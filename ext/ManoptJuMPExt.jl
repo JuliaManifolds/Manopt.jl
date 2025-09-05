@@ -29,24 +29,24 @@ Represent a solver from `Manopt.jl` within the [`MathOptInterface` (MOI)](@extre
 All types in brackets can also be `Nothing`, indicating they were not yet initialized.
 """
 mutable struct ManoptOptimizer <: MOI.AbstractOptimizer
-    problem::Union{Nothing,Manopt.AbstractManoptProblem}
-    manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
-    objective::Union{Nothing,Manopt.AbstractManifoldObjective}
-    state::Union{Nothing,Manopt.AbstractManoptSolverState}
+    problem::Union{Nothing, Manopt.AbstractManoptProblem}
+    manifold::Union{Nothing, ManifoldsBase.AbstractManifold}
+    objective::Union{Nothing, Manopt.AbstractManifoldObjective}
+    state::Union{Nothing, Manopt.AbstractManoptSolverState}
     # Does this make sense to be elementwise Nothing? On a manifold a partial init is not possible
-    variable_primal_start::Vector{Union{Nothing,Float64}}
+    variable_primal_start::Vector{Union{Nothing, Float64}}
     sense::MOI.OptimizationSense
     # Not sure what these are for? All parameters set should be reflected in the `state` parameter.
-    options::Dict{String,Any}
+    options::Dict{String, Any}
     function ManoptOptimizer()
         return new(
             nothing,
             nothing,
             nothing,
             nothing,
-            Union{Nothing,Float64}[],
+            Union{Nothing, Float64}[],
             MOI.FEASIBILITY_SENSE,
-            Dict{String,Any}(DESCENT_STATE_TYPE => Manopt.GradientDescentState),
+            Dict{String, Any}(DESCENT_STATE_TYPE => Manopt.GradientDescentState),
         )
     end
 end
@@ -73,7 +73,7 @@ but just be parametrized in a certain way.
 * `manifold::M`: The manifold in which the variables are constrained to lie.
   This is a [`ManifoldsBase.AbstractManifold`](@extref) object.
 """
-struct ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
+struct ManifoldSet{M <: ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
     manifold::M
 end
 
@@ -98,8 +98,8 @@ as a [`MOI.AbstractScalarFunction`](@extref JuMP :jl:type:`MathOptInterface.Abst
 # Fields
 * `func::MO`: The [`AbstractManifoldObjective`](@ref) function to be wrapped.
 """
-struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
-       MOI.AbstractScalarFunction
+struct RiemannianFunction{MO <: Manopt.AbstractManifoldObjective} <:
+    MOI.AbstractScalarFunction
     func::MO
 end
 
@@ -294,7 +294,7 @@ Return whether `vi` is a valid variable index.
 """
 function MOI.is_valid(model::ManoptOptimizer, vi::MOI.VariableIndex)
     return !isnothing(model.manifold) &&
-           1 <= vi.value <= MOI.dimension(ManifoldSet(model.manifold))
+        1 <= vi.value <= MOI.dimension(ManifoldSet(model.manifold))
 end
 
 """
@@ -318,8 +318,8 @@ Return `true` indicating that [`ManoptOptimizer`](@ref) supports starting values
 for the variables.
 """
 function MOI.supports(
-    ::ManoptOptimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex}
-)
+        ::ManoptOptimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex}
+    )
     return true
 end
 
@@ -336,11 +336,11 @@ Set the starting value of the variable of index `vi` to `value`. Note that if
 and hence `MOI.optimize!` unless another starting value is set.
 """
 function MOI.set(
-    model::ManoptOptimizer,
-    ::MOI.VariablePrimalStart,
-    vi::MOI.VariableIndex,
-    value::Union{Real,Nothing},
-)
+        model::ManoptOptimizer,
+        ::MOI.VariablePrimalStart,
+        vi::MOI.VariableIndex,
+        value::Union{Real, Nothing},
+    )
     MOI.throw_if_not_valid(model, vi)
     model.variable_primal_start[vi.value] = value
     model.state = nothing
@@ -353,7 +353,7 @@ end
 Return `true` indicating that `Optimizer` supports being set the objective
 sense (that is, min, max or feasibility) and the objective function.
 """
-function MOI.supports(::ManoptOptimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
+function MOI.supports(::ManoptOptimizer, ::Union{MOI.ObjectiveSense, MOI.ObjectiveFunction})
     return true
 end
 
@@ -382,8 +382,8 @@ MOI.get(model::ManoptOptimizer, ::MOI.ObjectiveSense) = model.sense
 Set the objective function as `func` for `model`.
 """
 function MOI.set(
-    model::ManoptOptimizer, attr::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
-)
+        model::ManoptOptimizer, attr::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
+    )
     backend = MOI.Nonlinear.SparseReverseMode()
     vars = [MOI.VariableIndex(i) for i in eachindex(model.variable_primal_start)]
     nlp_model = MOI.Nonlinear.Model()
@@ -461,7 +461,7 @@ on a manifold
 * `size::NTuple{N,Int}`: The size of the array
 """
 struct ManifoldPointArrayShape{N} <: JuMP.AbstractShape
-    size::NTuple{N,Int}
+    size::NTuple{N, Int}
 end
 
 """
@@ -471,7 +471,7 @@ Given a point `p` as an ``N``-dimensional array representing a point on a certai
 manifold, reshape it to a vector, which is necessary within [`JuMP`](@extref JuMP :std:doc:`index`).
 For the inverse see [`JuMP.reshape_vector`](@ref JuMP.reshape_vector(::Vector, ::ManifoldPointArrayShape)).
 """
-function JuMP.vectorize(array::Array{T,N}, ::ManifoldPointArrayShape{M}) where {T,N,M}
+function JuMP.vectorize(array::Array{T, N}, ::ManifoldPointArrayShape{M}) where {T, N, M}
     return vec(array)
 end
 

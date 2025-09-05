@@ -187,7 +187,7 @@ This struct is also a functor in both formats
     * `(M, p) -> X` to compute the gradient in allocating fashion.
 This is primarily used for computing a subgradient of the cost function ``h(q) + $(_tex(:frac, "1", "2λ"))$(_math(:distance))^2(q, p)`` that defines proximal map in the proximal gradient method. This reads
 ```math
-    ∂h(q) - $(_tex(:frac, "1","λ"))$(_tex(:log))_q p
+    ∂h(q) - $(_tex(:frac, "1", "λ"))$(_tex(:log))_q p
 ```
 is the proximity point where the proximal map is evaluated, i.e. the argument ``p`` of the proximal map ``$(_tex(:prox))_{λ h} (p)``.
 

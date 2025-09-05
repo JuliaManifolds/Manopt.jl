@@ -53,8 +53,8 @@ $(_var(:Keyword, :X, "initial_gradient"))
 $(_var(:Keyword, :p; add = :as_Initial))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
 * `restart_condition=[`NeverRestart`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to never restart.
-$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`"))
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`)"))
+$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`)"))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 
@@ -63,16 +63,16 @@ $(_var(:Keyword, :vector_transport_method))
 [`conjugate_gradient_descent`](@ref), [`DefaultManoptProblem`](@ref), [`ArmijoLinesearch`](@ref)
 """
 mutable struct ConjugateGradientDescentState{
-    P,
-    T,
-    F,
-    TStepsize<:Stepsize,
-    TStop<:StoppingCriterion,
-    TCoeff<:DirectionUpdateRuleStorage,
-    TRC<:AbstractRestartCondition,
-    TRetr<:AbstractRetractionMethod,
-    VTM<:AbstractVectorTransportMethod,
-} <: AbstractGradientSolverState
+        P,
+        T,
+        F,
+        TStepsize <: Stepsize,
+        TStop <: StoppingCriterion,
+        TCoeff <: DirectionUpdateRuleStorage,
+        TRC <: AbstractRestartCondition,
+        TRetr <: AbstractRetractionMethod,
+        VTM <: AbstractVectorTransportMethod,
+    } <: AbstractGradientSolverState
     p::P
     p_old::P
     X::T
@@ -85,27 +85,27 @@ mutable struct ConjugateGradientDescentState{
     retraction_method::TRetr
     vector_transport_method::VTM
     function ConjugateGradientDescentState(
-        M::AbstractManifold,
-        p::P,
-        sC::TsC,
-        s::TStep,
-        dC::DirectionUpdateRule,
-        res_cond::TRC=NeverRestart(),
-        retr::TRetr=default_retraction_method(M, typeof(p)),
-        vtr::VTM=default_vector_transport_method(M),
-        initial_gradient::T=zero_vector(M, p),
-    ) where {
-        P,
-        T,
-        TsC<:StoppingCriterion,
-        TStep<:Stepsize,
-        TRC<:AbstractRestartCondition,
-        TRetr<:AbstractRetractionMethod,
-        VTM<:AbstractVectorTransportMethod,
-    }
-        coef = DirectionUpdateRuleStorage(M, dC; p_init=p, X_init=initial_gradient)
+            M::AbstractManifold,
+            p::P,
+            sC::TsC,
+            s::TStep,
+            dC::DirectionUpdateRule,
+            res_cond::TRC = NeverRestart(),
+            retr::TRetr = default_retraction_method(M, typeof(p)),
+            vtr::VTM = default_vector_transport_method(M),
+            initial_gradient::T = zero_vector(M, p),
+        ) where {
+            P,
+            T,
+            TsC <: StoppingCriterion,
+            TStep <: Stepsize,
+            TRC <: AbstractRestartCondition,
+            TRetr <: AbstractRetractionMethod,
+            VTM <: AbstractVectorTransportMethod,
+        }
+        coef = DirectionUpdateRuleStorage(M, dC; p_init = p, X_init = initial_gradient)
         βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
-        cgs = new{P,T,βT,TStep,TsC,typeof(coef),TRC,TRetr,VTM}()
+        cgs = new{P, T, βT, TStep, TsC, typeof(coef), TRC, TRetr, VTM}()
         cgs.p = p
         cgs.p_old = copy(M, p)
         cgs.X = initial_gradient
@@ -122,26 +122,26 @@ mutable struct ConjugateGradientDescentState{
 end
 
 function ConjugateGradientDescentState(
-    M::AbstractManifold;
-    p::P=rand(M),
-    coefficient::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=ConjugateDescentCoefficient(),
-    restart_condition::TRC=NeverRestart(),
-    retraction_method::TRetr=default_retraction_method(M, typeof(p)),
-    stepsize::TStep=default_stepsize(
-        M, ConjugateGradientDescentState; retraction_method=retraction_method
-    ),
-    stopping_criterion::TsC=StopAfterIteration(500) | StopWhenGradientNormLess(1e-8),
-    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-    initial_gradient::T=zero_vector(M, p),
-) where {
-    P,
-    T,
-    TsC<:StoppingCriterion,
-    TStep<:Stepsize,
-    TRC<:AbstractRestartCondition,
-    TRetr<:AbstractRetractionMethod,
-    VTM<:AbstractVectorTransportMethod,
-}
+        M::AbstractManifold;
+        p::P = rand(M),
+        coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
+        restart_condition::TRC = NeverRestart(),
+        retraction_method::TRetr = default_retraction_method(M, typeof(p)),
+        stepsize::TStep = default_stepsize(
+            M, ConjugateGradientDescentState; retraction_method = retraction_method
+        ),
+        stopping_criterion::TsC = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-8),
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+        initial_gradient::T = zero_vector(M, p),
+    ) where {
+        P,
+        T,
+        TsC <: StoppingCriterion,
+        TStep <: Stepsize,
+        TRC <: AbstractRestartCondition,
+        TRetr <: AbstractRetractionMethod,
+        VTM <: AbstractVectorTransportMethod,
+    }
     return ConjugateGradientDescentState(
         M,
         p,
@@ -1043,8 +1043,8 @@ A restart strategy that indicates to never restart.
 struct NeverRestart <: AbstractRestartCondition end
 
 function (corr::NeverRestart)(
-    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
-)
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
+    )
     return false
 end
 
@@ -1062,9 +1062,9 @@ at the current iterate ``p``.
 """
 struct RestartOnNonDescent <: AbstractRestartCondition end
 function (corr::RestartOnNonDescent)(
-    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
-)
-    return get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true) >= 0
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
+    )
+    return get_differential(amp, cgs.p, cgs.δ; gradient = cgs.X, evaluated = true) >= 0
 end
 
 @doc """
@@ -1080,14 +1080,14 @@ A restart strategy that indicates to restart whenever the search direction `δ` 
 
 at the current iterate ``p``.
 """
-struct RestartOnNonSufficientDescent{F<:Real} <: AbstractRestartCondition
+struct RestartOnNonSufficientDescent{F <: Real} <: AbstractRestartCondition
     κ::F
 end
 function (corr::RestartOnNonSufficientDescent)(
-    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
-)
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
+    )
     return (
-        get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true) >
-        -corr.κ * get_differential(amp, cgs.p, cgs.X; gradient=cgs.X, evaluated=true)
+        get_differential(amp, cgs.p, cgs.δ; gradient = cgs.X, evaluated = true) >
+            -corr.κ * get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
     )
 end

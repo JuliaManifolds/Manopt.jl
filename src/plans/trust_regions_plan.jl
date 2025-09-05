@@ -1,4 +1,3 @@
-
 @doc """
     TrustRegionModelObjective{O<:AbstractManifoldHessianObjective} <: AbstractManifoldSubObjective{O}
 

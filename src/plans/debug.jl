@@ -528,8 +528,8 @@ mutable struct DebugIfEntry{F} <: DebugAction
     msg::String
     type::Symbol
     function DebugIfEntry(
-        f::Symbol, check::F=(>(0)); type=:warn, message=":\$f nonpositive.", io::IO=stdout
-    ) where {F}
+            f::Symbol, check::F = (>(0)); type = :warn, message = ":\$f nonpositive.", io::IO = stdout
+        ) where {F}
         return new{F}(io, check, f, message, type)
     end
 end
@@ -581,14 +581,14 @@ mutable struct DebugEntryChange <: DebugAction
     io::IO
     storage::StoreStateAction
     function DebugEntryChange(
-        f::Symbol,
-        d;
-        storage::StoreStateAction=StoreStateAction([f]),
-        prefix::String="Change of \$f:",
-        format::String="$prefix%s",
-        io::IO=stdout,
-        initial_value::Any=NaN,
-    )
+            f::Symbol,
+            d;
+            storage::StoreStateAction = StoreStateAction([f]),
+            prefix::String = "Change of \$f:",
+            format::String = "$prefix%s",
+            io::IO = stdout,
+            initial_value::Any = NaN,
+        )
         if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
             update_storage!(storage, Dict(f => initial_value))
         end

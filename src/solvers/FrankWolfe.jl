@@ -1,4 +1,3 @@
-
 _doc_FW_sub = """
 ```math
    $(_tex(:argmin))_{q ∈ C} ⟨$(_tex(:grad)) f(p_k), $(_tex(:log))_{p_k}q⟩.

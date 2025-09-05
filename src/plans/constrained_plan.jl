@@ -405,7 +405,7 @@ get_objective(cmp::ConstrainedManoptProblem) = cmp.objective
 Implement the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`.
 
 ```math
-$(_tex(:Cal,"L"))(p; μ, λ) = f(p) + $(_tex(:sum, "i=1", "m")) μ_ig_i(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p)
+$(_tex(:Cal, "L"))(p; μ, λ) = f(p) + $(_tex(:sum, "i=1", "m")) μ_ig_i(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p)
 ```
 
 # Fields
@@ -420,7 +420,7 @@ Create a functor for the Lagrangian with fixed dual variables.
 
 # Example
 
-When you directly want to evaluate the Lagrangian ``$(_tex(:Cal,"L"))``
+When you directly want to evaluate the Lagrangian ``$(_tex(:Cal, "L"))``
 you can also call
 
 ```
@@ -451,7 +451,7 @@ The gradient of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`
 with respect to the variable ``p``. The formula reads
 
 ```math
-$(_tex(:grad))_p $(_tex(:Cal,"L"))(p; μ, λ)
+$(_tex(:grad))_p $(_tex(:Cal, "L"))(p; μ, λ)
 = $(_tex(:grad)) f(p) + $(_tex(:sum, "i=1", "m")) μ_i $(_tex(:grad)) g_i(p) + $(_tex(:sum, "j=1", "n")) λ_j $(_tex(:grad)) h_j(p)
 ```
 
@@ -467,7 +467,7 @@ Create a functor for the Lagrangian with fixed dual variables.
 
 # Example
 
-When you directly want to evaluate the gradient of the Lagrangian ``$(_tex(:grad))_p $(_tex(:Cal,"L"))``
+When you directly want to evaluate the gradient of the Lagrangian ``$(_tex(:grad))_p $(_tex(:Cal, "L"))``
 you can also call `LagrangianGradient(co, μ, λ)(M,p)` or `LagrangianGradient(co, μ, λ)(M,X,p)` for the in-place variant.
 """
 mutable struct LagrangianGradient{CO, T} <: AbstractConstrainedFunctor{T}
@@ -505,7 +505,7 @@ The Hessian of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`
 with respect to the variable ``p``. The formula reads
 
 ```math
-$(_tex(:Hess))_p $(_tex(:Cal,"L"))(p; μ, λ)[X]
+$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p; μ, λ)[X]
 = $(_tex(:Hess)) f(p) + $(_tex(:sum, "i=1", "m")) μ_i $(_tex(:Hess)) g_i(p)[X] + $(_tex(:sum, "j=1", "n")) λ_j $(_tex(:Hess)) h_j(p)[X]
 ```
 
@@ -521,7 +521,7 @@ Create a functor for the Lagrangian with fixed dual variables.
 
 # Example
 
-When you directly want to evaluate the Hessian of the Lagrangian ``$(_tex(:Hess))_p $(_tex(:Cal,"L"))``
+When you directly want to evaluate the Hessian of the Lagrangian ``$(_tex(:Hess))_p $(_tex(:Cal, "L"))``
 you can also call `LagrangianHessian(co, μ, λ)(M, p, X)` or `LagrangianHessian(co, μ, λ)(M, Y, p, X)` for the in-place variant.
 """
 mutable struct LagrangianHessian{CO, T} <: AbstractConstrainedFunctor{T}

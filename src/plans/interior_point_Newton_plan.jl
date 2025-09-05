@@ -255,18 +255,21 @@ end
 Given the constrained optimization problem
 
 ```math
-$(_tex(:aligned,
-    "$(_tex(:min))_{p ∈ $(_math(:M))} & f(p)",
-    "$(_tex(:text, " subject to ")) &g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, " for ")) i= 1, …, m,",
-    "$(_tex(:quad)) & h_j(p) = 0 $(_tex(:quad))$(_tex(:text, " for ")) j=1,…,n,",
-))
+$(
+    _tex(
+        :aligned,
+        "$(_tex(:min))_{p ∈ $(_math(:M))} & f(p)",
+        "$(_tex(:text, " subject to ")) &g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, " for ")) i= 1, …, m,",
+        "$(_tex(:quad)) & h_j(p) = 0 $(_tex(:quad))$(_tex(:text, " for ")) j=1,…,n,",
+    )
+)
 ```
 
 Then reformulating the KKT conditions of the Lagrangian
 from the optimality conditions of the Lagrangian
 
 ```math
-$(_tex(:Cal,"L"))(p, μ, λ) = f(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p) + $(_tex(:sum, "i=1", "m")) μ_ig_i(p)
+$(_tex(:Cal, "L"))(p, μ, λ) = f(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p) + $(_tex(:sum, "i=1", "m")) μ_ig_i(p)
 ```
 
 in a perturbed / barrier method in a condensed form
@@ -277,17 +280,20 @@ and the Riemannian gradient of the Lagrangian with respect to the first paramete
 Let ``$(_tex(:Cal, "N")) = $(_math(:M)) × ℝ^n``. We obtain the linear system
 
 ```math
-$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where " )) (X,Y) ∈ T_{(p,λ)}$(_tex(:Cal, "N"))
+$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where ")) (X,Y) ∈ T_{(p,λ)}$(_tex(:Cal, "N"))
 ```
 
 where ``$(_tex(:Cal, "A")): T_{(p,λ)}$(_tex(:Cal, "N")) → T_{(p,λ)}$(_tex(:Cal, "N"))`` is a linear operator and
 this struct models the right hand side ``b(p,λ) ∈ T_{(p,λ)}$(_math(:M))`` given by
 
 ```math
-b(p,λ) = $(_tex(:pmatrix,
-    "$(_tex(:grad)) f(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) λ_j $(_tex(:grad)) h_j(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) μ_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) $(_tex(:frac, "μ_i", "s_i"))$(_tex(:bigl))( μ_i(g_i(p)+s_i) + β - μ_is_i $(_tex(:bigr)))$(_tex(:grad)) g_i(p)",
-    "h(p)",
-))
+b(p,λ) = $(
+    _tex(
+        :pmatrix,
+        "$(_tex(:grad)) f(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) λ_j $(_tex(:grad)) h_j(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) μ_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) $(_tex(:frac, "μ_i", "s_i"))$(_tex(:bigl))( μ_i(g_i(p)+s_i) + β - μ_is_i $(_tex(:bigr)))$(_tex(:grad)) g_i(p)",
+        "h(p)",
+    )
+)
 ```
 
 # Fields
@@ -352,11 +358,14 @@ end
 Given the constrained optimization problem
 
 ```math
-$(_tex(:aligned,
-    "$(_tex(:min))_{p ∈ $(_math(:M))} & f(p)",
-    "$(_tex(:text, "subject to")) & g_i(p) ≤ 0 $(_tex(:quad))$(_tex(:text, " for " )) i= 1, …, m,",
-    "$(_tex(:quad)) & h_j(p)=0 $(_tex(:quad)) $(_tex(:text, " for " )) j=1,…,n,",
-))
+$(
+    _tex(
+        :aligned,
+        "$(_tex(:min))_{p ∈ $(_math(:M))} & f(p)",
+        "$(_tex(:text, "subject to")) & g_i(p) ≤ 0 $(_tex(:quad))$(_tex(:text, " for ")) i= 1, …, m,",
+        "$(_tex(:quad)) & h_j(p)=0 $(_tex(:quad)) $(_tex(:text, " for ")) j=1,…,n,",
+    )
+)
 ```
 
 we reformulate the KKT conditions of the Lagrangian
@@ -372,17 +381,20 @@ the Riemannian gradient of the Lagrangian with respect to the first parameter.
 Let ``$(_tex(:Cal, "N")) = $(_math(:M)) × ℝ^n``. We obtain the linear system
 
 ```math
-$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where " )) X ∈ T_p$(_math(:M)), Y ∈ ℝ^n
+$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where ")) X ∈ T_p$(_math(:M)), Y ∈ ℝ^n
 ```
 where ``$(_tex(:Cal, "A")): T_{(p,λ)}$(_tex(:Cal, "N")) → T_{(p,λ)}$(_tex(:Cal, "N"))`` is a linear operator
 on ``T_{(p,λ)}$(_tex(:Cal, "N")) = T_p$(_math(:M)) × ℝ^n`` given by
 
 ```math
 $(_tex(:Cal, "A"))(p,λ)[X,Y] =
-$(_tex(:pmatrix,
-    "$(_tex(:Hess))_p$(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum,"i=1", "m")) $(_tex(:frac, "μ_i", "s_i")) ⟨$(_tex(:grad)) g_i(p), X⟩$(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Y_j $(_tex(:grad)) h_j(p)",
-    "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
-))
+$(
+    _tex(
+        :pmatrix,
+        "$(_tex(:Hess))_p$(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) $(_tex(:frac, "μ_i", "s_i")) ⟨$(_tex(:grad)) g_i(p), X⟩$(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Y_j $(_tex(:grad)) h_j(p)",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
+    )
+)
 ```
 
 # Fields
@@ -468,12 +480,15 @@ and introducing the slack variables ``s=-g(p) ∈ ℝ^m``
 the vector field is given by
 
 ```math
-F(p, μ, λ, s) = $(_tex(:pmatrix,
-  "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p, μ, λ)",
-  "g(p) + s",
-  "h(p)",
-  "μ ⊙ s",
-)),
+F(p, μ, λ, s) = $(
+    _tex(
+        :pmatrix,
+        "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p, μ, λ)",
+        "g(p) + s",
+        "h(p)",
+        "μ ⊙ s",
+    )
+),
 ```
 where ``p ∈ $(_math(:M))``, ``μ, s ∈ ℝ^m`` and ``λ ∈ ℝ^n``,
 and ``⊙`` denotes the Hadamard (or elementwise) product
@@ -528,12 +543,15 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 
 ```math
 $(_tex(:operatorname, "J")) F(p, μ, λ, s)[X, Y, Z, W] =
-$(_tex(:pmatrix,
-    "$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) Y_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Z_j $(_tex(:grad)) h_j(p)",
-    "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), X⟩ + W_i$(_tex(:Bigr)))_{i=1}^m",
-    "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
-    "μ ⊙ W + s ⊙ Y",
-))
+$(
+    _tex(
+        :pmatrix,
+        "$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) Y_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Z_j $(_tex(:grad)) h_j(p)",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), X⟩ + W_i$(_tex(:Bigr)))_{i=1}^m",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
+        "μ ⊙ W + s ⊙ Y",
+    )
+)
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product
 
@@ -603,12 +621,15 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 
 ```math
 $(_tex(:operatorname, "J"))^*
-F(p, μ, λ, s)[X, Y, Z, W] = $(_tex(:pmatrix,
-    "$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) Y_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Z_j $(_tex(:grad)) h_j(p)",
-    "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), X⟩ + s_iW_i$(_tex(:Bigr)))_{i=1}^m",
-    "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
-    "μ ⊙ W + Y"
-)),
+F(p, μ, λ, s)[X, Y, Z, W] = $(
+    _tex(
+        :pmatrix,
+        "$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) Y_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Z_j $(_tex(:grad)) h_j(p)",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), X⟩ + s_iW_i$(_tex(:Bigr)))_{i=1}^m",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
+        "μ ⊙ W + Y"
+    )
+),
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product
 
@@ -724,12 +745,15 @@ for a shorthand of the first component of ``F``, as
 $(_tex(:grad)) φ
 =
 2
-$(_tex(:pmatrix,
-  "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p,μ,λ)[L] + (g_i(p) + s_i)$(_tex(:grad)) g_i(p) + h_j(p)$(_tex(:grad)) h_j(p)",
-  "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), L⟩ + s_i$(_tex(:Bigr)))_{i=1}^m + μ ⊙ s ⊙ s",
-  "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), L⟩ $(_tex(:Bigr)))_{j=1}^n",
-  "g + s + μ ⊙ μ ⊙ s",
-)),
+$(
+    _tex(
+        :pmatrix,
+        "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p,μ,λ)[L] + (g_i(p) + s_i)$(_tex(:grad)) g_i(p) + h_j(p)$(_tex(:grad)) h_j(p)",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), L⟩ + s_i$(_tex(:Bigr)))_{i=1}^m + μ ⊙ s ⊙ s",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), L⟩ $(_tex(:Bigr)))_{j=1}^n",
+        "g + s + μ ⊙ μ ⊙ s",
+    )
+),
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product.
 
@@ -798,7 +822,7 @@ Then, let
 
 ```math
 τ_1 = $(_tex(:frac, "m$(_tex(:min))$(_tex(:set, "μ ⊙ s"))", "μ^{$(_tex(:rm, "T"))}s"))
-$(_tex(:quad))$(_tex(:text, " and " ))$(_tex(:quad))
+$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
 τ_2 = $(_tex(:frac, "μ^{$(_tex(:rm, "T"))}s", "$(_tex(:norm, "F(q)"))")),
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product.
@@ -808,7 +832,7 @@ we then define two functions
 
 ```math
 c_1(α) = $(_tex(:min))$(_tex(:set, "μ(α) ⊙ s(α)")) - $(_tex(:frac, "γτ_1 μ(α)^{$(_tex(:rm, "T"))}s(α)", "m"))
-$(_tex(:quad))$(_tex(:text, " and " ))$(_tex(:quad))
+$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
 c_2(α) = μ(α)^{$(_tex(:rm, "T"))}s(α) – γτ_2 $(_tex(:norm, "F(q(α))")).
 ```
 

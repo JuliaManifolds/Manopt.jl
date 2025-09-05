@@ -54,7 +54,7 @@ define!(
     :LaTeX,
     :aligned,
     (lines...) ->
-        raw"\begin{aligned}\n" *
+    raw"\begin{aligned}\n" *
         "$(join(["   $(line)" for line in lines], raw"\\\\ "))" *
         raw"\n\end{aligned}\n",
 )
@@ -111,7 +111,7 @@ define!(:LaTeX, :rm, (letter) -> raw"\mathrm{" * "$letter" * "}")
 define!(:LaTeX, :sqrt, (s) -> raw"\sqrt{" * "$s}")
 define!(:LaTeX, :subgrad, raw"∂")
 define!(:LaTeX, :set, (s) -> raw"\{" * "$s" * raw"\}")
-define!(:LaTeX, :sum, (b="", t="") -> raw"\sum" * "_{$b}^{$t}")
+define!(:LaTeX, :sum, (b = "", t = "") -> raw"\sum" * "_{$b}^{$t}")
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
 define!(:LaTeX, :tilde, raw"\tilde")
 define!(:LaTeX, :transp, raw"\mathrm{T}")

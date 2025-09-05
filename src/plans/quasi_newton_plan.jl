@@ -31,11 +31,11 @@ abstract type AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian BFGS update is used in the Riemannian quasi-Newton method.
 
-Denote by ``$(_tex(:widetilde,"H"))_k^$(_tex(:rm,"BFGS"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``$(_tex(:widetilde, "H"))_k^$(_tex(:rm, "BFGS"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-H^$(_tex(:rm,"BFGS"))_{k+1} = $(_tex(:widetilde,"H"))^$(_tex(:rm,"BFGS"))_k  + $(_tex(:frac, "y_k y^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k")) - $(_tex(:frac, "$(_tex(:widetilde,"H"))^$(_tex(:rm,"BFGS"))_k s_k s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde,"H"))^$(_tex(:rm,"BFGS"))_k ", " s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde,"H"))^$(_tex(:rm,"BFGS"))_k s_k"))
+H^$(_tex(:rm, "BFGS"))_{k+1} = $(_tex(:widetilde, "H"))^$(_tex(:rm, "BFGS"))_k  + $(_tex(:frac, "y_k y^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k")) - $(_tex(:frac, "$(_tex(:widetilde, "H"))^$(_tex(:rm, "BFGS"))_k s_k s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde, "H"))^$(_tex(:rm, "BFGS"))_k ", " s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde, "H"))^$(_tex(:rm, "BFGS"))_k s_k"))
 ```
 
 where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
@@ -54,14 +54,14 @@ struct BFGS <: AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemannian BFGS update is used in the Riemannian quasi-Newton method.
 
-Denote by ``$(_tex(:widetilde, "B"))_k^$(_tex(:rm,"BFGS"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``$(_tex(:widetilde, "B"))_k^$(_tex(:rm, "BFGS"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-B^$(_tex(:rm,"BFGS"))_{k+1}  = $(_tex(:Bigl))(
+B^$(_tex(:rm, "BFGS"))_{k+1}  = $(_tex(:Bigl))(
   $(_tex(:Id))_{T_{x_{k+1}} $(_math(:M))} - $(_tex(:frac, "s_k y^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr)))
-$(_tex(:widetilde, "B"))^$(_tex(:rm,"BFGS"))_k
+$(_tex(:widetilde, "B"))^$(_tex(:rm, "BFGS"))_k
 $(_tex(:Bigl))(
   $(_tex(:Id))_{T_{x_{k+1}} $(_math(:M))} - $(_tex(:frac, "y_k s^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr))) + $(_tex(:frac, "s_k s^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
@@ -83,14 +83,14 @@ struct InverseBFGS <: AbstractQuasiNewtonUpdateRule end
 
 indicates in an [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian DFP update is used in the Riemannian quasi-Newton method.
 
-Denote by ``$(_tex(:widetilde,"H"))_k^$(_tex(:rm, "DFP"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``$(_tex(:widetilde, "H"))_k^$(_tex(:rm, "DFP"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
 H^$(_tex(:rm, "DFP"))_{k+1} = $(_tex(:Bigl))(
   $(_tex(:Id))_{T_{x_{k+1}} $(_math(:M))} - $(_tex(:frac, "y_k s^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr)))
-$(_tex(:widetilde,"H"))^$(_tex(:rm, "DFP"))_k
+$(_tex(:widetilde, "H"))^$(_tex(:rm, "DFP"))_k
 $(_tex(:Bigl))(
   $(_tex(:Id))_{T_{x_{k+1}} $(_math(:M))} - $(_tex(:frac, "s_k y^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr))) + $(_tex(:frac, "y_k y^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
@@ -136,15 +136,18 @@ struct InverseDFP <: AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian SR1 update is used in the Riemannian quasi-Newton method.
 
-Denote by ``$(_tex(:widetilde,"H"))_k^$(_tex(:rm, "SR1"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``$(_tex(:widetilde, "H"))_k^$(_tex(:rm, "SR1"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-H^$(_tex(:rm, "SR1"))_{k+1} = $(_tex(:widetilde,"H"))^$(_tex(:rm, "SR1"))_k
-+ $(_tex(:frac,
-  "(y_k - $(_tex(:widetilde,"H"))^$(_tex(:rm, "SR1"))_k s_k) (y_k - $(_tex(:widetilde,"H"))^$(_tex(:rm, "SR1"))_k s_k)^{$(_tex(:rm, "T"))}",
-  "(y_k - $(_tex(:widetilde,"H"))^$(_tex(:rm, "SR1"))_k s_k)^{$(_tex(:rm, "T"))} s_k",
-))
+H^$(_tex(:rm, "SR1"))_{k+1} = $(_tex(:widetilde, "H"))^$(_tex(:rm, "SR1"))_k
++ $(
+    _tex(
+        :frac,
+        "(y_k - $(_tex(:widetilde, "H"))^$(_tex(:rm, "SR1"))_k s_k) (y_k - $(_tex(:widetilde, "H"))^$(_tex(:rm, "SR1"))_k s_k)^{$(_tex(:rm, "T"))}",
+        "(y_k - $(_tex(:widetilde, "H"))^$(_tex(:rm, "SR1"))_k s_k)^{$(_tex(:rm, "T"))} s_k",
+    )
+)
 ```
 
 where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
@@ -157,7 +160,7 @@ $(_tex(:grad))f(x_{k+1}) - T^{S}_{x_k, α_k η_k}($(_tex(:grad))f(x_k)) ∈ T_{x
 respectively.
 
 This method can be stabilized by only performing the update if denominator is larger than
-``r$(_tex(:norm, "s_k"; index="x_{k+1}"))$(_tex(:norm, "y_k - $(_tex(:widetilde,"H"))^$(_tex(:rm, "SR1"))_k s_k"; index="x_{k+1}"))``
+``r$(_tex(:norm, "s_k"; index = "x_{k+1}"))$(_tex(:norm, "y_k - $(_tex(:widetilde, "H"))^$(_tex(:rm, "SR1"))_k s_k"; index = "x_{k+1}"))``
 for some ``r>0``. For more details, see Section 6.2 in [NocedalWright:2006](@cite).
 
 # Constructor
@@ -197,7 +200,7 @@ $(_tex(:grad))f(x_{k+1}) - T^{S}_{x_k, α_k η_k}($(_tex(:grad))f(x_k)) ∈ T_{x
 respectively.
 
 This method can be stabilized by only performing the update if denominator is larger than
-``r$(_tex(:norm, "y_k"; index="x_{k+1}"))$(_tex(:norm, "s_k - $(_tex(:widetilde,"H"))^$(_tex(:rm, "SR1"))_k y_k"; index="x_{k+1}"))``
+``r$(_tex(:norm, "y_k"; index = "x_{k+1}"))$(_tex(:norm, "s_k - $(_tex(:widetilde, "H"))^$(_tex(:rm, "SR1"))_k y_k"; index = "x_{k+1}"))``
 for some ``r>0``. For more details, see Section 6.2 in [NocedalWright:2006](@cite).
 
 # Constructor
@@ -215,18 +218,18 @@ end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian Broyden update is used in the Riemannian quasi-Newton method, which is as a convex combination of [`BFGS`](@ref) and [`DFP`](@ref).
 
-Denote by ``$(_tex(:widetilde,"H"))_k^$(_tex(:rm, "Br"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``$(_tex(:widetilde, "H"))_k^$(_tex(:rm, "Br"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
-H^$(_tex(:rm, "Br"))_{k+1} = $(_tex(:widetilde,"H"))^$(_tex(:rm, "Br"))_k
-  - $(_tex(:frac, "$(_tex(:widetilde,"H"))^$(_tex(:rm, "Br"))_k s_k s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde,"H"))^$(_tex(:rm, "Br"))_k}{s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde,"H"))^$(_tex(:rm, "Br"))_k s_k} + \frac{y_k y^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
-  + φ_k s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde,"H"))^$(_tex(:rm, "Br"))_k s_k
+H^$(_tex(:rm, "Br"))_{k+1} = $(_tex(:widetilde, "H"))^$(_tex(:rm, "Br"))_k
+  - $(_tex(:frac, "$(_tex(:widetilde, "H"))^$(_tex(:rm, "Br"))_k s_k s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde, "H"))^$(_tex(:rm, "Br"))_k}{s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde, "H"))^$(_tex(:rm, "Br"))_k s_k} + \frac{y_k y^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
+  + φ_k s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde, "H"))^$(_tex(:rm, "Br"))_k s_k
   $(_tex(:Bigl))(
-        $(_tex(:frac, "y_k", "s^{$(_tex(:rm, "T"))}_k y_k")) - $(_tex(:frac, "$(_tex(:widetilde,"H"))^$(_tex(:rm, "Br"))_k s_k", "s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde,"H"))^$(_tex(:rm, "Br"))_k s_k"))
+        $(_tex(:frac, "y_k", "s^{$(_tex(:rm, "T"))}_k y_k")) - $(_tex(:frac, "$(_tex(:widetilde, "H"))^$(_tex(:rm, "Br"))_k s_k", "s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde, "H"))^$(_tex(:rm, "Br"))_k s_k"))
   $(_tex(:Bigr)))
   $(_tex(:Bigl))(
-        $(_tex(:frac, "y_k", "s^{$(_tex(:rm, "T"))}_k y_k")) - $(_tex(:frac, "$(_tex(:widetilde,"H"))^$(_tex(:rm, "Br"))_k s_k", "s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde,"H"))^$(_tex(:rm, "Br"))_k s_k"))
+        $(_tex(:frac, "y_k", "s^{$(_tex(:rm, "T"))}_k y_k")) - $(_tex(:frac, "$(_tex(:widetilde, "H"))^$(_tex(:rm, "Br"))_k s_k", "s^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde, "H"))^$(_tex(:rm, "Br"))_k s_k"))
   $(_tex(:Bigr)))^{$(_tex(:rm, "T"))}
 ```
 
@@ -255,17 +258,20 @@ Indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian Br
 is used in the Riemannian quasi-Newton method, which is as a convex combination
 of [`InverseBFGS`](@ref) and [`InverseDFP`](@ref).
 
-Denote by ``$(_tex(:widetilde,"H"))_k^{$(_tex(:rm, "Br"))}`` the operator concatenated with a vector transport
+Denote by ``$(_tex(:widetilde, "H"))_k^{$(_tex(:rm, "Br"))}`` the operator concatenated with a vector transport
 and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
 B^$(_tex(:rm, "Br"))_{k+1}
 = $(_tex(:widetilde, "B"))^$(_tex(:rm, "Br"))_k
-   - $(_tex(:frac,
+   - $(
+    _tex(
+        :frac,
         "$(_tex(:widetilde, "B"))^$(_tex(:rm, "Br"))_k y_k y^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde, "B"))^$(_tex(:rm, "Br"))_k",
         "y^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde, "B"))^$(_tex(:rm, "Br"))_k y_k"
-    ))
+    )
+)
     + $(_tex(:frac, "s_k s^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
     + φ_k y^{$(_tex(:rm, "T"))}_k $(_tex(:widetilde, "B"))^$(_tex(:rm, "Br"))_k y_k
     $(_tex(:Bigl))(
@@ -720,7 +726,7 @@ as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`QuasiNewtonLimitedMe
 butut the update  then is only executed if
 
 ```math
-$(_tex(:frac, "g_{x_{k+1}}(y_k,s_k)", "$(_tex(:norm, "s_k"; index="x_{k+1}"))^{2}")) ≥ θ $(_tex(:norm, "$(_tex(:grad))f(x_k)"; index="x_k")),
+$(_tex(:frac, "g_{x_{k+1}}(y_k,s_k)", "$(_tex(:norm, "s_k"; index = "x_{k+1}"))^{2}")) ≥ θ $(_tex(:norm, "$(_tex(:grad))f(x_k)"; index = "x_k")),
 ```
 
 is satisfied, where ``θ`` is a monotone increasing function satisfying ``θ(0) = 0``
@@ -729,9 +735,9 @@ update is skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@re
 the matrix ``H_k`` or ``B_k`` is not updated.
 The basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` is nevertheless transported into the upcoming tangent
 space ``T_{x_{k+1}} $(_math(:M))``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
-neither the oldest vector pair ``$(_tex(:widetilde,"s"))_{k−m}``, ``$(_tex(:widetilde,"y"))_{k−m}`` is
-discarded nor the newest vector pair ``$(_tex(:widetilde,"s"))_k, $(_tex(:widetilde,"y"))_k`` is added
-into storage, but all stored vector pairs ``$(_tex(:set, "$(_tex(:widetilde,"s"))_i, $(_tex(:widetilde,"y"))_i"))_{i=k-m}^{k-1}``
+neither the oldest vector pair ``$(_tex(:widetilde, "s"))_{k−m}``, ``$(_tex(:widetilde, "y"))_{k−m}`` is
+discarded nor the newest vector pair ``$(_tex(:widetilde, "s"))_k, $(_tex(:widetilde, "y"))_k`` is added
+into storage, but all stored vector pairs ``$(_tex(:set, "$(_tex(:widetilde, "s"))_i, $(_tex(:widetilde, "y"))_i"))_{i=k-m}^{k-1}``
 are transported into the tangent space ``T_{x_{k+1}} $(_math(:M))``.
 If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting
 method follows the method of [HuangAbsilGallivan:2018](@cite),

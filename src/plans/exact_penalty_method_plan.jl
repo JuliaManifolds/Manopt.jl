@@ -19,11 +19,14 @@ struct LogarithmicSumOfExponentials <: SmoothingTechnique end
 Specify a smoothing based on ``$(_tex(:max))$(_tex(:set, "0,x")) ≈ $(_tex(:Cal, "P"))(x,u)`` for some ``u``, where
 
 ```math
-$(_tex(:Cal, "P")) = $(_tex(:cases,
-  "0 & $(_tex(:text, " if ")) x ≤ 0,",
-  "$(_tex(:frac, "x^2", "2u")) & $(_tex(:text, " if ")) 0 ≤ x ≤ u",
-  "x-$(_tex(:frac, "u", "2")) & $(_tex(:text, " if ")) x ≥ u"
-))
+$(_tex(:Cal, "P")) = $(
+    _tex(
+        :cases,
+        "0 & $(_tex(:text, " if ")) x ≤ 0,",
+        "$(_tex(:frac, "x^2", "2u")) & $(_tex(:text, " if ")) 0 ≤ x ≤ u",
+        "x-$(_tex(:frac, "u", "2")) & $(_tex(:text, " if ")) x ≥ u"
+    )
+)
 ```
 """
 struct LinearQuadraticHuber <: SmoothingTechnique end

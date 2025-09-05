@@ -253,7 +253,7 @@ function __init__()
                     It requires the package `JuMP.jl`, so please load it e.g. via
                     """,
                 )
-                printstyled(io, "`using JuMP`"; color=:cyan)
+                printstyled(io, "`using JuMP`"; color = :cyan)
             end
         end
     end

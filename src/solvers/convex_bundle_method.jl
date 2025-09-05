@@ -24,10 +24,13 @@ The formula reads
 ```math
 ζ_{1, ω}(δ)
 :=
-$(_tex(:cases,
-  "1 & $(_tex(:text, " if ")) ω ≥ 0,",
-  "$(_tex(:sqrt, "-ω"))δ$(_tex(:cot))($(_tex(:sqrt, "-ω"))δ) & $(_tex(:text, " if ")) ω < 0",
-))
+$(
+    _tex(
+        :cases,
+        "1 & $(_tex(:text, " if ")) ω ≥ 0,",
+        "$(_tex(:sqrt, "-ω"))δ$(_tex(:cot))($(_tex(:sqrt, "-ω"))δ) & $(_tex(:text, " if ")) ω < 0",
+    )
+)
 ```
 
 where ``ω ≤ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is a lower bound to the sectional curvature in
@@ -46,10 +49,13 @@ The formula reads
 
 ```math
 ζ_{2, Ω}(δ) :=
-$(_tex(:cases,
-"1 & $(_tex(:text, " if ")) Ω ≤ 0,",
-"$(_tex(:sqrt, "Ω"))δ$(_tex(:cot))($(_tex(:sqrt, "Ω"))δ) & $(_tex(:text, " if ")) Ω > 0",
-))
+$(
+    _tex(
+        :cases,
+        "1 & $(_tex(:text, " if ")) Ω ≤ 0,",
+        "$(_tex(:sqrt, "Ω"))δ$(_tex(:cot))($(_tex(:sqrt, "Ω"))δ) & $(_tex(:text, " if ")) Ω > 0",
+    )
+)
 ```
 
 where ``Ω ≥ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is an upper bound to the sectional curvature in
@@ -366,7 +372,7 @@ end
     DomainBackTrackingStepsize <: Stepsize
 
 Implement a backtrack as long as we are ``q =$(_tex(:retr))_p(X)``
-yields a point closer to ``p`` than ``$(_tex(:norm, "X"; index="p"))`` or
+yields a point closer to ``p`` than ``$(_tex(:norm, "X"; index = "p"))`` or
 ``q`` is not on the domain.
 For the domain this step size requires a [`ConvexBundleMethodState`](@ref).
 """

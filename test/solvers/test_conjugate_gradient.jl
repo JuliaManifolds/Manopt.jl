@@ -287,43 +287,43 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         e_func(p) = dot(p, A * p)
 
         obj = ManifoldFirstOrderObjective(;
-            cost=(M, p) -> e_func(p), gradient=(M, p) -> A * p - dot(p, A * p) * p
+            cost = (M, p) -> e_func(p), gradient = (M, p) -> A * p - dot(p, A * p) * p
         )
         p0 = 0.5 * [1.0, 1.0, 1.0, 1.0]
 
         stopping_criterion = StopAfterIteration(30)
         get_stepsize() = Manopt.ArmijoLinesearchStepsize(
-            M; initial_stepsize=1.0, initial_guess=(args...) -> 1.0
+            M; initial_stepsize = 1.0, initial_guess = (args...) -> 1.0
         )
 
         p1 = conjugate_gradient_descent(
             M,
             obj,
             p0;
-            restart_condition=NeverRestart(),
+            restart_condition = NeverRestart(),
             stopping_criterion,
-            stepsize=get_stepsize(),
+            stepsize = get_stepsize(),
         )
 
         p2 = conjugate_gradient_descent(
             M,
             obj,
             p0;
-            restart_condition=RestartOnNonDescent(),
+            restart_condition = RestartOnNonDescent(),
             stopping_criterion,
-            stepsize=get_stepsize(),
+            stepsize = get_stepsize(),
         )
 
         p3 = conjugate_gradient_descent(
             M,
             obj,
             p0;
-            restart_condition=RestartOnNonSufficientDescent(0.5),
+            restart_condition = RestartOnNonSufficientDescent(0.5),
             stopping_criterion,
-            stepsize=get_stepsize(),
+            stepsize = get_stepsize(),
         )
         # sufficient descent should perform best, descent better than no restart
         @test e_func(p3) < e_func(p2) && e_func(p2) < e_func(p1)
-        @test e_func(p3) ≈ 1 atol = 1e-3
+        @test e_func(p3) ≈ 1 atol = 1.0e-3
     end
 end

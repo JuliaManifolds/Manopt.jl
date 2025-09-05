@@ -1,4 +1,3 @@
-
 @doc """
     FrankWolfeCost{P,T}
 

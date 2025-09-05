@@ -1,4 +1,3 @@
-
 @doc """
     AbstractManifoldFirstOrderObjective{E<:AbstractEvaluationType, FGD} <: AbstractManifoldCostObjective{E, FGD}
 
