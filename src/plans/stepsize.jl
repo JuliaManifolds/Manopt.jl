@@ -1692,7 +1692,7 @@ end
     DistanceOverGradientsStepsize{R<:Real} <: Stepsize
 
 Implements the Riemannian Distance over Gradients (RDoG) stepsize schedule, a learning-rate-free 
-optimization method for Riemannian manifolds introduced by [Dodd, Sharrock, and Nemeth (2024)](@cite).
+optimization method for Riemannian manifolds introduced by [@dodd2024learning].
 
 This stepsize adapts automatically without hyperparameter tuning by tracking the maximum distance 
 from the initial point and accumulating gradient norms.
