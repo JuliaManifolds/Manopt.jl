@@ -128,6 +128,121 @@ using ManoptTestSuite
             "Polyak()\nA stepsize with keyword parameters\n   * initial_cost_estimate = 0.0\n"
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
     end
+    @testset "Distance over Gradients Stepsize" begin
+        @testset "does not use sectional cuvature (Eucludian)" begin
+            M = Euclidean(2)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = sum(2 .* p)
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [2.0, 2.0]
+            gds = GradientDescentState(M; p = p)
+            ds = DistanceOverGradientsStepsize(
+                M; p = p, initial_distance = 1.0, use_curvature = false
+            )
+            @test ds.gradient_sum == 0
+            @test ds.max_distance == 1.0
+            @test ds.initial_point == p
+            @test ds.last_stepsize === NaN
+            lr = ds(dmp, gds, 0)
+            @test lr == 0.125
+        end
+        @testset "use sectional cuvature (Euclidian)" begin
+            M = Euclidean(2)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = sum(2 .* p)
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [2.0, 2.0]
+            gds = GradientDescentState(M; p = p)
+            ds = DistanceOverGradientsStepsize(
+                M;
+                p = p,
+                initial_distance = 1.0,
+                use_curvature = true,
+                sectional_curvature_bound = 0.0,
+            )
+            @test ds.gradient_sum == 0
+            @test ds.max_distance == 1.0
+            @test ds.initial_point == p
+            @test ds.last_stepsize === NaN
+            lr = ds(dmp, gds, 0)
+            @test lr == 0.125
+        end
+        @testset "do not use sectional cuvature (Sphere)" begin
+            M = Sphere(1)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = sum(2 .* p)
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [1, 0]
+            gds = GradientDescentState(M; p = p)
+            ds = DistanceOverGradientsStepsize(
+                M; p = p, initial_distance = 1.0, use_curvature = false
+            )
+            @test ds.gradient_sum == 0
+            @test ds.max_distance == 1.0
+            @test ds.initial_point == p
+            @test ds.last_stepsize === NaN
+            lr = ds(dmp, gds, 0)
+            @test lr == 0.5
+        end
+        @testset "use sectional cuvature (Sphere)" begin
+            M = Sphere(1)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = sum(2 .* p)
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [1, 0]
+            gds = GradientDescentState(M; p = p)
+            ds = DistanceOverGradientsStepsize(
+                M;
+                p = p,
+                initial_distance = 1.0,
+                use_curvature = true,
+                sectional_curvature_bound = 1.0,
+            )
+            @test ds.gradient_sum == 0
+            @test ds.max_distance == 1.0
+            @test ds.initial_point == p
+            @test ds.last_stepsize === NaN
+            lr = ds(dmp, gds, 0)
+            @test lr == 0.5
+        end
+        @testset "use sectional curvature (Hyperbolic)" begin
+            M = Hyperbolic(2)              # Lorentz model in R^3
+
+            t = 0.5
+            p = [cosh(t), sinh(t), 0.0]
+
+            v_ambient = [0.0, 1.0, 0.0]
+            g = project(M, p, v_ambient)
+            gnorm = norm(M, p, g)
+            f(M, q) = 0.0
+            grad_f(M, q) = g
+
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            gds = GradientDescentState(M; p = p)
+            ds = DistanceOverGradientsStepsize(
+                M;
+                p = p,
+                initial_distance = 1.0,
+                use_curvature = true,
+                sectional_curvature_bound = -1.0,
+            )
+
+            @test ds.gradient_sum == 0
+            @test ds.max_distance == 1.0
+            @test ds.initial_point == p
+            @test ds.last_stepsize === NaN
+
+            # Expected initial step:
+            # ζκ(1) = (√|κ| * 1) / tanh(√|κ| * 1) = 1 / tanh(1)
+            # lr = initial_distance / (sqrt(ζκ(1)) * sqrt(gnorm^2)) = 1 / (sqrt(ζκ(1)) * gnorm)
+            zeta = 1 / tanh(1.0)
+            expected_lr = 1.0 / (sqrt(zeta) * gnorm)
+
+            # Call with the known gradient to avoid any objective/gradient mismatches
+            lr = ds(dmp, gds, 0; gradient = g)
+            @test isapprox(lr, expected_lr; rtol = 1.0e-12, atol = 0)
+        end
+    end
     @testset "max_stepsize fallbacks" begin
         M = ManoptTestSuite.DummyManifold()
         @test isinf(Manopt.max_stepsize(M))
