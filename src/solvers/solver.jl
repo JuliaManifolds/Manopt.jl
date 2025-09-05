@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
     decorate_state!(s::AbstractManoptSolverState)
 
 decorate the [`AbstractManoptSolverState`](@ref)` s` with specific decorators.
@@ -73,7 +73,7 @@ function decorate_state!(
     return deco_s
 end
 
-@doc raw"""
+@doc """
     decorate_objective!(M, o::AbstractManifoldObjective)
 
 decorate the [`AbstractManifoldObjective`](@ref)` o` with specific decorators.

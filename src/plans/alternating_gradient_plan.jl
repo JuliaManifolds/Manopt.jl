@@ -1,12 +1,12 @@
-@doc raw"""
+@doc """
     ManifoldAlternatingGradientObjective{E<:AbstractEvaluationType,F,G} <: AbstractManifoldFirstOrderObjective{E, Tuple{F,G}}
 
 An alternating gradient objective consists of
 
 * a cost function ``F(x)``
-* a gradient ``\operatorname{grad}F`` that is either
-  * given as one function ``\operatorname{grad}F`` returning a tangent vector `X` on `M` or
-  * an array of gradient functions ``\operatorname{grad}F_i``, `ì=1,…,n` s each returning a component of the gradient
+* a gradient ``$(_tex(:grad))F`` that is either
+  * given as one function ``$(_tex(:grad))F`` returning a tangent vector `X` on `M` or
+  * an array of gradient functions ``$(_tex(:grad))F_i``, `ì=1,…,n` s each returning a component of the gradient
   which might be allocating or mutating variants, but not a mix of both.
 
 !!! note

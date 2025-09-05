@@ -1,8 +1,8 @@
-@doc raw"""
+@doc """
     AbstractHessianSolverState <: AbstractGradientSolverState
 
 An [`AbstractManoptSolverState`](@ref) type to represent algorithms that employ the Hessian.
-These options are assumed to have a field (`gradient`) to store the current gradient ``\operatorname{grad}f(x)``
+These options are assumed to have a field (`gradient`) to store the current gradient ``$(_tex(:grad))f(x)``
 """
 abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
 
@@ -15,16 +15,16 @@ An abstract type for all objectives that provide a (full) Hessian, where
 abstract type AbstractManifoldHessianObjective{E <: AbstractEvaluationType, F, G, H} <:
 AbstractManifoldFirstOrderObjective{E, Tuple{F, G}} end
 
-@doc raw"""
+@doc """
     ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldHessianObjective{T,C,G,H}
 
 specify a problem for Hessian based algorithms.
 
 # Fields
 
-* `cost`:           a function ``f:\mathcal M→ℝ`` to minimize
-* `gradient`:       the gradient ``\operatorname{grad}f:\mathcal M → \mathcal T\mathcal M`` of the cost function ``f``
-* `hessian`:        the Hessian ``\operatorname{Hess}f(x)[⋅]: \mathcal T_{x} \mathcal M → \mathcal T_{x} \mathcal M`` of the cost function ``f``
+* `cost`:           a function ``f:$(_math(:M))→ℝ`` to minimize
+* `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:M)) → $(_math(:TM))`` of the cost function ``f``
+* `hessian`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TpM; p="x")) → $(_math(:TpM; p="x"))`` of the cost function ``f``
 * `preconditioner`: the symmetric, positive definite preconditioner
   as an approximation of the inverse of the Hessian of ``f``, a map with the same
   input variables as the `hessian` to numerically stabilize iterations when the Hessian is
@@ -95,12 +95,12 @@ function get_gradient_function(mho::ManifoldHessianObjective, recursive = false)
     return mho.gradient!!
 end
 
-@doc raw"""
+@doc """
     Y = get_hessian(amp::AbstractManoptProblem{T}, p, X)
     get_hessian!(amp::AbstractManoptProblem{T}, Y, p, X)
 
 evaluate the Hessian of an [`AbstractManoptProblem`](@ref) `amp` at `p`
-applied to a tangent vector `X`, computing ``\operatorname{Hess}f(q)[X]``,
+applied to a tangent vector `X`, computing ``$(_tex(:Hess))f(q)[X]``,
 which can also happen in-place of `Y`.
 """
 function get_hessian(amp::AbstractManoptProblem, p, X)
@@ -143,10 +143,10 @@ function get_hessian!(
     return Y
 end
 
-@doc raw"""
+@doc """
     get_hessian_function(amgo::ManifoldHessianObjective{E<:AbstractEvaluationType})
 
-return the function to evaluate (just) the Hessian ``\operatorname{Hess} f(p)``.
+return the function to evaluate (just) the Hessian ``$(_tex(:Hess)) f(p)``.
 Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 
 * `(M, p, X) -> Y` for the [`AllocatingEvaluation`](@ref) case
@@ -159,7 +159,7 @@ function get_hessian_function(
     return get_hessian_function(get_objective(admo, recursive))
 end
 
-@doc raw"""
+@doc """
     get_preconditioner(amp::AbstractManoptProblem, p, X)
 
 evaluate the symmetric, positive definite preconditioner (approximation of the
@@ -174,7 +174,7 @@ function get_preconditioner!(amp::AbstractManoptProblem, Y, p, X)
     return get_preconditioner!(get_manifold(amp), Y, get_objective(amp), p, X)
 end
 
-@doc raw"""
+@doc """
     get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
 
 evaluate the symmetric, positive definite preconditioner (approximation of the
@@ -222,7 +222,7 @@ update_hessian!(M, f, p, p_proposal, X) = f
 
 update_hessian_basis!(M, f, p) = f
 
-@doc raw"""
+@doc """
     AbstractApproxHessian <: Function
 
 An abstract supertype for approximate Hessian functions, declares them also to be functions.
@@ -231,9 +231,9 @@ abstract type AbstractApproxHessian <: Function end
 
 _doc_ApproxHessian_formula = raw"""
 ```math
-\operatorname{Hess}f(p)[X] ≈
+$(_tex(:Hess))f(p)[X] ≈
 \frac{\lVert X \rVert_p}{c}\Bigl(
-  \mathcal T_{p\gets q}\bigr(\operatorname{grad}f(q)\bigl) - \operatorname{grad}f(p)
+  \mathcal T_{p\gets q}\bigr($(_tex(:grad))f(q)\bigl) - $(_tex(:grad))f(p)
 \Bigl)
 ```
 """

@@ -1,14 +1,14 @@
-@doc raw"""
+@doc """
     AbstractEvaluationType
 
 An abstract type to specify the kind of evaluation a [`AbstractManifoldObjective`](@ref) supports.
 """
 abstract type AbstractEvaluationType end
 
-@doc raw"""
+@doc """
     AbstractManifoldObjective{E<:AbstractEvaluationType}
 
-Describe the collection of the optimization function ``f: \mathcal M → ℝ`` (or even a vectorial range)
+Describe the collection of the optimization function ``f: $(_math(:M)) → ℝ`` (or even a vectorial range)
 and its corresponding elements, which might for example be a gradient or (one or more) proximal maps.
 
 All these elements should usually be implemented as functions
@@ -22,7 +22,7 @@ the type `T` indicates the global [`AbstractEvaluationType`](@ref).
 """
 abstract type AbstractManifoldObjective{E <: AbstractEvaluationType} end
 
-@doc raw"""
+@doc """
     AbstractDecoratedManifoldObjective{E<:AbstractEvaluationType,O<:AbstractManifoldObjective}
 
 A common supertype for all decorators of [`AbstractManifoldObjective`](@ref)s to simplify dispatch.
@@ -31,7 +31,7 @@ A common supertype for all decorators of [`AbstractManifoldObjective`](@ref)s to
 abstract type AbstractDecoratedManifoldObjective{E, O <: AbstractManifoldObjective} <:
 AbstractManifoldObjective{E} end
 
-@doc raw"""
+@doc """
     AllocatingEvaluation <: AbstractEvaluationType
 
 A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating that
@@ -39,7 +39,7 @@ the problem contains or the function(s) allocate memory for their result, they w
 """
 struct AllocatingEvaluation <: AbstractEvaluationType end
 
-@doc raw"""
+@doc """
     InplaceEvaluation <: AbstractEvaluationType
 
 A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating that
@@ -47,7 +47,7 @@ the problem contains or the function(s) do not allocate memory but work on their
 """
 struct InplaceEvaluation <: AbstractEvaluationType end
 
-@doc raw"""
+@doc """
     ParentEvaluationType <: AbstractEvaluationType
 
 A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating that
@@ -56,7 +56,7 @@ the problem contains or the function(s) do inherit their property from a parent
 """
 struct ParentEvaluationType <: AbstractEvaluationType end
 
-@doc raw"""
+@doc """
     AllocatingInplaceEvaluation <: AbstractEvaluationType
 
 A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating that
@@ -65,7 +65,7 @@ that does not allocate memory but work on their input, in place.
 """
 struct AllocatingInplaceEvaluation <: AbstractEvaluationType end
 
-@doc raw"""
+@doc """
     ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
        AbstractDecoratedManifoldObjective{E,O2}
 
@@ -161,7 +161,7 @@ function is_objective_decorator(s::AbstractManifoldObjective)
     return _extract_val(dispatch_objective_decorator(s))
 end
 
-@doc raw"""
+@doc """
     get_objective(o::AbstractManifoldObjective, recursive=true)
 
 return the (one step) undecorated [`AbstractManifoldObjective`](@ref) of the (possibly) decorated `o`.

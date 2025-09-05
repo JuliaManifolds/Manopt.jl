@@ -19,14 +19,14 @@ function get_gradient_function(cgo::AbstractManifoldSubObjective)
     return (M, p) -> get_gradient(M, cgo, p)
 end
 
-@doc raw"""
+@doc """
     get_objective(amso::AbstractManifoldSubObjective)
 
 Return the (original) objective stored the sub objective is build on.
 """
 get_objective(amso::AbstractManifoldSubObjective)
 
-@doc raw"""
+@doc """
     get_objective_cost(M, amso::AbstractManifoldSubObjective, p)
 
 Evaluate the cost of the (original) objective stored within the sub objective.
@@ -37,7 +37,7 @@ function get_objective_cost(
     return get_cost(M, get_objective(amso), p)
 end
 
-@doc raw"""
+@doc """
     X = get_objective_gradient(M, amso::AbstractManifoldSubObjective, p)
     get_objective_gradient!(M, X, amso::AbstractManifoldSubObjective, p)
 
@@ -54,7 +54,7 @@ function get_objective_gradient!(
     return get_gradient!(M, X, get_objective(amso), p)
 end
 
-@doc raw"""
+@doc """
     Y = get_objective_Hessian(M, amso::AbstractManifoldSubObjective, p, X)
     get_objective_Hessian!(M, Y, amso::AbstractManifoldSubObjective, p, X)
 
@@ -72,7 +72,7 @@ function get_objective_hessian!(
     return Y
 end
 
-@doc raw"""
+@doc """
     Y = get_objective_preconditioner(M, amso::AbstractManifoldSubObjective, p, X)
     get_objective_preconditioner(M, Y, amso::AbstractManifoldSubObjective, p, X)
 
@@ -89,7 +89,7 @@ function get_objective_preconditioner!(
     return get_preconditioner!(M, Y, get_objective(amso), p, X)
 end
 
-@doc raw"""
+@doc """
     get_sub_problem(ams::AbstractSubProblemSolverState)
 
 Access the sub problem of a solver state that involves a sub optimisation task.
@@ -97,7 +97,7 @@ By default this returns `ams.sub_problem`.
 """
 get_sub_problem(ams::AbstractSubProblemSolverState) = ams.sub_problem
 
-@doc raw"""
+@doc """
     get_sub_state(ams::AbstractSubProblemSolverState)
 
 Access the sub state of a solver state that involves a sub optimisation task.

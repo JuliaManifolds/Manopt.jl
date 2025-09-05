@@ -17,6 +17,7 @@ function show(io::IO, cgds::ConjugateGradientDescentState)
     $Iter
     ## Parameters
     * conjugate gradient coefficient: $(cgds.coefficient) (last β=$(cgds.β))
+    * restart condition: $(cgds.restart_condition)
     * retraction method: $(cgds.retraction_method)
     * vector transport method: $(cgds.vector_transport_method)
 
@@ -82,6 +83,10 @@ $(_var(:Argument, :p))
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
+* `restart_condition::AbstractRestartCondition=`[`NeverRestart`]`)(@ref)`()`:
+  rule when the algorithm should restart, i.e. use the negative gradient instead of the computed direction,
+  as a functior where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
+  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
 $(_var(:Keyword, :differential))
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
@@ -135,31 +140,33 @@ function conjugate_gradient_descent!(
     return conjugate_gradient_descent!(M, dmgo, p; kwargs...)
 end
 function conjugate_gradient_descent!(
-        M::AbstractManifold,
-        mgo::O,
-        p;
-        coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
-        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-        stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
-            M, ConjugateGradientDescentState; retraction_method = retraction_method
-        ),
-        stopping_criterion::StoppingCriterion = StopAfterIteration(500) |
-            StopWhenGradientNormLess(1.0e-8),
-        vector_transport_method = default_vector_transport_method(M, typeof(p)),
-        initial_gradient = zero_vector(M, p),
-        kwargs...,
-    ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
+    M::AbstractManifold,
+    mgo::O,
+    p;
+    coefficient::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=ConjugateDescentCoefficient(),
+    restart_condition::AbstractRestartCondition=NeverRestart(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
+        M, ConjugateGradientDescentState; retraction_method=retraction_method
+    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
+                                          StopWhenGradientNormLess(1e-8),
+    vector_transport_method=default_vector_transport_method(M, typeof(p)),
+    initial_gradient=zero_vector(M, p),
+    kwargs...,
+) where {O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective}}
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     cgs = ConjugateGradientDescentState(
         M;
-        p = p,
-        stopping_criterion = stopping_criterion,
-        stepsize = _produce_type(stepsize, M),
-        coefficient = _produce_type(coefficient, M),
-        retraction_method = retraction_method,
-        vector_transport_method = vector_transport_method,
-        initial_gradient = initial_gradient,
+        p=p,
+        stopping_criterion=stopping_criterion,
+        stepsize=_produce_type(stepsize, M),
+        coefficient=_produce_type(coefficient, M),
+        restart_condition=restart_condition,
+        retraction_method=retraction_method,
+        vector_transport_method=vector_transport_method,
+        initial_gradient=initial_gradient,
     )
     dcgs = decorate_state!(cgs; kwargs...)
     solve!(dmp, dcgs)
@@ -185,5 +192,11 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
     vector_transport_to!(M, cgs.δ, cgs.p_old, cgs.δ, cgs.p, cgs.vector_transport_method)
     cgs.δ .*= cgs.β
     cgs.δ .-= cgs.X
+    if (cgs.restart_condition(amp, cgs, k))
+        # restart solver; set dir to -grad
+        cgs.δ = -copy(get_manifold(amp), cgs.p, cgs.X)
+        update_storage!(cgs.coefficient.storage, amp, cgs)
+        cgs.β = 0.0
+    end
     return cgs
 end

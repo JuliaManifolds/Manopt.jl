@@ -1,4 +1,5 @@
-@doc raw"""
+
+@doc """
     AbstractManifoldFirstOrderObjective{E<:AbstractEvaluationType, FGD} <: AbstractManifoldCostObjective{E, FGD}
 
 An abstract type for all objectives that provide
@@ -532,7 +533,7 @@ end
 #  Access gradient
 # -----------------------------
 
-@doc raw"""
+@doc """
     get_gradient(amp::AbstractManoptProblem, p)
     get_gradient!(amp::AbstractManoptProblem, X, p)
 
@@ -565,7 +566,7 @@ function get_subgradient!(
     return get_gradient!(M, X, agmo, p)
 end
 
-@doc raw"""
+@doc """
     get_gradient(agst::AbstractGradientSolverState)
 
 return the gradient stored within gradient options.
@@ -573,7 +574,7 @@ THe default returns `agst.X`.
 """
 get_gradient(agst::AbstractGradientSolverState) = agst.X
 
-@doc raw"""
+@doc """
     set_gradient!(agst::AbstractGradientSolverState, M, p, X)
 
 set the (current) gradient stored within an [`AbstractGradientSolverState`](@ref) to `X`.
@@ -584,7 +585,7 @@ function set_gradient!(agst::AbstractGradientSolverState, M, p, X)
     return agst
 end
 
-@doc raw"""
+@doc """
     get_iterate(agst::AbstractGradientSolverState)
 
 return the iterate stored within gradient options.
@@ -592,7 +593,7 @@ THe default returns `agst.p`.
 """
 get_iterate(agst::AbstractGradientSolverState) = agst.p
 
-@doc raw"""
+@doc """
     set_iterate!(agst::AbstractGradientSolverState, M, p)
 
 set the (current) iterate stored within an [`AbstractGradientSolverState`](@ref) to `p`.
@@ -1032,13 +1033,24 @@ function PreconditionedDirection(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.PreconditionedDirectionRule, args...; kwargs...)
 end
 
-@doc raw"""
+"""
+    AbstractRestartCondition
+
+A general struct, that indicates then to restart.
+It is used within the [`ConjugateGradientDescentState`](@ref).
+
+It is implemented to work as a functor `(problem, state, iteration) -> true|false`
+and what is done in the restart case (`true`) is decided by the single solver.
+"""
+abstract type AbstractRestartCondition end
+
+@doc """
     DebugGradient <: DebugAction
 
 debug for the gradient evaluated at the current iterate
 
 # Constructors
-    DebugGradient(; long=false, prefix= , format= "$prefix%s", io=stdout)
+    DebugGradient(; long=false, prefix= , format= "\$prefix%s", io=stdout)
 
 display the short (`false`) or long (`true`) default text for the gradient,
 or set the `prefix` manually. Alternatively the complete format can be set.
@@ -1065,7 +1077,7 @@ function show(io::IO, dg::DebugGradient)
 end
 status_summary(dg::DebugGradient) = "(:Gradient, \"$(dg.format)\")"
 
-@doc raw"""
+@doc """
     DebugGradientNorm <: DebugAction
 
 debug for gradient evaluated at the current iterate.
@@ -1107,13 +1119,13 @@ function show(io::IO, dgn::DebugGradientNorm)
 end
 status_summary(dgn::DebugGradientNorm) = "(:GradientNorm, \"$(dgn.format)\")"
 
-@doc raw"""
+@doc """
     DebugStepsize <: DebugAction
 
 debug for the current step size.
 
 # Constructors
-    DebugStepsize(;long=false,prefix="step size:", format="$prefix%s", io=stdout)
+    DebugStepsize(;long=false,prefix="step size:", format="\$prefix%s", io=stdout)
 
 display the a `prefix` in front of the step size.
 """
@@ -1143,7 +1155,7 @@ status_summary(ds::DebugStepsize) = "(:Stepsize, \"$(ds.format)\")"
 #
 # Records
 #
-@doc raw"""
+@doc """
     RecordGradient <: RecordAction
 
 record the gradient evaluated at the current iterate
@@ -1165,7 +1177,7 @@ function (r::RecordGradient{T})(
 end
 show(io::IO, ::RecordGradient{T}) where {T} = print(io, "RecordGradient{$T}()")
 
-@doc raw"""
+@doc """
     RecordGradientNorm <: RecordAction
 
 record the norm of the current gradient
@@ -1182,7 +1194,7 @@ function (r::RecordGradientNorm)(
 end
 show(io::IO, ::RecordGradientNorm) = print(io, "RecordGradientNorm()")
 
-@doc raw"""
+@doc """
     RecordStepsize <: RecordAction
 
 record the step size

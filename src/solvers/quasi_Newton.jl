@@ -441,7 +441,7 @@ function locking_condition_scale(
     return norm(M, p_old, X) / norm(M, p, vector_transport_to(M, p_old, X, p, vtm))
 end
 
-@doc raw"""
+@doc """
     update_hessian!(d::AbstractQuasiNewtonDirectionUpdate, amp, st, p_old, k)
 
 update the Hessian within the [`QuasiNewtonState`](@ref) `st` given a [`AbstractManoptProblem`](@ref) `amp`

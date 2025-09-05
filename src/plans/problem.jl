@@ -3,21 +3,21 @@
 #
 # ---
 
-@doc raw"""
+@doc """
     AbstractManoptProblem{M<:AbstractManifold}
 
 Describe a Riemannian optimization problem with all static (not-changing) properties.
 
 The most prominent features that should always be stated here are
 
-* the [`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) ``\mathcal M``
-* the cost function ``f:  \mathcal M → ℝ``
+* the [`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) ``$(_math(:M))``
+* the cost function ``f:  $(_math(:M)) → ℝ``
 
 Usually the cost should be within an [`AbstractManifoldObjective`](@ref).
 """
 abstract type AbstractManoptProblem{M <: AbstractManifold} end
 
-@doc raw"""
+@doc """
     DefaultManoptProblem{TM <: AbstractManifold, Objective <: AbstractManifoldObjective}
 
 Model a default manifold problem, that (just) consists of the domain of optimisation,
@@ -43,7 +43,7 @@ Get the [`AbstractEvaluationType`](@ref) of the objective.
 """
 evaluation_type(::AbstractManifoldObjective{Teval}) where {Teval} = Teval
 
-@doc raw"""
+@doc """
     get_manifold(amp::AbstractManoptProblem)
 
 return the manifold stored within an [`AbstractManoptProblem`](@ref)
@@ -52,7 +52,7 @@ get_manifold(::AbstractManoptProblem)
 
 get_manifold(amp::DefaultManoptProblem) = amp.manifold
 
-@doc raw"""
+@doc """
     get_objective(mp::AbstractManoptProblem, recursive=false)
 
 return the objective [`AbstractManifoldObjective`](@ref) stored within an [`AbstractManoptProblem`](@ref).
@@ -64,7 +64,7 @@ function get_objective(amp::DefaultManoptProblem, recursive = false)
     return recursive ? get_objective(amp.objective, true) : amp.objective
 end
 
-@doc raw"""
+@doc """
     get_cost(amp::AbstractManoptProblem, p)
 
 evaluate the cost function `f` stored within the [`AbstractManifoldObjective`](@ref) of an
@@ -74,7 +74,7 @@ function get_cost(amp::AbstractManoptProblem, p)
     return get_cost(get_manifold(amp), get_objective(amp), p)
 end
 
-@doc raw"""
+@doc """
     get_cost(M::AbstractManifold, obj::AbstractManifoldObjective, p)
 
 evaluate the cost function `f` defined on `M` stored within the [`AbstractManifoldObjective`](@ref) at the point `p`.

@@ -6,16 +6,16 @@ An abstract type for different representations of a vectorial function
 """
 abstract type AbstractVectorialType end
 
-@doc raw"""
+@doc """
     CoordinateVectorialType{B<:AbstractBasis} <: AbstractVectorialType
 
 A type to indicate that gradient of the constraints is implemented as a
 Jacobian matrix with respect to a certain basis, that is if the vector function
-is ``f: \mathcal M → ℝ^m`` and we have a basis ``\mathcal B`` of ``T_p\mathcal M``, at ``p∈ \mathcal M``
-This can be written as ``J_g(p) = (c_1^{\mathrm{T}},…,c_m^{\mathrm{T}})^{\mathrm{T}} \in ℝ^{m,d}``, that is,
+is ``f: $(_math(:M)) → ℝ^m`` and we have a basis ``$(_tex(:Cal, "B")) of ``T_p$(_math(:M))``, at ``p∈ $(_math(:M))``
+This can be written as ``J_g(p) = (c_1^{$(_tex(:rm, "T"))},…,c_m^{$(_tex(:rm, "T"))})^{$(_tex(:rm, "T"))} ∈ ℝ^{m,d}``, that is,
 every row ``c_i`` of this matrix is a set of coefficients such that
-`get_coefficients(M, p, c, B)` is the tangent vector ``\oepratorname{grad} g_i(p)``
-for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_i(p) ∈ T_p\mathcal M``,
+`get_coefficients(M, p, c, B)` is the tangent vector ``$(_tex(:grad)) g_i(p)``
+for example ``g_i(p) ∈ ℝ^m`` or ``$(_tex(:grad)) g_i(p) ∈ T_p$(_math(:M))``,
     ``i=1,…,m``.
 
 # Fields
@@ -60,19 +60,19 @@ function _to_iterable_indices(A::AbstractVector, i)
     end
 end
 
-@doc raw"""
+@doc """
     ComponentVectorialType <: AbstractVectorialType
 
 A type to indicate that constraints are implemented as component functions,
-for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_i(p) ∈ T_p\mathcal M``, ``i=1,…,m``.
+for example ``g_i(p) ∈ ℝ^m`` or ``$(_tex(:grad)) g_i(p) ∈ T_p$(_math(:M))``, ``i=1,…,m``.
 """
 struct ComponentVectorialType <: AbstractVectorialType end
 
-@doc raw"""
+@doc """
     FunctionVectorialType{P<:AbstractPowerRepresentation} <: AbstractVectorialType
 
  A type to indicate that constraints are implemented one whole functions,
-for example ``g(p) ∈ ℝ^m`` or ``\operatorname{grad} g(p) ∈ (T_p\mathcal M)^m``.
+for example ``g(p) ∈ ℝ^m`` or ``$(_tex(:grad)) g(p) ∈ (T_p$(_math(:M)))^m``.
 
 This type internally stores the [`AbstractPowerRepresentation`](@extref `ManifoldsBase.AbstractPowerRepresentation`),
 when it makes sense, especially for Hessian and gradient functions.
@@ -95,10 +95,10 @@ get_range(::AbstractVectorialType) = NestedPowerRepresentation()
 
 FunctionVectorialType() = FunctionVectorialType(NestedPowerRepresentation())
 
-@doc raw"""
+@doc """
     AbstractVectorFunction{E, FT} <: Function
 
-Represent an abstract vectorial function ``f:\mathcal M → ℝ^n`` with an
+Represent an abstract vectorial function ``f:$(_math(:M)) → ℝ^n`` with an
 [`AbstractEvaluationType`](@ref) `E` and an [`AbstractVectorialType`](@ref) to specify the
 format ``f`` is implemented as.
 
@@ -115,7 +115,7 @@ For the [`ComponentVectorialType`](@ref) imagine that ``f`` could also be writte
 using its component functions,
 
 ```math
-f(p) = \bigl( f_1(p), f_2(p), \ldots, f_n(p) \bigr)^{\mathrm{T}}
+f(p) = \bigl( f_1(p), f_2(p),…, f_n(p) \bigr)^{$(_tex(:rm, "T"))}
 ```
 
 In this representation `f` is given as a vector `[f1(M,p), f2(M,p), ..., fn(M,p)]`
@@ -132,10 +132,10 @@ that if this is expensive even to compute a single component, all of `f` has to 
 abstract type AbstractVectorFunction{E <: AbstractEvaluationType, FT <: AbstractVectorialType} <:
 Function end
 
-@doc raw"""
+@doc """
     VectorGradientFunction{E, FT, JT, F, J, I} <: AbstractManifoldObjective{E}
 
-Represent an abstract vectorial function ``f:\mathcal M → ℝ^n`` that provides a (component wise)
+Represent an abstract vectorial function ``f:$(_math(:M)) → ℝ^n`` that provides a (component wise)
 gradient.
 The [`AbstractEvaluationType`](@ref) `E` indicates the evaluation type,
 and the [`AbstractVectorialType`](@ref)s `FT` and `JT` the formats in which
@@ -307,7 +307,7 @@ _vgf_index_to_length(r::UnitRange{<:Integer}, n) = length(r)
 #
 #
 # ---- Hessian
-@doc raw"""
+@doc """
     get_hessian(M::AbstractManifold, vgf::VectorHessianFunction, p, X, i)
     get_hessian(M::AbstractManifold, vgf::VectorHessianFunction, p, X, i, range)
     get_hessian!(M::AbstractManifold, X, vgf::VectorHessianFunction, p, X, i)
@@ -810,7 +810,7 @@ _get_jacobian_basis(jt::CoordinateVectorialType) = jt.basis
 #
 #
 # ---- Gradient
-@doc raw"""
+@doc """
     get_gradient(M::AbstractManifold, vgf::VectorGradientFunction, p, i)
     get_gradient(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range)
     get_gradient!(M::AbstractManifold, X, vgf::VectorGradientFunction, p, i)
@@ -1105,7 +1105,7 @@ get_gradient_function(vgf::VectorGradientFunction, recursive = false) = vgf.jaco
 #
 #
 # ---- Value
-@doc raw"""
+@doc """
     get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p[, i=:])
     get_value!(M::AbstractManifold, V, vgf::AbstractVectorFunction, p[, i=:])
 
@@ -1183,7 +1183,7 @@ function get_value!(
     return V
 end
 
-@doc raw"""
+@doc """
     get_value_function(vgf::VectorGradientFunction, recursive=false)
 
 return the internally stored function computing [`get_value`](@ref).
@@ -1192,10 +1192,10 @@ function get_value_function(vgf::VectorGradientFunction, recursive = false)
     return vgf.value!!
 end
 
-@doc raw"""
+@doc """
     length(vgf::AbstractVectorFunction)
 
-Return the length of the vector the function ``f: \mathcal M → ℝ^n`` maps into,
+Return the length of the vector the function ``f: $(_math(:M)) → ℝ^n`` maps into,
 that is the number `n`.
 """
 Base.length(vgf::AbstractVectorFunction) = vgf.range_dimension

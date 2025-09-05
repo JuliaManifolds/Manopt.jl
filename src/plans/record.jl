@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
     RecordAction
 
 A `RecordAction` is a small functor to record values.
@@ -23,7 +23,7 @@ an `Vector` of recorded values. See [`get_record`](@ref get_record(r::RecordActi
 """
 abstract type RecordAction <: AbstractStateAction end
 
-@doc raw"""
+@doc """
     RecordSolverState <: AbstractManoptSolverState
 
 append to any [`AbstractManoptSolverState`](@ref) the decorator with record capability,
@@ -141,7 +141,7 @@ function _get_record_state(::AbstractManoptSolverState, ::Val{false})
 end
 get_record_state(s::RecordSolverState) = s
 
-@doc raw"""
+@doc """
     get_record_action(s::AbstractManoptSolverState, s::Symbol)
 
 return the action contained in the (first) [`RecordSolverState`](@ref) decorator within the [`AbstractManoptSolverState`](@ref) `o`.
@@ -154,7 +154,7 @@ function get_record_action(s::AbstractManoptSolverState, symbol::Symbol = :Itera
         error("No record known for key :$s found")
     end
 end
-@doc raw"""
+@doc """
     get_record(s::AbstractManoptSolverState, [,symbol=:Iteration])
     get_record(s::RecordSolverState, [,symbol=:Iteration])
 
@@ -175,7 +175,7 @@ function get_record(s::AbstractManoptSolverState, symbol::Symbol = :Iteration)
     return get_record(get_record_state(s), symbol)
 end
 
-@doc raw"""
+@doc """
     get_record(r::RecordAction)
 
 return the recorded values stored within a [`RecordAction`](@ref) `r`.
@@ -216,7 +216,7 @@ end
 # Meta Record States
 #
 
-@doc raw"""
+@doc """
     RecordEvery <: RecordAction
 
 record only every ``k``th iteration.
@@ -347,7 +347,7 @@ function show(io::IO, rg::RecordGroup)
     return print(io, "RecordGroup([$s])")
 end
 
-@doc raw"""
+@doc """
     get_record(r::RecordGroup)
 
 return an array of tuples, where each tuple is a recorded set per iteration or record call.
@@ -372,7 +372,7 @@ function get_record(r::RecordGroup, s::NTuple{N, Symbol}) where {N}
     return [zip(get_record.([r.group[i] for i in inds])...)...]
 end
 
-@doc raw"""
+@doc """
     getindex(r::RecordGroup, s::Symbol)
     r[s]
     getindex(r::RecordGroup, sT::NTuple{N,Symbol})
@@ -388,7 +388,7 @@ getindex(r::RecordGroup, s::Symbol) = get_record(r, s)
 getindex(r::RecordGroup, s::NTuple{N, Symbol}) where {N} = get_record(r, s)
 getindex(r::RecordGroup, i) = get_record(r, i)
 
-@doc raw"""
+@doc """
     RecordSubsolver <: RecordAction
 
 Record the current sub solvers recording, by calling [`get_record`](@ref)
@@ -423,7 +423,7 @@ function show(io::IO, rsr::RecordSubsolver{R}) where {R}
 end
 status_summary(::RecordSubsolver) = ":Subsolver"
 
-@doc raw"""
+@doc """
     RecordWhenActive <: RecordAction
 
 record action that only records if the `active` boolean is set to true.
@@ -480,7 +480,7 @@ get_record(r::RecordWhenActive, args...) = get_record(r.record, args...)
 # Specific Record types
 #
 
-@doc raw"""
+@doc """
     RecordCost <: RecordAction
 
 Record the current cost function value, see [`get_cost`](@ref).
@@ -586,7 +586,7 @@ function show(io::IO, rc::RecordChange)
 end
 status_summary(rc::RecordChange) = ":Change"
 
-@doc raw"""
+@doc """
     RecordEntry{T} <: RecordAction
 
 record a certain fields entry of type {T} during the iterates
@@ -624,7 +624,7 @@ function show(io::IO, di::RecordEntry)
     return print(io, "RecordEntry(:$(di.field))")
 end
 
-@doc raw"""
+@doc """
     RecordEntryChange{T} <: RecordAction
 
 record a certain entries change during iterates
@@ -665,7 +665,7 @@ function show(io::IO, rec::RecordEntryChange)
     return print(io, "RecordEntryChange(:$(rec.field), $(rec.distance))")
 end
 
-@doc raw"""
+@doc """
     RecordIterate <: RecordAction
 
 record the iterate
@@ -699,7 +699,7 @@ function show(io::IO, ri::RecordIterate)
 end
 status_summary(di::RecordIterate) = ":Iterate"
 
-@doc raw"""
+@doc """
     RecordIteration <: RecordAction
 
 record the current iteration
@@ -714,7 +714,7 @@ end
 show(io::IO, ::RecordIteration) = print(io, "RecordIteration()")
 status_summary(::RecordIteration) = ":Iteration"
 
-@doc raw"""
+@doc """
     RecordStoppingReason <: RecordAction
 
 Record reason the solver stopped, see [`get_reason`](@ref).
@@ -732,7 +732,7 @@ end
 show(io::IO, ::RecordStoppingReason) = print(io, "RecordStoppingReason()")
 status_summary(di::RecordStoppingReason) = ":Stop"
 
-@doc raw"""
+@doc """
     RecordTime <: RecordAction
 
 record the time elapsed during the current iteration.
@@ -777,7 +777,7 @@ status_summary(ri::RecordTime) = (ri.mode === :iterative ? ":IterativeTime" : ":
 # Factory
 #
 
-@doc raw"""
+@doc """
     RecordFactory(s::AbstractManoptSolverState, a)
 
 Generate a dictionary of [`RecordAction`](@ref)s.
@@ -844,7 +844,7 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})
     return dictionary
 end
 RecordFactory(s::AbstractManoptSolverState, a) = RecordFactory(s, [a])
-@doc raw"""
+@doc """
     RecordGroupFactory(s::AbstractManoptSolverState, a)
 
 Generate a [`RecordGroup`] of [`RecordAction`](@ref)s. The following rules are used
@@ -891,7 +891,7 @@ function RecordGroupFactory(
     return RecordActionFactory(s, symbol)
 end
 
-@doc raw"""
+@doc """
     RecordActionFactory(s::AbstractManoptSolverState, a)
 
 create a [`RecordAction`](@ref) where
@@ -928,7 +928,7 @@ function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Time) && return RecordTime(; mode = :cumulative)
     return RecordEntry(getfield(s, symbol), symbol)
 end
-@doc raw"""
+@doc """
     RecordActionFactory(s::AbstractManoptSolverState, t::Tuple{Symbol, T}) where {T}
 
 create a [`RecordAction`](@ref) where

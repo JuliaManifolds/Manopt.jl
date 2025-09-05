@@ -40,7 +40,7 @@ function maybe_wrap_evaluation_type(::E) where {E <: AbstractEvaluationType}
     return ClosedFormSubSolverState{E}()
 end
 
-@doc raw"""
+@doc """
     AbstractGradientSolverState <: AbstractManoptSolverState
 
 A generic [`AbstractManoptSolverState`](@ref) type for gradient based options data.
@@ -67,7 +67,7 @@ The default is `Val{false}`, so by default a state is not decorated.
 """
 dispatch_state_decorator(::AbstractManoptSolverState) = Val(false)
 
-@doc raw"""
+@doc """
     get_message(du::AbstractManoptSolverState)
 
 get a message (String) from internal functors, in a summary.
@@ -80,7 +80,7 @@ _get_message(s::AbstractManoptSolverState, ::Val{true}) = get_message(s.state)
 #INtroduce a default that there is no message
 _get_message(s::AbstractManoptSolverState, ::Val{false}) = ""
 
-@doc raw"""
+@doc """
     get_stopping_criterion(ams::AbstractManoptSolverState)
 
 Return the [`StoppingCriterion`](@ref) stored within the [`AbstractManoptSolverState`](@ref) `ams`.
@@ -103,7 +103,7 @@ function is_state_decorator(s::AbstractManoptSolverState)
     return _extract_val(dispatch_state_decorator(s))
 end
 
-@doc raw"""
+@doc """
     ReturnSolverState{O<:AbstractManoptSolverState} <: AbstractManoptSolverState
 
 This internal type is used to indicate that the contained [`AbstractManoptSolverState`](@ref) `state`
@@ -157,7 +157,7 @@ function get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverSt
     return o.objective, get_solver_return(s)
 end
 
-@doc raw"""
+@doc """
     get_state(s::AbstractManoptSolverState, recursive::Bool=true)
 
 return the (one step) undecorated [`AbstractManoptSolverState`](@ref) of the (possibly) decorated `s`.
@@ -296,7 +296,7 @@ VectorStorageKey(key::Symbol) = VectorStorageKey{key}()
 #
 # Common Actions for decorated AbstractManoptSolverState
 #
-@doc raw"""
+@doc """
     AbstractStateAction
 
 a common `Type` for `AbstractStateActions` that might be triggered in decorators,
@@ -329,7 +329,7 @@ Make a copy of tangent vector `X` from manifold `M` for storage in [`StoreStateA
 _storage_copy_vector(M::AbstractManifold, X) = copy(M, X)
 _storage_copy_vector(::AbstractManifold, X::Number) = StorageRef(X)
 
-@doc raw"""
+@doc """
     StoreStateAction <: AbstractStateAction
 
 internal storage for [`AbstractStateAction`](@ref)s to store a tuple of fields from an

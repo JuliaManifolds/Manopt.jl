@@ -165,7 +165,7 @@ end
 # ManifoldCachedObjective constructor which errors by default
 # since LRUCache.jl extension is required
 #
-@doc raw"""
+@doc """
     ManifoldCachedObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractDecoratedManifoldObjective{E,P}
 
 Create a cache for an objective, based on a `NamedTuple` that stores some kind of cache.
@@ -997,7 +997,7 @@ end
 #
 # Factory
 #
-@doc raw"""
+@doc """
     objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Symbol)
 
 Generate a cached variant of the [`AbstractManifoldObjective`](@ref) `o`
@@ -1022,7 +1022,7 @@ function objective_cache_factory(M, o, cache::Symbol)
     return o
 end
 
-@doc raw"""
+@doc """
     objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Tuple{Symbol, Array, Array})
     objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Tuple{Symbol, Array})
 

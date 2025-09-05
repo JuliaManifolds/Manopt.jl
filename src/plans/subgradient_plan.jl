@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
     ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:AbstractManifoldCostObjective{T, C}
 
 A structure to store information about a objective for a subgradient based optimization problem
@@ -27,7 +27,7 @@ struct ManifoldSubgradientObjective{T <: AbstractEvaluationType, C, S} <:
     end
 end
 
-@doc raw"""
+@doc """
     get_subgradient(amp::AbstractManoptProblem, p)
     get_subgradient!(amp::AbstractManoptProblem, X, p)
 
@@ -86,10 +86,10 @@ function get_subgradient!(
     return get_subgradient!(M, X, get_objective(admo, false), p)
 end
 
-@doc raw"""
+@doc """
     get_subgradient_function(amgo::ManifoldSubgradientObjective, recursive=false)
 
-return the function to evaluate (just) the gradient ``\operatorname{grad} f(p)``,
+return the function to evaluate (just) the gradient ``$(_tex(:grad)) f(p)``,
 where either the gradient function using the decorator or without the decorator is used.
 
 By default `recursive` is set to `false`, since usually to just pass the gradient function

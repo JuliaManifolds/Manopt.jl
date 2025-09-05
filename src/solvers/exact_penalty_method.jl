@@ -165,7 +165,7 @@ _doc_EMP_ρ_update = raw"""
 ```math
 ρ^{(k)} = \begin{cases}
 ρ^{(k-1)}/θ_ρ,  & \text{if } \displaystyle \max_{j ∈ \mathcal{E},i ∈ \mathcal{I}} \Bigl\{ \vert h_j(x^{(k)}) \vert, g_i(x^{(k)})\Bigr\} \geq u^{(k-1)} \Bigr) ,\\
-ρ^{(k-1)}, & \text{else,}
+ρ^{(k-1)}, & $(_tex(:text, "else,"))
 \end{cases}
 ```
 

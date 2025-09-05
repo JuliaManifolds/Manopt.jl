@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
     DebugAction
 
 A `DebugAction` is a small functor to print/issue debug output. The usual call is given by
@@ -15,7 +15,7 @@ or to @info. The default is the `print` function on the default `Base.stdout`.
 """
 abstract type DebugAction <: AbstractStateAction end
 
-@doc raw"""
+@doc """
     DebugSolverState <: AbstractManoptSolverState
 
 The debug state appends debug to any state, they act as a decorator pattern.
@@ -157,7 +157,7 @@ function set_parameter!(dg::DebugGroup, e::Symbol, args...)
     return dg
 end
 
-@doc raw"""
+@doc """
     DebugEvery <: DebugAction
 
 evaluate and print debug only every ``k``th iteration. Otherwise no print is performed.
@@ -229,7 +229,7 @@ end
 #
 # Special single ones
 #
-@doc raw"""
+@doc """
     DebugCallback <: DebugAction
 
 Debug for a simple callback function, mainly for compatibility to other solvers and if
@@ -365,7 +365,7 @@ function show(io::IO, di::DebugCost)
 end
 status_summary(di::DebugCost) = "(:Cost, \"$(escape_string(di.format))\")"
 
-@doc raw"""
+@doc """
     DebugDivider <: DebugAction
 
 print a small divider (default `" | "`).
@@ -390,7 +390,7 @@ function show(io::IO, di::DebugDivider)
 end
 status_summary(di::DebugDivider) = "\"$(escape_string(di.divider))\""
 
-@doc raw"""
+@doc """
     DebugEntry <: DebugAction
 
 print a certain fields entry during the iterates, where a `format` can be specified
@@ -402,7 +402,7 @@ how to print the entry.
 
 # Constructor
 
-    DebugEntry(f; prefix="$f:", format = "$prefix %s", io=stdout)
+    DebugEntry(f; prefix="\$f:", format = "\$prefix %s", io=stdout)
 
 """
 mutable struct DebugEntry <: DebugAction
@@ -498,7 +498,7 @@ function status_summary(d::DebugFeasibility)
     return "(:Feasibility, $sf)"
 end
 
-@doc raw"""
+@doc """
     DebugIfEntry <: DebugAction
 
 Issue a warning, info, or error if a certain field does _not_ pass a the `check`.
@@ -518,7 +518,7 @@ That way you can print the value in this case as well.
 
 # Constructor
 
-    DebugEntry(field, check=(>(0)); type=:warn, message=":$f is nonnegative", io=stdout)
+    DebugEntry(field, check=(>(0)); type=:warn, message=":\$f is nonnegative", io=stdout)
 
 """
 mutable struct DebugIfEntry{F} <: DebugAction
@@ -528,8 +528,8 @@ mutable struct DebugIfEntry{F} <: DebugAction
     msg::String
     type::Symbol
     function DebugIfEntry(
-            f::Symbol, check::F = (>(0)); type = :warn, message = ":$f nonpositive.", io::IO = stdout
-        ) where {F}
+        f::Symbol, check::F=(>(0)); type=:warn, message=":\$f nonpositive.", io::IO=stdout
+    ) where {F}
         return new{F}(io, check, f, message, type)
     end
 end
@@ -548,7 +548,7 @@ function show(io::IO, di::DebugIfEntry)
     return print(io, "DebugIfEntry(:$(di.field), $(di.check); type=:$(di.type))")
 end
 
-@doc raw"""
+@doc """
     DebugEntryChange{T} <: DebugAction
 
 print a certain entries change during iterates
@@ -569,10 +569,10 @@ print a certain entries change during iterates
 ## Keyword arguments
 
 * `io=stdout`:                      an `IOStream` used for the debug
-* `prefix="Change of $f"`:          the prefix
+* `prefix="Change of \$f"`:          the prefix
 * `storage=StoreStateAction((f,))`: a [`StoreStateAction`](@ref)
 * `initial_value=NaN`:              an initial value for the change of `o.field`.
-* `format="$prefix %e"`:            format to print the change
+* `format="\$prefix %e"`:            format to print the change
 """
 mutable struct DebugEntryChange <: DebugAction
     distance::Any
@@ -581,14 +581,14 @@ mutable struct DebugEntryChange <: DebugAction
     io::IO
     storage::StoreStateAction
     function DebugEntryChange(
-            f::Symbol,
-            d;
-            storage::StoreStateAction = StoreStateAction([f]),
-            prefix::String = "Change of $f:",
-            format::String = "$prefix%s",
-            io::IO = stdout,
-            initial_value::Any = NaN,
-        )
+        f::Symbol,
+        d;
+        storage::StoreStateAction=StoreStateAction([f]),
+        prefix::String="Change of \$f:",
+        format::String="$prefix%s",
+        io::IO=stdout,
+        initial_value::Any=NaN,
+    )
         if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
             update_storage!(storage, Dict(f => initial_value))
         end
@@ -616,7 +616,7 @@ function show(io::IO, dec::DebugEntryChange)
     )
 end
 
-@doc raw"""
+@doc """
     DebugGradientChange()
 
 debug for the amount of change of the gradient (stored in `get_gradient(o)` of the [`AbstractManoptSolverState`](@ref) `o`)
@@ -627,7 +627,7 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `storage=`[`StoreStateAction`](@ref)`( (:Gradient,) )`: storage of the action for previous data
 * `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`:
 * `io=stdout`: default stream to print the debug to.
-* `format="$prefix %f"`: format to print the output
+* `format="\$prefix %f"`: format to print the output
 """
 mutable struct DebugGradientChange{VTR <: AbstractVectorTransportMethod} <: DebugAction
     io::IO
@@ -681,7 +681,7 @@ function status_summary(di::DebugGradientChange)
     return "(:GradientChange, \"$(escape_string(di.format))\")"
 end
 
-@doc raw"""
+@doc """
     DebugIterate <: DebugAction
 
 debug for the current iterate (stored in `get_iterate(o)`).
@@ -692,7 +692,7 @@ debug for the current iterate (stored in `get_iterate(o)`).
 # Keyword arguments
 
 * `io=stdout`:           default stream to print the debug to.
-* `format="$prefix %s"`: format how to print the current iterate
+* `format="\$prefix %s"`: format how to print the current iterate
 * `long=false`:          whether to have a long (`"current iterate:"`) or a short (`"p:"`) prefix default
 * `prefix`:              (see `long` for default) set a prefix to be printed before the iterate
 """
@@ -717,7 +717,7 @@ function show(io::IO, di::DebugIterate)
 end
 status_summary(di::DebugIterate) = "(:Iterate, \"$(escape_string(di.format))\")"
 
-@doc raw"""
+@doc """
     DebugIteration <: DebugAction
 
 # Constructor
@@ -746,7 +746,7 @@ function show(io::IO, di::DebugIteration)
 end
 status_summary(di::DebugIteration) = "(:Iteration, \"$(escape_string(di.format))\")"
 
-@doc raw"""
+@doc """
     DebugMessages <: DebugAction
 
 An [`AbstractManoptSolverState`](@ref) or one of its sub steps like a
@@ -802,7 +802,7 @@ function status_summary(d::DebugMessages)
     return "(:Messages, :$(d.status))"
 end
 
-@doc raw"""
+@doc """
     DebugStoppingCriterion <: DebugAction
 
 print the Reason provided by the stopping criterion. Usually this should be
@@ -837,7 +837,7 @@ function status_summary(c::DebugStoppingCriterion)
     return length(c.prefix) == 0 ? ":Stop" : "(:Stop, \"$(c.prefix)\")"
 end
 
-@doc raw"""
+@doc """
     DebugWhenActive <: DebugAction
 
 evaluate and print debug only if the active boolean is set.
@@ -889,7 +889,7 @@ function set_parameter!(dwa::DebugWhenActive, ::Val{:Activity}, v)
     return dwa.active = v
 end
 
-@doc raw"""
+@doc """
     DebugTime()
 
 Measure time and print the intervals. Using `start=true` you can start the timer on construction,
@@ -900,7 +900,7 @@ The measured time is rounded using the given `time_accuracy` and printed after [
 # Keyword parameters
 
 * `io=stdout`:             default stream to print the debug to.
-* `format="$prefix %s"`:   format to print the output, where `%s` is the canonicalized time`.
+* `format="\$prefix %s"`:   format to print the output, where `%s` is the canonicalized time`.
 * `mode=:cumulative`:      whether to display the total time or reset on every call using `:iterative`.
 * `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`:
 * `start=false`:           indicate whether to start the timer on creation or not.
@@ -972,7 +972,7 @@ end
 #
 # Debugs that warn about something
 #
-@doc raw"""
+@doc """
     DebugWarnIfCostIncreases <: DebugAction
 
 print a warning if the cost increases.
@@ -1028,7 +1028,7 @@ function show(io::IO, di::DebugWarnIfCostIncreases)
     return print(io, "DebugWarnIfCostIncreases(; tol=\"$(di.tol)\")")
 end
 
-@doc raw"""
+@doc """
     DebugWarnIfCostNotFinite <: DebugAction
 
 A debug to see when a field (value or array within the AbstractManoptSolverState is or contains values
@@ -1067,7 +1067,7 @@ end
 show(io::IO, ::DebugWarnIfCostNotFinite) = print(io, "DebugWarnIfCostNotFinite()")
 status_summary(::DebugWarnIfCostNotFinite) = ":WarnCost"
 
-@doc raw"""
+@doc """
     DebugWarnIfFieldNotFinite <: DebugAction
 
 A debug to see when a field from the options is not finite, for example `Inf` or `Nan`
@@ -1124,7 +1124,7 @@ function show(io::IO, dw::DebugWarnIfFieldNotFinite)
     return print(io, "DebugWarnIfFieldNotFinite(:$(dw.field), :$(dw.status))")
 end
 
-@doc raw"""
+@doc """
     DebugWarnIfGradientNormTooLarge{T} <: DebugAction
 
 A debug to warn when an evaluated gradient at the current iterate is larger than
@@ -1180,7 +1180,7 @@ end
 #
 # Convenience constructors using Symbols
 #
-@doc raw"""
+@doc """
     DebugFactory(a::Vector)
 
 Generate a dictionary of [`DebugAction`](@ref)s.
@@ -1267,7 +1267,7 @@ function DebugFactory(a::Vector{<:Any})
     return dictionary
 end
 
-@doc raw"""
+@doc """
     DebugGroupFactory(a::Vector)
 
 Generate a [`DebugGroup`](@ref) of [`DebugAction`](@ref)s. The following rules are used
@@ -1309,7 +1309,7 @@ function DebugGroupFactory(a::Vector; activation_offset = 1)
 end
 DebugGroupFactory(a; kwargs...) = DebugGroupFactory([a]; kwargs...)
 
-@doc raw"""
+@doc """
     DebugActionFactory(s)
 
 create a [`DebugAction`](@ref) where

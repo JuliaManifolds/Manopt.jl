@@ -89,15 +89,15 @@ function mid_point!(M::Sphere, y, p, q, x)
     return y
 end
 
-@doc raw"""
+@doc """
     reflect(M, f, x; kwargs...)
     reflect!(M, q, f, x; kwargs...)
 
 reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f: \mathcal M → \mathcal M``, given by
+function ``f: $(Manopt._math(:M)) → $(Manopt._math(:M))``, given by
 
 ````math
-    \operatorname{refl}_f(x) = \operatorname{refl}_{f(x)}(x),
+$(Manopt._tex(:operatorname, "refl"))_f(x) = $(Manopt._tex(:operatorname, "refl"))_{f(x)}(x),
 ````
 
 Compute the result in `q`.
@@ -116,10 +116,10 @@ end
 Reflect the point `x` from the manifold `M` at point `p`, given by
 
 ```math
-$(_tex(:reflect))
+$(Manopt._tex(:reflect))
 ```
 
-where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an inverse
+where ``$(Manopt._tex(:retr))`` and ``$(Manopt._tex(:invretr))`` denote a retraction and an inverse
 retraction, respectively.
 This can also be done in place of `q`.
 

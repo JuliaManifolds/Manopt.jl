@@ -1589,7 +1589,7 @@ function WolfePowellBinaryLinesearch(args...; kwargs...)
     return ManifoldDefaultsFactory(WolfePowellBinaryLinesearchStepsize, args...; kwargs...)
 end
 
-@doc raw"""
+@doc """
     get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
 
 return the stepsize stored within [`AbstractManoptSolverState`](@ref) `ams` when solving the
@@ -1643,7 +1643,7 @@ function _get_initial_stepsize(
     return get_initial_stepsize(ams.stepsize)
 end
 
-@doc raw"""
+@doc """
     get_last_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
 
 return the last computed stepsize stored within [`AbstractManoptSolverState`](@ref) `ams`
@@ -1671,7 +1671,7 @@ function _get_last_stepsize(
     # if not -> call step.
     return ams.stepsize(amp, ams, vars...)
 end
-@doc raw"""
+@doc """
     get_last_stepsize(::Stepsize, vars...)
 
 return the last computed stepsize from within the stepsize.

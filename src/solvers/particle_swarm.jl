@@ -153,7 +153,7 @@ end
 #
 # Constructors
 #
-_doc_swarm = raw"``S = \{s_1, \ldots, s_n\}``"
+_doc_swarm = raw"``S = \{s_1,…, s_n\}``"
 
 _doc_particle_update = raw"""
 ```math
@@ -357,7 +357,7 @@ end
 #
 # Stopping Criteria
 #
-@doc raw"""
+@doc """
     StopWhenSwarmVelocityLess <: StoppingCriterion
 
 Stopping criterion for [`particle_swarm`](@ref), when the velocity of the swarm

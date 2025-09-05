@@ -50,6 +50,14 @@ end
 # ---
 # LaTeX
 
+define!(
+    :LaTeX,
+    :aligned,
+    (lines...) ->
+        raw"\begin{aligned}\n" *
+        "$(join(["   $(line)" for line in lines], raw"\\\\ "))" *
+        raw"\n\end{aligned}\n",
+)
 define!(:LaTeX, :abs, (v) -> raw"\lvert " * "$v" * raw" \rvert")
 define!(:LaTeX, :argmin, raw"\operatorname*{arg\,min}")
 define!(:LaTeX, :ast, raw"\ast")
@@ -70,14 +78,17 @@ define!(
         raw"\end{cases}",
 )
 define!(:LaTeX, :cdots, raw"\cdots")
+define!(:LaTeX, :cot, raw"\cot")
 define!(:LaTeX, :ddots, raw"\ddots")
 define!(:LaTeX, :deriv, (t = "t") -> raw"\frac{\mathrm{d}}{\mathrm{d}" * "$(t)" * "}")
 define!(:LaTeX, :diff, (t = "") -> raw"\mathrm{D}_{" * "$(t)" * "}")
 define!(:LaTeX, :displaystyle, raw"\displaystyle")
+define!(:LaTeX, :eR, raw"\bar{\mathbb R}")
 define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")
 define!(:LaTeX, :grad, raw"\operatorname{grad}")
 define!(:LaTeX, :hat, (letter) -> raw"\hat{" * "$letter" * "}")
 define!(:LaTeX, :Hess, raw"\operatorname{Hess}")
+define!(:LaTeX, :Id, raw"\mathrm{Id}")
 define!(:LaTeX, :invretr, raw"\operatorname{retr}^{-1}")
 define!(:LaTeX, :inner, (a, b; index = "") -> "⟨$a,$b⟩_{$index}")
 define!(:LaTeX, :log, raw"\log")
@@ -89,6 +100,7 @@ define!(
     :pmatrix,
     (lines...) -> raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}",
 )
+define!(:LaTeX, :operatorname, (name) -> raw"\operatorname{$name}")
 define!(:LaTeX, :proj, raw"\operatorname{proj}")
 define!(:LaTeX, :prox, raw"\operatorname{prox}")
 define!(:LaTeX, :quad, raw"\quad")
@@ -98,12 +110,15 @@ define!(:LaTeX, :retr, raw"\operatorname{retr}")
 define!(:LaTeX, :rm, (letter) -> raw"\mathrm{" * "$letter" * "}")
 define!(:LaTeX, :sqrt, (s) -> raw"\sqrt{" * "$s}")
 define!(:LaTeX, :subgrad, raw"∂")
-define!(:LaTeX, :sum, (b = "", t = "") -> raw"\sum" * "_{$b}^{$t}")
+define!(:LaTeX, :set, (s) -> raw"\{" * "$s" * raw"\}")
+define!(:LaTeX, :sum, (b="", t="") -> raw"\sum" * "_{$b}^{$t}")
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
+define!(:LaTeX, :tilde, raw"\tilde")
 define!(:LaTeX, :transp, raw"\mathrm{T}")
 define!(:LaTeX, :vdots, raw"\vdots")
 define!(:LaTeX, :vert, raw"\vert")
 define!(:LaTeX, :widehat, (letter) -> raw"\widehat{" * "$letter" * "}")
+define!(:LaTeX, :widetilde, raw"\widetilde")
 _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 #
 # ---

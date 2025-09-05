@@ -1,7 +1,7 @@
 s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
 !(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-using Manopt, Manifolds, ManifoldsBase, ManoptTestSuite, Test, Random
+using Manopt, Manifolds, ManifoldsBase, ManoptTestSuite, Test, Random, LinearAlgebra
 using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
 
 @testset "Conjugate Gradient Descent" begin
@@ -277,5 +277,53 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         p = get_solver_result(s)[]
         @test f(M, p) < f(M, p0)
         @test isapprox(M, p, p_star; atol = 5.0e-8)
+    end
+
+    @testset "Restart Condition test" begin
+        n = 4
+        A = diagm(1:n)
+        M = Sphere(n - 1)
+
+        e_func(p) = dot(p, A * p)
+
+        obj = ManifoldFirstOrderObjective(;
+            cost=(M, p) -> e_func(p), gradient=(M, p) -> A * p - dot(p, A * p) * p
+        )
+        p0 = 0.5 * [1.0, 1.0, 1.0, 1.0]
+
+        stopping_criterion = StopAfterIteration(30)
+        get_stepsize() = Manopt.ArmijoLinesearchStepsize(
+            M; initial_stepsize=1.0, initial_guess=(args...) -> 1.0
+        )
+
+        p1 = conjugate_gradient_descent(
+            M,
+            obj,
+            p0;
+            restart_condition=NeverRestart(),
+            stopping_criterion,
+            stepsize=get_stepsize(),
+        )
+
+        p2 = conjugate_gradient_descent(
+            M,
+            obj,
+            p0;
+            restart_condition=RestartOnNonDescent(),
+            stopping_criterion,
+            stepsize=get_stepsize(),
+        )
+
+        p3 = conjugate_gradient_descent(
+            M,
+            obj,
+            p0;
+            restart_condition=RestartOnNonSufficientDescent(0.5),
+            stopping_criterion,
+            stepsize=get_stepsize(),
+        )
+        # sufficient descent should perform best, descent better than no restart
+        @test e_func(p3) < e_func(p2) && e_func(p2) < e_func(p1)
+        @test e_func(p3) ≈ 1 atol = 1e-3
     end
 end
