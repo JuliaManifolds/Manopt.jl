@@ -1,7 +1,7 @@
 name = "Manopt"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 authors = ["Ronny Bergmann <manopt@ronnybergmann.net>"]
-version = "0.5.20"
+version = "0.5.21"
 
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
@@ -42,7 +42,7 @@ Aqua = "0.8"
 ColorSchemes = "3.5.0"
 ColorTypes = "0.9.1, 0.10, 0.11, 0.12"
 Colors = "0.11.2, 0.12, 0.13"
-DataStructures = "0.17, 0.18"
+DataStructures = "0.17, 0.18, 0.19"
 Dates = "1.10"
 ForwardDiff = "0.10, 1"
 JuMP = "1.15"

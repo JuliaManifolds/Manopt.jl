@@ -57,7 +57,7 @@ mutable struct StopWhenPollSizeLess{F} <: StoppingCriterion
     threshold::F
     last_poll_size::F
     at_iteration::Int
-    function StopWhenPollSizeLess(ε::F) where {F<:Real}
+    function StopWhenPollSizeLess(ε::F) where {F <: Real}
         return new{F}(ε, zero(ε), -1)
     end
 end
@@ -102,16 +102,16 @@ $(_var(:Keyword, :vector_transport_method))
 $(_var(:Keyword, :X))
 """
 mutable struct LowerTriangularAdaptivePoll{
-    P,
-    T,
-    F<:Real,
-    V<:AbstractVector{F},
-    M<:AbstractMatrix{F},
-    I<:Int,
-    B,
-    VTM<:AbstractVectorTransportMethod,
-    RM<:AbstractRetractionMethod,
-} <: AbstractMeshPollFunction
+        P,
+        T,
+        F <: Real,
+        V <: AbstractVector{F},
+        M <: AbstractMatrix{F},
+        I <: Int,
+        B,
+        VTM <: AbstractVectorTransportMethod,
+        RM <: AbstractRetractionMethod,
+    } <: AbstractMeshPollFunction
     base_point::P
     candidate::P
     poll_counter::I
@@ -126,15 +126,15 @@ mutable struct LowerTriangularAdaptivePoll{
 end
 
 function LowerTriangularAdaptivePoll(
-    M::AbstractManifold,
-    p=rand(M);
-    basis::AbstractBasis=default_basis(M, typeof(p)),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
-        M
-    ),
-    X=zero_vector(M, p),
-)
+        M::AbstractManifold,
+        p = rand(M);
+        basis::AbstractBasis = default_basis(M, typeof(p)),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M),
+        vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(
+            M
+        ),
+        X = zero_vector(M, p),
+    )
     d = manifold_dimension(M)
     b_l = zeros(d)
     D_k = zeros(d, d + 1)
@@ -203,19 +203,19 @@ function update_basepoint!(M, ltap::LowerTriangularAdaptivePoll{P}, p::P) where 
 end
 function show(io::IO, ltap::LowerTriangularAdaptivePoll)
     s = """LowerTriangularAdaptivePoll
-      with
-      * basis on the tangent space: $(ltap.basis)
-      * retraction_method:          $(ltap.retraction_method)
-      * vector_transport_method:    $(ltap.vector_transport_method)
-      """
+    with
+    * basis on the tangent space: $(ltap.basis)
+    * retraction_method:          $(ltap.retraction_method)
+    * vector_transport_method:    $(ltap.vector_transport_method)
+    """
     return print(io, s)
 end
 function (ltap::LowerTriangularAdaptivePoll)(
-    amp::AbstractManoptProblem,
-    mesh_size::Real;
-    scale_mesh::Real=1.0,
-    max_stepsize::Real=Inf,
-)
+        amp::AbstractManoptProblem,
+        mesh_size::Real;
+        scale_mesh::Real = 1.0,
+        max_stepsize::Real = Inf,
+    )
     M = get_manifold(amp)
     n = manifold_dimension(M)
     l = -log(4, mesh_size)
@@ -244,7 +244,7 @@ function (ltap::LowerTriangularAdaptivePoll)(
     # (bottom left)
     if n > 1
         ltap.mesh[(ltap.random_index + 1):n, (1:n)] = ltap.mesh[
-            (ltap.random_index):(n - 1), (1:n)
+            (ltap.random_index):(n - 1), (1:n),
         ]
         # zero row above
         ltap.mesh[ltap.random_index, (1:n)] .= 0
@@ -252,7 +252,7 @@ function (ltap::LowerTriangularAdaptivePoll)(
     # second to last column: random vector
     ltap.mesh[:, n] .= ltap.random_vector
     # set last column to minus the sum.
-    ltap.mesh[:, n + 1] .= -1 .* sum(ltap.mesh[:, 1:n]; dims=2)
+    ltap.mesh[:, n + 1] .= -1 .* sum(ltap.mesh[:, 1:n]; dims = 2)
     # Permute B (first n columns)
     ltap.mesh[:, 1:n] .= ltap.mesh[:, randperm(n)]
     # look for best
@@ -317,8 +317,8 @@ $(_var(:Field, :retraction_method))
 * `X::T=zero_vector(M, p)
 $(_var(:Keyword, :retraction_method))
 """
-mutable struct DefaultMeshAdaptiveDirectSearch{P,T,RM<:AbstractRetractionMethod} <:
-               AbstractMeshSearchFunction
+mutable struct DefaultMeshAdaptiveDirectSearch{P, T, RM <: AbstractRetractionMethod} <:
+    AbstractMeshSearchFunction
     p::P
     q::P
     X::T
@@ -326,11 +326,11 @@ mutable struct DefaultMeshAdaptiveDirectSearch{P,T,RM<:AbstractRetractionMethod}
     retraction_method::RM
 end
 function DefaultMeshAdaptiveDirectSearch(
-    M::AbstractManifold,
-    p=rand(M);
-    X=zero_vector(M, p),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-)
+        M::AbstractManifold,
+        p = rand(M);
+        X = zero_vector(M, p),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M),
+    )
     return DefaultMeshAdaptiveDirectSearch(p, copy(M, p), X, false, retraction_method)
 end
 """
@@ -357,13 +357,13 @@ function show(io::IO, dmads::DefaultMeshAdaptiveDirectSearch)
     return print(io, s)
 end
 function (dmads::DefaultMeshAdaptiveDirectSearch)(
-    amp::AbstractManoptProblem,
-    mesh_size::Real,
-    p,
-    X;
-    scale_mesh::Real=1.0,
-    max_stepsize::Real=Inf,
-)
+        amp::AbstractManoptProblem,
+        mesh_size::Real,
+        p,
+        X;
+        scale_mesh::Real = 1.0,
+        max_stepsize::Real = Inf,
+    )
     M = get_manifold(amp)
     dmads.X .= (4 * mesh_size * scale_mesh) .* X
 
@@ -384,7 +384,7 @@ end
 
 # Fields
 
-$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :p; add = [:as_Iterate]))
 * `mesh_size`: the current (internal) mesh size
 * `scale_mesh`: the current scaling of the internal mesh size, yields the actual mesh size used
 * `max_stepsize`: an upper bound for the longest step taken in looking for a candidate in either poll or search
@@ -395,12 +395,12 @@ $(_var(:Field, :stopping_criterion, "stop"))
 
 """
 mutable struct MeshAdaptiveDirectSearchState{
-    P,
-    F<:Real,
-    PT<:AbstractMeshPollFunction,
-    ST<:AbstractMeshSearchFunction,
-    SC<:StoppingCriterion,
-} <: AbstractManoptSolverState
+        P,
+        F <: Real,
+        PT <: AbstractMeshPollFunction,
+        ST <: AbstractMeshSearchFunction,
+        SC <: StoppingCriterion,
+    } <: AbstractManoptSolverState
     p::P
     mesh_size::F
     scale_mesh::F
@@ -411,36 +411,36 @@ mutable struct MeshAdaptiveDirectSearchState{
     search::ST
 end
 function MeshAdaptiveDirectSearchState(
-    M::AbstractManifold,
-    p::P=rand(M);
-    mesh_basis::B=default_basis(M, typeof(p)),
-    scale_mesh::F=injectivity_radius(M) / 2,
-    max_stepsize::F=injectivity_radius(M),
-    stopping_criterion::SC=StopAfterIteration(500) | StopWhenPollSizeLess(1e-7),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
-        M, typeof(p)
-    ),
-    poll::PT=LowerTriangularAdaptivePoll(
-        M,
-        copy(M, p);
-        basis=mesh_basis,
-        retraction_method=retraction_method,
-        vector_transport_method=vector_transport_method,
-    ),
-    search::ST=DefaultMeshAdaptiveDirectSearch(
-        M, copy(M, p); retraction_method=retraction_method
-    ),
-) where {
-    P,
-    F,
-    PT<:AbstractMeshPollFunction,
-    ST<:AbstractMeshSearchFunction,
-    SC<:StoppingCriterion,
-    B<:AbstractBasis,
-}
+        M::AbstractManifold,
+        p::P = rand(M);
+        mesh_basis::B = default_basis(M, typeof(p)),
+        scale_mesh::F = injectivity_radius(M) / 2,
+        max_stepsize::F = injectivity_radius(M),
+        stopping_criterion::SC = StopAfterIteration(500) | StopWhenPollSizeLess(1.0e-7),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
+        vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(
+            M, typeof(p)
+        ),
+        poll::PT = LowerTriangularAdaptivePoll(
+            M,
+            copy(M, p);
+            basis = mesh_basis,
+            retraction_method = retraction_method,
+            vector_transport_method = vector_transport_method,
+        ),
+        search::ST = DefaultMeshAdaptiveDirectSearch(
+            M, copy(M, p); retraction_method = retraction_method
+        ),
+    ) where {
+        P,
+        F,
+        PT <: AbstractMeshPollFunction,
+        ST <: AbstractMeshSearchFunction,
+        SC <: StoppingCriterion,
+        B <: AbstractBasis,
+    }
     poll_s = manifold_dimension(M) * 1.0
-    return MeshAdaptiveDirectSearchState{P,F,PT,ST,SC}(
+    return MeshAdaptiveDirectSearchState{P, F, PT, ST, SC}(
         p, 1.0, scale_mesh, max_stepsize, poll_s, stopping_criterion, poll, search
     )
 end
@@ -458,8 +458,8 @@ function show(io::IO, mads::MeshAdaptiveDirectSearchState)
     * scale_mesh: $(mads.scale_mesh)
     * max_stepsize: $(mads.max_stepsize)
     * poll_size: $(mads.poll_size)
-    * poll:\n  $(replace(repr(mads.poll), "\n" => "\n  ")[1:end-3])
-    * search:\n  $(replace(repr(mads.search), "\n" => "\n  ")[1:end-3])
+    * poll:\n  $(replace(repr(mads.poll), "\n" => "\n  ")[1:(end - 3)])
+    * search:\n  $(replace(repr(mads.search), "\n" => "\n  ")[1:(end - 3)])
 
     ## Stopping criterion
     $(status_summary(mads.stop))
@@ -470,8 +470,8 @@ end
 get_solver_result(ips::MeshAdaptiveDirectSearchState) = ips.p
 
 function (c::StopWhenPollSizeLess)(
-    p::AbstractManoptProblem, s::MeshAdaptiveDirectSearchState, k::Int
-)
+        p::AbstractManoptProblem, s::MeshAdaptiveDirectSearchState, k::Int
+    )
     if k == 0 # reset on init
         c.at_iteration = -1
     end

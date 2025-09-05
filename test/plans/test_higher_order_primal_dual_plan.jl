@@ -68,7 +68,7 @@ using ManifoldDiff:
             Dprox_G_dual!,
             DΛ!,
             adjoint_DΛ!;
-            evaluation=InplaceEvaluation(),
+            evaluation = InplaceEvaluation(),
         )
         p2 = TwoManifoldProblem(M, N, obj2)
         x1 = get_differential_primal_prox(p1, 1.0, p0, X)
@@ -80,9 +80,9 @@ using ManifoldDiff:
 
         ξ1 = get_differential_dual_prox(p1, n, 1.0, ξ0, Ξ)
         ξ2 = get_differential_dual_prox(p2, n, 1.0, ξ0, Ξ)
-        @test ξ1 ≈ ξ2 atol = 2 * 1e-16
+        @test ξ1 ≈ ξ2 atol = 2 * 1.0e-16
         get_differential_dual_prox!(p1, ξ1, n, 1.0, ξ0, Ξ)
         get_differential_dual_prox!(p2, ξ2, n, 1.0, ξ0, Ξ)
-        @test ξ1 ≈ ξ2 atol = 2 * 1e-16
+        @test ξ1 ≈ ξ2 atol = 2 * 1.0e-16
     end
 end

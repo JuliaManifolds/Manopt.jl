@@ -18,17 +18,17 @@ using LRUCache, LinearAlgebra, Manifolds, Manopt, ManoptTestSuite, Test
 
     dc_obja = ManifoldDifferenceOfConvexObjective(f, grad_h)
     dc_obji = ManifoldDifferenceOfConvexObjective(
-        f, grad_h!; evaluation=InplaceEvaluation()
+        f, grad_h!; evaluation = InplaceEvaluation()
     )
-    dcp_obja = ManifoldDifferenceOfConvexProximalObjective(grad_h; cost=f)
+    dcp_obja = ManifoldDifferenceOfConvexProximalObjective(grad_h; cost = f)
     dcp_obji = ManifoldDifferenceOfConvexProximalObjective(
-        grad_h!; evaluation=InplaceEvaluation(), cost=f
+        grad_h!; evaluation = InplaceEvaluation(), cost = f
     )
     @testset "Gradient access" begin
         # Alloc
-        dc_objga = ManifoldDifferenceOfConvexObjective(f, grad_h; gradient=grad_g)
+        dc_objga = ManifoldDifferenceOfConvexObjective(f, grad_h; gradient = grad_g)
         dcp_objga = ManifoldDifferenceOfConvexProximalObjective(
-            grad_h; cost=f, gradient=grad_g
+            grad_h; cost = f, gradient = grad_g
         )
         for o in [dc_objga, dcp_objga]
             gga = Manopt.get_gradient_function(o)
@@ -42,10 +42,10 @@ using LRUCache, LinearAlgebra, Manifolds, Manopt, ManoptTestSuite, Test
         end
         # Inplace
         dc_objgi = ManifoldDifferenceOfConvexObjective(
-            f, grad_h!; gradient=grad_g!, evaluation=InplaceEvaluation()
+            f, grad_h!; gradient = grad_g!, evaluation = InplaceEvaluation()
         )
         dcp_objgi = ManifoldDifferenceOfConvexProximalObjective(
-            grad_h!; cost=f, gradient=grad_g!, evaluation=InplaceEvaluation()
+            grad_h!; cost = f, gradient = grad_g!, evaluation = InplaceEvaluation()
         )
         for o in [dc_objgi, dcp_objgi]
             ggi = Manopt.get_gradient_function(o)

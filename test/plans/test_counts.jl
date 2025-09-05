@@ -115,7 +115,7 @@ using LinearAlgebra: Symmetric
         grad_f!(M, X, p) = (X .= A * p - (p' * A * p) * p)
         Hess_f!(M, Y, p, X) = (Y .= A * X + (p' * A * X) .* p + (p' * A * p) .* X)
         obj_i = ManifoldHessianObjective(
-            f, grad_f!, Hess_f!; evaluation=InplaceEvaluation()
+            f, grad_f!, Hess_f!; evaluation = InplaceEvaluation()
         )
         c_obj_i = ManifoldCountObjective(M, obj_i, [:Cost, :Gradient, :Hessian])
         @test Manopt.get_cost_function(obj_i) === Manopt.get_cost_function(c_obj_i, true)

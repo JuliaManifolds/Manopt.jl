@@ -18,7 +18,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
 
         # With interim caches for p and X
         eo1 = Manopt.decorate_objective!(
-            M, o; objective_type=:Euclidean, embedded_p=copy(p), embedded_X=copy(X)
+            M, o; objective_type = :Euclidean, embedded_p = copy(p), embedded_X = copy(X)
         )
         eo2 = EmbeddedManifoldObjective(o, missing, copy(X))
         eo3 = EmbeddedManifoldObjective(o, copy(p), missing)
@@ -112,7 +112,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         ∇²f!(M, Y, p, X) = (Y .= A * X)
         grad_f!(M, X, p) = (X .= A * p - (p' * A * p) * p)
         Hess_f!(M, Y, p, X) = (Y .= A * X - (p' * A * X) .* p - (p' * A * p) .* X)
-        obj_i = ManifoldHessianObjective(f, ∇f!, ∇²f!; evaluation=InplaceEvaluation())
+        obj_i = ManifoldHessianObjective(f, ∇f!, ∇²f!; evaluation = InplaceEvaluation())
         e_obj_i = EmbeddedManifoldObjective(obj_i)
         @test Manopt.get_cost_function(obj_i) === Manopt.get_cost_function(e_obj_i, true)
         f2 = Manopt.get_cost_function(e_obj_i)

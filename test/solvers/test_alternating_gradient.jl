@@ -8,7 +8,7 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
     function f(N, p)
         return 1 / 2 * (
             distance(N[1], p[N, Val(1)], data[1])^2 +
-            distance(N[2], p[N, Val(2)], data[2])^2
+                distance(N[2], p[N, Val(2)], data[2])^2
         )
     end
     grad_f1(N, p) = -log(N[1], p[N, 1], data[1])
@@ -29,11 +29,11 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
         objv = ManifoldAlternatingGradientObjective(f, [grad_f1, grad_f2])
         Pv = DefaultManoptProblem(N, objv)
         objf! = ManifoldAlternatingGradientObjective(
-            f, grad_f!; evaluation=InplaceEvaluation()
+            f, grad_f!; evaluation = InplaceEvaluation()
         )
         Pf! = DefaultManoptProblem(N, objf!)
         objv! = ManifoldAlternatingGradientObjective(
-            f, [grad_f1!, grad_f2!]; evaluation=InplaceEvaluation()
+            f, [grad_f1!, grad_f2!]; evaluation = InplaceEvaluation()
         )
         Pv! = DefaultManoptProblem(N, objv!)
         for P in [Pf, Pv, Pf!, Pv!]
@@ -62,17 +62,17 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             f,
             [grad_f1!, grad_f2!],
             p;
-            order_type=:Linear,
-            evaluation=InplaceEvaluation(),
+            order_type = :Linear,
+            evaluation = InplaceEvaluation(),
         )
         r = alternating_gradient_descent!(
             N,
             f,
             [grad_f1!, grad_f2!],
             q;
-            order_type=:Linear,
-            evaluation=InplaceEvaluation(),
-            return_state=true,
+            order_type = :Linear,
+            evaluation = InplaceEvaluation(),
+            return_state = true,
         )
         @test Manopt.get_message(r) == ""
         @test startswith(

@@ -36,10 +36,10 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
     hess_g2(M, p, X) = copy(-X)
     hess_g2!(M, Y, p, X) = copyto!(Y, -X)
     @test Manopt._number_of_constraints(
-        nothing, [grad_g1, grad_g2]; jacobian_type=ComponentVectorialType()
+        nothing, [grad_g1, grad_g2]; jacobian_type = ComponentVectorialType()
     ) == 2
     @test Manopt._number_of_constraints(
-        [g1, g2], nothing; jacobian_type=ComponentVectorialType()
+        [g1, g2], nothing; jacobian_type = ComponentVectorialType()
     ) == 2
     # Equality Constraints
     h(M, p) = [2 * p[3] - 1]
@@ -71,7 +71,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
     hh = [[0.0, 0.0, 0.0]]
 
     cofa = ConstrainedManifoldObjective(
-        f, grad_f, g, grad_g, h, grad_h; inequality_constraints=2, equality_constraints=1
+        f, grad_f, g, grad_g, h, grad_h; inequality_constraints = 2, equality_constraints = 1
     )
     cofaA = ConstrainedManifoldObjective( # Array representation tangent vector
         f,
@@ -80,8 +80,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         grad_gA,
         h,
         grad_hA;
-        inequality_constraints=2,
-        equality_constraints=1,
+        inequality_constraints = 2,
+        equality_constraints = 1,
     )
     cofm = ConstrainedManifoldObjective(
         f,
@@ -90,9 +90,9 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         grad_g!,
         h!,
         grad_h!;
-        evaluation=InplaceEvaluation(),
-        inequality_constraints=2,
-        equality_constraints=1,
+        evaluation = InplaceEvaluation(),
+        inequality_constraints = 2,
+        equality_constraints = 1,
     )
     cova = ConstrainedManifoldObjective(
         f,
@@ -101,8 +101,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         [grad_g1, grad_g2],
         [h1],
         [grad_h1];
-        inequality_constraints=2,
-        equality_constraints=1,
+        inequality_constraints = 2,
+        equality_constraints = 1,
     )
     covm = ConstrainedManifoldObjective(
         f,
@@ -111,9 +111,9 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         [grad_g1!, grad_g2!],
         [h1],
         [grad_h1!];
-        evaluation=InplaceEvaluation(),
-        inequality_constraints=2,
-        equality_constraints=1,
+        evaluation = InplaceEvaluation(),
+        inequality_constraints = 2,
+        equality_constraints = 1,
     )
     @test repr(cofa) === "ConstrainedManifoldObjective{AllocatingEvaluation}"
     @test repr(cofm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
@@ -126,11 +126,11 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         @test equality_constraints_length(cofa) == 1
         @test inequality_constraints_length(cofa) == 2
         cofE = ConstrainedManifoldObjective(
-            f, grad_f, nothing, nothing, h, grad_h; equality_constraints=1
+            f, grad_f, nothing, nothing, h, grad_h; equality_constraints = 1
         )
 
         cofI = ConstrainedManifoldObjective(
-            f, grad_f, g, grad_g, nothing, nothing; inequality_constraints=2
+            f, grad_f, g, grad_g, nothing, nothing; inequality_constraints = 2
         )
         @test equality_constraints_length(cofI) == 0
         @test inequality_constraints_length(cofE) == 0
@@ -144,11 +144,11 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         grad_g,
         h,
         grad_h;
-        hess_f=hess_f,
-        hess_g=hess_g,
-        hess_h=hess_h,
-        inequality_constraints=2,
-        equality_constraints=1,
+        hess_f = hess_f,
+        hess_g = hess_g,
+        hess_h = hess_h,
+        inequality_constraints = 2,
+        equality_constraints = 1,
     )
     cofhm = ConstrainedManifoldObjective(
         f,
@@ -157,12 +157,12 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         grad_g!,
         h!,
         grad_h!;
-        hess_f=(hess_f!),
-        hess_g=(hess_g!),
-        hess_h=(hess_h!),
-        evaluation=InplaceEvaluation(),
-        inequality_constraints=2,
-        equality_constraints=1,
+        hess_f = (hess_f!),
+        hess_g = (hess_g!),
+        hess_h = (hess_h!),
+        evaluation = InplaceEvaluation(),
+        inequality_constraints = 2,
+        equality_constraints = 1,
     )
     covha = ConstrainedManifoldObjective(
         f,
@@ -171,11 +171,11 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         [grad_g1, grad_g2],
         [h1],
         [grad_h1];
-        hess_f=hess_f,
-        hess_g=[hess_g1, hess_g2],
-        hess_h=[hess_h1],
-        inequality_constraints=2,
-        equality_constraints=1,
+        hess_f = hess_f,
+        hess_g = [hess_g1, hess_g2],
+        hess_h = [hess_h1],
+        inequality_constraints = 2,
+        equality_constraints = 1,
     )
     covhm = ConstrainedManifoldObjective(
         f,
@@ -184,12 +184,12 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         [grad_g1!, grad_g2!],
         [h1],
         [grad_h1!];
-        hess_f=(hess_f!),
-        hess_g=[hess_g1!, hess_g2!],
-        hess_h=[hess_h1!],
-        evaluation=InplaceEvaluation(),
-        inequality_constraints=2,
-        equality_constraints=1,
+        hess_f = (hess_f!),
+        hess_g = [hess_g1!, hess_g2!],
+        hess_h = [hess_h1!],
+        evaluation = InplaceEvaluation(),
+        inequality_constraints = 2,
+        equality_constraints = 1,
     )
 
     mp = DefaultManoptProblem(M, cofha)
@@ -197,8 +197,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
     cop2 = ConstrainedManoptProblem(
         M,
         cofaA;
-        gradient_equality_range=ArrayPowerRepresentation(),
-        gradient_inequality_range=ArrayPowerRepresentation(),
+        gradient_equality_range = ArrayPowerRepresentation(),
+        gradient_inequality_range = ArrayPowerRepresentation(),
     )
 
     @testset "ConstrainedManoptProblem special cases" begin
@@ -223,8 +223,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         #
         @test get_equality_constraint(cop2, p, :) == c[2]
         @test get_inequality_constraint(cop2, p, :) == c[1]
-        @test get_grad_equality_constraint(cop2, p, :) == cat(gh...; dims=2)
-        @test get_grad_inequality_constraint(cop2, p, :) == cat(gg...; dims=2)
+        @test get_grad_equality_constraint(cop2, p, :) == cat(gh...; dims = 2)
+        @test get_grad_inequality_constraint(cop2, p, :) == cat(gg...; dims = 2)
         get_grad_equality_constraint!(cop2, Y, p, 1)
         @test Y == gh[1]
         get_grad_inequality_constraint!(cop2, Y, p, 1)
@@ -280,10 +280,10 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         # At least one constraint necessary
         @test_throws ErrorException ConstrainedManifoldObjective(f, grad_f)
         @test_throws ErrorException ConstrainedManifoldObjective(
-            f, grad_f!; evaluation=InplaceEvaluation()
+            f, grad_f!; evaluation = InplaceEvaluation()
         )
         co1f = ConstrainedManifoldObjective(
-            f, grad_f!; g=g, grad_g=grad_g, hess_g=hess_g, M=M
+            f, grad_f!; g = g, grad_g = grad_g, hess_g = hess_g, M = M
         )
         @test get_equality_constraint(M, co1f, p, :) == []
         @test get_inequality_constraint(M, co1f, p, :) == c[1]
@@ -293,7 +293,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         @test get_hess_inequality_constraint(M, co1f, p, X, :) == hg
 
         co1v = ConstrainedManifoldObjective(
-            f, grad_f!; g=[g1, g2], grad_g=[grad_g1, grad_g2], hess_g=[hess_g1, hess_g2]
+            f, grad_f!; g = [g1, g2], grad_g = [grad_g1, grad_g2], hess_g = [hess_g1, hess_g2]
         )
         @test get_equality_constraint(M, co1v, p, :) == []
         @test get_inequality_constraint(M, co1v, p, :) == c[1]
@@ -303,7 +303,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         @test get_hess_inequality_constraint(M, co1f, p, X, :) == hg
 
         co2f = ConstrainedManifoldObjective(
-            f, grad_f!; h=h, grad_h=grad_h, hess_h=hess_h, M=M
+            f, grad_f!; h = h, grad_h = grad_h, hess_h = hess_h, M = M
         )
         @test get_equality_constraint(M, co2f, p, :) == c[2]
         @test get_inequality_constraint(M, co2f, p, :) == []
@@ -313,7 +313,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         @test get_hess_inequality_constraint(M, co2f, p, X, :) == []
 
         co2v = ConstrainedManifoldObjective(
-            f, grad_f!; h=h, grad_h=grad_h, hess_h=hess_h, M=M
+            f, grad_f!; h = h, grad_h = grad_h, hess_h = hess_h, M = M
         )
         @test get_equality_constraint(M, co2v, p, :) == c[2]
         @test get_inequality_constraint(M, co2v, p, :) == []
@@ -362,23 +362,23 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         coh = ConstrainedManifoldObjective(
             f,
             grad_f;
-            hess_f=hess_f,
-            g=g,
-            grad_g=grad_g,
-            hess_g=hess_g,
-            h=h,
-            grad_h=grad_h,
-            hess_h=hess_h,
-            M=M,
+            hess_f = hess_f,
+            g = g,
+            grad_g = grad_g,
+            hess_g = hess_g,
+            h = h,
+            grad_h = grad_h,
+            hess_h = hess_h,
+            M = M,
         )
-        @test is_feasible(M, coh, [-2.0, 3.0, 0.5]; error=:info)
-        @test_throws ErrorException is_feasible(M, coh, p; error=:error)
-        @test_logs (:info,) !is_feasible(M, coh, p; error=:info)
-        @test_logs (:warn,) !is_feasible(M, coh, p; error=:warn)
+        @test is_feasible(M, coh, [-2.0, 3.0, 0.5]; error = :info)
+        @test_throws ErrorException is_feasible(M, coh, p; error = :error)
+        @test_logs (:info,) !is_feasible(M, coh, p; error = :info)
+        @test_logs (:warn,) !is_feasible(M, coh, p; error = :warn)
         st = Manopt.StepsizeState(p, X)
         mp = DefaultManoptProblem(M, coh)
         io = IOBuffer()
-        df = DebugFeasibility(; io=io)
+        df = DebugFeasibility(; io = io)
         @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible]; atol=1.0e-13)"
         # short form:
         @test Manopt.status_summary(df) === "(:Feasibility, [\"feasible: \", :Feasible])"
@@ -399,14 +399,14 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         coh = ConstrainedManifoldObjective(
             f,
             grad_f;
-            hess_f=hess_f,
-            g=g,
-            grad_g=grad_g,
-            hess_g=hess_g,
-            h=h,
-            grad_h=grad_h,
-            hess_h=hess_h,
-            M=M,
+            hess_f = hess_f,
+            g = g,
+            grad_g = grad_g,
+            hess_g = hess_g,
+            h = h,
+            grad_h = grad_h,
+            hess_h = hess_h,
+            M = M,
         )
         @testset "Lagrangian Cost, Grad and Hessian" begin
             Lc = LagrangianCost(coh, μ, λ)
@@ -521,7 +521,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
             # (2) grad g terms
             Wc[N, 1] += sum(
                 (μ ./ s) .*
-                [inner(Nc[1], qc[N, 1], gg[i], Yc[Nc, 1]) for i in 1:length(gg)] .* gg,
+                    [inner(Nc[1], qc[N, 1], gg[i], Yc[Nc, 1]) for i in 1:length(gg)] .* gg,
             )
             # (3) grad h terms (note the Y_2 component)
             Wc[N, 1] += sum(Yc[N, 2] .* gh)
@@ -574,8 +574,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         ρ = 0.1
         for P in [cofa, cofm, cova, covm]
             @testset "$P" begin
-                EPCe = ExactPenaltyCost(P, ρ, u; smoothing=LogarithmicSumOfExponentials())
-                EPGe = ExactPenaltyGrad(P, ρ, u; smoothing=LogarithmicSumOfExponentials())
+                EPCe = ExactPenaltyCost(P, ρ, u; smoothing = LogarithmicSumOfExponentials())
+                EPGe = ExactPenaltyGrad(P, ρ, u; smoothing = LogarithmicSumOfExponentials())
                 # LogExp Cost
                 v1 = sum(u .* log.(1 .+ exp.(c[1] ./ u))) # cost g
                 v2 = sum(u .* log.(exp.(c[2] ./ u) .+ exp.(-c[2] ./ u))) # cost h
@@ -588,8 +588,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
                 vg2 = sum(vg2f .* gh)
                 @test EPGe(M, p) == gf + vg1 + vg2
                 # Huber Cost
-                EPCh = ExactPenaltyCost(P, ρ, u; smoothing=LinearQuadraticHuber())
-                EPGh = ExactPenaltyGrad(P, ρ, u; smoothing=LinearQuadraticHuber())
+                EPCh = ExactPenaltyCost(P, ρ, u; smoothing = LinearQuadraticHuber())
+                EPGh = ExactPenaltyGrad(P, ρ, u; smoothing = LinearQuadraticHuber())
                 w1 = sum((c[1] .- u / 2) .* (c[1] .> u)) # g > u
                 w2 = sum((c[1] .^ 2 ./ (2 * u)) .* ((c[1] .> 0) .& (c[1] .<= u))) #
                 w3 = sum(sqrt.(c[2] .^ 2 .+ u^2))

@@ -14,9 +14,9 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         f,
         p0;
         # debug=[:Iteration, :Cost, " ", :poll_size, " ", :mesh_size, " ", :Stop, "\n"],
-        return_state=true,
+        return_state = true,
     )
-    @test distance(M, get_solver_result(s), W) < 1e-9
+    @test distance(M, get_solver_result(s), W) < 1.0e-9
     @test startswith(get_reason(s), "The algorithm computed a poll step size")
     #
     #
@@ -31,7 +31,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     f2(M, p) = opnorm(B2 - A2 * p)
     Random.seed!(42)
     # start with a very small mesh size - yields a more exact result
-    p_s2 = mesh_adaptive_direct_search!(M2, f2, p1; scale_mesh=0.1)
+    p_s2 = mesh_adaptive_direct_search!(M2, f2, p1; scale_mesh = 0.1)
     @test isapprox(M, p_s2, p1)
-    @test distance(M2, p_s2, W2) < 1e-7
+    @test distance(M2, p_s2, W2) < 1.0e-7
 end
