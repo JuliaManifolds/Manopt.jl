@@ -22,9 +22,9 @@ o = gradient_descent(
     F,
     gradF,
     pts[1];
-    debug=[:Iteration, " | ", :Change, " | ", :Cost, "\n", :Stop],
-    record=[:x, :Change, :Cost],
-    return_state=true,
+    debug = [:Iteration, " | ", :Change, " | ", :Cost, "\n", :Stop],
+    record = [:x, :Change, :Cost],
+    return_state = true,
 )
 x_mean2 = get_solver_result(o)
 values = get_record(o) # vector with a tuple per iteration
@@ -37,9 +37,9 @@ TolVibrantTeal = RGBA{Float64}(colorant"#009988")
 TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE")
 asymptote_export_S2_signals(
     joinpath(@__DIR__, "img/MeanIllustr.asy");
-    points=[[x_mean], [euclidean_mean_normed], pts],
-    colors=Dict(:points => [TolVibrantOrange, TolVibrantCyan, TolVibrantTeal]),
-    dot_sizes=[3.5, 2.5, 3.5],
-    camera_position=(0.7, 0.7, 0.5),
+    points = [[x_mean], [euclidean_mean_normed], pts],
+    colors = Dict(:points => [TolVibrantOrange, TolVibrantCyan, TolVibrantTeal]),
+    dot_sizes = [3.5, 2.5, 3.5],
+    camera_position = (0.7, 0.7, 0.5),
 )
-render_asymptote(joinpath(@__DIR__, "img/MeanIllustr.asy"); render=4)  #src
+render_asymptote(joinpath(@__DIR__, "img/MeanIllustr.asy"); render = 4)  #src

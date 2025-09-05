@@ -1,5 +1,4 @@
-
-@doc raw"""
+@doc """
     AbstractManifoldFirstOrderObjective{E<:AbstractEvaluationType, FGD} <: AbstractManifoldCostObjective{E, FGD}
 
 An abstract type for all objectives that provide
@@ -7,8 +6,8 @@ An abstract type for all objectives that provide
 * first order information, so either a (full) gradient or a differential, where
 `E` is a [`AbstractEvaluationType`](@ref) for the gradient function.
 """
-abstract type AbstractManifoldFirstOrderObjective{E<:AbstractEvaluationType,FGD} <:
-              AbstractManifoldCostObjective{E,FGD} end
+abstract type AbstractManifoldFirstOrderObjective{E <: AbstractEvaluationType, FGD} <:
+AbstractManifoldCostObjective{E, FGD} end
 
 @doc """
     ManifoldFirstOrderObjective{E<:AbstractEvaluationType, F} <: AbstractManifoldFirstOrderObjective{E, F}
@@ -65,20 +64,20 @@ Where:
 # Used with
 [`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
-struct ManifoldFirstOrderObjective{E<:AbstractEvaluationType,F<:NamedTuple} <:
-       AbstractManifoldFirstOrderObjective{E,F}
+struct ManifoldFirstOrderObjective{E <: AbstractEvaluationType, F <: NamedTuple} <:
+    AbstractManifoldFirstOrderObjective{E, F}
     functions::F
 end
 
 # A Monster constructor
 function ManifoldFirstOrderObjective(;
-    cost=nothing,
-    differential=nothing,
-    gradient=nothing,
-    costgradient=nothing,
-    costdifferential=nothing,
-    evaluation::E=AllocatingEvaluation(),
-) where {E<:AbstractEvaluationType}
+        cost = nothing,
+        differential = nothing,
+        gradient = nothing,
+        costgradient = nothing,
+        costdifferential = nothing,
+        evaluation::E = AllocatingEvaluation(),
+    ) where {E <: AbstractEvaluationType}
     nc = isnothing(cost)
     nd = isnothing(differential)
     ng = isnothing(gradient)
@@ -102,29 +101,29 @@ function ManifoldFirstOrderObjective(;
 
     nt = (;)
     if !nc
-        nt = merge(nt, (; cost=cost))
+        nt = merge(nt, (; cost = cost))
     end
     if !ng
-        nt = merge(nt, (; gradient=gradient))
+        nt = merge(nt, (; gradient = gradient))
     end
     if !nd
-        nt = merge(nt, (; differential=differential))
+        nt = merge(nt, (; differential = differential))
     end
     if !ncg
-        nt = merge(nt, (; costgradient=costgradient))
+        nt = merge(nt, (; costgradient = costgradient))
     end
     if !ncd
-        nt = merge(nt, (; costdifferential=costdifferential))
+        nt = merge(nt, (; costdifferential = costdifferential))
     end
 
-    return ManifoldFirstOrderObjective{E,typeof(nt)}(nt)
+    return ManifoldFirstOrderObjective{E, typeof(nt)}(nt)
 end
 
-const ManifoldGradientObjective{E,F,G} = ManifoldFirstOrderObjective{
+const ManifoldGradientObjective{E, F, G} = ManifoldFirstOrderObjective{
     E,
     <:Union{
-        NamedTuple{Tuple{:cost,:gradient},Tuple{F,G}},
-        NamedTuple{Tuple{:cost,:gradient,:differential},Tuple{F,G,D where D}},
+        NamedTuple{Tuple{:cost, :gradient}, Tuple{F, G}},
+        NamedTuple{Tuple{:cost, :gradient, :differential}, Tuple{F, G, D where {D}}},
     },
 }
 @doc """
@@ -144,14 +143,14 @@ to evaluate the `differential`.
 [`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
 function ManifoldGradientObjective(cost, grad; kwargs...)
-    return ManifoldFirstOrderObjective(; cost=cost, gradient=grad, kwargs...)
+    return ManifoldFirstOrderObjective(; cost = cost, gradient = grad, kwargs...)
 end
 
-const ManifoldCostGradientObjective{E,FG} = ManifoldFirstOrderObjective{
+const ManifoldCostGradientObjective{E, FG} = ManifoldFirstOrderObjective{
     E,
     <:Union{
-        NamedTuple{Tuple{:costgradient},Tuple{FG}},
-        NamedTuple{Tuple{:costgradient,:differential},Tuple{FG,D where D}},
+        NamedTuple{Tuple{:costgradient}, Tuple{FG}},
+        NamedTuple{Tuple{:costgradient, :differential}, Tuple{FG, D where {D}}},
     },
 }
 @doc """
@@ -172,14 +171,14 @@ to evaluate the `differential`.
 [`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
 function ManifoldCostGradientObjective(cost_grad; kwargs...)
-    return ManifoldFirstOrderObjective(; costgradient=cost_grad, kwargs...)
+    return ManifoldFirstOrderObjective(; costgradient = cost_grad, kwargs...)
 end
 
 #
 # get_cost
 function get_cost(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{AllocatingEvaluation}, p
-)
+        M::AbstractManifold, mfo::ManifoldFirstOrderObjective{AllocatingEvaluation}, p
+    )
     haskey(mfo.functions, :cost) && (return mfo.functions[:cost](M, p))
     if haskey(mfo.functions, :costdifferential)
         X = zero_vector(M, p)
@@ -190,8 +189,8 @@ function get_cost(
     return error("$mfo does not seem to provide a cost")
 end
 function get_cost(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, p
-)
+        M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, p
+    )
     haskey(mfo.functions, :cost) && (return mfo.functions[:cost](M, p))
     X = zero_vector(M, p)
     haskey(mfo.functions, :costgradient) && return mfo.functions[:costgradient](M, X, p)[1]
@@ -204,12 +203,12 @@ end
 # get_cost_and_differential
 
 function get_cost_and_differential(
-    M::AbstractManifold,
-    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation},
-    p,
-    X;
-    kwargs...,
-)
+        M::AbstractManifold,
+        mfo::ManifoldFirstOrderObjective{AllocatingEvaluation},
+        p,
+        X;
+        kwargs...,
+    )
     if haskey(mfo.functions, :costdifferential)
         return mfo.functions[:costdifferential](M, p, X)
     elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :differential)
@@ -225,12 +224,12 @@ function get_cost_and_differential(
     return error("$mfo does not provide a cost and a differential")
 end
 function get_cost_and_differential(
-    M::AbstractManifold,
-    mfo::ManifoldFirstOrderObjective{InplaceEvaluation},
-    p,
-    X;
-    Y=nothing,
-)
+        M::AbstractManifold,
+        mfo::ManifoldFirstOrderObjective{InplaceEvaluation},
+        p,
+        X;
+        Y = nothing,
+    )
     if haskey(mfo.functions, :costdifferential)
         return mfo.functions[:costdifferential](M, p, X)
     elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :differential)
@@ -254,15 +253,15 @@ function get_cost_and_differential(amp::AbstractManoptProblem, p, X; kwargs...)
 end
 
 function get_cost_and_differential(
-    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X; kwargs...
-)
+        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X; kwargs...
+    )
     return get_cost_and_differential(M, get_objective(admo, false), p, X; kwargs...)
 end
 
 # general: Generate a separate cost
 function get_cost_function(
-    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation}, recursive::Bool=false
-)
+        mfo::ManifoldFirstOrderObjective{AllocatingEvaluation}, recursive::Bool = false
+    )
     if haskey(mfo.functions, :cost)
         return mfo.functions[:cost]
     else
@@ -270,8 +269,8 @@ function get_cost_function(
     end
 end
 function get_cost_function(
-    mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, recursive::Bool=false
-)
+        mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, recursive::Bool = false
+    )
     if haskey(mfo.functions, :cost)
         return mfo.functions[:cost]
     else
@@ -281,8 +280,8 @@ end
 
 # Differential - passthrough
 function get_differential(
-    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X; kwargs...
-)
+        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X; kwargs...
+    )
     return get_differential(M, get_objective(admo, false), p, X; kwargs...)
 end
 # On problems -> “unpack”
@@ -307,27 +306,27 @@ By default this falls back to ``Df(p)[X] = ⟨$(_tex(:grad))f(p), X⟩
   already contains the evaluated gradient (`true`).
 """
 function get_differential(
-    M::AbstractManifold,
-    amfo::AbstractManifoldFirstOrderObjective,
-    p,
-    X;
-    gradient=nothing,
-    evaluated::Bool=false,
-)
+        M::AbstractManifold,
+        amfo::AbstractManifoldFirstOrderObjective,
+        p,
+        X;
+        gradient = nothing,
+        evaluated::Bool = false,
+    )
     isnothing(gradient) && (return real(inner(M, p, get_gradient(M, amfo, p), X)))
     # if it is not nothing call in-place
     (!evaluated) && (get_gradient!(M, gradient, amfo, p))
     return real(inner(M, p, gradient, X))
 end
 function get_differential(
-    M::AbstractManifold,
-    mfo::ManifoldFirstOrderObjective,
-    p,
-    X;
-    gradient=nothing,
-    evaluated::Bool=false,
-    kwargs...,
-)
+        M::AbstractManifold,
+        mfo::ManifoldFirstOrderObjective,
+        p,
+        X;
+        gradient = nothing,
+        evaluated::Bool = false,
+        kwargs...,
+    )
     # If we have a differential – evaluate that
     haskey(mfo.functions, :differential) && (return mfo.functions[:differential](M, p, X))
     haskey(mfo.functions, :costdifferential) &&
@@ -342,8 +341,8 @@ function get_differential(
 end
 # Differential function - pass-through
 function get_differential_function(
-    admo::AbstractDecoratedManifoldObjective, recursive=false
-)
+        admo::AbstractDecoratedManifoldObjective, recursive = false
+    )
     return get_differential_function(get_objective(admo, recursive))
 end
 
@@ -354,11 +353,11 @@ Return the function to evaluate (just) the differential ``Df(p)[X]``.
 For a decorated objective, the `recursive` positional parameter determines whether to
 directly call this function on the next decorator or whether to get the “most inner” objective.
 """
-get_differential_function(::AbstractManifoldFirstOrderObjective; recursive::Bool=false)
+get_differential_function(::AbstractManifoldFirstOrderObjective; recursive::Bool = false)
 
 function get_differential_function(
-    mfo::ManifoldFirstOrderObjective{<:AbstractEvaluationType}, recursive::Bool=false
-)
+        mfo::ManifoldFirstOrderObjective{<:AbstractEvaluationType}, recursive::Bool = false
+    )
     if haskey(mfo.functions, :differential)
         return mfo.functions[:differential]
     else
@@ -376,20 +375,20 @@ end
 
 # (a) alloc
 function get_gradient(
-    M::AbstractManifold,
-    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple},
-    p,
-)
+        M::AbstractManifold,
+        mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple},
+        p,
+    )
     haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient](M, p))
     haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, p)[2])
     return error("$mfo does not seem to provide a gradient")
 end
 function get_gradient!(
-    M::AbstractManifold,
-    X,
-    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple},
-    p,
-)
+        M::AbstractManifold,
+        X,
+        mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple},
+        p,
+    )
     haskey(mfo.functions, :gradient) &&
         (return copyto!(M, X, p, mfo.functions[:gradient](M, p)))
     haskey(mfo.functions, :costgradient) &&
@@ -398,17 +397,17 @@ function get_gradient!(
 end
 # (b) inplace
 function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation,<:NamedTuple}, p
-)
+        M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation, <:NamedTuple}, p
+    )
     X = zero_vector(M, p)
     return get_gradient!(M, X, mfo, p)
 end
 function get_gradient!(
-    M::AbstractManifold,
-    X,
-    mfo::ManifoldFirstOrderObjective{InplaceEvaluation,<:NamedTuple},
-    p,
-)
+        M::AbstractManifold,
+        X,
+        mfo::ManifoldFirstOrderObjective{InplaceEvaluation, <:NamedTuple},
+        p,
+    )
     haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient](M, X, p))
     haskey(mfo.functions, :costgradient) &&
         (return mfo.functions[:costgradient](M, X, p)[2])
@@ -429,20 +428,20 @@ Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 * `(M, p) -> X` for the [`AllocatingEvaluation`](@ref) case
 * `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref) working in-place of `X`.
 """
-get_gradient_function(::AbstractManifoldFirstOrderObjective; recursive=false)
+get_gradient_function(::AbstractManifoldFirstOrderObjective; recursive = false)
 
-function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
+function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursive = false)
     return get_gradient_function(get_objective(admo, recursive))
 end
 function get_gradient_function(
-    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple}, recursive=false
-)
+        mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple}, recursive = false
+    )
     haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient])
     return (M, p) -> get_gradient(M, mfo, p)
 end
 function get_gradient_function(
-    mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, recursive=false
-)
+        mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, recursive = false
+    )
     haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient])
     return (M, X, p) -> get_gradient!(M, X, mfo, p)
 end
@@ -452,22 +451,22 @@ end
 # -----------------------------
 # 0: General decorators
 function get_cost_and_gradient(
-    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p
-)
+        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p
+    )
     return get_cost_and_gradient(M, get_objective(admo, false), p)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p
-)
+        M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p
+    )
     return get_cost_and_gradient!(M, X, get_objective(admo, false), p)
 end
 
 # Case 1, FG (a) alloc
 function get_cost_and_gradient(
-    M::AbstractManifold,
-    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple},
-    p,
-)
+        M::AbstractManifold,
+        mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple},
+        p,
+    )
     haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, p))
     if haskey(mfo.functions, :cost) && haskey(mfo.functions, :gradient)
         return (mfo.functions[:cost](M, p), mfo.functions[:gradient](M, p))
@@ -475,17 +474,17 @@ function get_cost_and_gradient(
     if haskey(mfo.functions, :costdifferential) && haskey(mfo.functions, :gradient)
         Y = zero_vector(M, p)
         return (
-            mfo.functions[:costdifferential](M, p, Y)[1], mfo.functions[:gradient](M, p)
+            mfo.functions[:costdifferential](M, p, Y)[1], mfo.functions[:gradient](M, p),
         )
     end
     return error("$mfo seems to either have no access to a cost or a gradient")
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold,
-    X,
-    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple},
-    p,
-)
+        M::AbstractManifold,
+        X,
+        mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple},
+        p,
+    )
     if haskey(mfo.functions, :costgradient)
         c, Y = mfo.functions[:costgradient](M, p)
         copyto!(M, X, p, Y)
@@ -504,14 +503,14 @@ function get_cost_and_gradient!(
     return error("$mfo seems to either have no access to a cost or a gradient")
 end
 function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, p
-)
+        M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, p
+    )
     X = zero_vector(M, p)
     return get_cost_and_gradient!(M, X, mfo, p)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, p
-)
+        M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, p
+    )
     haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, X, p))
     if haskey(mfo.functions, :cost) && haskey(mfo.functions, :gradient)
         return mfo.functions[:cost](M, p), mfo.functions[:gradient](M, X, p)
@@ -519,13 +518,13 @@ function get_cost_and_gradient!(
     Y = zero_vector(M, p)
     if haskey(mfo.functions, :costdifferential) && haskey(mfo.functions, :gradient)
         return (
-            mfo.functions[:costdifferential](M, p, Y)[1], mfo.functions[:gradient](M, X, p)
+            mfo.functions[:costdifferential](M, p, Y)[1], mfo.functions[:gradient](M, X, p),
         )
     end
 
     return error("$mfo seems to either have no access to a cost or a gradient")
 end
-function show(io::IO, ::ManifoldFirstOrderObjective{E,FG}) where {E,FG}
+function show(io::IO, ::ManifoldFirstOrderObjective{E, FG}) where {E, FG}
     return print(io, "ManifoldFirstOrderObjective{$E, $FG}")
 end
 
@@ -533,7 +532,7 @@ end
 #  Access gradient
 # -----------------------------
 
-@doc raw"""
+@doc """
     get_gradient(amp::AbstractManoptProblem, p)
     get_gradient!(amp::AbstractManoptProblem, X, p)
 
@@ -561,12 +560,12 @@ function get_subgradient(M::AbstractManifold, agmo::AbstractManifoldFirstOrderOb
     return get_gradient(M, agmo, p)
 end
 function get_subgradient!(
-    M::AbstractManifold, X, agmo::AbstractManifoldFirstOrderObjective, p
-)
+        M::AbstractManifold, X, agmo::AbstractManifoldFirstOrderObjective, p
+    )
     return get_gradient!(M, X, agmo, p)
 end
 
-@doc raw"""
+@doc """
     get_gradient(agst::AbstractGradientSolverState)
 
 return the gradient stored within gradient options.
@@ -574,7 +573,7 @@ THe default returns `agst.X`.
 """
 get_gradient(agst::AbstractGradientSolverState) = agst.X
 
-@doc raw"""
+@doc """
     set_gradient!(agst::AbstractGradientSolverState, M, p, X)
 
 set the (current) gradient stored within an [`AbstractGradientSolverState`](@ref) to `X`.
@@ -585,7 +584,7 @@ function set_gradient!(agst::AbstractGradientSolverState, M, p, X)
     return agst
 end
 
-@doc raw"""
+@doc """
     get_iterate(agst::AbstractGradientSolverState)
 
 return the iterate stored within gradient options.
@@ -593,7 +592,7 @@ THe default returns `agst.p`.
 """
 get_iterate(agst::AbstractGradientSolverState) = agst.p
 
-@doc raw"""
+@doc """
     set_iterate!(agst::AbstractGradientSolverState, M, p)
 
 set the (current) iterate stored within an [`AbstractGradientSolverState`](@ref) to `p`.
@@ -623,7 +622,7 @@ You can also use `Gradient()` to create the corresponding factory, though this o
 this parameter-free instantiation to later.
 """
 struct IdentityUpdateRule <: DirectionUpdateRule end
-Gradient() = ManifoldDefaultsFactory(Manopt.IdentityUpdateRule; requires_manifold=false)
+Gradient() = ManifoldDefaultsFactory(Manopt.IdentityUpdateRule; requires_manifold = false)
 
 """
     MomentumGradientRule <: DirectionUpdateRule
@@ -660,8 +659,8 @@ $(_var(:Keyword, :X))
 [`MomentumGradient`](@ref)
 """
 mutable struct MomentumGradientRule{
-    P,T,D<:DirectionUpdateRule,R<:Real,VTM<:AbstractVectorTransportMethod
-} <: DirectionUpdateRule
+        P, T, D <: DirectionUpdateRule, R <: Real, VTM <: AbstractVectorTransportMethod,
+    } <: DirectionUpdateRule
     momentum::R
     p_old::P
     direction::D
@@ -669,21 +668,21 @@ mutable struct MomentumGradientRule{
     X_old::T
 end
 function MomentumGradientRule(
-    M::AbstractManifold;
-    p::P=rand(M),
-    direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=Gradient(),
-    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-    X::Q=zero_vector(M, p),
-    momentum::F=0.2,
-) where {P,Q,F<:Real,VTM<:AbstractVectorTransportMethod}
+        M::AbstractManifold;
+        p::P = rand(M),
+        direction::Union{<:DirectionUpdateRule, ManifoldDefaultsFactory} = Gradient(),
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+        X::Q = zero_vector(M, p),
+        momentum::F = 0.2,
+    ) where {P, Q, F <: Real, VTM <: AbstractVectorTransportMethod}
     dir = _produce_type(direction, M)
-    return MomentumGradientRule{P,Q,typeof(dir),F,VTM}(
+    return MomentumGradientRule{P, Q, typeof(dir), F, VTM}(
         momentum, p, dir, vector_transport_method, X
     )
 end
 function (mg::MomentumGradientRule)(
-    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
-)
+        mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+    )
     M = get_manifold(mp)
     p = get_iterate(s)
     step, dir = mg.direction(mp, s, k) #get inner direction and step size
@@ -757,29 +756,29 @@ Add average to a gradient problem, where
 $(_var(:Keyword, :vector_transport_method))
 """
 mutable struct AverageGradientRule{
-    P,T,D<:DirectionUpdateRule,VTM<:AbstractVectorTransportMethod
-} <: DirectionUpdateRule
+        P, T, D <: DirectionUpdateRule, VTM <: AbstractVectorTransportMethod,
+    } <: DirectionUpdateRule
     gradients::AbstractVector{T}
     last_iterate::P
     direction::D
     vector_transport_method::VTM
 end
 function AverageGradientRule(
-    M::AbstractManifold;
-    p::P=rand(M),
-    n::Int=10,
-    direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=Gradient(),
-    gradients=[zero_vector(M, p) for _ in 1:n],
-    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-) where {P,VTM}
+        M::AbstractManifold;
+        p::P = rand(M),
+        n::Int = 10,
+        direction::Union{<:DirectionUpdateRule, ManifoldDefaultsFactory} = Gradient(),
+        gradients = [zero_vector(M, p) for _ in 1:n],
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+    ) where {P, VTM}
     dir = _produce_type(direction, M)
-    return AverageGradientRule{P,eltype(gradients),typeof(dir),VTM}(
+    return AverageGradientRule{P, eltype(gradients), typeof(dir), VTM}(
         gradients, copy(M, p), dir, vector_transport_method
     )
 end
 function (a::AverageGradientRule)(
-    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
-)
+        mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+    )
     # remove oldest/last
     pop!(a.gradients)
     M = get_manifold(mp)
@@ -803,11 +802,11 @@ them to the current iterates tangent space.
 
 # Input
 
-$(_var(:Argument, :M; type=true)) (optional)
+$(_var(:Argument, :M; type = true)) (optional)
 
 # Keyword arguments
 
-$(_var(:Keyword, :p; add=:as_Initial))
+$(_var(:Keyword, :p; add = :as_Initial))
 * `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
 * `gradients=[zero_vector(M, p) for _ in 1:n]` how to initialise the internal storage
 * `n=10` number of gradient evaluations to take the mean over
@@ -839,7 +838,7 @@ $(_var(:Keyword, :inverse_retraction_method))
 
 ## Keyword arguments
 
-$(_var(:Keyword, :p; add=:as_Initial))
+$(_var(:Keyword, :p; add = :as_Initial))
 * `γ=0.001``
 * `μ=0.9``
 * `shrinkage = k -> 0.8`
@@ -849,7 +848,7 @@ $(_var(:Keyword, :inverse_retraction_method))
 
 [`Nesterov`](@ref)
 """
-mutable struct NesterovRule{P,R<:Real} <: DirectionUpdateRule
+mutable struct NesterovRule{P, R <: Real} <: DirectionUpdateRule
     γ::R
     μ::R
     v::P
@@ -857,17 +856,17 @@ mutable struct NesterovRule{P,R<:Real} <: DirectionUpdateRule
     inverse_retraction_method::AbstractInverseRetractionMethod
 end
 function NesterovRule(
-    M::AbstractManifold;
-    p::P=rand(M),
-    γ::T=0.001,
-    μ::T=0.9,
-    shrinkage::Function=i -> 0.8,
-    inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-        M, typeof(p)
-    ),
-) where {P,T}
+        M::AbstractManifold;
+        p::P = rand(M),
+        γ::T = 0.001,
+        μ::T = 0.9,
+        shrinkage::Function = i -> 0.8,
+        inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
+            M, typeof(p)
+        ),
+    ) where {P, T}
     p_ = _ensure_mutating_variable(p)
-    return NesterovRule{typeof(p_),T}(
+    return NesterovRule{typeof(p_), T}(
         γ, μ, copy(M, p_), shrinkage, inverse_retraction_method
     )
 end
@@ -881,7 +880,7 @@ function (n::NesterovRule)(mp::AbstractManoptProblem, s::AbstractGradientSolverS
         M,
         p,
         ((α * n.γ) / (n.γ + α * n.μ)) *
-        inverse_retract(M, p, n.v, n.inverse_retraction_method),
+            inverse_retract(M, p, n.v, n.inverse_retraction_method),
     )
     gradf_yk = get_gradient(mp, y)
     xn = retract(M, y, -h * gradf_yk)
@@ -917,11 +916,11 @@ Then the direction from ``p_k`` to ``p_k+1`` by ``d = $(_tex(:invretr))_{p_k}p_{
 
 # Input
 
-$(_var(:Argument, :M; type=true)) (optional)
+$(_var(:Argument, :M; type = true)) (optional)
 
 # Keyword arguments
 
-$(_var(:Keyword, :p; add=:as_Initial))
+$(_var(:Keyword, :p; add = :as_Initial))
 * `γ=0.001`
 * `μ=0.9`
 * `shrinkage = k -> 0.8`
@@ -957,7 +956,7 @@ Add preconditioning to a gradient problem.
 
 # Input
 
-$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :M; type = true))
 * `preconditioner`:   preconditioner function, either as a `(M, p, X)` -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
 
 # Keyword arguments
@@ -966,23 +965,23 @@ $(_var(:Keyword, :evaluation))
 * `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
 """
 mutable struct PreconditionedDirectionRule{
-    E<:AbstractEvaluationType,D<:DirectionUpdateRule,F
-} <: DirectionUpdateRule
+        E <: AbstractEvaluationType, D <: DirectionUpdateRule, F,
+    } <: DirectionUpdateRule
     preconditioner::F
     direction::D
 end
 function PreconditionedDirectionRule(
-    M::AbstractManifold,
-    preconditioner::F;
-    direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=Gradient(),
-    evaluation::E=AllocatingEvaluation(),
-) where {E<:AbstractEvaluationType,F}
+        M::AbstractManifold,
+        preconditioner::F;
+        direction::Union{<:DirectionUpdateRule, ManifoldDefaultsFactory} = Gradient(),
+        evaluation::E = AllocatingEvaluation(),
+    ) where {E <: AbstractEvaluationType, F}
     dir = _produce_type(direction, M)
-    return PreconditionedDirectionRule{E,typeof(dir),F}(preconditioner, dir)
+    return PreconditionedDirectionRule{E, typeof(dir), F}(preconditioner, dir)
 end
 function (pg::PreconditionedDirectionRule{AllocatingEvaluation})(
-    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
-)
+        mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+    )
     M = get_manifold(mp)
     p = get_iterate(s)
     # get inner direction and step size
@@ -992,8 +991,8 @@ function (pg::PreconditionedDirectionRule{AllocatingEvaluation})(
     return step, get_gradient(s)
 end
 function (pg::PreconditionedDirectionRule{InplaceEvaluation})(
-    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
-)
+        mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+    )
     M = get_manifold(mp)
     p = get_iterate(s)
     step, dir = pg.direction(mp, s, k) # get inner direction and step size
@@ -1019,7 +1018,7 @@ you turn a gradient descent into a Newton method.
 
 # Arguments
 
-$(_var(:Argument, :M; type=true)) (optional)
+$(_var(:Argument, :M; type = true)) (optional)
 * `preconditioner`:   preconditioner function, either as a `(M, p, X) -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
 
 # Keyword arguments
@@ -1033,13 +1032,24 @@ function PreconditionedDirection(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.PreconditionedDirectionRule, args...; kwargs...)
 end
 
-@doc raw"""
+"""
+    AbstractRestartCondition
+
+A general struct, that indicates then to restart.
+It is used within the [`ConjugateGradientDescentState`](@ref).
+
+It is implemented to work as a functor `(problem, state, iteration) -> true|false`
+and what is done in the restart case (`true`) is decided by the single solver.
+"""
+abstract type AbstractRestartCondition end
+
+@doc """
     DebugGradient <: DebugAction
 
 debug for the gradient evaluated at the current iterate
 
 # Constructors
-    DebugGradient(; long=false, prefix= , format= "$prefix%s", io=stdout)
+    DebugGradient(; long=false, prefix= , format= "\$prefix%s", io=stdout)
 
 display the short (`false`) or long (`true`) default text for the gradient,
 or set the `prefix` manually. Alternatively the complete format can be set.
@@ -1048,11 +1058,11 @@ mutable struct DebugGradient <: DebugAction
     io::IO
     format::String
     function DebugGradient(;
-        long::Bool=false,
-        prefix=long ? "Gradient: " : "grad f(p):",
-        format="$prefix%s",
-        io::IO=stdout,
-    )
+            long::Bool = false,
+            prefix = long ? "Gradient: " : "grad f(p):",
+            format = "$prefix%s",
+            io::IO = stdout,
+        )
         return new(io, format)
     end
 end
@@ -1066,7 +1076,7 @@ function show(io::IO, dg::DebugGradient)
 end
 status_summary(dg::DebugGradient) = "(:Gradient, \"$(dg.format)\")"
 
-@doc raw"""
+@doc """
     DebugGradientNorm <: DebugAction
 
 debug for gradient evaluated at the current iterate.
@@ -1084,17 +1094,17 @@ mutable struct DebugGradientNorm <: DebugAction
     io::IO
     format::String
     function DebugGradientNorm(;
-        long::Bool=false,
-        prefix=long ? "Norm of the Gradient: " : "|grad f(p)|:",
-        format="$prefix%s",
-        io::IO=stdout,
-    )
+            long::Bool = false,
+            prefix = long ? "Norm of the Gradient: " : "|grad f(p)|:",
+            format = "$prefix%s",
+            io::IO = stdout,
+        )
         return new(io, format)
     end
 end
 function (d::DebugGradientNorm)(
-    mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     (k < 1) && return nothing
     Printf.format(
         d.io,
@@ -1108,13 +1118,13 @@ function show(io::IO, dgn::DebugGradientNorm)
 end
 status_summary(dgn::DebugGradientNorm) = "(:GradientNorm, \"$(dgn.format)\")"
 
-@doc raw"""
+@doc """
     DebugStepsize <: DebugAction
 
 debug for the current step size.
 
 # Constructors
-    DebugStepsize(;long=false,prefix="step size:", format="$prefix%s", io=stdout)
+    DebugStepsize(;long=false,prefix="step size:", format="\$prefix%s", io=stdout)
 
 display the a `prefix` in front of the step size.
 """
@@ -1122,17 +1132,17 @@ mutable struct DebugStepsize <: DebugAction
     io::IO
     format::String
     function DebugStepsize(;
-        long::Bool=false,
-        io::IO=stdout,
-        prefix=long ? "step size:" : "s:",
-        format="$prefix%s",
-    )
+            long::Bool = false,
+            io::IO = stdout,
+            prefix = long ? "step size:" : "s:",
+            format = "$prefix%s",
+        )
         return new(io, format)
     end
 end
 function (d::DebugStepsize)(
-    p::P, s::O, k::Int
-) where {P<:AbstractManoptProblem,O<:AbstractGradientSolverState}
+        p::P, s::O, k::Int
+    ) where {P <: AbstractManoptProblem, O <: AbstractGradientSolverState}
     (k < 1) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, k))
     return nothing
@@ -1144,7 +1154,7 @@ status_summary(ds::DebugStepsize) = "(:Stepsize, \"$(ds.format)\")"
 #
 # Records
 #
-@doc raw"""
+@doc """
     RecordGradient <: RecordAction
 
 record the gradient evaluated at the current iterate
@@ -1155,42 +1165,42 @@ record the gradient evaluated at the current iterate
 initialize the [`RecordAction`](@ref) to the corresponding type of the tangent vector.
 """
 mutable struct RecordGradient{T} <: RecordAction
-    recorded_values::Array{T,1}
-    RecordGradient{T}() where {T} = new(Array{T,1}())
+    recorded_values::Array{T, 1}
+    RecordGradient{T}() where {T} = new(Array{T, 1}())
 end
 RecordGradient(::T) where {T} = RecordGradient{T}()
 function (r::RecordGradient{T})(
-    ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-) where {T}
+        ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    ) where {T}
     return record_or_reset!(r, get_gradient(s), k)
 end
 show(io::IO, ::RecordGradient{T}) where {T} = print(io, "RecordGradient{$T}()")
 
-@doc raw"""
+@doc """
     RecordGradientNorm <: RecordAction
 
 record the norm of the current gradient
 """
 mutable struct RecordGradientNorm <: RecordAction
-    recorded_values::Array{Float64,1}
-    RecordGradientNorm() = new(Array{Float64,1}())
+    recorded_values::Array{Float64, 1}
+    RecordGradientNorm() = new(Array{Float64, 1}())
 end
 function (r::RecordGradientNorm)(
-    mp::AbstractManoptProblem, ast::AbstractManoptSolverState, k::Int
-)
+        mp::AbstractManoptProblem, ast::AbstractManoptSolverState, k::Int
+    )
     M = get_manifold(mp)
     return record_or_reset!(r, norm(M, get_iterate(ast), get_gradient(ast)), k)
 end
 show(io::IO, ::RecordGradientNorm) = print(io, "RecordGradientNorm()")
 
-@doc raw"""
+@doc """
     RecordStepsize <: RecordAction
 
 record the step size
 """
 mutable struct RecordStepsize <: RecordAction
-    recorded_values::Array{Float64,1}
-    RecordStepsize() = new(Array{Float64,1}())
+    recorded_values::Array{Float64, 1}
+    RecordStepsize() = new(Array{Float64, 1}())
 end
 function (r::RecordStepsize)(p::AbstractManoptProblem, s::AbstractGradientSolverState, k)
     return record_or_reset!(r, get_last_stepsize(p, s, k), k)

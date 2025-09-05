@@ -10,7 +10,7 @@ using Manopt, Manifolds, Test
         @test Manopt.evaluation_type(cpa) === AllocatingEvaluation
 
         grad_f!(M, X, p) = (X .= 2 * p)
-        moi = ManifoldGradientObjective(f, grad_f!; evaluation=InplaceEvaluation())
+        moi = ManifoldGradientObjective(f, grad_f!; evaluation = InplaceEvaluation())
         cpi = DefaultManoptProblem(M, moi)
         @test Manopt.evaluation_type(cpi) === InplaceEvaluation
     end

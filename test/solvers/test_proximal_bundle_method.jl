@@ -5,12 +5,12 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
     M = Hyperbolic(4)
     p = [0.0, 0.0, 0.0, 0.0, 1.0]
     p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
-    pbms = ProximalBundleMethodState(M; p=p0, stopping_criterion=StopAfterIteration(200))
+    pbms = ProximalBundleMethodState(M; p = p0, stopping_criterion = StopAfterIteration(200))
     @test get_iterate(pbms) == p0
 
     pbms.X = [1.0, 0.0, 0.0, 0.0, 0.0]
     @testset "Special Stopping Criteria" begin
-        sc1 = StopWhenLagrangeMultiplierLess(1e-8)
+        sc1 = StopWhenLagrangeMultiplierLess(1.0e-8)
         @test startswith(
             repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)\n"
         )
@@ -18,7 +18,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         # Trigger manually
         sc1.at_iteration = 2
         @test length(get_reason(sc1)) > 0
-        sc2 = StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both)
+        sc2 = StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode = :both)
         @test startswith(
             repr(sc2), "StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode=:both)\n"
         )
@@ -26,7 +26,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         # Trigger manually
         sc2.at_iteration = 2
         @test length(get_reason(sc2)) > 0
-        sc3 = StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both, names=["a", "b"])
+        sc3 = StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode = :both, names = ["a", "b"])
         # Trigger manually
         sc3.at_iteration = 2
         @test length(get_reason(sc3)) > 0
@@ -56,9 +56,9 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             f,
             ∂f,
             p0;
-            stopping_criterion=StopAfterIteration(200),
-            return_state=true,
-            debug=[],
+            stopping_criterion = StopAfterIteration(200),
+            return_state = true,
+            debug = [],
         )
         p_star2 = get_solver_result(pbms2)
         @test get_subgradient(pbms2) == -∂f(M, p_star2)
@@ -66,12 +66,12 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         set_iterate!(pbms2, M, p)
         @test get_iterate(pbms2) == p
         # Test warnings
-        dw1 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=0.0)
+        dw1 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 0.0)
         dw1(mp, pbms, 1) #do one normal run.
         @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"0.0\")"
         pbms.ν = 101.0
         @test_logs (:warn,) dw1(mp, pbms, 2)
-        dw2 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=1e1)
+        dw2 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 1.0e1)
         dw2.old_value = -101.0
         @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"10.0\")"
         pbms.ν = -1.0
@@ -89,7 +89,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             X .*= -1 / max(10 * eps(Float64), d)
             return X
         end
-        bmom = ManifoldSubgradientObjective(f, ∂f!; evaluation=InplaceEvaluation())
+        bmom = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())
         mp = DefaultManoptProblem(M, bmom)
         X = zero_vector(M, p)
         Y = get_subgradient(mp, p)
@@ -107,11 +107,11 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             f,
             ∂f!,
             copy(p0);
-            stopping_criterion=StopAfterIteration(200),
-            evaluation=InplaceEvaluation(),
-            sub_state=AllocatingEvaluation(), # keep the default allocating subsolver here
-            return_state=true,
-            debug=[],
+            stopping_criterion = StopAfterIteration(200),
+            evaluation = InplaceEvaluation(),
+            sub_state = AllocatingEvaluation(), # keep the default allocating subsolver here
+            return_state = true,
+            debug = [],
         )
         p_star2 = get_solver_result(s2)
         @test f(M, p_star2) <= f(M, p0)
@@ -126,36 +126,36 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         function ∂f(M, p)
             return sum(
                 1 / length(data) *
-                ManifoldDiff.subgrad_distance.(Ref(M), data, Ref(p), 1; atol=1e-8),
+                    ManifoldDiff.subgrad_distance.(Ref(M), data, Ref(p), 1; atol = 1.0e-8),
             )
         end
         p0 = p1
-        pbm_s = proximal_bundle_method(M, f, ∂f, p0; return_state=true)
+        pbm_s = proximal_bundle_method(M, f, ∂f, p0; return_state = true)
         @test startswith(
             repr(pbm_s), "# Solver state for `Manopt.jl`s Proximal Bundle Method\n"
         )
         q = get_solver_result(pbm_s)
         # with default parameters for both median and proximal bundle, this is not very precise
         m = median(M, data)
-        @test distance(M, q, m) < 2 * 1e-3
+        @test distance(M, q, m) < 2 * 1.0e-3
         # test access functions
         @test get_iterate(pbm_s) == q
-        @test norm(M, q, get_subgradient(pbm_s)) < 1e-4
+        @test norm(M, q, get_subgradient(pbm_s)) < 1.0e-4
         # test the other stopping criterion mode
         q2 = proximal_bundle_method(
             M,
             f,
             ∂f,
             p0;
-            stopping_criterion=StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both),
+            stopping_criterion = StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode = :both),
         )
-        @test distance(M, q2, m) < 2 * 1e-3
+        @test distance(M, q2, m) < 2 * 1.0e-3
         # Test bundle size and in-place
         p_size = copy(p0)
         function ∂f!(M, X, p)
             X = sum(
                 1 / length(data) *
-                ManifoldDiff.subgrad_distance!.(Ref(M), Ref(X), data, Ref(p), 1; atol=1e-8),
+                    ManifoldDiff.subgrad_distance!.(Ref(M), Ref(X), data, Ref(p), 1; atol = 1.0e-8),
             )
             return X
         end
@@ -164,10 +164,10 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             f,
             ∂f!,
             p_size;
-            bundle_size=2,
-            evaluation=InplaceEvaluation(),
-            stopping_criterion=StopAfterIteration(200),
-            sub_problem=(proximal_bundle_method_subsolver!),
+            bundle_size = 2,
+            evaluation = InplaceEvaluation(),
+            stopping_criterion = StopAfterIteration(200),
+            sub_problem = (proximal_bundle_method_subsolver!),
         )
     end
 end

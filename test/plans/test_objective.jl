@@ -41,7 +41,7 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
             (M, p) -> p[1],
             (M, X, p) -> (X .= p),
             (M, Y, p, X) -> (Y .= X);
-            evaluation=InplaceEvaluation(),
+            evaluation = InplaceEvaluation(),
         )
         @test Manopt.get_cost_function(oi)(M, p) == p[1]
         Y = similar(X)

@@ -9,27 +9,27 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
     @testset "Test Restart CG" begin
         M = Euclidean(2)
         du = DummyCGCoeff()
-        dur2 = ConjugateGradientBealeRestart(du; threshold=0.3)
-        dur3 = ConjugateGradientBealeRestart(du; threshold=0.1)
+        dur2 = ConjugateGradientBealeRestart(du; threshold = 0.3)
+        dur3 = ConjugateGradientBealeRestart(du; threshold = 0.1)
         f(M, p) = norm(M, p)^2
         grad_f(M, p) = p
         p0 = [1.0, 0.0]
         pr = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         cgs2 = ConjugateGradientDescentState(
             M;
-            p=p0,
-            stopping_criterion=StopAfterIteration(2),
-            stepsize=Manopt.ConstantStepsize(M, 1.0),
-            coefficient=dur2,
+            p = p0,
+            stopping_criterion = StopAfterIteration(2),
+            stepsize = Manopt.ConstantStepsize(M, 1.0),
+            coefficient = dur2,
         )
         cgs2.X = [0.0, 0.2]
         @test cgs2.coefficient(pr, cgs2, 1) != 0
         cgs3 = ConjugateGradientDescentState(
             M;
-            p=p0,
-            stopping_criterion=StopAfterIteration(2),
-            stepsize=Manopt.ConstantStepsize(M, 1.0),
-            coefficient=dur3,
+            p = p0,
+            stopping_criterion = StopAfterIteration(2),
+            stepsize = Manopt.ConstantStepsize(M, 1.0),
+            coefficient = dur3,
         )
         cgs3.X = [0.0, 0.2]
         @test cgs3.coefficient(pr, cgs3, 1) == 0
@@ -44,9 +44,9 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
             "Manopt.FletcherReevesCoefficientRule()"
         # either in the factory constructor or in the factory call we need M
         # so lets alternate
-        @test repr(Manopt.DaiYuanCoefficient(M; vector_transport_method=p)()) ==
+        @test repr(Manopt.DaiYuanCoefficient(M; vector_transport_method = p)()) ==
             "Manopt.DaiYuanCoefficientRule(; vector_transport_method=$pt)"
-        @test repr(HagerZhangCoefficient(; vector_transport_method=p)(M)) ==
+        @test repr(HagerZhangCoefficient(; vector_transport_method = p)(M)) ==
             "Manopt.HagerZhangCoefficientRule(; vector_transport_method=$pt)"
         @test repr(HestenesStiefelCoefficient()(M)) ==
             "Manopt.HestenesStiefelCoefficientRule(; vector_transport_method=$pt)"

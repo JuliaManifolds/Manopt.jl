@@ -1,7 +1,7 @@
-@doc raw"""
+@doc """
     asymptote_export_S2_signals(filename; points, curves, tangent_vectors, colors, kwargs...)
 
-Export given `points`, `curves`, and `tangent_vectors` on the sphere ``\mathbb S^2``
+Export given `points`, `curves`, and `tangent_vectors` on the sphere ``𝕊^2``
 to Asymptote.
 
 # Input
@@ -47,32 +47,32 @@ to Asymptote.
   position the camera points at
 """
 function asymptote_export_S2_signals(
-    filename::String;
-    points::Array{Array{T,1},1} where {T}=Array{Array{Float64,1},1}(undef, 0),
-    curves::Array{Array{T,1},1} where {T}=Array{Array{Float64,1},1}(undef, 0),
-    tangent_vectors::Array{Array{Tuple{T,T},1},1} where {T}=Array{
-        Array{Tuple{Float64,Float64},1},1
-    }(
-        undef, 0
-    ),
-    colors::Dict{Symbol,Array{RGBA{Float64},1}}=Dict{Symbol,Array{RGBA{Float64},1}}(),
-    arrow_head_size::Float64=6.0,
-    arrow_head_sizes::Array{Float64,1}=fill(arrow_head_size, length(tangent_vectors)),
-    camera_position::Tuple{Float64,Float64,Float64}=(1.0, 1.0, 0.0),
-    line_width::Float64=1.0,
-    line_widths::Array{Float64,1}=fill(
-        line_width, length(curves) + length(tangent_vectors)
-    ),
-    dot_size::Float64=1.0,
-    dot_sizes::Array{Float64,1}=fill(dot_size, length(points)),
-    size::Union{Nothing,Tuple{Int,Int}}=nothing,
-    sphere_color::RGBA{Float64}=RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
-    sphere_line_color::RGBA{Float64}=RGBA{Float64}(0.75, 0.75, 0.75, 0.6),
-    sphere_line_width::Float64=0.5,
-    target::Tuple{Float64,Float64,Float64}=(0.0, 0.0, 0.0),
-)
+        filename::String;
+        points::Array{Array{T, 1}, 1} where {T} = Array{Array{Float64, 1}, 1}(undef, 0),
+        curves::Array{Array{T, 1}, 1} where {T} = Array{Array{Float64, 1}, 1}(undef, 0),
+        tangent_vectors::Array{Array{Tuple{T, T}, 1}, 1} where {T} = Array{
+            Array{Tuple{Float64, Float64}, 1}, 1,
+        }(
+            undef, 0
+        ),
+        colors::Dict{Symbol, Array{RGBA{Float64}, 1}} = Dict{Symbol, Array{RGBA{Float64}, 1}}(),
+        arrow_head_size::Float64 = 6.0,
+        arrow_head_sizes::Array{Float64, 1} = fill(arrow_head_size, length(tangent_vectors)),
+        camera_position::Tuple{Float64, Float64, Float64} = (1.0, 1.0, 0.0),
+        line_width::Float64 = 1.0,
+        line_widths::Array{Float64, 1} = fill(
+            line_width, length(curves) + length(tangent_vectors)
+        ),
+        dot_size::Float64 = 1.0,
+        dot_sizes::Array{Float64, 1} = fill(dot_size, length(points)),
+        size::Union{Nothing, Tuple{Int, Int}} = nothing,
+        sphere_color::RGBA{Float64} = RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
+        sphere_line_color::RGBA{Float64} = RGBA{Float64}(0.75, 0.75, 0.75, 0.6),
+        sphere_line_width::Float64 = 0.5,
+        target::Tuple{Float64, Float64, Float64} = (0.0, 0.0, 0.0),
+    )
     io = open(filename, "w")
-    try
+    return try
         #
         # Header
         # ---
@@ -133,7 +133,7 @@ function asymptote_export_S2_signals(
                         "rgb($(red(c)),$(green(c)),$(blue(c)))",
                         (key == :curves) ? "+linewidth($(line_widths[i])pt)" : "",
                         if (key == :tvectors)
-                            "+linewidth($(line_widths[length(curves)+i])pt)"
+                            "+linewidth($(line_widths[length(curves) + i])pt)"
                         else
                             ""
                         end,
@@ -202,11 +202,11 @@ function asymptote_export_S2_signals(
         close(io)
     end
 end
-@doc raw"""
+@doc """
     asymptote_export_S2_data(filename)
 
 Export given `data` as an array of points on the 2-sphere, which might be one-, two-
-or three-dimensional data with points on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) ``\mathbb S^2``.
+or three-dimensional data with points on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) ``𝕊^2``.
 
 # Input
 
@@ -228,20 +228,20 @@ or three-dimensional data with points on the [Sphere](https://juliamanifolds.git
 * `target`           position the camera points at (default: center of xy-plane within data).
 """
 function asymptote_export_S2_data(
-    filename::String;
-    data=fill([0.0, 0.0, 1.0], 0, 0),
-    arrow_head_size::Float64=1.8,
-    scale_axes=(1 / 3.0, 1 / 3.0, 1 / 3.0),
-    camera_position::Tuple{Float64,Float64,Float64}=scale_axes .* (
-        (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, max(size(data, 3), 0) + 10
-    ),
-    target::Tuple{Float64,Float64,Float64}=scale_axes .* (
-        (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, 0.0
-    ),
-    elevation_color_scheme=ColorSchemes.viridis,
-)
+        filename::String;
+        data = fill([0.0, 0.0, 1.0], 0, 0),
+        arrow_head_size::Float64 = 1.8,
+        scale_axes = (1 / 3.0, 1 / 3.0, 1 / 3.0),
+        camera_position::Tuple{Float64, Float64, Float64} = scale_axes .* (
+            (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, max(size(data, 3), 0) + 10,
+        ),
+        target::Tuple{Float64, Float64, Float64} = scale_axes .* (
+            (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, 0.0,
+        ),
+        elevation_color_scheme = ColorSchemes.viridis,
+    )
     io = open(filename, "w")
-    try
+    return try
         write(
             io,
             string(
@@ -266,8 +266,8 @@ function asymptote_export_S2_data(
                     write(
                         io,
                         string(
-                            "draw( $(scale_axes.*(x-1,y-1,z-1))",
-                            "--$(scale_axes.*(x-1,y-1,z-1).+v),",
+                            "draw( $(scale_axes .* (x - 1, y - 1, z - 1))",
+                            "--$(scale_axes .* (x - 1, y - 1, z - 1) .+ v),",
                             " rgb($(red(c)),$(green(c)),$(blue(c))), Arrow3);\n",
                         ),
                     )
@@ -278,7 +278,7 @@ function asymptote_export_S2_data(
         close(io)
     end
 end
-@doc raw"""
+@doc """
     asymptote_export_SPD(filename)
 
 export given `data` as a point on a `Power(SymmetricPOsitiveDefinnite(3))}` manifold of
@@ -306,20 +306,20 @@ Both values `camera_position` and `target` are scaled by `scaledAxes*EW`, where
 `EW` is the maximal eigenvalue in the `data`.
 """
 function asymptote_export_SPD(
-    filename::String;
-    data=fill(Matrix{Float64}(I, 3, 3), 0, 0),
-    scale_axes=(1 / 3.0, 1 / 3.0, 1 / 3.0) .*
-               (length(data) > 0 ? maximum(maximum(eigvals.(data))) : 1),
-    camera_position::Tuple{Float64,Float64,Float64}=(
-        (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, max(size(data, 3), 0.0) + 10.0
-    ),
-    target::Tuple{Float64,Float64,Float64}=(
-        (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, 0.0
-    ),
-    color_scheme=ColorSchemes.viridis,
-)
+        filename::String;
+        data = fill(Matrix{Float64}(I, 3, 3), 0, 0),
+        scale_axes = (1 / 3.0, 1 / 3.0, 1 / 3.0) .*
+            (length(data) > 0 ? maximum(maximum(eigvals.(data))) : 1),
+        camera_position::Tuple{Float64, Float64, Float64} = (
+            (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, max(size(data, 3), 0.0) + 10.0,
+        ),
+        target::Tuple{Float64, Float64, Float64} = (
+            (size(data, 1) - 1) / 2, (size(data, 2) - 1) / 2, 0.0,
+        ),
+        color_scheme = ColorSchemes.viridis,
+    )
     io = open(filename, "w")
-    try
+    return try
         write(
             io,
             string(
@@ -354,16 +354,16 @@ function asymptote_export_SPD(
                         Lλ = log.(λ)
                         GAI = sqrt(
                             2 / 3 * sum(Lλ .^ 2) -
-                            2 / 3 * sum(sum(tril(Lλ * Lλ', -1); dims=1); dims=2)[1],
+                                2 / 3 * sum(sum(tril(Lλ * Lλ', -1); dims = 1); dims = 2)[1],
                         )
                         c = get(color_scheme, GAI / (1 + GAI), (0, 1))
                         write(
                             io,
                             string(
-                                "  draw(  ellipsoid( ($(V[1,1]),$(V[2,1]),$(V[3,1])),",
-                                " ($(V[1,2]),$(V[2,2]),$(V[3,2])), ($(V[1,3]),$(V[2,3]),$(V[3,3])),",
+                                "  draw(  ellipsoid( ($(V[1, 1]),$(V[2, 1]),$(V[3, 1])),",
+                                " ($(V[1, 2]),$(V[2, 2]),$(V[3, 2])), ($(V[1, 3]),$(V[2, 3]),$(V[3, 3])),",
                                 " $(λ[1]), $(λ[2]), $(λ[3]), ",
-                                " (gDx*$(x-1), gDy*$(y-1), gDz*$(z-1))),",
+                                " (gDx*$(x - 1), gDy*$(y - 1), gDz*$(z - 1))),",
                                 " rgb($(red(c)),$(green(c)),$(blue(c)))  );\n",
                             ),
                         )
@@ -397,11 +397,11 @@ the default values are given in brackets
 * `export_file`: (the filename with format as ending) specify the export filename
 """
 function render_asymptote(
-    filename;
-    render::Union{Int,Nothing}=4,
-    format="png",
-    export_folder=string(filename[1:([findlast(".", filename)...][1])], format),
-)
+        filename;
+        render::Union{Int, Nothing} = 4,
+        format = "png",
+        export_folder = string(filename[1:([findlast(".", filename)...][1])], format),
+    )
     if isnothing(render)
         renderCmd = `asy -f $(format) -globalwrite  -o "$(relpath(export_folder))" $(filename)`
     else

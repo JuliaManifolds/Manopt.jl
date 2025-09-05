@@ -1,19 +1,19 @@
-@doc raw"""
+@doc """
     AbstractManifoldCostObjective{T<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
 Representing objectives on manifolds with a cost function implemented.
 """
-abstract type AbstractManifoldCostObjective{T<:AbstractEvaluationType,TC} <:
-              AbstractManifoldObjective{T} end
+abstract type AbstractManifoldCostObjective{T <: AbstractEvaluationType, TC} <:
+AbstractManifoldObjective{T} end
 
-@doc raw"""
+@doc """
     ManifoldCostObjective{T, TC} <: AbstractManifoldCostObjective{T, TC}
 
 specify an [`AbstractManifoldObjective`](@ref) that does only have information about
-the cost function ``f:  \mathbb M → ℝ`` implemented as a function `(M, p) -> c`
+the cost function ``f:  $(_math(:M)) → ℝ`` implemented as a function `(M, p) -> c`
 to compute the cost value `c` at `p` on the manifold `M`.
 
-* `cost`: a function ``f: \mathcal M → ℝ`` to minimize
+* `cost`: a function ``f: $(_math(:M)) → ℝ`` to minimize
 
 # Constructors
 
@@ -25,14 +25,14 @@ the type `T` can be set for consistency reasons with other problems.
 # Used with
 [`NelderMead`](@ref), [`particle_swarm`](@ref)
 """
-struct ManifoldCostObjective{T<:AbstractEvaluationType,TC} <:
-       AbstractManifoldCostObjective{T,TC}
+struct ManifoldCostObjective{T <: AbstractEvaluationType, TC} <:
+    AbstractManifoldCostObjective{T, TC}
     cost::TC
 end
 function ManifoldCostObjective(cost::Tcost) where {Tcost}
-    return ManifoldCostObjective{AllocatingEvaluation,Tcost}(cost)
+    return ManifoldCostObjective{AllocatingEvaluation, Tcost}(cost)
 end
-@doc raw"""
+@doc """
     get_cost(M::AbstractManifold, mco::AbstractManifoldCostObjective, p)
 
 Evaluate the cost function from within the [`AbstractManifoldCostObjective`](@ref) on `M`
@@ -47,14 +47,14 @@ function get_cost(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective,
     return get_cost(M, get_objective(admo, false), p)
 end
 
-@doc raw"""
+@doc """
     get_cost_function(amco::AbstractManifoldCostObjective; recursive=false)
 
 return the function to evaluate (just) the cost ``f(p)=c`` as a function `(M,p) -> c`.
 If `amco` has more than one decorator, `recursive` determines whether just one (`false`)
 or all wrappers (`true`) should be “unwrapped” at once.
 """
-get_cost_function(mco::AbstractManifoldCostObjective, recursive=false) = mco.cost
-function get_cost_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
+get_cost_function(mco::AbstractManifoldCostObjective, recursive = false) = mco.cost
+function get_cost_function(admo::AbstractDecoratedManifoldObjective, recursive = false)
     return get_cost_function(get_objective(admo, recursive))
 end

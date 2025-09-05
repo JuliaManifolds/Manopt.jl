@@ -57,28 +57,28 @@ using ManifoldDiff: prox_distance, prox_distance!
         callargs_linearized = [M, N, f, x0, ξ0, m, n, prox_f, prox_g_dual, adjoint_DΛ]
         o1 = ChambollePock(
             callargs_linearized...;
-            linearized_forward_operator=DΛ,
-            relax=:dual,
-            variant=:linearized,
+            linearized_forward_operator = DΛ,
+            relax = :dual,
+            variant = :linearized,
         )
         o2 = ChambollePock(
             callargs_linearized...;
-            linearized_forward_operator=DΛ,
-            relax=:primal,
-            variant=:linearized,
+            linearized_forward_operator = DΛ,
+            relax = :primal,
+            variant = :linearized,
         )
-        @test o1 ≈ o2 atol = 2 * 1e-7
+        @test o1 ≈ o2 atol = 2 * 1.0e-7
         callargs_exact = [M, N, f, x0, ξ0, m, n, prox_f, prox_g_dual, adjoint_DΛ]
-        o3 = ChambollePock(callargs_exact...; Λ=Λ, relax=:dual, variant=:exact)
-        o4 = ChambollePock(callargs_exact...; Λ=Λ, relax=:primal, variant=:exact)
-        @test o3 ≈ o4 atol = 2 * 1e-7
+        o3 = ChambollePock(callargs_exact...; Λ = Λ, relax = :dual, variant = :exact)
+        o4 = ChambollePock(callargs_exact...; Λ = Λ, relax = :primal, variant = :exact)
+        @test o3 ≈ o4 atol = 2 * 1.0e-7
         @test o1 ≈ o3
         o1a = ChambollePock(
             callargs_linearized...;
-            linearized_forward_operator=DΛ,
-            relax=:dual,
-            variant=:linearized,
-            return_state=true,
+            linearized_forward_operator = DΛ,
+            relax = :dual,
+            variant = :linearized,
+            return_state = true,
         )
         @test startswith(
             repr(o1a), "# Solver state for `Manopt.jl`s Chambolle-Pock Algorithm"
@@ -86,10 +86,10 @@ using ManifoldDiff: prox_distance, prox_distance!
         @test get_solver_result(o1a) == o1
         o2a = ChambollePock(
             callargs_linearized...;
-            linearized_forward_operator=DΛ,
-            relax=:dual,
-            variant=:linearized,
-            update_dual_base=(p, o, k) -> o.n,
+            linearized_forward_operator = DΛ,
+            relax = :dual,
+            variant = :linearized,
+            update_dual_base = (p, o, k) -> o.n,
         )
         @test o2a ≈ o3
     end

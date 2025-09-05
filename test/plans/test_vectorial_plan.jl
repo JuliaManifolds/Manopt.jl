@@ -35,27 +35,27 @@ using Manopt: get_value, get_value_function, get_gradient_function
         [g1, g2],
         [grad_g1, grad_g2],
         2;
-        function_type=ComponentVectorialType(),
-        jacobian_type=ComponentVectorialType(),
+        function_type = ComponentVectorialType(),
+        jacobian_type = ComponentVectorialType(),
     )
-    vgf_fi = VectorGradientFunction(g!, grad_g!, 2; evaluation=InplaceEvaluation())
+    vgf_fi = VectorGradientFunction(g!, grad_g!, 2; evaluation = InplaceEvaluation())
     vgf_vi = VectorGradientFunction(
         [g1, g2],
         [grad_g1!, grad_g2!],
         2;
-        function_type=ComponentVectorialType(),
-        jacobian_type=ComponentVectorialType(),
-        evaluation=InplaceEvaluation(),
+        function_type = ComponentVectorialType(),
+        jacobian_type = ComponentVectorialType(),
+        evaluation = InplaceEvaluation(),
     )
     vgf_ja = VectorGradientFunction(
-        g, jac_g, 2; jacobian_type=CoordinateVectorialType(DefaultOrthonormalBasis())
+        g, jac_g, 2; jacobian_type = CoordinateVectorialType(DefaultOrthonormalBasis())
     )
     vgf_ji = VectorGradientFunction(
         g!,
         jac_g!,
         2;
-        jacobian_type=CoordinateVectorialType(DefaultOrthonormalBasis()),
-        evaluation=InplaceEvaluation(),
+        jacobian_type = CoordinateVectorialType(DefaultOrthonormalBasis()),
+        evaluation = InplaceEvaluation(),
     )
     @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis
     @test Manopt.get_jacobian_basis(vgf_vi) == DefaultOrthonormalBasis()
@@ -63,8 +63,8 @@ using Manopt: get_value, get_value_function, get_gradient_function
         g!,
         jac_g!,
         2;
-        jacobian_type=CoordinateVectorialType(DefaultBasis()),
-        evaluation=InplaceEvaluation(),
+        jacobian_type = CoordinateVectorialType(DefaultBasis()),
+        evaluation = InplaceEvaluation(),
     )
     @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis
     @test Manopt.get_jacobian_basis(vgf_jib) == DefaultBasis()
@@ -80,20 +80,20 @@ using Manopt: get_value, get_value_function, get_gradient_function
         [grad_g1, grad_g2],
         [hess_g1, hess_g2],
         2;
-        function_type=ComponentVectorialType(),
-        jacobian_type=ComponentVectorialType(),
-        hessian_type=ComponentVectorialType(),
+        function_type = ComponentVectorialType(),
+        jacobian_type = ComponentVectorialType(),
+        hessian_type = ComponentVectorialType(),
     )
-    vhf_fi = VectorHessianFunction(g!, grad_g!, hess_g!, 2; evaluation=InplaceEvaluation())
+    vhf_fi = VectorHessianFunction(g!, grad_g!, hess_g!, 2; evaluation = InplaceEvaluation())
     vhf_vi = VectorHessianFunction(
         [g1, g2],
         [grad_g1!, grad_g2!],
         [hess_g1!, hess_g2!],
         2;
-        function_type=ComponentVectorialType(),
-        jacobian_type=ComponentVectorialType(),
-        hessian_type=ComponentVectorialType(),
-        evaluation=InplaceEvaluation(),
+        function_type = ComponentVectorialType(),
+        jacobian_type = ComponentVectorialType(),
+        hessian_type = ComponentVectorialType(),
+        evaluation = InplaceEvaluation(),
     )
 
     for vgf in
