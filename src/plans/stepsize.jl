@@ -1681,10 +1681,8 @@ function get_last_stepsize(step::WolfePowellBinaryLinesearchStepsize, ::Any...)
     return step.last_stepsize
 end
 
-# ===== RDoG (Riemannian Distance over Gradients) Stepsize =====
-
 @doc raw"""
-    RDoGStepsize{R<:Real} <: Stepsize
+    DistanceOverGradientsStepsize{R<:Real} <: Stepsize
 
 Implements the Riemannian Distance over Gradients (RDoG) stepsize schedule, a learning-rate-free 
 optimization method for Riemannian manifolds introduced by [Dodd, Sharrock, and Nemeth (2024)](@cite).
@@ -1713,7 +1711,7 @@ where ``ζ_κ`` is the geometric curvature function:
 
 # Constructor
 
-    RDoGStepsize(M::AbstractManifold; kwargs...)
+    DistanceOverGradientsStepsize(M::AbstractManifold; kwargs...)
 
 Initialize the RDoG stepsize on manifold `M`.
 
@@ -1728,7 +1726,7 @@ $(_var(:Keyword, :p; add="initial point, used to track distances"))
 
 [`AdaptiveWNGradientStepsize`](@ref), [`gradient_descent`](@ref)
 """
-mutable struct RDoGStepsize{R<:Real,P} <: Stepsize
+mutable struct DistanceOverGradientsStepsize{R<:Real,P} <: Stepsize
     initial_distance::R
     max_distance::R
     gradient_sum::R
@@ -1738,14 +1736,14 @@ mutable struct RDoGStepsize{R<:Real,P} <: Stepsize
     last_stepsize::R
 end
 
-function RDoGStepsize(
+function DistanceOverGradientsStepsize(
     M::AbstractManifold;
     p=rand(M),
     initial_distance::R=1e-3,
     use_curvature::Bool=false,
     sectional_curvature_bound::R=0.0,
 ) where {R<:Real}
-    return RDoGStepsize{R,typeof(p)}(
+    return DistanceOverGradientsStepsize{R,typeof(p)}(
         initial_distance,
         initial_distance,  # max_distance starts at initial_distance
         zero(R),          # gradient_sum starts at 0
@@ -1783,7 +1781,7 @@ function geometric_curvature_function(κ::Real, d::Real)
     end
 end
 
-function (rdog::RDoGStepsize)(
+function (rdog::DistanceOverGradientsStepsize)(
     mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
     i,
@@ -1832,12 +1830,12 @@ function (rdog::RDoGStepsize)(
     return stepsize
 end
 
-get_initial_stepsize(rdog::RDoGStepsize) = rdog.last_stepsize
-get_last_stepsize(rdog::RDoGStepsize) = rdog.last_stepsize
+get_initial_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
+get_last_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
 
-function show(io::IO, rdog::RDoGStepsize)
+function show(io::IO, rdog::DistanceOverGradientsStepsize)
     s = """
-    RDoGStepsize(;
+    DistanceOverGradients(;
       initial_distance=$(rdog.initial_distance),
       use_curvature=$(rdog.use_curvature),
       sectional_curvature_bound=$(rdog.sectional_curvature_bound)
@@ -1852,10 +1850,10 @@ function show(io::IO, rdog::RDoGStepsize)
 end
 
 """
-    RDoG(; kwargs...)
-    RDoG(M::AbstractManifold; kwargs...)
+    DistanceOverGradients(; kwargs...)
+    DistanceOverGradients(M::AbstractManifold; kwargs...)
 
-Creates a factory for the [`RDoGStepsize`](@ref).
+Creates a factory for the [`DistanceOverGradientsStepsize`](@ref).
 
 ## Keyword arguments
 
@@ -1863,8 +1861,8 @@ Creates a factory for the [`RDoGStepsize`](@ref).
 * `use_curvature=false`: whether to use sectional curvature
 * `sectional_curvature_bound=0.0`: lower bound on sectional curvature
 
-$(_note(:ManifoldDefaultFactory, "RDoGStepsize"))
+$(_note(:ManifoldDefaultFactory, "DistanceOverGradientsStepsize"))
 """
-function RDoG(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.RDoGStepsize, args...; kwargs...)
+function DistanceOverGradients(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.DistanceOverGradientsStepsize, args...; kwargs...)
 end

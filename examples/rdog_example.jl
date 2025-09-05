@@ -1,5 +1,5 @@
 """
-Example demonstrating the RDoG (Riemannian Distance over Gradients) stepsize schedule.
+Example demonstrating the Distance over Gradients (RDoG) stepsize schedule.
 
 This learning-rate-free optimization method adapts automatically without hyperparameter tuning.
 """
@@ -42,20 +42,20 @@ p0 = rand(M)
 initial_cost = f(M, p0)
 initial_gap = initial_cost - true_optimal
 
-println("RDoG Example: Rayleigh Quotient Minimization")
+println("DistanceOverGradients Example: Rayleigh Quotient Minimization")
 println("=" ^ 50)
 println("Manifold: Sphere($(d-1))")
 println("True optimal value: ", true_optimal)
 println("Initial cost: ", initial_cost)
 println("Initial optimality gap: ", initial_gap)
 
-# Example 1: Basic RDoG without curvature
-println("\n1. Basic RDoG (no curvature)")
+# Example 1: Basic DistanceOverGradients without curvature
+println("\n1. DistanceOverGradients (no curvature)")
 println("-" ^ 30)
 
 result1 = gradient_descent(
     M, f, grad_f, p0;
-    stepsize=RDoG(M; initial_distance=1e-2, use_curvature=false),
+    stepsize=DistanceOverGradients(M; initial_distance=1e-2, use_curvature=false),
     stopping_criterion=StopAfterIteration(maxiter) | StopWhenGradientNormLess(1e-6),
     debug=[
         :Iteration,
@@ -74,14 +74,14 @@ println("Final cost: ", final_cost1)
 println("Final optimality gap: ", final_gap1)
 println("Gap reduction factor: ", abs(initial_gap / final_gap1))
 
-# Example 2: RDoG with curvature
-println("\n2. RDoG with curvature")
+# Example 2: DistanceOverGradients with curvature
+println("\n2. DistanceOverGradients with curvature")
 println("-" ^ 30)
 
 # The sphere has constant sectional curvature κ = 1
 result2 = gradient_descent(
     M, f, grad_f, p0;
-    stepsize=RDoG(M; initial_distance=1e-2, use_curvature=true, sectional_curvature_bound=1.0),
+    stepsize=DistanceOverGradients(M; initial_distance=1e-2, use_curvature=true, sectional_curvature_bound=1.0),
     stopping_criterion=StopAfterIteration(maxiter) | StopWhenGradientNormLess(1e-6),
     debug=[
         :Iteration,
@@ -125,7 +125,7 @@ println("Final cost: ", final_cost3)
 println("Final optimality gap: ", final_gap3)
 println("Gap reduction factor: ", abs(initial_gap / final_gap3))
 
-# Example 4: RDoG with different initial distances
+# Example 4: DistanceOverGradients with different initial distances
 println("\n4. Sensitivity to initial distance")
 println("-" ^ 30)
 
@@ -133,7 +133,7 @@ println("Running shorter tests (200 iterations) with different initial distances
 for eps in [1e-5, 1e-3, 1e-1]
     result = gradient_descent(
         M, f, grad_f, p0;
-        stepsize=RDoG(M; initial_distance=eps, use_curvature=false),
+        stepsize=DistanceOverGradients(M; initial_distance=eps, use_curvature=false),
         stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-6),
         debug=[]
     )
