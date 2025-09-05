@@ -38,37 +38,37 @@ construct debug decorated options, where `dD` can be
 * a `Dict{Symbol,DebugAction}`.
 * an Array of Symbols, String and an Int for the [`DebugFactory`](@ref)
 """
-mutable struct DebugSolverState{S<:AbstractManoptSolverState} <: AbstractManoptSolverState
+mutable struct DebugSolverState{S <: AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
-    debugDictionary::Dict{Symbol,<:DebugAction}
+    debugDictionary::Dict{Symbol, <:DebugAction}
     function DebugSolverState{S}(
-        st::S, dA::Dict{Symbol,<:DebugAction}
-    ) where {S<:AbstractManoptSolverState}
+            st::S, dA::Dict{Symbol, <:DebugAction}
+        ) where {S <: AbstractManoptSolverState}
         return new(st, dA)
     end
 end
-function DebugSolverState(st::S, dD::D) where {S<:AbstractManoptSolverState,D<:DebugAction}
+function DebugSolverState(st::S, dD::D) where {S <: AbstractManoptSolverState, D <: DebugAction}
     return DebugSolverState{S}(st, Dict(:Iteration => dD))
 end
 function DebugSolverState(
-    st::S, dD::Array{<:DebugAction,1}
-) where {S<:AbstractManoptSolverState}
+        st::S, dD::Array{<:DebugAction, 1}
+    ) where {S <: AbstractManoptSolverState}
     return DebugSolverState{S}(st, Dict(:Iteration => DebugGroup(dD)))
 end
 function DebugSolverState(
-    st::S, dD::Dict{Symbol,<:DebugAction}
-) where {S<:AbstractManoptSolverState}
+        st::S, dD::Dict{Symbol, <:DebugAction}
+    ) where {S <: AbstractManoptSolverState}
     return DebugSolverState{S}(st, dD)
 end
 function DebugSolverState(
-    st::S, format::Array{<:Any,1}
-) where {S<:AbstractManoptSolverState}
+        st::S, format::Array{<:Any, 1}
+    ) where {S <: AbstractManoptSolverState}
     return DebugSolverState{S}(st, DebugFactory(format))
 end
 function DebugSolverState( # a function: callback
-    st::S,
-    callback::Function,
-) where {S<:AbstractManoptSolverState}
+        st::S,
+        callback::Function,
+    ) where {S <: AbstractManoptSolverState}
     return DebugSolverState{S}(st, DebugFactory([callback]))
 end
 
@@ -129,13 +129,14 @@ that are evaluated `en bloque`; the method does not perform any print itself,
 but relies on the internal prints. It still concatenates the result and returns
 the complete string
 """
-mutable struct DebugGroup{D<:DebugAction} <: DebugAction
+mutable struct DebugGroup{D <: DebugAction} <: DebugAction
     group::Vector{D}
 end
 function (d::DebugGroup)(p::AbstractManoptProblem, st::AbstractManoptSolverState, k)
     for di in d.group
         di(p, st, k)
     end
+    return
 end
 function status_summary(dg::DebugGroup)
     str = join(["$(status_summary(di))" for di in dg.group], ", ")
@@ -180,8 +181,8 @@ mutable struct DebugEvery <: DebugAction
     always_update::Bool
     activation_offset::Int
     function DebugEvery(
-        d::DebugAction, every::Int=1, always_update::Bool=true; activation_offset=1
-    )
+            d::DebugAction, every::Int = 1, always_update::Bool = true; activation_offset = 1
+        )
         return new(d, every, always_update, activation_offset)
     end
 end
@@ -248,14 +249,14 @@ A simple callbaclk of the signature `() -> nothing` can be specified by `simple=
 """
 struct DebugCallback{CB} <: DebugAction
     callback::CB
-    function DebugCallback(callback; simple::Bool=false)
+    function DebugCallback(callback; simple::Bool = false)
         _cb = simple ? (problem, state, k) -> callback() : callback
         return new{typeof(_cb)}(_cb)
     end
 end
 function (d::DebugCallback)(
-    problem::AbstractManoptProblem, state::AbstractManoptSolverState, k
-)
+        problem::AbstractManoptProblem, state::AbstractManoptSolverState, k
+    )
     d.callback(problem, state, k)
     return nothing
 end
@@ -282,28 +283,28 @@ $(_var(:Keyword, :inverse_retraction_method))
 the inverse retraction
   to be used for approximating distance.
 """
-mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
+mutable struct DebugChange{IR <: AbstractInverseRetractionMethod} <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
     inverse_retraction_method::IR
     function DebugChange(
-        M::AbstractManifold=DefaultManifold();
-        storage::Union{Nothing,StoreStateAction}=nothing,
-        io::IO=stdout,
-        prefix::String="Last Change: ",
-        format::String="$(prefix)%f",
-        inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-            M
-        ),
-    )
+            M::AbstractManifold = DefaultManifold();
+            storage::Union{Nothing, StoreStateAction} = nothing,
+            io::IO = stdout,
+            prefix::String = "Last Change: ",
+            format::String = "$(prefix)%f",
+            inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
+                M
+            ),
+        )
         irm = inverse_retraction_method
         # Deprecated, remove in Manopt 0.5
         if isnothing(storage)
             if M isa DefaultManifold
-                storage = StoreStateAction(M; store_fields=[:Iterate])
+                storage = StoreStateAction(M; store_fields = [:Iterate])
             else
-                storage = StoreStateAction(M; store_points=Tuple{:Iterate})
+                storage = StoreStateAction(M; store_points = Tuple{:Iterate})
             end
         end
         return new{typeof(irm)}(io, format, storage, irm)
@@ -350,8 +351,8 @@ mutable struct DebugCost <: DebugAction
     io::IO
     format::String
     function DebugCost(;
-        long::Bool=false, io::IO=stdout, format=long ? "current cost: %f" : "f(x): %f"
-    )
+            long::Bool = false, io::IO = stdout, format = long ? "current cost: %f" : "f(x): %f"
+        )
         return new(io, format)
     end
 end
@@ -373,10 +374,10 @@ print a small divider (default `" | "`).
     DebugDivider(div,print)
 
 """
-mutable struct DebugDivider{TIO<:IO} <: DebugAction
+mutable struct DebugDivider{TIO <: IO} <: DebugAction
     io::TIO
     divider::String
-    DebugDivider(divider=" | "; io::IO=stdout) = new{typeof(io)}(io, divider)
+    DebugDivider(divider = " | "; io::IO = stdout) = new{typeof(io)}(io, divider)
 end
 function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int)
     if k >= 0 && !isempty(d.divider)
@@ -408,7 +409,7 @@ mutable struct DebugEntry <: DebugAction
     io::IO
     format::String
     field::Symbol
-    function DebugEntry(f::Symbol; prefix="$f:", format="$prefix %s", io::IO=stdout)
+    function DebugEntry(f::Symbol; prefix = "$f:", format = "$prefix %s", io::IO = stdout)
         return new(io, format, f)
     end
 end
@@ -455,15 +456,15 @@ DebugFeasibility(
 """
 mutable struct DebugFeasibility <: DebugAction
     atol::Float64
-    format::Vector{Union{String,Symbol}}
+    format::Vector{Union{String, Symbol}}
     io::IO
-    function DebugFeasibility(format=["feasible: ", :Feasible]; io::IO=stdout, atol=1e-13)
+    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = 1.0e-13)
         return new(atol, format, io)
     end
 end
 function (d::DebugFeasibility)(
-    mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
-)
+        mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
+    )
     s = ""
     p = get_iterate(st)
     eqc = get_equality_constraint(mp, p, :)
@@ -482,8 +483,8 @@ function (d::DebugFeasibility)(
         (f === :NumEqNz) && (s *= n_eq == 0 ? "" : "$(n_eq)")
         (f === :NumIneq) && (s *= "$(n_ineq)")
         (f === :NumIneqNz) && (s *= n_ineq == 0 ? "" : "$(n_ineq)")
-        (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz);init=0.0))")
-        (f === :TotalInEq) && (s *= "$(sum(ineq_pos;init=0.0))")
+        (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz); init = 0.0))")
+        (f === :TotalInEq) && (s *= "$(sum(ineq_pos; init = 0.0))")
     end
     print(d.io, (k > 0) ? s : "")
     return nothing
@@ -527,8 +528,8 @@ mutable struct DebugIfEntry{F} <: DebugAction
     msg::String
     type::Symbol
     function DebugIfEntry(
-        f::Symbol, check::F=(>(0)); type=:warn, message=":\$f nonpositive.", io::IO=stdout
-    ) where {F}
+            f::Symbol, check::F = (>(0)); type = :warn, message = ":\$f nonpositive.", io::IO = stdout
+        ) where {F}
         return new{F}(io, check, f, message, type)
     end
 end
@@ -580,14 +581,14 @@ mutable struct DebugEntryChange <: DebugAction
     io::IO
     storage::StoreStateAction
     function DebugEntryChange(
-        f::Symbol,
-        d;
-        storage::StoreStateAction=StoreStateAction([f]),
-        prefix::String="Change of \$f:",
-        format::String="$prefix%s",
-        io::IO=stdout,
-        initial_value::Any=NaN,
-    )
+            f::Symbol,
+            d;
+            storage::StoreStateAction = StoreStateAction([f]),
+            prefix::String = "Change of \$f:",
+            format::String = "$prefix%s",
+            io::IO = stdout,
+            initial_value::Any = NaN,
+        )
         if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
             update_storage!(storage, Dict(f => initial_value))
         end
@@ -595,8 +596,8 @@ mutable struct DebugEntryChange <: DebugAction
     end
 end
 function (d::DebugEntryChange)(
-    p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
-)
+        p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
+    )
     if k == 0
         # on init if field not present -> generate
         !has_storage(d.storage, d.field) && d.storage(p, st, k)
@@ -628,25 +629,25 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `io=stdout`: default stream to print the debug to.
 * `format="\$prefix %f"`: format to print the output
 """
-mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugAction
+mutable struct DebugGradientChange{VTR <: AbstractVectorTransportMethod} <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
     vector_transport_method::VTR
     function DebugGradientChange(
-        M::AbstractManifold=DefaultManifold();
-        storage::Union{Nothing,StoreStateAction}=nothing,
-        io::IO=stdout,
-        prefix::String="Last Change: ",
-        format::String="$(prefix)%f",
-        vector_transport_method::VTR=default_vector_transport_method(M),
-    ) where {VTR<:AbstractVectorTransportMethod}
+            M::AbstractManifold = DefaultManifold();
+            storage::Union{Nothing, StoreStateAction} = nothing,
+            io::IO = stdout,
+            prefix::String = "Last Change: ",
+            format::String = "$(prefix)%f",
+            vector_transport_method::VTR = default_vector_transport_method(M),
+        ) where {VTR <: AbstractVectorTransportMethod}
         if isnothing(storage)
             if M isa DefaultManifold
-                storage = StoreStateAction(M; store_fields=[:Iterate, :Gradient])
+                storage = StoreStateAction(M; store_fields = [:Iterate, :Gradient])
             else
                 storage = StoreStateAction(
-                    M; store_points=[:Iterate], store_vectors=[:Gradient]
+                    M; store_points = [:Iterate], store_vectors = [:Gradient]
                 )
             end
         end
@@ -654,8 +655,8 @@ mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugA
     end
 end
 function (d::DebugGradientChange)(
-    pm::AbstractManoptProblem, st::AbstractManoptSolverState, k
-)
+        pm::AbstractManoptProblem, st::AbstractManoptSolverState, k
+    )
     if k > 0
         M = get_manifold(pm)
         p_old = get_storage(d.storage, PointStorageKey(:Iterate))
@@ -699,11 +700,11 @@ mutable struct DebugIterate <: DebugAction
     io::IO
     format::String
     function DebugIterate(;
-        io::IO=stdout,
-        long::Bool=false,
-        prefix=long ? "current iterate:" : "p:",
-        format="$prefix %s",
-    )
+            io::IO = stdout,
+            long::Bool = false,
+            prefix = long ? "current iterate:" : "p:",
+            format = "$prefix %s",
+        )
         return new(io, format)
     end
 end
@@ -733,7 +734,7 @@ debug for the current iteration (prefixed with `#` by )
 mutable struct DebugIteration <: DebugAction
     io::IO
     format::String
-    DebugIteration(; io::IO=stdout, format="# %-6d") = new(io, format)
+    DebugIteration(; io::IO = stdout, format = "# %-6d") = new(io, format)
 end
 function (d::DebugIteration)(::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int)
     (k == 0) && print(d.io, "Initial ")
@@ -773,7 +774,7 @@ mutable struct DebugMessages <: DebugAction
     io::IO
     mode::Symbol
     status::Symbol
-    function DebugMessages(mode::Symbol=:Info, warn::Symbol=:Once; io::IO=stdout)
+    function DebugMessages(mode::Symbol = :Info, warn::Symbol = :Once; io::IO = stdout)
         return new(io, mode, warn)
     end
 end
@@ -820,11 +821,11 @@ DebugStoppingCriterion(prefix = ""; io::IO=stdout)
 mutable struct DebugStoppingCriterion <: DebugAction
     io::IO
     prefix::String
-    DebugStoppingCriterion(prefix=""; io::IO=stdout) = new(io, prefix)
+    DebugStoppingCriterion(prefix = ""; io::IO = stdout) = new(io, prefix)
 end
 function (d::DebugStoppingCriterion)(
-    ::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
-)
+        ::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
+    )
     print(d.io, (k > 0) ? "$(d.prefix)$(get_reason(st))" : "")
     return nothing
 end
@@ -857,18 +858,18 @@ deactivate this debug
 
     DebugWhenActive(d::DebugAction, active=true, always_update=true)
 """
-mutable struct DebugWhenActive{D<:DebugAction} <: DebugAction
+mutable struct DebugWhenActive{D <: DebugAction} <: DebugAction
     debug::D
     active::Bool
     always_update::Bool
     function DebugWhenActive(
-        d::D, active::Bool=true, always_update::Bool=true
-    ) where {D<:DebugAction}
+            d::D, active::Bool = true, always_update::Bool = true
+        ) where {D <: DebugAction}
         return new{D}(d, active, always_update)
     end
 end
 function (dwa::DebugWhenActive)(p::AbstractManoptProblem, st::AbstractManoptSolverState, k)
-    if dwa.active
+    return if dwa.active
         dwa.debug(p, st, k)
     elseif (k < 0) && (dwa.always_update)
         dwa.debug(p, st, k)
@@ -913,13 +914,13 @@ mutable struct DebugTime <: DebugAction
     time_accuracy::Period
     mode::Symbol
     function DebugTime(;
-        start=false,
-        io::IO=stdout,
-        prefix::String="time spent:",
-        format::String="$(prefix) %s",
-        mode::Symbol=:cumulative,
-        time_accuracy::Period=Millisecond(1),
-    )
+            start = false,
+            io::IO = stdout,
+            prefix::String = "time spent:",
+            format::String = "$(prefix) %s",
+            mode::Symbol = :cumulative,
+            time_accuracy::Period = Millisecond(1),
+        )
         return new(io, format, Nanosecond(start ? time_ns() : 0), time_accuracy, mode)
     end
 end
@@ -993,11 +994,11 @@ mutable struct DebugWarnIfCostIncreases <: DebugAction
     status::Symbol
     old_cost::Float64
     tol::Float64
-    DebugWarnIfCostIncreases(warn::Symbol=:Once; tol=1e-13) = new(warn, Float64(Inf), tol)
+    DebugWarnIfCostIncreases(warn::Symbol = :Once; tol = 1.0e-13) = new(warn, Float64(Inf), tol)
 end
 function (d::DebugWarnIfCostIncreases)(
-    p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
-)
+        p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
+    )
     (k < 0) && (return nothing)
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
@@ -1010,7 +1011,7 @@ function (d::DebugWarnIfCostIncreases)(
                 @warn """
                 You seem to be running a `gradient_descent` with a `ConstantStepsize`.
                 Maybe consider to use `ArmijoLinesearch` (if applicable) or use
-                `ConstantLength(value)` with a `value` less than $(get_last_stepsize(p,st,k)).
+                `ConstantLength(value)` with a `value` less than $(get_last_stepsize(p, st, k)).
                 """
             end
             if d.status === :Once
@@ -1044,11 +1045,11 @@ All other symbols are handled as if they were `:Always:`
 """
 mutable struct DebugWarnIfCostNotFinite <: DebugAction
     status::Symbol
-    DebugWarnIfCostNotFinite(warn::Symbol=:Once) = new(warn)
+    DebugWarnIfCostNotFinite(warn::Symbol = :Once) = new(warn)
 end
 function (d::DebugWarnIfCostNotFinite)(
-    p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
-)
+        p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
+    )
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
         if !isfinite(cost)
@@ -1088,13 +1089,13 @@ Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `I
 mutable struct DebugWarnIfFieldNotFinite <: DebugAction
     status::Symbol
     field::Symbol
-    function DebugWarnIfFieldNotFinite(field::Symbol=:Gradient, warn::Symbol=:Once)
+    function DebugWarnIfFieldNotFinite(field::Symbol = :Gradient, warn::Symbol = :Once)
         return new(warn, field)
     end
 end
 function (d::DebugWarnIfFieldNotFinite)(
-    ::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
-)
+        ::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
+    )
     if d.status !== :No
         if d.field == :Iterate
             v = get_iterate(st)
@@ -1147,13 +1148,13 @@ Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `I
 mutable struct DebugWarnIfGradientNormTooLarge{T} <: DebugAction
     status::Symbol
     factor::T
-    function DebugWarnIfGradientNormTooLarge(factor::T=1.0, warn::Symbol=:Once) where {T}
+    function DebugWarnIfGradientNormTooLarge(factor::T = 1.0, warn::Symbol = :Once) where {T}
         return new{T}(warn, factor)
     end
 end
 function (d::DebugWarnIfGradientNormTooLarge)(
-    mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
-)
+        mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
+    )
     if d.status !== :No
         M = get_manifold(mp)
         p = get_iterate(st)
@@ -1250,14 +1251,14 @@ function DebugFactory(a::Vector{<:Any})
             b = [b..., :Stop => [DebugActionFactory(:Stop)]]
         end
     end
-    dictionary = Dict{Symbol,DebugAction}()
+    dictionary = Dict{Symbol, DebugAction}()
     # Look for a global number -> DebugEvery
     e = filter(x -> isa(x, Int), a)
     ae = length(e) > 0 ? last(e) : 0
     # Run through all (updated) pairs
     for d in b
         offset = d.first === :BeforeIteration ? 0 : 1
-        debug = DebugGroupFactory(d.second; activation_offset=offset)
+        debug = DebugGroupFactory(d.second; activation_offset = offset)
         (:WhenActive in a) && (debug = DebugWhenActive(debug))
         # Add DebugEvery to all but Start and Stop
         (!(d.first in [:Start, :Stop]) && (ae > 0)) && (debug = DebugEvery(debug, ae))
@@ -1286,7 +1287,7 @@ If any integers are present, the last of these is used to wrap the group in a
 If `:WhenActive` is present, the resulting Action is wrapped in [`DebugWhenActive`](@ref),
 making it deactivatable by its parent solver.
 """
-function DebugGroupFactory(a::Vector; activation_offset=1)
+function DebugGroupFactory(a::Vector; activation_offset = 1)
     group = DebugAction[]
     for d in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Integers & Active
         push!(group, DebugActionFactory(d))
@@ -1301,7 +1302,7 @@ function DebugGroupFactory(a::Vector; activation_offset=1)
     # filter numbers, find last
     e = filter(x -> isa(x, Int), a)
     if length(e) > 0
-        debug = DebugEvery(debug, last(e); activation_offset=activation_offset)
+        debug = DebugEvery(debug, last(e); activation_offset = activation_offset)
     end
     (:WhenActive in a) && (debug = (DebugWhenActive(debug)))
     return debug
@@ -1321,8 +1322,8 @@ create a [`DebugAction`](@ref) where
 * a `<:Function` creates a [`DebugCallback`](@ref) with the function as callback.
 """
 DebugActionFactory(d::String) = DebugDivider(d)
-DebugActionFactory(a::A) where {A<:DebugAction} = a
-DebugActionFactory(f::F) where {F<:Function} = DebugCallback(f)
+DebugActionFactory(a::A) where {A <: DebugAction} = a
+DebugActionFactory(f::F) where {F <: Function} = DebugCallback(f)
 
 """
     DebugActionFactory(s::Symbol)
@@ -1369,7 +1370,7 @@ function DebugActionFactory(d::Symbol)
     (d == :WarnCost) && return DebugWarnIfCostNotFinite()
     (d == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)
     (d == :Time) && return DebugTime()
-    (d == :IterativeTime) && return DebugTime(; mode=:Iterative)
+    (d == :IterativeTime) && return DebugTime(; mode = :Iterative)
     # Messages
     (d == :WarningMessages) && return DebugMessages(:Warning)
     (d == :InfoMessages) && return DebugMessages(:Info)
@@ -1400,21 +1401,21 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
-function DebugActionFactory(t::Tuple{Symbol,Any})
-    (t[1] == :Change) && return DebugChange(; format=t[2])
-    (t[1] == :Cost) && return DebugCost(; format=t[2])
+function DebugActionFactory(t::Tuple{Symbol, Any})
+    (t[1] == :Change) && return DebugChange(; format = t[2])
+    (t[1] == :Cost) && return DebugCost(; format = t[2])
     (t[1] == :Feasibility) && return DebugFeasibility(t[2])
-    (t[1] == :Gradient) && return DebugGradient(; format=t[2])
-    (t[1] == :GradientChange) && return DebugGradientChange(; format=t[2])
-    (t[1] == :GradientNorm) && return DebugGradientNorm(; format=t[2])
-    (t[1] == :Iteration) && return DebugIteration(; format=t[2])
-    (t[1] == :Iterate) && return DebugIterate(; format=t[2])
-    (t[1] == :IterativeTime) && return DebugTime(; mode=:Iterative, format=t[2])
-    (t[1] == :Stepsize) && return DebugStepsize(; format=t[2])
+    (t[1] == :Gradient) && return DebugGradient(; format = t[2])
+    (t[1] == :GradientChange) && return DebugGradientChange(; format = t[2])
+    (t[1] == :GradientNorm) && return DebugGradientNorm(; format = t[2])
+    (t[1] == :Iteration) && return DebugIteration(; format = t[2])
+    (t[1] == :Iterate) && return DebugIterate(; format = t[2])
+    (t[1] == :IterativeTime) && return DebugTime(; mode = :Iterative, format = t[2])
+    (t[1] == :Stepsize) && return DebugStepsize(; format = t[2])
     (t[1] == :Stop) && return DebugStoppingCriterion(t[2])
-    (t[1] == :Time) && return DebugTime(; format=t[2])
+    (t[1] == :Time) && return DebugTime(; format = t[2])
     ((t[1] == :Messages) || (t[1] == :InfoMessages)) && return DebugMessages(:Info, t[2])
     (t[1] == :WarningMessages) && return DebugMessages(:Warning, t[2])
     (t[1] == :ErrorMessages) && return DebugMessages(:error, t[2])
-    return DebugEntry(t[1]; format=t[2])
+    return DebugEntry(t[1]; format = t[2])
 end

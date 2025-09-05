@@ -12,8 +12,8 @@ abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
 An abstract type for all objectives that provide a (full) Hessian, where
 `T` is a [`AbstractEvaluationType`](@ref) for the gradient and Hessian functions.
 """
-abstract type AbstractManifoldHessianObjective{E<:AbstractEvaluationType,F,G,H} <:
-              AbstractManifoldFirstOrderObjective{E,Tuple{F,G}} end
+abstract type AbstractManifoldHessianObjective{E <: AbstractEvaluationType, F, G, H} <:
+AbstractManifoldFirstOrderObjective{E, Tuple{F, G}} end
 
 @doc """
     ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldHessianObjective{T,C,G,H}
@@ -24,7 +24,7 @@ specify a problem for Hessian based algorithms.
 
 * `cost`:           a function ``f:$(_math(:M))→ℝ`` to minimize
 * `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:M)) → $(_math(:TM))`` of the cost function ``f``
-* `hessian`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TpM; p="x")) → $(_math(:TpM; p="x"))`` of the cost function ``f``
+* `hessian`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TpM; p = "x")) → $(_math(:TpM; p = "x"))`` of the cost function ``f``
 * `preconditioner`: the symmetric, positive definite preconditioner
   as an approximation of the inverse of the Hessian of ``f``, a map with the same
   input variables as the `hessian` to numerically stabilize iterations when the Hessian is
@@ -43,19 +43,19 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient and can have 
 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <:
-       AbstractManifoldHessianObjective{T,C,G,H}
+struct ManifoldHessianObjective{T <: AbstractEvaluationType, C, G, H, Pre} <:
+    AbstractManifoldHessianObjective{T, C, G, H}
     cost::C
     gradient!!::G
     hessian!!::H
     preconditioner!!::Pre
     function ManifoldHessianObjective(
-        cost::C,
-        grad::G,
-        hess::H,
-        precond=nothing;
-        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {C,G,H}
+            cost::C,
+            grad::G,
+            hess::H,
+            precond = nothing;
+            evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        ) where {C, G, H}
         if isnothing(precond)
             if evaluation isa InplaceEvaluation
                 precond = (M, Y, p, X) -> (Y .= X)
@@ -63,35 +63,35 @@ struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <:
                 precond = (M, p, X) -> X
             end
         end
-        return new{typeof(evaluation),C,G,H,typeof(precond)}(cost, grad, hess, precond)
+        return new{typeof(evaluation), C, G, H, typeof(precond)}(cost, grad, hess, precond)
     end
 end
 
 function get_gradient(
-    M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p
-)
+        M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p
+    )
     return mho.gradient!!(M, p)
 end
 function get_gradient(
-    M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p
-)
+        M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p
+    )
     X = zero_vector(M, p)
     mho.gradient!!(M, X, p)
     return X
 end
 function get_gradient!(
-    M::AbstractManifold, X, mho::ManifoldHessianObjective{AllocatingEvaluation}, p
-)
+        M::AbstractManifold, X, mho::ManifoldHessianObjective{AllocatingEvaluation}, p
+    )
     copyto!(M, X, p, mho.gradient!!(M, p))
     return X
 end
 function get_gradient!(
-    M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p
-)
+        M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p
+    )
     return mho.gradient!!(M, Y, p)
 end
 
-function get_gradient_function(mho::ManifoldHessianObjective, recursive=false)
+function get_gradient_function(mho::ManifoldHessianObjective, recursive = false)
     return mho.gradient!!
 end
 
@@ -114,31 +114,31 @@ function get_hessian(M::AbstractManifold, admo::AbstractDecoratedManifoldObjecti
     return get_hessian(M, get_objective(admo, false), p, X)
 end
 function get_hessian(
-    M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
-)
+        M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
+    )
     return mho.hessian!!(M, p, X)
 end
 function get_hessian(
-    M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
-)
+        M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
+    )
     Y = zero_vector(M, p)
     mho.hessian!!(M, Y, p, X)
     return Y
 end
 function get_hessian!(
-    M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p, X
-)
+        M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p, X
+    )
     return get_hessian!(M, Y, get_objective(admo, false), p, X)
 end
 function get_hessian!(
-    M::AbstractManifold, Y, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
-)
+        M::AbstractManifold, Y, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
+    )
     copyto!(M, Y, p, mho.hessian!!(M, p, X))
     return Y
 end
 function get_hessian!(
-    M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
-)
+        M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
+    )
     mho.hessian!!(M, Y, p, X)
     return Y
 end
@@ -152,10 +152,10 @@ Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 * `(M, p, X) -> Y` for the [`AllocatingEvaluation`](@ref) case
 * `(M, Y, p, X) -> X` for the [`InplaceEvaluation`](@ref), working in-place of `Y`.
 """
-get_hessian_function(mho::ManifoldHessianObjective, recursive::Bool=false) = mho.hessian!!
+get_hessian_function(mho::ManifoldHessianObjective, recursive::Bool = false) = mho.hessian!!
 function get_hessian_function(
-    admo::AbstractDecoratedManifoldObjective, recursive::Bool=false
-)
+        admo::AbstractDecoratedManifoldObjective, recursive::Bool = false
+    )
     return get_hessian_function(get_objective(admo, recursive))
 end
 
@@ -183,37 +183,37 @@ inverse of the Hessian of the cost function `F`) of a
 tangent vector `X`.
 """
 function get_preconditioner(
-    M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
-)
+        M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
+    )
     return mho.preconditioner!!(M, p, X)
 end
 function get_preconditioner(
-    M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
-)
+        M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
+    )
     Y = zero_vector(M, p)
     mho.preconditioner!!(M, Y, p, X)
     return Y
 end
 function get_preconditioner(
-    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X
-)
+        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X
+    )
     return get_preconditioner(M, get_objective(admo, false), p, X)
 end
 
 function get_preconditioner!(
-    M::AbstractManifold, Y, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
-)
+        M::AbstractManifold, Y, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
+    )
     copyto!(M, Y, p, mho.preconditioner!!(M, p, X))
     return Y
 end
 function get_preconditioner!(
-    M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p, X
-)
+        M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p, X
+    )
     return get_preconditioner!(M, Y, get_objective(admo, false), p, X)
 end
 function get_preconditioner!(
-    M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
-)
+        M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
+    )
     mho.preconditioner!!(M, Y, p, X)
     return Y
 end
@@ -277,8 +277,8 @@ $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 """
-mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real} <:
-               AbstractApproxHessian
+mutable struct ApproxHessianFiniteDifference{E, P, T, G, RTR, VTR, R <: Real} <:
+    AbstractApproxHessian
     p_dir::P
     gradient!!::G
     grad_tmp::T
@@ -288,25 +288,25 @@ mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real} <:
     steplength::R
 end
 function ApproxHessianFiniteDifference(
-    M::mT,
-    p::P,
-    grad_f::G;
-    tangent_vector=zero_vector(M, p),
-    steplength::R=2^-14,
-    evaluation=AllocatingEvaluation(),
-    retraction_method::RTR=default_retraction_method(M, typeof(p)),
-    vector_transport_method::VTR=default_vector_transport_method(M, typeof(p)),
-) where {
-    mT<:AbstractManifold,
-    P,
-    G,
-    R<:Real,
-    RTR<:AbstractRetractionMethod,
-    VTR<:AbstractVectorTransportMethod,
-}
+        M::mT,
+        p::P,
+        grad_f::G;
+        tangent_vector = zero_vector(M, p),
+        steplength::R = 2^-14,
+        evaluation = AllocatingEvaluation(),
+        retraction_method::RTR = default_retraction_method(M, typeof(p)),
+        vector_transport_method::VTR = default_vector_transport_method(M, typeof(p)),
+    ) where {
+        mT <: AbstractManifold,
+        P,
+        G,
+        R <: Real,
+        RTR <: AbstractRetractionMethod,
+        VTR <: AbstractVectorTransportMethod,
+    }
     X = copy(M, p, tangent_vector)
     Y = copy(M, p, tangent_vector)
-    return ApproxHessianFiniteDifference{typeof(evaluation),P,typeof(X),G,RTR,VTR,R}(
+    return ApproxHessianFiniteDifference{typeof(evaluation), P, typeof(X), G, RTR, VTR, R}(
         p, grad_f, X, Y, retraction_method, vector_transport_method, steplength
     )
 end
@@ -367,8 +367,8 @@ $(_var(:Keyword, :vector_transport_method)).
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :vector_transport_method))
 """
-mutable struct ApproxHessianSymmetricRankOne{E,P,G,T,B<:AbstractBasis{ℝ},VTR,R<:Real} <:
-               AbstractApproxHessian
+mutable struct ApproxHessianSymmetricRankOne{E, P, G, T, B <: AbstractBasis{ℝ}, VTR, R <: Real} <:
+    AbstractApproxHessian
     p_tmp::P
     gradient!!::G
     grad_tmp::T
@@ -378,19 +378,19 @@ mutable struct ApproxHessianSymmetricRankOne{E,P,G,T,B<:AbstractBasis{ℝ},VTR,R
     ν::R
 end
 function ApproxHessianSymmetricRankOne(
-    M::mT,
-    p::P,
-    gradient::G;
-    initial_operator::AbstractMatrix=Matrix{Float64}(
-        I, manifold_dimension(M), manifold_dimension(M)
-    ),
-    basis::B=default_basis(M, typeof(p)),
-    nu::R=-1.0,
-    evaluation=AllocatingEvaluation(),
-    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-) where {
-    mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},R<:Real,VTM<:AbstractVectorTransportMethod
-}
+        M::mT,
+        p::P,
+        gradient::G;
+        initial_operator::AbstractMatrix = Matrix{Float64}(
+            I, manifold_dimension(M), manifold_dimension(M)
+        ),
+        basis::B = default_basis(M, typeof(p)),
+        nu::R = -1.0,
+        evaluation = AllocatingEvaluation(),
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+    ) where {
+        mT <: AbstractManifold, P, G, B <: AbstractBasis{ℝ}, R <: Real, VTM <: AbstractVectorTransportMethod,
+    }
     if evaluation isa AllocatingEvaluation
         grad_tmp = gradient(M, p)
     elseif evaluation isa InplaceEvaluation
@@ -398,7 +398,7 @@ function ApproxHessianSymmetricRankOne(
         gradient(M, grad_tmp, p)
     end
 
-    return ApproxHessianSymmetricRankOne{typeof(evaluation),P,G,typeof(grad_tmp),B,VTM,R}(
+    return ApproxHessianSymmetricRankOne{typeof(evaluation), P, G, typeof(grad_tmp), B, VTM, R}(
         p, gradient, grad_tmp, initial_operator, basis, vector_transport_method, nu
     )
 end
@@ -432,8 +432,8 @@ function (f::ApproxHessianSymmetricRankOne{InplaceEvaluation})(M, Y, p, X)
 end
 
 function update_hessian!(
-    M, f::ApproxHessianSymmetricRankOne{AllocatingEvaluation}, p, p_proposal, X
-)
+        M, f::ApproxHessianSymmetricRankOne{AllocatingEvaluation}, p, p_proposal, X
+    )
     yk_c = get_coordinates(
         M,
         p,
@@ -444,30 +444,30 @@ function update_hessian!(
     )
     sk_c = get_coordinates(M, p, X, f.basis)
     srvec = yk_c - f.matrix * sk_c
-    if f.ν < 0 || abs(dot(srvec, sk_c)) >= f.ν * norm(srvec) * norm(sk_c)
+    return if f.ν < 0 || abs(dot(srvec, sk_c)) >= f.ν * norm(srvec) * norm(sk_c)
         f.matrix = f.matrix + srvec * srvec' / (srvec' * sk_c)
     end
 end
 
 function update_hessian!(
-    M::AbstractManifold,
-    f::ApproxHessianSymmetricRankOne{InplaceEvaluation},
-    p,
-    p_proposal,
-    X,
-)
+        M::AbstractManifold,
+        f::ApproxHessianSymmetricRankOne{InplaceEvaluation},
+        p,
+        p_proposal,
+        X,
+    )
     grad_proposal = zero_vector(M, p_proposal)
     f.gradient!!(M, grad_proposal, p_proposal)
     yk_c = get_coordinates(
         M,
         p,
         vector_transport_to(M, p_proposal, grad_proposal, p, f.vector_transport_method) -
-        f.grad_tmp,
+            f.grad_tmp,
         f.basis,
     )
     sk_c = get_coordinates(M, p, X, f.basis)
     srvec = yk_c - f.matrix * sk_c
-    if f.ν < 0 || abs(dot(srvec, sk_c)) >= f.ν * norm(srvec) * norm(sk_c)
+    return if f.ν < 0 || abs(dot(srvec, sk_c)) >= f.ν * norm(srvec) * norm(sk_c)
         f.matrix = f.matrix + srvec * srvec' / (srvec' * sk_c)
     end
 end
@@ -513,8 +513,8 @@ $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :vector_transport_method))
 """
 mutable struct ApproxHessianBFGS{
-    E,P,G,T,B<:AbstractBasis{ℝ},VTR<:AbstractVectorTransportMethod
-} <: AbstractApproxHessian
+        E, P, G, T, B <: AbstractBasis{ℝ}, VTR <: AbstractVectorTransportMethod,
+    } <: AbstractApproxHessian
     p_tmp::P
     gradient!!::G
     grad_tmp::T
@@ -524,24 +524,24 @@ mutable struct ApproxHessianBFGS{
     scale::Bool
 end
 function ApproxHessianBFGS(
-    M::mT,
-    p::P,
-    gradient::G;
-    initial_operator::AbstractMatrix=Matrix{Float64}(
-        I, manifold_dimension(M), manifold_dimension(M)
-    ),
-    basis::B=default_basis(M, typeof(p)),
-    scale::Bool=true,
-    evaluation=AllocatingEvaluation(),
-    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-) where {mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},VTM<:AbstractVectorTransportMethod}
+        M::mT,
+        p::P,
+        gradient::G;
+        initial_operator::AbstractMatrix = Matrix{Float64}(
+            I, manifold_dimension(M), manifold_dimension(M)
+        ),
+        basis::B = default_basis(M, typeof(p)),
+        scale::Bool = true,
+        evaluation = AllocatingEvaluation(),
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+    ) where {mT <: AbstractManifold, P, G, B <: AbstractBasis{ℝ}, VTM <: AbstractVectorTransportMethod}
     if evaluation == AllocatingEvaluation()
         grad_tmp = gradient(M, p)
     elseif evaluation == InplaceEvaluation()
         grad_tmp = zero_vector(M, p)
         gradient(M, grad_tmp, p)
     end
-    return ApproxHessianBFGS{typeof(evaluation),P,G,typeof(grad_tmp),B,VTM}(
+    return ApproxHessianBFGS{typeof(evaluation), P, G, typeof(grad_tmp), B, VTM}(
         p, gradient, grad_tmp, initial_operator, basis, vector_transport_method, scale
     )
 end
@@ -575,8 +575,8 @@ function (f::ApproxHessianBFGS{InplaceEvaluation})(M, Y, p, X)
 end
 
 function update_hessian!(
-    M::AbstractManifold, f::ApproxHessianBFGS{AllocatingEvaluation}, p, p_proposal, X
-)
+        M::AbstractManifold, f::ApproxHessianBFGS{AllocatingEvaluation}, p, p_proposal, X
+    )
     yk_c = get_coordinates(
         M,
         p,
@@ -600,7 +600,7 @@ function update_hessian!(M, f::ApproxHessianBFGS{InplaceEvaluation}, p, p_propos
         M,
         p,
         vector_transport_to(M, p_proposal, grad_proposal, p, f.vector_transport_method) -
-        f.grad_tmp,
+            f.grad_tmp,
         f.basis,
     )
     sk_c = get_coordinates(M, p, X, f.basis)

@@ -15,7 +15,7 @@ The most prominent features that should always be stated here are
 
 Usually the cost should be within an [`AbstractManifoldObjective`](@ref).
 """
-abstract type AbstractManoptProblem{M<:AbstractManifold} end
+abstract type AbstractManoptProblem{M <: AbstractManifold} end
 
 @doc """
     DefaultManoptProblem{TM <: AbstractManifold, Objective <: AbstractManifoldObjective}
@@ -23,8 +23,8 @@ abstract type AbstractManoptProblem{M<:AbstractManifold} end
 Model a default manifold problem, that (just) consists of the domain of optimisation,
 that is an `AbstractManifold` and an [`AbstractManifoldObjective`](@ref)
 """
-struct DefaultManoptProblem{TM<:AbstractManifold,O<:AbstractManifoldObjective} <:
-       AbstractManoptProblem{TM}
+struct DefaultManoptProblem{TM <: AbstractManifold, O <: AbstractManifoldObjective} <:
+    AbstractManoptProblem{TM}
     manifold::TM
     objective::O
 end
@@ -60,7 +60,7 @@ If `recursive is set to true, it additionally unwraps all decorators of the obje
 """
 get_objective(::AbstractManoptProblem)
 
-function get_objective(amp::DefaultManoptProblem, recursive=false)
+function get_objective(amp::DefaultManoptProblem, recursive = false)
     return recursive ? get_objective(amp.objective, true) : amp.objective
 end
 
@@ -97,7 +97,7 @@ function set_parameter!(amp::AbstractManoptProblem, ::Val{:Manifold}, args...)
     set_parameter!(get_manifold(amp), args...)
     return amp
 end
-function set_parameter!(TpM::TangentSpace, ::Union{Val{:Basepoint},Val{:p}}, p)
+function set_parameter!(TpM::TangentSpace, ::Union{Val{:Basepoint}, Val{:p}}, p)
     copyto!(TpM.manifold, TpM.point, p)
     return TpM
 end

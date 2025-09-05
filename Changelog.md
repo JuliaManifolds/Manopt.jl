@@ -6,32 +6,34 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.21] unreleased
+## [0.5.21] September 5, 2025
 
 ### Added
 
 * a `warm_start_factor` field to `ProximalGradientMethodBacktrackingStepsize` to allow to scale the stepsize in the backtracking procedure.
 * a `gradient=` keyword in several `Stepsize`s, such that one can avoid to internally avoid computing the gradient again.
-* used this keyword in
+* used the ``gradient=` keyword in
   * `alternating_gradient_descent`
-  * conjugate_gradient
+  * `conjugate_gradient`
   * `Frank_Wolfe_method`
   * `gradient_descent`
   * `interior_point_newton`
   * `quasi_Newton`
   * `projected_gradient_method`
-* a `restart_condition` functor to `conjugate_gradient_descent`, which allows the algorithm to restart if the search direction is sub-par. 
-* two references
+* a `restart_condition` functor to `conjugate_gradient_descent`, which allows the algorithm to restart if the search direction is sub-par (#492)
+* two literature references
 
-### Fixed
-
-* Fixed some math rendering in the docs.
 
 ### Changed
 
 * remodelled the docs for the extensions a bit, added `JuMP` to the DocumenterInterlinks.
-* the internal `VectorizedManifold` is now called `ManifoldSet`
-* the internal `ArrayShape` is not called `ManifoldPointArrayShape`
+* the internal `VectorizedManifold` within that extension is now called `ManifoldSet`
+* the internal `ArrayShape` within that extensionis not called `ManifoldPointArrayShape`
+* Switch to using [Runic.jl](https://github.com/fredrikekre/Runic.jl) as code formatter
+
+### Fixed
+
+* Fixed some math rendering in the docs, especially avoid `raw` strings and interpolate math symbols more often.
 
 ## [0.5.20] July 8, 2025
 

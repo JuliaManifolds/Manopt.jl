@@ -3,8 +3,8 @@
 
 Representing objectives on manifolds with a cost function implemented.
 """
-abstract type AbstractManifoldCostObjective{T<:AbstractEvaluationType,TC} <:
-              AbstractManifoldObjective{T} end
+abstract type AbstractManifoldCostObjective{T <: AbstractEvaluationType, TC} <:
+AbstractManifoldObjective{T} end
 
 @doc """
     ManifoldCostObjective{T, TC} <: AbstractManifoldCostObjective{T, TC}
@@ -25,12 +25,12 @@ the type `T` can be set for consistency reasons with other problems.
 # Used with
 [`NelderMead`](@ref), [`particle_swarm`](@ref)
 """
-struct ManifoldCostObjective{T<:AbstractEvaluationType,TC} <:
-       AbstractManifoldCostObjective{T,TC}
+struct ManifoldCostObjective{T <: AbstractEvaluationType, TC} <:
+    AbstractManifoldCostObjective{T, TC}
     cost::TC
 end
 function ManifoldCostObjective(cost::Tcost) where {Tcost}
-    return ManifoldCostObjective{AllocatingEvaluation,Tcost}(cost)
+    return ManifoldCostObjective{AllocatingEvaluation, Tcost}(cost)
 end
 @doc """
     get_cost(M::AbstractManifold, mco::AbstractManifoldCostObjective, p)
@@ -54,7 +54,7 @@ return the function to evaluate (just) the cost ``f(p)=c`` as a function `(M,p) 
 If `amco` has more than one decorator, `recursive` determines whether just one (`false`)
 or all wrappers (`true`) should be “unwrapped” at once.
 """
-get_cost_function(mco::AbstractManifoldCostObjective, recursive=false) = mco.cost
-function get_cost_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
+get_cost_function(mco::AbstractManifoldCostObjective, recursive = false) = mco.cost
+function get_cost_function(admo::AbstractDecoratedManifoldObjective, recursive = false)
     return get_cost_function(get_objective(admo, recursive))
 end

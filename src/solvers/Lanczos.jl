@@ -1,4 +1,3 @@
-
 #
 # Lanczos sub solver
 #
@@ -10,7 +9,7 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 # Fields
 
 $(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :stopping_criterion, "stop_newton", add="used for the inner Newton iteration"))
+$(_var(:Field, :stopping_criterion, "stop_newton", add = "used for the inner Newton iteration"))
 * `σ`:               the current regularization parameter
 * `X`:               the Iterate
 * `Lanczos_vectors`: the obtained Lanczos vectors
@@ -26,14 +25,14 @@ $(_var(:Field, :stopping_criterion, "stop_newton", add="used for the inner Newto
 
 ## Keyword arguments
 
-$(_var(:Keyword, :X; add="as the iterate"))
+$(_var(:Keyword, :X; add = "as the iterate"))
 * `maxIterLanzcos=200`: shortcut to set the maximal number of iterations in the ` stopping_crtierion=`
 * `θ=0.5`: set the parameter in the [`StopWhenFirstOrderProgress`](@ref) within the default `stopping_criterion=`.
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)`"))
-$(_var(:Keyword, :stopping_criterion, "stopping_criterion_newton"; default="[`StopAfterIteration`](@ref)`(200)`", add=" used for the inner Newton iteration"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)`"))
+$(_var(:Keyword, :stopping_criterion, "stopping_criterion_newton"; default = "[`StopAfterIteration`](@ref)`(200)`", add = " used for the inner Newton iteration"))
 * `σ=10.0`: specify the regularization parameter
 """
-mutable struct LanczosState{T,R,SC,SCN,B,TM,C} <: AbstractManoptSolverState
+mutable struct LanczosState{T, R, SC, SCN, B, TM, C} <: AbstractManoptSolverState
     X::T
     σ::R
     stop::SC
@@ -46,19 +45,19 @@ mutable struct LanczosState{T,R,SC,SCN,B,TM,C} <: AbstractManoptSolverState
     S::T               # store the tangent vector that solves the minimization problem
 end
 function LanczosState(
-    TpM::TangentSpace;
-    X::T=zero_vector(TpM.manifold, TpM.point),
-    maxIterLanczos=200,
-    θ=0.5,
-    stopping_criterion::SC=StopAfterIteration(maxIterLanczos) |
-                           StopWhenFirstOrderProgress(θ),
-    stopping_criterion_newton::SCN=StopAfterIteration(200),
-    σ::R=10.0,
-) where {T,SC<:StoppingCriterion,SCN<:StoppingCriterion,R}
+        TpM::TangentSpace;
+        X::T = zero_vector(TpM.manifold, TpM.point),
+        maxIterLanczos = 200,
+        θ = 0.5,
+        stopping_criterion::SC = StopAfterIteration(maxIterLanczos) |
+            StopWhenFirstOrderProgress(θ),
+        stopping_criterion_newton::SCN = StopAfterIteration(200),
+        σ::R = 10.0,
+    ) where {T, SC <: StoppingCriterion, SCN <: StoppingCriterion, R}
     tridig = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
     coeffs = zeros(maxIterLanczos)
     Lanczos_vectors = typeof(X)[]
-    return LanczosState{T,R,SC,SCN,typeof(Lanczos_vectors),typeof(tridig),typeof(coeffs)}(
+    return LanczosState{T, R, SC, SCN, typeof(Lanczos_vectors), typeof(tridig), typeof(coeffs)}(
         X,
         σ,
         stopping_criterion,
@@ -143,7 +142,7 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
         ls.coefficients[1] = (α - sqrt(α^2 + 4 * ls.σ * nX)) / (2 * ls.σ)
     else # `i > 1`
         β = norm(M, p, ls.Hp_residual)
-        if β > 1e-12 # Obtained new orthogonal Lanczos long enough with respect to numerical stability
+        if β > 1.0e-12 # Obtained new orthogonal Lanczos long enough with respect to numerical stability
             if length(ls.Lanczos_vectors) < k
                 push!(ls.Lanczos_vectors, ls.Hp_residual ./ β)
             else
@@ -151,7 +150,7 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
             end
         else # Generate new random vector and
             # modified Gram Schmidt of new vector with respect to Q
-            rand!(M, ls.Hp_residual; vector_at=p)
+            rand!(M, ls.Hp_residual; vector_at = p)
             for k in 1:(k - 1)
                 ls.Hp_residual .=
                     ls.Hp_residual -
@@ -190,7 +189,7 @@ function min_cubic_Newton!(mp::AbstractManoptProblem{<:TangentSpace}, ls::Lanczo
     TpM = get_manifold(mp)
     p = TpM.point
     M = base_manifold(TpM)
-    tol = 1e-16
+    tol = 1.0e-16
 
     gvec = zeros(k)
     gvec[1] = norm(M, p, ls.X)
@@ -272,8 +271,8 @@ mutable struct StopWhenFirstOrderProgress{F} <: StoppingCriterion
     StopWhenFirstOrderProgress(θ::F) where {F} = new{F}(θ, -1)
 end
 function (c::StopWhenFirstOrderProgress)(
-    dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, k::Int
-)
+        dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, k::Int
+    )
     if (k == 0)
         if norm(ls.X) == zero(eltype(ls.X))
             c.at_iteration = 0
@@ -305,8 +304,8 @@ function get_reason(c::StopWhenFirstOrderProgress)
     return ""
 end
 function (c::StopWhenFirstOrderProgress)(
-    dmp::AbstractManoptProblem{<:TangentSpace}, ams::AbstractManoptSolverState, k::Int
-)
+        dmp::AbstractManoptProblem{<:TangentSpace}, ams::AbstractManoptSolverState, k::Int
+    )
     if (k == 0)
         c.at_iteration = -1
         return false
@@ -359,10 +358,10 @@ mutable struct StopWhenAllLanczosVectorsUsed <: StoppingCriterion
     StopWhenAllLanczosVectorsUsed(maxLanczosVectors::Int) = new(maxLanczosVectors, -1)
 end
 function (c::StopWhenAllLanczosVectorsUsed)(
-    ::AbstractManoptProblem,
-    arcs::AdaptiveRegularizationState{P,T,Pr,<:LanczosState},
-    i::Int,
-) where {P,T,Pr}
+        ::AbstractManoptProblem,
+        arcs::AdaptiveRegularizationState{P, T, Pr, <:LanczosState},
+        i::Int,
+    ) where {P, T, Pr}
     (i == 0) && (c.at_iteration = -1) # reset on init
     if (i > 0) && length(arcs.sub_state.Lanczos_vectors) == c.maxLanczosVectors
         c.at_iteration = i

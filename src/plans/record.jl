@@ -52,36 +52,36 @@ construct record decorated [`AbstractManoptSolverState`](@ref), where `dR` can b
   `recordDictionary`(@ref).
 * a `Dict{Symbol,RecordAction}`.
 """
-mutable struct RecordSolverState{S<:AbstractManoptSolverState,TRD<:NamedTuple} <:
-               AbstractManoptSolverState
+mutable struct RecordSolverState{S <: AbstractManoptSolverState, TRD <: NamedTuple} <:
+    AbstractManoptSolverState
     state::S
     recordDictionary::TRD
-    function RecordSolverState{S}(s::S; kwargs...) where {S<:AbstractManoptSolverState}
-        return new{S,typeof(values(kwargs))}(s, values(kwargs))
+    function RecordSolverState{S}(s::S; kwargs...) where {S <: AbstractManoptSolverState}
+        return new{S, typeof(values(kwargs))}(s, values(kwargs))
     end
 end
-function RecordSolverState(s::S, dR::RecordAction) where {S<:AbstractManoptSolverState}
-    return RecordSolverState{S}(s; Iteration=dR)
+function RecordSolverState(s::S, dR::RecordAction) where {S <: AbstractManoptSolverState}
+    return RecordSolverState{S}(s; Iteration = dR)
 end
 function RecordSolverState(
-    s::S, dR::Dict{Symbol,<:RecordAction}
-) where {S<:AbstractManoptSolverState}
+        s::S, dR::Dict{Symbol, <:RecordAction}
+    ) where {S <: AbstractManoptSolverState}
     return RecordSolverState{S}(s; dR...)
 end
-function RecordSolverState(s::S, format::Vector{<:Any}) where {S<:AbstractManoptSolverState}
+function RecordSolverState(s::S, format::Vector{<:Any}) where {S <: AbstractManoptSolverState}
     return RecordSolverState{S}(s; RecordFactory(get_state(s), format)...)
 end
-function RecordSolverState(s::S, symbol::Symbol) where {S<:AbstractManoptSolverState}
+function RecordSolverState(s::S, symbol::Symbol) where {S <: AbstractManoptSolverState}
     return RecordSolverState{S}(s; RecordFactory(get_state(s), symbol)...)
 end
 function status_summary(rst::RecordSolverState)
     if length(rst.recordDictionary) > 0
         return """
-               $(rst.state)
+        $(rst.state)
 
-               ## Record
-               $(rst.recordDictionary)
-               """
+        ## Record
+        $(rst.recordDictionary)
+        """
     else
         return "RecordSolverState($(rst.state), $(rst.recordDictionary))"
     end
@@ -147,7 +147,7 @@ get_record_state(s::RecordSolverState) = s
 return the action contained in the (first) [`RecordSolverState`](@ref) decorator within the [`AbstractManoptSolverState`](@ref) `o`.
 
 """
-function get_record_action(s::AbstractManoptSolverState, symbol::Symbol=:Iteration)
+function get_record_action(s::AbstractManoptSolverState, symbol::Symbol = :Iteration)
     if haskey(s.recordDictionary, symbol)
         return s.recordDictionary[symbol]
     else
@@ -165,13 +165,13 @@ any recordings during an `:Iteration`.
 When called with arbitrary [`AbstractManoptSolverState`](@ref), this method looks for the
 [`RecordSolverState`](@ref) decorator and calls `get_record` on the decorator.
 """
-function get_record(s::RecordSolverState, symbol::Symbol=:Iteration)
+function get_record(s::RecordSolverState, symbol::Symbol = :Iteration)
     return get_record(get_record_action(s, symbol))
 end
 function get_record(s::RecordSolverState, symbol::Symbol, i...)
     return get_record(get_record_action(s, symbol), i...)
 end
-function get_record(s::AbstractManoptSolverState, symbol::Symbol=:Iteration)
+function get_record(s::AbstractManoptSolverState, symbol::Symbol = :Iteration)
     return get_record(get_record_state(s), symbol)
 end
 
@@ -205,7 +205,7 @@ or reset (`k<0`) the internal storage, where `v` has to match the internal
 value type of the corresponding [`RecordAction`](@ref).
 """
 function record_or_reset!(r::RecordAction, v, k::Int)
-    if k > 0
+    return if k > 0
         push!(r.recorded_values, deepcopy(v))
     elseif k < 0 # reset if negative
         r.recorded_values = empty(r.recorded_values) # Reset to empty
@@ -229,13 +229,13 @@ mutable struct RecordEvery <: RecordAction
     record::RecordAction
     every::Int
     always_update::Bool
-    function RecordEvery(r::RecordAction, every::Int=1, always_update::Bool=true)
+    function RecordEvery(r::RecordAction, every::Int = 1, always_update::Bool = true)
         return new(r, every, always_update)
     end
 end
 function (re::RecordEvery)(
-    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
-)
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
+    )
     if k <= 0
         re.record(amp, ams, k)
     elseif (rem(k, re.every) == 0)
@@ -297,11 +297,11 @@ To access all recordings of the second entry of this last `g3` you can do either
 the first one can only be accessed by `g4[1]`, since no symbol was given here.
 """
 mutable struct RecordGroup <: RecordAction
-    group::Array{RecordAction,1}
-    indexSymbols::Dict{Symbol,Int}
+    group::Array{RecordAction, 1}
+    indexSymbols::Dict{Symbol, Int}
     function RecordGroup(
-        g::Array{<:RecordAction,1}, symbols::Dict{Symbol,Int}=Dict{Symbol,Int}()
-    )
+            g::Array{<:RecordAction, 1}, symbols::Dict{Symbol, Int} = Dict{Symbol, Int}()
+        )
         if length(symbols) > 0
             if maximum(values(symbols)) > length(g)
                 error(
@@ -315,14 +315,14 @@ mutable struct RecordGroup <: RecordAction
         return new(g, symbols)
     end
     function RecordGroup(
-        records::Vector,# assumed: {<:Union{<:RecordAction,Pair{<:RecordAction,Symbol}, rest ignored
-    )
-        g = Array{RecordAction,1}()
-        si = Dict{Symbol,Int}()
+            records::Vector, # assumed: {<:Union{<:RecordAction,Pair{<:RecordAction,Symbol}, rest ignored
+        )
+        g = Array{RecordAction, 1}()
+        si = Dict{Symbol, Int}()
         for i in 1:length(records)
             if records[i] isa RecordAction
                 push!(g, records[i])
-            elseif records[i] isa Pair{<:RecordAction,Symbol}
+            elseif records[i] isa Pair{<:RecordAction, Symbol}
                 push!(g, records[i].first)
                 push!(si, records[i].second => i)
             else
@@ -331,15 +331,16 @@ mutable struct RecordGroup <: RecordAction
         end
         return RecordGroup(g, si)
     end
-    RecordGroup() = new(Array{RecordAction,1}(), Dict{Symbol,Int}())
+    RecordGroup() = new(Array{RecordAction, 1}(), Dict{Symbol, Int}())
 end
 function (d::RecordGroup)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
     for ri in d.group
         ri(p, s, k)
     end
+    return
 end
 function status_summary(rg::RecordGroup)
-    return "[ $( join(["$(status_summary(ri))" for ri in rg.group], ", ")) ]"
+    return "[ $(join(["$(status_summary(ri))" for ri in rg.group], ", ")) ]"
 end
 function show(io::IO, rg::RecordGroup)
     s = join(["$(ri)" for ri in rg.group], ", ")
@@ -366,7 +367,7 @@ return an array of tuples, where each tuple is a recorded set corresponding to t
 get_record(r::RecordGroup) = length(r.group) > 0 ? [zip(get_record.(r.group)...)...] : []
 get_record(r::RecordGroup, i) = get_record(r.group[i])
 get_record(r::RecordGroup, s::Symbol) = get_record(r.group[r.indexSymbols[s]])
-function get_record(r::RecordGroup, s::NTuple{N,Symbol}) where {N}
+function get_record(r::RecordGroup, s::NTuple{N, Symbol}) where {N}
     inds = getindex.(Ref(r.indexSymbols), s)
     return [zip(get_record.([r.group[i] for i in inds])...)...]
 end
@@ -384,7 +385,7 @@ See [`get_record`](@ref get_record(r::RecordGroup)) for details.
 """
 getindex(::RecordGroup, ::Any...)
 getindex(r::RecordGroup, s::Symbol) = get_record(r, s)
-getindex(r::RecordGroup, s::NTuple{N,Symbol}) where {N} = get_record(r, s)
+getindex(r::RecordGroup, s::NTuple{N, Symbol}) where {N} = get_record(r, s)
 getindex(r::RecordGroup, i) = get_record(r, i)
 
 @doc """
@@ -406,14 +407,14 @@ mutable struct RecordSubsolver{R} <: RecordAction
     record::Vector{Symbol}
 end
 function RecordSubsolver(;
-    record::Union{Symbol,Vector{Symbol}}=:Iteration, record_type=eltype([])
-)
+        record::Union{Symbol, Vector{Symbol}} = :Iteration, record_type = eltype([])
+    )
     r = record isa Symbol ? [record] : record
     return RecordSubsolver{record_type}(record_type[], r)
 end
 function (rsr::RecordSubsolver)(
-    ::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
-)
+        ::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
+    )
     record_or_reset!(rsr, get_record(get_sub_state(ams), rsr.record...), k)
     return nothing
 end
@@ -440,21 +441,21 @@ are never accessible, is not that useful.
 
     RecordWhenActive(r::RecordAction, active=true, always_update=true)
 """
-mutable struct RecordWhenActive{R<:RecordAction} <: RecordAction
+mutable struct RecordWhenActive{R <: RecordAction} <: RecordAction
     record::R
     active::Bool
     always_update::Bool
     function RecordWhenActive(
-        r::R, active::Bool=true, always_update::Bool=true
-    ) where {R<:RecordAction}
+            r::R, active::Bool = true, always_update::Bool = true
+        ) where {R <: RecordAction}
         return new{R}(r, active, always_update)
     end
 end
 
 function (rwa::RecordWhenActive)(
-    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
-)
-    if rwa.active
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
+    )
+    return if rwa.active
         rwa.record(amp, ams, k)
     elseif (rwa.always_update) && (k <= 0)
         rwa.record(amp, ams, k)
@@ -493,8 +494,8 @@ Record the current cost function value, see [`get_cost`](@ref).
     RecordCost()
 """
 mutable struct RecordCost <: RecordAction
-    recorded_values::Array{Float64,1}
-    RecordCost() = new(Array{Float64,1}())
+    recorded_values::Array{Float64, 1}
+    RecordCost() = new(Array{Float64, 1}())
 end
 function (r::RecordCost)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
     return record_or_reset!(r, get_cost(amp, get_iterate(s)), k)
@@ -527,36 +528,36 @@ with the previous fields as keywords. For the `DefaultManifold` only the field s
 Providing the actual manifold moves the default storage to the efficient point storage.
 """
 mutable struct RecordChange{
-    TInvRetr<:AbstractInverseRetractionMethod,TStorage<:StoreStateAction
-} <: RecordAction
+        TInvRetr <: AbstractInverseRetractionMethod, TStorage <: StoreStateAction,
+    } <: RecordAction
     recorded_values::Vector{Float64}
     storage::TStorage
     inverse_retraction_method::TInvRetr
     function RecordChange(
-        M::AbstractManifold=DefaultManifold();
-        storage::Union{Nothing,StoreStateAction}=nothing,
-        inverse_retraction_method::IRT=default_inverse_retraction_method(M),
-    ) where {IRT<:AbstractInverseRetractionMethod}
+            M::AbstractManifold = DefaultManifold();
+            storage::Union{Nothing, StoreStateAction} = nothing,
+            inverse_retraction_method::IRT = default_inverse_retraction_method(M),
+        ) where {IRT <: AbstractInverseRetractionMethod}
         irm = inverse_retraction_method
         if isnothing(storage)
             if M isa DefaultManifold
-                storage = StoreStateAction(M; store_fields=[:Iterate])
+                storage = StoreStateAction(M; store_fields = [:Iterate])
             else
-                storage = StoreStateAction(M; store_points=Tuple{:Iterate})
+                storage = StoreStateAction(M; store_points = Tuple{:Iterate})
             end
         end
-        return new{typeof(irm),typeof(storage)}(Vector{Float64}(), storage, irm)
+        return new{typeof(irm), typeof(storage)}(Vector{Float64}(), storage, irm)
     end
     function RecordChange(
-        p,
-        a::StoreStateAction=StoreStateAction([:Iterate]);
-        manifold::AbstractManifold=DefaultManifold(1),
-        inverse_retraction_method::IRT=default_inverse_retraction_method(
-            manifold, typeof(p)
-        ),
-    ) where {IRT<:AbstractInverseRetractionMethod}
+            p,
+            a::StoreStateAction = StoreStateAction([:Iterate]);
+            manifold::AbstractManifold = DefaultManifold(1),
+            inverse_retraction_method::IRT = default_inverse_retraction_method(
+                manifold, typeof(p)
+            ),
+        ) where {IRT <: AbstractInverseRetractionMethod}
         update_storage!(a, Dict(:Iterate => p))
-        return new{IRT,typeof(a)}(Vector{Float64}(), a, inverse_retraction_method)
+        return new{IRT, typeof(a)}(Vector{Float64}(), a, inverse_retraction_method)
     end
 end
 function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
@@ -608,15 +609,15 @@ Initialize the record action to record the state field `f`, and initialize the
 * `RecordEntry(SVDMPoint, :p)` to record the field `s.p` which takes values of type [`SVDMPoint`](@extref `Manifolds.SVDMPoint`).
 """
 mutable struct RecordEntry{T} <: RecordAction
-    recorded_values::Array{T,1}
+    recorded_values::Array{T, 1}
     field::Symbol
-    RecordEntry{T}(f::Symbol) where {T} = new(Array{T,1}(), f)
+    RecordEntry{T}(f::Symbol) where {T} = new(Array{T, 1}(), f)
 end
 RecordEntry(::T, f::Symbol) where {T} = RecordEntry{T}(f)
 RecordEntry(d::DataType, f::Symbol) = RecordEntry{d}(f)
 function (r::RecordEntry{T})(
-    ::AbstractManoptProblem, s::AbstractManoptSolverState, i
-) where {T}
+        ::AbstractManoptProblem, s::AbstractManoptSolverState, i
+    ) where {T}
     return record_or_reset!(r, getfield(s, r.field), i)
 end
 function show(io::IO, di::RecordEntry)
@@ -639,18 +640,18 @@ record a certain entries change during iterates
 
     RecordEntryChange(f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
 """
-mutable struct RecordEntryChange{TStorage<:StoreStateAction} <: RecordAction
+mutable struct RecordEntryChange{TStorage <: StoreStateAction} <: RecordAction
     recorded_values::Vector{Float64}
     field::Symbol
     distance::Any
     storage::TStorage
-    function RecordEntryChange(f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
+    function RecordEntryChange(f::Symbol, d, a::StoreStateAction = StoreStateAction([f]))
         return new{typeof(a)}(Float64[], f, d, a)
     end
 end
 function (r::RecordEntryChange)(
-    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
-)
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
+    )
     value = 0.0
     if has_storage(r.storage, r.field)
         value = r.distance(
@@ -679,8 +680,8 @@ initialize the iterate record array to the type of `x0`, which indicates the kin
 initialize the iterate record array to the data type `T`.
 """
 mutable struct RecordIterate{T} <: RecordAction
-    recorded_values::Array{T,1}
-    RecordIterate{T}() where {T} = new(Array{T,1}())
+    recorded_values::Array{T, 1}
+    RecordIterate{T}() where {T} = new(Array{T, 1}())
 end
 RecordIterate(::T) where {T} = RecordIterate{T}()
 function RecordIterate()
@@ -689,8 +690,8 @@ function RecordIterate()
     )
 end
 function (r::RecordIterate{T})(
-    ::AbstractManoptProblem, s::AbstractManoptSolverState, i
-) where {T}
+        ::AbstractManoptProblem, s::AbstractManoptSolverState, i
+    ) where {T}
     return record_or_reset!(r, get_iterate(s), i)
 end
 function show(io::IO, ri::RecordIterate)
@@ -704,8 +705,8 @@ status_summary(di::RecordIterate) = ":Iterate"
 record the current iteration
 """
 mutable struct RecordIteration <: RecordAction
-    recorded_values::Array{Int,1}
-    RecordIteration() = new(Array{Int,1}())
+    recorded_values::Array{Int, 1}
+    RecordIteration() = new(Array{Int, 1}())
 end
 function (r::RecordIteration)(::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int)
     return record_or_reset!(r, k, k)
@@ -723,8 +724,8 @@ mutable struct RecordStoppingReason <: RecordAction
 end
 RecordStoppingReason() = RecordStoppingReason(String[])
 function (rsr::RecordStoppingReason)(
-    ::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
-)
+        ::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
+    )
     s = get_reason(get_stopping_criterion(ams))
     return (length(s) > 0) && record_or_reset!(rsr, s, k)
 end
@@ -748,11 +749,11 @@ The default is `:cumulative`, and any non-listed symbol default to using this mo
     RecordTime(; mode::Symbol=:cumulative)
 """
 mutable struct RecordTime <: RecordAction
-    recorded_values::Array{Nanosecond,1}
+    recorded_values::Array{Nanosecond, 1}
     start::Nanosecond
     mode::Symbol
-    function RecordTime(; mode::Symbol=:cumulative)
-        return new(Array{Nanosecond,1}(), Nanosecond(time_ns()), mode)
+    function RecordTime(; mode::Symbol = :cumulative)
+        return new(Array{Nanosecond, 1}(), Nanosecond(time_ns()), mode)
     end
 end
 function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
@@ -800,16 +801,16 @@ a [`RecordAction`](@ref) to call.
 Note that upon the initialisation all dictionaries but the `:StartAlgorithm`
 one are called with an `i=0` for reset.
 """
-function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
+function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})
     # filter out :Iteration defaults
     # filter numbers & stop & pairs (pairs handles separately, numbers at the end)
     iter_entries = filter(
         x ->
-            !isa(x, Pair{Symbol,T} where {T}) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int),
+        !isa(x, Pair{Symbol, T} where {T}) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int),
         a,
     )
     # Filter pairs
-    b = filter(x -> isa(x, Pair{Symbol,T} where {T}), a)
+    b = filter(x -> isa(x, Pair{Symbol, T} where {T}), a)
     # Push this to the :Iteration if that exists or add that pair
     i = findlast(x -> (isa(x, Pair)) && (x.first == :Iteration), b)
     if !isnothing(i)
@@ -828,7 +829,7 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
             b = [b..., :Stop => [RecordActionFactory(s, :Stop)]]
         end
     end
-    dictionary = Dict{Symbol,RecordAction}()
+    dictionary = Dict{Symbol, RecordAction}()
     # Look for a global number -> RecordEvery
     e = filter(x -> isa(x, Int), a)
     ae = length(e) > 0 ? last(e) : 0
@@ -861,13 +862,13 @@ If any integers are present, the last of these is used to wrap the group in a
 If `:WhenActive` is present, the resulting Action is wrapped in [`RecordWhenActive`](@ref),
 making it deactivatable by its parent solver.
 """
-function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
+function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})
     # filter out every
-    group = Array{Union{<:RecordAction,Pair{<:RecordAction,Symbol}},1}()
+    group = Array{Union{<:RecordAction, Pair{<:RecordAction, Symbol}}, 1}()
     for e in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter `Int` and Active
         if e isa Symbol # factory for this symbol, store in a pair (for better access later)
             push!(group, RecordActionFactory(s, e) => e)
-        elseif e isa Pair{<:RecordAction,Symbol} #already a generated action => symbol to store at
+        elseif e isa Pair{<:RecordAction, Symbol} #already a generated action => symbol to store at
             push!(group, e)
         else # process the others as elements for an action factory
             push!(group, RecordActionFactory(s, e))
@@ -885,8 +886,8 @@ function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     return record
 end
 function RecordGroupFactory(
-    s::AbstractManoptSolverState, symbol::Union{Symbol,<:RecordAction}
-)
+        s::AbstractManoptSolverState, symbol::Union{Symbol, <:RecordAction}
+    )
     return RecordActionFactory(s, symbol)
 end
 
@@ -912,7 +913,7 @@ and every other symbol is passed to [`RecordEntry`](@ref), which results in reco
 field of the state with the symbol indicating the field of the solver to record.
 """
 RecordActionFactory(::AbstractManoptSolverState, a::RecordAction) = a
-RecordActionFactory(::AbstractManoptSolverState, sa::Pair{<:RecordAction,Symbol}) = sa
+RecordActionFactory(::AbstractManoptSolverState, sa::Pair{<:RecordAction, Symbol}) = sa
 function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Change) && return RecordChange()
     (symbol == :Cost) && return RecordCost()
@@ -920,11 +921,11 @@ function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :GradientNorm) && return RecordGradientNorm()
     (symbol == :Iterate) && return RecordIterate(get_iterate(s))
     (symbol == :Iteration) && return RecordIteration()
-    (symbol == :IterativeTime) && return RecordTime(; mode=:iterative)
+    (symbol == :IterativeTime) && return RecordTime(; mode = :iterative)
     (symbol == :Stepsize) && return RecordStepsize()
     (symbol == :Stop) && return RecordStoppingReason()
     (symbol == :Subsolver) && return RecordSubsolver()
-    (symbol == :Time) && return RecordTime(; mode=:cumulative)
+    (symbol == :Time) && return RecordTime(; mode = :cumulative)
     return RecordEntry(getfield(s, symbol), symbol)
 end
 @doc """
@@ -937,7 +938,7 @@ create a [`RecordAction`](@ref) where
 For other symbol the second entry is ignored and the symbol is used to generate a [`RecordEntry`](@ref)
 recording the field with the name `symbol` of `s`.
 """
-function RecordActionFactory(s::AbstractManoptSolverState, t::Tuple{Symbol,T}) where {T}
-    (t[1] == :Subsolver) && return RecordSubsolver(; record=t[2])
+function RecordActionFactory(s::AbstractManoptSolverState, t::Tuple{Symbol, T}) where {T}
+    (t[1] == :Subsolver) && return RecordSubsolver(; record = t[2])
     return RecordEntry(getfield(s, t[1]), t[1])
 end

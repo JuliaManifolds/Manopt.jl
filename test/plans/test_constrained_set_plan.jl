@@ -10,15 +10,15 @@ using Manifolds, Manopt, Random, Test
     # N random points moved to top left to have a mean outside
     pts = [
         exp(
-            M,
-            c,
-            get_vector(
                 M,
                 c,
-                σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
-                DefaultOrthonormalBasis(),
-            ),
-        ) for _ in 1:N
+                get_vector(
+                    M,
+                    c,
+                    σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
+                    DefaultOrthonormalBasis(),
+                ),
+            ) for _ in 1:N
     ]
     f(M, p) = 1 / (2 * length(pts)) .* sum(distance(M, p, q)^2 for q in pts)
     grad_f(M, p) = -1 / length(pts) .* sum(log(M, p, q) for q in pts)
@@ -38,7 +38,7 @@ using Manifolds, Manopt, Random, Test
         q = (n > r) ? exp(M, c, (r / n) * X) : copy(M, p)
         return q
     end
-    function project_C!(M, q, p; X=zero_vector(M, c))
+    function project_C!(M, q, p; X = zero_vector(M, c))
         log!(M, X, c, p)
         n = norm(M, c, X)
         if (n > r)
@@ -52,12 +52,12 @@ using Manifolds, Manopt, Random, Test
     indicator_C(M, p) = (g(M, p) ≤ 0) ? 0 : Inf
 
     csoa = ManifoldConstrainedSetObjective(f, grad_f, project_C)
-    csoa2 = ManifoldConstrainedSetObjective(f, grad_f, project_C; indicator=indicator_C)
+    csoa2 = ManifoldConstrainedSetObjective(f, grad_f, project_C; indicator = indicator_C)
     csoi = ManifoldConstrainedSetObjective(
-        f, grad_f!, project_C!; evaluation=InplaceEvaluation()
+        f, grad_f!, project_C!; evaluation = InplaceEvaluation()
     )
     csoi2 = ManifoldConstrainedSetObjective(
-        f, grad_f!, project_C!; evaluation=InplaceEvaluation(), indicator=indicator_C
+        f, grad_f!, project_C!; evaluation = InplaceEvaluation(), indicator = indicator_C
     )
 
     for objective in [csoa, csoa2, csoi, csoi2]

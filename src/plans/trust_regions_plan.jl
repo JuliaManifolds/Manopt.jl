@@ -1,4 +1,3 @@
-
 @doc """
     TrustRegionModelObjective{O<:AbstractManifoldHessianObjective} <: AbstractManifoldSubObjective{O}
 
@@ -19,17 +18,17 @@ A trust region model of the form
 with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective
 """
 struct TrustRegionModelObjective{
-    E<:AbstractEvaluationType,
-    O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective},
-} <: AbstractManifoldSubObjective{E,O}
+        E <: AbstractEvaluationType,
+        O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective},
+    } <: AbstractManifoldSubObjective{E, O}
     objective::O
 end
 function TrustRegionModelObjective(
-    mho::O
-) where {
-    E,O<:Union{AbstractManifoldHessianObjective{E},AbstractDecoratedManifoldObjective{E}}
-}
-    return TrustRegionModelObjective{E,O}(mho)
+        mho::O
+    ) where {
+        E, O <: Union{AbstractManifoldHessianObjective{E}, AbstractDecoratedManifoldObjective{E}},
+    }
+    return TrustRegionModelObjective{E, O}(mho)
 end
 
 get_objective(trmo::TrustRegionModelObjective) = trmo.objective

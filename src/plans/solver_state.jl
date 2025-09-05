@@ -1,4 +1,3 @@
-
 @inline _extract_val(::Val{T}) where {T} = T
 
 @doc """
@@ -11,7 +10,7 @@ A general super type for all solver states.
 The following fields are assumed to be default. If you use different ones,
 adapt the the access functions [`get_iterate`](@ref) and [`get_stopping_criterion`](@ref) accordingly
 
-$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :p; add = [:as_Iterate]))
 $(_var(:Field, :stopping_criterion, "stop"))
 """
 abstract type AbstractManoptSolverState end
@@ -26,18 +25,18 @@ Subsolver state indicating that a closed-form solution is available with
 
     ClosedFormSubSolverState(; evaluation=AllocatingEvaluation())
 """
-struct ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState end
-function ClosedFormSubSolverState(::E) where {E<:AbstractEvaluationType}
+struct ClosedFormSubSolverState{E <: AbstractEvaluationType} <: AbstractManoptSolverState end
+function ClosedFormSubSolverState(::E) where {E <: AbstractEvaluationType}
     return ClosedFormSubSolverState{E}()
 end
 function ClosedFormSubSolverState(;
-    evaluation::E=AllocatingEvaluation()
-) where {E<:AbstractEvaluationType}
+        evaluation::E = AllocatingEvaluation()
+    ) where {E <: AbstractEvaluationType}
     return ClosedFormSubSolverState(evaluation)
 end
 
 maybe_wrap_evaluation_type(s::AbstractManoptSolverState) = s
-function maybe_wrap_evaluation_type(::E) where {E<:AbstractEvaluationType}
+function maybe_wrap_evaluation_type(::E) where {E <: AbstractEvaluationType}
     return ClosedFormSubSolverState{E}()
 end
 
@@ -114,7 +113,7 @@ should be returned at the end of a solver instead of the usual minimizer.
 
 [`get_solver_result`](@ref)
 """
-struct ReturnSolverState{S<:AbstractManoptSolverState} <: AbstractManoptSolverState
+struct ReturnSolverState{S <: AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
 end
 status_summary(rst::ReturnSolverState) = status_summary(rst.state)
@@ -172,11 +171,11 @@ for both the recursive and the direct case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
 """
-function get_state(s::AbstractManoptSolverState, recursive::Bool=true)
+function get_state(s::AbstractManoptSolverState, recursive::Bool = true)
     return _get_state(s, dispatch_state_decorator(s), recursive)
 end
-_get_state(s::AbstractManoptSolverState, ::Val{false}, rec=true) = s
-function _get_state(s::AbstractManoptSolverState, ::Val{true}, rec=true)
+_get_state(s::AbstractManoptSolverState, ::Val{false}, rec = true) = s
+function _get_state(s::AbstractManoptSolverState, ::Val{true}, rec = true)
     return rec ? get_state(s.state) : s.state
 end
 
@@ -245,11 +244,11 @@ function get_solver_result(s::AbstractManoptSolverState)
     return _get_solver_result(s, dispatch_state_decorator(s))
 end
 function get_solver_result(
-    tos::Tuple{<:AbstractManifoldObjective,<:AbstractManoptSolverState}
-)
+        tos::Tuple{<:AbstractManifoldObjective, <:AbstractManoptSolverState}
+    )
     return get_solver_result(tos...)
 end
-function get_solver_result(tos::Tuple{<:AbstractManifoldObjective,S}) where {S}
+function get_solver_result(tos::Tuple{<:AbstractManifoldObjective, S}) where {S}
     return tos[2]
 end
 function get_solver_result(::AbstractManifoldObjective, s::AbstractManoptSolverState)
@@ -393,9 +392,9 @@ types (than the default) for your points/vectors on `M`.
 * `once` (`true`) whether to update internal storage only once per iteration or on every update call
 """
 mutable struct StoreStateAction{
-    TPS_asserts,TXS_assert,TPS<:NamedTuple,TXS<:NamedTuple,TPI<:NamedTuple,TTI<:NamedTuple
-} <: AbstractStateAction
-    values::Dict{Symbol,Any}
+        TPS_asserts, TXS_assert, TPS <: NamedTuple, TXS <: NamedTuple, TPI <: NamedTuple, TTI <: NamedTuple,
+    } <: AbstractStateAction
+    values::Dict{Symbol, Any}
     keys::Vector{Symbol} # for values
     point_values::TPS
     vector_values::TXS
@@ -404,12 +403,12 @@ mutable struct StoreStateAction{
     once::Bool
     last_stored::Int
     function StoreStateAction(
-        general_keys::Vector{Symbol}=Symbol[],
-        point_values::NamedTuple=NamedTuple(),
-        vector_values::NamedTuple=NamedTuple(),
-        once::Bool=true;
-        M::AbstractManifold=DefaultManifold(),
-    )
+            general_keys::Vector{Symbol} = Symbol[],
+            point_values::NamedTuple = NamedTuple(),
+            vector_values::NamedTuple = NamedTuple(),
+            once::Bool = true;
+            M::AbstractManifold = DefaultManifold(),
+        )
         point_init = NamedTuple{keys(point_values)}(map(u -> false, keys(point_values)))
         vector_init = NamedTuple{keys(vector_values)}(map(u -> false, keys(vector_values)))
         point_values_copy = NamedTuple{keys(point_values)}(
@@ -426,7 +425,7 @@ mutable struct StoreStateAction{
             typeof(point_init),
             typeof(vector_init),
         }(
-            Dict{Symbol,Any}(),
+            Dict{Symbol, Any}(),
             general_keys,
             point_values_copy,
             vector_values_copy,
@@ -438,25 +437,25 @@ mutable struct StoreStateAction{
     end
 end
 @noinline function StoreStateAction(
-    M::AbstractManifold;
-    store_fields::Vector{Symbol}=Symbol[],
-    store_points::Union{Type{<:Tuple},Vector{Symbol}}=Tuple{},
-    store_vectors::Union{Type{<:Tuple},Vector{Symbol}}=Tuple{},
-    p_init=_ensure_mutating_variable(rand(M)),
-    X_init=zero_vector(M, p_init),
-    once=true,
-)
+        M::AbstractManifold;
+        store_fields::Vector{Symbol} = Symbol[],
+        store_points::Union{Type{<:Tuple}, Vector{Symbol}} = Tuple{},
+        store_vectors::Union{Type{<:Tuple}, Vector{Symbol}} = Tuple{},
+        p_init = _ensure_mutating_variable(rand(M)),
+        X_init = zero_vector(M, p_init),
+        once = true,
+    )
     TPS_tuple = _store_to_tuple(store_points)
     TTS_tuple = _store_to_tuple(store_vectors)
     point_values = NamedTuple{TPS_tuple}(map(_ -> p_init, TPS_tuple))
     vector_values = NamedTuple{TTS_tuple}(map(_ -> X_init, TTS_tuple))
-    return StoreStateAction(store_fields, point_values, vector_values, once; M=M)
+    return StoreStateAction(store_fields, point_values, vector_values, once; M = M)
 end
 
 _store_to_tuple(store::Type{<:Tuple}) = Tuple(store.parameters)
 _store_to_tuple(store::Vector{Symbol}) = tuple(store...)
 
-@generated function extract_type_from_namedtuple(::Type{nt}, ::Val{key}) where {nt,key}
+@generated function extract_type_from_namedtuple(::Type{nt}, ::Val{key}) where {nt, key}
     for i in 1:length(nt.parameters[1])
         if nt.parameters[1][i] === key
             return nt.parameters[2].parameters[i]
@@ -466,20 +465,20 @@ _store_to_tuple(store::Vector{Symbol}) = tuple(store...)
 end
 
 function _store_point_assert_type(
-    ::StoreStateAction{TPS_asserts,TXS_assert}, key::Val
-) where {TPS_asserts,TXS_assert}
+        ::StoreStateAction{TPS_asserts, TXS_assert}, key::Val
+    ) where {TPS_asserts, TXS_assert}
     return extract_type_from_namedtuple(TPS_asserts, key)
 end
 
 function _store_vector_assert_type(
-    ::StoreStateAction{TPS_asserts,TXS_assert}, key::Val
-) where {TPS_asserts,TXS_assert}
+        ::StoreStateAction{TPS_asserts, TXS_assert}, key::Val
+    ) where {TPS_asserts, TXS_assert}
     return extract_type_from_namedtuple(TXS_assert, key)
 end
 
 function (a::StoreStateAction)(
-    amp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        amp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     (!a.once || a.last_stored != k) && (update_storage!(a, amp, s))
     a.last_stored = k
     return a
@@ -575,8 +574,8 @@ the [`AbstractManoptSolverState`](@ref) `s`.
 Optimized using the information from `amp`
 """
 function update_storage!(
-    a::AbstractStateAction, amp::AbstractManoptProblem, s::AbstractManoptSolverState
-)
+        a::AbstractStateAction, amp::AbstractManoptProblem, s::AbstractManoptSolverState
+    )
     for key in a.keys
         if key === :Iterate
             a.values[key] = deepcopy(get_iterate(s))
@@ -594,7 +593,7 @@ function update_storage!(
 
     M = get_manifold(amp)
     @inline function update_points(key)
-        if key === :Iterate
+        return if key === :Iterate
             copyto!(M, a.point_values[key], get_iterate(s))
         else
             copyto!(
@@ -608,7 +607,7 @@ function update_storage!(
     a.point_init = NamedTuple{keys(a.point_values)}(map(u -> true, keys(a.point_values)))
 
     @inline function update_vector(key)
-        if key === :Gradient
+        return if key === :Gradient
             copyto!(M, a.vector_values[key], get_gradient(s))
         else
             copyto!(
@@ -631,7 +630,7 @@ end
 Update the [`AbstractStateAction`](@ref) `a` internal values to the ones given in
 the dictionary `d`. The values are merged, where the values from `d` are preferred.
 """
-function update_storage!(a::AbstractStateAction, d::Dict{Symbol,<:Any})
+function update_storage!(a::AbstractStateAction, d::Dict{Symbol, <:Any})
     merge!(a.values, d)
     # update keys
     return a.keys = collect(keys(a.values))
@@ -657,12 +656,12 @@ function get_count(ams::AbstractManoptSolverState, v::Val{:Iterations})
 end
 
 # in general, ignore printing the objective by default
-function show(io::IO, t::Tuple{<:AbstractManifoldObjective,<:AbstractManoptSolverState})
+function show(io::IO, t::Tuple{<:AbstractManifoldObjective, <:AbstractManoptSolverState})
     return print(io, "$(t[2])")
 end
 # for decorated ones, default: pass down
 function show(
-    io::IO, t::Tuple{<:AbstractDecoratedManifoldObjective,<:AbstractManoptSolverState}
-)
+        io::IO, t::Tuple{<:AbstractDecoratedManifoldObjective, <:AbstractManoptSolverState}
+    )
     return show(io, (get_objective(t[1], false), t[2]))
 end

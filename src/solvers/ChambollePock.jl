@@ -8,7 +8,7 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 * `acceleration::R`:    acceleration factor
 * `dual_stepsize::R`:   proximal parameter of the dual prox
 $(_var(:Field, :inverse_retraction_method))
-$(_var(:Field, :inverse_retraction_method, "inverse_retraction_method_dual"; M="N", p="n"))
+$(_var(:Field, :inverse_retraction_method, "inverse_retraction_method_dual"; M = "N", p = "n"))
 * `m::P`:               base point on ``$(_math(:M))``
 * `n::Q`:               base point on ``$(_tex(:Cal, "N"))``
 * `p::P`:               an initial point on ``p^{(0)} ∈ $(_math(:M))``
@@ -24,7 +24,7 @@ $(_var(:Field, :stopping_criterion, "stop"))
 * `update_primal_base`: function `(pr, st, k) -> m` to update the primal base
 * `update_dual_base`:  function `(pr, st, k) -> n` to update the dual base
 $(_var(:Field, :vector_transport_method))
-$(_var(:Field, :vector_transport_method, "vector_transport_method_dual"; M="N"))
+$(_var(:Field, :vector_transport_method, "vector_transport_method_dual"; M = "N"))
 
 Here, `P` is a point type on ``$(_math(:M))``, `T` its tangent vector type, `Q` a point type on ``$(_tex(:Cal, "N"))``,
 and `R<:Real` is a real number type
@@ -42,7 +42,7 @@ If you activate these to be different from the default identity, you have to pro
 
 # Keyword arguments
 
-* `n=``$(Manopt._link(:rand; M="N"))
+* `n=``$(Manopt._link(:rand; M = "N"))
 * `p=`$(Manopt._link(:rand))
 * `m=`$(Manopt._link(:rand))
 * `X=`$(Manopt._link(:zero_vector))
@@ -50,31 +50,31 @@ If you activate these to be different from the default identity, you have to pro
 * `dual_stepsize=1/sqrt(8)`
 * `primal_stepsize=1/sqrt(8)`
 $(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"; M="N", p="n"))
+$(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"; M = "N", p = "n"))
 * `relaxation=1.0`
 * `relax=:primal`: relax the primal variable by default
 $(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(300)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(300)`"))
 * `variant=:exact`: run the exact Chambolle Pock by default
 * `update_primal_base=missing`
 * `update_dual_base=missing`
 $(_var(:Keyword, :vector_transport_method))
-$(_var(:Keyword, :vector_transport_method, "vector_transport_method_dual"; M="N", p="n"))
+$(_var(:Keyword, :vector_transport_method, "vector_transport_method_dual"; M = "N", p = "n"))
 
 if `Manifolds.jl` is loaded, `N` is also a keyword argument and set to `TangentBundle(M)` by default.
 """
 mutable struct ChambollePockState{
-    P,
-    Q,
-    T,
-    R,
-    SC<:StoppingCriterion,
-    RM<:AbstractRetractionMethod,
-    IRM<:AbstractInverseRetractionMethod,
-    IRM_Dual<:AbstractInverseRetractionMethod,
-    VTM<:AbstractVectorTransportMethod,
-    VTM_Dual<:AbstractVectorTransportMethod,
-} <: AbstractPrimalDualSolverState
+        P,
+        Q,
+        T,
+        R,
+        SC <: StoppingCriterion,
+        RM <: AbstractRetractionMethod,
+        IRM <: AbstractInverseRetractionMethod,
+        IRM_Dual <: AbstractInverseRetractionMethod,
+        VTM <: AbstractVectorTransportMethod,
+        VTM_Dual <: AbstractVectorTransportMethod,
+    } <: AbstractPrimalDualSolverState
     m::P
     n::Q
     p::P
@@ -88,8 +88,8 @@ mutable struct ChambollePockState{
     relax::Symbol
     stop::SC
     variant::Symbol
-    update_primal_base::Union{Function,Missing}
-    update_dual_base::Union{Function,Missing}
+    update_primal_base::Union{Function, Missing}
+    update_dual_base::Union{Function, Missing}
     retraction_method::RM
     inverse_retraction_method::IRM
     inverse_retraction_method_dual::IRM_Dual
@@ -97,41 +97,41 @@ mutable struct ChambollePockState{
     vector_transport_method_dual::VTM_Dual
 end
 function Manopt.ChambollePockState(
-    M::AbstractManifold,
-    N::AbstractManifold;
-    m::P=rand(M),
-    n::Q=rand(N),
-    p::P=rand(M),
-    X::T=zero_vector(M, p),
-    primal_stepsize::R=1 / sqrt(8),
-    dual_stepsize::R=1 / sqrt(8),
-    acceleration::R=0.0,
-    relaxation::R=1.0,
-    relax::Symbol=:primal,
-    stopping_criterion::SC=StopAfterIteration(300),
-    variant::Symbol=:exact,
-    update_primal_base::Union{Function,Missing}=missing,
-    update_dual_base::Union{Function,Missing}=missing,
-    retraction_method::RM=default_retraction_method(M, typeof(p)),
-    inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
-    inverse_retraction_method_dual::IRM_Dual=default_inverse_retraction_method(
-        N, typeof(p)
-    ),
-    vector_transport_method::VTM=default_vector_transport_method(M, typeof(n)),
-    vector_transport_method_dual::VTM_Dual=default_vector_transport_method(N, typeof(n)),
-) where {
-    P,
-    Q,
-    T,
-    R,
-    SC<:StoppingCriterion,
-    RM<:AbstractRetractionMethod,
-    IRM<:AbstractInverseRetractionMethod,
-    IRM_Dual<:AbstractInverseRetractionMethod,
-    VTM<:AbstractVectorTransportMethod,
-    VTM_Dual<:AbstractVectorTransportMethod,
-}
-    return ChambollePockState{P,Q,T,R,SC,RM,IRM,IRM_Dual,VTM,VTM_Dual}(
+        M::AbstractManifold,
+        N::AbstractManifold;
+        m::P = rand(M),
+        n::Q = rand(N),
+        p::P = rand(M),
+        X::T = zero_vector(M, p),
+        primal_stepsize::R = 1 / sqrt(8),
+        dual_stepsize::R = 1 / sqrt(8),
+        acceleration::R = 0.0,
+        relaxation::R = 1.0,
+        relax::Symbol = :primal,
+        stopping_criterion::SC = StopAfterIteration(300),
+        variant::Symbol = :exact,
+        update_primal_base::Union{Function, Missing} = missing,
+        update_dual_base::Union{Function, Missing} = missing,
+        retraction_method::RM = default_retraction_method(M, typeof(p)),
+        inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
+        inverse_retraction_method_dual::IRM_Dual = default_inverse_retraction_method(
+            N, typeof(p)
+        ),
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(n)),
+        vector_transport_method_dual::VTM_Dual = default_vector_transport_method(N, typeof(n)),
+    ) where {
+        P,
+        Q,
+        T,
+        R,
+        SC <: StoppingCriterion,
+        RM <: AbstractRetractionMethod,
+        IRM <: AbstractInverseRetractionMethod,
+        IRM_Dual <: AbstractInverseRetractionMethod,
+        VTM <: AbstractVectorTransportMethod,
+        VTM_Dual <: AbstractVectorTransportMethod,
+    }
+    return ChambollePockState{P, Q, T, R, SC, RM, IRM, IRM_Dual, VTM, VTM_Dual}(
         m,
         n,
         p,
@@ -211,12 +211,12 @@ This can be done inplace of ``p``.
 
  # Input parameters
 
-$(_var(:Argument, :M; type=true))
-$(_var(:Argument, :M, "N"; type=true))
+$(_var(:Argument, :M; type = true))
+$(_var(:Argument, :M, "N"; type = true))
 $(_var(:Argument, :p))
 $(_var(:Argument, :X))
 $(_var(:Argument, :p, "m"))
-$(_var(:Argument, :p, "n"; M="N"))
+$(_var(:Argument, :p, "n"; M = "N"))
 * `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$(_tex_DΛ)``
 * `prox_F, prox_G_Dual`:          the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
@@ -236,7 +236,7 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"; M="N", p="n"))
+$(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"; M = "N", p = "n"))
 * `Λ=missing`: the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
 * `linearized_forward_operator=missing`: its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
@@ -244,32 +244,32 @@ $(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"; M
 * `relax=:primal`: whether to relax the primal or dual
 * `variant=:exact` if `Λ` is missing, otherwise `:linearized`: variant to use.
   Note that this changes the arguments the `forward_operator` is called with.
-$(_var(:Keyword, :stopping_criterion; default="[StopAfterIteration`](@ref)`(100)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[StopAfterIteration`](@ref)`(100)`"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
-$(_var(:Keyword, :vector_transport_method, "vector_transport_method_dual"; M="N", p="n"))
+$(_var(:Keyword, :vector_transport_method, "vector_transport_method_dual"; M = "N", p = "n"))
 
 $(_note(:OutputSection))
 """
 
 @doc "$(_doc_ChambollePock)"
 function ChambollePock(
-    M::AbstractManifold,
-    N::AbstractManifold,
-    cost::TF,
-    p::P,
-    X::T,
-    m::P,
-    n::Q,
-    prox_F::Function,
-    prox_G_dual::Function,
-    adjoint_linear_operator::Function;
-    Λ::Union{Function,Missing}=missing,
-    linearized_forward_operator::Union{Function,Missing}=missing,
-    kwargs...,
-) where {TF,P,T,Q}
+        M::AbstractManifold,
+        N::AbstractManifold,
+        cost::TF,
+        p::P,
+        X::T,
+        m::P,
+        n::Q,
+        prox_F::Function,
+        prox_G_dual::Function,
+        adjoint_linear_operator::Function;
+        Λ::Union{Function, Missing} = missing,
+        linearized_forward_operator::Union{Function, Missing} = missing,
+        kwargs...,
+    ) where {TF, P, T, Q}
     q = copy(M, p)
     Y = copy(N, n, X)
     m2 = copy(M, m)
@@ -285,77 +285,77 @@ function ChambollePock(
         prox_F,
         prox_G_dual,
         adjoint_linear_operator;
-        Λ=Λ,
-        linearized_forward_operator=linearized_forward_operator,
+        Λ = Λ,
+        linearized_forward_operator = linearized_forward_operator,
         kwargs...,
     )
 end
 
 @doc "$(_doc_ChambollePock)"
 function ChambollePock!(
-    M::AbstractManifold,
-    N::AbstractManifold,
-    cost::TF,
-    p::P,
-    X::T,
-    m::P,
-    n::Q,
-    prox_F::Function,
-    prox_G_dual::Function,
-    adjoint_linear_operator::Function;
-    Λ::Union{Function,Missing}=missing,
-    linearized_forward_operator::Union{Function,Missing}=missing,
-    acceleration=0.05,
-    dual_stepsize=1 / sqrt(8),
-    primal_stepsize=1 / sqrt(8),
-    relaxation=1.0,
-    relax::Symbol=:primal,
-    stopping_criterion::StoppingCriterion=StopAfterIteration(200),
-    update_primal_base::Union{Function,Missing}=missing,
-    update_dual_base::Union{Function,Missing}=missing,
-    retraction_method::RM=default_retraction_method(M, typeof(p)),
-    inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
-    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-    variant=ismissing(Λ) ? :exact : :linearized,
-    kwargs...,
-) where {
-    TF,
-    P,
-    Q,
-    T,
-    RM<:AbstractRetractionMethod,
-    IRM<:AbstractInverseRetractionMethod,
-    VTM<:AbstractVectorTransportMethod,
-}
+        M::AbstractManifold,
+        N::AbstractManifold,
+        cost::TF,
+        p::P,
+        X::T,
+        m::P,
+        n::Q,
+        prox_F::Function,
+        prox_G_dual::Function,
+        adjoint_linear_operator::Function;
+        Λ::Union{Function, Missing} = missing,
+        linearized_forward_operator::Union{Function, Missing} = missing,
+        acceleration = 0.05,
+        dual_stepsize = 1 / sqrt(8),
+        primal_stepsize = 1 / sqrt(8),
+        relaxation = 1.0,
+        relax::Symbol = :primal,
+        stopping_criterion::StoppingCriterion = StopAfterIteration(200),
+        update_primal_base::Union{Function, Missing} = missing,
+        update_dual_base::Union{Function, Missing} = missing,
+        retraction_method::RM = default_retraction_method(M, typeof(p)),
+        inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+        variant = ismissing(Λ) ? :exact : :linearized,
+        kwargs...,
+    ) where {
+        TF,
+        P,
+        Q,
+        T,
+        RM <: AbstractRetractionMethod,
+        IRM <: AbstractInverseRetractionMethod,
+        VTM <: AbstractVectorTransportMethod,
+    }
     pdmo = PrimalDualManifoldObjective(
         cost,
         prox_F,
         prox_G_dual,
         adjoint_linear_operator;
-        linearized_forward_operator=linearized_forward_operator,
-        Λ=Λ,
+        linearized_forward_operator = linearized_forward_operator,
+        Λ = Λ,
     )
     dpdmo = decorate_objective!(M, pdmo; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmo)
     cps = ChambollePockState(
         M,
         N;
-        m=m,
-        n=n,
-        p=p,
-        X=X,
-        primal_stepsize=primal_stepsize,
-        dual_stepsize=dual_stepsize,
-        acceleration=acceleration,
-        relaxation=relaxation,
-        stopping_criterion=stopping_criterion,
-        relax=relax,
-        update_primal_base=update_primal_base,
-        update_dual_base=update_dual_base,
-        variant=variant,
-        retraction_method=retraction_method,
-        inverse_retraction_method=inverse_retraction_method,
-        vector_transport_method=vector_transport_method,
+        m = m,
+        n = n,
+        p = p,
+        X = X,
+        primal_stepsize = primal_stepsize,
+        dual_stepsize = dual_stepsize,
+        acceleration = acceleration,
+        relaxation = relaxation,
+        stopping_criterion = stopping_criterion,
+        relax = relax,
+        update_primal_base = update_primal_base,
+        update_dual_base = update_dual_base,
+        variant = variant,
+        retraction_method = retraction_method,
+        inverse_retraction_method = inverse_retraction_method,
+        vector_transport_method = vector_transport_method,
     )
     dcps = decorate_state!(cps; kwargs...)
     solve!(tmp, dcps)
@@ -408,7 +408,7 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
                 M,
                 cps.m,
                 -cps.primal_stepsize *
-                (adjoint_linearized_operator(tmp, cps.m, cps.n, ptXn)),
+                    (adjoint_linearized_operator(tmp, cps.m, cps.n, ptXn)),
                 cps.p,
                 cps.vector_transport_method,
             ),
@@ -454,7 +454,7 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
                 M,
                 cps.m,
                 -cps.primal_stepsize *
-                (adjoint_linearized_operator(tmp, cps.m, cps.n, ptXbar)),
+                    (adjoint_linearized_operator(tmp, cps.m, cps.n, ptXbar)),
                 cps.p,
                 cps.vector_transport_method,
             ),
@@ -472,8 +472,8 @@ end
 # depending on whether its primal relaxed or dual relaxed, start from start=o.x or start=o.xbar
 #
 function dual_update!(
-    tmp::TwoManifoldProblem, cps::ChambollePockState, start::P, ::Val{:linearized}
-) where {P}
+        tmp::TwoManifoldProblem, cps::ChambollePockState, start::P, ::Val{:linearized}
+    ) where {P}
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
     obj = get_objective(tmp)
@@ -501,8 +501,8 @@ end
 # depending on whether its primal relaxed or dual relaxed start from start=o.x or start=o.xbar here
 #
 function dual_update!(
-    tmp::TwoManifoldProblem, cps::ChambollePockState, start::P, ::Val{:exact}
-) where {P}
+        tmp::TwoManifoldProblem, cps::ChambollePockState, start::P, ::Val{:exact}
+    ) where {P}
     N = get_manifold(tmp, 2)
     ξ_update = inverse_retract(
         N, cps.n, forward_operator(tmp, start), cps.inverse_retraction_method_dual
@@ -521,7 +521,7 @@ update the prox parameters as described in Algorithm 2 of [ChambollePock:2011](@
 2. ``τ_{n+1} = θ_nτ_n``
 3. ``σ_{n+1} = $(_tex(:frac, "σ_n", "θ_n"))``
 """
-function update_prox_parameters!(pds::S) where {S<:AbstractPrimalDualSolverState}
+function update_prox_parameters!(pds::S) where {S <: AbstractPrimalDualSolverState}
     if pds.acceleration > 0
         pds.relaxation = 1 / sqrt(1 + 2 * pds.acceleration * pds.primal_stepsize)
         pds.primal_stepsize = pds.primal_stepsize * pds.relaxation

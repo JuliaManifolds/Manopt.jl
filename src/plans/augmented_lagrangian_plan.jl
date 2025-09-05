@@ -30,7 +30,7 @@ number type used and ``T`` the vector type.
 
     AugmentedLagrangianCost(co, ρ, μ, λ)
 """
-mutable struct AugmentedLagrangianCost{CO,R,T} <: AbstractConstrainedFunctor{T}
+mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunctor{T}
     co::CO
     ρ::R
     μ::T
@@ -80,7 +80,7 @@ number type used and ``T`` the vector type.
     AugmentedLagrangianGrad(co, ρ, μ, λ)
 
 """
-mutable struct AugmentedLagrangianGrad{CO,R,T} <: AbstractConstrainedFunctor{T}
+mutable struct AugmentedLagrangianGrad{CO, R, T} <: AbstractConstrainedFunctor{T}
     co::CO
     ρ::R
     μ::T
@@ -97,8 +97,8 @@ end
 get_parameter(alg::AugmentedLagrangianGrad, ::Val{:ρ}) = alg.ρ
 # default, that is especially when the `grad_g` and `grad_h` are functions.
 function (LG::AugmentedLagrangianGrad)(
-    M::AbstractManifold, X, p, range=NestedPowerRepresentation()
-)
+        M::AbstractManifold, X, p, range = NestedPowerRepresentation()
+    )
     gp = get_inequality_constraint(M, LG.co, p, :)
     hp = get_equality_constraint(M, LG.co, p, :)
     m = length(gp)

@@ -13,7 +13,7 @@ function egrad(M::PowerManifold, X::Array)
     AR[:, :, 2] .= -AtU * (transpose(AtU) * V)
     return AR
 end
-struct EGrad{T,TM} <: Function
+struct EGrad{T, TM} <: Function
     M::TM
     A::Matrix{T}
 end
@@ -28,11 +28,11 @@ function (e::EGrad)(Y::Array, X::Array)
 end
 
 rgrad(M::PowerManifold, p) = project(M, p, egrad(M, p))
-struct RGrad{T,TM} <: Function
-    egrad::EGrad{T,TM}
+struct RGrad{T, TM} <: Function
+    egrad::EGrad{T, TM}
 end
 function RGrad(M::PowerManifold, A::Matrix{T}) where {T}
-    return RGrad{T,typeof(M)}(EGrad{T,typeof(M)}(M, A))
+    return RGrad{T, typeof(M)}(EGrad{T, typeof(M)}(M, A))
 end
 function (r::RGrad)(M::PowerManifold, X, p)
     return project!(M, X, p, r.egrad(X, p))
@@ -47,7 +47,7 @@ function e2rhess!(M::Grassmann, Y, p, X, e_grad, e_Hess)
     return project!(M, Y, p, Y)
 end
 
-function eHess(M::AbstractManifold, X::Array{Float64,3}, H::Array{Float64,3})
+function eHess(M::AbstractManifold, X::Array{Float64, 3}, H::Array{Float64, 3})
     U = X[M, 1]
     V = X[M, 2]
     Udot = H[M, 1]
@@ -71,7 +71,7 @@ function eHess(M::AbstractManifold, X::Array{Float64,3}, H::Array{Float64,3})
     #! format: on
     return R
 end
-struct EHess{T,TM} <: Function
+struct EHess{T, TM} <: Function
     M::TM
     A::Matrix{T}
 end
@@ -107,14 +107,14 @@ function rhess(M::PowerManifold, p, X)
     end
     return Ha
 end
-struct RHess{T,TM} <: Function
-    e_grad!::EGrad{T,TM}
-    e_hess!::EHess{T,TM}
-    G::Array{T,3}
-    H::Array{T,3}
+struct RHess{T, TM} <: Function
+    e_grad!::EGrad{T, TM}
+    e_hess!::EHess{T, TM}
+    G::Array{T, 3}
+    H::Array{T, 3}
 end
 function RHess(M::AbstractManifold, A::Matrix{T}, p) where {T}
-    return RHess{T,typeof(M)}(
+    return RHess{T, typeof(M)}(
         EGrad(M, A), EHess(M, A), zeros(T, size(A, 1), p, 2), zeros(T, size(A, 1), p, 2)
     )
 end

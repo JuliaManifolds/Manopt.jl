@@ -1,4 +1,3 @@
-
 using Manifolds, Manopt, Test
 
 @testset "Conjugate Residual Plan" begin
@@ -16,7 +15,7 @@ using Manifolds, Manopt, Test
     b!(M, W, p) = (W .= bv)
 
     slso = SymmetricLinearSystemObjective(A, b)
-    slso2 = SymmetricLinearSystemObjective(A!, b!; evaluation=InplaceEvaluation())
+    slso2 = SymmetricLinearSystemObjective(A!, b!; evaluation = InplaceEvaluation())
     @testset "Objective" begin
         grad_value = A(TpM, p, X0) + b(TpM, p)
         cost_value = 0.5 * norm(M, p, grad_value)^2
@@ -65,8 +64,8 @@ using Manifolds, Manopt, Test
     end
     @testset "StopWhenRelativeResidualLess" begin
         dmp = DefaultManoptProblem(TpM, slso)
-        crs = ConjugateResidualState(TpM, slso; X=X0)
-        swrr = StopWhenRelativeResidualLess(1.0, 1e-3) #initial norm 1.0, ε=1e-9
+        crs = ConjugateResidualState(TpM, slso; X = X0)
+        swrr = StopWhenRelativeResidualLess(1.0, 1.0e-3) #initial norm 1.0, ε=1e-9
         @test startswith(repr(swrr), "StopWhenRelativeResidualLess(1.0, 0.001)")
         # initially this resets norm
         swrr(dmp, crs, 0)
@@ -75,7 +74,7 @@ using Manifolds, Manopt, Test
         # sop reason is also empty still
         @test length(get_reason(swrr)) == 0
         # Manually set residual small
-        crs.r = [1e-5, 1e-5]
+        crs.r = [1.0e-5, 1.0e-5]
         @test swrr(dmp, crs, 2) == true
         @test swrr.norm_r == norm(crs.r)
         @test length(get_reason(swrr)) > 0

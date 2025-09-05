@@ -20,7 +20,7 @@ All these elements should usually be implemented as functions
 
 the type `T` indicates the global [`AbstractEvaluationType`](@ref).
 """
-abstract type AbstractManifoldObjective{E<:AbstractEvaluationType} end
+abstract type AbstractManifoldObjective{E <: AbstractEvaluationType} end
 
 @doc """
     AbstractDecoratedManifoldObjective{E<:AbstractEvaluationType,O<:AbstractManifoldObjective}
@@ -28,8 +28,8 @@ abstract type AbstractManifoldObjective{E<:AbstractEvaluationType} end
 A common supertype for all decorators of [`AbstractManifoldObjective`](@ref)s to simplify dispatch.
     The second parameter should refer to the undecorated objective (the most inner one).
 """
-abstract type AbstractDecoratedManifoldObjective{E,O<:AbstractManifoldObjective} <:
-              AbstractManifoldObjective{E} end
+abstract type AbstractDecoratedManifoldObjective{E, O <: AbstractManifoldObjective} <:
+AbstractManifoldObjective{E} end
 
 @doc """
     AllocatingEvaluation <: AbstractEvaluationType
@@ -74,23 +74,23 @@ A wrapper to indicate that `get_solver_result` should return the inner objective
 The types are such that one can still dispatch on the undecorated type `O2` of the
 original objective as well.
 """
-struct ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
-       AbstractDecoratedManifoldObjective{E,O2}
+struct ReturnManifoldObjective{E, O2, O1 <: AbstractManifoldObjective{E}} <:
+    AbstractDecoratedManifoldObjective{E, O2}
     objective::O1
 end
 function ReturnManifoldObjective(
-    o::O
-) where {E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E}}
-    return ReturnManifoldObjective{E,O,O}(o)
+        o::O
+    ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
+    return ReturnManifoldObjective{E, O, O}(o)
 end
 function ReturnManifoldObjective(
-    o::O1
-) where {
-    E<:AbstractEvaluationType,
-    O2<:AbstractManifoldObjective,
-    O1<:AbstractDecoratedManifoldObjective{E,O2},
-}
-    return ReturnManifoldObjective{E,O2,O1}(o)
+        o::O1
+    ) where {
+        E <: AbstractEvaluationType,
+        O2 <: AbstractManifoldObjective,
+        O1 <: AbstractDecoratedManifoldObjective{E, O2},
+    }
+    return ReturnManifoldObjective{E, O2, O1}(o)
 end
 
 #
@@ -175,11 +175,11 @@ for both the recursive and the direct case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
 """
-function get_objective(o::AbstractManifoldObjective, recursive=true)
+function get_objective(o::AbstractManifoldObjective, recursive = true)
     return _get_objective(o, dispatch_objective_decorator(o), recursive)
 end
-_get_objective(o::AbstractManifoldObjective, ::Val{false}, rec=true) = o
-function _get_objective(o::AbstractManifoldObjective, ::Val{true}, rec=true)
+_get_objective(o::AbstractManifoldObjective, ::Val{false}, rec = true) = o
+function _get_objective(o::AbstractManifoldObjective, ::Val{true}, rec = true)
     return rec ? get_objective(o.objective) : o.objective
 end
 
@@ -216,7 +216,7 @@ end
 function show(io::IO, co::AbstractDecoratedManifoldObjective)
     return show(io, get_objective(co, false))
 end
-function show(io::IO, t::Tuple{<:AbstractManifoldObjective,P}) where {P}
+function show(io::IO, t::Tuple{<:AbstractManifoldObjective, P}) where {P}
     s = "$(status_summary(t[1]))"
     length(s) > 0 && (s = "$(s)\n\n")
     return print(

@@ -20,11 +20,11 @@ $(_var(:Field, :vector_transport_method))
 # Internal and temporary fields
 
 * `cognitive_vector`: temporary storage for a tangent vector related to `cognitive_weight`
-$(_var(:Field, :p; add=" storing the best point visited by all particles"))
+$(_var(:Field, :p; add = " storing the best point visited by all particles"))
 * `positional_best`:  storing the best position ``p_i`` every single swarm participant visited
-$(_var(:Field, :p, "q"; add=" serving as temporary storage for interims results; avoids allocations"))
+$(_var(:Field, :p, "q"; add = " serving as temporary storage for interims results; avoids allocations"))
 * `social_vec`:       temporary storage for a tangent vector related to `social_weight`
-* `swarm`:            a set of points (of type `AbstractVector{P}`) on a manifold ``$(_math(:Sequence, "a","i","1","N"))``
+* `swarm`:            a set of points (of type `AbstractVector{P}`) on a manifold ``$(_math(:Sequence, "a", "i", "1", "N"))``
 
 # Constructor
 
@@ -40,7 +40,7 @@ The `p` used in the following defaults is the type of one point from the swarm.
 $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :retraction_method))
 * `social_weight=1.4`
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)`"))
 $(_var(:Keyword, :vector_transport_method))
 
 # See also
@@ -48,16 +48,16 @@ $(_var(:Keyword, :vector_transport_method))
 [`particle_swarm`](@ref)
 """
 mutable struct ParticleSwarmState{
-    P,
-    T,
-    TX<:AbstractVector{P},
-    TVelocity<:AbstractVector{T},
-    TParams<:Real,
-    TStopping<:StoppingCriterion,
-    TRetraction<:AbstractRetractionMethod,
-    TInvRetraction<:AbstractInverseRetractionMethod,
-    TVTM<:AbstractVectorTransportMethod,
-} <: AbstractManoptSolverState
+        P,
+        T,
+        TX <: AbstractVector{P},
+        TVelocity <: AbstractVector{T},
+        TParams <: Real,
+        TStopping <: StoppingCriterion,
+        TRetraction <: AbstractRetractionMethod,
+        TInvRetraction <: AbstractInverseRetractionMethod,
+        TVTM <: AbstractVectorTransportMethod,
+    } <: AbstractManoptSolverState
     swarm::TX
     positional_best::TX
     p::P
@@ -74,28 +74,28 @@ mutable struct ParticleSwarmState{
     vector_transport_method::TVTM
 
     function ParticleSwarmState(
-        M::AbstractManifold,
-        swarm::VP,
-        velocity::VT;
-        inertia=0.65,
-        social_weight=1.4,
-        cognitive_weight=1.4,
-        stopping_criterion::SCT=StopAfterIteration(500) | StopWhenChangeLess(M, 1e-4),
-        retraction_method::RTM=default_retraction_method(M, eltype(swarm)),
-        inverse_retraction_method::IRM=default_inverse_retraction_method(M, eltype(swarm)),
-        vector_transport_method::VTM=default_vector_transport_method(M, eltype(swarm)),
-    ) where {
-        P,
-        T,
-        VP<:AbstractVector{<:P},
-        VT<:AbstractVector{<:T},
-        RTM<:AbstractRetractionMethod,
-        SCT<:StoppingCriterion,
-        IRM<:AbstractInverseRetractionMethod,
-        VTM<:AbstractVectorTransportMethod,
-    }
+            M::AbstractManifold,
+            swarm::VP,
+            velocity::VT;
+            inertia = 0.65,
+            social_weight = 1.4,
+            cognitive_weight = 1.4,
+            stopping_criterion::SCT = StopAfterIteration(500) | StopWhenChangeLess(M, 1.0e-4),
+            retraction_method::RTM = default_retraction_method(M, eltype(swarm)),
+            inverse_retraction_method::IRM = default_inverse_retraction_method(M, eltype(swarm)),
+            vector_transport_method::VTM = default_vector_transport_method(M, eltype(swarm)),
+        ) where {
+            P,
+            T,
+            VP <: AbstractVector{<:P},
+            VT <: AbstractVector{<:T},
+            RTM <: AbstractRetractionMethod,
+            SCT <: StoppingCriterion,
+            IRM <: AbstractInverseRetractionMethod,
+            VTM <: AbstractVectorTransportMethod,
+        }
         s = new{
-            P,T,VP,VT,typeof(inertia + social_weight + cognitive_weight),SCT,RTM,IRM,VTM
+            P, T, VP, VT, typeof(inertia + social_weight + cognitive_weight), SCT, RTM, IRM, VTM,
         }()
         s.swarm = swarm
         s.positional_best = copy.(Ref(M), swarm)
@@ -224,7 +224,7 @@ $_doc_swarm_global_best
 
 # Input
 
-$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :M; type = true))
 $(_var(:Argument, :f))
 * `swarm = [rand(M) for _ in 1:swarm_size]`: an initial swarm of points.
 
@@ -238,7 +238,7 @@ $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :retraction_method))
 * `social_weight=1.4`: a social weight factor
 * `swarm_size=100`: swarm size, if it should be generated randomly
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)`"))
 $(_var(:Keyword, :vector_transport_method))
 * `velocity`:                  a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position
 
@@ -248,26 +248,26 @@ If you provide the objective directly, these decorations can still be specified
 $(_note(:OutputSection))
 """
 @doc "$(_doc_PSO)"
-function particle_swarm(M::AbstractManifold, f; swarm_size=100, kwargs...)
+function particle_swarm(M::AbstractManifold, f; swarm_size = 100, kwargs...)
     return particle_swarm(M, f, [rand(M) for _ in 1:swarm_size]; kwargs...)
 end
 function particle_swarm(
-    M::AbstractManifold,
-    f,
-    swarm::AbstractVector;
-    velocity::AbstractVector=[rand(M; vector_at=y) for y in swarm],
-    kwargs...,
-)
+        M::AbstractManifold,
+        f,
+        swarm::AbstractVector;
+        velocity::AbstractVector = [rand(M; vector_at = y) for y in swarm],
+        kwargs...,
+    )
     f_ = _ensure_mutating_cost(f, first(swarm))
     swarm_ = [_ensure_mutating_variable(s) for s in swarm]
     velocity_ = [_ensure_mutating_variable(v) for v in velocity]
     mco = ManifoldCostObjective(f_)
-    rs = particle_swarm(M, mco, swarm_; velocity=velocity_, kwargs...)
+    rs = particle_swarm(M, mco, swarm_; velocity = velocity_, kwargs...)
     return _ensure_matching_output(first(swarm), rs)
 end
 function particle_swarm(
-    M::AbstractManifold, mco::O, swarm::AbstractVector; kwargs...
-) where {O<:Union{AbstractManifoldCostObjective,AbstractDecoratedManifoldObjective}}
+        M::AbstractManifold, mco::O, swarm::AbstractVector; kwargs...
+    ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
     new_swarm = [copy(M, xi) for xi in swarm]
     return particle_swarm!(M, mco, new_swarm; kwargs...)
 end
@@ -278,37 +278,37 @@ function particle_swarm!(M::AbstractManifold, f, swarm::AbstractVector; kwargs..
     return particle_swarm!(M, mco, swarm; kwargs...)
 end
 function particle_swarm!(
-    M::AbstractManifold,
-    mco::O,
-    swarm::AbstractVector;
-    velocity::AbstractVector=[rand(M; vector_at=y) for y in swarm],
-    inertia::Real=0.65,
-    social_weight::Real=1.4,
-    cognitive_weight::Real=1.4,
-    stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
-                                          StopWhenSwarmVelocityLess(1e-4),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(swarm)),
-    inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-        M, eltype(swarm)
-    ),
-    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
-        M, eltype(swarm)
-    ),
-    kwargs..., #collect rest
-) where {O<:Union{AbstractManifoldCostObjective,AbstractDecoratedManifoldObjective}}
+        M::AbstractManifold,
+        mco::O,
+        swarm::AbstractVector;
+        velocity::AbstractVector = [rand(M; vector_at = y) for y in swarm],
+        inertia::Real = 0.65,
+        social_weight::Real = 1.4,
+        cognitive_weight::Real = 1.4,
+        stopping_criterion::StoppingCriterion = StopAfterIteration(500) |
+            StopWhenSwarmVelocityLess(1.0e-4),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, eltype(swarm)),
+        inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
+            M, eltype(swarm)
+        ),
+        vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(
+            M, eltype(swarm)
+        ),
+        kwargs..., #collect rest
+    ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     pss = ParticleSwarmState(
         M,
         swarm,
         velocity;
-        inertia=inertia,
-        social_weight=social_weight,
-        cognitive_weight=cognitive_weight,
-        stopping_criterion=stopping_criterion,
-        retraction_method=retraction_method,
-        inverse_retraction_method=inverse_retraction_method,
-        vector_transport_method=vector_transport_method,
+        inertia = inertia,
+        social_weight = social_weight,
+        cognitive_weight = cognitive_weight,
+        stopping_criterion = stopping_criterion,
+        retraction_method = retraction_method,
+        inverse_retraction_method = inverse_retraction_method,
+        vector_transport_method = vector_transport_method,
     )
     dpss = decorate_state!(pss; kwargs...)
     solve!(mp, dpss)
@@ -351,6 +351,7 @@ function step_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState, ::Any)
             end
         end
     end
+    return
 end
 
 #
@@ -374,7 +375,7 @@ is less than a threshold.
 
 initialize the stopping criterion to a certain `tolerance`.
 """
-mutable struct StopWhenSwarmVelocityLess{F<:Real} <: StoppingCriterion
+mutable struct StopWhenSwarmVelocityLess{F <: Real} <: StoppingCriterion
     threshold::F
     at_iteration::Int
     velocity_norms::Vector{F}
@@ -383,8 +384,8 @@ end
 # It just indicates loss of velocity, not convergence to a minimizer
 indicates_convergence(c::StopWhenSwarmVelocityLess) = false
 function (c::StopWhenSwarmVelocityLess)(
-    mp::AbstractManoptProblem, pss::ParticleSwarmState, k::Int
-)
+        mp::AbstractManoptProblem, pss::ParticleSwarmState, k::Int
+    )
     if k == 0 # reset on init
         c.at_iteration = -1
         # init to correct length

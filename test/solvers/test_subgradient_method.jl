@@ -10,21 +10,21 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Random, Test
     q0 = [10.0, 5.0]
     sgs = SubGradientMethodState(
         M;
-        p=p0,
-        stopping_criterion=StopAfterIteration(200),
-        stepsize=Manopt.ConstantStepsize(M),
+        p = p0,
+        stopping_criterion = StopAfterIteration(200),
+        stepsize = Manopt.ConstantStepsize(M),
     )
     sgs_ac = SubGradientMethodState(
         M;
-        p=q0,
-        stopping_criterion=StopAfterIteration(200),
-        stepsize=Manopt.ConstantStepsize(M, 1.0; type=:absolute),
+        p = q0,
+        stopping_criterion = StopAfterIteration(200),
+        stepsize = Manopt.ConstantStepsize(M, 1.0; type = :absolute),
     )
     sgs_ad = SubGradientMethodState(
         M;
-        p=q0,
-        stopping_criterion=StopAfterIteration(200),
-        stepsize=Manopt.DecreasingStepsize(M; length=1.0, type=:absolute),
+        p = q0,
+        stopping_criterion = StopAfterIteration(200),
+        stepsize = Manopt.DecreasingStepsize(M; length = 1.0, type = :absolute),
     )
     @test startswith(repr(sgs), "# Solver state for `Manopt.jl`s Subgradient Method\n")
     @test get_iterate(sgs) == p0
@@ -69,7 +69,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Random, Test
         @test_throws MethodError get_proximal_map!(mp, 1.0, sgs.p, 1)
         @test_throws MethodError get_proximal_map(mp, 1.0, sgs.p)
         @test_throws MethodError get_proximal_map!(mp, 1.0, sgs.p)
-        sgs2 = subgradient_method(M, f, ∂f, p0; return_state=true)
+        sgs2 = subgradient_method(M, f, ∂f, p0; return_state = true)
         p_star2 = get_solver_result(sgs2)
         @test get_subgradient(sgs2) == -∂f(M, p_star2)
         @test f(M, p_star2) <= f(M, p0)
@@ -88,7 +88,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Random, Test
             X ./= -max(10 * eps(Float64), d)
             return X
         end
-        sgom = ManifoldSubgradientObjective(f, ∂f!; evaluation=InplaceEvaluation())
+        sgom = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())
         mp = DefaultManoptProblem(M, sgom)
         X = zero_vector(M, p)
         Y = get_subgradient(mp, p)
@@ -104,11 +104,11 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Random, Test
         @test isapprox(M, q2, p)
         @test isapprox(M, q3, p)
         Random.seed!(23)
-        q4 = subgradient_method(M, f, ∂f!; evaluation=InplaceEvaluation())
-        @test isapprox(M, q4, p; atol=0.5) # random point -> not that close
+        q4 = subgradient_method(M, f, ∂f!; evaluation = InplaceEvaluation())
+        @test isapprox(M, q4, p; atol = 0.5) # random point -> not that close
         # in-place
         q5 = copy(M, p0)
-        subgradient_method!(M, f, ∂f!, q5; evaluation=InplaceEvaluation())
+        subgradient_method!(M, f, ∂f!, q5; evaluation = InplaceEvaluation())
         @test isapprox(M, q3, q5)
         # Check Fallbacks of Problem
         @test get_cost(mp, q1) == 0.0
@@ -116,7 +116,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Random, Test
         @test_throws MethodError get_gradient(mp, sgs.p)
         @test_throws MethodError get_proximal_map(mp, 1.0, sgs.p, 1)
         s2 = subgradient_method(
-            M, f, ∂f!, p0; evaluation=InplaceEvaluation(), return_state=true
+            M, f, ∂f!, p0; evaluation = InplaceEvaluation(), return_state = true
         )
         p_star2 = get_solver_result(s2)
         @test f(M, p_star2) <= f(M, p0)
@@ -125,11 +125,11 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Random, Test
     @testset "Circle" begin
         Mc, fc, ∂fc, pc, pcs = ManoptTestSuite.Circle_mean_task()
         q4 = subgradient_method(Mc, fc, ∂fc, pc)
-        q5 = subgradient_method(Mc, fc, ∂fc, pc; evaluation=InplaceEvaluation())
-        s3 = subgradient_method(Mc, fc, ∂fc, pc; return_state=true)
+        q5 = subgradient_method(Mc, fc, ∂fc, pc; evaluation = InplaceEvaluation())
+        s3 = subgradient_method(Mc, fc, ∂fc, pc; return_state = true)
         q6 = get_solver_result(s3)[]
-        @test isapprox(q4, 0.0; atol=1e-8)
-        @test isapprox(q5, 0.0; atol=1e-8)
-        @test isapprox(q6, 0.0; atol=1e-8)
+        @test isapprox(q4, 0.0; atol = 1.0e-8)
+        @test isapprox(q5, 0.0; atol = 1.0e-8)
+        @test isapprox(q6, 0.0; atol = 1.0e-8)
     end
 end

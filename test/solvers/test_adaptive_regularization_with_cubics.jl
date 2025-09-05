@@ -42,15 +42,15 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         arcs = AdaptiveRegularizationState(
             M,
             DefaultManoptProblem(M2, arcmo),
-            GradientDescentState(M2; p=zero_vector(M, p0));
-            p=p0,
+            GradientDescentState(M2; p = zero_vector(M, p0));
+            p = p0,
         )
         @test startswith(
             repr(arcs),
             "# Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)",
         )
         p1 = rand(M)
-        X1 = rand(M; vector_at=p1)
+        X1 = rand(M; vector_at = p1)
         set_iterate!(arcs, p1)
         @test arcs.p == p1
         set_gradient!(arcs, X1)
@@ -58,9 +58,9 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         arcs2 = AdaptiveRegularizationState(
             M,
             DefaultManoptProblem(M2, arcmo),
-            LanczosState(M2; maxIterLanczos=1);
-            p=p0,
-            stopping_criterion=StopWhenAllLanczosVectorsUsed(1),
+            LanczosState(M2; maxIterLanczos = 1);
+            p = p0,
+            stopping_criterion = StopWhenAllLanczosVectorsUsed(1),
         )
         #add a fake Lanczos
         push!(arcs2.sub_state.Lanczos_vectors, X1)
@@ -69,7 +69,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         @test stop_solver!(arcs2.sub_problem, arcs2, 1)
 
         arcs3 = AdaptiveRegularizationState(
-            M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos=2); p=p0
+            M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos = 2); p = p0
         )
         #add a fake Lanczos
         initialize_solver!(arcs3.sub_problem, arcs3.sub_state)
@@ -84,11 +84,11 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
                 arcs3.sub_state.Lanczos_vectors[2],
             ),
             0.0,
-            atol=1e-14,
+            atol = 1.0e-14,
         )
         # a second that copies
         arcs4 = AdaptiveRegularizationState(
-            M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos=2); p=p0
+            M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos = 2); p = p0
         )
         #add a fake Lanczos
         push!(arcs4.sub_state.Lanczos_vectors, copy(M, p1, X1))
@@ -103,7 +103,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
                 arcs4.sub_state.Lanczos_vectors[2],
             ),
             0.0,
-            atol=1e-14,
+            atol = 1.0e-14,
         )
 
         st1 = StopWhenFirstOrderProgress(0.5)
@@ -140,30 +140,30 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         )
         @test r == p0
         # Dummy construction with a function for the `sub_problem`
-        arcs4 = AdaptiveRegularizationState(M, f1; p=p0)
+        arcs4 = AdaptiveRegularizationState(M, f1; p = p0)
         @test arcs4.sub_state isa Manopt.ClosedFormSubSolverState
     end
 
     @testset "A few solver runs" begin
         p1 = adaptive_regularization_with_cubics(
-            M, f, grad_f, Hess_f, p0; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
+            M, f, grad_f, Hess_f, p0; θ = 0.5, σ = 100.0, retraction_method = PolarRetraction()
         )
-        @test abs(f(M, p1) - f_min) < 5e-14
+        @test abs(f(M, p1) - f_min) < 5.0e-14
         @test isapprox(M, p_min, p1)
         Random.seed!(42)
         p2 = adaptive_regularization_with_cubics(
-            M, f, grad_f, Hess_f; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
+            M, f, grad_f, Hess_f; θ = 0.5, σ = 100.0, retraction_method = PolarRetraction()
         )
         @test isapprox(M, p_min, p2)
         # Third with approximate Hessian
         p3 = adaptive_regularization_with_cubics(
-            M, f, grad_f, p0; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
+            M, f, grad_f, p0; θ = 0.5, σ = 100.0, retraction_method = PolarRetraction()
         )
         @test isapprox(M, p_min, p3)
         # Fourth with approximate Hessian and random point
         Random.seed!(36)
         p4 = adaptive_regularization_with_cubics(
-            M, f, grad_f; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
+            M, f, grad_f; θ = 0.5, σ = 100.0, retraction_method = PolarRetraction()
         )
         @test isapprox(M, p_min, p4)
         # with a large η1 to trigger the bad model case once
@@ -172,23 +172,23 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
             f,
             grad_f,
             Hess_f;
-            θ=0.5,
-            σ=100.0,
-            η1=0.89,
-            retraction_method=PolarRetraction(),
+            θ = 0.5,
+            σ = 100.0,
+            η1 = 0.89,
+            retraction_method = PolarRetraction(),
         )
         @test isapprox(M, p_min, p5)
 
         # in place
         q1 = copy(M, p0)
         adaptive_regularization_with_cubics!(
-            M, f, grad_f, Hess_f, q1; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
+            M, f, grad_f, Hess_f, q1; θ = 0.5, σ = 100.0, retraction_method = PolarRetraction()
         )
         @test isapprox(M, p_min, q1)
         # in place with approx Hess
         q2 = copy(M, p0)
         adaptive_regularization_with_cubics!(
-            M, f, grad_f, q2; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
+            M, f, grad_f, q2; θ = 0.5, σ = 100.0, retraction_method = PolarRetraction()
         )
         @test isapprox(M, p_min, q2)
 
@@ -202,23 +202,23 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         sub_problem = DefaultManoptProblem(M2, arcmo)
         sub_state = GradientDescentState(
             M2;
-            p=zero_vector(M, p0),
-            stopping_criterion=StopAfterIteration(500) |
-                               StopWhenGradientNormLess(1e-11) |
-                               StopWhenFirstOrderProgress(0.1),
+            p = zero_vector(M, p0),
+            stopping_criterion = StopAfterIteration(500) |
+                StopWhenGradientNormLess(1.0e-11) |
+                StopWhenFirstOrderProgress(0.1),
         )
         q3 = copy(M, p0)
         adaptive_regularization_with_cubics!(
             M,
             mho,
             q3;
-            θ=0.5,
-            σ=100.0,
-            retraction_method=PolarRetraction(),
-            sub_problem=sub_problem,
-            sub_state=sub_state,
-            return_objective=true,
-            return_state=true,
+            θ = 0.5,
+            σ = 100.0,
+            retraction_method = PolarRetraction(),
+            sub_problem = sub_problem,
+            sub_state = sub_state,
+            return_objective = true,
+            return_state = true,
         )
         @test isapprox(M, p_min, q3)
 
@@ -232,11 +232,11 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         hess_fc(Mc, p, X) = 1.0
         p0 = 0.2
         p1 = adaptive_regularization_with_cubics(
-            Mc, fc, grad_fc, hess_fc, p0; θ=0.5, σ=100.0
+            Mc, fc, grad_fc, hess_fc, p0; θ = 0.5, σ = 100.0
         )
         @test fc(Mc, p0) > fc(Mc, p1)
         p2 = adaptive_regularization_with_cubics(
-            Mc, fc, grad_fc, hess_fc, p0; θ=0.5, σ=100.0, evaluation=InplaceEvaluation()
+            Mc, fc, grad_fc, hess_fc, p0; θ = 0.5, σ = 100.0, evaluation = InplaceEvaluation()
         )
         @test fc(Mc, p0) > fc(Mc, p2)
     end
