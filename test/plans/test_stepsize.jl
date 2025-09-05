@@ -135,9 +135,9 @@ using ManoptTestSuite
             grad_f(M, p) = sum(2 .* p)
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
-            gds = GradientDescentState(M; p=p)
+            gds = GradientDescentState(M; p = p)
             ds = DistanceOverGradientsStepsize(
-                M; p=p, initial_distance=1.0, use_curvature=false
+                M; p = p, initial_distance = 1.0, use_curvature = false
             )
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
@@ -152,13 +152,13 @@ using ManoptTestSuite
             grad_f(M, p) = sum(2 .* p)
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
-            gds = GradientDescentState(M; p=p)
+            gds = GradientDescentState(M; p = p)
             ds = DistanceOverGradientsStepsize(
                 M;
-                p=p,
-                initial_distance=1.0,
-                use_curvature=true,
-                sectional_curvature_bound=0.0,
+                p = p,
+                initial_distance = 1.0,
+                use_curvature = true,
+                sectional_curvature_bound = 0.0,
             )
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
@@ -173,9 +173,9 @@ using ManoptTestSuite
             grad_f(M, p) = sum(2 .* p)
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [1, 0]
-            gds = GradientDescentState(M; p=p)
+            gds = GradientDescentState(M; p = p)
             ds = DistanceOverGradientsStepsize(
-                M; p=p, initial_distance=1.0, use_curvature=false
+                M; p = p, initial_distance = 1.0, use_curvature = false
             )
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
@@ -190,13 +190,13 @@ using ManoptTestSuite
             grad_f(M, p) = sum(2 .* p)
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [1, 0]
-            gds = GradientDescentState(M; p=p)
+            gds = GradientDescentState(M; p = p)
             ds = DistanceOverGradientsStepsize(
                 M;
-                p=p,
-                initial_distance=1.0,
-                use_curvature=true,
-                sectional_curvature_bound=1.0,
+                p = p,
+                initial_distance = 1.0,
+                use_curvature = true,
+                sectional_curvature_bound = 1.0,
             )
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
@@ -218,13 +218,13 @@ using ManoptTestSuite
             grad_f(M, q) = g
 
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
-            gds = GradientDescentState(M; p=p)
+            gds = GradientDescentState(M; p = p)
             ds = DistanceOverGradientsStepsize(
                 M;
-                p=p,
-                initial_distance=1.0,
-                use_curvature=true,
-                sectional_curvature_bound=-1.0,
+                p = p,
+                initial_distance = 1.0,
+                use_curvature = true,
+                sectional_curvature_bound = -1.0,
             )
 
             @test ds.gradient_sum == 0
@@ -239,8 +239,8 @@ using ManoptTestSuite
             expected_lr = 1.0 / (sqrt(zeta) * gnorm)
 
             # Call with the known gradient to avoid any objective/gradient mismatches
-            lr = ds(dmp, gds, 0; gradient=g)
-            @test isapprox(lr, expected_lr; rtol=1e-12, atol=0)
+            lr = ds(dmp, gds, 0; gradient = g)
+            @test isapprox(lr, expected_lr; rtol = 1.0e-12, atol = 0)
         end
     end
     @testset "max_stepsize fallbacks" begin

@@ -1733,7 +1733,7 @@ $(_var(:Keyword, :p; add="initial point, used to track distances"))
 
 [`AdaptiveWNGradientStepsize`](@ref), [`gradient_descent`](@ref)
 """
-mutable struct DistanceOverGradientsStepsize{R<:Real,P} <: Stepsize
+mutable struct DistanceOverGradientsStepsize{R <: Real, P} <: Stepsize
     initial_distance::R
     max_distance::R
     gradient_sum::R
@@ -1744,13 +1744,13 @@ mutable struct DistanceOverGradientsStepsize{R<:Real,P} <: Stepsize
 end
 
 function DistanceOverGradientsStepsize(
-    M::AbstractManifold;
-    p=rand(M),
-    initial_distance::R=1e-3,
-    use_curvature::Bool=false,
-    sectional_curvature_bound::R=0.0,
-) where {R<:Real}
-    return DistanceOverGradientsStepsize{R,typeof(p)}(
+        M::AbstractManifold;
+        p = rand(M),
+        initial_distance::R = 1.0e-3,
+        use_curvature::Bool = false,
+        sectional_curvature_bound::R = 0.0,
+    ) where {R <: Real}
+    return DistanceOverGradientsStepsize{R, typeof(p)}(
         initial_distance,
         initial_distance,  # max_distance starts at initial_distance
         zero(R),          # gradient_sum starts at 0
@@ -1778,7 +1778,7 @@ function geometric_curvature_function(κ::Real, d::Real)
         sqrt_abs_κ = sqrt(abs(κ))
         arg = sqrt_abs_κ * d
         # Avoid numerical issues for small arguments
-        if arg < 1e-8
+        if arg < 1.0e-8
             return 1.0 + arg^2 / 3.0  # Taylor expansion
         else
             return arg / tanh(arg)
@@ -1789,13 +1789,13 @@ function geometric_curvature_function(κ::Real, d::Real)
 end
 
 function (rdog::DistanceOverGradientsStepsize)(
-    mp::AbstractManoptProblem,
-    s::AbstractManoptSolverState,
-    i,
-    args...;
-    gradient=nothing,
-    kwargs...,
-)
+        mp::AbstractManoptProblem,
+        s::AbstractManoptSolverState,
+        i,
+        args...;
+        gradient = nothing,
+        kwargs...,
+    )
     M = get_manifold(mp)
     p = get_iterate(s)
     grad = isnothing(gradient) ? get_gradient(mp, p) : gradient
