@@ -51,15 +51,15 @@ function set_parameter!(
 end
 get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:β}) = acsf.β
 
-@doc raw"""
+@doc """
     ConstrainedManifoldObjective{T<:AbstractEvaluationType, C<:ConstraintType} <: AbstractManifoldObjective{T}
 
 Describes the constrained objective
 ```math
 \begin{aligned}
- \operatorname*{arg\,min}_{p ∈\mathcal{M}} & f(p)\\
- \text{subject to } &g_i(p)\leq0 \quad \text{ for all } i=1,…,m,\\
- \quad &h_j(p)=0 \quad \text{ for all } j=1,…,n.
+ $(_tex(:argmin))_{p ∈ } & f(p)\\
+ $(_tex(:text, "subject to")) & g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, "for all ")) i=1,…,m,\\
+ $(_tex(:quad)) &h_j(p)=0 $(_tex(:quad)) $(_tex(:text, "for all ")) j=1,…,n.
 \end{aligned}
 ```
 
@@ -68,9 +68,9 @@ Describes the constrained objective
 * `objective`: an [`AbstractManifoldObjective`](@ref) representing the unconstrained
   objective, that is containing cost ``f``, the gradient of the cost ``f`` and maybe the Hessian.
 * `equality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the equality constraints
-``h: \mathcal M → \mathbb R^n`` also possibly containing its gradient and/or Hessian
+``h: $(_math(:M)) → ℝ^n`` also possibly containing its gradient and/or Hessian
 * `equality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the equality constraints
-``h: \mathcal M → \mathbb R^n`` also possibly containing its gradient and/or Hessian
+``h: $(_math(:M)) → ℝ^n`` also possibly containing its gradient and/or Hessian
 
 # Constructors
     ConstrainedManifoldObjective(M::AbstractManifold, f, grad_f;
@@ -301,7 +301,7 @@ function ConstrainedManifoldObjective(
     return ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h; kwargs...)
 end
 
-@doc raw"""
+@doc """
     ConstrainedProblem{
         TM <: AbstractManifold,
         O <: AbstractManifoldObjective
@@ -319,19 +319,19 @@ correctly, they work as follows:
 
 Assume the objective is
 ```math
-\begin{aligned}
- \operatorname*{arg\,min}_{p ∈\mathcal{M}} & f(p)\\
- \text{subject to } &g_i(p)\leq0 \quad \text{ for all } i=1,…,m,\\
- \quad &h_j(p)=0 \quad \text{ for all } j=1,…,n.
-\end{aligned}
+\\begin{aligned}
+ $(_tex(:argmin))_{p ∈ $(_math(:M))} & f(p)\\\\
+ $(_tex(:text, "subject to ")) & g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, " for all ")) i=1,…,m,\\
+ $(_tex(:quad)) & h_j(p)=0 $(_tex(:quad)) $(_tex(:text, " for all ")) j=1,…,n.
+\\end{aligned}
 ```
 
 then the gradients can (classically) be considered as vectors of the
 components gradients, for example
-``\bigl(\operatorname{grad} g_1(p), \operatorname{grad} g_2(p), …, \operatorname{grad} g_m(p) \bigr)``.
+``$(_tex(:bigl))($(_tex(:grad)) g_1(p), $(_tex(:grad)) g_2(p), …, $(_tex(:grad)) g_m(p) $(_tex(:bigr)))``.
 
 In another interpretation, this can be considered a point on the tangent space
-at ``P = (p,…,p) \in \mathcal M^m``, so in the tangent space to the [`PowerManifold`](@extref `ManifoldsBase.PowerManifold`) ``\mathcal M^m``.
+at ``P = (p,…,p) ∈ $(_math(:M))^m``, so in the tangent space to the [`PowerManifold`](@extref `ManifoldsBase.PowerManifold`) ``$(_math(:M))^m``.
 The case where this is a [`NestedPowerRepresentation`](@extref `ManifoldsBase.NestedPowerRepresentation`) this agrees with the
 interpretation from before, but on power manifolds, more efficient representations exist.
 
@@ -396,14 +396,13 @@ end
 get_manifold(cmp::ConstrainedManoptProblem) = cmp.manifold
 get_objective(cmp::ConstrainedManoptProblem) = cmp.objective
 
-@doc raw"""
+@doc """
     LagrangianCost{CO,T} <: AbstractConstrainedFunctor{T}
 
 Implement the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`.
 
 ```math
-\mathcal L(p; μ, λ)
-= f(p) +  \sum_{i=1}^m μ_ig_i(p) + \sum_{j=1}^n λ_jh_j(p)
+$(_tex(:Cal,"L"))(p; μ, λ) = f(p) + $(_tex(:sum, "i=1", "m")) μ_ig_i(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p)
 ```
 
 # Fields
@@ -418,7 +417,7 @@ Create a functor for the Lagrangian with fixed dual variables.
 
 # Example
 
-When you directly want to evaluate the Lagrangian ``\mathcal L``
+When you directly want to evaluate the Lagrangian ``$(_tex(:Cal,"L"))``
 you can also call
 
 ```
@@ -442,15 +441,15 @@ function show(io::IO, lc::LagrangianCost)
     return print(io, "LagrangianCost\n\twith μ=$(lc.μ), λ=$(lc.λ)")
 end
 
-@doc raw"""
+@doc """
     LagrangianGradient{CO,T}
 
 The gradient of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`
 with respect to the variable ``p``. The formula reads
 
 ```math
-\operatorname{grad}_p \mathcal L(p; μ, λ)
-= \operatorname{grad} f(p) +  \sum_{i=1}^m μ_i \operatorname{grad} g_i(p) + \sum_{j=1}^n λ_j \operatorname{grad} h_j(p)
+$(_tex(:grad))_p $(_tex(:Cal,"L"))(p; μ, λ)
+= $(_tex(:grad)) f(p) + $(_tex(:sum, "i=1", "m")) μ_i $(_tex(:grad)) g_i(p) + $(_tex(:sum, "j=1", "n")) λ_j $(_tex(:grad)) h_j(p)
 ```
 
 # Fields
@@ -465,7 +464,7 @@ Create a functor for the Lagrangian with fixed dual variables.
 
 # Example
 
-When you directly want to evaluate the gradient of the Lagrangian ``\operatorname{grad}_p \mathcal L``
+When you directly want to evaluate the gradient of the Lagrangian ``$(_tex(:grad))_p $(_tex(:Cal,"L"))``
 you can also call `LagrangianGradient(co, μ, λ)(M,p)` or `LagrangianGradient(co, μ, λ)(M,X,p)` for the in-place variant.
 """
 mutable struct LagrangianGradient{CO,T} <: AbstractConstrainedFunctor{T}
@@ -496,15 +495,15 @@ function show(io::IO, lg::LagrangianGradient)
     return print(io, "LagrangianGradient\n\twith μ=$(lg.μ), λ=$(lg.λ)")
 end
 
-@doc raw"""
+@doc """
     LagrangianHessian{CO, V, T}
 
-The Hesian of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`
+The Hessian of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`
 with respect to the variable ``p``. The formula reads
 
 ```math
-\operatorname{Hess}_p \mathcal L(p; μ, λ)[X]
-= \operatorname{Hess} f(p) +  \sum_{i=1}^m μ_i \operatorname{Hess} g_i(p)[X] + \sum_{j=1}^n λ_j \operatorname{Hess} h_j(p)[X]
+$(_tex(:Hess))_p $(_tex(:Cal,"L"))(p; μ, λ)[X]
+= $(_tex(:Hess)) f(p) + $(_tex(:sum, "i=1", "m")) μ_i $(_tex(:Hess)) g_i(p)[X] + $(_tex(:sum, "j=1", "n")) λ_j $(_tex(:Hess)) h_j(p)[X]
 ```
 
 # Fields
@@ -519,7 +518,7 @@ Create a functor for the Lagrangian with fixed dual variables.
 
 # Example
 
-When you directly want to evaluate the Hessian of the Lagrangian ``\operatorname{Hess}_p \mathcal L``
+When you directly want to evaluate the Hessian of the Lagrangian ``$(_tex(:Hess))_p $(_tex(:Cal,"L"))``
 you can also call `LagrangianHessian(co, μ, λ)(M, p, X)` or `LagrangianHessian(co, μ, λ)(M, Y, p, X)` for the in-place variant.
 """
 mutable struct LagrangianHessian{CO,T} <: AbstractConstrainedFunctor{T}
@@ -550,7 +549,7 @@ function show(io::IO, lh::LagrangianHessian)
     return print(io, "LagrangianHessian\n\twith μ=$(lh.μ), λ=$(lh.λ)")
 end
 
-@doc raw"""
+@doc """
     equality_constraints_length(co::ConstrainedManifoldObjective)
 
 Return the number of equality constraints of an [`ConstrainedManifoldObjective`](@ref).
@@ -563,7 +562,7 @@ function equality_constraints_length(co::AbstractDecoratedManifoldObjective)
     return equality_constraints_length(get_objective(co, false))
 end
 
-@doc raw"""
+@doc """
     get_unconstrained_objective(co::ConstrainedManifoldObjective)
 
 Returns the internally stored unconstrained [`AbstractManifoldObjective`](@ref)
@@ -578,7 +577,7 @@ function get_cost_function(co::ConstrainedManifoldObjective, recursive=false)
     return get_cost_function(co.objective, recursive)
 end
 
-@doc raw"""
+@doc """
     get_equality_constraint(amp::AbstractManoptProblem, p, j=:)
     get_equality_constraint(M::AbstractManifold, objective, p, j=:)
 
@@ -617,7 +616,7 @@ function get_gradient_function(co::ConstrainedManifoldObjective, recursive=false
     return get_gradient_function(co.objective, recursive)
 end
 
-@doc raw"""
+@doc """
     get_inequality_constraint(amp::AbstractManoptProblem, p, j=:)
     get_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
 
@@ -644,13 +643,13 @@ function get_inequality_constraint(
     end
 end
 
-@doc raw"""
+@doc """
     get_grad_equality_constraint(amp::AbstractManoptProblem, p, j)
     get_grad_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
     get_grad_equality_constraint!(amp::AbstractManoptProblem, X, p, j)
     get_grad_equality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
 
-Evaluate the gradient or gradients  of the equality constraint ``(\operatorname{grad} h(p))_j`` or ``\operatorname{grad} h_j(p)``,
+Evaluate the gradient or gradients  of the equality constraint ``($(_tex(:grad)) h(p))_j`` or ``$(_tex(:grad)) h_j(p)``,
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the gradient.
 """
@@ -723,13 +722,13 @@ function get_grad_equality_constraint!(
     return get_gradient!(M, X, co.equality_constraints, p, j, range)
 end
 
-@doc raw"""
+@doc """
     get_grad_inequality_constraint(amp::AbstractManoptProblem, p, j=:)
     get_grad_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
     get_grad_inequality_constraint!(amp::AbstractManoptProblem, X, p, j=:)
     get_grad_inequality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
 
-Evaluate the gradient or gradients of the inequality constraint ``(\operatorname{grad} g(p))_j`` or ``\operatorname{grad} g_j(p)``,
+Evaluate the gradient or gradients of the inequality constraint ``($(_tex(:grad)) g(p))_j`` or ``$(_tex(:grad)) g_j(p)``,
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the gradient.
 """
@@ -806,13 +805,13 @@ function get_hessian_function(co::ConstrainedManifoldObjective, recursive=false)
     return get_hessian_function(co.objective, recursive)
 end
 
-@doc raw"""
+@doc """
     get_hess_equality_constraint(amp::AbstractManoptProblem, p, j=:)
     get_hess_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
     get_hess_equality_constraint!(amp::AbstractManoptProblem, X, p, j=:)
     get_hess_equality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
 
-Evaluate the Hessian or Hessians of the equality constraint ``(\operatorname{Hess} h(p))_j`` or ``\operatorname{Hess} h_j(p)``,
+Evaluate the Hessian or Hessians of the equality constraint ``($(_tex(:Hess)) h(p))_j`` or ``$(_tex(:Hess)) h_j(p)``,
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the Hessian.
 """
@@ -883,13 +882,13 @@ function get_hess_equality_constraint!(
     return get_hessian!(M, Y, co.equality_constraints, p, X, j, range)
 end
 
-@doc raw"""
+@doc """
     get_hess_inequality_constraint(amp::AbstractManoptProblem, p, X, j=:)
     get_hess_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
     get_hess_inequality_constraint!(amp::AbstractManoptProblem, Y, p, j=:)
     get_hess_inequality_constraint!(M::AbstractManifold, Y, co::ConstrainedManifoldObjective, p, X, j=:, range=NestedPowerRepresentation())
 
-Evaluate the Hessian or Hessians of the inequality constraint ``(\operatorname{Hess} g(p)[X])_j`` or ``\operatorname{Hess} g_j(p)[X]``,
+Evaluate the Hessian or Hessians of the inequality constraint ``($(_tex(:Hess)) g(p)[X])_j`` or ``$(_tex(:Hess)) g_j(p)[X]``,
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the Hessian.
 """
@@ -968,7 +967,7 @@ function get_hess_inequality_constraint!(
     return get_hessian!(M, Y, co.inequality_constraints, p, X, j, range)
 end
 
-@doc raw"""
+@doc """
     inequality_constraints_length(cmo::ConstrainedManifoldObjective)
 
 Return the number of inequality constraints of an [`ConstrainedManifoldObjective`](@ref) `cmo`.
@@ -981,18 +980,18 @@ function inequality_constraints_length(admo::AbstractDecoratedManifoldObjective)
     return inequality_constraints_length(get_objective(admo, false))
 end
 
-@doc raw"""
+@doc """
     is_feasible(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, kwargs...)
 
 Evaluate whether a boint `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo`.
-That is for the provided inequality constaints ``g: \mathcal M → ℝ^m`` and equality constaints ``h: \mathcal M \to ℝ^m``
-from within `cmo`, the point ``p ∈ \mathcal M`` is feasible if
+That is for the provided inequality constaints ``g: $(_math(:M)) → ℝ^m`` and equality constaints ``h: $(_math(:M)) \to ℝ^m``
+from within `cmo`, the point ``p ∈ $(_math(:M))`` is feasible if
 ```math
-g_i(p) ≤ 0, \text{ for all } i=1,…,m\quad\text{ and }\quad h_j(p) = 0, \text{ for all } j=1,…,n.
+g_i(p) ≤ 0, \text{ for all } i=1,…,m$(_tex(:quad))\text{ and }$(_tex(:quad)) h_j(p) = 0, \text{ for all } j=1,…,n.
 ```
 
 # Keyword arguments
-* `check_point::Bool=true`: whether to also verify that ``p∈\mathcal M` holds, using [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
+* `check_point::Bool=true`: whether to also verify that ``p∈$(_math(:M))` holds, using [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
 * `error::Symbol=:none`: if the point is not feasible, this symbol determines how to report the error.
     * `:error`: throws an error
     * `:info`: displays the error message as an @info
@@ -1021,7 +1020,7 @@ function is_feasible(M, cmo, p; check_point::Bool=true, error::Symbol=:none, kwa
     return feasible
 end
 
-@doc raw"""
+@doc """
     get_feasibility_status(
         M::AbstractManifold,
         cmo::ConstrainedManifoldObjective,

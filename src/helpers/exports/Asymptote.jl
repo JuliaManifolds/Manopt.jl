@@ -1,7 +1,7 @@
-@doc raw"""
+@doc """
     asymptote_export_S2_signals(filename; points, curves, tangent_vectors, colors, kwargs...)
 
-Export given `points`, `curves`, and `tangent_vectors` on the sphere ``\mathbb S^2``
+Export given `points`, `curves`, and `tangent_vectors` on the sphere ``𝕊^2``
 to Asymptote.
 
 # Input
@@ -202,11 +202,11 @@ function asymptote_export_S2_signals(
         close(io)
     end
 end
-@doc raw"""
+@doc """
     asymptote_export_S2_data(filename)
 
 Export given `data` as an array of points on the 2-sphere, which might be one-, two-
-or three-dimensional data with points on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) ``\mathbb S^2``.
+or three-dimensional data with points on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) ``𝕊^2``.
 
 # Input
 
@@ -278,7 +278,7 @@ function asymptote_export_S2_data(
         close(io)
     end
 end
-@doc raw"""
+@doc """
     asymptote_export_SPD(filename)
 
 export given `data` as a point on a `Power(SymmetricPOsitiveDefinnite(3))}` manifold of

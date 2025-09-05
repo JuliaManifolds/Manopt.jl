@@ -200,7 +200,7 @@ function show(io::IO, c::StopWhenResidualIsReducedByFactorOrPower)
     )
 end
 
-@doc raw"""
+@doc """
     set_parameter!(c::StopWhenResidualIsReducedByFactorOrPower, :ResidualPower, v)
 
 Update the residual Power `θ`  to `v`.
@@ -212,7 +212,7 @@ function set_parameter!(
     return c
 end
 
-@doc raw"""
+@doc """
     set_parameter!(c::StopWhenResidualIsReducedByFactorOrPower, :ResidualFactor, v)
 
 Update the residual Factor `κ` to `v`.
@@ -400,9 +400,9 @@ end
 _doc_TCG_subproblem = raw"""
 ```math
 \begin{align*}
-\operatorname*{arg\,min}_{Y  ∈  T_p\mathcal{M}}&\ m_p(Y) = f(p) +
+$(_tex(:argmin))_{Y  ∈  T_p\mathcal{M}}&\ m_p(Y) = f(p) +
 ⟨\operatorname{grad}f(p), Y⟩_p + \frac{1}{2} ⟨\mathcal{H}_p[Y], Y⟩_p\\
-\text{such that}& \ \lVert Y \rVert_p ≤ Δ
+$(_tex(:text, "such that"))& \ \lVert Y \rVert_p ≤ Δ
 \end{align*}
 ```
 """

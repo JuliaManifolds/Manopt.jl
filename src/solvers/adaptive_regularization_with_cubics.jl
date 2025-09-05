@@ -168,7 +168,7 @@ end
 
 _doc_ARC_mdoel = raw"""
 ```math
-m_k(X) = f(p_k) + ⟨X, \operatorname{grad} f(p^{(k)})⟩ + \frac{1}{2}⟨X, \operatorname{Hess} f(p^{(k)})[X]⟩ + \frac{σ_k}{3}\lVert X \rVert^3
+m_k(X) = f(p_k) + ⟨X, \operatorname{grad} f(p^{(k)})⟩ + \frac{1}{2}⟨X, $(_tex(:Hess)) f(p^{(k)})[X]⟩ + \frac{σ_k}{3}\lVert X \rVert^3
 ```
 """
 

@@ -14,6 +14,7 @@ Thanks to the following contributors to `Manopt.jl`:
 * Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](solvers/FrankWolfe.md) solver.
 * Mathias Ravn Munkvold contributed most of the implementation of the [Adaptive Regularization with Cubics](solvers/adaptive-regularization-with-cubics.md) solver as well as its [Lanczos](@ref arc-Lanczos) subsolver
 * [Sander Engen Oddsen](https://github.com/oddsen) contributed to the implementation of the [LTMADS](solvers/mesh_adaptive_direct_search.md) solver.
+* [Jonas Püschel](https://www.uni-augsburg.de/de/fakultaet/mntf/math/prof/numa/team/jonas-pueschel/) contributed [restart rules for the conjugate gradient solver](@ref cg-restart).
 * [Tom-Christian Riemer](https://www.tu-chemnitz.de/mathematik/wire/mitarbeiter.php) implemented the [trust regions](solvers/trust_regions.md) and [quasi Newton](solvers/quasi_Newton.md) solvers as well as the [truncated conjugate gradient descent](solvers/truncated_conjugate_gradient_descent.md) subsolver.
 * [Markus A. Stokkenes](https://www.linkedin.com/in/markus-a-stokkenes-b41bba17b/) contributed most of the implementation of the [Interior Point Newton Method](solvers/interior_point_Newton.md) as well as its default [Conjugate Residual](solvers/conjugate_residual.md) subsolver
 * [Manuel Weiss](https://scoop.iwr.uni-heidelberg.de/author/manuel-weiß/) implemented most of the [conjugate gradient update rules](@ref cg-coeffs)

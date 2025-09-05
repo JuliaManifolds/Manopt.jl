@@ -2,10 +2,10 @@ _doc_AL_Cost(iter) = "$(_tex(:Cal, "L"))_{ρ^{($iter)}}(p, μ^{($iter)}, λ^{($i
 _doc_AL_Cost_long = raw"""
 ```math
 \mathcal L_\rho(p, μ, λ)
-= f(x) + \frac{ρ}{2} \biggl(
-    \sum_{j=1}^n \Bigl( h_j(p) + \frac{λ_j}{ρ} \Bigr)^2
+= f(x) + $(_tex(:frac, "ρ", "2")) \biggl(
+    \sum_{j=1}^n \Bigl( h_j(p) + $(_tex(:frac, "λ_j", "ρ")) \Bigr)^2
     +
-    \sum_{i=1}^m \max\Bigl\{ 0, \frac{μ_i}{ρ} + g_i(p) \Bigr\}^2
+    \sum_{i=1}^m \max\Bigl\{ 0, $(_tex(:frac, "μ_i", "ρ} + g_i(p) \Bigr\"))^2
 \Bigr)
 ```
 """
@@ -54,7 +54,7 @@ function (L::AugmentedLagrangianCost)(M::AbstractManifold, p)
     return c + (L.ρ / 2) * d
 end
 
-@doc raw"""
+@doc """
     AugmentedLagrangianGrad{CO,R,T} <: AbstractConstrainedFunctor{T}
 
 Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``

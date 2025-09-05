@@ -2,7 +2,7 @@ _doc_IPN_subsystem =
     raw"""
 ```math
 \operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
-\text{ where }
+$(_tex(:text, " where "))
 """ * "X ∈ $(_math(:TpM)), Y,W ∈ ℝ^m, Z ∈ ℝ^n,\n```\n"
 _doc_IPN = """
     interior_point_Newton(M, f, grad_f, Hess_f, p=rand(M); kwargs...)

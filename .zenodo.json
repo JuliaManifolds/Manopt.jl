@@ -1,33 +1,59 @@
 {
     "contributors": [
         {
-            "affiliation": "NTNU Trondheim",
-            "name": "Jasa, Hajg",
-            "type": "ProjectMember",
-            "orcid": "0009-0002-7917-0530"
-        },
-        {
-            "name": "Mathieu Besançon",
-            "type": "Other",
-            "orcid": "0000-0002-6284-3033"
-        },
-        {
             "affiliation": "EMBL Heidelberg",
             "name": "Ahlmann-Eltze, Constantin",
-            "type": "Other",
-            "orcid": "0000-0002-3762-068X"
+            "orcid": "0000-0002-3762-068X",
+            "type": "Other"
+        },
+        {
+            "name": "Besançon, Mathieu",
+            "orcid": "0000-0002-6284-3033",
+            "type": "Other"
+        },
+        {
+            "affiliation": "University of Cambridge",
+            "name": "Diepeveen, Willem",
+            "type": "ProjectMember",
+            "orcid": "0000-0002-4690-9258"
         },
         {
             "name": "Dornig, Renée",
             "type": "ProjectMember"
         },
         {
-            "name": "Riemer, Tom-Christian",
+            "affiliation": "NTNU Trondheim",
+            "name": "Jasa, Hajg",
+            "orcid": "0009-0002-7917-0530",
+            "type": "ProjectMember"
+        },
+        {
+            "affiliation": "NTNU Trondheim",
+            "name": "Kjemsås, Even Stephansen",
+            "type": "ProjectMember"
+        },
+        {
+            "affiliation": "NTNU Trondheim",
+            "name": "Kolstø, Johannes Voll",
             "type": "ProjectMember"
         },
         {
             "affiliation": "NTNU Trondheim",
             "name": "Oddsen, Sander Engen",
+            "type": "ProjectMember"
+        },
+        {
+            "affiliation": "Augsburg University",
+            "name": "Püschel, Jonas",
+            "orcid": "0009-0007-1946-2925",
+            "type": "ProjectMember"
+        },
+        {
+            "name": "Rebjock, Quentin",
+            "type": "ProjectMember"
+        },
+        {
+            "name": "Riemer, Tom-Christian",
             "type": "ProjectMember"
         },
         {
@@ -39,34 +65,14 @@
             "type": "ProjectMember"
         },
         {
-            "name": "Rebjock, Quentin",
-            "type": "ProjectMember"
-        },
-        {
-            "affiliation": "NTNU Trondheim",
-            "name": "Kolstø, Johannes Voll",
-            "type": "ProjectMember"
-        },
-        {
-            "affiliation": "University of Cambridge",
-            "name": "Diepeveen, Willem",
-            "type": "ProjectMember",
-            "orcid": "0000-0002-4690-9258"
-        },
-        {
-            "affiliation": "NTNU Trondheim",
-            "name": "Kjemsås, Even Stephansen",
-            "type": "ProjectMember"
-        },
-        {
             "affiliation": "NTNU Trondheim",
             "name": "Stokkenes, Markus A.",
             "type": "ProjectMember"
         },
         {
             "name": "Daniel VandenHeuvel",
-            "type": "other",
-            "orcid": "0000-0001-6462-0135"
+            "orcid": "0000-0001-6462-0135",
+            "type": "other"
         }
     ],
     "creators": [

@@ -32,6 +32,7 @@ $(_var(:Field, :X))
 * `δ`:                       the current descent direction, also a tangent vector
 * `β`:                       the current update coefficient rule, see .
 * `coefficient`:             function to determine the new `β`
+* `restart_condition`:       an [`AbstractRestartCondition`](@ref) to determine how to handle non-descent directions.
 $(_var(:Field, :stepsize))
 $(_var(:Field, :stopping_criterion, "stop"))
 $(_var(:Field, :retraction_method))
@@ -52,6 +53,7 @@ The following fields from above <re keyword arguments
 $(_var(:Keyword, :X, "initial_gradient"))
 $(_var(:Keyword, :p; add=:as_Initial))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
+* `restart_condition=[`NeverRestart`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to never restart.
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`"))
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`)"))
 $(_var(:Keyword, :retraction_method))
@@ -65,9 +67,10 @@ mutable struct ConjugateGradientDescentState{
     P,
     T,
     F,
-    TCoeff<:DirectionUpdateRuleStorage,
     TStepsize<:Stepsize,
     TStop<:StoppingCriterion,
+    TCoeff<:DirectionUpdateRuleStorage,
+    TRC<:AbstractRestartCondition,
     TRetr<:AbstractRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
 } <: AbstractGradientSolverState
@@ -77,23 +80,33 @@ mutable struct ConjugateGradientDescentState{
     δ::T
     β::F
     coefficient::TCoeff
+    restart_condition::TRC
     stepsize::TStepsize
     stop::TStop
     retraction_method::TRetr
     vector_transport_method::VTM
-    function ConjugateGradientDescentState{P,T}(
+    function ConjugateGradientDescentState(
         M::AbstractManifold,
         p::P,
-        sC::StoppingCriterion,
-        s::Stepsize,
+        sC::TsC,
+        s::TStep,
         dC::DirectionUpdateRule,
-        retr::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-        vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
+        res_cond::TRC=NeverRestart(),
+        retr::TRetr=default_retraction_method(M, typeof(p)),
+        vtr::VTM=default_vector_transport_method(M),
         initial_gradient::T=zero_vector(M, p),
-    ) where {P,T}
+    ) where {
+        P,
+        T,
+        TsC<:StoppingCriterion,
+        TStep<:Stepsize,
+        TRC<:AbstractRestartCondition,
+        TRetr<:AbstractRetractionMethod,
+        VTM<:AbstractVectorTransportMethod,
+    }
         coef = DirectionUpdateRuleStorage(M, dC; p_init=p, X_init=initial_gradient)
         βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
-        cgs = new{P,T,βT,typeof(coef),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
+        cgs = new{P,T,βT,TStep,TsC,typeof(coef),TRC,TRetr,VTM}()
         cgs.p = p
         cgs.p_old = copy(M, p)
         cgs.X = initial_gradient
@@ -102,6 +115,7 @@ mutable struct ConjugateGradientDescentState{
         cgs.retraction_method = retr
         cgs.stepsize = s
         cgs.coefficient = coef
+        cgs.restart_condition = res_cond
         cgs.vector_transport_method = vtr
         cgs.β = zero(βT)
         return cgs
@@ -112,21 +126,30 @@ function ConjugateGradientDescentState(
     M::AbstractManifold;
     p::P=rand(M),
     coefficient::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=ConjugateDescentCoefficient(),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    stepsize::Stepsize=default_stepsize(
+    restart_condition::TRC=NeverRestart(),
+    retraction_method::TRetr=default_retraction_method(M, typeof(p)),
+    stepsize::TStep=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
     ),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
-                                          StopWhenGradientNormLess(1e-8),
-    vector_transport_method=default_vector_transport_method(M, typeof(p)),
+    stopping_criterion::TsC=StopAfterIteration(500) | StopWhenGradientNormLess(1e-8),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     initial_gradient::T=zero_vector(M, p),
-) where {P,T}
-    return ConjugateGradientDescentState{P,T}(
+) where {
+    P,
+    T,
+    TsC<:StoppingCriterion,
+    TStep<:Stepsize,
+    TRC<:AbstractRestartCondition,
+    TRetr<:AbstractRetractionMethod,
+    VTM<:AbstractVectorTransportMethod,
+}
+    return ConjugateGradientDescentState(
         M,
         p,
         stopping_criterion,
         stepsize,
         _produce_type(coefficient, M),
+        restart_condition,
         retraction_method,
         vector_transport_method,
         initial_gradient,
@@ -138,13 +161,17 @@ function get_message(cgs::ConjugateGradientDescentState)
     return get_message(cgs.stepsize)
 end
 
+function get_gradient(cgs::ConjugateGradientDescentState)
+    return cgs.X
+end
+
 _doc_CG_notaion = """
 Denote the last iterate and gradient by ``p_k,X_k``,
 the current iterate and gradient by ``p_{k+1}, X_{k+1}``, respectively,
 as well as the last update direction by ``δ_k``.
 """
 
-@doc raw"""
+@doc """
     ConjugateDescentCoefficientRule <: DirectionUpdateRule
 
 A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update coefficient adapted to manifolds
@@ -808,7 +835,7 @@ function PolakRibiereCoefficient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.PolakRibiereCoefficientRule, args...; kwargs...)
 end
 
-@doc raw"""
+@doc """
     SteepestDescentCoefficientRule <: DirectionUpdateRule
 
 A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update coefficient
@@ -994,5 +1021,62 @@ $(_note(:ManifoldDefaultFactory, "ConjugateGradientBealeRestartRule"))
 function ConjugateGradientBealeRestart(args...; kwargs...)
     return ManifoldDefaultsFactory(
         Manopt.ConjugateGradientBealeRestartRule, args...; kwargs...
+    )
+end
+
+@doc """
+    NeverRestart <: AbstractRestartCondition
+
+A restart strategy that indicates to never restart.
+"""
+struct NeverRestart <: AbstractRestartCondition end
+
+function (corr::NeverRestart)(
+    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
+)
+    return false
+end
+
+@doc """
+    RestartOnNonDescent <: AbstractRestartCondition
+
+A restart strategy that restarts, whenever the search direction `δ` is not a descent direction,
+i.e. when
+
+```math
+    ⟨$(_tex(:grad))f(p), δ⟩ > 0,
+```
+
+at the current iterate ``p``.
+"""
+struct RestartOnNonDescent <: AbstractRestartCondition end
+function (corr::RestartOnNonDescent)(
+    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
+)
+    return get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true) >= 0
+end
+
+@doc """
+RestartOnNonSufficientDescent <: AbstractRestartCondition
+
+## Fields
+* `κ`: the sufficient decrease factor
+
+A restart strategy that indicates to restart whenever the search direction `δ` is not a sufficient descent direction, i.e.
+```math
+    ⟨$(_tex(:grad))f(p), δ⟩ ≤ - κ $(_tex(:norm, "X"))^2.
+```
+
+at the current iterate ``p``.
+"""
+struct RestartOnNonSufficientDescent{F<:Real} <: AbstractRestartCondition
+    κ::F
+end
+function (corr::RestartOnNonSufficientDescent)(
+    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
+)
+    return (
+        get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true) >
+        -corr.κ * get_differential(amp, cgs.p, cgs.X; gradient=cgs.X, evaluated=true)
     )
 end

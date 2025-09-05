@@ -142,7 +142,7 @@ end
 
 _doc_check_Hess_formula = raw"""
 ```math
-f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \frac{t^2}{2}⟨\operatorname{Hess}f(p)[X], X⟩ + \mathcal O(t^3)
+f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + $(_tex(:frac, "t^2", "2"))⟨$(_tex(:Hess))f(p)[X], X⟩ + \mathcal O(t^3)
 ```
 """
 
@@ -319,7 +319,7 @@ function check_Hessian(
     )
 end
 
-@doc raw"""
+@doc """
     is_Hessian_linear(M, Hess_f, p,
         X=rand(M; vector_at=p), Y=rand(M; vector_at=p), a=randn(), b=randn();
         error=:none, io=nothing, kwargs...
@@ -328,8 +328,8 @@ end
 Verify whether the Hessian function `Hess_f` fulfills linearity,
 
 ```math
-\operatorname{Hess} f(p)[aX + bY] = b\operatorname{Hess} f(p)[X]
- + b\operatorname{Hess} f(p)[Y]
+$(_tex(:Hess)) f(p)[aX + bY] = b$(_tex(:Hess)) f(p)[X]
+ + b$(_tex(:Hess)) f(p)[Y]
 ```
 
 which is checked using `isapprox` and the keyword arguments are passed to this function.
@@ -364,7 +364,7 @@ function is_Hessian_linear(
     return false
 end
 
-@doc raw"""
+@doc """
     is_Hessian_symmetric(M, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p);
     error=:none, io=nothing, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps
 )
@@ -372,7 +372,7 @@ end
 Verify whether the Hessian function `Hess_f` fulfills symmetry, which means that
 
 ```math
-⟨\operatorname{Hess} f(p)[X], Y⟩ = ⟨X, \operatorname{Hess} f(p)[Y]⟩
+⟨$(_tex(:Hess)) f(p)[X], Y⟩ = ⟨X, $(_tex(:Hess)) f(p)[Y]⟩
 ```
 
 which is checked using `isapprox` and the `kwargs...` are passed to this function.

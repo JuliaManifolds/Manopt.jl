@@ -1,10 +1,10 @@
 _doc_PDSN_formula = raw"""
-Given a `cost` function ``\mathcal E: \mathcal M → \overline{ℝ}`` of the form
+Given a `cost` function ``\mathcal E: $(_math(:M)) → \overline{ℝ}`` of the form
 ```math
 \mathcal E(p) = F(p) + G( Λ(p) ),
 ```
-where ``F: \mathcal M → \overline{ℝ}``, ``G: \mathcal N → \overline{ℝ}``,
-and ``Λ: \mathcal M → \mathcal N``. The remaining input parameters are
+where ``F: $(_math(:M)) → \overline{ℝ}``, ``G: \mathcal N → \overline{ℝ}``,
+and ``Λ: $(_math(:M)) → \mathcal N``. The remaining input parameters are
 """
 
 _doc_PDSN = """

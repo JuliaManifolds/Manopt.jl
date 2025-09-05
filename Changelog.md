@@ -20,12 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * `interior_point_newton`
   * `quasi_Newton`
   * `projected_gradient_method`
+* a `restart_condition` functor to `conjugate_gradient_descent`, which allows the algorithm to restart if the search direction is sub-par. 
 * two references
 
 ### Fixed
 
 * Fixed some math rendering in the docs.
-
 
 ### Changed
 

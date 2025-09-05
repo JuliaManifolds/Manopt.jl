@@ -1,11 +1,11 @@
-@doc raw"""
+@doc """
     AdaptiveRagularizationWithCubicsModelObjective
 
 A model for the adaptive regularization with Cubics
 
 ```math
-m(X) = f(p) + ⟨\operatorname{grad} f(p), X ⟩_p + \frac{1}{2} ⟨\operatorname{Hess} f(p)[X], X⟩_p
-       +  \frac{σ}{3} \lVert X \rVert^3,
+m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p
+       +  $(_tex(:frac, "σ", "3")) $(_tex(:norm, "X"))^3,
 ```
 
 cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite)
@@ -47,14 +47,14 @@ end
 
 get_objective(arcmo::AdaptiveRagularizationWithCubicsModelObjective) = arcmo.objective
 
-@doc raw"""
+@doc """
     get_cost(TpM, trmo::AdaptiveRagularizationWithCubicsModelObjective, X)
 
 Evaluate the tangent space [`AdaptiveRagularizationWithCubicsModelObjective`](@ref)
 
 ```math
-m(X) = f(p) + ⟨\operatorname{grad} f(p), X ⟩_p + \frac{1}{2} ⟨\operatorname{Hess} f(p)[X], X⟩_p
-       +  \frac{σ}{3} \lVert X \rVert^3,
+m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p
+       + $(_tex(:frac, "σ", "3")) $(_tex(:norm, "X"))^3,
 ```
 
 at `X`, cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite).
@@ -72,14 +72,14 @@ end
 function get_cost_function(arcmo::AdaptiveRagularizationWithCubicsModelObjective)
     return (TpM, X) -> get_cost(TpM, arcmo, X)
 end
-@doc raw"""
+@doc """
     get_gradient(TpM, trmo::AdaptiveRagularizationWithCubicsModelObjective, X)
 
 Evaluate the gradient of the [`AdaptiveRagularizationWithCubicsModelObjective`](@ref)
 
 ```math
-\operatorname{grad} m(X) = \operatorname{grad} f(p) + \operatorname{Hess} f(p)[X]
-       + σ\lVert X \rVert X,
+$(_tex(:grad)) m(X) = $(_tex(:grad)) f(p) + $(_tex(:Hess)) f(p)[X]
+       + σ$(_tex(:norm, "X")) X,
 ```
 
 at `X`, cf. Eq. (37) in [AgarwalBoumalBullinsCartis:2020](@cite).

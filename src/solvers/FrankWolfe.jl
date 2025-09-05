@@ -1,7 +1,7 @@
 
-_doc_FW_sub = raw"""
+_doc_FW_sub = """
 ```math
-   \operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p_k), \log_{p_k}q⟩.
+   $(_tex(:argmin))_{q ∈ C} ⟨$(_tex(:grad)) f(p_k), $(_tex(:log))_{p_k}q⟩.
 ```
 """
 
@@ -151,9 +151,9 @@ function show(io::IO, fws::FrankWolfeState)
     return print(io, s)
 end
 
-_doc_FW_problem = raw"""
+_doc_FW_problem = """
 ```math
-    \operatorname*{arg\,min}_{p∈\mathcal C} f(p),
+    $(_tex(:argmin))_{p∈$(_tex(:Cal, "C"))} f(p),
 ```
 """
 _doc_FW_sk_default = raw"``s_k = \frac{2}{k+2}``"

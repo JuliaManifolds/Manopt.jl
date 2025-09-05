@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
     EmbeddedManifoldObjective{P, T, E, O2, O1<:AbstractManifoldObjective{E}} <:
        AbstractDecoratedManifoldObjective{E,O2}
 
@@ -57,7 +57,7 @@ function local_embed!(M::AbstractManifold, emo::EmbeddedManifoldObjective{P}, p)
     return emo.p
 end
 
-@doc raw"""
+@doc """
     get_cost(M::AbstractManifold,emo::EmbeddedManifoldObjective, p)
 
 Evaluate the cost function of an objective defined in the embedding by first embedding `p`
@@ -72,7 +72,7 @@ function get_cost_function(emo::EmbeddedManifoldObjective, recursive=false)
     recursive && (return get_cost_function(emo.objective, recursive))
     return (M, p) -> get_cost(M, emo, p)
 end
-@doc raw"""
+@doc """
     get_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p)
 
@@ -126,7 +126,7 @@ end
 #
 # Hessian
 #
-@doc raw"""
+@doc """
     get_hessian(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, X)
     get_hessian!(M::AbstractManifold, Y, emo::EmbeddedManifoldObjective, p, X)
 
@@ -206,7 +206,7 @@ function get_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
         get_equality_constraint(M, emo.objective, q, :),
     ]
 end
-@doc raw"""
+@doc """
     get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
 
 evaluate the `j`s equality constraint ``h_j(p)`` defined in the embedding, that is embed `p`
@@ -216,7 +216,7 @@ function get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjec
     q = local_embed!(M, emo, p)
     return get_equality_constraint(M, emo.objective, q, j)
 end
-@doc raw"""
+@doc """
     get_inequality_constraint(M::AbstractManifold, ems::EmbeddedManifoldObjective, p, i)
 
 Evaluate the `i`s inequality constraint ``g_i(p)`` defined in the embedding, that is embed `p`
@@ -228,11 +228,11 @@ function get_inequality_constraint(
     q = local_embed!(M, emo, p)
     return get_inequality_constraint(M, emo.objective, q, i)
 end
-@doc raw"""
+@doc """
     X = get_grad_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
     get_grad_equality_constraint!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p, j)
 
-Evaluate the gradient of the `j`th equality constraint ``\operatorname{grad} h_j(p)``
+Evaluate the gradient of the `j`th equality constraint ``$(_tex(:grad)) h_j(p)``
 defined in the embedding, that is embed `p` before calling the gradient function stored in
 the [`EmbeddedManifoldObjective`](@ref).
 
@@ -300,11 +300,11 @@ function get_grad_equality_constraint!(
     Y .= [riemannian_gradient(M, p, X) for X in Z]
     return Y
 end
-@doc raw"""
+@doc """
     X = get_grad_inequality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
     get_grad_inequality_constraint!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p, j)
 
-Evaluate the gradient of the `j`th inequality constraint ``\operatorname{grad} g_j(p)``
+Evaluate the gradient of the `j`th inequality constraint ``$(_tex(:grad)) g_j(p)``
 defined in the embedding, that is embed `p` before calling the gradient function stored in
 the [`EmbeddedManifoldObjective`](@ref).
 

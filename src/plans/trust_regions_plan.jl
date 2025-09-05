@@ -1,11 +1,11 @@
 
-@doc raw"""
+@doc """
     TrustRegionModelObjective{O<:AbstractManifoldHessianObjective} <: AbstractManifoldSubObjective{O}
 
 A trust region model of the form
 
 ```math
-    m(X) = f(p) + ⟨\operatorname{grad} f(p), X⟩_p + \frac{1}(2} ⟨\operatorname{Hess} f(p)[X], X⟩_p
+    m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p
 ```
 
 # Fields
@@ -34,13 +34,13 @@ end
 
 get_objective(trmo::TrustRegionModelObjective) = trmo.objective
 
-@doc raw"""
+@doc """
     get_cost(TpM, trmo::TrustRegionModelObjective, X)
 
 Evaluate the tangent space [`TrustRegionModelObjective`](@ref)
 
 ```math
-m(X) = f(p) + ⟨\operatorname{grad} f(p), X ⟩_p + \frac{1}{2} ⟨\operatorname{Hess} f(p)[X], X⟩_p.
+m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p.
 ```
 """
 function get_cost(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
@@ -51,13 +51,13 @@ function get_cost(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
     Y = get_objective_hessian(M, trmo, p, X)
     return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X)
 end
-@doc raw"""
+@doc """
     get_gradient(TpM, trmo::TrustRegionModelObjective, X)
 
 Evaluate the gradient of the [`TrustRegionModelObjective`](@ref)
 
 ```math
-\operatorname{grad} m(X) = \operatorname{grad} f(p) + \operatorname{Hess} f(p)[X].
+$(_tex(:grad)) m(X) = $(_tex(:grad)) f(p) + $(_tex(:Hess)) f(p)[X].
 ```
 """
 function get_gradient(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
@@ -72,13 +72,13 @@ function get_gradient!(TpM::TangentSpace, Y, trmo::TrustRegionModelObjective, X)
     Y .+= get_objective_gradient(M, trmo, p)
     return Y
 end
-@doc raw"""
+@doc """
     get_hessian(TpM, trmo::TrustRegionModelObjective, X)
 
 Evaluate the Hessian of the [`TrustRegionModelObjective`](@ref)
 
 ```math
-\operatorname{Hess} m(X)[Y] = \operatorname{Hess} f(p)[Y].
+$(_tex(:Hess)) m(X)[Y] = $(_tex(:Hess)) f(p)[Y].
 ```
 """
 function get_hessian(TpM::TangentSpace, trmo::TrustRegionModelObjective, X, V)
