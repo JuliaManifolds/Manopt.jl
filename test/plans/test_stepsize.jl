@@ -136,11 +136,13 @@ using ManoptTestSuite
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p=p)
-            ds = DistanceOverGradientsStepsize(M, p=p, initial_distance=1.0, use_curvature=false)
+            ds = DistanceOverGradientsStepsize(
+                M; p=p, initial_distance=1.0, use_curvature=false
+            )
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
-            @test ds.last_stepsize  === NaN
+            @test ds.last_stepsize === NaN
             lr = ds(dmp, gds, 0)
             @test lr == 0.125
         end
@@ -151,11 +153,17 @@ using ManoptTestSuite
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p=p)
-            ds = DistanceOverGradientsStepsize(M, p=p, initial_distance=1.0, use_curvature=true, sectional_curvature_bound=0.0)
+            ds = DistanceOverGradientsStepsize(
+                M;
+                p=p,
+                initial_distance=1.0,
+                use_curvature=true,
+                sectional_curvature_bound=0.0,
+            )
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
-            @test ds.last_stepsize  === NaN
+            @test ds.last_stepsize === NaN
             lr = ds(dmp, gds, 0)
             @test lr == 0.125
         end
@@ -164,13 +172,15 @@ using ManoptTestSuite
             f(M, p) = sum(p .^ 2)
             grad_f(M, p) = sum(2 .* p)
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
-            p = [1, 0] 
+            p = [1, 0]
             gds = GradientDescentState(M; p=p)
-            ds = DistanceOverGradientsStepsize(M, p=p, initial_distance=1.0, use_curvature=false)
+            ds = DistanceOverGradientsStepsize(
+                M; p=p, initial_distance=1.0, use_curvature=false
+            )
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
-            @test ds.last_stepsize  === NaN
+            @test ds.last_stepsize === NaN
             lr = ds(dmp, gds, 0)
             @test lr == 0.5
         end
@@ -181,11 +191,17 @@ using ManoptTestSuite
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [1, 0]
             gds = GradientDescentState(M; p=p)
-            ds = DistanceOverGradientsStepsize(M, p=p, initial_distance=1.0, use_curvature=true, sectional_curvature_bound=1.0)
+            ds = DistanceOverGradientsStepsize(
+                M;
+                p=p,
+                initial_distance=1.0,
+                use_curvature=true,
+                sectional_curvature_bound=1.0,
+            )
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
-            @test ds.last_stepsize  === NaN
+            @test ds.last_stepsize === NaN
             lr = ds(dmp, gds, 0)
             @test lr == 0.5
         end
@@ -194,28 +210,34 @@ using ManoptTestSuite
 
             t = 0.5
             p = [cosh(t), sinh(t), 0.0]
-        
+
             v_ambient = [0.0, 1.0, 0.0]
             g = project(M, p, v_ambient)
             gnorm = norm(M, p, g)
             f(M, q) = 0.0
             grad_f(M, q) = g
-        
+
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             gds = GradientDescentState(M; p=p)
-            ds = DistanceOverGradientsStepsize(M; p=p, initial_distance=1.0, use_curvature=true, sectional_curvature_bound=-1.0)
-        
+            ds = DistanceOverGradientsStepsize(
+                M;
+                p=p,
+                initial_distance=1.0,
+                use_curvature=true,
+                sectional_curvature_bound=-1.0,
+            )
+
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === NaN
-        
+
             # Expected initial step:
             # ζκ(1) = (√|κ| * 1) / tanh(√|κ| * 1) = 1 / tanh(1)
             # lr = initial_distance / (sqrt(ζκ(1)) * sqrt(gnorm^2)) = 1 / (sqrt(ζκ(1)) * gnorm)
             zeta = 1 / tanh(1.0)
             expected_lr = 1.0 / (sqrt(zeta) * gnorm)
-        
+
             # Call with the known gradient to avoid any objective/gradient mismatches
             lr = ds(dmp, gds, 0; gradient=g)
             @test isapprox(lr, expected_lr; rtol=1e-12, atol=0)

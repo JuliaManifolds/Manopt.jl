@@ -1792,19 +1792,21 @@ function (rdog::DistanceOverGradientsStepsize)(
     M = get_manifold(mp)
     p = get_iterate(s)
     grad = isnothing(gradient) ? get_gradient(mp, p) : gradient
-    
+
     # Compute gradient norm
     grad_norm_sq = norm(M, p, grad)^2
-    
+
     if i == 0
         # Initialize on first call
         rdog.gradient_sum = grad_norm_sq
         rdog.initial_point = copy(M, p)
         rdog.max_distance = rdog.initial_distance
-        
+
         # Initial stepsize
         if rdog.use_curvature
-            ζ = geometric_curvature_function(rdog.sectional_curvature_bound, rdog.max_distance)
+            ζ = geometric_curvature_function(
+                rdog.sectional_curvature_bound, rdog.max_distance
+            )
             stepsize = rdog.initial_distance / (sqrt(ζ) * sqrt(max(grad_norm_sq, eps())))
         else
             stepsize = rdog.initial_distance / sqrt(max(grad_norm_sq, eps()))
@@ -1812,20 +1814,22 @@ function (rdog::DistanceOverGradientsStepsize)(
     else
         # Update gradient sum
         rdog.gradient_sum += grad_norm_sq
-        
+
         # Update max distance
         current_distance = distance(M, rdog.initial_point, p)
         rdog.max_distance = max(rdog.max_distance, current_distance)
-        
+
         # Compute stepsize
         if rdog.use_curvature
-            ζ = geometric_curvature_function(rdog.sectional_curvature_bound, rdog.max_distance)
+            ζ = geometric_curvature_function(
+                rdog.sectional_curvature_bound, rdog.max_distance
+            )
             stepsize = rdog.max_distance / (sqrt(ζ) * sqrt(rdog.gradient_sum))
         else
             stepsize = rdog.max_distance / sqrt(rdog.gradient_sum)
         end
     end
-    
+
     rdog.last_stepsize = stepsize
     return stepsize
 end
@@ -1840,7 +1844,7 @@ function show(io::IO, rdog::DistanceOverGradientsStepsize)
       use_curvature=$(rdog.use_curvature),
       sectional_curvature_bound=$(rdog.sectional_curvature_bound)
     )
-    
+
     Current state:
       max_distance = $(rdog.max_distance)
       gradient_sum = $(rdog.gradient_sum)
