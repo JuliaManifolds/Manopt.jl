@@ -6,6 +6,17 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.22] unreleased
+
+### Added
+
+* a `keywords_accepted(f, mode=:warn; kwargs...)` function that verifies that all keywords are accepted by a certain function.
+* an internal function `calls_with_kwargs(f)` to indicate which functions `f` passes `kwargs...` to.
+
+### Fixed
+
+* the typo in the name `AdaptiveRagularizationWithCubicsModelObjective` is fixed to `AdaptiveRegularizationWithCubicsModelObjective`.
+
 ## [0.5.21] September 5, 2025
 
 ### Added
