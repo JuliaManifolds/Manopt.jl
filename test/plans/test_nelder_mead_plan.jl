@@ -4,7 +4,7 @@ using Manifolds, Manopt, Test
     @testset "Nelder Mead State" begin
         M = Euclidean(2)
         o = NelderMeadState(M)
-        o2 = NelderMeadState(M; population=o.population)
+        o2 = NelderMeadState(M; population = o.population)
         @test o.p == o2.p
         @test o.population == o2.population
         @test get_state(o) == o

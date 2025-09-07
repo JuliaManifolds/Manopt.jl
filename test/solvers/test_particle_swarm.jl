@@ -10,7 +10,7 @@ using Random
         p2 = copy.(Ref(M), p1)
 
         Random.seed!(35)
-        o = particle_swarm(M, f, p1; return_state=true)
+        o = particle_swarm(M, f, p1; return_state = true)
         @test startswith(
             repr(o), "# Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm"
         )
@@ -42,7 +42,7 @@ using Random
         M = Sphere(2)
         f(::Sphere, p) = transpose(p) * A * p
         p_start = [rand(M) for i in 1:3]
-        X_start = [rand(M; vector_at=y) for y in p_start]
+        X_start = [rand(M; vector_at = y) for y in p_start]
         p = DefaultManoptProblem(M, ManifoldCostObjective(f))
         o = ParticleSwarmState(M, zero.(p_start), X_start)
         # test `set_iterate``
@@ -54,7 +54,7 @@ using Random
             # verify that the new particle locations are on the manifold
             @test is_point(M, p, true)
             # verify that the new velocities are tangent vectors of the original particle locations
-            @test is_vector(M, p, v, true; atol=2e-15)
+            @test is_vector(M, p, v, true; atol = 2.0e-15)
         end
         set_iterate!(o, p_start[1])
         @test get_iterate(o) == p_start[1]

@@ -46,14 +46,14 @@ using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
     coh = ConstrainedManifoldObjective(
         f,
         grad_f;
-        hess_f=hess_f,
-        g=g,
-        grad_g=grad_g,
-        hess_g=hess_g,
-        h=h,
-        grad_h=grad_h,
-        hess_h=hess_h,
-        M=M,
+        hess_f = hess_f,
+        g = g,
+        grad_g = grad_g,
+        hess_g = hess_g,
+        h = h,
+        grad_h = grad_h,
+        hess_h = hess_h,
+        M = M,
     )
     sub_obj = SymmetricLinearSystemObjective(
         CondensedKKTVectorFieldJacobian(coh, μ, s, β), CondensedKKTVectorField(coh, μ, s, β)
@@ -61,7 +61,7 @@ using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
     sub_state = ConjugateResidualState(TangentSpace(sub_M, sub_p), sub_obj)
     dmp = DefaultManoptProblem(M, coh)
     ipns = InteriorPointNewtonState(
-        M, coh, DefaultManoptProblem(sub_M, sub_obj), sub_state; p=p
+        M, coh, DefaultManoptProblem(sub_M, sub_obj), sub_state; p = p
     )
     # Getters & Setters
     @test length(Manopt.get_message(ipns)) == 0
@@ -72,13 +72,13 @@ using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
     show_str = "# Solver state for `Manopt.jl`s Interior Point Newton Method\n"
     @test startswith(repr(ipns), show_str)
     #
-    sc = StopWhenKKTResidualLess(1e-5)
+    sc = StopWhenKKTResidualLess(1.0e-5)
     @test length(get_reason(sc)) == 0
     @test !sc(dmp, ipns, 1) #not yet reached
     @test Manopt.indicates_convergence(sc)
     @test startswith(repr(sc), "StopWhenKKTResidualLess(1.0e-5)\n")
     # Fake stop
-    sc.residual = 1e-7
+    sc.residual = 1.0e-7
     sc.at_iteration = 1
     @test length(get_reason(sc)) > 0
     #
@@ -87,7 +87,7 @@ using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
     @test Manopt.set_parameter!(ipcc, :γ, 2.0) == ipcc
     @test Manopt.get_parameter(ipcc, :γ) == 2.0
     @test Manopt.get_parameter(ipcc, :τ1) == 2 / 3
-    @test Manopt.get_parameter(ipcc, :τ2) ≈ 0.2809757 atol = 1e-7
+    @test Manopt.get_parameter(ipcc, :τ2) ≈ 0.2809757 atol = 1.0e-7
     @test !ipcc(step_M, step_p)
     ipcc.τ1 = 0.01 # trick conditions so ipcc succeeds
     ipcc.τ2 = 0.01

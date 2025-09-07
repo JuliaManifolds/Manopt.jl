@@ -69,14 +69,14 @@ using RecursiveArrayTools
     p0 = deepcopy(data)
     X0 = ArrayPartition(zero_vector(M, m), zero_vector(M, m))
 
-    pdmoe = PrimalDualManifoldObjective(f, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
+    pdmoe = PrimalDualManifoldObjective(f, prox_f, prox_g_dual, adjoint_DΛ; Λ = Λ)
     p_exact = TwoManifoldProblem(M, N, pdmoe)
     pdmol = PrimalDualManifoldObjective(
-        f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
+        f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator = DΛ
     )
     p_linearized = TwoManifoldProblem(M, N, pdmol)
-    s_exact = ChambollePockState(M; m=m, n=n, p=zero.(p0), X=X0, variant=:exact)
-    s_linearized = ChambollePockState(M; m=m, n=n, p=p0, X=X0, variant=:linearized)
+    s_exact = ChambollePockState(M; m = m, n = n, p = zero.(p0), X = X0, variant = :exact)
+    s_linearized = ChambollePockState(M; m = m, n = n, p = p0, X = X0, variant = :linearized)
     n_old = ArrayPartition(n[N, :point], n[N, :vector])
     p_old = copy(p0)
     ξ_old = ArrayPartition(X0[N, :point], X0[N, :vector])
@@ -86,20 +86,20 @@ using RecursiveArrayTools
 
     osm = PrimalDualSemismoothNewtonState(
         M;
-        m=m,
-        n=n,
-        p=zero.(p0),
-        X=X0,
-        primal_stepsize=0.0,
-        dual_stepsize=0.0,
-        regularization_parameter=0.0,
+        m = m,
+        n = n,
+        p = zero.(p0),
+        X = X0,
+        primal_stepsize = 0.0,
+        dual_stepsize = 0.0,
+        regularization_parameter = 0.0,
     )
     set_iterate!(osm, p0)
     @test all(get_iterate(osm) .== p0)
 
     @testset "test Mutating/Allocation Problem Variants" begin
         pdmoa = PrimalDualManifoldObjective(
-            f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ, Λ=Λ
+            f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator = DΛ, Λ = Λ
         )
         p1 = TwoManifoldProblem(M, N, pdmoa)
         pdmoi = PrimalDualManifoldObjective(
@@ -107,9 +107,9 @@ using RecursiveArrayTools
             prox_f!,
             prox_g_dual!,
             adjoint_DΛ!;
-            linearized_forward_operator=(DΛ!),
-            Λ=(Λ!),
-            evaluation=InplaceEvaluation(),
+            linearized_forward_operator = (DΛ!),
+            Λ = (Λ!),
+            evaluation = InplaceEvaluation(),
         )
         p2 = TwoManifoldProblem(M, N, pdmoi)
         x1 = get_primal_prox(p1, 1.0, p0)
@@ -159,20 +159,20 @@ using RecursiveArrayTools
         @test Z1 == Z2
     end
     @testset "Primal/Dual residual" begin
-        pmdoe = PrimalDualManifoldObjective(f, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
+        pmdoe = PrimalDualManifoldObjective(f, prox_f, prox_g_dual, adjoint_DΛ; Λ = Λ)
         p_exact = TwoManifoldProblem(M, N, pdmoe)
         pmdol = PrimalDualManifoldObjective(
-            f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
+            f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator = DΛ
         )
         p_linearized = TwoManifoldProblem(M, N, pmdol)
-        s_exact = ChambollePockState(M; m=m, n=n, p=p0, X=X0, variant=:exact)
-        s_linearized = ChambollePockState(M; m=m, n=n, p=p0, X=X0, variant=:linearized)
-        @test primal_residual(p_exact, s_exact, p_old, ξ_old, n_old) ≈ 0 atol = 1e-16
+        s_exact = ChambollePockState(M; m = m, n = n, p = p0, X = X0, variant = :exact)
+        s_linearized = ChambollePockState(M; m = m, n = n, p = p0, X = X0, variant = :linearized)
+        @test primal_residual(p_exact, s_exact, p_old, ξ_old, n_old) ≈ 0 atol = 1.0e-16
         @test primal_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) ≈ 0 atol =
-            1e-16
-        @test dual_residual(p_exact, s_exact, p_old, ξ_old, n_old) ≈ 4.0 atol = 1e-16
+            1.0e-16
+        @test dual_residual(p_exact, s_exact, p_old, ξ_old, n_old) ≈ 4.0 atol = 1.0e-16
         @test dual_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) ≈ 0.0 atol =
-            1e-16
+            1.0e-16
 
         step_solver!(p_exact, s_exact, 1)
         step_solver!(p_linearized, s_linearized, 1)
@@ -181,7 +181,7 @@ using RecursiveArrayTools
         @test dual_residual(p_exact, s_exact, p_old, ξ_old, n_old) > 4.0
         @test dual_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) > 0
 
-        o_err = ChambollePockState(M; m=m, n=n, p=p0, X=X0, variant=:err)
+        o_err = ChambollePockState(M; m = m, n = n, p = p0, X = X0, variant = :err)
         @test_throws DomainError dual_residual(p_exact, o_err, p_old, ξ_old, n_old)
     end
     @testset "Debug prints" begin
@@ -189,77 +189,77 @@ using RecursiveArrayTools
         update_storage!(a, Dict(:Iterate => p_old, :X => ξ_old, :n => n_old, :m => copy(m)))
         io = IOBuffer()
 
-        d1 = DebugDualResidual(; storage=a, io=io)
+        d1 = DebugDualResidual(; storage = a, io = io)
         d1(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Residual:")
 
-        d2 = DebugPrimalResidual(; storage=a, io=io)
+        d2 = DebugPrimalResidual(; storage = a, io = io)
         d2(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Residual: ")
 
-        d3 = DebugPrimalDualResidual(; storage=a, io=io)
+        d3 = DebugPrimalDualResidual(; storage = a, io = io)
         d3(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "PD Residual: ")
 
-        d4 = DebugPrimalChange(; storage=a, prefix="Primal Change: ", io=io)
+        d4 = DebugPrimalChange(; storage = a, prefix = "Primal Change: ", io = io)
         d4(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Change: ")
 
-        d5 = DebugPrimalIterate(; io=io)
+        d5 = DebugPrimalIterate(; io = io)
         d5(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "p:")
 
-        d6 = DebugDualIterate(; io=io)
+        d6 = DebugDualIterate(; io = io)
         d6(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "X:")
 
-        d7 = DebugDualChange(; storage=a, io=io)
+        d7 = DebugDualChange(; storage = a, io = io)
         d7(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Change:")
 
-        d7a = DebugDualChange((X0, n); storage=a, io=io)
+        d7a = DebugDualChange((X0, n); storage = a, io = io)
         d7a(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Change:")
 
-        d8 = DebugDualBaseIterate(; io=io)
+        d8 = DebugDualBaseIterate(; io = io)
         d8(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "n:")
 
-        d9 = DebugDualBaseChange(; storage=a, io=io)
+        d9 = DebugDualBaseChange(; storage = a, io = io)
         d9(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Base Change:")
 
-        d10 = DebugPrimalBaseIterate(; io=io)
+        d10 = DebugPrimalBaseIterate(; io = io)
         d10(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "m:")
 
-        d11 = DebugPrimalBaseChange(; storage=a, io=io)
+        d11 = DebugPrimalBaseChange(; storage = a, io = io)
         d11(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Base Change:")
 
-        d12 = DebugDualResidual((p0, X0, n); storage=a, io=io)
+        d12 = DebugDualResidual((p0, X0, n); storage = a, io = io)
         d12(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Residual:")
 
-        d13 = DebugPrimalDualResidual((p0, X0, n); storage=a, io=io)
+        d13 = DebugPrimalDualResidual((p0, X0, n); storage = a, io = io)
         d13(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "PD Residual:")
 
-        d14 = DebugPrimalResidual((p0, X0, n); storage=a, io=io)
+        d14 = DebugPrimalResidual((p0, X0, n); storage = a, io = io)
         d14(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Residual:")
@@ -270,15 +270,15 @@ using RecursiveArrayTools
         io = IOBuffer()
 
         for r in [
-            RecordPrimalChange(),
-            RecordPrimalIterate(p0),
-            RecordDualIterate(X0),
-            RecordDualChange(),
-            RecordDualBaseIterate(n),
-            RecordDualBaseChange(),
-            RecordPrimalBaseIterate(p0),
-            RecordPrimalBaseChange(),
-        ]
+                RecordPrimalChange(),
+                RecordPrimalIterate(p0),
+                RecordDualIterate(X0),
+                RecordDualChange(),
+                RecordDualBaseIterate(n),
+                RecordDualBaseChange(),
+                RecordPrimalBaseIterate(p0),
+                RecordPrimalBaseChange(),
+            ]
             r(p_exact, s_exact, 1)
             @test length(get_record(r)) == 1
         end
@@ -286,7 +286,7 @@ using RecursiveArrayTools
     @testset "Objective Decorator passthrough" begin
         # PD
         pdmo = PrimalDualManifoldObjective(
-            f, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ, linearized_forward_operator=DΛ
+            f, prox_f, prox_g_dual, adjoint_DΛ; Λ = Λ, linearized_forward_operator = DΛ
         )
         ro = ManoptTestSuite.DummyDecoratedObjective(pdmo)
         q1 = get_primal_prox(M, ro, 0.1, p0)

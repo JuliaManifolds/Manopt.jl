@@ -11,17 +11,17 @@ using Manifolds, ManifoldDiff, ManifoldsBase, Manopt, Test
 # Dummy types
 struct DummyManifold <: AbstractManifold{ManifoldsBase.ℝ} end
 
-struct DummyDecoratedObjective{E,O<:AbstractManifoldObjective} <:
-       Manopt.AbstractDecoratedManifoldObjective{E,O}
+struct DummyDecoratedObjective{E, O <: AbstractManifoldObjective} <:
+    Manopt.AbstractDecoratedManifoldObjective{E, O}
     objective::O
 end
 function DummyDecoratedObjective(
-    o::O
-) where {E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E}}
-    return DummyDecoratedObjective{E,O}(o)
+        o::O
+    ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
+    return DummyDecoratedObjective{E, O}(o)
 end
 
-struct DummyProblem{M<:AbstractManifold} <: AbstractManoptProblem{M} end
+struct DummyProblem{M <: AbstractManifold} <: AbstractManoptProblem{M} end
 struct DummmyStoppingCriteriaSet <: StoppingCriterionSet end
 struct DummyStoppingCriterion <: StoppingCriterion end
 
@@ -54,14 +54,14 @@ end
 # From ManoptExamples – to avoid a circular dependency
 # Maybe the examples using these could also be simplified instead.
 function adjoint_differential_forward_logs(
-    M::PowerManifold{𝔽,TM,TSize,TPR}, p, X
-) where {𝔽,TM,TSize,TPR}
+        M::PowerManifold{𝔽, TM, TSize, TPR}, p, X
+    ) where {𝔽, TM, TSize, TPR}
     Y = zero_vector(M, p)
     return adjoint_differential_forward_logs!(M, Y, p, X)
 end
 function adjoint_differential_forward_logs!(
-    M::PowerManifold{𝔽,TM,TSize,TPR}, Y, p, X
-) where {𝔽,TM,TSize,TPR}
+        M::PowerManifold{𝔽, TM, TSize, TPR}, Y, p, X
+    ) where {𝔽, TM, TSize, TPR}
     power_size = power_dimensions(M)
     d = length(power_size)
     N = PowerManifold(M.manifold, TPR(), power_size..., d)
@@ -77,12 +77,12 @@ function adjoint_differential_forward_logs!(
                 j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
                 Y[M, I...] =
                     Y[M, I...] + ManifoldDiff.adjoint_differential_log_basepoint(
-                        M.manifold, p[M, I...], p[M, J...], X[N, I..., k]
-                    )
+                    M.manifold, p[M, I...], p[M, J...], X[N, I..., k]
+                )
                 Y[M, J...] =
                     Y[M, J...] + ManifoldDiff.adjoint_differential_log_argument(
-                        M.manifold, p[M, J...], p[M, I...], X[N, I..., k]
-                    )
+                    M.manifold, p[M, J...], p[M, I...], X[N, I..., k]
+                )
             end
         end # directions
     end # i in R
@@ -99,7 +99,7 @@ function differential_forward_logs(M::PowerManifold, p, X)
     else
         N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size...)
     end
-    Y = zero_vector(N, repeat(p; inner=d2))
+    Y = zero_vector(N, repeat(p; inner = d2))
     return differential_forward_logs!(M, Y, p, X)
 end
 function differential_forward_logs!(M::PowerManifold, Y, p, X)
@@ -122,10 +122,10 @@ function differential_forward_logs!(M::PowerManifold, Y, p, X)
                 # collects two, namely in kth direction since xi appears as base and arg
                 Y[N, I..., k] =
                     ManifoldDiff.differential_log_basepoint(
-                        M.manifold, p[M, I...], p[M, J...], X[M, I...]
-                    ) .+ ManifoldDiff.differential_log_argument(
-                        M.manifold, p[M, I...], p[M, J...], X[M, J...]
-                    )
+                    M.manifold, p[M, I...], p[M, J...], X[M, I...]
+                ) .+ ManifoldDiff.differential_log_argument(
+                    M.manifold, p[M, I...], p[M, J...], X[M, J...]
+                )
             else
                 Y[N, I..., k] = zero_vector(M.manifold, p[M, I...])
             end
@@ -133,7 +133,7 @@ function differential_forward_logs!(M::PowerManifold, Y, p, X)
     end # i in R
     return Y
 end
-function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSize,TPR}
+function forward_logs(M::PowerManifold{𝔽, TM, TSize, TPR}, p) where {𝔽, TM, TSize, TPR}
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
@@ -147,7 +147,7 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
     end
     sN = d > 1 ? [power_size..., d] : [power_size...]
     N = PowerManifold(M.manifold, TPR(), sN...)
-    xT = repeat(p; inner=d2)
+    xT = repeat(p; inner = d2)
     X = zero_vector(N, xT)
     e_k_vals = [1 * (1:d .== k) for k in 1:d]
     for i in R # iterate over all pixel
@@ -162,7 +162,7 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
     end # i in R
     return X
 end
-function forward_logs!(M::PowerManifold{𝔽,TM,TSize,TPR}, X, p) where {𝔽,TM,TSize,TPR}
+function forward_logs!(M::PowerManifold{𝔽, TM, TSize, TPR}, X, p) where {𝔽, TM, TSize, TPR}
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
@@ -194,7 +194,7 @@ end
 function L2_Total_Variation(M, p_data, α, p)
     return 1 / 2 * distance(M, p_data, p)^2 + α * Total_Variation(M, p)
 end
-function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0, α=1.0)
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p = 2.0, q = 1.0, α = 1.0)
     pdims = power_dimensions(N)
     if length(pdims) == 1
         d = 1
@@ -218,9 +218,9 @@ function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0, α=
             return max.(normΞ .- λ, 0.0) ./ ((normΞ .== 0) .+ normΞ) .* Ξ
         end
         if p == 2 # Example 3 case 3
-            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims=d + 1))
+            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims = d + 1))
             if length(iRep) > 1
-                norms = repeat(norms; inner=iRep)
+                norms = repeat(norms; inner = iRep)
             end
             # if the norm is zero add 1 to avoid division by zero, also then the
             # nominator is already (max(-λ,0) = 0) so it stays zero then
@@ -229,14 +229,14 @@ function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0, α=
         throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
     elseif q == Inf
         if p == 2
-            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims=d + 1))
+            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims = d + 1))
             if length(iRep) > 1
-                norms = repeat(norms; inner=iRep)
+                norms = repeat(norms; inner = iRep)
             end
         elseif p == 1
-            norms = sum(norm.(Ref(N.manifold), x, Ξ); dims=d + 1)
+            norms = sum(norm.(Ref(N.manifold), x, Ξ); dims = d + 1)
             if length(iRep) > 1
-                norms = repeat(norms; inner=iRep)
+                norms = repeat(norms; inner = iRep)
             end
         elseif p == Inf
             norms = norm.(Ref(N.manifold), x, Ξ)
@@ -247,16 +247,16 @@ function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0, α=
     end # end q
     return throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
 end
-function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Float64=1.0, α=1.0)
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Float64 = 1.0, α = 1.0)
     return project_collaborative_TV(N, λ, x, Ξ, Float64(p), q, α)
 end
-function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Float64, q::Int, α=1.0)
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Float64, q::Int, α = 1.0)
     return project_collaborative_TV(N, λ, x, Ξ, p, Float64(q), α)
 end
-function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Int, α=1.0)
+function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p::Int, q::Int, α = 1.0)
     return project_collaborative_TV(N, λ, x, Ξ, Float64(p), Float64(q), α)
 end
-function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p=2.0, q=1.0, α=1.0)
+function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p = 2.0, q = 1.0, α = 1.0)
     pdims = power_dimensions(N)
     if length(pdims) == 1
         d = 1
@@ -280,9 +280,9 @@ function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p=2.0, q=1.0
             Θ .= max.(normΞ .- λ, 0.0) ./ ((normΞ .== 0) .+ normΞ) .* Ξ
             return Θ
         elseif p == 2 # Example 3 case 3
-            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims=d + 1))
+            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims = d + 1))
             if length(iRep) > 1
-                norms = repeat(norms; inner=iRep)
+                norms = repeat(norms; inner = iRep)
             end
             # if the norm is zero add 1 to avoid division by zero, also then the
             # nominator is already (max(-λ,0) = 0) so it stays zero then
@@ -293,11 +293,11 @@ function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p=2.0, q=1.0
         end
     elseif q == Inf
         if p == 2
-            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims=d + 1))
-            (length(iRep) > 1) && (norms = repeat(norms; inner=iRep))
+            norms = sqrt.(sum(norm.(Ref(N.manifold), x, Ξ) .^ 2; dims = d + 1))
+            (length(iRep) > 1) && (norms = repeat(norms; inner = iRep))
         elseif p == 1
-            norms = sum(norm.(Ref(N.manifold), x, Ξ); dims=d + 1)
-            (length(iRep) > 1) && (norms = repeat(norms; inner=iRep))
+            norms = sum(norm.(Ref(N.manifold), x, Ξ); dims = d + 1)
+            (length(iRep) > 1) && (norms = repeat(norms; inner = iRep))
         elseif p == Inf
             norms = norm.(Ref(N.manifold), x, Ξ)
         else
@@ -309,19 +309,19 @@ function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p=2.0, q=1.0
     return throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
 end
 function project_collaborative_TV!(
-    N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Float64=1.0, α=1.0
-)
+        N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Float64 = 1.0, α = 1.0
+    )
     return project_collaborative_TV!(N, Θ, λ, x, Ξ, Float64(p), q, α)
 end
-function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Float64, q::Int, α=1.0)
+function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Float64, q::Int, α = 1.0)
     return project_collaborative_TV!(N, Θ, λ, x, Ξ, p, Float64(q), α)
 end
-function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Int, α=1.0)
+function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Int, α = 1.0)
     return project_collaborative_TV!(N, Θ, λ, x, Ξ, Float64(p), Float64(q), α)
 end
 function prox_Total_Variation(
-    M::AbstractManifold, λ::Number, x::Tuple{T,T}, p::Int=1
-) where {T}
+        M::AbstractManifold, λ::Number, x::Tuple{T, T}, p::Int = 1
+    ) where {T}
     d = distance(M, x[1], x[2])
     if p == 1
         t = min(0.5, λ / d)
@@ -340,8 +340,8 @@ function prox_Total_Variation(
     )
 end
 function prox_Total_Variation!(
-    M::AbstractManifold, y, λ::Number, x::Tuple{T,T}, p::Int=1
-) where {T}
+        M::AbstractManifold, y, λ::Number, x::Tuple{T, T}, p::Int = 1
+    ) where {T}
     d = distance(M, x[1], x[2])
     if p == 1
         t = min(0.5, λ / d)
@@ -360,7 +360,7 @@ function prox_Total_Variation!(
     ManifoldsBase.exp_fused!(M, y[2], x[2], X2, t)
     return y
 end
-function prox_Total_Variation(M::PowerManifold, λ, x, p::Int=1)
+function prox_Total_Variation(M::PowerManifold, λ, x, p::Int = 1)
     y = deepcopy(x)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
@@ -382,7 +382,7 @@ function prox_Total_Variation(M::PowerManifold, λ, x, p::Int=1)
     end # directions
     return y
 end
-function prox_Total_Variation!(M::PowerManifold, y, λ, x, p::Int=1)
+function prox_Total_Variation!(M::PowerManifold, y, λ, x, p::Int = 1)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
@@ -404,7 +404,7 @@ function prox_Total_Variation!(M::PowerManifold, y, λ, x, p::Int=1)
     end # directions
     return y
 end
-function Total_Variation(M::PowerManifold, x, p=1, q=1)
+function Total_Variation(M::PowerManifold, x, p = 1, q = 1)
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
@@ -429,13 +429,13 @@ end
 #
 #
 # Further example functions - Chambolle-Pock
-function differential_project_collaborative_TV(N::PowerManifold, p, ξ, η, p1=2.0, p2=1.0)
+function differential_project_collaborative_TV(N::PowerManifold, p, ξ, η, p1 = 2.0, p2 = 1.0)
     ζ = zero_vector(N, p)
     return differential_project_collaborative_TV!(N, ζ, p, ξ, η, p1, p2)
 end
 function differential_project_collaborative_TV!(
-    N::PowerManifold, ζ, p, ξ, η, p1=2.0, p2=1.0
-)
+        N::PowerManifold, ζ, p, ξ, η, p1 = 2.0, p2 = 1.0
+    )
     ζ = zero_vector!(N, ζ, p)
     pdims = power_dimensions(N)
     if length(pdims) == 1
@@ -474,7 +474,7 @@ function differential_project_collaborative_TV!(
                         else
                             1 / norms[I..., k] * (
                                 η[N, I..., k] .-
-                                1 / norms[I..., k]^2 .* inner(
+                                    1 / norms[I..., k]^2 .* inner(
                                     N.manifold,
                                     p[N, I..., k],
                                     η[N, I..., k],
@@ -490,7 +490,7 @@ function differential_project_collaborative_TV!(
             return ζ
         elseif p1 == 2
             norms = norm.(Ref(N.manifold), p, ξ)
-            norms_ = sqrt.(sum(norms .^ 2; dims=length(pdims)))
+            norms_ = sqrt.(sum(norms .^ 2; dims = length(pdims)))
 
             for i in R # iterate over all pixel
                 for k in 1:d # for all direction combinations
@@ -512,7 +512,7 @@ function differential_project_collaborative_TV!(
                                 else
                                     1 / norms_[I...] * (
                                         η[N, I..., k] .-
-                                        1 / norms_[I...]^2 .* inner(
+                                            1 / norms_[I...]^2 .* inner(
                                             N.manifold,
                                             p[N, I..., k],
                                             η[N, I..., k],
@@ -576,7 +576,7 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
                         else
                             1 / norms[I..., k] * (
                                 Η[N, I..., k] .-
-                                1 / norms[I..., k]^2 .* inner(
+                                    1 / norms[I..., k]^2 .* inner(
                                     N.manifold,
                                     x[N, I..., k],
                                     Η[N, I..., k],
@@ -592,7 +592,7 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
             return Y
         elseif p == 2
             norms = norm.(Ref(N.manifold), x, Ξ)
-            norms_ = sqrt.(sum(norms .^ 2; dims=length(pdims)))
+            norms_ = sqrt.(sum(norms .^ 2; dims = length(pdims)))
 
             for i in R # iterate over all pixel
                 for k in 1:d # for all direction combinations
@@ -614,7 +614,7 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
                                 else
                                     1 / norms_[I...] * (
                                         Η[N, I..., k] .-
-                                        1 / norms_[I...]^2 .* inner(
+                                            1 / norms_[I...]^2 .* inner(
                                             N.manifold,
                                             x[N, I..., k],
                                             Η[N, I..., k],

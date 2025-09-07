@@ -69,7 +69,7 @@ end
         # allocating
         mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
         # Init to copy of p - init cache
-        sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p=copy(M, p))
+        sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p = copy(M, p))
         @test repr(sco1) == "SimpleManifoldCachedObjective{AllocatingEvaluation,$(mgoa)}"
         @test startswith(
             repr((sco1, 1.0)),
@@ -129,9 +129,9 @@ end
         @test sco1.objective.functions[:gradient].i == 6
 
         mgoi = ManifoldGradientObjective(
-            TestCostCount(0), TestGradCount(0); evaluation=InplaceEvaluation()
+            TestCostCount(0), TestGradCount(0); evaluation = InplaceEvaluation()
         )
-        sco2 = Manopt.SimpleManifoldCachedObjective(M, mgoi; initialized=false)
+        sco2 = Manopt.SimpleManifoldCachedObjective(M, mgoi; initialized = false)
         # not evaluated on init -> this is the first
         @test sco2.objective.functions[:cost].i == 0
         @test sco2.objective.functions[:gradient].i == 0
@@ -166,7 +166,7 @@ end
         @test sco2.objective.functions[:gradient].i == 4
 
         mcgoa = ManifoldCostGradientObjective(TestCostGradCount(0))
-        sco3 = Manopt.SimpleManifoldCachedObjective(M, mcgoa; initialized=false)
+        sco3 = Manopt.SimpleManifoldCachedObjective(M, mcgoa; initialized = false)
         # not evaluated on init -> still zero
         @test sco3.objective.functions[:costgradient].i == 0
         @test get_gradient(M, sco3, p) == p
@@ -193,9 +193,9 @@ end
         @test sco3.objective.functions[:costgradient].i == 8
 
         mcgoi = ManifoldCostGradientObjective(
-            TestCostGradCount(0); evaluation=InplaceEvaluation()
+            TestCostGradCount(0); evaluation = InplaceEvaluation()
         )
-        sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p=p)
+        sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p = p)
         # evaluated on init -> evaluates twice
         @test sco4.objective.functions[:costgradient].i == 2
         @test get_gradient(M, sco4, p) == p
@@ -310,7 +310,7 @@ end
         co2a = ManifoldCountObjective(M, o2a, [:Cost, :Gradient])
         #pass size
         lco2a = objective_cache_factory(M, co2a, (:LRU, [:Cost, :Gradient], 10))
-        o2i = ManifoldCostGradientObjective(f_f_grad!; evaluation=InplaceEvaluation())
+        o2i = ManifoldCostGradientObjective(f_f_grad!; evaluation = InplaceEvaluation())
         co2i = ManifoldCountObjective(M, o2i, [:Cost, :Gradient])
         # pass keyword
         lco2i = objective_cache_factory(
@@ -385,7 +385,7 @@ end
         grad_f!(M, X, p) = (X .= A * p - (p' * A * p) * p)
         Hess_f!(M, Y, p, X) = (Y .= A * X - (p' * A * X) .* p - (p' * A * p) .* X)
         obj_i = ManifoldHessianObjective(
-            f, grad_f!, Hess_f!; evaluation=InplaceEvaluation()
+            f, grad_f!, Hess_f!; evaluation = InplaceEvaluation()
         )
         c_obj_i = objective_cache_factory(
             M, obj_i, (:LRU, [:Cost, :Gradient, :Hessian], [:cache_size => 1])
@@ -411,7 +411,7 @@ end
         #
         # Simple
         obj_g = ManifoldGradientObjective(f, grad_f)
-        s_obj = Manopt.SimpleManifoldCachedObjective(M, obj_g; p=similar(p), X=similar(X))
+        s_obj = Manopt.SimpleManifoldCachedObjective(M, obj_g; p = similar(p), X = similar(X))
         # undecorated / recursive cost -> exactly f
         @test Manopt.get_cost_function(obj_g) === Manopt.get_cost_function(s_obj, true)
         # otherwise different
@@ -425,9 +425,9 @@ end
         @test grad_f1 != grad_f
         @test grad_f1(M, p) == grad_f(M, p)
         # Simple Mutating
-        obj_g_i = ManifoldGradientObjective(f, grad_f!; evaluation=InplaceEvaluation())
+        obj_g_i = ManifoldGradientObjective(f, grad_f!; evaluation = InplaceEvaluation())
         s_obj_i = Manopt.SimpleManifoldCachedObjective(
-            M, obj_g_i; p=similar(p), X=similar(X)
+            M, obj_g_i; p = similar(p), X = similar(X)
         )
         @test Manopt.get_cost_function(obj_g_i) === Manopt.get_cost_function(s_obj_i, true)
         f2 = Manopt.get_cost_function(s_obj_i)

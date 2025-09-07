@@ -13,7 +13,7 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     p = [1.0, zeros(n - 1)...]
     X = [0.0, 1.0, zeros(n - 2)...]
     obj = ManifoldHessianObjective(f, ∇f, ∇²f)
-    obj! = ManifoldHessianObjective(f, ∇f!, ∇²f!; evaluation=InplaceEvaluation())
+    obj! = ManifoldHessianObjective(f, ∇f!, ∇²f!; evaluation = InplaceEvaluation())
     neg_obj = -obj
     @test neg_obj isa ScaledManifoldObjective
     s = "ScaledManifoldObjective based on a $(obj) with scale -1"
