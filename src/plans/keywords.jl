@@ -152,9 +152,12 @@ accepts when constructed.
 
 This function uses [`direct_keywords`](@ref) to find keywords a function directly accepts,
 and [`calls_with_kwargs`](@ref) to find functions it passes keyword to, where they also
-might be accepted
+might be accepted.
+In order for nonmutating functions `f` to work the same as their mutating variants `f!`,
+the allocating one, one should set [`calls_with_kwargs`](@ref)`(f) = (f,)`.
 
-this also includes keywords that are passed on to internal structures.
+this also includes keywords that are passed on to internal structures, also specified using
+[`calls_with_kwargs`](@ref).
 """
 function accepted_keywords(f)
     kw = direct_keywords(f)
@@ -178,12 +181,7 @@ calls_with_kwargs(f) = ()
     direct_keywords(solver)
     direct_keywords(stepsize)
 
-Return a set of keywords a function directly would work with,
-i.e. that are directly defined in one of its dispatch variants, including
-a mutating variant.
-
-For example `direct_keywords(gradient_descent)` and `direct_keywords(gradient_descent!)`
-should return the same set [`Keywords!`](@ref).
+Return a set of keywords a function directly would work with.
 """
 function direct_keywords(f)
     methods_f = methods(f)
