@@ -5,14 +5,18 @@ A small internal struct to represent a set of keywords,
 
 # Fields
 
-* `accepted` a `Set` of symbols of keywords a certain function accepts
-* `deprecated` a `Set` of symbols of keywords a certain function has deprecated
+* `accepted=Set{Symbol}()` a `Set` of symbols of keywords a certain function accepts
+* `deprecated=Set{Symbol}()` a `Set` of symbols of keywords a certain function has deprecated
+* `in=nothing` the function the keywords are (directly or indirectly) accepted in
+  to Indicate ane empty set, use `nothing`.
 * `origins` a dictionary that specifies for every keyword the function it is passed to.
   this usually should point to the function it is _directly_ passed to.
 
 # Constructor
 
-    Keywords(accepted=Set{Symbol}(), deprecated=Set{Symbol}(); type::Type=Nothing)
+    Keywords(
+        accepted=Set{Symbol}(), deprecated=Set{Symbol}();
+        in::Type=nothing)
 
 Generate a Keywords wrapper, where both default to being the empty set.
 For pretty printing you can provide a type they belong to.
@@ -20,16 +24,16 @@ For pretty printing you can provide a type they belong to.
 struct Keywords{I}
     accepted::Set{Symbol}
     deprecated::Set{Symbol}
-    origins::Dict{Symbol,Union{T,Vector{T}} where {T<:Union{Function,Type}}}
+    origins::Dict{Symbol, Union{T, Vector{T}} where {T <: Union{Function, Type}}}
 end
 function Keywords(
-    accepted::Set{Symbol}=Set{Symbol}(),
-    deprecated::Set{Symbol}=Set{Symbol}();
-    in=nothing,
-    origins=nothing,
-)
+        accepted::Set{Symbol} = Set{Symbol}(),
+        deprecated::Set{Symbol} = Set{Symbol}();
+        in = nothing,
+        origins = nothing,
+    )
     if !isnothing(in)
-        _origins = Dict{Symbol,Any}()
+        _origins = isnothing(origins) ? Dict{Symbol, Any}() : origins
         for kw in accepted
             _origins[kw] = in
         end
@@ -37,7 +41,7 @@ function Keywords(
             _origins[kw] = in
         end
     else
-        _origins = Dict{Symbol,Union{<:Function,<:Type}}()
+        _origins = Dict{Symbol, Union{<:Function, <:Type}}()
     end
     return Keywords{in}(accepted, deprecated, _origins)
 end
@@ -45,14 +49,47 @@ function copy(kw::Keywords{I}) where {I}
     return Keywords{I}(copy(kw.accepted), copy(kw.deprecated), copy(kw.origins))
 end
 
+struct ManoptKeywordError{F, K <: Keywords} <: Exception
+    f::F
+    kw::K
+end
+function Base.showerror(io::IO, e::ManoptKeywordError)
+    return print(io, keyword_error_string(e.f, e.kw))
+end
+function keyword_error_string(f, kw::Keywords; hint = true)
+    io = IOBuffer()
+    if length(kw.accepted) > 0
+        print(io, "$(f) does not accept the keyword(s)\n\n  * ")
+        print(io, join(kw.accepted, "\n  * "), "\n")
+    end
+    if length(kw.deprecated) > 0
+        print(io, "\n$(f) accepts, but deprecates the keyword(s):\n  ")
+        for k in keys(kw.deprecated)
+            print(io, join(kw.deprecated, ", "))
+        end
+        print(io, "\n")
+    end
+    if hint
+        akw = accepted_keywords(f).accepted
+        if length(akw) == 0
+            return print(io, "\n$f does not accept any keywords.")
+        else
+            print(io, "\nHint: $f does accept the following keywords:\n\n  ")
+            print(io, join(sort!(collect(akw)), ", "))
+            print(io, "\n")
+        end
+    end
+    return String(take!(io))
+end
+
 """
-    union!(kw::Keywords, kw2::Keywords)
+    add!(kw::Keywords, kw2::Keywords)
 
 Append the [`Keywords`](@ref) `kw2` to `kw`, i.e. union the accepted and deprecated keywords,
 as well as their origins, but keep first parameter of `kw`.
 Also their origin takes precedence.
 """
-function Base.union!(kw::Keywords{I}, kw2::Keywords) where {I}
+function add!(kw::Keywords{I}, kw2::Keywords) where {I}
     union!(kw.accepted, kw2.accepted)
     union!(kw.deprecated, kw2.deprecated)
     for (k, v) in kw2.origins
@@ -74,7 +111,7 @@ function Base.show(io::IO, kw::Keywords{I}) where {I}
         "none"
     else
         ast = ""
-        for kwn in sort!(collect(kw.accepted); by=s -> lowercase(String(s)))
+        for kwn in sort!(collect(kw.accepted); by = s -> lowercase(String(s)))
             if !startswith(string(kwn), "_")
                 astn = "\n  * $(kwn)"
                 if haskey(kw.origins, kwn) && kw.origins[kwn] isa Vector
@@ -97,10 +134,10 @@ function Base.show(io::IO, kw::Keywords{I}) where {I}
     return print(
         io,
         """
-$dt
+        $dt
 
-accepted: $as$ds
-""",
+        accepted: $as$ds
+        """,
     )
 end
 
@@ -113,17 +150,26 @@ end
 Return a set of keywords, see [`Keywords`](@ref), a certain element of `Manopt.jl`
 accepts when constructed.
 
+This function uses [`direct_keywords`](@ref) to find keywords a function directly accepts,
+and [`calls_with_kwargs`](@ref) to find functions it passes keyword to, where they also
+might be accepted
+
 this also includes keywords that are passed on to internal structures.
 """
 function accepted_keywords(f)
     kw = direct_keywords(f)
     for g in calls_with_kwargs(f)
         kw2 = accepted_keywords(g)
-        union!(kw, kw2)
+        add!(kw, kw2)
     end
     return kw
 end
 
+"""
+    calls_with_kwargs(f)
+
+Return a tuple of functions `f` calls and passes its `kwargs...` to.
+"""
 calls_with_kwargs(f) = ()
 
 """
@@ -144,14 +190,17 @@ function direct_keywords(f)
     s = Set{Symbol}()
     for m in methods_f
         for fkw in filter(
-            x -> !(x == Symbol("kwargs...") || startswith("$(x)", "_")), Base.kwarg_decl(m)
-        )
+                x -> !(
+                    x == Symbol("...") || x == Symbol("kwargs...") || startswith("$(x)", "_")
+                ),
+                Base.kwarg_decl(m),
+            )
             push!(s, fkw)
         end
     end
     d = deprecated_keywords(s)
     setdiff!(s, d)
-    return Keywords(s, d; in=f)
+    return Keywords(s, d; in = f)
 end
 
 deprecated_keywords(s) = Set{Symbol}()
@@ -161,4 +210,41 @@ function pretty_string_keywords(s::Set{Symbol})
     return """
     * $(join(s, "\n* "))
     """
+end
+
+"""
+    keywords_accepted(f, mode=:warn, kw::Keywords=accepted_keywords(f); kwargs...)
+
+Given a function `f`, [`Keywords`](@ref) `kw` it accepts, check if `kwargs...` are accepted
+by those keywords and warn if deprecated keywords are passed
+
+For keywords that are not accepted/processed here, the `mode` argument provides
+how to report the result, either `:warn` or `:error` on keywords that are not accepted.
+"""
+function keywords_accepted(
+        f, mode::Symbol = :warn, kw::Keywords = accepted_keywords(f); kwargs...
+    )
+    d = Set{Symbol}()
+    a = Set{Symbol}()
+    for (k, v) in kwargs
+        # Deprecated?
+        if k in kw.deprecated
+            push!(d, k)
+        end
+        # Not accepted?
+        if k ∉ kw.accepted
+            push!(a, k)
+        end
+    end
+    # Warn for deprecated
+    if (mode != :warn) && length(d) > 0 # Warn about deprecated always
+        # if we are on warn the next kicks in anyways
+        @warn keyword_error_string(f, Keywords(Set{Symbol}(), d; hint = false); hint = false)
+    end
+    if length(a) > 0
+        error_kws = Keywords(a, d; in = f)
+        (mode == :warn) && (@warn keyword_error_string(f, error_kws; hint = true))
+        (mode == :error) && throw(ManoptKeywordError(f, error_kws))
+    end
+    return (length(a) == 0) && (length(d) == 0)
 end

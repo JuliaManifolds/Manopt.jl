@@ -117,7 +117,7 @@ function decorate_objective!(
         _embedded_X = objective_type == :Riemannian ? missing : embed(M, p, zero_vector(M, p)),
         return_objective = false,
         kwargs...,
-    ) where {O<:AbstractManifoldObjective}
+    ) where {O <: AbstractManifoldObjective}
     # Order:
     # 1) wrap embedding,
     # 2) _then_ count
