@@ -197,12 +197,12 @@ calls_with_kwargs(::typeof(gradient_descent)) = (gradient_descent!,)
 "$(_doc_gradient_descent)"
 gradient_descent!(M::AbstractManifold, args...; kwargs...)
 
-# TODO Add this second signature as well
 function gradient_descent!(
         M::AbstractManifold, f, grad_f, p;
         differential = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
+    keywords_accepted(gradient_descent; kwargs...)
     mgo = ManifoldGradientObjective(
         f, grad_f; differential = differential, evaluation = evaluation
     )
@@ -233,7 +233,7 @@ function gradient_descent!(
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
     # all explicit others others from above are anyways accepted here, so we only have to pass kwargs in
-    keywords_accepted(gradient_descent!, :error; kwargs...)
+    keywords_accepted(gradient_descent!; kwargs...)
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     s = GradientDescentState(

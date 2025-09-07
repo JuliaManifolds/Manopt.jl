@@ -385,14 +385,16 @@ $(_note(:OtherKeywords))
 $(_note(:OutputSection))
 """
 function cma_es(M::AbstractManifold, f; kwargs...)
+    keywords_accepted(cma_es; kwargs...)
     mco = ManifoldCostObjective(f)
     return cma_es!(M, mco, rand(M); kwargs...)
 end
 function cma_es(M::AbstractManifold, f, p_m; kwargs...)
+    keywords_accepted(cma_es; kwargs...)
     mco = ManifoldCostObjective(f)
     return cma_es!(M, mco, copy(M, p_m); kwargs...)
 end
-
+calls_with_kwargs(::typeof(cma_es)) = (cma_es!,)
 function cma_es!(M::AbstractManifold, f, p_m; kwargs...)
     mco = ManifoldCostObjective(f)
     return cma_es!(M, mco, p_m; kwargs...)
@@ -435,6 +437,7 @@ function cma_es!(
         rng::AbstractRNG = default_rng(),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(cma_es; kwargs...)
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     n_coords = number_of_coordinates(M, basis)
@@ -491,6 +494,7 @@ function cma_es!(
     solve!(mp, d_state)
     return get_solver_return(get_objective(mp), d_state)
 end
+calls_with_kwargs(::typeof(cma_es!)) = (decorate_objective!, decorate_state!)
 
 @doc """
     eigenvector_transport!(

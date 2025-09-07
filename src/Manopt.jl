@@ -516,7 +516,7 @@ export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
-export AdaptiveRagularizationWithCubicsModelObjective
+export AdaptiveRegularizationWithCubicsModelObjective
 export ExactPenaltyCost, ExactPenaltyGrad
 export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #

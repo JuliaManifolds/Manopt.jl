@@ -108,7 +108,7 @@ decorate_objective!(M::AbstractManifold, o::AbstractManifoldObjective; kwargs...
 function decorate_objective!(
         M::AbstractManifold, o::O;
         cache::Union{
-            Missing, Symbol, Tuple{Symbol, <:AbstractArray}, Tuple{Symbol, <:AbstractArray, P} where {P},
+            Missing, Symbol, Tuple{Symbol, <:AbstractArray}, Tuple{Symbol, <:AbstractArray, <:Any},
         } = missing,
         count::Union{Missing, AbstractVector{<:Symbol}} = missing,
         objective_type::Symbol = :Riemannian,
