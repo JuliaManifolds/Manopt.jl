@@ -1738,17 +1738,20 @@ end
 function DistanceOverGradientsStepsize(
         M::AbstractManifold;
         p = rand(M),
-        initial_distance::R = 1.0e-3,
+        initial_distance::R1 = 1.0e-3,
         use_curvature::Bool = false,
-        sectional_curvature_bound::R = 0.0,
-    ) where {R <: Real}
+        sectional_curvature_bound::R2 = 0.0,
+    ) where {R1 <: Real, R2 <: Real}
+    R = promote_type(R1, R2)
+    id = convert(R, initial_distance)
+    κ = convert(R, sectional_curvature_bound)
     return DistanceOverGradientsStepsize{R, typeof(p)}(
-        initial_distance,
-        initial_distance,  # max_distance starts at initial_distance
+        id,
+        id,  # max_distance starts at initial_distance
         zero(R),          # gradient_sum starts at 0
         copy(M, p),       # store initial point
         use_curvature,
-        sectional_curvature_bound,
+        κ,
         NaN,              # last_stepsize
     )
 end

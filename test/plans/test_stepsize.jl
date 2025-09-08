@@ -1,4 +1,4 @@
-using ManifoldsBase, Manopt, Manifolds, Test
+using LinearAlgebra, ManifoldsBase, Manopt, Manifolds, Test
 
 s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
 !(s in LOAD_PATH) && (push!(LOAD_PATH, s))
@@ -241,6 +241,28 @@ using ManoptTestSuite
             # Call with the known gradient to avoid any objective/gradient mismatches
             lr = ds(dmp, gds, 0; gradient = g)
             @test isapprox(lr, expected_lr; rtol = 1.0e-12, atol = 0)
+        end
+        @testset "Simple Rayleigh coefficient" begin
+            # Minimize negative Rayleigh quotient on the sphere S^1
+            M = Sphere(1)
+            A = [1.0 0; 0 1.0]
+
+            f(M, p) = -p' * A * p
+            
+            function grad_f(M, p)
+                g = -2 * A * p
+                return g - LinearAlgebra.dot(g, p) * p  # project to tangent space
+            end
+
+            p0 = rand(M)
+
+            x = gradient_descent(
+                M, f, grad_f, p0;
+                stepsize = DistanceOverGradients(M; initial_distance = Manifolds.injectivity_radius(M), use_curvature = true),
+                stopping_criterion = StopWhenGradientNormLess(1e-14),
+            )
+
+            @test f(M, x) ≈ -1
         end
     end
     @testset "max_stepsize fallbacks" begin
