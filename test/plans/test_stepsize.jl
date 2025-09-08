@@ -266,9 +266,9 @@ using ManoptTestSuite
                 stepsize = DistanceOverGradients(initial_distance = Manifolds.injectivity_radius(M)),
                 stopping_criterion = StopWhenGradientNormLess(1.0e-15),
             )
-            
+
             # 1e-6 is the maximum rtol for the test to pass on 1.10; it works without specifying rtol on 1.11
-            @test f(M, x) ≈ -1 rtol=1e-6
+            @test f(M, x) ≈ -1 rtol = 1.0e-6
         end
     end
     @testset "max_stepsize fallbacks" begin
