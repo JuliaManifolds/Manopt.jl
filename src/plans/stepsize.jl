@@ -1706,15 +1706,7 @@ from the initial point and accumulating gradient norms.
 * `use_curvature::Bool`: whether to use sectional curvature in the stepsize
 * `sectional_curvature_bound::R`: lower bound on sectional curvature ``κ`` (only used if `use_curvature=true`)
 
-The stepsize at iteration ``t`` is computed as:
-
-```math
-η_t = \frac{\bar{r}_t}{\sqrt{ζ_κ(\bar{r}_t)} \sqrt{G_t}}
-```
-
-where ``ζ_κ`` is the geometric curvature function:
-- ``ζ_κ(d) = 1`` if ``κ ≥ 0`` or `use_curvature=false`
-- ``ζ_κ(d) = \frac{\sqrt{|κ|} d}{\tanh(\sqrt{|κ|} d)}`` if ``κ < 0``
+To see how stepsize at iteration ``t`` is computed see [`geometric_curvature_function`](@ref).
 
 # Constructor
 
@@ -1761,17 +1753,18 @@ function DistanceOverGradientsStepsize(
     )
 end
 
-"""
+@doc raw"""
     geometric_curvature_function(κ::Real, d::Real)
 
 Compute the geometric curvature function ``ζ_κ(d)`` for sectional curvature bound ``κ``.
 
 ```math
-ζ_κ(d) = \\begin{cases}
-    \\frac{\\sqrt{|κ|} d}{\\tanh(\\sqrt{|κ|} d)} & \\text{if } κ < 0 \\\\
-    1 & \\text{if } κ ≥ 0
-\\end{cases}
+η_t = \frac{\bar{r}_t}{\sqrt{ζ_κ(\bar{r}_t)} \sqrt{G_t}}
 ```
+
+where ``ζ_κ`` is the geometric curvature function:
+- ``ζ_κ(d) = 1`` if ``κ ≥ 0`` or `use_curvature=false`
+- ``ζ_κ(d) = \frac{\sqrt{|κ|} d}{\tanh(\sqrt{|κ|} d)}`` if ``κ < 0``
 """
 function geometric_curvature_function(κ::Real, d::Real)
     if κ < 0 && d > 0
