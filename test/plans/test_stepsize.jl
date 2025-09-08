@@ -262,7 +262,7 @@ using ManoptTestSuite
                 stopping_criterion = StopWhenGradientNormLess(1.0e-15),
             )
             
-            # 1e-6 is maximal rtol the tests is passing on 1.10, it works without in 1.11
+            # 1e-6 is the maximum rtol for the test to pass on 1.10; it works without specifying rtol on 1.11
             @test f(M, x) ≈ -1 rtol=1e-6
         end
     end
