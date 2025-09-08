@@ -270,6 +270,28 @@ using ManoptTestSuite
             # 1e-6 is the maximum rtol for the test to pass on 1.10; it works without specifying rtol on 1.11
             @test f(M, x) ≈ -1 rtol = 1.0e-6
         end
+        @testset "Distance from Hyperbolic to origin" begin
+            M = Hyperbolic(2)
+
+            f(M, x) = (x[1])^2 + x[2]^2 + x[3]^2
+
+            function grad_f(M, p)
+                grad_euc = [2p[1], 2.0p[2], 2.0p[3]]
+                ort_vector = [p[1], p[2], -p[3]]
+                ort_norm = dot(ort_vector, ort_vector)
+                return grad_euc - dot(grad_euc, ort_vector) * ort_vector / ort_norm
+            end
+
+            p0 = [1, 1, √3]
+
+            x = gradient_descent(
+                M, f, grad_f, p0;
+                stepsize = DistanceOverGradients(initial_distance = 1, use_curvature = true, sectional_curvature_bound = -1.0),
+                stopping_criterion = StopWhenGradientNormLess(1.0e-15)
+            )
+
+            @test f(M, x) ≈ 1
+        end
     end
     @testset "max_stepsize fallbacks" begin
         M = ManoptTestSuite.DummyManifold()
