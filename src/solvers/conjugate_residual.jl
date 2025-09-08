@@ -61,7 +61,7 @@ end
 function conjugate_residual(
         TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X = zero_vector(TpM); kwargs...
     )
-    keywords_accepted(conjugate_gradient_descent; kwargs...)
+    keywords_accepted(conjugate_residual; kwargs...)
     Y = copy(TpM, X)
     return conjugate_residual!(TpM, slso, Y; kwargs...)
 end

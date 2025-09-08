@@ -61,13 +61,11 @@ function keyword_error_string(f, kw::Keywords; hint = true)
     io = IOBuffer()
     if length(kw.accepted) > 0
         print(io, "$(f) does not accept the keyword(s)\n\n  * ")
-        print(io, join(kw.accepted, "\n  * "), "\n")
+        print(io, join(sort!(collect(kw.accepted)), "\n  * "), "\n")
     end
     if length(kw.deprecated) > 0
         print(io, "\n$(f) accepts, but deprecates the keyword(s):\n  ")
-        for k in keys(kw.deprecated)
-            print(io, join(kw.deprecated, ", "))
-        end
+        print(io, join(sort!(collect(kw.deprecated)), ", "), "\n  ")
         print(io, "\n")
     end
     if hint
@@ -101,11 +99,8 @@ function add!(kw::Keywords{I}, kw2::Keywords) where {I}
     return kw
 end
 
-function Base.show(io::IO, ::Keywords{Nothing})
-    return print(io, "Keywords()")
-end
 function Base.show(io::IO, kw::Keywords{I}) where {I}
-    if I === Nothing && length(kw.accepted) == 0 && length(kw.deprecated) == 0
+    if I === nothing && length(kw.accepted) == 0 && length(kw.deprecated) == 0
         return print(io, "Keywords()")
     end
     as = if (length(kw.accepted) == 0)
@@ -225,19 +220,19 @@ function keywords_accepted(
             push!(d, k)
         end
         # Not accepted?
-        if k ∉ kw.accepted
+        if (length(kw.accepted) > 0) && (k ∉ kw.accepted)
             push!(a, k)
         end
     end
     # Warn for deprecated
     if (mode != :warn) && length(d) > 0 # Warn about deprecated always
         # if we are on warn the next kicks in anyways
-        @warn keyword_error_string(f, Keywords(Set{Symbol}(), d; hint = false); hint = false)
+        @warn keyword_error_string(f, Keywords(Set{Symbol}(), d); hint = false)
     end
     if length(a) > 0
         error_kws = Keywords(a, d; from = f)
-        (mode == :warn) && (@warn keyword_error_string(f, error_kws; hint = true))
-        (mode == :error) && throw(ManoptKeywordError(f, error_kws))
+        (mode === :warn) && (@warn keyword_error_string(f, error_kws; hint = true))
+        (mode === :error) && throw(ManoptKeywordError(f, error_kws))
         # else handle as :none and do not warn or error
     end
     return (length(a) == 0) && (length(d) == 0)
