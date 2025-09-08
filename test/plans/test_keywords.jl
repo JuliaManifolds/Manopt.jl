@@ -33,4 +33,25 @@ using Manopt, Test
             Manopt.Keywords(Set([:a])); b = 1
         )
     end
+    @testset "Error printing" begin
+        kwd = Manopt.Keywords(Set([:a, :b]))
+        err = Manopt.ManoptKeywordError(show, kwd)
+        io = IOBuffer()
+        showerror(io, err)
+        str = String(take!(io))
+        @test contains(str, "show does not accept the keyword(s)")
+        @test contains(str, "* a")
+        @test contains(str, "* b")
+        @test contains(str, "does accept the following") # From Hint
+        # With accepted kws
+        kwd2 = Manopt.Keywords(Set([:a]), Set([:b]))
+        err2 = Manopt.ManoptKeywordError(show, kwd2)
+        io2 = IOBuffer()
+        showerror(io2, err2)
+        str2 = String(take!(io2))
+        @test contains(str2, "show does not accept the keyword(s)")
+        @test contains(str2, "* a")
+        @test contains(str2, "show accepts, but deprecates the keyword(s):")
+        @test contains(str2, "b")
+    end
 end
