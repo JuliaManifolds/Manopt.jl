@@ -258,9 +258,10 @@ using ManoptTestSuite
 
             x = gradient_descent(
                 M, f, grad_f, p0;
-                stepsize = DistanceOverGradients(initial_distance = Manifolds.injectivity_radius(M)),
+                stepsize = DistanceOverGradients(initial_distance = 1e-3),
                 stopping_criterion = StopWhenGradientNormLess(1.0e-14),
             )
+            
 
             @test f(M, x) ≈ -1
         end

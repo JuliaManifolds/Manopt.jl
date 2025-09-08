@@ -1784,21 +1784,20 @@ function geometric_curvature_function(κ::Real, d::Real)
     end
 end
 
-function (rdog::DistanceOverGradientsStepsize)(
+function (rdog::DistanceOverGradientsStepsize{R, P})(
         mp::AbstractManoptProblem,
         s::AbstractManoptSolverState,
         i,
         args...;
         gradient = nothing,
         kwargs...,
-    )
+    ) where {R, P}
     M = get_manifold(mp)
     p = get_iterate(s)
     grad = isnothing(gradient) ? get_gradient(mp, p) : gradient
 
     # Compute gradient norm
-    grad_norm_sq = norm(M, p, grad)^2
-
+    grad_norm_sq = clamp(norm(M, p, grad)^2, eps(R), typemax(R))
     if i == 0
         # Initialize on first call
         rdog.gradient_sum = grad_norm_sq
@@ -1810,9 +1809,10 @@ function (rdog::DistanceOverGradientsStepsize)(
             ζ = geometric_curvature_function(
                 rdog.sectional_curvature_bound, rdog.max_distance
             )
-            stepsize = rdog.initial_distance / (sqrt(ζ) * sqrt(max(grad_norm_sq, eps())))
+            stepsize = rdog.initial_distance / (sqrt(ζ) * sqrt(max(grad_norm_sq, eps(R))))
         else
-            stepsize = rdog.initial_distance / sqrt(max(grad_norm_sq, eps()))
+            @show grad_norm_sq
+            stepsize = rdog.initial_distance / sqrt(max(grad_norm_sq, eps(R)))
         end
     else
         # Update gradient sum
