@@ -268,8 +268,7 @@ using ManoptTestSuite
             f(M, p) = -p' * A * p
 
             function grad_f(M, p)
-                g = -2 * A * p
-                return g - LinearAlgebra.dot(g, p) * p  # project to tangent space
+                return project(M, p, -2 * A * p)
             end
 
             p0 = rand(M)
@@ -286,20 +285,19 @@ using ManoptTestSuite
         @testset "Distance from Hyperbolic to origin" begin
             M = Hyperbolic(2)
 
-            f(M, x) = x[1]^2 + x[2]^2 + x[3]^2
+            f(M, x) = exp(x[1]^2 + x[2]^2)
 
             function grad_f(M, p)
-                grad_euc = 2.0*[p[1], p[2], p[3]]
-                ort_vector = [p[1], p[2], -p[3]]
-                ort_norm = dot(ort_vector, ort_vector)
-                return grad_euc - dot(grad_euc, ort_vector) * ort_vector / ort_norm
+                val = exp(p[1]^2 + p[2]^2)
+                grad_E = [2*p[1]*val, 2*p[2]*val, 0.0]
+                return project(M, p, grad_E)
             end
 
             p0 = rand(M)
 
             x = gradient_descent(
                 M, f, grad_f, p0;
-                stepsize = DistanceOverGradients(initial_distance = 1, use_curvature = true, sectional_curvature_bound = -1.0),
+                stepsize = DistanceOverGradients(use_curvature = true, sectional_curvature_bound = -1.0),
                 stopping_criterion = StopWhenGradientNormLess(1.0e-15)
             )
 
