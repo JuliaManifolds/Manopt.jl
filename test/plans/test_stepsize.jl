@@ -144,8 +144,21 @@ using ManoptTestSuite
             @test ds.initial_point == p
             @test ds.last_stepsize === NaN
             @test ds.last_stepsize === get_last_stepsize(ds)
+            # test printed representation before first step
+            repr_ds = repr(ds)
+            @test occursin("DistanceOverGradients(;", repr_ds)
+            @test occursin("initial_distance=1.0", repr_ds)
+            @test occursin("use_curvature=false", repr_ds)
+            @test occursin("sectional_curvature_bound=0.0", repr_ds)
+            @test occursin("Current state:", repr_ds)
+            @test occursin("max_distance = 1.0", repr_ds)
+            @test occursin("gradient_sum = 0.0", repr_ds)
+            @test occursin("last_stepsize = NaN", repr_ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.125
+            # after first step, last_stepsize should be reflected in repr
+            repr_ds_after = repr(ds)
+            @test occursin("last_stepsize = 0.125", repr_ds_after)
         end
         @testset "use sectional cuvature (Euclidian)" begin
             M = Euclidean(2)
@@ -273,16 +286,16 @@ using ManoptTestSuite
         @testset "Distance from Hyperbolic to origin" begin
             M = Hyperbolic(2)
 
-            f(M, x) = (x[1])^2 + x[2]^2 + x[3]^2
+            f(M, x) = x[1]^2 + x[2]^2 + x[3]^2
 
             function grad_f(M, p)
-                grad_euc = [2p[1], 2.0p[2], 2.0p[3]]
+                grad_euc = 2.0*[p[1], p[2], p[3]]
                 ort_vector = [p[1], p[2], -p[3]]
                 ort_norm = dot(ort_vector, ort_vector)
                 return grad_euc - dot(grad_euc, ort_vector) * ort_vector / ort_norm
             end
 
-            p0 = [1, 1, √3]
+            p0 = rand(M)
 
             x = gradient_descent(
                 M, f, grad_f, p0;
