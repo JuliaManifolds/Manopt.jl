@@ -248,7 +248,7 @@ using ManoptTestSuite
             A = [1.0 0; 0 1.0]
 
             f(M, p) = -p' * A * p
-            
+
             function grad_f(M, p)
                 g = -2 * A * p
                 return g - LinearAlgebra.dot(g, p) * p  # project to tangent space
@@ -259,7 +259,7 @@ using ManoptTestSuite
             x = gradient_descent(
                 M, f, grad_f, p0;
                 stepsize = DistanceOverGradients(M; initial_distance = Manifolds.injectivity_radius(M), use_curvature = true),
-                stopping_criterion = StopWhenGradientNormLess(1e-14),
+                stopping_criterion = StopWhenGradientNormLess(1.0e-14),
             )
 
             @test f(M, x) ≈ -1
