@@ -481,6 +481,7 @@ export adaptive_regularization_with_cubics,
     gradient_descent!,
     interior_point_Newton,
     interior_point_Newton!,
+    keywords_accepted
     LevenbergMarquardt,
     LevenbergMarquardt!,
     mesh_adaptive_direct_search,
