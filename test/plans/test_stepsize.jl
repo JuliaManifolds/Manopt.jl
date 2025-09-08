@@ -289,7 +289,7 @@ using ManoptTestSuite
 
             function grad_f(M, p)
                 val = exp(p[1]^2 + p[2]^2)
-                grad_E = [2*p[1]*val, 2*p[2]*val, 0.0]
+                grad_E = [2 * p[1] * val, 2 * p[2] * val, 0.0]
                 return project(M, p, grad_E)
             end
 
