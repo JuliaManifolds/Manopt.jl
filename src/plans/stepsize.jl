@@ -1811,7 +1811,6 @@ function (rdog::DistanceOverGradientsStepsize{R, P})(
             )
             stepsize = rdog.initial_distance / (sqrt(ζ) * sqrt(max(grad_norm_sq, eps(R))))
         else
-            @show grad_norm_sq
             stepsize = rdog.initial_distance / sqrt(max(grad_norm_sq, eps(R)))
         end
     else

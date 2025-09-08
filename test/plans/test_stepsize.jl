@@ -259,11 +259,11 @@ using ManoptTestSuite
             x = gradient_descent(
                 M, f, grad_f, p0;
                 stepsize = DistanceOverGradients(initial_distance = Manifolds.injectivity_radius(M)),
-                stopping_criterion = StopWhenGradientNormLess(1.0e-14),
+                stopping_criterion = StopWhenGradientNormLess(1.0e-15),
             )
             
-
-            @test f(M, x) ≈ -1
+            # 1e-6 is maximal rtol the tests is passing on 1.10, it works without in 1.11
+            @test f(M, x) ≈ -1 rtol=1e-6
         end
     end
     @testset "max_stepsize fallbacks" begin
