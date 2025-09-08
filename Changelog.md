@@ -12,8 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * a `keywords_accepted(f, mode=:warn; kwargs...)` function that verifies that all keywords are accepted by a certain function.
 * an internal function `calls_with_kwargs(f)` to indicate which functions `f` passes `kwargs...` to.
-
-### Fixed
+* a `KeywordsErrorMode` preference parameter to control how keywords that are not used/allowed should be treated. Values are `"none"`, `"warn"` (default), and `"error"`.
 
 * the typo in the name `AdaptiveRgularizationWithCubicsModelObjective` is fixed to `AdaptiveRegularizationWithCubicsModelObjective`.
 

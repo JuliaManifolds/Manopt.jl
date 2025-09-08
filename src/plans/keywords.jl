@@ -204,13 +204,6 @@ end
 
 deprecated_keywords(s) = Set{Symbol}()
 
-function pretty_string_keywords(s::Set{Symbol})
-    (length(s) == 0) && return ""
-    return """
-    * $(join(s, "\n* "))
-    """
-end
-
 """
     keywords_accepted(f, mode=:warn, kw::Keywords=accepted_keywords(f); kwargs...)
 
@@ -221,7 +214,8 @@ For keywords that are not accepted/processed here, the `mode` argument provides
 how to report the result, either `:warn` or `:error` on keywords that are not accepted.
 """
 function keywords_accepted(
-        f, mode::Symbol = :warn, kw::Keywords = accepted_keywords(f); kwargs...
+        f, mode::Symbol = Symbol(get_parameter(:KeywordsErrorMode)), kw::Keywords = accepted_keywords(f);
+        kwargs...
     )
     d = Set{Symbol}()
     a = Set{Symbol}()
@@ -244,6 +238,7 @@ function keywords_accepted(
         error_kws = Keywords(a, d; from = f)
         (mode == :warn) && (@warn keyword_error_string(f, error_kws; hint = true))
         (mode == :error) && throw(ManoptKeywordError(f, error_kws))
+        # else handle as :none and do not warn or error
     end
     return (length(a) == 0) && (length(d) == 0)
 end
