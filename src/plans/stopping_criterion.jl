@@ -1391,10 +1391,10 @@ function StopWhenCriterionWithIterationCondition(
     ) where {SC <: StoppingCriterion, F}
     return StopWhenCriterionWithIterationCondition{SC, F}(sc, comp, -1)
 end
-function Base.:>(sc::StoppingCriterion, n::Int)
+function Base.:<(n::Int, sc::StoppingCriterion)
     return StopWhenCriterionWithIterationCondition(sc, n; comp = (>(n)))
 end
-function Base.:>=(sc::StoppingCriterion, n::Int)
+function Base.:<=(n::Int, sc::StoppingCriterion)
     return StopWhenCriterionWithIterationCondition(sc, n; comp = (>=(n)))
 end
 function Base.:(==)(sc::StoppingCriterion, n::Int)
