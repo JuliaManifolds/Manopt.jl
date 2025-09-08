@@ -50,6 +50,19 @@ function copy(kw::Keywords{I}) where {I}
     return Keywords{I}(copy(kw.accepted), copy(kw.deprecated), copy(kw.origins))
 end
 
+"""
+    ManoptKeywordError <: Exception
+
+An error to indicate that a certain function received keywords it does not accept.
+
+# Fields
+* `f` the function that received the keywords
+* `kw::Keywords` the keywords that were not accepted
+
+# Constructor
+
+    ManoptKeywordError(f, kw::Keywords)
+"""
 struct ManoptKeywordError{F, K <: Keywords} <: Exception
     f::F
     kw::K

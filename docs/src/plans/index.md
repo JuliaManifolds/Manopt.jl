@@ -79,6 +79,7 @@ solver or any of the inner functions it calls.
 ```@docs
 Manopt.Keywords
 Manopt.accepted_keywords
+Manopt.ManoptKeywordError
 Manopt.add!
 Manopt.calls_with_kwargs
 Manopt.direct_keywords
