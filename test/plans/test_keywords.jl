@@ -19,6 +19,9 @@ using Manopt, Test
         @test contains(repr(kwa), "accepted")
         @test contains(repr(kwa), "* a")
         @test contains(repr(kwa), "* b")
+        kwa.origins[:a] = [repr]
+        @test contains(repr(kwa), "passed on to repr")
+
     end
     @testset "check errors" begin
         @test Manopt.keywords_accepted(show, :error, Manopt.Keywords(Set([:a])))
@@ -53,5 +56,17 @@ using Manopt, Test
         @test contains(str2, "* a")
         @test contains(str2, "show accepts, but deprecates the keyword(s):")
         @test contains(str2, "b")
+    end
+    @testset "No accepted kws" begin
+        function f end
+        kwd = Manopt.Keywords(Set([:a, :b]))
+        err = Manopt.ManoptKeywordError(f, kwd)
+        io = IOBuffer()
+        showerror(io, err)
+        str = String(take!(io))
+        @test contains(str, "f does not accept the keyword(s)")
+        @test contains(str, "* a")
+        @test contains(str, "* b")
+        @test contains(str, "f does not accept any keywords.") # From Hint
     end
 end

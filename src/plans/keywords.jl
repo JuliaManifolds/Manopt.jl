@@ -84,7 +84,7 @@ function keyword_error_string(f, kw::Keywords; hint = true)
     if hint
         akw = accepted_keywords(f).accepted
         if length(akw) == 0
-            return print(io, "\n$f does not accept any keywords.")
+            print(io, "\n$f does not accept any keywords.")
         else
             print(io, "\nHint: $f does accept the following keywords:\n\n  ")
             print(io, join(sort!(collect(akw)), ", "))
