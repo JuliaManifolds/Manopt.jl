@@ -239,9 +239,11 @@ usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) fo
 
 @doc "$(_doc_AGD)"
 alternating_gradient_descent(::AbstractManifold, args...; kwargs...)
+calls_with_kwargs(::typeof(alternating_gradient_descent)) = (alternating_gradient_descent!,)
 
 @doc "$(_doc_AGD)"
 alternating_gradient_descent!(M::AbstractManifold, args...; kwargs...)
+calls_with_kwargs(::typeof(alternating_gradient_descent!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(
         amp::AbstractManoptProblem, agds::AlternatingGradientDescentState

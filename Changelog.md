@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* the typo in the name `AdaptiveRagularizationWithCubicsModelObjective` is fixed to `AdaptiveRegularizationWithCubicsModelObjective`.
+* the typo in the name `AdaptiveRgularizationWithCubicsModelObjective` is fixed to `AdaptiveRegularizationWithCubicsModelObjective`.
 
 ## [0.5.21] September 5, 2025
 

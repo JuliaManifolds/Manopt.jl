@@ -320,9 +320,11 @@ end
 function exact_penalty_method(
         M::AbstractManifold, cmo::O, p = rand(M); kwargs...
     ) where {O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(exact_penalty_method; kwargs...)
     q = copy(M, p)
     return exact_penalty_method!(M, cmo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(exact_penalty_method)) = (exact_penalty_method!,)
 
 @doc "$(_doc_EPM)"
 exact_penalty_method!(M::AbstractManifold, args...; kwargs...)
@@ -426,6 +428,7 @@ function exact_penalty_method!(
         O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective},
         Pr <: Union{F, AbstractManoptProblem} where {F},
     }
+    keywords_accepted(exact_penalty_method!; kwargs...)
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     emps = ExactPenaltyMethodState(
         M,
@@ -457,6 +460,8 @@ function exact_penalty_method!(
     solve!(mp, epms)
     return get_solver_return(get_objective(mp), epms)
 end
+calls_with_kwargs(::typeof(exact_penalty_method!)) = (decorate_objective!, decorate_state!)
+
 #
 # Solver functions
 #

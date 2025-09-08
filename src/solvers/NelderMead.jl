@@ -238,16 +238,6 @@ NelderMead(M::AbstractManifold, args...; kwargs...)
 function NelderMead(M::AbstractManifold, f; kwargs...)
     return NelderMead(M, f, NelderMeadSimplex(M); kwargs...)
 end
-function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
-    mco = ManifoldCostObjective(f)
-    return NelderMead(M, mco, population; kwargs...)
-end
-function NelderMead(
-        M::AbstractManifold, mco::O, population::NelderMeadSimplex; kwargs...
-    ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
-    res_population = NelderMeadSimplex(copy.(Ref(M), population.pts))
-    return NelderMead!(M, mco, res_population; kwargs...)
-end
 function NelderMead(
         M::AbstractManifold, f::F, population::NelderMeadSimplex{P, V}; kwargs...
     ) where {P <: Number, V <: AbstractVector{P}, F <: Function}
@@ -256,6 +246,19 @@ function NelderMead(
     rs = NelderMead(M, f_, population_; kwargs...)
     return (P == eltype(rs)) ? rs[] : rs
 end
+function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
+    mco = ManifoldCostObjective(f)
+    return NelderMead(M, mco, population; kwargs...)
+end
+function NelderMead(
+        M::AbstractManifold, mco::O, population::NelderMeadSimplex; kwargs...
+    ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(NelderMead; kwargs...)
+    res_population = NelderMeadSimplex(copy.(Ref(M), population.pts))
+    return NelderMead!(M, mco, res_population; kwargs...)
+end
+calls_with_kwargs(::typeof(NelderMead)) = (NelderMead!,)
+
 @doc "$(_doc_NelderMead)"
 NelderMead!(M::AbstractManifold, args...; kwargs...)
 function NelderMead!(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
@@ -280,6 +283,7 @@ function NelderMead!(
         ),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(NelderMead; kwargs...)
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     s = NelderMeadState(
@@ -297,6 +301,8 @@ function NelderMead!(
     solve!(mp, s)
     return get_solver_return(s)
 end
+calls_with_kwargs(::typeof(NelderMead!)) = (decorate_objective!, decorate_state!)
+
 #
 # Solver functions
 #

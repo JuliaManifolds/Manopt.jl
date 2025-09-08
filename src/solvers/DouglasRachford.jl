@@ -221,9 +221,11 @@ end
 function DouglasRachford(
         M::AbstractManifold, mpo::O, p; kwargs...
     ) where {O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(DouglasRachford; kwargs...)
     q = copy(M, p)
     return DouglasRachford!(M, mpo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(DouglasRachford)) = (DouglasRachford!,)
 
 @doc "$(_doc_Douglas_Rachford)"
 DouglasRachford!(::AbstractManifold, args...; kwargs...)
@@ -285,6 +287,7 @@ function DouglasRachford!(
         O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective},
         E <: AbstractEvaluationType,
     }
+    keywords_accepted(DouglasRachford!; kwargs...)
     dmpo = decorate_objective!(M, mpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpo)
     drs = DouglasRachfordState(
@@ -303,6 +306,8 @@ function DouglasRachford!(
     solve!(dmp, ddrs)
     return get_solver_return(get_objective(dmp), ddrs)
 end
+calls_with_kwargs(::typeof(DouglasRachford!)) = (decorate_objective!, decorate_state!)
+
 #
 # An internal function that turns more than 2 proximal maps into a parallel variant
 # on the power manifold

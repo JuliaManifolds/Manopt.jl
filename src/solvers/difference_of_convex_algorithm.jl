@@ -201,6 +201,7 @@ end
 function difference_of_convex_algorithm(
         M::AbstractManifold, mdco::O, p; kwargs...
     ) where {O <: Union{ManifoldDifferenceOfConvexObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(difference_of_convex_algorithm; kwargs...)
     q = copy(M, p)
     return difference_of_convex_algorithm!(M, mdco, q; kwargs...)
 end
@@ -304,6 +305,7 @@ function difference_of_convex_algorithm!(
         end,
         kwargs..., #collect rest
     ) where {O <: Union{ManifoldDifferenceOfConvexObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(difference_of_convex_algorithm!; kwargs...)
     dmdco = decorate_objective!(M, mdco; objective_type = objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
     isnothing(sub_problem) && error(
@@ -327,6 +329,8 @@ function difference_of_convex_algorithm!(
     solve!(dmp, ddcs)
     return get_solver_return(get_objective(dmp), ddcs)
 end
+calls_with_kwargs(::typeof(difference_of_convex_algorithm!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(::AbstractManoptProblem, dcs::DifferenceOfConvexState)
     return dcs
 end

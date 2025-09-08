@@ -74,9 +74,11 @@ end
 function proximal_gradient_method(
         M::AbstractManifold, mpgo::O, p = rand(M); kwargs...
     ) where {O <: Union{ManifoldProximalGradientObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(proximal_gradient_method; kwargs...)
     q = copy(M, p)
     return proximal_gradient_method!(M, mpgo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(proximal_gradient_method)) = (proximal_gradient_method!,)
 
 @doc "$(_doc_prox_grad_method)"
 function proximal_gradient_method!(
@@ -94,7 +96,6 @@ function proximal_gradient_method!(
     )
     return proximal_gradient_method!(M, mpgo, p; evaluation = evaluation, kwargs...)
 end
-
 function proximal_gradient_method!(
         M::AbstractManifold,
         mpgo::O,
@@ -145,6 +146,7 @@ function proximal_gradient_method!(
         O <: Union{ManifoldProximalGradientObjective, AbstractDecoratedManifoldObjective},
         S <: StoppingCriterion,
     }
+    keywords_accepted(proximal_gradient_method!; kwargs...)
     # Check whether either the right defaults were provided or a `sub_problem`.
     if isnothing(mpgo.proximal_map_h!!) && isnothing(cost_nonsmooth)
         error(
@@ -173,6 +175,7 @@ function proximal_gradient_method!(
     solve!(dmp, dpgms)
     return get_solver_return(get_objective(dmp), dpgms)
 end
+calls_with_kwargs(::typeof(proximal_gradient_method!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMethodState)
     M = get_manifold(amp)
