@@ -519,7 +519,7 @@ function trust_regions!(
     solve!(dmp, dtrs)
     return get_solver_return(get_objective(dmp), dtrs)
 end
-calls_with_kwargs(::typeof(trust_regions!)) = (initialize_solver!, step_solver!)
+calls_with_kwargs(::typeof(trust_regions!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)

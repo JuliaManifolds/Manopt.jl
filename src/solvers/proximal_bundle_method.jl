@@ -290,7 +290,7 @@ function proximal_bundle_method!(
         sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = evaluation,
         kwargs..., #especially may contain debug
     ) where {TF, TdF, TRetr, IR, VTransp}
-    keyword_arguments_accepted(proximal_bundle_method!; kwargs...)
+    keywords_accepted(proximal_bundle_method!; kwargs...)
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation = evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)

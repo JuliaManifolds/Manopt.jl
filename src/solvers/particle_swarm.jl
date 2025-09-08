@@ -272,6 +272,7 @@ function particle_swarm(
     new_swarm = [copy(M, xi) for xi in swarm]
     return particle_swarm!(M, mco, new_swarm; kwargs...)
 end
+calls_with_kwargs(::typeof(particle_swarm)) = (particle_swarm!,)
 
 @doc "$(_doc_PSO)"
 function particle_swarm!(M::AbstractManifold, f, swarm::AbstractVector; kwargs...)

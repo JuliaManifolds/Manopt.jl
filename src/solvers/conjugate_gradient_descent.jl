@@ -174,6 +174,8 @@ function conjugate_gradient_descent!(
     solve!(dmp, dcgs)
     return get_solver_return(get_objective(dmp), dcgs)
 end
+calls_with_kwargs(::typeof(conjugate_gradient_descent!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState)
     cgs.X = get_gradient(amp, cgs.p)
     cgs.δ = -copy(get_manifold(amp), cgs.p, cgs.X)

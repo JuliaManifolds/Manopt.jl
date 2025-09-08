@@ -624,9 +624,11 @@ $(_note(:OutputSection))
 function convex_bundle_method(
         M::AbstractManifold, f::TF, ∂f::TdF, p = rand(M); kwargs...
     ) where {TF, TdF}
+    keywords_accepted(convex_bundle_method; kwargs...)
     p_star = copy(M, p)
     return convex_bundle_method!(M, f, ∂f, p_star; kwargs...)
 end
+calls_with_kwargs(::typeof(convex_bundle_method)) = (convex_bundle_method!,)
 
 @doc "$(_doc_convex_bundle_method)"
 function convex_bundle_method!(
@@ -660,6 +662,7 @@ function convex_bundle_method!(
         ϱ = nothing,
         kwargs...,
     ) where {R <: Real, TF, TdF, TRetr, IR, VTransp}
+    keywords_accepted(convex_bundle_method!; kwargs...)
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation = evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
@@ -688,6 +691,7 @@ function convex_bundle_method!(
     bms = decorate_state!(bms; debug = debug, kwargs...)
     return get_solver_return(solve!(mp, bms))
 end
+calls_with_kwargs(::typeof(convex_bundle_method!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(
         mp::AbstractManoptProblem, bms::ConvexBundleMethodState{P, T, Pr, St, R}

@@ -63,9 +63,11 @@ end
 function cyclic_proximal_point(
         M::AbstractManifold, mpo::O, p; kwargs...
     ) where {O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(cyclic_proximal_point; kwargs...)
     q = copy(M, p)
     return cyclic_proximal_point!(M, mpo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(cyclic_proximal_point)) = (cyclic_proximal_point!,)
 
 @doc "$(_doc_CPPA)"
 cyclic_proximal_point!(M::AbstractManifold, args...; kwargs...)
@@ -78,7 +80,7 @@ function cyclic_proximal_point!(
         kwargs...,
     )
     mpo = ManifoldProximalMapObjective(f, proxes_f; evaluation = evaluation)
-    return cyclic_proximal_point(M, mpo, p; evaluation = evaluation, kwargs...)
+    return cyclic_proximal_point!(M, mpo, p; evaluation = evaluation, kwargs...)
 end
 function cyclic_proximal_point!(
         M::AbstractManifold,
@@ -90,6 +92,7 @@ function cyclic_proximal_point!(
         λ = i -> 1 / i,
         kwargs...,
     ) where {O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(cyclic_proximal_point!; kwargs...)
     dmpo = decorate_objective!(M, mpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpo)
     cpps = CyclicProximalPointState(
@@ -103,6 +106,8 @@ function cyclic_proximal_point!(
     solve!(dmp, dcpps)
     return get_solver_return(get_objective(dmp), dcpps)
 end
+calls_with_kwargs(::typeof(cyclic_proximal_point!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPointState)
     c = length(get_objective(amp, true).proximal_maps!!)
     cpps.order = collect(1:c)
