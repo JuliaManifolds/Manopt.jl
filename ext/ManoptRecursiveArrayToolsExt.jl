@@ -80,7 +80,7 @@ end
 function alternating_gradient_descent(
         M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p; kwargs...
     )
-    keywords_accepted(alternating_gradient_descent; kwargs...)
+    Manopt.keywords_accepted(alternating_gradient_descent; kwargs...)
     q = copy(M, p)
     return alternating_gradient_descent!(M, ago, q; kwargs...)
 end
@@ -111,7 +111,7 @@ function alternating_gradient_descent!(
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         kwargs...,
     )
-    keywords_accepted(alternating_gradient_descent!; kwargs...)
+    Manopt.keywords_accepted(alternating_gradient_descent!; kwargs...)
     dagmo = Manopt.decorate_objective!(M, agmo; kwargs...)
     dmp = DefaultManoptProblem(M, dagmo)
     agds = AlternatingGradientDescentState(

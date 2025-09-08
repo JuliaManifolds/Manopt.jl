@@ -7,7 +7,8 @@ A small internal struct to represent a set of keywords,
 
 * `accepted=Set{Symbol}()` a `Set` of symbols of keywords a certain function accepts
 * `deprecated=Set{Symbol}()` a `Set` of symbols of keywords a certain function has deprecated
-* `in=nothing` the function the keywords are (directly or indirectly) accepted in
+* `from=nothing` the function the keywords are (directly or indirectly) come from or accepted in.
+  to indicate that these are not associated with a certain function, use `nothing`.
   to Indicate ane empty set, use `nothing`.
 * `origins` a dictionary that specifies for every keyword the function it is passed to.
   this usually should point to the function it is _directly_ passed to.
@@ -16,7 +17,7 @@ A small internal struct to represent a set of keywords,
 
     Keywords(
         accepted=Set{Symbol}(), deprecated=Set{Symbol}();
-        in::Type=nothing)
+        from::Type=nothing)
 
 Generate a Keywords wrapper, where both default to being the empty set.
 For pretty printing you can provide a type they belong to.
@@ -29,21 +30,21 @@ end
 function Keywords(
         accepted::Set{Symbol} = Set{Symbol}(),
         deprecated::Set{Symbol} = Set{Symbol}();
-        in = nothing,
+        from = nothing,
         origins = nothing,
     )
-    if !isnothing(in)
+    if !isnothing(from)
         _origins = isnothing(origins) ? Dict{Symbol, Any}() : origins
         for kw in accepted
-            _origins[kw] = in
+            _origins[kw] = from
         end
         for kw in deprecated
-            _origins[kw] = in
+            _origins[kw] = from
         end
     else
         _origins = Dict{Symbol, Union{<:Function, <:Type}}()
     end
-    return Keywords{in}(accepted, deprecated, _origins)
+    return Keywords{from}(accepted, deprecated, _origins)
 end
 function copy(kw::Keywords{I}) where {I}
     return Keywords{I}(copy(kw.accepted), copy(kw.deprecated), copy(kw.origins))
@@ -198,7 +199,7 @@ function direct_keywords(f)
     end
     d = deprecated_keywords(s)
     setdiff!(s, d)
-    return Keywords(s, d; in = f)
+    return Keywords(s, d; from = f)
 end
 
 deprecated_keywords(s) = Set{Symbol}()
@@ -240,7 +241,7 @@ function keywords_accepted(
         @warn keyword_error_string(f, Keywords(Set{Symbol}(), d; hint = false); hint = false)
     end
     if length(a) > 0
-        error_kws = Keywords(a, d; in = f)
+        error_kws = Keywords(a, d; from = f)
         (mode == :warn) && (@warn keyword_error_string(f, error_kws; hint = true))
         (mode == :error) && throw(ManoptKeywordError(f, error_kws))
     end
