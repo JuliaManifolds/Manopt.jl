@@ -143,6 +143,7 @@ using ManoptTestSuite
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.125
         end
@@ -164,6 +165,7 @@ using ManoptTestSuite
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.125
         end
@@ -181,6 +183,7 @@ using ManoptTestSuite
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.5
         end
@@ -202,6 +205,7 @@ using ManoptTestSuite
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.5
         end
@@ -231,6 +235,7 @@ using ManoptTestSuite
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === get_last_stepsize(ds)
 
             # Expected initial step:
             # ζκ(1) = (√|κ| * 1) / tanh(√|κ| * 1) = 1 / tanh(1)
