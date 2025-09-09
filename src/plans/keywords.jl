@@ -25,7 +25,7 @@ For pretty printing you can provide a type they belong to.
 struct Keywords{I}
     accepted::Set{Symbol}
     deprecated::Set{Symbol}
-    origins::Dict{Symbol, Union{T, Vector{T}} where {T <: Union{Function, Type}}}
+    origins::Dict{Symbol, Vector{Any}}
 end
 function Keywords(
         accepted::Set{Symbol} = Set{Symbol}(),
@@ -34,15 +34,15 @@ function Keywords(
         origins::Union{Dict, Nothing} = nothing,
     )
     if !isnothing(from)
-        _origins = isnothing(origins) ? Dict{Symbol, Any}() : origins
+        _origins = isnothing(origins) ? Dict{Symbol, Vector{Any}}() : origins
         for kw in accepted
-            _origins[kw] = from
+            _origins[kw] = [from]
         end
         for kw in deprecated
-            _origins[kw] = from
+            _origins[kw] = [from]
         end
     else
-        _origins = Dict{Symbol, Union{<:Function, <:Type}}()
+        _origins = Dict{Symbol, Vector{Any}}()
     end
     return Keywords{from}(accepted, deprecated, _origins)
 end
@@ -106,7 +106,7 @@ function add!(kw::Keywords{I}, kw2::Keywords) where {I}
     union!(kw.deprecated, kw2.deprecated)
     for (k, v) in kw2.origins
         if !haskey(kw.origins, k)
-            kw.origins[k] = v isa Vector ? [I, v...] : [I, v]
+            kw.origins[k] = [I, v...]
         end
     end
     return kw
