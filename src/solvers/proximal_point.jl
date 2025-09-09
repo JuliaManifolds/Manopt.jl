@@ -110,9 +110,11 @@ end
 function proximal_point(
         M::AbstractManifold, mpo::O, p; kwargs...
     ) where {O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(proximal_point; kwargs...)
     q = copy(M, p)
     return proximal_point!(M, mpo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(proximal_point)) = (proximal_point!,)
 
 @doc "$(_doc_PPA)"
 proximal_point!(M::AbstractManifold, args...; kwargs...)
@@ -136,6 +138,7 @@ function proximal_point!(
         λ = k -> 1,
         kwargs...,
     ) where {O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(proximal_point!; kwargs...)
     dmpo = decorate_objective!(M, mpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpo)
     pps = ProximalPointState(M; p = p, stopping_criterion = stopping_criterion, λ = λ)
@@ -143,6 +146,8 @@ function proximal_point!(
     solve!(dmp, dpps)
     return get_solver_return(get_objective(dmp), dpps)
 end
+calls_with_kwargs(::typeof(proximal_point!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(::AbstractManoptProblem, pps::ProximalPointState)
     return pps
 end

@@ -118,9 +118,11 @@ end
 function conjugate_gradient_descent(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(conjugate_gradient_descent; kwargs...)
     q = copy(M, p)
     return conjugate_gradient_descent!(M, mgo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(conjugate_gradient_descent)) = (conjugate_gradient_descent!,)
 
 @doc "$(_doc_CG)"
 conjugate_gradient_descent!(M::AbstractManifold, params...; kwargs...)
@@ -136,8 +138,7 @@ function conjugate_gradient_descent!(
     mgo = ManifoldGradientObjective(
         f, grad_f; differential = differential, evaluation = evaluation
     )
-    dmgo = decorate_objective!(M, mgo; kwargs...)
-    return conjugate_gradient_descent!(M, dmgo, p; kwargs...)
+    return conjugate_gradient_descent!(M, mgo, p; kwargs...)
 end
 function conjugate_gradient_descent!(
         M::AbstractManifold,
@@ -155,6 +156,7 @@ function conjugate_gradient_descent!(
         initial_gradient = zero_vector(M, p),
         kwargs...,
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(conjugate_gradient_descent!; kwargs...)
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     cgs = ConjugateGradientDescentState(
@@ -172,6 +174,8 @@ function conjugate_gradient_descent!(
     solve!(dmp, dcgs)
     return get_solver_return(get_objective(dmp), dcgs)
 end
+calls_with_kwargs(::typeof(conjugate_gradient_descent!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState)
     cgs.X = get_gradient(amp, cgs.p)
     cgs.δ = -copy(get_manifold(amp), cgs.p, cgs.X)

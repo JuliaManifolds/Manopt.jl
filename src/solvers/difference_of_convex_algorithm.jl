@@ -150,7 +150,7 @@ $(_var(:Keyword, :sub_kwargs))
 * `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess`if provided
    the objective used within `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_problem"))
-$(_var(:Keyword, :sub_state; default = "([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hessian` is provided)"))
+$(_var(:Keyword, :sub_state; default = "([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hess` is provided)"))
 $(_var(:Keyword, :sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`:
   a stopping criterion used withing the default `sub_state=`
@@ -201,9 +201,11 @@ end
 function difference_of_convex_algorithm(
         M::AbstractManifold, mdco::O, p; kwargs...
     ) where {O <: Union{ManifoldDifferenceOfConvexObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(difference_of_convex_algorithm; kwargs...)
     q = copy(M, p)
     return difference_of_convex_algorithm!(M, mdco, q; kwargs...)
 end
+calls_with_kwargs(::typeof(difference_of_convex_algorithm)) = (difference_of_convex_algorithm!,)
 
 @doc "$(_doc_DoC)"
 difference_of_convex_algorithm!(M::AbstractManifold, args...; kwargs...)
@@ -304,6 +306,7 @@ function difference_of_convex_algorithm!(
         end,
         kwargs..., #collect rest
     ) where {O <: Union{ManifoldDifferenceOfConvexObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(difference_of_convex_algorithm!; kwargs...)
     dmdco = decorate_objective!(M, mdco; objective_type = objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
     isnothing(sub_problem) && error(
@@ -327,6 +330,8 @@ function difference_of_convex_algorithm!(
     solve!(dmp, ddcs)
     return get_solver_return(get_objective(dmp), ddcs)
 end
+calls_with_kwargs(::typeof(difference_of_convex_algorithm!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(::AbstractManoptProblem, dcs::DifferenceOfConvexState)
     return dcs
 end

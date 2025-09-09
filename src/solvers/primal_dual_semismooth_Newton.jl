@@ -62,6 +62,7 @@ function primal_dual_semismooth_Newton(
         Λ::Union{Function, Missing} = missing,
         kwargs...,
     ) where {TF, P, T, Q}
+    keywords_accepted(primal_dual_semismooth_Newton; kwargs...)
     x_res = copy(M, p)
     ξ_res = copy(N, n, X)
     m_res = copy(M, m)
@@ -84,6 +85,7 @@ function primal_dual_semismooth_Newton(
         kwargs...,
     )
 end
+calls_with_kwargs(::typeof(primal_dual_semismooth_Newton)) = (primal_dual_semismooth_Newton!,)
 
 @doc "$(_doc_PDSN)"
 function primal_dual_semismooth_Newton!(
@@ -122,6 +124,7 @@ function primal_dual_semismooth_Newton!(
         IRM <: AbstractInverseRetractionMethod,
         VTM <: AbstractVectorTransportMethod,
     }
+    keywords_accepted(primal_dual_semismooth_Newton!; kwargs...)
     pdmsno = PrimalDualManifoldSemismoothNewtonObjective(
         cost,
         prox_F,
@@ -155,6 +158,7 @@ function primal_dual_semismooth_Newton!(
     solve!(tmp, dpdsn)
     return get_solver_return(get_objective(tmp), dpdsn)
 end
+calls_with_kwargs(::typeof(primal_dual_semismooth_Newton!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(::TwoManifoldProblem, ::PrimalDualSemismoothNewtonState) end
 

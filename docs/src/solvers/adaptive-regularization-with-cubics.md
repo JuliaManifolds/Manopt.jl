@@ -32,13 +32,13 @@ Manopt.LanczosState
 There is a generic objective, that implements the sub problem
 
 ```@docs
-AdaptiveRagularizationWithCubicsModelObjective
+AdaptiveRegularizationWithCubicsModelObjective
 ```
 
 Since the sub problem is given on the tangent space, you have to provide
 
 ```
-arc_obj = AdaptiveRagularizationWithCubicsModelObjective(mho, σ)
+arc_obj = AdaptiveRegularizationWithCubicsModelObjective(mho, σ)
 sub_problem = DefaultProblem(TangentSpaceAt(M,p), arc_obj)
 ```
 

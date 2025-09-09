@@ -525,10 +525,12 @@ function truncated_conjugate_gradient_descent(
             AbstractDecoratedManifoldObjective{E, <:AbstractManifoldSubObjective} where {E},
         },
     }
+    keywords_accepted(truncated_conjugate_gradient_descent; kwargs...)
     q = copy(M, p)
     Y = copy(M, p, X)
     return truncated_conjugate_gradient_descent!(M, mho, q, Y; kwargs...)
 end
+calls_with_kwargs(::typeof(truncated_conjugate_gradient_descent)) = (truncated_conjugate_gradient_descent!,)
 
 @doc "$(_doc_TCGD)"
 truncated_conjugate_gradient_descent!(M::AbstractManifold, args...; kwargs...)
@@ -578,6 +580,7 @@ function truncated_conjugate_gradient_descent!(
         project!::Proj = (copyto!),
         kwargs..., #collect rest
     ) where {Proj}
+    keywords_accepted(truncated_conjugate_gradient_descent!; kwargs...)
     dtrm = decorate_objective!(TpM, trm; kwargs...)
     mp = DefaultManoptProblem(TpM, dtrm)
     tcgs = TruncatedConjugateGradientState(
@@ -594,6 +597,7 @@ function truncated_conjugate_gradient_descent!(
     solve!(mp, dtcgs)
     return get_solver_return(get_objective(mp), dtcgs)
 end
+calls_with_kwargs(::typeof(truncated_conjugate_gradient_descent!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(
         mp::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState

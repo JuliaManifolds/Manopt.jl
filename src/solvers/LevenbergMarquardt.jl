@@ -120,9 +120,11 @@ end
 function LevenbergMarquardt(
         M::AbstractManifold, nlso::O, p; kwargs...
     ) where {O <: Union{NonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(LevenbergMarquardt; kwargs...)
     q = copy(M, p)
     return LevenbergMarquardt!(M, nlso, q; kwargs...)
 end
+calls_with_kwargs(::typeof(LevenbergMarquardt)) = (LevenbergMarquardt!,)
 
 @doc "$(_doc_LM)"
 LevenbergMarquardt!(M::AbstractManifold, args...; kwargs...)
@@ -179,6 +181,7 @@ function LevenbergMarquardt!(
         (linear_subsolver!) = (default_lm_lin_solve!),
         kwargs..., #collect rest
     ) where {O <: Union{NonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(LevenbergMarquardt!; kwargs...)
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
     lms = LevenbergMarquardtState(
@@ -198,6 +201,7 @@ function LevenbergMarquardt!(
     solve!(nlsp, dlms)
     return get_solver_return(get_objective(nlsp), dlms)
 end
+calls_with_kwargs(::typeof(LevenbergMarquardt!)) = (decorate_objective!, decorate_state!)
 #
 # Solver functions
 #

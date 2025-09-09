@@ -194,7 +194,7 @@ include("solvers/conjugate_gradient_descent.jl")
 include("solvers/conjugate_residual.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/difference_of_convex_algorithm.jl")
-include("solvers/difference-of-convex-proximal-point.jl")
+include("solvers/difference_of_convex_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/exact_penalty_method.jl")
 include("solvers/projected_gradient_method.jl")
@@ -481,6 +481,7 @@ export adaptive_regularization_with_cubics,
     gradient_descent!,
     interior_point_Newton,
     interior_point_Newton!,
+    keywords_accepted,
     LevenbergMarquardt,
     LevenbergMarquardt!,
     mesh_adaptive_direct_search,
@@ -516,7 +517,7 @@ export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
-export AdaptiveRagularizationWithCubicsModelObjective
+export AdaptiveRegularizationWithCubicsModelObjective
 export ExactPenaltyCost, ExactPenaltyGrad
 export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #

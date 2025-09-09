@@ -152,9 +152,11 @@ end
 function interior_point_Newton(
         M::AbstractManifold, cmo::O, p; kwargs...
     ) where {O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(interior_point_Newton; kwargs...)
     q = copy(M, p)
     return interior_point_Newton!(M, cmo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(interior_point_Newton)) = (interior_point_Newton!,)
 
 @doc "$(_doc_IPN)"
 interior_point_Newton!(M::AbstractManifold, args...; kwargs...)
@@ -267,6 +269,7 @@ function interior_point_Newton!(
         Pr <: Union{F, AbstractManoptProblem} where {F},
     }
     !is_feasible(M, cmo, p; error = :error)
+    keywords_accepted(interior_point_Newton!; kwargs...)
     dcmo = decorate_objective!(M, cmo; kwargs...)
     dmp = DefaultManoptProblem(M, dcmo)
     ips = InteriorPointNewtonState(
@@ -293,6 +296,8 @@ function interior_point_Newton!(
     solve!(dmp, ips)
     return get_solver_return(get_objective(dmp), ips)
 end
+calls_with_kwargs(::typeof(interior_point_Newton!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState)
     M = get_manifold(amp)
     cmo = get_objective(amp)

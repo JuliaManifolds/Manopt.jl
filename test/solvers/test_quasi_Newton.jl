@@ -392,7 +392,7 @@ end
         grad_fc(::Euclidean, p) = 2 * A * p
         p0 = [2.0, 1 + im]
         @test_logs (:info,) Manopt.set_parameter!(:Mode, "Tutorial")
-        p4 = quasi_Newton(M, fc, grad_fc, p0; stopoing_criterion = StopAfterIteration(3))
+        p4 = quasi_Newton(M, fc, grad_fc, p0; stopping_criterion = StopAfterIteration(3))
         @test_logs (:info,) Manopt.set_parameter!(:Mode, "")
         @test fc(M, p4) ≤ fc(M, p0)
     end

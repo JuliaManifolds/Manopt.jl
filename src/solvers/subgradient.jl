@@ -145,9 +145,11 @@ end
 function subgradient_method(
         M::AbstractManifold, sgo::O, p; kwargs...
     ) where {O <: Union{ManifoldSubgradientObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(subgradient_method; kwargs...)
     q = copy(M, p)
     return subgradient_method!(M, sgo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(subgradient_method)) = (subgradient_method!,)
 
 @doc "$(_doc_SGM)"
 subgradient_method!(M::AbstractManifold, args...; kwargs...)
@@ -174,6 +176,7 @@ function subgradient_method!(
         X = zero_vector(M, p),
         kwargs...,
     ) where {O <: Union{ManifoldSubgradientObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(subgradient_method!; kwargs...)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
     sgs = SubGradientMethodState(
@@ -188,6 +191,8 @@ function subgradient_method!(
     solve!(mp, dsgs)
     return get_solver_return(get_objective(mp), dsgs)
 end
+calls_with_kwargs(::typeof(subgradient_method!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState)
     M = get_manifold(mp)
     copyto!(M, sgs.p_star, sgs.p)

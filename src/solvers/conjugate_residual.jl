@@ -56,14 +56,16 @@ function conjugate_residual(
         kwargs...,
     )
     slso = SymmetricLinearSystemObjective(A, b; evaluation = evaluation, kwargs...)
-    return conjugate_residual(TpM, slso, X; evaluation = evaluation, kwargs...)
+    return conjugate_residual(TpM, slso, X; kwargs...)
 end
 function conjugate_residual(
         TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X = zero_vector(TpM); kwargs...
     )
+    keywords_accepted(conjugate_residual; kwargs...)
     Y = copy(TpM, X)
     return conjugate_residual!(TpM, slso, Y; kwargs...)
 end
+calls_with_kwargs(::typeof(conjugate_residual)) = (conjugate_residual!,)
 
 @doc "$_doc_conjugate_residual"
 conjugate_residual!(TpM::TangentSpace, args...; kwargs...)
@@ -78,6 +80,7 @@ function conjugate_residual!(
         ),
         kwargs...,
     ) where {SC <: StoppingCriterion}
+    keywords_accepted(conjugate_residual!; kwargs...)
     crs = ConjugateResidualState(
         TpM, slso; stopping_criterion = stopping_criterion, kwargs...
     )
@@ -87,6 +90,7 @@ function conjugate_residual!(
     solve!(dmp, dcrs)
     return get_solver_return(get_objective(dmp), dcrs)
 end
+calls_with_kwargs(::typeof(conjugate_residual!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(
         amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState

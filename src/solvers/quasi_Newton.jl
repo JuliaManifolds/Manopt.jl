@@ -277,9 +277,11 @@ end
 function quasi_Newton(
         M::AbstractManifold, mgo::O, p; kwargs...
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(quasi_Newton; kwargs...)
     q = copy(M, p)
     return quasi_Newton!(M, mgo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(quasi_Newton)) = (quasi_Newton!,)
 
 @doc "$(_doc_QN)"
 quasi_Newton!(M::AbstractManifold, params...; kwargs...)
@@ -334,6 +336,7 @@ function quasi_Newton!(
         E <: AbstractEvaluationType,
         O <: Union{AbstractManifoldFirstOrderObjective{E}, AbstractDecoratedManifoldObjective{E}},
     }
+    keywords_accepted(quasi_Newton!; kwargs...)
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             M,
@@ -380,6 +383,8 @@ function quasi_Newton!(
     solve!(mp, dqns)
     return get_solver_return(get_objective(mp), dqns)
 end
+calls_with_kwargs(::typeof(quasi_Newton!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
     M = get_manifold(amp)
     get_gradient!(amp, qns.X, qns.p)

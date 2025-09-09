@@ -1,5 +1,5 @@
 @doc """
-    AdaptiveRagularizationWithCubicsModelObjective
+    AdaptiveRegularizationWithCubicsModelObjective
 
 A model for the adaptive regularization with Cubics
 
@@ -17,11 +17,11 @@ cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite)
 
 # Constructors
 
-    AdaptiveRagularizationWithCubicsModelObjective(mho, σ=1.0)
+    AdaptiveRegularizationWithCubicsModelObjective(mho, σ=1.0)
 
 with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective.
 """
-mutable struct AdaptiveRagularizationWithCubicsModelObjective{
+mutable struct AdaptiveRegularizationWithCubicsModelObjective{
         E <: AbstractEvaluationType,
         O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective},
         R,
@@ -29,15 +29,15 @@ mutable struct AdaptiveRagularizationWithCubicsModelObjective{
     objective::O
     σ::R
 end
-function AdaptiveRagularizationWithCubicsModelObjective(
+function AdaptiveRegularizationWithCubicsModelObjective(
         mho::O, σ::R = 1.0
     ) where {
         E, O <: Union{AbstractManifoldHessianObjective{E}, AbstractDecoratedManifoldObjective{E}}, R,
     }
-    return AdaptiveRagularizationWithCubicsModelObjective{E, O, R}(mho, σ)
+    return AdaptiveRegularizationWithCubicsModelObjective{E, O, R}(mho, σ)
 end
 function set_parameter!(
-        f::AdaptiveRagularizationWithCubicsModelObjective,
+        f::AdaptiveRegularizationWithCubicsModelObjective,
         ::Union{Val{:σ}, Val{:RegularizationParameter}},
         σ,
     )
@@ -45,12 +45,12 @@ function set_parameter!(
     return f
 end
 
-get_objective(arcmo::AdaptiveRagularizationWithCubicsModelObjective) = arcmo.objective
+get_objective(arcmo::AdaptiveRegularizationWithCubicsModelObjective) = arcmo.objective
 
 @doc """
-    get_cost(TpM, trmo::AdaptiveRagularizationWithCubicsModelObjective, X)
+    get_cost(TpM, trmo::AdaptiveRegularizationWithCubicsModelObjective, X)
 
-Evaluate the tangent space [`AdaptiveRagularizationWithCubicsModelObjective`](@ref)
+Evaluate the tangent space [`AdaptiveRegularizationWithCubicsModelObjective`](@ref)
 
 ```math
 m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p
@@ -60,7 +60,7 @@ m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_t
 at `X`, cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite).
 """
 function get_cost(
-        TpM::TangentSpace, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
+        TpM::TangentSpace, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X
     )
     M = base_manifold(TpM)
     p = TpM.point
@@ -69,13 +69,13 @@ function get_cost(
     Y = get_objective_hessian(M, arcmo, p, X)
     return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X) + arcmo.σ / 3 * norm(M, p, X)^3
 end
-function get_cost_function(arcmo::AdaptiveRagularizationWithCubicsModelObjective)
+function get_cost_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective)
     return (TpM, X) -> get_cost(TpM, arcmo, X)
 end
 @doc """
-    get_gradient(TpM, trmo::AdaptiveRagularizationWithCubicsModelObjective, X)
+    get_gradient(TpM, trmo::AdaptiveRegularizationWithCubicsModelObjective, X)
 
-Evaluate the gradient of the [`AdaptiveRagularizationWithCubicsModelObjective`](@ref)
+Evaluate the gradient of the [`AdaptiveRegularizationWithCubicsModelObjective`](@ref)
 
 ```math
 $(_tex(:grad)) m(X) = $(_tex(:grad)) f(p) + $(_tex(:Hess)) f(p)[X]
@@ -85,7 +85,7 @@ $(_tex(:grad)) m(X) = $(_tex(:grad)) f(p) + $(_tex(:Hess)) f(p)[X]
 at `X`, cf. Eq. (37) in [AgarwalBoumalBullinsCartis:2020](@cite).
 """
 function get_gradient(
-        TpM::TangentSpace, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
+        TpM::TangentSpace, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X
     )
     M = base_manifold(TpM)
     p = TpM.point
@@ -93,7 +93,7 @@ function get_gradient(
     return G + get_objective_hessian(M, arcmo, p, X) + arcmo.σ * norm(M, p, X) * X
 end
 function get_gradient!(
-        TpM::TangentSpace, Y, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
+        TpM::TangentSpace, Y, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X
     )
     M = base_manifold(TpM)
     p = TpM.point
@@ -101,6 +101,6 @@ function get_gradient!(
     Y .= Y + get_objective_gradient(M, arcmo, p) + arcmo.σ * norm(M, p, X) * X
     return Y
 end
-function get_gradient_function(arcmo::AdaptiveRagularizationWithCubicsModelObjective)
+function get_gradient_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective)
     return (TpM, X) -> get_gradient(TpM, arcmo, X)
 end

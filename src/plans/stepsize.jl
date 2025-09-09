@@ -836,7 +836,7 @@ $(_var(:Keyword, :vector_transport_method))
 * `bb_max_stepsize=1e3`
 $(_var(:Keyword, :retraction_method))
 * `strategy=direct`
-* `storage=[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])``
+* `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
 * `stepsize_reduction=0.5`
 * `sufficient_decrease=1e-4`
 * `stop_when_stepsize_less=0.0`
