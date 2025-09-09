@@ -1710,7 +1710,7 @@ end
 * `initial_distance=1e-3`: initial estimate ``ϵ``
 * `use_curvature=false`: whether to use ``ζ_κ``
 * `sectional_curvature_bound=0.0`: lower curvature bound ``κ`` (if known)
-$(_var(:Keyword, :p; add = "initial point, used to track distances"))
+* `p`: initial point, used to track distance
 
 # References
 
