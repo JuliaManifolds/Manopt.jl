@@ -391,7 +391,7 @@ in the embedding. The fields `vectorized_point`, `vectorized_tangent`
 and `embedding_tangent` are used as preallocated buffer so that the conversion
 to Euclidean objective is allocation-free.
 """
-struct _EmbeddingObjective{E<:MOI.AbstractNLPEvaluator,T}
+struct _EmbeddingObjective{E <: MOI.AbstractNLPEvaluator, T}
     evaluator::E
     # Used to store the vectorized point
     vectorized_point::Vector{Float64}
@@ -434,8 +434,8 @@ end
 Set the objective function as `func` for `model`.
 """
 function MOI.set(
-    model::ManoptOptimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
-)
+        model::ManoptOptimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
+    )
     backend = MOI.Nonlinear.SparseReverseMode()
     vars = [MOI.VariableIndex(i) for i in eachindex(model.variable_primal_start)]
     nlp_model = MOI.Nonlinear.Model()
@@ -457,7 +457,7 @@ function MOI.set(
             Manopt.ManifoldGradientObjective(
                 (M, x) -> _get_cost(M, embedding_obj, x),
                 (M, g, x) -> _get_gradient!(M, g, embedding_obj, x);
-                evaluation=Manopt.InplaceEvaluation(),
+                evaluation = Manopt.InplaceEvaluation(),
             ),
         )
     end
@@ -534,8 +534,8 @@ Base.length(shape::ManifoldPointArrayShape) = prod(shape.size)
 Inplace version of `res = JuMP.vectorize(array, shape)`.
 """
 function _vectorize!(
-    res::Vector{T}, array::Array{T,N}, ::ManifoldPointArrayShape{N}
-) where {T,N}
+        res::Vector{T}, array::Array{T, N}, ::ManifoldPointArrayShape{N}
+    ) where {T, N}
     return copyto!(res, array)
 end
 
@@ -545,8 +545,8 @@ end
 Inplace version of `res = JuMP.reshape_vector(vec, shape)`.
 """
 function _reshape_vector!(
-    res::Array{T,N}, vec::Vector{T}, ::ManifoldPointArrayShape{N}
-) where {T,N}
+        res::Array{T, N}, vec::Vector{T}, ::ManifoldPointArrayShape{N}
+    ) where {T, N}
     return copyto!(res, vec)
 end
 
@@ -564,7 +564,7 @@ Given a point `p` as an ``N``-dimensional array representing a point on a certai
 manifold, reshape it to a vector, which is necessary within [`JuMP`](@extref JuMP :std:doc:`index`).
 For the inverse see [`JuMP.reshape_vector`](@ref JuMP.reshape_vector(::Vector, ::ManifoldPointArrayShape)).
 """
-function JuMP.vectorize(array::Array{T,N}, ::ManifoldPointArrayShape{N}) where {T,N}
+function JuMP.vectorize(array::Array{T, N}, ::ManifoldPointArrayShape{N}) where {T, N}
     return vec(array)
 end
 

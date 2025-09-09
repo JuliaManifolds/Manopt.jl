@@ -9,6 +9,7 @@ function _test_allocs(problem::Manopt.AbstractManoptProblem, x, g)
     @test 0 == @allocated Manopt.get_cost(problem, x)
     Manopt.get_gradient!(problem, g, x) # Compilation
     @test 0 == @allocated Manopt.get_gradient!(problem, g, x)
+    return nothing
 end
 
 _test_allocs(optimizer, x, g) = _test_allocs(optimizer.problem, x, g)
@@ -25,7 +26,8 @@ function _test_sphere_sum(model, obj_sign)
     @test value.(model[:x]) ≈ obj_sign * inv(√3) * ones(3) rtol = 1.0e-2
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
-    return _test_allocs(unsafe_backend(model), zeros(3), zeros(3))
+    _test_allocs(unsafe_backend(model), zeros(3), zeros(3))
+    return nothing
 end
 
 function test_sphere()
@@ -51,7 +53,7 @@ function test_sphere()
         end
 
         Manopt.ManifoldGradientObjective(
-            eval_sum_cb, eval_grad_sum_cb; evaluation=Manopt.InplaceEvaluation()
+            eval_sum_cb, eval_grad_sum_cb; evaluation = Manopt.InplaceEvaluation()
         )
     end
 
