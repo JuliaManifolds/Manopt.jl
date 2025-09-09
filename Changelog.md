@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [candidate] September 8, 2025
+
+### Added
+
+* Add Distance over Gradients (RDoG) stepsize: `DistanceOverGradientsStepsize` and factory `DistanceOverGradients`, a learning‑rate‑free, curvature‑aware stepsize with `show`/`repr` and tests on Euclidean, Sphere, and Hyperbolic manifolds.
+
 ## [0.5.21] September 5, 2025
 
 ### Added

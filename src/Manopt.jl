@@ -522,7 +522,8 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export AdaptiveWNGradient, ConstantLength, DecreasingLength, Polyak
+export AdaptiveWNGradient, ConstantLength, DecreasingLength,
+    Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
 export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize

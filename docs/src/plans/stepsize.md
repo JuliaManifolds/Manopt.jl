@@ -24,6 +24,7 @@ AdaptiveWNGradient
 ArmijoLinesearch
 ConstantLength
 DecreasingLength
+DistanceOverGradients
 NonmonotoneLinesearch
 Polyak
 WolfePowellLinesearch
@@ -45,7 +46,7 @@ Modules = [Manopt]
 Pages = ["plans/stepsize.jl"]
 Private = true
 Order = [:function, :type]
-Filter = t -> !(t in [Stepsize, AdaptiveWNGradient, ArmijoLinesearch, ConstantLength, DecreasingLength, NonmonotoneLinesearch, Polyak, WolfePowellLinesearch, WolfePowellBinaryLinesearch ])
+Filter = t -> !(t in [Stepsize, AdaptiveWNGradient, ArmijoLinesearch, ConstantLength, DecreasingLength, DistanceOverGradients, NonmonotoneLinesearch, Polyak, WolfePowellLinesearch, WolfePowellBinaryLinesearch ])
 ```
 
 
