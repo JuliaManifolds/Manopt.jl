@@ -31,7 +31,7 @@ function Keywords(
         accepted::Set{Symbol} = Set{Symbol}(),
         deprecated::Set{Symbol} = Set{Symbol}();
         from = nothing,
-        origins::Union{Dict,Nothing} = nothing,
+        origins::Union{Dict, Nothing} = nothing,
     )
     if !isnothing(from)
         _origins = isnothing(origins) ? Dict{Symbol, Any}() : origins
