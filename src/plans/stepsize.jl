@@ -1691,39 +1691,31 @@ end
 @doc raw"""
     DistanceOverGradientsStepsize{R<:Real} <: Stepsize
 
-Implements the Riemannian Distance over Gradients (RDoG) stepsize schedule, a learning-rate-free 
-optimization method for Riemannian manifolds introduced by [DoddSharrockNemeth:2024].
-
-This stepsize adapts automatically without hyperparameter tuning by tracking the maximum distance 
-from the initial point and accumulating gradient norms.
-
 # Fields
 
-* `initial_distance::R`: initial distance estimate ``ϵ > 0``
-* `max_distance::R`: maximum distance from initial point ``\bar{r}_t = \max_{s≤t} d(p_0, p_s)``
-* `gradient_sum::R`: accumulated squared gradient norms ``G_t = \sum_{s=0}^t \|∇f(p_s)\|^2``
-* `initial_point`: the initial point ``p_0``
-* `use_curvature::Bool`: whether to use sectional curvature in the stepsize
-* `sectional_curvature_bound::R`: lower bound on sectional curvature ``κ`` (only used if `use_curvature=true`)
-
-To see how stepsize at iteration ``t`` is computed see [`geometric_curvature_function`](@ref).
+* `initial_distance::R`: initial distance estimate ``ϵ>0``
+* `max_distance::R`: tracked maximum distance ``\bar r_t``
+* `gradient_sum::R`: accumulated sum ``G_t``
+* `initial_point`: stored start point ``p_0``
+* `use_curvature::Bool`: toggle curvature correction ``ζ_κ``
+* `sectional_curvature_bound::R`: lower bound ``κ`` used in ``ζ_κ`` when `use_curvature=true`
+* `last_stepsize::R`: last computed stepsize
 
 # Constructor
 
     DistanceOverGradientsStepsize(M::AbstractManifold; kwargs...)
 
-Initialize the RDoG stepsize on manifold `M`.
-
 ## Keyword arguments
 
-* `initial_distance=1e-3`: initial distance estimate ``ϵ``
-* `use_curvature=false`: whether to incorporate sectional curvature
-* `sectional_curvature_bound=0.0`: lower bound on sectional curvature (if known)
-$(_var(:Keyword, :p; add="initial point, used to track distances"))
+* `initial_distance=1e-3`: initial estimate ``ϵ``
+* `use_curvature=false`: whether to use ``ζ_κ``
+* `sectional_curvature_bound=0.0`: lower curvature bound ``κ`` (if known)
+$(_var(:Keyword, :p; add = "initial point, used to track distances"))
 
-# See also
+# References
 
-[`AdaptiveWNGradientStepsize`](@ref), [`gradient_descent`](@ref)
+[DoddSharrockNemeth:2024](@cite): Learning-Rate-Free Stochastic Optimization over
+Riemannian Manifolds (RDoG).
 """
 mutable struct DistanceOverGradientsStepsize{R <: Real, P} <: Stepsize
     initial_distance::R
@@ -1759,15 +1751,17 @@ end
 @doc raw"""
     geometric_curvature_function(κ::Real, d::Real)
 
-Compute the geometric curvature function ``ζ_κ(d)`` for sectional curvature bound ``κ``.
+Compute the geometric curvature function ``ζ_κ(d)`` used by the RDoG stepsize:
 
 ```math
-η_t = \frac{\bar{r}_t}{\sqrt{ζ_κ(\bar{r}_t)} \sqrt{G_t}}
+ζ_κ(d) =
+\begin{cases}
+1, & \text{if } κ \ge 0,\\[4pt]
+\dfrac{\sqrt{|κ|}\,d}{\tanh(\sqrt{|κ|}\,d)}, & \text{if } κ < 0.
+\end{cases}
 ```
 
-where ``ζ_κ`` is the geometric curvature function:
-- ``ζ_κ(d) = 1`` if ``κ ≥ 0`` or `use_curvature=false`
-- ``ζ_κ(d) = \frac{\sqrt{|κ|} d}{\tanh(\sqrt{|κ|} d)}`` if ``κ < 0``
+For small arguments, a Taylor approximation is used for numerical stability.
 """
 function geometric_curvature_function(κ::Real, d::Real)
     if κ < 0 && d > 0
@@ -1855,17 +1849,58 @@ function show(io::IO, rdog::DistanceOverGradientsStepsize)
     return print(io, s)
 end
 
-"""
+@doc raw"""
     DistanceOverGradients(; kwargs...)
     DistanceOverGradients(M::AbstractManifold; kwargs...)
 
-Creates a factory for the [`DistanceOverGradientsStepsize`](@ref).
+Create a factory for the [`DistanceOverGradientsStepsize`](@ref), the
+Riemannian Distance over Gradients (RDoG) learning-rate-free stepsize from
+[DoddSharrockNemeth:2024](@cite). It adapts via the maximum distance from the
+start point and the accumulated gradient norms, optionally corrected by the
+geometric curvature term ``ζ_κ``.
+
+Riemannian Distance over Gradients (RDoG) learning-rate-free stepsize schedule
+introduced by [DoddSharrockNemeth:2024]. This schedule adapts without manual
+tuning by combining a distance proxy from the start point with accumulated
+gradient norms.
+
+Definitions used by the implementation:
+
+* ``\bar r_t := \max(\,ϵ,\, \max_{0\le s\le t} d(p_0, p_s)\,)`` tracks the maximum geodesic
+  distance from the initial point ``p_0`` using the current iterate ``p_t``.
+* ``G_t := \sum_{s=0}^t \lVert g_s \rVert^2``, where ``g_s = \operatorname{grad} f(p_s)``.
+
+At iteration ``t`` the stepsize used here is
+
+```math
+η_t =
+\begin{cases}
+\dfrac{\bar r_t}{\sqrt{G_t}}, & \text{if `use_curvature = false`,}\\[6pt]
+\dfrac{\bar r_t}{\sqrt{\,ζ_κ(\bar r_t)\,}\,\sqrt{G_t}}, & \text{if `use_curvature = true`,}
+\end{cases}
+```
+
+with the geometric curvature function ``ζ_κ(d)`` defined in
+[`geometric_curvature_function`](@ref). The initialization in this
+implementation follows the paper: on the first call (``t=0``), we set
+``G_0=\lVert g_0\rVert^2``, ``\bar r_0 = ϵ`` and take
+
+```math
+η_0 =
+\begin{cases}
+\dfrac{ϵ}{\lVert g_0\rVert}, & \text{if `use_curvature = false`,}\\[6pt]
+\dfrac{ϵ}{\sqrt{\,ζ_κ(ϵ)\,}\,\lVert g_0\rVert}, & \text{if `use_curvature = true`.}
+\end{cases}
+```
+
+On subsequent calls, the state is updated as implemented: ``G_t \leftarrow G_{t-1}
++ \lVert g_t\rVert^2`` and ``\bar r_t \leftarrow \max(\bar r_{t-1}, d(p_0,p_t))``.
 
 ## Keyword arguments
 
-* `initial_distance=1e-3`: initial distance estimate
-* `use_curvature=false`: whether to use sectional curvature
-* `sectional_curvature_bound=0.0`: lower bound on sectional curvature
+* `initial_distance=1e-3`: initial distance estimate ``ϵ``
+* `use_curvature=false`: whether to include ``ζ_κ``
+* `sectional_curvature_bound=0.0`: curvature lower bound ``κ`` (if known)
 
 $(_note(:ManifoldDefaultFactory, "DistanceOverGradientsStepsize"))
 """

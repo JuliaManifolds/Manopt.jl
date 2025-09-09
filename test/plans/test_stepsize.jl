@@ -1,4 +1,4 @@
-using LinearAlgebra, ManifoldsBase, Manopt, Manifolds, Test
+using ManifoldsBase, Manopt, Manifolds, Test
 
 s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
 !(s in LOAD_PATH) && (push!(LOAD_PATH, s))
