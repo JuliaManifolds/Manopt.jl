@@ -1,4 +1,3 @@
-
 @doc """
     NonlinearLeastSquaresObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
@@ -46,41 +45,41 @@ $(_var(:Keyword, :evaluation))
 [`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref)
 """
 struct NonlinearLeastSquaresObjective{
-    E<:AbstractEvaluationType,F<:AbstractVectorGradientFunction{E}
-} <: AbstractManifoldFirstOrderObjective{E,F}
+        E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E},
+    } <: AbstractManifoldFirstOrderObjective{E, F}
     objective::F
 end
 
 function NonlinearLeastSquaresObjective(
-    f,
-    jacobian,
-    range_dimension::Integer;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
-    jacobian_type::AbstractVectorialType=CoordinateVectorialType(jacobian_tangent_basis),
-    function_type::AbstractVectorialType=FunctionVectorialType(),
-    kwargs...,
-)
+        f,
+        jacobian,
+        range_dimension::Integer;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        jacobian_tangent_basis::AbstractBasis = DefaultOrthonormalBasis(),
+        jacobian_type::AbstractVectorialType = CoordinateVectorialType(jacobian_tangent_basis),
+        function_type::AbstractVectorialType = FunctionVectorialType(),
+        kwargs...,
+    )
     vgf = VectorGradientFunction(
         f,
         jacobian,
         range_dimension;
-        evaluation=evaluation,
-        jacobian_type=jacobian_type,
-        function_type=function_type,
+        evaluation = evaluation,
+        jacobian_type = jacobian_type,
+        function_type = function_type,
     )
     return NonlinearLeastSquaresObjective(vgf; kwargs...)
 end
 
 # Cost
 function get_cost(
-    M::AbstractManifold,
-    nlso::NonlinearLeastSquaresObjective{
-        E,<:AbstractVectorFunction{E,<:ComponentVectorialType}
-    },
-    p;
-    kwargs...,
-) where {E<:AbstractEvaluationType}
+        M::AbstractManifold,
+        nlso::NonlinearLeastSquaresObjective{
+            E, <:AbstractVectorFunction{E, <:ComponentVectorialType},
+        },
+        p;
+        kwargs...,
+    ) where {E <: AbstractEvaluationType}
     v = 0.0
     for i in 1:length(nlso.objective)
         v += abs(get_value(M, nlso.objective, p, i))^2
@@ -89,45 +88,45 @@ function get_cost(
     return v
 end
 function get_cost(
-    M::AbstractManifold,
-    nlso::NonlinearLeastSquaresObjective{
-        E,<:AbstractVectorFunction{E,<:FunctionVectorialType}
-    },
-    p;
-    value_cache=get_value(M, nlso.objective, p),
-) where {E<:AbstractEvaluationType}
+        M::AbstractManifold,
+        nlso::NonlinearLeastSquaresObjective{
+            E, <:AbstractVectorFunction{E, <:FunctionVectorialType},
+        },
+        p;
+        value_cache = get_value(M, nlso.objective, p),
+    ) where {E <: AbstractEvaluationType}
     return sum(abs2, value_cache) / 2
 end
 
 function get_jacobian(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
-)
+        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+    )
     J = zeros(length(nlso.objective), manifold_dimension(M))
     get_jacobian!(M, J, nlso, p; kwargs...)
     return J
 end
 # The jacobian is now just a pass-through
 function get_jacobian!(
-    M::AbstractManifold, J, nlso::NonlinearLeastSquaresObjective, p; kwargs...
-)
+        M::AbstractManifold, J, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+    )
     get_jacobian!(M, J, nlso.objective, p; kwargs...)
     return J
 end
 function get_gradient(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
-)
+        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+    )
     X = zero_vector(M, p)
     return get_gradient!(M, X, nlso, p; kwargs...)
 end
 function get_gradient!(
-    M::AbstractManifold,
-    X,
-    nlso::NonlinearLeastSquaresObjective,
-    p;
-    basis=get_basis(nlso.objective.jacobian_type),
-    jacobian_cache=get_jacobian(M, nlso, p; basis=basis),
-    value_cache=get_residuals(M, nlso, p),
-)
+        M::AbstractManifold,
+        X,
+        nlso::NonlinearLeastSquaresObjective,
+        p;
+        basis = get_basis(nlso.objective.jacobian_type),
+        jacobian_cache = get_jacobian(M, nlso, p; basis = basis),
+        value_cache = get_residuals(M, nlso, p),
+    )
     return get_vector!(M, X, p, transpose(jacobian_cache) * value_cache, basis)
 end
 
@@ -146,8 +145,8 @@ the [`NonlinearLeastSquaresObjective`](@ref) `nlso` and a current point ``p`` on
 get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
 
 function get_residuals(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
-)
+        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+    )
     V = zeros(length(nlso.objective))
     return get_residuals!(M, V, nlso, p; kwargs...)
 end
@@ -156,27 +155,27 @@ end
 get_residuals!(M::AbstractManifold, V, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
 
 function get_residuals!(
-    M::AbstractManifold,
-    V,
-    nlso::NonlinearLeastSquaresObjective{
-        E,<:AbstractVectorFunction{E,<:ComponentVectorialType}
-    },
-    p;
-    kwargs...,
-) where {E<:AbstractEvaluationType}
+        M::AbstractManifold,
+        V,
+        nlso::NonlinearLeastSquaresObjective{
+            E, <:AbstractVectorFunction{E, <:ComponentVectorialType},
+        },
+        p;
+        kwargs...,
+    ) where {E <: AbstractEvaluationType}
     for i in 1:length(nlso.objective)
         V[i] = get_value(M, nlso.objective, p, i)
     end
     return V
 end
 function get_residuals!(
-    M::AbstractManifold,
-    V,
-    nlso::NonlinearLeastSquaresObjective{
-        E,<:AbstractVectorFunction{E,<:FunctionVectorialType}
-    },
-    p,
-) where {E<:AbstractEvaluationType}
+        M::AbstractManifold,
+        V,
+        nlso::NonlinearLeastSquaresObjective{
+            E, <:AbstractVectorFunction{E, <:FunctionVectorialType},
+        },
+        p,
+    ) where {E <: AbstractEvaluationType}
     get_value!(M, V, nlso.objective, p)
     return V
 end
@@ -190,7 +189,7 @@ Describes a Gradient based descent algorithm, with
 
 A default value is given in brackets if a parameter can be left out in initialization.
 
-$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :p; add = [:as_Iterate]))
 $(_var(:Field, :retraction_method))
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
 * `residual_values_temp`: value of ``F`` for the current proposal point
@@ -227,22 +226,22 @@ The following fields are keyword arguments
 * `expect_zero_residual=false`
 * `initial_gradient=`$(_link(:zero_vector))
 $(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)`"))
 
 # See also
 
 [`gradient_descent`](@ref), [`LevenbergMarquardt`](@ref)
 """
 mutable struct LevenbergMarquardtState{
-    P,
-    TStop<:StoppingCriterion,
-    TRTM<:AbstractRetractionMethod,
-    Tresidual_values,
-    TJac,
-    TGrad,
-    Tparams<:Real,
-    TLS,
-} <: AbstractGradientSolverState
+        P,
+        TStop <: StoppingCriterion,
+        TRTM <: AbstractRetractionMethod,
+        Tresidual_values,
+        TJac,
+        TGrad,
+        Tparams <: Real,
+        TLS,
+    } <: AbstractGradientSolverState
     p::P
     stop::TStop
     retraction_method::TRTM
@@ -260,21 +259,21 @@ mutable struct LevenbergMarquardtState{
     last_step_successful::Bool
     linear_subsolver!::TLS
     function LevenbergMarquardtState(
-        M::AbstractManifold,
-        initial_residual_values::Tresidual_values,
-        initial_jacobian::TJac;
-        p::P=rand(M),
-        X::TGrad=zero_vector(M, p),
-        stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                              StopWhenGradientNormLess(1e-12) |
-                                              StopWhenStepsizeLess(1e-12),
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-        η::Real=0.2,
-        damping_term_min::Real=0.1,
-        β::Real=5.0,
-        expect_zero_residual::Bool=false,
-        linear_subsolver!::TLS=(default_lm_lin_solve!),
-    ) where {P,Tresidual_values,TJac,TGrad,TLS}
+            M::AbstractManifold,
+            initial_residual_values::Tresidual_values,
+            initial_jacobian::TJac;
+            p::P = rand(M),
+            X::TGrad = zero_vector(M, p),
+            stopping_criterion::StoppingCriterion = StopAfterIteration(200) |
+                StopWhenGradientNormLess(1.0e-12) |
+                StopWhenStepsizeLess(1.0e-12),
+            retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
+            η::Real = 0.2,
+            damping_term_min::Real = 0.1,
+            β::Real = 5.0,
+            expect_zero_residual::Bool = false,
+            linear_subsolver!::TLS = (default_lm_lin_solve!),
+        ) where {P, Tresidual_values, TJac, TGrad, TLS}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
         end

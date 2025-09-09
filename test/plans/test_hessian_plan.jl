@@ -15,7 +15,7 @@ using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test, Random
 
     mho1 = ManifoldHessianObjective(f, grad_f, Hess_f)
     mho2 = ManifoldHessianObjective(f, grad_f, Hess_f, precon)
-    mho3 = ManifoldHessianObjective(f, grad_f!, Hess_f!; evaluation=InplaceEvaluation())
+    mho3 = ManifoldHessianObjective(f, grad_f!, Hess_f!; evaluation = InplaceEvaluation())
     mho4 = ManifoldHessianObjective(f, grad_f, Hess_f)
 
     p = zeros(2)
@@ -29,7 +29,7 @@ using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test, Random
         get_gradient!(mp, Y, p)
         @test Y == zeros(2)
         # check differential default
-        @test get_differential(mp, p, X; gradient=Y) == 0
+        @test get_differential(mp, p, X; gradient = Y) == 0
         @test get_differential(mp, p, X) == 0
         # Hessian
         @test get_hessian(mp, p, X) == 0.5 * X
@@ -128,7 +128,7 @@ using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test, Random
         Random.seed!(42)
         p0 = rand(M)
         q1 = trust_regions(M, f2, grad_f2, p0)
-        q2 = trust_regions(M, f2, grad_f2!, p0; evaluation=InplaceEvaluation())
+        q2 = trust_regions(M, f2, grad_f2!, p0; evaluation = InplaceEvaluation())
         @test isapprox(M, q1, q2)
     end
 end

@@ -22,7 +22,7 @@ function _test_sphere_sum(model, obj_sign)
     @test primal_status(model) == MOI.FEASIBLE_POINT
     @test dual_status(model) == MOI.NO_SOLUTION
     @test objective_value(model) ≈ obj_sign * √3
-    @test value.(model[:x]) ≈ obj_sign * inv(√3) * ones(3) rtol = 1e-2
+    @test value.(model[:x]) ≈ obj_sign * inv(√3) * ones(3) rtol = 1.0e-2
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
     return _test_allocs(unsafe_backend(model), zeros(3), zeros(3))
@@ -31,7 +31,7 @@ end
 function test_sphere()
     model = Model(Manopt.JuMP_Optimizer)
     start = normalize(1:3)
-    @variable(model, x[i=1:3] in Sphere(2), start = start[i])
+    @variable(model, x[i = 1:3] in Sphere(2), start = start[i])
 
     objective = let
         # We create `grad_f` here to avoid having an allocation in `eval_grad_sum_cb`
@@ -56,7 +56,7 @@ function test_sphere()
     end
 
     @testset "$obj_sense" for (obj_sense, obj_sign) in
-                              [(MOI.MIN_SENSE, -1), (MOI.MAX_SENSE, 1)]
+        [(MOI.MIN_SENSE, -1), (MOI.MAX_SENSE, 1)]
         @testset "JuMP objective" begin
             @objective(model, obj_sense, sum(x))
             _test_sphere_sum(model, obj_sign)
@@ -80,8 +80,8 @@ function test_sphere()
     @objective(model, Min, sum(xi^4 for xi in x))
     set_start_value.(x, start)
     optimize!(model)
-    @test objective_value(model) ≈ 1 / 3 rtol = 1e-4
-    @test value.(x) ≈ inv(√3) * ones(3) rtol = 1e-2
+    @test objective_value(model) ≈ 1 / 3 rtol = 1.0e-4
+    @test value.(x) ≈ inv(√3) * ones(3) rtol = 1.0e-2
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
 
@@ -95,7 +95,7 @@ function test_sphere()
     set_start_value(x[3], 1.0)
 
     @variable(model, [1:2, 1:2] in Stiefel(2, 2))
-    @test_throws MOI.AddConstraintNotAllowed optimize!(model)
+    return @test_throws MOI.AddConstraintNotAllowed optimize!(model)
 end
 
 @testset "JuMP tests" begin
@@ -104,11 +104,11 @@ end
 
 function test_runtests()
     optimizer = Manopt.JuMP_Optimizer()
-    config = MOI.Test.Config(; exclude=Any[MOI.ListOfModelAttributesSet])
+    config = MOI.Test.Config(; exclude = Any[MOI.ListOfModelAttributesSet])
     return MOI.Test.runtests(
         optimizer,
         config;
-        exclude=String[
+        exclude = String[
             # See https://github.com/jump-dev/MathOptInterface.jl/pull/2195
             "test_model_copy_to_UnsupportedConstraint",
             "test_model_copy_to_UnsupportedAttribute",

@@ -14,7 +14,7 @@ struct NoIterateState <: AbstractManoptSolverState end
         @test repr(Manopt.ReturnSolverState(s)) == "ReturnSolverState($s)"
         @test Manopt.status_summary(Manopt.ReturnSolverState(s)) ==
             "ManoptTestSuite.DummyState(Float64[])"
-        a = ArmijoLinesearch(; initial_stepsize=1.0)(M)
+        a = ArmijoLinesearch(; initial_stepsize = 1.0)(M)
         @test get_last_stepsize(a) == 1.0
         @test get_initial_stepsize(a) == 1.0
         Manopt.set_parameter!(s, :Dummy, 1)
@@ -22,7 +22,7 @@ struct NoIterateState <: AbstractManoptSolverState end
 
     @testset "Decreasing Stepsize" begin
         M = Euclidean(3)
-        dec_step = DecreasingLength(; length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0)(
+        dec_step = DecreasingLength(; length = 10.0, factor = 1.0, subtrahend = 0.0, exponent = 1.0)(
             M
         )
         @test get_initial_stepsize(dec_step) == 10.0

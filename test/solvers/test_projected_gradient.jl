@@ -10,15 +10,15 @@ using Manifolds, Manopt, Random, Test
     # N random points moved to top left to have a mean outside
     pts = [
         exp(
-            M,
-            c,
-            get_vector(
                 M,
                 c,
-                σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
-                DefaultOrthonormalBasis(),
-            ),
-        ) for _ in 1:N
+                get_vector(
+                    M,
+                    c,
+                    σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
+                    DefaultOrthonormalBasis(),
+                ),
+            ) for _ in 1:N
     ]
     f(M, p) = 1 / (2 * length(pts)) .* sum(distance(M, p, q)^2 for q in pts)
     grad_f(M, p) = -1 / length(pts) .* sum(log(M, p, q) for q in pts)
@@ -38,7 +38,7 @@ using Manifolds, Manopt, Random, Test
         q = (n > r) ? exp(M, c, (r / n) * X) : copy(M, p)
         return q
     end
-    function project_C!(M, q, p; X=zero_vector(M, c))
+    function project_C!(M, q, p; X = zero_vector(M, c))
         log!(M, X, c, p)
         n = norm(M, c, X)
         if (n > r)
@@ -54,8 +54,8 @@ using Manifolds, Manopt, Random, Test
         grad_f,
         project_C,
         c;
-        stopping_criterion=StopAfterIteration(150) |
-                           StopWhenProjectedGradientStationary(M, 1e-7),
+        stopping_criterion = StopAfterIteration(150) |
+            StopWhenProjectedGradientStationary(M, 1.0e-7),
     )
     Random.seed!(42)
     mean_pg_2 = projected_gradient_method(
@@ -63,8 +63,8 @@ using Manifolds, Manopt, Random, Test
         f,
         grad_f,
         project_C;
-        stopping_criterion=StopAfterIteration(150) |
-                           StopWhenProjectedGradientStationary(M, 1e-7),
+        stopping_criterion = StopAfterIteration(150) |
+            StopWhenProjectedGradientStationary(M, 1.0e-7),
     )
     @test isapprox(M, mean_pg_1, mean_pg_2)
     mean_pg_3 = copy(M, c)
@@ -74,10 +74,10 @@ using Manifolds, Manopt, Random, Test
         grad_f!,
         project_C!,
         mean_pg_3;
-        evaluation=InplaceEvaluation(),
-        stopping_criterion=StopAfterIteration(150) |
-                           StopWhenProjectedGradientStationary(M, 1e-7),
-        return_state=true,
+        evaluation = InplaceEvaluation(),
+        stopping_criterion = StopAfterIteration(150) |
+            StopWhenProjectedGradientStationary(M, 1.0e-7),
+        return_state = true,
     )
     @test isapprox(M, mean_pg_1, mean_pg_3)
     @test startswith(
@@ -85,8 +85,11 @@ using Manifolds, Manopt, Random, Test
     )
     stop_when_stationary = st.stop.criteria[2]
     @test repr(stop_when_stationary) ==
-        "StopWhenProjectedGradientStationary($(stop_when_stationary.threshold))\n    $(Manopt.status_summary(
-        stop_when_stationary))"
+        "StopWhenProjectedGradientStationary($(stop_when_stationary.threshold))\n    $(
+        Manopt.status_summary(
+            stop_when_stationary
+        )
+    )"
     @test length(get_reason(stop_when_stationary)) > 0
-    @test length(get_reason(StopWhenProjectedGradientStationary(M, 1e-7))) == 0
+    @test length(get_reason(StopWhenProjectedGradientStationary(M, 1.0e-7))) == 0
 end

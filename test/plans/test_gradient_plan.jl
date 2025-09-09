@@ -15,9 +15,9 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
     X = [0.2, 0.3]
     gst = GradientDescentState(
         M;
-        p=zero(p),
-        stopping_criterion=StopAfterIteration(20),
-        stepsize=Manopt.ConstantStepsize(M),
+        p = zero(p),
+        stopping_criterion = StopAfterIteration(20),
+        stepsize = Manopt.ConstantStepsize(M),
     )
     set_iterate!(gst, M, q)
     @test get_iterate(gst) == q
@@ -40,22 +40,22 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
     @test get_gradient(mp, gst.p) == zero_vector(M, p)
     @test_throws MethodError get_proximal_map(mp, 1.0, gst.p, 1)
     @testset "Debug Gradient" begin
-        a1 = DebugGradient(; long=false, io=io)
+        a1 = DebugGradient(; long = false, io = io)
         a1(mp, gst, 1)
         @test String(take!(io)) == "grad f(p):[1.0, 0.0]"
-        a1a = DebugGradient(; prefix="s:", io=io)
+        a1a = DebugGradient(; prefix = "s:", io = io)
         a1a(mp, gst, 1)
         @test String(take!(io)) == "s:[1.0, 0.0]"
-        a2 = DebugGradientNorm(; long=false, io=io)
+        a2 = DebugGradientNorm(; long = false, io = io)
         a2(mp, gst, 1)
         @test String(take!(io)) == "|grad f(p)|:1.0"
-        a2a = DebugGradientNorm(; prefix="s:", io=io)
+        a2a = DebugGradientNorm(; prefix = "s:", io = io)
         a2a(mp, gst, 1)
         @test String(take!(io)) == "s:1.0"
-        a3 = DebugStepsize(; long=false, io=io)
+        a3 = DebugStepsize(; long = false, io = io)
         a3(mp, gst, 1)
         @test String(take!(io)) == "s:1.0"
-        a3a = DebugStepsize(; prefix="S:", io=io)
+        a3a = DebugStepsize(; prefix = "S:", io = io)
         a3a(mp, gst, 1)
         @test String(take!(io)) == "S:1.0"
     end
@@ -87,7 +87,7 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         @test isapprox(M, p, Y1, Y2)
 
         costgrad!(M, X, p) = (f(M, p), grad_f!(M, X, p))
-        mcgo! = ManifoldCostGradientObjective(costgrad!; evaluation=InplaceEvaluation())
+        mcgo! = ManifoldCostGradientObjective(costgrad!; evaluation = InplaceEvaluation())
         @test isapprox(M, p, Y1, get_gradient(M, mcgo!, p))
         get_gradient!(M, Y2, mcgo!, p)
         @test isapprox(M, p, Y1, Y2)
@@ -126,42 +126,42 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         # Use old names here
         mfo1a = ManifoldCostGradientObjective(fg)
         @test startswith(repr(mfo1a), "ManifoldFirstOrderObjective{AllocatingEvaluation, ")
-        mfo1i = ManifoldCostGradientObjective(fg!; evaluation=InplaceEvaluation())
+        mfo1i = ManifoldCostGradientObjective(fg!; evaluation = InplaceEvaluation())
         mfo2a = ManifoldGradientObjective(f, grad_f)
-        mfo2i = ManifoldGradientObjective(f, grad_f!; evaluation=InplaceEvaluation())
-        mfo3a = ManifoldCostGradientObjective(fg; differential=diff_f)
+        mfo2i = ManifoldGradientObjective(f, grad_f!; evaluation = InplaceEvaluation())
+        mfo3a = ManifoldCostGradientObjective(fg; differential = diff_f)
         mfo3i = ManifoldCostGradientObjective(
-            fg!; differential=diff_f, evaluation=InplaceEvaluation()
+            fg!; differential = diff_f, evaluation = InplaceEvaluation()
         )
-        mfo4a = ManifoldGradientObjective(f, grad_f; differential=diff_f)
+        mfo4a = ManifoldGradientObjective(f, grad_f; differential = diff_f)
         mfo4i = ManifoldGradientObjective(
-            f, grad_f!; differential=diff_f, evaluation=InplaceEvaluation()
+            f, grad_f!; differential = diff_f, evaluation = InplaceEvaluation()
         )
-        mfo5a = ManifoldFirstOrderObjective(; cost=f, costgradient=fg, costdifferential=fd)
+        mfo5a = ManifoldFirstOrderObjective(; cost = f, costgradient = fg, costdifferential = fd)
         mfo5i = ManifoldFirstOrderObjective(;
-            cost=f, costgradient=fg!, costdifferential=fd, evaluation=InplaceEvaluation()
+            cost = f, costgradient = fg!, costdifferential = fd, evaluation = InplaceEvaluation()
         )
         # an inplace does not make sense for 6
-        mfo6 = ManifoldFirstOrderObjective(; costdifferential=fd)
-        mfo7a = ManifoldFirstOrderObjective(; costdifferential=fd, gradient=grad_f)
+        mfo6 = ManifoldFirstOrderObjective(; costdifferential = fd)
+        mfo7a = ManifoldFirstOrderObjective(; costdifferential = fd, gradient = grad_f)
         mfo7i = ManifoldFirstOrderObjective(;
-            costdifferential=fd, gradient=grad_f!, evaluation=InplaceEvaluation()
+            costdifferential = fd, gradient = grad_f!, evaluation = InplaceEvaluation()
         )
-        mfo8a = ManifoldFirstOrderObjective(; costgradient=fg, costdifferential=fd)
+        mfo8a = ManifoldFirstOrderObjective(; costgradient = fg, costdifferential = fd)
         mfo8i = ManifoldFirstOrderObjective(;
-            costgradient=fg!, costdifferential=fd, evaluation=InplaceEvaluation()
+            costgradient = fg!, costdifferential = fd, evaluation = InplaceEvaluation()
         )
-        mfo9 = ManifoldFirstOrderObjective(; cost=f, differential=diff_f)
+        mfo9 = ManifoldFirstOrderObjective(; cost = f, differential = diff_f)
 
         # only cost
-        @test_throws ArgumentError ManifoldFirstOrderObjective(; cost=f)
+        @test_throws ArgumentError ManifoldFirstOrderObjective(; cost = f)
         # No cost
-        @test_throws ArgumentError ManifoldFirstOrderObjective(;)
+        @test_throws ArgumentError ManifoldFirstOrderObjective()
         @test_throws ArgumentError ManifoldFirstOrderObjective(;
-            gradient=grad_f, differential=diff_f
+            gradient = grad_f, differential = diff_f
         )
-        @test_throws ArgumentError ManifoldFirstOrderObjective(; gradient=grad_f)
-        @test_throws ArgumentError ManifoldFirstOrderObjective(; differential=diff_f)
+        @test_throws ArgumentError ManifoldFirstOrderObjective(; gradient = grad_f)
+        @test_throws ArgumentError ManifoldFirstOrderObjective(; differential = diff_f)
         # test cost & diff for all
         # collect all allocs, inplace, and 6&9
         mfod1a = ManoptTestSuite.DummyDecoratedObjective(mfo1a)
@@ -178,8 +178,8 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
             @test get_differential(M, obj, p, X) == d
             @test Manopt.get_cost_and_differential(M, obj, p, X) == (c, d)
             # using gradient!
-            @test get_differential(M, obj, p, X; Y=Y) == d
-            @test Manopt.get_cost_and_differential(M, obj, p, X; Y=Y) == (c, d)
+            @test get_differential(M, obj, p, X; Y = Y) == d
+            @test Manopt.get_cost_and_differential(M, obj, p, X; Y = Y) == (c, d)
             @test Manopt.get_differential_function(obj)(M, p, X) == d
         end
         Yi = zero_vector(M, p)
@@ -204,8 +204,8 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
             @test Yi == G
         end
         # Corner case, check that the fake-empty one causes the errors as expected
-        mfo_fa = ManifoldFirstOrderObjective{AllocatingEvaluation,typeof((;))}((;))
-        mfo_fi = ManifoldFirstOrderObjective{InplaceEvaluation,typeof((;))}((;))
+        mfo_fa = ManifoldFirstOrderObjective{AllocatingEvaluation, typeof((;))}((;))
+        mfo_fi = ManifoldFirstOrderObjective{InplaceEvaluation, typeof((;))}((;))
         for mfo_f in [mfo_fa, mfo_fi]
             @test_throws ErrorException get_cost(M, mfo_f, q)
             @test_throws ErrorException get_gradient(M, mfo_f, q)

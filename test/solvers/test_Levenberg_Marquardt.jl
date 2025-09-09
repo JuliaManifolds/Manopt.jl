@@ -9,7 +9,7 @@ const ref_R = [
     -0.9075488409419746 -0.35922823268191284 0.21750903004038213
 ]
 
-function get_test_pts(σ=0.02)
+function get_test_pts(σ = 0.02)
     return ref_R * ref_points .+ randn(size(ref_points)) .* σ
     return tab
 end
@@ -27,8 +27,8 @@ function F_RLM(::AbstractManifold, p)
 end
 
 function jacF_RLM(
-    M::AbstractManifold, p; basis_domain::AbstractBasis=default_basis(M, typeof(p))
-)
+        M::AbstractManifold, p; basis_domain::AbstractBasis = default_basis(M, typeof(p))
+    )
     X0 = zeros(manifold_dimension(M))
     J = ForwardDiff.jacobian(
         x -> F_RLM(M, exp(M, p, get_vector(M, p, x, basis_domain))), X0
@@ -78,8 +78,8 @@ struct jacF_reg_r2
 end
 
 function (f::jacF_reg_r2)(
-    M::AbstractManifold, p; basis_domain::AbstractBasis=default_basis(M, typeof(p))
-)
+        M::AbstractManifold, p; basis_domain::AbstractBasis = default_basis(M, typeof(p))
+    )
     return [f.ts_r2 zero(f.ts_r2); zero(f.ts_r2) f.ts_r2]
 end
 
@@ -91,8 +91,8 @@ function F_reg_r2!(::AbstractManifold, x, p)
 end
 
 function jacF_reg_r2!(
-    M::AbstractManifold, J, p; basis_domain::AbstractBasis=default_basis(M, typeof(p))
-)
+        M::AbstractManifold, J, p; basis_domain::AbstractBasis = default_basis(M, typeof(p))
+    )
     midpoint = div(size(J, 1), 2)
     view(J, 1:midpoint, 1) .= ts_r2
     view(J, 1:midpoint, 2) .= 0
@@ -111,13 +111,13 @@ end
     M = Rotations(3)
     p0 = exp(M, ref_R, get_vector(M, ref_R, randn(3) * 0.00001, DefaultOrthonormalBasis()))
 
-    lm_r = LevenbergMarquardt(M, F_RLM, jacF_RLM, p0, length(pts_LM); return_state=true)
+    lm_r = LevenbergMarquardt(M, F_RLM, jacF_RLM, p0, length(pts_LM); return_state = true)
     lm_rs = "# Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm\n"
     @test startswith(repr(lm_r), lm_rs)
     p_opt = get_state(lm_r).p
-    @test norm(M, p_opt, get_gradient(lm_r)) < 2e-3
+    @test norm(M, p_opt, get_gradient(lm_r)) < 2.0e-3
     p_atol = 1.5e-2
-    @test isapprox(M, ref_R, p_opt; atol=p_atol)
+    @test isapprox(M, ref_R, p_opt; atol = p_atol)
 
     # allocating R2 regression, nonzero residual
     M = Euclidean(2)
@@ -129,10 +129,10 @@ end
         jacF_reg_r2(ts_r2, xs_r2, ys_r2),
         p0,
         length(ts_r2) * 2;
-        return_state=true,
+        return_state = true,
     )
     lms = get_state(ds)
-    @test isapprox(M, p_star, lms.p; atol=p_atol)
+    @test isapprox(M, p_star, lms.p; atol = p_atol)
 
     # testing with a basis that requires caching
     ds = LevenbergMarquardt(
@@ -141,19 +141,19 @@ end
         jacF_reg_r2(ts_r2, xs_r2, ys_r2),
         p0,
         length(ts_r2) * 2;
-        return_state=true,
-        jacobian_tangent_basis=ProjectedOrthonormalBasis(:svd),
+        return_state = true,
+        jacobian_tangent_basis = ProjectedOrthonormalBasis(:svd),
     )
     lms = get_state(ds)
-    @test isapprox(M, p_star, lms.p; atol=p_atol)
+    @test isapprox(M, p_star, lms.p; atol = p_atol)
     # start with random point
     p2 = LevenbergMarquardt(
         M,
         F_reg_r2(ts_r2, xs_r2, ys_r2),
         jacF_reg_r2(ts_r2, xs_r2, ys_r2),
-        length(ts_r2) * 2;
+        length(ts_r2) * 2
     )
-    @test isapprox(M, p_star, p2; atol=p_atol)
+    @test isapprox(M, p_star, p2; atol = p_atol)
     # testing in-place
     p3 = copy(M, p0)
     LevenbergMarquardt!(
@@ -161,9 +161,9 @@ end
         F_reg_r2(ts_r2, xs_r2, ys_r2),
         jacF_reg_r2(ts_r2, xs_r2, ys_r2),
         p3,
-        length(ts_r2) * 2;
+        length(ts_r2) * 2
     )
-    @test isapprox(M, p_star, p3; atol=p_atol)
+    @test isapprox(M, p_star, p3; atol = p_atol)
 
     # allocating R2 regression, zero residual, custom subsolver
     M = Euclidean(2)
@@ -172,13 +172,13 @@ end
         F_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
         jacF_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
         p0;
-        return_state=true,
-        expect_zero_residual=true,
-        (linear_subsolver!)=(test_lm_lin_solve!),
+        return_state = true,
+        expect_zero_residual = true,
+        (linear_subsolver!) = (test_lm_lin_solve!),
     )
     lms = get_state(ds)
     @test lms.linear_subsolver! === test_lm_lin_solve!
-    @test isapprox(M, p_star, lms.p; atol=p_atol)
+    @test isapprox(M, p_star, lms.p; atol = p_atol)
 
     p1 = copy(M, p0)
     LevenbergMarquardt!(
@@ -186,9 +186,9 @@ end
         F_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
         jacF_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
         p1;
-        expect_zero_residual=true,
+        expect_zero_residual = true,
     )
-    @test isapprox(M, p_star, p1; atol=p_atol)
+    @test isapprox(M, p_star, p1; atol = p_atol)
 
     # mutating R2 regression
     p0 = [0.0, 0.0]
@@ -198,19 +198,19 @@ end
         jacF_reg_r2!,
         p0,
         length(ts_r2) * 2;
-        return_state=true,
-        evaluation=InplaceEvaluation(),
+        return_state = true,
+        evaluation = InplaceEvaluation(),
     )
     lms = get_state(ds)
-    @test isapprox(M, p_star, lms.p; atol=p_atol)
+    @test isapprox(M, p_star, lms.p; atol = p_atol)
 
     x0 = [4.0, 2.0]
     o_r2 = LevenbergMarquardtState(
         M,
         similar(x0, length(ts_r2)),
         similar(x0, 2 * length(ts_r2), 2);
-        p=x0,
-        stopping_criterion=StopAfterIteration(20),
+        p = x0,
+        stopping_criterion = StopAfterIteration(20),
     )
     p_r2 = DefaultManoptProblem(
         M,
@@ -229,7 +229,7 @@ end
     p_r2_mut = DefaultManoptProblem(
         M,
         NonlinearLeastSquaresObjective(
-            F_reg_r2!, jacF_reg_r2!, length(ts_r2) * 2; evaluation=InplaceEvaluation()
+            F_reg_r2!, jacF_reg_r2!, length(ts_r2) * 2; evaluation = InplaceEvaluation()
         ),
     )
 
@@ -243,27 +243,27 @@ end
             M,
             similar(x0, length(ts_r2)),
             similar(x0, 2 * length(ts_r2), 2);
-            p=x0,
-            stopping_criterion=StopAfterIteration(20),
-            η=2,
+            p = x0,
+            stopping_criterion = StopAfterIteration(20),
+            η = 2,
         )
 
         @test_throws ArgumentError LevenbergMarquardtState(
             M,
             similar(x0, length(ts_r2)),
             similar(x0, 2 * length(ts_r2), 2);
-            p=x0,
-            stopping_criterion=StopAfterIteration(20),
-            damping_term_min=-1,
+            p = x0,
+            stopping_criterion = StopAfterIteration(20),
+            damping_term_min = -1,
         )
 
         @test_throws ArgumentError LevenbergMarquardtState(
             M,
             similar(x0, length(ts_r2)),
             similar(x0, 2 * length(ts_r2), 2);
-            p=x0,
-            stopping_criterion=StopAfterIteration(20),
-            β=0.5,
+            p = x0,
+            stopping_criterion = StopAfterIteration(20),
+            β = 0.5,
         )
 
         @test_throws ArgumentError LevenbergMarquardt(
@@ -271,16 +271,16 @@ end
             F_reg_r2!,
             jacF_reg_r2!,
             x0;
-            return_state=true,
-            evaluation=InplaceEvaluation(),
+            return_state = true,
+            evaluation = InplaceEvaluation(),
         )
         @test_throws ArgumentError LevenbergMarquardt!(
             M,
             F_reg_r2!,
             jacF_reg_r2!,
             x0;
-            return_state=true,
-            evaluation=InplaceEvaluation(),
+            return_state = true,
+            evaluation = InplaceEvaluation(),
         )
     end
 

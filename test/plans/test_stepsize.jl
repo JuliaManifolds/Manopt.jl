@@ -41,7 +41,7 @@ using ManoptTestSuite
         grad_f(M, p) = sum(2 .* p)
         p = [2.0, 2.0]
         s1 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1.0, 1.0, 0.99; stop_decreasing_at_step=10
+            M, f, p, grad_f(M, p), 1.0, 1.0, 0.99; stop_decreasing_at_step = 10
         )
         @test startswith(s1[2], "Max decrease")
         s2 = Manopt.linesearch_backtrack(
@@ -53,20 +53,20 @@ using ManoptTestSuite
             1.0,
             0.5,
             grad_f(M, p);
-            retraction_method=ExponentialRetraction(),
+            retraction_method = ExponentialRetraction(),
         )
         @test startswith(s2[2], "The search direction")
         s3 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1.0, 1.0, 0.5; stop_when_stepsize_less=0.75
+            M, f, p, grad_f(M, p), 1.0, 1.0, 0.5; stop_when_stepsize_less = 0.75
         )
         @test startswith(s3[2], "Min step size (0.75)")
         # cheating for increase
         s4 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; stop_when_stepsize_exceeds=0.1
+            M, f, p, grad_f(M, p), 1.0e-12, 0, 0.5; stop_when_stepsize_exceeds = 0.1
         )
         @test startswith(s4[2], "Max step size (0.1)")
         s5 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; stop_increasing_at_step=1
+            M, f, p, grad_f(M, p), 1.0e-12, 0, 0.5; stop_increasing_at_step = 1
         )
         @test startswith(s5[2], "Max increase steps (1)")
     end
@@ -78,8 +78,8 @@ using ManoptTestSuite
         p = [1.0, 0.0, 0.0]
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
-        s = AdaptiveWNGradient(; gradient_reduction=0.5, count_threshold=2)(M)
-        gds = GradientDescentState(M; p=p)
+        s = AdaptiveWNGradient(; gradient_reduction = 0.5, count_threshold = 2)(M)
+        gds = GradientDescentState(M; p = p)
         @test get_initial_stepsize(s) == 1.0
         @test get_last_stepsize(s) == 1.0
         @test s(mp, gds, 0) == 1.0
@@ -104,14 +104,14 @@ using ManoptTestSuite
         p = [1.0, 0.0, 0.0]
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
-        gds = GradientDescentState(M; p=p)
+        gds = GradientDescentState(M; p = p)
         abs_dec_step = Manopt.DecreasingStepsize(
-            M; length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0, type=:absolute
+            M; length = 10.0, factor = 1.0, subtrahend = 0.0, exponent = 1.0, type = :absolute
         )
         solve!(mp, gds)
         @test abs_dec_step(mp, gds, 1) ==
             10.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
-        abs_const_step = Manopt.ConstantStepsize(M, 1.0; type=:absolute)
+        abs_const_step = Manopt.ConstantStepsize(M, 1.0; type = :absolute)
         @test abs_const_step(mp, gds, 1) ==
             1.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
     end
@@ -122,7 +122,7 @@ using ManoptTestSuite
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p = [2.0, 2.0]
         X = grad_f(M, p)
-        sgs = SubGradientMethodState(M; p=p)
+        sgs = SubGradientMethodState(M; p = p)
         ps = Polyak()()
         @test repr(ps) ==
             "Polyak()\nA stepsize with keyword parameters\n   * initial_cost_estimate = 0.0\n"
