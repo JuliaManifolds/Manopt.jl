@@ -1860,7 +1860,7 @@ start point and the accumulated gradient norms, optionally corrected by the
 geometric curvature term ``ζ_κ``.
 
 Riemannian Distance over Gradients (RDoG) learning-rate-free stepsize schedule
-introduced by [DoddSharrockNemeth:2024]. This schedule adapts without manual
+introduced by [DoddSharrockNemeth:2024](@cite). This schedule adapts without manual
 tuning by combining a distance proxy from the start point with accumulated
 gradient norms.
 
