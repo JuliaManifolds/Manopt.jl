@@ -142,6 +142,7 @@ using ManoptTestSuite
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
+            @test ds.last_stepsize === get_initial_stepsize(ds)
             @test ds.last_stepsize === NaN
             @test ds.last_stepsize === get_last_stepsize(ds)
             # test printed representation before first step
@@ -177,6 +178,7 @@ using ManoptTestSuite
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
+            @test ds.last_stepsize === get_initial_stepsize(ds)
             @test ds.last_stepsize === NaN
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
@@ -195,6 +197,7 @@ using ManoptTestSuite
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
+            @test ds.last_stepsize === get_initial_stepsize(ds)
             @test ds.last_stepsize === NaN
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
@@ -217,6 +220,7 @@ using ManoptTestSuite
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
+            @test ds.last_stepsize === get_initial_stepsize(ds)
             @test ds.last_stepsize === NaN
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
@@ -247,6 +251,7 @@ using ManoptTestSuite
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
+            @test ds.last_stepsize === get_initial_stepsize(ds)
             @test ds.last_stepsize === NaN
             @test ds.last_stepsize === get_last_stepsize(ds)
 
