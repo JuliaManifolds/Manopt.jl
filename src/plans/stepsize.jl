@@ -1767,12 +1767,7 @@ function geometric_curvature_function(κ::Real, d::Real)
     if κ < 0 && d > 0
         sqrt_abs_κ = sqrt(abs(κ))
         arg = sqrt_abs_κ * d
-        # Avoid numerical issues for small arguments
-        if arg < 1.0e-8
-            return 1.0 + arg^2 / 3.0  # Taylor expansion
-        else
-            return arg / tanh(arg)
-        end
+        return arg / tanh(arg)
     else
         return 1.0
     end
