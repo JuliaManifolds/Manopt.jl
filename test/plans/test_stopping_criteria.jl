@@ -330,6 +330,40 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
         @test length(get_reason(sc)) == 0
     end
 
+    @testset "has_converged" begin
+        M = Euclidean(1)
+        pr = ManoptTestSuite.DummyProblem{typeof(M)}()
+        s1 = StopWhenGradientNormLess(1.0e-4)
+        s2 = StopAfterIteration(10)
+        s3 = s1 & s2
+        s4 = s1 | s2
+        @test Manopt.indicates_convergence(s3)
+        @test !Manopt.indicates_convergence(s4)
+        @test !has_converged(s1)
+        @test !has_converged(s2)
+        @test !has_converged(s3)
+        @test !has_converged(s4)
+        # Tweak s1 to be active
+        s1.at_iteration = 1
+        # Check default
+        @test has_converged(s1)
+        # s3 does not trigger because s2 is not active yet
+        @test !has_converged(s3)
+        # But s4 does since we stopped with s1 due to convergence
+        @test has_converged(s4)
+        # Set s2 active as well
+        s2.at_iteration = 11
+        @test !has_converged(s2) # But it does not indicate we converged
+        @test has_converged(s3) # Now this is fine as well
+        @test has_converged(s4) # This continues to indicate that.
+        # Deactivate s1
+        s1.at_iteration = -1
+        # Now neither s3 (not all active) nor s4 (the active one not converged) indicate convergence
+        @test !has_converged(s1)
+        @test !has_converged(s3)
+        @test !has_converged(s4)
+    end
+
     @testset "StopWhenCriterionWithIterationCondition" begin
         f(M, p) = 0.0 # Always triggrers
         M = Euclidean(2)
