@@ -13,6 +13,7 @@ or a [`Stepsize`](@ref).
 AbstractManoptSolverState
 get_state
 Manopt.get_count
+Manopt.has_converged(::AbstractManoptSolverState)
 ```
 
 Since every subtype of an [`AbstractManoptSolverState`](@ref) directly relate to a solver,

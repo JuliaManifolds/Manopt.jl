@@ -92,6 +92,7 @@ struct NoIterateState <: AbstractManoptSolverState end
         set_gradient!(d2, M, p, X)
         @test d2.state.X == ones(3)
         @test get_stopping_criterion(d2) === s2.stop
+        @test has_converged(d2) === has_converged(s2)
     end
 
     @testset "Closed Form State" begin

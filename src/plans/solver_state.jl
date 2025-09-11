@@ -655,6 +655,13 @@ function get_count(ams::AbstractManoptSolverState, v::Val{:Iterations})
     return get_count(ams.stop, v)
 end
 
+"""
+    has_converged(ams::AbstractManoptSolverState)
+
+Return whether the solver has converged, based on the internal [`StoppingCriterion`](@ref).
+"""
+has_converged(ams::AbstractManoptSolverState) = has_converged(get_stopping_criterion(ams))
+
 # in general, ignore printing the objective by default
 function show(io::IO, t::Tuple{<:AbstractManifoldObjective, <:AbstractManoptSolverState})
     return print(io, "$(t[2])")
