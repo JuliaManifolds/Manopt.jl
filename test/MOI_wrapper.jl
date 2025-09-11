@@ -30,8 +30,10 @@ function _test_sphere_sum(model, obj_sign)
     return nothing
 end
 
-function test_sphere()
-    model = Model(Manopt.JuMP_Optimizer)
+function test_sphere(descent_state_type; kws...)
+    model = Model(Manopt.JuMP_Optimizer; kws...)
+    @test MOI.supports(backend(model), MOI.RawOptimizerAttribute("descent_state_type"))
+    set_attribute(model, "descent_state_type", descent_state_type)
     start = normalize(1:3)
     @variable(model, x[i = 1:3] in Sphere(2), start = start[i])
 
@@ -97,11 +99,13 @@ function test_sphere()
     set_start_value(x[3], 1.0)
 
     @variable(model, [1:2, 1:2] in Stiefel(2, 2))
-    return @test_throws MOI.AddConstraintNotAllowed optimize!(model)
+    @test_throws MOI.AddConstraintNotAllowed optimize!(model)
+    return
 end
 
 @testset "JuMP tests" begin
-    test_sphere()
+    test_sphere(GradientDescentState; add_bridges = true)
+    test_sphere(GradientDescentState; add_bridges = false)
 end
 
 function test_runtests()
