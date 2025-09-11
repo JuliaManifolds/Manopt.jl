@@ -1035,6 +1035,96 @@ function ConjugateGradientBealeRestart(args...; kwargs...)
     )
 end
 
+
+@doc """
+    HybridCoefficientRule <: DirectionUpdateRule
+
+A functor `(problem, state, k) -> β_k` to compute hybrid conjugate gradient update coefficients
+
+# Fields
+
+coefficients::AbstractArray{DirectionUpdateRuleStorage}
+coefficient_fallback::DirectionUpdateRuleStorage
+scalar_fallback::Real
+
+# Constructor
+
+    HybridCoefficientRule(
+        M::AbstractManifold,     
+        coefficients::AbstractArray{Union{DirectionUpdateRule,ManifoldDefaultsFactory}},
+        coefficient_fallback::Union{DirectionUpdateRule,ManifoldDefaultsFactory},
+        scalar_fallback::Real
+    )
+
+Construct the hybrid coefficient update rule.
+
+# See also
+
+[`HybridCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
+"""
+struct HybridCoefficientRule <: DirectionUpdateRule
+    coefficients::AbstractArray{DirectionUpdateRuleStorage}
+    coefficient_fallback::DirectionUpdateRuleStorage
+    scalar_fallback::Real
+end
+function HybridCoefficientRule(
+    M::AbstractManifold,
+    args...;
+    coefficient_fallback::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=SteepestDescentCoefficient(),
+    scalar_fallback::Real=1.0
+)
+    coefficients_new = [DirectionUpdateRuleStorage(M, _produce_type(c,M)) for c in args]
+    coefficient_fallback_new = DirectionUpdateRuleStorage(M, _produce_type(coefficient_fallback,M))
+    return Manopt.HybridCoefficientRule(coefficients_new, coefficient_fallback_new, scalar_fallback)
+end
+
+update_rule_storage_points(::HybridCoefficientRule) = Tuple{}
+update_rule_storage_vectors(::HybridCoefficientRule) = Tuple{}
+
+function (u::DirectionUpdateRuleStorage{<:HybridCoefficientRule})(
+    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
+)
+    βs = [c(amp, cgs, i) for c = u.coefficient.coefficients]
+    β_fallback = u.coefficient.coefficient_fallback(amp, cgs, i)
+    return max(u.coefficient.scalar_fallback * β_fallback, min(βs...))
+end
+function show(io::IO, u::HybridCoefficientRule)
+    print(
+        io,
+        "Manopt.HybridCoefficientRule(coefficents=$(u.coefficents),coefficent_fallback=$(u.coefficent_fallback),scalar_fallback=$(u.scalar_fallback))",
+    )
+end
+
+"""
+    HybridCoefficient(coefficents::AbstractArray{Union{DirectionUpdateRule,ManifoldDefaultsFactory}}; kwargs...)
+    HybridCoefficient(M::AbstractManifold, coefficents::AbstractArray{Union{DirectionUpdateRule,ManifoldDefaultsFactory}}; kwargs...)
+
+Computes an hybrid update coefficient for the [`conjugate_gradient_descent`](@ref). Given coefficents ``β_i`` for ``i = 1,...,m``,
+a fallback coefficent ``β_0`` and a scalar factor for the fallback ``σ``, it returns ``β_k = max(σ * β_0, min(β_1, .... β_m))``. 
+
+## Input
+
+* `coefficents` : an array of [`DirectionUpdateRule`](@ref) or a corresponding
+[`ManifoldDefaultsFactory`](@ref) to produce such a rule.
+
+## Keyword arguments
+
+* `coefficent_fallback=[`SteepestDescentCoefficient`](@ref)`()` : a fallback [`DirectionUpdateRule`](@ref) or a corresponding
+[`ManifoldDefaultsFactory`](@ref) to produce such a rule, which marks a lower bound for the resulting coefficent.
+* `scalar_fallback=1.0` : a scalar to multiply the fallback coefficent by.
+
+coefficient_fallback::Union{DirectionUpdateRule,ManifoldDefaultsFactory},
+scalar_fallback::Real)
+
+
+$(_note(:ManifoldDefaultFactory, "HybridCoefficientRule"))
+"""
+function HybridCoefficient(args...; kwargs...)
+    return ManifoldDefaultsFactory(
+        Manopt.HybridCoefficientRule, args...; kwargs...
+    )
+end
+
 @doc """
     NeverRestart <: AbstractRestartCondition
 
