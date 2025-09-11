@@ -6,6 +6,14 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.23] candidate
+
+### Changed
+
+* formerly a stopping criterion could be activated at certain iterations with `sc > 5`, `sc >= 5`, `sc == 5`, `sc <= 5`, and `sc < 5`.
+  This caused too many issues with invalidations, so it has been reduced and moved to `sc ⩼ 5`, `sc ≟ 5`, `sc ⩻ 5` for the cases 1, 3, and 5, respectively,
+  cf. (#509).
+
 ## [0.5.22] September 09, 2025
 
 ### Added
