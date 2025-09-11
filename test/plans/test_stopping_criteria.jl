@@ -317,6 +317,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
         sc = StopWhenRepeated(s, 3)
         sc2 = s × 3
         @test Manopt.indicates_convergence(sc) == Manopt.indicates_convergence(s)
+        @test has_converged(sc) == has_converged(s)
         @test get_reason(sc) == ""
         @test startswith(repr(sc), "StopWhenRepeated with the Stopping Criterion:\n")
         @test startswith(Manopt.status_summary(sc), "0 ≥ 3 (consecutive): not reached")
@@ -327,6 +328,46 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
         @test length(get_reason(sc)) > 0
         # reset
         sc(p, o, 0) # reset
+        @test length(get_reason(sc)) == 0
+    end
+
+    @testset "StopWhenCriterionWithIterationCondition" begin
+        f(M, p) = 0.0 # Always triggrers
+        M = Euclidean(2)
+        p = [1.0, 2.0]
+        mco = ManifoldCostObjective(f)
+        mp = DefaultManoptProblem(M, mco)
+        st = NelderMeadState(M)
+        st.p = p
+
+        s = StopWhenCostLess(1.0e-4)
+
+        sc = StopWhenCriterionWithIterationCondition(s, 5)
+        @test Manopt.indicates_convergence(sc) == Manopt.indicates_convergence(s)
+        @test has_converged(sc) == has_converged(s)
+        @test get_reason(sc) == ""
+        @test startswith(
+            repr(sc),
+            "StopWhenCriterionWithIterationCondition with the Stopping Criterion:\n",
+        )
+        @test startswith(Manopt.status_summary(sc), "Base.Fix2{typeof(>), Int64}(>, 5) &&")
+        sc2 = s > 5
+        @test typeof(sc) === typeof(sc2)
+        # Test other constructors
+        sc3 = s >= 5
+        @test sc3.comp === (>=(5))
+        sc4 = s == 5
+        @test sc4.comp === (==(5))
+        sc5 = s <= 5
+        @test sc5.comp === (<=(5))
+        sc6 = s < 5
+        @test sc6.comp === (<(5))
+
+        # test that it does not hit at 5
+        @test !sc(mp, st, 5) # still count 0
+        @test sc(mp, st, 6) # triggers
+        @test length(get_reason(sc)) > 0
+        sc(mp, st, 0) # reset
         @test length(get_reason(sc)) == 0
     end
 
@@ -364,42 +405,4 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
         @test !has_converged(s4)
     end
 
-    @testset "StopWhenCriterionWithIterationCondition" begin
-        f(M, p) = 0.0 # Always triggrers
-        M = Euclidean(2)
-        p = [1.0, 2.0]
-        mco = ManifoldCostObjective(f)
-        mp = DefaultManoptProblem(M, mco)
-        st = NelderMeadState(M)
-        st.p = p
-
-        s = StopWhenCostLess(1.0e-4)
-
-        sc = StopWhenCriterionWithIterationCondition(s, 5)
-        @test Manopt.indicates_convergence(sc) == Manopt.indicates_convergence(s)
-        @test get_reason(sc) == ""
-        @test startswith(
-            repr(sc),
-            "StopWhenCriterionWithIterationCondition with the Stopping Criterion:\n",
-        )
-        @test startswith(Manopt.status_summary(sc), "Base.Fix2{typeof(>), Int64}(>, 5) &&")
-        sc2 = s > 5
-        @test typeof(sc) === typeof(sc2)
-        # Test other constructors
-        sc3 = s >= 5
-        @test sc3.comp === (>=(5))
-        sc4 = s == 5
-        @test sc4.comp === (==(5))
-        sc5 = s <= 5
-        @test sc5.comp === (<=(5))
-        sc6 = s < 5
-        @test sc6.comp === (<(5))
-
-        # test that it does not hit at 5
-        @test !sc(mp, st, 5) # still count 0
-        @test sc(mp, st, 6) # triggers
-        @test length(get_reason(sc)) > 0
-        sc(mp, st, 0) # reset
-        @test length(get_reason(sc)) == 0
-    end
 end
