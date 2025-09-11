@@ -306,12 +306,12 @@ _doc_QN_H_update = "``H_k ↦ H_{k+1}``"
 _doc_QN_B_update = "``B_k ↦ B_{k+1}``"
 _doc_QN_H_full_system = """
 ```math
-$(_tex(:text, "Solve"))$(_tex(:quad)) $(_tex(:hat, "η_k")) = - H_k $(_tex(:widehat, "$(_tex(:operatorname, "grad"))f(x_k)")),
+$(_tex(:text, "Solve"))$(_tex(:quad))$(_tex(:hat, "η_k")) = - H_k $(_tex(:widehat, "$(_tex(:grad))f(x_k)")),
 ```
 """
 _doc_QN_B_full_system = """
 ```math
-$(_tex(:hat, "η_k")) = - B_k $(_tex(:widehat, "$(_tex(:operatorname, "grad"))f(x_k)")),
+$(_tex(:hat, "η_k")) = - B_k $(_tex(:widehat, "$(_tex(:grad))f(x_k)")),
 ```
 """
 
@@ -504,9 +504,10 @@ function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
     return d
 end
 
-_doc_QN_B = raw"""
+_doc_QN_B = """
 ```math
-\mathcal{B}^{(0)}_k[⋅] = $(_tex(:frac, "g_{p_k}(s_{k-1}, y_{k-1})", "g_{p_k}(y_{k-1}, y_{k-1})} \; $(_tex(:Id))_{T_{p_k} $(_math(:M))"))[⋅]
+$(_tex(:Cal, "B"))_k^{(0)}[⋅]
+= $(_tex(:frac, "$(_tex(:inner, "s_{k-1}", "y_{k-1}"; index="p_k"))", "$(_tex(:inner, "y_{k-1}", "y_{k-1}"; index="p_k"))"))$(_tex(:Id))_{$(_math(:TpM))"[⋅]
 ```
 """
 

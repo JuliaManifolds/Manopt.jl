@@ -67,9 +67,9 @@ function check_differential(
     )
 end
 
-_doc_check_gradient_formula = raw"""
+_doc_check_gradient_formula = """
 ```math
-f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \mathcal O(t^2)
+f($(_tex(:retr))_p(tX)) = f(p) + t⟨$(_tex(:grad)) f(p), X⟩ + $(_tex(:Cal, "O"))(t^2)
 ```
 """
 @doc """
@@ -139,9 +139,9 @@ function check_gradient(
     return check_differential(M, f, df, p, X; name = "gradient", error = error, kwargs...)
 end
 
-_doc_check_Hess_formula = raw"""
+_doc_check_Hess_formula = """
 ```math
-f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + $(_tex(:frac, "t^2", "2"))⟨$(_tex(:Hess))f(p)[X], X⟩ + \mathcal O(t^3)
+f($(_tex(:retr))_p(tX)) = f(p) + t⟨$(_tex(:grad)) f(p), X⟩ + $(_tex(:frac, "t^2", "2"))⟨$(_tex(:Hess))f(p)[X], X⟩ + $(_tex(:Cal, "O"))(t^3)
 ```
 """
 

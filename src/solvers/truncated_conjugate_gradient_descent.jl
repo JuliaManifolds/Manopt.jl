@@ -403,9 +403,9 @@ end
 _doc_TCG_subproblem = raw"""
 ```math
 \begin{align*}
-$(_tex(:argmin))_{Y  ∈  T_p\mathcal{M}}&\ m_p(Y) = f(p) +
+\operatorname{arg\,min}_{Y  ∈  T_p\mathcal{M}}&\ m_p(Y) = f(p) +
 ⟨\operatorname{grad}f(p), Y⟩_p + \frac{1}{2} ⟨\mathcal{H}_p[Y], Y⟩_p\\
-$(_tex(:text, "such that"))& \ \lVert Y \rVert_p ≤ Δ
+$(\text{such that"}& \ \lVert Y \rVert_p ≤ Δ
 \end{align*}
 ```
 """
