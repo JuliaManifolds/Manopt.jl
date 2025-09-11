@@ -160,7 +160,7 @@ define!(
 )
 define!(:Math, :vector_transport, :name, "the vector transport")
 define!(
-    :Math, :VT, (a = "⋅", b = "⋅") -> _math(:vector_transport, :symbol, a,b)
+    :Math, :VT, (a = "⋅", b = "⋅") -> _math(:vector_transport, :symbol, a, b)
 )
 _math(args...; kwargs...) = glossary(:Math, args...; kwargs...)
 

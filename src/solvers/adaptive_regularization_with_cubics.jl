@@ -168,13 +168,13 @@ end
 
 _doc_ARC_model = """
 ```math
-m_k(X) = f(p_k) + $(_tex(:inner, "X" , "$(_tex(:grad)) f(p^{(k)})")) + $(_tex(:frac, "1","2)) $(_tex(:inner, "X", "$(_tex(:Hess)) f(p^{(k)})[X]")) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X"))^3"))
+m_k(X) = f(p_k) + $(_tex(:inner, "X", "$(_tex(:grad)) f(p^{(k)})")) + $(_tex(:frac, "1", "2)) $(_tex(:inner, "X", "$(_tex(:Hess)) f(p^{(k)})[X]")) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X"))^3"))
 ```
 """
 
 _doc_ARC_improvement = """
 ```math
-  ρ_k = $(_tex(:frac, "f(p_k) - f($(_tex(:retr))_{p_k}(X_k))" , "m_k(0) - m_k(X_k) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X"))^3"))
+  ρ_k = $(_tex(:frac, "f(p_k) - f($(_tex(:retr))_{p_k}(X_k))", "m_k(0) - m_k(X_k) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X"))^3"))
 ```
 """
 _doc_ARC_regularization_update = raw"""

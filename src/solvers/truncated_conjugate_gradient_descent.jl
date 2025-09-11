@@ -405,7 +405,7 @@ _doc_TCG_subproblem = raw"""
 \begin{align*}
 \operatorname{arg\,min}_{Y  ∈  T_p\mathcal{M}}&\ m_p(Y) = f(p) +
 ⟨\operatorname{grad}f(p), Y⟩_p + \frac{1}{2} ⟨\mathcal{H}_p[Y], Y⟩_p\\
-$(\text{such that"}& \ \lVert Y \rVert_p ≤ Δ
+\text{such that} & \ \lVert Y \rVert_p ≤ Δ
 \end{align*}
 ```
 """
