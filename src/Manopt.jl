@@ -441,7 +441,7 @@ export SteepestDescentCoefficient,
     LiuStoreyCoefficient,
     DaiYuanCoefficient,
     HagerZhangCoefficient,
-    ConjugateGradientBealeRestart
+    ConjugateGradientBealeRestart,
     HybridCoefficient
 #
 # Restart Conditions

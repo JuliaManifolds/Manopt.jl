@@ -1101,6 +1101,7 @@ end
 
 Computes an hybrid update coefficient for the [`conjugate_gradient_descent`](@ref). Given coefficents ``β_i`` for ``i = 1,...,m``,
 a fallback coefficent ``β_0`` and a scalar factor for the fallback ``σ``, it returns ``β_k = max(σ * β_0, min(β_1, .... β_m))``. 
+This includes the HS-DY and FR-PRP hybrid parameters introduced in [`SakaiIiduka:2020`](cite) and [`SakaiIiduka:2021`](cite).
 
 ## Input
 

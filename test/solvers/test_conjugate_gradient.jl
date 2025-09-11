@@ -176,7 +176,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         )
         s9.X = grad_1
         s9.δ = δ1
-        @test s9.coefficient(dmp, s9, 1) == 1.0 #max(0.0, min(0.0, 1.0))
+        @test s9.coefficient(dmp, s9, 1) == 0.0 #max(0.0, min(0.0, 1.0))
         s9.X = grad_2
         s9.δ = δ2
         @test s9.coefficient(dmp, s9, 2) == max(0.0, 
