@@ -244,9 +244,11 @@ end
 function Frank_Wolfe_method(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(Frank_Wolfe_method; kwargs...)
     q = copy(M, p)
     return Frank_Wolfe_method!(M, mgo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(Frank_Wolfe_method)) = (Frank_Wolfe_method!,)
 
 @doc "$_doc_Frank_Wolfe_method"
 Frank_Wolfe_method!(M::AbstractManifold, args...; kwargs...)
@@ -308,6 +310,7 @@ function Frank_Wolfe_method!(
         TStop <: StoppingCriterion,
         O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective},
     }
+    keywords_accepted(Frank_Wolfe_method!; kwargs...)
     dmgo = decorate_objective!(M, mgo; objective_type = objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
@@ -325,6 +328,8 @@ function Frank_Wolfe_method!(
     solve!(dmp, dfws)
     return get_solver_return(get_objective(dmp), dfws)
 end
+calls_with_kwargs(::typeof(Frank_Wolfe_method!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState)
     get_gradient!(amp, fws.X, fws.p)
     return fws

@@ -239,8 +239,10 @@ function stochastic_gradient_descent(
         M::AbstractManifold, msgo::O, p; kwargs...
     ) where {O <: Union{ManifoldStochasticGradientObjective, AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
+    keywords_accepted(stochastic_gradient_descent; kwargs...)
     return stochastic_gradient_descent!(M, msgo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(stochastic_gradient_descent)) = (stochastic_gradient_descent!,)
 
 @doc "$(_doc_SGD)"
 stochastic_gradient_descent!(::AbstractManifold, args...; kwargs...)
@@ -272,6 +274,7 @@ function stochastic_gradient_descent!(
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         kwargs...,
     ) where {O <: Union{ManifoldStochasticGradientObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(stochastic_gradient_descent!; kwargs...)
     dmsgo = decorate_objective!(M, msgo; kwargs...)
     mp = DefaultManoptProblem(M, dmsgo)
     sgds = StochasticGradientDescentState(
@@ -289,6 +292,8 @@ function stochastic_gradient_descent!(
     solve!(mp, dsgds)
     return get_solver_return(get_objective(mp), dsgds)
 end
+calls_with_kwargs(::typeof(stochastic_gradient_descent!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(::AbstractManoptProblem, s::StochasticGradientDescentState)
     s.k = 1
     (s.order_type == :FixedRandom) && (shuffle!(s.order))

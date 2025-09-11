@@ -243,7 +243,7 @@ $(_var(:Keyword, :retraction_method)):
 $(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`"))
 $(_var(:Keyword, :sub_kwargs))
 * `sub_objective=nothing`: a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword
-  By default, this is initialized as a [`AdaptiveRagularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
+  By default, this is initialized as a [`AdaptiveRegularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
 $(_var(:Keyword, :sub_state; default = "[`LanczosState`](@ref)`(M, copy(M,p))`"))
 $(_var(:Keyword, :sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
 
@@ -311,9 +311,11 @@ end
 function adaptive_regularization_with_cubics(
         M::AbstractManifold, mho::O, p = rand(M); kwargs...
     ) where {O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(adaptive_regularization_with_cubics; kwargs...)
     q = copy(M, p)
     return adaptive_regularization_with_cubics!(M, mho, q; kwargs...)
 end
+calls_with_kwargs(::typeof(adaptive_regularization_with_cubics)) = (adaptive_regularization_with_cubics!,)
 
 @doc "$_doc_ARC"
 adaptive_regularization_with_cubics!(M::AbstractManifold, args...; kwargs...)
@@ -401,10 +403,11 @@ function adaptive_regularization_with_cubics!(
         end,
         kwargs...,
     ) where {T, R, O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(adaptive_regularization_with_cubics!; kwargs...)
     dmho = decorate_objective!(M, mho; objective_type = objective_type, kwargs...)
     if isnothing(sub_objective)
         sub_objective = decorate_objective!(
-            M, AdaptiveRagularizationWithCubicsModelObjective(dmho, σ); sub_kwargs...
+            M, AdaptiveRegularizationWithCubicsModelObjective(dmho, σ); sub_kwargs...
         )
     end
     if isnothing(sub_problem)
@@ -433,6 +436,7 @@ function adaptive_regularization_with_cubics!(
     solve!(dmp, darcs)
     return get_solver_return(get_objective(dmp), darcs)
 end
+calls_with_kwargs(::typeof(adaptive_regularization_with_cubics!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState)
     get_gradient!(dmp, arcs.X, arcs.p)

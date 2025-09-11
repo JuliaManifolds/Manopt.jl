@@ -128,7 +128,7 @@ import Manifolds: inner
             M, f, g, grad_h, p0; sub_problem = nothing
         )
         @test_throws ErrorException difference_of_convex_algorithm(
-            M, f, g, grad_h, p0; sub_hessian = nothing
+            M, f, g, grad_h, p0; sub_hess = nothing
         )
         @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0)
 

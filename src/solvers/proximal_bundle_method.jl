@@ -261,9 +261,11 @@ $(_note(:OutputSection))
 function proximal_bundle_method(
         M::AbstractManifold, f::TF, ∂f::TdF, p = rand(M); kwargs...
     ) where {TF, TdF}
+    keywords_accepted(proximal_bundle_method; kwargs...)
     p_star = copy(M, p)
     return proximal_bundle_method!(M, f, ∂f, p_star; kwargs...)
 end
+calls_with_kwargs(::typeof(proximal_bundle_method)) = (proximal_bundle_method!,)
 
 @doc "$(_doc_PBM)"
 function proximal_bundle_method!(
@@ -288,6 +290,7 @@ function proximal_bundle_method!(
         sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = evaluation,
         kwargs..., #especially may contain debug
     ) where {TF, TdF, TRetr, IR, VTransp}
+    keywords_accepted(proximal_bundle_method!; kwargs...)
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation = evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
@@ -311,6 +314,8 @@ function proximal_bundle_method!(
     pbms = decorate_state!(pbms; kwargs...)
     return get_solver_return(solve!(mp, pbms))
 end
+calls_with_kwargs(::typeof(proximal_bundle_method!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(
         mp::AbstractManoptProblem, pbms::ProximalBundleMethodState{P, T, Pr, St, R}
     ) where {P, T, Pr, St <: AbstractManoptSolverState, R <: Real}

@@ -268,9 +268,11 @@ end
 function particle_swarm(
         M::AbstractManifold, mco::O, swarm::AbstractVector; kwargs...
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(particle_swarm; kwargs...)
     new_swarm = [copy(M, xi) for xi in swarm]
     return particle_swarm!(M, mco, new_swarm; kwargs...)
 end
+calls_with_kwargs(::typeof(particle_swarm)) = (particle_swarm!,)
 
 @doc "$(_doc_PSO)"
 function particle_swarm!(M::AbstractManifold, f, swarm::AbstractVector; kwargs...)
@@ -296,6 +298,7 @@ function particle_swarm!(
         ),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(particle_swarm!; kwargs...)
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     pss = ParticleSwarmState(
@@ -314,6 +317,7 @@ function particle_swarm!(
     solve!(mp, dpss)
     return get_solver_return(get_objective(mp), dpss)
 end
+calls_with_kwargs(::typeof(particle_swarm!)) = (decorate_objective!, decorate_state!)
 
 #
 # Solver functions

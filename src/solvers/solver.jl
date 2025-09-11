@@ -1,3 +1,5 @@
+function decorate_state! end
+
 @doc """
     decorate_state!(s::AbstractManoptSolverState)
 
@@ -25,6 +27,8 @@ other keywords are ignored.
 
 [`DebugSolverState`](@ref), [`RecordSolverState`](@ref), [`ReturnSolverState`](@ref)
 """
+decorate_state!(s::AbstractManoptSolverState; kwargs...)
+
 function decorate_state!(
         s::S;
         debug::Union{
@@ -73,6 +77,7 @@ function decorate_state!(
     return deco_s
 end
 
+function decorate_objective! end
 @doc """
     decorate_objective!(M, o::AbstractManifoldObjective)
 
@@ -98,17 +103,18 @@ A specific one is used to activate certain decorators.
 
 [`objective_cache_factory`](@ref)
 """
+decorate_objective!(M::AbstractManifold, o::AbstractManifoldObjective; kwargs...)
+
 function decorate_objective!(
-        M::AbstractManifold,
-        o::O;
+        M::AbstractManifold, o::O;
         cache::Union{
-            Missing, Symbol, Tuple{Symbol, <:AbstractArray}, Tuple{Symbol, <:AbstractArray, P} where {P},
+            Missing, Symbol, Tuple{Symbol, <:AbstractArray}, Tuple{Symbol, <:AbstractArray, <:Any},
         } = missing,
         count::Union{Missing, AbstractVector{<:Symbol}} = missing,
         objective_type::Symbol = :Riemannian,
         p = objective_type == :Riemannian ? missing : rand(M),
-        embedded_p = objective_type == :Riemannian ? missing : embed(M, p),
-        embedded_X = objective_type == :Riemannian ? missing : embed(M, p, zero_vector(M, p)),
+        _embedded_p = objective_type == :Riemannian ? missing : embed(M, p),
+        _embedded_X = objective_type == :Riemannian ? missing : embed(M, p, zero_vector(M, p)),
         return_objective = false,
         kwargs...,
     ) where {O <: AbstractManifoldObjective}
@@ -121,7 +127,7 @@ function decorate_objective!(
     # and always last wrapper: `ReturnObjective`.
     deco_o = o
     if objective_type ∈ [:Embedding, :Euclidean]
-        deco_o = EmbeddedManifoldObjective(o, embedded_p, embedded_X)
+        deco_o = EmbeddedManifoldObjective(o, _embedded_p, _embedded_X)
     end
     (!ismissing(count)) && (deco_o = objective_count_factory(M, deco_o, count))
     (!ismissing(cache)) && (deco_o = objective_cache_factory(M, deco_o, cache))

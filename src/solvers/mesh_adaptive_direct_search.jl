@@ -50,12 +50,15 @@ end
 function mesh_adaptive_direct_search(
         M::AbstractManifold, mco::AbstractManifoldCostObjective, p = rand(M); kwargs...
     )
+    keywords_accepted(mesh_adaptive_direct_search; kwargs...)
     q = copy(M, p)
     return mesh_adaptive_direct_search!(M, mco, q; kwargs...)
 end
+calls_with_kwargs(::typeof(mesh_adaptive_direct_search)) = (mesh_adaptive_direct_search!,)
 
 @doc "$(_doc_mads)"
 mesh_adaptive_direct_search!(M::AbstractManifold, args...; kwargs...)
+
 function mesh_adaptive_direct_search!(M::AbstractManifold, f, p; kwargs...)
     mco = ManifoldCostObjective(f)
     return mesh_adaptive_direct_search!(M, mco, p; kwargs...)
@@ -85,6 +88,7 @@ function mesh_adaptive_direct_search!(
         ),
         kwargs..., #collect rest
     ) where {B <: AbstractBasis, PT <: AbstractMeshPollFunction, ST <: AbstractMeshSearchFunction}
+    keywords_accepted(mesh_adaptive_direct_search!; kwargs...)
     dmco = decorate_objective!(M, mco; kwargs...)
     dmp = DefaultManoptProblem(M, dmco)
     madss = MeshAdaptiveDirectSearchState(
@@ -103,6 +107,7 @@ function mesh_adaptive_direct_search!(
     solve!(dmp, dmadss)
     return get_solver_return(get_objective(dmp), dmadss)
 end
+calls_with_kwargs(::typeof(mesh_adaptive_direct_search!)) = (decorate_objective!, decorate_state!)
 
 # Init already do a poll, since the first search requires a poll
 function initialize_solver!(

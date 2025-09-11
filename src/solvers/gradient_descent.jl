@@ -80,6 +80,7 @@ function (r::IdentityUpdateRule)(
     get_gradient!(mp, s.X, s.p)
     return get_stepsize(mp, s, k; gradient = s.X), s.X
 end
+
 function default_stepsize(
         M::AbstractManifold,
         ::Type{GradientDescentState};
@@ -191,18 +192,20 @@ function gradient_descent(
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(gradient_descent)) = (gradient_descent!,)
 
 "$(_doc_gradient_descent)"
 gradient_descent!(M::AbstractManifold, args...; kwargs...)
+
 function gradient_descent!(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        M::AbstractManifold, f, grad_f, p;
+        differential = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation = evaluation)
+    keywords_accepted(gradient_descent; kwargs...)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential = differential, evaluation = evaluation
+    )
     return gradient_descent!(M, mgo, p; kwargs...)
 end
 function gradient_descent!(
@@ -229,6 +232,8 @@ function gradient_descent!(
         X = zero_vector(M, p),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
+    # all explicit others others from above are anyways accepted here, so we only have to pass kwargs in
+    keywords_accepted(gradient_descent!; kwargs...)
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     s = GradientDescentState(
@@ -244,6 +249,7 @@ function gradient_descent!(
     solve!(dmp, ds)
     return get_solver_return(get_objective(dmp), ds)
 end
+calls_with_kwargs(::typeof(gradient_descent!)) = (decorate_objective!, decorate_state!)
 #
 # Solver functions
 #

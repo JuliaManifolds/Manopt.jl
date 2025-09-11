@@ -194,7 +194,7 @@ include("solvers/conjugate_gradient_descent.jl")
 include("solvers/conjugate_residual.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/difference_of_convex_algorithm.jl")
-include("solvers/difference-of-convex-proximal-point.jl")
+include("solvers/difference_of_convex_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/exact_penalty_method.jl")
 include("solvers/projected_gradient_method.jl")
@@ -448,6 +448,7 @@ export NeverRestart, RestartOnNonDescent, RestartOnNonSufficientDescent
 #
 # Solvers
 export adaptive_regularization_with_cubics,
+    accepted_keywords,
     adaptive_regularization_with_cubics!,
     alternating_gradient_descent,
     alternating_gradient_descent!,
@@ -516,13 +517,14 @@ export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
-export AdaptiveRagularizationWithCubicsModelObjective
+export AdaptiveRegularizationWithCubicsModelObjective
 export ExactPenaltyCost, ExactPenaltyGrad
 export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export AdaptiveWNGradient, ConstantLength, DecreasingLength, Polyak
+export AdaptiveWNGradient, ConstantLength, DecreasingLength,
+    Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
 export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize

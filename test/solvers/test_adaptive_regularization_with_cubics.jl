@@ -20,7 +20,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
     p0 = Matrix{Float64}(I, n, n)[:, 1:k]
     M2 = TangentSpace(M, copy(M, p0))
     mho = ManifoldHessianObjective(f, grad_f, Hess_f)
-    arcmo = AdaptiveRagularizationWithCubicsModelObjective(mho)
+    arcmo = AdaptiveRegularizationWithCubicsModelObjective(mho)
 
     @testset "Accessors for the Objective" begin
         isapprox(

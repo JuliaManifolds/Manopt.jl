@@ -274,6 +274,7 @@ function ChambollePock(
     Y = copy(N, n, X)
     m2 = copy(M, m)
     n2 = copy(N, n)
+    keywords_accepted(ChambollePock; kwargs...)
     return ChambollePock!(
         M,
         N,
@@ -290,6 +291,7 @@ function ChambollePock(
         kwargs...,
     )
 end
+calls_with_kwargs(::typeof(ChambollePock)) = (ChambollePock!,)
 
 @doc "$(_doc_ChambollePock)"
 function ChambollePock!(
@@ -335,6 +337,7 @@ function ChambollePock!(
         linearized_forward_operator = linearized_forward_operator,
         Λ = Λ,
     )
+    keywords_accepted(ChambollePock!; kwargs...)
     dpdmo = decorate_objective!(M, pdmo; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmo)
     cps = ChambollePockState(
@@ -361,6 +364,7 @@ function ChambollePock!(
     solve!(tmp, dcps)
     return get_solver_return(get_objective(tmp), dcps)
 end
+calls_with_kwargs(::typeof(ChambollePock!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(::TwoManifoldProblem, ::ChambollePockState) end
 

@@ -58,11 +58,30 @@ You can further activate a “Tutorial” mode by `set_parameter!(:Mode, "Tutori
 Manopt.is_tutorial_mode
 ```
 
-# A factory for providing manifold defaults
+## A factory for providing manifold defaults
 
 In several cases a manifold might not yet be known at the time a (keyword) argument should be provided. Therefore, any type with a manifold default can be wrapped into a factory.
 
 ```@docs
 Manopt.ManifoldDefaultsFactory
 Manopt._produce_type
+```
+
+## Keyword arguments and their verification
+
+Internally `Manopt.jl` passes keywords for the (high-level) solver
+functions to several inner functions, e.g. to add debug or caching.
+Besides the documentation, one can check with the internal function [`Manopt.accepted_keywords`](@ref) which keywords a solver accepts.
+
+A solver also warns, if a keyword is passed, that is not handled by the
+solver or any of the inner functions it calls.
+
+```@docs
+Manopt.Keywords
+Manopt.accepted_keywords
+Manopt.ManoptKeywordError
+Manopt.add!
+Manopt.calls_with_kwargs
+Manopt.direct_keywords
+Manopt.keywords_accepted
 ```

@@ -6,10 +6,23 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.22] September 09, 2025
+
+### Added
+
+* a `keywords_accepted(f, mode=:warn; kwargs...)` function that verifies that all keywords are accepted by a certain function.
+* an internal function `calls_with_kwargs(f)` to indicate which functions `f` passes `kwargs...` to.
+* a `KeywordsErrorMode` preference parameter to control how keywords that are not used/allowed should be treated. Values are `"none"`, `"warn"` (default), and `"error"`.
+* Add Distance over Gradients (RDoG) stepsize: `DistanceOverGradientsStepsize` and factory `DistanceOverGradients`, a learning‑rate‑free, curvature‑aware stepsize with `show`/`repr` and tests on Euclidean, Sphere, and Hyperbolic manifolds.
+
+### Fixed
+* the typo in the name `AdaptiveRgularizationWithCubicsModelObjective` is fixed to `AdaptiveRegularizationWithCubicsModelObjective`.
+
 ## [0.5.21] September 5, 2025
 
 ### Added
 
+* a system to track keywords, warning when unused ones are passed and a static way to explore possible keywords.
 * a `warm_start_factor` field to `ProximalGradientMethodBacktrackingStepsize` to allow to scale the stepsize in the backtracking procedure.
 * a `gradient=` keyword in several `Stepsize`s, such that one can avoid to internally avoid computing the gradient again.
 * used the ``gradient=` keyword in

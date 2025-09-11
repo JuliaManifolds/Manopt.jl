@@ -380,8 +380,10 @@ function augmented_Lagrangian_method(
         M::AbstractManifold, cmo::O, p = rand(M); kwargs...
     ) where {O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
+    keywords_accepted(augmented_Lagrangian_method; kwargs...)
     return augmented_Lagrangian_method!(M, cmo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(augmented_Lagrangian_method)) = (augmented_Lagrangian_method!,)
 
 @doc "$(_doc_alm)"
 function augmented_Lagrangian_method!(
@@ -487,6 +489,7 @@ function augmented_Lagrangian_method!(
             StopWhenStepsizeLess(1.0e-10),
         kwargs...,
     ) where {O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(augmented_Lagrangian_method!; kwargs...)
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     alms = AugmentedLagrangianMethodState(
         M,
@@ -522,7 +525,7 @@ function augmented_Lagrangian_method!(
     solve!(mp, alms)
     return get_solver_return(get_objective(mp), alms)
 end
-
+calls_with_kwargs(::typeof(augmented_Lagrangian_method!)) = (decorate_objective!, decorate_state!)
 #
 # Solver functions
 #

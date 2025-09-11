@@ -213,9 +213,11 @@ function projected_gradient_method(
     return projected_gradient_method(M, cs_obj, p; kwargs...)
 end
 function projected_gradient_method(M, obj::ManifoldConstrainedSetObjective, p; kwargs...)
+    keywords_accepted(projected_gradient_method; kwargs...)
     q = copy(M, p)
     return projected_gradient_method!(M, obj, q; kwargs...)
 end
+calls_with_kwargs(::typeof(projected_gradient_method)) = (projected_gradient_method!,)
 
 @doc "$(_doc_pgm)"
 function projected_gradient_method!(
@@ -241,6 +243,7 @@ function projected_gradient_method!(
         X = zero_vector(M, p),
         kwargs...,
     )
+    keywords_accepted(projected_gradient_method!; kwargs...)
     dobj = decorate_objective!(M, obj; kwargs...)
     dmp = DefaultManoptProblem(M, dobj)
     pgms = ProjectedGradientMethodState(
@@ -257,6 +260,7 @@ function projected_gradient_method!(
     solve!(dmp, dpgms)
     return get_solver_return(get_objective(dmp), dpgms)
 end
+calls_with_kwargs(::typeof(projected_gradient_method!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(amp::AbstractManoptProblem, pgms::ProjectedGradientMethodState)
     get_gradient!(amp, pgms.X, pgms.p)

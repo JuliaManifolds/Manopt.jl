@@ -383,9 +383,11 @@ end
 function trust_regions(
         M::AbstractManifold, mho::O, p = rand(M); kwargs...
     ) where {O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(trust_regions; kwargs...)
     q = copy(M, p)
     return trust_regions!(M, mho, q; kwargs...)
 end
+calls_with_kwargs(::typeof(trust_regions)) = (trust_regions!,)
 
 @doc "$(_doc_TR)"
 trust_regions!(M::AbstractManifold, args...; kwargs...)
@@ -490,6 +492,7 @@ function trust_regions!(
             "trust_region_radius must be positive and smaller than max_trust_region_radius (=$max_trust_region_radius) but it is $trust_region_radius.",
         ),
     )
+    keywords_accepted(trust_regions!; kwargs...)
     dmho = decorate_objective!(M, mho; kwargs...)
     dmp = DefaultManoptProblem(M, dmho)
     trs = TrustRegionsState(
@@ -516,6 +519,7 @@ function trust_regions!(
     solve!(dmp, dtrs)
     return get_solver_return(get_objective(dmp), dtrs)
 end
+calls_with_kwargs(::typeof(trust_regions!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)
