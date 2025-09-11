@@ -1338,6 +1338,10 @@ end
 function indicates_convergence(sc::StopWhenRepeated)
     return indicates_convergence(sc.stopping_criterion)
 end
+function has_converged(sc::StopWhenRepeated)
+    # When the inner one indicates convergence, this does as well
+    return has_converged(sc.stopping_criterion)
+end
 function show(io::IO, sc::StopWhenRepeated)
     is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
     return print(
