@@ -1136,7 +1136,7 @@ and can be implemented using
 
 The HS-DY parameter with parameter `0<σ<1` reads
 ```math
-β_k^{$(_tex(:rm, "HS-DY"))} = $(_tex(:max))$(_tex(:bigl))(-σ * β_k^{DY}, $(_tex(:min))(β_k^{HS}, β_k^{DY})$(_tex(:bigr)))
+β_k^{$(_tex(:rm, "HS-DY"))} = $(_tex(:max))$(_tex(:bigl))(-σ β_k^{DY}, $(_tex(:min))(β_k^{HS}, β_k^{DY})$(_tex(:bigr)))
 ```
 and can be implemented using
 [`HybridCoefficient`](@ref)`(`[`HestenesStiefelCoefficient`](@ref)`(),`[`DaiYuanCoefficient`](@ref)`(); lower_bound = `[`DaiYuanCoefficient`](@ref)`(), lower_bound_scale = -σ)`
