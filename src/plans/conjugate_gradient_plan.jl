@@ -1062,7 +1062,7 @@ Construct the hybrid coefficient update rule.
 
 [`HybridCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
 """
-struct HybridCoefficientRule{N} <: DirectionUpdateRule where N
+struct HybridCoefficientRule{N} <: DirectionUpdateRule where {N}
     coefficients::NTuple{N, DirectionUpdateRuleStorage}
     lower_bound::DirectionUpdateRuleStorage
     lower_bound_scale::Real
@@ -1090,7 +1090,7 @@ function (u::DirectionUpdateRuleStorage{<:HybridCoefficientRule})(
     return max(u.coefficient.lower_bound_scale * β_lower_bound, min(βs...))
 end
 function show(io::IO, u::HybridCoefficientRule)
-    coefficient_str = join([repr(c.coefficient) for c = u.coefficients], ", ")
+    coefficient_str = join([repr(c.coefficient) for c in u.coefficients], ", ")
     return print(
         io,
         "Manopt.HybridCoefficientRule(coefficients=($coefficient_str)),lower_bound=$(repr(u.lower_bound.coefficient)),lower_bound_scale=$(u.lower_bound_scale))",
