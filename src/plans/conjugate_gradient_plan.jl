@@ -1043,17 +1043,17 @@ A functor `(problem, state, k) -> β_k` to compute hybrid conjugate gradient upd
 
 # Fields
 
-coefficients::AbstractArray{DirectionUpdateRuleStorage}
-coefficient_fallback::DirectionUpdateRuleStorage
-scalar_fallback::Real
+* `coefficients::NTuple{DirectionUpdateRuleStorage, N}`: `NTuple` containing storage wrappers of CG coefficients of which the minimum is taken
+* `lower_bound::DirectionUpdateRuleStorage`: storage wrapper of lower bound CG coefficient
+* `lower_bound_scale::Real`: scalar the lower bound is multiplied with
 
 # Constructor
 
     HybridCoefficientRule(
         M::AbstractManifold,     
-        coefficients::AbstractArray{Union{DirectionUpdateRule,ManifoldDefaultsFactory}},
-        coefficient_fallback::Union{DirectionUpdateRule,ManifoldDefaultsFactory},
-        scalar_fallback::Real
+        coefficients::NTuple{N, DirectionUpdateRuleStorage},
+        lower_bound::Union{DirectionUpdateRule,ManifoldDefaultsFactory},
+        lower_bound_scale::Real
     )
 
 Construct the hybrid coefficient update rule.
@@ -1062,60 +1062,76 @@ Construct the hybrid coefficient update rule.
 
 [`HybridCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
 """
-struct HybridCoefficientRule <: DirectionUpdateRule
-    coefficients::AbstractArray{DirectionUpdateRuleStorage}
-    coefficient_fallback::DirectionUpdateRuleStorage
-    scalar_fallback::Real
+struct HybridCoefficientRule{N} <: DirectionUpdateRule where N
+    coefficients::NTuple{N, DirectionUpdateRuleStorage}
+    lower_bound::DirectionUpdateRuleStorage
+    lower_bound_scale::Real
 end
 function HybridCoefficientRule(
-    M::AbstractManifold,
-    args...;
-    coefficient_fallback::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=SteepestDescentCoefficient(),
-    scalar_fallback::Real=1.0
-)
-    coefficients_new = [DirectionUpdateRuleStorage(M, _produce_type(c,M)) for c in args]
-    coefficient_fallback_new = DirectionUpdateRuleStorage(M, _produce_type(coefficient_fallback,M))
-    return Manopt.HybridCoefficientRule(coefficients_new, coefficient_fallback_new, scalar_fallback)
+        M::AbstractManifold,
+        args...;
+        lower_bound::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = SteepestDescentCoefficient(),
+        lower_bound_scale::Real = 1.0
+    )
+    N = length(args)
+    coefficients_new = NTuple{N, DirectionUpdateRuleStorage}([DirectionUpdateRuleStorage(M, _produce_type(c, M)) for c in args])
+    lower_bound_new = DirectionUpdateRuleStorage(M, _produce_type(lower_bound, M))
+    return Manopt.HybridCoefficientRule(coefficients_new, lower_bound_new, lower_bound_scale)
 end
 
 update_rule_storage_points(::HybridCoefficientRule) = Tuple{}
 update_rule_storage_vectors(::HybridCoefficientRule) = Tuple{}
 
 function (u::DirectionUpdateRuleStorage{<:HybridCoefficientRule})(
-    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
-)
-    βs = [c(amp, cgs, i) for c = u.coefficient.coefficients]
-    β_fallback = u.coefficient.coefficient_fallback(amp, cgs, i)
-    return max(u.coefficient.scalar_fallback * β_fallback, min(βs...))
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
+    )
+    βs = [c(amp, cgs, i) for c in u.coefficient.coefficients]
+    β_lower_bound = u.coefficient.lower_bound(amp, cgs, i)
+    return max(u.coefficient.lower_bound_scale * β_lower_bound, min(βs...))
 end
 function show(io::IO, u::HybridCoefficientRule)
-    print(
+    coefficient_str = join([repr(c.coefficient) for c = u.coefficients], ", ")
+    return print(
         io,
-        "Manopt.HybridCoefficientRule(coefficents=$(u.coefficents),coefficent_fallback=$(u.coefficent_fallback),scalar_fallback=$(u.scalar_fallback))",
+        "Manopt.HybridCoefficientRule(coefficients=($coefficient_str)),lower_bound=$(repr(u.lower_bound.coefficient)),lower_bound_scale=$(u.lower_bound_scale))",
     )
 end
 
 """
-    HybridCoefficient(coefficents::AbstractArray{Union{DirectionUpdateRule,ManifoldDefaultsFactory}}; kwargs...)
-    HybridCoefficient(M::AbstractManifold, coefficents::AbstractArray{Union{DirectionUpdateRule,ManifoldDefaultsFactory}}; kwargs...)
+    HybridCoefficient(coefficients::AbstractArray{Union{DirectionUpdateRule,ManifoldDefaultsFactory}}; kwargs...)
+    HybridCoefficient(M::AbstractManifold, coefficients::AbstractArray{Union{DirectionUpdateRule,ManifoldDefaultsFactory}}; kwargs...)
 
-Computes an hybrid update coefficient for the [`conjugate_gradient_descent`](@ref). Given coefficents ``β_i`` for ``i = 1,...,m``,
-a fallback coefficent ``β_0`` and a scalar factor for the fallback ``σ``, it returns ``β_k = max(σ * β_0, min(β_1, .... β_m))``. 
-This includes the HS-DY and FR-PRP hybrid parameters introduced in [`SakaiIiduka:2020`](cite) and [`SakaiIiduka:2021`](cite).
+Computes an hybrid update coefficient for the [`conjugate_gradient_descent`](@ref). Given coefficients ``β_i`` for ``i = 1,...,m``,
+a lower bound coefficient ``β_0`` and a scalar factor for the lower bound ``σ``, it returns ``β_k = max(σ * β_0, min(β_1, .... β_m))``. 
+This includes the HS-DY and FR-PRP hybrid parameters introduced in [`SakaiIiduka:2020`](cite) and [`SakaiIiduka:2021`](cite)
 
 ## Input
 
-* `coefficents` : an array of [`DirectionUpdateRule`](@ref) or a corresponding
-[`ManifoldDefaultsFactory`](@ref) to produce such a rule.
+* `args...` : CG coefficients of type [`DirectionUpdateRule`](@ref) or a corresponding
+[`ManifoldDefaultsFactory`](@ref) to produce such a rule, of which the minimum is taken in the 
+hybrid rule
 
 ## Keyword arguments
 
-* `coefficent_fallback=[`SteepestDescentCoefficient`](@ref)`()` : a fallback [`DirectionUpdateRule`](@ref) or a corresponding
-[`ManifoldDefaultsFactory`](@ref) to produce such a rule, which marks a lower bound for the resulting coefficent.
-* `scalar_fallback=1.0` : a scalar to multiply the fallback coefficent by.
+* `lower_bound=[`SteepestDescentCoefficient`](@ref)`()` : a lower bound [`DirectionUpdateRule`](@ref) or a corresponding
+[`ManifoldDefaultsFactory`](@ref) for the resulting value of `β`
+* `lower_bound_scale=1.0` : a scalar to multiply the lower bound coefficient by.
 
-coefficient_fallback::Union{DirectionUpdateRule,ManifoldDefaultsFactory},
-scalar_fallback::Real)
+## Examples
+
+The FR-PRP parameter reads
+```math
+ \\beta_k^{FR-PRP} = \\max\\{0, \\min\\{\\beta_k^{FR}, \\beta_k^{PRP}\\}\\}
+``` 
+and can be implemented using 
+[`HybridCoefficient`](@ref)`(`[`FletcherReevesCoefficient`](@ref)`(),`[`PolakRibiereCoefficient`](@ref)`())`
+
+The HS-DY parameter with parameter `0<σ<1` reads
+```math
+ \\beta_k^{HS-DY} = \\max\\{-\\sigma\\beta_k^{DY}, \\min\\{\\beta_k^{HS}, \\beta_k^{DY}\\}\\}
+```
+and can be implemented using 
+[`HybridCoefficient`](@ref)`(`[`HestenesStiefelCoefficient`](@ref)`(),`[`DaiYuanCoefficient`](@ref)`(); lower_bound = `[`DaiYuanCoefficient`](@ref)`(), lower_bound_scale = -σ)`
 
 
 $(_note(:ManifoldDefaultFactory, "HybridCoefficientRule"))

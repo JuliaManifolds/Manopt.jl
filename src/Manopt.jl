@@ -446,8 +446,8 @@ export SteepestDescentCoefficient,
 #
 # Restart Conditions
 export AbstractRestartCondition
-export NeverRestart, 
-    RestartOnNonDescent, 
+export NeverRestart,
+    RestartOnNonDescent,
     RestartOnNonSufficientDescent
 #
 #
