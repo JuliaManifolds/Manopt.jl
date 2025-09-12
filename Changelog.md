@@ -48,6 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Fixed some math rendering in the docs, especially avoid `raw` strings and interpolate math symbols more often.
 
+### Fixed
+
+* Fixed allocations in the callbacks of the JuMP interface so that the solver can query the cost and gradient without allocating.
+
 ## [0.5.20] July 8, 2025
 
 ### Added
