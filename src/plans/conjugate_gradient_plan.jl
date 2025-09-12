@@ -1113,13 +1113,12 @@ This includes the HS-DY and FR-PRP hybrid parameters introduced in [SakaiIiduka:
 
 ## Input
 
-* `args...` : CG coefficients of type [`DirectionUpdateRule`](@ref) or a corresponding
-[`ManifoldDefaultsFactory`](@ref) to produce such a rule, of which the minimum is taken in the
+* `args...` : CG coefficients of type [`DirectionUpdateRule`](@ref) or a corresponding [`ManifoldDefaultsFactory`](@ref) to produce such a rule, of which the minimum is taken in the
 hybrid rule
 
 ## Keyword arguments
 
-* `lower_bound=[`SteepestDescentCoefficient`](@ref)`()` : a lower bound [`DirectionUpdateRule`](@ref) or a corresponding
+* `lower_bound=`[`SteepestDescentCoefficient`](@ref)`()` : a lower bound [`DirectionUpdateRule`](@ref) or a corresponding
 [`ManifoldDefaultsFactory`](@ref) for the resulting value of `β`
 * `lower_bound_scale=1.0` : a scalar to multiply the lower bound coefficient by.
 
