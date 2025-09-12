@@ -27,6 +27,7 @@ DaiYuanCoefficient
 FletcherReevesCoefficient
 HagerZhangCoefficient
 HestenesStiefelCoefficient
+HybridCoefficient
 LiuStoreyCoefficient
 PolakRibiereCoefficient
 SteepestDescentCoefficient
@@ -52,6 +53,7 @@ Manopt.DaiYuanCoefficientRule
 Manopt.FletcherReevesCoefficientRule
 Manopt.HagerZhangCoefficientRule
 Manopt.HestenesStiefelCoefficientRule
+Manopt.HybridCoefficientRule
 Manopt.LiuStoreyCoefficientRule
 Manopt.PolakRibiereCoefficientRule
 Manopt.SteepestDescentCoefficientRule

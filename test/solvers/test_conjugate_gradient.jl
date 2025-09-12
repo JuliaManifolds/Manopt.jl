@@ -163,6 +163,27 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         s8.X = grad_2
         s8.δ = δ2
         @test s8.coefficient(dmp, s8, 2) == dot(grad_2, diff) / dot(grad_1, grad_1)
+
+        dU = HybridCoefficient(PolakRibiereCoefficient(), FletcherReevesCoefficient())
+        s9 = ConjugateGradientDescentState(
+            M;
+            p = x0,
+            stopping_criterion = sC,
+            stepsize = s,
+            coefficient = dU,
+            retraction_method = retr,
+            vector_transport_method = vtm,
+        )
+        s9.X = grad_1
+        s9.δ = δ1
+        @test s9.coefficient(dmp, s9, 1) == 0.0 #max(0.0, min(0.0, 1.0))
+        s9.X = grad_2
+        s9.δ = δ2
+        @test s9.coefficient(dmp, s9, 2) == max(
+            0.0,
+            min(dot(grad_2, diff) / dot(grad_1, grad_1), dot(grad_2, grad_2) / dot(grad_1, grad_1))
+        )
+
     end
     @testset "Conjugate Gradient runs – Low Rank matrix approx" begin
         A = Diagonal([2.0, 1.1, 1.0])
