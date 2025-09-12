@@ -1,4 +1,4 @@
-struct DirectionUpdateRuleStorage{TC <: DirectionUpdateRule, TStorage <: StoreStateAction}
+struct DirectionUpdateRuleStorage{TC <: DirectionUpdateRule, TStorage <: StoreStateAction} <: DirectionUpdateRule
     coefficient::TC
     storage::TStorage
 end
@@ -1068,13 +1068,13 @@ struct HybridCoefficientRule{F<:Real} <: DirectionUpdateRule
 end
 function HybridCoefficientRule(
         M::AbstractManifold,
-        args...;
+        coefficients::Union{DirectionUpdateRule, ManifoldDefaultsFactory}...;
         lower_bound::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = SteepestDescentCoefficient(),
         lower_bound_scale::Real = 1.0
     )
-    N = length(args)
-    coefficients_new = [_produce_type(c, M) for c in args]
-    lower_bound_new = _produce_type(lower_bound, M)
+    N = length(coefficients)
+    coefficients_new = [DirectionUpdateRuleStorage(M, _produce_type(c, M)) for c in coefficients]
+    lower_bound_new = DirectionUpdateRuleStorage(M, _produce_type(lower_bound, M))
     return Manopt.HybridCoefficientRule(coefficients_new, lower_bound_new, lower_bound_scale)
 end
 
@@ -1102,7 +1102,7 @@ end
 
 Computes an hybrid update coefficient for the [`conjugate_gradient_descent`](@ref). Given coefficients ``β_i`` for ``i = 1,...,m``,
 a lower bound coefficient ``β_0`` and a scalar factor for the lower bound ``σ``, it returns ``β_k = max(σ * β_0, min(β_1, .... β_m))``.
-This includes the HS-DY and FR-PRP hybrid parameters introduced in [`SakaiIiduka:2020`](@cite) and [`SakaiIiduka:2021`](@cite)
+This includes the HS-DY and FR-PRP hybrid parameters introduced in [SakaiIiduka:2020](@cite) and [SakaiIiduka:2021](@cite)
 
 ## Input
 

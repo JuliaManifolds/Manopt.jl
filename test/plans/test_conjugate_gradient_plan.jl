@@ -68,6 +68,6 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         @test contains(hcs, "Manopt.PolakRibiereCoefficientRule")
         @test contains(hcs, "Manopt.FletcherReevesCoefficientRule")
         @test contains(hcs, "Manopt.SteepestDescentCoefficientRule")
-        @test contains(hcs, "lower_bound_scale=1.0")
+        @test contains(hcs, "lower_bound_scale = 1.0")
     end
 end
