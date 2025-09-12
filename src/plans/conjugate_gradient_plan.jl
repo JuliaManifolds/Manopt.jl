@@ -1102,8 +1102,8 @@ end
     HybridCoefficient(M::AbstractManifold, coefficients::AbstractArray{Union{DirectionUpdateRule,ManifoldDefaultsFactory}}; kwargs...)
 
 Computes an hybrid update coefficient for the [`conjugate_gradient_descent`](@ref). Given coefficients ``β_i`` for ``i = 1,...,m``,
-a lower bound coefficient ``β_0`` and a scalar factor for the lower bound ``σ``, it returns ``β_k = max(σ * β_0, min(β_1, .... β_m))``. 
-This includes the HS-DY and FR-PRP hybrid parameters introduced in [`SakaiIiduka:2020`](cite) and [`SakaiIiduka:2021`](cite)
+a lower bound coefficient ``β_0`` and a scalar factor for the lower bound ``σ``, it returns ``β_k = max(σ * β_0, min(β_1, .... β_m))``.
+This includes the HS-DY and FR-PRP hybrid parameters introduced in [`SakaiIiduka:2020`](@cite) and [`SakaiIiduka:2021`](@cite)
 
 ## Input
 
@@ -1122,15 +1122,15 @@ hybrid rule
 The FR-PRP parameter reads
 ```math
  \\beta_k^{FR-PRP} = \\max\\{0, \\min\\{\\beta_k^{FR}, \\beta_k^{PRP}\\}\\}
-``` 
-and can be implemented using 
+```
+and can be implemented using
 [`HybridCoefficient`](@ref)`(`[`FletcherReevesCoefficient`](@ref)`(),`[`PolakRibiereCoefficient`](@ref)`())`
 
 The HS-DY parameter with parameter `0<σ<1` reads
 ```math
  \\beta_k^{HS-DY} = \\max\\{-\\sigma\\beta_k^{DY}, \\min\\{\\beta_k^{HS}, \\beta_k^{DY}\\}\\}
 ```
-and can be implemented using 
+and can be implemented using
 [`HybridCoefficient`](@ref)`(`[`HestenesStiefelCoefficient`](@ref)`(),`[`DaiYuanCoefficient`](@ref)`(); lower_bound = `[`DaiYuanCoefficient`](@ref)`(), lower_bound_scale = -σ)`
 
 
