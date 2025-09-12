@@ -1063,7 +1063,7 @@ Construct the hybrid coefficient update rule.
 [`HybridCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
 """
 struct HybridCoefficientRule{N} <: DirectionUpdateRule where {N}
-    coefficients::NTuple{N, DirectionUpdateRuleStorage}
+    coefficients::NTuple{N, <:DirectionUpdateRuleStorage}
     lower_bound::DirectionUpdateRuleStorage
     lower_bound_scale::Real
 end
