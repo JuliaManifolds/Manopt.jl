@@ -32,7 +32,7 @@ end
 
 function test_sphere(descent_state_type; kws...)
     model = Model(Manopt.JuMP_Optimizer; kws...)
-    @test MOI.supports(backend(model), MOI.RawOptimizerAttribute("descent_state_type"))
+    @test MOI.supports(JuMP.backend(model), MOI.RawOptimizerAttribute("descent_state_type"))
     set_attribute(model, "descent_state_type", descent_state_type)
     start = normalize(1:3)
     @variable(model, x[i = 1:3] in Sphere(2), start = start[i])
