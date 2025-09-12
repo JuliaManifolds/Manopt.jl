@@ -1061,7 +1061,7 @@ Construct the hybrid coefficient update rule.
 
 [`HybridCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
 """
-struct HybridCoefficientRule{F<:Real} <: DirectionUpdateRule
+struct HybridCoefficientRule{F <: Real} <: DirectionUpdateRule
     coefficients::Vector{<:DirectionUpdateRule}
     lower_bound::DirectionUpdateRule
     lower_bound_scale::F
