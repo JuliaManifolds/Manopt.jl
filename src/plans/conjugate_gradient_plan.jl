@@ -1074,7 +1074,7 @@ function HybridCoefficientRule(
         lower_bound_scale::Real = 1.0
     )
     N = length(args)
-    coefficients_new = NTuple{N, DirectionUpdateRuleStorage}([DirectionUpdateRuleStorage(M, _produce_type(c, M)) for c in args])
+    coefficients_new = NTuple{N, <:DirectionUpdateRuleStorage}([DirectionUpdateRuleStorage(M, _produce_type(c, M)) for c in args])
     lower_bound_new = DirectionUpdateRuleStorage(M, _produce_type(lower_bound, M))
     return Manopt.HybridCoefficientRule(coefficients_new, lower_bound_new, lower_bound_scale)
 end
