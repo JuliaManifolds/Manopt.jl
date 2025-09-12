@@ -1037,7 +1037,7 @@ end
 
 
 @doc """
-    HybridCoefficientRule <: DirectionUpdateRule
+    HybridCoefficientRule{N} <: DirectionUpdateRule
 
 A functor `(problem, state, k) -> β_k` to compute hybrid conjugate gradient update coefficients
 
