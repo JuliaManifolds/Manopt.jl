@@ -351,16 +351,11 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
             "StopWhenCriterionWithIterationCondition with the Stopping Criterion:\n",
         )
         @test startswith(Manopt.status_summary(sc), "Base.Fix2{typeof(>), Int64}(>, 5) &&")
-        sc2 = s > 5
+        sc2 = s ⩼ 5
         @test typeof(sc) === typeof(sc2)
-        # Test other constructors
-        sc3 = s >= 5
-        @test sc3.comp === (>=(5))
-        sc4 = s == 5
+        sc4 = s ≟ 5
         @test sc4.comp === (==(5))
-        sc5 = s <= 5
-        @test sc5.comp === (<=(5))
-        sc6 = s < 5
+        sc6 = s ⩻ 5
         @test sc6.comp === (<(5))
 
         # test that it does not hit at 5

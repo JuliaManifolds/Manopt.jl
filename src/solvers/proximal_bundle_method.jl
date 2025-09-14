@@ -207,7 +207,7 @@ end
 
 _doc_PBM_dk = raw"""
 ```math
-d_k = \frac{1}{\mu_k} \sum_{j\in J_k} λ_j^k $(_tex(:rm, "P"))_{p_k←q_j}X_{q_j},
+d_k = \frac{1}{\mu_k} \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
 ```
 
 with ``X_{q_j} ∈ ∂f(q_j)``, ``p_k`` the last serious iterate,

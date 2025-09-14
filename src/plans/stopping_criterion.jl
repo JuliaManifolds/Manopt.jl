@@ -1386,38 +1386,39 @@ function show(io::IO, sc::StopWhenRepeated)
 end
 
 @doc """
-    StopWhenCriterionWithIterationCondition <: StoppingCriterion
+    StopWhenCriterionWithCondition <: StoppingCriterion
 
-A stopping criterion that indicates to stop when the (internal) stopping criterion it wraps,
-has indicated to stop with an additional check compared to the current iteration, e.g.
+A stopping criterion, that only evaluates a certain (inner) stopping based on a condition
+on the iterate `k`.
+The condition is a function `condition(k) -> Bool`.
 
-* `>(n)` only (stricly) after iteration `n`
-* `>=(n)` only including and after iteration `n`
-* `==(n)` only exactly at `n`
-* `<=(n)` only including and before iteration `n`
-* `<(n)` only (strictly) before iteration `n`
-* any functor `f(k) -> Bool` indicating to evaluate the stopping criterion at iteration `k`.
+## Example `(k) -> >(n)` would only activate that stopping criterion after `n` iterations.`.
 
-# Fields
+## Fields
 
 * `criterion`: the [`StoppingCriterion`](@ref) to wrap
 * `comp`: the number of times the criterion has to indicate to stop
 
-# Constructor
+## Constructor
 
     StopWhenRepeated(criterion::StoppingCriterion, n=0; comp = (>(n)))
 
 Create a stopping criterion that indicates to stop when the `comp` has indicated to
 check the inner criterion. The `n` is ignored if you provide a manual functor `comp`.
 
-As well as for a given [` StoppingCriterion`] `sc` the shortcuts
-`sc > n`, `sc >= n`, `sc == n`, `sc <= n`, `sc < n` for the cases above.
-
-# Examples
+## Examples
 
 A stopping criterion that indicates to stop when the gradient norm is small but only after the third iteration
     StopWhenCriterionWithIterationCondition(StopWhenGradientNormLess(1e-6), 3)
-    StopWhenGradientNormLess(1e-6) > 3
+
+You can also use the infix operators `≟` (`\\questeq` on REPL),  `⩻` (`\\ltquest`), and `⩼` (`\\gtquest`) to create such a criterion:
+
+    StopWhenGradientNormLess(1e-6) ≟ 3
+    StopWhenGradientNormLess(1e-6) ⩻ 3
+    StopWhenGradientNormLess(1e-6) ⩼ 3
+
+These are equivalent to specifying `comp = (==(3))`, `comp = (<(3))`, and `comp = (>(3))`, respectively.
+Their interpretation is “the stopping criterion is only checked (asked) if the condition is met”
 """
 mutable struct StopWhenCriterionWithIterationCondition{SC <: StoppingCriterion, F} <:
     StoppingCriterion
@@ -1430,20 +1431,14 @@ function StopWhenCriterionWithIterationCondition(
     ) where {SC <: StoppingCriterion, F}
     return StopWhenCriterionWithIterationCondition{SC, F}(sc, comp, -1)
 end
-function Base.:>(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp = (>(n)))
+function ⩻(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc; comp = (<(n)))
 end
-function Base.:>=(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp = (>=(n)))
+function ⩼(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc; comp = (>(n)))
 end
-function Base.:(==)(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp = (==(n)))
-end
-function Base.:<(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp = (<(n)))
-end
-function Base.:<=(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp = (<=(n)))
+function ≟(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc; comp = (==(n)))
 end
 function (c::StopWhenCriterionWithIterationCondition)(
         p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int

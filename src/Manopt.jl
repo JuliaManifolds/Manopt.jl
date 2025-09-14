@@ -261,7 +261,7 @@ function __init__()
 end
 #
 # General
-export ℝ, ℂ, &, |
+export ℝ, ℂ, &, |, ×, ≟, ⩼, ⩻
 export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
@@ -454,6 +454,7 @@ export NeverRestart,
 #
 # Solvers
 export adaptive_regularization_with_cubics,
+    accepted_keywords,
     adaptive_regularization_with_cubics!,
     alternating_gradient_descent,
     alternating_gradient_descent!,
@@ -487,7 +488,6 @@ export adaptive_regularization_with_cubics,
     gradient_descent!,
     interior_point_Newton,
     interior_point_Newton!,
-    keywords_accepted,
     LevenbergMarquardt,
     LevenbergMarquardt!,
     mesh_adaptive_direct_search,
