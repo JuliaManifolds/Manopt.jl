@@ -63,5 +63,11 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         @test cgbr.threshold == cgbr.threshold
         @test repr(LiuStoreyCoefficient(M)()) ==
             "Manopt.LiuStoreyCoefficientRule(; vector_transport_method=$pt)"
+        hcs = repr(HybridCoefficient(PolakRibiereCoefficient(), FletcherReevesCoefficient())(M))
+        @test contains(hcs, "Manopt.HybridCoefficientRule")
+        @test contains(hcs, "Manopt.PolakRibiereCoefficientRule")
+        @test contains(hcs, "Manopt.FletcherReevesCoefficientRule")
+        @test contains(hcs, "Manopt.SteepestDescentCoefficientRule")
+        @test contains(hcs, "lower_bound_scale = 1.0")
     end
 end

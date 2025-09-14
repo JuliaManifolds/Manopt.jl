@@ -229,12 +229,12 @@ An abstract supertype for approximate Hessian functions, declares them also to b
 """
 abstract type AbstractApproxHessian <: Function end
 
-_doc_ApproxHessian_formula = raw"""
+_doc_ApproxHessian_formula = """
 ```math
 $(_tex(:Hess))f(p)[X] ≈
-\frac{\lVert X \rVert_p}{c}\Bigl(
-  \mathcal T_{p\gets q}\bigr($(_tex(:grad))f(q)\bigl) - $(_tex(:grad))f(p)
-\Bigl)
+$(_tex(:frac, "$(_tex(:norm, "X"))", "c"))$(_tex(:Bigl))(
+  $(_math(:VT, "p", "q"))$(_tex(:bigl))( $(_tex(:grad))f(q)$(_tex(:bigr)) - $(_tex(:grad))f(p)
+$(_tex(:Bigr)))
 ```
 """
 _doc_ApproxHessian_step = raw"\operatorname{retr}_p(\frac{c}{\lVert X \rVert_p}X)"

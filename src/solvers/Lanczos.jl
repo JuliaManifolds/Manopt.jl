@@ -249,7 +249,7 @@ m(X_k) \leq m(0)
 A stopping criterion related to the Riemannian adaptive regularization with cubics (ARC)
 solver indicating that the model function at the current (outer) iterate,
 
-$_doc_ARC_mdoel
+$_doc_ARC_model
 
 defined on the tangent space ``$(_math(:TpM))`` fulfills at the current iterate ``X_k`` that
 

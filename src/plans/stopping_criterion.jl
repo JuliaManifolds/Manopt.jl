@@ -18,7 +18,7 @@ abstract type StoppingCriterion end
 """
     indicates_convergence(c::StoppingCriterion)
 
-Return whether (true) or not (false) a [`StoppingCriterion`](@ref) does _always_
+Return whether a [`StoppingCriterion`](@ref) does _always_
 mean that, when it indicates to stop, the solver has converged to a
 minimizer or critical point.
 
@@ -32,10 +32,32 @@ With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` the ind
 
 * `indicates_convergence(s1)` is `false`
 * `indicates_convergence(s2)` is `true`
-* `indicates_convergence(s1 | s2)` is `false`, since this might also stop after 20 iterations
+* `indicates_convergence(s1 | s2)` is `false`, since this might also stop after 20 iterations,
+  or in other words, for [`StopWhenAny`](@ref) _all_ its criteria have to indicate convergence, for this to return true.
 * `indicates_convergence(s1 & s2)` is `true`, since `s2` is fulfilled if this stops.
 """
 indicates_convergence(c::StoppingCriterion) = false
+
+"""
+    has_converged(c::StoppingCriterion)
+
+Return whether a [`StoppingCriterion`](@ref) that has indicated to stop _and_ is a stopping criterion
+that allows to conclude that the corresponding solver has converged.
+
+By default this is given by the static [`indicates_convergence`](@ref)`(c)` as well as
+the test whether the stopping criterion has stopped.
+For some stopping criteria, for example [`StopWhenAny`](@ref) a more advanced test can be done,
+that is more precise.
+
+# Examples
+With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` we obtain
+
+* `has_converged(s1)` is always `false` (even if it has stopped)
+* `has_converged(s2)` is always `true` as soon as it has stopped
+* `has_converged(s1 | s2)` is always `true` if it has stopped _and_ `s2` is the reason for that.
+* `has_converged(s1 & s2)` is `true` as soon as the algorithm stopped, since here `s2` always
+"""
+has_converged(c::StoppingCriterion) = indicates_convergence(c) && (get_count(c, Val(:Iterations)) >= 0)
 
 function get_count(c::StoppingCriterion, ::Val{:Iterations})
     if hasfield(typeof(c), :at_iteration)
@@ -44,6 +66,7 @@ function get_count(c::StoppingCriterion, ::Val{:Iterations})
         return 0
     end
 end
+
 @doc """
     StoppingCriterionGroup <: StoppingCriterion
 
@@ -1057,12 +1080,20 @@ end
 function indicates_convergence(c::StopWhenAll)
     return any(indicates_convergence(ci) for ci in c.criteria)
 end
+function has_converged(c::StopWhenAll)
+    # All are active
+    if length(get_active_stopping_criteria(c)) == length(c.criteria)
+        # at least one of them does has_converged as well
+        return any(has_converged(ci) for ci in c.criteria)
+    end
+    return false
+end
 function get_count(c::StopWhenAll, v::Val{:Iterations})
     return maximum(get_count(ci, v) for ci in c.criteria)
 end
 function show(io::IO, c::StopWhenAll)
     s = replace(status_summary(c), "\n" => "\n    ") #increase indent
-    return print(io, "StopWhenAll with the Stopping Criteria\n    $(s)")
+    return print(io, "StopWhenAll with the stopping criteria\n    $(s)")
 end
 
 """
@@ -1149,7 +1180,11 @@ function status_summary(c::StopWhenAny)
     return "$(r)Overall: $s"
 end
 function indicates_convergence(c::StopWhenAny)
-    return any(indicates_convergence(ci) for ci in get_active_stopping_criteria(c))
+    return all(indicates_convergence(ci) for ci in c.criteria)
+end
+function has_converged(c::StopWhenAny)
+    # If any of the active ones has_converged – we stop due to convergence
+    return any(has_converged(ci) for ci in get_active_stopping_criteria(c))
 end
 function get_count(c::StopWhenAny, v::Val{:Iterations})
     iters = filter(x -> x > 0, [get_count(ci, v) for ci in c.criteria])
@@ -1338,6 +1373,10 @@ end
 function indicates_convergence(sc::StopWhenRepeated)
     return indicates_convergence(sc.stopping_criterion)
 end
+function has_converged(sc::StopWhenRepeated)
+    # When the inner one indicates convergence, this does as well
+    return has_converged(sc.stopping_criterion)
+end
 function show(io::IO, sc::StopWhenRepeated)
     is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
     return print(
@@ -1347,38 +1386,39 @@ function show(io::IO, sc::StopWhenRepeated)
 end
 
 @doc """
-    StopWhenCriterionWithIterationCondition <: StoppingCriterion
+    StopWhenCriterionWithCondition <: StoppingCriterion
 
-A stopping criterion that indicates to stop when the (internal) stopping criterion it wraps,
-has indicated to stop with an additional check compared to the current iteration, e.g.
+A stopping criterion, that only evaluates a certain (inner) stopping based on a condition
+on the iterate `k`.
+The condition is a function `condition(k) -> Bool`.
 
-* `>(n)` only (stricly) after iteration `n`
-* `>=(n)` only including and after iteration `n`
-* `==(n)` only exactly at `n`
-* `<=(n)` only including and before iteration `n`
-* `<(n)` only (strictly) before iteration `n`
-* any functor `f(k) -> Bool` indicating to evaluate the stopping criterion at iteration `k`.
+## Example `(k) -> >(n)` would only activate that stopping criterion after `n` iterations.`.
 
-# Fields
+## Fields
 
 * `criterion`: the [`StoppingCriterion`](@ref) to wrap
 * `comp`: the number of times the criterion has to indicate to stop
 
-# Constructor
+## Constructor
 
     StopWhenRepeated(criterion::StoppingCriterion, n=0; comp = (>(n)))
 
 Create a stopping criterion that indicates to stop when the `comp` has indicated to
 check the inner criterion. The `n` is ignored if you provide a manual functor `comp`.
 
-As well as for a given [` StoppingCriterion`] `sc` the shortcuts
-`sc > n`, `sc >= n`, `sc == n`, `sc <= n`, `sc < n` for the cases above.
-
-# Examples
+## Examples
 
 A stopping criterion that indicates to stop when the gradient norm is small but only after the third iteration
     StopWhenCriterionWithIterationCondition(StopWhenGradientNormLess(1e-6), 3)
-    StopWhenGradientNormLess(1e-6) > 3
+
+You can also use the infix operators `≟` (`\\questeq` on REPL),  `⩻` (`\\ltquest`), and `⩼` (`\\gtquest`) to create such a criterion:
+
+    StopWhenGradientNormLess(1e-6) ≟ 3
+    StopWhenGradientNormLess(1e-6) ⩻ 3
+    StopWhenGradientNormLess(1e-6) ⩼ 3
+
+These are equivalent to specifying `comp = (==(3))`, `comp = (<(3))`, and `comp = (>(3))`, respectively.
+Their interpretation is “the stopping criterion is only checked (asked) if the condition is met”
 """
 mutable struct StopWhenCriterionWithIterationCondition{SC <: StoppingCriterion, F} <:
     StoppingCriterion
@@ -1391,20 +1431,14 @@ function StopWhenCriterionWithIterationCondition(
     ) where {SC <: StoppingCriterion, F}
     return StopWhenCriterionWithIterationCondition{SC, F}(sc, comp, -1)
 end
-function Base.:>(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp = (>(n)))
+function ⩻(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc; comp = (<(n)))
 end
-function Base.:>=(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp = (>=(n)))
+function ⩼(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc; comp = (>(n)))
 end
-function Base.:(==)(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp = (==(n)))
-end
-function Base.:<(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp = (<(n)))
-end
-function Base.:<=(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp = (<=(n)))
+function ≟(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc; comp = (==(n)))
 end
 function (c::StopWhenCriterionWithIterationCondition)(
         p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
@@ -1441,6 +1475,10 @@ function status_summary(sc::StopWhenCriterionWithIterationCondition)
 end
 function indicates_convergence(sc::StopWhenCriterionWithIterationCondition)
     return indicates_convergence(sc.stopping_criterion)
+end
+function has_converged(sc::StopWhenCriterionWithIterationCondition)
+    # When the inner one indicates convergence, this does as well
+    return has_converged(sc.stopping_criterion)
 end
 function show(io::IO, sc::StopWhenCriterionWithIterationCondition)
     has_stopped = (sc.at_iteration >= 0)

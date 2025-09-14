@@ -261,7 +261,7 @@ function __init__()
 end
 #
 # General
-export ℝ, ℂ, &, |
+export ℝ, ℂ, &, |, ×, ≟, ⩼, ⩻
 export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
@@ -376,6 +376,7 @@ export get_state,
     set_iterate!,
     get_residuals,
     get_residuals!,
+    has_converged,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
@@ -441,10 +442,15 @@ export SteepestDescentCoefficient,
     LiuStoreyCoefficient,
     DaiYuanCoefficient,
     HagerZhangCoefficient,
-    ConjugateGradientBealeRestart
-# Direction Corrections
+    ConjugateGradientBealeRestart,
+    HybridCoefficient
+#
+# Restart Conditions
 export AbstractRestartCondition
-export NeverRestart, RestartOnNonDescent, RestartOnNonSufficientDescent
+export NeverRestart,
+    RestartOnNonDescent,
+    RestartOnNonSufficientDescent
+#
 #
 # Solvers
 export adaptive_regularization_with_cubics,

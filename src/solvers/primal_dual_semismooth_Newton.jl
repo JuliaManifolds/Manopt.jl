@@ -1,10 +1,10 @@
 _doc_PDSN_formula = raw"""
-Given a `cost` function ``\mathcal E: $(_math(:M)) → \overline{ℝ}`` of the form
+Given a `cost` function ``\mathcal E: \mathcal M → \overline{ℝ}`` of the form
 ```math
 \mathcal E(p) = F(p) + G( Λ(p) ),
 ```
-where ``F: $(_math(:M)) → \overline{ℝ}``, ``G: \mathcal N → \overline{ℝ}``,
-and ``Λ: $(_math(:M)) → \mathcal N``. The remaining input parameters are
+where ``F: \mathcal M → \overline{ℝ}``, ``G: \mathcal N → \overline{ℝ}``,
+and ``Λ: \mathcal M → \mathcal N``. The remaining input parameters are
 """
 
 _doc_PDSN = """
@@ -15,7 +15,7 @@ Perform the Primal-Dual Riemannian semismooth Newton algorithm.
 $(_doc_PDSN_formula)
 
 * `p, X`:                          primal and dual start points ``p∈$(_math(:M))`` and ``X ∈ T_n$(_tex(:Cal, "N"))``
-* `m,n`:                           base points on ``$(_math(:M))`` and ``$(_tex(:Cal, "N"))`, respectively.
+* `m,n`:                           base points on ``$(_math(:M))`` and ``$(_tex(:Cal, "N"))``, respectively.
 * `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
 * `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_math(:TpM; p = "m")) → $(_math(:TpM; M = "N", p = "Λ(m)"))``
 * `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
