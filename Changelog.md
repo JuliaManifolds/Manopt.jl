@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * formerly a stopping criterion could be activated at certain iterations with `sc > 5`, `sc >= 5`, `sc == 5`, `sc <= 5`, and `sc < 5`.
   This caused too many issues with invalidations, so it has been reduced and moved to `sc ⩼ 5`, `sc ≟ 5`, `sc ⩻ 5` for the cases 1, 3, and 5, respectively,
   cf. (#509).
+* Refine the `JuMP` extension and add an allocation-free cost and gradient callback for JuMP interface (#498)
 
 ## [0.5.22] September 09, 2025
 
