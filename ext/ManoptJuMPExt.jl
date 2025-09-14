@@ -80,12 +80,15 @@ end
 """
     MOI.dimension(set::ManifoldSet)
 
-Return the representation side of points on the (vectorized in representation) manifold.
+Return the representation size of points on the (vectorized in representation) manifold.
 As the MOI variables are real, this means if the [`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)
 yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of ``ℝ^n``).
+
+Note that this is not the dimension of the manifold itself, but the
+vector length of the vectorized representation of the manifold.
 """
 function MOI.dimension(set::ManifoldSet)
-    return prod(ManifoldsBase.representation_size(set.manifold))
+    return length(_shape(set.manifold))
 end
 
 @doc """
@@ -377,12 +380,57 @@ already been set.
 MOI.get(model::ManoptOptimizer, ::MOI.ObjectiveSense) = model.sense
 
 """
+    _EmbeddingObjective{E<:MOI.AbstractNLPEvaluator,T}
+
+Objective where `evaluator` is a MathOptInterface evaluator for the objective
+in the embedding. The fields `vectorized_point`, `vectorized_tangent`
+and `embedding_tangent` are used as preallocated buffer so that the conversion
+to Euclidean objective is allocation-free.
+"""
+struct _EmbeddingObjective{E <: MOI.AbstractNLPEvaluator, T}
+    evaluator::E
+    # Used to store the vectorized point
+    vectorized_point::Vector{Float64}
+    # Used to store the vectorized tangent
+    vectorized_tangent::Vector{Float64}
+    # Used to store the tangent in the embedding space
+    embedding_tangent::T
+end
+
+"""
+    _get_cost(M, objective::_EmbeddingObjective, p)
+
+Convert the point `p` to its vectorization and then evaluate the objective
+using `objective.evaluator`.
+"""
+function _get_cost(M, objective::_EmbeddingObjective, p)
+    _vectorize!(objective.vectorized_point, p, _shape(M))
+    return MOI.eval_objective(objective.evaluator, objective.vectorized_point)
+end
+
+"""
+    _get_cost(M, objective::_EmbeddingObjective, p)
+
+Convert the point `p` to its vectorization and then evaluate the gradient
+using `objective.evaluator` to get the vectorized gradient. Then reshape the
+gradient and convert it to the Riemannian gradient.
+"""
+function _get_gradient!(M, gradient, objective::_EmbeddingObjective, p)
+    _vectorize!(objective.vectorized_point, p, _shape(M))
+    MOI.eval_objective_gradient(
+        objective.evaluator, objective.vectorized_tangent, objective.vectorized_point
+    )
+    _reshape_vector!(objective.embedding_tangent, objective.vectorized_tangent, _shape(M))
+    return ManifoldDiff.riemannian_gradient!(M, gradient, p, objective.embedding_tangent)
+end
+
+"""
     MOI.set(model::ManoptOptimizer, ::MOI.ObjectiveFunction{F}, func::F) where {F}
 
 Set the objective function as `func` for `model`.
 """
 function MOI.set(
-        model::ManoptOptimizer, attr::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
+        model::ManoptOptimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
     )
     backend = MOI.Nonlinear.SparseReverseMode()
     vars = [MOI.VariableIndex(i) for i in eachindex(model.variable_primal_start)]
@@ -391,19 +439,24 @@ function MOI.set(
     MOI.Nonlinear.set_objective(nlp_model, nl)
     evaluator = MOI.Nonlinear.Evaluator(nlp_model, backend, vars)
     MOI.initialize(evaluator, [:Grad])
-    function eval_f_cb(M, x)
-        return MOI.eval_objective(evaluator, JuMP.vectorize(x, _shape(model.manifold)))
+    objective = let                                             # COV_EXCL_LINE
+        # To avoid creating a closure capturing the `embedding_obj` object,
+        # we use the `let` block trick detailed in:
+        # https://docs.julialang.org/en/v1/manual/performance-tips/#man-performance-captured
+        embedding_obj = _EmbeddingObjective(
+            evaluator,
+            zeros(length(_shape(model.manifold))),
+            zeros(length(_shape(model.manifold))),
+            _zero(_shape(model.manifold)),
+        )
+        RiemannianFunction(
+            Manopt.ManifoldGradientObjective(
+                (M, x) -> _get_cost(M, embedding_obj, x),
+                (M, g, x) -> _get_gradient!(M, g, embedding_obj, x);
+                evaluation = Manopt.InplaceEvaluation(),
+            ),
+        )
     end
-    function eval_grad_f_cb(M, X)
-        x = JuMP.vectorize(X, _shape(model.manifold))
-        grad_f = zeros(length(x))
-        MOI.eval_objective_gradient(evaluator, grad_f, x)
-        reshaped_grad_f = JuMP.reshape_vector(grad_f, _shape(model.manifold))
-        return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
-    end
-    objective = RiemannianFunction(
-        Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
-    )
     MOI.set(model, MOI.ObjectiveFunction{typeof(objective)}(), objective)
     return nothing
 end
@@ -465,13 +518,49 @@ struct ManifoldPointArrayShape{N} <: JuMP.AbstractShape
 end
 
 """
+    length(shape::ManifoldPointArrayShape)
+
+Return the length of the vectors in the vectorized representation.
+"""
+Base.length(shape::ManifoldPointArrayShape) = prod(shape.size)
+
+"""
+    _vectorize!(res::Vector{T}, array::Array{T,N}, shape::ManifoldPointArrayShape{N}) where {T,N}
+
+Inplace version of `res = JuMP.vectorize(array, shape)`.
+"""
+function _vectorize!(
+        res::Vector{T}, array::Array{T, N}, ::ManifoldPointArrayShape{N}
+    ) where {T, N}
+    return copyto!(res, array)
+end
+
+"""
+    _reshape_vector!(res::Array{T,N}, vec::Vector{T}, ::ManifoldPointArrayShape{N}) where {T,N}
+
+Inplace version of `res = JuMP.reshape_vector(vec, shape)`.
+"""
+function _reshape_vector!(
+        res::Array{T, N}, vec::Vector{T}, ::ManifoldPointArrayShape{N}
+    ) where {T, N}
+    return copyto!(res, vec)
+end
+
+"""
+    _zero(shape::ManifoldPointArrayShape)
+
+Return a zero element of the shape `shape`.
+"""
+_zero(shape::ManifoldPointArrayShape{N}) where {N} = zeros(shape.size)
+
+"""
     JuMP.vectorize(p::Array{T,N}, shape::ManifoldPointArrayShape{N}) where {T,N}
 
 Given a point `p` as an ``N``-dimensional array representing a point on a certain
 manifold, reshape it to a vector, which is necessary within [`JuMP`](@extref JuMP :std:doc:`index`).
 For the inverse see [`JuMP.reshape_vector`](@ref JuMP.reshape_vector(::Vector, ::ManifoldPointArrayShape)).
 """
-function JuMP.vectorize(array::Array{T, N}, ::ManifoldPointArrayShape{M}) where {T, N, M}
+function JuMP.vectorize(array::Array{T, N}, ::ManifoldPointArrayShape{N}) where {T, N}
     return vec(array)
 end
 
@@ -490,6 +579,12 @@ function JuMP.reshape_set(set::ManifoldSet, shape::ManifoldPointArrayShape)
     return set.manifold
 end
 
+"""
+    _shape(m::ManifoldsBase.AbstractManifold)
+
+Return the shape of points of the manifold `m`.
+At the moment, we only support manifolds for which the shape is a `Array`.
+"""
 function _shape(m::ManifoldsBase.AbstractManifold)
     return ManifoldPointArrayShape(ManifoldsBase.representation_size(m))
 end
