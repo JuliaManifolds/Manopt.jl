@@ -6,7 +6,15 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.23] candidate
+## [0.5.23] September 14, 2025
+
+### Added
+
+* `HybridCoefficient(args...)` conjugate gradient parameters.
+* a function `has_converged(sc)` function for any `StoppingCriterion` to indicate that it _both_ has stopped and the reason is a convergence certificate.
+  Note that compared to the static evaluation of `indicates_convergence(sc)`, which is independent of the state of the criterion,
+  this is the dynamic variant to be used _after_ a solver has stopped.
+* a `has_converged(::AbstractManoptSolverState)` function to check whether the solver has converged.
 
 ### Changed
 
