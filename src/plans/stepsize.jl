@@ -1844,7 +1844,7 @@ function show(io::IO, rdog::DistanceOverGradientsStepsize)
     return print(io, s)
 end
 
-@doc raw"""
+doc_DoG_main = raw"""
     DistanceOverGradients(; kwargs...)
     DistanceOverGradients(M::AbstractManifold; kwargs...)
 
@@ -1896,6 +1896,9 @@ On subsequent calls, the state is updated as implemented: ``G_t \leftarrow G_{t-
 * `initial_distance=1e-3`: initial distance estimate ``ϵ``
 * `use_curvature=false`: whether to include ``ζ_κ``
 * `sectional_curvature_bound=0.0`: curvature lower bound ``κ`` (if known)
+"""
+@doc """
+$(doc_DoG_main)
 
 $(_note(:ManifoldDefaultFactory, "DistanceOverGradientsStepsize"))
 """
