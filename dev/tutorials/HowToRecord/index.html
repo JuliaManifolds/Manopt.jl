@@ -30,7 +30,7 @@ Stop When _one_ of the following are fulfilled:
   * Max Iteration 200:  not reached
   * |grad f| &lt; 1.0e-8: reached
 Overall: reached
-This indicates convergence: Yes
+This indicates convergence: No
 
 ## Record
 (Iteration = RecordCost(),)</code></pre><p>From the returned state, we see that the <a href="https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.GradientDescentState"><code>GradientDescentState</code></a> are encapsulated (decorated) within a <a href="https://manoptjl.org/stable/plans/record/#Manopt.RecordSolverState"><code>RecordSolverState</code></a>.</p><p>For such a state, one can attach different recorders to some operations, currently to <code>:Start</code>. <code>:Stop</code>, and <code>:Iteration</code>, where <code>:Iteration</code> is the default when using the <code>record=</code> keyword with a <a href="https://manoptjl.org/stable/plans/record/#Manopt.RecordAction"><code>RecordAction</code></a> or a <code>Symbol</code> as we just did. We can access all values recorded during the iterations by calling <code>get_record(R, :Iteation)</code> or since this is the default even shorter</p><pre><code class="language-julia hljs">get_record(R)</code></pre><pre><code class="nohighlight hljs">58-element Vector{Float64}:
@@ -73,7 +73,7 @@ Stop When _one_ of the following are fulfilled:
   * Max Iteration 200:  not reached
   * |grad f| &lt; 1.0e-8: reached
 Overall: reached
-This indicates convergence: Yes
+This indicates convergence: No
 
 ## Record
 (Iteration = RecordGroup([RecordIteration(), RecordCost()]),)</code></pre><p>Here, the symbol <code>:Cost</code> is mapped to using the <a href="https://manoptjl.org/stable/plans/record/#Manopt.RecordCost"><code>RecordCost</code></a> action. The same holds for <code>:Iteration</code> obviously records the current iteration number <code>i</code>. To access these you can first extract the group of records (that is where the <code>:Iteration</code>s are recorded; note the plural) and then access the <code>:Cost</code> ““”</p><pre><code class="language-julia hljs">get_record_action(R2, :Iteration)</code></pre><pre><code class="nohighlight hljs">RecordGroup([RecordIteration(), RecordCost()])</code></pre><p>Since <code>iteration</code> is the default, we can also omit it here again. To access single recorded values, one can use</p><pre><code class="language-julia hljs">get_record_action(R2)[:Cost]</code></pre><pre><code class="nohighlight hljs">58-element Vector{Float64}:
@@ -209,7 +209,7 @@ Stop When _one_ of the following are fulfilled:
   * Max Iteration 200:  not reached
   * |grad f| &lt; 1.0e-9: reached
 Overall: reached
-This indicates convergence: Yes
+This indicates convergence: No
 
 ## Record
 (Iteration = RecordEvery(RecordGroup([RecordIteration(), RecordCost(), RecordEntry(:X)]), 6, true), Stop = RecordIteration())</code></pre><p>And we can look at the recorded value at <code>:Stop</code> to see how many iterations were performed</p><pre><code class="language-julia hljs">get_record(res, :Stop)</code></pre><pre><code class="nohighlight hljs">1-element Vector{Int64}:
@@ -387,7 +387,7 @@ Stop When _one_ of the following are fulfilled:
   * Max Iteration 200:  not reached
   * |grad f| &lt; 1.0e-8: reached
 Overall: reached
-This indicates convergence: Yes
+This indicates convergence: No
 
 ## Record
 (Iteration = Main.Notebook.RecordCount([25, 29, 33, 37, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152, 156, 160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216, 220, 224, 229, 232, 237, 241, 245, 247, 249]),)</code></pre><pre><code class="language-julia hljs">get_record(R4)</code></pre><pre><code class="nohighlight hljs">58-element Vector{Int64}:
@@ -421,8 +421,8 @@ This indicates convergence: Yes
   [af67fdf4] ManifoldDiff v0.4.4
   [1cead3c2] Manifolds v0.10.23
   [3362f125] ManifoldsBase v1.2.0
-  [0fc0a36d] Manopt v0.5.22 `..`
-  [91a5bcdd] Plots v1.40.19
+  [0fc0a36d] Manopt v0.5.23 `..`
+  [91a5bcdd] Plots v1.40.20
   [731186ca] RecursiveArrayTools v3.37.1
   [37e2e46d] LinearAlgebra v1.11.0
-  [9a3f8284] Random v1.11.0</code></pre><p>This tutorial was last rendered September 14, 2025, 07:22:29.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../HowToDebug/">« Print debug output</a><a class="docs-footer-nextpage" href="../ImplementASolver/">Implement a solver »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Sunday 14 September 2025 08:25">Sunday 14 September 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  [9a3f8284] Random v1.11.0</code></pre><p>This tutorial was last rendered September 15, 2025, 08:28:54.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../HowToDebug/">« Print debug output</a><a class="docs-footer-nextpage" href="../ImplementASolver/">Implement a solver »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Monday 15 September 2025 08:32">Monday 15 September 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
