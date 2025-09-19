@@ -1,7 +1,7 @@
 name = "Manopt"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 authors = ["Ronny Bergmann <manopt@ronnybergmann.net>"]
-version = "0.5.23"
+version = "0.5.24"
 
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
@@ -50,8 +50,8 @@ LRUCache = "1.4"
 LineSearches = "7.2.0"
 LinearAlgebra = "1.10"
 ManifoldDiff = "0.3.8, 0.4"
-Manifolds = "0.10"
-ManifoldsBase = "1.1"
+Manifolds = "0.10, 0.11"
+ManifoldsBase = "1.1, 2"
 Markdown = "1.10"
 Plots = "1.30"
 Preferences = "1.4"
