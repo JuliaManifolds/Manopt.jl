@@ -2031,12 +2031,19 @@ function update_bracket(a::UnivariateTriple{R}, b::UnivariateTriple{R}, c::Univa
     return a, b
 end
 
-function cubic(a::UnivariateTriple{R}, b::UnivariateTriple{R}) where {R}
+function cubic(a::UnivariateTriple{R}, b::UnivariateTriple{R}; warn = true) where {R}
+    if (a.f > b.f && warn)
+        @warn "value bracket condition not met."
+    end
+    if (a.df * (b.t - a.t) > 0 && warn)
+        @warn "derivative bracket condition not met."
+    end
     Δ = b.t - a.t
     v = a.df + b.df - 3 * (b.f - a.f) / Δ
     discriminant = v^2 - a.df * b.df
-    if (discriminant < -2.0e-16)
+    if (discriminant < -2.0e-16 && warn)
         @warn "discriminant=$discriminant negative, check input of 'cubic'."
+        return -1
     end
     w = sign(Δ) * sqrt(abs(discriminant))
     denom_a = a.df + v - w
@@ -2065,13 +2072,13 @@ function step(a, b, c, τ)
     end
 end
 
-function get_ut!(mp, clbs, p, η, t)
+function get_ut!(mp, cbls, p, η, t)
     M = get_manifold(mp)
-    clbs.last_stepsize = t
-    ManifoldsBase.retract_fused!(M, clbs.candidate_point, p, η, t, clbs.retraction_method)
-    Tη = vector_transport_to(M, p, η, clbs.candidate_point, clbs.vector_transport_method)
-    f = get_cost(M, get_objective(mp), clbs.candidate_point)
-    df = get_differential(mp, clbs.candidate_point, Tη)
+    cbls.last_stepsize = t
+    ManifoldsBase.retract_fused!(M, cbls.candidate_point, p, η, t, cbls.retraction_method)
+    Tη = vector_transport_to(M, p, η, cbls.candidate_point, cbls.vector_transport_method)
+    f = get_cost(M, get_objective(mp), cbls.candidate_point)
+    df = get_differential(mp, cbls.candidate_point, Tη)
     return UnivariateTriple(t, f, df)
 end
 
@@ -2099,9 +2106,11 @@ function (cbls::CubicBracketingLinesearchStepsize)(
         (c.f < init.f && check_curvature(c)) && return t
         if (c.f ≥ c_old.f && c_old.df * (c.t - c_old.t) < 0)
             (a, b) = c_old, c
+            break
         end
         if (c.f ≤ c_old.f && c.df * (c_old.t - c.t) < 0)
             (a, b) = c, c_old
+            break
         end
         if (c.f > init.f || c.df > 0)
             (a, b) = c.f < init.f ? (c, init) : (init, c)
@@ -2111,7 +2120,6 @@ function (cbls::CubicBracketingLinesearchStepsize)(
         c_old = c
         c = get_ut!(mp, cbls, p, η, t)
     end
-
 
     while ((n_iter += 1) <= cbls.max_iterations)
         # Step 1
@@ -2123,7 +2131,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
         check_curvature(c) && return t
         a_old = a
         a, b = update_bracket(a, b, c)
-        if (true)
+        if (cbls.hybrid)
             while ((n_iter += 1) <= cbls.max_iterations)
                 # Step 2
                 abs(a.t - b.t) < cbls.min_bracket_width && return t
@@ -2132,19 +2140,25 @@ function (cbls::CubicBracketingLinesearchStepsize)(
                 # Step 3
                 (c.df - a_old.df) / (c.t - a_old.t) ≤ 0 && break
                 # Step 4
-                γ = cubic(a_old, c)
+                γ = cubic(a_old, c; warn = false)
                 (γ < min(a.t, b.t) || γ > max(a.t, b.t)) && break
                 t = step(a.t, b.t, γ, cbls.min_bracket_width)
                 c = get_ut!(mp, cbls, p, η, t)
                 check_curvature(c) && return t
                 a_old = a
                 a, b = update_bracket(a, b, c)
+                if (a.f > b.f)
+                    @warn "after update 4 value bracket condition not met."
+                end
             end
             # Step 5
             t = (a.t + b.t) / 2
             c = get_ut!(mp, cbls, p, η, t)
             check_curvature(c) && return t
             a, b = update_bracket(a, b, c)
+            if (a.f > b.f)
+                @warn "after update 5 value bracket condition not met."
+            end
         end
     end
 
