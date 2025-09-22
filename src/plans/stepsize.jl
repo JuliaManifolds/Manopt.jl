@@ -429,10 +429,10 @@ function show(io::IO, als::ArmijoLinesearchStepsize)
         io,
         """
         ArmijoLinesearch(;
-            initial_stepsize=$(als.initial_stepsize)
-            retraction_method=$(als.retraction_method)
-            contraction_factor=$(als.contraction_factor)
-            sufficient_decrease=$(als.sufficient_decrease)
+            initial_stepsize=$(als.initial_stepsize),
+            retraction_method=$(als.retraction_method),
+            contraction_factor=$(als.contraction_factor),
+            sufficient_decrease=$(als.sufficient_decrease),
         )""",
     )
 end
@@ -617,11 +617,11 @@ get_last_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
 function show(io::IO, awng::AdaptiveWNGradientStepsize)
     s = """
     AdaptiveWNGradient(;
-      count_threshold=$(awng.count_threshold),
-      minimal_bound=$(awng.minimal_bound),
-      alternate_bound=$(awng.alternate_bound),
-      gradient_reduction=$(awng.gradient_reduction),
-      gradient_bound=$(awng.gradient_bound)
+      count_threshold = $(awng.count_threshold),
+      minimal_bound = $(awng.minimal_bound),
+      alternate_bound = $(awng.alternate_bound),
+      gradient_reduction = $(awng.gradient_reduction),
+      gradient_bound = $(awng.gradient_bound)
     )
 
     as well as internally the weight ω_k = $(awng.weight) and current count c_k = $(awng.count).
@@ -749,11 +749,12 @@ function linesearch_backtrack!(
         stop_when_stepsize_exceeds = max_stepsize(M, p) / norm(M, p, η),
         stop_increasing_at_step = 100,
         stop_decreasing_at_step = 1000,
+        search_dir_inner = nothing
     ) where {TF, T}
     msg = ""
     ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
     f_q = f(M, q)
-    search_dir_inner = real(inner(M, p, η, X))
+    search_dir_inner = isnothing(search_dir_inner) ? real(inner(M, p, η, X)) : search_dir_inner
     if search_dir_inner >= 0
         msg = "The search direction η might not be a descent direction, since ⟨η, grad_f(p)⟩ ≥ 0."
     end
@@ -856,7 +857,7 @@ mutable struct NonmonotoneLinesearchStepsize{
     } <: Linesearch
     bb_min_stepsize::R
     bb_max_stepsize::R
-    candiate_point::P
+    candidate_point::P
     initial_stepsize::R
     message::String
     old_costs::T
@@ -1031,7 +1032,7 @@ function (a::NonmonotoneLinesearchStepsize)(
     #compute the new step size with the help of the Barzilai-Borwein step size
     (a.initial_stepsize, a.message) = linesearch_backtrack!(
         M,
-        a.candiate_point,
+        a.candidate_point,
         f,
         p,
         X,
@@ -1053,16 +1054,15 @@ function show(io::IO, a::NonmonotoneLinesearchStepsize)
         io,
         """
         NonmonotoneLinesearch(;
-            initial_stepsize = $(a.initial_stepsize)
-            bb_max_stepsize = $(a.bb_max_stepsize)
+            initial_stepsize = $(a.initial_stepsize),
+            bb_max_stepsize = $(a.bb_max_stepsize),
             bb_min_stepsize = $(a.bb_min_stepsize),
-            memory_size = $(length(a.old_costs))
-            stepsize_reduction = $(a.stepsize_reduction)
-            strategy = :$(a.strategy)
-            sufficient_decrease = $(a.sufficient_decrease)
-            retraction_method = $(a.retraction_method)
-            vector_transport_method = $(
-            a.vector_transport_method
+            memory_size = $(length(a.old_costs)),
+            stepsize_reduction = $(a.stepsize_reduction),
+            strategy = :$(a.strategy),
+            sufficient_decrease = $(a.sufficient_decrease),
+            retraction_method = $(a.retraction_method),
+            vector_transport_method = $(a.vector_transport_method)
         )""",
     )
 end
@@ -1145,8 +1145,9 @@ $(_var(:Keyword, :retraction_method))
 * `stop_increasing_at_step=100`:  last step to increase the stepsize (phase 1),
 * `stop_decreasing_at_step=1000`: last step size to decrease the stepsize (phase 2),
 """
-NonmonotoneLinesearch(args...; kwargs...) =
-    ManifoldDefaultsFactory(NonmonotoneLinesearchStepsize, args...; kwargs...)
+function NonmonotoneLinesearch(args...; kwargs...)
+    return ManifoldDefaultsFactory(NonmonotoneLinesearchStepsize, args...; kwargs...)
+end
 
 @doc """
     PolyakStepsize <: Stepsize
@@ -1252,12 +1253,16 @@ $(_var(:Field, :retraction_method))
 * `stop_when_stepsize_less::R`: a safeguard to stop when the stepsize gets too small
 $(_var(:Field, :vector_transport_method))
 
-# Keyword arguments
+# Constructor
+
+    WolfePowellLinesearchStepsize(M::AbstractManifold; kwargs...)
+
+## Keyword arguments
 
 * `sufficient_decrease=10^(-4)`
 * `sufficient_curvature=0.999`
-$(_var(:Field, :p; add = "as temporary storage for candidates"))
-$(_var(:Field, :X; add = "as type of memory allocated for the candidates direction and tangent"))
+$(_var(:Keyword, :p; add = "as temporary storage for candidates"))
+$(_var(:Keyword, :X; add = "as type of memory allocated for the candidates direction and tangent"))
 * `max_stepsize=`[`max_stepsize`](@ref)`(M, p)`: largest stepsize allowed here.
 $(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
@@ -1386,11 +1391,11 @@ function show(io::IO, a::WolfePowellLinesearchStepsize)
         io,
         """
         WolfePowellLinesearch(;
-            sufficient_descrease=$(a.sufficient_decrease)
-            sufficient_curvature=$(a.sufficient_curvature),
-            retraction_method = $(a.retraction_method)
-            vector_transport_method = $(a.vector_transport_method)
-            stop_when_stepsize_less = $(a.stop_when_stepsize_less)
+            sufficient_descrease = $(a.sufficient_decrease),
+            sufficient_curvature = $(a.sufficient_curvature),
+            retraction_method = $(a.retraction_method),
+            vector_transport_method = $(a.vector_transport_method),
+            stop_when_stepsize_less = $(a.stop_when_stepsize_less),
         )""",
     )
 end
@@ -1423,8 +1428,8 @@ This is adopted from [NocedalWright:2006; Section 3.1](@cite)
 
 * `sufficient_decrease=10^(-4)`
 * `sufficient_curvature=0.999`
-$(_var(:Field, :p; add = "as temporary storage for candidates"))
-$(_var(:Field, :X; add = "as type of memory allocated for the candidates direction and tangent"))
+$(_var(:Keyword, :p; add = "as temporary storage for candidates"))
+$(_var(:Keyword, :X; add = "as type of memory allocated for the candidates direction and tangent"))
 * `max_stepsize=`[`max_stepsize`](@ref)`(M, p)`: largest stepsize allowed here.
 $(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
@@ -1450,7 +1455,11 @@ $(_var(:Field, :retraction_method))
 * `stop_when_stepsize_less::R`: a safeguard to stop when the stepsize gets too small
 $(_var(:Field, :vector_transport_method))
 
-# Keyword arguments
+# Constructor
+
+    WolfePowellBinaryLinesearchStepsize(M::AbstractManifold; kwargs...)
+
+## Keyword arguments
 
 * `sufficient_decrease=10^(-4)`
 * `sufficient_curvature=0.999`
@@ -1535,11 +1544,11 @@ function show(io::IO, a::WolfePowellBinaryLinesearchStepsize)
         io,
         """
         WolfePowellBinaryLinesearch(;
-            sufficient_descrease=$(a.sufficient_decrease)
-            sufficient_curvature=$(a.sufficient_curvature),
-            retraction_method = $(a.retraction_method)
-            vector_transport_method = $(a.vector_transport_method)
-            stop_when_stepsize_less = $(a.stop_when_stepsize_less)
+            sufficient_descrease = $(a.sufficient_decrease),
+            sufficient_curvature = $(a.sufficient_curvature),
+            retraction_method = $(a.retraction_method),
+            vector_transport_method = $(a.vector_transport_method),
+            stop_when_stepsize_less = $(a.stop_when_stepsize_less),
         )""",
     )
 end
@@ -1831,9 +1840,9 @@ get_last_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
 function show(io::IO, rdog::DistanceOverGradientsStepsize)
     s = """
     DistanceOverGradients(;
-      initial_distance=$(rdog.initial_distance),
-      use_curvature=$(rdog.use_curvature),
-      sectional_curvature_bound=$(rdog.sectional_curvature_bound)
+      initial_distance = $(rdog.initial_distance),
+      use_curvature = $(rdog.use_curvature),
+      sectional_curvature_bound = $(rdog.sectional_curvature_bound)
     )
 
     Current state:
@@ -1904,4 +1913,302 @@ $(_note(:ManifoldDefaultFactory, "DistanceOverGradientsStepsize"))
 """
 function DistanceOverGradients(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.DistanceOverGradientsStepsize, args...; kwargs...)
+end
+
+@doc """
+    CubicBracketingLinesearchStepsize{P,T,R<:Real} <: Linesearch
+
+Do a bracketing line search to find a step size ``α`` that finds a
+local minimum along the  search direction ``X`` starting from ``p``,
+utilizing cubic polynomial interpolation.
+See [`CubicBracketingLinesearch`](@ref) for the math details
+
+# Fields
+$(_var(:Field, :p, "candidate_point"; add = " as temporary storage for candidates"))
+* `initial_stepsize::R`: the step size to start the search with
+* `last_stepsize::R`
+$(_var(:Field, :retraction_method))
+* `stepsize_increase::R`:  step size increase factor ``>1``
+* `max_iterations::I`: maximum number of iterations
+* `sufficient_curvature::R`: target reduction of the curvature ``(0,1)``
+* `min_bracket_width::R`: minimal size of the bracket ``[a,b]``
+* `hybrid::Bool`: use the hybrid strategy
+$(_var(:Field, :vector_transport_method))
+
+# Constructor
+
+    CubicBracketingLinesearchStepsize(M::AbstractManifold; kwargs...)
+
+## Keyword arguments
+
+$(_var(:Keyword, :p, "candidate_point"; add = " as temporary storage for candidates"))
+* `initial_stepsize=1.0`: the step size to start the search with
+$(_var(:Keyword, :retraction_method))
+* `stepsize_increase=1.1`:  step size increase factor ``>1``
+* `max_iterations=100`: maximum number of iterations
+* `sufficient_curvature=0.2`: target reduction of the curvature ``(0,1)``
+* `min_bracket_width=1e-4`: minimal size of the bracket ``[a,b]``
+* `hybrid=true`: use the hybrid strategy
+$(_var(:Keyword, :vector_transport_method))
+"""
+mutable struct CubicBracketingLinesearchStepsize{
+        P,
+        R <: Real,
+        I <: Integer,
+        TRM <: AbstractRetractionMethod,
+        VTM <: AbstractVectorTransportMethod,
+    } <: Linesearch
+    candidate_point::P
+    initial_stepsize::R
+    last_stepsize::R
+    retraction_method::TRM
+    stepsize_increase::R
+    max_iterations::I
+    sufficient_curvature::R
+    min_bracket_width::R
+    hybrid::Bool
+    vector_transport_method::VTM
+    function CubicBracketingLinesearchStepsize(
+            M::AbstractManifold;
+            candidate_point::P = allocate_result(M, rand),
+            initial_stepsize::R = 1.0,
+            retraction_method::TRM = default_retraction_method(M),
+            stepsize_increase::R = 1.5,
+            max_iterations::I = 100,
+            sufficient_curvature::R = 0.2,
+            min_bracket_width::R = 1.0e-4,
+            hybrid::Bool = true,
+            vector_transport_method::VTM = default_vector_transport_method(M),
+        ) where {P, R <: Real, I <: Integer, TRM, VTM}
+        return new{P, R, I, TRM, VTM}(candidate_point, initial_stepsize, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method)
+    end
+end
+
+struct UnivariateTriple{R <: Real}
+    t::R
+    f::R
+    df::R
+end
+
+mutable struct StepsizeBracketContainer{R <: Real}
+    a::R
+    b::R
+    f_a::R
+    f_b::R
+    df_a::R
+    df_b::R
+end
+# update bracket w.r.t. the bracketing strategy in WW. Hager (R3) - (R5)
+function update_bracket(a::UnivariateTriple{R}, b::UnivariateTriple{R}, c::UnivariateTriple{R}) where {R}
+    if (c.t > max(a.t, b.t) || c.t < min(a.t, b.t))
+        throw(
+            DomainError(
+                c.t,
+                "Bracket interval does not contain update value"
+            ),
+        )
+    end
+    if (c.f > a.f)
+        #(R3)
+        a, b = a, c
+    elseif (c.f < a.f)
+        #(R4)
+        if (c.df * (a.t - c.t) ≤ 0)
+            a, b = c, a
+        else
+            a, b = c, b
+        end
+    else
+        #(R5)
+        if (c.df * (a.t - c.t) < 0)
+            a, b = c, a
+        elseif (a.df * (b.t - a.t) < 0)
+            a, b = a, c
+        else
+            a, b = c, b
+        end
+    end
+    return a, b
+end
+
+function cubic(a::UnivariateTriple{R}, b::UnivariateTriple{R}) where {R}
+    Δ = b.t - a.t
+    v = a.df + b.df - 3 * (b.f - a.f) / Δ
+    discriminant = v^2 - a.df * b.df
+    if (discriminant < -2.0e-16)
+        @warn "discriminant=$discriminant negative, check input of 'cubic'."
+    end
+    w = sign(Δ) * sqrt(abs(discriminant))
+    denom_a = a.df + v - w
+    denom_b = b.df + v + w
+    if (denom_a > denom_b)
+        return a.t + Δ * a.df / denom_a
+    else
+        return b.t - Δ * b.df / denom_b
+    end
+end
+
+function secant(a::UnivariateTriple{R}, b::UnivariateTriple{R}) where {R}
+    return (a.t * b.df - b.t * a.df) / (b.df - a.df)
+end
+
+function step(a, b, c, τ)
+    y = min(a, b)
+    z = max(a, b)
+    if (y + τ ≤ c && c ≤ z - τ)
+        return c
+    end
+    if (c > (a + b) / 2)
+        return max(z - τ, (a + b) / 2)
+    else
+        return min(y + τ, (a + b) / 2)
+    end
+end
+
+function get_ut!(mp, clbs, p, η, t)
+    M = get_manifold(mp)
+    clbs.last_stepsize = t
+    ManifoldsBase.retract_fused!(M, clbs.candidate_point, p, η, t, clbs.retraction_method)
+    Tη = vector_transport_to(M, p, η, clbs.candidate_point, clbs.vector_transport_method)
+    f = get_cost(M, get_objective(mp), clbs.candidate_point)
+    df = get_differential(mp, clbs.candidate_point, Tη)
+    return UnivariateTriple(t, f, df)
+end
+
+function (cbls::CubicBracketingLinesearchStepsize)(
+        mp::AbstractManoptProblem,
+        s::AbstractManoptSolverState,
+        k::Int,
+        η = (-get_gradient(mp, get_iterate(s)));
+        kwargs...,
+    )
+    M = get_manifold(mp)
+    p = get_iterate(s)
+
+    init = UnivariateTriple(0.0, get_cost(M, get_objective(mp), p), get_differential(mp, p, η; gradient = s.X, evaluated = true))
+
+    check_curvature(c::UnivariateTriple) = abs(c.df) < cbls.sufficient_curvature * abs(init.df)
+
+    n_iter = 0
+    t = cbls.last_stepsize
+    c_old = init
+    c = get_ut!(mp, cbls, p, η, t)
+    a, b = nothing, nothing
+    # Construct initial bracket
+    while ((n_iter += 1) <= cbls.max_iterations)
+        (c.f < init.f && check_curvature(c)) && return t
+        if (c.f ≥ c_old.f && c_old.df * (c.t - c_old.t) < 0)
+            (a, b) = c_old, c
+        end
+        if (c.f ≤ c_old.f && c.df * (c_old.t - c.t) < 0)
+            (a, b) = c, c_old
+        end
+        if (c.f > init.f || c.df > 0)
+            (a, b) = c.f < init.f ? (c, init) : (init, c)
+            break
+        end
+        t *= cbls.stepsize_increase
+        c_old = c
+        c = get_ut!(mp, cbls, p, η, t)
+    end
+
+
+    while ((n_iter += 1) <= cbls.max_iterations)
+        # Step 1
+        abs(a.t - b.t) < cbls.min_bracket_width && return t
+        l = 2 * abs(a.t - b.t)
+        γ = cubic(a, b)
+        t = step(a.t, b.t, γ, cbls.min_bracket_width)
+        c = get_ut!(mp, cbls, p, η, t)
+        check_curvature(c) && return t
+        a_old = a
+        a, b = update_bracket(a, b, c)
+        if (true)
+            while ((n_iter += 1) <= cbls.max_iterations)
+                # Step 2
+                abs(a.t - b.t) < cbls.min_bracket_width && return t
+                l = l / 2
+                abs(a_old.t - t) > l && break
+                # Step 3
+                (c.df - a_old.df) / (c.t - a_old.t) ≤ 0 && break
+                # Step 4
+                γ = cubic(a_old, c)
+                (γ < min(a.t, b.t) || γ > max(a.t, b.t)) && break
+                t = step(a.t, b.t, γ, cbls.min_bracket_width)
+                c = get_ut!(mp, cbls, p, η, t)
+                check_curvature(c) && return t
+                a_old = a
+                a, b = update_bracket(a, b, c)
+            end
+            # Step 5
+            t = (a.t + b.t) / 2
+            c = get_ut!(mp, cbls, p, η, t)
+            check_curvature(c) && return t
+            a, b = update_bracket(a, b, c)
+        end
+    end
+
+    return t
+end
+function show(io::IO, cbls::CubicBracketingLinesearchStepsize)
+    return print(
+        io,
+        """
+        CubicBracketingLinesearch(;
+            initial_stepsize = $(cbls.initial_stepsize)
+            stepsize_increase = $(cbls.stepsize_increase)
+            sufficient_curvature = $(cbls.sufficient_curvature)
+            min_bracket_width = $(cbls.min_bracket_width)
+            hybrid = $(cbls.hybrid)
+            retraction_method = $(cbls.retraction_method),
+            vector_transport_method = $(cbls.vector_transport_method)
+        )""",
+    )
+end
+function status_summary(cbls::CubicBracketingLinesearchStepsize)
+    return "$(cbls)\nand a computed last stepsize of $(cbls.last_stepsize)"
+end
+
+@doc """
+    CubicBracketingLinesearch(; kwargs...)
+    CubicBracketingLinesearch(M::AbstractManifold; kwargs...)
+
+A functor representing the curvature minimizing cubic bracketing scheme introduced
+in [Hager:1989](@cite). Firstly, a bracket ``[a,b]`` is generated by multiplying 
+``t_0`` chosen as `last_stepsize` (or in case of the first iteration `initial_stepsize`) repeatedly with 
+the `stepsize_increase > 1` until the bracket conditions
+
+```math
+    ϕ'(a)(b-a) < 0  \\quad \\text{and} \\quad ϕ(a) ≤ ϕ(b). 
+```
+is satisfied by either ``[a,b] = [t_{k-1},t_k]`,``[a,b] = [t_k,t_{k-1}]``, ``[a,b] = [0,t_k]`` or ``[a,b] = [t_k,0]``. Here, ``ϕ(t)`` denotes the cost function when performing 
+a step with size ``t`` into direction ``η``.
+Over the iteration, the bracket ``[a,b]`` is repeatedly
+updated using a cubic polynomial using values of ``ϕ, ϕ'`` at ``a,b``.
+The update value ``c`` is the local minimum of the polynomial, and the bracket coindition
+ensures that it lies inbetween ``a`` and ``b``. We note that the update strategy taken from
+[Hager:1989](@cite) ensures that the updated bracket satsifies the bracket condtion. 
+
+If the parameter `hybrid` is set to `true`, the hybrid approach from [Hager:1989](@cite)
+is activated, which prevents slow convergence in edge cases.
+
+The algorithm terminates if at any point the found candidate stepsize suffices the curvature condition
+induced by `sufficient_curvature``
+or the bracket ``[a,b]`` is smaller than the `min_bracket_width`.
+
+# Keyword arguments
+
+$(_var(:Keyword, :p; add = "to store an interim result"))
+* `p=allocate_result(M, rand)`: to store an interim result
+* `initial_stepsize=1.0`: the step size to start the search with
+$(_var(:Keyword, :retraction_method))
+* `stepsize_increase=1.1`:  step size increase factor ``>1``
+* `max_iterations=100`: maximum number of iterations
+* `sufficient_curvature=0.2`: target reduction of the curvature ``(0,1)``
+* `min_bracket_width=1e-4`: minimal size of the bracket ``[a,b]``
+* `hybrid=true`: use the hybrid strategy
+$(_var(:Keyword, :vector_transport_method))
+"""
+function CubicBracketingLinesearch(args...; kwargs...)
+    return ManifoldDefaultsFactory(CubicBracketingLinesearchStepsize, args...; kwargs...)
 end

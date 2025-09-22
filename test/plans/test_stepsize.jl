@@ -118,7 +118,7 @@ using ManoptTestSuite
     @testset "Polyak Stepsize" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = sum(2 .* p)
+        grad_f(M, p) = 2 .* p
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p = [2.0, 2.0]
         X = grad_f(M, p)
@@ -127,6 +127,18 @@ using ManoptTestSuite
         @test repr(ps) ==
             "Polyak()\nA stepsize with keyword parameters\n   * initial_cost_estimate = 0.0\n"
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
+    end
+    @testset "CubicBracketing Stepsize" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p = [1.0, 2.0]
+        X = grad_f(M, p)
+        gs = GradientDescentState(M; p = p, X = grad_f(M, p))
+        clbs = CubicBracketingLinesearch()(M)
+        @test startswith(repr(clbs), "CubicBracketingLinesearch(;")
+        @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
     end
     @testset "Distance over Gradients Stepsize" begin
         @testset "does not use sectional cuvature (Eucludian)" begin
@@ -148,9 +160,9 @@ using ManoptTestSuite
             # test printed representation before first step
             repr_ds = repr(ds)
             @test occursin("DistanceOverGradients(;", repr_ds)
-            @test occursin("initial_distance=1.0", repr_ds)
-            @test occursin("use_curvature=false", repr_ds)
-            @test occursin("sectional_curvature_bound=0.0", repr_ds)
+            @test occursin("initial_distance = 1.0", repr_ds)
+            @test occursin("use_curvature = false", repr_ds)
+            @test occursin("sectional_curvature_bound = 0.0", repr_ds)
             @test occursin("Current state:", repr_ds)
             @test occursin("max_distance = 1.0", repr_ds)
             @test occursin("gradient_sum = 0.0", repr_ds)

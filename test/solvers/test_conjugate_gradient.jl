@@ -288,6 +288,19 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         )
         @test norm(p1) ≈ 0 atol = 4 * 1.0e-16
         @test p1 == p2
+
+        # Cubic stepsize should yield the exact stepsize for quadratic problems
+        p3 = copy(M, p0)
+        conjugate_gradient_descent!(
+            M,
+            f,
+            grad_f,
+            p3;
+            stepsize = CubicBracketingLinesearch(; sufficient_curvature = 1.0e-4),
+            stopping_criterion = StopAfterIteration(2),
+        )
+        @test norm(p1) ≈ 0 atol = 4 * 1.0e-16
+        @test isapprox(M, p1, p3; atol = 5.0e-8)
     end
 
     @testset "CG on the Circle" begin

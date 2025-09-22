@@ -532,7 +532,7 @@ export Stepsize
 export AdaptiveWNGradient, ConstantLength, DecreasingLength,
     Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
 export ProximalGradientMethodBacktracking
-export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
+export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch, CubicBracketingLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
 export DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
