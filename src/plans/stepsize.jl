@@ -2090,7 +2090,10 @@ Step function to determine the stepsize update `c` discribed in
 [Hager:1989](@cite).
 
 # Input
-
+* `a::Real`: first value of the bracket
+* `b::Real`: second value of the bracket
+* `c::Real`: update value
+* `τ::Real`: minimal step tolerance
 """
 function step(a::Real, b::Real, c::Real, τ::Real)
     y = min(a, b)
@@ -2105,6 +2108,16 @@ function step(a::Real, b::Real, c::Real, τ::Real)
     end
 end
 
+@doc"""
+Get the `UnivariateTriple` related to the step with 
+stepsize ``τ`` from ``p`` in direction ``η``.
+
+# Input
+* `a::Real`: first value of the bracket
+* `b::Real`: second value of the bracket
+* `c::Real`: update value
+* `τ::Real`: minimal step tolerance
+"""
 function get_univariate_triple!(mp, cbls, p, η, t)
     M = get_manifold(mp)
     cbls.last_stepsize = t
