@@ -1984,21 +1984,28 @@ mutable struct CubicBracketingLinesearchStepsize{
     end
 end
 
+"""
+Triple of stepsize, function value und derivative value
+
+# Fields
+* `t::R`: stepsize
+* `f::R`: cost at stepsize `t`
+* `df::R`: derivative of the cost at stepsize `t`
+"""
 struct UnivariateTriple{R <: Real}
     t::R
     f::R
     df::R
 end
 
-mutable struct StepsizeBracketContainer{R <: Real}
-    a::R
-    b::R
-    f_a::R
-    f_b::R
-    df_a::R
-    df_b::R
-end
-# update bracket w.r.t. the bracketing strategy in WW. Hager (R3) - (R5)
+"""
+Updates bracket w.r.t. the bracketing strategy in WW. Hager (R3) - (R5).
+
+# Input
+* `a::UnivariateTriple{R}`: triple of bracket value `a`
+* `b::UnivariateTriple{R}`: triple bracket value `b`
+* `c::UnivariateTriple{R}`: triple of update value
+"""
 function update_bracket(a::UnivariateTriple{R}, b::UnivariateTriple{R}, c::UnivariateTriple{R}) where {R}
     if (c.t > max(a.t, b.t) || c.t < min(a.t, b.t))
         throw(
@@ -2031,7 +2038,18 @@ function update_bracket(a::UnivariateTriple{R}, b::UnivariateTriple{R}, c::Univa
     return a, b
 end
 
-function cubic(a::UnivariateTriple{R}, b::UnivariateTriple{R}; warn = true) where {R}
+"""
+Returns the local minimizer of the cubic polynomial ``p`` with ``p(a.t)=a.f``, ``p(b.t)=b.f``,
+``p'(a.t)=a.df``, ``p'(b.t)=b.df``.
+
+# Input
+* `a::UnivariateTriple{R}`: triple of bracket value `a`
+* `b::UnivariateTriple{R}`: triple bracket value `b`
+
+# Keyword arguments
+* `warn::Bool`: Boolean value if warnings should be displayed
+"""
+function cubic(a::UnivariateTriple{R}, b::UnivariateTriple{R}; warn::Bool = true) where {R}
     if (a.f > b.f && warn)
         @warn "value bracket condition not met."
     end
@@ -2055,11 +2073,26 @@ function cubic(a::UnivariateTriple{R}, b::UnivariateTriple{R}; warn = true) wher
     end
 end
 
+"""
+Returns the extremal of the quadratic polynomial ``p`` with 
+``p'(a.t)=a.df``, ``p'(b.t)=b.df``.
+
+# Input
+* `a::UnivariateTriple{R}`: triple of bracket value `a`
+* `b::UnivariateTriple{R}`: triple bracket value `b`
+"""
 function secant(a::UnivariateTriple{R}, b::UnivariateTriple{R}) where {R}
     return (a.t * b.df - b.t * a.df) / (b.df - a.df)
 end
 
-function step(a, b, c, τ)
+"""
+Step function to determine the stepsize update `c` discribed in 
+[Hager:1989](@cite).
+
+# Input
+
+"""
+function step(a::Real, b::Real, c::Real, τ::Real)
     y = min(a, b)
     z = max(a, b)
     if (y + τ ≤ c && c ≤ z - τ)
@@ -2072,7 +2105,7 @@ function step(a, b, c, τ)
     end
 end
 
-function get_ut!(mp, cbls, p, η, t)
+function get_univariate_triple!(mp, cbls, p, η, t)
     M = get_manifold(mp)
     cbls.last_stepsize = t
     ManifoldsBase.retract_fused!(M, cbls.candidate_point, p, η, t, cbls.retraction_method)
@@ -2099,7 +2132,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     n_iter = 0
     t = cbls.last_stepsize
     c_old = init
-    c = get_ut!(mp, cbls, p, η, t)
+    c = get_univariate_triple!(mp, cbls, p, η, t)
     a, b = nothing, nothing
     # Construct initial bracket
     while ((n_iter += 1) <= cbls.max_iterations)
@@ -2118,7 +2151,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
         end
         t *= cbls.stepsize_increase
         c_old = c
-        c = get_ut!(mp, cbls, p, η, t)
+        c = get_univariate_triple!(mp, cbls, p, η, t)
     end
 
     while ((n_iter += 1) <= cbls.max_iterations)
@@ -2127,7 +2160,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
         l = 2 * abs(a.t - b.t)
         γ = cubic(a, b)
         t = step(a.t, b.t, γ, cbls.min_bracket_width)
-        c = get_ut!(mp, cbls, p, η, t)
+        c = get_univariate_triple!(mp, cbls, p, η, t)
         check_curvature(c) && return t
         a_old = a
         a, b = update_bracket(a, b, c)
@@ -2143,7 +2176,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
                 γ = cubic(a_old, c; warn = false)
                 (γ < min(a.t, b.t) || γ > max(a.t, b.t)) && break
                 t = step(a.t, b.t, γ, cbls.min_bracket_width)
-                c = get_ut!(mp, cbls, p, η, t)
+                c = get_univariate_triple!(mp, cbls, p, η, t)
                 check_curvature(c) && return t
                 a_old = a
                 a, b = update_bracket(a, b, c)
@@ -2153,7 +2186,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
             end
             # Step 5
             t = (a.t + b.t) / 2
-            c = get_ut!(mp, cbls, p, η, t)
+            c = get_univariate_triple!(mp, cbls, p, η, t)
             check_curvature(c) && return t
             a, b = update_bracket(a, b, c)
             if (a.f > b.f)
