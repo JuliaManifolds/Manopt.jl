@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
 🏔️ Manopt.jl: optimization on Manifolds in Julia.
 
 * 📚 Documentation: [manoptjl.org](https://manoptjl.org)
@@ -194,7 +194,7 @@ include("solvers/conjugate_gradient_descent.jl")
 include("solvers/conjugate_residual.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/difference_of_convex_algorithm.jl")
-include("solvers/difference-of-convex-proximal-point.jl")
+include("solvers/difference_of_convex_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/exact_penalty_method.jl")
 include("solvers/projected_gradient_method.jl")
@@ -223,41 +223,7 @@ include("helpers/exports/Asymptote.jl")
 include("helpers/LineSearchesTypes.jl")
 include("deprecated.jl")
 
-"""
-    Manopt.JuMP_Optimizer()
-
-Creates a new optimizer object for the [MathOptInterface](https://jump.dev/MathOptInterface.jl/) (MOI).
-An alias `Manopt.JuMP_Optimizer` is defined for convenience.
-
-The minimization of a function `f(X)` of an array `X[1:n1,1:n2,...]`
-over a manifold `M` starting at `X0`, can be modeled as follows:
-```julia
-using JuMP
-model = Model(Manopt.JuMP_Optimizer)
-@variable(model, X[i1=1:n1,i2=1:n2,...] in M, start = X0[i1,i2,...])
-@objective(model, Min, f(X))
-```
-The optimizer assumes that `M` has a `Array` shape described
-by `ManifoldsBase.representation_size`.
-"""
-global JuMP_Optimizer
-
-"""
-    struct VectorizedManifold{M} <: MOI.AbstractVectorSet
-        manifold::M
-    end
-
-Representation of points of `manifold` as a vector of `R^n` where `n` is
-`MOI.dimension(VectorizedManifold(manifold))`.
-"""
-global JuMP_VectorizedManifold
-
-"""
-    struct ArrayShape{N} <: JuMP.AbstractShape
-
-Shape of an `Array{T,N}` of size `size`.
-"""
-global JuMP_ArrayShape
+function JuMP_Optimizer end
 
 function __init__()
     #
@@ -270,14 +236,25 @@ function __init__()
                     io,
                     "\nThe `convex_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
                 )
-                printstyled(io, "`using QuadraticModels, RipQP`"; color=:cyan)
+                printstyled(io, "`using QuadraticModels, RipQP`"; color = :cyan)
             end
             if exc.f === proximal_bundle_method_subsolver
                 print(
                     io,
                     "\nThe `proximal_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
                 )
-                printstyled(io, "`using QuadraticModels, RipQP`"; color=:cyan)
+                printstyled(io, "`using QuadraticModels, RipQP`"; color = :cyan)
+            end
+            if exc.f === Manopt.JuMP_Optimizer
+                print(
+                    io,
+                    """
+
+                    The `Manopt.JuMP_Optimizer` is not yet properly initialized.
+                    It requires the package `JuMP.jl`, so please load it e.g. via
+                    """,
+                )
+                printstyled(io, "`using JuMP`"; color = :cyan)
             end
         end
     end
@@ -285,7 +262,7 @@ function __init__()
 end
 #
 # General
-export ℝ, ℂ, &, |
+export ℝ, ℂ, &, |, ×, ≟, ⩼, ⩻
 export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
@@ -403,6 +380,7 @@ export get_state,
     set_iterate!,
     get_residuals,
     get_residuals!,
+    has_converged,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
@@ -469,10 +447,19 @@ export SteepestDescentCoefficient,
     LiuStoreyCoefficient,
     DaiYuanCoefficient,
     HagerZhangCoefficient,
-    ConjugateGradientBealeRestart
+    ConjugateGradientBealeRestart,
+    HybridCoefficient
+#
+# Restart Conditions
+export AbstractRestartCondition
+export NeverRestart,
+    RestartOnNonDescent,
+    RestartOnNonSufficientDescent
+#
 #
 # Solvers
 export adaptive_regularization_with_cubics,
+    accepted_keywords,
     adaptive_regularization_with_cubics!,
     alternating_gradient_descent,
     alternating_gradient_descent!,
@@ -543,13 +530,14 @@ export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
-export AdaptiveRagularizationWithCubicsModelObjective
+export AdaptiveRegularizationWithCubicsModelObjective
 export ExactPenaltyCost, ExactPenaltyGrad
 export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export AdaptiveWNGradient, ConstantLength, DecreasingLength, Polyak
+export AdaptiveWNGradient, ConstantLength, DecreasingLength,
+    Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
 export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
@@ -617,7 +605,7 @@ export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugWhenActive, DebugWarnIfFieldNotFinite, DebugIfEntry
 export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite
-export DebugWarnIfLagrangeMultiplierIncreases
+export DebugWarnIfLagrangeMultiplierIncreases, DebugWarnIfStepsizeCollapsed
 export DebugWarnIfGradientNormTooLarge, DebugMessages
 #
 # Records - and access functions

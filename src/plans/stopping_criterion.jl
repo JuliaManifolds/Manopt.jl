@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
     StoppingCriterion
 
 An abstract type for the functors representing stopping criteria, so they are
@@ -18,7 +18,7 @@ abstract type StoppingCriterion end
 """
     indicates_convergence(c::StoppingCriterion)
 
-Return whether (true) or not (false) a [`StoppingCriterion`](@ref) does _always_
+Return whether a [`StoppingCriterion`](@ref) does _always_
 mean that, when it indicates to stop, the solver has converged to a
 minimizer or critical point.
 
@@ -32,10 +32,32 @@ With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` the ind
 
 * `indicates_convergence(s1)` is `false`
 * `indicates_convergence(s2)` is `true`
-* `indicates_convergence(s1 | s2)` is `false`, since this might also stop after 20 iterations
+* `indicates_convergence(s1 | s2)` is `false`, since this might also stop after 20 iterations,
+  or in other words, for [`StopWhenAny`](@ref) _all_ its criteria have to indicate convergence, for this to return true.
 * `indicates_convergence(s1 & s2)` is `true`, since `s2` is fulfilled if this stops.
 """
 indicates_convergence(c::StoppingCriterion) = false
+
+"""
+    has_converged(c::StoppingCriterion)
+
+Return whether a [`StoppingCriterion`](@ref) that has indicated to stop _and_ is a stopping criterion
+that allows to conclude that the corresponding solver has converged.
+
+By default this is given by the static [`indicates_convergence`](@ref)`(c)` as well as
+the test whether the stopping criterion has stopped.
+For some stopping criteria, for example [`StopWhenAny`](@ref) a more advanced test can be done,
+that is more precise.
+
+# Examples
+With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` we obtain
+
+* `has_converged(s1)` is always `false` (even if it has stopped)
+* `has_converged(s2)` is always `true` as soon as it has stopped
+* `has_converged(s1 | s2)` is always `true` if it has stopped _and_ `s2` is the reason for that.
+* `has_converged(s1 & s2)` is `true` as soon as the algorithm stopped, since here `s2` always
+"""
+has_converged(c::StoppingCriterion) = indicates_convergence(c) && (get_count(c, Val(:Iterations)) >= 0)
 
 function get_count(c::StoppingCriterion, ::Val{:Iterations})
     if hasfield(typeof(c), :at_iteration)
@@ -44,7 +66,8 @@ function get_count(c::StoppingCriterion, ::Val{:Iterations})
         return 0
     end
 end
-@doc raw"""
+
+@doc """
     StoppingCriterionGroup <: StoppingCriterion
 
 An abstract type for a Stopping Criterion that itself consists of a set of
@@ -129,7 +152,7 @@ function set_parameter!(c::StopAfter, ::Val{:MaxTime}, v::Period)
     return c
 end
 
-@doc raw"""
+@doc """
     StopAfterIteration <: StoppingCriterion
 
 A functor for a stopping criterion to stop after a maximal number of iterations.
@@ -152,8 +175,8 @@ mutable struct StopAfterIteration <: StoppingCriterion
     StopAfterIteration(k::Int) = new(k, -1)
 end
 function (c::StopAfterIteration)(
-    ::P, ::S, k::Int
-) where {P<:AbstractManoptProblem,S<:AbstractManoptSolverState}
+        ::P, ::S, k::Int
+    ) where {P <: AbstractManoptProblem, S <: AbstractManoptSolverState}
     if k == 0 # reset on init
         c.at_iteration = -1
     end
@@ -216,13 +239,13 @@ $(_var(:Field, :storage))
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M="N"))``.
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M = "N"))``.
 Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:M))``
 is given by
 
 ```
-$(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distance))(p_k,q_k)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1","r"))},
+$(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distance))(p_k,q_k)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.
@@ -248,8 +271,8 @@ default. You can also provide an inverse_retraction_method for the `distance` or
 to use its default inverse retraction.
 """
 mutable struct StopWhenChangeLess{
-    F,IRT<:AbstractInverseRetractionMethod,TSSA<:StoreStateAction,N<:Union{Missing,Real}
-} <: StoppingCriterion
+        F, IRT <: AbstractInverseRetractionMethod, TSSA <: StoreStateAction, N <: Union{Missing, Real},
+    } <: StoppingCriterion
     threshold::F
     last_change::F
     storage::TSSA
@@ -258,17 +281,17 @@ mutable struct StopWhenChangeLess{
     outer_norm::N
 end
 function StopWhenChangeLess(
-    M::AbstractManifold,
-    ε::F;
-    storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
-    inverse_retraction_method::IRT=default_inverse_retraction_method(M),
-    outer_norm::N=missing,
-) where {F,N<:Union{Missing,Real},IRT<:AbstractInverseRetractionMethod}
-    return StopWhenChangeLess{F,IRT,typeof(storage),N}(
+        M::AbstractManifold,
+        ε::F;
+        storage::StoreStateAction = StoreStateAction(M; store_points = Tuple{:Iterate}),
+        inverse_retraction_method::IRT = default_inverse_retraction_method(M),
+        outer_norm::N = missing,
+    ) where {F, N <: Union{Missing, Real}, IRT <: AbstractInverseRetractionMethod}
+    return StopWhenChangeLess{F, IRT, typeof(storage), N}(
         ε, zero(ε), storage, inverse_retraction_method, -1, outer_norm
     )
 end
-function StopWhenChangeLess(ε::R; kwargs...) where {R<:Real}
+function StopWhenChangeLess(ε::R; kwargs...) where {R <: Real}
     return StopWhenChangeLess(DefaultManifold(), ε; kwargs...)
 end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k)
@@ -338,18 +361,18 @@ $(_var(:Field, :last_change))
 
 Initialize the stopping criterion to a threshold `tolerance` for the change of the cost function.
 """
-mutable struct StopWhenCostChangeLess{F<:Real} <: StoppingCriterion
+mutable struct StopWhenCostChangeLess{F <: Real} <: StoppingCriterion
     tolerance::F
     at_iteration::Int
     last_cost::F
     last_change::F
 end
-function StopWhenCostChangeLess(tol::F) where {F<:Real}
+function StopWhenCostChangeLess(tol::F) where {F <: Real}
     return StopWhenCostChangeLess{F}(tol, -1, zero(tol), 2 * tol)
 end
 function (c::StopWhenCostChangeLess)(
-    problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
-)
+        problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
+    )
     if iteration <= 0 # reset on init
         c.at_iteration = -1
         c.last_cost = Inf
@@ -398,13 +421,13 @@ mutable struct StopWhenCostLess{F} <: StoppingCriterion
     threshold::F
     last_cost::F
     at_iteration::Int
-    function StopWhenCostLess(ε::F) where {F<:Real}
+    function StopWhenCostLess(ε::F) where {F <: Real}
         return new{F}(ε, zero(ε), -1)
     end
 end
 function (c::StopWhenCostLess)(
-    p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     if k == 0 # reset on init
         c.at_iteration = -1
     end
@@ -440,7 +463,7 @@ function set_parameter!(c::StopWhenCostLess, ::Val{:MinCost}, v)
     return c
 end
 
-@doc raw"""
+@doc """
     StopWhenEntryChangeLess
 
 Evaluate whether a certain fields change is less than a certain threshold
@@ -470,7 +493,7 @@ For the storage a [`StoreStateAction`](@ref) is used
     )
 
 """
-mutable struct StopWhenEntryChangeLess{F,TF,TSSA<:StoreStateAction} <: StoppingCriterion
+mutable struct StopWhenEntryChangeLess{F, TF, TSSA <: StoreStateAction} <: StoppingCriterion
     at_iteration::Int
     distance::F
     field::Symbol
@@ -479,16 +502,16 @@ mutable struct StopWhenEntryChangeLess{F,TF,TSSA<:StoreStateAction} <: StoppingC
     last_change::TF
 end
 function StopWhenEntryChangeLess(
-    field::Symbol, distance::F, threshold::TF; storage::TSSA=StoreStateAction([field])
-) where {F,TF,TSSA<:StoreStateAction}
-    return StopWhenEntryChangeLess{F,TF,TSSA}(
+        field::Symbol, distance::F, threshold::TF; storage::TSSA = StoreStateAction([field])
+    ) where {F, TF, TSSA <: StoreStateAction}
+    return StopWhenEntryChangeLess{F, TF, TSSA}(
         -1, distance, field, storage, threshold, zero(threshold)
     )
 end
 
 function (sc::StopWhenEntryChangeLess)(
-    mp::AbstractManoptProblem, s::AbstractManoptSolverState, k
-)
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k
+    )
     if k == 0 # reset on init
         sc.at_iteration = -1
     end
@@ -547,13 +570,13 @@ $(_var(:Field, :storage))
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M="N"))``.
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M = "N"))``.
 Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradien ``X,Y ∈ $(_math(:M))``
 is given by
 
 ```
-$(_tex(:norm, "X-Y"; index="p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k-Y_k"; index="p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1","r"))},
+$(_tex(:norm, "X-Y"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k-Y_k"; index = "p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.
@@ -571,11 +594,11 @@ The `outer_norm` has no effect on manifols, that do not consist of components.
 
 Create a stopping criterion with threshold `ε` for the change gradient, that is, this criterion
 indicates to stop when [`get_gradient`](@ref) is in (norm of) its change less than `ε`, where
-`vector_transport_method` denotes the vector transport ``$(_tex(:Cal,"T"))`` used.
+`vector_transport_method` denotes the vector transport ``$(_tex(:Cal, "T"))`` used.
 """
 mutable struct StopWhenGradientChangeLess{
-    F,VTM<:AbstractVectorTransportMethod,TSSA<:StoreStateAction,N<:Union{Missing,Real}
-} <: StoppingCriterion
+        F, VTM <: AbstractVectorTransportMethod, TSSA <: StoreStateAction, N <: Union{Missing, Real},
+    } <: StoppingCriterion
     threshold::F
     last_change::F
     storage::TSSA
@@ -584,32 +607,32 @@ mutable struct StopWhenGradientChangeLess{
     outer_norm::N
 end
 function StopWhenGradientChangeLess(
-    M::AbstractManifold,
-    ε::F;
-    storage::StoreStateAction=StoreStateAction(
-        M; store_points=Tuple{:Iterate}, store_vectors=Tuple{:Gradient}
-    ),
-    vector_transport_method::VTM=default_vector_transport_method(M),
-    outer_norm::N=missing,
-) where {F,N<:Union{Missing,Real},VTM<:AbstractVectorTransportMethod}
-    return StopWhenGradientChangeLess{F,VTM,typeof(storage),N}(
+        M::AbstractManifold,
+        ε::F;
+        storage::StoreStateAction = StoreStateAction(
+            M; store_points = Tuple{:Iterate}, store_vectors = Tuple{:Gradient}
+        ),
+        vector_transport_method::VTM = default_vector_transport_method(M),
+        outer_norm::N = missing,
+    ) where {F, N <: Union{Missing, Real}, VTM <: AbstractVectorTransportMethod}
+    return StopWhenGradientChangeLess{F, VTM, typeof(storage), N}(
         ε, zero(ε), storage, vector_transport_method, -1, outer_norm
     )
 end
 function StopWhenGradientChangeLess(
-    ε::Float64; storage::StoreStateAction=StoreStateAction([:Iterate, :Gradient]), kwargs...
-)
-    return StopWhenGradientChangeLess(DefaultManifold(1), ε; storage=storage, kwargs...)
+        ε::Float64; storage::StoreStateAction = StoreStateAction([:Iterate, :Gradient]), kwargs...
+    )
+    return StopWhenGradientChangeLess(DefaultManifold(1), ε; storage = storage, kwargs...)
 end
 function (c::StopWhenGradientChangeLess)(
-    mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     M = get_manifold(mp)
     if k == 0 # reset on init
         c.at_iteration = -1
     end
     if has_storage(c.storage, PointStorageKey(:Iterate)) &&
-        has_storage(c.storage, VectorStorageKey(:Gradient))
+            has_storage(c.storage, VectorStorageKey(:Gradient))
         M = get_manifold(mp)
         p_old = get_storage(c.storage, PointStorageKey(:Iterate))
         X_old = get_storage(c.storage, VectorStorageKey(:Gradient))
@@ -676,13 +699,13 @@ A stopping criterion based on the current gradient norm.
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M="N"))``.
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M = "N"))``.
 Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:M))``
 is given by
 
 ```
-$(_tex(:norm, "X"; index="p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k"; index="p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1","r"))},
+$(_tex(:norm, "X"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k"; index = "p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.
@@ -699,22 +722,22 @@ Create a stopping criterion with threshold `ε` for the gradient, that is, this 
 indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`,
 where the norm to use can be specified in the `norm=` keyword.
 """
-mutable struct StopWhenGradientNormLess{F,TF,N<:Union{Missing,Real}} <: StoppingCriterion
+mutable struct StopWhenGradientNormLess{F, TF, N <: Union{Missing, Real}} <: StoppingCriterion
     norm::F
     threshold::TF
     last_change::TF
     at_iteration::Int
     outer_norm::N
     function StopWhenGradientNormLess(
-        ε::TF; norm::F=norm, outer_norm::N=missing
-    ) where {F,TF,N<:Union{Missing,Real}}
-        return new{F,TF,N}(norm, ε, zero(ε), -1, outer_norm)
+            ε::TF; norm::F = norm, outer_norm::N = missing
+        ) where {F, TF, N <: Union{Missing, Real}}
+        return new{F, TF, N}(norm, ε, zero(ε), -1, outer_norm)
     end
 end
 
 function (sc::StopWhenGradientNormLess)(
-    mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     M = get_manifold(mp)
     if k == 0 # reset on init
         sc.at_iteration = -1
@@ -771,13 +794,13 @@ mutable struct StopWhenStepsizeLess{F} <: StoppingCriterion
     threshold::F
     last_stepsize::F
     at_iteration::Int
-    function StopWhenStepsizeLess(ε::F) where {F<:Real}
+    function StopWhenStepsizeLess(ε::F) where {F <: Real}
         return new{F}(ε, zero(ε), -1)
     end
 end
 function (c::StopWhenStepsizeLess)(
-    p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     if k == 0 # reset on init
         c.at_iteration = -1
     end
@@ -828,8 +851,8 @@ mutable struct StopWhenCostNaN <: StoppingCriterion
     StopWhenCostNaN() = new(-1)
 end
 function (c::StopWhenCostNaN)(
-    p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     if k == 0 # reset on init
         c.at_iteration = -1
     end
@@ -871,8 +894,8 @@ mutable struct StopWhenIterateNaN <: StoppingCriterion
     StopWhenIterateNaN() = new(-1)
 end
 function (c::StopWhenIterateNaN)(
-    p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     if k == 0 # reset on init
         c.at_iteration = -1
     end
@@ -897,7 +920,7 @@ function show(io::IO, c::StopWhenIterateNaN)
     return print(io, "StopWhenIterateNaN()\n    $(status_summary(c))")
 end
 
-@doc raw"""
+@doc """
     StopWhenSmallerOrEqual <: StoppingCriterion
 
 A functor for an stopping criterion, where the algorithm if stopped when a variable is smaller than or equal to its minimum value.
@@ -917,13 +940,13 @@ mutable struct StopWhenSmallerOrEqual{R} <: StoppingCriterion
     value::Symbol
     minValue::R
     at_iteration::Int
-    function StopWhenSmallerOrEqual(value::Symbol, mValue::R) where {R<:Real}
+    function StopWhenSmallerOrEqual(value::Symbol, mValue::R) where {R <: Real}
         return new{R}(value, mValue, -1)
     end
 end
 function (c::StopWhenSmallerOrEqual)(
-    ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     if k == 0 # reset on init
         c.at_iteration = -1
     end
@@ -966,11 +989,11 @@ mutable struct StopWhenSubgradientNormLess{R} <: StoppingCriterion
     at_iteration::Int
     threshold::R
     value::R
-    StopWhenSubgradientNormLess(ε::R) where {R<:Real} = new{R}(-1, ε, zero(ε))
+    StopWhenSubgradientNormLess(ε::R) where {R <: Real} = new{R}(-1, ε, zero(ε))
 end
 function (c::StopWhenSubgradientNormLess)(
-    mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     M = get_manifold(mp)
     if (k == 0) # reset on init
         c.at_iteration = -1
@@ -1013,7 +1036,7 @@ end
 # Meta Criteria
 #
 
-@doc raw"""
+@doc """
     StopWhenAll <: StoppingCriterionSet
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
@@ -1025,7 +1048,7 @@ reasons.
     StopWhenAll(c::NTuple{N,StoppingCriterion} where N)
     StopWhenAll(c::StoppingCriterion,...)
 """
-mutable struct StopWhenAll{TCriteria<:Tuple} <: StoppingCriterionSet
+mutable struct StopWhenAll{TCriteria <: Tuple} <: StoppingCriterionSet
     criteria::TCriteria
     at_iteration::Int
     StopWhenAll(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), -1)
@@ -1050,19 +1073,27 @@ function status_summary(c::StopWhenAll)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop When _all_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r  * $(replace(status_summary(cs),"\n" => "\n    "))\n"
+        r = "$r  * $(replace(status_summary(cs), "\n" => "\n    "))\n"
     end
     return "$(r)Overall: $s"
 end
 function indicates_convergence(c::StopWhenAll)
     return any(indicates_convergence(ci) for ci in c.criteria)
 end
+function has_converged(c::StopWhenAll)
+    # All are active
+    if length(get_active_stopping_criteria(c)) == length(c.criteria)
+        # at least one of them does has_converged as well
+        return any(has_converged(ci) for ci in c.criteria)
+    end
+    return false
+end
 function get_count(c::StopWhenAll, v::Val{:Iterations})
     return maximum(get_count(ci, v) for ci in c.criteria)
 end
 function show(io::IO, c::StopWhenAll)
     s = replace(status_summary(c), "\n" => "\n    ") #increase indent
-    return print(io, "StopWhenAll with the Stopping Criteria\n    $(s)")
+    return print(io, "StopWhenAll with the stopping criteria\n    $(s)")
 end
 
 """
@@ -1082,20 +1113,20 @@ Is the same as
     a = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6))
     b = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6), StopWhenGradientNormLess(1e-6))
 """
-function Base.:&(s1::S, s2::T) where {S<:StoppingCriterion,T<:StoppingCriterion}
+function Base.:&(s1::S, s2::T) where {S <: StoppingCriterion, T <: StoppingCriterion}
     return StopWhenAll(s1, s2)
 end
-function Base.:&(s1::S, s2::StopWhenAll) where {S<:StoppingCriterion}
+function Base.:&(s1::S, s2::StopWhenAll) where {S <: StoppingCriterion}
     return StopWhenAll(s1, s2.criteria...)
 end
-function Base.:&(s1::StopWhenAll, s2::T) where {T<:StoppingCriterion}
+function Base.:&(s1::StopWhenAll, s2::T) where {T <: StoppingCriterion}
     return StopWhenAll(s1.criteria..., s2)
 end
 function Base.:&(s1::StopWhenAll, s2::StopWhenAll)
     return StopWhenAll(s1.criteria..., s2.criteria...)
 end
 
-@doc raw"""
+@doc """
     StopWhenAny <: StoppingCriterionSet
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
@@ -1106,7 +1137,7 @@ concatenation of all reasons (assuming that all non-indicating return `""`).
     StopWhenAny(c::NTuple{N,StoppingCriterion} where N)
     StopWhenAny(c::StoppingCriterion...)
 """
-mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
+mutable struct StopWhenAny{TCriteria <: Tuple} <: StoppingCriterionSet
     criteria::TCriteria
     at_iteration::Int
     StopWhenAny(c::Vector{<:StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), -1)
@@ -1144,12 +1175,16 @@ function status_summary(c::StopWhenAny)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop When _one_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r  * $(replace(status_summary(cs),"\n" => "\n    "))\n"
+        r = "$r  * $(replace(status_summary(cs), "\n" => "\n    "))\n"
     end
     return "$(r)Overall: $s"
 end
 function indicates_convergence(c::StopWhenAny)
-    return any(indicates_convergence(ci) for ci in get_active_stopping_criteria(c))
+    return all(indicates_convergence(ci) for ci in c.criteria)
+end
+function has_converged(c::StopWhenAny)
+    # If any of the active ones has_converged – we stop due to convergence
+    return any(has_converged(ci) for ci in get_active_stopping_criteria(c))
 end
 function get_count(c::StopWhenAny, v::Val{:Iterations})
     iters = filter(x -> x > 0, [get_count(ci, v) for ci in c.criteria])
@@ -1177,13 +1212,13 @@ Is the same as
     a = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6))
     b = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6), StopWhenGradientNormLess(1e-6))
 """
-function Base.:|(s1::S, s2::T) where {S<:StoppingCriterion,T<:StoppingCriterion}
+function Base.:|(s1::S, s2::T) where {S <: StoppingCriterion, T <: StoppingCriterion}
     return StopWhenAny(s1, s2)
 end
-function Base.:|(s1::S, s2::StopWhenAny) where {S<:StoppingCriterion}
+function Base.:|(s1::S, s2::StopWhenAny) where {S <: StoppingCriterion}
     return StopWhenAny(s1, s2.criteria...)
 end
-function Base.:|(s1::StopWhenAny, s2::T) where {T<:StoppingCriterion}
+function Base.:|(s1::StopWhenAny, s2::T) where {T <: StoppingCriterion}
     return StopWhenAny(s1.criteria..., s2)
 end
 function Base.:|(s1::StopWhenAny, s2::StopWhenAny)
@@ -1192,7 +1227,7 @@ end
 
 is_active_stopping_criterion(c::StoppingCriterion) = (c.at_iteration >= 0)
 
-@doc raw"""
+@doc """
     get_active_stopping_criteria(c)
 
 returns all active stopping criteria, if any, that are within a
@@ -1202,13 +1237,13 @@ array if no stop is indicated or the stopping criterion as the only element of
 an array. For a [`StoppingCriterionSet`](@ref) all internal (even nested)
 criteria that indicate to stop are returned.
 """
-function get_active_stopping_criteria(c::sCS) where {sCS<:StoppingCriterionSet}
+function get_active_stopping_criteria(c::sCS) where {sCS <: StoppingCriterionSet}
     c = get_active_stopping_criteria.(get_stopping_criteria(c))
     return vcat(c...)
 end
 # for non-array containing stopping criteria, the recursion ends in either
 # returning nothing or an 1-element array containing itself
-function get_active_stopping_criteria(c::sC) where {sC<:StoppingCriterion}
+function get_active_stopping_criteria(c::sC) where {sC <: StoppingCriterion}
     if is_active_stopping_criterion(c)
         return [c] # recursion top
     else
@@ -1216,13 +1251,13 @@ function get_active_stopping_criteria(c::sC) where {sC<:StoppingCriterion}
     end
 end
 
-@doc raw"""
+@doc """
     get_stopping_criteria(c)
 
 return the array of internally stored [`StoppingCriterion`](@ref)s for a
 [`StoppingCriterionSet`](@ref) `c`.
 """
-function get_stopping_criteria(c::S) where {S<:StoppingCriterionSet}
+function get_stopping_criteria(c::S) where {S <: StoppingCriterionSet}
     return error("get_stopping_criteria() not defined for a $(typeof(c)).")
 end
 get_stopping_criteria(c::StopWhenAll) = c.criteria
@@ -1245,7 +1280,7 @@ function set_parameter!(c::StopWhenAny, s::Symbol, v)
     return c
 end
 
-@doc raw"""
+@doc """
     StopWhenRepeated <: StoppingCriterion
 
 A stopping Criterion that indicates to stop when the (internal) stoppoing criterion it wraps,
@@ -1277,7 +1312,7 @@ A stopping criterion that indicates to stop whenever the gradient norm is less t
 A stopping criterion that indicates to stop whenever the gradient norm is less that `1e-6` at three iterations (not necessarily consecutive):
     StopWhenRepeated(StopWhenGradientNormLess(1e-6), 3; consecutive=false)
 """
-mutable struct StopWhenRepeated{SC<:StoppingCriterion} <: StoppingCriterion
+mutable struct StopWhenRepeated{SC <: StoppingCriterion} <: StoppingCriterion
     stopping_criterion::SC
     n::Int
     count::Int
@@ -1285,8 +1320,8 @@ mutable struct StopWhenRepeated{SC<:StoppingCriterion} <: StoppingCriterion
     at_iteration::Int
 end
 function StopWhenRepeated(
-    sc::SC, n::Int; consecutive::Bool=true
-) where {SC<:StoppingCriterion}
+        sc::SC, n::Int; consecutive::Bool = true
+    ) where {SC <: StoppingCriterion}
     return StopWhenRepeated{SC}(sc, n, 0, consecutive, -1)
 end
 function cross(sc::StoppingCriterion, n::Int)
@@ -1294,8 +1329,8 @@ function cross(sc::StoppingCriterion, n::Int)
 end
 
 function (c::StopWhenRepeated)(
-    p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     if k <= 0 # reset on init
         c.count = zero(c.count)
         c.at_iteration = -1
@@ -1338,6 +1373,10 @@ end
 function indicates_convergence(sc::StopWhenRepeated)
     return indicates_convergence(sc.stopping_criterion)
 end
+function has_converged(sc::StopWhenRepeated)
+    # When the inner one indicates convergence, this does as well
+    return has_converged(sc.stopping_criterion)
+end
 function show(io::IO, sc::StopWhenRepeated)
     is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
     return print(
@@ -1346,69 +1385,64 @@ function show(io::IO, sc::StopWhenRepeated)
     )
 end
 
-@doc raw"""
-    StopWhenCriterionWithIterationCondition <: StoppingCriterion
+@doc """
+    StopWhenCriterionWithCondition <: StoppingCriterion
 
-A stopping criterion that indicates to stop when the (internal) stopping criterion it wraps,
-has indicated to stop with an additional check compared to the current iteration, e.g.
+A stopping criterion, that only evaluates a certain (inner) stopping based on a condition
+on the iterate `k`.
+The condition is a function `condition(k) -> Bool`.
 
-* `>(n)` only (stricly) after iteration `n`
-* `>=(n)` only including and after iteration `n`
-* `==(n)` only exactly at `n`
-* `<=(n)` only including and before iteration `n`
-* `<(n)` only (strictly) before iteration `n`
-* any functor `f(k) -> Bool` indicating to evaluate the stopping criterion at iteration `k`.
+## Example `(k) -> >(n)` would only activate that stopping criterion after `n` iterations.`.
 
-# Fields
+## Fields
 
 * `criterion`: the [`StoppingCriterion`](@ref) to wrap
 * `comp`: the number of times the criterion has to indicate to stop
 
-# Constructor
+## Constructor
 
     StopWhenRepeated(criterion::StoppingCriterion, n=0; comp = (>(n)))
 
 Create a stopping criterion that indicates to stop when the `comp` has indicated to
 check the inner criterion. The `n` is ignored if you provide a manual functor `comp`.
 
-As well as for a given [` StoppingCriterion`] `sc` the shortcuts
-`sc > n`, `sc >= n`, `sc == n`, `sc <= n`, `sc < n` for the cases above.
-
-# Examples
+## Examples
 
 A stopping criterion that indicates to stop when the gradient norm is small but only after the third iteration
     StopWhenCriterionWithIterationCondition(StopWhenGradientNormLess(1e-6), 3)
-    StopWhenGradientNormLess(1e-6) > 3
+
+You can also use the infix operators `≟` (`\\questeq` on REPL),  `⩻` (`\\ltquest`), and `⩼` (`\\gtquest`) to create such a criterion:
+
+    StopWhenGradientNormLess(1e-6) ≟ 3
+    StopWhenGradientNormLess(1e-6) ⩻ 3
+    StopWhenGradientNormLess(1e-6) ⩼ 3
+
+These are equivalent to specifying `comp = (==(3))`, `comp = (<(3))`, and `comp = (>(3))`, respectively.
+Their interpretation is “the stopping criterion is only checked (asked) if the condition is met”
 """
-mutable struct StopWhenCriterionWithIterationCondition{SC<:StoppingCriterion,F} <:
-               StoppingCriterion
+mutable struct StopWhenCriterionWithIterationCondition{SC <: StoppingCriterion, F} <:
+    StoppingCriterion
     stopping_criterion::SC
     comp::F
     at_iteration::Int
 end
 function StopWhenCriterionWithIterationCondition(
-    sc::SC, n::Int=0; comp::F=(>(n))
-) where {SC<:StoppingCriterion,F}
-    return StopWhenCriterionWithIterationCondition{SC,F}(sc, comp, -1)
+        sc::SC, n::Int = 0; comp::F = (>(n))
+    ) where {SC <: StoppingCriterion, F}
+    return StopWhenCriterionWithIterationCondition{SC, F}(sc, comp, -1)
 end
-function Base.:>(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp=(>(n)))
+function ⩻(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc; comp = (<(n)))
 end
-function Base.:>=(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp=(>=(n)))
+function ⩼(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc; comp = (>(n)))
 end
-function Base.:(==)(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp=(==(n)))
-end
-function Base.:<(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp=(<(n)))
-end
-function Base.:<=(sc::StoppingCriterion, n::Int)
-    return StopWhenCriterionWithIterationCondition(sc, n; comp=(<=(n)))
+function ≟(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc; comp = (==(n)))
 end
 function (c::StopWhenCriterionWithIterationCondition)(
-    p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-)
+        p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
     if k <= 0 # reset on init
         c.at_iteration = -1
         return c.stopping_criterion(p, s, k) # reset the criterion
@@ -1442,6 +1476,10 @@ end
 function indicates_convergence(sc::StopWhenCriterionWithIterationCondition)
     return indicates_convergence(sc.stopping_criterion)
 end
+function has_converged(sc::StopWhenCriterionWithIterationCondition)
+    # When the inner one indicates convergence, this does as well
+    return has_converged(sc.stopping_criterion)
+end
 function show(io::IO, sc::StopWhenCriterionWithIterationCondition)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -1452,7 +1490,7 @@ function show(io::IO, sc::StopWhenCriterionWithIterationCondition)
     )
 end
 
-@doc raw"""
+@doc """
     get_reason(s::AbstractManoptSolverState)
 
 return the current reason stored within the [`StoppingCriterion`](@ref) from

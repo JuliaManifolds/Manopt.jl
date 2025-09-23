@@ -1,12 +1,14 @@
 _doc_AL_Cost(iter) = "$(_tex(:Cal, "L"))_{ρ^{($iter)}}(p, μ^{($iter)}, λ^{($iter)})"
-_doc_AL_Cost_long = raw"""
+_doc_AL_Cost_long = """
 ```math
-\mathcal L_\rho(p, μ, λ)
-= f(x) + \frac{ρ}{2} \biggl(
-    \sum_{j=1}^n \Bigl( h_j(p) + \frac{λ_j}{ρ} \Bigr)^2
-    +
-    \sum_{i=1}^m \max\Bigl\{ 0, \frac{μ_i}{ρ} + g_i(p) \Bigr\}^2
-\Bigr)
+$(_tex(:Cal, "L"))_ρ(p, μ, λ)
+= f(x) + $(_tex(:frac, "ρ", "2"))$(_tex(:biggl))(
+  $(_tex(:sum, "j=1", "n"))$(_tex(:Bigl))(
+    h_j(p) + $(_tex(:frac, "λ_j", "ρ"))
+  $(_tex(:Bigr)))^2
+  +
+  $(_tex(:sum, "i=1", "m"))$(_tex(:max))$(_tex(:set, "0, $(_tex(:frac, "μ_i", "ρ")) + g_i(p)"))^2
+$(_tex(:biggr)))
 ```
 """
 
@@ -30,7 +32,7 @@ number type used and ``T`` the vector type.
 
     AugmentedLagrangianCost(co, ρ, μ, λ)
 """
-mutable struct AugmentedLagrangianCost{CO,R,T} <: AbstractConstrainedFunctor{T}
+mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunctor{T}
     co::CO
     ρ::R
     μ::T
@@ -54,7 +56,7 @@ function (L::AugmentedLagrangianCost)(M::AbstractManifold, p)
     return c + (L.ρ / 2) * d
 end
 
-@doc raw"""
+@doc """
     AugmentedLagrangianGrad{CO,R,T} <: AbstractConstrainedFunctor{T}
 
 Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
@@ -80,7 +82,7 @@ number type used and ``T`` the vector type.
     AugmentedLagrangianGrad(co, ρ, μ, λ)
 
 """
-mutable struct AugmentedLagrangianGrad{CO,R,T} <: AbstractConstrainedFunctor{T}
+mutable struct AugmentedLagrangianGrad{CO, R, T} <: AbstractConstrainedFunctor{T}
     co::CO
     ρ::R
     μ::T
@@ -97,8 +99,8 @@ end
 get_parameter(alg::AugmentedLagrangianGrad, ::Val{:ρ}) = alg.ρ
 # default, that is especially when the `grad_g` and `grad_h` are functions.
 function (LG::AugmentedLagrangianGrad)(
-    M::AbstractManifold, X, p, range=NestedPowerRepresentation()
-)
+        M::AbstractManifold, X, p, range = NestedPowerRepresentation()
+    )
     gp = get_inequality_constraint(M, LG.co, p, :)
     hp = get_equality_constraint(M, LG.co, p, :)
     m = length(gp)

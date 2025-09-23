@@ -28,16 +28,16 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         p = [4.0, 2.0]
         st = GradientDescentState(
             M;
-            p=p,
-            stopping_criterion=StopAfterIteration(10),
-            stepsize=Manopt.ConstantStepsize(M),
+            p = p,
+            stopping_criterion = StopAfterIteration(10),
+            stepsize = Manopt.ConstantStepsize(M),
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
         # summary fallback to show
         @test Manopt.status_summary(TestDebugAction()) === "TestDebugAction()"
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
-        a1 = DebugDivider("|"; io=io)
+        a1 = DebugDivider("|"; io = io)
         @test Manopt.dispatch_state_decorator(DebugSolverState(st, a1)) === Val{true}()
         # constructors
         @test DebugSolverState(st, a1).debugDictionary[:Iteration] == a1
@@ -45,7 +45,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test DebugSolverState(st, Dict(:A => a1)).debugDictionary[:A] == a1
         @test DebugSolverState(st, ["|"]).debugDictionary[:Iteration].divider == a1.divider
         @test endswith(repr(DebugSolverState(st, a1)), "\"|\"")
-        @test repr(DebugSolverState(st, Dict{Symbol,DebugAction}())) == repr(st)
+        @test repr(DebugSolverState(st, Dict{Symbol, DebugAction}())) == repr(st)
         # Passthrough
         dss = DebugSolverState(st, a1)
         Manopt.set_parameter!(dss, :StoppingCriterion, :MaxIteration, 20)
@@ -62,57 +62,57 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test String(take!(io)) == "|"
         @test DebugEvery(a1, 10, true)(mp, st, -1) == nothing
         # Debug Cost
-        @test DebugCost(; format="A %f").format == "A %f"
-        DebugCost(; long=false, io=io)(mp, st, 0)
+        @test DebugCost(; format = "A %f").format == "A %f"
+        DebugCost(; long = false, io = io)(mp, st, 0)
         @test String(take!(io)) == "f(x): 0.000000"
-        DebugCost(; long=false, io=io)(mp, st, -1)
+        DebugCost(; long = false, io = io)(mp, st, -1)
         @test String(take!(io)) == ""
         # entry
-        DebugEntry(:p; prefix="x:", io=io)(mp, st, 0)
+        DebugEntry(:p; prefix = "x:", io = io)(mp, st, 0)
         @test String(take!(io)) == "x: $p"
-        DebugEntry(:p; prefix="x:", io=io)(mp, st, -1)
+        DebugEntry(:p; prefix = "x:", io = io)(mp, st, -1)
         @test String(take!(io)) == ""
         # Change of Iterate and recording a custom field
         a2 = DebugChange(;
-            storage=StoreStateAction(M; store_points=Tuple{:Iterate}, p_init=p),
-            prefix="Last: ",
-            io=io,
+            storage = StoreStateAction(M; store_points = Tuple{:Iterate}, p_init = p),
+            prefix = "Last: ",
+            io = io,
         )
         a2(mp, st, 0) # init
         st.p = [3.0, 2.0]
         a2(mp, st, 1)
         a2inv = DebugChange(;
-            storage=StoreStateAction(M; store_fields=[:Iterate]),
-            prefix="Last: ",
-            io=io,
-            inverse_retraction_method=PolarInverseRetraction(),
+            storage = StoreStateAction(M; store_fields = [:Iterate]),
+            prefix = "Last: ",
+            io = io,
+            inverse_retraction_method = PolarInverseRetraction(),
         )
         a2mani = DebugChange(
             TestPolarManifold();
-            storage=StoreStateAction([:Iterate]),
-            prefix="Last: ",
-            io=io,
+            storage = StoreStateAction([:Iterate]),
+            prefix = "Last: ",
+            io = io,
         )
         @test a2inv.inverse_retraction_method === PolarInverseRetraction()
         @test a2mani.inverse_retraction_method === PolarInverseRetraction()
         @test a2.inverse_retraction_method === LogarithmicInverseRetraction()
         @test String(take!(io)) == "Last: 1.000000"
         a3 = DebugGradientChange(;
-            storage=StoreStateAction([:Gradient, :Iterate]), prefix="Last: ", io=io
+            storage = StoreStateAction([:Gradient, :Iterate]), prefix = "Last: ", io = io
         )
         a3(mp, st, 0) # init
         st.X = [1.0, 0.0]
         a3(mp, st, 1)
         @test String(take!(io)) == "Last: 1.000000"
         # Iterate
-        DebugIterate(; io=io)(mp, st, 0)
+        DebugIterate(; io = io)(mp, st, 0)
         @test String(take!(io)) == ""
-        DebugIterate(; io=io)(mp, st, 1)
+        DebugIterate(; io = io)(mp, st, 1)
         @test String(take!(io)) == "p: $(st.p)"
         # Iteration
-        DebugIteration(; io=io)(mp, st, 0)
+        DebugIteration(; io = io)(mp, st, 0)
         @test String(take!(io)) == "Initial "
-        DebugIteration(; io=io)(mp, st, 23)
+        DebugIteration(; io = io)(mp, st, 23)
         @test String(take!(io)) == "# 23    "
         @test repr(DebugIteration()) == "DebugIteration(; format=\"# %-6d\")"
         @test Manopt.status_summary(DebugIteration()) == "(:Iteration, \"# %-6d\")"
@@ -124,14 +124,14 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         a3 = DebugEntryChange(
             :p,
             (mp, o, x, y) -> distance(Manopt.get_manifold(mp), x, y);
-            prefix="Last: ",
+            prefix = "Last: ",
             io,
         )
         a4 = DebugEntryChange(
             :p,
             (mp, o, x, y) -> distance(Manopt.get_manifold(mp), x, y);
-            initial_value=p,
-            format="Last: %1.1f",
+            initial_value = p,
+            format = "Last: %1.1f",
             io,
         )
         a3(mp, st, 0) # init
@@ -145,13 +145,13 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         a4(mp, st, 1)
         @test String(take!(io)) == "Last: 1.0"
         # StoppingCriterion
-        DebugStoppingCriterion(; io=io)(mp, st, 1)
+        DebugStoppingCriterion(; io = io)(mp, st, 1)
         @test String(take!(io)) == ""
         st.stop(mp, st, 19)
-        DebugStoppingCriterion(; io=io)(mp, st, 19)
+        DebugStoppingCriterion(; io = io)(mp, st, 19)
         @test String(take!(io)) == ""
         st.stop(mp, st, 20)
-        DebugStoppingCriterion(; io=io)(mp, st, 20)
+        DebugStoppingCriterion(; io = io)(mp, st, 20)
         @test String(take!(io)) ==
             "At iteration 20 the algorithm reached its maximal number of iterations (20).\n"
         @test repr(DebugStoppingCriterion()) == "DebugStoppingCriterion()"
@@ -255,9 +255,9 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         p = [4.0, 2.0]
         st = GradientDescentState(
             M;
-            p=p,
-            stopping_criterion=StopAfterIteration(20),
-            stepsize=Manopt.ConstantStepsize(M),
+            p = p,
+            stopping_criterion = StopAfterIteration(20),
+            stepsize = Manopt.ConstantStepsize(M),
         )
         f(M, y) = Inf
         grad_f(M, y) = Inf .* ones(2)
@@ -296,6 +296,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test isa(df2[:Iteration], DebugWarnIfFieldNotFinite)
         df3 = DebugFactory([:WarnBundle])
         @test isa(df3[:Iteration], DebugWarnIfLagrangeMultiplierIncreases)
+        df4 = DebugFactory([:WarnStepsize])
+        @test isa(df4[:Iteration], DebugWarnIfStepsizeCollapsed)
     end
     @testset "Debug Time" begin
         io = IOBuffer()
@@ -303,16 +305,16 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         p = [4.0, 2.0]
         st = GradientDescentState(
             M;
-            p=p,
-            stopping_criterion=StopAfterIteration(20),
-            stepsize=Manopt.ConstantStepsize(M),
+            p = p,
+            stopping_criterion = StopAfterIteration(20),
+            stepsize = Manopt.ConstantStepsize(M),
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
-        d1 = DebugTime(; start=true, io=io)
+        d1 = DebugTime(; start = true, io = io)
         @test d1.last_time != Nanosecond(0)
-        d2 = DebugTime(; io=io)
+        d2 = DebugTime(; io = io)
         @test d2.last_time == Nanosecond(0)
         d2(mp, st, 1)
         @test d2.last_time != Nanosecond(0) # changes on first call
@@ -321,7 +323,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         d2(mp, st, 2)
         @test t == d2.last_time # but not afterwards
         @test endswith(String(take!(io)), "seconds")
-        d3 = DebugTime(; start=true, mode=:iterative, io=io)
+        d3 = DebugTime(; start = true, mode = :iterative, io = io)
         @test d3.last_time != Nanosecond(0) # changes on first call
         t = d3.last_time
         d3(mp, st, 2)
@@ -335,9 +337,9 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         drs = "DebugTime(; format=\"time spent: %s\", mode=:cumulative)"
         @test repr(DebugTime()) == drs
         drs2 = "(:IterativeTime, \"time spent: %s\")"
-        @test Manopt.status_summary(DebugTime(; mode=:iterative)) == drs2
+        @test Manopt.status_summary(DebugTime(; mode = :iterative)) == drs2
         drs3 = "(:Time, \"time spent: %s\")"
-        @test Manopt.status_summary(DebugTime(; mode=:cumulative)) == drs3
+        @test Manopt.status_summary(DebugTime(; mode = :cumulative)) == drs3
     end
     @testset "Debug show/summaries" begin
         d1 = DebugDivider("|")
@@ -390,22 +392,22 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         p = [-4.0, 2.0]
         st = GradientDescentState(
             M;
-            p=p,
-            stopping_criterion=StopAfterIteration(20),
-            stepsize=Manopt.ConstantStepsize(M),
+            p = p,
+            stopping_criterion = StopAfterIteration(20),
+            stepsize = Manopt.ConstantStepsize(M),
         )
         f(M, y) = Inf
         grad_f(M, y) = Inf .* ones(2)
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 
-        die1 = DebugIfEntry(:p, p -> p[1] > 0.0; type=:warn, message="test1")
+        die1 = DebugIfEntry(:p, p -> p[1] > 0.0; type = :warn, message = "test1")
         @test startswith(repr(die1), "DebugIfEntry(:p, ")
         @test_logs (:warn, "test1") die1(mp, st, 1)
-        die2 = DebugIfEntry(:p, p -> p[1] > 0.0; type=:info, message="test2")
+        die2 = DebugIfEntry(:p, p -> p[1] > 0.0; type = :info, message = "test2")
         @test_logs (:info, "test2") die2(mp, st, 1)
-        die3 = DebugIfEntry(:p, p -> p[1] > 0.0; type=:error, message="test3")
+        die3 = DebugIfEntry(:p, p -> p[1] > 0.0; type = :error, message = "test3")
         @test_throws ErrorException die3(mp, st, 1)
-        die4 = DebugIfEntry(:p, p -> p[1] > 0.0; type=:print, message="test4", io=io)
+        die4 = DebugIfEntry(:p, p -> p[1] > 0.0; type = :print, message = "test4", io = io)
         die4(mp, st, 1)
         @test String(take!(io)) == "test4"
     end
@@ -415,14 +417,14 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         p = [4.0, 2.0]
         st = GradientDescentState(
             M;
-            p=p,
-            stopping_criterion=StopAfterIteration(20),
-            stepsize=Manopt.ConstantStepsize(M),
+            p = p,
+            stopping_criterion = StopAfterIteration(20),
+            stepsize = Manopt.ConstantStepsize(M),
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
-        dD = DebugDivider(" | "; io=io)
+        dD = DebugDivider(" | "; io = io)
         dA = DebugWhenActive(dD, false)
         @test !dA.active
         Manopt.set_parameter!(dA, :Dummy, true) # pass down
@@ -460,36 +462,36 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
             p = [4.0, 2.0]
             st = GradientDescentState(
                 M;
-                p=p,
-                stopping_criterion=StopAfterIteration(20),
-                stepsize=Manopt.ConstantStepsize(M),
+                p = p,
+                stopping_criterion = StopAfterIteration(20),
+                stepsize = Manopt.ConstantStepsize(M),
             )
             f(M, q) = distance(M, q, p) .^ 2
             grad_f(M, q) = -2 * log(M, q, p)
             mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             n = 0
             cb() = (n += 1)
-            dst = decorate_state!(st; callback=cb)
+            dst = decorate_state!(st; callback = cb)
             step_solver!(mp, dst, 1)
             @test n == 1
-            dst = decorate_state!(st; callback=cb, debug=DebugDivider(""))
+            dst = decorate_state!(st; callback = cb, debug = DebugDivider(""))
             step_solver!(mp, dst, 1)
             @test n == 2
             cb2(p, s, k) = ((k > 1) && (n += 1))
             # Advanced 2, pass to debug
-            dst2 = decorate_state!(st; debug=cb2)
+            dst2 = decorate_state!(st; debug = cb2)
             step_solver!(mp, dst2, 1)
             step_solver!(mp, dst2, 2)
             @test n == 3
             #Equivalent to 2.
-            dst3 = decorate_state!(st; debug=Manopt.DebugCallback(cb2))
+            dst3 = decorate_state!(st; debug = Manopt.DebugCallback(cb2))
             step_solver!(mp, dst3, 1)
             step_solver!(mp, dst3, 2)
             @test n == 4
             return nothing
         end
         test_simple_callback()
-        dbc = Manopt.DebugCallback(() -> nothing; simple=true)
+        dbc = Manopt.DebugCallback(() -> nothing; simple = true)
         @test startswith(repr(dbc), "DebugCallback containing")
         @test startswith(Manopt.status_summary(dbc), "#")
     end

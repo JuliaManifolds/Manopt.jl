@@ -5,24 +5,24 @@
 if "--help" ∈ ARGS
     println(
         """
-docs/make.jl
+        docs/make.jl
 
-Render the `Manopt.jl` documentation with optional arguments
+        Render the `Manopt.jl` documentation with optional arguments
 
-Arguments
-* `--exclude-tutorials` - exclude the tutorials from the menu of Documenter,
-  This can be used if not all tutorials are rendered and you want to therefore exclude links
-  to these, especially the corresponding menu. This option should not be set on CI.
-  Locally this is also set if `--quarto` is not set and not all tutorials are rendered.
-* `--help`              - print this help and exit without rendering the documentation
-* `--prettyurls`        – toggle the pretty urls part to true, which is always set on CI
-* `--quarto`            – (re)run the Quarto notebooks from the `tutorials/` folder before
-  generating the documentation. If they are generated once they are cached accordingly.
-  Then you can spare time in the rendering by not passing this argument.
-  If quarto is not run, some tutorials are generated as empty files, since they
-  are referenced from within the documentation.
-  These are currently `getstarted.md` and `ImplementOwnManifold.md`.
-"""
+        Arguments
+        * `--exclude-tutorials` - exclude the tutorials from the menu of Documenter,
+          This can be used if not all tutorials are rendered and you want to therefore exclude links
+          to these, especially the corresponding menu. This option should not be set on CI.
+          Locally this is also set if `--quarto` is not set and not all tutorials are rendered.
+        * `--help`              - print this help and exit without rendering the documentation
+        * `--prettyurls`        – toggle the pretty urls part to true, which is always set on CI
+        * `--quarto`            – (re)run the Quarto notebooks from the `tutorials/` folder before
+          generating the documentation. If they are generated once they are cached accordingly.
+          Then you can spare time in the rendering by not passing this argument.
+          If quarto is not run, some tutorials are generated as empty files, since they
+          are referenced from within the documentation.
+          These are currently `getstarted.md` and `ImplementOwnManifold.md`.
+        """
     )
     exit(0)
 end
@@ -35,17 +35,17 @@ tutorials_in_menu = !("--exclude-tutorials" ∈ ARGS)
 # (a) setup the tutorials menu – check whether all files exist
 tutorials_menu =
     "How to..." => [
-        "🏔️ Get started with Manopt.jl" => "tutorials/getstarted.md",
-        "Speedup using in-place computations" => "tutorials/InplaceGradient.md",
-        "Use automatic differentiation" => "tutorials/AutomaticDifferentiation.md",
-        "Define objectives in the embedding" => "tutorials/EmbeddingObjectives.md",
-        "Count and use a cache" => "tutorials/CountAndCache.md",
-        "Print debug output" => "tutorials/HowToDebug.md",
-        "Record values" => "tutorials/HowToRecord.md",
-        "Implement a solver" => "tutorials/ImplementASolver.md",
-        "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
-        "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
-    ]
+    "🏔️ Get started with Manopt.jl" => "tutorials/getstarted.md",
+    "Speedup using in-place computations" => "tutorials/InplaceGradient.md",
+    "Use automatic differentiation" => "tutorials/AutomaticDifferentiation.md",
+    "Define objectives in the embedding" => "tutorials/EmbeddingObjectives.md",
+    "Count and use a cache" => "tutorials/CountAndCache.md",
+    "Print debug output" => "tutorials/HowToDebug.md",
+    "Record values" => "tutorials/HowToRecord.md",
+    "Implement a solver" => "tutorials/ImplementASolver.md",
+    "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
+    "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
+]
 # Check whether all tutorials are rendered, issue a warning if not (and quarto if not set)
 all_tutorials_exist = true
 for (name, file) in tutorials_menu.second
@@ -55,8 +55,8 @@ for (name, file) in tutorials_menu.second
         if !run_quarto
             @warn "Tutorial $name does not exist at $fn."
             if (!isfile(fn)) && (
-                endswith(file, "getstarted.md") || endswith(file, "ImplementOwnManifold.md")
-            )
+                    endswith(file, "getstarted.md") || endswith(file, "ImplementOwnManifold.md") || endswith(file, "HowToRecord.md")
+                )
                 @warn "Generating empty file, since this tutorial is linked to from the documentation."
                 touch(fn)
             end
@@ -106,7 +106,7 @@ using RipQP, QuadraticModels
 
 # (d) add contributing.md and changelog.md to the docs – and link to releases and issues
 
-function add_links(line::String, url::String="https://github.com/JuliaManifolds/Manopt.jl")
+function add_links(line::String, url::String = "https://github.com/JuliaManifolds/Manopt.jl")
     # replace issues (#XXXX) -> ([#XXXX](url/issue/XXXX))
     while (m = match(r"\(\#([0-9]+)\)", line)) !== nothing
         id = m.captures[1]
@@ -145,20 +145,21 @@ end
 
 ## Build tutorials menu
 # (e) finally make docs
-bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
+bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style = :alpha)
 links = InterLinks(
+    "JuMP" => ("https://jump.dev/JuMP.jl/stable/"),
     "ManifoldDiff" => ("https://juliamanifolds.github.io/ManifoldDiff.jl/stable/"),
     "ManifoldsBase" => ("https://juliamanifolds.github.io/ManifoldsBase.jl/stable/"),
     "Manifolds" => ("https://juliamanifolds.github.io/Manifolds.jl/stable/"),
 )
 makedocs(;
-    format=Documenter.HTML(;
-        prettyurls=run_on_CI || ("--prettyurls" ∈ ARGS),
-        assets=["assets/favicon.ico", "assets/citations.css", "assets/link-icons.css"],
-        size_threshold_warn=250 * 2^10, # raise slightly from 100 to 200 KiB
-        size_threshold=350 * 2^10,      # raise slightly 200 to to 300 KiB
+    format = Documenter.HTML(;
+        prettyurls = run_on_CI || ("--prettyurls" ∈ ARGS),
+        assets = ["assets/favicon.ico", "assets/citations.css", "assets/link-icons.css"],
+        size_threshold_warn = 250 * 2^10, # raise slightly from 100 to 200 KiB
+        size_threshold = 350 * 2^10,      # raise slightly 200 to to 300 KiB
     ),
-    modules=[
+    modules = [
         Manopt,
         Base.get_extension(Manopt, :ManoptJuMPExt),
         Base.get_extension(Manopt, :ManoptLineSearchesExt),
@@ -166,9 +167,9 @@ makedocs(;
         Base.get_extension(Manopt, :ManoptManifoldsExt),
         Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt),
     ],
-    authors="Ronny Bergmann <ronny.bergmann@ntnu.no> and contributors.",
-    sitename="Manopt.jl",
-    pages=[
+    authors = "Ronny Bergmann <ronny.bergmann@ntnu.no> and contributors.",
+    sitename = "Manopt.jl",
+    pages = [
         "Home" => "index.md",
         "About" => "about.md",
         (tutorials_in_menu ? [tutorials_menu] : [])...,
@@ -220,8 +221,8 @@ makedocs(;
         "Changelog" => "changelog.md",
         "References" => "references.md",
     ],
-    plugins=[bib, links],
+    plugins = [bib, links],
 )
-deploydocs(; repo="github.com/JuliaManifolds/Manopt.jl", push_preview=true)
+deploydocs(; repo = "github.com/JuliaManifolds/Manopt.jl", push_preview = true)
 #back to main env
 Pkg.activate()

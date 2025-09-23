@@ -14,28 +14,28 @@ using LinearAlgebra: I, tr
         mI = -Matrix{Float64}(I, d, d)
         grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
         p0 = project(M, ones(d))
-        sol = augmented_Lagrangian_method(M, f, grad_f, p0; g=g, grad_g=grad_g)
-        @test distance(M, sol, v0) < 8 * 1e-4
+        sol = augmented_Lagrangian_method(M, f, grad_f, p0; g = g, grad_g = grad_g)
+        @test distance(M, sol, v0) < 8 * 1.0e-4
         sol2 = copy(M, p0)
-        augmented_Lagrangian_method!(M, f, grad_f, sol2; g=g, grad_g=grad_g)
+        augmented_Lagrangian_method!(M, f, grad_f, sol2; g = g, grad_g = grad_g)
         @test sol2 == sol
         augmented_Lagrangian_method!(
             M,
             f,
             grad_f,
             sol2;
-            g=g,
-            grad_g=grad_g,
-            gradient_inequality_range=NestedPowerRepresentation(),
+            g = g,
+            grad_g = grad_g,
+            gradient_inequality_range = NestedPowerRepresentation(),
         )
         @test sol2 ≈ sol
 
-        co = ConstrainedManifoldObjective(f, grad_f; g=g, grad_g=grad_g, M=M)
+        co = ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M)
         mp = DefaultManoptProblem(M, co)
         # dummy ALM problem
         sp = DefaultManoptProblem(M, ManifoldCostObjective(f))
         ss = NelderMeadState(M)
-        alms = AugmentedLagrangianMethodState(M, co, sp, ss; p=p0)
+        alms = AugmentedLagrangianMethodState(M, co, sp, ss; p = p0)
         set_iterate!(alms, M, 2 .* p0)
         @test Manopt.get_message(alms) == ""
         @test get_iterate(alms) == 2 .* p0
@@ -59,10 +59,10 @@ using LinearAlgebra: I, tr
             f,
             grad_f,
             4.0;
-            g=g,
-            grad_g=grad_g,
-            stopping_criterion=StopAfterIteration(20),
-            return_state=true,
+            g = g,
+            grad_g = grad_g,
+            stopping_criterion = StopAfterIteration(20),
+            return_state = true,
         )
         q = get_solver_result(s)[]
         @test q isa Real

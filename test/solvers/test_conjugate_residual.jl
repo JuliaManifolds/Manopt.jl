@@ -15,7 +15,7 @@ using Manifolds, Manopt, Test
     slso = SymmetricLinearSystemObjective(A, b)
     pT = conjugate_residual(TpM, slso, X0)
     pT2 = conjugate_residual(TpM, A, b, X0)
-    @test norm(ps - pT) < 3e-15
-    @test norm(pT2 - pT) < 3e-15
-    @test get_cost(TpM, slso, pT) < 5e-15
+    @test norm(ps - pT) < 3.0e-15
+    @test norm(pT2 - pT) < 3.0e-15
+    @test get_cost(TpM, slso, pT) < 5.0e-15
 end

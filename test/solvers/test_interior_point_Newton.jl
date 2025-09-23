@@ -26,7 +26,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
 
         # With dummy closed form solution
         ipnsc = InteriorPointNewtonState(
-            M, ConstrainedManifoldObjective(f, grad_f; g=g, grad_g=grad_g, M=M), f
+            M, ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M), f
         )
         @test ipnsc.sub_state isa Manopt.ClosedFormSubSolverState
 
@@ -49,7 +49,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
             10,
         ]
 
-        sc = StopAfterIteration(800) | StopWhenKKTResidualLess(1e-2)
+        sc = StopAfterIteration(800) | StopWhenKKTResidualLess(1.0e-2)
         # (a) classical call w/ recording
         res = interior_point_Newton(
             M,
@@ -57,18 +57,18 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
             grad_f,
             Hess_f,
             p_0;
-            g=g,
-            grad_g=grad_g,
-            Hess_g=Hess_g,
-            stopping_criterion=sc,
-            debug=_debug ? dbg : [],
-            record=_debug_iterates_plot ? record : [],
-            return_state=true,
-            return_objective=true,
+            g = g,
+            grad_g = grad_g,
+            Hess_g = Hess_g,
+            stopping_criterion = sc,
+            debug = _debug ? dbg : [],
+            record = _debug_iterates_plot ? record : [],
+            return_state = true,
+            return_objective = true,
         )
 
         q = get_solver_result(res)
-        @test distance(M, q, [0.0, 0.0, 1.0]) < 2e-4
+        @test distance(M, q, [0.0, 0.0, 1.0]) < 2.0e-4
 
         # (b) inplace call
         q2 = copy(M, p_0)
@@ -78,22 +78,22 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
             grad_f,
             Hess_f,
             q2;
-            g=g,
-            grad_g=grad_g,
-            Hess_g=Hess_g,
-            stopping_criterion=sc,
+            g = g,
+            grad_g = grad_g,
+            Hess_g = Hess_g,
+            stopping_criterion = sc,
         )
         @test q == q2
 
         # (c) call with objective - but then we also test the Centrality cond
         coh = ConstrainedManifoldObjective(
-            f, grad_f, g, grad_g, nothing, nothing; hess_f=Hess_f, hess_g=Hess_g, M=M, p=p_0
+            f, grad_f, g, grad_g, nothing, nothing; hess_f = Hess_f, hess_g = Hess_g, M = M, p = p_0
         )
         ipcc = InteriorPointCentralityCondition(coh, 0.9)
         q3 = interior_point_Newton(
-            M, coh, p_0; stopping_criterion=sc, centrality_condition=ipcc
+            M, coh, p_0; stopping_criterion = sc, centrality_condition = ipcc
         )
-        @test distance(M, q3, [0.0, 0.0, 1.0]) < 2e-4
+        @test distance(M, q3, [0.0, 0.0, 1.0]) < 2.0e-4
         if _debug_iterates_plot
             using GLMakie, Makie, GeometryTypes
             rec = get_record(res[2])
@@ -124,12 +124,12 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
 
             pa = [:color => f_.(pts), :backlight => 1.0f0, :colorrange => range_f]
             # light colormap on sphere
-            surface!(scene, x1, x2, x3; colormap=(:viridis, 0.4), pa...)
+            surface!(scene, x1, x2, x3; colormap = (:viridis, 0.4), pa...)
             # ful color on feasible set
-            surface!(scene, x1_, x2_, x3_; colormap=(:viridis, 1.0), backlight=1.0f0, pa...)
-            scatter!(scene, π1.(rec), π2.(rec), π3.(rec); color=:black, markersize=8)
+            surface!(scene, x1_, x2_, x3_; colormap = (:viridis, 1.0), backlight = 1.0f0, pa...)
+            scatter!(scene, π1.(rec), π2.(rec), π3.(rec); color = :black, markersize = 8)
             P = [(1 + add_scale) .* p_opt]
-            scatter!(scene, π1.(P), π2.(P), π3.(P); color=:white, markersize=9)
+            scatter!(scene, π1.(P), π2.(P), π3.(P); color = :white, markersize = 9)
             display(scene)
         end
     end

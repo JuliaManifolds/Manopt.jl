@@ -9,18 +9,20 @@ Random.seed!(29)
         M = Euclidean(6)
         # From Wikipedia https://en.wikipedia.org/wiki/Rosenbrock_function
         function Rosenbrock(::Euclidean, x)
-            return sum([
-                100 * (x[2 * i - 1]^2 - x[2 * i])^2 + (x[2 * i - 1] - 1)^2 for
-                i in 1:div(length(x), 2)
-            ])
+            return sum(
+                [
+                    100 * (x[2 * i - 1]^2 - x[2 * i])^2 + (x[2 * i - 1] - 1)^2 for
+                        i in 1:div(length(x), 2)
+                ]
+            )
         end
         for initial_simplex in [
-            NelderMeadSimplex([8 * randn(6) for i in 1:7]),
-            NelderMeadSimplex(M, zeros(6)),
-            NelderMeadSimplex(M),
-        ]
+                NelderMeadSimplex([8 * randn(6) for i in 1:7]),
+                NelderMeadSimplex(M, zeros(6)),
+                NelderMeadSimplex(M),
+            ]
             rst = NelderMead(
-                M, Rosenbrock, initial_simplex; record=[RecordCost()], return_state=true
+                M, Rosenbrock, initial_simplex; record = [RecordCost()], return_state = true
             )
             x = get_solver_result(rst)
             rec = get_record(rst)
@@ -46,9 +48,9 @@ Random.seed!(29)
             M,
             f,
             p0;
-            record=[RecordCost()],
-            return_state=true,
-            stopping_criterion=StopAfterIteration(400),
+            record = [RecordCost()],
+            return_state = true,
+            stopping_criterion = StopAfterIteration(400),
         )
         @test startswith(repr(s), "# Solver state for `Manopt.jl`s Nelder Mead Algorithm")
         p1 = get_solver_result(s)
@@ -61,12 +63,12 @@ Random.seed!(29)
             M,
             f,
             p2;
-            stopping_criterion=StopAfterIteration(400),
+            stopping_criterion = StopAfterIteration(400),
         )
         @test isapprox(M, p1, p3)
         # SC
-        f = StopWhenPopulationConcentrated(1e-1, 1e-2)
-        sf = "StopWhenPopulationConcentrated($(1e-1), $(1e-2))\n    $(Manopt.status_summary(f))"
+        f = StopWhenPopulationConcentrated(1.0e-1, 1.0e-2)
+        sf = "StopWhenPopulationConcentrated($(1.0e-1), $(1.0e-2))\n    $(Manopt.status_summary(f))"
         @test repr(f) == sf
     end
 
@@ -79,16 +81,16 @@ Random.seed!(29)
         #vector p-cost
         f2(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p[])) .^ 2)
         q = NelderMead(M, f)
-        @test isapprox(p_star, q; atol=1e-7)
-        s = NelderMead(M, f; return_state=true)
+        @test isapprox(p_star, q; atol = 1.0e-7)
+        s = NelderMead(M, f; return_state = true)
         q2 = get_solver_result(s)[] # here: return back to float
-        @test isapprox(M, p_star, q2; atol=1e-7)
+        @test isapprox(M, p_star, q2; atol = 1.0e-7)
         population = NelderMeadSimplex(M)
         q3 = NelderMead(M, f, population)
         #same type also returns Float
-        @test isapprox(M, p_star, q3; atol=1e-7)
+        @test isapprox(M, p_star, q3; atol = 1.0e-7)
         population2 = NelderMeadSimplex([[0.1], [-0.1]])
         q4 = NelderMead(M, f2, population2)
-        @test isapprox(M, p_star, q4[]; atol=1e-7)
+        @test isapprox(M, p_star, q4[]; atol = 1.0e-7)
     end
 end

@@ -43,40 +43,40 @@ Initialise the `ManifoldCountObjective` to wrap `objective` initializing the set
 Count function calls on `objective` using the symbols in `count` initialising all entries to `init`.
 """
 struct ManifoldCountObjective{
-    E,P,O<:AbstractManifoldObjective,I<:Union{<:Integer,AbstractVector{<:Integer}}
-} <: AbstractDecoratedManifoldObjective{E,P}
-    counts::Dict{Symbol,I}
+        E, P, O <: AbstractManifoldObjective, I <: Union{<:Integer, AbstractVector{<:Integer}},
+    } <: AbstractDecoratedManifoldObjective{E, P}
+    counts::Dict{Symbol, I}
     objective::O
 end
 function ManifoldCountObjective(
-    ::AbstractManifold, objective::O, counts::Dict{Symbol,I}
-) where {
-    E<:AbstractEvaluationType,
-    I<:Union{<:Integer,AbstractVector{<:Integer}},
-    O<:AbstractManifoldObjective{E},
-}
-    return ManifoldCountObjective{E,O,O,I}(counts, objective)
+        ::AbstractManifold, objective::O, counts::Dict{Symbol, I}
+    ) where {
+        E <: AbstractEvaluationType,
+        I <: Union{<:Integer, AbstractVector{<:Integer}},
+        O <: AbstractManifoldObjective{E},
+    }
+    return ManifoldCountObjective{E, O, O, I}(counts, objective)
 end
 # Store the undecorated type of the input is decorated
 function ManifoldCountObjective(
-    ::AbstractManifold, objective::O, counts::Dict{Symbol,I}
-) where {
-    E<:AbstractEvaluationType,
-    I<:Union{<:Integer,AbstractVector{<:Integer}},
-    P<:AbstractManifoldObjective,
-    O<:AbstractDecoratedManifoldObjective{E,P},
-}
-    return ManifoldCountObjective{E,P,O,I}(counts, objective)
+        ::AbstractManifold, objective::O, counts::Dict{Symbol, I}
+    ) where {
+        E <: AbstractEvaluationType,
+        I <: Union{<:Integer, AbstractVector{<:Integer}},
+        P <: AbstractManifoldObjective,
+        O <: AbstractDecoratedManifoldObjective{E, P},
+    }
+    return ManifoldCountObjective{E, P, O, I}(counts, objective)
 end
 function ManifoldCountObjective(
-    M::AbstractManifold,
-    objective::O,
-    count::AbstractVector{Symbol},
-    init::I=0;
-    p::P=rand(M),
-) where {P,I<:Integer,O<:AbstractManifoldObjective}
+        M::AbstractManifold,
+        objective::O,
+        count::AbstractVector{Symbol},
+        init::I = 0;
+        p::P = rand(M),
+    ) where {P, I <: Integer, O <: AbstractManifoldObjective}
     # Infer the sizes of the counters from the symbols if possible
-    counts = Pair{Symbol,Union{I,Vector{I}}}[]
+    counts = Pair{Symbol, Union{I, Vector{I}}}[]
     for symbol in count
         l = _get_counter_size(M, objective, symbol, p)
         push!(counts, Pair(symbol, l == 1 ? init : fill(init, l)))
@@ -86,8 +86,8 @@ function ManifoldCountObjective(
 end
 
 function _get_counter_size(
-    M::AbstractManifold, o::O, s::Symbol, p::P=rand(M)
-) where {P,O<:AbstractManifoldObjective}
+        M::AbstractManifold, o::O, s::Symbol, p::P = rand(M)
+    ) where {P, O <: AbstractManifoldObjective}
     # vectorial counting cases
     (s === :EqualityConstraint) && (return length(get_equality_constraint(M, o, p, :)))
     (s === :GradEqualityConstraint) && (return length(get_equality_constraint(M, o, p, :)))
@@ -104,7 +104,7 @@ function _count_if_exists(co::ManifoldCountObjective, s::Symbol)
     return haskey(co.counts, s) && (co.counts[s] += 1)
 end
 function _count_if_exists(co::ManifoldCountObjective, s::Symbol, i::Integer)
-    if haskey(co.counts, s)
+    return if haskey(co.counts, s)
         if (i == 1) && (ndims(co.counts[s]) == 0)
             return co.counts[s] += 1
         elseif length(i) == ndims(co.counts[s]) && all(i .<= size(co.counts[s]))
@@ -124,7 +124,7 @@ Depending on the `mode` different results appear if the symbol does not exist in
 * `:warn`:  issues a warning if a field does not exist
 * `:error`: issues an error if a field does not exist
 """
-function get_count(co::ManifoldCountObjective, s::Symbol, mode::Symbol=:None)
+function get_count(co::ManifoldCountObjective, s::Symbol, mode::Symbol = :None)
     if !haskey(co.counts, s)
         msg = "There is no recorded count for $s."
         (mode === :warn) && (@warn msg)
@@ -133,7 +133,7 @@ function get_count(co::ManifoldCountObjective, s::Symbol, mode::Symbol=:None)
     end
     return co.counts[s]
 end
-function get_count(o::AbstractManifoldObjective, s::Symbol, mode::Symbol=:None)
+function get_count(o::AbstractManifoldObjective, s::Symbol, mode::Symbol = :None)
     return _get_count(o, dispatch_objective_decorator(o), s, mode)
 end
 function _get_count(o::AbstractManifoldObjective, ::Val{false}, s, m)
@@ -143,7 +143,7 @@ function _get_count(o::AbstractManifoldObjective, ::Val{true}, s, m)
     return get_count(get_objective(o, false), s, m)
 end
 
-function get_count(co::ManifoldCountObjective, s::Symbol, i, mode::Symbol=:None)
+function get_count(co::ManifoldCountObjective, s::Symbol, i, mode::Symbol = :None)
     if !haskey(co.counts, s)
         msg = "There is no recorded count for :$s."
         (mode === :warn) && (@warn msg)
@@ -173,7 +173,7 @@ function get_count(co::ManifoldCountObjective, s::Symbol, i, mode::Symbol=:None)
     end
     return co.counts[s][i...]
 end
-function get_count(o::AbstractManifoldObjective, s::Symbol, i, mode::Symbol=:None)
+function get_count(o::AbstractManifoldObjective, s::Symbol, i, mode::Symbol = :None)
     return _get_count(o, dispatch_objective_decorator(o), s, i, mode)
 end
 function _get_count(o::AbstractManifoldObjective, ::Val{false}, s, i, m)
@@ -188,7 +188,7 @@ end
 
 Reset all values in the count objective to `value`.
 """
-function reset_counters!(co::ManifoldCountObjective, value::Integer=0)
+function reset_counters!(co::ManifoldCountObjective, value::Integer = 0)
     for s in keys(co.counts)
         if (ndims(co.counts[s]) == 0)
             co.counts[s] = value
@@ -198,10 +198,10 @@ function reset_counters!(co::ManifoldCountObjective, value::Integer=0)
     end
     return co
 end
-function reset_counters!(o::AbstractDecoratedManifoldObjective, value::Integer=0)
+function reset_counters!(o::AbstractDecoratedManifoldObjective, value::Integer = 0)
     return reset_counters!(get_objective(o, false), value)
 end
-function reset_counters!(o::AbstractManifoldObjective, value::Integer=0)
+function reset_counters!(o::AbstractManifoldObjective, value::Integer = 0)
     return error("It seems $o does not provide access to a `ManifoldCountObjective`.")
 end
 
@@ -214,7 +214,7 @@ function get_cost(M::AbstractManifold, co::ManifoldCountObjective, p)
     return get_cost(M, co.objective, p)
 end
 # Passthrough
-function get_cost_function(co::ManifoldCountObjective, recursive=false)
+function get_cost_function(co::ManifoldCountObjective, recursive = false)
     recursive && return get_cost_function(co.objective, recursive)
     return (M, p) -> get_cost(M, co, p)
 end
@@ -225,10 +225,10 @@ function get_cost_and_gradient(M::AbstractManifold, co::ManifoldCountObjective, 
     return get_cost_and_gradient(M, co.objective, p)
 end
 function get_cost_and_gradient(
-    M::AbstractManifold,
-    co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}},
-    p,
-) where {E<:AbstractEvaluationType}
+        M::AbstractManifold,
+        co::ManifoldCountObjective{E, <:ManifoldFirstOrderObjective{E, <:NamedTuple}},
+        p,
+    ) where {E <: AbstractEvaluationType}
     _count_if_exists(co, :Cost)
     _count_if_exists(co, :Gradient)
     return get_cost_and_gradient(M, co.objective, p)
@@ -240,11 +240,11 @@ function get_cost_and_gradient!(M::AbstractManifold, X, co::ManifoldCountObjecti
     return get_cost_and_gradient!(M, X, co.objective, p)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold,
-    X,
-    co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}},
-    p,
-) where {E<:AbstractEvaluationType}
+        M::AbstractManifold,
+        X,
+        co::ManifoldCountObjective{E, <:ManifoldFirstOrderObjective{E, <:NamedTuple}},
+        p,
+    ) where {E <: AbstractEvaluationType}
     _count_if_exists(co, :Cost)
     _count_if_exists(co, :Gradient)
     return get_cost_and_gradient!(M, X, co.objective, p)
@@ -255,20 +255,20 @@ function get_differential(M::AbstractManifold, co::ManifoldCountObjective, p, X;
     return get_differential(M, co.objective, p, X; kwargs...)
 end
 # Passthrough
-function get_differential_function(co::ManifoldCountObjective, recursive=false)
+function get_differential_function(co::ManifoldCountObjective, recursive = false)
     recursive && return get_differential_function(co.objective, recursive)
     return (M, p, X; kwargs...) -> get_differential(M, co, p, X; kwargs...)
 end
 
 function get_gradient_function(
-    sco::ManifoldCountObjective{AllocatingEvaluation}, recursive=false
-)
+        sco::ManifoldCountObjective{AllocatingEvaluation}, recursive = false
+    )
     recursive && return get_gradient_function(sco.objective, recursive)
     return (M, p) -> get_gradient(M, sco, p)
 end
 function get_gradient_function(
-    sco::ManifoldCountObjective{InplaceEvaluation}, recursive=false
-)
+        sco::ManifoldCountObjective{InplaceEvaluation}, recursive = false
+    )
     recursive && return get_gradient_function(sco.objective, recursive)
     return (M, X, p) -> get_gradient!(M, X, sco, p)
 end
@@ -283,10 +283,10 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
     return X
 end
 function get_gradient(
-    M::AbstractManifold,
-    co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}},
-    p,
-) where {E<:AbstractEvaluationType}
+        M::AbstractManifold,
+        co::ManifoldCountObjective{E, <:ManifoldFirstOrderObjective{E, <:NamedTuple}},
+        p,
+    ) where {E <: AbstractEvaluationType}
     _count_if_exists(co, :Gradient)
     fs = get_objective(co.objective, true).functions
     haskey(fs, :costgradient) && _count_if_exists(co, :Cost)
@@ -296,11 +296,11 @@ function get_gradient(
     return get_gradient(M, co.objective, p)
 end
 function get_gradient!(
-    M::AbstractManifold,
-    X,
-    co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}},
-    p,
-) where {E<:AbstractEvaluationType}
+        M::AbstractManifold,
+        X,
+        co::ManifoldCountObjective{E, <:ManifoldFirstOrderObjective{E, <:NamedTuple}},
+        p,
+    ) where {E <: AbstractEvaluationType}
     _count_if_exists(co, :Gradient)
     fs = co.objective.functions
     haskey(fs, :costgradient) && _count_if_exists(co, :Cost)
@@ -322,14 +322,14 @@ function get_hessian!(M::AbstractManifold, Y, co::ManifoldCountObjective, p, X)
 end
 
 function get_hessian_function(
-    sco::ManifoldCountObjective{AllocatingEvaluation}, recursive::Bool=false
-)
+        sco::ManifoldCountObjective{AllocatingEvaluation}, recursive::Bool = false
+    )
     recursive && return get_hessian_function(sco.objective, recursive)
     return (M, p, X) -> get_hessian(M, sco, p, X)
 end
 function get_hessian_function(
-    sco::ManifoldCountObjective{InplaceEvaluation}, recursive::Bool=false
-)
+        sco::ManifoldCountObjective{InplaceEvaluation}, recursive::Bool = false
+    )
     recursive && return get_hessian_function(sco.objective, recursive)
     return (M, Y, p, X) -> get_hessian!(M, Y, sco, p, X)
 end
@@ -347,14 +347,14 @@ end
 #
 # Constraint
 function get_equality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, c::Colon
-)
+        M::AbstractManifold, co::ManifoldCountObjective, p, c::Colon
+    )
     _count_if_exists(co, :EqualityConstraints)
     return get_equality_constraint(M, co.objective, p, c)
 end
 function get_equality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, j::Integer
-)
+        M::AbstractManifold, co::ManifoldCountObjective, p, j::Integer
+    )
     _count_if_exists(co, :EqualityConstraint, j)
     return get_equality_constraint(M, co.objective, p, j)
 end
@@ -366,14 +366,14 @@ function get_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective
 end
 
 function get_inequality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
-)
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
+    )
     _count_if_exists(co, :InequalityConstraints)
     return get_inequality_constraint(M, co.objective, p, i)
 end
 function get_inequality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
-)
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+    )
     _count_if_exists(co, :InequalityConstraint, i)
     return get_inequality_constraint(M, co.objective, p, i)
 end
@@ -385,14 +385,14 @@ function get_inequality_constraint(M::AbstractManifold, co::ManifoldCountObjecti
 end
 
 function get_grad_equality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
-)
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
+    )
     _count_if_exists(co, :GradEqualityConstraints)
     return get_grad_equality_constraint(M, co.objective, p, i)
 end
 function get_grad_equality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, j::Integer
-)
+        M::AbstractManifold, co::ManifoldCountObjective, p, j::Integer
+    )
     _count_if_exists(co, :GradEqualityConstraint, j)
     return get_grad_equality_constraint(M, co.objective, p, j)
 end
@@ -403,20 +403,20 @@ function get_grad_equality_constraint(M::AbstractManifold, co::ManifoldCountObje
     return get_grad_equality_constraint(M, co.objective, p, i)
 end
 function get_grad_equality_constraint!(
-    M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
-)
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
+    )
     _count_if_exists(co, :GradEqualityConstraints)
     return get_grad_equality_constraint!(M, X, co.objective, p, i)
 end
 function get_grad_equality_constraint!(
-    M::AbstractManifold, X, co::ManifoldCountObjective, p, j::Integer
-)
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, j::Integer
+    )
     _count_if_exists(co, :GradEqualityConstraint, j)
     return get_grad_equality_constraint!(M, X, co.objective, p, j)
 end
 function get_grad_equality_constraint!(
-    M::AbstractManifold, X, co::ManifoldCountObjective, p, i
-)
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i
+    )
     for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
         _count_if_exists(co, :GradEqualityConstraint, j)
     end
@@ -424,20 +424,20 @@ function get_grad_equality_constraint!(
 end
 
 function get_grad_inequality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
-)
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
+    )
     _count_if_exists(co, :GradInequalityConstraints)
     return get_grad_inequality_constraint(M, co.objective, p, i)
 end
 function get_grad_inequality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
-)
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+    )
     _count_if_exists(co, :GradInequalityConstraint, i)
     return get_grad_inequality_constraint(M, co.objective, p, i)
 end
 function get_grad_inequality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i
-)
+        M::AbstractManifold, co::ManifoldCountObjective, p, i
+    )
     for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
         _count_if_exists(co, :GradInequalityConstraint, j)
     end
@@ -445,20 +445,20 @@ function get_grad_inequality_constraint(
 end
 
 function get_grad_inequality_constraint!(
-    M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
-)
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
+    )
     _count_if_exists(co, :GradInequalityConstraints)
     return get_grad_inequality_constraint!(M, X, co.objective, p, i)
 end
 function get_grad_inequality_constraint!(
-    M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Integer
-)
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Integer
+    )
     _count_if_exists(co, :GradInequalityConstraint, i)
     return get_grad_inequality_constraint!(M, X, co.objective, p, i)
 end
 function get_grad_inequality_constraint!(
-    M::AbstractManifold, X, co::ManifoldCountObjective, p, i
-)
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i
+    )
     for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
         _count_if_exists(co, :GradInequalityConstraint, j)
     end
@@ -526,8 +526,8 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p, i)
 end
 
 function objective_count_factory(
-    M::AbstractManifold, o::AbstractManifoldObjective, counts::Vector{<:Symbol}
-)
+        M::AbstractManifold, o::AbstractManifoldObjective, counts::Vector{<:Symbol}
+    )
     return ManifoldCountObjective(M, o, counts)
 end
 
@@ -538,16 +538,16 @@ function status_summary(co::ManifoldCountObjective)
     length(co.counts) == 0 && return "$(s)    No counters active\n$(s2)"
     longest_key_length = max(length.(["$c" for c in keys(co.counts)])...)
     count_strings = [
-        "  * :$(rpad("$(c[1])",longest_key_length)) : $(c[2])" for c in co.counts
+        "  * :$(rpad("$(c[1])", longest_key_length)) : $(c[2])" for c in co.counts
     ]
-    return "$(s)$(join(count_strings,"\n"))$s2"
+    return "$(s)$(join(count_strings, "\n"))$s2"
 end
 
 function show(io::IO, co::ManifoldCountObjective)
     return print(io, "$(status_summary(co))")
 end
 function show(
-    io::IO, t::Tuple{<:ManifoldCountObjective,S}
-) where {S<:AbstractManoptSolverState}
+        io::IO, t::Tuple{<:ManifoldCountObjective, S}
+    ) where {S <: AbstractManoptSolverState}
     return print(io, "$(t[2])\n\n$(t[1])")
 end

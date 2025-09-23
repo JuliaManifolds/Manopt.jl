@@ -6,7 +6,7 @@ see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient
 
 # Fields
 
-$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :p; add = [:as_Iterate]))
 * `direction`:  a direction update to use
 $(_var(:Field, :stopping_criterion, "stop"))
 $(_var(:Field, :stepsize))
@@ -27,20 +27,20 @@ Create a `StochasticGradientDescentState` with start point `p`.
 * `order_type=:RandomOrder``
 * `order=Int[]`: specify how to store the order of indices for the next epoche
 $(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :p; add=:as_Initial))
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(1000)`"))
-$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
-$(_var(:Keyword, :X; add=:as_Memory))
+$(_var(:Keyword, :p; add = :as_Initial))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
+$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
+$(_var(:Keyword, :X; add = :as_Memory))
 
 """
 mutable struct StochasticGradientDescentState{
-    TX,
-    TV,
-    D<:DirectionUpdateRule,
-    TStop<:StoppingCriterion,
-    TStep<:Stepsize,
-    RM<:AbstractRetractionMethod,
-} <: AbstractGradientSolverState
+        TX,
+        TV,
+        D <: DirectionUpdateRule,
+        TStop <: StoppingCriterion,
+        TStep <: Stepsize,
+        RM <: AbstractRetractionMethod,
+    } <: AbstractGradientSolverState
     p::TX
     X::TV
     direction::D
@@ -53,24 +53,24 @@ mutable struct StochasticGradientDescentState{
 end
 
 function StochasticGradientDescentState(
-    M::AbstractManifold;
-    p::P=rand(M),
-    X::T=zero_vector(M, p),
-    direction::D=StochasticGradientRule(M; X=copy(M, p, X)),
-    order_type::Symbol=:RandomOrder,
-    order::Vector{<:Int}=Int[],
-    retraction_method::RM=default_retraction_method(M, typeof(p)),
-    stopping_criterion::SC=StopAfterIteration(1000),
-    stepsize::S=default_stepsize(M, StochasticGradientDescentState),
-) where {
-    P,
-    T,
-    D<:DirectionUpdateRule,
-    RM<:AbstractRetractionMethod,
-    SC<:StoppingCriterion,
-    S<:Stepsize,
-}
-    return StochasticGradientDescentState{P,T,D,SC,S,RM}(
+        M::AbstractManifold;
+        p::P = rand(M),
+        X::T = zero_vector(M, p),
+        direction::D = StochasticGradientRule(M; X = copy(M, p, X)),
+        order_type::Symbol = :RandomOrder,
+        order::Vector{<:Int} = Int[],
+        retraction_method::RM = default_retraction_method(M, typeof(p)),
+        stopping_criterion::SC = StopAfterIteration(1000),
+        stepsize::S = default_stepsize(M, StochasticGradientDescentState),
+    ) where {
+        P,
+        T,
+        D <: DirectionUpdateRule,
+        RM <: AbstractRetractionMethod,
+        SC <: StoppingCriterion,
+        S <: Stepsize,
+    }
+    return StochasticGradientDescentState{P, T, D, SC, S, RM}(
         p,
         X,
         direction,
@@ -129,14 +129,14 @@ struct StochasticGradientRule{T} <: AbstractGradientGroupDirectionRule
     X::T
 end
 function StochasticGradientRule(
-    M::AbstractManifold; p=rand(M), X::T=zero_vector(M, p)
-) where {T}
+        M::AbstractManifold; p = rand(M), X::T = zero_vector(M, p)
+    ) where {T}
     return StochasticGradientRule{T}(X)
 end
 
 function (sg::StochasticGradientRule)(
-    apm::AbstractManoptProblem, sgds::StochasticGradientDescentState, k
-)
+        apm::AbstractManoptProblem, sgds::StochasticGradientDescentState, k
+    )
     # for each new epoch choose new order if at random order
     ((sgds.k == 1) && (sgds.order_type == :Random)) && shuffle!(sgds.order)
     # the gradient to choose, either from the order or completely random
@@ -151,7 +151,7 @@ end
 # Keyword arguments
 
 $(_var(:Keyword, :X, "initial_gradient"))
-$(_var(:Keyword, :p; add=:as_Initial))
+$(_var(:Keyword, :p; add = :as_Initial))
 
 $(_note(:ManifoldDefaultFactory, "StochasticGradientRule"))
 """
@@ -179,7 +179,7 @@ perform a stochastic gradient descent. This can be perfomed in-place of `p`.
 
 # Input
 
-$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :M; type = true))
 * `grad_f`: a gradient function, that either returns a vector of the gradients
   or is a vector of gradient functions
 $(_var(:Argument, :p))
@@ -196,8 +196,8 @@ $(_var(:Keyword, :evaluation))
   a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
 * `order_type=:RandomOder`: a type of ordering of gradient evaluations.
   Possible values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(1000)`"))
-$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
+$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
 * `order=[1:n]`: the initial permutation, where `n` is the number of gradients in `gradF`.
 $(_var(:Keyword, :retraction_method))
 
@@ -212,13 +212,13 @@ function stochastic_gradient_descent(M::AbstractManifold, grad_f; kwargs...)
     return stochastic_gradient_descent(M, grad_f, rand(M); kwargs...)
 end
 function stochastic_gradient_descent(
-    M::AbstractManifold,
-    grad_f,
-    p;
-    cost=Missing(),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
+        M::AbstractManifold,
+        grad_f,
+        p;
+        cost = Missing(),
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    )
     p_ = _ensure_mutating_variable(p)
     cost_ = _ensure_mutating_cost(cost, p)
     if p isa Number
@@ -231,64 +231,69 @@ function stochastic_gradient_descent(
     else
         grad_f_ = grad_f
     end
-    msgo = ManifoldStochasticGradientObjective(grad_f_; cost=cost_, evaluation=evaluation)
-    rs = stochastic_gradient_descent(M, msgo, p_; evaluation=evaluation, kwargs...)
+    msgo = ManifoldStochasticGradientObjective(grad_f_; cost = cost_, evaluation = evaluation)
+    rs = stochastic_gradient_descent(M, msgo, p_; evaluation = evaluation, kwargs...)
     return _ensure_matching_output(p, rs)
 end
 function stochastic_gradient_descent(
-    M::AbstractManifold, msgo::O, p; kwargs...
-) where {O<:Union{ManifoldStochasticGradientObjective,AbstractDecoratedManifoldObjective}}
+        M::AbstractManifold, msgo::O, p; kwargs...
+    ) where {O <: Union{ManifoldStochasticGradientObjective, AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
+    keywords_accepted(stochastic_gradient_descent; kwargs...)
     return stochastic_gradient_descent!(M, msgo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(stochastic_gradient_descent)) = (stochastic_gradient_descent!,)
 
 @doc "$(_doc_SGD)"
 stochastic_gradient_descent!(::AbstractManifold, args...; kwargs...)
 function stochastic_gradient_descent!(
-    M::AbstractManifold,
-    grad_f,
-    p;
-    cost=Missing(),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    msgo = ManifoldStochasticGradientObjective(grad_f; cost=cost, evaluation=evaluation)
-    return stochastic_gradient_descent!(M, msgo, p; evaluation=evaluation, kwargs...)
+        M::AbstractManifold,
+        grad_f,
+        p;
+        cost = Missing(),
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    )
+    msgo = ManifoldStochasticGradientObjective(grad_f; cost = cost, evaluation = evaluation)
+    return stochastic_gradient_descent!(M, msgo, p; evaluation = evaluation, kwargs...)
 end
 function stochastic_gradient_descent!(
-    M::AbstractManifold,
-    msgo::O,
-    p;
-    direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=StochasticGradient(;
-        p=p
-    ),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
-                                          StopWhenGradientNormLess(1e-9),
-    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
-        M, StochasticGradientDescentState
-    ),
-    order=collect(1:length(get_gradients(M, msgo, p))),
-    order_type::Symbol=:Random,
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    kwargs...,
-) where {O<:Union{ManifoldStochasticGradientObjective,AbstractDecoratedManifoldObjective}}
+        M::AbstractManifold,
+        msgo::O,
+        p;
+        direction::Union{<:DirectionUpdateRule, ManifoldDefaultsFactory} = StochasticGradient(;
+            p = p
+        ),
+        stopping_criterion::StoppingCriterion = StopAfterIteration(10000) |
+            StopWhenGradientNormLess(1.0e-9),
+        stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
+            M, StochasticGradientDescentState
+        ),
+        order = collect(1:length(get_gradients(M, msgo, p))),
+        order_type::Symbol = :Random,
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
+        kwargs...,
+    ) where {O <: Union{ManifoldStochasticGradientObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(stochastic_gradient_descent!; kwargs...)
     dmsgo = decorate_objective!(M, msgo; kwargs...)
     mp = DefaultManoptProblem(M, dmsgo)
     sgds = StochasticGradientDescentState(
         M;
-        p=p,
-        X=zero_vector(M, p),
-        direction=_produce_type(direction, M),
-        stopping_criterion=stopping_criterion,
-        stepsize=_produce_type(stepsize, M),
-        order_type=order_type,
-        order=order,
-        retraction_method=retraction_method,
+        p = p,
+        X = zero_vector(M, p),
+        direction = _produce_type(direction, M),
+        stopping_criterion = stopping_criterion,
+        stepsize = _produce_type(stepsize, M),
+        order_type = order_type,
+        order = order,
+        retraction_method = retraction_method,
     )
     dsgds = decorate_state!(sgds; kwargs...)
     solve!(mp, dsgds)
     return get_solver_return(get_objective(mp), dsgds)
 end
+calls_with_kwargs(::typeof(stochastic_gradient_descent!)) = (decorate_objective!, decorate_state!)
+
 function initialize_solver!(::AbstractManoptProblem, s::StochasticGradientDescentState)
     s.k = 1
     (s.order_type == :FixedRandom) && (shuffle!(s.order))

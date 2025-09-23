@@ -15,9 +15,9 @@ Perform the Primal-Dual Riemannian semismooth Newton algorithm.
 $(_doc_PDSN_formula)
 
 * `p, X`:                          primal and dual start points ``p∈$(_math(:M))`` and ``X ∈ T_n$(_tex(:Cal, "N"))``
-* `m,n`:                           base points on ``$(_math(:M))`` and ``$(_tex(:Cal, "N"))`, respectively.
+* `m,n`:                           base points on ``$(_math(:M))`` and ``$(_tex(:Cal, "N"))``, respectively.
 * `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_math(:TpM; p="m")) → $(_math(:TpM; M="N", p="Λ(m)"))``
+* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_math(:TpM; p = "m")) → $(_math(:TpM; M = "N", p = "Λ(m)"))``
 * `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 * `diff_prox_F, diff_prox_dual_G`: the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
@@ -34,7 +34,7 @@ $(_var(:Keyword, :inverse_retraction_method))
 * `reg_param=1e-5`: regularisation parameter for the Newton matrix
   Note that this changes the arguments the `forward_operator` is called.
 $(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(50)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(50)`"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 $(_var(:Keyword, :vector_transport_method))
@@ -46,22 +46,23 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_PDSN)"
 function primal_dual_semismooth_Newton(
-    M::AbstractManifold,
-    N::AbstractManifold,
-    cost::TF,
-    p::P,
-    X::T,
-    m::P,
-    n::Q,
-    prox_F::Function,
-    diff_prox_F::Function,
-    prox_G_dual::Function,
-    diff_prox_G_dual::Function,
-    linearized_forward_operator::Function,
-    adjoint_linearized_operator::Function;
-    Λ::Union{Function,Missing}=missing,
-    kwargs...,
-) where {TF,P,T,Q}
+        M::AbstractManifold,
+        N::AbstractManifold,
+        cost::TF,
+        p::P,
+        X::T,
+        m::P,
+        n::Q,
+        prox_F::Function,
+        diff_prox_F::Function,
+        prox_G_dual::Function,
+        diff_prox_G_dual::Function,
+        linearized_forward_operator::Function,
+        adjoint_linearized_operator::Function;
+        Λ::Union{Function, Missing} = missing,
+        kwargs...,
+    ) where {TF, P, T, Q}
+    keywords_accepted(primal_dual_semismooth_Newton; kwargs...)
     x_res = copy(M, p)
     ξ_res = copy(N, n, X)
     m_res = copy(M, m)
@@ -80,48 +81,50 @@ function primal_dual_semismooth_Newton(
         diff_prox_G_dual,
         linearized_forward_operator,
         adjoint_linearized_operator;
-        Λ=Λ,
+        Λ = Λ,
         kwargs...,
     )
 end
+calls_with_kwargs(::typeof(primal_dual_semismooth_Newton)) = (primal_dual_semismooth_Newton!,)
 
 @doc "$(_doc_PDSN)"
 function primal_dual_semismooth_Newton!(
-    M::mT,
-    N::nT,
-    cost::Function,
-    p::P,
-    X::T,
-    m::P,
-    n::Q,
-    prox_F::Function,
-    diff_prox_F::Function,
-    prox_G_dual::Function,
-    diff_prox_G_dual::Function,
-    linearized_forward_operator::Function,
-    adjoint_linearized_operator::Function;
-    dual_stepsize=1 / sqrt(8),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    Λ::Union{Function,Missing}=missing,
-    primal_stepsize=1 / sqrt(8),
-    reg_param=1e-5,
-    stopping_criterion::StoppingCriterion=StopAfterIteration(50),
-    update_primal_base::Union{Function,Missing}=missing,
-    update_dual_base::Union{Function,Missing}=missing,
-    retraction_method::RM=default_retraction_method(M, typeof(p)),
-    inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
-    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-    kwargs...,
-) where {
-    mT<:AbstractManifold,
-    nT<:AbstractManifold,
-    P,
-    Q,
-    T,
-    RM<:AbstractRetractionMethod,
-    IRM<:AbstractInverseRetractionMethod,
-    VTM<:AbstractVectorTransportMethod,
-}
+        M::mT,
+        N::nT,
+        cost::Function,
+        p::P,
+        X::T,
+        m::P,
+        n::Q,
+        prox_F::Function,
+        diff_prox_F::Function,
+        prox_G_dual::Function,
+        diff_prox_G_dual::Function,
+        linearized_forward_operator::Function,
+        adjoint_linearized_operator::Function;
+        dual_stepsize = 1 / sqrt(8),
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        Λ::Union{Function, Missing} = missing,
+        primal_stepsize = 1 / sqrt(8),
+        reg_param = 1.0e-5,
+        stopping_criterion::StoppingCriterion = StopAfterIteration(50),
+        update_primal_base::Union{Function, Missing} = missing,
+        update_dual_base::Union{Function, Missing} = missing,
+        retraction_method::RM = default_retraction_method(M, typeof(p)),
+        inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+        kwargs...,
+    ) where {
+        mT <: AbstractManifold,
+        nT <: AbstractManifold,
+        P,
+        Q,
+        T,
+        RM <: AbstractRetractionMethod,
+        IRM <: AbstractInverseRetractionMethod,
+        VTM <: AbstractVectorTransportMethod,
+    }
+    keywords_accepted(primal_dual_semismooth_Newton!; kwargs...)
     pdmsno = PrimalDualManifoldSemismoothNewtonObjective(
         cost,
         prox_F,
@@ -130,31 +133,32 @@ function primal_dual_semismooth_Newton!(
         diff_prox_G_dual,
         linearized_forward_operator,
         adjoint_linearized_operator;
-        Λ=Λ,
-        evaluation=evaluation,
+        Λ = Λ,
+        evaluation = evaluation,
     )
     dpdmsno = decorate_objective!(M, pdmsno; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmsno)
     pdsn = PrimalDualSemismoothNewtonState(
         M;
-        m=m,
-        n=n,
-        p=p,
-        X=X,
-        primal_stepsize=primal_stepsize,
-        dual_stepsize=dual_stepsize,
-        regularization_parameter=reg_param,
-        stopping_criterion=stopping_criterion,
-        update_primal_base=update_primal_base,
-        update_dual_base=update_dual_base,
-        retraction_method=retraction_method,
-        inverse_retraction_method=inverse_retraction_method,
-        vector_transport_method=vector_transport_method,
+        m = m,
+        n = n,
+        p = p,
+        X = X,
+        primal_stepsize = primal_stepsize,
+        dual_stepsize = dual_stepsize,
+        regularization_parameter = reg_param,
+        stopping_criterion = stopping_criterion,
+        update_primal_base = update_primal_base,
+        update_dual_base = update_dual_base,
+        retraction_method = retraction_method,
+        inverse_retraction_method = inverse_retraction_method,
+        vector_transport_method = vector_transport_method,
     )
     dpdsn = decorate_state!(pdsn; kwargs...)
     solve!(tmp, dpdsn)
     return get_solver_return(get_objective(tmp), dpdsn)
 end
+calls_with_kwargs(::typeof(primal_dual_semismooth_Newton!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(::TwoManifoldProblem, ::PrimalDualSemismoothNewtonState) end
 
@@ -207,8 +211,8 @@ raw"""
 Constructs the vector representation of ``X(p^{(k)}, ξ_{n}^{(k)}) ∈ \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}``
 """
 function construct_primal_dual_residual_vector(
-    tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState
-)
+        tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState
+    )
     obj = get_objective(tmp)
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
@@ -223,7 +227,7 @@ function construct_primal_dual_residual_vector(
                 M,
                 pdsn.m,
                 -pdsn.primal_stepsize *
-                (adjoint_linearized_operator(tmp, pdsn.m, pdsn.n, pdsn.X)),
+                    (adjoint_linearized_operator(tmp, pdsn.m, pdsn.n, pdsn.X)),
                 pdsn.p,
                 pdsn.vector_transport_method,
             ),
@@ -270,8 +274,8 @@ onstruct_primal_dual_residual_covariant_derivative_matrix(p, o)
 Constructs the matrix representation of ``V^{(k)}:\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}\rightarrow \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}``
 """
 function construct_primal_dual_residual_covariant_derivative_matrix(
-    tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState
-)
+        tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState
+    )
     obj = get_objective(tmp)
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)

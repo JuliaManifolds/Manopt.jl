@@ -59,15 +59,15 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint
         Dprox_G_dual,
         DΛ,
         adjoint_DΛ;
-        primal_stepsize=σ,
-        dual_stepsize=τ,
-        return_state=true,
+        primal_stepsize = σ,
+        dual_stepsize = τ,
+        return_state = true,
     )
     @test startswith(
         repr(s), "# Solver state for `Manopt.jl`s primal dual semismooth Newton"
     )
     y = get_solver_result(s)
-    @test x_hat ≈ y atol = 2 * 1e-7
+    @test x_hat ≈ y atol = 2 * 1.0e-7
 
     update_dual_base(p, o, i) = o.n
     o2 = primal_dual_semismooth_Newton(
@@ -84,17 +84,17 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint
         Dprox_G_dual,
         DΛ,
         adjoint_DΛ;
-        primal_stepsize=σ,
-        dual_stepsize=τ,
-        update_dual_base=update_dual_base,
-        return_state=false,
+        primal_stepsize = σ,
+        dual_stepsize = τ,
+        update_dual_base = update_dual_base,
+        return_state = false,
     )
     y2 = o2
-    @test x_hat ≈ y2 atol = 2 * 1e-7
+    @test x_hat ≈ y2 atol = 2 * 1.0e-7
     @testset "Objective Decorator passthrough" begin
         # PDNSSN additional tests
         pdmsno = PrimalDualManifoldSemismoothNewtonObjective(
-            f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ;
+            f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ
         )
         ro = ManoptTestSuite.DummyDecoratedObjective(pdmsno)
         X = zero_vector(M, x0)
