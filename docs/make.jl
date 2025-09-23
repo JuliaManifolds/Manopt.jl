@@ -55,7 +55,7 @@ for (name, file) in tutorials_menu.second
         if !run_quarto
             @warn "Tutorial $name does not exist at $fn."
             if (!isfile(fn)) && (
-                    endswith(file, "getstarted.md") || endswith(file, "ImplementOwnManifold.md")
+                    endswith(file, "getstarted.md") || endswith(file, "ImplementOwnManifold.md") || endswith(file, "HowToRecord.md")
                 )
                 @warn "Generating empty file, since this tutorial is linked to from the documentation."
                 touch(fn)

@@ -1921,7 +1921,7 @@ end
 Do a bracketing line search to find a step size ``α`` that finds a
 local minimum along the  search direction ``X`` starting from ``p``,
 utilizing cubic polynomial interpolation.
-See [`CubicBracketingLinesearch`](@ref) for the math details
+See [`CubicBracketingLinesearch`](@ref) for the mathematical details.
 
 # Fields
 $(_var(:Field, :p, "candidate_point"; add = " as temporary storage for candidates"))
