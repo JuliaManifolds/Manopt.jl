@@ -2050,20 +2050,15 @@ Returns the local minimizer of the cubic polynomial ``p`` with ``p(a.t)=a.f``, `
 * `warn::Bool`: Boolean value if warnings should be displayed
 """
 function cubic(a::UnivariateTriple{R}, b::UnivariateTriple{R}; warn::Bool = true) where {R}
-    if (a.f > b.f && warn)
-        @warn "value bracket condition not met."
-    end
-    if (a.df * (b.t - a.t) > 0 && warn)
-        @warn "derivative bracket condition not met."
-    end
+    (a.f > b.f && warn) && @warn "value bracket condition not met."
+    (a.df * (b.t - a.t) > 0 && warn) && @warn "derivative bracket condition not met."
+    
     Δ = b.t - a.t
     v = a.df + b.df - 3 * (b.f - a.f) / Δ
     discriminant = v^2 - a.df * b.df
-    if (discriminant < -2.0e-16 && warn)
-        @warn "discriminant=$discriminant negative, check input of 'cubic'."
-        return -1
-    end
-    w = sign(Δ) * sqrt(abs(discriminant))
+    #negative discriminants only occur with roundoff errors at 0
+    discriminant = max(discriminant, 0.0)
+    w = sign(Δ) * sqrt(discriminant)
     denom_a = a.df + v - w
     denom_b = b.df + v + w
     if (denom_a > denom_b)
@@ -2193,18 +2188,12 @@ function (cbls::CubicBracketingLinesearchStepsize)(
                 check_curvature(c) && return t
                 a_old = a
                 a, b = update_bracket(a, b, c)
-                if (a.f > b.f)
-                    @warn "after update 4 value bracket condition not met."
-                end
             end
             # Step 5
             t = (a.t + b.t) / 2
             c = get_univariate_triple!(mp, cbls, p, η, t)
             check_curvature(c) && return t
             a, b = update_bracket(a, b, c)
-            if (a.f > b.f)
-                @warn "after update 5 value bracket condition not met."
-            end
         end
     end
 
