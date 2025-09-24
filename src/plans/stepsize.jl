@@ -2052,7 +2052,7 @@ Returns the local minimizer of the cubic polynomial ``p`` with ``p(a.t)=a.f``, `
 function cubic(a::UnivariateTriple{R}, b::UnivariateTriple{R}; warn::Bool = true) where {R}
     (a.f > b.f && warn) && @warn "value bracket condition not met."
     (a.df * (b.t - a.t) > 0 && warn) && @warn "derivative bracket condition not met."
-    
+
     Δ = b.t - a.t
     v = a.df + b.df - 3 * (b.f - a.f) / Δ
     discriminant = v^2 - a.df * b.df

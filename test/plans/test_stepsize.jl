@@ -141,7 +141,7 @@ using ManoptTestSuite
         @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
 
         #edge cases of interval bracketing
-        a,b,τ = 0, 1, 0.25
+        a, b, τ = 0, 1, 0.25
         @test Manopt.step(a, b, 0.5, τ) == 0.5
         @test Manopt.step(a, b, a, τ) == a + τ
         @test Manopt.step(a, b, b, τ) == b - τ
@@ -149,14 +149,14 @@ using ManoptTestSuite
         a = Manopt.UnivariateTriple(0.0, 0.0, -1.0)
         b = Manopt.UnivariateTriple(1.0, -2.0, -3.0)
 
-        # check x^3 - 3x; local min at x = 1 
+        # check x^3 - 3x; local min at x = 1
         a = Manopt.UnivariateTriple(0.0, 0.0, -3.0)
         b = Manopt.UnivariateTriple(2.0, 2.0, 9.0)
-        @test Manopt.cubic(a, b) ≈ 1.0 rtol = 1e-12
+        @test Manopt.cubic(a, b) ≈ 1.0 rtol = 1.0e-12
 
-        # test secant 
+        # test secant
         @test Manopt.secant(a, b) == (a.t * b.df - b.t * a.df) / (b.df - a.df)
-        
+
     end
     @testset "Distance over Gradients Stepsize" begin
         @testset "does not use sectional cuvature (Eucludian)" begin

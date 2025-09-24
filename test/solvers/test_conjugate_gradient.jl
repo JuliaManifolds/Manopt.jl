@@ -360,38 +360,41 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         @test e_func(p3) < e_func(p2) && e_func(p2) < e_func(p1)
         @test e_func(p3) ≈ 1 atol = 1.0e-3
     end
-    
+
     @testset "Minimal eigenvalue calculation" begin
-        
+
         n = 3
         A = diagm(1:3)
-        M = Sphere(n-1)
+        M = Sphere(n - 1)
         obj = ManifoldFirstOrderObjective(;
-            cost = (M,p) -> dot(p, A*p),
-            gradient = (M,p) -> A*p - dot(p, A * p) * p
+            cost = (M, p) -> dot(p, A * p),
+            gradient = (M, p) -> A * p - dot(p, A * p) * p
         )
         retraction_method = ProjectionRetraction()
         vector_transport_method = ProjectionTransport()
-        stopping_criterion= StopAfterIteration(100) | StopWhenGradientNormLess(1e-10)
-        p0 = 1/sqrt(3) * [1., 1, 1]
+        stopping_criterion = StopAfterIteration(300) | StopWhenGradientNormLess(1.0e-12)
+        p0 = 1 / sqrt(3) * [1.0, 1, 1]
         is_converged = false
-        q1 = copy(p0) 
-        conjugate_gradient_descent!(M, obj, q1;
-            retraction_method, vector_transport_method, 
-            stopping_criterion, 
-            coefficient = HybridCoefficient(M, FletcherReevesCoefficient(), PolakRibiereCoefficient(M ; vector_transport_method)),
+        q1 = copy(p0)
+        conjugate_gradient_descent!(
+            M, obj, q1;
+            retraction_method, vector_transport_method,
+            stopping_criterion,
+            coefficient = HybridCoefficient(M, FletcherReevesCoefficient(), PolakRibiereCoefficient(M; vector_transport_method)),
             stepsize = CubicBracketingLinesearch(
                 M; retraction_method, vector_transport_method
-            ));
-        @test q1 ≈ [1, 0, 0] rtol = 1e-8
+            )
+        )
+        @test q1 ≈ [1, 0, 0] rtol = 1.0e-8
 
-        q2 = copy(p0) 
-        conjugate_gradient_descent!(M, obj, q2;
-            retraction_method, vector_transport_method, 
-            stopping_criterion, 
-            coefficient = HybridCoefficient(M, FletcherReevesCoefficient(), PolakRibiereCoefficient(M ; vector_transport_method)),
+        q2 = copy(p0)
+        conjugate_gradient_descent!(
+            M, obj, q2;
+            retraction_method, vector_transport_method,
+            stopping_criterion,
+            coefficient = HybridCoefficient(M, FletcherReevesCoefficient(), PolakRibiereCoefficient(M; vector_transport_method)),
             stepsize = ArmijoLinesearch(M)
-            );
-        @test q2 ≈ [1, 0, 0] rtol = 1e-8
+        )
+        @test q2 ≈ [1, 0, 0] rtol = 1.0e-8
     end
 end
