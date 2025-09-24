@@ -138,6 +138,7 @@ using ManoptTestSuite
         gs = GradientDescentState(M; p = p, X = grad_f(M, p))
         clbs = CubicBracketingLinesearch()(M)
         @test startswith(repr(clbs), "CubicBracketingLinesearch(;")
+        @test startswith(Manopt.status_summary(clbs), repr(clbs))
         @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
 
         #edge cases of interval bracketing
@@ -154,9 +155,41 @@ using ManoptTestSuite
         b = Manopt.UnivariateTriple(2.0, 2.0, 9.0)
         @test Manopt.cubic(a, b) ≈ 1.0 rtol = 1.0e-12
 
+        # test (R3)
+        c = Manopt.UnivariateTriple(1.0, 1.0, 1.0)
+        @test Manopt.update_bracket(a, b, c) == (a, c)
+
+        # test (R4)
+        c = Manopt.UnivariateTriple(1.0, -2.0, -1.0)
+        @test Manopt.update_bracket(a, b, c) == (c, b)
+
+        c = Manopt.UnivariateTriple(1.0, -2.0, 1.0)
+        @test Manopt.update_bracket(a, b, c) == (c, a)
+
+        #test (R5)
+        c = Manopt.UnivariateTriple(1.0, 0.0, 1.0)
+        @test Manopt.update_bracket(a, b, c) == (c, a)
+
+        c = Manopt.UnivariateTriple(1.0, 0.0, -1.0)
+        @test Manopt.update_bracket(a, b, c) == (a, c)
+
+        a = Manopt.UnivariateTriple(0.0, 0.0, 0.0)
+        @test Manopt.update_bracket(a, b, c) == (c, b)
+
         # test secant
         @test Manopt.secant(a, b) == (a.t * b.df - b.t * a.df) / (b.df - a.df)
-
+    end
+    @testset "CubicBracketingStepsize force Hybrid" begin
+        # test hybrid intervention for edge case
+        M = Euclidean(1)
+        f(M, p) = sum(p.^2 - p.^4)
+        grad_f(M, p) = 2 * p - 4 * p.^3
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p = [-0.1]
+        X = grad_f(M, p)
+        gs = GradientDescentState(M; p = p, X = grad_f(M, p))
+        clbs = CubicBracketingLinesearch(; sufficient_curvature = 1.0e-4, initial_stepsize = 250 / 49)(M)
+        @test clbs(dmp, gs, 1) ≈ 25 / 49 atol = 5 * 1.0e-4
     end
     @testset "Distance over Gradients Stepsize" begin
         @testset "does not use sectional cuvature (Eucludian)" begin

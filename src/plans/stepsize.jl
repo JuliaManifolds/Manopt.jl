@@ -2153,10 +2153,6 @@ function (cbls::CubicBracketingLinesearchStepsize)(
             (a, b) = c, c_old
             break
         end
-        if (c.f > init.f || c.df > 0)
-            (a, b) = c.f < init.f ? (c, init) : (init, c)
-            break
-        end
         t *= cbls.stepsize_increase
         c_old = c
         c = get_univariate_triple!(mp, cbls, p, η, t)
@@ -2164,12 +2160,12 @@ function (cbls::CubicBracketingLinesearchStepsize)(
 
     while ((n_iter += 1) <= cbls.max_iterations)
         # Step 1
-        abs(a.t - b.t) < cbls.min_bracket_width && return t
+        abs(a.t - b.t) < cbls.min_bracket_width && break
         l = 2 * abs(a.t - b.t)
         γ = cubic(a, b)
         t = step(a.t, b.t, γ, cbls.min_bracket_width)
         c = get_univariate_triple!(mp, cbls, p, η, t)
-        check_curvature(c) && return t
+        check_curvature(c) && break
         a_old = a
         a, b = update_bracket(a, b, c)
         if (cbls.hybrid)
@@ -2192,11 +2188,10 @@ function (cbls::CubicBracketingLinesearchStepsize)(
             # Step 5
             t = (a.t + b.t) / 2
             c = get_univariate_triple!(mp, cbls, p, η, t)
-            check_curvature(c) && return t
+            check_curvature(c) && break
             a, b = update_bracket(a, b, c)
         end
     end
-
     return t
 end
 function show(io::IO, cbls::CubicBracketingLinesearchStepsize)

@@ -372,7 +372,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         )
         retraction_method = ProjectionRetraction()
         vector_transport_method = ProjectionTransport()
-        stopping_criterion = StopAfterIteration(300) | StopWhenGradientNormLess(1.0e-12)
+        stopping_criterion = StopAfterIteration(300) | StopWhenGradientNormLess(1.0e-10)
         p0 = 1 / sqrt(3) * [1.0, 1, 1]
         is_converged = false
         q1 = copy(p0)
