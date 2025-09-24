@@ -1327,7 +1327,7 @@ function linesearch_backtrack!(
     msg = ""
     ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
     f_q = f(M, q)
-    search_dir_inner = real(inner(M, p, η, X)) : search_dir_inner
+    search_dir_inner = real(inner(M, p, η, X))
     if search_dir_inner >= 0
         msg = "The search direction η might not be a descent direction, since ⟨η, grad_f(p)⟩ ≥ 0."
     end

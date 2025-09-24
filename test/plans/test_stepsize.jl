@@ -143,15 +143,15 @@ using ManoptTestSuite
 
         #edge cases of interval bracketing
         a, b, τ = 0, 1, 0.25
-        @test Manopt.step(a, b, 0.5, τ) == 0.5
-        @test Manopt.step(a, b, a, τ) == a + τ
-        @test Manopt.step(a, b, b, τ) == b - τ
+        @test Manopt.cubic_stepsize_update_step(a, b, 0.5, τ) == 0.5
+        @test Manopt.cubic_stepsize_update_step(a, b, a, τ) == a + τ
+        @test Manopt.cubic_stepsize_update_step(a, b, b, τ) == b - τ
 
 
         # check x^3 - 3x; local min at x = 1
         a = Manopt.UnivariateTriple(0.0, 0.0, -3.0)
         b = Manopt.UnivariateTriple(2.0, 2.0, 9.0)
-        @test Manopt.cubic(a, b) ≈ 1.0 rtol = 1.0e-12
+        @test Manopt.cubic_polynomial_argmin(a, b) ≈ 1.0 rtol = 1.0e-12
 
         # test if DomainError is thrown
         c = Manopt.UnivariateTriple(3.0, 0.0, 0.0)
