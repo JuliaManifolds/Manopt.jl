@@ -182,8 +182,8 @@ using ManoptTestSuite
     @testset "CubicBracketingStepsize force Hybrid" begin
         # test hybrid intervention for edge case
         M = Euclidean(1)
-        f(M, p) = sum(p.^2 - p.^4)
-        grad_f(M, p) = 2 * p - 4 * p.^3
+        f(M, p) = sum(p .^ 2 - p .^ 4)
+        grad_f(M, p) = 2 * p - 4 * p .^ 3
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p = [-0.1]
         X = grad_f(M, p)
