@@ -126,11 +126,11 @@ Specify a [`Stepsize`](@ref) that is constant.
 # Input
 
 * `M` (optional)
-`s=min( injectivity_radius(M)/2, 1.0)` : the length to use.
+* `s=min( injectivity_radius(M)/2, 1.0)` : the length to use.
 
 # Keyword argument
 
-* `type::Symbol=relative` specify the type of constant step size.
+* `type::Symbol=:relative` specify the type of constant step size. Possible values are
   * `:relative` – scale the gradient tangent vector ``X`` to ``s*X``
   * `:absolute` – scale the gradient to an absolute step length ``s``, that is ``$(_tex(:frac, "s", _tex(:norm, "X")))X``
 
@@ -757,6 +757,8 @@ mutable struct CubicBracketingLinesearchStepsize{
 end
 
 """
+    UnivariateTriple{R <: Real}
+
 Triple of stepsize, function value und derivative value
 
 # Fields
@@ -771,7 +773,9 @@ struct UnivariateTriple{R <: Real}
 end
 
 """
-Updates bracket w.r.t. the bracketing strategy in WW. Hager (R3) - (R5).
+    update_bracket(a::UnivariateTriple, b::UnivariateTriple, c::UnivariateTriple)
+
+Updates bracket w.r.t. the bracketing strategy in [Hager:1989](@cite) (R3) - (R5).
 
 # Input
 * `a::UnivariateTriple{R}`: triple of bracket value `a`
@@ -811,6 +815,8 @@ function update_bracket(a::UnivariateTriple{R}, b::UnivariateTriple{R}, c::Univa
 end
 
 """
+    cubic_polynomial_argmin(a::UnivariateTriple, b::UnivariateTriple; warn::Bool = true)
+
 Returns the local minimizer of the cubic polynomial ``p`` with ``p(a.t)=a.f``, ``p(b.t)=b.f``,
 ``p'(a.t)=a.df``, ``p'(b.t)=b.df``.
 
@@ -821,7 +827,7 @@ Returns the local minimizer of the cubic polynomial ``p`` with ``p(a.t)=a.f``, `
 # Keyword arguments
 * `warn::Bool`: Boolean value if warnings should be displayed
 """
-function cubic(a::UnivariateTriple{R}, b::UnivariateTriple{R}; warn::Bool = true) where {R}
+function cubic_polynomial_argmin(a::UnivariateTriple{R}, b::UnivariateTriple{R}; warn::Bool = true) where {R}
     (a.f > b.f && warn) && @warn "value bracket condition not met."
     (a.df * (b.t - a.t) > 0 && warn) && @warn "derivative bracket condition not met."
 
@@ -841,6 +847,8 @@ function cubic(a::UnivariateTriple{R}, b::UnivariateTriple{R}; warn::Bool = true
 end
 
 """
+    secant(a::UnivariateTriple, b::UnivariateTriple)
+
 Returns the extremal of the quadratic polynomial ``p`` with
 ``p'(a.t)=a.df``, ``p'(b.t)=b.df``.
 
@@ -853,7 +861,10 @@ function secant(a::UnivariateTriple{R}, b::UnivariateTriple{R}) where {R}
 end
 
 """
-Step function to determine the stepsize update `c` discribed in
+    cubic_stepsize_update_step(a::Real, b::Real, c::Real, τ::Real)
+
+
+Step function to determine the stepsize update `c` described in
 [Hager:1989](@cite).
 
 # Input
@@ -862,7 +873,7 @@ Step function to determine the stepsize update `c` discribed in
 * `c::Real`: update value
 * `τ::Real`: minimal step tolerance
 """
-function step(a::Real, b::Real, c::Real, τ::Real)
+function cubic_stepsize_update_step(a::Real, b::Real, c::Real, τ::Real)
     y = min(a, b)
     z = max(a, b)
     if (y + τ ≤ c && c ≤ z - τ)
@@ -934,8 +945,8 @@ function (cbls::CubicBracketingLinesearchStepsize)(
         # Step 1
         abs(a.t - b.t) < cbls.min_bracket_width && break
         l = 2 * abs(a.t - b.t)
-        γ = cubic(a, b)
-        t = step(a.t, b.t, γ, cbls.min_bracket_width)
+        γ = cubic_polynomial_argmin(a, b)
+        t = cubic_stepsize_update_step(a.t, b.t, γ, cbls.min_bracket_width)
         c = get_univariate_triple!(mp, cbls, p, η, t)
         check_curvature(c) && break
         a_old = a
@@ -949,9 +960,9 @@ function (cbls::CubicBracketingLinesearchStepsize)(
                 # Step 3
                 (c.df - a_old.df) / (c.t - a_old.t) ≤ 0 && break
                 # Step 4
-                γ = cubic(a_old, c; warn = false)
+                γ = cubic_polynomial_argmin(a_old, c; warn = false)
                 (γ < min(a.t, b.t) || γ > max(a.t, b.t)) && break
-                t = step(a.t, b.t, γ, cbls.min_bracket_width)
+                t = cubic_stepsize_update_step(a.t, b.t, γ, cbls.min_bracket_width)
                 c = get_univariate_triple!(mp, cbls, p, η, t)
                 check_curvature(c) && return t
                 a_old = a
