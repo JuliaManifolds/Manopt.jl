@@ -147,13 +147,15 @@ using ManoptTestSuite
         @test Manopt.step(a, b, a, τ) == a + τ
         @test Manopt.step(a, b, b, τ) == b - τ
 
-        a = Manopt.UnivariateTriple(0.0, 0.0, -1.0)
-        b = Manopt.UnivariateTriple(1.0, -2.0, -3.0)
 
         # check x^3 - 3x; local min at x = 1
         a = Manopt.UnivariateTriple(0.0, 0.0, -3.0)
         b = Manopt.UnivariateTriple(2.0, 2.0, 9.0)
         @test Manopt.cubic(a, b) ≈ 1.0 rtol = 1.0e-12
+
+        # test if DomainError is thrown
+        c = Manopt.UnivariateTriple(3.0, 0.0, 0.0)
+        @test_throws DomainError Manopt.update_bracket(a, b, c)
 
         # test (R3)
         c = Manopt.UnivariateTriple(1.0, 1.0, 1.0)
@@ -182,14 +184,14 @@ using ManoptTestSuite
     @testset "CubicBracketingStepsize force Hybrid" begin
         # test hybrid intervention for edge case
         M = Euclidean(1)
-        f(M, p) = sum(p .^ 2 - p .^ 4)
-        grad_f(M, p) = 2 * p - 4 * p .^ 3
+        f(M, p) = sum(p .^ 6)
+        grad_f(M, p) = 6 * p .^ 5
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
-        p = [-0.1]
+        p = [-1.0]
         X = grad_f(M, p)
         gs = GradientDescentState(M; p = p, X = grad_f(M, p))
-        clbs = CubicBracketingLinesearch(; sufficient_curvature = 1.0e-4, initial_stepsize = 250 / 49)(M)
-        @test clbs(dmp, gs, 1) ≈ 25 / 49 atol = 5 * 1.0e-4
+        clbs = CubicBracketingLinesearch(; sufficient_curvature = 1.0e-16, min_bracket_width = 0.0, initial_stepsize = 0.5)(M)
+        @test clbs(dmp, gs, 1) ≈ 1 / 6 atol = 5.0e-4
     end
     @testset "Distance over Gradients Stepsize" begin
         @testset "does not use sectional cuvature (Eucludian)" begin

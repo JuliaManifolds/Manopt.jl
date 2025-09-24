@@ -2103,7 +2103,7 @@ function step(a::Real, b::Real, c::Real, τ::Real)
     end
 end
 
-@doc"""
+"""
 Get the `UnivariateTriple` related to the step with 
 stepsize ``τ`` from ``p`` in direction ``η``.
 
