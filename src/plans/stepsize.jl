@@ -749,12 +749,11 @@ function linesearch_backtrack!(
         stop_when_stepsize_exceeds = max_stepsize(M, p) / norm(M, p, η),
         stop_increasing_at_step = 100,
         stop_decreasing_at_step = 1000,
-        search_dir_inner = nothing
     ) where {TF, T}
     msg = ""
     ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
     f_q = f(M, q)
-    search_dir_inner = isnothing(search_dir_inner) ? real(inner(M, p, η, X)) : search_dir_inner
+    search_dir_inner = real(inner(M, p, η, X)) : search_dir_inner
     if search_dir_inner >= 0
         msg = "The search direction η might not be a descent direction, since ⟨η, grad_f(p)⟩ ≥ 0."
     end
@@ -2252,6 +2251,8 @@ $(_var(:Keyword, :retraction_method))
 * `min_bracket_width=1e-4`: minimal size of the bracket ``[a,b]``
 * `hybrid=true`: use the hybrid strategy
 $(_var(:Keyword, :vector_transport_method))
+
+$(_note(:ManifoldDefaultFactory, "CubicBracketingLinesearch"))
 """
 function CubicBracketingLinesearch(args...; kwargs...)
     return ManifoldDefaultsFactory(CubicBracketingLinesearchStepsize, args...; kwargs...)
