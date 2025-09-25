@@ -7,7 +7,7 @@
 
 ## Problem
 
-```@meta
+```@docs
 VectorBundleManoptProblem
 ```
 

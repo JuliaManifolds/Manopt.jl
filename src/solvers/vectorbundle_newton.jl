@@ -171,10 +171,8 @@ function show(io::IO, vbns::VectorBundleNewtonState)
 end
 
 
-raw"""
-    VectorBundleManoptProblem{
-    TM<:AbstractManifold,TV<:AbstractManifold,O
-}
+@doc raw"""
+    VectorBundleManoptProblem{TM<:AbstractManifold,TV<:AbstractManifold,O}
 
 Model a vector bundle problem, that consists of the domain manifold ``\mathcal M`` that is a AbstractManifold, the range vector bundle ``\mathcal E`` and the Newton equation ``Q_{F(x)}\circ F'(x) \delta x + F(x) = 0_{p(F(x))}``. The Newton equation should be implemented as a functor that computes a representation of the Newton matrix and the right hand side. It needs to have a field ``A`` to store a representation of the Newton matrix ``Q_{F(x)}\circ F'(x) `` and a field ``b`` to store a representation of the right hand side ``F(x)``.
 """
@@ -242,9 +240,9 @@ is solved to compute a Newton direction ``X``. The next iterate is then computed
 # Arguments
 
 * `M`: domain manifold
-* 'E': range vector bundle
-* 'p': current iterate
-* 'NE': functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}\circ F'(p)`` (covariant derivative of ``F``) and the right hand side ``F(p)`` at a point ``p\in\mathcal M``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
+* `E`: range vector bundle
+* `p`: current iterate
+* `NE`: functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}\circ F'(p)`` (covariant derivative of ``F``) and the right hand side ``F(p)`` at a point ``p\in\mathcal M``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
 
 # Keyword arguments
 
