@@ -1,15 +1,15 @@
 @doc raw"""
     VectorBundleNewtonState{P,T} <: AbstractManoptSolverState
 
-Is state for the vectorbundle Newton method
+Is state for the vector bundle Newton method
 
 # Fields
 
-* 'p': current iterate
-* 'p_trial': next iterate needed for simplified Newton (not needed if affine covariant damping is not used to compute stepsizes)
-* 'X': current Newton direction
-* 'sub_problem': method (closed form solution) that returns the solution of the Newton equation, i.e. the Newton direction
-* 'sub_state': sub_state to sub_problem, in most cases either AllocatingEvaluation() or InplaceEvaluation()
+* `p`: current iterate
+* `p_trial`: next iterate needed for simplified Newton (not needed if affine covariant damping is not used to compute stepsizes)
+* `X`: current Newton direction
+* `sub_problem`: method (closed form solution) that returns the solution of the Newton equation, i.e. the Newton direction
+* `sub_state`: sub_state to sub_problem, in most cases either AllocatingEvaluation() or InplaceEvaluation()
 * `stop`: stopping criterion
 * `stepsize`: damping factor for the Newton direction
 * `retraction_method`:  the retraction to use in the Newton update
@@ -68,18 +68,18 @@ end
 @doc raw"""
     AffineCovariantStepsize <: Stepsize
 
-    A functor to provide an affine covariant stepsize generalizing the idea of following Newton paths introduced by [TODO](@cite). It can be used to derive a damped Newton method. The step sizes (damping factors) are computed by a predictor-corrector-loop using an affine covariant quantity ``\theta`` to measure local convergence.
+A functor to provide an affine covariant stepsize generalizing the idea of following Newton paths introduced by [TODO](@cite). It can be used to derive a damped Newton method. The step sizes (damping factors) are computed by a predictor-corrector-loop using an affine covariant quantity ``\theta`` to measure local convergence.
 
-    # Fields
+# Fields
 
-    * `alpha`: the step size
-    * `theta`: quantity that measures local convergence of Newton's method
-    * `theta_des`: desired theta
-    * `theta_acc`: acceptable theta
-    * `last_stepsize`: last computed step size (helper)
-    * `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm, that is used to compute the overall distance based on the element-wise distance.
+* `alpha`: the step size
+* `theta`: quantity that measures local convergence of Newton's method
+* `theta_des`: desired theta
+* `theta_acc`: acceptable theta
+* `last_stepsize`: last computed step size (helper)
+* `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm, that is used to compute the overall distance based on the element-wise distance.
 
-    # Constructor
+# Constructor
 
     AffineCovariantStepsize(M::AbstractManifold=DefaultManifold(2);
         stepsize=1.0,
@@ -90,11 +90,10 @@ end
         outer_norm=2
     )
 
-        initializes all fields, where none of them is mandatory. The length is set to ``1.0``.
+Initializes all fields, where none of them is mandatory. The length is set to ``1.0``.
 
-    Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
-    This should be implemented as a method of the ``newton_equation(M, VB, p, p_trial)`` as parameters and returning a representation of the (transported) ``F(p_{\mathrm{trial}})``.
-
+Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
+This should be implemented as a method of the ``newton_equation(M, VB, p, p_trial)`` as parameters and returning a representation of the (transported) ``F(p_{\mathrm{trial}})``.
 """
 mutable struct AffineCovariantStepsize{T, R <: Real} <: Stepsize
     alpha::T
