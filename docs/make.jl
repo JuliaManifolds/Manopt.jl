@@ -203,6 +203,7 @@ makedocs(;
             "Subgradient method" => "solvers/subgradient.md",
             "Steihaug-Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
             "Trust-Regions Solver" => "solvers/trust_regions.md",
+            "Vector Bundle Newton Method" => "solvers/vectorbundle_newton.md",
         ],
         "Plans" => [
             "Specify a Solver" => "plans/index.md",

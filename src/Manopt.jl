@@ -267,8 +267,8 @@ export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
 export AbstractManoptProblem
-export DefaultManoptProblem,
-    TwoManifoldProblem, ConstrainedManoptProblem, VectorbundleManoptProblem
+export DefaultManoptProblem
+export TwoManifoldProblem, ConstrainedManoptProblem, VectorBundleManoptProblem
 #
 # Objectives
 export AbstractDecoratedManifoldObjective,
@@ -298,8 +298,7 @@ export AbstractDecoratedManifoldObjective,
     PrimalDualManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
     SimpleManifoldCachedObjective,
-    ManifoldCachedObjective,
-    VectorbundleObjective
+    ManifoldCachedObjective
 # Functions
 export AbstractVectorFunction,
     AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
@@ -344,7 +343,7 @@ export AbstractGradientSolverState,
     SubGradientMethodState,
     TruncatedConjugateGradientState,
     TrustRegionsState,
-    VectorbundleNewtonState
+    VectorBundleNewtonState
 
 # Objectives and Costs
 export NelderMeadSimplex
@@ -408,7 +407,7 @@ export equality_constraints_length,
     get_hess_equality_constraint!,
     inequality_constraints_length,
     is_feasible
-export get_vectorbundle, get_derivative, get_connection_map, get_bundle_map
+export get_vectorbundle
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export KKTVectorField, KKTVectorFieldJacobian, KKTVectorFieldAdjointJacobian
@@ -536,7 +535,7 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export AdaptiveWNGradient, ConstantLength, DecreasingLength,
+export AdaptiveWNGradient, AffineCovariantStepsize, ConstantLength, DecreasingLength,
     Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
 export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
