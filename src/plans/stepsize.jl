@@ -724,12 +724,14 @@ $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 """
 mutable struct CubicBracketingLinesearchStepsize{
-        P,
         R <: Real,
         I <: Integer,
         TRM <: AbstractRetractionMethod,
         VTM <: AbstractVectorTransportMethod,
+        P,
+        T,
     } <: Linesearch
+    candidate_direction::T
     candidate_point::P
     initial_stepsize::R
     last_stepsize::R
@@ -740,9 +742,11 @@ mutable struct CubicBracketingLinesearchStepsize{
     min_bracket_width::R
     hybrid::Bool
     vector_transport_method::VTM
+    max_stepsize::R
     function CubicBracketingLinesearchStepsize(
             M::AbstractManifold;
             candidate_point::P = allocate_result(M, rand),
+            candidate_direction::T = zero_vector(M, candidate_point),
             initial_stepsize::R = 1.0,
             retraction_method::TRM = default_retraction_method(M),
             stepsize_increase::R = 1.5,
@@ -751,8 +755,9 @@ mutable struct CubicBracketingLinesearchStepsize{
             min_bracket_width::R = 1.0e-4,
             hybrid::Bool = true,
             vector_transport_method::VTM = default_vector_transport_method(M),
-        ) where {P, R <: Real, I <: Integer, TRM, VTM}
-        return new{P, R, I, TRM, VTM}(candidate_point, initial_stepsize, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method)
+            max_stepsize::Real = max_stepsize(M),
+        ) where {R <: Real, I <: Integer, TRM, VTM, P, T}
+        return new{R, I, TRM, VTM, P, T}(candidate_direction, candidate_point, initial_stepsize, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize)
     end
 end
 
@@ -887,21 +892,22 @@ function cubic_stepsize_update_step(a::Real, b::Real, c::Real, τ::Real)
 end
 
 """
-Get the `UnivariateTriple` related to the step with
-stepsize ``τ`` from ``p`` in direction ``η``.
+Get the `UnivariateTriple` of the problem `mp` related to the step with
+stepsize ``t`` from ``p`` in direction ``η``.
 
 # Input
-* `a::Real`: first value of the bracket
-* `b::Real`: second value of the bracket
-* `c::Real`: update value
-* `τ::Real`: minimal step tolerance
+* `mp::AbstractManoptProblem`
+* `cbls:::CubicBracketingLinesearchStepsize`: containing `retraction_method`, `vector_transport` and the temporary `candidate_point` and `candidate_direction`
+* `p`: point in the manifold of `mp`
+* `η`: search direction at `p`
+* `t::Real`: step size 
 """
-function get_univariate_triple!(mp, cbls, p, η, t)
+function get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketingLinesearchStepsize, p, η, t)
     M = get_manifold(mp)
     cbls.last_stepsize = t
     ManifoldsBase.retract_fused!(M, cbls.candidate_point, p, η, t, cbls.retraction_method)
-    Tη = vector_transport_to(M, p, η, cbls.candidate_point, cbls.vector_transport_method)
-    f, df = Manopt.get_cost_and_differential(mp, cbls.candidate_point, Y_tmp)
+    vector_transport_to!(M, cbls.candidate_direction, p, η, cbls.candidate_point, cbls.vector_transport_method)
+    f, df = get_cost_and_differential(mp, cbls.candidate_point, cbls.candidate_direction)
     return UnivariateTriple(t, f, df)
 end
 
@@ -935,7 +941,9 @@ function (cbls::CubicBracketingLinesearchStepsize)(
             (a, b) = c, c_old
             break
         end
+        (t == cbls.max_stepsize) && return t
         t *= cbls.stepsize_increase
+        t = min(t, cbls.max_stepsize)
         c_old = c
         c = get_univariate_triple!(mp, cbls, p, η, t)
     end
