@@ -989,13 +989,14 @@ function show(io::IO, cbls::CubicBracketingLinesearchStepsize)
         io,
         """
         CubicBracketingLinesearch(;
-            initial_stepsize = $(cbls.initial_stepsize)
-            stepsize_increase = $(cbls.stepsize_increase)
-            sufficient_curvature = $(cbls.sufficient_curvature)
-            min_bracket_width = $(cbls.min_bracket_width)
-            hybrid = $(cbls.hybrid)
+            initial_stepsize = $(cbls.initial_stepsize),
+            stepsize_increase = $(cbls.stepsize_increase),
+            sufficient_curvature = $(cbls.sufficient_curvature),
+            min_bracket_width = $(cbls.min_bracket_width),
+            hybrid = $(cbls.hybrid),
             retraction_method = $(cbls.retraction_method),
-            vector_transport_method = $(cbls.vector_transport_method)
+            vector_transport_method = $(cbls.vector_transport_method),
+            max_stepsize = $(cbls.max_stepsize)
         )""",
     )
 end
