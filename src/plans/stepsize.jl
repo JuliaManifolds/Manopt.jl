@@ -901,8 +901,7 @@ function get_univariate_triple!(mp, cbls, p, η, t)
     cbls.last_stepsize = t
     ManifoldsBase.retract_fused!(M, cbls.candidate_point, p, η, t, cbls.retraction_method)
     Tη = vector_transport_to(M, p, η, cbls.candidate_point, cbls.vector_transport_method)
-    f = get_cost(M, get_objective(mp), cbls.candidate_point)
-    df = get_differential(mp, cbls.candidate_point, Tη)
+    f, df = Manopt.get_cost_and_differential(mp, cbls.candidate_point, Y_tmp)
     return UnivariateTriple(t, f, df)
 end
 
