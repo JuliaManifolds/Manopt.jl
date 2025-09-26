@@ -705,6 +705,7 @@ $(_var(:Field, :retraction_method))
 * `sufficient_curvature::R`: target reduction of the curvature ``(0,1)``
 * `min_bracket_width::R`: minimal size of the bracket ``[a,b]``
 * `hybrid::Bool`: use the hybrid strategy
+* `max_stepsize::R`: maximal stepsize
 $(_var(:Field, :vector_transport_method))
 
 # Constructor
@@ -721,6 +722,7 @@ $(_var(:Keyword, :retraction_method))
 * `sufficient_curvature=0.2`: target reduction of the curvature ``(0,1)``
 * `min_bracket_width=1e-4`: minimal size of the bracket ``[a,b]``
 * `hybrid=true`: use the hybrid strategy
+* `max_stepsize= max_stepsize(M)`: maximal stepsize
 $(_var(:Keyword, :vector_transport_method))
 """
 mutable struct CubicBracketingLinesearchStepsize{
