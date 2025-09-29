@@ -126,11 +126,11 @@ Specify a [`Stepsize`](@ref) that is constant.
 # Input
 
 * `M` (optional)
-`s=min( injectivity_radius(M)/2, 1.0)` : the length to use.
+* `s=min( injectivity_radius(M)/2, 1.0)` : the length to use.
 
 # Keyword argument
 
-* `type::Symbol=relative` specify the type of constant step size.
+* `type::Symbol=:relative` specify the type of constant step size. Possible values are
   * `:relative` – scale the gradient tangent vector ``X`` to ``s*X``
   * `:absolute` – scale the gradient to an absolute step length ``s``, that is ``$(_tex(:frac, "s", _tex(:norm, "X")))X``
 
@@ -429,10 +429,10 @@ function show(io::IO, als::ArmijoLinesearchStepsize)
         io,
         """
         ArmijoLinesearch(;
-            initial_stepsize=$(als.initial_stepsize)
-            retraction_method=$(als.retraction_method)
-            contraction_factor=$(als.contraction_factor)
-            sufficient_decrease=$(als.sufficient_decrease)
+            initial_stepsize=$(als.initial_stepsize),
+            retraction_method=$(als.retraction_method),
+            contraction_factor=$(als.contraction_factor),
+            sufficient_decrease=$(als.sufficient_decrease),
         )""",
     )
 end
@@ -617,11 +617,11 @@ get_last_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
 function show(io::IO, awng::AdaptiveWNGradientStepsize)
     s = """
     AdaptiveWNGradient(;
-      count_threshold=$(awng.count_threshold),
-      minimal_bound=$(awng.minimal_bound),
-      alternate_bound=$(awng.alternate_bound),
-      gradient_reduction=$(awng.gradient_reduction),
-      gradient_bound=$(awng.gradient_bound)
+      count_threshold = $(awng.count_threshold),
+      minimal_bound = $(awng.minimal_bound),
+      alternate_bound = $(awng.alternate_bound),
+      gradient_reduction = $(awng.gradient_reduction),
+      gradient_bound = $(awng.gradient_bound)
     )
 
     as well as internally the weight ω_k = $(awng.weight) and current count c_k = $(awng.count).
@@ -684,6 +684,590 @@ $(_var(:Keyword, :X; add = "only used to define the `gradient_bound`"))
 """
 function AdaptiveWNGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.AdaptiveWNGradientStepsize, args...; kwargs...)
+end
+
+
+@doc """
+    CubicBracketingLinesearchStepsize{P,T,R<:Real} <: Linesearch
+
+Do a bracketing line search to find a step size ``α`` that finds a
+local minimum along the  search direction ``X`` starting from ``p``,
+utilizing cubic polynomial interpolation.
+See [`CubicBracketingLinesearch`](@ref) for the mathematical details.
+
+# Fields
+$(_var(:Field, :p, "candidate_point"; add = " as temporary storage for candidates"))
+* `initial_stepsize::R`: the step size to start the search with
+* `last_stepsize::R`
+$(_var(:Field, :retraction_method))
+* `stepsize_increase::R`:  step size increase factor ``>1``
+* `max_iterations::I`: maximum number of iterations
+* `sufficient_curvature::R`: target reduction of the curvature ``(0,1)``
+* `min_bracket_width::R`: minimal size of the bracket ``[a,b]``
+* `hybrid::Bool`: use the hybrid strategy
+* `max_stepsize::R`: maximal stepsize
+$(_var(:Field, :vector_transport_method))
+
+# Constructor
+
+    CubicBracketingLinesearchStepsize(M::AbstractManifold; kwargs...)
+
+## Keyword arguments
+
+$(_var(:Keyword, :p, "candidate_point"; add = " as temporary storage for candidates"))
+* `initial_stepsize=1.0`: the step size to start the search with
+$(_var(:Keyword, :retraction_method))
+* `stepsize_increase=1.1`:  step size increase factor ``>1``
+* `max_iterations=100`: maximum number of iterations
+* `sufficient_curvature=0.2`: target reduction of the curvature ``(0,1)``
+* `min_bracket_width=1e-4`: minimal size of the bracket ``[a,b]``
+* `hybrid=true`: use the hybrid strategy
+* `max_stepsize= max_stepsize(M)`: maximal stepsize
+$(_var(:Keyword, :vector_transport_method))
+"""
+mutable struct CubicBracketingLinesearchStepsize{
+        R <: Real,
+        I <: Integer,
+        TRM <: AbstractRetractionMethod,
+        VTM <: AbstractVectorTransportMethod,
+        P,
+        T,
+    } <: Linesearch
+    candidate_direction::T
+    candidate_point::P
+    initial_stepsize::R
+    last_stepsize::R
+    retraction_method::TRM
+    stepsize_increase::R
+    max_iterations::I
+    sufficient_curvature::R
+    min_bracket_width::R
+    hybrid::Bool
+    vector_transport_method::VTM
+    max_stepsize::R
+    function CubicBracketingLinesearchStepsize(
+            M::AbstractManifold;
+            candidate_point::P = allocate_result(M, rand),
+            candidate_direction::T = zero_vector(M, candidate_point),
+            initial_stepsize::R = 1.0,
+            retraction_method::TRM = default_retraction_method(M),
+            stepsize_increase::R = 1.5,
+            max_iterations::I = 100,
+            sufficient_curvature::R = 0.2,
+            min_bracket_width::R = 1.0e-4,
+            hybrid::Bool = true,
+            vector_transport_method::VTM = default_vector_transport_method(M),
+            max_stepsize::Real = max_stepsize(M),
+        ) where {R <: Real, I <: Integer, TRM, VTM, P, T}
+        return new{R, I, TRM, VTM, P, T}(candidate_direction, candidate_point, initial_stepsize, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize)
+    end
+end
+
+"""
+    UnivariateTriple{R <: Real}
+
+Triple of stepsize, function value und derivative value
+
+# Fields
+* `t::R`: stepsize
+* `f::R`: cost at stepsize `t`
+* `df::R`: derivative of the cost at stepsize `t`
+"""
+struct UnivariateTriple{R <: Real}
+    t::R
+    f::R
+    df::R
+end
+
+"""
+    update_bracket(a::UnivariateTriple, b::UnivariateTriple, c::UnivariateTriple)
+
+Updates bracket w.r.t. the bracketing strategy in [Hager:1989](@cite) (R3) - (R5).
+
+# Input
+* `a::UnivariateTriple{R}`: triple of bracket value `a`
+* `b::UnivariateTriple{R}`: triple bracket value `b`
+* `c::UnivariateTriple{R}`: triple of update value
+"""
+function update_bracket(a::UnivariateTriple{R}, b::UnivariateTriple{R}, c::UnivariateTriple{R}) where {R}
+    if (c.t > max(a.t, b.t) || c.t < min(a.t, b.t))
+        throw(
+            DomainError(
+                c.t,
+                "Bracket interval does not contain update value"
+            ),
+        )
+    end
+    if (c.f > a.f)
+        #(R3)
+        a, b = a, c
+    elseif (c.f < a.f)
+        #(R4)
+        if (c.df * (a.t - c.t) ≤ 0)
+            a, b = c, a
+        else
+            a, b = c, b
+        end
+    else
+        #(R5)
+        if (c.df * (a.t - c.t) < 0)
+            a, b = c, a
+        elseif (a.df * (b.t - a.t) < 0)
+            a, b = a, c
+        else
+            a, b = c, b
+        end
+    end
+    return a, b
+end
+
+"""
+    cubic_polynomial_argmin(a::UnivariateTriple, b::UnivariateTriple; warn::Bool = true)
+
+Returns the local minimizer of the cubic polynomial ``p`` with ``p(a.t)=a.f``, ``p(b.t)=b.f``,
+``p'(a.t)=a.df``, ``p'(b.t)=b.df``.
+
+# Input
+* `a::UnivariateTriple{R}`: triple of bracket value `a`
+* `b::UnivariateTriple{R}`: triple bracket value `b`
+
+# Keyword arguments
+* `warn::Bool`: Boolean value if warnings should be displayed
+"""
+function cubic_polynomial_argmin(a::UnivariateTriple{R}, b::UnivariateTriple{R}; warn::Bool = true) where {R}
+    (a.f > b.f && warn) && @warn "value bracket condition not met."
+    (a.df * (b.t - a.t) > 0 && warn) && @warn "derivative bracket condition not met."
+
+    Δ = b.t - a.t
+    v = a.df + b.df - 3 * (b.f - a.f) / Δ
+    discriminant = v^2 - a.df * b.df
+    #negative discriminants only occur with roundoff errors at 0
+    discriminant = max(discriminant, 0.0)
+    w = sign(Δ) * sqrt(discriminant)
+    denom_a = a.df + v - w
+    denom_b = b.df + v + w
+    if (denom_a > denom_b)
+        return a.t + Δ * a.df / denom_a
+    else
+        return b.t - Δ * b.df / denom_b
+    end
+end
+
+"""
+    secant(a::UnivariateTriple, b::UnivariateTriple)
+
+Returns the extremal of the quadratic polynomial ``p`` with
+``p'(a.t)=a.df``, ``p'(b.t)=b.df``.
+
+# Input
+* `a::UnivariateTriple{R}`: triple of bracket value `a`
+* `b::UnivariateTriple{R}`: triple bracket value `b`
+"""
+function secant(a::UnivariateTriple{R}, b::UnivariateTriple{R}) where {R}
+    return (a.t * b.df - b.t * a.df) / (b.df - a.df)
+end
+
+"""
+    cubic_stepsize_update_step(a::Real, b::Real, c::Real, τ::Real)
+
+
+Step function to determine the stepsize update `c` described in
+[Hager:1989](@cite).
+
+# Input
+* `a::Real`: first value of the bracket
+* `b::Real`: second value of the bracket
+* `c::Real`: update value
+* `τ::Real`: minimal step tolerance
+"""
+function cubic_stepsize_update_step(a::Real, b::Real, c::Real, τ::Real)
+    y = min(a, b)
+    z = max(a, b)
+    if (y + τ ≤ c && c ≤ z - τ)
+        return c
+    end
+    if (c > (a + b) / 2)
+        return max(z - τ, (a + b) / 2)
+    else
+        return min(y + τ, (a + b) / 2)
+    end
+end
+
+"""
+Get the `UnivariateTriple` of the problem `mp` related to the step with
+stepsize ``t`` from ``p`` in direction ``η``.
+
+# Input
+* `mp::AbstractManoptProblem`
+* `cbls:::CubicBracketingLinesearchStepsize`: containing `retraction_method`, `vector_transport` and the temporary `candidate_point` and `candidate_direction`
+* `p`: point in the manifold of `mp`
+* `η`: search direction at `p`
+* `t::Real`: step size 
+"""
+function get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketingLinesearchStepsize, p, η, t)
+    M = get_manifold(mp)
+    cbls.last_stepsize = t
+    ManifoldsBase.retract_fused!(M, cbls.candidate_point, p, η, t, cbls.retraction_method)
+    vector_transport_to!(M, cbls.candidate_direction, p, η, cbls.candidate_point, cbls.vector_transport_method)
+    f, df = get_cost_and_differential(mp, cbls.candidate_point, cbls.candidate_direction)
+    return UnivariateTriple(t, f, df)
+end
+
+function (cbls::CubicBracketingLinesearchStepsize)(
+        mp::AbstractManoptProblem,
+        s::AbstractManoptSolverState,
+        k::Int,
+        η = (-get_gradient(mp, get_iterate(s)));
+        kwargs...,
+    )
+    M = get_manifold(mp)
+    p = get_iterate(s)
+
+    init = UnivariateTriple(0.0, get_cost(M, get_objective(mp), p), get_differential(mp, p, η; gradient = s.X, evaluated = true))
+
+    check_curvature(c::UnivariateTriple) = abs(c.df) < cbls.sufficient_curvature * abs(init.df)
+
+    n_iter = 0
+    t = cbls.last_stepsize
+    c_old = init
+    c = get_univariate_triple!(mp, cbls, p, η, t)
+    a, b = nothing, nothing
+    # Construct initial bracket
+    while ((n_iter += 1) <= cbls.max_iterations)
+        (c.f < init.f && check_curvature(c)) && return t
+        if (c.f ≥ c_old.f && c_old.df * (c.t - c_old.t) < 0)
+            (a, b) = c_old, c
+            break
+        end
+        if (c.f ≤ c_old.f && c.df * (c_old.t - c.t) < 0)
+            (a, b) = c, c_old
+            break
+        end
+        (t == cbls.max_stepsize) && return t
+        t *= cbls.stepsize_increase
+        t = min(t, cbls.max_stepsize)
+        c_old = c
+        c = get_univariate_triple!(mp, cbls, p, η, t)
+    end
+
+    while ((n_iter += 1) <= cbls.max_iterations)
+        # Step 1
+        abs(a.t - b.t) < cbls.min_bracket_width && break
+        l = 2 * abs(a.t - b.t)
+        γ = cubic_polynomial_argmin(a, b)
+        t = cubic_stepsize_update_step(a.t, b.t, γ, cbls.min_bracket_width)
+        c = get_univariate_triple!(mp, cbls, p, η, t)
+        check_curvature(c) && break
+        a_old = a
+        a, b = update_bracket(a, b, c)
+        if (cbls.hybrid)
+            while ((n_iter += 1) <= cbls.max_iterations)
+                # Step 2
+                abs(a.t - b.t) < cbls.min_bracket_width && return t
+                l = l / 2
+                abs(a_old.t - t) > l && break
+                # Step 3
+                (c.df - a_old.df) / (c.t - a_old.t) ≤ 0 && break
+                # Step 4
+                γ = cubic_polynomial_argmin(a_old, c; warn = false)
+                (γ < min(a.t, b.t) || γ > max(a.t, b.t)) && break
+                t = cubic_stepsize_update_step(a.t, b.t, γ, cbls.min_bracket_width)
+                c = get_univariate_triple!(mp, cbls, p, η, t)
+                check_curvature(c) && return t
+                a_old = a
+                a, b = update_bracket(a, b, c)
+            end
+            # Step 5
+            t = (a.t + b.t) / 2
+            c = get_univariate_triple!(mp, cbls, p, η, t)
+            check_curvature(c) && break
+            a, b = update_bracket(a, b, c)
+        end
+    end
+    return t
+end
+function show(io::IO, cbls::CubicBracketingLinesearchStepsize)
+    return print(
+        io,
+        """
+        CubicBracketingLinesearch(;
+            initial_stepsize = $(cbls.initial_stepsize),
+            stepsize_increase = $(cbls.stepsize_increase),
+            sufficient_curvature = $(cbls.sufficient_curvature),
+            min_bracket_width = $(cbls.min_bracket_width),
+            hybrid = $(cbls.hybrid),
+            retraction_method = $(cbls.retraction_method),
+            vector_transport_method = $(cbls.vector_transport_method),
+            max_stepsize = $(cbls.max_stepsize)
+        )""",
+    )
+end
+function status_summary(cbls::CubicBracketingLinesearchStepsize)
+    return "$(cbls)\nand a computed last stepsize of $(cbls.last_stepsize)"
+end
+
+@doc """
+    CubicBracketingLinesearch(; kwargs...)
+    CubicBracketingLinesearch(M::AbstractManifold; kwargs...)
+
+A functor representing the curvature minimizing cubic bracketing scheme introduced
+in [Hager:1989](@cite). Firstly, a bracket ``[a,b]`` is generated by multiplying
+``t_0`` chosen as `last_stepsize` (or in case of the first iteration `initial_stepsize`) repeatedly with
+the `stepsize_increase > 1` until the bracket conditions
+
+```math
+    ϕ'(a)(b-a) < 0  \\quad \\text{and} \\quad ϕ(a) ≤ ϕ(b).
+```
+
+is satisfied by either ``[a,b] = [t_{k-1},t_k]``, ``[a,b] = [t_k,t_{k-1}]``, ``[a,b] = [0,t_k]``, or ``[a,b] = [t_k,0]``.
+Here, ``ϕ(t)`` denotes the cost function when performing
+a step with size ``t`` into direction ``η``.
+Over the iteration, the bracket ``[a,b]`` is repeatedly
+updated using a cubic polynomial using values of ``ϕ, ϕ'`` at ``a,b``.
+The update value ``c`` is the local minimum of the polynomial, and the bracket coindition
+ensures that it lies inbetween ``a`` and ``b``. We note that the update strategy taken from
+[Hager:1989](@cite) ensures that the updated bracket satsifies the bracket condtion.
+
+If the parameter `hybrid` is set to `true`, the hybrid approach from [Hager:1989](@cite)
+is activated, which prevents slow convergence in edge cases.
+
+The algorithm terminates if at any point the found candidate stepsize suffices the curvature condition
+induced by `sufficient_curvature``
+or the bracket ``[a,b]`` is smaller than the `min_bracket_width`.
+
+# Keyword arguments
+
+$(_var(:Keyword, :p; add = "to store an interim result"))
+* `p=`[`allocate_result`](@extref ManifoldsBase.allocate_result)`(M, rand)`: to store an interim result
+* `initial_stepsize=1.0`: the step size to start the search with
+$(_var(:Keyword, :retraction_method))
+* `stepsize_increase=1.1`:  step size increase factor ``>1``
+* `max_iterations=100`: maximum number of iterations
+* `sufficient_curvature=0.2`: target reduction of the curvature ``(0,1)``
+* `min_bracket_width=1e-4`: minimal size of the bracket ``[a,b]``
+* `hybrid=true`: use the hybrid strategy
+$(_var(:Keyword, :vector_transport_method))
+
+$(_note(:ManifoldDefaultFactory, "CubicBracketingLinesearch"))
+"""
+function CubicBracketingLinesearch(args...; kwargs...)
+    return ManifoldDefaultsFactory(CubicBracketingLinesearchStepsize, args...; kwargs...)
+end
+
+
+@doc raw"""
+    DistanceOverGradientsStepsize{R<:Real} <: Stepsize
+
+# Fields
+
+* `initial_distance::R`: initial distance estimate ``ϵ>0``
+* `max_distance::R`: tracked maximum distance ``\bar r_t``
+* `gradient_sum::R`: accumulated sum ``G_t``
+* `initial_point`: stored start point ``p_0``
+* `use_curvature::Bool`: toggle curvature correction ``ζ_κ``
+* `sectional_curvature_bound::R`: lower bound ``κ`` used in ``ζ_κ`` when `use_curvature=true`
+* `last_stepsize::R`: last computed stepsize
+
+# Constructor
+
+    DistanceOverGradientsStepsize(M::AbstractManifold; kwargs...)
+
+## Keyword arguments
+
+* `initial_distance=1e-3`: initial estimate ``ϵ``
+* `use_curvature=false`: whether to use ``ζ_κ``
+* `sectional_curvature_bound=0.0`: lower curvature bound ``κ`` (if known)
+* `p`: initial point, used to track distance
+
+# References
+
+[DoddSharrockNemeth:2024](@cite): Learning-Rate-Free Stochastic Optimization over
+Riemannian Manifolds (RDoG).
+"""
+mutable struct DistanceOverGradientsStepsize{R <: Real, P} <: Stepsize
+    initial_distance::R
+    max_distance::R
+    gradient_sum::R
+    initial_point::P
+    use_curvature::Bool
+    sectional_curvature_bound::R
+    last_stepsize::R
+end
+
+function DistanceOverGradientsStepsize(
+        M::AbstractManifold;
+        p = rand(M),
+        initial_distance::R1 = 1.0e-3,
+        use_curvature::Bool = false,
+        sectional_curvature_bound::R2 = 0.0,
+    ) where {R1 <: Real, R2 <: Real}
+    R = promote_type(R1, R2)
+    id = convert(R, initial_distance)
+    κ = convert(R, sectional_curvature_bound)
+    return DistanceOverGradientsStepsize{R, typeof(p)}(
+        id,
+        id,  # max_distance starts at initial_distance
+        zero(R),          # gradient_sum starts at 0
+        copy(M, p),       # store initial point
+        use_curvature,
+        κ,
+        NaN,              # last_stepsize
+    )
+end
+
+@doc raw"""
+    geometric_curvature_function(κ::Real, d::Real)
+
+Compute the geometric curvature function ``ζ_κ(d)`` used by the RDoG stepsize:
+
+```math
+ζ_κ(d) =
+\begin{cases}
+1, & \text{if } κ \ge 0,\\[4pt]
+\dfrac{\sqrt{|κ|}\,d}{\tanh(\sqrt{|κ|}\,d)}, & \text{if } κ < 0.
+\end{cases}
+```
+
+For small arguments, a Taylor approximation is used for numerical stability.
+"""
+function geometric_curvature_function(κ::Real, d::Real)
+    if κ < 0 && d > 0
+        sqrt_abs_κ = sqrt(abs(κ))
+        arg = sqrt_abs_κ * d
+        return arg / tanh(arg)
+    else
+        return 1.0
+    end
+end
+
+function (rdog::DistanceOverGradientsStepsize{R, P})(
+        mp::AbstractManoptProblem,
+        s::AbstractManoptSolverState,
+        i,
+        args...;
+        gradient = nothing,
+        kwargs...,
+    ) where {R, P}
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    grad = isnothing(gradient) ? get_gradient(mp, p) : gradient
+
+    # Compute gradient norm
+    grad_norm_sq = clamp(norm(M, p, grad)^2, eps(R), typemax(R))
+    if i == 0
+        # Initialize on first call
+        rdog.gradient_sum = grad_norm_sq
+        rdog.initial_point = copy(M, p)
+        rdog.max_distance = rdog.initial_distance
+
+        # Initial stepsize
+        if rdog.use_curvature
+            ζ = geometric_curvature_function(
+                rdog.sectional_curvature_bound, rdog.max_distance
+            )
+            stepsize = rdog.initial_distance / (sqrt(ζ) * sqrt(max(grad_norm_sq, eps(R))))
+        else
+            stepsize = rdog.initial_distance / sqrt(max(grad_norm_sq, eps(R)))
+        end
+    else
+        # Update gradient sum
+        rdog.gradient_sum += grad_norm_sq
+
+        # Update max distance
+        current_distance = distance(M, rdog.initial_point, p)
+        rdog.max_distance = max(rdog.max_distance, current_distance)
+
+        # Compute stepsize
+        if rdog.use_curvature
+            ζ = geometric_curvature_function(
+                rdog.sectional_curvature_bound, rdog.max_distance
+            )
+            stepsize = rdog.max_distance / (sqrt(ζ) * sqrt(rdog.gradient_sum))
+        else
+            stepsize = rdog.max_distance / sqrt(rdog.gradient_sum)
+        end
+    end
+
+    rdog.last_stepsize = stepsize
+    return stepsize
+end
+
+get_initial_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
+get_last_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
+
+function show(io::IO, rdog::DistanceOverGradientsStepsize)
+    s = """
+    DistanceOverGradients(;
+      initial_distance = $(rdog.initial_distance),
+      use_curvature = $(rdog.use_curvature),
+      sectional_curvature_bound = $(rdog.sectional_curvature_bound)
+    )
+
+    Current state:
+      max_distance = $(rdog.max_distance)
+      gradient_sum = $(rdog.gradient_sum)
+      last_stepsize = $(rdog.last_stepsize)
+    """
+    return print(io, s)
+end
+
+doc_DoG_main = raw"""
+    DistanceOverGradients(; kwargs...)
+    DistanceOverGradients(M::AbstractManifold; kwargs...)
+
+Create a factory for the [`DistanceOverGradientsStepsize`](@ref), the
+Riemannian Distance over Gradients (RDoG) learning-rate-free stepsize from
+[DoddSharrockNemeth:2024](@cite). It adapts via the maximum distance from the
+start point and the accumulated gradient norms, optionally corrected by the
+geometric curvature term ``ζ_κ``. It adapts without manual
+tuning by combining a distance proxy from the start point with accumulated
+gradient norms.
+
+Definitions used by the implementation:
+
+* ``\bar r_t := \max(\,ϵ,\, \max_{0\le s\le t} d(p_0, p_s)\,)`` tracks the maximum geodesic
+  distance from the initial point ``p_0`` using the current iterate ``p_t``.
+* ``G_t := \displaystyle\sum_{s=0}^t \lVert g_s \rVert^2``, where ``g_s = \operatorname{grad} f(p_s)``.
+
+At iteration ``t`` the stepsize used here is
+
+```math
+η_t =
+\begin{cases}
+\frac{\bar r_t}{\sqrt{G_t}}, & \text{if we do not use curvature,}\\
+\frac{\bar r_t}{\sqrt{\,ζ_κ(\bar r_t)\,}\,\sqrt{G_t}}, & \text{if we use curvature.}
+\end{cases}
+```
+
+with the geometric curvature function ``ζ_κ(d)`` defined in
+[`geometric_curvature_function`](@ref). The initialization in this
+implementation follows the paper: on the first call (``t=0``), we set
+``G_0=\lVert g_0\rVert^2``, ``\bar r_0 = ϵ`` and take
+
+```math
+η_0 =
+\begin{cases}
+\frac{ϵ}{\lVert g_0\rVert}, & \text{if we do not use curvature,}\\
+\frac{ϵ}{\sqrt{\,ζ_κ(ϵ)\,}\,\lVert g_0\rVert}, & \text{if we use curvature.}
+\end{cases}
+```
+
+On subsequent calls, the state is updated as implemented:
+``G_t ← G_{t-1} + \lVert g_t\rVert^2`` and ``\bar r_t ← \max(\bar r_{t-1}, d(p_0,p_t))``.
+
+## Keyword arguments
+
+* `initial_distance=1e-3`: initial distance estimate ``ϵ``
+* `use_curvature=false`: whether to include ``ζ_κ``
+* `sectional_curvature_bound=0.0`: curvature lower bound ``κ`` (if known)
+"""
+@doc """
+$(doc_DoG_main)
+
+$(_note(:ManifoldDefaultFactory, "DistanceOverGradientsStepsize"))
+"""
+function DistanceOverGradients(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.DistanceOverGradientsStepsize, args...; kwargs...)
 end
 
 @doc """
@@ -856,7 +1440,7 @@ mutable struct NonmonotoneLinesearchStepsize{
     } <: Linesearch
     bb_min_stepsize::R
     bb_max_stepsize::R
-    candiate_point::P
+    candidate_point::P
     initial_stepsize::R
     message::String
     old_costs::T
@@ -1031,7 +1615,7 @@ function (a::NonmonotoneLinesearchStepsize)(
     #compute the new step size with the help of the Barzilai-Borwein step size
     (a.initial_stepsize, a.message) = linesearch_backtrack!(
         M,
-        a.candiate_point,
+        a.candidate_point,
         f,
         p,
         X,
@@ -1053,16 +1637,15 @@ function show(io::IO, a::NonmonotoneLinesearchStepsize)
         io,
         """
         NonmonotoneLinesearch(;
-            initial_stepsize = $(a.initial_stepsize)
-            bb_max_stepsize = $(a.bb_max_stepsize)
+            initial_stepsize = $(a.initial_stepsize),
+            bb_max_stepsize = $(a.bb_max_stepsize),
             bb_min_stepsize = $(a.bb_min_stepsize),
-            memory_size = $(length(a.old_costs))
-            stepsize_reduction = $(a.stepsize_reduction)
-            strategy = :$(a.strategy)
-            sufficient_decrease = $(a.sufficient_decrease)
-            retraction_method = $(a.retraction_method)
-            vector_transport_method = $(
-            a.vector_transport_method
+            memory_size = $(length(a.old_costs)),
+            stepsize_reduction = $(a.stepsize_reduction),
+            strategy = :$(a.strategy),
+            sufficient_decrease = $(a.sufficient_decrease),
+            retraction_method = $(a.retraction_method),
+            vector_transport_method = $(a.vector_transport_method)
         )""",
     )
 end
@@ -1145,8 +1728,9 @@ $(_var(:Keyword, :retraction_method))
 * `stop_increasing_at_step=100`:  last step to increase the stepsize (phase 1),
 * `stop_decreasing_at_step=1000`: last step size to decrease the stepsize (phase 2),
 """
-NonmonotoneLinesearch(args...; kwargs...) =
-    ManifoldDefaultsFactory(NonmonotoneLinesearchStepsize, args...; kwargs...)
+function NonmonotoneLinesearch(args...; kwargs...)
+    return ManifoldDefaultsFactory(NonmonotoneLinesearchStepsize, args...; kwargs...)
+end
 
 @doc """
     PolyakStepsize <: Stepsize
@@ -1252,12 +1836,16 @@ $(_var(:Field, :retraction_method))
 * `stop_when_stepsize_less::R`: a safeguard to stop when the stepsize gets too small
 $(_var(:Field, :vector_transport_method))
 
-# Keyword arguments
+# Constructor
+
+    WolfePowellLinesearchStepsize(M::AbstractManifold; kwargs...)
+
+## Keyword arguments
 
 * `sufficient_decrease=10^(-4)`
 * `sufficient_curvature=0.999`
-$(_var(:Field, :p; add = "as temporary storage for candidates"))
-$(_var(:Field, :X; add = "as type of memory allocated for the candidates direction and tangent"))
+$(_var(:Keyword, :p; add = "as temporary storage for candidates"))
+$(_var(:Keyword, :X; add = "as type of memory allocated for the candidates direction and tangent"))
 * `max_stepsize=`[`max_stepsize`](@ref)`(M, p)`: largest stepsize allowed here.
 $(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
@@ -1386,11 +1974,11 @@ function show(io::IO, a::WolfePowellLinesearchStepsize)
         io,
         """
         WolfePowellLinesearch(;
-            sufficient_descrease=$(a.sufficient_decrease)
-            sufficient_curvature=$(a.sufficient_curvature),
-            retraction_method = $(a.retraction_method)
-            vector_transport_method = $(a.vector_transport_method)
-            stop_when_stepsize_less = $(a.stop_when_stepsize_less)
+            sufficient_descrease = $(a.sufficient_decrease),
+            sufficient_curvature = $(a.sufficient_curvature),
+            retraction_method = $(a.retraction_method),
+            vector_transport_method = $(a.vector_transport_method),
+            stop_when_stepsize_less = $(a.stop_when_stepsize_less),
         )""",
     )
 end
@@ -1423,8 +2011,8 @@ This is adopted from [NocedalWright:2006; Section 3.1](@cite)
 
 * `sufficient_decrease=10^(-4)`
 * `sufficient_curvature=0.999`
-$(_var(:Field, :p; add = "as temporary storage for candidates"))
-$(_var(:Field, :X; add = "as type of memory allocated for the candidates direction and tangent"))
+$(_var(:Keyword, :p; add = "as temporary storage for candidates"))
+$(_var(:Keyword, :X; add = "as type of memory allocated for the candidates direction and tangent"))
 * `max_stepsize=`[`max_stepsize`](@ref)`(M, p)`: largest stepsize allowed here.
 $(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
@@ -1450,7 +2038,11 @@ $(_var(:Field, :retraction_method))
 * `stop_when_stepsize_less::R`: a safeguard to stop when the stepsize gets too small
 $(_var(:Field, :vector_transport_method))
 
-# Keyword arguments
+# Constructor
+
+    WolfePowellBinaryLinesearchStepsize(M::AbstractManifold; kwargs...)
+
+## Keyword arguments
 
 * `sufficient_decrease=10^(-4)`
 * `sufficient_curvature=0.999`
@@ -1535,11 +2127,11 @@ function show(io::IO, a::WolfePowellBinaryLinesearchStepsize)
         io,
         """
         WolfePowellBinaryLinesearch(;
-            sufficient_descrease=$(a.sufficient_decrease)
-            sufficient_curvature=$(a.sufficient_curvature),
-            retraction_method = $(a.retraction_method)
-            vector_transport_method = $(a.vector_transport_method)
-            stop_when_stepsize_less = $(a.stop_when_stepsize_less)
+            sufficient_descrease = $(a.sufficient_decrease),
+            sufficient_curvature = $(a.sufficient_curvature),
+            retraction_method = $(a.retraction_method),
+            vector_transport_method = $(a.vector_transport_method),
+            stop_when_stepsize_less = $(a.stop_when_stepsize_less),
         )""",
     )
 end
@@ -1686,222 +2278,4 @@ function get_last_stepsize(step::WolfePowellLinesearchStepsize, ::Any...)
 end
 function get_last_stepsize(step::WolfePowellBinaryLinesearchStepsize, ::Any...)
     return step.last_stepsize
-end
-
-@doc raw"""
-    DistanceOverGradientsStepsize{R<:Real} <: Stepsize
-
-# Fields
-
-* `initial_distance::R`: initial distance estimate ``ϵ>0``
-* `max_distance::R`: tracked maximum distance ``\bar r_t``
-* `gradient_sum::R`: accumulated sum ``G_t``
-* `initial_point`: stored start point ``p_0``
-* `use_curvature::Bool`: toggle curvature correction ``ζ_κ``
-* `sectional_curvature_bound::R`: lower bound ``κ`` used in ``ζ_κ`` when `use_curvature=true`
-* `last_stepsize::R`: last computed stepsize
-
-# Constructor
-
-    DistanceOverGradientsStepsize(M::AbstractManifold; kwargs...)
-
-## Keyword arguments
-
-* `initial_distance=1e-3`: initial estimate ``ϵ``
-* `use_curvature=false`: whether to use ``ζ_κ``
-* `sectional_curvature_bound=0.0`: lower curvature bound ``κ`` (if known)
-* `p`: initial point, used to track distance
-
-# References
-
-[DoddSharrockNemeth:2024](@cite): Learning-Rate-Free Stochastic Optimization over
-Riemannian Manifolds (RDoG).
-"""
-mutable struct DistanceOverGradientsStepsize{R <: Real, P} <: Stepsize
-    initial_distance::R
-    max_distance::R
-    gradient_sum::R
-    initial_point::P
-    use_curvature::Bool
-    sectional_curvature_bound::R
-    last_stepsize::R
-end
-
-function DistanceOverGradientsStepsize(
-        M::AbstractManifold;
-        p = rand(M),
-        initial_distance::R1 = 1.0e-3,
-        use_curvature::Bool = false,
-        sectional_curvature_bound::R2 = 0.0,
-    ) where {R1 <: Real, R2 <: Real}
-    R = promote_type(R1, R2)
-    id = convert(R, initial_distance)
-    κ = convert(R, sectional_curvature_bound)
-    return DistanceOverGradientsStepsize{R, typeof(p)}(
-        id,
-        id,  # max_distance starts at initial_distance
-        zero(R),          # gradient_sum starts at 0
-        copy(M, p),       # store initial point
-        use_curvature,
-        κ,
-        NaN,              # last_stepsize
-    )
-end
-
-@doc raw"""
-    geometric_curvature_function(κ::Real, d::Real)
-
-Compute the geometric curvature function ``ζ_κ(d)`` used by the RDoG stepsize:
-
-```math
-ζ_κ(d) =
-\begin{cases}
-1, & \text{if } κ \ge 0,\\[4pt]
-\dfrac{\sqrt{|κ|}\,d}{\tanh(\sqrt{|κ|}\,d)}, & \text{if } κ < 0.
-\end{cases}
-```
-
-For small arguments, a Taylor approximation is used for numerical stability.
-"""
-function geometric_curvature_function(κ::Real, d::Real)
-    if κ < 0 && d > 0
-        sqrt_abs_κ = sqrt(abs(κ))
-        arg = sqrt_abs_κ * d
-        return arg / tanh(arg)
-    else
-        return 1.0
-    end
-end
-
-function (rdog::DistanceOverGradientsStepsize{R, P})(
-        mp::AbstractManoptProblem,
-        s::AbstractManoptSolverState,
-        i,
-        args...;
-        gradient = nothing,
-        kwargs...,
-    ) where {R, P}
-    M = get_manifold(mp)
-    p = get_iterate(s)
-    grad = isnothing(gradient) ? get_gradient(mp, p) : gradient
-
-    # Compute gradient norm
-    grad_norm_sq = clamp(norm(M, p, grad)^2, eps(R), typemax(R))
-    if i == 0
-        # Initialize on first call
-        rdog.gradient_sum = grad_norm_sq
-        rdog.initial_point = copy(M, p)
-        rdog.max_distance = rdog.initial_distance
-
-        # Initial stepsize
-        if rdog.use_curvature
-            ζ = geometric_curvature_function(
-                rdog.sectional_curvature_bound, rdog.max_distance
-            )
-            stepsize = rdog.initial_distance / (sqrt(ζ) * sqrt(max(grad_norm_sq, eps(R))))
-        else
-            stepsize = rdog.initial_distance / sqrt(max(grad_norm_sq, eps(R)))
-        end
-    else
-        # Update gradient sum
-        rdog.gradient_sum += grad_norm_sq
-
-        # Update max distance
-        current_distance = distance(M, rdog.initial_point, p)
-        rdog.max_distance = max(rdog.max_distance, current_distance)
-
-        # Compute stepsize
-        if rdog.use_curvature
-            ζ = geometric_curvature_function(
-                rdog.sectional_curvature_bound, rdog.max_distance
-            )
-            stepsize = rdog.max_distance / (sqrt(ζ) * sqrt(rdog.gradient_sum))
-        else
-            stepsize = rdog.max_distance / sqrt(rdog.gradient_sum)
-        end
-    end
-
-    rdog.last_stepsize = stepsize
-    return stepsize
-end
-
-get_initial_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
-get_last_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
-
-function show(io::IO, rdog::DistanceOverGradientsStepsize)
-    s = """
-    DistanceOverGradients(;
-      initial_distance=$(rdog.initial_distance),
-      use_curvature=$(rdog.use_curvature),
-      sectional_curvature_bound=$(rdog.sectional_curvature_bound)
-    )
-
-    Current state:
-      max_distance = $(rdog.max_distance)
-      gradient_sum = $(rdog.gradient_sum)
-      last_stepsize = $(rdog.last_stepsize)
-    """
-    return print(io, s)
-end
-
-doc_DoG_main = raw"""
-    DistanceOverGradients(; kwargs...)
-    DistanceOverGradients(M::AbstractManifold; kwargs...)
-
-Create a factory for the [`DistanceOverGradientsStepsize`](@ref), the
-Riemannian Distance over Gradients (RDoG) learning-rate-free stepsize from
-[DoddSharrockNemeth:2024](@cite). It adapts via the maximum distance from the
-start point and the accumulated gradient norms, optionally corrected by the
-geometric curvature term ``ζ_κ``.
-
-Riemannian Distance over Gradients (RDoG) learning-rate-free stepsize schedule
-introduced by [DoddSharrockNemeth:2024](@cite). This schedule adapts without manual
-tuning by combining a distance proxy from the start point with accumulated
-gradient norms.
-
-Definitions used by the implementation:
-
-* ``\bar r_t := \max(\,ϵ,\, \max_{0\le s\le t} d(p_0, p_s)\,)`` tracks the maximum geodesic
-  distance from the initial point ``p_0`` using the current iterate ``p_t``.
-* ``G_t := \sum_{s=0}^t \lVert g_s \rVert^2``, where ``g_s = \operatorname{grad} f(p_s)``.
-
-At iteration ``t`` the stepsize used here is
-
-```math
-η_t =
-\begin{cases}
-\dfrac{\bar r_t}{\sqrt{G_t}}, & \text{if `use_curvature = false`,}\\[6pt]
-\dfrac{\bar r_t}{\sqrt{\,ζ_κ(\bar r_t)\,}\,\sqrt{G_t}}, & \text{if `use_curvature = true`,}
-\end{cases}
-```
-
-with the geometric curvature function ``ζ_κ(d)`` defined in
-[`geometric_curvature_function`](@ref). The initialization in this
-implementation follows the paper: on the first call (``t=0``), we set
-``G_0=\lVert g_0\rVert^2``, ``\bar r_0 = ϵ`` and take
-
-```math
-η_0 =
-\begin{cases}
-\dfrac{ϵ}{\lVert g_0\rVert}, & \text{if `use_curvature = false`,}\\[6pt]
-\dfrac{ϵ}{\sqrt{\,ζ_κ(ϵ)\,}\,\lVert g_0\rVert}, & \text{if `use_curvature = true`.}
-\end{cases}
-```
-
-On subsequent calls, the state is updated as implemented: ``G_t \leftarrow G_{t-1}
-+ \lVert g_t\rVert^2`` and ``\bar r_t \leftarrow \max(\bar r_{t-1}, d(p_0,p_t))``.
-
-## Keyword arguments
-
-* `initial_distance=1e-3`: initial distance estimate ``ϵ``
-* `use_curvature=false`: whether to include ``ζ_κ``
-* `sectional_curvature_bound=0.0`: curvature lower bound ``κ`` (if known)
-"""
-@doc """
-$(doc_DoG_main)
-
-$(_note(:ManifoldDefaultFactory, "DistanceOverGradientsStepsize"))
-"""
-function DistanceOverGradients(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.DistanceOverGradientsStepsize, args...; kwargs...)
 end

@@ -288,6 +288,19 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         )
         @test norm(p1) ≈ 0 atol = 4 * 1.0e-16
         @test p1 == p2
+
+        # Cubic stepsize should yield the exact stepsize for quadratic problems
+        p3 = copy(M, p0)
+        conjugate_gradient_descent!(
+            M,
+            f,
+            grad_f,
+            p3;
+            stepsize = CubicBracketingLinesearch(; sufficient_curvature = 1.0e-4),
+            stopping_criterion = StopAfterIteration(2),
+        )
+        @test norm(p1) ≈ 0 atol = 4 * 1.0e-16
+        @test isapprox(M, p1, p3; atol = 5.0e-8)
     end
 
     @testset "CG on the Circle" begin
@@ -346,5 +359,42 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         # sufficient descent should perform best, descent better than no restart
         @test e_func(p3) < e_func(p2) && e_func(p2) < e_func(p1)
         @test e_func(p3) ≈ 1 atol = 1.0e-3
+    end
+
+    @testset "Minimal eigenvalue calculation" begin
+
+        n = 3
+        A = diagm(1:3)
+        M = Sphere(n - 1)
+        obj = ManifoldFirstOrderObjective(;
+            cost = (M, p) -> dot(p, A * p),
+            gradient = (M, p) -> A * p - dot(p, A * p) * p
+        )
+        retraction_method = ProjectionRetraction()
+        vector_transport_method = ProjectionTransport()
+        stopping_criterion = StopAfterIteration(300) | StopWhenGradientNormLess(1.0e-10)
+        p0 = 1 / sqrt(3) * [1.0, 1, 1]
+        is_converged = false
+        q1 = copy(p0)
+        conjugate_gradient_descent!(
+            M, obj, q1;
+            retraction_method, vector_transport_method,
+            stopping_criterion,
+            coefficient = HybridCoefficient(M, FletcherReevesCoefficient(), PolakRibiereCoefficient(M; vector_transport_method)),
+            stepsize = CubicBracketingLinesearch(
+                M; retraction_method, vector_transport_method
+            )
+        )
+        @test q1 ≈ [1, 0, 0] rtol = 1.0e-8
+
+        q2 = copy(p0)
+        conjugate_gradient_descent!(
+            M, obj, q2;
+            retraction_method, vector_transport_method,
+            stopping_criterion,
+            coefficient = HybridCoefficient(M, FletcherReevesCoefficient(), PolakRibiereCoefficient(M; vector_transport_method)),
+            stepsize = ArmijoLinesearch(M)
+        )
+        @test q2 ≈ [1, 0, 0] rtol = 1.0e-8
     end
 end

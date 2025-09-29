@@ -23,6 +23,7 @@ Currently, the following step sizes are available
 AdaptiveWNGradient
 ArmijoLinesearch
 ConstantLength
+CubicBracketingLinesearch
 DecreasingLength
 DistanceOverGradients
 NonmonotoneLinesearch
@@ -46,7 +47,7 @@ Modules = [Manopt]
 Pages = ["plans/stepsize.jl"]
 Private = true
 Order = [:function, :type]
-Filter = t -> !(t in [Stepsize, AdaptiveWNGradient, ArmijoLinesearch, ConstantLength, DecreasingLength, DistanceOverGradients, NonmonotoneLinesearch, Polyak, WolfePowellLinesearch, WolfePowellBinaryLinesearch ])
+Filter = t -> !(t in [Stepsize, AdaptiveWNGradient, ArmijoLinesearch, ConstantLength, CubicBracketingLinesearch, DecreasingLength, DistanceOverGradients, NonmonotoneLinesearch, Polyak, WolfePowellLinesearch, WolfePowellBinaryLinesearch ])
 ```
 
 
