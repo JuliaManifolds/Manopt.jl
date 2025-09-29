@@ -81,7 +81,7 @@ discretized_y = [y(Ωi) for Ωi in Omega];
 
 # ╔═╡ e00854e0-95ef-4ef5-be4c-ea19f014c8b7
 md"""
-In order to apply Newton's method to find a zero of $F$, we need the linear mapping $Q_{F(\gamma)}^*\circ F'(\gamma)$ (cf. \ref{paper}) which can be seen as a covariant derivative. Since the sphere is an embedded submanifold of $\mathbb R^3$, we can use the formular 
+In order to apply Newton's method to find a zero of $F$, we need the linear mapping $Q_{F(\gamma)}^*\circ F'(\gamma)$ (cf. \ref{paper}) which can be seen as a covariant derivative. Since the sphere is an embedded submanifold of $\mathbb R^3$, we can use the formula 
 
 $Q_{F(\gamma)}^*\circ F'(\gamma)\delta \gamma\,\phi = F(\gamma)(\overset{\rightarrow}{V}_\gamma'(\gamma)\delta \gamma\,\phi) + F_{\mathbb R^3}'(\gamma)\delta \gamma\,\phi$
 
@@ -286,7 +286,7 @@ begin
 	
     row, col = fldmod1(1, 2)
 	
-	Axis(f[row, col], yscale = log10, title = string("Norms of the Newton directions (semilogarithmic)"), xminorgridvisible = true, xticks = (1:length(change)), xlabel = "Iteration", ylabel = "‖δx‖")
+	Axis(f[row, col], yscale = log10, title = string("Norms of the Newton directions (semilogarithmic)"), xminorgridvisible = true, xticks = (1:length(change)), xlabel = "Iteration", ylabel = "‖δγ‖")
     scatterlines!(change[1:end], color = :blue)
 	f	
 end
