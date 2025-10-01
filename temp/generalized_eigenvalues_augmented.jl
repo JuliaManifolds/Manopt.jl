@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -55,12 +55,6 @@ begin
 			if i > j
 				B[i,j] = -1.0
 			end
-			if i < j
-				B[i,j] = 0.0
-			end
-			if i == j
-				B[i, j] = 0.0
-			end
 		end
 	end
 	println(eigvals(eig_A))
@@ -94,9 +88,12 @@ function NewtonEquation(M, f_pr, f_sp)
 end
 	
 function (ne::NewtonEquation)(M, VB, p)
-    ne.A .= hcat(vcat(ne.f_second_prime(p) - 1/(norm(B*p)^2) * (ne.f_prime(p)*(B*p)*B), p'), vcat(B*p, 0))
-    ne.b .= vcat(ne.f_prime(p)', 0)
-	return
+    ne.A .= hcat(vcat(ne.f_second_prime(p) - 1/(norm(B*p)^2) * (ne.f_prime(p)*(B*p)*B), p'), vcat(-B*p, 0))
+	b_temp = vcat(ne.f_prime(p)', 0)
+	deltax_temp = ne.A \ (-b_temp)
+	println("λ schätzer =", norm(deltax_temp[N+1]))
+	#ne.b .= vcat(ne.f_prime(p)', 0)
+    ne.b .= vcat(b_temp + ne.A * vcat(zeros(N), deltax_temp[N+1]))
 end
 	
 function (ne::NewtonEquation)(M, VB, p, p_trial)
@@ -105,9 +102,13 @@ end
 end;
 
 # ╔═╡ 7bf95fe2-20cb-4824-9d5d-b520b4e6e1ad
+begin
+	lambda_glob = 0.0
 function solve_augmented_system(problem, newtonstate) 
 	res = (problem.newton_equation.A) \ (-problem.newton_equation.b)
+	global lambda_glob = res[N+1]
 	return res[1:N]
+end
 end;
 
 # ╔═╡ 427233d0-567d-4cac-930d-7c80178f2d09
@@ -118,7 +119,7 @@ begin
 	NE = NewtonEquation(M, f_prime, f_second_derivative)
 		
 	st_res = vectorbundle_newton(M, TangentBundle(M), NE, y0; sub_problem=solve_augmented_system, sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(M,1e-11; outer_norm=Inf)),
+	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(M,1e-12)),
 	retraction_method=ProjectionRetraction(),
 	#stepsize=Manopt.AffineCovariantStepsize(M, theta_des=0.5),
 	#stepsize=ConstantLength(power, 1.0),
@@ -145,11 +146,14 @@ end
 # ╔═╡ dd7fea0d-9ada-4bec-91c8-2338969f71e6
 res = get_record(st_res, :Iteration, :Iterate)[end]
 
+# ╔═╡ 8d5c0855-f46c-48a7-beeb-695ee1f9e73f
+eigenvalue = lambda_glob + 0.9999999999999749 # λ_glob + letzter Schätzer
+
 # ╔═╡ 4c756d92-6e43-4bc8-8f84-35373ba8172b
-res'*eig_A*res
+(res'*eig_A*res)/(res'*B*res)
 
 # ╔═╡ a7a13b69-dd2c-4f24-989d-dc3356633184
-norm(eig_A*res - res'*eig_A*res*B*res)
+norm(eig_A*res - eigenvalue*B*res)
 
 # ╔═╡ Cell order:
 # ╠═3e19b659-8855-4020-9173-fe4a1ffbbc08
@@ -163,5 +167,6 @@ norm(eig_A*res - res'*eig_A*res*B*res)
 # ╠═66bb735a-a41d-4742-8581-fe48907b7489
 # ╠═285c7cdc-fdc7-43e8-99fa-17fd708d4328
 # ╠═dd7fea0d-9ada-4bec-91c8-2338969f71e6
+# ╠═8d5c0855-f46c-48a7-beeb-695ee1f9e73f
 # ╠═4c756d92-6e43-4bc8-8f84-35373ba8172b
 # ╠═a7a13b69-dd2c-4f24-989d-dc3356633184
