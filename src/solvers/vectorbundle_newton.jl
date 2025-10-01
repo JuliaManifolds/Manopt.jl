@@ -77,7 +77,26 @@ A functor to provide an affine covariant stepsize generalizing the idea of follo
 * `theta_des`: desired theta
 * `theta_acc`: acceptable theta
 * `last_stepsize`: last computed step size (helper)
-* `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm, that is used to compute the overall distance based on the element-wise distance.
+* `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
+  that is used to compute the overall distance based on the element-wise distance.
+  You can deactivate this, but setting this value to `missing`.
+
+# Example
+
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:M))``
+is given by
+
+```
+$(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distance))(p_k,q_k)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
+```
+
+where the sum turns into a maximum for the case ``r=∞``.
+The `outer_norm` has no effect on manifolds that do not consist of components.
+
+
+If the manifold does not have components, the outer norm is ignored.
 
 # Constructor
 
@@ -87,7 +106,7 @@ A functor to provide an affine covariant stepsize generalizing the idea of follo
         theta_des=0.1,
         theta_acc=1.1*theta_des,
         last_stepsize = 1.0,
-        outer_norm=2
+        outer_norm::Union{Missing,Real}=missing
     )
 
 Initializes all fields, where none of them is mandatory. The length is set to ``1.0``.
@@ -95,20 +114,20 @@ Initializes all fields, where none of them is mandatory. The length is set to ``
 Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
 This should be implemented as a method of the ``newton_equation(M, VB, p, p_trial)`` as parameters and returning a representation of the (transported) ``F(p_{\mathrm{trial}})``.
 """
-mutable struct AffineCovariantStepsize{T, R <: Real} <: Stepsize
+mutable struct AffineCovariantStepsize{T, R <: Real, N <: Union{Missing, Real}} <: Stepsize
     alpha::T
     theta::R
     theta_des::R
     theta_acc::R
     last_stepsize::R
-    outer_norm::Real
+    outer_norm::N
 end
 function AffineCovariantStepsize(
         M::AbstractManifold = DefaultManifold(2);
         alpha = 1.0, theta = 1.3, theta_des = 0.1, theta_acc = 1.1 * theta_des,
-        last_stepsize = 1.0, outer_norm = 2
-    )
-    return AffineCovariantStepsize{typeof(alpha), typeof(theta)}(alpha, theta, theta_des, theta_acc, last_stepsize, outer_norm)
+        last_stepsize = 1.0, outer_norm::N = missing
+    ) where {N <: Union{Missing, Real}}
+    return AffineCovariantStepsize{typeof(alpha), typeof(theta), N}(alpha, theta, theta_des, theta_acc, last_stepsize, outer_norm)
 end
 
 function (acs::AffineCovariantStepsize)(
@@ -129,7 +148,11 @@ function (acs::AffineCovariantStepsize)(
         amp.newton_equation.b .= rhs_simplified
 
         simplified_newton = ams.sub_problem(amp, ams)
-        acs.theta = norm(amp.manifold, ams.p, simplified_newton, acs.outer_norm) / norm(amp.manifold, ams.p, ams.X, acs.outer_norm)
+        if has_components(M) && !ismissing(acs.outer_norm)
+            acs.theta = norm(amp.manifold, ams.p, simplified_newton, acs.outer_norm) / norm(amp.manifold, ams.p, ams.X, acs.outer_norm)
+        else
+            acs.theta = norm(simplified_newton) / norm(ams.X)
+        end
         alpha_new = min(1.0, ((acs.alpha * acs.theta_des) / (acs.theta)))
         if acs.alpha < 1.0e-15
             println("Newton's method failed")
