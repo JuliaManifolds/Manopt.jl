@@ -126,7 +126,6 @@ begin
 	discretized_λ = [λ(Ωi) for Ωi in Omega_λ]
 
 	disc_point = ArrayPartition(discretized_y, discretized_v, discretized_λ)
-	
 end;
 
 # ╔═╡ 7741a74f-0a73-47c8-9202-b8789782eb7b
@@ -391,11 +390,10 @@ end;
 
 # ╔═╡ d903c84a-45f6-4e09-9ec2-88e248531fec
 	begin
-	y_0 = copy(product, disc_point)
 	
 	NE = NewtonEquation(product, integrand_yλ, integrand_vv, integrand_vλ, integrandb_λ, transport, Omega_y, Omega_v, Omega_λ)
 		
-	st_res = vectorbundle_newton(product, TangentBundle(product), NE, y_0; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
+	st_res = vectorbundle_newton(product, TangentBundle(product), NE, disc_point; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
 	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(product,1e-12; outer_norm=Inf, inverse_retraction_method=pr_inv)),
 	retraction_method=ProductRetraction(ExponentialRetraction(), ProjectionRetraction(), ExponentialRetraction()),
 	stepsize=Manopt.AffineCovariantStepsize(product, theta_des=0.5, outer_norm=Inf),
