@@ -1,4 +1,3 @@
-
 using LineSearches
 using Manifolds, Manopt
 using Test
@@ -31,11 +30,11 @@ using Test
         rosenbrock,
         rosenbrock_grad!,
         x0;
-        stepsize=ls_hz,
-        debug=[],
-        evaluation=InplaceEvaluation(),
-        stopping_criterion=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
-        return_state=true,
+        stepsize = ls_hz,
+        debug = [],
+        evaluation = InplaceEvaluation(),
+        stopping_criterion = StopAfterIteration(1000) | StopWhenGradientNormLess(1.0e-6),
+        return_state = true,
     )
 
     @test rosenbrock(M, get_iterate(x_opt)) < 1.503084
@@ -43,7 +42,7 @@ using Test
 
     # make sure get_last_stepsize works
     mgo = ManifoldGradientObjective(
-        rosenbrock, rosenbrock_grad!; evaluation=InplaceEvaluation()
+        rosenbrock, rosenbrock_grad!; evaluation = InplaceEvaluation()
     )
     mp = DefaultManoptProblem(M, mgo)
     @test get_last_stepsize(mp, x_opt, 1) > 0.0
@@ -56,11 +55,11 @@ using Test
         return error("test exception")
     end
     mgo_throw = Manopt.ManifoldGradientObjective(
-        rosenbrock_throw, rosenbrock_grad!; evaluation=InplaceEvaluation()
+        rosenbrock_throw, rosenbrock_grad!; evaluation = InplaceEvaluation()
     )
     mp_throw = DefaultManoptProblem(M, mgo_throw)
-    st_qn = QuasiNewtonState(M; p=x0)
+    st_qn = QuasiNewtonState(M; p = x0)
     initialize_solver!(mp, st_qn)
     ls_mt = Manopt.LineSearchesStepsize(M, LineSearches.MoreThuente())
-    @test_throws ErrorException ls_mt(mp_throw, st_qn, 1; fp=rosenbrock(M, x0))
+    @test_throws ErrorException ls_mt(mp_throw, st_qn, 1; fp = rosenbrock(M, x0))
 end

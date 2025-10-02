@@ -19,42 +19,42 @@ using Manifolds, Manopt, Test
         JF(M, x) = [j1(M, x), j2(M, x)]
         JF!(M, JF, x) = (JF .= [j1(M, x), j2(M, x)])
         # Jacobi matrix
-        J(M, x) = cat(j1(M, x), j2(M, x); dims=2)
-        J!(M, J, x) = (J .= cat(j1(M, x), j2(M, x); dims=2))
+        J(M, x) = cat(j1(M, x), j2(M, x); dims = 2)
+        J!(M, J, x) = (J .= cat(j1(M, x), j2(M, x); dims = 2))
         # Smoothing types
 
         # Test all (new) possible combinations of vectorial cost and Jacobian
         # (1) [F]unction (Gradient), [C]omponent (Gradients), [J] Coordinate (Jacobian in Basis)
         # (2) [a]llocating [i] inplace
         nlsoFa = NonlinearLeastSquaresObjective(
-            f, JF, 2; jacobian_type=FunctionVectorialType()
+            f, JF, 2; jacobian_type = FunctionVectorialType()
         )
         nlsoFi = NonlinearLeastSquaresObjective(
             f!,
             JF!,
             2;
-            evaluation=InplaceEvaluation(),
-            jacobian_type=FunctionVectorialType(),
+            evaluation = InplaceEvaluation(),
+            jacobian_type = FunctionVectorialType(),
         )
         nlsoCa = NonlinearLeastSquaresObjective(
             [f1, f2],
             [j1, j2],
             2;
-            function_type=ComponentVectorialType(),
-            jacobian_type=ComponentVectorialType(),
+            function_type = ComponentVectorialType(),
+            jacobian_type = ComponentVectorialType(),
         )
         nlsoCi = NonlinearLeastSquaresObjective(
             [f1, f2],
             [j1!, j2!],
             2;
-            function_type=ComponentVectorialType(),
-            jacobian_type=ComponentVectorialType(),
-            evaluation=InplaceEvaluation(),
+            function_type = ComponentVectorialType(),
+            jacobian_type = ComponentVectorialType(),
+            evaluation = InplaceEvaluation(),
         )
         nlsoJa = NonlinearLeastSquaresObjective(
-            f, J, 2; jacobian_type=CoordinateVectorialType()
+            f, J, 2; jacobian_type = CoordinateVectorialType()
         )
-        nlsoJi = NonlinearLeastSquaresObjective(f!, J!, 2; evaluation=InplaceEvaluation())
+        nlsoJi = NonlinearLeastSquaresObjective(f!, J!, 2; evaluation = InplaceEvaluation())
 
         p = [0.5, 0.5]
         V = [0.0, 0.0]

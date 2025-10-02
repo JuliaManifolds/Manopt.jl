@@ -20,7 +20,7 @@ is initalised with ``X^{(0)}`` as the zero vector and
 
 performed the following steps at iteration ``k=0,…`` until the `stopping_criterion` is fulfilled.
 
-1. compute a step size ``α_k = $(_tex(:displaystyle))$(_tex(:frac, "⟨ r^{(k)}, $(_tex(:Cal, "A"))(p)[r^{(k)}] ⟩_p","⟨ $(_tex(:Cal, "A"))(p)[d^{(k)}], $(_tex(:Cal, "A"))(p)[d^{(k)}] ⟩_p"))``
+1. compute a step size ``α_k = $(_tex(:displaystyle))$(_tex(:frac, "⟨ r^{(k)}, $(_tex(:Cal, "A"))(p)[r^{(k)}] ⟩_p", "⟨ $(_tex(:Cal, "A"))(p)[d^{(k)}], $(_tex(:Cal, "A"))(p)[d^{(k)}] ⟩_p"))``
 2. do a step ``X^{(k+1)} = X^{(k)} + α_kd^{(k)}``
 2. update the residual ``r^{(k+1)} = r^{(k)} + α_k Y^{(k)}``
 4. compute ``Z = $(_tex(:Cal, "A"))(p)[r^{(k+1)}]``
@@ -40,7 +40,7 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 # Keyword arguments
 
 $(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`,  where `c` is ``$(_tex(:norm,"b"))``"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`,  where `c` is ``$(_tex(:norm, "b"))``"))
 $(_note(:OutputSection))
 """
 
@@ -48,38 +48,41 @@ $(_note(:OutputSection))
 conjugate_residual(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual(
-    TpM::TangentSpace,
-    A,
-    b,
-    X=zero_vector(TpM);
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    slso = SymmetricLinearSystemObjective(A, b; evaluation=evaluation, kwargs...)
-    return conjugate_residual(TpM, slso, X; evaluation=evaluation, kwargs...)
+        TpM::TangentSpace,
+        A,
+        b,
+        X = zero_vector(TpM);
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    )
+    slso = SymmetricLinearSystemObjective(A, b; evaluation = evaluation, kwargs...)
+    return conjugate_residual(TpM, slso, X; kwargs...)
 end
 function conjugate_residual(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X=zero_vector(TpM); kwargs...
-)
+        TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X = zero_vector(TpM); kwargs...
+    )
+    keywords_accepted(conjugate_residual; kwargs...)
     Y = copy(TpM, X)
     return conjugate_residual!(TpM, slso, Y; kwargs...)
 end
+calls_with_kwargs(::typeof(conjugate_residual)) = (conjugate_residual!,)
 
 @doc "$_doc_conjugate_residual"
 conjugate_residual!(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual!(
-    TpM::TangentSpace,
-    slso::SymmetricLinearSystemObjective,
-    X;
-    stopping_criterion::SC=StopAfterIteration(manifold_dimension(TpM)) |
-                           StopWhenRelativeResidualLess(
-        norm(base_manifold(TpM), base_point(TpM), get_b(TpM, slso)), 1e-8
-    ),
-    kwargs...,
-) where {SC<:StoppingCriterion}
+        TpM::TangentSpace,
+        slso::SymmetricLinearSystemObjective,
+        X;
+        stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
+            StopWhenRelativeResidualLess(
+            norm(base_manifold(TpM), base_point(TpM), get_b(TpM, slso)), 1.0e-8
+        ),
+        kwargs...,
+    ) where {SC <: StoppingCriterion}
+    keywords_accepted(conjugate_residual!; kwargs...)
     crs = ConjugateResidualState(
-        TpM, slso; stopping_criterion=stopping_criterion, kwargs...
+        TpM, slso; stopping_criterion = stopping_criterion, kwargs...
     )
     dslso = decorate_objective!(TpM, slso; kwargs...)
     dmp = DefaultManoptProblem(TpM, dslso)
@@ -87,10 +90,11 @@ function conjugate_residual!(
     solve!(dmp, dcrs)
     return get_solver_return(get_objective(dmp), dcrs)
 end
+calls_with_kwargs(::typeof(conjugate_residual!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(
-    amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
-)
+        amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
+    )
     TpM = get_manifold(amp)
     get_hessian!(TpM, crs.r, get_objective(amp), base_point(TpM), crs.X)
     crs.r .*= -1
@@ -104,8 +108,8 @@ function initialize_solver!(
 end
 
 function step_solver!(
-    amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, i
-)
+        amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, i
+    )
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
     p = base_point(TpM)

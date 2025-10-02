@@ -51,21 +51,21 @@ as well as arguments and keyword arguments for the update rule.
 
 [`_produce_type`](@ref)
 """
-struct ManifoldDefaultsFactory{T,TM<:Union{<:AbstractManifold,Nothing},A,K}
+struct ManifoldDefaultsFactory{T, TM <: Union{<:AbstractManifold, Nothing}, A, K}
     M::TM
     args::A
     kwargs::K
     constructor_requires_manifold::Bool
 end
 function ManifoldDefaultsFactory(
-    T::Type, M::TM, args...; requires_manifold=true, kwargs...
-) where {TM<:AbstractManifold}
-    return ManifoldDefaultsFactory{T,TM,typeof(args),typeof(kwargs)}(
+        T::Type, M::TM, args...; requires_manifold = true, kwargs...
+    ) where {TM <: AbstractManifold}
+    return ManifoldDefaultsFactory{T, TM, typeof(args), typeof(kwargs)}(
         M, args, kwargs, requires_manifold
     )
 end
-function ManifoldDefaultsFactory(T::Type, args...; requires_manifold=true, kwargs...)
-    return ManifoldDefaultsFactory{T,Nothing,typeof(args),typeof(kwargs)}(
+function ManifoldDefaultsFactory(T::Type, args...; requires_manifold = true, kwargs...)
+    return ManifoldDefaultsFactory{T, Nothing, typeof(args), typeof(kwargs)}(
         nothing, args, kwargs, requires_manifold
     )
 end
@@ -76,14 +76,14 @@ function (mdf::ManifoldDefaultsFactory{T})(M::AbstractManifold) where {T}
         return T(mdf.args...; mdf.kwargs...)
     end
 end
-function (mdf::ManifoldDefaultsFactory{T,<:AbstractManifold})() where {T}
+function (mdf::ManifoldDefaultsFactory{T, <:AbstractManifold})() where {T}
     if mdf.constructor_requires_manifold
         return T(mdf.M, mdf.args...; mdf.kwargs...)
     else
         return T(mdf.args...; mdf.kwargs...)
     end
 end
-function (mdf::ManifoldDefaultsFactory{T,Nothing})() where {T}
+function (mdf::ManifoldDefaultsFactory{T, Nothing})() where {T}
     (!mdf.constructor_requires_manifold) && (return T(mdf.args...; mdf.kwargs...))
     throw(MethodError(T, mdf.args))
 end
@@ -98,7 +98,7 @@ just be returned.
 _produce_type(t, M::AbstractManifold) = t
 _produce_type(t::ManifoldDefaultsFactory, M::AbstractManifold) = t(M)
 
-function show(io::IO, mdf::ManifoldDefaultsFactory{T,M}) where {T,M}
+function show(io::IO, mdf::ManifoldDefaultsFactory{T, M}) where {T, M}
     rm = mdf.constructor_requires_manifold
     if M === Nothing
         mline = "without a default manifold"
@@ -106,11 +106,11 @@ function show(io::IO, mdf::ManifoldDefaultsFactory{T,M}) where {T,M}
         mline = "Default manifold: $(mdf.M)"
         (!rm) && (mline = "$mline and the constructor does also not require a manifold.")
     end
-    ar_s = length(mdf.args) == 0 ? " none" : "\n$(join(["  * $s" for s in mdf.args],"\n"))"
+    ar_s = length(mdf.args) == 0 ? " none" : "\n$(join(["  * $s" for s in mdf.args], "\n"))"
     kw_s = if length(mdf.kwargs) == 0
         " none"
     else
-        "\n$(join(["  * $(s.first)=$(repr(s.second))" for s in mdf.kwargs],"\n"))"
+        "\n$(join(["  * $(s.first)=$(repr(s.second))" for s in mdf.kwargs], "\n"))"
     end
     s = """
     ManifoldDefaultsFactory($T)

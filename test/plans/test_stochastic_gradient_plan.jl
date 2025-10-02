@@ -10,16 +10,16 @@ using LinearAlgebra, LRUCache, Manifolds, Manopt, ManoptTestSuite, Test
     s = 1.0
     pts = [
         exp(M, p, X) for
-        X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
+            X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
     ]
     f(M, y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
     f2 = [(M, y) -> 1 / 2 * distance(M, y, x) for x in pts]
     sgrad_f1(M, y) = [-log(M, y, x) for x in pts]
     sgrad_f2 = [((M, y) -> -log(M, y, x)) for x in pts]
-    msgo_ff = ManifoldStochasticGradientObjective(sgrad_f1; cost=f)
-    msgo_vf = ManifoldStochasticGradientObjective(sgrad_f2; cost=f)
-    msgo_fv = ManifoldStochasticGradientObjective(sgrad_f1; cost=f2)
-    msgo_vv = ManifoldStochasticGradientObjective(sgrad_f2; cost=f2)
+    msgo_ff = ManifoldStochasticGradientObjective(sgrad_f1; cost = f)
+    msgo_vf = ManifoldStochasticGradientObjective(sgrad_f2; cost = f)
+    msgo_fv = ManifoldStochasticGradientObjective(sgrad_f1; cost = f2)
+    msgo_vv = ManifoldStochasticGradientObjective(sgrad_f2; cost = f2)
     @testset "Elementwise Cost access" begin
         for msgo in [msgo_ff, msgo_vf]
             @test get_cost(M, msgo, p) == get_cost(M, msgo, p, 1)

@@ -18,11 +18,11 @@ if these are different from the iterate and search direction of the main solver.
 
 [`interior_point_Newton`](@ref)
 """
-struct StepsizeState{P,T} <: AbstractManoptSolverState
+struct StepsizeState{P, T} <: AbstractManoptSolverState
     p::P
     X::T
 end
-StepsizeState(M::AbstractManifold; p=rand(M), X=zero_vector(M, p)) = StepsizeState(p, X)
+StepsizeState(M::AbstractManifold; p = rand(M), X = zero_vector(M, p)) = StepsizeState(p, X)
 get_iterate(s::StepsizeState) = s.p
 get_gradient(s::StepsizeState) = s.X
 set_iterate!(s::StepsizeState, M, p) = copyto!(M, s.p, p)
@@ -35,7 +35,7 @@ set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
 
 * `λ`:           the Lagrange multiplier with respect to the equality constraints
 * `μ`:           the Lagrange multiplier with respect to the inequality constraints
-$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :p; add = [:as_Iterate]))
 * `s`:           the current slack variable
 $(_var(:Field, :sub_problem))
 $(_var(:Field, :sub_state))
@@ -66,7 +66,7 @@ are used to fill in reasonable defaults for the keywords.
 
 # Input
 
-$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :M; type = true))
 * `cmo`:         a [`ConstrainedManifoldObjective`](@ref)
 $(_var(:Argument, :sub_problem))
 $(_var(:Argument, :sub_state))
@@ -75,7 +75,7 @@ $(_var(:Argument, :sub_state))
 
 Let `m` and `n` denote the number of inequality and equality constraints, respectively
 
-$(_var(:Keyword, :p; add=:as_Initial))
+$(_var(:Keyword, :p; add = :as_Initial))
 * `μ=ones(m)`
 * `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`
 * `Y=zero(μ)`
@@ -85,30 +85,30 @@ $(_var(:Keyword, :p; add=:as_Initial))
 * `W=zero(s)`
 * `ρ=μ's/m`
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)`"))
 $(_var(:Keyword, :retraction_method))
 * `step_objective=`[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
 * `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `step_problem`: wrap the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m``
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
-$(_var(:Keyword, :stepsize; default="[`ArmijoLinesearch`](@ref)`()`", add=" with the [`InteriorPointCentralityCondition`](@ref) as
+$(_var(:Keyword, :stepsize; default = "[`ArmijoLinesearch`](@ref)`()`", add = " with the [`InteriorPointCentralityCondition`](@ref) as
   additional condition to accept a step"))
 
 and internally `_step_M` and `_step_p` for the manifold and point in the stepsize.
 """
 mutable struct InteriorPointNewtonState{
-    P,
-    T,
-    Pr<:Union{AbstractManoptProblem,F} where {F},
-    St<:AbstractManoptSolverState,
-    V,
-    R<:Real,
-    SC<:StoppingCriterion,
-    TRTM<:AbstractRetractionMethod,
-    TStepsize<:Stepsize,
-    TStepPr<:AbstractManoptProblem,
-    TStepSt<:AbstractManoptSolverState,
-} <: AbstractHessianSolverState
+        P,
+        T,
+        Pr <: Union{AbstractManoptProblem, F} where {F},
+        St <: AbstractManoptSolverState,
+        V,
+        R <: Real,
+        SC <: StoppingCriterion,
+        TRTM <: AbstractRetractionMethod,
+        TStepsize <: Stepsize,
+        TStepPr <: AbstractManoptProblem,
+        TStepSt <: AbstractManoptSolverState,
+    } <: AbstractHessianSolverState
     p::P
     X::T
     sub_problem::Pr
@@ -127,56 +127,56 @@ mutable struct InteriorPointNewtonState{
     step_problem::TStepPr
     step_state::TStepSt
     function InteriorPointNewtonState(
-        M::AbstractManifold,
-        cmo::ConstrainedManifoldObjective,
-        sub_problem::Pr,
-        sub_state::St;
-        p::P=rand(M),
-        X::T=zero_vector(M, p),
-        μ::V=ones(length(get_inequality_constraint(M, cmo, p, :))),
-        Y::V=zero(μ),
-        λ::V=zeros(length(get_equality_constraint(M, cmo, p, :))),
-        Z::V=zero(λ),
-        s::V=ones(length(get_inequality_constraint(M, cmo, p, :))),
-        W::V=zero(s),
-        ρ::R=μ's / length(get_inequality_constraint(M, cmo, p, :)),
-        σ::R=calculate_σ(M, cmo, p, μ, λ, s),
-        stopping_criterion::SC=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
-        retraction_method::RTM=default_retraction_method(M),
-        step_objective=ManifoldGradientObjective(
-            KKTVectorFieldNormSq(cmo),
-            KKTVectorFieldNormSqGradient(cmo);
-            evaluation=InplaceEvaluation(),
-        ),
-        vector_space=Rn,
-        _step_M=M × vector_space(length(μ)) × vector_space(length(λ)) ×
+            M::AbstractManifold,
+            cmo::ConstrainedManifoldObjective,
+            sub_problem::Pr,
+            sub_state::St;
+            p::P = rand(M),
+            X::T = zero_vector(M, p),
+            μ::V = ones(length(get_inequality_constraint(M, cmo, p, :))),
+            Y::V = zero(μ),
+            λ::V = zeros(length(get_equality_constraint(M, cmo, p, :))),
+            Z::V = zero(λ),
+            s::V = ones(length(get_inequality_constraint(M, cmo, p, :))),
+            W::V = zero(s),
+            ρ::R = μ's / length(get_inequality_constraint(M, cmo, p, :)),
+            σ::R = calculate_σ(M, cmo, p, μ, λ, s),
+            stopping_criterion::SC = StopAfterIteration(200) | StopWhenChangeLess(1.0e-8),
+            retraction_method::RTM = default_retraction_method(M),
+            step_objective = ManifoldGradientObjective(
+                KKTVectorFieldNormSq(cmo),
+                KKTVectorFieldNormSqGradient(cmo);
+                evaluation = InplaceEvaluation(),
+            ),
+            vector_space = Rn,
+            _step_M = M × vector_space(length(μ)) × vector_space(length(λ)) ×
                 vector_space(length(s)),
-        step_problem::StepPr=DefaultManoptProblem(_step_M, step_objective),
-        _step_p=rand(_step_M),
-        step_state::StepSt=StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
-        centrality_condition::F=(N, p) -> true,
-        stepsize::S=ArmijoLinesearchStepsize(
-            get_manifold(step_problem);
-            retraction_method=default_retraction_method(get_manifold(step_problem)),
-            initial_stepsize=1.0,
-            additional_decrease_condition=centrality_condition,
-        ),
-        kwargs...,
-    ) where {
-        P,
-        T,
-        Pr<:Union{AbstractManoptProblem,F} where {F},
-        St<:AbstractManoptSolverState,
-        V,
-        R,
-        F,
-        SC<:StoppingCriterion,
-        StepPr<:AbstractManoptProblem,
-        StepSt<:AbstractManoptSolverState,
-        RTM<:AbstractRetractionMethod,
-        S<:Stepsize,
-    }
-        ips = new{P,T,Pr,St,V,R,SC,RTM,S,StepPr,StepSt}()
+            step_problem::StepPr = DefaultManoptProblem(_step_M, step_objective),
+            _step_p = rand(_step_M),
+            step_state::StepSt = StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
+            centrality_condition::F = (N, p) -> true,
+            stepsize::S = ArmijoLinesearchStepsize(
+                get_manifold(step_problem);
+                retraction_method = default_retraction_method(get_manifold(step_problem)),
+                initial_stepsize = 1.0,
+                additional_decrease_condition = centrality_condition,
+            ),
+            kwargs...,
+        ) where {
+            P,
+            T,
+            Pr <: Union{AbstractManoptProblem, F} where {F},
+            St <: AbstractManoptSolverState,
+            V,
+            R,
+            F,
+            SC <: StoppingCriterion,
+            StepPr <: AbstractManoptProblem,
+            StepSt <: AbstractManoptSolverState,
+            RTM <: AbstractRetractionMethod,
+            S <: Stepsize,
+        }
+        ips = new{P, T, Pr, St, V, R, SC, RTM, S, StepPr, StepSt}()
         ips.p = p
         ips.sub_problem = sub_problem
         ips.sub_state = sub_state
@@ -198,13 +198,13 @@ mutable struct InteriorPointNewtonState{
     end
 end
 function InteriorPointNewtonState(
-    M::AbstractManifold,
-    cmo::ConstrainedManifoldObjective,
-    sub_problem;
-    evaluation::E=AllocatingEvaluation(),
-    kwargs...,
-) where {E<:AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        sub_problem;
+        evaluation::E = AllocatingEvaluation(),
+        kwargs...,
+    ) where {E <: AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
     return InteriorPointNewtonState(M, cmo, sub_problem, cfs; kwargs...)
 end
 # get & set iterate
@@ -249,50 +249,51 @@ end
 # Constraint functors
 #
 
-@doc raw"""
+@doc """
     CondensedKKTVectorField{O<:ConstrainedManifoldObjective,T,R} <: AbstractConstrainedSlackFunctor{T,R}
 
 Given the constrained optimization problem
 
 ```math
-\begin{aligned}
-\min_{p ∈\mathcal{M}} &f(p)\\
-\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
-\quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
-\end{aligned}
+$(
+    _tex(
+        :aligned,
+        "$(_tex(:min))_{p ∈ $(_math(:M))} & f(p)",
+        "$(_tex(:text, " subject to ")) &g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, " for ")) i= 1, …, m,",
+        "$(_tex(:quad)) & h_j(p) = 0 $(_tex(:quad))$(_tex(:text, " for ")) j=1,…,n,",
+    )
+)
 ```
 
 Then reformulating the KKT conditions of the Lagrangian
 from the optimality conditions of the Lagrangian
 
 ```math
-\mathcal L(p, μ, λ) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
+$(_tex(:Cal, "L"))(p, μ, λ) = f(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p) + $(_tex(:sum, "i=1", "m")) μ_ig_i(p)
 ```
 
 in a perturbed / barrier method in a condensed form
 using a slack variable ``s ∈ ℝ^m`` and a barrier parameter ``β``
 and the Riemannian gradient of the Lagrangian with respect to the first parameter
-``\operatorname{grad}_p L(p, μ, λ)``.
+``$(_tex(:grad))_p L(p, μ, λ)``.
 
-Let ``\mathcal N = \mathcal M × ℝ^n``. We obtain the linear system
+Let ``$(_tex(:Cal, "N")) = $(_math(:M)) × ℝ^n``. We obtain the linear system
 
 ```math
-\mathcal A(p,λ)[X,Y] = -b(p,λ),\qquad \text{where } (X,Y) ∈ T_{(p,λ)}\mathcal N
+$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where ")) (X,Y) ∈ T_{(p,λ)}$(_tex(:Cal, "N"))
 ```
 
-where ``\mathcal A: T_{(p,λ)}\mathcal N → T_{(p,λ)}\mathcal N`` is a linear operator and
-this struct models the right hand side ``b(p,λ) ∈ T_{(p,λ)}\mathcal M`` given by
+where ``$(_tex(:Cal, "A")): T_{(p,λ)}$(_tex(:Cal, "N")) → T_{(p,λ)}$(_tex(:Cal, "N"))`` is a linear operator and
+this struct models the right hand side ``b(p,λ) ∈ T_{(p,λ)}$(_math(:M))`` given by
 
 ```math
-b(p,λ) = \begin{pmatrix}
-\operatorname{grad} f(p)
-+ \displaystyle\sum_{j=1}^n λ_j \operatorname{grad} h_j(p)
-+ \displaystyle\sum_{i=1}^m μ_i \operatorname{grad} g_i(p)
-+ \displaystyle\sum_{i=1}^m \frac{μ_i}{s_i}\bigl(
-  μ_i(g_i(p)+s_i) + β - μ_is_i
-\bigr)\operatorname{grad} g_i(p)\\
-h(p)
-\end{pmatrix}
+b(p,λ) = $(
+    _tex(
+        :pmatrix,
+        "$(_tex(:grad)) f(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) λ_j $(_tex(:grad)) h_j(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) μ_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) $(_tex(:frac, "μ_i", "s_i"))$(_tex(:bigl))( μ_i(g_i(p)+s_i) + β - μ_is_i $(_tex(:bigr)))$(_tex(:grad)) g_i(p)",
+        "h(p)",
+    )
+)
 ```
 
 # Fields
@@ -306,8 +307,8 @@ h(p)
 
     CondensedKKTVectorField(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorField{O<:ConstrainedManifoldObjective,T,R} <:
-               AbstractConstrainedSlackFunctor{T,R}
+mutable struct CondensedKKTVectorField{O <: ConstrainedManifoldObjective, T, R} <:
+    AbstractConstrainedSlackFunctor{T, R}
     cmo::O
     μ::T
     s::T
@@ -351,45 +352,49 @@ function show(io::IO, CKKTvf::CondensedKKTVectorField)
     )
 end
 
-@doc raw"""
+@doc """
     CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,T,R}  <: AbstractConstrainedSlackFunctor{T,R}
 
 Given the constrained optimization problem
 
 ```math
-\begin{aligned}
-\min_{p ∈\mathcal{M}} &f(p)\\
-\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
-\quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
-\end{aligned}
+$(
+    _tex(
+        :aligned,
+        "$(_tex(:min))_{p ∈ $(_math(:M))} & f(p)",
+        "$(_tex(:text, "subject to")) & g_i(p) ≤ 0 $(_tex(:quad))$(_tex(:text, " for ")) i= 1, …, m,",
+        "$(_tex(:quad)) & h_j(p)=0 $(_tex(:quad)) $(_tex(:text, " for ")) j=1,…,n,",
+    )
+)
 ```
 
 we reformulate the KKT conditions of the Lagrangian
 from the optimality conditions of the Lagrangian
 
 ```math
-\mathcal L(p, μ, λ) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
+$(_tex(:Cal, "L"))(p, μ, λ) = f(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p) +$(_tex(:sum, "i=1", "m")) μ_ig_i(p)
 ```
 
-in a perturbed / barrier method enhanced as well as condensed form as using ``\operatorname{grad}_o L(p, μ, λ)``
+in a perturbed / barrier method enhanced as well as condensed form as using ``$(_tex(:grad))_o L(p, μ, λ)``
 the Riemannian gradient of the Lagrangian with respect to the first parameter.
 
-Let ``\mathcal N = \mathcal M × ℝ^n``. We obtain the linear system
+Let ``$(_tex(:Cal, "N")) = $(_math(:M)) × ℝ^n``. We obtain the linear system
 
 ```math
-\mathcal A(p,λ)[X,Y] = -b(p,λ),\qquad \text{where } X ∈ T_p\mathcal M, Y ∈ ℝ^n
+$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where ")) X ∈ T_p$(_math(:M)), Y ∈ ℝ^n
 ```
-where ``\mathcal A: T_{(p,λ)}\mathcal N → T_{(p,λ)}\mathcal N`` is a linear operator
-on ``T_{(p,λ)}\mathcal N = T_p\mathcal M × ℝ^n`` given by
+where ``$(_tex(:Cal, "A")): T_{(p,λ)}$(_tex(:Cal, "N")) → T_{(p,λ)}$(_tex(:Cal, "N"))`` is a linear operator
+on ``T_{(p,λ)}$(_tex(:Cal, "N")) = T_p$(_math(:M)) × ℝ^n`` given by
 
 ```math
-\mathcal A(p,λ)[X,Y] = \begin{pmatrix}
-\operatorname{Hess}_p\mathcal L(p, μ, λ)[X]
-+ \displaystyle\sum_{i=1}^m \frac{μ_i}{s_i}⟨\operatorname{grad} g_i(p), X⟩\operatorname{grad} g_i(p)
-+ \displaystyle\sum_{j=1}^n Y_j \operatorname{grad} h_j(p)
-\\
-\Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n
-\end{pmatrix}
+$(_tex(:Cal, "A"))(p,λ)[X,Y] =
+$(
+    _tex(
+        :pmatrix,
+        "$(_tex(:Hess))_p$(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) $(_tex(:frac, "μ_i", "s_i")) ⟨$(_tex(:grad)) g_i(p), X⟩$(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Y_j $(_tex(:grad)) h_j(p)",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
+    )
+)
 ```
 
 # Fields
@@ -403,8 +408,8 @@ on ``T_{(p,λ)}\mathcal N = T_p\mathcal M × ℝ^n`` given by
 
     CondensedKKTVectorFieldJacobian(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,T,R} <:
-               AbstractConstrainedSlackFunctor{T,R}
+mutable struct CondensedKKTVectorFieldJacobian{O <: ConstrainedManifoldObjective, T, R} <:
+    AbstractConstrainedSlackFunctor{T, R}
     cmo::O
     μ::T
     s::T
@@ -453,7 +458,7 @@ function show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
     )
 end
 
-@doc raw"""
+@doc """
     KKTVectorField{O<:ConstrainedManifoldObjective}
 
 Implement the vectorfield ``F`` KKT-conditions, inlcuding a slack variable
@@ -462,27 +467,31 @@ for the inequality constraints.
 Given the [`LagrangianCost`](@ref)
 
 ```math
-\mathcal L(p; μ, λ) = f(p) + \sum_{i=1}^m μ_ig_i(p) + \sum_{j=1}^n λ_jh_j(p)
+$(_tex(:Cal, "L"))(p; μ, λ) = f(p) + $(_tex(:sum, "i=1", "m")) μ_ig_i(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p)
 ```
 
 the [`LagrangianGradient`](@ref)
 
 ```math
-\operatorname{grad}\mathcal L(p, μ, λ) = \operatorname{grad}f(p) + \sum_{j=1}^n λ_j \operatorname{grad} h_j(p) + \sum_{i=1}^m μ_i \operatorname{grad} g_i(p),
+$(_tex(:grad))$(_tex(:Cal, "L"))(p, μ, λ) = $(_tex(:grad))f(p) + $(_tex(:sum, "j=1", "n")) λ_j $(_tex(:grad)) h_j(p) + $(_tex(:sum, "i=1", "m")) μ_i $(_tex(:grad)) g_i(p),
 ```
 
 and introducing the slack variables ``s=-g(p) ∈ ℝ^m``
 the vector field is given by
 
 ```math
-F(p, μ, λ, s) = \begin{pmatrix}
-\operatorname{grad}_p \mathcal L(p, μ, λ)\\
-g(p) + s\\
-h(p)\\
-μ ⊙ s
-\end{pmatrix}, \text{ where } p \in \mathcal M, μ, s \in ℝ^m\text{ and } λ \in ℝ^n,
+F(p, μ, λ, s) = $(
+    _tex(
+        :pmatrix,
+        "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p, μ, λ)",
+        "g(p) + s",
+        "h(p)",
+        "μ ⊙ s",
+    )
+),
 ```
-where ``⊙`` denotes the Hadamard (or elementwise) product
+where ``p ∈ $(_math(:M))``, ``μ, s ∈ ℝ^m`` and ``λ ∈ ℝ^n``,
+and ``⊙`` denotes the Hadamard (or elementwise) product
 
 # Fields
 
@@ -498,11 +507,11 @@ in the computations. Furthermore Both fields together also calrify the product m
 # Example
 
 Define `F = KKTVectorField(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:M))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `F(N, q)` or as the in-place variant `F(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` for the result.
 """
-struct KKTVectorField{O<:ConstrainedManifoldObjective}
+struct KKTVectorField{O <: ConstrainedManifoldObjective}
     cmo::O
 end
 function (KKTvf::KKTVectorField)(N, q)
@@ -526,23 +535,27 @@ function show(io::IO, KKTvf::KKTVectorField)
     return print(io, "KKTVectorField\nwith the objective\n\t$(KKTvf.cmo)")
 end
 
-@doc raw"""
+@doc """
     KKTVectorFieldJacobian{O<:ConstrainedManifoldObjective}
 
 Implement the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldAdjointJacobian`](@ref)..
 
 ```math
-\operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = \begin{pmatrix}
-    \operatorname{Hess}_p \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
-    \Bigl( ⟨\operatorname{grad} g_i(p), X⟩ + W_i\Bigr)_{i=1}^m\\
-    \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n\\
-    μ ⊙ W + s ⊙ Y
-\end{pmatrix},
+$(_tex(:operatorname, "J")) F(p, μ, λ, s)[X, Y, Z, W] =
+$(
+    _tex(
+        :pmatrix,
+        "$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) Y_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Z_j $(_tex(:grad)) h_j(p)",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), X⟩ + W_i$(_tex(:Bigr)))_{i=1}^m",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
+        "μ ⊙ W + s ⊙ Y",
+    )
+)
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product
 
-See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess}_p \mathcal L(p, μ, λ)[X]``.
+See also the [`LagrangianHessian`](@ref) ``$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X]``.
 
 # Fields
 
@@ -557,11 +570,11 @@ Generate the Jacobian of the KKT vector field related to some [`ConstrainedManif
 # Example
 
 Define `JF = KKTVectorFieldJacobian(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:M))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `JF(N, q, Y)` or as the in-place variant `JF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are a tangent vector at `q`.
 """
-mutable struct KKTVectorFieldJacobian{O<:ConstrainedManifoldObjective}
+mutable struct KKTVectorFieldJacobian{O <: ConstrainedManifoldObjective}
     cmo::O
 end
 function (KKTvfJ::KKTVectorFieldJacobian)(N, q, Y)
@@ -600,23 +613,27 @@ function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
     return print(io, "KKTVectorFieldJacobian\nwith the objective\n\t$(KKTvfJ.cmo)")
 end
 
-@doc raw"""
+@doc """
     KKTVectorFieldAdjointJacobian{O<:ConstrainedManifoldObjective}
 
 Implement the Adjoint of the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldJacobian`](@ref).
 
 ```math
-\operatorname{J}^* F(p, μ, λ, s)[X, Y, Z, W] = \begin{pmatrix}
-    \operatorname{Hess}_p \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
-    \Bigl( ⟨\operatorname{grad} g_i(p), X⟩ + s_iW_i\Bigr)_{i=1}^m\\
-    \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n\\
-    μ ⊙ W + Y
-\end{pmatrix},
+$(_tex(:operatorname, "J"))^*
+F(p, μ, λ, s)[X, Y, Z, W] = $(
+    _tex(
+        :pmatrix,
+        "$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) Y_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Z_j $(_tex(:grad)) h_j(p)",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), X⟩ + s_iW_i$(_tex(:Bigr)))_{i=1}^m",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
+        "μ ⊙ W + Y"
+    )
+),
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product
 
-See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess}_p \mathcal L(p, μ, λ)[X]``.
+See also the [`LagrangianHessian`](@ref) ``$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X]``.
 
 # Fields
 
@@ -631,11 +648,11 @@ Generate the Adjoint Jacobian of the KKT vector field related to some [`Constrai
 # Example
 
 Define `AdJF = KKTVectorFieldAdjointJacobian(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:M))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `AdJF(N, q, Y)` or as the in-place variant `AdJF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are a tangent vector at `q`.
 """
-mutable struct KKTVectorFieldAdjointJacobian{O<:ConstrainedManifoldObjective}
+mutable struct KKTVectorFieldAdjointJacobian{O <: ConstrainedManifoldObjective}
     cmo::O
 end
 function (KKTvfJa::KKTVectorFieldAdjointJacobian)(N, q, Y)
@@ -673,7 +690,7 @@ function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
     return print(io, "KKTVectorFieldAdjointJacobian\nwith the objective\n\t$(KKTvfAdJ.cmo)")
 end
 
-@doc raw"""
+@doc """
     KKTVectorFieldNormSq{O<:ConstrainedManifoldObjective}
 
 Implement the square of the norm of the vectorfield ``F`` of the KKT-conditions, inlcuding a slack variable
@@ -691,10 +708,10 @@ In [LaiYoshise:2024](@cite) this is called the merit function.
 # Example
 
 Define `f = KKTVectorFieldNormSq(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:M))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `f(N, q)`, where `q` is a point on `N`.
 """
-mutable struct KKTVectorFieldNormSq{O<:ConstrainedManifoldObjective}
+mutable struct KKTVectorFieldNormSq{O <: ConstrainedManifoldObjective}
     cmo::O
 end
 function (KKTvc::KKTVectorFieldNormSq)(N, q)
@@ -706,33 +723,37 @@ function show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
     return print(io, "KKTVectorFieldNormSq\nwith the objective\n\t$(KKTvfNSq.cmo)")
 end
 
-@doc raw"""
+@doc """
     KKTVectorFieldNormSqGradient{O<:ConstrainedManifoldObjective}
 
-Compute the gradient of the [`KKTVectorFieldNormSq`](@ref) ``φ(p,μ,λ,s) = \lVert F(p,μ,λ,s)\rVert^2``,
+Compute the gradient of the [`KKTVectorFieldNormSq`](@ref) ``φ(p,μ,λ,s) = $(_tex(:norm, "F(p,μ,λ,s)"))^2``,
 that is of the norm squared of the [`KKTVectorField`](@ref) ``F``.
 
 This is given in [LaiYoshise:2024](@cite) as the gradient of their merit function,
 which we can write with the adjoint ``J^*`` of the Jacobian
 
 ```math
-\operatorname{grad} φ = 2\operatorname{J}^* F(p, μ, λ, s)[F(p, μ, λ, s)],
+$(_tex(:grad)) φ = 2$(_tex(:operatorname, "J"))^* F(p, μ, λ, s)[F(p, μ, λ, s)],
 ```
 
 and hence is computed with [`KKTVectorFieldAdjointJacobian`](@ref) and [`KKTVectorField`](@ref).
 
-For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = \operatorname{grad}_p \mathcal L(p,μ,λ) ∈ T_p\mathcal M``,
+For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = $(_tex(:grad))_p $(_tex(:Cal, "L"))(p,μ,λ) ∈ T_p$(_math(:M))``,
 for a shorthand of the first component of ``F``, as
 
 ```math
-\operatorname{grad} φ
+$(_tex(:grad)) φ
 =
-2 \begin{pmatrix}
-\operatorname{grad}_p \mathcal L(p,μ,λ)[L] + (g_i(p) + s_i)\operatorname{grad} g_i(p) + h_j(p)\operatorname{grad} h_j(p)\\
-  \Bigl( ⟨\operatorname{grad} g_i(p), L⟩ + s_i\Bigr)_{i=1}^m + μ ⊙ s ⊙ s\\
-  \Bigl( ⟨\operatorname{grad} h_j(p), L⟩ \Bigr)_{j=1}^n\\
-  g + s + μ ⊙ μ ⊙ s
-\end{pmatrix},
+2
+$(
+    _tex(
+        :pmatrix,
+        "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p,μ,λ)[L] + (g_i(p) + s_i)$(_tex(:grad)) g_i(p) + h_j(p)$(_tex(:grad)) h_j(p)",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), L⟩ + s_i$(_tex(:Bigr)))_{i=1}^m + μ ⊙ s ⊙ s",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), L⟩ $(_tex(:Bigr)))_{j=1}^n",
+        "g + s + μ ⊙ μ ⊙ s",
+    )
+),
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product.
 
@@ -747,11 +768,11 @@ where ``⊙`` denotes the Hadamard (or elementwise) product.
 # Example
 
 Define `grad_f = KKTVectorFieldNormSqGradient(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:M))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `grad_f(N, q)` or as the in-place variant `grad_f(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` returning the resulting gradient at.
 """
-mutable struct KKTVectorFieldNormSqGradient{O<:ConstrainedManifoldObjective}
+mutable struct KKTVectorFieldNormSqGradient{O <: ConstrainedManifoldObjective}
     cmo::O
 end
 function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, q)
@@ -776,8 +797,8 @@ end
 #
 # A special linesearch for IP Newton
 function interior_point_initial_guess(
-    mp::AbstractManoptProblem, ips::StepsizeState, ::Int, l::R
-) where {R<:Real}
+        mp::AbstractManoptProblem, ips::StepsizeState, ::Int, l::R
+    ) where {R <: Real}
     N = get_manifold(mp)
     Y = get_gradient(N, get_objective(mp), ips.p)
     grad_norm = norm(N, ips.p, Y)
@@ -785,7 +806,7 @@ function interior_point_initial_guess(
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
 
-@doc raw"""
+@doc """
     InteriorPointCentralityCondition{CO,R}
 
 A functor to check the centrality condition.
@@ -795,32 +816,32 @@ Section 6 of [LaiYoshise:2024](@cite) propose the following additional condition
 inspired by the Euclidean case described in Section 6 [El-BakryTapiaTsuchiyaZhang:1996](@cite):
 
 For a given [`ConstrainedManifoldObjective`](@ref) assume consider the [`KKTVectorField`](@ref) ``F``,
-that is we are at a point ``q = (p, λ, μ, s)``  on ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
+that is we are at a point ``q = (p, λ, μ, s)``  on ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
 
 Then, let
 
 ```math
-τ_1 = \frac{m⋅\min\{ μ ⊙ s\}}{μ^{\mathrm{T}}s}
-\quad\text{ and }\quad
-τ_2 = \frac{μ^{\mathrm{T}}s}{\lVert F(q) \rVert}
+τ_1 = $(_tex(:frac, "m$(_tex(:min))$(_tex(:set, "μ ⊙ s"))", "μ^{$(_tex(:rm, "T"))}s"))
+$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
+τ_2 = $(_tex(:frac, "μ^{$(_tex(:rm, "T"))}s", "$(_tex(:norm, "F(q)"))")),
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product.
 
-For a new candidate ``q(α) = \bigl(p(α), λ(α), μ(α), s(α)\bigr) := (\operatorname{retr}_p(αX), λ+αY, μ+αZ, s+αW)``,
+For a new candidate ``q(α) = $(_tex(:bigl))(p(α), λ(α), μ(α), s(α)$(_tex(:bigr)) := ($(_tex(:retr))_p(αX), λ+αY, μ+αZ, s+αW)``,
 we then define two functions
 
 ```math
-c_1(α) = \min\{ μ(α) ⊙ s(α) \} - \frac{γτ_1 μ(α)^{\mathrm{T}}s(α)}{m}
-\quad\text{ and }\quad
-c_2(α) = μ(α)^{\mathrm{T}}s(α) – γτ_2 \lVert F(q(α)) \rVert.
+c_1(α) = $(_tex(:min))$(_tex(:set, "μ(α) ⊙ s(α)")) - $(_tex(:frac, "γτ_1 μ(α)^{$(_tex(:rm, "T"))}s(α)", "m"))
+$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
+c_2(α) = μ(α)^{$(_tex(:rm, "T"))}s(α) – γτ_2 $(_tex(:norm, "F(q(α))")).
 ```
 
-While the paper now states that the (Armijo) linesearch starts at a point
-``\tilde α``, it is easier to include the condition that ``c_1(α) ≥ 0`` and ``c_2(α) ≥ 0``
-into the linesearch as well.
+While the paper now states that the (Armijo) line search starts at a point
+``$(_tex(:tilde)) α``, it is easier to include the condition that ``c_1(α) ≥ 0`` and ``c_2(α) ≥ 0``
+into the line search as well.
 
 The functor `InteriorPointCentralityCondition(cmo, γ, μ, s, normKKT)(N,qα)`
-defined here evaluates this condition and returns true if both ``c_1`` and ``c_2`` are nonnegative.
+defined here evaluates this condition and returns true if both ``c_1`` and ``c_2`` are non-negative.
 
 # Fields
 
@@ -843,14 +864,14 @@ The parameters `τ1`, `τ2` are initialise to zero if not provided.
     to update ``τ_1`` and ``τ_2``, call `set_parameter(ipcc, :τ, N, q)` to update
     both ``τ_1`` and ``τ_2`` according to the formulae above.
 """
-mutable struct InteriorPointCentralityCondition{CO,R}
+mutable struct InteriorPointCentralityCondition{CO, R}
     cmo::CO
     γ::R
     τ1::R
     τ2::R
 end
-function InteriorPointCentralityCondition(cmo::CO, γ::R) where {CO,R}
-    return InteriorPointCentralityCondition{CO,R}(cmo, γ, zero(γ), zero(γ))
+function InteriorPointCentralityCondition(cmo::CO, γ::R) where {CO, R}
+    return InteriorPointCentralityCondition{CO, R}(cmo, γ, zero(γ), zero(γ))
 end
 function (ipcc::InteriorPointCentralityCondition)(N, qα)
     μα = qα[N, 2]
@@ -886,20 +907,20 @@ function set_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:τ}, N, q
     return ipcc
 end
 
-@doc raw"""
+@doc """
     StopWhenKKTResidualLess <: StoppingCriterion
 
 Stop when the KKT residual
 
 ```
 r^2
-= \lVert \operatorname{grad}_p \mathcal L(p, μ, λ) \rVert^2
-+ \sum_{i=1}^m [μ_i]_{-}^2 + [g_i(p)]_+^2 + \lvert \mu_ig_i(p)^2
-+ \sum_{j=1}^n \lvert h_i(p)\rvert^2.
+= $(_tex(:norm, "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p, μ, λ) "))^2
++ $(_tex(:sum, "i=1", "m")) [μ_i]_{-}^2 + [g_i(p)]_+^2 + $(_tex(:abs, "μ_i g_i(p)"))^2
++ $(_tex(:sum, "j=1", "n")) $(_tex(:abs, "h_i(p)"))^2.
 ```
 
 is less than a given threshold ``r < ε``.
-We use ``[v]_+ = \max\{0,v\}`` and ``[v]_- = \min\{0,t\}``
+We use ``[v]_+ = $(_tex(:max))$(_tex(:set, "0,v"))`` and ``[v]_- = $(_tex(:min))$(_tex(:set, "0,t"))``
 for the positive and negative part of ``v``, respectively
 
 # Fields
@@ -917,8 +938,8 @@ mutable struct StopWhenKKTResidualLess{R} <: StoppingCriterion
     end
 end
 function (c::StopWhenKKTResidualLess)(
-    amp::AbstractManoptProblem, ipns::InteriorPointNewtonState, k::Int
-)
+        amp::AbstractManoptProblem, ipns::InteriorPointNewtonState, k::Int
+    )
     M = get_manifold(amp)
     (k <= 0) && return false
     # now k > 0
@@ -962,38 +983,38 @@ function show(io::IO, c::StopWhenKKTResidualLess)
 end
 
 # An internal function to compute the new σ
-@doc raw"""
+@doc """
     calculate_σ(M, cmo, p, μ, λ, s; kwargs...)
 
 Compute the new ``σ`` factor for the barrier parameter in [`interior_point_Newton`](@ref) as
 
 ```math
-\min\{\frac{1}{2}, \lVert F(p; μ, λ, s)\rVert^{\frac{1}{2}} \},
+$(_tex(:min))$(_tex(:set, "$(_tex(:frac, "1", "2")), $(_tex(:norm, "F(p; μ, λ, s)"))^{$(_tex(:frac, "1", "2"))}")),
 ```
 where ``F`` is the KKT vector field, hence the [`KKTVectorFieldNormSq`](@ref) is used.
 
 # Keyword arguments
 
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
-* `N` the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m`` the vector field lives on (generated using `vector_space`)
+* `N` the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m`` the vector field lives on (generated using `vector_space`)
 * `q` provide memory on `N` for interims evaluation of the vector field
 """
 function calculate_σ(
-    N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s; kwargs...
-)
+        N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s; kwargs...
+    )
     return calculate_σ(N, get_objective(cmo, true), p, μ, λ, s; kwargs...)
 end
 function calculate_σ(
-    M::AbstractManifold,
-    cmo::ConstrainedManifoldObjective,
-    p,
-    μ,
-    λ,
-    s;
-    vector_space=Rn,
-    N=M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
-    q=allocate_result(N, rand),
-)
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        p,
+        μ,
+        λ,
+        s;
+        vector_space = Rn,
+        N = M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
+        q = allocate_result(N, rand),
+    )
     q1, q2, q3, q4 = submanifold_components(N, q)
     copyto!(N[1], q1, p)
     q2 .= μ

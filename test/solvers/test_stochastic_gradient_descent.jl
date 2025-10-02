@@ -6,7 +6,7 @@ using Manopt, Manifolds, Test
     s = 1.0
     pts = [
         exp(M, p, X) for
-        X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
+            X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
     ]
     f(M, y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
     grad_f(M, y) = sum([-log(M, y, x) for x in pts])
@@ -19,26 +19,28 @@ using Manopt, Manifolds, Test
         return X
     end
     sgrad_f2 = [((M, y) -> -log(M, y, x)) for x in pts]
-    sgrad_f2! = [function f!(M, X, y)
-        log!(M, X, y, x)
-        X .*= -1
-        return X
-    end for x in pts]
+    sgrad_f2! = [
+        function f!(M, X, y)
+                log!(M, X, y, x)
+                X .*= -1
+                return X
+        end for x in pts
+    ]
 
     @testset "Constructors" begin
-        sg = StochasticGradient(M; p=p)()
+        sg = StochasticGradient(M; p = p)()
         @test sg.X == zero_vector(M, p)
 
         msgo1 = ManifoldStochasticGradientObjective(sgrad_f1)
         dmp1 = DefaultManoptProblem(M, msgo1)
         msgo1i = ManifoldStochasticGradientObjective(
-            sgrad_f1!; evaluation=InplaceEvaluation()
+            sgrad_f1!; evaluation = InplaceEvaluation()
         )
         dmp1i = DefaultManoptProblem(M, msgo1i)
         msgo2 = ManifoldStochasticGradientObjective(sgrad_f2)
         dmp2 = DefaultManoptProblem(M, msgo2)
         msgo2i = ManifoldStochasticGradientObjective(
-            sgrad_f2!; evaluation=InplaceEvaluation()
+            sgrad_f2!; evaluation = InplaceEvaluation()
         )
         dmp2i = DefaultManoptProblem(M, msgo2i)
         @test get_gradient(dmp1, p, 1) == zeros(3)
@@ -77,7 +79,7 @@ using Manopt, Manifolds, Test
         @test_throws ErrorException get_gradients(dmp1i, p)
         @test_throws ErrorException get_gradient!(dmp1i, Z4, p, 1)
         sgds = StochasticGradientDescentState(
-            M; p=deepcopy(p), X=zero_vector(M, p), direction=StochasticGradient(; p=p)(M)
+            M; p = deepcopy(p), X = zero_vector(M, p), direction = StochasticGradient(; p = p)(M)
         )
         sgds.order = collect(1:5)
         sgds.order_type = :Linear
@@ -90,34 +92,34 @@ using Manopt, Manifolds, Test
         )
     end
     @testset "Comparing Stochastic Methods" begin
-        q1 = stochastic_gradient_descent(M, sgrad_f1, p; order_type=:Linear)
+        q1 = stochastic_gradient_descent(M, sgrad_f1, p; order_type = :Linear)
         @test is_point(M, q1, true)
         s1 = stochastic_gradient_descent(
-            M, sgrad_f1, p; order_type=:Linear, return_state=true
+            M, sgrad_f1, p; order_type = :Linear, return_state = true
         )
         q1a = get_solver_result(s1)
         @test q1 == q1a
-        q2 = stochastic_gradient_descent(M, sgrad_f1, p; order_type=:FixedRandom)
+        q2 = stochastic_gradient_descent(M, sgrad_f1, p; order_type = :FixedRandom)
         @test is_point(M, q2, true)
-        q3 = stochastic_gradient_descent(M, sgrad_f1, p; order_type=:Random)
+        q3 = stochastic_gradient_descent(M, sgrad_f1, p; order_type = :Random)
         @test is_point(M, q3, true)
         q4 = copy(M, p)
-        stochastic_gradient_descent!(M, sgrad_f1, q4; order_type=:Random)
+        stochastic_gradient_descent!(M, sgrad_f1, q4; order_type = :Random)
         @test is_point(M, q4, true)
         q5 = stochastic_gradient_descent(
             M,
             sgrad_f1,
             p;
-            order_type=:Random,
-            direction=AverageGradient(M; p=p, n=10, direction=StochasticGradient()),
+            order_type = :Random,
+            direction = AverageGradient(M; p = p, n = 10, direction = StochasticGradient()),
         )
         @test is_point(M, q5, true)
         q6 = stochastic_gradient_descent(
             M,
             sgrad_f1,
             p;
-            order_type=:Random,
-            direction=MomentumGradient(; p=p, direction=StochasticGradient()),
+            order_type = :Random,
+            direction = MomentumGradient(; p = p, direction = StochasticGradient()),
         )
         @test is_point(M, q6, true)
     end
@@ -138,8 +140,8 @@ using Manopt, Manifolds, Test
         #For this case in-place does not exist.
         sgrad_fc2 = [((M, y) -> -log(M, y, x)) for x in data]
         q3 = stochastic_gradient_descent(Mc, sgrad_fc2, pc)
-        q4 = stochastic_gradient_descent(Mc, sgrad_fc2, pc; evaluation=InplaceEvaluation())
-        s = stochastic_gradient_descent(Mc, sgrad_fc2, pc; return_state=true)
+        q4 = stochastic_gradient_descent(Mc, sgrad_fc2, pc; evaluation = InplaceEvaluation())
+        s = stochastic_gradient_descent(Mc, sgrad_fc2, pc; return_state = true)
         q5 = get_solver_result(s)[]
         @test all([is_point(Mc, q, true) for q in [q1, q2, q3, q4, q5]])
     end

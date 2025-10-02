@@ -15,7 +15,7 @@ The second block of signatures perform the optimization in-place of `p`.
 
 # Input
 
-$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :M; type = true))
 * `f`: a cost function ``f: $(_math(:M))→ℝ^m``.
   The cost function can be provided in two different ways
     * as a single function returning a vector ``f(p) ∈ ℝ^m``
@@ -64,28 +64,28 @@ $(_note(:OutputSection))
 @doc "$(_doc_LM)"
 LevenbergMarquardt(M::AbstractManifold, args...; kwargs...)
 function LevenbergMarquardt(
-    M::AbstractManifold,
-    f,
-    jacobian_f,
-    num_components::Int=-1;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
+        M::AbstractManifold,
+        f,
+        jacobian_f,
+        num_components::Int = -1;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    )
     return LevenbergMarquardt(
-        M, f, jacobian_f, rand(M), num_components; evaluation=evaluation, kwargs...
+        M, f, jacobian_f, rand(M), num_components; evaluation = evaluation, kwargs...
     )
 end
 function LevenbergMarquardt(
-    M::AbstractManifold,
-    f,
-    jacobian_f,
-    p,
-    num_components::Int=-1;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    function_type::AbstractVectorialType=FunctionVectorialType(),
-    jacobian_type::AbstractVectorialType=CoordinateVectorialType(DefaultOrthonormalBasis()),
-    kwargs...,
-)
+        M::AbstractManifold,
+        f,
+        jacobian_f,
+        p,
+        num_components::Int = -1;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        function_type::AbstractVectorialType = FunctionVectorialType(),
+        jacobian_type::AbstractVectorialType = CoordinateVectorialType(DefaultOrthonormalBasis()),
+        kwargs...,
+    )
     if num_components == -1
         if evaluation === AllocatingEvaluation()
             num_components = length(f(M, p))
@@ -101,43 +101,45 @@ function LevenbergMarquardt(
         f,
         jacobian_f,
         num_components;
-        evaluation=evaluation,
-        function_type=function_type,
-        jacobian_type=jacobian_type,
+        evaluation = evaluation,
+        function_type = function_type,
+        jacobian_type = jacobian_type,
     )
-    return LevenbergMarquardt(M, vgf, p; evaluation=evaluation, kwargs...)
+    return LevenbergMarquardt(M, vgf, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt(
-    M::AbstractManifold,
-    vgf::VectorGradientFunction,
-    p;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
+        M::AbstractManifold,
+        vgf::VectorGradientFunction,
+        p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    )
     nlso = NonlinearLeastSquaresObjective(vgf)
-    return LevenbergMarquardt(M, nlso, p; evaluation=evaluation, kwargs...)
+    return LevenbergMarquardt(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt(
-    M::AbstractManifold, nlso::O, p; kwargs...
-) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
+        M::AbstractManifold, nlso::O, p; kwargs...
+    ) where {O <: Union{NonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(LevenbergMarquardt; kwargs...)
     q = copy(M, p)
     return LevenbergMarquardt!(M, nlso, q; kwargs...)
 end
+calls_with_kwargs(::typeof(LevenbergMarquardt)) = (LevenbergMarquardt!,)
 
 @doc "$(_doc_LM)"
 LevenbergMarquardt!(M::AbstractManifold, args...; kwargs...)
 function LevenbergMarquardt!(
-    M::AbstractManifold,
-    f,
-    jacobian_f,
-    p,
-    num_components::Int=-1;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacobian_tangent_basis::AbstractBasis=default_basis(M, typeof(p)),
-    jacobian_type=CoordinateVectorialType(jacobian_tangent_basis),
-    function_type=FunctionVectorialType(),
-    kwargs...,
-)
+        M::AbstractManifold,
+        f,
+        jacobian_f,
+        p,
+        num_components::Int = -1;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        jacobian_tangent_basis::AbstractBasis = default_basis(M, typeof(p)),
+        jacobian_type = CoordinateVectorialType(jacobian_tangent_basis),
+        function_type = FunctionVectorialType(),
+        kwargs...,
+    )
     if num_components == -1
         if evaluation === AllocatingEvaluation()
             num_components = length(f(M, p))
@@ -153,63 +155,65 @@ function LevenbergMarquardt!(
         f,
         jacobian_f,
         num_components;
-        evaluation=evaluation,
-        jacobian_type=jacobian_type,
-        function_type=function_type,
+        evaluation = evaluation,
+        jacobian_type = jacobian_type,
+        function_type = function_type,
     )
-    return LevenbergMarquardt!(M, nlso, p; evaluation=evaluation, kwargs...)
+    return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt!(
-    M::AbstractManifold,
-    nlso::O,
-    p;
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                          StopWhenGradientNormLess(1e-12) |
-                                          StopWhenStepsizeLess(1e-12),
-    debug=[DebugWarnIfCostIncreases()],
-    expect_zero_residual::Bool=false,
-    β::Real=5.0,
-    η::Real=0.2,
-    damping_term_min::Real=0.1,
-    initial_residual_values=similar(p, length(get_objective(nlso).objective)),
-    initial_jacobian_f=similar(
-        p, length(get_objective(nlso).objective), manifold_dimension(M)
-    ),
-    (linear_subsolver!)=(default_lm_lin_solve!),
-    kwargs..., #collect rest
-) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
+        M::AbstractManifold,
+        nlso::O,
+        p;
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
+        stopping_criterion::StoppingCriterion = StopAfterIteration(200) |
+            StopWhenGradientNormLess(1.0e-12) |
+            StopWhenStepsizeLess(1.0e-12),
+        debug = [DebugWarnIfCostIncreases()],
+        expect_zero_residual::Bool = false,
+        β::Real = 5.0,
+        η::Real = 0.2,
+        damping_term_min::Real = 0.1,
+        initial_residual_values = similar(p, length(get_objective(nlso).objective)),
+        initial_jacobian_f = similar(
+            p, length(get_objective(nlso).objective), manifold_dimension(M)
+        ),
+        (linear_subsolver!) = (default_lm_lin_solve!),
+        kwargs..., #collect rest
+    ) where {O <: Union{NonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(LevenbergMarquardt!; kwargs...)
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
     lms = LevenbergMarquardtState(
         M,
         initial_residual_values,
         initial_jacobian_f;
-        p=p,
+        p = p,
         β,
         η,
         damping_term_min,
-        stopping_criterion=stopping_criterion,
-        retraction_method=retraction_method,
-        expect_zero_residual=expect_zero_residual,
-        (linear_subsolver!)=(linear_subsolver!),
+        stopping_criterion = stopping_criterion,
+        retraction_method = retraction_method,
+        expect_zero_residual = expect_zero_residual,
+        (linear_subsolver!) = (linear_subsolver!),
     )
-    dlms = decorate_state!(lms; debug=debug, kwargs...)
+    dlms = decorate_state!(lms; debug = debug, kwargs...)
     solve!(nlsp, dlms)
     return get_solver_return(get_objective(nlsp), dlms)
 end
+calls_with_kwargs(::typeof(LevenbergMarquardt!)) = (decorate_objective!, decorate_state!)
 #
 # Solver functions
 #
 function initialize_solver!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective},
-    lms::LevenbergMarquardtState,
-) where {mT<:AbstractManifold}
+        dmp::DefaultManoptProblem{mT, <:NonlinearLeastSquaresObjective},
+        lms::LevenbergMarquardtState,
+    ) where {mT <: AbstractManifold}
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     get_residuals!(M, lms.residual_values, nlso, lms.p)
     get_jacobian!(M, lms.jacobian, nlso, lms.p)
-    get_gradient!(M, lms.X, nlso, lms.p; jacobian_cache=lms.jacobian)
+    get_gradient!(M, lms.X, nlso, lms.p; jacobian_cache = lms.jacobian)
     return lms
 end
 
@@ -237,10 +241,10 @@ function default_lm_lin_solve!(sk, JJ, grad_f_c)
 end
 
 function step_solver!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective},
-    lms::LevenbergMarquardtState,
-    ::Integer,
-) where {mT<:AbstractManifold}
+        dmp::DefaultManoptProblem{mT, <:NonlinearLeastSquaresObjective},
+        lms::LevenbergMarquardtState,
+        ::Integer,
+    ) where {mT <: AbstractManifold}
     # `o.residual_values` is either initialized by `initialize_solver!` or taken from the previous iteration
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
@@ -268,9 +272,9 @@ function step_solver!(
 
     ρk =
         (normFk2 - norm(lms.candidate_residual_values)^2) / (
-            -2 * inner(M, lms.p, lms.X, lms.step_vector) - norm(lms.jacobian * sk)^2 -
+        -2 * inner(M, lms.p, lms.X, lms.step_vector) - norm(lms.jacobian * sk)^2 -
             λk * norm(sk)^2
-        )
+    )
     if ρk >= lms.η
         copyto!(M, lms.p, temp_x)
         copyto!(lms.residual_values, lms.candidate_residual_values)

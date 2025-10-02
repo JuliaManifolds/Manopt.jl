@@ -16,23 +16,23 @@ include("trust_region_model.jl")
     p[:, :, 2] = [0.0 0.0; 1.0 0.0; 0.0 1.0]
 
     @test_throws ErrorException trust_regions(
-        M, f, rgrad, rhess, p; max_trust_region_radius=-0.1
+        M, f, rgrad, rhess, p; max_trust_region_radius = -0.1
     )
     @test_throws ErrorException trust_regions(
-        M, f, rgrad, rhess, p; trust_region_radius=-0.1
+        M, f, rgrad, rhess, p; trust_region_radius = -0.1
     )
     @test_throws ErrorException trust_regions(
-        M, f, rgrad, rhess, p; max_trust_region_radius=0.1, trust_region_radius=0.11
+        M, f, rgrad, rhess, p; max_trust_region_radius = 0.1, trust_region_radius = 0.11
     )
     @testset "State Constructors" begin
         X = rgrad(M, p)
         TpM = TangentSpace(M, copy(M, p))
         mho = ManifoldHessianObjective(f, rgrad, rhess)
         sub_problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
-        sub_state = TruncatedConjugateGradientState(TpM; X=get_gradient(M, mho, p))
+        sub_state = TruncatedConjugateGradientState(TpM; X = get_gradient(M, mho, p))
         trs1 = TrustRegionsState(M, sub_problem)
         trs2 = TrustRegionsState(M, sub_problem, sub_state)
-        trs3 = TrustRegionsState(M, sub_problem; p=p)
+        trs3 = TrustRegionsState(M, sub_problem; p = p)
     end
     @testset "Objective accessors" begin
         mho = ManifoldHessianObjective(f, rgrad, rhess)
@@ -53,18 +53,18 @@ include("trust_region_model.jl")
     end
     @testset "Allocating Variant" begin
         s = trust_regions(
-            M, f, rgrad, rhess, p; max_trust_region_radius=8.0, return_state=true
+            M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, return_state = true
         )
         @test startswith(repr(s), "# Solver state for `Manopt.jl`s Trust Region Method\n")
         p1 = get_solver_result(s)
         q = copy(M, p)
         set_gradient!(s, M, p, zero_vector(M, p))
         @test norm(M, p, get_gradient(s)) ≈ 0.0
-        trust_regions!(M, f, rgrad, rhess, q; max_trust_region_radius=8.0)
+        trust_regions!(M, f, rgrad, rhess, q; max_trust_region_radius = 8.0)
         @test isapprox(M, p1, q)
         Random.seed!(42)
         p2 = trust_regions(
-            M, f, rgrad, rhess, p; max_trust_region_radius=8.0, randomize=true
+            M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, randomize = true
         )
 
         @test f(M, p2) ≈ f(M, p1)
@@ -74,8 +74,8 @@ include("trust_region_model.jl")
             f,
             rgrad,
             p;
-            max_trust_region_radius=8.0,
-            stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
+            max_trust_region_radius = 8.0,
+            stopping_criterion = StopAfterIteration(2000) | StopWhenGradientNormLess(1.0e-6),
         )
         q2 = copy(M, p)
         trust_regions!(
@@ -83,16 +83,16 @@ include("trust_region_model.jl")
             f,
             rgrad,
             q2;
-            stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
-            max_trust_region_radius=8.0,
+            stopping_criterion = StopAfterIteration(2000) | StopWhenGradientNormLess(1.0e-6),
+            max_trust_region_radius = 8.0,
         )
-        @test isapprox(M, p3, q2; atol=1e-6)
+        @test isapprox(M, p3, q2; atol = 1.0e-6)
         @test f(M, p3) ≈ f(M, p1)
     end
     @testset "TCG" begin
         X = zero_vector(M, p)
         Y = truncated_conjugate_gradient_descent(
-            M, f, rgrad, rhess, p, X; trust_region_radius=0.5
+            M, f, rgrad, rhess, p, X; trust_region_radius = 0.5
         )
         @test Y != X
         # random point -> different result
@@ -101,16 +101,16 @@ include("trust_region_model.jl")
             f,
             rgrad,
             rhess;
-            trust_region_radius=0.5,
+            trust_region_radius = 0.5,
         )
         @test Y2 != X
         Y3 = truncated_conjugate_gradient_descent(
-            M, f, rgrad, rhess, p, X; trust_region_radius=0.5
+            M, f, rgrad, rhess, p, X; trust_region_radius = 0.5
         )
         @test Y3 != X
         Y4 = copy(M, p, X)
         truncated_conjugate_gradient_descent!(
-            M, f, rgrad, rhess, p, Y4; trust_region_radius=0.5
+            M, f, rgrad, rhess, p, Y4; trust_region_radius = 0.5
         )
         @test Y4 != X
     end
@@ -119,7 +119,7 @@ include("trust_region_model.jl")
         h = RHess(M, A, m)
         p1 = copy(M, p)
         trust_regions!(
-            M, f, g, h, p1; max_trust_region_radius=8.0, evaluation=InplaceEvaluation()
+            M, f, g, h, p1; max_trust_region_radius = 8.0, evaluation = InplaceEvaluation()
         )
         p2 = copy(M, p)
         trust_regions!(
@@ -130,14 +130,14 @@ include("trust_region_model.jl")
                 M,
                 copy(M, p),
                 g;
-                steplength=2^(-9),
-                vector_transport_method=ProjectionTransport(),
-                evaluation=InplaceEvaluation(),
+                steplength = 2^(-9),
+                vector_transport_method = ProjectionTransport(),
+                evaluation = InplaceEvaluation(),
             ),
             p2;
-            stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
-            max_trust_region_radius=8.0,
-            evaluation=InplaceEvaluation(),
+            stopping_criterion = StopAfterIteration(2000) | StopWhenGradientNormLess(1.0e-6),
+            max_trust_region_radius = 8.0,
+            evaluation = InplaceEvaluation(),
         )
         @test f(M, p2) ≈ f(M, p1)
         X = zero_vector(M, p)
@@ -148,13 +148,13 @@ include("trust_region_model.jl")
             h,
             p,
             X;
-            evaluation=InplaceEvaluation(),
-            trust_region_radius=0.5,
+            evaluation = InplaceEvaluation(),
+            trust_region_radius = 0.5,
         )
         @test Y6 != X
         Y9 = copy(M, p, X)
         truncated_conjugate_gradient_descent!(
-            M, f, g, h, p, Y6; evaluation=InplaceEvaluation(), trust_region_radius=0.5
+            M, f, g, h, p, Y6; evaluation = InplaceEvaluation(), trust_region_radius = 0.5
         )
         @test Y6 != X
     end
@@ -203,15 +203,15 @@ include("trust_region_model.jl")
                 f,
                 grad_f!,
                 ApproxHessianSymmetricRankOne(
-                    M, p, grad_f!; nu=eps(Float64)^2, evaluation=InplaceEvaluation()
+                    M, p, grad_f!; nu = eps(Float64)^2, evaluation = InplaceEvaluation()
                 ),
                 p;
-                stopping_criterion=StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
-                trust_region_radius=1.0,
-                θ=0.1,
-                κ=0.9,
-                retraction_method=ProjectionRetraction(),
-                evaluation=InplaceEvaluation(),
+                stopping_criterion = StopAfterIteration(100) | StopWhenGradientNormLess(1.0e-8),
+                trust_region_radius = 1.0,
+                θ = 0.1,
+                κ = 0.9,
+                retraction_method = ProjectionRetraction(),
+                evaluation = InplaceEvaluation(),
             )
             @test isapprox(M, qaHSR1, p_star) || isapprox(M, qaHSR1, -p_star)
 
@@ -220,14 +220,14 @@ include("trust_region_model.jl")
                 M,
                 f,
                 grad_f,
-                ApproxHessianSymmetricRankOne(M, qaHSR1_2, grad_f; nu=eps(Float64)^2),
+                ApproxHessianSymmetricRankOne(M, qaHSR1_2, grad_f; nu = eps(Float64)^2),
                 qaHSR1_2;
-                stopping_criterion=StopAfterIteration(10000) |
-                                   StopWhenGradientNormLess(1e-6),
-                trust_region_radius=1.0,
-                θ=0.1,
-                κ=0.9,
-                retraction_method=ProjectionRetraction(),
+                stopping_criterion = StopAfterIteration(10000) |
+                    StopWhenGradientNormLess(1.0e-6),
+                trust_region_radius = 1.0,
+                θ = 0.1,
+                κ = 0.9,
+                retraction_method = ProjectionRetraction(),
             )
             @test isapprox(M, qaHSR1_2, p_star) || isapprox(M, qaHSR1_2, -p_star)
 
@@ -237,12 +237,12 @@ include("trust_region_model.jl")
                 grad_f,
                 ApproxHessianBFGS(M, p, grad_f),
                 p;
-                stopping_criterion=StopAfterIteration(10000) |
-                                   StopWhenGradientNormLess(1e-6),
-                trust_region_radius=1.0,
-                θ=0.1,
-                κ=0.9,
-                retraction_method=ProjectionRetraction(),
+                stopping_criterion = StopAfterIteration(10000) |
+                    StopWhenGradientNormLess(1.0e-6),
+                trust_region_radius = 1.0,
+                θ = 0.1,
+                κ = 0.9,
+                retraction_method = ProjectionRetraction(),
             )
             @test isapprox(M, qaHBFGS, p_star) || isapprox(M, qaHBFGS, -p_star)
 
@@ -253,12 +253,12 @@ include("trust_region_model.jl")
                 grad_f,
                 ApproxHessianBFGS(M, qaHBFGS_2, grad_f),
                 qaHBFGS_2;
-                stopping_criterion=StopAfterIteration(10000) |
-                                   StopWhenGradientNormLess(1e-6),
-                trust_region_radius=1.0,
-                θ=0.1,
-                κ=0.9,
-                retraction_method=ProjectionRetraction(),
+                stopping_criterion = StopAfterIteration(10000) |
+                    StopWhenGradientNormLess(1.0e-6),
+                trust_region_radius = 1.0,
+                θ = 0.1,
+                κ = 0.9,
+                retraction_method = ProjectionRetraction(),
             )
             @test isapprox(M, qaHBFGS_2, p_star) || isapprox(M, qaHBFGS_2, -p_star)
         end
@@ -270,8 +270,8 @@ include("trust_region_model.jl")
                 grad_f!,
                 Hess_f!,
                 q3;
-                trust_region_radius=1.0,
-                evaluation=InplaceEvaluation(),
+                trust_region_radius = 1.0,
+                evaluation = InplaceEvaluation(),
             )
             @test isapprox(M, q3, p_star) || isapprox(M, q3, -p_star)
 
@@ -282,8 +282,8 @@ include("trust_region_model.jl")
                 grad_f!,
                 Hess_f!,
                 q4;
-                trust_region_radius=1.0,
-                evaluation=InplaceEvaluation(),
+                trust_region_radius = 1.0,
+                evaluation = InplaceEvaluation(),
             )
             @test isapprox(M, q4, p_star) || isapprox(M, q4, -p_star)
 
@@ -294,16 +294,16 @@ include("trust_region_model.jl")
                 f,
                 grad_f!,
                 ApproxHessianSymmetricRankOne(
-                    M, qaHSR1_3, grad_f!; nu=eps(Float64)^2, evaluation=InplaceEvaluation()
+                    M, qaHSR1_3, grad_f!; nu = eps(Float64)^2, evaluation = InplaceEvaluation()
                 ),
                 qaHSR1_3;
-                stopping_criterion=StopAfterIteration(10000) |
-                                   StopWhenGradientNormLess(1e-6),
-                trust_region_radius=1.0,
-                θ=0.1,
-                κ=0.9,
-                retraction_method=ProjectionRetraction(),
-                evaluation=InplaceEvaluation(),
+                stopping_criterion = StopAfterIteration(10000) |
+                    StopWhenGradientNormLess(1.0e-6),
+                trust_region_radius = 1.0,
+                θ = 0.1,
+                κ = 0.9,
+                retraction_method = ProjectionRetraction(),
+                evaluation = InplaceEvaluation(),
             )
             @test isapprox(M, qaHSR1_3, p_star) || isapprox(M, qaHSR1_3, -p_star)
 
@@ -312,15 +312,15 @@ include("trust_region_model.jl")
                 M,
                 f,
                 grad_f!,
-                ApproxHessianBFGS(M, qaHBFGS_3, grad_f!; evaluation=InplaceEvaluation()),
+                ApproxHessianBFGS(M, qaHBFGS_3, grad_f!; evaluation = InplaceEvaluation()),
                 qaHBFGS_3;
-                stopping_criterion=StopAfterIteration(10000) |
-                                   StopWhenGradientNormLess(1e-6),
-                trust_region_radius=1.0,
-                θ=0.1,
-                κ=0.9,
-                retraction_method=ProjectionRetraction(),
-                evaluation=InplaceEvaluation(),
+                stopping_criterion = StopAfterIteration(10000) |
+                    StopWhenGradientNormLess(1.0e-6),
+                trust_region_radius = 1.0,
+                θ = 0.1,
+                κ = 0.9,
+                retraction_method = ProjectionRetraction(),
+                evaluation = InplaceEvaluation(),
             )
             @test isapprox(M, qaHBFGS_3, p_star) || isapprox(M, qaHBFGS_3, -p_star)
         end
@@ -328,15 +328,15 @@ include("trust_region_model.jl")
     @testset "on the Circle" begin
         Mc, fc, grad_fc, pc0, pc_star = ManoptTestSuite.Circle_mean_task()
         hess_fc(Mc, p, X) = 1.0
-        s = trust_regions(Mc, fc, grad_fc, hess_fc; return_state=true)
+        s = trust_regions(Mc, fc, grad_fc, hess_fc; return_state = true)
         q = get_solver_result(s)
-        @test distance(Mc, pc_star, q[]) < 1e-2
+        @test distance(Mc, pc_star, q[]) < 1.0e-2
         q2 = trust_regions(Mc, fc, grad_fc, hess_fc, 0.1)
-        @test distance(Mc, pc_star, q[]) < 1e-2
+        @test distance(Mc, pc_star, q[]) < 1.0e-2
         q2 = trust_regions(Mc, fc, grad_fc, hess_fc)
-        @test distance(Mc, pc_star, q[]) < 1e-2
+        @test distance(Mc, pc_star, q[]) < 1.0e-2
         Y1 = truncated_conjugate_gradient_descent(
-            Mc, fc, grad_fc, hess_fc, 0.1, 0.0; trust_region_radius=0.5
+            Mc, fc, grad_fc, hess_fc, 0.1, 0.0; trust_region_radius = 0.5
         )
         @test abs(Y1) ≈ 0.5
     end
@@ -351,13 +351,13 @@ include("trust_region_model.jl")
         ∇f(E, p) = A * p
         ∇²f(M, p, X) = A * X
         λ = min(eigvals(A)...)
-        q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean, (project!)=(project!))
-        @test f(M, q) ≈ λ atol = 1 * 1e-1 # a bit imprecise?
+        q = trust_regions(M, f, ∇f, p0; objective_type = :Euclidean, (project!) = (project!))
+        @test f(M, q) ≈ λ atol = 1 * 1.0e-1 # a bit imprecise?
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         q3 = trust_regions(M, f, grad_f, p0)
         q4 = trust_regions(M, f, grad_f, Hess_f, p0)
-        @test f(M, q3) ≈ λ atol = 5 * 1e-8
-        @test f(M, q4) ≈ λ atol = 5 * 1e-10
+        @test f(M, q3) ≈ λ atol = 5 * 1.0e-8
+        @test f(M, q4) ≈ λ atol = 5 * 1.0e-10
     end
 end

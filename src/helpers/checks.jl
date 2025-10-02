@@ -1,4 +1,3 @@
-
 @doc """
     check_differential(M, F, dF, p=rand(M), X=rand(M; vector_at=p); kwargs...)
 
@@ -28,23 +27,23 @@ $(_var(:Keyword, :retraction_method))
   the slope estimation. The default is, to use all window sizes `2:N`.
 """
 function check_differential(
-    M::AbstractManifold,
-    F,
-    dF,
-    p=rand(M),
-    X=rand(M; vector_at=p);
-    exactness_tol=1e-12,
-    io::Union{IO,Nothing}=nothing,
-    limits=(-8.0, 0.0),
-    N=101,
-    name="differential",
-    log_range=range(limits[1], limits[2]; length=N),
-    plot=false,
-    retraction_method=default_retraction_method(M, typeof(p)),
-    slope_tol=0.1,
-    error::Symbol=:none,
-    window=nothing,
-)
+        M::AbstractManifold,
+        F,
+        dF,
+        p = rand(M),
+        X = rand(M; vector_at = p);
+        exactness_tol = 1.0e-12,
+        io::Union{IO, Nothing} = nothing,
+        limits = (-8.0, 0.0),
+        N = 101,
+        name = "differential",
+        log_range = range(limits[1], limits[2]; length = N),
+        plot = false,
+        retraction_method = default_retraction_method(M, typeof(p)),
+        slope_tol = 0.1,
+        error::Symbol = :none,
+        window = nothing,
+    )
     Xn = X ./ norm(M, p, X) # normalize tangent direction
     # function for the directional derivative
     #
@@ -58,19 +57,19 @@ function check_differential(
         log_range,
         abs.(costs .- linearized),
         2.0;
-        exactness_tol=exactness_tol,
-        io=io,
-        name=name,
-        plot=plot,
-        slope_tol=slope_tol,
-        error=error,
-        window=window,
+        exactness_tol = exactness_tol,
+        io = io,
+        name = name,
+        plot = plot,
+        slope_tol = slope_tol,
+        error = error,
+        window = window,
     )
 end
 
-_doc_check_gradient_formula = raw"""
+_doc_check_gradient_formula = """
 ```math
-f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \mathcal O(t^2)
+f($(_tex(:retr))_p(tX)) = f(p) + t⟨$(_tex(:grad)) f(p), X⟩ + $(_tex(:Cal, "O"))(t^2)
 ```
 """
 @doc """
@@ -121,28 +120,28 @@ easily be set.
 
 """
 function check_gradient(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    p=rand(M),
-    X=rand(M; vector_at=p);
-    gradient=grad_f(M, p),
-    check_vector::Bool=false,
-    error::Symbol=:none,
-    atol::Real=0,
-    rtol::Real=atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
-    kwargs...,
-)
+        M::AbstractManifold,
+        f,
+        grad_f,
+        p = rand(M),
+        X = rand(M; vector_at = p);
+        gradient = grad_f(M, p),
+        check_vector::Bool = false,
+        error::Symbol = :none,
+        atol::Real = 0,
+        rtol::Real = atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
+        kwargs...,
+    )
     check_vector &&
-        (!is_vector(M, p, gradient, error === :error; atol=atol, rtol=rtol) && return false)
+        (!is_vector(M, p, gradient, error === :error; atol = atol, rtol = rtol) && return false)
     # function for the directional derivative - real so it also works on complex manifolds
     df(M, p, Y) = real(inner(M, p, gradient, Y))
-    return check_differential(M, f, df, p, X; name="gradient", error=error, kwargs...)
+    return check_differential(M, f, df, p, X; name = "gradient", error = error, kwargs...)
 end
 
-_doc_check_Hess_formula = raw"""
+_doc_check_Hess_formula = """
 ```math
-f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \frac{t^2}{2}⟨\operatorname{Hess}f(p)[X], X⟩ + \mathcal O(t^3)
+f($(_tex(:retr))_p(tX)) = f(p) + t⟨$(_tex(:grad)) f(p), X⟩ + $(_tex(:frac, "t^2", "2"))⟨$(_tex(:Hess))f(p)[X], X⟩ + $(_tex(:Cal, "O"))(t^3)
 ```
 """
 
@@ -215,75 +214,75 @@ While `check_vector` is also passed to the inner call to `check_gradient` as wel
 this inner `check_gradient` is meant to be just for inner verification, so it does not throw an error nor produce a plot itself.
 """
 function check_Hessian(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    Hess_f,
-    p=rand(M),
-    X=rand(M; vector_at=p),
-    Y=rand(M; vector_at=p);
-    a=randn(),
-    atol::Real=0,
-    b=randn(),
-    check_grad=true,
-    check_vector=false,
-    check_symmetry=true,
-    check_linearity=true,
-    exactness_tol=1e-12,
-    io::Union{IO,Nothing}=nothing,
-    gradient=grad_f(M, p),
-    Hessian=Hess_f(M, p, X),
-    limits=(-8.0, 0.0),
-    mode::Symbol=:Default,
-    N=101,
-    log_range=range(limits[1], limits[2]; length=N),
-    plot=false,
-    retraction_method=default_retraction_method(M, typeof(p)),
-    rtol::Real=atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
-    slope_tol=0.1,
-    error=:none,
-    window=nothing,
-    kwargs...,
-)
+        M::AbstractManifold,
+        f,
+        grad_f,
+        Hess_f,
+        p = rand(M),
+        X = rand(M; vector_at = p),
+        Y = rand(M; vector_at = p);
+        a = randn(),
+        atol::Real = 0,
+        b = randn(),
+        check_grad = true,
+        check_vector = false,
+        check_symmetry = true,
+        check_linearity = true,
+        exactness_tol = 1.0e-12,
+        io::Union{IO, Nothing} = nothing,
+        gradient = grad_f(M, p),
+        Hessian = Hess_f(M, p, X),
+        limits = (-8.0, 0.0),
+        mode::Symbol = :Default,
+        N = 101,
+        log_range = range(limits[1], limits[2]; length = N),
+        plot = false,
+        retraction_method = default_retraction_method(M, typeof(p)),
+        rtol::Real = atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
+        slope_tol = 0.1,
+        error = :none,
+        window = nothing,
+        kwargs...,
+    )
     if check_grad
         if !check_gradient(
-            M,
-            f,
-            grad_f,
-            p,
-            X;
-            gradient=gradient,
-            error=error,
-            io=io,
-            check_vector=check_vector,
-            atol=atol,
-            rtol=rtol,
-            retraction_method=retraction_method,
-            kwargs...,
-        )
+                M,
+                f,
+                grad_f,
+                p,
+                X;
+                gradient = gradient,
+                error = error,
+                io = io,
+                check_vector = check_vector,
+                atol = atol,
+                rtol = rtol,
+                retraction_method = retraction_method,
+                kwargs...,
+            )
             return false
         end
     end
     check_vector &&
-        (!is_vector(M, p, Hessian, error === :error; atol=atol, rtol=rtol) && return false)
+        (!is_vector(M, p, Hessian, error === :error; atol = atol, rtol = rtol) && return false)
     if check_linearity
         if !is_Hessian_linear(
-            M, Hess_f, p, X, Y, a, b; error=error, io=io, atol=atol, rtol=rtol
-        )
+                M, Hess_f, p, X, Y, a, b; error = error, io = io, atol = atol, rtol = rtol
+            )
             return false
         end
     end
     if check_symmetry
         if !is_Hessian_symmetric(
-            M, Hess_f, p, X, Y; error=error, io=io, atol=atol, rtol=rtol
-        )
+                M, Hess_f, p, X, Y; error = error, io = io, atol = atol, rtol = rtol
+            )
             return false
         end
     end
     if mode === :CriticalPoint # find a critical point and update gradient, Hessian and tangent vector
         p = gradient_descent(M, f, grad_f, p)
         gradient = grad_f(M, p)
-        X = rand(M; vector_at=p)
+        X = rand(M; vector_at = p)
         Hessian = Hess_f(M, p, X)
     end
     #
@@ -300,7 +299,7 @@ function check_Hessian(
     # linearized
     linearized = map(
         t ->
-            f(M, p) +
+        f(M, p) +
             t * real(inner(M, p, gradient, X_n)) +
             t^2 / 2 * real(inner(M, p, Hessian_n, X_n)),
         T,
@@ -309,17 +308,17 @@ function check_Hessian(
         log_range,
         abs.(costs .- linearized),
         3.0;
-        exactness_tol=exactness_tol,
-        io=io,
-        name="Hessian",
-        plot=plot,
-        slope_tol=slope_tol,
-        error=error,
-        window=window,
+        exactness_tol = exactness_tol,
+        io = io,
+        name = "Hessian",
+        plot = plot,
+        slope_tol = slope_tol,
+        error = error,
+        window = window,
     )
 end
 
-@doc raw"""
+@doc """
     is_Hessian_linear(M, Hess_f, p,
         X=rand(M; vector_at=p), Y=rand(M; vector_at=p), a=randn(), b=randn();
         error=:none, io=nothing, kwargs...
@@ -328,8 +327,8 @@ end
 Verify whether the Hessian function `Hess_f` fulfills linearity,
 
 ```math
-\operatorname{Hess} f(p)[aX + bY] = b\operatorname{Hess} f(p)[X]
- + b\operatorname{Hess} f(p)[Y]
+$(_tex(:Hess)) f(p)[aX + bY] = b$(_tex(:Hess)) f(p)[X]
+ + b$(_tex(:Hess)) f(p)[Y]
 ```
 
 which is checked using `isapprox` and the keyword arguments are passed to this function.
@@ -341,17 +340,17 @@ which is checked using `isapprox` and the keyword arguments are passed to this f
 
 """
 function is_Hessian_linear(
-    M,
-    Hess_f,
-    p,
-    X=rand(M; vector_at=p),
-    Y=rand(M; vector_at=p),
-    a=randn(),
-    b=randn();
-    error=:none,
-    io=nothing,
-    kwargs...,
-)
+        M,
+        Hess_f,
+        p,
+        X = rand(M; vector_at = p),
+        Y = rand(M; vector_at = p),
+        a = randn(),
+        b = randn();
+        error = :none,
+        io = nothing,
+        kwargs...,
+    )
     Z1 = Hess_f(M, p, a * X + b * Y)
     Z2 = a * Hess_f(M, p, X) + b * Hess_f(M, p, Y)
     isapprox(M, p, Z1, Z2; kwargs...) && return true
@@ -364,7 +363,7 @@ function is_Hessian_linear(
     return false
 end
 
-@doc raw"""
+@doc """
     is_Hessian_symmetric(M, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p);
     error=:none, io=nothing, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps
 )
@@ -372,7 +371,7 @@ end
 Verify whether the Hessian function `Hess_f` fulfills symmetry, which means that
 
 ```math
-⟨\operatorname{Hess} f(p)[X], Y⟩ = ⟨X, \operatorname{Hess} f(p)[Y]⟩
+⟨$(_tex(:Hess)) f(p)[X], Y⟩ = ⟨X, $(_tex(:Hess)) f(p)[Y]⟩
 ```
 
 which is checked using `isapprox` and the `kwargs...` are passed to this function.
@@ -384,20 +383,20 @@ which is checked using `isapprox` and the `kwargs...` are passed to this functio
   how to handle errors, possible values: `:error`, `:info`, `:warn`
 """
 function is_Hessian_symmetric(
-    M,
-    Hess_f,
-    p=rand(M),
-    X=rand(M; vector_at=p),
-    Y=rand(M; vector_at=p);
-    error=:none,
-    io=nothing,
-    atol::Real=0,
-    rtol::Real=atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
-    kwargs...,
-)
+        M,
+        Hess_f,
+        p = rand(M),
+        X = rand(M; vector_at = p),
+        Y = rand(M; vector_at = p);
+        error = :none,
+        io = nothing,
+        atol::Real = 0,
+        rtol::Real = atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
+        kwargs...,
+    )
     a = inner(M, p, Hess_f(M, p, X), Y)
     b = inner(M, p, X, Hess_f(M, p, Y))
-    isapprox(a, b; atol=atol, rtol=rtol) && (return true)
+    isapprox(a, b; atol = atol, rtol = rtol) && (return true)
     m = "Hess f seems to not be symmetric: ⟨Hess f(p)[X], Y⟩ = $a != $b = ⟨Hess f(p)[Y], X⟩"
     (io !== nothing) && print(io, m)
     (error === :info) && @info m

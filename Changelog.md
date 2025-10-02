@@ -6,13 +6,49 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.21] unreleased
+## [0.5.24] unreleased
 
 ### Added
 
+* `CubicBracketingLinesearch` step size
+
+## [0.5.23] September 14, 2025
+
+### Added
+
+* `HybridCoefficient(args...)` conjugate gradient parameters.
+* a function `has_converged(sc)` function for any `StoppingCriterion` to indicate that it _both_ has stopped and the reason is a convergence certificate.
+  Note that compared to the static evaluation of `indicates_convergence(sc)`, which is independent of the state of the criterion,
+  this is the dynamic variant to be used _after_ a solver has stopped.
+* a `has_converged(::AbstractManoptSolverState)` function to check whether the solver has converged.
+
+### Changed
+
+* formerly a stopping criterion could be activated at certain iterations with `sc > 5`, `sc >= 5`, `sc == 5`, `sc <= 5`, and `sc < 5`.
+  This caused too many issues with invalidations, so it has been reduced and moved to `sc ⩼ 5`, `sc ≟ 5`, `sc ⩻ 5` for the cases 1, 3, and 5, respectively,
+  cf. (#509).
+* Refine the `JuMP` extension and add an allocation-free cost and gradient callback for JuMP interface (#498)
+
+## [0.5.22] September 09, 2025
+
+### Added
+
+* a `keywords_accepted(f, mode=:warn; kwargs...)` function that verifies that all keywords are accepted by a certain function.
+* an internal function `calls_with_kwargs(f)` to indicate which functions `f` passes `kwargs...` to.
+* a `KeywordsErrorMode` preference parameter to control how keywords that are not used/allowed should be treated. Values are `"none"`, `"warn"` (default), and `"error"`.
+* Add Distance over Gradients (RDoG) stepsize: `DistanceOverGradientsStepsize` and factory `DistanceOverGradients`, a learning‑rate‑free, curvature‑aware stepsize with `show`/`repr` and tests on Euclidean, Sphere, and Hyperbolic manifolds.
+
+### Fixed
+* the typo in the name `AdaptiveRgularizationWithCubicsModelObjective` is fixed to `AdaptiveRegularizationWithCubicsModelObjective`.
+
+## [0.5.21] September 5, 2025
+
+### Added
+
+* a system to track keywords, warning when unused ones are passed and a static way to explore possible keywords.
 * a `warm_start_factor` field to `ProximalGradientMethodBacktrackingStepsize` to allow to scale the stepsize in the backtracking procedure.
 * a `gradient=` keyword in several `Stepsize`s, such that one can avoid to internally avoid computing the gradient again.
-* used this keyword in
+* used the ``gradient=` keyword in
   * `alternating_gradient_descent`
   * conjugate_gradient
   * `Frank_Wolfe_method`
@@ -20,18 +56,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * `interior_point_newton`
   * `quasi_Newton`
   * `projected_gradient_method`
-* two references
-
-### Fixed
-
-* Fixed some math rendering in the docs.
+* a `restart_condition` functor to `conjugate_gradient_descent`, which allows the algorithm to restart if the search direction is sub-par (#492)
+* two literature references
 
 
 ### Changed
 
 * remodelled the docs for the extensions a bit, added `JuMP` to the DocumenterInterlinks.
-* the internal `VectorizedManifold` is now called `ManifoldSet`
-* the internal `ArrayShape` is not called `ManifoldPointArrayShape`
+* the internal `VectorizedManifold` within that extension is now called `ManifoldSet`
+* the internal `ArrayShape` within that extensionis not called `ManifoldPointArrayShape`
+* Switch to using [Runic.jl](https://github.com/fredrikekre/Runic.jl) as code formatter
+
+### Fixed
+
+* Fixed some math rendering in the docs, especially avoid `raw` strings and interpolate math symbols more often.
+
+### Fixed
+
+* Fixed allocations in the callbacks of the JuMP interface so that the solver can query the cost and gradient without allocating.
 
 ## [0.5.20] July 8, 2025
 

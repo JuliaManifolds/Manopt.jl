@@ -1,4 +1,6 @@
-@doc raw"""
+function decorate_state! end
+
+@doc """
     decorate_state!(s::AbstractManoptSolverState)
 
 decorate the [`AbstractManoptSolverState`](@ref)` s` with specific decorators.
@@ -25,38 +27,40 @@ other keywords are ignored.
 
 [`DebugSolverState`](@ref), [`RecordSolverState`](@ref), [`ReturnSolverState`](@ref)
 """
+decorate_state!(s::AbstractManoptSolverState; kwargs...)
+
 function decorate_state!(
-    s::S;
-    debug::Union{
-        Missing, # none
-        Function, # a function to indicate a (non-simple) callback
-        DebugAction, # single one -> to :Iteration
-        Array{DebugAction,1}, # a group -> to :Iteration
-        Dict{Symbol,DebugAction}, # the most elaborate, a dictionary
-        Array{<:Any,1}, # short hand for Factory.
-    }=missing,
-    record::Union{
-        Missing, # none
-        Symbol, # single action shortcut by symbol
-        RecordAction, # single action -> to :Iteration
-        Array{RecordAction,1}, # a group -> to :Iteration
-        Dict{Symbol,RecordAction}, # a dictionary for precise settings
-        Array{<:Any,1}, # a formatted string with symbols or AbstractStateActions
-    }=missing,
-    callback=missing, # a (simple) callback function
-    return_state=false,
-    kwargs..., # ignore all others
-) where {S<:AbstractManoptSolverState}
+        s::S;
+        debug::Union{
+            Missing, # none
+            Function, # a function to indicate a (non-simple) callback
+            DebugAction, # single one -> to :Iteration
+            Array{DebugAction, 1}, # a group -> to :Iteration
+            Dict{Symbol, DebugAction}, # the most elaborate, a dictionary
+            Array{<:Any, 1}, # short hand for Factory.
+        } = missing,
+        record::Union{
+            Missing, # none
+            Symbol, # single action shortcut by symbol
+            RecordAction, # single action -> to :Iteration
+            Array{RecordAction, 1}, # a group -> to :Iteration
+            Dict{Symbol, RecordAction}, # a dictionary for precise settings
+            Array{<:Any, 1}, # a formatted string with symbols or AbstractStateActions
+        } = missing,
+        callback = missing, # a (simple) callback function
+        return_state = false,
+        kwargs..., # ignore all others
+    ) where {S <: AbstractManoptSolverState}
     deco_s = s
     # Add callback to debug parameter
     if !ismissing(callback) # we got a simple callback
         if ismissing(debug)
-            debug = DebugCallback(callback; simple=true)
+            debug = DebugCallback(callback; simple = true)
         else
             # From complex to simple, first array, since the other ones create an array
-            (debug isa Array) && push!(debug, DebugCallback(callback; simple=true))
+            (debug isa Array) && push!(debug, DebugCallback(callback; simple = true))
             if ((debug isa Function) || (debug isa DebugAction))
-                debug = [debug, DebugCallback(callback; simple=true)]
+                debug = [debug, DebugCallback(callback; simple = true)]
             end
             (debug isa Dict) && warn(
                 "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually",
@@ -73,7 +77,8 @@ function decorate_state!(
     return deco_s
 end
 
-@doc raw"""
+function decorate_objective! end
+@doc """
     decorate_objective!(M, o::AbstractManifoldObjective)
 
 decorate the [`AbstractManifoldObjective`](@ref)` o` with specific decorators.
@@ -98,20 +103,21 @@ A specific one is used to activate certain decorators.
 
 [`objective_cache_factory`](@ref)
 """
+decorate_objective!(M::AbstractManifold, o::AbstractManifoldObjective; kwargs...)
+
 function decorate_objective!(
-    M::AbstractManifold,
-    o::O;
-    cache::Union{
-        Missing,Symbol,Tuple{Symbol,<:AbstractArray},Tuple{Symbol,<:AbstractArray,P} where P
-    }=missing,
-    count::Union{Missing,AbstractVector{<:Symbol}}=missing,
-    objective_type::Symbol=:Riemannian,
-    p=objective_type == :Riemannian ? missing : rand(M),
-    embedded_p=objective_type == :Riemannian ? missing : embed(M, p),
-    embedded_X=objective_type == :Riemannian ? missing : embed(M, p, zero_vector(M, p)),
-    return_objective=false,
-    kwargs...,
-) where {O<:AbstractManifoldObjective}
+        M::AbstractManifold, o::O;
+        cache::Union{
+            Missing, Symbol, Tuple{Symbol, <:AbstractArray}, Tuple{Symbol, <:AbstractArray, <:Any},
+        } = missing,
+        count::Union{Missing, AbstractVector{<:Symbol}} = missing,
+        objective_type::Symbol = :Riemannian,
+        p = objective_type == :Riemannian ? missing : rand(M),
+        _embedded_p = objective_type == :Riemannian ? missing : embed(M, p),
+        _embedded_X = objective_type == :Riemannian ? missing : embed(M, p, zero_vector(M, p)),
+        return_objective = false,
+        kwargs...,
+    ) where {O <: AbstractManifoldObjective}
     # Order:
     # 1) wrap embedding,
     # 2) _then_ count
@@ -121,7 +127,7 @@ function decorate_objective!(
     # and always last wrapper: `ReturnObjective`.
     deco_o = o
     if objective_type ∈ [:Embedding, :Euclidean]
-        deco_o = EmbeddedManifoldObjective(o, embedded_p, embedded_X)
+        deco_o = EmbeddedManifoldObjective(o, _embedded_p, _embedded_X)
     end
     (!ismissing(count)) && (deco_o = objective_count_factory(M, deco_o, count))
     (!ismissing(cache)) && (deco_o = objective_cache_factory(M, deco_o, cache))

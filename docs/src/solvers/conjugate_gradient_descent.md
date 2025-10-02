@@ -27,9 +27,22 @@ DaiYuanCoefficient
 FletcherReevesCoefficient
 HagerZhangCoefficient
 HestenesStiefelCoefficient
+HybridCoefficient
 LiuStoreyCoefficient
 PolakRibiereCoefficient
 SteepestDescentCoefficient
+```
+
+## [Restart rules](@id cg-restart)
+
+The update rules might produce update steps that are not a descent direction, or at least
+be only approximately one. In these cases the following restart rules can be specified.
+
+```@docs
+AbstractRestartCondition
+NeverRestart
+RestartOnNonDescent
+RestartOnNonSufficientDescent
 ```
 
 ## Internal rules for coefficients
@@ -40,6 +53,7 @@ Manopt.DaiYuanCoefficientRule
 Manopt.FletcherReevesCoefficientRule
 Manopt.HagerZhangCoefficientRule
 Manopt.HestenesStiefelCoefficientRule
+Manopt.HybridCoefficientRule
 Manopt.LiuStoreyCoefficientRule
 Manopt.PolakRibiereCoefficientRule
 Manopt.SteepestDescentCoefficientRule
