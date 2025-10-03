@@ -223,9 +223,9 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         prox_h(M, λ, p) = p
         p0 = p1
         pbm_s = proximal_gradient_method(
-            M, f, g, grad_g; 
-            prox_nonsmooth = prox_h, 
-            inverse_retraction_method = ProjectionInverseRetraction(), 
+            M, f, g, grad_g;
+            prox_nonsmooth = prox_h,
+            inverse_retraction_method = ProjectionInverseRetraction(),
             stepsize = ProximalGradientMethodBacktracking(;
                 initial_stepsize = 1.0,
                 strategy = :convex
