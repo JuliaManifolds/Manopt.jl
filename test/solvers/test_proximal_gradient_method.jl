@@ -90,8 +90,9 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
             dw1 = DebugWarnIfStepsizeCollapsed(:Once)
             @test repr(dw1) == "DebugWarnIfStepsizeCollapsed()"
             pgms_warn = ProximalGradientMethodState(
-                M;
-                p = p0,
+                Sphere(2);
+                p = rand(Sphere(2)),
+                inverse_retraction_method = ProjectionInverseRetraction(),
                 stepsize = Manopt.ProximalGradientMethodBacktrackingStepsize(
                     M; initial_stepsize = 1.0, strategy = :convex, stop_when_stepsize_less = 10.0
                 ),
