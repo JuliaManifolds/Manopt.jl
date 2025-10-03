@@ -508,11 +508,7 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
 
         # Compute log_p(candidate_point) and its squared norm for the conditions
         log_p_q = inverse_retract(M, p, candidate_point, st.inverse_retraction_method)
-        squared_distance = if st.inverse_retraction_method == LogarithmicInverseRetraction()
-            distance(M, p, candidate_point)^2
-        else
-            norm(M, p, log_p_q)^2
-        end
+        squared_distance = norm(M, p, log_p_q)^2
         if s.strategy === :nonconvex
             # Nonconvex descent condition
             if get_cost(mp, p) - get_cost(mp, candidate_point) >=
