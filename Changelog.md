@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * `CubicBracketingLinesearch` step size
+* fallback in `proximal_gradient_plan`to use the norm of the inverse retraction if the distance is not available.
 
 ## [0.5.23] September 14, 2025
 
