@@ -227,7 +227,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
             prox_nonsmooth = prox_h, 
             inverse_retraction_method = ProjectionInverseRetraction(), 
             stepsize = ProximalGradientMethodBacktracking(;
-                initial_stepsize = 1.0, 
+                initial_stepsize = 1.0,
                 strategy = :convex
             ),
             return_state = true
