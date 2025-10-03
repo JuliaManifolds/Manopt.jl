@@ -90,9 +90,8 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
             dw1 = DebugWarnIfStepsizeCollapsed(:Once)
             @test repr(dw1) == "DebugWarnIfStepsizeCollapsed()"
             pgms_warn = ProximalGradientMethodState(
-                Sphere(2);
-                p = rand(Sphere(2)),
-                inverse_retraction_method = ProjectionInverseRetraction(),
+                M;
+                p = p0,
                 stepsize = Manopt.ProximalGradientMethodBacktrackingStepsize(
                     M; initial_stepsize = 1.0, strategy = :convex, stop_when_stepsize_less = 10.0
                 ),
@@ -224,7 +223,14 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         prox_h(M, λ, p) = p
         p0 = p1
         pbm_s = proximal_gradient_method(
-            M, f, g, grad_g; prox_nonsmooth = prox_h, return_state = true
+            M, f, g, grad_g; 
+            prox_nonsmooth = prox_h, 
+            inverse_retraction_method = ProjectionInverseRetraction(), 
+            stepsize = ProximalGradientMethodBacktracking(;
+                initial_stepsize = 1.0, 
+                strategy = :convex
+            ),
+            return_state = true
         )
         @test startswith(
             repr(pbm_s), "# Solver state for `Manopt.jl`s Proximal Gradient Method\n"
