@@ -15,8 +15,8 @@ Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 
-[sources]
-Manopt = {path = ".."}
+[sources.Manopt]
+path = ".."
 
 [compat]
 ADTypes = "1"
@@ -27,7 +27,7 @@ FiniteDifferences = "0.12"
 IJulia = "1"
 LRUCache = "1.4"
 ManifoldDiff = "0.4"
-Manifolds = "0.10"
+Manifolds = "0.10, 0.11"
 ManifoldsBase = "1"
 Manopt = "0.5"
 Plots = "1.38"
