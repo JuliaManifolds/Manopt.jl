@@ -84,6 +84,7 @@ using Manifolds, Manopt, Random, Test
         repr(st), "# Solver state for `Manopt.jl`s Projected Gradient Method\n"
     )
     stop_when_stationary = st.stop.criteria[2]
+    @test Manopt.indicates_convergence(stop_when_stationary)
     @test repr(stop_when_stationary) ==
         "StopWhenProjectedGradientStationary($(stop_when_stationary.threshold))\n    $(
         Manopt.status_summary(
