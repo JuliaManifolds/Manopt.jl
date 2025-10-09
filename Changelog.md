@@ -6,7 +6,13 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.24] unreleased
+## [0.5.25] October 9, 2025
+
+### Changed
+
+* Bumped dependencies of all JuliaManifolds ecosystem packages to be consistent with ManifoldsBase.jl 2.0 and Manifolds.jl 0.11
+
+## [0.5.24] October 6, 2025
 
 ### Added
 
