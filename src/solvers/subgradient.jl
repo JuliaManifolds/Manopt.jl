@@ -102,7 +102,7 @@ For more details see [FerreiraOliveira:1998](@cite).
 
 $(_var(:Argument, :M; type = true))
 $(_var(:Argument, :f))
-* `∂f`: the (sub)gradient ``∂ f: $(_math(:M)) → T$(_math(:M))`` of f
+* `∂f`: the (sub)gradient ``∂ f: $(_math(:M)) → T$(_math(:M))`` of ``f``
 $(_var(:Argument, :p))
 
 alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` can be provided.

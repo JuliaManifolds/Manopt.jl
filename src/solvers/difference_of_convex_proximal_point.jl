@@ -186,6 +186,12 @@ See [AlmeidaNetoOliveiraSouza:2020](@cite) for more details on the modified vari
 where steps 4-6 are slightly changed, since here the classical proximal point method for
 DC functions is obtained for ``s_k = 1`` and one can hence employ usual line search method.
 
+# Input
+
+$(_var(:Argument, :M; type = true))
+$(_var(:Argument, :f; add = "total cost function `f = g - h`"))
+$(_var(:Argument, :grad_f, "grad_h"; f="h"))
+$(_var(:Argument, :p))
 
 # Keyword arguments
 

@@ -427,16 +427,16 @@ define!(
     :Variable,
     :grad_f,
     :description,
-    (; M = "M", p = "p") ->
-    "the (Riemannian) gradient ``$(_tex(:grad))f: $(_math(:M, M = M)) → $(_math(:TpM; M = M, p = p))`` of f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
+    (; M = "M", p = "p", f="f", kwargs...) ->
+    "the (Riemannian) gradient ``$(_tex(:grad))$f: $(_math(:M, M = M)) → $(_math(:TpM; M = M, p = p))`` of $f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
 )
 
 define!(
     :Variable,
     :Hess_f,
     :description,
-    (; M = "M", p = "p") ->
-    "the (Riemannian) Hessian ``$(_tex(:Hess))f: $(_math(:TpM, M = M, p = p)) → $(_math(:TpM; M = M, p = p))`` of f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
+    (; M = "M", p = "p", f="f") ->
+    "the (Riemannian) Hessian ``$(_tex(:Hess))$f: $(_math(:TpM, M = M, p = p)) → $(_math(:TpM; M = M, p = p))`` of $f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
 )
 
 define!(
@@ -542,18 +542,9 @@ define!(
     :Variable,
     :subgrad_f,
     :description,
-    (; M = "M", p = "p") -> """
-    the subgradient ``∂f: $(_math(:M; M = M)) → $(_math(:TM; M = M))`` of f as a function `(M, p) -> X`
-    or a function `(M, X, p) -> X` computing `X` in-place.
-    This function should always only return one element from the subgradient.
+    (; M = "M", p = "p", f="f", kwargs...) -> """
+    the subgradient ``∂$f: $(_math(:M; M = M)) → $(_math(:TM; M = M))`` of ``$f`` as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place. This function should always only return one element from the subgradient.
     """,
-)
-define!(
-    :Variable,
-    :subgrad_f,
-    :description,
-    (; M = "M") ->
-    " a state to specify the sub solver to use. For a closed form solution, this indicates the type of function.",
 )
 
 define!(
