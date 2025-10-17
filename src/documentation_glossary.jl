@@ -427,7 +427,7 @@ define!(
     :Variable,
     :grad_f,
     :description,
-    (; M = "M", p = "p", f="f", kwargs...) ->
+    (; M = "M", p = "p", f = "f", kwargs...) ->
     "the (Riemannian) gradient ``$(_tex(:grad))$f: $(_math(:M, M = M)) → $(_math(:TpM; M = M, p = p))`` of $f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
 )
 
@@ -435,7 +435,7 @@ define!(
     :Variable,
     :Hess_f,
     :description,
-    (; M = "M", p = "p", f="f") ->
+    (; M = "M", p = "p", f = "f") ->
     "the (Riemannian) Hessian ``$(_tex(:Hess))$f: $(_math(:TpM, M = M, p = p)) → $(_math(:TpM; M = M, p = p))`` of $f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
 )
 
@@ -542,7 +542,7 @@ define!(
     :Variable,
     :subgrad_f,
     :description,
-    (; M = "M", p = "p", f="f", kwargs...) -> """
+    (; M = "M", p = "p", f = "f", kwargs...) -> """
     the subgradient ``∂$f: $(_math(:M; M = M)) → $(_math(:TM; M = M))`` of ``$f`` as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place. This function should always only return one element from the subgradient.
     """,
 )

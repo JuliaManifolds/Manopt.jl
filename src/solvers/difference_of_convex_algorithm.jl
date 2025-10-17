@@ -136,7 +136,7 @@ until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
 $(_var(:Argument, :M; type = true))
 $(_var(:Argument, :f; add = "total cost function `f = g - h`"))
 * `g`: the smooth part ``g``of the cost function
-$(_var(:Argument, :subgrad_f, "∂h"; f="h"))
+$(_var(:Argument, :subgrad_f, "∂h"; f = "h"))
 $(_var(:Argument, :p))
 
 # Keyword arguments

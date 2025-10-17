@@ -190,7 +190,7 @@ DC functions is obtained for ``s_k = 1`` and one can hence employ usual line sea
 
 $(_var(:Argument, :M; type = true))
 $(_var(:Argument, :f; add = "total cost function `f = g - h`"))
-$(_var(:Argument, :grad_f, "grad_h"; f="h"))
+$(_var(:Argument, :grad_f, "grad_h"; f = "h"))
 $(_var(:Argument, :p))
 
 # Keyword arguments
