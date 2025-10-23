@@ -113,7 +113,7 @@ define!(:LaTeX, :rm, (letter) -> raw"\mathrm{" * "$letter" * "}")
 define!(:LaTeX, :sqrt, (s) -> raw"\sqrt{" * "$s}")
 define!(:LaTeX, :subgrad, raw"∂")
 define!(:LaTeX, :set, (s) -> raw"\{" * "$s" * raw"\}")
-define!(:LaTeX, :sum, (b = "", t = "") -> raw"\sum" * "_{$b}^{$t}")
+define!(:LaTeX, :sum, (b = "", t = "") -> raw"\sum" * (length(b)>0 ? "_{$b}" : "") * (length(t)>0 ? "^{$t}" : ""))
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
 define!(:LaTeX, :tilde, raw"\tilde")
 define!(:LaTeX, :transp, raw"\mathrm{T}")
@@ -305,7 +305,7 @@ define!(
     :NonLinearLeastSquares,
     (; M = "M", p = "p") -> """
     ```math
-    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum))_{i=1}^m $(_tex(:abs, "f_i($p)"))^2
+    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum, "i=1", "m")) $(_tex(:abs, "f_i($p)"))^2
     ```
 
     where ``f: $(_math(:M; M = M)) → ℝ^m`` is written with component functions ``f_i: $(_math(:M; M = M)) → ℝ``, ``i=1,…,m``,
