@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * fixed a few typos in the documentation strings of a few solvers.
+* fixed a typo in the documentation of `LevenbergMarquardt`.
+* fixed a bug in an internal tex command to print sums in the documentation.
 
 ## [0.5.25] October 9, 2025
 
