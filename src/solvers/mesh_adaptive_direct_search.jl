@@ -96,7 +96,7 @@ function mesh_adaptive_direct_search!(
         p;
         mesh_basis = mesh_basis,
         scale_mesh = scale_mesh,
-        max_stepsize = max_stepsize,
+        max_stepsize = oftype(scale_mesh, max_stepsize),
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,

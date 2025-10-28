@@ -34,4 +34,12 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     p_s2 = mesh_adaptive_direct_search!(M2, f2, p1; scale_mesh = 0.1)
     @test isapprox(M, p_s2, p1)
     @test distance(M2, p_s2, W2) < 1.0e-7
+    #
+    #
+    # An example on a sphere (to ensure type coherence between injectivity radii)
+    M3 = Sphere(2)
+    f3(M, p) = sum(p)
+    p2 = [-1.0, 0.0, 0.0]
+    s3 = mesh_adaptive_direct_search(M3, f3, p2; return_state=true)
+    @test startswith(get_reason(s3), "At iteration")
 end
