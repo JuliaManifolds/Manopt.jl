@@ -40,6 +40,6 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     M3 = Sphere(2)
     f3(M, p) = sum(p)
     p2 = [-1.0, 0.0, 0.0]
-    s3 = mesh_adaptive_direct_search(M3, f3, p2; return_state=true)
+    s3 = mesh_adaptive_direct_search(M3, f3, p2; return_state = true)
     @test startswith(get_reason(s3), "At iteration")
 end
