@@ -22,7 +22,6 @@ using LinearAlgebra: eigvals
         end
 
         function NewtonEquation(M, f_pr, f_sp)
-	        n = manifold_dimension(M)
 	        A = zeros(N+1,N+1)
 	        b = zeros(N+1)
 	        return NewtonEquation{typeof(f_pr), typeof(f_sp), typeof(A), typeof(b)}(f_pr, f_sp, A, b)
@@ -39,7 +38,7 @@ using LinearAlgebra: eigvals
 	        return res[1:N]
         end
 
-        y0 = copy(M, 1/sqrt(N)*ones(N))
+        y0 = 1/sqrt(N)*ones(N)
 	
         NE = NewtonEquation(M, f_prime, f_second_derivative)
 		
@@ -75,7 +74,6 @@ using LinearAlgebra: eigvals
         end
 
         function NewtonEquation(M, f_pr, f_sp)
-	        n = manifold_dimension(M)
 	        A = zeros(N+1,N+1)
 	        b = zeros(N+1)
 	        return NewtonEquation{typeof(f_pr), typeof(f_sp), typeof(A), typeof(b)}(f_pr, f_sp, A, b)
@@ -97,7 +95,7 @@ using LinearAlgebra: eigvals
 	        return res[1:N]
         end
 
-        y0 = copy(M, 1/sqrt(N)*ones(N))
+        y0 = 1/sqrt(N)*ones(N)
 	
         NE = NewtonEquation(M, f_prime, f_second_derivative)
 		
