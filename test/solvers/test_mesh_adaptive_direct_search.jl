@@ -41,5 +41,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     f3(M, p) = sum(p)
     p2 = [-1.0, 0.0, 0.0]
     s3 = mesh_adaptive_direct_search(M3, f3, p2; return_state = true)
-    @test startswith(get_reason(s3), "At iteration")
+    p3 = get_solver_result(s3)
+    @test f3(M3, p3) < f3(M3, p2)
+    @test is_point(M3, p3; error = :error)
 end
