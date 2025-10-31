@@ -21,11 +21,10 @@ Is state for the vector bundle Newton method
 # Input
 
 *`M`: domain manifold
-* `E``: range vector bundle
+* `E`: range vector bundle
 * `p`: initial point
 * `sub_problem`: method (closed form solution) that gets the [`VectorBundleManoptProblem`](@ref) and the [`VectorBundleNewtonState`](@ref) and returns the solution of the Newton equation, i.e. the Newton direction `X`
 * `sub_state`: sub_state to sub_problem, in most cases either AllocatingEvaluation() or InplaceEvaluation()
-
 
 # Keyword arguments
 
@@ -250,7 +249,7 @@ is solved to compute a Newton direction ``X``. The next iterate is then computed
 * `sub_problem`: method (closed form solution) that gets the [`VectorBundleManoptProblem`](@ref) and the [`VectorBundleNewtonState`](@ref) and returns the solution of the Newton equation, i.e. the Newton direction `X`
 * `sub_state`=AllocatingEvaluation(): sub_state to sub_problem, in most cases either AllocatingEvaluation() or InplaceEvaluation()
 * `X=`zero_vector(M, p)
-* `retraction_method=``default_retraction_method`(M, typeof(p)),
+* `retraction_method=`default_retraction_method`(M, typeof(p)),
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)``,
 * `stepsize=`1.0
 """
