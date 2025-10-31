@@ -43,7 +43,7 @@ using LinearAlgebra: eigvals
         NE = NewtonEquation(M, f_prime, f_second_derivative)
 		
         st_res = vectorbundle_newton(M, TangentBundle(M), NE, y0; sub_problem=solve_augmented_system,
-        stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(M,1e-11)),
+        stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(M,1e-11)),
         retraction_method=ProjectionRetraction(),
         stepsize=ConstantLength(M, 1.0),
         record=[:Iterate, :Change],
@@ -51,6 +51,15 @@ using LinearAlgebra: eigvals
 
         res = get_solver_result(st_res)
         @test isapprox(f(M, res), any(eigvals(matrix)); atol = 2.0 * 1.0e-2)
+
+        st_res2 = vectorbundle_newton(M, TangentBundle(M), NE, y0; sub_problem=solve_augmented_system,
+        stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(M,1e-11)),
+        retraction_method=ProjectionRetraction(),
+        stepsize=ConstantLength(M, 1.0),
+        record=[:Iterate, :Change],
+        return_state=true)
+
+        @test get_solver_result(st_res2) == res
     end
 
 @testset "Affine covariant stepsize" begin
@@ -100,7 +109,7 @@ using LinearAlgebra: eigvals
         NE = NewtonEquation(M, f_prime, f_second_derivative)
 		
         st_res = vectorbundle_newton(M, TangentBundle(M), NE, y0; sub_problem=solve_augmented_system, sub_state=AllocatingEvaluation(),
-        stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(M,1e-11)),
+        stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(M,1e-11)),
         retraction_method=ProjectionRetraction(),
         stepsize=AffineCovariantStepsize(M, θ_des = 0.1),
         record=[:Iterate, :Change],
