@@ -1,6 +1,9 @@
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
 using Manopt, Manifolds, ManifoldsBase, ManoptTestSuite, Test, LinearAlgebra
 using LinearAlgebra: eigvals
-@testset "VectorbundleNewton" begin
+@testset "Vectorbundle Newton" begin
     @testset "Vector bundle Newton runs – Rayleigh quotient minimization" begin
         N = 10
         matrix = zeros(N, N)
