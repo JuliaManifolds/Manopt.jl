@@ -234,6 +234,8 @@ Q_{F(p)} ∘ F'(p) X + F(p) = 0
 is solved to compute a Newton direction ``X``.
 The next iterate is then computed by applying a retraction.
 
+For more details see [WeiglSchiela:2024, WeiglBergmannSchiela:2025](@cite).
+
 # Arguments
 
 $(_var(:Argument, :M; type = true))
