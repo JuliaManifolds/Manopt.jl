@@ -118,7 +118,7 @@ using ManoptTestSuite
     @testset "Polyak Stepsize" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = sum(2 .* p)
+        grad_f(M, p) = 2 .* p
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p = [2.0, 2.0]
         X = grad_f(M, p)
@@ -127,6 +127,71 @@ using ManoptTestSuite
         @test repr(ps) ==
             "Polyak()\nA stepsize with keyword parameters\n   * initial_cost_estimate = 0.0\n"
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
+    end
+    @testset "CubicBracketing Stepsize" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p = [1.0, 2.0]
+        X = grad_f(M, p)
+        gs = GradientDescentState(M; p = p, X = grad_f(M, p))
+        clbs = CubicBracketingLinesearch()(M)
+        @test startswith(repr(clbs), "CubicBracketingLinesearch(;")
+        @test startswith(Manopt.status_summary(clbs), repr(clbs))
+        @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
+
+        #edge cases of interval bracketing
+        a, b, τ = 0, 1, 0.25
+        @test Manopt.cubic_stepsize_update_step(a, b, 0.5, τ) == 0.5
+        @test Manopt.cubic_stepsize_update_step(a, b, a, τ) == a + τ
+        @test Manopt.cubic_stepsize_update_step(a, b, b, τ) == b - τ
+
+
+        # check x^3 - 3x; local min at x = 1
+        a = Manopt.UnivariateTriple(0.0, 0.0, -3.0)
+        b = Manopt.UnivariateTriple(2.0, 2.0, 9.0)
+        @test Manopt.cubic_polynomial_argmin(a, b) ≈ 1.0 rtol = 1.0e-12
+
+        # test if DomainError is thrown
+        c = Manopt.UnivariateTriple(3.0, 0.0, 0.0)
+        @test_throws DomainError Manopt.update_bracket(a, b, c)
+
+        # test (R3)
+        c = Manopt.UnivariateTriple(1.0, 1.0, 1.0)
+        @test Manopt.update_bracket(a, b, c) == (a, c)
+
+        # test (R4)
+        c = Manopt.UnivariateTriple(1.0, -2.0, -1.0)
+        @test Manopt.update_bracket(a, b, c) == (c, b)
+
+        c = Manopt.UnivariateTriple(1.0, -2.0, 1.0)
+        @test Manopt.update_bracket(a, b, c) == (c, a)
+
+        #test (R5)
+        c = Manopt.UnivariateTriple(1.0, 0.0, 1.0)
+        @test Manopt.update_bracket(a, b, c) == (c, a)
+
+        c = Manopt.UnivariateTriple(1.0, 0.0, -1.0)
+        @test Manopt.update_bracket(a, b, c) == (a, c)
+
+        a = Manopt.UnivariateTriple(0.0, 0.0, 0.0)
+        @test Manopt.update_bracket(a, b, c) == (c, b)
+
+        # test secant
+        @test Manopt.secant(a, b) == (a.t * b.df - b.t * a.df) / (b.df - a.df)
+    end
+    @testset "CubicBracketingStepsize force Hybrid" begin
+        # test hybrid intervention for edge case
+        M = Euclidean(1)
+        f(M, p) = sum(p .^ 6)
+        grad_f(M, p) = 6 * p .^ 5
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p = [-1.0]
+        X = grad_f(M, p)
+        gs = GradientDescentState(M; p = p, X = grad_f(M, p))
+        clbs = CubicBracketingLinesearch(; sufficient_curvature = 1.0e-16, min_bracket_width = 0.0, initial_stepsize = 0.5)(M)
+        @test clbs(dmp, gs, 1) ≈ 1 / 6 atol = 5.0e-4
     end
     @testset "Distance over Gradients Stepsize" begin
         @testset "does not use sectional cuvature (Eucludian)" begin
@@ -148,9 +213,9 @@ using ManoptTestSuite
             # test printed representation before first step
             repr_ds = repr(ds)
             @test occursin("DistanceOverGradients(;", repr_ds)
-            @test occursin("initial_distance=1.0", repr_ds)
-            @test occursin("use_curvature=false", repr_ds)
-            @test occursin("sectional_curvature_bound=0.0", repr_ds)
+            @test occursin("initial_distance = 1.0", repr_ds)
+            @test occursin("use_curvature = false", repr_ds)
+            @test occursin("sectional_curvature_bound = 0.0", repr_ds)
             @test occursin("Current state:", repr_ds)
             @test occursin("max_distance = 1.0", repr_ds)
             @test occursin("gradient_sum = 0.0", repr_ds)

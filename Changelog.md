@@ -6,6 +6,29 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.26] unreleased
+
+### Changed
+
+* fixed a few typos in the documentation strings of a few solvers.
+* fixed a typo in the documentation of `LevenbergMarquardt`.
+* fixed a bug in an internal tex command to print sums in the documentation.
+* fixed the use of `mesh_adaptive_direct_search` on manifolds with irrational injectivity radius.
+* improved the `CONTRIBUTING.md` to reflect the new code formatter we use, as mentioned in (#527).
+
+## [0.5.25] October 9, 2025
+
+### Changed
+
+* Bumped dependencies of all JuliaManifolds ecosystem packages to be consistent with ManifoldsBase.jl 2.0 and Manifolds.jl 0.11
+
+## [0.5.24] October 6, 2025
+
+### Added
+
+* `CubicBracketingLinesearch` step size
+* fallback in `proximal_gradient_plan`to use the norm of the inverse retraction if the distance is not available.
+
 ## [0.5.23] September 14, 2025
 
 ### Added

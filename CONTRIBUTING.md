@@ -16,7 +16,7 @@ The following is a set of guidelines to [`Manopt.jl`](https://juliamanifolds.git
     - [Provide a new algorithm](#Provide-a-new-algorithm)
     - [Provide a new example](#Provide-a-new-example)
     - [Code style](#Code-style)
-
+    - [Concerning the documentation](#Concerning-the-documentation)
 ## I just have a question
 
 The developer can most easily be reached in the Julia Slack channel [#manifolds](https://julialang.slack.com/archives/CP4QF0K5Z).
@@ -31,8 +31,10 @@ If you found a bug or want to propose a feature, please open an issue in within 
 
 ### Add a missing method
 
-There is still a lot of methods for within the optimization framework of  `Manopt.jl`, may it be functions, gradients, differentials, proximal maps, step size rules or stopping criteria.
-If you notice a method missing and can contribute an implementation, please do so, and the maintainers try help with the necessary details.
+There is still a lot of methods that can be contributed within the optimization framework of [`Manopt.jl`](https://juliamanifolds.github.io/Manopt.jl/),
+may it be functions, gradients, differentials, proximal maps, step size rules or stopping criteria.
+If you notice a method you could contribute or improve an implementation, please do so,
+and the maintainers try help with the necessary details.
 Even providing a single new method is a good contribution.
 
 ### Provide a new algorithm
@@ -54,27 +56,31 @@ where also their reproducible Quarto-Markdown files are stored.
 
 ### Code style
 
-Try to follow the [documentation guidelines](https://docs.julialang.org/en/v1/manual/documentation/) from the Julia documentation as well as [Blue Style](https://github.com/invenia/BlueStyle).
-Run [`JuliaFormatter.jl`](https://github.com/domluna/JuliaFormatter.jl) on the repository in the way set in the `.JuliaFormatter.toml` file, which enforces a number of conventions consistent with the Blue Style. Furthermore [vale](https://vale.sh) is run on both Markdown and code files, affecting documentation and source code comments
+Try to follow the [documentation guidelines](https://docs.julialang.org/en/v1/manual/documentation/) from the Julia documentation as well as oriented on [Blue Style](https://github.com/invenia/BlueStyle).
+[`Manopt.jl`](https://juliamanifolds.github.io/Manopt.jl/) uses [Runic.jl](https://github.com/fredrikekre/Runic.jl) for code formatting.
 
 Please follow a few internal conventions:
 
-- It is preferred that the `AbstractManoptProblem`'s struct contains information about the general structure of the problem.
+- It is preferred that any subtype of a `AbstractManoptProblem`'s struct contains information about the general structure of the problem.
 - Any implemented function should be accompanied by its mathematical formulae if a closed form exists.
 - `AbstractManoptProblem` and helping functions are stored within the `plan/` folder and sorted by properties of the problem and/or solver at hand.
 - the solver state is usually stored with the solver itself
 - Within the source code of one algorithm, following the state, the high level interface should be next, then the initialization, then the step.
 - Otherwise an alphabetical order of functions is preferable.
 - The preceding implies that the mutating variant of a function follows the non-mutating variant.
-- There should be no dangling `=` signs.
 - Always add a newline between things of different types (struct/method/const).
 - Always add a newline between methods for different functions (including mutating/nonmutating variants).
 - Prefer to have no newline between methods for the same function; when reasonable, merge the documentation strings.
+  You can also define a string for the common documentation and interpolate it in the docstrings of the methods.
 - All `import`/`using`/`include` should be in the main module file.
 
-Concerning documentation
+### Concerning the documentation
 
 - if possible provide both mathematical formulae and literature references using [DocumenterCitations.jl](https://juliadocs.org/DocumenterCitations.jl/stable/) and BibTeX where possible
-- Always document all input variables and keyword arguments
+- Always document all input variables, positional arguments with their defaults, and keyword arguments also with their types and default values.
+- if applicable, use [DocumenterInterlinks.jl](https://juliadocs.org/DocumenterInterLinks.jl/stable/) when mentioning functions from other packages in the documentation. If you add a reference to a function from a new package, maybe consider adapting the CSS as well to prefix the links with the package logo.
+- Write a short entry in the [Changelog.md](https://manoptjl.org/stable/changelog/) to document your changes.
+
+If you implement a new feature, a tutorial how to use it would be appreciated as well. Tutorials are written as [Quarto](https://quarto.org/) documents and stored in the `tutorials/` folder. This is rendered automatically into the documentation page, you just have to add a menu entry within the tutorial sub menu.
 
 If you implement an algorithm with a certain numerical example in mind, it would be great, if this could be added to the [ManoptExamples.jl](https://github.com/JuliaManifolds/ManoptExamples.jl) package as well.

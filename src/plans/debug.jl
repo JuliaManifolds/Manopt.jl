@@ -518,7 +518,7 @@ That way you can print the value in this case as well.
 
 # Constructor
 
-    DebugEntry(field, check=(>(0)); type=:warn, message=":\$f is nonnegative", io=stdout)
+    DebugIfEntry(field, check=(>(0)); type=:warn, message=":\$f is nonnegative", io=stdout)
 
 """
 mutable struct DebugIfEntry{F} <: DebugAction

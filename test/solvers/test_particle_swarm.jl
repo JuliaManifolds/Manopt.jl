@@ -69,6 +69,7 @@ using Random
     end
     @testset "Specific Stopping criteria" begin
         sc = StopWhenSwarmVelocityLess(1.0)
+        @test !Manopt.indicates_convergence(sc)
         @test startswith(repr(sc), "StopWhenSwarmVelocityLess")
         @test get_reason(sc) == ""
         # Trigger manually
