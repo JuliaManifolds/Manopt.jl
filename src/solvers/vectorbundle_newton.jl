@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
     VectorBundleNewtonState{P,T} <: AbstractManoptSolverState
 
 Is state for the vector bundle Newton method
@@ -7,10 +7,11 @@ Is state for the vector bundle Newton method
 
 * `p`: current iterate
 * `p_trial`: next iterate needed for simplified Newton (not needed if affine covariant damping is not used to compute stepsizes)
-* `X`: current Newton direction
-* `sub_problem`: method (closed form solution) that returns the solution of the Newton equation, i.e. the Newton direction
-* `sub_state`: sub_state to sub_problem, in most cases either AllocatingEvaluation() or InplaceEvaluation()
-* `stop`: stopping criterion
+$(_var(:Field, :X; add = "as current Newton direction"))
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
+$(_var(:Field, :stopping_criterion, "stop"))
+$(_var(:Field, :stepsize))
 * `stepsize`: damping factor for the Newton direction
 * `retraction_method`:  the retraction to use in the Newton update
 
@@ -20,19 +21,18 @@ Is state for the vector bundle Newton method
 
 # Input
 
-*`M`: domain manifold
+$(_var(:Argument, :M; type = true))
 * `E`: range vector bundle
-* `p`: initial point
-* `sub_problem`: method (closed form solution) that gets the [`VectorBundleManoptProblem`](@ref) and the [`VectorBundleNewtonState`](@ref) and returns the solution of the Newton equation, i.e. the Newton direction `X`
-* `sub_state`: sub_state to sub_problem, in most cases either AllocatingEvaluation() or InplaceEvaluation()
+$(_var(:Argument, :p))
+$(_var(:Argument, :sub_state)) that returns the solution of the Newton equation, i.e. the Newton direction
+$(_var(:Argument, :sub_problem))
 
 # Keyword arguments
 
-* `X=`zero_vector(M, p)
-* `retraction_method=`default_retraction_method`(M, typeof(p)),
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)``,
-* `stepsize=`1.0
-
+$(_var(:Keyword, :X; add = :as_Memory))
+$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, VectorBundleNewtonState)`"))
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
 """
 mutable struct VectorBundleNewtonState{
         P, T, Pr, St,
@@ -63,11 +63,12 @@ function VectorBundleNewtonState(
     )
 end
 
-# TODO: paper zitieren, unten evtl ManoptExamples-Beispiel zitieren, falls möglich
-@doc raw"""
+@doc """
 AffineCovariantStepsize <: Stepsize
 
-A functor to provide an affine covariant stepsize generalizing the idea of following Newton paths introduced by [TODO](@cite). It can be used to derive a damped Newton method. The stepsizes (damping factors) are computed by a predictor-corrector-loop using an affine covariant quantity ``θ`` to measure local convergence.
+A functor to provide an affine covariant stepsize generalizing the idea of following Newton paths introduced by [WeiglBergmannSchiela:2025; Section 4](@cite).
+It can be used to derive a damped Newton method. The stepsizes (damping factors) are computed
+by a predictor-corrector-loop using an affine covariant quantity ``θ`` to measure local convergence.
 
 # Fields
 
@@ -80,7 +81,7 @@ A functor to provide an affine covariant stepsize generalizing the idea of follo
 * `θ_des`=0.5:            desired theta
 * `θ_acc`=1.1*θ_des:      acceptable theta
 * `last_stepsize`=1.0:    last computed stepsize (this is an auxiliary variable used within the algorithm)
-* `outer_norm`=Inf:   if `M` is a manifold with components, this can be used to specify the norm,
+* `outer_norm`=Inf:       if `M` is a manifold with components, this can be used to specify the norm,
   that is used to compute the overall distance based on the element-wise distance.
 
 # Example
@@ -90,7 +91,7 @@ any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` wit
 Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:M))``
 is given by
 
-```
+```math
 $(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distance))(p_k,q_k)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
@@ -101,19 +102,15 @@ If the manifold does not have components, the outer norm is ignored.
 
 # Constructor
 
-    AffineCovariantStepsize(M::AbstractManifold=DefaultManifold(2);
-        α=1.0,
-        θ=1.3,
-        θ_des=0.5,
-        θ_acc=1.1*theta_des,
-        last_stepsize = 1.0,
-        outer_norm::Real=Inf
+    AffineCovariantStepsize(
+        M::AbstractManifold=DefaultManifold(2);
+        α=1.0, θ=1.3, θ_des=0.5, θ_acc=1.1*θ_des, outer_norm::Real=Inf
     )
 
 Initializes all fields, where none of them is mandatory. The length is set to ``1.0``.
 
 Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
-This should be implemented as a method of the ``newton_equation(M, VB, p, p_trial)`` as parameters and returning a representation of the (transported) ``F(p_{\mathrm{trial}})``.
+This should be implemented as a method of the ``newton_equation(M, VB, p, p_trial)`` as parameters and returning a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
 """
 mutable struct AffineCovariantStepsize{T, R <: Real, N <: Real} <: Stepsize
     α::T
@@ -125,10 +122,9 @@ mutable struct AffineCovariantStepsize{T, R <: Real, N <: Real} <: Stepsize
 end
 function AffineCovariantStepsize(
         M::AbstractManifold = DefaultManifold(2);
-        α = 1.0, θ = 1.3, θ_des = 0.5, θ_acc = 1.1 * θ_des,
-        last_stepsize = 1.0, outer_norm::N = 2
+        α = 1.0, θ = 1.3, θ_des = 0.5, θ_acc = 1.1 * θ_des, outer_norm::N = 2
     ) where {N <: Real}
-    return AffineCovariantStepsize{typeof(α), typeof(θ), N}(α, θ, θ_des, θ_acc, last_stepsize, outer_norm)
+    return AffineCovariantStepsize{typeof(α), typeof(θ), N}(α, θ, θ_des, θ_acc, 1.0, outer_norm)
 end
 
 function (acs::AffineCovariantStepsize)(
@@ -192,10 +188,11 @@ function show(io::IO, vbns::VectorBundleNewtonState)
 end
 
 
-@doc raw"""
-    VectorBundleManoptProblem{M<:AbstractManifold,TV<:AbstractManifold,O}
+@doc """
+    VectorBundleManoptProblem{M<:AbstractManifold,TV<:AbstractManifold,O} <: AbstractManoptProblem{M}
 
-Model a vector bundle problem, that consists of the domain manifold ``\mathcal M`` that is a AbstractManifold, the range vector bundle ``\mathcal E`` and the Newton equation ``Q_{F(x)}\circ F'(x) \delta x + F(x) = 0_{p(F(x))}``. The Newton equation should be implemented as a functor that computes a representation of the Newton matrix and the right hand side. It needs to have a field ``A`` to store a representation of the Newton matrix ``Q_{F(x)}\circ F'(x) `` and a field ``b`` to store a representation of the right hand side ``F(x)``.
+Model a vector bundle problem, that consists of the domain manifold ``$(_math(:M))`` that is a $(_link(:AbstractManifold)), the range vector bundle ``$(_tex(:Cal, "E"))`` and the Newton equation ``Q_{F(x)}∘ F'(x) δ x + F(x) = 0_{p(F(x))}``.
+The Newton equation should be implemented as a functor that computes a representation of the Newton matrix and the right hand side. It needs to have a field ``A`` to store a representation of the Newton matrix ``Q_{F(x)}∘ F'(x) `` and a field ``b`` to store a representation of the right hand side ``F(x)``.
 """
 struct VectorBundleManoptProblem{
         M <: AbstractManifold, TV <: AbstractManifold, O,
@@ -205,7 +202,7 @@ struct VectorBundleManoptProblem{
     newton_equation::O
 end
 
-raw"""
+@doc """
     get_vectorbundle(vbp::VectorBundleManoptProblem)
 
     returns the range vector bundle stored within a [`VectorBundleManoptProblem`](@ref)
@@ -228,30 +225,36 @@ function get_newton_equation(vbp::VectorBundleManoptProblem)
     return vbp.newton_equation
 end
 
-doc_vector_bundle_newton = raw"""
+doc_vector_bundle_newton = """
     vectorbundle_newton(M, E, NE, p; kwargs...)
     vectorbundle_newton!(M, E, NE, p; kwargs...)
 
-Perform Newton's method for finding a zero of a mapping ``F:\mathcal M → \mathcal E`` where ``\mathcal M`` is a manifold and ``\mathcal E`` is a vector bundle.
+Perform Newton's method for finding a zero of a mapping ``F:$(_math(:M)) → $(_tex(:Cal, "E"))`` where ``$(_math(:M))`` is a manifold and ``$(_tex(:Cal, "E"))`` is a vector bundle.
 In each iteration the Newton equation
-`` Q_{F(p)} ∘ F'(p) X + F(p) = 0``
-is solved to compute a Newton direction ``X``. The next iterate is then computed by applying a retraction.
+
+```math
+Q_{F(p)} ∘ F'(p) X + F(p) = 0
+```
+
+is solved to compute a Newton direction ``X``.
+The next iterate is then computed by applying a retraction.
 
 # Arguments
 
-* `M`: domain manifold
+$(_var(:Argument, :M; type = true))
 * `E`: range vector bundle
-* `p`: starting point
-* `NE`: functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}\circ F'(p)`` (covariant derivative of ``F`` at ``p``) and the right hand side ``F(p)`` at a point ``p\in\mathcal M``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
+$(_var(:Argument, :p))
+* `NE`: functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}∘ F'(p)`` (covariant derivative of ``F`` at ``p``) and the right hand side ``F(p)`` at a point ``p ∈ $(_math(:M))``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
 
 # Keyword arguments
 
-* `sub_problem`: method (closed form solution) that gets the [`VectorBundleManoptProblem`](@ref) and the [`VectorBundleNewtonState`](@ref) and returns the solution of the Newton equation, i.e. the Newton direction `X`
-* `sub_state`=AllocatingEvaluation(): sub_state to sub_problem, in most cases either AllocatingEvaluation() or InplaceEvaluation()
-* `X=`zero_vector(M, p)
 * `retraction_method=`default_retraction_method`(M, typeof(p)),
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)``,
-* `stepsize=`1.0
+$(_var(:Keyword, :sub_state; default = "([`AllocatingEvaluation`](@ref)"))
+$(_var(:Keyword, :sub_problem; default = "nothing")), i.e. you have to provide a method for solving the Newton equation.
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, VectorBundleNewtonState)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
+$(_var(:Keyword, :X; add = :as_Memory))
 """
 
 @doc "$(doc_vector_bundle_newton)"

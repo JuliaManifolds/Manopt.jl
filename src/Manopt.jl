@@ -407,7 +407,6 @@ export equality_constraints_length,
     get_hess_equality_constraint!,
     inequality_constraints_length,
     is_feasible
-export get_vectorbundle
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export KKTVectorField, KKTVectorFieldJacobian, KKTVectorFieldAdjointJacobian
