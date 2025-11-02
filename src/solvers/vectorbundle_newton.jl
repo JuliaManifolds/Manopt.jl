@@ -5,15 +5,14 @@ Is state for the vector bundle Newton method
 
 # Fields
 
-* `p`: current iterate
-* `p_trial`: next iterate needed for simplified Newton (not needed if affine covariant damping is not used to compute stepsizes)
+$(_var(:Field, :p; add = "as current point"))
+$(_var(:Field, :p, "p_trial"; add = "next iterate needed for simplified Newton"))
 $(_var(:Field, :X; add = "as current Newton direction"))
 $(_var(:Field, :sub_problem))
 $(_var(:Field, :sub_state))
 $(_var(:Field, :stopping_criterion, "stop"))
 $(_var(:Field, :stepsize))
-* `stepsize`: damping factor for the Newton direction
-* `retraction_method`:  the retraction to use in the Newton update
+$(_var(:Field, :retraction_method))
 
 # Constructor
 
@@ -72,16 +71,12 @@ by a predictor-corrector-loop using an affine covariant quantity ``θ`` to measu
 
 # Fields
 
-`M` : manifold
-
-# Keyword arguments
-
-* `α`=1:                  stepsize (damping factor)
-* `θ`=1.3:                quantity that measures local convergence of Newton's method
-* `θ_des`=0.5:            desired theta
-* `θ_acc`=1.1*θ_des:      acceptable theta
-* `last_stepsize`=1.0:    last computed stepsize (this is an auxiliary variable used within the algorithm)
-* `outer_norm`=Inf:       if `M` is a manifold with components, this can be used to specify the norm,
+* `α`:             stepsize (damping factor)
+* `θ`:             quantity that measures local convergence of Newton's method
+* `θ_des`:         desired θ
+* `θ_acc`:         acceptable θ
+* `last_stepsize`: last computed stepsize (this is an auxiliary variable used within the algorithm)
+* `outer_norm`:    if `M` is a manifold with components, this can be used to specify the norm,
   that is used to compute the overall distance based on the element-wise distance.
 
 # Example
@@ -110,7 +105,7 @@ If the manifold does not have components, the outer norm is ignored.
 Initializes all fields, where none of them is mandatory. The length is set to ``1.0``.
 
 Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
-This should be implemented as a method of the ``newton_equation(M, VB, p, p_trial)`` as parameters and returning a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
+This should be implemented as a method of the `newton_equation(M, VB, p, p_trial)` as parameters and returning a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
 """
 mutable struct AffineCovariantStepsize{T, R <: Real, N <: Real} <: Stepsize
     α::T
@@ -205,7 +200,7 @@ end
 @doc """
     get_vectorbundle(vbp::VectorBundleManoptProblem)
 
-    returns the range vector bundle stored within a [`VectorBundleManoptProblem`](@ref)
+returns the range vector bundle stored within a [`VectorBundleManoptProblem`](@ref)
 """
 get_vectorbundle(vbp::VectorBundleManoptProblem) = vbp.vectorbundle
 
@@ -248,7 +243,6 @@ $(_var(:Argument, :p))
 
 # Keyword arguments
 
-* `retraction_method=`default_retraction_method`(M, typeof(p)),
 $(_var(:Keyword, :sub_state; default = "([`AllocatingEvaluation`](@ref)"))
 $(_var(:Keyword, :sub_problem; default = "nothing")), i.e. you have to provide a method for solving the Newton equation.
 $(_var(:Keyword, :retraction_method))
