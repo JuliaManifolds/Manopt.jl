@@ -127,7 +127,7 @@ function AffineCovariantStepsize(
         M::AbstractManifold = DefaultManifold(2);
         α = 1.0, θ = 1.3, θ_des = 0.5, θ_acc = 1.1 * θ_des,
         last_stepsize = 1.0, outer_norm::N = 2
-    ) where {N <:  Real}
+    ) where {N <: Real}
     return AffineCovariantStepsize{typeof(α), typeof(θ), N}(α, θ, θ_des, θ_acc, last_stepsize, outer_norm)
 end
 

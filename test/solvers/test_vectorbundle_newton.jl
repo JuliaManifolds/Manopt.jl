@@ -3,7 +3,7 @@ using LinearAlgebra: eigvals
 @testset "VectorbundleNewton" begin
     @testset "Vector bundle Newton runs – Rayleigh quotient minimization" begin
         N = 10
-        matrix = zeros(N,N)
+        matrix = zeros(N, N)
         for i in 1:N
             matrix[i, i] = i
         end
@@ -15,56 +15,60 @@ using LinearAlgebra: eigvals
         f_second_derivative(p) = 2.0 * matrix
 
         struct NewtonEquation{F, T, NM, Nrhs}
-	        f_prime::F
-	        f_second_prime::T
-	        A::NM
-	        b::Nrhs
+            f_prime::F
+            f_second_prime::T
+            A::NM
+            b::Nrhs
         end
 
         function NewtonEquation(M, f_pr, f_sp)
-	        A = zeros(N+1,N+1)
-	        b = zeros(N+1)
-	        return NewtonEquation{typeof(f_pr), typeof(f_sp), typeof(A), typeof(b)}(f_pr, f_sp, A, b)
+            A = zeros(N + 1, N + 1)
+            b = zeros(N + 1)
+            return NewtonEquation{typeof(f_pr), typeof(f_sp), typeof(A), typeof(b)}(f_pr, f_sp, A, b)
         end
 
         function (ne::NewtonEquation)(M, VB, p)
-            ne.A .= hcat(vcat(ne.f_second_prime(p) - ne.f_prime(p)*p*Matrix{Float64}(I, N, N), p'), vcat(p, 0))
+            ne.A .= hcat(vcat(ne.f_second_prime(p) - ne.f_prime(p) * p * Matrix{Float64}(I, N, N), p'), vcat(p, 0))
             ne.b .= vcat(ne.f_prime(p)', 0)
-	        return
+            return
         end
 
-        function solve_augmented_system(problem, newtonstate) 
-	        res = (problem.newton_equation.A) \ (-problem.newton_equation.b)
-	        return res[1:N]
+        function solve_augmented_system(problem, newtonstate)
+            res = (problem.newton_equation.A) \ (-problem.newton_equation.b)
+            return res[1:N]
         end
 
-        y0 = 1/sqrt(N)*ones(N)
-	
+        y0 = 1 / sqrt(N) * ones(N)
+
         NE = NewtonEquation(M, f_prime, f_second_derivative)
-		
-        st_res = vectorbundle_newton(M, TangentBundle(M), NE, y0; sub_problem=solve_augmented_system,
-        stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(M,1e-11)),
-        retraction_method=ProjectionRetraction(),
-        stepsize=ConstantLength(M, 1.0),
-        record=[:Iterate, :Change],
-        return_state=true)
+
+        st_res = vectorbundle_newton(
+            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
+            stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
+            retraction_method = ProjectionRetraction(),
+            stepsize = ConstantLength(M, 1.0),
+            record = [:Iterate, :Change],
+            return_state = true
+        )
 
         res = get_solver_result(st_res)
         @test isapprox(f(M, res), any(eigvals(matrix)); atol = 2.0 * 1.0e-2)
 
-        st_res2 = vectorbundle_newton(M, TangentBundle(M), NE, y0; sub_problem=solve_augmented_system,
-        stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(M,1e-11)),
-        retraction_method=ProjectionRetraction(),
-        stepsize=ConstantLength(M, 1.0),
-        record=[:Iterate, :Change],
-        return_state=true)
+        st_res2 = vectorbundle_newton(
+            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
+            stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
+            retraction_method = ProjectionRetraction(),
+            stepsize = ConstantLength(M, 1.0),
+            record = [:Iterate, :Change],
+            return_state = true
+        )
 
         @test get_solver_result(st_res2) == res
     end
 
-@testset "Affine covariant stepsize" begin
+    @testset "Affine covariant stepsize" begin
         N = 10
-        matrix = zeros(N,N)
+        matrix = zeros(N, N)
         for i in 1:N
             matrix[i, i] = i
         end
@@ -76,44 +80,46 @@ using LinearAlgebra: eigvals
         f_second_derivative(p) = 2.0 * matrix
 
         struct NewtonEquation{F, T, NM, Nrhs}
-	        f_prime::F
-	        f_second_prime::T
-	        A::NM
-	        b::Nrhs
+            f_prime::F
+            f_second_prime::T
+            A::NM
+            b::Nrhs
         end
 
         function NewtonEquation(M, f_pr, f_sp)
-	        A = zeros(N+1,N+1)
-	        b = zeros(N+1)
-	        return NewtonEquation{typeof(f_pr), typeof(f_sp), typeof(A), typeof(b)}(f_pr, f_sp, A, b)
+            A = zeros(N + 1, N + 1)
+            b = zeros(N + 1)
+            return NewtonEquation{typeof(f_pr), typeof(f_sp), typeof(A), typeof(b)}(f_pr, f_sp, A, b)
         end
 
         function (ne::NewtonEquation)(M, VB, p)
-            ne.A .= hcat(vcat(ne.f_second_prime(p) - ne.f_prime(p)*p*Matrix{Float64}(I, N, N), p'), vcat(p, 0))
+            ne.A .= hcat(vcat(ne.f_second_prime(p) - ne.f_prime(p) * p * Matrix{Float64}(I, N, N), p'), vcat(p, 0))
             ne.b .= vcat(ne.f_prime(p)', 0)
-	        return
+            return
         end
 
-        #  needed: function that returns the (transported) right hand side for the simplified Newton step 
+        #  needed: function that returns the (transported) right hand side for the simplified Newton step
         function (ne::NewtonEquation)(M, VB, p, p_trial)
-            return vcat(vector_transport_to(M, p, ne.f_prime(p_trial)', p_trial,  ProjectionTransport()), 0)
+            return vcat(vector_transport_to(M, p, ne.f_prime(p_trial)', p_trial, ProjectionTransport()), 0)
         end
 
-        function solve_augmented_system(problem, newtonstate) 
-	        res = (problem.newton_equation.A) \ (-problem.newton_equation.b)
-	        return res[1:N]
+        function solve_augmented_system(problem, newtonstate)
+            res = (problem.newton_equation.A) \ (-problem.newton_equation.b)
+            return res[1:N]
         end
 
-        y0 = 1/sqrt(N)*ones(N)
-	
+        y0 = 1 / sqrt(N) * ones(N)
+
         NE = NewtonEquation(M, f_prime, f_second_derivative)
-		
-        st_res = vectorbundle_newton(M, TangentBundle(M), NE, y0; sub_problem=solve_augmented_system, sub_state=AllocatingEvaluation(),
-        stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(M,1e-11)),
-        retraction_method=ProjectionRetraction(),
-        stepsize=AffineCovariantStepsize(M, θ_des = 0.1),
-        record=[:Iterate, :Change],
-        return_state=true)
+
+        st_res = vectorbundle_newton(
+            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system, sub_state = AllocatingEvaluation(),
+            stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
+            retraction_method = ProjectionRetraction(),
+            stepsize = AffineCovariantStepsize(M, θ_des = 0.1),
+            record = [:Iterate, :Change],
+            return_state = true
+        )
 
         res = get_solver_result(st_res)
         @test isapprox(f(M, res), any(eigvals(matrix)); atol = 2.0 * 1.0e-2)
