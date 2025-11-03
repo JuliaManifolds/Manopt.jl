@@ -38,34 +38,34 @@ using LinearAlgebra: eigvals
         end
 
         function solve_augmented_system(problem, newtonstate)
-            local res = (problem.newton_equation.A) \ (-problem.newton_equation.b) # hier ist local scheinbar wichtig
-            return res[1:N]
+            return ((problem.newton_equation.A) \ (-problem.newton_equation.b))[1:(end - 1)]
         end
-
         y0 = zeros(N)
         y0[2] = 1.0
-	    y0[3] = 1.0
-	    y0[5] = 1.0
-	    y0 = 1/norm(y0)*y0
+        y0[3] = 1.0
+        y0[5] = 1.0
+        y0 = 1 / norm(y0) * y0
 
         NE = NewtonEquation(M, f_prime, f_second_derivative)
 
-        res = Manopt.vectorbundle_newton(M, TangentBundle(M), NE, y0; sub_problem=solve_augmented_system,
-	    stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(M,1e-11)),
-	    retraction_method=ProjectionRetraction(),
-	    stepsize=ConstantLength(M, 1.0),
-        return_state = true,
+        y1 = Manopt.vectorbundle_newton(
+            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
+            stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
+            retraction_method = ProjectionRetraction(),
+            stepsize = ConstantLength(M, 1.0),
         )
 
-        @test any(isapprox(f(M, get_solver_result(res)), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
-        
-        Manopt.vectorbundle_newton!(M, TangentBundle(M), NE, y0; sub_problem=solve_augmented_system,
-	    stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(M,1e-11)),
-	    retraction_method=ProjectionRetraction(),
-	    stepsize=ConstantLength(M, 1.0),
-        )
 
-        @test y0 == get_solver_result(res)
+        @test any(isapprox(f(M, y1), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
+
+        y2 = copy(M, y0) # avoid working inplace of y0
+        Manopt.vectorbundle_newton!(
+            M, TangentBundle(M), NE, y2; sub_problem = solve_augmented_system,
+            stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
+            retraction_method = ProjectionRetraction(),
+            stepsize = ConstantLength(M, 1.0),
+        )
+        @test y1 == y2
     end
 
     @testset "Affine covariant stepsize" begin
@@ -106,28 +106,23 @@ using LinearAlgebra: eigvals
         end
 
         function solve_augmented_system(problem, newtonstate)
-            res = (problem.newton_equation.A) \ (-problem.newton_equation.b)
-            return res[1:N]
+            return ((problem.newton_equation.A) \ (-problem.newton_equation.b))[1:N]
         end
 
         y0 = zeros(N)
         y0[2] = 1.0
-	    y0[3] = 1.0
-	    y0[5] = 1.0
-	    y0 = 1/norm(y0)*y0
+        y0[3] = 1.0
+        y0[5] = 1.0
+        y0 = 1 / norm(y0) * y0
 
         NE = NewtonEquation(M, f_prime, f_second_derivative)
 
-        st_res = Manopt.vectorbundle_newton(
+        y1 = Manopt.vectorbundle_newton(
             M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
             stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
             retraction_method = ProjectionRetraction(),
             stepsize = Manopt.AffineCovariantStepsize(M, θ_des = 0.1),
-            record = [:Iterate, :Change],
-            return_state = true
         )
-
-        res = get_solver_result(st_res)
-       @test any(isapprox(f(M, res), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
+        @test any(isapprox(f(M, y1), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
     end
 end
