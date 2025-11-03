@@ -38,8 +38,8 @@ using LinearAlgebra: eigvals
         end
 
         function solve_augmented_system(problem, newtonstate)
-            X = (problem.newton_equation.A) \ (-problem.newton_equation.b)
-            return X[1:N]
+            local res = (problem.newton_equation.A) \ (-problem.newton_equation.b) # hier ist local scheinbar wichtig
+            return res[1:N]
         end
 
         y0 = zeros(N)
