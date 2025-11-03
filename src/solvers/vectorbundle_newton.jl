@@ -76,7 +76,7 @@ by a predictor-corrector-loop using an affine covariant quantity ``θ`` to measu
 * `θ_des`:         desired θ
 * `θ_acc`:         acceptable θ
 * `last_stepsize`: last computed stepsize (this is an auxiliary variable used within the algorithm)
-* `outer_norm`:    if `M` is a manifold with components, this can be used to specify the norm,
+* `outer_norm`:    if `M` is a manifold with components, this is used to specify the norm,
   that is used to compute the overall distance based on the element-wise distance.
 
 # Example
@@ -99,7 +99,7 @@ If the manifold does not have components, the outer norm is ignored.
 
     AffineCovariantStepsize(
         M::AbstractManifold=DefaultManifold(2);
-        α=1.0, θ=1.3, θ_des=0.5, θ_acc=1.1*θ_des, outer_norm::Real=Inf
+        α=1.0, θ=1.3, θ_des=0.5, θ_acc=1.1*θ_des, outer_norm::Real=missing
     )
 
 Initializes all fields, where none of them is mandatory. The length is set to ``1.0``.
@@ -107,7 +107,7 @@ Initializes all fields, where none of them is mandatory. The length is set to ``
 Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
 This should be implemented as a method of the `newton_equation(M, VB, p, p_trial)` as parameters and returning a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
 """
-mutable struct AffineCovariantStepsize{T, R <: Real, N <: Real} <: Stepsize
+mutable struct AffineCovariantStepsize{T, R <: Real, N <: Union{Real, Missing}} <: Stepsize
     α::T
     θ::R
     θ_des::R
@@ -117,8 +117,8 @@ mutable struct AffineCovariantStepsize{T, R <: Real, N <: Real} <: Stepsize
 end
 function AffineCovariantStepsize(
         M::AbstractManifold = DefaultManifold(2);
-        α = 1.0, θ = 1.3, θ_des = 0.5, θ_acc = 1.1 * θ_des, outer_norm::N = 2
-    ) where {N <: Real}
+        α = 1.0, θ = 1.3, θ_des = 0.5, θ_acc = 1.1 * θ_des, outer_norm::N = missing
+    ) where {N <: Union{Real, Missing}}
     return AffineCovariantStepsize{typeof(α), typeof(θ), N}(α, θ, θ_des, θ_acc, 1.0, outer_norm)
 end
 
@@ -139,11 +139,13 @@ function (acs::AffineCovariantStepsize)(
         amp.newton_equation.b .= rhs_simplified
 
         simplified_newton = ams.sub_problem(amp, ams)
-        if has_components(M)
+
+        if has_components(M) && !ismissing(acs.outer_norm)
             θ_new = norm(amp.manifold, ams.p, simplified_newton, acs.outer_norm) / norm(amp.manifold, ams.p, ams.X, acs.outer_norm)
         else
             θ_new = norm(simplified_newton) / norm(ams.X)
         end
+
         α_new = min(1.0, ((α_new * acs.θ_des) / θ_new))
         if α_new < 1.0e-15
             println("Newton's method failed")
