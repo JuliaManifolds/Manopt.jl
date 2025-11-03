@@ -65,7 +65,7 @@ before calling the cost function stored in the [`EmbeddedManifoldObjective`](@re
 """
 function get_cost(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     q = local_embed!(M, emo, p)
-    return get_cost(get_embedding(M), emo.objective, q)
+    return get_cost(get_embedding(M, typeof(p)), emo.objective, q)
 end
 
 function get_cost_function(emo::EmbeddedManifoldObjective, recursive = false)
@@ -86,27 +86,27 @@ function get_gradient(
         M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p
     ) where {P}
     q = local_embed!(M, emo, p)
-    return riemannian_gradient(M, p, get_gradient(get_embedding(M), emo.objective, q))
+    return riemannian_gradient(M, p, get_gradient(get_embedding(M, typeof(p)), emo.objective, q))
 end
 function get_gradient(
         M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_gradient!(get_embedding(M), emo.X, emo.objective, q)
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q)
     return riemannian_gradient(M, p, emo.X)
 end
 function get_gradient!(
         M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P, Missing}, p
     ) where {P}
     q = local_embed!(M, emo, p)
-    riemannian_gradient!(M, X, p, get_gradient(get_embedding(M), emo.objective, q))
+    riemannian_gradient!(M, X, p, get_gradient(get_embedding(M, typeof(p)), emo.objective, q))
     return X
 end
 function get_gradient!(
         M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P, T}, p
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_gradient!(get_embedding(M), emo.X, emo.objective, q)
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q)
     riemannian_gradient!(M, X, p, emo.X)
     return X
 end
@@ -143,8 +143,8 @@ function get_hessian(
     return riemannian_Hessian(
         M,
         p,
-        get_gradient(get_embedding(M), emo.objective, q),
-        get_hessian(get_embedding(M), emo.objective, q, embed(M, p, X)),
+        get_gradient(get_embedding(M, typeof(p)), emo.objective, q),
+        get_hessian(get_embedding(M, typeof(p)), emo.objective, q, embed(M, p, X)),
         X,
     )
 end
@@ -152,9 +152,9 @@ function get_hessian(
         M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, X
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_gradient!(get_embedding(M), emo.X, emo.objective, embed(M, p))
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, embed(M, p))
     return riemannian_Hessian(
-        M, p, emo.X, get_hessian(get_embedding(M), emo.objective, q, embed(M, p, X)), X
+        M, p, emo.X, get_hessian(get_embedding(M, typeof(p)), emo.objective, q, embed(M, p, X)), X
     )
 end
 function get_hessian!(
@@ -165,8 +165,8 @@ function get_hessian!(
         M,
         Y,
         p,
-        get_gradient(get_embedding(M), emo.objective, q),
-        get_hessian(get_embedding(M), emo.objective, q, embed(M, p, X)),
+        get_gradient(get_embedding(M, typeof(p)), emo.objective, q),
+        get_hessian(get_embedding(M, typeof(p)), emo.objective, q, embed(M, p, X)),
         X,
     )
     return Y
@@ -175,9 +175,9 @@ function get_hessian!(
         M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, X
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_gradient!(get_embedding(M), emo.X, emo.objective, embed(M, p))
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, embed(M, p))
     riemannian_Hessian!(
-        M, Y, p, emo.X, get_hessian(get_embedding(M), emo.objective, q, embed(M, p, X)), X
+        M, Y, p, emo.X, get_hessian(get_embedding(M, typeof(p)), emo.objective, q, embed(M, p, X)), X
     )
     return Y
 end
@@ -243,28 +243,28 @@ function get_grad_equality_constraint(
         M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j::Integer
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_equality_constraint(get_embedding(M), emo.objective, q, j)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     return riemannian_gradient(M, p, Z)
 end
 function get_grad_equality_constraint(
         M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_equality_constraint(get_embedding(M), emo.objective, q, j)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     return [riemannian_gradient(M, p, X) for X in Z]
 end
 function get_grad_equality_constraint(
         M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j::Integer
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_grad_equality_constraint!(get_embedding(M), emo.X, emo.objective, q, j)
+    get_grad_equality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, j)
     return riemannian_gradient(M, p, emo.X)
 end
 function get_grad_equality_constraint(
         M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    Xs = get_grad_equality_constraint(get_embedding(M), emo.objective, q, j)
+    Xs = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     Ys = [riemannian_gradient(M, p, X) for X in Xs]
     return Ys
 end
@@ -272,7 +272,7 @@ function get_grad_equality_constraint!(
         M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j::Integer
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_equality_constraint(get_embedding(M), emo.objective, q, j)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     riemannian_gradient!(M, Y, p, Z)
     return Y
 end
@@ -280,7 +280,7 @@ function get_grad_equality_constraint!(
         M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_equality_constraint(get_embedding(M), emo.objective, q, j)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     Y .= [riemannian_gradient(M, p, X) for X in Z]
     return Y
 end
@@ -288,7 +288,7 @@ function get_grad_equality_constraint!(
         M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j::Integer
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_grad_equality_constraint!(get_embedding(M), emo.X, emo.objective, q, j)
+    get_grad_equality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, j)
     riemannian_gradient!(M, Y, p, emo.X)
     return Y
 end
@@ -296,7 +296,7 @@ function get_grad_equality_constraint!(
         M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    Z = get_grad_equality_constraint(get_embedding(M), emo.objective, q, j)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     Y .= [riemannian_gradient(M, p, X) for X in Z]
     return Y
 end
@@ -315,35 +315,35 @@ function get_grad_inequality_constraint(
         M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, i::Integer
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M), emo.objective, q, i)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, i)
     return riemannian_gradient(M, p, Z)
 end
 function get_grad_inequality_constraint(
         M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M), emo.objective, q, j)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     return [riemannian_gradient(M, p, X) for X in Z]
 end
 function get_grad_inequality_constraint(
         M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, i::Integer
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_grad_inequality_constraint!(get_embedding(M), emo.X, emo.objective, q, i)
+    get_grad_inequality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, i)
     return riemannian_gradient(M, p, emo.X)
 end
 function get_grad_inequality_constraint(
         M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M), emo.objective, q, j)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     return [riemannian_gradient(M, p, X) for X in Z]
 end
 function get_grad_inequality_constraint!(
         M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, i::Integer
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M), emo.objective, q, i)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, i)
     riemannian_gradient!(M, Y, p, Z)
     return Y
 end
@@ -351,7 +351,7 @@ function get_grad_inequality_constraint!(
         M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M), emo.objective, q, j)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     Y .= [riemannian_gradient(M, p, X) for X in Z]
     return Y
 end
@@ -359,7 +359,7 @@ function get_grad_inequality_constraint!(
         M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, i::Integer
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_grad_inequality_constraint!(get_embedding(M), emo.X, emo.objective, q, i)
+    get_grad_inequality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, i)
     riemannian_gradient!(M, Y, p, emo.X)
     return Y
 end
@@ -367,7 +367,7 @@ function get_grad_inequality_constraint!(
         M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M), emo.objective, q, j)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     Y .= [riemannian_gradient(M, p, X) for X in Z]
     return Y
 end
