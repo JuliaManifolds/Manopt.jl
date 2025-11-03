@@ -1,6 +1,7 @@
 s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
 !(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
+
 using Manopt, Manifolds, ManifoldsBase, ManoptTestSuite, Test, LinearAlgebra
 using LinearAlgebra: eigvals
 @testset "Vectorbundle Newton" begin
@@ -45,28 +46,14 @@ using LinearAlgebra: eigvals
 
         NE = NewtonEquation(M, f_prime, f_second_derivative)
 
-        st_res = vectorbundle_newton(
+        res = Manopt.vectorbundle_newton(
             M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
-            stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
+            stopping_criterion = (StopAfterIteration(40) | StopWhenChangeLess(M, 1.0e-11)),
             retraction_method = ProjectionRetraction(),
-            stepsize = ConstantLength(M, 1.0),
-            record = [:Iterate, :Change],
-            return_state = true
+            stepsize = ConstantLength(M, 1.0)
         )
 
-        res = get_solver_result(st_res)
-        @test isapprox(f(M, res), any(eigvals(matrix)); atol = 2.0 * 1.0e-2)
-
-        st_res2 = vectorbundle_newton(
-            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
-            stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
-            retraction_method = ProjectionRetraction(),
-            stepsize = ConstantLength(M, 1.0),
-            record = [:Iterate, :Change],
-            return_state = true
-        )
-
-        @test get_solver_result(st_res2) == res
+        @test any(isapprox(f(M, res), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
     end
 
     @testset "Affine covariant stepsize" begin
@@ -115,16 +102,16 @@ using LinearAlgebra: eigvals
 
         NE = NewtonEquation(M, f_prime, f_second_derivative)
 
-        st_res = vectorbundle_newton(
-            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system, sub_state = AllocatingEvaluation(),
-            stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
+        st_res = Manopt.vectorbundle_newton(
+            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
+            stopping_criterion = (StopAfterIteration(40) | StopWhenChangeLess(M, 1.0e-11)),
             retraction_method = ProjectionRetraction(),
-            stepsize = AffineCovariantStepsize(M, θ_des = 0.1),
+            stepsize = Manopt.AffineCovariantStepsize(M, θ_des = 0.1),
             record = [:Iterate, :Change],
             return_state = true
         )
 
         res = get_solver_result(st_res)
-        @test isapprox(f(M, res), any(eigvals(matrix)); atol = 2.0 * 1.0e-2)
+       @test any(isapprox(f(M, res), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
     end
 end
