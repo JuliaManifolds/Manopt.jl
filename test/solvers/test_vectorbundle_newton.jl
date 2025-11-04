@@ -148,5 +148,9 @@ using LinearAlgebra: eigvals
         # we stopped since the change was small enough
         @test occursin("* |Δp| < 1.0e-11: reached", st_str)
         @test occursin("AffineCovariantStepsize", st_str)
+        acs = st.stepsize
+        @test get_initial_stepsize(acs) == acs.α
+        @test get_last_stepsize(acs) > 0.0
+        @test default_stepsize(M, VectorBundleNewtonState) isa Manopt.ConstantStepsize
     end
 end

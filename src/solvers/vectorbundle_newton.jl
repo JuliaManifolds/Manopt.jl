@@ -157,10 +157,7 @@ function get_last_stepsize(step::AffineCovariantStepsize, ::Any...)
     return step.last_stepsize
 end
 
-function default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState})
-    #return AffineCovariantStepsize(M)
-    return _produce_type(ConstantLength(1.0), M)
-end
+default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = ConstantStepsize(M)
 
 function show(io::IO, vbns::VectorBundleNewtonState)
     i = get_count(vbns, :Iterations)
