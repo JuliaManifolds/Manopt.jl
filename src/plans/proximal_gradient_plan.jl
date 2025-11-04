@@ -725,18 +725,14 @@ function show(io::IO, c::StopWhenGradientMappingNormLess)
         io, "StopWhenGradientMappingNormLess($(c.threshold))\n    $(status_summary(c))"
     )
 end
-
+# If we are running on a prox grad backtrack, ignore the threshold from the DEbug and take the one from the stepsize
 function (d::DebugWarnIfStepsizeCollapsed)(
-        ::AbstractManoptProblem, st::ProximalGradientMethodState, k::Int
-    )
+        ::AbstractManoptProblem,
+        st::ProximalGradientMethodState{P, T, Pr, St, A, S, TStS},
+        k::Int,
+    ) where {P, T, Pr, St, A, S, TStS <: ProximalGradientMethodBacktrackingStepsize}
     (k < 1) && (return nothing)
     s = st.stepsize
-    (!isa(s, Manopt.ProximalGradientMethodBacktrackingStepsize)) && throw(
-        DomainError(
-            s,
-            "DebugWarnIfStepsizeCollapsed only works with `ProximalGradientMethodBacktrackingStepsize` stepsizes.",
-        ),
-    )
     if d.status !== :No
         if s.last_stepsize ≤ s.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(s.stop_when_stepsize_less)."

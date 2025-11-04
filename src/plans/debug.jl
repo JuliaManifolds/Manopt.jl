@@ -1181,7 +1181,7 @@ end
     DebugWarnIfStepsizeCollapsed <: DebugAction
 
 print a warning if the backtracking stopped because the stepsize fell below a given threshold.
-This threshold is specified by the `stop_when_stepsize_less` field. 
+This threshold is specified by the `stop_when_stepsize_less` field.
 
 # Constructor
 

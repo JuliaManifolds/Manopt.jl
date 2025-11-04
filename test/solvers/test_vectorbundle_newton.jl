@@ -83,6 +83,10 @@ using LinearAlgebra: eigvals
             alg_kwargs...
         )
         @test y1 == y4
+
+        # test access on the VB Problem
+        vbp = VectorBundleManoptProblem(M, TangentBundle(M), NE)
+        @test Manopt.get_newton_equation(vbp) === NE
     end
 
     @testset "Affine covariant stepsize" begin
