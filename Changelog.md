@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.26] unreleased
 
+### Fixed
+
+* fixes a few inconsistencies regarding `get_embedding`, which now consistently uses a point type as positional second argument.
+
 ### Changed
 
 * fixed a few typos in the documentation strings of a few solvers.
