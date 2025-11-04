@@ -1205,18 +1205,12 @@ function show(io::IO, di::DebugWarnIfStepsizeCollapsed)
     return print(io, "DebugWarnIfStepsizeCollapsed($(di.stop_when_stepsize_less), :$(di.status))")
 end
 function (d::DebugWarnIfStepsizeCollapsed)(
-        ::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
+        amp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
     (k < 1) && (return nothing)
     s = st.stepsize
-    (:last_stepsize ∉ fieldnames(typeof(s))) && throw(
-        DomainError(
-            s,
-            "DebugWarnIfStepsizeCollapsed only works with stepsize structs that contain a `last_stepsize` field.",
-        ),
-    )
     if d.status !== :No
-        if s.last_stepsize ≤ d.stop_when_stepsize_less
+        if get_last_stepsize(amp, st, k) ≤ d.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(d.stop_when_stepsize_less)."
             if d.status === :Once
                 @warn "Further warnings will be suppressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."

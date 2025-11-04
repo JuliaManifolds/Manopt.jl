@@ -453,6 +453,7 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
 end
 
 get_initial_stepsize(s::ProximalGradientMethodBacktrackingStepsize) = s.initial_stepsize
+get_last_stepsize(s::ProximalGradientMethodBacktrackingStepsize) = s.last_stepsize
 
 function Base.show(io::IO, pgb::ProximalGradientMethodBacktrackingStepsize)
     s = """

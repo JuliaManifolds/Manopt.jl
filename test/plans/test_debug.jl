@@ -290,16 +290,9 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         w7 = DebugWarnIfFieldNotFinite(:Iterate, :Always)
         @test_logs (:warn,) w7(mp, st, 1)
 
-        st2 = GradientDescentState(
-          M;
-          p = p,
-          stopping_criterion = StopAfterIteration(20),
-          stepsize = Manopt.WolfePowellLinesearchStepsize(M),
-        )
         w8 = DebugWarnIfStepsizeCollapsed(1.0, :Once)
         @test repr(w8) == "DebugWarnIfStepsizeCollapsed(1.0, :Once)"
-        @test_throws DomainError w8(mp2, st, 1)
-        @test_logs (:warn,) (:warn,) w8(mp2, st2, 1)
+        @test_logs (:warn,) (:warn,) w8(mp2, st, 1)
 
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:Iteration], DebugWarnIfCostNotFinite)
