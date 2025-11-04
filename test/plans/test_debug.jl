@@ -291,10 +291,10 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test_logs (:warn,) w7(mp, st, 1)
 
         st2 = GradientDescentState(
-          M;
-          p = p,
-          stopping_criterion = StopAfterIteration(20),
-          stepsize = Manopt.WolfePowellLinesearchStepsize(M),
+            M;
+            p = p,
+            stopping_criterion = StopAfterIteration(20),
+            stepsize = Manopt.WolfePowellLinesearchStepsize(M),
         )
         w8 = DebugWarnIfStepsizeCollapsed(1.0, :Once)
         @test repr(w8) == "DebugWarnIfStepsizeCollapsed(1.0, :Once)"

@@ -1197,8 +1197,8 @@ All other symbols are handled as if they were `:Always`
 mutable struct DebugWarnIfStepsizeCollapsed{T} <: DebugAction
     status::Symbol
     stop_when_stepsize_less::T
-    function DebugWarnIfStepsizeCollapsed(tol::T=1e-8, warn::Symbol = :Once) where {T}
-      return new{T}(warn, tol)
+    function DebugWarnIfStepsizeCollapsed(tol::T = 1.0e-8, warn::Symbol = :Once) where {T}
+        return new{T}(warn, tol)
     end
 end
 function show(io::IO, di::DebugWarnIfStepsizeCollapsed)
