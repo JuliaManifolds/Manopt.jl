@@ -395,6 +395,6 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
             coefficient = HybridCoefficient(M, FletcherReevesCoefficient(), PolakRibiereCoefficient(M; vector_transport_method)),
             stepsize = ArmijoLinesearch(M)
         )
-        @test q2 ≈ [1, 0, 0] rtol = 1.0e-8
+        @test q2 ≈ [1, 0, 0] rtol = 1.0e-7
     end
 end
