@@ -98,27 +98,27 @@ using LinearAlgebra: eigvals
         f_prime(p) = (2.0 * matrix * p)'
         f_second_derivative(p) = 2.0 * matrix
 
-        struct NewtonEquation{F, T, NM, Nrhs}
+        struct NewtonEquation2{F, T, NM, Nrhs}
             f_prime::F
             f_second_prime::T
             A::NM
             b::Nrhs
         end
 
-        function NewtonEquation(M, f_pr, f_sp)
+        function NewtonEquation2(M, f_pr, f_sp)
             A = zeros(N + 1, N + 1)
             b = zeros(N + 1)
-            return NewtonEquation{typeof(f_pr), typeof(f_sp), typeof(A), typeof(b)}(f_pr, f_sp, A, b)
+            return NewtonEquation2{typeof(f_pr), typeof(f_sp), typeof(A), typeof(b)}(f_pr, f_sp, A, b)
         end
 
-        function (ne::NewtonEquation)(M, VB, p)
+        function (ne::NewtonEquation2)(M, VB, p)
             ne.A .= hcat(vcat(ne.f_second_prime(p) - ne.f_prime(p) * p * Matrix{Float64}(I, N, N), p'), vcat(p, 0))
             ne.b .= vcat(ne.f_prime(p)', 0)
             return p
         end
 
         #  needed: function that returns the (transported) right hand side for the simplified Newton step
-        function (ne::NewtonEquation)(M, VB, p, p_trial)
+        function (ne::NewtonEquation2)(M, VB, p, p_trial)
             return vcat(vector_transport_to(M, p, ne.f_prime(p_trial)', p_trial, ProjectionTransport()), 0)
         end
 
@@ -132,7 +132,7 @@ using LinearAlgebra: eigvals
         y0[5] = 1.0
         y0 = 1 / norm(y0) * y0
 
-        NE = NewtonEquation(M, f_prime, f_second_derivative)
+        NE = NewtonEquation2(M, f_prime, f_second_derivative)
 
         st = Manopt.vectorbundle_newton(
             M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
