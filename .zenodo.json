@@ -61,10 +61,6 @@
             "type": "Other"
         },
         {
-            "name": "Weiß, Manuel",
-            "type": "ProjectMember"
-        },
-        {
             "affiliation": "NTNU Trondheim",
             "name": "Stokkenes, Markus A.",
             "type": "ProjectMember"
@@ -73,6 +69,15 @@
             "name": "Daniel VandenHeuvel",
             "orcid": "0000-0001-6462-0135",
             "type": "other"
+        },
+        {
+            "affiliation": "University of Bayreuth",
+            "name": "Weigl, Laura",
+            "type": "ProjectMember"
+        },
+        {
+            "name": "Weiß, Manuel",
+            "type": "ProjectMember"
         }
     ],
     "creators": [
