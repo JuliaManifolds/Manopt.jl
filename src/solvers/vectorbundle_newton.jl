@@ -126,11 +126,10 @@ end
 function (acs::AffineCovariantStepsize)(
         amp::AbstractManoptProblem, ams::VectorBundleNewtonState, ::Any, args...; kwargs...
     )
-    α_new = copy(acs.α)
-    θ_new = copy(acs.θ)
+    α_new = acs.α
+    θ_new = acs.θ
     b = copy(amp.newton_equation.b)
     while θ_new > acs.θ_acc && α_new > 1.0e-10
-        acs.last_stepsize = copy(α_new)
         Xα = α_new * ams.X
         M = get_manifold(amp)
         retract!(M, ams.p_trial, ams.p, Xα, ams.retraction_method)
@@ -141,19 +140,15 @@ function (acs::AffineCovariantStepsize)(
 
         simplified_newton = ams.sub_problem(amp, ams)
 
-        if has_components(M) && !ismissing(acs.outer_norm)
-            θ_new = norm(amp.manifold, ams.p, simplified_newton, acs.outer_norm) / norm(amp.manifold, ams.p, ams.X, acs.outer_norm)
-        else
-            θ_new = norm(amp.manifold, ams.p, simplified_newton) / norm(amp.manifold, ams.p, ams.X)
-        end
+        add_arg = (has_components(M) && !ismissing(acs.outer_norm)) ? (outer_norm = acs.outer_norm,) : ()
+        nom = norm(amp.manifold, ams.p, simplified_newton, add_arg...)
+        denom = norm(amp.manifold, ams.p, ams.X, add_arg...)
+        θ_new = nom / denom
 
         α_new = min(1.0, ((α_new * acs.θ_des) / θ_new))
-        if α_new < 1.0e-15
-            println("Newton's method failed")
-            return
-        end
     end
     amp.newton_equation.b .= b
+    acs.last_stepsize = α_new
     return acs.last_stepsize
 end
 get_initial_stepsize(s::AffineCovariantStepsize) = s.α
