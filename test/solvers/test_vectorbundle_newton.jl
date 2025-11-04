@@ -123,7 +123,7 @@ using LinearAlgebra: eigvals
         end
 
         function solve_augmented_system(problem, newtonstate)
-            return ((problem.newton_equation.A) \ (-problem.newton_equation.b))[1:end-1]
+            return ((problem.newton_equation.A) \ (-problem.newton_equation.b))[1:(end - 1)]
         end
 
         y0 = zeros(N)
