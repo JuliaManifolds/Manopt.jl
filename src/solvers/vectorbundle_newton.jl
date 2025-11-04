@@ -144,7 +144,7 @@ function (acs::AffineCovariantStepsize)(
         if has_components(M) && !ismissing(acs.outer_norm)
             θ_new = norm(amp.manifold, ams.p, simplified_newton, acs.outer_norm) / norm(amp.manifold, ams.p, ams.X, acs.outer_norm)
         else
-            θ_new = norm(simplified_newton) / norm(ams.X)
+            θ_new = norm(amp.manifold, ams.p, simplified_newton) / norm(amp.manifold, ams.p, ams.X)
         end
 
         α_new = min(1.0, ((α_new * acs.θ_des) / θ_new))
