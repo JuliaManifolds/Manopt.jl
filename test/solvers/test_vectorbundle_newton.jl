@@ -41,8 +41,6 @@ using LinearAlgebra: eigvals
             return ((problem.newton_equation.A) \ (-problem.newton_equation.b))[1:(end - 1)]
         end
         function solve_augmented_system!(problem, X, newtonstate)
-            @info X
-            @info ((problem.newton_equation.A) \ (-problem.newton_equation.b))[1:(end - 1)]
             X .= ((problem.newton_equation.A) \ (-problem.newton_equation.b))[1:(end - 1)]
             return X
         end
@@ -70,7 +68,7 @@ using LinearAlgebra: eigvals
             sub_problem = solve_augmented_system!, sub_state = InplaceEvaluation(),
             alg_kwargs...
         )
-                @test y1 == y2
+        @test y1 == y2
 
 
         y3 = copy(M, y0) # avoid working inplace of y0
@@ -149,7 +147,6 @@ using LinearAlgebra: eigvals
         @test occursin("Vector bundle Newton method", st_str)
         # we stopped since the change was small enough
         @test occursin("* |Δp| < 1.0e-11: reached", st_str)
-        @test !occursin("AffineCovariantStepsize", st_str)
-        println(st.stepsize)
+        @test occursin("AffineCovariantStepsize", st_str)
     end
 end
