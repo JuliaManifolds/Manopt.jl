@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.26] unreleased
 
+### Added
+
+* a `vectorbundle_newton` solver to find zeros of equations defined on vector bundles.
+
 ### Changed
 
 * fixed a few typos in the documentation strings of a few solvers.

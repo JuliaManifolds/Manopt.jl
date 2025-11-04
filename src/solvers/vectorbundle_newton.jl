@@ -8,8 +8,9 @@ Is state for the vector bundle Newton method
 $(_var(:Field, :p; add = "as current point"))
 $(_var(:Field, :p, "p_trial"; add = "next iterate needed for simplified Newton"))
 $(_var(:Field, :X; add = "as current Newton direction"))
-$(_var(:Field, :sub_problem))
-$(_var(:Field, :sub_state))
+$(_var(:Field, :sub_problem)) currently only the closed form solution is implemented, that is, this is a functor that maps
+  either `(problem::`[`VectorBundleManoptProblem`](@ref)`, state::VectorBundleNewtonState) -> X` or `(problem, X, state) -> X` to compute the Newton direction.
+$(_var(:Field, :sub_state)) specify how the sub_problem is evaluated, e.g. [`AllocatingEvaluation`](@ref) or [`InplaceEvaluation`](@ref)
 $(_var(:Field, :stopping_criterion, "stop"))
 $(_var(:Field, :stepsize))
 $(_var(:Field, :retraction_method))
@@ -23,7 +24,7 @@ $(_var(:Field, :retraction_method))
 $(_var(:Argument, :M; type = true))
 * `E`: range vector bundle
 $(_var(:Argument, :p))
-$(_var(:Argument, :sub_state)) that returns the solution of the Newton equation, i.e. the Newton direction
+$(_var(:Argument, :sub_state))
 $(_var(:Argument, :sub_problem))
 
 # Keyword arguments
@@ -171,7 +172,7 @@ function show(io::IO, vbns::VectorBundleNewtonState)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(vbns.stop) ? "Yes" : "No"
     s = """
-    # Solver state for `Manopt.jl`s Vectorbundle Newton Method
+    # Solver state for `Manopt.jl`s Vector bundle Newton method
     $Iter
     ## Parameters
     * retraction method: $(vbns.retraction_method)
@@ -247,8 +248,10 @@ $(_var(:Argument, :p))
 
 # Keyword arguments
 
-$(_var(:Keyword, :sub_state; default = "([`AllocatingEvaluation`](@ref)"))
-$(_var(:Keyword, :sub_problem; default = "nothing")), i.e. you have to provide a method for solving the Newton equation.
+$(_var(:Keyword, :sub_problem; default = "`nothing`")), i.e. you have to provide a method for solving the Newton equation.
+  Currently only the closed form solution is implemented, that is, this is a functor that maps either
+  `(problem::`[`VectorBundleManoptProblem`](@ref)`, state::VectorBundleNewtonState) -> X` or `(problem, X, state) -> X` to compute the Newton direction.
+$(_var(:Keyword, :sub_state; default = "[`AllocatingEvaluation`](@ref)"))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, VectorBundleNewtonState)`"))
 $(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
