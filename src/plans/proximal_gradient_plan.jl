@@ -725,33 +725,6 @@ function show(io::IO, c::StopWhenGradientMappingNormLess)
     )
 end
 
-@doc """
-    DebugWarnIfStepsizeCollapsed <: DebugAction
-
-print a warning if the backtracking stopped because the stepsize fell below a given threshold in the [`proximal_gradient_method`](@ref).
-This threshold is specified by the `stop_when_stepsize_less` field of the [`ProximalGradientMethodBacktrackingStepsize`](@ref).
-
-# Constructor
-
-    DebugWarnIfStepsizeCollapsed(warn=:Once;)
-
-Initialize the warning to warning level (`:Once`).
-
-The `warn` level can be set to `:Once` to only warn the first time the cost increases,
-to `:Always` to report an increase every time it happens, and it can be set to `:No`
-to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
-All other symbols are handled as if they were `:Always`
-"""
-mutable struct DebugWarnIfStepsizeCollapsed <: DebugAction
-    status::Symbol
-    function DebugWarnIfStepsizeCollapsed(warn::Symbol = :Once)
-        return new(warn)
-    end
-end
-function show(io::IO, di::DebugWarnIfStepsizeCollapsed)
-    return print(io, "DebugWarnIfStepsizeCollapsed()")
-end
-
 function (d::DebugWarnIfStepsizeCollapsed)(
         ::AbstractManoptProblem, st::ProximalGradientMethodState, k::Int
     )

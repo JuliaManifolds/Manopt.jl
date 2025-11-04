@@ -88,7 +88,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
 
         @testset "Backtracking Warnings" begin
             dw1 = DebugWarnIfStepsizeCollapsed(:Once)
-            @test repr(dw1) == "DebugWarnIfStepsizeCollapsed()"
+            @test repr(dw1) == "DebugWarnIfStepsizeCollapsed(Once, :Once)"
             pgms_warn = ProximalGradientMethodState(
                 M;
                 p = p0,
