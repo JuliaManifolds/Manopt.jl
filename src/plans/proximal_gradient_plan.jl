@@ -453,6 +453,7 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
 end
 
 get_initial_stepsize(s::ProximalGradientMethodBacktrackingStepsize) = s.initial_stepsize
+get_last_stepsize(s::ProximalGradientMethodBacktrackingStepsize) = s.last_stepsize
 
 function Base.show(io::IO, pgb::ProximalGradientMethodBacktrackingStepsize)
     s = """
@@ -724,45 +725,14 @@ function show(io::IO, c::StopWhenGradientMappingNormLess)
         io, "StopWhenGradientMappingNormLess($(c.threshold))\n    $(status_summary(c))"
     )
 end
-
-@doc """
-    DebugWarnIfStepsizeCollapsed <: DebugAction
-
-print a warning if the backtracking stopped because the stepsize fell below a given threshold in the [`proximal_gradient_method`](@ref).
-This threshold is specified by the `stop_when_stepsize_less` field of the [`ProximalGradientMethodBacktrackingStepsize`](@ref).
-
-# Constructor
-
-    DebugWarnIfStepsizeCollapsed(warn=:Once;)
-
-Initialize the warning to warning level (`:Once`).
-
-The `warn` level can be set to `:Once` to only warn the first time the cost increases,
-to `:Always` to report an increase every time it happens, and it can be set to `:No`
-to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
-All other symbols are handled as if they were `:Always`
-"""
-mutable struct DebugWarnIfStepsizeCollapsed <: DebugAction
-    status::Symbol
-    function DebugWarnIfStepsizeCollapsed(warn::Symbol = :Once)
-        return new(warn)
-    end
-end
-function show(io::IO, di::DebugWarnIfStepsizeCollapsed)
-    return print(io, "DebugWarnIfStepsizeCollapsed()")
-end
-
+# If we are running on a prox grad backtrack, ignore the threshold from the DEbug and take the one from the stepsize
 function (d::DebugWarnIfStepsizeCollapsed)(
-        ::AbstractManoptProblem, st::ProximalGradientMethodState, k::Int
-    )
+        ::AbstractManoptProblem,
+        st::ProximalGradientMethodState{P, T, Pr, St, A, S, TStS},
+        k::Int,
+    ) where {P, T, Pr, St, A, S, TStS <: ProximalGradientMethodBacktrackingStepsize}
     (k < 1) && (return nothing)
     s = st.stepsize
-    (!isa(s, Manopt.ProximalGradientMethodBacktrackingStepsize)) && throw(
-        DomainError(
-            s,
-            "DebugWarnIfStepsizeCollapsed only works with `ProximalGradientMethodBacktrackingStepsize` stepsizes.",
-        ),
-    )
     if d.status !== :No
         if s.last_stepsize ≤ s.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(s.stop_when_stepsize_less)."

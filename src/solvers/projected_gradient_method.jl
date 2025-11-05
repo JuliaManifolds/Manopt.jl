@@ -50,7 +50,7 @@ function ProjectedGradientMethodState(
             M, typeof(p)
         ),
         stepsize::Stepsize = ConstantStepsize(M),
-        stopping_criterion::StoppingCriterion = StopAfterIteration(300), # TODO: Improve?
+        stopping_criterion::StoppingCriterion = StopAfterIteration(300),
         X = zero_vector(M, p),
     )
     return ProjectedGradientMethodState(
