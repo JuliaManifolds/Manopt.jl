@@ -1862,12 +1862,15 @@ mutable struct WolfePowellLinesearchStepsize{
     candidate_point::P
     last_stepsize::R
     max_stepsize::R
-    message::String
     retraction_method::TRM
     stop_when_stepsize_less::R
     vector_transport_method::VTM
     stop_increasing_at_step::Int
     stop_decreasing_at_step::Int
+
+    stop_decreasing_at_step_activated_at::Int
+    stop_increasing_at_step_activated_at::Int
+    stop_when_stepsize_less_activated_at::Int
     function WolfePowellLinesearchStepsize(
             M::AbstractManifold;
             p::P = allocate_result(M, rand),
@@ -1888,12 +1891,14 @@ mutable struct WolfePowellLinesearchStepsize{
             p,
             0.0,
             max_stepsize,
-            "", # init empty message
             retraction_method,
             stop_when_stepsize_less,
             vector_transport_method,
             stop_increasing_at_step,
             stop_decreasing_at_step,
+            -1,
+            -1,
+            -1,
         )
     end
 end
@@ -1906,7 +1911,9 @@ function (a::WolfePowellLinesearchStepsize)(
     )
     # For readability extract a few variables
     # maybe collect and warn
-    a.message = ""
+    a.stop_decreasing_at_step_activated_at = -1
+    a.stop_increasing_at_step_activated_at = -1
+    a.stop_when_stepsize_less_activated_at = -1
     M = get_manifold(mp)
     p = get_iterate(ams)
     l = get_differential(mp, p, η)
@@ -1935,8 +1942,7 @@ function (a::WolfePowellLinesearchStepsize)(
             fNew = get_cost(mp, a.candidate_point)
             i += 1
             if i == a.stop_decreasing_at_step
-                a.message = (length(a.message) > 0) ? a.message * "\n " : "Wolfe-Powell line search:\n"
-                a.message = "$(a.message) Max decrease steps for s_minus ($(a.stop_decreasing_at_step)) reached in iteration $k."
+                a.stop_decreasing_at_step_activated_at = k
                 break
             end
         end
@@ -1952,8 +1958,7 @@ function (a::WolfePowellLinesearchStepsize)(
                 ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
                 fNew = get_cost(mp, a.candidate_point)
                 if i == a.stop_increasing_at_step
-                    a.message = (length(a.message) > 0) ? a.message * "\n " : "Wolfe-Powell line search:\n"
-                    a.message = "$(a.message) Max increase steps for s_plus ($(a.stop_increasing_at_step)) reached in iteration $k."
+                    a.stop_increasing_at_step_activated_at = k
                     break
                 end
             end
@@ -1972,8 +1977,7 @@ function (a::WolfePowellLinesearchStepsize)(
             s_plus = step
         end
         if abs(s_plus - s_minus) <= a.stop_when_stepsize_less
-            a.message = (length(a.message) > 0) ? a.message * "\n " : "Wolfe-Powell line search:\n"
-            a.message = "$(a.message) Minimum step size ($(a.stop_when_stepsize_less)) exceeded in iteration $k."
+            a.stop_when_stepsize_less_activated_at = k
             break
         end
         ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
@@ -2000,6 +2004,18 @@ function show(io::IO, a::WolfePowellLinesearchStepsize)
 end
 function status_summary(a::WolfePowellLinesearchStepsize)
     s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
+    if a.stop_decreasing_at_step_activated_at >= 0
+        s = (length(s) > 0) ? s * "\n " : "Wolfe-Powell line search:\n"
+        s = s * " Max decrease steps for s_minus ($(a.stop_decreasing_at_step)) reached in iteration $(a.stop_decreasing_at_step_activated_at)."
+    end
+    if a.stop_increasing_at_step_activated_at >= 0
+        s = (length(s) > 0) ? s * "\n " : "Wolfe-Powell line search:\n"
+        s = s * " Max increase steps for s_plus ($(a.stop_increasing_at_step)) reached in iteration $(a.stop_increasing_at_step_activated_at)."
+    end
+    if a.stop_when_stepsize_less_activated_at >= 0
+        s = (length(s) > 0) ? s * "\n " : "Wolfe-Powell line search:\n"
+        s = s * " Minimum step size ($(a.stop_when_stepsize_less)) exceeded in iteration $(a.stop_when_stepsize_less_activated_at)."
+    end
     return "$a$s"
 end
 """
