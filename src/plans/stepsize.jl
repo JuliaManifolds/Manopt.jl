@@ -902,7 +902,7 @@ stepsize ``t`` from ``p`` in direction ``η``.
 * `cbls:::CubicBracketingLinesearchStepsize`: containing `retraction_method`, `vector_transport` and the temporary `candidate_point` and `candidate_direction`
 * `p`: point in the manifold of `mp`
 * `η`: search direction at `p`
-* `t::Real`: step size 
+* `t::Real`: step size
 """
 function get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketingLinesearchStepsize, p, η, t)
     M = get_manifold(mp)
@@ -1849,10 +1849,12 @@ $(_var(:Keyword, :X; add = "as type of memory allocated for the candidates direc
 * `max_stepsize=`[`max_stepsize`](@ref)`(M, p)`: largest stepsize allowed here.
 $(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
+* `stop_increasing_at_step=100`: for the initial increase test (s_plus), stop after these many steps
+* `stop_decreasing_at_step=1000`: for the initial decrease test (s_minus), stop after these many steps
 $(_var(:Keyword, :vector_transport_method))
 """
 mutable struct WolfePowellLinesearchStepsize{
-        R <: Real, TRM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T,
+        R, TRM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T, I,
     } <: Linesearch
     sufficient_decrease::R
     sufficient_curvature::R
@@ -1860,10 +1862,12 @@ mutable struct WolfePowellLinesearchStepsize{
     candidate_point::P
     last_stepsize::R
     max_stepsize::R
+    message::String
     retraction_method::TRM
     stop_when_stepsize_less::R
     vector_transport_method::VTM
-
+    stop_increasing_at_step::Int
+    stop_decreasing_at_step::Int
     function WolfePowellLinesearchStepsize(
             M::AbstractManifold;
             p::P = allocate_result(M, rand),
@@ -1874,28 +1878,35 @@ mutable struct WolfePowellLinesearchStepsize{
             sufficient_curvature::R = 0.999,
             vector_transport_method::VTM = default_vector_transport_method(M),
             stop_when_stepsize_less::R = 0.0,
-        ) where {TRM, VTM, P, T, R}
-        return new{R, TRM, VTM, P, T}(
+            stop_increasing_at_step::I = 100,
+            stop_decreasing_at_step::I = 1000,
+        ) where {TRM, VTM, P, T, R, I}
+        return new{R, TRM, VTM, P, T, I}(
             sufficient_decrease,
             sufficient_curvature,
             X,
             p,
             0.0,
             max_stepsize,
+            "", # init empty message
             retraction_method,
             stop_when_stepsize_less,
             vector_transport_method,
+            stop_increasing_at_step,
+            stop_decreasing_at_step,
         )
     end
 end
 function (a::WolfePowellLinesearchStepsize)(
         mp::AbstractManoptProblem,
         ams::AbstractManoptSolverState,
-        ::Int,
+        k::Int,
         η = (-get_gradient(mp, get_iterate(ams)));
         kwargs...,
     )
     # For readability extract a few variables
+    # maybe collect and warn
+    a.message = ""
     M = get_manifold(mp)
     p = get_iterate(ams)
     l = get_differential(mp, p, η)
@@ -1916,39 +1927,42 @@ function (a::WolfePowellLinesearchStepsize)(
     # Temp tangent vector
     Y = zero_vector(M, a.candidate_point)
     if fNew > f0 + a.sufficient_decrease * step * l
+        i = 0
         while (fNew > f0 + a.sufficient_decrease * step * l) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             step = s_minus
-            ManifoldsBase.retract_fused!(
-                M, a.candidate_point, p, η, step, a.retraction_method
-            )
+            ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
             fNew = get_cost(mp, a.candidate_point)
+            i += 1
+            if i == a.stop_decreasing_at_step
+                a.message = (length(a.message) > 0) ? a.message * "\n " : "Wolfe-Powell line search:\n"
+                a.message = "$(a.message) Max decrease steps for s_minus ($(a.stop_decreasing_at_step)) reached in iteration $k."
+                break
+            end
         end
         s_plus = 2.0 * s_minus
     else
-        vector_transport_to!(
-            M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
-        )
-        if get_differential(mp, a.candidate_point, a.candidate_direction; Y = Y) <
-                a.sufficient_curvature * l
-            while fNew <= f0 + a.sufficient_decrease * step * l &&
-                    (s_plus < max_step_increase) # increase
+        vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
+        if get_differential(mp, a.candidate_point, a.candidate_direction; Y = Y) < a.sufficient_curvature * l
+            i = 0
+            while fNew <= f0 + a.sufficient_decrease * step * l && (s_plus < max_step_increase)
+                # increase
                 s_plus = s_plus * 2.0
                 step = s_plus
-                ManifoldsBase.retract_fused!(
-                    M, a.candidate_point, p, η, step, a.retraction_method
-                )
+                ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
                 fNew = get_cost(mp, a.candidate_point)
+                if i == a.stop_increasing_at_step
+                    a.message = (length(a.message) > 0) ? a.message * "\n " : "Wolfe-Powell line search:\n"
+                    a.message = "$(a.message) Max increase steps for s_plus ($(a.stop_increasing_at_step)) reached in iteration $k."
+                    break
+                end
             end
             s_minus = s_plus / 2.0
         end
     end
     ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
-    vector_transport_to!(
-        M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
-    )
-    while get_differential(mp, a.candidate_point, a.candidate_direction; Y = Y) <
-            a.sufficient_curvature * l
+    vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
+    while get_differential(mp, a.candidate_point, a.candidate_direction; Y = Y) < a.sufficient_curvature * l
         step = (s_minus + s_plus) / 2
         ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
         fNew = get_cost(mp, a.candidate_point)
@@ -1957,13 +1971,13 @@ function (a::WolfePowellLinesearchStepsize)(
         else
             s_plus = step
         end
-        abs(s_plus - s_minus) <= a.stop_when_stepsize_less && break
-        ManifoldsBase.retract_fused!(
-            M, a.candidate_point, p, η, s_minus, a.retraction_method
-        )
-        vector_transport_to!(
-            M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
-        )
+        if abs(s_plus - s_minus) <= a.stop_when_stepsize_less
+            a.message = (length(a.message) > 0) ? a.message * "\n " : "Wolfe-Powell line search:\n"
+            a.message = "$(a.message) Minimum step size ($(a.stop_when_stepsize_less)) exceeded in iteration $k."
+            break
+        end
+        ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
+        vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
     end
     step = s_minus
     a.last_stepsize = step
@@ -1979,6 +1993,8 @@ function show(io::IO, a::WolfePowellLinesearchStepsize)
             retraction_method = $(a.retraction_method),
             vector_transport_method = $(a.vector_transport_method),
             stop_when_stepsize_less = $(a.stop_when_stepsize_less),
+            stop_increasing_at_step = $(a.stop_increasing_at_step),
+            stop_decreasing_at_step = $(a.stop_decreasing_at_step),
         )""",
     )
 end
@@ -2016,6 +2032,8 @@ $(_var(:Keyword, :X; add = "as type of memory allocated for the candidates direc
 * `max_stepsize=`[`max_stepsize`](@ref)`(M, p)`: largest stepsize allowed here.
 $(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
+* `stop_increasing_at_step=100`: for the initial increase test (s_plus), stop after these many steps
+* `stop_decreasing_at_step=1000`: for the initial decrease test (s_minus), stop after these many steps
 $(_var(:Keyword, :vector_transport_method))
 """
 function WolfePowellLinesearch(args...; kwargs...)
