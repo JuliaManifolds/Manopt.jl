@@ -1697,7 +1697,7 @@ function get_message(a::NonmonotoneLinesearchStepsize)
         length(msg) > 0 && (msg = "$msg\n")
         msg *= get_message(:stop_decreasing, m[:stop_decreasing], a.stop_decreasing_at_step)
     end
-    return if :stepsize_less ∈ k
+    if :stepsize_less ∈ k
         length(msg) > 0 && (msg = "$msg\n")
         # Sadly at this point we cannot say what we actually reset to
         msg *= get_message(:stepsize_less, m[:stepsize_less], a.initial_stepsize, a.stop_when_stepsize_less)
