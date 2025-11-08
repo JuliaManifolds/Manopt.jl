@@ -59,13 +59,12 @@ using ManoptTestSuite
         s3 = Manopt.linesearch_backtrack(
             M, f, p, grad_f(M, p), 1.0, 1.0, 0.5; stop_when_stepsize_less = 0.75
         )
-        @test :stepsize_exceeds in keys(s3[2])
+        @test :stepsize_less in keys(s3[2])
         # cheating for increase
         s4 = Manopt.linesearch_backtrack(
             M, f, p, grad_f(M, p), 1.0e-12, 0, 0.5; stop_when_stepsize_exceeds = 0.1
         )
         @test :stepsize_exceeds in keys(s4[2])
-        @test startswith(s4[2], "Max step size (0.1)")
         s5 = Manopt.linesearch_backtrack(
             M, f, p, grad_f(M, p), 1.0e-12, 0, 0.5; stop_increasing_at_step = 1
         )
