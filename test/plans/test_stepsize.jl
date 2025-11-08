@@ -43,7 +43,7 @@ using ManoptTestSuite
         s1 = Manopt.linesearch_backtrack(
             M, f, p, grad_f(M, p), 1.0, 1.0, 0.99; stop_decreasing_at_step = 10
         )
-        @test startswith(s1[2], "Max decrease")
+        @test :stop_decreasing in keys(s1[2])
         s2 = Manopt.linesearch_backtrack(
             M,
             f,
@@ -55,20 +55,21 @@ using ManoptTestSuite
             grad_f(M, p);
             retraction_method = ExponentialRetraction(),
         )
-        @test startswith(s2[2], "The search direction")
+        @test :non_descent_direction in keys(s2[2])
         s3 = Manopt.linesearch_backtrack(
             M, f, p, grad_f(M, p), 1.0, 1.0, 0.5; stop_when_stepsize_less = 0.75
         )
-        @test startswith(s3[2], "Min step size (0.75)")
+        @test :stepsize_exceeds in keys(s3[2])
         # cheating for increase
         s4 = Manopt.linesearch_backtrack(
             M, f, p, grad_f(M, p), 1.0e-12, 0, 0.5; stop_when_stepsize_exceeds = 0.1
         )
+        @test :stepsize_exceeds in keys(s4[2])
         @test startswith(s4[2], "Max step size (0.1)")
         s5 = Manopt.linesearch_backtrack(
             M, f, p, grad_f(M, p), 1.0e-12, 0, 0.5; stop_increasing_at_step = 1
         )
-        @test startswith(s5[2], "Max increase steps (1)")
+        @test :stop_increasing in keys(s5[2])
     end
     @testset "Adaptive WN Gradient" begin
         # Build a dummy function and gradient

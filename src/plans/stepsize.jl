@@ -1379,8 +1379,7 @@ function linesearch_backtrack!(
         ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
         f_q = f(M, q)
         if i == stop_increasing_at_step
-            (length(msg) > 0) && (msg = "$msg\n")
-            msg = "$(msg)Max increase steps ($(stop_increasing_at_step)) reached"
+            messages[:stop_increasing] = i
             break
         end
         if s > stop_when_stepsize_exceeds
@@ -1656,7 +1655,7 @@ function (a::NonmonotoneLinesearchStepsize)(
         stop_decreasing_at_step = a.stop_decreasing_at_step,
     )
     for (k, v) in messages
-        a.message[k] = v
+        a.messages[k] = v
     end
     return a.initial_stepsize
 end
@@ -1703,6 +1702,7 @@ function get_message(a::NonmonotoneLinesearchStepsize)
         # Sadly at this point we cannot say what we actually reset to
         msg *= get_message(:stepsize_less, m[:stepsize_less], a.initial_stepsize, a.stop_when_stepsize_less)
     end
+    return msg
 end
 
 @doc """
