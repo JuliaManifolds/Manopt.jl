@@ -2054,7 +2054,7 @@ function status_summary(a::WolfePowellLinesearchStepsize)
 end
 function get_message(a::WolfePowellLinesearchStepsize)
     m = a.messages
-    k = m
+    k = keys(m)
     msg = ""
     if :stop_decreasing ∈ k
         msg = msg * get_message(:stop_decreasing, m[:stop_decreasing], a.stop_decreasing_at_step)
