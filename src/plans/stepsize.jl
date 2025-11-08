@@ -338,7 +338,7 @@ $(_var(:Keyword, :retraction_method))
 * `stop_increasing_at_step=100`: for the initial increase test, stop after these many steps
 * `stop_decreasing_at_step=1000`: in the backtrack, stop after these many steps
 """
-mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F, IGF, DF, IF} <:
+mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F <: Real, IGF, DF, IF} <:
     Linesearch
     candidate_point::P
     contraction_factor::F
@@ -1908,7 +1908,7 @@ $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 """
 mutable struct WolfePowellLinesearchStepsize{
-        R, TRM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T, I,
+        R <: Real, TRM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T, I,
     } <: Linesearch
     sufficient_decrease::R
     sufficient_curvature::R
