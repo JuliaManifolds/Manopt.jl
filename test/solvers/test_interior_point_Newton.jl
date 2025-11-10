@@ -1,4 +1,4 @@
-using Manifolds, Manopt, LinearAlgebra, Random, Test
+using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
 
 @testset "Interior Point Newton Solver" begin
     @testset "StepsizeState" begin
