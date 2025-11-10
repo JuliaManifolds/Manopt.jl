@@ -21,14 +21,14 @@ the function creating the factory should either be called `TypeOf` or if that is
 """
 abstract type Stepsize end
 
-mutable struct StepsizeMessage{TBound<:Real,TS<:Real}
+mutable struct StepsizeMessage{TBound <: Real, TS <: Real}
     at_iteration::Int
     bound::TBound
     value::TS
 end
 
-function StepsizeMessage{TBound,TS}() where {TBound<:Real,TS<:Real}
-    return StepsizeMessage{TBound,TS}(-1, zero(TS), zero(TS))
+function StepsizeMessage{TBound, TS}() where {TBound <: Real, TS <: Real}
+    return StepsizeMessage{TBound, TS}(-1, zero(TS), zero(TS))
 end
 
 function reset_messages!(msgs::NamedTuple)
@@ -37,6 +37,26 @@ function reset_messages!(msgs::NamedTuple)
         m.bound = 0
         m.value = 0
     end
+    return
+end
+function set_message!(
+        msgs::NamedTuple, key::Symbol;
+        at::Union{Nothing, Int} = nothing,
+        bound = nothing,
+        value = nothing,
+    )
+    haskey(msgs, key) && set_message!(msgs[key], at, bound, value)
+    return msgs
+end
+function set_message!(
+        msg::StepsizeMessage{TBound, TS},
+        iter::Union{Nothing, Int} = nothing,
+        bound::Union{TBound, Nothing} = nothing,
+        value::Union{TS, Nothing} = nothing
+    ) where {TBound <: Real, TS <: Real}
+    isnothing(iter) || (msg.at_iteration = iter)
+    isnothing(bound) || (msg.bound = bound)
+    return isnothing(value) || (msg.value = value)
 end
 
 get_message(::S) where {S <: Stepsize} = ""
@@ -315,6 +335,10 @@ This functor accepts the following keyword arguments:
 
 # Fields
 
+* `additional_decrease_condition`: specify a condition a new point has to additionally
+  fulfill. The default accepts all points.
+* `additional_increase_condition`: specify a condtion that additionally to
+  checking a valid increase has to be fulfilled. The default accepts all points.
 * `candidate_point`:               to store an interim result
 * `initial_stepsize`:              and initial step size
 $(_var(:Keyword, :retraction_method))
@@ -325,10 +349,7 @@ $(_var(:Keyword, :retraction_method))
   it maps `(m,p,k,l) -> α` based on a [`AbstractManoptProblem`](@ref) `p`,
   [`AbstractManoptSolverState`](@ref) `s`, the current iterate `k` and a last step size `l`.
   It returns the initial guess `α`.
-* `additional_decrease_condition`: specify a condition a new point has to additionally
-  fulfill. The default accepts all points.
-* `additional_increase_condition`: specify a condtion that additionally to
-  checking a valid increase has to be fulfilled. The default accepts all points.
+* `messages::NamedTuple`:          a named tuple to store possible [`StepsizeMessage`](@ref) about the stepsize search.
 * `stop_when_stepsize_less`:       smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds`:    largest stepsize when to stop.
 * `stop_increasing_at_step`:       last step to increase the stepsize (phase 1),
@@ -387,10 +408,13 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
             stop_decreasing_at_step::I = 1000,
             sufficient_decrease = 0.1,
         ) where {TRM, P, I, F, IGF, DF, IF}
-        msgs = (; stop_decreasing = StepsizeMessage{Int,R}(),
-            stop_increasing = StepsizeMessage{Int,R}(),
-            stepsize_less = StepsizeMessage{R,R}(),
-            stepsize_exceeds = StepsizeMessage{R,R}())
+        msgs = (;
+            non_descent_direction = StepsizeMessage{F, F}(),
+            stop_decreasing = StepsizeMessage{Int, F}(),
+            stop_increasing = StepsizeMessage{Int, F}(),
+            stepsize_less = StepsizeMessage{F, F}(),
+            stepsize_exceeds = StepsizeMessage{F, F}(),
+        )
         return new{TRM, P, I, F, IGF, DF, IF, typeof(msgs)}(
             candidate_point,
             contraction_factor,
@@ -426,7 +450,7 @@ function (a::ArmijoLinesearchStepsize)(
     )
     reset_messages!(a.messages)
     l = norm(get_manifold(mp), p, η)
-    (a.last_stepsize, messages) = linesearch_backtrack!(
+    a.last_stepsize = linesearch_backtrack!(
         get_manifold(mp),
         a.candidate_point,
         (M, p) -> get_cost_function(get_objective(mp))(M, p),
@@ -443,10 +467,8 @@ function (a::ArmijoLinesearchStepsize)(
         stop_decreasing_at_step = a.stop_decreasing_at_step,
         additional_decrease_condition = a.additional_decrease_condition,
         additional_increase_condition = a.additional_increase_condition,
+        report_messages_in = a.messages,
     )
-    for (k, v) in messages
-        a.messages[k] = v
-    end
     return a.last_stepsize
 end
 get_initial_stepsize(a::ArmijoLinesearchStepsize) = a.initial_stepsize
@@ -466,30 +488,8 @@ function status_summary(als::ArmijoLinesearchStepsize)
     return "$(als)\nand a computed last stepsize of $(als.last_stepsize)"
 end
 function get_message(a::ArmijoLinesearchStepsize)
-    m = a.messages
-    k = keys(m)
-    msg = ""
-    if :stepsize_exceeds ∈ k
-        length(msg) > 0 && (msg = "$msg\n")
-        # Sadly at this point we cannot say what we actually reset to
-        msg *= get_message(:stepsize_exceeds, m[:stepsize_exceeds], NaN, a.stop_when_stepsize_exceeds)
-    end
-    if :stop_increasing ∈ k
-        length(msg) > 0 && (msg = "$msg\n")
-        # Sadly at this point we cannot say what we actually reset to
-        msg *= get_message(:stop_increasing, m[:stop_increasing], a.stop_increasing_at_step)
-    end
-    if :stop_decreasing ∈ k
-        length(msg) > 0 && (msg = "$msg\n")
-        msg *= get_message(:stop_decreasing, m[:stop_decreasing], a.stop_decreasing_at_step)
-    end
-    if :stepsize_less ∈ k
-        length(msg) > 0 && (msg = "$msg\n")
-        # Sadly at this point we cannot say what we actually reset to
-        msg *= get_message(:stepsize_less, m[:stepsize_less], get_last_stepsize(a), a.stop_when_stepsize_less)
-    end
-    length(msg) > 0 && (msg = "ArmijoLinesearchStepsize messages:\n$msg")
-    return msg
+    s = [get_message(kv[1], kv[2]) for kv in pairs(a.messages)]
+    return join([m for m in s if length(m) > 0], "\n")
 end
 function get_parameter(a::ArmijoLinesearchStepsize, s::Val{:DecreaseCondition}, args...)
     return get_parameter(a.additional_decrease_condition, args...)
@@ -1344,10 +1344,12 @@ $(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold
 * `stop_increasing_at_step=100`: stop the initial increase of step size after these many steps
 * `stop_decreasing_at_step=`1000`: stop the decreasing search after these many steps
+* `report_messages_in::NamedTuple = (; )`: a named tuple of [`StepsizeMessage`](@ref)s to report messages in.
+  currently supported keywords are `:non_descent_direction`, `:stepsize_exceeds`, `:stepsize_less`, `:stop_increasing`, `:stop_decreasing`
 * `additional_increase_condition=(M,p) -> true`: impose an additional condition for an increased step size to be accepted
 * `additional_decrease_condition=(M,p) -> true`: impose an additional condition for an decreased step size to be accepted
 
-These keywords are used as safeguards, where only the max stepsize is a very manifold specific one.
+  These keywords are used as safeguards, where only the max stepsize is a very manifold specific one.
 
 # Return value
 
@@ -1361,7 +1363,7 @@ function linesearch_backtrack(
 end
 
 """
-    (s, msg) = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p))
+    s = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p))
 
 Perform a line search backtrack in-place of `q`.
 For all details and options, see [`linesearch_backtrack`](@ref)
@@ -1389,16 +1391,10 @@ function linesearch_backtrack!(
     ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
     f_q = f(M, q)
     search_dir_inner = real(inner(M, p, η, X))
-    if search_dir_inner >= 0 
-        if :non_descent_direction in keys(report_messages_in)
-            report_messages_in[:non_descent_direction].at_iteration = 0
-            report_messages_in[:non_descent_direction].value = search_dir_inner
-        end
+    if search_dir_inner >= 0
+        set_message!(report_messages_in, :non_descent_direction, at = 0, value = search_dir_inner)
         s = zero(s)
-        if :stepsize_less in keys(report_messages_in)
-            report_messages_in[:non_descent_direction].at_iteration = 0
-            report_messages_in[:non_descent_direction].value = search_dir_inner
-        end
+        set_message!(report_messages_in, :stepsize_less, at = 0, value = s)
         return s
     end
 
@@ -1411,15 +1407,11 @@ function linesearch_backtrack!(
         ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
         f_q = f(M, q)
         if i == stop_increasing_at_step
-            report_messages_in[:stop_increasing].at_iteration = i
-            report_messages_in[:stop_increasing].bound = stop_increasing_at_step
-            report_messages_in[:stop_increasing].value = s
+            set_message!(report_messages_in, :stop_increasing, at = i, bound = stop_increasing_at_step, value = s)
             break
         end
         if s > stop_when_stepsize_exceeds
-            report_messages_in[:stepsize_exceeds].at_iteration = i
-            report_messages_in[:stepsize_exceeds].bound = stop_when_stepsize_exceeds
-            report_messages_in[:stepsize_exceeds].value = s
+            set_message!(report_messages_in, :stepsize_exceeds, at = i, bound = stop_when_stepsize_exceeds, value = s)
             break
         end
     end
@@ -1432,15 +1424,11 @@ function linesearch_backtrack!(
         ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
         f_q = f(M, q)
         if i == stop_decreasing_at_step
-            report_messages_in[:stop_decreasing].at_iteration = i
-            report_messages_in[:stop_decreasing].bound = stop_decreasing_at_step
-            report_messages_in[:stop_decreasing].value = s
+            set_message!(report_messages_in, :stop_decreasing, at = i, bound = stop_decreasing_at_step, value = s)
             break
         end
         if s < stop_when_stepsize_less
-            report_messages_in[:stepsize_less].at_iteration = i
-            report_messages_in[:stepsize_less].bound = stop_decreasing_at_step
-            report_messages_in[:stepsize_less].value = s
+            set_message!(report_messages_in, :stepsize_less, at = i, bound = stop_when_stepsize_less, value = s)
             break
         end
     end
@@ -1500,12 +1488,13 @@ mutable struct NonmonotoneLinesearchStepsize{
         TRM <: AbstractRetractionMethod,
         VTM <: AbstractVectorTransportMethod,
         TSSA <: StoreStateAction,
+        MSGS <: NamedTuple,
     } <: Linesearch
     bb_min_stepsize::R
     bb_max_stepsize::R
     candidate_point::P
     initial_stepsize::R
-    messages::Dict{Symbol, Int}
+    messages::MSGS
     old_costs::T
     retraction_method::TRM
     stepsize_reduction::R
@@ -1566,12 +1555,19 @@ mutable struct NonmonotoneLinesearchStepsize{
             throw(DomainError(memory_size, "The memory_size has to be greater than zero."))
         end
         old_costs = zeros(memory_size)
-        return new{P, typeof(old_costs), R, I, TRM, VTM, typeof(storage)}(
+        msgs = (;
+            non_descent_direction = StepsizeMessage{R, R}(),
+            stop_decreasing = StepsizeMessage{Int, R}(),
+            stop_increasing = StepsizeMessage{Int, R}(),
+            stepsize_less = StepsizeMessage{R, R}(),
+            stepsize_exceeds = StepsizeMessage{R, R}(),
+        )
+        return new{P, typeof(old_costs), R, I, TRM, VTM, typeof(storage), typeof(msgs)}(
             bb_min_stepsize,
             bb_max_stepsize,
             p,
             initial_stepsize,
-            Dict{Symbol, Int}(),
+            msgs,
             old_costs,
             retraction_method,
             stepsize_reduction,
@@ -1620,7 +1616,7 @@ end
 function (a::NonmonotoneLinesearchStepsize)(
         M::mT, p, f::TF, X::T, η::T, old_p, old_X, iter::Int; kwargs...
     ) where {mT <: AbstractManifold, TF, T}
-    empty!(a.messages)
+    reset_messages!(a.messages)
     #find the difference between the current and previous gradient after the previous gradient is transported to the current tangent space
     grad_diff = X - vector_transport_to(M, old_p, old_X, p, a.vector_transport_method)
     #transport the previous step into the tangent space of the current manifold point
@@ -1677,7 +1673,7 @@ function (a::NonmonotoneLinesearchStepsize)(
     end
 
     #compute the new step size with the help of the Barzilai-Borwein step size
-    (a.initial_stepsize, messages) = linesearch_backtrack!(
+    a.initial_stepsize = linesearch_backtrack!(
         M,
         a.candidate_point,
         f,
@@ -1693,10 +1689,8 @@ function (a::NonmonotoneLinesearchStepsize)(
         stop_when_stepsize_exceeds = (a.stop_when_stepsize_exceeds / norm(M, p, η)),
         stop_increasing_at_step = a.stop_increasing_at_step,
         stop_decreasing_at_step = a.stop_decreasing_at_step,
+        report_messages_in = a.messages,
     )
-    for (k, v) in messages
-        a.messages[k] = v
-    end
     return a.initial_stepsize
 end
 function show(io::IO, a::NonmonotoneLinesearchStepsize)
@@ -1717,32 +1711,8 @@ function show(io::IO, a::NonmonotoneLinesearchStepsize)
     )
 end
 function get_message(a::NonmonotoneLinesearchStepsize)
-    m = a.messages
-    k = keys(m)
-    msg = ""
-    if :non_descent_direction ∈ k
-        msg = get_message(:non_descent_direction, m[:non_descent_direction])
-    end
-    if :stepsize_exceeds ∈ k
-        length(msg) > 0 && (msg = "$msg\n")
-        # Sadly at this point we cannot say what we actually reset to
-        msg *= get_message(:stepsize_exceeds, m[:stepsize_exceeds], NaN, a.stop_when_stepsize_exceeds)
-    end
-    if :stop_increasing ∈ k
-        length(msg) > 0 && (msg = "$msg\n")
-        # Sadly at this point we cannot say what we actually reset to
-        msg *= get_message(:stop_increasing, m[:stop_increasing], a.stop_increasing_at_step)
-    end
-    if :stop_decreasing ∈ k
-        length(msg) > 0 && (msg = "$msg\n")
-        msg *= get_message(:stop_decreasing, m[:stop_decreasing], a.stop_decreasing_at_step)
-    end
-    if :stepsize_less ∈ k
-        length(msg) > 0 && (msg = "$msg\n")
-        # Sadly at this point we cannot say what we actually reset to
-        msg *= get_message(:stepsize_less, m[:stepsize_less], a.initial_stepsize, a.stop_when_stepsize_less)
-    end
-    return msg
+    s = [get_message(kv[1], kv[2]) for kv in pairs(a.messages)]
+    return join([m for m in s if length(m) > 0], "\n")
 end
 
 @doc """
@@ -1948,7 +1918,7 @@ $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 """
 mutable struct WolfePowellLinesearchStepsize{
-        R <: Real, TRM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T, I, TMSG<:NamedTuple
+        R <: Real, TRM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T, I, TMSG <: NamedTuple,
     } <: Linesearch
     sufficient_decrease::R
     sufficient_curvature::R
@@ -1975,10 +1945,13 @@ mutable struct WolfePowellLinesearchStepsize{
             stop_increasing_at_step::I = 100,
             stop_decreasing_at_step::I = 1000,
         ) where {TRM, VTM, P, T, R, I}
-        msgs = (; stop_decreasing = StepsizeMessage{Int,R}(),
-            stop_increasing = StepsizeMessage{Int,R}(),
-            stepsize_less = StepsizeMessage{R,R}(),
-            stepsize_exceeds = StepsizeMessage{R,R}())
+        msgs = (;
+            non_descent_direction = StepsizeMessage{R, R}(),
+            stop_decreasing = StepsizeMessage{Int, R}(),
+            stop_increasing = StepsizeMessage{Int, R}(),
+            stepsize_less = StepsizeMessage{R, R}(),
+            stepsize_exceeds = StepsizeMessage{R, R}(),
+        )
         return new{R, TRM, VTM, P, T, I, typeof(msgs)}(
             sufficient_decrease,
             sufficient_curvature,
@@ -2033,8 +2006,7 @@ function (a::WolfePowellLinesearchStepsize)(
             fNew = get_cost(mp, a.candidate_point)
             i += 1
             if i == a.stop_decreasing_at_step
-                a.messages[:stop_decreasing] = k
-                a.messages[:stop_decreasing].bound = a.stop_decreasing_at_step
+                set_message!(a.messages, :stop_decreasing, at = k, bound = a.stop_decreasing_at_step, value = s_minus)
                 break
             end
         end
@@ -2050,8 +2022,7 @@ function (a::WolfePowellLinesearchStepsize)(
                 ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
                 fNew = get_cost(mp, a.candidate_point)
                 if i == a.stop_increasing_at_step
-                    a.messages[:stop_increasing].at_iteration = k
-                    a.messages[:stop_increasing].bound = a.stop_increasing_at_step
+                    set_message!(a.messages, :stop_increasing, at = k, bound = a.stop_increasing_at_step, value = s_plus)
                     break
                 end
             end
@@ -2070,8 +2041,7 @@ function (a::WolfePowellLinesearchStepsize)(
             s_plus = step
         end
         if abs(s_plus - s_minus) <= a.stop_when_stepsize_less
-            a.messages[:stepsize_less].at_iteration = k
-            a.messages[:stepsize_less].bound = a.stop_when_stepsize_less
+            set_message!(a.messages, :stepsize_less, at = k, bound = a.stop_when_stepsize_less, value = step)
             break
         end
         ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
@@ -2101,19 +2071,8 @@ function status_summary(a::WolfePowellLinesearchStepsize)
     return "$a$s"
 end
 function get_message(a::WolfePowellLinesearchStepsize)
-    m = a.messages
-    msg = ""
-    if a.messages[:stop_decreasing].at_iteration > 0
-        msg = msg * get_message(:stop_decreasing, m[:stop_decreasing], a.stop_decreasing_at_step)
-    end
-    if a.messages[:stop_increasing].at_iteration > 0
-        msg = msg * get_message(:stop_increasing, m[:stop_increasing], a.stop_increasing_at_step)
-    end
-    if a.messages[:stepsize_less].at_iteration > 0
-        msg = msg * get_message(:stepsize_less, m[:stepsize_less], a.last_stepsize, a.stop_when_stepsize_less)
-    end
-    (length(msg) > 0) && (msg = "Wolfe-Powell Linesearch:\n$msg")
-    return msg
+    s = [get_message(kv[1], kv[2]) for kv in pairs(a.messages)]
+    return join([m for m in s if length(m) > 0], "\n")
 end
 """
     WolfePowellLinesearch(; kwargs...)
@@ -2420,15 +2379,18 @@ them into human readable strings. The arguments usually contain
 an iteration number `k` or bounds to communicate to the user.
 """
 get_message(s::Symbol, args...) = get_message(Val(s), args...)
+get_message(s::Symbol, msg::StepsizeMessage) = get_message(Val(s), msg.at_iteration, msg.value, msg.bound)
+
 """
     get_message(:non_descent_direction, k::Int)
 
 Display a message string for a non-descent direction encountered at iteration `k`.
 """
-function get_message(::Val{:non_descent_direction}, k::Int = -1)
+function get_message(::Val{:non_descent_direction}, k::Int = -1, value::Real = NaN, bound::Real = 0)
     (k < 0) && (return "")
     s = (k == 0) ? "the beginning" : "iteration #$k"
-    return (k > 0) ? "At $s: Non-descent direction encountered." : ""
+    v_str = isnan(value) ? "" : "($value ≥ $bound)"
+    return (k >= 0) ? "At $s: Non-descent direction encountered $v_str." : ""
 end
 
 """
@@ -2450,11 +2412,12 @@ end
 Display a message string for stopping the decrease of the step size at iteration `k`
 and the step size `step` chosen instead.
 """
-function get_message(::Val{:stop_decreasing}, k::Int = -1, bound::Int = -1)
+function get_message(::Val{:stop_decreasing}, k::Int = -1, value::Real = NaN, bound::Int = -1)
     (k < 0) && (return "")
     s = (k == 0) ? "the beginning" : "iteration #$k"
-    s_str = isnan(step) ? "" : "($bound)"
-    return (k > 0) ? "At $s: Maximal number of decrease steps $s_str reached. Aborting decrease." : ""
+    s_str = isnan(bound) ? "" : "($bound)"
+    v_str = isnan(value) ? "" : "Continuing with a stepsize of $value."
+    return (k > 0) ? "At $s: Maximal number of decrease steps $s_str reached. Aborting decrease. $v_str" : ""
 end
 """
     get_message(:stop_increasing, k::Int=-1, step::Real = NaN)
@@ -2462,11 +2425,12 @@ end
 Display a message string for stopping the increase of the step size at iteration `k`
 and the step size `step` chosen instead.
 """
-function get_message(::Val{:stop_increasing}, k::Int = -1, bound::Int = -1)
+function get_message(::Val{:stop_increasing}, k::Int = -1, value::Real = NaN, bound::Int = -1)
     (k < 0) && (return "")
     s = (k == 0) ? "the beginning" : "iteration #$k"
     s_str = isnan(bound) ? "" : "($bound)"
-    return (k > 0) ? "At $s: Maximal number of increase steps $s_str reached. Aborting increase." : ""
+    v_str = isnan(value) ? "" : "Continuing with a stepsize of $value."
+    return (k > 0) ? "At $s: Maximal number of increase steps $s_str reached. Aborting increase. $v_str" : ""
 end
 """
 get_message(:stepsize_less, k::Int=-1, step::Real = NaN, bound::Real = NaN)
@@ -2474,10 +2438,10 @@ get_message(:stepsize_less, k::Int=-1, step::Real = NaN, bound::Real = NaN)
 Display a message string for stopping the increase of the step size at iteration `k`
 and the step size `step` chosen instead.
 """
-function get_message(::Val{:stepsize_less}, k::Int = -1, step::Real = NaN, bound::Real = NaN)
+function get_message(::Val{:stepsize_less}, k::Int = -1, value::Real = NaN, bound::Real = NaN)
     (k < 0) && (return "")
     s = (k == 0) ? "the beginning" : "iteration #$k"
-    s_str = isnan(step) ? "" : "Falling back to a stepsize of $step"
+    s_str = isnan(value) ? "" : " Falling back to a stepsize of $value"
     b_str = isnan(bound) ? "" : "($bound)"
     return (k > 0) ? "At $s: Minimal stepsize less than bound $b_str reached.$s_str" : ""
 end
