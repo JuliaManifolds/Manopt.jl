@@ -1,298 +1,4 @@
 """
-    Stepsize
-
-An abstract type for the functors representing step sizes. These are callable
-structures. The naming scheme is `TypeOfStepSize`, for example `ConstantStepsize`.
-
-Every Stepsize has to provide a constructor and its function has to have
-the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
-and the current number of iterations are the arguments
-and returns a number, namely the stepsize to use.
-
-The functor usually should accept arbitrary keyword arguments. Common ones used are
-* `gradient=nothing`: to pass a pre-calculated gradient, otherwise it is computed.
-
-For most it is advisable to employ a [`ManifoldDefaultsFactory`](@ref). Then
-the function creating the factory should either be called `TypeOf` or if that is confusing or too generic, `TypeOfLength`
-
-# See also
-
-[`Linesearch`](@ref)
-"""
-abstract type Stepsize end
-
-mutable struct StepsizeMessage{TBound <: Real, TS <: Real}
-    at_iteration::Int
-    bound::TBound
-    value::TS
-end
-
-function StepsizeMessage{TBound, TS}() where {TBound <: Real, TS <: Real}
-    return StepsizeMessage{TBound, TS}(-1, zero(TS), zero(TS))
-end
-
-function reset_messages!(msgs::NamedTuple)
-    for m in msgs
-        m.at_iteration = -1
-        m.bound = 0
-        m.value = 0
-    end
-    return
-end
-function set_message!(
-        msgs::NamedTuple, key::Symbol;
-        at::Union{Nothing, Int} = nothing,
-        bound = nothing,
-        value = nothing,
-    )
-    haskey(msgs, key) && set_message!(msgs[key], at, bound, value)
-    return msgs
-end
-function set_message!(
-        msg::StepsizeMessage{TBound, TS},
-        iter::Union{Nothing, Int} = nothing,
-        bound::Union{TBound, Nothing} = nothing,
-        value::Union{TS, Nothing} = nothing
-    ) where {TBound <: Real, TS <: Real}
-    isnothing(iter) || (msg.at_iteration = iter)
-    isnothing(bound) || (msg.bound = bound)
-    return isnothing(value) || (msg.value = value)
-end
-
-get_message(::S) where {S <: Stepsize} = ""
-
-"""
-    default_stepsize(M::AbstractManifold, ams::AbstractManoptSolverState)
-
-Returns the default [`Stepsize`](@ref) functor used when running the solver specified by the
-[`AbstractManoptSolverState`](@ref) `ams` running with an objective on the `AbstractManifold M`.
-"""
-default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
-
-"""
-    max_stepsize(M::AbstractManifold, p)
-    max_stepsize(M::AbstractManifold)
-
-Get the maximum stepsize (at point `p`) on manifold `M`. It should be used to limit the
-distance an algorithm is trying to move in a single step.
-
-By default, this returns $(_link(:injectivity_radius))`(M)`, if this exists.
-If this is not available on the the method returns `Inf`.
-"""
-function max_stepsize(M::AbstractManifold, p)
-    s = try
-        injectivity_radius(M, p)
-    catch
-        is_tutorial_mode() &&
-            @warn "`max_stepsize was called, but there seems to not be an `injectivity_raidus` available on $M."
-        Inf
-    end
-    return s
-end
-function max_stepsize(M::AbstractManifold)
-    s = try
-        injectivity_radius(M)
-    catch
-        is_tutorial_mode() &&
-            @warn "`max_stepsize was called, but there seems to not be an `injectivity_raidus` available on $M."
-        Inf
-    end
-    return s
-end
-
-"""
-    ConstantStepsize <: Stepsize
-
-A functor `(problem, state, ...) -> s` to provide a constant step size `s`.
-
-# Fields
-
-* `length`: constant value for the step size
-* `type`:   a symbol that indicates whether the stepsize is relatively (:relative),
-    with respect to the gradient norm, or absolutely (:absolute) constant.
-
-# Constructors
-
-    ConstantStepsize(s::Real, t::Symbol=:relative)
-
-initialize the stepsize to a constant `s` of type `t`.
-
-    ConstantStepsize(
-        M::AbstractManifold=DefaultManifold(),
-        s=min(1.0, injectivity_radius(M)/2);
-        type::Symbol=:relative
-    )
-"""
-mutable struct ConstantStepsize{R <: Real} <: Stepsize
-    length::R
-    type::Symbol
-end
-function ConstantStepsize(
-        M::AbstractManifold, length::R = min(injectivity_radius(M) / 2, 1.0); type = :relative
-    ) where {R <: Real}
-    return ConstantStepsize{R}(length, type)
-end
-function (cs::ConstantStepsize)(
-        amp::AbstractManoptProblem,
-        ams::AbstractManoptSolverState,
-        ::Any,
-        args...;
-        gradient = nothing,
-        kwargs...,
-    )
-    s = cs.length
-    if cs.type == :absolute
-        grad = isnothing(gradient) ? get_gradient(amp, get_iterate(ams)) : gradient
-        ns = norm(get_manifold(amp), get_iterate(ams), grad)
-        if ns > eps(eltype(s))
-            s /= ns
-        end
-    end
-    return s
-end
-get_initial_stepsize(s::ConstantStepsize) = s.length
-function show(io::IO, cs::ConstantStepsize)
-    return print(io, "ConstantLength($(cs.length); type=:$(cs.type))")
-end
-
-"""
-    ConstantLength(s; kwargs...)
-    ConstantLength(M::AbstractManifold, s; kwargs...)
-
-Specify a [`Stepsize`](@ref) that is constant.
-
-# Input
-
-* `M` (optional)
-* `s=min( injectivity_radius(M)/2, 1.0)` : the length to use.
-
-# Keyword argument
-
-* `type::Symbol=:relative` specify the type of constant step size. Possible values are
-  * `:relative` – scale the gradient tangent vector ``X`` to ``s*X``
-  * `:absolute` – scale the gradient to an absolute step length ``s``, that is ``$(_tex(:frac, "s", _tex(:norm, "X")))X``
-
-$(_note(:ManifoldDefaultFactory, "ConstantStepsize"))
-"""
-function ConstantLength(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.ConstantStepsize, args...; kwargs...)
-end
-
-@doc """
-    DecreasingStepsize()
-
-A functor `(problem, state, ...) -> s` to provide a constant step size `s`.
-
-# Fields
-
-* `exponent`:   a value ``e`` the current iteration numbers ``e``th exponential is
-  taken of
-* `factor`:     a value ``f`` to multiply the initial step size with every iteration
-* `length`:     the initial step size ``l``.
-* `subtrahend`: a value ``a`` that is subtracted every iteration
-* `shift`:      shift the denominator iterator ``i`` by ``s```.
-* `type`:       a symbol that indicates whether the stepsize is relatively (:relative),
-    with respect to the gradient norm, or absolutely (:absolute) constant.
-
-In total the complete formulae reads for the ``i``th iterate as
-
-```math
-s_i = $(_tex(:frac, "(l - i a)f^i", "(i+s)^e"))
-```
-
-and hence the default simplifies to just ``s_i = \frac{l}{i}``
-
-# Constructor
-
-    DecreasingStepsize(M::AbstractManifold;
-        length=min(injectivity_radius(M)/2, 1.0),
-        factor=1.0,
-        subtrahend=0.0,
-        exponent=1.0,
-        shift=0.0,
-        type=:relative,
-    )
-
-initializes all fields, where none of them is mandatory and the length is set to
-half and to ``1`` if the injectivity radius is infinite.
-"""
-mutable struct DecreasingStepsize{R <: Real} <: Stepsize
-    length::R
-    factor::R
-    subtrahend::R
-    exponent::R
-    shift::R
-    type::Symbol
-end
-function DecreasingStepsize(
-        M::AbstractManifold;
-        length::R = isinf(manifold_dimension(M)) ? 1.0 : manifold_dimension(M) / 2,
-        factor::R = 1.0,
-        subtrahend::R = 0.0,
-        exponent::R = 1.0,
-        shift::R = 0.0,
-        type::Symbol = :relative,
-    ) where {R}
-    return DecreasingStepsize(length, factor, subtrahend, exponent, shift, type)
-end
-function (s::DecreasingStepsize)(
-        amp::P, ams::O, k::Int, args...; kwargs...
-    ) where {P <: AbstractManoptProblem, O <: AbstractManoptSolverState}
-    ds = (s.length - k * s.subtrahend) * (s.factor^k) / ((k + s.shift)^(s.exponent))
-    if s.type == :absolute
-        ns = norm(get_manifold(amp), get_iterate(ams), get_gradient(ams))
-        if ns > eps(eltype(ds))
-            ds /= ns
-        end
-    end
-    return ds
-end
-get_initial_stepsize(s::DecreasingStepsize) = s.length
-function show(io::IO, s::DecreasingStepsize)
-    return print(
-        io,
-        "DecreasingLength(; length=$(s.length),  factor=$(s.factor),  subtrahend=$(s.subtrahend),  shift=$(s.shift), type=$(s.type))",
-    )
-end
-"""
-    DegreasingLength(; kwargs...)
-    DecreasingLength(M::AbstractManifold; kwargs...)
-
-Specify a [`Stepsize`]  that is decreasing as ``s_k = $(_tex(:frac, "(l - ak)f^i", "(k+s)^e"))
-with the following
-
-# Keyword arguments
-
-* `exponent=1.0`:   the exponent ``e`` in the denominator
-* `factor=1.0`:     the factor ``f`` in the nominator
-* `length=min(injectivity_radius(M)/2, 1.0)`: the initial step size ``l``.
-* `subtrahend=0.0`: a value ``a`` that is subtracted every iteration
-* `shift=0.0`:      shift the denominator iterator ``k`` by ``s``.
-* `type::Symbol=relative` specify the type of constant step size.
-* `:relative` – scale the gradient tangent vector ``X`` to ``s_k*X``
-* `:absolute` – scale the gradient to an absolute step length ``s_k``, that is ``$(_tex(:frac, "s_k", _tex(:norm, "X")))X``
-
-$(_note(:ManifoldDefaultFactory, "DecreasingStepsize"))
-"""
-function DecreasingLength(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.DecreasingStepsize, args...; kwargs...)
-end
-
-"""
-    Linesearch <: Stepsize
-
-An abstract functor to represent line search type step size determinations, see
-[`Stepsize`](@ref) for details. One example is the [`ArmijoLinesearchStepsize`](@ref)
-functor.
-
-Compared to simple step sizes, the line search functors provide an interface of
-the form `(p,o,i,X) -> s` with an additional (but optional) fourth parameter to
-provide a search direction; this should default to something reasonable,
-most prominently the negative gradient.
-"""
-abstract type Linesearch <: Stepsize end
-
-"""
     armijo_initial_guess(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k, l)
 
 # Input
@@ -737,6 +443,83 @@ function AdaptiveWNGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.AdaptiveWNGradientStepsize, args...; kwargs...)
 end
 
+"""
+    ConstantStepsize <: Stepsize
+
+A functor `(problem, state, ...) -> s` to provide a constant step size `s`.
+
+# Fields
+
+* `length`: constant value for the step size
+* `type`:   a symbol that indicates whether the stepsize is relatively (:relative),
+    with respect to the gradient norm, or absolutely (:absolute) constant.
+
+# Constructors
+
+    ConstantStepsize(s::Real, t::Symbol=:relative)
+
+initialize the stepsize to a constant `s` of type `t`.
+
+    ConstantStepsize(
+        M::AbstractManifold=DefaultManifold(),
+        s=min(1.0, injectivity_radius(M)/2);
+        type::Symbol=:relative
+    )
+"""
+mutable struct ConstantStepsize{R <: Real} <: Stepsize
+    length::R
+    type::Symbol
+end
+function ConstantStepsize(
+        M::AbstractManifold, length::R = min(injectivity_radius(M) / 2, 1.0); type = :relative
+    ) where {R <: Real}
+    return ConstantStepsize{R}(length, type)
+end
+function (cs::ConstantStepsize)(
+        amp::AbstractManoptProblem,
+        ams::AbstractManoptSolverState,
+        ::Any,
+        args...;
+        gradient = nothing,
+        kwargs...,
+    )
+    s = cs.length
+    if cs.type == :absolute
+        grad = isnothing(gradient) ? get_gradient(amp, get_iterate(ams)) : gradient
+        ns = norm(get_manifold(amp), get_iterate(ams), grad)
+        if ns > eps(eltype(s))
+            s /= ns
+        end
+    end
+    return s
+end
+get_initial_stepsize(s::ConstantStepsize) = s.length
+function show(io::IO, cs::ConstantStepsize)
+    return print(io, "ConstantLength($(cs.length); type=:$(cs.type))")
+end
+
+"""
+    ConstantLength(s; kwargs...)
+    ConstantLength(M::AbstractManifold, s; kwargs...)
+
+Specify a [`Stepsize`](@ref) that is constant.
+
+# Input
+
+* `M` (optional)
+* `s=min( injectivity_radius(M)/2, 1.0)` : the length to use.
+
+# Keyword argument
+
+* `type::Symbol=:relative` specify the type of constant step size. Possible values are
+  * `:relative` – scale the gradient tangent vector ``X`` to ``s*X``
+  * `:absolute` – scale the gradient to an absolute step length ``s``, that is ``$(_tex(:frac, "s", _tex(:norm, "X")))X``
+
+$(_note(:ManifoldDefaultFactory, "ConstantStepsize"))
+"""
+function ConstantLength(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.ConstantStepsize, args...; kwargs...)
+end
 
 @doc """
     CubicBracketingLinesearchStepsize{P,T,R<:Real} <: Linesearch
@@ -1106,6 +889,106 @@ function CubicBracketingLinesearch(args...; kwargs...)
 end
 
 
+@doc """
+    DecreasingStepsize()
+
+A functor `(problem, state, ...) -> s` to provide a constant step size `s`.
+
+# Fields
+
+* `exponent`:   a value ``e`` the current iteration numbers ``e``th exponential is
+  taken of
+* `factor`:     a value ``f`` to multiply the initial step size with every iteration
+* `length`:     the initial step size ``l``.
+* `subtrahend`: a value ``a`` that is subtracted every iteration
+* `shift`:      shift the denominator iterator ``i`` by ``s```.
+* `type`:       a symbol that indicates whether the stepsize is relatively (:relative),
+    with respect to the gradient norm, or absolutely (:absolute) constant.
+
+In total the complete formulae reads for the ``i``th iterate as
+
+```math
+s_i = $(_tex(:frac, "(l - i a)f^i", "(i+s)^e"))
+```
+
+and hence the default simplifies to just ``s_i = \frac{l}{i}``
+
+# Constructor
+
+    DecreasingStepsize(M::AbstractManifold;
+        length=min(injectivity_radius(M)/2, 1.0),
+        factor=1.0,
+        subtrahend=0.0,
+        exponent=1.0,
+        shift=0.0,
+        type=:relative,
+    )
+
+initializes all fields, where none of them is mandatory and the length is set to
+half and to ``1`` if the injectivity radius is infinite.
+"""
+mutable struct DecreasingStepsize{R <: Real} <: Stepsize
+    length::R
+    factor::R
+    subtrahend::R
+    exponent::R
+    shift::R
+    type::Symbol
+end
+function DecreasingStepsize(
+        M::AbstractManifold;
+        length::R = isinf(manifold_dimension(M)) ? 1.0 : manifold_dimension(M) / 2,
+        factor::R = 1.0,
+        subtrahend::R = 0.0,
+        exponent::R = 1.0,
+        shift::R = 0.0,
+        type::Symbol = :relative,
+    ) where {R}
+    return DecreasingStepsize(length, factor, subtrahend, exponent, shift, type)
+end
+function (s::DecreasingStepsize)(
+        amp::P, ams::O, k::Int, args...; kwargs...
+    ) where {P <: AbstractManoptProblem, O <: AbstractManoptSolverState}
+    ds = (s.length - k * s.subtrahend) * (s.factor^k) / ((k + s.shift)^(s.exponent))
+    if s.type == :absolute
+        ns = norm(get_manifold(amp), get_iterate(ams), get_gradient(ams))
+        if ns > eps(eltype(ds))
+            ds /= ns
+        end
+    end
+    return ds
+end
+get_initial_stepsize(s::DecreasingStepsize) = s.length
+function show(io::IO, s::DecreasingStepsize)
+    return print(
+        io,
+        "DecreasingLength(; length=$(s.length),  factor=$(s.factor),  subtrahend=$(s.subtrahend),  shift=$(s.shift), type=$(s.type))",
+    )
+end
+"""
+    DegreasingLength(; kwargs...)
+    DecreasingLength(M::AbstractManifold; kwargs...)
+
+Specify a [`Stepsize`]  that is decreasing as ``s_k = $(_tex(:frac, "(l - ak)f^i", "(k+s)^e"))
+with the following
+
+# Keyword arguments
+
+* `exponent=1.0`:   the exponent ``e`` in the denominator
+* `factor=1.0`:     the factor ``f`` in the nominator
+* `length=min(injectivity_radius(M)/2, 1.0)`: the initial step size ``l``.
+* `subtrahend=0.0`: a value ``a`` that is subtracted every iteration
+* `shift=0.0`:      shift the denominator iterator ``k`` by ``s``.
+* `type::Symbol=relative` specify the type of constant step size.
+* `:relative` – scale the gradient tangent vector ``X`` to ``s_k*X``
+* `:absolute` – scale the gradient to an absolute step length ``s_k``, that is ``$(_tex(:frac, "s_k", _tex(:norm, "X")))X``
+
+$(_note(:ManifoldDefaultFactory, "DecreasingStepsize"))
+"""
+function DecreasingLength(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.DecreasingStepsize, args...; kwargs...)
+end
+
 @doc raw"""
     DistanceOverGradientsStepsize{R<:Real} <: Stepsize
 
@@ -1319,117 +1202,6 @@ $(_note(:ManifoldDefaultFactory, "DistanceOverGradientsStepsize"))
 """
 function DistanceOverGradients(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.DistanceOverGradientsStepsize, args...; kwargs...)
-end
-
-@doc """
-    (s, msg) = linesearch_backtrack(M, F, p, X, s, decrease, contract η = -X, f0 = f(p); kwargs...)
-    (s, msg) = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p); kwargs...)
-
-perform a line search
-
-* on manifold `M`
-* for the cost function `f`,
-* at the current point `p`
-* with current gradient provided in `X`
-* an initial stepsize `s`
-* a sufficient `decrease`
-* a `contract`ion factor ``σ``
-* a search direction ``η = -X``
-* an offset, ``f_0 = F(x)``
-
-## Keyword arguments
-
-$(_var(:Keyword, :retraction_method))
-* `stop_when_stepsize_less=0.0`: to avoid numerical underflow
-* `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold
-* `stop_increasing_at_step=100`: stop the initial increase of step size after these many steps
-* `stop_decreasing_at_step=`1000`: stop the decreasing search after these many steps
-* `report_messages_in::NamedTuple = (; )`: a named tuple of [`StepsizeMessage`](@ref)s to report messages in.
-  currently supported keywords are `:non_descent_direction`, `:stepsize_exceeds`, `:stepsize_less`, `:stop_increasing`, `:stop_decreasing`
-* `additional_increase_condition=(M,p) -> true`: impose an additional condition for an increased step size to be accepted
-* `additional_decrease_condition=(M,p) -> true`: impose an additional condition for an decreased step size to be accepted
-
-  These keywords are used as safeguards, where only the max stepsize is a very manifold specific one.
-
-# Return value
-
-A stepsize `s` and a message `msg` (in case any of the 4 criteria hit)
-"""
-function linesearch_backtrack(
-        M::AbstractManifold, f, p, X::T, s, decrease, contract, η::T = (-X), f0 = f(M, p); kwargs...
-    ) where {T}
-    q = allocate(M, p)
-    return linesearch_backtrack!(M, q, f, p, X, s, decrease, contract, η, f0; kwargs...)
-end
-
-"""
-    s = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p))
-
-Perform a line search backtrack in-place of `q`.
-For all details and options, see [`linesearch_backtrack`](@ref)
-"""
-function linesearch_backtrack!(
-        M::AbstractManifold,
-        q,
-        f::TF,
-        p,
-        X::T,
-        s,
-        decrease,
-        contract,
-        η::T = (-X),
-        f0 = f(M, p);
-        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-        additional_increase_condition = (M, p) -> true,
-        additional_decrease_condition = (M, p) -> true,
-        stop_when_stepsize_less = 0.0,
-        stop_when_stepsize_exceeds = max_stepsize(M, p) / norm(M, p, η),
-        stop_increasing_at_step = 100,
-        stop_decreasing_at_step = 1000,
-        report_messages_in::NamedTuple = (;),
-    ) where {TF, T}
-    ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
-    f_q = f(M, q)
-    search_dir_inner = real(inner(M, p, η, X))
-    if search_dir_inner >= 0
-        set_message!(report_messages_in, :non_descent_direction, at = 0, value = search_dir_inner)
-    end
-
-    i = 0
-    # Ensure that both the original condition and the additional one are fulfilled afterwards
-    while f_q < f0 + decrease * s * search_dir_inner || !additional_increase_condition(M, q)
-        (stop_increasing_at_step == 0) && break
-        i = i + 1
-        s = s / contract
-        ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
-        f_q = f(M, q)
-        if i == stop_increasing_at_step
-            set_message!(report_messages_in, :stop_increasing, at = i, bound = stop_increasing_at_step, value = s)
-            break
-        end
-        if s > stop_when_stepsize_exceeds
-            set_message!(report_messages_in, :stepsize_exceeds, at = i, bound = stop_when_stepsize_exceeds, value = s)
-            break
-        end
-    end
-    i = 0
-    # Ensure that both the original condition and the additional one are fulfilled afterwards
-    while (f_q > f0 + decrease * s * search_dir_inner) ||
-            (!additional_decrease_condition(M, q))
-        i = i + 1
-        s = contract * s
-        ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
-        f_q = f(M, q)
-        if i == stop_decreasing_at_step
-            set_message!(report_messages_in, :stop_decreasing, at = i, bound = stop_decreasing_at_step, value = s)
-            break
-        end
-        if s < stop_when_stepsize_less
-            set_message!(report_messages_in, :stepsize_less, at = i, bound = stop_when_stepsize_less, value = s)
-            break
-        end
-    end
-    return s
 end
 
 @doc """
@@ -2365,80 +2137,4 @@ function get_last_stepsize(step::WolfePowellLinesearchStepsize, ::Any...)
 end
 function get_last_stepsize(step::WolfePowellBinaryLinesearchStepsize, ::Any...)
     return step.last_stepsize
-end
-
-# Messsages – only materialized when asked
-"""
-    get_message(s::Symbol, args...)
-
-For a certain set of symbols `s`, this message function turns
-them into human readable strings. The arguments usually contain
-an iteration number `k` or bounds to communicate to the user.
-"""
-get_message(s::Symbol, args...) = get_message(Val(s), args...)
-get_message(s::Symbol, msg::StepsizeMessage) = get_message(Val(s), msg.at_iteration, msg.value, msg.bound)
-
-"""
-    get_message(:non_descent_direction, k::Int)
-
-Display a message string for a non-descent direction encountered at iteration `k`.
-"""
-function get_message(::Val{:non_descent_direction}, k::Int = -1, value::Real = NaN, bound::Real = 0)
-    (k < 0) && (return "")
-    s = (k == 0) ? "the beginning" : "iteration #$k"
-    v_str = isnan(value) ? "" : "($value ≥ $bound)"
-    return (k >= 0) ? "At $s: Non-descent direction encountered $v_str." : ""
-end
-
-"""
-    get_message(:stepsize_exceeds, k::Int, step::Real = NaN, bound::Real = NaN)
-
-Display a message string for a stepsize exceeding a certain bound at iteration `k`
-amd the step size `step` chosen instead.
-"""
-function get_message(::Val{:stepsize_exceeds}, k::Int = -1, value::Real = NaN, bound::Real = NaN)
-    (k < 0) && (return "")
-    s = (k == 0) ? "the beginning" : "iteration #$k"
-    s_str = isnan(value) ? "" : "Reducing to $value"
-    b_str = isnan(bound) ? "" : "($bound)"
-    return (k > 0) ? "At $s: Maximal step size bound $b_str exceeded. $s_str." : ""
-end
-"""
-    get_message(:stop_decreasing, k::Int=-1, step::Real = NaN)
-
-Display a message string for stopping the decrease of the step size at iteration `k`
-and the step size `step` chosen instead.
-"""
-function get_message(::Val{:stop_decreasing}, k::Int = -1, value::Real = NaN, bound::Int = -1)
-    (k < 0) && (return "")
-    s = (k == 0) ? "the beginning" : "iteration #$k"
-    s_str = isnan(bound) ? "" : "($bound)"
-    v_str = isnan(value) ? "" : "Continuing with a stepsize of $value."
-    return (k > 0) ? "At $s: Maximal number of decrease steps $s_str reached. Aborting decrease. $v_str" : ""
-end
-"""
-    get_message(:stop_increasing, k::Int=-1, step::Real = NaN)
-
-Display a message string for stopping the increase of the step size at iteration `k`
-and the step size `step` chosen instead.
-"""
-function get_message(::Val{:stop_increasing}, k::Int = -1, value::Real = NaN, bound::Int = -1)
-    (k < 0) && (return "")
-    s = (k == 0) ? "the beginning" : "iteration #$k"
-    s_str = isnan(bound) ? "" : "($bound)"
-    v_str = isnan(value) ? "" : "Continuing with a stepsize of $value."
-    return (k > 0) ? "At $s: Maximal number of increase steps $s_str reached. Aborting increase. $v_str" : ""
-end
-"""
-get_message(:stepsize_less, k::Int=-1, step::Real = NaN, bound::Real = NaN)
-
-Display a message string for stopping the increase of the step size at iteration `k`
-and the step size `step` chosen instead.
-"""
-function get_message(::Val{:stepsize_less}, k::Int = -1, value::Real = NaN, bound::Real = NaN)
-    (k < 0) && (return "")
-    s = (k == 0) ? "the beginning" : "iteration #$k"
-    s_str = isnan(value) ? "" : " Falling back to a stepsize of $value"
-    b_str = isnan(bound) ? "" : "($bound)"
-    return (k > 0) ? "At $s: Minimal stepsize less than bound $b_str reached.$s_str" : ""
 end
