@@ -21,6 +21,24 @@ the function creating the factory should either be called `TypeOf` or if that is
 """
 abstract type Stepsize end
 
+mutable struct StepsizeMessage{TBound<:Real,TS<:Real}
+    at_iteration::Int
+    bound::TBound
+    value::TS
+end
+
+function StepsizeMessage{TBound,TS}() where {TBound<:Real,TS<:Real}
+    return StepsizeMessage{TBound,TS}(-1, zero(TS), zero(TS))
+end
+
+function reset_messages!(msgs::NamedTuple)
+    for m in msgs
+        m.at_iteration = -1
+        m.bound = 0
+        m.value = 0
+    end
+end
+
 get_message(::S) where {S <: Stepsize} = ""
 
 """
@@ -338,7 +356,7 @@ $(_var(:Keyword, :retraction_method))
 * `stop_increasing_at_step=100`: for the initial increase test, stop after these many steps
 * `stop_decreasing_at_step=1000`: in the backtrack, stop after these many steps
 """
-mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F <: Real, IGF, DF, IF} <:
+mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F <: Real, IGF, DF, IF, MSGS} <:
     Linesearch
     candidate_point::P
     contraction_factor::F
@@ -353,7 +371,7 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
     stop_decreasing_at_step::I
     additional_decrease_condition::DF
     additional_increase_condition::IF
-    messages::Dict{Symbol, Int}
+    messages::MSGS
     function ArmijoLinesearchStepsize(
             M::AbstractManifold;
             additional_decrease_condition::DF = (M, p) -> true,
@@ -369,7 +387,11 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
             stop_decreasing_at_step::I = 1000,
             sufficient_decrease = 0.1,
         ) where {TRM, P, I, F, IGF, DF, IF}
-        return new{TRM, P, I, F, IGF, DF, IF}(
+        msgs = (; stop_decreasing = StepsizeMessage{Int,R}(),
+            stop_increasing = StepsizeMessage{Int,R}(),
+            stepsize_less = StepsizeMessage{R,R}(),
+            stepsize_exceeds = StepsizeMessage{R,R}())
+        return new{TRM, P, I, F, IGF, DF, IF, typeof(msgs)}(
             candidate_point,
             contraction_factor,
             initial_guess,
@@ -383,7 +405,7 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
             stop_decreasing_at_step,
             additional_decrease_condition,
             additional_increase_condition,
-            Dict{Symbol, Int64}()
+            msgs,
         )
     end
 end
@@ -402,7 +424,7 @@ end
 function (a::ArmijoLinesearchStepsize)(
         mp::AbstractManoptProblem, p, X, η; initial_guess = 1.0, kwargs...
     )
-    empty!(a.messages)
+    reset_messages!(a.messages)
     l = norm(get_manifold(mp), p, η)
     (a.last_stepsize, messages) = linesearch_backtrack!(
         get_manifold(mp),
@@ -1362,14 +1384,24 @@ function linesearch_backtrack!(
         stop_when_stepsize_exceeds = max_stepsize(M, p) / norm(M, p, η),
         stop_increasing_at_step = 100,
         stop_decreasing_at_step = 1000,
+        report_messages_in::NamedTuple = (;),
     ) where {TF, T}
-    messages = Dict{Symbol, Int}()
     ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
     f_q = f(M, q)
     search_dir_inner = real(inner(M, p, η, X))
-    if search_dir_inner >= 0
-        messages[:non_descent_direction] = 0
+    if search_dir_inner >= 0 
+        if :non_descent_direction in keys(report_messages_in)
+            report_messages_in[:non_descent_direction].at_iteration = 0
+            report_messages_in[:non_descent_direction].value = search_dir_inner
+        end
+        s = zero(s)
+        if :stepsize_less in keys(report_messages_in)
+            report_messages_in[:non_descent_direction].at_iteration = 0
+            report_messages_in[:non_descent_direction].value = search_dir_inner
+        end
+        return s
     end
+
     i = 0
     # Ensure that both the original condition and the additional one are fulfilled afterwards
     while f_q < f0 + decrease * s * search_dir_inner || !additional_increase_condition(M, q)
@@ -1379,11 +1411,15 @@ function linesearch_backtrack!(
         ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
         f_q = f(M, q)
         if i == stop_increasing_at_step
-            messages[:stop_increasing] = i
+            report_messages_in[:stop_increasing].at_iteration = i
+            report_messages_in[:stop_increasing].bound = stop_increasing_at_step
+            report_messages_in[:stop_increasing].value = s
             break
         end
         if s > stop_when_stepsize_exceeds
-            messages[:stepsize_exceeds] = i
+            report_messages_in[:stepsize_exceeds].at_iteration = i
+            report_messages_in[:stepsize_exceeds].bound = stop_when_stepsize_exceeds
+            report_messages_in[:stepsize_exceeds].value = s
             break
         end
     end
@@ -1396,15 +1432,19 @@ function linesearch_backtrack!(
         ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
         f_q = f(M, q)
         if i == stop_decreasing_at_step
-            messages[:stop_decreasing] = i
+            report_messages_in[:stop_decreasing].at_iteration = i
+            report_messages_in[:stop_decreasing].bound = stop_decreasing_at_step
+            report_messages_in[:stop_decreasing].value = s
             break
         end
         if s < stop_when_stepsize_less
-            messages[:stepsize_less] = i
+            report_messages_in[:stepsize_less].at_iteration = i
+            report_messages_in[:stepsize_less].bound = stop_decreasing_at_step
+            report_messages_in[:stepsize_less].value = s
             break
         end
     end
-    return (s, messages)
+    return s
 end
 
 @doc """
@@ -1908,7 +1948,7 @@ $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 """
 mutable struct WolfePowellLinesearchStepsize{
-        R <: Real, TRM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T, I,
+        R <: Real, TRM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T, I, TMSG<:NamedTuple
     } <: Linesearch
     sufficient_decrease::R
     sufficient_curvature::R
@@ -1921,7 +1961,7 @@ mutable struct WolfePowellLinesearchStepsize{
     vector_transport_method::VTM
     stop_increasing_at_step::Int
     stop_decreasing_at_step::Int
-    messages::Dict{Symbol, Int}
+    messages::TMSG
     function WolfePowellLinesearchStepsize(
             M::AbstractManifold;
             p::P = allocate_result(M, rand),
@@ -1935,7 +1975,11 @@ mutable struct WolfePowellLinesearchStepsize{
             stop_increasing_at_step::I = 100,
             stop_decreasing_at_step::I = 1000,
         ) where {TRM, VTM, P, T, R, I}
-        return new{R, TRM, VTM, P, T, I}(
+        msgs = (; stop_decreasing = StepsizeMessage{Int,R}(),
+            stop_increasing = StepsizeMessage{Int,R}(),
+            stepsize_less = StepsizeMessage{R,R}(),
+            stepsize_exceeds = StepsizeMessage{R,R}())
+        return new{R, TRM, VTM, P, T, I, typeof(msgs)}(
             sufficient_decrease,
             sufficient_curvature,
             X,
@@ -1947,7 +1991,7 @@ mutable struct WolfePowellLinesearchStepsize{
             vector_transport_method,
             stop_increasing_at_step,
             stop_decreasing_at_step,
-            Dict{Symbol, Int}()
+            msgs,
         )
     end
 end
@@ -1970,7 +2014,8 @@ function (a::WolfePowellLinesearchStepsize)(
     s_plus = step
     s_minus = step
     # clear messages
-    empty!(a.messages)
+    reset_messages!(a.messages)
+
     f0 = get_cost(mp, p)
     ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
     fNew = get_cost(mp, a.candidate_point)
@@ -1988,7 +2033,8 @@ function (a::WolfePowellLinesearchStepsize)(
             fNew = get_cost(mp, a.candidate_point)
             i += 1
             if i == a.stop_decreasing_at_step
-                messages[:stop_decreasing] = k
+                a.messages[:stop_decreasing] = k
+                a.messages[:stop_decreasing].bound = a.stop_decreasing_at_step
                 break
             end
         end
@@ -2004,7 +2050,8 @@ function (a::WolfePowellLinesearchStepsize)(
                 ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
                 fNew = get_cost(mp, a.candidate_point)
                 if i == a.stop_increasing_at_step
-                    a.messages[:stop_increasing] = k
+                    a.messages[:stop_increasing].at_iteration = k
+                    a.messages[:stop_increasing].bound = a.stop_increasing_at_step
                     break
                 end
             end
@@ -2023,7 +2070,8 @@ function (a::WolfePowellLinesearchStepsize)(
             s_plus = step
         end
         if abs(s_plus - s_minus) <= a.stop_when_stepsize_less
-            a.messages[:stepsize_less] = k
+            a.messages[:stepsize_less].at_iteration = k
+            a.messages[:stepsize_less].bound = a.stop_when_stepsize_less
             break
         end
         ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
@@ -2054,15 +2102,14 @@ function status_summary(a::WolfePowellLinesearchStepsize)
 end
 function get_message(a::WolfePowellLinesearchStepsize)
     m = a.messages
-    k = keys(m)
     msg = ""
-    if :stop_decreasing ∈ k
+    if a.messages[:stop_decreasing].at_iteration > 0
         msg = msg * get_message(:stop_decreasing, m[:stop_decreasing], a.stop_decreasing_at_step)
     end
-    if :stop_increasing ∈ k
+    if a.messages[:stop_increasing].at_iteration > 0
         msg = msg * get_message(:stop_increasing, m[:stop_increasing], a.stop_increasing_at_step)
     end
-    if :stepsize_less ∈ k
+    if a.messages[:stepsize_less].at_iteration > 0
         msg = msg * get_message(:stepsize_less, m[:stepsize_less], a.last_stepsize, a.stop_when_stepsize_less)
     end
     (length(msg) > 0) && (msg = "Wolfe-Powell Linesearch:\n$msg")
