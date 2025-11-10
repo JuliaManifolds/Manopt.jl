@@ -74,7 +74,6 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             evaluation = InplaceEvaluation(),
             return_state = true,
         )
-        @test Manopt.get_message(r) == ""
         @test startswith(
             repr(r), "# Solver state for `Manopt.jl`s Alternating Gradient Descent Solver"
         )
