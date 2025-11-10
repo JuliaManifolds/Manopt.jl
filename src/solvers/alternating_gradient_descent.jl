@@ -172,7 +172,8 @@ end
 
 # update Armijo to work on the kth gradient only.
 function (a::ArmijoLinesearchStepsize)(
-        amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, ::Int
+        amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, ::Int, η;
+        kwargs...
     )
     reset_messages!(a.messages)
     M = get_manifold(amp)
