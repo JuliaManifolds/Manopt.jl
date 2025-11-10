@@ -1775,7 +1775,7 @@ function (a::WolfePowellLinesearchStepsize)(
             fNew = get_cost(mp, a.candidate_point)
             i += 1
             if i == a.stop_decreasing_at_step
-                set_message!(a.messages, :stop_decreasing, at = k, bound = a.stop_decreasing_at_step, value = s_minus)
+                set_message!(a.messages, :stop_decreasing, at = i, bound = a.stop_decreasing_at_step, value = s_minus)
                 break
             end
         end
@@ -1790,8 +1790,9 @@ function (a::WolfePowellLinesearchStepsize)(
                 step = s_plus
                 ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
                 fNew = get_cost(mp, a.candidate_point)
+                i += 1
                 if i == a.stop_increasing_at_step
-                    set_message!(a.messages, :stop_increasing, at = k, bound = a.stop_increasing_at_step, value = s_plus)
+                    set_message!(a.messages, :stop_increasing, at = i, bound = a.stop_increasing_at_step, value = s_plus)
                     break
                 end
             end

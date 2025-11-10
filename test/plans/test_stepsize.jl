@@ -380,4 +380,45 @@ using ManoptTestSuite
         @test isinf(Manopt.max_stepsize(M))
         @test isinf(Manopt.max_stepsize(M, :NoPoint))
     end
+    @testset "stepsize messages" begin
+        msgRR = Manopt.StepsizeMessage(; bound = 0.0, value = 0.1)
+        msgRR.at_iteration = 1
+        msgIR = Manopt.StepsizeMessage(; bound = 10, value = 0.2)
+        msgIR.at_iteration = 1
+
+        s1 = Manopt.get_message(:non_descent_direction, msgRR)
+        @test contains(s1, "⟨η, grad_f(p)⟩ = 0.1 ≥ 0.0")
+        s1b = Manopt.get_message(:non_descent_direction, 1, 0.1, 0.0)
+        @test s1 == s1b
+        s2 = Manopt.get_message(:stepsize_exceeds, msgRR)
+        @test contains(s2, "bound (0.0) exceeded")
+        @test contains(s2, "Reducing to 0.1")
+        s3 = Manopt.get_message(:stop_decreasing, msgIR)
+        @test contains(s3, "number of decrease steps (10) reached")
+        @test contains(s3, "Continuing with a stepsize of 0.2")
+        s4 = Manopt.get_message(:stop_increasing, msgIR)
+        @test contains(s4, "number of increase steps (10) reached")
+        @test contains(s4, "Continuing with a stepsize of 0.2")
+        s5 = Manopt.get_message(:stepsize_less, msgRR)
+        @test contains(s5, "bound (0.0) reached")
+        @test contains(s5, "Falling back to a stepsize of 0.1")
+    end
+    @testset "Warnings withing WolfePowellLinesearch" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p = [2.0, 2.0]
+        gs = GradientDescentState(M; p = p)
+        # large sufficient curvatuture to trigger stop inc.
+        wpls = WolfePowellLinesearch(M; stop_increasing_at_step = 1, stop_decreasing_at_step = 1)()
+        wpls(dmp, gs, 1)
+        # This set the dec message
+        @test wpls.messages[:stop_decreasing].at_iteration > 0
+        # to hit the innc message we set the values to something surreal
+        wpls.sufficient_decrease = 0.1
+        wpls.sufficient_curvature = 0.2
+        wpls(dmp, gs, 2, -0.0001 * grad_f(M, p))
+        @test wpls.messages[:stop_increasing].at_iteration > 0
+    end
 end

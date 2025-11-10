@@ -8,6 +8,11 @@ a step size underflow happens at a certain iteration
 - `at_iteration::Int`: The iteration at which the message was set
 - `bound::TBound`: The bound that was hit
 - `value::TS`: The corresponding value that either caused the message or provides additional information
+
+# Constructor
+
+    StepsizeMessage(; bound::TBound = 0.0, value::TS = 0.0)
+
 """
 mutable struct StepsizeMessage{TBound <: Real, TS <: Real}
     at_iteration::Int
@@ -17,6 +22,12 @@ end
 
 function StepsizeMessage{TBound, TS}() where {TBound <: Real, TS <: Real}
     return StepsizeMessage{TBound, TS}(-1, zero(TS), zero(TS))
+end
+
+function StepsizeMessage(
+        ; bound::TBound = 0.0, value::TS = 0.0
+    ) where {TBound <: Real, TS <: Real}
+    return StepsizeMessage{TBound, TS}(-1, bound, value)
 end
 
 """
@@ -96,8 +107,8 @@ Display a message string for a non-descent direction encountered at iteration `k
 function get_message(::Val{:non_descent_direction}, k::Int = -1, value::Real = NaN, bound::Real = 0)
     (k < 0) && (return "")
     s = (k == 0) ? "the beginning" : "iteration #$k"
-    v_str = isnan(value) ? "" : "($value ≥ $bound)"
-    return (k >= 0) ? "At $s: Non-descent direction encountered $v_str." : ""
+    v_str = isnan(value) ? "" : "(⟨η, grad_f(p)⟩ = $value ≥ $bound)"
+    return (k >= 0) ? "At $s: Non-descent direction η encountered $v_str." : ""
 end
 
 """
@@ -148,7 +159,7 @@ and the step size `step` chosen instead.
 function get_message(::Val{:stepsize_less}, k::Int = -1, value::Real = NaN, bound::Real = NaN)
     (k < 0) && (return "")
     s = (k == 0) ? "the beginning" : "iteration #$k"
-    s_str = isnan(value) ? "" : " Falling back to a stepsize of $value"
+    s_str = isnan(value) ? "" : " Falling back to a stepsize of $value."
     b_str = isnan(bound) ? "" : "($bound)"
     return (k > 0) ? "At $s: Minimal stepsize less than bound $b_str reached.$s_str" : ""
 end
