@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * In `WolfePowellLinesearchStepsize`, two new keyword arguments `stop_increasing_at_step=` and `stop_decreasing_at_step=` were added to limit the number of increase/decrease steps in the initial bracketing phase for s_plus and s_minus, respectively. (resolves (#495))
+* refactor `get_message` to only allocate a string when it is asked to deliver one, not every time a message is actually stored. This makes the message system align more with `get_reason`.
 
 ## [0.5.26] November 5, 2025
 
