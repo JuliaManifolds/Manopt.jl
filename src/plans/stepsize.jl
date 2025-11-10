@@ -2390,10 +2390,10 @@ end
 Display a message string for a stepsize exceeding a certain bound at iteration `k`
 amd the step size `step` chosen instead.
 """
-function get_message(::Val{:stepsize_exceeds}, k::Int = -1, step::Real = NaN, bound::Real = NaN)
+function get_message(::Val{:stepsize_exceeds}, k::Int = -1, value::Real = NaN, bound::Real = NaN)
     (k < 0) && (return "")
     s = (k == 0) ? "the beginning" : "iteration #$k"
-    s_str = isnan(step) ? "" : "Reducing to $step"
+    s_str = isnan(value) ? "" : "Reducing to $value"
     b_str = isnan(bound) ? "" : "($bound)"
     return (k > 0) ? "At $s: Maximal step size bound $b_str exceeded. $s_str." : ""
 end
@@ -2403,10 +2403,10 @@ end
 Display a message string for stopping the decrease of the step size at iteration `k`
 and the step size `step` chosen instead.
 """
-function get_message(::Val{:stop_decreasing}, k::Int = -1, num_steps::Int = -1)
+function get_message(::Val{:stop_decreasing}, k::Int = -1, bound::Int = -1)
     (k < 0) && (return "")
     s = (k == 0) ? "the beginning" : "iteration #$k"
-    s_str = isnan(step) ? "" : "($num_steps)"
+    s_str = isnan(step) ? "" : "($bound)"
     return (k > 0) ? "At $s: Maximal number of decrease steps $s_str reached. Aborting decrease." : ""
 end
 """
@@ -2415,10 +2415,10 @@ end
 Display a message string for stopping the increase of the step size at iteration `k`
 and the step size `step` chosen instead.
 """
-function get_message(::Val{:stop_increasing}, k::Int = -1, num_steps::Int = -1)
+function get_message(::Val{:stop_increasing}, k::Int = -1, bound::Int = -1)
     (k < 0) && (return "")
     s = (k == 0) ? "the beginning" : "iteration #$k"
-    s_str = isnan(step) ? "" : "($num_steps)"
+    s_str = isnan(bound) ? "" : "($bound)"
     return (k > 0) ? "At $s: Maximal number of increase steps $s_str reached. Aborting increase." : ""
 end
 """
