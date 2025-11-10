@@ -47,6 +47,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             "\n",
             :Stop,
             10,
+            DebugMessages(:Info, :Always),
         ]
 
         sc = StopAfterIteration(800) | StopWhenKKTResidualLess(1.0e-2)

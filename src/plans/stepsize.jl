@@ -1393,9 +1393,6 @@ function linesearch_backtrack!(
     search_dir_inner = real(inner(M, p, η, X))
     if search_dir_inner >= 0
         set_message!(report_messages_in, :non_descent_direction, at = 0, value = search_dir_inner)
-        s = zero(s)
-        set_message!(report_messages_in, :stepsize_less, at = 0, value = s)
-        return s
     end
 
     i = 0
