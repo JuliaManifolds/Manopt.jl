@@ -1,0 +1,158 @@
+---
+title: "Using Manopt.jl from within JuMP"
+author: Ronny Bergmann
+---
+
+In this tutorial we aim to illustrate how to use manifolds and the algorithms from [`Manopt.jl`](https://manoptjl.org) within the [JuMP](https://jump.dev) framework by implementing the [get started](getstarted.md) tutorial again using JuMP combining it with for example their [get started](https://jump.dev/JuMP.jl/stable/tutorials/getting_started/getting_started_with_JuMP/#Getting-started-with-JuMP) tutorial.
+
+```{julia}
+#| echo: false
+#| code-fold: true
+#| output: false
+using Pkg;
+cd(@__DIR__)
+Pkg.activate("."); # for reproducibility use the local tutorial environment.
+```
+
+```{julia}
+using JuMP, Manopt, Manifolds, ManifoldsBase, Random
+using ManifoldDiff: grad_distance, prox_distance
+Random.seed!(42);
+```
+
+First we generate the same data for the [Riemannian center of mass](getstarted.md) as before
+
+```{julia}
+n = 100
+σ = π / 8
+M = Sphere(2)
+p0 = 1 / sqrt(2) * [1.0, 0.0, 1.0]
+data = [exp(M, p0,  σ * rand(M; vector_at=p0)) for i in 1:n];
+```
+
+and we start by stating that our [JuMP model](https://jump.dev/JuMP.jl/stable/manual/models/) is
+
+```{julia}
+model = Model(Manopt.JuMP_Optimizer)
+```
+
+Next we add a [JuMP variable](https://jump.dev/JuMP.jl/stable/manual/variables/),
+where we specify the manifold using the `in` keyword, `start=` cares for the initialisation
+
+```{julia}
+@variable(model, p[i=1:3] in M, start=p0[i])
+```
+
+Our cost and gradient are defined as
+
+```{julia}
+f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
+grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
+```
+
+## Variant I: Specify the Riemannian Objective
+
+As the first variant, we can set the objective to an already implemented Riemannian function,
+using the [`ManifoldGradientObjective`](@ref).
+
+```{julia}
+@objective(model, Min, ManifoldGradientObjective(f, grad_f))
+```
+
+We set the start point and look at the overall model to see that the solver that by default will be used is the [gradient descent](../solvers/gradient_descent.md)
+
+```{julia}
+#| output: false
+set_start_value.(p, p0)
+```
+
+Then we can call the solver
+
+```{julia}
+optimize!(model)
+```
+
+and look at the solution
+
+```{julia}
+solution_summary(model)
+```
+
+```{julia}
+q1 = value.(p)
+```
+
+## Variant II: Specify cost in the embedding
+
+As a second variant, we define the objective in the embedding, so here the $\mathbb R^3$,
+since then we can leave both the gradient computation and conversion from the Euclidean
+to Riemannian gradient to JuMP.
+
+```{julia}
+model2 = Model(Manopt.JuMP_Optimizer)
+@variable(model2, p[i=1:3] in M, start = p0[i])
+```
+
+We defined the cost function in the embedding in a form, that `JuMP` can perform AD with.
+
+```{julia}
+#| output: false
+@objective(model2, Min, sum(sum((p - d) .^ 2) for d in data) / (2 * n))
+```
+
+One disadvantage of this formulation and leaving the AD to JuMP is, that the
+exponential map computations accumulate an error over time. We use a stabilized version
+to compensate for that by setting the retraction to the stabilized version of the exponential map, that for numerical stability performs a projection onto the manifold as well.
+
+```{julia}
+set_attribute(model2, "retraction_method", ManifoldsBase.StabilizedRetraction(ExponentialRetraction()))
+set_start_value.(p, p0)
+model2
+```
+
+Then we start the solver again with
+
+```{julia}
+optimize!(model2)
+```
+
+and look at the solution
+
+```{julia}
+solution_summary(model2)
+```
+
+Since we are optimizing different functions, the results are not completely the same; the first objective computes geodesic distances between the points,
+while the second computes the distances in $\bbR^3$.
+Still the resulting minimizer
+
+```{julia}
+q2 = value.(p)
+```
+
+is not that far away from the result of the first solver run.
+
+```{julia}
+distance(Sphere(2), q1, q2)
+```
+
+## Non-array representation
+
+TODO
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+#| echo: false
+#| output: asis
+using Dates
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
+```
