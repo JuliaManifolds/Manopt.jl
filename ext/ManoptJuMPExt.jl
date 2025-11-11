@@ -194,10 +194,11 @@ end
 Return a `Bool` indicating whether `attr.name` is a valid option name
 for `Manopt`.
 """
-function MOI.supports(::ManoptOptimizer, ::MOI.RawOptimizerAttribute)
+function MOI.supports(::ManoptOptimizer, attr::MOI.RawOptimizerAttribute)
     # FIXME Ideally, this should only return `true` if it is a valid keyword argument for
     #       one of the `...DescentState()` constructors. Is there an easy way to check this ?
     #       Does it depend on the different solvers ?
+    @info attr.name
     return true
 end
 
@@ -503,6 +504,10 @@ function MOI.optimize!(model::ManoptOptimizer)
     return nothing
 end
 
+#
+#
+# A wrapper for points that are just array shaped
+
 @doc """
     ManifoldPointArrayShape{N} <: JuMP.AbstractShape
 
@@ -588,27 +593,63 @@ At the moment, we only support manifolds for which the shape is a `Array`.
 function _shape(m::ManifoldsBase.AbstractManifold)
     return ManifoldPointArrayShape(ManifoldsBase.representation_size(m))
 end
+function _shape(m::ManifoldsBase.AbstractManifold, ::Nothing)
+    return _shape(m)
+end
+function _shape(m::ManifoldsBase.AbstractManifold, ::P) where {P}
+    error("TODO")
+end
+
+"""
+    JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold, ::Type{P}=Nothing)
+
+Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
+and the [`ManifoldSet`](@ref) in which they should belong as well as the
+`shape` that can be used to go from the vectorized MOI representation to the
+shape of the manifold, that is, [`ManifoldPointArrayShape`](@ref).
+
+The optional parameter `P` can be used to indicate that the point is different from an integer
+"""
+function JuMP.build_variable(::Function, point, m::ManifoldsBase.AbstractManifold)
+    @info point
+    shape = _shape(m)
+    return JuMP.VariablesConstrainedOnCreation(
+        JuMP.vectorize(point, shape), ManifoldSet(m), shape
+    )
+end
+
+#
+#
+# Non-Array points, either general structs or those that require wrappers
+# Test examples:
+# * HyperboloidPoint (the same as array on Hyperbolic, so basically an array)
+# * SVDMPoint on FixedRank, which actualy has 3 fields
+
+@doc """
+    ManifoldPointArrayShape{M, P} <: JuMP.AbstractShape
+
+A wrapper for points on a manifold of type `M` of type `P`
+
+# Fields
+
+* manifold::M
+"""
+struct ManifoldPointShape{M <: AbstractManifold, P} <: JuMP.AbstractShape
+    manifold::M
+end
+
+# Functions we need
+
+
+#
+#
+# Generic further functions
 
 _in(mime::MIME"text/plain") = "in"
 _in(mime::MIME"text/latex") = "\\in"
 
 function JuMP.in_set_string(mime, set::ManifoldsBase.AbstractManifold)
     return _in(mime) * " " * string(set)
-end
-
-"""
-    JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
-
-Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
-and the [`ManifoldSet`](@ref) in which they should belong as well as the
-`shape` that can be used to go from the vectorized MOI representation to the
-shape of the manifold, that is, [`ManifoldPointArrayShape`](@ref).
-"""
-function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
-    shape = _shape(m)
-    return JuMP.VariablesConstrainedOnCreation(
-        JuMP.vectorize(func, shape), ManifoldSet(m), shape
-    )
 end
 
 """
