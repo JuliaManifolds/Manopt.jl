@@ -172,12 +172,14 @@ end
 
 # update Armijo to work on the kth gradient only.
 function (a::ArmijoLinesearchStepsize)(
-        amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, ::Int
+        amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, ::Int, η;
+        kwargs...
     )
+    reset_messages!(a.messages)
     M = get_manifold(amp)
     X = zero_vector(M, agds.p)
     get_gradient!(amp, X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
-    (a.last_stepsize, a.message) = linesearch_backtrack!(
+    a.last_stepsize = linesearch_backtrack!(
         M,
         a.candidate_point,
         (M, p) -> get_cost(amp, p),
@@ -187,6 +189,7 @@ function (a::ArmijoLinesearchStepsize)(
         a.sufficient_decrease,
         a.contraction_factor;
         retraction_method = a.retraction_method,
+        report_messages_in = a.messages,
     )
     return a.last_stepsize
 end

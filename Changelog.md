@@ -6,6 +6,13 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.27] November 11, 2025
+
+### Added
+
+* In `WolfePowellLinesearchStepsize`, two new keyword arguments `stop_increasing_at_step=` and `stop_decreasing_at_step=` were added to limit the number of increase/decrease steps in the initial bracketing phase for s_plus and s_minus, respectively. (resolves (#495))
+* refactor `get_message` to only allocate a string when it is asked to deliver one, not every time a message is actually stored. This makes the message system align more with `get_reason`.
+
 ## [0.5.26] November 5, 2025
 
 ### Added
@@ -235,7 +242,7 @@ present; they were changed to `retact_fused!`.
 * add a `PreconditionedDirection` variant to the `direction` gradient processor
   keyword argument and its corresponding `PreconditionedDirectionRule`
 * make the preconditioner available in quasi Newton.
-* in `gradient_descent` and `conjugate_gradient_descent` the rule can be added anyways.
+* in `gradient_descent` and `conjugate_gradient_descent` the rule can be added anyway.
 
 ### Fixed
 
@@ -370,7 +377,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
   * index for equality constraints is unified to `j` running from `1,...,n`
   * iterations are using now `k`
 * `get_manopt_parameter` has been renamed to `get_parameter` since it is internal,
-  so internally that is clear; accessing it from outside hence reads anyways `Manopt.get_parameter`
+  so internally that is clear; accessing it from outside hence reads anyway `Manopt.get_parameter`
 * `set_manopt_parameter!` has been renamed to `set_parameter!` since it is internal,
   so internally that is clear; accessing it from outside hence reads `Manopt.set_parameter!`
 * changed the `stabilize::Bool=` keyword in `quasi_Newton` to the more flexible `project!=`
