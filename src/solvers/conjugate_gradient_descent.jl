@@ -83,7 +83,7 @@ $(_var(:Argument, :p))
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
-* `restart_condition::AbstractRestartCondition=`[`NeverRestart`]`)(@ref)`()`:
+* `restart_condition::AbstractRestartCondition=`[`NeverRestart`](@ref)`()`:
   rule when the algorithm should restart, i.e. use the negative gradient instead of the computed direction,
   as a functior where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
@@ -96,6 +96,8 @@ $(_var(:Keyword, :vector_transport_method))
 
 If you provide the [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
+
+$(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
 """

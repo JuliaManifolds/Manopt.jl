@@ -52,7 +52,7 @@ The following fields from above <re keyword arguments
 $(_var(:Keyword, :X, "initial_gradient"))
 $(_var(:Keyword, :p; add = :as_Initial))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
-* `restart_condition=[`NeverRestart`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to never restart.
+* `restart_condition=`[`NeverRestart`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to never restart.
 $(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`"))
 $(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`)"))
 $(_var(:Keyword, :retraction_method))
