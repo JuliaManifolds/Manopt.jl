@@ -210,7 +210,7 @@ Overall, we look for step size, that provides _enough decrease_, see
 * `initial_stepsize=1.0`: specify an initial step size
 * `initial_guess=`[`ArmijoInitialGuess`](@ref): Compute the initial step size of
   a line search based on this function.
-  The funtion required is `(p,s,k,l) -> α` and computes the initial step size ``α``
+  The function required is `(p,s,k,l) -> α` and computes the initial step size ``α``
   based on a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `s`,
   the current iterate `k` and a last step size `l`.
 $(_var(:Keyword, :retraction_method))
