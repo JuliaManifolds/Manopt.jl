@@ -14,7 +14,7 @@ where ``$(_tex(:Cal, "C")) ⊂ $(_math(:M))`` is a convex closed subset.
 * `objective::AbstractManifoldObjective` the (unconstrained) objective, which
   contains ``f`` and for example ist gradient ``$(_tex(:grad)) f``.
 * `project!!::PF` a projection function ``$(_tex(:proj))_{$(_tex(:Cal, "C"))}: $(_math(:M)) → $(_tex(:Cal, "C"))`` that projects onto the set ``$(_tex(:Cal, "C"))``.
-* `indicator::IF` the indicator function ``ι_{$(_tex(:Cal, "C"))}(p) = $(_tex(:cases, "0 &" * _tex(:text, " for ") * "p∈" * _tex(:Cal, "C"), "∞ &" * _tex(:text, " else.")))
+* `indicator::IF` the indicator function ``ι_{$(_tex(:Cal, "C"))}(p) = $(_tex(:cases, "0 &" * _tex(:text, " for ") * "p∈" * _tex(:Cal, "C"), "∞ &" * _tex(:text, " else.")))``
 
 # Constructor
 
