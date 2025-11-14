@@ -69,6 +69,11 @@ end
 
 
 """
+    (hzi::HagerZhangInitialGuess{TF})(mp::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int, last_stepsize::Real, η; lf0, Dlf0) where {TF <: Real}
+
+Initial line search guess from the paper [HagerZhang:2006:2](@cite), following the procedure
+`initial`. The line search was adapted to the Riemannian setting by introducing
+customizable norms for point and tangent vectors and maximum stepsize `alphamax`.
 """
 function (hzi::HagerZhangInitialGuess{TF})(mp::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int, last_stepsize::Real, η; lf0, Dlf0) where {TF <: Real}
     M = get_manifold(mp)
