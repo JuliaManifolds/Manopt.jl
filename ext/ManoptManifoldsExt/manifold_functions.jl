@@ -1,3 +1,8 @@
+
+Manopt.default_point_norm(::Euclidean, p) = norm(p, Inf)
+
+Manopt.default_vector_norm(::Euclidean, p, X) = norm(p, Inf)
+
 """
     max_stepsize(M::TangentBundle, p)
 
