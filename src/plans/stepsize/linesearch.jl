@@ -80,9 +80,35 @@ _doc_linesearch_backtrack = """
     s = linesearch_backtrack(M, F, p, s, decrease, contract, η; kwargs...)
     s = linesearch_backtrack!(M, q, F, p, s, decrease, contract, η; kwargs...)
 
-perform a line search
+perform a line search along ``\ell_f(s) = f($(_tex(:retr))_p(sη)`` to find a stepsize `s`.
+See [NocedalWright:2006; Section 3](@cite) for details.
+
+The linesearch starts with a first phase where the stepsize is increased as ``s ↦ s / σ``
+until
+
+```math
+f($(_tex(:retr))_p(sη)) ≥ f(p) + a * s * Df(p)[η]
+````
+
+where ``a`` is the `decrease` parameter, and ``Df(p)[η]`` is the directional derivative.
+
+Then the actual backtracking phase starts, where the stepsize is decreased as ``s ↦ σ s``
+until
+```math
+f($(_tex(:retr))_p(sη)) ≤ f(p) + b * s * Df(p)[η]
+```
+
+where ``b`` is the `decrease` parameter.
 
 This can be done in-place, where `q` is the point to store the point reached in.
+
+Both phases have a safeguard on the maximal number of steps to perform as well as an
+upper and lower bound for the stepsize, respectively.
+The upper bound is a special case on manifolds to avoid exceeding the injectivity radius.
+Furthermore, both phases can be equipped with additional conditions to be fulfilled in order to
+accept the current stepsize.
+
+## Arguments
 
 * on manifold `M`
 * for the cost function `f`,
