@@ -205,7 +205,7 @@ Overall, we look for step size, that provides _enough decrease_, see
 * `additional_increase_condition::IF=(M, p) -> true`:
   specify an additional criterion that has to be met to accept a step size in the (initial) increase loop
 * `candidate_point=allocate_result(M, rand)`:
-  speciy a point to be used as memory for the candidate points.
+  specify a point to be used as memory for the candidate points.
 * `contraction_factor=0.95`: how to update ``s`` in the decrease step
 * `initial_stepsize=1.0`: specify an initial step size
 * `initial_guess=`[`ArmijoInitialGuess`](@ref)`()`: Compute the initial step size of
