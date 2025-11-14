@@ -1,50 +1,3 @@
-"""
-    armijo_initial_guess(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k, l, η; kwargs...)
-
-# Input
-
-* `mp`: the [`AbstractManoptProblem`](@ref) we are aiming to minimize
-* `s`:  the [`AbstractManoptSolverState`](@ref) for the current solver
-* `k`:  the current iteration
-* `l`:  the last step size computed in the previous iteration.
-* `η`:  the search direction
-
-Return an initial guess for the [`ArmijoLinesearchStepsize`](@ref).
-
-The default provided is based on the [`max_stepsize`](@ref)`(M)`, which we denote by ``m``.
-Let further ``X`` be the current descent direction with norm ``n=$(_tex(:norm, "X"; index = "p"))`` its length.
-Then this (default) initial guess returns
-
-* ``l`` if ``m`` is not finite
-* ``$(_tex(:min))(l, $(_tex(:frac, "m", "n")))`` otherwise
-
-This ensures that the initial guess does not yield to large (initial) steps.
-"""
-function armijo_initial_guess(
-        mp::AbstractManoptProblem, s::AbstractManoptSolverState, ::Int, l::Real, η; kwargs...
-    )
-    M = get_manifold(mp)
-    X = get_gradient(s)
-    p = get_iterate(s)
-    grad_norm = norm(M, p, X)
-    max_step = max_stepsize(M, p)
-    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
-end
-
-_doc_stepsize_initial_guess(default = "") = """
-* `initial_guess`$(length(default) > 0 ? " = $(default)" : ""): a function to provide an initial guess for the step size,
-  it maps `(problem, state, k, last_stepsize, η) -> α_0` based on
-  * a [`AbstractManoptProblem`](@ref) `problem`
-  * a [`AbstractManoptSolverState`](@ref) `state`
-  * the current iterate `k`
-  * the last step size `last_stepsize`
-  * the search direction `η`
-  and should at least accept the keywords
-  * `lf0 = `[`get_cost`](@ref)`(problem, get_iterate(state))` the current cost at ^p` here interpreted as the initial point of `f` along the line search direction`
-  * `Dlf0 = `[`get_differential`](@ref)`(problem, get_iterate(state), η)` the directional derivative at point `p` in direction `η`
-
-"""
-
 @doc """
     ArmijoLinesearchStepsize <: Linesearch
 
@@ -95,7 +48,7 @@ $(_var(:Keyword, :retraction_method))
 * `stop_increasing_at_step=100`: for the initial increase test, stop after these many steps
 * `stop_decreasing_at_step=1000`: in the backtrack, stop after these many steps
 """
-mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F <: Real, IGF, DF, IF, MSGS} <:
+mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F <: Real, IGF <: AbstractInitialLinesearchGuess, DF, IF, MSGS} <:
     Linesearch
     candidate_point::P
     contraction_factor::F
@@ -118,7 +71,7 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
             candidate_point::P = allocate_result(M, rand),
             contraction_factor::F = 0.95,
             initial_stepsize::F = 1.0,
-            initial_guess::IGF = armijo_initial_guess,
+            initial_guess::IGF = ArmijoInitialGuess(),
             retraction_method::TRM = default_retraction_method(M),
             stop_when_stepsize_less::F = 0.0,
             stop_when_stepsize_exceeds = max_stepsize(M),
