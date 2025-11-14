@@ -42,7 +42,7 @@ $(_var(:Keyword, :retraction_method))
 * `contraction_factor=0.95`
 * `sufficient_decrease=0.1`
 * `last_stepsize=initialstepsize`
-* `initial_guess=`[`armijo_initial_guess`](@ref)
+* `initial_guess=`[`ArmijoInitialGuess`](@ref)
 * `stop_when_stepsize_less=0.0`: stop when the stepsize decreased below this version.
 * `stop_when_stepsize_exceeds=[`max_step`](@ref)`(M)`: provide an absolute maximal step size.
 * `stop_increasing_at_step=100`: for the initial increase test, stop after these many steps
@@ -71,14 +71,14 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
             candidate_point::P = allocate_result(M, rand),
             contraction_factor::F = 0.95,
             initial_stepsize::F = 1.0,
-            initial_guess::IGF = armijo_initial_guess,
+            initial_guess::IGF = ArmijoInitialGuess(),
             retraction_method::TRM = default_retraction_method(M),
             stop_when_stepsize_less::F = 0.0,
             stop_when_stepsize_exceeds::Real = max_stepsize(M),
             stop_increasing_at_step::I = 100,
             stop_decreasing_at_step::I = 1000,
             sufficient_decrease = 0.1,
-        ) where {TRM <: AbstractRetractionMethod, P, I, F <: Real, IGF <: AbstractInitialLinesearchGuess, DF, IF}
+        ) where {TRM <: AbstractRetractionMethod, P, I, F <: Real, IGF, DF, IF}
         msgs = (;
             non_descent_direction = StepsizeMessage{F, F}(),
             stop_decreasing = StepsizeMessage{Int, F}(),
