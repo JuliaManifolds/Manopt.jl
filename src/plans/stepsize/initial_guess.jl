@@ -1,5 +1,17 @@
 abstract type AbstractInitialLinesearchGuess end
 
+struct ConstantInitialGuess{TF} <: AbstractInitialLinesearchGuess
+    α::TF
+end
+ConstantInitialGuess() = ConstantInitialGuess(1.0)
+
+function (cig::ConstantInitialGuess)(
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, ::Int, l::Real, η; kwargs...
+    )
+    return cig.α
+end
+
+
 struct ArmijoInitialGuess <: AbstractInitialLinesearchGuess end
 
 """
@@ -49,10 +61,31 @@ _doc_stepsize_initial_guess(default = "") = """
 
 """
 
-default_point_norm(::AbstractManifold, p) = one(number_eltype(p))
-default_point_norm(::DefaultManifold, p) = norm(p, Inf)
+"""
+    default_point_distance(::AbstractManifold, p)
 
-default_vector_norm(M::AbstractManifold, p, X) = norm(M, p, X)
+The default Hager-Zhang guess for distance between `p` the solution to the optimization
+problem. The default is 0, which deactivates heuristic I0 (a).
+On each manifold with `default_point_distance`, you need to also implement `default_vector_norm`.
+"""
+default_point_distance(::AbstractManifold, p) = zero(number_eltype(p))
+
+"""
+    default_point_distance(::DefaultManifold, p)
+
+Following [HagerZhang:2006:2](@cite), the expected distance to the optimal solution from `p`
+on `DefaultManifold` is the `Inf` norm of `p`.
+"""
+default_point_distance(::DefaultManifold, p) = norm(p, Inf)
+
+"""
+    default_point_distance(::AbstractManifold, p)
+
+The default Hager-Zhang guess for distance between `p` the solution to the optimization
+problem along the descent direction. There is no default implementation because it is only
+needed for manifolds with a specific `default_point_distance` method.
+"""
+default_vector_norm(M::AbstractManifold, p, X)
 default_vector_norm(::DefaultManifold, p, X) = norm(p, Inf)
 
 
@@ -69,7 +102,7 @@ struct HagerZhangInitialGuess{TF <: Real, TPN, TVN} <: AbstractInitialLinesearch
     ψ2::TF
     constant_guess::TF
     quadstep::Bool
-    point_norm::TPN
+    point_distance::TPN
     vector_norm::TVN
     zero_abstol::TF
     alphamax::TF
@@ -82,14 +115,14 @@ function HagerZhangInitialGuess{TF}(;
         ψ2::TF = 2.0,
         constant_guess::TF = NaN,
         quadstep::Bool = true,
-        point_norm::TPN = default_point_norm,
+        point_distance::TPN = default_point_distance,
         vector_norm::TVN = default_vector_norm,
         zero_abstol::TF = eps(TF),
         alphamax::TF = Inf,
     ) where {TF <: Real, TPN, TVN}
     return HagerZhangInitialGuess{TF, TPN, TVN}(
         ψ0, ψ1, ψ2, constant_guess, quadstep,
-        point_norm, vector_norm, zero_abstol, alphamax
+        point_distance, vector_norm, zero_abstol, alphamax
     )
 end
 
@@ -106,12 +139,12 @@ function (hzi::HagerZhangInitialGuess{TF})(
     alphamax = min(hzi.alphamax, max_stepsize(M, p))
 
     if k == 1
-        pn = hzi.point_norm(M, p)
-        ηn = hzi.vector_norm(M, p, η)
+        pn = hzi.point_distance(M, p)
         # Step I0
         if isnan(hzi.constant_guess)
             if pn > hzi.zero_abstol
                 # I0.(a)
+                ηn = hzi.vector_norm(M, p, η)
                 return min(hzi.ψ0 * pn / ηn, alphamax)
             elseif abs_lf0 > hzi.zero_abstol
                 # I0.(b)

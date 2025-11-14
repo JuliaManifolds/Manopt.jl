@@ -21,7 +21,7 @@ using ManoptTestSuite
 
         gds1 = GradientDescentState(M; p = p1)
         η1 = -X1
-        @test hzi(dmp, gds1, 1, NaN, η1) ≈ hzi.ψ0 * Manopt.default_point_norm(M, p1) / Manopt.default_vector_norm(M, p1, η1)
+        @test hzi(dmp, gds1, 1, NaN, η1) ≈ hzi.ψ0 * Manopt.default_point_distance(M, p1) / Manopt.default_vector_norm(M, p1, η1)
         # case I0 (b)
         p2 = [0.0, 0.0]
         X2 = grad_f(M, p2)
@@ -61,7 +61,7 @@ using ManoptTestSuite
 
         gds = GradientDescentState(MS; p = p4)
         η4 = -X4
-        @test hzi(dmp, gds, 1, NaN, η4) ≈ 5.0e-5
+        @test hzi(dmp, gds, 1, NaN, η4) ≈ 2.5e-5
     end
 end
 
