@@ -41,8 +41,8 @@ with the fields keyword arguments and the retraction is set to the default retra
 $(_var(:Keyword, :retraction_method))
 * `contraction_factor=0.95`
 * `sufficient_decrease=0.1`
-* `last_stepsize=initialstepsize`
-* `initial_guess=`[`armijo_initial_guess`](@ref)
+* `initial_stepsize = 1.0` the first step size to plug into the `initial_guess` function.
+* `initial_guess=`[`ArmijoInitialGuess`](@ref)
 * `stop_when_stepsize_less=0.0`: stop when the stepsize decreased below this version.
 * `stop_when_stepsize_exceeds=[`max_step`](@ref)`(M)`: provide an absolute maximal step size.
 * `stop_increasing_at_step=100`: for the initial increase test, stop after these many steps
@@ -207,8 +207,8 @@ Overall, we look for step size, that provides _enough decrease_, see
 * `candidate_point=allocate_result(M, rand)`:
   speciy a point to be used as memory for the candidate points.
 * `contraction_factor=0.95`: how to update ``s`` in the decrease step
-* `initial_stepsize=1.0``: specify an initial step size
-* `initial_guess=`[`armijo_initial_guess`](@ref): Compute the initial step size of
+* `initial_stepsize=1.0`: specify an initial step size
+* `initial_guess=`[`ArmijoInitialGuess`](@ref): Compute the initial step size of
   a line search based on this function.
   The funtion required is `(p,s,k,l) -> α` and computes the initial step size ``α``
   based on a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `s`,
