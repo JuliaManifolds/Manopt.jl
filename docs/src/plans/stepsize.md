@@ -32,6 +32,14 @@ WolfePowellLinesearch
 WolfePowellBinaryLinesearch
 ```
 
+Additionally, initial stepsize guesses are handled by subtypes of `AbstractInitialLinesearchGuess`:
+
+```@docs
+ConstantInitialGuess
+ArmijoInitialGuess
+HagerZhangInitialGuess
+```
+
 Some step sizes use [`max_stepsize`](@ref) function as a rough upper estimate for the trust region size.
 It is by default equal to injectivity radius of the exponential map but in some cases a different value is used.
 For the `FixedRankMatrices` manifold an estimate from Manopt is used.
@@ -56,6 +64,13 @@ Then the following state can be used to wrap these locally
 
 ```@docs
 StepsizeState
+```
+
+The Hager-Zhang initial guess uses two helper functions to determine initial stepsize in the first iteration on manifolds which have "expected minimizer", for example the zero point on the Euclidean manifold:
+
+```@docs
+default_vector_norm
+default_point_distance
 ```
 
 ## Literature
