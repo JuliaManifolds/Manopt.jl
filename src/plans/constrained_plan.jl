@@ -72,7 +72,7 @@ Describes the constrained objective
 ``h: $(_math(:M)) → ℝ^n`` also possibly containing its gradient and/or Hessian
 
 # Constructors
-    ConstrainedManifoldObjective(M::AbstractManifold, f, grad_f;
+    ConstrainedManifoldObjective(f, grad_f;
         g=nothing,
         grad_g=nothing,
         h=nothing,
@@ -94,7 +94,7 @@ of the ranges of `h` and `g`, respectively.
 You can also provide a manifold `M` and a point `p` to use one evaluation of the constraints
 to automatically try to determine these sizes.
 
-    ConstrainedManifoldObjective(M::AbstractManifold, mho::AbstractManifoldObjective;
+    ConstrainedManifoldObjective(mho::AbstractManifoldObjective;
         equality_constraints = nothing,
         inequality_constraints = nothing
     )
