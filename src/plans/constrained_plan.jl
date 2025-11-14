@@ -55,11 +55,11 @@ get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:β}) = acsf.β
 
 Describes the constrained objective
 ```math
-\begin{aligned}
+\\begin{aligned}
  $(_tex(:argmin))_{p ∈ } & f(p)\\
  $(_tex(:text, "subject to")) & g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, "for all ")) i=1,…,m,\\
  $(_tex(:quad)) &h_j(p)=0 $(_tex(:quad)) $(_tex(:text, "for all ")) j=1,…,n.
-\end{aligned}
+\\end{aligned}
 ```
 
 # Fields
