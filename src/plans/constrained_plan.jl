@@ -305,7 +305,7 @@ function ConstrainedManifoldObjective(
 end
 
 @doc """
-    ConstrainedProblem{
+    ConstrainedManoptProblem{
         TM <: AbstractManifold,
         O <: AbstractManifoldObjective
         HR<:Union{AbstractPowerRepresentation,Nothing},
