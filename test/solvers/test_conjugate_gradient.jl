@@ -327,7 +327,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
 
         stopping_criterion = StopAfterIteration(30)
         get_stepsize() = Manopt.ArmijoLinesearchStepsize(
-            M; initial_stepsize = 1.0, initial_guess = (args...) -> 1.0
+            M; initial_stepsize = 1.0, initial_guess = Manopt.ConstantInitialGuess(1.0)
         )
 
         p1 = conjugate_gradient_descent(
