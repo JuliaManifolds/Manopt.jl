@@ -8,10 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+
 ### Fixed
 
 * fixes a few typos in the doc strings of matrix update formulae within the quasi-Newton and CG solver.
-
+* unified the interfaces for line search related functions, especially,
+  * `linesearch_backtrack(M, F, p, X, s, decrease, contract, η, f0; kwargs...)` now has `f0=` and `gradient=` keyword arguments instead of positional ones for `X` and the last * `f0`. It additionally has a `Dlf0=` keyword argument to pass the evaluated differential instead of the gradient, which otherwise defaults to calling the inner product.
+* refactor the nonmonotone linesearch stepsize to have an initial guess that can be set.
+  It still defaults to the (now extracted) `BarzilaiBorweinInitialGuess` function, but can now be changed to any other function of the same signature.
 ## [0.5.27] November 11, 2025
 
 ### Added

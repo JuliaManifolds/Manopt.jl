@@ -48,26 +48,26 @@ using ManoptTestSuite
             stepsize_exceeds = Manopt.StepsizeMessage{Float64, Float64}(),
         )
         s1 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1.0, 1.0, 0.99; stop_decreasing_at_step = 10,
+            M, f, p, 1.0, 1.0, 0.99, -grad_f(M, p); gradient = grad_f(M, p), stop_decreasing_at_step = 10,
             report_messages_in = msgs,
         )
         @test msgs[:stop_decreasing].at_iteration == 10
         s2 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1.0, 1.0, 0.5, grad_f(M, p); retraction_method = ExponentialRetraction(),
+            M, f, p, 1.0, 1.0, 0.5, grad_f(M, p); gradient = grad_f(M, p), retraction_method = ExponentialRetraction(),
             report_messages_in = msgs,
         )
         @test msgs[:non_descent_direction].at_iteration == 0
         s3 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1.0, 1.0, 0.5; stop_when_stepsize_less = 0.75, report_messages_in = msgs
+            M, f, p, 1.0, 1.0, 0.5, -grad_f(M, p); gradient = grad_f(M, p), stop_when_stepsize_less = 0.75, report_messages_in = msgs
         )
         @test msgs[:stepsize_less].at_iteration == 1
         # cheating for increase
         s4 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1.0e-12, 0, 0.5; stop_when_stepsize_exceeds = 0.1, report_messages_in = msgs
+            M, f, p, 1.0e-12, 0, 0.5, -grad_f(M, p); gradient = grad_f(M, p), stop_when_stepsize_exceeds = 0.1, report_messages_in = msgs
         )
         @test msgs[:stepsize_exceeds].at_iteration > 0 # or 37
         s5 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1.0e-12, 0, 0.5; stop_increasing_at_step = 1, report_messages_in = msgs
+            M, f, p, 1.0e-12, 0, 0.5, -grad_f(M, p); gradient = grad_f(M, p), stop_increasing_at_step = 1, report_messages_in = msgs
         )
         @test msgs[:stop_increasing].at_iteration == 1
     end

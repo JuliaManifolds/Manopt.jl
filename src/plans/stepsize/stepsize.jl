@@ -1,12 +1,13 @@
 """
-    armijo_initial_guess(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k, l)
+    armijo_initial_guess(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k, l, η; kwargs...)
 
 # Input
 
-* `mp`: the [`AbstractManoptProblem`](@ref) we are aiminig to minimize
+* `mp`: the [`AbstractManoptProblem`](@ref) we are aiming to minimize
 * `s`:  the [`AbstractManoptSolverState`](@ref) for the current solver
 * `k`:  the current iteration
 * `l`:  the last step size computed in the previous iteration.
+* `η`:  the search direction
 
 Return an initial guess for the [`ArmijoLinesearchStepsize`](@ref).
 
@@ -20,7 +21,7 @@ Then this (default) initial guess returns
 This ensures that the initial guess does not yield to large (initial) steps.
 """
 function armijo_initial_guess(
-        mp::AbstractManoptProblem, s::AbstractManoptSolverState, ::Int, l::Real
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, ::Int, l::Real, η; kwargs...
     )
     M = get_manifold(mp)
     X = get_gradient(s)
@@ -29,6 +30,20 @@ function armijo_initial_guess(
     max_step = max_stepsize(M, p)
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
+
+_doc_stepsize_initial_guess(default = "") = """
+* `initial_guess`$(length(default) > 0 ? " = $(default)" : ""): a function to provide an initial guess for the step size,
+  it maps `(problem, state, k, last_stepsize, η) -> α_0` based on
+  * a [`AbstractManoptProblem`](@ref) `problem`
+  * a [`AbstractManoptSolverState`](@ref) `state`
+  * the current iterate `k`
+  * the last step size `last_stepsize`
+  * the search direction `η`
+  and should at least accept the keywords
+  * `lf0 = `[`get_cost`](@ref)`(problem, get_iterate(state))` the current cost at ^p` here interpreted as the initial point of `f` along the line search direction`
+  * `Dlf0 = `[`get_differential`](@ref)`(problem, get_iterate(state), η)` the directional derivative at point `p` in direction `η`
+
+"""
 
 @doc """
     ArmijoLinesearchStepsize <: Linesearch
@@ -51,10 +66,7 @@ $(_var(:Keyword, :retraction_method))
 * `contraction_factor`:            exponent for line search reduction
 * `sufficient_decrease`:           gain within Armijo's rule
 * `last_stepsize`:                 the last step size to start the search with
-* `initial_guess`:                 a function to provide an initial guess for the step size,
-  it maps `(m,p,k,l) -> α` based on a [`AbstractManoptProblem`](@ref) `p`,
-  [`AbstractManoptSolverState`](@ref) `s`, the current iterate `k` and a last step size `l`.
-  It returns the initial guess `α`.
+* $(_doc_stepsize_initial_guess)
 * `messages::NamedTuple`:          a named tuple to store possible [`StepsizeMessage`](@ref) about the stepsize search.
 * `stop_when_stepsize_less`:       smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds`:    largest stepsize when to stop.
@@ -77,7 +89,7 @@ $(_var(:Keyword, :retraction_method))
 * `contraction_factor=0.95`
 * `sufficient_decrease=0.1`
 * `last_stepsize=initialstepsize`
-* `initial_guess=`[`armijo_initial_guess`](@ref)` – (p,s,i,l) -> l`
+* `initial_guess=`[`armijo_initial_guess`](@ref)
 * `stop_when_stepsize_less=0.0`: stop when the stepsize decreased below this version.
 * `stop_when_stepsize_exceeds=[`max_step`](@ref)`(M)`: provide an absolute maximal step size.
 * `stop_increasing_at_step=100`: for the initial increase test, stop after these many steps
@@ -161,11 +173,11 @@ function (a::ArmijoLinesearchStepsize)(
         a.candidate_point,
         (M, p) -> get_cost_function(get_objective(mp))(M, p),
         p,
-        X,
         initial_guess,
         a.sufficient_decrease,
         a.contraction_factor,
         η;
+        gradient = X,
         retraction_method = a.retraction_method,
         stop_when_stepsize_less = (a.stop_when_stepsize_less / l),
         stop_when_stepsize_exceeds = (a.stop_when_stepsize_exceeds / l),
@@ -1211,10 +1223,11 @@ A functor representing a nonmonotone line search using the Barzilai-Borwein step
 
 # Fields
 
-* `initial_stepsize=1.0`:     the step size to start the search with
-* `memory_size=10`:           number of iterations after which the cost value needs to be lower than the current one
+* $(_doc_stepsize_initial_guess)
+* `memory_size`:           number of iterations after which the cost value needs to be lower than the current one
 * `bb_min_stepsize=1e-3`:     lower bound for the Barzilai-Borwein step size greater than zero
 * `bb_max_stepsize=1e3`:      upper bound for the Barzilai-Borwein step size greater than min_stepsize
+* `last_stepsize`:     the last computed stepsize
 $(_var(:Keyword, :retraction_method))
 * `strategy=direct`:          defines if the new step size is computed using the `:direct`, `:indirect` or `:alternating` strategy
 * `storage`:                  (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
@@ -1234,7 +1247,8 @@ $(_var(:Keyword, :vector_transport_method))
 ## Keyword arguments
 
 * `p=allocate_result(M, rand)`: to store an interim result
-* `initial_stepsize=1.0`
+* `initial_guess = (problem, state, k, last_stepsize, η) -> k == 0 ? 1.0 : last_stepsize`
+   function to provide an initial guess for the stepsize
 * `memory_size=10`
 * `bb_min_stepsize=1e-3`
 * `bb_max_stepsize=1e3`
@@ -1258,11 +1272,13 @@ mutable struct NonmonotoneLinesearchStepsize{
         VTM <: AbstractVectorTransportMethod,
         TSSA <: StoreStateAction,
         MSGS <: NamedTuple,
+        IG,
     } <: Linesearch
     bb_min_stepsize::R
     bb_max_stepsize::R
     candidate_point::P
-    initial_stepsize::R
+    initial_guess::IG
+    last_stepsize::R
     messages::MSGS
     old_costs::T
     retraction_method::TRM
@@ -1280,7 +1296,7 @@ mutable struct NonmonotoneLinesearchStepsize{
             bb_min_stepsize::R = 1.0e-3,
             bb_max_stepsize::R = 1.0e3,
             p::P = allocate_result(M, rand),
-            initial_stepsize::R = 1.0,
+            initial_guess::IG = (problem, state, k, last_stepsize, η) -> k == 0 ? 1.0 : last_stepsize,
             memory_size::I = 10,
             retraction_method::TRM = default_retraction_method(M),
             stepsize_reduction::R = 0.5,
@@ -1294,29 +1310,25 @@ mutable struct NonmonotoneLinesearchStepsize{
             strategy::Symbol = :direct,
             sufficient_decrease::R = 1.0e-4,
             vector_transport_method::VTM = default_vector_transport_method(M),
-        ) where {TRM, VTM, P, R <: Real, I <: Integer}
+        ) where {TRM, VTM, P, R <: Real, I <: Integer, IG}
         stop_when_stepsize_exceeds = R(stop_when_stepsize_exceeds)
         if strategy ∉ [:direct, :inverse, :alternating]
             @warn string(
-                "The strategy '",
-                strategy,
-                "' is not defined. The 'direct' strategy is used instead.",
+                "The strategy '", strategy, "' is not defined. The 'direct' strategy is used instead.",
             )
             strategy = :direct
         end
         if bb_min_stepsize <= 0.0
             throw(
                 DomainError(
-                    bb_min_stepsize,
-                    "The lower bound for the step size min_stepsize has to be greater than zero.",
+                    bb_min_stepsize, "The lower bound for the step size min_stepsize has to be greater than zero.",
                 ),
             )
         end
         if bb_max_stepsize <= bb_min_stepsize
             throw(
                 DomainError(
-                    bb_max_stepsize,
-                    "The upper bound for the step size max_stepsize has to be greater its lower bound min_stepsize.",
+                    bb_max_stepsize, "The upper bound for the step size max_stepsize has to be greater its lower bound min_stepsize.",
                 ),
             )
         end
@@ -1331,11 +1343,12 @@ mutable struct NonmonotoneLinesearchStepsize{
             stepsize_less = StepsizeMessage{R, R}(),
             stepsize_exceeds = StepsizeMessage{R, R}(),
         )
-        return new{P, typeof(old_costs), R, I, TRM, VTM, typeof(storage), typeof(msgs)}(
+        return new{P, typeof(old_costs), R, I, TRM, VTM, typeof(storage), typeof(msgs), IG}(
             bb_min_stepsize,
             bb_max_stepsize,
             p,
-            initial_stepsize,
+            initial_guess,
+            1.0,
             msgs,
             old_costs,
             retraction_method,
@@ -1389,8 +1402,11 @@ function (a::NonmonotoneLinesearchStepsize)(
     #find the difference between the current and previous gradient after the previous gradient is transported to the current tangent space
     grad_diff = X - vector_transport_to(M, old_p, old_X, p, a.vector_transport_method)
     #transport the previous step into the tangent space of the current manifold point
+
+    initial_stepsize = a.initial_guess(M, p, iter, a.last_stepsize, η)
+
     x_diff =
-        -a.initial_stepsize *
+        -initial_stepsize *
         vector_transport_to(M, old_p, old_X, p, a.vector_transport_method)
 
     #compute the new Barzilai-Borwein step size
@@ -1442,17 +1458,17 @@ function (a::NonmonotoneLinesearchStepsize)(
     end
 
     #compute the new step size with the help of the Barzilai-Borwein step size
-    a.initial_stepsize = linesearch_backtrack!(
+    a.last_stepsize = linesearch_backtrack!(
         M,
         a.candidate_point,
         f,
         p,
-        X,
         BarzilaiBorwein_stepsize,
         a.sufficient_decrease,
         a.stepsize_reduction,
-        η,
-        maximum([a.old_costs[j] for j in 1:min(iter, memory_size)]);
+        η;
+        lf0 = maximum([a.old_costs[j] for j in 1:min(iter, memory_size)]),
+        gradient = X,
         retraction_method = a.retraction_method,
         stop_when_stepsize_less = (a.stop_when_stepsize_less / norm(M, p, η)),
         stop_when_stepsize_exceeds = (a.stop_when_stepsize_exceeds / norm(M, p, η)),
@@ -1460,7 +1476,7 @@ function (a::NonmonotoneLinesearchStepsize)(
         stop_decreasing_at_step = a.stop_decreasing_at_step,
         report_messages_in = a.messages,
     )
-    return a.initial_stepsize
+    return a.last_stepsize
 end
 function show(io::IO, a::NonmonotoneLinesearchStepsize)
     return print(
