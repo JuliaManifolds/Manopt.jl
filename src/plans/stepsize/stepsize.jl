@@ -161,7 +161,7 @@ function (a::ArmijoLinesearchStepsize)(
     )
     p = get_iterate(s)
     grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
-    return a(mp, p, grad, η; initial_guess = a.initial_guess(mp, s, k, a.last_stepsize))
+    return a(mp, p, grad, η; initial_guess = a.initial_guess(mp, s, k, a.last_stepsize, η))
 end
 function (a::ArmijoLinesearchStepsize)(
         mp::AbstractManoptProblem, p, X, η; initial_guess = 1.0, kwargs...
@@ -1483,7 +1483,7 @@ function show(io::IO, a::NonmonotoneLinesearchStepsize)
         io,
         """
         NonmonotoneLinesearch(;
-            initial_stepsize = $(a.initial_stepsize),
+            last_stepsize = $(a.last_stepsize),
             bb_max_stepsize = $(a.bb_max_stepsize),
             bb_min_stepsize = $(a.bb_min_stepsize),
             memory_size = $(length(a.old_costs)),
