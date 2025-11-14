@@ -4,6 +4,68 @@ s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
 !(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 using ManoptTestSuite
 
+
+@testset "Initial stepsize" begin
+    @testset "Hager-Zhang" begin
+        M = ManifoldsBase.DefaultManifold(2)
+        hzi = Manopt.HagerZhangInitialGuess()
+        hzi_nq = Manopt.HagerZhangInitialGuess{Float64}(; constant_guess = 12.0, quadstep = false)
+
+        f(M, p) = sum((p .- 1) .^ 2)
+        grad_f(M, p) = 2 .* (p .- 1)
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+
+        # case I0 (a)
+        p1 = [2.0, 2.0]
+        X1 = grad_f(M, p1)
+
+        gds1 = GradientDescentState(M; p = p1)
+        η1 = -X1
+        @test hzi(dmp, gds1, 1, NaN, η1) ≈ hzi.ψ0 * Manopt.default_point_norm(M, p1) / Manopt.default_vector_norm(M, p1, η1)
+        # case I0 (b)
+        p2 = [0.0, 0.0]
+        X2 = grad_f(M, p2)
+
+        gds2 = GradientDescentState(M; p = p2)
+        η2 = -X2
+        @test hzi(dmp, gds2, 1, NaN, η2) ≈ hzi.ψ0 * abs(f(M, p2)) / norm(M, p2, η2)^2
+
+        # case I0 (c)
+        f2(M, p) = sum((p .- 1) .^ 2) - 2
+        grad_f2(M, p) = 2 .* (p .- 1)
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f2, grad_f2))
+
+        p3 = [0.0, 0.0]
+        X3 = grad_f2(M, p3)
+
+        gds3 = GradientDescentState(M; p = p3)
+        η3 = -X3
+        @test hzi(dmp, gds3, 1, NaN, η3) ≈ 1.0
+
+        # case I0, explicit guess
+        @test hzi_nq(dmp, gds3, 1, NaN, η3) ≈ hzi_nq.constant_guess
+
+        # case I1
+        @test hzi(dmp, gds3, 2, 1.0, η3) ≈ 0.5
+
+        # case I2
+        @test hzi_nq(dmp, gds3, 2, 41.0, η3) ≈ hzi.ψ2 * 41.0
+
+        # sphere
+        MS = Sphere(1)
+        f3(M, p) = 100 * sum((p .- 1) .^ 2)
+        grad_f3(M, p) = project(M, p, 200 .* (p .- 1))
+        dmp = DefaultManoptProblem(MS, ManifoldGradientObjective(f3, grad_f3))
+        p4 = [0.0, 1.0]
+        X4 = grad_f3(MS, p4)
+
+        gds = GradientDescentState(MS; p = p4)
+        η4 = -X4
+        @test hzi(dmp, gds, 1, NaN, η4) ≈ 5.0e-5
+    end
+end
+
+
 @testset "Stepsize" begin
     M = ManifoldsBase.DefaultManifold(2)
     @test Manopt.get_message(Manopt.ConstantStepsize(M, 1.0)) == ""

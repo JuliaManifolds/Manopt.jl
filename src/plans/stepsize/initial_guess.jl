@@ -50,32 +50,55 @@ _doc_stepsize_initial_guess(default = "") = """
 """
 
 default_point_norm(::AbstractManifold, p) = one(number_eltype(p))
+default_point_norm(::DefaultManifold, p) = norm(p, Inf)
 
-default_vector_norm(::AbstractManifold, p, X) = norm(M, p, X)
-
-"""
-"""
-Base.@kwdef mutable struct HagerZhangInitialGuess{TF <: Real, TPN, TVN} <: AbstractInitialLinesearchGuess
-    ψ0::TF = 0.01
-    ψ1::TF = 0.01
-    ψ2::TF = 2.0
-    constant_guess::TF = NaN
-    quadstep::Bool = true
-    point_norm::TPN = default_point_norm
-    vector_norm::TVN = default_vector_norm
-    zero_abstol::TF = eps(TF)
-    alphamax::TF = Inf
-end
+default_vector_norm(M::AbstractManifold, p, X) = norm(M, p, X)
+default_vector_norm(::DefaultManifold, p, X) = norm(p, Inf)
 
 
 """
-    (hzi::HagerZhangInitialGuess{TF})(mp::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int, last_stepsize::Real, η; lf0, Dlf0) where {TF <: Real}
+    HagerZhangInitialGuess{TF <: Real, TPN, TVN} <: AbstractInitialLinesearchGuess
 
 Initial line search guess from the paper [HagerZhang:2006:2](@cite), following the procedure
 `initial`. The line search was adapted to the Riemannian setting by introducing
 customizable norms for point and tangent vectors and maximum stepsize `alphamax`.
 """
-function (hzi::HagerZhangInitialGuess{TF})(mp::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int, last_stepsize::Real, η; lf0, Dlf0) where {TF <: Real}
+struct HagerZhangInitialGuess{TF <: Real, TPN, TVN} <: AbstractInitialLinesearchGuess
+    ψ0::TF
+    ψ1::TF
+    ψ2::TF
+    constant_guess::TF
+    quadstep::Bool
+    point_norm::TPN
+    vector_norm::TVN
+    zero_abstol::TF
+    alphamax::TF
+end
+
+HagerZhangInitialGuess() = HagerZhangInitialGuess{Float64}()
+function HagerZhangInitialGuess{TF}(;
+        ψ0::TF = 0.01,
+        ψ1::TF = 0.01,
+        ψ2::TF = 2.0,
+        constant_guess::TF = NaN,
+        quadstep::Bool = true,
+        point_norm::TPN = default_point_norm,
+        vector_norm::TVN = default_vector_norm,
+        zero_abstol::TF = eps(TF),
+        alphamax::TF = Inf,
+    ) where {TF <: Real, TPN, TVN}
+    return HagerZhangInitialGuess{TF, TPN, TVN}(
+        ψ0, ψ1, ψ2, constant_guess, quadstep,
+        point_norm, vector_norm, zero_abstol, alphamax
+    )
+end
+
+function (hzi::HagerZhangInitialGuess{TF})(
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState,
+        k::Int, last_stepsize::Real, η;
+        lf0 = get_cost(mp, get_iterate(s)),
+        Dlf0 = get_differential(mp, get_iterate(s), η),
+    ) where {TF <: Real}
     M = get_manifold(mp)
     p = get_iterate(s)
     abs_lf0 = abs(lf0)
@@ -104,7 +127,7 @@ function (hzi::HagerZhangInitialGuess{TF})(mp::AbstractManoptProblem, ::Abstract
         if hzi.quadstep
             # attempt step I1
             step_R = hzi.ψ1 * last_stepsize
-            f_R = get_cost(mp, p, step_R * η)
+            f_R = get_cost(mp, ManifoldsBase.retract_fused(M, p, η, step_R, default_retraction_method(M, typeof(p))))
             # solving quadratic fit to the line given lf0, Dlf0 and cost at f_R
             q_b = Dlf0
             q_a = (f_R - q_b * step_R - lf0) / step_R^2
