@@ -1,41 +1,56 @@
+"""
+    AbstractInitialLinesearchGuess
+
+An abstract type for initial line search guess strategies. These are functors that map
+`(problem, state, k, last_stepsize, η) -> α_0`, where `α_0` is the initial step size,
+based on
+
+* an [`AbstractManoptProblem`](@ref) `problem`
+* an [`AbstractManoptSolverState`](@ref) `state`
+* the current iterate `k`
+* the last step size `last_stepsize`
+* the search direction `η`
+"""
 abstract type AbstractInitialLinesearchGuess end
 
+"""
+    ConstantInitialGuess{TF} <: AbstractInitialLinesearchGuess
+
+Implement a constant initial guess for line searches.
+
+# Constructor
+
+    ConstantInitialGuess(α::TF)
+
+where `α` is the constant initial step size.
+"""
 struct ConstantInitialGuess{TF} <: AbstractInitialLinesearchGuess
     α::TF
 end
 ConstantInitialGuess() = ConstantInitialGuess(1.0)
 
 function (cig::ConstantInitialGuess)(
-        mp::AbstractManoptProblem, s::AbstractManoptSolverState, ::Int, l::Real, η; kwargs...
+        ::AbstractManoptProblem, ::AbstractManoptSolverState, ::Int, ::Real, η; kwargs...
     )
     return cig.α
 end
 
+"""
+    ArmijoInitialGuess <: AbstractInitialLinesearchGuess
 
+Implement the initial guess for an Armijo line search.
+
+The initial step size is chosen as `min(l, max_stepsize(M, p) / norm(M, p, η))`,
+where `l` is the last step size used, `p` the current point and `η` the search direction.
+
+The default provided is based on the [`max_stepsize`](@ref)`(M)`.
+
+# Constructor
+
+    ArmijoInitialGuess()
+"""
 struct ArmijoInitialGuess <: AbstractInitialLinesearchGuess end
 
-"""
-    (::ArmijoInitialGuess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k, l, η; kwargs...)
-
-# Input
-
-* `mp`: the [`AbstractManoptProblem`](@ref) we are aiming to minimize
-* `s`:  the [`AbstractManoptSolverState`](@ref) for the current solver
-* `k`:  the current iteration
-* `l`:  the last step size computed in the previous iteration.
-* `η`:  the search direction
-
-Return an initial guess for the [`ArmijoLinesearchStepsize`](@ref).
-
-The default provided is based on the [`max_stepsize`](@ref)`(M)`, which we denote by ``m``.
-Let further ``X`` be the current descent direction with norm ``n=$(_tex(:norm, "X"; index = "p"))`` its length.
-Then this (default) initial guess returns
-
-* ``l`` if ``m`` is not finite
-* ``$(_tex(:min))(l, $(_tex(:frac, "m", "n")))`` otherwise
-
-This ensures that the initial guess does not yield to large (initial) steps.
-"""
 function (::ArmijoInitialGuess)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, ::Int, l::Real, η; kwargs...
     )
@@ -58,7 +73,6 @@ _doc_stepsize_initial_guess(default = "") = """
   and should at least accept the keywords
   * `lf0 = `[`get_cost`](@ref)`(problem, get_iterate(state))` the current cost at ^p` here interpreted as the initial point of `f` along the line search direction`
   * `Dlf0 = `[`get_differential`](@ref)`(problem, get_iterate(state), η)` the directional derivative at point `p` in direction `η`
-
 """
 
 """
