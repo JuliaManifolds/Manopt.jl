@@ -19,7 +19,7 @@ $(_var(:Keyword, :retraction_method))
 * `contraction_factor`:            exponent for line search reduction
 * `sufficient_decrease`:           gain within Armijo's rule
 * `last_stepsize`:                 the last step size to start the search with
-* $(_doc_stepsize_initial_guess)
+* $(_doc_stepsize_initial_guess_field)
 * `messages::NamedTuple`:          a named tuple to store possible [`StepsizeMessage`](@ref) about the stepsize search.
 * `stop_when_stepsize_less`:       smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds`:    largest stepsize when to stop.
@@ -1173,7 +1173,7 @@ A functor representing a nonmonotone line search using the Barzilai-Borwein step
 
 # Fields
 
-* $(_doc_stepsize_initial_guess)
+* $(_doc_stepsize_initial_guess_field)
 * `memory_size`:           number of iterations after which the cost value needs to be lower than the current one
 * `bb_min_stepsize=1e-3`:     lower bound for the Barzilai-Borwein step size greater than zero
 * `bb_max_stepsize=1e3`:      upper bound for the Barzilai-Borwein step size greater than min_stepsize

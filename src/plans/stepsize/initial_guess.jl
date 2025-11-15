@@ -62,8 +62,8 @@ function (::ArmijoInitialGuess)(
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
 
-_doc_stepsize_initial_guess(default = "") = """
-* `initial_guess`$(length(default) > 0 ? " = $(default)" : ""): a function to provide an initial guess for the step size,
+_doc_stepsize_initial_guess_field = """
+* `initial_guess`: a function to provide an initial guess for the step size,
   it maps `(problem, state, k, last_stepsize, η) -> α_0` based on
   * a [`AbstractManoptProblem`](@ref) `problem`
   * a [`AbstractManoptSolverState`](@ref) `state`
