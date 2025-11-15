@@ -50,17 +50,12 @@ function set_parameter!(
 end
 get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:β}) = acsf.β
 
-@doc """
+"""
     ConstrainedManifoldObjective{T<:AbstractEvaluationType, C<:ConstraintType} <: AbstractManifoldObjective{T}
 
-Describes the constrained objective
-```math
-\begin{aligned}
- $(_tex(:argmin))_{p ∈ } & f(p)\\
- $(_tex(:text, "subject to")) & g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, "for all ")) i=1,…,m,\\
- $(_tex(:quad)) &h_j(p)=0 $(_tex(:quad)) $(_tex(:text, "for all ")) j=1,…,n.
-\end{aligned}
-```
+Describes a constrained objective
+
+$(_problem(:Constrained))
 
 # Fields
 
@@ -68,11 +63,11 @@ Describes the constrained objective
   objective, that is containing cost ``f``, the gradient of the cost ``f`` and maybe the Hessian.
 * `equality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the equality constraints
 ``h: $(_math(:M)) → ℝ^n`` also possibly containing its gradient and/or Hessian
-* `equality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the equality constraints
-``h: $(_math(:M)) → ℝ^n`` also possibly containing its gradient and/or Hessian
+* `inequality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the inequality constraints
+``g: $(_math(:M)) → ℝ^m`` also possibly containing its gradient and/or Hessian
 
 # Constructors
-    ConstrainedManifoldObjective(M::AbstractManifold, f, grad_f;
+    ConstrainedManifoldObjective(f, grad_f;
         g=nothing,
         grad_g=nothing,
         h=nothing,
@@ -94,7 +89,7 @@ of the ranges of `h` and `g`, respectively.
 You can also provide a manifold `M` and a point `p` to use one evaluation of the constraints
 to automatically try to determine these sizes.
 
-    ConstrainedManifoldObjective(M::AbstractManifold, mho::AbstractManifoldObjective;
+    ConstrainedManifoldObjective(mho::AbstractManifoldObjective;
         equality_constraints = nothing,
         inequality_constraints = nothing
     )
@@ -305,7 +300,7 @@ function ConstrainedManifoldObjective(
 end
 
 @doc """
-    ConstrainedProblem{
+    ConstrainedManoptProblem{
         TM <: AbstractManifold,
         O <: AbstractManifoldObjective
         HR<:Union{AbstractPowerRepresentation,Nothing},

@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+* Change the construction of the product manifold in `interior_point_newton` from `×` to `ProductManifold`, so that the algorithm also work on Product manifolds `M`, where it now correctly wraps `M` instead of extending it.
+* unifies the doc strings for constrained problems
 * fixes a few typos in the doc strings of matrix update formulae within the quasi-Newton and CG solver.
 * unified the interfaces for line search related functions, especially,
   * `linesearch_backtrack(M, F, p, X, s, decrease, contract, η, f0; kwargs...)` now has `lf0=` and `gradient=` keyword arguments instead of positional ones for `X` and the last `f0`, respectively. It additionally has a `Dlf0=` keyword argument to pass the evaluated differential instead of the gradient, which otherwise defaults to calling the inner product.
