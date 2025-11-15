@@ -8,8 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-
-
 ### Fixed
 
 * fixes a few typos in the doc strings of matrix update formulae within the quasi-Newton and CG solver.
