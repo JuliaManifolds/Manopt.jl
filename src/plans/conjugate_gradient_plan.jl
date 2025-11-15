@@ -891,7 +891,7 @@ end
     ConjugateGradientBealeRestartRule <: DirectionUpdateRule
 
 A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update coefficient
-based on a restart idea of [Beale:1972](@cite), following [HagerZhang:2006; page 12](@cite)
+based on a restart idea of [Beale:1972](@cite), following [HagerZhang:2006:1; page 12](@cite)
 adapted to manifolds.
 
 # Fields
@@ -998,7 +998,7 @@ end
     ConjugateGradientBealeRestart(M::AbstractManifold, direction_update::Union{DirectionUpdateRule,ManifoldDefaultsFactory}; kwargs...)
 
 Compute a conjugate gradient coefficient with a potential restart, when two directions are
-nearly orthogonal. See [HagerZhang:2006; page 12](@cite) (in the preprint, page 46 in Journal page numbers).
+nearly orthogonal. See [HagerZhang:2006:1; page 12](@cite) (in the preprint, page 46 in Journal page numbers).
 This method is named after E. Beale from his proceedings paper in 1972 [Beale:1972](@cite).
 This method acts as a _decorator_ to any existing [`DirectionUpdateRule`](@ref) `direction_update`.
 

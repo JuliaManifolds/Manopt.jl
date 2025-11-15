@@ -17,7 +17,7 @@ VectorBundleManoptProblem
 VectorBundleNewtonState
 ```
 
-# Stepsize
+# [Stepsize](@id Sec-VectorBundleNewton-Stepsize)
 
 ```@docs
 AffineCovariantStepsize

@@ -28,7 +28,7 @@ ProximalGradientNonsmoothCost
 StopWhenGradientMappingNormLess
 ```
 
-## Stepsize
+## [Stepsize](@id Sec-ProxGrad-Stepsize)
 
 ```@docs
 ProximalGradientMethodBacktracking
