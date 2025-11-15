@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+* Change the construction of the product manifold in `interior_point_newton` from `×` to `ProductManifold`, so that the algorithm also work on Product manifolds `M`, where it now correctly wraps `M` instead of extending it.
+* unifies the doc strings for constrained problems
 * fixes a few typos in the doc strings of matrix update formulae within the quasi-Newton and CG solver.
 
 ## [0.5.27] November 11, 2025
