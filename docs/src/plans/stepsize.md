@@ -1,4 +1,4 @@
-# [Stepsize and line search](@id Stepsize)
+# [Stepsize and line search](@id Sec-Stepsize)
 
 ```@meta
 CurrentModule = Manopt
