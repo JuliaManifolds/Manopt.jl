@@ -774,20 +774,10 @@ function update_hessian!(
         # the stored vectors are just transported to the new tangent space; `sk` and `yk` are not added
         for i in 1:length(d.update.memory_s)
             vector_transport_to!(
-                M,
-                d.update.memory_s[i],
-                p_old,
-                d.update.memory_s[i],
-                p,
-                d.update.vector_transport_method,
+                M, d.update.memory_s[i], p_old, d.update.memory_s[i], p, d.update.vector_transport_method,
             )
             vector_transport_to!(
-                M,
-                d.update.memory_y[i],
-                p_old,
-                d.update.memory_y[i],
-                p,
-                d.update.vector_transport_method,
+                M, d.update.memory_y[i], p_old, d.update.memory_y[i], p, d.update.vector_transport_method,
             )
         end
     end

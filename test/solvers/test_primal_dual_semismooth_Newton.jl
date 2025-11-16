@@ -1,5 +1,8 @@
-using Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
-using ManifoldDiff: differential_shortest_geodesic_startpoint
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
+using Manopt, Manifolds, ManifoldsBase, ManifoldDiff, ManoptTestSuite, Test, RecursiveArrayTools
+using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
 
 @testset "PD-RSSN" begin
     #
