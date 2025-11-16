@@ -62,6 +62,10 @@ using ManoptTestSuite
         gds = GradientDescentState(MS; p = p4)
         η4 = -X4
         @test hzi(dmp, gds, 1, NaN, η4) ≈ 2.5e-5
+
+        # some defaults
+        @test Manopt.default_point_distance(Euclidean(2), p1) == 2.0
+        @test Manopt.default_vector_norm(Euclidean(2), p1, X1) == 2.0
     end
 end
 
