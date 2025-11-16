@@ -78,6 +78,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         @test st.warm_start_factor == 1.0
         @test st.last_stepsize == 1.0
         @test get_initial_stepsize(st) == 1.0
+        @test st(mp, pgms, 1) == 1.0
         pr = prox_h(M, 1.0, p0)
         @test get_proximal_map(M, ob, 1.0, p0) == pr
         @test_throws DomainError Manopt.ProximalGradientMethodBacktrackingStepsize(
@@ -86,7 +87,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         @test_throws DomainError Manopt.ProximalGradientMethodBacktrackingStepsize(
             M; warm_start_factor = -1.0
         )
-
+        
         @testset "Backtracking Warnings" begin
             dw1 = DebugWarnIfStepsizeCollapsed(:Once)
             @test repr(dw1) == "DebugWarnIfStepsizeCollapsed(Once, :Once)"
