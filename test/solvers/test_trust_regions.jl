@@ -28,11 +28,13 @@ include("trust_region_model.jl")
         X = rgrad(M, p)
         TpM = TangentSpace(M, copy(M, p))
         mho = ManifoldHessianObjective(f, rgrad, rhess)
-        sub_problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
+        sub_objective = TrustRegionModelObjective(mho)
+        sub_problem = DefaultManoptProblem(TpM, sub_objective)
         sub_state = TruncatedConjugateGradientState(TpM; X = get_gradient(M, mho, p))
         trs1 = TrustRegionsState(M, sub_problem)
         trs2 = TrustRegionsState(M, sub_problem, sub_state)
         trs3 = TrustRegionsState(M, sub_problem; p = p)
+        @test Manopt.get_gradient_function(sub_objective)(M, p) == X
     end
     @testset "Objective accessors" begin
         mho = ManifoldHessianObjective(f, rgrad, rhess)

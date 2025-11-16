@@ -15,8 +15,8 @@ abstract type AbstractManifoldSubObjective{
     E <: AbstractEvaluationType, O <: AbstractManifoldObjective,
 } <: AbstractManifoldObjective{E} end
 
-function get_gradient_function(cgo::AbstractManifoldSubObjective)
-    return (M, p) -> get_gradient(M, cgo, p)
+function get_gradient_function(amso::AbstractManifoldSubObjective)
+    return (M, p) -> get_gradient(M, get_objective(amso), p)
 end
 
 @doc """
