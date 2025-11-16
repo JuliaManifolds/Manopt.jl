@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * `linesearch_backtrack(M, F, p, X, s, decrease, contract, η, f0; kwargs...)` now has `lf0=` and `gradient=` keyword arguments instead of positional ones for `X` and the last `f0`, respectively. It additionally has a `Dlf0=` keyword argument to pass the evaluated differential instead of the gradient, which otherwise defaults to calling the inner product.
 * refactor the nonmonotone linesearch stepsize to have an initial guess that can be set. For now it still afterwards performs the Barzilein Borwein initial guess,
 so a constant initial guess is recommended here for not.
+* covers one last line in `proximal_gradient_plan`
 
 ## [0.5.27] November 11, 2025
 
@@ -83,6 +84,7 @@ so a constant initial guess is recommended here for not.
 * Add Distance over Gradients (RDoG) stepsize: `DistanceOverGradientsStepsize` and factory `DistanceOverGradients`, a learning‑rate‑free, curvature‑aware stepsize with `show`/`repr` and tests on Euclidean, Sphere, and Hyperbolic manifolds.
 
 ### Fixed
+
 * the typo in the name `AdaptiveRgularizationWithCubicsModelObjective` is fixed to `AdaptiveRegularizationWithCubicsModelObjective`.
 
 ## [0.5.21] September 5, 2025
@@ -102,7 +104,6 @@ so a constant initial guess is recommended here for not.
   * `projected_gradient_method`
 * a `restart_condition` functor to `conjugate_gradient_descent`, which allows the algorithm to restart if the search direction is sub-par (#492)
 * two literature references
-
 
 ### Changed
 
@@ -223,7 +224,6 @@ present; they were changed to `retact_fused!`.
 * fixes a scaling error in quasi newton
 * Fixes printing of JuMP models containg Manopt solver.
 
-
 ## [0.5.12] April 13, 2025
 
 ### Added
@@ -232,7 +232,6 @@ present; they were changed to `retact_fused!`.
   especially turn maximisation problems into minimisation ones using a scaling of `-1`.
 * Introduce a `ManifoldConstrainedSetObjective`
 * Introduce a `projected_gradient_method`
-
 
 ## [0.5.11] April 8, 2025
 
@@ -335,7 +334,7 @@ present; they were changed to `retact_fused!`.
 
 ### Changed
 
-* slightly improves the test for the ` ExponentialFamilyProjection` text on the about page.
+* slightly improves the test for the `ExponentialFamilyProjection` text on the about page.
 
 ### Added
 
@@ -419,6 +418,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
     * `DifferenceOfConvexState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `DifferenceOfConvexProximalState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexProximalState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
   * bumped `Manifolds.jl`to version 0.10; this mainly means that any algorithm working on a product manifold and requiring `ArrayPartition` now has to explicitly do `using RecursiveArrayTools`.
+
 ### Fixed
 
 * the `AverageGradientRule` filled its internal vector of gradients wrongly or mixed it up in parallel transport. This is now fixed.
@@ -432,14 +432,13 @@ In general this introduces a few factories, that avoid having to pass the manifo
 * all deprecated keyword arguments and a few function signatures were removed:
   * `get_equality_constraints`, `get_equality_constraints!`, `get_inequality_constraints`, `get_inequality_constraints!` are removed. Use their singular forms and set the index to `:` instead.
   * `StopWhenChangeLess(ε)` is removed, use ``StopWhenChangeLess(M, ε)` instead to fill for example the retraction properly used to determine the change
- * In the `WolfePowellLinesearch` and  `WolfeBinaryLinesearch`the `linesearch_stopsize=` keyword is replaced by `stop_when_stepsize_less=`
- * `DebugChange` and `RecordChange` had a `manifold=` and a `invretr` keyword that were replaced by the first positional argument `M` and `inverse_retraction_method=`, respectively
- * in the `NonlinearLeastSquaresObjective` and `LevenbergMarquardt` the `jacB=` keyword is now called `jacobian_tangent_basis=`
- * in `particle_swarm` the `n=` keyword is replaced by `swarm_size=`.
- * `update_stopping_criterion!` has been removed and unified with `set_parameter!`. The code adaptions are
-   * to set a parameter of a stopping criterion, just replace `update_stopping_criterion!(sc, :Val, v)` with `set_parameter!(sc, :Val, v)`
-   * to update a stopping criterion in a solver state, replace the old `update_stopping_criterion!(state, :Val, v)` tat passed down to the stopping criterion by the explicit pass down with `set_parameter!(state, :StoppingCriterion, :Val, v)`
-
+* In the `WolfePowellLinesearch` and  `WolfeBinaryLinesearch`the `linesearch_stopsize=` keyword is replaced by `stop_when_stepsize_less=`
+* `DebugChange` and `RecordChange` had a `manifold=` and a `invretr` keyword that were replaced by the first positional argument `M` and `inverse_retraction_method=`, respectively
+* in the `NonlinearLeastSquaresObjective` and `LevenbergMarquardt` the `jacB=` keyword is now called `jacobian_tangent_basis=`
+* in `particle_swarm` the `n=` keyword is replaced by `swarm_size=`.
+* `update_stopping_criterion!` has been removed and unified with `set_parameter!`. The code adaptions are
+  * to set a parameter of a stopping criterion, just replace `update_stopping_criterion!(sc, :Val, v)` with `set_parameter!(sc, :Val, v)`
+  * to update a stopping criterion in a solver state, replace the old `update_stopping_criterion!(state, :Val, v)` tat passed down to the stopping criterion by the explicit pass down with `set_parameter!(state, :StoppingCriterion, :Val, v)`
 
 ## [0.4.69] August 3, 2024
 
@@ -475,7 +474,6 @@ In general this introduces a few factories, that avoid having to pass the manifo
 
 * a few typos in the documentation
 * `WolfePowellLinesearch` no longer uses `max_stepsize` with invalid point by default.
-
 
 ## [0.4.66] June 27, 2024
 
@@ -561,7 +559,6 @@ In general this introduces a few factories, that avoid having to pass the manifo
   (lower letter symbols). Since these are not exported, this is considered an internal, hence non-breaking change.
   * semantic symbols are now all nouns in upper case letters
   * `:active` is changed to `:Activity`
-
 
 ## [0.4.60] April 10, 2024
 
@@ -898,7 +895,7 @@ and their documentation and testing has been extended.
 ### Added
 
 * A `:Subsolver` keyword in the `debug=` keyword argument, that activates the new `DebugWhenActive``
-  to de/activate subsolver debug from the main solvers `DebugEvery`.
+  to de/activate subsolver debug from the main solvers`DebugEvery`.
 
 ## [0.4.30] August 3, 2023
 
@@ -987,7 +984,6 @@ and their documentation and testing has been extended.
 
 * Switch all Requires weak dependencies to actual weak dependencies starting in Julia 1.9
 
-
 ## [0.4.20] May 11, 2023
 
 ### Changed
@@ -1050,9 +1046,11 @@ and their documentation and testing has been extended.
 ## [0.4.14] April 06, 2023
 
 ### Changed
+
 * `particle_swarm` now uses much more in-place operations
 
 ### Fixed
+
 * `particle_swarm` used quite a few `deepcopy(p)` commands still, which were replaced by `copy(M, p)`
 
 ## [0.4.13] April 09, 2023
@@ -1135,7 +1133,6 @@ and their documentation and testing has been extended.
 
 * fix a type in `HestenesStiefelCoefficient`
 
-
 ## [0.4.3] January 17, 2023
 
 ### Fixed
@@ -1149,7 +1146,6 @@ and their documentation and testing has been extended.
 
 * the usage of `inner` in line search methods, such that they work well with
   complex manifolds as well
-
 
 ## [0.4.1] January 15, 2023
 
