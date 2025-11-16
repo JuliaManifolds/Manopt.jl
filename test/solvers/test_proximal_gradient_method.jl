@@ -87,7 +87,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         @test_throws DomainError Manopt.ProximalGradientMethodBacktrackingStepsize(
             M; warm_start_factor = -1.0
         )
-        
+
         @testset "Backtracking Warnings" begin
             dw1 = DebugWarnIfStepsizeCollapsed(:Once)
             @test repr(dw1) == "DebugWarnIfStepsizeCollapsed(Once, :Once)"
