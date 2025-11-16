@@ -111,6 +111,8 @@ end
 function test_runtests()
     optimizer = Manopt.JuMP_Optimizer()
     config = MOI.Test.Config(; exclude = Any[MOI.ListOfModelAttributesSet])
+    # Test MOI getter
+    @test MOI.get(optimizer, MOI.RawOptimizerAttribute("descent_state_type")) == GradientDescentState
     return MOI.Test.runtests(
         optimizer,
         config;

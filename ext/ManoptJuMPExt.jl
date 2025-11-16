@@ -36,7 +36,6 @@ mutable struct ManoptOptimizer <: MOI.AbstractOptimizer
     # Does this make sense to be elementwise Nothing? On a manifold a partial init is not possible
     variable_primal_start::Vector{Union{Nothing, Float64}}
     sense::MOI.OptimizationSense
-    # Not sure what these are for? All parameters set should be reflected in the `state` parameter.
     options::Dict{String, Any}
     function ManoptOptimizer()
         return new(
