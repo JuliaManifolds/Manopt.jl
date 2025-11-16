@@ -81,7 +81,7 @@ F:  ℝ^{n+1} → ℝ,\quad F(\mathbf x) = \frac{\mathbf x^\mathrm{T}A\mathbf x}
 
 Minimizing this function yields the smallest eigenvalue $\lambda_1$ as a value and the corresponding minimizer $\mathbf x^*$ is a corresponding eigenvector.
 
-Since the length of an eigenvector is irrelevant, there is an ambiguity in the cost function. It can be better phrased on the sphere $ 𝕊^n$ of unit vectors in $ℝ^{n+1}$,
+Since the length of an eigenvector is irrelevant, there is an ambiguity in the cost function. It can be better phrased on the sphere $𝕊^n$ of unit vectors in $ℝ^{n+1}$,
 
 ```math
 \operatorname*{arg\,min}_{p ∈ 𝕊^n}\ f(p) = \operatorname*{arg\,min}_{\ p ∈ 𝕊^n} p^\mathrm{T}Ap

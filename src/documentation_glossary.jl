@@ -113,14 +113,14 @@ define!(:LaTeX, :rm, (letter) -> raw"\mathrm{" * "$letter" * "}")
 define!(:LaTeX, :sqrt, (s) -> raw"\sqrt{" * "$s}")
 define!(:LaTeX, :subgrad, raw"∂")
 define!(:LaTeX, :set, (s) -> raw"\{" * "$s" * raw"\}")
-define!(:LaTeX, :sum, (b = "", t = "") -> raw"\sum" * "_{$b}^{$t}")
+define!(:LaTeX, :sum, (b = "", t = "") -> raw"\sum" * (length(b) > 0 ? "_{$b}" : "") * (length(t) > 0 ? "^{$t}" : ""))
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
 define!(:LaTeX, :tilde, raw"\tilde")
 define!(:LaTeX, :transp, raw"\mathrm{T}")
 define!(:LaTeX, :vdots, raw"\vdots")
 define!(:LaTeX, :vert, raw"\vert")
 define!(:LaTeX, :widehat, (letter) -> raw"\widehat{" * "$letter" * "}")
-define!(:LaTeX, :widetilde, raw"\widetilde")
+define!(:LaTeX, :widetilde, (letter) -> raw"\widetilde{" * "$letter" * "}")
 _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 #
 # ---
@@ -305,7 +305,7 @@ define!(
     :NonLinearLeastSquares,
     (; M = "M", p = "p") -> """
     ```math
-    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum))_{i=1}^m $(_tex(:abs, "f_i($p)"))^2
+    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum, "i=1", "m")) $(_tex(:abs, "f_i($p)"))^2
     ```
 
     where ``f: $(_math(:M; M = M)) → ℝ^m`` is written with component functions ``f_i: $(_math(:M; M = M)) → ℝ``, ``i=1,…,m``,
@@ -427,16 +427,16 @@ define!(
     :Variable,
     :grad_f,
     :description,
-    (; M = "M", p = "p") ->
-    "the (Riemannian) gradient ``$(_tex(:grad))f: $(_math(:M, M = M)) → $(_math(:TpM; M = M, p = p))`` of f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
+    (; M = "M", p = "p", f = "f", kwargs...) ->
+    "the (Riemannian) gradient ``$(_tex(:grad))$f: $(_math(:M, M = M)) → $(_math(:TpM; M = M, p = p))`` of $f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
 )
 
 define!(
     :Variable,
     :Hess_f,
     :description,
-    (; M = "M", p = "p") ->
-    "the (Riemannian) Hessian ``$(_tex(:Hess))f: $(_math(:TpM, M = M, p = p)) → $(_math(:TpM; M = M, p = p))`` of f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
+    (; M = "M", p = "p", f = "f") ->
+    "the (Riemannian) Hessian ``$(_tex(:Hess))$f: $(_math(:TpM, M = M, p = p)) → $(_math(:TpM; M = M, p = p))`` of $f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
 )
 
 define!(
@@ -542,18 +542,9 @@ define!(
     :Variable,
     :subgrad_f,
     :description,
-    (; M = "M", p = "p") -> """
-    the subgradient ``∂f: $(_math(:M; M = M)) → $(_math(:TM; M = M))`` of f as a function `(M, p) -> X`
-    or a function `(M, X, p) -> X` computing `X` in-place.
-    This function should always only return one element from the subgradient.
+    (; M = "M", p = "p", f = "f", kwargs...) -> """
+    the subgradient ``∂$f: $(_math(:M; M = M)) → $(_math(:TM; M = M))`` of ``$f`` as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place. This function should always only return one element from the subgradient.
     """,
-)
-define!(
-    :Variable,
-    :subgrad_f,
-    :description,
-    (; M = "M") ->
-    " a state to specify the sub solver to use. For a closed form solution, this indicates the type of function.",
 )
 
 define!(

@@ -215,6 +215,7 @@ include("solvers/truncated_conjugate_gradient_descent.jl")
 include("solvers/trust_regions.jl")
 include("solvers/stochastic_gradient_descent.jl")
 include("solvers/subgradient.jl")
+include("solvers/vectorbundle_newton.jl")
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 include("helpers/checks.jl")
@@ -266,7 +267,8 @@ export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
 export AbstractManoptProblem
-export DefaultManoptProblem, TwoManifoldProblem, ConstrainedManoptProblem
+export DefaultManoptProblem
+export TwoManifoldProblem, ConstrainedManoptProblem, VectorBundleManoptProblem
 #
 # Objectives
 export AbstractDecoratedManifoldObjective,
@@ -340,7 +342,8 @@ export AbstractGradientSolverState,
     StochasticGradientDescentState,
     SubGradientMethodState,
     TruncatedConjugateGradientState,
-    TrustRegionsState
+    TrustRegionsState,
+    VectorBundleNewtonState
 
 # Objectives and Costs
 export NelderMeadSimplex
@@ -514,7 +517,9 @@ export adaptive_regularization_with_cubics,
     truncated_conjugate_gradient_descent,
     truncated_conjugate_gradient_descent!,
     trust_regions,
-    trust_regions!
+    trust_regions!,
+    vectorbundle_newton,
+    vectorbundle_newton!
 #
 # Solver helpers
 export decorate_state!, decorate_objective!
@@ -529,7 +534,7 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export AdaptiveWNGradient, ConstantLength, DecreasingLength,
+export AdaptiveWNGradient, AffineCovariantStepsize, ConstantLength, DecreasingLength,
     Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
 export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch, CubicBracketingLinesearch

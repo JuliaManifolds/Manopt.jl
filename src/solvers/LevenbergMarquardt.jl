@@ -51,7 +51,7 @@ $(_var(:Keyword, :evaluation))
 * `initial_residual_values`: the initial residual vector of the cost function `f`.
   By default this is a vector of length `num_components` of similar type as `p`.
 * `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
-* `linear_subsolver!`:    a function with three arguments `sk, JJ, grad_f_c`` that solves the
+* `linear_subsolver!`:    a function with three arguments `sk, JJ, grad_f_c` that solves the
   linear subproblem `sk .= JJ \\ grad_f_c`, where `JJ` is (up to numerical issues) a
   symmetric positive definite matrix. Default value is [`default_lm_lin_solve!`](@ref).
 $(_var(:Keyword, :retraction_method))

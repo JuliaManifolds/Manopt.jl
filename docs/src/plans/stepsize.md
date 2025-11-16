@@ -44,10 +44,10 @@ Internally these use
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["plans/stepsize.jl"]
+Pages = ["plans/stepsize/stepsize_message.jl", "plans/stepsize/linesearch.jl", "plans/stepsize/stepsize.jl"]
 Private = true
 Order = [:function, :type]
-Filter = t -> !(t in [Stepsize, AdaptiveWNGradient, ArmijoLinesearch, ConstantLength, CubicBracketingLinesearch, DecreasingLength, DistanceOverGradients, NonmonotoneLinesearch, Polyak, WolfePowellLinesearch, WolfePowellBinaryLinesearch ])
+Filter = t -> !(t in [Manopt.get_message, Stepsize, AdaptiveWNGradient, ArmijoLinesearch, ConstantLength, CubicBracketingLinesearch, DecreasingLength, DistanceOverGradients, NonmonotoneLinesearch, Polyak, WolfePowellLinesearch, WolfePowellBinaryLinesearch ])
 ```
 
 

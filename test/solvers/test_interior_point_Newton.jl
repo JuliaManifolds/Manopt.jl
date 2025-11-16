@@ -1,4 +1,4 @@
-using Manifolds, Manopt, LinearAlgebra, Random, Test
+using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
 
 @testset "Interior Point Newton Solver" begin
     @testset "StepsizeState" begin
@@ -47,6 +47,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
             "\n",
             :Stop,
             10,
+            DebugMessages(:Info, :Always),
         ]
 
         sc = StopAfterIteration(800) | StopWhenKKTResidualLess(1.0e-2)

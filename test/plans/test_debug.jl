@@ -290,6 +290,10 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         w7 = DebugWarnIfFieldNotFinite(:Iterate, :Always)
         @test_logs (:warn,) w7(mp, st, 1)
 
+        w8 = DebugWarnIfStepsizeCollapsed(1.0, :Once)
+        @test repr(w8) == "DebugWarnIfStepsizeCollapsed(1.0, :Once)"
+        @test_logs (:warn,) (:warn,) w8(mp2, st, 1)
+
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:Iteration], DebugWarnIfCostNotFinite)
         df2 = DebugFactory([:WarnGradient])

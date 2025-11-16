@@ -73,7 +73,7 @@ function test_sphere(descent_state_type; kws...)
     end
     @test contains(
         sprint(show, model),
-        "Vector{VariableRef} in ManoptJuMPExt.ManifoldSet{Sphere{ManifoldsBase.TypeParameter{Tuple{2}}, ℝ}}: 1",
+        "Vector{VariableRef} in ManoptJuMPExt.ManifoldSet{Sphere{ℝ, ManifoldsBase.TypeParameter{Tuple{2}}}}: 1",
     )
     @test contains(sprint(print, model), "[x[1], x[2], x[3]] in Sphere(2, ℝ)")
     @test contains(

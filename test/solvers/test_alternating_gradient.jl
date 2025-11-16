@@ -74,10 +74,11 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             evaluation = InplaceEvaluation(),
             return_state = true,
         )
-        @test Manopt.get_message(r) == ""
         @test startswith(
             repr(r), "# Solver state for `Manopt.jl`s Alternating Gradient Descent Solver"
         )
+        # r has the same message as the internal stepsize
+        @test Manopt.get_message(r) == Manopt.get_message(r.stepsize)
         @test isapprox(N, q3, q)
     end
 end

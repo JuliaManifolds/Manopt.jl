@@ -518,7 +518,7 @@ That way you can print the value in this case as well.
 
 # Constructor
 
-    DebugEntry(field, check=(>(0)); type=:warn, message=":\$f is nonnegative", io=stdout)
+    DebugIfEntry(field, check=(>(0)); type=:warn, message=":\$f is nonnegative", io=stdout)
 
 """
 mutable struct DebugIfEntry{F} <: DebugAction
@@ -1175,6 +1175,50 @@ function (d::DebugWarnIfGradientNormTooLarge)(
 end
 function show(io::IO, d::DebugWarnIfGradientNormTooLarge)
     return print(io, "DebugWarnIfGradientNormTooLarge($(d.factor), :$(d.status))")
+end
+
+@doc """
+    DebugWarnIfStepsizeCollapsed <: DebugAction
+
+print a warning if the backtracking stopped because the stepsize fell below a given threshold.
+This threshold is specified by the `stop_when_stepsize_less` field.
+
+# Constructor
+
+    DebugWarnIfStepsizeCollapsed(tol::T=1e-8,warn=:Once;)
+
+Initialize the warning to warning level (`:Once`) with a tolerance for `stop_when_stepsize_less` set to `tol` (1e-8).
+
+The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+to `:Always` to report an increase every time it happens, and it can be set to `:No`
+to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
+All other symbols are handled as if they were `:Always`
+"""
+mutable struct DebugWarnIfStepsizeCollapsed{T} <: DebugAction
+    status::Symbol
+    stop_when_stepsize_less::T
+    function DebugWarnIfStepsizeCollapsed(tol::T = 1.0e-8, warn::Symbol = :Once) where {T}
+        return new{T}(warn, tol)
+    end
+end
+function show(io::IO, di::DebugWarnIfStepsizeCollapsed)
+    return print(io, "DebugWarnIfStepsizeCollapsed($(di.stop_when_stepsize_less), :$(di.status))")
+end
+function (d::DebugWarnIfStepsizeCollapsed)(
+        amp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
+    )
+    (k < 1) && (return nothing)
+    s = st.stepsize
+    if d.status !== :No
+        if get_last_stepsize(amp, st, k) ≤ d.stop_when_stepsize_less
+            @warn "Backtracking stopped because the stepsize fell below the threshold $(d.stop_when_stepsize_less)."
+            if d.status === :Once
+                @warn "Further warnings will be suppressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
+                d.status = :No
+            end
+        end
+    end
+    return nothing
 end
 
 #

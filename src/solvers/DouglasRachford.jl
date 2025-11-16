@@ -147,8 +147,8 @@ _doc_Douglas_Rachford = """
     DouglasRachford!(M, f, proxes_f, p)
     DouglasRachford!(M, mpo, p)
 
-Compute the Douglas-Rachford algorithm on the manifold ``$(_math(:M))``, starting from `p``
-given the (two) proximal maps `proxes_f`, see [ BergmannPerschSteidl:2016](@cite).
+Compute the Douglas-Rachford algorithm on the manifold ``$(_math(:M))``, starting from `p`
+given the (two) proximal maps `proxes_f`, see [BergmannPerschSteidl:2016](@cite).
 
 For ``k>2`` proximal maps, the problem is reformulated using the parallel Douglas Rachford:
 a vectorial proximal map on the power manifold ``$(_math(:M))^k`` is introduced as the first
@@ -157,10 +157,9 @@ This hence also boils down to two proximal maps, though each evaluates proximal 
 that is, component wise in a vector.
 
 !!! note
-
-   The parallel Douglas Rachford does not work in-place for now, since
-   while creating the new staring point `p'` on the power manifold, a copy of `p`
-   Is created
+    The parallel Douglas Rachford does not work in-place for now, since
+    while creating the new staring point `p'` on the power manifold, a copy of `p`
+    Is created
 
 If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proximal maps are kept unchanged.
 

@@ -35,6 +35,7 @@ $(_var(:Argument, :M; type = true))
 $(_var(:Argument, :f; add = "total cost function `f = g + h`"))
 * `g`:              the smooth part of the cost function
 * `grad_g`:           a gradient `(M,p) -> X` or `(M, X, p) -> X` of the smooth part ``g`` of the problem
+$(_var(:Argument, :p))
 
 # Keyword Arguments
 

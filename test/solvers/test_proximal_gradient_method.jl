@@ -29,6 +29,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
     @testset "Proximal Gradient Backtracking" begin
         pgb = Manopt.ProximalGradientMethodBacktrackingStepsize(M)
         @test get_initial_stepsize(pgb) == 1.0
+        @test get_last_stepsize(pgb) == 1.0
         @test startswith(repr(pgb), "ProximalGradientMethodBacktrackingStepsize(;\n")
     end
     @testset "Allocating Evaluation" begin
@@ -88,7 +89,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
 
         @testset "Backtracking Warnings" begin
             dw1 = DebugWarnIfStepsizeCollapsed(:Once)
-            @test repr(dw1) == "DebugWarnIfStepsizeCollapsed()"
+            @test repr(dw1) == "DebugWarnIfStepsizeCollapsed(Once, :Once)"
             pgms_warn = ProximalGradientMethodState(
                 M;
                 p = p0,
@@ -98,15 +99,21 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
                 stopping_criterion = StopAfterIteration(200),
             )
             @test_logs (:warn,) (:warn,) dw1(mp, pgms_warn, 1)
-            dw2 = DebugWarnIfStepsizeCollapsed(:Once)
+            dw2 = DebugWarnIfStepsizeCollapsed(1.0, :Once)
             pgms_const = ProximalGradientMethodState(
                 M;
                 p = p0,
                 stepsize = Manopt.ConstantStepsize(M, 1.0),
                 stopping_criterion = StopAfterIteration(2),
             )
-            @test_throws DomainError dw2(mp, pgms_const, 1)
+            # works normally does nothing on init and normally
             @test isnothing(dw2(mp, pgms_const, 0))
+            @test isnothing(dw2(mp, pgms_const, 0))
+            # but if we force a small step we warn
+            pgms_const.stepsize.length = 0.5
+            @test_logs (:warn,) (:warn,) dw2(mp, pgms_const, 1)
+            # but also only once
+            @test_nowarn dw2(mp, pgms_const, 2)
         end
 
         # Test subsolver with subgradient

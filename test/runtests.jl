@@ -73,6 +73,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test
         include("solvers/test_subgradient_method.jl")
         include("solvers/test_truncated_cg.jl")
         include("solvers/test_trust_regions.jl")
+        include("solvers/test_vectorbundle_newton.jl")
     end
     include("MOI_wrapper.jl")
     include("test_aqua.jl")
