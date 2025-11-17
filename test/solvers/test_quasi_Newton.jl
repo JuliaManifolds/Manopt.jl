@@ -282,7 +282,7 @@ end
         @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol = 2.0e-4)
     end
 
-    @testset "Wolfe Powell linesearch" begin
+    @testset "Wolfe Powell line search" begin
         n = 4
         rayleigh_atol = 1.0e-8
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
@@ -470,5 +470,24 @@ end
         @test isapprox(M, pstar, p)
         s = quasi_Newton(M, f, grad_f, data[1]; return_state = true)
         @test get_solver_result(s)[] == p
+    end
+
+    @testset "Cautious Update that does only transport" begin
+        M = Euclidean(2)
+        p = [0.0, 1.0]
+        f(M, p) = sum(p .^ 2)
+        # A wrong gradient
+        grad_f(M, p) = -2 .* p
+        gmp = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, gmp)
+        qdu = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2)
+        qns = QuasiNewtonState(
+            M;
+            p = copy(M, p),
+            direction_update = QuasiNewtonCautiousDirectionUpdate(qdu),
+        )
+        # This triggers and cautious update that does not update the Hessian
+        Manopt.update_hessian!(qns.direction_update, mp, qns, p, 1)
+        # But I am not totally sure what to test for afterwards
     end
 end
