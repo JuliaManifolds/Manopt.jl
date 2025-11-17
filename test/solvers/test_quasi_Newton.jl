@@ -486,6 +486,8 @@ end
             p = copy(M, p),
             direction_update = QuasiNewtonCautiousDirectionUpdate(qdu),
         )
+        # current bound with the gradient is 2, so we choose an sk larger than that
+        qns.sk = [1.0, 1.1]
         # This triggers and cautious update that does not update the Hessian
         Manopt.update_hessian!(qns.direction_update, mp, qns, p, 1)
         # But I am not totally sure what to test for afterwards
