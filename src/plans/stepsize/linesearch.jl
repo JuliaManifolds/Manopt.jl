@@ -76,33 +76,63 @@ most prominently the negative gradient.
 """
 abstract type Linesearch <: Stepsize end
 
-@doc """
-    s = linesearch_backtrack(M, F, p, X, s, decrease, contract η = -X, f0 = f(p); kwargs...)
-    s = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p); kwargs...)
+_doc_linesearch_backtrack = """
+    s = linesearch_backtrack(M, F, p, s, decrease, contract, η; kwargs...)
+    s = linesearch_backtrack!(M, q, F, p, s, decrease, contract, η; kwargs...)
 
-perform a line search
+perform a line search along ``\ell_f(s) = f($(_tex(:retr))_p(sη)`` to find a stepsize `s`.
+See [NocedalWright:2006; Section 3](@cite) for details.
+
+The linesearch starts with a first phase where the stepsize is increased as ``s ↦ s / σ``
+until
+
+```math
+f($(_tex(:retr))_p(sη)) ≥ f(p) + a * s * Df(p)[η]
+````
+
+where ``a`` is the `decrease` parameter, and ``Df(p)[η]`` is the directional derivative.
+
+Then the actual backtracking phase starts, where the stepsize is decreased as ``s ↦ σ s``
+until
+```math
+f($(_tex(:retr))_p(sη)) ≤ f(p) + b * s * Df(p)[η]
+```
+
+where ``b`` is the `decrease` parameter.
+
+This can be done in-place, where `q` is the point to store the point reached in.
+
+Both phases have a safeguard on the maximal number of steps to perform as well as an
+upper and lower bound for the stepsize, respectively.
+The upper bound is a special case on manifolds to avoid exceeding the injectivity radius.
+Furthermore, both phases can be equipped with additional conditions to be fulfilled in order to
+accept the current stepsize.
+
+## Arguments
 
 * on manifold `M`
 * for the cost function `f`,
 * at the current point `p`
-* with current gradient provided in `X`
 * an initial stepsize `s`
 * a sufficient `decrease`
 * a `contract`ion factor ``σ``
-* a search direction ``η = -X``
-* an offset, ``f_0 = F(x)``
+* a search direction ``η``
 
 ## Keyword arguments
 
 $(_var(:Keyword, :retraction_method))
+* `additional_increase_condition=(M,p) -> true`: impose an additional condition for an increased step size to be accepted
+* `additional_decrease_condition=(M,p) -> true`: impose an additional condition for an decreased step size to be accepted
+* `Dlf0`: precomputed directional derivative at point `p` in direction `η`
+  if the `gradient` is specified, this is computed as the real part of `inner(M, p, gradient, η)`, otherwise it it nothing
+* `lf0 = f(M, p)`: the function value at the initial point `p`
+* `gradient = nothing`: precomputed gradient at point `p`
+* `report_messages_in::NamedTuple = (; )`: a named tuple of [`StepsizeMessage`](@ref)s to report messages in.
+  currently supported keywords are `:non_descent_direction`, `:stepsize_exceeds`, `:stepsize_less`, `:stop_increasing`, `:stop_decreasing`
 * `stop_when_stepsize_less=0.0`: to avoid numerical underflow
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold
 * `stop_increasing_at_step=100`: stop the initial increase of step size after these many steps
 * `stop_decreasing_at_step=`1000`: stop the decreasing search after these many steps
-* `report_messages_in::NamedTuple = (; )`: a named tuple of [`StepsizeMessage`](@ref)s to report messages in.
-  currently supported keywords are `:non_descent_direction`, `:stepsize_exceeds`, `:stepsize_less`, `:stop_increasing`, `:stop_decreasing`
-* `additional_increase_condition=(M,p) -> true`: impose an additional condition for an increased step size to be accepted
-* `additional_decrease_condition=(M,p) -> true`: impose an additional condition for an decreased step size to be accepted
 
   These keywords are used as safeguards, where only the max stepsize is a very manifold specific one.
 
@@ -110,30 +140,28 @@ $(_var(:Keyword, :retraction_method))
 
 A stepsize `s` and a message `msg` (in case any of the 4 criteria hit)
 """
+
+@doc "$_doc_linesearch_backtrack"
 function linesearch_backtrack(
-        M::AbstractManifold, f, p, X::T, s, decrease, contract, η::T = (-X), f0 = f(M, p); kwargs...
-    ) where {T}
+        M::AbstractManifold, f, p, s, decrease, contract, η; kwargs...
+    )
     q = allocate(M, p)
-    return linesearch_backtrack!(M, q, f, p, X, s, decrease, contract, η, f0; kwargs...)
+    return linesearch_backtrack!(M, q, f, p, s, decrease, contract, η; kwargs...)
 end
 
-"""
-    s = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p))
-
-Perform a line search backtrack in-place of `q`.
-For all details and options, see [`linesearch_backtrack`](@ref)
-"""
+@doc "$_doc_linesearch_backtrack"
 function linesearch_backtrack!(
         M::AbstractManifold,
         q,
         f::TF,
         p,
-        X::T,
         s,
         decrease,
         contract,
-        η::T = (-X),
-        f0 = f(M, p);
+        η::T;
+        lf0 = f(M, p),
+        gradient = nothing,
+        Dlf0 = isnothing(gradient) ? nothing : real(inner(M, p, gradient, η)),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         additional_increase_condition = (M, p) -> true,
         additional_decrease_condition = (M, p) -> true,
@@ -145,14 +173,13 @@ function linesearch_backtrack!(
     ) where {TF, T}
     ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
     f_q = f(M, q)
-    search_dir_inner = real(inner(M, p, η, X))
-    if search_dir_inner >= 0
-        set_message!(report_messages_in, :non_descent_direction, at = 0, value = search_dir_inner)
+    if Dlf0 >= 0
+        set_message!(report_messages_in, :non_descent_direction, at = 0, value = Dlf0)
     end
 
     i = 0
     # Ensure that both the original condition and the additional one are fulfilled afterwards
-    while f_q < f0 + decrease * s * search_dir_inner || !additional_increase_condition(M, q)
+    while f_q < lf0 + decrease * s * Dlf0 || !additional_increase_condition(M, q)
         (stop_increasing_at_step == 0) && break
         i = i + 1
         s = s / contract
@@ -169,7 +196,7 @@ function linesearch_backtrack!(
     end
     i = 0
     # Ensure that both the original condition and the additional one are fulfilled afterwards
-    while (f_q > f0 + decrease * s * search_dir_inner) ||
+    while (f_q > lf0 + decrease * s * Dlf0) ||
             (!additional_decrease_condition(M, q))
         i = i + 1
         s = contract * s

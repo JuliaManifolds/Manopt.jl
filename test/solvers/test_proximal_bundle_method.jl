@@ -33,12 +33,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
     end
     @testset "Allocating Subgradient" begin
         f(M, q) = distance(M, q, p)
-        function ∂f(M, q)
-            if distance(M, p, q) == 0
-                return zero_vector(M, q)
-            end
-            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
-        end
+        ∂f(M, q) = (distance(M, p, q) == 0) ? zero_vector(M, q) : (-log(M, q, p) / max(10 * eps(Float64), distance(M, p, q)))
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
         X = zero_vector(M, p)
         Y = get_subgradient(mp, p)
@@ -169,5 +164,18 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             stopping_criterion = StopAfterIteration(200),
             sub_problem = (proximal_bundle_method_subsolver!),
         )
+    end
+    @testset "Trigger the case where the bundle is not transported" begin
+        M = Hyperbolic(4)
+        p = [0.0, 0.0, 0.0, 0.0, 1.0]
+        p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
+        pbms = ProximalBundleMethodState(M; p = p0, stopping_criterion = StopAfterIteration(200))
+        f(M, q) = distance(M, q, p)
+        ∂f(M, q) = (distance(M, p, q) == 0) ? zero_vector(M, q) : (-log(M, q, p) / max(10 * eps(Float64), distance(M, p, q)))
+        mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
+        pbms.p_last_serious = p0
+        Manopt.step_solver!(mp, pbms, 1)
+        # test bundle base point still p0
+        @test pbms.bundle[1][1] == p0
     end
 end

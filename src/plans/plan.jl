@@ -122,6 +122,7 @@ include("record.jl")
 
 include("stopping_criterion.jl")
 
+include("stepsize/initial_guess.jl")
 include("stepsize/stepsize_message.jl")
 include("stepsize/linesearch.jl")
 include("stepsize/stepsize.jl")

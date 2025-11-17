@@ -184,10 +184,11 @@ function (a::ArmijoLinesearchStepsize)(
         a.candidate_point,
         (M, p) -> get_cost(amp, p),
         agds.p,
-        X,
         a.last_stepsize,
         a.sufficient_decrease,
-        a.contraction_factor;
+        a.contraction_factor,
+        -X;
+        gradient = X,
         retraction_method = a.retraction_method,
         report_messages_in = a.messages,
     )

@@ -75,10 +75,10 @@ function test_sphere(descent_state_type; kws...)
         sprint(show, model),
         "Vector{VariableRef} in ManoptJuMPExt.ManifoldSet{Sphere{ℝ, ManifoldsBase.TypeParameter{Tuple{2}}}}: 1",
     )
-    @test contains(sprint(print, model), "[x[1], x[2], x[3]] in Sphere(2, ℝ)")
+    @test contains(sprint(print, model), "[x[1], x[2], x[3]] in $(Sphere(2))")
     @test contains(
         JuMP.model_string(MIME("text/latex"), model),
-        "[x_{1}, x_{2}, x_{3}] \\in Sphere(2, ℝ)",
+        "[x_{1}, x_{2}, x_{3}] \\in $(Sphere(2))",
     )
 
     @objective(model, Min, sum(xi^4 for xi in x))
@@ -111,6 +111,8 @@ end
 function test_runtests()
     optimizer = Manopt.JuMP_Optimizer()
     config = MOI.Test.Config(; exclude = Any[MOI.ListOfModelAttributesSet])
+    # Test MOI getter
+    @test MOI.get(optimizer, MOI.RawOptimizerAttribute("descent_state_type")) == GradientDescentState
     return MOI.Test.runtests(
         optimizer,
         config;
