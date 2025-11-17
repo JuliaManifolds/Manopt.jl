@@ -488,6 +488,9 @@ end
         )
         # current bound with the gradient is 2, so we choose an sk larger than that
         qns.sk = [1.0, 1.1]
+        # push one dummy pair we can transport
+        push!(qdu.memory_y, [1, 2])
+        push!(qdu.memory_s, [3, 4])
         # This triggers and cautious update that does not update the Hessian
         Manopt.update_hessian!(qns.direction_update, mp, qns, p, 1)
         # But I am not totally sure what to test for afterwards
