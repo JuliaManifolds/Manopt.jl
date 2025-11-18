@@ -80,6 +80,7 @@ $(_problem(:Constrained))
         evaluation=AllocatingEvaluation(),
         M = nothing,
         p = isnothing(M) ? nothing : rand(M),
+        atol = 1.0e-13,
     )
 
 Generate the constrained objective based on all involved single functions `f`, `grad_f`, `g`,
@@ -101,6 +102,8 @@ Both variants require that at least one of the constraints (and its gradient) is
 If any of the three parts provides a Hessian, the corresponding object, that is a
 [`ManifoldHessianObjective`](@ref) for `f` or a [`VectorHessianFunction`](@ref) for `g` or `h`,
 respectively, is created.
+
+Feasibility of points `p` with respect to the constraints is determined up to the tolerance `atol`.
 """
 struct ConstrainedManifoldObjective{
         E <: AbstractEvaluationType,
@@ -177,7 +180,6 @@ function ConstrainedManifoldObjective(
         inequality_constraints::Union{Integer, Nothing} = nothing,
         M::Union{AbstractManifold, Nothing} = nothing,
         p = isnothing(M) ? nothing : rand(M),
-        atol = 1.0e-13,
         kwargs...,
     )
     if isnothing(hess_f)
@@ -268,7 +270,7 @@ function ConstrainedManifoldObjective(
         end
     end
     return ConstrainedManifoldObjective(
-        objective; equality_constraints = eq, inequality_constraints = ineq, atol = atol
+        objective; equality_constraints = eq, inequality_constraints = ineq, kwargs...
     )
 end
 function ConstrainedManifoldObjective(
