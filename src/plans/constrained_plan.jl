@@ -111,6 +111,7 @@ struct ConstrainedManifoldObjective{
     objective::MO
     equality_constraints::EMO
     inequality_constraints::IMO
+    atol::Float64
 end
 function _vector_function_type_hint(f)
     (!isnothing(f) && isa(f, AbstractVector)) && return ComponentVectorialType()
@@ -176,6 +177,7 @@ function ConstrainedManifoldObjective(
         inequality_constraints::Union{Integer, Nothing} = nothing,
         M::Union{AbstractManifold, Nothing} = nothing,
         p = isnothing(M) ? nothing : rand(M),
+        atol = 1.0e-13,
         kwargs...,
     )
     if isnothing(hess_f)
@@ -266,13 +268,14 @@ function ConstrainedManifoldObjective(
         end
     end
     return ConstrainedManifoldObjective(
-        objective; equality_constraints = eq, inequality_constraints = ineq
+        objective; equality_constraints = eq, inequality_constraints = ineq, atol = atol
     )
 end
 function ConstrainedManifoldObjective(
         objective::MO;
         equality_constraints::EMO = nothing,
         inequality_constraints::IMO = nothing,
+        atol = 1.0e-13,
         kwargs...,
     ) where {E <: AbstractEvaluationType, MO <: AbstractManifoldObjective{E}, IMO, EMO}
     if isnothing(equality_constraints) && isnothing(inequality_constraints)
@@ -290,7 +293,7 @@ function ConstrainedManifoldObjective(
         )
     end
     return ConstrainedManifoldObjective{E, MO, EMO, IMO}(
-        objective, equality_constraints, inequality_constraints
+        objective, equality_constraints, inequality_constraints, atol
     )
 end
 function ConstrainedManifoldObjective(
@@ -997,15 +1000,13 @@ g_i(p) ≤ 0, \text{ for all } i=1,…,m$(_tex(:quad))\text{ and }$(_tex(:quad))
     * `:warn`: displays the error message as a @warning.
 
 The keyword `error=` and all other `kwargs...` are passed on to [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
-if the point is verfied (see `check_point`).
-
-All other keywords are passed on to `is_poi`
+if the point is verified (see `check_point`).
 """
 function is_feasible(M, cmo, p; check_point::Bool = true, error::Symbol = :none, kwargs...)
-    v = !check_point || is_point(M, p; error = error)
+    v = !check_point || is_point(M, p; error = error, kwargs...)
     g = get_inequality_constraint(M, cmo, p, :)
     h = get_equality_constraint(M, cmo, p, :)
-    feasible = v && all(g .<= 0) && all(h .== 0)
+    feasible = v && all(g .<= cmo.atol) && isapprox.(h, 0; atol = cmo.atol) |> all
     # if we are feasible or no error shall be generated
     ((error === :none) || feasible) && return feasible
     # collect information about infeasibily
