@@ -467,9 +467,11 @@ function (d::DebugFeasibility)(
     )
     s = ""
     p = get_iterate(st)
-    eqc = get_equality_constraint(mp, p, :)
+    eqc_ = get_equality_constraint(mp, p, :)
+    eqc = eqc_ isa AbstractArray ? eqc_ : [eqc_]
     eqc_nz = eqc[abs.(eqc) .> d.atol]
-    ineqc = get_inequality_constraint(mp, p, :)
+    ineqc_ = get_inequality_constraint(mp, p, :)
+    ineqc = ineqc_ isa AbstractArray ? ineqc_ : [ineqc_]
     ineqc_pos = ineqc[ineqc .> d.atol]
     feasible = (length(eqc_nz) == 0) && (length(ineqc_pos) == 0)
     n_eq = length(eqc_nz)
