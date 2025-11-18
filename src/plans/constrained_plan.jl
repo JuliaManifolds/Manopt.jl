@@ -103,7 +103,7 @@ If any of the three parts provides a Hessian, the corresponding object, that is 
 [`ManifoldHessianObjective`](@ref) for `f` or a [`VectorHessianFunction`](@ref) for `g` or `h`,
 respectively, is created.
 
-Feasibility of points `p` with respect to the constraints is determined up to the tolerance `atol`.
+Feasibility of points with respect to the constraints is determined up to the tolerance `atol`.
 """
 struct ConstrainedManifoldObjective{
         E <: AbstractEvaluationType,
