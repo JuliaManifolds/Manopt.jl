@@ -486,7 +486,7 @@ function (d::DebugFeasibility)(
         (f === :NumIneq) && (s *= "$(n_ineq)")
         (f === :NumIneqNz) && (s *= n_ineq == 0 ? "" : "$(n_ineq)")
         (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz); init = 0.0))")
-        (f === :TotalInEq) && (s *= "$(sum(ineq_pos; init = 0.0))")
+        (f === :TotalInEq) && (s *= "$(sum(ineqc_pos; init = 0.0))")
     end
     print(d.io, (k > 0) ? s : "")
     return nothing
