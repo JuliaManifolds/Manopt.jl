@@ -456,7 +456,7 @@ mutable struct DebugFeasibility <: DebugAction
     format::Vector{Union{String, Symbol}}
     io::IO
     function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = NaN)
-        isnan(atol) && (@warn "Providing atol= directly to DebugFeasibility is deprecated. Use the keyword for the ConstrainedObjective instead. The value provided here ($(atol)) is ignored")
+        isnan(atol) || (@warn "Providing atol= directly to DebugFeasibility is deprecated. Use the keyword for the ConstrainedObjective instead. The value provided here ($(atol)) is ignored")
         return new(format, io)
     end
 end
