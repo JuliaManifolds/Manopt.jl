@@ -159,6 +159,8 @@ function _number_of_constraints(
     return -1
 end
 
+_get_atol(cmo::ConstrainedManifoldObjective) = cmo.atol
+
 function ConstrainedManifoldObjective(
         f,
         grad_f,
@@ -986,8 +988,8 @@ end
 @doc """
     is_feasible(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, kwargs...)
 
-Evaluate whether a boint `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo`.
-That is for the provided inequality constaints ``g: $(_math(:M)) → ℝ^m`` and equality constaints ``h: $(_math(:M)) \to ℝ^m``
+Evaluate whether a point `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo`.
+That is for the provided inequality constraints ``g: $(_math(:M)) → ℝ^m`` and equality constraints ``h: $(_math(:M)) \to ℝ^m``
 from within `cmo`, the point ``p ∈ $(_math(:M))`` is feasible if
 ```math
 g_i(p) ≤ 0, \text{ for all } i=1,…,m$(_tex(:quad))\text{ and }$(_tex(:quad)) h_j(p) = 0, \text{ for all } j=1,…,n.
@@ -1008,7 +1010,8 @@ function is_feasible(M, cmo, p; check_point::Bool = true, error::Symbol = :none,
     v = !check_point || is_point(M, p; error = error, kwargs...)
     g = get_inequality_constraint(M, cmo, p, :)
     h = get_equality_constraint(M, cmo, p, :)
-    feasible = v && all(g .<= cmo.atol) && isapprox.(h, 0; atol = cmo.atol) |> all
+    atol = _get_atol(cmo)
+    feasible = v && all(g .<= atol) && isapprox.(h, 0; atol = atol) |> all
     # if we are feasible or no error shall be generated
     ((error === :none) || feasible) && return feasible
     # collect information about infeasibily
