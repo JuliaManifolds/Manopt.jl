@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Fixed a typo in `DebugFeasibility`, where an undefined variable was used.
 
+### Changed
+
+* Removed `atol` from `DebugFeasibility` and instead use the one newly added `atol` from the `ConstrainedManifoldObjective`.
+
 ## [0.5.28] November 17, 2025
 
 ### Changed
