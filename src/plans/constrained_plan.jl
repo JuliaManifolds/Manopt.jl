@@ -159,8 +159,6 @@ function _number_of_constraints(
     return -1
 end
 
-_get_atol(cmo::ConstrainedManifoldObjective) = cmo.atol
-
 function ConstrainedManifoldObjective(
         f,
         grad_f,
@@ -986,9 +984,9 @@ function inequality_constraints_length(admo::AbstractDecoratedManifoldObjective)
 end
 
 @doc """
-    is_feasible(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, kwargs...)
+    is_feasible(M::AbstractManifold, o::AbstractDecoratedManifoldObjective, p, kwargs...)
 
-Evaluate whether a point `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo`.
+Evaluate whether a point `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo = get_objective(o)`.
 That is for the provided inequality constraints ``g: $(_math(:M)) → ℝ^m`` and equality constraints ``h: $(_math(:M)) \to ℝ^m``
 from within `cmo`, the point ``p ∈ $(_math(:M))`` is feasible if
 ```math
@@ -1006,11 +1004,11 @@ g_i(p) ≤ 0, \text{ for all } i=1,…,m$(_tex(:quad))\text{ and }$(_tex(:quad))
 The keyword `error=` and all other `kwargs...` are passed on to [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
 if the point is verified (see `check_point`).
 """
-function is_feasible(M, cmo, p; check_point::Bool = true, error::Symbol = :none, kwargs...)
+function is_feasible(M, o, p; check_point::Bool = true, error::Symbol = :none, kwargs...)
     v = !check_point || is_point(M, p; error = error, kwargs...)
     g = get_inequality_constraint(M, cmo, p, :)
     h = get_equality_constraint(M, cmo, p, :)
-    atol = _get_atol(cmo)
+    cmo = get_objective(o)
     feasible = v && all(g .<= atol) && isapprox.(h, 0; atol = atol) |> all
     # if we are feasible or no error shall be generated
     ((error === :none) || feasible) && return feasible

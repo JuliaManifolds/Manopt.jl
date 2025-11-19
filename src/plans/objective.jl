@@ -93,8 +93,6 @@ function ReturnManifoldObjective(
     return ReturnManifoldObjective{E, O2, O1}(o)
 end
 
-_get_atol(cmo::ReturnManifoldObjective{E, O2, O1}) where {E, O2, O1 <: ConstrainedManifoldObjective} = cmo.objective.atol
-
 #
 # Internal converters if the variable in the high-level interface is a number.
 #
