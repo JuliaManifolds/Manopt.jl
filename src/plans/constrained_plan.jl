@@ -984,9 +984,10 @@ function inequality_constraints_length(admo::AbstractDecoratedManifoldObjective)
 end
 
 @doc """
+    is_feasible(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, kwargs...)
     is_feasible(M::AbstractManifold, o::AbstractDecoratedManifoldObjective, p, kwargs...)
 
-Evaluate whether a point `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo = get_objective(o)`.
+Evaluate whether a point `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo`.
 That is for the provided inequality constraints ``g: $(_math(:M)) → ℝ^m`` and equality constraints ``h: $(_math(:M)) \to ℝ^m``
 from within `cmo`, the point ``p ∈ $(_math(:M))`` is feasible if
 ```math
