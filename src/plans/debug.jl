@@ -1433,6 +1433,7 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 
 * `:Change` creates a [`DebugChange`](@ref)
 * `:Cost` creates a [`DebugCost`](@ref)
+* `:Feasibility` creates a [`DebugFeasibility`](@ref)
 * `:Gradient` creates a [`DebugGradient`](@ref)
 * `:GradientChange` creates a [`DebugGradientChange`](@ref)
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
