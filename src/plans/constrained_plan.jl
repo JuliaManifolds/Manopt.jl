@@ -180,7 +180,7 @@ function ConstrainedManifoldObjective(
         inequality_constraints::Union{Integer, Nothing} = nothing,
         M::Union{AbstractManifold, Nothing} = nothing,
         p = isnothing(M) ? nothing : rand(M),
-        kwargs...,
+        atol = 1.0e-13,
     )
     if isnothing(hess_f)
         objective = ManifoldGradientObjective(f, grad_f; evaluation = evaluation)
@@ -270,7 +270,7 @@ function ConstrainedManifoldObjective(
         end
     end
     return ConstrainedManifoldObjective(
-        objective; equality_constraints = eq, inequality_constraints = ineq, kwargs...
+        objective; equality_constraints = eq, inequality_constraints = ineq, atol = atol
     )
 end
 function ConstrainedManifoldObjective(
