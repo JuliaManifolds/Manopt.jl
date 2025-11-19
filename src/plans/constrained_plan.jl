@@ -80,7 +80,7 @@ $(_problem(:Constrained))
         evaluation=AllocatingEvaluation(),
         M = nothing,
         p = isnothing(M) ? nothing : rand(M),
-        atol = 1.0e-13,
+        atol = 0,
     )
 
 Generate the constrained objective based on all involved single functions `f`, `grad_f`, `g`,
@@ -180,7 +180,7 @@ function ConstrainedManifoldObjective(
         inequality_constraints::Union{Integer, Nothing} = nothing,
         M::Union{AbstractManifold, Nothing} = nothing,
         p = isnothing(M) ? nothing : rand(M),
-        atol = 1.0e-13,
+        atol = 0,
     )
     if isnothing(hess_f)
         objective = ManifoldGradientObjective(f, grad_f; evaluation = evaluation)
@@ -277,7 +277,7 @@ function ConstrainedManifoldObjective(
         objective::MO;
         equality_constraints::EMO = nothing,
         inequality_constraints::IMO = nothing,
-        atol = 1.0e-13,
+        atol = 0,
         kwargs...,
     ) where {E <: AbstractEvaluationType, MO <: AbstractManifoldObjective{E}, IMO, EMO}
     if isnothing(equality_constraints) && isnothing(inequality_constraints)
