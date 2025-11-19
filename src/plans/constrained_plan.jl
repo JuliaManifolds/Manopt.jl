@@ -1005,11 +1005,11 @@ The keyword `error=` and all other `kwargs...` are passed on to [`is_point`](@ex
 if the point is verified (see `check_point`).
 """
 function is_feasible(M, o, p; check_point::Bool = true, error::Symbol = :none, kwargs...)
+    cmo = get_objective(o)
     v = !check_point || is_point(M, p; error = error, kwargs...)
     g = get_inequality_constraint(M, cmo, p, :)
     h = get_equality_constraint(M, cmo, p, :)
-    cmo = get_objective(o)
-    feasible = v && all(g .<= atol) && isapprox.(h, 0; atol = atol) |> all
+    feasible = v && all(g .<= cmo.atol) && isapprox.(h, 0; atol = cmo.atol) |> all
     # if we are feasible or no error shall be generated
     ((error === :none) || feasible) && return feasible
     # collect information about infeasibily
