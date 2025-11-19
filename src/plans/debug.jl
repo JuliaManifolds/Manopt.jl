@@ -453,12 +453,11 @@ DebugFeasibility(
 
 """
 mutable struct DebugFeasibility <: DebugAction
-    atol::Float64
     format::Vector{Union{String, Symbol}}
     io::IO
     function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = NaN)
         isnan(atol) && (@warn "Providing atol= directly to DebugFeasibility is deprecated. Use the keyword for the ConstrainedObjective instead. The value provided here ($(atol)) is ignored")
-        return new(atol, format, io)
+        return new(format, io)
     end
 end
 function (d::DebugFeasibility)(
@@ -491,7 +490,7 @@ function (d::DebugFeasibility)(
 end
 function show(io::IO, d::DebugFeasibility)
     sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"
-    return print(io, "DebugFeasibility($sf; atol=$(d.atol))")
+    return print(io, "DebugFeasibility($sf)")
 end
 function status_summary(d::DebugFeasibility)
     sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"
