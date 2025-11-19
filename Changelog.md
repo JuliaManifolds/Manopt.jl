@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * a keyword argument `atol` to the `ConstrainedManifoldObjective` to set a tolerance for constraint satisfaction.
 
+### Fixed
+
+* Fixed a typo in `DebugFeasibility`, where an undefined variable was used.
+
 ## [0.5.28] November 17, 2025
 
 ### Changed

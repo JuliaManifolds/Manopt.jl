@@ -483,7 +483,7 @@ function (d::DebugFeasibility)(
         (f === :NumIneq) && (s *= "$(n_ineq)")
         (f === :NumIneqNz) && (s *= n_ineq == 0 ? "" : "$(n_ineq)")
         (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz); init = 0.0))")
-        (f === :TotalInEq) && (s *= "$(sum(ineq_pos; init = 0.0))")
+        (f === :TotalInEq) && (s *= "$(sum(ineqc_pos; init = 0.0))")
     end
     print(d.io, (k > 0) ? s : "")
     return nothing
@@ -1432,6 +1432,7 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 
 * `:Change` creates a [`DebugChange`](@ref)
 * `:Cost` creates a [`DebugCost`](@ref)
+* `:Feasibility` creates a [`DebugFeasibility`](@ref)
 * `:Gradient` creates a [`DebugGradient`](@ref)
 * `:GradientChange` creates a [`DebugGradientChange`](@ref)
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
