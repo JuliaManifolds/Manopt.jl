@@ -120,16 +120,16 @@ function interior_point_Newton(
         g = nothing, h = nothing,
         grad_g = nothing, grad_h = nothing,
         Hess_g = nothing, Hess_h = nothing,
-        inequality_constrains::Union{Integer, Nothing} = nothing,
-        equality_constrains::Union{Nothing, Integer} = nothing,
+        inequality_constraints::Union{Integer, Nothing} = nothing,
+        equality_constraints::Union{Nothing, Integer} = nothing,
         kwargs...,
     )
     cmo = ConstrainedManifoldObjective(
         f, grad_f, g, grad_g, h, grad_h;
         hess_f = Hess_f, hess_g = Hess_g, hess_h = Hess_h,
         evaluation = evaluation,
-        inequality_constrains = inequality_constrains,
-        equality_constrains = equality_constrains,
+        inequality_constraints = inequality_constraints,
+        equality_constraints = equality_constraints,
         M = M, p = p,
     )
     return interior_point_Newton(M, cmo, p; evaluation = evaluation, kwargs...)

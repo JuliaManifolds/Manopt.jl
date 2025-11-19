@@ -427,7 +427,6 @@ end
 Display information about the feasibility of the current iterate
 
 # Fields
-* `atol`:   absolute tolerance for when either equality or inequality constraints are counted as violated
 * `format`: a vector of symbols and string formatting the output
 * `io`:     default stream to print the debug to.
 
@@ -450,27 +449,27 @@ format to print the output.
 DebugFeasibility(
     format=["feasible: ", :Feasible];
     io::IO=stdout,
-    atol=1e-13
 )
 
 """
 mutable struct DebugFeasibility <: DebugAction
-    atol::Float64
     format::Vector{Union{String, Symbol}}
     io::IO
-    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = 1.0e-13)
-        return new(atol, format, io)
+    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = NaN)
+        isnan(atol) && (@warn "Providing atol= directly to DebugFeasibility is deprecated. Use the keyword for the ConstrainedObjective instead. The value provided here ($(atol)) is ignored")
+        return new(format, io)
     end
 end
 function (d::DebugFeasibility)(
         mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
     s = ""
+    cmo = get_objective(mp)
     p = get_iterate(st)
     eqc = get_equality_constraint(mp, p, :)
-    eqc_nz = eqc[abs.(eqc) .> d.atol]
+    eqc_nz = eqc[abs.(eqc) .> cmo.atol]
     ineqc = get_inequality_constraint(mp, p, :)
-    ineqc_pos = ineqc[ineqc .> d.atol]
+    ineqc_pos = ineqc[ineqc .> cmo.atol]
     feasible = (length(eqc_nz) == 0) && (length(ineqc_pos) == 0)
     n_eq = length(eqc_nz)
     n_ineq = length(ineqc_pos)
@@ -491,7 +490,7 @@ function (d::DebugFeasibility)(
 end
 function show(io::IO, d::DebugFeasibility)
     sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"
-    return print(io, "DebugFeasibility($sf; atol=$(d.atol))")
+    return print(io, "DebugFeasibility($sf)")
 end
 function status_summary(d::DebugFeasibility)
     sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"

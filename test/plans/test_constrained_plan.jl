@@ -379,7 +379,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         mp = DefaultManoptProblem(M, coh)
         io = IOBuffer()
         df = DebugFeasibility(; io = io)
-        @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible]; atol=1.0e-13)"
+        @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible])"
         # short form:
         @test Manopt.status_summary(df) === "(:Feasibility, [\"feasible: \", :Feasible])"
         df(mp, st, 1)
