@@ -427,7 +427,6 @@ end
 Display information about the feasibility of the current iterate
 
 # Fields
-* `atol`:   absolute tolerance for when either equality or inequality constraints are counted as violated
 * `format`: a vector of symbols and string formatting the output
 * `io`:     default stream to print the debug to.
 
@@ -454,10 +453,12 @@ DebugFeasibility(
 
 """
 mutable struct DebugFeasibility <: DebugAction
+    atol::Float64
     format::Vector{Union{String, Symbol}}
     io::IO
-    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout)
-        return new(format, io)
+    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = NaN)
+        isnan(atol) && (@warn "Providing atol= directly to DebugFeasibility is deprecated. Use the keyword for the ConstrainedObjective instead. The value provided here ($(atol)) is ignored")
+        return new(atol, format, io)
     end
 end
 function (d::DebugFeasibility)(
