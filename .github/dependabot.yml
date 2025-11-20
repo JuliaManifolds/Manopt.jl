@@ -13,7 +13,7 @@ updates:
     directories: # Location of Julia projects
       - "/"
       - "/docs"
-      - "/test"
+      - "/tutorials"
     schedule:
       interval: "daily"
     groups:
