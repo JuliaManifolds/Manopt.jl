@@ -1,17 +1,59 @@
 mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
         TDU <: QuasiNewtonLimitedMemoryDirectionUpdate,
+        TM <: AbstractManifold,
+        F <: Real,
+        THM <: AbstractMatrix,
+        V <: AbstractVector,
     } <: AbstractQuasiNewtonDirectionUpdate
+    # this approximates inverse Hessian
     qn_du::TDU
+
+    # fields for approximating the Hessian
+    current_scale::F
+    M_11::THM
+    M_21::THM
+    M_22::THM
+    # tolerance for detecting zero inner products between y and s
+    iszero_abstol::F
+    # buffer for calculating stuff
+    coords_Sk_X::V
+    coords_Sk_Y::V
+    coords_Yk_X::V
+    coords_Yk_Y::V
 end
 
+"""
+    abstract type AbstractFPFPPUpdater end
+
+Abstract type for methods that calculate f' and f'' in the GCP calculation in subsequent
+line segments in `GCPFinder`.
+"""
 abstract type AbstractFPFPPUpdater end
 
+"""
+    init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, d, ha)
+
+Method for initialization of `AbstractFPFPPUpdater` `fpfpp_upd` just before the loop
+that examines subsequent intervals for GCP. By default it does nothing.
+"""
 init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, d, ha) = fpfpp_upd
 
+"""
+    struct GenericFPFPPUpdater <: AbstractFPFPPUpdater end
+
+Generic f' and f'' calculation that only relies on `hess_val_eb` but is relatively slow for
+high-dimensional domains.
+"""
 struct GenericFPFPPUpdater <: AbstractFPFPPUpdater end
 
 get_default_fpfpp_updater(::MatrixHessianApproximation) = GenericFPFPPUpdater()
 
+"""
+    struct LimitedMemoryFPFPPUpdater{TV <: AbstractVector} <: AbstractFPFPPUpdater
+
+f' and f'' calculation that is optimized for `QuasiNewtonLimitedMemoryBoxDirectionUpdate`.
+It relies on a specific Hessian structure.
+"""
 struct LimitedMemoryFPFPPUpdater{TV <: AbstractVector} <: AbstractFPFPPUpdater
     p_s::TV
     p_y::TV
@@ -152,13 +194,14 @@ function GCPFinder(M::AbstractManifold, p, ha; fpfpp_updater = get_default_fpfpp
 end
 
 """
-    find_gcp!(gcp::GCPFinder, p_cp, p, d, X, ha)
+    find_gcp!(gcp::GCPFinder, p_cp, p, d, X)
 
 Find generalized Cauchy point looking from point `p` in direction `d` and save it to `p_cp`.
 Gradient of the objective at `p` is `X`.
-"""
-function find_gcp!(gcp::GCPFinder, p_cp, p, d, X, ha)
 
+The function returns `true` if the point was found and `false` otherwise.
+"""
+function find_gcp!(gcp::GCPFinder, p_cp, p, d, X)
     M = gcp.M
     copyto!(M, p_cp, p)
     zero_vector!(M, gcp.Y_tmp, p)
@@ -177,18 +220,6 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X, ha)
         if t[i] > 0
             push!(F_list, (t[i], i))
         end
-
-        if M isa ProductManifold
-            # push also `t` corresponding to max_stepsize if it is considered in the manifold
-            M2 = M.manifolds[2]
-            p2 = submanifold_component(M, p, Val(2))
-            max_step = Manopt.max_stepsize(M2, p2)
-            if isfinite(max_step)
-                d2 = submanifold_component(M, d, Val(2))
-                tms = max_step / norm(M2, p2, d2)
-                push!(F_list, (tms, -1))
-            end
-        end
     end
 
     if isempty(F_list)
@@ -196,10 +227,22 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X, ha)
         return false
     end
 
+    if M isa ProductManifold
+        # push also `t` corresponding to max_stepsize if it is considered in the manifold
+        M2 = M.manifolds[2]
+        p2 = submanifold_component(M, p, Val(2))
+        max_step = Manopt.max_stepsize(M2, p2)
+        if isfinite(max_step)
+            d2 = submanifold_component(M, d, Val(2))
+            tms = max_step / norm(M2, p2, d2)
+            push!(F_list, (tms, -1))
+        end
+    end
+
     F = BinaryHeap(Base.By(first), F_list)
 
     f_prime = inner(M, p, X, d)
-    f_double_prime = hess_val(ha, d)
+    f_double_prime = hess_val(gcp.ha, d)
 
     if iszero(f_prime) || iszero(f_double_prime)
         return false
@@ -211,7 +254,7 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X, ha)
     t_current, b = pop!(F)
     dt = t_current - t_old
 
-    init_updater!(M, gcp.fpfpp_upd, d, ha)
+    init_updater!(M, gcp.fpfpp_upd, d, gcp.ha)
     # b can be -1 if it corresponds to the max stepsize limit on the manifold part
     while dt_min > dt && b != -1
         gcp.Y_tmp .+= dt .* d
@@ -221,7 +264,7 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X, ha)
         gb = get_at_bound_index(M, grad, b)
         db = get_at_bound_index(M, gcp.d_old, b)
 
-        f_prime, f_double_prime = gcp.fpfpp_upd(M, f_prime, f_double_prime, dt, db, gb, ha, b, gcp.Y_tmp, gcp.d_old)
+        f_prime, f_double_prime = gcp.fpfpp_upd(M, f_prime, f_double_prime, dt, db, gb, gcp.ha, b, gcp.Y_tmp, gcp.d_old)
         t_old = t_current
 
         # If f_prime is 0, we've found the local minimizer (GCP)
