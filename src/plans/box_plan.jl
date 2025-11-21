@@ -1,7 +1,5 @@
-
-
 mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
-        TDU <: QuasiNewtonLimitedMemoryDirectionUpdate
+        TDU <: QuasiNewtonLimitedMemoryDirectionUpdate,
     } <: AbstractQuasiNewtonDirectionUpdate
     qn_du::TDU
 end
@@ -14,7 +12,7 @@ struct GenericFPFPPUpdater <: AbstractFPFPPUpdater end
 
 get_default_fpfpp_updater(::MatrixHessianApproximation) = GenericFPFPPUpdater()
 
-struct LimitedMemoryFPFPPUpdater{TV<:AbstractVector} <: AbstractFPFPPUpdater
+struct LimitedMemoryFPFPPUpdater{TV <: AbstractVector} <: AbstractFPFPPUpdater
     p_s::TV
     p_y::TV
     c_s::TV
@@ -28,7 +26,7 @@ end
 function (::GenericFPFPPUpdater)(M::AbstractManifold, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d_old)
     f_prime = old_f_prime + dt * old_f_double_prime - db * (gb + hess_val_eb(ha, b, z))
     f_double_prime = old_f_double_prime + (2 * -db * hess_val_eb(ha, b, d_old)) + db^2 * hess_val_eb(ha, b)
-    
+
     return f_prime, f_double_prime
 end
 
@@ -88,7 +86,7 @@ function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(M::AbstractManifold, old_f_prime
 
     coords_py .-= db .* coords_Yk_eb
     coords_ps .-= db .* coords_Sk_eb
-        
+
     return f_prime, f_double_prime
 end
 
@@ -121,23 +119,27 @@ function get_bound_t(M::ProductManifold, p, d, i)
 end
 function set_bound_t_at_index!(M::ProductManifold, p_cp, t, d, i)
     set_bound_t_at_index!(M.manifolds[1], submanifold_component(M, p_cp, Val(1)), t, d, i)
+    return p_cp
 end
 
 function set_bound_t_at_index!(::Hyperrectangle, p_cp, t, d, i)
     p_cp[i] += t * d[i]
+    return p_cp
 end
 
 function set_bound_at_index!(M::Hyperrectangle, p_cp, d, i)
     p_cp[i] = d[i] > 0 ? M.ub[i] : M.lb[i]
     d[i] = 0
+    return p_cp
 end
 
 function set_bound_at_index!(M::ProductManifold, p_cp, d, i)
     set_bound_at_index!(M.manifolds[1], submanifold_component(M, p_cp, Val(1)), submanifold_component(M, d, Val(1)), i)
+    return p_cp
 end
 
 
-struct GCPFinder{TM<:AbstractManifold,TX,THA,TFU<:AbstractFPFPPUpdater}
+struct GCPFinder{TM <: AbstractManifold, TX, THA, TFU <: AbstractFPFPPUpdater}
     M::TM
     Y_tmp::TX
     d_old::TX
@@ -145,7 +147,7 @@ struct GCPFinder{TM<:AbstractManifold,TX,THA,TFU<:AbstractFPFPPUpdater}
     fpfpp_updater::TFU
 end
 
-function GCPFinder(M::AbstractManifold, p, ha; fpfpp_updater=get_default_fpfpp_updater(ha))
+function GCPFinder(M::AbstractManifold, p, ha; fpfpp_updater = get_default_fpfpp_updater(ha))
     return GCPFinder(M, zero_vector(M, p), zero_vector(M, p), ha, fpfpp_updater)
 end
 
@@ -160,14 +162,14 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X, ha)
     M = gcp.M
     copyto!(M, p_cp, p)
     zero_vector!(M, gcp.Y_tmp, p)
-    
+
     bounds_indices = get_bounds_index(M)
     TInd = eltype(bounds_indices)
 
-    t = Dict{TInd,Float64}((k, Inf) for k in bounds_indices)
+    t = Dict{TInd, Float64}((k, Inf) for k in bounds_indices)
 
-    F_list = Tuple{Float64,TInd}[]
-    sizehint!(F_list, length(bounds_indices)+1)
+    F_list = Tuple{Float64, TInd}[]
+    sizehint!(F_list, length(bounds_indices) + 1)
 
     for i in bounds_indices
         t[i] = get_bound_t(M, p, d, i)
@@ -208,7 +210,7 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X, ha)
 
     t_current, b = pop!(F)
     dt = t_current - t_old
-    
+
     init_updater!(M, gcp.fpfpp_upd, d, ha)
     # b can be -1 if it corresponds to the max stepsize limit on the manifold part
     while dt_min > dt && b != -1
@@ -218,7 +220,7 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X, ha)
 
         gb = get_at_bound_index(M, grad, b)
         db = get_at_bound_index(M, gcp.d_old, b)
-     
+
         f_prime, f_double_prime = gcp.fpfpp_upd(M, f_prime, f_double_prime, dt, db, gb, ha, b, gcp.Y_tmp, gcp.d_old)
         t_old = t_current
 
@@ -230,7 +232,7 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X, ha)
         end
 
         dt_min = -f_prime / f_double_prime
-        
+
         if isempty(F)
             break
         end
@@ -250,4 +252,3 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X, ha)
 
     return true
 end
-
