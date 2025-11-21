@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * Removed `atol` from `DebugFeasibility` and instead use the one newly added `atol` from the `ConstrainedManifoldObjective`.
+* Move from CompatHelper to dependabot to keep track of dependency updates in Julia packages.
 
 ## [0.5.28] November 17, 2025
 

@@ -1,7 +1,23 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+# For the Julia part inspired by
+# * https://github.com/JuliaDiff/DifferentiationInterface.jl/pull/924
+# * https://github.com/NumericalEarth/Breeze.jl/blob/f066f4dbca086c622be30c9276dae6e79d8e6c0a/.github/dependabot.yml
 version: 2
+enable-beta-ecosystems: true # for now necessary to use the Julia ecosystem
 updates:
   - package-ecosystem: "github-actions"
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+  - package-ecosystem: "julia"
+    directories: # Location of Julia projects
+      - "/"
+      - "/docs"
+      - "/tutorials"
+    schedule:
+      interval: "daily"
+    groups:
+      # Group all Julia package updates into a single PR:
+      all-julia-packages:
+        patterns:
+          - "*"
