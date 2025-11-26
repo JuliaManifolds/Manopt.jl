@@ -1,10 +1,24 @@
 """
-    ManoptTestSuite.jl
+    Manopt.Test
 
-A small module to provide common dummy types and defaults for testing.
+The module `Manopt.Test` provides dummy types and small test problems and examples
+that can be used throughout testing.
+
+Some of these are simplified variants from problems from [`ManoptExamples.jl`](@ref),
+that are added here to not introduce a circular dependency.
+
+Some of the functionality is only populated when certain packages are loaded,
+that is
+* `Test.jl`
+* `Manifolds.jl`
 """
-module ManoptTestSuite
-using Manifolds, ManifoldDiff, ManifoldsBase, Manopt, Test
+module Test
+using ..Manopt
+using ..Manopt: AbstractManifoldObjective, AbstractManoptProblem, AbstractEvaluationType
+using ..Manopt: AbstractManoptSolverState
+using ..Manopt: StoppingCriterionSet, StoppingCriterion
+using ManifoldsBase
+using ManifoldDiff
 
 #
 #
@@ -31,22 +45,32 @@ end
 DummyState() = DummyState([])
 Manopt.get_iterate(::DummyState) = NaN
 Manopt.set_parameter!(s::DummyState, ::Val, v) = s
-
-#
-#
-# Grouped Tasks
+Manopt.set_parameter!(s::DummyState, ::Val{:StoppingCriterion}, v) = s
 """
     M, f, grad_f, p0, p_star = Circle_mean_task()
 
 Create a small mean problem on the circle to test Number-based algorithms
+Requires `Manifolds.jl` to be loaded, use [`Manopt.Test.mea_task`](@ref)`(M, data)`
+for the general case
 """
-function Circle_mean_task()
-    M = Circle()
-    data = [-π / 2, π / 4, 0.0, π / 4]
-    p_star = 0.0
-    f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
-    grad_f(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), data))
-    return M, f, grad_f, data[1], p_star
+function Circle_mean_task end
+
+raw"""
+    f, grad_f = Manopt.Test.mean_task(M, data)
+
+Returns cost and gradient for computing the mean of `data` on manifold `M`
+
+```math
+\beg{align*}
+f(p) = \frac{1}{2n} \sum_{i=1}^n d_M(p, data_i)^2
+\operatorname{grad} f(p) = -\frac{1}{n} \sum_{i=1}^n \log_p(data_i)
+\end{align*}
+"""
+function mean_task(M::AbstractManifold, data::AbstractVector)
+    n = length(data)
+    f(M, p) = 1 / (2n) * sum(distance.(Ref(M), Ref(p), data) .^ 2)
+    grad_f(M, p) = -1 / n * sum(log.(Ref(M), Ref(p), data))
+    return f, grad_f
 end
 
 #
@@ -339,8 +363,50 @@ function prox_Total_Variation(
         ManifoldsBase.exp_fused(M, x[2], log(M, x[2], x[1]), t),
     )
 end
+function prox_Total_Variation(
+        M::PowerManifold, λ::Number, x::Tuple{T, T}, p::Int = 1
+    ) where {T}
+    d = distance(M, x[1], x[2])
+    if p == 1
+        t = min(0.5, λ / d)
+    elseif p == 2
+        t = λ / (1 + 2 * λ)
+    else
+        throw(
+            ErrorException(
+                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
+            ),
+        )
+    end
+    return (
+        ManifoldsBase.exp_fused(M, x[1], log(M, x[1], x[2]), t),
+        ManifoldsBase.exp_fused(M, x[2], log(M, x[2], x[1]), t),
+    )
+end
+
 function prox_Total_Variation!(
         M::AbstractManifold, y, λ::Number, x::Tuple{T, T}, p::Int = 1
+    ) where {T}
+    d = distance(M, x[1], x[2])
+    if p == 1
+        t = min(0.5, λ / d)
+    elseif p == 2
+        t = λ / (1 + 2 * λ)
+    else
+        throw(
+            ErrorException(
+                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
+            ),
+        )
+    end
+    X1 = log(M, x[1], x[2])
+    X2 = log(M, x[2], x[1])
+    ManifoldsBase.exp_fused!(M, y[1], x[1], X1, t)
+    ManifoldsBase.exp_fused!(M, y[2], x[2], X2, t)
+    return y
+end
+function prox_Total_Variation!(
+        M::PowerManifold, y, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
     d = distance(M, x[1], x[2])
     if p == 1

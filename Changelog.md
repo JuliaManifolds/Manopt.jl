@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Removed `atol` from `DebugFeasibility` and instead use the one newly added `atol` from the `ConstrainedManifoldObjective`.
 * Move from CompatHelper to dependabot to keep track of dependency updates in Julia packages.
+* moved the `ManoptTestSuite` module to a sub module `Manopt.Test` within `Manopt.jl`,
+so it can be easier resused by others as well
+* moved to using a `Project.toml` for tests and an overall `[Workspace]`.
+  This also allows finally to run single test files without installing all packages manually, but instead just switching to and instantiating the test environment.
+
+
 
 ## [0.5.28] November 17, 2025
 

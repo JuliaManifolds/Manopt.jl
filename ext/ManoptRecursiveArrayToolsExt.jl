@@ -128,4 +128,6 @@ function alternating_gradient_descent!(
     Manopt.solve!(dmp, agds)
     return Manopt.get_solver_return(get_objective(dmp), agds)
 end
+
+## Prox TV on
 end
