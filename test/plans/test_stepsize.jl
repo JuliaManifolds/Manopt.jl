@@ -1,10 +1,5 @@
 using ManifoldsBase, Manopt, Manifolds, Test
 
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-using ManoptTestSuite
-
-
 @testset "Initial stepsize" begin
     @testset "Hager-Zhang" begin
         M = ManifoldsBase.DefaultManifold(2)
@@ -442,7 +437,7 @@ end
         end
     end
     @testset "max_stepsize fallbacks" begin
-        M = ManoptTestSuite.DummyManifold()
+        M = Manopt.Test.DummyManifold()
         @test isinf(Manopt.max_stepsize(M))
         @test isinf(Manopt.max_stepsize(M, :NoPoint))
     end

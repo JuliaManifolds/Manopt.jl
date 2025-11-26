@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using Manopt, Manifolds, ManifoldsBase, ManifoldDiff, ManoptTestSuite, Test, RecursiveArrayTools
+using Manopt, Manifolds, ManifoldsBase, ManifoldDiff, Test, RecursiveArrayTools
 using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
 
 @testset "PD-RSSN" begin
@@ -28,9 +25,9 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
     prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
 
     prox_g_dual(N, n, λ, ξ) =
-        ManoptTestSuite.project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0) # non-isotropic
-    DΛ(M, m, X) = ManoptTestSuite.differential_forward_logs(M, m, X)
-    adjoint_DΛ(N, m, n, ξ) = ManoptTestSuite.adjoint_differential_forward_logs(M, m, ξ)
+        Manopt.Test.project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0) # non-isotropic
+    DΛ(M, m, X) = Manopt.Test.differential_forward_logs(M, m, X)
+    adjoint_DΛ(N, m, n, ξ) = Manopt.Test.adjoint_differential_forward_logs(M, m, ξ)
 
     function Dprox_F(M, λ, x, η)
         return ManifoldDiff.differential_shortest_geodesic_startpoint(
@@ -38,7 +35,7 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
         )
     end
     function Dprox_G_dual(N, n, λ, ξ, η)
-        return ManoptTestSuite.differential_project_collaborative_TV(
+        return Manopt.Test.differential_project_collaborative_TV(
             N, λ, n, ξ, η, Inf, Inf, 0.0
         )
     end
@@ -99,7 +96,7 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
         pdmsno = PrimalDualManifoldSemismoothNewtonObjective(
             f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ
         )
-        ro = ManoptTestSuite.DummyDecoratedObjective(pdmsno)
+        ro = Manopt.Test.DummyDecoratedObjective(pdmsno)
         X = zero_vector(M, x0)
         Y = get_differential_primal_prox(M, pdmsno, 0.1, x0, X)
         Y2 = get_differential_primal_prox(M, ro, 0.1, x0, X)

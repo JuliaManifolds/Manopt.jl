@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using LinearAlgebra, Manifolds, Manopt, ManoptTestSuite, Random, Test
+using LinearAlgebra, Manifolds, Manopt, Random, Test
 
 include("trust_region_model.jl")
 
@@ -328,7 +325,7 @@ include("trust_region_model.jl")
         end
     end
     @testset "on the Circle" begin
-        Mc, fc, grad_fc, pc0, pc_star = ManoptTestSuite.Circle_mean_task()
+        Mc, fc, grad_fc, pc0, pc_star = Manopt.Test.Circle_mean_task()
         hess_fc(Mc, p, X) = 1.0
         s = trust_regions(Mc, fc, grad_fc, hess_fc; return_state = true)
         q = get_solver_result(s)
