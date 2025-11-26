@@ -50,20 +50,20 @@ Manopt.set_parameter!(s::DummyState, ::Val{:StoppingCriterion}, v) = s
     M, f, grad_f, p0, p_star = Circle_mean_task()
 
 Create a small mean problem on the circle to test Number-based algorithms
-Requires `Manifolds.jl` to be loaded, use [`Manopt.Test.mea_task`](@ref)`(M, data)`
+Requires `Manifolds.jl` to be loaded, use [`Manopt.Test.mean_task`](@ref)`(M, data)`
 for the general case
 """
 function Circle_mean_task end
 
-raw"""
+@doc raw"""
     f, grad_f = Manopt.Test.mean_task(M, data)
 
-Returns cost and gradient for computing the mean of `data` on manifold `M`
+Returns cost and gradient for computing the mean of `data` ``d_i`` on manifold `M`
 
 ```math
-\beg{align*}
-f(p) = \frac{1}{2n} \sum_{i=1}^n d_M(p, data_i)^2
-\operatorname{grad} f(p) = -\frac{1}{n} \sum_{i=1}^n \log_p(data_i)
+\begin{align*}
+f(p) = \frac{1}{2n} \sum_{i=1}^n d_M(p, d_i)^2
+\operatorname{grad} f(p) = -\frac{1}{n} \sum_{i=1}^n \log_p(d_i)
 \end{align*}
 """
 function mean_task(M::AbstractManifold, data::AbstractVector)
