@@ -4,7 +4,7 @@
 The module `Manopt.Test` provides dummy types and small test problems and examples
 that can be used throughout testing.
 
-Some of these are simplified variants from problems from [`ManoptExamples.jl`](@ref),
+Some of these are simplified variants from problems from `ManoptExamples.jl`,
 that are added here to not introduce a circular dependency.
 
 Some of the functionality is only populated when certain packages are loaded,

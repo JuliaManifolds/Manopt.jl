@@ -219,7 +219,7 @@ makedocs(;
             "Checks" => "helpers/checks.md",
             "Exports" => "helpers/exports.md",
             "Test" => "helpers/test.md",
-            ],
+        ],
         "Contributing to Manopt.jl" => "contributing.md",
         "Extensions" => "extensions.md",
         "Notation" => "notation.md",
