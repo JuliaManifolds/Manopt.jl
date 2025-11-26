@@ -215,7 +215,11 @@ makedocs(;
             "Debug Output" => "plans/debug.md",
             "Recording values" => "plans/record.md",
         ],
-        "Helpers" => ["Checks" => "helpers/checks.md", "Exports" => "helpers/exports.md"],
+        "Helpers" => [
+            "Checks" => "helpers/checks.md",
+            "Exports" => "helpers/exports.md",
+            "Test" => "helpers/test.md",
+            ],
         "Contributing to Manopt.jl" => "contributing.md",
         "Extensions" => "extensions.md",
         "Notation" => "notation.md",

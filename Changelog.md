@@ -10,21 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* a keyword argument `atol` to the `ConstrainedManifoldObjective` to set a tolerance for constraint satisfaction.
+* a keyword argument `atol` to the `ConstrainedManifoldObjective` to set a tolerance for constraint satisfaction. (#545)
 
 ### Fixed
 
-* Fixed a typo in `DebugFeasibility`, where an undefined variable was used.
+* Fixed a typo in `DebugFeasibility`, where an undefined variable was used. (#544)
 
 ### Changed
 
-* Removed `atol` from `DebugFeasibility` and instead use the one newly added `atol` from the `ConstrainedManifoldObjective`.
-* Move from CompatHelper to dependabot to keep track of dependency updates in Julia packages.
+* Removed `atol` from `DebugFeasibility` and instead use the one newly added `atol` from the `ConstrainedManifoldObjective`. (#546)
+* Move from CompatHelper to dependabot to keep track of dependency updates in Julia packages. (#547)
 * moved the `ManoptTestSuite` module to a sub module `Manopt.Test` within `Manopt.jl`,
-so it can be easier resused by others as well
+so it can be easier resused by others as well (#550)
 * moved to using a `Project.toml` for tests and an overall `[Workspace]`.
-  This also allows finally to run single test files without installing all packages manually, but instead just switching to and instantiating the test environment.
-
+  This also allows finally to run single test files without installing all packages manually, but instead just switching to and instantiating the test environment. (#550)
+* for compatibility, state also `[source]` entries consistently in the sub `Project.toml` files. (#550)
 
 
 ## [0.5.28] November 17, 2025
