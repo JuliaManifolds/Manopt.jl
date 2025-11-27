@@ -1,12 +1,9 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Dates
+using Manifolds, ManifoldsBase, Manopt, Test, ManifoldsBase, Dates
 
 @testset "StoppingCriteria" begin
     @testset "Generic Tests" begin
         @test_throws ErrorException get_stopping_criteria(
-            ManoptTestSuite.DummmyStoppingCriteriaSet()
+            Manopt.Test.DummmyStoppingCriteriaSet()
         )
 
         s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1))
@@ -61,7 +58,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
         @test s3.threshold == 1.0e-2
         # Dummy without iterations has a reasonable fallback
         @test Manopt.get_count(
-            ManoptTestSuite.DummyStoppingCriterion(), Val(:Iterations)
+            Manopt.Test.DummyStoppingCriterion(), Val(:Iterations)
         ) == 0
 
         sn = StopWhenAny([StopAfterIteration(10)])
@@ -69,8 +66,8 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
     end
 
     @testset "Test StopAfter" begin
-        p = ManoptTestSuite.DummyProblem{ManifoldsBase.DefaultManifold}()
-        o = ManoptTestSuite.DummyState()
+        p = Manopt.Test.DummyProblem{ManifoldsBase.DefaultManifold}()
+        o = Manopt.Test.DummyState()
         s = StopAfter(Millisecond(30))
         @test !Manopt.indicates_convergence(s)
         @test Manopt.status_summary(s) == "stopped after $(s.threshold):\tnot reached"
@@ -311,8 +308,8 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
     end
 
     @testset "StopWhenRepeated" begin
-        p = ManoptTestSuite.DummyProblem{ManifoldsBase.DefaultManifold}()
-        o = ManoptTestSuite.DummyState()
+        p = Manopt.Test.DummyProblem{ManifoldsBase.DefaultManifold}()
+        o = Manopt.Test.DummyState()
         s = StopAfterIteration(2)
         sc = StopWhenRepeated(s, 3)
         sc2 = s × 3
@@ -368,7 +365,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
 
     @testset "has_converged" begin
         M = Euclidean(1)
-        pr = ManoptTestSuite.DummyProblem{typeof(M)}()
+        pr = Manopt.Test.DummyProblem{typeof(M)}()
         s1 = StopWhenGradientNormLess(1.0e-4)
         s2 = StopAfterIteration(10)
         s3 = s1 & s2

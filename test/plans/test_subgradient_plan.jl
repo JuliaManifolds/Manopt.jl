@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test
+using LRUCache, Manifolds, Manopt, Test
 
 @testset "Subgradient Plan" begin
     M = Euclidean(2)
@@ -15,7 +12,7 @@ using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test
     end
     mso = ManifoldSubgradientObjective(f, ∂f)
     @testset "Objective Decorator passthrough" begin
-        ddo = ManoptTestSuite.DummyDecoratedObjective(mso)
+        ddo = Manopt.Test.DummyDecoratedObjective(mso)
         @test get_cost(M, mso, p) == get_cost(M, ddo, p)
         @test get_subgradient(M, mso, p) == get_subgradient(M, ddo, p)
         X = zero_vector(M, p)

@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using ManifoldsBase, Manopt, ManoptTestSuite, Test
+using ManifoldsBase, Manopt, Test
 
 @testset "Gradient Plan" begin
     io = IOBuffer()
@@ -101,7 +98,7 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         @test get_count(cmcgo, :Cost) == 3
     end
     @testset "Objective Decorator passthrough" begin
-        ddo = ManoptTestSuite.DummyDecoratedObjective(mgo)
+        ddo = Manopt.Test.DummyDecoratedObjective(mgo)
         @test get_cost(M, mgo, p) == get_cost(M, ddo, p)
         @test get_gradient(M, mgo, p) == get_gradient(M, ddo, p)
         X = zero_vector(M, p)
@@ -164,8 +161,8 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         @test_throws ArgumentError ManifoldFirstOrderObjective(; differential = diff_f)
         # test cost & diff for all
         # collect all allocs, inplace, and 6&9
-        mfod1a = ManoptTestSuite.DummyDecoratedObjective(mfo1a)
-        mfod1i = ManoptTestSuite.DummyDecoratedObjective(mfo1i)
+        mfod1a = Manopt.Test.DummyDecoratedObjective(mfo1a)
+        mfod1i = Manopt.Test.DummyDecoratedObjective(mfo1i)
         cda = [mfo1a, mfo2a, mfo3a, mfo4a, mfo5a, mfo7a, mfo8a, mfod1a]
         cdi = [mfo1i, mfo2i, mfo3i, mfo4i, mfo5i, mfo7i, mfo8i, mfod1i]
         cdr = [mfo6, mfo9]

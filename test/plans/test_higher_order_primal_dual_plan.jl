@@ -1,8 +1,5 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
 using Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
-using ManoptTestSuite: forward_logs, adjoint_differential_forward_logs
+using Manopt.Test: forward_logs, adjoint_differential_forward_logs
 using ManifoldDiff:
     differential_shortest_geodesic_startpoint,
     differential_shortest_geodesic_startpoint!,
@@ -40,10 +37,10 @@ using ManifoldDiff:
         return Y
     end
     function Dprox_G_dual(N, n, λ, X, Y)
-        return ManoptTestSuite.differential_project_collaborative_TV(N, n, X, Y, Inf, Inf)
+        return Manopt.Test.differential_project_collaborative_TV(N, n, X, Y, Inf, Inf)
     end
     function Dprox_G_dual!(N, Z, n, λ, X, Y)
-        return ManoptTestSuite.differential_project_collaborative_TV!(
+        return Manopt.Test.differential_project_collaborative_TV!(
             N, Z, n, X, Y, Inf, Inf
         )
     end

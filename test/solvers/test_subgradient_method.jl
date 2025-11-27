@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Random, Test
+using Manifolds, ManifoldsBase, Manopt, Random, Test
 
 @testset "Subgradient Plan" begin
     M = Euclidean(2)
@@ -123,7 +120,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Random, Test
     end
 
     @testset "Circle" begin
-        Mc, fc, ∂fc, pc, pcs = ManoptTestSuite.Circle_mean_task()
+        Mc, fc, ∂fc, pc, pcs = Manopt.Test.Circle_mean_task()
         q4 = subgradient_method(Mc, fc, ∂fc, pc)
         q5 = subgradient_method(Mc, fc, ∂fc, pc; evaluation = InplaceEvaluation())
         s3 = subgradient_method(Mc, fc, ∂fc, pc; return_state = true)
