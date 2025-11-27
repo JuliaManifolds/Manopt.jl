@@ -22,6 +22,239 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     coords_Yk_Y::V
 end
 
+function reset_update!(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    initialize_update!(ha.qn_du)
+    return ha
+end
+
+@doc raw"""
+    hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, X)
+
+Compute $⟨X, B X⟩$, where $B$ is the (1, 1)-Hessian represented by `gh`.
+"""
+hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, X) = hess_val_single_pass(gh, X)
+
+@doc raw"""
+    hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b)
+
+Compute $⟨X, B X⟩$, where $B$ is the (1, 1)-Hessian represented by `gh`, and `X` is the
+unit vector along index `b`.
+"""
+hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b) = hess_val_single_pass_eb(gh, b)
+
+@doc raw"""
+    hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, Y)
+
+Compute $⟨X, B Y⟩$, where $B$ is the (1, 1)-Hessian represented by `gh`, where `X` is the
+unit vector pointing at index `b`.
+"""
+hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, Y) = hess_val_single_pass_eb(gh, b, Y)
+
+function set_M_current_scale!(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    M = gh.M
+    p = gh.p
+    m = length(gh.qn_du.memory_s)
+    for i in m:-1:1
+        # what if division by zero happened here, setting to zero ignores this in the next step
+        # pre-compute in case inner is expensive
+        v = inner(M, p, gh.qn_du.memory_s[i], gh.qn_du.memory_y[i])
+        if isnan(v)
+            println("NaN in memory")
+            @show gh.qn_du.memory_s[i]
+            @show gh.qn_du.memory_y[i]
+        end
+        if v < gh.iszero_abstol
+            # The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i, ignoring summand in approximation.
+            # (s, y) pairs with negative inner product are broken anyway, so we can reject them here
+            gh.ρ[i] = zero(eltype(gh.ρ))
+        else
+            gh.ρ[i] = 1 / v
+            # it's so close to zero that we can skip it
+            if abs(gh.ρ[i]) < gh.iszero_abstol
+                gh.ρ[i] = zero(eltype(gh.ρ))
+            end
+        end
+    end
+    last_safe_index = -1
+    for i in eachindex(gh.ρ)
+        if abs(gh.ρ[i]) > 0
+            last_safe_index = i
+        end
+    end
+
+    if (last_safe_index == -1)
+        # All memory yield zero inner products
+        gh.current_scale = gh.initial_scale
+        gh.M_11 = fill(0.0, 0, 0)
+        gh.M_21 = fill(0.0, 0, 0)
+        gh.M_22 = fill(0.0, 0, 0)
+        return gh
+    end
+
+    invA = Diagonal([-ri for ri in gh.ρ if !iszero(ri)])
+    num_nonzero_rho = count(!iszero, gh.ρ)
+
+    Lk = LowerTriangular(zeros(num_nonzero_rho, num_nonzero_rho))
+
+    # total scaling factor for the initial Hessian
+    gh.current_scale = (gh.ρ[last_safe_index] * norm(M, p, gh.qn_du.memory_y[last_safe_index])^2) / gh.initial_scale
+
+    tsksk = Symmetric(zeros(num_nonzero_rho, num_nonzero_rho))
+    ii = 1
+    # fill Dk and Lk
+    for i in 1:m
+        if iszero(gh.ρ[i])
+            continue
+        end
+        jj = 1
+        for j in 1:m
+            if iszero(gh.ρ[j])
+                continue
+            end
+            if jj < ii
+                Lk[ii, jj] = inner(M, p, gh.qn_du.memory_s[i], gh.qn_du.memory_y[j])
+            end
+            if ii <= jj
+                tsksk.data[ii, jj] = inner(M, p, gh.qn_du.memory_s[i], gh.qn_du.memory_s[j])
+            end
+            jj += 1
+        end
+        ii += 1
+    end
+    tsksk.data .*= gh.current_scale
+
+    # matrix inversion using the blockwise formula for speed
+    # Schur complement of -Dk is the only non-diagonal matrix we actually need to inverse in this step
+    W1 = Lk * invA
+    W2 = W1 * Lk'
+
+    gh.M_22 = inv(Symmetric(tsksk - W2))
+    W3 = gh.M_22 * W1
+    W4 = W1' * W3
+
+    gh.M_11 = invA + W4
+    gh.M_21 = -W3
+
+    return gh
+end
+
+function hess_val_from_wmwt_coords(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
+    result = gh.current_scale * iss
+    if length(cy1) == 0
+        return result
+    end
+    result -= dot(cy1, gh.M_11, cy2)
+    result -= 2 * dot(cs1, gh.M_21, cy2)
+    result -= dot(cs1, gh.M_22, cs2)
+
+    return result
+end
+
+function hess_val_single_pass(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, X)
+    M = gh.M
+    p = gh.p
+    m = length(gh.qn_du.memory_s)
+    num_nonzero_rho = count(!iszero, gh.ρ)
+
+    normX_sqr = norm(M, p, X)^2
+
+    if m == 0 || num_nonzero_rho == 0
+        return gh.initial_scale \ normX_sqr
+    end
+
+    ii = 1
+    for i in 1:m
+        if iszero(gh.ρ[i])
+            continue
+        end
+        gh.coords_Yk_X[ii] = inner(M, p, gh.qn_du.memory_y[i], X)
+        gh.coords_Sk_X[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], X)
+
+        ii += 1
+    end
+    coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
+    coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
+
+    return hess_val_from_wmwt_coords(gh, normX_sqr, coords_Yk, coords_Sk, coords_Yk, coords_Sk)
+end
+
+function hess_val_single_pass_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b)
+    M = gh.M
+    p = gh.p
+    m = length(gh.qn_du.memory_s)
+    num_nonzero_rho = count(!iszero, gh.ρ)
+
+    if m == 0 || num_nonzero_rho == 0
+        return inv(gh.initial_scale)
+    end
+
+    ii = 1
+    for i in 1:m
+        if iszero(gh.ρ[i])
+            continue
+        end
+        gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
+        gh.coords_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
+
+        ii += 1
+    end
+    coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
+    coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
+
+    return hess_val_from_wmwt_coords(gh, one(eltype(gh.ρ)), coords_Yk, coords_Sk, coords_Yk, coords_Sk)
+end
+
+function hess_val_single_pass_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, Y)
+    M = gh.M
+    p = gh.p
+    m = length(gh.qn_du.memory_s)
+    num_nonzero_rho = count(!iszero, gh.ρ)
+
+    Yb = get_at_bound_index(M, Y, b)
+    if m == 0 || num_nonzero_rho == 0
+        return gh.initial_scale * Yb
+    end
+
+    ii = 1
+    for i in 1:m
+        if iszero(gh.ρ[i])
+            continue
+        end
+        gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
+        gh.coords_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
+
+        gh.coords_Yk_Y[ii] = inner(M, p, gh.qn_du.memory_y[i], Y)
+        gh.coords_Sk_Y[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], Y)
+        ii += 1
+    end
+    coords_Yk_X = view(gh.coords_Yk_X, 1:num_nonzero_rho)
+    coords_Yk_Y = view(gh.coords_Yk_Y, 1:num_nonzero_rho)
+    coords_Sk_X = view(gh.coords_Sk_X, 1:num_nonzero_rho)
+    coords_Sk_Y = view(gh.coords_Sk_Y, 1:num_nonzero_rho)
+
+    return hess_val_from_wmwt_coords(gh, Yb, coords_Yk_X, coords_Sk_X, coords_Yk_Y, coords_Sk_Y)
+end
+
+@doc raw"""
+    update_hessian!(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, p)
+
+Update Hessian approximation `gh` by moving it to point `p` and updating the stored `s` and
+`y` vectors.
+"""
+function update_hessian!(
+        gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate,
+        mp::AbstractManoptProblem,
+        st::AbstractManoptSolverState,
+        p_old,
+        k::Int,
+    )
+    (capacity(gh.qn_du.memory_s) == 0) && return gh
+    update_hessian!(gh.qn_du, mp, st, p_old, k)
+    set_M_current_scale!(gh)
+    return gh
+end
+
+
 """
     abstract type AbstractFPFPPUpdater end
 
@@ -46,7 +279,7 @@ high-dimensional domains.
 """
 struct GenericFPFPPUpdater <: AbstractFPFPPUpdater end
 
-get_default_fpfpp_updater(::MatrixHessianApproximation) = GenericFPFPPUpdater()
+get_default_fpfpp_updater(::AbstractQuasiNewtonDirectionUpdate) = GenericFPFPPUpdater()
 
 """
     struct LimitedMemoryFPFPPUpdater{TV <: AbstractVector} <: AbstractFPFPPUpdater
@@ -61,7 +294,7 @@ struct LimitedMemoryFPFPPUpdater{TV <: AbstractVector} <: AbstractFPFPPUpdater
     c_y::TV
 end
 
-function get_default_fpfpp_updater(ha::LimitedMemoryHessianApproximation)
+function get_default_fpfpp_updater(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     return LimitedMemoryFPFPPUpdater(similar(ha.ρ), similar(ha.ρ), similar(ha.ρ), similar(ha.ρ))
 end
 
@@ -88,7 +321,7 @@ function init_updater!(M::AbstractManifold, fpfpp_upd::LimitedMemoryFPFPPUpdater
     return fpfpp_upd
 end
 
-function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(M::AbstractManifold, old_f_prime, old_f_double_prime, dt, db, gb, ha::LimitedMemoryHessianApproximation, b, z, d_old)
+function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(M::AbstractManifold, old_f_prime, old_f_double_prime, dt, db, gb, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, z, d_old)
 
     m = length(ha.memory_s)
     num_nonzero_rho = count(!iszero, ha.ρ)
@@ -133,12 +366,12 @@ function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(M::AbstractManifold, old_f_prime
 end
 
 """
-    get_bounds_index(::HyperrectangleProduct)
+    get_bounds_index(::AbstractManifold)
 
 Get the bound indices of manifold `M`. Standard manifolds don't have bounds, so
 `Base.OneTo(1)` is returned.
 """
-get_bounds_index(M::Hyperrectangle) = eachindex(M.lb)
+get_bounds_index(M::AbstractManifold)
 get_bounds_index(M::ProductManifold) = get_bounds_index(M.manifolds[1])
 
 """
@@ -147,31 +380,12 @@ get_bounds_index(M::ProductManifold) = get_bounds_index(M.manifolds[1])
 Get the upper bound on moving in direction `d` from point `p` on manifold `M`, for the
 bound index `i`.
 """
-function get_bound_t(M::Hyperrectangle, p, d, i)
-    if d[i] > 0
-        return (M.ub[i] - p[i]) / d[i]
-    elseif d[i] < 0
-        return (M.lb[i] - p[i]) / d[i]
-    else
-        return Inf
-    end
-end
+get_bound_t(M::AbstractManifold, p, d, i)
 function get_bound_t(M::ProductManifold, p, d, i)
     return get_bound_t(M.manifolds[1], submanifold_component(M, p, Val(1)), submanifold_component(M, d, Val(1)), i)
 end
 function set_bound_t_at_index!(M::ProductManifold, p_cp, t, d, i)
     set_bound_t_at_index!(M.manifolds[1], submanifold_component(M, p_cp, Val(1)), t, d, i)
-    return p_cp
-end
-
-function set_bound_t_at_index!(::Hyperrectangle, p_cp, t, d, i)
-    p_cp[i] += t * d[i]
-    return p_cp
-end
-
-function set_bound_at_index!(M::Hyperrectangle, p_cp, d, i)
-    p_cp[i] = d[i] > 0 ? M.ub[i] : M.lb[i]
-    d[i] = 0
     return p_cp
 end
 
