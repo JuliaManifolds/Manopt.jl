@@ -1105,7 +1105,7 @@ end
 function (d::DebugGradientNorm)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
-    (k < 1) && return nothing
+    (k < 0) && return nothing
     Printf.format(
         d.io,
         Printf.Format(d.format),
