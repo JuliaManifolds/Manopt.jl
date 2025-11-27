@@ -218,9 +218,12 @@ include("solvers/subgradient.jl")
 include("solvers/vectorbundle_newton.jl")
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
+
 include("helpers/checks.jl")
 include("helpers/exports/Asymptote.jl")
 include("helpers/LineSearchesTypes.jl")
+include("helpers//test.jl")
+
 include("deprecated.jl")
 
 function JuMP_Optimizer end
