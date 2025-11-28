@@ -360,7 +360,7 @@ mutable struct DebugCost <: DebugAction
     end
 end
 function (d::DebugCost)(p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int)
-    (k >= !d.at_init) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(st)))
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(st)))
     return nothing
 end
 function show(io::IO, di::DebugCost)
@@ -384,7 +384,7 @@ mutable struct DebugDivider{TIO <: IO} <: DebugAction
     DebugDivider(divider = " | "; io::IO = stdout, at_init::Bool = true) = new{typeof(io)}(io, divider, at_init)
 end
 function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int)
-    if k >= !d.at_init && !isempty(d.divider)
+    if k >= (d.at_init ? 0 : 1) && !isempty(d.divider)
         print(d.io, d.divider)
     end
     return nothing
@@ -419,7 +419,7 @@ mutable struct DebugEntry <: DebugAction
     end
 end
 function (d::DebugEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, k)
-    (k >= !d.at_init) && Printf.format(d.io, Printf.Format(d.format), getfield(st, d.field))
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), getfield(st, d.field))
     return nothing
 end
 function show(io::IO, di::DebugEntry)
@@ -493,7 +493,7 @@ function (d::DebugFeasibility)(
         (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz); init = 0.0))")
         (f === :TotalInEq) && (s *= "$(sum(ineqc_pos; init = 0.0))")
     end
-    print(d.io, (k >= !d.at_init) ? s : "")
+    print(d.io, (k >= (d.at_init ? 0 : 1)) ? s : "")
     return nothing
 end
 function show(io::IO, d::DebugFeasibility)
@@ -543,7 +543,7 @@ mutable struct DebugIfEntry{F} <: DebugAction
     end
 end
 function (d::DebugIfEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, k)
-    if (k >= !d.at_init) && (!d.check(getfield(st, d.field)))
+    if (k >= (d.at_init ? 0 : 1)) && (!d.check(getfield(st, d.field)))
         format = Printf.Format(d.msg)
         msg = !('%' ∈ d.msg) ? d.msg : Printf.format(format, getfield(st, d.field))
         d.type === :warn && (@warn "$(msg)")
@@ -721,7 +721,7 @@ mutable struct DebugIterate <: DebugAction
     end
 end
 function (d::DebugIterate)(::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int)
-    (k > !d.at_init) && Printf.format(d.io, Printf.Format(d.format), get_iterate(st))
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), get_iterate(st))
     return nothing
 end
 function show(io::IO, di::DebugIterate)

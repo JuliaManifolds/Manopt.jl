@@ -1069,7 +1069,7 @@ mutable struct DebugGradient <: DebugAction
     end
 end
 function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    (k < !d.at_init) && return nothing
+    (k < (d.at_init ? 0 : 1)) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_gradient(s))
     return nothing
 end
@@ -1109,7 +1109,7 @@ end
 function (d::DebugGradientNorm)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
-    (k < !d.at_init) && return nothing
+    (k < (d.at_init ? 0 : 1)) && return nothing
     Printf.format(
         d.io,
         Printf.Format(d.format),

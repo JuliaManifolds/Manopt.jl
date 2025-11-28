@@ -133,7 +133,7 @@ end
 function (d::DebugProximalParameter)(
         ::AbstractManoptProblem, cpps::DouglasRachfordState, k::Int
     )
-    (k > !d.at_init) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(k))
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(k))
     return nothing
 end
 function (r::RecordProximalParameter)(
