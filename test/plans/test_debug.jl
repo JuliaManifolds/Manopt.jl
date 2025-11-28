@@ -106,7 +106,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test String(take!(io)) == "Last: 1.000000"
         # Iterate
         DebugIterate(; io = io)(mp, st, 0)
-        @test String(take!(io)) == ""
+        @test String(take!(io)) == "p: [3.0, 2.0]"
         DebugIterate(; io = io)(mp, st, 1)
         @test String(take!(io)) == "p: $(st.p)"
         # Iteration
