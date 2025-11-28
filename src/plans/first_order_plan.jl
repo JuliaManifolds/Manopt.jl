@@ -1149,7 +1149,7 @@ end
 function (d::DebugStepsize)(
         p::P, s::O, k::Int
     ) where {P <: AbstractManoptProblem, O <: AbstractGradientSolverState}
-    (k < !d.at_init) && return nothing
+    (k < (d.at_init ? 0 : 1)) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, k))
     return nothing
 end
