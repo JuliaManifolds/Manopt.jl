@@ -363,13 +363,13 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         # verify that a non-default manifold works as well - not sure how to test this then
         d = DebugChange(Euclidean(2))
 
-        @test repr(DebugCost()) == "DebugCost(; format=\"f(x): %f\")"
+        @test repr(DebugCost()) == "DebugCost(; format=\"f(x): %f\", at_init=true)"
         @test Manopt.status_summary(DebugCost()) == "(:Cost, \"f(x): %f\")"
 
-        @test repr(DebugDivider("|")) == "DebugDivider(; divider=\"|\")"
+        @test repr(DebugDivider("|")) == "DebugDivider(; divider=\"|\", at_init=true)"
         @test Manopt.status_summary(DebugDivider("a")) == "\"a\""
 
-        @test repr(DebugEntry(:a)) == "DebugEntry(:a; format=\"a: %s\")"
+        @test repr(DebugEntry(:a)) == "DebugEntry(:a; format=\"a: %s\", at_init=true)"
 
         @test repr(DebugStepsize()) == "DebugStepsize(; format=\"s:%s\")"
         @test Manopt.status_summary(DebugStepsize()) == "(:Stepsize, \"s:%s\")"
