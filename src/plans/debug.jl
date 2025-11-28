@@ -715,7 +715,7 @@ mutable struct DebugIterate <: DebugAction
             long::Bool = false,
             prefix = long ? "current iterate:" : "p:",
             format = "$prefix %s",
-            at_init::Bool = true,
+            at_init::Bool = false,
         )
         return new(io, format, at_init)
     end
