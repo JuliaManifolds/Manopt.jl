@@ -432,9 +432,9 @@ Display information about the feasibility of the current iterate
 
 The following symbols are filled with values
 
-* `:Feasbile` display true or false depending on whether the iterate is feasible
-* `:FeasbileEq` display `=` or `≠` equality constraints are fulfilled or not
-* `:FeasbileInEq` display `≤` or `≰` inequality constraints are fulfilled or not
+* `:Feasible` display true or false depending on whether the iterate is feasible
+* `:FeasibleEq` display `=` or `≠` equality constraints are fulfilled or not
+* `:FeasibleIneq` display `≤` or `≰` inequality constraints are fulfilled or not
 * `:NumEq` display the number of equality constraints infeasible
 * `:NumEqNz` display the number of equality constraints infeasible if exists
 * `:NumIneq` display the number of inequality constraints infeasible
@@ -1241,7 +1241,7 @@ when the `:WhenActive` symbol is present
 
 # Return value
 
-A dictionary for the different enrty points where debug can happen, each containing
+A dictionary for the different entry points where debug can happen, each containing
 a [`DebugAction`](@ref) to call.
 
 Note that upon the initialisation all dictionaries but the `:StartAlgorithm`

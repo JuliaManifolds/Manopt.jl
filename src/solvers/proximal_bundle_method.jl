@@ -469,13 +469,13 @@ function (sc::StopWhenLagrangeMultiplierLess)(
         sc.at_iteration = k
         return true
     end
-    nd = norm(M, pbms.p_last_serious, pbms.d)
+    norm_d = norm(M, pbms.p_last_serious, pbms.d)
     if (sc.mode == :both) &&
             (pbms.c ≤ sc.tolerances[1]) &&
-            (nd ≤ sc.tolerances[2]) &&
+            (norm_d ≤ sc.tolerances[2]) &&
             (k > 0)
         sc.values[1] = pbms.c
-        sc.values[2] = nd
+        sc.values[2] = norm_d
         sc.at_iteration = k
         return true
     end

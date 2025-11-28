@@ -1,6 +1,7 @@
 [default.extend-words]
-sur = "sur" # french
+methodes = "methodes" # french
 Serie = "Serie" # french
+sur = "sur" # french
 
 [files]
 extend-exclude = [
