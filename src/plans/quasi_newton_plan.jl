@@ -562,6 +562,19 @@ function is always included and the old, probably no longer relevant, informatio
 $(_var(:Field, :vector_transport_method))
 * `message`:                 a string containing a potential warning that might have appeared
 * `project!`:                a function to stabilize the update by projecting on the tangent space
+* `vector_transport_method`: method for transporting stored s and y directions to the new point
+* `nonpositive_curvature_behavior`: how non-positive-definite pairs (s, y) are detected and handled in vector transport.
+                             Allowed values are:
+                                - `:ignore` (default): pairs whose inner product is zero are
+                                  omitted from the current Hessian approximation but are
+                                  retained in memory for further iterations. This may lead
+                                  to non-positive-definite Hessians and non-descent directions
+                                  being selected and thus needs to be handled elsewhere.
+                                - `:byrd`: pairs such that `inner(M, p, X_s, Y_s) <= iszero_abstol * norm(M, p, Y_s)^2`
+                                  are removed from memory (see [ByrdLuNocedalZhu:1995](@cite),
+                                  Eq. (3.9) and its discussion).
+* `sy_tol`:                  tolerance for detecting non-positive-definite pairs (X_s, X_y).
+                             The pairs may lose positive-definiteness after vector transport.
 
 # Constructor
 
@@ -597,6 +610,8 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     initial_scale::G
     project!::Proj
     vector_transport_method::VT
+    nonpositive_curvature_behavior::Symbol
+    sy_tol::F
     message::String
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
@@ -608,6 +623,8 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
         initial_scale::G = 1.0,
         (project!)::Proj = (copyto!),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+        nonpositive_curvature_behavior::Symbol = :ignore,
+        sy_tol::Real = 1.0e-8,
     ) where {
         NT <: AbstractQuasiNewtonUpdateRule,
         T,
@@ -630,6 +647,8 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
         _initial_state,
         project!,
         vector_transport_method,
+        nonpositive_curvature_behavior,
+        sy_tol,
         "",
     )
 end
@@ -664,13 +683,21 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
         # what if division by zero happened here, setting to zero ignores this in the next step
         # pre-compute in case inner is expensive
         v = inner(M, p, d.memory_s[i], d.memory_y[i])
-        if iszero(v)
+        if d.nonpositive_curvature_behavior === :ignore && iszero(v)
             d.ρ[i] = zero(eltype(d.ρ))
             if length(d.message) > 0
                 d.message = replace(d.message, " i=" => " i=$i,")
                 d.message = replace(d.message, "summand in" => "summands in")
             else
                 d.message = "The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i, ignoring summand in approximation."
+            end
+        elseif d.nonpositive_curvature_behavior === :byrd && v <= d.sy_tol * norm(M, p, d.memory_y[i])
+            d.ρ[i] = zero(eltype(d.ρ))
+            if length(d.message) > 0
+                d.message = replace(d.message, " i=" => " i=$i,")
+                d.message = replace(d.message, "summand in" => "summands in")
+            else
+                d.message = "The inner products ⟨s_i,y_i⟩ <= $(d.sy_tol * norm(M, p, d.memory_y[i])), i=$i, removing summand from approximation."
             end
         else
             d.ρ[i] = 1 / v
@@ -732,7 +759,7 @@ end
 These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule,
 which are based on the idea of a so-called cautious update. The search direction is calculated
 as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref),
-butut the update  then is only executed if
+but the update then is only executed if
 
 ```math
 $(_tex(:frac, "g_{x_{k+1}}(y_k,s_k)", "$(_tex(:norm, "s_k"; index = "x_{k+1}"))^{2}")) ≥ θ $(_tex(:norm, "$(_tex(:grad))f(p_k)"; index = "p_k")),

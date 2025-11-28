@@ -210,10 +210,10 @@ $(_var(:Argument, :p))
 
 # Keyword arguments
 
-* `basis=`[`DefaultOrthonormalBasis`](@extref ManifoldsBase.DefaultOrthonormalBasis)`()`:
+* `basis::AbstractBasis=`[`DefaultOrthonormalBasis`](@extref ManifoldsBase.DefaultOrthonormalBasis)`()`:
   basis to use within each of the the tangent spaces to represent
   the Hessian (inverse) for the cases where it is stored in full (matrix) form.
-* `cautious_update=false`:
+* `cautious_update::Bool=false`:
    whether or not to use the [`QuasiNewtonCautiousDirectionUpdate`](@ref)
    which wraps the `direction_upate`.
 * `cautious_function=(x) -> x * 1e-4`:
@@ -229,7 +229,7 @@ $(_var(:Keyword, :evaluation; add = :GradientExample))
    See also `initial_scale`.
 * `initial_scale=1.0`: scale initial `s` to use in with $(_doc_QN_init_scaling) in the computation of the limited memory approach.
   see also `initial_operator`
-* `memory_size=20`: limited memory, number of ``s_k, y_k`` to store.
+* `memory_size::Int=min(manifold_dimension(M), 20)`: limited memory, number of ``s_k, y_k`` to store.
    Set to a negative value to use a full memory (matrix) representation
 * `nondescent_direction_behavior=:reinitialize_direction_update`:
   specify how non-descent direction is handled. This can be
@@ -331,6 +331,8 @@ function quasi_Newton!(
         ),
         stopping_criterion::StoppingCriterion = StopAfterIteration(max(1000, memory_size)) |
             StopWhenGradientNormLess(1.0e-6),
+        nonpositive_curvature_behavior::Symbol = :ignore,
+        sy_tol::Real = 1.0e-8,
         kwargs...,
     ) where {
         E <: AbstractEvaluationType,
@@ -346,6 +348,8 @@ function quasi_Newton!(
             initial_scale = initial_scale,
             (project!) = (project!),
             vector_transport_method = vector_transport_method,
+            nonpositive_curvature_behavior = nonpositive_curvature_behavior,
+            sy_tol = sy_tol,
         )
     else
         local_dir_upd = QuasiNewtonMatrixDirectionUpdate(
@@ -724,14 +728,35 @@ function update_hessian!(
     start = length(d.memory_s) == capacity(d.memory_s) ? 2 : 1
     M = get_manifold(mp)
     p = get_iterate(st)
+    reforming_required = false
     for i in start:length(d.memory_s)
-        # transport all stored tangent vectors in the tangent space of the next iterate
-        vector_transport_to!(
-            M, d.memory_s[i], p_old, d.memory_s[i], p, d.vector_transport_method
-        )
-        vector_transport_to!(
-            M, d.memory_y[i], p_old, d.memory_y[i], p, d.vector_transport_method
-        )
+        if d.nonpositive_curvature_behavior === :byrd && iszero(d.ρ[i])
+            reforming_required = true
+        else
+            # transport all stored tangent vectors in the tangent space of the next iterate
+            vector_transport_to!(
+                M, d.memory_s[i], p_old, d.memory_s[i], p, d.vector_transport_method
+            )
+            vector_transport_to!(
+                M, d.memory_y[i], p_old, d.memory_y[i], p, d.vector_transport_method
+            )
+        end
+    end
+
+    if reforming_required
+        # drop elements with zero inner product
+        T = eltype(d.memory_s)
+        memory_size = capacity(d.memory_s)
+        new_scb = CircularBuffer{T}(memory_size)
+        new_ycb = CircularBuffer{T}(memory_size)
+        for i in 1:length(d.memory_s)
+            if !iszero(d.ρ[i])
+                push!(new_scb, d.memory_s[i])
+                push!(new_ycb, d.memory_y[i])
+            end
+        end
+        d.memory_s = new_scb
+        d.memory_y = new_ycb
     end
 
     # add newest

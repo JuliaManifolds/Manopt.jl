@@ -230,6 +230,11 @@ end
             )
             @test isapprox(M, x_direction, x_solution; atol = rayleigh_atol)
         end
+
+        @testset "Byrd's nonpositive rule" begin
+            x1 = quasi_Newton(M, f, grad_f, x; nonpositive_curvature_behavior = :byrd, sy_tol = 1.0e8)
+            @test isapprox(M, x1, x_solution; atol = rayleigh_atol)
+        end
     end
 
     @testset "Brocket" begin

@@ -6,6 +6,13 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+* `nonpositive_curvature_behavior` for `QuasiNewtonLimitedMemoryDirectionUpdate` that determines how transported (y, s) vector pairs are treated after transport; if their inner product gets too low, it may lead to non-positive-definite Hessians which needs to be avoided.
+* `GCPFinder` for handling direction selection in the presence of box (Hyperrectangle) constraints in quasi-Newton methods. This allows for L-BFGS-B-style box constraint handling.
+
 ## [0.5.29] November 26, 2025
 
 ### Added

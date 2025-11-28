@@ -13,8 +13,6 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     M_11::THM
     M_21::THM
     M_22::THM
-    # tolerance for detecting zero inner products between y and s
-    iszero_abstol::F
     # buffer for calculating stuff
     coords_Sk_X::V
     coords_Sk_Y::V
@@ -22,7 +20,7 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     coords_Yk_Y::V
 end
 
-function reset_update!(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+function initialize_update!(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     initialize_update!(ha.qn_du)
     return ha
 end
@@ -403,7 +401,10 @@ struct GCPFinder{TM <: AbstractManifold, TX, THA, TFU <: AbstractFPFPPUpdater}
     fpfpp_updater::TFU
 end
 
-function GCPFinder(M::AbstractManifold, p, ha; fpfpp_updater = get_default_fpfpp_updater(ha))
+function GCPFinder(
+        M::AbstractManifold, p, ha::AbstractQuasiNewtonDirectionUpdate;
+        fpfpp_updater::AbstractFPFPPUpdater = get_default_fpfpp_updater(ha)
+    )
     return GCPFinder(M, zero_vector(M, p), zero_vector(M, p), ha, fpfpp_updater)
 end
 
