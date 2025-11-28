@@ -1,9 +1,11 @@
 [default.extend-words]
-# <typo> = "<correction>"
+sur = "sur" # french
+Serie = "Serie" # french
 
 [files]
 extend-exclude = [
 "tutorials/*.html",
-"docs/src/tutorials/*.md", # rendered from tutorials/*.qmd -Z we do not want typos twice
+# rendered from tutorials/*.qmd -Z we do not want typos twice
+"docs/src/tutorials/*.md",
 "joss/paper.md",
 ]

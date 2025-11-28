@@ -236,7 +236,7 @@ Debug for a simple callback function, mainly for compatibility to other solvers 
 a user already has a callback function or functor available
 
 The expected format of the is that it is a function with signature `(problem, state, iteration) -> nothing`
-A simple callbaclk of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form
+A simple callback of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form
 
 !!! note
     This is for now an internal struct, since its name might still change before
@@ -374,8 +374,8 @@ print a small divider (default `" | "`).
     DebugDivider(div,print)
 
 """
-mutable struct DebugDivider{TIO <: IO} <: DebugAction
-    io::TIO
+mutable struct DebugDivider{TypeIO <: IO} <: DebugAction
+    io::TypeIO
     divider::String
     DebugDivider(divider = " | "; io::IO = stdout) = new{typeof(io)}(io, divider)
 end

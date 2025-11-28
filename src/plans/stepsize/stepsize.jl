@@ -143,15 +143,15 @@ function (a::ArmijoLinesearchStepsize)(
     return a.last_stepsize
 end
 get_initial_stepsize(a::ArmijoLinesearchStepsize) = a.initial_stepsize
-function show(io::IO, als::ArmijoLinesearchStepsize)
+function show(io::IO, armijo_ls::ArmijoLinesearchStepsize)
     return print(
         io,
         """
         ArmijoLinesearch(;
-            initial_stepsize=$(als.initial_stepsize),
-            retraction_method=$(als.retraction_method),
-            contraction_factor=$(als.contraction_factor),
-            sufficient_decrease=$(als.sufficient_decrease),
+            initial_stepsize=$(armijo_ls.initial_stepsize),
+            retraction_method=$(armijo_ls.retraction_method),
+            contraction_factor=$(armijo_ls.contraction_factor),
+            sufficient_decrease=$(armijo_ls.sufficient_decrease),
         )""",
     )
 end

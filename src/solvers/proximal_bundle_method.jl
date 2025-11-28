@@ -352,15 +352,15 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
     _proximal_bundle_subsolver!(M, pbms)
     pbms.c = sum(pbms.λ .* pbms.approx_errors)
     pbms.d .= -1 / pbms.μ .* sum(pbms.λ .* pbms.transported_subgradients)
-    nd = norm(M, pbms.p_last_serious, pbms.d)
+    norm_d = norm(M, pbms.p_last_serious, pbms.d)
     pbms.ν = -pbms.μ * norm(M, pbms.p_last_serious, pbms.d)^2 - pbms.c
-    if nd ≤ pbms.ε
+    if norm_d ≤ pbms.ε
         retract!(M, pbms.p, pbms.p_last_serious, pbms.d, pbms.retraction_method)
         get_subgradient!(mp, pbms.X, pbms.p)
         pbms.α = 0.0
     else
         retract!(
-            M, pbms.p, pbms.p_last_serious, pbms.ε * pbms.d / nd, pbms.retraction_method
+            M, pbms.p, pbms.p_last_serious, pbms.ε * pbms.d / norm_d, pbms.retraction_method
         )
         get_subgradient!(mp, pbms.X, pbms.p)
         pbms.α =
@@ -371,7 +371,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
             vector_transport_to(
                 M, pbms.p, pbms.X, pbms.p_last_serious, pbms.vector_transport_method
             ),
-        ) / (pbms.ε * nd)
+        ) / (pbms.ε * norm_d)
     end
     if get_cost(mp, pbms.p) ≤ (get_cost(mp, pbms.p_last_serious) + pbms.m * pbms.ν)
         copyto!(M, pbms.p_last_serious, pbms.p)
