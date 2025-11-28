@@ -371,14 +371,14 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
         @test repr(DebugEntry(:a)) == "DebugEntry(:a; format=\"a: %s\", at_init=true)"
 
-        @test repr(DebugStepsize()) == "DebugStepsize(; format=\"s:%s\")"
+        @test repr(DebugStepsize()) == "DebugStepsize(; format=\"s:%s\", at_init=true)"
         @test Manopt.status_summary(DebugStepsize()) == "(:Stepsize, \"s:%s\")"
 
-        @test repr(DebugGradientNorm()) == "DebugGradientNorm(; format=\"|grad f(p)|:%s\")"
+        @test repr(DebugGradientNorm()) == "DebugGradientNorm(; format=\"|grad f(p)|:%s\", at_init=true)"
         dgn_s = "(:GradientNorm, \"|grad f(p)|:%s\")"
         @test Manopt.status_summary(DebugGradientNorm()) == dgn_s
 
-        @test repr(DebugGradient()) == "DebugGradient(; format=\"grad f(p):%s\")"
+        @test repr(DebugGradient()) == "DebugGradient(; format=\"grad f(p):%s\", at_init=false)"
         dg_s = "(:Gradient, \"grad f(p):%s\")"
         @test Manopt.status_summary(DebugGradient()) == dg_s
     end

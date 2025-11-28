@@ -1135,24 +1135,26 @@ display the a `prefix` in front of the step size.
 mutable struct DebugStepsize <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugStepsize(;
             long::Bool = false,
             io::IO = stdout,
             prefix = long ? "step size:" : "s:",
             format = "$prefix%s",
+            at_init::Bool = true,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugStepsize)(
         p::P, s::O, k::Int
     ) where {P <: AbstractManoptProblem, O <: AbstractGradientSolverState}
-    (k < 0) && return nothing
+    (k < !d.at_init) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, k))
     return nothing
 end
 function show(io::IO, ds::DebugStepsize)
-    return print(io, "DebugStepsize(; format=\"$(ds.format)\")")
+    return print(io, "DebugStepsize(; format=\"$(ds.format)\", at_init=$(ds.at_init))")
 end
 status_summary(ds::DebugStepsize) = "(:Stepsize, \"$(ds.format)\")"
 #
