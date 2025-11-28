@@ -166,7 +166,7 @@ Whether internal variables are updates is determined by `always_update`.
 This method does not perform any print itself but relies on it's children's print.
 
 It also sets the sub solvers active parameter, see |`DebugWhenActive`}(#ref).
-Here, the `activattion_offset` can be used to specify whether it refers to _this_ iteration,
+Here, the `activation_offset` can be used to specify whether it refers to _this_ iteration,
 the `i`th, when this call is _before_ the iteration, then the offset should be 0,
 for the _next_ iteration, that is if this is called _after_ an iteration, it has to be set to 1.
 Since usual debug is happening after the iteration, 1 is the default.
@@ -1081,7 +1081,7 @@ It can also be set to `:No` to deactivate the warning, but this makes this Actio
 All other symbols are handled as if they were `:Always:`
 
 # Example
-    DebugWaranIfFieldNotFinite(:Gradient)
+    DebugWarnIfFieldNotFinite(:Gradient)
 
 Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `Inf`.
 """
@@ -1140,7 +1140,7 @@ It can also be set to `:No` to deactivate the warning, but this makes this Actio
 All other symbols are handled as if they were `:Always:`
 
 # Example
-    DebugWaranIfFieldNotFinite(:Gradient)
+    DebugWarnIfFieldNotFinite(:Gradient)
 
 Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `Inf`.
 """
@@ -1207,7 +1207,6 @@ function (d::DebugWarnIfStepsizeCollapsed)(
         amp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
     (k < 1) && (return nothing)
-    s = st.stepsize
     if d.status !== :No
         if get_last_stepsize(amp, st, k) ≤ d.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(d.stop_when_stepsize_less)."
@@ -1241,7 +1240,7 @@ when the `:WhenActive` symbol is present
 
 # Return value
 
-A dictionary for the different enrty points where debug can happen, each containing
+A dictionary for the different entry points where debug can happen, each containing
 a [`DebugAction`](@ref) to call.
 
 Note that upon the initialisation all dictionaries but the `:StartAlgorithm`
