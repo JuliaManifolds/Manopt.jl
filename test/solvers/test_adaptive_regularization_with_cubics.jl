@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Random
+using Manifolds, ManifoldsBase, Manopt, Test, Random
 using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
 
 @testset "Adaptive Regularization with Cubics" begin
@@ -228,7 +225,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
     end
 
     @testset "A short solver run on the circle" begin
-        Mc, fc, grad_fc, pc0, pc_star = ManoptTestSuite.Circle_mean_task()
+        Mc, fc, grad_fc, pc0, pc_star = Manopt.Test.Circle_mean_task()
         hess_fc(Mc, p, X) = 1.0
         p0 = 0.2
         p1 = adaptive_regularization_with_cubics(

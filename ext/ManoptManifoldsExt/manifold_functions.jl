@@ -1,4 +1,14 @@
 """
+    default_point_distance(::DefaultManifold, p)
+
+Following [HagerZhang:2006:2](@cite), the expected distance to the optimal solution from `p`
+on `DefaultManifold` is the `Inf` norm of `p`.
+"""
+Manopt.default_point_distance(::Euclidean, p) = norm(p, Inf)
+
+Manopt.default_vector_norm(::Euclidean, p, X) = norm(p, Inf)
+
+"""
     max_stepsize(M::TangentBundle, p)
 
 Tangent bundle has injectivity radius of either infinity (for flat manifolds) or 0

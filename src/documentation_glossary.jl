@@ -120,7 +120,7 @@ define!(:LaTeX, :transp, raw"\mathrm{T}")
 define!(:LaTeX, :vdots, raw"\vdots")
 define!(:LaTeX, :vert, raw"\vert")
 define!(:LaTeX, :widehat, (letter) -> raw"\widehat{" * "$letter" * "}")
-define!(:LaTeX, :widetilde, raw"\widetilde")
+define!(:LaTeX, :widetilde, (letter) -> raw"\widetilde{" * "$letter" * "}")
 _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 #
 # ---

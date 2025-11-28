@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using Manifolds, ManifoldDiff, ManifoldsBase, Manopt, ManoptTestSuite, Test
+using Manifolds, ManifoldDiff, ManifoldsBase, Manopt, Test
 using RecursiveArrayTools
 
 @testset "Test primal dual plan" begin
@@ -17,12 +14,12 @@ using RecursiveArrayTools
     x_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = TangentBundle(M)
     fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
-    Λ(M, x) = ArrayPartition(x, ManoptTestSuite.forward_logs(M, x))
+    Λ(M, x) = ArrayPartition(x, Manopt.Test.forward_logs(M, x))
     function Λ!(M, Y, x)
         N = TangentBundle(M)
         copyto!(M, Y[N, :point], x)
         zero_vector!(N.manifold, Y[N, :vector], Y[N, :point])
-        ManoptTestSuite.forward_logs!(M, Y[N, :vector], x)
+        Manopt.Test.forward_logs!(M, Y[N, :vector], x)
         return Y
     end
     prior(M, x) = norm(norm.(Ref(pixelM), x, (Λ(M, x))[N, :vector]), 1)
@@ -32,34 +29,34 @@ using RecursiveArrayTools
     function prox_g_dual(N, n, λ, ξ)
         return ArrayPartition(
             ξ[N, :point],
-            ManoptTestSuite.project_collaborative_TV(
+            Manopt.Test.project_collaborative_TV(
                 base_manifold(N), λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
             ),
         )
     end
     function prox_g_dual!(N, η, n, λ, ξ)
         η[N, :point] .= ξ[N, :point]
-        ManoptTestSuite.project_collaborative_TV!(
+        Manopt.Test.project_collaborative_TV!(
             base_manifold(N), η[N, :vector], λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
         )
         return η
     end
     DΛ(M, m, X) = ArrayPartition(
-        zero_vector(M, m), ManoptTestSuite.differential_forward_logs(M, m, X)
+        zero_vector(M, m), Manopt.Test.differential_forward_logs(M, m, X)
     )
     function DΛ!(M, Y, m, X)
         N = TangentBundle(M)
         zero_vector!(M, Y[N, :point], m)
-        ManoptTestSuite.differential_forward_logs!(M, Y[N, :vector], m, X)
+        Manopt.Test.differential_forward_logs!(M, Y[N, :vector], m, X)
         return Y
     end
     function adjoint_DΛ(N, m, n, Y)
-        return ManoptTestSuite.adjoint_differential_forward_logs(
+        return Manopt.Test.adjoint_differential_forward_logs(
             N.manifold, m, Y[N, :vector]
         )
     end
     function adjoint_DΛ!(N, X, m, n, Y)
-        return ManoptTestSuite.adjoint_differential_forward_logs!(
+        return Manopt.Test.adjoint_differential_forward_logs!(
             N.manifold, X, m, Y[N, :vector]
         )
     end
@@ -288,7 +285,7 @@ using RecursiveArrayTools
         pdmo = PrimalDualManifoldObjective(
             f, prox_f, prox_g_dual, adjoint_DΛ; Λ = Λ, linearized_forward_operator = DΛ
         )
-        ro = ManoptTestSuite.DummyDecoratedObjective(pdmo)
+        ro = Manopt.Test.DummyDecoratedObjective(pdmo)
         q1 = get_primal_prox(M, ro, 0.1, p0)
         q2 = get_primal_prox(M, pdmo, 0.1, p0)
         @test q1 == q2

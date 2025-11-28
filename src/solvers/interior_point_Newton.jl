@@ -120,16 +120,16 @@ function interior_point_Newton(
         g = nothing, h = nothing,
         grad_g = nothing, grad_h = nothing,
         Hess_g = nothing, Hess_h = nothing,
-        inequality_constrains::Union{Integer, Nothing} = nothing,
-        equality_constrains::Union{Nothing, Integer} = nothing,
+        inequality_constraints::Union{Integer, Nothing} = nothing,
+        equality_constraints::Union{Nothing, Integer} = nothing,
         kwargs...,
     )
     cmo = ConstrainedManifoldObjective(
         f, grad_f, g, grad_g, h, grad_h;
         hess_f = Hess_f, hess_g = Hess_g, hess_h = Hess_h,
         evaluation = evaluation,
-        inequality_constrains = inequality_constrains,
-        equality_constrains = equality_constrains,
+        inequality_constraints = inequality_constraints,
+        equality_constraints = equality_constraints,
         M = M, p = p,
     )
     return interior_point_Newton(M, cmo, p; evaluation = evaluation, kwargs...)
@@ -187,8 +187,12 @@ function interior_point_Newton!(
         step_objective = ManifoldGradientObjective(
             KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation = evaluation
         ),
-        _step_M::AbstractManifold = M × vector_space(length(μ)) × vector_space(length(λ)) ×
+        _step_M::AbstractManifold = ProductManifold(
+            M,
+            vector_space(length(μ)),
+            vector_space(length(λ)),
             vector_space(length(s)),
+        ),
         step_problem = DefaultManoptProblem(_step_M, step_objective),
         _step_p = rand(_step_M),
         step_state = StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
@@ -204,7 +208,7 @@ function interior_point_Newton!(
         ),
         stopping_criterion::StoppingCriterion = StopAfterIteration(800) |
             StopWhenKKTResidualLess(1.0e-8),
-        _sub_M = M × vector_space(length(λ)),
+        _sub_M = ProductManifold(M, vector_space(length(λ))),
         _sub_p = rand(_sub_M),
         _sub_X = rand(_sub_M; vector_at = _sub_p),
         sub_objective = decorate_objective!(

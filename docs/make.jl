@@ -156,8 +156,9 @@ makedocs(;
     format = Documenter.HTML(;
         prettyurls = run_on_CI || ("--prettyurls" ∈ ARGS),
         assets = ["assets/favicon.ico", "assets/citations.css", "assets/link-icons.css"],
-        size_threshold_warn = 250 * 2^10, # raise slightly from 100 to 200 KiB
-        size_threshold = 350 * 2^10,      # raise slightly 200 to to 300 KiB
+        size_threshold = 1100 * 2^10,      # raise slightly 200 to to 300 KiB
+        size_threshold_warn = 900 * 2^10, # raise from 500 KiB to 1.1 MB (for search index)
+        search_size_threshold_warn = 2000 * 2^10,
     ),
     modules = [
         Manopt,
@@ -214,7 +215,11 @@ makedocs(;
             "Debug Output" => "plans/debug.md",
             "Recording values" => "plans/record.md",
         ],
-        "Helpers" => ["Checks" => "helpers/checks.md", "Exports" => "helpers/exports.md"],
+        "Helpers" => [
+            "Checks" => "helpers/checks.md",
+            "Exports" => "helpers/exports.md",
+            "Test" => "helpers/test.md",
+        ],
         "Contributing to Manopt.jl" => "contributing.md",
         "Extensions" => "extensions.md",
         "Notation" => "notation.md",

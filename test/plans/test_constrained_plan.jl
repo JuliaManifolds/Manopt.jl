@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, RecursiveArrayTools
+using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
 
 @testset "Constrained Plan" begin
     M = ManifoldsBase.DefaultManifold(3)
@@ -379,7 +376,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         mp = DefaultManoptProblem(M, coh)
         io = IOBuffer()
         df = DebugFeasibility(; io = io)
-        @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible]; atol=1.0e-13)"
+        @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible])"
         # short form:
         @test Manopt.status_summary(df) === "(:Feasibility, [\"feasible: \", :Feasible])"
         df(mp, st, 1)
@@ -603,7 +600,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
     end
     @testset "Objective Decorator passthrough" begin
         for obj in [cofa, cofm, cova, covm, cofha, cofhm, covha, covhm]
-            ddo = ManoptTestSuite.DummyDecoratedObjective(obj)
+            ddo = Manopt.Test.DummyDecoratedObjective(obj)
             @test get_equality_constraint(M, ddo, p, :) ==
                 get_equality_constraint(M, obj, p, :)
             @test get_inequality_constraint(M, ddo, p, :) ==
@@ -643,7 +640,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
             @test Ye == Xe
         end
         for obj in [cofha, cofhm, covha, covhm]
-            ddo = ManoptTestSuite.DummyDecoratedObjective(obj)
+            ddo = Manopt.Test.DummyDecoratedObjective(obj)
             Xe = get_hess_equality_constraint(M, ddo, p, X, :)
             Ye = get_hess_equality_constraint(M, obj, p, X, :)
             @test Ye == Xe

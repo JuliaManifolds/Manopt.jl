@@ -797,7 +797,7 @@ end
 #
 # A special linesearch for IP Newton
 function interior_point_initial_guess(
-        mp::AbstractManoptProblem, ips::StepsizeState, ::Int, l::R
+        mp::AbstractManoptProblem, ips::StepsizeState, ::Int, l::R, η; kwargs...
     ) where {R <: Real}
     N = get_manifold(mp)
     Y = get_gradient(N, get_objective(mp), ips.p)
@@ -1012,7 +1012,12 @@ function calculate_σ(
         λ,
         s;
         vector_space = Rn,
-        N = M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
+        N = ProductManifold(
+            M,
+            vector_space(length(μ)),
+            vector_space(length(λ)),
+            vector_space(length(s)),
+        ),
         q = allocate_result(N, rand),
     )
     q1, q2, q3, q4 = submanifold_components(N, q)

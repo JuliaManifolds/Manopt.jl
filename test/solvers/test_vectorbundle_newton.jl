@@ -1,8 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-
-using Manopt, Manifolds, ManifoldsBase, ManoptTestSuite, Test, LinearAlgebra
+using Manopt, Manifolds, ManifoldsBase, Test, LinearAlgebra
 using LinearAlgebra: eigvals
 @testset "Vectorbundle Newton" begin
     @testset "Vector bundle Newton runs – Rayleigh quotient minimization" begin

@@ -766,7 +766,6 @@ function update_hessian!(
     p = get_iterate(st)
     bound = d.θ(norm(M, p_old, get_gradient(mp, p_old)))
     sk_normsq = norm(M, p, st.sk)^2
-
     # if the decision rule is fulfilled, the new `sk` and `yk` are added
     if sk_normsq != 0 && real(inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
         update_hessian!(d.update, mp, st, p_old, iter)
@@ -774,20 +773,10 @@ function update_hessian!(
         # the stored vectors are just transported to the new tangent space; `sk` and `yk` are not added
         for i in 1:length(d.update.memory_s)
             vector_transport_to!(
-                M,
-                d.update.memory_s[i],
-                p_old,
-                d.update.memory_s[i],
-                p,
-                d.update.vector_transport_method,
+                M, d.update.memory_s[i], p_old, d.update.memory_s[i], p, d.update.vector_transport_method,
             )
             vector_transport_to!(
-                M,
-                d.update.memory_y[i],
-                p_old,
-                d.update.memory_y[i],
-                p,
-                d.update.vector_transport_method,
+                M, d.update.memory_y[i], p_old, d.update.memory_y[i], p, d.update.vector_transport_method,
             )
         end
     end

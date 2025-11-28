@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using Manopt, Manifolds, ManifoldsBase, ManoptTestSuite, Test, Random, LinearAlgebra
+using Manopt, Manifolds, ManifoldsBase, Test, Random, LinearAlgebra
 using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
 
 @testset "Conjugate Gradient Descent" begin
@@ -304,7 +301,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     end
 
     @testset "CG on the Circle" begin
-        M, f, grad_f, p0, p_star = ManoptTestSuite.Circle_mean_task()
+        M, f, grad_f, p0, p_star = Manopt.Test.Circle_mean_task()
         s = conjugate_gradient_descent(
             M, f, grad_f, p0; evaluation = InplaceEvaluation(), return_state = true
         )
@@ -327,7 +324,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
 
         stopping_criterion = StopAfterIteration(30)
         get_stepsize() = Manopt.ArmijoLinesearchStepsize(
-            M; initial_stepsize = 1.0, initial_guess = (args...) -> 1.0
+            M; initial_stepsize = 1.0, initial_guess = Manopt.ConstantInitialGuess(1.0)
         )
 
         p1 = conjugate_gradient_descent(
