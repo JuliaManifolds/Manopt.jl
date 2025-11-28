@@ -1,4 +1,4 @@
- name: Spell Check
+name: Spell Check
 
 on: [pull_request, workflow_dispatch]
 
