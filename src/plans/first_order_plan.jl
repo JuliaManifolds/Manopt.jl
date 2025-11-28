@@ -1049,7 +1049,7 @@ abstract type AbstractRestartCondition end
 debug for the gradient evaluated at the current iterate
 
 # Constructors
-    DebugGradient(; long=false, prefix= , format= "\$prefix%s", io=stdout)
+    DebugGradient(; long=false, prefix= , format= "\$prefix%s", io=stdout, at_init=false)
 
 display the short (`false`) or long (`true`) default text for the gradient,
 or set the `prefix` manually. Alternatively the complete format can be set.
@@ -1084,7 +1084,7 @@ status_summary(dg::DebugGradient) = "(:Gradient, \"$(dg.format)\")"
 debug for gradient evaluated at the current iterate.
 
 # Constructors
-    DebugGradientNorm([long=false,p=print])
+    DebugGradientNorm([long=false, format= "\$prefix%s", io=stdout, at_init=true])
 
 display the short (`false`) or long (`true`) default text for the gradient norm.
 
@@ -1128,7 +1128,7 @@ status_summary(dgn::DebugGradientNorm) = "(:GradientNorm, \"$(dgn.format)\")"
 debug for the current step size.
 
 # Constructors
-    DebugStepsize(;long=false,prefix="step size:", format="\$prefix%s", io=stdout)
+    DebugStepsize(;long=false,prefix="step size:", format="\$prefix%s", io=stdout, at_init=true)
 
 display the a `prefix` in front of the step size.
 """
