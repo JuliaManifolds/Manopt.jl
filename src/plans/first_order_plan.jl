@@ -78,20 +78,20 @@ function ManifoldFirstOrderObjective(;
         costdifferential = nothing,
         evaluation::E = AllocatingEvaluation(),
     ) where {E <: AbstractEvaluationType}
-    nc = isnothing(cost)
-    nd = isnothing(differential)
-    ng = isnothing(gradient)
+    no_cost = isnothing(cost)
+    no_diff = isnothing(differential)
+    no_grad = isnothing(gradient)
     ncg = isnothing(costgradient)
     ncd = isnothing(costdifferential)
 
-    if nc && ncg && ncd
+    if no_cost && ncg && ncd
         throw(
             ArgumentError(
                 "Either cost, costgradient or costdifferential keyword argument needs to be provided",
             ),
         )
     end
-    if ng && ncg && nd && ncd
+    if no_grad && ncg && no_diff && ncd
         throw(
             ArgumentError(
                 "Either gradient, costgradient, differential or costdifferential keyword argument needs to be provided",
@@ -100,13 +100,13 @@ function ManifoldFirstOrderObjective(;
     end
 
     nt = (;)
-    if !nc
+    if !no_cost
         nt = merge(nt, (; cost = cost))
     end
-    if !ng
+    if !no_grad
         nt = merge(nt, (; gradient = gradient))
     end
-    if !nd
+    if !no_diff
         nt = merge(nt, (; differential = differential))
     end
     if !ncg
