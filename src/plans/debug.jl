@@ -346,22 +346,25 @@ print the current cost function value, see [`get_cost`](@ref).
 * `format="\$prefix %f"`: format to print the output
 * `io=stdout`: default stream to print the debug to.
 * `long=false`: short form to set the format to `f(x):` (default) or `current cost: ` and the cost
+* `at_init=true`: whether to print also at initialization
 """
 mutable struct DebugCost <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugCost(;
-            long::Bool = false, io::IO = stdout, format = long ? "current cost: %f" : "f(x): %f"
+            long::Bool = false, io::IO = stdout, format = long ? "current cost: %f" : "f(x): %f",
+            at_init::Bool = true,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugCost)(p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int)
-    (k >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(st)))
+    (k >= !d.at_init) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(st)))
     return nothing
 end
 function show(io::IO, di::DebugCost)
-    return print(io, "DebugCost(; format=\"$(escape_string(di.format))\")")
+    return print(io, "DebugCost(; format=\"$(escape_string(di.format))\", at_init=$(di.at_init))")
 end
 status_summary(di::DebugCost) = "(:Cost, \"$(escape_string(di.format))\")"
 
@@ -377,16 +380,17 @@ print a small divider (default `" | "`).
 mutable struct DebugDivider{TIO <: IO} <: DebugAction
     io::TIO
     divider::String
-    DebugDivider(divider = " | "; io::IO = stdout) = new{typeof(io)}(io, divider)
+    at_init::Bool
+    DebugDivider(divider = " | "; io::IO = stdout, at_init::Bool = true) = new{typeof(io)}(io, divider, at_init)
 end
 function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int)
-    if k >= 0 && !isempty(d.divider)
+    if k >= !d.at_init && !isempty(d.divider)
         print(d.io, d.divider)
     end
     return nothing
 end
 function show(io::IO, di::DebugDivider)
-    return print(io, "DebugDivider(; divider=\"$(escape_string(di.divider))\")")
+    return print(io, "DebugDivider(; divider=\"$(escape_string(di.divider))\", at_init=$(di.at_init))")
 end
 status_summary(di::DebugDivider) = "\"$(escape_string(di.divider))\""
 
@@ -409,16 +413,17 @@ mutable struct DebugEntry <: DebugAction
     io::IO
     format::String
     field::Symbol
-    function DebugEntry(f::Symbol; prefix = "$f:", format = "$prefix %s", io::IO = stdout)
-        return new(io, format, f)
+    at_init::Bool
+    function DebugEntry(f::Symbol; prefix = "$f:", format = "$prefix %s", io::IO = stdout, at_init::Bool = true)
+        return new(io, format, f, at_init)
     end
 end
 function (d::DebugEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, k)
-    (k >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(st, d.field))
+    (k >= !d.at_init) && Printf.format(d.io, Printf.Format(d.format), getfield(st, d.field))
     return nothing
 end
 function show(io::IO, di::DebugEntry)
-    return print(io, "DebugEntry(:$(di.field); format=\"$(escape_string(di.format))\")")
+    return print(io, "DebugEntry(:$(di.field); format=\"$(escape_string(di.format))\", at_init=$(di.at_init))")
 end
 
 """
@@ -455,9 +460,10 @@ DebugFeasibility(
 mutable struct DebugFeasibility <: DebugAction
     format::Vector{Union{String, Symbol}}
     io::IO
-    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = NaN)
+    at_init::Bool
+    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = NaN, at_init::Bool = true)
         isnan(atol) || (@warn "Providing atol= directly to DebugFeasibility is deprecated. Use the keyword for the ConstrainedObjective instead. The value provided here ($(atol)) is ignored")
-        return new(format, io)
+        return new(format, io, at_init)
     end
 end
 function (d::DebugFeasibility)(
@@ -485,12 +491,12 @@ function (d::DebugFeasibility)(
         (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz); init = 0.0))")
         (f === :TotalInEq) && (s *= "$(sum(ineqc_pos; init = 0.0))")
     end
-    print(d.io, (k >= 0) ? s : "")
+    print(d.io, (k >= !d.at_init) ? s : "")
     return nothing
 end
 function show(io::IO, d::DebugFeasibility)
     sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"
-    return print(io, "DebugFeasibility($sf)")
+    return print(io, "DebugFeasibility($sf, at_init=$(d.at_init))")
 end
 function status_summary(d::DebugFeasibility)
     sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"
@@ -526,14 +532,15 @@ mutable struct DebugIfEntry{F} <: DebugAction
     field::Symbol
     msg::String
     type::Symbol
+    at_init::Bool
     function DebugIfEntry(
-            f::Symbol, check::F = (>(0)); type = :warn, message = ":\$f nonpositive.", io::IO = stdout
+            f::Symbol, check::F = (>(0)); type = :warn, message = ":\$f nonpositive.", io::IO = stdout, at_init::Bool = true
         ) where {F}
-        return new{F}(io, check, f, message, type)
+        return new{F}(io, check, f, message, type, at_init)
     end
 end
 function (d::DebugIfEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, k)
-    if (k >= 0) && (!d.check(getfield(st, d.field)))
+    if (k >= !d.at_init) && (!d.check(getfield(st, d.field)))
         format = Printf.Format(d.msg)
         msg = !('%' ∈ d.msg) ? d.msg : Printf.format(format, getfield(st, d.field))
         d.type === :warn && (@warn "$(msg)")
@@ -544,7 +551,7 @@ function (d::DebugIfEntry)(::AbstractManoptProblem, st::AbstractManoptSolverStat
     return nothing
 end
 function show(io::IO, di::DebugIfEntry)
-    return print(io, "DebugIfEntry(:$(di.field), $(di.check); type=:$(di.type))")
+    return print(io, "DebugIfEntry(:$(di.field), $(di.check); type=:$(di.type), at_init=$(di.at_init))")
 end
 
 @doc """
@@ -698,21 +705,23 @@ debug for the current iterate (stored in `get_iterate(o)`).
 mutable struct DebugIterate <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugIterate(;
             io::IO = stdout,
             long::Bool = false,
             prefix = long ? "current iterate:" : "p:",
             format = "$prefix %s",
+            at_init::Bool = true,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugIterate)(::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int)
-    (k > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(st))
+    (k > !d.at_init) && Printf.format(d.io, Printf.Format(d.format), get_iterate(st))
     return nothing
 end
 function show(io::IO, di::DebugIterate)
-    return print(io, "DebugIterate(; format=\"$(escape_string(di.format))\")")
+    return print(io, "DebugIterate(; format=\"$(escape_string(di.format))\", at_init=$(di.at_init))")
 end
 status_summary(di::DebugIterate) = "(:Iterate, \"$(escape_string(di.format))\")"
 

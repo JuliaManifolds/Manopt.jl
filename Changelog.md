@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* print more debug information already before the initial iteration (#552)
+* add keyword argument `at_init` to some debug options to control whether they print already before the initial iteration (#552)
 
 ## [0.5.29] November 26, 2025
 
