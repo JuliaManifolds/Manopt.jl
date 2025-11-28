@@ -6,6 +6,13 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.30] unreleased
+
+### Changed
+
+* removed the JuMP extension, since it was a bit incomplete and hard to maintain,
+ and not possible to extend to all manifolds. The main reason is, that matrices are a bit tough to represent in JuMP, which is vector based, and types points are nearly impossible to represent. Distinguishing between points and tangent vectors is also a bit hard to track.
+
 ## [0.5.29] November 26, 2025
 
 ### Added

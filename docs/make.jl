@@ -101,7 +101,7 @@ end
 # (c) load necessary packages for the docs
 using Documenter
 using DocumenterCitations, DocumenterInterLinks
-using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
+using LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
 
 # (d) add contributing.md and changelog.md to the docs – and link to releases and issues
@@ -162,7 +162,6 @@ makedocs(;
     ),
     modules = [
         Manopt,
-        Base.get_extension(Manopt, :ManoptJuMPExt),
         Base.get_extension(Manopt, :ManoptLineSearchesExt),
         Base.get_extension(Manopt, :ManoptLRUCacheExt),
         Base.get_extension(Manopt, :ManoptManifoldsExt),
