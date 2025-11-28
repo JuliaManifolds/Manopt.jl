@@ -374,7 +374,7 @@ status_summary(di::DebugCost) = "(:Cost, \"$(escape_string(di.format))\")"
 print a small divider (default `" | "`).
 
 # Constructor
-    DebugDivider(div,print)
+    DebugDivider(div, io=stdout, at_init=true)
 
 """
 mutable struct DebugDivider{TIO <: IO} <: DebugAction
@@ -403,11 +403,11 @@ how to print the entry.
 # Additional fields
 
 * `field`: symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `at_init`: whether to print also at initialization
 
 # Constructor
 
-    DebugEntry(f; prefix="\$f:", format = "\$prefix %s", io=stdout)
-
+    DebugEntry(f; prefix="\$f:", format = "\$prefix %s", io=stdout, at_init=true)
 """
 mutable struct DebugEntry <: DebugAction
     io::IO
@@ -434,6 +434,7 @@ Display information about the feasibility of the current iterate
 # Fields
 * `format`: a vector of symbols and string formatting the output
 * `io`:     default stream to print the debug to.
+* `at_init`: whether to print also at initialization
 
 The following symbols are filled with values
 
@@ -454,6 +455,7 @@ format to print the output.
 DebugFeasibility(
     format=["feasible: ", :Feasible];
     io::IO=stdout,
+    at_init::Bool=true,
 )
 
 """
@@ -520,10 +522,11 @@ That way you can print the value in this case as well.
 * `msg`:   if the `check` fails, this message is displayed
 * `type`: symbol specifying the type of display, possible values `:print`, `: warn`, `:info`, `:error`,
             where `:print` prints to `io`.
+* `at_init`: whether to print also at initialization
 
 # Constructor
 
-    DebugIfEntry(field, check=(>(0)); type=:warn, message=":\$f is nonnegative", io=stdout)
+    DebugIfEntry(field, check=(>(0)); type=:warn, message=":\$f is nonnegative", io=stdout, at_init=true)
 
 """
 mutable struct DebugIfEntry{F} <: DebugAction
@@ -701,6 +704,7 @@ debug for the current iterate (stored in `get_iterate(o)`).
 * `format="\$prefix %s"`: format how to print the current iterate
 * `long=false`:          whether to have a long (`"current iterate:"`) or a short (`"p:"`) prefix default
 * `prefix`:              (see `long` for default) set a prefix to be printed before the iterate
+* `at_init=true`:        whether to print also at initialization
 """
 mutable struct DebugIterate <: DebugAction
     io::IO
