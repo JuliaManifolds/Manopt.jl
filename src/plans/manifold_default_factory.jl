@@ -22,7 +22,7 @@ types from the list of types that do not require the manifold.
 * `M::Union{Nothing,AbstractManifold}`:  provide a manifold for defaults
 * `args::A`:                             arguments (`args...`) that are passed to the type constructor
 * `kwargs::K`:                           keyword arguments (`kwargs...`) that are passed to the type constructor
-* `constructor_requires_manifold::Bool`: indicate whether the type construtor requires the manifold or not
+* `constructor_requires_manifold::Bool`: indicate whether the type constructor requires the manifold or not
 
 
 # Constructor

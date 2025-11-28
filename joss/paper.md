@@ -25,7 +25,7 @@ Based on a generic optimization framework, together with the interface [`Manifol
 # Statement of Need
 
 In many applications and optimization tasks, non-linear data appears naturally.
-For example, when data on the sphere is measured [@GousenbourgerMassartMusolasAbsilJaquesHendrickxMarzouk:2017], diffusion data can be captured as a signal or even multivariate data of symmetric positive definite matrices [@ValkonenBrediesKnoll2013], and orientations like they appear for electron backscattered diffraction (EBSD) data [@BachmannHielscherSchaeben2011]. Another example are fixed rank matrices, appearing in matrix completion [@Vandereycken:2013:1].
+For example, when data on the sphere is measured [@GousenbourgerMassartMusolasAbsilJacquesHendrickxMarzouk:2017], diffusion data can be captured as a signal or even multivariate data of symmetric positive definite matrices [@ValkonenBrediesKnoll2013], and orientations like they appear for electron backscattered diffraction (EBSD) data [@BachmannHielscherSchaeben2011]. Another example are fixed rank matrices, appearing in matrix completion [@Vandereycken:2013:1].
 Working on these data, for example doing data interpolation and approximation [@BergmannGousenbourger:2018:2], denoising [@LellmannStrekalovskiyKoetterCremers:2013:1; @BergmannFitschenPerschSteidl:2018], inpainting [@BergmannChanHielscherPerschSteidl:2016], or performing matrix completion [@GaoAbsil:2021], can usually be phrased as an optimization problem
 
 $$ \text{Minimize}\quad f(x) \quad \text{where } x\in\mathcal M, $$
@@ -82,7 +82,7 @@ In the current version 0.3.17 of `Manopt.jl` the following algorithms are availa
 Given the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/v0.7/manifolds/sphere.html) from `Manifolds.jl` and a set of unit vectors $p_1,...,p_N\in\mathbb R^3$, where $N$ is the number of data points,
 we can compute the generalization of the mean, called the Riemannian Center of Mass [@Karcher:1977:1], defined as the minimizer of the squared distances to the given data – a property that the mean in vector spaces fulfills:
 
-$$ \operatorname*{arg\,min}_{x\in\mathcal M}\quad \displaystyle\sum_{k=1}^Nd_{\mathcal M}(x, p_k)^2, $$
+$$ \operatorname*{arg\,min}_{x\in\mathcal M}\quad \displaystyle\sum_{k=1}^N d_{\mathcal M}(x, p_k)^2, $$
 
 where $d_{\mathcal M}$ denotes the length of a shortest geodesic connecting the points specified by its two arguments;
 this is called the Riemannian distance. For the sphere this [`distance`](https://juliamanifolds.github.io/Manifolds.jl/v0.7/manifolds/sphere.html#ManifoldsBase.distance-Tuple{AbstractSphere,%20Any,%20Any}) is given by the length of the shorter great arc connecting the two points.

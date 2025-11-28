@@ -145,7 +145,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test dmani.inverse_retraction_method === CayleyInverseRetraction()
         @test d.inverse_retraction_method === LogarithmicInverseRetraction()
     end
-    @testset "RecordEnrty" begin
+    @testset "RecordEntry" begin
         set_iterate!(gds, M, p)
         f = RecordEntry(p, :p)
         @test repr(f) == "RecordEntry(:p)"

@@ -529,7 +529,7 @@ function (sc::StopWhenEntryChangeLess)(
 end
 function get_reason(sc::StopWhenEntryChangeLess)
     if (sc.last_change < sc.threshold) && (sc.at_iteration >= 0)
-        return "At iteation $(sc.at_iteration) the algorithm performed a step with a change ($(sc.last_change)) in $(sc.field) less than $(sc.threshold).\n"
+        return "At iteration $(sc.at_iteration) the algorithm performed a step with a change ($(sc.last_change)) in $(sc.field) less than $(sc.threshold).\n"
     end
     return ""
 end
@@ -1283,7 +1283,7 @@ end
 @doc """
     StopWhenRepeated <: StoppingCriterion
 
-A stopping Criterion that indicates to stop when the (internal) stoppoing criterion it wraps,
+A stopping Criterion that indicates to stop when the (internal) stopping criterion it wraps,
 has indicated to stop for `n` (consecutive) times
 
 # Fields

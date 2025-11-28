@@ -175,7 +175,7 @@ _doc_SGD = """
     stochastic_gradient_descent!(M, grad_f, p; kwargs...)
     stochastic_gradient_descent!(M, msgo, p; kwargs...)
 
-perform a stochastic gradient descent. This can be perfomed in-place of `p`.
+perform a stochastic gradient descent. This can be performed in-place of `p`.
 
 # Input
 
@@ -194,7 +194,7 @@ then using the `cost=` keyword does not have any effect since if so, the cost is
 $(_var(:Keyword, :evaluation))
 * `evaluation_order=:Random`: specify whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
-* `order_type=:RandomOder`: a type of ordering of gradient evaluations.
+* `order_type=:RandomOrder`: a type of ordering of gradient evaluations.
   Possible values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
 $(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
 $(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))

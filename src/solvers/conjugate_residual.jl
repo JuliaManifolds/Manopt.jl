@@ -12,7 +12,7 @@ Compute the solution of ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p ``, where
 * ``0_p`` is the zero vector ``$(_math(:TpM))``.
 
 This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
-is initalised with ``X^{(0)}`` as the zero vector and
+is initialised with ``X^{(0)}`` as the zero vector and
 
 * the initial residual ``r^{(0)} = -b(p) - $(_tex(:Cal, "A"))(p)[X^{(0)}]``
 * the initial conjugate direction ``d^{(0)} = r^{(0)}``

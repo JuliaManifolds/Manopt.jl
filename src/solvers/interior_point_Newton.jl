@@ -33,7 +33,7 @@ and its gradient [`KKTVectorFieldNormSqGradient`](@ref) together with the [`Inte
 Note that since the vector field ``F`` includes the gradients of the constraint
 functions ``g, h``, its gradient or Jacobian requires the Hessians of the constraints.
 
-For that seach direction a line search is performed, that additionally ensures that
+For that search direction a line search is performed, that additionally ensures that
 the constraints are further fulfilled.
 
 # Input
@@ -76,7 +76,7 @@ $(_var(:Keyword, :retraction_method))
 * `step_problem`: the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
   as the problem the linesearch `stepsize=` employs for determining a step size
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
-$(_var(:Keyword, :stepsize; default = "[`ArmijoLinesearch`](@ref)`()`", add = " with the `centrality_condtion` keyword as additional criterion to accept a step, if this is provided"))
+$(_var(:Keyword, :stepsize; default = "[`ArmijoLinesearch`](@ref)`()`", add = " with the `centrality_condition` keyword as additional criterion to accept a step, if this is provided"))
 $(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-8)`"))
   a stopping criterion, by default depending on the residual of the KKT vector field or a maximal number of steps, which ever hits first.
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
@@ -90,9 +90,9 @@ $(_var(:Keyword, :sub_state; default = "[`ConjugateResidualState`](@ref)"))
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`:
   th initial gradient with respect to `p`.
-* `Y=zero(μ)`:  the initial gradient with respct to `μ`
-* `Z=zero(λ)`:  the initial gradient with respct to `λ`
-* `W=zero(s)`:  the initial gradient with respct to `s`
+* `Y=zero(μ)`:  the initial gradient with respect to `μ`
+* `Z=zero(λ)`:  the initial gradient with respect to `λ`
+* `W=zero(s)`:  the initial gradient with respect to `s`
 
 As well as internal keywords used to set up these given keywords like `_step_M`, `_step_p`, `_sub_M`, `_sub_p`, and `_sub_X`,
 that should not be changed.
@@ -102,7 +102,7 @@ All other keyword arguments are passed to [`decorate_state!`](@ref) for state de
 
 !!! note
 
-    The `centrality_condition=mising` disables to check centrality during the line search,
+    The `centrality_condition=missing` disables to check centrality during the line search,
     but you can pass [`InteriorPointCentralityCondition`](@ref)`(cmo, γ)`, where `γ` is a constant,
     to activate this check.
 

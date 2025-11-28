@@ -173,7 +173,7 @@ that is the sub problem (Oracle)
 $_doc_FW_sub
 
 for every iterate ``p_k`` together with a stepsize ``s_k≤1``.
-The algorhtm can be performed in-place of `p`.
+The algorithm can be performed in-place of `p`.
 
 This algorithm is inspired by but slightly more general than [WeberSra:2022](@cite).
 

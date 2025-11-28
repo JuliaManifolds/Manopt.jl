@@ -1,2 +1,9 @@
 [default.extend-words]
 # <typo> = "<correction>"
+
+[files]
+extend-exclude = [
+"tutorials/*.html",
+"docs/src/tutorials/*.md", # rendered from tutorials/*.qmd -Z we do not want typos twice
+"joss/paper.md",
+]

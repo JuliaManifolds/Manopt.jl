@@ -11,7 +11,7 @@ This functor accepts the following keyword arguments:
 
 * `additional_decrease_condition`: specify a condition a new point has to additionally
   fulfill. The default accepts all points.
-* `additional_increase_condition`: specify a condtion that additionally to
+* `additional_increase_condition`: specify a condition that additionally to
   checking a valid increase has to be fulfilled. The default accepts all points.
 * `candidate_point`:               to store an interim result
 * `initial_stepsize`:              and initial step size
@@ -182,7 +182,7 @@ end
 
 Specify a step size that performs an Armijo line search. Given a Function ``f:$(_math(:M))→ℝ``
 and its Riemannian Gradient ``$(_tex(:grad))f: $(_math(:M))→$(_math(:TM))``,
-the curent point ``p∈$(_math(:M))`` and a search direction ``X∈$(_math(:TpM))``.
+the current point ``p∈$(_math(:M))`` and a search direction ``X∈$(_math(:TpM))``.
 
 Then the step size ``s`` is found by reducing the initial step size ``s`` until
 
@@ -1953,7 +1953,7 @@ function show(io::IO, a::WolfePowellBinaryLinesearchStepsize)
         io,
         """
         WolfePowellBinaryLinesearch(;
-            sufficient_descrease = $(a.sufficient_decrease),
+            sufficient_decrease = $(a.sufficient_decrease),
             sufficient_curvature = $(a.sufficient_curvature),
             retraction_method = $(a.retraction_method),
             vector_transport_method = $(a.vector_transport_method),
@@ -1988,7 +1988,7 @@ Then the following Algorithm is performed similar to Algorithm 7 from [Huang:201
     WolfePowellBinaryLinesearch(; kwargs...)
     WolfePowellBinaryLinesearch(M::AbstractManifold; kwargs...)
 
-Perform a lineseach to fulfull both the Armijo-Goldstein conditions
+Perform a linesearch to fulfill both the Armijo-Goldstein conditions
 for some given sufficient decrease coefficient ``c_1`` and some sufficient curvature condition coefficient``c_2``.
 Compared to [`WolfePowellLinesearch`](@ref Manopt.WolfePowellLinesearch) which tries a simpler method, this linesearch performs the following algorithm
 

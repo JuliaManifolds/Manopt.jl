@@ -11,7 +11,7 @@
 #
 # to keep naming, notation, and formatting
 
-# In general every dictionary here can be either :Symbol-> String or :Symbol -> Dictionary enrties
+# In general every dictionary here can be either :Symbol-> String or :Symbol -> Dictionary entries
 
 _MANOPT_DOC_TYPE = Dict{Symbol, Union{String, Dict, Function}}
 
@@ -130,7 +130,7 @@ _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 define!(:Math, :distance, raw"\mathrm{d}")
 define!(:Math, :M, (; M = "M") -> _math(:Manifold, :symbol; M = M))
 define!(:Math, :Manifold, :symbol, (; M = "M") -> _tex(:Cal, M))
-define!(:Math, :Manifold, :descrption, "the Riemannian manifold")
+define!(:Math, :Manifold, :description, "the Riemannian manifold")
 define!(:Math, :M, (; M = "M") -> _math(:Manifold, :symbol; M = M))
 define!(:Math, :Iterate, (; p = "p", k = "k") -> "$(p)^{($(k))}")
 define!(
