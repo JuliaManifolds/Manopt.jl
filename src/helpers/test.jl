@@ -36,7 +36,7 @@ function DummyDecoratedObjective(
 end
 
 struct DummyProblem{M <: AbstractManifold} <: AbstractManoptProblem{M} end
-struct DummmyStoppingCriteriaSet <: StoppingCriterionSet end
+struct DummyStoppingCriteriaSet <: StoppingCriterionSet end
 struct DummyStoppingCriterion <: StoppingCriterion end
 
 mutable struct DummyState <: AbstractManoptSolverState

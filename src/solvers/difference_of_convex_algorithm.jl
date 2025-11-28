@@ -161,7 +161,7 @@ $(_var(:Keyword, :sub_kwargs))
 $(_var(:Keyword, :sub_state; default = "([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hess` is provided)"))
 $(_var(:Keyword, :sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`:
-  a stopping criterion used withing the default `sub_state=`
+  a stopping criterion used within the default `sub_state=`
   $(_note(:KeywordUsedIn, "sub_state"))
 * `sub_stepsize=`[`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`.
   $(_note(:KeywordUsedIn, "sub_state"))

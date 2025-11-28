@@ -138,7 +138,7 @@ m3 = gradient_descent(M, f, grad_f, data[1];
 ```
 
 We can finally use another way to determine the stepsize, for example
-a little more expensive [`ArmijoLineSeach`](https://manoptjl.org/stable/plans/stepsize/#Manopt.ArmijoLinesearch) than the default [stepsize](https://manoptjl.org/stable/plans/stepsize/) rule used on the Sphere.
+a little more expensive [`ArmijoLineSearch`](https://manoptjl.org/stable/plans/stepsize/#Manopt.ArmijoLinesearch) than the default [stepsize](https://manoptjl.org/stable/plans/stepsize/) rule used on the Sphere.
 
 ```{julia}
 m4 = gradient_descent(M, f, grad_f, data[1];

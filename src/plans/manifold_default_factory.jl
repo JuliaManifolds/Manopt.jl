@@ -3,7 +3,7 @@
 
 A generic factory to postpone the instantiation of certain types from within $(_link(:Manopt)),
 in order to be able to adapt it to defaults from different manifolds and/or postpone the
-decission on which manifold to use to a later point
+decision on which manifold to use to a later point
 
 For now this is established for
 
