@@ -500,4 +500,35 @@ end
         Manopt.update_hessian!(qns.direction_update, mp, qns, p, 1)
         # But I am not totally sure what to test for afterwards
     end
+
+    @testset "Hyperrectangle domain" begin
+
+        @testset "GCPFinder" begin
+            M = Hyperrectangle([-1.0, -2.0, -Inf], [2.0, Inf, 2.0])
+            ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS())
+
+            p = [0.0, 0.0, 0.0]
+            gf = Manopt.GCPFinder(M, p, ha)
+
+            X1 = [-5.0, 0.0, 0.0]
+
+            d = -X1
+            d_out = similar(d)
+
+            @test Manopt.find_gcp_direction!(gf, d_out, p, d, X1) === :found_limited
+            @test d_out ≈ [2.0, 0.0, 0.0]
+
+        end
+        @testset "Pure Hyperrectangle" begin
+            M = Hyperrectangle([-1.0, 2.0, -Inf], [2.0, Inf, 2.0])
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = 2 .* p
+            p0 = [0.0, 4.0, 10.0]
+            p_opt = quasi_Newton(M, f, grad_f, p0)
+        end
+
+        @testset "Hyperrectangle × Sphere" begin
+
+        end
+    end
 end

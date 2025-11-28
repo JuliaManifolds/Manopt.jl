@@ -1,3 +1,12 @@
+"""
+    requires_gcp(M::AbstractManifold)
+
+Return `true` if `M` is a `Hyperrectangle`-like manifold with corners, or a product of it
+with a standard manifold. Otherwise return `false`.
+"""
+requires_gcp(::AbstractManifold) = false
+requires_gcp(M::ProductManifold) = requires_gcp(M.manifolds[1])
+
 mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
         TDU <: QuasiNewtonLimitedMemoryDirectionUpdate,
         TM <: AbstractManifold,
@@ -25,28 +34,105 @@ function initialize_update!(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     return ha
 end
 
+function get_at_bound_index(M::ProductManifold, X, b)
+    return get_at_bound_index(M.manifolds[1], submanifold_component(M, X, Val(1)), b)
+end
+
 @doc raw"""
-    hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, X)
+    hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M, p, X)
 
 Compute $⟨X, B X⟩$, where $B$ is the (1, 1)-Hessian represented by `gh`.
 """
-hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, X) = hess_val_single_pass(gh, X)
+function hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M, p, X)
+    m = length(gh.qn_du.memory_s)
+    num_nonzero_rho = count(!iszero, gh.ρ)
+
+    normX_sqr = norm(M, p, X)^2
+
+    if m == 0 || num_nonzero_rho == 0
+        return gh.initial_scale \ normX_sqr
+    end
+
+    ii = 1
+    for i in 1:m
+        if iszero(gh.ρ[i])
+            continue
+        end
+        gh.coords_Yk_X[ii] = inner(M, p, gh.qn_du.memory_y[i], X)
+        gh.coords_Sk_X[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], X)
+
+        ii += 1
+    end
+    coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
+    coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
+
+    return hess_val_from_wmwt_coords(gh, normX_sqr, coords_Yk, coords_Sk, coords_Yk, coords_Sk)
+end
 
 @doc raw"""
-    hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b)
+    hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b)
 
 Compute $⟨X, B X⟩$, where $B$ is the (1, 1)-Hessian represented by `gh`, and `X` is the
 unit vector along index `b`.
 """
-hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b) = hess_val_single_pass_eb(gh, b)
+function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b)
+    m = length(gh.qn_du.memory_s)
+    num_nonzero_rho = count(!iszero, gh.ρ)
+
+    if m == 0 || num_nonzero_rho == 0
+        return inv(gh.initial_scale)
+    end
+
+    ii = 1
+    for i in 1:m
+        if iszero(gh.ρ[i])
+            continue
+        end
+        gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
+        gh.coords_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
+
+        ii += 1
+    end
+    coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
+    coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
+
+    return hess_val_from_wmwt_coords(gh, one(eltype(gh.ρ)), coords_Yk, coords_Sk, coords_Yk, coords_Sk)
+end
 
 @doc raw"""
-    hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, Y)
+    hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b, Y)
 
 Compute $⟨X, B Y⟩$, where $B$ is the (1, 1)-Hessian represented by `gh`, where `X` is the
 unit vector pointing at index `b`.
 """
-hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, Y) = hess_val_single_pass_eb(gh, b, Y)
+function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b, Y)
+    m = length(gh.qn_du.memory_s)
+    num_nonzero_rho = count(!iszero, gh.ρ)
+
+    Yb = get_at_bound_index(M, Y, b)
+    if m == 0 || num_nonzero_rho == 0
+        return gh.initial_scale * Yb
+    end
+
+    ii = 1
+    for i in 1:m
+        if iszero(gh.ρ[i])
+            continue
+        end
+        gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
+        gh.coords_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
+
+        gh.coords_Yk_Y[ii] = inner(M, p, gh.qn_du.memory_y[i], Y)
+        gh.coords_Sk_Y[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], Y)
+        ii += 1
+    end
+    coords_Yk_X = view(gh.coords_Yk_X, 1:num_nonzero_rho)
+    coords_Yk_Y = view(gh.coords_Yk_Y, 1:num_nonzero_rho)
+    coords_Sk_X = view(gh.coords_Sk_X, 1:num_nonzero_rho)
+    coords_Sk_Y = view(gh.coords_Sk_Y, 1:num_nonzero_rho)
+
+    return hess_val_from_wmwt_coords(gh, Yb, coords_Yk_X, coords_Sk_X, coords_Yk_Y, coords_Sk_Y)
+end
 
 function set_M_current_scale!(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     M = gh.M
@@ -148,90 +234,6 @@ function hess_val_from_wmwt_coords(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdat
     return result
 end
 
-function hess_val_single_pass(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, X)
-    M = gh.M
-    p = gh.p
-    m = length(gh.qn_du.memory_s)
-    num_nonzero_rho = count(!iszero, gh.ρ)
-
-    normX_sqr = norm(M, p, X)^2
-
-    if m == 0 || num_nonzero_rho == 0
-        return gh.initial_scale \ normX_sqr
-    end
-
-    ii = 1
-    for i in 1:m
-        if iszero(gh.ρ[i])
-            continue
-        end
-        gh.coords_Yk_X[ii] = inner(M, p, gh.qn_du.memory_y[i], X)
-        gh.coords_Sk_X[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], X)
-
-        ii += 1
-    end
-    coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
-    coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
-
-    return hess_val_from_wmwt_coords(gh, normX_sqr, coords_Yk, coords_Sk, coords_Yk, coords_Sk)
-end
-
-function hess_val_single_pass_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b)
-    M = gh.M
-    p = gh.p
-    m = length(gh.qn_du.memory_s)
-    num_nonzero_rho = count(!iszero, gh.ρ)
-
-    if m == 0 || num_nonzero_rho == 0
-        return inv(gh.initial_scale)
-    end
-
-    ii = 1
-    for i in 1:m
-        if iszero(gh.ρ[i])
-            continue
-        end
-        gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
-        gh.coords_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
-
-        ii += 1
-    end
-    coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
-    coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
-
-    return hess_val_from_wmwt_coords(gh, one(eltype(gh.ρ)), coords_Yk, coords_Sk, coords_Yk, coords_Sk)
-end
-
-function hess_val_single_pass_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, Y)
-    M = gh.M
-    p = gh.p
-    m = length(gh.qn_du.memory_s)
-    num_nonzero_rho = count(!iszero, gh.ρ)
-
-    Yb = get_at_bound_index(M, Y, b)
-    if m == 0 || num_nonzero_rho == 0
-        return gh.initial_scale * Yb
-    end
-
-    ii = 1
-    for i in 1:m
-        if iszero(gh.ρ[i])
-            continue
-        end
-        gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
-        gh.coords_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
-
-        gh.coords_Yk_Y[ii] = inner(M, p, gh.qn_du.memory_y[i], Y)
-        gh.coords_Sk_Y[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], Y)
-        ii += 1
-    end
-    coords_Yk_X = view(gh.coords_Yk_X, 1:num_nonzero_rho)
-    coords_Yk_Y = view(gh.coords_Yk_Y, 1:num_nonzero_rho)
-    coords_Sk_X = view(gh.coords_Sk_X, 1:num_nonzero_rho)
-    coords_Sk_Y = view(gh.coords_Sk_Y, 1:num_nonzero_rho)
-
-    return hess_val_from_wmwt_coords(gh, Yb, coords_Yk_X, coords_Sk_X, coords_Yk_Y, coords_Sk_Y)
-end
 
 @doc raw"""
     update_hessian!(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, p)
@@ -296,9 +298,9 @@ function get_default_fpfpp_updater(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdat
     return LimitedMemoryFPFPPUpdater(similar(ha.ρ), similar(ha.ρ), similar(ha.ρ), similar(ha.ρ))
 end
 
-function (::GenericFPFPPUpdater)(M::AbstractManifold, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d_old)
-    f_prime = old_f_prime + dt * old_f_double_prime - db * (gb + hess_val_eb(ha, b, z))
-    f_double_prime = old_f_double_prime + (2 * -db * hess_val_eb(ha, b, d_old)) + db^2 * hess_val_eb(ha, b)
+function (::GenericFPFPPUpdater)(M::AbstractManifold, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d_old)
+    f_prime = old_f_prime + dt * old_f_double_prime - db * (gb + hess_val_eb(ha, M, p, b, z))
+    f_double_prime = old_f_double_prime + (2 * -db * hess_val_eb(ha, M, p, b, d_old)) + db^2 * hess_val_eb(ha, M, p, b)
 
     return f_prime, f_double_prime
 end
@@ -319,7 +321,7 @@ function init_updater!(M::AbstractManifold, fpfpp_upd::LimitedMemoryFPFPPUpdater
     return fpfpp_upd
 end
 
-function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(M::AbstractManifold, old_f_prime, old_f_double_prime, dt, db, gb, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, z, d_old)
+function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(M::AbstractManifold, p, old_f_prime, old_f_double_prime, dt, db, gb, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, z, d_old)
 
     m = length(ha.memory_s)
     num_nonzero_rho = count(!iszero, ha.ρ)
@@ -355,7 +357,7 @@ function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(M::AbstractManifold, old_f_prime
     f_prime = old_f_prime + dt * old_f_double_prime - db * (gb + eb_B_z)
     eb_B_d = hess_val_from_wmwt_coords(ha, iss_eb_d, coords_Yk_eb, coords_Sk_eb, coords_py, coords_ps)
 
-    f_double_prime = old_f_double_prime - 2 * db * eb_B_d + db^2 * hess_val_eb(ha, b)
+    f_double_prime = old_f_double_prime - 2 * db * eb_B_d + db^2 * hess_val_eb(ha, M, p, b)
 
     coords_py .-= db .* coords_Yk_eb
     coords_ps .-= db .* coords_Sk_eb
@@ -392,9 +394,18 @@ function set_bound_at_index!(M::ProductManifold, p_cp, d, i)
     return p_cp
 end
 
+function bound_direction_tweak!(::ProductManifold, d_out, d, p, p_cp)
+    bound_direction_tweak!(
+        M.manifolds[1], submanifold_component(M, d_out, Val(1)),
+        submanifold_component(M, d, Val(1)), submanifold_component(M, p, Val(1)),
+        submanifold_component(M, p_cp, Val(1))
+    )
+    return d_out
+end
 
-struct GCPFinder{TM <: AbstractManifold, TX, THA, TFU <: AbstractFPFPPUpdater}
+struct GCPFinder{TM <: AbstractManifold, TP, TX, THA, TFU <: AbstractFPFPPUpdater}
     M::TM
+    p_cp::TP
     Y_tmp::TX
     d_old::TX
     ha::THA
@@ -405,29 +416,39 @@ function GCPFinder(
         M::AbstractManifold, p, ha::AbstractQuasiNewtonDirectionUpdate;
         fpfpp_updater::AbstractFPFPPUpdater = get_default_fpfpp_updater(ha)
     )
-    return GCPFinder(M, zero_vector(M, p), zero_vector(M, p), ha, fpfpp_updater)
+    return GCPFinder(M, copy(M, p), zero_vector(M, p), zero_vector(M, p), ha, fpfpp_updater)
 end
 
 """
-    find_gcp!(gcp::GCPFinder, p_cp, p, d, X)
+    find_gcp!(gcp::GCPFinder, d_out, p, d, X)
 
-Find generalized Cauchy point looking from point `p` in direction `d` and save it to `p_cp`.
-Gradient of the objective at `p` is `X`.
+Find generalized Cauchy point looking from point `p` in direction `d` and save the tangent
+vector pointing at it to `d_out`. Gradient of the objective at `p` is `X`.
 
-The function returns `true` if the point was found and `false` otherwise.
+The function returns 
+* `:found_limited` if the point was found and we can perform a step of length at most 1
+  in direction `d_out` afterwards,
+* `:found_unlimited` if the point was found and we can perform a step of length at most
+  `max_stepsize(M, p)` in direction `d_out` afterwards,
+* `:not_found` if the search cannot be performed in direction `d`.
 """
-function find_gcp!(gcp::GCPFinder, p_cp, p, d, X)
+function find_gcp_direction!(gcp::GCPFinder, d_out, p, d, X)
     M = gcp.M
-    copyto!(M, p_cp, p)
+    copyto!(M, gcp.p_cp, p)
+    p_cp = gcp.p_cp
     zero_vector!(M, gcp.Y_tmp, p)
+    copyto!(M, d_out, d)
 
     bounds_indices = get_bounds_index(M)
     TInd = eltype(bounds_indices)
+    TF = number_eltype(d)
 
-    t = Dict{TInd, Float64}((k, Inf) for k in bounds_indices)
+    t = Dict{TInd, TF}((k, Inf) for k in bounds_indices)
 
-    F_list = Tuple{Float64, TInd}[]
+    F_list = Tuple{TF, TInd}[]
     sizehint!(F_list, length(bounds_indices) + 1)
+
+    has_finite_limit = false
 
     for i in bounds_indices
         t[i] = get_bound_t(M, p, d, i)
@@ -435,14 +456,11 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X)
         if t[i] > 0
             push!(F_list, (t[i], i))
         end
-    end
-
-    if isempty(F_list)
-        @warn "We can't go in the selected direction"
-        return false
+        has_finite_limit |= isfinite(t[i])
     end
 
     if M isa ProductManifold
+        # Hyperrectangle × something else
         # push also `t` corresponding to max_stepsize if it is considered in the manifold
         M2 = M.manifolds[2]
         p2 = submanifold_component(M, p, Val(2))
@@ -452,15 +470,21 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X)
             tms = max_step / norm(M2, p2, d2)
             push!(F_list, (tms, -1))
         end
+    else
+        # Check only when we work on a pure Hyperrectangle
+        if isempty(F_list)
+            @warn "We can't go in the selected direction"
+            return :not_found
+        end
     end
 
     F = BinaryHeap(Base.By(first), F_list)
 
     f_prime = inner(M, p, X, d)
-    f_double_prime = hess_val(gcp.ha, d)
+    f_double_prime = hess_val(gcp.ha, M, p, d)
 
     if iszero(f_prime) || iszero(f_double_prime)
-        return false
+        return :not_found
     end
 
     dt_min = -f_prime / f_double_prime
@@ -469,17 +493,17 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X)
     t_current, b = pop!(F)
     dt = t_current - t_old
 
-    init_updater!(M, gcp.fpfpp_upd, d, gcp.ha)
+    init_updater!(M, gcp.fpfpp_updater, d, gcp.ha)
     # b can be -1 if it corresponds to the max stepsize limit on the manifold part
     while dt_min > dt && b != -1
         gcp.Y_tmp .+= dt .* d
         copyto!(M, gcp.d_old, d)
         set_bound_at_index!(M, p_cp, d, b)
 
-        gb = get_at_bound_index(M, grad, b)
+        gb = get_at_bound_index(M, X, b)
         db = get_at_bound_index(M, gcp.d_old, b)
 
-        f_prime, f_double_prime = gcp.fpfpp_upd(M, f_prime, f_double_prime, dt, db, gb, gcp.ha, b, gcp.Y_tmp, gcp.d_old)
+        f_prime, f_double_prime = gcp.fpfpp_updater(M, p, f_prime, f_double_prime, dt, db, gb, gcp.ha, b, gcp.Y_tmp, gcp.d_old)
         t_old = t_current
 
         # If f_prime is 0, we've found the local minimizer (GCP)
@@ -508,5 +532,11 @@ function find_gcp!(gcp::GCPFinder, p_cp, p, d, X)
         end
     end
 
-    return true
+    bound_direction_tweak!(M, d_out, d, p, p_cp)
+
+    if has_finite_limit
+        return :found_limited
+    else
+        return :found_unlimited
+    end
 end

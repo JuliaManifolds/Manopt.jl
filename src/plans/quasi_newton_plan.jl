@@ -409,8 +409,8 @@ space ``T_{p_{k+1}} $(_tex(:Cal, "M"))``, preferably with an isometric vector tr
 
 # Provided functors
 
-* `(mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction
-* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
+* `(mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction
+* `(η, mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
 
 # Fields
 
@@ -510,6 +510,16 @@ end
 function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
     copyto!(d.matrix, I)
     return d
+end
+function hess_val(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+    c = get_coordinates(M, p, X)
+    return dot(c, d.matrix, c)
+end
+function hess_val_eb(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, b) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+    return d.matrix[b, b]
+end
+function hess_val_eb(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, b, X) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+    return dot(d.matrix[b, :], get_coordinates(M, p, X))
 end
 
 _doc_QN_B = """

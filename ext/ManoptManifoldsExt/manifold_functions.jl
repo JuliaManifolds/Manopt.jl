@@ -193,3 +193,10 @@ function Manopt.set_bound_at_index!(M::Hyperrectangle, p_cp, d, i)
     d[i] = 0
     return p_cp
 end
+
+function Manopt.bound_direction_tweak!(::Hyperrectangle, d_out, d, p, p_cp)
+    return d_out .= p_cp .- p
+end
+
+Manopt.requires_gcp(::Hyperrectangle) = true
+Manopt.get_at_bound_index(::Hyperrectangle, X, b) = X[b]

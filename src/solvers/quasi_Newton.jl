@@ -215,7 +215,7 @@ $(_var(:Argument, :p))
   the Hessian (inverse) for the cases where it is stored in full (matrix) form.
 * `cautious_update::Bool=false`:
    whether or not to use the [`QuasiNewtonCautiousDirectionUpdate`](@ref)
-   which wraps the `direction_upate`.
+   which wraps the `direction_update`.
 * `cautious_function=(x) -> x * 1e-4`:
   a monotone increasing function for the cautious update that is zero at ``x=0``
   and strictly increasing at ``0``
