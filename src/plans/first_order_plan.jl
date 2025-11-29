@@ -1049,7 +1049,7 @@ abstract type AbstractRestartCondition end
 debug for the gradient evaluated at the current iterate
 
 # Constructors
-    DebugGradient(; long=false, prefix= , format= "\$prefix%s", io=stdout)
+    DebugGradient(; long=false, prefix= , format= "\$prefix%s", io=stdout, at_init=false)
 
 display the short (`false`) or long (`true`) default text for the gradient,
 or set the `prefix` manually. Alternatively the complete format can be set.
@@ -1057,22 +1057,24 @@ or set the `prefix` manually. Alternatively the complete format can be set.
 mutable struct DebugGradient <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugGradient(;
             long::Bool = false,
             prefix = long ? "Gradient: " : "grad f(p):",
             format = "$prefix%s",
             io::IO = stdout,
+            at_init::Bool = false,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    (k < 1) && return nothing
+    (k < (d.at_init ? 0 : 1)) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_gradient(s))
     return nothing
 end
 function show(io::IO, dg::DebugGradient)
-    return print(io, "DebugGradient(; format=\"$(dg.format)\")")
+    return print(io, "DebugGradient(; format=\"$(dg.format)\", at_init=$(dg.at_init))")
 end
 status_summary(dg::DebugGradient) = "(:Gradient, \"$(dg.format)\")"
 
@@ -1082,7 +1084,7 @@ status_summary(dg::DebugGradient) = "(:Gradient, \"$(dg.format)\")"
 debug for gradient evaluated at the current iterate.
 
 # Constructors
-    DebugGradientNorm([long=false,p=print])
+    DebugGradientNorm([long=false, format= "\$prefix%s", io=stdout, at_init=true])
 
 display the short (`false`) or long (`true`) default text for the gradient norm.
 
@@ -1093,19 +1095,21 @@ display the a `prefix` in front of the gradient norm.
 mutable struct DebugGradientNorm <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugGradientNorm(;
             long::Bool = false,
             prefix = long ? "Norm of the Gradient: " : "|grad f(p)|:",
             format = "$prefix%s",
             io::IO = stdout,
+            at_init::Bool = true,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugGradientNorm)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
-    (k < 1) && return nothing
+    (k < (d.at_init ? 0 : 1)) && return nothing
     Printf.format(
         d.io,
         Printf.Format(d.format),
@@ -1114,7 +1118,7 @@ function (d::DebugGradientNorm)(
     return nothing
 end
 function show(io::IO, dgn::DebugGradientNorm)
-    return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\")")
+    return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\", at_init=$(dgn.at_init))")
 end
 status_summary(dgn::DebugGradientNorm) = "(:GradientNorm, \"$(dgn.format)\")"
 
@@ -1124,31 +1128,33 @@ status_summary(dgn::DebugGradientNorm) = "(:GradientNorm, \"$(dgn.format)\")"
 debug for the current step size.
 
 # Constructors
-    DebugStepsize(;long=false,prefix="step size:", format="\$prefix%s", io=stdout)
+    DebugStepsize(;long=false,prefix="step size:", format="\$prefix%s", io=stdout, at_init=true)
 
 display the a `prefix` in front of the step size.
 """
 mutable struct DebugStepsize <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugStepsize(;
             long::Bool = false,
             io::IO = stdout,
             prefix = long ? "step size:" : "s:",
             format = "$prefix%s",
+            at_init::Bool = true,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugStepsize)(
         p::P, s::O, k::Int
     ) where {P <: AbstractManoptProblem, O <: AbstractGradientSolverState}
-    (k < 1) && return nothing
+    (k < (d.at_init ? 0 : 1)) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, k))
     return nothing
 end
 function show(io::IO, ds::DebugStepsize)
-    return print(io, "DebugStepsize(; format=\"$(ds.format)\")")
+    return print(io, "DebugStepsize(; format=\"$(ds.format)\", at_init=$(ds.at_init))")
 end
 status_summary(ds::DebugStepsize) = "(:Stepsize, \"$(ds.format)\")"
 #
