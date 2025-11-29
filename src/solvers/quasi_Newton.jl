@@ -32,7 +32,7 @@ Generate the Quasi Newton state on the manifold `M` with start point `p`.
 
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), memory_size; vector_transport_method=vector_transport_method)`
 $(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
-* `initial_scale=1.0`: a realtive initial scale. By default deactivated when using a preconditioner.
+* `initial_scale=1.0`: a relative initial scale. By default deactivated when using a preconditioner.
 * `memory_size=20`: a shortcut to set the memory in the default direction update
 * `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, Nothing} = nothing` specify a preconditioner or deactivate by passing `nothing`.
 $(_var(:Keyword, :retraction_method))
@@ -215,7 +215,7 @@ $(_var(:Argument, :p))
   the Hessian (inverse) for the cases where it is stored in full (matrix) form.
 * `cautious_update=false`:
    whether or not to use the [`QuasiNewtonCautiousDirectionUpdate`](@ref)
-   which wraps the `direction_upate`.
+   which wraps the `direction_update`.
 * `cautious_function=(x) -> x * 1e-4`:
   a monotone increasing function for the cautious update that is zero at ``x=0``
   and strictly increasing at ``0``
@@ -241,7 +241,7 @@ $(_var(:Keyword, :evaluation; add = :GradientExample))
 * `preconditioner=nothing` specify a preconditioner, either
   * the default `nothing` does not activate a preconditioning
   * a function of the form `(M, p, X) -> Y` or mutating `(M, Y, p, X) -> Y` depending on the `evaluation`
-  * a [`PreconditionedDirection`](@ref). See also their docs for mor details on the preconditioner.
+  * a [`PreconditionedDirection`](@ref). See also their docs for more details on the preconditioner.
   Note that the preconditioner is applied to the gradient, i.e. the right hand side _before_ solving the linear system.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.

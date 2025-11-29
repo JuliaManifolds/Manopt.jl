@@ -100,7 +100,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             rec = get_record(res[2])
             prepend!(rec, [p_0])
             add_scale = 0.0075
-            rec .+= add_scale * rec # scale slighly to lie on the sphere
+            rec .+= add_scale * rec # scale slightly to lie on the sphere
             n = 30
             π1(x) = x[1]
             π2(x) = x[2]
@@ -126,7 +126,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             pa = [:color => f_.(pts), :backlight => 1.0f0, :colorrange => range_f]
             # light colormap on sphere
             surface!(scene, x1, x2, x3; colormap = (:viridis, 0.4), pa...)
-            # ful color on feasible set
+            # full color on feasible set
             surface!(scene, x1_, x2_, x3_; colormap = (:viridis, 1.0), backlight = 1.0f0, pa...)
             scatter!(scene, π1.(rec), π2.(rec), π3.(rec); color = :black, markersize = 8)
             P = [(1 + add_scale) .* p_opt]

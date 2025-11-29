@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * a keyword argument `atol` to the `ConstrainedManifoldObjective` to set a tolerance for constraint satisfaction. (#545)
+* a spell checker following [crate-ci/typos](https://github.com/crate-ci/typos)
 
 ### Fixed
 
@@ -21,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Removed `atol` from `DebugFeasibility` and instead use the one newly added `atol` from the `ConstrainedManifoldObjective`. (#546)
 * Move from CompatHelper to dependabot to keep track of dependency updates in Julia packages. (#547)
 * moved the `ManoptTestSuite` module to a sub module `Manopt.Test` within `Manopt.jl`,
-so it can be easier resused by others as well (#550)
+so it can be easier reused by others as well (#550)
 * moved to using a `Project.toml` for tests and an overall `[Workspace]`.
   This also allows finally to run single test files without installing all packages manually, but instead just switching to and instantiating the test environment. (#550)
 * for compatibility, state also `[source]` entries consistently in the sub `Project.toml` files. (#550)
@@ -246,7 +247,7 @@ present; they were changed to `retact_fused!`.
 * A scaling error that appeared only when calling `get_cost_function` on the new `ScaledManifoldObjective`.
 * Documentation issues for quasi-Newton solvers.
 * fixes a scaling error in quasi newton
-* Fixes printing of JuMP models containg Manopt solver.
+* Fixes printing of JuMP models containing Manopt solver.
 
 ## [0.5.12] April 13, 2025
 

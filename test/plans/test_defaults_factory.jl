@@ -1,6 +1,6 @@
 using Manopt, Manifolds, Test
 
-# A rule taht does not need a manifold but has defaults
+# A rule that does not need a manifold but has defaults
 struct FactoryDummyRule{R <: Real}
     t::R
     FactoryDummyRule(; t::R = 1.0) where {R <: Real} = new{R}(t)

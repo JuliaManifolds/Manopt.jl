@@ -236,7 +236,7 @@ Debug for a simple callback function, mainly for compatibility to other solvers 
 a user already has a callback function or functor available
 
 The expected format of the is that it is a function with signature `(problem, state, iteration) -> nothing`
-A simple callbaclk of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form
+A simple callback of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form
 
 !!! note
     This is for now an internal struct, since its name might still change before
@@ -374,8 +374,8 @@ print a small divider (default `" | "`).
     DebugDivider(div,print)
 
 """
-mutable struct DebugDivider{TIO <: IO} <: DebugAction
-    io::TIO
+mutable struct DebugDivider{TypeIO <: IO} <: DebugAction
+    io::TypeIO
     divider::String
     DebugDivider(divider = " | "; io::IO = stdout) = new{typeof(io)}(io, divider)
 end
@@ -432,9 +432,9 @@ Display information about the feasibility of the current iterate
 
 The following symbols are filled with values
 
-* `:Feasbile` display true or false depending on whether the iterate is feasible
-* `:FeasbileEq` display `=` or `≠` equality constraints are fulfilled or not
-* `:FeasbileInEq` display `≤` or `≰` inequality constraints are fulfilled or not
+* `:Feasible` display true or false depending on whether the iterate is feasible
+* `:FeasibleEq` display `=` or `≠` equality constraints are fulfilled or not
+* `:FeasibleIneq` display `≤` or `≰` inequality constraints are fulfilled or not
 * `:NumEq` display the number of equality constraints infeasible
 * `:NumEqNz` display the number of equality constraints infeasible if exists
 * `:NumIneq` display the number of inequality constraints infeasible
@@ -1241,7 +1241,7 @@ when the `:WhenActive` symbol is present
 
 # Return value
 
-A dictionary for the different enrty points where debug can happen, each containing
+A dictionary for the different entry points where debug can happen, each containing
 a [`DebugAction`](@ref) to call.
 
 Note that upon the initialisation all dictionaries but the `:StartAlgorithm`
