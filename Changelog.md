@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+* add keyword argument `at_init` to some debug options to control whether they print already at the initialisation and hence before the first iteration (#552)
+
 ## [0.5.29] November 26, 2025
 
 ### Added
