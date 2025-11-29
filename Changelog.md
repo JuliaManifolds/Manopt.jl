@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * a keyword argument `atol` to the `ConstrainedManifoldObjective` to set a tolerance for constraint satisfaction. (#545)
+* a spell checker following [crate-ci/typos](https://github.com/crate-ci/typos)
 
 ### Fixed
 
