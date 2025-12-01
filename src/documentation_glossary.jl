@@ -13,44 +13,10 @@
 
 # In general every dictionary here can be either :Symbol-> String or :Symbol -> Dictionary entries
 
-_MANOPT_DOC_TYPE = Dict{Symbol, Union{String, Dict, Function}}
+# generate Glossary for Manopt.jl
+Glossaries.@Glossary
 
-_manopt_glossary = _MANOPT_DOC_TYPE()
-
-# easier access functions
-"""
-    glossary(s::Symbol, args...; kwargs...)
-    glossary(g::Dict, s::Symbol, args...; kwargs...)
-
-Access an entry in the glossary at `Symbol` s
-if that entry is
-* a string, this is returned
-* a function, it is called with `args...` and `kwargs...` passed
-* a dictionary, then the arguments and keyword arguments are passed to this dictionary, assuming `args[1]` is a symbol
-"""
-#do not document for now, until we have an internals section
-glossary(s::Symbol, args...; kwargs...) = glossary(_manopt_glossary, s, args...; kwargs...)
-function glossary(g::_MANOPT_DOC_TYPE, s::Symbol, args...; kwargs...)
-    return glossary(g[s], args...; kwargs...)
-end
-glossary(s::String, args...; kwargs...) = s
-glossary(f::Function, args...; kwargs...) = f(args...; kwargs...)
-
-define!(s::Symbol, args...) = define!(_manopt_glossary, s, args...)
-function define!(g::_MANOPT_DOC_TYPE, s::Symbol, e::Union{String, Function})
-    g[s] = e
-    return g
-end
-function define!(g::_MANOPT_DOC_TYPE, s1::Symbol, s2::Symbol, args...)
-    !(haskey(g, s1)) && (g[s1] = _MANOPT_DOC_TYPE())
-    define!(g[s1], s2, args...)
-    return g
-end
-
-# ---
-# LaTeX
-
-define!(
+Glossaries.@define!(
     :LaTeX,
     :aligned,
     (lines...) ->
@@ -58,20 +24,20 @@ define!(
         "$(join(["   $(line)" for line in lines], raw"\\\\ "))" *
         raw"\n\end{aligned}\n",
 )
-define!(:LaTeX, :abs, (v) -> raw"\lvert " * "$v" * raw" \rvert")
-define!(:LaTeX, :argmin, raw"\operatorname*{arg\,min}")
-define!(:LaTeX, :ast, raw"\ast")
-define!(:LaTeX, :bar, (letter) -> raw"\bar" * "$(letter)")
-define!(:LaTeX, :big, raw"\big")
-define!(:LaTeX, :bigl, raw"\bigl")
-define!(:LaTeX, :bigr, raw"\bigr")
-define!(:LaTeX, :biggl, raw"\biggl")
-define!(:LaTeX, :biggr, raw"\biggr")
-define!(:LaTeX, :Big, raw"\Big")
-define!(:LaTeX, :Bigl, raw"\Bigl")
-define!(:LaTeX, :Bigr, raw"\Bigr")
-define!(:LaTeX, :Cal, (letter) -> raw"\mathcal " * "$letter")
-define!(
+Glossaries.@define!(:LaTeX, :abs, (v) -> raw"\lvert " * "$v" * raw" \rvert")
+Glossaries.@define!(:LaTeX, :argmin, raw"\operatorname*{arg\,min}")
+Glossaries.@define!(:LaTeX, :ast, raw"\ast")
+Glossaries.@define!(:LaTeX, :bar, (letter) -> raw"\bar" * "$(letter)")
+Glossaries.@define!(:LaTeX, :big, raw"\big")
+Glossaries.@define!(:LaTeX, :bigl, raw"\bigl")
+Glossaries.@define!(:LaTeX, :bigr, raw"\bigr")
+Glossaries.@define!(:LaTeX, :biggl, raw"\biggl")
+Glossaries.@define!(:LaTeX, :biggr, raw"\biggr")
+Glossaries.@define!(:LaTeX, :Big, raw"\Big")
+Glossaries.@define!(:LaTeX, :Bigl, raw"\Bigl")
+Glossaries.@define!(:LaTeX, :Bigr, raw"\Bigr")
+Glossaries.@define!(:LaTeX, :Cal, (letter) -> raw"\mathcal " * "$letter")
+Glossaries.@define!(
     :LaTeX,
     :cases,
     (c...) ->
@@ -79,87 +45,86 @@ define!(
         "$(join(["   $(ci)" for ci in c], raw"\\\\ "))" *
         raw"\end{cases}",
 )
-define!(:LaTeX, :cdots, raw"\cdots")
-define!(:LaTeX, :cot, raw"\cot")
-define!(:LaTeX, :ddots, raw"\ddots")
-define!(:LaTeX, :deriv, (t = "t") -> raw"\frac{\mathrm{d}}{\mathrm{d}" * "$(t)" * "}")
-define!(:LaTeX, :diff, (t = "") -> raw"\mathrm{D}_{" * "$(t)" * "}")
-define!(:LaTeX, :displaystyle, raw"\displaystyle")
-define!(:LaTeX, :eR, raw"\bar{\mathbb R}")
-define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")
-define!(:LaTeX, :grad, raw"\operatorname{grad}")
-define!(:LaTeX, :hat, (letter) -> raw"\hat{" * "$letter" * "}")
-define!(:LaTeX, :Hess, raw"\operatorname{Hess}")
-define!(:LaTeX, :Id, raw"\mathrm{Id}")
-define!(:LaTeX, :invretr, raw"\operatorname{retr}^{-1}")
-define!(:LaTeX, :inner, (a, b; index = "") -> "⟨$a,$b⟩_{$index}")
-define!(:LaTeX, :log, raw"\log")
-define!(:LaTeX, :max, raw"\max")
-define!(:LaTeX, :min, raw"\min")
-define!(:LaTeX, :norm, (v; index = "") -> raw"\lVert " * "$v" * raw" \rVert" * "_{$index}")
-define!(
-    :LaTeX,
-    :pmatrix,
+Glossaries.@define!(:LaTeX, :cdots, raw"\cdots")
+Glossaries.@define!(:LaTeX, :cot, raw"\cot")
+Glossaries.@define!(:LaTeX, :ddots, raw"\ddots")
+Glossaries.@define!(:LaTeX, :deriv, (t = "t") -> raw"\frac{\mathrm{d}}{\mathrm{d}" * "$(t)" * "}")
+Glossaries.@define!(:LaTeX, :diff, (t = "") -> raw"\mathrm{D}_{" * "$(t)" * "}")
+Glossaries.@define!(:LaTeX, :displaystyle, raw"\displaystyle")
+Glossaries.@define!(:LaTeX, :eR, raw"\bar{\mathbb R}")
+Glossaries.@define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")
+Glossaries.@define!(:LaTeX, :grad, raw"\operatorname{grad}")
+Glossaries.@define!(:LaTeX, :hat, (letter) -> raw"\hat{" * "$letter" * "}")
+Glossaries.@define!(:LaTeX, :Hess, raw"\operatorname{Hess}")
+Glossaries.@define!(:LaTeX, :Id, raw"\mathrm{Id}")
+Glossaries.@define!(:LaTeX, :invretr, raw"\operatorname{retr}^{-1}")
+Glossaries.@define!(:LaTeX, :inner, (a, b; index = "") -> "⟨$a,$b⟩_{$index}")
+Glossaries.@define!(:LaTeX, :log, raw"\log")
+Glossaries.@define!(:LaTeX, :max, raw"\max")
+Glossaries.@define!(:LaTeX, :min, raw"\min")
+Glossaries.@define!(:LaTeX, :norm, (v; index = "") -> raw"\lVert " * "$v" * raw" \rVert" * "_{$index}")
+Glossaries.@define!(
+    :LaTeX, :pmatrix,
     (lines...) -> raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}",
 )
-define!(:LaTeX, :operatorname, (name) -> raw"\operatorname{$name}")
-define!(:LaTeX, :proj, raw"\operatorname{proj}")
-define!(:LaTeX, :prox, raw"\operatorname{prox}")
-define!(:LaTeX, :quad, raw"\quad")
-define!(:LaTeX, :qquad, raw"\qquad")
-define!(:LaTeX, :reflect, raw"\operatorname{refl}")
-define!(:LaTeX, :retr, raw"\operatorname{retr}")
-define!(:LaTeX, :rm, (letter) -> raw"\mathrm{" * "$letter" * "}")
-define!(:LaTeX, :sqrt, (s) -> raw"\sqrt{" * "$s}")
-define!(:LaTeX, :subgrad, raw"∂")
-define!(:LaTeX, :set, (s) -> raw"\{" * "$s" * raw"\}")
-define!(:LaTeX, :sum, (b = "", t = "") -> raw"\sum" * (length(b) > 0 ? "_{$b}" : "") * (length(t) > 0 ? "^{$t}" : ""))
-define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
-define!(:LaTeX, :tilde, raw"\tilde")
-define!(:LaTeX, :transp, raw"\mathrm{T}")
-define!(:LaTeX, :vdots, raw"\vdots")
-define!(:LaTeX, :vert, raw"\vert")
-define!(:LaTeX, :widehat, (letter) -> raw"\widehat{" * "$letter" * "}")
-define!(:LaTeX, :widetilde, (letter) -> raw"\widetilde{" * "$letter" * "}")
+Glossaries.@define!(:LaTeX, :operatorname, (name) -> raw"\operatorname{$name}")
+Glossaries.@define!(:LaTeX, :proj, raw"\operatorname{proj}")
+Glossaries.@define!(:LaTeX, :prox, raw"\operatorname{prox}")
+Glossaries.@define!(:LaTeX, :quad, raw"\quad")
+Glossaries.@define!(:LaTeX, :qquad, raw"\qquad")
+Glossaries.@define!(:LaTeX, :reflect, raw"\operatorname{refl}")
+Glossaries.@define!(:LaTeX, :retr, raw"\operatorname{retr}")
+Glossaries.@define!(:LaTeX, :rm, (letter) -> raw"\mathrm{" * "$letter" * "}")
+Glossaries.@define!(:LaTeX, :sqrt, (s) -> raw"\sqrt{" * "$s}")
+Glossaries.@define!(:LaTeX, :subgrad, raw"∂")
+Glossaries.@define!(:LaTeX, :set, (s) -> raw"\{" * "$s" * raw"\}")
+Glossaries.@define!(:LaTeX, :sum, (b = "", t = "") -> raw"\sum" * (length(b) > 0 ? "_{$b}" : "") * (length(t) > 0 ? "^{$t}" : ""))
+Glossaries.@define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
+Glossaries.@define!(:LaTeX, :tilde, raw"\tilde")
+Glossaries.@define!(:LaTeX, :transp, raw"\mathrm{T}")
+Glossaries.@define!(:LaTeX, :vdots, raw"\vdots")
+Glossaries.@define!(:LaTeX, :vert, raw"\vert")
+Glossaries.@define!(:LaTeX, :widehat, (letter) -> raw"\widehat{" * "$letter" * "}")
+Glossaries.@define!(:LaTeX, :widetilde, (letter) -> raw"\widetilde{" * "$letter" * "}")
 _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 #
 # ---
 # Mathematics and semantic symbols
 # :symbol the symbol,
 # :description the description
-define!(:Math, :distance, raw"\mathrm{d}")
-define!(:Math, :M, (; M = "M") -> _math(:Manifold, :symbol; M = M))
-define!(:Math, :Manifold, :symbol, (; M = "M") -> _tex(:Cal, M))
-define!(:Math, :Manifold, :description, "the Riemannian manifold")
-define!(:Math, :M, (; M = "M") -> _math(:Manifold, :symbol; M = M))
-define!(:Math, :Iterate, (; p = "p", k = "k") -> "$(p)^{($(k))}")
-define!(
+Glossaries.@define!(:Math, Glossaries.Glossar())
+Glossaries.@define!(:Math, :distance, :math, raw"\mathrm{d}")
+Glossaries.@define!(:Math, :M, :math, (; M = "M") -> _math(:Manifold, :symbol; M = M))
+Glossaries.@define!(:Math, :Manifold, :symbol, (; M = "M") -> _tex(:Cal, M))
+Glossaries.@define!(:Math, :Manifold, :description, "the Riemannian manifold")
+Glossaries.@define!(:Math, :Iterate, :math, (; p = "p", k = "k") -> "$(p)^{($(k))}")
+Glossaries.@define!(
     :Math,
     :Sequence,
     (var, ind, from, to) -> raw"\{" * "$(var)_$(ind)" * raw"\}" * "_{$(ind)=$from}^{$to}",
 )
-define!(:Math, :TM, (; M = "M") -> _math(:TangentBundle, :symbol; M = M))
-define!(:Math, :TangentBundle, :symbol, (; M = "M") -> "T$(_tex(:Cal, M))")
-define!(
+Glossaries.@define!(:Math, :TM, (; M = "M") -> _math(:TangentBundle, :symbol; M = M))
+Glossaries.@define!(:Math, :TangentBundle, :symbol, (; M = "M") -> "T$(_tex(:Cal, M))")
+Glossaries.@define!(
     :Math,
     :TangentBundle,
     :description,
     (; M = "M") -> "the tangent bundle of the manifold ``$(_math(:M; M = M))``",
 )
-define!(:Math, :TpM, (; M = "M", p = "p") -> _math(:TangentSpace, :symbol; M = M, p = p))
-define!(:Math, :TangentSpace, :symbol, (; M = "M", p = "p") -> "T_{$p}$(_tex(:Cal, M))")
-define!(
+Glossaries.@define!(:Math, :TpM, (; M = "M", p = "p") -> _math(:TangentSpace, :symbol; M = M, p = p))
+Glossaries.@define!(:Math, :TangentSpace, :symbol, (; M = "M", p = "p") -> "T_{$p}$(_tex(:Cal, M))")
+Glossaries.@define!(
     :Math,
     :TangentSpace,
     :description,
     (; M = "M", p = "p") ->
     "the tangent space at the point ``p`` on the manifold ``$(_math(:M; M = M))``",
 )
-define!(
+Glossaries.@define!(
     :Math, :vector_transport, :symbol, (a = "⋅", b = "⋅") -> raw"\mathcal T_{" * "$a←$b" * "}"
 )
-define!(:Math, :vector_transport, :name, "the vector transport")
-define!(
+Glossaries.@define!(:Math, :vector_transport, :name, "the vector transport")
+Glossaries.@define!(
     :Math, :VT, (a = "⋅", b = "⋅") -> _math(:vector_transport, :symbol, a, b)
 )
 _math(args...; kwargs...) = glossary(:Math, args...; kwargs...)
@@ -170,45 +135,38 @@ _math(args...; kwargs...) = glossary(:Math, args...; kwargs...)
 # Collect short forms for links, especially Interdocs ones.
 _link(args...; kwargs...) = glossary(:Link, args...; kwargs...)
 
-define!(
-    :Link,
-    :AbstractManifold,
+Glossaries.@define!(
+    :Link, :AbstractManifold,
     "[`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`)",
 )
-define!(
-    :Link,
-    :AbstractPowerManifold,
+Glossaries.@define!(
+    :Link, :AbstractPowerManifold,
     "[`AbstractPowerManifold`](@extref `ManifoldsBase.AbstractPowerManifold`)",
 )
-define!(
-    :Link,
-    :injectivity_radius,
+Glossaries.@define!(
+    :Link, :injectivity_radius,
     "[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)",
 )
-define!(
-    :Link,
-    :manifold_dimension,
+Glossaries.@define!(
+    :Link, :manifold_dimension,
     (; M = "M") ->
     "[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)$(length(M) > 0 ? "`($M)`" : "")",
 )
-define!(:Link, :Manopt, "[`Manopt.jl`](https://manoptjl.org)")
-define!(
+Glossaries.@define!(:Link, :Manopt, "[`Manopt.jl`](https://manoptjl.org)")
+Glossaries.@define!(
     :Link, :Manifolds, "[`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/)"
 )
-define!(
-    :Link,
-    :ManifoldsBase,
+Glossaries.@define!(
+    :Link, :ManifoldsBase,
     "[`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/)",
 )
-define!(
-    :Link,
-    :rand,
+Glossaries.@define!(
+    :Link, :rand,
     (; M = "M") ->
     "[`rand`](@extref Base.rand-Tuple{AbstractManifold})$(length(M) > 0 ? "`($M)`" : "")",
 )
-define!(
-    :Link,
-    :zero_vector,
+Glossaries.@define!(
+    :Link, :zero_vector,
     (; M = "M", p = "p") ->
     "[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)$(length(M) > 0 ? "`($M, $p)`" : "")",
 )
@@ -217,7 +175,7 @@ define!(
 #
 # Notes / Remarks
 _note(args...; kwargs...) = glossary(:Note, args...; kwargs...)
-define!(
+Glossaries.@define!(
     :Note,
     :ManifoldDefaultFactory,
     (type::String) -> """
@@ -227,7 +185,7 @@ define!(
         until the manifold from for example a corresponding [`AbstractManoptSolverState`](@ref) is available.
     """,
 )
-define!(
+Glossaries.@define!(
     :Note,
     :GradientObjective,
     (; objective = "gradient_objective", f = "f", grad_f = "grad_f") -> """
@@ -235,12 +193,12 @@ define!(
     the corresponding [`AbstractManifoldFirstOrderObjective`](@ref) `$objective` directly.
     """,
 )
-define!(
+Glossaries.@define!(
     :Note,
     :OtherKeywords,
     "All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or [`decorate_objective!`](@ref) for objective decorators, respectively.",
 )
-define!(
+Glossaries.@define!(
     :Note,
     :OutputSection,
     (; p_min = "p^*") -> """
@@ -250,12 +208,12 @@ define!(
     To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
     """,
 )
-define!(
+Glossaries.@define!(
     :Note,
     :TutorialMode,
     "If you activate tutorial mode (cf. [`is_tutorial_mode`](@ref)), this solver provides additional debug warnings.",
 )
-define!(
+Glossaries.@define!(
     :Note,
     :KeywordUsedIn,
     function (kw::String)
@@ -268,7 +226,7 @@ define!(
 # Problems
 _problem(args...; kwargs...) = glossary(:Problem, args...; kwargs...)
 
-define!(
+Glossaries.@define!(
     :Problem,
     :Constrained,
     (; M = "M", p = "p") -> """
@@ -281,7 +239,7 @@ define!(
     ```
     """,
 )
-define!(
+Glossaries.@define!(
     :Problem,
     :SetConstrained,
     (; M = "M", p = "p") -> """
@@ -293,14 +251,14 @@ define!(
     ```
     """,
 )
-define!(
+Glossaries.@define!(
     :Problem, :Default, (; M = "M", p = "p") -> """
     ```math
     $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} f($p)
     ```
     """
 )
-define!(
+Glossaries.@define!(
     :Problem,
     :NonLinearLeastSquares,
     (; M = "M", p = "p") -> """
@@ -316,8 +274,8 @@ define!(
 #
 #
 # Stopping Criteria
-define!(:StoppingCriterion, :Any, "[` | `](@ref StopWhenAny)")
-define!(:StoppingCriterion, :All, "[` & `](@ref StopWhenAll)")
+Glossaries.@define!(:StoppingCriterion, :Any, "[` | `](@ref StopWhenAny)")
+Glossaries.@define!(:StoppingCriterion, :All, "[` & `](@ref StopWhenAll)")
 _sc(args...; kwargs...) = glossary(:StoppingCriterion, args...; kwargs...)
 
 #
@@ -333,7 +291,7 @@ _sc(args...; kwargs...) = glossary(:StoppingCriterion, args...; kwargs...)
 _var(args...; kwargs...) = glossary(:Variable, args...; kwargs...)
 
 #Meta: How to format an argument, a field of a struct, and a keyword
-define!(
+Glossaries.@define!(
     :Variable,
     :Argument,
     # for the symbol s (possibly with special type t)
@@ -349,7 +307,7 @@ define!(
         return "* `$(d)$(disp_type)`: $(_var(s, :description; kwargs...))$(disp_add)"
     end,
 )
-define!(
+Glossaries.@define!(
     :Variable,
     :Field,
     function (s::Symbol, d = "$s", t = ""; type = true, add = "", kwargs...)
@@ -359,7 +317,7 @@ define!(
         return "* `$(d)$(disp_type)`: $(_var(s, :description; kwargs...))$(disp_add)"
     end,
 )
-define!(
+Glossaries.@define!(
     :Variable,
     :Keyword,
     function (
@@ -383,38 +341,38 @@ define!(
 #
 # variables / Names used in Arguments, Fields, and Keywords
 
-define!(
+Glossaries.@define!(
     :Variable,
     :at_iteration,
     :description,
     "an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case;",
 )
-define!(:Variable, :at_iteration, :type, "Int")
+Glossaries.@define!(:Variable, :at_iteration, :type, "Int")
 
-define!(
+Glossaries.@define!(
     :Variable,
     :differential,
     :description,
     "specify a specific function to evaluate the differential. By default, ``Df(p)[X] = ⟨$(_tex(:grad))f(p),X⟩``. is used",
 )
-define!(:Variable, :differential, :default, "`nothing`")
+Glossaries.@define!(:Variable, :differential, :default, "`nothing`")
 
-define!(
+Glossaries.@define!(
     :Variable,
     :evaluation,
     :description,
     "specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second.",
 )
-define!(:Variable, :evaluation, :type, "AbstractEvaluationType")
-define!(:Variable, :evaluation, :default, "[`AllocatingEvaluation`](@ref)`()`")
-define!(
+Glossaries.@define!(:Variable, :evaluation, :type, "AbstractEvaluationType")
+Glossaries.@define!(:Variable, :evaluation, :default, "[`AllocatingEvaluation`](@ref)`()`")
+Glossaries.@define!(
     :Variable,
     :evaluation,
     :GradientExample,
     "For example `grad_f(M,p)` allocates, but `grad_f!(M, X, p)` computes the result in-place of `X`.",
 )
 
-define!(
+Glossaries.@define!(
     :Variable,
     :f,
     :description,
@@ -423,7 +381,7 @@ define!(
     end,
 )
 
-define!(
+Glossaries.@define!(
     :Variable,
     :grad_f,
     :description,
@@ -431,7 +389,7 @@ define!(
     "the (Riemannian) gradient ``$(_tex(:grad))$f: $(_math(:M, M = M)) → $(_math(:TpM; M = M, p = p))`` of $f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
 )
 
-define!(
+Glossaries.@define!(
     :Variable,
     :Hess_f,
     :description,
@@ -439,106 +397,106 @@ define!(
     "the (Riemannian) Hessian ``$(_tex(:Hess))$f: $(_math(:TpM, M = M, p = p)) → $(_math(:TpM; M = M, p = p))`` of $f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
 )
 
-define!(
+Glossaries.@define!(
     :Variable,
     :inverse_retraction_method,
     :description,
     "an inverse retraction ``$(_tex(:invretr))`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`)",
 )
-define!(:Variable, :inverse_retraction_method, :type, "AbstractInverseRetractionMethod")
-define!(
+Glossaries.@define!(:Variable, :inverse_retraction_method, :type, "AbstractInverseRetractionMethod")
+Glossaries.@define!(
     :Variable,
     :inverse_retraction_method,
     :default,
     (; M = "M", p = "p") ->
     "[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`($M, typeof($p))`",
 )
-define!(
+Glossaries.@define!(
     :Variable,
     :last_change,
     :description,
     "the last change recorded in this stopping criterion",
 )
-define!(:Variable, :last_change, :type, "Real")
+Glossaries.@define!(:Variable, :last_change, :type, "Real")
 
-define!(
+Glossaries.@define!(
     :Variable, :M, :description, (; M = "M") -> "a Riemannian manifold ``$(_tex(:Cal, M))``"
 )
-define!(:Variable, :M, :type, "`$(_link(:AbstractManifold))` ")
+Glossaries.@define!(:Variable, :M, :type, "`$(_link(:AbstractManifold))` ")
 
-define!(
+Glossaries.@define!(
     :Variable, :p, :description, (; M = "M") -> "a point on the manifold ``$(_tex(:Cal, M))``"
 )
-define!(:Variable, :p, :type, "P")
-define!(:Variable, :p, :default, (; M = "M") -> _link(:rand; M = M))
-define!(:Variable, :p, :as_Iterate, " storing the current iterate")
-define!(:Variable, :p, :as_Initial, " to specify the initial value")
+Glossaries.@define!(:Variable, :p, :type, "P")
+Glossaries.@define!(:Variable, :p, :default, (; M = "M") -> _link(:rand; M = M))
+Glossaries.@define!(:Variable, :p, :as_Iterate, " storing the current iterate")
+Glossaries.@define!(:Variable, :p, :as_Initial, " to specify the initial value")
 
-define!(
+Glossaries.@define!(
     :Variable,
     :retraction_method,
     :description,
     "a retraction ``$(_tex(:retr))`` to use, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`)",
 )
-define!(:Variable, :retraction_method, :type, "AbstractRetractionMethod")
-define!(
+Glossaries.@define!(:Variable, :retraction_method, :type, "AbstractRetractionMethod")
+Glossaries.@define!(
     :Variable,
     :retraction_method,
     :default,
     "[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`",
 )
 
-define!(
+Glossaries.@define!(
     :Variable,
     :storage,
     :description,
     (; M = "M") -> "a storage to access the previous iterate",
 )
-define!(:Variable, :storage, :type, "StoreStateAction")
-define!(
+Glossaries.@define!(:Variable, :storage, :type, "StoreStateAction")
+Glossaries.@define!(
     :Variable,
     :stepsize,
     :description,
     (; M = "M") -> "a functor inheriting from [`Stepsize`](@ref) to determine a step size",
 )
-define!(:Variable, :stepsize, :type, "Stepsize")
+Glossaries.@define!(:Variable, :stepsize, :type, "Stepsize")
 
-define!(
+Glossaries.@define!(
     :Variable,
     :stopping_criterion,
     :description,
     (; M = "M") -> "a functor indicating that the stopping criterion is fulfilled",
 )
-define!(:Variable, :stopping_criterion, :type, "StoppingCriterion")
+Glossaries.@define!(:Variable, :stopping_criterion, :type, "StoppingCriterion")
 
-define!(
+Glossaries.@define!(
     :Variable,
     :sub_kwargs,
     :description,
     "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective, the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself.",
 )
-define!(:Variable, :sub_kwargs, :default, "`(;)`")
+Glossaries.@define!(:Variable, :sub_kwargs, :default, "`(;)`")
 
-define!(
+Glossaries.@define!(
     :Variable,
     :sub_problem,
     :description,
     (; M = "M") ->
     " specify a problem for a solver or a closed form solution function, which can be allocating or in-place.",
 )
-define!(:Variable, :sub_problem, :type, "Union{AbstractManoptProblem, F}")
+Glossaries.@define!(:Variable, :sub_problem, :type, "Union{AbstractManoptProblem, F}")
 
-define!(
+Glossaries.@define!(
     :Variable,
     :sub_state,
     :description,
     (; M = "M") ->
     " a state to specify the sub solver to use. For a closed form solution, this indicates the type of function.",
 )
-define!(:Variable, :sub_state, :type, "Union{AbstractManoptProblem, F}")
+Glossaries.@define!(:Variable, :sub_state, :type, "Union{AbstractManoptProblem, F}")
 
-define!(:Variable, :subgrad_f, :symbol, "∂f")
-define!(
+Glossaries.@define!(:Variable, :subgrad_f, :symbol, "∂f")
+Glossaries.@define!(
     :Variable,
     :subgrad_f,
     :description,
@@ -547,15 +505,15 @@ define!(
     """,
 )
 
-define!(
+Glossaries.@define!(
     :Variable,
     :vector_transport_method,
     :description,
     (; M = "M", p = "p") ->
     "a vector transport ``$(_math(:vector_transport, :symbol))`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)",
 )
-define!(:Variable, :vector_transport_method, :type, "AbstractVectorTransportMethodP")
-define!(
+Glossaries.@define!(:Variable, :vector_transport_method, :type, "AbstractVectorTransportMethodP")
+Glossaries.@define!(
     :Variable,
     :vector_transport_method,
     :default,
@@ -563,15 +521,15 @@ define!(
     "[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`($M, typeof($p))`",
 )
 
-define!(
+Glossaries.@define!(
     :Variable,
     :X,
     :description,
     (; M = "M", p = "p") ->
     "a tangent vector at the point ``$p`` on the manifold ``$(_tex(:Cal, M))``",
 )
-define!(:Variable, :X, :type, "T")
-define!(:Variable, :X, :default, (; M = "M", p = "p") -> _link(:zero_vector; M = M, p = p))
-define!(:Variable, :X, :as_Gradient, "storing the gradient at the current iterate")
-define!(:Variable, :X, :as_Subgradient, "storing a subgradient at the current iterate")
-define!(:Variable, :X, :as_Memory, "to specify the representation of a tangent vector")
+Glossaries.@define!(:Variable, :X, :type, "T")
+Glossaries.@define!(:Variable, :X, :default, (; M = "M", p = "p") -> _link(:zero_vector; M = M, p = p))
+Glossaries.@define!(:Variable, :X, :as_Gradient, "storing the gradient at the current iterate")
+Glossaries.@define!(:Variable, :X, :as_Subgradient, "storing a subgradient at the current iterate")
+Glossaries.@define!(:Variable, :X, :as_Memory, "to specify the representation of a tangent vector")
