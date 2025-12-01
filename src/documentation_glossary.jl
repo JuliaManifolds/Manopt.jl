@@ -92,41 +92,29 @@ _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 # Mathematics and semantic symbols
 # :symbol the symbol,
 # :description the description
-Glossaries.@define!(:Math, Glossaries.Glossar())
-Glossaries.@define!(:Math, :distance, :math, raw"\mathrm{d}")
-Glossaries.@define!(:Math, :M, :math, (; M = "M") -> _math(:Manifold, :symbol; M = M))
-Glossaries.@define!(:Math, :Manifold, :symbol, (; M = "M") -> _tex(:Cal, M))
-Glossaries.@define!(:Math, :Manifold, :description, "the Riemannian manifold")
-Glossaries.@define!(:Math, :Iterate, :math, (; p = "p", k = "k") -> "$(p)^{($(k))}")
-Glossaries.@define!(
-    :Math,
-    :Sequence,
+Glossaries.@define!(:distance, :math, raw"\mathrm{d}")
+Glossaries.@define!(:Manifold, :math, (; M = "M") -> _tex(:Cal, M))
+Glossaries.@define!(:Manifold, :description, "the Riemannian manifold")
+Glossaries.@define!(:Iterate, :math, (; p = "p", k = "k") -> "$(p)^{($(k))}")
+Glossaries.@define!(:Sequence, :math,
     (var, ind, from, to) -> raw"\{" * "$(var)_$(ind)" * raw"\}" * "_{$(ind)=$from}^{$to}",
 )
-Glossaries.@define!(:Math, :TM, (; M = "M") -> _math(:TangentBundle, :symbol; M = M))
-Glossaries.@define!(:Math, :TangentBundle, :symbol, (; M = "M") -> "T$(_tex(:Cal, M))")
-Glossaries.@define!(
-    :Math,
-    :TangentBundle,
+Glossaries.@define!(:TangentBundle, :math, (; M = "M") -> "T$(_tex(:Cal, M))")
+Glossaries.@define!(:TangentBundle,
     :description,
     (; M = "M") -> "the tangent bundle of the manifold ``$(_math(:M; M = M))``",
 )
-Glossaries.@define!(:Math, :TpM, (; M = "M", p = "p") -> _math(:TangentSpace, :symbol; M = M, p = p))
-Glossaries.@define!(:Math, :TangentSpace, :symbol, (; M = "M", p = "p") -> "T_{$p}$(_tex(:Cal, M))")
+Glossaries.@define!(:TangentSpace, :math, (; M = "M", p = "p") -> "T_{$p}$(_tex(:Cal, M))")
 Glossaries.@define!(
-    :Math,
-    :TangentSpace,
-    :description,
-    (; M = "M", p = "p") ->
-    "the tangent space at the point ``p`` on the manifold ``$(_math(:M; M = M))``",
+    :TangentSpace, :description,
+    (; M = "M", p = "p") -> "the tangent space at the point ``p`` on the manifold ``$(_math(:M; M = M))``",
 )
 Glossaries.@define!(
-    :Math, :vector_transport, :symbol, (a = "⋅", b = "⋅") -> raw"\mathcal T_{" * "$a←$b" * "}"
+    :vector_transport, :math, (a = "⋅", b = "⋅") -> raw"\mathcal T_{" * "$a←$b" * "}"
 )
-Glossaries.@define!(:Math, :vector_transport, :name, "the vector transport")
-Glossaries.@define!(
-    :Math, :VT, (a = "⋅", b = "⋅") -> _math(:vector_transport, :symbol, a, b)
-)
+Glossaries.@define!(:vector_transport, :name, "the vector transport")
+
+# TODO: Replace with new formatter.
 _math(args...; kwargs...) = glossary(:Math, args...; kwargs...)
 
 #
