@@ -11,7 +11,7 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
         TDU <: QuasiNewtonLimitedMemoryDirectionUpdate,
         TM <: AbstractManifold,
         F <: Real,
-        THM <: AbstractMatrix,
+        T_HM <: AbstractMatrix,
         V <: AbstractVector,
     } <: AbstractQuasiNewtonDirectionUpdate
     # this approximates inverse Hessian
@@ -19,9 +19,9 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
 
     # fields for approximating the Hessian
     current_scale::F
-    M_11::THM
-    M_21::THM
-    M_22::THM
+    M_11::T_HM
+    M_21::T_HM
+    M_22::T_HM
     # buffer for calculating stuff
     coords_Sk_X::V
     coords_Sk_Y::V
@@ -403,12 +403,12 @@ function bound_direction_tweak!(::ProductManifold, d_out, d, p, p_cp)
     return d_out
 end
 
-struct GCPFinder{TM <: AbstractManifold, TP, TX, THA, TFU <: AbstractFPFPPUpdater}
+struct GCPFinder{TM <: AbstractManifold, TP, TX, T_HA, TFU <: AbstractFPFPPUpdater}
     M::TM
     p_cp::TP
     Y_tmp::TX
     d_old::TX
-    ha::THA
+    ha::T_HA
     fpfpp_updater::TFU
 end
 
