@@ -383,7 +383,7 @@ is necessity for the construction.
 as vectors of symbols each referring to fields of the state (lower case symbols)
 or semantic ones (upper case).
 
-* `p_init` (`rand(M)`) but making sure this is not a number but a (mutatable) array
+* `p_init` (`rand(M)`) but making sure this is not a number but a (mutable) array
 * `X_init` (`zero_vector(M, p_init)`)
 
 are used to initialize the point and vector storage, change these if you use other

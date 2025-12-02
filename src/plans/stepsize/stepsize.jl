@@ -11,7 +11,7 @@ This functor accepts the following keyword arguments:
 
 * `additional_decrease_condition`: specify a condition a new point has to additionally
   fulfill. The default accepts all points.
-* `additional_increase_condition`: specify a condtion that additionally to
+* `additional_increase_condition`: specify a condition that additionally to
   checking a valid increase has to be fulfilled. The default accepts all points.
 * `candidate_point`:               to store an interim result
 * `initial_stepsize`:              and initial step size
@@ -143,20 +143,20 @@ function (a::ArmijoLinesearchStepsize)(
     return a.last_stepsize
 end
 get_initial_stepsize(a::ArmijoLinesearchStepsize) = a.initial_stepsize
-function show(io::IO, als::ArmijoLinesearchStepsize)
+function show(io::IO, armijo_ls::ArmijoLinesearchStepsize)
     return print(
         io,
         """
         ArmijoLinesearch(;
-            initial_stepsize=$(als.initial_stepsize),
-            retraction_method=$(als.retraction_method),
-            contraction_factor=$(als.contraction_factor),
-            sufficient_decrease=$(als.sufficient_decrease),
+            initial_stepsize=$(armijo_ls.initial_stepsize),
+            retraction_method=$(armijo_ls.retraction_method),
+            contraction_factor=$(armijo_ls.contraction_factor),
+            sufficient_decrease=$(armijo_ls.sufficient_decrease),
         )""",
     )
 end
-function status_summary(als::ArmijoLinesearchStepsize)
-    return "$(als)\nand a computed last stepsize of $(als.last_stepsize)"
+function status_summary(armijo_ls::ArmijoLinesearchStepsize)
+    return "$(armijo_ls)\nand a computed last stepsize of $(armijo_ls.last_stepsize)"
 end
 function get_message(a::ArmijoLinesearchStepsize)
     s = [get_message(kv[1], kv[2]) for kv in pairs(a.messages)]
@@ -182,7 +182,7 @@ end
 
 Specify a step size that performs an Armijo line search. Given a Function ``f:$(_math(:M))→ℝ``
 and its Riemannian Gradient ``$(_tex(:grad))f: $(_math(:M))→$(_math(:TM))``,
-the curent point ``p∈$(_math(:M))`` and a search direction ``X∈$(_math(:TpM))``.
+the current point ``p∈$(_math(:M))`` and a search direction ``X∈$(_math(:TpM))``.
 
 Then the step size ``s`` is found by reducing the initial step size ``s`` until
 
@@ -820,9 +820,9 @@ Here, ``ϕ(t)`` denotes the cost function when performing
 a step with size ``t`` into direction ``η``.
 Over the iteration, the bracket ``[a,b]`` is repeatedly
 updated using a cubic polynomial using values of ``ϕ, ϕ'`` at ``a,b``.
-The update value ``c`` is the local minimum of the polynomial, and the bracket coindition
-ensures that it lies inbetween ``a`` and ``b``. We note that the update strategy taken from
-[Hager:1989](@cite) ensures that the updated bracket satsifies the bracket condtion.
+The update value ``c`` is the local minimum of the polynomial, and the bracket condition
+ensures that it lies in between ``a`` and ``b``. We note that the update strategy taken from
+[Hager:1989](@cite) ensures that the updated bracket satisfies the bracket condition.
 
 If the parameter `hybrid` is set to `true`, the hybrid approach from [Hager:1989](@cite)
 is activated, which prevents slow convergence in edge cases.
@@ -1586,7 +1586,7 @@ end
     Polyak(; kwargs...)
     Polyak(M::AbstractManifold; kwargs...)
 
-Compute a step size according to a method propsed by Polyak, cf. the Dynamic step size
+Compute a step size according to a method proposed by Polyak, cf. the Dynamic step size
 discussed in Section 3.2 of [Bertsekas:2015](@cite).
 This has been generalised here to both the Riemannian case and to approximate the minimum cost value.
 
@@ -1792,7 +1792,7 @@ function show(io::IO, a::WolfePowellLinesearchStepsize)
         io,
         """
         WolfePowellLinesearch(;
-            sufficient_descrease = $(a.sufficient_decrease),
+            sufficient_decrease = $(a.sufficient_decrease),
             sufficient_curvature = $(a.sufficient_curvature),
             retraction_method = $(a.retraction_method),
             vector_transport_method = $(a.vector_transport_method),
@@ -1814,7 +1814,7 @@ end
     WolfePowellLinesearch(; kwargs...)
     WolfePowellLinesearch(M::AbstractManifold; kwargs...)
 
-Perform a lineseach to fulfull both the Armijo-Goldstein conditions
+Perform a linesearch to fulfill both the Armijo-Goldstein conditions
 ```math
 f$(_tex(:bigl))( $(_tex(:retr))_{p}(αX) $(_tex(:bigr))) ≤ f(p) + c_1 α_k ⟨$(_tex(:grad)) f(p), X⟩_{p}
 ```
@@ -1953,7 +1953,7 @@ function show(io::IO, a::WolfePowellBinaryLinesearchStepsize)
         io,
         """
         WolfePowellBinaryLinesearch(;
-            sufficient_descrease = $(a.sufficient_decrease),
+            sufficient_decrease = $(a.sufficient_decrease),
             sufficient_curvature = $(a.sufficient_curvature),
             retraction_method = $(a.retraction_method),
             vector_transport_method = $(a.vector_transport_method),
@@ -1988,7 +1988,7 @@ Then the following Algorithm is performed similar to Algorithm 7 from [Huang:201
     WolfePowellBinaryLinesearch(; kwargs...)
     WolfePowellBinaryLinesearch(M::AbstractManifold; kwargs...)
 
-Perform a lineseach to fulfull both the Armijo-Goldstein conditions
+Perform a linesearch to fulfill both the Armijo-Goldstein conditions
 for some given sufficient decrease coefficient ``c_1`` and some sufficient curvature condition coefficient``c_2``.
 Compared to [`WolfePowellLinesearch`](@ref Manopt.WolfePowellLinesearch) which tries a simpler method, this linesearch performs the following algorithm
 

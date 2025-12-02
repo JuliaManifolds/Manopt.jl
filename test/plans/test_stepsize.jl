@@ -464,7 +464,7 @@ end
         @test contains(s5, "bound (0.0) reached")
         @test contains(s5, "Falling back to a stepsize of 0.1")
     end
-    @testset "Warnings withing WolfePowellLinesearch" begin
+    @testset "Warnings within WolfePowellLinesearch" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)
         grad_f(M, p) = 2 .* p

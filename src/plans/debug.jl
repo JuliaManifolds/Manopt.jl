@@ -166,7 +166,7 @@ Whether internal variables are updates is determined by `always_update`.
 This method does not perform any print itself but relies on it's children's print.
 
 It also sets the sub solvers active parameter, see |`DebugWhenActive`}(#ref).
-Here, the `activattion_offset` can be used to specify whether it refers to _this_ iteration,
+Here, the `activation_offset` can be used to specify whether it refers to _this_ iteration,
 the `i`th, when this call is _before_ the iteration, then the offset should be 0,
 for the _next_ iteration, that is if this is called _after_ an iteration, it has to be set to 1.
 Since usual debug is happening after the iteration, 1 is the default.
@@ -236,7 +236,7 @@ Debug for a simple callback function, mainly for compatibility to other solvers 
 a user already has a callback function or functor available
 
 The expected format of the is that it is a function with signature `(problem, state, iteration) -> nothing`
-A simple callbaclk of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form
+A simple callback of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form
 
 !!! note
     This is for now an internal struct, since its name might still change before
@@ -346,22 +346,25 @@ print the current cost function value, see [`get_cost`](@ref).
 * `format="\$prefix %f"`: format to print the output
 * `io=stdout`: default stream to print the debug to.
 * `long=false`: short form to set the format to `f(x):` (default) or `current cost: ` and the cost
+* `at_init=true`: whether to print also at initialization
 """
 mutable struct DebugCost <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugCost(;
-            long::Bool = false, io::IO = stdout, format = long ? "current cost: %f" : "f(x): %f"
+            long::Bool = false, io::IO = stdout, format = long ? "current cost: %f" : "f(x): %f",
+            at_init::Bool = true,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugCost)(p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int)
-    (k >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(st)))
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(st)))
     return nothing
 end
 function show(io::IO, di::DebugCost)
-    return print(io, "DebugCost(; format=\"$(escape_string(di.format))\")")
+    return print(io, "DebugCost(; format=\"$(escape_string(di.format))\", at_init=$(di.at_init))")
 end
 status_summary(di::DebugCost) = "(:Cost, \"$(escape_string(di.format))\")"
 
@@ -371,22 +374,23 @@ status_summary(di::DebugCost) = "(:Cost, \"$(escape_string(di.format))\")"
 print a small divider (default `" | "`).
 
 # Constructor
-    DebugDivider(div,print)
+    DebugDivider(div, io=stdout, at_init=true)
 
 """
-mutable struct DebugDivider{TIO <: IO} <: DebugAction
-    io::TIO
+mutable struct DebugDivider{TypeIO <: IO} <: DebugAction
+    io::TypeIO
     divider::String
-    DebugDivider(divider = " | "; io::IO = stdout) = new{typeof(io)}(io, divider)
+    at_init::Bool
+    DebugDivider(divider = " | "; io::IO = stdout, at_init::Bool = true) = new{typeof(io)}(io, divider, at_init)
 end
 function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int)
-    if k >= 0 && !isempty(d.divider)
+    if k >= (d.at_init ? 0 : 1) && !isempty(d.divider)
         print(d.io, d.divider)
     end
     return nothing
 end
 function show(io::IO, di::DebugDivider)
-    return print(io, "DebugDivider(; divider=\"$(escape_string(di.divider))\")")
+    return print(io, "DebugDivider(; divider=\"$(escape_string(di.divider))\", at_init=$(di.at_init))")
 end
 status_summary(di::DebugDivider) = "\"$(escape_string(di.divider))\""
 
@@ -399,26 +403,27 @@ how to print the entry.
 # Additional fields
 
 * `field`: symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `at_init`: whether to print also at initialization
 
 # Constructor
 
-    DebugEntry(f; prefix="\$f:", format = "\$prefix %s", io=stdout)
-
+    DebugEntry(f; prefix="\$f:", format = "\$prefix %s", io=stdout, at_init=true)
 """
 mutable struct DebugEntry <: DebugAction
     io::IO
     format::String
     field::Symbol
-    function DebugEntry(f::Symbol; prefix = "$f:", format = "$prefix %s", io::IO = stdout)
-        return new(io, format, f)
+    at_init::Bool
+    function DebugEntry(f::Symbol; prefix = "$f:", format = "$prefix %s", io::IO = stdout, at_init::Bool = true)
+        return new(io, format, f, at_init)
     end
 end
 function (d::DebugEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, k)
-    (k >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(st, d.field))
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), getfield(st, d.field))
     return nothing
 end
 function show(io::IO, di::DebugEntry)
-    return print(io, "DebugEntry(:$(di.field); format=\"$(escape_string(di.format))\")")
+    return print(io, "DebugEntry(:$(di.field); format=\"$(escape_string(di.format))\", at_init=$(di.at_init))")
 end
 
 """
@@ -429,12 +434,13 @@ Display information about the feasibility of the current iterate
 # Fields
 * `format`: a vector of symbols and string formatting the output
 * `io`:     default stream to print the debug to.
+* `at_init`: whether to print also at initialization
 
 The following symbols are filled with values
 
-* `:Feasbile` display true or false depending on whether the iterate is feasible
-* `:FeasbileEq` display `=` or `≠` equality constraints are fulfilled or not
-* `:FeasbileInEq` display `≤` or `≰` inequality constraints are fulfilled or not
+* `:Feasible` display true or false depending on whether the iterate is feasible
+* `:FeasibleEq` display `=` or `≠` equality constraints are fulfilled or not
+* `:FeasibleIneq` display `≤` or `≰` inequality constraints are fulfilled or not
 * `:NumEq` display the number of equality constraints infeasible
 * `:NumEqNz` display the number of equality constraints infeasible if exists
 * `:NumIneq` display the number of inequality constraints infeasible
@@ -449,15 +455,17 @@ format to print the output.
 DebugFeasibility(
     format=["feasible: ", :Feasible];
     io::IO=stdout,
+    at_init::Bool=true,
 )
 
 """
 mutable struct DebugFeasibility <: DebugAction
     format::Vector{Union{String, Symbol}}
     io::IO
-    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = NaN)
+    at_init::Bool
+    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = NaN, at_init::Bool = true)
         isnan(atol) || (@warn "Providing atol= directly to DebugFeasibility is deprecated. Use the keyword for the ConstrainedObjective instead. The value provided here ($(atol)) is ignored")
-        return new(format, io)
+        return new(format, io, at_init)
     end
 end
 function (d::DebugFeasibility)(
@@ -485,12 +493,12 @@ function (d::DebugFeasibility)(
         (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz); init = 0.0))")
         (f === :TotalInEq) && (s *= "$(sum(ineqc_pos; init = 0.0))")
     end
-    print(d.io, (k > 0) ? s : "")
+    print(d.io, (k >= (d.at_init ? 0 : 1)) ? s : "")
     return nothing
 end
 function show(io::IO, d::DebugFeasibility)
     sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"
-    return print(io, "DebugFeasibility($sf)")
+    return print(io, "DebugFeasibility($sf, at_init=$(d.at_init))")
 end
 function status_summary(d::DebugFeasibility)
     sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"
@@ -514,10 +522,11 @@ That way you can print the value in this case as well.
 * `msg`:   if the `check` fails, this message is displayed
 * `type`: symbol specifying the type of display, possible values `:print`, `: warn`, `:info`, `:error`,
             where `:print` prints to `io`.
+* `at_init`: whether to print also at initialization
 
 # Constructor
 
-    DebugIfEntry(field, check=(>(0)); type=:warn, message=":\$f is nonnegative", io=stdout)
+    DebugIfEntry(field, check=(>(0)); type=:warn, message=":\$f is nonnegative", io=stdout, at_init=true)
 
 """
 mutable struct DebugIfEntry{F} <: DebugAction
@@ -526,14 +535,15 @@ mutable struct DebugIfEntry{F} <: DebugAction
     field::Symbol
     msg::String
     type::Symbol
+    at_init::Bool
     function DebugIfEntry(
-            f::Symbol, check::F = (>(0)); type = :warn, message = ":\$f nonpositive.", io::IO = stdout
+            f::Symbol, check::F = (>(0)); type = :warn, message = ":\$f nonpositive.", io::IO = stdout, at_init::Bool = true
         ) where {F}
-        return new{F}(io, check, f, message, type)
+        return new{F}(io, check, f, message, type, at_init)
     end
 end
 function (d::DebugIfEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, k)
-    if (k >= 0) && (!d.check(getfield(st, d.field)))
+    if (k >= (d.at_init ? 0 : 1)) && (!d.check(getfield(st, d.field)))
         format = Printf.Format(d.msg)
         msg = !('%' ∈ d.msg) ? d.msg : Printf.format(format, getfield(st, d.field))
         d.type === :warn && (@warn "$(msg)")
@@ -544,7 +554,7 @@ function (d::DebugIfEntry)(::AbstractManoptProblem, st::AbstractManoptSolverStat
     return nothing
 end
 function show(io::IO, di::DebugIfEntry)
-    return print(io, "DebugIfEntry(:$(di.field), $(di.check); type=:$(di.type))")
+    return print(io, "DebugIfEntry(:$(di.field), $(di.check); type=:$(di.type), at_init=$(di.at_init))")
 end
 
 @doc """
@@ -694,25 +704,28 @@ debug for the current iterate (stored in `get_iterate(o)`).
 * `format="\$prefix %s"`: format how to print the current iterate
 * `long=false`:          whether to have a long (`"current iterate:"`) or a short (`"p:"`) prefix default
 * `prefix`:              (see `long` for default) set a prefix to be printed before the iterate
+* `at_init=true`:        whether to print also at initialization
 """
 mutable struct DebugIterate <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugIterate(;
             io::IO = stdout,
             long::Bool = false,
             prefix = long ? "current iterate:" : "p:",
             format = "$prefix %s",
+            at_init::Bool = false,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugIterate)(::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int)
-    (k > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(st))
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), get_iterate(st))
     return nothing
 end
 function show(io::IO, di::DebugIterate)
-    return print(io, "DebugIterate(; format=\"$(escape_string(di.format))\")")
+    return print(io, "DebugIterate(; format=\"$(escape_string(di.format))\", at_init=$(di.at_init))")
 end
 status_summary(di::DebugIterate) = "(:Iterate, \"$(escape_string(di.format))\")"
 
@@ -1081,7 +1094,7 @@ It can also be set to `:No` to deactivate the warning, but this makes this Actio
 All other symbols are handled as if they were `:Always:`
 
 # Example
-    DebugWaranIfFieldNotFinite(:Gradient)
+    DebugWarnIfFieldNotFinite(:Gradient)
 
 Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `Inf`.
 """
@@ -1140,7 +1153,7 @@ It can also be set to `:No` to deactivate the warning, but this makes this Actio
 All other symbols are handled as if they were `:Always:`
 
 # Example
-    DebugWaranIfFieldNotFinite(:Gradient)
+    DebugWarnIfFieldNotFinite(:Gradient)
 
 Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `Inf`.
 """
@@ -1207,7 +1220,6 @@ function (d::DebugWarnIfStepsizeCollapsed)(
         amp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
     (k < 1) && (return nothing)
-    s = st.stepsize
     if d.status !== :No
         if get_last_stepsize(amp, st, k) ≤ d.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(d.stop_when_stepsize_less)."
@@ -1241,7 +1253,7 @@ when the `:WhenActive` symbol is present
 
 # Return value
 
-A dictionary for the different enrty points where debug can happen, each containing
+A dictionary for the different entry points where debug can happen, each containing
 a [`DebugAction`](@ref) to call.
 
 Note that upon the initialisation all dictionaries but the `:StartAlgorithm`
@@ -1377,6 +1389,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 
 * `:Cost` creates a [`DebugCost`](@ref)
 * `:Change` creates a [`DebugChange`](@ref)
+* `:Feasibility` creates a [`DebugFeasibility`](@ref)
 * `:Gradient` creates a [`DebugGradient`](@ref)
 * `:GradientChange` creates a [`DebugGradientChange`](@ref)
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)

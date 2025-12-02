@@ -67,7 +67,7 @@ _doc_PPA = """
     proximal_point!(M, prox_f, p; kwargs...)
     proximal_point!(M, mpmo, p; kwargs...)
 
-Perform the proximal point algoritm from [FerreiraOliveira:2002](@cite) which reads
+Perform the proximal point algorithm from [FerreiraOliveira:2002](@cite) which reads
 
 ```math
 p^{(k+1)} = $(_tex(:prox))_{λ_kf}(p^{(k)})

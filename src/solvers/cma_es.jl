@@ -683,12 +683,12 @@ function is_active_stopping_criterion(c::StopWhenEvolutionStagnates)
     if N < c.min_size
         return false
     end
-    thr_low = Int(ceil(N * c.fraction))
-    thr_high = Int(floor(N * (1 - c.fraction)))
+    threshold_low = Int(ceil(N * c.fraction))
+    threshold_high = Int(floor(N * (1 - c.fraction)))
     best_stagnant =
-        median(c.best_history[1:thr_low]) <= median(c.best_history[thr_high:end])
+        median(c.best_history[1:threshold_low]) <= median(c.best_history[threshold_high:end])
     median_stagnant =
-        median(c.median_history[1:thr_low]) <= median(c.median_history[thr_high:end])
+        median(c.median_history[1:threshold_low]) <= median(c.median_history[threshold_high:end])
     return best_stagnant && median_stagnant
 end
 function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState, k::Int)
@@ -714,12 +714,12 @@ function status_summary(c::StopWhenEvolutionStagnates)
     if N == 0
         return "best and median fitness not yet filled, stopping criterion:\t$s"
     end
-    thr_low = Int(ceil(N * c.fraction))
-    thr_high = Int(floor(N * (1 - c.fraction)))
-    median_best_old = median(c.best_history[1:thr_low])
-    median_best_new = median(c.best_history[thr_high:end])
-    median_median_old = median(c.median_history[1:thr_low])
-    median_median_new = median(c.median_history[thr_high:end])
+    threshold_low = Int(ceil(N * c.fraction))
+    threshold_high = Int(floor(N * (1 - c.fraction)))
+    median_best_old = median(c.best_history[1:threshold_low])
+    median_best_new = median(c.best_history[threshold_high:end])
+    median_median_old = median(c.median_history[1:threshold_low])
+    median_median_new = median(c.median_history[threshold_high:end])
     return "generation >= $(c.min_size) && $(median_best_old) <= $(median_best_new) && $(median_median_old) <= $(median_median_new):\t$s"
 end
 function get_reason(c::StopWhenEvolutionStagnates)

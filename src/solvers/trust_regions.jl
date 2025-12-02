@@ -104,7 +104,7 @@ mutable struct TrustRegionsState{
             acceptance_rate::R,
             ρ_regularization::R,
             randomize::Bool,
-            stopping_citerion::SC,
+            stopping_criterion::SC,
             retraction_method::RTR,
             reduction_threshold::R,
             augmentation_threshold::R,
@@ -127,7 +127,7 @@ mutable struct TrustRegionsState{
         trs = new{P, T, Pr, St, SC, RTR, R, Proj}()
         trs.p = p
         trs.X = X
-        trs.stop = stopping_citerion
+        trs.stop = stopping_criterion
         trs.retraction_method = retraction_method
         trs.trust_region_radius = trust_region_radius
         trs.max_trust_region_radius = max_trust_region_radius::R

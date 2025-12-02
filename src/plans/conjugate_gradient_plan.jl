@@ -164,7 +164,7 @@ function get_gradient(cgs::ConjugateGradientDescentState)
     return cgs.X
 end
 
-_doc_CG_notaion = """
+_doc_CG_notation = """
 Denote the last iterate and gradient by ``p_k,X_k``,
 the current iterate and gradient by ``p_{k+1}, X_{k+1}``, respectively,
 as well as the last update direction by ``δ_k``.
@@ -195,7 +195,7 @@ struct ConjugateDescentCoefficientRule <: DirectionUpdateRule end
 
 Compute the (classical) conjugate gradient coefficient based on [Fletcher:1987](@cite) adapted to manifolds
 
-$(_doc_CG_notaion)
+$(_doc_CG_notation)
 
 Then the coefficient reads
 ```math
@@ -315,7 +315,7 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [DaiYuan:1999](@cite) adapted to
 Riemannian manifolds.
 
-$(_doc_CG_notaion)
+$(_doc_CG_notation)
 Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
 where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
 
@@ -394,7 +394,7 @@ end
 
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [FletcherReeves:1964](@cite) adapted to manifolds
 
-$(_doc_CG_notaion)
+$(_doc_CG_notation)
 
 Then the coefficient reads
 ```math
@@ -493,7 +493,7 @@ end
 
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [FletcherReeves:1964](@cite) adapted to manifolds
 
-$(_doc_CG_notaion)
+$(_doc_CG_notation)
 Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
 where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
 
@@ -602,7 +602,7 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [HestenesStiefel:1952](@cite) adapted to manifolds
 
 
-$(_doc_CG_notaion)
+$(_doc_CG_notation)
 Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
 where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
 
@@ -722,7 +722,7 @@ end
 
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [LiuStorey:1991](@cite) adapted to manifolds
 
-$(_doc_CG_notaion)
+$(_doc_CG_notation)
 Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
 where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
 
@@ -819,7 +819,7 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based
 on [PolakRibiere:1969](@cite) adapted to Riemannian manifolds.
 
-$(_doc_CG_notaion)
+$(_doc_CG_notation)
 Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
 where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
 
@@ -1002,7 +1002,7 @@ nearly orthogonal. See [HagerZhang:2006:1; page 12](@cite) (in the preprint, pag
 This method is named after E. Beale from his proceedings paper in 1972 [Beale:1972](@cite).
 This method acts as a _decorator_ to any existing [`DirectionUpdateRule`](@ref) `direction_update`.
 
-$(_doc_CG_notaion)
+$(_doc_CG_notation)
 
 Then a restart is performed, hence ``β_k = 0`` returned if
 

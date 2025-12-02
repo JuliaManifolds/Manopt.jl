@@ -461,7 +461,7 @@ end
 @doc """
     KKTVectorField{O<:ConstrainedManifoldObjective}
 
-Implement the vectorfield ``F`` KKT-conditions, inlcuding a slack variable
+Implement the vector field ``F`` KKT-conditions, including a slack variable
 for the inequality constraints.
 
 Given the [`LagrangianCost`](@ref)
@@ -498,7 +498,7 @@ and ``⊙`` denotes the Hadamard (or elementwise) product
 * `cmo` the [`ConstrainedManifoldObjective`](@ref)
 
 While the point `p` is arbitrary and usually not needed, it serves as internal memory
-in the computations. Furthermore Both fields together also calrify the product manifold structure to use.
+in the computations. Furthermore Both fields together also clarify the product manifold structure to use.
 
 # Constructor
 
@@ -538,7 +538,7 @@ end
 @doc """
     KKTVectorFieldJacobian{O<:ConstrainedManifoldObjective}
 
-Implement the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
+Implement the Jacobian of the vector field ``F`` of the KKT-conditions, including a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldAdjointJacobian`](@ref)..
 
 ```math
@@ -616,7 +616,7 @@ end
 @doc """
     KKTVectorFieldAdjointJacobian{O<:ConstrainedManifoldObjective}
 
-Implement the Adjoint of the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
+Implement the Adjoint of the Jacobian of the vector field ``F`` of the KKT-conditions, including a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldJacobian`](@ref).
 
 ```math
@@ -693,7 +693,7 @@ end
 @doc """
     KKTVectorFieldNormSq{O<:ConstrainedManifoldObjective}
 
-Implement the square of the norm of the vectorfield ``F`` of the KKT-conditions, inlcuding a slack variable
+Implement the square of the norm of the vector field ``F`` of the KKT-conditions, including a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref), where this functor applies the norm to.
 In [LaiYoshise:2024](@cite) this is called the merit function.
 

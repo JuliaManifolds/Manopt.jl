@@ -1,5 +1,5 @@
 @doc """
-    PrimalDualManifoldSemismoothNewtonObjective{E<:AbstractEvaluationType, TC, LO, ALO, PF, DPF, PG, DPG, L} <: AbstractPrimalDualManifoldObjective{E, TC, PF}
+    PrimalDualManifoldSemismoothNewtonObjective{E<:AbstractEvaluationType, TC, LO, TALO, PF, DPF, PG, DPG, L} <: AbstractPrimalDualManifoldObjective{E, TC, PF}
 
 Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [DiepeveenLellmann:2021](@cite)
 
@@ -19,7 +19,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
     PrimalDualManifoldSemismoothNewtonObjective(cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ)
 """
 mutable struct PrimalDualManifoldSemismoothNewtonObjective{
-        E <: AbstractEvaluationType, TC, PF, DPF, PG, DPG, LFO, ALO, L,
+        E <: AbstractEvaluationType, TC, PF, DPF, PG, DPG, LFO, TALO, L,
     } <: AbstractPrimalDualManifoldObjective{E, TC, PF}
     cost::TC
     prox_f!!::PF
@@ -27,7 +27,7 @@ mutable struct PrimalDualManifoldSemismoothNewtonObjective{
     prox_g_dual!!::PG
     diff_prox_g_dual!!::DPG
     linearized_forward_operator!!::LFO
-    adjoint_linearized_operator!!::ALO
+    adjoint_linearized_operator!!::TALO
     Λ!!::L
 end
 function PrimalDualManifoldSemismoothNewtonObjective(

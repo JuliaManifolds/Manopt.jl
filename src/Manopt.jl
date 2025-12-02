@@ -171,11 +171,11 @@ Rn(args...; kwargs...) = Rn(Val(Rn_default()), args...; kwargs...)
     Rn_default()
 
 Specify a default value to dispatch [`Rn`](@ref) on.
-This default is set to `Manifolds`, indicating, that when this package is loded,
+This default is set to `Manifolds`, indicating, that when this package is loaded,
 it is the preferred package to ask for a vector space space.
 
 The default within `Manopt.jl` is to use the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) from `ManifoldsBase.jl`.
-If you load `Manifolds.jl` this switches to using [`Euclidan`](@extref Manifolds.Euclidean).
+If you load `Manifolds.jl` this switches to using [`Euclidean`](@extref Manifolds.Euclidean).
 """
 Rn_default() = :Manifolds
 Rn(::Val{T}, args...; kwargs...) where {T} = DefaultManifold(args...; kwargs...)

@@ -22,10 +22,10 @@ which represents proximal maps ``$(_tex(:prox))_{λf_i}`` for summands ``f = f_1
 
 # Constructor
 
-    ManifoldProximalMapObjective(f, proxes_f::Union{Tuple,AbstractVector}, numer_of_proxes=onex(length(proxes));
+    ManifoldProximalMapObjective(f, proxes_f::Union{Tuple,AbstractVector}, number_of_proxes=onex(length(proxes));
        evaluation=Allocating)
 
-Generate a proximal problem with a tuple or vector of funtions, where by default every function computes a single prox
+Generate a proximal problem with a tuple or vector of functions, where by default every function computes a single prox
 of one component of ``f``.
 
     ManifoldProximalMapObjective(f, prox_f); evaluation=Allocating)
@@ -207,7 +207,7 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 $(_var(:Field, :p; add = [:as_Iterate]))
 $(_var(:Field, :stopping_criterion, "stop"))
 * `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``k``
-* `oder_type`: whether to use a randomly permuted sequence (`:FixedRandomOrder`),
+* `order_type`: whether to use a randomly permuted sequence (`:FixedRandomOrder`),
   a per cycle permuted sequence (`:RandomOrder`) or the default linear one.
 
 # Constructor
@@ -269,19 +269,21 @@ print the current iterates proximal point algorithm parameter given by
 mutable struct DebugProximalParameter <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugProximalParameter(;
             long::Bool = false,
             prefix = long ? "Proximal Map Parameter λ(i):" : "λ:",
             format = "$prefix%s",
             io::IO = stdout,
+            at_init::Bool = true,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugProximalParameter)(
         ::AbstractManoptProblem, cpps::CyclicProximalPointState, k::Int
     )
-    (k > 0) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(k))
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(k))
     return nothing
 end
 

@@ -2,7 +2,7 @@ using Manifolds, Manopt, Test
 
 @testset "Nonlinear lest squares plan" begin
     @testset "Test cost/residual/jacobian cases" begin
-        # a simple nlso objetive on R2
+        # a simple nlso objective on R2
         M = Euclidean(2)
         d1 = [1, 0]
         d2 = [0, 1]
@@ -73,7 +73,7 @@ using Manifolds, Manopt, Test
             get_jacobian!(M, G, nlso, p)
             @test G == get_jacobian(M, nlso, p)
             @test G == Gt
-            # since s1/s2 are the identity we can also always check agains the allocating
+            # since s1/s2 are the identity we can also always check against the allocating
             # jacobian of the objective
             G2 = get_jacobian(M, nlso.objective, p)
             @test G2 == Gt

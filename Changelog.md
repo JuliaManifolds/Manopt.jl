@@ -12,12 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `nonpositive_curvature_behavior` for `QuasiNewtonLimitedMemoryDirectionUpdate` that determines how transported (y, s) vector pairs are treated after transport; if their inner product gets too low, it may lead to non-positive-definite Hessians which needs to be avoided. (#554)
 * `GCPFinder` for handling direction selection in the presence of box (`Hyperrectangle`) constraints in quasi-Newton methods. This allows for L-BFGS-B-style box constraint handling. (#554)
+* add keyword argument `at_init` to some debug options to control whether they print already at the initialisation and hence before the first iteration (#552)
 
 ## [0.5.29] November 26, 2025
 
 ### Added
 
 * a keyword argument `atol` to the `ConstrainedManifoldObjective` to set a tolerance for constraint satisfaction. (#545)
+* a spell checker following [crate-ci/typos](https://github.com/crate-ci/typos)
 
 ### Fixed
 
@@ -253,7 +255,7 @@ present; they were changed to `retact_fused!`.
 * A scaling error that appeared only when calling `get_cost_function` on the new `ScaledManifoldObjective`.
 * Documentation issues for quasi-Newton solvers.
 * fixes a scaling error in quasi newton
-* Fixes printing of JuMP models containg Manopt solver.
+* Fixes printing of JuMP models containing Manopt solver.
 
 ## [0.5.12] April 13, 2025
 

@@ -460,7 +460,7 @@ Specify a step size that performs a backtracking to the interior of the domain o
 # Keyword arguments
 
 * `candidate_point=allocate_result(M, rand)`:
-  speciy a point to be used as memory for the candidate points.
+  specify a point to be used as memory for the candidate points.
 * `contraction_factor`: how to update ``s`` in the decrease step
 * `initial_stepsize``: specify an initial step size
 $(_var(:Keyword, :retraction_method))

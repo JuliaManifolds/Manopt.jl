@@ -192,7 +192,7 @@ $(_problem(:Default))
 PSO starts with an initial `swarm` [BorckmansIshtevaAbsil:2010](@cite) of points
 on the manifold.
 If no `swarm` is provided, the `swarm_size` keyword is used to generate random points.
-The computation can be perfomed in-place of `swarm`.
+The computation can be performed in-place of `swarm`.
 
 To this end, a swarm $_doc_swarm of particles is moved around the manifold `M` in the following manner.
 For every particle ``s_k^{(i)}`` the new particle velocities ``X_k^{(i)}`` are computed in every step ``i`` of the algorithm by
