@@ -39,11 +39,11 @@ function get_at_bound_index(M::ProductManifold, X, b)
 end
 
 @doc raw"""
-    hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M, p, X)
+    hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
 
 Compute $⟨X, B X⟩$, where $B$ is the (1, 1)-Hessian represented by `gh`.
 """
-function hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M, p, X)
+function hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
     m = length(gh.qn_du.memory_s)
     num_nonzero_rho = count(!iszero, gh.ρ)
 
