@@ -180,6 +180,172 @@ function get_residuals!(
     return V
 end
 
+#
+#
+# Robustifiers
+
+"""
+    AbstractRobustifierFunction <: Function
+
+An abstract type to represent robustifiers, i.e., functions ``ρ: ℝ → ℝ``,
+currently mainly used within [Levenberg-Marquardt](@ref).
+
+Usually these should be twice continuously differentiable functions with
+
+* ``ρ(0) = 0``
+* ``ρ'(0) = 1``
+
+to mimic the classical least squares behaviour around zero residuals.
+and
+* ``ρ'(x) < 1`` in outlier regions
+* ``ρ''(x) < 0`` in outlier regions
+
+Note that the robustifier is applioed to the squared residuals within the
+nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
+"""
+abstract type AbstractRobustifierFunction <: Function end
+
+function get_robustifier_values end
+
+"""
+    (a, b, c) = get_robustifier_values(ρ::AbstractRobustifierFunction, x::Real)
+
+Evaluate the robustifier ``ρ`` and its first two derivatives at `x`.
+
+# Returns
+A tuple `(a, b, c)` with
+* `a = ρ(x)`
+* `b = ρ'(x)`
+* `c = ρ''(x)` (might be `missing` if not defined)
+"""
+get_robustifier_values(ρ::AbstractRobustifierFunction, x::Real)
+
+"""
+    RobustifierFunction{F, G, H} <: AbstractRobustifierFunction
+
+A struct to represent a robustifier function ``ρ: ℝ → ℝ`` along with its first
+and second derivative ``ρ'`` and ``ρ''``, respectively.
+
+# Fields
+
+* `ρ::F` : the robustifier function
+* `ρ_prime::G` : the first derivative of the robustifier function
+* `ρ_double_prime::H` : the second derivative of the robustifier function
+
+# Constructor
+
+    RobustifierFunction(ρ, ρ_prime, ρ_double_prime)
+
+Generate a `RobustifierFunction` given the function `ρ` and its first and second derivative.
+"""
+struct RobustifierFunction{F <: Function, G <: Function, H <: Union{Function, Missing}} <: AbstractRobustifierFunction
+    ρ::F
+    ρ_prime::G
+    ρ_double_prime::H
+end
+
+function get_robustifier_values(ρf::RobustifierFunction, x::Real)
+    a = ρf.ρ(x)
+    b = ρf.ρ_prime(x)
+    c = ismissing(ρf.ρ_double_prime) ? missing : ρf.ρ_double_prime(x)
+    return (a, b, c)
+end
+
+"""
+    HuberRobustifier <: AbstractRobustifierFunction
+
+A robustifier that is based on the Huber function. Note that robustifiers act on the
+squared residuals within the nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
+
+Hence the parameter `δ` refers to the threshold in the squared residuals.
+
+THe formula for the Huber robustifier is given as
+```math
+ρ(x) = $(
+    _tex(
+        :cases,
+        "x & $(_tex(:text, "if")) x ≤ 1",
+        "2$(_tex(:sqrt, "x")) - 1 $(_tex(:text, "if")) x > 1"
+    )
+)
+```
+that is, its first and second derivatives read as
+```math
+ρ'(x) = $(
+    _tex(
+        :cases,
+        "1 & $(_tex(:text, "if")) x ≤ 1",
+        "$(_tex(:frac, "1", raw"\sqrt{x}")) $(_tex(:text, "if")) x > 1"
+    )
+)
+```
+and
+```math
+ρ''(x) =  $(
+    _tex(
+        :cases,
+        "0 & $(_tex(:text, "if")) x ≤ 1",
+        "-$(_tex(:frac, "1", "2 x^{3/2}")) $(_tex(:text, "if")) x > 1"
+    )
+)
+```
+
+If you want to use a different threshold `δ > 0`, use a
+[`ScaledRobustifierFunction`](@ref) to scale the residuals accordingly, or even use the
+shorthand `δ ∘ HuberRobustifier()`.
+"""
+struct HuberRobustifier <: AbstractRobustifierFunction end
+
+function get_robustifier_values(::HuberRobustifier, x::Real)
+    (x == 0) && (return (0.0, 1.0, 0.0))
+    a = x <= 1 ? x : 2 * sqrt(x) - 1
+    b = x <= 1 ? 1.0 : 1 / sqrt(x)
+    c = x <= 1 ? 0.0 : -1 / (2 * x^(3 / 2))
+    return (a, b, c)
+end
+
+"""
+    ScaledRobustifierFunction{F<:AbstractRobustifierFunction, R <: Real} <: AbstractRobustifierFunction
+
+A given robustifier function to scale the residuals a real value `scale` ``s``,
+i.e. we consider ``ρ_s(f(p)^2) = ρ(s^2⋅f(p)^2)`` for some [`AbstractRobustifierFunction`](@ref) ``ρ``.
+The function and its derivatives hence read as
+* ``ρ_s(x) = s^2 ρ(x / s^2)``
+* ``ρ_s'(x) = ρ'(x / s^2)``
+* ``ρ_s''(x) = $(_tex(:frac, "1", "s^2")) ρ''(x / s^2)``
+
+# Fields
+
+* `robustifier::F` : the underlying robustifier function
+* `scale::R` : the scaling factor `s`
+
+# Constructor
+
+    ScaledRobustifierFunction(robustifier::F, scale::R) where {F<:AbstractRobustifierFunction, R <: Real}
+    scale ∘ robustifier
+
+Generate a `ScaledRobustifierFunction` given a robustifier function and a scaling factor.
+"""
+struct ScaledRobustifierFunction{
+        F <: AbstractRobustifierFunction,
+        R <: Real,
+    } <: AbstractRobustifierFunction
+    robustifier::F
+    scale::R
+end
+
+Base.:∘(s::Real, rf::AbstractRobustifierFunction) = ScaledRobustifierFunction(rf, s)
+Base.:∘(s::Real, rf::ScaledRobustifierFunction) = ScaledRobustifierFunction(rf.robustifier, s * rf.scale)
+
+function get_robustifier_values(srf::ScaledRobustifierFunction, x::Real)
+    s2 = srf.scale^2
+    (a, b, c) = get_robustifier_values(srf.robustifier, x / s2)
+    a_scaled = s2 * a
+    b_scaled = b
+    c_scaled = ismissing(c) ? missing : c / s2
+    return (a_scaled, b_scaled, c_scaled)
+end
+
 @doc """
     LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
 
