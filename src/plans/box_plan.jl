@@ -403,7 +403,7 @@ function bound_direction_tweak!(::ProductManifold, d_out, d, p, p_cp)
     return d_out
 end
 
-struct GCPFinder{TM <: AbstractManifold, TP, TX, T_HA, TFU <: AbstractFPFPPUpdater}
+struct GCPFinder{TM <: AbstractManifold, TP, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
     M::TM
     p_cp::TP
     Y_tmp::TX
