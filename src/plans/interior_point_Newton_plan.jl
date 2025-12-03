@@ -93,6 +93,7 @@ $(_var(:Keyword, :retraction_method))
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 $(_var(:Keyword, :stepsize; default = "[`ArmijoLinesearch`](@ref)`()`", add = " with the [`InteriorPointCentralityCondition`](@ref) as
   additional condition to accept a step"))
+* `is_feasible_error=:error`: specify how to handle infeasible starting points, see [`is_feasible`](@ref) for options.
 
 and internally `_step_M` and `_step_p` for the manifold and point in the stepsize.
 """
@@ -126,6 +127,7 @@ mutable struct InteriorPointNewtonState{
     stepsize::TStepsize
     step_problem::TStepPr
     step_state::TStepSt
+    is_feasible_error::Symbol
     function InteriorPointNewtonState(
             M::AbstractManifold,
             cmo::ConstrainedManifoldObjective,
@@ -161,6 +163,7 @@ mutable struct InteriorPointNewtonState{
                 initial_stepsize = 1.0,
                 additional_decrease_condition = centrality_condition,
             ),
+            is_feasible_error::Symbol = :error,
             kwargs...,
         ) where {
             P,
@@ -194,6 +197,7 @@ mutable struct InteriorPointNewtonState{
         ips.stepsize = stepsize
         ips.step_problem = step_problem
         ips.step_state = step_state
+        ips.is_feasible_error = is_feasible_error
         return ips
     end
 end

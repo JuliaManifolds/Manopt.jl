@@ -93,6 +93,7 @@ $(_var(:Keyword, :sub_state; default = "[`ConjugateResidualState`](@ref)"))
 * `Y=zero(μ)`:  the initial gradient with respect to `μ`
 * `Z=zero(λ)`:  the initial gradient with respect to `λ`
 * `W=zero(s)`:  the initial gradient with respect to `s`
+* `is_feasible_error=:error`:  specify how to handle infeasible starting points, see [`is_feasible`](@ref) for options.
 
 As well as internal keywords used to set up these given keywords like `_step_M`, `_step_p`, `_sub_M`, `_sub_p`, and `_sub_X`,
 that should not be changed.
@@ -234,13 +235,14 @@ function interior_point_Newton!(
             sub_kwargs...,
         ),
         sub_problem::Pr = DefaultManoptProblem(TangentSpace(_sub_M, _sub_p), sub_objective),
+        is_feasible_error = :error,
         kwargs...,
     ) where {
         O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective},
         St <: AbstractManoptSolverState,
         Pr <: Union{F, AbstractManoptProblem} where {F},
     }
-    !is_feasible(M, cmo, p; error = :error)
+    !is_feasible(M, cmo, p; error = is_feasible_error)
     keywords_accepted(interior_point_Newton!; kwargs...)
     dcmo = decorate_objective!(M, cmo; kwargs...)
     dmp = DefaultManoptProblem(M, dcmo)
@@ -251,6 +253,7 @@ function interior_point_Newton!(
         retraction_method = retraction_method,
         step_problem = step_problem, step_state = step_state,
         stepsize = _produce_type(stepsize, _step_M),
+        is_feasible_error = is_feasible_error,
         kwargs...,
     )
     ips = decorate_state!(ips; kwargs...)
@@ -262,7 +265,7 @@ calls_with_kwargs(::typeof(interior_point_Newton!)) = (decorate_objective!, deco
 function initialize_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState)
     M = get_manifold(amp)
     cmo = get_objective(amp)
-    !is_feasible(M, cmo, ips.p; error = :error)
+    !is_feasible(M, cmo, ips.p; error = ips.is_feasible_error)
     return ips
 end
 
