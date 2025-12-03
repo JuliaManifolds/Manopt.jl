@@ -339,6 +339,7 @@ function quasi_Newton!(
         O <: Union{AbstractManifoldFirstOrderObjective{E}, AbstractDecoratedManifoldObjective{E}},
     }
     keywords_accepted(quasi_Newton!; kwargs...)
+    local local_dir_upd
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             M,
@@ -351,6 +352,9 @@ function quasi_Newton!(
             nonpositive_curvature_behavior = nonpositive_curvature_behavior,
             sy_tol = sy_tol,
         )
+        if requires_gcp(M)
+            local_dir_upd = QuasiNewtonLimitedMemoryBoxDirectionUpdate(local_dir_upd)
+        end
     else
         local_dir_upd = QuasiNewtonMatrixDirectionUpdate(
             M,
@@ -401,6 +405,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     M = get_manifold(mp)
     get_gradient!(mp, qns.X, qns.p)
     qns.direction_update(qns.η, mp, qns)
+    # current_max_length = get_parameter(qns.direction_update, Val(:max_length))
     if !(qns.nondescent_direction_behavior === :ignore)
         qns.nondescent_direction_value = real(inner(M, qns.p, qns.η, qns.X))
         if qns.nondescent_direction_value > 0

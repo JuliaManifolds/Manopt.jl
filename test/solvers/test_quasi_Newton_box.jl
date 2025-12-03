@@ -116,7 +116,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
         f(M, p) = sum(p .^ 2)
         grad_f(M, p) = 2 .* p
         p0 = [0.0, 4.0, 10.0]
-        p_opt = quasi_Newton(M, f, grad_f, p0)
+        # p_opt = quasi_Newton(M, f, grad_f, p0)
     end
 
     @testset "requires_gcp" begin

@@ -7,9 +7,24 @@ with a standard manifold. Otherwise return `false`.
 requires_gcp(::AbstractManifold) = false
 requires_gcp(M::ProductManifold) = requires_gcp(M.manifolds[1])
 
+@doc raw"""
+    mutable struct LimitedMemoryHessianApproximation end
+
+An approximation of Hessian of a scalar function of the form ``B_0 = θ I``,
+``B_{k+1} = B_k - W_k M_k W_k^{\mathrm{T}}``,
+where ``\theta > 0`` is an initial scaling guess.
+Matrix ``M_k = \begin{psmallmatrix}M_{11} & M_{21}^{\mathrm{T}}\\ M_{21} & M_{22}\end{psmallmatrix}``
+is stored using its blocks.
+Blocks ``W_k`` are (implicitly) composed from `memory_y` and `memory_s`.
+
+Initial scale ``\theta`` is stored in the field `initial_scale` but if the memory isn't empty,
+the current scale is set to squared norm of $s_k$ divided by inner product of ``s_k`` and ``y_k``
+where ``k`` is the oldest index for which the denominator is not equal to 0.
+
+See [ByrdNocedalSchnabel:1994](@cite) for details.
+"""
 mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
         TDU <: QuasiNewtonLimitedMemoryDirectionUpdate,
-        TM <: AbstractManifold,
         F <: Real,
         T_HM <: AbstractMatrix,
         V <: AbstractVector,
@@ -22,17 +37,59 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     M_11::T_HM
     M_21::T_HM
     M_22::T_HM
-    # buffer for calculating stuff
+    # buffer for calculating W_k blocks
     coords_Sk_X::V
     coords_Sk_Y::V
     coords_Yk_X::V
     coords_Yk_Y::V
 end
 
+function QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+        qn_du::QuasiNewtonLimitedMemoryDirectionUpdate{<:AbstractQuasiNewtonUpdateRule, T, F}
+    ) where {T, F <: Real}
+    memory_size = capacity(qn_du.memory_s)
+    M_11 = zeros(F, memory_size, memory_size)
+    M_21 = zeros(F, memory_size, memory_size)
+    M_22 = zeros(F, memory_size, memory_size)
+    coords_Sk_X = zeros(F, memory_size)
+    coords_Sk_Y = zeros(F, memory_size)
+    coords_Yk_X = zeros(F, memory_size)
+    coords_Yk_Y = zeros(F, memory_size)
+    return QuasiNewtonLimitedMemoryBoxDirectionUpdate{
+        typeof(qn_du), F, typeof(M_11), typeof(coords_Sk_X),
+    }(
+        qn_du,
+        qn_du.initial_scale,
+        M_11,
+        M_21,
+        M_22,
+        coords_Sk_X,
+        coords_Sk_Y,
+        coords_Yk_X,
+        coords_Yk_Y,
+    )
+end
+
 function initialize_update!(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     initialize_update!(ha.qn_du)
     return ha
 end
+
+function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
+        mp::AbstractManoptProblem, st
+    )
+    r = zero_vector(get_manifold(mp), get_iterate(st))
+    return d(r, mp, st)
+end
+function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
+        r, mp::AbstractManoptProblem, st
+    )
+    d.qn_du(r, mp, st)
+    # TODO find_gcp_direction!
+    return r
+end
+
+get_update_vector_transport(u::QuasiNewtonLimitedMemoryBoxDirectionUpdate) = get_update_vector_transport(u.qn_du)
 
 function get_at_bound_index(M::ProductManifold, X, b)
     return get_at_bound_index(M.manifolds[1], submanifold_component(M, X, Val(1)), b)
@@ -306,8 +363,8 @@ function (::GenericFPFPPUpdater)(M::AbstractManifold, p, old_f_prime, old_f_doub
 end
 
 function init_updater!(M::AbstractManifold, fpfpp_upd::LimitedMemoryFPFPPUpdater, d, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
-    fpfpp_upd.c_s .= 0
-    fpfpp_upd.c_y .= 0
+    fill!(fpfpp_upd.c_s, 0)
+    fill!(fpfpp_upd.c_y, 0)
     ii = 1
     for i in eachindex(ha.ρ)
         if iszero(ha.ρ[i])
@@ -420,7 +477,7 @@ function GCPFinder(
 end
 
 """
-    find_gcp!(gcp::GCPFinder, d_out, p, d, X)
+    find_gcp_direction!(gcp::GCPFinder, d_out, p, d, X)
 
 Find generalized Cauchy point looking from point `p` in direction `d` and save the tangent
 vector pointing at it to `d_out`. Gradient of the objective at `p` is `X`.
