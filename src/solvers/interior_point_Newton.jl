@@ -24,7 +24,7 @@ $(_doc_IPN_subsystem)
 
 see [`CondensedKKTVectorFieldJacobian`](@ref) and [`CondensedKKTVectorField`](@ref), respectively,
 for the reduced form, this is usually solved in.
-From the resulting `X` and `Z` in the reeuced form, the other two, ``Y``, ``W``, are then computed.
+From the resulting `X` and `Z` in the reduced form, the other two, ``Y``, ``W``, are then computed.
 
 From the gradient ``(X,Y,Z,W)`` at the current iterate ``(p, μ, λ, s)``,
 a line search is performed using the [`KKTVectorFieldNormSq`](@ref) norm of the KKT vector field (squared)
@@ -89,11 +89,11 @@ $(_var(:Keyword, :sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub
 $(_var(:Keyword, :sub_state; default = "[`ConjugateResidualState`](@ref)"))
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`:
-  th initial gradient with respect to `p`.
-* `Y=zero(μ)`:  the initial gradient with respect to `μ`
-* `Z=zero(λ)`:  the initial gradient with respect to `λ`
-* `W=zero(s)`:  the initial gradient with respect to `s`
-* `is_feasible_error=:error`:  specify how to handle infeasible starting points, see [`is_feasible`](@ref) for options.
+  the initial gradient with respect to `p`.
+* `Y=zero(μ)`: the initial gradient with respect to `μ`
+* `Z=zero(λ)`: the initial gradient with respect to `λ`
+* `W=zero(s)`: the initial gradient with respect to `s`
+* `is_feasible_error=:error`: specify how to handle infeasible starting points, see [`is_feasible`](@ref) for options.
 
 As well as internal keywords used to set up these given keywords like `_step_M`, `_step_p`, `_sub_M`, `_sub_p`, and `_sub_X`,
 that should not be changed.
