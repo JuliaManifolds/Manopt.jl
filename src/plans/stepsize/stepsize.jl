@@ -114,13 +114,19 @@ function (a::ArmijoLinesearchStepsize)(
     )
     p = get_iterate(s)
     grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
-    return a(mp, p, grad, η; initial_guess = a.initial_guess(mp, s, k, a.last_stepsize, η))
+    return a(mp, p, grad, η; initial_guess = a.initial_guess(mp, s, k, a.last_stepsize, η), kwargs...)
 end
 function (a::ArmijoLinesearchStepsize)(
-        mp::AbstractManoptProblem, p, X, η; initial_guess = 1.0, kwargs...
+        mp::AbstractManoptProblem, p, X, η; initial_guess::Real = 1.0, kwargs...
     )
     reset_messages!(a.messages)
     l = norm(get_manifold(mp), p, η)
+    local swse
+    if :stop_when_stepsize_exceeds in keys(kwargs)
+        swse = kwargs.stop_when_stepsize_exceeds
+    else
+        swse = (a.stop_when_stepsize_exceeds / l)
+    end
     a.last_stepsize = linesearch_backtrack!(
         get_manifold(mp),
         a.candidate_point,
@@ -133,7 +139,7 @@ function (a::ArmijoLinesearchStepsize)(
         gradient = X,
         retraction_method = a.retraction_method,
         stop_when_stepsize_less = (a.stop_when_stepsize_less / l),
-        stop_when_stepsize_exceeds = (a.stop_when_stepsize_exceeds / l),
+        stop_when_stepsize_exceeds = swse,
         stop_increasing_at_step = a.stop_increasing_at_step,
         stop_decreasing_at_step = a.stop_decreasing_at_step,
         additional_decrease_condition = a.additional_decrease_condition,
@@ -1251,7 +1257,7 @@ mutable struct NonmonotoneLinesearchStepsize{
             retraction_method::TRM = default_retraction_method(M),
             stepsize_reduction::R = 0.5,
             stop_when_stepsize_less::R = 0.0,
-            stop_when_stepsize_exceeds = real(max_stepsize(M)),
+            stop_when_stepsize_exceeds::R = real(max_stepsize(M)),
             stop_increasing_at_step::I = 100,
             stop_decreasing_at_step::I = 1000,
             storage::Union{Nothing, StoreStateAction} = StoreStateAction(

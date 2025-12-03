@@ -6,10 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased
 
 ### Added
 
+* `nonpositive_curvature_behavior` for `QuasiNewtonLimitedMemoryDirectionUpdate` that determines how transported (y, s) vector pairs are treated after transport; if their inner product gets too low, it may lead to non-positive-definite Hessians which needs to be avoided. (#554)
+* `GCPFinder` for handling direction selection in the presence of box (`Hyperrectangle`) constraints in quasi-Newton methods. This allows for L-BFGS-B-style box constraint handling. (#554)
 * add keyword argument `at_init` to some debug options to control whether they print already at the initialisation and hence before the first iteration (#552)
 
 ## [0.5.29] November 26, 2025
@@ -28,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Removed `atol` from `DebugFeasibility` and instead use the one newly added `atol` from the `ConstrainedManifoldObjective`. (#546)
 * Move from CompatHelper to dependabot to keep track of dependency updates in Julia packages. (#547)
 * moved the `ManoptTestSuite` module to a sub module `Manopt.Test` within `Manopt.jl`,
-so it can be easier reused by others as well (#550)
+  so it can be easier reused by others as well (#550)
 * moved to using a `Project.toml` for tests and an overall `[Workspace]`.
   This also allows finally to run single test files without installing all packages manually, but instead just switching to and instantiating the test environment. (#550)
 * for compatibility, state also `[source]` entries consistently in the sub `Project.toml` files. (#550)
