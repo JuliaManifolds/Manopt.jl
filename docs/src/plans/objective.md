@@ -144,6 +144,24 @@ get_differential_function
 get_gradient_function
 ```
 
+#### Robustifiers
+
+Inside the [`NonlinearLeastSquaresObjective`](@ref) one can use robustifiers. The following ones are provided
+
+```@docs
+SoftL1Robustifier
+AbstractRobustifierFunction
+CauchyRobustifier
+TolerantRobustifier
+TukeyRobustifier
+ComposedRobustifierFunction
+ArctanRobustifier
+ScaledRobustifierFunction
+RobustifierFunction
+IdentityRobustifier
+HuberRobustifier
+get_robustifier_values
+```
 ### Subgradient objective
 
 ```@docs

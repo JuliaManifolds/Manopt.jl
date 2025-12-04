@@ -305,6 +305,11 @@ export AbstractDecoratedManifoldObjective,
 # Functions
 export AbstractVectorFunction,
     AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
+# Robustifiers
+export AbstractRobustifierFunction, SoftL1Robustifier, AbstractRobustifierFunction,
+    CauchyRobustifier, TolerantRobustifier, TukeyRobustifier, ComposedRobustifierFunction,
+    ArctanRobustifier, ScaledRobustifierFunction, RobustifierFunction, IdentityRobustifier,
+    HuberRobustifier
 #
 # Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
@@ -408,6 +413,7 @@ export equality_constraints_length,
     get_hess_inequality_constraint!,
     get_hess_equality_constraint,
     get_hess_equality_constraint!,
+    get_robustifier_values,
     inequality_constraints_length,
     is_feasible
 # Subproblem cost/grad

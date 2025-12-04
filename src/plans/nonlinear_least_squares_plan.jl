@@ -296,7 +296,7 @@ The formula for the Cauchy robustifier is given as
 
 and its first and second derivatives read as
 
-```mathg
+```math
 ρ'(x) = $(_tex(:frac, "1", "1 + x"))
 ```
 
@@ -374,8 +374,8 @@ The formula for the Huber robustifier is given as
 ρ(x) = $(
     _tex(
         :cases,
-        "x & $(_tex(:text, "if")) x ≤ 1",
-        "2$(_tex(:sqrt, "x")) - 1 $(_tex(:text, "if")) x > 1"
+        "x & $(_tex(:text, "if ")) x ≤ 1",
+        "2$(_tex(:sqrt, "x")) - 1 & $(_tex(:text, "if ")) x > 1"
     )
 )
 ```
@@ -384,8 +384,8 @@ that is, its first and second derivatives read as
 ρ'(x) = $(
     _tex(
         :cases,
-        "1 & $(_tex(:text, "if")) x ≤ 1",
-        "$(_tex(:frac, "1", raw"\sqrt{x}")) $(_tex(:text, "if")) x > 1"
+        "1 & $(_tex(:text, "if ")) x ≤ 1",
+        "$(_tex(:frac, "1", raw"\sqrt{x}")) & $(_tex(:text, "if ")) x > 1"
     )
 )
 ```
@@ -394,8 +394,8 @@ and
 ρ''(x) =  $(
     _tex(
         :cases,
-        "0 & $(_tex(:text, "if")) x ≤ 1",
-        "-$(_tex(:frac, "1", "2 x^{3/2}")) $(_tex(:text, "if")) x > 1"
+        "0 & $(_tex(:text, "if ")) x ≤ 1",
+        "-$(_tex(:frac, "1", "2 x^{3/2}")) & $(_tex(:text, "if ")) x > 1"
     )
 )
 ```
@@ -552,8 +552,8 @@ The formula for the Tukey robustifier is given as
 ρ(x) = $(
     _tex(
         :cases,
-        "$(_tex(:frac, "1", "3"))(1-(1-x)^3) & $(_tex(:text, "if")) x ≤ 1",
-        "$(_tex(:frac, "1", "3")) & $(_tex(:text, "if")) x > 1"
+        "$(_tex(:frac, "1", "3"))(1-(1-x)^3) & $(_tex(:text, "if ")) x ≤ 1",
+        "$(_tex(:frac, "1", "3")) & $(_tex(:text, "if ")) x > 1"
     )
 )
 ```
@@ -562,8 +562,8 @@ that is, its first and second derivatives read as
 ρ'(x) = $(
     _tex(
         :cases,
-        "(1 - x)^2 & $(_tex(:text, "if")) x ≤ 1",
-        "0 & $(_tex(:text, "if")) x > 1"
+        "(1 - x)^2 & $(_tex(:text, "if ")) x ≤ 1",
+        "0 & $(_tex(:text, "if ")) x > 1"
     )
 )
 ```
@@ -572,8 +572,8 @@ and
 ρ''(x) =  $(
     _tex(
         :cases,
-        "-2(1 - x) & $(_tex(:text, "if")) x ≤ 1",
-        "0 & $(_tex(:text, "if")) x > 1"
+        "-2(1 - x) & $(_tex(:text, "if ")) x ≤ 1",
+        "0 & $(_tex(:text, "if ")) x > 1"
     )
 )
 ```
