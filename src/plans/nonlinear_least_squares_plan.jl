@@ -251,15 +251,79 @@ function get_robustifier_values(ρf::RobustifierFunction, x::Real)
     return (a, b, c)
 end
 
+#
+#
+# Concrete cases
+
+"""
+    ArctanRobustifier <: AbstractRobustifierFunction
+
+A robustifier that is based on the arctangent function.
+
+The formula for the robustifier is given as
+```math
+ρ(x) = $(_tex(:rm, "atan"))(x)
+```
+and its first and second derivatives read as
+```math
+ρ'(x) = $(_tex(:frac, "1", "1 + x^2"))
+```
+and
+```math
+ρ''(x) = -$(_tex(:frac, "2x", "(1 + x^2)^2"))
+```
+"""
+struct ArctanRobustifier <: AbstractRobustifierFunction end
+
+function get_robustifier_values(::ArctanRobustifier, x::Real)
+    (x == 0) && (return (0.0, 1.0, 0.0))
+    a = atan(x)
+    b = 1 / (1 + x^2)
+    c = -2 * x / (1 + x^2)^2
+    return (a, b, c)
+end
+
+"""
+    CauchyRobustifier <: AbstractRobustifierFunction
+
+A robustifier that is based on the Cauchy function. Note that robustifiers act on the
+squared residuals within the nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
+
+The formula for the Cauchy robustifier is given as
+```math
+ρ(x) = $(_tex(:log, "1 + x"))
+```
+
+and its first and second derivatives read as
+
+```mathg
+ρ'(x) = $(_tex(:frac, "1", "1 + x"))
+```
+
+and
+
+```math
+ρ''(x) = -$(_tex(:frac, "1", "(1 + x)^2"))
+```
+"""
+struct CauchyRobustifier <: AbstractRobustifierFunction end
+
+function get_robustifier_values(::CauchyRobustifier, x::Real)
+    (x == 0) && (return (0.0, 1.0, -1.0))
+    a = log(1 + x)
+    b = 1 / (1 + x)
+    c = -1 / (1 + x)^2
+    return (a, b, c)
+
+end
+
 """
     HuberRobustifier <: AbstractRobustifierFunction
 
 A robustifier that is based on the Huber function. Note that robustifiers act on the
 squared residuals within the nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
 
-Hence the parameter `δ` refers to the threshold in the squared residuals.
-
-THe formula for the Huber robustifier is given as
+The formula for the Huber robustifier is given as
 ```math
 ρ(x) = $(
     _tex(
@@ -305,6 +369,17 @@ function get_robustifier_values(::HuberRobustifier, x::Real)
 end
 
 """
+    IdentityRobustifier <: AbstractRobustifierFunction
+
+A robustifier that is the identity function, i.e., ``ρ(x) = x``.
+
+Its first and second derivatives read as ``ρ'(x) = 1`` and ``ρ''(x) = 0``.
+"""
+struct IdentityRobustifier <: AbstractRobustifierFunction end
+get_robustifier_values(::IdentityRobustifier, x::Real) = (x, 1.0, 0.0)
+
+
+"""
     ScaledRobustifierFunction{F<:AbstractRobustifierFunction, R <: Real} <: AbstractRobustifierFunction
 
 A given robustifier function to scale the residuals a real value `scale` ``s``,
@@ -344,6 +419,80 @@ function get_robustifier_values(srf::ScaledRobustifierFunction, x::Real)
     b_scaled = b
     c_scaled = ismissing(c) ? missing : c / s2
     return (a_scaled, b_scaled, c_scaled)
+end
+
+"""
+    SoftL1Robustifier <: AbstractRobustifierFunction
+
+A robustifier that is based on Soft ``ℓ_1`` norm.
+Note that robustifiers act on the
+squared residuals within the nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
+
+The formula for the robustifier is given as
+
+```math
+ρ(x) = 2($(_tex(:sqrt, "1 + x")) - 1)
+```
+and its first and second derivatives read as
+```math
+ρ'(x) = $(_tex(:frac, "1", "$(_tex(:sqrt, "1 + x"))"))
+```
+and
+```math
+ρ''(x) = -$(_tex(:frac, "1", "2 (1 + x)^{3/2}"))
+```
+"""
+struct SoftL1Robustifier <: AbstractRobustifierFunction end
+
+function get_robustifier_values(::SoftL1Robustifier, x::Real)
+    (x == 0) && (return (0.0, 1.0, -0.5))
+    s = sqrt(1 + x)
+    a = 2 * (s - 1)
+    b = 1 / s
+    c = -1 / (2 * s * (1 + x))
+    return (a, b, c)
+end
+
+"""
+    TolerantRobustifier <: AbstractRobustifierFunction
+
+A robustifier that is based on the tolerant function.
+
+The formula for the robustifier is given as
+```math
+ρ_{a,b}(x) = b$(_tex(:log, "1+ $(_tex(:rm, "e")){(s-a)/b}")) - b$(_tex(:log, "1 + $(_tex(:rm, "e")){-a/b}"))
+```
+and its first and second derivatives read as
+```math
+ρ'_{a,b}(x) = $(_tex(:frac, "1", "1 + $(_tex(:rm, "e")){(a - x)/b}"))
+```
+
+and
+
+```math
+ρ''_{a,b}(x) = $(_tex(:frac, "1", "4b$(_tex(:rm, "cosh"))^2$(_tex(:Bigl))($(_tex(:frac, "(a - x)", "2b"))$(_tex(:Bigr)))"))
+```
+"""
+struct TolerantRobustifier <: AbstractRobustifierFunction
+    a::Real
+    b::Real
+    function TolerantRobustifier(a::Real, b::Real)
+        (b <= 0) && throw(ArgumentError("Parameter b must be strictly positive, received $b"))
+        return new(a, b)
+    end
+end
+
+function get_robustifier_values(trf::TolerantRobustifier, x::Real)
+    a = trf.a
+    b = trf.b
+    exp_term1 = exp((x - a) / b)
+    exp_term2 = exp(-a / b)
+    s1 = log(1 + exp_term1)
+    s2 = log(1 + exp_term2)
+    val = b * (s1 - s2)
+    deriv1 = 1 / (1 + exp((a - x) / b))
+    deriv2 = 1 / (4 * b * cosh((a - x) / (2b))^2)
+    return (val, deriv1, deriv2)
 end
 
 @doc """
