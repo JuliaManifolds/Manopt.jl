@@ -318,6 +318,52 @@ function get_robustifier_values(::CauchyRobustifier, x::Real)
 end
 
 """
+ComposedRobustifierFunction{F<:AbstractRobustifierFunction, G<:AbstractRobustifierFunction} <: AbstractRobustifierFunction
+
+A robustifier that is the composition of two robustifier functions ``ρ = ρ_1 ∘ ρ_2``.
+
+For formulae for the first and second derivatives are
+```math
+ρ'(x) = ρ_1'(ρ_2(x)) ⋅ ρ_2'(x)
+```
+and
+```math
+ρ''(x) = ρ_1''(ρ_2(x)) ⋅ (ρ_2'(x))^2 + ρ_1'(ρ_2(x)) ⋅ ρ_2''(x)
+```
+
+# Fields
+* `ρ1::F` : the first robustifier function
+* `ρ2::G` : the second robustifier function
+
+# Constructor
+
+    ComposedRobustifierFunction(ρ1::F, ρ2::G) where {F<:AbstractRobustifierFunction, G<:AbstractRobustifierFunction}
+    ρ1 ∘ ρ2
+
+"""
+struct ComposedRobustifierFunction{
+        F <: AbstractRobustifierFunction,
+        G <: AbstractRobustifierFunction,
+    } <: AbstractRobustifierFunction
+    ρ1::F
+    ρ2::G
+end
+
+Base.:∘(rf1::AbstractRobustifierFunction, rf2::AbstractRobustifierFunction) =
+    ComposedRobustifierFunction(rf1, rf2)
+
+function get_robustifier_values(
+        crf::ComposedRobustifierFunction, x::Real
+    )
+    (a2, b2, c2) = get_robustifier_values(crf.ρ2, x)
+    (a1, b1, c1) = get_robustifier_values(crf.ρ1, a2)
+    a = a1
+    b = b1 * b2
+    c = (ismissing(c1) || ismissing(c2)) ? missing : c1 * b2^2 + b1 * c2
+    return (a, b, c)
+end
+
+"""
     HuberRobustifier <: AbstractRobustifierFunction
 
 A robustifier that is based on the Huber function. Note that robustifiers act on the
@@ -494,6 +540,58 @@ function get_robustifier_values(trf::TolerantRobustifier, x::Real)
     deriv2 = 1 / (4 * b * cosh((a - x) / (2b))^2)
     return (val, deriv1, deriv2)
 end
+
+"""
+    TukeyRobustifier <: AbstractRobustifierFunction
+
+A robustifier that is based on the Tukey function. Note that robustifiers act on the
+squared residuals within the nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
+
+The formula for the Tukey robustifier is given as
+```math
+ρ(x) = $(
+    _tex(
+        :cases,
+        "$(_tex(:frac, "1", "3"))(1-(1-x)^3) & $(_tex(:text, "if")) x ≤ 1",
+        "$(_tex(:frac, "1", "3")) & $(_tex(:text, "if")) x > 1"
+    )
+)
+```
+that is, its first and second derivatives read as
+```math
+ρ'(x) = $(
+    _tex(
+        :cases,
+        "(1 - x)^2 & $(_tex(:text, "if")) x ≤ 1",
+        "0 & $(_tex(:text, "if")) x > 1"
+    )
+)
+```
+and
+```math
+ρ''(x) =  $(
+    _tex(
+        :cases,
+        "-2(1 - x) & $(_tex(:text, "if")) x ≤ 1",
+        "0 & $(_tex(:text, "if")) x > 1"
+    )
+)
+```
+"""
+struct TukeyRobustifier <: AbstractRobustifierFunction end
+
+function get_robustifier_values(::TukeyRobustifier, x::Real)
+    (x == 0) && (return (0.0, 1.0, -2.0))
+    if x <= 1
+        a = (1 / 3) * (1 - (1 - x)^3)
+        b = (1 - x)^2
+        c = 2 * (x - 1)
+        return (a, b, c)
+    else
+        return (1 / 3, 0.0, 0.0)
+    end
+end
+
 
 @doc """
     LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
