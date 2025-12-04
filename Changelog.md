@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* add keyword argument `is_feasible_error` to `interior_point_Newton` to control how to handle infeasible starting points (#556)
 * add keyword argument `at_init` to some debug options to control whether they print already at the initialisation and hence before the first iteration (#552)
 
 ## [0.5.29] November 26, 2025
