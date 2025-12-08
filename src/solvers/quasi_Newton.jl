@@ -741,6 +741,7 @@ function fill_rho_i!(M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectio
     else
         d.ρ[i] = 1 / v
     end
+    return d
 end
 
 # Limited-memory update
