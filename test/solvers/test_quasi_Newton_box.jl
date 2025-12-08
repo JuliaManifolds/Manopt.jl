@@ -114,8 +114,8 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
     @testset "Pure Hyperrectangle" begin
         M = Hyperrectangle([-1.0, 2.0, -Inf], [2.0, Inf, 2.0])
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = 2 .* p
-        p0 = [0.0, 4.0, 10.0]
+        grad_f(M, p) = project(M, p, 2 .* p)
+        p0 = [0.0, 4.0, 1.0]
         # p_opt = quasi_Newton(M, f, grad_f, p0)
     end
 

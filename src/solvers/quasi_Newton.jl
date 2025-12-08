@@ -720,6 +720,29 @@ function update_hessian!(
     return d
 end
 
+function fill_rho_i!(M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectionUpdate, i::Int)
+    v = inner(M, p, d.memory_s[i], d.memory_y[i])
+    if d.nonpositive_curvature_behavior === :ignore && iszero(v)
+        d.ρ[i] = zero(eltype(d.ρ))
+        if length(d.message) > 0
+            d.message = replace(d.message, " i=" => " i=$i,")
+            d.message = replace(d.message, "summand in" => "summands in")
+        else
+            d.message = "The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i, ignoring summand in approximation."
+        end
+    elseif d.nonpositive_curvature_behavior === :byrd && v <= d.sy_tol * norm(M, p, d.memory_y[i])
+        d.ρ[i] = zero(eltype(d.ρ))
+        if length(d.message) > 0
+            d.message = replace(d.message, " i=" => " i=$i,")
+            d.message = replace(d.message, "summand in" => "summands in")
+        else
+            d.message = "The inner products ⟨s_i,y_i⟩ <= $(d.sy_tol * norm(M, p, d.memory_y[i])), i=$i, removing summand from approximation."
+        end
+    else
+        d.ρ[i] = 1 / v
+    end
+end
+
 # Limited-memory update
 function update_hessian!(
         d::QuasiNewtonLimitedMemoryDirectionUpdate{U},
@@ -735,16 +758,19 @@ function update_hessian!(
     p = get_iterate(st)
     reforming_required = false
     for i in start:length(d.memory_s)
+        # transport all stored tangent vectors in the tangent space of the next iterate
+        vector_transport_to!(
+            M, d.memory_s[i], p_old, d.memory_s[i], p, d.vector_transport_method
+        )
+        vector_transport_to!(
+            M, d.memory_y[i], p_old, d.memory_y[i], p, d.vector_transport_method
+        )
+
+        # what if division by zero happened here, setting to zero ignores this in the next step
+        # pre-compute in case inner is expensive
+        fill_rho_i!(M, p, d, i)
         if d.nonpositive_curvature_behavior === :byrd && iszero(d.ρ[i])
             reforming_required = true
-        else
-            # transport all stored tangent vectors in the tangent space of the next iterate
-            vector_transport_to!(
-                M, d.memory_s[i], p_old, d.memory_s[i], p, d.vector_transport_method
-            )
-            vector_transport_to!(
-                M, d.memory_y[i], p_old, d.memory_y[i], p, d.vector_transport_method
-            )
         end
     end
 
@@ -780,6 +806,9 @@ function update_hessian!(
     else
         push!(d.memory_y, copy(M, st.yk))
     end
+
+    fill_rho_i!(M, p, d, 1)
+
     return d
 end
 

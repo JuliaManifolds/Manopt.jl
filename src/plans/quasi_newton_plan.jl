@@ -690,28 +690,9 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
     end
     # backward pass
     for i in m:-1:1
-        # what if division by zero happened here, setting to zero ignores this in the next step
-        # pre-compute in case inner is expensive
-        v = inner(M, p, d.memory_s[i], d.memory_y[i])
-        if d.nonpositive_curvature_behavior === :ignore && iszero(v)
-            d.ρ[i] = zero(eltype(d.ρ))
-            if length(d.message) > 0
-                d.message = replace(d.message, " i=" => " i=$i,")
-                d.message = replace(d.message, "summand in" => "summands in")
-            else
-                d.message = "The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i, ignoring summand in approximation."
-            end
-        elseif d.nonpositive_curvature_behavior === :byrd && v <= d.sy_tol * norm(M, p, d.memory_y[i])
-            d.ρ[i] = zero(eltype(d.ρ))
-            if length(d.message) > 0
-                d.message = replace(d.message, " i=" => " i=$i,")
-                d.message = replace(d.message, "summand in" => "summands in")
-            else
-                d.message = "The inner products ⟨s_i,y_i⟩ <= $(d.sy_tol * norm(M, p, d.memory_y[i])), i=$i, removing summand from approximation."
-            end
-        else
-            d.ρ[i] = 1 / v
-        end
+        # d.ρ is precomputed in the Hessian update
+        fill_rho_i!(M, p, d, i)
+
         d.ξ[i] = inner(M, p, d.memory_s[i], r) * d.ρ[i]
         r .-= d.ξ[i] .* d.memory_y[i]
     end

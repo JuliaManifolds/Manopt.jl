@@ -85,7 +85,11 @@ function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
         r, mp::AbstractManoptProblem, st
     )
     d.qn_du(r, mp, st)
-    # TODO find_gcp_direction!
+    M = get_manifold(mp)
+    p = get_iterate(st)
+    X = get_gradient(st)
+    gcp = GCPFinder(M, p, d)
+    find_gcp_direction!(gcp, r, p, r, X)
     return r
 end
 
@@ -98,21 +102,21 @@ end
 @doc raw"""
     hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
 
-Compute $⟨X, B X⟩$, where $B$ is the (1, 1)-Hessian represented by `gh`.
+Compute ``⟨X, B X⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`.
 """
 function hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
     m = length(gh.qn_du.memory_s)
-    num_nonzero_rho = count(!iszero, gh.ρ)
+    num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
     normX_sqr = norm(M, p, X)^2
 
     if m == 0 || num_nonzero_rho == 0
-        return gh.initial_scale \ normX_sqr
+        return gh.qn_du.initial_scale \ normX_sqr
     end
 
     ii = 1
     for i in 1:m
-        if iszero(gh.ρ[i])
+        if iszero(gh.qn_du.ρ[i])
             continue
         end
         gh.coords_Yk_X[ii] = inner(M, p, gh.qn_du.memory_y[i], X)
@@ -129,20 +133,20 @@ end
 @doc raw"""
     hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b)
 
-Compute $⟨X, B X⟩$, where $B$ is the (1, 1)-Hessian represented by `gh`, and `X` is the
+Compute ``⟨X, B X⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`, and `X` is the
 unit vector along index `b`.
 """
 function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b)
     m = length(gh.qn_du.memory_s)
-    num_nonzero_rho = count(!iszero, gh.ρ)
+    num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
     if m == 0 || num_nonzero_rho == 0
-        return inv(gh.initial_scale)
+        return inv(gh.qn_du.initial_scale)
     end
 
     ii = 1
     for i in 1:m
-        if iszero(gh.ρ[i])
+        if iszero(gh.qn_du.ρ[i])
             continue
         end
         gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
@@ -159,21 +163,21 @@ end
 @doc raw"""
     hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b, Y)
 
-Compute $⟨X, B Y⟩$, where $B$ is the (1, 1)-Hessian represented by `gh`, where `X` is the
+Compute ``⟨X, B Y⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`, where `X` is the
 unit vector pointing at index `b`.
 """
 function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b, Y)
     m = length(gh.qn_du.memory_s)
-    num_nonzero_rho = count(!iszero, gh.ρ)
+    num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
     Yb = get_at_bound_index(M, Y, b)
     if m == 0 || num_nonzero_rho == 0
-        return gh.initial_scale * Yb
+        return gh.qn_du.initial_scale * Yb
     end
 
     ii = 1
     for i in 1:m
-        if iszero(gh.ρ[i])
+        if iszero(gh.qn_du.ρ[i])
             continue
         end
         gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
@@ -191,65 +195,42 @@ function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstract
     return hess_val_from_wmwt_coords(gh, Yb, coords_Yk_X, coords_Sk_X, coords_Yk_Y, coords_Sk_Y)
 end
 
-function set_M_current_scale!(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
-    M = gh.M
-    p = gh.p
+function set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     m = length(gh.qn_du.memory_s)
-    for i in m:-1:1
-        # what if division by zero happened here, setting to zero ignores this in the next step
-        # pre-compute in case inner is expensive
-        v = inner(M, p, gh.qn_du.memory_s[i], gh.qn_du.memory_y[i])
-        if isnan(v)
-            println("NaN in memory")
-            @show gh.qn_du.memory_s[i]
-            @show gh.qn_du.memory_y[i]
-        end
-        if v < gh.iszero_abstol
-            # The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i, ignoring summand in approximation.
-            # (s, y) pairs with negative inner product are broken anyway, so we can reject them here
-            gh.ρ[i] = zero(eltype(gh.ρ))
-        else
-            gh.ρ[i] = 1 / v
-            # it's so close to zero that we can skip it
-            if abs(gh.ρ[i]) < gh.iszero_abstol
-                gh.ρ[i] = zero(eltype(gh.ρ))
-            end
-        end
-    end
     last_safe_index = -1
-    for i in eachindex(gh.ρ)
-        if abs(gh.ρ[i]) > 0
+    for i in eachindex(gh.qn_du.ρ)
+        if abs(gh.qn_du.ρ[i]) > 0
             last_safe_index = i
         end
     end
 
     if (last_safe_index == -1)
         # All memory yield zero inner products
-        gh.current_scale = gh.initial_scale
+        gh.current_scale = gh.qn_du.initial_scale
         gh.M_11 = fill(0.0, 0, 0)
         gh.M_21 = fill(0.0, 0, 0)
         gh.M_22 = fill(0.0, 0, 0)
         return gh
     end
 
-    invA = Diagonal([-ri for ri in gh.ρ if !iszero(ri)])
-    num_nonzero_rho = count(!iszero, gh.ρ)
+    invA = Diagonal([-ri for ri in gh.qn_du.ρ if !iszero(ri)])
+    num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
     Lk = LowerTriangular(zeros(num_nonzero_rho, num_nonzero_rho))
 
     # total scaling factor for the initial Hessian
-    gh.current_scale = (gh.ρ[last_safe_index] * norm(M, p, gh.qn_du.memory_y[last_safe_index])^2) / gh.initial_scale
+    gh.current_scale = (gh.qn_du.ρ[last_safe_index] * norm(M, p, gh.qn_du.memory_y[last_safe_index])^2) / gh.qn_du.initial_scale
 
     tsksk = Symmetric(zeros(num_nonzero_rho, num_nonzero_rho))
     ii = 1
     # fill Dk and Lk
     for i in 1:m
-        if iszero(gh.ρ[i])
+        if iszero(gh.qn_du.ρ[i])
             continue
         end
         jj = 1
         for j in 1:m
-            if iszero(gh.ρ[j])
+            if iszero(gh.qn_du.ρ[j])
                 continue
             end
             if jj < ii
@@ -307,7 +288,7 @@ function update_hessian!(
     )
     (capacity(gh.qn_du.memory_s) == 0) && return gh
     update_hessian!(gh.qn_du, mp, st, p_old, k)
-    set_M_current_scale!(gh)
+    set_M_current_scale!(get_manifold(mp), get_iterate(st), gh)
     return gh
 end
 
@@ -321,12 +302,12 @@ line segments in `GCPFinder`.
 abstract type AbstractFPFPPUpdater end
 
 """
-    init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, d, ha)
+    init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
 
 Method for initialization of `AbstractFPFPPUpdater` `fpfpp_upd` just before the loop
 that examines subsequent intervals for GCP. By default it does nothing.
 """
-init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, d, ha) = fpfpp_upd
+init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate) = fpfpp_upd
 
 """
     struct GenericFPFPPUpdater <: AbstractFPFPPUpdater end
@@ -352,7 +333,7 @@ struct LimitedMemoryFPFPPUpdater{TV <: AbstractVector} <: AbstractFPFPPUpdater
 end
 
 function get_default_fpfpp_updater(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
-    return LimitedMemoryFPFPPUpdater(similar(ha.ρ), similar(ha.ρ), similar(ha.ρ), similar(ha.ρ))
+    return LimitedMemoryFPFPPUpdater(similar(ha.qn_du.ρ), similar(ha.qn_du.ρ), similar(ha.qn_du.ρ), similar(ha.qn_du.ρ))
 end
 
 function (::GenericFPFPPUpdater)(M::AbstractManifold, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d_old)
@@ -362,17 +343,17 @@ function (::GenericFPFPPUpdater)(M::AbstractManifold, p, old_f_prime, old_f_doub
     return f_prime, f_double_prime
 end
 
-function init_updater!(M::AbstractManifold, fpfpp_upd::LimitedMemoryFPFPPUpdater, d, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+function init_updater!(M::AbstractManifold, fpfpp_upd::LimitedMemoryFPFPPUpdater, p, d, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     fill!(fpfpp_upd.c_s, 0)
     fill!(fpfpp_upd.c_y, 0)
     ii = 1
-    for i in eachindex(ha.ρ)
-        if iszero(ha.ρ[i])
+    for i in eachindex(ha.qn_du.ρ)
+        if iszero(ha.qn_du.ρ[i])
             continue
         end
 
-        fpfpp_upd.p_s[ii] = ha.current_scale * inner(M, ha.p, ha.memory_s[i], d)
-        fpfpp_upd.p_y[ii] = inner(M, ha.p, ha.memory_y[i], d)
+        fpfpp_upd.p_s[ii] = ha.current_scale * inner(M, p, ha.qn_du.memory_s[i], d)
+        fpfpp_upd.p_y[ii] = inner(M, p, ha.qn_du.memory_y[i], d)
         ii += 1
     end
     return fpfpp_upd
@@ -380,20 +361,20 @@ end
 
 function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(M::AbstractManifold, p, old_f_prime, old_f_double_prime, dt, db, gb, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, z, d_old)
 
-    m = length(ha.memory_s)
-    num_nonzero_rho = count(!iszero, ha.ρ)
+    m = length(ha.qn_du.memory_s)
+    num_nonzero_rho = count(!iszero, ha.qn_du.ρ)
 
     iss_eb_z = get_at_bound_index(M, z, b)
     iss_eb_d = get_at_bound_index(M, d_old, b)
 
     ii = 1
     for i in 1:m
-        if iszero(ha.ρ[i])
+        if iszero(ha.qn_du.ρ[i])
             continue
         end
         # setting _X to w_b from the paper
-        ha.coords_Yk_X[ii] = get_at_bound_index(M, ha.memory_y[i], b)
-        ha.coords_Sk_X[ii] = ha.current_scale * get_at_bound_index(M, ha.memory_s[i], b)
+        ha.coords_Yk_X[ii] = get_at_bound_index(M, ha.qn_du.memory_y[i], b)
+        ha.coords_Sk_X[ii] = ha.current_scale * get_at_bound_index(M, ha.qn_du.memory_s[i], b)
 
         ii += 1
     end
@@ -550,7 +531,7 @@ function find_gcp_direction!(gcp::GCPFinder, d_out, p, d, X)
     t_current, b = pop!(F)
     dt = t_current - t_old
 
-    init_updater!(M, gcp.fpfpp_updater, d, gcp.ha)
+    init_updater!(M, gcp.fpfpp_updater, p, d, gcp.ha)
     # b can be -1 if it corresponds to the max stepsize limit on the manifold part
     while dt_min > dt && b != -1
         gcp.Y_tmp .+= dt .* d
