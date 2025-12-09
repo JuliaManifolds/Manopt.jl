@@ -42,6 +42,15 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     coords_Sk_Y::V
     coords_Yk_X::V
     coords_Yk_Y::V
+    last_gcp_result::Symbol
+end
+
+function get_parameter(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate, ::Val{:max_stepsize})
+    if d.last_gcp_result === :found_limited
+        return 1.0
+    else
+        return Inf
+    end
 end
 
 function QuasiNewtonLimitedMemoryBoxDirectionUpdate(
@@ -67,6 +76,7 @@ function QuasiNewtonLimitedMemoryBoxDirectionUpdate(
         coords_Sk_Y,
         coords_Yk_X,
         coords_Yk_Y,
+        :not_searched,
     )
 end
 
@@ -89,7 +99,7 @@ function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
     p = get_iterate(st)
     X = get_gradient(st)
     gcp = GCPFinder(M, p, d)
-    find_gcp_direction!(gcp, r, p, r, X)
+    d.last_gcp_result = find_gcp_direction!(gcp, r, p, r, X)
     return r
 end
 

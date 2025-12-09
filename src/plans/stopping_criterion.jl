@@ -722,7 +722,7 @@ Create a stopping criterion with threshold `ε` for the gradient, that is, this 
 indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`,
 where the norm to use can be specified in the `norm=` keyword.
 """
-mutable struct StopWhenGradientNormLess{F, TF, N <: Union{Missing, Real}} <: StoppingCriterion
+mutable struct StopWhenGradientNormLess{F, TF <: Real, N <: Union{Missing, Real}} <: StoppingCriterion
     norm::F
     threshold::TF
     last_change::TF
@@ -730,7 +730,7 @@ mutable struct StopWhenGradientNormLess{F, TF, N <: Union{Missing, Real}} <: Sto
     outer_norm::N
     function StopWhenGradientNormLess(
             ε::TF; norm::F = norm, outer_norm::N = missing
-        ) where {F, TF, N <: Union{Missing, Real}}
+        ) where {F, TF <: Real, N <: Union{Missing, Real}}
         return new{F, TF, N}(norm, ε, zero(ε), -1, outer_norm)
     end
 end
@@ -769,11 +769,76 @@ function show(io::IO, c::StopWhenGradientNormLess)
 end
 
 """
-    set_parameter!(c::StopWhenGradientNormLess, :MinGradNorm, v::Float64)
+    set_parameter!(c::StopWhenGradientNormLess{F,TF}, ::Val{:MinGradNorm}, v::TF) where {F,TF<:Real}
 
 Update the minimal gradient norm when an algorithm shall stop
 """
-function set_parameter!(c::StopWhenGradientNormLess, ::Val{:MinGradNorm}, v::Float64)
+function set_parameter!(c::StopWhenGradientNormLess{F, TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF <: Real}
+    c.threshold = v
+    return c
+end
+
+"""
+    StopWhenProjectedMinusGradientNormLess <: StoppingCriterion
+
+A stopping criterion similar to [`StopWhenGradientNormLess`](@ref), although it checks the
+norm of projected minus gradient. It is primarily useful for optimization involving
+[`Hyperrectangle`](@extref).
+"""
+mutable struct StopWhenProjectedMinusGradientNormLess{F, TF <: Real, N <: Union{Missing, Real}} <: StoppingCriterion
+    norm::F
+    threshold::TF
+    last_change::TF
+    at_iteration::Int
+    outer_norm::N
+    function StopWhenProjectedMinusGradientNormLess(
+            ε::TF; norm::F = norm, outer_norm::N = missing
+        ) where {F, TF <: Real, N <: Union{Missing, Real}}
+        return new{F, TF, N}(norm, ε, zero(ε), -1, outer_norm)
+    end
+end
+
+function (sc::StopWhenProjectedMinusGradientNormLess)(
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
+    M = get_manifold(mp)
+    if k == 0 # reset on init
+        sc.at_iteration = -1
+    end
+    if (k > 0)
+        r = (has_components(M) && !ismissing(sc.outer_norm)) ? (sc.outer_norm,) : ()
+        p = get_iterate(s)
+        mpg = project(M, p, -get_gradient(s))
+        sc.last_change = sc.norm(M, p, mpg, r...)
+        if sc.last_change < sc.threshold
+            sc.at_iteration = k
+            return true
+        end
+    end
+    return false
+end
+function get_reason(c::StopWhenProjectedMinusGradientNormLess)
+    if (c.last_change < c.threshold) && (c.at_iteration >= 0)
+        return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the gradient norm ($(c.last_change)) is less than $(c.threshold).\n"
+    end
+    return ""
+end
+function status_summary(c::StopWhenProjectedMinusGradientNormLess)
+    has_stopped = (c.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return "|grad f| < $(c.threshold): $s"
+end
+indicates_convergence(c::StopWhenProjectedMinusGradientNormLess) = true
+function show(io::IO, c::StopWhenProjectedMinusGradientNormLess)
+    return print(io, "StopWhenProjectedMinusGradientNormLess($(c.threshold))\n    $(status_summary(c))")
+end
+
+"""
+    set_parameter!(c::StopWhenProjectedMinusGradientNormLess{F,TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF<:Real}
+
+Update the minimal gradient norm when an algorithm shall stop.
+"""
+function set_parameter!(c::StopWhenProjectedMinusGradientNormLess{F, TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF <: Real}
     c.threshold = v
     return c
 end

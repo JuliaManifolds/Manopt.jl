@@ -114,9 +114,12 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
     @testset "Pure Hyperrectangle" begin
         M = Hyperrectangle([-1.0, 2.0, -Inf], [2.0, Inf, 2.0])
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = project(M, p, 2 .* p)
+        function grad_f(M, p)
+            return project(M, p, 2 .* p)
+        end
         p0 = [0.0, 4.0, 1.0]
-        # p_opt = quasi_Newton(M, f, grad_f, p0)
+        p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedMinusGradientNormLess(1.0e-6) | StopAfterIteration(10))
+        @test p_opt ≈ [0, 2, 0]
     end
 
     @testset "requires_gcp" begin

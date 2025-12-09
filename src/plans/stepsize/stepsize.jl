@@ -1724,6 +1724,9 @@ function (a::WolfePowellLinesearchStepsize)(
     max_step_increase = ifelse(
         isfinite(a.max_stepsize), min(1.0e9, a.max_stepsize / grad_norm), 1.0e9
     )
+    if :stop_when_stepsize_exceeds in keys(kwargs)
+        max_step_increase = min(max_step_increase, kwargs[:stop_when_stepsize_exceeds])
+    end
     step = ifelse(isfinite(a.max_stepsize), min(1.0, a.max_stepsize / grad_norm), 1.0)
     s_plus = step
     s_minus = step
