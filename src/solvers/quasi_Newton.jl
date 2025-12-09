@@ -781,14 +781,20 @@ function update_hessian!(
         memory_size = capacity(d.memory_s)
         new_scb = CircularBuffer{T}(memory_size)
         new_ycb = CircularBuffer{T}(memory_size)
+        new_ρ = similar(d.ρ)
+        fill!(new_ρ, 0)
+        j = 1
         for i in 1:length(d.memory_s)
             if !iszero(d.ρ[i])
                 push!(new_scb, d.memory_s[i])
                 push!(new_ycb, d.memory_y[i])
+                new_ρ[j] = d.ρ[i]
+                j += 1
             end
         end
         d.memory_s = new_scb
         d.memory_y = new_ycb
+        d.ρ = new_ρ
     end
 
     # add newest
@@ -797,6 +803,7 @@ function update_hessian!(
         old_sk = popfirst!(d.memory_s)
         copyto!(M, old_sk, st.sk)
         push!(d.memory_s, old_sk)
+        circshift!(d.ρ, -1)
     else
         push!(d.memory_s, copy(M, st.sk))
     end
@@ -808,7 +815,7 @@ function update_hessian!(
         push!(d.memory_y, copy(M, st.yk))
     end
 
-    fill_rho_i!(M, p, d, 1)
+    fill_rho_i!(M, p, d, length(d.memory_s))
 
     return d
 end
@@ -838,6 +845,7 @@ function update_hessian!(
             vector_transport_to!(
                 M, d.update.memory_y[i], p_old, d.update.memory_y[i], p, d.update.vector_transport_method,
             )
+            fill_rho_i!(M, p, d.update, i)
         end
     end
     return d

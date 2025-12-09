@@ -691,8 +691,6 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
     # backward pass
     for i in m:-1:1
         # d.ρ is precomputed in the Hessian update
-        fill_rho_i!(M, p, d, i)
-
         d.ξ[i] = inner(M, p, d.memory_s[i], r) * d.ρ[i]
         r .-= d.ξ[i] .* d.memory_y[i]
     end
