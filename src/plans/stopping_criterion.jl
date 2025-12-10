@@ -783,7 +783,7 @@ end
 
 A stopping criterion similar to [`StopWhenGradientNormLess`](@ref), although it checks the
 norm of projected minus gradient. It is primarily useful for optimization involving
-[`Hyperrectangle`](@extref).
+[`Hyperrectangle`](@extref Manifolds.Hyperrectangle).
 
 On manifolds with boundary and manifolds with corners, for a tangent vector ``X``,
 ``-X`` might not be a valid tangent vector. As an example, consider the objective
