@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * fixed a few typos in the documentation (#557)
+* fixed a bug in `StopWhenRepeated` where it stopped already at initialisation if the interior stopping criterion was satisfied (#558)
 
 ## [0.5.29] November 26, 2025
 
