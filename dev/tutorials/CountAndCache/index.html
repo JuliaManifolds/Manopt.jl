@@ -97,7 +97,7 @@ end</code></pre><pre><code class="nohighlight hljs">g_grad_g! (generic function 
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 25),
     return_objective=true,
-)</code></pre><pre><code class="nohighlight hljs">  1.193055 seconds (2.29 M allocations: 114.720 MiB, 99.63% compilation time)
+)</code></pre><pre><code class="nohighlight hljs">  1.277256 seconds (2.30 M allocations: 115.448 MiB, 2.79% gc time, 99.63% compilation time)
 
 ## Cache
   * :Cost     : 25/25 entries of type Float64 used
@@ -113,7 +113,7 @@ To access the solver result, call `get_solver_result` on this variable.</code></
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 25),
     return_objective=true,
-)</code></pre><pre><code class="nohighlight hljs">  0.810828 seconds (1.03 M allocations: 62.518 MiB, 3.62% gc time, 99.32% compilation time)
+)</code></pre><pre><code class="nohighlight hljs">  0.781595 seconds (1.03 M allocations: 62.543 MiB, 99.31% compilation time)
 
 ## Cache
   * :Cost     : 25/25 entries of type Float64 used
@@ -160,7 +160,7 @@ grad_g3!(M, X, p) = storage_g(Val(:Gradient), M, X, p)
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 2),
     return_objective=true#, return_state=true
-)</code></pre><pre><code class="nohighlight hljs">  0.726920 seconds (951.15 k allocations: 48.173 MiB, 99.44% compilation time)
+)</code></pre><pre><code class="nohighlight hljs">  0.725545 seconds (951.72 k allocations: 48.207 MiB, 99.44% compilation time)
 
 ## Cache
   * :Cost     : 2/2 entries of type Float64 used
@@ -199,7 +199,7 @@ grad_g4!(M, X, p) = cache_g(Val(:Gradient), M, X, p)
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 25),
     return_objective=true,
-)</code></pre><pre><code class="nohighlight hljs">  0.699524 seconds (834.36 k allocations: 42.853 MiB, 99.29% compilation time)
+)</code></pre><pre><code class="nohighlight hljs">  0.757392 seconds (834.92 k allocations: 42.885 MiB, 4.54% gc time, 99.34% compilation time)
 
 ## Cache
   * :Cost     : 25/25 entries of type Float64 used
@@ -220,9 +220,9 @@ g(N, p4) - f_star</code></pre><pre><code class="nohighlight hljs">1.677058492077
   [8ac3fa9e] LRUCache v1.6.2
   [af67fdf4] ManifoldDiff v0.4.5
   [1cead3c2] Manifolds v0.11.7
-  [3362f125] ManifoldsBase v2.2.1
+  [3362f125] ManifoldsBase v2.3.0
   [0fc0a36d] Manopt v0.5.29 `.`
   [91a5bcdd] Plots v1.41.2
   [731186ca] RecursiveArrayTools v3.39.0
   [37e2e46d] LinearAlgebra v1.12.0
-  [9a3f8284] Random v1.11.0</code></pre><p>This tutorial was last rendered November 29, 2025, 11:25:24.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../EmbeddingObjectives/">« Define objectives in the embedding</a><a class="docs-footer-nextpage" href="../HowToDebug/">Print debug output »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 4 December 2025 14:31">Thursday 4 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  [9a3f8284] Random v1.11.0</code></pre><p>This tutorial was last rendered December 10, 2025, 09:44:30.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../EmbeddingObjectives/">« Define objectives in the embedding</a><a class="docs-footer-nextpage" href="../HowToDebug/">Print debug output »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Wednesday 10 December 2025 09:52">Wednesday 10 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
