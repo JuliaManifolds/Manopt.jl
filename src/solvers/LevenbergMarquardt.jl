@@ -240,6 +240,7 @@ function default_lm_lin_solve!(sk, JJ, grad_f_c)
     return sk
 end
 
+
 function step_solver!(
         dmp::DefaultManoptProblem{mT, <:NonlinearLeastSquaresObjective},
         lms::LevenbergMarquardtState,
@@ -253,6 +254,9 @@ function step_solver!(
         get_jacobian!(M, lms.jacobian, nlso, lms.p)
     end
     λk = lms.damping_term * norm(lms.residual_values)^2
+    # --- check to move this solving in Coordinates to a sub-method to be able to replace it
+    # we pass problem and state; that should be enough.
+    #
     basis_ox = get_basis(nlso.objective.jacobian_type)
     JJ = transpose(lms.jacobian) * lms.jacobian + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
@@ -264,6 +268,7 @@ function step_solver!(
     get_vector!(M, lms.X, lms.p, grad_f_c, basis_ox)
 
     get_vector!(M, lms.step_vector, lms.p, sk, basis_ox)
+    # --- end.
     lms.last_stepsize = norm(M, lms.p, lms.step_vector)
     temp_x = retract(M, lms.p, lms.step_vector, lms.retraction_method)
 

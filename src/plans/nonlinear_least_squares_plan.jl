@@ -592,6 +592,18 @@ function get_robustifier_values(::TukeyRobustifier, x::Real)
     end
 end
 
+#
+#
+# Subproblem for LM
+
+struct LevenbergMarquardtLinearSubproblem{F}
+    linear_solver!::F
+end
+
+function (lmls::LevenbergMarquardtLinearSubproblem)(sk, JJ, grad_f_c)
+    lmls.linear_solver!(sk, JJ, grad_f_c)
+end
+
 
 @doc """
     LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
@@ -653,7 +665,9 @@ mutable struct LevenbergMarquardtState{
         TJac,
         TGrad,
         Tparams <: Real,
-        TLS,
+        Pr,
+        St,
+        Sm <: AbstractRobustifierFunction
     } <: AbstractGradientSolverState
     p::P
     stop::TStop
@@ -670,7 +684,9 @@ mutable struct LevenbergMarquardtState{
     β::Tparams
     expect_zero_residual::Bool
     last_step_successful::Bool
-    linear_subsolver!::TLS
+    sub_problem::Pr
+    sub_state::St
+    smoothing::Sm
     function LevenbergMarquardtState(
             M::AbstractManifold,
             initial_residual_values::Tresidual_values,
@@ -685,10 +701,17 @@ mutable struct LevenbergMarquardtState{
             damping_term_min::Real = 0.1,
             β::Real = 5.0,
             expect_zero_residual::Bool = false,
-            linear_subsolver!::TLS = (default_lm_lin_solve!),
-        ) where {P, Tresidual_values, TJac, TGrad, TLS}
+            linear_subsolver! = nothing, #remove on next breaking release
+            sub_problem::Pr = linear_subsolver!,
+            sub_state::St = InplaceEvaluation(),
+            smoothing::Sm = IdentityRobustifier()
+        ) where {P, Tresidual_values, TJac, TGrad, Pr, St, Sm<:AbstractRobustifierFunction}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
+        end
+        if linear_subsolver! !== nothing
+            @warn "The keyword argument `linear_subsolver!` is deprecated and will be removed in future releases. Please use `sub_problem` and `sub_state` instead."
+            sub_problem = LevenbergMarquardtLinearSubproblem(linear_subsolver!)
         end
         if damping_term_min <= 0
             throw(
@@ -701,16 +724,11 @@ mutable struct LevenbergMarquardtState{
             throw(ArgumentError("Value of β must be strictly above 1, received $β"))
         end
         Tparams = promote_type(typeof(η), typeof(damping_term_min), typeof(β))
+        SC = typeof(stopping_criterion),
+        RM = typeof(retraction_method),
         return new{
-            P,
-            typeof(stopping_criterion),
-            typeof(retraction_method),
-            Tresidual_values,
-            TJac,
-            TGrad,
-            Tparams,
-            TLS,
-        }(
+            P, SC, RM, Tresidual_values, TJac, TGrad, Tparams, Pr, St,
+            }(
             p,
             stopping_criterion,
             retraction_method,
@@ -726,7 +744,9 @@ mutable struct LevenbergMarquardtState{
             β,
             expect_zero_residual,
             true,
-            linear_subsolver!,
+            sub_problem,
+            sub_state,
+            smoothing,
         )
     end
 end
