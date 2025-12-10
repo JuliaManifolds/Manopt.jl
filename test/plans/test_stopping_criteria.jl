@@ -363,6 +363,20 @@ using Manifolds, ManifoldsBase, Manopt, Test, ManifoldsBase, Dates
         @test length(get_reason(sc)) == 0
     end
 
+    @testset "StopWhenRelativeAPosterioriChangeCostLessOrEqual" begin
+        sc = StopWhenRelativeAPosterioriChangeCostLessOrEqual(; factr = 100.0)
+        prob = DefaultManoptProblem(
+            Euclidean(), ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
+        )
+        s = GradientDescentState(Euclidean(); p = 1.0)
+        @test !sc(prob, s, 1)
+        @test length(get_reason(sc)) == 0
+        s.p = 1.0 - 1.0e-14
+
+        @test sc(prob, s, 2)
+        @test length(get_reason(sc)) > 0
+    end
+
     @testset "has_converged" begin
         M = Euclidean(1)
         pr = Manopt.Test.DummyProblem{typeof(M)}()

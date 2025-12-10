@@ -13,7 +13,7 @@ requires_gcp(M::ProductManifold) = requires_gcp(M.manifolds[1])
 An approximation of Hessian of a scalar function of the form ``B_0 = θ I``,
 ``B_{k+1} = B_k - W_k M_k W_k^{\mathrm{T}}``,
 where ``\theta > 0`` is an initial scaling guess.
-Matrix ``M_k = \begin{psmallmatrix}M_{11} & M_{21}^{\mathrm{T}}\\ M_{21} & M_{22}\end{psmallmatrix}``
+Matrix ``M_k = \left(\begin{smallmatrix}M_{11} & M_{21}^{\mathrm{T}}\\ M_{21} & M_{22}\end{smallmatrix}\right)``
 is stored using its blocks.
 Blocks ``W_k`` are (implicitly) composed from `memory_y` and `memory_s`.
 
