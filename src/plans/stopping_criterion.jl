@@ -1301,7 +1301,7 @@ has indicated to stop for `n` (consecutive) times
 
 Create a stopping criterion that indicates to stop when the `criterion` has indicated to stop
 `n` times (consecutively, if `consecutive=true` for the first constructor).
-Note that the cross product is in general noncommutative, and here only the order `sc × n`` is possible.
+Note that the cross product is in general noncommutative, and here only the order `sc × n` is possible.
 
 # Examples
 
