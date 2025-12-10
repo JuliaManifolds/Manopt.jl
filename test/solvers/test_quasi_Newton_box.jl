@@ -118,7 +118,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
             return project(M, p, 2 .* p)
         end
         p0 = [0.0, 4.0, 1.0]
-        p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedMinusGradientNormLess(1.0e-6) | StopAfterIteration(10))
+        p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(10))
         @test p_opt ≈ [0, 2, 0]
     end
 

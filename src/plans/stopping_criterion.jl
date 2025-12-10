@@ -779,26 +779,32 @@ function set_parameter!(c::StopWhenGradientNormLess{F, TF}, ::Val{:MinGradNorm},
 end
 
 """
-    StopWhenProjectedMinusGradientNormLess <: StoppingCriterion
+    StopWhenProjectedNegativeGradientNormLess <: StoppingCriterion
 
 A stopping criterion similar to [`StopWhenGradientNormLess`](@ref), although it checks the
 norm of projected minus gradient. It is primarily useful for optimization involving
 [`Hyperrectangle`](@extref).
+
+On manifolds with boundary and manifolds with corners, for a tangent vector ``X``,
+``-X`` might not be a valid tangent vector. As an example, consider the objective
+``f(x)=x^2`` on the interval ``[1, 2]``. Its gradient at 1 is equal to 2, but because the
+point 1 is at the boundary of the interval, the projected negative gradient is equal to 0
+because we can't go in the negative direction.
 """
-mutable struct StopWhenProjectedMinusGradientNormLess{F, TF <: Real, N <: Union{Missing, Real}} <: StoppingCriterion
+mutable struct StopWhenProjectedNegativeGradientNormLess{F, TF <: Real, N <: Union{Missing, Real}} <: StoppingCriterion
     norm::F
     threshold::TF
     last_change::TF
     at_iteration::Int
     outer_norm::N
-    function StopWhenProjectedMinusGradientNormLess(
+    function StopWhenProjectedNegativeGradientNormLess(
             ε::TF; norm::F = norm, outer_norm::N = missing
         ) where {F, TF <: Real, N <: Union{Missing, Real}}
         return new{F, TF, N}(norm, ε, zero(ε), -1, outer_norm)
     end
 end
 
-function (sc::StopWhenProjectedMinusGradientNormLess)(
+function (sc::StopWhenProjectedNegativeGradientNormLess)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
     M = get_manifold(mp)
@@ -808,7 +814,7 @@ function (sc::StopWhenProjectedMinusGradientNormLess)(
     if (k > 0)
         r = (has_components(M) && !ismissing(sc.outer_norm)) ? (sc.outer_norm,) : ()
         p = get_iterate(s)
-        mpg = project(M, p, -get_gradient(s))
+        mpg = embed_project(M, p, -get_gradient(s))
         sc.last_change = sc.norm(M, p, mpg, r...)
         if sc.last_change < sc.threshold
             sc.at_iteration = k
@@ -817,28 +823,28 @@ function (sc::StopWhenProjectedMinusGradientNormLess)(
     end
     return false
 end
-function get_reason(c::StopWhenProjectedMinusGradientNormLess)
+function get_reason(c::StopWhenProjectedNegativeGradientNormLess)
     if (c.last_change < c.threshold) && (c.at_iteration >= 0)
         return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the gradient norm ($(c.last_change)) is less than $(c.threshold).\n"
     end
     return ""
 end
-function status_summary(c::StopWhenProjectedMinusGradientNormLess)
+function status_summary(c::StopWhenProjectedNegativeGradientNormLess)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "|grad f| < $(c.threshold): $s"
+    return "|proj (-grad f)| < $(c.threshold): $s"
 end
-indicates_convergence(c::StopWhenProjectedMinusGradientNormLess) = true
-function show(io::IO, c::StopWhenProjectedMinusGradientNormLess)
-    return print(io, "StopWhenProjectedMinusGradientNormLess($(c.threshold))\n    $(status_summary(c))")
+indicates_convergence(c::StopWhenProjectedNegativeGradientNormLess) = true
+function show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
+    return print(io, "StopWhenProjectedNegativeGradientNormLess($(c.threshold))\n    $(status_summary(c))")
 end
 
 """
-    set_parameter!(c::StopWhenProjectedMinusGradientNormLess{F,TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF<:Real}
+    set_parameter!(c::StopWhenProjectedNegativeGradientNormLess{F,TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF<:Real}
 
 Update the minimal gradient norm when an algorithm shall stop.
 """
-function set_parameter!(c::StopWhenProjectedMinusGradientNormLess{F, TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF <: Real}
+function set_parameter!(c::StopWhenProjectedNegativeGradientNormLess{F, TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF <: Real}
     c.threshold = v
     return c
 end

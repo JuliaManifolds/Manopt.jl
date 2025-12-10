@@ -406,7 +406,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     get_gradient!(mp, qns.X, qns.p)
     qns.direction_update(qns.η, mp, qns)
     current_max_stepsize = get_parameter(qns.direction_update, Val(:max_stepsize))
-    if !isfinite(current_max_stepsize)
+    if !isnothing(current_max_stepsize) && !isfinite(current_max_stepsize)
         current_max_stepsize = max_stepsize(M, qns.p) / norm(qns.η)
     end
     if !(qns.nondescent_direction_behavior === :ignore)
@@ -422,7 +422,12 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
             end
         end
     end
-    α = qns.stepsize(mp, qns, k, qns.η; gradient = qns.X, stop_when_stepsize_exceeds = current_max_stepsize)
+    local α
+    if isnothing(current_max_stepsize)
+        α = qns.stepsize(mp, qns, k, qns.η; gradient = qns.X)
+    else
+        α = qns.stepsize(mp, qns, k, qns.η; gradient = qns.X, stop_when_stepsize_exceeds = current_max_stepsize)
+    end
     copyto!(M, qns.p_old, get_iterate(qns))
     ManifoldsBase.retract_fused!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
     qns.η .*= α
