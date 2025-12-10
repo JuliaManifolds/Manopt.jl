@@ -1336,7 +1336,7 @@ function (c::StopWhenRepeated)(
     if k <= 0 # reset on init
         c.count = zero(c.count)
         c.at_iteration = -1
-        return c.stopping_criterion(p, s, k) # reset the criterion
+        c.stopping_criterion(p, s, k) # reset the criterion
     end
     # evaluate the inner stopping criterion
     stop = c.stopping_criterion(p, s, k)
@@ -1355,7 +1355,7 @@ function get_reason(sc::StopWhenRepeated)
     has_stopped = (sc.at_iteration >= 0)
     if (sc.at_iteration >= 0)
         s = has_stopped ? "reached" : "not reached"
-        c = sc.consecutive ? "consecutive " : ""
+        c = sc.consecutive ? "consecutive" : ""
         # we can only get the last reason, unless we do more allocations
         r = """At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n) $(c) times:
         $(sc.count) ≥ $(sc.n): $(s)
