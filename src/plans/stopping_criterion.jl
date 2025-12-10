@@ -1336,7 +1336,6 @@ function (c::StopWhenRepeated)(
     if k <= 0 # reset on init
         c.count = zero(c.count)
         c.at_iteration = -1
-        c.stopping_criterion(p, s, k) # reset the criterion
     end
     # evaluate the inner stopping criterion
     stop = c.stopping_criterion(p, s, k)
