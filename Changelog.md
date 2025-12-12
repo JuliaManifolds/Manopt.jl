@@ -8,13 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Added
-
 * `nonpositive_curvature_behavior` for `QuasiNewtonLimitedMemoryDirectionUpdate` that determines how transported (y, s) vector pairs are treated after transport; if their inner product gets too low, it may lead to non-positive-definite Hessians which needs to be avoided. (#554)
 * `GCPFinder` for handling direction selection in the presence of box (`Hyperrectangle`) constraints in quasi-Newton methods. This allows for L-BFGS-B-style box constraint handling. (#554)
 * New stopping criteria: `StopWhenRelativeAPosterioriChangeCostLessOrEqual` and `StopWhenProjectedNegativeGradientNormLess`.
+
+## [0.5.30] December 10, 2025
+
+### Added
+
 * add keyword argument `is_feasible_error` to `interior_point_Newton` to control how to handle infeasible starting points (#556)
 * add keyword argument `at_init` to some debug options to control whether they print already at the initialisation and hence before the first iteration (#552)
+
+### Fixed
+
+* fixed a few typos in the documentation (#557)
+* fixed a bug in `StopWhenRepeated` where it stopped already at initialisation if the interior stopping criterion was satisfied (#558)
 
 ## [0.5.29] November 26, 2025
 
