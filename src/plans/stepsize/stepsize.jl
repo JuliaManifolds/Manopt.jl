@@ -41,10 +41,10 @@ with the fields keyword arguments and the retraction is set to the default retra
 $(_var(:Keyword, :retraction_method))
 * `contraction_factor=0.95`
 * `sufficient_decrease=0.1`
-* `last_stepsize=initialstepsize`
+* `last_stepsize=initial_stepsize`
 * `initial_guess=`[`ArmijoInitialGuess`](@ref)`()`
 * `stop_when_stepsize_less=0.0`: stop when the stepsize decreased below this version.
-* `stop_when_stepsize_exceeds=[`max_step`](@ref)`(M)`: provide an absolute maximal step size.
+* `stop_when_stepsize_exceeds=[`max_stepsize`](@ref)`(M)`: provide an absolute maximal step size.
 * `stop_increasing_at_step=100`: for the initial increase test, stop after these many steps
 * `stop_decreasing_at_step=1000`: in the backtrack, stop after these many steps
 """
@@ -672,7 +672,6 @@ end
 """
     cubic_stepsize_update_step(a::Real, b::Real, c::Real, τ::Real)
 
-
 Step function to determine the stepsize update `c` described in
 [Hager:1989](@cite).
 
@@ -696,6 +695,8 @@ function cubic_stepsize_update_step(a::Real, b::Real, c::Real, τ::Real)
 end
 
 """
+    get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketingLinesearchStepsize, p, η, t::Real)
+
 Get the `UnivariateTriple` of the problem `mp` related to the step with
 stepsize ``t`` from ``p`` in direction ``η``.
 
@@ -706,7 +707,7 @@ stepsize ``t`` from ``p`` in direction ``η``.
 * `η`: search direction at `p`
 * `t::Real`: step size
 """
-function get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketingLinesearchStepsize, p, η, t)
+function get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketingLinesearchStepsize, p, η, t::Real)
     M = get_manifold(mp)
     cbls.last_stepsize = t
     ManifoldsBase.retract_fused!(M, cbls.candidate_point, p, η, t, cbls.retraction_method)
@@ -730,7 +731,11 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     check_curvature(c::UnivariateTriple) = abs(c.df) < cbls.sufficient_curvature * abs(init.df)
 
     n_iter = 0
-    t = cbls.last_stepsize
+    max_step = cbls.max_stepsize
+    if :stop_when_stepsize_exceeds in keys(kwargs)
+        max_step = min(max_step, kwargs.stop_when_stepsize_exceeds)
+    end
+    t = min(cbls.last_stepsize, max_step)
     c_old = init
     c = get_univariate_triple!(mp, cbls, p, η, t)
     a, b = nothing, nothing
@@ -745,9 +750,9 @@ function (cbls::CubicBracketingLinesearchStepsize)(
             (a, b) = c, c_old
             break
         end
-        (t == cbls.max_stepsize) && return t
+        (t == max_step) && return t
         t *= cbls.stepsize_increase
-        t = min(t, cbls.max_stepsize)
+        t = min(t, max_step)
         c_old = c
         c = get_univariate_triple!(mp, cbls, p, η, t)
     end
@@ -1414,6 +1419,13 @@ function (a::NonmonotoneLinesearchStepsize)(
     end
 
     #compute the new step size with the help of the Barzilai-Borwein step size
+    l = norm(M, p, η)
+    local swse
+    if :stop_when_stepsize_exceeds in keys(kwargs)
+        swse = kwargs.stop_when_stepsize_exceeds
+    else
+        swse = (a.stop_when_stepsize_exceeds / l)
+    end
     a.last_stepsize = linesearch_backtrack!(
         M,
         a.candidate_point,
@@ -1423,11 +1435,11 @@ function (a::NonmonotoneLinesearchStepsize)(
         a.sufficient_decrease,
         a.stepsize_reduction,
         η;
-        lf0 = maximum([a.old_costs[j] for j in 1:min(iter, memory_size)]),
+        lf0 = maximum(view(a.old_costs, 1:min(iter, memory_size))),
         gradient = X,
         retraction_method = a.retraction_method,
-        stop_when_stepsize_less = (a.stop_when_stepsize_less / norm(M, p, η)),
-        stop_when_stepsize_exceeds = (a.stop_when_stepsize_exceeds / norm(M, p, η)),
+        stop_when_stepsize_less = (a.stop_when_stepsize_less / l),
+        stop_when_stepsize_exceeds = swse,
         stop_increasing_at_step = a.stop_increasing_at_step,
         stop_decreasing_at_step = a.stop_decreasing_at_step,
         report_messages_in = a.messages,
@@ -1728,6 +1740,7 @@ function (a::WolfePowellLinesearchStepsize)(
         max_step_increase = min(max_step_increase, kwargs[:stop_when_stepsize_exceeds])
     end
     step = ifelse(isfinite(a.max_stepsize), min(1.0, a.max_stepsize / grad_norm), 1.0)
+    step = min(step, max_step_increase)
     s_plus = step
     s_minus = step
     # clear messages
@@ -1754,14 +1767,14 @@ function (a::WolfePowellLinesearchStepsize)(
                 break
             end
         end
-        s_plus = 2.0 * s_minus
+        s_plus = min(2.0 * s_minus, max_step_increase)
     else
         vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
         if get_differential(mp, a.candidate_point, a.candidate_direction; Y = Y) < a.sufficient_curvature * l
             i = 0
             while fNew <= f0 + a.sufficient_decrease * step * l && (s_plus < max_step_increase)
                 # increase
-                s_plus = s_plus * 2.0
+                s_plus = min(s_plus * 2.0, max_step_increase)
                 step = s_plus
                 ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
                 fNew = get_cost(mp, a.candidate_point)

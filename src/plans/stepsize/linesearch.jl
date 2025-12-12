@@ -129,8 +129,8 @@ $(_var(:Keyword, :retraction_method))
 * `gradient = nothing`: precomputed gradient at point `p`
 * `report_messages_in::NamedTuple = (; )`: a named tuple of [`StepsizeMessage`](@ref)s to report messages in.
   currently supported keywords are `:non_descent_direction`, `:stepsize_exceeds`, `:stepsize_less`, `:stop_increasing`, `:stop_decreasing`
-* `stop_when_stepsize_less=0.0`: to avoid numerical underflow
-* `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold
+* `stop_when_stepsize_less::Real=0.0`: to avoid numerical underflow
+* `stop_when_stepsize_exceeds::Real=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold or exceeding boundaries on a manifold with corners
 * `stop_increasing_at_step=100`: stop the initial increase of step size after these many steps
 * `stop_decreasing_at_step=`1000`: stop the decreasing search after these many steps
 
@@ -159,14 +159,14 @@ function linesearch_backtrack!(
         decrease,
         contract,
         η::T;
-        lf0 = f(M, p),
+        lf0::Real = f(M, p),
         gradient = nothing,
         Dlf0 = isnothing(gradient) ? nothing : real(inner(M, p, gradient, η)),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         additional_increase_condition = (M, p) -> true,
         additional_decrease_condition = (M, p) -> true,
-        stop_when_stepsize_less = 0.0,
-        stop_when_stepsize_exceeds = max_stepsize(M, p) / norm(M, p, η),
+        stop_when_stepsize_less::Real = 0.0,
+        stop_when_stepsize_exceeds::Real = max_stepsize(M, p) / norm(M, p, η),
         stop_increasing_at_step = 100,
         stop_decreasing_at_step = 1000,
         report_messages_in::NamedTuple = (;),
@@ -182,14 +182,14 @@ function linesearch_backtrack!(
     while f_q < lf0 + decrease * s * Dlf0 || !additional_increase_condition(M, q)
         (stop_increasing_at_step == 0) && break
         i = i + 1
-        s = s / contract
+        s = min(s / contract, stop_when_stepsize_exceeds)
         ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
         f_q = f(M, q)
         if i == stop_increasing_at_step
             set_message!(report_messages_in, :stop_increasing, at = i, bound = stop_increasing_at_step, value = s)
             break
         end
-        if s > stop_when_stepsize_exceeds
+        if s >= stop_when_stepsize_exceeds
             set_message!(report_messages_in, :stepsize_exceeds, at = i, bound = stop_when_stepsize_exceeds, value = s)
             break
         end
