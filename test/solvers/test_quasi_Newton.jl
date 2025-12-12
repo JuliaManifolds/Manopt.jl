@@ -1,5 +1,5 @@
 using Manopt, Manifolds, Test
-using LinearAlgebra: I, eigvecs, tr, Diagonal
+using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
 
 mutable struct QuasiNewtonGradientDirectionUpdate{VT <: AbstractVectorTransportMethod} <:
     AbstractQuasiNewtonDirectionUpdate
@@ -230,6 +230,11 @@ end
             )
             @test isapprox(M, x_direction, x_solution; atol = rayleigh_atol)
         end
+
+        @testset "Byrd's nonpositive rule" begin
+            x1 = quasi_Newton(M, f, grad_f, x; nonpositive_curvature_behavior = :byrd, sy_tol = 1.0e8)
+            @test isapprox(M, x1, x_solution; atol = rayleigh_atol)
+        end
     end
 
     @testset "Brocket" begin
@@ -260,7 +265,7 @@ end
             vector_transport_method = ProjectionTransport(),
             retraction_method = QRRetraction(),
             cautious_update = true,
-            stopping_criterion = StopWhenGradientNormLess(1.0e-6),
+            stopping_criterion = StopWhenGradientNormLess(1.0e-6) | StopAfterIteration(100),
         )
 
         x_inverseBFGSHuang = quasi_Newton(
@@ -277,7 +282,7 @@ end
             vector_transport_method = ProjectionTransport(),
             retraction_method = QRRetraction(),
             cautious_update = true,
-            stopping_criterion = StopWhenGradientNormLess(1.0e-6),
+            stopping_criterion = StopWhenGradientNormLess(1.0e-6) | StopAfterIteration(100),
         )
         @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol = 2.0e-4)
     end
@@ -305,7 +310,7 @@ end
             x;
             basis = get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size = -1,
-            stopping_criterion = StopWhenGradientNormLess(1.0e-9),
+            stopping_criterion = StopWhenGradientNormLess(1.0e-9) | StopAfterIteration(1000),
         )
         @test norm(abs.(x_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
     end
@@ -406,13 +411,13 @@ end
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(M; p = p)
         # push zeros to memory
-        push!(qns.direction_update.memory_s, copy(p))
-        push!(qns.direction_update.memory_s, copy(p))
-        push!(qns.direction_update.memory_y, copy(p))
-        push!(qns.direction_update.memory_y, copy(p))
+        qns.yk = copy(p)
+        qns.sk = copy(p)
+        update_hessian!(qns.direction_update, mp, qns, p, 1)
+        update_hessian!(qns.direction_update, mp, qns, p, 2)
+        @test contains(qns.direction_update.message, "i=2,1,1")
         qns.direction_update(mp, qns)
         # Update (1) says at i=1 inner products are zero (2) all are zero -> gradient proposal
-        @test contains(qns.direction_update.message, "i=1,2")
         @test contains(qns.direction_update.message, "gradient")
     end
 

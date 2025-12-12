@@ -8,6 +8,19 @@ Manopt.default_point_distance(::Euclidean, p) = norm(p, Inf)
 
 Manopt.default_vector_norm(::Euclidean, p, X) = norm(p, Inf)
 
+
+Manopt.get_bounds_index(M::Hyperrectangle) = eachindex(M.lb)
+
+function Manopt.get_bound_t(M::Hyperrectangle, p, d, i)
+    if d[i] > 0
+        return (M.ub[i] - p[i]) / d[i]
+    elseif d[i] < 0
+        return (M.lb[i] - p[i]) / d[i]
+    else
+        return Inf
+    end
+end
+
 """
     max_stepsize(M::TangentBundle, p)
 
@@ -169,3 +182,21 @@ function reflect!(
     X .*= -1
     return retract!(M, q, p, X, retraction_method)
 end
+
+function Manopt.set_bound_t_at_index!(::Hyperrectangle, p_cp, t, d, i)
+    p_cp[i] += t * d[i]
+    return p_cp
+end
+
+function Manopt.set_bound_at_index!(M::Hyperrectangle, p_cp, d, i)
+    p_cp[i] = d[i] > 0 ? M.ub[i] : M.lb[i]
+    d[i] = 0
+    return p_cp
+end
+
+function Manopt.bound_direction_tweak!(::Hyperrectangle, d_out, d, p, p_cp)
+    return d_out .= p_cp .- p
+end
+
+Manopt.requires_gcp(::Hyperrectangle) = true
+Manopt.get_at_bound_index(::Hyperrectangle, X, b) = X[b]
