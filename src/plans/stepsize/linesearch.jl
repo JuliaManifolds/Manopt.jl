@@ -46,21 +46,40 @@ function max_stepsize(M::AbstractManifold, p)
         injectivity_radius(M, p)
     catch
         is_tutorial_mode() &&
-            @warn "`max_stepsize was called, but there seems to not be an `injectivity_raidus` available on $M."
+            @warn "`max_stepsize was called, but there seems to not be an `injectivity_radius` available on $M."
         Inf
     end
     return s
+end
+function max_stepsize(M::ProductManifold, p)
+    return min(map(max_stepsize, M.manifolds, submanifold_components(M, p))...)
+end
+function max_stepsize(M::AbstractPowerManifold, p)
+    stepsize = number_eltype(p)(Inf)
+    rep_size = representation_size(M.manifold)
+    for i in get_iterator(M)
+        cur_stepsize = max_stepsize(M.manifold, _read(M, rep_size, p, i))
+        stepsize = min(cur_stepsize, stepsize)
+    end
+    return stepsize
 end
 function max_stepsize(M::AbstractManifold)
     s = try
         injectivity_radius(M)
     catch
         is_tutorial_mode() &&
-            @warn "`max_stepsize was called, but there seems to not be an `injectivity_raidus` available on $M."
+            @warn "`max_stepsize was called, but there seems to not be an `injectivity_radius` available on $M."
         Inf
     end
     return s
 end
+function max_stepsize(M::ProductManifold)
+    return min(map(max_stepsize, M.manifolds)...)
+end
+function max_stepsize(M::AbstractPowerManifold)
+    return max_stepsize(M.manifold)
+end
+
 
 """
     Linesearch <: Stepsize

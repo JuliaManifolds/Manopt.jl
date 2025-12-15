@@ -1,6 +1,8 @@
 using Manopt, Manifolds, Test
 using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
 
+using RecursiveArrayTools
+
 @testset "Riemannian quasi-Newton Methods with box-like domains" begin
     @testset "get_bound_t - basic" begin
         M = Hyperrectangle([0.0, 0.0], [2.0, 2.0])
@@ -120,6 +122,15 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
         p0 = [0.0, 4.0, 1.0]
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(10))
         @test p_opt ≈ [0, 2, 0]
+
+
+        f2(M, p) = sum(p .^ 4)
+        function grad_f2(M, p)
+            return project(M, p, 4 .* (p .^ 3))
+        end
+        p0 = [0.0, 4.0, 1.0]
+        p_opt = quasi_Newton(M, f2, grad_f2, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
+        @test f2(M, p_opt) < 16.1
     end
 
     @testset "requires_gcp" begin
@@ -129,6 +140,15 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
     end
 
     @testset "Hyperrectangle × Sphere" begin
+        S2 = Sphere(2)
+        px = [0.0, 1.0, 0.0]
+        Mbox = Hyperrectangle([-1.0, 2.0, -Inf], [2.0, Inf, 2.0])
+        M = Mbox × S2
+        f(M, p) = sum(p.x[1] .^ 4) + 0.5 * distance(S2, p.x[2], px)^2
+        grad_f(M, p) = ArrayPartition(project(Mbox, p.x[1], 4 .* (p.x[1] .^ 3)), -log(S2, p.x[2], px))
+        p0 = ArrayPartition([0.0, 4.0, 1.0], [1.0, 0.0, 0.0])
 
+        p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
+        @test distance(M, p_opt, ArrayPartition([0, 2, 0], px)) < 0.1
     end
 end

@@ -138,6 +138,7 @@ using ManifoldsBase:
     set_component!,
     shortest_geodesic,
     shortest_geodesic!,
+    submanifold_component,
     submanifold_components,
     vector_transport_to,
     vector_transport_to!,

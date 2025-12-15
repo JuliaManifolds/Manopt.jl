@@ -167,7 +167,7 @@ function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstract
     coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
     coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
 
-    return hess_val_from_wmwt_coords(gh, one(eltype(gh.ρ)), coords_Yk, coords_Sk, coords_Yk, coords_Sk)
+    return hess_val_from_wmwt_coords(gh, one(eltype(gh.qn_du.ρ)), coords_Yk, coords_Sk, coords_Yk, coords_Sk)
 end
 
 @doc raw"""
@@ -442,7 +442,7 @@ function set_bound_at_index!(M::ProductManifold, p_cp, d, i)
     return p_cp
 end
 
-function bound_direction_tweak!(::ProductManifold, d_out, d, p, p_cp)
+function bound_direction_tweak!(M::ProductManifold, d_out, d, p, p_cp)
     bound_direction_tweak!(
         M.manifolds[1], submanifold_component(M, d_out, Val(1)),
         submanifold_component(M, d, Val(1)), submanifold_component(M, p, Val(1)),
