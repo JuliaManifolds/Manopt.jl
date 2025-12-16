@@ -516,6 +516,7 @@ function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(
     end
     return false
 end
+indicates_convergence(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual) = true
 function get_reason(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
     if c.at_iteration >= 0
         return "At iteration $(c.at_iteration) the algorithm performed a step with a relative a posteriori cost change ($(abs(c.last_change))) less than or equal to $(c.tolerance)."

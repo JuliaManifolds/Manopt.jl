@@ -90,6 +90,53 @@ using RecursiveArrayTools
         @test f_double_prime == f_original_double_prime
     end
 
+    @testset "update_fp_fpp - basic d = [-2.0, -1.0] with limited memory update" begin
+        M = Hyperrectangle([1.0, 4.0], [2.0, 10.0])
+
+        p = [2.0, 5.0]
+        ha = QuasiNewtonLimitedMemoryBoxDirectionUpdate(QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2))
+        st = QuasiNewtonState(M)
+
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 * p
+        gmp = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, gmp)
+
+        st.yk = [2.0, 4.0]
+        st.sk = [4.0, 2.0]
+        update_hessian!(ha, mp, st, p, 1)
+        grad = grad_f(M, p)
+
+        d = similar(grad)
+        ha(d, mp, st)
+
+        b = 1
+        z = [-0.5, -0.25]
+        d_old = [-2.0, -1.0]
+
+        d[1] = 0.0
+
+        old_f_prime = -6.0
+        old_f_double_prime = 10.0
+        dt = 0.25
+        db = d[b]
+        gb = grad[b]
+
+        # compare the generic and limited memory updater
+        f_prime, f_double_prime = Manopt.GenericFPFPPUpdater()(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d_old)
+        @test f_prime == -3.5
+        @test f_double_prime == 10
+
+        lmupd = Manopt.get_default_fpfpp_updater(ha)
+        @test lmupd isa Manopt.LimitedMemoryFPFPPUpdater
+
+        Manopt.init_updater!(M, lmupd, p, d, ha)
+        f_prime_limited, f_double_prime_limited = lmupd(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d_old)
+
+        @test f_prime ≈ f_prime_limited
+        @test f_double_prime ≈ f_double_prime_limited
+    end
+
     @testset "GCPFinder" begin
         M = Hyperrectangle([-1.0, -2.0, -Inf], [2.0, Inf, 2.0])
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS())
@@ -113,6 +160,7 @@ using RecursiveArrayTools
         @test Manopt.find_gcp_direction!(gf, d_out, p, [1.0, 1.0, 0.0], [-10.0, -10.0, -10.0]) === :found_limited
         @test d_out ≈ [2.0, 10.0, 0.0]
     end
+
     @testset "Pure Hyperrectangle" begin
         M = Hyperrectangle([-1.0, 2.0, -Inf], [2.0, Inf, 2.0])
         f(M, p) = sum(p .^ 2)
