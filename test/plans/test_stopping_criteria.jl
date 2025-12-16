@@ -1,5 +1,11 @@
 using Manifolds, ManifoldsBase, Manopt, Test, ManifoldsBase, Dates
 
+function to_display_string(obj)
+    buf = IOBuffer()
+    show(buf, MIME"text/plain"(), obj)
+    return String(take!(buf))
+end
+
 @testset "StoppingCriteria" begin
     @testset "Generic Tests" begin
         @test_throws ErrorException get_stopping_criteria(
@@ -369,12 +375,18 @@ using Manifolds, ManifoldsBase, Manopt, Test, ManifoldsBase, Dates
             Euclidean(), ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         )
         s = GradientDescentState(Euclidean(); p = 1.0)
+        @test !sc(prob, s, -1)
         @test !sc(prob, s, 1)
         @test length(get_reason(sc)) == 0
         s.p = 1.0 - 1.0e-14
 
         @test sc(prob, s, 2)
         @test length(get_reason(sc)) > 0
+        @test startswith(
+            to_display_string(sc),
+            "StopWhenRelativeAPosterioriChangeCostLessOrEqual with threshold 1.4210854715202004e-12.\n",
+        )
+        @test startswith(Manopt.status_summary(sc), "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = ")
     end
 
     @testset "has_converged" begin

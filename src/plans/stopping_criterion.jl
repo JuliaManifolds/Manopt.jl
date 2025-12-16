@@ -527,7 +527,7 @@ function status_summary(c::StopWhenRelativeAPosterioriChangeCostLessOrEqual)
     s = has_stopped ? "reached" : "not reached"
     return "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = $(abs(c.last_change)) ≤ $(c.tolerance):\t$s"
 end
-function Base.show(io::IO, c::StopWhenRelativeAPosterioriChangeCostLessOrEqual)
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenRelativeAPosterioriChangeCostLessOrEqual)
     return print(
         io,
         "StopWhenRelativeAPosterioriChangeCostLessOrEqual with threshold $(c.tolerance).\n    $(status_summary(c))",
