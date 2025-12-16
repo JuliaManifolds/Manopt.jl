@@ -390,12 +390,12 @@ end
     end
 
     @testset "StopWhenProjectedNegativeGradientNormLess" begin
-        sc = StopWhenProjectedNegativeGradientNormLess(1e-10)
+        sc = StopWhenProjectedNegativeGradientNormLess(1.0e-10)
         M = Hyperrectangle([1.0], [2.0])
         prob = DefaultManoptProblem(
             M, ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         )
-        s = GradientDescentState(M; p = [1.0], X=[2.0])
+        s = GradientDescentState(M; p = [1.0], X = [2.0])
         @test !sc(prob, s, -1)
         @test length(get_reason(sc)) == 0
         @test sc(prob, s, 1)
@@ -407,8 +407,8 @@ end
         )
         @test startswith(Manopt.status_summary(sc), "|proj (-grad f)| < 1.0e-10")
 
-        Manopt.set_parameter!(sc, Val(:MinGradNorm), 1e-5)
-        @test sc.threshold == 1e-5
+        Manopt.set_parameter!(sc, Val(:MinGradNorm), 1.0e-5)
+        @test sc.threshold == 1.0e-5
     end
 
     @testset "has_converged" begin
