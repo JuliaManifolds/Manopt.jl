@@ -369,8 +369,8 @@ end
         @test length(get_reason(sc)) == 0
     end
 
-    @testset "StopWhenRelativeAPosterioriChangeCostLessOrEqual" begin
-        sc = StopWhenRelativeAPosterioriChangeCostLessOrEqual(; factr = 100.0)
+    @testset "StopWhenRelativeAPosterioriCostChangeLessOrEqual" begin
+        sc = StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr = 100.0)
         prob = DefaultManoptProblem(
             Euclidean(), ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         )
@@ -384,9 +384,31 @@ end
         @test length(get_reason(sc)) > 0
         @test startswith(
             to_display_string(sc),
-            "StopWhenRelativeAPosterioriChangeCostLessOrEqual with threshold 1.4210854715202004e-12.\n",
+            "StopWhenRelativeAPosterioriCostChangeLessOrEqual with threshold 1.4210854715202004e-12.\n",
         )
         @test startswith(Manopt.status_summary(sc), "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = ")
+    end
+
+    @testset "StopWhenProjectedNegativeGradientNormLess" begin
+        sc = StopWhenProjectedNegativeGradientNormLess(1e-10)
+        M = Hyperrectangle([1.0], [2.0])
+        prob = DefaultManoptProblem(
+            M, ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
+        )
+        s = GradientDescentState(M; p = [1.0], X=[2.0])
+        @test !sc(prob, s, -1)
+        @test length(get_reason(sc)) == 0
+        @test sc(prob, s, 1)
+        @test length(get_reason(sc)) > 0
+
+        @test startswith(
+            to_display_string(sc),
+            "StopWhenProjectedNegativeGradientNormLess(1.0e-10)\n",
+        )
+        @test startswith(Manopt.status_summary(sc), "|proj (-grad f)| < 1.0e-10")
+
+        Manopt.set_parameter!(sc, Val(:MinGradNorm), 1e-5)
+        @test sc.threshold == 1e-5
     end
 
     @testset "has_converged" begin

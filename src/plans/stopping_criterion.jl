@@ -464,7 +464,7 @@ function set_parameter!(c::StopWhenCostLess, ::Val{:MinCost}, v)
 end
 
 """
-    StopWhenRelativeAPosterioriChangeCostLessOrEqual <: StoppingCriterion
+    StopWhenRelativeAPosterioriCostChangeLessOrEqual <: StoppingCriterion
 
 A stopping criterion to stop when
 
@@ -481,25 +481,25 @@ $(_var(:Field, :last_change))
 
 # Constructor
 
-    StopWhenRelativeAPosterioriChangeCostLessOrEqual(tolerance::F)
+    StopWhenRelativeAPosterioriCostChangeLessOrEqual(tolerance::F)
 
 Initialize the stopping criterion to a threshold `tolerance` for the change of the cost function.
 
-    StopWhenRelativeAPosterioriChangeCostLessOrEqual(; factr::Real=1.0e7)
+    StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::Real=1.0e7)
 
 Initialize tolerance to `factr * eps(factr)`, following the convention in [ZhuByrdLuNocedal:1997](@cite).
 """
-mutable struct StopWhenRelativeAPosterioriChangeCostLessOrEqual{F <: Real} <: StoppingCriterion
+mutable struct StopWhenRelativeAPosterioriCostChangeLessOrEqual{F <: Real} <: StoppingCriterion
     tolerance::F
     at_iteration::Int
     last_cost::F
     last_change::F
 end
-function StopWhenRelativeAPosterioriChangeCostLessOrEqual(tol::F) where {F <: Real}
-    return StopWhenRelativeAPosterioriChangeCostLessOrEqual{F}(tol, -1, zero(tol), 2 * tol)
+function StopWhenRelativeAPosterioriCostChangeLessOrEqual(tol::F) where {F <: Real}
+    return StopWhenRelativeAPosterioriCostChangeLessOrEqual{F}(tol, -1, zero(tol), 2 * tol)
 end
-StopWhenRelativeAPosterioriChangeCostLessOrEqual(; factr::F = 1.0e7) where {F <: Real} = StopWhenRelativeAPosterioriChangeCostLessOrEqual(factr * eps(factr))
-function (c::StopWhenRelativeAPosterioriChangeCostLessOrEqual)(
+StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::F = 1.0e7) where {F <: Real} = StopWhenRelativeAPosterioriCostChangeLessOrEqual(factr * eps(factr))
+function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(
         problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
     )
     if iteration <= 0 # reset on init
@@ -516,21 +516,21 @@ function (c::StopWhenRelativeAPosterioriChangeCostLessOrEqual)(
     end
     return false
 end
-function get_reason(c::StopWhenRelativeAPosterioriChangeCostLessOrEqual)
+function get_reason(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
     if c.at_iteration >= 0
         return "At iteration $(c.at_iteration) the algorithm performed a step with a relative a posteriori cost change ($(abs(c.last_change))) less than or equal to $(c.tolerance)."
     end
     return ""
 end
-function status_summary(c::StopWhenRelativeAPosterioriChangeCostLessOrEqual)
+function status_summary(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = $(abs(c.last_change)) ≤ $(c.tolerance):\t$s"
 end
-function Base.show(io::IO, ::MIME"text/plain", c::StopWhenRelativeAPosterioriChangeCostLessOrEqual)
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
     return print(
         io,
-        "StopWhenRelativeAPosterioriChangeCostLessOrEqual with threshold $(c.tolerance).\n    $(status_summary(c))",
+        "StopWhenRelativeAPosterioriCostChangeLessOrEqual with threshold $(c.tolerance).\n    $(status_summary(c))",
     )
 end
 
