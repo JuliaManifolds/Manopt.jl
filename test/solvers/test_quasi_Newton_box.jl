@@ -110,6 +110,9 @@ using RecursiveArrayTools
         d = similar(grad)
         ha(d, mp, st)
 
+        d2 = ha(mp, st)
+        @test d ≈ d2
+
         b = 1
         z = [-0.5, -0.25]
         d_old = [-2.0, -1.0]
@@ -159,6 +162,11 @@ using RecursiveArrayTools
 
         @test Manopt.find_gcp_direction!(gf, d_out, p, [1.0, 1.0, 0.0], [-10.0, -10.0, -10.0]) === :found_limited
         @test d_out ≈ [2.0, 10.0, 0.0]
+
+        p2 = [-1.0, -2.0, 2.0]
+        gf2 = Manopt.GCPFinder(M, p2, ha)
+
+        @test Manopt.find_gcp_direction!(gf2, d_out, p2, [-1.0, -1.0, 1.0], [-10.0, -10.0, -10.0]) === :not_found
     end
 
     @testset "Pure Hyperrectangle" begin

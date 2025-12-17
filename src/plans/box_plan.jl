@@ -126,9 +126,7 @@ function hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractMan
 
     ii = 1
     for i in 1:m
-        if iszero(gh.qn_du.ρ[i])
-            continue
-        end
+        iszero(gh.qn_du.ρ[i]) && continue
         gh.coords_Yk_X[ii] = inner(M, p, gh.qn_du.memory_y[i], X)
         gh.coords_Sk_X[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], X)
 
@@ -156,9 +154,7 @@ function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstract
 
     ii = 1
     for i in 1:m
-        if iszero(gh.qn_du.ρ[i])
-            continue
-        end
+        iszero(gh.qn_du.ρ[i]) && continue
         gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
         gh.coords_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
 
@@ -187,9 +183,7 @@ function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstract
 
     ii = 1
     for i in 1:m
-        if iszero(gh.qn_du.ρ[i])
-            continue
-        end
+        iszero(gh.qn_du.ρ[i]) && continue
         gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
         gh.coords_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
 
@@ -235,14 +229,10 @@ function set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemo
     ii = 1
     # fill Dk and Lk
     for i in 1:m
-        if iszero(gh.qn_du.ρ[i])
-            continue
-        end
+        iszero(gh.qn_du.ρ[i]) && continue
         jj = 1
         for j in 1:m
-            if iszero(gh.qn_du.ρ[j])
-                continue
-            end
+            iszero(gh.qn_du.ρ[j]) && continue
             if jj < ii
                 Lk[ii, jj] = inner(M, p, gh.qn_du.memory_s[i], gh.qn_du.memory_y[j])
             end
