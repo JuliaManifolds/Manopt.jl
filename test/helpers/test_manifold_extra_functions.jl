@@ -69,6 +69,7 @@ Random.seed!(42)
 
         R3 = Euclidean(3)
         TR3 = TangentBundle(R3)
+
         p = [0.0, 1.0, 0.0]
         X = [0.0, 0.0, 0.0]
 
@@ -82,6 +83,14 @@ Random.seed!(42)
 
         @test Manopt.max_stepsize(R3, p) == Inf
         @test Manopt.max_stepsize(TR3, ArrayPartition(p, X)) == Inf
+
+        S_R3 = ProductManifold(M, R3)
+        @test Manopt.max_stepsize(S_R3) ≈ π
+        @test Manopt.max_stepsize(S_R3, ArrayPartition(p, [0.0, 0.0, 0.0])) ≈ π
+
+        S_pow = PowerManifold(M, NestedPowerRepresentation(), 3)
+        @test Manopt.max_stepsize(S_pow) ≈ π
+        @test Manopt.max_stepsize(S_pow, [p, p, p]) ≈ π
 
         Mfr = FixedRankMatrices(5, 4, 2)
         pfr = SVDMPoint(

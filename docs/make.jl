@@ -179,6 +179,7 @@ makedocs(;
             "Adaptive Regularization with Cubics" => "solvers/adaptive-regularization-with-cubics.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
             "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",
+            "Box domains" => "solvers/box_domain.md",
             "Chambolle-Pock" => "solvers/ChambollePock.md",
             "CMA-ES" => "solvers/cma_es.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",

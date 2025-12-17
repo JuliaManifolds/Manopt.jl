@@ -14,7 +14,8 @@ Wrapper for line searches available in the `LineSearches.jl` library.
 
 Wrap `linesearch` (for example [`HagerZhang`](https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.HagerZhang)
 or [`MoreThuente`](https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.MoreThuente)).
-The initial step selection from Linesearches.jl is not yet supported and the value 1.0 is used.
+The initial step selection from Linesearches.jl is not yet supported and `initial_guess` is
+always used (by default [`ConstantInitialGuess`](@ref)).
 
 # Keyword Arguments
 
