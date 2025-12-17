@@ -582,13 +582,9 @@ $(_var(:Field, :vector_transport_method))
 [`AbstractQuasiNewtonDirectionUpdate`](@ref)
 """
 mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
-        NT <: AbstractQuasiNewtonUpdateRule,
-        T,
-        F,
-        V <: AbstractVector{F},
-        G <: Union{F, Nothing},
-        VT <: AbstractVectorTransportMethod,
-        Proj,
+        NT <: AbstractQuasiNewtonUpdateRule, T, F,
+        V <: AbstractVector{F}, G <: Union{F, Nothing},
+        VT <: AbstractVectorTransportMethod, Proj,
     } <: AbstractQuasiNewtonDirectionUpdate
     memory_s::CircularBuffer{T}
     memory_y::CircularBuffer{T}
@@ -754,8 +750,8 @@ taking into account that the corresponding step size is chosen.
 
 # Provided functors
 
-* `(mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction
-* `(η, mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
+* `(mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction
+* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
 
 # Fields
 

@@ -603,6 +603,9 @@ function set_iterate!(agst::AbstractGradientSolverState, M, p)
     return agst
 end
 
+#
+#
+# Direction Update Rules -------------------------------------------------------------------
 """
     DirectionUpdateRule
 
@@ -1030,6 +1033,223 @@ $(_note(:ManifoldDefaultFactory, "PreconditionedDirectionRule"))
 """
 function PreconditionedDirection(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.PreconditionedDirectionRule, args...; kwargs...)
+end
+
+"""
+    AdaptiveDirectionRule{E<:AbstractEvaluationType, T} <: DirectionUpdateRule
+
+A direction update rule that follows the proposed general framework of [SakaiIiduka:2024](@cite)
+using a memory of previous gradients to adaptively compute a new direction in two steps
+
+1. Apply a direction computation function ``ϕ_k`` to compute a new direction based on the memory of recorded gradients.
+2. Apply a precondition function ``ψ_k`` to the computed direction to obtain the final direction.
+
+In the following we use `M` as the manifold, `p` as the current iterate, `d` as an instance of
+this direction update rule itself, and `k` as the current iteration number
+
+# Fields
+
+* `memory_gradients`: circular buffer storing the last ``m`` gradients
+* `direction`: a function or functor that maps – depending on `E` – either
+  * `(M, p, d, k) -> X` allocating a new direction `X`
+  * `(M, X, p, d, k) -> X` mutating the direction `X`
+* `precondition`: a function or functor that maps – depending on `E` – either
+  * `(M, p, d, X, k) -> Y` allocating a new preconditioned direction `Y`
+  * `(M, Y, p, d, X, k) -> Y` mutating the preconditioned direction `pd`
+* `p_memory`: the point indicating the tangent space the memory of gradients are in.
+* $(_var(:Field, :vector_transport_method))
+
+# Constructors
+
+    AdaptiveDirectionRule(
+        M::AbstractManifold, direction, preconditioning;
+        memory_size::Int = 10,
+        p = rand(M),
+        X = zero_vector(M, p),
+        evaluation::E = AllocatingEvaluation(),
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+    ) where {E <: EvaluationType}
+
+Add an adaptive direction update rule to a gradient problem, where
+* `memory_size` is the number of gradients stored
+* `X` denotes the type of the stored gradients
+* `evaluation` specifies whether the direction and preconditioning functions work in-place or allocate new memory
+
+
+"""
+struct AdaptiveDirectionRule{E <: AbstractEvaluationType, D, PC, P, T, VTM} <: DirectionUpdateRule
+    memory_gradients::CircularBuffer{T}
+    direction::D
+    preconditioning::PC
+    p_memory::P
+    X_memory::T
+    vector_transport_method::VTM
+end
+function AdaptiveDirectionRule(
+        M::AbstractManifold,
+        direction::D,
+        precondition::PC;
+        memory_size::Int = 10,
+        p::P = rand(M),
+        X::T = zero_vector(M, p),
+        evaluation::E = AllocatingEvaluation(),
+        vector_transport_method::VTM = default_vector_transport_method(
+            M, typeof(p)
+        ),
+    ) where {E <: AbstractEvaluationType, D, PC, P, T, VTM <: AbstractVectorTransportMethod}
+    gradient_memory = CircularBuffer{T}(memory_size)
+    return AdaptiveDirectionRule{E, D, PC, P, T, VTM}(gradient_memory, direction, precondition, p, X, vector_transport_method)
+end
+function (ad::AdaptiveDirectionRule{AllocatingEvaluation})(
+        mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+    )
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    X = get_gradient(s)
+    update_adaptive_memory!(ad, mp, s, X)
+    ad.X_memory = ad.direction(M, p, ad, k) # compute direction
+    ad.X_memory = ad.preconditioning(M, p, ad, ad.X_memory, k) # precondition direction
+    return get_stepsize(mp, s, k; gradient = X, η = -ad.X_memory), ad.X_memory
+end
+function (ad::AdaptiveDirectionRule{InplaceEvaluation})(
+        mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+    )
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    X = get_gradient(s)
+    update_adaptive_memory!(ad, mp, s, X)
+    ad.direction(M, ad.X_memory, p, ad, k) # compute direction
+    ad.preconditioning(M, ad.X_memory, p, ad, ad.X_memory, k) # precondition direction
+    return get_stepsize(mp, s, k; gradient = X, η = -ad.X_memory), ad.X_memory
+end
+
+#
+# Both previous functions update the inner memory:
+# 1. transport all old gradients to the new tangent space
+# 2. add the current gradient to the memory (popping the oldest if necessary)
+function update_adaptive_memory!(
+        ad::AdaptiveDirectionRule, mp::AbstractManoptProblem, s::AbstractGradientSolverState, X = get_gradient(s)
+    )
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    # transport memory to current tangent space
+    start = length(ad.memory_gradients) == capacity(ad.memory_gradients) ? 2 : 1
+    for i in start:length(ad.memory_gradients)
+        # transport all stored tangent vectors in the tangent space of the next iterate
+        vector_transport_to!(
+            M, ad.memory_gradients[i], ad.p_memory, ad.memory_gradients[i], p, ad.vector_transport_method
+        )
+    end
+    copyto!(M, ad.p_memory, p)
+    # if memory is full, pop first - but reuse memory
+    if isfull(ad.memory_gradients)
+        Y = popfirst!(ad.memory_gradients)
+        copyto!(M, Y, p, X)
+        push!(ad.memory_gradients, Y)
+    else
+        # store current gradient
+        push!(ad.memory_gradients, copy(M, p, X))
+    end
+    return ad
+end
+
+"""
+    AdaptiveDirection(direction, precondition; kwargs...)
+    AdaptiveDirection(M::AbstractManifold, direction, precondition; kwargs...)
+
+1. Apply a direction computation function ``ϕ_k`` to compute a new direction based on the memory of recorded gradients.
+2. Apply a precondition function ``ψ_k`` to the computed direction to obtain the final direction.
+
+Note that compared to [SakaiIiduka:2024](@cite), the second step is deonted slightly differently here,
+it directly performs the preconditioning and does not (first) return ``H_k`` (the inverse of) a preconditioner.
+
+In the following we use `M` as the manifold, `p` as the current iterate, `d` as an instance of
+this direction update rule itself, and `k` as the current iteration number
+
+# Arguments
+
+$(_var(:Argument, :M; type = true)) (optional)
+* `direction`: a function or functor that maps either
+  * `(M, p, d, k) -> X` allocating a new direction `X`
+  * `(M, X, p, d, k) -> X` mutating the direction `X`
+* `preconditioning`: a function or functor that maps either
+  * `(M, p, d, k) -> X` allocating a new preconditioned direction `X`
+  * `(M, X, p, d, k) -> X` mutating the preconditioned direction `X`
+
+# Keyword arguments
+
+$(_var(:Keyword, :evaluation))
+
+$(_note(:ManifoldDefaultFactory, "PreconditionedDirectionRule"))
+"""
+function AdaptiveDirection(M::AbstractManifold, precondition, direction; kwargs...)
+    return ManifoldDefaultsFactory(
+        Manopt.AdaptiveDirectionRule, M, direction, precondition; kwargs...,
+    )
+end
+
+"""
+    BasicDirection
+
+A simple direction function for [`AdaptiveDirectionRule`](@ref) that just returns
+the last stored gradient from the memory, i.e.
+
+```math
+    ϕ_k(g_1,…,g_m) = g_m
+```
+"""
+struct BasicDirection end
+function (bd::BasicDirection)(M::AbstractManifold, p, ad::AdaptiveDirectionRule, k)
+    return ad.memory_gradients[end]
+end
+function (bd::BasicDirection)(M::AbstractManifold, X, p, ad::AdaptiveDirectionRule, k)
+    return copyto!(M, X, p, ad.memory_gradients[end])
+end
+
+"""
+    AdamDirection
+
+A direction function for [`AdaptiveDirectionRule`](@ref) that implements the ADAM rule adapted to Riemannian manifolds as
+
+```math
+m_k = β m_{k-1} + (1-β) g_k,
+$(_tex(:qquad))
+ϕ_k(g_1,…,g_m) = $(_tex(:frac, "m_k", "1-β^k"))
+```
+
+where ``g_k`` is the current gradient, ``m_k`` is the first moment estimate, and ``β ∈(0,1)`` is a decay rate.
+
+# Fields
+
+* `β::Real`: decay rate for the first moment estimate
+* `m::T`: storage for the first moment estimate
+
+# Constructors
+
+    AdamDirection(M::AbstractManifold; β=0.9, p=rand(M), X=zero_vector(M,p))
+"""
+struct AdamDirection{R <: Real, T}
+    β::R
+    m::T
+end
+function AdamDirection(
+        M::AbstractManifold;
+        β::F = 0.9,
+        p::P = rand(M),
+        X::T = zero_vector(M, p),
+    ) where {F <: Real, P, T}
+    return AdamDirection{F, T}(β, copy(M, p, X))
+end
+function (ad::AdamDirection)(M::AbstractManifold, p, adr::AdaptiveDirectionRule, k)
+    g = adr.memory_gradients[end]
+    copyto!(M, ad.m, p, (1 - ad.β) * g + ad.β * ad.m)
+    return (1 / (1 - ad.β^k)) * ad.m
+end
+function (ad::AdamDirection)(M::AbstractManifold, X, p, adr::AdaptiveDirectionRule, k)
+    g = adr.memory_gradients[end]
+    copyto!(M, ad.m, p, (1 - ad.β) * g + ad.β * ad.m)
+    copyto!(M, X, p, (1 / (1 - ad.β^k)) * ad.m)
+    return X
 end
 
 """
