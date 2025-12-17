@@ -34,26 +34,26 @@ This indicates convergence: No
 
 ## Record
 (Iteration = RecordCost(),)</code></pre><p>From the returned state, we see that the <a href="https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.GradientDescentState"><code>GradientDescentState</code></a> are encapsulated (decorated) within a <a href="https://manoptjl.org/stable/plans/record/#Manopt.RecordSolverState"><code>RecordSolverState</code></a>.</p><p>For such a state, one can attach different recorders to some operations, currently to <code>:Start</code>. <code>:Stop</code>, and <code>:Iteration</code>, where <code>:Iteration</code> is the default when using the <code>record=</code> keyword with a <a href="https://manoptjl.org/stable/plans/record/#Manopt.RecordAction"><code>RecordAction</code></a> or a <code>Symbol</code> as we just did. We can access all values recorded during the iterations by calling <code>get_record(R, :Iteration)</code> or since this is the default even shorter</p><pre><code class="language-julia hljs">get_record(R)</code></pre><pre><code class="nohighlight hljs">58-element Vector{Float64}:
- 0.6870172325261714
+ 0.6870172325261713
  0.6239221496686211
  0.5900244338953805
  0.569312079535616
- 0.5518048258655456
- 0.5429045359832492
+ 0.5518048258655455
+ 0.5429045359832493
  0.5383847696671531
  0.5360322830268693
- 0.5348144739486789
+ 0.5348144739486791
  0.5341773307679921
  ⋮
  0.5334801024530127
  0.5334801024530104
  0.5334801024530084
- 0.5334801024530074
- 0.5334801024530069
- 0.5334801024530061
- 0.5334801024530058
- 0.5334801024530058
- 0.5334801024530058</code></pre><p>To record more than one value, you can pass an array of a mix of symbols and <a href="https://manoptjl.org/stable/plans/record/#Manopt.RecordAction"><code>RecordAction</code></a>s which formally introduces <a href="https://manoptjl.org/stable/plans/record/#Manopt.RecordGroup"><code>RecordGroup</code></a>. Such a group records a tuple of values in every iteration:</p><pre><code class="language-julia hljs">R2 = gradient_descent(M, f, grad_f, data[1]; record=[:Iteration, :Cost], return_state=true)</code></pre><pre><code class="nohighlight hljs"># Solver state for `Manopt.jl`s Gradient Descent
+ 0.5334801024530073
+ 0.5334801024530067
+ 0.5334801024530064
+ 0.5334801024530063
+ 0.533480102453006
+ 0.533480102453006</code></pre><p>To record more than one value, you can pass an array of a mix of symbols and <a href="https://manoptjl.org/stable/plans/record/#Manopt.RecordAction"><code>RecordAction</code></a>s which formally introduces <a href="https://manoptjl.org/stable/plans/record/#Manopt.RecordGroup"><code>RecordGroup</code></a>. Such a group records a tuple of values in every iteration:</p><pre><code class="language-julia hljs">R2 = gradient_descent(M, f, grad_f, data[1]; record=[:Iteration, :Cost], return_state=true)</code></pre><pre><code class="nohighlight hljs"># Solver state for `Manopt.jl`s Gradient Descent
 After 58 iterations
 
 ## Parameters
@@ -77,66 +77,66 @@ This indicates convergence: No
 
 ## Record
 (Iteration = RecordGroup([RecordIteration(), RecordCost()]),)</code></pre><p>Here, the symbol <code>:Cost</code> is mapped to using the <a href="https://manoptjl.org/stable/plans/record/#Manopt.RecordCost"><code>RecordCost</code></a> action. The same holds for <code>:Iteration</code> obviously records the current iteration number <code>i</code>. To access these you can first extract the group of records (that is where the <code>:Iteration</code>s are recorded; note the plural) and then access the <code>:Cost</code> ““”</p><pre><code class="language-julia hljs">get_record_action(R2, :Iteration)</code></pre><pre><code class="nohighlight hljs">RecordGroup([RecordIteration(), RecordCost()])</code></pre><p>Since <code>iteration</code> is the default, we can also omit it here again. To access single recorded values, one can use</p><pre><code class="language-julia hljs">get_record_action(R2)[:Cost]</code></pre><pre><code class="nohighlight hljs">58-element Vector{Float64}:
- 0.6870172325261714
+ 0.6870172325261713
  0.6239221496686211
  0.5900244338953805
  0.569312079535616
- 0.5518048258655456
- 0.5429045359832492
+ 0.5518048258655455
+ 0.5429045359832493
  0.5383847696671531
  0.5360322830268693
- 0.5348144739486789
+ 0.5348144739486791
  0.5341773307679921
  ⋮
  0.5334801024530127
  0.5334801024530104
  0.5334801024530084
- 0.5334801024530074
- 0.5334801024530069
- 0.5334801024530061
- 0.5334801024530058
- 0.5334801024530058
- 0.5334801024530058</code></pre><p>This can be also done by using a the high level interface <a href="https://manoptjl.org/stable/plans/record/#Manopt.get_record"><code>get_record</code></a></p><pre><code class="language-julia hljs">get_record(R2, :Iteration, :Cost)</code></pre><pre><code class="nohighlight hljs">58-element Vector{Float64}:
- 0.6870172325261714
+ 0.5334801024530073
+ 0.5334801024530067
+ 0.5334801024530064
+ 0.5334801024530063
+ 0.533480102453006
+ 0.533480102453006</code></pre><p>This can be also done by using a the high level interface <a href="https://manoptjl.org/stable/plans/record/#Manopt.get_record"><code>get_record</code></a></p><pre><code class="language-julia hljs">get_record(R2, :Iteration, :Cost)</code></pre><pre><code class="nohighlight hljs">58-element Vector{Float64}:
+ 0.6870172325261713
  0.6239221496686211
  0.5900244338953805
  0.569312079535616
- 0.5518048258655456
- 0.5429045359832492
+ 0.5518048258655455
+ 0.5429045359832493
  0.5383847696671531
  0.5360322830268693
- 0.5348144739486789
+ 0.5348144739486791
  0.5341773307679921
  ⋮
  0.5334801024530127
  0.5334801024530104
  0.5334801024530084
- 0.5334801024530074
- 0.5334801024530069
- 0.5334801024530061
- 0.5334801024530058
- 0.5334801024530058
- 0.5334801024530058</code></pre><p>Note that the first symbol again refers to the point where we record (not to the thing we record). We can also pass a tuple as second argument to have our own order within the tuples returned. Switching the order of recorded cost and Iteration can be done using ““”</p><pre><code class="language-julia hljs">get_record(R2, :Iteration, (:Iteration, :Cost))</code></pre><pre><code class="nohighlight hljs">58-element Vector{Tuple{Int64, Float64}}:
- (1, 0.6870172325261714)
+ 0.5334801024530073
+ 0.5334801024530067
+ 0.5334801024530064
+ 0.5334801024530063
+ 0.533480102453006
+ 0.533480102453006</code></pre><p>Note that the first symbol again refers to the point where we record (not to the thing we record). We can also pass a tuple as second argument to have our own order within the tuples returned. Switching the order of recorded cost and Iteration can be done using ““”</p><pre><code class="language-julia hljs">get_record(R2, :Iteration, (:Iteration, :Cost))</code></pre><pre><code class="nohighlight hljs">58-element Vector{Tuple{Int64, Float64}}:
+ (1, 0.6870172325261713)
  (2, 0.6239221496686211)
  (3, 0.5900244338953805)
  (4, 0.569312079535616)
- (5, 0.5518048258655456)
- (6, 0.5429045359832492)
+ (5, 0.5518048258655455)
+ (6, 0.5429045359832493)
  (7, 0.5383847696671531)
  (8, 0.5360322830268693)
- (9, 0.5348144739486789)
+ (9, 0.5348144739486791)
  (10, 0.5341773307679921)
  ⋮
  (50, 0.5334801024530127)
  (51, 0.5334801024530104)
  (52, 0.5334801024530084)
- (53, 0.5334801024530074)
- (54, 0.5334801024530069)
- (55, 0.5334801024530061)
- (56, 0.5334801024530058)
- (57, 0.5334801024530058)
- (58, 0.5334801024530058)</code></pre><h2 id="A-more-complex-example"><a class="docs-heading-anchor" href="#A-more-complex-example">A more complex example</a><a id="A-more-complex-example-1"></a><a class="docs-heading-anchor-permalink" href="#A-more-complex-example" title="Permalink"></a></h2><p>To illustrate a complicated example let’s record:</p><ul><li>the iteration number, cost and gradient field, but only every sixth iteration;</li><li>the iteration at which we stop.</li></ul><p>We first generate the problem and the state, to also illustrate the low-level works when not using the high-level interface <a href="https://manoptjl.org/stable/solvers/gradient_descent.html"><code>gradient_descent</code></a>.</p><pre><code class="language-julia hljs">p = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+ (53, 0.5334801024530073)
+ (54, 0.5334801024530067)
+ (55, 0.5334801024530064)
+ (56, 0.5334801024530063)
+ (57, 0.533480102453006)
+ (58, 0.533480102453006)</code></pre><h2 id="A-more-complex-example"><a class="docs-heading-anchor" href="#A-more-complex-example">A more complex example</a><a id="A-more-complex-example-1"></a><a class="docs-heading-anchor-permalink" href="#A-more-complex-example" title="Permalink"></a></h2><p>To illustrate a complicated example let’s record:</p><ul><li>the iteration number, cost and gradient field, but only every sixth iteration;</li><li>the iteration at which we stop.</li></ul><p>We first generate the problem and the state, to also illustrate the low-level works when not using the high-level interface <a href="https://manoptjl.org/stable/solvers/gradient_descent.html"><code>gradient_descent</code></a>.</p><pre><code class="language-julia hljs">p = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 s = GradientDescentState(
     M;
     p=copy(data[1]),
@@ -190,7 +190,7 @@ This indicates convergence: No
 
 ## Record
 (Iteration = RecordEvery(RecordGroup([RecordIteration(), RecordCost(), RecordEntry(:X)]), 6, true), Stop = RecordIteration())</code></pre><p>We now call the solver</p><pre><code class="language-julia hljs">res = solve!(p, r)</code></pre><pre><code class="nohighlight hljs"># Solver state for `Manopt.jl`s Gradient Descent
-After 59 iterations
+After 62 iterations
 
 ## Parameters
 * retraction method: StabilizedRetraction()
@@ -213,16 +213,17 @@ This indicates convergence: No
 
 ## Record
 (Iteration = RecordEvery(RecordGroup([RecordIteration(), RecordCost(), RecordEntry(:X)]), 6, true), Stop = RecordIteration())</code></pre><p>And we can look at the recorded value at <code>:Stop</code> to see how many iterations were performed</p><pre><code class="language-julia hljs">get_record(res, :Stop)</code></pre><pre><code class="nohighlight hljs">1-element Vector{Int64}:
- 59</code></pre><p>and the other values during the iterations are</p><pre><code class="language-julia hljs">get_record(res, :Iteration, (:Iteration, :Cost))</code></pre><pre><code class="nohighlight hljs">9-element Vector{Tuple{Int64, Float64}}:
- (6, 0.5429045359832492)
- (12, 0.5336712822308557)
+ 62</code></pre><p>and the other values during the iterations are</p><pre><code class="language-julia hljs">get_record(res, :Iteration, (:Iteration, :Cost))</code></pre><pre><code class="nohighlight hljs">10-element Vector{Tuple{Int64, Float64}}:
+ (6, 0.5429045359832493)
+ (12, 0.5336712822308556)
  (18, 0.533484098624334)
  (24, 0.5334801877032025)
  (30, 0.533480104312984)
  (36, 0.5334801024945819)
- (42, 0.5334801024539588)
+ (42, 0.5334801024539587)
  (48, 0.5334801024530285)
- (54, 0.5334801024530069)</code></pre><p>where the last tuple contains the names from the pairs when we generated the record group. So similarly we can use <code>:Gradient</code> as specified before to access the recorded gradient.</p><h2 id="Recording-from-a-Subsolver"><a class="docs-heading-anchor" href="#Recording-from-a-Subsolver">Recording from a Subsolver</a><a id="Recording-from-a-Subsolver-1"></a><a class="docs-heading-anchor-permalink" href="#Recording-from-a-Subsolver" title="Permalink"></a></h2><p>One can also record from a subsolver. For that we need a problem that actually requires a subsolver. We take the constraint example from the <a href="../HowToDebug/">How to print debug</a> tutorial. Maybe read that part for more details on the problem</p><pre><code class="language-julia hljs">d = 4
+ (54, 0.5334801024530067)
+ (60, 0.5334801024530059)</code></pre><p>where the last tuple contains the names from the pairs when we generated the record group. So similarly we can use <code>:Gradient</code> as specified before to access the recorded gradient.</p><h2 id="Recording-from-a-Subsolver"><a class="docs-heading-anchor" href="#Recording-from-a-Subsolver">Recording from a Subsolver</a><a id="Recording-from-a-Subsolver-1"></a><a class="docs-heading-anchor-permalink" href="#Recording-from-a-Subsolver" title="Permalink"></a></h2><p>One can also record from a subsolver. For that we need a problem that actually requires a subsolver. We take the constraint example from the <a href="../HowToDebug/">How to print debug</a> tutorial. Maybe read that part for more details on the problem</p><pre><code class="language-julia hljs">d = 4
 M2 = Sphere(d - 1)
 v0 = project(M2, [ones(2)..., zeros(d - 2)...])
 Z = v0 * v0&#39;
@@ -321,8 +322,8 @@ This indicates convergence: No
 ## Record
 (Iteration = RecordGroup([RecordIteration(), Main.Notebook.RecordCount([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]), RecordCost()]),)</code></pre><p>For <code>:Cost</code> we already learned how to access them, the <code>=&gt; :Count</code> introduces an action to obtain the <code>:Count</code> symbol as its access. We can again access the whole sets of records</p><pre><code class="language-julia hljs">get_record(R3)</code></pre><pre><code class="nohighlight hljs">20-element Vector{Tuple{Int64, Int64, Float64}}:
  (1, 1, 0.5823814423113638)
- (2, 2, 0.540804980234004)
- (3, 3, 0.5345550944722898)
+ (2, 2, 0.5408049802340039)
+ (3, 3, 0.5345550944722897)
  (4, 4, 0.5336375289938885)
  (5, 5, 0.5335031591890169)
  (6, 6, 0.5334834802310251)
@@ -337,8 +338,8 @@ This indicates convergence: No
  (15, 15, 0.5334801024531117)
  (16, 16, 0.5334801024530216)
  (17, 17, 0.5334801024530085)
- (18, 18, 0.5334801024530063)
- (19, 19, 0.5334801024530061)
+ (18, 18, 0.5334801024530064)
+ (19, 19, 0.5334801024530063)
  (20, 20, 0.5334801024530059)</code></pre><p>this is equivalent to calling <code>R[:Iteration]</code>. Note that since we introduced <code>:Count</code> we can also access a single recorded value using</p><pre><code class="language-julia hljs">R3[:Iteration, :Count]</code></pre><pre><code class="nohighlight hljs">20-element Vector{Int64}:
   1
   2
@@ -389,7 +390,7 @@ Overall: reached
 This indicates convergence: No
 
 ## Record
-(Iteration = Main.Notebook.RecordCount([25, 29, 33, 37, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152, 156, 160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216, 220, 223, 226, 230, 234, 239, 243, 247, 251]),)</code></pre><pre><code class="language-julia hljs">get_record(R4)</code></pre><pre><code class="nohighlight hljs">58-element Vector{Int64}:
+(Iteration = Main.Notebook.RecordCount([25, 29, 33, 37, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152, 156, 160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216, 220, 223, 226, 230, 235, 238, 240, 244, 246]),)</code></pre><pre><code class="language-julia hljs">get_record(R4)</code></pre><pre><code class="nohighlight hljs">58-element Vector{Int64}:
   25
   29
   33
@@ -405,11 +406,11 @@ This indicates convergence: No
  223
  226
  230
- 234
- 239
- 243
- 247
- 251</code></pre><p>We can see that the number of cost function calls varies, depending on how many line search backtrack steps were required to obtain a good stepsize.</p><h2 id="Technical-details"><a class="docs-heading-anchor" href="#Technical-details">Technical details</a><a id="Technical-details-1"></a><a class="docs-heading-anchor-permalink" href="#Technical-details" title="Permalink"></a></h2><p>This tutorial is cached. It was last run on the following package versions.</p><pre><code class="nohighlight hljs">Status `~/work/Manopt.jl/Manopt.jl/tutorials/Project.toml`
+ 235
+ 238
+ 240
+ 244
+ 246</code></pre><p>We can see that the number of cost function calls varies, depending on how many line search backtrack steps were required to obtain a good stepsize.</p><h2 id="Technical-details"><a class="docs-heading-anchor" href="#Technical-details">Technical details</a><a id="Technical-details-1"></a><a class="docs-heading-anchor-permalink" href="#Technical-details" title="Permalink"></a></h2><p>This tutorial is cached. It was last run on the following package versions.</p><pre><code class="nohighlight hljs">Status `~/work/Manopt.jl/Manopt.jl/tutorials/Project.toml`
   [47edcb42] ADTypes v1.20.0
   [6e4b80f9] BenchmarkTools v1.6.3
   [5ae59095] Colors v0.13.1
@@ -424,4 +425,4 @@ This indicates convergence: No
   [91a5bcdd] Plots v1.41.3
   [731186ca] RecursiveArrayTools v3.41.0
   [37e2e46d] LinearAlgebra v1.12.0
-  [9a3f8284] Random v1.11.0</code></pre><p>This tutorial was last rendered December 17, 2025, 11:27:11.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../HowToDebug/">« Print debug output</a><a class="docs-footer-nextpage" href="../ImplementASolver/">Implement a solver »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Wednesday 17 December 2025 11:31">Wednesday 17 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  [9a3f8284] Random v1.11.0</code></pre><p>This tutorial was last rendered December 17, 2025, 11:30:29.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../HowToDebug/">« Print debug output</a><a class="docs-footer-nextpage" href="../ImplementASolver/">Implement a solver »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Wednesday 17 December 2025 11:34">Wednesday 17 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
