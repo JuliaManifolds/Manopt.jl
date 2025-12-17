@@ -138,6 +138,19 @@ using RecursiveArrayTools
 
         @test f_prime ≈ f_prime_limited
         @test f_double_prime ≈ f_double_prime_limited
+
+        ha.last_gcp_result = :found_unlimited
+        @test Manopt.get_parameter(ha, Val(:max_stepsize)) == Inf
+
+        @testset "No memory tests" begin
+            ha2 = QuasiNewtonLimitedMemoryBoxDirectionUpdate(QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2))
+            @test Manopt.hess_val_eb(ha2, M, p, b, grad) ≈ 4.0
+            Manopt.set_M_current_scale!(M, p, ha2)
+            @test ha2.current_scale == ha2.qn_du.initial_scale
+            @test ha2.M_11 == fill(0.0, 0, 0)
+            @test ha2.M_21 == fill(0.0, 0, 0)
+            @test ha2.M_22 == fill(0.0, 0, 0)
+        end
     end
 
     @testset "GCPFinder" begin
@@ -187,6 +200,15 @@ using RecursiveArrayTools
         p0 = [0.0, 4.0, 1.0]
         p_opt = quasi_Newton(M, f2, grad_f2, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test f2(M, p_opt) < 16.1
+
+        for stepsize in [ArmijoLinesearch(), CubicBracketingLinesearch()]
+            p_opt = quasi_Newton(
+                M, f2, grad_f2, p0;
+                stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100),
+                stepsize = stepsize
+            )
+            @test f2(M, p_opt) < 16.1
+        end
     end
 
     @testset "requires_gcp" begin

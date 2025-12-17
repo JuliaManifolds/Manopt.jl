@@ -123,7 +123,7 @@ function (a::ArmijoLinesearchStepsize)(
     l = norm(get_manifold(mp), p, η)
     local swse
     if :stop_when_stepsize_exceeds in keys(kwargs)
-        swse = kwargs.stop_when_stepsize_exceeds
+        swse = kwargs[:stop_when_stepsize_exceeds]
     else
         swse = (a.stop_when_stepsize_exceeds / l)
     end
@@ -733,7 +733,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     n_iter = 0
     max_step = cbls.max_stepsize
     if :stop_when_stepsize_exceeds in keys(kwargs)
-        max_step = min(max_step, kwargs.stop_when_stepsize_exceeds)
+        max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
     end
     t = min(cbls.last_stepsize, max_step)
     c_old = init
