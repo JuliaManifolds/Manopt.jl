@@ -500,4 +500,31 @@ end
         Manopt.update_hessian!(qns.direction_update, mp, qns, p, 1)
         # But I am not totally sure what to test for afterwards
     end
+    @testset "Removing zero rho vectors" begin
+        M = Euclidean(2)
+        p = [0.0, 1.0]
+        f(M, p) = sum(p .^ 2)
+        # A wrong gradient
+        grad_f(M, p) = -2 .* p
+        gmp = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, gmp)
+        qdu = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 3)
+        # push three pairs; middle one has zero inner product
+        push!(qdu.memory_y, [1, 0])
+        push!(qdu.memory_s, [1, 0])
+
+        push!(qdu.memory_y, [1, 0])
+        push!(qdu.memory_s, [0, 1])
+
+        push!(qdu.memory_y, [0, 2])
+        push!(qdu.memory_s, [0, 2])
+        qdu.ρ = [1.0, 0.0, 4.0]
+        # delete the zero inner product pair and check that the removal was correct
+        Manopt._drop_zero_rho_vectors!(qdu)
+        @test length(qdu.memory_y) == 2
+        @test length(qdu.memory_s) == 2
+        @test qdu.ρ[[1, 2]] == [1.0, 4.0]
+        @test qdu.memory_y[1] == [1, 0]
+        @test qdu.memory_y[2] == [0, 2]
+    end
 end

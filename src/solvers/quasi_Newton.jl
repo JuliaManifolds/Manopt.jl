@@ -752,6 +752,28 @@ function fill_rho_i!(M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectio
     return d
 end
 
+function _drop_zero_rho_vectors!(d::QuasiNewtonLimitedMemoryDirectionUpdate{U}) where {U <: InverseBFGS}
+    T = eltype(d.memory_s)
+    memory_size = capacity(d.memory_s)
+    new_scb = CircularBuffer{T}(memory_size)
+    new_ycb = CircularBuffer{T}(memory_size)
+    new_ρ = similar(d.ρ)
+    fill!(new_ρ, 0)
+    j = 1
+    for i in 1:length(d.memory_s)
+        if !iszero(d.ρ[i])
+            push!(new_scb, d.memory_s[i])
+            push!(new_ycb, d.memory_y[i])
+            new_ρ[j] = d.ρ[i]
+            j += 1
+        end
+    end
+    d.memory_s = new_scb
+    d.memory_y = new_ycb
+    d.ρ = new_ρ
+    return d
+end
+
 # Limited-memory update
 function update_hessian!(
         d::QuasiNewtonLimitedMemoryDirectionUpdate{U},
@@ -784,25 +806,7 @@ function update_hessian!(
     end
 
     if reforming_required
-        # drop elements with zero inner product
-        T = eltype(d.memory_s)
-        memory_size = capacity(d.memory_s)
-        new_scb = CircularBuffer{T}(memory_size)
-        new_ycb = CircularBuffer{T}(memory_size)
-        new_ρ = similar(d.ρ)
-        fill!(new_ρ, 0)
-        j = 1
-        for i in 1:length(d.memory_s)
-            if !iszero(d.ρ[i])
-                push!(new_scb, d.memory_s[i])
-                push!(new_ycb, d.memory_y[i])
-                new_ρ[j] = d.ρ[i]
-                j += 1
-            end
-        end
-        d.memory_s = new_scb
-        d.memory_y = new_ycb
-        d.ρ = new_ρ
+        _drop_zero_rho_vectors!(d)
     end
 
     # add newest
