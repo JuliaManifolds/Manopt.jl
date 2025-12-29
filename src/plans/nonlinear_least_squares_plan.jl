@@ -37,8 +37,9 @@ $(_problem(:NonLinearLeastSquares))
 
 # Constructors
 
-    NonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer; kwargs...)
-    NonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction)
+    NonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer, robustifier=IdentityRobustifier())
+    NonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction, robustifier::AbstractRobustifierFunction=IdentityRobustifier())
+    NonlinearLeastSquaresObjective(fs::Vector{<:AbstractVectorGradientFunction}, robustifiers::Vector{<:AbstractRobustifierFunction}=fill(IdentityRobustifier(), length(fs)))
 
 # Arguments
 
@@ -47,6 +48,8 @@ $(_problem(:NonLinearLeastSquares))
 * `range_dimension::Integer` the number of dimensions `m` the function `f` maps into
 
 These three can also be passed as a [`AbstractVectorGradientFunction`](@ref) `vf` already.
+
+* `robustifier` the robustifier function(s) to use, by default the identity function.
 
 # Keyword arguments
 
@@ -73,7 +76,7 @@ struct NonlinearLeastSquaresObjective{
     # block components case constructor
     function NonlinearLeastSquaresObjective(
             fs::VF,
-            robustifiers::RV
+            robustifiers::RV = fill(IdentityRobustifier(), length(fs)),
         ) where {E <: AbstractEvaluationType, VF <: Vector{AbstractVectorGradientFunction{E}}, RV <: Vector{<:AbstractRobustifierFunction}}
         # we need to check that the lengths match
         (length(fs) != length(robustifiers)) && throw(
@@ -86,7 +89,7 @@ struct NonlinearLeastSquaresObjective{
     # single component case constructor
     function NonlinearLeastSquaresObjective(
             f::F,
-            robustifier::R
+            robustifier::R = IdentityRobustifier(),
         ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction}
         return new{E, F, R}(f, robustifier)
     end
@@ -96,12 +99,12 @@ end
 function NonlinearLeastSquaresObjective(
         f,
         jacobian,
-        range_dimension::Integer;
+        range_dimension::Integer,
+        robustifier::AbstractRobustifierFunction = IdentityRobustifier();
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         jacobian_tangent_basis::AbstractBasis = DefaultOrthonormalBasis(),
         jacobian_type::AbstractVectorialType = CoordinateVectorialType(jacobian_tangent_basis),
         function_type::AbstractVectorialType = FunctionVectorialType(),
-        robustifier::AbstractRobustifierFunction = IdentityRobustifier(),
     )
     vgf = VectorGradientFunction(
         f,

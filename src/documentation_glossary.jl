@@ -305,14 +305,16 @@ define!(
     :NonLinearLeastSquares,
     (; M = "M", p = "p") -> """
     ```math
-    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum, "i=1", "m"))
-        ρ_i $(_tex(:Bigl))( $(_tex(:abs, "F_i($p)"))^2 $(_tex(:Bigr)))
+    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} f(p),
+    $(_tex(:qquad)) f(p) = $(_tex(:frac, 1, 2)) $(_tex(:sum, "i=1", "m"))
+        ρ_i $(_tex(:bigl))( $(_tex(:norm, "F_i($p)"))^2 $(_tex(:bigr)))
     ```
 
-    where ``F_i: $(_math(:M; M = M)) → ℝ^{n_i}`` is the ``i``th (block) component of the
-    residual function ``F: $(_math(:M; M = M)) → ℝ^{n_1 + … + n_m}``,
+    where ``F_i: $(_math(:M; M = M)) → ℝ^{n_i}`` is the ``i``th block component of length ``n_i > 0``
     and each ``ρ_i: ℝ → ℝ`` is a robustifier function, cf. [`AbstractRobustifierFunction`](@ref),
-    for such a (block) component.
+    for such a block component.
+    The overall residual function is denoted by ``F: $(_math(:M; M = M)) → ℝ^{n}`` with ``n = $(_tex(:sum, "i=1", "m")) n_i``
+    and concatenates all block components.
     """,
 )
 
