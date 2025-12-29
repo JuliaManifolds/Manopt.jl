@@ -1,20 +1,39 @@
+"""
+    AbstractRobustifierFunction <: Function
+
+An abstract type to represent robustifiers, i.e., functions ``ρ: ℝ → ℝ``,
+currently mainly used within [Levenberg-Marquardt](@ref).
+
+Usually these should be twice continuously differentiable functions with
+
+* ``ρ(0) = 0``
+* ``ρ'(0) = 1``
+
+to mimic the classical least squares behaviour around zero residuals.
+and
+* ``ρ'(x) < 1`` in outlier regions
+* ``ρ''(x) < 0`` in outlier regions
+
+Note that the robustifier is applioed to the squared residuals within the
+nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
+"""
+abstract type AbstractRobustifierFunction <: Function end
+
 @doc """
     NonlinearLeastSquaresObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
-An objective to model the nonlinear least squares problem
+An objective to model the robustified nonlinear least squares problem
 
 $(_problem(:NonLinearLeastSquares))
 
-Specify a nonlinear least squares problem
-
 # Fields
 
-* `objective`: a [`AbstractVectorGradientFunction`](@ref)`{E}` containing both the vector of
-  cost functions ``f_i`` (or a function returning a vector of costs) as well as their
-  gradients ``$(_tex(:grad)) f_i`` (or Jacobian of the vector-valued function).
-
-This `NonlinearLeastSquaresObjective` then has the same [`AbstractEvaluationType`](@ref) `T`
-as the (inner) `objective`.
+* `objective`: a (vector of) [`AbstractVectorGradientFunction`](@ref)`{E}`s, one for each
+  (block component) cost function ``F_i``, which might internally also be a vector of component costs ``(F_i)_j``,
+  as well as their Jacobian ``J_{F_i}`` or a vector of gradients ``$(_tex(:grad)) (F_i)_j``
+  depending on the specified [`AbstractVectorialType`](@ref)s.
+* `robustifier`: a (vector of) [`AbstractRobustifierFunction`](@ref)`s`, one for each
+  (block component) cost function ``F_i``.
 
 # Constructors
 
@@ -23,7 +42,7 @@ as the (inner) `objective`.
 
 # Arguments
 
-* `f` the vectorial cost function ``f: $(_math(:M)) → ℝ^m``
+* `f` the vectorial cost function ``f: $(_math(:M)) → ℝ^m`` or a vector of these
 * `jacobian` the Jacobian, might also be a vector of gradients of the component functions of `f`
 * `range_dimension::Integer` the number of dimensions `m` the function `f` maps into
 
@@ -45,11 +64,35 @@ $(_var(:Keyword, :evaluation))
 [`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref)
 """
 struct NonlinearLeastSquaresObjective{
-        E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E},
-    } <: AbstractManifoldFirstOrderObjective{E, F}
-    objective::F
+        E <: AbstractEvaluationType,
+        VF <: Union{Vector{AbstractVectorGradientFunction{E}}, AbstractVectorGradientFunction{E}},
+        RF <: Union{Vector{<:AbstractRobustifierFunction}, AbstractRobustifierFunction},
+    } <: AbstractManifoldFirstOrderObjective{E, VF}
+    objective::VF
+    robustifier::RF
+    # block components case constructor
+    function NonlinearLeastSquaresObjective(
+            fs::VF,
+            robustifiers::RV
+        ) where {E <: AbstractEvaluationType, VF <: Vector{AbstractVectorGradientFunction{E}}, RV <: Vector{<:AbstractRobustifierFunction}}
+        # we need to check that the lengths match
+        (length(fs) != length(robustifiers)) && throw(
+            ArgumentError(
+                "Number of functions ($(length(fs))) does not match number of robustifiers ($(length(robustifiers)))",
+            ),
+        )
+        return new{E, VF, RV}(fs, robustifiers)
+    end
+    # single component case constructor
+    function NonlinearLeastSquaresObjective(
+            f::F,
+            robustifier::R
+        ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction}
+        return new{E, F, R}(f, robustifier)
+    end
 end
 
+# the old single function constructor
 function NonlinearLeastSquaresObjective(
         f,
         jacobian,
@@ -58,7 +101,7 @@ function NonlinearLeastSquaresObjective(
         jacobian_tangent_basis::AbstractBasis = DefaultOrthonormalBasis(),
         jacobian_type::AbstractVectorialType = CoordinateVectorialType(jacobian_tangent_basis),
         function_type::AbstractVectorialType = FunctionVectorialType(),
-        kwargs...,
+        robustifier::AbstractRobustifierFunction = IdentityRobustifier(),
     )
     vgf = VectorGradientFunction(
         f,
@@ -68,9 +111,8 @@ function NonlinearLeastSquaresObjective(
         jacobian_type = jacobian_type,
         function_type = function_type,
     )
-    return NonlinearLeastSquaresObjective(vgf; kwargs...)
+    return NonlinearLeastSquaresObjective(vgf, robustifier)
 end
-
 # Cost
 function get_cost(
         M::AbstractManifold,
@@ -183,27 +225,6 @@ end
 #
 #
 # Robustifiers
-
-"""
-    AbstractRobustifierFunction <: Function
-
-An abstract type to represent robustifiers, i.e., functions ``ρ: ℝ → ℝ``,
-currently mainly used within [Levenberg-Marquardt](@ref).
-
-Usually these should be twice continuously differentiable functions with
-
-* ``ρ(0) = 0``
-* ``ρ'(0) = 1``
-
-to mimic the classical least squares behaviour around zero residuals.
-and
-* ``ρ'(x) < 1`` in outlier regions
-* ``ρ''(x) < 0`` in outlier regions
-
-Note that the robustifier is applioed to the squared residuals within the
-nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
-"""
-abstract type AbstractRobustifierFunction <: Function end
 
 function get_robustifier_values end
 
@@ -606,7 +627,7 @@ struct LevenbergMarquardtLinearSubproblem{F}
 end
 
 function (lmls::LevenbergMarquardtLinearSubproblem)(sk, JJ, grad_f_c)
-    lmls.linear_solver!(sk, JJ, grad_f_c)
+    return lmls.linear_solver!(sk, JJ, grad_f_c)
 end
 
 
@@ -622,7 +643,7 @@ A default value is given in brackets if a parameter can be left out in initializ
 $(_var(:Field, :p; add = [:as_Iterate]))
 $(_var(:Field, :retraction_method))
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
-* `residual_values_temp`: value of ``F`` for the current proposal point
+* `candidate_residual_values`: value of ``F`` for the current proposal point
 $(_var(:Field, :stopping_criterion, "stop"))
 * `jacobian`:                 the current Jacobian of ``F``
 * `gradient`:             the current gradient of ``F``
@@ -672,7 +693,6 @@ mutable struct LevenbergMarquardtState{
         Tparams <: Real,
         Pr,
         St,
-        Sm <: AbstractRobustifierFunction
     } <: AbstractGradientSolverState
     p::P
     stop::TStop
@@ -691,7 +711,6 @@ mutable struct LevenbergMarquardtState{
     last_step_successful::Bool
     sub_problem::Pr
     sub_state::St
-    smoothing::Sm
     function LevenbergMarquardtState(
             M::AbstractManifold,
             initial_residual_values::Tresidual_values,
@@ -709,8 +728,7 @@ mutable struct LevenbergMarquardtState{
             linear_subsolver! = nothing, #remove on next breaking release
             sub_problem::Pr = linear_subsolver!,
             sub_state::St = InplaceEvaluation(),
-            smoothing::Sm = IdentityRobustifier()
-        ) where {P, Tresidual_values, TJac, TGrad, Pr, St, Sm<:AbstractRobustifierFunction}
+        ) where {P, Tresidual_values, TJac, TGrad, Pr, St}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
         end
@@ -729,30 +747,29 @@ mutable struct LevenbergMarquardtState{
             throw(ArgumentError("Value of β must be strictly above 1, received $β"))
         end
         Tparams = promote_type(typeof(η), typeof(damping_term_min), typeof(β))
-        SC = typeof(stopping_criterion),
-        RM = typeof(retraction_method),
-        return new{
-            P, SC, RM, Tresidual_values, TJac, TGrad, Tparams, Pr, St, Sm,
+        return SC = typeof(stopping_criterion),
+            RM = typeof(retraction_method),
+            return new{
+                P, SC, RM, Tresidual_values, TJac, TGrad, Tparams, Pr, St,
             }(
-            p,
-            stopping_criterion,
-            retraction_method,
-            initial_residual_values,
-            copy(initial_residual_values),
-            initial_jacobian,
-            X,
-            allocate(M, X),
-            zero(Tparams),
-            η,
-            damping_term_min,
-            damping_term_min,
-            β,
-            expect_zero_residual,
-            true,
-            sub_problem,
-            sub_state,
-            smoothing,
-        )
+                p,
+                stopping_criterion,
+                retraction_method,
+                initial_residual_values,
+                copy(initial_residual_values),
+                initial_jacobian,
+                X,
+                allocate(M, X),
+                zero(Tparams),
+                η,
+                damping_term_min,
+                damping_term_min,
+                β,
+                expect_zero_residual,
+                true,
+                sub_problem,
+                sub_state,
+            )
     end
 end
 
