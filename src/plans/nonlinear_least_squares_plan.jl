@@ -370,6 +370,7 @@ A robustifier that is based on the Huber function. Note that robustifiers act on
 squared residuals within the nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
 
 The formula for the Huber robustifier is given as
+
 ```math
 ρ(x) = $(
     _tex(
@@ -379,7 +380,9 @@ The formula for the Huber robustifier is given as
     )
 )
 ```
+
 that is, its first and second derivatives read as
+
 ```math
 ρ'(x) = $(
     _tex(
@@ -389,7 +392,9 @@ that is, its first and second derivatives read as
     )
 )
 ```
+
 and
+
 ```math
 ρ''(x) =  $(
     _tex(
@@ -727,7 +732,7 @@ mutable struct LevenbergMarquardtState{
         SC = typeof(stopping_criterion),
         RM = typeof(retraction_method),
         return new{
-            P, SC, RM, Tresidual_values, TJac, TGrad, Tparams, Pr, St,
+            P, SC, RM, Tresidual_values, TJac, TGrad, Tparams, Pr, St, Sm,
             }(
             p,
             stopping_criterion,

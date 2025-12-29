@@ -305,11 +305,14 @@ define!(
     :NonLinearLeastSquares,
     (; M = "M", p = "p") -> """
     ```math
-    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum, "i=1", "m")) $(_tex(:abs, "f_i($p)"))^2
+    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum, "i=1", "m"))
+        ρ_i $(_tex(:Bigl))( $(_tex(:abs, "F_i($p)"))^2 $(_tex(:Bigr)))
     ```
 
-    where ``f: $(_math(:M; M = M)) → ℝ^m`` is written with component functions ``f_i: $(_math(:M; M = M)) → ℝ``, ``i=1,…,m``,
-    and each component function is continuously differentiable.
+    where ``F_i: $(_math(:M; M = M)) → ℝ^{n_i}`` is the ``i``th (block) component of the
+    residual function ``F: $(_math(:M; M = M)) → ℝ^{n_1 + … + n_m}``,
+    and each ``ρ_i: ℝ → ℝ`` is a robustifier function, cf. [`AbstractRobustifierFunction`](@ref),
+    for such a (block) component.
     """,
 )
 
