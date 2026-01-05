@@ -5,8 +5,8 @@ _doc_mads = """
     mesh_adaptive_direct_search!(M, f, p; kwargs...)
     mesh_adaptive_direct_search!(M, mco::AbstractManifoldCostObjective, p; kwargs..)
 
-The Mesh Adaptive Direct Search (MADS) algorithm minimizes an objective function ``f: $(_math(:M)) → ℝ`` on the manifold `M`.
-The algorithm constructs an implicit mesh in the tangent space ``$(_math(:TpM))`` at the current candidate ``p``.
+The Mesh Adaptive Direct Search (MADS) algorithm minimizes an objective function ``f: $(_math(:Manifold))nifold))) → ℝ`` on the manifold `M`.
+The algorithm constructs an implicit mesh in the tangent space ``$(_math(:TangentSpace)))`` at the current candidate ``p``.
 Each iteration consists of a search step and a poll step.
 
 The search step selects points from the implicit mesh and attempts to find an improved candidate solution that reduces the value of ``f``.
@@ -15,9 +15,7 @@ It consists of a local exploration on the current implicit mesh in the neighbour
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :p]))
 
 # Keyword arguments
 
@@ -27,13 +25,12 @@ $(_var(:Argument, :p))
   any vector generated on the mesh is shortened to this length to avoid leaving the injectivity radius,
 * `poll::`[`AbstractMeshPollFunction`](@ref)`=`[`LowerTriangularAdaptivePoll`](@ref)`(M, copy(M,p))`:
   the poll function to use. The `mesh_basis` (as `basis`), `retraction_method`, and `vector_transport_method` are passed to this default as well.
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:retraction_method))
 * `scale_mesh=`$(_link(:injectivity_radius))`(M) / 4`: initial scaling of the mesh
 * `search::`[`AbstractMeshSearchFunction`](@ref)`=`[`DefaultMeshAdaptiveDirectSearch`](@ref)`(M, copy(M,p))`:
   the search function to use. The `retraction_method` is passed to this default as well.
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenPollSizeLess`](@ref)`(1e-10)`"))
-$(_var(:Keyword, :vector_transport_method))
-$(_var(:Keyword, :X))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenPollSizeLess`](@ref)`(1e-10)`"))
+$(_kwargs([:vector_transport_method, :X]))
 
 $(_note(:OtherKeywords))
 

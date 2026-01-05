@@ -7,15 +7,16 @@
 
 # Fields
 
-$(_var(:Field, :stepsize, "backtracking"; type = true)) to determine the step size ``β_k`` step size from ``p_k`` to the candidate ``q_k``
-$(_var(:Field, :inverse_retraction_method))
-$(_var(:Field, :p; add = [:as_Iterate]))
-* `q` an interims point for the projected gradient step
-$(_var(:Field, :stepsize)) ``α_k`` to determine the ``q_k`` candidate
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :X))
-* `Y::T` a temporary memory for a tangent vector to store the no. Used within the backtracking
+$(_fields(:stepsize; name = "backtracking")) to determine the step size ``β_k`` step size from ``p_k`` to the candidate ``q_k``
+$(_fields(:inverse_retraction_method))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:p; name = "q"))
+  an interims point for the projected gradient step
+$(_fields(:stepsize)) ``α_k`` to determine the ``q_k`` candidate
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields([:retraction_method, :X]))
+$(_fields(:X; name = "Y"))
+  a temporary memory for a tangent vector to store the no. Used within the backtracking
 
 # Constructor
 
@@ -23,12 +24,11 @@ $(_var(:Field, :X))
 
 ## Keyword arguments
 
-$(_var(:Keyword, :stepsize, "backtracking"; default = "[`ArmijoLinesearchStepsize`](@ref)`(M)`")) ``p_k`` to the candidate ``q_k``
-$(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :stepsize; default = "[`ConstantStepsize`](@ref)`(M)`")) ``α_k`` to determine the ``q_k`` candidate
-$(_var(:Keyword, :stopping_criterion, "stop"; default = "[`StopAfterIteration`](@ref)`(300)`"))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :X))
+$(_kwargs(:stepsize; name = "backtracking", default = "[`ArmijoLinesearchStepsize`](@ref)`(M)`")) ``p_k`` to the candidate ``q_k``
+$(_kwargs(:inverse_retraction_method))
+$(_kwargs(:stepsize; default = "[`ConstantStepsize`](@ref)`(M)`")) ``α_k`` to determine the ``q_k`` candidate
+$(_kwargs(:stopping_criterion; name = "stop", default = "[`StopAfterIteration`](@ref)`(300)`"))
+$(_kwargs([:retraction_method, :X]))
 """
 struct ProjectedGradientMethodState{P, T, S, S2, SC, RM, IRM} <: AbstractManoptSolverState
     backtrack::S2
@@ -178,22 +178,19 @@ For more information see [BergmannFerreiraNemethZhu:2025](@cite).
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
+$(_args([:M, :f, :grad_f]))
 * `proj` the function that projects onto the set ``$(_tex(:Cal, "C"))``
   as a function `(M, p) -> q` or a function `(M, q, p) -> q` computing the projection in-place of `q`.
-$(_var(:Argument, :p))
+$(_args(:p))
 
 
 # Keyword arguments
 
-$(_var(:Keyword, :stepsize, "backtrack"; default = "[`ArmijoLinesearchStepsize`](@ref)`(M; stop_increasing_at_step=0)`")) to perform the backtracking to determine the ``β_k``.
+$(_kwargs(:stepsize, "backtrack"; default = "[`ArmijoLinesearchStepsize`](@ref)`(M; stop_increasing_at_step=0)`")) to perform the backtracking to determine the ``β_k``.
   Note that the method requires ``β_k ≤ 1``, otherwise the projection step no longer provides points within the constraints
-$(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default = "[`ConstantStepsize`](@ref)`(injectivity_radius(M)/2)`")) to perform the candidate projected step.
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500) `$(_sc(:Any))` `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)"))
+$(_kwargs([:evaluation, :retraction_method]))
+$(_kwargs(:stepsize; default = "[`ConstantStepsize`](@ref)`(injectivity_radius(M)/2)`")) to perform the candidate projected step.
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500) `$(_sc(:Any))` `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)"))
 
 $(_note(:OtherKeywords))
 

@@ -6,14 +6,14 @@ see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient
 
 # Fields
 
-$(_var(:Field, :p; add = [:as_Iterate]))
+$(_fields(:p; add_properties = [:as_Iterate]))
 * `direction`:  a direction update to use
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :stepsize))
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields(:stepsize))
 * `evaluation_order`: specify whether to use a randomly permuted sequence (`:FixedRandom`:),
   a per cycle permuted sequence (`:Linear`) or the default, a `:Random` sequence.
 * `order`: stores the current permutation
-$(_var(:Field, :retraction_method))
+$(_fields(:retraction_method))
 
 # Constructor
 
@@ -26,11 +26,11 @@ Create a `StochasticGradientDescentState` with start point `p`.
 * `direction=`[`StochasticGradientRule`](@ref)`(M, $(_link(:zero_vector)))
 * `order_type=:RandomOrder``
 * `order=Int[]`: specify how to store the order of indices for the next epoche
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :p; add = :as_Initial))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
-$(_var(:Keyword, :X; add = :as_Memory))
+$(_kwargs(:retraction_method))
+$(_kwargs(:p; add_properties = [:as_Initial]))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
+$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 
 """
 mutable struct StochasticGradientDescentState{
@@ -113,7 +113,7 @@ The default gradient processor, which just evaluates the (stochastic) gradient o
 
 # Fields
 
-$(_var(:Field, :X))
+$(_fields(:X))
 
 # Constructor
 
@@ -150,8 +150,8 @@ end
 
 # Keyword arguments
 
-$(_var(:Keyword, :X, "initial_gradient"))
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:X, "initial_gradient"))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 
 $(_note(:ManifoldDefaultFactory, "StochasticGradientRule"))
 """
@@ -179,10 +179,10 @@ perform a stochastic gradient descent. This can be performed in-place of `p`.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
 * `grad_f`: a gradient function, that either returns a vector of the gradients
   or is a vector of gradient functions
-$(_var(:Argument, :p))
+$(_args(:p))
 
 alternatively to the gradient you can provide an [`ManifoldStochasticGradientObjective`](@ref) `msgo`,
 then using the `cost=` keyword does not have any effect since if so, the cost is already within the objective.
@@ -191,15 +191,15 @@ then using the `cost=` keyword does not have any effect since if so, the cost is
 
 * `cost=missing`: you can provide a cost function for example to track the function value
 * `direction=`[`StochasticGradient`](@ref)`($(_link(:zero_vector)))
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `evaluation_order=:Random`: specify whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
 * `order_type=:RandomOrder`: a type of ordering of gradient evaluations.
   Possible values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
+$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
 * `order=[1:n]`: the initial permutation, where `n` is the number of gradients in `gradF`.
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:retraction_method))
 
 $(_note(:OtherKeywords))
 

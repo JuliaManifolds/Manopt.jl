@@ -6,8 +6,8 @@
 
 # Fields
 
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:stopping_criterion; name = "stop"))
 * `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``k``
 
 # Constructor
@@ -18,13 +18,13 @@ Initialize the proximal point method solver state, where
 
 ## Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
 
 ## Keyword arguments
 
 * `λ=k -> 1.0` a function to compute the ``λ_k, k ∈ $(_tex(:Cal, "N"))``,
-$(_var(:Keyword, :p; add = :as_Initial))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(100)`"))
+$(_kwargs(:p; add_properties = [:as_Initial]))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(100)`"))
 
 # See also
 
@@ -75,15 +75,15 @@ p^{(k+1)} = $(_tex(:prox))_{λ_kf}(p^{(k)})
 
 # Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
 * `prox_f`: a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the summands of ``f`` (see `evaluation`)
 
 # Keyword arguments
 
-$(_var(:Keyword, :evaluation))
-* `f=nothing`: a cost function ``f: $(_math(:M))→ℝ`` to minimize. For running the algorithm, ``f`` is not required, but for example when recording the cost or using a stopping criterion that requires a cost function.
+$(_kwargs(:evaluation))
+* `f=nothing`: a cost function ``f: $(_math(:Manifold))nifold)))→ℝ`` to minimize. For running the algorithm, ``f`` is not required, but for example when recording the cost or using a stopping criterion that requires a cost function.
 * `λ= k -> 1.0`: a function returning the (square summable but not summable) sequence of ``λ_i``
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)`)"))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)`)"))
 
 $(_note(:OtherKeywords))
 

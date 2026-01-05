@@ -514,7 +514,7 @@ during the last iteration.
 * `storage`                   : a [`StoreStateAction`](@ref) to store (at least) the last
   iterate to use this as the last value (to compute the change) serving as a potential cache
   shared with other components of the solver.
-$(_var(:Keyword, :inverse_retraction_method))
+$(_kwargs(:inverse_retraction_method))
 * `recorded_values`           : to store the recorded values
 
 # Constructor

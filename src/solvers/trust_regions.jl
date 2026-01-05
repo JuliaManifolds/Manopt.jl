@@ -9,18 +9,17 @@ Store the state of the trust-regions solver.
   that decides if the iteration is accepted or not.
 * `HX`, `HY`, `HZ`:          interim storage (to avoid allocation) of ``$(_tex(:Hess)) f(p)[⋅]` of `X`, `Y`, `Z`
 * `max_trust_region_radius`: the maximum trust-region radius
-$(_var(:Field, :p; add = [:as_Iterate]))
+$(_fields(:p; add_properties = [:as_Iterate]))
 * `project!`:                for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:stopping_criterion; name = "stop"))
 * `randomize`:               indicate whether `X` is initialised to a random vector or not
 * `ρ_regularization`:        regularize the model fitness ``ρ`` to avoid division by zero
-$(_var(:Field, :sub_problem))
-$(_var(:Field, :sub_state))
+$(_fields([:sub_problem, :sub_state]))
 * `σ`:                       Gaussian standard deviation when creating the random initial tangent vector
   This field has no effect, when `randomize` is false.
 * `trust_region_radius`: the trust-region radius
-$(_var(:Field, :X))
+$(_fields(:X))
 * `Y`:                       the solution (tangent vector) of the subsolver
 * `Z`:                       the Cauchy point (only used if random is activated)
 
@@ -39,22 +38,20 @@ create a trust region state.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :sub_problem))
-$(_var(:Argument, :sub_state))
+$(_args([:M, :sub_problem, :sub_state]))
 
 ## Keyword arguments
 
 * `acceptance_rate=0.1`
 * `max_trust_region_radius=sqrt(manifold_dimension(M))`
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 * `project!=copyto!`
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
 * `randomize=false`
 * `ρ_regularization=10000.0`
 * `θ=1.0`
 * `trust_region_radius=max_trust_region_radius / 8`
-$(_var(:Keyword, :X; add = :as_Memory))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 
 # See also
 
@@ -267,11 +264,7 @@ by default the [`truncated_conjugate_gradient_descent`](@ref) is used.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
-$(_var(:Argument, :Hess_f))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :grad_f, :Hess_f, :p]))
 
 # Keyword arguments
 
@@ -281,7 +274,7 @@ $(_var(:Argument, :p))
 * `augmentation_threshold=0.75`: trust-region augmentation threshold: if ρ is larger than this threshold,
   a solution is on the trust region boundary and negative curvature, and the radius is extended (augmented)
 * `augmentation_factor=2.0`: trust-region augmentation factor
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `κ=0.1`: the linear convergence target rate of the tCG method
     [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping criterion therein
 * `max_trust_region_radius`: the maximum trust-region radius
@@ -296,12 +289,13 @@ $(_var(:Keyword, :evaluation))
 * `reduction_factor=0.25`: trust-region reduction factor
 * `reduction_threshold=0.1`: trust-region reduction threshold: if ρ is below this threshold,
   the trust region radius is reduced by `reduction_factor`.
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
-$(_var(:Keyword, :sub_kwargs))
-$(_var(:Keyword, :stopping_criterion, "sub_stopping_criterion"; default = "( see [`truncated_conjugate_gradient_descent`](@ref))"))
-$(_var(:Keyword, :sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`"))
-$(_var(:Keyword, :sub_state; default = "[`QuasiNewtonState`](@ref)", add = " where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
+$(_kwargs(:sub_kwargs))
+$(_kwargs(:stopping_criterion, "sub_stopping_criterion"; default = "( see [`truncated_conjugate_gradient_descent`](@ref))"))
+$(_kwargs(:sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`"))
+$(_kwargs(:sub_state; default = "[`QuasiNewtonState`](@ref)"))
+  , where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used
 * `θ=1.0`:                the superlinear convergence target rate of ``1+θ`` of the tCG-method
   [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping criterion therein
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(M) / 4`: the initial trust-region radius

@@ -7,13 +7,13 @@ Model a constrained objective restricted to a set
 $(_tex(:argmin))_{p ∈ $(_tex(:Cal, "C"))} f(p)
 ```
 
-where ``$(_tex(:Cal, "C")) ⊂ $(_math(:M))`` is a convex closed subset.
+where ``$(_tex(:Cal, "C")) ⊂ $(_math(:Manifold)))`` is a convex closed subset.
 
 # Fields
 
 * `objective::AbstractManifoldObjective` the (unconstrained) objective, which
   contains ``f`` and for example its gradient ``$(_tex(:grad)) f``.
-* `project!!::PF` a projection function ``$(_tex(:proj))_{$(_tex(:Cal, "C"))}: $(_math(:M)) → $(_tex(:Cal, "C"))`` that projects onto the set ``$(_tex(:Cal, "C"))``.
+* `project!!::PF` a projection function ``$(_tex(:proj))_{$(_tex(:Cal, "C"))}: $(_math(:Manifold))) → $(_tex(:Cal, "C"))`` that projects onto the set ``$(_tex(:Cal, "C"))``.
 * `indicator::IF` the indicator function ``ι_{$(_tex(:Cal, "C"))}(p) = $(_tex(:cases, "0 &" * _tex(:text, " for ") * "p∈" * _tex(:Cal, "C"), "∞ &" * _tex(:text, " else.")))``
 
 # Constructor
@@ -24,7 +24,7 @@ Generate the constrained objective for a given function `f` its gradient `grad_f
 
 ## Keyword arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `indicator=nothing`: the indicator function ``ι_{$(_tex(:Cal, "C"))}(p)``. If not provided a test, whether the projection yields the same point is performed.
   For the [`InplaceEvaluation`](@ref) this required one allocation.
 """

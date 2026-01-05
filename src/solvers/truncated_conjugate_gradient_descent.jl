@@ -15,7 +15,7 @@ Let `T` denote the type of a tangent vector and `R <: Real`.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * `randomize`:          indicate whether `X` is initialised to a random vector or not
 * `residual::T`:                 the gradient of the model ``m(Y)``
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:stopping_criterion; name = "stop"))
 * `θ::R`:                     the superlinear convergence target rate of ``1+θ``
 * `trust_region_radius::R`:   the trust-region radius
 * `X::T`:                     the gradient ``$(_tex(:grad))f(p)``
@@ -41,13 +41,12 @@ Initialise the TCG state.
 * `θ=1.0`
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(base_manifold(TpM)) / 4`
 $(
-    _var(
-        :Keyword,
+    _kwargs(
         :stopping_criterion;
         default = "[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "base_manifold(Tpm)"))`)`$(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`$(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()`"
     )
 )
-$(_var(:Keyword, :X))
+$(_kwargs(:X))
 
 # See also
 
@@ -147,7 +146,7 @@ residual. The criterion hence reads
 
 * `κ`:      the reduction factor
 * `θ`:      part of the reduction power
-$(_var(:Field, :at_iteration))
+$(_fields(:at_iteration))
 
 # Constructor
 
@@ -236,7 +235,7 @@ and to end the algorithm when the trust region has been left.
 
 # Fields
 
-$(_var(:Field, :at_iteration))
+$(_fields(:at_iteration))
 * `trr` the trust region radius
 * `YPY` the computed norm of ``Y``.
 
@@ -297,7 +296,7 @@ yield a reduction of the model.
 
 # Fields
 
-$(_var(:Field, :at_iteration))
+$(_fields(:at_iteration))
 * `value` store the value of the inner product.
 * `reason`: stores a reason of stopping if the stopping criterion has been reached,
   see [`get_reason`](@ref).
@@ -351,7 +350,7 @@ A functor for testing if the curvature of the model value increased.
 
 # Fields
 
-$(_var(:Field, :at_iteration))
+$(_fields(:at_iteration))
 * `model_value`stre the last model value
 * `inc_model_value` store the model value that increased
 
@@ -424,7 +423,7 @@ solve the trust-region subproblem
 
 $(_doc_TCG_subproblem)
 
-on a manifold ``$(_math(:M))`` by using the Steihaug-Toint truncated conjugate-gradient (tCG) method.
+on a manifold ``$(_math(:Manifold))nifold)))`` by using the Steihaug-Toint truncated conjugate-gradient (tCG) method.
 This can be done inplace of `X`.
 
 For a description of the algorithm and theorems offering convergence guarantees,
@@ -432,12 +431,7 @@ see [AbsilBakerGallivan:2006, ConnGouldToint:2000](@cite).
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
-$(_var(:Argument, :Hess_f))
-$(_var(:Argument, :p))
-$(_var(:Argument, :X))
+$(_args([:M, :f, :grad_f, :Hess_f, :p, :X]))
 
 Instead of the three functions, you either provide a [`ManifoldHessianObjective`](@ref) `mho`
 which is then used to build the trust region model, or a [`TrustRegionModelObjective`](@ref) `trmo`
@@ -445,7 +439,7 @@ directly.
 
 # Keyword arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `preconditioner`:       a preconditioner for the Hessian H.
   This is either an allocating function `(M, p, X) -> Y` or an in-place function `(M, Y, p, X) -> Y`,
   see `evaluation`, and by default set to the identity.
@@ -454,10 +448,9 @@ $(_var(:Keyword, :evaluation))
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * `randomize=false`:      indicate whether `X` is initialised to a random vector or not. This disables preconditioning.
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:retraction_method))
 $(
-    _var(
-        :Keyword,
+    _kwargs(
         :stopping_criterion;
         default = "[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "base_manifold(Tpm)"))`)`$(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`$(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()`"
     )

@@ -138,18 +138,18 @@ _math_TangentBundle_description(; M = "M") = "the tangent bundle of the manifold
 Glossaries.define!(_glossary_math_terms, :TangentBundle, :description, _math_TangentBundle_description)
 _math_TangentSpace(; M = "M", p = "p") = "T_{$p}$(_tex(:Cal, M))"
 Glossaries.define!(_glossary_math_terms, :TangentSpace, :math, _math_TangentSpace)
-_math_TangentSpace_description(; M = "M", p = "p") = "the tangent space at the point ``$p`` on the manifold ``$(_math(:M; M = M))``"
+_math_TangentSpace_description(; M = "M", p = "p") = "the tangent space at the point ``$p`` on the manifold ``$(_math(:Manifold; M = M))``"
 Glossaries.define!(_glossary_math_terms, :TangentSpace, :description, _math_TangentSpace_description)
 _math_vector_transport(p = "⋅", q = "⋅") = raw"\mathcal T_{" * "$q←$p" * "}"
-Glossaries.define!(_glossary_math_terms, :vector_transport, :math, _math_vector_transport)
+Glossaries.define!(_glossary_math_terms, :VectorTransport, :math, _math_vector_transport)
 function _math_vector_transport_description(; M = "M", p = "⋅", q = "⋅")
     points_given == (length(p) > 0 && p != "⋅" && length(q) > 0 && q != "⋅")
     return manifold_given = length(M) > 0 &&
         return "a vector transport $(manifold_given ? "on the manifold $(_math(:Manifold; M = M)) " : "")" *
         "$(points_given ? "from ``$p`` to ``$q``" : "between two points")"
 end
-Glossaries.define!(_glossary_math_terms, :vector_transport, :description, _math_vector_transport_description)
-Glossaries.define!(_glossary_math_terms, :vector_transport, :name, "the vector transport")
+Glossaries.define!(_glossary_math_terms, :VectorTransport, :description, _math_vector_transport_description)
+Glossaries.define!(_glossary_math_terms, :VectorTransport, :name, "the vector transport")
 
 #
 # ---
@@ -254,7 +254,7 @@ Glossaries.define!(
     (; M = "M", p = "p") -> """
         ```math
     \\begin{aligned}
-    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} & f($p)\\\\
+    $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} & f($p)\\\\
     $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
     \\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
     \\end{aligned}
@@ -266,8 +266,8 @@ Glossaries.define!(
     (; M = "M", p = "p") -> """
         ```math
     \\begin{aligned}
-    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} & f($p)\\\\
-    $(_tex(:text, "subject to"))$(_tex(:quad))& p ∈ $(_tex(:Cal, "C")) ⊂ $(_math(:M; M = M))
+    $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} & f($p)\\\\
+    $(_tex(:text, "subject to"))$(_tex(:quad))& p ∈ $(_tex(:Cal, "C")) ⊂ $(_math(:Manifold; M = M))
     \\end{aligned}
     ```
     """,
@@ -276,7 +276,7 @@ Glossaries.define!(
     _glossary_problems, :Default, :problem,
     (; M = "M", p = "p") -> """
     ```math
-    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} f($p)
+    $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} f($p)
     ```
     """
 )
@@ -284,10 +284,10 @@ Glossaries.define!(
     _glossary_problems, :NonLinearLeastSquares, :problem,
     (; M = "M", p = "p") -> """
     ```math
-    $(_tex(:argmin))_{$p ∈ $(_math(:M; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum, "i=1", "m")) $(_tex(:abs, "f_i($p)"))^2
+    $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum, "i=1", "m")) $(_tex(:abs, "f_i($p)"))^2
     ```
 
-    where ``f: $(_math(:M; M = M)) → ℝ^m`` is written with component functions ``f_i: $(_math(:M; M = M)) → ℝ``, ``i=1,…,m``,
+    where ``f: $(_math(:Manifold; M = M)) → ℝ^m`` is written with component functions ``f_i: $(_math(:Manifold; M = M)) → ℝ``, ``i=1,…,m``,
     and each component function is continuously differentiable.
     """,
 )
@@ -323,10 +323,10 @@ _glossary[:Variable] = Glossaries.Glossary()
 _glossary_variables = _glossary[:Variable]
 __arg_formater = Glossaries.Argument()
 _args(args...; kwargs...) = __arg_formater(_glossary_variables, args...; kwargs...)
-__kws_formater = Glossaries.Keyword()
-_kws(args...; kwargs...) = __kws_formater(_glossary_variables, args...; kwargs...)
-__fld_formater = Glossaries.Field()
-_flds(args...; kwargs...) = __fld_formater(_glossary_variables, args...; kwargs...)
+__kwargs_formater = Glossaries.Keyword()
+_kwargs(args...; kwargs...) = __kwargs_formater(_glossary_variables, args...; kwargs...)
+__field_formater = Glossaries.Field()
+_fields(args...; kwargs...) = __field_formater(_glossary_variables, args...; kwargs...)
 
 #
 #
@@ -372,14 +372,14 @@ Glossaries.define!(_glossary_variables, :grad_f)
 Glossaries.define!(
     _glossary_variables, :grad_f, :description,
     (; M = "M", p = "p", f = "f", kwargs...) ->
-    "the (Riemannian) gradient ``$(_tex(:grad))$f: $(_math(:M, M = M)) → $(_math(:TpM; M = M, p = p))`` of $f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
+    "the (Riemannian) gradient ``$(_tex(:grad))$f: $(_math(:Manifold, M = M)) → $(_math(:TangentSpace; M = M, p = p))`` of $f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
 )
 
 Glossaries.define!(_glossary_variables, :Hess_f)
 Glossaries.define!(
     _glossary_variables, :Hess_f, :description,
     (; M = "M", p = "p", f = "f") ->
-    "the (Riemannian) Hessian ``$(_tex(:Hess))$f: $(_math(:TpM, M = M, p = p)) → $(_math(:TpM; M = M, p = p))`` of $f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
+    "the (Riemannian) Hessian ``$(_tex(:Hess))$f: $(_math(:TangentSpace, M = M, p = p)) → $(_math(:TangentSpace; M = M, p = p))`` of $f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
 )
 
 Glossaries.define!(_glossary_variables, :inverse_retraction_method)
@@ -470,7 +470,7 @@ Glossaries.define!(_glossary_variables, :subgrad_f, :name, "∂f")
 Glossaries.define!(
     _glossary_variables, :subgrad_f, :description,
     (; M = "M", p = "p", f = "f", kwargs...) -> """
-    the subgradient ``∂$f: $(_math(:M; M = M)) → $(_math(:TM; M = M))`` of ``$f`` as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place. This function should always only return one element from the subgradient.
+    the subgradient ``∂$f: $(_math(:Manifold; M = M)) → $(_math(:TangentBundle; M = M))`` of ``$f`` as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place. This function should always only return one element from the subgradient.
     """,
 )
 
@@ -478,7 +478,7 @@ Glossaries.define!(_glossary_variables, :vector_transport_method)
 Glossaries.define!(
     _glossary_variables, :vector_transport_method, :description,
     (; M = "M", p = "p") ->
-    "a vector transport ``$(_math(:vector_transport, :symbol))`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)",
+    "a vector transport ``$(_math(:VectorTransport, :symbol))`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)",
 )
 Glossaries.define!(_glossary_variables, :vector_transport_method, :type, "AbstractVectorTransportMethodP")
 Glossaries.define!(

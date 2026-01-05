@@ -13,15 +13,11 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :X; add = [:as_Gradient]))
-$(_var(:Field, :inverse_retraction_method))
-$(_var(:Field, :vector_transport_method))
-$(_var(:Field, :sub_problem))
-$(_var(:Field, :sub_state))
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :stepsize))
-$(_var(:Field, :retraction_method))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:X; add_properties = [:as_Gradient]))
+$(_fields([:inverse_retraction_method, :sub_problem, :sub_state]))
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields([:stepsize, :retraction_method, :vector_transport_method]))
 
 The sub task requires a method to solve
 
@@ -39,18 +35,15 @@ Initialise the Frank Wolfe method state, where `sub_problem` is a closed form so
 
 ## Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :sub_problem))
-$(_var(:Argument, :sub_state))
+$(_args([:M, :sub_problem, :sub_state]))
 
 ## Keyword arguments
 
-$(_var(:Keyword, :p; add = :as_Initial))
-$(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, FrankWolfeState)`"))
-$(_var(:Keyword, :X; add = :as_Memory))
+$(_kwargs(:p; add_properties = [:as_Initial]))
+$(_kwargs([:inverse_retraction_method, :retraction_method]))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
+$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, FrankWolfeState)`"))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 
 where the remaining fields from before are keyword arguments.
 """
@@ -183,36 +176,31 @@ use a retraction and its inverse.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :grad_f, :p]))
 
 $(_note(:GradientObjective))
 
 # Keyword arguments
 
-$(_var(:Keyword, :differential))
-$(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default = "[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)"))
+$(_kwargs([:differential, :evaluation, :retraction_method]))
+$(_kwargs(:stepsize; default = "[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`"))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)"))
 * `sub_cost=`[`FrankWolfeCost`](@ref)`(p, X)`:
   the cost of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
 * `sub_grad=`[`FrankWolfeGradient`](@ref)`(p, X)`:
   the gradient of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
-$(_var(:Keyword, :sub_kwargs))
+$(_kwargs(:sub_kwargs))
 
 * `sub_objective=`[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_gradient)`:
   the objective for the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_problem"))
 
-$(_var(:Keyword, :sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
-$(_var(:Keyword, :sub_state; default = "[`GradientDescentState`](@ref)`(M, copy(M,p))`"))
+$(_kwargs(:sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
+$(_kwargs(:sub_state; default = "[`GradientDescentState`](@ref)`(M, copy(M,p))`"))
 
-$(_var(:Keyword, :X; add = :as_Gradient))
-$(_var(:Keyword, :stopping_criterion, "sub_stopping_criterion"; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`"))
+$(_kwargs(:X; add_properties = [:as_Gradient]))
+$(_kwargs(:stopping_criterion, "sub_stopping_criterion"; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`"))
   $(_note(:KeywordUsedIn, "sub_state"))
-$(_var(:Keyword, :X; add = :as_Gradient))
+$(_kwargs(:X; add_properties = [:as_Gradient]))
 
 $(_note(:OtherKeywords))
 

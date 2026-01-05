@@ -3,9 +3,9 @@
 
 Model an objective of the form
 ```math
-    f(p) = g(p) + h(p), $(_tex(:qquad)) p ∈ $(_math(:M)),
+    f(p) = g(p) + h(p), $(_tex(:qquad)) p ∈ $(_math(:Manifold))nifold))),
 ```
-where ``g: $(_math(:M)) → $(_tex(:eR))`` is a differentiable function
+where ``g: $(_math(:Manifold))) → $(_tex(:eR))`` is a differentiable function
 and ``h: → $(_tex(:eR))`` is a (possibly) lower semicontinous, and proper function.
 
 This objective provides the total cost ``f``, its smooth component ``g``,
@@ -136,7 +136,7 @@ Stores the nonsmooth part ``h`` of the proximal gradient objective ``f = g + h``
 This struct is also a functor `(M, q) -> v` that can be used as a cost function within a solver, primarily for solving the proximal map subproblem formulation in the proximal gradient method, which reads
 
 ```math
-    $(_tex(:prox))_{λ h}(p) = $(_tex(:argmin))_{q ∈ $(_math(:M))} h(q) + $(_tex(:frac, "1", "2λ"))$(_math(:distance))^2(q, p)
+    $(_tex(:prox))_{λ h}(p) = $(_tex(:argmin))_{q ∈ $(_math(:Manifold)))} h(q) + $(_tex(:frac, "1", "2λ"))$(_math(:distance))^2(q, p)
 ```
 
 Hence, the functor reads
@@ -235,18 +235,18 @@ State for the [`proximal_gradient_method`](@ref) solver.
 
 # Fields
 
-$(_var(:Field, :inverse_retraction_method))
+$(_fields(:inverse_retraction_method))
 * `a` - point after acceleration step
-$(_var(:Field, :p; add = [:as_Iterate]))
+$(_fields(:p; add_properties = [:as_Iterate]))
 * `q` - point for storing gradient step
-$(_var(:Field, :retraction_method))
+$(_fields(:retraction_method))
 * `X` - tangent vector for storing gradient
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:stopping_criterion; name = "stop"))
 * `acceleration` - a function `(problem, state, k) -> state` to compute an acceleration before the gradient step
 * `stepsize` - a function or [`Stepsize`](@ref) object to compute the stepsize
 * `last_stepsize` - stores the last computed stepsize
-$(_var(:Field, :sub_problem, "sub_problem", "Union{AbstractManoptProblem, F}"; add = "or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)"))
-$(_var(:Field, :sub_state; add = "This field is ignored, if the `sub_problem` is `Nothing`"))
+$(_fields(:sub_problem; name = "sub_problem", type = "Union{AbstractManoptProblem, F}")) or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
+$(_fields(:sub_state)). This field is ignored, if the `sub_problem` is `Nothing`.
 
 # Constructor
 
@@ -256,19 +256,19 @@ Generate the state for a given manifold `M` with initial iterate `p`.
 
 ## Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
 
 # Keyword arguments
 
 * `stepsize=default_stepsize(M, ProximalGradientMethodState)`
-$(_var(:Field, :inverse_retraction_method))
-$(_var(:Keyword, :p; add = :as_Initial))
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:inverse_retraction_method))
+$(_kwargs(:p; add_properties = [:as_Initial]))
+$(_kwargs(:retraction_method))
 * `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)` by default no acceleration is performed
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(100)`"))
-$(_var(:Keyword, :sub_problem; default = "nothing"))
-$(_var(:Keyword, :sub_state; default = _var(:evaluation, :default)))
-$(_var(:Keyword, :X; add = :as_Memory))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(100)`"))
+$(_kwargs(:sub_problem; default = "nothing"))
+$(_kwargs(:sub_state; default = _glossary[:Variable][:evaluation][:default]))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct ProximalGradientMethodState{
         P,
@@ -606,7 +606,7 @@ Generate the state for a given manifold `M` with initial iterate `p`.
 
 ## Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
 
 # Keyword arguments
 
@@ -664,8 +664,8 @@ A stopping criterion based on the gradient mapping norm for proximal gradient me
 
 # Fields
 
-$(_var(:Field, :at_iteration))
-$(_var(:Field, :last_change))
+$(_fields(:at_iteration))
+$(_fields(:last_change))
 * `threshold`: the threshold for the change to check (run under to stop)
 
 # Constructor

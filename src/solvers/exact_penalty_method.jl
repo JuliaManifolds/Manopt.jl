@@ -7,11 +7,10 @@ Describes the exact penalty method, with
 
 * `ϵ`: the accuracy tolerance
 * `ϵ_min`: the lower bound for the accuracy tolerance
-$(_var(:Field, :p; add = [:as_Iterate]))
+$(_fields(:p; add_properties = [:as_Iterate]))
 * `ρ`: the penalty parameter
-$(_var(:Field, :sub_problem))
-$(_var(:Field, :sub_state))
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields([:sub_problem, :sub_state]))
+$(_fields(:stopping_criterion; name = "stop"))
 * `u`: the smoothing parameter and threshold for violation of the constraints
 * `u_min`: the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `θ_ϵ`: the scaling factor of the tolerance parameter
@@ -40,10 +39,10 @@ construct the exact penalty state, where `sub_problem` is a closed form solution
 * `u_min=1e-6`
 * `u_exponent=1 / 100`:  a shortcut for the scaling factor ``θ_u``.
 * `θ_u=(u_min / u)^(u_exponent)`
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 * `ρ=1.0`
 * `θ_ρ=0.3`
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`"))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`"))
   [`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-10) )`
 
 # See also
@@ -199,7 +198,7 @@ $(_doc_EPM_penalty)
 Since this is non-smooth, a [`SmoothingTechnique`](@ref) with parameter `u` is applied,
 see the [`ExactPenaltyCost`](@ref).
 
-In every step ``k`` of the exact penalty method, the smoothed objective is then minimized over all ``p ∈$(_math(:M))``.
+In every step ``k`` of the exact penalty method, the smoothed objective is then minimized over all ``p ∈$(_math(:Manifold))nifold))nifold)))``.
 Then, the accuracy tolerance ``ϵ`` and the smoothing parameter ``u`` are updated by setting
 
 $(_doc_EMP_ϵ_update)
@@ -212,10 +211,7 @@ $(_doc_EMP_ρ_update)
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :grad_f, :p]))
 
 # Keyword arguments
  if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`
@@ -252,12 +248,13 @@ Otherwise the problem is not constrained and a better solver would be for exampl
   $(_note(:KeywordUsedIn, "sub_problem"))
 * `sub_grad=`[`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver
   $(_note(:KeywordUsedIn, "sub_problem"))
-$(_var(:Keyword, :sub_kwargs))
+$(_kwargs(:sub_kwargs))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver
   $(_note(:KeywordUsedIn, "sub_state"))
-$(_var(:Keyword, :sub_state; default = "[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
-$(_var(:Keyword, :sub_state; default = "[`QuasiNewtonState`](@ref)", add = " where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`"))
+$(_kwargs(:sub_state; default = "[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
+$(_kwargs(:sub_state; default = "[`QuasiNewtonState`](@ref)"))
+  , where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used"))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`"))
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.

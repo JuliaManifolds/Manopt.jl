@@ -52,7 +52,7 @@ They can also be addressed by their alternate constructors
 * `gradient=nothing` the gradient function `g(M, p)` or in-place `g!(M, X, p)`
 * `costgradient = nothing` the combined cost and gradient function `fg(M,p)` or in-place `fg!(M, X, p))`
 * `costdifferential = nothing` the combined cost and differential function  `fdf(M, p, X)`
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 
 Where:
  * At least one of `cost`, `costgradient` or `costdifferential` must be provided.
@@ -632,12 +632,12 @@ direction update.
 
 # Fields
 
-$(_var(:Field, :p, "p_old"))
+$(_fields(:p; name = "p_old"))
 * `momentum::Real`: factor for the momentum
 * `direction`: internal [`DirectionUpdateRule`](@ref) to determine directions
   to add the momentum to.
-$(_var(:Field, :vector_transport_method))
-$(_var(:Field, :X, "X_old"))
+$(_fields(:vector_transport_method))
+$(_fields(:X; name = "X_old"))
 
 # Constructors
 
@@ -648,12 +648,10 @@ Initialize a momentum gradient rule to `s`, where `p` and `X` are memory for int
 
 ## Keyword arguments
 
-$(_var(:Keyword, :p))
+$(_kwargs(:p))
 * `s=`[`IdentityUpdateRule`](@ref)`()`
 * `momentum=0.2`
-$(_var(:Keyword, :vector_transport_method))
-$(_var(:Keyword, :X))
-
+$(_kwargs([:vector_transport_method, :X]))
 
 # See also
 [`MomentumGradient`](@ref)
@@ -708,11 +706,11 @@ last direction multiplied by momentum ``m``.
 
 # Keyword arguments
 
-$(_var(:Keyword, :p))
+$(_kwargs(:p))
 * `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
-$(_var(:Keyword, :X))
+$(_kwargs(:X))
 * `momentum=0.2` amount of momentum to use
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "MomentumGradientRule"))
 """
@@ -733,7 +731,7 @@ them to the current iterates tangent space.
 * `gradients`:               the last `n` gradient/direction updates
 * `last_iterate`:            last iterate (needed to transport the gradients)
 * `direction`:               internal [`DirectionUpdateRule`](@ref) to determine directions to apply the averaging to
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 # Constructors
 
@@ -753,7 +751,7 @@ Add average to a gradient problem, where
 * `direction`:               is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
 * `gradients`:               can be pre-filled with some history
 * `last_iterate`:            stores the last iterate
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 """
 mutable struct AverageGradientRule{
         P, T, D <: DirectionUpdateRule, VTM <: AbstractVectorTransportMethod,
@@ -802,16 +800,15 @@ them to the current iterates tangent space.
 
 # Input
 
-$(_var(:Argument, :M; type = true)) (optional)
+$(_args(:M)) (optional)
 
 # Keyword arguments
 
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 * `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
 * `gradients=[zero_vector(M, p) for _ in 1:n]` how to initialise the internal storage
 * `n=10` number of gradient evaluations to take the mean over
-$(_var(:Keyword, :X))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs([:X, :vector_transport_method]))
 
 $(_note(:ManifoldDefaultFactory, "AverageGradientRule"))
 """
@@ -830,7 +827,7 @@ See [`Nesterov`](@ref) for details
 * `γ::Real`, `μ::Real`: coefficients from the last iterate
 * `v::P`:      an interim point to compute the next gradient evaluation point `y_k`
 * `shrinkage`: a function `k -> ...` to compute the shrinkage ``β_k`` per iterate `k``.
-$(_var(:Keyword, :inverse_retraction_method))
+$(_kwargs(:inverse_retraction_method))
 
 # Constructor
 
@@ -838,11 +835,11 @@ $(_var(:Keyword, :inverse_retraction_method))
 
 ## Keyword arguments
 
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 * `γ=0.001``
 * `μ=0.9``
 * `shrinkage = k -> 0.8`
-$(_var(:Keyword, :inverse_retraction_method))
+$(_kwargs(:inverse_retraction_method))
 
 # See also
 
@@ -916,15 +913,15 @@ Then the direction from ``p_k`` to ``p_k+1`` by ``d = $(_tex(:invretr))_{p_k}p_{
 
 # Input
 
-$(_var(:Argument, :M; type = true)) (optional)
+$(_args(:M)) (optional)
 
 # Keyword arguments
 
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 * `γ=0.001`
 * `μ=0.9`
 * `shrinkage = k -> 0.8`
-$(_var(:Keyword, :inverse_retraction_method))
+$(_kwargs(:inverse_retraction_method))
 
 $(_note(:ManifoldDefaultFactory, "NesterovRule"))
 """
@@ -956,12 +953,12 @@ Add preconditioning to a gradient problem.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
 * `preconditioner`:   preconditioner function, either as a `(M, p, X)` -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
 
 # Keyword arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
 """
 mutable struct PreconditionedDirectionRule{
@@ -1005,7 +1002,7 @@ end
     PreconditionedDirection(M::AbstractManifold, preconditioner; kwargs...)
 
 Add a preconditioner to a gradient processor following the [motivation for optimization](https://en.wikipedia.org/wiki/Preconditioner#Preconditioning_in_optimization),
-as a linear invertible map ``P: $(_math(:TpM)) → $(_math(:TpM))`` that usually should be
+as a linear invertible map ``P: $(_math(:TangentSpace))) → $(_math(:TangentSpace)))`` that usually should be
 
 * symmetric: ``⟨X, P(Y)⟩ = ⟨P(X), Y⟩``
 * positive definite ``⟨X, P(X)⟩ > 0`` for ``X`` not the zero-vector
@@ -1018,13 +1015,13 @@ you turn a gradient descent into a Newton method.
 
 # Arguments
 
-$(_var(:Argument, :M; type = true)) (optional)
+$(_args(:M)) (optional)
 * `preconditioner`:   preconditioner function, either as a `(M, p, X) -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
 
 # Keyword arguments
 
 * `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 
 $(_note(:ManifoldDefaultFactory, "PreconditionedDirectionRule"))
 """

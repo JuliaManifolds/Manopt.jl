@@ -5,15 +5,17 @@ Is state for the vector bundle Newton method
 
 # Fields
 
-$(_var(:Field, :p; add = "as current point"))
-$(_var(:Field, :p, "p_trial"; add = "next iterate needed for simplified Newton"))
-$(_var(:Field, :X; add = "as current Newton direction"))
-$(_var(:Field, :sub_problem)) currently only the closed form solution is implemented, that is, this is a functor that maps
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:p; name = "p_trial"))
+  next iterate needed for simplified Newton
+$(_fields(:X))
+  as current Newton direction
+$(_fields(:sub_problem))
+  currently only the closed form solution is implemented, that is, this is a functor that maps
   either `(problem::`[`VectorBundleManoptProblem`](@ref)`, state::VectorBundleNewtonState) -> X` or `(problem, X, state) -> X` to compute the Newton direction.
-$(_var(:Field, :sub_state)) specify how the sub_problem is evaluated, e.g. [`AllocatingEvaluation`](@ref) or [`InplaceEvaluation`](@ref)
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :stepsize))
-$(_var(:Field, :retraction_method))
+$(_fields(:sub_state)) specify how the sub_problem is evaluated, e.g. [`AllocatingEvaluation`](@ref) or [`InplaceEvaluation`](@ref)
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields([:stepsize, :retraction_method]))
 
 # Constructor
 
@@ -21,18 +23,16 @@ $(_var(:Field, :retraction_method))
 
 # Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
 * `E`: range vector bundle
-$(_var(:Argument, :p))
-$(_var(:Argument, :sub_state))
-$(_var(:Argument, :sub_problem))
+$(_args([:p, :sub_state, :sub_problem]))
 
 # Keyword arguments
 
-$(_var(:Keyword, :X; add = :as_Memory))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, VectorBundleNewtonState)`"))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
+$(_kwargs(:X; add_properties = [:as_Memory]))
+$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, VectorBundleNewtonState)`"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
 """
 mutable struct VectorBundleNewtonState{
         P, T, Pr, St,
@@ -82,9 +82,9 @@ by a predictor-corrector-loop using an affine covariant quantity ``θ`` to measu
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:M))``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold))nifold))nifold))) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))nifold)))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold)))``
 is given by
 
 ```math
@@ -181,7 +181,7 @@ end
 @doc """
     VectorBundleManoptProblem{M<:AbstractManifold,TV<:AbstractManifold,O} <: AbstractManoptProblem{M}
 
-Model a vector bundle problem, that consists of the domain manifold ``$(_math(:M))`` that is a $(_link(:AbstractManifold)), the range vector bundle ``$(_tex(:Cal, "E"))`` and the Newton equation ``Q_{F(x)}∘ F'(x) δ x + F(x) = 0_{p(F(x))}``.
+Model a vector bundle problem, that consists of the domain manifold ``$(_math(:Manifold)))`` that is a $(_link(:AbstractManifold)), the range vector bundle ``$(_tex(:Cal, "E"))`` and the Newton equation ``Q_{F(x)}∘ F'(x) δ x + F(x) = 0_{p(F(x))}``.
 The Newton equation should be implemented as a functor that computes a representation of the Newton matrix and the right hand side. It needs to have a field ``A`` to store a representation of the Newton matrix ``Q_{F(x)}∘ F'(x) `` and a field ``b`` to store a representation of the right hand side ``F(x)``.
 """
 struct VectorBundleManoptProblem{
@@ -219,7 +219,7 @@ doc_vector_bundle_newton = """
     vectorbundle_newton(M, E, NE, p; kwargs...)
     vectorbundle_newton!(M, E, NE, p; kwargs...)
 
-Perform Newton's method for finding a zero of a mapping ``F:$(_math(:M)) → $(_tex(:Cal, "E"))`` where ``$(_math(:M))`` is a manifold and ``$(_tex(:Cal, "E"))`` is a vector bundle.
+Perform Newton's method for finding a zero of a mapping ``F:$(_math(:Manifold))) → $(_tex(:Cal, "E"))`` where ``$(_math(:Manifold)))`` is a manifold and ``$(_tex(:Cal, "E"))`` is a vector bundle.
 In each iteration the Newton equation
 
 ```math
@@ -233,21 +233,21 @@ For more details see [WeiglSchiela:2024, WeiglBergmannSchiela:2025](@cite).
 
 # Arguments
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
 * `E`: range vector bundle
-$(_var(:Argument, :p))
-* `NE`: functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}∘ F'(p)`` (covariant derivative of ``F`` at ``p``) and the right hand side ``F(p)`` at a point ``p ∈ $(_math(:M))``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
+$(_args(:p))
+* `NE`: functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}∘ F'(p)`` (covariant derivative of ``F`` at ``p``) and the right hand side ``F(p)`` at a point ``p ∈ $(_math(:Manifold)))``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
 
 # Keyword arguments
 
-$(_var(:Keyword, :sub_problem; default = "`nothing`")), i.e. you have to provide a method for solving the Newton equation.
+$(_kwargs(:sub_problem; default = "`nothing`")), i.e. you have to provide a method for solving the Newton equation.
   Currently only the closed form solution is implemented, that is, this is a functor that maps either
   `(problem::`[`VectorBundleManoptProblem`](@ref)`, state::VectorBundleNewtonState) -> X` or `(problem, X, state) -> X` to compute the Newton direction.
-$(_var(:Keyword, :sub_state; default = "[`AllocatingEvaluation`](@ref)"))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, VectorBundleNewtonState)`"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
-$(_var(:Keyword, :X; add = :as_Memory))
+$(_kwargs(:sub_state; default = "[`AllocatingEvaluation`](@ref)"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, VectorBundleNewtonState)`"))
+$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 """
 
 @doc "$(doc_vector_bundle_newton)"

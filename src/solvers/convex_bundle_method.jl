@@ -1,7 +1,7 @@
 @doc """
     estimate_sectional_curvature(M::AbstractManifold, p)
 
-Estimate the sectional curvature of a manifold ``$(_math(:M))`` at a point ``p ∈ $(_math(:M))``
+Estimate the sectional curvature of a manifold ``$(_math(:Manifold)))`` at a point ``p ∈ $(_math(:Manifold)))``
 on two random tangent vectors at ``p`` that are orthogonal to each other.
 
 # See also
@@ -34,7 +34,7 @@ $(
 ```
 
 where ``ω ≤ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is a lower bound to the sectional curvature in
-a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:M))`` with diameter ``δ``.
+a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:Manifold)))`` with diameter ``δ``.
 """
 function ζ_1(k_min, diameter)
     (k_min < zero(k_min)) && return sqrt(-k_min) * diameter * coth(sqrt(-k_min) * diameter)
@@ -59,7 +59,7 @@ $(
 ```
 
 where ``Ω ≥ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is an upper bound to the sectional curvature in
-a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:M))`` with diameter ``δ``.
+a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:Manifold)))`` with diameter ``δ``.
 """
 function ζ_2(k_max, diameter)
     (k_max > zero(k_max)) && return sqrt(k_max) * diameter * cot(sqrt(k_max) * diameter)
@@ -69,7 +69,7 @@ end
 @doc """
     close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
 
-sample a random point close to ``p ∈ $(_math(:M))`` within a tolerance `tol`
+sample a random point close to ``p ∈ $(_math(:Manifold)))`` within a tolerance `tol`
 and a [retraction](@extref ManifoldsBase :doc:`retractions`).
 """
 function close_point(M, p, tol; retraction_method = default_retraction_method(M, typeof(p)))
@@ -95,23 +95,22 @@ point type `P` and a tangent vector type `T``
 * `diameter::R`: estimate for the diameter of the level set of the objective function at the starting point
 * `domain: the domain of ``f`` as a function `(M,p) -> b`that evaluates to true when the current candidate is in the domain of `f`, and false otherwise,
 * `g::T`:                      descent direction
-$(_var(:Field, :inverse_retraction_method))
+$(_fields(:inverse_retraction_method))
 * `k_max::R`:                  upper bound on the sectional curvature of the manifold
 * `linearization_errors<:AbstractVector{<:R}`: linearization errors at the last serious step
 * `m::R`:                      the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
-$(_var(:Field, :p; add = [:as_Iterate]))
+$(_fields(:p; add_properties = [:as_Iterate]))
 * `p_last_serious::P`:         last serious iterate
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:retraction_method))
+$(_fields(:stopping_criterion; name = "stop"))
 * `transported_subgradients`:  subgradients of the bundle that are transported to `p_last_serious`
-$(_var(:Field, :vector_transport_method))
-$(_var(:Field, :X; add = [:as_Subgradient]))
-$(_var(:Field, :stepsize))
+$(_fields(:vector_transport_method))
+$(_fields(:X; add_properties = [:as_Subgradient]))
+$(_fields(:stepsize))
 * `ε::R`:                      convex combination of the linearization errors
 * `λ:::AbstractVector{<:R}`:   convex coefficients from the slution of the subproblem
 * `ξ`:                         the stopping parameter given by ``ξ = -$(_tex(:norm, "g"))^2 – ε``
-$(_var(:Field, :sub_problem))
-$(_var(:Field, :sub_state))
+$(_fields([:sub_problem, :sub_state]))
 
 # Constructor
 
@@ -122,9 +121,7 @@ Generate the state for the [`convex_bundle_method`](@ref) on the manifold `M`
 
 ## Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :sub_problem))
-$(_var(:Argument, :sub_state))
+$(_args([:M, :sub_problem, :sub_state]))
 
 # Keyword arguments
 
@@ -138,13 +135,13 @@ Most of the following keyword arguments set default values for the fields mentio
 * `domain=(M, p) -> isfinite(f(M, p))`
 * `k_max=0`
 * `k_min=0`
-$(_var(:Keyword, :p; add = :as_Initial))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, ConvexBundleMethodState)`"))
-$(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
-* `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:p; add_properties = [:as_Initial]))
+$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, ConvexBundleMethodState)`"))
+$(_kwargs([:inverse_retraction_method, :retraction_method]))
+$(_kwargs(:stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
+$(_kwargs(:X))
+  to specify the type of tangent vector to use.
+$(_kwargs(:vector_transport_method))
 """
 mutable struct ConvexBundleMethodState{
         P,
@@ -463,7 +460,7 @@ Specify a step size that performs a backtracking to the interior of the domain o
   specify a point to be used as memory for the candidate points.
 * `contraction_factor`: how to update ``s`` in the decrease step
 * `initial_stepsize``: specify an initial step size
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:retraction_method))
 
 $(_note(:ManifoldDefaultFactory, "DomainBackTrackingStepsize"))
 """
@@ -592,10 +589,7 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :subgrad_f, _var(:subgrad_f, :symbol)))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :subgrad_f, :p]))
 
 # Keyword arguments
 
@@ -605,15 +599,15 @@ $(_var(:Argument, :p))
 * `m=1e-3`: : the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
 * `diameter=50.0`: estimate for the diameter of the level set of the objective function at the starting point.
 * `domain=(M, p) -> isfinite(f(M, p))`: a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `k_max=0`: upper bound on the sectional curvature of the manifold.
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, ConvexBundleMethodState)`"))
-$(_var(:Keyword, :inverse_retraction_method))$(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
-$(_var(:Keyword, :vector_transport_method))
-$(_var(:Keyword, :sub_state; default = "[`convex_bundle_method_subsolver`](@ref)`"))
-$(_var(:Keyword, :sub_problem; default = "[`AllocatingEvaluation`](@ref)"))
-$(_var(:Keyword, :X))
+$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, ConvexBundleMethodState)`"))
+$(_kwargs(:inverse_retraction_method))
+$(_kwargs(:stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
+$(_kwargs(:vector_transport_method))
+$(_kwargs(:sub_state; default = "[`convex_bundle_method_subsolver`](@ref)`"))
+$(_kwargs(:sub_problem; default = "[`AllocatingEvaluation`](@ref)"))
+$(_kwargs(:X))
 
 $(_note(:OtherKeywords))
 

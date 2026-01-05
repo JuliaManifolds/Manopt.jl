@@ -15,20 +15,19 @@ stores option values for a [`proximal_bundle_method`](@ref) solver.
 * `δ`:                        parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(i + 1)``, else ``μ += δ μ``
 * `ε`:                        stepsize-like parameter related to the injectivity radius of the manifold
 * `η`:                        curvature-dependent term for updating the approximation errors
-$(_var(:Field, :inverse_retraction_method))
+$(_fields(:inverse_retraction_method))
 * `λ`:                        convex coefficients that solve the subproblem
 * `m`:                        the parameter to test the decrease of the cost
 * `μ`:                        (initial) proximal parameter for the subproblem
 * `ν`:                        the stopping parameter given by ``ν = - μ |d|^2 - c``
-$(_var(:Field, :p; add = [:as_Iterate]))
+$(_fields(:p; add_properties = [:as_Iterate]))
 * `p_last_serious`:           last serious iterate
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:retraction_method))
+$(_fields(:stopping_criterion; name = "stop"))
 * `transported_subgradients`: subgradients of the bundle that are transported to `p_last_serious`
-$(_var(:Field, :vector_transport_method))
-$(_var(:Field, :X; add = [:as_Subgradient]))
-$(_var(:Field, :sub_problem))
-$(_var(:Field, :sub_state))
+$(_fields(:vector_transport_method))
+$(_fields(:X; add_properties = [:as_Subgradient]))
+$(_fields([:sub_problem, :sub_state]))
 
 # Constructor
 
@@ -45,14 +44,13 @@ Generate the state for the [`proximal_bundle_method`](@ref) on the manifold `M`
 * `ε=1e-2`
 * `μ=0.5`
 * `m=0.0125`
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :p; add = :as_Initial))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
-$(_var(:Keyword, :sub_problem; default = "[`proximal_bundle_method_subsolver`](@ref)`"))
-$(_var(:Keyword, :sub_state; default = "[`AllocatingEvaluation`](@ref)"))
-$(_var(:Keyword, :vector_transport_method))
-* `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
+$(_kwargs([:retraction_method, :inverse_retraction_method]))
+$(_kwargs(:p; add_properties = [:as_Initial]))
+$(_kwargs(:stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
+$(_kwargs(:sub_problem; default = "[`proximal_bundle_method_subsolver`](@ref)`"))
+$(_kwargs(:sub_state; default = "[`AllocatingEvaluation`](@ref)"))
+$(_kwargs(:vector_transport_method))
+$(_kwargs(:X)) to specify the type of tangent vector to use.
 """
 mutable struct ProximalBundleMethodState{
         P,
@@ -231,10 +229,7 @@ For more details see [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :subgrad_f, _var(:subgrad_f, :symbol)))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :subgrad_f, :p]))
 
 # Keyword arguments
 
@@ -242,15 +237,14 @@ $(_var(:Argument, :p))
 * `bundle_size=50`:  the maximal size of the bundle
 * `δ=1.0`:           parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(i + 1)``, else ``μ += δ μ``
 * `ε=1e-2`:          stepsize-like parameter related to the injectivity radius of the manifold
-$(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :inverse_retraction_method))
+$(_kwargs([:evaluation, :inverse_retraction_method]))
 * `m=0.0125`:        a real number that controls the decrease of the cost function
 * `μ=0.5`:           initial proximal parameter for the subproblem
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
-$(_var(:Keyword, :sub_problem; default = "[`proximal_bundle_method_subsolver`](@ref)`"))
-$(_var(:Keyword, :sub_state; default = "[`AllocatingEvaluation`](@ref)"))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
+$(_kwargs(:sub_problem; default = "[`proximal_bundle_method_subsolver`](@ref)`"))
+$(_kwargs(:sub_state; default = "[`AllocatingEvaluation`](@ref)"))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:OtherKeywords))
 
