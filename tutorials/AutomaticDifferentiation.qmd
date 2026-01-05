@@ -141,7 +141,7 @@ More generally take a change of the metric into account as
 = Df(p)[X] = g_p(\operatorname{grad}f(p), X)
 ```
 
-or in words: we have to change the Riesz representer of the (restricted/projected) differential of $f$ ($\tilde f$) to the one with respect to the Riemannian metric. This is done using ``[`change_representer`](@extref `ManifoldsBase.change_representer-Tuple{AbstractManifold, ManifoldsBase.AbstractMetric, Any, Any}`)``{=commonmark}.
+or in words: we have to change the Riesz representer of the (restricted/projected) differential of $f$ ($\tilde f$) to the one with respect to the Riemannian metric. This is done using ``[`change_representer`](@extref `ManifoldsBase.change_representer-Tuple{AbstractManifold, AbstractMetric, Any, Any}`)``{=commonmark}.
 
 ### A continued example
 
@@ -187,7 +187,7 @@ This can be computed for symmetric positive definite matrices by summing the squ
 G(q) = sum(log.(eigvals(Symmetric(q))) .^ 2) / 2
 ```
 
-We can also interpret this as a function on the space of matrices and apply the Euclidean finite differences machinery; in this way we can easily derive the Euclidean gradient. But when computing the Riemannian gradient, we have to change the representer (see again ``[`change_representer`](@extref `ManifoldsBase.change_representer-Tuple{AbstractManifold, ManifoldsBase.AbstractMetric, Any, Any}`)``{=commonmark}) after projecting onto the tangent space $T_p\mathcal P(n)$ at $p$.
+We can also interpret this as a function on the space of matrices and apply the Euclidean finite differences machinery; in this way we can easily derive the Euclidean gradient. But when computing the Riemannian gradient, we have to change the representer (see again ``[`change_representer`](@extref `ManifoldsBase.change_representer-Tuple{AbstractManifold, AbstractMetric, Any, Any}`)``{=commonmark}) after projecting onto the tangent space $T_p\mathcal P(n)$ at $p$.
 
 Let's first define a point and the manifold $N=\mathcal P(3)$.
 
