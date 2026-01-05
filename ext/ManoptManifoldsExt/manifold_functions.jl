@@ -135,11 +135,11 @@ This can also be done in place of `q`.
 
 ## Keyword Arguments
 
-$(_kwargs([:retraction_method, :inverse_retraction_method]))
+$(Manopt._kwargs([:retraction_method, :inverse_retraction_method]))
 
 and for the `reflect!` additionally
 
-$(_kwargs(:X))
+$(Manopt._kwargs(:X))
   as temporary memory to compute the inverse retraction in place.
   otherwise this is the memory that would be allocated anyways.
 """

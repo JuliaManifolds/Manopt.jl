@@ -352,7 +352,7 @@ Glossaries.define!(
     _glossary_variables, :evaluation, :description,
     "specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second.",
 )
-Glossaries.define!(_glossary_variables, :evaluation, :type, "AbstractEvaluationType")
+Glossaries.define!(_glossary_variables, :evaluation, :type, "`[`AbstractEvaluationType`](@ref)`")
 Glossaries.define!(_glossary_variables, :evaluation, :default, "[`AllocatingEvaluation`](@ref)`()`")
 Glossaries.define!(
     _glossary_variables, :evaluation,
@@ -387,7 +387,7 @@ Glossaries.define!(
     _glossary_variables, :inverse_retraction_method, :description,
     "an inverse retraction ``$(_tex(:invretr))`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`)",
 )
-Glossaries.define!(_glossary_variables, :inverse_retraction_method, :type, "AbstractInverseRetractionMethod")
+Glossaries.define!(_glossary_variables, :inverse_retraction_method, :type, "`[`AbstractInverseRetractionMethod`](@ref)`")
 Glossaries.define!(
     _glossary_variables, :inverse_retraction_method, :default,
     (; M = "M", p = "p") ->
@@ -407,7 +407,7 @@ Glossaries.define!(
     _glossary_variables, :M, :description,
     (; M = "M") -> "a Riemannian manifold ``$(_tex(:Cal, M))``"
 )
-Glossaries.define!(_glossary_variables, :M, :type, "`$(_link(:AbstractManifold))` ")
+Glossaries.define!(_glossary_variables, :M, :type, "`$(_link(:AbstractManifold))`")
 
 Glossaries.define!(_glossary_variables, :p)
 Glossaries.define!(
@@ -424,7 +424,7 @@ Glossaries.define!(
     _glossary_variables, :retraction_method, :description,
     "a retraction ``$(_tex(:retr))`` to use, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`)",
 )
-Glossaries.define!(_glossary_variables, :retraction_method, :type, "AbstractRetractionMethod")
+Glossaries.define!(_glossary_variables, :retraction_method, :type, "`[`AbstractRetractionMethod`](@ref)`")
 Glossaries.define!(
     _glossary_variables, :retraction_method, :default,
     "[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`",
@@ -435,18 +435,18 @@ Glossaries.define!(
     _glossary_variables, :storage, :description,
     (; M = "M") -> "a storage to access the previous iterate",
 )
-Glossaries.define!(_glossary_variables, :storage, :type, "StoreStateAction")
+Glossaries.define!(_glossary_variables, :storage, :type, "`[`StoreStateAction`](@ref)`")
 
 Glossaries.define!(_glossary_variables, :stepsize)
 Glossaries.define!(_glossary_variables, :stepsize, :description, (; M = "M") -> "a functor inheriting from [`Stepsize`](@ref) to determine a step size")
-Glossaries.define!(_glossary_variables, :stepsize, :type, "Stepsize")
+Glossaries.define!(_glossary_variables, :stepsize, :type, "`[`Stepsize`](@ref)`")
 
 Glossaries.define!(_glossary_variables, :stopping_criterion)
 Glossaries.define!(
     _glossary_variables, :stopping_criterion, :description,
     (; M = "M") -> "a functor indicating that the stopping criterion is fulfilled",
 )
-Glossaries.define!(_glossary_variables, :stopping_criterion, :type, "StoppingCriterion")
+Glossaries.define!(_glossary_variables, :stopping_criterion, :type, "`[`StoppingCriterion`](@ref)`")
 
 Glossaries.define!(_glossary_variables, :sub_kwargs)
 Glossaries.define!(_glossary_variables, :sub_kwargs, :description, "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective, the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself.")
@@ -457,14 +457,14 @@ Glossaries.define!(
     _glossary_variables, :sub_problem, :description,
     (; M = "M") -> " specify a problem for a solver or a closed form solution function, which can be allocating or in-place."
 )
-Glossaries.define!(_glossary_variables, :sub_problem, :type, "Union{AbstractManoptProblem, F}")
+Glossaries.define!(_glossary_variables, :sub_problem, :type, "Union{`[`AbstractManoptProblem`](@ref)`, F}")
 
 Glossaries.define!(_glossary_variables, :sub_state)
 Glossaries.define!(
     _glossary_variables, :sub_state, :description,
     (; M = "M") -> " a state to specify the sub solver to use. For a closed form solution, this indicates the type of function.",
 )
-Glossaries.define!(_glossary_variables, :sub_state, :type, "Union{AbstractManoptProblem, F}")
+Glossaries.define!(_glossary_variables, :sub_state, :type, "Union{`[`AbstractManoptProblem`](@ref)`, F}")
 
 Glossaries.define!(_glossary_variables, :subgrad_f, :name, "∂f")
 Glossaries.define!(
@@ -480,7 +480,7 @@ Glossaries.define!(
     (; M = "M", p = "p") ->
     "a vector transport ``$(_math(:VectorTransport, :symbol))`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)",
 )
-Glossaries.define!(_glossary_variables, :vector_transport_method, :type, "AbstractVectorTransportMethodP")
+Glossaries.define!(_glossary_variables, :vector_transport_method, :type, "`[`AbstractVectorTransportMethod`](@ref)`")
 Glossaries.define!(
     _glossary_variables, :vector_transport_method, :default,
     (; M = "M", p = "p") ->
