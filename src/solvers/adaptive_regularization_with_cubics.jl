@@ -44,7 +44,7 @@ Construct the solver state with all fields stated as keyword arguments and the f
 * `σmin=1e-7
 * `ρ_regularization=1e3`
 $(_kwargs([:evaluation, :p, :retraction_method]))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(100)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
 $(_kwargs(:X))
 """
 mutable struct AdaptiveRegularizationState{
@@ -233,12 +233,12 @@ $(_kwargs(:evaluation))
 * `maxIterLanczos=200`: a shortcut to set the stopping criterion in the sub solver,
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
 $(_kwargs(:retraction_method)):
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)"))
 $(_kwargs(:sub_kwargs))
 * `sub_objective=nothing`: a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword
   By default, this is initialized as a [`AdaptiveRegularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
-$(_kwargs(:sub_state; default = "[`LanczosState`](@ref)`(M, copy(M,p))`"))
-$(_kwargs(:sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
+$(_kwargs(:sub_state; default = "`[`LanczosState`](@ref)`(M, copy(M,p))"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 
 $(_note(:OtherKeywords))
 

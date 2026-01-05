@@ -80,7 +80,7 @@ Construct a Nelder-Mead Option with a default population (if not provided) of se
 # Keyword arguments
 
 * `population=`[`NelderMeadSimplex`](@ref)`(M)`
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
   a [`StoppingCriterion`](@ref)
 * `α=1.0`: reflection parameter ``α > 0``:
 * `γ=2.0` expansion parameter ``γ``:
@@ -217,7 +217,7 @@ $(_args([:M, :f]))
 
 # Keyword arguments
 
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
   a [`StoppingCriterion`](@ref)
 * `α=1.0`: reflection parameter ``α > 0``:
 * `γ=2.0` expansion parameter ``γ``:

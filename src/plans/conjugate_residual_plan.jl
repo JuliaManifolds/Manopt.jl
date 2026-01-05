@@ -201,7 +201,7 @@ Initialise the state with default values.
 * `Ad=copy(TpM, Ar)`
 * `α::R=0.0`
 * `β::R=0.0`
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:X))
 
 # See also

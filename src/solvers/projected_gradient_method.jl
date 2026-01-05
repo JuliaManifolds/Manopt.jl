@@ -24,10 +24,11 @@ $(_fields(:X; name = "Y"))
 
 ## Keyword arguments
 
-$(_kwargs(:stepsize; name = "backtracking", default = "[`ArmijoLinesearchStepsize`](@ref)`(M)`")) ``p_k`` to the candidate ``q_k``
+$(_kwargs(:stepsize; name = "backtracking", default = "`[`ArmijoLinesearchStepsize`](@ref)`(M)")) ``p_k`` to the candidate ``q_k``
 $(_kwargs(:inverse_retraction_method))
-$(_kwargs(:stepsize; default = "[`ConstantStepsize`](@ref)`(M)`")) ``α_k`` to determine the ``q_k`` candidate
-$(_kwargs(:stopping_criterion; name = "stop", default = "[`StopAfterIteration`](@ref)`(300)`"))
+$(_kwargs(:stepsize; default = "`[`ConstantStepsize`](@ref)`(M)"))
+  ``α_k`` to determine the ``q_k`` candidate
+$(_kwargs(:stopping_criterion; name = "stop", default = "`[`StopAfterIteration`](@ref)`(300)"))
 $(_kwargs([:retraction_method, :X]))
 """
 struct ProjectedGradientMethodState{P, T, S, S2, SC, RM, IRM} <: AbstractManoptSolverState
@@ -186,11 +187,11 @@ $(_args(:p))
 
 # Keyword arguments
 
-$(_kwargs(:stepsize, "backtrack"; default = "[`ArmijoLinesearchStepsize`](@ref)`(M; stop_increasing_at_step=0)`")) to perform the backtracking to determine the ``β_k``.
+$(_kwargs(:stepsize, "backtrack"; default = "`[`ArmijoLinesearchStepsize`](@ref)`(M; stop_increasing_at_step=0)")) to perform the backtracking to determine the ``β_k``.
   Note that the method requires ``β_k ≤ 1``, otherwise the projection step no longer provides points within the constraints
 $(_kwargs([:evaluation, :retraction_method]))
-$(_kwargs(:stepsize; default = "[`ConstantStepsize`](@ref)`(injectivity_radius(M)/2)`")) to perform the candidate projected step.
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500) `$(_sc(:Any))` `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)"))
+$(_kwargs(:stepsize; default = "`[`ConstantStepsize`](@ref)`(injectivity_radius(M)/2)")) to perform the candidate projected step.
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500) `$(_sc(:Any))` `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)"))
 
 $(_note(:OtherKeywords))
 

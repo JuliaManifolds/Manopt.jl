@@ -30,9 +30,9 @@ $(_args([:p, :sub_state, :sub_problem]))
 # Keyword arguments
 
 $(_kwargs(:X; add_properties = [:as_Memory]))
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, VectorBundleNewtonState)`"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`VectorBundleNewtonState`](@ref)`)"))
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
 """
 mutable struct VectorBundleNewtonState{
         P, T, Pr, St,
@@ -243,10 +243,10 @@ $(_args(:p))
 $(_kwargs(:sub_problem; default = "`nothing`")), i.e. you have to provide a method for solving the Newton equation.
   Currently only the closed form solution is implemented, that is, this is a functor that maps either
   `(problem::`[`VectorBundleManoptProblem`](@ref)`, state::VectorBundleNewtonState) -> X` or `(problem, X, state) -> X` to compute the Newton direction.
-$(_kwargs(:sub_state; default = "[`AllocatingEvaluation`](@ref)"))
+$(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
 $(_kwargs(:retraction_method))
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, VectorBundleNewtonState)`"))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`VectorBundleNewtonState`](@ref)`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 

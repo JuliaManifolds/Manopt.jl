@@ -136,9 +136,9 @@ Most of the following keyword arguments set default values for the fields mentio
 * `k_max=0`
 * `k_min=0`
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, ConvexBundleMethodState)`"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`)"))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
-$(_kwargs(:stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:X))
   to specify the type of tangent vector to use.
 $(_kwargs(:vector_transport_method))
@@ -601,12 +601,12 @@ $(_args([:M, :f, :subgrad_f, :p]))
 * `domain=(M, p) -> isfinite(f(M, p))`: a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
 $(_kwargs(:evaluation))
 * `k_max=0`: upper bound on the sectional curvature of the manifold.
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, ConvexBundleMethodState)`"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`)"))
 $(_kwargs(:inverse_retraction_method))
-$(_kwargs(:stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:vector_transport_method))
-$(_kwargs(:sub_state; default = "[`convex_bundle_method_subsolver`](@ref)`"))
-$(_kwargs(:sub_problem; default = "[`AllocatingEvaluation`](@ref)"))
+$(_kwargs(:sub_state; default = "`[`convex_bundle_method_subsolver`](@ref)"))
+$(_kwargs(:sub_problem; default = "`[`AllocatingEvaluation`](@ref)´ "))
 $(_kwargs(:X))
 
 $(_note(:OtherKeywords))

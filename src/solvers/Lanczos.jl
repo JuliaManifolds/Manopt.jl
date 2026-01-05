@@ -29,8 +29,8 @@ $(_fields(:stopping_criterion, "stop_newton"))
 $(_kwargs(:X; add_properties = [:as_Iterate]))
 * `maxIterLanzcos=200`: shortcut to set the maximal number of iterations in the ` stopping_crtierion=`
 * `θ=0.5`: set the parameter in the [`StopWhenFirstOrderProgress`](@ref) within the default `stopping_criterion=`.
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)`"))
-$(_kwargs(:stopping_criterion; name = "stopping_criterion_newton", default = "[`StopAfterIteration`](@ref)`(200)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)"))
+$(_kwargs(:stopping_criterion; name = "stopping_criterion_newton", default = "`[`StopAfterIteration`](@ref)`(200)"))
   used for the inner Newton iteration
 * `σ=10.0`: specify the regularization parameter
 """

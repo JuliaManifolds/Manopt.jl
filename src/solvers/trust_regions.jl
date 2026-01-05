@@ -46,7 +46,7 @@ $(_args([:M, :sub_problem, :sub_state]))
 * `max_trust_region_radius=sqrt(manifold_dimension(M))`
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `project!=copyto!`
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 * `randomize=false`
 * `ρ_regularization=10000.0`
 * `θ=1.0`
@@ -290,11 +290,11 @@ $(_kwargs(:evaluation))
 * `reduction_threshold=0.1`: trust-region reduction threshold: if ρ is below this threshold,
   the trust region radius is reduced by `reduction_factor`.
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 $(_kwargs(:sub_kwargs))
-$(_kwargs(:stopping_criterion, "sub_stopping_criterion"; default = "( see [`truncated_conjugate_gradient_descent`](@ref))"))
-$(_kwargs(:sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`"))
-$(_kwargs(:sub_state; default = "[`QuasiNewtonState`](@ref)"))
+$(_kwargs(:stopping_criterion, "sub_stopping_criterion"; default = "`( see [`truncated_conjugate_gradient_descent`](@ref))` "))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))"))
+$(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
   , where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used
 * `θ=1.0`:                the superlinear convergence target rate of ``1+θ`` of the tCG-method
   [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping criterion therein

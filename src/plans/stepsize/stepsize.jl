@@ -1461,15 +1461,15 @@ This method first computes
 
 (x -> p, F-> f)
 ```math
-y_{k} = $(_tex(:grad))f(p_{k}) - $(_math(:VectorTransport, :symbol, "p_k", "p_{k-1}"))$(_tex(:grad))f(p_{k-1})
+y_{k} = $(_tex(:grad))f(p_{k}) - $(_math(:VectorTransport, "p_k", "p_{k-1}"))$(_tex(:grad))f(p_{k-1})
 ```
 
 and
 ```math
-s_{k} = - α_{k-1} ⋅ $(_math(:VectorTransport, :symbol, "p_k", "p_{k-1}"))$(_tex(:grad))f(p_{k-1}),
+s_{k} = - α_{k-1} ⋅ $(_math(:VectorTransport, "p_k", "p_{k-1}"))$(_tex(:grad))f(p_{k-1}),
 ```
 
-where ``α_{k-1}`` is the step size computed in the last iteration and ``$(_math(:VectorTransport, :symbol))`` is a vector transport.
+where ``α_{k-1}`` is the step size computed in the last iteration and ``$(_math(:VectorTransport))`` is a vector transport.
 Then the Barzilai—Borwein step size is
 
 ```math
@@ -1972,10 +1972,10 @@ _doc_WPBL_algorithm = """With
 ```math
 A(t) = f(p_+) ≤ c_1 t ⟨$(_tex(:grad))f(p), X⟩_{x}
 $(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
-W(t) = ⟨$(_tex(:grad))f(x_+), $(_math(:VectorTransport, :symbol, "p_+", "p"))X⟩_{p_+} ≥ c_2 ⟨X, $(_tex(:grad))f(x)⟩_x,
+W(t) = ⟨$(_tex(:grad))f(x_+), $(_math(:VectorTransport, "p_+", "p"))X⟩_{p_+} ≥ c_2 ⟨X, $(_tex(:grad))f(x)⟩_x,
 ```
 
-where ``p_+ =$(_tex(:retr))_p(tX)`` is the current trial point, and ``$(_math(:VectorTransport, :symbol))`` denotes a
+where ``p_+ =$(_tex(:retr))_p(tX)`` is the current trial point, and ``$(_math(:VectorTransport))`` denotes a
 vector transport.
 Then the following Algorithm is performed similar to Algorithm 7 from [Huang:2014](@cite)
 

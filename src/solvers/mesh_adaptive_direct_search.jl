@@ -29,7 +29,7 @@ $(_kwargs(:retraction_method))
 * `scale_mesh=`$(_link(:injectivity_radius))`(M) / 4`: initial scaling of the mesh
 * `search::`[`AbstractMeshSearchFunction`](@ref)`=`[`DefaultMeshAdaptiveDirectSearch`](@ref)`(M, copy(M,p))`:
   the search function to use. The `retraction_method` is passed to this default as well.
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenPollSizeLess`](@ref)`(1e-10)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenPollSizeLess`](@ref)`(1e-10)"))
 $(_kwargs([:vector_transport_method, :X]))
 
 $(_note(:OtherKeywords))

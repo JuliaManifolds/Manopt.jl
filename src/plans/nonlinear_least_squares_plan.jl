@@ -226,7 +226,7 @@ The following fields are keyword arguments
 * `expect_zero_residual=false`
 * `initial_gradient=`$(_link(:zero_vector))
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
 
 # See also
 

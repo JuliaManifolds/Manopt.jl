@@ -33,7 +33,7 @@ $(_kwargs([:evaluation, :inverse_retraction_method]))
 * `reg_param=1e-5`: regularisation parameter for the Newton matrix
   Note that this changes the arguments the `forward_operator` is called.
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(50)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 $(_kwargs(:vector_transport_method))

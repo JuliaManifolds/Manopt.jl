@@ -39,7 +39,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
   the prox of `p`, which function is used depends on `reflection_evaluation`.
 * `reflection_evaluation=`[`AllocatingEvaluation`](@ref)`()`) specify whether the reflection works in-place or allocating (default)
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(300)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)"))
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 """
 mutable struct DouglasRachfordState{
@@ -186,7 +186,7 @@ $(_kwargs([:evaluation, :inverse_retraction_method]))
 * `reflection_evaluation`: ([`AllocatingEvaluation`](@ref) whether `R` works in-place or allocating
 $(_kwargs(:retraction_method))
   This is used both in the relaxation step as well as in the reflection, unless you set `R` yourself.
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-5)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-5)"))
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 
 $(_note(:OtherKeywords))

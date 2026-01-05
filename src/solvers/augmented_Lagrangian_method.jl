@@ -320,9 +320,9 @@ $(_kwargs(:evaluation))
 
 $(_kwargs(:sub_kwargs))
 
-$(_kwargs(:stopping_criterion; default = _sc_alm_default))
-$(_kwargs(:sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
-$(_kwargs(:sub_state; default = "[`QuasiNewtonState`](@ref)")), where more precisely
+$(_kwargs(:stopping_criterion; default = "`$(_sc_alm_default)` "))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
+$(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` ")), where more precisely
   as quasi newton method, the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used.
 * `sub_stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`,
 

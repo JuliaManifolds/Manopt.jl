@@ -83,13 +83,13 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 * `W=zero(s)`
 * `ρ=μ's/m`
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)"))
 $(_kwargs(:retraction_method))
 * `step_objective=`[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
 * `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `step_problem`: wrap the manifold ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m``
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
-$(_kwargs(:stepsize; default = "[`ArmijoLinesearch`](@ref)`()`"))
+$(_kwargs(:stepsize; default = " `[`ArmijoLinesearch`](@ref)`()"))
   with the [`InteriorPointCentralityCondition`](@ref) as additional condition to accept a step"))
 * `is_feasible_error=:error`: specify how to handle infeasible starting points, see [`is_feasible`](@ref) for options.
 

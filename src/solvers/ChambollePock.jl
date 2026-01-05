@@ -54,7 +54,7 @@ $(_kwargs(:inverse_retraction_method; name = "inverse_retraction_method_dual", M
 * `relaxation=1.0`
 * `relax=:primal`: relax the primal variable by default
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(300)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)"))
 * `variant=:exact`: run the exact Chambolle Pock by default
 * `update_primal_base=missing`
 * `update_dual_base=missing`
@@ -243,7 +243,7 @@ $(_kwargs(:inverse_retraction_method; name = "inverse_retraction_method_dual", M
 * `relax=:primal`: whether to relax the primal or dual
 * `variant=:exact` if `Λ` is missing, otherwise `:linearized`: variant to use.
   Note that this changes the arguments the `forward_operator` is called with.
-$(_kwargs(:stopping_criterion; default = "[StopAfterIteration`](@ref)`(100)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 $(_kwargs([:retraction_method, :vector_transport_method]))

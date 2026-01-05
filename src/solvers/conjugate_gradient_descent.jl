@@ -85,8 +85,8 @@ $(_args([:M, :f, :grad_f, :p]))
   as a functior where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
 $(_kwargs([:differential, :evaluation, :retraction_method]))
-$(_kwargs(:stepsize; default = "[`ArmijoLinesearch`](@ref)`()`"))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
+$(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:vector_transport_method))
 
 If you provide the [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.

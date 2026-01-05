@@ -245,7 +245,8 @@ $(_fields(:stopping_criterion; name = "stop"))
 * `acceleration` - a function `(problem, state, k) -> state` to compute an acceleration before the gradient step
 * `stepsize` - a function or [`Stepsize`](@ref) object to compute the stepsize
 * `last_stepsize` - stores the last computed stepsize
-$(_fields(:sub_problem; name = "sub_problem", type = "Union{AbstractManoptProblem, F}")) or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
+$(_fields(:sub_problem; name = "sub_problem", type = "Union{`[`AbstractManoptProblem`](@ref)`, F}"))
+    or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
 $(_fields(:sub_state)). This field is ignored, if the `sub_problem` is `Nothing`.
 
 # Constructor
@@ -265,7 +266,7 @@ $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 * `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)` by default no acceleration is performed
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(100)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
 $(_kwargs(:sub_problem; default = "nothing"))
 $(_kwargs(:sub_state; default = _glossary[:Variable][:evaluation][:default]))
 $(_kwargs(:X; add_properties = [:as_Memory]))

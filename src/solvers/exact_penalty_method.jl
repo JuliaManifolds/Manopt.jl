@@ -42,8 +42,7 @@ construct the exact penalty state, where `sub_problem` is a closed form solution
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `ρ=1.0`
 * `θ_ρ=0.3`
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`"))
-  [`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-10) )`
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-10) )"))
 
 # See also
 
@@ -251,10 +250,10 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 $(_kwargs(:sub_kwargs))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver
   $(_note(:KeywordUsedIn, "sub_state"))
-$(_kwargs(:sub_state; default = "[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
-$(_kwargs(:sub_state; default = "[`QuasiNewtonState`](@ref)"))
+$(_kwargs(:sub_state; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
+$(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
   , where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used"))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )"))
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.

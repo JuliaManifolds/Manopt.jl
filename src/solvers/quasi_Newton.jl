@@ -30,12 +30,12 @@ Generate the Quasi Newton state on the manifold `M` with start point `p`.
 ## Keyword arguments
 
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), memory_size; vector_transport_method=vector_transport_method)`
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 * `initial_scale=1.0`: a relative initial scale. By default deactivated when using a preconditioner.
 * `memory_size=20`: a shortcut to set the memory in the default direction update
 * `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, Nothing} = nothing` specify a preconditioner or deactivate by passing `nothing`.
 $(_kwargs(:retraction_method))
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, QuasiNewtonState)`"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`QuasiNewtonState`](@ref)`)"))
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 
@@ -242,8 +242,8 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 $(_kwargs(:retraction_method))
-$(_kwargs(:stepsize; default = "[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`"))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
+$(_kwargs(:stepsize; default = "`[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 $(_kwargs(:vector_transport_method))
 
 $(_note(:OtherKeywords))

@@ -42,8 +42,8 @@ $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 
-$(_kwargs(:stepsize; default = "[`ConstantLength`](@ref)`()`"))
-$(_kwargs(:stopping_criterion; default = "[StopWhenChangeLess`](@ref)`(1e-8)`"))
+$(_kwargs(:stepsize; default = "`[`ConstantLength`](@ref)`()"))
+$(_kwargs(:stopping_criterion; default = "`[StopWhenChangeLess`](@ref)`(1e-8)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct DifferenceOfConvexProximalState{
@@ -203,8 +203,8 @@ $(_kwargs(:evaluation))
 * `g=nothing`: specify the function `g`.
 * `grad_g=nothing`: specify the gradient of `g`. If both `g`and `grad_g` are specified, a subsolver is automatically set up.
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
-$(_kwargs(:stepsize; default = "[`ConstantLength`](@ref)`()`"))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`)"))
+$(_kwargs(:stepsize; default = "`[`ConstantLength`](@ref)`()"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)"))
   A [`StopWhenGradientNormLess`](@ref)`(1e-8)` is added with $(_sc(:Any)), when a `gradient` is provided.
 * `sub_cost=`[`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`):
   cost to be used within the default `sub_problem` that is initialized as soon as `g` is provided.
@@ -218,9 +218,9 @@ $(_kwargs(:sub_kwargs))
 * `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess`if provided
    the objective used within `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_problem"))
-$(_kwargs(:sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 $(_kwargs(:sub_state; default = "([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hess` is provided)"))
-$(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "([`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))`[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
+$(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "(`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
   $(_note(:KeywordUsedIn, "sub_state"))
 
 $(_note(:OtherKeywords))

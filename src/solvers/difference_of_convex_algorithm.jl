@@ -36,7 +36,7 @@ Here the elements passed are the current iterate `p` and the subgradient `X` of 
 ## further keyword arguments
 
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct DifferenceOfConvexState{
@@ -143,7 +143,7 @@ $(_args(:p))
 $(_kwargs(:evaluation))
 * `gradient=nothing`:        specify ``$(_tex(:grad)) f``, for debug / analysis or enhancing the `stopping_criterion=`
 * `grad_g=nothing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)"))
 * `g=nothing`:               specify the function `g` If specified, a subsolver is automatically set up.
 * `sub_cost=`[`LinearizedDCCost`](@ref)`(g, p, initial_vector)`: a cost to be used within the default `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_objective"))
@@ -158,7 +158,7 @@ $(_kwargs(:sub_kwargs))
    the objective used within `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_problem"))
 $(_kwargs(:sub_state; default = "([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hess` is provided)"))
-$(_kwargs(:sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`:
   a stopping criterion used within the default `sub_state=`
   $(_note(:KeywordUsedIn, "sub_state"))

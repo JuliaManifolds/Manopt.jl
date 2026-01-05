@@ -27,8 +27,8 @@ current_glossary!(_glossary)
 # since otherwise they would be hard to type in (non-raw) strings.
 _glossary[:LaTeX] = Glossaries.Glossary()
 _glossary_tex_terms = _glossary[:LaTeX]
-__tex_formater = Glossaries.Math()
-_tex(args...; kwargs...) = __tex_formater(_glossary_tex_terms, args...; kwargs...)
+__tex_formatter = Glossaries.Math()
+_tex(args...; kwargs...) = __tex_formatter(_glossary_tex_terms, args...; kwargs...)
 
 function _tex_aligned(lines...)
     return raw"\begin{aligned}\n" *
@@ -140,6 +140,7 @@ _math_TangentSpace(; M = "M", p = "p") = "T_{$p}$(_tex(:Cal, M))"
 Glossaries.define!(_glossary_math_terms, :TangentSpace, :math, _math_TangentSpace)
 _math_TangentSpace_description(; M = "M", p = "p") = "the tangent space at the point ``$p`` on the manifold ``$(_math(:Manifold; M = M))``"
 Glossaries.define!(_glossary_math_terms, :TangentSpace, :description, _math_TangentSpace_description)
+
 _math_vector_transport(p = "⋅", q = "⋅") = raw"\mathcal T_{" * "$q←$p" * "}"
 Glossaries.define!(_glossary_math_terms, :VectorTransport, :math, _math_vector_transport)
 function _math_vector_transport_description(; M = "M", p = "⋅", q = "⋅")
@@ -158,8 +159,8 @@ Glossaries.define!(_glossary_math_terms, :VectorTransport, :name, "the vector tr
 _glossary[:Link] = Glossaries.Glossary()
 _glossary_links = _glossary[:Link]
 
-__link_formater = Glossaries.Plain(:link)
-_link(args...; kwargs...) = __link_formater(_glossary_links, args...; kwargs...)
+__link_formatter = Glossaries.Plain(:link)
+_link(args...; kwargs...) = __link_formatter(_glossary_links, args...; kwargs...)
 
 Glossaries.define!(
     _glossary_links, :AbstractManifold, :link,
@@ -199,8 +200,8 @@ Glossaries.define!(_glossary_links, :zero_vector, :link, _link_zero_vector)
 _glossary[:Note] = Glossaries.Glossary()
 _glossary_notes = _glossary[:Note]
 
-__note_formater = Glossaries.Plain(:note)
-_note(args...; kwargs...) = __note_formater(_glossary_notes, args...; kwargs...)
+__note_formatter = Glossaries.Plain(:note)
+_note(args...; kwargs...) = __note_formatter(_glossary_notes, args...; kwargs...)
 Glossaries.define!(
     _glossary_notes, :ManifoldDefaultFactory, :note,
     (type::String) -> """
@@ -321,12 +322,12 @@ Glossaries.define!(
 # :type a type
 _glossary[:Variable] = Glossaries.Glossary()
 _glossary_variables = _glossary[:Variable]
-__arg_formater = Glossaries.Argument()
-_args(args...; kwargs...) = __arg_formater(_glossary_variables, args...; kwargs...)
-__kwargs_formater = Glossaries.Keyword()
-_kwargs(args...; kwargs...) = __kwargs_formater(_glossary_variables, args...; kwargs...)
-__field_formater = Glossaries.Field()
-_fields(args...; kwargs...) = __field_formater(_glossary_variables, args...; kwargs...)
+__arg_formatter = Glossaries.Argument()
+_args(args...; kwargs...) = __arg_formatter(_glossary_variables, args...; kwargs...)
+__kwargs_formatter = Glossaries.Keyword()
+_kwargs(args...; kwargs...) = __kwargs_formatter(_glossary_variables, args...; kwargs...)
+__field_formatter = Glossaries.Field()
+_fields(args...; kwargs...) = __field_formatter(_glossary_variables, args...; kwargs...)
 
 #
 #
@@ -345,15 +346,15 @@ Glossaries.define!(
     _glossary_variables, :differential, :description,
     "specify a specific function to evaluate the differential. By default, ``Df(p)[X] = ⟨$(_tex(:grad))f(p),X⟩``. is used",
 )
-Glossaries.define!(_glossary_variables, :differential, :default, "`nothing`")
+Glossaries.define!(_glossary_variables, :differential, :default, "nothing")
 
 Glossaries.define!(_glossary_variables, :evaluation)
 Glossaries.define!(
     _glossary_variables, :evaluation, :description,
     "specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second.",
 )
-Glossaries.define!(_glossary_variables, :evaluation, :type, "`[`AbstractEvaluationType`](@ref)`")
-Glossaries.define!(_glossary_variables, :evaluation, :default, "[`AllocatingEvaluation`](@ref)`()`")
+Glossaries.define!(_glossary_variables, :evaluation, :type, "`[`AbstractEvaluationType`](@ref)` ")
+Glossaries.define!(_glossary_variables, :evaluation, :default, "`[`AllocatingEvaluation`](@ref)`()")
 Glossaries.define!(
     _glossary_variables, :evaluation,
     :GradientExample,
@@ -387,11 +388,11 @@ Glossaries.define!(
     _glossary_variables, :inverse_retraction_method, :description,
     "an inverse retraction ``$(_tex(:invretr))`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`)",
 )
-Glossaries.define!(_glossary_variables, :inverse_retraction_method, :type, "`[`AbstractInverseRetractionMethod`](@ref)`")
+Glossaries.define!(_glossary_variables, :inverse_retraction_method, :type, "`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`)` ")
 Glossaries.define!(
     _glossary_variables, :inverse_retraction_method, :default,
     (; M = "M", p = "p") ->
-    "[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`($M, typeof($p))`",
+    "`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`($M, typeof($p))",
 )
 
 Glossaries.define!(_glossary_variables, :last_change)
@@ -407,7 +408,7 @@ Glossaries.define!(
     _glossary_variables, :M, :description,
     (; M = "M") -> "a Riemannian manifold ``$(_tex(:Cal, M))``"
 )
-Glossaries.define!(_glossary_variables, :M, :type, "`$(_link(:AbstractManifold))`")
+Glossaries.define!(_glossary_variables, :M, :type, "`$(_link(:AbstractManifold))` ")
 
 Glossaries.define!(_glossary_variables, :p)
 Glossaries.define!(
@@ -415,7 +416,7 @@ Glossaries.define!(
     (; M = "M") -> "a point on the manifold ``$(_tex(:Cal, M))``"
 )
 Glossaries.define!(_glossary_variables, :p, :type, "P")
-Glossaries.define!(_glossary_variables, :p, :default, (; M = "M") -> _link(:rand; M = M))
+Glossaries.define!(_glossary_variables, :p, :default, (; M = "M") -> "`$(_link(:rand; M = M))` ")
 Glossaries.define!(_glossary_variables, :p, :as_Iterate, " storing the current iterate")
 Glossaries.define!(_glossary_variables, :p, :as_Initial, " to specify the initial value")
 
@@ -424,10 +425,10 @@ Glossaries.define!(
     _glossary_variables, :retraction_method, :description,
     "a retraction ``$(_tex(:retr))`` to use, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`)",
 )
-Glossaries.define!(_glossary_variables, :retraction_method, :type, "`[`AbstractRetractionMethod`](@ref)`")
+Glossaries.define!(_glossary_variables, :retraction_method, :type, "`[`AbstractRetractionMethod`](@extref `ManifoldsBase.AbstractRetractionMethod`)` ")
 Glossaries.define!(
     _glossary_variables, :retraction_method, :default,
-    "[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`",
+    (; M = "M", p = "p") -> "`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`($M, typeof($p))",
 )
 
 Glossaries.define!(_glossary_variables, :storage)
@@ -435,22 +436,22 @@ Glossaries.define!(
     _glossary_variables, :storage, :description,
     (; M = "M") -> "a storage to access the previous iterate",
 )
-Glossaries.define!(_glossary_variables, :storage, :type, "`[`StoreStateAction`](@ref)`")
+Glossaries.define!(_glossary_variables, :storage, :type, "`[`StoreStateAction`](@ref)` ")
 
 Glossaries.define!(_glossary_variables, :stepsize)
 Glossaries.define!(_glossary_variables, :stepsize, :description, (; M = "M") -> "a functor inheriting from [`Stepsize`](@ref) to determine a step size")
-Glossaries.define!(_glossary_variables, :stepsize, :type, "`[`Stepsize`](@ref)`")
+Glossaries.define!(_glossary_variables, :stepsize, :type, "`[`Stepsize`](@ref)` ")
 
 Glossaries.define!(_glossary_variables, :stopping_criterion)
 Glossaries.define!(
     _glossary_variables, :stopping_criterion, :description,
     (; M = "M") -> "a functor indicating that the stopping criterion is fulfilled",
 )
-Glossaries.define!(_glossary_variables, :stopping_criterion, :type, "`[`StoppingCriterion`](@ref)`")
+Glossaries.define!(_glossary_variables, :stopping_criterion, :type, "`[`StoppingCriterion`](@ref)` ")
 
 Glossaries.define!(_glossary_variables, :sub_kwargs)
 Glossaries.define!(_glossary_variables, :sub_kwargs, :description, "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective, the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself.")
-Glossaries.define!(_glossary_variables, :sub_kwargs, :default, "`(;)`")
+Glossaries.define!(_glossary_variables, :sub_kwargs, :default, "(;)")
 
 Glossaries.define!(_glossary_variables, :sub_problem)
 Glossaries.define!(
@@ -478,13 +479,13 @@ Glossaries.define!(_glossary_variables, :vector_transport_method)
 Glossaries.define!(
     _glossary_variables, :vector_transport_method, :description,
     (; M = "M", p = "p") ->
-    "a vector transport ``$(_math(:VectorTransport, :symbol))`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)",
+    "a vector transport ``$(_math(:VectorTransport))`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)",
 )
-Glossaries.define!(_glossary_variables, :vector_transport_method, :type, "`[`AbstractVectorTransportMethod`](@ref)`")
+Glossaries.define!(_glossary_variables, :vector_transport_method, :type, "`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`)` ")
 Glossaries.define!(
     _glossary_variables, :vector_transport_method, :default,
     (; M = "M", p = "p") ->
-    "[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`($M, typeof($p))`",
+    "`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`($M, typeof($p))",
 )
 
 Glossaries.define!(_glossary_variables, :X)
@@ -494,7 +495,7 @@ Glossaries.define!(
     "a tangent vector at the point ``$p`` on the manifold ``$(_tex(:Cal, M))``",
 )
 Glossaries.define!(_glossary_variables, :X, :type, "T")
-Glossaries.define!(_glossary_variables, :X, :default, (; M = "M", p = "p") -> _link(:zero_vector; M = M, p = p))
+Glossaries.define!(_glossary_variables, :X, :default, (; M = "M", p = "p") -> "`$(_link(:zero_vector; M = M, p = p))` ")
 Glossaries.define!(_glossary_variables, :X, :as_Gradient, "storing the gradient at the current iterate")
 Glossaries.define!(_glossary_variables, :X, :as_Subgradient, "storing a subgradient at the current iterate")
 Glossaries.define!(_glossary_variables, :X, :as_Memory, "to specify the representation of a tangent vector")

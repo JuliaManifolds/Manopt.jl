@@ -225,7 +225,7 @@ $(_args(:M))
 * `evaluation_order=:LinearOrder`: soecify the `order_type`
 * `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_tex(:Cal, "N"))``,
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(2000)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)"))
 
 # See also
 

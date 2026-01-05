@@ -41,8 +41,8 @@ $(_args([:M, :sub_problem, :sub_state]))
 
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, FrankWolfeState)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`FrankWolfeState`](@ref)`)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 
 where the remaining fields from before are keyword arguments.
@@ -183,8 +183,8 @@ $(_note(:GradientObjective))
 # Keyword arguments
 
 $(_kwargs([:differential, :evaluation, :retraction_method]))
-$(_kwargs(:stepsize; default = "[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`"))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)"))
+$(_kwargs(:stepsize; default = "`[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)"))
 * `sub_cost=`[`FrankWolfeCost`](@ref)`(p, X)`:
   the cost of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
 * `sub_grad=`[`FrankWolfeGradient`](@ref)`(p, X)`:
@@ -194,11 +194,11 @@ $(_kwargs(:sub_kwargs))
 * `sub_objective=`[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_gradient)`:
   the objective for the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_problem"))
 
-$(_kwargs(:sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
-$(_kwargs(:sub_state; default = "[`GradientDescentState`](@ref)`(M, copy(M,p))`"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
+$(_kwargs(:sub_state; default = "`[`GradientDescentState`](@ref)`(M, copy(M,p))"))
 
 $(_kwargs(:X; add_properties = [:as_Gradient]))
-$(_kwargs(:stopping_criterion, "sub_stopping_criterion"; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`"))
+$(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)"))
   $(_note(:KeywordUsedIn, "sub_state"))
 $(_kwargs(:X; add_properties = [:as_Gradient]))
 

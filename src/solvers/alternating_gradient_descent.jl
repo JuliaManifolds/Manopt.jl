@@ -26,8 +26,8 @@ $(_fields(:X; add_properties = [:as_Gradient]))
 $(_kwargs(:p))
 * `order_type::Symbol=:Linear`
 * `order::Vector{<:Int}=Int[]`
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, AlternatingGradientDescentState)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, AlternatingGradientDescentState)"))
 $(_kwargs(:X))
 
 Generate the options for point `p` and where `inner_iterations`, `order_type`, `order`,
@@ -223,8 +223,8 @@ $(_kwargs(:evaluation))
 * `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle permuted sequence (`:Random`) or the default `:Linear` one.
 * `inner_iterations=5`:  how many gradient steps to take in a component before alternating to the next
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`)"))
-$(_kwargs(:stepsize; default = "[`ArmijoLinesearch`](@ref)`()`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`)"))
+$(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
 * `order=[1:n]`:         the initial permutation, where `n` is the number of gradients in `gradF`.
 $(_kwargs(:retraction_method))
 

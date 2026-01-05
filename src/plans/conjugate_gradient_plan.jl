@@ -53,8 +53,8 @@ $(_kwargs(:X; name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
 * `restart_condition=`[`NeverRestart`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to never restart.
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`"))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`)"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:retraction_method))
 $(_kwargs(:vector_transport_method))
 
@@ -316,8 +316,8 @@ Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algo
 Riemannian manifolds.
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:VectorTransport, :symbol))`` denotes a vector transport.
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 ````math
@@ -329,7 +329,7 @@ $(
     _tex(
         :frac,
         _tex(:norm, "X_{k+1}"; index = "p_{k+1}") * "^2",
-        "⟨$(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"
+        "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"
     )
 )
 ````
@@ -494,8 +494,8 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [FletcherReeves:1964](@cite) adapted to manifolds
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:VectorTransport, :symbol))`` denotes a vector transport.
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 ```math
@@ -503,11 +503,11 @@ Then the coefficient reads
     _tex(
         :frac,
         "2$(_tex(:norm, "ν_k"; index = "p_{k+1}"))^2",
-        "⟨$(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}",
+        "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}",
     )
 )
-  $(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))δ_k,
-  $(_tex(:frac, "X_{k+1}", "⟨$(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"))
+  $(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k,
+  $(_tex(:frac, "X_{k+1}", "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"))
 $(_tex(:Bigr))⟩_{p_{k+1}}.
 ```
 
@@ -603,8 +603,8 @@ Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algo
 
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:VectorTransport, :symbol))`` denotes a vector transport.
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 
@@ -615,21 +615,21 @@ Then the coefficient reads
     _tex(
         :frac,
         "$(_tex(:diff))f(p_{k+1})[ν_k]",
-        "$(_tex(:diff))f(p_{k+1})[$(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))δ_k] - $(_tex(:diff))f(p_k)[δ_k]",
+        "$(_tex(:diff))f(p_{k+1})[$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k] - $(_tex(:diff))f(p_k)[δ_k]",
     )
 )
 \\\\&= $(
     _tex(
         :frac,
         "$(_tex(:inner, "X_{k+1}", "ν_k"; index = "p_{k+1}"))",
-        "$(_tex(:inner, "$(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))δ_k", "X_{k+1}"; index = "p_{k+1}")) - $(_tex(:inner, "δ_k", "X_k"; index = "p_{k}"))",
+        "$(_tex(:inner, "$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k", "X_{k+1}"; index = "p_{k+1}")) - $(_tex(:inner, "δ_k", "X_k"; index = "p_{k}"))",
     )
 )
 \\\\&= $(
     _tex(
         :frac,
         "$(_tex(:inner, "X_{k+1}", "ν_k"; index = "p_{k+1}"))",
-        "$(_tex(:inner, "$(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))δ_k", "ν_k"; index = "p_{k+1}"))",
+        "$(_tex(:inner, "$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k", "ν_k"; index = "p_{k+1}"))",
     )
 ),
 \\end{aligned}
@@ -723,8 +723,8 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [LiuStorey:1991](@cite) adapted to manifolds
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:VectorTransport, :symbol))`` denotes a vector transport.
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 ```math
@@ -820,8 +820,8 @@ Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algo
 on [PolakRibiere:1969](@cite) adapted to Riemannian manifolds.
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:VectorTransport, :symbol))`` denotes a vector transport.
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 
@@ -1010,7 +1010,7 @@ Then a restart is performed, hence ``β_k = 0`` returned if
   $(
     _tex(
         :frac,
-        "⟨X_{k+1}, $(_math(:VectorTransport, :symbol, "p_{k+1}", "p_k"))X_k⟩",
+        "⟨X_{k+1}, $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k⟩",
         _tex(:norm, "X_k", index = "p_k")
     )
 ) > ε,

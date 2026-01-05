@@ -40,7 +40,7 @@ The `p` used in the following defaults is the type of one point from the swarm.
 * `inertia=0.65`
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `social_weight=1.4`
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)"))
 $(_kwargs(:vector_transport_method))
 
 # See also
@@ -198,7 +198,7 @@ To this end, a swarm $_doc_swarm of particles is moved around the manifold `M` i
 For every particle ``s_k^{(i)}`` the new particle velocities ``X_k^{(i)}`` are computed in every step ``i`` of the algorithm by
 
 ```math
-X_k^{(i)} = ω $(_math(:VectorTransport, :symbol, "s_k^{(i)", "s_k^{(i-1)}")) X_k^{(i-1)} + c r_1  $(_tex(:invretr))_{s_k^{(i)}}(p_k^{(i)}) + s r_2 $(_tex(:invretr))_{s_k^{(i)}}(p),
+X_k^{(i)} = ω $(_math(:VectorTransport, "s_k^{(i)", "s_k^{(i-1)}")) X_k^{(i-1)} + c r_1  $(_tex(:invretr))_{s_k^{(i)}}(p_k^{(i)}) + s r_2 $(_tex(:invretr))_{s_k^{(i)}}(p),
 ```
 
 
@@ -207,7 +207,7 @@ where
 * ``ω`` denotes the inertia,
 * ``c`` and ``s`` are a cognitive and a social weight, respectively,
 * ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step
-* $(_math(:VectorTransport, :symbol)) is a vector transport, and
+* $(_math(:VectorTransport)) is a vector transport, and
 * $(_tex(:invretr)) is an inverse retraction
 
 Then the position of the particle is updated as
@@ -236,7 +236,7 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `social_weight=1.4`: a social weight factor
 * `swarm_size=100`: swarm size, if it should be generated randomly
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)"))
 $(_kwargs(:vector_transport_method))
 * `velocity`:                  a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position
 

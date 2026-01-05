@@ -46,9 +46,9 @@ Generate the state for the [`proximal_bundle_method`](@ref) on the manifold `M`
 * `m=0.0125`
 $(_kwargs([:retraction_method, :inverse_retraction_method]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
-$(_kwargs(:sub_problem; default = "[`proximal_bundle_method_subsolver`](@ref)`"))
-$(_kwargs(:sub_state; default = "[`AllocatingEvaluation`](@ref)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
+$(_kwargs(:sub_problem; default = "`[`proximal_bundle_method_subsolver`](@ref)` "))
+$(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X)) to specify the type of tangent vector to use.
 """
@@ -241,9 +241,9 @@ $(_kwargs([:evaluation, :inverse_retraction_method]))
 * `m=0.0125`:        a real number that controls the decrease of the cost function
 * `μ=0.5`:           initial proximal parameter for the subproblem
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
-$(_kwargs(:sub_problem; default = "[`proximal_bundle_method_subsolver`](@ref)`"))
-$(_kwargs(:sub_state; default = "[`AllocatingEvaluation`](@ref)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
+$(_kwargs(:sub_problem; default = "`[`proximal_bundle_method_subsolver`](@ref)`"))
+$(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
 $(_kwargs(:vector_transport_method))
 
 $(_note(:OtherKeywords))

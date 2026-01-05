@@ -28,8 +28,8 @@ Create a `StochasticGradientDescentState` with start point `p`.
 * `order=Int[]`: specify how to store the order of indices for the next epoche
 $(_kwargs(:retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`StochasticGradientDescentState`](@ref)`)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 
 """
@@ -196,8 +196,8 @@ $(_kwargs(:evaluation))
   a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
 * `order_type=:RandomOrder`: a type of ordering of gradient evaluations.
   Possible values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`StochasticGradientDescentState`](@ref)`)"))
 * `order=[1:n]`: the initial permutation, where `n` is the number of gradients in `gradF`.
 $(_kwargs(:retraction_method))
 

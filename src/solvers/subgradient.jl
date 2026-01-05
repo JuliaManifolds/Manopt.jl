@@ -21,8 +21,8 @@ Initialise the Subgradient method state
 
 $(_kwargs(:retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, SubGradientMethodState)`"))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(5000)`"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`SubGradientMethodState`](@ref)`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct SubGradientMethodState{
@@ -107,8 +107,8 @@ alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` c
 
 $(_kwargs(:evaluation))
 $(_kwargs(:retraction_method))
-$(_kwargs(:stepsize; default = "[`default_stepsize`](@ref)`(M, SubGradientMethodState)`"))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(5000)`"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`SubGradientMethodState`](@ref)`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.

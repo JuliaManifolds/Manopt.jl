@@ -72,9 +72,9 @@ $(_kwargs(:retraction_method))
 * `step_problem`: the manifold ``$(_math(:Manifold))nifold))) × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
   as the problem the linesearch `stepsize=` employs for determining a step size
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
-$(_kwargs(:stepsize; default = "[`ArmijoLinesearch`](@ref)`()`"))
+$(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
   with the `centrality_condition` keyword as additional criterion to accept a step, if this is provided"))
-$(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-8)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-8)"))
   a stopping criterion, by default depending on the residual of the KKT vector field or a maximal number of steps, which ever hits first.
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_objective`: The [`SymmetricLinearSystemObjective`](@ref) modelling the system of equations to use in the sub solver,
@@ -82,8 +82,8 @@ $(_kwargs(:stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`[` 
   $(_note(:KeywordUsedIn, "sub_problem"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(manifold_dimension(M))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`, where ``c = $(_tex(:norm, "b"))`` from the system to solve.
   $(_note(:KeywordUsedIn, "sub_state"))
-$(_kwargs(:sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
-$(_kwargs(:sub_state; default = "[`ConjugateResidualState`](@ref)"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
+$(_kwargs(:sub_state; default = "`[`ConjugateResidualState`](@ref)` "))
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`:
   the initial gradient with respect to `p`.
