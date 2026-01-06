@@ -261,8 +261,8 @@ function step_solver!(
     @info "α" α
     C = sqrt(ρ_primek / 2) * (I - α / norm_FkSq * (Fk * transpose(Fk)))
     Y = sqrt(ρ_primek) / (1 - α) * Fk
-    # do these have to be updated as well?
-    λk = lms.damping_term * norm_FkSq
+    # do these have to be updated as well? Probably to ρ_k
+    λk = lms.damping_term * 0.5 * ρ_k
 
     # --- check to move this solving in Coordinates to a sub-method to be able to replace it
     # we pass problem and state; that should be enough.
