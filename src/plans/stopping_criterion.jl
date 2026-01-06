@@ -244,7 +244,7 @@ any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` wit
 Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:M))``
 is given by
 
-```
+```math
 $(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distance))(p_k,q_k)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
@@ -575,7 +575,7 @@ any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` wit
 Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradien ``X,Y ∈ $(_math(:M))``
 is given by
 
-```
+```math
 $(_tex(:norm, "X-Y"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k-Y_k"; index = "p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
@@ -686,8 +686,8 @@ A stopping criterion based on the current gradient norm.
 # Fields
 
 * `norm`:      a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm
-  of the gradient `X` in the tangent space at `p` on `M``.
-  For manifolds with components provide `(M::AbstractManifold, p, X, r) -> ℝ`.
+  of the gradient `X` in the tangent space at `p` on `M`.
+  For manifolds with components provide a function `(M::AbstractManifold, p, X, r) -> ℝ`.
 * `threshold`: the threshold to indicate to stop when the distance is below this value
 * `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
   that is used to compute the overall distance based on the element-wise distance.
@@ -704,7 +704,7 @@ any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` wit
 Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:M))``
 is given by
 
-```
+```math
 $(_tex(:norm, "X"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k"; index = "p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
@@ -1301,15 +1301,17 @@ has indicated to stop for `n` (consecutive) times
 
 Create a stopping criterion that indicates to stop when the `criterion` has indicated to stop
 `n` times (consecutively, if `consecutive=true` for the first constructor).
-Note that the cross product is in general noncommutative, and here only the order `sc × n`` is possible.
+Note that the cross product is in general noncommutative, and here only the order `sc × n` is possible.
 
 # Examples
 
 A stopping criterion that indicates to stop whenever the gradient norm is less that `1e-6` for three consecutive iterations:
+
     StopWhenRepeated(StopWhenGradientNormLess(1e-6), 3)
     StopWhenGradientNormLess(1e-6) × 3
 
 A stopping criterion that indicates to stop whenever the gradient norm is less that `1e-6` at three iterations (not necessarily consecutive):
+
     StopWhenRepeated(StopWhenGradientNormLess(1e-6), 3; consecutive=false)
 """
 mutable struct StopWhenRepeated{SC <: StoppingCriterion} <: StoppingCriterion
@@ -1334,7 +1336,6 @@ function (c::StopWhenRepeated)(
     if k <= 0 # reset on init
         c.count = zero(c.count)
         c.at_iteration = -1
-        return c.stopping_criterion(p, s, k) # reset the criterion
     end
     # evaluate the inner stopping criterion
     stop = c.stopping_criterion(p, s, k)
@@ -1353,7 +1354,7 @@ function get_reason(sc::StopWhenRepeated)
     has_stopped = (sc.at_iteration >= 0)
     if (sc.at_iteration >= 0)
         s = has_stopped ? "reached" : "not reached"
-        c = sc.consecutive ? "consecutive " : ""
+        c = sc.consecutive ? "consecutive" : ""
         # we can only get the last reason, unless we do more allocations
         r = """At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n) $(c) times:
         $(sc.count) ≥ $(sc.n): $(s)
@@ -1392,7 +1393,9 @@ A stopping criterion, that only evaluates a certain (inner) stopping based on a 
 on the iterate `k`.
 The condition is a function `condition(k) -> Bool`.
 
-## Example `(k) -> >(n)` would only activate that stopping criterion after `n` iterations.`.
+## Example
+
+`(k) -> >(n)` would only activate that stopping criterion after `n` iterations.
 
 ## Fields
 
@@ -1409,6 +1412,7 @@ check the inner criterion. The `n` is ignored if you provide a manual functor `c
 ## Examples
 
 A stopping criterion that indicates to stop when the gradient norm is small but only after the third iteration
+
     StopWhenCriterionWithIterationCondition(StopWhenGradientNormLess(1e-6), 3)
 
 You can also use the infix operators `≟` (`\\questeq` on REPL),  `⩻` (`\\ltquest`), and `⩼` (`\\gtquest`) to create such a criterion:

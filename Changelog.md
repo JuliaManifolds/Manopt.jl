@@ -6,11 +6,17 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.30] December 10, 2025
 
 ### Added
 
+* add keyword argument `is_feasible_error` to `interior_point_Newton` to control how to handle infeasible starting points (#556)
 * add keyword argument `at_init` to some debug options to control whether they print already at the initialisation and hence before the first iteration (#552)
+
+### Fixed
+
+* fixed a few typos in the documentation (#557)
+* fixed a bug in `StopWhenRepeated` where it stopped already at initialisation if the interior stopping criterion was satisfied (#558)
 
 ## [0.5.29] November 26, 2025
 

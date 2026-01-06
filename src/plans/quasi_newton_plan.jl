@@ -754,8 +754,8 @@ taking into account that the corresponding step size is chosen.
 
 # Provided functors
 
-* `(mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction
-* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
+* `(mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction
+* `(η, mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
 
 # Fields
 
