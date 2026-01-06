@@ -240,7 +240,7 @@ $(_args(:p))
 
 # Keyword arguments
 
-$(_kwargs(:sub_problem; default = "`nothing`")), i.e. you have to provide a method for solving the Newton equation.
+$(_kwargs(:sub_problem; default = "nothing")), i.e. you have to provide a method for solving the Newton equation.
   Currently only the closed form solution is implemented, that is, this is a functor that maps either
   `(problem::`[`VectorBundleManoptProblem`](@ref)`, state::VectorBundleNewtonState) -> X` or `(problem, X, state) -> X` to compute the Newton direction.
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
