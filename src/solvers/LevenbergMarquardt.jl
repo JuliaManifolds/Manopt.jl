@@ -253,30 +253,41 @@ function step_solver!(
     if lms.last_step_successful
         get_jacobian!(M, lms.jacobian, nlso, lms.p)
     end
-    λk = lms.damping_term * norm(lms.residual_values)^2
+    # Robustification, see [BB26]
+    Fk = lms.residual_values
+    norm_FkSq = norm(Fk)^2
+    (ρ_k, ρ_primek, ρ_dprimek) = get_robustifier_values(nlso.robustifier, norm_FkSq)
+    α = 1 - sqrt(1 + 2 * (ρ_dprimek / ρ_primek) * norm_FkSq)
+    @info "α" α
+    C = sqrt(ρ_primek / 2) * (I - α / norm_FkSq * (Fk * transpose(Fk)))
+    Y = sqrt(ρ_primek) / (1 - α) * Fk
+    # do these have to be updated as well?
+    λk = lms.damping_term * norm_FkSq
+
     # --- check to move this solving in Coordinates to a sub-method to be able to replace it
     # we pass problem and state; that should be enough.
     #
     basis_ox = get_basis(nlso.objective.jacobian_type)
-    JJ = transpose(lms.jacobian) * lms.jacobian + λk * I
+    grad_f_c = transpose(lms.jacobian) * transpose(C) * Y
+    # formerly JJ
+    #     JJ = transpose(lms.jacobian) * lms.jacobian + λk * I
+    Hess_f_c = transpose(lms.jacobian) * transpose(C) * C * lms.jacobian + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
-    grad_f_c = transpose(lms.jacobian) * lms.residual_values
     sk = similar(grad_f_c)
-    lms.linear_subsolver!(sk, JJ, grad_f_c)
+    # TODO: MOdify
+    lms.sub_problem(sk, Hess_f_c, grad_f_c)
     sk .*= -1
     get_vector!(M, lms.X, lms.p, grad_f_c, basis_ox)
-
     get_vector!(M, lms.step_vector, lms.p, sk, basis_ox)
     # --- end.
     lms.last_stepsize = norm(M, lms.p, lms.step_vector)
     temp_x = retract(M, lms.p, lms.step_vector, lms.retraction_method)
 
-    normFk2 = norm(lms.residual_values)^2
     get_value!(M, lms.candidate_residual_values, nlso.objective, temp_x)
-
+    # Does the rho need to be updated?
     ρk =
-        (normFk2 - norm(lms.candidate_residual_values)^2) / (
+        (norm_FkSq - norm(lms.candidate_residual_values)^2) / (
         -2 * inner(M, lms.p, lms.X, lms.step_vector) - norm(lms.jacobian * sk)^2 -
             λk * norm(sk)^2
     )

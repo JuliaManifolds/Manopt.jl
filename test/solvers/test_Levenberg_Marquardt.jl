@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test
+using Manifolds, Manopt, Test, ManifoldsBase
 using ForwardDiff
 using LinearAlgebra
 
@@ -177,7 +177,7 @@ end
         (linear_subsolver!) = (test_lm_lin_solve!),
     )
     lms = get_state(ds)
-    @test lms.linear_subsolver! === test_lm_lin_solve!
+    @test lms.sub_problem === test_lm_lin_solve!
     @test isapprox(M, p_star, lms.p; atol = p_atol)
 
     p1 = copy(M, p0)
