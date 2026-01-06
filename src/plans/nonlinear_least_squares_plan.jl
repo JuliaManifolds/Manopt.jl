@@ -37,7 +37,7 @@ $(_problem(:NonLinearLeastSquares))
 
 # Constructors
 
-    NonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer, robustifier=IdentityRobustifier())
+    NonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer, robustifier=IdentityRobustifier(); kwargs...)
     NonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction, robustifier::AbstractRobustifierFunction=IdentityRobustifier())
     NonlinearLeastSquaresObjective(fs::Vector{<:AbstractVectorGradientFunction}, robustifiers::Vector{<:AbstractRobustifierFunction}=fill(IdentityRobustifier(), length(fs)))
 
@@ -49,11 +49,15 @@ $(_problem(:NonLinearLeastSquares))
 
 These three can also be passed as a [`AbstractVectorGradientFunction`](@ref) `vf` already.
 
-* `robustifier` the robustifier function(s) to use, by default the identity function.
+* `robustifier` the robustifier function(s) to use, by default the [`IdentityRobustifier`](@ref) (for each component),
+    which corresponds to the classical nonlinear least squares problem.
 
 # Keyword arguments
 
 $(_var(:Keyword, :evaluation))
+
+As well as for the first variant
+
 * `function_type::`[`AbstractVectorialType`](@ref)`=`[`FunctionVectorialType`](@ref)`()`: specify
   the format the residuals are given in. By default a function returning a vector.
 * `jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis()`; shortcut to specify

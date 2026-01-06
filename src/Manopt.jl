@@ -366,6 +366,8 @@ export get_proximal_map, get_proximal_map!
 export get_state,
     get_initial_stepsize,
     get_iterate,
+    get_adjoint_jacobian,
+    get_adjoint_jacobian!,
     get_jacobian,
     get_jacobian!,
     get_gradients,

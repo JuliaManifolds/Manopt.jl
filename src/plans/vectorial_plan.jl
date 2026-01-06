@@ -11,12 +11,11 @@ abstract type AbstractVectorialType end
 
 A type to indicate that gradient of the constraints is implemented as a
 Jacobian matrix with respect to a certain basis, that is if the vector function
-is ``f: $(_math(:M)) → ℝ^m`` and we have a basis ``$(_tex(:Cal, "B")) of ``T_p$(_math(:M))``, at ``p∈ $(_math(:M))``
+is ``f: $(_math(:M)) → ℝ^m`` and we have a basis ``$(_tex(:Cal, "B"))`` of ``$(_math(:TpM))``, at ``p∈ $(_math(:M))``
 This can be written as ``J_g(p) = (c_1^{$(_tex(:rm, "T"))},…,c_m^{$(_tex(:rm, "T"))})^{$(_tex(:rm, "T"))} ∈ ℝ^{m,d}``, that is,
 every row ``c_i`` of this matrix is a set of coefficients such that
-`get_coefficients(M, p, c, B)` is the tangent vector ``$(_tex(:grad)) g_i(p)``
-for example ``g_i(p) ∈ ℝ^m`` or ``$(_tex(:grad)) g_i(p) ∈ T_p$(_math(:M))``,
-    ``i=1,…,m``.
+[`get_coordinates`](@extref `ManifoldsBase.get_coordinates`)`(M, p, c, B)` is the tangent vector ``$(_tex(:grad)) g_i(p)``
+for example ``g_i(p) ∈ ℝ^m`` or ``$(_tex(:grad)) g_i(p) ∈ $(_math(:TpM))``, ``i=1,…,m``.
 
 # Fields
 
@@ -115,7 +114,7 @@ For the [`ComponentVectorialType`](@ref) imagine that ``f`` could also be writte
 using its component functions,
 
 ```math
-f(p) = \bigl( f_1(p), f_2(p),…, f_n(p) \bigr)^{$(_tex(:rm, "T"))}
+f(p) = $(_tex(:bigl))( f_1(p), f_2(p),…, f_n(p) $(_tex(:bigr)))^{$(_tex(:rm, "T"))}
 ```
 
 In this representation `f` is given as a vector `[f1(M,p), f2(M,p), ..., fn(M,p)]`
@@ -515,7 +514,7 @@ get_hessian_function(vgf::VectorHessianFunction, recursive::Bool = false) = vgf.
 
 #
 #
-# --- Jacobian
+# --- Jacobian - matrix representation
 
 # A small helper function to change the basis of a Jacobian
 """
@@ -543,43 +542,36 @@ function _change_basis!(
     ) where {B <: AbstractBasis}
     return JF
 end
-_doc_get_jacobian_vgf = """
+
+_doc_get_jacobian_matrix_vgf = """
     get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p; kwargs...)
-    get_jacobian(M::AbstractManifold, J, vgf::AbstractVectorGradientFunction, p; kwargs...)
+    get_jacobian!(M::AbstractManifold, J, vgf::AbstractVectorGradientFunction, p; kwargs...)
 
-Compute the Jacobian ``J_F ∈ ℝ^{m×n}`` of the [`AbstractVectorGradientFunction`](@ref) ``F`` at `p` on the `M`.
+Compute the Jacobian ``J_F ∈ ℝ^{m×n}`` in matrix form of an [`AbstractVectorGradientFunction`](@ref) ``F: $(_math(:M)) → ℝ^m`` at `p` on the `M`
+with respect to a certain basis of the tangent space ``$(_math(:TpM))``.
+Denote this basis by ``Y_1,…,Y_n``, where `n` is the $(_link(:manifold_dimension)).
+Then we can write any tangent vector ``X = $(_tex(:displaystyle))$(_tex(:sum))_i c_iY_i``
+and the Jacobian describes the linear map ``DF(p): $(_math(:TpM)) → ℝ^m`` as a matrix i.e.
 
-There are two interpretations of the Jacobian of a vectorial function ``F: $(_math(:M)) → ℝ^m`` on a manifold.
-Both depend on choosing a basis on the tangent space ``$(_math(:TpM))`` which we denote by
-``Y_1,…,Y_n``, where `n` is the $(_link(:manifold_dimension))`(M)`.
-We can write any tangent vector ``X = $(_tex(:displaystyle))$(_tex(:sum))_i c_iY_i``
+````math
+DF(p)[X] = J_F(p) c.
+````
 
-1. The Jacobian ``J_F`` is the matrix with respect to the basis ``Y_1,…,Y_n`` such that
-for any ``X∈$(_math(:TpM))`` we have the equality of the differential ``DF(p)[X] = Jc``.
-  In other words, the `j`th column of ``J`` is given by ``DF(p)[Y_j]``
-
-2. Given the gradients ``$(_tex(:grad)) F_i(p)`` of the component functions ``F_i: $(_math(:M)) → ℝ``,
-  we define the jacobian function as
-
-  ````math
-  J(X) = $(_tex(:pmatrix, "⟨$(_tex(:grad)) F_1, X⟩_p", "⟨$(_tex(:grad)) F_1, X⟩_p", "⋮", "⟨$(_tex(:grad)) F_1, X⟩_p"))
-  ````
-
-  Then either the ``j``th column of ``J_F`` is given by ``J(Y_i)`` or the ``i``th row is given by all inner products ``$(_tex(:grad)) F_1, Y_j⟩_p`` of the ``i``th gradient function with all basis vectors ``Y_j``.
+In other words, the `j`th column of ``J`` is given by ``DF(p)[Y_j]``
 
 The computation can be computed in-place of `J`.
 
 # Keyword arguments
 
-* `basis::AbstractBasis = `[`get_basis`](@ref)`(vgf)`
-  for the [`CoordinateVectorialType`](@ref) of the vectorial functions gradient, this
+* `basis::AbstractBasis = `[`get_basis`](@ref)`(vgf)` basis with respect to which the matrix
+  is built. For the [`CoordinateVectorialType`](@ref) of the vectorial functions gradient, this
   might lead to a change of basis, if this basis and the one the coordinates are given in do not agree.
 * `range::AbstractPowerRepresentation = `[`get_range`](@ref)`(vgf.jacobian_type)`
   specify the range of the gradients in the case of a [`FunctionVectorialType`](@ref),
-  that is, on which type of power manifold the gradient is given on.
+  that is, on which type of power manifold the gradient(s) of the function is/are given on.
 """
 
-@doc "$(_doc_get_jacobian_vgf)"
+@doc "$(_doc_get_jacobian_matrix_vgf)"
 get_jacobian(::AbstractManifold, ::AbstractVectorGradientFunction, p; kwargs...)
 
 # Part I: allocating vgf – allocating jacobian
@@ -699,7 +691,7 @@ function get_jacobian(
 end
 
 function get_jacobian! end
-@doc "$(_doc_get_jacobian_vgf)"
+@doc "$(_doc_get_jacobian_matrix_vgf)"
 get_jacobian!(M::AbstractManifold, JF, vgf::AbstractVectorGradientFunction, p)
 
 # Part I: allocating vgf – inplace jacobian
@@ -806,6 +798,84 @@ function get_jacobian_basis(vgf::AbstractVectorGradientFunction)
 end
 _get_jacobian_basis(jt::AbstractVectorialType) = DefaultOrthonormalBasis()
 _get_jacobian_basis(jt::CoordinateVectorialType) = jt.basis
+
+#
+#
+# --- Jacobian function in terms of gradients as a 1-1 tensor (basis free)
+
+_doc_get_jacobian_function_vgf = """
+    get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, X; kwargs...)
+    get_jacobian!(M::AbstractManifold, a, vgf::AbstractVectorGradientFunction, p, X; kwargs...)
+
+Compute the Jacobian how it acts on a tangent vector `X` at `p` on the manifold `M`, i.e., compute
+
+````math
+J_F(p)[X] = DF(p)[X] ∈ ℝ^m
+````
+
+If the gradient functions of the single component functions are provided, this is given by
+
+````math
+J_F(p)[X] = $(
+    _tex(
+        :pmatrix,
+        _tex(:inner, "$(_tex(:grad))F_1(p)", "X"), _tex(:inner, "$(_tex(:grad))F_2(p)", "X"), _tex(:vdots), _tex(:inner, "$(_tex(:grad))F_m(p)", "X")
+    )
+)
+  ∈ ℝ^m
+````
+
+This can be computed in-place of `a`.
+"""
+
+@doc "$(_doc_get_jacobian_function_vgf)"
+function get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, X; kwargs...)
+    error("Not implemented for $(typeof(vgf))")
+end
+
+@doc "$(_doc_get_jacobian_function_vgf)"
+function get_jacobian!(M::AbstractManifold, a, vgf::AbstractVectorGradientFunction, p, X; kwargs...)
+    error("Not implemented for $(typeof(vgf))")
+end
+
+#
+#
+# --- Adjoint Jacobian function in terms of gradients as a 1-1 tensor (basis free)
+
+_doc_get_adjoint_jacobian_function_vgf = """
+    get_adjoint_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
+    get_adjoint_jacobian!(M::AbstractManifold, X, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
+
+Compute the adjoint Jacobian how it acts on a vector `a` at `p`, i.e., it is given by the relation
+
+````math
+$(_tex(:inner, "J_F^*(p)[a]", "X"; index = "p")) = $(_tex(:inner, "a", "J_F(p)[X]")),
+````
+
+where the inner product on the right hand side is the standard Euclidean inner product on ``ℝ^m``.
+
+To be precise, the adjoint Jacobian is defined using the Riemannian gradients of the component functions
+``F_i`` of ``F`` as
+
+````math
+J_F^*(p): ℝ^m → $(_math(:TpM)),
+$(_tex(:qquad))
+J_F^*(p)[a] = $(_tex(:sum, "i=1", "m")) a_i $(_tex(:grad))F_i(p),
+````
+
+This can be computed in-place of `X`.
+"""
+
+@doc "$(_doc_get_adjoint_jacobian_function_vgf)"
+function get_adjoint_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
+    error("Not implemented for $(typeof(vgf))")
+end
+
+@doc "$(_doc_get_adjoint_jacobian_function_vgf)"
+function get_adjoint_jacobian!(M::AbstractManifold, X, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
+    error("Not implemented for $(typeof(vgf))")
+end
+
 
 #
 #
