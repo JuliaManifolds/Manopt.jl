@@ -221,7 +221,7 @@ using RecursiveArrayTools
 
         MInf = Hyperrectangle([-Inf, -Inf, -Inf], [Inf, Inf, Inf])
 
-        f3(M, p) = sum(p .^ 4) - sum(p.^2)
+        f3(M, p) = sum(p .^ 4) - sum(p .^ 2)
         function grad_f3(M, p)
             return project(MInf, p, 4 .* (p .^ 3) - 2 .* p)
         end

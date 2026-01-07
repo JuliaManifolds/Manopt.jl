@@ -1420,7 +1420,7 @@ function (a::NonmonotoneLinesearchStepsize)(
 
     #compute the new step size with the help of the Barzilai-Borwein step size
     l = norm(M, p, η)
-    local swse # COV_EXCL_LINE 
+    local swse # COV_EXCL_LINE
     if :stop_when_stepsize_exceeds in keys(kwargs)
         swse = kwargs.stop_when_stepsize_exceeds
     else
