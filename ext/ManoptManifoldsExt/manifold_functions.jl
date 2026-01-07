@@ -73,6 +73,9 @@ function max_stepsize(M::Hyperrectangle)
     end
     return ms
 end
+function max_stepsize(M::ProbabilitySimplex)
+    return 1.0
+end
 
 """
     mid_point(M, p, q, x)

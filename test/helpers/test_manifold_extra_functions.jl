@@ -112,6 +112,9 @@ Random.seed!(42)
         M = Hyperrectangle([-3, -1.5], [3, 1.5])
         @test Manopt.max_stepsize(M) ≈ 6.0
         @test Manopt.max_stepsize(M, [-1, 0.5]) ≈ 4.0
+
+        M = ProbabilitySimplex(3)
+        @test Manopt.max_stepsize(M) == 1.0
     end
     @testset "Vector space default" begin
         @test Manopt.Rn(Val(:Manopt), 3) isa ManifoldsBase.DefaultManifold
