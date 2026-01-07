@@ -121,7 +121,7 @@ function (a::ArmijoLinesearchStepsize)(
     )
     reset_messages!(a.messages)
     l = norm(get_manifold(mp), p, η)
-    local swse
+    local swse # COV_EXCL_LINE
     if :stop_when_stepsize_exceeds in keys(kwargs)
         swse = kwargs[:stop_when_stepsize_exceeds]
     else
@@ -1353,7 +1353,8 @@ function (a::NonmonotoneLinesearchStepsize)(
         η,
         p_old,
         X_old,
-        k,
+        k;
+        kwargs...,
     )
 end
 function (a::NonmonotoneLinesearchStepsize)(
@@ -1422,7 +1423,7 @@ function (a::NonmonotoneLinesearchStepsize)(
     l = norm(M, p, η)
     local swse # COV_EXCL_LINE
     if :stop_when_stepsize_exceeds in keys(kwargs)
-        swse = kwargs.stop_when_stepsize_exceeds
+        swse = kwargs[:stop_when_stepsize_exceeds]
     else
         swse = (a.stop_when_stepsize_exceeds / l)
     end
