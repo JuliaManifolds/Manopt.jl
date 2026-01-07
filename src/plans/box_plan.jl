@@ -369,9 +369,7 @@ function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(M::AbstractManifold, p, old_f_pr
 
     ii = 1
     for i in 1:m
-        if iszero(ha.qn_du.ρ[i])
-            continue
-        end
+        iszero(ha.qn_du.ρ[i]) && continue
         # setting _X to w_b from the paper
         ha.coords_Yk_X[ii] = get_at_bound_index(M, ha.qn_du.memory_y[i], b)
         ha.coords_Sk_X[ii] = ha.current_scale * get_at_bound_index(M, ha.qn_du.memory_s[i], b)
@@ -552,10 +550,7 @@ function find_gcp_direction!(gcp::GCPFinder, d_out, p, d, X)
         end
 
         dt_min = -f_prime / f_double_prime
-
-        if isempty(F)
-            break
-        end
+        isempty(F) && break
 
         t_current, b = pop!(F)
         dt = t_current - t_old
@@ -563,7 +558,6 @@ function find_gcp_direction!(gcp::GCPFinder, d_out, p, d, X)
 
     dt_min = max(dt_min, 0.0)
     t_old = t_old + dt_min
-
     for i in bounds_indices
         if t[i] >= t_current
             set_bound_t_at_index!(M, p_cp, t_old, d, i)

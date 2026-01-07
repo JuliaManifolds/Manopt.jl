@@ -339,7 +339,7 @@ function quasi_Newton!(
         O <: Union{AbstractManifoldFirstOrderObjective{E}, AbstractDecoratedManifoldObjective{E}},
     }
     keywords_accepted(quasi_Newton!; kwargs...)
-    local local_dir_upd
+    local local_dir_upd # COV_EXCL_LINE 
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             M,
@@ -422,7 +422,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
             end
         end
     end
-    local α
+    local α # COV_EXCL_LINE 
     if isnothing(current_max_stepsize)
         α = qns.stepsize(mp, qns, k, qns.η; gradient = qns.X)
     else

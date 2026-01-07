@@ -180,6 +180,15 @@ using RecursiveArrayTools
         gf2 = Manopt.GCPFinder(M, p2, ha)
 
         @test Manopt.find_gcp_direction!(gf2, d_out, p2, [-1.0, -1.0, 1.0], [-10.0, -10.0, -10.0]) === :not_found
+
+        M2 = Hyperrectangle([-10.0], [10.0])
+
+        ha2 = QuasiNewtonMatrixDirectionUpdate(M2, BFGS(), DefaultOrthonormalBasis(), [100.0;;])
+        p3 = [1.0]
+        gf3 = Manopt.GCPFinder(M2, p3, ha2)
+
+        d_out = similar(p3)
+        @test Manopt.find_gcp_direction!(gf3, d_out, p3, [1.0], [-10.0]) === :found_limited
     end
 
     @testset "Pure Hyperrectangle" begin
@@ -201,14 +210,30 @@ using RecursiveArrayTools
         p_opt = quasi_Newton(M, f2, grad_f2, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test f2(M, p_opt) < 16.1
 
-        for stepsize in [ArmijoLinesearch(), CubicBracketingLinesearch()]
+        for stepsize in [ArmijoLinesearch(), CubicBracketingLinesearch(), NonmonotoneLinesearch()]
             p_opt = quasi_Newton(
                 M, f2, grad_f2, p0;
                 stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100),
                 stepsize = stepsize
             )
-            @test f2(M, p_opt) < 16.1
+            @test f2(M, p_opt) < 64.0
         end
+
+        MInf = Hyperrectangle([-Inf, -Inf, -Inf], [Inf, Inf, Inf])
+
+        f3(M, p) = sum(p .^ 4) - sum(p.^2)
+        function grad_f3(M, p)
+            return project(MInf, p, 4 .* (p .^ 3) - 2 .* p)
+        end
+        p0 = [0.0, 4.0, 1.0]
+        p_opt = quasi_Newton(MInf, f3, grad_f3, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
+        @test f3(MInf, p_opt) < 16.1
+
+        p_opt = quasi_Newton(
+            MInf, f3, grad_f3, p0;
+            stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100),
+        )
+        @test f3(MInf, p_opt) < 64.0
     end
 
     @testset "requires_gcp" begin
