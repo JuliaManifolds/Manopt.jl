@@ -22,6 +22,8 @@ Initial scale ``\theta`` is stored in the field `initial_scale` but if the memor
 the current scale is set to squared norm of $s_k$ divided by inner product of ``s_k`` and ``y_k``
 where ``k`` is the oldest index for which the denominator is not equal to 0.
 
+`last_gcp_result` stores the result of the last generalized Cauchy point search.
+
 See [ByrdNocedalSchnabel:1994](@cite) for details.
 """
 mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
