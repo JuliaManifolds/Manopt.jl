@@ -98,8 +98,8 @@ function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    gcp = GCPFinder(M, p, d)
-    d.last_gcp_result = find_gcp_direction!(gcp, r, p, r, X)
+    gcp = GeneralizedCauchyPointFinder(M, p, d)
+    d.last_gcp_result = find_generalized_cauchy_point_direction!(gcp, r, p, r, X)
     return r
 end
 
@@ -326,7 +326,7 @@ end
     abstract type AbstractFPFPPUpdater end
 
 Abstract type for methods that calculate f' and f'' in the GCP calculation in subsequent
-line segments in `GCPFinder`.
+line segments in `GeneralizedCauchyPointFinder`.
 """
 abstract type AbstractFPFPPUpdater end
 
@@ -501,14 +501,14 @@ end
 
 
 @doc raw"""
-    GCPFinder{TM <: AbstractManifold, TP, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
+    GeneralizedCauchyPointFinder{TM <: AbstractManifold, TP, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
 
 Helper container for generalized Cauchy point search. Stores the manifold `M`, cached
 workspace (`p_cp`, `Y_tmp`, `d_old`), the quasi-Newton direction update `ha`, and the
 ``f'``/``f''`` updater `fpfpp_updater`. Instances are reused across segments during
-`find_gcp_direction!` to avoid allocations.
+`find_generalized_cauchy_point_direction!` to avoid allocations.
 """
-struct GCPFinder{TM <: AbstractManifold, TP, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
+struct GeneralizedCauchyPointFinder{TM <: AbstractManifold, TP, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
     M::TM
     p_cp::TP
     Y_tmp::TX
@@ -517,15 +517,15 @@ struct GCPFinder{TM <: AbstractManifold, TP, TX, T_HA <: AbstractQuasiNewtonDire
     fpfpp_updater::TFU
 end
 
-function GCPFinder(
+function GeneralizedCauchyPointFinder(
         M::AbstractManifold, p, ha::AbstractQuasiNewtonDirectionUpdate;
         fpfpp_updater::AbstractFPFPPUpdater = get_default_fpfpp_updater(ha)
     )
-    return GCPFinder(M, copy(M, p), zero_vector(M, p), zero_vector(M, p), ha, fpfpp_updater)
+    return GeneralizedCauchyPointFinder(M, copy(M, p), zero_vector(M, p), zero_vector(M, p), ha, fpfpp_updater)
 end
 
 """
-    find_gcp_direction!(gcp::GCPFinder, d_out, p, d, X)
+    find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFinder, d_out, p, d, X)
 
 Find generalized Cauchy point looking from point `p` in direction `d` and save the tangent
 vector pointing at it to `d_out`. Gradient of the objective at `p` is `X`.
@@ -537,7 +537,7 @@ The function returns
   `max_stepsize(M, p)` in direction `d_out` afterwards,
 * `:not_found` if the search cannot be performed in direction `d`.
 """
-function find_gcp_direction!(gcp::GCPFinder, d_out, p, d, X)
+function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFinder, d_out, p, d, X)
     M = gcp.M
     copyto!(M, gcp.p_cp, p)
     p_cp = gcp.p_cp

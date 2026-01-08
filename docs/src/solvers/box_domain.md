@@ -33,7 +33,7 @@ data = Matrix(rand(distr, 200)')  # 200 samples
 The objective function is defined as follows, with gradient calculated using automatic differentiation.
 
 ```@example example-box-domain
-function logprob_objective(::AbstractManifold, p)
+function logprob_cost(::AbstractManifold, p)
     D, R = p.x
     logdet = sum(log, D)
     invΣ = R * Diagonal(1 ./ D) * R'
@@ -45,19 +45,21 @@ function logprob_objective(::AbstractManifold, p)
 end
 
 function logprob_gradient(M::AbstractManifold, p)
-    Y = DifferentiationInterface.gradient(q -> logprob_objective(M, q), AutoForwardDiff(), p)
+    Y = DifferentiationInterface.gradient(q -> logprob_cost(M, q), AutoForwardDiff(), p)
     return riemannian_gradient(M, p, Y)
 end
 ```
 
 Finally, we can solve the optimization problem using a quasi-Newton method with box domain support.
 We restrict the variances (diagonal elements of the covariance matrix) to be between 1.0 and 100.0.
+The covariance matrix is represented using its eigendecomposition $\Sigma = R D R^{\top}$, where $D$ is a diagonal matrix of variances and $R$ is an orthogonal matrix of principal directions.
+With constraints on variances, the optimization variable belongs to $[1,100]^N \times \mathrm{SO}(N)$.
 
 ```@example example-box-domain
 M = ProductManifold(Hyperrectangle(fill(1.0, N), fill(100.0, N)), M_rot)
 
 p0 = ArrayPartition(fill(10.0, N), Matrix{Float64}(I(5)))
-p_mle = quasi_Newton(M, logprob_objective, logprob_gradient, p0; stopping_criterion = StopAfterIteration(100) | StopWhenProjectedNegativeGradientNormLess(1e-6))
+p_mle = quasi_Newton(M, logprob_cost, logprob_gradient, p0; stopping_criterion = StopAfterIteration(100) | StopWhenProjectedNegativeGradientNormLess(1e-6))
 println("Estimated variances: $(p_mle.x[1])")
 cov_matrix_mle = p_mle.x[2] * Diagonal(p_mle.x[1]) * p_mle.x[2]'
 println("Estimated covariance matrix:")
@@ -82,12 +84,12 @@ Manopt.AbstractFPFPPUpdater
 Manopt.GenericFPFPPUpdater
 Manopt.get_bounds_index
 Manopt.requires_gcp
-Manopt.find_gcp_direction!
+Manopt.find_generalized_cauchy_point_direction!
 Manopt.hess_val_eb
 Manopt.LimitedMemoryFPFPPUpdater
 Manopt.get_bound_t
 Manopt.set_M_current_scale!
 Manopt.hess_val_from_wmwt_coords
-Manopt.GCPFinder
+Manopt.GeneralizedCauchyPointFinder
 Manopt.bound_direction_tweak!
 ```

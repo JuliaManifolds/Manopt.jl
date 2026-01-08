@@ -153,42 +153,42 @@ using RecursiveArrayTools
         end
     end
 
-    @testset "GCPFinder" begin
+    @testset "GeneralizedCauchyPointFinder" begin
         M = Hyperrectangle([-1.0, -2.0, -Inf], [2.0, Inf, 2.0])
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS())
 
         p = [0.0, 0.0, 0.0]
-        gf = Manopt.GCPFinder(M, p, ha)
+        gf = Manopt.GeneralizedCauchyPointFinder(M, p, ha)
 
         X1 = [-5.0, 0.0, 0.0]
 
         d = -X1
         d_out = similar(d)
 
-        @test Manopt.find_gcp_direction!(gf, d_out, p, d, X1) === :found_limited
+        @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, d, X1) === :found_limited
         @test d_out ≈ [2.0, 0.0, 0.0]
 
         d2 = [0.0, 1.0, 0.0]
 
-        @test Manopt.find_gcp_direction!(gf, d_out, p, d2, [0.0, -1.0, 0.0]) === :found_unlimited
+        @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, d2, [0.0, -1.0, 0.0]) === :found_unlimited
         @test d_out ≈ d2
 
-        @test Manopt.find_gcp_direction!(gf, d_out, p, [1.0, 1.0, 0.0], [-10.0, -10.0, -10.0]) === :found_limited
+        @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, [1.0, 1.0, 0.0], [-10.0, -10.0, -10.0]) === :found_limited
         @test d_out ≈ [2.0, 10.0, 0.0]
 
         p2 = [-1.0, -2.0, 2.0]
-        gf2 = Manopt.GCPFinder(M, p2, ha)
+        gf2 = Manopt.GeneralizedCauchyPointFinder(M, p2, ha)
 
-        @test Manopt.find_gcp_direction!(gf2, d_out, p2, [-1.0, -1.0, 1.0], [-10.0, -10.0, -10.0]) === :not_found
+        @test Manopt.find_generalized_cauchy_point_direction!(gf2, d_out, p2, [-1.0, -1.0, 1.0], [-10.0, -10.0, -10.0]) === :not_found
 
         M2 = Hyperrectangle([-10.0], [10.0])
 
         ha2 = QuasiNewtonMatrixDirectionUpdate(M2, BFGS(), DefaultOrthonormalBasis(), [100.0;;])
         p3 = [1.0]
-        gf3 = Manopt.GCPFinder(M2, p3, ha2)
+        gf3 = Manopt.GeneralizedCauchyPointFinder(M2, p3, ha2)
 
         d_out = similar(p3)
-        @test Manopt.find_gcp_direction!(gf3, d_out, p3, [1.0], [-10.0]) === :found_limited
+        @test Manopt.find_generalized_cauchy_point_direction!(gf3, d_out, p3, [1.0], [-10.0]) === :found_limited
     end
 
     @testset "Pure Hyperrectangle" begin
