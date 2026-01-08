@@ -92,4 +92,7 @@ Manopt.set_M_current_scale!
 Manopt.hess_val_from_wmwt_coords
 Manopt.GeneralizedCauchyPointFinder
 Manopt.bound_direction_tweak!
+Manopt.set_bound_t_at_index!
+Manopt.get_at_bound_index
+Manopt.set_bound_at_index!
 ```
