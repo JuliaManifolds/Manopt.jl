@@ -6,7 +6,7 @@ The core idea is considering a piecewise quadratic approximation of the objectiv
 The points at which the approximation might not be differentiable correspond to hitting new boundaries along the initially selected descent direction.
 Then, we can perform standard line search between the initial iterate and the generalized Cauchy point.
 
-Currently `Manopt.jl` can handle domains that are either a `Hyperrectangle` or a `ProductManifold` containing a `Hyperrectangle` as its first factor and other manifolds as subsequent factors.
+Currently `Manopt.jl` can handle domains that are either a [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) or a [`ProductManifold`](@extref ManifoldsBase.ProductManifold) containing a [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) as its first factor and other manifolds as subsequent factors.
 
 ## Example
 
