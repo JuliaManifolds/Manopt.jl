@@ -11,14 +11,14 @@ Manopt.default_vector_norm(::Euclidean, p, X) = norm(p, Inf)
 """
     get_bounds_index(::Hyperrectangle)
 
-Get the bound indices of [`Hyperrectangle`](@ref) `M`. They are the same as the indices of the
+Get the bound indices of [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`. They are the same as the indices of the
 lower (or upper) bounds.
 """
 Manopt.get_bounds_index(M::Hyperrectangle) = eachindex(M.lb)
 """
     get_bound_t(M::Hyperrectangle, x, d, i)
 
-Get the upper bound on moving in direction `d` from point `p` on [`Hyperrectangle`](@extref) `M`,
+Get the upper bound on moving in direction `d` from point `p` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`,
 for the bound index `i`. There are three cases:
 
 1. If `d[i] > 0`, the formula reads `(M.ub[i] - p[i]) / d[i]`.
@@ -203,7 +203,7 @@ end
 """
     Manopt.set_bound_t_at_index!(::Hyperrectangle, p_cp, t, d, i)
 
-Advance the point `p_cp` on [`Hyperrectangle`](@extref) along direction `d` by stepsize `t`
+Advance the point `p_cp` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) along direction `d` by stepsize `t`
 only at index `i`. Used while searching for a bound during generalized Cauchy point updates.
 """
 function Manopt.set_bound_t_at_index!(::Hyperrectangle, p_cp, t, d, i)
@@ -214,7 +214,7 @@ end
 """
     Manopt.set_bound_at_index!(M::Hyperrectangle, p_cp, d, i)
 
-Set element of point `p_cp` on [`Hyperrectangle`](@extref) at index `i` to the
+Set element of point `p_cp` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) at index `i` to the
 corresponding lower or upper bound of `M` depending on the sign of direction `d` and set
 that direction entry to 0.
 """
@@ -243,7 +243,7 @@ Manopt.requires_generalized_cauchy_point_computation(::Hyperrectangle) = true
 """
     Manopt.get_at_bound_index(::Hyperrectangle, X, b)
 
-Extract the element of tangent vector `X` to a point on [`Hyperrectangle`](@extref)
+Extract the element of tangent vector `X` to a point on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle)
 at index `b`.
 """
 Manopt.get_at_bound_index(::Hyperrectangle, X, b) = X[b]
