@@ -236,10 +236,10 @@ using RecursiveArrayTools
         @test f3(MInf, p_opt) < 64.0
     end
 
-    @testset "requires_gcp" begin
-        @test !Manopt.requires_gcp(Sphere(2))
-        @test Manopt.requires_gcp(Hyperrectangle([1], [2]))
-        @test Manopt.requires_gcp(ProductManifold(Hyperrectangle([1], [2]), Sphere(2)))
+    @testset "requires_generalized_cauchy_point_computation" begin
+        @test !Manopt.requires_generalized_cauchy_point_computation(Sphere(2))
+        @test Manopt.requires_generalized_cauchy_point_computation(Hyperrectangle([1], [2]))
+        @test Manopt.requires_generalized_cauchy_point_computation(ProductManifold(Hyperrectangle([1], [2]), Sphere(2)))
     end
 
     @testset "Hyperrectangle × Sphere" begin

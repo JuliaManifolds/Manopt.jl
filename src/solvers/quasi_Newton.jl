@@ -352,7 +352,7 @@ function quasi_Newton!(
             nonpositive_curvature_behavior = nonpositive_curvature_behavior,
             sy_tol = sy_tol,
         )
-        if requires_gcp(M)
+        if requires_generalized_cauchy_point_computation(M)
             local_dir_upd = QuasiNewtonLimitedMemoryBoxDirectionUpdate(local_dir_upd)
         end
     else

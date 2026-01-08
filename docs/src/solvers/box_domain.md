@@ -83,7 +83,7 @@ Manopt.hess_val
 Manopt.AbstractFPFPPUpdater
 Manopt.GenericFPFPPUpdater
 Manopt.get_bounds_index
-Manopt.requires_gcp
+Manopt.requires_generalized_cauchy_point_computation
 Manopt.find_generalized_cauchy_point_direction!
 Manopt.hess_val_eb
 Manopt.LimitedMemoryFPFPPUpdater

@@ -1,11 +1,11 @@
 """
-    requires_gcp(M::AbstractManifold)
+    requires_generalized_cauchy_point_computation(M::AbstractManifold)
 
 Return `true` if `M` is a `Hyperrectangle`-like manifold with corners, or a product of it
 with a standard manifold. Otherwise return `false`.
 """
-requires_gcp(::AbstractManifold) = false
-requires_gcp(M::ProductManifold) = requires_gcp(M.manifolds[1])
+requires_generalized_cauchy_point_computation(::AbstractManifold) = false
+requires_generalized_cauchy_point_computation(M::ProductManifold) = requires_generalized_cauchy_point_computation(M.manifolds[1])
 
 @doc raw"""
     mutable struct LimitedMemoryHessianApproximation end
@@ -15,7 +15,8 @@ An approximation of Hessian of a scalar function of the form ``B_0 = θ I``,
 where ``\theta > 0`` is an initial scaling guess.
 Matrix ``M_k = \left(\begin{smallmatrix}M_{11} & M_{21}^{\mathrm{T}}\\ M_{21} & M_{22}\end{smallmatrix}\right)``
 is stored using its blocks.
-Blocks ``W_k`` are (implicitly) composed from `memory_y` and `memory_s`.
+Blocks ``W_k`` are (implicitly) composed from `memory_y` and `memory_s` stored in `qn_du`
+of type [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref).
 
 Initial scale ``\theta`` is stored in the field `initial_scale` but if the memory isn't empty,
 the current scale is set to squared norm of $s_k$ divided by inner product of ``s_k`` and ``y_k``
