@@ -199,6 +199,21 @@ function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstract
     return hess_val_from_wmwt_coords(gh, Yb, coords_Yk_X, coords_Sk_X, coords_Yk_Y, coords_Sk_Y)
 end
 
+@doc raw"""
+    set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+
+Refresh the scaling factor and blockwise Hessian approximation stored in `gh` using the
+nonzero curvature pairs currently in memory.
+
+- Identifies the most recent index with nonzero ``ρ_i`` to scale the initial Hessian guess
+    by ``ρ_i‖y_i‖^2 / θ``.
+- Builds ``L_k`` and ``S_k^\top S_k`` from the stored ``(s_i, y_i)`` pairs and updates the
+    block matrices ``M_{11}``, ``M_{21}``, and ``M_{22}`` via the blockwise inverse formula.
+- If all ``ρ_i`` vanish, resets `current_scale` to `initial_scale` and clears the block
+    matrices.
+
+Returns the mutated `gh`.
+"""
 function set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     m = length(gh.qn_du.memory_s)
     last_safe_index = -1
@@ -260,6 +275,20 @@ function set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemo
     return gh
 end
 
+@doc raw"""
+    hess_val_from_wmwt_coords(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
+
+Evaluate the quadratic form defined by the current blockwise Hessian approximation stored in
+`gh`, given precomputed coordinate vectors.
+
+Arguments:
+- `iss`: inner product of original vectors.
+- `cy1`, `cy2`: coordinates of ``y``-like vectors in the ``Y_k`` basis.
+- `cs1`, `cs2`: coordinates of ``s``-like vectors in the scaled ``S_k`` basis.
+
+The result is ``θ·iss - cy₁ᵀ M₁₁ cy₂ - 2·cs₁ᵀ M₂₁ cy₂ - cs₁ᵀ M₂₂ cs₂`` using the blocks
+``M₁₁``, ``M₂₁``, ``M₂₂`` stored in `gh` and the current scale ``θ``. Returns the scalar value.
+"""
 function hess_val_from_wmwt_coords(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
     result = gh.current_scale * iss
     if length(cy1) == 0
@@ -359,7 +388,31 @@ function init_updater!(M::AbstractManifold, fpfpp_upd::LimitedMemoryFPFPPUpdater
     return fpfpp_upd
 end
 
-function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(M::AbstractManifold, p, old_f_prime, old_f_double_prime, dt, db, gb, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, z, d_old)
+@doc raw"""
+    (fpfpp_upd::LimitedMemoryFPFPPUpdater)(
+        M::AbstractManifold, p, old_f_prime::Real, old_f_double_prime::Real,
+        dt::Real, db, gb, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, z, d_old
+    )
+
+Update ``f'`` and ``f''`` for the generalized Cauchy point line search using the limited-memory
+block Hessian stored in `ha`.
+
+## Arguments:
+
+- `old_f_prime`, `old_f_double_prime`: values carried from the previous segment.
+- `dt`: step length along the segment direction.
+- `db`: direction component at the bound index `b`.
+- `gb`: gradient component at the bound index `b`.
+- `z`: trial step vector.
+- `d_old`: previous search direction.
+
+The updater reuses cached coordinate projections in `fpfpp_upd` to cheaply evaluate Hessian
+quadratic forms via `hess_val_from_wmwt_coords`, then returns the new `(f', f'')` pair.
+"""
+function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(
+        M::AbstractManifold, p, old_f_prime::Real, old_f_double_prime::Real,
+        dt::Real, db, gb, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, z, d_old
+    )
 
     m = length(ha.qn_du.memory_s)
     num_nonzero_rho = count(!iszero, ha.qn_du.ρ)
@@ -430,6 +483,13 @@ function set_bound_at_index!(M::ProductManifold, p_cp, d, i)
     return p_cp
 end
 
+@doc raw"""
+    bound_direction_tweak!(M::ProductManifold, d_out, d, p, p_cp)
+
+Set `d_out .= p_cp .- p` on the `Hyperrectangle` part of the `ProductManifold` `M`.
+
+Return the mutated `d_out`.
+"""
 function bound_direction_tweak!(M::ProductManifold, d_out, d, p, p_cp)
     bound_direction_tweak!(
         M.manifolds[1], submanifold_component(M, d_out, Val(1)),
@@ -439,6 +499,15 @@ function bound_direction_tweak!(M::ProductManifold, d_out, d, p, p_cp)
     return d_out
 end
 
+
+@doc raw"""
+    GCPFinder{TM <: AbstractManifold, TP, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
+
+Helper container for generalized Cauchy point search. Stores the manifold `M`, cached
+workspace (`p_cp`, `Y_tmp`, `d_old`), the quasi-Newton direction update `ha`, and the
+``f'``/``f''`` updater `fpfpp_updater`. Instances are reused across segments during
+`find_gcp_direction!` to avoid allocations.
+"""
 struct GCPFinder{TM <: AbstractManifold, TP, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
     M::TM
     p_cp::TP
