@@ -5,7 +5,7 @@ author: "Mateusz Baran"
 
 # Optimization with box domains and products of manifolds and boxes
 
-A [`Hyperrectangle`]([@extref Manifolds.Hyperrectangle](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/hyperrectangle/)) is, in general, not a manifold but a manifold with corners because locally at the boundary it looks like $\mathbb{R}^{n-k} \times \mathbb{R}^k_{\geq 0}$ for some $k > 0$, instead of $\mathbb{R}^n$ as required by the definition of a manifold.
+A ``[`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`)``{=commonmark} is, in general, not a manifold but a manifold with corners because locally at the boundary it looks like $\mathbb{R}^{n-k} \times \mathbb{R}^k_{\geq 0}$ for some $k > 0$, instead of $\mathbb{R}^n$ as required by the definition of a manifold.
 
 Such spaces require special handling when used as domains in optimization.
 For simple methods like gradient descent using projected gradient and a stopping criterion involving [`StopWhenProjectedNegativeGradientNormLess`](@ref) may be sufficient, however methods that approximate the Hessian can benefit from a more advanced approach.
@@ -13,7 +13,7 @@ The core idea is considering a piecewise quadratic approximation of the objectiv
 The points at which the approximation might not be differentiable correspond to hitting new boundaries along the initially selected descent direction.
 Then, we can perform standard line search between the initial iterate and the generalized Cauchy point.
 
-Currently `Manopt.jl` can handle domains that are either a [`Hyperrectangle`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/hyperrectangle/) or a [`ProductManifold`](@extref ManifoldsBase.ProductManifold) containing a [`Hyperrectangle`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/hyperrectangle/) as its first factor and other manifolds as subsequent factors.
+Currently `Manopt.jl` can handle domains that are either a ``[`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`)``{=commonmark} or a ``[`ProductManifold`](@extref `ManifoldsBase.ProductManifold`)``{=commonmark} containing a ``[`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`)``{=commonmark} as its first factor and other manifolds as subsequent factors.
 
 ## Example
 

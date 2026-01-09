@@ -4,13 +4,12 @@ The Generalized Cauchy Point (GCP) subsolver is a component in optimization algo
 
 ```math
 \begin{align*}
-\operatorname*{arg\,min}_{Y  ∈  T_p D \times \mathcal{M}}&\ m_p(Y) = f(p) +
-⟨\operatorname{grad}f(p), Y⟩_p + \frac{1}{2} ⟨\mathcal{H}_p[Y], Y⟩_p\\
-\text{such that}& \ \exp_p(Y) \in D \times \mathcal{M}
+\operatorname*{arg\,min}_{Y  ∈  T_p D \times \mathcal{M}}&\ m_p(Y) = ⟨X_g, Y⟩_p + \frac{1}{2} ⟨\mathcal{H}_p[Y], Y⟩_p\\
+\text{such that}& \ \exp_p(Y) = \exp_p(\alpha X) \in D \times \mathcal{M} \text{ for some } \alpha \in \mathbb{R}
 \end{align*}
 ```
 
-where $D$ is a box domain ([`Hyperrectangle`](@extref Manifolds.Hyperrectangle)), $\mathcal{M}$ is a Riemannian manifold, and $\mathcal{H}_p$ is a Hessian-like linear operator at point $p$.
+where $X$ is a given direction, the exponential map handles projection of the tangent vector when reaching the boundary, $D$ is a box domain ([`Hyperrectangle`](@extref Manifolds.Hyperrectangle)), $\mathcal{M}$ is a Riemannian manifold, $X_g$ is the gradient of a scalar function $f$ at point $p$ and $\mathcal{H}_p$ is a linear operator that approximates the Hessian of $f$ at $p$.
 
 The solver is currently primarily intended for internal use by optimization algorithms that require bound-constrained subproblem solutions.
 
