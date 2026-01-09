@@ -1,6 +1,8 @@
 # Optimization with box domains and products of manifolds and boxes
 
-A [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) is, in general, not a manifold but a manifold with corners, thus handling it as a domain in optimization requires special attention.
+A [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) is, in general, not a manifold but a manifold with corners because locally at the boundary it looks like $\mathbb{R}^{n-k} \times \mathbb{R}^k_{\geq 0}$ for some $k > 0$, instead of $\mathbb{R}^n$ as required by the definition of a manifold.
+
+Such spaces require special handling when used as domains in optimization.
 For simple methods like gradient descent using projected gradient and a stopping criterion involving [`StopWhenProjectedNegativeGradientNormLess`](@ref) may be sufficient, however methods that approximate the Hessian can benefit from a more advanced approach.
 The core idea is considering a piecewise quadratic approximation of the objective along the descent direction, and selecting the generalized Cauchy point -- its minimizer.
 The points at which the approximation might not be differentiable correspond to hitting new boundaries along the initially selected descent direction.
