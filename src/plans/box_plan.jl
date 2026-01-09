@@ -113,11 +113,11 @@ function get_at_bound_index(M::ProductManifold, X, b)
 end
 
 @doc raw"""
-    hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
+    hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
 
 Compute ``⟨X, B X⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`.
 """
-function hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
+function hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
     m = length(gh.qn_du.memory_s)
     num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
@@ -138,16 +138,16 @@ function hess_val(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractMan
     coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
     coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
 
-    return hess_val_from_wmwt_coords(gh, normX_sqr, coords_Yk, coords_Sk, coords_Yk, coords_Sk)
+    return hessian_value_from_wmwt_coords(gh, normX_sqr, coords_Yk, coords_Sk, coords_Yk, coords_Sk)
 end
 
 @doc raw"""
-    hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b)
+    hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b)
 
 Compute ``⟨X, B X⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`, and `X` is the
 unit vector along index `b`.
 """
-function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b)
+function hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b)
     m = length(gh.qn_du.memory_s)
     num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
@@ -166,16 +166,16 @@ function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstract
     coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
     coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
 
-    return hess_val_from_wmwt_coords(gh, one(eltype(gh.qn_du.ρ)), coords_Yk, coords_Sk, coords_Yk, coords_Sk)
+    return hessian_value_from_wmwt_coords(gh, one(eltype(gh.qn_du.ρ)), coords_Yk, coords_Sk, coords_Yk, coords_Sk)
 end
 
 @doc raw"""
-    hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b, Y)
+    hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b, Y)
 
 Compute ``⟨X, B Y⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`, where `X` is the
 unit vector pointing at index `b`.
 """
-function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b, Y)
+function hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b, Y)
     m = length(gh.qn_du.memory_s)
     num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
@@ -199,7 +199,7 @@ function hess_val_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstract
     coords_Sk_X = view(gh.coords_Sk_X, 1:num_nonzero_rho)
     coords_Sk_Y = view(gh.coords_Sk_Y, 1:num_nonzero_rho)
 
-    return hess_val_from_wmwt_coords(gh, Yb, coords_Yk_X, coords_Sk_X, coords_Yk_Y, coords_Sk_Y)
+    return hessian_value_from_wmwt_coords(gh, Yb, coords_Yk_X, coords_Sk_X, coords_Yk_Y, coords_Sk_Y)
 end
 
 @doc raw"""
@@ -279,7 +279,7 @@ function set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemo
 end
 
 @doc raw"""
-    hess_val_from_wmwt_coords(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
+    hessian_value_from_wmwt_coords(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
 
 Evaluate the quadratic form defined by the current blockwise Hessian approximation stored in
 `gh`, given precomputed coordinate vectors.
@@ -292,7 +292,7 @@ Arguments:
 The result is ``θ·iss - cy₁ᵀ M₁₁ cy₂ - 2·cs₁ᵀ M₂₁ cy₂ - cs₁ᵀ M₂₂ cs₂`` using the blocks
 ``M₁₁``, ``M₂₁``, ``M₂₂`` stored in `gh` and the current scale ``θ``. Returns the scalar value.
 """
-function hess_val_from_wmwt_coords(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
+function hessian_value_from_wmwt_coords(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
     result = gh.current_scale * iss
     if length(cy1) == 0
         return result
@@ -344,7 +344,7 @@ init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, p, d, ha::Abs
 """
     struct GenericFPFPPUpdater <: AbstractFPFPPUpdater end
 
-Generic f' and f'' calculation that only relies on `hess_val_eb` but is relatively slow for
+Generic f' and f'' calculation that only relies on `hessian_value_eb` but is relatively slow for
 high-dimensional domains.
 """
 struct GenericFPFPPUpdater <: AbstractFPFPPUpdater end
@@ -369,8 +369,8 @@ function get_default_fpfpp_updater(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdat
 end
 
 function (::GenericFPFPPUpdater)(M::AbstractManifold, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d_old)
-    f_prime = old_f_prime + dt * old_f_double_prime - db * (gb + hess_val_eb(ha, M, p, b, z))
-    f_double_prime = old_f_double_prime + (2 * -db * hess_val_eb(ha, M, p, b, d_old)) + db^2 * hess_val_eb(ha, M, p, b)
+    f_prime = old_f_prime + dt * old_f_double_prime - db * (gb + hessian_value_eb(ha, M, p, b, z))
+    f_double_prime = old_f_double_prime + (2 * -db * hessian_value_eb(ha, M, p, b, d_old)) + db^2 * hessian_value_eb(ha, M, p, b)
 
     return f_prime, f_double_prime
 end
@@ -410,7 +410,7 @@ block Hessian stored in `ha`.
 - `d_old`: previous search direction.
 
 The updater reuses cached coordinate projections in `fpfpp_upd` to cheaply evaluate Hessian
-quadratic forms via `hess_val_from_wmwt_coords`, then returns the new `(f', f'')` pair.
+quadratic forms via `hessian_value_from_wmwt_coords`, then returns the new `(f', f'')` pair.
 """
 function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(
         M::AbstractManifold, p, old_f_prime::Real, old_f_double_prime::Real,
@@ -444,12 +444,12 @@ function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(
     coords_cy .+= dt .* coords_py
     coords_cs .+= dt .* coords_ps
 
-    eb_B_z = hess_val_from_wmwt_coords(ha, iss_eb_z, coords_Yk_eb, coords_Sk_eb, coords_cy, coords_cs)
+    eb_B_z = hessian_value_from_wmwt_coords(ha, iss_eb_z, coords_Yk_eb, coords_Sk_eb, coords_cy, coords_cs)
 
     f_prime = old_f_prime + dt * old_f_double_prime - db * (gb + eb_B_z)
-    eb_B_d = hess_val_from_wmwt_coords(ha, iss_eb_d, coords_Yk_eb, coords_Sk_eb, coords_py, coords_ps)
+    eb_B_d = hessian_value_from_wmwt_coords(ha, iss_eb_d, coords_Yk_eb, coords_Sk_eb, coords_py, coords_ps)
 
-    f_double_prime = old_f_double_prime - 2 * db * eb_B_d + db^2 * hess_val_eb(ha, M, p, b)
+    f_double_prime = old_f_double_prime - 2 * db * eb_B_d + db^2 * hessian_value_eb(ha, M, p, b)
 
     coords_py .-= db .* coords_Yk_eb
     coords_ps .-= db .* coords_Sk_eb
@@ -589,7 +589,7 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFin
     F = BinaryHeap(Base.By(first), F_list)
 
     f_prime = inner(M, p, X, d)
-    f_double_prime = hess_val(gcp.ha, M, p, d)
+    f_double_prime = hessian_value(gcp.ha, M, p, d)
 
     if iszero(f_prime) || iszero(f_double_prime)
         return :not_found

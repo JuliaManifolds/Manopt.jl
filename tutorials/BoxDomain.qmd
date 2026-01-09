@@ -1,6 +1,11 @@
+---
+title: "How to do optimization on box domains"
+author: "Mateusz Baran"
+---
+
 # Optimization with box domains and products of manifolds and boxes
 
-A [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) is, in general, not a manifold but a manifold with corners because locally at the boundary it looks like $\mathbb{R}^{n-k} \times \mathbb{R}^k_{\geq 0}$ for some $k > 0$, instead of $\mathbb{R}^n$ as required by the definition of a manifold.
+A [`Hyperrectangle`]([@extref Manifolds.Hyperrectangle](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/hyperrectangle/)) is, in general, not a manifold but a manifold with corners because locally at the boundary it looks like $\mathbb{R}^{n-k} \times \mathbb{R}^k_{\geq 0}$ for some $k > 0$, instead of $\mathbb{R}^n$ as required by the definition of a manifold.
 
 Such spaces require special handling when used as domains in optimization.
 For simple methods like gradient descent using projected gradient and a stopping criterion involving [`StopWhenProjectedNegativeGradientNormLess`](@ref) may be sufficient, however methods that approximate the Hessian can benefit from a more advanced approach.
@@ -8,7 +13,7 @@ The core idea is considering a piecewise quadratic approximation of the objectiv
 The points at which the approximation might not be differentiable correspond to hitting new boundaries along the initially selected descent direction.
 Then, we can perform standard line search between the initial iterate and the generalized Cauchy point.
 
-Currently `Manopt.jl` can handle domains that are either a [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) or a [`ProductManifold`](@extref ManifoldsBase.ProductManifold) containing a [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) as its first factor and other manifolds as subsequent factors.
+Currently `Manopt.jl` can handle domains that are either a [`Hyperrectangle`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/hyperrectangle/) or a [`ProductManifold`](@extref ManifoldsBase.ProductManifold) containing a [`Hyperrectangle`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/hyperrectangle/) as its first factor and other manifolds as subsequent factors.
 
 ## Example
 
@@ -19,7 +24,7 @@ Although there are better ways to solve this problem, expressing it this way all
 First, we set up the problem by generating synthetic data.
 The data is sampled from a multivariate normal distribution with known covariance matrix.
 
-```@example example-box-domain
+```{julia}
 using Manopt, Manifolds, LinearAlgebra, Random, Distributions
 using ForwardDiff, DifferentiationInterface, RecursiveArrayTools
 
@@ -34,7 +39,7 @@ data = Matrix(rand(distr, 200)')  # 200 samples
 
 The objective function is defined as follows, with gradient calculated using automatic differentiation.
 
-```@example example-box-domain
+```{julia}
 function logprob_cost(::AbstractManifold, p)
     D, R = p.x
     logdet = sum(log, D)
@@ -57,7 +62,7 @@ We restrict the variances (diagonal elements of the covariance matrix) to be bet
 The covariance matrix is represented using its eigendecomposition $\Sigma = R D R^{\top}$, where $D$ is a diagonal matrix of variances and $R$ is an orthogonal matrix of principal directions.
 With constraints on variances, the optimization variable belongs to $[1,100]^N \times \mathrm{SO}(N)$.
 
-```@example example-box-domain
+```{julia}
 M = ProductManifold(Hyperrectangle(fill(1.0, N), fill(100.0, N)), M_rot)
 
 p0 = ArrayPartition(fill(10.0, N), Matrix{Float64}(I(5)))
@@ -70,31 +75,3 @@ nothing
 ```
 
 We see that despite the original covariance matrix having variances ranging from 0.5 to 20.0, the estimated covariance matrix respects the box constraints of variances between 1.0 and 100.0.
-
-## Public types and method
-
-```@docs
-QuasiNewtonLimitedMemoryBoxDirectionUpdate
-```
-
-## Internal types and method
-
-```@docs
-Manopt.init_updater!
-Manopt.hess_val
-Manopt.AbstractFPFPPUpdater
-Manopt.GenericFPFPPUpdater
-Manopt.get_bounds_index
-Manopt.requires_generalized_cauchy_point_computation
-Manopt.find_generalized_cauchy_point_direction!
-Manopt.hess_val_eb
-Manopt.LimitedMemoryFPFPPUpdater
-Manopt.get_bound_t
-Manopt.set_M_current_scale!
-Manopt.hess_val_from_wmwt_coords
-Manopt.GeneralizedCauchyPointFinder
-Manopt.bound_direction_tweak!
-Manopt.set_bound_t_at_index!
-Manopt.get_at_bound_index
-Manopt.set_bound_at_index!
-```

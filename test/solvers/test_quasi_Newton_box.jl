@@ -51,7 +51,7 @@ using RecursiveArrayTools
 
         # original formula
         f_original_prime = dot(grad, d) + dot(d, ha.matrix, z)
-        f_original_double_prime = Manopt.hess_val(ha, M, p, d)
+        f_original_double_prime = Manopt.hessian_value(ha, M, p, d)
 
         @test f_prime == f_original_prime
         @test f_double_prime == f_original_double_prime
@@ -84,7 +84,7 @@ using RecursiveArrayTools
 
         # original formula
         f_original_prime = dot(grad, d) + dot(d, ha.matrix, z)
-        f_original_double_prime = Manopt.hess_val(ha, M, p, d)
+        f_original_double_prime = Manopt.hessian_value(ha, M, p, d)
 
         @test f_prime == f_original_prime
         @test f_double_prime == f_original_double_prime
@@ -144,7 +144,7 @@ using RecursiveArrayTools
 
         @testset "No memory tests" begin
             ha2 = QuasiNewtonLimitedMemoryBoxDirectionUpdate(QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2))
-            @test Manopt.hess_val_eb(ha2, M, p, b, grad) ≈ 4.0
+            @test Manopt.hessian_value_eb(ha2, M, p, b, grad) ≈ 4.0
             Manopt.set_M_current_scale!(M, p, ha2)
             @test ha2.current_scale == ha2.qn_du.initial_scale
             @test ha2.M_11 == fill(0.0, 0, 0)

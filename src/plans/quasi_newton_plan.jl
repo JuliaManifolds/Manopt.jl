@@ -512,30 +512,30 @@ function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
     return d
 end
 """
-    hess_val(d::QuasiNewtonMatrixDirectionUpdate, M, p, X)
+    hessian_value(d::QuasiNewtonMatrixDirectionUpdate, M, p, X)
 
 Evaluate the quadratic form associated with the stored quasi-Newton matrix.
 Returns the scalar ``c^{\top} B c`` where ``c`` are the coordinates of the
 tangent vector `X` at `p` (in the basis `d.basis`) and ``B`` is `d.matrix`.
 """
-function hess_val(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+function hessian_value(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X) where {T <: Union{BFGS, DFP, SR1, Broyden}}
     c = get_coordinates(M, p, X, d.basis)
     return dot(c, d.matrix, c)
 end
 
 """
-    hess_val_eb(d::QuasiNewtonMatrixDirectionUpdate, M, p, b)
+    hessian_value_eb(d::QuasiNewtonMatrixDirectionUpdate, M, p, b)
 
 Evaluate the quadratic form associated with the stored quasi-Newton matrix.
 Returns the scalar ``c^{\top} B c`` where ``c`` are the coordinates of the
 unit tangent vector along direction with index `b` at `p` (in the basis `d.basis`)
 and ``B`` is `d.matrix`.
 """
-function hess_val_eb(d::QuasiNewtonMatrixDirectionUpdate{T}, ::AbstractManifold, p, b) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+function hessian_value_eb(d::QuasiNewtonMatrixDirectionUpdate{T}, ::AbstractManifold, p, b) where {T <: Union{BFGS, DFP, SR1, Broyden}}
     return d.matrix[b, b]
 end
 """
-    hess_val_eb(d::QuasiNewtonMatrixDirectionUpdate, M, p, b, X)
+    hessian_value_eb(d::QuasiNewtonMatrixDirectionUpdate, M, p, b, X)
 
 Evaluate the quadratic form associated with the stored quasi-Newton matrix.
 Returns the scalar ``c_b^{\top} B c`` where ``c_b`` are the coordinates of the
@@ -543,7 +543,7 @@ unit tangent vector along direction with index `b` at `p` (in the basis `d.basis
 ``c`` are the coordinates of the tangent vector `X` at `p` (in the basis `d.basis`)
 and ``B`` is `d.matrix`.
 """
-function hess_val_eb(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, b, X) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+function hessian_value_eb(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, b, X) where {T <: Union{BFGS, DFP, SR1, Broyden}}
     return dot(d.matrix[b, :], get_coordinates(M, p, X, d.basis))
 end
 
