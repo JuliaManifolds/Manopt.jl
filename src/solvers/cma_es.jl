@@ -8,7 +8,8 @@ State of covariance matrix adaptation evolution strategy.
 
 # Fields
 
-$(_var(:Field, :p; add = " storing the best point found so far"))
+$(_fields(:p))
+  storing the best point found so far
 * `p_obj`                       objective value at `p`
 * `μ`                           parent number
 * `λ`                           population size
@@ -29,15 +30,15 @@ $(_var(:Field, :p; add = " storing the best point found so far"))
 * `worst_fitness_current_gen`   worst fitness value of individuals in the current generation
 * `p_m`                         point around which the search for new candidates is done
 * `σ`                           step size
-* `p_σ`                         coordinates of a vector in ``$(_math(:TpM; p = "p_m"))``
-* `p_c`                         coordinates of a vector in ``$(_math(:TpM; p = "p_m"))``
+* `p_σ`                         coordinates of a vector in ``$(_math(:TangentSpace; p = "p_m"))``
+* `p_c`                         coordinates of a vector in ``$(_math(:TangentSpace; p = "p_m"))``
 * `deviations`                  standard deviations of coordinate RNG
 * `buffer`                      buffer for random number generation and `wmean_y_c` of length `n_coords`
 * `e_mv_norm`                   expected value of norm of the `n_coords`-variable standard normal distribution
 * `recombination_weights`       recombination weights used for updating covariance matrix
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :vector_transport_method))
+$(_fields(:retraction_method))
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields(:vector_transport_method))
 * `basis`                       a real coefficient basis for covariance matrix
 * `rng`                         RNG for generating new points
 
@@ -359,8 +360,8 @@ setting.
 
 # Input
 
-* `M`:      a manifold ``$(_math(:M))``
-* `f`:      a cost function ``f: $(_math(:M))→ℝ`` to find a minimizer ``p^*`` for
+* `M`:      a manifold ``$(_math(:Manifold)))``
+* `f`:      a cost function ``f: $(_math(:Manifold))nifold)))→ℝ`` to find a minimizer ``p^*`` for
 
 # Keyword arguments
 
@@ -373,9 +374,8 @@ setting.
 * `tol_x=1e-12`: tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
   absolute difference between subsequent point but actually computed from distribution
   parameters.
-$(_var(:Keyword, :stopping_criterion; default = "`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`"))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:stopping_criterion; default = "`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`"))
+$(_kwargs([:retraction_method, :vector_transport_method]))
 * `basis`               (`DefaultOrthonormalBasis()`) basis used to represent covariance in
 * `rng=default_rng()`: random number generator for generating new points
   on `M`
@@ -509,7 +509,7 @@ calls_with_kwargs(::typeof(cma_es!)) = (decorate_objective!, decorate_state!)
 Transport the matrix with `matrix_eig` eigen decomposition when expanded in `basis` from
 point `p` to point `q` on `M`. Update `matrix_eigen` in-place.
 
-`(p, matrix_eig)` belongs to the fiber bundle of ``B = $(_math(:M)))) × SPD(n)``, where `n`
+`(p, matrix_eig)` belongs to the fiber bundle of ``B = $(_math(:Manifold))))) × SPD(n)``, where `n`
 is the (real) dimension of `M`. The function corresponds to the Ehresmann connection
 defined by vector transport `vtm` of eigenvectors of `matrix_eigen`.
 """

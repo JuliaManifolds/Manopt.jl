@@ -39,10 +39,10 @@ depending on the `evaluation=` keyword in the constructor and stored in `T <: Ab
 
 * `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_forward_operator!!`: linearized operator for the forward operation in the algorithm ``DΛ``
-* `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : $(_tex(:Cal, "N")) → T$(_math(:M))``
+* `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : $(_tex(:Cal, "N")) → T$(_math(:Manifold))nifold))nifold))``
 * `prox_f!!`:                      the proximal map belonging to ``f``
 * `prox_G_dual!!`:                 the proximal map belonging to ``g_n^*``
-* `Λ!!`:                           the  forward operator (if given) ``Λ: $(_math(:M)) → $(_tex(:Cal, "N"))``
+* `Λ!!`:                           the  forward operator (if given) ``Λ: $(_math(:Manifold))) → $(_tex(:Cal, "N"))``
 
 Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
 

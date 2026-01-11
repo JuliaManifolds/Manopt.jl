@@ -26,16 +26,16 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 # Fields
 
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :X))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:X))
 * `δ`:                       the current descent direction, also a tangent vector
 * `β`:                       the current update coefficient rule, see .
 * `coefficient`:             function to determine the new `β`
 * `restart_condition`:       an [`AbstractRestartCondition`](@ref) to determine how to handle non-descent directions.
-$(_var(:Field, :stepsize))
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :vector_transport_method))
+$(_fields(:stepsize))
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields(:retraction_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -49,14 +49,14 @@ and `δ` is initialized to a copy of this vector.
 
 The following fields from above <re keyword arguments
 
-$(_var(:Keyword, :X, "initial_gradient"))
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:X; name = "initial_gradient"))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
 * `restart_condition=`[`NeverRestart`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to never restart.
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`)"))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:vector_transport_method))
 
 # See also
 
@@ -248,7 +248,7 @@ A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update
 
 # Fields
 
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -258,7 +258,7 @@ Construct the Dai—Yuan coefficient update rule.
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 # See also
 
@@ -316,8 +316,8 @@ Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algo
 Riemannian manifolds.
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 ````math
@@ -329,7 +329,7 @@ $(
     _tex(
         :frac,
         _tex(:norm, "X_{k+1}"; index = "p_{k+1}") * "^2",
-        "⟨$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"
+        "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"
     )
 )
 ````
@@ -339,7 +339,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "DaiYuanCoefficientRule"))
 """
@@ -420,7 +420,7 @@ A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update
 
 # Fields
 
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -430,7 +430,7 @@ Construct the Hager-Zhang coefficient update rule based on [HagerZhang:2005](@ci
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 # See also
 
@@ -494,8 +494,8 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [FletcherReeves:1964](@cite) adapted to manifolds
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 ```math
@@ -503,11 +503,11 @@ Then the coefficient reads
     _tex(
         :frac,
         "2$(_tex(:norm, "ν_k"; index = "p_{k+1}"))^2",
-        "⟨$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}",
+        "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}",
     )
 )
-  $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k,
-  $(_tex(:frac, "X_{k+1}", "⟨$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"))
+  $(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k,
+  $(_tex(:frac, "X_{k+1}", "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"))
 $(_tex(:Bigr))⟩_{p_{k+1}}.
 ```
 
@@ -515,7 +515,7 @@ This method includes a numerical stability proposed by those authors.
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "HagerZhangCoefficientRule"))
 """
@@ -530,7 +530,7 @@ A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update
 
 # Fields
 
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -540,7 +540,7 @@ Construct the Hestenes-Stiefel coefficient update rule based on [HestenesStiefel
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 # See also
 
@@ -603,8 +603,8 @@ Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algo
 
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 
@@ -615,21 +615,21 @@ Then the coefficient reads
     _tex(
         :frac,
         "$(_tex(:diff))f(p_{k+1})[ν_k]",
-        "$(_tex(:diff))f(p_{k+1})[$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k] - $(_tex(:diff))f(p_k)[δ_k]",
+        "$(_tex(:diff))f(p_{k+1})[$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k] - $(_tex(:diff))f(p_k)[δ_k]",
     )
 )
 \\\\&= $(
     _tex(
         :frac,
         "$(_tex(:inner, "X_{k+1}", "ν_k"; index = "p_{k+1}"))",
-        "$(_tex(:inner, "$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k", "X_{k+1}"; index = "p_{k+1}")) - $(_tex(:inner, "δ_k", "X_k"; index = "p_{k}"))",
+        "$(_tex(:inner, "$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k", "X_{k+1}"; index = "p_{k+1}")) - $(_tex(:inner, "δ_k", "X_k"; index = "p_{k}"))",
     )
 )
 \\\\&= $(
     _tex(
         :frac,
         "$(_tex(:inner, "X_{k+1}", "ν_k"; index = "p_{k+1}"))",
-        "$(_tex(:inner, "$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k", "ν_k"; index = "p_{k+1}"))",
+        "$(_tex(:inner, "$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k", "ν_k"; index = "p_{k+1}"))",
     )
 ),
 \\end{aligned}
@@ -640,7 +640,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "HestenesStiefelCoefficientRule"))
 """
@@ -657,7 +657,7 @@ A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update
 
 # Fields
 
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -667,7 +667,7 @@ Construct the Lui-Storey coefficient update rule based on [LiuStorey:1991](@cite
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 # See also
 
@@ -723,8 +723,8 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [LiuStorey:1991](@cite) adapted to manifolds
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 ```math
@@ -738,7 +738,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "LiuStoreyCoefficientRule"))
 """
@@ -753,7 +753,7 @@ A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update
 
 # Fields
 
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -763,7 +763,7 @@ Construct the Dai—Yuan coefficient update rule.
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 # See also
 [`PolakRibiereCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
@@ -820,8 +820,8 @@ Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algo
 on [PolakRibiere:1969](@cite) adapted to Riemannian manifolds.
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 
@@ -836,7 +836,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "PolakRibiereCoefficientRule"))
 """
@@ -898,7 +898,7 @@ adapted to manifolds.
 
 * `direction_update::DirectionUpdateRule`: the actual rule, that is restarted
 * `threshold::Real`: a threshold for the restart check.
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -916,14 +916,14 @@ Construct the Beale restart coefficient update rule adapted to manifolds.
 
 ## Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
   If this is not provided, the `DefaultManifold()` from $(_link(:ManifoldsBase)) is used.
 * `direction_update`: a [`DirectionUpdateRule`](@ref) or a corresponding
   [`ManifoldDefaultsFactory`](@ref) to produce such a rule.
 
 ## Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 * `threshold=0.2`
 
 # See also
@@ -1010,7 +1010,7 @@ Then a restart is performed, hence ``β_k = 0`` returned if
   $(
     _tex(
         :frac,
-        "⟨X_{k+1}, $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k⟩",
+        "⟨X_{k+1}, $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k⟩",
         _tex(:norm, "X_k", index = "p_k")
     )
 ) > ε,
@@ -1024,7 +1024,7 @@ where ``ε`` is the `threshold`, which is set by default to `0.2`, see [Powell:1
 
 ## Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 * `threshold=0.2`
 
 $(_note(:ManifoldDefaultFactory, "ConjugateGradientBealeRestartRule"))

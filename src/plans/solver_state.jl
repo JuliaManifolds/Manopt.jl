@@ -10,8 +10,8 @@ A general super type for all solver states.
 The following fields are assumed to be default. If you use different ones,
 adapt the the access functions [`get_iterate`](@ref) and [`get_stopping_criterion`](@ref) accordingly
 
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:stopping_criterion; name = "stop"))
 """
 abstract type AbstractManoptSolverState end
 

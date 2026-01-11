@@ -22,9 +22,9 @@ specify a problem for Hessian based algorithms.
 
 # Fields
 
-* `cost`:           a function ``f:$(_math(:M))→ℝ`` to minimize
-* `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:M)) → $(_math(:TM))`` of the cost function ``f``
-* `hessian`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TpM; p = "x")) → $(_math(:TpM; p = "x"))`` of the cost function ``f``
+* `cost`:           a function ``f:$(_math(:Manifold))nifold)))→ℝ`` to minimize
+* `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold))) → $(_math(:TangentBundle))`` of the cost function ``f``
+* `hessian`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TangentSpace; p = "x")) → $(_math(:TangentSpace; p = "x"))`` of the cost function ``f``
 * `preconditioner`: the symmetric, positive definite preconditioner
   as an approximation of the inverse of the Hessian of ``f``, a map with the same
   input variables as the `hessian` to numerically stabilize iterations when the Hessian is
@@ -233,7 +233,7 @@ _doc_ApproxHessian_formula = """
 ```math
 $(_tex(:Hess))f(p)[X] ≈
 $(_tex(:frac, "$(_tex(:norm, "X"))", "c"))$(_tex(:Bigl))(
-  $(_math(:VT, "p", "q"))$(_tex(:bigl))( $(_tex(:grad))f(q)$(_tex(:bigr)) - $(_tex(:grad))f(p)
+  $(_math(:VectorTransport, "p", "q"))$(_tex(:bigl))( $(_tex(:grad))f(q)$(_tex(:bigr)) - $(_tex(:grad))f(p)
 $(_tex(:Bigr)))
 ```
 """
@@ -246,10 +246,10 @@ A functor to approximate the Hessian by a finite difference of gradient evaluati
 
 Given a point `p` and a direction `X` and the gradient ``$(_tex(:grad)) f(p)``
 of a function ``f`` the Hessian is approximated as follows:
-let ``c`` be a stepsize, ``X ∈ $(_math(:TpM))`` a tangent vector and ``q = $_doc_ApproxHessian_step``
+let ``c`` be a stepsize, ``X ∈ $(_math(:TangentSpace)))`` a tangent vector and ``q = $_doc_ApproxHessian_step``
 be a step in direction ``X`` of length ``c`` following a retraction
 Then the Hessian is approximated by the finite difference of the gradients,
-where ``$(_math(:vector_transport, :symbol))`` is a vector transport.
+where ``$(_math(:VectorTransport))`` is a vector transport.
 
 $_doc_ApproxHessian_formula
 
@@ -257,8 +257,7 @@ $_doc_ApproxHessian_formula
 
 * `gradient!!`:              the gradient function (either allocating or mutating, see `evaluation` parameter)
 * `step_length`:             a step length for the finite difference
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs([:retraction_method, :vector_transport_method]))
 
 ## Internal temporary fields
 
@@ -272,10 +271,9 @@ $(_var(:Keyword, :vector_transport_method))
 
 ## Keyword arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `steplength=`2^{-14}``: step length ``c`` to approximate the gradient evaluations
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs([:retraction_method, :vector_transport_method]))
 """
 mutable struct ApproxHessianFiniteDifference{E, P, T, G, RTR, VTR, R <: Real} <:
     AbstractApproxHessian
@@ -346,7 +344,7 @@ A functor to approximate the Hessian by the symmetric rank one update.
 
 * `gradient!!`: the gradient function (either allocating or mutating, see `evaluation` parameter).
 * `ν`: a small real number to ensure that the denominator in the update does not become too small and thus the method does not break down.
-$(_var(:Keyword, :vector_transport_method)).
+$(_kwargs(:vector_transport_method)).
 
 ## Internal temporary fields
 
@@ -364,8 +362,7 @@ $(_var(:Keyword, :vector_transport_method)).
 * `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
 * `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)
-$(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs([:evaluation, :vector_transport_method]))
 """
 mutable struct ApproxHessianSymmetricRankOne{E, P, G, T, B <: AbstractBasis{ℝ}, VTR, R <: Real} <:
     AbstractApproxHessian
@@ -492,7 +489,7 @@ A functor to approximate the Hessian by the BFGS update.
 
 * `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter).
 * `scale`
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 ## Internal temporary fields
 
@@ -509,8 +506,7 @@ $(_var(:Field, :vector_transport_method))
 * `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
 * `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)
-$(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs([:evaluation, :vector_transport_method]))
 """
 mutable struct ApproxHessianBFGS{
         E, P, G, T, B <: AbstractBasis{ℝ}, VTR <: AbstractVectorTransportMethod,

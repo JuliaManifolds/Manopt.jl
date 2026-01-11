@@ -9,11 +9,11 @@ A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 * `γ1`, `γ2`:  shrinking and expansion factors for regularization parameter `σ`
 * `H`: the current Hessian evaluation
 * `s`: the current solution from the subsolver
-$(_var(:Field, :p; add = [:as_Iterate]))
+$(_fields(:p; add_properties = [:as_Iterate]))
 * `q`: a point for the candidates to evaluate model and ρ
-$(_var(:Field, :X; add = [:as_Gradient]))
+$(_fields(:X; add_properties = [:as_Gradient]))
 * `s`: the tangent vector step resulting from minimizing the model
-  problem in the tangent space ``$(_math(:TpM))``
+  problem in the tangent space ``$(_math(:TangentSpace)))``
 * `σ`: the current cubic regularization parameter
 * `σmin`: lower bound for the cubic regularization parameter
 * `ρ_regularization`: regularization parameter for computing ρ.
@@ -22,10 +22,9 @@ $(_var(:Field, :X; add = [:as_Gradient]))
 * `ρ`: the current regularized ratio of actual improvement and model improvement.
 * `ρ_denominator`: a value to store the denominator from the computation of ρ
   to allow for a warning or error when this value is non-positive.
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :sub_problem))
-$(_var(:Field, :sub_state))
+$(_fields(:retraction_method))
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields([:sub_problem, :sub_state]))
 
 Furthermore the following integral fields are defined
 
@@ -44,11 +43,9 @@ Construct the solver state with all fields stated as keyword arguments and the f
 * `σ=100/manifold_dimension(M)`
 * `σmin=1e-7
 * `ρ_regularization=1e3`
-$(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :p))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(100)`"))
-$(_var(:Keyword, :X))
+$(_kwargs([:evaluation, :p, :retraction_method]))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
+$(_kwargs(:X))
 """
 mutable struct AdaptiveRegularizationState{
         P,
@@ -200,7 +197,7 @@ Solve an optimization problem on the manifold `M` by iteratively minimizing
 
 $_doc_ARC_model
 
-on the tangent space at the current iterate ``p_k``, where ``X ∈ $(_math(:TpM; p = "p_k"))`` and
+on the tangent space at the current iterate ``p_k``, where ``X ∈ $(_math(:TangentSpace; p = "p_k"))`` and
 ``σ_k > 0`` is a regularization parameter.
 
 Let ``Xp^{(k)}`` denote the minimizer of the model ``m_k`` and use the model improvement
@@ -219,11 +216,7 @@ For more details see [AgarwalBoumalBullinsCartis:2020](@cite).
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
-$(_var(:Argument, :Hess_f))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :grad_f, :Hess_f, :p]))
 
 the cost `f` and its gradient and Hessian might also be provided as a [`ManifoldHessianObjective`](@ref)
 
@@ -235,17 +228,17 @@ the cost `f` and its gradient and Hessian might also be provided as a [`Manifold
 * `η2=0.9`: upper model success threshold
 * `γ1=0.1`: regularization reduction factor (for the success case)
 * `γ2=2.0`: regularization increment factor (for the non-success case)
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `initial_tangent_vector=zero_vector(M, p)`: initialize any tangent vector data,
 * `maxIterLanczos=200`: a shortcut to set the stopping criterion in the sub solver,
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
-$(_var(:Keyword, :retraction_method)):
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`"))
-$(_var(:Keyword, :sub_kwargs))
+$(_kwargs(:retraction_method)):
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)"))
+$(_kwargs(:sub_kwargs))
 * `sub_objective=nothing`: a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword
   By default, this is initialized as a [`AdaptiveRegularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
-$(_var(:Keyword, :sub_state; default = "[`LanczosState`](@ref)`(M, copy(M,p))`"))
-$(_var(:Keyword, :sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
+$(_kwargs(:sub_state; default = "`[`LanczosState`](@ref)`(M, copy(M,p))"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 
 $(_note(:OtherKeywords))
 

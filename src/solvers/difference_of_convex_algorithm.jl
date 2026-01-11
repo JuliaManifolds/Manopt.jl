@@ -7,16 +7,15 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :X; add = [:as_Subgradient]))
-$(_var(:Field, :sub_problem))
-$(_var(:Field, :sub_state))
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:X; add_properties = [:as_Subgradient]))
+$(_fields([:sub_problem, :sub_state]))
+$(_fields(:stopping_criterion; name = "stop"))
 
 The sub task consists of a method to solve
 
 ```math
-    $(_tex(:argmin))_{q∈$(_math(:M))}\\ g(p) - ⟨X, $(_tex(:log))_p q⟩
+    $(_tex(:argmin))_{q∈$(_math(:Manifold))nifold)))}\\ g(p) - ⟨X, $(_tex(:log))_p q⟩
 ```
 
 is needed. Besides a problem and a state, one can also provide a function and
@@ -36,9 +35,9 @@ Here the elements passed are the current iterate `p` and the subgradient `X` of 
 
 ## further keyword arguments
 
-$(_var(:Keyword, :p; add = :as_Initial))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`"))
-$(_var(:Keyword, :X; add = :as_Memory))
+$(_kwargs(:p; add_properties = [:as_Initial]))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct DifferenceOfConvexState{
         P, T, Pr, St <: AbstractManoptSolverState, SC <: StoppingCriterion,
@@ -115,7 +114,7 @@ _doc_DoC = """
 Compute the difference of convex algorithm [BergmannFerreiraSantosSouza:2024](@cite) to minimize
 
 ```math
-    $(_tex(:argmin))_{p∈$(_math(:M))}\\ g(p) - h(p)
+    $(_tex(:argmin))_{p∈$(_math(:Manifold)))}\\ g(p) - h(p)
 ```
 
 where you need to provide ``f(p) = g(p) - h(p)``, ``g`` and the subdifferential ``∂h`` of ``h``.
@@ -126,25 +125,25 @@ Then repeat for ``k=0,1,…``
 1. Take ``X^{(k)}  ∈ ∂h(p^{(k)})``
 2. Set the next iterate to the solution of the subproblem
 ```math
-  p^{(k+1)} ∈ $(_tex(:argmin))_{q ∈ $(_math(:M))} g(q) - ⟨X^{(k)}, $(_tex(:log))_{p^{(k)}}q⟩
+  p^{(k+1)} ∈ $(_tex(:argmin))_{q ∈ $(_math(:Manifold)))} g(q) - ⟨X^{(k)}, $(_tex(:log))_{p^{(k)}}q⟩
 ```
 
 until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f; add = "total cost function `f = g - h`"))
-* `g`: the smooth part ``g``of the cost function
-$(_var(:Argument, :subgrad_f, "∂h"; f = "h"))
-$(_var(:Argument, :p))
+$(_args([:M, :f]))
+  total cost function ``f = g - h``
+* `g`: the smooth part ``g`` of the cost function
+$(_args(:subgrad_f; name = "∂h", f = "h"))
+$(_args(:p))
 
 # Keyword arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `gradient=nothing`:        specify ``$(_tex(:grad)) f``, for debug / analysis or enhancing the `stopping_criterion=`
 * `grad_g=nothing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)"))
 * `g=nothing`:               specify the function `g` If specified, a subsolver is automatically set up.
 * `sub_cost=`[`LinearizedDCCost`](@ref)`(g, p, initial_vector)`: a cost to be used within the default `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_objective"))
@@ -154,18 +153,18 @@ $(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(2
 * `sub_hess`:              (a finite difference approximation using `sub_grad` by default):
    specify a Hessian of the `sub_cost`, which the default solver, see `sub_state=` needs.
   $(_note(:KeywordUsedIn, "sub_objective"))
-$(_var(:Keyword, :sub_kwargs))
+$(_kwargs(:sub_kwargs))
 * `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess`if provided
    the objective used within `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_problem"))
-$(_var(:Keyword, :sub_state; default = "([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hess` is provided)"))
-$(_var(:Keyword, :sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
+$(_kwargs(:sub_state; default = "([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hess` is provided)"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`:
   a stopping criterion used within the default `sub_state=`
   $(_note(:KeywordUsedIn, "sub_state"))
 * `sub_stepsize=`[`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`.
   $(_note(:KeywordUsedIn, "sub_state"))
-$(_var(:Keyword, :X; add = :as_Memory))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 
 $(_note(:OtherKeywords))
 

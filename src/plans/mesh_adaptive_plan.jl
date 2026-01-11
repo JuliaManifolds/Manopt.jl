@@ -85,8 +85,7 @@ with two small modifications:
 * `mesh`: a vector of tangent vectors storing the mesh.
 * `random_vector`: a ``d``-dimensional random vector ``b_l```
 * `random_index`: a random index ``ι``
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :vector_transport_method))
+$(_fields([:retraction_method, :vector_transport_method]))
 * `X::T` the last successful poll direction stored as a tangent vector.
   initialised to the zero vector and reset to the zero vector after moving to a new tangent space.
 
@@ -97,9 +96,7 @@ $(_var(:Field, :vector_transport_method))
 ## Keyword arguments
 
 * `basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`)
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :vector_transport_method))
-$(_var(:Keyword, :X))
+$(_kwargs([:retraction_method, :vector_transport_method, :X]))
 """
 mutable struct LowerTriangularAdaptivePoll{
         P,
@@ -306,7 +303,7 @@ end
 * `q`: a temporary memory for a point on the manifold
 * `X`: information to perform the search, e.g. the last direction found by poll.
 * `last_search_improved::Bool` indicate whether the last search was successful, i.e. improved the cost.
-$(_var(:Field, :retraction_method))
+$(_fields(:retraction_method))
 
 # Constructor
 
@@ -314,8 +311,7 @@ $(_var(:Field, :retraction_method))
 
 ## Keyword arguments
 
-* `X::T=zero_vector(M, p)
-$(_var(:Keyword, :retraction_method))
+$(_kwargs([:retraction_method, :X]))
 """
 mutable struct DefaultMeshAdaptiveDirectSearch{P, T, RM <: AbstractRetractionMethod} <:
     AbstractMeshSearchFunction
@@ -384,12 +380,12 @@ end
 
 # Fields
 
-$(_var(:Field, :p; add = [:as_Iterate]))
+$(_fields(:p; add_properties = [:as_Iterate]))
 * `mesh_size`: the current (internal) mesh size
 * `scale_mesh`: the current scaling of the internal mesh size, yields the actual mesh size used
 * `max_stepsize`: an upper bound for the longest step taken in looking for a candidate in either poll or search
 * `poll_size`
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:stopping_criterion; name = "stop"))
 * `poll::`[`AbstractMeshPollFunction`]: a poll step (functor) to perform
 * `search::`[`AbstractMeshSearchFunction`}(@ref) a search step (functor) to perform
 

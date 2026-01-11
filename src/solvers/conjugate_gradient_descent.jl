@@ -72,10 +72,7 @@ $(_doc_update_delta_k)
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :grad_f, :p]))
 
 # Keyword arguments
 
@@ -87,12 +84,10 @@ $(_var(:Argument, :p))
   rule when the algorithm should restart, i.e. use the negative gradient instead of the computed direction,
   as a functior where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
-$(_var(:Keyword, :differential))
-$(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default = "[`ArmijoLinesearch`](@ref)`()`"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs([:differential, :evaluation, :retraction_method]))
+$(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
+$(_kwargs(:vector_transport_method))
 
 If you provide the [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
