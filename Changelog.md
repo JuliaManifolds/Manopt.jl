@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.31] January 11, 2026
+
+### Changed
+
+Moved the documentation glossaries to using the new [Glossaries.jl](https://github.com/JuliaManifolds/Glossaries.jl) package.
+
 ## [0.5.30] December 10, 2025
 
 ### Added
