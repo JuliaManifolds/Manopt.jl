@@ -212,8 +212,8 @@ nonzero curvature pairs currently in memory.
     by ``ρ_i‖y_i‖^2 / θ``.
 - Builds ``L_k`` and ``S_k^\top S_k`` from the stored ``(s_i, y_i)`` pairs and updates the
     block matrices ``M_{11}``, ``M_{21}``, and ``M_{22}`` via the blockwise inverse formula.
-- If all ``ρ_i`` vanish, resets `current_scale` to `initial_scale` and clears the block
-    matrices.
+- If all ``ρ_i`` vanish, resets `current_scale` to the inverse of `initial_scale` and
+    clears the block matrices.
 
 Returns the mutated `gh`.
 """
@@ -228,7 +228,7 @@ function set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemo
 
     if (last_safe_index == -1)
         # All memory yield zero inner products
-        gh.current_scale = gh.qn_du.initial_scale
+        gh.current_scale = inv(gh.qn_du.initial_scale)
         gh.M_11 = fill(0.0, 0, 0)
         gh.M_21 = fill(0.0, 0, 0)
         gh.M_22 = fill(0.0, 0, 0)
