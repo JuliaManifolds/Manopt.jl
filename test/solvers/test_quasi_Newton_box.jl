@@ -175,6 +175,11 @@ using RecursiveArrayTools
         @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, d, X1) === :found_limited
         @test d_out ≈ [2.0, 0.0, 0.0]
 
+
+        d_out = similar(d)
+
+        @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, 0 * d, X1) === :not_found
+
         d2 = [0.0, 1.0, 0.0]
 
         @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, d2, [0.0, -1.0, 0.0]) === :found_unlimited

@@ -337,9 +337,9 @@ abstract type AbstractFPFPPUpdater end
     init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
 
 Method for initialization of `AbstractFPFPPUpdater` `fpfpp_upd` just before the loop
-that examines subsequent intervals for GCP. By default it does nothing.
+that examines subsequent intervals for GCP.
 """
-init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate) = fpfpp_upd
+init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
 
 """
     struct GenericFPFPPUpdater <: AbstractFPFPPUpdater end
