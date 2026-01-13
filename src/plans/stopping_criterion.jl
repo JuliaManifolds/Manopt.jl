@@ -471,8 +471,7 @@ A stopping criterion to stop when
 based on Eq. (1) in [ZhuByrdLuNocedal:1997](@cite)
 
 # Fields
-$(_var(:Field, :at_iteration))
-$(_var(:Field, :last_change))
+$(_fields([:at_iteration, :last_change]))
 * `last_cost``: the last cost value
 
 # Constructor
