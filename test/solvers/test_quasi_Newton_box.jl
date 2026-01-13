@@ -40,16 +40,15 @@ using RecursiveArrayTools
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [2.0 0.0; 0.0 2.0])
         b = 2
         z = [-0.25, -1.0]
-        d_old = [-1.0, -4.0]
-
-        d[2] = 0.0
 
         # optimized formula
-        f_prime, f_double_prime = Manopt.GenericFPFPPUpdater()(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d_old)
+        f_prime, f_double_prime = Manopt.GenericFPFPPUpdater()(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d)
         @test f_prime ≈ -0.5
         @test f_double_prime ≈ 2.0
 
         # original formula
+
+        d[2] = 0.0
         f_original_prime = dot(grad, d) + dot(d, ha.matrix, z)
         f_original_double_prime = Manopt.hessian_value(ha, M, p, d)
 
@@ -73,16 +72,15 @@ using RecursiveArrayTools
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [2.0 0.0; 0.0 2.0])
         b = 1
         z = [-0.5, -0.25]
-        d_old = [-2.0, -1.0]
-
-        d[1] = 0.0
 
         # optimized formula
-        f_prime, f_double_prime = Manopt.GenericFPFPPUpdater()(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d_old)
+        f_prime, f_double_prime = Manopt.GenericFPFPPUpdater()(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d)
         @test f_prime == -3.5
         @test f_double_prime == 2
 
         # original formula
+
+        d[1] = 0.0
         f_original_prime = dot(grad, d) + dot(d, ha.matrix, z)
         f_original_double_prime = Manopt.hessian_value(ha, M, p, d)
 
@@ -106,6 +104,8 @@ using RecursiveArrayTools
         st.sk = [4.0, 2.0]
         update_hessian!(ha, mp, st, p, 1)
         grad = grad_f(M, p)
+        st.p = p
+        st.X = grad
 
         d = similar(grad)
         ha(d, mp, st)
@@ -114,10 +114,6 @@ using RecursiveArrayTools
         @test d ≈ d2
 
         b = 1
-        z = [-0.5, -0.25]
-        d_old = [-2.0, -1.0]
-
-        d[1] = 0.0
 
         old_f_prime = -6.0
         old_f_double_prime = 10.0
@@ -125,16 +121,23 @@ using RecursiveArrayTools
         db = d[b]
         gb = grad[b]
 
-        # compare the generic and limited memory updater
-        f_prime, f_double_prime = Manopt.GenericFPFPPUpdater()(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d_old)
-        @test f_prime == -3.5
-        @test f_double_prime == 10
+        z = dt * d
 
-        lmupd = Manopt.get_default_fpfpp_updater(ha)
+        # compare the generic and limited memory updater
+        gupd = Manopt.GenericFPFPPUpdater()
+        Manopt.init_updater!(M, gupd, p, d, ha)
+        f_prime, f_double_prime = gupd(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d)
+
+        @test f_prime ≈ 0.375
+        @test f_double_prime ≈ 9.5
+
+        lmupd = Manopt.get_default_fpfpp_updater(M, p, ha)
         @test lmupd isa Manopt.LimitedMemoryFPFPPUpdater
 
         Manopt.init_updater!(M, lmupd, p, d, ha)
-        f_prime_limited, f_double_prime_limited = lmupd(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d_old)
+        f_prime_limited, f_double_prime_limited = lmupd(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d)
+
+        d[1] = 0.0
 
         @test f_prime ≈ f_prime_limited
         @test f_double_prime ≈ f_double_prime_limited
