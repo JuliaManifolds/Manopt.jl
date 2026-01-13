@@ -204,8 +204,8 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 # Fields
 
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:stopping_criterion; name = "stop"))
 * `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``k``
 * `order_type`: whether to use a randomly permuted sequence (`:FixedRandomOrder`),
   a per cycle permuted sequence (`:RandomOrder`) or the default linear one.
@@ -218,14 +218,14 @@ Generate the options
 
 ## Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
 
 # Keyword arguments
 
 * `evaluation_order=:LinearOrder`: soecify the `order_type`
 * `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_tex(:Cal, "N"))``,
-$(_var(:Keyword, :p; add = :as_Initial))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(2000)`"))
+$(_kwargs(:p; add_properties = [:as_Initial]))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)"))
 
 # See also
 

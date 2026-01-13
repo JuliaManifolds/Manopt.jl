@@ -20,7 +20,7 @@ no plot is generated,
 * `name="differential"`: name to display in the plot
 * `plot=false`: whether to plot the result (if `Plots.jl` is loaded).
   The plot is in log-log-scale. This is returned and can then also be saved.
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:retraction_method))
 * `slope_tol=0.1`: tolerance for the slope (global) of the approximation
 * `throw_error=false`: throw an error message if the differential is wrong
 * `window=nothing`: specify window sizes within the `log_range` that are used for
@@ -89,7 +89,7 @@ no plot is generated.
 # Keyword arguments
 
 * `check_vector=true`:
-  verify that ``$(_tex(:grad))f(p) ∈ $(_math(:TpM))`` using `is_vector`.
+  verify that ``$(_tex(:grad))f(p) ∈ $(_math(:TangentSpace))`` using `is_vector`.
 * `exactness_tol=1e-12`:
   if all errors are below this tolerance, the gradient is considered to be exact
 * `io=nothing`:
@@ -104,7 +104,7 @@ no plot is generated.
 * `plot=false`:
   whether to plot the result (if `Plots.jl` is loaded).
   The plot is in log-log-scale. This is returned and can then also be saved.
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:retraction_method))
 * `slope_tol=0.1`:
   tolerance for the slope (global) of the approximation
 * `atol`, `rtol`:
@@ -165,13 +165,13 @@ no plot is generated.
 # Keyword arguments
 
 * `check_grad=true`:
-  verify that ``$(_tex(:grad))f(p) ∈ $(_math(:TpM))``.
+  verify that ``$(_tex(:grad))f(p) ∈ $(_math(:TangentSpace)))``.
 * `check_linearity=true`:
   verify that the Hessian is linear, see [`is_Hessian_linear`](@ref) using `a`, `b`, `X`, and `Y`
 * `check_symmetry=true`:
   verify that the Hessian is symmetric, see [`is_Hessian_symmetric`](@ref)
 * `check_vector=false`:
-  verify that `$(_tex(:Hess)) f(p)[X] ∈ $(_math(:TpM))`` using `is_vector`.
+  verify that `$(_tex(:Hess)) f(p)[X] ∈ $(_math(:TangentSpace)))`` using `is_vector`.
 * `mode=:Default`:
   specify the mode for the verification; the default assumption is,
   that the retraction provided is of second order. Otherwise one can also verify the Hessian
@@ -198,7 +198,7 @@ no plot is generated.
   number of points to use within the `log_range` default range ``[10^{-8},10^{0}]``
 * `plot=false`:
   whether to plot the resulting verification (requires `Plots.jl` to be loaded). The plot is in log-log-scale. This is returned and can then also be saved.
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:retraction_method))
 * `slope_tol=0.1`:
   tolerance for the slope (global) of the approximation
 * `error=:none`:

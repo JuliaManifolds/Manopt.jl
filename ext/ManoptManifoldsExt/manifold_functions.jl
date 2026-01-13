@@ -134,7 +134,7 @@ end
     reflect!(M, q, f, x; kwargs...)
 
 reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f: $(Manopt._math(:M)) → $(Manopt._math(:M))``, given by
+function ``f: $(Manopt._math(:Manifold))) → $(Manopt._math(:Manifold)))``, given by
 
 ````math
 $(Manopt._tex(:operatorname, "refl"))_f(x) = $(Manopt._tex(:operatorname, "refl"))_{f(x)}(x),
@@ -163,14 +163,13 @@ where ``$(Manopt._tex(:retr))`` and ``$(Manopt._tex(:invretr))`` denote a retrac
 retraction, respectively.
 This can also be done in place of `q`.
 
-## Keyword arguments
+## Keyword Arguments
 
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :inverse_retraction_method))
+$(Manopt._kwargs([:retraction_method, :inverse_retraction_method]))
 
 and for the `reflect!` additionally
 
-$(_var(:Keyword, :X))
+$(Manopt._kwargs(:X))
   as temporary memory to compute the inverse retraction in place.
   otherwise this is the memory that would be allocated anyways.
 """

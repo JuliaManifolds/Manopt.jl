@@ -8,8 +8,9 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 
 # Fields
 
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :stopping_criterion, "stop_newton", add = "used for the inner Newton iteration"))
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields(:stopping_criterion, "stop_newton"))
+  used for the inner Newton iteration
 * `σ`:               the current regularization parameter
 * `X`:               the Iterate
 * `Lanczos_vectors`: the obtained Lanczos vectors
@@ -25,11 +26,12 @@ $(_var(:Field, :stopping_criterion, "stop_newton", add = "used for the inner New
 
 ## Keyword arguments
 
-$(_var(:Keyword, :X; add = "as the iterate"))
+$(_kwargs(:X; add_properties = [:as_Iterate]))
 * `maxIterLanzcos=200`: shortcut to set the maximal number of iterations in the ` stopping_crtierion=`
 * `θ=0.5`: set the parameter in the [`StopWhenFirstOrderProgress`](@ref) within the default `stopping_criterion=`.
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)`"))
-$(_var(:Keyword, :stopping_criterion, "stopping_criterion_newton"; default = "[`StopAfterIteration`](@ref)`(200)`", add = " used for the inner Newton iteration"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)"))
+$(_kwargs(:stopping_criterion; name = "stopping_criterion_newton", default = "`[`StopAfterIteration`](@ref)`(200)"))
+  used for the inner Newton iteration
 * `σ=10.0`: specify the regularization parameter
 """
 mutable struct LanczosState{T, R, SC, SCN, B, TM, C} <: AbstractManoptSolverState
@@ -251,14 +253,14 @@ solver indicating that the model function at the current (outer) iterate,
 
 $_doc_ARC_model
 
-defined on the tangent space ``$(_math(:TpM))`` fulfills at the current iterate ``X_k`` that
+defined on the tangent space ``$(_math(:TangentSpace))entSpace)))`` fulfills at the current iterate ``X_k`` that
 
 $_math_sc_firstorder
 
 # Fields
 
 * `θ`:      the factor ``θ`` in the second condition
-$(_var(:Field, :at_iteration))
+$(_fields(:at_iteration))
 
 # Constructor
 

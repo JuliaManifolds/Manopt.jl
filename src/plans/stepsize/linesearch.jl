@@ -139,7 +139,7 @@ accept the current stepsize.
 
 ## Keyword arguments
 
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:retraction_method))
 * `additional_increase_condition=(M,p) -> true`: impose an additional condition for an increased step size to be accepted
 * `additional_decrease_condition=(M,p) -> true`: impose an additional condition for an decreased step size to be accepted
 * `Dlf0`: precomputed directional derivative at point `p` in direction `η`

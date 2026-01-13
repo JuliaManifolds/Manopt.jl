@@ -7,7 +7,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 
 * `cost`:                        ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_operator`:         the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `linearized_adjoint_operator`: the adjoint differential ``(DΛ)^* : $(_math(:M; M = "N")) → $(_math(:TM))``
+* `linearized_adjoint_operator`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → $(_math(:TangentBundle))``
 * `prox_F`:                      the proximal map belonging to ``F``
 * `diff_prox_F`:                 the (Clarke Generalized) differential of the proximal maps of ``F``
 * `prox_G_dual`:                 the proximal map belonging to `G^$(_tex(:ast))_n``
@@ -68,19 +68,17 @@ end
 
 # Fields
 
-$(_var(:Field, :p, "m"))
-$(_var(:Field, :p, "n", "Q"; M = "N"))
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :X))
+$(_fields(:p; name = "m"))
+$(_fields(:p; type = "Q", name = "n", M = "N"))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:X))
 * `primal_stepsize::Float64`:  proximal parameter of the primal prox
 * `dual_stepsize::Float64`:    proximal parameter of the dual prox
 * `reg_param::Float64`:        regularisation parameter for the Newton matrix
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:stopping_criterion; name = "stop"))
 * `update_primal_base`:        function to update the primal base
 * `update_dual_base`:          function to update the dual base
-$(_var(:Field, :inverse_retraction_method))
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :vector_transport_method))
+$(_fields([:inverse_retraction_method, :retraction_method, :vector_transport_method]))
 
 where for the update functions a [`AbstractManoptProblem`](@ref) `amp`,
 [`AbstractManoptSolverState`](@ref) `ams` and the current iterate `i` are the arguments.
@@ -104,10 +102,9 @@ Generate a state for the [`primal_dual_semismooth_Newton`](@ref).
 * `reg_param=1e-5`
 * `update_primal_base=(amp, ams, k) -> o.m`
 * `update_dual_base=(amp, ams, k) -> o.n`
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)`"))
-$(_var(:Keyword, :vector_transport_method))
+$(Manopt._kwargs([:retraction_method, :inverse_retraction_method]))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)`"))
+$(_kwargs(:vector_transport_method))
 """
 mutable struct PrimalDualSemismoothNewtonState{
         P,

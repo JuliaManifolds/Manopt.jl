@@ -42,7 +42,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:M)),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))nifold))nifold))nifold))),
 ```
 
 respectively.
@@ -59,11 +59,11 @@ Then the update formula reads
 
 ```math
 B^$(_tex(:rm, "BFGS"))_{k+1}  = $(_tex(:Bigl))(
-  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:M))} - $(_tex(:frac, "s_k y^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k"))
+  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold))nifold)))} - $(_tex(:frac, "s_k y^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr)))
 $(_tex(:widetilde, "B"))^$(_tex(:rm, "BFGS"))_k
 $(_tex(:Bigl))(
-  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:M))} - $(_tex(:frac, "y_k s^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k"))
+  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold)))} - $(_tex(:frac, "y_k s^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr))) + $(_tex(:frac, "s_k s^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
 ```
 
@@ -71,7 +71,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:M)),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
 ```
 
 respectively.
@@ -88,11 +88,11 @@ Then the update formula reads
 
 ```math
 H^$(_tex(:rm, "DFP"))_{k+1} = $(_tex(:Bigl))(
-  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:M))} - $(_tex(:frac, "y_k s^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
+  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold)))} - $(_tex(:frac, "y_k s^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr)))
 $(_tex(:widetilde, "H"))^$(_tex(:rm, "DFP"))_k
 $(_tex(:Bigl))(
-  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:M))} - $(_tex(:frac, "s_k y^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
+  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold)))} - $(_tex(:frac, "s_k y^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr))) + $(_tex(:frac, "y_k y^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
 ```
 
@@ -100,7 +100,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:M)),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
 ```
 
 respectively.
@@ -124,7 +124,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:M)),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
 ```
 
 respectively.
@@ -154,7 +154,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:M)),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
 ```
 
 respectively.
@@ -196,7 +196,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:M)),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
 ```
 
 respectively.
@@ -245,7 +245,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:M)),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
 ```
 
 respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
@@ -296,7 +296,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:M)),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
 ```
 
 respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
@@ -347,7 +347,7 @@ Add preconditioning to a gradient problem.
 
 # Keyword arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 """
 struct QuasiNewtonPreconditioner{E <: AbstractEvaluationType, F}
     preconditioner::F
@@ -418,7 +418,7 @@ space ``T_{p_{k+1}} $(_tex(:Cal, "M"))``, preferably with an isometric vector tr
 * `matrix`:                 the matrix which represents the approximating operator.
 * `initial_scale`:          when initialising the update, a unit matrix is used as initial approximation, scaled by this factor
 * `update`:                 a [`AbstractQuasiNewtonUpdateRule`](@ref).
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -433,7 +433,7 @@ $(_var(:Field, :vector_transport_method))
 ## Keyword arguments
 
 * `initial_scale=1.0` – this can also be deactivated by passing `nothing`.
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 Generate the Update rule with defaults from a manifold and the names corresponding to the fields.
 
@@ -550,7 +550,7 @@ end
 _doc_QN_B = """
 ```math
 $(_tex(:Cal, "B"))_k^{(0)}[⋅]
-= $(_tex(:frac, "$(_tex(:inner, "s_{k-1}", "y_{k-1}"; index = "p_k"))", "$(_tex(:inner, "y_{k-1}", "y_{k-1}"; index = "p_k"))"))$(_tex(:Id))_{$(_math(:TpM))}[⋅]
+= $(_tex(:frac, "$(_tex(:inner, "s_{k-1}", "y_{k-1}"; index = "p_k"))", "$(_tex(:inner, "y_{k-1}", "y_{k-1}"; index = "p_k"))"))$(_tex(:Id))_{$(_math(:TangentSpace)))}[⋅]
 ```
 """
 
@@ -562,7 +562,7 @@ where the approximating operator is represented by ``m`` stored pairs of tangent
 vectors ``$(_math(:Sequence, "$(_tex(:widetilde, "s"))", "i", "k-m", "k-1"))`` and ``$(_math(:Sequence, "$(_tex(:widetilde, "y"))", "i", "k-m", "k-1"))``
 in the ``k``-th iteration. For the calculation of the search direction ``X_k``, the generalisation
 of the two-loop recursion is used (see [HuangGallivanAbsil:2015](@cite)),
-since it only requires inner products and linear combinations of tangent vectors in ``$(_math(:TpM; p = "p_k"))``.
+since it only requires inner products and linear combinations of tangent vectors in ``$(_math(:TangentSpace; p = "p_k"))``.
 For that the stored pairs of tangent vectors ``s_i, y_i``,
 the gradient ``$(_tex(:grad)) f(p_k)`` of the objective function ``f`` in ``p_k``
 and the positive definite self-adjoint operator
@@ -574,10 +574,10 @@ is executed ``m`` times in a row on ``$(_tex(:Cal, "B"))^{(0)}_k[⋅]`` using th
 and in the same time the resulting operator ``$(_tex(:Cal, "B"))^{$(_tex(:rm, "LRBFGS"))}_k [⋅]`` is directly applied on ``$(_tex(:grad))f(p_k)``.
 When updating there are two cases: if there is still free memory, ``k < m``, the previously
 stored vector pairs ``$(_tex(:widehat, "s"))_i,$(_tex(:widehat, "y"))_i`` have to be
-transported into the upcoming tangent space ``$(_math(:TpM; p = "p_{k+1}"))``.
+transported into the upcoming tangent space ``$(_math(:TangentSpace; p = "p_{k+1}"))``.
 If there is no free memory, the oldest pair ``$(_tex(:widehat, "s"))_i,$(_tex(:widehat, "y"))_i``
 has to be discarded and then all the remaining vector pairs ``$(_tex(:widehat, "s"))_i,$(_tex(:widehat, "y"))_i``
-are transported into the tangent space ``$(_math(:TpM; p = "p_{k+1}"))``.
+are transported into the tangent space ``$(_math(:TangentSpace; p = "p_{k+1}"))``.
 After that the new values ``s_k = $(_tex(:widehat, "s"))_k = T^{S}_{p_k, α_k η_k}(α_k η_k)`` and ``y_k = $(_tex(:widehat, "y"))_k``
 are stored at the beginning. This process ensures that new information about the objective
 function is always included and the old, probably no longer relevant, information is discarded.
@@ -594,7 +594,7 @@ function is always included and the old, probably no longer relevant, informatio
 * `ξ`:                       a variable used in the two-loop recursion.
 * `ρ`L                       a variable used in the two-loop recursion.
 * `initial_scale`:           initial scaling of the Hessian, deactivate (e.g. when using a preconditioner) by passing `nothing`
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 * `message`:                 a string containing a potential warning that might have appeared
 * `project!`:                a function to stabilize the update by projecting on the tangent space
 * `vector_transport_method`: method for transporting stored s and y directions to the new point
@@ -784,11 +784,11 @@ and ``θ`` is strictly increasing at ``0``. If this is not the case, the corresp
 update is skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 the matrix ``H_k`` or ``B_k`` is not updated.
 The basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` is nevertheless transported into the upcoming tangent
-space ``T_{x_{k+1}} $(_math(:M))``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
+space ``T_{x_{k+1}} $(_math(:Manifold)))``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 neither the oldest vector pair ``$(_tex(:widetilde, "s"))_{k−m}``, ``$(_tex(:widetilde, "y"))_{k−m}`` is
 discarded nor the newest vector pair ``$(_tex(:widetilde, "s"))_k, $(_tex(:widetilde, "y"))_k`` is added
 into storage, but all stored vector pairs ``$(_tex(:set, "$(_tex(:widetilde, "s"))_i, $(_tex(:widetilde, "y"))_i"))_{i=k-m}^{k-1}``
-are transported into the tangent space ``T_{x_{k+1}} $(_math(:M))``.
+are transported into the tangent space ``T_{x_{k+1}} $(_math(:Manifold)))``.
 If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting
 method follows the method of [HuangAbsilGallivan:2018](@cite),
 taking into account that the corresponding step size is chosen.

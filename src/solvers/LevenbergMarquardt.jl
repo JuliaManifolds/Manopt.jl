@@ -15,8 +15,8 @@ The second block of signatures perform the optimization in-place of `p`.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-* `f`: a cost function ``f: $(_math(:M))→ℝ^m``.
+$(_args(:M))
+* `f`: a cost function ``f: $(_math(:Manifold))nifold))nifold)))→ℝ^m``.
   The cost function can be provided in two different ways
     * as a single function returning a vector ``f(p) ∈ ℝ^m``
     * as a vector of functions, where each single function returns a scalar ``f_i(p) ∈ ℝ``
@@ -28,7 +28,7 @@ $(_var(:Argument, :M; type = true))
   * as a single function returning a (coefficient) matrix ``J ∈ ℝ^{m×d}``, where ``d`` is the dimension of the manifold.
   These coefficients are given with respect to an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) of the tangent space at `p`.
   The type is determined by the `jacobian_type=` keyword argument.
-$(_var(:Argument, :p))
+$(_args(:p))
 * `num_components`: length ``m`` of the vector returned by the cost function.
   By default its value is -1 which means that it is determined automatically by
   calling `f` one additional time. This is only possible when `evaluation` is [`AllocatingEvaluation`](@ref),
@@ -39,7 +39,7 @@ Alternatively, passing a [`NonlinearLeastSquaresObjective`](@ref) `nlso`.
 
 # Keyword arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `η=0.2`:                   scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < η < 1`.
 * `expect_zero_residual=false`: whether or not the algorithm might expect that the value of
   residual (objective) at minimum is equal to 0.
@@ -54,7 +54,7 @@ $(_var(:Keyword, :evaluation))
 * `linear_subsolver!`:    a function with three arguments `sk, JJ, grad_f_c` that solves the
   linear subproblem `sk .= JJ \\ grad_f_c`, where `JJ` is (up to numerical issues) a
   symmetric positive definite matrix. Default value is [`default_lm_lin_solve!`](@ref).
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:retraction_method))
 
 $(_note(:OtherKeywords))
 

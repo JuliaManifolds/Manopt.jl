@@ -3,7 +3,7 @@
 # Objective.
 _doc_CR_cost = """
 ```math
-f(X) = $(_tex(:frac, 1, 2)) $(_tex(:norm, _tex(:Cal, "A") * "[X] + b"; index = "p"))^2,\\qquad X ∈ $(_math(:TpM)),
+f(X) = $(_tex(:frac, 1, 2)) $(_tex(:norm, _tex(:Cal, "A") * "[X] + b"; index = "p"))^2,\\qquad X ∈ $(_math(:TangentSpace))),
 ```
 """
 @doc """
@@ -13,7 +13,7 @@ Model the objective
 
 $(_doc_CR_cost)
 
-defined on the tangent space ``$(_math(:TpM))`` at ``p`` on the manifold ``$(_math(:M))``.
+defined on the tangent space ``$(_math(:TangentSpace)))`` at ``p`` on the manifold ``$(_math(:Manifold)))``.
 
 In other words this is an objective to solve ``$(_tex(:Cal, "A")) = -b(p)``
 for some linear symmetric operator and a vector function.
@@ -185,7 +185,7 @@ A state for the [`conjugate_residual`](@ref) solver.
 * `rAr::R`: internal field for storing ``⟨ r, $(_tex(:Cal, "A"))(p)[r] ⟩``
 * `α::R`: a step length
 * `β::R`: the conjugate coefficient
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:stopping_criterion; name = "stop"))
 
 # Constructor
 
@@ -201,8 +201,8 @@ Initialise the state with default values.
 * `Ad=copy(TpM, Ar)`
 * `α::R=0.0`
 * `β::R=0.0`
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
-$(_var(:Keyword, :X))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
+$(_kwargs(:X))
 
 # See also
 
@@ -298,7 +298,7 @@ from the [`conjugate_residual`](@ref)
 
 # Fields
 
-$(_var(:Field, :at_iteration))
+$(_fields(:at_iteration))
 * `c`: the initial norm
 * `ε`: the threshold
 * `norm_rk`: the last computed norm of the residual
