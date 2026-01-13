@@ -42,7 +42,9 @@ using RecursiveArrayTools
         z = [-0.25, -1.0]
 
         # optimized formula
-        f_prime, f_double_prime = Manopt.GenericFPFPPUpdater()(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d)
+        upd = Manopt.GenericFPFPPUpdater(similar(d))
+        Manopt.init_updater!(M, upd, p, d, ha)
+        f_prime, f_double_prime = upd(M, p, old_f_prime, old_f_double_prime, 0 + dt, dt, db, gb, ha, b, d)
         @test f_prime ≈ -0.5
         @test f_double_prime ≈ 2.0
 
@@ -74,7 +76,9 @@ using RecursiveArrayTools
         z = [-0.5, -0.25]
 
         # optimized formula
-        f_prime, f_double_prime = Manopt.GenericFPFPPUpdater()(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d)
+        upd = Manopt.GenericFPFPPUpdater(similar(d))
+        Manopt.init_updater!(M, upd, p, d, ha)
+        f_prime, f_double_prime = upd(M, p, old_f_prime, old_f_double_prime, 0 + dt, dt, db, gb, ha, b, d)
         @test f_prime == -3.5
         @test f_double_prime == 2
 
@@ -121,12 +125,12 @@ using RecursiveArrayTools
         db = d[b]
         gb = grad[b]
 
-        z = dt * d
+        t_current = 0 + dt
 
         # compare the generic and limited memory updater
-        gupd = Manopt.GenericFPFPPUpdater()
+        gupd = Manopt.GenericFPFPPUpdater(similar(d))
         Manopt.init_updater!(M, gupd, p, d, ha)
-        f_prime, f_double_prime = gupd(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d)
+        f_prime, f_double_prime = gupd(M, p, old_f_prime, old_f_double_prime, t_current, dt, db, gb, ha, b, d)
 
         @test f_prime ≈ 0.375
         @test f_double_prime ≈ 9.5
@@ -135,7 +139,7 @@ using RecursiveArrayTools
         @test lmupd isa Manopt.LimitedMemoryFPFPPUpdater
 
         Manopt.init_updater!(M, lmupd, p, d, ha)
-        f_prime_limited, f_double_prime_limited = lmupd(M, p, old_f_prime, old_f_double_prime, dt, db, gb, ha, b, z, d)
+        f_prime_limited, f_double_prime_limited = lmupd(M, p, old_f_prime, old_f_double_prime, t_current, dt, db, gb, ha, b, d)
 
         d[1] = 0.0
 
