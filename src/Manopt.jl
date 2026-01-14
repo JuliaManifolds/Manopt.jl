@@ -426,6 +426,7 @@ export KKTVectorFieldNormSq, KKTVectorFieldNormSqGradient
 export LagrangianCost, LagrangianGradient, LagrangianHessian
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 export FrankWolfeCost, FrankWolfeGradient
+export LevenbergMarquardtSurrogatePenaltyObjective, LevenbergMarquardtSurrogateConstrainedObjective
 export TrustRegionModelObjective
 export CondensedKKTVectorField, CondensedKKTVectorFieldJacobian
 export SymmetricLinearSystemObjective

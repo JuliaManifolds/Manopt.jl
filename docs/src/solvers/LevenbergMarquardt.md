@@ -15,6 +15,13 @@ LevenbergMarquardt!
 LevenbergMarquardtState
 ```
 
+## Sub-problem
+
+```@docs
+LevenbergMarquardtSurrogatePenaltyObjective
+LevenbergMarquardtSurrogateConstrainedObjective
+```
+
 ## [Technical details](@id sec-lm-technical-details)
 
 The [`LevenbergMarquardt`](@ref) solver requires the following functions of a manifold to be available
@@ -25,9 +32,9 @@ The [`LevenbergMarquardt`](@ref) solver requires the following functions of a ma
 
 ## Internals
 
-```@docs  
-Manopt.default_lm_lin_solve!  
-```  
+```@docs
+Manopt.default_lm_lin_solve!
+```
 
 ## Literature
 

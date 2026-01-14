@@ -99,7 +99,7 @@ struct NonlinearLeastSquaresObjective{
     end
 end
 
-# the old single function constructor
+# the old single function constructor – TODO: remove?
 function NonlinearLeastSquaresObjective(
         f,
         jacobian,
@@ -786,4 +786,79 @@ function show(io::IO, lms::LevenbergMarquardtState)
     $(status_summary(lms.stop))
     This indicates convergence: $Conv"""
     return print(io, s)
+end
+
+#
+#
+# --- Subproblems ----
+
+#
+# ----- A cost/grad objective to e.g. do CG, or Gauß-Newton ----
+
+@doc """
+    LevenbergMarquardtSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
+
+Given an [`NonlinearLeastSquaresObjective`](@ref) `objective` and a damping term `damping_term`,
+this objective represents the penalized objective for the sub-problem to solve within every step
+of the Levenberg-Marquardt algorithm given by
+
+```math
+σ(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; size = "big"))^2
+  + $(_tex(:frac, "λ", "2"))$(_tex(:norm, "X"))^2
+```
+
+where ``X ∈ $(_math(:TangentSpace))`` is the new step to compute.
+Set ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``.
+
+Then we have  ``y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p)``.
+
+and ``$(_tex(:Cal, "L")) = CJ_F^*(p)[X]`` is a linear operator using the adjoint of the Jacobian and
+```math
+C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2")*"^2")),
+```
+
+## Fields
+
+* `objective`: the [`NonlinearLeastSquaresObjective`](@ref) to penalize
+* `penalty`: the damping term ``λ``
+"""
+mutable struct LevenbergMarquardtSurrogatePenaltyObjective{
+        E <: AbstractEvaluationType, NLSO <: NonlinearLeastSquaresObjective{E}, R,
+    } <: AbstractManifoldFirstOrderObjective{E, NLSO}
+    objective::NLSO
+    penalty::R
+end
+
+@doc """
+    LevenbergMarquardtSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
+
+Given an [`NonlinearLeastSquaresObjective`](@ref) `objective` and a damping term `damping_term`,
+this objective represents the penalized objective for the sub-problem to solve within every step
+of the Levenberg-Marquardt algorithm given by
+
+```math
+σ(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; size = "big"))^2
+$(_tex(:text, "such that ")) $(_tex(:norm, "X")) ≤ Δ
+```
+
+where ``X ∈ $(_math(:TangentSpace))`` is the new step to compute.
+Set ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``.
+
+Then we have  ``y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p)``.
+
+and ``$(_tex(:Cal, "L")) = CJ_F^*(p)[X]`` is a linear operator using the adjoint of the Jacobian and
+```math
+C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2")*"^2")),
+```
+
+## Fields
+
+* `objective`: the [`NonlinearLeastSquaresObjective`](@ref) to penalize
+* `radius`: the trust region radius ``Δ``
+"""
+mutable struct LevenbergMarquardtSurrogateConstrainedObjective{
+        E <: AbstractEvaluationType, NLSO <: NonlinearLeastSquaresObjective{E}, R,
+    } <: AbstractManifoldFirstOrderObjective{E, NLSO}
+    objective::NLSO
+    radius::R
 end

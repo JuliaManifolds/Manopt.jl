@@ -80,7 +80,9 @@ Glossaries.define!(_glossary_tex_terms, :inner, :math, _tex_inner)
 Glossaries.define!(_glossary_tex_terms, :log, :math, raw"\log")
 Glossaries.define!(_glossary_tex_terms, :max, :math, raw"\max")
 Glossaries.define!(_glossary_tex_terms, :min, :math, raw"\min")
-_tex_norm(v; index = "") = raw"\lVert " * "$v" * raw" \rVert" * "_{$index}"
+function _tex_norm(v; index = "", size = "")
+    return (length(size) > 0 ? "\\$(size)l" : "") * raw"\lVert " * "$v" * (length(size) > 0 ? "\\$(size)r" : "") * raw" \rVert" * "_{$index}"
+end
 Glossaries.define!(_glossary_tex_terms, :norm, :math, _tex_norm)
 _tex_pmatrix(lines...) = raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}"
 Glossaries.define!(_glossary_tex_terms, :pmatrix, :math, _tex_pmatrix)
