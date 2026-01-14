@@ -38,6 +38,10 @@ using Pkg; Pkg.add("Manopt");
 
 and then checkout the [🏔️ Get started with Manopt.jl](https://manoptjl.org/stable/tutorials/getstarted/) tutorial.
 
+You can also watch an introduction given at JuliaCon 2022
+
+[<div style="text-align:center"><img src ="https://img.youtube.com/vi/thbekfsyhCE/maxresdefault.jpg" style="width:50%; align:center;"></div>](https://youtu.be/thbekfsyhCE)
+
 ## Related packages
 
 Manopt.jl is based on [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/),
