@@ -42,20 +42,19 @@ using RecursiveArrayTools
         z = [-0.25, -1.0]
 
         # optimized formula
-        upd = Manopt.GenericFPFPPUpdater(similar(d))
+        upd = Manopt.GenericSegmentHessianUpdater(similar(d))
         Manopt.init_updater!(M, upd, p, d, ha)
-        f_prime, f_double_prime = upd(M, p, old_f_prime, old_f_double_prime, 0 + dt, dt, db, gb, ha, b, d)
-        @test f_prime ≈ -0.5
-        @test f_double_prime ≈ 2.0
+        hv_eb_dz, hv_eb_d = upd(M, p, 0 + dt, dt, db, ha, b, d)
+        @test hv_eb_dz ≈ -2.0
+        @test hv_eb_d ≈ -8.0
 
         # original formula
 
-        d[2] = 0.0
-        f_original_prime = dot(grad, d) + dot(d, ha.matrix, z)
-        f_original_double_prime = Manopt.hessian_value(ha, M, p, d)
+        original_hv_eb_dz = dot([0, 1], ha.matrix, z)
+        original_hv_eb_d = dot([0, 1], ha.matrix, d)
 
-        @test f_prime == f_original_prime
-        @test f_double_prime == f_original_double_prime
+        @test hv_eb_dz == original_hv_eb_dz
+        @test hv_eb_d == original_hv_eb_d
     end
 
 
@@ -76,20 +75,19 @@ using RecursiveArrayTools
         z = [-0.5, -0.25]
 
         # optimized formula
-        upd = Manopt.GenericFPFPPUpdater(similar(d))
+        upd = Manopt.GenericSegmentHessianUpdater(similar(d))
         Manopt.init_updater!(M, upd, p, d, ha)
-        f_prime, f_double_prime = upd(M, p, old_f_prime, old_f_double_prime, 0 + dt, dt, db, gb, ha, b, d)
-        @test f_prime == -3.5
-        @test f_double_prime == 2
+        hv_eb_dz, hv_eb_d = upd(M, p, 0 + dt, dt, db, ha, b, d)
+        @test hv_eb_dz == -1.0
+        @test hv_eb_d == -4.0
 
         # original formula
 
-        d[1] = 0.0
-        f_original_prime = dot(grad, d) + dot(d, ha.matrix, z)
-        f_original_double_prime = Manopt.hessian_value(ha, M, p, d)
+        original_hv_eb_dz = dot([1, 0], ha.matrix, z)
+        original_hv_eb_d = dot([1, 0], ha.matrix, d)
 
-        @test f_prime == f_original_prime
-        @test f_double_prime == f_original_double_prime
+        @test hv_eb_dz == original_hv_eb_dz
+        @test hv_eb_d == original_hv_eb_d
     end
 
     @testset "update_fp_fpp - basic d = [-2.0, -1.0] with limited memory update" begin
@@ -128,23 +126,21 @@ using RecursiveArrayTools
         t_current = 0 + dt
 
         # compare the generic and limited memory updater
-        gupd = Manopt.GenericFPFPPUpdater(similar(d))
+        gupd = Manopt.GenericSegmentHessianUpdater(similar(d))
         Manopt.init_updater!(M, gupd, p, d, ha)
-        f_prime, f_double_prime = gupd(M, p, old_f_prime, old_f_double_prime, t_current, dt, db, gb, ha, b, d)
+        hv_eb_dz, hv_eb_d = gupd(M, p, t_current, dt, db, ha, b, d)
 
-        @test f_prime ≈ 0.375
-        @test f_double_prime ≈ 9.5
+        @test hv_eb_dz ≈ -0.125
+        @test hv_eb_d ≈ -0.5
 
-        lmupd = Manopt.get_default_fpfpp_updater(M, p, ha)
-        @test lmupd isa Manopt.LimitedMemoryFPFPPUpdater
+        lmupd = Manopt.get_default_hessian_segment_updater(M, p, ha)
+        @test lmupd isa Manopt.LimitedMemorySegmentHessianUpdater
 
         Manopt.init_updater!(M, lmupd, p, d, ha)
-        f_prime_limited, f_double_prime_limited = lmupd(M, p, old_f_prime, old_f_double_prime, t_current, dt, db, gb, ha, b, d)
+        hv_eb_dz_limited, hv_eb_d_limited = lmupd(M, p, t_current, dt, db, ha, b, d)
 
-        d[1] = 0.0
-
-        @test f_prime ≈ f_prime_limited
-        @test f_double_prime ≈ f_double_prime_limited
+        @test hv_eb_dz ≈ hv_eb_dz_limited
+        @test hv_eb_d ≈ hv_eb_d_limited
 
         ha.last_gcp_result = :found_unlimited
         @test Manopt.get_parameter(ha, Val(:max_stepsize)) == Inf

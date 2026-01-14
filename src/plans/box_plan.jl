@@ -326,103 +326,112 @@ end
 
 
 """
-    abstract type AbstractFPFPPUpdater end
+    abstract type AbstractSegmentHessianUpdater end
 
 Abstract type for methods that calculate f' and f'' in the GCP calculation in subsequent
 line segments in `GeneralizedCauchyPointFinder`.
 """
-abstract type AbstractFPFPPUpdater end
+abstract type AbstractSegmentHessianUpdater end
 
 """
-    init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
+    init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
 
-Method for initialization of `AbstractFPFPPUpdater` `fpfpp_upd` just before the loop
+Method for initialization of `AbstractSegmentHessianUpdater` `hessian_segment_updater` just before the loop
 that examines subsequent intervals for GCP.
 """
-init_updater!(::AbstractManifold, fpfpp_upd::AbstractFPFPPUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
+init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
 
 """
-    struct GenericFPFPPUpdater <: AbstractFPFPPUpdater end
+    struct GenericSegmentHessianUpdater <: AbstractSegmentHessianUpdater end
 
 Generic f' and f'' calculation that only relies on `hessian_value_eb` but is relatively slow for
 high-dimensional domains.
 """
-struct GenericFPFPPUpdater{TX} <: AbstractFPFPPUpdater
+struct GenericSegmentHessianUpdater{TX} <: AbstractSegmentHessianUpdater
     d_z::TX
 end
 
-function get_default_fpfpp_updater(M::AbstractManifold, p, ::AbstractQuasiNewtonDirectionUpdate)
-    return GenericFPFPPUpdater(zero_vector(M, p))
+function get_default_hessian_segment_updater(M::AbstractManifold, p, ::AbstractQuasiNewtonDirectionUpdate)
+    return GenericSegmentHessianUpdater(zero_vector(M, p))
 end
 
-function init_updater!(M::AbstractManifold, fpfpp_upd::GenericFPFPPUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
-    zero_vector!(M, fpfpp_upd.d_z, p)
-    return fpfpp_upd
+function init_updater!(M::AbstractManifold, hessian_segment_updater::GenericSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
+    zero_vector!(M, hessian_segment_updater.d_z, p)
+    return hessian_segment_updater
 end
 
-function (upd::GenericFPFPPUpdater)(M::AbstractManifold, p, old_f_prime, old_f_double_prime, t::Real, dt::Real, db, gb, ha, b, d)
+@doc raw"""
+    (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, db, ha::AbstractQuasiNewtonDirectionUpdate, b, d)
+
+Calculate Hessian values ``⟨e_b, B d_z⟩`` and ``⟨e_b, B d⟩`` for the generalized Cauchy
+point line search using the generic approach via `hessian_value_eb`.
+``d_z`` start with 0 and is updated in-place by adding `dt * d` to it.
+"""
+function (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, db, ha, b, d)
     upd.d_z .+= dt .* d
-    f_prime = old_f_prime + dt * old_f_double_prime - db * (gb + hessian_value_eb(ha, M, p, b, upd.d_z))
-    f_double_prime = old_f_double_prime + (2 * -db * hessian_value_eb(ha, M, p, b, d)) + db^2 * hessian_value_eb(ha, M, p, b)
+    hv_eb_dz = hessian_value_eb(ha, M, p, b, upd.d_z)
+    hv_eb_d = hessian_value_eb(ha, M, p, b, d)
 
-    return f_prime, f_double_prime
+    return hv_eb_dz, hv_eb_d
 end
 
 """
-    struct LimitedMemoryFPFPPUpdater{TV <: AbstractVector} <: AbstractFPFPPUpdater
+    struct LimitedMemorySegmentHessianUpdater{TV <: AbstractVector} <: AbstractSegmentHessianUpdater
 
-f' and f'' calculation that is optimized for `QuasiNewtonLimitedMemoryBoxDirectionUpdate`.
-It relies on a specific Hessian structure.
+Hessian value calculation for generalized Cauchy point line segments that is optimized for
+`QuasiNewtonLimitedMemoryBoxDirectionUpdate`. It relies on a specific Hessian structure.
 """
-struct LimitedMemoryFPFPPUpdater{TV <: AbstractVector} <: AbstractFPFPPUpdater
+struct LimitedMemorySegmentHessianUpdater{TV <: AbstractVector} <: AbstractSegmentHessianUpdater
     p_s::TV
     p_y::TV
     c_s::TV
     c_y::TV
 end
 
-function get_default_fpfpp_updater(::AbstractManifold, p, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
-    return LimitedMemoryFPFPPUpdater(similar(ha.qn_du.ρ), similar(ha.qn_du.ρ), similar(ha.qn_du.ρ), similar(ha.qn_du.ρ))
+function get_default_hessian_segment_updater(::AbstractManifold, p, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    return LimitedMemorySegmentHessianUpdater(similar(ha.qn_du.ρ), similar(ha.qn_du.ρ), similar(ha.qn_du.ρ), similar(ha.qn_du.ρ))
 end
 
-function init_updater!(M::AbstractManifold, fpfpp_upd::LimitedMemoryFPFPPUpdater, p, d, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
-    fill!(fpfpp_upd.c_s, 0)
-    fill!(fpfpp_upd.c_y, 0)
+function init_updater!(M::AbstractManifold, hessian_segment_updater::LimitedMemorySegmentHessianUpdater, p, d, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    fill!(hessian_segment_updater.c_s, 0)
+    fill!(hessian_segment_updater.c_y, 0)
     ii = 1
     for i in eachindex(ha.qn_du.ρ)
         if iszero(ha.qn_du.ρ[i])
             continue
         end
 
-        fpfpp_upd.p_s[ii] = ha.current_scale * inner(M, p, ha.qn_du.memory_s[i], d)
-        fpfpp_upd.p_y[ii] = inner(M, p, ha.qn_du.memory_y[i], d)
+        hessian_segment_updater.p_s[ii] = ha.current_scale * inner(M, p, ha.qn_du.memory_s[i], d)
+        hessian_segment_updater.p_y[ii] = inner(M, p, ha.qn_du.memory_y[i], d)
         ii += 1
     end
-    return fpfpp_upd
+    return hessian_segment_updater
 end
 
 @doc raw"""
-    (fpfpp_upd::LimitedMemoryFPFPPUpdater)(
-        M::AbstractManifold, p, old_f_prime::Real, old_f_double_prime::Real,
+    (hessian_segment_updater::LimitedMemorySegmentHessianUpdater)(
+        M::AbstractManifold, p,
         t::Real, dt::Real, db, gb, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, d
     )
 
-Update ``f'`` and ``f''`` for the generalized Cauchy point line search using the limited-memory
-block Hessian stored in `ha`.
+Calculate Hessian values ``⟨e_b, B d_z⟩`` and ``⟨e_b, B d⟩`` for the generalized Cauchy
+point line search using the limited-memory block Hessian stored in `ha`.
+``d_z`` start with 0 and is updated in-place by adding `dt * d` to it.
 
 ## Arguments:
 
-- `old_f_prime`, `old_f_double_prime`: values carried from the previous segment.
-- `dt`: step length along the segment direction.
+- `M`: manifold.
+- `p`: current iterate.
+- `t`: current step length from `p`.
+- `dt`: step length increment from the last step.
 - `db`: direction component at the bound index `b`.
-- `gb`: gradient component at the bound index `b`.
 
-The updater reuses cached coordinate projections in `fpfpp_upd` to cheaply evaluate Hessian
-quadratic forms via `hessian_value_from_wmwt_coords`, then returns the new `(f', f'')` pair.
+The updater reuses cached coordinate projections in `hessian_segment_updater` to cheaply
+evaluate Hessian quadratic forms via `hessian_value_from_wmwt_coords`.
 """
-function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(
-        M::AbstractManifold, p, old_f_prime::Real, old_f_double_prime::Real,
-        t::Real, dt::Real, db, gb, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, d
+function (hessian_segment_updater::LimitedMemorySegmentHessianUpdater)(
+        M::AbstractManifold, p,
+        t::Real, dt::Real, db, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, d
     )
 
     m = length(ha.qn_du.memory_s)
@@ -441,25 +450,22 @@ function (fpfpp_upd::LimitedMemoryFPFPPUpdater)(
     coords_Yk_eb = view(ha.coords_Yk_X, 1:num_nonzero_rho)
     coords_Sk_eb = view(ha.coords_Sk_X, 1:num_nonzero_rho)
 
-    coords_cy = view(fpfpp_upd.c_y, 1:num_nonzero_rho)
-    coords_cs = view(fpfpp_upd.c_s, 1:num_nonzero_rho)
-    coords_py = view(fpfpp_upd.p_y, 1:num_nonzero_rho)
-    coords_ps = view(fpfpp_upd.p_s, 1:num_nonzero_rho)
+    coords_cy = view(hessian_segment_updater.c_y, 1:num_nonzero_rho)
+    coords_cs = view(hessian_segment_updater.c_s, 1:num_nonzero_rho)
+    coords_py = view(hessian_segment_updater.p_y, 1:num_nonzero_rho)
+    coords_ps = view(hessian_segment_updater.p_s, 1:num_nonzero_rho)
 
     coords_cy .+= dt .* coords_py
     coords_cs .+= dt .* coords_ps
 
     eb_B_z = hessian_value_from_wmwt_coords(ha, t * db, coords_Yk_eb, coords_Sk_eb, coords_cy, coords_cs)
 
-    f_prime = old_f_prime + dt * old_f_double_prime - db * (gb + eb_B_z)
     eb_B_d = hessian_value_from_wmwt_coords(ha, db, coords_Yk_eb, coords_Sk_eb, coords_py, coords_ps)
-
-    f_double_prime = old_f_double_prime - 2 * db * eb_B_d + db^2 * hessian_value_eb(ha, M, p, b)
 
     coords_py .-= db .* coords_Yk_eb
     coords_ps .-= db .* coords_Sk_eb
 
-    return f_prime, f_double_prime
+    return eb_B_z, eb_B_d
 end
 
 """
@@ -509,25 +515,26 @@ function set_bound_for_t!(
 end
 
 @doc raw"""
-    GeneralizedCauchyPointFinder{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
+    GeneralizedCauchyPointFinder{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
 
 Helper container for generalized Cauchy point search. Stores the manifold `M`, cached
-workspace (`d_tmp`), the quasi-Newton direction update `ha`, and the
-``f'``/``f''`` updater `fpfpp_updater`. Instances are reused across segments during
-`find_generalized_cauchy_point_direction!` to avoid allocations.
+workspace (`d_tmp`), the quasi-Newton direction update `ha`, and the `hessian_segment_updater`,
+which computes certain values of the Hessian while advancing segments.
+Instances are reused across segments during `find_generalized_cauchy_point_direction!` to
+avoid allocations.
 """
-struct GeneralizedCauchyPointFinder{TM <: AbstractManifold, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
+struct GeneralizedCauchyPointFinder{TM <: AbstractManifold, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
     M::TM
     d_tmp::TX
     ha::T_HA
-    fpfpp_updater::TFU
+    hessian_segment_updater::TFU
 end
 
 function GeneralizedCauchyPointFinder(
         M::AbstractManifold, p, ha::AbstractQuasiNewtonDirectionUpdate;
-        fpfpp_updater::AbstractFPFPPUpdater = get_default_fpfpp_updater(M, p, ha)
+        hessian_segment_updater::AbstractSegmentHessianUpdater = get_default_hessian_segment_updater(M, p, ha)
     )
-    return GeneralizedCauchyPointFinder(M, zero_vector(M, p), ha, fpfpp_updater)
+    return GeneralizedCauchyPointFinder(M, zero_vector(M, p), ha, hessian_segment_updater)
 end
 
 """
@@ -603,13 +610,16 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFin
     t_current, b = pop!(F)
     dt = t_current - t_old
 
-    init_updater!(M, gcp.fpfpp_updater, p, d_tmp, gcp.ha)
+    init_updater!(M, gcp.hessian_segment_updater, p, d_tmp, gcp.ha)
     # b can be -1 if it corresponds to the max stepsize limit on the manifold part
     while dt_min > dt && b != -1
         db = get_at_bound_index(M, d_tmp, b)
         gb = get_at_bound_index(M, X, b)
 
-        f_prime, f_double_prime = gcp.fpfpp_updater(M, p, f_prime, f_double_prime, t_current, dt, db, gb, gcp.ha, b, d_tmp)
+        hv_eb_dz, hv_eb_d = gcp.hessian_segment_updater(M, p, t_current, dt, db, gcp.ha, b, d_tmp)
+
+        f_prime += dt * f_double_prime - db * (gb + hv_eb_dz)
+        f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_eb(gcp.ha, M, p, b)
 
         set_zero_at_index!(M, d_tmp, b)
 

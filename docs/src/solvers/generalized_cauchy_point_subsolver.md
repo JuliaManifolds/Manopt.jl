@@ -40,8 +40,8 @@ These are internal symbols used to manage and manipulate bound constraints durin
 
 ```@docs
 Manopt.init_updater!
-Manopt.AbstractFPFPPUpdater
-Manopt.GenericFPFPPUpdater
+Manopt.AbstractSegmentHessianUpdater
+Manopt.GenericSegmentHessianUpdater
 Manopt.get_bounds_index
 Manopt.get_bound_t
 Manopt.get_at_bound_index
@@ -52,7 +52,7 @@ Manopt.set_zero_at_index!
 ### Symbols related to specific Hessian approximations
 
 ```@docs
-Manopt.LimitedMemoryFPFPPUpdater
+Manopt.LimitedMemorySegmentHessianUpdater
 Manopt.hessian_value_from_wmwt_coords
 Manopt.set_M_current_scale!
 ```
