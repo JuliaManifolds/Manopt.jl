@@ -547,11 +547,11 @@ _doc_get_jacobian_matrix_vgf = """
     get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p; kwargs...)
     get_jacobian!(M::AbstractManifold, J, vgf::AbstractVectorGradientFunction, p; kwargs...)
 
-Compute the Jacobian ``J_F ∈ ℝ^{m×n}`` in matrix form of an [`AbstractVectorGradientFunction`](@ref) ``F: $(_math(:M)) → ℝ^m`` at `p` on the `M`
-with respect to a certain basis of the tangent space ``$(_math(:TpM))``.
+Compute the Jacobian ``J_F ∈ ℝ^{m×n}`` in matrix form of an [`AbstractVectorGradientFunction`](@ref) ``F: $(_math(:Manifold)) → ℝ^m`` at `p` on the `M`
+with respect to a certain basis of the tangent space ``$(_math(:TangentSpace))``.
 Denote this basis by ``Y_1,…,Y_n``, where `n` is the $(_link(:manifold_dimension)).
 Then we can write any tangent vector ``X = $(_tex(:displaystyle))$(_tex(:sum))_i c_iY_i``
-and the Jacobian describes the linear map ``DF(p): $(_math(:TpM)) → ℝ^m`` as a matrix i.e.
+and the Jacobian describes the linear map ``DF(p): $(_math(:TangentSpace)) → ℝ^m`` as a matrix i.e.
 
 ````math
 DF(p)[X] = J_F(p) c.
@@ -858,7 +858,7 @@ To be precise, the adjoint Jacobian is defined using the Riemannian gradients of
 ``F_i`` of ``F`` as
 
 ````math
-J_F^*(p): ℝ^m → $(_math(:TpM)),
+J_F^*(p): ℝ^m → $(_math(:TangentSpace)),
 $(_tex(:qquad))
 J_F^*(p)[a] = $(_tex(:sum, "i=1", "m")) a_i $(_tex(:grad))F_i(p),
 ````
