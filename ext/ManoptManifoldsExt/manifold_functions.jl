@@ -201,12 +201,12 @@ end
 
 
 """
-    Manopt.set_zero_bound_at_index!(M::Hyperrectangle, d, i)
+    Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
 
 Set element of tangent vector `d` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle)
 at index `i` to 0.
 """
-function Manopt.set_zero_bound_at_index!(M::Hyperrectangle, d, i)
+function Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
     d[i] = 0
     return d
 end

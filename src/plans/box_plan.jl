@@ -483,12 +483,12 @@ function get_bound_t(M::ProductManifold, p, d, i)
 end
 
 """
-    set_zero_bound_at_index!(M::ProductManifold, d, i)
+    set_zero_at_index!(M::ProductManifold, d, i)
 
 Set the element of the first component of `d` at bound index `i` to zero.
 """
-function set_zero_bound_at_index!(M::ProductManifold, d, i)
-    set_zero_bound_at_index!(M.manifolds[1], submanifold_component(M, d, Val(1)), i)
+function set_zero_at_index!(M::ProductManifold, d, i)
+    set_zero_at_index!(M.manifolds[1], submanifold_component(M, d, Val(1)), i)
     return d
 end
 
@@ -611,7 +611,7 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFin
 
         f_prime, f_double_prime = gcp.fpfpp_updater(M, p, f_prime, f_double_prime, t_current, dt, db, gb, gcp.ha, b, d_tmp)
 
-        set_zero_bound_at_index!(M, d_tmp, b)
+        set_zero_at_index!(M, d_tmp, b)
 
         t_old = t_current
 
