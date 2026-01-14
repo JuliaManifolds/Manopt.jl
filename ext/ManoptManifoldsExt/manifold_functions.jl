@@ -199,37 +199,35 @@ function reflect!(
     return retract!(M, q, p, X, retraction_method)
 end
 
-"""
-    Manopt.set_bound_t_at_index!(::Hyperrectangle, p_cp, t, d, i)
-
-Advance the point `p_cp` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) along direction `d` by stepsize `t`
-only at index `i`. Used while searching for a bound during generalized Cauchy point updates.
-"""
-function Manopt.set_bound_t_at_index!(::Hyperrectangle, p_cp, t, d, i)
-    p_cp[i] += t * d[i]
-    return p_cp
-end
 
 """
-    Manopt.set_bound_at_index!(M::Hyperrectangle, p_cp, d, i)
+    Manopt.set_zero_bound_at_index!(M::Hyperrectangle, d, i)
 
-Set element of point `p_cp` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) at index `i` to the
-corresponding lower or upper bound of `M` depending on the sign of direction `d` and set
-that direction entry to 0.
+Set element of tangent vector `d` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle)
+at index `i` to 0.
 """
-function Manopt.set_bound_at_index!(M::Hyperrectangle, p_cp, d, i)
-    p_cp[i] = d[i] > 0 ? M.ub[i] : M.lb[i]
+function Manopt.set_zero_bound_at_index!(M::Hyperrectangle, d, i)
     d[i] = 0
-    return p_cp
+    return d
 end
 
 """
-    Manopt.bound_direction_tweak!(::Hyperrectangle, d_out, d, p, p_cp)
+    Manopt.set_bound_for_t!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real, t_old::Real)
 
-Set `d_out` to the difference between `p_cp` and `p`.
+For each index `i`, set element of tangent vector `d_out` on
+[`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M` according to the following rule:
+- if `t[i] >= t_current`, multiply `d_out[i]` by `t_old`;
+- else, set `d_out[i]` to the distance from `p[i]` to the bound in the direction of `d_out[i]`.
 """
-function Manopt.bound_direction_tweak!(::Hyperrectangle, d_out, d, p, p_cp)
-    return d_out .= p_cp .- p
+function Manopt.set_bound_for_t!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real, t_old::Real)
+    for i in eachindex(M.lb)
+        if ts[i] >= t_current
+            d_out[i] *= t_old
+        else
+            d_out[i] = d_out[i] > 0 ? M.ub[i] - p[i] : M.lb[i] - p[i]
+        end
+    end
+    return d_out
 end
 
 """

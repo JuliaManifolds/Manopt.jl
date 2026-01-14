@@ -481,44 +481,44 @@ get_bound_t(M::AbstractManifold, p, d, i)
 function get_bound_t(M::ProductManifold, p, d, i)
     return get_bound_t(M.manifolds[1], submanifold_component(M, p, Val(1)), submanifold_component(M, d, Val(1)), i)
 end
-function set_bound_t_at_index!(M::ProductManifold, p_cp, t, d, i)
-    set_bound_t_at_index!(M.manifolds[1], submanifold_component(M, p_cp, Val(1)), t, d, i)
-    return p_cp
-end
 
-function set_bound_at_index!(M::ProductManifold, p_cp, d, i)
-    set_bound_at_index!(M.manifolds[1], submanifold_component(M, p_cp, Val(1)), submanifold_component(M, d, Val(1)), i)
-    return p_cp
-end
-
-@doc raw"""
-    bound_direction_tweak!(M::ProductManifold, d_out, d, p, p_cp)
-
-Set `d_out .= p_cp .- p` on the `Hyperrectangle` part of the `ProductManifold` `M`.
-
-Return the mutated `d_out`.
 """
-function bound_direction_tweak!(M::ProductManifold, d_out, d, p, p_cp)
-    bound_direction_tweak!(
+    set_zero_bound_at_index!(M::ProductManifold, d, i)
+
+Set the element of the first component of `d` at bound index `i` to zero.
+"""
+function set_zero_bound_at_index!(M::ProductManifold, d, i)
+    set_zero_bound_at_index!(M.manifolds[1], submanifold_component(M, d, Val(1)), i)
+    return d
+end
+
+"""
+    Manopt.set_bound_for_t!(M::ProductManifold, d_out, p, ts::Dict, t_current::Real, t_old::Real)
+
+Set `d_out` so that it points from `p` to the generalized Cauchy point given times to
+bounds `ts`.
+"""
+function set_bound_for_t!(
+        M::ProductManifold, d_out, p, ts::Dict, t_current::Real, t_old::Real
+    )
+    set_bound_for_t!(
         M.manifolds[1], submanifold_component(M, d_out, Val(1)),
-        submanifold_component(M, d, Val(1)), submanifold_component(M, p, Val(1)),
-        submanifold_component(M, p_cp, Val(1))
+        submanifold_component(M, p, Val(1)), ts, t_current, t_old
     )
     return d_out
 end
-
 
 @doc raw"""
     GeneralizedCauchyPointFinder{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
 
 Helper container for generalized Cauchy point search. Stores the manifold `M`, cached
-workspace (`p_cp`), the quasi-Newton direction update `ha`, and the
+workspace (`d_tmp`), the quasi-Newton direction update `ha`, and the
 ``f'``/``f''`` updater `fpfpp_updater`. Instances are reused across segments during
 `find_generalized_cauchy_point_direction!` to avoid allocations.
 """
-struct GeneralizedCauchyPointFinder{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
+struct GeneralizedCauchyPointFinder{TM <: AbstractManifold, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractFPFPPUpdater}
     M::TM
-    p_cp::TP
+    d_tmp::TX
     ha::T_HA
     fpfpp_updater::TFU
 end
@@ -527,7 +527,7 @@ function GeneralizedCauchyPointFinder(
         M::AbstractManifold, p, ha::AbstractQuasiNewtonDirectionUpdate;
         fpfpp_updater::AbstractFPFPPUpdater = get_default_fpfpp_updater(M, p, ha)
     )
-    return GeneralizedCauchyPointFinder(M, copy(M, p), ha, fpfpp_updater)
+    return GeneralizedCauchyPointFinder(M, zero_vector(M, p), ha, fpfpp_updater)
 end
 
 """
@@ -545,15 +545,15 @@ The function returns
 """
 function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFinder, d_out, p, d, X)
     M = gcp.M
-    copyto!(M, gcp.p_cp, p)
-    p_cp = gcp.p_cp
     copyto!(M, d_out, d)
+    d_tmp = gcp.d_tmp
+    copyto!(M, d_tmp, d)
 
     bounds_indices = get_bounds_index(M)
     TInd = eltype(bounds_indices)
     TF = number_eltype(d)
 
-    t = Dict{TInd, TF}((k, Inf) for k in bounds_indices)
+    ts = Dict{TInd, TF}((k, Inf) for k in bounds_indices)
 
     F_list = Tuple{TF, TInd}[]
     sizehint!(F_list, length(bounds_indices) + 1)
@@ -561,12 +561,12 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFin
     has_finite_limit = false
 
     for i in bounds_indices
-        t[i] = get_bound_t(M, p, d, i)
+        ts[i] = get_bound_t(M, p, d, i)
 
-        if t[i] > 0
-            push!(F_list, (t[i], i))
+        if ts[i] > 0
+            push!(F_list, (ts[i], i))
         end
-        has_finite_limit |= isfinite(t[i])
+        has_finite_limit |= isfinite(ts[i])
     end
 
     if M isa ProductManifold
@@ -603,15 +603,15 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFin
     t_current, b = pop!(F)
     dt = t_current - t_old
 
-    init_updater!(M, gcp.fpfpp_updater, p, d, gcp.ha)
+    init_updater!(M, gcp.fpfpp_updater, p, d_tmp, gcp.ha)
     # b can be -1 if it corresponds to the max stepsize limit on the manifold part
     while dt_min > dt && b != -1
-        db = get_at_bound_index(M, d, b)
+        db = get_at_bound_index(M, d_tmp, b)
         gb = get_at_bound_index(M, X, b)
 
-        f_prime, f_double_prime = gcp.fpfpp_updater(M, p, f_prime, f_double_prime, t_current, dt, db, gb, gcp.ha, b, d)
+        f_prime, f_double_prime = gcp.fpfpp_updater(M, p, f_prime, f_double_prime, t_current, dt, db, gb, gcp.ha, b, d_tmp)
 
-        set_bound_at_index!(M, p_cp, d, b)
+        set_zero_bound_at_index!(M, d_tmp, b)
 
         t_old = t_current
 
@@ -631,13 +631,8 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFin
 
     dt_min = max(dt_min, 0.0)
     t_old = t_old + dt_min
-    for i in bounds_indices
-        if t[i] >= t_current
-            set_bound_t_at_index!(M, p_cp, t_old, d, i)
-        end
-    end
 
-    bound_direction_tweak!(M, d_out, d, p, p_cp)
+    set_bound_for_t!(M, d_out, p, ts, t_current, t_old)
 
     if has_finite_limit
         return :found_limited

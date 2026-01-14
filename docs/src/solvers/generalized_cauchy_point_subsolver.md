@@ -44,10 +44,8 @@ Manopt.AbstractFPFPPUpdater
 Manopt.GenericFPFPPUpdater
 Manopt.get_bounds_index
 Manopt.get_bound_t
-Manopt.bound_direction_tweak!
-Manopt.set_bound_t_at_index!
 Manopt.get_at_bound_index
-Manopt.set_bound_at_index!
+Manopt.set_zero_bound_at_index!
 ```
 
 ### Symbols related to specific Hessian approximations
