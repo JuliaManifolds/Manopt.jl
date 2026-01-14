@@ -16,7 +16,7 @@ The second block of signatures perform the optimization in-place of `p`.
 # Input
 
 $(_args(:M))
-* `f`: a cost function ``f: $(_math(:Manifold))nifold))nifold)))→ℝ^m``.
+* `f`: a cost function ``f: $(_math(:Manifold))→ℝ^m``.
   The cost function can be provided in two different ways
     * as a single function returning a vector ``f(p) ∈ ℝ^m``
     * as a vector of functions, where each single function returns a scalar ``f_i(p) ∈ ℝ``

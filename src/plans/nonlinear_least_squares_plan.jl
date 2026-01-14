@@ -814,7 +814,7 @@ Then we have  ``y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p)``.
 
 and ``$(_tex(:Cal, "L")) = CJ_F^*(p)[X]`` is a linear operator using the adjoint of the Jacobian and
 ```math
-C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2")*"^2")),
+C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2") * "^2")),
 ```
 
 ## Fields
@@ -848,7 +848,7 @@ Then we have  ``y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p)``.
 
 and ``$(_tex(:Cal, "L")) = CJ_F^*(p)[X]`` is a linear operator using the adjoint of the Jacobian and
 ```math
-C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2")*"^2")),
+C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2") * "^2")),
 ```
 
 ## Fields
