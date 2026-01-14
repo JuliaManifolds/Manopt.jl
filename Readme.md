@@ -40,7 +40,7 @@ and then checkout the [🏔️ Get started with Manopt.jl](https://manoptjl.org/
 
 You can also watch an introduction given at JuliaCon 2022
 
-[<img src ="https://img.youtube.com/vi/thbekfsyhCE/maxresdefault.jpg" style="width:75%; align:center;">](https://youtu.be/thbekfsyhCE)
+[<img src ="https://img.youtube.com/vi/thbekfsyhCE/maxresdefault.jpg" style="width:66%; align:center;">](https://youtu.be/thbekfsyhCE)
 
 ## Related packages
 
