@@ -42,6 +42,9 @@ You can also watch an introduction given at JuliaCon 2022
 
 [<img src ="https://img.youtube.com/vi/thbekfsyhCE/maxresdefault.jpg" style="width:66%; align:center;">](https://youtu.be/thbekfsyhCE)
 
+or look at the slides from the presentation [here](https://ronnybergmann.net/talks/2022-JuliaCon-Manoptjl-extended.pdf).
+
+
 ## Related packages
 
 Manopt.jl is based on [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/),
