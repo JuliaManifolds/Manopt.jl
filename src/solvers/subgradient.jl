@@ -5,11 +5,10 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 # Fields
 
-$(_var(:Field, :p; add = [:as_Iterate]))
+$(_fields(:p; add_properties = [:as_Iterate]))
 * `p_star`: optimal value
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :stepsize))
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields([:retraction_method, :stepsize]))
+$(_fields(:stopping_criterion; name = "stop"))
 * `X`: the current element from the possible subgradients at `p` that was last evaluated.
 
 # Constructor
@@ -20,11 +19,11 @@ Initialise the Subgradient method state
 
 # Keyword arguments
 
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :p; add = :as_Initial))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, SubGradientMethodState)`"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(5000)`"))
-$(_var(:Keyword, :X; add = :as_Memory))
+$(_kwargs(:retraction_method))
+$(_kwargs(:p; add_properties = [:as_Initial]))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`SubGradientMethodState`](@ref)`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(5000)"))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct SubGradientMethodState{
         TR <: AbstractRetractionMethod, TS <: Stepsize, TSC <: StoppingCriterion, P, T,
@@ -100,20 +99,17 @@ For more details see [FerreiraOliveira:1998](@cite).
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-* `∂f`: the (sub)gradient ``∂ f: $(_math(:M)) → T$(_math(:M))`` of ``f``
-$(_var(:Argument, :p))
+$(_args([:M, :f, :subgrad_f, :p]))
 
 alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` can be provided.
 
 # Keyword arguments
 
-$(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, SubGradientMethodState)`"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(5000)`"))
-$(_var(:Keyword, :X; add = :as_Memory))
+$(_kwargs(:evaluation))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`SubGradientMethodState`](@ref)`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(5000)"))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 

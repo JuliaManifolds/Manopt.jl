@@ -2,7 +2,7 @@ _doc_IPN_subsystem = """
 ```math
   $(_tex(:operatorname, "J")) F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
   $(_tex(:text, " where "))
-  X ∈ $(_math(:TpM)), Y,W ∈ ℝ^m, Z ∈ ℝ^n
+  X ∈ $(_math(:TangentSpace))), Y,W ∈ ℝ^m, Z ∈ ℝ^n
 ```
 """
 _doc_IPN = """
@@ -38,11 +38,7 @@ the constraints are further fulfilled.
 
 # Input
 
-$(_var(:Argument, :M))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
-$(_var(:Argument, :Hess_f))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :grad_f, :Hess_f, :p]))
 
 or a [`ConstrainedManifoldObjective`](@ref) `cmo` containing `f`, `grad_f`, `Hess_f`, and the constraints
 
@@ -55,7 +51,7 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
   This can be used to ensure that the resulting iterate is still an interior point if you provide a check `(N,q) -> true/false`,
   where `N` is the manifold of the `step_problem`.
 * `equality_constraints=nothing`: the number ``n`` of equality constraints.
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `g=nothing`: the inequality constraints
 * `grad_g=nothing`: the gradient of the inequality constraints
 * `grad_h=nothing`: the gradient of the equality constraints
@@ -68,16 +64,17 @@ $(_var(:Keyword, :evaluation))
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
 * `λ=ones(length(h(M, p)))`: the Lagrange multiplier with respect to the equality constraints ``h``
 * `μ=ones(length(g(M, p)))`: the Lagrange multiplier with respect to the inequality constraints ``g``
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:retraction_method))
 * `ρ=μ's / length(μ)`:  store the orthogonality `μ's/m` to compute the barrier parameter `β` in the sub problem.
 * `s=copy(μ)`: initial value for the slack variables
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`:  scaling factor for the barrier parameter `β` in the sub problem, which is updated during the iterations
 * `step_objective`: a [`ManifoldGradientObjective`](@ref) of the norm of the KKT vector field [`KKTVectorFieldNormSq`](@ref) and its gradient [`KKTVectorFieldNormSqGradient`](@ref)
-* `step_problem`: the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
+* `step_problem`: the manifold ``$(_math(:Manifold))nifold))) × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
   as the problem the linesearch `stepsize=` employs for determining a step size
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
-$(_var(:Keyword, :stepsize; default = "[`ArmijoLinesearch`](@ref)`()`", add = " with the `centrality_condition` keyword as additional criterion to accept a step, if this is provided"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-8)`"))
+$(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
+  with the `centrality_condition` keyword as additional criterion to accept a step, if this is provided"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-8)"))
   a stopping criterion, by default depending on the residual of the KKT vector field or a maximal number of steps, which ever hits first.
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_objective`: The [`SymmetricLinearSystemObjective`](@ref) modelling the system of equations to use in the sub solver,
@@ -85,8 +82,8 @@ $(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(2
   $(_note(:KeywordUsedIn, "sub_problem"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(manifold_dimension(M))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`, where ``c = $(_tex(:norm, "b"))`` from the system to solve.
   $(_note(:KeywordUsedIn, "sub_state"))
-$(_var(:Keyword, :sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
-$(_var(:Keyword, :sub_state; default = "[`ConjugateResidualState`](@ref)"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
+$(_kwargs(:sub_state; default = "`[`ConjugateResidualState`](@ref)` "))
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`:
   the initial gradient with respect to `p`.

@@ -18,8 +18,7 @@ The initial step selection from Linesearches.jl is not yet supported and the val
 
 # Keyword Arguments
 
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs([:retraction_method, :vector_transport_method]))
 """
 mutable struct LineSearchesStepsize{
         TLS, TIG <: AbstractInitialLinesearchGuess, TRM <: AbstractRetractionMethod, TVTM <: AbstractVectorTransportMethod, TF <: Real,

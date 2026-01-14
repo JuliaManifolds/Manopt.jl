@@ -31,24 +31,24 @@ computing the gradient step.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f; add = "total cost function `f = g + h`"))
+$(_args([:M, :f]))
+  total cost function ``f = g + h``
 * `g`:              the smooth part of the cost function
 * `grad_g`:           a gradient `(M,p) -> X` or `(M, X, p) -> X` of the smooth part ``g`` of the problem
-$(_var(:Argument, :p))
+$(_args(:p))
 
-# Keyword Arguments
+# Keyword arguments
 
 * `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step - the default is to copy the current point to the acceleration point, i.e. no acceleration is performed
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `prox_nonsmooth`:          a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the (possibly) nonsmoooth part ``h`` of ``f``
-$(_var(:Argument, :p))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, ProximalGradientMethodState)`")) that by default uses a [`ProximalGradientMethodBacktracking`](@ref).
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(100)`"))
-$(_var(:Keyword, :sub_problem, "sub_problem", "Union{AbstractManoptProblem, F, Nothing}"; default = "nothing", add = "or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)"))
-$(_var(:Keyword, :sub_state; default = "evaluation", add = "This field is ignored, if the `sub_problem` is `Nothing`"))
-$(_var(:Keyword, :X; add = :as_Gradient))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ProximalGradientMethodState`](@ref)`)"))
+  that by default uses a [`ProximalGradientMethodBacktracking`](@ref).
+$(_kwargs(:retraction_method))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
+$(_kwargs(:sub_problem, "sub_problem", "Union{AbstractManoptProblem, F, Nothing}"; default = "nothing"))
+  or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
+$(_kwargs(:sub_state; default = "evaluation")). This field is ignored, if the `sub_problem` is `Nothing`.
 
 $(_note(:OtherKeywords))
 

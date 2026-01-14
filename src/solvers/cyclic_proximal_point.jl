@@ -24,19 +24,19 @@ perform a cyclic proximal point algorithm. This can be done in-place of `p`.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-* `f`:        a cost function ``f: $(_math(:M))→ℝ`` to minimize
+$(_args(:M))
+* `f`:        a cost function ``f: $(_math(:Manifold))nifold)))→ℝ`` to minimize
 * `proxes_f`: an Array of proximal maps (`Function`s) `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the summands of ``f`` (see `evaluation`)
 
 where `f` and the proximal maps `proxes_f` can also be given directly as a [`ManifoldProximalMapObjective`](@ref) `mpo`
 
 # Keyword arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Random`) or the default linear one.
 * `λ=iter -> 1/iter`:         a function returning the (square summable but not summable) sequence of ``λ_i``
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)"))
 
 $(_note(:OtherKeywords))
 

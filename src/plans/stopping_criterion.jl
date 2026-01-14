@@ -222,14 +222,11 @@ For the storage a [`StoreStateAction`](@ref) is used.
 # Fields
 
 
-$(_var(:Field, :at_iteration))
-$(_var(:Field, :last_change))
-$(_var(:Field, :inverse_retraction_method))
-$(_var(:Field, :storage))
+$(_fields([:at_iteration, :last_change, :inverse_retraction_method, :storage]))
 * `at_iteration::Int`: indicate at which iteration this stopping criterion was last active.
 * `inverse_retraction`: An [`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) that can be passed
   to approximate the distance by this inverse retraction and a norm on the tangent space.
-  This can be used if neither the distance nor the logarithmic map are availannle on `M`.
+  This can be used if neither the distance nor the logarithmic map are available on `M`.
 * `last_change`: store the last change
 * `storage`: A [`StoreStateAction`](@ref) to access the previous iterate.
 * `threshold`: the threshold for the change to check (run under to stop)
@@ -239,9 +236,9 @@ $(_var(:Field, :storage))
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:M))``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold))nifold))) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold)))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold)))``
 is given by
 
 ```math
@@ -351,8 +348,7 @@ end
 A stopping criterion to stop when the change of the cost function is less than a certain threshold.
 
 # Fields
-$(_var(:Field, :at_iteration))
-$(_var(:Field, :last_change))
+$(_fields([:at_iteration, :last_change]))
 * `last_cost``: the last cost value
 
 # Constructor
@@ -559,10 +555,7 @@ A stopping criterion based on the change of the gradient.
 
 # Fields
 
-$(_var(:Field, :at_iteration))
-$(_var(:Field, :last_change))
-$(_var(:Field, :vector_transport_method))
-$(_var(:Field, :storage))
+$(_fields([:at_iteration, :last_change, :vector_transport_method, :storage]))
 * `threshold`: the threshold for the change to check (run under to stop)
 * `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
   that is used to compute the overall distance based on the element-wise distance.
@@ -570,9 +563,9 @@ $(_var(:Field, :storage))
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradien ``X,Y ∈ $(_math(:M))``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold))) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold)))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradien ``X,Y ∈ $(_math(:Manifold)))``
 is given by
 
 ```math
@@ -699,9 +692,9 @@ A stopping criterion based on the current gradient norm.
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:M))``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold))) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold)))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:Manifold)))``
 is given by
 
 ```math

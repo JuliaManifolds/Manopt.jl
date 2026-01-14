@@ -43,7 +43,7 @@ $(_problem(:NonLinearLeastSquares))
 
 # Arguments
 
-* `f` the vectorial cost function ``f: $(_math(:M)) → ℝ^m`` or a vector of these
+* `f` the vectorial cost function ``f: $(_math(:Manifold)) → ℝ^m``
 * `jacobian` the Jacobian, might also be a vector of gradients of the component functions of `f`
 * `range_dimension::Integer` the number of dimensions `m` the function `f` maps into
 
@@ -54,7 +54,7 @@ These three can also be passed as a [`AbstractVectorGradientFunction`](@ref) `vf
 
 # Keyword arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 
 As well as for the first variant
 
@@ -634,11 +634,11 @@ Describes a Gradient based descent algorithm, with
 
 A default value is given in brackets if a parameter can be left out in initialization.
 
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :retraction_method))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:retraction_method))
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
 * `candidate_residual_values`: value of ``F`` for the current proposal point
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:stopping_criterion; name = "stop"))
 * `jacobian`:                 the current Jacobian of ``F``
 * `gradient`:             the current gradient of ``F``
 * `step_vector`:          the tangent vector at `x` that is used to move to the next point
@@ -670,8 +670,8 @@ The following fields are keyword arguments
 * `η=0.2`,
 * `expect_zero_residual=false`
 * `initial_gradient=`$(_link(:zero_vector))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)`"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
 
 # See also
 

@@ -3,7 +3,7 @@
 
 Specify an objective for a [`difference_of_convex_algorithm`](@ref).
 
-The objective ``f: $(_math(:M)) → ℝ`` is given as
+The objective ``f: $(_math(:Manifold))nifold))) → ℝ`` is given as
 
 ```math
     f(p) = g(p) - h(p)
@@ -15,7 +15,7 @@ Furthermore the subdifferential ``∂h`` of ``h`` is required.
 # Fields
 
 * `cost`: an implementation of ``f(p) = g(p)-h(p)`` as a function `f(M,p)`.
-* `∂h!!`: a deterministic version of ``∂h: $(_math(:M)) → T$(_math(:M))``,
+* `∂h!!`: a deterministic version of ``∂h: $(_math(:Manifold))→ T$(_math(:Manifold)))``,
   in the sense that calling `∂h(M, p)` returns a subgradient of ``h`` at `p` and
   if there is more than one, it returns a deterministic choice.
 
@@ -247,7 +247,7 @@ Specify an objective [`difference_of_convex_proximal_point`](@ref) algorithm.
 The problem is of the form
 
 ```math
-    $(_tex(:argmin))_{p∈$(_math(:M))} g(p) - h(p)
+    $(_tex(:argmin))_{p∈$(_math(:Manifold))} g(p) - h(p)
 ```
 
 where both ``g`` and ``h`` are convex, lower semicontinuous and proper.
@@ -256,7 +256,7 @@ where both ``g`` and ``h`` are convex, lower semicontinuous and proper.
 
 * `cost`:     implementation of ``f(p) = g(p)-h(p)``
 * `gradient`: the gradient of the cost
-* `grad_h!!`: a function ``$(_tex(:grad))h: $(_math(:M)) → T$(_math(:M))``,
+* `grad_h!!`: a function ``$(_tex(:grad))h: $(_math(:Manifold))) → T$(_math(:Manifold)))``,
 
 Note that both the gradients might be given in two possible signatures
 as allocating or in-place.
@@ -373,7 +373,7 @@ A functor `(M, p) → ℝ` to represent the inner cost function of a [`ManifoldD
 This is the cost function of the proximal map of `g`.
 
 ```math
-    F_{p_k}(p) = $(_tex(:frac, "1", "2λ"))d_{$(_math(:M))}(p_k,p)^2 + g(p)
+    F_{p_k}(p) = $(_tex(:frac, "1", "2λ"))d_{$(_math(:Manifold)))}(p_k,p)^2 + g(p)
 ```
 
 for a point `pk` and a proximal parameter ``λ``.
@@ -415,7 +415,7 @@ A functor `(M,X,p) → ℝ` to represent the gradient of the inner cost function
 This is the gradient function of the proximal map cost function of `g`. Based on
 
 ```math
-    F_{p_k}(p) = $(_tex(:frac, "1", "2λ}d_{$(_math(:M))"))(p_k,p)^2 + g(p)
+    F_{p_k}(p) = $(_tex(:frac, "1", "2λ}d_{$(_math(:Manifold)))"))(p_k,p)^2 + g(p)
 ```
 
 it reads

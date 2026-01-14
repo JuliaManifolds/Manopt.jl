@@ -10,19 +10,20 @@ Describes a particle swarm optimizing algorithm, with
 
 * `cognitive_weight`: a cognitive weight factor
 * `inertia`:          the inertia of the particles
-$(_var(:Field, :inverse_retraction_method))
-$(_var(:Field, :retraction_method))
+$(_fields([:inverse_retraction_method, :retraction_method]))
 * `social_weight`:    a social weight factor
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :vector_transport_method))
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields(:vector_transport_method))
 * `velocity`:         a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles
 
 # Internal and temporary fields
 
 * `cognitive_vector`: temporary storage for a tangent vector related to `cognitive_weight`
-$(_var(:Field, :p; add = " storing the best point visited by all particles"))
+$(_fields(:p))
+  storing the best point visited by all particles
 * `positional_best`:  storing the best position ``p_i`` every single swarm participant visited
-$(_var(:Field, :p, "q"; add = " serving as temporary storage for interims results; avoids allocations"))
+$(_fields(:p; name = "q"))
+  serving as temporary storage for interims results; avoids allocations
 * `social_vec`:       temporary storage for a tangent vector related to `social_weight`
 * `swarm`:            a set of points (of type `AbstractVector{P}`) on a manifold ``$(_math(:Sequence, "a", "i", "1", "N"))``
 
@@ -37,11 +38,10 @@ The `p` used in the following defaults is the type of one point from the swarm.
 
 * `cognitive_weight=1.4`
 * `inertia=0.65`
-$(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :retraction_method))
+$(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `social_weight=1.4`
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)`"))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)"))
+$(_kwargs(:vector_transport_method))
 
 # See also
 
@@ -198,7 +198,7 @@ To this end, a swarm $_doc_swarm of particles is moved around the manifold `M` i
 For every particle ``s_k^{(i)}`` the new particle velocities ``X_k^{(i)}`` are computed in every step ``i`` of the algorithm by
 
 ```math
-X_k^{(i)} = ω $(_math(:vector_transport, :symbol, "s_k^{(i)", "s_k^{(i-1)}")) X_k^{(i-1)} + c r_1  $(_tex(:invretr))_{s_k^{(i)}}(p_k^{(i)}) + s r_2 $(_tex(:invretr))_{s_k^{(i)}}(p),
+X_k^{(i)} = ω $(_math(:VectorTransport, "s_k^{(i)", "s_k^{(i-1)}")) X_k^{(i-1)} + c r_1  $(_tex(:invretr))_{s_k^{(i)}}(p_k^{(i)}) + s r_2 $(_tex(:invretr))_{s_k^{(i)}}(p),
 ```
 
 
@@ -207,7 +207,7 @@ where
 * ``ω`` denotes the inertia,
 * ``c`` and ``s`` are a cognitive and a social weight, respectively,
 * ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step
-* $(_math(:vector_transport, :symbol)) is a vector transport, and
+* $(_math(:VectorTransport)) is a vector transport, and
 * $(_tex(:invretr)) is an inverse retraction
 
 Then the position of the particle is updated as
@@ -224,8 +224,7 @@ $_doc_swarm_global_best
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
+$(_args([:M, :f]))
 * `swarm = [rand(M) for _ in 1:swarm_size]`: an initial swarm of points.
 
 Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObjective`](@ref) `mco`.
@@ -234,12 +233,11 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 
 * `cognitive_weight=1.4`: a cognitive weight factor
 * `inertia=0.65`: the inertia of the particles
-$(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :retraction_method))
+$(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `social_weight=1.4`: a social weight factor
 * `swarm_size=100`: swarm size, if it should be generated randomly
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)`"))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)"))
+$(_kwargs(:vector_transport_method))
 * `velocity`:                  a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position
 
 $(_note(:OtherKeywords))

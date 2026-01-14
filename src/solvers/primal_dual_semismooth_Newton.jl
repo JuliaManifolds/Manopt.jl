@@ -14,10 +14,10 @@ Perform the Primal-Dual Riemannian semismooth Newton algorithm.
 
 $(_doc_PDSN_formula)
 
-* `p, X`:                          primal and dual start points ``p∈$(_math(:M))`` and ``X ∈ T_n$(_tex(:Cal, "N"))``
-* `m,n`:                           base points on ``$(_math(:M))`` and ``$(_tex(:Cal, "N"))``, respectively.
+* `p, X`:                          primal and dual start points ``p∈$(_math(:Manifold))nifold))nifold))nifold))`` and ``X ∈ T_n$(_tex(:Cal, "N"))``
+* `m,n`:                           base points on ``$(_math(:Manifold)))`` and ``$(_tex(:Cal, "N"))``, respectively.
 * `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_math(:TpM; p = "m")) → $(_math(:TpM; M = "N", p = "Λ(m)"))``
+* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_math(:TangentSpace; p = "m")) → $(_math(:TangentSpace; M = "N", p = "Λ(m)"))``
 * `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 * `diff_prox_F, diff_prox_dual_G`: the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
@@ -26,18 +26,17 @@ For more details on the algorithm, see [DiepeveenLellmann:2021](@cite).
 # Keyword arguments
 
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
-$(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :inverse_retraction_method))
+$(_kwargs([:evaluation, :inverse_retraction_method]))
 * `Λ=missing`: the exact operator, that is required if `Λ(m)=n` does not hold;
   `missing` indicates, that the forward operator is exact.
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
 * `reg_param=1e-5`: regularisation parameter for the Newton matrix
   Note that this changes the arguments the `forward_operator` is called.
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(50)`"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:OtherKeywords))
 
