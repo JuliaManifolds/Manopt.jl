@@ -367,7 +367,7 @@ Calculate Hessian values ``⟨e_b, B d_z⟩`` and ``⟨e_b, B d⟩`` for the gen
 point line search using the generic approach via `hessian_value_eb`.
 ``d_z`` start with 0 and is updated in-place by adding `dt * d` to it.
 """
-function (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, db, ha, b, d)
+function (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha, d)
     upd.d_z .+= dt .* d
     hv_eb_dz = hessian_value_eb(ha, M, p, b, upd.d_z)
     hv_eb_d = hessian_value_eb(ha, M, p, b, d)
@@ -431,7 +431,7 @@ evaluate Hessian quadratic forms via `hessian_value_from_wmwt_coords`.
 """
 function (hessian_segment_updater::LimitedMemorySegmentHessianUpdater)(
         M::AbstractManifold, p,
-        t::Real, dt::Real, db, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, d
+        t::Real, dt::Real, b, db, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, d
     )
 
     m = length(ha.qn_du.memory_s)
@@ -616,7 +616,7 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFin
         db = get_at_bound_index(M, d_tmp, b)
         gb = get_at_bound_index(M, X, b)
 
-        hv_eb_dz, hv_eb_d = gcp.hessian_segment_updater(M, p, t_current, dt, db, gcp.ha, b, d_tmp)
+        hv_eb_dz, hv_eb_d = gcp.hessian_segment_updater(M, p, t_current, dt, b, db, gcp.ha, d_tmp)
 
         f_prime += dt * f_double_prime - db * (gb + hv_eb_dz)
         f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_eb(gcp.ha, M, p, b)
