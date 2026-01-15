@@ -13,7 +13,7 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 * `q`: a point for the candidates to evaluate model and ρ
 $(_fields(:X; add_properties = [:as_Gradient]))
 * `s`: the tangent vector step resulting from minimizing the model
-  problem in the tangent space ``$(_math(:TangentSpace)))``
+  problem in the tangent space ``$(_math(:TangentSpace))``
 * `σ`: the current cubic regularization parameter
 * `σmin`: lower bound for the cubic regularization parameter
 * `ρ_regularization`: regularization parameter for computing ρ.

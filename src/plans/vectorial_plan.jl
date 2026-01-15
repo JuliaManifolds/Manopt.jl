@@ -72,7 +72,7 @@ struct ComponentVectorialType <: AbstractVectorialType end
     FunctionVectorialType{P<:AbstractPowerRepresentation} <: AbstractVectorialType
 
  A type to indicate that constraints are implemented one whole functions,
-for example ``g(p) ∈ ℝ^m`` or ``$(_tex(:grad)) g(p) ∈ ($(_math(:TangentSpace)))^m``.
+for example ``g(p) ∈ ℝ^m`` or ``$(_tex(:grad)) g(p) ∈ ($(_math(:TangentSpace))^m``.
 
 This type internally stores the [`AbstractPowerRepresentation`](@extref `ManifoldsBase.AbstractPowerRepresentation`),
 when it makes sense, especially for Hessian and gradient functions.
@@ -157,7 +157,7 @@ Putting these gradients into a vector the same way as the functions, yields a
 
 ```math
 $(_tex(:grad)) f(p) = $(_tex(:Bigl))( $(_tex(:grad)) f_1(p), $(_tex(:grad)) f_2(p), …, $(_tex(:grad)) f_n(p) $(_tex(:Bigr)))^$(_tex(:transp))
-∈ ($(_math(:TangentSpace))))^n
+∈ ($(_math(:TangentSpace)))^n
 ```
 
 And advantage here is, that again the single components can be evaluated individually

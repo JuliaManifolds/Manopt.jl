@@ -3,7 +3,7 @@
 # Objective.
 _doc_CR_cost = """
 ```math
-f(X) = $(_tex(:frac, 1, 2)) $(_tex(:norm, _tex(:Cal, "A") * "[X] + b"; index = "p"))^2,\\qquad X ∈ $(_math(:TangentSpace))),
+f(X) = $(_tex(:frac, 1, 2)) $(_tex(:norm, _tex(:Cal, "A") * "[X] + b"; index = "p"))^2,\\qquad X ∈ $(_math(:TangentSpace)),
 ```
 """
 @doc """
@@ -13,7 +13,7 @@ Model the objective
 
 $(_doc_CR_cost)
 
-defined on the tangent space ``$(_math(:TangentSpace)))`` at ``p`` on the manifold ``$(_math(:Manifold)))``.
+defined on the tangent space ``$(_math(:TangentSpace))`` at ``p`` on the manifold ``$(_math(:Manifold))``.
 
 In other words this is an objective to solve ``$(_tex(:Cal, "A")) = -b(p)``
 for some linear symmetric operator and a vector function.
@@ -290,7 +290,7 @@ Stop when re relative residual in the [`conjugate_residual`](@ref)
 is below a certain threshold, i.e.
 
 ```math
-$(_tex(:displaystyle))$(_tex(:frac, _tex(:norm, "r^{(k)"), "c")) ≤ ε,
+$(_tex(:displaystyle))$(_tex(:frac, _tex(:norm, "r^{(k)}"), "c")) ≤ ε,
 ```
 
 where ``c = $(_tex(:norm, "b"))`` of the initial vector from the vector field in ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p``,

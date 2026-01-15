@@ -54,7 +54,7 @@ _tex_Cal(letter) = raw"\mathcal{" * "$letter" * "}"
 Glossaries.define!(_glossary_tex_terms, :Cal, :math, _tex_Cal)
 function _tex_cases(cases...)
     return raw"\begin{cases}" *
-        "$(join(["   $(ci)" for ci in c], raw"\\\\ "))" *
+        "$(join(["   $(ci)" for ci in cases], raw"\\\\ "))" *
         raw"\end{cases}"
 end
 Glossaries.define!(_glossary_tex_terms, :cases, :math, _tex_cases)
@@ -80,7 +80,7 @@ Glossaries.define!(_glossary_tex_terms, :inner, :math, _tex_inner)
 Glossaries.define!(_glossary_tex_terms, :log, :math, raw"\log")
 Glossaries.define!(_glossary_tex_terms, :max, :math, raw"\max")
 Glossaries.define!(_glossary_tex_terms, :min, :math, raw"\min")
-_tex_norm(v; index = "") = raw"\lVert " * "$v" * raw" \rVert" * "_{$index}"
+_tex_norm(v; index = "") = raw"\lVert " * "$v" * raw" \rVert" * (length(index) > 0 ? "_{$index}" : "")
 Glossaries.define!(_glossary_tex_terms, :norm, :math, _tex_norm)
 _tex_pmatrix(lines...) = raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}"
 Glossaries.define!(_glossary_tex_terms, :pmatrix, :math, _tex_pmatrix)
