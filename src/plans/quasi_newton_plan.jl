@@ -515,7 +515,7 @@ end
 _doc_QN_B = """
 ```math
 $(_tex(:Cal, "B"))_k^{(0)}[⋅]
-= $(_tex(:frac, "$(_tex(:inner, "s_{k-1}", "y_{k-1}"; index = "p_k"))", "$(_tex(:inner, "y_{k-1}", "y_{k-1}"; index = "p_k"))"))$(_tex(:Id))_{$(_math(:TangentSpace)))}[⋅]
+= $(_tex(:frac, "$(_tex(:inner, "s_{k-1}", "y_{k-1}"; index = "p_k"))", "$(_tex(:inner, "y_{k-1}", "y_{k-1}"; index = "p_k"))"))$(_tex(:Id))_{$(_math(:TangentSpace))}[⋅]
 ```
 """
 

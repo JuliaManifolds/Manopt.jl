@@ -54,7 +54,7 @@ _tex_Cal(letter) = raw"\mathcal{" * "$letter" * "}"
 Glossaries.define!(_glossary_tex_terms, :Cal, :math, _tex_Cal)
 function _tex_cases(cases...)
     return raw"\begin{cases}" *
-        "$(join(["   $(ci)" for ci in c], raw"\\\\ "))" *
+        "$(join(["   $(ci)" for ci in cases], raw"\\\\ "))" *
         raw"\end{cases}"
 end
 Glossaries.define!(_glossary_tex_terms, :cases, :math, _tex_cases)
@@ -81,7 +81,7 @@ Glossaries.define!(_glossary_tex_terms, :log, :math, raw"\log")
 Glossaries.define!(_glossary_tex_terms, :max, :math, raw"\max")
 Glossaries.define!(_glossary_tex_terms, :min, :math, raw"\min")
 function _tex_norm(v; index = "", size = "")
-    return (length(size) > 0 ? "\\$(size)l" : "") * raw"\lVert " * "$v" * (length(size) > 0 ? "\\$(size)r" : "") * raw" \rVert" * "_{$index}"
+    return (length(size) > 0 ? "\\$(size)l" : "") * raw"\lVert " * "$v" * (length(size) > 0 ? "\\$(size)r" : "") * raw" \rVert" * (length(index) > 0 ? "_{$index}" : "")
 end
 Glossaries.define!(_glossary_tex_terms, :norm, :math, _tex_norm)
 _tex_pmatrix(lines...) = raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}"
@@ -288,7 +288,7 @@ Glossaries.define!(
     (; M = "M", p = "p") -> """
     ```math
     $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} f($p),
-    $(_tex(:qquad)) f($p) = $(_tex(:frac, "1", "2")) $(_tex(:sum, b = "i=1", "m"))
+    $(_tex(:qquad)) f($p) = $(_tex(:frac, "1", "2")) $(_tex(:sum,"i=1", "m"))
         ρ_i $(_tex(:bigl))( $(_tex(:norm, "F_i($p)"))^2 $(_tex(:bigr)))
     ```
 

@@ -292,7 +292,7 @@ $(_kwargs(:evaluation))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 $(_kwargs(:sub_kwargs))
-$(_kwargs(:stopping_criterion, "sub_stopping_criterion"; default = "`( see [`truncated_conjugate_gradient_descent`](@ref))` "))
+$(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "`( see [`truncated_conjugate_gradient_descent`](@ref))` "))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))"))
 $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
   , where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used
