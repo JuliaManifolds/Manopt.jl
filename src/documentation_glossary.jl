@@ -285,9 +285,7 @@ Glossaries.define!(
     _glossary_problems, :NonLinearLeastSquares, :problem,
     (; M = "M", p = "p") -> """
     ```math
-    $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} f($p),
-    $(_tex(:qquad)) f($p) = $(_tex(:frac, "1", "2")) $(_tex(:sum, "i=1", "m"))
-        ρ_i $(_tex(:bigl))( $(_tex(:norm, "F_i($p)"))^2 $(_tex(:bigr)))
+$(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum, "i=1", "m")) $(_tex(:abs, "f_i($p)"))^2
     ```
 
     where ``f: $(_math(:Manifold; M = M)) → ℝ^m`` is written with component functions ``f_i: $(_math(:Manifold; M = M)) → ℝ``, ``i=1,…,m``,
