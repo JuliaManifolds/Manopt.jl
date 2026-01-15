@@ -20,6 +20,7 @@ GradientDescentState
 A field of the options is the `direction`, a [`DirectionUpdateRule`](@ref), which by default [`IdentityUpdateRule`](@ref) just evaluates the gradient but can be enhanced for example to
 
 ```@docs
+AdaptiveDirection
 AverageGradient
 DirectionUpdateRule
 IdentityUpdateRule
@@ -28,10 +29,17 @@ Nesterov
 PreconditionedDirection
 ```
 
-which internally use the [`ManifoldDefaultsFactory`](@ref) and produce the internal
-elements
+where the [`AdaptiveDirection`](@ref) can be configured with different adaptive rules
 
 ```@docs
+BasicDirection
+AdamDirection
+```
+
+Internally the direction rules use the [`ManifoldDefaultsFactory`](@ref) and produce the (not exported) actual rules
+
+```@docs
+Manopt.AdaptiveDirectionRule
 Manopt.AverageGradientRule
 Manopt.ConjugateDescentCoefficientRule
 Manopt.MomentumGradientRule
