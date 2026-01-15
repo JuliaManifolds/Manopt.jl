@@ -54,7 +54,7 @@ _tex_Cal(letter) = raw"\mathcal{" * "$letter" * "}"
 Glossaries.define!(_glossary_tex_terms, :Cal, :math, _tex_Cal)
 function _tex_cases(cases...)
     return raw"\begin{cases}" *
-        "$(join(["   $(ci)" for ci in c], raw"\\\\ "))" *
+        "$(join(["   $(ci)" for ci in cases], raw"\\\\ "))" *
         raw"\end{cases}"
 end
 Glossaries.define!(_glossary_tex_terms, :cases, :math, _tex_cases)
