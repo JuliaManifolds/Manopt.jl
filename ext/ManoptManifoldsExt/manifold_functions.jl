@@ -212,18 +212,15 @@ function Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
 end
 
 """
-    Manopt.set_bound_for_t!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real, t_old::Real)
+    Manopt.set_bound_for_t!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real)
 
-For each index `i`, set element of tangent vector `d_out` on
-[`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M` according to the following rule:
-- if `t[i] >= t_current`, multiply `d_out[i]` by `t_old`;
-- else, set `d_out[i]` to the distance from `p[i]` to the bound in the direction of `d_out[i]`.
+For each index `i`, `t[i] < t_current`, set element of tangent vector `d_out` on
+[`Hyperrectangle`](@extref Manifolds.Hyperrectangle) to the distance from `p[i]` to the
+bound in the direction of `d_out[i]`.
 """
-function Manopt.set_bound_for_t!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real, t_old::Real)
+function Manopt.set_bound_for_t!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real)
     for i in eachindex(M.lb)
-        if ts[i] >= t_current
-            d_out[i] *= t_old
-        else
+        if ts[i] < t_current
             d_out[i] = d_out[i] > 0 ? M.ub[i] - p[i] : M.lb[i] - p[i]
         end
     end

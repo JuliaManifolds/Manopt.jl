@@ -499,17 +499,17 @@ function set_zero_at_index!(M::ProductManifold, d, i)
 end
 
 """
-    Manopt.set_bound_for_t!(M::ProductManifold, d_out, p, ts::Dict, t_current::Real, t_old::Real)
+    Manopt.set_bound_for_t!(M::ProductManifold, d_out, p, ts::Dict, t_current::Real)
 
 Set `d_out` so that it points from `p` to the generalized Cauchy point given times to
 bounds `ts`.
 """
 function set_bound_for_t!(
-        M::ProductManifold, d_out, p, ts::Dict, t_current::Real, t_old::Real
+        M::ProductManifold, d_out, p, ts::Dict, t_current::Real
     )
     set_bound_for_t!(
         M.manifolds[1], submanifold_component(M, d_out, Val(1)),
-        submanifold_component(M, p, Val(1)), ts, t_current, t_old
+        submanifold_component(M, p, Val(1)), ts, t_current
     )
     return d_out
 end
@@ -641,8 +641,8 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFin
 
     dt_min = max(dt_min, 0.0)
     t_old = t_old + dt_min
-
-    set_bound_for_t!(M, d_out, p, ts, t_current, t_old)
+    d_out .*= t_old
+    set_bound_for_t!(M, d_out, p, ts, t_current)
 
     if has_finite_limit
         return :found_limited
