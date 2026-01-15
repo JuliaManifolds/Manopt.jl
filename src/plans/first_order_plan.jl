@@ -1002,7 +1002,7 @@ end
     PreconditionedDirection(M::AbstractManifold, preconditioner; kwargs...)
 
 Add a preconditioner to a gradient processor following the [motivation for optimization](https://en.wikipedia.org/wiki/Preconditioner#Preconditioning_in_optimization),
-as a linear invertible map ``P: $(_math(:TangentSpace))) → $(_math(:TangentSpace)))`` that usually should be
+as a linear invertible map ``P: $(_math(:TangentSpace)) → $(_math(:TangentSpace))`` that usually should be
 
 * symmetric: ``⟨X, P(Y)⟩ = ⟨P(X), Y⟩``
 * positive definite ``⟨X, P(X)⟩ > 0`` for ``X`` not the zero-vector

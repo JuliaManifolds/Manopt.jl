@@ -80,7 +80,7 @@ Glossaries.define!(_glossary_tex_terms, :inner, :math, _tex_inner)
 Glossaries.define!(_glossary_tex_terms, :log, :math, raw"\log")
 Glossaries.define!(_glossary_tex_terms, :max, :math, raw"\max")
 Glossaries.define!(_glossary_tex_terms, :min, :math, raw"\min")
-_tex_norm(v; index = "") = raw"\lVert " * "$v" * raw" \rVert" * "_{$index}"
+_tex_norm(v; index = "") = raw"\lVert " * "$v" * raw" \rVert" * (length(index) > 0 ? "_{$index}" : "")
 Glossaries.define!(_glossary_tex_terms, :norm, :math, _tex_norm)
 _tex_pmatrix(lines...) = raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}"
 Glossaries.define!(_glossary_tex_terms, :pmatrix, :math, _tex_pmatrix)
@@ -285,7 +285,9 @@ Glossaries.define!(
     _glossary_problems, :NonLinearLeastSquares, :problem,
     (; M = "M", p = "p") -> """
     ```math
-    $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum, "i=1", "m")) $(_tex(:abs, "f_i($p)"))^2
+    $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} f($p),
+    $(_tex(:qquad)) f($p) = $(_tex(:frac, "1", "2")) $(_tex(:sum,"i=1", "m"))
+        ρ_i $(_tex(:bigl))( $(_tex(:norm, "F_i($p)"))^2 $(_tex(:bigr)))
     ```
 
     where ``f: $(_math(:Manifold; M = M)) → ℝ^m`` is written with component functions ``f_i: $(_math(:Manifold; M = M)) → ℝ``, ``i=1,…,m``,

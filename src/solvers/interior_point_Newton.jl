@@ -2,7 +2,7 @@ _doc_IPN_subsystem = """
 ```math
   $(_tex(:operatorname, "J")) F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
   $(_tex(:text, " where "))
-  X ∈ $(_math(:TangentSpace))), Y,W ∈ ℝ^m, Z ∈ ℝ^n
+  X ∈ $(_math(:TangentSpace)), Y,W ∈ ℝ^m, Z ∈ ℝ^n
 ```
 """
 _doc_IPN = """

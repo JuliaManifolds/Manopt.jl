@@ -246,7 +246,7 @@ A functor to approximate the Hessian by a finite difference of gradient evaluati
 
 Given a point `p` and a direction `X` and the gradient ``$(_tex(:grad)) f(p)``
 of a function ``f`` the Hessian is approximated as follows:
-let ``c`` be a stepsize, ``X ∈ $(_math(:TangentSpace)))`` a tangent vector and ``q = $_doc_ApproxHessian_step``
+let ``c`` be a stepsize, ``X ∈ $(_math(:TangentSpace))`` a tangent vector and ``q = $_doc_ApproxHessian_step``
 be a step in direction ``X`` of length ``c`` following a retraction
 Then the Hessian is approximated by the finite difference of the gradients,
 where ``$(_math(:VectorTransport))`` is a vector transport.
