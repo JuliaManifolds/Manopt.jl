@@ -349,28 +349,32 @@ high-dimensional domains.
 """
 struct GenericSegmentHessianUpdater{TX} <: AbstractSegmentHessianUpdater
     d_z::TX
+    d_tmp::TX
 end
 
 function get_default_hessian_segment_updater(M::AbstractManifold, p, ::AbstractQuasiNewtonDirectionUpdate)
-    return GenericSegmentHessianUpdater(zero_vector(M, p))
+    return GenericSegmentHessianUpdater(zero_vector(M, p), zero_vector(M, p))
 end
 
 function init_updater!(M::AbstractManifold, hessian_segment_updater::GenericSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
     zero_vector!(M, hessian_segment_updater.d_z, p)
+    copyto!(M, hessian_segment_updater.d_tmp, d)
     return hessian_segment_updater
 end
 
 @doc raw"""
-    (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, db, ha::AbstractQuasiNewtonDirectionUpdate, b, d)
+    (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha::AbstractQuasiNewtonDirectionUpdate)
 
-Calculate Hessian values ``⟨e_b, B d_z⟩`` and ``⟨e_b, B d⟩`` for the generalized Cauchy
+Calculate Hessian values ``⟨e_b, B d_z⟩`` and ``⟨e_b, B d_tmp⟩`` for the generalized Cauchy
 point line search using the generic approach via `hessian_value_eb`.
 ``d_z`` start with 0 and is updated in-place by adding `dt * d` to it.
 """
-function (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha, d)
-    upd.d_z .+= dt .* d
+function (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha)
+    upd.d_z .+= dt .* upd.d_tmp
     hv_eb_dz = hessian_value_eb(ha, M, p, b, upd.d_z)
-    hv_eb_d = hessian_value_eb(ha, M, p, b, d)
+    hv_eb_d = hessian_value_eb(ha, M, p, b, upd.d_tmp)
+
+    set_zero_at_index!(M, upd.d_tmp, b)
 
     return hv_eb_dz, hv_eb_d
 end
@@ -411,7 +415,7 @@ end
 @doc raw"""
     (hessian_segment_updater::LimitedMemorySegmentHessianUpdater)(
         M::AbstractManifold, p,
-        t::Real, dt::Real, db, gb, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, b, d
+        t::Real, dt::Real, b, db, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate
     )
 
 Calculate Hessian values ``⟨e_b, B d_z⟩`` and ``⟨e_b, B d⟩`` for the generalized Cauchy
@@ -424,14 +428,15 @@ point line search using the limited-memory block Hessian stored in `ha`.
 - `p`: current iterate.
 - `t`: current step length from `p`.
 - `dt`: step length increment from the last step.
-- `db`: direction component at the bound index `b`.
+- `b`: bound index of the current segment.
+- `db`: search direction component at the bound index `b`.
 
 The updater reuses cached coordinate projections in `hessian_segment_updater` to cheaply
 evaluate Hessian quadratic forms via `hessian_value_from_wmwt_coords`.
 """
 function (hessian_segment_updater::LimitedMemorySegmentHessianUpdater)(
         M::AbstractManifold, p,
-        t::Real, dt::Real, b, db, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate, d
+        t::Real, dt::Real, b, db, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate
     )
 
     m = length(ha.qn_du.memory_s)
@@ -553,8 +558,6 @@ The function returns
 function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFinder, d_out, p, d, X)
     M = gcp.M
     copyto!(M, d_out, d)
-    d_tmp = gcp.d_tmp
-    copyto!(M, d_tmp, d)
 
     bounds_indices = get_bounds_index(M)
     TInd = eltype(bounds_indices)
@@ -610,18 +613,16 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFin
     t_current, b = pop!(F)
     dt = t_current - t_old
 
-    init_updater!(M, gcp.hessian_segment_updater, p, d_tmp, gcp.ha)
+    init_updater!(M, gcp.hessian_segment_updater, p, d, gcp.ha)
     # b can be -1 if it corresponds to the max stepsize limit on the manifold part
     while dt_min > dt && b != -1
-        db = get_at_bound_index(M, d_tmp, b)
+        db = get_at_bound_index(M, d, b)
         gb = get_at_bound_index(M, X, b)
 
-        hv_eb_dz, hv_eb_d = gcp.hessian_segment_updater(M, p, t_current, dt, b, db, gcp.ha, d_tmp)
+        hv_eb_dz, hv_eb_d = gcp.hessian_segment_updater(M, p, t_current, dt, b, db, gcp.ha)
 
         f_prime += dt * f_double_prime - db * (gb + hv_eb_dz)
         f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_eb(gcp.ha, M, p, b)
-
-        set_zero_at_index!(M, d_tmp, b)
 
         t_old = t_current
 

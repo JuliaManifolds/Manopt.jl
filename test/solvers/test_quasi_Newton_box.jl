@@ -42,9 +42,9 @@ using RecursiveArrayTools
         z = [-0.25, -1.0]
 
         # optimized formula
-        upd = Manopt.GenericSegmentHessianUpdater(similar(d))
+        upd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
         Manopt.init_updater!(M, upd, p, d, ha)
-        hv_eb_dz, hv_eb_d = upd(M, p, 0 + dt, dt, b, db, ha, d)
+        hv_eb_dz, hv_eb_d = upd(M, p, 0 + dt, dt, b, db, ha)
         @test hv_eb_dz ≈ -2.0
         @test hv_eb_d ≈ -8.0
 
@@ -75,9 +75,9 @@ using RecursiveArrayTools
         z = [-0.5, -0.25]
 
         # optimized formula
-        upd = Manopt.GenericSegmentHessianUpdater(similar(d))
+        upd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
         Manopt.init_updater!(M, upd, p, d, ha)
-        hv_eb_dz, hv_eb_d = upd(M, p, 0 + dt, dt, b, db, ha, d)
+        hv_eb_dz, hv_eb_d = upd(M, p, 0 + dt, dt, b, db, ha)
         @test hv_eb_dz == -1.0
         @test hv_eb_d == -4.0
 
@@ -126,9 +126,9 @@ using RecursiveArrayTools
         t_current = 0 + dt
 
         # compare the generic and limited memory updater
-        gupd = Manopt.GenericSegmentHessianUpdater(similar(d))
+        gupd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
         Manopt.init_updater!(M, gupd, p, d, ha)
-        hv_eb_dz, hv_eb_d = gupd(M, p, t_current, dt, b, db, ha, d)
+        hv_eb_dz, hv_eb_d = gupd(M, p, t_current, dt, b, db, ha)
 
         @test hv_eb_dz ≈ -0.125
         @test hv_eb_d ≈ -0.5
@@ -137,7 +137,7 @@ using RecursiveArrayTools
         @test lmupd isa Manopt.LimitedMemorySegmentHessianUpdater
 
         Manopt.init_updater!(M, lmupd, p, d, ha)
-        hv_eb_dz_limited, hv_eb_d_limited = lmupd(M, p, t_current, dt, b, db, ha, d)
+        hv_eb_dz_limited, hv_eb_d_limited = lmupd(M, p, t_current, dt, b, db, ha)
 
         @test hv_eb_dz ≈ hv_eb_dz_limited
         @test hv_eb_d ≈ hv_eb_d_limited
