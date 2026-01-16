@@ -11,9 +11,9 @@ which represents proximal maps ``$(_tex(:prox))_{λf_i}`` for summands ``f = f_1
 
 # Fields
 
-* `cost`: a function ``f:$(_tex(:Cal, "M"))→ℝ`` to
+* `cost`: a function ``f:$(_math(:Manifold))→ℝ`` to
   minimize
-* `proxes`: proximal maps ``$(_tex(:prox))_{λf_i}:$(_tex(:Cal, "M")) → $(_tex(:Cal, "M"))``
+* `proxes`: proximal maps ``$(_tex(:prox))_{λf_i}:$(_math(:Manifold)) → $(_math(:Manifold))``
   as functions `(M, λ, p) -> q` or in-place `(M, q, λ, p)`.
 * `number_of_proxes`: number of proximal maps per function,
   to specify when one of the maps is a combined one such that the proximal maps
@@ -223,7 +223,7 @@ $(_args(:M))
 # Keyword arguments
 
 * `evaluation_order=:LinearOrder`: soecify the `order_type`
-* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_tex(:Cal, "N"))``,
+* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_math(:Manifold; M = "N"))``,
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)"))
 

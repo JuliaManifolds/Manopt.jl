@@ -182,11 +182,11 @@ _doc_NelderMead = """
     NelderMead!(M::AbstractManifold, f, population)
     NelderMead!(M::AbstractManifold, mco::AbstractManifoldCostObjective, population)
 
-Solve a Nelder-Mead minimization problem for the cost function ``f: $(_tex(:Cal, "M")) → ℝ`` on the
+Solve a Nelder-Mead minimization problem for the cost function ``f: $(_math(:Manifold)) → ℝ`` on the
 manifold `M`. If the initial [`NelderMeadSimplex`](@ref) is not provided, a random set of
 points is chosen. The computation can be performed in-place of the `population`.
 
-The algorithm consists of the following steps. Let ``d`` denote the dimension of the manifold ``$(_tex(:Cal, "M"))``.
+The algorithm consists of the following steps. Let ``d`` denote the dimension of the manifold ``$(_math(:Manifold))``.
 
 1. Order the simplex vertices ``p_i, i=1,…,d+1`` by increasing cost, such that we have ``f(p_1) ≤ f(p_2) ≤ … ≤ f(p_{d+1})``.
 2. Compute the Riemannian center of mass [Karcher:1977](@cite), cf. [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}), ``p_{$(_tex(:text, "m"))}``

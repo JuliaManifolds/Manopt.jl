@@ -423,8 +423,8 @@ solve the trust-region subproblem
 
 $(_doc_TCG_subproblem)
 
-on a manifold ``$(_math(:Manifold))nifold)))`` by using the Steihaug-Toint truncated conjugate-gradient (tCG) method.
-This can be done inplace of `X`.
+on a manifold ``$(_math(:Manifold))`` by using the Steihaug-Toint truncated conjugate-gradient (tCG) method.
+This can be done in-place of `X`.
 
 For a description of the algorithm and theorems offering convergence guarantees,
 see [AbsilBakerGallivan:2006, ConnGouldToint:2000](@cite).

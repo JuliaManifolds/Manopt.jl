@@ -56,7 +56,7 @@ These three can also be passed as a [`AbstractVectorGradientFunction`](@ref) `vf
 
 $(_kwargs(:evaluation))
 
-As well as for the first variant
+As well as for the first variant of having a single block
 
 * `function_type::`[`AbstractVectorialType`](@ref)`=`[`FunctionVectorialType`](@ref)`()`: specify
   the format the residuals are given in. By default a function returning a vector.

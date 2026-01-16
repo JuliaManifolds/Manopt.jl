@@ -180,9 +180,9 @@ end
     ArmijoLinesearch(; kwargs...)
     ArmijoLinesearch(M::AbstractManifold; kwargs...)
 
-Specify a step size that performs an Armijo line search. Given a Function ``f:$(_math(:Manifold))nifold))nifold))nifold)))→ℝ``
-and its Riemannian Gradient ``$(_tex(:grad))f: $(_math(:Manifold))nifold))nifold))nifold)))→$(_math(:TangentBundle))``,
-the current point ``p∈$(_math(:Manifold))nifold))nifold)))`` and a search direction ``X∈$(_math(:TangentSpace))``.
+Specify a step size that performs an Armijo line search. Given a Function ``f:$(_math(:Manifold))→ℝ``
+and its Riemannian Gradient ``$(_tex(:grad))f: $(_math(:Manifold))→$(_math(:TangentBundle))``,
+the current point ``p∈$(_math(:Manifold))`` and a search direction ``X∈$(_math(:TangentSpace))``.
 
 Then the step size ``s`` is found by reducing the initial step size ``s`` until
 

@@ -104,7 +104,7 @@ end
     reflect!(M, q, f, x; kwargs...)
 
 reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f: $(Manopt._math(:Manifold))) → $(Manopt._math(:Manifold)))``, given by
+function ``f: $(Manopt._math(:Manifold)) → $(Manopt._math(:Manifold))``, given by
 
 ````math
 $(Manopt._tex(:operatorname, "refl"))_f(x) = $(Manopt._tex(:operatorname, "refl"))_{f(x)}(x),

@@ -147,11 +147,11 @@ _doc_Douglas_Rachford = """
     DouglasRachford!(M, f, proxes_f, p)
     DouglasRachford!(M, mpo, p)
 
-Compute the Douglas-Rachford algorithm on the manifold ``$(_math(:Manifold))nifold)))``, starting from `p`
+Compute the Douglas-Rachford algorithm on the manifold ``$(_math(:Manifold))``, starting from `p`
 given the (two) proximal maps `proxes_f`, see [BergmannPerschSteidl:2016](@cite).
 
 For ``k>2`` proximal maps, the problem is reformulated using the parallel Douglas Rachford:
-a vectorial proximal map on the power manifold ``$(_math(:Manifold)))^k`` is introduced as the first
+a vectorial proximal map on the power manifold ``$(_math(:Manifold))^k`` is introduced as the first
 proximal map and the second proximal map of the is set to the [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}) (Riemannian center of mass).
 This hence also boils down to two proximal maps, though each evaluates proximal maps in parallel,
 that is, component wise in a vector.

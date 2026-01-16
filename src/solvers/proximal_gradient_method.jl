@@ -11,7 +11,7 @@ See also [FengHuangSongYingZeng:2021](@cite) for a similar approach.
 Given the minimization problem
 
 ```math
-$(_tex(:argmin))_{p∈$(_tex(:Cal, "M"))} f(p),
+$(_tex(:argmin))_{p∈$(_math(:Manifold))} f(p),
 $(_tex(:quad)) $(_tex(:text, " where ")) $(_tex(:quad)) f(p) = g(p) + h(p).
 ```
 

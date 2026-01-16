@@ -39,10 +39,10 @@ depending on the `evaluation=` keyword in the constructor and stored in `T <: Ab
 
 * `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_forward_operator!!`: linearized operator for the forward operation in the algorithm ``DΛ``
-* `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : $(_tex(:Cal, "N")) → T$(_math(:Manifold))nifold))nifold))``
+* `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → T$(_math(:Manifold))``
 * `prox_f!!`:                      the proximal map belonging to ``f``
 * `prox_G_dual!!`:                 the proximal map belonging to ``g_n^*``
-* `Λ!!`:                           the  forward operator (if given) ``Λ: $(_math(:Manifold))) → $(_tex(:Cal, "N"))``
+* `Λ!!`:                           the  forward operator (if given) ``Λ: $(_math(:Manifold)) → $(_math(:Manifold; M = "N"))``
 
 Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
 
@@ -408,7 +408,7 @@ end
 
 Evaluate the adjoint of the linearized forward operator of ``(DΛ(m))^*[Y]`` stored within
 the [`AbstractPrimalDualManifoldObjective`](@ref) (in place of `X`).
-Since ``Y∈T_n$(_tex(:Cal, "N"))``, both ``m`` and ``n=Λ(m)`` are necessary arguments, mainly because
+Since ``Y∈$(_math(:TangentSpace; p = "n", M = "N"))``, both ``m`` and ``n=Λ(m)`` are necessary arguments, mainly because
 the forward operator ``Λ`` might be `missing` in `p`.
 """
 adjoint_linearized_operator(

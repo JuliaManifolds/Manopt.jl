@@ -4,7 +4,7 @@ function reflect end
     reflect!(M, q, f, x; kwargs...)
 
 reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f: $(_math(:Manifold))) → $(_math(:Manifold)))``, given by
+function ``f: $(_math(:Manifold)) → $(_math(:Manifold))``, given by
 
 ````math
     $(_tex(:reflect))_f(x) = $(_tex(:reflect))_{f(x)}(x),

@@ -15,7 +15,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 The sub task consists of a method to solve
 
 ```math
-    $(_tex(:argmin))_{q∈$(_math(:Manifold))nifold)))}\\ g(p) - ⟨X, $(_tex(:log))_p q⟩
+    $(_tex(:argmin))_{q∈$(_math(:Manifold))}\\ g(p) - ⟨X, $(_tex(:log))_p q⟩
 ```
 
 is needed. Besides a problem and a state, one can also provide a function and
@@ -114,7 +114,7 @@ _doc_DoC = """
 Compute the difference of convex algorithm [BergmannFerreiraSantosSouza:2024](@cite) to minimize
 
 ```math
-    $(_tex(:argmin))_{p∈$(_math(:Manifold)))}\\ g(p) - h(p)
+    $(_tex(:argmin))_{p∈$(_math(:Manifold))\\ g(p) - h(p)
 ```
 
 where you need to provide ``f(p) = g(p) - h(p)``, ``g`` and the subdifferential ``∂h`` of ``h``.
@@ -125,7 +125,7 @@ Then repeat for ``k=0,1,…``
 1. Take ``X^{(k)}  ∈ ∂h(p^{(k)})``
 2. Set the next iterate to the solution of the subproblem
 ```math
-  p^{(k+1)} ∈ $(_tex(:argmin))_{q ∈ $(_math(:Manifold)))} g(q) - ⟨X^{(k)}, $(_tex(:log))_{p^{(k)}}q⟩
+  p^{(k+1)} ∈ $(_tex(:argmin))_{q ∈ $(_math(:Manifold))} g(q) - ⟨X^{(k)}, $(_tex(:log))_{p^{(k)}}q⟩
 ```
 
 until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.

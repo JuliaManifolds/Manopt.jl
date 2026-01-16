@@ -42,7 +42,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))nifold))nifold))nifold))),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold)),
 ```
 
 respectively.
@@ -59,11 +59,11 @@ Then the update formula reads
 
 ```math
 B^$(_tex(:rm, "BFGS"))_{k+1}  = $(_tex(:Bigl))(
-  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold))nifold)))} - $(_tex(:frac, "s_k y^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k"))
+  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold))} - $(_tex(:frac, "s_k y^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr)))
 $(_tex(:widetilde, "B"))^$(_tex(:rm, "BFGS"))_k
 $(_tex(:Bigl))(
-  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold)))} - $(_tex(:frac, "y_k s^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k"))
+  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold))} - $(_tex(:frac, "y_k s^{$(_tex(:rm, "T"))}_k ", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr))) + $(_tex(:frac, "s_k s^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
 ```
 
@@ -71,7 +71,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold)),
 ```
 
 respectively.
@@ -88,11 +88,11 @@ Then the update formula reads
 
 ```math
 H^$(_tex(:rm, "DFP"))_{k+1} = $(_tex(:Bigl))(
-  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold)))} - $(_tex(:frac, "y_k s^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
+  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold))} - $(_tex(:frac, "y_k s^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr)))
 $(_tex(:widetilde, "H"))^$(_tex(:rm, "DFP"))_k
 $(_tex(:Bigl))(
-  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold)))} - $(_tex(:frac, "s_k y^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
+  $(_tex(:Id))_{T_{x_{k+1}} $(_math(:Manifold))} - $(_tex(:frac, "s_k y^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
 $(_tex(:Bigr))) + $(_tex(:frac, "y_k y^{$(_tex(:rm, "T"))}_k", "s^{$(_tex(:rm, "T"))}_k y_k"))
 ```
 
@@ -100,7 +100,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold)),
 ```
 
 respectively.
@@ -124,7 +124,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold)),
 ```
 
 respectively.
@@ -154,7 +154,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold)),
 ```
 
 respectively.
@@ -196,7 +196,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold)),
 ```
 
 respectively.
@@ -245,7 +245,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold)),
 ```
 
 respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
@@ -296,7 +296,7 @@ where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current
 
 ```math
 T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:quad))
-$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold))),
+$(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold)),
 ```
 
 respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
@@ -405,7 +405,7 @@ in both variants.
 The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used.
 In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}``
 and ``B_{k+1}``, and the basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` is transported into the upcoming tangent
-space ``T_{p_{k+1}} $(_tex(:Cal, "M"))``, preferably with an isometric vector transport, or generated there.
+space ``$(_math(:TangentSpace; p = "p_{k+1}"))``, preferably with an isometric vector transport, or generated there.
 
 # Provided functors
 
@@ -743,11 +743,11 @@ and ``θ`` is strictly increasing at ``0``. If this is not the case, the corresp
 update is skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 the matrix ``H_k`` or ``B_k`` is not updated.
 The basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` is nevertheless transported into the upcoming tangent
-space ``T_{x_{k+1}} $(_math(:Manifold)))``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
+space ``T_{x_{k+1}} $(_math(:Manifold))``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 neither the oldest vector pair ``$(_tex(:widetilde, "s"))_{k−m}``, ``$(_tex(:widetilde, "y"))_{k−m}`` is
 discarded nor the newest vector pair ``$(_tex(:widetilde, "s"))_k, $(_tex(:widetilde, "y"))_k`` is added
 into storage, but all stored vector pairs ``$(_tex(:set, "$(_tex(:widetilde, "s"))_i, $(_tex(:widetilde, "y"))_i"))_{i=k-m}^{k-1}``
-are transported into the tangent space ``T_{x_{k+1}} $(_math(:Manifold)))``.
+are transported into the tangent space ``T_{x_{k+1}} $(_math(:Manifold))``.
 If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting
 method follows the method of [HuangAbsilGallivan:2018](@cite),
 taking into account that the corresponding step size is chosen.

@@ -82,9 +82,9 @@ by a predictor-corrector-loop using an affine covariant quantity ``θ`` to measu
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold))nifold))nifold))) = $(_math(:Manifold; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))nifold)))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold)))``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold)) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold))`
 is given by
 
 ```math
@@ -181,7 +181,7 @@ end
 @doc """
     VectorBundleManoptProblem{M<:AbstractManifold,TV<:AbstractManifold,O} <: AbstractManoptProblem{M}
 
-Model a vector bundle problem, that consists of the domain manifold ``$(_math(:Manifold)))`` that is a $(_link(:AbstractManifold)), the range vector bundle ``$(_tex(:Cal, "E"))`` and the Newton equation ``Q_{F(x)}∘ F'(x) δ x + F(x) = 0_{p(F(x))}``.
+Model a vector bundle problem, that consists of the domain manifold ``$(_math(:Manifold))`` that is a $(_link(:AbstractManifold)), the range vector bundle ``$(_tex(:Cal, "E"))`` and the Newton equation ``Q_{F(x)}∘ F'(x) δ x + F(x) = 0_{p(F(x))}``.
 The Newton equation should be implemented as a functor that computes a representation of the Newton matrix and the right hand side. It needs to have a field ``A`` to store a representation of the Newton matrix ``Q_{F(x)}∘ F'(x) `` and a field ``b`` to store a representation of the right hand side ``F(x)``.
 """
 struct VectorBundleManoptProblem{
@@ -219,7 +219,7 @@ doc_vector_bundle_newton = """
     vectorbundle_newton(M, E, NE, p; kwargs...)
     vectorbundle_newton!(M, E, NE, p; kwargs...)
 
-Perform Newton's method for finding a zero of a mapping ``F:$(_math(:Manifold))) → $(_tex(:Cal, "E"))`` where ``$(_math(:Manifold)))`` is a manifold and ``$(_tex(:Cal, "E"))`` is a vector bundle.
+Perform Newton's method for finding a zero of a mapping ``F:$(_math(:Manifold)) → $(_tex(:Cal, "E"))`` where ``$(_math(:Manifold))`` is a manifold and ``$(_tex(:Cal, "E"))`` is a vector bundle.
 In each iteration the Newton equation
 
 ```math
@@ -236,7 +236,7 @@ For more details see [WeiglSchiela:2024, WeiglBergmannSchiela:2025](@cite).
 $(_args(:M))
 * `E`: range vector bundle
 $(_args(:p))
-* `NE`: functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}∘ F'(p)`` (covariant derivative of ``F`` at ``p``) and the right hand side ``F(p)`` at a point ``p ∈ $(_math(:Manifold)))``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
+* `NE`: functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}∘ F'(p)`` (covariant derivative of ``F`` at ``p``) and the right hand side ``F(p)`` at a point ``p ∈ $(_math(:Manifold))``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
 
 # Keyword arguments
 

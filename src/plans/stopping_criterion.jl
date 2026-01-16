@@ -236,9 +236,9 @@ $(_fields([:at_iteration, :last_change, :inverse_retraction_method, :storage]))
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold))nifold))) = $(_math(:Manifold; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold)))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold)))``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold)) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold))``
 is given by
 
 ```math
@@ -563,9 +563,9 @@ $(_fields([:at_iteration, :last_change, :vector_transport_method, :storage]))
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold))) = $(_math(:Manifold; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold)))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradien ``X,Y ∈ $(_math(:Manifold)))``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold)) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradien ``X,Y ∈ $(_math(:Manifold))``
 is given by
 
 ```math
@@ -692,9 +692,9 @@ A stopping criterion based on the current gradient norm.
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold))) = $(_math(:Manifold; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold)))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:Manifold)))``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold)) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:Manifold))``
 is given by
 
 ```math

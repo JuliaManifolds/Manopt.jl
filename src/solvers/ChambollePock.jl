@@ -9,12 +9,12 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 * `dual_stepsize::R`:   proximal parameter of the dual prox
 $(_fields(:inverse_retraction_method))
 $(_fields(:inverse_retraction_method; name = "inverse_retraction_method_dual", M = "N", p = "n"))
-* `m::P`:               base point on ``$(_math(:Manifold))nifold))nifold)))``
-* `n::Q`:               base point on ``$(_tex(:Cal, "N"))``
-* `p::P`:               an initial point on ``p^{(0)} ∈ $(_math(:Manifold))nifold))nifold))nifold))nifold)))``
+* `m::P`:               base point on ``$(_math(:Manifold))``
+* `n::Q`:               base point on ``$(_math(:Manifold; M = "N"))``
+* `p::P`:               an initial point on ``p^{(0)} ∈ $(_math(:Manifold))``
 * `pbar::P`:            the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `primal_stepsize::R`: proximal parameter of the primal prox
-* `X::T`:               an initial tangent vector ``X^{(0)} ∈ T_{p^{(0)}}$(_math(:Manifold)))``
+* `X::T`:               an initial tangent vector ``X^{(0)} ∈ $(_math(:TangentSpace; p = "p^{(0)}"))``
 * `Xbar::T`:            the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
 * `relaxation::R`:      relaxation in the primal relaxation step (to compute `pbar`:
 * `relax::Symbol:       which variable to relax (`:primal` or `:dual`:
@@ -26,7 +26,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 $(_fields(:vector_transport_method))
 $(_fields(:vector_transport_method; name = "vector_transport_method_dual", M = "N"))
 
-Here, `P` is a point type on ``$(_math(:Manifold)))``, `T` its tangent vector type, `Q` a point type on ``$(_tex(:Cal, "N"))``,
+Here, `P` is a point type on ``$(_math(:Manifold))``, `T` its tangent vector type, `Q` a point type on ``$(_math(:Manifold; M = "N"))``,
 and `R<:Real` is a real number type
 
 where for the last two the functions a [`AbstractManoptProblem`](@ref)` p`,
@@ -187,15 +187,17 @@ function set_iterate!(apds::AbstractPrimalDualSolverState, p)
     return apds
 end
 
-_tex_DΛ = "DΛ: T_{m}$(_math(:Manifold))) → T_{Λ(m)}$(_tex(:Cal, "N")))"
+_tex_DΛ = "DΛ: $(_math(:TangentSpace; p = "m")) → $(_math(:TangentSpace; p = "Λ(m)", M = "N"))"
 
 _doc_ChambollePock_formula = """
-Given a `cost` function ``$(_tex(:Cal, "E")): $(_math(:Manifold))) → ℝ`` of the form
-```math
+Given a `cost` function ``$(_tex(:Cal, "E")): $(_math(:Manifold)) → ℝ`` of the form
+
+    ```math
 $(_tex(:Cal, "E"))(p) = F(p) + G( Λ(p) ),
 ```
-where ``F:$(_math(:Manifold))) → ℝ``, ``G:$(_tex(:Cal, "N")) → ℝ``,
-and ``Λ:$(_math(:Manifold))) → $(_tex(:Cal, "N"))``.
+
+where ``F:$(_math(:Manifold)) → ℝ``, ``G:$(_math(:Manifold; M = "N")) → ℝ``,
+and ``Λ:$(_math(:Manifold)) → $(_math(:Manifold; M = "N"))``.
 """
 
 _doc_ChambollePock = """

@@ -155,7 +155,7 @@ _doc_Frank_Wolfe_method = """
     Frank_Wolfe_method!(M, f, grad_f, p; kwargs...)
     Frank_Wolfe_method!(M, gradient_objective, p; kwargs...)
 
-Perform the Frank-Wolfe algorithm to compute for ``$(_tex(:Cal, "C")) ⊂ $(_tex(:Cal, "M"))``
+Perform the Frank-Wolfe algorithm to compute for ``$(_tex(:Cal, "C")) ⊂ $(_math(:Manifold))``
 the constrained problem
 
 $_doc_FW_problem

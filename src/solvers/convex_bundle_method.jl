@@ -1,7 +1,7 @@
 @doc """
     estimate_sectional_curvature(M::AbstractManifold, p)
 
-Estimate the sectional curvature of a manifold ``$(_math(:Manifold)))`` at a point ``p ∈ $(_math(:Manifold)))``
+Estimate the sectional curvature of a manifold ``$(_math(:Manifold))`` at a point ``p ∈ $(_math(:Manifold))``
 on two random tangent vectors at ``p`` that are orthogonal to each other.
 
 # See also
@@ -34,7 +34,7 @@ $(
 ```
 
 where ``ω ≤ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is a lower bound to the sectional curvature in
-a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:Manifold)))`` with diameter ``δ``.
+a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:Manifold))`` with diameter ``δ``.
 """
 function ζ_1(k_min, diameter)
     (k_min < zero(k_min)) && return sqrt(-k_min) * diameter * coth(sqrt(-k_min) * diameter)
@@ -59,7 +59,7 @@ $(
 ```
 
 where ``Ω ≥ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is an upper bound to the sectional curvature in
-a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:Manifold)))`` with diameter ``δ``.
+a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:Manifold))`` with diameter ``δ``.
 """
 function ζ_2(k_max, diameter)
     (k_max > zero(k_max)) && return sqrt(k_max) * diameter * cot(sqrt(k_max) * diameter)
@@ -69,7 +69,7 @@ end
 @doc """
     close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
 
-sample a random point close to ``p ∈ $(_math(:Manifold)))`` within a tolerance `tol`
+sample a random point close to ``p ∈ $(_math(:Manifold))`` within a tolerance `tol`
 and a [retraction](@extref ManifoldsBase :doc:`retractions`).
 """
 function close_point(M, p, tol; retraction_method = default_retraction_method(M, typeof(p)))

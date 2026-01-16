@@ -81,7 +81,7 @@ $(_args(:M))
 # Keyword arguments
 
 $(_kwargs(:evaluation))
-* `f=nothing`: a cost function ``f: $(_math(:Manifold))nifold)))→ℝ`` to minimize. For running the algorithm, ``f`` is not required, but for example when recording the cost or using a stopping criterion that requires a cost function.
+* `f=nothing`: a cost function ``f: $(_math(:Manifold))→ℝ`` to minimize. For running the algorithm, ``f`` is not required, but for example when recording the cost or using a stopping criterion that requires a cost function.
 * `λ= k -> 1.0`: a function returning the (square summable but not summable) sequence of ``λ_i``
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)"))
 

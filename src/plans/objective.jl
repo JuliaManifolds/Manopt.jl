@@ -8,7 +8,7 @@ abstract type AbstractEvaluationType end
 @doc """
     AbstractManifoldObjective{E<:AbstractEvaluationType}
 
-Describe the collection of the optimization function ``f: $(_math(:Manifold))nifold))nifold))) → ℝ`` (or even a vectorial range)
+Describe the collection of the optimization function ``f: $(_math(:Manifold)) → ℝ`` (or even a vectorial range)
 and its corresponding elements, which might for example be a gradient or (one or more) proximal maps.
 
 All these elements should usually be implemented as functions

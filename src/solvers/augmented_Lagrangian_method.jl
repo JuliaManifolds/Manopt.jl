@@ -235,7 +235,7 @@ $(_problem(:Constrained))
 where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "n"))`` and ``$(_math(:Sequence, "h", "j", "1", "m"))``
 are twice continuously differentiable functions from `M` to ℝ.
 In every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
- ``$(_doc_AL_Cost("k"))`` is minimized on $(_tex(:Cal, "M")),
+ ``$(_doc_AL_Cost("k"))`` is minimized on $(_math(:Manifold)),
   where ``μ^{(k)} ∈ ℝ^n`` and ``λ^{(k)} ∈ ℝ^m`` are the current iterates of the Lagrange multipliers and ``ρ^{(k)}`` is the current penalty parameter.
 
 The Lagrange multipliers are then updated by

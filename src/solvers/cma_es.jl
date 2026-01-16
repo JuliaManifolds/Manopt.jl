@@ -360,8 +360,8 @@ setting.
 
 # Input
 
-* `M`:      a manifold ``$(_math(:Manifold)))``
-* `f`:      a cost function ``f: $(_math(:Manifold))nifold)))→ℝ`` to find a minimizer ``p^*`` for
+* `M`:      a manifold ``$(_math(:Manifold))``
+* `f`:      a cost function ``f: $(_math(:Manifold))→ℝ`` to find a minimizer ``p^*`` for
 
 # Keyword arguments
 
@@ -509,7 +509,7 @@ calls_with_kwargs(::typeof(cma_es!)) = (decorate_objective!, decorate_state!)
 Transport the matrix with `matrix_eig` eigen decomposition when expanded in `basis` from
 point `p` to point `q` on `M`. Update `matrix_eigen` in-place.
 
-`(p, matrix_eig)` belongs to the fiber bundle of ``B = $(_math(:Manifold))))) × SPD(n)``, where `n`
+`(p, matrix_eig)` belongs to the fiber bundle of ``B = $(_math(:Manifold)) × $(_tex(:rm, "SPD"))(n)``, where `n`
 is the (real) dimension of `M`. The function corresponds to the Ehresmann connection
 defined by vector transport `vtm` of eigenvectors of `matrix_eigen`.
 """

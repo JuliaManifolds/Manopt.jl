@@ -2,10 +2,12 @@
     ManifoldProximalGradientObjective{E,<:AbstractEvaluationType, TC, TG, TGG, TP} <: AbstractManifoldObjective{E,TC,TGG}
 
 Model an objective of the form
+
 ```math
-    f(p) = g(p) + h(p), $(_tex(:qquad)) p ∈ $(_math(:Manifold))nifold))),
+f(p) = g(p) + h(p), $(_tex(:qquad)) p ∈ $(_math(:Manifold)),
 ```
-where ``g: $(_math(:Manifold))) → $(_tex(:eR))`` is a differentiable function
+
+where ``g: $(_math(:Manifold)) → $(_tex(:eR))`` is a differentiable function
 and ``h: → $(_tex(:eR))`` is a (possibly) lower semicontinous, and proper function.
 
 This objective provides the total cost ``f``, its smooth component ``g``,
@@ -20,7 +22,7 @@ as well as ``$(_tex(:grad)) g`` and ``$(_tex(:prox))_{λ h}``.
 
 # Constructor
     ManifoldProximalGradientObjective(f, g, grad_g, prox_h;
-        evalauation=[`AllocatingEvaluation`](@ref)
+        evalauation=AllocatingEvaluation()
     )
 
 Generate the proximal gradient objective given the total cost ``f = g + h``, smooth cost ``g``, the gradient of the smooth component ``$(_tex(:grad)) g``, and the proximal map of the nonsmooth component ``$(_tex(:prox))_{λ h}``.
@@ -136,7 +138,7 @@ Stores the nonsmooth part ``h`` of the proximal gradient objective ``f = g + h``
 This struct is also a functor `(M, q) -> v` that can be used as a cost function within a solver, primarily for solving the proximal map subproblem formulation in the proximal gradient method, which reads
 
 ```math
-    $(_tex(:prox))_{λ h}(p) = $(_tex(:argmin))_{q ∈ $(_math(:Manifold)))} h(q) + $(_tex(:frac, "1", "2λ"))$(_math(:distance))^2(q, p)
+    $(_tex(:prox))_{λ h}(p) = $(_tex(:argmin))_{q ∈ $(_math(:Manifold))} h(q) + $(_tex(:frac, "1", "2λ"))$(_math(:distance))^2(q, p)
 ```
 
 Hence, the functor reads

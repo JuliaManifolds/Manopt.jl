@@ -22,8 +22,8 @@ specify a problem for Hessian based algorithms.
 
 # Fields
 
-* `cost`:           a function ``f:$(_math(:Manifold))nifold)))→ℝ`` to minimize
-* `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold))) → $(_math(:TangentBundle))`` of the cost function ``f``
+* `cost`:           a function ``f:$(_math(:Manifold))→ℝ`` to minimize
+* `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold)) → $(_math(:TangentBundle))`` of the cost function ``f``
 * `hessian`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TangentSpace; p = "x")) → $(_math(:TangentSpace; p = "x"))`` of the cost function ``f``
 * `preconditioner`: the symmetric, positive definite preconditioner
   as an approximation of the inverse of the Hessian of ``f``, a map with the same

@@ -10,10 +10,10 @@ AbstractManifoldObjective{T} end
     ManifoldCostObjective{T, TC} <: AbstractManifoldCostObjective{T, TC}
 
 specify an [`AbstractManifoldObjective`](@ref) that does only have information about
-the cost function ``f:  $(_math(:Manifold))) → ℝ`` implemented as a function `(M, p) -> c`
+the cost function ``f:  $(_math(:Manifold)) → ℝ`` implemented as a function `(M, p) -> c`
 to compute the cost value `c` at `p` on the manifold `M`.
 
-* `cost`: a function ``f: $(_math(:Manifold))) → ℝ`` to minimize
+* `cost`: a function ``f: $(_math(:Manifold)) → ℝ`` to minimize
 
 # Constructors
 

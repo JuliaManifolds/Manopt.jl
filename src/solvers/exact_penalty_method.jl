@@ -197,7 +197,7 @@ $(_doc_EPM_penalty)
 Since this is non-smooth, a [`SmoothingTechnique`](@ref) with parameter `u` is applied,
 see the [`ExactPenaltyCost`](@ref).
 
-In every step ``k`` of the exact penalty method, the smoothed objective is then minimized over all ``p ∈$(_math(:Manifold))nifold))nifold)))``.
+In every step ``k`` of the exact penalty method, the smoothed objective is then minimized over all ``p ∈$(_math(:Manifold))``.
 Then, the accuracy tolerance ``ϵ`` and the smoothing parameter ``u`` are updated by setting
 
 $(_doc_EMP_ϵ_update)
