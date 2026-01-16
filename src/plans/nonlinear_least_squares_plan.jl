@@ -99,7 +99,7 @@ struct NonlinearLeastSquaresObjective{
     end
 end
 
-# the old single function constructor – TODO: remove?
+# the old single function constructor – TODO: remove? No but carefully document that this is just one special case that has a nicer shortcut and calls the vectorial one
 function NonlinearLeastSquaresObjective(
         f,
         jacobian,
@@ -803,7 +803,7 @@ this objective represents the penalized objective for the sub-problem to solve w
 of the Levenberg-Marquardt algorithm given by
 
 ```math
-σ(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; size = "big"))^2
+μ(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; size = "big"))^2
   + $(_tex(:frac, "λ", "2"))$(_tex(:norm, "X"))^2
 ```
 
@@ -838,7 +838,7 @@ of the Levenberg-Marquardt algorithm given by
 
 ```math
 σ(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; size = "big"))^2
-$(_tex(:text, "such that ")) $(_tex(:norm, "X")) ≤ Δ
+$(_tex(:quad))$(_tex(:text, " such that "))$(_tex(:quad))$(_tex(:norm, "X")) ≤ Δ
 ```
 
 where ``X ∈ $(_math(:TangentSpace))`` is the new step to compute.
