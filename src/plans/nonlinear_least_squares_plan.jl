@@ -28,12 +28,12 @@ $(_problem(:NonLinearLeastSquares))
 
 # Fields
 
-* `objective`: a (vector of) [`AbstractVectorGradientFunction`](@ref)`{E}`s, one for each
-  (block component) cost function ``F_i``, which might internally also be a vector of component costs ``(F_i)_j``,
+* `objective`: a vector of [`AbstractVectorGradientFunction`](@ref)`{E}`s, one for each
+  block component cost function ``F_i``, which might internally also be a vector of component costs ``(F_i)_j``,
   as well as their Jacobian ``J_{F_i}`` or a vector of gradients ``$(_tex(:grad)) (F_i)_j``
   depending on the specified [`AbstractVectorialType`](@ref)s.
-* `robustifier`: a (vector of) [`AbstractRobustifierFunction`](@ref)`s`, one for each
-  (block component) cost function ``F_i``.
+* `robustifier`: a vector of [`AbstractRobustifierFunction`](@ref)`s`, one for each
+  block component cost function ``F_i``.
 
 # Constructors
 
@@ -72,8 +72,8 @@ As well as for the first variant of having a single block
 """
 struct NonlinearLeastSquaresObjective{
         E <: AbstractEvaluationType,
-        VF <: Union{Vector{AbstractVectorGradientFunction{E}}, AbstractVectorGradientFunction{E}},
-        RF <: Union{Vector{<:AbstractRobustifierFunction}, AbstractRobustifierFunction},
+        VF <: Vector{AbstractVectorGradientFunction{E}},
+        RF <: Vector{<:AbstractRobustifierFunction},
     } <: AbstractManifoldFirstOrderObjective{E, VF}
     objective::VF
     robustifier::RF
@@ -95,7 +95,7 @@ struct NonlinearLeastSquaresObjective{
             f::F,
             robustifier::R = IdentityRobustifier(),
         ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction}
-        return new{E, F, R}(f, robustifier)
+        return new{E, Vector{F}, Vector{R}}([f,], [robustifier,])
     end
 end
 
