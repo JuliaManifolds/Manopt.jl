@@ -6,10 +6,10 @@ _doc_conjugate_residual = """
 
 Compute the solution of ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p ``, where
 
-* ``$(_tex(:Cal, "A"))`` is a linear, symmetric operator on ``$(_math(:TangentSpace)))``
+* ``$(_tex(:Cal, "A"))`` is a linear, symmetric operator on ``$(_math(:TangentSpace))``
 * ``b`` is a vector field on the manifold
-* ``X ∈ $(_math(:TangentSpace)))`` is a tangent vector
-* ``0_p`` is the zero vector ``$(_math(:TangentSpace)))``.
+* ``X ∈ $(_math(:TangentSpace))`` is a tangent vector
+* ``0_p`` is the zero vector ``$(_math(:TangentSpace))``.
 
 This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
 is initialised with ``X^{(0)}`` as the zero vector and

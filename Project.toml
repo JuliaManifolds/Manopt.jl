@@ -1,6 +1,6 @@
 name = "Manopt"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
-version = "0.5.31"
+version = "0.5.32"
 authors = ["Ronny Bergmann <manopt@ronnybergmann.net>"]
 
 [workspace]
@@ -47,7 +47,7 @@ ColorTypes = "0.9.1, 0.10, 0.11, 0.12"
 Colors = "0.11.2, 0.12, 0.13"
 DataStructures = "0.17, 0.18, 0.19"
 Dates = "1.10"
-Glossaries = "0.1.0"
+Glossaries = "0.1.1"
 JuMP = "1.15"
 LRUCache = "1.4"
 LineSearches = "7.2.0"

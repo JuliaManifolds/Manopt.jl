@@ -9,7 +9,7 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 # Fields
 
 $(_fields(:stopping_criterion; name = "stop"))
-$(_fields(:stopping_criterion, "stop_newton"))
+$(_fields(:stopping_criterion, name = "stop_newton"))
   used for the inner Newton iteration
 * `σ`:               the current regularization parameter
 * `X`:               the Iterate

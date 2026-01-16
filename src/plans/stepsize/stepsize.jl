@@ -188,7 +188,7 @@ end
 
 Specify a step size that performs an Armijo line search. Given a Function ``f:$(_math(:Manifold))nifold))nifold))nifold)))→ℝ``
 and its Riemannian Gradient ``$(_tex(:grad))f: $(_math(:Manifold))nifold))nifold))nifold)))→$(_math(:TangentBundle))``,
-the current point ``p∈$(_math(:Manifold))nifold))nifold)))`` and a search direction ``X∈$(_math(:TangentSpace)))``.
+the current point ``p∈$(_math(:Manifold))nifold))nifold)))`` and a search direction ``X∈$(_math(:TangentSpace))``.
 
 Then the step size ``s`` is found by reducing the initial step size ``s`` until
 
@@ -1649,7 +1649,7 @@ See [`WolfePowellLinesearch`](@ref) for the math details
 $(_fields(:X; name = "candidate_direction"))
 $(_fields(:p; name = "candidate_point"))
   as temporary storage for candidates
-$(_fields(:X, "candidate_tangent"))
+$(_fields(:X, name = "candidate_tangent"))
 * `last_stepsize::R`
 * `max_stepsize::R`
 $(_fields(:retraction_method))

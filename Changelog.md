@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Line searches consistently respect `stop_when_stepsize_exceeds` keyword argument as a hard limit.
 
+## [0.5.32] January 15, 2026
+
+### Fixed
+
+* Fixed failing precompilation related to the release of Glossaries.jl v0.1.1 (#567).
+
 ## [0.5.31] January 11, 2026
 
 ### Changed
