@@ -288,7 +288,7 @@ Glossaries.define!(
     (; M = "M", p = "p") -> """
     ```math
     $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} f($p),
-    $(_tex(:qquad)) f($p) = $(_tex(:frac, "1", "2")) $(_tex(:sum,"i=1", "m"))
+    $(_tex(:qquad)) f($p) = $(_tex(:frac, "1", "2")) $(_tex(:sum, "i=1", "m"))
         ρ_i $(_tex(:bigl))( $(_tex(:norm, "F_i($p)"))^2 $(_tex(:bigr)))
     ```
 

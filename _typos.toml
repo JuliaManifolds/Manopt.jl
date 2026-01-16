@@ -2,7 +2,7 @@
 methodes = "methodes" # french
 Serie = "Serie" # french
 sur = "sur" # french
-cmo = "cmo" # often ussed abbreciation for constrained manifold objective
+cmo = "cmo" # often used abbreviation for constrained manifold objective
 
 [files]
 extend-exclude = [
