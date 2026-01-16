@@ -42,6 +42,7 @@ Glossaries.define!(_glossary_tex_terms, :argmin, :math, raw"\operatorname*{arg\,
 Glossaries.define!(_glossary_tex_terms, :ast, :math, raw"\ast")
 _tex_bar(letter) = raw"\bar" * "$(letter)"
 Glossaries.define!(_glossary_tex_terms, :bar, :math, _tex_bar)
+Glossaries.define!(_glossary_tex_terms, :bf, :math, (letter) -> raw"\mathbf{" * "$letter" * "}")
 Glossaries.define!(_glossary_tex_terms, :big, :math, raw"\big")
 Glossaries.define!(_glossary_tex_terms, :bigl, :math, raw"\bigl")
 Glossaries.define!(_glossary_tex_terms, :bigr, :math, raw"\bigr")
