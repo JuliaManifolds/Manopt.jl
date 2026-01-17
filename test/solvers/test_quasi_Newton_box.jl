@@ -258,6 +258,20 @@ using RecursiveArrayTools
         grad_f(M, p) = ArrayPartition(project(Mbox, p.x[1], 4 .* (p.x[1] .^ 3)), -log(S2, p.x[2], px))
         p0 = ArrayPartition([0.0, 4.0, 1.0], [1.0, 0.0, 0.0])
 
+        @testset "Hessian updater" begin
+            d = -grad_f(M, p0)
+            ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis())
+            gupd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
+            Manopt.init_updater!(M, gupd, p0, d, ha)
+            b = 2
+            dt = 0.25
+            t_current = 0 + dt
+            db = d[b]
+            hv_eb_dz, hv_eb_d = gupd(M, p0, t_current, dt, b, db, ha)
+            @test hv_eb_dz ≈ -64.0
+            @test hv_eb_d ≈ -256.0
+        end
+
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test distance(M, p_opt, ArrayPartition([0, 2, 0], px)) < 0.1
     end
