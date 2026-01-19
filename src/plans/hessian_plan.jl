@@ -272,7 +272,7 @@ $(_kwargs([:retraction_method, :vector_transport_method]))
 ## Keyword arguments
 
 $(_kwargs(:evaluation))
-* `steplength=`2^{-14}``: step length ``c`` to approximate the gradient evaluations
+* `steplength=2^{-14}`: step length ``c`` to approximate the gradient evaluations
 $(_kwargs([:retraction_method, :vector_transport_method]))
 """
 mutable struct ApproxHessianFiniteDifference{E, P, T, G, RTR, VTR, R <: Real} <:
@@ -359,8 +359,8 @@ $(_kwargs(:vector_transport_method)).
 
 ## Keyword arguments
 
-* `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
-* `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
+* `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
+* `basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)
 $(_kwargs([:evaluation, :vector_transport_method]))
 """
@@ -504,7 +504,7 @@ $(_fields(:vector_transport_method))
 ## Keyword arguments
 
 * `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
-* `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
+* `basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`)) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)
 $(_kwargs([:evaluation, :vector_transport_method]))
 """
