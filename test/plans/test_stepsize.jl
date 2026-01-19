@@ -263,7 +263,7 @@ end
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p = p)
-            ds = DistanceOverGradientsStepsize(
+            ds = Manopt.DistanceOverGradientsStepsize(
                 M; p = p, initial_distance = 1.0, use_curvature = false
             )
             @test ds.gradient_sum == 0
@@ -295,7 +295,7 @@ end
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p = p)
-            ds = DistanceOverGradientsStepsize(
+            ds = Manopt.DistanceOverGradientsStepsize(
                 M;
                 p = p,
                 initial_distance = 1.0,
@@ -318,7 +318,7 @@ end
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [1, 0]
             gds = GradientDescentState(M; p = p)
-            ds = DistanceOverGradientsStepsize(
+            ds = Manopt.DistanceOverGradientsStepsize(
                 M; p = p, initial_distance = 1.0, use_curvature = false
             )
             @test ds.gradient_sum == 0
@@ -337,7 +337,7 @@ end
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [1, 0]
             gds = GradientDescentState(M; p = p)
-            ds = DistanceOverGradientsStepsize(
+            ds = Manopt.DistanceOverGradientsStepsize(
                 M;
                 p = p,
                 initial_distance = 1.0,
@@ -367,7 +367,7 @@ end
 
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             gds = GradientDescentState(M; p = p)
-            ds = DistanceOverGradientsStepsize(
+            ds = Manopt.DistanceOverGradientsStepsize(
                 M;
                 p = p,
                 initial_distance = 1.0,

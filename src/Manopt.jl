@@ -440,6 +440,7 @@ export AbstractMeshSearchFunction, DefaultMeshAdaptiveDirectSearch
 # Direction Update Rules
 export DirectionUpdateRule
 export Gradient, StochasticGradient
+export AdaptiveDirection, BasicDirection, AdamDirection
 export AverageGradient, MomentumGradient, Nesterov, PreconditionedDirection
 export SteepestDescentCoefficient,
     HestenesStiefelCoefficient,
@@ -539,7 +540,7 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 # Stepsize
 export Stepsize
 export AdaptiveWNGradient, AffineCovariantStepsize, ConstantLength, DecreasingLength,
-    Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
+    Polyak, DistanceOverGradients
 export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch, CubicBracketingLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
