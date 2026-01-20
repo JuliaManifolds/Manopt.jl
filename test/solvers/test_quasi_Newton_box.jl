@@ -198,6 +198,21 @@ using RecursiveArrayTools
         @test Manopt.find_generalized_cauchy_point_direction!(gf3, d_out, p3, [1.0], [-10.0]) === :found_limited
     end
 
+    @testset "Hitting multiple bounds at the same time in GCD" begin
+        M = Hyperrectangle([-1.0, -1.0, -1.0], [1.0, 1.0, 1.0])
+        ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [1.0 0 0; 0 1 0; 0 0 1])
+
+        p = [0.0, 0.0, 0.0]
+        gf = Manopt.GeneralizedCauchyPointFinder(M, p, ha)
+
+        d = [-2.0, -2.0, -1.0]
+        d_out = similar(d)
+        X = [10.0, 10.0, 10.0]
+
+        @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, d, X) === :found_limited
+        @test d_out ≈ [-1.0, -1.0, -1.0]
+    end
+
     @testset "Pure Hyperrectangle" begin
         M = Hyperrectangle([-1.0, 2.0, -Inf], [2.0, Inf, 2.0])
         f(M, p) = sum(p .^ 2)
