@@ -9,26 +9,26 @@ V = rand(M_rot)
 cov_matrix = Symmetric(V * Diagonal([0.5; 2.0; 5.0; 10.0; 20.0]) * V&#39;)
 distr = MvNormal(zeros(N), cov_matrix)
 data = Matrix(rand(distr, 200)&#39;)  # 200 samples</code></pre><pre><code class="nohighlight hljs">200×5 Matrix{Float64}:
-  2.49038   -0.168705    0.151366   -0.505951   1.81476
-  8.68367   -0.572302    5.72617    -0.295533   0.657729
-  8.40996    6.29926     4.77559    -4.03387   -1.1649
-  2.99286    1.60723     0.851197   -2.0991    -1.00619
-  2.64802    2.18773    -1.04062    -1.88145    2.05745
- -1.01777   -1.36644    -3.61584    -1.63211   -3.35438
- -3.40142   -3.1588     -0.0170035   1.96801   -1.49553
-  1.95833    2.79409    -1.70579    -4.24353   -0.798043
- -3.32303   -0.0233805  -2.66939    -1.56835    0.465777
- -0.327506  -2.69881    -0.704321    1.9431     1.95525
-  ⋮                                            
- -5.93031    6.1875      2.86863     1.03258   -5.11744
- -1.55962   -1.24998     2.16333     3.2081     1.6293
-  0.167224  -3.57609     0.426404    1.28818    0.908444
-  6.58708   -2.05486     0.701533   -1.43904    3.23943
- -2.56407   -0.415862   -2.09832    -0.437734  -1.65001
- -1.00687    2.38711     1.50414    -1.2128    -2.54722
-  1.03473    5.72644     0.584391   -3.4385    -1.68224
- -0.327656   3.75644    -1.37365    -1.6606    -1.40564
- -3.19919   -1.29392    -4.15543    -0.363522   2.4925</code></pre><p>The objective function is defined as follows, with gradient calculated using automatic differentiation.</p><pre><code class="language-julia hljs">function logprob_cost(::AbstractManifold, p)
+  1.31836   -0.951711   -3.31596   -0.300194   0.987336
+  0.574116   1.59959    -5.75171    1.55356    0.153909
+  2.15917    0.824968   -4.43389    0.621973   1.35833
+ -0.979209  -1.16307    -0.722652   3.7614    -2.05473
+  0.8005     0.360195    5.32486   -1.41458   -1.3069
+  1.57754   -1.96819     4.12654    0.390011   3.70517
+  1.95463   -1.17801    -2.67621    1.72106    7.20807
+ -0.321101  -1.15027     9.16183   -3.18628    3.20653
+ -1.04675   -0.0358171   1.05297   -1.30608    2.57686
+ -3.27924   -0.299723   -1.43109   -2.18      -2.54985
+  ⋮                                           
+  2.6483    -1.29704    -0.384122   2.9537     0.525084
+ -1.1108    -0.990818    0.471443  -3.64609   -1.08925
+ -1.24921    0.505105   -5.98117    1.49954   -0.62018
+ -1.3531    -0.237816   -6.00298    0.615194   0.566824
+  1.56227    1.12512    -8.62925    0.519578   0.787965
+ -3.48332    3.90296    -3.05323   -2.93144   -3.42566
+ -2.40993    0.021535    4.31482    0.675921  -2.54267
+  2.99519    1.55608    -2.81013   -2.34705   10.6464
+  0.963613  -0.21493     2.45843   -4.29768    1.84176</code></pre><p>The objective function is defined as follows, with gradient calculated using automatic differentiation.</p><pre><code class="language-julia hljs">function logprob_cost(::AbstractManifold, p)
     D, R = p.x
     logdet = sum(log, D)
     invΣ = R * Diagonal(1 ./ D) * R&#39;
@@ -50,6 +50,6 @@ println(&quot;Estimated variances: $(p_mle.x[1])&quot;)
 cov_matrix_mle = p_mle.x[2] * Diagonal(p_mle.x[1]) * p_mle.x[2]&#39;
 println(&quot;Estimated covariance matrix:&quot;)
 println(cov_matrix_mle)
-nothing</code></pre><pre><code class="nohighlight hljs">Estimated variances: [19.50151919578211, 10.450782523211519, 1.7965430399610323, 4.462749591568088, 1.0]
+nothing</code></pre><pre><code class="nohighlight hljs">Estimated variances: [2.0957894394668775, 1.0, 17.273257788818537, 4.262314409995603, 9.423109718039616]
 Estimated covariance matrix:
-[10.955133783542928 2.5040881385360967 … -4.852089012263297 0.5699143105369153; 2.5040881385360967 10.522888931441459 … -4.193508805571896 -4.826582679292507; … ; -4.852089012263297 -4.193508805571897 … 5.7368789587003945 2.3305014423568653; 0.5699143105369152 -4.826582679292507 … 2.3305014423568653 5.1410110005090495]</code></pre><p>We see that despite the original covariance matrix having variances ranging from 0.5 to 20.0, the estimated covariance matrix respects the box constraints of variances between 1.0 and 100.0.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../ConstrainedOptimization/">« Do constrained optimization</a><a class="docs-footer-nextpage" href="../../solvers/">List of Solvers »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Saturday 17 January 2026 11:56">Saturday 17 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+[2.779019171688191 -0.4220602218351867 … -0.6457356408454762 2.1606351098405834; -0.4220602218351867 1.683483002890376 … -0.10670331829133023 -0.17225304667562572; … ; -0.6457356408454763 -0.10670331829133027 … 4.746565496087616 -0.8655214796221485; 2.1606351098405834 -0.17225304667562572 … -0.8655214796221484 8.573394722504359]</code></pre><p>We see that despite the original covariance matrix having variances ranging from 0.5 to 20.0, the estimated covariance matrix respects the box constraints of variances between 1.0 and 100.0.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../ConstrainedOptimization/">« Do constrained optimization</a><a class="docs-footer-nextpage" href="../../solvers/">List of Solvers »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Tuesday 20 January 2026 17:18">Tuesday 20 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
