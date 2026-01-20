@@ -22,7 +22,7 @@ These symbols are directly used by solvers to compute the descent direction corr
 ```@docs
 Manopt.requires_generalized_cauchy_point_computation
 Manopt.find_generalized_cauchy_point_direction!
-Manopt.GeneralizedCauchyPointFinder
+Manopt.GeneralizedCauchyDirectionFinder
 ```
 
 ### Symbols related to the Hessian approximation
@@ -53,6 +53,6 @@ Manopt.set_zero_at_index!
 
 ```@docs
 Manopt.LimitedMemorySegmentHessianUpdater
-Manopt.hessian_value_from_wmwt_coords
+Manopt.hessian_value_from_inner_products
 Manopt.set_M_current_scale!
 ```

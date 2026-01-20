@@ -101,7 +101,7 @@ function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    gcp = GeneralizedCauchyPointFinder(M, p, d)
+    gcp = GeneralizedCauchyDirectionFinder(M, p, d)
     d.last_gcp_result = find_generalized_cauchy_point_direction!(gcp, r, p, r, X)
     return r
 end
@@ -138,7 +138,7 @@ function hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstra
     coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
     coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
 
-    return hessian_value_from_wmwt_coords(gh, normX_sqr, coords_Yk, coords_Sk, coords_Yk, coords_Sk)
+    return hessian_value_from_inner_products(gh, normX_sqr, coords_Yk, coords_Sk, coords_Yk, coords_Sk)
 end
 
 @doc raw"""
@@ -166,7 +166,7 @@ function hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abs
     coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
     coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
 
-    return hessian_value_from_wmwt_coords(gh, one(eltype(gh.qn_du.ρ)), coords_Yk, coords_Sk, coords_Yk, coords_Sk)
+    return hessian_value_from_inner_products(gh, one(eltype(gh.qn_du.ρ)), coords_Yk, coords_Sk, coords_Yk, coords_Sk)
 end
 
 @doc raw"""
@@ -199,7 +199,7 @@ function hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abs
     coords_Sk_X = view(gh.coords_Sk_X, 1:num_nonzero_rho)
     coords_Sk_Y = view(gh.coords_Sk_Y, 1:num_nonzero_rho)
 
-    return hessian_value_from_wmwt_coords(gh, Yb, coords_Yk_X, coords_Sk_X, coords_Yk_Y, coords_Sk_Y)
+    return hessian_value_from_inner_products(gh, Yb, coords_Yk_X, coords_Sk_X, coords_Yk_Y, coords_Sk_Y)
 end
 
 @doc raw"""
@@ -279,7 +279,7 @@ function set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemo
 end
 
 @doc raw"""
-    hessian_value_from_wmwt_coords(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
+    hessian_value_from_inner_products(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
 
 Evaluate the quadratic form defined by the current blockwise Hessian approximation stored in
 `gh`, given precomputed coordinate vectors.
@@ -292,7 +292,7 @@ Arguments:
 The result is ``θ·iss - cy₁ᵀ M₁₁ cy₂ - 2·cs₁ᵀ M₂₁ cy₂ - cs₁ᵀ M₂₂ cs₂`` using the blocks
 ``M₁₁``, ``M₂₁``, ``M₂₂`` stored in `gh` and the current scale ``θ``. Returns the scalar value.
 """
-function hessian_value_from_wmwt_coords(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
+function hessian_value_from_inner_products(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
     result = gh.current_scale * iss
     if length(cy1) == 0
         return result
@@ -329,7 +329,7 @@ end
     abstract type AbstractSegmentHessianUpdater end
 
 Abstract type for methods that calculate f' and f'' in the GCP calculation in subsequent
-line segments in `GeneralizedCauchyPointFinder`.
+line segments in [`GeneralizedCauchyDirectionFinder`](@ref).
 """
 abstract type AbstractSegmentHessianUpdater end
 
@@ -432,7 +432,7 @@ point line search using the limited-memory block Hessian stored in `ha`.
 - `db`: search direction component at the bound index `b`.
 
 The updater reuses cached coordinate projections in `hessian_segment_updater` to cheaply
-evaluate Hessian quadratic forms via `hessian_value_from_wmwt_coords`.
+evaluate Hessian quadratic forms via `hessian_value_from_inner_products`.
 """
 function (hessian_segment_updater::LimitedMemorySegmentHessianUpdater)(
         M::AbstractManifold, p,
@@ -463,9 +463,9 @@ function (hessian_segment_updater::LimitedMemorySegmentHessianUpdater)(
     coords_cy .+= dt .* coords_py
     coords_cs .+= dt .* coords_ps
 
-    eb_B_z = hessian_value_from_wmwt_coords(ha, t * db, coords_Yk_eb, coords_Sk_eb, coords_cy, coords_cs)
+    eb_B_z = hessian_value_from_inner_products(ha, t * db, coords_Yk_eb, coords_Sk_eb, coords_cy, coords_cs)
 
-    eb_B_d = hessian_value_from_wmwt_coords(ha, db, coords_Yk_eb, coords_Sk_eb, coords_py, coords_ps)
+    eb_B_d = hessian_value_from_inner_products(ha, db, coords_Yk_eb, coords_Sk_eb, coords_py, coords_ps)
 
     coords_py .-= db .* coords_Yk_eb
     coords_ps .-= db .* coords_Sk_eb
@@ -520,7 +520,7 @@ function set_bound_for_t!(
 end
 
 @doc raw"""
-    GeneralizedCauchyPointFinder{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
+    GeneralizedCauchyDirectionFinder{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
 
 Helper container for generalized Cauchy point search. Stores the manifold `M`, cached
 workspace (`d_tmp`), the quasi-Newton direction update `ha`, and the `hessian_segment_updater`,
@@ -528,22 +528,22 @@ which computes certain values of the Hessian while advancing segments.
 Instances are reused across segments during `find_generalized_cauchy_point_direction!` to
 avoid allocations.
 """
-struct GeneralizedCauchyPointFinder{TM <: AbstractManifold, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
+struct GeneralizedCauchyDirectionFinder{TM <: AbstractManifold, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
     M::TM
     d_tmp::TX
     ha::T_HA
     hessian_segment_updater::TFU
 end
 
-function GeneralizedCauchyPointFinder(
+function GeneralizedCauchyDirectionFinder(
         M::AbstractManifold, p, ha::AbstractQuasiNewtonDirectionUpdate;
         hessian_segment_updater::AbstractSegmentHessianUpdater = get_default_hessian_segment_updater(M, p, ha)
     )
-    return GeneralizedCauchyPointFinder(M, zero_vector(M, p), ha, hessian_segment_updater)
+    return GeneralizedCauchyDirectionFinder(M, zero_vector(M, p), ha, hessian_segment_updater)
 end
 
 """
-    find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFinder, d_out, p, d, X)
+    find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
 
 Find generalized Cauchy point looking from point `p` in direction `d` and save the tangent
 vector pointing at it to `d_out`. Gradient of the objective at `p` is `X`.
@@ -555,7 +555,7 @@ The function returns
   `max_stepsize(M, p)` in direction `d_out` afterwards,
 * `:not_found` if the search cannot be performed in direction `d`.
 """
-function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyPointFinder, d_out, p, d, X)
+function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
     M = gcp.M
     copyto!(M, d_out, d)
 

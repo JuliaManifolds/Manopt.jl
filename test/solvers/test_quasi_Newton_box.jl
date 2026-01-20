@@ -156,12 +156,12 @@ using RecursiveArrayTools
         end
     end
 
-    @testset "GeneralizedCauchyPointFinder" begin
+    @testset "GeneralizedCauchyDirectionFinder" begin
         M = Hyperrectangle([-1.0, -2.0, -Inf], [2.0, Inf, 2.0])
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS())
 
         p = [0.0, 0.0, 0.0]
-        gf = Manopt.GeneralizedCauchyPointFinder(M, p, ha)
+        gf = Manopt.GeneralizedCauchyDirectionFinder(M, p, ha)
 
         X1 = [-5.0, 0.0, 0.0]
 
@@ -184,7 +184,7 @@ using RecursiveArrayTools
         @test d_out ≈ [2.0, 10.0, 0.0]
 
         p2 = [-1.0, -2.0, 2.0]
-        gf2 = Manopt.GeneralizedCauchyPointFinder(M, p2, ha)
+        gf2 = Manopt.GeneralizedCauchyDirectionFinder(M, p2, ha)
 
         @test Manopt.find_generalized_cauchy_point_direction!(gf2, d_out, p2, [-1.0, -1.0, 1.0], [-10.0, -10.0, -10.0]) === :not_found
 
@@ -192,7 +192,7 @@ using RecursiveArrayTools
 
         ha2 = QuasiNewtonMatrixDirectionUpdate(M2, BFGS(), DefaultOrthonormalBasis(), [100.0;;])
         p3 = [1.0]
-        gf3 = Manopt.GeneralizedCauchyPointFinder(M2, p3, ha2)
+        gf3 = Manopt.GeneralizedCauchyDirectionFinder(M2, p3, ha2)
 
         d_out = similar(p3)
         @test Manopt.find_generalized_cauchy_point_direction!(gf3, d_out, p3, [1.0], [-10.0]) === :found_limited
@@ -203,7 +203,7 @@ using RecursiveArrayTools
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [1.0 0 0; 0 1 0; 0 0 1])
 
         p = [0.0, 0.0, 0.0]
-        gf = Manopt.GeneralizedCauchyPointFinder(M, p, ha)
+        gf = Manopt.GeneralizedCauchyDirectionFinder(M, p, ha)
 
         d = [-2.0, -2.0, -1.0]
         d_out = similar(d)
