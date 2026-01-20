@@ -842,7 +842,7 @@ function get_cost(
         cost += get_cost(M, o, r, p; value_cache = value_cache[(start + 1):(start + length(o))])
     end
     # Finally add the damping term
-    cost += (lmsco.penalty / 2) * norm(M, p, X)^2
+    cost += (penalty / 2) * norm(M, p, X)^2
     return cost
 end
 function get_cost(
