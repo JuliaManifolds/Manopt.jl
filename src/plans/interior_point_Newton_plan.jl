@@ -127,10 +127,7 @@ mutable struct InteriorPointNewtonState{
     step_state::TStepSt
     is_feasible_error::Symbol
     function InteriorPointNewtonState(
-            M::AbstractManifold,
-            cmo::ConstrainedManifoldObjective,
-            sub_problem::Pr,
-            sub_state::St;
+            M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr, sub_state::St;
             p::P = rand(M),
             X::T = zero_vector(M, p),
             μ::V = ones(length(get_inequality_constraint(M, cmo, p, :))),
@@ -164,18 +161,9 @@ mutable struct InteriorPointNewtonState{
             is_feasible_error::Symbol = :error,
             kwargs...,
         ) where {
-            P,
-            T,
-            Pr <: Union{AbstractManoptProblem, F} where {F},
-            St <: AbstractManoptSolverState,
-            V,
-            R,
-            F,
-            SC <: StoppingCriterion,
-            StepPr <: AbstractManoptProblem,
-            StepSt <: AbstractManoptSolverState,
-            RTM <: AbstractRetractionMethod,
-            S <: Stepsize,
+            P, T, Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+            V, R, F, SC <: StoppingCriterion, RTM <: AbstractRetractionMethod,
+            StepPr <: AbstractManoptProblem, StepSt <: AbstractManoptSolverState, S <: Stepsize,
         }
         ips = new{P, T, Pr, St, V, R, SC, RTM, S, StepPr, StepSt}()
         ips.p = p
@@ -200,11 +188,8 @@ mutable struct InteriorPointNewtonState{
     end
 end
 function InteriorPointNewtonState(
-        M::AbstractManifold,
-        cmo::ConstrainedManifoldObjective,
-        sub_problem;
-        evaluation::E = AllocatingEvaluation(),
-        kwargs...,
+        M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem;
+        evaluation::E = AllocatingEvaluation(), kwargs...,
     ) where {E <: AbstractEvaluationType}
     cfs = ClosedFormSubSolverState(; evaluation = evaluation)
     return InteriorPointNewtonState(M, cmo, sub_problem, cfs; kwargs...)

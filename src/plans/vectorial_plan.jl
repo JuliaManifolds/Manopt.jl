@@ -32,7 +32,6 @@ end
 CoordinateVectorialType() = CoordinateVectorialType(DefaultOrthonormalBasis())
 
 
-
 """
     get_basis(::AbstractVectorialType)
 
@@ -614,7 +613,7 @@ function get_jacobian!(
 end
 # (b) We have a vector of gradient functions
 function get_jacobian(
-        M::AbstractManifold, vgf::VGF, p; basis = get_basis(vgf.jacobian_type), range=nothing,
+        M::AbstractManifold, vgf::VGF, p; basis = get_basis(vgf.jacobian_type), range = nothing,
     ) where {
         FT, VGF <: AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:ComponentVectorialType},
     }
@@ -623,10 +622,10 @@ function get_jacobian(
     # generate the first row to get an eltype
     c1 = get_coordinates(M, p, vgf.jacobian!![1](M, p), basis)
     JF = zeros(eltype(c1), n, d)
-    return get_jacobian!(M, JF, vgf, p; basis = basis, range=range)
+    return get_jacobian!(M, JF, vgf, p; basis = basis, range = range)
 end
 function get_jacobian!(
-        M::AbstractManifold, JF, vgf::VGF, p; basis = get_basis(vgf.jacobian_type), range=nothing,
+        M::AbstractManifold, JF, vgf::VGF, p; basis = get_basis(vgf.jacobian_type), range = nothing,
     ) where {
         FT, VGF <: AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:ComponentVectorialType},
     }
@@ -637,7 +636,7 @@ function get_jacobian!(
 end
 # (c) Jacobian function
 function get_jacobian(
-        M::AbstractManifold, vgf::VGF, p; basis = get_basis(vgf.jacobian_type), range=nothing,
+        M::AbstractManifold, vgf::VGF, p; basis = get_basis(vgf.jacobian_type), range = nothing,
     ) where {
         FT,
         VGF <: AbstractVectorGradientFunction{
@@ -649,7 +648,7 @@ function get_jacobian(
     return JF
 end
 function get_jacobian!(
-        M::AbstractManifold, JF, vgf::VGF, p; basis = get_basis(vgf.jacobian_type), range=nothing,
+        M::AbstractManifold, JF, vgf::VGF, p; basis = get_basis(vgf.jacobian_type), range = nothing,
     ) where {
         FT, VGF <: AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:CoordinateVectorialType},
     }
@@ -857,8 +856,8 @@ function get_jacobian(
             <:AllocatingEvaluation, FT, <:CoordinateVectorialType,
         },
     }
-    c = get_coordinates(M, p, X,get_jacobian_basis(vgf)) # to make sure basis is set
-    return vgf.jacobian!!(M, p, X)*c
+    c = get_coordinates(M, p, X, get_jacobian_basis(vgf)) # to make sure basis is set
+    return vgf.jacobian!!(M, p, X) * c
 end
 # Part II: mutating vgf – allocating jacobian (a) single gradient function
 function get_jacobian(
@@ -867,7 +866,7 @@ function get_jacobian(
     ) where {FT}
     n = vgf.range_dimension
     a = zeros(eltype(X), n)
-    return get_jacobian!(M, a, vgf, p, X; range=range)
+    return get_jacobian!(M, a, vgf, p, X; range = range)
 end
 function get_jacobian!(
         M::AbstractManifold, a, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:FunctionVectorialType}, p, X;

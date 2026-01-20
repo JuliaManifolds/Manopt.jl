@@ -129,6 +129,7 @@ include("stepsize/stepsize.jl")
 
 include("keywords.jl")
 
+# Generic plans I: based on objective structure
 include("bundle_plan.jl")
 include("cost_plan.jl")
 include("first_order_plan.jl")
@@ -137,12 +138,15 @@ include("proximal_plan.jl")
 include("proximal_gradient_plan.jl")
 include("subgradient_plan.jl")
 include("vectorial_plan.jl")
+include("linear_surrogate_plan.jl")
 
+# Generic plans II: based on subsolvers
 include("subsolver_plan.jl")
 include("constrained_plan.jl")
 include("constrained_set_plan.jl")
 include("trust_regions_plan.jl")
 
+# Specific solver plans
 include("adaptive_regularization_with_cubics_plan.jl")
 include("alternating_gradient_plan.jl")
 include("augmented_lagrangian_plan.jl")

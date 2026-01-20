@@ -95,7 +95,7 @@ struct NonlinearLeastSquaresObjective{
             f::F,
             robustifier::R = IdentityRobustifier(),
         ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction}
-        return new{E, Vector{F}, Vector{R}}([f,], [robustifier,])
+        return new{E, Vector{F}, Vector{R}}([f], [robustifier])
     end
 end
 
@@ -795,9 +795,6 @@ end
 #
 # ----- A cost/grad objective to e.g. do CG, or Gauß-Newton ----
 
-
-abstract type AbstractLevenbergMarquardtSurrogateObjective{E<:AbstractEvaluationType, NLSO <: NonlinearLeastSquaresObjective{E}} <: AbstractManifoldFirstOrderObjective{E, NLSO} end
-
 @doc """
     LevenbergMarquardtSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
 
@@ -825,57 +822,139 @@ C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)
 * `objective`: the [`NonlinearLeastSquaresObjective`](@ref) to penalize
 * `penalty`: the damping term ``λ``
 """
-mutable struct LevenbergMarquardtSurrogatePenaltyObjective{
-        E <: AbstractEvaluationType, NLSO <: NonlinearLeastSquaresObjective{E}, R,
-    } <: AbstractLevenbergMarquardtSurrogateObjective{E, NLSO}
-    objective::NLSO
+mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType, R} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective}
+    objective::NonlinearLeastSquaresObjective{E}
     penalty::R
 end
 
-get_objective(lmsco::LevenbergMarquardtSurrogatePenaltyObjective) = lmsco.objective
+get_objective(lmsco::LevenbergMarquardtLinearSurrogateObjective) = lmsco.objective
 
-# TODO: Implement a function get_linear_operator that returns the linear operator A
-# as a matric with respect to a certain basis of the tangent space
-
-# TODO: Find a better name ?
-"""
-    evaluate_linear_operator(
-        M::AbstractManifold, lmsco::LevenbergMarquardtSurrogatePenaltyObjective, p, X; penalty = 0,
+function get_cost(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
+        value_cache = get_residuals(M, lmsco.objective, p),
+        penalty = lmsco.penalty,
     )
-    evaluate_linear_operator(
-        M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X; penalty = 0,
+    nlso = lmsco.objective
+    cost = 0.0
+    # For every block
+    start = 0
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        cost += get_cost(M, o, r, p; value_cache = value_cache[(start + 1):(start + length(o))])
+    end
+    # Finally add the damping term
+    cost += (lmsco.penalty / 2) * norm(M, p, X)^2
+    return cost
+end
+function get_cost(
+        M::AbstractManifold, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, C;
+        value_cache = get_value(M, o, p)
+    )
+    F_p_norm2 = sum(abs2, value_cache)
+    (ρ_value, _, _) = get_robustifier_values(r, F_p_norm2)
+    return 0.5 * ρ_value
+end
+
+function get_gradient(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
+        value_cache = get_residuals(M, lmsco.objective, p),
+        penalty = lmsco.penalty,
+    )
+    Y = zero_vector(M, p)
+    return get_gradient!(
+        M, Y, lmsco, p, X;
+        value_cache = value_cache,
+        penalty = penalty,
+    )
+end
+function get_gradient!(
+        M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
+        value_cache = get_residuals(M, lmsco.objective, p),
+        penalty = lmsco.penalty,
+    )
+    nlso = lmsco.objective
+    # For every block
+    zero_vector!(M, Y, p)
+    Z = copy(M, p, Y)
+    start = 0
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        len_o = length(o)
+        get_gradient!(
+            M, Z, o, r, p, X;
+            value_cache = value_cache[(start + 1):(start + len_o)],
+        )
+        Y .+= Z
+        start += len_o
+    end
+    # Finally add the damping term
+    (penalty != 0) && (Y .+= penalty * X)
+    return Y
+end
+function get_gradient!(
+        M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
+        value_cache = get_value(M, o, p),
+    )
+    a = value_cache # evaluate residuals F(p)
+    F_p_norm2 = sum(abs2, a)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
+    α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
+    # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
+    b = zero(a)
+    get_jacobian!(M, b, o, p, X)
+    # Compute C^TCa = C^2 a (inplace of a)
+    b .= ρ_prime .* (I - α * (a * a') ./ F_p_norm2)^2 * b
+    # add C^T y = C^T (sqrt(ρ(p)) / (1 - α) F(p)) (which overall has a ρ_prime upfront)
+    b .+= (ρ_prime / (1 - α)) .* (I - α * (a * a') ./ F_p_norm2) * a
+    # apply the adjoint
+    get_adjoint_jacobian!(M, Y, o, p, b)
+    return Y
+end
+
+"""
+    linear_normal_operator(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; penalty = lmsco.penalty,
+    )
+    linear_normal_operator(
+        M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X; penalty = lmsco.penalty,
+    )
+    linear_normal_operator!(
+        M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; penalty = lmsco.penalty,
+    )
+    linear_normal_operator!(
+        M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X; penalty = lmsco.penalty,
     )
 
 Compute the linear operator ``$(_tex(:Cal, "A"))` corresponding to the optimality conditions of the
-Levenberg-Marquardt surrogate objective, i.e.,
+modified Levenberg-Marquardt surrogate objective, i.e. the normal conditions
+
 ```math
 $(_tex(:Cal, "A"))(X) = $(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))(X) + λX
 = J_F^*(p)$(_tex(:bigl))[ C^T C J_F(p)[X] $(_tex(:bigr))] + λX,
 ```
+
 where ``λ = `penalty` is a damping parameter.
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
 
-See also [`evaluate_tangent_vector`](@ref) for evaluating the corresponding vector field
+See also [`normal_vector_field`](@ref) for evaluating the corresponding vector field
 """
-function evaluate_linear_operator(
-        M::AbstractManifold, lmsco::AbstractLevenbergMarquardtSurrogateObjective, p, X;
-        penalty = 0,
+function linear_normal_operator(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
+        penalty = lmsco.penalty,
     )
     Y = zero_vector(M, p)
-    return evaluate_linear_operator!(M, Y, lmsco, p, X; penalty = penalty)
+    return linear_normal_operator!(M, Y, lmsco, p, X; penalty = penalty)
 end
-function evaluate_linear_operator!(
-        M::AbstractManifold, Y, lmsco::AbstractLevenbergMarquardtSurrogateObjective, p, X;
-        penalty = 0,
+function linear_normal_operator!(
+        M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
+        penalty = lmsco.penalty,
     )
     nlso = get_objective(lmsco)
     # For every block
     zero_vector!(M, Y, p)
     Z = copy(M, p, Y)
-    for (o,r) in zip(nlso.objective, nlso.robustifier)
-        evaluate_linear_operator!(M, Z, o, r, p, X; penalty = 0)
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        linear_normal_operator!(M, Z, o, r, p, X; penalty = 0)
         Y .+= Z
     end
     # Finally add the damping term
@@ -883,7 +962,7 @@ function evaluate_linear_operator!(
     return Y
 end
 # for a single block – the actual formula
-function evaluate_linear_operator!(
+function linear_normal_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
         penalty = 0,
     )
@@ -894,7 +973,7 @@ function evaluate_linear_operator!(
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     get_jacobian!(M, Y, o, p, X)
     # Compute C^TCa = C^2 a (inplace of a)
-    a .= ρ_prime * (1 - α * (a*a') ./ F_p_norm2)^2 * a
+    a .= ρ_prime .* (I - α * (a * a') ./ F_p_norm2)^2 * a
     # Now apply the adjoint
     get_adjoint_jacobian!(M, Y, o, p, a)
     # Finally add the damping term
@@ -902,24 +981,76 @@ function evaluate_linear_operator!(
     return Y
 end
 
-# TODO: implement a function get_tangent_vector that returns the computed tangent vector
-# in coefficients of a certain basis of the tangent space
-# TODO: Find a better name ?
 """
-    evaluate_tangent_vector(
-        M::AbstractManifold, lmsco::LevenbergMarquardtSurrogatePenaltyObjective, p
+    linear_operator(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
-    evaluate_tangent_vector!(
-        M::AbstractManifold, X, lmsco::LevenbergMarquardtSurrogatePenaltyObjective, p
+    linear_operator(
+        M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
     )
-    evaluate_tangent_vector!(
+
+Compute the linear operator ``$(_tex(:Cal, "L"))` corresponding to the optimality conditions of the
+Levenberg-Marquardt surrogate objective, i.e. the normal conditions
+
+```math
+$(_tex(:Cal, "L"))(X) = C J_F^*(p)[X] $(_tex(:bigr))],
+```
+
+Note that this is done per every block (vectorial function with its robustifier) of the underlying
+[`NonlinearLeastSquaresObjective`](@ref) and summed up.
+
+See also [`evaluate_tangent_vector`](@ref) for evaluating the corresponding vector field
+"""
+function linear_operator(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X,
+    )
+    nlso = get_objective(lmsco)
+    n = sum(get_length(o) for o in nlso.objective)
+    y = zeros(eltype(p), n)
+    return linear_operator!(M, y, lmsco, p, X)
+end
+function linear_operator!(
+        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X,
+    )
+    nlso = get_objective(lmsco)
+    # Init to zero
+    fill!(y, 0)
+    start = 0
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        linear_operator!(M, y[(start + 1):(start + get_length(o))], o, r, p, X)
+        start += get_length(o)
+    end
+    return y
+end
+# for a single block – the actual formula
+function linear_operator!(
+        M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
+    )
+    F_p = get_value(M, o, p) # evaluate residuals F(p)
+    F_p_norm2 = sum(abs2, F_p)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
+    α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
+    get_jacobian!(M, y, o, p, X)
+    # Compute C y
+    y .= sqrt(ρ_prime) .* (I - α * (F_p * F_p') ./ F_p_norm2) * y
+    return y
+end
+
+"""
+    normal_vector_field(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
+    )
+    normal_vector_field!(
+        M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
+    )
+    normal_vector_field!(
         M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p
     )
 
-Compute the linear operator tangent vector ``X`` corresponding to the optimality conditions of the
+Compute the normal linear operator tangent vector ``X`` corresponding to the optimality conditions of the
 Levenberg-Marquardt surrogate objective, i.e.,
 ```math
-X = - J_F^*(p)[ C^T y],
+X = - J_F^*(p)[ C^T y], $(_tex(:quad)) y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p).
 ```
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
@@ -927,27 +1058,27 @@ Note that this is done per every block (vectorial function with its robustifier)
 
 See also [`evaluate_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
 """
-function evaluate_tangent_vector(
+function normal_vector_field(
         M::AbstractManifold, lmsco::AbstractLevenbergMarquardtSurrogateObjective, p
     )
     X = zero_vector(M, p)
-    return evaluate_tangent_vector!(M, X, lmsco, p)
+    return normal_vector_field!(M, X, lmsco, p)
 end
-function evaluate_tangent_vector!(
+function normal_vector_field!(
         M::AbstractManifold, X, lmsco::AbstractLevenbergMarquardtSurrogateObjective, p
     )
     nlso = get_objective(lmsco)
     # For every block
     zero_vector!(M, X, p)
     Z = copy(M, p, X)
-    for (o,r) in zip(nlso.objective, nlso.robustifier)
-        evaluate_tangent_vector!(M, Z, o, r, p)
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        normal_vector_field!(M, Z, o, r, p)
         X .+= Z
     end
     return X
 end
 # for a single block – the actual formula
-function evaluate_tangent_vector!(
+function normal_vector_field!(
         M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p
     )
     y = get_value(M, o, p) # evaluate residuals F(p)
@@ -957,46 +1088,66 @@ function evaluate_tangent_vector!(
     # Compute y = (sqrt(ρ(p)) / (1-α)) F(p)
     y .= (sqrt(ρ_value) / (1 - α)) * y
     # Now compute J_F^*(p)[C^T y] (inplace of y)
-    y .= ρ_prime * (1 - α * (y*y') ./ F_p_norm2) * y
+    y .= ρ_prime * (1 - α * (y * y') ./ F_p_norm2) * y
     # Now apply the adjoint and negate
     get_adjoint_jacobian!(M, X, o, p, y)
     X .*= -1
     return X
 end
 
-
-@doc """
-    LevenbergMarquardtSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
-
-Given an [`NonlinearLeastSquaresObjective`](@ref) `objective` and a damping term `damping_term`,
-this objective represents the penalized objective for the sub-problem to solve within every step
-of the Levenberg-Marquardt algorithm given by
-
-```math
-σ(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; size = "big"))^2
-$(_tex(:quad))$(_tex(:text, " such that "))$(_tex(:quad))$(_tex(:norm, "X")) ≤ Δ
-```
-
-where ``X ∈ $(_math(:TangentSpace))`` is the new step to compute.
-Set ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``.
-
-Then we have  ``y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p)``.
-
-and ``$(_tex(:Cal, "L")) = CJ_F^*(p)[X]`` is a linear operator using the adjoint of the Jacobian and
-```math
-C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2") * "^2")),
-```
-
-## Fields
-
-* `objective`: the [`NonlinearLeastSquaresObjective`](@ref) to penalize
-* `radius`: the trust region radius ``Δ``
 """
-mutable struct LevenbergMarquardtSurrogateConstrainedObjective{
-        E <: AbstractEvaluationType, NLSO <: NonlinearLeastSquaresObjective{E}, R,
-    } <: AbstractLevenbergMarquardtSurrogateObjective{E, NLSO}
-    objective::NLSO
-    radius::R
-end
+    vector_field(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
+    )
+    vector_field!(
+        M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
+    )
+    vector_field!(
+        M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p
+    )
 
-get_objective(lmsco::LevenbergMarquardtSurrogateConstrainedObjective) = lmsco.objective
+Compute the vector field ``y`` corresponding to the Levenberg-Marquardt surrogate objective, i.e.,
+
+```math
+y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p).
+```
+
+Note that this is done per every block (vectorial function with its robustifier) of the underlying
+[`NonlinearLeastSquaresObjective`](@ref) and summed up.
+
+See also [`evaluate_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
+"""
+function vector_field(
+        M::AbstractManifold, lmsco::AbstractLevenbergMarquardtSurrogateObjective, p
+    )
+    nlso = get_objective(lmsco)
+    n = sum(get_length(o) for o in nlso.objective)
+    y = zeros(eltype(p), n)
+    return vector_field!(M, y, lmsco, p)
+end
+function vector_field!(
+        M::AbstractManifold, y, lmsco::AbstractLevenbergMarquardtSurrogateObjective, p
+    )
+    nlso = get_objective(lmsco)
+    # Init to zero
+    fill!(y, 0)
+    start = 0
+    # For every block
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        vector_field!(M, y[(start + 1):(start + get_length(o))], o, r, p)
+        start += get_length(o)
+    end
+    return y
+end
+# for a single block – the actual formula
+function vector_field!(
+        M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p
+    )
+    get_value!(M, y, o, p) # evaluate residuals F(p)
+    F_p_norm2 = sum(abs2, y)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
+    α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
+    # Compute y = (sqrt(ρ(p)) / (1-α)) F(p)
+    y .= (sqrt(ρ_value) / (1 - α)) * y
+    return y
+end

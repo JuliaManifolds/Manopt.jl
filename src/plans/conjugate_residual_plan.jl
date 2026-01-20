@@ -35,8 +35,7 @@ The first variants allocate for the result, the second variants work in-place.
 
 Generate the objective specifying whether the two parts work allocating or in-place.
 """
-mutable struct SymmetricLinearSystemObjective{E <: AbstractEvaluationType, TA, T} <:
-    AbstractManifoldObjective{E}
+mutable struct SymmetricLinearSystemObjective{E <: AbstractEvaluationType, TA, T} <: AbstractManifoldObjective{E}
     A!!::TA
     b!!::T
 end
@@ -220,8 +219,7 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
     β::R
     stop::TStop
     function ConjugateResidualState(
-            TpM::TangentSpace,
-            slso::SymmetricLinearSystemObjective;
+            TpM::TangentSpace, slso::SymmetricLinearSystemObjective;
             X::T = rand(TpM),
             r::T = (-get_gradient(TpM, slso, X)),
             d::T = copy(TpM, r),
@@ -233,8 +231,6 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
                 StopWhenGradientNormLess(1.0e-8),
             kwargs...,
         ) where {T, R, SC <: StoppingCriterion}
-        M = base_manifold(TpM)
-        p = base_point(TpM)
         crs = new{T, R, SC}()
         crs.X = X
         crs.r = r
