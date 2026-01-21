@@ -1,8 +1,8 @@
 _doc_conjugate_residual = """
     conjugate_residual(TpM::TangentSpace, A, b, X=zero_vector(TpM))
-    conjugate_residual(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X=zero_vector(TpM))
+    conjugate_residual(TpM::TangentSpace, slso::AbstractSymmetricLinearSystemObjective, X=zero_vector(TpM))
     conjugate_residual!(TpM::TangentSpace, A, b, X)
-    conjugate_residual!(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X)
+    conjugate_residual!(TpM::TangentSpace, slso::AbstractSymmetricLinearSystemObjective, X)
 
 Compute the solution of ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p ``, where
 
@@ -60,11 +60,11 @@ function conjugate_residual(
     return conjugate_residual(TpM, slso, X; kwargs...)
 end
 function conjugate_residual(
-        TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X = zero_vector(TpM); kwargs...
+        TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X = zero_vector(TpM); kwargs...
     )
     keywords_accepted(conjugate_residual; kwargs...)
     Y = copy(TpM, X)
-    return conjugate_residual!(TpM, slso, Y; kwargs...)
+    return conjugate_residual!(TpM, aslso, Y; kwargs...)
 end
 calls_with_kwargs(::typeof(conjugate_residual)) = (conjugate_residual!,)
 
@@ -73,7 +73,7 @@ conjugate_residual!(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual!(
         TpM::TangentSpace,
-        slso::SymmetricLinearSystemObjective,
+        aslso::AbstractSymmetricLinearSystemObjective,
         X;
         stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
             StopWhenRelativeResidualLess(
@@ -83,9 +83,9 @@ function conjugate_residual!(
     ) where {SC <: StoppingCriterion}
     keywords_accepted(conjugate_residual!; kwargs...)
     crs = ConjugateResidualState(
-        TpM, slso; stopping_criterion = stopping_criterion, kwargs...
+        TpM, aslso; stopping_criterion = stopping_criterion, kwargs...
     )
-    dslso = decorate_objective!(TpM, slso; kwargs...)
+    dslso = decorate_objective!(TpM, aslso; kwargs...)
     dmp = DefaultManoptProblem(TpM, dslso)
     dcrs = decorate_state!(crs; kwargs...)
     solve!(dmp, dcrs)
