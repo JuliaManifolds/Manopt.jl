@@ -4,23 +4,23 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
 using RecursiveArrayTools
 
 @testset "Riemannian quasi-Newton Methods with box-like domains" begin
-    @testset "get_bound_t - basic" begin
+    @testset "get_stepsize_bound - basic" begin
         M = Hyperrectangle([0.0, 0.0], [2.0, 2.0])
 
         # d[i] > 0
         p = [0.0, 1.0]; d = [1.0, 1.0]
-        @test Manopt.get_bound_t(M, p, d, 1) ≈ (2.0 - 0.0) / 1.0  # = 2.0
-        @test Manopt.get_bound_t(M, p, d, 2) ≈ (2.0 - 1.0) / 1.0  # = 1.0
+        @test Manopt.get_stepsize_bound(M, p, d, 1) ≈ (2.0 - 0.0) / 1.0  # = 2.0
+        @test Manopt.get_stepsize_bound(M, p, d, 2) ≈ (2.0 - 1.0) / 1.0  # = 1.0
 
         # d[i] < 0
         p = [0.0, 1.0]; d = [-1.0, -1.0]
-        @test Manopt.get_bound_t(M, p, d, 1) ≈ (0.0 - 0.0) / -1.0  # = 0.0
-        @test Manopt.get_bound_t(M, p, d, 2) ≈ (0.0 - 1.0) / -1.0  # = 1.0
+        @test Manopt.get_stepsize_bound(M, p, d, 1) ≈ (0.0 - 0.0) / -1.0  # = 0.0
+        @test Manopt.get_stepsize_bound(M, p, d, 2) ≈ (0.0 - 1.0) / -1.0  # = 1.0
 
         # d[i] = 0
         p = [0.0, 1.0]; d = [0.0, 0.0]
-        @test Manopt.get_bound_t(M, p, d, 1) ≈ Inf
-        @test Manopt.get_bound_t(M, p, d, 2) ≈ Inf
+        @test Manopt.get_stepsize_bound(M, p, d, 1) ≈ Inf
+        @test Manopt.get_stepsize_bound(M, p, d, 2) ≈ Inf
     end
 
 

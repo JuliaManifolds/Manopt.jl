@@ -483,14 +483,14 @@ get_bounds_index(M::AbstractManifold)
 get_bounds_index(M::ProductManifold) = get_bounds_index(M.manifolds[1])
 
 """
-    get_bound_t(M::AbstractManifold, x, d, i)
+    get_stepsize_bound(M::AbstractManifold, x, d, i)
 
 Get the upper bound on moving in direction `d` from point `p` on manifold `M`, for the
 bound index `i`.
 """
-get_bound_t(M::AbstractManifold, p, d, i)
-function get_bound_t(M::ProductManifold, p, d, i)
-    return get_bound_t(M.manifolds[1], submanifold_component(M, p, Val(1)), submanifold_component(M, d, Val(1)), i)
+get_stepsize_bound(M::AbstractManifold, p, d, i)
+function get_stepsize_bound(M::ProductManifold, p, d, i)
+    return get_stepsize_bound(M.manifolds[1], submanifold_component(M, p, Val(1)), submanifold_component(M, d, Val(1)), i)
 end
 
 """
@@ -504,15 +504,15 @@ function set_zero_at_index!(M::ProductManifold, d, i)
 end
 
 """
-    Manopt.set_bound_for_t!(M::ProductManifold, d_out, p, ts::Dict, t_current::Real)
+    Manopt.set_stepsize_bound!(M::ProductManifold, d_out, p, ts::Dict, t_current::Real)
 
-Set `d_out` so that it points from `p` to the generalized Cauchy point given times to
-bounds `ts`.
+Set `d_out` so that it points from `p` to the generalized Cauchy point given step sizes to
+bounds in `ts`.
 """
-function set_bound_for_t!(
+function set_stepsize_bound!(
         M::ProductManifold, d_out, p, ts::Dict, t_current::Real
     )
-    set_bound_for_t!(
+    set_stepsize_bound!(
         M.manifolds[1], submanifold_component(M, d_out, Val(1)),
         submanifold_component(M, p, Val(1)), ts, t_current
     )
@@ -571,7 +571,7 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyDirectio
     has_finite_limit = false
 
     for i in bounds_indices
-        ts[i] = get_bound_t(M, p, d, i)
+        ts[i] = get_stepsize_bound(M, p, d, i)
 
         if ts[i] > 0
             push!(F_list, (ts[i], i))
@@ -643,7 +643,7 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyDirectio
     dt_min = max(dt_min, 0.0)
     t_old = t_old + dt_min
     d_out .*= t_old
-    set_bound_for_t!(M, d_out, p, ts, t_current)
+    set_stepsize_bound!(M, d_out, p, ts, t_current)
 
     if has_finite_limit
         return :found_limited

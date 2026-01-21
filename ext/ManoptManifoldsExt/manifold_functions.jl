@@ -16,7 +16,7 @@ lower (or upper) bounds.
 """
 Manopt.get_bounds_index(M::Hyperrectangle) = eachindex(M.lb)
 """
-    get_bound_t(M::Hyperrectangle, x, d, i)
+    get_stepsize_bound(M::Hyperrectangle, x, d, i)
 
 Get the upper bound on moving in direction `d` from point `p` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`,
 for the bound index `i`. There are three cases:
@@ -25,7 +25,7 @@ for the bound index `i`. There are three cases:
 2. If `d[i] < 0`, the formula reads `(M.lb[i] - p[i]) / d[i]`.
 3. If `d[i] == 0`, the result is `Inf`.
 """
-function Manopt.get_bound_t(M::Hyperrectangle, p, d, i)
+function Manopt.get_stepsize_bound(M::Hyperrectangle, p, d, i)
     if d[i] > 0
         return (M.ub[i] - p[i]) / d[i]
     elseif d[i] < 0
@@ -212,13 +212,13 @@ function Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
 end
 
 """
-    Manopt.set_bound_for_t!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real)
+    Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real)
 
 For each index `i`, `t[i] < t_current`, set element of tangent vector `d_out` on
 [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) to the distance from `p[i]` to the
 bound in the direction of `d_out[i]`.
 """
-function Manopt.set_bound_for_t!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real)
+function Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real)
     for i in eachindex(M.lb)
         if ts[i] < t_current
             d_out[i] = d_out[i] > 0 ? M.ub[i] - p[i] : M.lb[i] - p[i]
