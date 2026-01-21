@@ -1,11 +1,11 @@
 """
-    requires_generalized_cauchy_point_computation(M::AbstractManifold)
+    requires_generalized_cauchy_direction_computation(M::AbstractManifold)
 
 Return `true` if `M` is a `Hyperrectangle`-like manifold with corners, or a product of it
 with a standard manifold. Otherwise return `false`.
 """
-requires_generalized_cauchy_point_computation(::AbstractManifold) = false
-requires_generalized_cauchy_point_computation(M::ProductManifold) = requires_generalized_cauchy_point_computation(M.manifolds[1])
+requires_generalized_cauchy_direction_computation(::AbstractManifold) = false
+requires_generalized_cauchy_direction_computation(M::ProductManifold) = requires_generalized_cauchy_direction_computation(M.manifolds[1])
 
 @doc raw"""
     mutable struct LimitedMemoryHessianApproximation end

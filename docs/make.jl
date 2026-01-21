@@ -190,7 +190,7 @@ makedocs(;
             "Douglas—Rachford" => "solvers/DouglasRachford.md",
             "Exact Penalty Method" => "solvers/exact_penalty_method.md",
             "Frank-Wolfe" => "solvers/FrankWolfe.md",
-            "Generalized Cauchy point subsolver" => "solvers/generalized_cauchy_point_subsolver.md",
+            "Generalized Cauchy direction subsolver" => "solvers/generalized_cauchy_direction_subsolver.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Interior Point Newton" => "solvers/interior_point_Newton.md",
             "Levenberg–Marquardt" => "solvers/LevenbergMarquardt.md",
