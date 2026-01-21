@@ -8,8 +8,8 @@
 Provide a linear surrogate model for the given [`AbstractManifoldObjective`](@ref) `O` of the form
 
 ```math
-σ_p(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, _tex(:Cal, "L")*"(X) + y"))^2
-  + $(_tex(:frac, "λ", "2"))$(_tex(:norm, "X"; index="p"))^2,
+σ_p(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, _tex(:Cal, "L") * "(X) + y"))^2
+  + $(_tex(:frac, "λ", "2"))$(_tex(:norm, "X"; index = "p"))^2,
   $(_tex(:qquad))for X ∈ $(_math(:TangentSpace)), λ ≥ 0,
 ```
 
@@ -53,7 +53,7 @@ If a tangent vector `X` is provided, evaluate ``$(_tex(:Cal, "L"))(X)``.
 If a basis `B` is provided, return the matrix representation of ``$(_tex(:Cal, "L"))`` with respect to that basis.
 Otherwise return the operator as a function `(TpM, X) -> Y`.
 """
-linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X=nothing)
+linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X = nothing)
 
 function vector_field end
 """
@@ -78,7 +78,7 @@ If a tangent vector `X` is provided, evaluate ``$(_tex(:Cal, "L"))^* $(_tex(:Cal
 If a basis `B` is provided, return the matrix representation of ``$(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))`` with respect to that basis.
 Otherwise return the operator as a function `(TpM, X) -> Y`.
 """
-linear_normal_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X=nothing)
+linear_normal_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X = nothing)
 
 function normal_vector_field end
 """

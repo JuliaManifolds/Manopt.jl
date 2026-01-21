@@ -178,7 +178,15 @@ function LevenbergMarquardt!(
         initial_jacobian_f = similar(
             p, length(get_objective(nlso).objective), manifold_dimension(M)
         ),
-        (linear_subsolver!) = (default_lm_lin_solve!),
+        (linear_subsolver!) = nothing,
+        sub_surrogate = LevenbergMarquardtSurrogateObjective(nlso, damping_term_min),
+        sub_objective = SymmetricLinearSystemObjective(
+            (M, Y, p, X) -> linear_normal_operator!(M, Y, sub_objective, p, X),
+            (M, p) -> normal_vector_field(M, sub_objective, p);
+            evaluation = InplaceEvaluation(),
+        ),
+        sub_problem = isnothing(linear_subsolver!) ? DefaultProblem(M, sub_objective) : linear_subsolver!,
+        sub_state = isnothing(linear_subsolver!) ? ConjugateResidualState(TangentSpace(M, p)) : InplaceEvaluation(),
         kwargs..., #collect rest
     ) where {O <: Union{NonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(LevenbergMarquardt!; kwargs...)
@@ -195,7 +203,8 @@ function LevenbergMarquardt!(
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,
         expect_zero_residual = expect_zero_residual,
-        (linear_subsolver!) = (linear_subsolver!),
+        sub_problem = sub_problem,
+        sub_state = sub_state,
     )
     dlms = decorate_state!(lms; debug = debug, kwargs...)
     solve!(nlsp, dlms)
@@ -212,8 +221,6 @@ function initialize_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     get_residuals!(M, lms.residual_values, nlso, lms.p)
-    get_jacobian!(M, lms.jacobian, nlso, lms.p)
-    get_gradient!(M, lms.X, nlso, lms.p; jacobian_cache = lms.jacobian)
     return lms
 end
 

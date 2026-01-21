@@ -123,110 +123,108 @@ end
 # Cost
 function get_cost(
         M::AbstractManifold,
-        nlso::NonlinearLeastSquaresObjective{
-            E, <:AbstractVectorFunction{E, <:ComponentVectorialType},
-        },
+        nlso::NonlinearLeastSquaresObjective,
         p;
         kwargs...,
-    ) where {E <: AbstractEvaluationType}
+    )
     v = 0.0
-    for i in 1:length(nlso.objective)
-        v += abs(get_value(M, nlso.objective, p, i))^2
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        vi = sum(abs2, get_value(M, o, p))
+        (a, _, _) = get_robustifier_values(r, vi)
+        v += a
     end
     v /= 2
     return v
 end
-function get_cost(
-        M::AbstractManifold,
-        nlso::NonlinearLeastSquaresObjective{
-            E, <:AbstractVectorFunction{E, <:FunctionVectorialType},
-        },
-        p;
-        value_cache = get_value(M, nlso.objective, p),
-    ) where {E <: AbstractEvaluationType}
-    return sum(abs2, value_cache) / 2
-end
+#
 
-function get_jacobian(
-        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
-    )
-    J = zeros(length(nlso.objective), manifold_dimension(M))
-    get_jacobian!(M, J, nlso, p; kwargs...)
-    return J
-end
-# The jacobian is now just a pass-through
-function get_jacobian!(
-        M::AbstractManifold, J, nlso::NonlinearLeastSquaresObjective, p; kwargs...
-    )
-    get_jacobian!(M, J, nlso.objective, p; kwargs...)
-    return J
-end
+_doc_get_gradient_nlso = """
+    get_gradient(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
+    get_gradient!(M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
+
+Compute the gradient for the [`NonlinearLeastSquaresObjective`](@ref) `nlso` at the point ``p ∈ M``,
+i.e.
+
+```math
+$(_tex(:grad)) F(p) = $(_tex(:sum, "i=1", "m")) ρ'$(_tex(:bigl))($(_tex(:norm, "F_i(p)"; index = "2"))^2$(_tex(:bigr)))
+$(_tex(:sum, "j=1", "n_i")) f_{i,j}(p) $(_tex(:grad)) f_{i,j}(p)
+```
+
+where ``F_i(p) ∈ ℝ^{n_i}`` is the vector of residuals for the `i`-th block component cost function
+and ``f_{i,j}(p)`` its `j`-th component function.
+
+# Keyword arguments
+* `value_cache=nothing` : if provided, this vector is used to store the residuals ``F(p)``
+  internally to avoid recomputations.
+"""
+#
+
+@doc "$(_doc_get_gradient_nlso)"
 function get_gradient(
-        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p
     )
     X = zero_vector(M, p)
     return get_gradient!(M, X, nlso, p; kwargs...)
 end
+
+@doc "$(_doc_get_gradient_nlso)"
 function get_gradient!(
-        M::AbstractManifold,
-        X,
-        nlso::NonlinearLeastSquaresObjective,
-        p;
-        basis = get_basis(nlso.objective.jacobian_type),
-        jacobian_cache = get_jacobian(M, nlso, p; basis = basis),
-        value_cache = get_residuals(M, nlso, p),
+        M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective, p; value_cache = nothing,
     )
-    return get_vector!(M, X, p, transpose(jacobian_cache) * value_cache, basis)
+    zero_vector!(M, X, p)
+    start = 0
+    Y = copy(M, p, X)
+    for (o, r) in zip(nlso.objective, nlso.robustifier) # for every block
+        len = get_length(o)
+        Fi_p = isnothing(value_cache) ? get_value(M, o, p) : view(value_cache, (start + 1):(start + len))
+        get_value!(M, Fp, o, p; kwargs...)
+        # get gradients for every component
+        for j in 1:len
+            get_gradient!(M, Y, o, p, j) # gradient of f_{i,j}
+            Y .+= Fi_p[j] .* Y
+        end
+        # compute robustifier derivative
+        (_, b, _) = get_robustifier_values(r, sum(abs2, Fi_p))
+        X .+= b .* Y
+        start += len
+    end
+    return X
 end
 
-#
-#
+
 # --- Residuals
 _doc_get_residuals_nlso = """
     get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p)
-    get_residuals!(M::AbstractManifold, V, nlso::NonlinearLeastSquaresObjective, p)
+    get_residuals!(M::AbstractManifold, v, nlso::NonlinearLeastSquaresObjective, p)
 
-Compute the vector of residuals ``f_i(p)``, ``i=1,…,m`` given the manifold `M`,
-the [`NonlinearLeastSquaresObjective`](@ref) `nlso` and a current point ``p`` on `M`.
+Compute the vector of residuals ``F(p) ∈ ℝ^n``, ``n = $(_tex(:sum, "1", "m")) n_i``.
+In other words this is the concatenation of the residual vectors ``F_i(p)``, ``i=1,…,m``
+of the components of the the [`NonlinearLeastSquaresObjective`](@ref) `nlso`
+at the current point ``p`` on `M`.
+
+This can be computed in-place of `v`.
 """
 
 @doc "$(_doc_get_residuals_nlso)"
-get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
-
 function get_residuals(
         M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
     )
-    V = zeros(length(nlso.objective))
-    return get_residuals!(M, V, nlso, p; kwargs...)
+    v = zeros(sum(get_length(o) for o in nlso.objective))
+    return get_residuals!(M, v, nlso, p; kwargs...)
 end
 
 @doc "$(_doc_get_residuals_nlso)"
-get_residuals!(M::AbstractManifold, V, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
-
 function get_residuals!(
-        M::AbstractManifold,
-        V,
-        nlso::NonlinearLeastSquaresObjective{
-            E, <:AbstractVectorFunction{E, <:ComponentVectorialType},
-        },
-        p;
-        kwargs...,
-    ) where {E <: AbstractEvaluationType}
-    for i in 1:length(nlso.objective)
-        V[i] = get_value(M, nlso.objective, p, i)
+        M::AbstractManifold, v, nlso::NonlinearLeastSquaresObjective, p; kwargs...,
+    )
+    start = 0
+    for o in nlso.objective # for every block
+        len = get_length(o)
+        view_v = view(v, (start + 1):(start + len))
+        get_value!(M, view_v, o, p)
+        start += len
     end
-    return V
-end
-function get_residuals!(
-        M::AbstractManifold,
-        V,
-        nlso::NonlinearLeastSquaresObjective{
-            E, <:AbstractVectorFunction{E, <:FunctionVectorialType},
-        },
-        p,
-    ) where {E <: AbstractEvaluationType}
-    get_value!(M, V, nlso.objective, p)
-    return V
+    return v
 end
 
 #
@@ -639,7 +637,6 @@ $(_fields(:retraction_method))
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
 * `candidate_residual_values`: value of ``F`` for the current proposal point
 $(_fields(:stopping_criterion; name = "stop"))
-* `jacobian`:                 the current Jacobian of ``F``
 * `gradient`:             the current gradient of ``F``
 * `step_vector`:          the tangent vector at `x` that is used to move to the next point
 * `last_stepsize`:        length of `step_vector`
@@ -693,7 +690,6 @@ mutable struct LevenbergMarquardtState{
     retraction_method::TRTM
     residual_values::Tresidual_values
     candidate_residual_values::Tresidual_values
-    jacobian::TJac
     X::TGrad
     step_vector::TGrad
     last_stepsize::Tparams
@@ -1017,8 +1013,9 @@ function linear_operator!(
     fill!(y, 0)
     start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        linear_operator!(M, y[(start + 1):(start + get_length(o))], o, r, p, X)
-        start += get_length(o)
+        len = get_length(o)
+        linear_operator!(M, y[(start + 1):(start + len)], o, r, p, X)
+        start += len
     end
     return y
 end
@@ -1059,13 +1056,13 @@ Note that this is done per every block (vectorial function with its robustifier)
 See also [`evaluate_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
 """
 function normal_vector_field(
-        M::AbstractManifold, lmsco::AbstractLevenbergMarquardtSurrogateObjective, p
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
     )
     X = zero_vector(M, p)
     return normal_vector_field!(M, X, lmsco, p)
 end
 function normal_vector_field!(
-        M::AbstractManifold, X, lmsco::AbstractLevenbergMarquardtSurrogateObjective, p
+        M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
     )
     nlso = get_objective(lmsco)
     # For every block
@@ -1118,7 +1115,7 @@ Note that this is done per every block (vectorial function with its robustifier)
 See also [`evaluate_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
 """
 function vector_field(
-        M::AbstractManifold, lmsco::AbstractLevenbergMarquardtSurrogateObjective, p
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
     )
     nlso = get_objective(lmsco)
     n = sum(get_length(o) for o in nlso.objective)
@@ -1126,7 +1123,7 @@ function vector_field(
     return vector_field!(M, y, lmsco, p)
 end
 function vector_field!(
-        M::AbstractManifold, y, lmsco::AbstractLevenbergMarquardtSurrogateObjective, p
+        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
     )
     nlso = get_objective(lmsco)
     # Init to zero

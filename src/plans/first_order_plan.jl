@@ -297,7 +297,7 @@ Evaluate the differential ``Df(p)[X]`` of the function ``f`` represented by
 the [`AbstractManifoldFirstOrderObjective`](@ref).
 For [`AbstractManoptProblem`](@ref) the inner manifold and objectives are used,
 similarly, any objective decorator would “pass though” to its inner objective.
-By default this falls back to ``Df(p)[X] = ⟨$(_tex(:grad))f(p), X⟩
+By default this falls back to ``Df(p)[X] = ⟨$(_tex(:grad))f(p), X⟩``.
 
 # Keyword arguments
 * `gradient=nothing` – pass a tangent vector to be used internally as interims memory,

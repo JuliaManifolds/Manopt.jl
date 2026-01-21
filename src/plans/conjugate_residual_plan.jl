@@ -23,7 +23,7 @@ for (iteratively) solving Newton-like equations.
 # Fields
 
 * `A!!`: a symmetric, linear operator on the tangent space
-* `b!!`: a gradient function
+* `b!!`: a gradient function,
 
 where `A!!` can work as an allocating operator `(M, p, X) -> Y` or an in-place one `(M, Y, p, X) -> Y`,
 and similarly `b!!` can either be a function `(M, p) -> X` or `(M, X, p) -> X`.
