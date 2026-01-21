@@ -221,6 +221,7 @@ function initialize_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     get_residuals!(M, lms.residual_values, nlso, lms.p)
+    get_gradient!(M, lms.X, nlso, lms.p)
     return lms
 end
 
@@ -256,58 +257,30 @@ function step_solver!(
     # `o.residual_values` is either initialized by `initialize_solver!` or taken from the previous iteration
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
+
     # a new Jacobian is only  needed if the last step was successful
     if lms.last_step_successful
         get_jacobian!(M, lms.jacobian, nlso, lms.p)
     end
-    # Robustification, see [BB26]
-    Fk = lms.residual_values
-    norm_FkSq = norm(Fk)^2
-    (ρ_k, ρ_primek, ρ_dprimek) = get_robustifier_values(nlso.robustifier, norm_FkSq)
-    α = 1 - sqrt(1 + 2 * (ρ_dprimek / ρ_primek) * norm_FkSq)
-    @info "α" α
-    C = sqrt(ρ_primek / 2) * (I - α / norm_FkSq * (Fk * transpose(Fk)))
-    Y = sqrt(ρ_primek) / (1 - α) * Fk
-    # do these have to be updated as well? Probably to ρ_k
-    λk = lms.damping_term * 0.5 * ρ_k
+    # update base point of the tangent space the subproblem works on
+    set_parameter(lms.sub_problem, :Manifold, :Basepoint, lms.p)
 
-    # --- check to move this solving in Coordinates to a sub-method to be able to replace it
-    # we pass problem and state; that should be enough.
-    #
-    basis_ox = get_basis(nlso.objective.jacobian_type)
-    grad_f_c = transpose(lms.jacobian) * transpose(C) * Y
-    # formerly JJ
-    #     JJ = transpose(lms.jacobian) * lms.jacobian + λk * I
-    Hess_f_c = transpose(lms.jacobian) * transpose(C) * C * lms.jacobian + λk * I
-    # `cholesky` is technically not necessary but it's the fastest method to solve the
-    # problem because JJ is symmetric positive definite
-    sk = similar(grad_f_c)
-    # TODO: MOdify
-    lms.sub_problem(sk, Hess_f_c, grad_f_c)
-    sk .*= -1
-    get_vector!(M, lms.X, lms.p, grad_f_c, basis_ox)
-    get_vector!(M, lms.step_vector, lms.p, sk, basis_ox)
-    # --- end.
-    lms.last_stepsize = norm(M, lms.p, lms.step_vector)
-    temp_x = retract(M, lms.p, lms.step_vector, lms.retraction_method)
+    # Maybe store in state?
+    Y = get_solver_result(solve!(lms.sub_problem, lms.sub_state))
 
-    get_value!(M, lms.candidate_residual_values, nlso.objective, temp_x)
-    # Does the rho need to be updated?
-    ρk =
-        (norm_FkSq - norm(lms.candidate_residual_values)^2) / (
-        -2 * inner(M, lms.p, lms.X, lms.step_vector) - norm(lms.jacobian * sk)^2 -
-            λk * norm(sk)^2
-    )
-    if ρk >= lms.η
-        copyto!(M, lms.p, temp_x)
-        copyto!(lms.residual_values, lms.candidate_residual_values)
+    # New iterate candidate - maybe store in state?
+    q = retract(M, lms.p, Y, lms.retraction_method)
+
+    # TODO: Compute the improvement factor ρk, i.e. how much the
+    # actual cost decrease compares to the predicted one
+    ρ_k = 0 # TODO
+    if ρ_k >= lms.η
+        copyto!(M, lms.p, q)
         if lms.expect_zero_residual
             lms.damping_term = max(lms.damping_term_min, lms.damping_term / lms.β)
         end
-        lms.last_step_successful = true
     else
         lms.damping_term *= lms.β
-        lms.last_step_successful = false
     end
     return lms
 end
