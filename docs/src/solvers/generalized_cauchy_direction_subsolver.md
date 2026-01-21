@@ -4,7 +4,7 @@ The Generalized Cauchy Direction (GCD) subsolver is a component in optimization 
 
 ```math
 \begin{align*}
-\operatorname*{arg\,min}_{Y  ∈  T_p D \times \mathcal{M}}&\ m_p(Y) = ⟨X_g, Y⟩_p + \frac{1}{2} ⟨\mathcal{H}_p[Y], Y⟩_p\\
+\operatorname*{arg\,min}_{Y  ∈  T_p D \times \mathcal{M}}&\ m_p(Y), \qquad m_p(Y) = ⟨X_g, Y⟩_p + \frac{1}{2} ⟨\mathcal{H}_p[Y], Y⟩_p\\
 \text{such that}& \ \exp_p(Y) = \exp_p(\alpha X) \in D \times \mathcal{M} \text{ for some } \alpha \in \mathbb{R}
 \end{align*}
 ```
