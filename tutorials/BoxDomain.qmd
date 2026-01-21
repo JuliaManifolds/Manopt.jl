@@ -9,9 +9,9 @@ A ``[`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`)``{=commonmark} is, in
 
 Such spaces require special handling when used as domains in optimization.
 For simple methods like gradient descent using projected gradient and a stopping criterion involving [`StopWhenProjectedNegativeGradientNormLess`](@ref) may be sufficient, however methods that approximate the Hessian can benefit from a more advanced approach.
-The core idea is considering a piecewise quadratic approximation of the objective along the descent direction, and selecting the generalized Cauchy point -- its minimizer.
+The core idea is considering a piecewise quadratic approximation of the objective along the descent direction in the tangent space at the current iterate, and selecting the generalized Cauchy direction -- its minimizer.
 The points at which the approximation might not be differentiable correspond to hitting new boundaries along the initially selected descent direction.
-Then, we can perform standard line search between the initial iterate and the generalized Cauchy point.
+Then, we can perform standard line search from the initial iterate in the generalized Cauchy direction.
 
 Currently `Manopt.jl` can handle domains that are either a ``[`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`)``{=commonmark} or a ``[`ProductManifold`](@extref `ManifoldsBase.ProductManifold`)``{=commonmark} containing a ``[`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`)``{=commonmark} as its first factor and other manifolds as subsequent factors.
 
