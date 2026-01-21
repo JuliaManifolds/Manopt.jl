@@ -77,7 +77,7 @@ function conjugate_residual!(
         X;
         stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
             StopWhenRelativeResidualLess(
-            norm(base_manifold(TpM), base_point(TpM), get_b(TpM, slso)), 1.0e-8
+            norm(base_manifold(TpM), base_point(TpM), vector_field(TpM, slso)), 1.0e-8
         ),
         kwargs...,
     ) where {SC <: StoppingCriterion}
@@ -99,7 +99,7 @@ function initialize_solver!(
     TpM = get_manifold(amp)
     get_hessian!(TpM, crs.r, get_objective(amp), base_point(TpM), crs.X)
     crs.r .*= -1
-    crs.r .-= get_b(TpM, get_objective(amp))
+    crs.r .-= vector_field(TpM, get_objective(amp))
     copyto!(TpM, crs.d, crs.r)
     get_hessian!(amp, crs.Ar, crs.X, crs.r)
     copyto!(TpM, crs.Ad, crs.Ar)

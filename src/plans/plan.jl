@@ -138,6 +138,9 @@ include("proximal_plan.jl")
 include("proximal_gradient_plan.jl")
 include("subgradient_plan.jl")
 include("vectorial_plan.jl")
+
+# Linear systems
+include("conjugate_residual_plan.jl")
 include("linear_surrogate_plan.jl")
 
 # Generic plans II: based on subsolvers
@@ -151,7 +154,6 @@ include("adaptive_regularization_with_cubics_plan.jl")
 include("alternating_gradient_plan.jl")
 include("augmented_lagrangian_plan.jl")
 include("conjugate_gradient_plan.jl")
-include("conjugate_residual_plan.jl")
 include("exact_penalty_method_plan.jl")
 include("frank_wolfe_plan.jl")
 include("interior_point_Newton_plan.jl")

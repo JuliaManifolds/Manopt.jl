@@ -820,6 +820,11 @@ mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluatio
     penalty::R
 end
 
+function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateObjective, ::Val{:Penalty}, penalty::Real)
+    lmlso.penalty = penalty
+    return lmlso
+end
+
 get_objective(lmsco::LevenbergMarquardtLinearSurrogateObjective) = lmsco.objective
 
 function get_cost(

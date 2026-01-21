@@ -88,3 +88,48 @@ function normal_vector_field end
 Return the normal vector ``$(_tex(:Cal, "L"))^*(y)`` of the linear surrogate model `lsmo` at the point ``p ∈ M``.
 """
 normal_vector_field(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p)
+
+#
+#
+# Wrapper to symmetrix linear systems where the normal eq becomes the linear one
+"""
+    SymmetricLinearSystem{E <: AbstractEvaluationType, O<: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}
+
+A wrapper type to turn an
+[`AbstractLinearSurrogateObjective`](@ref) `O` into a
+[`AbstractSymmetricLinearSystemObjective`](@ref) by interpreting the normal equations of `O`
+as the symmetric linear system.
+"""
+struct SymmetricLinearSystem{E <: AbstractEvaluationType, O <: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}
+    objective::O
+end
+
+get_objective(slsmo::SymmetricLinearSystem) = slsmo.objective
+
+# set parameter just passes down to the inner objective
+set_parameter!(slsmo::SymmetricLinearSystem, name::Symbol, value) = set_parameter!(get_objective(slsmo), name, value)
+
+function linear_operator(
+        TpM::TangentSpace, slso::SymmetricLinearSystem, X
+    )
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return normal_vector_field(M, slso.objective, p)
+end
+function linear_operator!(
+        TpM::TangentSpace, Y, slso::SymmetricLinearSystem, X
+    )
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return normal_vector_field!(M, Y, slso.objective, p)
+end
+function vector_field(TpM::TangentSpace, slso::SymmetricLinearSystem)
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return linear_normal_operator(M, slso.objective, p)
+end
+function vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystem)
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return linear_normal_operator!(M, Y, slso.objective, p)
+end

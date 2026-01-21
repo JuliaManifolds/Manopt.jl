@@ -180,11 +180,8 @@ function LevenbergMarquardt!(
         ),
         (linear_subsolver!) = nothing,
         # TODO: Oh! how should I update the damping parameter here?
-        sub_surrogate = LevenbergMarquardtSurrogateObjective(nlso, damping_term_min),
-        sub_objective = SymmetricLinearSystemObjective(
-            (M, Y, p, X) -> linear_normal_operator!(M, Y, sub_objective, p, X),
-            (M, p) -> normal_vector_field(M, sub_objective, p);
-            evaluation = InplaceEvaluation(),
+        sub_objective = SymmetricLinearSystem(
+            LevenbergMarquardtSurrogateObjective(nlso, damping_term_min)
         ),
         sub_problem = isnothing(linear_subsolver!) ? DefaultProblem(M, sub_objective) : linear_subsolver!,
         sub_state = isnothing(linear_subsolver!) ? ConjugateResidualState(TangentSpace(M, p)) : InplaceEvaluation(),
@@ -255,7 +252,8 @@ function step_solver!(
         lms::LevenbergMarquardtState,
         ::Integer,
     ) where {mT <: AbstractManifold}
-    # `o.residual_values` is either initialized by `initialize_solver!` or taken from the previous iteration
+    # Update damping term in the surrogate
+    set_parameter!(lms.sub_problem, :Penalty, lms.damping_term)
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
 

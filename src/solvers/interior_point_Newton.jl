@@ -219,7 +219,7 @@ function interior_point_Newton!(
         ),
         sub_stopping_criterion::StoppingCriterion = StopAfterIteration(manifold_dimension(M)) |
             StopWhenRelativeResidualLess(
-            norm(_sub_M, _sub_p, get_b(TangentSpace(_sub_M, _sub_p), sub_objective)), 1.0e-8
+            norm(_sub_M, _sub_p, vector_field(TangentSpace(_sub_M, _sub_p), sub_objective)), 1.0e-8
         ),
         sub_state::St = decorate_state!(
             ConjugateResidualState(
