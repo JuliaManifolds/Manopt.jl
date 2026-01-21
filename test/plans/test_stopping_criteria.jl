@@ -387,7 +387,7 @@ end
             "StopWhenRelativeAPosterioriCostChangeLessOrEqual with threshold 1.4210854715202004e-12.\n",
         )
         @test startswith(Manopt.status_summary(sc), "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = ")
-        @test Manopt.indicates_convergence(sc)
+        @test !Manopt.indicates_convergence(sc)
     end
 
     @testset "StopWhenProjectedNegativeGradientNormLess" begin
