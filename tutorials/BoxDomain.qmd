@@ -27,6 +27,7 @@ The data is sampled from a multivariate normal distribution with known covarianc
 ```{julia}
 using Manopt, Manifolds, LinearAlgebra, Random, Distributions
 using ForwardDiff, DifferentiationInterface, RecursiveArrayTools
+Random.seed!(41)
 
 N = 5 # dimensionality of data
 M_spd = SymmetricPositiveDefinite(N)
