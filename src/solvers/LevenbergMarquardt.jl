@@ -179,6 +179,7 @@ function LevenbergMarquardt!(
             p, length(get_objective(nlso).objective), manifold_dimension(M)
         ),
         (linear_subsolver!) = nothing,
+        # TODO: Oh! how should I update the damping parameter here?
         sub_surrogate = LevenbergMarquardtSurrogateObjective(nlso, damping_term_min),
         sub_objective = SymmetricLinearSystemObjective(
             (M, Y, p, X) -> linear_normal_operator!(M, Y, sub_objective, p, X),

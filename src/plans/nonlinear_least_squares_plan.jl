@@ -688,9 +688,7 @@ mutable struct LevenbergMarquardtState{
     stop::TStop
     retraction_method::TRTM
     residual_values::Tresidual_values
-    candidate_residual_values::Tresidual_values
     X::TGrad
-    step_vector::TGrad
     last_stepsize::Tparams
     η::Tparams
     damping_term::Tparams

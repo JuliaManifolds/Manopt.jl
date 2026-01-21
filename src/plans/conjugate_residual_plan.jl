@@ -170,6 +170,13 @@ function get_hessian!(
     return slso.A!!(base_manifold(TpM), W, base_point(TpM), V)
 end
 
+# pass down to both internal ones
+function set_parameter!(slso::SymmetricLinearSystemObjective, symbol::Symbol, value)
+    set_parameter!(slso.A!!, symbol, value)
+    set_parameter!(slso.b!!, symbol, value)
+    return slso
+end
+
 @doc """
     ConjugateResidualState{T,R,TStop<:StoppingCriterion} <: AbstractManoptSolverState
 
