@@ -8,12 +8,10 @@ end
 
 @testset "StoppingCriteria" begin
     @testset "Generic Tests" begin
-        @test_throws ErrorException get_stopping_criteria(
-            Manopt.Test.DummyStoppingCriteriaSet()
-        )
+        @test_throws ErrorException get_stopping_criteria(Manopt.Test.DummyStoppingCriteriaSet())
 
         s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1))
-        @test Manopt.indicates_convergence(s) #due to all and change this is true
+        @test !Manopt.indicates_convergence(s) # Neither of the two indicates convergence
         @test startswith(repr(s), "StopWhenAll with the")
         @test get_reason(s) === ""
         # Trigger second one manually
@@ -21,8 +19,7 @@ end
         s.criteria[2].at_iteration = 3
         @test length(get_reason(s.criteria[2])) > 0
         s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1)])
-        @test get_stopping_criteria(s)[1].max_iterations ==
-            get_stopping_criteria(s2)[1].max_iterations
+        @test get_stopping_criteria(s)[1].max_iterations == get_stopping_criteria(s2)[1].max_iterations
 
         s3 = StopWhenCostLess(0.1)
         p = DefaultManoptProblem(

@@ -323,7 +323,7 @@ function status_summary(c::StopWhenChangeLess)
     s = has_stopped ? "reached" : "not reached"
     return "|Δp| < $(c.threshold): $s"
 end
-indicates_convergence(c::StopWhenChangeLess) = true
+indicates_convergence(c::StopWhenChangeLess) = false
 function show(io::IO, c::StopWhenChangeLess)
     s = ismissing(c.outer_norm) ? "" : "and outer norm $(c.outer_norm)"
     return print(

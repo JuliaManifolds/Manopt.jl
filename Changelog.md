@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * Line searches consistently respect `stop_when_stepsize_exceeds` keyword argument as a hard limit. (#554)
+* `StopWhenChangeLess` falsely claimed to indicate convergence. This is now fixed.
 
 ## [0.5.32] January 15, 2026
 
