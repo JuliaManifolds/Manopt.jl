@@ -221,6 +221,7 @@ function initialize_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     get_residuals!(M, lms.residual_values, nlso, lms.p)
+    get_gradient!(M, lms.X, nlso, lms.p)
     return lms
 end
 
@@ -256,6 +257,7 @@ function step_solver!(
     # `o.residual_values` is either initialized by `initialize_solver!` or taken from the previous iteration
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
+
     # a new Jacobian is only  needed if the last step was successful
     if lms.last_step_successful
         get_jacobian!(M, lms.jacobian, nlso, lms.p)

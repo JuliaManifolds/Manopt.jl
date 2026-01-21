@@ -635,7 +635,6 @@ A default value is given in brackets if a parameter can be left out in initializ
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:retraction_method))
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
-* `candidate_residual_values`: value of ``F`` for the current proposal point
 $(_fields(:stopping_criterion; name = "stop"))
 * `gradient`:             the current gradient of ``F``
 * `step_vector`:          the tangent vector at `x` that is used to move to the next point
@@ -648,9 +647,9 @@ $(_fields(:stopping_criterion; name = "stop"))
   new point is rejected
 * `expect_zero_residual`: if true, the algorithm expects that the value of
   the residual (objective) at minimum is equal to 0.
-* `linear_subsolver!`:    a function with three arguments `sk, JJ, grad_f_c`` that solves the
-  linear subproblem `sk .= JJ \\ grad_f_c`, where `JJ` is (up to numerical issues) a
-  symmetric positive definite matrix. Default value is [`default_lm_lin_solve!`](@ref).
+* `sub_problem`: the linear subproblem solver to use to solve the linearized
+  subproblem in each iteration.
+* `sub_state`: the state to use for the linear subproblem solver.
 
 # Constructor
 
