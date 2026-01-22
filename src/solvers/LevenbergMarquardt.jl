@@ -186,10 +186,8 @@ function LevenbergMarquardt!(
         β::Real = 5.0,
         η::Real = 0.2,
         damping_term_min::Real = 0.1,
-        initial_residual_values = similar(p, length(get_objective(nlso).objective)),
-        initial_jacobian_f = similar(
-            p, length(get_objective(nlso).objective), manifold_dimension(M)
-        ),
+        X = zero_vector(M, p),
+        initial_residual_values = similar(X, sum(length(o) for o in get_objective(nlso).objective)),
         (linear_subsolver!) = nothing,
         sub_objective = SymmetricLinearSystem(
             LevenbergMarquardtLinearSurrogateObjective(nlso, damping_term_min)
@@ -203,8 +201,7 @@ function LevenbergMarquardt!(
     nlsp = DefaultManoptProblem(M, dnlso)
     lms = LevenbergMarquardtState(
         M,
-        initial_residual_values,
-        initial_jacobian_f;
+        initial_residual_values;
         p = p,
         β,
         η,

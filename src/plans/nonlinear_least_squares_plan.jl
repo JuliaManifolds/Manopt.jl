@@ -175,7 +175,7 @@ function get_gradient!(
     start = 0
     Y = copy(M, p, X)
     for (o, r) in zip(nlso.objective, nlso.robustifier) # for every block
-        len = get_length(o)
+        len = length(o)
         Fi_p = isnothing(value_cache) ? get_value(M, o, p) : view(value_cache, (start + 1):(start + len))
         get_value!(M, Fp, o, p; kwargs...)
         # get gradients for every component
@@ -209,7 +209,7 @@ This can be computed in-place of `v`.
 function get_residuals(
         M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
     )
-    v = zeros(sum(get_length(o) for o in nlso.objective))
+    v = zeros(sum(length(o) for o in nlso.objective))
     return get_residuals!(M, v, nlso, p; kwargs...)
 end
 
@@ -218,8 +218,9 @@ function get_residuals!(
         M::AbstractManifold, v, nlso::NonlinearLeastSquaresObjective, p; kwargs...,
     )
     start = 0
+    @info v
     for o in nlso.objective # for every block
-        len = get_length(o)
+        len = length(o)
         view_v = view(v, (start + 1):(start + len))
         get_value!(M, view_v, o, p)
         start += len
@@ -678,7 +679,6 @@ mutable struct LevenbergMarquardtState{
         TStop <: StoppingCriterion,
         TRTM <: AbstractRetractionMethod,
         Tresidual_values,
-        TJac,
         TGrad,
         Tparams <: Real,
         Pr,
@@ -700,8 +700,7 @@ mutable struct LevenbergMarquardtState{
     sub_state::St
     function LevenbergMarquardtState(
             M::AbstractManifold,
-            initial_residual_values::Tresidual_values,
-            initial_jacobian::TJac;
+            initial_residual_values::Tresidual_values;
             p::P = rand(M),
             X::TGrad = zero_vector(M, p),
             stopping_criterion::StoppingCriterion = StopAfterIteration(200) |
@@ -737,16 +736,13 @@ mutable struct LevenbergMarquardtState{
         SC = typeof(stopping_criterion)
         RM = typeof(retraction_method)
         return new{
-            P, SC, RM, Tresidual_values, TJac, TGrad, Tparams, Pr, St,
+            P, SC, RM, Tresidual_values, TGrad, Tparams, Pr, St,
         }(
             p,
             stopping_criterion,
             retraction_method,
             initial_residual_values,
-            copy(initial_residual_values),
-            initial_jacobian,
             X,
-            allocate(M, X),
             zero(Tparams),
             η,
             damping_term_min,
@@ -1004,7 +1000,7 @@ function linear_operator(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X,
     )
     nlso = get_objective(lmsco)
-    n = sum(get_length(o) for o in nlso.objective)
+    n = sum(length(o) for o in nlso.objective)
     y = zeros(eltype(p), n)
     return linear_operator!(M, y, lmsco, p, X)
 end
@@ -1016,7 +1012,7 @@ function linear_operator!(
     fill!(y, 0)
     start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        len = get_length(o)
+        len = length(o)
         linear_operator!(M, y[(start + 1):(start + len)], o, r, p, X)
         start += len
     end
@@ -1120,7 +1116,7 @@ function vector_field(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
     )
     nlso = get_objective(lmsco)
-    n = sum(get_length(o) for o in nlso.objective)
+    n = sum(length(o) for o in nlso.objective)
     y = zeros(eltype(p), n)
     return vector_field!(M, y, lmsco, p)
 end
@@ -1133,8 +1129,8 @@ function vector_field!(
     start = 0
     # For every block
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        vector_field!(M, y[(start + 1):(start + get_length(o))], o, r, p)
-        start += get_length(o)
+        vector_field!(M, y[(start + 1):(start + length(o))], o, r, p)
+        start += length(o)
     end
     return y
 end
