@@ -177,7 +177,6 @@ function get_gradient!(
     for (o, r) in zip(nlso.objective, nlso.robustifier) # for every block
         len = length(o)
         Fi_p = isnothing(value_cache) ? get_value(M, o, p) : view(value_cache, (start + 1):(start + len))
-        get_value!(M, Fp, o, p; kwargs...)
         # get gradients for every component
         for j in 1:len
             get_gradient!(M, Y, o, p, j) # gradient of f_{i,j}
@@ -714,7 +713,7 @@ mutable struct LevenbergMarquardtState{
             linear_subsolver! = nothing, #remove on next breaking release
             sub_problem::Pr = linear_subsolver!, # todo: change default?
             sub_state::St = InplaceEvaluation(),
-        ) where {P, Tresidual_values, TJac, TGrad, Pr, St}
+        ) where {P, Tresidual_values, TGrad, Pr, St}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
         end

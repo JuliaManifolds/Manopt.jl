@@ -1371,7 +1371,6 @@ function get_value(
     vgf.value!!(M, value_cache, p)
     return value_cache[i]
 end
-# A ComponentVectorialType Inplace does that make sense, since those would be real - valued functions
 
 function get_value!(
         M::AbstractManifold,
@@ -1386,17 +1385,21 @@ function get_value!(
 end
 
 function get_value!(
-        M::AbstractManifold,
-        V,
-        vgf::AbstractVectorFunction{InplaceEvaluation, <:FunctionVectorialType},
-        p,
-        i = :;
+        M::AbstractManifold, V, vgf::AbstractVectorFunction{InplaceEvaluation, <:FunctionVectorialType}, p, i = :;
         value_cache = zeros(vgf.range_dimension),
     )
     vgf.value!!(M, value_cache, p)
     V .= value_cache[i]
     return V
 end
+
+function get_value!(
+        M::AbstractManifold, V, vgf::AbstractVectorFunction{E, <:ComponentVectorialType}, p, i = :
+    ) where {E <: AbstractEvaluationType}
+    V .= [f(M, p) for f in vgf.value!![i]]
+    return V
+end
+
 
 @doc """
     get_value_function(vgf::VectorGradientFunction, recursive=false)

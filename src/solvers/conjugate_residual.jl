@@ -97,9 +97,11 @@ function initialize_solver!(
         amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
     )
     TpM = get_manifold(amp)
-    get_hessian!(TpM, crs.r, get_objective(amp), base_point(TpM), crs.X)
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    linear_operator!(M, crs.r, get_objective(amp), p, crs.X)
     crs.r .*= -1
-    crs.r .-= vector_field(TpM, get_objective(amp))
+    crs.r .-= vector_field(M, get_objective(amp), p)
     copyto!(TpM, crs.d, crs.r)
     get_hessian!(amp, crs.Ar, crs.X, crs.r)
     copyto!(TpM, crs.Ad, crs.Ar)

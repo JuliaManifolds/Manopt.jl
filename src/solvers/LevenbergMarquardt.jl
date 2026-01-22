@@ -192,7 +192,7 @@ function LevenbergMarquardt!(
         sub_objective = SymmetricLinearSystem(
             LevenbergMarquardtLinearSurrogateObjective(nlso, damping_term_min)
         ),
-        sub_problem = isnothing(linear_subsolver!) ? DefaultManoptProblem(M, sub_objective) : linear_subsolver!,
+        sub_problem = isnothing(linear_subsolver!) ? DefaultManoptProblem(TangentSpace(M, p), sub_objective) : linear_subsolver!,
         sub_state = isnothing(linear_subsolver!) ? ConjugateResidualState(TangentSpace(M, p), sub_objective) : InplaceEvaluation(),
         kwargs..., #collect rest
     ) where {O <: Union{NonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
@@ -265,12 +265,8 @@ function step_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
 
-    # a new Jacobian is only  needed if the last step was successful
-    if lms.last_step_successful
-        get_jacobian!(M, lms.jacobian, nlso, lms.p)
-    end
     # update base point of the tangent space the subproblem works on
-    set_parameter(lms.sub_problem, :Manifold, :Basepoint, lms.p)
+    set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
 
     # Maybe store in state?
     Y = get_solver_result(solve!(lms.sub_problem, lms.sub_state))
