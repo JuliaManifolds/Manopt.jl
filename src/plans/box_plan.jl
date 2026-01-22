@@ -41,10 +41,10 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     M_21::T_HM
     M_22::T_HM
     # buffer for calculating W_k blocks
-    coords_Sk_X::V
-    coords_Sk_Y::V
-    coords_Yk_X::V
-    coords_Yk_Y::V
+    buffer_inner_Sk_X::V
+    buffer_inner_Sk_Y::V
+    buffer_inner_Yk_X::V
+    buffer_inner_Yk_Y::V
     last_gcp_result::Symbol
 end
 
@@ -63,22 +63,22 @@ function QuasiNewtonLimitedMemoryBoxDirectionUpdate(
     M_11 = zeros(F, memory_size, memory_size)
     M_21 = zeros(F, memory_size, memory_size)
     M_22 = zeros(F, memory_size, memory_size)
-    coords_Sk_X = zeros(F, memory_size)
-    coords_Sk_Y = zeros(F, memory_size)
-    coords_Yk_X = zeros(F, memory_size)
-    coords_Yk_Y = zeros(F, memory_size)
+    buffer_inner_Sk_X = zeros(F, memory_size)
+    buffer_inner_Sk_Y = zeros(F, memory_size)
+    buffer_inner_Yk_X = zeros(F, memory_size)
+    buffer_inner_Yk_Y = zeros(F, memory_size)
     return QuasiNewtonLimitedMemoryBoxDirectionUpdate{
-        typeof(qn_du), F, typeof(M_11), typeof(coords_Sk_X),
+        typeof(qn_du), F, typeof(M_11), typeof(buffer_inner_Sk_X),
     }(
         qn_du,
         qn_du.initial_scale,
         M_11,
         M_21,
         M_22,
-        coords_Sk_X,
-        coords_Sk_Y,
-        coords_Yk_X,
-        coords_Yk_Y,
+        buffer_inner_Sk_X,
+        buffer_inner_Sk_Y,
+        buffer_inner_Yk_X,
+        buffer_inner_Yk_Y,
         :not_searched,
     )
 end
@@ -113,11 +113,11 @@ function get_at_bound_index(M::ProductManifold, X, b)
 end
 
 @doc raw"""
-    hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
+    hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
 
 Compute ``⟨X, B X⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`.
 """
-function hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
+function hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
     m = length(gh.qn_du.memory_s)
     num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
@@ -130,24 +130,25 @@ function hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstra
     ii = 1
     for i in 1:m
         iszero(gh.qn_du.ρ[i]) && continue
-        gh.coords_Yk_X[ii] = inner(M, p, gh.qn_du.memory_y[i], X)
-        gh.coords_Sk_X[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], X)
+        gh.buffer_inner_Yk_X[ii] = inner(M, p, gh.qn_du.memory_y[i], X)
+        gh.buffer_inner_Sk_X[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], X)
 
         ii += 1
     end
-    coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
-    coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
+    buffer_inner_Yk = view(gh.buffer_inner_Yk_X, 1:num_nonzero_rho)
+    buffer_inner_Sk = view(gh.buffer_inner_Sk_X, 1:num_nonzero_rho)
 
-    return hessian_value_from_inner_products(gh, normX_sqr, coords_Yk, coords_Sk, coords_Yk, coords_Sk)
+    return hessian_value_from_inner_products(gh, normX_sqr, buffer_inner_Yk, buffer_inner_Sk, buffer_inner_Yk, buffer_inner_Sk)
 end
 
 @doc raw"""
-    hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b)
+    hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X::UnitVector)
 
 Compute ``⟨X, B X⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`, and `X` is the
-unit vector along index `b`.
+[`UnitVector`](@ref).
 """
-function hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b)
+function hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X::UnitVector)
+    b = X.index
     m = length(gh.qn_du.memory_s)
     num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
@@ -158,24 +159,26 @@ function hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abs
     ii = 1
     for i in 1:m
         iszero(gh.qn_du.ρ[i]) && continue
-        gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
-        gh.coords_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
+        gh.buffer_inner_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
+        gh.buffer_inner_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
 
         ii += 1
     end
-    coords_Yk = view(gh.coords_Yk_X, 1:num_nonzero_rho)
-    coords_Sk = view(gh.coords_Sk_X, 1:num_nonzero_rho)
+    buffer_inner_Yk = view(gh.buffer_inner_Yk_X, 1:num_nonzero_rho)
+    buffer_inner_Sk = view(gh.buffer_inner_Sk_X, 1:num_nonzero_rho)
 
-    return hessian_value_from_inner_products(gh, one(eltype(gh.qn_du.ρ)), coords_Yk, coords_Sk, coords_Yk, coords_Sk)
+    return hessian_value_from_inner_products(gh, one(eltype(gh.qn_du.ρ)), buffer_inner_Yk, buffer_inner_Sk, buffer_inner_Yk, buffer_inner_Sk)
 end
 
 @doc raw"""
-    hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b, Y)
+    hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X::UnitVector, Y)
 
 Compute ``⟨X, B Y⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`, where `X` is the
-unit vector pointing at index `b`.
+[`UnitVector`](@ref).
 """
-function hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, b, Y)
+function hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X::UnitVector, Y)
+    b = X.index
+
     m = length(gh.qn_du.memory_s)
     num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
@@ -187,19 +190,19 @@ function hessian_value_eb(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abs
     ii = 1
     for i in 1:m
         iszero(gh.qn_du.ρ[i]) && continue
-        gh.coords_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
-        gh.coords_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
+        gh.buffer_inner_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
+        gh.buffer_inner_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
 
-        gh.coords_Yk_Y[ii] = inner(M, p, gh.qn_du.memory_y[i], Y)
-        gh.coords_Sk_Y[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], Y)
+        gh.buffer_inner_Yk_Y[ii] = inner(M, p, gh.qn_du.memory_y[i], Y)
+        gh.buffer_inner_Sk_Y[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], Y)
         ii += 1
     end
-    coords_Yk_X = view(gh.coords_Yk_X, 1:num_nonzero_rho)
-    coords_Yk_Y = view(gh.coords_Yk_Y, 1:num_nonzero_rho)
-    coords_Sk_X = view(gh.coords_Sk_X, 1:num_nonzero_rho)
-    coords_Sk_Y = view(gh.coords_Sk_Y, 1:num_nonzero_rho)
+    buffer_inner_Yk_X = view(gh.buffer_inner_Yk_X, 1:num_nonzero_rho)
+    buffer_inner_Yk_Y = view(gh.buffer_inner_Yk_Y, 1:num_nonzero_rho)
+    buffer_inner_Sk_X = view(gh.buffer_inner_Sk_X, 1:num_nonzero_rho)
+    buffer_inner_Sk_Y = view(gh.buffer_inner_Sk_Y, 1:num_nonzero_rho)
 
-    return hessian_value_from_inner_products(gh, Yb, coords_Yk_X, coords_Sk_X, coords_Yk_Y, coords_Sk_Y)
+    return hessian_value_from_inner_products(gh, Yb, buffer_inner_Yk_X, buffer_inner_Sk_X, buffer_inner_Yk_Y, buffer_inner_Sk_Y)
 end
 
 @doc raw"""
@@ -344,7 +347,7 @@ init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessia
 """
     struct GenericSegmentHessianUpdater <: AbstractSegmentHessianUpdater end
 
-Generic f' and f'' calculation that only relies on `hessian_value_eb` but is relatively slow for
+Generic f' and f'' calculation that only relies on `hessian_value` but is relatively slow for
 high-dimensional domains.
 """
 struct GenericSegmentHessianUpdater{TX} <: AbstractSegmentHessianUpdater
@@ -366,13 +369,13 @@ end
     (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha::AbstractQuasiNewtonDirectionUpdate)
 
 Calculate Hessian values ``⟨e_b, B d_z⟩`` and ``⟨e_b, B d_tmp⟩`` for the generalized Cauchy
-point line search using the generic approach via `hessian_value_eb`.
+point line search using the generic approach via `hessian_value` with [`UnitVector`](@ref).
 ``d_z`` start with 0 and is updated in-place by adding `dt * d` to it.
 """
 function (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha)
     upd.d_z .+= dt .* upd.d_tmp
-    hv_eb_dz = hessian_value_eb(ha, M, p, b, upd.d_z)
-    hv_eb_d = hessian_value_eb(ha, M, p, b, upd.d_tmp)
+    hv_eb_dz = hessian_value(ha, M, p, UnitVector(b), upd.d_z)
+    hv_eb_d = hessian_value(ha, M, p, UnitVector(b), upd.d_tmp)
 
     set_zero_at_index!(M, upd.d_tmp, b)
 
@@ -446,29 +449,29 @@ function (hessian_segment_updater::LimitedMemorySegmentHessianUpdater)(
     for i in 1:m
         iszero(ha.qn_du.ρ[i]) && continue
         # setting _X to w_b from the paper
-        ha.coords_Yk_X[ii] = get_at_bound_index(M, ha.qn_du.memory_y[i], b)
-        ha.coords_Sk_X[ii] = ha.current_scale * get_at_bound_index(M, ha.qn_du.memory_s[i], b)
+        ha.buffer_inner_Yk_X[ii] = get_at_bound_index(M, ha.qn_du.memory_y[i], b)
+        ha.buffer_inner_Sk_X[ii] = ha.current_scale * get_at_bound_index(M, ha.qn_du.memory_s[i], b)
 
         ii += 1
     end
 
-    coords_Yk_eb = view(ha.coords_Yk_X, 1:num_nonzero_rho)
-    coords_Sk_eb = view(ha.coords_Sk_X, 1:num_nonzero_rho)
+    buffer_inner_Yk_eb = view(ha.buffer_inner_Yk_X, 1:num_nonzero_rho)
+    buffer_inner_Sk_eb = view(ha.buffer_inner_Sk_X, 1:num_nonzero_rho)
 
-    coords_cy = view(hessian_segment_updater.c_y, 1:num_nonzero_rho)
-    coords_cs = view(hessian_segment_updater.c_s, 1:num_nonzero_rho)
-    coords_py = view(hessian_segment_updater.p_y, 1:num_nonzero_rho)
-    coords_ps = view(hessian_segment_updater.p_s, 1:num_nonzero_rho)
+    buffer_inner_cy = view(hessian_segment_updater.c_y, 1:num_nonzero_rho)
+    buffer_inner_cs = view(hessian_segment_updater.c_s, 1:num_nonzero_rho)
+    buffer_inner_py = view(hessian_segment_updater.p_y, 1:num_nonzero_rho)
+    buffer_inner_ps = view(hessian_segment_updater.p_s, 1:num_nonzero_rho)
 
-    coords_cy .+= dt .* coords_py
-    coords_cs .+= dt .* coords_ps
+    buffer_inner_cy .+= dt .* buffer_inner_py
+    buffer_inner_cs .+= dt .* buffer_inner_ps
 
-    eb_B_z = hessian_value_from_inner_products(ha, t * db, coords_Yk_eb, coords_Sk_eb, coords_cy, coords_cs)
+    eb_B_z = hessian_value_from_inner_products(ha, t * db, buffer_inner_Yk_eb, buffer_inner_Sk_eb, buffer_inner_cy, buffer_inner_cs)
 
-    eb_B_d = hessian_value_from_inner_products(ha, db, coords_Yk_eb, coords_Sk_eb, coords_py, coords_ps)
+    eb_B_d = hessian_value_from_inner_products(ha, db, buffer_inner_Yk_eb, buffer_inner_Sk_eb, buffer_inner_py, buffer_inner_ps)
 
-    coords_py .-= db .* coords_Yk_eb
-    coords_ps .-= db .* coords_Sk_eb
+    buffer_inner_py .-= db .* buffer_inner_Yk_eb
+    buffer_inner_ps .-= db .* buffer_inner_Sk_eb
 
     return eb_B_z, eb_B_d
 end
@@ -601,7 +604,7 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyDirectio
     F = BinaryHeap(Base.By(first), F_list)
 
     f_prime = inner(M, p, X, d)
-    f_double_prime = hessian_value(gcp.ha, M, p, d)
+    f_double_prime = hessian_value_diag(gcp.ha, M, p, d)
 
     if iszero(f_prime) || iszero(f_double_prime)
         return :not_found
@@ -622,7 +625,7 @@ function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyDirectio
         hv_eb_dz, hv_eb_d = gcp.hessian_segment_updater(M, p, t_current, dt, b, db, gcp.ha)
 
         f_prime += dt * f_double_prime - db * (gb + hv_eb_dz)
-        f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_eb(gcp.ha, M, p, b)
+        f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_diag(gcp.ha, M, p, UnitVector(b))
 
         t_old = t_current
 

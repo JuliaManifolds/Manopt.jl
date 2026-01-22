@@ -512,39 +512,52 @@ function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
     return d
 end
 """
-    hessian_value(d::QuasiNewtonMatrixDirectionUpdate, M, p, X)
+    hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate, M, p, X)
 
 Evaluate the quadratic form associated with the stored quasi-Newton matrix.
 Returns the scalar ``c^{\top} B c`` where ``c`` are the coordinates of the
 tangent vector `X` at `p` (in the basis `d.basis`) and ``B`` is `d.matrix`.
 """
-function hessian_value(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+function hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X) where {T <: Union{BFGS, DFP, SR1, Broyden}}
     c = get_coordinates(M, p, X, d.basis)
     return dot(c, d.matrix, c)
 end
 
 """
-    hessian_value_eb(d::QuasiNewtonMatrixDirectionUpdate, M, p, b)
+    UnitVector{TB}
+
+A type representing a unit tangent vector on a `Hyperrectangle`-like manifold with corners,
+or a product of it with a standard manifold.
+The field `index` stores the index of the element equal to 1.
+All other elements are equal to 0.
+"""
+struct UnitVector{TB}
+    index::TB
+end
+
+"""
+    hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate, M, p, X::UnitVector)
 
 Evaluate the quadratic form associated with the stored quasi-Newton matrix.
 Returns the scalar ``c^{\top} B c`` where ``c`` are the coordinates of the
-unit tangent vector along direction with index `b` at `p` (in the basis `d.basis`)
-and ``B`` is `d.matrix`.
+[`UnitVector`](@ref) `X` at `p` (in the basis `d.basis`) and ``B`` is `d.matrix`.
 """
-function hessian_value_eb(d::QuasiNewtonMatrixDirectionUpdate{T}, ::AbstractManifold, p, b) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+function hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate{T}, ::AbstractManifold, p, X::UnitVector) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+    b = X.index
     return d.matrix[b, b]
 end
 """
-    hessian_value_eb(d::QuasiNewtonMatrixDirectionUpdate, M, p, b, X)
+    hessian_value(d::QuasiNewtonMatrixDirectionUpdate, M, p, X::UnitVector, Y)
 
 Evaluate the quadratic form associated with the stored quasi-Newton matrix.
 Returns the scalar ``c_b^{\top} B c`` where ``c_b`` are the coordinates of the
-unit tangent vector along direction with index `b` at `p` (in the basis `d.basis`),
-``c`` are the coordinates of the tangent vector `X` at `p` (in the basis `d.basis`)
+[`UnitVector`](@ref) `X` at `p` (assumed to correspond to the basis `d.basis`),
+``c`` are the coordinates of the tangent vector `Y` at `p` (in the basis `d.basis`)
 and ``B`` is `d.matrix`.
 """
-function hessian_value_eb(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, b, X) where {T <: Union{BFGS, DFP, SR1, Broyden}}
-    return dot(d.matrix[b, :], get_coordinates(M, p, X, d.basis))
+function hessian_value(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X::UnitVector, Y) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+    b = X.index
+    return dot(d.matrix[b, :], get_coordinates(M, p, Y, d.basis))
 end
 
 _doc_QN_B = """

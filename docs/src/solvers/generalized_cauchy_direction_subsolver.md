@@ -5,11 +5,13 @@ The Generalized Cauchy Direction (GCD) subsolver is a component in optimization 
 ```math
 \begin{align*}
 \operatorname*{arg\,min}_{Y  ∈  T_p D \times \mathcal{M}}&\ m_p(Y), \qquad m_p(Y) = ⟨X_g, Y⟩_p + \frac{1}{2} ⟨\mathcal{H}_p[Y], Y⟩_p\\
-\text{such that}& \ \exp_p(Y) = \exp_p(\alpha X) \in D \times \mathcal{M} \text{ for some } \alpha \in \mathbb{R}
+\text{such that}& \ \exp_p(Y) = \exp_p(\alpha X) \in D \times \mathcal{M} \text{ for some } \alpha \in [0, A]
 \end{align*}
 ```
 
-where $X$ is a given direction, the exponential map handles projection of the tangent vector when reaching the boundary, $D$ is a box domain ([`Hyperrectangle`](@extref Manifolds.Hyperrectangle)), $\mathcal{M}$ is a Riemannian manifold, $X_g$ is the gradient of a scalar function $f$ at point $p$ and $\mathcal{H}_p$ is a linear operator that approximates the Hessian of $f$ at $p$.
+where $X=(X_{\mathrm{D}}, X_{\mathcal{M}})$ is a given direction, the exponential map handles projection of the tangent vector when reaching the boundary, $D$ is a box domain ([`Hyperrectangle`](@extref Manifolds.Hyperrectangle)), $\mathcal{M}$ is a Riemannian manifold, $X_g$ is the gradient of a scalar function $f$ at point $p=(p_{\mathrm{D}}, p_{\mathcal{M}})$, $A$ is the maximum allowed step size on $\mathcal{M}$ at point $p=(p_{\mathrm{D}}, p_{\mathcal{M}})$ in direction $X_{\mathcal{M}}$ (infinity is supported) and $\mathcal{H}_p$ is a linear operator that approximates the Hessian of $f$ at $p$.
+
+Additionally, the subsolver indicates whether the selected direction $Y$ reaches the boundary of $D$ at some point, in which case the subsequent step size selection in direction $Y$ needs to be limited to the interval $[0, 1]$.
 
 The solver is currently primarily intended for internal use by optimization algorithms that require bound-constrained subproblem solutions.
 
@@ -31,7 +33,7 @@ These symbols are used to evaluate the Hessian approximation at specific tangent
 
 ```@docs
 Manopt.hessian_value
-Manopt.hessian_value_eb
+Manopt.hessian_value_diag
 ```
 
 ### Symbols related to bound handling
