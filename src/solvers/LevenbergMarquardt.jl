@@ -112,9 +112,21 @@ function LevenbergMarquardt(
         vgf::VectorGradientFunction,
         p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        robustifier = IdentityRobustifier(),
         kwargs...,
     )
-    nlso = NonlinearLeastSquaresObjective(vgf)
+    nlso = NonlinearLeastSquaresObjective(vgf, robustifier)
+    return LevenbergMarquardt(M, nlso, p; evaluation = evaluation, kwargs...)
+end
+function LevenbergMarquardt(
+        M::AbstractManifold,
+        vgf::Vector{<:VectorGradientFunction},
+        p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        robustifier::Vector{<:AbstractRobustifierFunction} = [IdentityRobustifier() for _ in 1:length(vgf)],
+        kwargs...,
+    )
+    nlso = NonlinearLeastSquaresObjective(vgf, robustifier)
     return LevenbergMarquardt(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt(
@@ -180,10 +192,10 @@ function LevenbergMarquardt!(
         ),
         (linear_subsolver!) = nothing,
         sub_objective = SymmetricLinearSystem(
-            LevenbergMarquardtSurrogateObjective(nlso, damping_term_min)
+            LevenbergMarquardtLinearSurrogateObjective(nlso, damping_term_min)
         ),
-        sub_problem = isnothing(linear_subsolver!) ? DefaultProblem(M, sub_objective) : linear_subsolver!,
-        sub_state = isnothing(linear_subsolver!) ? ConjugateResidualState(TangentSpace(M, p)) : InplaceEvaluation(),
+        sub_problem = isnothing(linear_subsolver!) ? DefaultManoptProblem(M, sub_objective) : linear_subsolver!,
+        sub_state = isnothing(linear_subsolver!) ? ConjugateResidualState(TangentSpace(M, p), sub_objective) : InplaceEvaluation(),
         kwargs..., #collect rest
     ) where {O <: Union{NonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(LevenbergMarquardt!; kwargs...)

@@ -106,15 +106,17 @@ $(_doc_CR_cost)
 Which is ``$(_tex(:grad)) f(X) = $(_tex(:Cal, "A"))[X]+b``. This can be computed in-place of `Y`.
 """
 function get_gradient(TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X)
+    M = base_manifold(TpM)
     p = base_point(TpM)
-    return linear_operator(TpM, aslso, p, X) + vector_field(TpM, aslso)
+    return linear_operator(M, aslso, p, X) + vector_field(M, aslso, p)
 end
 function get_gradient!(
         TpM::TangentSpace, Y, aslso::AbstractSymmetricLinearSystemObjective{AllocatingEvaluation}, X
     )
+    M = base_manifold(TpM)
     p = base_point(TpM)
     # Evaluate A[X] + b
-    Y .= linear_operator(TpM, aslso, p, X) + vector_field(TpM, aslso, p)
+    Y .= linear_operator(M, aslso, p, X) + vector_field(M, aslso, p)
     return Y
 end
 function get_gradient!(
@@ -123,8 +125,8 @@ function get_gradient!(
     M = base_manifold(TpM)
     p = base_point(TpM)
     W = copy(M, p, Y)
-    linear_operaotor!(TpM, W, aslso, X)
-    vector_field!(TpM, Y, aslso)
+    linear_operator!(M, W, aslso, p, X)
+    vector_field!(M, Y, aslso, p)
     Y .+= W
     return Y
 end
@@ -140,38 +142,42 @@ $(_doc_CR_cost)
 Which is ``$(_tex(:Hess)) f(X)[Y] = $(_tex(:Cal, "A"))[V]``. This can be computed in-place of `W`.
 Internally this jsut calls the [`linear_operator`](@ref) function.
 """
-get_hessian(TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X, V) = linear_operator(TpM, aslso, X, V)
-get_hessian!(TpM::TangentSpace, W, aslso::AbstractSymmetricLinearSystemObjective, X, V) = linear_operator!(TpM, W, aslso, X, V)
-
+function get_hessian(TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X, V)
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return linear_operator(M, aslso, p, V)
+end
+function get_hessian!(TpM::TangentSpace, W, aslso::AbstractSymmetricLinearSystemObjective, X, V)
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    linear_operator!(M, W, aslso, p, V)
+    return W
+end
 #
 #
 # Specific case with 2 functions
 function linear_operator(
-        TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X, V
+        M::AbstractManifold, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, p, X,
     )
-    return slso.A!!(base_manifold(TpM), base_point(TpM), V)
+    return slso.A!!(M, p, X)
 end
 function linear_operator(
-        TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X, V
+        M::AbstractManifold, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, p, X,
     )
-    M = base_manifold(TpM)
-    p = base_point(TpM)
-    W = copy(M, p, V)
-    slso.A!!(M, W, p, V)
+    Y = copy(M, p, X)
+    slso.A!!(M, Y, p, X)
+    return Y
+end
+function linear_operator!(
+        M::AbstractManifold, W, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, p, X,
+    )
+    copyto!(M, W, p, slso.A!!(M, p, X))
     return W
 end
 function linear_operator!(
-        TpM::TangentSpace, W, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X, V
+        M::AbstractManifold, W, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, p, X,
     )
-    M = base_manifold(TpM)
-    p = base_point(TpM)
-    copyto!(M, W, p, slso.A!!(M, p, V))
-    return W
-end
-function linear_operator!(
-        TpM::TangentSpace, W, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X, V
-    )
-    return slso.A!!(base_manifold(TpM), W, base_point(TpM), V)
+    return slso.A!!(M, W, p, X)
 end
 
 @doc """
@@ -181,27 +187,25 @@ end
 evaluate the stored value for computing the right hand side ``b`` in ``$(_tex(:Cal, "A"))=-b``.
 """
 function vector_field(
-        TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}
+        M::AbstractManifold, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, p
     )
-    return slso.b!!(base_manifold(TpM), base_point(TpM))
+    return slso.b!!(M, p)
 end
-function vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation})
-    M = base_manifold(TpM)
-    p = base_point(TpM)
+function vector_field(
+        M::AbstractManifold, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, p
+    )
     Y = zero_vector(M, p)
     return slso.b!!(M, Y, p)
 end
 function vector_field!(
-        TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}
+        M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, p
     )
-    M = base_manifold(TpM)
-    p = base_point(TpM)
     copyto!(M, Y, p, slso.b!!(M, p))
     return Y
 end
-function vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective{InplaceEvaluation})
-    M = base_manifold(TpM)
-    p = base_point(TpM)
+function vector_field!(
+        M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, p
+    )
     return slso.b!!(M, Y, p)
 end
 

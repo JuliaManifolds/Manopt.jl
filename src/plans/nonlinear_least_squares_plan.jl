@@ -20,7 +20,7 @@ nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
 abstract type AbstractRobustifierFunction <: Function end
 
 @doc """
-    NonlinearLeastSquaresObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
+    NonlinearLeastSquaresObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{E}
 
 An objective to model the robustified nonlinear least squares problem
 
@@ -72,7 +72,7 @@ As well as for the first variant of having a single block
 """
 struct NonlinearLeastSquaresObjective{
         E <: AbstractEvaluationType,
-        VF <: Vector{AbstractVectorGradientFunction{E}},
+        VF <: Vector{<:AbstractVectorGradientFunction{E}},
         RF <: Vector{<:AbstractRobustifierFunction},
     } <: AbstractManifoldFirstOrderObjective{E, VF}
     objective::VF
@@ -81,7 +81,7 @@ struct NonlinearLeastSquaresObjective{
     function NonlinearLeastSquaresObjective(
             fs::VF,
             robustifiers::RV = fill(IdentityRobustifier(), length(fs)),
-        ) where {E <: AbstractEvaluationType, VF <: Vector{AbstractVectorGradientFunction{E}}, RV <: Vector{<:AbstractRobustifierFunction}}
+        ) where {E <: AbstractEvaluationType, VF <: Vector{<:AbstractVectorGradientFunction{E}}, RV <: Vector{<:AbstractRobustifierFunction}}
         # we need to check that the lengths match
         (length(fs) != length(robustifiers)) && throw(
             ArgumentError(
@@ -815,7 +815,7 @@ C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)
 * `objective`: the [`NonlinearLeastSquaresObjective`](@ref) to penalize
 * `penalty`: the damping term ``λ``
 """
-mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType, R} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective}
+mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType, R} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
     objective::NonlinearLeastSquaresObjective{E}
     penalty::R
 end
@@ -969,9 +969,10 @@ function linear_normal_operator!(
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
     α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
-    get_jacobian!(M, Y, o, p, X)
-    # Compute C^TCa = C^2 a (inplace of a)
-    a .= ρ_prime .* (I - α * (a * a') ./ F_p_norm2)^2 * a
+    b = zero(a)
+    get_jacobian!(M, b, o, p, X)
+    # Compute C^TCb = C^2 b (inplace of a)
+    a .= ρ_prime .* (I - α * (a * a') ./ F_p_norm2)^2 * b
     # Now apply the adjoint
     get_adjoint_jacobian!(M, Y, o, p, a)
     # Finally add the damping term
@@ -1084,10 +1085,9 @@ function normal_vector_field!(
     F_p_norm2 = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
     α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
-    # Compute y = (sqrt(ρ(p)) / (1-α)) F(p)
-    y .= (sqrt(ρ_value) / (1 - α)) * y
+    # Compute y = (sqrt(ρ'(p)) / (1-α)) F(p) and
     # Now compute J_F^*(p)[C^T y] (inplace of y)
-    y .= ρ_prime * (1 - α * (y * y') ./ F_p_norm2) * y
+    y .= (ρ_prime / (1 - α)) * (I - α * (y * y') ./ F_p_norm2) * y
     # Now apply the adjoint and negate
     get_adjoint_jacobian!(M, X, o, p, y)
     X .*= -1

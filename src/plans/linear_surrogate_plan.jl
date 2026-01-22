@@ -109,27 +109,15 @@ get_objective(slsmo::SymmetricLinearSystem) = slsmo.objective
 # set parameter just passes down to the inner objective
 set_parameter!(slsmo::SymmetricLinearSystem, name::Symbol, value) = set_parameter!(get_objective(slsmo), name, value)
 
-function linear_operator(
-        TpM::TangentSpace, slso::SymmetricLinearSystem, X
-    )
-    M = base_manifold(TpM)
-    p = base_point(TpM)
+function linear_operator(M::AbstractManifold, slso::SymmetricLinearSystem, p, X)
+    return linear_normal_operator(M, slso.objective, p, X)
+end
+function linear_operator!(M::AbstractManifold, Y, slso::SymmetricLinearSystem, p, X)
+    return linear_normal_operator!(M, Y, slso.objective, p, X)
+end
+function vector_field(M::AbstractManifold, slso::SymmetricLinearSystem, p)
     return normal_vector_field(M, slso.objective, p)
 end
-function linear_operator!(
-        TpM::TangentSpace, Y, slso::SymmetricLinearSystem, X
-    )
-    M = base_manifold(TpM)
-    p = base_point(TpM)
+function vector_field!(M::AbstractManifold, Y, slso::SymmetricLinearSystem, p)
     return normal_vector_field!(M, Y, slso.objective, p)
-end
-function vector_field(TpM::TangentSpace, slso::SymmetricLinearSystem)
-    M = base_manifold(TpM)
-    p = base_point(TpM)
-    return linear_normal_operator(M, slso.objective, p)
-end
-function vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystem)
-    M = base_manifold(TpM)
-    p = base_point(TpM)
-    return linear_normal_operator!(M, Y, slso.objective, p)
 end
