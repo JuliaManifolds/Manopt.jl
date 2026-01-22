@@ -102,7 +102,7 @@ function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
     p = get_iterate(st)
     X = get_gradient(st)
     gcp = GeneralizedCauchyDirectionFinder(M, p, d)
-    d.last_gcp_result = find_generalized_cauchy_point_direction!(gcp, r, p, r, X)
+    d.last_gcp_result = find_generalized_cauchy_direction!(gcp, r, p, r, X)
     return r
 end
 
@@ -385,8 +385,8 @@ end
 """
     struct LimitedMemorySegmentHessianUpdater{TV <: AbstractVector} <: AbstractSegmentHessianUpdater
 
-Hessian value calculation for generalized Cauchy point line segments that is optimized for
-`QuasiNewtonLimitedMemoryBoxDirectionUpdate`. It relies on a specific Hessian structure.
+Hessian value calculation for generalized Cauchy direction line segments that is optimized for
+[`QuasiNewtonLimitedMemoryBoxDirectionUpdate`](@ref). It relies on a specific Hessian structure.
 """
 struct LimitedMemorySegmentHessianUpdater{TV <: AbstractVector} <: AbstractSegmentHessianUpdater
     p_s::TV
@@ -525,10 +525,10 @@ end
 @doc raw"""
     GeneralizedCauchyDirectionFinder{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
 
-Helper container for generalized Cauchy point search. Stores the manifold `M`, cached
+Helper container for generalized Cauchy direction search. Stores the manifold `M`, cached
 workspace (`d_tmp`), the quasi-Newton direction update `ha`, and the `hessian_segment_updater`,
 which computes certain values of the Hessian while advancing segments.
-Instances are reused across segments during `find_generalized_cauchy_point_direction!` to
+Instances are reused across segments during [`find_generalized_cauchy_direction!`](@ref) to
 avoid allocations.
 """
 struct GeneralizedCauchyDirectionFinder{TM <: AbstractManifold, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
@@ -546,10 +546,10 @@ function GeneralizedCauchyDirectionFinder(
 end
 
 """
-    find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
+    find_generalized_cauchy_direction!(gcp::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
 
-Find generalized Cauchy point looking from point `p` in direction `d` and save the tangent
-vector pointing at it to `d_out`. Gradient of the objective at `p` is `X`.
+Find generalized Cauchy direction looking from point `p` in direction `d` and save it to `d_out`.
+Gradient of the objective at `p` is `X`.
 
 The function returns 
 * `:found_limited` if the point was found and we can perform a step of length at most 1
@@ -558,7 +558,7 @@ The function returns
   `max_stepsize(M, p)` in direction `d_out` afterwards,
 * `:not_found` if the search cannot be performed in direction `d`.
 """
-function find_generalized_cauchy_point_direction!(gcp::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
+function find_generalized_cauchy_direction!(gcp::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
     M = gcp.M
     copyto!(M, d_out, d)
 

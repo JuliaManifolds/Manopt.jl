@@ -168,25 +168,25 @@ using RecursiveArrayTools
         d = -X1
         d_out = similar(d)
 
-        @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, d, X1) === :found_limited
+        @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p, d, X1) === :found_limited
         @test d_out ≈ [2.0, 0.0, 0.0]
 
         d_out = similar(d)
 
-        @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, 0 * d, X1) === :not_found
+        @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p, 0 * d, X1) === :not_found
 
         d2 = [0.0, 1.0, 0.0]
 
-        @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, d2, [0.0, -1.0, 0.0]) === :found_unlimited
+        @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p, d2, [0.0, -1.0, 0.0]) === :found_unlimited
         @test d_out ≈ d2
 
-        @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, [1.0, 1.0, 0.0], [-10.0, -10.0, -10.0]) === :found_limited
+        @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p, [1.0, 1.0, 0.0], [-10.0, -10.0, -10.0]) === :found_limited
         @test d_out ≈ [2.0, 10.0, 0.0]
 
         p2 = [-1.0, -2.0, 2.0]
         gf2 = Manopt.GeneralizedCauchyDirectionFinder(M, p2, ha)
 
-        @test Manopt.find_generalized_cauchy_point_direction!(gf2, d_out, p2, [-1.0, -1.0, 1.0], [-10.0, -10.0, -10.0]) === :not_found
+        @test Manopt.find_generalized_cauchy_direction!(gf2, d_out, p2, [-1.0, -1.0, 1.0], [-10.0, -10.0, -10.0]) === :not_found
 
         M2 = Hyperrectangle([-10.0], [10.0])
 
@@ -195,7 +195,7 @@ using RecursiveArrayTools
         gf3 = Manopt.GeneralizedCauchyDirectionFinder(M2, p3, ha2)
 
         d_out = similar(p3)
-        @test Manopt.find_generalized_cauchy_point_direction!(gf3, d_out, p3, [1.0], [-10.0]) === :found_limited
+        @test Manopt.find_generalized_cauchy_direction!(gf3, d_out, p3, [1.0], [-10.0]) === :found_limited
     end
 
     @testset "Hitting multiple bounds at the same time in GCD" begin
@@ -209,7 +209,7 @@ using RecursiveArrayTools
         d_out = similar(d)
         X = [10.0, 10.0, 10.0]
 
-        @test Manopt.find_generalized_cauchy_point_direction!(gf, d_out, p, d, X) === :found_limited
+        @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p, d, X) === :found_limited
         @test d_out ≈ [-1.0, -1.0, -1.0]
     end
 

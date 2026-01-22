@@ -17,19 +17,19 @@ The solver is currently primarily intended for internal use by optimization algo
 
 ## Internal types and method
 
-### Symbols related to the GCP computation
+### Symbols related to the GCD computation
 
-These symbols are directly used by solvers to compute the descent direction corresponding to the Generalized Cauchy point.
+These symbols are directly used by solvers to compute the descent direction corresponding to the Generalized Cauchy direction.
 
 ```@docs
 Manopt.requires_generalized_cauchy_direction_computation
-Manopt.find_generalized_cauchy_point_direction!
+Manopt.find_generalized_cauchy_direction!
 Manopt.GeneralizedCauchyDirectionFinder
 ```
 
 ### Symbols related to the Hessian approximation
 
-These symbols are used to evaluate the Hessian approximation at specific tangent vectors during the generalized Cauchy point computation.
+These symbols are used to evaluate the Hessian approximation at specific tangent vectors during the generalized Cauchy direction computation.
 
 ```@docs
 Manopt.hessian_value
