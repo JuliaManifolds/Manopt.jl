@@ -43,16 +43,6 @@ trust_regions!
 TrustRegionsState
 ```
 
-## Approximation of the Hessian
-
-Several different methods to approximate the Hessian are available.
-
-```@docs
-ApproxHessianFiniteDifference
-ApproxHessianSymmetricRankOne
-ApproxHessianBFGS
-```
-
 as well as their (non-exported) common supertype
 
 ```@docs

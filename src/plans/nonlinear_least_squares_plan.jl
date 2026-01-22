@@ -167,7 +167,7 @@ function get_gradient(
     return get_gradient!(M, X, nlso, p; kwargs...)
 end
 
-@doc "$(_doc_get_gradient_nlso)"
+# @doc "$(_doc_get_gradient_nlso)"
 function get_gradient!(
         M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective, p; value_cache = nothing,
     )
@@ -217,7 +217,6 @@ function get_residuals!(
         M::AbstractManifold, v, nlso::NonlinearLeastSquaresObjective, p; kwargs...,
     )
     start = 0
-    @info v
     for o in nlso.objective # for every block
         len = length(o)
         view_v = view(v, (start + 1):(start + len))
@@ -784,7 +783,7 @@ end
 # ----- A cost/grad objective to e.g. do CG, or Gauß-Newton ----
 
 @doc """
-    LevenbergMarquardtSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
+    LevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
 
 Given an [`NonlinearLeastSquaresObjective`](@ref) `objective` and a damping term `damping_term`,
 this objective represents the penalized objective for the sub-problem to solve within every step
@@ -993,7 +992,7 @@ $(_tex(:Cal, "L"))(X) = C J_F^*(p)[X] $(_tex(:bigr))],
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
 
-See also [`evaluate_tangent_vector`](@ref) for evaluating the corresponding vector field
+See also [`vector_field`](@ref) for evaluating the corresponding vector field
 """
 function linear_operator(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X,
@@ -1051,7 +1050,7 @@ X = - J_F^*(p)[ C^T y], $(_tex(:quad)) y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
 
-See also [`evaluate_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
+See also [`linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
 """
 function normal_vector_field(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
@@ -1109,7 +1108,7 @@ y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p).
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
 
-See also [`evaluate_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
+See also [`linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
 """
 function vector_field(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p

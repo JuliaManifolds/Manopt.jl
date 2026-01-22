@@ -18,8 +18,7 @@ LevenbergMarquardtState
 ## Sub-problem
 
 ```@docs
-LevenbergMarquardtSurrogatePenaltyObjective
-LevenbergMarquardtSurrogateConstrainedObjective
+Manopt.LevenbergMarquardtLinearSurrogateObjective
 ```
 
 ## [Technical details](@id sec-lm-technical-details)

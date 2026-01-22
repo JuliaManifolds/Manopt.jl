@@ -25,12 +25,6 @@ DifferenceOfConvexState
 DifferenceOfConvexProximalState
 ```
 
-## The difference of convex objective
-
-```@docs
-ManifoldDifferenceOfConvexObjective
-```
-
 as well as for the corresponding sub problem
 
 ```@docs

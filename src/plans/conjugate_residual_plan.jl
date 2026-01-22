@@ -26,9 +26,7 @@ Concrete subtypes of this type should/could implement
 
 * [`get_cost`](@ref)`(TpM, aslso, X)` to compute/evaluate the objective
 * [`get_gradient`](@ref)`(TpM, aslso, X)` to compute/evaluate the objectives gradient at `X`
-* [`get_gradient!`](@ref)`(TpM, Y, aslso, X)` to compute/evaluate the objectives gradient at `X` (inplace)
 * [`linear_operator`](@ref)`(TpM, aslso, X)` to compute/evaluate the linear operator ``$(_tex(:Cal, "A"))`` at `X`
-* [`linear_operator!`](@ref)`(TpM, Y, aslso, X)` to compute/evaluate the linear operator ``$(_tex(:Cal, "A"))`` at `X` (inplace)
 """
 abstract type AbstractSymmetricLinearSystemObjective{E <: AbstractEvaluationType} <: AbstractManifoldObjective{E} end
 
