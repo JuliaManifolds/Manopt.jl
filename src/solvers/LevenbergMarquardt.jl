@@ -278,7 +278,9 @@ function step_solver!(
     @info "For the cost we have $(get_cost(M, nlso, lms.p)) -> $(get_cost(M, nlso, q)) hence a diff of $(get_cost(M, nlso, lms.p) - get_cost(M, nlso, q))"
     @info "For the surrogate we have $(get_cost(lms.sub_problem, zero_vector(M, lms.p))) -> $(get_cost(lms.sub_problem, lms.X)) hence a diff of $(0.5 * get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X))"
     ρ = (get_cost(M, nlso, lms.p) - get_cost(M, nlso, q)) / (
-        0.5 * get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X)
+        0.5 * (
+            get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X)
+        )
     )
     # Update damping term and iterate
     @info "ρ = $ρ, η = $(lms.η)"
