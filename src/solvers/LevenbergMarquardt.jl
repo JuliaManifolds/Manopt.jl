@@ -178,7 +178,7 @@ function LevenbergMarquardt!(
         nlso::O,
         p;
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-        stopping_criterion::StoppingCriterion = StopAfterIteration(20) |
+        stopping_criterion::StoppingCriterion = StopAfterIteration(10) |
             StopWhenGradientNormLess(1.0e-12) |
             StopWhenStepsizeLess(1.0e-12),
         debug = [DebugWarnIfCostIncreases()],
@@ -262,17 +262,18 @@ function step_solver!(
     ) where {mT <: AbstractManifold}
     # Update damping term in the surrogate
     # should this be with (currenlty) or without robustifier?
-    set_parameter!(lms.sub_problem, :Penalty, lms.damping_term * get_cost(dmp, lms.p))
+    set_parameter!(get_objective(lms.sub_problem), :Penalty, lms.damping_term)
+    @info "Damping term: $(lms.damping_term)"
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
 
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
     # Subsolver result
-    lms.X .= get_solver_result(solve!(lms.sub_problem, lms.sub_state))
+    lms.X .= -get_solver_result(solve!(lms.sub_problem, lms.sub_state))
     @info "X: $(lms.X)"
     # New iterate candidate - maybe store in state?
-    q = retract(M, lms.p, -lms.X, lms.retraction_method)
+    q = retract(M, lms.p, lms.X, lms.retraction_method)
     # Evaluate improvement of actual cost divided by predicted cost improvement
     @info "For the cost we have $(get_cost(M, nlso, lms.p)) -> $(get_cost(M, nlso, q)) hence a diff of $(get_cost(M, nlso, lms.p) - get_cost(M, nlso, q))"
     @info "For the surrogate we have $(get_cost(lms.sub_problem, zero_vector(M, lms.p))) -> $(get_cost(lms.sub_problem, lms.X)) hence a diff of $(0.5 * get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X))"

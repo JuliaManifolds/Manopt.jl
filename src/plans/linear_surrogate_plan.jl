@@ -107,7 +107,7 @@ end
 get_objective(slsmo::SymmetricLinearSystem) = slsmo.objective
 
 # set parameter just passes down to the inner objective
-set_parameter!(slsmo::SymmetricLinearSystem, name::Symbol, value) = set_parameter!(get_objective(slsmo), name, value)
+set_parameter!(slsmo::SymmetricLinearSystem, name::Symbol, value) = set_parameter!(slsmo.objective, name, value)
 
 function linear_operator(M::AbstractManifold, slso::SymmetricLinearSystem, p, X)
     return linear_normal_operator(M, slso.objective, p, X)
