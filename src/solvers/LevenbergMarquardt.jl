@@ -178,7 +178,7 @@ function LevenbergMarquardt!(
         nlso::O,
         p;
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-        stopping_criterion::StoppingCriterion = StopAfterIteration(200) |
+        stopping_criterion::StoppingCriterion = StopAfterIteration(20) |
             StopWhenGradientNormLess(1.0e-12) |
             StopWhenStepsizeLess(1.0e-12),
         debug = [DebugWarnIfCostIncreases()],
@@ -261,33 +261,42 @@ function step_solver!(
         ::Integer,
     ) where {mT <: AbstractManifold}
     # Update damping term in the surrogate
-    set_parameter!(lms.sub_problem, :Penalty, lms.damping_term)
+    # should this be with (currenlty) or without robustifier?
+    set_parameter!(lms.sub_problem, :Penalty, lms.damping_term * get_cost(dmp, lms.p))
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
 
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
-
-    # Maybe store in state?
-    Y = get_solver_result(solve!(lms.sub_problem, lms.sub_state))
-
+    # Subsolver result
+    lms.X .= get_solver_result(solve!(lms.sub_problem, lms.sub_state))
+    @info "X: $(lms.X)"
     # New iterate candidate - maybe store in state?
-    q = retract(M, lms.p, Y, lms.retraction_method)
-
-    # TODO: Compute the improvement factor ρk, i.e. how much the
-    # actual cost decrease compares to the predicted one
-    ρ_k = 0 # TODO
-    if ρ_k >= lms.η
+    q = retract(M, lms.p, -lms.X, lms.retraction_method)
+    # Evaluate improvement of actual cost divided by predicted cost improvement
+    @info "For the cost we have $(get_cost(M, nlso, lms.p)) -> $(get_cost(M, nlso, q)) hence a diff of $(get_cost(M, nlso, lms.p) - get_cost(M, nlso, q))"
+    @info "For the surrogate we have $(get_cost(lms.sub_problem, zero_vector(M, lms.p))) -> $(get_cost(lms.sub_problem, lms.X)) hence a diff of $(0.5 * get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X))"
+    ρ = (get_cost(M, nlso, lms.p) - get_cost(M, nlso, q)) / (
+        0.5 * get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X)
+    )
+    # Update damping term and iterate
+    @info "ρ = $ρ, η = $(lms.η)"
+    if ρ >= lms.η # enough improvement: accept, decrease damping term
         copyto!(M, lms.p, q)
         if lms.expect_zero_residual
             lms.damping_term = max(lms.damping_term_min, lms.damping_term / lms.β)
         end
-    else
+    else # not enough improvement: reject, increase damping term
         lms.damping_term *= lms.β
     end
     return lms
 end
 
-function get_last_stepsize(::AbstractManoptProblem, lms::LevenbergMarquardtState, ::Any...)
-    return lms.last_stepsize
+function get_last_stepsize(
+        dmp::DefaultManoptProblem{mT, <:NonlinearLeastSquaresObjective},
+        lms::LevenbergMarquardtState,
+        k,
+    ) where {mT <: AbstractManifold}
+    M = get_manifold(dmp)
+    return norm(M, lms.p, lms.X)
 end

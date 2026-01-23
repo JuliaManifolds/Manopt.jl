@@ -687,13 +687,11 @@ mutable struct LevenbergMarquardtState{
     retraction_method::TRTM
     residual_values::Tresidual_values
     X::TGrad
-    last_stepsize::Tparams
     η::Tparams
     damping_term::Tparams
     damping_term_min::Tparams
     β::Tparams
     expect_zero_residual::Bool
-    last_step_successful::Bool
     sub_problem::Pr
     sub_state::St
     function LevenbergMarquardtState(
@@ -741,13 +739,11 @@ mutable struct LevenbergMarquardtState{
             retraction_method,
             initial_residual_values,
             X,
-            zero(Tparams),
             η,
             damping_term_min,
             damping_term_min,
             β,
             expect_zero_residual,
-            true,
             sub_problem,
             sub_state,
         )

@@ -90,7 +90,7 @@ function get_cost(
     )
     M = base_manifold(TpM)
     p = base_point(TpM)
-    return 0.5 * norm(M, p, linear_operator(TpM, aslso, p, X) + vector_field(TpM, aslso))^2
+    return 0.5 * norm(M, p, linear_operator(TpM, aslso, p, X) + vector_field(TpM, aslso, p))^2
 end
 
 @doc """
