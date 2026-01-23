@@ -834,12 +834,20 @@ function get_cost(
     return cost
 end
 function get_cost(
-        M::AbstractManifold, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, C;
+        M::AbstractManifold, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
         value_cache = get_value(M, o, p)
     )
     F_p_norm2 = sum(abs2, value_cache)
     (ρ_value, _, _) = get_robustifier_values(r, F_p_norm2)
     return 0.5 * ρ_value
+end
+
+function get_cost(
+        TpM::TangentSpace, slso::SymmetricLinearSystem{E, <: LevenbergMarquardtLinearSurrogateObjective}, X
+    ) where {E <: AbstractEvaluationType}
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return get_cost(M, slso.objective, p, X)
 end
 
 function get_gradient(

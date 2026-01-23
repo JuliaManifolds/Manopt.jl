@@ -262,11 +262,11 @@ function step_solver!(
     ) where {mT <: AbstractManifold}
     # Update damping term in the surrogate
     # should this be with (currenlty) or without robustifier?
-    set_parameter!(get_objective(lms.sub_problem), :Penalty, lms.damping_term)
-    @info "Damping term: $(lms.damping_term)"
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
-
+    set_parameter!(get_objective(lms.sub_problem), :Penalty, lms.damping_term)
+    @info "Damping term: $(lms.damping_term)"
+    get_cost(lms.sub_problem, zero_vector(M, lms.p))
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
     # Subsolver result
