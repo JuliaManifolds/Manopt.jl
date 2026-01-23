@@ -595,8 +595,12 @@ function find_generalized_cauchy_direction!(gcp::GeneralizedCauchyDirectionFinde
         end
     else
         # Check only when we work on a pure Hyperrectangle
+        # 
+        # In this case we can't move in the direction `d` at all, though it's usually not
+        # a problem relevant to the end user because it can be handled by step_solver! that
+        # uses the GCD subsolver.
+
         if isempty(F_list)
-            @warn "We can't go in the selected direction"
             return :not_found
         end
     end
