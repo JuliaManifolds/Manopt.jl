@@ -276,7 +276,7 @@ function step_solver!(
     q = retract(M, lms.p, lms.X, lms.retraction_method)
     # Evaluate improvement of actual cost divided by predicted cost improvement
     @info "For the cost we have $(get_cost(M, nlso, lms.p)) -> $(get_cost(M, nlso, q)) hence a diff of $(get_cost(M, nlso, lms.p) - get_cost(M, nlso, q))"
-    @info "For the surrogate we have $(get_cost(lms.sub_problem, zero_vector(M, lms.p))) -> $(get_cost(lms.sub_problem, lms.X)) hence a diff of $(0.5 * get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X))"
+    @info "For the surrogate we have $(get_cost(lms.sub_problem, zero_vector(M, lms.p))) -> $(get_cost(lms.sub_problem, lms.X)) hence a diff of $(0.5 * (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X)))"
     ρ = (get_cost(M, nlso, lms.p) - get_cost(M, nlso, q)) / (
         0.5 * (
             get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X)
