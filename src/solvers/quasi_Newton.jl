@@ -407,7 +407,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     end
     if !(qns.nondescent_direction_behavior === :ignore)
         qns.nondescent_direction_value = real(inner(M, qns.p, qns.η, qns.X))
-        if qns.nondescent_direction_value > 0
+        if qns.nondescent_direction_value >= 0
             if qns.nondescent_direction_behavior === :step_towards_negative_gradient ||
                     qns.nondescent_direction_behavior === :reinitialize_direction_update
                 copyto!(M, qns.η, qns.X)
