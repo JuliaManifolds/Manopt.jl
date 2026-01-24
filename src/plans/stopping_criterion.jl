@@ -493,7 +493,7 @@ end
 function StopWhenRelativeAPosterioriCostChangeLessOrEqual(tol::F) where {F <: Real}
     return StopWhenRelativeAPosterioriCostChangeLessOrEqual{F}(tol, -1, zero(tol), 2 * tol)
 end
-StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::F = 1.0e7) where {F <: Real} = StopWhenRelativeAPosterioriCostChangeLessOrEqual(factr * eps(factr))
+StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::F = 1.0e7) where {F <: Real} = StopWhenRelativeAPosterioriCostChangeLessOrEqual(factr * eps(typeof(factr)))
 function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(
         problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
     )
