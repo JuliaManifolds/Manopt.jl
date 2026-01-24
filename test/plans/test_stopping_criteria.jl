@@ -381,7 +381,7 @@ end
         @test length(get_reason(sc)) > 0
         @test startswith(
             to_display_string(sc),
-            "StopWhenRelativeAPosterioriCostChangeLessOrEqual with threshold 1.4210854715202004e-12.\n",
+            "StopWhenRelativeAPosterioriCostChangeLessOrEqual with threshold 2.220446049250313e-14.\n",
         )
         @test startswith(Manopt.status_summary(sc), "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = ")
         @test !Manopt.indicates_convergence(sc)
