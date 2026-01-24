@@ -244,7 +244,10 @@ function set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemo
     Lk = LowerTriangular(zeros(num_nonzero_rho, num_nonzero_rho))
 
     # total scaling factor for the initial Hessian
-    gh.current_scale = (gh.qn_du.ρ[last_safe_index] * norm(M, p, gh.qn_du.memory_y[last_safe_index])^2) / gh.qn_du.initial_scale
+    # written this way to avoid floating point overflow (when ynorm is finite but ynorm^2 is Inf)
+    # see CUTEst EXPQUAD problem for an example
+    ynorm = norm(M, p, gh.qn_du.memory_y[last_safe_index])
+    gh.current_scale = ((gh.qn_du.ρ[last_safe_index] * ynorm) * ynorm) / gh.qn_du.initial_scale
 
     tsksk = Symmetric(zeros(num_nonzero_rho, num_nonzero_rho))
     ii = 1
@@ -270,7 +273,6 @@ function set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemo
     # Schur complement of -Dk is the only non-diagonal matrix we actually need to inverse in this step
     W1 = Lk * invA
     W2 = W1 * Lk'
-
     gh.M_22 = inv(Symmetric(tsksk - W2))
     W3 = gh.M_22 * W1
     W4 = W1' * W3
