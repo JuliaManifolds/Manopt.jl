@@ -63,6 +63,9 @@ using Test
     ls_mt = Manopt.LineSearchesStepsize(M, LineSearches.MoreThuente())
     @test_throws ErrorException ls_mt(mp_throw, st_qn, 1; fp = rosenbrock(M, x0))
 
+    # test max stepsize limit enforcement
+    @test ls_hz(mp, st_qn, 1, [1.0, 2.0, 3.0, 4.0, 0.0]; stop_when_stepsize_exceeds = 0.1) == 0.1
+
     @testset "max stepsize limit setting" begin
         lss = [
             LineSearches.MoreThuente(),

@@ -60,9 +60,10 @@ function (cs::Manopt.LineSearchesStepsize)(
     if :stop_when_stepsize_exceeds in keys(kwargs)
         new_max_alpha = min(
             kwargs[:stop_when_stepsize_exceeds],
-            linesearches_get_max_alpha(cs.linesearch),
+            Manopt.linesearches_get_max_alpha(cs.linesearch),
         )
-        ls = linesearches_set_max_alpha(cs.linesearch, new_max_alpha)
+        ls = Manopt.linesearches_set_max_alpha(cs.linesearch, new_max_alpha)
+        α0 = min(α0, new_max_alpha)
     else
         ls = cs.linesearch
     end
