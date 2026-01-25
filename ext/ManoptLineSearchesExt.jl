@@ -56,7 +56,7 @@ function (cs::Manopt.LineSearchesStepsize)(
     α0 = cs.initial_guess(mp, s, k, cs.last_stepsize, η; lf0 = fp, Dlf0 = dphi_0)
 
     # handle stepsize limit
-    local ls
+    local ls # COV_EXCL_LINE
     if :stop_when_stepsize_exceeds in keys(kwargs)
         new_max_alpha = min(
             kwargs[:stop_when_stepsize_exceeds],
