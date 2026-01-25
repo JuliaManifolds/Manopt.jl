@@ -62,6 +62,25 @@ function LineSearchesStepsize(
     )
 end
 
+"""
+    linesearches_get_max_alpha(ls)
+
+Get the maximum step size for `LineSearches.jl` line search `ls`.
+"""
+linesearches_get_max_alpha(ls)
+
+function linesearches_get_max_alpha end
+
+"""
+    linesearches_set_max_alpha(ls, max_alpha::Real)
+
+Set the maximum step size for `LineSearches.jl` line search `ls` to `max_alpha`.
+Return a new line search object with the updated maximum step size.
+"""
+linesearches_set_max_alpha(ls, max_alpha::Real)
+
+function linesearches_set_max_alpha end
+
 function Base.show(io::IO, cs::LineSearchesStepsize)
     return print(
         io,
