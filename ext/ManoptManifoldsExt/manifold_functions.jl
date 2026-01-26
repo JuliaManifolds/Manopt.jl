@@ -9,6 +9,33 @@ Manopt.default_point_distance(::Euclidean, p) = norm(p, Inf)
 Manopt.default_vector_norm(::Euclidean, p, X) = norm(p, Inf)
 
 """
+    get_bounds_index(::Hyperrectangle)
+
+Get the bound indices of [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`. They are the same as the indices of the
+lower (or upper) bounds.
+"""
+Manopt.get_bounds_index(M::Hyperrectangle) = eachindex(M.lb)
+"""
+    get_stepsize_bound(M::Hyperrectangle, x, d, i)
+
+Get the upper bound on moving in direction `d` from point `p` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`,
+for the bound index `i`. There are three cases:
+
+1. If `d[i] > 0`, the formula reads `(M.ub[i] - p[i]) / d[i]`.
+2. If `d[i] < 0`, the formula reads `(M.lb[i] - p[i]) / d[i]`.
+3. If `d[i] == 0`, the result is `Inf`.
+"""
+function Manopt.get_stepsize_bound(M::Hyperrectangle, p, d, i)
+    if d[i] > 0
+        return (M.ub[i] - p[i]) / d[i]
+    elseif d[i] < 0
+        return (M.lb[i] - p[i]) / d[i]
+    else
+        return Inf
+    end
+end
+
+"""
     max_stepsize(M::TangentBundle, p)
 
 Tangent bundle has injectivity radius of either infinity (for flat manifolds) or 0
@@ -59,6 +86,9 @@ function max_stepsize(M::Hyperrectangle)
         ms = max(ms, M.ub[i] - M.lb[i])
     end
     return ms
+end
+function max_stepsize(M::ProbabilitySimplex)
+    return 1.0
 end
 
 """
@@ -168,3 +198,46 @@ function reflect!(
     X .*= -1
     return retract!(M, q, p, X, retraction_method)
 end
+
+
+"""
+    Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
+
+Set element of tangent vector `d` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle)
+at index `i` to 0.
+"""
+function Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
+    d[i] = 0
+    return d
+end
+
+"""
+    Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real)
+
+For each index `i`, `t[i] < t_current`, set element of tangent vector `d_out` on
+[`Hyperrectangle`](@extref Manifolds.Hyperrectangle) to the distance from `p[i]` to the
+bound in the direction of `d_out[i]`.
+"""
+function Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real)
+    for i in eachindex(M.lb)
+        if ts[i] < t_current
+            d_out[i] = d_out[i] > 0 ? M.ub[i] - p[i] : M.lb[i] - p[i]
+        end
+    end
+    return d_out
+end
+
+"""
+    Manopt.requires_generalized_cauchy_direction_computation(::Hyperrectangle)
+
+Returns `true`, as `Hyperrectangle` manifold requires generalized Cauchy point computation in solvers.
+"""
+Manopt.requires_generalized_cauchy_direction_computation(::Hyperrectangle) = true
+
+"""
+    Manopt.get_at_bound_index(::Hyperrectangle, X, b)
+
+Extract the element of tangent vector `X` to a point on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle)
+at index `b`.
+"""
+Manopt.get_at_bound_index(::Hyperrectangle, X, b) = X[b]
