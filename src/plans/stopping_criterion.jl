@@ -137,8 +137,19 @@ function status_summary(c::StopAfter)
     return "stopped after $(c.threshold):\t$s"
 end
 indicates_convergence(c::StopAfter) = false
-function show(io::IO, c::StopAfter)
-    return print(io, "StopAfter($(repr(c.threshold)))\n    $(status_summary(c))")
+function Base.show(io::IO, c::StopAfter)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopAfter)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopAfter; multiline::Bool)
+    if multiline
+        return print(io, "StopAfter($(repr(c.threshold)))\n    $(status_summary(c))")
+    else
+        return Base.show_default(io, c)
+    end
 end
 
 """
@@ -197,8 +208,23 @@ function status_summary(c::StopAfterIteration)
     s = has_stopped ? "reached" : "not reached"
     return "Max Iteration $(c.max_iterations):\t$s"
 end
-function show(io::IO, c::StopAfterIteration)
-    return print(io, "StopAfterIteration($(c.max_iterations))\n    $(status_summary(c))")
+function Base.show(io::IO, c::StopAfterIteration)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopAfterIteration)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopAfterIteration; multiline::Bool)
+    if multiline
+        return print(io, "StopAfterIteration($(c.max_iterations))\n    $(status_summary(c))")
+    else
+        if c.at_iteration >= 0
+            return Base.show_default(io, c)
+        else
+            return print(io, "StopAfterIteration($(c.max_iterations))")
+        end
+    end
 end
 
 """
@@ -324,12 +350,23 @@ function status_summary(c::StopWhenChangeLess)
     return "|Δp| < $(c.threshold): $s"
 end
 indicates_convergence(c::StopWhenChangeLess) = true
-function show(io::IO, c::StopWhenChangeLess)
-    s = ismissing(c.outer_norm) ? "" : "and outer norm $(c.outer_norm)"
-    return print(
-        io,
-        "StopWhenChangeLess with threshold $(c.threshold)$(s).\n    $(status_summary(c))",
-    )
+function Base.show(io::IO, c::StopWhenChangeLess)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenChangeLess)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenChangeLess; multiline::Bool)
+    if multiline
+        s = ismissing(c.outer_norm) ? "" : "and outer norm $(c.outer_norm)"
+        return print(
+            io,
+            "StopWhenChangeLess with threshold $(c.threshold)$(s).\n    $(status_summary(c))",
+        )
+    else
+        return Base.show_default(io, c)
+    end
 end
 
 """
@@ -395,10 +432,21 @@ function status_summary(c::StopWhenCostChangeLess)
     return "|Δf(p)| = $(abs(c.last_change)) < $(c.tolerance):\t$s"
 end
 function Base.show(io::IO, c::StopWhenCostChangeLess)
-    return print(
-        io,
-        "StopWhenCostChangeLess with threshold $(c.tolerance).\n    $(status_summary(c))",
-    )
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenCostChangeLess)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenCostChangeLess; multiline::Bool)
+    if multiline
+        return print(
+            io,
+            "StopWhenCostChangeLess with threshold $(c.tolerance).\n    $(status_summary(c))",
+        )
+    else
+        return Base.show_default(io, c)
+    end
 end
 
 """
@@ -445,8 +493,19 @@ function status_summary(c::StopWhenCostLess)
     s = has_stopped ? "reached" : "not reached"
     return "f(x) < $(c.threshold):\t$s"
 end
-function show(io::IO, c::StopWhenCostLess)
-    return print(io, "StopWhenCostLess($(c.threshold))\n    $(status_summary(c))")
+function Base.show(io::IO, c::StopWhenCostLess)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenCostLess)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenCostLess; multiline::Bool)
+    if multiline
+        return print(io, "StopWhenCostLess($(c.threshold))\n    $(status_summary(c))")
+    else
+        return Base.show_default(io, c)
+    end
 end
 
 """
@@ -544,8 +603,19 @@ function set_parameter!(c::StopWhenEntryChangeLess, ::Val{:Threshold}, v)
     c.threshold = v
     return c
 end
-function show(io::IO, c::StopWhenEntryChangeLess)
-    return print(io, "StopWhenEntryChangeLess\n    $(status_summary(c))")
+function Base.show(io::IO, c::StopWhenEntryChangeLess)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenEntryChangeLess)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenEntryChangeLess; multiline::Bool)
+    if multiline
+        return print(io, "StopWhenEntryChangeLess\n    $(status_summary(c))")
+    else
+        return Base.show_default(io, sc)
+    end
 end
 
 @doc """
@@ -653,12 +723,23 @@ function status_summary(c::StopWhenGradientChangeLess)
     s = has_stopped ? "reached" : "not reached"
     return "|Δgrad f| < $(c.threshold): $s"
 end
-function show(io::IO, c::StopWhenGradientChangeLess)
-    s = ismissing(c.outer_norm) ? "" : "outer_norm=$(c.outer_norm), "
-    return print(
-        io,
-        "StopWhenGradientChangeLess with threshold $(c.threshold); $(s)vector_transport_method=$(c.vector_transport_method))\n    $(status_summary(c))",
-    )
+function Base.show(io::IO, c::StopWhenGradientChangeLess)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenGradientChangeLess)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenGradientChangeLess; multiline::Bool)
+    if multiline
+        s = ismissing(c.outer_norm) ? "" : "outer_norm=$(c.outer_norm), "
+        return print(
+            io,
+            "StopWhenGradientChangeLess with threshold $(c.threshold); $(s)vector_transport_method=$(c.vector_transport_method)\n    $(status_summary(c))",
+        )
+    else
+        return Base.show_default(io, c)
+    end
 end
 
 """
@@ -757,8 +838,19 @@ function status_summary(c::StopWhenGradientNormLess)
     return "|grad f| < $(c.threshold): $s"
 end
 indicates_convergence(c::StopWhenGradientNormLess) = true
-function show(io::IO, c::StopWhenGradientNormLess)
-    return print(io, "StopWhenGradientNormLess($(c.threshold))\n    $(status_summary(c))")
+function Base.show(io::IO, c::StopWhenGradientNormLess)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenGradientNormLess)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenGradientNormLess; multiline::Bool)
+    if multiline
+        return print(io, "StopWhenGradientNormLess($(c.threshold))\n    $(status_summary(c))")
+    else
+        return Base.show_default(io, c)
+    end
 end
 
 """
@@ -815,8 +907,19 @@ function status_summary(c::StopWhenStepsizeLess)
     s = has_stopped ? "reached" : "not reached"
     return "Stepsize s < $(c.threshold):\t$s"
 end
-function show(io::IO, c::StopWhenStepsizeLess)
-    return print(io, "StopWhenStepsizeLess($(c.threshold))\n    $(status_summary(c))")
+function Base.show(io::IO, c::StopWhenStepsizeLess)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenStepsizeLess)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenStepsizeLess; multiline::Bool)
+    if multiline
+        return print(io, "StopWhenStepsizeLess($(c.threshold))\n    $(status_summary(c))")
+    else
+        return Base.show_default(io, c)
+    end
 end
 """
     set_parameter!(c::StopWhenStepsizeLess, :MinStepsize, v)
@@ -867,8 +970,19 @@ function status_summary(c::StopWhenCostNaN)
     s = has_stopped ? "reached" : "not reached"
     return "f(x) is NaN:\t$s"
 end
-function show(io::IO, c::StopWhenCostNaN)
-    return print(io, "StopWhenCostNaN()\n    $(status_summary(c))")
+function Base.show(io::IO, c::StopWhenCostNaN)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenCostNaN)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenCostNaN; multiline::Bool)
+    if multiline
+        return print(io, "StopWhenCostNaN()\n    $(status_summary(c))")
+    else
+        return Base.show_default(io, c)
+    end
 end
 
 """
@@ -893,24 +1007,35 @@ function (c::StopWhenIterateNaN)(
         c.at_iteration = -1
     end
     if (k >= 0) && any(isnan.(get_iterate(s)))
-        c.at_iteration = 0
+        c.at_iteration = k
         return true
     end
     return false
 end
 function get_reason(c::StopWhenIterateNaN)
     if (c.at_iteration >= 0)
-        return "The algorithm reached an iterate containing NaNs iterate.\n"
+        return "The algorithm reached an iterate containing NaNs.\n"
     end
     return ""
 end
 function status_summary(c::StopWhenIterateNaN)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "f(x) is NaN:\t$s"
+    return "An entry of x is NaN:\t$s"
 end
-function show(io::IO, c::StopWhenIterateNaN)
-    return print(io, "StopWhenIterateNaN()\n    $(status_summary(c))")
+function Base.show(io::IO, c::StopWhenIterateNaN)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenIterateNaN)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenIterateNaN; multiline::Bool)
+    if multiline
+        return print(io, "StopWhenIterateNaN()\n    $(status_summary(c))")
+    else
+        return Base.show_default(io, c)
+    end
 end
 
 @doc """
@@ -960,10 +1085,22 @@ function status_summary(c::StopWhenSmallerOrEqual)
     s = has_stopped ? "reached" : "not reached"
     return "Field :$(c.value) ≤ $(c.minValue):\t$s"
 end
-function show(io::IO, c::StopWhenSmallerOrEqual)
-    return print(
-        io, "StopWhenSmallerOrEqual(:$(c.value), $(c.minValue))\n    $(status_summary(c))"
-    )
+function Base.show(io::IO, c::StopWhenSmallerOrEqual)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenSmallerOrEqual)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenSmallerOrEqual; multiline::Bool)
+    if multiline
+        return print(
+            io,
+            "StopWhenSmallerOrEqual(:$(c.value), $(c.minValue))\n    $(status_summary(c))",
+        )
+    else
+        return Base.show_default(io, c)
+    end
 end
 
 """
@@ -1010,10 +1147,22 @@ function status_summary(c::StopWhenSubgradientNormLess)
     return "|∂f| < $(c.threshold): $s"
 end
 indicates_convergence(c::StopWhenSubgradientNormLess) = true
-function show(io::IO, c::StopWhenSubgradientNormLess)
-    return print(
-        io, "StopWhenSubgradientNormLess($(c.threshold))\n    $(status_summary(c))"
-    )
+function Base.show(io::IO, c::StopWhenSubgradientNormLess)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenSubgradientNormLess)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenSubgradientNormLess; multiline::Bool)
+    if multiline
+        return print(
+            io,
+            "StopWhenSubgradientNormLess($(c.threshold))\n    $(status_summary(c))",
+        )
+    else
+        return Base.show_default(io, c)
+    end
 end
 """
     set_parameter!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
@@ -1084,9 +1233,20 @@ end
 function get_count(c::StopWhenAll, v::Val{:Iterations})
     return maximum(get_count(ci, v) for ci in c.criteria)
 end
-function show(io::IO, c::StopWhenAll)
-    s = replace(status_summary(c), "\n" => "\n    ") #increase indent
-    return print(io, "StopWhenAll with the stopping criteria\n    $(s)")
+function Base.show(io::IO, c::StopWhenAll)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenAll)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenAll; multiline::Bool)
+    if multiline
+        s = replace(status_summary(c), "\n" => "\n    ") # increase indent
+        return print(io, "StopWhenAll with the stopping criteria\n    $(s)")
+    else
+        return Base.show_default(io, c)
+    end
 end
 
 """
@@ -1139,7 +1299,7 @@ end
 
 # `_fast_any(f, tup::Tuple)`` is functionally equivalent to `any(f, tup)`` but on Julia 1.10
 # this implementation is faster on heterogeneous tuples
-@inline _fast_any(f, tup::Tuple{}) = true
+@inline _fast_any(f, tup::Tuple{}) = false
 @inline _fast_any(f, tup::Tuple{T}) where {T} = f(tup[1])
 @inline function _fast_any(f, tup::Tuple)
     if f(tup[1])
@@ -1184,9 +1344,20 @@ function get_count(c::StopWhenAny, v::Val{:Iterations})
     (length(iters) == 0) && (return 0)
     return minimum(iters)
 end
-function show(io::IO, c::StopWhenAny)
-    s = replace(status_summary(c), "\n" => "\n    ") #increase indent
-    return print(io, "StopWhenAny with the Stopping Criteria\n    $(s)")
+function Base.show(io::IO, c::StopWhenAny)
+    return print_object(io, c, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenAny)
+    multiline = get(io, :multiline, true)
+    return print_object(io, c, multiline = multiline)
+end
+function print_object(io::IO, c::StopWhenAny; multiline::Bool)
+    if multiline
+        s = replace(status_summary(c), "\n" => "\n    ") # increase indent
+        return print(io, "StopWhenAny with the Stopping Criteria\n    $(s)")
+    else
+        return Base.show_default(io, c)
+    end
 end
 """
     |(s1,s2)
@@ -1371,12 +1542,23 @@ function has_converged(sc::StopWhenRepeated)
     # When the inner one indicates convergence, this does as well
     return has_converged(sc.stopping_criterion)
 end
-function show(io::IO, sc::StopWhenRepeated)
-    is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
-    return print(
-        io,
-        "StopWhenRepeated with the Stopping Criterion:\n    $(is)\n$(status_summary(sc))",
-    )
+function Base.show(io::IO, sc::StopWhenRepeated)
+    return print_object(io, sc, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", sc::StopWhenRepeated)
+    multiline = get(io, :multiline, true)
+    return print_object(io, sc, multiline = multiline)
+end
+function print_object(io::IO, sc::StopWhenRepeated; multiline::Bool)
+    if multiline
+        is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") # increase indent
+        return print(
+            io,
+            "StopWhenRepeated with the Stopping Criterion:\n    $(is)\n$(status_summary(sc))",
+        )
+    else
+        return Base.show_default(io, sc)
+    end
 end
 
 @doc """
@@ -1477,14 +1659,25 @@ function has_converged(sc::StopWhenCriterionWithIterationCondition)
     # When the inner one indicates convergence, this does as well
     return has_converged(sc.stopping_criterion)
 end
-function show(io::IO, sc::StopWhenCriterionWithIterationCondition)
-    has_stopped = (sc.at_iteration >= 0)
-    s = has_stopped ? "reached" : "not reached"
-    is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
-    return print(
-        io,
-        "StopWhenCriterionWithIterationCondition with the Stopping Criterion:\n    $(is)\nand condition $(sc.comp)\n\toverall: $(s)",
-    )
+function Base.show(io::IO, sc::StopWhenCriterionWithIterationCondition)
+    return print_object(io, sc, multiline = false)
+end
+function Base.show(io::IO, ::MIME"text/plain", sc::StopWhenCriterionWithIterationCondition)
+    multiline = get(io, :multiline, true)
+    return print_object(io, sc, multiline = multiline)
+end
+function print_object(io::IO, sc::StopWhenCriterionWithIterationCondition; multiline::Bool)
+    if multiline
+        has_stopped = (sc.at_iteration >= 0)
+        s = has_stopped ? "reached" : "not reached"
+        is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") # increase indent
+        return print(
+            io,
+            "StopWhenCriterionWithIterationCondition with the Stopping Criterion:\n    $(is)\nand condition $(sc.comp)\n\toverall: $(s)",
+        )
+    else
+        return Base.show_default(io, sc)
+    end
 end
 
 @doc """

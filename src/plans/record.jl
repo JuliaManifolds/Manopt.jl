@@ -77,7 +77,7 @@ end
 function status_summary(rst::RecordSolverState)
     if length(rst.recordDictionary) > 0
         return """
-        $(rst.state)
+        $(status_summary(rst.state))
 
         ## Record
         $(rst.recordDictionary)
@@ -86,9 +86,27 @@ function status_summary(rst::RecordSolverState)
         return "RecordSolverState($(rst.state), $(rst.recordDictionary))"
     end
 end
-function show(io::IO, rst::RecordSolverState)
-    return print(io, status_summary(rst))
+# 2-argument show, used by Array show, print(obj) and repr(obj), keep it short
+function Base.show(io::IO, obj::RecordSolverState)
+    return print_object(io, obj, multiline = false)
 end
+
+# the 3-argument show used by display(obj) on the REPL
+function Base.show(io::IO, mime::MIME"text/plain", obj::RecordSolverState)
+    # you can add IO options if you want
+    multiline = get(io, :multiline, true)
+    return print_object(io, obj, multiline = multiline)
+end
+
+function print_object(io::IO, obj::RecordSolverState; multiline::Bool)
+    if multiline
+        return print(io, status_summary(obj))
+    else
+        # write something short, or go back to default mode
+        return Base.show_default(io, obj)
+    end
+end
+
 dispatch_state_decorator(::RecordSolverState) = Val(true)
 
 @doc """

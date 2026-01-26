@@ -95,24 +95,40 @@ function get_message(gds::GradientDescentState)
     # for now only step size is quipped with messages
     return get_message(gds.stepsize)
 end
-function show(io::IO, gds::GradientDescentState)
-    i = get_count(gds, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
-    s = """
-    # Solver state for `Manopt.jl`s Gradient Descent
-    $Iter
-    ## Parameters
-    * retraction method: $(gds.retraction_method)
 
-    ## Stepsize
-    $(gds.stepsize)
+function Base.show(io::IO, obj::GradientDescentState)
+    return print_object(io, obj, multiline = false)
+end
+# the 3-argument show used by display(obj) on the REPL
+function Base.show(io::IO, ::MIME"text/plain", obj::GradientDescentState)
+    multiline = get(io, :multiline, true)
+    @info multiline
+    return print_object(io, obj, multiline = multiline)
+end
 
-    ## Stopping criterion
+function print_object(io::IO, gds::GradientDescentState; multiline::Bool)
+    if multiline
+        i = get_count(gds, :Iterations)
+        Iter = (i > 0) ? "After $i iterations\n" : ""
+        Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
+        s = """
+        # Solver state for `Manopt.jl`s Gradient Descent
+        $Iter
+        ## Parameters
+        * retraction method: $(gds.retraction_method)
 
-    $(status_summary(gds.stop))
-    This indicates convergence: $Conv"""
-    return print(io, s)
+        ## Stepsize
+        $(gds.stepsize)
+
+        ## Stopping criterion
+
+        $(status_summary(gds.stop))
+        This indicates convergence: $Conv"""
+        return print(io, s)
+    else
+        # write something short, or go back to default mode
+        return Base.show_default(io, gds)
+    end
 end
 
 _doc_gd_iterate = raw"""

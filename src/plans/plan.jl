@@ -7,7 +7,11 @@ where `e` is a type from Manopt.
 This method is similar to `show` but just returns a string.
 It might also be more verbose in explaining, or hide internal information.
 """
-status_summary(e) = "$(e)"
+function status_summary(e)
+    a = IOBuffer()
+    Base.show(a, MIME"text/plain"(), e)
+    return String(take!(a))
+end
 
 """
     set_parameter!(f, element::Symbol , args...)
