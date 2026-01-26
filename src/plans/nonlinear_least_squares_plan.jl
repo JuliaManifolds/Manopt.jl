@@ -790,15 +790,15 @@ of the Levenberg-Marquardt algorithm given by
   + $(_tex(:frac, "λ", "2"))$(_tex(:norm, "X"))^2
 ```
 
-where ``X ∈ $(_math(:TangentSpace))`` is the new step to compute.
-Set ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``.
+where ``X ∈ $(_math(:TangentSpace))`` and ``λ ≥ 0`` is the damping term.
 
-Then we have  ``y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p)``.
-
-and ``$(_tex(:Cal, "L")) = CJ_F^*(p)[X]`` is a linear operator using the adjoint of the Jacobian and
+Using ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``.
+we have  ``y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p)`` and ``$(_tex(:Cal, "L")) = CJ_F^*(p)[X]``
+is a linear operator using the adjoint of the Jacobian with
 ```math
 C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2") * "^2")),
 ```
+where ``F(p)`` is the vector of residuals at point ``p ∈ M``.
 
 ## Fields
 
@@ -819,31 +819,18 @@ get_objective(lmsco::LevenbergMarquardtLinearSurrogateObjective) = lmsco.objecti
 
 function get_cost(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        value_cache = get_residuals(M, lmsco.objective, p),
+        # TODO: Check whether caching makes sense here
+        # value_cache = get_residuals(M, lmsco.objective, p),
         penalty = lmsco.penalty,
     )
     nlso = lmsco.objective
-    cost = 0.0
-    # For every block
-    start = 0
-    for (o, r) in zip(nlso.objective, nlso.robustifier)
-        cost += get_cost(M, o, r, p; value_cache = value_cache[(start + 1):(start + length(o))])
-    end
-    # Finally add the damping term
+    cost = norm(linear_operator(M, lmsco, p, X) + vector_field(M, lmsco, p))^2 / 2
+    # add the damping term
     cost += (penalty / 2) * norm(M, p, X)^2
     return cost
 end
 function get_cost(
-        M::AbstractManifold, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        value_cache = get_value(M, o, p)
-    )
-    F_p_norm2 = sum(abs2, value_cache)
-    (ρ_value, _, _) = get_robustifier_values(r, F_p_norm2)
-    return 0.5 * ρ_value
-end
-
-function get_cost(
-        TpM::TangentSpace, slso::SymmetricLinearSystem{E, <: LevenbergMarquardtLinearSurrogateObjective}, X
+        TpM::TangentSpace, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, X
     ) where {E <: AbstractEvaluationType}
     M = base_manifold(TpM)
     p = base_point(TpM)
@@ -1142,7 +1129,7 @@ function vector_field!(
     )
     get_value!(M, y, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, y)
-    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
+    (ρ_value, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
     α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
     # Compute y = (sqrt(ρ(p)) / (1-α)) F(p)
     y .= (sqrt(ρ_value) / (1 - α)) * y
