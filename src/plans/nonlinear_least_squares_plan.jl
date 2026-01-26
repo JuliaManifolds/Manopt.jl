@@ -1132,7 +1132,7 @@ function vector_field!(
     (ρ_value, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
     α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
     # Compute y = (sqrt(ρ(p)) / (1-α)) F(p)
-    y .= (sqrt(ρ_value) / (1 - α)) * y
+    y .= (sqrt(ρ_prime) / (1 - α)) * y
     return y
 end
 
