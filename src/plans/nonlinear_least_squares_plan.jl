@@ -1002,7 +1002,7 @@ function linear_operator!(
     start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
-        linear_operator!(M, y[(start + 1):(start + len)], o, r, p, X)
+        linear_operator!(M, view(y, (start + 1):(start + len)), o, r, p, X)
         start += len
     end
     return y
@@ -1118,7 +1118,7 @@ function vector_field!(
     start = 0
     # For every block
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        vector_field!(M, y[(start + 1):(start + length(o))], o, r, p)
+        vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p)
         start += length(o)
     end
     return y
