@@ -793,7 +793,7 @@ of the Levenberg-Marquardt algorithm given by
 where ``X ∈ $(_math(:TangentSpace))`` and ``λ ≥ 0`` is the damping term.
 
 Using ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``.
-we have  ``y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p)`` and ``$(_tex(:Cal, "L")) = CJ_F^*(p)[X]``
+we have  ``y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p)`` and ``$(_tex(:Cal, "L")) = CJ_F^*(p)[X]``
 is a linear operator using the adjoint of the Jacobian with
 ```math
 C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2") * "^2")),
@@ -1035,7 +1035,7 @@ end
 Compute the normal linear operator tangent vector ``X`` corresponding to the optimality conditions of the
 Levenberg-Marquardt surrogate objective, i.e.,
 ```math
-X = - J_F^*(p)[ C^T y], $(_tex(:quad)) y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p).
+X = - J_F^*(p)[ C^T y], $(_tex(:quad)) y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p).
 ```
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
@@ -1093,7 +1093,7 @@ end
 Compute the vector field ``y`` corresponding to the Levenberg-Marquardt surrogate objective, i.e.,
 
 ```math
-y = $(_tex(:frac, _tex(:sqrt, "ρ(p)"), "1-α"))F(p).
+y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p).
 ```
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
