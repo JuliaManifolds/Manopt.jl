@@ -45,6 +45,7 @@ qR = 1 / length(pts) .* sum(pts)
 f(M, p) = sum(distance(M, p, q)^2 for q in pts)
 q1 = LevenbergMarquardt(
     M, [F], p0;
+    η = 0.01,
     robustifier = [IdentityRobustifier() for _ in 1:2][1:1],
     debug = [:Iteration, :Cost, " ", :damping_term, " ", :Iterate, "\n\n"],
 )

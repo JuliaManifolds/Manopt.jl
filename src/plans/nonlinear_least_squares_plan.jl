@@ -1135,3 +1135,28 @@ function vector_field!(
     y .= (sqrt(ρ_value) / (1 - α)) * y
     return y
 end
+
+
+#
+# The LInear System for the LM Surrogate is its normal equations
+
+function linear_operator(
+        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, X
+    ) where {E <: AbstractEvaluationType}
+    return linear_normal_operator(M, slso.objective, p, X)
+end
+function linear_operator!(
+        M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, X
+    ) where {E <: AbstractEvaluationType}
+    return linear_normal_operator!(M, Y, slso.objective, p, X)
+end
+function vector_field(
+        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
+    ) where {E <: AbstractEvaluationType}
+    return normal_vector_field(M, slso.objective, p)
+end
+function vector_field!(
+        M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
+    ) where {E <: AbstractEvaluationType}
+    return normal_vector_field!(M, Y, slso.objective, p)
+end

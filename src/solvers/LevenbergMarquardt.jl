@@ -178,7 +178,7 @@ function LevenbergMarquardt!(
         nlso::O,
         p;
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-        stopping_criterion::StoppingCriterion = StopAfterIteration(10) |
+        stopping_criterion::StoppingCriterion = StopAfterIteration(200) |
             StopWhenGradientNormLess(1.0e-12) |
             StopWhenStepsizeLess(1.0e-12),
         debug = [DebugWarnIfCostIncreases()],
@@ -264,9 +264,9 @@ function step_solver!(
     # should this be with (currenlty) or without robustifier?
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
-    set_parameter!(get_objective(lms.sub_problem), :Penalty, lms.damping_term)
-    @info "Damping term: $(lms.damping_term)"
-    get_cost(lms.sub_problem, zero_vector(M, lms.p))
+    FpSq = get_cost(M, nlso, lms.p)
+    set_parameter!(get_objective(lms.sub_problem), :Penalty, lms.damping_term * FpSq)
+    @info "Damping term: $(lms.damping_term) * $FpSq = $(lms.damping_term * FpSq)"
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
     # Subsolver result
