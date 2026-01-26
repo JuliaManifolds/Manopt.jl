@@ -102,7 +102,6 @@ end
 # the 3-argument show used by display(obj) on the REPL
 function Base.show(io::IO, ::MIME"text/plain", obj::GradientDescentState)
     multiline = get(io, :multiline, true)
-    @info multiline
     return print_object(io, obj, multiline = multiline)
 end
 
