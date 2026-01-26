@@ -8,9 +8,9 @@
 Provide a linear surrogate model for the given [`AbstractManifoldObjective`](@ref) `O` of the form
 
 ```math
-σ_p(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, _tex(:Cal, "L") * "(X) + y"))^2
+σ_p(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, _tex(:Cal, "L") * "(X) + y"; index = "2"))^2
   + $(_tex(:frac, "λ", "2"))$(_tex(:norm, "X"; index = "p"))^2,
-  $(_tex(:qquad))for X ∈ $(_math(:TangentSpace)), λ ≥ 0,
+  $(_tex(:qquad))$(_tex(:text, " for "))X ∈ $(_math(:TangentSpace)), λ ≥ 0,
 ```
 
 where ``$(_tex(:Cal, "L"))`` is a linear operator on the tangent space at a point ``p ∈ M``
