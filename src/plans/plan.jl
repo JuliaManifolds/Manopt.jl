@@ -1,16 +1,19 @@
 """
+    status_summary(io, e)
     status_summary(e)
 
-Return a string reporting about the current status of `e`,
-where `e` is a type from Manopt.
+Returns a string reporting about the current status of an element `e`
+defined in `Manopt.jl`, which can also directly be printed to an `IO` stream `io`.
 
-This method is similar to `show` but just returns a string.
-It might also be more verbose in explaining, or hide internal information.
+This method should generate a human readable summary of `e`,
+
+By default, the variant with an `IO` stream dispatches to the one without to generate
+a string and prints it to the `IO` stream.
 """
-function status_summary(e)
-    a = IOBuffer()
-    Base.show(a, MIME"text/plain"(), e)
-    return String(take!(a))
+function status_summary end
+
+function status_summary(io::IO, e)
+    return print(io, status_summary(e))
 end
 
 """

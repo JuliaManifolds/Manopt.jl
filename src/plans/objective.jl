@@ -22,6 +22,15 @@ the type `T` indicates the global [`AbstractEvaluationType`](@ref).
 """
 abstract type AbstractManifoldObjective{E <: AbstractEvaluationType} end
 
+function Base.show(io::IO, ::MIME"text/plain", amo::AbstractManifoldObjective)
+    multiline = get(io, :multiline, true)
+    if multiline
+        return status_summary(io, amo)
+    else
+        show(io, amo)
+    end
+end
+
 @doc """
     AbstractDecoratedManifoldObjective{E<:AbstractEvaluationType,O<:AbstractManifoldObjective}
 

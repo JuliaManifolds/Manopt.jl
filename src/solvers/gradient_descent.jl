@@ -52,7 +52,7 @@ mutable struct GradientDescentState{
     retraction_method::TRTM
 end
 function GradientDescentState(
-        M::AbstractManifold;
+        M::AbstractManifold = ManifoldsBase.DefaultManifold();
         p::P = rand(M),
         X::T = zero_vector(M, p),
         stopping_criterion::SC = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8),
@@ -96,38 +96,27 @@ function get_message(gds::GradientDescentState)
     return get_message(gds.stepsize)
 end
 
-function Base.show(io::IO, obj::GradientDescentState)
-    return print_object(io, obj, multiline = false)
-end
-# the 3-argument show used by display(obj) on the REPL
-function Base.show(io::IO, ::MIME"text/plain", obj::GradientDescentState)
-    multiline = get(io, :multiline, true)
-    return print_object(io, obj, multiline = multiline)
+function Base.show(io::IO, gds::GradientDescentState)
+    return "GradientDescentState(; direction=$(repr(gds.direction)), p=$(repr(gds.p)), stepsize=$(repr(gds.stepsize)), stopping_criterion=$(repr(gds.stop)), retraction_method=$(repr(gds.retraction_method)), X=$(repr(gds.X)))"
 end
 
-function print_object(io::IO, gds::GradientDescentState; multiline::Bool)
-    if multiline
-        i = get_count(gds, :Iterations)
-        Iter = (i > 0) ? "After $i iterations\n" : ""
-        Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
-        s = """
-        # Solver state for `Manopt.jl`s Gradient Descent
-        $Iter
-        ## Parameters
-        * retraction method: $(gds.retraction_method)
+function status_summary(gds::GradientDescentState)
+    i = get_count(gds, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Gradient Descent
+    $Iter
+    ## Parameters
+    * retraction method: $(gds.retraction_method)
 
-        ## Stepsize
-        $(gds.stepsize)
+    ## Stepsize
+    $(gds.stepsize)
 
-        ## Stopping criterion
-
-        $(status_summary(gds.stop))
-        This indicates convergence: $Conv"""
-        return print(io, s)
-    else
-        # write something short, or go back to default mode
-        return Base.show_default(io, gds)
-    end
+    ## Stopping criterion
+    $(status_summary(gds.stop))
+    This indicates convergence: $Conv"""
+    return s
 end
 
 _doc_gd_iterate = raw"""
