@@ -22,6 +22,15 @@ the type `T` indicates the global [`AbstractEvaluationType`](@ref).
 """
 abstract type AbstractManifoldObjective{E <: AbstractEvaluationType} end
 
+function Base.show(io::IO, ::MIME"text/plain", amo::AbstractManifoldObjective)
+    multiline = get(io, :multiline, true)
+    if multiline
+        return status_summary(io, amo)
+    else
+        show(io, amo)
+    end
+end
+
 @doc """
     AbstractDecoratedManifoldObjective{E<:AbstractEvaluationType,O<:AbstractManifoldObjective}
 
@@ -224,10 +233,8 @@ function show(io::IO, t::Tuple{<:AbstractManifoldObjective, P}) where {P}
     )
 end
 
-function status_summary(::AbstractManifoldObjective{E}) where {E}
-    return ""
-end
-# Default: remove decorator for status summary
-function status_summary(co::AbstractDecoratedManifoldObjective)
-    return status_summary(get_objective(co, false))
+# For decorators the human readable version is “transparent” by default, i.e.
+# if no special addition is done, it just prints the human readable string from the child
+function status_summary(io::IO, co::AbstractDecoratedManifoldObjective)
+    return status_summary(io, get_objective(co, false))
 end

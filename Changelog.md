@@ -6,6 +6,13 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.33] Unreleased
+
+### Fixed
+
+* Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (issue [#560](https://github.com/JuliaManifolds/Manopt.jl/issues/560)).
+* Fixed some text descriptions of a few stopping criteria.
+
 ## [0.5.32] January 15, 2026
 
 ### Fixed

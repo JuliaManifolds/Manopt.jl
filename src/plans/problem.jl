@@ -17,6 +17,16 @@ Usually the cost should be within an [`AbstractManifoldObjective`](@ref).
 """
 abstract type AbstractManoptProblem{M <: AbstractManifold} end
 
+function Base.show(io::IO, ::MIME"text/plain", amp::AbstractManoptProblem)
+    multiline = get(io, :multiline, true)
+    if multiline
+        return status_summary(io, amp)
+    else
+        show(io, amp)
+    end
+end
+
+
 @doc """
     DefaultManoptProblem{TM <: AbstractManifold, Objective <: AbstractManifoldObjective}
 

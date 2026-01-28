@@ -15,6 +15,15 @@ $(_fields(:stopping_criterion; name = "stop"))
 """
 abstract type AbstractManoptSolverState end
 
+function Base.show(io::IO, ::MIME"text/plain", ams::AbstractManoptSolverState)
+    multiline = get(io, :multiline, true)
+    if multiline
+        return status_summary(io, ams)
+    else
+        show(io, ams)
+    end
+end
+
 """
     ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState
 

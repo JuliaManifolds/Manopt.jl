@@ -52,7 +52,7 @@ mutable struct GradientDescentState{
     retraction_method::TRTM
 end
 function GradientDescentState(
-        M::AbstractManifold;
+        M::AbstractManifold = ManifoldsBase.DefaultManifold();
         p::P = rand(M),
         X::T = zero_vector(M, p),
         stopping_criterion::SC = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8),
@@ -95,7 +95,15 @@ function get_message(gds::GradientDescentState)
     # for now only step size is quipped with messages
     return get_message(gds.stepsize)
 end
-function show(io::IO, gds::GradientDescentState)
+
+function Base.show(io::IO, gds::GradientDescentState)
+    return print(
+        io,
+        "GradientDescentState(; direction=$(repr(gds.direction)), p=$(repr(gds.p)), stepsize=$(repr(gds.stepsize)), stopping_criterion=$(repr(gds.stop)), retraction_method=$(repr(gds.retraction_method)), X=$(repr(gds.X)))"
+    )
+end
+
+function status_summary(gds::GradientDescentState)
     i = get_count(gds, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
@@ -109,10 +117,9 @@ function show(io::IO, gds::GradientDescentState)
     $(gds.stepsize)
 
     ## Stopping criterion
-
     $(status_summary(gds.stop))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_gd_iterate = raw"""

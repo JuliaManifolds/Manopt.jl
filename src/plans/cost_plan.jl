@@ -58,3 +58,10 @@ get_cost_function(mco::AbstractManifoldCostObjective, recursive = false) = mco.c
 function get_cost_function(admo::AbstractDecoratedManifoldObjective, recursive = false)
     return get_cost_function(get_objective(admo, recursive))
 end
+
+function show(io::IO, ::ManifoldCostObjective{E, TC}) where {E, TC}
+    return print(io, "ManifoldCostObjective(f)")
+end
+function status_summary(io::IO, mco::ManifoldCostObjective{E, TC}) where {E, TC}
+    return print(io, "A cost function on a Riemannian manifold `f = (M,p) -> ...`.")
+end

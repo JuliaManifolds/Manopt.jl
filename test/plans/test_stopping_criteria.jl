@@ -1,5 +1,11 @@
 using Manifolds, ManifoldsBase, Manopt, Test, ManifoldsBase, Dates
 
+function repl_show_string(e)
+    a = IOBuffer()
+    Base.show(a, MIME"text/plain"(), e)
+    return String(take!(a))
+end
+
 @testset "StoppingCriteria" begin
     @testset "Generic Tests" begin
         @test_throws ErrorException get_stopping_criteria(
@@ -8,7 +14,8 @@ using Manifolds, ManifoldsBase, Manopt, Test, ManifoldsBase, Dates
 
         s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1))
         @test Manopt.indicates_convergence(s) #due to all and change this is true
-        @test startswith(repr(s), "StopWhenAll with the")
+        @test startswith(repl_show_string(s), "StopWhenAll")
+        @test startswith(Manopt.status_summary(s), "StopWhenAll(")
         @test get_reason(s) === ""
         # Trigger second one manually
         s.criteria[2].last_change = 0.05

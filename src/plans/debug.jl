@@ -101,14 +101,13 @@ function status_summary(dst::DebugSolverState)
         for (k, v) in dst.debugDictionary
             s = "$s\n    :$k = $(status_summary(v))"
         end
-        return "$(dst.state)\n\n## Debug$s"
-    else # for length 1 the group is equivalent to the summary of the single state
+        return "$(status_summary(dst.state))\n\n## Debug$s"
+    else # if the dictionary has no entries, there is no actual debug in pretty print
         return status_summary(dst.state)
     end
 end
-function show(io::IO, dst::DebugSolverState)
-    return print(io, status_summary(dst))
-end
+
+
 dispatch_state_decorator(::DebugSolverState) = Val(true)
 
 #
