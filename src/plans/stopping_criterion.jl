@@ -15,6 +15,16 @@ details when a criterion is met (and that is empty otherwise).
 """
 abstract type StoppingCriterion end
 
+function Base.show(io::IO, ::MIME"text/plain", asc::StoppingCriterion)
+    multiline = get(io, :multiline, true)
+    if multiline
+        return status_summary(io, asc)
+    else
+        show(io, asc)
+    end
+end
+
+
 """
     indicates_convergence(c::StoppingCriterion)
 
@@ -131,25 +141,14 @@ function get_reason(c::StopAfter)
     end
     return ""
 end
-function status_summary(c::StopAfter)
+function status_summary(io::IO, c::StopAfter; multiline = true)
     has_stopped = (c.at_iteration >= 0)
-    s = has_stopped ? "reached" : "not reached"
-    return "stopped after $(c.threshold):\t$s"
+    s = (has_stopped ? "reached" : "not reached")
+    return print(io, (multiline ? "A stopping criterion to stop after $(c.threshold)\n\t" : "stopped after $(c.threshold):\t") * "$s")
 end
 indicates_convergence(c::StopAfter) = false
 function Base.show(io::IO, c::StopAfter)
-    return print_object(io, c, multiline = false)
-end
-function Base.show(io::IO, ::MIME"text/plain", c::StopAfter)
-    multiline = get(io, :multiline, true)
-    return print_object(io, c, multiline = multiline)
-end
-function print_object(io::IO, c::StopAfter; multiline::Bool)
-    if multiline
-        return print(io, "StopAfter($(repr(c.threshold)))\n    $(status_summary(c))")
-    else
-        return Base.show_default(io, c)
-    end
+    return print(io, "StopAfter($(repr(c.threshold)))")
 end
 
 """

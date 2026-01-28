@@ -1,6 +1,6 @@
 """
-    status_summary(io, e)
-    status_summary(e)
+    status_summary(io, e; multiline = true)
+    status_summary(e; multiline = true)
 
 Returns a string reporting about the current status of an element `e`
 defined in `Manopt.jl`, which can also directly be printed to an `IO` stream `io`.
@@ -9,11 +9,14 @@ This method should generate a human readable summary of `e`,
 
 By default, the variant with an `IO` stream dispatches to the one without to generate
 a string and prints it to the `IO` stream.
+
+If that element is used within another structure, e.g. a stopping criterion within
+a state, a shorter one-line summary might be preferred, which can be obtained by setting `multiline=false`
 """
 function status_summary end
 
-function status_summary(io::IO, e)
-    return print(io, status_summary(e))
+function status_summary(io::IO, e; multiline = true)
+    return print(io, status_summary(e; multiline = multiline))
 end
 
 """

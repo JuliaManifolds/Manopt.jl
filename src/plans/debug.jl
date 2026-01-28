@@ -102,30 +102,11 @@ function status_summary(dst::DebugSolverState)
             s = "$s\n    :$k = $(status_summary(v))"
         end
         return "$(status_summary(dst.state))\n\n## Debug$s"
-    else # for length 1 the group is equivalent to the summary of the single state
+    else # if the dictionary has no entries, there is no actual debug in pretty print
         return status_summary(dst.state)
     end
 end
-# 2-argument show, used by Array show, print(obj) and repr(obj), keep it short
-function Base.show(io::IO, obj::DebugSolverState)
-    return print_object(io, obj, multiline = false)
-end
 
-# the 3-argument show used by display(obj) on the REPL
-function Base.show(io::IO, ::MIME"text/plain", obj::DebugSolverState)
-    # you can add IO options if you want
-    multiline = get(io, :multiline, true)
-    return print_object(io, obj, multiline = multiline)
-end
-
-function print_object(io::IO, dst::DebugSolverState; multiline::Bool)
-    if multiline
-        return print(io, status_summary(dst))
-    else
-        # write something short, or go back to default mode
-        Base.show_default(io, dst)
-    end
-end
 
 dispatch_state_decorator(::DebugSolverState) = Val(true)
 

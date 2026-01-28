@@ -11,15 +11,15 @@ using ManifoldsBase, Manopt, Test
     @testset "ReturnObjective" begin
         o = ManifoldCostObjective(x -> x)
         r = Manopt.ReturnManifoldObjective(o)
-        @test repr(o) == "ManifoldCostObjective{AllocatingEvaluation}"
-        @test repr(r) == "ManifoldCostObjective{AllocatingEvaluation}"
+        @test repr(o) == "ManifoldCostObjective(f)"
+        @test repr(r) == "ManifoldCostObjective(f)"
         @test Manopt.status_summary(o) == "" # both simplified to empty
         @test Manopt.status_summary(r) == ""
         @test repr((o, 1.0)) ==
             "To access the solver result, call `get_solver_result` on this variable."
         d = Manopt.Test.DummyDecoratedObjective(o)
         r2 = Manopt.ReturnManifoldObjective(d)
-        @test repr(r) == "ManifoldCostObjective{AllocatingEvaluation}"
+        @test repr(r) == "ManifoldCostObjective(f)"
     end
     @testset "set_parameter!" begin
         o = ManifoldCostObjective(x -> x)

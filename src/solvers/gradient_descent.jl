@@ -97,7 +97,10 @@ function get_message(gds::GradientDescentState)
 end
 
 function Base.show(io::IO, gds::GradientDescentState)
-    return "GradientDescentState(; direction=$(repr(gds.direction)), p=$(repr(gds.p)), stepsize=$(repr(gds.stepsize)), stopping_criterion=$(repr(gds.stop)), retraction_method=$(repr(gds.retraction_method)), X=$(repr(gds.X)))"
+    return print(
+        io,
+        "GradientDescentState(; direction=$(repr(gds.direction)), p=$(repr(gds.p)), stepsize=$(repr(gds.stepsize)), stopping_criterion=$(repr(gds.stop)), retraction_method=$(repr(gds.retraction_method)), X=$(repr(gds.X)))"
+    )
 end
 
 function status_summary(gds::GradientDescentState)

@@ -233,10 +233,8 @@ function show(io::IO, t::Tuple{<:AbstractManifoldObjective, P}) where {P}
     )
 end
 
-function status_summary(::AbstractManifoldObjective{E}) where {E}
-    return ""
-end
-# Default: remove decorator for status summary
-function status_summary(co::AbstractDecoratedManifoldObjective)
-    return status_summary(get_objective(co, false))
+# For decorators the human readable version is “transparent” by default, i.e.
+# if no special addition is done, it just prints the human readable string from the child
+function status_summary(io::IO, co::AbstractDecoratedManifoldObjective)
+    return status_summary(io, get_objective(co, false))
 end
