@@ -527,4 +527,28 @@ end
         @test qdu.memory_y[1] == [1, 0]
         @test qdu.memory_y[2] == [0, 2]
     end
+
+    @testset "reforming_required + (start == 2)" begin
+        M = Euclidean(2)
+        p = [0.0, 0.0]
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 * sum(p)
+        gmp = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, gmp)
+        ha = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2; nonpositive_curvature_behavior = :byrd)
+        qns = QuasiNewtonState(M; p = p, nonpositive_curvature_behavior = :byrd, direction_update = ha)
+
+        qns.yk = [1.0, 1.0]
+        qns.sk = [1.0, 2.0]
+        update_hessian!(qns.direction_update, mp, qns, p, 1)
+
+        qns.yk = [2.0, 1.0]
+        qns.sk = [1.0, 2.0]
+        update_hessian!(qns.direction_update, mp, qns, p, 2)
+        ha.memory_s[2] = [0.0, 0.0]  # force reforming_required in next step
+        update_hessian!(qns.direction_update, mp, qns, p, 3)
+        # test that the zeroes out pair was replaced
+        @test qns.direction_update.memory_s[1] == [1.0, 2.0]
+        @test qns.direction_update.memory_s[2] == [1.0, 2.0]
+    end
 end
