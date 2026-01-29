@@ -85,6 +85,7 @@ end
 
 function initialize_update!(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     initialize_update!(ha.qn_du)
+    ha.last_gcp_result = :not_searched
     return ha
 end
 
@@ -652,8 +653,7 @@ function find_generalized_cauchy_direction!(gcp::GeneralizedCauchyDirectionFinde
     dt_min = max(dt_min, 0.0)
     t_old = t_old + dt_min
     d_out .*= t_old
-    set_stepsize_bound!(M, d_out, p, ts, t_current)
-
+    set_stepsize_bound!(M, d_out, p, ts, t_old)
     if has_finite_limit
         return :found_limited
     else

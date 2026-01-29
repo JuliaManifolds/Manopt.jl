@@ -389,6 +389,15 @@ function quasi_Newton!(
 end
 calls_with_kwargs(::typeof(quasi_Newton!)) = (decorate_objective!, decorate_state!)
 
+function _get_max_stepsize(M::AbstractManifold, qns::QuasiNewtonState)
+    current_max_stepsize = get_parameter(qns.direction_update, Val(:max_stepsize))
+    if !isnothing(current_max_stepsize) && !isfinite(current_max_stepsize)
+        return max_stepsize(M, qns.p) / norm(qns.η)
+    else
+        return current_max_stepsize
+    end
+end
+
 function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
     M = get_manifold(amp)
     get_gradient!(amp, qns.X, qns.p)
@@ -401,10 +410,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     M = get_manifold(mp)
     get_gradient!(mp, qns.X, qns.p)
     qns.direction_update(qns.η, mp, qns)
-    current_max_stepsize = get_parameter(qns.direction_update, Val(:max_stepsize))
-    if !isnothing(current_max_stepsize) && !isfinite(current_max_stepsize)
-        current_max_stepsize = max_stepsize(M, qns.p) / norm(qns.η)
-    end
+    current_max_stepsize = _get_max_stepsize(M, qns)
     if !(qns.nondescent_direction_behavior === :ignore)
         qns.nondescent_direction_value = real(inner(M, qns.p, qns.η, qns.X))
         if qns.nondescent_direction_value >= 0
@@ -415,6 +421,12 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
             end
             if qns.nondescent_direction_behavior === :reinitialize_direction_update
                 initialize_update!(qns.direction_update)
+            end
+            # update direction after reinitialization to get a valid one
+            if qns.nondescent_direction_behavior === :step_towards_negative_gradient ||
+                    qns.nondescent_direction_behavior === :reinitialize_direction_update
+                qns.direction_update(qns.η, mp, qns)
+                current_max_stepsize = _get_max_stepsize(M, qns)
             end
         end
     end
@@ -802,6 +814,17 @@ function update_hessian!(
     end
 
     if reforming_required
+        # we need to move first vectors in memory too because they most likely won't be
+        # overwritten by new pairs
+        if start == 2
+            vector_transport_to!(
+                M, d.memory_s[1], p_old, d.memory_s[1], p, d.vector_transport_method
+            )
+            vector_transport_to!(
+                M, d.memory_y[1], p_old, d.memory_y[1], p, d.vector_transport_method
+            )
+            fill_rho_i!(M, p, d, 1)
+        end
         _drop_zero_rho_vectors!(d)
     end
 
