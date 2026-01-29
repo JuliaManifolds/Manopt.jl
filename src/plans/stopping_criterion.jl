@@ -1017,7 +1017,6 @@ function status_summary(c::StopWhenSubgradientNormLess; inline = false)
     s = has_stopped ? "reached" : "not reached"
     return (inline ? "|∂f| < $(c.threshold):\t" : "A stopping criterion to stop when the subgradient norm |∂f| is less than $(c.threshold)\n\t") * "$s"
 end
-indicates_convergence(c::StopWhenSubgradientNormLess) = true
 function Base.show(io::IO, c::StopWhenSubgradientNormLess)
     return print(io, "StopWhenSubgradientNormLess($(c.threshold))")
 end
@@ -1383,12 +1382,6 @@ function get_reason(sc::StopWhenRepeated)
     end
     return ""
 end
-function status_summary(sc::StopWhenRepeated)
-    has_stopped = (sc.at_iteration >= 0)
-    s = has_stopped ? "reached" : "not reached"
-    c = sc.consecutive ? "consecutive" : ""
-    return "$(sc.count) ≥ $(sc.n) ($(c)): $(s) (last inner status: $(status_summary(sc.stopping_criterion)))"
-end
 function indicates_convergence(sc::StopWhenRepeated)
     return indicates_convergence(sc.stopping_criterion)
 end
@@ -1399,7 +1392,7 @@ end
 function Base.show(io::IO, sc::StopWhenRepeated)
     return print(io, "StopWhenRepeated($(typeof(sc.stopping_criterion)), $(sc.n); consecutive=$(sc.consecutive))")
 end
-function status_summary(sc::StopWhenRepeated; inline::Bool)
+function status_summary(sc::StopWhenRepeated; inline::Bool = false)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     c = sc.consecutive ? "consecutive" : ""
@@ -1490,12 +1483,6 @@ function get_reason(sc::StopWhenCriterionWithIterationCondition)
         return r
     end
     return ""
-end
-function status_summary(sc::StopWhenCriterionWithIterationCondition; inline::Bool = false)
-    has_stopped = (sc.at_iteration >= 0)
-    s = has_stopped ? "reached" : "not reached"
-    is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
-    return "$(sc.comp) && $(is)\n    overall: $(s)"
 end
 function indicates_convergence(sc::StopWhenCriterionWithIterationCondition)
     return indicates_convergence(sc.stopping_criterion)
