@@ -74,7 +74,10 @@ end
 function RecordSolverState(s::S, symbol::Symbol) where {S <: AbstractManoptSolverState}
     return RecordSolverState{S}(s; RecordFactory(get_state(s), symbol)...)
 end
-function status_summary(rst::RecordSolverState)
+function status_summary(rst::RecordSolverState; inline = false)
+    if inline
+        return "a RecordSolverState for $(status_summary(rst.state; inline = true))"
+    end
     if length(rst.recordDictionary) > 0
         return """
         $(status_summary(rst.state))
@@ -82,29 +85,18 @@ function status_summary(rst::RecordSolverState)
         ## Record
         $(rst.recordDictionary)
         """
-    else
-        return "RecordSolverState($(rst.state), $(rst.recordDictionary))"
+    else # We indicate there is a record but no registered recordings
+        return """
+        $(status_summary(rst.state))
+
+        ## Record
+        No recordings registered.
+        """
     end
 end
 # 2-argument show, used by Array show, print(obj) and repr(obj), keep it short
 function Base.show(io::IO, obj::RecordSolverState)
-    return print_object(io, obj, multiline = false)
-end
-
-# the 3-argument show used by display(obj) on the REPL
-function Base.show(io::IO, mime::MIME"text/plain", obj::RecordSolverState)
-    # you can add IO options if you want
-    multiline = get(io, :multiline, true)
-    return print_object(io, obj, multiline = multiline)
-end
-
-function print_object(io::IO, obj::RecordSolverState; multiline::Bool)
-    if multiline
-        return print(io, status_summary(obj))
-    else
-        # write something short, or go back to default mode
-        return Base.show_default(io, obj)
-    end
+    return print(io, "RecordSolverState($(obj.state), $(obj.recordDictionary))")
 end
 
 dispatch_state_decorator(::RecordSolverState) = Val(true)

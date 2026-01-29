@@ -24,11 +24,7 @@ abstract type AbstractManifoldObjective{E <: AbstractEvaluationType} end
 
 function Base.show(io::IO, ::MIME"text/plain", amo::AbstractManifoldObjective)
     multiline = get(io, :multiline, true)
-    if multiline
-        return status_summary(io, amo)
-    else
-        show(io, amo)
-    end
+    return multiline ? status_summary(io, amo) : show(io, amo)
 end
 
 @doc """
