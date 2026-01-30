@@ -22,7 +22,7 @@ Initial scale ``\theta`` is stored in the field `initial_scale` but if the memor
 the current scale is set to squared norm of $s_k$ divided by inner product of ``s_k`` and ``y_k``
 where ``k`` is the oldest index for which the denominator is not equal to 0.
 
-`last_gcp_result` stores the result of the last generalized Cauchy point search.
+`last_gcd_result` stores the result of the last generalized Cauchy direction search.
 
 See [ByrdNocedalSchnabel:1994](@cite) for details.
 """
@@ -45,12 +45,13 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     buffer_inner_Sk_Y::V
     buffer_inner_Yk_X::V
     buffer_inner_Yk_Y::V
-    last_gcp_result::Symbol
+    last_gcd_result::Symbol
+    last_gcd_stepsize::F
 end
 
 function get_parameter(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate, ::Val{:max_stepsize})
-    if d.last_gcp_result === :found_limited
-        return 1.0
+    if d.last_gcd_result === :found_limited
+        return d.last_gcd_stepsize
     else
         return Inf
     end
@@ -80,12 +81,13 @@ function QuasiNewtonLimitedMemoryBoxDirectionUpdate(
         buffer_inner_Yk_X,
         buffer_inner_Yk_Y,
         :not_searched,
+        NaN,
     )
 end
 
 function initialize_update!(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     initialize_update!(ha.qn_du)
-    ha.last_gcp_result = :not_searched
+    ha.last_gcd_result = :not_searched
     return ha
 end
 
@@ -102,8 +104,8 @@ function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    gcp = GeneralizedCauchyDirectionFinder(M, p, d)
-    d.last_gcp_result = find_generalized_cauchy_direction!(gcp, r, p, r, X)
+    gcd = GeneralizedCauchyDirectionFinder(M, p, d)
+    d.last_gcd_result, d.last_gcd_stepsize = find_generalized_cauchy_direction!(gcd, r, p, r, X)
     return r
 end
 
@@ -334,7 +336,7 @@ end
 """
     abstract type AbstractSegmentHessianUpdater end
 
-Abstract type for methods that calculate f' and f'' in the GCP calculation in subsequent
+Abstract type for methods that calculate f' and f'' in the GCD calculation in subsequent
 line segments in [`GeneralizedCauchyDirectionFinder`](@ref).
 """
 abstract type AbstractSegmentHessianUpdater end
@@ -343,7 +345,7 @@ abstract type AbstractSegmentHessianUpdater end
     init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
 
 Method for initialization of `AbstractSegmentHessianUpdater` `hessian_segment_updater` just before the loop
-that examines subsequent intervals for GCP.
+that examines subsequent intervals for GCD.
 """
 init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
 
@@ -549,7 +551,7 @@ function GeneralizedCauchyDirectionFinder(
 end
 
 """
-    find_generalized_cauchy_direction!(gcp::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
+    find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
 
 Find generalized Cauchy direction looking from point `p` in direction `d` and save it to `d_out`.
 Gradient of the objective at `p` is `X`.
@@ -561,8 +563,8 @@ The function returns
   `max_stepsize(M, p)` in direction `d_out` afterwards,
 * `:not_found` if the search cannot be performed in direction `d`.
 """
-function find_generalized_cauchy_direction!(gcp::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
-    M = gcp.M
+function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
+    M = gcd.M
     copyto!(M, d_out, d)
 
     bounds_indices = get_bounds_index(M)
@@ -576,11 +578,14 @@ function find_generalized_cauchy_direction!(gcp::GeneralizedCauchyDirectionFinde
 
     has_finite_limit = false
 
+    smallest_positive_limit = Inf
+
     for i in bounds_indices
         ts[i] = get_stepsize_bound(M, p, d, i)
 
         if ts[i] > 0
             push!(F_list, (ts[i], i))
+            smallest_positive_limit = min(smallest_positive_limit, ts[i])
         end
         has_finite_limit |= isfinite(ts[i])
     end
@@ -604,17 +609,17 @@ function find_generalized_cauchy_direction!(gcp::GeneralizedCauchyDirectionFinde
         # uses the GCD subsolver.
 
         if isempty(F_list)
-            return :not_found
+            return (:not_found, NaN)
         end
     end
 
     F = BinaryHeap(Base.By(first), F_list)
 
     f_prime = inner(M, p, X, d)
-    f_double_prime = hessian_value_diag(gcp.ha, M, p, d)
+    f_double_prime = hessian_value_diag(gcd.ha, M, p, d)
 
     if iszero(f_prime) || iszero(f_double_prime)
-        return :not_found
+        return (:not_found, NaN)
     end
 
     dt_min = -f_prime / f_double_prime
@@ -623,22 +628,22 @@ function find_generalized_cauchy_direction!(gcp::GeneralizedCauchyDirectionFinde
     t_current, b = pop!(F)
     dt = t_current - t_old
 
-    init_updater!(M, gcp.hessian_segment_updater, p, d, gcp.ha)
+    init_updater!(M, gcd.hessian_segment_updater, p, d, gcd.ha)
     # b can be -1 if it corresponds to the max stepsize limit on the manifold part
     while dt_min > dt && b != -1
         db = get_at_bound_index(M, d, b)
         gb = get_at_bound_index(M, X, b)
 
-        hv_eb_dz, hv_eb_d = gcp.hessian_segment_updater(M, p, t_current, dt, b, db, gcp.ha)
+        hv_eb_dz, hv_eb_d = gcd.hessian_segment_updater(M, p, t_current, dt, b, db, gcd.ha)
 
         f_prime += dt * f_double_prime - db * (gb + hv_eb_dz)
-        f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_diag(gcp.ha, M, p, UnitVector(b))
+        f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_diag(gcd.ha, M, p, UnitVector(b))
 
         t_old = t_current
 
-        # If f_prime is 0, we've found the local minimizer (GCP)
+        # If f_prime is 0, we've found the local minimizer (GCD)
         if iszero(f_prime) || iszero(f_double_prime)
-            # It means that GCP is at the beginning of the t_current, so we want to set dt_min to 0 (stay in the point)
+            # It means that GCD is at the beginning of the t_current, so we want to set dt_min to 0 (stay in the point)
             dt_min = 0.0
             break
         end
@@ -653,10 +658,14 @@ function find_generalized_cauchy_direction!(gcp::GeneralizedCauchyDirectionFinde
     dt_min = max(dt_min, 0.0)
     t_old = t_old + dt_min
     d_out .*= t_old
+    # by construction, there is no bound achievable before stepsize 1.0 in direction d_out
+    # there first bound after that is achieved at smallest_positive_limit / t_old
+    max_feasible_stepsize = max(1.0, smallest_positive_limit / t_old)
+
     set_stepsize_bound!(M, d_out, p, ts, t_old)
     if has_finite_limit
-        return :found_limited
+        return (:found_limited, max_feasible_stepsize)
     else
-        return :found_unlimited
+        return (:found_unlimited, Inf)
     end
 end
