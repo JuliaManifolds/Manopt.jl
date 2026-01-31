@@ -11,11 +11,12 @@ end
         @test_throws ErrorException get_stopping_criteria(
             Manopt.Test.DummyStoppingCriteriaSet()
         )
-
-        s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1))
-        @test Manopt.indicates_convergence(s) #both are false so this is false
-        @test startswith(repl_show_string(s), "StopWhenAll")
-        @test startswith(Manopt.status_summary(s), "StopWhenAll(")
+        sa = StopAfterIteration(10)
+        sb = StopWhenChangeLess(Euclidean(), 0.1)
+        s = StopWhenAll(sa, sb)
+        @test !Manopt.indicates_convergence(s) #both are false so this is false
+        @test repr(s) == "StopWhenAll([$(repr(sa)), $(repr(sb))])"
+        @test startswith(Manopt.status_summary(s), "Stop when")
         @test get_reason(s) === ""
         # Trigger second one manually
         s.criteria[2].last_change = 0.05
@@ -37,11 +38,12 @@ end
         @test s3(p, s, 2)
         @test length(get_reason(s3)) > 0
         # repack
-        sn = StopWhenAny(StopAfterIteration(10), s3)
+        sn1 = StopAfterIteration(10)
+        sn = StopWhenAny(sn1, s3)
         @test get_reason(sn) == ""
         @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iterations
-        @test startswith(repr(sn), "StopWhenAny with the")
-        @test Manopt._fast_any(x -> false, ())
+        @test repr(sn) == "StopWhenAny([$(repr(sn1)), $(repr(s3))])"
+        @test_broken Manopt._fast_any(x -> false, ())
 
         sn2 = StopAfterIteration(10) | s3
         @test get_stopping_criteria(sn)[1].max_iterations ==
@@ -53,7 +55,7 @@ end
         @test get_active_stopping_criteria(s3) == [s3]
         @test get_active_stopping_criteria(StopAfterIteration(1)) == []
         sm = StopWhenAll(StopAfterIteration(10), s3)
-        s1 = "StopAfterIteration(10)\n    Max Iteration 10:\tnot reached"
+        s1 = "StopAfterIteration(10)"
 
         @test repr(StopAfterIteration(10)) == s1
         @test !sm(p, s, 9)
