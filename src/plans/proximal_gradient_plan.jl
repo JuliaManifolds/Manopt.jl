@@ -713,18 +713,16 @@ function get_reason(c::StopWhenGradientMappingNormLess)
     return ""
 end
 
-function status_summary(c::StopWhenGradientMappingNormLess)
+function status_summary(c::StopWhenGradientMappingNormLess; inline = false)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "|G| < $(c.threshold): $s"
+    return (inline ? "|G| < $(c.threshold):\t" : "A stopping criterion to stop when the gradient mapping norm is less then a tolerance.\n\t") * s
 end
 
 indicates_convergence(c::StopWhenGradientMappingNormLess) = true
 
-function show(io::IO, c::StopWhenGradientMappingNormLess)
-    return print(
-        io, "StopWhenGradientMappingNormLess($(c.threshold))\n    $(status_summary(c))"
-    )
+function Base.show(io::IO, c::StopWhenGradientMappingNormLess)
+    return print(io, "StopWhenGradientMappingNormLess($(c.threshold))")
 end
 # If we are running on a prox grad backtrack, ignore the threshold from the DEbug and take the one from the stepsize
 function (d::DebugWarnIfStepsizeCollapsed)(

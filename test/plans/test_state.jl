@@ -104,7 +104,7 @@ struct NoIterateState <: AbstractManoptSolverState end
         ddo = Manopt.Test.DummyDecoratedObjective(o)
         s = Manopt.Test.DummyState()
         rs = Manopt.ReturnSolverState(s)
-        @test Manopt.get_solver_return(o, rs) == s #no ReturnObjective
+        @test Manopt.get_solver_return(o, rs) == s #no ReturnManifoldObjective
         # Return O & S
         (a, b) = Manopt.get_solver_return(ro, rs)
         @test a == o

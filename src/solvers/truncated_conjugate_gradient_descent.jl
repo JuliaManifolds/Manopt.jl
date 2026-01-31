@@ -190,16 +190,13 @@ function get_reason(c::StopWhenResidualIsReducedByFactorOrPower)
     end
     return ""
 end
-function status_summary(c::StopWhenResidualIsReducedByFactorOrPower)
+function status_summary(c::StopWhenResidualIsReducedByFactorOrPower; inline = false)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "Residual reduced by factor $(c.κ) or power $(c.θ):\t$s"
+    return (inline ? "Residual reduced by factor $(c.κ) or power $(c.θ):\t" : "A stopping criterion used within tCG to check whether the residual is reduced by factor $(c.κ) or power 1+$(c.θ)\n\t") * "$s"
 end
 function show(io::IO, c::StopWhenResidualIsReducedByFactorOrPower)
-    return print(
-        io,
-        "StopWhenResidualIsReducedByFactorOrPower($(c.κ), $(c.θ))\n    $(status_summary(c))",
-    )
+    return print(io, "StopWhenResidualIsReducedByFactorOrPower($(c.κ), $(c.θ))")
 end
 
 @doc """

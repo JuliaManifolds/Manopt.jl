@@ -1070,11 +1070,11 @@ end
 function status_summary(c::StopWhenAll; inline = false)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    r = "Stop When _all_ of the following are fulfilled:\n"
+    r = "Stop when _all_ of the following are fulfilled:\n"
     for cs in c.criteria
         r = "$r  * $(replace(status_summary(cs; inline = true), "\n" => "\n    "))\n"
     end
-    return (inline ? "$(r)Overall: $s" : "Stop When _all_ of the following are fulfilled:\n$(r)Overall: $s")
+    return (inline ? "$(r)Overall: $s" : "Stop when _all_ of the following are fulfilled:\n$(r)Overall: $s")
 end
 function indicates_convergence(c::StopWhenAll)
     return any(indicates_convergence(ci) for ci in c.criteria)
@@ -1181,7 +1181,7 @@ end
 function status_summary(c::StopWhenAny; inline = false)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    r = "Stop When _one_ of the following are fulfilled:\n"
+    r = "Stop when _one_ of the following are fulfilled:\n"
     for cs in c.criteria
         r = "$r  * $(replace(status_summary(cs; inline = true), "\n" => "\n    "))\n"
     end

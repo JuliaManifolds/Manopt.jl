@@ -740,8 +740,9 @@ function (rsr::RecordStoppingReason)(
     return (length(s) > 0) && record_or_reset!(rsr, s, k)
 end
 show(io::IO, ::RecordStoppingReason) = print(io, "RecordStoppingReason()")
-status_summary(di::RecordStoppingReason) = ":Stop"
-
+function status_summary(di::RecordStoppingReason; inline = false)
+    return (inline ? ":Stop" : "A record action to record the stopping reason")
+end
 @doc """
     RecordTime <: RecordAction
 
@@ -781,8 +782,9 @@ end
 function show(io::IO, ri::RecordTime)
     return print(io, "RecordTime(; mode=:$(ri.mode))")
 end
-status_summary(ri::RecordTime) = (ri.mode === :iterative ? ":IterativeTime" : ":Time")
-
+function status_summary(ri::RecordTime; inline = false)
+    return (inline ? (ri.mode === :iterative ? ":IterativeTime" : ":Time") : "A Rectord action for recording times" * (ri.mode == :iterative ? " iteratively" : "."))
+end
 #
 # Factory
 #

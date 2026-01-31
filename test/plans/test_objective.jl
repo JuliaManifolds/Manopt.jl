@@ -8,18 +8,19 @@ using ManifoldsBase, Manopt, Test
         @test Manopt.is_objective_decorator(d)
         @test !Manopt.is_objective_decorator(o)
     end
-    @testset "ReturnObjective" begin
+    @testset "ReturnManifoldObjective" begin
         o = ManifoldCostObjective(x -> x)
         r = Manopt.ReturnManifoldObjective(o)
         @test repr(o) == "ManifoldCostObjective(f)"
-        @test repr(r) == "ManifoldCostObjective(f)"
-        @test Manopt.status_summary(o) == "" # both simplified to empty
-        @test Manopt.status_summary(r) == ""
-        @test repr((o, 1.0)) ==
-            "To access the solver result, call `get_solver_result` on this variable."
+        @test repr(r) == "ReturnManifoldObjective(ManifoldCostObjective(f))"
+        @test Manopt.status_summary(o) == "A cost function on a Riemannian manifold `f = (M,p) -> ℝ`."
+        @test Manopt.status_summary(r) == "A cost function on a Riemannian manifold `f = (M,p) -> ℝ`."
         d = Manopt.Test.DummyDecoratedObjective(o)
         r2 = Manopt.ReturnManifoldObjective(d)
-        @test repr(r) == "ManifoldCostObjective(f)"
+        # Still acts transparent for one of them
+        @test Manopt.status_summary(r2) == "A dummy decorator for A cost function on a Riemannian manifold `f = (M,p) -> ℝ`."
+        # repr contains all is much longer
+        @test repr(r2) == "ReturnManifoldObjective(DummyDecoratedObjective{AllocatingEvaluation})"
     end
     @testset "set_parameter!" begin
         o = ManifoldCostObjective(x -> x)

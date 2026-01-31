@@ -146,13 +146,13 @@ end
 indicates_convergence(c::StopWhenProjectedGradientStationary) = true
 function show(io::IO, c::StopWhenProjectedGradientStationary)
     return print(
-        io, "StopWhenProjectedGradientStationary($(c.threshold))\n    $(status_summary(c))"
+        io, "StopWhenProjectedGradientStationary($(c.threshold))"
     )
 end
-function status_summary(c::StopWhenProjectedGradientStationary)
+function status_summary(c::StopWhenProjectedGradientStationary; inline = false)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "projected gradient stationary (<$(c.threshold)): \t$s"
+    return (inline ? "projected gradient stationary (<$(c.threshold)):\t" : "A stopping criterion to stop when the projected gradient is stationary, i.e. in norm less than $(c.threshold).\n\t") * s
 end
 #
 #

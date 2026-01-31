@@ -97,7 +97,15 @@ function ReturnManifoldObjective(
     }
     return ReturnManifoldObjective{E, O2, O1}(o)
 end
-
+# The human readable version is “transparent” by default here
+function status_summary(o::ReturnManifoldObjective; kwargs...)
+    return status_summary(o.objective; kwargs...)
+end
+function Base.show(io::IO, ro::ReturnManifoldObjective)
+    print(io, "ReturnManifoldObjective(")
+    show(io, ro.objective)
+    return print(io, ")")
+end
 #
 # Internal converters if the variable in the high-level interface is a number.
 #
@@ -216,17 +224,6 @@ end
 
 function show(io::IO, o::AbstractManifoldObjective{E}) where {E}
     return print(io, "$(nameof(typeof(o))){$E}")
-end
-# Default: remove decorator for show
-function show(io::IO, co::AbstractDecoratedManifoldObjective)
-    return show(io, get_objective(co, false))
-end
-function show(io::IO, t::Tuple{<:AbstractManifoldObjective, P}) where {P}
-    s = "$(status_summary(t[1]))"
-    length(s) > 0 && (s = "$(s)\n\n")
-    return print(
-        io, "$(s)To access the solver result, call `get_solver_result` on this variable."
-    )
 end
 
 # For decorators the human readable version is “transparent” by default, i.e.
