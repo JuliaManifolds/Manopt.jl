@@ -761,9 +761,7 @@ function status_summary(c::StopWhenGradientNormLess; inline = false)
     s = has_stopped ? "reached" : "not reached"
     return (inline ? "|grad f| < $(c.threshold):\t" : "A stopping criterion to stop when the gradient norm is less than $(c.threshold)\n\t") * "$s"
 end
-function show(io::IO, c::StopWhenGradientNormLess)
-    return print(io, "StopWhenGradientNormLess($(c.threshold))\n    $(status_summary(c))")
-end
+show(io::IO, c::StopWhenGradientNormLess) = print(io, "StopWhenGradientNormLess($(c.threshold))")
 
 """
     set_parameter!(c::StopWhenGradientNormLess, :MinGradNorm, v::Float64)

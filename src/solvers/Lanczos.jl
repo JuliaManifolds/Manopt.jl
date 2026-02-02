@@ -380,12 +380,9 @@ end
 function status_summary(c::StopWhenAllLanczosVectorsUsed)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "All Lanczos vectors ($(c.maxLanczosVectors)) used:\t$s"
+    return (inline ? "" : "Stop when all Lanczos vectors are used\n\t":"All Lanczos vectors ($(c.maxLanczosVectors)) used:\t") * s
 end
 indicates_convergence(c::StopWhenAllLanczosVectorsUsed) = false
 function show(io::IO, c::StopWhenAllLanczosVectorsUsed)
-    return print(
-        io,
-        "StopWhenAllLanczosVectorsUsed($(repr(c.maxLanczosVectors)))\n    $(status_summary(c))",
-    )
+    return print(io, "StopWhenAllLanczosVectorsUsed($(repr(c.maxLanczosVectors)))")
 end

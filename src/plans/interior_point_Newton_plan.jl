@@ -974,14 +974,14 @@ function get_reason(c::StopWhenKKTResidualLess)
     end
     return ""
 end
-function status_summary(swrr::StopWhenKKTResidualLess)
+function status_summary(swrr::StopWhenKKTResidualLess; inline = false)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "‖F(p, λ, μ)‖ < ε:\t$s"
+    return (inline ? "‖F(p, λ, μ)‖ < ε = $(c.ε):\t" : "Stop when the KKT resudual is less than ε = $(c.ε)\n\t") * s
 end
 indicates_convergence(::StopWhenKKTResidualLess) = true
 function show(io::IO, c::StopWhenKKTResidualLess)
-    return print(io, "StopWhenKKTResidualLess($(c.ε))\n    $(status_summary(c))")
+    return print(io, "StopWhenKKTResidualLess($(c.ε))")
 end
 
 # An internal function to compute the new σ

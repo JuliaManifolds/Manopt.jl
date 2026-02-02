@@ -420,14 +420,12 @@ function get_reason(c::StopWhenPopulationConcentrated)
     end
     return ""
 end
-function status_summary(c::StopWhenPopulationConcentrated)
+function status_summary(c::StopWhenPopulationConcentrated; inline = false)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):\t$s"
+    head = (!inline ? "Stop when the population of a swarm is concentrated in eher function values (tolerance: $(c.tol_f)) or points (tolerance: $(c.tol_p))\n\t" : "")
+    return head*"Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):\t$s"
 end
 function show(io::IO, c::StopWhenPopulationConcentrated)
-    return print(
-        io,
-        "StopWhenPopulationConcentrated($(c.tol_f), $(c.tol_p))\n    $(status_summary(c))",
-    )
+    return print(io, "StopWhenPopulationConcentrated($(c.tol_f), $(c.tol_p))")
 end

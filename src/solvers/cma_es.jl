@@ -565,20 +565,20 @@ function (c::StopWhenCovarianceIllConditioned)(
     end
     return false
 end
-function status_summary(c::StopWhenCovarianceIllConditioned)
-    has_stopped = c.at_iteration > 0
-    s = has_stopped ? "reached" : "not reached"
-    return "cond(s.covariance_matrix) > $(c.threshold):\t$s"
-end
 function get_reason(c::StopWhenCovarianceIllConditioned)
     if c.at_iteration >= 0
         return "At iteration $(c.at_iteration) the condition number of covariance matrix ($(c.last_cond)) exceeded the threshold ($(c.threshold)).\n"
     end
     return ""
 end
+function status_summary(c::StopWhenCovarianceIllConditioned; inline = false)
+    has_stopped = c.at_iteration > 0
+    s = has_stopped ? "reached" : "not reached"
+    return (inline ? "cond(s.covariance_matrix) > $(c.threshold):\t" : "Stop when the covariance matrix is ill-conditioned, i.e. the last condition number is larger than the threshold of $(c.threshold)\n\t") * s
+end
 function show(io::IO, c::StopWhenCovarianceIllConditioned)
     return print(
-        io, "StopWhenCovarianceIllConditioned($(c.threshold))\n    $(status_summary(c))"
+        io, "StopWhenCovarianceIllConditioned($(c.threshold))"
     )
 end
 
