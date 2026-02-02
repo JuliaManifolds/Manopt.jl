@@ -231,3 +231,6 @@ end
 function status_summary(io::IO, co::AbstractDecoratedManifoldObjective)
     return status_summary(io, get_objective(co, false))
 end
+function status_summary(co::AbstractDecoratedManifoldObjective)
+    return status_summary(get_objective(co, false))
+end

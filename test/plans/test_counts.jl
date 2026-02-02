@@ -52,12 +52,9 @@ using LinearAlgebra: Symmetric
         )
         @test get_count(c_obj3, :Gradient) == 2
         @test get_count(c_obj3, :Cost) == -1 # nonexistent
-        @test startswith(repr(c_obj), "## Statistics")
-        @test startswith(Manopt.status_summary(c_obj), "## Statistics")
-        # also for the `repr` call
-        @test startswith(repr((c_obj, p)), "## Statistics")
-        # but this also includes the hint, how to access the result
-        @test endswith(repr((c_obj, p)), "on this variable.")
+        @test startswith(repr(c_obj), "ManifoldCountObjective(ManifoldFirstOrderObjective")
+        @test contains(Manopt.status_summary(c_obj), "## Statistics")
+        @test contains(Manopt.status_summary(c_obj; inline = true), "(statistics:")
         rc_obj = Manopt.Test.DummyDecoratedObjective(c_obj)
         @test get_count(rc_obj, :Gradient) == 4 #still works if count is encapsulated
         @test_throws ErrorException get_count(obj, :Gradient) # no count objective

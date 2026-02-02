@@ -49,7 +49,7 @@ struct ManifoldCountObjective{
     objective::O
 end
 function ManifoldCountObjective(
-        ::AbstractManifold, objective::O, counts::Dict{Symbol, I}
+        objective::O, counts::Dict{Symbol, I}
     ) where {
         E <: AbstractEvaluationType,
         I <: Union{<:Integer, AbstractVector{<:Integer}},
@@ -81,8 +81,7 @@ function ManifoldCountObjective(
         l = _get_counter_size(M, objective, symbol, p)
         push!(counts, Pair(symbol, l == 1 ? init : fill(init, l)))
     end
-
-    return ManifoldCountObjective(M, objective, Dict(counts))
+    return ManifoldCountObjective(objective, Dict(counts))
 end
 
 function _get_counter_size(
@@ -531,23 +530,27 @@ function objective_count_factory(
     return ManifoldCountObjective(M, o, counts)
 end
 
-function status_summary(co::ManifoldCountObjective)
+# change default – do not unwrap but call the one below
+function status_summary(io::IO, co::ManifoldCountObjective; kwargs...)
+    return print(io, status_summary(co; kwargs...))
+end
+function status_summary(co::ManifoldCountObjective; inline = false)
+    so = status_summary(co.objective; inline = inline)
+    if inline
+        return "$so (statistics: $(join([ ":$(c[1])=$(c[2])" for c in co.counts ], ", ")))"
+    end
     s = "## Statistics on function calls\n"
-    s2 = status_summary(co.objective)
-    (length(s2) > 0) && (s2 = "\n$(s2)")
-    length(co.counts) == 0 && return "$(s)    No counters active\n$(s2)"
+    (length(so) > 0) && (so = "$(so)")
+    length(co.counts) == 0 && return "$(s)    No counters active\n$(so)"
     longest_key_length = max(length.(["$c" for c in keys(co.counts)])...)
     count_strings = [
         "  * :$(rpad("$(c[1])", longest_key_length)) : $(c[2])" for c in co.counts
     ]
-    return "$(s)$(join(count_strings, "\n"))$s2"
+    return "$(so)\n\n$(s)$(join(count_strings, "\n"))"
 end
-
+function status_summary(t::Tuple{<:ManifoldCountObjective, S}; inline = false) where {S <: AbstractManoptSolverState}
+    return "$(status_summary(t[2], inline = inline))\n\n$(status_summary(t[1]; inline = inline))"
+end
 function show(io::IO, co::ManifoldCountObjective)
-    return print(io, "$(status_summary(co))")
-end
-function show(
-        io::IO, t::Tuple{<:ManifoldCountObjective, S}
-    ) where {S <: AbstractManoptSolverState}
-    return print(io, "$(t[2])\n\n$(t[1])")
+    return print(io, "ManifoldCountObjective($(repr(co.objective)), $(repr(co.counts)))")
 end
