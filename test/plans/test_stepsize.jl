@@ -255,6 +255,93 @@ end
         clbs = CubicBracketingLinesearch(; sufficient_curvature = 1.0e-16, min_bracket_width = 0.0, initial_stepsize = 0.5)(M)
         @test clbs(dmp, gs, 1) ≈ 1 / 6 atol = 5.0e-4
     end
+    @testset "secant numerical stability" begin
+        # Large offset, small interval
+        a = 1.0e7
+        b = a + 1.0e-6
+
+        # Choose derivatives that differ slightly
+        ga = 1.0
+        gb = nextfloat(ga)   # smallest representable difference
+
+        # minimizer using affine formula
+        x_ref = a - ga * (b - a) / (gb - ga)
+
+        err_secant = abs(
+            Manopt.secant(
+                Manopt.UnivariateTriple(a, 0.0, ga),
+                Manopt.UnivariateTriple(b, 0.0, gb)
+            ) - x_ref
+        )
+        @test err_secant < 1.0e-6
+    end
+    @testset "HagerZhang Linesearch Stepsize" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p = [1.0, 2.0]
+        η = -grad_f(M, p)
+        gs = GradientDescentState(M; p = p)
+
+        hzls = HagerZhangLinesearch()(M)
+        @test startswith(repr(hzls), "HagerZhangLinesearch(;")
+        @test startswith(Manopt.status_summary(hzls), "HagerZhangLinesearch(;")
+        @test Manopt.get_message(hzls) == ""
+
+        α = hzls(dmp, gs, 1, η)
+        @test isfinite(α)
+        @test α > 0
+        @test hzls.last_stepsize == α
+        @test hzls.last_cost <= f(M, p) + 1.0e-12
+
+        hzls_limit = Manopt.HagerZhangLinesearchStepsize(M; stepsize_limit = 0.05)
+        α_limit = hzls_limit(dmp, gs, 1, η)
+        @test α_limit <= 0.05 + eps(0.05)
+        @test hzls_limit.last_stepsize == α_limit
+        α_limit_kw = hzls_limit(dmp, gs, 2, η; stop_when_stepsize_exceeds = 0.01)
+        @test α_limit_kw <= 0.01 + eps(0.01)
+
+        hzls_approx = Manopt.HagerZhangLinesearchStepsize(
+            M; wolfe_condition_mode = :approximate, stepsize_limit = 0.2
+        )
+        α_approx = hzls_approx(dmp, gs, 1, η)
+        @test α_approx > 0
+
+        @testset "termination modes" begin
+            hzls_std = Manopt.HagerZhangLinesearchStepsize(
+                M;
+                wolfe_condition_mode = :standard,
+                initial_guess = Manopt.ConstantInitialGuess(0.5),
+                max_function_evaluations = 5,
+            )
+            α_std = hzls_std(dmp, gs, 1, η)
+            @test isapprox(α_std, 0.5; rtol = 1.0e-12, atol = 0.0)
+            @test hzls_std.current_mode == :standard
+
+            hzls_adapt = Manopt.HagerZhangLinesearchStepsize(
+                M;
+                wolfe_condition_mode = :adaptive,
+                initial_guess = Manopt.ConstantInitialGuess(0.5),
+                initial_last_cost = f(M, p),
+                ω = 1.0,
+                max_function_evaluations = 5,
+            )
+            α_adapt = hzls_adapt(dmp, gs, 1, η)
+            @test α_adapt > 0
+            @test hzls_adapt.current_mode == :approximate
+
+            hzls_eval = Manopt.HagerZhangLinesearchStepsize(
+                M;
+                wolfe_condition_mode = :standard,
+                initial_guess = Manopt.ConstantInitialGuess(1.0),
+                max_function_evaluations = 2,
+            )
+            α_eval = hzls_eval(dmp, gs, 1, η)
+            @test α_eval > 0
+            @test hzls_eval.last_evaluation_index == length(hzls_eval.triples)
+        end
+    end
     @testset "Distance over Gradients Stepsize" begin
         @testset "does not use sectional cuvature (Eucludian)" begin
             M = Euclidean(2)

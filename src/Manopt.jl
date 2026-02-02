@@ -547,6 +547,7 @@ export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
 export DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
 export ProximalGradientMethodBacktracking
+export HagerZhangLinesearch
 #
 # Stopping Criteria
 export StoppingCriterion, StoppingCriterionSet
