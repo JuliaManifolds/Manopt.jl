@@ -2163,6 +2163,31 @@ $(_fields(:vector_transport_method))
 $(_kwargs(:p; name = "candidate_point")) as temporary storage for candidates
 $(_kwargs(:retraction_method))
 $(_kwargs(:vector_transport_method))
+* `initial_guess::AbstractInitialLinesearchGuess=HagerZhangInitialGuess()`: initial linesearch guess strategy
+* `initial_last_stepsize::Real = NaN`: initial value for the stored last stepsize
+* `initial_last_cost::Real = NaN`: initial value for the stored last cost
+* `stepsize_limit::Real = Inf`: upper bound for trial stepsizes during bracketing
+* `candidate_point = allocate_result(M, rand)`: storage for trial points
+* `candidate_direction = zero_vector(M, candidate_point)`: storage for transported directions
+* `max_bracket_iterations::Int = 10`: maximum number of bracketing iterations
+* `start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = 2`: bracketing iteration
+  number at which Wolfe conditions are started to be enforced; setting to 1 may cause no
+  bracketing to occur when the initial guess satisfies the Wolfe conditions
+* `max_function_evaluations::Int = 20`: maximum number of function evaluations per linesearch
+* `wolfe_condition_mode::Symbol = :adaptive`: one of `:standard`, `:approximate`, or `:adaptive`.
+  Selects between (T1) and (T2) conditions in [HagerZhang:2006:2](@cite).
+* `ϵ::Real = 1.0e-6`: initial allowed increase in function value in termination condition (T2).
+  Allowed range: `ϵ >= 0`.
+* `δ::Real = 0.1`: parameter for approximate Wolfe condition.
+  Allowed range: `0 < δ < 0.5` and `δ <= σ`.
+* `σ::Real = 0.9`: curvature condition parameter. Allowed range: `δ <= σ < 1`.
+* `ω::Real = 1.0e-3`: interpolation safeguard parameter. Allowed range: `0 <= ω <= 1`.
+* `θ::Real = 0.5`: bisection update parameter. Allowed range: `0 < θ < 1`.
+* `γ::Real = 0.66`: determines when a bisection step is performed instead of secant.
+  Allowed range: `0 < γ < 1`.
+* `ρ::Real = 5.0`: bracketing expansion factor. Allowed range: `ρ > 1`.
+* `Δ::Real = 0.7`: Parameter controlling the rate of change of Qₖ.
+  Allowed range: `0 <= Δ <= 1`.
 """
 mutable struct HagerZhangLinesearchStepsize{
         TF <: Real,
@@ -2178,6 +2203,7 @@ mutable struct HagerZhangLinesearchStepsize{
     vector_transport_method::TVTM
     stepsize_limit::TF
     max_bracket_iterations::Int
+    start_enforcing_wolfe_conditions_at_bracketing_iteration::Int
     wolfe_condition_mode::Symbol # :standard, :approximate, :adaptive
     ϵ::TF # approximate Wolfe termination parameter
     δ::TF # used in approximate Wolfe condition
@@ -2185,12 +2211,8 @@ mutable struct HagerZhangLinesearchStepsize{
     ω::TF
     θ::TF # update rule parameter
     γ::TF
-    η::TF
     ρ::TF
     Δ::TF
-    ψ₀::TF
-    ψ₁::TF
-    ψ₂::TF
     # storage for candidates
     candidate_point::TP
     candidate_direction::TX
@@ -2217,6 +2239,7 @@ mutable struct HagerZhangLinesearchStepsize{
             candidate_point = allocate_result(M, rand),
             candidate_direction = zero_vector(M, candidate_point),
             max_bracket_iterations::Int = 10,
+            start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = initial_guess isa ConstantStepsize ? 2 : 1,
             max_function_evaluations::Int = 20,
             wolfe_condition_mode::Symbol = :adaptive,
             ϵ::TF = 1.0e-6,
@@ -2225,12 +2248,8 @@ mutable struct HagerZhangLinesearchStepsize{
             ω::TF = 1.0e-3,
             θ::TF = 0.5,
             γ::TF = 0.66,
-            η::TF = 0.01,
             ρ::TF = 5.0,
             Δ::TF = 0.7,
-            ψ₀::TF = 0.01,
-            ψ₁::TF = 0.1,
-            ψ₂::TF = 2.0,
         ) where {
             TIG <: AbstractInitialLinesearchGuess, TRM <: AbstractRetractionMethod,
             TVTM <: AbstractVectorTransportMethod, TF <: Real,
@@ -2245,11 +2264,7 @@ mutable struct HagerZhangLinesearchStepsize{
         @assert Δ >= 0 && Δ <= 1
         @assert θ > 0 && θ < 1
         @assert γ > 0 && γ < 1
-        @assert η > 0
         @assert ρ > 1
-        @assert ψ₀ > 0 && ψ₀ < 1
-        @assert ψ₁ > 0 && ψ₁ < 1
-        @assert ψ₂ > 1
         @assert stepsize_limit > 0
         @assert wolfe_condition_mode in (:standard, :approximate, :adaptive)
 
@@ -2260,8 +2275,8 @@ mutable struct HagerZhangLinesearchStepsize{
 
         return new{TF, TIG, TRM, TVTM, typeof(candidate_point), typeof(candidate_direction)}(
             initial_guess, retraction_method, vector_transport_method, stepsize_limit,
-            max_bracket_iterations, wolfe_condition_mode,
-            ϵ, δ, σ, ω, θ, γ, η, ρ, Δ, ψ₀, ψ₁, ψ₂,
+            max_bracket_iterations, start_enforcing_wolfe_conditions_at_bracketing_iteration, wolfe_condition_mode,
+            ϵ, δ, σ, ω, θ, γ, ρ, Δ,
             candidate_point, candidate_direction, zero_vector(M, candidate_point),
             triples, 0,
             0.0, 0.0, # Qₖ, Cₖ
@@ -2381,7 +2396,7 @@ function _hz_bracket(
     local c_index, f_eval, f_wolfe
     for j in 1:hzls.max_bracket_iterations
         c_index, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, current_step)
-        if f_eval || f_wolfe
+        if f_eval || (f_wolfe && j >= hzls.start_enforcing_wolfe_conditions_at_bracketing_iteration)
             break
         end
         if hzls.triples[c_index].df >= 0
@@ -2563,10 +2578,18 @@ function (hzls::HagerZhangLinesearchStepsize)(
     (i_a_j, i_b_j, f_eval, f_wolfe) = _hz_bracket(hzls, M, mp, p, η, α0, max_alpha)
     while !(f_eval || f_wolfe)
         # L1
-        (i_a, i_b, _i_c, f_eval, f_wolfe) = _hz_secant2(hzls, M, mp, p, η, i_a_j, i_b_j)
+        finite_at_b = isfinite(hzls.triples[i_b_j].f)
+        if finite_at_b
+            # _hz_secant2 only makes sense if we have finite function values at both ends
+            # but _hz_update may still work
+            (i_a, i_b, _i_c, f_eval, f_wolfe) = _hz_secant2(hzls, M, mp, p, η, i_a_j, i_b_j)
+        else
+            (i_a, i_b) = (i_a_j, i_b_j)
+        end
         # L2
         # we additionally check that we can continue narrowing the bracket
-        if !(f_eval || f_wolfe) && hzls.triples[i_b].t - hzls.triples[i_a].t > hzls.γ * (hzls.triples[i_b_j].t - hzls.triples[i_a_j].t)
+        if !(f_eval || f_wolfe) &&
+                (!finite_at_b || hzls.triples[i_b].t - hzls.triples[i_a].t > hzls.γ * (hzls.triples[i_b_j].t - hzls.triples[i_a_j].t))
             # secant2 did not reduce the bracket sufficiently
             # we need to do bisection
             (i_a, i_b, _i_c, f_eval, f_wolfe) = _hz_update(
@@ -2604,12 +2627,8 @@ function Base.show(io::IO, cbls::HagerZhangLinesearchStepsize)
             ω = $(cbls.ω),
             θ = $(cbls.θ),
             γ = $(cbls.γ),
-            η = $(cbls.η),
             ρ = $(cbls.ρ),
             Δ = $(cbls.Δ),
-            ψ₀ = $(cbls.ψ₀),
-            ψ₁ = $(cbls.ψ₁),
-            ψ₂ = $(cbls.ψ₂),
         )""",
     )
 end
