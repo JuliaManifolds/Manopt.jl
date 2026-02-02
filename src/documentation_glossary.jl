@@ -100,7 +100,7 @@ Glossaries.define!(_glossary_tex_terms, :rm, :math, _tex_rm)
 _tex_sqrt(s) = raw"\sqrt{" * "$s" * "}"
 Glossaries.define!(_glossary_tex_terms, :sqrt, :math, _tex_sqrt)
 Glossaries.define!(_glossary_tex_terms, :subgrad, :math, raw"∂")
-_tex_set(s) = raw"\set{" * "$s" * "}"
+_tex_set(s) = raw"\{" * "$s" * raw"\}"
 Glossaries.define!(_glossary_tex_terms, :set, :math, _tex_set)
 _tex_sum(b = "", t = "") = raw"\sum" * (length(b) > 0 ? "_{$b}" : "") * (length(t) > 0 ? "^{$t}" : "")
 Glossaries.define!(_glossary_tex_terms, :sum, :math, _tex_sum)

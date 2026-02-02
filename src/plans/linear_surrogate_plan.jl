@@ -33,11 +33,11 @@ for a concrete subtype of `AbstractLinearSurrogateObjective`
 abstract type AbstractLinearSurrogateObjective{E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}} <: AbstractManifoldObjective{E} end
 
 """
-    get_objective(lso::AbstractLinearSurrogateObjective)
+    get_objective(also::AbstractLinearSurrogateObjective)
 
-Return the objective `O` associated with the linear surrogate model `lso`.
+Return the objective `O` associated with the linear surrogate model `also`.
 """
-get_objective(lso::AbstractLinearSurrogateObjective)
+get_objective(also::AbstractLinearSurrogateObjective)
 
 function linear_operator end
 """

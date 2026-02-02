@@ -64,10 +64,7 @@ $(_note(:OutputSection))
 @doc "$(_doc_LM)"
 LevenbergMarquardt(M::AbstractManifold, args...; kwargs...)
 function LevenbergMarquardt(
-        M::AbstractManifold,
-        f,
-        jacobian_f,
-        num_components::Int = -1;
+        M::AbstractManifold, f, jacobian_f, num_components::Int = -1;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
@@ -76,11 +73,7 @@ function LevenbergMarquardt(
     )
 end
 function LevenbergMarquardt(
-        M::AbstractManifold,
-        f,
-        jacobian_f,
-        p,
-        num_components::Int = -1;
+        M::AbstractManifold, f, jacobian_f, p, num_components::Int = -1;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         function_type::AbstractVectorialType = FunctionVectorialType(),
         jacobian_type::AbstractVectorialType = CoordinateVectorialType(DefaultOrthonormalBasis()),
@@ -98,12 +91,8 @@ function LevenbergMarquardt(
         end
     end
     vgf = VectorGradientFunction(
-        f,
-        jacobian_f,
-        num_components;
-        evaluation = evaluation,
-        function_type = function_type,
-        jacobian_type = jacobian_type,
+        f, jacobian_f, num_components;
+        evaluation = evaluation, function_type = function_type, jacobian_type = jacobian_type,
     )
     return LevenbergMarquardt(M, vgf, p; evaluation = evaluation, kwargs...)
 end
@@ -141,11 +130,7 @@ calls_with_kwargs(::typeof(LevenbergMarquardt)) = (LevenbergMarquardt!,)
 @doc "$(_doc_LM)"
 LevenbergMarquardt!(M::AbstractManifold, args...; kwargs...)
 function LevenbergMarquardt!(
-        M::AbstractManifold,
-        f,
-        jacobian_f,
-        p,
-        num_components::Int = -1;
+        M::AbstractManifold, f, jacobian_f, p, num_components::Int = -1;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         jacobian_tangent_basis::AbstractBasis = default_basis(M, typeof(p)),
         jacobian_type = CoordinateVectorialType(jacobian_tangent_basis),
@@ -174,13 +159,9 @@ function LevenbergMarquardt!(
     return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt!(
-        M::AbstractManifold,
-        nlso::O,
-        p;
+        M::AbstractManifold, nlso::O, p;
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-        stopping_criterion::StoppingCriterion = StopAfterIteration(200) |
-            StopWhenGradientNormLess(1.0e-12) |
-            StopWhenStepsizeLess(1.0e-12),
+        stopping_criterion::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
         debug = [DebugWarnIfCostIncreases()],
         expect_zero_residual::Bool = false,
         β::Real = 5.0,
@@ -189,9 +170,9 @@ function LevenbergMarquardt!(
         X = zero_vector(M, p),
         initial_residual_values = similar(X, sum(length(o) for o in get_objective(nlso).objective)),
         (linear_subsolver!) = nothing,
-        sub_objective = SymmetricLinearSystem(
-            LevenbergMarquardtLinearSurrogateObjective(nlso, damping_term_min)
-        ),
+        sub_objective = SymmetricLinearSystem(LevenbergMarquardtLinearSurrogateObjective(nlso, damping_term_min)),
+        # to keep this non-breaking for now, maybe:
+        # TODO change default on next breaking release to no longer accept `linear_subsolver` here
         sub_problem = isnothing(linear_subsolver!) ? DefaultManoptProblem(TangentSpace(M, p), sub_objective) : linear_subsolver!,
         sub_state = isnothing(linear_subsolver!) ? ConjugateResidualState(TangentSpace(M, p), sub_objective) : InplaceEvaluation(),
         kwargs..., #collect rest
@@ -200,11 +181,11 @@ function LevenbergMarquardt!(
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
     lms = LevenbergMarquardtState(
-        M,
-        initial_residual_values;
+        M, initial_residual_values;
         p = p,
-        β,
-        η,
+        # TODO Rename to have either only math symbols or only speaking names but not both
+        β = β,
+        η = η,
         damping_term_min,
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,
@@ -221,8 +202,7 @@ calls_with_kwargs(::typeof(LevenbergMarquardt!)) = (decorate_objective!, decorat
 # Solver functions
 #
 function initialize_solver!(
-        dmp::DefaultManoptProblem{mT, <:NonlinearLeastSquaresObjective},
-        lms::LevenbergMarquardtState,
+        dmp::DefaultManoptProblem{mT, <:NonlinearLeastSquaresObjective}, lms::LevenbergMarquardtState,
     ) where {mT <: AbstractManifold}
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
@@ -261,32 +241,25 @@ function step_solver!(
         ::Integer,
     ) where {mT <: AbstractManifold}
     # Update damping term in the surrogate
-    # should this be with (currenlty) or without robustifier?
+    # should this be with (currently) or without robustifier?
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     FpSq = get_cost(M, nlso, lms.p)
     set_parameter!(get_objective(lms.sub_problem), :Penalty, lms.damping_term * FpSq)
-    @info "Damping term: $(lms.damping_term) * $FpSq = $(lms.damping_term * FpSq)"
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
     # Subsolver result
     lms.X .= -get_solver_result(solve!(lms.sub_problem, lms.sub_state))
-    @info "X: $(lms.X)"
     # New iterate candidate - maybe store in state?
     q = retract(M, lms.p, lms.X, lms.retraction_method)
     # Evaluate improvement of actual cost divided by predicted cost improvement
-    @info "For the cost we have $(get_cost(M, nlso, lms.p)) -> $(get_cost(M, nlso, q)) hence a diff of $(get_cost(M, nlso, lms.p) - get_cost(M, nlso, q))"
-    @info "For the surrogate we have $(get_cost(lms.sub_problem, zero_vector(M, lms.p))) -> $(get_cost(lms.sub_problem, lms.X)) hence a diff of $(0.5 * (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X)))"
-    ρ = (get_cost(M, nlso, lms.p) - get_cost(M, nlso, q)) / (
-        0.5 * (
-            get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X)
-        )
-    )
+    cost_improvement = get_cost(M, nlso, lms.p) - get_cost(M, nlso, q)
+    model_improvement = 0.5 * (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X))
+    ρ = cost_improvement / model_improvement
     # Update damping term and iterate
-    @info "ρ = $ρ, η = $(lms.η)"
     if ρ >= lms.η # enough improvement: accept, decrease damping term
         copyto!(M, lms.p, q)
-        if lms.expect_zero_residual
+        if lms.expect_zero_residual # following Adachi et al.: If we expect a zero cost at the minimum, reduce damping on success.
             lms.damping_term = max(lms.damping_term_min, lms.damping_term / lms.β)
         end
     else # not enough improvement: reject, increase damping term

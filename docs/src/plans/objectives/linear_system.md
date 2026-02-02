@@ -18,4 +18,5 @@ Manopt.linear_operator
 Manopt.vector_field
 Manopt.linear_normal_operator
 Manopt.normal_vector_field
+Manopt.normal_vector_field!
 ```

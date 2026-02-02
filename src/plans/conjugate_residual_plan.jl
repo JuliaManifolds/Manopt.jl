@@ -136,7 +136,7 @@ evaluate the Hessian of
 $(_doc_CR_cost)
 
 Which is ``$(_tex(:Hess)) f(X)[Y] = $(_tex(:Cal, "A"))[V]``. This can be computed in-place of `W`.
-Internally this jsut calls the [`linear_operator`](@ref) function.
+Internally this (just) calls the [`linear_operator`](@ref) function.
 """
 function get_hessian(TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X, V)
     M = base_manifold(TpM)

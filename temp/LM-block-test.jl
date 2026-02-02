@@ -44,12 +44,11 @@ qc = mean(M, pts)
 qR = 1 / length(pts) .* sum(pts)
 f(M, p) = sum(distance(M, p, q)^2 for q in pts)
 q1 = LevenbergMarquardt(
-    M, [F,G], p0;
-    η = 0.9,
+    M, [F, G], p0;
+    β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
     robustifier = [IdentityRobustifier() for _ in 1:2],
-    debug = [:Iteration, :Cost, " ", :damping_term, " ", :Iterate, "\n\n"],
+    debug = [:Iteration, :Cost, " ", :damping_term, " ", :Iterate, "\n"],
 )
-@info "---"
 @info "Mean cost $(f(M, qc))"
 @info "Mean cost (R) $(f(M, qR))"
 @info "Cost after optimization $(f(M, q1))"
