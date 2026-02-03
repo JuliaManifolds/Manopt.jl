@@ -2213,6 +2213,7 @@ mutable struct HagerZhangLinesearchStepsize{
     γ::TF
     ρ::TF
     Δ::TF
+    secant_acceptance_ratio::TF
     # storage for candidates
     candidate_point::TP
     candidate_direction::TX
@@ -2250,6 +2251,7 @@ mutable struct HagerZhangLinesearchStepsize{
             γ::TF = 0.66,
             ρ::TF = 5.0,
             Δ::TF = 0.7,
+            secant_acceptance_ratio::TF = 1.0e-8,
         ) where {
             TIG <: AbstractInitialLinesearchGuess, TRM <: AbstractRetractionMethod,
             TVTM <: AbstractVectorTransportMethod, TF <: Real,
@@ -2276,7 +2278,7 @@ mutable struct HagerZhangLinesearchStepsize{
         return new{TF, TIG, TRM, TVTM, typeof(candidate_point), typeof(candidate_direction)}(
             initial_guess, retraction_method, vector_transport_method, stepsize_limit,
             max_bracket_iterations, start_enforcing_wolfe_conditions_at_bracketing_iteration, wolfe_condition_mode,
-            ϵ, δ, σ, ω, θ, γ, ρ, Δ,
+            ϵ, δ, σ, ω, θ, γ, ρ, Δ, secant_acceptance_ratio,
             candidate_point, candidate_direction, zero_vector(M, candidate_point),
             triples, 0,
             0.0, 0.0, # Qₖ, Cₖ
@@ -2346,6 +2348,12 @@ function _hz_evaluate_next_step(
     )
     triples = hzls.triples
     max_evals = length(triples)
+    for ti in 1:hzls.last_evaluation_index
+        t = triples[ti]
+        if t.t == α
+            error("Hager-Zhang linesearch attempted to evaluate at previously evaluated stepsize $α (index $ti).")
+        end
+    end
     if hzls.last_evaluation_index + 1 > max_evals
         # this should never happen if the calling code is correct
         error("Hager-Zhang linesearch exceeded maximum number of function evaluations $(length(hzls.triples)).")
@@ -2393,7 +2401,7 @@ function _hz_bracket(
     )
     # B0
     current_step = c
-    local c_index, f_eval, f_wolfe
+    local c_index, f_eval, f_wolfe # COV_EXCL_LINE
     for j in 1:hzls.max_bracket_iterations
         c_index, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, current_step)
         if f_eval || (f_wolfe && j >= hzls.start_enforcing_wolfe_conditions_at_bracketing_iteration)
@@ -2472,7 +2480,7 @@ function _hz_update(
                 return (i_a, i_b, i_c, f_eval, f_wolfe)
             else
                 # U3
-                i_a_bar, i_b_bar, f_eval, f_wolfe = _hz_u3(hzls, M, mp, p, η, i_a, i_b)
+                i_a_bar, i_b_bar, f_eval, f_wolfe = _hz_u3(hzls, M, mp, p, η, i_a, i_c)
                 return (i_a_bar, i_b_bar, i_c, f_eval, f_wolfe)
             end
         end
@@ -2490,7 +2498,7 @@ function _hz_u3(
     f_wolfe = false
     while hzls.last_evaluation_index < length(hzls.triples)
         # U3 (a)
-        d = (1 - hzls.θ) * hzls.triples[i_a].t + hzls.θ * hzls.triples[i_b].t
+        d = (1 - hzls.θ) * hzls.triples[i_a_bar].t + hzls.θ * hzls.triples[i_b_bar].t
         i_d, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, d)
         if hzls.triples[i_d].df >= 0 || f_eval || f_wolfe
             return (i_a_bar, i_d, f_eval, f_wolfe)
@@ -2513,6 +2521,14 @@ function _hz_secant2(
     )
     # S1
     c = secant(hzls.triples[i_a], hzls.triples[i_b])
+    width = hzls.triples[i_b].t - hzls.triples[i_a].t
+    if abs(c - hzls.triples[i_a].t) < hzls.secant_acceptance_ratio * width ||
+            abs(c - hzls.triples[i_b].t) < hzls.secant_acceptance_ratio * width
+        # secant too close to an endpoint, use bisection instead
+        # this case is not present in the original algorithm, but the following steps don't make much sense in this case
+        c = (hzls.triples[i_a].t + hzls.triples[i_b].t) / 2
+        return _hz_update(hzls, M, mp, p, η, i_a, i_b, c)
+    end
     (i_A, i_B, i_c, f_eval, f_wolfe) = _hz_update(hzls, M, mp, p, η, i_a, i_b, c)
     if f_eval || f_wolfe
         # not present in the original algorithm, but this seems to be the right way to handle this case
@@ -2561,8 +2577,6 @@ function (hzls::HagerZhangLinesearchStepsize)(
     end
 
     # L0, initialization
-    # guess initial alpha
-    α0 = hzls.initial_guess(mp, s, k, hzls.last_stepsize, η; lf0 = fp, Dlf0 = dphi_0)
 
     # handle stepsize limit
     max_alpha = hzls.stepsize_limit
@@ -2572,9 +2586,14 @@ function (hzls::HagerZhangLinesearchStepsize)(
             max_alpha,
         )
     end
+    # guess initial alpha
+    α0 = hzls.initial_guess(mp, s, k, hzls.last_stepsize, η; lf0 = fp, Dlf0 = dphi_0, stop_when_stepsize_exceeds = max_alpha)
+
+    # in case initial_guess does not take into account the stepsize limit, we enforce it here
     α0 = min(α0, max_alpha)
 
     # L0, bracket(c)
+    local i_a_j, i_b_j, f_eval, f_wolfe # COV_EXCL_LINE
     (i_a_j, i_b_j, f_eval, f_wolfe) = _hz_bracket(hzls, M, mp, p, η, α0, max_alpha)
     while !(f_eval || f_wolfe)
         # L1

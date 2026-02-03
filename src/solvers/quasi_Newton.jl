@@ -404,6 +404,7 @@ function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
     copyto!(M, qns.sk, qns.p, qns.X)
     copyto!(M, qns.yk, qns.p, qns.X)
     initialize_update!(qns.direction_update)
+    initialize_stepsize!(qns.stepsize)
     return qns
 end
 function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)

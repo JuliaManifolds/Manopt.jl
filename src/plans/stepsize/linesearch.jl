@@ -24,6 +24,18 @@ abstract type Stepsize end
 get_message(::S) where {S <: Stepsize} = ""
 
 """
+    initialize_stepsize!(sm::Stepsize)
+
+Initialize the state of a stepsize functor. This is called at the beginning of a solver run,
+and can be used to set up internal state of the stepsize functor that is preserved between
+line searches in the same optimization, for example adaptive thresholds for Wolfe criteria
+in Hager-Zhang line search.
+
+By default it does nothing.
+"""
+initialize_stepsize!(sm::Stepsize) = sm
+
+"""
     default_stepsize(M::AbstractManifold, ams::AbstractManoptSolverState)
 
 Returns the default [`Stepsize`](@ref) functor used when running the solver specified by the
