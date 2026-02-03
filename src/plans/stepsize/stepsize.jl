@@ -2348,12 +2348,6 @@ function _hz_evaluate_next_step(
     )
     triples = hzls.triples
     max_evals = length(triples)
-    for ti in 1:hzls.last_evaluation_index
-        t = triples[ti]
-        if t.t == α
-            error("Hager-Zhang linesearch attempted to evaluate at previously evaluated stepsize $α (index $ti).")
-        end
-    end
     if hzls.last_evaluation_index + 1 > max_evals
         # this should never happen if the calling code is correct
         error("Hager-Zhang linesearch exceeded maximum number of function evaluations $(length(hzls.triples)).")
