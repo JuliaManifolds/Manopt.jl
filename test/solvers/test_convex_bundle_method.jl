@@ -49,13 +49,9 @@ using Manopt: estimate_sectional_curvature
 
     @testset "Special Stopping Criteria" begin
         sc1 = StopWhenLagrangeMultiplierLess(1.0e-8)
-        @test startswith(
-            repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)\n"
-        )
+        @test startswith(repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)")
         sc2 = StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode = :both)
-        @test startswith(
-            repr(sc2), "StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode=:both)\n"
-        )
+        @test startswith(repr(sc2), "StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode=:both)")
     end
 
     @testset "Allocating Subgradient" begin

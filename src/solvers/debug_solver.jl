@@ -8,14 +8,14 @@ triggered (with iteration number `0`) to trigger possible resets
 function initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
     initialize_solver!(amp, dss.state)
     # Call Start
-    get(dss.debugDictionary, :Start, DebugDivider(""))(amp, get_state(dss), 0)
+    get(dss.debug_dictionary, :Start, DebugDivider(""))(amp, get_state(dss), 0)
     # Reset / Init (maybe with print at 0) (before) Iteration
     for key in [:BeforeIteration, :Iteration]
-        get(dss.debugDictionary, key, DebugDivider(""))(amp, get_state(dss), 0)
+        get(dss.debug_dictionary, key, DebugDivider(""))(amp, get_state(dss), 0)
     end
     # (just) reset Stop (do not print here)
     for key in [:Stop]
-        get(dss.debugDictionary, key, DebugDivider(""))(amp, get_state(dss), -1)
+        get(dss.debug_dictionary, key, DebugDivider(""))(amp, get_state(dss), -1)
     end
     return dss
 end
@@ -41,7 +41,7 @@ that were added to the `:Stop` entry of the debug lists.
 function stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k::Int)
     stop = stop_solver!(amp, dss.state, k)
     if stop
-        get(dss.debugDictionary, :Stop, DebugDivider(""))(amp, get_state(dss), k)
+        get(dss.debug_dictionary, :Stop, DebugDivider(""))(amp, get_state(dss), k)
     end
     return stop
 end

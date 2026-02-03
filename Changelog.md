@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (issue [#560](https://github.com/JuliaManifolds/Manopt.jl/issues/560)).
 * Fixed some text descriptions of a few stopping criteria.
+* unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
 
 ## [0.5.32] January 15, 2026
 
