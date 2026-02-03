@@ -27,7 +27,7 @@ The original options can still be accessed using the [`get_state`](@ref) functio
 # Fields
 
 * `options`:         the options that are extended by debug information
-* `debugDictionary`: a `Dict{Symbol,DebugAction}` to keep track of Debug for different actions
+* `debug_dictionary`: a `Dict{Symbol,DebugAction}` to keep track of Debug for different actions
 
 # Constructors
     DebugSolverState(o,dA)
@@ -40,7 +40,7 @@ construct debug decorated options, where `dD` can be
 """
 mutable struct DebugSolverState{S <: AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
-    debugDictionary::Dict{Symbol, <:DebugAction}
+    debug_dictionary::Dict{Symbol, <:DebugAction}
     function DebugSolverState{S}(
             st::S, dA::Dict{Symbol, <:DebugAction}
         ) where {S <: AbstractManoptSolverState}
@@ -75,10 +75,10 @@ end
 """
     set_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
 
-Set certain values specified by `args...` into the elements of the `debugDictionary`
+Set certain values specified by `args...` into the elements of the `debug_dictionary`
 """
 function set_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
-    for d in values(dss.debugDictionary)
+    for d in values(dss.debug_dictionary)
         set_parameter!(d, args...)
     end
     return dss
@@ -96,9 +96,9 @@ function get_parameter(dss::DebugSolverState, v::Val{T}, args...) where {T}
 end
 
 function status_summary(dst::DebugSolverState)
-    if length(dst.debugDictionary) > 0
+    if length(dst.debug_dictionary) > 0
         s = ""
-        for (k, v) in dst.debugDictionary
+        for (k, v) in dst.debug_dictionary
             s = "$s\n    :$k = $(status_summary(v))"
         end
         return "$(status_summary(dst.state))\n\n## Debug$s"
@@ -106,7 +106,9 @@ function status_summary(dst::DebugSolverState)
         return status_summary(dst.state)
     end
 end
-
+function show(io::IO, dst::DebugSolverState)
+    return print(io, "DebugSolverState($(dst.state), $(dst.debug_dictionary))")
+end
 
 dispatch_state_decorator(::DebugSolverState) = Val(true)
 
@@ -391,7 +393,7 @@ end
 function show(io::IO, di::DebugDivider)
     return print(io, "DebugDivider(; divider=\"$(escape_string(di.divider))\", at_init=$(di.at_init))")
 end
-status_summary(di::DebugDivider) = "\"$(escape_string(di.divider))\""
+status_summary(di::DebugDivider; inline = true) = (inline ? "\"$(escape_string(di.divider))\"" : "A Debug printing the String “$(escape_string(di.divider))” as a divider.")
 
 @doc """
     DebugEntry <: DebugAction

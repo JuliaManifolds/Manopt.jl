@@ -8,6 +8,8 @@ function ManifoldsBase.default_inverse_retraction_method(::TestPolarManifold)
 end
 
 struct TestDebugAction <: DebugAction end
+Base.show(io::IO, ::TestDebugAction) = print(io, "TestDebugAction()")
+
 
 struct TestMessageState <: AbstractManoptSolverState end
 Manopt.get_message(::TestMessageState) = "DebugTest"
@@ -34,18 +36,25 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
-        # summary fallback to show
+        tda = TestDebugAction()
+        # summary fallback to show - inherited from AbstractStateAction(s)
         @test Manopt.status_summary(TestDebugAction()) === "TestDebugAction()"
+        show(io, tda)
+        @test String(take!(io)) === "TestDebugAction()"
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         a1 = DebugDivider("|"; io = io)
-        @test Manopt.dispatch_state_decorator(DebugSolverState(st, a1)) === Val{true}()
+        dst = DebugSolverState(st, a1)
+        @test Manopt.dispatch_state_decorator(dst) === Val{true}()
         # constructors
-        @test DebugSolverState(st, a1).debugDictionary[:Iteration] == a1
-        @test DebugSolverState(st, [a1]).debugDictionary[:Iteration].group[1] == a1
-        @test DebugSolverState(st, Dict(:A => a1)).debugDictionary[:A] == a1
-        @test DebugSolverState(st, ["|"]).debugDictionary[:Iteration].divider == a1.divider
-        @test endswith(repr(DebugSolverState(st, a1)), "\"|\"")
-        @test repr(DebugSolverState(st, Dict{Symbol, DebugAction}())) == repr(st)
+        @test DebugSolverState(st, a1).debug_dictionary[:Iteration] == a1
+        @test DebugSolverState(st, [a1]).debug_dictionary[:Iteration].group[1] == a1
+        @test DebugSolverState(st, Dict(:A => a1)).debug_dictionary[:A] == a1
+        @test DebugSolverState(st, ["|"]).debug_dictionary[:Iteration].divider == a1.divider
+        @test endswith(Manopt.status_summary(dst), "\"|\"")
+        @test Manopt.status_summary(a1; inline = true) == "\"|\""
+        @test Manopt.status_summary(a1; inline = false) == "A Debug printing the String “|” as a divider."
+        empty_dbg = Dict{Symbol, DebugAction}()
+        @test repr(DebugSolverState(st, empty_dbg)) == "DebugSolverState($(repr(st)), $(repr(empty_dbg)))"
         # Passthrough
         dss = DebugSolverState(st, a1)
         Manopt.set_parameter!(dss, :StoppingCriterion, :MaxIteration, 20)

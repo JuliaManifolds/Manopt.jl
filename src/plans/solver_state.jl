@@ -313,6 +313,11 @@ for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverSt
 """
 abstract type AbstractStateAction end
 
+status_summary(asa::AbstractStateAction; inline = true) = repr(asa)
+status_summary(io::IO, asa::AbstractStateAction; inline = true) = show(io, status_summary(asa; inline = inline))
+
+Base.show(io::IO, ::MIME"text/plain", asa::AbstractStateAction) = status_summary(io::IO, asa; inline = false)
+
 mutable struct StorageRef{T}
     x::T
 end

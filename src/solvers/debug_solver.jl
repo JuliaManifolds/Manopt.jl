@@ -26,9 +26,9 @@ Extend the `i`th step of the solver by a hook to run debug prints,
 that were added to the `:BeforeIteration` and `:Iteration` entries of the debug lists.
 """
 function step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k)
-    get(dss.debugDictionary, :BeforeIteration, DebugDivider(""))(amp, get_state(dss), k)
+    get(dss.debug_dictionary, :BeforeIteration, DebugDivider(""))(amp, get_state(dss), k)
     step_solver!(amp, dss.state, k)
-    get(dss.debugDictionary, :Iteration, DebugDivider(""))(amp, get_state(dss), k)
+    get(dss.debug_dictionary, :Iteration, DebugDivider(""))(amp, get_state(dss), k)
     return dss
 end
 

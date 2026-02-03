@@ -103,7 +103,7 @@ function Base.show(io::IO, gds::GradientDescentState)
     )
 end
 
-function status_summary(gds::GradientDescentState)
+function status_summary(gds::GradientDescentState; inline = false)
     i = get_count(gds, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
@@ -117,7 +117,8 @@ function status_summary(gds::GradientDescentState)
     $(gds.stepsize)
 
     ## Stopping criterion
-    $(status_summary(gds.stop))
+    $(status_summary(gds.stop; inline = true))
+
     This indicates convergence: $Conv"""
     return s
 end
