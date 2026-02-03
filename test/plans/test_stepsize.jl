@@ -603,6 +603,19 @@ end
             @test abs(step - 0.5) < 1.0e-1
         end
 
+        @testset "Hager-Zhang initialize_stepsize!" begin
+            hzls = HagerZhangLinesearch()(M)
+            hzls.last_evaluation_index = 5
+            hzls.Qₖ = 2.0
+            hzls.Cₖ = 2.0
+            hzls.current_mode = :approximate
+            Manopt.initialize_stepsize!(hzls)
+            @test hzls.last_evaluation_index == 0
+            @test hzls.Qₖ == 0.0
+            @test hzls.Cₖ == 0.0
+            @test hzls.current_mode == :standard
+        end
+
     end
     @testset "Distance over Gradients Stepsize" begin
         @testset "does not use sectional cuvature (Eucludian)" begin
