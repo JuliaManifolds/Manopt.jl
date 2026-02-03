@@ -409,7 +409,8 @@ function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
 end
 function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     M = get_manifold(mp)
-    get_gradient!(mp, qns.X, qns.p)
+    # qns.X should be the correct gradient at qns.p from initialization or the previous step
+    # get_gradient!(mp, qns.X, qns.p)
     qns.direction_update(qns.η, mp, qns)
     current_max_stepsize = _get_max_stepsize(M, qns)
     if !(qns.nondescent_direction_behavior === :ignore)
