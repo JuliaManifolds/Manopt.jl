@@ -559,6 +559,50 @@ end
             α = hzls_s2(dmp, gs, 1, η)
             @test α > 0
         end
+
+        @testset "Hager-Zhang infinite at b" begin
+            # A function that is finite for small steps but infinite for larger ones
+            # and has positive slope where it is infinite to trigger the bracket condition.
+
+            M = Euclidean(1)
+
+            # f(x) = x^2 - x for x < 1.0
+            # f(x) = Inf for x >= 1.0
+            # Min at x = 0.5, f(0.5) = -0.25
+            function f_inf(M, p)
+                x = p[1]
+                if x < 1.0
+                    return x^2 - x
+                else
+                    return Inf
+                end
+            end
+
+            function grad_f_inf(M, p)
+                x = p[1]
+                if x < 1.0
+                    return [2 * x - 1]
+                else
+                    # Return a positive slope to satisfy _hz_bracket exit condition
+                    return [1.0]
+                end
+            end
+
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f_inf, grad_f_inf))
+
+            # Start at 0. f(0)=0. grad(0)=-1. Search direction +1.
+            s = GradientDescentState(M; p = [0.0])
+
+            # Force initial guess to be 2.0 (in the infinite region)
+            hzls = HagerZhangLinesearch(; initial_guess = Manopt.ConstantInitialGuess(2.0))(M)
+
+            # Because initial bracket will be [0, 2] with f(2)=Inf.
+            # Then bisection will eventually find 0.5.
+
+            step = hzls(dmp, s, 1, [1.0])
+            @test abs(step - 0.5) < 1.0e-1
+        end
+
     end
     @testset "Distance over Gradients Stepsize" begin
         @testset "does not use sectional cuvature (Eucludian)" begin
