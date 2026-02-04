@@ -257,6 +257,7 @@ function step_solver!(
     model_improvement = 0.5 * (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X))
     ρ = cost_improvement / model_improvement
     # Update damping term and iterate
+    # TODO Abstract this to a generic update for η?
     if ρ >= lms.η # enough improvement: accept, decrease damping term
         copyto!(M, lms.p, q)
         if lms.expect_zero_residual # following Adachi et al.: If we expect a zero cost at the minimum, reduce damping on success.
