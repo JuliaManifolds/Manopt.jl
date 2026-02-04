@@ -708,7 +708,7 @@ mutable struct LevenbergMarquardtState{
             β::Real = 5.0,
             expect_zero_residual::Bool = false,
             linear_subsolver! = nothing, #remove on next breaking release
-            sub_problem::Pr = linear_subsolver!, # todo: change default?
+            sub_problem::Pr = linear_subsolver!, # TODO change default on next breaking release
             sub_state::St = InplaceEvaluation(),
         ) where {P, Tresidual_values, TGrad, Pr, St}
         if η <= 0 || η >= 1
@@ -894,6 +894,68 @@ function get_gradient!(
     return Y
 end
 
+#
+#
+# We can do a closed form solution of the Surrogate using \ as soon as we have a basis
+# We can model that as a state of a solver for ease of use
+"""
+    CoordinatesNormalSystemState <: AbstractManoptSolverState
+
+A solver state indicating that we solve the [`LevenbergMarquardtLinearSurrogateObjective`](@ref)
+using a linear system in coordinates of the tangent space at the current iterate
+
+# Fields
+* `A` an ``n×n`` matrix to store the normal operator in coordinates, where `n` is the number of coordinates
+* `b` a ``n`` vector storing the right hand side of the system of normal equations
+* `basis::`[`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`)
+* `linsolve` a functor `(A,b) -> c` to solve the linear system or `(c, A, b) -> c` depending on the evaluation type specified in `solve!`
+"""
+mutable struct CoordinatesNormalSystemState{E <: AbstractEvaluationType, F, TA <: AbstractMatrix, TB <: AbstractVector, TBA <: AbstractBasis} <: AbstractManoptSolverState
+    A::TA
+    b::TB
+    basis::TBA
+    c::TB
+    linsolve!!::F
+end
+function CoordinatesNormalSystemState(
+        M::AbstractManifold, p = rand(M);
+        evaluation::E = AllocatingEvaluation(), linsolve::F = \, basis::B = DefaultOrthonormalBasis()
+    ) where {E <: AbstractEvaluationType, F, B <: AbstractBasis}
+    c = get_coordinates(M, p, zero_vector(M, p))
+    n = length(c)
+    A = zeros(eltype(c), n, n)
+    b = zeros(eltype(c), n)
+    return CoordinatesNormalSystemState{E, F, typeof(A), typeof(b), B}(A, b, basis, c, linsolve)
+end
+
+# The objective here should be a LevenbergMarquardtLinearSurrogateObjective, but might be decorated as well, so for now lets not type it (yet?)
+function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNormalSystemState{AllocatingEvaluation})
+    # Update A and b
+    TpM = get_manifold(dmp)
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    o = get_objective(dmp)
+    linear_operator!(M, cnss.A, o, p, cnss.basis)
+    vector_field!(M, cnss.b, o, p, cnss.basis)
+    cnss.c = cnss.linsolve!!(cnss.A, cnss.b)
+    return cnss
+end
+function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNormalSystemState{InplaceEvaluation})
+    # Update A and b
+    TpM = get_manifold(dmp)
+    M = get_manifold(TpM)
+    p = base_point(TpM)
+    o = get_objective(dmp) # implicit: SymmetricSystem ...
+    linear_operator!(M, cnss.A, o, p, cnss.basis)
+    vector_field!(M, cnss.b, o, p, cnss.basis)
+    cnss.linsolve!!(cnss.c, cnss.A, cnss.b)
+    return cnss
+end
+get_solver_result(cnss::CoordinatesNormalSystemState) = cnss.c
+
+#
+#
+#
 """
     linear_normal_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; penalty = lmsco.penalty)
     linear_normal_operator(M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X; penalty = lmsco.penalty)
@@ -1024,7 +1086,7 @@ function linear_normal_operator!(
         A .+= C
     end
     # Finally add the damping term
-    (penalty != 0) && (A .+= penalty * I)
+    (penalty != 0) && (A .= A + penalty * I)
     return A
 end
 function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, basis::AbstractBasis; penalty = 0.0)
@@ -1033,10 +1095,10 @@ function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradie
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
     α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
     # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
-    # (a) get J_F in basis coordinates. We can use A for the interims result
-    get_jacobian!(M, A, o, p; basis = basis)
+    # (a) J_F is n-by-d so we have to allocate – where could we maybe store something like that and pass it down?
+    JF = get_jacobian(M, o, p; basis = basis)
     # compute A' C^TC A (C^TC = C^2 here) inplace of A
-    A .= A' * ρ_prime .* (I - α * (a * a') ./ F_p_norm2)^2 * A
+    A .= JF' * (ρ_prime .* (I - α * (a * a') ./ F_p_norm2)^2) * JF
     (penalty != 0) && (A .+= penalty * I)
     return A
 end
@@ -1176,10 +1238,10 @@ function normal_vector_field!(
     )
     nlso = get_objective(lmsco)
     # For every block
-    zero_vector!(M, X, p)
+    fill!(c, 0)
     d = copy(c)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        normal_vector_field!(M, c, o, r, p, B)
+        normal_vector_field!(M, d, o, r, p, B)
         c .+= d
     end
     return c
@@ -1267,6 +1329,7 @@ function linear_operator!(
     ) where {E <: AbstractEvaluationType}
     return linear_normal_operator!(M, Y, slso.objective, p, X)
 end
+
 function vector_field(
         M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
     ) where {E <: AbstractEvaluationType}
@@ -1276,4 +1339,14 @@ function vector_field!(
         M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
     ) where {E <: AbstractEvaluationType}
     return normal_vector_field!(M, Y, slso.objective, p)
+end
+function vector_field(
+        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B
+    ) where {E <: AbstractEvaluationType}
+    return normal_vector_field(M, slso.objective, p, B)
+end
+function vector_field!(
+        M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B
+    ) where {E <: AbstractEvaluationType}
+    return normal_vector_field!(M, Y, slso.objective, p, B)
 end

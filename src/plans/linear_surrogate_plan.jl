@@ -107,4 +107,7 @@ end
 get_objective(slsmo::SymmetricLinearSystem) = slsmo.objective
 
 # set parameter just passes down to the inner objective
-set_parameter!(slsmo::SymmetricLinearSystem, name::Symbol, value) = set_parameter!(slsmo.objective, name, value)
+function set_parameter!(slsmo::SymmetricLinearSystem, name::Symbol, value)
+    set_parameter!(slsmo.objective, name, value)
+    return slsmo
+end

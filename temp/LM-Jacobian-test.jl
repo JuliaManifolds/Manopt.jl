@@ -1,4 +1,4 @@
-using Manopt, Manifolds, LinearAlgebra, Test
+using Manopt, Manifolds, LinearAlgebra, Test, Chairmarks
 
 Rxy(α) = [cos(α) sin(α) 0.0; -sin(α) cos(α) 0; 0 0 1]
 Rxz(α) = [cos(α)  0.0 sin(α); 0 1 0; -sin(α) 0 cos(α)]
@@ -8,11 +8,11 @@ M = Rotations(3)
 
 # We generate a set of points that are “opposite” each other such that the mean is still I
 pts = [
-    Matrix{Float64}(I, 3,3),
-    Rxy(0.25)*Rxz(0.05)*Ryz(-0.125),
-    Rxy(-0.25)*Rxz(-0.05)*Ryz(0.125),
-    Rxy(-0.05)*Rxz(0.125)*Ryz(-0.25),
-    Rxy(0.05)*Rxz(-0.125)*Ryz(0.25),
+    Matrix{Float64}(I, 3, 3),
+    Rxy(0.25) * Rxz(0.05) * Ryz(-0.125),
+    Rxy(-0.25) * Rxz(-0.05) * Ryz(0.125),
+    Rxy(-0.05) * Rxz(0.125) * Ryz(-0.25),
+    Rxy(0.05) * Rxz(-0.125) * Ryz(0.25),
     #outliers
     #Rxy(0.125)*Rxz(0.25)*Ryz(0.05),
     #Rxy(-0.125)*Rxz(0.25)*Ryz(0.05),
@@ -24,17 +24,18 @@ F(M, p) = [distance(M, p, q) for q in pts]
 function JF(M, p, B::AbstractBasis = DefaultOrthonormalBasis())
     d = manifold_dimension(M)
     n = length(pts)
-    J = zeros(n,d)
-    for (i,q) in enumerate(pts)
-        dpq = distance(M, p,q)
+    J = zeros(n, d)
+    for (i, q) in enumerate(pts)
+        dpq = distance(M, p, q)
         if dpq > 0
-            J[i,:] = -1/dpq .* get_coordinates(M, p, log(M, p, q), B)
+            J[i, :] = -1 / dpq .* get_coordinates(M, p, log(M, p, q), B)
         end
     end
     return J
 end
 
-f = VectorGradientFunction(F, JF, length(pts);
+f = VectorGradientFunction(
+    F, JF, length(pts);
     evaluation = AllocatingEvaluation(),
     function_type = FunctionVectorialType(),
     jacobian_type = CoordinateVectorialType(DefaultOrthonormalBasis())
@@ -43,9 +44,39 @@ f = VectorGradientFunction(F, JF, length(pts);
 qc = mean(M, pts)
 cost(M, p) = sum(distance(M, p, q)^2 for q in pts)
 
+
+# Default Residual CG on this approach – works but probably allocates a bit too much (matrices coordinates/vector...)
 q1 = LevenbergMarquardt(
-    M, [f,], p0;
+    M, [f], p0;
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
-    robustifier = [IdentityRobustifier(),],
-    debug = [:Iteration, :Cost, " ", :damping_term, " ", :Iterate, "\n"],
+    robustifier = [IdentityRobustifier()],
+    debug = [:Iteration, :Cost, " ", :damping_term, "\n"],
 )
+# ... but works
+@info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q1)), difference (of q1 - qc): $(cost(M, q1) - cost(M, qc))"
+
+q1b = copy(M, p0)
+
+@b LevenbergMarquardt!(M, [f], q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()])
+
+@info q1 == q1b
+
+q2 = LevenbergMarquardt(
+    M, [f], p0;
+    β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
+    robustifier = [IdentityRobustifier()],
+    debug = [:Iteration, :Cost, " ", :damping_term, 5, "\n"],
+    sub_state = CoordinatesNormalSystemState(M),
+)
+
+# ... but works
+@info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q2)), difference (of q1 - qc): $(cost(M, q2) - cost(M, qc))"
+
+q2b = copy(M, p0)
+
+@b LevenbergMarquardt!(
+    M, [f], q2b;
+    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()], sub_state = CoordinatesNormalSystemState(M),
+)
+
+@info q2 == q2b

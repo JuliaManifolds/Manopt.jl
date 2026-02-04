@@ -299,6 +299,7 @@ export AbstractDecoratedManifoldObjective,
     ManifoldProximalMapObjective,
     ManifoldStochasticGradientObjective,
     ManifoldSubgradientObjective,
+    NonlinearLeastSquaresObjective,
     PrimalDualManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
     SimpleManifoldCachedObjective,
@@ -329,6 +330,7 @@ export AbstractGradientSolverState,
     ChambollePockState,
     ConjugateGradientDescentState,
     ConjugateResidualState,
+    CoordinatesNormalSystemState,
     CyclicProximalPointState,
     DifferenceOfConvexState,
     DifferenceOfConvexProximalState,
@@ -426,7 +428,7 @@ export KKTVectorFieldNormSq, KKTVectorFieldNormSqGradient
 export LagrangianCost, LagrangianGradient, LagrangianHessian
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 export FrankWolfeCost, FrankWolfeGradient
-export LevenbergMarquardtSurrogatePenaltyObjective, LevenbergMarquardtSurrogateConstrainedObjective
+export LevenbergMarquardtLinearSurrogateObjective
 export TrustRegionModelObjective
 export CondensedKKTVectorField, CondensedKKTVectorFieldJacobian
 export SymmetricLinearSystemObjective

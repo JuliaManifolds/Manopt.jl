@@ -159,6 +159,26 @@ function LevenbergMarquardt!(
     return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt!(
+        M::AbstractManifold, vgf::VectorGradientFunction, p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        robustifier = IdentityRobustifier(),
+        kwargs...,
+    )
+    nlso = NonlinearLeastSquaresObjective(vgf, robustifier)
+    return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
+end
+function LevenbergMarquardt!(
+        M::AbstractManifold,
+        vgf::Vector{<:VectorGradientFunction},
+        p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        robustifier::Vector{<:AbstractRobustifierFunction} = [IdentityRobustifier() for _ in 1:length(vgf)],
+        kwargs...,
+    )
+    nlso = NonlinearLeastSquaresObjective(vgf, robustifier)
+    return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
+end
+function LevenbergMarquardt!(
         M::AbstractManifold, nlso::O, p;
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stopping_criterion::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
@@ -245,7 +265,7 @@ function step_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     FpSq = get_cost(M, nlso, lms.p)
-    set_parameter!(get_objective(lms.sub_problem), :Penalty, lms.damping_term * FpSq)
+    set_parameter!(lms.sub_problem, :Objective, :Penalty, lms.damping_term * FpSq)
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
     # Subsolver result
