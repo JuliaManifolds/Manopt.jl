@@ -948,13 +948,14 @@ function get_adjoint_jacobian!(
 end
 # (c) Jacobian function
 function get_adjoint_jacobian!(
-        M::AbstractManifold, c, vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:CoefficientVectorialType}, p, a;
+        M::AbstractManifold, X, vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:CoefficientVectorialType}, p, a;
         basis::B = default_basis(M, typeof(p))
     ) where {FT, B <: AbstractBasis}
     n = vgf.range_dimension
     JF = vgf.jacobian!!(M, p)
-    c .= adjoint(JF) * a
-    return c
+    c = adjoint(JF) * a
+    get_vector!(M, X, p, c, basis)
+    return X
 end
 
 # Part II: mutating vgf (a) single gradient function
