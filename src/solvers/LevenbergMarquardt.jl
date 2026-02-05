@@ -76,7 +76,7 @@ function LevenbergMarquardt(
         M::AbstractManifold, f, jacobian_f, p, num_components::Int = -1;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         function_type::AbstractVectorialType = FunctionVectorialType(),
-        jacobian_type::AbstractVectorialType = CoordinateVectorialType(DefaultOrthonormalBasis()),
+        jacobian_type::AbstractVectorialType = CoefficientVectorialType(DefaultOrthonormalBasis()),
         kwargs...,
     )
     if num_components == -1
@@ -133,7 +133,7 @@ function LevenbergMarquardt!(
         M::AbstractManifold, f, jacobian_f, p, num_components::Int = -1;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         jacobian_tangent_basis::AbstractBasis = default_basis(M, typeof(p)),
-        jacobian_type = CoordinateVectorialType(jacobian_tangent_basis),
+        jacobian_type = CoefficientVectorialType(jacobian_tangent_basis),
         function_type = FunctionVectorialType(),
         kwargs...,
     )

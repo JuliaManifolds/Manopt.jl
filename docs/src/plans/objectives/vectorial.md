@@ -14,7 +14,7 @@ Manopt.VectorHessianFunction
 
 ```@docs
 Manopt.AbstractVectorialType
-Manopt.CoordinateVectorialType
+Manopt.CoefficientVectorialType
 Manopt.ComponentVectorialType
 Manopt.FunctionVectorialType
 ```

@@ -52,7 +52,7 @@ using Manifolds, Manopt, Test
             evaluation = InplaceEvaluation(),
         )
         nlsoJa = NonlinearLeastSquaresObjective(
-            f, J, 2; jacobian_type = CoordinateVectorialType()
+            f, J, 2; jacobian_type = CoefficientVectorialType()
         )
         nlsoJi = NonlinearLeastSquaresObjective(f!, J!, 2; evaluation = InplaceEvaluation())
 

@@ -62,7 +62,7 @@ As well as for the first variant of having a single block
   the format the residuals are given in. By default a function returning a vector.
 * `jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis()`; shortcut to specify
   the basis the Jacobian matrix is build with.
-* `jacobian_type::`[`AbstractVectorialType`](@ref)`=`[`CoordinateVectorialType`](@ref)`(jacobian_tangent_basis)`:
+* `jacobian_type::`[`AbstractVectorialType`](@ref)`=`[`CoefficientVectorialType`](@ref)`(jacobian_tangent_basis)`:
   specify the format the Jacobian is given in. By default a matrix of the differential with
   respect to a certain basis of the tangent space.
 
@@ -107,7 +107,7 @@ function NonlinearLeastSquaresObjective(
         robustifier::AbstractRobustifierFunction = IdentityRobustifier();
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         jacobian_tangent_basis::AbstractBasis = DefaultOrthonormalBasis(),
-        jacobian_type::AbstractVectorialType = CoordinateVectorialType(jacobian_tangent_basis),
+        jacobian_type::AbstractVectorialType = CoefficientVectorialType(jacobian_tangent_basis),
         function_type::AbstractVectorialType = FunctionVectorialType(),
     )
     vgf = VectorGradientFunction(

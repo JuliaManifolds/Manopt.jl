@@ -38,7 +38,7 @@ f = VectorGradientFunction(
     F, JF, length(pts);
     evaluation = AllocatingEvaluation(),
     function_type = FunctionVectorialType(),
-    jacobian_type = CoordinateVectorialType(DefaultOrthonormalBasis())
+    jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis())
 )
 
 qc = mean(M, pts)

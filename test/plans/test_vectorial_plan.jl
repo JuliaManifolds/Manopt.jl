@@ -48,13 +48,13 @@ using Manopt: get_value, get_value_function, get_gradient_function
         evaluation = InplaceEvaluation(),
     )
     vgf_ja = VectorGradientFunction(
-        g, jac_g, 2; jacobian_type = CoordinateVectorialType(DefaultOrthonormalBasis())
+        g, jac_g, 2; jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis())
     )
     vgf_ji = VectorGradientFunction(
         g!,
         jac_g!,
         2;
-        jacobian_type = CoordinateVectorialType(DefaultOrthonormalBasis()),
+        jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis()),
         evaluation = InplaceEvaluation(),
     )
     @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis
@@ -63,7 +63,7 @@ using Manopt: get_value, get_value_function, get_gradient_function
         g!,
         jac_g!,
         2;
-        jacobian_type = CoordinateVectorialType(DefaultBasis()),
+        jacobian_type = CoefficientVectorialType(DefaultBasis()),
         evaluation = InplaceEvaluation(),
     )
     @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis

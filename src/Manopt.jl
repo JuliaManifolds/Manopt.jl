@@ -316,7 +316,7 @@ export AbstractRobustifierFunction, SoftL1Robustifier, AbstractRobustifierFuncti
 # Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
 export AbstractVectorialType
-export CoordinateVectorialType, ComponentVectorialType, FunctionVectorialType
+export CoefficientVectorialType, ComponentVectorialType, FunctionVectorialType
 #
 # AbstractManoptSolverState
 export AbstractGradientSolverState,
