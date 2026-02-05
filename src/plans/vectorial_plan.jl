@@ -595,10 +595,9 @@ function get_jacobian(
         M::AbstractManifold, vgf::VGF, p; basis::AbstractBasis = get_basis(vgf.jacobian_type), kwargs...
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:AbstractVectorialType}}
     n = vgf.range_dimension
-    d = manifold_dimension(M)
     # Can we avoid this allocation?
-    c1 = get_coordinates(M, p, zero_vector(M, p), basis)
-    JF = zeros(eltype(c1), n, d)
+    c = get_coordinates(M, p, zero_vector(M, p), basis)
+    JF = zeros(eltype(c), n, length(c))
     return get_jacobian!(M, JF, vgf, p; basis = basis, kwargs...)
 end
 # Part I: allocating vgf

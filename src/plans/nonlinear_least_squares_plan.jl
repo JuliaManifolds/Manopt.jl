@@ -1316,12 +1316,12 @@ end
 function linear_operator(
         M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
     ) where {E <: AbstractEvaluationType}
-    return linear_normal_operator(M, slso.objective, p, X)
+    return linear_normal_operator(M, slso.objective, p, XB)
 end
 function linear_operator!(
         M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
     ) where {E <: AbstractEvaluationType}
-    return linear_normal_operator!(M, Y, slso.objective, p, X)
+    return linear_normal_operator!(M, Y, slso.objective, p, XB)
 end
 # (b) coefficients in a basis
 function linear_operator(
@@ -1335,7 +1335,7 @@ function linear_operator!(
     return linear_normal_operator!(M, Y, slso.objective, p, c, B)
 end
 
-
+# RHS as a tangent vector
 function vector_field(
         M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
     ) where {E <: AbstractEvaluationType}
@@ -1348,6 +1348,7 @@ function vector_field!(
     Y .*= -1
     return Y
 end
+# RHS in coordinates
 function vector_field(
         M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B
     ) where {E <: AbstractEvaluationType}
