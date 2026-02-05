@@ -269,7 +269,7 @@ function step_solver!(
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
     # Subsolver result
-    lms.X .= -get_solver_result(solve!(lms.sub_problem, lms.sub_state))
+    lms.X .= -get_solver_result(lms.sub_problem, solve!(lms.sub_problem, lms.sub_state))
     # New iterate candidate - maybe store in state?
     q = retract(M, lms.p, lms.X, lms.retraction_method)
     # Evaluate improvement of actual cost divided by predicted cost improvement

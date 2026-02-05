@@ -233,12 +233,22 @@ _set_iterate!(s::AbstractManoptSolverState, M, p, ::Val{true}) = set_iterate!(s.
     get_solver_result(ams::AbstractManoptSolverState)
     get_solver_result(tos::Tuple{AbstractManifoldObjective,AbstractManoptSolverState})
     get_solver_result(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
+    get_solver_result(p::AbstractManoptProblem, s::AbstractManoptSolverState)
 
 Return the final result after all iterations that is stored within
 the [`AbstractManoptSolverState`](@ref) `ams`, which was modified during the iterations.
 
-For the case the objective is passed as well, but default, the objective is ignored,
-and the solver result for the state is called.
+For the case an [`AbstractManifoldObjective`](@ref) `o` the objective is passed as well
+– either as a Tuple or as two parameters –, by default, the objective is ignored,
+and the solver result for the state is called; this is due to display reasons in REPL
+related to statistics, where such a Tuple might appear
+
+For the case an [`AbstractManoptProblem`](@ref) `p` is passed as well as
+a first optional parameter, by default the problem is ignored.
+This can be used to change the representation of a result stored in a state, e.g.
+when a tangent vector is (part of) the result, changing between representations in
+coefficients and different tangent vector representations could be performed as a final step,
+depending on which problem was aimed to be solved
 """
 function get_solver_result(s::AbstractManoptSolverState)
     return _get_solver_result(s, dispatch_state_decorator(s))
@@ -252,6 +262,10 @@ function get_solver_result(tos::Tuple{<:AbstractManifoldObjective, S}) where {S}
     return tos[2]
 end
 function get_solver_result(::AbstractManifoldObjective, s::AbstractManoptSolverState)
+    return get_solver_result(s)
+end
+#A poblem or – hence untyped – a closed form solution / function
+function get_solver_result(pf, s::AbstractManoptSolverState)
     return get_solver_result(s)
 end
 # if the second one is anything else, assume it is a point/result -> return that

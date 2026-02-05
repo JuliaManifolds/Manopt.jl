@@ -4,21 +4,20 @@ Rxy(α) = [cos(α) sin(α) 0.0; -sin(α) cos(α) 0; 0 0 1]
 Rxz(α) = [cos(α)  0.0 sin(α); 0 1 0; -sin(α) 0 cos(α)]
 Ryz(α) = [1.0 0 0; 0 cos(α) sin(α); 0 -sin(α) cos(α)]
 
-# M = Rotations(3)
-M = Rotations(4)
-
+M = Rotations(3)
 # We generate a set of points that are “opposite” each other such that the mean is still I
-# pts = [
-#     Matrix{Float64}(I, 3, 3),
-#     Rxy(0.25) * Rxz(0.05) * Ryz(-0.125),
-#     Rxy(-0.25) * Rxz(-0.05) * Ryz(0.125),
-#     Rxy(-0.05) * Rxz(0.125) * Ryz(-0.25),
-#     Rxy(0.05) * Rxz(-0.125) * Ryz(0.25),
-#     #outliers
-#     #Rxy(0.125)*Rxz(0.25)*Ryz(0.05),
-#     #Rxy(-0.125)*Rxz(0.25)*Ryz(0.05),
-# ]
-pts = rand(M, 5)
+pts = [
+     Matrix{Float64}(I, 3, 3),
+     Rxy(0.25) * Rxz(0.05) * Ryz(-0.125),
+     Rxy(-0.25) * Rxz(-0.05) * Ryz(0.125),
+     Rxy(-0.05) * Rxz(0.125) * Ryz(-0.25),
+     Rxy(0.05) * Rxz(-0.125) * Ryz(0.25),
+     #outliers
+     #Rxy(0.125)*Rxz(0.25)*Ryz(0.05),
+     #Rxy(-0.125)*Rxz(0.25)*Ryz(0.05),
+]
+# M = Rotations(4)
+# pts = rand(M, 5)
 p0 = copy(M, pts[2])
 # We do a full function approach here
 
@@ -47,7 +46,7 @@ qc = mean(M, pts)
 cost(M, p) = sum(distance(M, p, q)^2 for q in pts)
 
 
-#=
+
 # Default Residual CG on this approach – works but probably allocates a bit too much (matrices coordinates/vector...)
 q1 = LevenbergMarquardt(
     M, [f], p0;
@@ -58,7 +57,7 @@ q1 = LevenbergMarquardt(
 # ... but works
 @info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q1)), difference (of q1 - qc): $(cost(M, q1) - cost(M, qc))"
 
-# = q1b = copy(M, p0)
+#= q1b = copy(M, p0)
 
 @b LevenbergMarquardt!(M, [f], q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()])
 @info q1 == q1b =#

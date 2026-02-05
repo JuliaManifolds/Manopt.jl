@@ -938,7 +938,7 @@ end
 function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNormalSystemState{InplaceEvaluation})
     # Update A and b
     TpM = get_manifold(dmp)
-    M = get_manifold(TpM)
+    M = base_manifold(TpM)
     p = base_point(TpM)
     o = get_objective(dmp) # implicit: SymmetricSystem ...
     linear_operator!(M, cnss.A, o, p, cnss.basis)
@@ -946,8 +946,16 @@ function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNorm
     cnss.linsolve!!(cnss.c, cnss.A, -cnss.b)
     return cnss
 end
-get_solver_result(cnss::CoordinatesNormalSystemState) = cnss.c
-
+# Maybe a bit too precise, but in this case we get a coefficient vector and we want a tangent vector
+function get_solver_result(
+        dmp::DefaultManoptProblem{<:TangentSpace, <: SymmetricLinearSystem{<:AbstractEvaluationType,<:LevenbergMarquardtLinearSurrogateObjective}},
+        cnss::CoordinatesNormalSystemState
+    ) where {E}
+    TpM = get_manifold(dmp)
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return get_vector(M, p, cnss.c, cnss.basis)
+end
 #
 #
 #
