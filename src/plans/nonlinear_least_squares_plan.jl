@@ -1312,16 +1312,29 @@ end
 
 #
 # The Linear System for the LM Surrogate is its normal equations
+# (a) a vector X or a basis B
 function linear_operator(
-        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, X
+        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
     ) where {E <: AbstractEvaluationType}
     return linear_normal_operator(M, slso.objective, p, X)
 end
 function linear_operator!(
-        M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, X
+        M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
     ) where {E <: AbstractEvaluationType}
     return linear_normal_operator!(M, Y, slso.objective, p, X)
 end
+# (b) coefficients in a basis
+function linear_operator(
+        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
+    ) where {E <: AbstractEvaluationType}
+    return linear_normal_operator(M, slso.objective, p, c, B)
+end
+function linear_operator!(
+        M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
+    ) where {E <: AbstractEvaluationType}
+    return linear_normal_operator!(M, Y, slso.objective, p, c, B)
+end
+
 
 function vector_field(
         M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p

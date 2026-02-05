@@ -45,6 +45,7 @@ qc = mean(M, pts)
 cost(M, p) = sum(distance(M, p, q)^2 for q in pts)
 
 
+#=
 # Default Residual CG on this approach – works but probably allocates a bit too much (matrices coordinates/vector...)
 q1 = LevenbergMarquardt(
     M, [f], p0;
@@ -55,7 +56,7 @@ q1 = LevenbergMarquardt(
 # ... but works
 @info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q1)), difference (of q1 - qc): $(cost(M, q1) - cost(M, qc))"
 
-#= q1b = copy(M, p0)
+# = q1b = copy(M, p0)
 
 @b LevenbergMarquardt!(M, [f], q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()])
 @info q1 == q1b =#
