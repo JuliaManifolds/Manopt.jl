@@ -50,7 +50,7 @@ q1 = LevenbergMarquardt(
     M, [f], p0;
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
     robustifier = [IdentityRobustifier()],
-    debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n"],
+    debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop],
 )
 # ... but works
 @info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q1)), difference (of q1 - qc): $(cost(M, q1) - cost(M, qc))"
@@ -65,12 +65,12 @@ q2 = LevenbergMarquardt(
     M, [f], p0;
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
     robustifier = [IdentityRobustifier()],
-    debug = [:Iteration, :Cost, " ", :damping_term, 5, "\n"],
+    debug = [:Iteration, :Cost, " ", :damping_term, "\n", :Stop],
     sub_state = CoordinatesNormalSystemState(M),
 )
-
+@info q2
 # ... but works
-@info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q2)), difference (of q1 - qc): $(cost(M, q2) - cost(M, qc))"
+@info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q2): $(cost(M, q2)), difference (of q2 - qc): $(cost(M, q2) - cost(M, qc))"
 
 q2b = copy(M, p0)
 

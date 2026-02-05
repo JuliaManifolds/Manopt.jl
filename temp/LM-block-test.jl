@@ -47,7 +47,7 @@ q1 = LevenbergMarquardt(
     M, [F, G], p0;
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
     robustifier = [IdentityRobustifier() for _ in 1:2],
-    debug = [:Iteration, :Cost, " ", :damping_term, " ", :Iterate, "\n"],
+    debug = [:Iteration, :Cost, " ", :damping_term, " ", :Change, "\n", :Stop],
 )
 @info "Mean cost $(f(M, qc))"
 @info "Mean cost (R) $(f(M, qR))"
