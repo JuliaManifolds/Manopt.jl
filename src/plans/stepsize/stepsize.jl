@@ -2594,7 +2594,12 @@ function (hzls::HagerZhangLinesearchStepsize)(
     M = get_manifold(mp)
     p = get_iterate(s)
 
-    dphi_0 = get_differential(mp, p, η; Y = hzls.temporary_tangent)
+    local dphi_0 # COV_EXCL_LINE
+    if :gradient in keys(kwargs)
+        dphi_0 = real(inner(M, p, η, kwargs[:gradient]))
+    else
+        dphi_0 = get_differential(mp, p, η; Y = hzls.temporary_tangent)
+    end
     hzls.triples[1] = UnivariateTriple(0.0, fp, dphi_0)
     hzls.last_evaluation_index = 1
 

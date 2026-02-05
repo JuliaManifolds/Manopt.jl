@@ -293,6 +293,8 @@ end
         α = hzls(dmp, gs, 1, η)
         @test isfinite(α)
         @test α > 0
+        α2 = hzls(dmp, gs, 1, η; gradient = grad_f_sum_sq(M, p))
+        @test α2 ≈ α
         @test hzls.last_stepsize == α
         @test hzls.last_cost <= f_sum_sq(M, p) + 1.0e-12
 
