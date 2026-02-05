@@ -882,3 +882,22 @@ function update_hessian!(
     end
     return d
 end
+
+function get_cost(
+        mp::AbstractManoptProblem, s::QuasiNewtonState{
+            P, T,
+            <:AbstractQuasiNewtonDirectionUpdate,
+            <:StoppingCriterion,
+            <:HagerZhangLinesearchStepsize,
+        }
+    ) where {P, T}
+
+    hzls = s.stepsize
+    if hzls.last_evaluation_index === 0
+        # if no evaluation was performed, we need to compute the cost
+        return get_cost(mp, s.p)
+    else
+        # we can reuse the stored function value from the linesearch
+        return hzls.triples[hzls.last_evaluation_index].f
+    end
+end

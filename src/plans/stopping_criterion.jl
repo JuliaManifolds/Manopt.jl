@@ -375,7 +375,7 @@ function (c::StopWhenCostChangeLess)(
         c.last_change = 2 * c.tolerance
     end
     c.last_change = c.last_cost
-    c.last_cost = get_cost(problem, get_iterate(state))
+    c.last_cost = get_cost(problem, state)
     c.last_change = c.last_change - c.last_cost
     if abs(c.last_change) < c.tolerance
         c.at_iteration = iteration
@@ -405,11 +405,11 @@ end
     StopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the
-optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p, s)`.
 
 # Constructor
 
-    StopWhenCostLess(ε)
+    StopWhenCostLess(ε::Real)
 
 initialize the stopping criterion to a threshold `ε`.
 """
@@ -427,7 +427,7 @@ function (c::StopWhenCostLess)(
     if k == 0 # reset on init
         c.at_iteration = -1
     end
-    c.last_cost = get_cost(p, get_iterate(s))
+    c.last_cost = get_cost(p, s)
     if c.last_cost < c.threshold
         c.at_iteration = k
         return true
@@ -502,7 +502,7 @@ function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(
         c.last_cost = Inf
         c.last_change = 2 * c.tolerance
     end
-    current_cost = get_cost(problem, get_iterate(state))
+    current_cost = get_cost(problem, state)
     c.last_change = (c.last_cost - current_cost) / max(abs(c.last_cost), abs(current_cost), 1)
     c.last_cost = current_cost
     if iteration > 1 && c.last_change <= c.tolerance
@@ -973,13 +973,14 @@ end
 """
     StopWhenCostNaN <: StoppingCriterion
 
-stop looking at the cost function of the optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+Stop the solver when the cost function of the optimization problem
+[`AbstractManoptProblem`](@ref) is `NaN`. The value is obtained using `get_cost(p, s)`.
 
 # Constructor
 
     StopWhenCostNaN()
 
-initialize the stopping criterion to NaN.
+initialize the stopping criterion with `at_iteration` equal to -1.
 """
 mutable struct StopWhenCostNaN <: StoppingCriterion
     at_iteration::Int
@@ -992,7 +993,7 @@ function (c::StopWhenCostNaN)(
         c.at_iteration = -1
     end
     # but still verify whether it yields NaN
-    if isnan(get_cost(p, get_iterate(s)))
+    if isnan(get_cost(p, s))
         c.at_iteration = k
         return true
     end
@@ -1016,13 +1017,15 @@ end
 """
     StopWhenIterateNaN <: StoppingCriterion
 
-stop looking at the cost function of the optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+Stop the solver when the iterate of the optimization problem from within an
+[`AbstractManoptProblem`](@ref) contains `NaN` values.
+The value is obtained using `get_iterate(s)`.
 
 # Constructor
 
     StopWhenIterateNaN()
 
-initialize the stopping criterion to NaN.
+Initialize `at_iteration` to `-1`.
 """
 mutable struct StopWhenIterateNaN <: StoppingCriterion
     at_iteration::Int
