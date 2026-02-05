@@ -821,8 +821,6 @@ get_objective(lmsco::LevenbergMarquardtLinearSurrogateObjective) = lmsco.objecti
 
 function get_cost(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        # TODO: Check whether caching makes sense here
-        # value_cache = get_residuals(M, lmsco.objective, p),
         penalty = lmsco.penalty,
     )
     nlso = lmsco.objective
@@ -841,14 +839,11 @@ end
 
 function get_gradient(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        value_cache = get_residuals(M, lmsco.objective, p),
-        penalty = lmsco.penalty,
+        value_cache = get_residuals(M, lmsco.objective, p), penalty = lmsco.penalty,
     )
     Y = zero_vector(M, p)
     return get_gradient!(
-        M, Y, lmsco, p, X;
-        value_cache = value_cache,
-        penalty = penalty,
+        M, Y, lmsco, p, X; value_cache = value_cache, penalty = penalty,
     )
 end
 function get_gradient!(
@@ -937,7 +932,7 @@ function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNorm
     o = get_objective(dmp)
     linear_operator!(M, cnss.A, o, p, cnss.basis)
     vector_field!(M, cnss.b, o, p, cnss.basis)
-    cnss.c = cnss.linsolve!!(cnss.A, cnss.b)
+    cnss.c = cnss.linsolve!!(cnss.A, -cnss.b)
     return cnss
 end
 function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNormalSystemState{InplaceEvaluation})
@@ -948,7 +943,7 @@ function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNorm
     o = get_objective(dmp) # implicit: SymmetricSystem ...
     linear_operator!(M, cnss.A, o, p, cnss.basis)
     vector_field!(M, cnss.b, o, p, cnss.basis)
-    cnss.linsolve!!(cnss.c, cnss.A, cnss.b)
+    cnss.linsolve!!(cnss.c, cnss.A, -cnss.b)
     return cnss
 end
 get_solver_result(cnss::CoordinatesNormalSystemState) = cnss.c
@@ -1170,7 +1165,7 @@ Compute the normal linear operator tangent vector ``X`` corresponding to the opt
 Levenberg-Marquardt surrogate objective, i.e.,
 
 ```math
-X = - J_F^*(p)[ C^T y], $(_tex(:quad)) y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p).
+X = J_F^*(p)[ C^T y], $(_tex(:quad)) y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p).
 ```
 
 If you provide an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) `B` ``=$(_tex(:set, "Z_1,…,Z_d"))`` additionally,
@@ -1218,7 +1213,6 @@ function normal_vector_field!(
     y .= (ρ_prime / (1 - α)) * (I - α * (y * y') ./ F_p_norm2) * y
     # Now apply the adjoint and negate
     get_adjoint_jacobian!(M, X, o, p, y)
-    X .*= -1
     return X
 end
 
@@ -1261,7 +1255,6 @@ function normal_vector_field!(
     # Now apply the adjoint and negate
     # TODO: Do the correspnding dispatch cases already exist?
     get_adjoint_jacobian!(M, c, o, p, y; basis = B)
-    c .*= -1
     return c
 end
 
@@ -1333,20 +1326,24 @@ end
 function vector_field(
         M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
     ) where {E <: AbstractEvaluationType}
-    return normal_vector_field(M, slso.objective, p)
+    return -normal_vector_field(M, slso.objective, p)
 end
 function vector_field!(
         M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
     ) where {E <: AbstractEvaluationType}
-    return normal_vector_field!(M, Y, slso.objective, p)
+    normal_vector_field!(M, Y, slso.objective, p)
+    Y .*= -1
+    return
 end
 function vector_field(
         M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B
     ) where {E <: AbstractEvaluationType}
-    return normal_vector_field(M, slso.objective, p, B)
+    return -normal_vector_field(M, slso.objective, p, B)
 end
 function vector_field!(
         M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B
     ) where {E <: AbstractEvaluationType}
-    return normal_vector_field!(M, Y, slso.objective, p, B)
+    normal_vector_field!(M, Y, slso.objective, p, B)
+    Y .*= -1
+    return Y
 end

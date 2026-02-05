@@ -50,7 +50,7 @@ q1 = LevenbergMarquardt(
     M, [f], p0;
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
     robustifier = [IdentityRobustifier()],
-    debug = [:Iteration, :Cost, " ", :damping_term, "\n"],
+    debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n"],
 )
 # ... but works
 @info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q1)), difference (of q1 - qc): $(cost(M, q1) - cost(M, qc))"
