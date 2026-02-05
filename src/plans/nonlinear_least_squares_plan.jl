@@ -1222,7 +1222,7 @@ end
 function normal_vector_field(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis,
     )
-    c = zeros(eltype(p), number_of_coordinates(M, B))
+    c = get_coordinates(M, p, zero_vector(M, p), B)
     return normal_vector_field!(M, c, lmsco, p, B)
 end
 
@@ -1252,9 +1252,9 @@ function normal_vector_field!(
     # Compute y = (sqrt(ρ'(p)) / (1-α)) F(p) and
     # Now compute J_F^*(p)[C^T y] (inplace of y)
     y .= (ρ_prime / (1 - α)) * (I - α * (y * y') ./ F_p_norm2) * y
-    # Now apply the adjoint and negate
+    # Now apply the adjoint
     # TODO: Do the correspnding dispatch cases already exist?
-    get_adjoint_jacobian!(M, c, o, p, y; basis = B)
+    get_adjoint_jacobian!(M, c, o, p, y, B)
     return c
 end
 
@@ -1333,7 +1333,7 @@ function vector_field!(
     ) where {E <: AbstractEvaluationType}
     normal_vector_field!(M, Y, slso.objective, p)
     Y .*= -1
-    return
+    return Y
 end
 function vector_field(
         M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B
@@ -1341,9 +1341,9 @@ function vector_field(
     return -normal_vector_field(M, slso.objective, p, B)
 end
 function vector_field!(
-        M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B
+        M::AbstractManifold, c, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B
     ) where {E <: AbstractEvaluationType}
-    normal_vector_field!(M, Y, slso.objective, p, B)
-    Y .*= -1
-    return Y
+    normal_vector_field!(M, c, slso.objective, p, B)
+    c .*= -1
+    return c
 end

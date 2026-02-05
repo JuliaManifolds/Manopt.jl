@@ -676,7 +676,7 @@ end
 #
 # --- Jacobian function in terms of gradients as a 1-1 tensor (basis free) ---
 
-_doc_get_jacobiafunction_vector = """
+_doc_get_jacobian_function_vector = """
     get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, X; kwargs...)
     get_jacobian!(M::AbstractManifold, a, vgf::AbstractVectorGradientFunction, p, X; kwargs...)
 
@@ -704,10 +704,10 @@ Then it simplifies to a matric multiplication.
 This can be computed in-place of `a`.
 """
 
-@doc "$(_doc_get_jacobiafunction_vector)"
+@doc "$(_doc_get_jacobian_function_vector)"
 get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, X; kwargs...)
 
-@doc "$(_doc_get_jacobiafunction_vector)"
+@doc "$(_doc_get_jacobian_function_vector)"
 get_jacobian!(M::AbstractManifold, a, vgf::AbstractVectorGradientFunction, p, X; kwargs...)
 
 # For the allocating one, we just need to allocate a
@@ -776,7 +776,7 @@ end
 
 # --- Jacobian function in terms of gradients as a 1-1 tensor in a basis (hence in matrix form) ---
 
-_doc_get_jacobiafunction_vector = """
+_doc_get_jacobian_function_coord = """
     get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, c, B::AbstractBasis; kwargs...)
     get_jacobian!(M::AbstractManifold, a, vgf::AbstractVectorGradientFunction, p, c, B::AbstractBasis; kwargs...)
 
@@ -804,10 +804,10 @@ $(_kwargs(:X)) used as memory to compute the interims tangent vector where neces
   For performance reasons, try to pass `get_basis(vgf.jacobian_type)` as `B` where possible.
 """
 
-@doc "$(_doc_get_jacobiafunction_vector)"
+@doc "$(_doc_get_jacobian_function_coord)"
 get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, c, B::AbstractBasis; kwargs...)
 
-@doc "$(_doc_get_jacobiafunction_vector)"
+@doc "$(_doc_get_jacobian_function_coord)"
 get_jacobian!(M::AbstractManifold, a, vgf::AbstractVectorGradientFunction, p, c, B::AbstractBasis; kwargs...)
 
 # Part I: allocating/inplace vgf – allocating/inplace work the same here jacobian (a) single gradient function
@@ -1052,7 +1052,7 @@ function get_adjoint_jacobian!(
     n = vgf.range_dimension
     JF = vgf.jacobian!!(M, p)
     c .= adjoint(JF) * a
-    return change_basis!(M, c, p, c, get_basis(vgf.jacobian_type.basis), B)
+    return change_basis!(M, c, p, c, vgf.jacobian_type.basis, B)
 end
 # mutating, (c) Jacobian function
 function get_adjoint_jacobian!(
