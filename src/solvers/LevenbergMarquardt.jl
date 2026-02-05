@@ -276,10 +276,8 @@ function step_solver!(
     cost_improvement = get_cost(M, nlso, lms.p) - get_cost(M, nlso, q)
     model_improvement = 0.5 * (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X))
     ρ = cost_improvement / model_improvement
-
-    if model_improvement < 0
-        error("Subsolver returned a nonsensical direction with negative model improvement")
-    end
+    # TODO remove debug
+    (model_improvement < 0) && (@warn "Subsolver returned a nonsensical direction with negative model improvement $(model_improvement)")
     # Update damping term and iterate
     # TODO Abstract this to a generic update for η?
     if ρ >= lms.η # enough improvement: accept, decrease damping term
