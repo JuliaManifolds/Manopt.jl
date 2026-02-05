@@ -4,19 +4,21 @@ Rxy(α) = [cos(α) sin(α) 0.0; -sin(α) cos(α) 0; 0 0 1]
 Rxz(α) = [cos(α)  0.0 sin(α); 0 1 0; -sin(α) 0 cos(α)]
 Ryz(α) = [1.0 0 0; 0 cos(α) sin(α); 0 -sin(α) cos(α)]
 
-M = Rotations(3)
+# M = Rotations(3)
+M = Rotations(4)
 
 # We generate a set of points that are “opposite” each other such that the mean is still I
-pts = [
-    Matrix{Float64}(I, 3, 3),
-    Rxy(0.25) * Rxz(0.05) * Ryz(-0.125),
-    Rxy(-0.25) * Rxz(-0.05) * Ryz(0.125),
-    Rxy(-0.05) * Rxz(0.125) * Ryz(-0.25),
-    Rxy(0.05) * Rxz(-0.125) * Ryz(0.25),
-    #outliers
-    #Rxy(0.125)*Rxz(0.25)*Ryz(0.05),
-    #Rxy(-0.125)*Rxz(0.25)*Ryz(0.05),
-]
+# pts = [
+#     Matrix{Float64}(I, 3, 3),
+#     Rxy(0.25) * Rxz(0.05) * Ryz(-0.125),
+#     Rxy(-0.25) * Rxz(-0.05) * Ryz(0.125),
+#     Rxy(-0.05) * Rxz(0.125) * Ryz(-0.25),
+#     Rxy(0.05) * Rxz(-0.125) * Ryz(0.25),
+#     #outliers
+#     #Rxy(0.125)*Rxz(0.25)*Ryz(0.05),
+#     #Rxy(-0.125)*Rxz(0.25)*Ryz(0.05),
+# ]
+pts = rand(M, 5)
 p0 = copy(M, pts[2])
 # We do a full function approach here
 
