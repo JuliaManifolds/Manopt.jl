@@ -29,7 +29,7 @@ function JF(M, p, B::AbstractBasis = DefaultOrthonormalBasis())
     for (i, q) in enumerate(pts)
         dpq = distance(M, p, q)
         if dpq > 0
-            J[i, :] = 1 / dpq .* get_coordinates(M, p, log(M, p, q), B)
+            J[i, :] = -1 / dpq .* get_coordinates(M, p, log(M, p, q), B)
         end
     end
     return J
@@ -43,7 +43,7 @@ f = VectorGradientFunction(
 )
 
 qc = mean(M, pts)
-cost(M, p) = sum(distance(M, p, q)^2 for q in pts)
+cost(M, p) = 0.5 * sum(distance(M, p, q)^2 for q in pts)
 
 
 
@@ -57,10 +57,10 @@ q1 = LevenbergMarquardt(
 # ... but works
 @info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q1)), difference (of q1 - qc): $(cost(M, q1) - cost(M, qc))"
 
-#= q1b = copy(M, p0)
+q1b = copy(M, p0)
 
 @b LevenbergMarquardt!(M, [f], q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()])
-@info q1 == q1b =#
+@info q1 == q1b
 
 q2 = LevenbergMarquardt(
     M, [f], p0;
@@ -69,15 +69,14 @@ q2 = LevenbergMarquardt(
     debug = [:Iteration, :Cost, " ", :damping_term, "\n", :Stop],
     sub_state = CoordinatesNormalSystemState(M),
 )
-@info q2
 # ... but works
 @info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q2): $(cost(M, q2)), difference (of q2 - qc): $(cost(M, q2) - cost(M, qc))"
 
-#= q2b = copy(M, p0)
+q2b = copy(M, p0)
 
 @b LevenbergMarquardt!(
     M, [f], q2b;
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()], sub_state = CoordinatesNormalSystemState(M),
 )
 
-@info q2 == q2b =#
+@info q2 == q2b
