@@ -82,6 +82,7 @@ end
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
     @test startswith(repr(s3), "WolfePowellBinaryLinesearch(;")
+    @test get_last_stepsize(s3) == 0.0
     # no stepsize yet so `repr` and summary are the same
     @test repr(s3) == Manopt.status_summary(s3)
     s4 = WolfePowellLinesearch()(M)

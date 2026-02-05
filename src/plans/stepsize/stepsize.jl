@@ -2170,9 +2170,10 @@ $(_kwargs(:vector_transport_method))
 * `candidate_point = allocate_result(M, rand)`: storage for trial points
 * `candidate_direction = zero_vector(M, candidate_point)`: storage for transported directions
 * `max_bracket_iterations::Int = 10`: maximum number of bracketing iterations
-* `start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = 2`: bracketing iteration
-  number at which Wolfe conditions are started to be enforced; setting to 1 may cause no
-  bracketing to occur when the initial guess satisfies the Wolfe conditions
+* `start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = initial_guess isa ConstantStepsize ? 2 : 1`:
+  bracketing iteration number at which Wolfe conditions are started to be enforced;
+  setting to 1 may cause no bracketing to occur when the initial guess satisfies the Wolfe
+  conditions.
 * `max_function_evaluations::Int = 20`: maximum number of function evaluations per linesearch
 * `wolfe_condition_mode::Symbol = :adaptive`: one of `:standard`, `:approximate`, or `:adaptive`.
   Selects between (T1) and (T2) conditions in [HagerZhang:2006:2](@cite).
@@ -2188,6 +2189,9 @@ $(_kwargs(:vector_transport_method))
 * `ρ::Real = 5.0`: bracketing expansion factor. Allowed range: `ρ > 1`.
 * `Δ::Real = 0.7`: Parameter controlling the rate of change of Qₖ.
   Allowed range: `0 <= Δ <= 1`.
+* `secant_acceptance_ratio::Real = 1.0e-8`: minimum relative interval length
+  for accepting secant step. Allowed range: `secant_acceptance_ratio >= 0`.
+  In case of rejection, a bisection step is performed instead.
 """
 mutable struct HagerZhangLinesearchStepsize{
         TF <: Real,
@@ -2269,6 +2273,7 @@ mutable struct HagerZhangLinesearchStepsize{
         @assert ρ > 1
         @assert stepsize_limit > 0
         @assert wolfe_condition_mode in (:standard, :approximate, :adaptive)
+        @assert secant_acceptance_ratio >= 0
 
         # allocate storage
         triples = Vector{UnivariateTriple{TF}}(undef, max_function_evaluations)
@@ -2509,6 +2514,40 @@ function _hz_u3(
     return (i_a_bar, i_b_bar, f_eval, f_wolfe)
 end
 
+"""
+    _hz_secant2(
+        hzls::HagerZhangLinesearchStepsize, M::AbstractManifold,
+        mp::AbstractManoptProblem, p, η, i_a::Int, i_b::Int
+    )
+
+Perform the secant-based update in the Hager-Zhang linesearch.
+
+Computes a trial step using a secant interpolation of the bracketing
+endpoints. If the trial step is too close to an endpoint, falls back to a
+bisection step. Returns the updated bracketing indices and termination flags
+from the internal update routine.
+
+# Arguments
+- `hzls`: linesearch state and storage.
+- `M`: manifold for retractions and transports.
+- `mp`: optimization problem providing cost and differential.
+- `p`: current iterate.
+- `η`: search direction in the tangent space at `p`.
+- `i_a`, `i_b`: indices of the current bracketing interval in `hzls.triples`.
+
+# Return value
+Returns `(i_A, i_B, i_c, f_eval, f_wolfe)` where
+- `i_A`, `i_B`: indices bracketing the minimum after the update,
+- `i_c`: index of the most recent evaluation (or `-1` if the candidate was out of range),
+- `f_eval`: `true` iff the evaluation limit has been reached,
+- `f_wolfe`: `true` iff the Wolfe conditions are satisfied.
+
+# Steps (S1-S4)
+- S1: compute a secant trial `c` from the current bracket and accept it unless too close to
+  an endpoint (otherwise use a bisection step).
+- S2/S3: if the trial becomes a new endpoint, perform an update from that side.
+- S4: return the updated bracket and termination flags.
+"""
 function _hz_secant2(
         hzls::HagerZhangLinesearchStepsize, M::AbstractManifold,
         mp::AbstractManoptProblem, p, η, i_a::Int, i_b::Int
