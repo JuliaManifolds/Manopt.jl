@@ -115,7 +115,7 @@ function status_summary(drs::DouglasRachfordState; inline = false)
     inline && (return "$(repr(drs)) – $(Iter) $(has_converged(drs) ? "(converged)" : "")")
     P = drs.parallel ? "Parallel " : ""
     s = """
-    # Solver state for `Manopt.jl`s $P Douglas Rachford Algorithm
+    # Solver state for `Manopt.jl`s $(P)Douglas Rachford Algorithm
     $Iter
     using an $(refl_e) reflection.
 

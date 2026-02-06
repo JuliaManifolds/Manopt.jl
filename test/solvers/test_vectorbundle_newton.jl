@@ -143,7 +143,7 @@ using LinearAlgebra: eigvals
         )
         y1 = get_iterate(st)
         @test any(isapprox(f(M, y1), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
-        st_str = repr(st)
+        st_str = Manopt.status_summary(st; inline = false)
         @test occursin("Vector bundle Newton method", st_str)
         # we stopped since the change was small enough
         @test occursin("* |Δp| < 1.0e-11:\treached", st_str)

@@ -73,7 +73,8 @@ end
         @test isapprox(M, p_star, D, lrbfgs_s.direction_update(dmp, lrbfgs_s))
 
         @test startswith(
-            repr(lrbfgs_s), "# Solver state for `Manopt.jl`s Quasi Newton Method\n"
+            Manopt.status_summary(lrbfgs_s; inline = false),
+            "# Solver state for `Manopt.jl`s Quasi Newton Method\n"
         )
         @test get_last_stepsize(dmp, lrbfgs_s, lrbfgs_s.stepsize) > 0
         @test Manopt.get_iterate(lrbfgs_s) == x_lrbfgs
@@ -82,26 +83,17 @@ end
         @test Manopt.get_message(lrbfgs_s) == ""
         # with Cached Basis
         x_lrbfgs_cached = quasi_Newton(
-            M,
-            f,
-            grad_f,
-            p;
+            M, f, grad_f, p;
             stopping_criterion = StopWhenGradientNormLess(10^(-6)),
             basis = get_basis(M, p, DefaultOrthonormalBasis()),
         )
         @test isapprox(M, x_lrbfgs_cached, x_lrbfgs)
-
         x_lrbfgs_cached_2 = quasi_Newton(
-            M,
-            f,
-            grad_f,
-            p;
+            M, f, grad_f, p;
             stopping_criterion = StopWhenGradientNormLess(10^(-6)),
-            basis = get_basis(M, p, DefaultOrthonormalBasis()),
-            memory_size = -1,
+            basis = get_basis(M, p, DefaultOrthonormalBasis()), memory_size = -1,
         )
         @test isapprox(M, x_lrbfgs_cached_2, x_lrbfgs; atol = 1.0e-5)
-
         # with Costgrad
         mcgo = ManifoldCostGradientObjective(costgrad)
 
@@ -111,14 +103,9 @@ end
         @test isapprox(M, x_lrbfgs_costgrad, x_lrbfgs; atol = 1.0e-5)
 
         clrbfgs_s = quasi_Newton(
-            M,
-            f,
-            grad_f,
-            p;
-            cautious_update = true,
-            stopping_criterion = StopWhenGradientNormLess(10^(-6)),
-            return_state = true,
-            debug = [],
+            M, f, grad_f, p;
+            cautious_update = true, stopping_criterion = StopWhenGradientNormLess(10^(-6)),
+            return_state = true, debug = [],
         )
         # Test direction passthrough
         x_clrbfgs = get_solver_result(clrbfgs_s)
@@ -129,10 +116,7 @@ end
         @test norm(x_clrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
 
         x_rbfgs_Huang = quasi_Newton(
-            M,
-            f,
-            grad_f,
-            p;
+            M, f, grad_f, p;
             memory_size = -1,
             stepsize = WolfePowellBinaryLinesearch(
                 M;
@@ -146,16 +130,10 @@ end
         for T in [InverseBFGS(), BFGS(), InverseDFP(), DFP(), InverseSR1(), SR1()]
             for c in [true, false]
                 x_state = quasi_Newton(
-                    M,
-                    f,
-                    grad_f,
-                    p;
-                    direction_update = T,
-                    cautious_update = c,
-                    memory_size = -1,
+                    M, f, grad_f, p;
+                    direction_update = T, cautious_update = c, memory_size = -1,
                     stopping_criterion = StopWhenGradientNormLess(10^(-12)),
-                    return_state = true,
-                    debug = [],
+                    return_state = true, debug = [],
                 )
                 x_direction = get_solver_result(x_state)
                 D = zero_vector(M, x_direction)
@@ -196,11 +174,7 @@ end
 
         # An in-place preconditioner
         x_lrbfgs = quasi_Newton(
-            M,
-            f,
-            grad_f,
-            x;
-            memory_size = -1,
+            M, f, grad_f, x; memory_size = -1,
             preconditioner = QuasiNewtonPreconditioner(
                 (M, Y, p, X) -> (Y .= 0.5 .* X); evaluation = InplaceEvaluation()
             ),
@@ -214,17 +188,10 @@ end
         @test isapprox(M, x_cached_lrbfgs, x_solution; atol = rayleigh_atol)
 
         for T in [
-                    InverseDFP(),
-                    DFP(),
-                    Broyden(0.5),
-                    InverseBroyden(0.5),
-                    Broyden(0.5, :Davidon),
-                    Broyden(0.5, :InverseDavidon),
-                    InverseBFGS(),
-                    BFGS(),
+                    InverseDFP(), DFP(), Broyden(0.5), InverseBroyden(0.5),
+                    Broyden(0.5, :Davidon), Broyden(0.5, :InverseDavidon), InverseBFGS(), BFGS(),
                 ],
                 c in [true, false]
-
             x_direction = quasi_Newton(
                 M, f, grad_f, x; direction_update = T, cautious_update = c, memory_size = -1
             )
@@ -252,32 +219,18 @@ end
 
         x = Matrix{Float64}(I, n, n)[:, 2:(k + 1)]
         x_inverseBFGSCautious = quasi_Newton(
-            M,
-            f,
-            grad_f,
-            x;
-            memory_size = 8,
-            vector_transport_method = ProjectionTransport(),
-            retraction_method = QRRetraction(),
-            cautious_update = true,
-            stopping_criterion = StopWhenGradientNormLess(1.0e-6),
+            M, f, grad_f, x; memory_size = 8,
+            vector_transport_method = ProjectionTransport(), retraction_method = QRRetraction(),
+            cautious_update = true, stopping_criterion = StopWhenGradientNormLess(1.0e-6),
         )
 
         x_inverseBFGSHuang = quasi_Newton(
-            M,
-            f,
-            grad_f,
-            x;
-            memory_size = 8,
+            M, f, grad_f, x; memory_size = 8,
             stepsize = WolfePowellBinaryLinesearch(
-                M;
-                retraction_method = QRRetraction(),
-                vector_transport_method = ProjectionTransport(),
+                M; retraction_method = QRRetraction(), vector_transport_method = ProjectionTransport(),
             ),
-            vector_transport_method = ProjectionTransport(),
-            retraction_method = QRRetraction(),
-            cautious_update = true,
-            stopping_criterion = StopWhenGradientNormLess(1.0e-6),
+            vector_transport_method = ProjectionTransport(), retraction_method = QRRetraction(),
+            cautious_update = true, stopping_criterion = StopWhenGradientNormLess(1.0e-6),
         )
         @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol = 2.0e-4)
     end
@@ -292,19 +245,10 @@ end
         grad_f(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
         x_solution = abs.(eigvecs(A)[:, 1])
 
-        x = [
-            0.7011245948687502
-            -0.1726003159556036
-            0.38798265967671103
-            -0.5728026616491424
-        ]
+        x = [0.7011245948687502, -0.1726003159556036, 0.38798265967671103, -0.5728026616491424]
         x_lrbfgs = quasi_Newton(
-            M,
-            F,
-            grad_f,
-            x;
+            M, F, grad_f, x; memory_size = -1,
             basis = get_basis(M, x, DefaultOrthonormalBasis()),
-            memory_size = -1,
             stopping_criterion = StopWhenGradientNormLess(1.0e-9),
         )
         @test norm(abs.(x_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
@@ -425,8 +369,7 @@ end
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(
-            M;
-            p = copy(M, p),
+            M; p = copy(M, p),
             direction_update = QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
             nondescent_direction_behavior = :step_towards_negative_gradient,
         )
@@ -440,8 +383,7 @@ end
         ) solve!(mp, dqns)
 
         qns = QuasiNewtonState(
-            M;
-            p = copy(M, p),
+            M; p = copy(M, p),
             direction_update = QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
             nondescent_direction_behavior = :step_towards_negative_gradient,
         )
@@ -450,8 +392,7 @@ end
         @test qns.direction_update.num_times_init == 1
 
         qns = QuasiNewtonState(
-            M;
-            p = copy(M, p),
+            M; p = copy(M, p),
             direction_update = QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
             nondescent_direction_behavior = :reinitialize_direction_update,
         )
@@ -482,8 +423,7 @@ end
         mp = DefaultManoptProblem(M, gmp)
         qdu = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2)
         qns = QuasiNewtonState(
-            M;
-            p = copy(M, p),
+            M; p = copy(M, p),
             direction_update = QuasiNewtonCautiousDirectionUpdate(qdu),
         )
         # current bound with the gradient is 2, so we choose an sk larger than that

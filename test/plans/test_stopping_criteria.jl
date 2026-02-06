@@ -150,8 +150,7 @@ end
         @test g(gp, gs, 2)
         @test length(get_reason(g)) > 0
         h = StopWhenSmallerOrEqual(:p, 1.0e-4)
-        @test repr(h) ==
-            "StopWhenSmallerOrEqual(:p, $(1.0e-4))\n    $(Manopt.status_summary(h))"
+        @test repr(h) == "StopWhenSmallerOrEqual(:p, $(1.0e-4))"
         @test get_reason(h) == ""
         # Trigger manually
         h.at_iteration = 1
@@ -233,7 +232,7 @@ end
             stepsize = Manopt.ConstantStepsize(Euclidean()),
         )
         swecl = StopWhenEntryChangeLess(:p, (p, s, v, w) -> norm(w - v), 1.0e-5)
-        @test startswith(repr(swecl), "StopWhenEntryChangeLess\n")
+        @test startswith(repr(swecl), "StopWhenEntryChangeLess(")
         Manopt.set_parameter!(swecl, :Threshold, 1.0e-4)
         @test swecl.threshold == 1.0e-4
         @test !swecl(dmp, gds, 1) #First call stores
@@ -257,8 +256,7 @@ end
         mso = ManifoldSubgradientObjective(f, ∂f)
         mp = DefaultManoptProblem(M, mso)
         c2 = StopWhenSubgradientNormLess(1.0e-6)
-        sc2 = "StopWhenSubgradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c2))"
-        @test repr(c2) == sc2
+        @test repr(c2) == "StopWhenSubgradientNormLess(1.0e-6)"
         st = SubGradientMethodState(M; p = p, stopping_criterion = c2)
         st.X = ∂f(M, 2p)
         @test !c2(mp, st, 1)
@@ -277,7 +275,7 @@ end
         f(M, p) = norm(p) > 2 ? NaN : norm(p)
         M = Euclidean(2)
         p = [1.0, 2.0]
-        @test startswith(repr(sc1), "StopWhenCostNaN()\n")
+        @test startswith(repr(sc1), "StopWhenCostNaN()")
         mco = ManifoldCostObjective(f)
         mp = DefaultManoptProblem(M, mco)
         s = NelderMeadState(M)
@@ -292,7 +290,7 @@ end
         @test length(get_reason(sc1)) > 0
 
         sc2 = StopWhenCostChangeLess(1.0e-6)
-        @test startswith(repr(sc2), "StopWhenCostChangeLess with threshold 1.0e-6.\n")
+        @test startswith(repr(sc2), "StopWhenCostChangeLess(1.0e-6)")
         @test get_reason(sc2) == ""
         s.p = [0.0, 0.1]
         @test !sc2(mp, s, 1) # Init check
@@ -305,7 +303,7 @@ end
 
         s.p .= NaN
         sc3 = StopWhenIterateNaN()
-        @test startswith(repr(sc3), "StopWhenIterateNaN()\n")
+        @test startswith(repr(sc3), "StopWhenIterateNaN()")
         @test sc3(mp, s, 1) #always returns true since p was now set to NaN
         @test length(get_reason(sc3)) > 0
         s.p = p
@@ -326,7 +324,7 @@ end
         @test Manopt.indicates_convergence(sc) == Manopt.indicates_convergence(s)
         @test has_converged(sc) == has_converged(s)
         @test get_reason(sc) == ""
-        @test startswith(repr(sc), "StopWhenRepeated with the Stopping Criterion:\n")
+        @test startswith(repr(sc), "StopWhenRepeated(")
         @test startswith(Manopt.status_summary(sc), "0 ≥ 3 (consecutive): not reached")
         @test !sc(p, o, 1) # still count 0
         @test !sc(p, o, 2) # 1
@@ -353,10 +351,7 @@ end
         @test Manopt.indicates_convergence(sc) == Manopt.indicates_convergence(s)
         @test has_converged(sc) == has_converged(s)
         @test get_reason(sc) == ""
-        @test startswith(
-            repr(sc),
-            "StopWhenCriterionWithIterationCondition with the Stopping Criterion:\n",
-        )
+        @test startswith(repr(sc), "StopWhenCriterionWithIterationCondition(")
         @test startswith(Manopt.status_summary(sc), "Base.Fix2{typeof(>), Int64}(>, 5) &&")
         sc2 = s ⩼ 5
         @test typeof(sc) === typeof(sc2)

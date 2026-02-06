@@ -113,7 +113,7 @@ end
 
     lm_r = LevenbergMarquardt(M, F_RLM, jacF_RLM, p0, length(pts_LM); return_state = true)
     lm_rs = "# Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm\n"
-    @test startswith(repr(lm_r), lm_rs)
+    @test startswith(Manopt.status_summary(lm_r; inline = false), lm_rs)
     p_opt = get_state(lm_r).p
     @test norm(M, p_opt, get_gradient(lm_r)) < 2.0e-3
     p_atol = 1.5e-2

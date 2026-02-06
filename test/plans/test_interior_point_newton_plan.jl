@@ -70,7 +70,7 @@ using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
     @test set_gradient!(ipns, M, 3 * p) == ipns
     @test get_gradient(ipns) == 3 * p
     show_str = "# Solver state for `Manopt.jl`s Interior Point Newton Method\n"
-    @test startswith(repr(ipns), show_str)
+    @test startswith(Manopt.status_summary(ipns; inline = false), show_str)
     #
     sc = StopWhenKKTResidualLess(1.0e-5)
     @test length(get_reason(sc)) == 0

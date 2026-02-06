@@ -43,7 +43,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
             p = p0,
         )
         @test startswith(
-            repr(arcs),
+            Manopt.status_summary(arcs; inline = false),
             "# Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)",
         )
         p1 = rand(M)
@@ -104,7 +104,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         )
 
         st1 = StopWhenFirstOrderProgress(0.5)
-        @test startswith(repr(st1), "StopWhenFirstOrderProgress(0.5)\n")
+        @test startswith(repr(st1), "StopWhenFirstOrderProgress(0.5)")
         @test Manopt.indicates_convergence(st1)
         @test get_reason(st1) == ""
         # fake a trigger
@@ -114,10 +114,11 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         @test length(get_reason(st1)) > 0
 
         st2 = StopWhenAllLanczosVectorsUsed(2)
-        @test startswith(repr(st2), "StopWhenAllLanczosVectorsUsed(2)\n")
+        @test startswith(repr(st2), "StopWhenAllLanczosVectorsUsed(2)")
         @test !Manopt.indicates_convergence(st2)
         @test startswith(
-            repr(arcs2.sub_state), "# Solver state for `Manopt.jl`s Lanczos Iteration\n"
+            Manopt.status_summary(arcs2.sub_state; inline = false),
+            "# Solver state for `Manopt.jl`s Lanczos Iteration\n"
         )
         @test get_reason(st2) == ""
         # manually trigger
@@ -165,14 +166,8 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         @test isapprox(M, p_min, p4)
         # with a large η1 to trigger the bad model case once
         p5 = adaptive_regularization_with_cubics(
-            M,
-            f,
-            grad_f,
-            Hess_f;
-            θ = 0.5,
-            σ = 100.0,
-            η1 = 0.89,
-            retraction_method = PolarRetraction(),
+            M, f, grad_f, Hess_f;
+            θ = 0.5, σ = 100.0, η1 = 0.89, retraction_method = PolarRetraction(),
         )
         @test isapprox(M, p_min, p5)
 
@@ -198,24 +193,14 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
 
         sub_problem = DefaultManoptProblem(M2, arcmo)
         sub_state = GradientDescentState(
-            M2;
-            p = zero_vector(M, p0),
-            stopping_criterion = StopAfterIteration(500) |
-                StopWhenGradientNormLess(1.0e-11) |
-                StopWhenFirstOrderProgress(0.1),
+            M2; p = zero_vector(M, p0),
+            stopping_criterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-11) | StopWhenFirstOrderProgress(0.1),
         )
         q3 = copy(M, p0)
         adaptive_regularization_with_cubics!(
-            M,
-            mho,
-            q3;
-            θ = 0.5,
-            σ = 100.0,
-            retraction_method = PolarRetraction(),
-            sub_problem = sub_problem,
-            sub_state = sub_state,
-            return_objective = true,
-            return_state = true,
+            M, mho, q3; θ = 0.5, σ = 100.0,
+            retraction_method = PolarRetraction(), sub_problem = sub_problem, sub_state = sub_state,
+            return_objective = true, return_state = true,
         )
         @test isapprox(M, p_min, q3)
 

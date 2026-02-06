@@ -81,16 +81,12 @@ using Manifolds, Manopt, Random, Test
     )
     @test isapprox(M, mean_pg_1, mean_pg_3)
     @test startswith(
-        repr(st), "# Solver state for `Manopt.jl`s Projected Gradient Method\n"
+        Manopt.status_summary(st; inline = false),
+        "# Solver state for `Manopt.jl`s Projected Gradient Method\n"
     )
     stop_when_stationary = st.stop.criteria[2]
     @test Manopt.indicates_convergence(stop_when_stationary)
-    @test repr(stop_when_stationary) ==
-        "StopWhenProjectedGradientStationary($(stop_when_stationary.threshold))\n    $(
-        Manopt.status_summary(
-            stop_when_stationary
-        )
-    )"
+    @test repr(stop_when_stationary) == "StopWhenProjectedGradientStationary($(stop_when_stationary.threshold))"
     @test length(get_reason(stop_when_stationary)) > 0
     @test length(get_reason(StopWhenProjectedGradientStationary(M, 1.0e-7))) == 0
 end

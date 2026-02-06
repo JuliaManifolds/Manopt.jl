@@ -6,7 +6,8 @@ using Manifolds, Manopt, ManifoldsBase, Test
     η = zero_vector(M, p)
     s = TruncatedConjugateGradientState(TangentSpace(M, p); X = η)
     @test startswith(
-        repr(s), "# Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent\n"
+        Manopt.status_summary(s; inline = false),
+        "# Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent\n"
     )
     @test get_iterate(s) == η
     srr = StopWhenResidualIsReducedByFactorOrPower()

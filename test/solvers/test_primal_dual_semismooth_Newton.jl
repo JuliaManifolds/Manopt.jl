@@ -46,47 +46,20 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
     ξ0 = zero_vector(M, m)
 
     s = primal_dual_semismooth_Newton(
-        M,
-        N,
-        f,
-        x0,
-        ξ0,
-        m,
-        n,
-        prox_f,
-        Dprox_F,
-        prox_g_dual,
-        Dprox_G_dual,
-        DΛ,
-        adjoint_DΛ;
-        primal_stepsize = σ,
-        dual_stepsize = τ,
-        return_state = true,
+        M, N, f, x0, ξ0, m, n, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ;
+        primal_stepsize = σ, dual_stepsize = τ, return_state = true,
     )
     @test startswith(
-        repr(s), "# Solver state for `Manopt.jl`s primal dual semismooth Newton"
+        Manopt.status_summary(s; inline = false),
+        "# Solver state for `Manopt.jl`s primal dual semismooth Newton"
     )
     y = get_solver_result(s)
     @test x_hat ≈ y atol = 2 * 1.0e-7
 
     update_dual_base(p, o, i) = o.n
     o2 = primal_dual_semismooth_Newton(
-        M,
-        N,
-        f,
-        x0,
-        ξ0,
-        m,
-        n,
-        prox_f,
-        Dprox_F,
-        prox_g_dual,
-        Dprox_G_dual,
-        DΛ,
-        adjoint_DΛ;
-        primal_stepsize = σ,
-        dual_stepsize = τ,
-        update_dual_base = update_dual_base,
+        M, N, f, x0, ξ0, m, n, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ;
+        primal_stepsize = σ, dual_stepsize = τ, update_dual_base = update_dual_base,
         return_state = false,
     )
     y2 = o2

@@ -116,7 +116,7 @@ import Manifolds: inner
             M, f, g, grad_h, p0; grad_g = grad_g, gradient = grad_f, return_state = true
         )
         @test startswith(
-            repr(s1), "# Solver state for `Manopt.jl`s Difference of Convex Algorithm\n"
+            Manopt.status_summary(s1), "# Solver state for `Manopt.jl`s Difference of Convex Algorithm\n"
         )
         p3 = get_solver_result(s1)
         @test Manopt.get_message(s1) == "" # no message in last step
@@ -151,7 +151,7 @@ import Manifolds: inner
             M, grad_h, p0; g = g, grad_g = grad_g, gradient = grad_f, return_state = true
         )
         @test startswith(
-            repr(s2),
+            Manopt.status_summary(s2; inline = false),
             "# Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm\n",
         )
         p6 = get_solver_result(s2)
