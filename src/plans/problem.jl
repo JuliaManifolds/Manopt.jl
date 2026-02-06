@@ -22,7 +22,6 @@ function Base.show(io::IO, ::MIME"text/plain", amp::AbstractManoptProblem)
     return multiline ? status_summary(io, amp) : show(io, amp)
 end
 
-
 @doc """
     DefaultManoptProblem{TM <: AbstractManifold, Objective <: AbstractManifoldObjective}
 
@@ -33,6 +32,27 @@ struct DefaultManoptProblem{TM <: AbstractManifold, O <: AbstractManifoldObjecti
     AbstractManoptProblem{TM}
     manifold::TM
     objective::O
+end
+
+function show(io::IO, dmp::DefaultManoptProblem)
+    print(io, "DefaultManoptProblem(")
+    show(io, dmp.manifold)
+    print(io, ", ")
+    show(io, dmp.objective)
+    return print(io, ")")
+end
+
+function status_summary(dmp::DefaultManoptProblem; inline = false)
+    inline && return "An optimization problem to minimize $(dmp.objective) on the manifold $(dmp.manifold)"
+    return """
+    An optimization problem for Manopt.jl
+
+    ## Manifold
+      $(replace(repr(dmp.manifold), '\n' => "\n  "))
+
+    # Objective
+      $(replace(status_summary(dmp.objective, inline = false), '\n' => "\n  "))
+    """
 end
 
 """
