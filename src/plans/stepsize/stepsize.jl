@@ -2361,7 +2361,7 @@ function _hz_evaluate_next_step(
     vector_transport_to!(
         M, hzls.candidate_direction, p, η, hzls.candidate_point, hzls.vector_transport_method
     )
-    f, df = get_cost_and_differential(mp, hzls.candidate_point, hzls.candidate_direction)
+    f, df = get_cost_and_differential(mp, hzls.candidate_point, hzls.candidate_direction; Y = hzls.temporary_tangent)
     hzls.last_evaluation_index += 1
     triples[hzls.last_evaluation_index] = UnivariateTriple(α, f, df)
 
