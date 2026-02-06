@@ -948,7 +948,7 @@ function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNorm
 end
 # Maybe a bit too precise, but in this case we get a coefficient vector and we want a tangent vector
 function get_solver_result(
-        dmp::DefaultManoptProblem{<:TangentSpace, <: SymmetricLinearSystem{<:AbstractEvaluationType,<:LevenbergMarquardtLinearSurrogateObjective}},
+        dmp::DefaultManoptProblem{<:TangentSpace, <:SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateObjective}},
         cnss::CoordinatesNormalSystemState
     )
     TpM = get_manifold(dmp)

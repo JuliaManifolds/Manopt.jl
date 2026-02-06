@@ -3,8 +3,9 @@ using Manopt, Manifolds, LinearAlgebra, Test, Chairmarks
 M = SymmetricPositiveDefinite(2)
 # We generate a set of points that are “opposite” each other such that the mean is still I
 e = Matrix{Float64}(I, 2, 2)
-pts = [e, exp(M, e, [0.2 0.1; 0.1 0.0]), exp(M, e, -[0.2 0.1; 0.1 0.0]),
-    exp(M, e, [0.2 -0.1; -0.1 0.0]), exp(M, e, -[0.2 -0.1; -0.1 0.0])
+pts = [
+    e, exp(M, e, [0.2 0.1; 0.1 0.0]), exp(M, e, -[0.2 0.1; 0.1 0.0]),
+    exp(M, e, [0.2 -0.1; -0.1 0.0]), exp(M, e, -[0.2 -0.1; -0.1 0.0]),
 ]
 # M = Rotations(4)
 # pts = rand(M, 5)
@@ -36,7 +37,6 @@ qc = mean(M, pts)
 cost(M, p) = 0.5 * sum(distance(M, p, q)^2 for q in pts)
 
 
-
 # Default Residual CG on this approach – works but probably allocates a bit too much (matrices coordinates/vector...)
 q1 = LevenbergMarquardt(
     M, [f], p0;
@@ -64,9 +64,11 @@ q1b = copy(M, p0)
 
 q2b = copy(M, p0)
 
-(@b LevenbergMarquardt!(
-    M, [f], q2b;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()], sub_state = CoordinatesNormalSystemState(M),
-)) |> repr |> println
+(
+    @b LevenbergMarquardt!(
+        M, [f], q2b;
+        β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()], sub_state = CoordinatesNormalSystemState(M),
+    )
+) |> repr |> println
 
 @info distance(M, q2, q2b)

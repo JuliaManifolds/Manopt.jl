@@ -177,10 +177,13 @@ function linear_operator!(
 end
 
 @doc """
+    vector_field(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p)
+    vector_field!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p)
     vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjective)
     vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective)
 
-evaluate the stored value for computing the right hand side ``b`` in ``$(_tex(:Cal, "A"))=-b``.
+evaluate the stored value for computing the right hand side ``b`` in ``$(_tex(:Cal, "A"))=-b``,
+either providing a tangent space or a manifold and a point.
 """
 function vector_field(
         M::AbstractManifold, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, p
@@ -202,6 +205,30 @@ end
 function vector_field!(
         M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, p
     )
+    return slso.b!!(M, Y, p)
+end
+#Also on TpM – shortcuts
+function vector_field(
+        TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}
+    )
+    return slso.b!!(base_manifold(TpM), base_point(TpM))
+end
+function vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation})
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    Y = zero_vector(M, p)
+    return slso.b!!(M, Y, p)
+end
+function vector_field!(
+        TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}
+    )
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return copyto!(M, Y, p, slso.b!!(M, p))
+end
+function vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective{InplaceEvaluation})
+    M = base_manifold(TpM)
+    p = base_point(TpM)
     return slso.b!!(M, Y, p)
 end
 
