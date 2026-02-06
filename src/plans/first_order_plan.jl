@@ -607,6 +607,9 @@ individual one that provides these values.
 """
 abstract type DirectionUpdateRule end
 
+# These are usually short enough that their summary can just be the representation
+status_summary(dru::DirectionUpdateRule; inline = false) = repr(dru)
+
 """
     IdentityUpdateRule <: DirectionUpdateRule
 
