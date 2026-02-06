@@ -221,12 +221,13 @@ function get_message(dcs::TrustRegionsState)
     # for now only the sub solver might have messages
     return get_message(dcs.sub_state)
 end
-function show(io::IO, trs::TrustRegionsState)
+function status_summary(trs::TrustRegionsState; inline = false)
     i = get_count(trs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
+    inline && (return "$(repr(trs)) – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
     sub = repr(trs.sub_state)
-    sub = replace(sub, "\n" => "\n    | ")
+    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
     s = """
     # Solver state for `Manopt.jl`s Trust Region Method
     $Iter
@@ -242,10 +243,9 @@ function show(io::IO, trs::TrustRegionsState)
         | $(sub)
 
     ## Stopping criterion
-
-    $(status_summary(trs.stop))
+    $(status_summary(trs.stop; inline = false))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_TR = """

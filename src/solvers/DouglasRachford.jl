@@ -107,11 +107,12 @@ mutable struct DouglasRachfordState{
         )
     end
 end
-function show(io::IO, drs::DouglasRachfordState)
+function status_summary(drs::DouglasRachfordState; inline = false)
     i = get_count(drs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     refl_e = drs.reflection_evaluation == AllocatingEvaluation() ? "allocating" : "in place"
     Conv = indicates_convergence(drs.stop) ? "Yes" : "No"
+    inline && (return "$(repr(drs)) – $(Iter) $(has_converged(drs) ? "(converged)" : "")")
     P = drs.parallel ? "Parallel " : ""
     s = """
     # Solver state for `Manopt.jl`s $P Douglas Rachford Algorithm
@@ -119,10 +120,9 @@ function show(io::IO, drs::DouglasRachfordState)
     using an $(refl_e) reflection.
 
     ## Stopping criterion
-
     $(status_summary(drs.stop))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 get_iterate(drs::DouglasRachfordState) = drs.p
 function set_iterate!(drs::DouglasRachfordState, p)

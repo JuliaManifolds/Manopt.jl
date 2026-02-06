@@ -122,7 +122,7 @@ using ManifoldsBase, Manopt, Test
         # the number represents the case, a/i alloc/inplace
         # Use old names here
         mfo1a = ManifoldCostGradientObjective(fg)
-        @test startswith(repr(mfo1a), "ManifoldFirstOrderObjective{AllocatingEvaluation, ")
+        @test startswith(repr(mfo1a), "ManifoldFirstOrderObjective(; costgradient = ")
         mfo1i = ManifoldCostGradientObjective(fg!; evaluation = InplaceEvaluation())
         mfo2a = ManifoldGradientObjective(f, grad_f)
         mfo2i = ManifoldGradientObjective(f, grad_f!; evaluation = InplaceEvaluation())

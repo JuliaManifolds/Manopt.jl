@@ -182,19 +182,6 @@ function show(io::IO, smco::SimpleManifoldCachedObjective)
     return print(io, "; c = $(smco.c), initialized = $(smco.c_valid && smco.X_valid), p = $(smco.p), X = $(smco.X))")
 end
 
-function status_summary(smco::SimpleManifoldCachedObjective; inline = false)
-    inline && return "A simple cache objective caching one p,X,c for $(status_summary(smco.objective, inline = true))"
-    return """
-    A simple cache objective caching
-    * one iterate
-    * one gradient/tangent vector
-    * one cost/value evaluation.
-    used for
-
-    $(status_summary(smco.objective, inline = false))
-    """
-end
-
 
 #
 # ManifoldCachedObjective constructor which errors by default
@@ -1100,13 +1087,18 @@ function show(
     ) where {S <: AbstractManoptSolverState}
     return print(io, "$(t[2])\n\n$(status_summary(t[1]))")
 end
-
-function status_summary(smco::SimpleManifoldCachedObjective)
+function status_summary(smco::SimpleManifoldCachedObjective; inline = false)
+    inline && return "A simple cache objective caching one p, X, and c for $(status_summary(smco.objective, inline = true))"
     s = """
     ## Cache
-    A `SimpleManifoldCachedObjective` to cache one point and one tangent vector for the iterate and gradient, respectively
+    A `SimpleManifoldCachedObjective` to cache one point, one tangent vector, and real number
+    for the iterate, the gradient, and the cost function, respectively.
+
+    At the current iterate
+    * the tangent vector is cached:\t$(smco.X_valid ? "Yes" : "No")
+    * the cost is cached:\t$(smco.c_valid ? "Yes" : "No")
     """
-    s2 = status_summary(smco.objective)
+    s2 = status_summary(smco.objective; inline = false)
     length(s2) > 0 && (s2 = "\n$(s2)")
     return "$(s)$(s2)"
 end

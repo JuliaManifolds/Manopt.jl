@@ -107,6 +107,7 @@ function status_summary(gds::GradientDescentState; inline = false)
     i = get_count(gds, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
+    inline && (return "$(repr(gds)) – $(Iter) $(has_converged(gds) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Gradient Descent
     $Iter
@@ -118,7 +119,6 @@ function status_summary(gds::GradientDescentState; inline = false)
 
     ## Stopping criterion
     $(status_summary(gds.stop; inline = true))
-
     This indicates convergence: $Conv"""
     return s
 end

@@ -197,10 +197,11 @@ function CMAESState(
     )
 end
 
-function show(io::IO, s::CMAESState)
+function status_summary(s::CMAESState; inline = false)
     i = get_count(s, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(s.stop) ? "Yes" : "No"
+    inline && (return "$(repr(s)) – $(Iter) $(has_converged(s) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy
     $Iter
@@ -228,10 +229,9 @@ function show(io::IO, s::CMAESState)
     * σ:                          $(s.σ)
 
     ## Stopping criterion
-
-    $(status_summary(s.stop))
+    $(status_summary(s.stop; inline = false))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 #
 # Access functions

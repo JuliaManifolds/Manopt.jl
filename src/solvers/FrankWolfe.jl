@@ -118,12 +118,13 @@ function set_iterate!(fws::FrankWolfeState, p)
     fws.p = p
     return fws
 end
-function show(io::IO, fws::FrankWolfeState)
+function status_summary(fws::FrankWolfeState; inline = false)
     i = get_count(fws, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(fws.stop) ? "Yes" : "No"
     sub = repr(fws.sub_state)
-    sub = replace(sub, "\n" => "\n    | ")
+    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
+    inline && (return "$(repr(fws)) – $(Iter) $(has_converged(fws) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Frank Wolfe Method
     $Iter
@@ -137,10 +138,9 @@ function show(io::IO, fws::FrankWolfeState)
     $(fws.stepsize)
 
     ## Stopping criterion
-
     $(status_summary(fws.stop))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_FW_problem = """

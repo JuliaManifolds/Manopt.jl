@@ -148,10 +148,11 @@ function get_message(qns::QuasiNewtonState)
     d = "$(length(d) > 0 ? "\n" : "")$(msg3)"
     return d
 end
-function show(io::IO, qns::QuasiNewtonState)
+function status_summary(qns::QuasiNewtonState; inline = false)
     i = get_count(qns, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(qns.stop) ? "Yes" : "No"
+    inline && (return "$(repr(qns)) – $(Iter) $(has_converged(qns) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Quasi Newton Method
     $Iter
@@ -164,10 +165,9 @@ function show(io::IO, qns::QuasiNewtonState)
     $(qns.stepsize)
 
     ## Stopping criterion
-
-    $(status_summary(qns.stop))
+    $(status_summary(qns.stop; inline = false))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 get_iterate(qns::QuasiNewtonState) = qns.p
 function set_iterate!(qns::QuasiNewtonState, M, p)

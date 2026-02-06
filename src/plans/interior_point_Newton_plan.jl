@@ -226,10 +226,11 @@ function get_message(ips::InteriorPointNewtonState)
     return get_message(ips.stepsize)
 end
 # pretty print state info
-function show(io::IO, ips::InteriorPointNewtonState)
+function status_summary(ips::InteriorPointNewtonState; inline = false)
     i = get_count(ips, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
+    inline && (return "$(repr(ips)) – $(Iter) $(has_converged(ips) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Interior Point Newton Method
     $Iter
@@ -238,13 +239,13 @@ function show(io::IO, ips::InteriorPointNewtonState)
     * σ: $(ips.σ)
     * retraction method: $(ips.retraction_method)
 
-    ## Stopping criterion
-    $(status_summary(ips.stop))
     ## Stepsize
-    $(ips.stepsize)
-    This indicates convergence: $Conv
-    """
-    return print(io, s)
+    $(status_summary(ips.stepsize; inline = false))
+
+    ## Stopping criterion
+    $(status_summary(ips.stop; inline = false))
+    This indicates convergence: $Conv"""
+    return s
 end
 
 #

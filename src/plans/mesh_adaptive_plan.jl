@@ -442,13 +442,13 @@ function MeshAdaptiveDirectSearchState(
 end
 get_iterate(mads::MeshAdaptiveDirectSearchState) = mads.p
 
-function show(io::IO, mads::MeshAdaptiveDirectSearchState)
+function status_summary(mads::MeshAdaptiveDirectSearchState; inline = false)
     i = get_count(mads, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
+    inline && (return "$(repr(mads)) – $(Iter) $(has_converged(mads) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s mesh adaptive direct search
     $Iter
-
     ## Parameters
     * mesh_size: $(mads.mesh_size)
     * scale_mesh: $(mads.scale_mesh)
@@ -458,9 +458,9 @@ function show(io::IO, mads::MeshAdaptiveDirectSearchState)
     * search:\n  $(replace(repr(mads.search), "\n" => "\n  ")[1:(end - 3)])
 
     ## Stopping criterion
-    $(status_summary(mads.stop))
+    $(status_summary(mads.stop; inline = false))
     """
-    return print(io, s)
+    return s
 end
 
 get_solver_result(ips::MeshAdaptiveDirectSearchState) = ips.p

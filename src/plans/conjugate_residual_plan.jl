@@ -261,10 +261,11 @@ function set_gradient!(crs::ConjugateResidualState, ::AbstractManifold, r)
     return crs
 end
 
-function show(io::IO, crs::ConjugateResidualState)
+function status_summary(crs::ConjugateResidualState; inline = false)
     i = get_count(crs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(crs.stop) ? "Yes" : "No"
+    inline && (return "$(repr(crs)) – $(Iter) $(has_converged(crs) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Conjugate Residual Method
     $Iter
@@ -273,11 +274,21 @@ function show(io::IO, crs::ConjugateResidualState)
     * β: $(crs.β)
 
     ## Stopping criterion
-    $(status_summary(crs.stop))
-
+    $(status_summary(crs.stop; inline = false))
     This indicates convergence: $Conv
     """
-    return print(io, s)
+    return s
+end
+
+function Base.show(io::IO, crs::ConjugateResidualState)
+    print(io, "ConjugateResidualState(tangent_space, sym_lin_sys_obj;")
+    print(io, ", X=$(crs.X)")
+    print(io, ", d=$(crs.d)")
+    print(io, ", r=$(crs.r)")
+    print(io, ", α=$(crs.α)")
+    print(io, ", β=$(crs.β)")
+    print(io, ", stopping_criterion=$(repr(crs.stop))")
+    return print(io, ")")
 end
 
 #
@@ -350,15 +361,12 @@ function get_reason(swrr::StopWhenRelativeResidualLess)
     end
     return ""
 end
-function status_summary(swrr::StopWhenRelativeResidualLess)
+function status_summary(swrr::StopWhenRelativeResidualLess; inline = false)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "‖r^(k)‖ / c < ε:\t$s"
+    return inline ? "‖r^(k)‖ / c < ε:\t$s" : "A stopping criterion to stop when the relative residual is less than the threshold of $(swrr.ϵ)\n\t$s"
 end
 indicates_convergence(::StopWhenRelativeResidualLess) = true
 function show(io::IO, swrr::StopWhenRelativeResidualLess)
-    return print(
-        io,
-        "StopWhenRelativeResidualLess($(swrr.c), $(swrr.ε))\n    $(status_summary(swrr))",
-    )
+    return print(io, "StopWhenRelativeResidualLess($(swrr.c), $(swrr.ε))")
 end

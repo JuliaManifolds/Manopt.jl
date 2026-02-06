@@ -114,10 +114,11 @@ mutable struct ParticleSwarmState{
         return s
     end
 end
-function show(io::IO, pss::ParticleSwarmState)
+function status_summary(pss::ParticleSwarmState; inline = false)
     i = get_count(pss, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pss.stop) ? "Yes" : "No"
+    inline && (return "$(repr(pss)) – $(Iter) $(has_converged(pss) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm
     $Iter
@@ -130,10 +131,9 @@ function show(io::IO, pss::ParticleSwarmState)
     * vector transport method:   $(pss.vector_transport_method)
 
     ## Stopping criterion
-
-    $(status_summary(pss.stop))
+    $(status_summary(pss.stop; inline = false))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 #
 # Access functions

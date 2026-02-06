@@ -138,12 +138,13 @@ function set_gradient!(s::AdaptiveRegularizationState, X)
     return s
 end
 
-function show(io::IO, arcs::AdaptiveRegularizationState)
+function status_summary(arcs::AdaptiveRegularizationState; inline = false)
     i = get_count(arcs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(arcs.stop) ? "Yes" : "No"
-    sub = repr(arcs.sub_state)
-    sub = replace(sub, "\n" => "\n    | ")
+    inline && (return "$(repr(arcs)) – $(Iter) $(has_converged(arcs) ? "(converged)" : "")")
+    sub = status_summary(arcs.sub_state; inline = inline)
+    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
     s = """
     # Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)
     $Iter
@@ -157,10 +158,9 @@ function show(io::IO, arcs::AdaptiveRegularizationState)
         | $(sub)
 
     ## Stopping criterion
-
-    $(status_summary(arcs.stop))
+    $(status_summary(arcs.stop; inline = false))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_ARC_model = """

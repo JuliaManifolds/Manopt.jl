@@ -74,7 +74,7 @@ end
         @test contains(sco1r, "X = ")
         @test contains(sco1r, "initialized = ")
         sco1s = Manopt.status_summary(sco1)
-        @test startswith(sco1s, "A simple cache objective caching")
+        @test startswith(sco1s, "## Cache")
         @test contains(sco1s, Manopt.status_summary(mgoa))
         # evaluated on init -> 1
         @test sco1.objective.functions[:cost].i == 1

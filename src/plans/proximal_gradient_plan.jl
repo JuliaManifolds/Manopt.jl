@@ -357,25 +357,23 @@ function set_iterate!(pgms::ProximalGradientMethodState, M, p)
     return pgms
 end
 
-function show(io::IO, pgms::ProximalGradientMethodState)
+function status_summary(pgms::ProximalGradientMethodState; inline = false)
     i = get_count(pgms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
+    inline && (return "$(repr(pgms)) – $(Iter) $(has_converged(pgms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Proximal Gradient Method
     $Iter
-
     ## Parameters
-
     * retraction_method:              $(pgms.retraction_method)
     * stepsize:                       $(typeof(pgms.stepsize))
     * acceleration:                   $(typeof(pgms.acceleration))
 
     ## Stopping criterion
-
-    $(status_summary(pgms.stop))
+    $(status_summary(pgms.stop; inline = false))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 #
 # Stepsize

@@ -69,10 +69,11 @@ end
 get_iterate(pgms::ProjectedGradientMethodState) = pgms.p
 get_gradient(pgms::ProjectedGradientMethodState) = pgms.X
 
-function show(io::IO, pgms::ProjectedGradientMethodState)
+function status_summary(pgms::ProjectedGradientMethodState; inline = false)
     i = get_count(pgms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
+    inline && (return "$(repr(pdsns)) – $(Iter) $(has_converged(pdsns) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Projected Gradient Method
     $Iter
@@ -87,10 +88,9 @@ function show(io::IO, pgms::ProjectedGradientMethodState)
     $(pgms.backtrack)
 
     ## Stopping criterion
-
-    $(status_summary(pgms.stop))
+    $(status_summary(pgms.stop; inline = false))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 #

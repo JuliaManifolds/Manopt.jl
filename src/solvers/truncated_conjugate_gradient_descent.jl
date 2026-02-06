@@ -101,10 +101,11 @@ mutable struct TruncatedConjugateGradientState{T, R <: Real, SC <: StoppingCrite
         return tcgs
     end
 end
-function show(io::IO, tcgs::TruncatedConjugateGradientState)
+function status_summary(tcgs::TruncatedConjugateGradientState; inline = false)
     i = get_count(tcgs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(tcgs.stop) ? "Yes" : "No"
+    inline && (return "$(repr(tcgs)) – $(Iter) $(has_converged(tcgs) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent
     $Iter
@@ -113,10 +114,9 @@ function show(io::IO, tcgs::TruncatedConjugateGradientState)
     * trust region radius: $(tcgs.trust_region_radius)
 
     ## Stopping criterion
-
-    $(status_summary(tcgs.stop))
+    $(status_summary(tcgs.stop; inline = false))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, Y)
     return tcgs.Y = Y

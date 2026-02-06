@@ -76,7 +76,7 @@ using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
     @test length(get_reason(sc)) == 0
     @test !sc(dmp, ipns, 1) #not yet reached
     @test Manopt.indicates_convergence(sc)
-    @test startswith(repr(sc), "StopWhenKKTResidualLess(1.0e-5)\n")
+    @test startswith(repr(sc), "StopWhenKKTResidualLess(1.0e-5)")
     # Fake stop
     sc.residual = 1.0e-7
     sc.at_iteration = 1

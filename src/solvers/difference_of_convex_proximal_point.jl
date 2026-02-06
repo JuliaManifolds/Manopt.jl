@@ -125,12 +125,13 @@ function get_message(dcs::DifferenceOfConvexProximalState)
     # for now only the sub solver might have messages
     return get_message(dcs.sub_state)
 end
-function show(io::IO, dcps::DifferenceOfConvexProximalState)
+function status_summary(dcps::DifferenceOfConvexProximalState; inline = false)
     i = get_count(dcps, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(dcps.stop) ? "Yes" : "No"
+    inline && (return "$(repr(dcps)) – $(Iter) $(has_converged(dcps) ? "(converged)" : "")")
     sub = repr(dcps.sub_state)
-    sub = replace(sub, "\n" => "\n    | ")
+    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm
     $Iter
@@ -144,10 +145,9 @@ function show(io::IO, dcps::DifferenceOfConvexProximalState)
     $(dcps.stepsize)
 
     ## Stopping criterion
-
-    $(status_summary(dcps.stop))
+    $(status_summary(dcps.stop; inline = false))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 #
 # Prox approach

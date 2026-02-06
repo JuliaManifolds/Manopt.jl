@@ -149,10 +149,11 @@ mutable struct NelderMeadState{
         )
     end
 end
-function show(io::IO, nms::NelderMeadState)
+function status_summary(nms::NelderMeadState; inline = false)
     i = get_count(nms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(nms.stop) ? "Yes" : "No"
+    inline && (return "$(repr(nms)) – $(Iter) $(has_converged(nms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Nelder Mead Algorithm
     $Iter
@@ -165,10 +166,9 @@ function show(io::IO, nms::NelderMeadState)
     * retraction method:         $(nms.retraction_method)
 
     ## Stopping criterion
-
-    $(status_summary(nms.stop))
+    $(status_summary(nms.stop; inline = false))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 get_iterate(O::NelderMeadState) = O.p
 function set_iterate!(O::NelderMeadState, ::AbstractManifold, p)

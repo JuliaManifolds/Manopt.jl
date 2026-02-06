@@ -175,16 +175,15 @@ function set_iterate!(pbms::ProximalBundleMethodState, M, p)
 end
 get_subgradient(pbms::ProximalBundleMethodState) = pbms.d
 
-function show(io::IO, pbms::ProximalBundleMethodState)
+function status_summary(pbms::ProximalBundleMethodState; inline = false)
     i = get_count(pbms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pbms.stop) ? "Yes" : "No"
+    inline && (return "$(repr(pbms)) – $(Iter) $(has_converged(pbms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Proximal Bundle Method
     $Iter
-
     ## Parameters
-
     * bundle size:                                $(pbms.bundle_size)
     * inverse retraction:                         $(pbms.inverse_retraction_method)
     * descent test parameter:                     $(pbms.m)
@@ -198,9 +197,9 @@ function show(io::IO, pbms::ProximalBundleMethodState)
     * proximal parameter μ:                       $(pbms.μ)
 
     ## Stopping criterion
-    $(status_summary(pbms.stop))
+    $(status_summary(pbms.stop; inline = false))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_PBM_dk = raw"""
