@@ -17,7 +17,7 @@ It otherwise does call the original differential.
 This simple cache does not take into account, that some first order objectives have a
 common function for cost & grad. It only caches the function that is actually called.
 
-# Constructor
+# Constructors
 
     SimpleManifoldCachedObjective(M::AbstractManifold, obj::AbstractManifoldFirstOrderObjective; kwargs...)
 
@@ -28,6 +28,13 @@ common function for cost & grad. It only caches the function that is actually ca
   see also `initialize=`
 * `c=[`get_cost`](@ref)`(M, obj, p)` or `0.0`: a value to store the cost function in `initialize`
 * `initialized=true`: whether to initialize the cached `X` and `c` or not.
+
+where both for `p` and `X` copies are generated before they are stored.
+
+    SimpleManifoldCachedObjective(obj::AbstractManifoldFirstOrderObjective, p, X, c; initialized = false)
+
+Similar as above but initialising all fields directly and without copies and `initialized` indicated whether
+the three values correspond to an evaluation from `obj`.
 """
 mutable struct SimpleManifoldCachedObjective{
         E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}, P, T, C,
@@ -50,6 +57,14 @@ function SimpleManifoldCachedObjective(
     ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
     q = copy(M, p)
     return SimpleManifoldCachedObjective{E, O, typeof(q), typeof(X), typeof(c)}(
+        obj, q, X, initialized, c, initialized
+    )
+end
+
+function SimpleManifoldCachedObjective(
+        obj::O, p, X, c; initialized = false
+    ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
+    return SimpleManifoldCachedObjective{E, O, typeof(p), typeof(X), typeof(c)}(
         obj, q, X, initialized, c, initialized
     )
 end
@@ -160,6 +175,26 @@ function get_gradient_function(
     recursive && (return get_gradient_function(sco.objective, recursive))
     return (M, X, p) -> get_gradient!(M, X, sco, p)
 end
+
+function show(io::IO, smco::SimpleManifoldCachedObjective)
+    print(io, "SimpleManifoldCachedObjective(")
+    show(io, smco.objective)
+    return print(io, "; c = $(smco.c), initialized = $(smco.c_valid && smco.X_valid), p = $(smco.p), X = $(smco.X))")
+end
+
+function status_summary(smco::SimpleManifoldCachedObjective; inline = false)
+    inline && return "A simple cache objective caching one p,X,c for $(status_summary(smco.objective, inline = true))"
+    return """
+    A simple cache objective caching
+    * one iterate
+    * one gradient/tangent vector
+    * one cost/value evaluation.
+    used for
+
+    $(status_summary(smco.objective, inline = false))
+    """
+end
+
 
 #
 # ManifoldCachedObjective constructor which errors by default
