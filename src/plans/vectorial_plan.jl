@@ -13,7 +13,7 @@ A type to indicate that the component, e.g. the Jacobian of a vectorial function
 is implemented in coordinates, i.e. with respect to a certain basis
 ``$(_tex(:Cal, "B"))`` of ``$(_math(:TangentSpace))``, at ``p∈$(_math(:Manifold))``.
 For example the Jacobian ``J_F(p) = (c_1^{$(_tex(:rm, "T"))},…,c_m^{$(_tex(:rm, "T"))})^{$(_tex(:rm, "T"))} ∈ ℝ^{m,d}``
-is then an actual matric, where each row ``c_i`` is the coordinate representation of the
+is then an actual metric, where each row ``c_i`` is the coordinate representation of the
 gradient ``$(_tex(:grad)) f_i`` of the component functions of ``F``,
 cf. [`get_coordinates`](@extref `ManifoldsBase.get_coordinates`).
 
@@ -562,7 +562,7 @@ _doc_get_jacobian_matrix_vgf = """
     get_jacobian!(M::AbstractManifold, J, vgf::AbstractVectorGradientFunction, p; kwargs...)
 
 Return the Jacobian ``J_F(p): $(_math(:TangentSpace)) → ℝ^m`` of a [`AbstractVectorGradientFunction`](@ref) `vgf`,
-i.e. a function ``F: $(_math(:Manifold)) → ℝ^m``, where `p ∈ $(_math(:Manifold))`, in matric form with respect to
+i.e. a function ``F: $(_math(:Manifold)) → ℝ^m``, where `p ∈ $(_math(:Manifold))`, in matrix form with respect to
 a basis ``$(_tex(:Cal, "B")) = $(_tex(:set, "Y_1,…,Y_n"))``of the tangent space.
 
 Then decomposing a tangent vector ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "d")) c_iX_i``
@@ -698,7 +698,7 @@ J_F(p)[X] = $(
 ````
 
 Given a basis ``$(_tex(:set, "Y_1,…,Y_n"))`` this can also be computed in coordinates of this basis.
-Then it simplifies to a matric multiplication.
+Then it simplifies to a matrix multiplication.
 
 This can be computed in-place of `a`.
 """
@@ -998,7 +998,7 @@ end
 
 #
 #
-# --- Adjoint Jacobian function in terms of gradients as a matric-vector product in a basis
+# --- Adjoint Jacobian function in terms of gradients as a matrix-vector product in a basis
 
 _doc_get_adjoint_jacobian_function_coeff = """
     get_adjoint_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, a, B::AbstractBasis; kwargs...)
