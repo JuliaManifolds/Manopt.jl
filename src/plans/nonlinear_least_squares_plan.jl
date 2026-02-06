@@ -1261,7 +1261,7 @@ function normal_vector_field!(
     # Now compute J_F^*(p)[C^T y] (inplace of y)
     y .= (ρ_prime / (1 - α)) * (I - α * (y * y') ./ F_p_norm2) * y
     # Now apply the adjoint
-    # TODO: Do the correspnding dispatch cases already exist?
+    # TODO: Do the corresponding dispatch cases already exist?
     get_adjoint_jacobian!(M, c, o, p, y, B)
     return c
 end

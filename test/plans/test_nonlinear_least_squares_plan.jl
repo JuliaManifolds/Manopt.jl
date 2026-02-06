@@ -24,8 +24,8 @@ using Manifolds, Manopt, Test
         # Smoothing types
 
         # Test all (new) possible combinations of vectorial cost and Jacobian
-        # (1) [F]unction (Gradient), [C]omponent (Gradients), [J] Coordinate (Jacobian in Basis)
-        # (2) [a]llocating [i] inplace
+        # (1) Function (F, Gradient), Component (C, Gradients), [J] Coefficient (Jacobian in Basis)
+        # (2) [a] allocating [i] in place
         nlsoFa = NonlinearLeastSquaresObjective(
             f, JF, 2; jacobian_type = FunctionVectorialType()
         )
