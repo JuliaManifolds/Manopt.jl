@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * A robustified version of the Riemannian Levenberg Marquardt algorithm
+* An option to disable the warm start the conjugate residual currently does when used as a subsolver.
 
 ### Changed
 

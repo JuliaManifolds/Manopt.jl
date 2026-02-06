@@ -49,12 +49,8 @@ $(_note(:OutputSection))
 conjugate_residual(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual(
-        TpM::TangentSpace,
-        A,
-        b,
-        X = zero_vector(TpM);
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        TpM::TangentSpace, A, b, X = zero_vector(TpM);
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
     slso = SymmetricLinearSystemObjective(A, b; evaluation = evaluation, kwargs...)
     return conjugate_residual(TpM, slso, X; kwargs...)
@@ -99,11 +95,20 @@ function initialize_solver!(
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
     p = base_point(TpM)
-    linear_operator!(M, crs.r, get_objective(amp), p, crs.X)
-    crs.r .*= -1
+    if crs.warm_start
+        linear_operator!(M, crs.r, get_objective(amp), p, crs.X)
+        crs.r .*= -1
+    else
+        zero_vector!(M, crs.X, p)
+        zero_vector!(M, crs.r, p)
+    end
     crs.r .-= vector_field(M, get_objective(amp), p)
     copyto!(TpM, crs.d, crs.r)
-    get_hessian!(amp, crs.Ar, crs.X, crs.r)
+    if crs.warm_start
+        get_hessian!(amp, crs.Ar, crs.X, crs.r)
+    else
+        zero_vector!(M, crs.Ar, p)
+    end
     copyto!(TpM, crs.Ad, crs.Ar)
     crs.α = 0.0
     crs.β = 0.0

@@ -950,7 +950,7 @@ end
 function get_solver_result(
         dmp::DefaultManoptProblem{<:TangentSpace, <: SymmetricLinearSystem{<:AbstractEvaluationType,<:LevenbergMarquardtLinearSurrogateObjective}},
         cnss::CoordinatesNormalSystemState
-    ) where {E}
+    )
     TpM = get_manifold(dmp)
     M = base_manifold(TpM)
     p = base_point(TpM)

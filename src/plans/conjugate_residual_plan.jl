@@ -220,6 +220,9 @@ A state for the [`conjugate_residual`](@ref) solver.
 * `α::R`: a step length
 * `β::R`: the conjugate coefficient
 $(_fields(:stopping_criterion; name = "stop"))
+* `warm_start`: whether to warm start or not when reusing this state, i.e.
+  * `true` (default): means we reuse the values in `X` on initialization and set the remaining terms accordingly. This involved one call to the objectives linear system and right hand side.
+  * `false`: Initialize `X` to the zero vector and hence `d=r=-b(p)`, but we avoid evaluating the linear operator.
 
 # Constructor
 
@@ -253,6 +256,7 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
     α::R
     β::R
     stop::TStop
+    warm_start::Bool
     function ConjugateResidualState(
             TpM::TangentSpace, slso::AbstractSymmetricLinearSystemObjective;
             X::T = rand(TpM),
@@ -264,6 +268,7 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
             β::R = 0.0,
             stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
                 StopWhenGradientNormLess(1.0e-8),
+            warm_start::Bool = true,
             kwargs...,
         ) where {T, R, SC <: StoppingCriterion}
         crs = new{T, R, SC}()
@@ -276,6 +281,7 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
         crs.β = β
         crs.rAr = zero(R)
         crs.stop = stopping_criterion
+        crs.warm_start = warm_start
         return crs
     end
 end
