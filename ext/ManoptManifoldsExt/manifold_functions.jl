@@ -76,7 +76,7 @@ function max_stepsize(M::Hyperrectangle, p)
         cand_ub = ifelse(dist_ub > 0, dist_ub, zero(dist_ub))
         cand_lb = ifelse(dist_lb > 0, dist_lb, zero(dist_lb))
         ms = max(ms, max(cand_ub, cand_lb))
-    end
+    end # COV_EXCL_LINE
     return ms
 end
 function max_stepsize(M::Hyperrectangle)

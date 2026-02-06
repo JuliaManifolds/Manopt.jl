@@ -551,4 +551,24 @@ end
         @test qns.direction_update.memory_s[1] == [1.0, 2.0]
         @test qns.direction_update.memory_s[2] == [1.0, 2.0]
     end
+    @testset "get_cost specialization" begin
+        M = Euclidean(2)
+        p = [0.0, 1.0]
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        gmp = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, gmp)
+        ha = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2; nonpositive_curvature_behavior = :byrd)
+        qns = QuasiNewtonState(
+            M;
+            p = copy(M, p),
+            direction_update = ha,
+            nondescent_direction_behavior = :step_towards_negative_gradient,
+            stepsize = HagerZhangLinesearch()(M),
+        )
+        @test get_cost(mp, qns) == f(M, get_iterate(qns))
+        solve!(mp, qns)
+        @test get_cost(mp, qns) == f(M, get_iterate(qns))
+
+    end
 end
