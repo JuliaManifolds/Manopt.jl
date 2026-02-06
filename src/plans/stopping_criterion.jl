@@ -878,7 +878,8 @@ function (sc::StopWhenProjectedNegativeGradientNormLess)(
     if (k > 0)
         r = (has_components(M) && !ismissing(sc.outer_norm)) ? (sc.outer_norm,) : ()
         p = get_iterate(s)
-        mpg = embed_project(M, p, -get_gradient(s))
+        mpg = -get_gradient(s)
+        embed_project!(M, mpg, p, mpg)
         sc.last_change = sc.norm(M, p, mpg, r...)
         if sc.last_change < sc.threshold
             sc.at_iteration = k

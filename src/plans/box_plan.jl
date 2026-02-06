@@ -512,17 +512,19 @@ function set_zero_at_index!(M::ProductManifold, d, i)
 end
 
 """
-    Manopt.set_stepsize_bound!(M::ProductManifold, d_out, p, ts::Dict, t_current::Real)
+    set_stepsize_bound!(M::ProductManifold, d_out, p, F_list::Vector{<:Tuple}, t_current::Real)
 
 Set `d_out` so that it points from `p` to the generalized Cauchy point given step sizes to
-bounds in `ts`.
+bounds in `F_list` for coordinates achievable at step size less than `t_current`.
+If an index is not in `F_list`, it is assumed that the corresponding coordinate of `d_out`
+needs to be set to 0.
 """
 function set_stepsize_bound!(
-        M::ProductManifold, d_out, p, ts::Dict, t_current::Real
+        M::ProductManifold, d_out, p, F_list::Vector{<:Tuple}, t_current::Real
     )
     set_stepsize_bound!(
         M.manifolds[1], submanifold_component(M, d_out, Val(1)),
-        submanifold_component(M, p, Val(1)), ts, t_current
+        submanifold_component(M, p, Val(1)), F_list, t_current
     )
     return d_out
 end
@@ -536,18 +538,28 @@ which computes certain values of the Hessian while advancing segments.
 Instances are reused across segments during [`find_generalized_cauchy_direction!`](@ref) to
 avoid allocations.
 """
-struct GeneralizedCauchyDirectionFinder{TM <: AbstractManifold, TX, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
+struct GeneralizedCauchyDirectionFinder{
+        TM <: AbstractManifold, TX,
+        T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater, TFT <: Tuple, TBI,
+    }
     M::TM
     d_tmp::TX
     ha::T_HA
     hessian_segment_updater::TFU
+    F_list::Vector{TFT}
+    bounds_indices::TBI
 end
 
 function GeneralizedCauchyDirectionFinder(
         M::AbstractManifold, p, ha::AbstractQuasiNewtonDirectionUpdate;
         hessian_segment_updater::AbstractSegmentHessianUpdater = get_default_hessian_segment_updater(M, p, ha)
     )
-    return GeneralizedCauchyDirectionFinder(M, zero_vector(M, p), ha, hessian_segment_updater)
+    bounds_indices = get_bounds_index(M)
+    TInd = eltype(bounds_indices)
+    TF = number_eltype(p)
+    F_list = Tuple{TF, TInd}[]
+    sizehint!(F_list, length(bounds_indices) + 1)
+    return GeneralizedCauchyDirectionFinder(M, zero_vector(M, p), ha, hessian_segment_updater, F_list, bounds_indices)
 end
 
 """
@@ -567,27 +579,24 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
     M = gcd.M
     copyto!(M, d_out, d)
 
-    bounds_indices = get_bounds_index(M)
-    TInd = eltype(bounds_indices)
-    TF = number_eltype(d)
+    F_list = gcd.F_list
+    empty!(F_list)
 
-    ts = Dict{TInd, TF}((k, Inf) for k in bounds_indices)
-
-    F_list = Tuple{TF, TInd}[]
-    sizehint!(F_list, length(bounds_indices) + 1)
+    bounds_indices = gcd.bounds_indices
 
     has_finite_limit = false
 
     smallest_positive_limit = Inf
-
     for i in bounds_indices
-        ts[i] = get_stepsize_bound(M, p, d, i)
+        sbi = get_stepsize_bound(M, p, d, i)
 
-        if ts[i] > 0
-            push!(F_list, (ts[i], i))
-            smallest_positive_limit = min(smallest_positive_limit, ts[i])
+        if sbi > 0
+            push!(F_list, (sbi, i))
+            if sbi < smallest_positive_limit
+                smallest_positive_limit = sbi
+            end
         end
-        has_finite_limit |= isfinite(ts[i])
+        has_finite_limit |= isfinite(sbi)
     end
 
     if M isa ProductManifold
@@ -662,7 +671,7 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
     # there first bound after that is achieved at smallest_positive_limit / t_old
     max_feasible_stepsize = max(1.0, smallest_positive_limit / t_old)
 
-    set_stepsize_bound!(M, d_out, p, ts, t_old)
+    set_stepsize_bound!(M, d_out, p, F_list, t_old)
     if has_finite_limit
         return (:found_limited, max_feasible_stepsize)
     else

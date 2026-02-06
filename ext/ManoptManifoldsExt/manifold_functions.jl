@@ -67,16 +67,15 @@ The default maximum stepsize for `Hyperrectangle` manifold with corners is maxim
 of distances from `p` to each boundary.
 """
 function max_stepsize(M::Hyperrectangle, p)
-    ms = 0.0
-    for i in eachindex(M.lb, p)
-        dist_ub = M.ub[i] - p[i]
-        if dist_ub > 0
-            ms = max(ms, dist_ub)
-        end
-        dist_lb = p[i] - M.lb[i]
-        if dist_lb > 0
-            ms = max(ms, dist_lb)
-        end
+    lb = M.lb
+    ub = M.ub
+    ms = zero(eltype(p))
+    @inbounds @simd for i in eachindex(lb, ub, p)
+        dist_ub = ub[i] - p[i]
+        dist_lb = p[i] - lb[i]
+        cand_ub = ifelse(dist_ub > 0, dist_ub, zero(dist_ub))
+        cand_lb = ifelse(dist_lb > 0, dist_lb, zero(dist_lb))
+        ms = max(ms, max(cand_ub, cand_lb))
     end
     return ms
 end
@@ -212,16 +211,24 @@ function Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
 end
 
 """
-    Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real)
+    Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, F_list::Vector{<:Tuple}, t_current::Real)
 
-For each index `i`, `t[i] < t_current`, set element of tangent vector `d_out` on
-[`Hyperrectangle`](@extref Manifolds.Hyperrectangle) to the distance from `p[i]` to the
-bound in the direction of `d_out[i]`.
+For each pair `(t_i, i)` with index `i` in `F_list`, if `t_i < t_current`, set element of tangent
+vector `d_out` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) to the distance from
+`p[i]` to the bound in the direction of `d_out[i]`.
 """
-function Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, ts::Dict, t_current::Real)
-    for i in eachindex(M.lb)
-        if ts[i] < t_current
-            d_out[i] = d_out[i] > 0 ? M.ub[i] - p[i] : M.lb[i] - p[i]
+function Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, F_list::Vector{<:Tuple}, t_current::Real)
+    f_idx = 1
+    f_len = length(F_list)
+    for j in eachindex(d_out)
+        if f_idx <= f_len && F_list[f_idx][2] == j
+            t_i, i = F_list[f_idx]
+            if t_i < t_current
+                d_out[i] = d_out[i] > 0 ? M.ub[i] - p[i] : M.lb[i] - p[i]
+            end
+            f_idx += 1
+        else
+            d_out[j] = 0
         end
     end
     return d_out
