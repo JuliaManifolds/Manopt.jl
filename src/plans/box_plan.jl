@@ -521,7 +521,7 @@ to_coordinate_index(::AbstractManifold, b::UnitVector{Int}, ::AbstractBasis) = b
 Get the index of coordinate equal to 1 of [`UnitVector`](@ref) `b` with respect to
 `AbstractBasis` `B`.
 """
-function to_coordinate_index(M::ProductManifold, b::UnitVector, B::AbstractBasis)
+function to_coordinate_index(M::ProductManifold, b::UnitVector{Tuple{Int, Int}}, B::AbstractBasis)
     i, j = b.index
     offset = sum(k -> number_of_coordinates(M.manifolds[k], B), 1:(i - 1); init = 0)
     return offset + j

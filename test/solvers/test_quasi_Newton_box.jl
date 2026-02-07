@@ -296,13 +296,13 @@ using RecursiveArrayTools
     @testset "Sphere × Hyperrectangle" begin
         S2 = Sphere(2)
         px = [0.0, 1.0, 0.0]
-        Mbox = Hyperrectangle([-1.0, 2.0, -Inf], [2.0, Inf, 2.0])
+        Mbox = Hyperrectangle([-1.0 2.0; -Inf -Inf], [2.0 Inf; 2.0 Inf])
         M = S2 × Mbox
         f(M, p) = sum(p.x[2] .^ 4) + 0.5 * distance(S2, p.x[1], px)^2
         grad_f(M, p) = ArrayPartition(-log(S2, p.x[1], px), project(Mbox, p.x[2], 4 .* (p.x[2] .^ 3)))
-        p0 = ArrayPartition([1.0, 0.0, 0.0], [0.0, 4.0, 1.0])
+        p0 = ArrayPartition([1.0, 0.0, 0.0], [0.0 4.0; 1.0 1.0])
 
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
-        @test distance(M, p_opt, ArrayPartition(px, [0, 2, 0])) < 0.1
+        @test distance(M, p_opt, ArrayPartition(px, [0 2; 0 0])) < 0.1
     end
 end
