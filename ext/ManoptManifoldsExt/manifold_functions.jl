@@ -211,24 +211,23 @@ function Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
 end
 
 """
-    Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, F_list::Vector{<:Tuple}, t_current::Real)
+    Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, d, t_current::Real)
 
-For each pair `(t_i, i)` with index `i` in `F_list`, if `t_i < t_current`, set element of tangent
-vector `d_out` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) to the distance from
-`p[i]` to the bound in the direction of `d_out[i]`.
+For each element `i` in the tangent vector `d_out`, if the stepsize bound in direction `d`
+for that element is less than `t_current`, set the element of `d_out` to the distance from
+`p[i]` to the bound in the direction of `d[i]`. If the stepsize bound is non-positive,
+set the element to 0.
 """
-function Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, F_list::Vector{<:Tuple}, t_current::Real)
-    f_idx = 1
-    f_len = length(F_list)
-    for j in eachindex(d_out)
-        if f_idx <= f_len && F_list[f_idx][2] == j
-            t_i, i = F_list[f_idx]
-            if t_i < t_current
-                d_out[i] = d_out[i] > 0 ? M.ub[i] - p[i] : M.lb[i] - p[i]
+function Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, d, t_current::Real)
+
+    for i in eachindex(d_out, d)
+        bound = get_stepsize_bound(M, p, d, i)
+        if bound > 0
+            if bound < t_current && d_out[i] != 0
+                d_out[i] = d[i] > 0 ? M.ub[i] - p[i] : M.lb[i] - p[i]
             end
-            f_idx += 1
         else
-            d_out[j] = 0
+            d_out[i] = 0
         end
     end
     return d_out

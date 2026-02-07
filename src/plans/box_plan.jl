@@ -512,19 +512,27 @@ function set_zero_at_index!(M::ProductManifold, d, i)
 end
 
 """
-    set_stepsize_bound!(M::ProductManifold, d_out, p, F_list::Vector{<:Tuple}, t_current::Real)
+    set_stepsize_bound!(M::AbstractManifold, d_out, p, d, t_current::Real)
 
-Set `d_out` so that it points from `p` to the generalized Cauchy point given step sizes to
-bounds in `F_list` for coordinates achievable at step size less than `t_current`.
-If an index is not in `F_list`, it is assumed that the corresponding coordinate of `d_out`
-needs to be set to 0.
+For each component at index `i` in the tangent vector `d_out`, if the stepsize bound in
+direction `d` for that component is less than `t_current`, set the element of `d_out` to
+the distance from `p[i]` to the bound in the direction of `d[i]`. If the stepsize bound is
+non-positive, set the element to 0.
+
+By default it does not modify `d_out` because most manifolds don't have direction-specific
+stepsize bounds, and general anisotropic bounds are handled differently.
 """
-function set_stepsize_bound!(
-        M::ProductManifold, d_out, p, F_list::Vector{<:Tuple}, t_current::Real
-    )
-    set_stepsize_bound!(
-        M.manifolds[1], submanifold_component(M, d_out, Val(1)),
-        submanifold_component(M, p, Val(1)), F_list, t_current
+function set_stepsize_bound!(::AbstractManifold, d_out, p, d, t_current::Real)
+    return d_out
+end
+
+function set_stepsize_bound!(M::ProductManifold, d_out, p, d, t_current::Real)
+    map(
+        (N, d_out_c, p_c, d_c) -> set_stepsize_bound!(N, d_out_c, p_c, d_c, t_current),
+        M.manifolds,
+        submanifold_components(M, d_out),
+        submanifold_components(M, p),
+        submanifold_components(M, d),
     )
     return d_out
 end
@@ -533,21 +541,23 @@ end
     GeneralizedCauchyDirectionFinder{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
 
 Helper container for generalized Cauchy direction search. Stores the manifold `M`, cached
-workspace (`d_tmp`), the quasi-Newton direction update `ha`, and the `hessian_segment_updater`,
-which computes certain values of the Hessian while advancing segments.
+original descent direction (`d_original`), the quasi-Newton direction update `ha`, and the
+`hessian_segment_updater`, which computes certain values of the Hessian while advancing segments.
 Instances are reused across segments during [`find_generalized_cauchy_direction!`](@ref) to
 avoid allocations.
 """
 struct GeneralizedCauchyDirectionFinder{
         TM <: AbstractManifold, TX,
         T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater, TFT <: Tuple, TBI,
+        TO <: Base.Order.Ordering,
     }
     M::TM
-    d_tmp::TX
+    d_original::TX
     ha::T_HA
     hessian_segment_updater::TFU
     F_list::Vector{TFT}
     bounds_indices::TBI
+    ordering::TO
 end
 
 function GeneralizedCauchyDirectionFinder(
@@ -559,7 +569,11 @@ function GeneralizedCauchyDirectionFinder(
     TF = number_eltype(p)
     F_list = Tuple{TF, TInd}[]
     sizehint!(F_list, length(bounds_indices) + 1)
-    return GeneralizedCauchyDirectionFinder(M, zero_vector(M, p), ha, hessian_segment_updater, F_list, bounds_indices)
+    ordering = Base.By(first)
+    return GeneralizedCauchyDirectionFinder(
+        M, zero_vector(M, p), ha,
+        hessian_segment_updater, F_list, bounds_indices, ordering
+    )
 end
 
 """
@@ -577,8 +591,10 @@ The function returns
 """
 function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
     M = gcd.M
+    copyto!(M, gcd.d_original, d)
     copyto!(M, d_out, d)
 
+    ordering = gcd.ordering
     F_list = gcd.F_list
     empty!(F_list)
 
@@ -598,7 +614,6 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
         end
         has_finite_limit |= isfinite(sbi)
     end
-
     if M isa ProductManifold
         # Hyperrectangle × something else
         # push also `t` corresponding to max_stepsize if it is considered in the manifold
@@ -621,8 +636,7 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
             return (:not_found, NaN)
         end
     end
-
-    F = BinaryHeap(Base.By(first), F_list)
+    heapify!(F_list, ordering)
 
     f_prime = inner(M, p, X, d)
     f_double_prime = hessian_value_diag(gcd.ha, M, p, d)
@@ -634,7 +648,7 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
     dt_min = -f_prime / f_double_prime
     t_old = 0.0
 
-    t_current, b = pop!(F)
+    t_current, b = heappop!(F_list, ordering)
     dt = t_current - t_old
 
     init_updater!(M, gcd.hessian_segment_updater, p, d, gcd.ha)
@@ -658,9 +672,9 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
         end
 
         dt_min = -f_prime / f_double_prime
-        isempty(F) && break
+        isempty(F_list) && break
 
-        t_current, b = pop!(F)
+        t_current, b = heappop!(F_list, ordering)
         dt = t_current - t_old
     end
 
@@ -671,7 +685,7 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
     # there first bound after that is achieved at smallest_positive_limit / t_old
     max_feasible_stepsize = max(1.0, smallest_positive_limit / t_old)
 
-    set_stepsize_bound!(M, d_out, p, F_list, t_old)
+    set_stepsize_bound!(M, d_out, p, gcd.d_original, t_old)
     if has_finite_limit
         return (:found_limited, max_feasible_stepsize)
     else

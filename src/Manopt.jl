@@ -17,7 +17,7 @@ import LinearAlgebra: cross, LowerTriangular
 using ColorSchemes
 using ColorTypes
 using Colors
-using DataStructures: BinaryHeap, CircularBuffer, capacity, length, push!, size, isfull
+using DataStructures: CircularBuffer, capacity, length, push!, size, isfull, heapify!, heappop!
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using Glossaries
 using LinearAlgebra:
