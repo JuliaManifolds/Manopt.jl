@@ -1,11 +1,12 @@
 """
-    requires_generalized_cauchy_direction_computation(M::AbstractManifold)
+    has_anisotropic_max_stepsize(M::AbstractManifold)
 
-Return `true` if `M` is a `Hyperrectangle`-like manifold with corners, or a product of it
+Return `true` if `M` has `max_stepsize` that depends on the direction.
+For example, if `M` is a `Hyperrectangle`-like manifold with corners, or a product of it
 with a standard manifold. Otherwise return `false`.
 """
-requires_generalized_cauchy_direction_computation(::AbstractManifold) = false
-requires_generalized_cauchy_direction_computation(M::ProductManifold) = requires_generalized_cauchy_direction_computation(M.manifolds[1])
+has_anisotropic_max_stepsize(::AbstractManifold) = false
+has_anisotropic_max_stepsize(M::ProductManifold) = any(has_anisotropic_max_stepsize, M.manifolds)
 
 @doc raw"""
     mutable struct LimitedMemoryHessianApproximation end
@@ -111,8 +112,8 @@ end
 
 get_update_vector_transport(u::QuasiNewtonLimitedMemoryBoxDirectionUpdate) = get_update_vector_transport(u.qn_du)
 
-function get_at_bound_index(M::ProductManifold, X, b)
-    return get_at_bound_index(M.manifolds[1], submanifold_component(M, X, Val(1)), b)
+function get_at_bound_index(M::ProductManifold, X, b::Tuple{Int, Any})
+    return get_at_bound_index(M.manifolds[b[1]], submanifold_component(M, X, Val(1)), b[2])
 end
 
 @doc raw"""
@@ -355,13 +356,15 @@ init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessia
 Generic f' and f'' calculation that only relies on `hessian_value` but is relatively slow for
 high-dimensional domains.
 """
-struct GenericSegmentHessianUpdater{TX} <: AbstractSegmentHessianUpdater
+struct GenericSegmentHessianUpdater{TITR, TX} <: AbstractSegmentHessianUpdater
+    itr::TITR
     d_z::TX
     d_tmp::TX
 end
 
 function get_default_hessian_segment_updater(M::AbstractManifold, p, ::AbstractQuasiNewtonDirectionUpdate)
-    return GenericSegmentHessianUpdater(zero_vector(M, p), zero_vector(M, p))
+    itr = get_bounds_index(M)
+    return GenericSegmentHessianUpdater(itr, zero_vector(M, p), zero_vector(M, p))
 end
 
 function init_updater!(M::AbstractManifold, hessian_segment_updater::GenericSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
@@ -379,8 +382,8 @@ point line search using the generic approach via `hessian_value` with [`UnitVect
 """
 function (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha)
     upd.d_z .+= dt .* upd.d_tmp
-    hv_eb_dz = hessian_value(ha, M, p, UnitVector(b), upd.d_z)
-    hv_eb_d = hessian_value(ha, M, p, UnitVector(b), upd.d_tmp)
+    hv_eb_dz = hessian_value(ha, M, p, UnitVector(upd.itr, b), upd.d_z)
+    hv_eb_d = hessian_value(ha, M, p, UnitVector(upd.itr, b), upd.d_tmp)
 
     set_zero_at_index!(M, upd.d_tmp, b)
 
@@ -481,14 +484,61 @@ function (hessian_segment_updater::LimitedMemorySegmentHessianUpdater)(
     return eb_B_z, eb_B_d
 end
 
+struct ProductIndex{T <: Tuple}
+    ranges::T
+end
+
+Base.iterate(itr::ProductIndex) = _iterate(itr.ranges, 1, nothing)
+Base.iterate(itr::ProductIndex, state) = _iterate(itr.ranges, state...)
+
+function _iterate(ranges, i, st)
+    i > length(ranges) && return nothing
+    if st === nothing
+        it = iterate(ranges[i])
+        it === nothing && return _iterate(ranges, i + 1, nothing)
+        (j, st2) = it
+        return ((i, j), (i, st2))
+    else
+        it = iterate(ranges[i], st)
+        if it === nothing
+            return _iterate(ranges, i + 1, nothing)
+        else
+            (j, st2) = it
+            return ((i, j), (i, st2))
+        end
+    end
+end
+
+"""
+    _to_linear_index(itr::ProductIndex, b)
+
+Convert element `b` of the iteration of `itr` to a linear index. For example, if `itr` is
+an iteration over `(1:4, 1:3)`, then `_to_linear_index(itr, (2, 3))` returns `6`, which
+is the linear index of the element `(2, 3)` in the concatenated ranges `1:4, 1:3`.
+"""
+function _to_linear_index(itr::ProductIndex, b)
+    i, j = b
+    r = itr.ranges[i]
+    offset = sum(k -> length(itr.ranges[k]), 1:(i - 1); init = 0)
+    return offset + (j - first(r) + 1)
+end
+_to_linear_index(::Base.OneTo, b::Int) = b
+
+Base.length(itr::ProductIndex) = sum(length, itr.ranges)
+
+
 """
     get_bounds_index(::AbstractManifold)
 
 Get the bound indices of manifold `M`. Standard manifolds don't have bounds, so
 `Base.OneTo(1)` is returned.
 """
-get_bounds_index(M::AbstractManifold)
-get_bounds_index(M::ProductManifold) = get_bounds_index(M.manifolds[1])
+get_bounds_index(M::AbstractManifold) = Base.OneTo(0)
+function get_bounds_index(M::ProductManifold)
+    ranges = map(get_bounds_index, M.manifolds)
+    iter = ProductIndex(ranges)
+    return iter
+end
 
 """
     get_stepsize_bound(M::AbstractManifold, x, d, i)
@@ -497,17 +547,19 @@ Get the upper bound on moving in direction `d` from point `p` on manifold `M`, f
 bound index `i`.
 """
 get_stepsize_bound(M::AbstractManifold, p, d, i)
-function get_stepsize_bound(M::ProductManifold, p, d, i)
-    return get_stepsize_bound(M.manifolds[1], submanifold_component(M, p, Val(1)), submanifold_component(M, d, Val(1)), i)
+function get_stepsize_bound(M::ProductManifold, p, d, i::Tuple{Int, Any})
+    i1, i2 = i
+    return get_stepsize_bound(M.manifolds[i1], submanifold_component(M, p, i1), submanifold_component(M, d, i1), i2)
 end
 
 """
-    set_zero_at_index!(M::ProductManifold, d, i)
+    set_zero_at_index!(M::ProductManifold, d, i::Tuple{Int,Any})
 
-Set the element of the first component of `d` at bound index `i` to zero.
+Set the element of the `i[1]`th component of `d` at bound index `i[2]` to zero.
 """
-function set_zero_at_index!(M::ProductManifold, d, i)
-    set_zero_at_index!(M.manifolds[1], submanifold_component(M, d, Val(1)), i)
+function set_zero_at_index!(M::ProductManifold, d, i::Tuple{Int, Any})
+    i1, i2 = i
+    set_zero_at_index!(M.manifolds[i1], submanifold_component(M, d, i1), i2)
     return d
 end
 
@@ -576,6 +628,29 @@ function GeneralizedCauchyDirectionFinder(
     )
 end
 
+function collect_isotropic_limits!(::AbstractManifold, ::Vector{<:Tuple{TF, Any}}, p, d) where {TF <: Real}
+    return false, convert(TF, Inf)
+end
+
+function collect_isotropic_limits!(M::ProductManifold, F_list::Vector{<:Tuple{TF, Any}}, p, d) where {TF <: Real}
+    has_finite_limit = false
+    smallest_positive_limit = Inf
+    map(M.manifolds, submanifold_components(M, p), submanifold_components(M, d)) do Mi, p_i, d_i
+        if !has_anisotropic_max_stepsize(Mi)
+            max_step = Manopt.max_stepsize(Mi, p_i)
+            if isfinite(max_step)
+                tms = max_step / norm(Mi, p_i, d_i)
+                push!(F_list, (tms, -1))
+                has_finite_limit = true
+                if tms < smallest_positive_limit
+                    smallest_positive_limit = tms
+                end
+            end
+        end
+    end
+    return has_finite_limit, smallest_positive_limit
+end
+
 """
     find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
 
@@ -600,9 +675,9 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
 
     bounds_indices = gcd.bounds_indices
 
-    has_finite_limit = false
-
-    smallest_positive_limit = Inf
+    # isotropic limits
+    has_finite_limit, smallest_positive_limit = collect_isotropic_limits!(M, F_list, p, d)
+    # anisotropic limits
     for i in bounds_indices
         sbi = get_stepsize_bound(M, p, d, i)
 
@@ -614,27 +689,12 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
         end
         has_finite_limit |= isfinite(sbi)
     end
-    if M isa ProductManifold
-        # Hyperrectangle × something else
-        # push also `t` corresponding to max_stepsize if it is considered in the manifold
-        M2 = M.manifolds[2]
-        p2 = submanifold_component(M, p, Val(2))
-        max_step = Manopt.max_stepsize(M2, p2)
-        if isfinite(max_step)
-            d2 = submanifold_component(M, d, Val(2))
-            tms = max_step / norm(M2, p2, d2)
-            push!(F_list, (tms, -1))
-        end
-    else
-        # Check only when we work on a pure Hyperrectangle
-        #
-        # In this case we can't move in the direction `d` at all, though it's usually not
-        # a problem relevant to the end user because it can be handled by step_solver! that
-        # uses the GCD subsolver.
 
-        if isempty(F_list)
-            return (:not_found, NaN)
-        end
+    # In this case we can't move in the direction `d` at all, though it's usually not
+    # a problem relevant to the end user because it can be handled by step_solver! that
+    # uses the GCD subsolver.
+    if isempty(F_list)
+        return (:not_found, NaN)
     end
     heapify!(F_list, ordering)
 
@@ -660,7 +720,8 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
         hv_eb_dz, hv_eb_d = gcd.hessian_segment_updater(M, p, t_current, dt, b, db, gcd.ha)
 
         f_prime += dt * f_double_prime - db * (gb + hv_eb_dz)
-        f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_diag(gcd.ha, M, p, UnitVector(b))
+        Xb = UnitVector(gcd.bounds_indices, b)
+        f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_diag(gcd.ha, M, p, Xb)
 
         t_old = t_current
 

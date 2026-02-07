@@ -524,14 +524,16 @@ function hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractM
 end
 
 """
-    UnitVector{TB}
+    UnitVector{TR,TB}
 
 A type representing a unit tangent vector on a `Hyperrectangle`-like manifold with corners,
 or a product of it with a standard manifold.
 The field `index` stores the index of the element equal to 1.
 All other elements are equal to 0.
+`its` stores the overall iterator over all bounds.
 """
-struct UnitVector{TB}
+struct UnitVector{TI, TB}
+    its::TI
     index::TB
 end
 
@@ -543,7 +545,7 @@ Returns the scalar ``c^{\top} B c`` where ``c`` are the coordinates of the
 [`UnitVector`](@ref) `X` at `p` (in the basis `d.basis`) and ``B`` is `d.matrix`.
 """
 function hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate{T}, ::AbstractManifold, p, X::UnitVector) where {T <: Union{BFGS, DFP, SR1, Broyden}}
-    b = X.index
+    b = _to_linear_index(X.its, X.index)
     return d.matrix[b, b]
 end
 """
@@ -556,7 +558,7 @@ Returns the scalar ``c_b^{\top} B c`` where ``c_b`` are the coordinates of the
 and ``B`` is `d.matrix`.
 """
 function hessian_value(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X::UnitVector, Y) where {T <: Union{BFGS, DFP, SR1, Broyden}}
-    b = X.index
+    b = _to_linear_index(X.its, X.index)
     return dot(d.matrix[b, :], get_coordinates(M, p, Y, d.basis))
 end
 

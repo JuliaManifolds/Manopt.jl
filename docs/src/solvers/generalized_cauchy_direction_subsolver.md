@@ -23,7 +23,7 @@ The solver is currently primarily intended for internal use by optimization algo
 These symbols are directly used by solvers to compute the descent direction corresponding to the Generalized Cauchy direction.
 
 ```@docs
-Manopt.requires_generalized_cauchy_direction_computation
+Manopt.has_anisotropic_max_stepsize
 Manopt.find_generalized_cauchy_direction!
 Manopt.GeneralizedCauchyDirectionFinder
 ```

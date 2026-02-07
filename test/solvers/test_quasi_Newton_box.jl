@@ -42,7 +42,7 @@ using RecursiveArrayTools
         z = [-0.25, -1.0]
 
         # optimized formula
-        upd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
+        upd = Manopt.GenericSegmentHessianUpdater(Manopt.get_bounds_index(M), similar(d), similar(d))
         Manopt.init_updater!(M, upd, p, d, ha)
         hv_eb_dz, hv_eb_d = upd(M, p, 0 + dt, dt, b, db, ha)
         @test hv_eb_dz ≈ -2.0
@@ -75,7 +75,7 @@ using RecursiveArrayTools
         z = [-0.5, -0.25]
 
         # optimized formula
-        upd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
+        upd = Manopt.GenericSegmentHessianUpdater(Manopt.get_bounds_index(M), similar(d), similar(d))
         Manopt.init_updater!(M, upd, p, d, ha)
         hv_eb_dz, hv_eb_d = upd(M, p, 0 + dt, dt, b, db, ha)
         @test hv_eb_dz == -1.0
@@ -126,7 +126,7 @@ using RecursiveArrayTools
         t_current = 0 + dt
 
         # compare the generic and limited memory updater
-        gupd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
+        gupd = Manopt.GenericSegmentHessianUpdater(Manopt.get_bounds_index(M), similar(d), similar(d))
         Manopt.init_updater!(M, gupd, p, d, ha)
         hv_eb_dz, hv_eb_d = gupd(M, p, t_current, dt, b, db, ha)
 
@@ -148,7 +148,8 @@ using RecursiveArrayTools
 
         @testset "No memory tests" begin
             ha2 = QuasiNewtonLimitedMemoryBoxDirectionUpdate(QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2))
-            @test Manopt.hessian_value(ha2, M, p, Manopt.UnitVector(b), grad) ≈ 4.0
+            idx = Manopt.get_bounds_index(M)
+            @test Manopt.hessian_value(ha2, M, p, Manopt.UnitVector(idx, b), grad) ≈ 4.0
             Manopt.set_M_current_scale!(M, p, ha2)
             @test ha2.current_scale == ha2.qn_du.initial_scale
             @test ha2.M_11 == fill(0.0, 0, 0)
@@ -259,10 +260,10 @@ using RecursiveArrayTools
         @test f3(MInf, p_opt) < 64.0
     end
 
-    @testset "requires_generalized_cauchy_direction_computation" begin
-        @test !Manopt.requires_generalized_cauchy_direction_computation(Sphere(2))
-        @test Manopt.requires_generalized_cauchy_direction_computation(Hyperrectangle([1], [2]))
-        @test Manopt.requires_generalized_cauchy_direction_computation(ProductManifold(Hyperrectangle([1], [2]), Sphere(2)))
+    @testset "has_anisotropic_max_stepsize" begin
+        @test !Manopt.has_anisotropic_max_stepsize(Sphere(2))
+        @test Manopt.has_anisotropic_max_stepsize(Hyperrectangle([1], [2]))
+        @test Manopt.has_anisotropic_max_stepsize(ProductManifold(Hyperrectangle([1], [2]), Sphere(2)))
     end
 
     @testset "Hyperrectangle × Sphere" begin
@@ -277,12 +278,12 @@ using RecursiveArrayTools
         @testset "Hessian updater" begin
             d = -grad_f(M, p0)
             ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis())
-            gupd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
+            gupd = Manopt.GenericSegmentHessianUpdater(Manopt.get_bounds_index(M), similar(d), similar(d))
             Manopt.init_updater!(M, gupd, p0, d, ha)
-            b = 2
+            b = (1, 2)
             dt = 0.25
             t_current = 0 + dt
-            db = d[b]
+            db = d.x[b[1]][b[2]]
             hv_eb_dz, hv_eb_d = gupd(M, p0, t_current, dt, b, db, ha)
             @test hv_eb_dz ≈ -64.0
             @test hv_eb_d ≈ -256.0
@@ -290,5 +291,18 @@ using RecursiveArrayTools
 
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test distance(M, p_opt, ArrayPartition([0, 2, 0], px)) < 0.1
+    end
+
+    @testset "Sphere × Hyperrectangle" begin
+        S2 = Sphere(2)
+        px = [0.0, 1.0, 0.0]
+        Mbox = Hyperrectangle([-1.0, 2.0, -Inf], [2.0, Inf, 2.0])
+        M = S2 × Mbox
+        f(M, p) = sum(p.x[2] .^ 4) + 0.5 * distance(S2, p.x[1], px)^2
+        grad_f(M, p) = ArrayPartition(-log(S2, p.x[1], px), project(Mbox, p.x[2], 4 .* (p.x[2] .^ 3)))
+        p0 = ArrayPartition([1.0, 0.0, 0.0], [0.0, 4.0, 1.0])
+
+        p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
+        @test distance(M, p_opt, ArrayPartition(px, [0, 2, 0])) < 0.1
     end
 end

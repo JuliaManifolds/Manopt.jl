@@ -234,11 +234,11 @@ function Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, d, t_current::R
 end
 
 """
-    Manopt.requires_generalized_cauchy_direction_computation(::Hyperrectangle)
+    Manopt.has_anisotropic_max_stepsize(::Hyperrectangle)
 
 Returns `true`, as `Hyperrectangle` manifold requires generalized Cauchy point computation in solvers.
 """
-Manopt.requires_generalized_cauchy_direction_computation(::Hyperrectangle) = true
+Manopt.has_anisotropic_max_stepsize(::Hyperrectangle) = true
 
 """
     Manopt.get_at_bound_index(::Hyperrectangle, X, b)
