@@ -42,7 +42,7 @@ using RecursiveArrayTools
         z = [-0.25, -1.0]
 
         # optimized formula
-        upd = Manopt.GenericSegmentHessianUpdater(Manopt.get_bounds_index(M), similar(d), similar(d))
+        upd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
         Manopt.init_updater!(M, upd, p, d, ha)
         hv_eb_dz, hv_eb_d = upd(M, p, 0 + dt, dt, b, db, ha)
         @test hv_eb_dz ≈ -2.0
@@ -75,7 +75,7 @@ using RecursiveArrayTools
         z = [-0.5, -0.25]
 
         # optimized formula
-        upd = Manopt.GenericSegmentHessianUpdater(Manopt.get_bounds_index(M), similar(d), similar(d))
+        upd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
         Manopt.init_updater!(M, upd, p, d, ha)
         hv_eb_dz, hv_eb_d = upd(M, p, 0 + dt, dt, b, db, ha)
         @test hv_eb_dz == -1.0
@@ -126,7 +126,7 @@ using RecursiveArrayTools
         t_current = 0 + dt
 
         # compare the generic and limited memory updater
-        gupd = Manopt.GenericSegmentHessianUpdater(Manopt.get_bounds_index(M), similar(d), similar(d))
+        gupd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
         Manopt.init_updater!(M, gupd, p, d, ha)
         hv_eb_dz, hv_eb_d = gupd(M, p, t_current, dt, b, db, ha)
 
@@ -149,7 +149,7 @@ using RecursiveArrayTools
         @testset "No memory tests" begin
             ha2 = QuasiNewtonLimitedMemoryBoxDirectionUpdate(QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2))
             idx = Manopt.get_bounds_index(M)
-            @test Manopt.hessian_value(ha2, M, p, Manopt.UnitVector(idx, b), grad) ≈ 4.0
+            @test Manopt.hessian_value(ha2, M, p, Manopt.UnitVector(b), grad) ≈ 4.0
             Manopt.set_M_current_scale!(M, p, ha2)
             @test ha2.current_scale == ha2.qn_du.initial_scale
             @test ha2.M_11 == fill(0.0, 0, 0)
@@ -278,7 +278,7 @@ using RecursiveArrayTools
         @testset "Hessian updater" begin
             d = -grad_f(M, p0)
             ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis())
-            gupd = Manopt.GenericSegmentHessianUpdater(Manopt.get_bounds_index(M), similar(d), similar(d))
+            gupd = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
             Manopt.init_updater!(M, gupd, p0, d, ha)
             b = (1, 2)
             dt = 0.25

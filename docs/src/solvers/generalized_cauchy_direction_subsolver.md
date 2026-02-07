@@ -44,6 +44,7 @@ These are internal symbols used to manage and manipulate bound constraints durin
 ```@docs
 Manopt.init_updater!
 Manopt.UnitVector
+Manopt.to_coordinate_index
 Manopt.AbstractSegmentHessianUpdater
 Manopt.GenericSegmentHessianUpdater
 Manopt.get_bounds_index

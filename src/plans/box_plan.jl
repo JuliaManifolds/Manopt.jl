@@ -356,15 +356,13 @@ init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessia
 Generic f' and f'' calculation that only relies on `hessian_value` but is relatively slow for
 high-dimensional domains.
 """
-struct GenericSegmentHessianUpdater{TITR, TX} <: AbstractSegmentHessianUpdater
-    itr::TITR
+struct GenericSegmentHessianUpdater{TX} <: AbstractSegmentHessianUpdater
     d_z::TX
     d_tmp::TX
 end
 
 function get_default_hessian_segment_updater(M::AbstractManifold, p, ::AbstractQuasiNewtonDirectionUpdate)
-    itr = get_bounds_index(M)
-    return GenericSegmentHessianUpdater(itr, zero_vector(M, p), zero_vector(M, p))
+    return GenericSegmentHessianUpdater(zero_vector(M, p), zero_vector(M, p))
 end
 
 function init_updater!(M::AbstractManifold, hessian_segment_updater::GenericSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
@@ -382,8 +380,8 @@ point line search using the generic approach via `hessian_value` with [`UnitVect
 """
 function (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha)
     upd.d_z .+= dt .* upd.d_tmp
-    hv_eb_dz = hessian_value(ha, M, p, UnitVector(upd.itr, b), upd.d_z)
-    hv_eb_d = hessian_value(ha, M, p, UnitVector(upd.itr, b), upd.d_tmp)
+    hv_eb_dz = hessian_value(ha, M, p, UnitVector(b), upd.d_z)
+    hv_eb_d = hessian_value(ha, M, p, UnitVector(b), upd.d_tmp)
 
     set_zero_at_index!(M, upd.d_tmp, b)
 
@@ -509,20 +507,25 @@ function _iterate(ranges, i, st)
     end
 end
 
-"""
-    _to_linear_index(itr::ProductIndex, b)
 
-Convert element `b` of the iteration of `itr` to a linear index. For example, if `itr` is
-an iteration over `(1:4, 1:3)`, then `_to_linear_index(itr, (2, 3))` returns `6`, which
-is the linear index of the element `(2, 3)` in the concatenated ranges `1:4, 1:3`.
 """
-function _to_linear_index(itr::ProductIndex, b)
-    i, j = b
-    r = itr.ranges[i]
-    offset = sum(k -> length(itr.ranges[k]), 1:(i - 1); init = 0)
-    return offset + (j - first(r) + 1)
+    to_coordinate_index(M::ProductManifold, b::UnitVector, B::AbstractBasis)
+
+Get the index of coordinate equal to 1 of [`UnitVector`](@ref) `b` with respect to
+`AbstractBasis` `B`.
+"""
+to_coordinate_index(::AbstractManifold, b::UnitVector{Int}, ::AbstractBasis) = b.index
+"""
+    to_coordinate_index(M::ProductManifold, b::UnitVector, B::AbstractBasis)
+
+Get the index of coordinate equal to 1 of [`UnitVector`](@ref) `b` with respect to
+`AbstractBasis` `B`.
+"""
+function to_coordinate_index(M::ProductManifold, b::UnitVector, B::AbstractBasis)
+    i, j = b.index
+    offset = sum(k -> number_of_coordinates(M.manifolds[k], B), 1:(i - 1); init = 0)
+    return offset + j
 end
-_to_linear_index(::Base.OneTo, b::Int) = b
 
 Base.length(itr::ProductIndex) = sum(length, itr.ranges)
 
@@ -720,8 +723,7 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
         hv_eb_dz, hv_eb_d = gcd.hessian_segment_updater(M, p, t_current, dt, b, db, gcd.ha)
 
         f_prime += dt * f_double_prime - db * (gb + hv_eb_dz)
-        Xb = UnitVector(gcd.bounds_indices, b)
-        f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_diag(gcd.ha, M, p, Xb)
+        f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_diag(gcd.ha, M, p, UnitVector(b))
 
         t_old = t_current
 
