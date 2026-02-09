@@ -255,6 +255,7 @@ function initialize_solver!(
     get_gradient!(amp, agds.X, agds.p)
     (agds.order_type == :FixedRandom || agds.order_type == :Random) &&
         (shuffle!(agds.order))
+    initialize_stepsize!(agds.stepsize)
     return agds
 end
 function step_solver!(amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, k)

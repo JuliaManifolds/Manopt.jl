@@ -12,12 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `nonpositive_curvature_behavior` for `QuasiNewtonLimitedMemoryDirectionUpdate` that determines how transported (y, s) vector pairs are treated after transport; if their inner product gets too low, it may lead to non-positive-definite Hessians which needs to be avoided. This resolves issue #549. (#554)
 * `GeneralizedCauchyDirectionFinder` for handling direction selection in the presence of box (`Hyperrectangle`) constraints in quasi-Newton methods. This allows for L-BFGS-B-style box constraint handling. (#554)
-* New stopping criteria: `StopWhenRelativeAPosterioriCostChangeLessOrEqual` and `StopWhenProjectedNegativeGradientNormLess`. (#554)
+* New stopping criteria: `StopWhenRelativeAPosterioriCostChangeLessOrEqual` and `StopWhenProjectedNegativeGradientNormLess`. (#554).
+* `HagerZhangLinesearch` stepsize, a state-of-the-art line search for smooth objectives with cubic interpolation and adaptive Wolfe condition checking. (#554)
+* Stopping criteria can now be initialized using `initialize_stepsize!`, similar to solvers. (#554)
 
 ### Fixed
 
 * Line searches consistently respect `stop_when_stepsize_exceeds` keyword argument as a hard limit. (#554)
-* `StopWhenChangeLess` falsely claimed to indicate convergence. This is now fixed.
+* `StopWhenChangeLess` falsely claimed to indicate convergence. This is now fixed. (#554)
 
 ## [0.5.32] January 15, 2026
 
