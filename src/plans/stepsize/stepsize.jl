@@ -117,15 +117,15 @@ function (a::ArmijoLinesearchStepsize)(
     return a(mp, p, grad, η; initial_guess = a.initial_guess(mp, s, k, a.last_stepsize, η), kwargs...)
 end
 function (a::ArmijoLinesearchStepsize)(
-        mp::AbstractManoptProblem, p, X, η; initial_guess::Real = 1.0, kwargs...
+        mp::AbstractManoptProblem, p, X, η; initial_guess::Real = 1.0,
+        stop_when_stepsize_exceeds = nothing, kwargs...
     )
     reset_messages!(a.messages)
     l = norm(get_manifold(mp), p, η)
-    local swse # COV_EXCL_LINE
-    if :stop_when_stepsize_exceeds in keys(kwargs)
-        swse = kwargs[:stop_when_stepsize_exceeds]
+    swse = if isnothing(stop_when_stepsize_exceeds)
+        (a.stop_when_stepsize_exceeds / l)
     else
-        swse = (a.stop_when_stepsize_exceeds / l)
+        stop_when_stepsize_exceeds
     end
     a.last_stepsize = linesearch_backtrack!(
         get_manifold(mp),
@@ -2144,54 +2144,39 @@ end
 Do a bracketing line search to find a step size ``α`` that finds a
 local minimum along the  search direction ``X`` starting from ``p``,
 utilizing cubic polynomial interpolation using the method described in
-[HagerZhang:2006:2](@cite).
+[HagerZhang:2006:2](@cite). Function [`secant`](@ref) is used to find the minimum of the
+cubic polynomial fitted to values of the cost function and its derivative at the endpoints
+of the current interval.
 See [`HagerZhangLinesearch`](@ref) for the mathematical details.
 
 # Fields
+
 $(_fields(:p; name = "candidate_point"))
   as temporary storage for candidates
 * `initial_stepsize::R`: the step size to start the search with
 $(_fields(:retraction_method))
 $(_fields(:vector_transport_method))
+* `initial_guess`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+* `stepsize_limit`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+* `max_bracket_iterations`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+* `start_enforcing_wolfe_conditions_at_bracketing_iteration`: see keyword arguments of
+  [`HagerZhangLinesearch`](@ref) for details.
+* `wolfe_condition_mode`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+* `ϵ`, `δ`, `σ`, `ω`, `θ`, `γ`, `ρ`, `Δ`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+* `secant_acceptance_ratio`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+*  `candidate_direction`, `temporary_tangent`: as temporary storage for tangent vectors
+* `triples`: temporary storage for function and derivative evaluations
+* `last_evaluation_index`: to keep track of the number of evaluations performed so far;
+  points at the last filled entry of `triples`.
+* `Qₖ`, `Cₖ`: to keep track of the parameters of the Wolfe condition when in adaptive mode
+* `current_mode`: to keep track of the current Wolfe condition mode when in adaptive mode
+* `last_stepsize`: last stepsize computed since reset
+* `last_cost`: last cost value computed since reset
+* `ϵₖ`: the current ϵ parameter used in the approximate Wolfe condition and bracketing
 
 # Constructor
 
     HagerZhangLinesearchStepsize(M::AbstractManifold; kwargs...)
-
-## Keyword arguments
-
-$(_kwargs(:p; name = "candidate_point")) as temporary storage for candidates
-$(_kwargs(:retraction_method))
-$(_kwargs(:vector_transport_method))
-* `initial_guess::AbstractInitialLinesearchGuess=HagerZhangInitialGuess()`: initial linesearch guess strategy
-* `initial_last_stepsize::Real = NaN`: initial value for the stored last stepsize
-* `initial_last_cost::Real = NaN`: initial value for the stored last cost
-* `stepsize_limit::Real = Inf`: upper bound for trial stepsizes during bracketing
-* `candidate_point = allocate_result(M, rand)`: storage for trial points
-* `candidate_direction = zero_vector(M, candidate_point)`: storage for transported directions
-* `max_bracket_iterations::Int = 10`: maximum number of bracketing iterations
-* `start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = initial_guess isa ConstantStepsize ? 2 : 1`:
-  bracketing iteration number at which Wolfe conditions are started to be enforced;
-  setting to 1 may cause no bracketing to occur when the initial guess satisfies the Wolfe
-  conditions.
-* `max_function_evaluations::Int = 20`: maximum number of function evaluations per linesearch
-* `wolfe_condition_mode::Symbol = :adaptive`: one of `:standard`, `:approximate`, or `:adaptive`.
-  Selects between (T1) and (T2) conditions in [HagerZhang:2006:2](@cite).
-* `ϵ::Real = 1.0e-6`: initial allowed increase in function value in termination condition (T2).
-  Allowed range: `ϵ >= 0`.
-* `δ::Real = 0.1`: parameter for approximate Wolfe condition.
-  Allowed range: `0 < δ < 0.5` and `δ <= σ`.
-* `σ::Real = 0.9`: curvature condition parameter. Allowed range: `δ <= σ < 1`.
-* `ω::Real = 1.0e-3`: interpolation safeguard parameter. Allowed range: `0 <= ω <= 1`.
-* `θ::Real = 0.5`: bisection update parameter. Allowed range: `0 < θ < 1`.
-* `γ::Real = 0.66`: determines when a bisection step is performed instead of secant.
-  Allowed range: `0 < γ < 1`.
-* `ρ::Real = 5.0`: bracketing expansion factor. Allowed range: `ρ > 1`.
-* `Δ::Real = 0.7`: Parameter controlling the rate of change of Qₖ.
-  Allowed range: `0 <= Δ <= 1`.
-* `secant_acceptance_ratio::Real = 1.0e-8`: minimum relative interval length
-  for accepting secant step. Allowed range: `secant_acceptance_ratio >= 0`.
-  In case of rejection, a bisection step is performed instead.
 """
 mutable struct HagerZhangLinesearchStepsize{
         TF <: Real,
@@ -2589,16 +2574,16 @@ function (hzls::HagerZhangLinesearchStepsize)(
         k::Int,
         η = (-get_gradient(mp, get_iterate(s)));
         fp = get_cost(mp, get_iterate(s)),
+        gradient = nothing,
         kwargs...,
     )
     M = get_manifold(mp)
     p = get_iterate(s)
 
-    local dphi_0 # COV_EXCL_LINE
-    if :gradient in keys(kwargs)
-        dphi_0 = real(inner(M, p, η, kwargs[:gradient]))
+    dphi_0 = if !isnothing(gradient)
+        real(inner(M, p, η, gradient))
     else
-        dphi_0 = get_differential(mp, p, η; Y = hzls.temporary_tangent)
+        get_differential(mp, p, η; Y = hzls.temporary_tangent)
     end
     hzls.triples[1] = UnivariateTriple(0.0, fp, dphi_0)
     hzls.last_evaluation_index = 1
@@ -2667,30 +2652,29 @@ function (hzls::HagerZhangLinesearchStepsize)(
     return hzls.last_stepsize
 end
 
-function Base.show(io::IO, cbls::HagerZhangLinesearchStepsize)
+function Base.show(io::IO, hzls::HagerZhangLinesearchStepsize)
     return print(
         io,
         """
         HagerZhangLinesearch(;
-            initial_guess = $(cbls.initial_guess),
-            retraction_method = $(cbls.retraction_method),
-            vector_transport_method = $(cbls.vector_transport_method),
-            stepsize_limit = $(cbls.stepsize_limit),
-            max_bracket_iterations = $(cbls.max_bracket_iterations),
-            wolfe_condition_mode = $(cbls.wolfe_condition_mode),
-            ϵ = $(cbls.ϵ),
-            δ = $(cbls.δ),
-            σ = $(cbls.σ),
-            ω = $(cbls.ω),
-            θ = $(cbls.θ),
-            γ = $(cbls.γ),
-            ρ = $(cbls.ρ),
-            Δ = $(cbls.Δ),
+            initial_guess = $(hzls.initial_guess),
+            retraction_method = $(hzls.retraction_method),
+            vector_transport_method = $(hzls.vector_transport_method),
+            stepsize_limit = $(hzls.stepsize_limit),
+            max_bracket_iterations = $(hzls.max_bracket_iterations),
+            start_enforcing_wolfe_conditions_at_bracketing_iteration = $(hzls.start_enforcing_wolfe_conditions_at_bracketing_iteration),
+            max_function_evaluations = $(length(hzls.triples)),
+            wolfe_condition_mode = $(hzls.wolfe_condition_mode),
+            ϵ = $(hzls.ϵ), δ = $(hzls.δ), σ = $(hzls.σ),
+            ω = $(hzls.ω),
+            θ = $(hzls.θ), γ = $(hzls.γ), secant_acceptance_ratio = $(hzls.secant_acceptance_ratio),
+            ρ = $(hzls.ρ),
+            Δ = $(hzls.Δ),
         )""",
     )
 end
-function status_summary(cbls::HagerZhangLinesearchStepsize)
-    return "$(cbls)\nand a computed last stepsize of $(cbls.last_stepsize)"
+function status_summary(hzls::HagerZhangLinesearchStepsize)
+    return "$(hzls)\nand a computed last stepsize of $(hzls.last_stepsize)"
 end
 
 @doc """
@@ -2700,9 +2684,53 @@ end
 A functor representing the curvature minimizing cubic bracketing scheme introduced
 in [HagerZhang:2006:2](@cite). 
 
-# Keyword arguments
+The following changes were made to the original algorithm from the paper:
+1. The algorithm bails out early out of a secant update that is too close to one of the end
+   points and switches to bisection. Original algorithm performs a similar check at a later
+   stage. This precaution prevents a non-productive evaluation of the objective.
+2. Added `start_enforcing_wolfe_conditions_at_bracketing_iteration`, since with a very low
+   stepsize initialization that satisfies Wolfe conditions we might accept the initial
+   stepsize and not notice that bracketing could help us reach the minimum earlier.
+   Setting `start_enforcing_wolfe_conditions_at_bracketing_iteration`` to 1 reproduces the
+   behavior of the original paper. For example a static initial stepsize equal to 1.0 could
+   benefit from having this parameter increased.
+3. The paper isn't entirely clear on what the final stepsize to return is. This
+   implementation returns the last evaluated stepsize.
 
-$(_kwargs(:p)) to store an interim result
+## Keyword arguments
+
+$(_kwargs(:p; name = "candidate_point")) as temporary storage for candidates
+$(_kwargs(:retraction_method))
+$(_kwargs(:vector_transport_method))
+* `initial_guess::AbstractInitialLinesearchGuess=HagerZhangInitialGuess()`: initial linesearch guess strategy
+* `initial_last_stepsize::Real = NaN`: initial value for the stored last stepsize
+* `initial_last_cost::Real = NaN`: initial value for the stored last cost
+* `stepsize_limit::Real = Inf`: upper bound for trial stepsizes during bracketing
+* `candidate_point = allocate_result(M, rand)`: storage for trial points
+* `candidate_direction = zero_vector(M, candidate_point)`: storage for transported directions
+* `max_bracket_iterations::Int = 10`: maximum number of bracketing iterations
+* `start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = initial_guess isa ConstantStepsize ? 2 : 1`:
+  bracketing iteration number at which Wolfe conditions are started to be enforced;
+  setting to 1 may cause no bracketing to occur when the initial guess satisfies the Wolfe
+  conditions.
+* `max_function_evaluations::Int = 20`: maximum number of function evaluations per linesearch
+* `wolfe_condition_mode::Symbol = :adaptive`: one of `:standard`, `:approximate`, or `:adaptive`.
+  Selects between (T1) and (T2) conditions in [HagerZhang:2006:2](@cite).
+* `ϵ::Real = 1.0e-6`: initial allowed increase in function value in termination condition (T2).
+  Allowed range: `ϵ >= 0`.
+* `δ::Real = 0.1`: parameter for approximate Wolfe condition.
+  Allowed range: `0 < δ < 0.5` and `δ <= σ`.
+* `σ::Real = 0.9`: curvature condition parameter. Allowed range: `δ <= σ < 1`.
+* `ω::Real = 1.0e-3`: interpolation safeguard parameter. Allowed range: `0 <= ω <= 1`.
+* `θ::Real = 0.5`: bisection update parameter. Allowed range: `0 < θ < 1`.
+* `γ::Real = 0.66`: determines when a bisection step is performed instead of secant.
+  Allowed range: `0 < γ < 1`.
+* `ρ::Real = 5.0`: bracketing expansion factor. Allowed range: `ρ > 1`.
+* `Δ::Real = 0.7`: Parameter controlling the rate of change of Qₖ.
+  Allowed range: `0 <= Δ <= 1`.
+* `secant_acceptance_ratio::Real = 1.0e-8`: minimum relative interval length
+  for accepting secant step. Allowed range: `secant_acceptance_ratio >= 0`.
+  In case of rejection, a bisection step is performed instead.
 
 $(_note(:ManifoldDefaultFactory, "HagerZhangLinesearch"))
 """
