@@ -876,7 +876,8 @@ function get_gradient!(
     a = value_cache # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
+    # Max with 0.0 fpr stability, maybe even eps?
+    α = 1 - sqrt(max(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2, 0.0))
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     b = zero(a)
     get_jacobian!(M, b, o, p, X)
@@ -1021,7 +1022,8 @@ function linear_normal_operator!(
     a = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
+    # Max with 0.0 fpr stability, maybe even eps?
+    α = 1 - sqrt(max(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2, 0.0))
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     b = zero(a)
     get_jacobian!(M, b, o, p, X)
@@ -1096,7 +1098,8 @@ function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradie
     a = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
+    # Max with 0.0 fpr stability, maybe even eps?
+    α = 1 - sqrt(max(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2, 0.0))
     # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     # (a) J_F is n-by-d so we have to allocate – where could we maybe store something like that and pass it down?
     JF = get_jacobian(M, o, p; basis = basis)
@@ -1153,7 +1156,8 @@ function linear_operator!(
     F_p = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, F_p)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
+    # Max with 0.0 fpr stability, maybe even eps?
+    α = 1 - sqrt(max(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2, 0.0))
     get_jacobian!(M, y, o, p, X)
     # Compute C y
     y .= sqrt(ρ_prime) .* (I - α * (F_p * F_p') ./ F_p_norm2) * y
@@ -1215,7 +1219,8 @@ function normal_vector_field!(
     y = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
+    # Max with 0.0 fpr stability, maybe even eps?
+    α = 1 - sqrt(max(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2, 0.0))
     # Compute y = (sqrt(ρ'(p)) / (1-α)) F(p) and
     # Now compute J_F^*(p)[C^T y] (inplace of y)
     y .= (ρ_prime / (1 - α)) * (I - α * (y * y') ./ F_p_norm2) * y
@@ -1256,7 +1261,8 @@ function normal_vector_field!(
     y = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
+    # Max with 0.0 fpr stability, maybe even eps?
+    α = 1 - sqrt(max(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2, 0.0))
     # Compute y = (sqrt(ρ'(p)) / (1-α)) F(p) and
     # Now compute J_F^*(p)[C^T y] (inplace of y)
     y .= (ρ_prime / (1 - α)) * (I - α * (y * y') ./ F_p_norm2) * y
@@ -1311,7 +1317,8 @@ function vector_field!(
     get_value!(M, y, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    α = 1 - sqrt(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2)
+    # Max with 0.0 fpr stability, maybe even eps?
+    α = 1 - sqrt(max(1 + 2 * (ismissing(ρ_double_prime) ? 0.0 : ρ_double_prime / ρ_prime) * F_p_norm2, 0.0))
     # TODO: truncate α to 1-ϵ to avoid division by zero
     # Compute y = (sqrt(ρ(p)) / (1-α)) F(p)
     y .*= sqrt(ρ_prime) / (1 - α)
