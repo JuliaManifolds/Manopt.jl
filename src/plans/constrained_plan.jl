@@ -331,12 +331,9 @@ Creates a constrained Manopt problem specifying an [`AbstractPowerRepresentation
 for both the `gradient_equality_range` and the `gradient_inequality_range`, respectively.
 """
 struct ConstrainedManoptProblem{
-        TM <: AbstractManifold,
-        O <: AbstractManifoldObjective,
-        HR <: Union{AbstractPowerRepresentation, Nothing},
-        GR <: Union{AbstractPowerRepresentation, Nothing},
-        HHR <: Union{AbstractPowerRepresentation, Nothing},
-        GHR <: Union{AbstractPowerRepresentation, Nothing},
+        TM <: AbstractManifold, O <: AbstractManifoldObjective,
+        HR <: Union{AbstractPowerRepresentation, Nothing}, GR <: Union{AbstractPowerRepresentation, Nothing},
+        HHR <: Union{AbstractPowerRepresentation, Nothing}, GHR <: Union{AbstractPowerRepresentation, Nothing},
     } <: AbstractManoptProblem{TM}
     manifold::TM
     grad_equality_range::HR
@@ -347,38 +344,26 @@ struct ConstrainedManoptProblem{
 end
 
 function ConstrainedManoptProblem(
-        M::TM,
-        objective::O;
+        M::TM, objective::O;
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
-        gradient_equality_range::HR = range,
-        gradient_inequality_range::GR = range,
-        hessian_equality_range::HHR = range,
-        hessian_inequality_range::GHR = range,
+        gradient_equality_range::HR = range, gradient_inequality_range::GR = range,
+        hessian_equality_range::HHR = range, hessian_inequality_range::GHR = range,
     ) where {
-        TM <: AbstractManifold,
-        O <: AbstractManifoldObjective,
-        GR <: Union{AbstractPowerRepresentation, Nothing},
-        HR <: Union{AbstractPowerRepresentation, Nothing},
-        GHR <: Union{AbstractPowerRepresentation, Nothing},
-        HHR <: Union{AbstractPowerRepresentation, Nothing},
+        TM <: AbstractManifold, O <: AbstractManifoldObjective,
+        GR <: Union{AbstractPowerRepresentation, Nothing}, HR <: Union{AbstractPowerRepresentation, Nothing},
+        GHR <: Union{AbstractPowerRepresentation, Nothing}, HHR <: Union{AbstractPowerRepresentation, Nothing},
     }
     return ConstrainedManoptProblem{TM, O, HR, GR, HHR, GHR}(
-        M,
-        gradient_equality_range,
-        gradient_inequality_range,
-        hessian_equality_range,
-        hessian_inequality_range,
-        objective,
+        M, gradient_equality_range, gradient_inequality_range,
+        hessian_equality_range, hessian_inequality_range, objective,
     )
 end
 get_manifold(cmp::ConstrainedManoptProblem) = cmp.manifold
 get_objective(cmp::ConstrainedManoptProblem) = cmp.objective
 
 function show(io::IO, cmp::ConstrainedManoptProblem)
-    print(io, "ConstrainedManoptProblem(")
-    show(io, cmp.manifold)
-    print(io, ", ")
-    show(io, cmp.objective)
+    print(io, "ConstrainedManoptProblem("); show(io, cmp.manifold)
+    print(io, ", "); show(io, cmp.objective)
     print(io, "; gradient_equality_range = "); print(io, cmp.grad_equality_range)
     print(io, ", gradient_inequality_range = "); print(io, cmp.grad_inequality_range)
     print(io, ", hessian_equality_range = "); print(io, cmp.hess_equality_range)
