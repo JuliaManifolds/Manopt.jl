@@ -1293,7 +1293,7 @@ function vector_field(
     )
     nlso = get_objective(lmsco)
     n = sum(length(o) for o in nlso.objective)
-    y = zeros(eltype(p), n)
+    y = zeros(number_eltype(p), n)
     return vector_field!(M, y, lmsco, p)
 end
 function vector_field!(
