@@ -714,7 +714,7 @@ end
 function status_summary(c::StopWhenGradientMappingNormLess; inline = false)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "|G| < $(c.threshold):\t" : "A stopping criterion to stop when the gradient mapping norm is less then a tolerance.\n\t") * s
+    return (inline ? "|G| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient mapping norm is less then a tolerance.\n$(_MANOPT_INDENT)") * s
 end
 
 indicates_convergence(c::StopWhenGradientMappingNormLess) = true

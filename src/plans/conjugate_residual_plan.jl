@@ -364,7 +364,7 @@ end
 function status_summary(swrr::StopWhenRelativeResidualLess; inline = false)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return inline ? "‖r^(k)‖ / c < ε:\t$s" : "A stopping criterion to stop when the relative residual is less than the threshold of $(swrr.ϵ)\n\t$s"
+    return inline ? "‖r^(k)‖ / c < ε:$(_MANOPT_INDENT)$s" : "A stopping criterion to stop when the relative residual is less than the threshold of $(swrr.ϵ)\n$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(::StopWhenRelativeResidualLess) = true
 function show(io::IO, swrr::StopWhenRelativeResidualLess)

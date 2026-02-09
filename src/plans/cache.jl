@@ -1095,8 +1095,8 @@ function status_summary(smco::SimpleManifoldCachedObjective; inline = false)
     for the iterate, the gradient, and the cost function, respectively.
 
     At the current iterate
-    * the tangent vector is cached:\t$(smco.X_valid ? "Yes" : "No")
-    * the cost is cached:\t$(smco.c_valid ? "Yes" : "No")
+    * the tangent vector is cached:$(_MANOPT_INDENT)$(smco.X_valid ? "Yes" : "No")
+    * the cost is cached:$(_MANOPT_INDENT)$(smco.c_valid ? "Yes" : "No")
     """
     s2 = status_summary(smco.objective; inline = false)
     length(s2) > 0 && (s2 = "\n$(s2)")

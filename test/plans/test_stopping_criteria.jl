@@ -79,7 +79,7 @@ end
         o = Manopt.Test.DummyState()
         s = StopAfter(Millisecond(30))
         @test !Manopt.indicates_convergence(s)
-        @test Manopt.status_summary(s) == "stopped after $(s.threshold):\tnot reached"
+        @test Manopt.status_summary(s) == "stopped after $(s.threshold):$(_MANOPT_INDENT)not reached"
         @test repr(s) == "StopAfter(Millisecond(30))\n    $(Manopt.status_summary(s))"
         s(p, o, 0) # Start
         @test s(p, o, 1) == false
@@ -130,13 +130,13 @@ end
 
     @testset "Stopping Criterion print&summary" begin
         f = StopWhenStepsizeLess(1.0e-6)
-        sf1 = "Stepsize s < 1.0e-6:\tnot reached"
+        sf1 = "Stepsize s < 1.0e-6:$(_MANOPT_INDENT)not reached"
         sf2 = "StopWhenStepsizeLess(1.0e-6)"
         @test Manopt.status_summary(f) == "$sf2\n\n$sf1"
         @test Manopt.status_summary(f; inline = true) == sf1
         @test repr(f) == sf2
         g = StopWhenCostLess(1.0e-4)
-        @test Manopt.status_summary(g; inline = true) == "f(x) < $(1.0e-4):\tnot reached"
+        @test Manopt.status_summary(g; inline = true) == "f(x) < $(1.0e-4):$(_MANOPT_INDENT)not reached"
         @test repr(g) == "StopWhenCostLess(0.0001)\n    $(Manopt.status_summary(g))"
         gf(M, p) = norm(p)
         grad_gf(M, p) = p

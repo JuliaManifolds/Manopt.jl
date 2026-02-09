@@ -146,7 +146,7 @@ using LinearAlgebra: eigvals
         st_str = Manopt.status_summary(st; inline = false)
         @test occursin("Vector bundle Newton method", st_str)
         # we stopped since the change was small enough
-        @test occursin("* |Δp| < 1.0e-11:\treached", st_str)
+        @test occursin("* |Δp| < 1.0e-11:$(_MANOPT_INDENT)reached", st_str)
         @test occursin("AffineCovariantStepsize", st_str)
         acs = st.stepsize
         @test get_initial_stepsize(acs) == acs.α

@@ -487,6 +487,6 @@ end
 function status_summary(c::StopWhenPollSizeLess)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "Poll step size s < $(c.threshold):\t" : "Stop when the poll step size is less than the threshold $(c.threshold)\n\t") * s
+    return (inline ? "Poll step size s < $(c.threshold):$(_MANOPT_INDENT)" : "Stop when the poll step size is less than the threshold $(c.threshold)\n$(_MANOPT_INDENT)") * s
 end
 show(io::IO, c::StopWhenPollSizeLess) = print(io, "StopWhenPollSizeLess($(c.threshold))")

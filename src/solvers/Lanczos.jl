@@ -326,7 +326,7 @@ end
 function status_summary(c::StopWhenFirstOrderProgress)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "First order progress with θ=$(c.θ):\t$s"
+    return "First order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(c::StopWhenFirstOrderProgress) = true
 function show(io::IO, c::StopWhenFirstOrderProgress)
@@ -380,7 +380,7 @@ end
 function status_summary(c::StopWhenAllLanczosVectorsUsed)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "" : "Stop when all Lanczos vectors are used\n\t":"All Lanczos vectors ($(c.maxLanczosVectors)) used:\t") * s
+    return (inline ? "" : "Stop when all Lanczos vectors are used\n$(_MANOPT_INDENT)":"All Lanczos vectors ($(c.maxLanczosVectors)) used:$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(c::StopWhenAllLanczosVectorsUsed) = false
 function show(io::IO, c::StopWhenAllLanczosVectorsUsed)

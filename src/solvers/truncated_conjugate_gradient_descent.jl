@@ -193,7 +193,7 @@ end
 function status_summary(c::StopWhenResidualIsReducedByFactorOrPower; inline = false)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "Residual reduced by factor $(c.κ) or power $(c.θ):\t" : "A stopping criterion used within tCG to check whether the residual is reduced by factor $(c.κ) or power 1+$(c.θ)\n\t") * "$s"
+    return (inline ? "Residual reduced by factor $(c.κ) or power $(c.θ):$(_MANOPT_INDENT)" : "A stopping criterion used within tCG to check whether the residual is reduced by factor $(c.κ) or power 1+$(c.θ)\n$(_MANOPT_INDENT)") * "$s"
 end
 function show(io::IO, c::StopWhenResidualIsReducedByFactorOrPower)
     return print(io, "StopWhenResidualIsReducedByFactorOrPower($(c.κ), $(c.θ))")
@@ -277,7 +277,7 @@ end
 function status_summary(c::StopWhenTrustRegionIsExceeded)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "Trust region exceeded:\t$s"
+    return "Trust region exceeded:$(_MANOPT_INDENT)$s"
 end
 function show(io::IO, c::StopWhenTrustRegionIsExceeded)
     return print(io, "StopWhenTrustRegionIsExceeded()\n    $(status_summary(c))")
@@ -334,7 +334,7 @@ end
 function status_summary(c::StopWhenCurvatureIsNegative)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "Curvature is negative:\t$s"
+    return "Curvature is negative:$(_MANOPT_INDENT)$s"
 end
 function show(io::IO, c::StopWhenCurvatureIsNegative)
     return print(io, "StopWhenCurvatureIsNegative()\n    $(status_summary(c))")
@@ -390,7 +390,7 @@ end
 function status_summary(c::StopWhenModelIncreased)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "Model Increased:\t$s"
+    return "Model Increased:$(_MANOPT_INDENT)$s"
 end
 function show(io::IO, c::StopWhenModelIncreased)
     return print(io, "StopWhenModelIncreased()\n    $(status_summary(c))")

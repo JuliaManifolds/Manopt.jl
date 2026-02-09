@@ -574,7 +574,7 @@ end
 function status_summary(c::StopWhenCovarianceIllConditioned; inline = false)
     has_stopped = c.at_iteration > 0
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "cond(s.covariance_matrix) > $(c.threshold):\t" : "Stop when the covariance matrix is ill-conditioned, i.e. the last condition number is larger than the threshold of $(c.threshold)\n\t") * s
+    return (inline ? "cond(s.covariance_matrix) > $(c.threshold):\t" : "Stop when the covariance matrix is ill-conditioned, i.e. the last condition number is larger than the threshold of $(c.threshold)\n$(_MANOPT_INDENT)") * s
 end
 function show(io::IO, c::StopWhenCovarianceIllConditioned)
     return print(
@@ -712,7 +712,7 @@ function status_summary(c::StopWhenEvolutionStagnates)
     s = has_stopped ? "reached" : "not reached"
     N = length(c.best_history)
     if N == 0
-        return "best and median fitness not yet filled, stopping criterion:\t$s"
+        return "best and median fitness not yet filled, stopping criterion:$(_MANOPT_INDENT)$s"
     end
     threshold_low = Int(ceil(N * c.fraction))
     threshold_high = Int(floor(N * (1 - c.fraction)))
@@ -720,7 +720,7 @@ function status_summary(c::StopWhenEvolutionStagnates)
     median_best_new = median(c.best_history[threshold_high:end])
     median_median_old = median(c.median_history[1:threshold_low])
     median_median_new = median(c.median_history[threshold_high:end])
-    return "generation >= $(c.min_size) && $(median_best_old) <= $(median_best_new) && $(median_median_old) <= $(median_median_new):\t$s"
+    return "generation >= $(c.min_size) && $(median_best_old) <= $(median_best_new) && $(median_median_old) <= $(median_median_new):$(_MANOPT_INDENT)$s"
 end
 function get_reason(c::StopWhenEvolutionStagnates)
     if c.at_iteration >= 0
@@ -782,7 +782,7 @@ end
 function status_summary(c::StopWhenPopulationStronglyConcentrated)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
-    return "norm(s.deviations, Inf) < $(c.tol) && norm(s.σ * s.p_c, Inf) < $(c.tol) :\t$s"
+    return "norm(s.deviations, Inf) < $(c.tol) && norm(s.σ * s.p_c, Inf) < $(c.tol) :$(_MANOPT_INDENT)$s"
 end
 function get_reason(c::StopWhenPopulationStronglyConcentrated)
     if c.at_iteration >= 0
@@ -831,7 +831,7 @@ end
 function status_summary(c::StopWhenPopulationDiverges)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
-    return "cur_σ_times_maxstddev / c.last_σ_times_maxstddev > $(c.tol) :\t$s"
+    return "cur_σ_times_maxstddev / c.last_σ_times_maxstddev > $(c.tol) :$(_MANOPT_INDENT)$s"
 end
 function get_reason(c::StopWhenPopulationDiverges)
     if c.at_iteration >= 0
@@ -891,7 +891,7 @@ end
 function status_summary(c::StopWhenPopulationCostConcentrated)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
-    return "range of best objective values in the last $(length(c.best_value_history)) generations and all objective values in the current one < $(c.tol) :\t$s"
+    return "range of best objective values in the last $(length(c.best_value_history)) generations and all objective values in the current one < $(c.tol) :$(_MANOPT_INDENT)$s"
 end
 function get_reason(c::StopWhenPopulationCostConcentrated)
     if c.at_iteration >= 0

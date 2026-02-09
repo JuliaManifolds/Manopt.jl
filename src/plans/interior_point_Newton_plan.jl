@@ -351,7 +351,7 @@ end
 
 function show(io::IO, CKKTvf::CondensedKKTVectorField)
     return print(
-        io, "CondensedKKTVectorField\n\twith μ=$(CKKTvf.μ), s=$(CKKTvf.s), β=$(CKKTvf.β)"
+        io, "CondensedKKTVectorField\n$(_MANOPT_INDENT)with μ=$(CKKTvf.μ), s=$(CKKTvf.s), β=$(CKKTvf.β)"
     )
 end
 
@@ -457,7 +457,7 @@ end
 function show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
     return print(
         io,
-        "CondensedKKTVectorFieldJacobian\n\twith μ=$(CKKTvfJ.μ), s=$(CKKTvfJ.s), β=$(CKKTvfJ.β)",
+        "CondensedKKTVectorFieldJacobian\n$(_MANOPT_INDENT)with μ=$(CKKTvfJ.μ), s=$(CKKTvfJ.s), β=$(CKKTvfJ.β)",
     )
 end
 
@@ -535,7 +535,7 @@ function (KKTvf::KKTVectorField)(N, Y, q)
     return Y
 end
 function show(io::IO, KKTvf::KKTVectorField)
-    return print(io, "KKTVectorField\nwith the objective\n\t$(KKTvf.cmo)")
+    return print(io, "KKTVectorField\nwith the objective\n$(_MANOPT_INDENT)$(KKTvf.cmo)")
 end
 
 @doc """
@@ -613,7 +613,7 @@ function (KKTvfJ::KKTVectorFieldJacobian)(N, Z, q, Y)
     return Z
 end
 function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
-    return print(io, "KKTVectorFieldJacobian\nwith the objective\n\t$(KKTvfJ.cmo)")
+    return print(io, "KKTVectorFieldJacobian\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfJ.cmo)")
 end
 
 @doc """
@@ -690,7 +690,7 @@ function (KKTvfAdJ::KKTVectorFieldAdjointJacobian)(N, Z, q, Y)
     return Z
 end
 function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
-    return print(io, "KKTVectorFieldAdjointJacobian\nwith the objective\n\t$(KKTvfAdJ.cmo)")
+    return print(io, "KKTVectorFieldAdjointJacobian\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfAdJ.cmo)")
 end
 
 @doc """
@@ -723,7 +723,7 @@ function (KKTvc::KKTVectorFieldNormSq)(N, q)
     return inner(N, q, Y, Y)
 end
 function show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
-    return print(io, "KKTVectorFieldNormSq\nwith the objective\n\t$(KKTvfNSq.cmo)")
+    return print(io, "KKTVectorFieldNormSq\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfNSq.cmo)")
 end
 
 @doc """
@@ -792,7 +792,7 @@ function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, Y, q)
 end
 function show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
     return print(
-        io, "KKTVectorFieldNormSqGradient\nwith the objective\n\t$(KKTvfNSqGrad.cmo)"
+        io, "KKTVectorFieldNormSqGradient\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfNSqGrad.cmo)"
     )
 end
 
@@ -978,7 +978,7 @@ end
 function status_summary(swrr::StopWhenKKTResidualLess; inline = false)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "‖F(p, λ, μ)‖ < ε = $(c.ε):\t" : "Stop when the KKT resudual is less than ε = $(c.ε)\n\t") * s
+    return (inline ? "‖F(p, λ, μ)‖ < ε = $(c.ε):$(_MANOPT_INDENT)" : "Stop when the KKT resudual is less than ε = $(c.ε)\n$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(::StopWhenKKTResidualLess) = true
 function show(io::IO, c::StopWhenKKTResidualLess)

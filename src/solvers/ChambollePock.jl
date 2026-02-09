@@ -154,7 +154,7 @@ function Manopt.ChambollePockState(
         vector_transport_method_dual,
     )
 end
-function status_summaary(cps::ChambollePockState; inline = true)
+function status_summary(cps::ChambollePockState; inline = true)
     i = get_count(cps, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cps.stop) ? "Yes" : "No"

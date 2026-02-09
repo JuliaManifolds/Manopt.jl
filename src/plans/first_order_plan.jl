@@ -512,7 +512,7 @@ function get_cost_and_gradient!(
 end
 function status_summary(mfo::ManifoldFirstOrderObjective; inline = false)
     inline && (return "A first order objective with functions for $(join(keys(mfo.functions), ", ", (length(mfo.functions) > 2 ? "," : "") * " and "))")
-    return "A first order objective with $(length(mfo.functions)) provided functions.\n\n" * join([ "* $k:\t $(v))" for (k, v) in zip(keys(mfo.functions), mfo.functions) ], "\n")
+    return "A first order objective with $(length(mfo.functions)) provided functions.\n\n" * join([ "* $k:$(_MANOPT_INDENT) $(v)" for (k, v) in zip(keys(mfo.functions), mfo.functions) ], "\n")
 end
 function show(io::IO, mfo::ManifoldFirstOrderObjective{E}) where {E}
     print(io, "ManifoldFirstOrderObjective(; ")
