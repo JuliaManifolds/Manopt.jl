@@ -2144,7 +2144,7 @@ end
 Do a bracketing line search to find a step size ``α`` that finds a
 local minimum along the  search direction ``X`` starting from ``p``,
 utilizing cubic polynomial interpolation using the method described in
-[HagerZhang:2006:2](@cite). Function [`secant`](@ref) is used to find the minimum of the
+[HagerZhang:2006:2](@cite). The function [`secant`](@ref) is used to find the minimum of the
 cubic polynomial fitted to values of the cost function and its derivative at the endpoints
 of the current interval.
 See [`HagerZhangLinesearch`](@ref) for the mathematical details.
