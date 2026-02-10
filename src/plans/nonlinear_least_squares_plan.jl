@@ -646,6 +646,9 @@ $(_fields(:stopping_criterion; name = "stop"))
   new point is rejected
 * `expect_zero_residual`: if true, the algorithm expects that the value of
   the residual (objective) at minimum is equal to 0.
+* `minimum_acceptable_model_improvement`: the minimum improvement in the model function that
+  is required to accept a new point; if this is not met, the new point is rejected and
+  the damping term is increased.
 * `sub_problem`: the linear subproblem solver to use to solve the linearized
   subproblem in each iteration.
 * `sub_state`: the state to use for the linear subproblem solver.
@@ -667,6 +670,7 @@ The following fields are keyword arguments
 * `initial_gradient=`$(_link(:zero_vector))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
+* `minimum_acceptable_model_improvement::Real=eps(number_eltype(p))`
 
 # See also
 
@@ -692,6 +696,7 @@ mutable struct LevenbergMarquardtState{
     damping_term_min::Tparams
     β::Tparams
     expect_zero_residual::Bool
+    minimum_acceptable_model_improvement::Tparams
     sub_problem::Pr
     sub_state::St
     function LevenbergMarquardtState(
@@ -707,6 +712,7 @@ mutable struct LevenbergMarquardtState{
             damping_term_min::Real = 0.1,
             β::Real = 5.0,
             expect_zero_residual::Bool = false,
+            minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
             linear_subsolver! = nothing, #remove on next breaking release
             sub_problem::Pr = linear_subsolver!, # TODO change default on next breaking release
             sub_state::St = InplaceEvaluation(),
@@ -744,6 +750,7 @@ mutable struct LevenbergMarquardtState{
             damping_term_min,
             β,
             expect_zero_residual,
+            minimum_acceptable_model_improvement,
             sub_problem,
             sub_state,
         )
@@ -824,7 +831,7 @@ mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluatio
 end
 
 """
-    get_LevenbergMarquardt_scaling(b, c, FkSq; ε::Real = 1e-6, mode::Symbol = :Default)
+    get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FkSq::Real, ε::Real, mode::Symbol)
 
 Compute the `sqrt(ρ_prime) / (1 - α)` and `α / FkSq` that are required for the robust
 rescaling within [`LevenbergMarquardt`](@ref) given by
@@ -853,16 +860,18 @@ in the square root already if ``ρ_k'' < 0`` for stability reason, which means s
 
 In the case ``FkSq = 0`` we also set ``α / FkSq = 0``.
 
-## Keyword arguments
+## Additional arguments
 
-* `ε::Real = 1e-6`: the stability for ``α`` to not be too close to one.
-* `mode::Symbol = :Default` specify the mode of calculation
+* `ε::Real`: the stability for ``α`` to not be too close to one.
+* `mode::Symbol` specify the mode of calculation
   - `:Default` keeps negative ``ρ''_k < 0`` but makes sure the square root is well-defined.
   - `:Strict` set ``α = 0`` when ``ρ''_k < 0`` like Ceres does
 """
-function get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FkSq::Real;
-    ε::Real = 1.0e-6, mode::Symbol = :Default)
-    # second derivative existent and negative: In strict mode (motivated by ceres) -> return 0
+function get_LevenbergMarquardt_scaling(
+        ρ_prime::Real, ρ_double_prime::Real, FkSq::Real,
+        ε::Real, mode::Symbol
+    )
+    # second derivative existent and negative: In strict mode (motivated by ceres) -> return sqrt(ρ_prime), 0
     (ismissing(ρ_double_prime) || (ρ_double_prime < 0 && mode == :Strict)) && return (sqrt(ρ_prime), 0.0)
     (iszero(FkSq) && mode == :Strict) && return (sqrt(ρ_prime), 0.0)
     α = 1 - sqrt(max(1 + 2 * (ρ_double_prime / ρ_prime) * FkSq, 0.0))
@@ -928,17 +937,17 @@ function get_gradient!(
 end
 function get_gradient!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
-        value_cache = get_value(M, o, p), ε = 0.0, mode = :Default,
+        value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
     )
     a = value_cache # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2; ε = ε, mode = mode)
+    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     b = zero(a)
     get_jacobian!(M, b, o, p, X)
     # Compute C^TCa = C^2 a (inplace of a)
-    b .= ρ_prime .* (I - alpha_over_FkSq * (a * a') )^2 * b
+    b .= ρ_prime .* (I - alpha_over_FkSq * (a * a'))^2 * b
     # add C^T y = C^T (sqrt(ρ(p)) / (1 - α) F(p)) (which overall has a ρ_prime upfront)
     b .+= residual_scaling .* (I - alpha_over_FkSq * (a * a')) * a
     # apply the adjoint
@@ -1073,12 +1082,12 @@ end
 # for a single block – the actual formula
 function linear_normal_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
-        penalty = 0, ε = 0.0, mode = :Default
+        penalty = 0, ε::Real, mode::Symbol
     )
     a = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2; ε = ε, mode = mode)
+    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     b = zero(a)
     get_jacobian!(M, b, o, p, X)
@@ -1149,11 +1158,11 @@ function linear_normal_operator!(
     (penalty != 0) && (A .= A + penalty * I)
     return A
 end
-function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, basis::AbstractBasis; penalty = 0.0, ε = 0.0, mode = :Default)
+function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, basis::AbstractBasis; penalty = 0.0, ε::Real, mode::Symbol)
     a = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2; ε = ε, mode = mode)
+    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
     # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     # (a) J_F is n-by-d so we have to allocate – where could we maybe store something like that and pass it down?
     JF = get_jacobian(M, o, p; basis = basis)
@@ -1208,12 +1217,12 @@ end
 # for a single block – the actual formula
 function linear_operator!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
-        value_cache = get_value(M, o, p); penalty = 0.0, ε = 0.0, mode = :Default,
+        value_cache = get_value(M, o, p); penalty = 0.0, ε::Real, mode::Symbol,
     )
     F_p = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, F_p)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2; ε = ε, mode = mode)
+    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
     get_jacobian!(M, y, o, p, X)
     # Compute C y
     y .= residual_scaling .* (I - alpha_over_FkSq * (F_p * F_p'))^2 * y
@@ -1271,12 +1280,12 @@ end
 @doc "$(_doc_normal_vector_field)"
 function normal_vector_field!(
         M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        ε = 0.0, mode = :Default,
+        ε::Real, mode::Symbol,
     )
     y = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2; ε = ε, mode = mode)
+    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
     # Compute y = (sqrt(ρ'(p)) / (1-α)) F(p) and
     # Now compute J_F^*(p)[C^T y] (inplace of y)
     y .= residual_scaling .* (I - alpha_over_FkSq * (y * y')) * y
@@ -1313,12 +1322,12 @@ end
 @doc "$(_doc_normal_vector_field)"
 function normal_vector_field!(
         M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis;
-        ε = 0.0, mode = :Default,
+        ε::Real, mode::Symbol,
     )
     y = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2; ε = ε, mode = mode)
+    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
     # Compute y = (sqrt(ρ'(p)) / (1-α)) F(p) and
     # Now compute J_F^*(p)[C^T y] (inplace of y)
     y .= residual_scaling .* (I - alpha_over_FkSq * (y * y')) * y
@@ -1368,12 +1377,12 @@ end
 # for a single block – the actual formula
 function vector_field!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        ε = 0.0, mode = :Default,
+        ε::Real, mode::Symbol,
     )
     get_value!(M, y, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2; ε = ε, mode = mode)
+    residual_scaling, alpha_over_FkSq = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
     # Compute y = (sqrt(ρ(p)) / (1-α)) F(p)
     y .*= residual_scaling
     return y

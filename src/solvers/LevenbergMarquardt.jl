@@ -189,8 +189,8 @@ function LevenbergMarquardt!(
         initial_residual_values = similar(X, sum(length(o) for o in get_objective(nlso).objective)),
         (linear_subsolver!) = nothing,
         #TODO better names for the next 2?
-        ε = 0.0,
-        α_mode = :Default,
+        ε::Real = 1.0e-6,
+        α_mode::Symbol = :Default,
         sub_objective = SymmetricLinearSystem(LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = damping_term_min, ε = ε, mode = α_mode)),
         # to keep this non-breaking for now, maybe:
         # TODO change default on next breaking release to no longer accept `linear_subsolver` here
@@ -247,11 +247,29 @@ function step_solver!(
     set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
     # Subsolver result
     lms.X .= -get_solver_result(lms.sub_problem, solve!(lms.sub_problem, lms.sub_state))
+    if norm(M, lms.p, lms.X) > max_stepsize(M, lms.p)
+        # Vector too long; we can reject the step without evaluating the objective
+        lms.damping_term *= lms.β
+        return lms
+    end
+    model_improvement = 0.5 * (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X))
+    if model_improvement < lms.minimum_acceptable_model_improvement
+        @warn "Rejecting step because of insufficient model improvement. Model improvement: $model_improvement, minimum acceptable model improvement: $(lms.minimum_acceptable_model_improvement)"
+        # Model improvement insufficient, reject step and increase damping term
+        lms.damping_term *= lms.β
+        return lms
+    end
     # New iterate candidate - maybe store in state?
+
     q = retract(M, lms.p, lms.X, lms.retraction_method)
+    if !is_point(M, q)
+        # Retracted point is not valid, rejecting step
+        # example scenario: exp(SymmetricPositiveDefinite(2), [1 0; 0 1], [-22.45160594421605 -57.9485939494495; -57.9485939494495 1284.8842829453467])
+        lms.damping_term *= lms.β
+        return lms
+    end
     # Evaluate improvement of actual cost divided by predicted cost improvement
     cost_improvement = get_cost(M, nlso, lms.p) - get_cost(M, nlso, q)
-    model_improvement = 0.5 * (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X))
     ρ = cost_improvement / model_improvement
     # Update damping term and iterate
     # TODO Abstract this to a generic update for η?
