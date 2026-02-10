@@ -1207,7 +1207,7 @@ function linear_operator!(
     α = get_LevenbergMarquardt_α(ρ_prime, ρ_double_prime, F_p_norm2; ε = ε, mode = mode)
     get_jacobian!(M, y, o, p, X)
     # Compute C y
-    y .= sqrt(ρ_prime) .* (I - α * (F_p * F_p') ./ F_p_norm2) * y
+    y .= sqrt(ρ_prime) .* (I - α * (F_p * F_p') ./ F_p_norm2)^2 * y
     return y
 end
 
@@ -1314,7 +1314,6 @@ function normal_vector_field!(
     # Now compute J_F^*(p)[C^T y] (inplace of y)
     y .= (ρ_prime / (1 - α)) * (I - α * (y * y') ./ F_p_norm2) * y
     # Now apply the adjoint
-    # TODO: Do the corresponding dispatch cases already exist?
     get_adjoint_jacobian!(M, c, o, p, y, B)
     return c
 end
@@ -1366,7 +1365,6 @@ function vector_field!(
     F_p_norm2 = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
     α = get_LevenbergMarquardt_α(ρ_prime, ρ_double_prime, F_p_norm2; ε = ε, mode = mode)
-    # TODO: truncate α to 1-ϵ to avoid division by zero
     # Compute y = (sqrt(ρ(p)) / (1-α)) F(p)
     y .*= sqrt(ρ_prime) / (1 - α)
     return y
