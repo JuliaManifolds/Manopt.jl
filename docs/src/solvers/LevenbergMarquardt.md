@@ -19,6 +19,7 @@ LevenbergMarquardtState
 
 ```@docs
 Manopt.LevenbergMarquardtLinearSurrogateObjective
+Manopt.CoordinatesNormalSystemState
 ```
 
 ## [Technical details](@id sec-lm-technical-details)

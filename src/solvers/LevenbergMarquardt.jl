@@ -190,7 +190,10 @@ function LevenbergMarquardt!(
         X = zero_vector(M, p),
         initial_residual_values = similar(X, sum(length(o) for o in get_objective(nlso).objective)),
         (linear_subsolver!) = nothing,
-        sub_objective = SymmetricLinearSystem(LevenbergMarquardtLinearSurrogateObjective(nlso, damping_term_min)),
+        #TODO better names for the next 2?
+        ε = 0.0,
+        α_mode = :Default,
+        sub_objective = SymmetricLinearSystem(LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = damping_term_min, ε = ε, mode = α_mode)),
         # to keep this non-breaking for now, maybe:
         # TODO change default on next breaking release to no longer accept `linear_subsolver` here
         sub_problem = isnothing(linear_subsolver!) ? DefaultManoptProblem(TangentSpace(M, p), sub_objective) : linear_subsolver!,
