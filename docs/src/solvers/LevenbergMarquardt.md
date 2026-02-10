@@ -33,7 +33,7 @@ The [`LevenbergMarquardt`](@ref) solver requires the following functions of a ma
 ## Internals
 
 ```@docs
-Manopt.default_lm_lin_solve!
+Manopt.get_LevenbergMarquardt_α
 ```
 
 ## Literature

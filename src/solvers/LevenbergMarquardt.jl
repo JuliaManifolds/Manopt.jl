@@ -51,9 +51,7 @@ $(_kwargs(:evaluation))
 * `initial_residual_values`: the initial residual vector of the cost function `f`.
   By default this is a vector of length `num_components` of similar type as `p`.
 * `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
-* `linear_subsolver!`:    a function with three arguments `sk, JJ, grad_f_c` that solves the
-  linear subproblem `sk .= JJ \\ grad_f_c`, where `JJ` is (up to numerical issues) a
-  symmetric positive definite matrix. Default value is [`default_lm_lin_solve!`](@ref).
+* `linear_subsolver! = nothing`: (deprecated) short form for specifying a closed form subsolver.
 $(_kwargs(:retraction_method))
 
 $(_note(:OtherKeywords))
@@ -233,30 +231,6 @@ function initialize_solver!(
     get_gradient!(M, lms.X, nlso, lms.p)
     return lms
 end
-
-"""
-    default_lm_lin_solve!(sk, JJ, grad_f_c)
-
-Solve the system `JJ \\ grad_f_c` where JJ is (mathematically) a symmetric positive
-definite matrix and save the result to `sk`. In case of numerical errors the
-`PosDefException` is caught and the default symmetric solver `(Symmetric(JJ) \\ grad_f_c)`
-is used.
-
-The function is intended to be used with [`LevenbergMarquardt`](@ref).
-"""
-function default_lm_lin_solve!(sk, JJ, grad_f_c)
-    try
-        ldiv!(sk, cholesky(JJ), grad_f_c)
-    catch e
-        if e isa PosDefException
-            sk .= Symmetric(JJ) \ grad_f_c
-        else
-            rethrow()
-        end
-    end
-    return sk
-end
-
 
 function step_solver!(
         dmp::DefaultManoptProblem{mT, <:NonlinearLeastSquaresObjective},

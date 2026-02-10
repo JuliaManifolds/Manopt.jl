@@ -536,7 +536,7 @@ A robustifier that is based on the tolerant function.
 
 The formula for the robustifier is given as
 ```math
-ρ_{a,b}(x) = b$(_tex(:log, "1+ $(_tex(:rm, "e")){(s-a)/b}")) - b$(_tex(:log, "1 + $(_tex(:rm, "e")){-a/b}"))
+ρ_{a,b}(x) = b$(_tex(:log))(1+ $(_tex(:rm, "e"))^{(s-a)/b}) - b$(_tex(:log))(1 + $(_tex(:rm, "e"))^{-a/b})
 ```
 and its first and second derivatives read as
 ```math

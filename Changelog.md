@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * (breaking change) renamed `CoordinateVectorialType` to `CoefficientVectorialType` to have a
   consistent naming that anything with respect to a basis is called “coefficients”
+* removed the old closed-form-in-coordinates subsolver for `LevenbergMarquardt`; if you implemented your own, pass it to `sub_problem`,
+set the `sub_state` to indicate allocating or in-place evaluation and change the signature as documented; make especially sure to return a tangent vector now and not coordinates.
 
 ## [0.5.32] January 15, 2026
 

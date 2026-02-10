@@ -283,13 +283,4 @@ end
             evaluation = InplaceEvaluation(),
         )
     end
-
-    @testset "linear subproblem numerical issues" begin
-        JJ = [2.0 eps(); 0.0 2.0]
-        grad_f_c = [1.0, 2.0]
-        sk = similar(grad_f_c)
-        Manopt.default_lm_lin_solve!(sk, JJ, grad_f_c)
-        @test isapprox(sk, [0.5, 1.0])
-        @test_throws SingularException Manopt.default_lm_lin_solve!(sk, NaN .* JJ, grad_f_c)
-    end
 end
