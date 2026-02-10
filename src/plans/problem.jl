@@ -48,7 +48,7 @@ function status_summary(dmp::DefaultManoptProblem; inline = false)
     An optimization problem for Manopt.jl
 
     ## Manifold
-      $(replace(repr(dmp.manifold), "\n#" => "\n##"))
+      $(replace(repr(dmp.manifold), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))
 
     ## Objective
       $(replace(status_summary(dmp.objective, inline = inline), "\n#" => "\n##"))"""

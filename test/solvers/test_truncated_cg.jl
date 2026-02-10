@@ -12,11 +12,11 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @test get_iterate(s) == η
     srr = StopWhenResidualIsReducedByFactorOrPower()
     ssr1 = Manopt.status_summary(srr)
-    @test ssr1 == "Residual reduced by factor 0.1 or power 1.0:$(_MANOPT_INDENT)not reached"
+    @test ssr1 == "Residual reduced by factor 0.1 or power 1.0:$(Manopt._MANOPT_INDENT)not reached"
     @test repr(srr) == "StopWhenResidualIsReducedByFactorOrPower(0.1, 1.0)\n    $(ssr1)"
     str = StopWhenTrustRegionIsExceeded()
     str1 = Manopt.status_summary(str)
-    @test str1 == "Trust region exceeded:$(_MANOPT_INDENT)not reached"
+    @test str1 == "Trust region exceeded:$(Manopt._MANOPT_INDENT)not reached"
     @test repr(str) == "StopWhenTrustRegionIsExceeded()\n    $(str1)"
     @test get_reason(str) == ""
     # Trigger manually
@@ -24,10 +24,10 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @test length(get_reason(str)) > 0
     scn = StopWhenCurvatureIsNegative()
     scn1 = Manopt.status_summary(scn)
-    @test scn1 == "Curvature is negative:$(_MANOPT_INDENT)not reached"
+    @test scn1 == "Curvature is negative:$(Manopt._MANOPT_INDENT)not reached"
     @test repr(scn) == "StopWhenCurvatureIsNegative()\n    $(scn1)"
     smi = StopWhenModelIncreased()
     smi1 = Manopt.status_summary(smi)
-    @test smi1 == "Model Increased:$(_MANOPT_INDENT)not reached"
+    @test smi1 == "Model Increased:$(Manopt._MANOPT_INDENT)not reached"
     @test repr(smi) == "StopWhenModelIncreased()\n    $(smi1)"
 end
