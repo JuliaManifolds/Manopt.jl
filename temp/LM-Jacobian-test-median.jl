@@ -49,10 +49,10 @@ cost(M, p) = sum(distance(M, p, q) for q in pts)
 # Default Residual CG on this approach – works but probably allocates a bit too much (matrices coordinates/vector...)
 q1 = LevenbergMarquardt(
     M, [f], p0;
-    β = 2.0, η = 0.01, damping_term_min = 1.0e-5, ε = 1e-1, α_mode = :Strict,
+    β = 2.0, η = 0.01, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
     robustifier = [HuberRobustifier()],
     debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop],
-    stopping_criterion = StopWhenGradientNormLess(1e-16) | StopAfterIteration(100)
+    stopping_criterion = StopWhenGradientNormLess(1.0e-16) | StopAfterIteration(100)
 )
 # ... but works
 @info "Cost of median (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q1)), difference (of q1 - qc): $(cost(M, q1) - cost(M, qc))"

@@ -818,8 +818,8 @@ mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluatio
     penalty::R
     ε::R
     mode::Symbol
-    function LevenbergMarquardtLinearSurrogateObjective(objective::NonlinearLeastSquaresObjective{E}; penalty::R = 1e-6, ε::R = 1e-4, mode::Symbol = :Default) where {E, R <: Real}
-        return new{E,R}(objective, penalty, ε, mode)
+    function LevenbergMarquardtLinearSurrogateObjective(objective::NonlinearLeastSquaresObjective{E}; penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default) where {E, R <: Real}
+        return new{E, R}(objective, penalty, ε, mode)
     end
 end
 
@@ -829,13 +829,13 @@ end
 Compute the α for the robust rescaling within [`LevenbergMarquardt`](@ref) given by
 
 ```math
-    α = 1-$(_tex(:sqrt, "1 + 2$(_tex(:frac, "ρ_k''", "ρ_k'"))$(_tex(:norm, "F_k"; index="2"))"))
+    α = 1-$(_tex(:sqrt, "1 + 2$(_tex(:frac, "ρ_k''", "ρ_k'"))$(_tex(:norm, "F_k"; index = "2"))"))
 ```
 
 where
-* ``ρ_k'`` is the first derivative of the [`AbstractRobustifierFunction`](@ref) at ``$(_tex(:norm, "F_k"; index="2"))``
-* ``ρ_k''`` is the second derivative of the [`AbstractRobustifierFunction`](@ref) at ``$(_tex(:norm, "F_k"; index="2"))``
-* `FkSq` is the value ``$(_tex(:norm, "F_k"; index="2"))``
+* ``ρ_k'`` is the first derivative of the [`AbstractRobustifierFunction`](@ref) at ``$(_tex(:norm, "F_k"; index = "2"))``
+* ``ρ_k''`` is the second derivative of the [`AbstractRobustifierFunction`](@ref) at ``$(_tex(:norm, "F_k"; index = "2"))``
+* `FkSq` is the value ``$(_tex(:norm, "F_k"; index = "2"))``
 
 These are also the three input parameters `b`, `c`, and `FkSq`, respectively.
 
@@ -844,7 +844,7 @@ These are also the three input parameters `b`, `c`, and `FkSq`, respectively.
 For a unique solution that is a minimizer in a Levenberg-Marquardt step,
 we require `α < 1` and [TriggsMcLauchlanHartleyFitzgibbon:2000](@cite) recommends to bound this even by ``1-ε``.
 
-Furthermore if ``ρ´_k + 2ρ''_k $(_tex(:norm, "F_k"; index="2")) ≤ 0`` the Hessian is also indefinite.
+Furthermore if ``ρ´_k + 2ρ''_k $(_tex(:norm, "F_k"; index = "2")) ≤ 0`` the Hessian is also indefinite.
 This can be caught by making sure the argument of the ``√`` is ensured to be nonnegative.
 
 The [Ceres slver](http://ceres-solver.org/nnls_modeling.html#theory) even omits the second term
@@ -857,10 +857,12 @@ in the square root already if ``ρ_k'' < 0`` for stability reason, which means s
   - `:Default` keeps negative ``ρ''_k < 0`` but makes sure the square root is well-defined.
   - `:Strict` return ``α = 0`` when ``ρ''_k < 0`` like Ceres does
 """
-function get_LevenbergMarquardt_α(ρ_prime, ρ_double_prime, FkSq; ε::Real = 1e-6, mode::Symbol=:Default)
+function get_LevenbergMarquardt_α(ρ_prime, ρ_double_prime, FkSq; ε::Real = 1.0e-6, mode::Symbol = :Default)
+    # second derivative existent and negative: In strict mode (motivated by ceres) -> return 0
     (ismissing(ρ_double_prime) || (ρ_double_prime < 0 && mode == :Strict)) && return 0.0
+    (FkSq == 0 && mode == :Strict) && return 0.0
     α = 1 - sqrt(max(1 + 2 * (ρ_double_prime / ρ_prime) * FkSq, 0.0))
-    return min(α, 1-ε)
+    return min(α, 1 - ε)
 end
 function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateObjective, ::Val{:Penalty}, penalty::Real)
     lmlso.penalty = penalty
@@ -1140,7 +1142,7 @@ function linear_normal_operator!(
     (penalty != 0) && (A .= A + penalty * I)
     return A
 end
-function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, basis::AbstractBasis; penalty = 0.0, ε = 0.0, mode = :Default,)
+function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, basis::AbstractBasis; penalty = 0.0, ε = 0.0, mode = :Default)
     a = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
@@ -1253,7 +1255,7 @@ function normal_vector_field!(
     zero_vector!(M, X, p)
     Z = copy(M, p, X)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        normal_vector_field!(M, Z, o, r, p; ε = lmsco.ε, mode = lmsco.mode,)
+        normal_vector_field!(M, Z, o, r, p; ε = lmsco.ε, mode = lmsco.mode)
         X .+= Z
     end
     return X
