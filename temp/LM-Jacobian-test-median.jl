@@ -49,7 +49,7 @@ cost(M, p) = sum(distance(M, p, q) for q in pts)
 # Default Residual CG on this approach – works but probably allocates a bit too much (matrices coordinates/vector...)
 q1 = LevenbergMarquardt(
     M, [f], p0;
-    β = 10.0, η = 0.5, damping_term_min = 1.0e-3,
+    β = 4.0, η = 0.7, damping_term_min = 1.0e-5, ε = 1e-4, α_mode = :Strict,
     robustifier = [0.3 ∘ HuberRobustifier()],
     debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop],
 )
