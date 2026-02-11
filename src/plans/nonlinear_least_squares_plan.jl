@@ -891,7 +891,7 @@ Compute the surrogate cost. Let ``F`` denote the vector of residuals (of a block
 of the inner [`NonlinearLeastSquaresObjective`](@ref)
 
 ```math
-σ_k(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y - $(_tex(:Cal, "L"))(X)"; index="2"))^2, $(_tex(:qquad)) X ∈ $(_math(:TangentSpace))
+σ_k(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; index="2"))^2, $(_tex(:qquad)) X ∈ $(_math(:TangentSpace))
 ```
 
 where
