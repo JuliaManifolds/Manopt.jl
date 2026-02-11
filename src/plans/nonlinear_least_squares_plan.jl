@@ -1176,7 +1176,7 @@ function linear_normal_operator!(
     (penalty != 0) && (A .= A + penalty * I)
     return A
 end
-function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, basis::AbstractBasis; penalty = 0.0, ε::Real, mode::Symbol)
+function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, basis::AbstractBasis; penalty = 0.0, ε::Real=0.0, mode::Symbol=:Default)
     a = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
