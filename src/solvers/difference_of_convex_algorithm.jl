@@ -86,12 +86,12 @@ function get_message(dcs::DifferenceOfConvexState)
     return get_message(dcs.sub_state)
 end
 
-function status_summary(dcs::DifferenceOfConvexState; inline = false)
+function status_summary(dcs::DifferenceOfConvexState; context = :default)
     i = get_count(dcs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(dcs.stop) ? "Yes" : "No"
-    inline && (return "$(repr(dcs)) – $(Iter) $(has_converged(dcs) ? "(converged)" : "")")
-    sub = status_summary(dcs.sub_state; inline = false)
+    _is_inline(context) && (return "$(repr(dcs)) – $(Iter) $(has_converged(dcs) ? "(converged)" : "")")
+    sub = status_summary(dcs.sub_state; context = context)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Algorithm
@@ -101,7 +101,7 @@ function status_summary(dcs::DifferenceOfConvexState; inline = false)
         | $(sub)
 
     ## Stopping criterion
-    $(status_summary(dcs.stop; inline = false))
+    $(status_summary(dcs.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end

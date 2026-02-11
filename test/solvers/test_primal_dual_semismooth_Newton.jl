@@ -50,7 +50,7 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
         primal_stepsize = σ, dual_stepsize = τ, return_state = true,
     )
     @test startswith(
-        Manopt.status_summary(s; inline = false),
+        Manopt.status_summary(s; context = :default),
         "# Solver state for `Manopt.jl`s primal dual semismooth Newton"
     )
     y = get_solver_result(s)

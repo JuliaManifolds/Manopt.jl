@@ -197,11 +197,11 @@ function CMAESState(
     )
 end
 
-function status_summary(s::CMAESState; inline = false)
+function status_summary(s::CMAESState; context = :default)
     i = get_count(s, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(s.stop) ? "Yes" : "No"
-    inline && (return "$(repr(s)) – $(Iter) $(has_converged(s) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(s)) – $(Iter) $(has_converged(s) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy
     $Iter
@@ -229,7 +229,7 @@ function status_summary(s::CMAESState; inline = false)
     * σ:                          $(s.σ)
 
     ## Stopping criterion
-    $(status_summary(s.stop; inline = false))
+    $(status_summary(s.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end
@@ -571,10 +571,10 @@ function get_reason(c::StopWhenCovarianceIllConditioned)
     end
     return ""
 end
-function status_summary(c::StopWhenCovarianceIllConditioned; inline = false)
+function status_summary(c::StopWhenCovarianceIllConditioned; context = :default)
     has_stopped = c.at_iteration > 0
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "cond(s.covariance_matrix) > $(c.threshold):\t" : "Stop when the covariance matrix is ill-conditioned, i.e. the last condition number is larger than the threshold of $(c.threshold)\n$(_MANOPT_INDENT)") * s
+    return (_is_inline(context) ? "cond(s.covariance_matrix) > $(c.threshold):\t" : "Stop when the covariance matrix is ill-conditioned, i.e. the last condition number is larger than the threshold of $(c.threshold)\n$(_MANOPT_INDENT)") * s
 end
 function show(io::IO, c::StopWhenCovarianceIllConditioned)
     return print(

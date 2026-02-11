@@ -151,7 +151,7 @@ import Manifolds: inner
             M, grad_h, p0; g = g, grad_g = grad_g, gradient = grad_f, return_state = true
         )
         @test startswith(
-            Manopt.status_summary(s2; inline = false),
+            Manopt.status_summary(s2; context = :default),
             "# Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm\n",
         )
         p6 = get_solver_result(s2)

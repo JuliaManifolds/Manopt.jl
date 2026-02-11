@@ -125,11 +125,11 @@ function set_iterate!(epms::ExactPenaltyMethodState, M, p)
     epms.p = p
     return epms
 end
-function status_summary(epms::ExactPenaltyMethodState; inline = false)
+function status_summary(epms::ExactPenaltyMethodState; context = :default)
     i = get_count(epms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(epms.stop) ? "Yes" : "No"
-    inline && (return "$(repr(epms)) – $(Iter) $(has_converged(epms) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(epms)) – $(Iter) $(has_converged(epms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Exact Penalty Method
     $Iter

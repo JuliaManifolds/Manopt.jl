@@ -534,8 +534,8 @@ end
 function status_summary(io::IO, co::ManifoldCountObjective; kwargs...)
     return print(io, status_summary(co; kwargs...))
 end
-function status_summary(co::ManifoldCountObjective; inline = false)
-    so = status_summary(co.objective; inline = inline)
+function status_summary(co::ManifoldCountObjective; context = :default)
+    so = status_summary(co.objective; context = context)
     if inline
         return "$so (statistics: $(join([ ":$(c[1])=$(c[2])" for c in co.counts ], ", ")))"
     end
@@ -548,8 +548,8 @@ function status_summary(co::ManifoldCountObjective; inline = false)
     ]
     return "$(so)\n\n$(s)$(join(count_strings, "\n"))"
 end
-function status_summary(t::Tuple{<:ManifoldCountObjective, S}; inline = false) where {S <: AbstractManoptSolverState}
-    return "$(status_summary(t[2], inline = inline))\n\n$(status_summary(t[1]; inline = inline))"
+function status_summary(t::Tuple{<:ManifoldCountObjective, S}; context = :default) where {S <: AbstractManoptSolverState}
+    return "$(status_summary(t[2], context = context))\n\n$(status_summary(t[1]; context = context))"
 end
 function show(io::IO, co::ManifoldCountObjective)
     return print(io, "ManifoldCountObjective($(repr(co.objective)), $(repr(co.counts)))")

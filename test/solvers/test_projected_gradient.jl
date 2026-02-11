@@ -81,7 +81,7 @@ using Manifolds, Manopt, Random, Test
     )
     @test isapprox(M, mean_pg_1, mean_pg_3)
     @test startswith(
-        Manopt.status_summary(st; inline = false),
+        Manopt.status_summary(st; context = :default),
         "# Solver state for `Manopt.jl`s Projected Gradient Method\n"
     )
     stop_when_stationary = st.stop.criteria[2]

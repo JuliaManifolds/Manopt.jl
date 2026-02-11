@@ -357,11 +357,11 @@ function set_iterate!(pgms::ProximalGradientMethodState, M, p)
     return pgms
 end
 
-function status_summary(pgms::ProximalGradientMethodState; inline = false)
+function status_summary(pgms::ProximalGradientMethodState; context = :default)
     i = get_count(pgms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
-    inline && (return "$(repr(pgms)) – $(Iter) $(has_converged(pgms) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(pgms)) – $(Iter) $(has_converged(pgms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Proximal Gradient Method
     $Iter
@@ -371,7 +371,7 @@ function status_summary(pgms::ProximalGradientMethodState; inline = false)
     * acceleration:                   $(typeof(pgms.acceleration))
 
     ## Stopping criterion
-    $(status_summary(pgms.stop; inline = false))
+    $(status_summary(pgms.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end
@@ -711,10 +711,10 @@ function get_reason(c::StopWhenGradientMappingNormLess)
     return ""
 end
 
-function status_summary(c::StopWhenGradientMappingNormLess; inline = false)
+function status_summary(c::StopWhenGradientMappingNormLess; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "|G| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient mapping norm is less then a tolerance.\n$(_MANOPT_INDENT)") * s
+    return (_is_inline(context) ? "|G| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient mapping norm is less then a tolerance.\n$(_MANOPT_INDENT)") * s
 end
 
 indicates_convergence(c::StopWhenGradientMappingNormLess) = true

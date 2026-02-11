@@ -43,7 +43,7 @@ function show(io::IO, dmp::DefaultManoptProblem)
 end
 
 function status_summary(dmp::DefaultManoptProblem; inline = false)
-    inline && return "An optimization problem to minimize $(dmp.objective) on the manifold $(dmp.manifold)"
+    _is_inline(context) && return "An optimization problem to minimize $(dmp.objective) on the manifold $(dmp.manifold)"
     return """
     An optimization problem for Manopt.jl
 
@@ -51,7 +51,7 @@ function status_summary(dmp::DefaultManoptProblem; inline = false)
     $(_MANOPT_INDENT)$(replace(repr(dmp.manifold), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))
 
     ## Objective
-    $(_MANOPT_INDENT)$(replace(status_summary(dmp.objective, inline = inline), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))"""
+    $(_MANOPT_INDENT)$(replace(status_summary(dmp.objective, context = context), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))"""
 end
 
 """

@@ -101,11 +101,11 @@ mutable struct TruncatedConjugateGradientState{T, R <: Real, SC <: StoppingCrite
         return tcgs
     end
 end
-function status_summary(tcgs::TruncatedConjugateGradientState; inline = false)
+function status_summary(tcgs::TruncatedConjugateGradientState; context = :default)
     i = get_count(tcgs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(tcgs.stop) ? "Yes" : "No"
-    inline && (return "$(repr(tcgs)) – $(Iter) $(has_converged(tcgs) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(tcgs)) – $(Iter) $(has_converged(tcgs) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent
     $Iter
@@ -114,7 +114,7 @@ function status_summary(tcgs::TruncatedConjugateGradientState; inline = false)
     * trust region radius: $(tcgs.trust_region_radius)
 
     ## Stopping criterion
-    $(status_summary(tcgs.stop; inline = false))
+    $(status_summary(tcgs.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end
@@ -190,10 +190,10 @@ function get_reason(c::StopWhenResidualIsReducedByFactorOrPower)
     end
     return ""
 end
-function status_summary(c::StopWhenResidualIsReducedByFactorOrPower; inline = false)
+function status_summary(c::StopWhenResidualIsReducedByFactorOrPower; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "Residual reduced by factor $(c.κ) or power $(c.θ):$(_MANOPT_INDENT)" : "A stopping criterion used within tCG to check whether the residual is reduced by factor $(c.κ) or power 1+$(c.θ)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "Residual reduced by factor $(c.κ) or power $(c.θ):$(_MANOPT_INDENT)" : "A stopping criterion used within tCG to check whether the residual is reduced by factor $(c.κ) or power 1+$(c.θ)\n$(_MANOPT_INDENT)") * "$s"
 end
 function show(io::IO, c::StopWhenResidualIsReducedByFactorOrPower)
     return print(io, "StopWhenResidualIsReducedByFactorOrPower($(c.κ), $(c.θ))")

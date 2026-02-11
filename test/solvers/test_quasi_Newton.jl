@@ -73,7 +73,7 @@ end
         @test isapprox(M, p_star, D, lrbfgs_s.direction_update(dmp, lrbfgs_s))
 
         @test startswith(
-            Manopt.status_summary(lrbfgs_s; inline = false),
+            Manopt.status_summary(lrbfgs_s; context = :default),
             "# Solver state for `Manopt.jl`s Quasi Newton Method\n"
         )
         @test get_last_stepsize(dmp, lrbfgs_s, lrbfgs_s.stepsize) > 0

@@ -85,10 +85,10 @@ function AlternatingGradientDescentState(
         inner_iterations,
     )
 end
-function status_summary(agds::AlternatingGradientDescentState; inline = true)
+function status_summary(agds::AlternatingGradientDescentState; context = :default)
     Iter = (agds.i > 0) ? "After $(agds.i) iterations\n" : ""
     Conv = indicates_convergence(agds.stop) ? "Yes" : "No"
-    inline && (return "$(repr(agds)) – $(Iter) $(has_converged(agds) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(agds)) – $(Iter) $(has_converged(agds) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Alternating Gradient Descent Solver
     $Iter
@@ -101,7 +101,7 @@ function status_summary(agds::AlternatingGradientDescentState; inline = true)
     $(agds.stepsize)
 
     ## Stopping criterion
-    $(status_summary(agds.stop; inline = false))
+    $(status_summary(agds.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end

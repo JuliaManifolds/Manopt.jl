@@ -12,7 +12,7 @@ function status_summary(cgds::ConjugateGradientDescentState)
     i = get_count(cgds, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cgds.stop) ? "Yes" : "No"
-    inline && (return "$(repr(cgds)) – $(Iter) $(has_converged(cgds) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(cgds)) – $(Iter) $(has_converged(cgds) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver
     $Iter

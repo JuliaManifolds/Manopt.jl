@@ -54,11 +54,11 @@ mutable struct SubGradientMethodState{
         )
     end
 end
-function status_summary(sgms::SubGradientMethodState; inline = false)
+function status_summary(sgms::SubGradientMethodState; context = :default)
     i = get_count(sgms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(sgms.stop) ? "Yes" : "No"
-    inline && (return "$(repr(sgms)) – $(Iter) $(has_converged(sgms) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(sgms)) – $(Iter) $(has_converged(sgms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Subgradient Method
     $Iter
@@ -69,7 +69,7 @@ function status_summary(sgms::SubGradientMethodState; inline = false)
     $(sgms.stepsize)
 
     ## Stopping criterion
-    $(status_summary(sgms.stop; inline = false))
+    $(status_summary(sgms.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end

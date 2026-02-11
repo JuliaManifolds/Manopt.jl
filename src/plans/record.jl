@@ -74,20 +74,18 @@ end
 function RecordSolverState(s::S, symbol::Symbol) where {S <: AbstractManoptSolverState}
     return RecordSolverState{S}(s; RecordFactory(get_state(s), symbol)...)
 end
-function status_summary(rst::RecordSolverState; inline = false)
-    if inline
-        return "a RecordSolverState for $(status_summary(rst.state; inline = true))"
-    end
+function status_summary(rst::RecordSolverState; context = :default)
+    _is_inline(context) && (return "a RecordSolverState for $(status_summary(rst.state; inline = true))")
     if length(rst.recordDictionary) > 0
         return """
-        $(status_summary(rst.state))
+        $(status_summary(rst.state; context = context))
 
         ## Record
         $(rst.recordDictionary)
         """
     else # We indicate there is a record but no registered recordings
         return """
-        $(status_summary(rst.state))
+        $(status_summary(rst.state; context = context))
 
         ## Record
         No recordings registered.
@@ -740,8 +738,8 @@ function (rsr::RecordStoppingReason)(
     return (length(s) > 0) && record_or_reset!(rsr, s, k)
 end
 show(io::IO, ::RecordStoppingReason) = print(io, "RecordStoppingReason()")
-function status_summary(di::RecordStoppingReason; inline = false)
-    return (inline ? ":Stop" : "A record action to record the stopping reason")
+function status_summary(di::RecordStoppingReason; context = :default)
+    return (_is_inline(context) ? ":Stop" : "A record action to record the stopping reason")
 end
 @doc """
     RecordTime <: RecordAction
@@ -782,8 +780,8 @@ end
 function show(io::IO, ri::RecordTime)
     return print(io, "RecordTime(; mode=:$(ri.mode))")
 end
-function status_summary(ri::RecordTime; inline = false)
-    return (inline ? (ri.mode === :iterative ? ":IterativeTime" : ":Time") : "A Rectord action for recording times" * (ri.mode == :iterative ? " iteratively" : "."))
+function status_summary(ri::RecordTime; context = :default)
+    return (_is_inline(context) ? (ri.mode === :iterative ? ":IterativeTime" : ":Time") : "A Rectord action for recording times" * (ri.mode == :iterative ? " iteratively" : "."))
 end
 #
 # Factory

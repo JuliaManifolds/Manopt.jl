@@ -133,10 +133,10 @@ end
         sf1 = "Stepsize s < 1.0e-6:$(_MANOPT_INDENT)not reached"
         sf2 = "StopWhenStepsizeLess(1.0e-6)"
         @test Manopt.status_summary(f) == "$sf2\n\n$sf1"
-        @test Manopt.status_summary(f; inline = true) == sf1
+        @test Manopt.status_summary(f; context = :inline) == sf1
         @test repr(f) == sf2
         g = StopWhenCostLess(1.0e-4)
-        @test Manopt.status_summary(g; inline = true) == "f(x) < $(1.0e-4):$(_MANOPT_INDENT)not reached"
+        @test Manopt.status_summary(g; context = :inline) == "f(x) < $(1.0e-4):$(_MANOPT_INDENT)not reached"
         @test repr(g) == "StopWhenCostLess(0.0001)\n    $(Manopt.status_summary(g))"
         gf(M, p) = norm(p)
         grad_gf(M, p) = p

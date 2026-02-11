@@ -238,7 +238,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
             return_state = true
         )
         @test startswith(
-            Manopt.status_summary(pbm_s; inline = false),
+            Manopt.status_summary(pbm_s; context = :default),
             "# Solver state for `Manopt.jl`s Proximal Gradient Method\n"
         )
         q = get_solver_result(pbm_s)

@@ -262,9 +262,9 @@ function ConstrainedManifoldObjective(
     return ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h; kwargs...)
 end
 
-function status_summary(cmo::ConstrainedManifoldObjective; inline = false)
-    inline && (return "A constrained objective based on $(status_summary(cmo.objective; inline = inline)) with $(length(cmo.equality_constraints)) equality and $(length(cmo.inequality_constraints)) inequality constraints.")
-    s = status_summary(cmo.objective; inline = inline)
+function status_summary(cmo::ConstrainedManifoldObjective; context = :default)
+    _is_inline(context) && (return "A constrained objective based on $(status_summary(cmo.objective; context = context)) with $(length(cmo.equality_constraints)) equality and $(length(cmo.inequality_constraints)) inequality constraints.")
+    s = status_summary(cmo.objective; context = context)
     return """
     A constrained objective with $(length(cmo.equality_constraints)) equality and $(cmo.inequality_constraints) inequality constraints.
     For verifications, the inequalities are checked with an absolute tolerance of `atol = $(cmo.atol)`
@@ -273,10 +273,10 @@ function status_summary(cmo::ConstrainedManifoldObjective; inline = false)
     $(replace(s, "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n##"))
 
     ## Equality constrains
-    $(replace(status_summary(cmo.equality_constraints; inline = inline), "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n##"))
+    $(replace(status_summary(cmo.equality_constraints; context = context), "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n##"))
 
     ## Inequality constrains
-    $(replace(status_summary(cmo.inequality_constraints; inline = inline), "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n##"))"""
+    $(replace(status_summary(cmo.inequality_constraints; context = context), "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n##"))"""
 end
 
 @doc """
@@ -371,8 +371,8 @@ function show(io::IO, cmp::ConstrainedManoptProblem)
     return print(io, ")")
 end
 
-function status_summary(cmp::ConstrainedManoptProblem; inline = false)
-    inline && return "A constrained optimization problem to minimize $(cmp.objective) on the manifold $(cmp.manifold)"
+function status_summary(cmp::ConstrainedManoptProblem; context = :default)
+    _is_inline(context) && return "A constrained optimization problem to minimize $(cmp.objective) on the manifold $(cmp.manifold)"
     return """
     A constrained optimization problem for Manopt.jl
 
@@ -380,7 +380,7 @@ function status_summary(cmp::ConstrainedManoptProblem; inline = false)
       $(replace(repr(cmp.manifold), "\n#" => "\n##"))
 
     ## Objective
-      $(replace(status_summary(cmp.objective, inline = inline), "\n#" => "\n##"))
+      $(replace(status_summary(cmp.objective, context = context), "\n#" => "\n##"))
 
     ## Ranges
     * gradient equality range: $(_MANOPT_INDENT)$(cmp.grad_equality_range)

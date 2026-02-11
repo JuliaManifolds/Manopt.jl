@@ -393,7 +393,7 @@ end
 function show(io::IO, di::DebugDivider)
     return print(io, "DebugDivider(; divider=\"$(escape_string(di.divider))\", at_init=$(di.at_init))")
 end
-status_summary(di::DebugDivider; inline = true) = (inline ? "\"$(escape_string(di.divider))\"" : "A Debug printing the String “$(escape_string(di.divider))” as a divider.")
+status_summary(di::DebugDivider; context = :default) = (_is_inline(context) ? "\"$(escape_string(di.divider))\"" : "A Debug printing the String “$(escape_string(di.divider))” as a divider.")
 
 @doc """
     DebugEntry <: DebugAction

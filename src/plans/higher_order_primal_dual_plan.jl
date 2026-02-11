@@ -168,11 +168,11 @@ mutable struct PrimalDualSemismoothNewtonState{
         )
     end
 end
-function status_summary(pdsns::PrimalDualSemismoothNewtonState; inline = false)
+function status_summary(pdsns::PrimalDualSemismoothNewtonState; context = :default)
     i = get_count(pdsns, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pdsns.stop) ? "Yes" : "No"
-    inline && (return "$(repr(pdsns)) – $(Iter) $(has_converged(pdsns) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(pdsns)) – $(Iter) $(has_converged(pdsns) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s primal dual semismooth Newton
     $Iter
@@ -185,7 +185,7 @@ function status_summary(pdsns::PrimalDualSemismoothNewtonState; inline = false)
     * vector_transport_method:   $(pdsns.vector_transport_method)
 
     ## Stopping criterion
-    $(status_summary(pdsns.stop; inline = false))
+    $(status_summary(pdsns.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end

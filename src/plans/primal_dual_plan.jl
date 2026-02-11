@@ -25,8 +25,8 @@ function show(io::IO, tmp::TwoManifoldProblem)
     print(io, ", "); show(io, tmp.objective)
     return print(io, ")")
 end
-function status_summary(tmp::TwoManifoldProblem; inline = false)
-    inline && return "An optimization problem to minimize $(tmp.objective) using a primal manifold $(tmp.first_manifold) and a dual manifold $(tmp.second_manifold)."
+function status_summary(tmp::TwoManifoldProblem; context = :default)
+    _is_inline(context) && return "An optimization problem to minimize $(tmp.objective) using a primal manifold $(tmp.first_manifold) and a dual manifold $(tmp.second_manifold)."
     return """
     An optimization problem for Manopt.jl requiring a primal and a dual manifold
 
@@ -35,7 +35,7 @@ function status_summary(tmp::TwoManifoldProblem; inline = false)
     * $(replace(repr(tmp.second_manifold), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))
 
     ## Objective
-    $(_MANOPT_INDENT)$(replace(status_summary(tmp.objective, inline = inline), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))"""
+    $(_MANOPT_INDENT)$(replace(status_summary(tmp.objective, context = context), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))"""
 end
 
 @doc """
@@ -410,7 +410,7 @@ end
 
 function status_summary(pdmo::PrimalDualManifoldObjective; inline = false)
     both_missing = ismissing(pdmo.Λ!!) && ismissing(pdmo.linearized_forward_operator!!)
-    inline && ("A primal dual objective with a cost of f+g, a prox for f, a prox for the dual of g, as well as $(!ismissing(pdmo.Λ!!) ? "an operator Λ," : "") $(!ismissing(pdmo.linearized_forward_operator!!) ? "DΛ, " : "")$(!both_missing ? "and " : "")an adjoint D^*Λ")
+    _is_inline(context) && ("A primal dual objective with a cost of f+g, a prox for f, a prox for the dual of g, as well as $(!ismissing(pdmo.Λ!!) ? "an operator Λ," : "") $(!ismissing(pdmo.linearized_forward_operator!!) ? "DΛ, " : "")$(!both_missing ? "and " : "")an adjoint D^*Λ")
 
     maybe_line1 = ismissing(pdmo.Λ!!) ? "" : "\n* Λ:       $(pdmo.Λ!!)"
     maybe_line2 = ismissing(pdmo.linearized_forward_operator!!) ? "" : "\n* DΛ:      $(pdmo.linearized_forward_operator!!)"

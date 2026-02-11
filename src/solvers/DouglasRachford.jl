@@ -107,12 +107,12 @@ mutable struct DouglasRachfordState{
         )
     end
 end
-function status_summary(drs::DouglasRachfordState; inline = false)
+function status_summary(drs::DouglasRachfordState; context = :default)
     i = get_count(drs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     refl_e = drs.reflection_evaluation == AllocatingEvaluation() ? "allocating" : "in place"
     Conv = indicates_convergence(drs.stop) ? "Yes" : "No"
-    inline && (return "$(repr(drs)) – $(Iter) $(has_converged(drs) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(drs)) – $(Iter) $(has_converged(drs) ? "(converged)" : "")")
     P = drs.parallel ? "Parallel " : ""
     s = """
     # Solver state for `Manopt.jl`s $(P)Douglas Rachford Algorithm

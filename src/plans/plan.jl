@@ -1,24 +1,36 @@
-"""
-    status_summary(io, e; inline = false)
-    status_summary(e; inline = false)
+function status_summary end
 
-Returns a string reporting about the current status of an element `e`
-defined in `Manopt.jl`, which can also directly be printed to an `IO` stream `io`.
+_doc_status_summary = """
+    status_summary(io, e; context::Symbol = :default)
+    status_summary(e; context::Symbol = :default)
 
-This method should generate a human readable summary of `e`,
+Returns a string reporting about the current status of an element `e` defined in `Manopt.jl`,
+which can also directly be printed to an `IO` stream `io`.
+This method should generate a human readable summary of `e`.
 
 By default, the variant with an `IO` stream dispatches to the one without to generate
 a string and prints it to the `IO` stream.
+If you implement the variant with the stream `io` remember to also provide the one without
+Similarly, the
 
-If that element is used within another structure, e.g. a stopping criterion within
-a state, a shorter one-line summary might be preferred, which can be obtained by setting `inline = true`,
-this will print a very short variant, in constructors often only a Symbol.
+The summary is meant to be used in different contexts
+* `:default` should be the default and refers to a (multiline) context in REPL where a
+  human should read a comprehensive summary of `e`
+  This should also be the default
+* `:inline` should be a shorter variant that can be used inline of other summaries, e.g. in lists
+* `:short` should be a form even shorter or equal to `inline`, for example when in a list,
+  a certain element, like a [`DebugAction`](@ref) can be represented by a symbol.
+  The short variant should by default fall back to `:inline`
 """
-function status_summary end
 
-function status_summary(io::IO, e; inline = false)
-    return print(io, status_summary(e; inline = inline))
+@doc "$(_doc_status_summary)"
+status_summary(e; context::Symbol = :default)
+
+@doc "$(_doc_status_summary)"
+function status_summary(io::IO, e; context = :default)
+    return print(io, status_summary(e; context = context))
 end
+_is_inline(c) = (c == :inline || c == :short)
 
 """
     set_parameter!(f, element::Symbol , args...)

@@ -313,11 +313,11 @@ about the reason it stopped and whether this indicates convergence.
 ```{julia}
 #| output: false
 import Manopt: status_summary: show
-function status_summary(rws::RandomWalkState; inline = false)
+function status_summary(rws::RandomWalkState; context = :default)
     i = get_count(rws, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(rws.stop) ? "Yes" : "No"
-    inline && (return "$(repr(rws)) – $(Iter) $(has_converged(rws) ? "(converged)" : "")")
+    Manopt._is_inline(context) && (return "$(repr(rws)) – $(Iter) $(has_converged(rws) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Tutorial Random Walk
     $Iter

@@ -55,7 +55,7 @@ include("trust_region_model.jl")
             M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, return_state = true
         )
         @test startswith(
-            Manopt.status_summary(s; inline = false),
+            Manopt.status_summary(s; context = :default),
             "# Solver state for `Manopt.jl`s Trust Region Method\n"
         )
         p1 = get_solver_result(s)

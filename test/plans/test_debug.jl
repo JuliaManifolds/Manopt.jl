@@ -51,8 +51,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test DebugSolverState(st, Dict(:A => a1)).debug_dictionary[:A] == a1
         @test DebugSolverState(st, ["|"]).debug_dictionary[:Iteration].divider == a1.divider
         @test endswith(Manopt.status_summary(dst), "\"|\"")
-        @test Manopt.status_summary(a1; inline = true) == "\"|\""
-        @test Manopt.status_summary(a1; inline = false) == "A Debug printing the String “|” as a divider."
+        @test Manopt.status_summary(a1; context = :default) == "\"|\""
+        @test Manopt.status_summary(a1; context = :default) == "A Debug printing the String “|” as a divider."
         empty_dbg = Dict{Symbol, DebugAction}()
         @test repr(DebugSolverState(st, empty_dbg)) == "DebugSolverState($(repr(st)), $(repr(empty_dbg)))"
         # Passthrough

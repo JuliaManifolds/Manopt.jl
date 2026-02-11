@@ -1087,8 +1087,8 @@ function show(
     ) where {S <: AbstractManoptSolverState}
     return print(io, "$(t[2])\n\n$(status_summary(t[1]))")
 end
-function status_summary(smco::SimpleManifoldCachedObjective; inline = false)
-    inline && return "A simple cache objective caching one p, X, and c for $(status_summary(smco.objective, inline = true))"
+function status_summary(smco::SimpleManifoldCachedObjective; context = :default)
+    _is_inline(context) && return "A simple cache objective caching one p, X, and c for $(status_summary(smco.objective; context = context))"
     s = """
     ## Cache
     A `SimpleManifoldCachedObjective` to cache one point, one tangent vector, and real number
@@ -1098,7 +1098,7 @@ function status_summary(smco::SimpleManifoldCachedObjective; inline = false)
     * the tangent vector is cached:$(_MANOPT_INDENT)$(smco.X_valid ? "Yes" : "No")
     * the cost is cached:$(_MANOPT_INDENT)$(smco.c_valid ? "Yes" : "No")
     """
-    s2 = status_summary(smco.objective; inline = false)
+    s2 = status_summary(smco.objective; context = :default)
     length(s2) > 0 && (s2 = "\n$(s2)")
     return "$(s)$(s2)"
 end

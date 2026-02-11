@@ -142,10 +142,10 @@ function get_reason(c::StopAfter)
     end
     return ""
 end
-function status_summary(c::StopAfter; inline = false)
+function status_summary(c::StopAfter; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = (has_stopped ? "reached" : "not reached")
-    return (inline ? "stopped after $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop after $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "stopped after $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop after $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopAfter)
     return print(io, "StopAfter($(repr(c.threshold)))")
@@ -203,10 +203,10 @@ function get_reason(c::StopAfterIteration)
     end
     return ""
 end
-function status_summary(c::StopAfterIteration; inline = false)
+function status_summary(c::StopAfterIteration; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "stopped after $(c.max_iterations) iterations:$(_MANOPT_INDENT)" : "A stopping criterion to stop after $(c.max_iterations) iterations\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "stopped after $(c.max_iterations) iterations:$(_MANOPT_INDENT)" : "A stopping criterion to stop after $(c.max_iterations) iterations\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopAfterIteration)
     return print(io, "StopAfterIteration($(c.max_iterations))")
@@ -330,10 +330,10 @@ function get_reason(c::StopWhenChangeLess)
     end
     return ""
 end
-function status_summary(c::StopWhenChangeLess; inline = false)
+function status_summary(c::StopWhenChangeLess; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "|Δp| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the change of the iterate is less than $(c.threshold)\n using the $(repr(c.inverse_retraction_method))\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "|Δp| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the change of the iterate is less than $(c.threshold)\n using the $(repr(c.inverse_retraction_method))\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenChangeLess)
     return print(io, "StopWhenChangeLess($(c.threshold); inverse_retraction_method=$(repr(c.inverse_retraction_method)))")
@@ -397,10 +397,10 @@ function get_reason(c::StopWhenCostChangeLess)
     end
     return ""
 end
-function status_summary(c::StopWhenCostChangeLess; inline = false)
+function status_summary(c::StopWhenCostChangeLess; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "|Δf(p)| = $(abs(c.last_change)) < $(c.tolerance):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the change of the cost function is less than $(c.tolerance)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "|Δf(p)| = $(abs(c.last_change)) < $(c.tolerance):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the change of the cost function is less than $(c.tolerance)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenCostChangeLess)
     return print(io, "StopWhenCostChangeLess($(c.tolerance))")
@@ -446,10 +446,10 @@ function get_reason(c::StopWhenCostLess)
     end
     return ""
 end
-function status_summary(c::StopWhenCostLess; inline = false)
+function status_summary(c::StopWhenCostLess; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "f(x) < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the cost function is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "f(x) < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the cost function is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenCostLess)
     return print(io, "StopWhenCostLess($(c.threshold))")
@@ -536,10 +536,10 @@ function get_reason(sc::StopWhenEntryChangeLess)
     end
     return ""
 end
-function status_summary(sc::StopWhenEntryChangeLess; inline = false)
+function status_summary(sc::StopWhenEntryChangeLess; context = :default)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "|Δ:$(sc.field)| < $(sc.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the change of $(sc.field) is less than $(sc.threshold)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "|Δ:$(sc.field)| < $(sc.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the change of $(sc.field) is less than $(sc.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, sc::StopWhenEntryChangeLess)
     return print(io, "StopWhenEntryChangeLess($(sc.field), $(sc.distance), $(sc.threshold))")
@@ -656,10 +656,10 @@ function get_reason(c::StopWhenGradientChangeLess)
     end
     return ""
 end
-function status_summary(c::StopWhenGradientChangeLess; inline = false)
+function status_summary(c::StopWhenGradientChangeLess; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "|Δgrad f| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the change of the gradient is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "|Δgrad f| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the change of the gradient is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenGradientChangeLess)
     return print(io, "StopWhenGradientChangeLess($(c.threshold); vector_transport_method=$(c.vector_transport_method))")
@@ -756,10 +756,10 @@ function get_reason(c::StopWhenGradientNormLess)
     return ""
 end
 indicates_convergence(c::StopWhenGradientNormLess) = true
-function status_summary(c::StopWhenGradientNormLess; inline = false)
+function status_summary(c::StopWhenGradientNormLess; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "|grad f| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient norm is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "|grad f| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient norm is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
 show(io::IO, c::StopWhenGradientNormLess) = print(io, "StopWhenGradientNormLess($(c.threshold))")
 
@@ -813,10 +813,10 @@ function get_reason(c::StopWhenStepsizeLess)
     end
     return ""
 end
-function status_summary(c::StopWhenStepsizeLess; inline = false)
+function status_summary(c::StopWhenStepsizeLess; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "stepsize s < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the step size is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "stepsize s < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the step size is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenStepsizeLess)
     return print(io, "StopWhenStepsizeLess($(c.threshold))")
@@ -867,10 +867,10 @@ function get_reason(c::StopWhenCostNaN)
     end
     return ""
 end
-function status_summary(c::StopWhenCostNaN; inline = false)
+function status_summary(c::StopWhenCostNaN; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "f(x) is NaN:$(_MANOPT_INDENT)" : "A stopping criterion to stop when the cost function is NaN\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "f(x) is NaN:$(_MANOPT_INDENT)" : "A stopping criterion to stop when the cost function is NaN\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenCostNaN)
     return print(io, "StopWhenCostNaN()")
@@ -910,10 +910,10 @@ function get_reason(c::StopWhenIterateNaN)
     return ""
 end
 indicates_convergence(c::StopWhenIterateNaN) = false
-function status_summary(c::StopWhenIterateNaN; inline = false)
+function status_summary(c::StopWhenIterateNaN; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "An entry of x is NaN:$(_MANOPT_INDENT)" : "A stopping criterion to stop when an entry of the iterate is NaN\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "An entry of x is NaN:$(_MANOPT_INDENT)" : "A stopping criterion to stop when an entry of the iterate is NaN\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenIterateNaN)
     return print(io, "StopWhenIterateNaN()")
@@ -962,10 +962,10 @@ function get_reason(c::StopWhenSmallerOrEqual)
     end
     return ""
 end
-function status_summary(c::StopWhenSmallerOrEqual; inline = false)
+function status_summary(c::StopWhenSmallerOrEqual; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "Field :$(c.value) ≤ $(c.minValue):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the field :$(c.value) is smaller than or equal to $(c.minValue)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "Field :$(c.value) ≤ $(c.minValue):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the field :$(c.value) is smaller than or equal to $(c.minValue)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenSmallerOrEqual)
     return print(io, "StopWhenSmallerOrEqual(:$(c.value), $(c.minValue))")
@@ -1010,10 +1010,10 @@ function get_reason(c::StopWhenSubgradientNormLess)
     end
     return ""
 end
-function status_summary(c::StopWhenSubgradientNormLess; inline = false)
+function status_summary(c::StopWhenSubgradientNormLess; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "|∂f| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the subgradient norm |∂f| is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "|∂f| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the subgradient norm |∂f| is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenSubgradientNormLess)
     return print(io, "StopWhenSubgradientNormLess($(c.threshold))")
@@ -1065,14 +1065,14 @@ function get_reason(c::StopWhenAll)
     end
     return ""
 end
-function status_summary(c::StopWhenAll; inline = false)
+function status_summary(c::StopWhenAll; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop when _all_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r  * $(replace(status_summary(cs; inline = true), "\n" => "\n    "))\n"
+        r = "$r  * $(replace(status_summary(cs; context = :inline), "\n" => "\n    "))\n"
     end
-    return (inline ? "$(r)Overall: $s" : "Stop when _all_ of the following are fulfilled:\n$(r)Overall: $s")
+    return (_is_inline(context) ? "$(r)Overall: $s" : "Stop when _all_ of the following are fulfilled:\n$(r)Overall: $s")
 end
 function indicates_convergence(c::StopWhenAll)
     return any(indicates_convergence(ci) for ci in c.criteria)
@@ -1176,12 +1176,12 @@ function get_reason(c::StopWhenAny)
     end
     return ""
 end
-function status_summary(c::StopWhenAny; inline = false)
+function status_summary(c::StopWhenAny; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop when _one_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r  * $(replace(status_summary(cs; inline = true), "\n" => "\n    "))\n"
+        r = "$r  * $(replace(status_summary(cs; context = :inline), "\n" => "\n    "))\n"
     end
     return "$(r)Overall: $s"
 end
@@ -1394,7 +1394,7 @@ function status_summary(sc::StopWhenRepeated; inline::Bool = false)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     c = sc.consecutive ? "consecutive" : ""
-    return (inline ? "$(status_summary(sc.stopping_criterion; inline = true)) × $(sc.count) ≥ $(sc.n) ($(c)):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the inner criterion has indicated to stop $(sc.n) ($(c)) times\n$(_MANOPT_INDENT) $(replace(status_summary(sc.stopping_criterion; inline = false), "\n" => "\n    "))\n$(_MANOPT_INDENT)$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "$(status_summary(sc.stopping_criterion; cnontext = context)) × $(sc.count) ≥ $(sc.n) ($(c)):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the inner criterion has indicated to stop $(sc.n) ($(c)) times\n$(_MANOPT_INDENT) $(replace(status_summary(sc.stopping_criterion; context = context), "\n" => "\n    "))\n$(_MANOPT_INDENT)$(_MANOPT_INDENT)") * "$s"
 end
 
 @doc """
@@ -1495,8 +1495,8 @@ end
 function status_summary(sc::StopWhenCriterionWithIterationCondition; inline::Bool = false)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    is = replace("$(status_summary(sc.stopping_criterion; inline = inline))", "\n" => "\n    ") #increase indent
-    return (inline ? "$(sc.comp) && $(is):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the inner criterion is met and $(sc.comp)\n$(_MANOPT_INDENT)$(is)\n$(_MANOPT_INDENT)$(_MANOPT_INDENT)") * "$s"
+    is = replace("$(status_summary(sc.stopping_criterion; context = context))", "\n" => "\n    ") #increase indent
+    return (_is_inline(context) ? "$(sc.comp) && $(is):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the inner criterion is met and $(sc.comp)\n$(_MANOPT_INDENT)$(is)\n$(_MANOPT_INDENT)$(_MANOPT_INDENT)") * "$s"
 end
 
 

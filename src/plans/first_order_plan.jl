@@ -510,8 +510,8 @@ function get_cost_and_gradient!(
 
     return error("$mfo seems to either have no access to a cost or a gradient")
 end
-function status_summary(mfo::ManifoldFirstOrderObjective; inline = false)
-    inline && (return "A first order objective with functions for $(join(keys(mfo.functions), ", ", (length(mfo.functions) > 2 ? "," : "") * " and "))")
+function status_summary(mfo::ManifoldFirstOrderObjective; context = :default)
+    _is_inline(context) && (return "A first order objective with functions for $(join(keys(mfo.functions), ", ", (length(mfo.functions) > 2 ? "," : "") * " and "))")
     return "A first order objective with $(length(mfo.functions)) provided functions.\n\n" * join([ "* $k:$(_MANOPT_INDENT) $(v)" for (k, v) in zip(keys(mfo.functions), mfo.functions) ], "\n")
 end
 function show(io::IO, mfo::ManifoldFirstOrderObjective{E}) where {E}
@@ -608,7 +608,7 @@ individual one that provides these values.
 abstract type DirectionUpdateRule end
 
 # These are usually short enough that their summary can just be the representation
-status_summary(dru::DirectionUpdateRule; inline = false) = repr(dru)
+status_summary(dru::DirectionUpdateRule; context = :default) = repr(dru)
 
 """
     IdentityUpdateRule <: DirectionUpdateRule

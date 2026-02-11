@@ -69,11 +69,11 @@ end
 get_iterate(pgms::ProjectedGradientMethodState) = pgms.p
 get_gradient(pgms::ProjectedGradientMethodState) = pgms.X
 
-function status_summary(pgms::ProjectedGradientMethodState; inline = false)
+function status_summary(pgms::ProjectedGradientMethodState; context = :default)
     i = get_count(pgms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
-    inline && (return "$(repr(pdsns)) – $(Iter) $(has_converged(pdsns) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(pdsns)) – $(Iter) $(has_converged(pdsns) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Projected Gradient Method
     $Iter
@@ -149,10 +149,10 @@ function show(io::IO, c::StopWhenProjectedGradientStationary)
         io, "StopWhenProjectedGradientStationary($(c.threshold))"
     )
 end
-function status_summary(c::StopWhenProjectedGradientStationary; inline = false)
+function status_summary(c::StopWhenProjectedGradientStationary; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "projected gradient stationary (<$(c.threshold)):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the projected gradient is stationary, i.e. in norm less than $(c.threshold).\n$(_MANOPT_INDENT)") * s
+    return (_is_inline(context) ? "projected gradient stationary (<$(c.threshold)):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the projected gradient is stationary, i.e. in norm less than $(c.threshold).\n$(_MANOPT_INDENT)") * s
 end
 #
 #

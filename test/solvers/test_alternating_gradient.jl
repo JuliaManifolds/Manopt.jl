@@ -60,7 +60,7 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             order_type = :Linear, evaluation = InplaceEvaluation(), return_state = true,
         )
         @test startswith(
-            Manopt.status_summary(r; inline = false),
+            Manopt.status_summary(r; context = :default),
             "# Solver state for `Manopt.jl`s Alternating Gradient Descent Solver"
         )
         # r has the same message as the internal stepsize

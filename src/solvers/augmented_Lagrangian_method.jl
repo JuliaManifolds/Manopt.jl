@@ -166,11 +166,11 @@ function get_message(alms::AugmentedLagrangianMethodState)
     return get_message(alms.sub_state)
 end
 
-function status_summary(alms::AugmentedLagrangianMethodState; inline = true)
+function status_summary(alms::AugmentedLagrangianMethodState; context = :default)
     i = get_count(alms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(alms.stop) ? "Yes" : "No"
-    inline && (return "$(repr(alms)) – $(Iter) $(has_converged(alms) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(alms)) – $(Iter) $(has_converged(alms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Augmented Lagrangian Method
     $Iter
@@ -183,7 +183,7 @@ function status_summary(alms::AugmentedLagrangianMethodState; inline = true)
     * current penalty: $(alms.penalty)
 
     ## Stopping criterion
-    $(status_summary(alms.stop; inline = false))
+    $(status_summary(alms.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end

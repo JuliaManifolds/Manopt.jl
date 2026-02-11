@@ -43,7 +43,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
             p = p0,
         )
         @test startswith(
-            Manopt.status_summary(arcs; inline = false),
+            Manopt.status_summary(arcs; context = :default),
             "# Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)",
         )
         p1 = rand(M)
@@ -117,7 +117,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         @test startswith(repr(st2), "StopWhenAllLanczosVectorsUsed(2)")
         @test !Manopt.indicates_convergence(st2)
         @test startswith(
-            Manopt.status_summary(arcs2.sub_state; inline = false),
+            Manopt.status_summary(arcs2.sub_state; context = :default),
             "# Solver state for `Manopt.jl`s Lanczos Iteration\n"
         )
         @test get_reason(st2) == ""

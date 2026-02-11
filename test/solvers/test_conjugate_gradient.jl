@@ -212,7 +212,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         )
         @test get_solver_result(x_opt2) == x_opt
         @test startswith(
-            Manopt.status_summary(x_opt2; inline = false),
+            Manopt.status_summary(x_opt2; context = :default),
             "# Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver",
         )
         Random.seed!(23)

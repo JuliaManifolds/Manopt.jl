@@ -226,11 +226,11 @@ function get_message(ips::InteriorPointNewtonState)
     return get_message(ips.stepsize)
 end
 # pretty print state info
-function status_summary(ips::InteriorPointNewtonState; inline = false)
+function status_summary(ips::InteriorPointNewtonState; context = :default)
     i = get_count(ips, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
-    inline && (return "$(repr(ips)) – $(Iter) $(has_converged(ips) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(ips)) – $(Iter) $(has_converged(ips) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Interior Point Newton Method
     $Iter
@@ -240,10 +240,10 @@ function status_summary(ips::InteriorPointNewtonState; inline = false)
     * retraction method: $(ips.retraction_method)
 
     ## Stepsize
-    $(status_summary(ips.stepsize; inline = false))
+    $(status_summary(ips.stepsize; context = context))
 
     ## Stopping criterion
-    $(status_summary(ips.stop; inline = false))
+    $(status_summary(ips.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end
@@ -975,10 +975,10 @@ function get_reason(c::StopWhenKKTResidualLess)
     end
     return ""
 end
-function status_summary(swrr::StopWhenKKTResidualLess; inline = false)
+function status_summary(swrr::StopWhenKKTResidualLess; context = :default)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (inline ? "‖F(p, λ, μ)‖ < ε = $(c.ε):$(_MANOPT_INDENT)" : "Stop when the KKT resudual is less than ε = $(c.ε)\n$(_MANOPT_INDENT)") * s
+    return (_is_inline(context) ? "‖F(p, λ, μ)‖ < ε = $(c.ε):$(_MANOPT_INDENT)" : "Stop when the KKT resudual is less than ε = $(c.ε)\n$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(::StopWhenKKTResidualLess) = true
 function show(io::IO, c::StopWhenKKTResidualLess)

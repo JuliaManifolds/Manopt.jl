@@ -221,11 +221,11 @@ function get_message(dcs::TrustRegionsState)
     # for now only the sub solver might have messages
     return get_message(dcs.sub_state)
 end
-function status_summary(trs::TrustRegionsState; inline = false)
+function status_summary(trs::TrustRegionsState; context = :default)
     i = get_count(trs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
-    inline && (return "$(repr(trs)) – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(trs)) – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
     sub = repr(trs.sub_state)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
     s = """
@@ -243,7 +243,7 @@ function status_summary(trs::TrustRegionsState; inline = false)
         | $(sub)
 
     ## Stopping criterion
-    $(status_summary(trs.stop; inline = false))
+    $(status_summary(trs.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end

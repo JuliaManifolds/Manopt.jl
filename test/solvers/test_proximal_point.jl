@@ -29,7 +29,7 @@ using ManifoldDiff: prox_distance, prox_distance!
     get_proximal_map!(M, q3b, obj, 1.0, get_iterate(pps))
     @test distance(M, q3a, q3b) == 0
     @test startswith(
-        Manopt.status_summary(pps; inline = false),
+        Manopt.status_summary(pps; context = :default),
         "# Solver state for `Manopt.jl`s Proximal Point Method\n"
     )
 end

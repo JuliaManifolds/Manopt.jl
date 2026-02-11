@@ -46,7 +46,7 @@ using LinearAlgebra: I, tr
     @test Manopt.get_message(epms) == ""
     set_iterate!(epms, M, 2 .* p0)
     @test get_iterate(epms) == 2 .* p0
-    @test startswith(Manopt.status_summary(epms; inline = false), "# Solver state for `Manopt.jl`s Exact Penalty Method\n")
+    @test startswith(Manopt.status_summary(epms; context = :default), "# Solver state for `Manopt.jl`s Exact Penalty Method\n")
     # With dummy closed form solution
     epmsc = ExactPenaltyMethodState(M, f)
     @test epmsc.sub_state isa Manopt.ClosedFormSubSolverState

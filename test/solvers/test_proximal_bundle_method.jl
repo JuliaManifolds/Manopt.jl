@@ -123,7 +123,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         p0 = p1
         pbm_s = proximal_bundle_method(M, f, ∂f, p0; return_state = true)
         @test startswith(
-            Manopt.status_summary(pbm_s; inline = false),
+            Manopt.status_summary(pbm_s; context = :default),
             "# Solver state for `Manopt.jl`s Proximal Bundle Method\n"
         )
         q = get_solver_result(pbm_s)

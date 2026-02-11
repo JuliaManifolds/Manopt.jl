@@ -42,7 +42,7 @@ flat_example(::AbstractManifold, p) = 0.0
 
         o = cma_es(M, griewank, [10.0, 10.0]; return_state = true)
         @test startswith(
-            Manopt.status_summary(o; inline = false),
+            Manopt.status_summary(o; context = :default),
             "# Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy",
         )
 

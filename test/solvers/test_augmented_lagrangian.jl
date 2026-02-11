@@ -40,7 +40,7 @@ using LinearAlgebra: I, tr
         @test Manopt.get_message(alms) == ""
         @test get_iterate(alms) == 2 .* p0
         @test startswith(
-            Manopt.status_summary(alms; inline = false),
+            Manopt.status_summary(alms; context = :default),
             "# Solver state for `Manopt.jl`s Augmented Lagrangian Method\n"
         )
         @test Manopt.get_sub_problem(alms) === sp

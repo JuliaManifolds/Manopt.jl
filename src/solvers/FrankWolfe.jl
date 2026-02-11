@@ -118,13 +118,13 @@ function set_iterate!(fws::FrankWolfeState, p)
     fws.p = p
     return fws
 end
-function status_summary(fws::FrankWolfeState; inline = false)
+function status_summary(fws::FrankWolfeState; context = :default)
     i = get_count(fws, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(fws.stop) ? "Yes" : "No"
     sub = repr(fws.sub_state)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
-    inline && (return "$(repr(fws)) – $(Iter) $(has_converged(fws) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(fws)) – $(Iter) $(has_converged(fws) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Frank Wolfe Method
     $Iter

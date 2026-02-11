@@ -6,7 +6,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     η = zero_vector(M, p)
     s = TruncatedConjugateGradientState(TangentSpace(M, p); X = η)
     @test startswith(
-        Manopt.status_summary(s; inline = false),
+        Manopt.status_summary(s; context = :default),
         "# Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent\n"
     )
     @test get_iterate(s) == η

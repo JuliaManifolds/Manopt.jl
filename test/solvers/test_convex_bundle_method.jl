@@ -173,7 +173,7 @@ using Manopt: estimate_sectional_curvature
         p0 = p1
         cbm_s = convex_bundle_method(M, f, ∂f, p0; k_max = 1.0, k_min = 1.0, return_state = true)
         @test startswith(
-            Manopt.status_summary(cbm_s; inline = false),
+            Manopt.status_summary(cbm_s; context = :default),
             "# Solver state for `Manopt.jl`s Convex Bundle Method\n"
         )
         q = get_solver_result(cbm_s)
