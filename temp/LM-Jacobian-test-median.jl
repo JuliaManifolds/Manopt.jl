@@ -57,10 +57,9 @@ q1 = LevenbergMarquardt(
 # ... but works
 @info "Cost of median (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q1)), difference (of q1 - qc): $(cost(M, q1) - cost(M, qc))"
 
-#=
 q2 = LevenbergMarquardt(
     M, [f], p0;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
+    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε=0.5,
     robustifier = [0.05 ∘ HuberRobustifier()],
     debug = [:Iteration, :Cost, " ", :damping_term, "\n", :Stop],
     sub_state = CoordinatesNormalSystemState(M),
@@ -70,17 +69,16 @@ q2 = LevenbergMarquardt(
 
 q1b = copy(M, p0)
 
-(@b LevenbergMarquardt!(M, [f], q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [0.05 ∘ HuberRobustifier()])) |> repr |> println
-@info distance(M, q1, q1b)
+# (@b LevenbergMarquardt!(M, [f], q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [0.05 ∘ HuberRobustifier()])) |> repr |> println
+# @info distance(M, q1, q1b)
 
-q2b = copy(M, p0)
+# q2b = copy(M, p0)
 
-(
-    @b LevenbergMarquardt!(
-        M, [f], q2b;
-        β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [0.05 ∘ HuberRobustifier()], sub_state = CoordinatesNormalSystemState(M),
-    )
-) |> repr |> println
+# (
+#     @b LevenbergMarquardt!(
+#         M, [f], q2b;
+#         β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [0.05 ∘ HuberRobustifier()], sub_state = CoordinatesNormalSystemState(M),
+#     )
+# ) |> repr |> println
 
-@info distance(M, q2, q2b)
-=#
+# @info distance(M, q2, q2b)

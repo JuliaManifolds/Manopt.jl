@@ -649,6 +649,9 @@ $(_fields(:stopping_criterion; name = "stop"))
 * `minimum_acceptable_model_improvement`: the minimum improvement in the model function that
   is required to accept a new point; if this is not met, the new point is rejected and
   the damping term is increased.
+* `model_worsening_warning_threshold`: if the subproblem worsens by more than this
+  threshold, a warning is issued. This is useful to detect numerical issues in the linear
+  subproblem solver.
 * `sub_problem`: the linear subproblem solver to use to solve the linearized
   subproblem in each iteration.
 * `sub_state`: the state to use for the linear subproblem solver.
@@ -671,6 +674,7 @@ The following fields are keyword arguments
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
 * `minimum_acceptable_model_improvement::Real=eps(number_eltype(p))`
+* `model_worsening_warning_threshold::Real=-sqrt(eps(number_eltype(p)))`
 
 # See also
 
@@ -697,6 +701,7 @@ mutable struct LevenbergMarquardtState{
     β::Tparams
     expect_zero_residual::Bool
     minimum_acceptable_model_improvement::Tparams
+    model_worsening_warning_threshold::Tparams
     sub_problem::Pr
     sub_state::St
     function LevenbergMarquardtState(
@@ -713,6 +718,7 @@ mutable struct LevenbergMarquardtState{
             β::Real = 5.0,
             expect_zero_residual::Bool = false,
             minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
+            model_worsening_warning_threshold::Real = -sqrt(eps(number_eltype(p))),
             linear_subsolver! = nothing, #remove on next breaking release
             sub_problem::Pr = linear_subsolver!, # TODO change default on next breaking release
             sub_state::St = InplaceEvaluation(),
@@ -747,7 +753,7 @@ mutable struct LevenbergMarquardtState{
             damping_term_min, damping_term_min,
             β,
             expect_zero_residual,
-            minimum_acceptable_model_improvement, sub_problem, sub_state,
+            minimum_acceptable_model_improvement, model_worsening_warning_threshold, sub_problem, sub_state,
         )
     end
 end
@@ -882,8 +888,7 @@ end
 get_objective(lmsco::LevenbergMarquardtLinearSurrogateObjective) = lmsco.objective
 """
     get_cost(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        penalty = lmsco.penalty
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
 
 Compute the surrogate cost. Let ``F`` denote the vector of residuals (of a block),
@@ -899,13 +904,11 @@ where
 * ``y`` the rescaled vector field, see [`vector_field`](@ref)
 """
 function get_cost(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        penalty = lmsco.penalty,
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
-    nlso = lmsco.objective
-    cost = norm(linear_operator(M, lmsco, p, X; penalty = 0.0) + vector_field(M, lmsco, p))^2 / 2
+    cost = norm(linear_operator(M, lmsco, p, X) + vector_field(M, lmsco, p))^2 / 2
     # add the damping term
-    cost += (penalty / 2) * norm(M, p, X)^2
+    cost += (lmsco.penalty / 2) * norm(M, p, X)^2
     return cost
 end
 """
@@ -925,15 +928,14 @@ end
 
 function get_gradient(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        value_cache = get_residuals(M, lmsco.objective, p), penalty = lmsco.penalty
+        value_cache = get_residuals(M, lmsco.objective, p)
     )
     Y = zero_vector(M, p)
-    return get_gradient!(M, Y, lmsco, p, X; value_cache = value_cache, penalty = penalty)
+    return get_gradient!(M, Y, lmsco, p, X; value_cache = value_cache)
 end
 function get_gradient!(
         M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
         value_cache = get_residuals(M, lmsco.objective, p),
-        penalty = lmsco.penalty,
     )
     nlso = lmsco.objective
     # For every block
@@ -949,8 +951,7 @@ function get_gradient!(
         Y .+= Z
         start += len_o
     end
-    # Finally add the damping term
-    (penalty != 0) && (Y .+= penalty * X)
+    # The damping term is handled by get_gradient! of each block
     return Y
 end
 function get_gradient!(
@@ -1017,6 +1018,12 @@ function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNorm
     linear_operator!(M, cnss.A, o, p, cnss.basis)
     vector_field!(M, cnss.b, o, p, cnss.basis)
     cnss.c = cnss.linsolve!!(cnss.A, -cnss.b)
+    X = get_vector(M, p, cnss.c, cnss.basis)
+    if get_cost(dmp, 0 * X) < get_cost(dmp, -X) - sqrt(eps())
+        @show get_cost(dmp, 0 * X)
+        @show get_cost(dmp, -X)
+        error("model cost is much worse than zero step, something is wrong")
+    end
     return cnss
 end
 function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNormalSystemState{InplaceEvaluation})
@@ -1044,15 +1051,15 @@ end
 #
 #
 """
-    linear_normal_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; penalty = lmsco.penalty, ε = lmsco.ε, mode = lmsco.mode,)
-    linear_normal_operator(M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X; penalty = lmsco.penalty, ε = lmsco.ε, mode = lmsco.mode,)
-    linear_normal_operator!(M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; penalty = lmsco.penalty, ε = lmsco.ε, mode = lmsco.mode,)
-    linear_normal_operator!(M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X; penalty = lmsco.penalty, ε = lmsco.ε, mode = lmsco.mode,)
+    linear_normal_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; ε = lmsco.ε, mode = lmsco.mode,)
+    linear_normal_operator(M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X; ε = lmsco.ε, mode = lmsco.mode,)
+    linear_normal_operator!(M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; ε = lmsco.ε, mode = lmsco.mode,)
+    linear_normal_operator!(M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X; ε = lmsco.ε, mode = lmsco.mode,)
 
-    linear_normal_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; penalty = lmsco.penalty, ε = lmsco.ε, mode = lmsco.mode,)
-    linear_normal_operator(M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p[, c], B::AbstractBasis; penalty = lmsco.penalty, ε = lmsco.ε, mode = lmsco.mode,)
-    linear_normal_operator!(M::AbstractManifold, [A | b], lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; penalty = lmsco.penalty, ε = lmsco.ε, mode = lmsco.mode,)
-    linear_normal_operator!(M::AbstractManifold, [A | b], o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p[, c], B::AbstractBasis; penalty = lmsco.penalty, ε = lmsco.ε, mode = lmsco.mode,)
+    linear_normal_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode,)
+    linear_normal_operator(M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode,)
+    linear_normal_operator!(M::AbstractManifold, [A | b], lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode,)
+    linear_normal_operator!(M::AbstractManifold, [A | b], o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode,)
 
 Compute the linear operator ``$(_tex(:Cal, "A"))`` corresponding to the optimality conditions of the
 modified Levenberg-Marquardt surrogate objective, i.e. the normal conditions
@@ -1075,22 +1082,21 @@ then the result ``Y = $(_tex(:displaystyle))$(_tex(:sum, "i=0", "d")) b_iZ_i`` w
 See also [`normal_vector_field`](@ref) for evaluating the corresponding vector field.
 """
 function linear_normal_operator(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        penalty = lmsco.penalty,
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
     Y = zero_vector(M, p)
-    return linear_normal_operator!(M, Y, lmsco, p, X; penalty = penalty)
+    return linear_normal_operator!(M, Y, lmsco, p, X)
 end
 function linear_normal_operator!(
-        M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        penalty = lmsco.penalty,
+        M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
+    penalty = lmsco.penalty
     nlso = get_objective(lmsco)
     # For every block
     zero_vector!(M, Y, p)
     Z = copy(M, p, Y)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        linear_normal_operator!(M, Z, o, r, p, X; penalty = 0, ε = lmsco.ε, mode = lmsco.mode)
+        linear_normal_operator!(M, Z, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode)
         Y .+= Z
     end
     # Finally add the damping term
@@ -1100,7 +1106,7 @@ end
 # for a single block – the actual formula
 function linear_normal_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
-        penalty = 0, ε::Real, mode::Symbol
+        ε::Real, mode::Symbol
     )
     a = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, a)
@@ -1113,30 +1119,28 @@ function linear_normal_operator!(
     a .= ρ_prime .* (I - operator_scaling * (a * a'))^2 * b
     # Now apply the adjoint
     get_adjoint_jacobian!(M, Y, o, p, a)
-    # Finally add the damping term
-    (penalty != 0) && (Y .+= penalty * X)
+    # penalty is added once after summing up all blocks, so we do not add it here
     return Y
 end
 
 #
 # Basis case: (a) including coordinates
 function linear_normal_operator(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, c, B::AbstractBasis;
-        penalty = lmsco.penalty,
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, c, B::AbstractBasis
     )
     d = zero(c)
-    return linear_normal_operator!(M, d, lmsco, p, c, B; penalty = penalty)
+    return linear_normal_operator!(M, d, lmsco, p, c, B)
 end
 function linear_normal_operator!(
-        M::AbstractManifold, d, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, c, B::AbstractBasis;
-        penalty = lmsco.penalty,
+        M::AbstractManifold, d, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, c, B::AbstractBasis
     )
+    penalty = lmsco.penalty
     nlso = get_objective(lmsco)
     # For every block
     fill!(d, 0)
     e = copy(d)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        linear_normal_operator!(M, e, o, r, p, c, B; penalty = 0, ε = lmsco.ε, mode = lmsco.mode)
+        linear_normal_operator!(M, e, o, r, p, c, B; ε = lmsco.ε, mode = lmsco.mode)
         d .+= e
     end
     # Finally add the damping term
@@ -1153,30 +1157,31 @@ end
 #
 # Basis case: (b) no coordinates -> compute a matrix representation
 function linear_normal_operator(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis;
-        penalty = lmsco.penalty,
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis
     )
     d = number_of_coordinates(M, B)
     A = zeros(eltype(p), d, d)
-    return linear_normal_operator!(M, A, lmsco, p, B; penalty = penalty)
+    return linear_normal_operator!(M, A, lmsco, p, B)
 end
 function linear_normal_operator!(
-        M::AbstractManifold, A, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis;
-        penalty = lmsco.penalty,
+        M::AbstractManifold, A, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis
     )
+    penalty = lmsco.penalty
     nlso = get_objective(lmsco)
     # For every block
     fill!(A, 0)
     C = copy(A)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        linear_normal_operator!(M, C, o, r, p, B; penalty = 0, ε = lmsco.ε, mode = lmsco.mode)
+        linear_normal_operator!(M, C, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
         A .+= C
     end
     # Finally add the damping term
     (penalty != 0) && (A .= A + penalty * I)
     return A
 end
-function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, basis::AbstractBasis; penalty = 0.0, ε::Real=0.0, mode::Symbol=:Default)
+function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradientFunction,
+    r::AbstractRobustifierFunction, p, basis::AbstractBasis;
+    ε::Real, mode::Symbol)
     a = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
@@ -1186,7 +1191,7 @@ function linear_normal_operator!(M::AbstractManifold, A, o::AbstractVectorGradie
     JF = get_jacobian(M, o, p; basis = basis)
     # compute A' C^TC A (C^TC = C^2 here) inplace of A
     A .= JF' * (ρ_prime .* (I - operator_scaling * (a * a'))^2) * JF
-    (penalty != 0) && (A .+= penalty * I)
+    # damping term is added once after summing up all blocks, so we do not add it here
     return A
 end
 """
@@ -1209,17 +1214,15 @@ This can be computed in-place of `y`.
 See also [`vector_field`](@ref) for evaluating the corresponding vector field
 """
 function linear_operator(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        penalty = lmsco.penalty,
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
     nlso = get_objective(lmsco)
     n = sum(length(o) for o in nlso.objective)
     y = zeros(eltype(p), n)
-    return linear_operator!(M, y, lmsco, p, X; penalty = penalty)
+    return linear_operator!(M, y, lmsco, p, X)
 end
 function linear_operator!(
-        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        penalty = lmsco.penalty
+        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
     nlso = get_objective(lmsco)
     # Init to zero
@@ -1227,7 +1230,7 @@ function linear_operator!(
     start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
-        linear_operator!(M, view(y, (start + 1):(start + len)), o, r, p, X; penalty = penalty, ε = lmsco.ε, mode = lmsco.mode)
+        linear_operator!(M, view(y, (start + 1):(start + len)), o, r, p, X; ε = lmsco.ε, mode = lmsco.mode)
         start += len
     end
     return y
@@ -1235,7 +1238,7 @@ end
 # for a single block – the actual formula
 function linear_operator!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
-        value_cache = get_value(M, o, p); penalty = 0.0, ε::Real, mode::Symbol,
+        value_cache = get_value(M, o, p); ε::Real, mode::Symbol,
     )
     F_p = get_value(M, o, p) # evaluate residuals F(p)
     F_p_norm2 = sum(abs2, F_p)
@@ -1446,12 +1449,12 @@ function vector_field!(
 end
 # RHS in coordinates
 function vector_field(
-        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B
+        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
     ) where {E <: AbstractEvaluationType}
     return -normal_vector_field(M, slso.objective, p, B)
 end
 function vector_field!(
-        M::AbstractManifold, c, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B
+        M::AbstractManifold, c, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
     ) where {E <: AbstractEvaluationType}
     normal_vector_field!(M, c, slso.objective, p, B)
     c .*= -1

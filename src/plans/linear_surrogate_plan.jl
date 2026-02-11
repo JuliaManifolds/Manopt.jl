@@ -91,7 +91,7 @@ normal_vector_field(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective,
 
 #
 #
-# Wrapper to symmetrix linear systems where the normal eq becomes the linear one
+# Wrapper to symmetric linear systems where the normal eq becomes the linear one
 """
     SymmetricLinearSystem{E <: AbstractEvaluationType, O<: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}
 
