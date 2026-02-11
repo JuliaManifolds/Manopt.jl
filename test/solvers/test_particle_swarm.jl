@@ -12,7 +12,7 @@ using Random
         Random.seed!(35)
         o = particle_swarm(M, f, p1; return_state = true)
         @test startswith(
-            Manoopt.status_summary(o; context = :default),
+            Manopt.status_summary(o; context = :default),
             "# Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm\n"
         )
         g = get_solver_result(o)

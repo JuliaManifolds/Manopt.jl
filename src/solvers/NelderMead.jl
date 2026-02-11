@@ -166,7 +166,7 @@ function status_summary(nms::NelderMeadState; context = :default)
     * retraction method:         $(nms.retraction_method)
 
     ## Stopping criterion
-    $(status_summary(nms.stop; inline = false))
+    $(status_summary(nms.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end

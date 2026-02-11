@@ -75,7 +75,7 @@ function RecordSolverState(s::S, symbol::Symbol) where {S <: AbstractManoptSolve
     return RecordSolverState{S}(s; RecordFactory(get_state(s), symbol)...)
 end
 function status_summary(rst::RecordSolverState; context = :default)
-    _is_inline(context) && (return "a RecordSolverState for $(status_summary(rst.state; inline = true))")
+    _is_inline(context) && (return "a RecordSolverState for $(status_summary(rst.state; context = context))")
     if length(rst.recordDictionary) > 0
         return """
         $(status_summary(rst.state; context = context))
@@ -509,7 +509,7 @@ function (r::RecordCost)(amp::AbstractManoptProblem, s::AbstractManoptSolverStat
     return record_or_reset!(r, get_cost(amp, get_iterate(s)), k)
 end
 show(io::IO, ::RecordCost) = print(io, "RecordCost()")
-status_summary(di::RecordCost) = ":Cost"
+status_summary(di::RecordCost; context = :short) = ":Cost"
 
 @doc """
     RecordChange <: RecordAction
@@ -781,7 +781,9 @@ function show(io::IO, ri::RecordTime)
     return print(io, "RecordTime(; mode=:$(ri.mode))")
 end
 function status_summary(ri::RecordTime; context = :default)
-    return (_is_inline(context) ? (ri.mode === :iterative ? ":IterativeTime" : ":Time") : "A Rectord action for recording times" * (ri.mode == :iterative ? " iteratively" : "."))
+    (context == :short) && return (ri.mode === :iterative ? ":IterativeTime" : ":Time")
+    # Inline and Default:
+    return "A Rectord action for recording times" * (ri.mode == :iterative ? " iteratively" : ".")
 end
 #
 # Factory

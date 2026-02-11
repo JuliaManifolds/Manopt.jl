@@ -147,7 +147,7 @@ function status_summary(sc::StopWhenLagrangeMultiplierLess; context = :default)
     if !isnothing(sc.names)
         msg *= join(["$si < $bi" for (si, bi) in zip(sc.names, sc.tolerances)], ", ")
     end
-    return (is_inline(context) ? "" : "A stopping criterion to stop when the Lagrange multipliers are less than $(sc.tolerances).\n$(_MANOPT_INDENT)") * "$(msg):$(_MANOPT_INDENT)$(s)"
+    return (_is_inline(context) ? "" : "A stopping criterion to stop when the Lagrange multipliers are less than $(sc.tolerances).\n$(_MANOPT_INDENT)") * "$(msg):$(_MANOPT_INDENT)$(s)"
 end
 function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
     n = isnothing(sc.names) ? "" : ", $(names)"

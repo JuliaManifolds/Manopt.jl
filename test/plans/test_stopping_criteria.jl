@@ -79,8 +79,8 @@ end
         o = Manopt.Test.DummyState()
         s = StopAfter(Millisecond(30))
         @test !Manopt.indicates_convergence(s)
-        @test Manopt.status_summary(s) == "stopped after $(s.threshold):$(_MANOPT_INDENT)not reached"
-        @test repr(s) == "StopAfter(Millisecond(30))\n    $(Manopt.status_summary(s))"
+        @test Manopt.status_summary(s) == "stopped after $(s.threshold):$(Manopt._MANOPT_INDENT)not reached"
+        @test repr(s) == "StopAfter(Millisecond(30))"
         s(p, o, 0) # Start
         @test s(p, o, 1) == false
         @test get_reason(s) == ""
@@ -96,13 +96,13 @@ end
     @testset "Stopping Criterion &/| operators" begin
         a = StopAfterIteration(200)
         b = StopWhenChangeLess(Euclidean(), 1.0e-6)
-        sb = "StopWhenChangeLess with threshold 1.0e-6.\n    $(Manopt.status_summary(b))"
+        sb = "StopWhenChangeLess with threshold 1.0e-6."
         @test repr(b) == sb
         @test get_reason(b) == ""
         b2 = StopWhenChangeLess(Euclidean(), 1.0e-6) # second constructor
         @test repr(b2) == sb
         c = StopWhenGradientNormLess(1.0e-6)
-        sc = "StopWhenGradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c))"
+        sc = "StopWhenGradientNormLess(1.0e-6)"
         @test repr(c) == sc
         @test get_reason(c) == ""
         # Trigger manually
@@ -130,14 +130,14 @@ end
 
     @testset "Stopping Criterion print&summary" begin
         f = StopWhenStepsizeLess(1.0e-6)
-        sf1 = "Stepsize s < 1.0e-6:$(_MANOPT_INDENT)not reached"
+        sf1 = "Stepsize s < 1.0e-6:$(Mantopt._MANOPT_INDENT)not reached"
         sf2 = "StopWhenStepsizeLess(1.0e-6)"
         @test Manopt.status_summary(f) == "$sf2\n\n$sf1"
         @test Manopt.status_summary(f; context = :inline) == sf1
         @test repr(f) == sf2
         g = StopWhenCostLess(1.0e-4)
-        @test Manopt.status_summary(g; context = :inline) == "f(x) < $(1.0e-4):$(_MANOPT_INDENT)not reached"
-        @test repr(g) == "StopWhenCostLess(0.0001)\n    $(Manopt.status_summary(g))"
+        @test Manopt.status_summary(g; context = :inline) == "f(x) < $(1.0e-4):$(Manopt._MANOPT_INDENT)not reached"
+        @test repr(g) == "StopWhenCostLess(0.0001)"
         gf(M, p) = norm(p)
         grad_gf(M, p) = p
         gp = DefaultManoptProblem(Euclidean(2), ManifoldGradientObjective(gf, grad_gf))

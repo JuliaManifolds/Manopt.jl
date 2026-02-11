@@ -536,7 +536,7 @@ function status_summary(io::IO, co::ManifoldCountObjective; kwargs...)
 end
 function status_summary(co::ManifoldCountObjective; context = :default)
     so = status_summary(co.objective; context = context)
-    if inline
+    if _is_inline(context)
         return "$so (statistics: $(join([ ":$(c[1])=$(c[2])" for c in co.counts ], ", ")))"
     end
     s = "## Statistics on function calls\n"

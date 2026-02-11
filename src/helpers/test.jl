@@ -48,7 +48,7 @@ mutable struct DummyState <: AbstractManoptSolverState
     storage::Vector{Float64}
 end
 DummyState() = DummyState([])
-Manopt.status_summary(ds::DummyState; context = :Default) = "A Manopt Test state with storage $(status_summary(ds.storage; context = context))"
+Manopt.status_summary(ds::DummyState; context = :Default) = "A Manopt Test state with storage $(ds.storage)"
 Manopt.get_iterate(::DummyState) = NaN
 Manopt.set_parameter!(s::DummyState, ::Val, v) = s
 Manopt.set_parameter!(s::DummyState, ::Val{:StoppingCriterion}, v) = s

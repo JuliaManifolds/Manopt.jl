@@ -62,6 +62,6 @@ end
 function show(io::IO, ::ManifoldCostObjective{E, TC}) where {E, TC}
     return print(io, "ManifoldCostObjective(f)")
 end
-function status_summary(::ManifoldCostObjective{E, TC}; inline::Bool = false) where {E, TC}
+function status_summary(::ManifoldCostObjective{E, TC}; context::Symbol = :default) where {E, TC}
     return "A cost function on a Riemannian manifold `f = (M,p) -> ℝ`."
 end

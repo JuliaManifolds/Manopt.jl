@@ -131,7 +131,7 @@ function status_summary(pss::ParticleSwarmState; context = :default)
     * vector transport method:   $(pss.vector_transport_method)
 
     ## Stopping criterion
-    $(status_summary(pss.stop; inline = false))
+    $(status_summary(pss.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end
