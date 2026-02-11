@@ -89,3 +89,15 @@ If you implement an algorithm with a certain numerical example in mind, it would
 ### Spell checking
 
 We use [crate-ci/typos](https://github.com/crate-ci/typos) for spell checking, which is run automatically on GitHub Actions, but you can also run it locally using their command line tool.
+
+### On the use of AI
+
+Following the [Julia Discourse Guidelines – Keep it tidy](https://discourse.julialang.org/faq#keep-tidy),
+please do not open PRs or issues that are pure AI generated. `Manopt.jl` is in its aspects,
+especially the code, the documentation, as well as the tests, carefully curated to be concise,
+well-documented, comprehensive, but in tests also in a (hopefully) good balance between
+ensuring functionality and “over testing”.
+
+Of course it is ok to get help from an AI, e.g. when refactoring parts of the code,
+but please always carefully reflect on the results proposed and do not “[vibe code](https://en.wikipedia.org/wiki/Vibe_coding)”. That usually does not work well nor fit the exact mathematical definitions,
+reliability and stability as well as and abstractions of the provided algorithms `Manopt.jl` aims to provide.
