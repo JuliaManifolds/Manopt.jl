@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] unreleased
+
+### Added
+
+* A clarification on the use of AI in the [CONTRIBUTING.md](https://manoptjl.org/stable/contributing/) (#573)
+
 ## [0.5.32] January 15, 2026
 
 ### Fixed
