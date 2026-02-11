@@ -176,7 +176,7 @@ function status_summary(cps::ChambollePockState; context = :default)
     * vector_transport_method_dual:   $(cps.vector_transport_method_dual)
 
     ## Stopping criterion
-    $(status_summary(cps.stop; inline = false))
+    $(status_summary(cps.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end

@@ -88,7 +88,7 @@ function status_summary(pgms::ProjectedGradientMethodState; context = :default)
     $(pgms.backtrack)
 
     ## Stopping criterion
-    $(status_summary(pgms.stop; inline = false))
+    $(status_summary(pgms.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end

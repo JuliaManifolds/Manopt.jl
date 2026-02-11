@@ -42,7 +42,7 @@ function show(io::IO, dmp::DefaultManoptProblem)
     return print(io, ")")
 end
 
-function status_summary(dmp::DefaultManoptProblem; inline = false)
+function status_summary(dmp::DefaultManoptProblem; context = :default)
     _is_inline(context) && return "An optimization problem to minimize $(dmp.objective) on the manifold $(dmp.manifold)"
     return """
     An optimization problem for Manopt.jl

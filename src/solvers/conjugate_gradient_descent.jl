@@ -26,7 +26,7 @@ function status_summary(cgds::ConjugateGradientDescentState)
     $(cgds.stepsize)
 
     ## Stopping criterion
-    $(status_summary(cgds.stop; inline = false))
+    $(status_summary(cgds.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end
