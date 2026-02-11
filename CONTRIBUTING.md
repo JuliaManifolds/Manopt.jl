@@ -94,7 +94,7 @@ We use [crate-ci/typos](https://github.com/crate-ci/typos) for spell checking, w
 
 Following the [Julia Discourse Guidelines – Keep it tidy](https://discourse.julialang.org/faq#keep-tidy),
 please do not open PRs or issues that are pure AI generated. `Manopt.jl` is in its aspects,
-especally the code, the documentation, as well as the tests, carefully curated to be concise,
+especially the code, the documentation, as well as the tests, carefully curated to be concise,
 well-documented, comprehensive, but in tests also in a (hopefully) good balance between
 ensuring functionality and “over testing”.
 
