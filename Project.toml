@@ -24,6 +24,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [weakdeps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
 LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
@@ -34,6 +35,7 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
 
 [extensions]
+ManoptCUDAExt = "CUDA"
 ManoptJuMPExt = "JuMP"
 ManoptLRUCacheExt = "LRUCache"
 ManoptLineSearchesExt = "LineSearches"
@@ -42,6 +44,7 @@ ManoptRecursiveArrayToolsExt = "RecursiveArrayTools"
 ManoptRipQPQuadraticModelsExt = ["RipQP", "QuadraticModels"]
 
 [compat]
+CUDA = "5"
 ColorSchemes = "3.5.0"
 ColorTypes = "0.9.1, 0.10, 0.11, 0.12"
 Colors = "0.11.2, 0.12, 0.13"
