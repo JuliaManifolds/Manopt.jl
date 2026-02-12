@@ -249,7 +249,7 @@ function interior_point_Newton!(
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,
         step_problem = step_problem, step_state = step_state,
-        stepsize = _produce_type(stepsize, _step_M),
+        stepsize = _produce_type(stepsize, _step_M, _step_p),
         is_feasible_error = is_feasible_error,
         kwargs...,
     )
