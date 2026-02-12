@@ -907,7 +907,7 @@ where
 function get_cost(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
-    cost = norm(linear_operator(M, lmsco, p, X; penalty = 0.0) + vector_field(M, lmsco, p))^2 / 2
+    cost = norm(linear_operator(M, lmsco, p, X) + vector_field(M, lmsco, p))^2 / 2
     # add the damping term
     cost += (lmsco.penalty / 2) * norm(M, p, X)^2
     return cost
