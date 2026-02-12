@@ -10,7 +10,7 @@ struct NoIterateState <: AbstractManoptSolverState end
         s = Manopt.Test.DummyState()
         @test repr(Manopt.ReturnSolverState(s)) == "ReturnSolverState($s)"
         @test Manopt.status_summary(Manopt.ReturnSolverState(s)) ==
-            "Manopt.Test.DummyState(Float64[])"
+            "A Manopt Test state with storage Float64[]"
         a = ArmijoLinesearch(; initial_stepsize = 1.0)(M)
         @test get_last_stepsize(a) == 1.0
         @test get_initial_stepsize(a) == 1.0
