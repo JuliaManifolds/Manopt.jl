@@ -284,9 +284,11 @@ function Frank_Wolfe_method!(
                     M;
                     p = copy(M, p),
                     stopping_criterion = sub_stopping_criterion,
-                    stepsize = default_stepsize(
-                        M, GradientDescentState; retraction_method = retraction_method
-                    )(M, p),
+                    stepsize = _produce_type(
+                        default_stepsize(
+                            M, GradientDescentState; retraction_method = retraction_method
+                        ), M, p
+                    ),
                     sub_kwargs...,
                 );
                 objective_type = objective_type,
