@@ -1433,9 +1433,9 @@ function linear_operator(
     return linear_normal_operator(M, slso.objective, p, XB)
 end
 function linear_operator!(
-        M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
+        M::AbstractManifold, YA, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
     ) where {E <: AbstractEvaluationType}
-    return linear_normal_operator!(M, Y, slso.objective, p, XB)
+    return linear_normal_operator!(M, YA, slso.objective, p, XB)
 end
 # (b) coefficients in a basis
 function linear_operator(
