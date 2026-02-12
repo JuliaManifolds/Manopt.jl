@@ -36,7 +36,7 @@ The following packages are using `Manopt.jl`:
 
 The following papers are using `Manopt.jl`:
 
-* Why summation by parts is not enough (2026), [arXiv: 2602.10786](https://arxiv.org/abs/2602.10786) by Jan Glaubitz, Armin Iske, Joshua Lampert, and Philipp Öffner.
+* [GlaubitzIskeLampertOeffner:2026](@citet*)
 
 If you are missing a package or paper, that uses `Manopt.jl`, please [open an issue](https://github.com/JuliaManifolds/Manopt.jl/issues/new).
 It would be great to collect anything and anyone using Manopt.jl in this list.
