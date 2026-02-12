@@ -964,7 +964,7 @@ with the following
 $(_note(:ManifoldDefaultFactory, "DecreasingStepsize"))
 """
 function DecreasingLength(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.DecreasingStepsize, args...; requires_point = true, kwargs...)
+    return ManifoldDefaultsFactory(Manopt.DecreasingStepsize, args...; kwargs...)
 end
 
 @doc raw"""
