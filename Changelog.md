@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * A clarification on the use of AI in the [CONTRIBUTING.md](https://manoptjl.org/stable/contributing/) (#573)
+* Added another package and paper using `Manopt.jl` to the about page (#576).
 
 ## [0.5.32] January 15, 2026
 
