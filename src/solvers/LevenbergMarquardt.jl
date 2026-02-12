@@ -257,7 +257,7 @@ function step_solver!(
         if model_improvement < lms.model_worsening_warning_threshold
             @warn "Model worsened by more than the warning threshold. The subsolver is likely at fault. Model improvement: $model_improvement, warning threshold: $(lms.model_worsening_warning_threshold)"
         end
-        
+
         # Model improvement insufficient, reject step and increase damping term
         lms.damping_term *= lms.β
         return lms
