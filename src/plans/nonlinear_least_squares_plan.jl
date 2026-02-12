@@ -1262,7 +1262,7 @@ function linear_operator!(
     residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
     get_jacobian!(M, y, o, p, X)
     # Compute C y
-    y .= residual_scaling .* (I - operator_scaling * (F_p * F_p'))^2 * y
+    y .= sqrt(ρ_prime) .* (I - operator_scaling * (F_p * F_p')) * y
     return y
 end
 

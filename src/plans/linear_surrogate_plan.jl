@@ -104,6 +104,10 @@ struct SymmetricLinearSystem{E <: AbstractEvaluationType, O <: AbstractLinearSur
     objective::O
 end
 
+function show(io::IO, o::SymmetricLinearSystem{E}) where {E}
+    return print(io, "SymmetricLinearSystem{$E}($(o.objective))")
+end
+
 get_objective(slsmo::SymmetricLinearSystem) = slsmo.objective
 
 # set parameter just passes down to the inner objective
