@@ -197,7 +197,7 @@ using ManifoldDiff: grad_distance
             M, f, grad_f, pts[1];
             count = [:Gradient], return_objective = true, return_state = true,
         )
-        @test Manopt.status_summary(n6; context = :default) == "$(n6[2])\n\n$(n6[1])"
+        @test Manopt.status_summary(n6; context = :default) == "$(Manopt.status_summary(n6[2]; context = :default))\n\n$(Manopt.status_summary(n6[1]; context = :default))"
     end
     @testset "Tutorial mode" begin
         M = Sphere(2)

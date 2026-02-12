@@ -287,7 +287,7 @@ function Base.show(io::IO, crs::ConjugateResidualState)
     print(io, ", r=$(crs.r)")
     print(io, ", α=$(crs.α)")
     print(io, ", β=$(crs.β)")
-    print(io, ", stopping_criterion=$(repr(crs.stop))")
+    print(io, ", stoping_criterion = $(status_summary(crs.stop; context = :short))")
     return print(io, ")")
 end
 

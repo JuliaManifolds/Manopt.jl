@@ -99,7 +99,14 @@ end
 function Base.show(io::IO, gds::GradientDescentState)
     return print(
         io,
-        "GradientDescentState(; direction=$(repr(gds.direction)), p=$(repr(gds.p)), stepsize=$(repr(gds.stepsize)), stopping_criterion=$(repr(gds.stop)), retraction_method=$(repr(gds.retraction_method)), X=$(repr(gds.X)))"
+        """GradientDescentState(;
+        $(_MANOPT_INDENT)direction = $(repr(gds.direction)),
+        $(_MANOPT_INDENT)p = $(repr(gds.p)),
+        $(_MANOPT_INDENT)stepsize = $(repr(gds.stepsize)),
+        $(_MANOPT_INDENT)stopping_criterion = $(status_summary(gds.stop; context = :short))"),
+        $(_MANOPT_INDENT)retraction_method = $(repr(gds.retraction_method)),
+        $(_MANOPT_INDENT)X=$(repr(gds.X)))"
+        )"""
     )
 end
 
