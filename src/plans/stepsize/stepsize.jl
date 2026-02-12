@@ -2033,7 +2033,7 @@ $(_kwargs(:retraction_method))
 $(_kwargs(:vector_transport_method))
 """
 function WolfePowellBinaryLinesearch(args...; kwargs...)
-    return ManifoldDefaultsFactory(WolfePowellBinaryLinesearchStepsize, args...; requires_point = true, kwargs...)
+    return ManifoldDefaultsFactory(WolfePowellBinaryLinesearchStepsize, args...; kwargs...)
 end
 
 @doc """

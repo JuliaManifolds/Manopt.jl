@@ -57,8 +57,10 @@ function GradientDescentState(
         X::T = zero_vector(M, p),
         stopping_criterion::SC = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8),
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
-        stepsize::S = default_stepsize(
-            M, GradientDescentState; retraction_method = retraction_method
+        stepsize::S = _produce_type(
+            default_stepsize(
+                M, GradientDescentState; retraction_method = retraction_method
+            ), M, p
         ),
         direction::D = IdentityUpdateRule(),
         kwargs..., # ignore rest
