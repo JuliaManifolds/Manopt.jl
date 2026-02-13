@@ -59,9 +59,9 @@ q1 = LevenbergMarquardt(
 
 q2 = LevenbergMarquardt(
     M, [f], p0;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 0.5,
-    robustifier = [0.05 ∘ HuberRobustifier()],
-    debug = [:Iteration, :Cost, " ", :damping_term, "\n", :Stop],
+    β = 2., η = 0.2, damping_term_min = 1.0e-5, ε = 0.5,
+    robustifier = [HuberRobustifier()],
+    debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop],
     sub_state = CoordinatesNormalSystemState(M),
 )
 # ... but works
@@ -69,16 +69,23 @@ q2 = LevenbergMarquardt(
 
 q1b = copy(M, p0)
 
-# (@b LevenbergMarquardt!(M, [f], q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [0.05 ∘ HuberRobustifier()])) |> repr |> println
-# @info distance(M, q1, q1b)
+(
+    @b LevenbergMarquardt!(
+        M, [f], q1b;
+        β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
+        robustifier = [HuberRobustifier()])
+) |> repr |> println
 
-# q2b = copy(M, p0)
+@info "Distance from alloc q1 to in place q1b (from benchmark) $(distance(M, q1, q1b))"
 
-# (
-#     @b LevenbergMarquardt!(
-#         M, [f], q2b;
-#         β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [0.05 ∘ HuberRobustifier()], sub_state = CoordinatesNormalSystemState(M),
-#     )
-# ) |> repr |> println
+q2b = copy(M, p0)
+# TODO: Still errors on first step?
+(
+    @b LevenbergMarquardt!(
+        M, [f], q2b;
+        β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
+        robustifier = [HuberRobustifier()], sub_state = CoordinatesNormalSystemState(M),
+    )
+) |> repr |> println
 
-# @info distance(M, q2, q2b)
+@info "Distance from alloc q2 to in place q1b (from benchmark) $(distance(M, q2, q2b))"

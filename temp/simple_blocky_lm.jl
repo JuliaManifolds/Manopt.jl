@@ -1,4 +1,3 @@
-
 using Manopt, Manifolds, LinearAlgebra, Test, Chairmarks
 
 Rxy(α) = [cos(α) sin(α) 0.0; -sin(α) cos(α) 0; 0 0 1]
@@ -67,7 +66,7 @@ function test_lm(pk; scale_damping = ε0)
     (a, ap, app) = get_robustifier_values(robustifier, vi)
     @show "a: $a, a': $ap, a'': $app"
     residual_scaling, operator_scaling = Manopt.get_LevenbergMarquardt_scaling(ap, app, vi, ε0, α_mode)
-    oc = a/2
+    oc = a / 2
 
     @show "Residual scaling: $residual_scaling, Operator scaling: $operator_scaling"
     @show "Original cost: $oc"
@@ -81,7 +80,7 @@ function test_lm(pk; scale_damping = ε0)
     y_k = residual_scaling * F_k
 
     @show y_k
-    
+
     C_k = sqrt(ap) * (I - operator_scaling * (F_k * F_k'))
     J_k = JF(M, pk)
     function calc_surrogate_cost(cX)
