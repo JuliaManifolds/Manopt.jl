@@ -191,6 +191,7 @@ function LevenbergMarquardt!(
         #TODO better names for the next 2?
         ε::Real = 1.0e-6,
         α_mode::Symbol = :Default,
+        minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
         sub_objective = SymmetricLinearSystem(LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = damping_term_min, ε = ε, mode = α_mode)),
         # to keep this non-breaking for now, maybe:
         # TODO change default on next breaking release to no longer accept `linear_subsolver` here
@@ -213,6 +214,7 @@ function LevenbergMarquardt!(
         expect_zero_residual = expect_zero_residual,
         sub_problem = sub_problem,
         sub_state = sub_state,
+        minimum_acceptable_model_improvement = minimum_acceptable_model_improvement,
     )
     dlms = decorate_state!(lms; debug = debug, kwargs...)
     solve!(nlsp, dlms)
