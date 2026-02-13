@@ -1420,6 +1420,7 @@ function Base.show(io::IO, sc::StopWhenRepeated)
     return print(io, "StopWhenRepeated($(typeof(sc.stopping_criterion)), $(sc.n); consecutive=$(sc.consecutive))")
 end
 function status_summary(sc::StopWhenRepeated; context = :default)
+    (context == :short) && return "StopWhenRepeated($(repr(sc.stopping_criterion)))×$(sc.n)"
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     c = sc.consecutive ? "consecutive" : ""
@@ -1522,6 +1523,7 @@ function Base.show(io::IO, sc::StopWhenCriterionWithIterationCondition)
     return print(io, "StopWhenCriterionWithIterationCondition($(typeof(sc.stopping_criterion)), $(sc.comp))")
 end
 function status_summary(sc::StopWhenCriterionWithIterationCondition; context = :default)
+    (context == :short) && return repr(sc)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     is = replace("$(status_summary(sc.stopping_criterion; context = context))", "\n" => "\n    ") #increase indent
