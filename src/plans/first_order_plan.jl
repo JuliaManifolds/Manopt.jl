@@ -667,7 +667,7 @@ mutable struct MomentumGradientRule{
     X_old::T
 end
 function MomentumGradientRule(M::AbstractManifold, p; kwargs...)
-    return MomentumGradientRule(M; p = allocate(p), kwargs...)
+    return MomentumGradientRule(M; p = copy(M, p), kwargs...)
 end
 function MomentumGradientRule(
         M::AbstractManifold;
@@ -767,7 +767,7 @@ mutable struct AverageGradientRule{
     vector_transport_method::VTM
 end
 function AverageGradientRule(M::AbstractManifold, p; kwargs...)
-    return AverageGradientRule(M; p = allocate(p), kwargs...)
+    return AverageGradientRule(M; p = copy(M, p), kwargs...)
 end
 function AverageGradientRule(
         M::AbstractManifold;
@@ -862,7 +862,7 @@ mutable struct NesterovRule{P, R <: Real} <: DirectionUpdateRule
     inverse_retraction_method::AbstractInverseRetractionMethod
 end
 function NesterovRule(M::AbstractManifold, p; kwargs...)
-    return NesterovRule(M; p = allocate(p), kwargs...)
+    return NesterovRule(M; p = copy(M, p), kwargs...)
 end
 function NesterovRule(
         M::AbstractManifold;
