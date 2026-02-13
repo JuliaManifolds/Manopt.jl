@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Line searches consistently respect `stop_when_stepsize_exceeds` keyword argument as a hard limit. (#554)
 * `StopWhenChangeLess` falsely claimed to indicate convergence. This is now fixed. (#554)
 
+## [0.5.33] unreleased
+
+### Added
+
+* A clarification on the use of AI in the [CONTRIBUTING.md](https://manoptjl.org/stable/contributing/) (#573)
+* Added another package and paper using `Manopt.jl` to the about page (#576).
+
 ## [0.5.32] January 15, 2026
 
 ### Fixed
