@@ -59,7 +59,7 @@ q1 = LevenbergMarquardt(
 
 q2 = LevenbergMarquardt(
     M, [f], p0;
-    β = 2., η = 0.2, damping_term_min = 1.0e-5, ε = 0.5,
+    β = 2.0, η = 0.2, damping_term_min = 1.0e-5, ε = 0.5,
     robustifier = [HuberRobustifier()],
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop],
     sub_state = CoordinatesNormalSystemState(M),
@@ -73,7 +73,8 @@ q1b = copy(M, p0)
     @b LevenbergMarquardt!(
         M, [f], q1b;
         β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
-        robustifier = [HuberRobustifier()])
+        robustifier = [HuberRobustifier()]
+    )
 ) |> repr |> println
 
 @info "Distance from alloc q1 to in place q1b (from benchmark) $(distance(M, q1, q1b))"

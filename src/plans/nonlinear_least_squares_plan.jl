@@ -1029,7 +1029,7 @@ function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNorm
     cnss.c = cnss.linsolve!!(cnss.A, -cnss.b)
     X = get_vector(M, p, cnss.c, cnss.basis)
     # TODO: Remove ?
-    if get_cost(dmp, 0 * X) < get_cost(dmp, -X) - sqrt(eps())
+    if get_cost(dmp, 0 * X) < get_cost(dmp, -X) - sqrt(eps()) * (1 + sqrt(eps()) * get_cost(dmp, 0 * X))
         @show get_cost(dmp, 0 * X)
         @show get_cost(dmp, -X)
         error("model cost is much worse than zero step, something is wrong")

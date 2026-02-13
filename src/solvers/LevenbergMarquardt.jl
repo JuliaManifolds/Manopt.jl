@@ -254,7 +254,7 @@ function step_solver!(
     end
     model_improvement = (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X)) / 2
     if model_improvement < lms.minimum_acceptable_model_improvement
-        if model_improvement < lms.model_worsening_warning_threshold
+        if model_improvement < lms.model_worsening_warning_threshold * (1 + get_cost(lms.sub_problem, zero_vector(M, lms.p)))
             @warn "Model worsened by more than the warning threshold. The subsolver is likely at fault. Model improvement: $model_improvement, warning threshold: $(lms.model_worsening_warning_threshold)"
         end
 
