@@ -274,10 +274,11 @@ function get_reason(c::StopWhenTrustRegionIsExceeded)
     end
     return ""
 end
-function status_summary(c::StopWhenTrustRegionIsExceeded)
+function status_summary(c::StopWhenTrustRegionIsExceeded; context = :default)
+    (context == :short) && return repr(sc)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "Trust region exceeded:$(_MANOPT_INDENT)$s"
+    return (_is_inline(context) ? "Trust region exceeded:$(_MANOPT_INDENT)" : "A stopping criterion to stop when the trust region radius ($(c.trr)) is exceeded.\n$(_MANOPT_INDENT)") * "$s"
 end
 function show(io::IO, c::StopWhenTrustRegionIsExceeded)
     return print(io, "StopWhenTrustRegionIsExceeded()\n    $(status_summary(c))")
@@ -331,13 +332,14 @@ function get_reason(c::StopWhenCurvatureIsNegative)
     end
     return ""
 end
-function status_summary(c::StopWhenCurvatureIsNegative)
+function status_summary(c::StopWhenCurvatureIsNegative; context = :default)
+    (context == :short) && return repr(sc)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "Curvature is negative:$(_MANOPT_INDENT)$s"
+    return (_is_inline(context) ? "Curvature is negative:$(_MANOPT_INDENT)" : "A stopping criterion to stop when the is negative\n$(_MANOPT_INDENT)") * "$s"
 end
 function show(io::IO, c::StopWhenCurvatureIsNegative)
-    return print(io, "StopWhenCurvatureIsNegative()\n    $(status_summary(c))")
+    return print(io, "StopWhenCurvatureIsNegative()")
 end
 
 @doc """

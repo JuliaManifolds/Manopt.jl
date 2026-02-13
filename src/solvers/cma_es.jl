@@ -572,6 +572,7 @@ function get_reason(c::StopWhenCovarianceIllConditioned)
     return ""
 end
 function status_summary(c::StopWhenCovarianceIllConditioned; context = :default)
+    (context == :short) && return repr(c)
     has_stopped = c.at_iteration > 0
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "cond(s.covariance_matrix) > $(c.threshold):\t" : "Stop when the covariance matrix is ill-conditioned, i.e. the last condition number is larger than the threshold of $(c.threshold)\n$(_MANOPT_INDENT)") * s
@@ -628,7 +629,8 @@ function (c::StopWhenBestCostInGenerationConstant)(
     end
     return false
 end
-function status_summary(c::StopWhenBestCostInGenerationConstant)
+function status_summary(c::StopWhenBestCostInGenerationConstant; context = :default)
+    (context == :short) && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return "c.iterations_since_change > $(c.iteration_range):\t$s"
