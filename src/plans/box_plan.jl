@@ -603,7 +603,7 @@ avoid allocations.
 """
 struct GeneralizedCauchyDirectionFinder{
         TM <: AbstractManifold, TX,
-        T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater, TFT <: Tuple, TBI,
+        T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater, TFT <: Tuple{<:Real, Any}, TBI,
         TO <: Base.Order.Ordering,
     }
     M::TM
@@ -631,11 +631,11 @@ function GeneralizedCauchyDirectionFinder(
     )
 end
 
-function collect_isotropic_limits!(::AbstractManifold, ::Vector{<:Tuple{TF, Any}}, p, d) where {TF <: Real}
+function collect_isotropic_limits!(::AbstractManifold, ::Vector{<:Tuple{TF, Any}}, p, d)::Tuple{Bool, TF} where {TF <: Real}
     return false, convert(TF, Inf)
 end
 
-function collect_isotropic_limits!(M::ProductManifold, F_list::Vector{<:Tuple{TF, Any}}, p, d) where {TF <: Real}
+function collect_isotropic_limits!(M::ProductManifold, F_list::Vector{<:Tuple{TF, Any}}, p, d)::Tuple{Bool, TF} where {TF <: Real}
     has_finite_limit = false
     smallest_positive_limit = Inf
     map(M.manifolds, submanifold_components(M, p), submanifold_components(M, d)) do Mi, p_i, d_i
@@ -660,14 +660,24 @@ end
 Find generalized Cauchy direction looking from point `p` in direction `d` and save it to `d_out`.
 Gradient of the objective at `p` is `X`.
 
-The function returns 
+The function returns a pair (status, max_stepsize) where `status` is a symbol describing
+the result of the search, and `max_stepsize` is the maximum stepsize that can be taken in
+the direction `d_out`.
+
+The `status` can be one of the following:
 * `:found_limited` if the point was found and we can perform a step of length at most 1
   in direction `d_out` afterwards,
 * `:found_unlimited` if the point was found and we can perform a step of length at most
   `max_stepsize(M, p)` in direction `d_out` afterwards,
 * `:not_found` if the search cannot be performed in direction `d`.
 """
-function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
+function find_generalized_cauchy_direction!(
+        gcd::GeneralizedCauchyDirectionFinder{
+            <:AbstractManifold, <:Any,
+            <:AbstractQuasiNewtonDirectionUpdate, <:AbstractSegmentHessianUpdater, <:Tuple{TF, Any},
+        },
+        d_out, p, d, X
+    ) where {TF <: Real}
     M = gcd.M
     copyto!(M, gcd.d_original, d)
     copyto!(M, d_out, d)
@@ -682,7 +692,7 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
     has_finite_limit, smallest_positive_limit = collect_isotropic_limits!(M, F_list, p, d)
     # anisotropic limits
     for i in bounds_indices
-        sbi = get_stepsize_bound(M, p, d, i)
+        sbi = get_stepsize_bound(M, p, d, i)::TF
 
         if sbi > 0
             push!(F_list, (sbi, i))
@@ -717,10 +727,10 @@ function find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinde
     init_updater!(M, gcd.hessian_segment_updater, p, d, gcd.ha)
     # b can be -1 if it corresponds to the max stepsize limit on the manifold part
     while dt_min > dt && b != -1
-        db = get_at_bound_index(M, d, b)
-        gb = get_at_bound_index(M, X, b)
+        db = get_at_bound_index(M, d, b)::TF
+        gb = get_at_bound_index(M, X, b)::TF
 
-        hv_eb_dz, hv_eb_d = gcd.hessian_segment_updater(M, p, t_current, dt, b, db, gcd.ha)
+        hv_eb_dz, hv_eb_d = gcd.hessian_segment_updater(M, p, t_current, dt, b, db, gcd.ha)::Tuple{TF, TF}
 
         f_prime += dt * f_double_prime - db * (gb + hv_eb_dz)
         f_double_prime += (2 * -db * hv_eb_d) + db^2 * hessian_value_diag(gcd.ha, M, p, UnitVector(b))

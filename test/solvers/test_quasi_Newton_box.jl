@@ -289,6 +289,15 @@ using RecursiveArrayTools
             @test hv_eb_d ≈ -256.0
         end
 
+        @testset "GCD check" begin
+            d = -grad_f(M, p0)
+            ha = QuasiNewtonLimitedMemoryBoxDirectionUpdate(QuasiNewtonLimitedMemoryDirectionUpdate(M, p0, InverseBFGS(), 2))
+            gf = Manopt.GeneralizedCauchyDirectionFinder(M, p0, ha)
+            d_out = similar(d)
+            X = grad_f(M, p0)
+            @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p0, d, X) === (:found_limited, 1.0)
+        end
+
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test distance(M, p_opt, ArrayPartition([0, 2, 0], px)) < 0.1
     end
