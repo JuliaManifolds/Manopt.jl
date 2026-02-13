@@ -22,8 +22,8 @@ In case there is no Hessian approximation available, a simple stepsize limiting 
 This procedure is available using the following:
 
 ```@docs
-MaxStepsizeInDirectionFinder
-find_max_stepsize_in_direction
+Manopt.MaxStepsizeInDirectionFinder
+Manopt.find_max_stepsize_in_direction
 ```
 
 ## Internal types and method
