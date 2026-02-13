@@ -315,3 +315,38 @@ using RecursiveArrayTools
         @test distance(M, p_opt, ArrayPartition(px, [0 2; 0 0])) < 0.1
     end
 end
+
+@testset "MaxStepsizeInDirection" begin
+    @testset "found_limited" begin
+        M = Hyperrectangle([-1.0, -2.0, -Inf], [2.0, Inf, 2.0])
+        p = [0.0, 0.0, 0.0]
+        d = [2.0, 1.0, 1.0]
+        d_before = copy(d)
+
+        sdf = Manopt.MaxStepsizeInDirectionFinder(M, p)
+        @test Manopt.find_max_stepsize_in_direction(sdf, p, d) === (:found_limited, 1.0)
+        @test d == d_before
+    end
+
+    @testset "found_unlimited" begin
+        M = Hyperrectangle([-Inf], [Inf])
+        p = [0.0]
+        d = [1.0]
+        d_before = copy(d)
+
+        sdf = Manopt.MaxStepsizeInDirectionFinder(M, p)
+        @test Manopt.find_max_stepsize_in_direction(sdf, p, d) === (:found_unlimited, Inf)
+        @test d == d_before
+    end
+
+    @testset "not_found" begin
+        M = Hyperrectangle([0.0], [1.0])
+        p = [0.0]
+        d = [-1.0]
+        d_before = copy(d)
+
+        sdf = Manopt.MaxStepsizeInDirectionFinder(M, p)
+        @test Manopt.find_max_stepsize_in_direction(sdf, p, d) === (:not_found, NaN)
+        @test d == d_before
+    end
+end

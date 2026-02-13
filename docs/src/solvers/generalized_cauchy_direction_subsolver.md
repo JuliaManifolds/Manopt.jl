@@ -16,6 +16,16 @@ Note that the value $s_{\max}=1$ is obtained when the minimum lies at the bounda
 
 The solver is currently primarily intended for internal use by optimization algorithms that require bound-constrained subproblem solutions.
 
+## Simple stepsize limiting
+
+In case there is no Hessian approximation available, a simple stepsize limiting procedure is can be used to limit the stepsize in direction $X$ to the maximum allowed by the boundary of $D$ and the maximum allowed stepsize on $\mathcal{M}$.
+This procedure is available using the following:
+
+```@docs
+MaxStepsizeInDirectionFinder
+find_max_stepsize_in_direction
+```
+
 ## Internal types and method
 
 ### Symbols related to the GCD computation
