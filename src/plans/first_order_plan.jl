@@ -719,7 +719,7 @@ $(_kwargs(:vector_transport_method))
 $(_note(:ManifoldDefaultFactory, "MomentumGradientRule"))
 """
 function MomentumGradient(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; requires_point = true, kwargs...)
 end
 
 """
@@ -821,7 +821,7 @@ $(_kwargs([:X, :vector_transport_method]))
 $(_note(:ManifoldDefaultFactory, "AverageGradientRule"))
 """
 function AverageGradient(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; requires_point = true, kwargs...)
 end
 
 @doc """
@@ -938,7 +938,7 @@ $(_kwargs(:inverse_retraction_method))
 $(_note(:ManifoldDefaultFactory, "NesterovRule"))
 """
 function Nesterov(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.NesterovRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.NesterovRule, args...; requires_point = true, kwargs...)
 end
 
 """

@@ -47,6 +47,8 @@ FactoryDummyManifoldRule(M::TM; t::R = 1.0) where {TM <: AbstractManifold, R <: 
         FactoryDummyPointRule, M; requires_manifold = false, requires_point = true, t = 3.0
     )
     @test fdrp(M, p).p isa Vector{Float32}
+    @test fdrp(M).p isa Vector{Float64}
+    @test fdrp().p isa Vector{Float64}
 
     fdrmp = Manopt.ManifoldDefaultsFactory(
         FactoryDummyManifoldPointRule, M; requires_manifold = true, requires_point = true, t = 4.0
