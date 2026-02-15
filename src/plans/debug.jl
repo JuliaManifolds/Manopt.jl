@@ -95,15 +95,15 @@ function get_parameter(dss::DebugSolverState, v::Val{T}, args...) where {T}
     return get_parameter(dss.state, v, args...)
 end
 
-function status_summary(dst::DebugSolverState)
+function status_summary(dst::DebugSolverState; context = :default)
     if length(dst.debug_dictionary) > 0
         s = ""
         for (k, v) in dst.debug_dictionary
-            s = "$s\n    :$k = $(status_summary(v))"
+            s = "$s\n    :$k = $(status_summary(v; context = context))"
         end
-        return "$(status_summary(dst.state))\n\n## Debug$s"
+        return "$(status_summary(dst.state; context = context))\n\n## Debug$s"
     else # if the dictionary has no entries, there is no actual debug in pretty print
-        return status_summary(dst.state)
+        return status_summary(dst.state; context = context)
     end
 end
 function show(io::IO, dst::DebugSolverState)
@@ -139,9 +139,13 @@ function (d::DebugGroup)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     end
     return
 end
-function status_summary(dg::DebugGroup)
-    str = join(["$(status_summary(di))" for di in dg.group], ", ")
-    return "[ $str ]"
+function status_summary(dg::DebugGroup; context = :default)
+    (context == :short) && return "[ " * join(["$(status_summary(di; context = context))" for di in dg.group], ", ") * " ]"
+    (context == :inline) && return "A debug group consisting of " * join(["$(status_summary(di; context = context))" for di in dg.group], ", ", ", and")
+    return """
+    A debug group with the following elements
+    * $(join(["* $(status_summary(di; context = context))" for di in dg.group], "\n * ", ""))
+    """
 end
 function show(io::IO, dg::DebugGroup)
     s = join(["$(di)" for di in dg.group], ", ")
@@ -209,14 +213,18 @@ function show(io::IO, de::DebugEvery)
         "DebugEvery($(de.debug), $(de.every), $(de.always_update); activation_offset=$(de.activation_offset))",
     )
 end
-function status_summary(de::DebugEvery)
+function status_summary(de::DebugEvery; context = :default)
     s = ""
-    if de.debug isa DebugGroup
-        s = status_summary(de.debug)[3:(end - 2)]
-    else
-        s = "$(de.debug)"
+    if context == :short
+        if de.debug isa DebugGroup
+            s = status_summary(de.debug)[3:(end - 2)]
+        else
+            s = "$(de.debug)"
+        end
+        return "[$s, $(de.every)]"
     end
-    return "[$s, $(de.every)]"
+    (context == :inline) && return "The Debug $(status_summary(de.debug; context = context)) only printed every $(de.every) iteration"
+    return "A debug wrapper printing the following debug only every $(de.every)th iteration.\n$(replace(status_summary(de.debug; context = context), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))"
 end
 function set_parameter!(de::DebugEvery, e::Symbol, args...)
     set_parameter!(de, Val(e), args...)
@@ -332,7 +340,7 @@ function show(io::IO, dc::DebugChange)
         "DebugChange(; format=\"$(escape_string(dc.format))\", inverse_retraction=$(dc.inverse_retraction_method))",
     )
 end
-status_summary(dc::DebugChange) = "(:Change, \"$(escape_string(dc.format))\")"
+status_summary(dc::DebugChange; context = :short) = "(:Change, \"$(escape_string(dc.format))\")"
 
 @doc """
     DebugCost <: DebugAction
