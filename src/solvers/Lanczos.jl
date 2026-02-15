@@ -239,7 +239,7 @@ end
 #
 _math_sc_firstorder = raw"""
 ```math
-m(X_k) \leq m(0)
+m(X_k) ≤ m(0)
 \quad\text{ and }\quad
 \lVert \operatorname{grad} m(X_k) \rVert ≤ θ \lVert X_k \rVert^2
 ```
@@ -253,7 +253,7 @@ solver indicating that the model function at the current (outer) iterate,
 
 $_doc_ARC_model
 
-defined on the tangent space ``$(_math(:TangentSpace))entSpace)))`` fulfills at the current iterate ``X_k`` that
+defined on the tangent space ``$(_math(:TangentSpace))`` fulfils at the current iterate ``X_k`` that
 
 $_math_sc_firstorder
 
@@ -323,10 +323,12 @@ function (c::StopWhenFirstOrderProgress)(
     prog && (c.at_iteration = k)
     return prog
 end
-function status_summary(c::StopWhenFirstOrderProgress)
+function status_summary(c::StopWhenFirstOrderProgress; context = :default)
+    (context == :short) && return repr(sc)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "First order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
+    _is_inline(context) && return "First order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
+    return "A stopping criterion to stop when the Lanczos model has fpund a certain first order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(c::StopWhenFirstOrderProgress) = true
 function show(io::IO, c::StopWhenFirstOrderProgress)

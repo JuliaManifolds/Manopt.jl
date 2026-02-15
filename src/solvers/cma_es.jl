@@ -709,7 +709,8 @@ function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState,
     end
     return false
 end
-function status_summary(c::StopWhenEvolutionStagnates)
+function status_summary(c::StopWhenEvolutionStagnates; context = :default)
+    (context == :short) && return repr(sc)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     N = length(c.best_history)
@@ -722,7 +723,14 @@ function status_summary(c::StopWhenEvolutionStagnates)
     median_best_new = median(c.best_history[threshold_high:end])
     median_median_old = median(c.median_history[1:threshold_low])
     median_median_new = median(c.median_history[threshold_high:end])
-    return "generation >= $(c.min_size) && $(median_best_old) <= $(median_best_new) && $(median_median_old) <= $(median_median_new):$(_MANOPT_INDENT)$s"
+    inline = "generation >= $(c.min_size) && $(median_best_old) <= $(median_best_new) && $(median_median_old) <= $(median_median_new):$(_MANOPT_INDENT)"
+    _is_inline(context) && return "$(inline)$s"
+    return """
+    A stopping criterion to stop when the evolution stagnates, i.e.
+    * generation >= $(c.min_size)
+    * the best mean did not decrease $(median_best_old) <= $(median_best_new)"
+    * the median did not decrease $(median_median_old) <= $(median_median_new)
+    overall:$(_MANOPT_INDENT)$s"""
 end
 function get_reason(c::StopWhenEvolutionStagnates)
     if c.at_iteration >= 0
