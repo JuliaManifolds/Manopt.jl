@@ -10,12 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* A clarification on the use of AI in the [CONTRIBUTING.md](https://manoptjl.org/stable/contributing/) (#573)
+* Added another package and paper using `Manopt.jl` to the about page (#576).
 * Added `ManoptCUDAExt` extension for CUDA/GPU support, enabling solvers
   (`gradient_descent`, `conjugate_gradient_descent`) to work transparently
   with `CuArray`-backed manifold points. The extension overrides
-  `ManifoldsBase.allocate` and `linesearch_backtrack!` so that GPU arrays
-  stay on device throughout the solver loop. Supported stepsizes:
-  `ConstantLength`, `ArmijoLinesearchStepsize`, `NonmonotoneLinesearchStepsize`.
+  `linesearch_backtrack!` so that GPU arrays stay on device throughout
+  the solver loop. Supported stepsizes: `ConstantLength`,
+  `ArmijoLinesearchStepsize`, `NonmonotoneLinesearchStepsize`.
 
 ## [0.5.32] January 15, 2026
 
