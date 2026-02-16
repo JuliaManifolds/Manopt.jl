@@ -17,70 +17,23 @@ be changed after construction.
 
 ## Solution
 
-1. Override `ManifoldsBase.allocate` for `CuArray` points so that
-   `linesearch_backtrack` (non-mutating) allocates GPU arrays.
-2. Override `linesearch_backtrack!` (mutating) to detect CPU workspace /
-   GPU point mismatches and allocate a GPU scratch buffer. This covers
-   `ArmijoLinesearchStepsize` and `NonmonotoneLinesearchStepsize`.
+Override `linesearch_backtrack!` (mutating) to detect CPU workspace / GPU point
+mismatches and allocate a GPU scratch buffer. This covers
+`ArmijoLinesearchStepsize` and `NonmonotoneLinesearchStepsize`.
 
-## Companion extensions
-
-For full GPU support, also load `ManifoldsBaseCUDAExt` (from ManifoldsBase.jl)
-and `ManifoldsCUDAExt` (from Manifolds.jl). These provide GPU-aware allocation
-and manifold operation overrides respectively.
+GPU-aware `allocate` methods are provided by `ManifoldsBaseCUDAExt`
+(from ManifoldsBase.jl). For GPU-compatible manifold operations, also load
+`ManifoldsCUDAExt` (from Manifolds.jl).
 """
 module ManoptCUDAExt
 
-# === Imports (following Manopt extension conventions) ===
 using Manopt
 using ManifoldsBase
-using ManifoldsBase: AbstractRetractionMethod, default_retraction_method,
-    default_vector_transport_method
-using LinearAlgebra
 
 # Import functions we extend with new methods
 import Manopt: linesearch_backtrack!
 
 using CUDA
-
-# === CuArray type union (following OMEinsum.jl pattern) ===
-
-"""
-    CUDAManifoldPoint{T,N}
-
-Type union covering `CuArray` and its wrapped variants (`Transpose`, `Adjoint`)
-for dispatch in GPU-aware methods.
-"""
-const CUDAManifoldPoint{T,N} = Union{
-    CuArray{T,N},
-    LinearAlgebra.Transpose{T,<:CuArray{T,N}},
-    LinearAlgebra.Adjoint{T,<:CuArray{T,N}},
-}
-
-# === GPU-aware allocations ===
-
-# Override allocate for CuArray manifold points.
-# This fixes linesearch_backtrack (linesearch.jl:148) which calls allocate(M, p)
-# and would otherwise create a CPU Array.
-
-function ManifoldsBase.allocate(::ManifoldsBase.AbstractManifold, p::CuArray{T,N}) where {T,N}
-    return CuArray{T,N}(undef, size(p))
-end
-
-function ManifoldsBase.allocate(
-    ::ManifoldsBase.AbstractManifold, p::CuArray{T,N}, ::Type{S}
-) where {T,N,S}
-    return CuArray{S,N}(undef, size(p))
-end
-
-# Allocate without manifold argument (used by some ManifoldsBase paths)
-function ManifoldsBase.allocate(p::CuArray{T,N}) where {T,N}
-    return CuArray{T,N}(undef, size(p))
-end
-
-function ManifoldsBase.allocate(p::CuArray{T,N}, ::Type{S}) where {T,N,S}
-    return CuArray{S,N}(undef, size(p))
-end
 
 # === Fix linesearch_backtrack! for CPU workspace / GPU point mismatch ===
 
