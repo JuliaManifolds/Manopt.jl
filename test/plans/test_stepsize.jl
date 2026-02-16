@@ -515,6 +515,43 @@ end
             α = hzls_u3(dmp, gs, 1, η)
             @test α > 0
         end
+        @testset "U3 (b) trigger test" begin
+            M = Euclidean(1)
+            # Force U3 (b) in _hz_u3:
+            # 1) At d=0.5 we need df < 0 and f(d) <= f(0) + ϵₖ with no termination,
+            #    so i_a_bar gets updated to i_d.
+            # 2) On the next U3 iteration we return from the loop.
+            function f_u3b(M, q)
+                return 0.0
+            end
+
+            function grad_f_u3b(M, q)
+                v = q[1]
+                if isapprox(v, 0.0; atol = 1.0e-12)
+                    return [-1.0]
+                elseif isapprox(v, 1.0; atol = 1.0e-12)
+                    return [1.0]
+                elseif isapprox(v, 0.5; atol = 1.0e-12)
+                    return [-1.0]
+                elseif isapprox(v, 0.75; atol = 1.0e-12)
+                    return [1.0]
+                end
+                return [0.0]
+            end
+
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f_u3b, grad_f_u3b))
+            p = [0.0]
+            η = [1.0]
+            hzls_u3b = Manopt.HagerZhangLinesearchStepsize(M; max_function_evaluations = 4)
+            Manopt.initialize_stepsize!(hzls_u3b)
+            Manopt._hz_evaluate_next_step(hzls_u3b, M, dmp, p, η, 0.0)
+            Manopt._hz_evaluate_next_step(hzls_u3b, M, dmp, p, η, 1.0)
+
+            (i_a, i_b, f_eval, f_wolfe) = Manopt._hz_u3(hzls_u3b, M, dmp, p, η, 1, 2)
+            @test (i_a, i_b) == (3, 4)
+            @test f_eval
+            @test !f_wolfe
+        end
         @testset "U3 (c) info trigger test" begin
             M = Euclidean(1)
             # Force U3 (c) inside _hz_u3 by making the mid-point have
@@ -575,6 +612,29 @@ end
             @test !f_eval
             @test !f_wolfe
         end
+        @testset "U0 out-of-bracket early return" begin
+            M = Euclidean(1)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = 2 .* p
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [0.0]
+            η = [1.0]
+
+            hzls_u0 = Manopt.HagerZhangLinesearchStepsize(M; max_function_evaluations = 5)
+            Manopt.initialize_stepsize!(hzls_u0)
+            Manopt._hz_evaluate_next_step(hzls_u0, M, dmp, p, η, 0.0)
+            Manopt._hz_evaluate_next_step(hzls_u0, M, dmp, p, η, 1.0)
+
+            last_eval_before = hzls_u0.last_evaluation_index
+
+            # c is left of bracket [0, 1] -> U0 early return
+            @test (1, 2, -1, false, false) == Manopt._hz_update(hzls_u0, M, dmp, p, η, 1, 2, -0.1)
+            @test hzls_u0.last_evaluation_index == last_eval_before
+
+            # c is right of bracket [0, 1] -> U0 early return
+            @test (1, 2, -1, false, false) == Manopt._hz_update(hzls_u0, M, dmp, p, η, 1, 2, 1.1)
+            @test hzls_u0.last_evaluation_index == last_eval_before
+        end
 
         @testset "S2 trigger test" begin
             M = Euclidean(1)
@@ -633,14 +693,6 @@ end
             # 3. Secant gives c=0.2. At c, df=-0.1 and f=0 -> U2.
 
             function f_s3(M, q)
-                v = q[1]
-                if isapprox(v, 0.0; atol = 1.0e-12)
-                    return 0.0
-                elseif isapprox(v, 1.0; atol = 1.0e-12)
-                    return 0.0
-                elseif isapprox(v, 0.2; atol = 1.0e-12)
-                    return 0.0
-                end
                 return 0.0
             end
 
