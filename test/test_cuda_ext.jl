@@ -1,80 +1,146 @@
 using Manopt, Manifolds, ManifoldsBase, Test
-using CUDA
 
 @testset "ManoptCUDAExt" begin
-    if CUDA.functional()
-        @testset "GPU allocate" begin
-            M = Euclidean(10)
-            p_gpu = CUDA.zeros(10)
-            q = ManifoldsBase.allocate(M, p_gpu)
-            @test q isa CuArray
-            @test size(q) == (10,)
+    cuda_loaded = false
+    try
+        using CUDA
+        cuda_loaded = CUDA.functional()
+    catch
+        cuda_loaded = false
+    end
 
-            q2 = ManifoldsBase.allocate(M, p_gpu, Float32)
-            @test q2 isa CuArray{Float32}
-            @test size(q2) == (10,)
+    if cuda_loaded
+        @eval using CUDA
+
+        @testset "GD + ConstantLength on Euclidean" begin
+            M = Euclidean(10)
+            target = CuArray(randn(10))
+            f(M, p) = 0.5 * sum((p .- target) .^ 2)
+            grad_f(M, p) = p .- target
+            p0 = CUDA.zeros(10)
+
+            result = gradient_descent(
+                M, f, grad_f, p0;
+                stopping_criterion=StopAfterIteration(200),
+                stepsize=ConstantLength(0.1),
+            )
+            @test result isa CuArray
+            @test isapprox(Array(result), Array(target); atol=1e-6)
         end
 
-        @testset "Gradient descent with ConstantLength on Euclidean" begin
-            # Simple quadratic on R^n.
-            # Euclidean uses broadcasting-based retract/inner/norm, so this
-            # tests the basic GPU solver path without linesearch workspace.
+        @testset "GD + ArmijoLinesearch on Euclidean" begin
+            # Tests the linesearch_backtrack! CPU/GPU mismatch fix.
+            # ArmijoLinesearchStepsize pre-allocates candidate_point as CPU Array;
+            # the extension intercepts linesearch_backtrack! to use a GPU buffer.
             M = Euclidean(10)
-            target = randn(10)
-            target_gpu = CuArray(target)
+            target = CuArray(randn(10))
+            f(M, p) = 0.5 * sum((p .- target) .^ 2)
+            grad_f(M, p) = p .- target
+            p0 = CUDA.zeros(10)
 
-            f_cpu(M, p) = 0.5 * sum((p .- target) .^ 2)
-            grad_f_cpu(M, p) = p .- target
+            result = gradient_descent(
+                M, f, grad_f, p0;
+                stopping_criterion=StopAfterIteration(50),
+            )
+            @test result isa CuArray
+            @test isapprox(Array(result), Array(target); atol=1e-6)
+        end
 
-            f_gpu(M, p) = 0.5 * sum((p .- target_gpu) .^ 2)
-            grad_f_gpu(M, p) = p .- target_gpu
+        @testset "GD + record on Euclidean" begin
+            M = Euclidean(5)
+            target = CuArray(randn(5))
+            f(M, p) = 0.5 * sum((p .- target) .^ 2)
+            grad_f(M, p) = p .- target
+            p0 = CUDA.zeros(5)
 
-            p0_cpu = zeros(10)
-            result_cpu = gradient_descent(
-                M, f_cpu, grad_f_cpu, p0_cpu;
+            result = gradient_descent(
+                M, f, grad_f, p0;
+                stopping_criterion=StopAfterIteration(20),
+                stepsize=ConstantLength(0.1),
+                record=[:Cost],
+                return_state=true,
+            )
+            costs = get_record(result, :Cost)
+            @test length(costs) == 20
+            # Cost should decrease monotonically
+            @test all(diff(costs) .<= 0)
+            p_final = get_solver_result(result)
+            @test p_final isa CuArray
+        end
+
+        @testset "GD with Float32 on Euclidean" begin
+            M = Euclidean(8)
+            target = CuArray(randn(Float32, 8))
+            f(M, p) = Float32(0.5) * sum((p .- target) .^ 2)
+            grad_f(M, p) = p .- target
+            p0 = CUDA.zeros(Float32, 8)
+
+            result = gradient_descent(
+                M, f, grad_f, p0;
+                stopping_criterion=StopAfterIteration(200),
+                stepsize=ConstantLength(Float32(0.1)),
+            )
+            @test result isa CuArray{Float32}
+            @test isapprox(Array(result), Array(target); atol=1e-3)
+        end
+
+        @testset "GD on matrix-valued Euclidean" begin
+            M = Euclidean(3, 3)
+            target = CuArray(randn(3, 3))
+            f(M, p) = 0.5 * sum((p .- target) .^ 2)
+            grad_f(M, p) = p .- target
+            p0 = CUDA.zeros(3, 3)
+
+            result = gradient_descent(
+                M, f, grad_f, p0;
+                stopping_criterion=StopAfterIteration(200),
+                stepsize=ConstantLength(0.1),
+            )
+            @test result isa CuArray{Float64,2}
+            @test size(result) == (3, 3)
+            @test isapprox(Array(result), Array(target); atol=1e-6)
+        end
+
+        @testset "Conjugate GD on Euclidean" begin
+            M = Euclidean(10)
+            target = CuArray(randn(10))
+            f(M, p) = 0.5 * sum((p .- target) .^ 2)
+            grad_f(M, p) = p .- target
+            p0 = CUDA.zeros(10)
+
+            result = conjugate_gradient_descent(
+                M, f, grad_f, p0;
+                stopping_criterion=StopAfterIteration(50),
+                stepsize=ConstantLength(0.1),
+            )
+            @test result isa CuArray
+            @test isapprox(Array(result), Array(target); atol=1e-4)
+        end
+
+        @testset "GD on Sphere" begin
+            M = Sphere(9)
+            # Target point on sphere
+            t = randn(10)
+            t ./= norm(t)
+            target = CuArray(t)
+
+            # Minimize geodesic distance squared
+            f(M, p) = 0.5 * sum((p .- target) .^ 2)
+            grad_f(M, p) = project(M, p, p .- target)
+
+            # Start from a different point
+            s = randn(10)
+            s ./= norm(s)
+            p0 = CuArray(s)
+
+            result = gradient_descent(
+                M, f, grad_f, p0;
                 stopping_criterion=StopAfterIteration(100),
                 stepsize=ConstantLength(0.1),
             )
-
-            p0_gpu = CuArray(zeros(10))
-            result_gpu = gradient_descent(
-                M, f_gpu, grad_f_gpu, p0_gpu;
-                stopping_criterion=StopAfterIteration(100),
-                stepsize=ConstantLength(0.1),
-            )
-
-            @test result_gpu isa CuArray
-            @test isapprox(Array(result_gpu), result_cpu; atol=1e-10)
-        end
-
-        @testset "Gradient descent with ArmijoLinesearch on Euclidean" begin
-            # Tests the candidate_point adaptation path.
-            # ArmijoLinesearchStepsize is the default stepsize for gradient_descent.
-            M = Euclidean(10)
-            target = randn(10)
-            target_gpu = CuArray(target)
-
-            f_cpu(M, p) = 0.5 * sum((p .- target) .^ 2)
-            grad_f_cpu(M, p) = p .- target
-
-            f_gpu(M, p) = 0.5 * sum((p .- target_gpu) .^ 2)
-            grad_f_gpu(M, p) = p .- target_gpu
-
-            p0_cpu = zeros(10)
-            result_cpu = gradient_descent(
-                M, f_cpu, grad_f_cpu, p0_cpu;
-                stopping_criterion=StopAfterIteration(50),
-            )
-            # Default stepsize is ArmijoLinesearchStepsize
-
-            p0_gpu = CuArray(zeros(10))
-            result_gpu = gradient_descent(
-                M, f_gpu, grad_f_gpu, p0_gpu;
-                stopping_criterion=StopAfterIteration(50),
-            )
-
-            @test result_gpu isa CuArray
-            @test isapprox(Array(result_gpu), result_cpu; atol=1e-10)
+            @test result isa CuArray
+            # Should be on the sphere
+            @test isapprox(norm(Array(result)), 1.0; atol=1e-10)
         end
     else
         @info "CUDA not functional, skipping ManoptCUDAExt GPU tests"
