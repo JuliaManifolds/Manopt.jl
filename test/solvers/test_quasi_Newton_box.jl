@@ -97,6 +97,8 @@ using RecursiveArrayTools
         ha = QuasiNewtonLimitedMemoryBoxDirectionUpdate(QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2))
         st = QuasiNewtonState(M)
 
+        @test startswith(repr(ha), "QuasiNewtonLimitedMemoryBoxDirectionUpdate with internal state:")
+
         f(M, p) = sum(p .^ 2)
         grad_f(M, p) = 2 * p
         gmp = ManifoldGradientObjective(f, grad_f)

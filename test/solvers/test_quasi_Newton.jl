@@ -499,6 +499,8 @@ end
         # This triggers and cautious update that does not update the Hessian
         Manopt.update_hessian!(qns.direction_update, mp, qns, p, 1)
         # But I am not totally sure what to test for afterwards
+
+        @test startswith(repr(qdu), "QuasiNewtonLimitedMemoryDirectionUpdate with memory size")
     end
     @testset "Removing zero rho vectors" begin
         M = Euclidean(2)
