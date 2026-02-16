@@ -2161,6 +2161,7 @@ $(_fields(:vector_transport_method))
 * `max_bracket_iterations`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
 * `start_enforcing_wolfe_conditions_at_bracketing_iteration`: see keyword arguments of
   [`HagerZhangLinesearch`](@ref) for details.
+* `allow_early_maxstep_termination`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
 * `wolfe_condition_mode`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
 * `ϵ`, `δ`, `σ`, `ω`, `θ`, `γ`, `ρ`, `Δ`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
 * `secant_acceptance_ratio`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
@@ -2193,6 +2194,7 @@ mutable struct HagerZhangLinesearchStepsize{
     stepsize_limit::TF
     max_bracket_iterations::Int
     start_enforcing_wolfe_conditions_at_bracketing_iteration::Int
+    allow_early_maxstep_termination::Bool
     wolfe_condition_mode::Symbol # :standard, :approximate, :adaptive
     ϵ::TF # approximate Wolfe termination parameter
     δ::TF # used in approximate Wolfe condition
@@ -2232,6 +2234,7 @@ mutable struct HagerZhangLinesearchStepsize{
             start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = initial_guess isa ConstantStepsize ? 2 : 1,
             max_function_evaluations::Int = 20,
             wolfe_condition_mode::Symbol = :adaptive,
+            allow_early_maxstep_termination::Bool = true,
             ϵ::TF = 1.0e-6,
             δ::TF = 0.1,
             σ::TF = 0.9,
@@ -2267,7 +2270,8 @@ mutable struct HagerZhangLinesearchStepsize{
 
         return new{TF, TIG, TRM, TVTM, typeof(candidate_point), typeof(candidate_direction)}(
             initial_guess, retraction_method, vector_transport_method, stepsize_limit,
-            max_bracket_iterations, start_enforcing_wolfe_conditions_at_bracketing_iteration, wolfe_condition_mode,
+            max_bracket_iterations, start_enforcing_wolfe_conditions_at_bracketing_iteration,
+            allow_early_maxstep_termination, wolfe_condition_mode,
             ϵ, δ, σ, ω, θ, γ, ρ, Δ, secant_acceptance_ratio,
             candidate_point, candidate_direction, zero_vector(M, candidate_point),
             triples, 0,
@@ -2375,9 +2379,12 @@ end
 Perform the bracketing phase of the Hager-Zhang linesearch starting from an initial
 stepsize `c` and not exceeding `max_alpha`.
 
-Returns a tuple `(i_a, i_b)` where `i_a` and `i_b` are the indices in the stored function
-evaluations such that the minimum is bracketed between `triples[i_a].t` and
-`triples[i_b].t`.
+Returns a tuple `(i_a, i_b, f_eval, f_wolfe, f_early_maxstep)` where `i_a` and `i_b` are
+the indices in the stored function evaluations such that the minimum is bracketed between
+`triples[i_a].t` and `triples[i_b].t`. `f_eval` is `true` if the maximum number of function
+evaluations has been reached during the bracketing phase. `f_wolfe` is `true` if the Wolfe
+conditions have been satisfied. `f_early_maxstep` is `true` if the maximum stepsize was
+reached early with negative slope and an improvement over the initial point.
 """
 function _hz_bracket(
         hzls::HagerZhangLinesearchStepsize, M::AbstractManifold,
@@ -2386,6 +2393,7 @@ function _hz_bracket(
     # B0
     current_step = c
     local c_index, f_eval, f_wolfe # COV_EXCL_LINE
+    ls_early_exit = false
     for j in 1:hzls.max_bracket_iterations
         c_index, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, current_step)
         if f_eval || (f_wolfe && j >= hzls.start_enforcing_wolfe_conditions_at_bracketing_iteration)
@@ -2396,15 +2404,16 @@ function _hz_bracket(
             # handled after the loop
             break
         else
-            if hzls.triples[j].f > hzls.triples[1].f + hzls.ϵₖ
+            if hzls.triples[c_index].f > hzls.triples[1].f + hzls.ϵₖ
                 # B2 -- function value gets sufficiently larger than at 0
                 # perform main bracketing loop (we can skip U0-U2 checks here)
                 (i_a_bar, i_b_bar, f_eval, f_wolfe) = _hz_u3(hzls, M, mp, p, η, 1, c_index)
-                return (i_a_bar, i_b_bar, f_eval, f_wolfe)
+                return (i_a_bar, i_b_bar, f_eval, f_wolfe, false)
             else
                 if current_step == max_alpha
                     # we've reached maximum alpha so we can't expand anymore
                     # we handle this case after the loop
+                    ls_early_exit = hzls.allow_early_maxstep_termination
                     break
                 end
                 # B3 -- widen the bracket
@@ -2417,13 +2426,20 @@ function _hz_bracket(
     end
     # we detected positive slope, ran out of iterations or reached max stepsize
     # B1 seems to be the best choice for all three cases
+
+    if ls_early_exit
+        # additional termination condition: we reached the maximum stepsize with negative
+        # slope and an improvement over the initial point, so we can exit early with this step
+        return (1, c_index, f_eval, f_wolfe, true)
+    end
+
     i_min = 1
     for i in 2:(hzls.last_evaluation_index - 1)
         if hzls.triples[i].f <= hzls.triples[1].f + hzls.ϵₖ
             i_min = i
         end
     end
-    return (i_min, c_index, f_eval, f_wolfe)
+    return (i_min, c_index, f_eval, f_wolfe, false)
 end
 
 """
@@ -2617,8 +2633,8 @@ function (hzls::HagerZhangLinesearchStepsize)(
 
     # L0, bracket(c)
     local i_a_j, i_b_j, f_eval, f_wolfe # COV_EXCL_LINE
-    (i_a_j, i_b_j, f_eval, f_wolfe) = _hz_bracket(hzls, M, mp, p, η, α0, max_alpha)
-    while !(f_eval || f_wolfe)
+    (i_a_j, i_b_j, f_eval, f_wolfe, f_early_maxstep) = _hz_bracket(hzls, M, mp, p, η, α0, max_alpha)
+    !f_early_maxstep && while !(f_eval || f_wolfe)
         # L1
         finite_at_b = isfinite(hzls.triples[i_b_j].f)
         if finite_at_b
@@ -2631,7 +2647,7 @@ function (hzls::HagerZhangLinesearchStepsize)(
         # L2
         # we additionally check that we can continue narrowing the bracket
         if !(f_eval || f_wolfe) &&
-                (!finite_at_b || hzls.triples[i_b].t - hzls.triples[i_a].t > hzls.γ * (hzls.triples[i_b_j].t - hzls.triples[i_a_j].t))
+                (!finite_at_b || (hzls.triples[i_b].t - hzls.triples[i_a].t) > hzls.γ * (hzls.triples[i_b_j].t - hzls.triples[i_a_j].t))
             # secant2 did not reduce the bracket sufficiently
             # we need to do bisection
             (i_a, i_b, _i_c, f_eval, f_wolfe) = _hz_update(
@@ -2696,6 +2712,13 @@ The following changes were made to the original algorithm from the paper:
    benefit from having this parameter increased.
 3. The paper isn't entirely clear on what the final stepsize to return is. This
    implementation returns the last evaluated stepsize.
+4. The original algorithm doesn't specify what to do when the maximum stepsize is reached
+   during the bracketing phase with a negative slope and an improvement over the initial
+   point. This implementation allows for an early termination in this case, which seems
+   reasonable since we can't expand the bracket anymore and this point is likely close to
+   the minimum. By default this early termination is allowed, but it can be turned off via
+   `allow_early_maxstep_termination` in which case the algorithm continues with the main
+   loop even in this case.
 
 ## Keyword arguments
 
@@ -2714,6 +2737,8 @@ $(_kwargs(:vector_transport_method))
   setting to 1 may cause no bracketing to occur when the initial guess satisfies the Wolfe
   conditions.
 * `max_function_evaluations::Int = 20`: maximum number of function evaluations per linesearch
+* `allow_early_maxstep_termination::Bool = true`: whether to allow early termination when
+  the maximum stepsize is reached with negative slope and an improvement over the initial point.
 * `wolfe_condition_mode::Symbol = :adaptive`: one of `:standard`, `:approximate`, or `:adaptive`.
   Selects between (T1) and (T2) conditions in [HagerZhang:2006:2](@cite).
 * `ϵ::Real = 1.0e-6`: initial allowed increase in function value in termination condition (T2).

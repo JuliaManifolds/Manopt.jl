@@ -849,3 +849,8 @@ function find_max_stepsize_in_direction(
     end
 
 end
+
+function show(io::IO, qns::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    print(io, "QuasiNewtonLimitedMemoryBoxDirectionUpdate with internal state:\n")
+    return print(io, qns.qn_du)
+end

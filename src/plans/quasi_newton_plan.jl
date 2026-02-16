@@ -781,6 +781,10 @@ function initialize_update!(d::QuasiNewtonLimitedMemoryDirectionUpdate)
     return d
 end
 
+function show(io::IO, qns::QuasiNewtonLimitedMemoryDirectionUpdate)
+    return print(io, "QuasiNewtonLimitedMemoryDirectionUpdate with memory size $(length(qns.memory_s)) and $(qns.vector_transport_method) as vector transport.")
+end
+
 @doc """
     QuasiNewtonCautiousDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
