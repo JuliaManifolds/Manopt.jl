@@ -4,24 +4,30 @@
 CUDA extension for Manopt.jl, enabling solvers to work transparently with
 `CuArray`-backed manifold points.
 
-The main issue is that several linesearch stepsizes pre-allocate workspace
-arrays (e.g. `candidate_point`) via `allocate_result(M, rand)` at construction
-time, which always returns CPU `Array`s. When the optimization iterates are
-`CuArray`s, the type mismatch between CPU workspace and GPU iterates causes
-`retract_fused!` and broadcasting to fail.
+## Problem
+
+Several linesearch stepsizes pre-allocate workspace arrays (e.g. `candidate_point`)
+via `allocate_result(M, rand)` at construction time, which always returns CPU `Array`s.
+When the optimization iterates are `CuArray`s, the type mismatch between CPU workspace
+and GPU iterates causes `retract_fused!` and broadcasting to fail.
 
 Since these workspace arrays are stored in parametric `mutable struct` fields
 (e.g. `candidate_point::P` where `P = Vector{Float64}`), their types cannot
-be changed after construction. Instead, this extension intercepts the
-linesearch functions and allocates GPU-compatible scratch buffers when a
-CPU/GPU type mismatch is detected.
+be changed after construction.
 
-This extension fixes the problem by:
-1. Overriding `ManifoldsBase.allocate` for `CuArray` points so that
+## Solution
+
+1. Override `ManifoldsBase.allocate` for `CuArray` points so that
    `linesearch_backtrack` (non-mutating) allocates GPU arrays.
-2. Overriding `linesearch_backtrack!` (mutating) to detect CPU workspace /
+2. Override `linesearch_backtrack!` (mutating) to detect CPU workspace /
    GPU point mismatches and allocate a GPU scratch buffer. This covers
    `ArmijoLinesearchStepsize` and `NonmonotoneLinesearchStepsize`.
+
+## Companion extensions
+
+For full GPU support, also load `ManifoldsBaseCUDAExt` (from ManifoldsBase.jl)
+and `ManifoldsCUDAExt` (from Manifolds.jl). These provide GPU-aware allocation
+and manifold operation overrides respectively.
 """
 module ManoptCUDAExt
 
