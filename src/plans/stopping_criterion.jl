@@ -465,12 +465,13 @@ end
 A stopping criterion to stop when
 
 ````math
-\\frac{f_k - f_{k+1}}{\\max(\\lvert f_k \\rvert, \\lvert f_{k+1} \\rvert, 1)} \\leq tol,
+\\frac{f_k - f_{k+1}}{\\max(\\lvert f_k \\rvert, \\lvert f_{k+1} \\rvert, 1)} ≤ tol,
 ````
 
 based on Eq. (1) in [ZhuByrdLuNocedal:1997](@cite)
 
 # Fields
+* tolerance: the threshold `tol` in the above formula.
 $(_fields([:at_iteration, :last_change]))
 * `last_cost``: the last cost value
 

@@ -13,13 +13,13 @@ has_anisotropic_max_stepsize(M::ProductManifold) = any(has_anisotropic_max_steps
 
 An approximation of Hessian of a scalar function of the form ``B_0 = θ I``,
 ``B_{k+1} = B_k - W_k M_k W_k^{\mathrm{T}}``,
-where ``\theta > 0`` is an initial scaling guess.
-Matrix ``M_k = \left(\begin{smallmatrix}M_{11} & M_{21}^{\mathrm{T}}\\ M_{21} & M_{22}\end{smallmatrix}\right)``
+where ``θ > 0`` is an initial scaling guess.
+Matrix ``M_k = \left(\begin{smallmatrix}M₁₁ & M₂₁^{\mathrm{T}}\\ M₂₁ & M₂₂\end{smallmatrix}\right)``
 is stored using its blocks.
 Blocks ``W_k`` are (implicitly) composed from `memory_y` and `memory_s` stored in `qn_du`
 of type [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref).
 
-Initial scale ``\theta`` is stored in the field `initial_scale` but if the memory isn't empty,
+Initial scale ``θ`` is stored in the field `initial_scale` but if the memory isn't empty,
 the current scale is set to squared norm of $s_k$ divided by inner product of ``s_k`` and ``y_k``
 where ``k`` is the oldest index for which the denominator is not equal to 0.
 
@@ -210,7 +210,7 @@ function hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstra
 end
 
 @doc raw"""
-    set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    update_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
 
 Refresh the scaling factor and blockwise Hessian approximation stored in `gh` using the
 nonzero curvature pairs currently in memory.
@@ -218,13 +218,13 @@ nonzero curvature pairs currently in memory.
 - Identifies the most recent index with nonzero ``ρ_i`` to scale the initial Hessian guess
     by ``ρ_i‖y_i‖^2 / θ``.
 - Builds ``L_k`` and ``S_k^\top S_k`` from the stored ``(s_i, y_i)`` pairs and updates the
-    block matrices ``M_{11}``, ``M_{21}``, and ``M_{22}`` via the blockwise inverse formula.
+    block matrices ``M₁₁``, ``M₂₁``, and ``M₂₂`` via the blockwise inverse formula.
 - If all ``ρ_i`` vanish, resets `current_scale` to the inverse of `initial_scale` and
     clears the block matrices.
 
 Returns the mutated `gh`.
 """
-function set_M_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+function update_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     m = length(gh.qn_du.memory_s)
     last_safe_index = -1
     for i in eachindex(gh.qn_du.ρ)
@@ -329,7 +329,7 @@ function update_hessian!(
     )
     (capacity(gh.qn_du.memory_s) == 0) && return gh
     update_hessian!(gh.qn_du, mp, st, p_old, k)
-    set_M_current_scale!(get_manifold(mp), get_iterate(st), gh)
+    update_current_scale!(get_manifold(mp), get_iterate(st), gh)
     return gh
 end
 

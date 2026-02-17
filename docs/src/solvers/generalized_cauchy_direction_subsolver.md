@@ -69,5 +69,5 @@ Manopt.set_zero_at_index!
 ```@docs
 Manopt.LimitedMemorySegmentHessianUpdater
 Manopt.hessian_value_from_inner_products
-Manopt.set_M_current_scale!
+Manopt.update_current_scale!
 ```

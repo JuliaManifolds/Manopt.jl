@@ -152,7 +152,7 @@ using RecursiveArrayTools
             ha2 = QuasiNewtonLimitedMemoryBoxDirectionUpdate(QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2))
             idx = Manopt.get_bounds_index(M)
             @test Manopt.hessian_value(ha2, M, p, Manopt.UnitVector(b), grad) ≈ 4.0
-            Manopt.set_M_current_scale!(M, p, ha2)
+            Manopt.update_current_scale!(M, p, ha2)
             @test ha2.current_scale == ha2.qn_du.initial_scale
             @test ha2.M_11 == fill(0.0, 0, 0)
             @test ha2.M_21 == fill(0.0, 0, 0)
