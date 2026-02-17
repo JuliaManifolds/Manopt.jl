@@ -26,10 +26,11 @@ get_message(::S) where {S <: Stepsize} = ""
 """
     initialize_stepsize!(sm::Stepsize)
 
-Initialize the state of a stepsize functor. This is called at the beginning of a solver run,
-and can be used to set up internal state of the stepsize functor that is preserved between
-line searches in the same optimization, for example adaptive thresholds for Wolfe criteria
-in Hager-Zhang line search.
+Initialize the state of a stepsize functor. This function should be called in the
+`initialize_solver!` function for solvers that do possess a stepsize and can be used to
+set up internal state of the stepsize functor that is preserved between line searches in
+the same optimization, for example adaptive thresholds for Wolfe criteria in Hager-Zhang
+line search.
 
 By default it does nothing.
 """
