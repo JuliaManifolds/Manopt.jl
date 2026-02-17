@@ -22,7 +22,7 @@ In case there is no Hessian approximation available, a simple stepsize limiting 
 This procedure is available using the following:
 
 ```@docs
-Manopt.MaxStepsizeInDirectionFinder
+Manopt.MaxStepsizeInDirectionSubsolver
 Manopt.find_max_stepsize_in_direction
 ```
 
@@ -35,7 +35,7 @@ These symbols are directly used by solvers to compute the descent direction corr
 ```@docs
 Manopt.has_anisotropic_max_stepsize
 Manopt.find_generalized_cauchy_direction!
-Manopt.GeneralizedCauchyDirectionFinder
+Manopt.GeneralizedCauchyDirectionSubsolver
 ```
 
 ### Symbols related to the Hessian approximation
