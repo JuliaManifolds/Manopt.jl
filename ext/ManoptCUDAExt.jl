@@ -4,26 +4,6 @@
 CUDA extension for Manopt.jl, enabling solvers to work transparently with
 `CuArray`-backed manifold points.
 
-## Problem
-
-`ArmijoLinesearchStepsize` and `NonmonotoneLinesearchStepsize` pre-allocate a
-`candidate_point` workspace via `allocate_result(M, rand)` at construction time.
-This always returns a CPU `Array`, causing type mismatches when the solver iterate
-is a `CuArray`.
-
-## Solution
-
-Override `linesearch_backtrack!` to detect CPU workspace / GPU iterate mismatches
-and allocate a GPU scratch buffer on the fly.
-
-A more complete upstream fix is tracked in JuliaManifolds/Manopt.jl#577, which
-extends `_produce_type` to pass the iterate `p` into stepsize constructors so that
-`candidate_point` can be allocated with the correct array type from the start.
-
-## Companion extensions
-
-GPU-aware `allocate` is provided by `ManifoldsBaseCUDAExt` (ManifoldsBase.jl).
-GPU-compatible manifold operations are in `ManifoldsCUDAExt` (Manifolds.jl).
 """
 module ManoptCUDAExt
 
