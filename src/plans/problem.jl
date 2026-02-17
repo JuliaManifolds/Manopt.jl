@@ -48,10 +48,10 @@ function status_summary(dmp::DefaultManoptProblem; context = :default)
     An optimization problem for Manopt.jl
 
     ## Manifold
-    $(_MANOPT_INDENT)$(replace(repr(dmp.manifold), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))
+    $(_MANOPT_INDENT)$(replace(repr(dmp.manifold), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
 
     ## Objective
-    $(_MANOPT_INDENT)$(replace(status_summary(dmp.objective, context = context), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))"""
+    $(_MANOPT_INDENT)$(replace(status_summary(dmp.objective, context = context), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))"""
 end
 
 """

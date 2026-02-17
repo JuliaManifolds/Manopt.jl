@@ -144,7 +144,7 @@ function status_summary(arcs::AdaptiveRegularizationState; context = :default)
     Conv = indicates_convergence(arcs.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(arcs)) – $(Iter) $(has_converged(arcs) ? "(converged)" : "")")
     sub = status_summary(arcs.sub_state; context = context)
-    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
+    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
     s = """
     # Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)
     $Iter

@@ -227,7 +227,7 @@ function status_summary(trs::TrustRegionsState; context = :default)
     Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(trs)) – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
     sub = repr(trs.sub_state)
-    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
+    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
     s = """
     # Solver state for `Manopt.jl`s Trust Region Method
     $Iter

@@ -131,7 +131,7 @@ function status_summary(dcps::DifferenceOfConvexProximalState; context = :defaul
     Conv = indicates_convergence(dcps.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(dcps)) – $(Iter) $(has_converged(dcps) ? "(converged)" : "")")
     sub = repr(dcps.sub_state)
-    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
+    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm
     $Iter

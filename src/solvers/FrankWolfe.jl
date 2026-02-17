@@ -123,7 +123,7 @@ function status_summary(fws::FrankWolfeState; context = :default)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(fws.stop) ? "Yes" : "No"
     sub = repr(fws.sub_state)
-    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
+    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
     _is_inline(context) && (return "$(repr(fws)) – $(Iter) $(has_converged(fws) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Frank Wolfe Method

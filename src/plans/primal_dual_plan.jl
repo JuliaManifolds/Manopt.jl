@@ -31,11 +31,11 @@ function status_summary(tmp::TwoManifoldProblem; context = :default)
     An optimization problem for Manopt.jl requiring a primal and a dual manifold
 
     ## Manifolds
-    * $(replace(repr(tmp.first_manifold), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))
-    * $(replace(repr(tmp.second_manifold), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))
+    * $(replace(repr(tmp.first_manifold), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+    * $(replace(repr(tmp.second_manifold), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
 
     ## Objective
-    $(_MANOPT_INDENT)$(replace(status_summary(tmp.objective, context = context), "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))"""
+    $(_MANOPT_INDENT)$(replace(status_summary(tmp.objective, context = context), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))"""
 end
 
 @doc """

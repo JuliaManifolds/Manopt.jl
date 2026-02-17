@@ -92,7 +92,7 @@ function status_summary(dcs::DifferenceOfConvexState; context = :default)
     Conv = indicates_convergence(dcs.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(dcs)) – $(Iter) $(has_converged(dcs) ? "(converged)" : "")")
     sub = status_summary(dcs.sub_state; context = context)
-    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n##")
+    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Algorithm
     $Iter

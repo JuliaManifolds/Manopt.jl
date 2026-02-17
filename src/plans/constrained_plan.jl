@@ -270,13 +270,13 @@ function status_summary(cmo::ConstrainedManifoldObjective; context = :default)
     For verifications, the inequalities are checked with an absolute tolerance of `atol = $(cmo.atol)`
 
     ## Unconstrained Objective
-    $(replace(s, "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n##"))
+    $(replace(s, "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n$(_MANOPT_INDENT)##"))
 
     ## Equality constrains
-    $(replace(status_summary(cmo.equality_constraints; context = context), "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n##"))
+    $(replace(status_summary(cmo.equality_constraints; context = context), "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n$(_MANOPT_INDENT)##"))
 
     ## Inequality constrains
-    $(replace(status_summary(cmo.inequality_constraints; context = context), "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n##"))"""
+    $(replace(status_summary(cmo.inequality_constraints; context = context), "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n$(_MANOPT_INDENT)##"))"""
 end
 
 @doc """
@@ -377,10 +377,10 @@ function status_summary(cmp::ConstrainedManoptProblem; context = :default)
     A constrained optimization problem for Manopt.jl
 
     ## Manifold
-      $(replace(repr(cmp.manifold), "\n#" => "\n##"))
+      $(replace(repr(cmp.manifold), "\n#" => "\n$(_MANOPT_INDENT)##"))
 
     ## Objective
-      $(replace(status_summary(cmp.objective, context = context), "\n#" => "\n##"))
+      $(replace(status_summary(cmp.objective, context = context), "\n#" => "\n$(_MANOPT_INDENT)##"))
 
     ## Ranges
     * gradient equality range: $(_MANOPT_INDENT)$(cmp.grad_equality_range)

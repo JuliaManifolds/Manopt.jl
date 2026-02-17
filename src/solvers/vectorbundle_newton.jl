@@ -215,13 +215,13 @@ function status_summary(vbmp::VectorBundleManoptProblem; context = :default)
     A vector bundle problem representing a vector bundle newton equation objective
 
     ## Manifold
-    $(_MANOPT_INDENT)$(replace("$(vbmp.manifold)", "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))
+    $(_MANOPT_INDENT)$(replace("$(vbmp.manifold)", "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
 
     ## Range
-    $(_MANOPT_INDENT)$(replace("$(vbmp.vectorbundle)", "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))
+    $(_MANOPT_INDENT)$(replace("$(vbmp.vectorbundle)", "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
 
     ## Vector bundle newton equation
-    $(_MANOPT_INDENT)$(replace("$(vbmp.newton_equation)", "\n#" => "\n##", "\n" => "\n$(_MANOPT_INDENT)"))
+    $(_MANOPT_INDENT)$(replace("$(vbmp.newton_equation)", "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
     """
 end
 
