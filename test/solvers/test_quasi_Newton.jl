@@ -572,5 +572,9 @@ end
         solve!(mp, qns)
         @test get_cost(mp, qns) == f(M, get_iterate(qns))
 
+        @testset "get_cost with DebugSolverState" begin
+            dqns = DebugSolverState(qns, DebugMessages(:Info, :Always))
+            @test get_cost(mp, dqns) == f(M, get_iterate(dqns))
+        end
     end
 end
