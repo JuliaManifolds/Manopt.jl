@@ -1020,13 +1020,13 @@ end
 
 Stop the solver when the iterate of the optimization problem from within an
 [`AbstractManoptProblem`](@ref) contains `NaN` values.
-The value is obtained using `get_iterate(s)`.
+The value is obtained using [`get_iterate`](@ref)`(s)`.
 
 # Constructor
 
     StopWhenIterateNaN()
 
-Initialize `at_iteration` to `-1`.
+Initialize the stopping criterion.
 """
 mutable struct StopWhenIterateNaN <: StoppingCriterion
     at_iteration::Int

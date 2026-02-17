@@ -9,7 +9,7 @@ has_anisotropic_max_stepsize(::AbstractManifold) = false
 has_anisotropic_max_stepsize(M::ProductManifold) = any(has_anisotropic_max_stepsize, M.manifolds)
 
 @doc raw"""
-    mutable struct LimitedMemoryHessianApproximation end
+    LimitedMemoryHessianApproximation <: AbstractQuasiNewtonDirectionUpdate
 
 An approximation of Hessian of a scalar function of the form ``B_0 = θ I``,
 ``B_{k+1} = B_k - W_k M_k W_k^{\mathrm{T}}``,
