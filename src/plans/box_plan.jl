@@ -105,8 +105,8 @@ function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    gcd = GeneralizedCauchyDirectionFinder(M, p, d)
-    d.last_gcd_result, d.last_gcd_stepsize = find_generalized_cauchy_direction!(gcd, r, p, r, X)
+    gcd = GeneralizedCauchyDirectionSubsolver(M, p, d)
+    d.last_gcd_result, d.last_gcd_stepsize = find_generalized_cauchy_direction!(M, gcd, r, p, r, X)
     return r
 end
 
@@ -338,7 +338,7 @@ end
     abstract type AbstractSegmentHessianUpdater end
 
 Abstract type for methods that calculate f' and f'' in the GCD calculation in subsequent
-line segments in [`GeneralizedCauchyDirectionFinder`](@ref).
+line segments in [`GeneralizedCauchyDirectionSubsolver`](@ref).
 """
 abstract type AbstractSegmentHessianUpdater end
 
@@ -593,7 +593,7 @@ function set_stepsize_bound!(M::ProductManifold, d_out, p, d, t_current::Real)
 end
 
 @doc raw"""
-    GeneralizedCauchyDirectionFinder{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
+    GeneralizedCauchyDirectionSubsolver{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
 
 Helper container for generalized Cauchy direction search. Stores the manifold `M`, cached
 original descent direction (`d_original`), the quasi-Newton direction update `ha`, and the
@@ -601,12 +601,11 @@ original descent direction (`d_original`), the quasi-Newton direction update `ha
 Instances are reused across segments during [`find_generalized_cauchy_direction!`](@ref) to
 avoid allocations.
 """
-struct GeneralizedCauchyDirectionFinder{
-        TM <: AbstractManifold, TX,
+struct GeneralizedCauchyDirectionSubsolver{
+        TX,
         T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater, TFT <: Tuple{<:Real, Any}, TBI,
         TO <: Base.Order.Ordering,
     }
-    M::TM
     d_original::TX
     ha::T_HA
     hessian_segment_updater::TFU
@@ -615,7 +614,7 @@ struct GeneralizedCauchyDirectionFinder{
     ordering::TO
 end
 
-function GeneralizedCauchyDirectionFinder(
+function GeneralizedCauchyDirectionSubsolver(
         M::AbstractManifold, p, ha::AbstractQuasiNewtonDirectionUpdate;
         hessian_segment_updater::AbstractSegmentHessianUpdater = get_default_hessian_segment_updater(M, p, ha)
     )
@@ -625,8 +624,8 @@ function GeneralizedCauchyDirectionFinder(
     F_list = Tuple{TF, TInd}[]
     sizehint!(F_list, length(bounds_indices) + 1)
     ordering = Base.By(first)
-    return GeneralizedCauchyDirectionFinder(
-        M, zero_vector(M, p), ha,
+    return GeneralizedCauchyDirectionSubsolver(
+        zero_vector(M, p), ha,
         hessian_segment_updater, F_list, bounds_indices, ordering
     )
 end
@@ -655,10 +654,13 @@ function collect_isotropic_limits!(M::ProductManifold, F_list::Vector{<:Tuple{TF
 end
 
 """
-    find_generalized_cauchy_direction!(gcd::GeneralizedCauchyDirectionFinder, d_out, p, d, X)
+    find_generalized_cauchy_direction!(
+        M::AbstractManifold,
+        gcd::GeneralizedCauchyDirectionSubsolver, d_out, p, d, X
+    )
 
-Find generalized Cauchy direction looking from point `p` in direction `d` and save it to `d_out`.
-Gradient of the objective at `p` is `X`.
+Find generalized Cauchy direction looking from point `p` on manifold `M` in direction `d`
+and save it to `d_out`. Gradient of the objective at `p` is `X`.
 
 The function returns a pair (status, max_stepsize) where `status` is a symbol describing
 the result of the search, and `max_stepsize` is the maximum stepsize that can be taken in
@@ -672,13 +674,13 @@ The `status` can be one of the following:
 * `:not_found` if the search cannot be performed in direction `d`.
 """
 function find_generalized_cauchy_direction!(
-        gcd::GeneralizedCauchyDirectionFinder{
-            <:AbstractManifold, <:Any,
-            <:AbstractQuasiNewtonDirectionUpdate, <:AbstractSegmentHessianUpdater, <:Tuple{TF, Any},
+        M::AbstractManifold,
+        gcd::GeneralizedCauchyDirectionSubsolver{
+            <:Any, <:AbstractQuasiNewtonDirectionUpdate,
+            <:AbstractSegmentHessianUpdater, <:Tuple{TF, Any},
         },
         d_out, p, d, X
     ) where {TF <: Real}
-    M = gcd.M
     copyto!(M, gcd.d_original, d)
     copyto!(M, d_out, d)
 
@@ -767,39 +769,38 @@ function find_generalized_cauchy_direction!(
 end
 
 """
-    struct MaxStepsizeInDirectionFinder end
+    struct MaxStepsizeInDirectionSubsolver end
 
 Helper container for finding the maximum stepsize in a direction. Stores the manifold `M`,
 container for the list of bounds `F_list`, and the bound indices.
 
 ## Constructor
 
-    MaxStepsizeInDirectionFinder(M::AbstractManifold, p)
+    MaxStepsizeInDirectionSubsolver(M::AbstractManifold, p)
 
-Initialize the `MaxStepsizeInDirectionFinder` for manifold `M` and point `p`. The `F_list`
+Initialize the `MaxStepsizeInDirectionSubsolver` for manifold `M` and point `p`. The `F_list`
 is initialized to be empty and will be populated during the search for the maximum stepsize
 in a direction. Floating point type of the elements bounds in `F_list` is determined by the
 number type of `p`.
 
-The `MaxStepsizeInDirectionFinder` can be reused for multiple different points and
+The `MaxStepsizeInDirectionSubsolver` can be reused for multiple different points and
 directions on the same manifold, but it is not thread-safe.
 """
-struct MaxStepsizeInDirectionFinder{TM <: AbstractManifold, TFT <: Tuple{<:Real, Any}, TBI}
-    M::TM
+struct MaxStepsizeInDirectionSubsolver{TFT <: Tuple{<:Real, Any}, TBI}
     F_list::Vector{TFT}
     bounds_indices::TBI
 end
-function MaxStepsizeInDirectionFinder(M::AbstractManifold, p)
+function MaxStepsizeInDirectionSubsolver(M::AbstractManifold, p)
     bounds_indices = get_bounds_index(M)
     TInd = eltype(bounds_indices)
     TF = number_eltype(p)
     F_list = Tuple{TF, TInd}[]
     sizehint!(F_list, length(bounds_indices) + 1)
-    return MaxStepsizeInDirectionFinder{typeof(M), Tuple{TF, TInd}, typeof(bounds_indices)}(M, F_list, bounds_indices)
+    return MaxStepsizeInDirectionSubsolver{Tuple{TF, TInd}, typeof(bounds_indices)}(F_list, bounds_indices)
 end
 
 """
-    find_max_stepsize_in_direction(gcd::MaxStepsizeInDirectionFinder, p, d)
+    find_max_stepsize_in_direction(M::AbstractManifold, gcd::MaxStepsizeInDirectionSubsolver, p, d)
 
 Find the maximum stepsize that can be performed from point `p` in direction `d`.
 
@@ -815,11 +816,11 @@ The `status` can be one of the following:
 * `:not_found` if the search cannot be performed in direction `d`.
 """
 function find_max_stepsize_in_direction(
-        sdf::MaxStepsizeInDirectionFinder{<:AbstractManifold, <:Tuple{TF, Any}},
+        M::AbstractManifold,
+        sdf::MaxStepsizeInDirectionSubsolver{<:Tuple{TF, Any}},
         p, d
     ) where {TF <: Real}
 
-    M = sdf.M
     F_list = sdf.F_list
     empty!(F_list)
     bounds_indices = sdf.bounds_indices

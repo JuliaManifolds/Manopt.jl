@@ -160,46 +160,46 @@ using RecursiveArrayTools
         end
     end
 
-    @testset "GeneralizedCauchyDirectionFinder" begin
+    @testset "GeneralizedCauchyDirectionSubsolver" begin
         M = Hyperrectangle([-1.0, -2.0, -Inf], [2.0, Inf, 2.0])
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS())
 
         p = [0.0, 0.0, 0.0]
-        gf = Manopt.GeneralizedCauchyDirectionFinder(M, p, ha)
+        gf = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha)
 
         X1 = [-5.0, 0.0, 0.0]
 
         d = -X1
         d_out = similar(d)
 
-        @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p, d, X1) === (:found_limited, 1.0)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_out, p, d, X1) === (:found_limited, 1.0)
         @test d_out ≈ [2.0, 0.0, 0.0]
 
         d_out = similar(d)
 
-        @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p, 0 * d, X1) === (:not_found, NaN)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_out, p, 0 * d, X1) === (:not_found, NaN)
 
         d2 = [0.0, 1.0, 0.0]
 
-        @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p, d2, [0.0, -1.0, 0.0]) === (:found_unlimited, Inf)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_out, p, d2, [0.0, -1.0, 0.0]) === (:found_unlimited, Inf)
         @test d_out ≈ d2
 
-        @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p, [1.0, 1.0, 0.0], [-10.0, -10.0, -10.0]) === (:found_limited, 1.0)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_out, p, [1.0, 1.0, 0.0], [-10.0, -10.0, -10.0]) === (:found_limited, 1.0)
         @test d_out ≈ [2.0, 10.0, 0.0]
 
         p2 = [-1.0, -2.0, 2.0]
-        gf2 = Manopt.GeneralizedCauchyDirectionFinder(M, p2, ha)
+        gf2 = Manopt.GeneralizedCauchyDirectionSubsolver(M, p2, ha)
 
-        @test Manopt.find_generalized_cauchy_direction!(gf2, d_out, p2, [-1.0, -1.0, 1.0], [-10.0, -10.0, -10.0]) === (:not_found, NaN)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf2, d_out, p2, [-1.0, -1.0, 1.0], [-10.0, -10.0, -10.0]) === (:not_found, NaN)
 
         M2 = Hyperrectangle([-10.0], [10.0])
 
         ha2 = QuasiNewtonMatrixDirectionUpdate(M2, BFGS(), DefaultOrthonormalBasis(), [100.0;;])
         p3 = [1.0]
-        gf3 = Manopt.GeneralizedCauchyDirectionFinder(M2, p3, ha2)
+        gf3 = Manopt.GeneralizedCauchyDirectionSubsolver(M2, p3, ha2)
 
         d_out = similar(p3)
-        @test Manopt.find_generalized_cauchy_direction!(gf3, d_out, p3, [1.0], [-10.0]) === (:found_limited, 90.0)
+        @test Manopt.find_generalized_cauchy_direction!(M2, gf3, d_out, p3, [1.0], [-10.0]) === (:found_limited, 90.0)
     end
 
     @testset "Hitting multiple bounds at the same time in GCD" begin
@@ -207,13 +207,13 @@ using RecursiveArrayTools
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [1.0 0 0; 0 1 0; 0 0 1])
 
         p = [0.0, 0.0, 0.0]
-        gf = Manopt.GeneralizedCauchyDirectionFinder(M, p, ha)
+        gf = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha)
 
         d = [-2.0, -2.0, -1.0]
         d_out = similar(d)
         X = [10.0, 10.0, 10.0]
 
-        @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p, d, X) === (:found_limited, 1.0)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_out, p, d, X) === (:found_limited, 1.0)
         @test d_out ≈ [-1.0, -1.0, -1.0]
     end
 
@@ -294,10 +294,10 @@ using RecursiveArrayTools
         @testset "GCD check" begin
             d = -grad_f(M, p0)
             ha = QuasiNewtonLimitedMemoryBoxDirectionUpdate(QuasiNewtonLimitedMemoryDirectionUpdate(M, p0, InverseBFGS(), 2))
-            gf = Manopt.GeneralizedCauchyDirectionFinder(M, p0, ha)
+            gf = Manopt.GeneralizedCauchyDirectionSubsolver(M, p0, ha)
             d_out = similar(d)
             X = grad_f(M, p0)
-            @test Manopt.find_generalized_cauchy_direction!(gf, d_out, p0, d, X) === (:found_limited, 1.0)
+            @test Manopt.find_generalized_cauchy_direction!(M, gf, d_out, p0, d, X) === (:found_limited, 1.0)
         end
 
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
@@ -325,8 +325,8 @@ end
         d = [2.0, 1.0, 1.0]
         d_before = copy(d)
 
-        sdf = Manopt.MaxStepsizeInDirectionFinder(M, p)
-        @test Manopt.find_max_stepsize_in_direction(sdf, p, d) === (:found_limited, 1.0)
+        sdf = Manopt.MaxStepsizeInDirectionSubsolver(M, p)
+        @test Manopt.find_max_stepsize_in_direction(M, sdf, p, d) === (:found_limited, 1.0)
         @test d == d_before
     end
 
@@ -336,8 +336,8 @@ end
         d = [1.0]
         d_before = copy(d)
 
-        sdf = Manopt.MaxStepsizeInDirectionFinder(M, p)
-        @test Manopt.find_max_stepsize_in_direction(sdf, p, d) === (:found_unlimited, Inf)
+        sdf = Manopt.MaxStepsizeInDirectionSubsolver(M, p)
+        @test Manopt.find_max_stepsize_in_direction(M, sdf, p, d) === (:found_unlimited, Inf)
         @test d == d_before
     end
 
@@ -347,8 +347,8 @@ end
         d = [-1.0]
         d_before = copy(d)
 
-        sdf = Manopt.MaxStepsizeInDirectionFinder(M, p)
-        @test Manopt.find_max_stepsize_in_direction(sdf, p, d) === (:not_found, NaN)
+        sdf = Manopt.MaxStepsizeInDirectionSubsolver(M, p)
+        @test Manopt.find_max_stepsize_in_direction(M, sdf, p, d) === (:not_found, NaN)
         @test d == d_before
     end
 end
