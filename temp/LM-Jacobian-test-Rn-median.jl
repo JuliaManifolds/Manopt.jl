@@ -52,8 +52,8 @@ q1 = LevenbergMarquardt(
 
 q2 = LevenbergMarquardt(
     M, [f], p0;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
-    robustifier = [0.05 ∘ HuberRobustifier()],
+    β = 2.0, η = 0.2, damping_term_min = 1.0e-13,
+    robustifier = [1e-12 ∘ HuberRobustifier()],
     debug = [:Iteration, :Cost, " ", :damping_term, "\n", :Stop],
     sub_state = CoordinatesNormalSystemState(M),
 )

@@ -146,7 +146,7 @@ Compute the gradient for the [`NonlinearLeastSquaresObjective`](@ref) `nlso` at 
 i.e.
 
 ```math
-$(_tex(:grad)) F(p) = $(_tex(:sum, "i=1", "m")) ρ'$(_tex(:bigl))($(_tex(:norm, "F_i(p)"; index = "2"))^2$(_tex(:bigr)))
+$(_tex(:grad)) f(p) = $(_tex(:sum, "i=1", "m")) ρ'_i$(_tex(:bigl))($(_tex(:norm, "F_i(p)"; index = "2"))^2$(_tex(:bigr)))
 $(_tex(:sum, "j=1", "n_i")) f_{i,j}(p) $(_tex(:grad)) f_{i,j}(p)
 ```
 
@@ -157,7 +157,6 @@ and ``f_{i,j}(p)`` its `j`-th component function.
 * `value_cache=nothing` : if provided, this vector is used to store the residuals ``F(p)``
   internally to avoid recomputations.
 """
-#
 
 @doc "$(_doc_get_gradient_nlso)"
 function get_gradient(
@@ -663,15 +662,16 @@ Generate the Levenberg-Marquardt solver state.
 
 The following fields are keyword arguments
 
-* `β=5.0`
-* `damping_term_min=0.1`
-* `η=0.2`,
-* `expect_zero_residual=false`
-* `initial_gradient=`$(_link(:zero_vector))
+* `β = 5.0`
+* `damping_term_min = 0.1`
+* `damping_term = damping_term_min`
+* `η = 0.2`,
+* `expect_zero_residual = false`
+* `initial_gradient = `$(_link(:zero_vector))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
-* `minimum_acceptable_model_improvement::Real=eps(number_eltype(p))`
-* `model_worsening_warning_threshold::Real=-sqrt(eps(number_eltype(p)))`
+* `minimum_acceptable_model_improvement::Real = eps(number_eltype(p))` TODO: Debug, remove later
+* `model_worsening_warning_threshold::Real = -sqrt(eps(number_eltype(p)))`  TODO: Debug, remove later
 
 # See also
 
@@ -712,6 +712,7 @@ mutable struct LevenbergMarquardtState{
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
             η::Real = 0.2,
             damping_term_min::Real = 0.1,
+            damping_term::Real = damping_term_min,
             β::Real = 5.0,
             expect_zero_residual::Bool = false,
             minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
@@ -745,7 +746,7 @@ mutable struct LevenbergMarquardtState{
             stopping_criterion, retraction_method,
             initial_residual_values,
             X, η,
-            damping_term_min, damping_term_min,
+            damping_term, damping_term_min,
             β,
             expect_zero_residual,
             # TODO: Both are for now just for debug
@@ -1256,13 +1257,12 @@ function linear_operator!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
         value_cache = get_value(M, o, p); ε::Real, mode::Symbol,
     )
-    F_p = get_value(M, o, p) # evaluate residuals F(p)
-    F_p_norm2 = sum(abs2, F_p)
+    F_p_norm2 = sum(abs2, value_cache)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
-    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
     get_jacobian!(M, y, o, p, X)
     # Compute C y
-    y .= sqrt(ρ_prime) .* (I - operator_scaling * (F_p * F_p')) * y
+    y .= sqrt(ρ_prime) .* (I - operator_scaling * (value_cache * value_cache')) * y
     return y
 end
 
@@ -1294,7 +1294,7 @@ and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and comp
 
 @doc "$(_doc_normal_vector_field)"
 function normal_vector_field(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p; kwargs...
     )
     X = zero_vector(M, p)
     return normal_vector_field!(M, X, lmsco, p)
@@ -1324,10 +1324,9 @@ function normal_vector_field!(
     F_p_norm2 = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
     residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
-    # Compute y = (sqrt(ρ'(p)) / (1-α)) F(p) and
-    # Now compute J_F^*(p)[C^T y] (inplace of y)
+    # Compute y = ( ρ'(p) / (1-α)) F(p)
     y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
-    # Now apply the adjoint and negate
+    # and apply the adjoint, i.e. compute J_F^*(p)[C^T y]
     get_adjoint_jacobian!(M, X, o, p, y)
     return X
 end
@@ -1366,10 +1365,9 @@ function normal_vector_field!(
     F_p_norm2 = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
     residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
-    # Compute y = (sqrt(ρ'(p)) / (1-α)) F(p) and
-    # Now compute J_F^*(p)[C^T y] (inplace of y)
+    # Compute y = ρ'(p) / (1-α)) F(p) and ...
     y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
-    # Now apply the adjoint
+    # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (inplace of y)
     get_adjoint_jacobian!(M, c, o, p, y, B)
     return c
 end
@@ -1423,7 +1421,7 @@ function vector_field!(
     F_p_norm2 = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_p_norm2)
     residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
-    # Compute y = (sqrt(ρ(p)) / (1-α)) F(p)
+    # Compute y = sqrt(ρ(p)) / (1-α) * F(p)
     y .*= residual_scaling
     return y
 end

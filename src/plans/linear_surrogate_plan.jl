@@ -1,7 +1,7 @@
 #
 #
 # A linear surrogate model for use with certain objectives.
-
+# TODO: Currently this only has one concrete subtype,. maybe this abstract one is hence not needed?
 """
     AbstractLinearSurrogateObjective{E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}} <: AbstractManifoldObjective{E}
 
