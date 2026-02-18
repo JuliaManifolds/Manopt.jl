@@ -19,6 +19,25 @@ _get_manifold(tmp::TwoManifoldProblem, ::Val{2}) = tmp.second_manifold
 
 get_objective(tmo::TwoManifoldProblem) = tmo.objective
 
+function show(io::IO, tmp::TwoManifoldProblem)
+    print(io, "TwoManifoldProblem("); show(io, tmp.first_manifold)
+    print(io, ", "); show(io, tmp.second_manifold)
+    print(io, ", "); show(io, tmp.objective)
+    return print(io, ")")
+end
+function status_summary(tmp::TwoManifoldProblem; context = :default)
+    _is_inline(context) && return "An optimization problem to minimize $(tmp.objective) using a primal manifold $(tmp.first_manifold) and a dual manifold $(tmp.second_manifold)."
+    return """
+    An optimization problem for Manopt.jl requiring a primal and a dual manifold
+
+    ## Manifolds
+    * $(replace(repr(tmp.first_manifold), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+    * $(replace(repr(tmp.second_manifold), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+
+    ## Objective
+    $(_MANOPT_INDENT)$(replace(status_summary(tmp.objective, context = context), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))"""
+end
+
 @doc """
     AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P} <: AbstractManifoldCostObjective{E,C}
 
@@ -70,29 +89,18 @@ mutable struct PrimalDualManifoldObjective{
     Λ!!::L
 end
 function PrimalDualManifoldObjective(
-        cost,
-        prox_f,
-        prox_g_dual,
-        adjoint_linearized_operator;
+        cost::C,
+        prox_f::F,
+        prox_g_dual::G,
+        adjoint_linearized_operator::A;
         linearized_forward_operator::Union{Function, Missing} = missing,
         Λ::Union{Function, Missing} = missing,
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-    )
+        evaluation::E = AllocatingEvaluation(),
+    ) where {E <: AbstractEvaluationType, C, F, G, A}
     return PrimalDualManifoldObjective{
-        typeof(evaluation),
-        typeof(cost),
-        typeof(prox_f),
-        typeof(prox_g_dual),
-        typeof(linearized_forward_operator),
-        typeof(adjoint_linearized_operator),
-        typeof(Λ),
+        E, C, F, G, typeof(linearized_forward_operator), A, typeof(Λ),
     }(
-        cost,
-        prox_f,
-        prox_g_dual,
-        linearized_forward_operator,
-        adjoint_linearized_operator,
-        Λ,
+        cost, prox_f, prox_g_dual, linearized_forward_operator, adjoint_linearized_operator, Λ,
     )
 end
 
@@ -119,10 +127,7 @@ function get_primal_prox!(tmp::TwoManifoldProblem, q, σ, p)
 end
 
 function get_primal_prox(
-        M::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation},
-        σ,
-        p,
+        M::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, σ, p,
     )
     return apdmo.prox_f!!(M, σ, p)
 end
@@ -139,21 +144,13 @@ function get_primal_prox(
 end
 
 function get_primal_prox!(
-        M::AbstractManifold,
-        q,
-        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation},
-        σ,
-        p,
+        M::AbstractManifold, q, apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, σ, p,
     )
     copyto!(M, q, apdmo.prox_f!!(M, σ, p))
     return q
 end
 function get_primal_prox!(
-        M::AbstractManifold,
-        q,
-        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation},
-        σ,
-        p,
+        M::AbstractManifold, q, apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, σ, p,
     )
     apdmo.prox_f!!(M, q, σ, p)
     return q
@@ -187,20 +184,12 @@ function get_dual_prox!(tmp::TwoManifoldProblem, Y, n, τ, X)
 end
 
 function get_dual_prox(
-        M::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation},
-        n,
-        τ,
-        X,
+        M::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, n, τ, X,
     )
     return apdmo.prox_g_dual!!(M, n, τ, X)
 end
 function get_dual_prox(
-        M::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation},
-        n,
-        τ,
-        X,
+        M::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, n, τ, X,
     )
     Y = allocate_result(M, get_dual_prox, X)
     apdmo.prox_g_dual!!(M, Y, n, τ, X)
@@ -213,23 +202,13 @@ function get_dual_prox(
 end
 
 function get_dual_prox!(
-        M::AbstractManifold,
-        Y,
-        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation},
-        n,
-        τ,
-        X,
+        M::AbstractManifold, Y, apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, n, τ, X,
     )
     copyto!(M, Y, apdmo.prox_g_dual!!(M, n, τ, X))
     return Y
 end
 function get_dual_prox!(
-        M::AbstractManifold,
-        Y,
-        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation},
-        n,
-        τ,
-        X,
+        M::AbstractManifold, Y, apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, n, τ, X,
     )
     apdmo.prox_g_dual!!(M, Y, n, τ, X)
     return Y
@@ -264,70 +243,42 @@ function linearized_forward_operator!(tmp::TwoManifoldProblem, Y, m, X, n)
 end
 
 function linearized_forward_operator(
-        M::AbstractManifold,
-        ::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation},
-        m,
-        X,
-        ::Any,
+        M::AbstractManifold, ::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, m, X, ::Any,
     )
     return apdmo.linearized_forward_operator!!(M, m, X)
 end
 function linearized_forward_operator(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation},
-        m,
-        X,
-        n,
+        M::AbstractManifold, N::AbstractManifold,
+        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, m, X, n,
     )
     Y = zero_vector(N, n)
     apdmo.linearized_forward_operator!!(M, Y, m, X)
     return Y
 end
 function linearized_forward_operator(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        admo::AbstractDecoratedManifoldObjective,
-        m,
-        X,
-        n,
+        M::AbstractManifold, N::AbstractManifold,
+        admo::AbstractDecoratedManifoldObjective, m, X, n,
     )
     return linearized_forward_operator(M, N, get_objective(admo, false), m, X, n)
 end
 
 function linearized_forward_operator!(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        Y,
-        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation},
-        m,
-        X,
-        n,
+        M::AbstractManifold, N::AbstractManifold,
+        Y, apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, m, X, n,
     )
     copyto!(N, Y, n, apdmo.linearized_forward_operator!!(M, m, X))
     return Y
 end
 function linearized_forward_operator!(
-        M::AbstractManifold,
-        ::AbstractManifold,
-        Y,
-        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation},
-        m,
-        X,
-        ::Any,
+        M::AbstractManifold, ::AbstractManifold,
+        Y, apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, m, X, ::Any,
     )
     apdmo.linearized_forward_operator!!(M, Y, m, X)
     return Y
 end
 function linearized_forward_operator!(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        Y,
-        admo::AbstractDecoratedManifoldObjective,
-        m,
-        X,
-        n,
+        M::AbstractManifold, N::AbstractManifold,
+        Y, admo::AbstractDecoratedManifoldObjective, m, X, n,
     )
     return linearized_forward_operator!(M, N, Y, get_objective(admo, false), m, X, n)
 end
@@ -353,18 +304,14 @@ function forward_operator!(tmp::TwoManifoldProblem, q, p)
 end
 
 function forward_operator(
-        M::AbstractManifold,
-        ::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation},
-        p,
+        M::AbstractManifold, ::AbstractManifold,
+        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, p,
     )
     return apdmo.Λ!!(M, p)
 end
 function forward_operator(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation},
-        p,
+        M::AbstractManifold, N::AbstractManifold,
+        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, p,
     )
     q = rand(N)
     apdmo.Λ!!(M, q, p)
@@ -377,21 +324,15 @@ function forward_operator(
 end
 
 function forward_operator!(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        q,
-        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation},
-        p,
+        M::AbstractManifold, N::AbstractManifold,
+        q, apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, p,
     )
     copyto!(N, q, apdmo.Λ!!(M, p))
     return q
 end
 function forward_operator!(
-        M::AbstractManifold,
-        ::AbstractManifold,
-        q,
-        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation},
-        p,
+        M::AbstractManifold, ::AbstractManifold,
+        q, apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, p,
     )
     apdmo.Λ!!(M, q, p)
     return q
@@ -426,72 +367,72 @@ function adjoint_linearized_operator!(tmp::TwoManifoldProblem, X, m, n, Y)
     )
 end
 function adjoint_linearized_operator(
-        ::AbstractManifold,
-        N::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation},
-        m,
-        n,
-        Y,
+        ::AbstractManifold, N::AbstractManifold,
+        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, m, n, Y,
     )
     return apdmo.adjoint_linearized_operator!!(N, m, n, Y)
 end
 function adjoint_linearized_operator(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation},
-        m,
-        n,
-        Y,
+        M::AbstractManifold, N::AbstractManifold,
+        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, m, n, Y,
     )
     X = zero_vector(M, m)
     apdmo.adjoint_linearized_operator!!(N, X, m, n, Y)
     return X
 end
 function adjoint_linearized_operator(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        admo::AbstractDecoratedManifoldObjective,
-        m,
-        n,
-        Y,
+        M::AbstractManifold, N::AbstractManifold,
+        admo::AbstractDecoratedManifoldObjective, m, n, Y,
     )
     return adjoint_linearized_operator(M, N, get_objective(admo, false), m, n, Y)
 end
 
 function adjoint_linearized_operator!(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        X,
-        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation},
-        m,
-        n,
-        Y,
+        M::AbstractManifold, N::AbstractManifold,
+        X, apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, m, n, Y,
     )
     copyto!(M, X, apdmo.adjoint_linearized_operator!!(N, m, n, Y))
     return X
 end
 function adjoint_linearized_operator!(
-        ::AbstractManifold,
-        N::AbstractManifold,
-        X,
-        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation},
-        m,
-        n,
-        Y,
+        ::AbstractManifold, N::AbstractManifold,
+        X, apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, m, n, Y,
     )
     apdmo.adjoint_linearized_operator!!(N, X, m, n, Y)
     return X
 end
 function adjoint_linearized_operator!(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        X,
-        admo::AbstractDecoratedManifoldObjective,
-        m,
-        n,
-        Y,
+        M::AbstractManifold, N::AbstractManifold,
+        X, admo::AbstractDecoratedManifoldObjective, m, n, Y,
     )
     return adjoint_linearized_operator!(M, N, X, get_objective(admo, false), m, n, Y)
+end
+
+function status_summary(pdmo::PrimalDualManifoldObjective; context = :default)
+    both_missing = ismissing(pdmo.Λ!!) && ismissing(pdmo.linearized_forward_operator!!)
+    _is_inline(context) && ("A primal dual objective with a cost of f+g, a prox for f, a prox for the dual of g, as well as $(!ismissing(pdmo.Λ!!) ? "an operator Λ," : "") $(!ismissing(pdmo.linearized_forward_operator!!) ? "DΛ, " : "")$(!both_missing ? "and " : "")an adjoint D^*Λ")
+
+    maybe_line1 = ismissing(pdmo.Λ!!) ? "" : "\n* Λ:       $(pdmo.Λ!!)"
+    maybe_line2 = ismissing(pdmo.linearized_forward_operator!!) ? "" : "\n* DΛ:      $(pdmo.linearized_forward_operator!!)"
+    return """
+    A primal dual objective with
+
+    * cost:    $(pdmo.cost)
+    * prox_f:  $(pdmo.prox_f!!)
+    * prox_g*: $(pdmo.prox_g_dual!!)
+    * D^*Λ:    $(pdmo.adjoint_linearized_operator!!)$(maybe_line1)$(maybe_line2)"""
+end
+function show(io::IO, pdmo::PrimalDualManifoldObjective{E}) where {E}
+    print(io, "PrimalDualManifoldObjective(")
+    show(io, pdmo.cost); print(io, ", ")
+    show(io, pdmo.prox_f!!); print(io, ", ")
+    show(io, pdmo.prox_g_dual!!); print(io, ", ")
+    show(io, pdmo.adjoint_linearized_operator!!); print(io, ";\n$(_MANOPT_INDENT)")
+    print(io, _to_kw(E)); print(io, ",")
+    !ismissing(pdmo.Λ!!) && (print(io, " Λ = "); show(io, pdmo.Λ!!); print(io, ","))
+    !ismissing(pdmo.linearized_forward_operator!!) && (print(io, " linearized_forward_operator = "); show(io, pdmo.linearized_forward_operator!!); print(io, ","))
+    print(io, "\n")
+    return print(io, ")")
 end
 
 @doc """
@@ -522,23 +463,12 @@ function primal_residual(
         tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old
     )
     return primal_residual(
-        get_manifold(tmp, 1),
-        get_manifold(tmp, 2),
-        get_objective(tmp),
-        apds,
-        p_old,
-        X_old,
-        n_old,
+        get_manifold(tmp, 1), get_manifold(tmp, 2), get_objective(tmp), apds, p_old, X_old, n_old,
     )
 end
 function primal_residual(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective,
-        apds::AbstractPrimalDualSolverState,
-        p_old,
-        X_old,
-        n_old,
+        M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective,
+        apds::AbstractPrimalDualSolverState, p_old, X_old, n_old,
     )
     return norm(
         M,
@@ -546,20 +476,12 @@ function primal_residual(
         1 / apds.primal_stepsize *
             inverse_retract(M, apds.p, p_old, apds.inverse_retraction_method) -
             vector_transport_to(
-            M,
-            apds.m,
+            M, apds.m,
             adjoint_linearized_operator(
-                M,
-                N,
-                apdmo,
-                apds.m,
-                apds.n,
-                vector_transport_to(
-                    N, n_old, X_old, apds.n, apds.vector_transport_method_dual
-                ) - apds.X,
+                M, N, apdmo, apds.m, apds.n,
+                vector_transport_to(N, n_old, X_old, apds.n, apds.vector_transport_method_dual) - apds.X,
             ),
-            apds.p,
-            apds.vector_transport_method,
+            apds.p, apds.vector_transport_method,
         ),
     )
 end
@@ -597,24 +519,13 @@ function dual_residual(
         tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old
     )
     return dual_residual(
-        get_manifold(tmp, 1),
-        get_manifold(tmp, 2),
-        get_objective(tmp),
-        apds,
-        p_old,
-        X_old,
-        n_old,
+        get_manifold(tmp, 1), get_manifold(tmp, 2), get_objective(tmp), apds, p_old, X_old, n_old,
     )
 end
 
 function dual_residual(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective,
-        apds::AbstractPrimalDualSolverState,
-        p_old,
-        X_old,
-        n_old,
+        M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective,
+        apds::AbstractPrimalDualSolverState, p_old, X_old, n_old,
     )
     if apds.variant === :linearized
         return norm(
@@ -625,16 +536,11 @@ function dual_residual(
                     N, n_old, X_old, apds.n, apds.vector_transport_method_dual
                 ) - apds.X
             ) - linearized_forward_operator(
-                M,
-                N,
-                apdmo,
-                apds.m,
+                M, N, apdmo, apds.m,
                 vector_transport_to(
-                    M,
-                    apds.p,
+                    M, apds.p,
                     inverse_retract(M, apds.p, p_old, apds.inverse_retraction_method),
-                    apds.m,
-                    apds.vector_transport_method,
+                    apds.m, apds.vector_transport_method,
                 ),
                 apds.n,
             ),
@@ -648,23 +554,17 @@ function dual_residual(
                     N, n_old, X_old, apds.n, apds.vector_transport_method_dual
                 ) - apds.n
             ) - inverse_retract(
-                N,
-                apds.n,
+                N, apds.n,
                 forward_operator(
-                    M,
-                    N,
-                    apdmo,
+                    M, N, apdmo,
                     retract(
-                        M,
-                        apds.m,
+                        M, apds.m,
                         vector_transport_to(
-                            M,
-                            apds.p,
+                            M, apds.p,
                             inverse_retract(
                                 M, apds.p, p_old, apds.inverse_retraction_method
                             ),
-                            apds.m,
-                            apds.vector_transport_method,
+                            apds.m, apds.vector_transport_method,
                         ),
                         apds.retraction_method,
                     ),
@@ -675,8 +575,7 @@ function dual_residual(
     else
         throw(
             DomainError(
-                apds.variant,
-                "Unknown Chambolle—Pock variant, allowed are `:exact` or `:linearized`.",
+                apds.variant, "Unknown Chambolle—Pock variant, allowed are `:exact` or `:linearized`.",
             ),
         )
     end
@@ -707,18 +606,14 @@ mutable struct DebugDualResidual <: DebugAction
     storage::StoreStateAction
     function DebugDualResidual(;
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout,
-            prefix = "Dual Residual: ",
-            format = "$prefix%s",
+            io::IO = stdout, prefix = "Dual Residual: ", format = "$prefix%s",
         )
         return new(io, format, storage)
     end
     function DebugDualResidual(
             initial_values::Tuple{P, T, Q};
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout,
-            prefix = "Dual Residual: ",
-            format = "$prefix%s",
+            io::IO = stdout, prefix = "Dual Residual: ", format = "$prefix%s",
         ) where {P, T, Q}
         update_storage!(
             storage, Dict(k => v for (k, v) in zip((:Iterate, :X, :n), initial_values))
@@ -738,8 +633,7 @@ function (d::DebugDualResidual)(
         X_old = get_storage(d.storage, :X)
         n_old = get_storage(d.storage, :n)
         Printf.format(
-            d.io,
-            Printf.Format(d.format),
+            d.io, Printf.Format(d.format),
             dual_residual(M, N, apdmo, apds, p_old, X_old, n_old),
         )
     end
@@ -769,18 +663,14 @@ mutable struct DebugPrimalResidual <: DebugAction
     storage::StoreStateAction
     function DebugPrimalResidual(;
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout,
-            prefix = "Primal Residual: ",
-            format = "$prefix%s",
+            io::IO = stdout, prefix = "Primal Residual: ", format = "$prefix%s",
         )
         return new(io, format, storage)
     end
     function DebugPrimalResidual(
             values::Tuple{P, T, Q};
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout,
-            prefix = "Primal Residual: ",
-            format = "$prefix%s",
+            io::IO = stdout, prefix = "Primal Residual: ", format = "$prefix%s",
         ) where {P, T, Q}
         update_storage!(storage, Dict(k => v for (k, v) in zip((:Iterate, :X, :n), values)))
         return new(io, format, storage)
@@ -798,8 +688,7 @@ function (d::DebugPrimalResidual)(
         X_old = get_storage(d.storage, :X)
         n_old = get_storage(d.storage, :n)
         Printf.format(
-            d.io,
-            Printf.Format(d.format),
+            d.io, Printf.Format(d.format),
             primal_residual(M, N, apdmo, apds, p_old, X_old, n_old),
         )
     end
@@ -831,18 +720,14 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     storage::StoreStateAction
     function DebugPrimalDualResidual(;
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout,
-            prefix = "PD Residual: ",
-            format = "$prefix%s",
+            io::IO = stdout, prefix = "PD Residual: ", format = "$prefix%s",
         )
         return new(io, format, storage)
     end
     function DebugPrimalDualResidual(
             values::Tuple{P, T, Q};
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout,
-            prefix = "PD Residual: ",
-            format = "$prefix%s",
+            io::IO = stdout, prefix = "PD Residual: ", format = "$prefix%s",
         ) where {P, Q, T}
         update_storage!(storage, Dict(k => v for (k, v) in zip((:Iterate, :X, :n), values)))
         return new(io, format, storage)
@@ -859,9 +744,7 @@ function (d::DebugPrimalDualResidual)(
         p_old = get_storage(d.storage, :Iterate)
         X_old = get_storage(d.storage, :X)
         n_old = get_storage(d.storage, :n)
-        v =
-            primal_residual(M, N, apdmo, apds, p_old, X_old, n_old) +
-            dual_residual(tmp, apds, p_old, X_old, n_old)
+        v = primal_residual(M, N, apdmo, apds, p_old, X_old, n_old) + dual_residual(tmp, apds, p_old, X_old, n_old)
         Printf.format(d.io, Printf.Format(d.format), v / manifold_dimension(M))
     end
     return d.storage(tmp, apds, k)
@@ -877,9 +760,7 @@ Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
 function DebugPrimalChange(;
-        storage::StoreStateAction = StoreStateAction([:Iterate]),
-        prefix = "Primal Change: ",
-        kwargs...,
+        storage::StoreStateAction = StoreStateAction([:Iterate]), prefix = "Primal Change: ", kwargs...,
     )
     return DebugChange(; storage = storage, prefix = prefix, kwargs...)
 end
@@ -914,18 +795,14 @@ mutable struct DebugDualChange <: DebugAction
     storage::StoreStateAction
     function DebugDualChange(;
             storage::StoreStateAction = StoreStateAction([:X, :n]),
-            io::IO = stdout,
-            prefix = "Dual Change: ",
-            format = "$prefix%s",
+            io::IO = stdout, prefix = "Dual Change: ", format = "$prefix%s",
         )
         return new(io, format, storage)
     end
     function DebugDualChange(
             values::Tuple{T, P};
             storage::StoreStateAction = StoreStateAction([:X, :n]),
-            io::IO = stdout,
-            prefix = "Dual Change: ",
-            format = "$prefix%s",
+            io::IO = stdout, prefix = "Dual Change: ", format = "$prefix%s",
         ) where {P, T}
         update_storage!(
             storage, Dict{Symbol, Any}(k => v for (k, v) in zip((:X, :n), values))
@@ -942,8 +819,7 @@ function (d::DebugDualChange)(
         X_old = get_storage(d.storage, :X)
         n_old = get_storage(d.storage, :n)
         v = norm(
-            N,
-            apds.n,
+            N, apds.n,
             vector_transport_to(
                 N, n_old, X_old, apds.n, apds.vector_transport_method_dual
             ) - apds.X,
@@ -972,12 +848,8 @@ function DebugDualBaseChange(;
         storage::StoreStateAction = StoreStateAction([:n]), prefix = "Dual Base Change:", kwargs...
     )
     return DebugEntryChange(
-        :n,
-        (p, o, x, y) ->
-        distance(get_manifold(p, 2), x, y, o.inverse_retraction_method_dual);
-        storage = storage,
-        prefix = prefix,
-        kwargs...,
+        :n, (p, o, x, y) -> distance(get_manifold(p, 2), x, y, o.inverse_retraction_method_dual);
+        storage = storage, prefix = prefix, kwargs...,
     )
 end
 
@@ -998,11 +870,8 @@ see their constructors for detail, on `o.n`.
 """
 function DebugPrimalBaseChange(opts...; prefix = "Primal Base Change:", kwargs...)
     return DebugEntryChange(
-        :m,
-        (p, o, x, y) -> distance(get_manifold(p, 1), x, y),
-        opts...;
-        prefix = prefix,
-        kwargs...,
+        :m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y),
+        opts...; prefix = prefix, kwargs...,
     )
 end
 
@@ -1070,6 +939,7 @@ Create an [`RecordAction`](@ref) that records the primal base point,
 an [`RecordEntry`](@ref) of `o.m`.
 """
 RecordPrimalBaseIterate(m) = RecordEntry(m, :m)
+
 """
     RecordPrimalBaseChange()
 

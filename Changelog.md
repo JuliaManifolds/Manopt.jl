@@ -6,12 +6,18 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.33] unreleased
+## [0.5.33] Unreleased
 
 ### Added
 
 * A clarification on the use of AI in the [CONTRIBUTING.md](https://manoptjl.org/stable/contributing/) (#573)
 * Added another package and paper using `Manopt.jl` to the about page (#576).
+
+### Fixed
+
+* Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (issue [#560](https://github.com/JuliaManifolds/Manopt.jl/issues/560)).
+* Fixed some text descriptions of a few stopping criteria.
+* unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
 
 ## [0.5.32] January 15, 2026
 

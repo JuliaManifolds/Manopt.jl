@@ -283,7 +283,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @testset "RecordTime" begin
         h1 = RecordTime(; mode = :cumulative)
         @test repr(h1) == "RecordTime(; mode=:cumulative)"
-        @test Manopt.status_summary(h1) == ":Time"
+        @test Manopt.status_summary(h1, context = :short) == ":Time"
         t = h1.start
         @test t isa Nanosecond
         h1(dmp, gds, 1)

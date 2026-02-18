@@ -1,13 +1,36 @@
-"""
-    status_summary(e)
+function status_summary end
 
-Return a string reporting about the current status of `e`,
-where `e` is a type from Manopt.
+_doc_status_summary = """
+    status_summary(io, e; context::Symbol = :default)
+    status_summary(e; context::Symbol = :default)
 
-This method is similar to `show` but just returns a string.
-It might also be more verbose in explaining, or hide internal information.
+Returns a string reporting about the current status of an element `e` defined in `Manopt.jl`,
+which can also directly be printed to an `IO` stream `io`.
+This method should generate a human readable summary of `e`.
+
+By default, the variant with an `IO` stream dispatches to the one without to generate
+a string and prints it to the `IO` stream.
+If you implement the variant with the stream `io` remember to also provide the one without
+Similarly, the
+
+The summary is meant to be used in different contexts
+* `:default` should be the default and refers to a (multiline) context in REPL where a
+  human should read a comprehensive summary of `e`
+  This should also be the default
+* `:inline` should be a shorter variant that can be used inline of other summaries, e.g. in lists
+* `:short` should be a form even shorter or equal to `inline`, for example when in a list,
+  a certain element, like a [`DebugAction`](@ref) can be represented by a symbol.
+  The short variant should by default fall back to `:inline`
 """
-status_summary(e) = "$(e)"
+
+@doc "$(_doc_status_summary)"
+status_summary(e; context::Symbol = :default)
+
+@doc "$(_doc_status_summary)"
+function status_summary(io::IO, e; context = :default)
+    return print(io, status_summary(e; context = context))
+end
+_is_inline(c) = (c == :inline || c == :short)
 
 """
     set_parameter!(f, element::Symbol , args...)

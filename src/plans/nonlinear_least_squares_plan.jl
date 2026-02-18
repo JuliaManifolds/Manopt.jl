@@ -318,10 +318,11 @@ mutable struct LevenbergMarquardtState{
     end
 end
 
-function show(io::IO, lms::LevenbergMarquardtState)
+function status_summary(lms::LevenbergMarquardtState; context = :default)
     i = get_count(lms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(lms.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(lms)) – $(Iter) $(has_converged(lms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm
     $Iter
@@ -333,8 +334,7 @@ function show(io::IO, lms::LevenbergMarquardtState)
     * retraction method: $(lms.retraction_method)
 
     ## Stopping criterion
-
-    $(status_summary(lms.stop))
+    $(status_summary(lms.stop; context = context))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end

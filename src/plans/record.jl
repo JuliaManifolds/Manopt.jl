@@ -74,21 +74,29 @@ end
 function RecordSolverState(s::S, symbol::Symbol) where {S <: AbstractManoptSolverState}
     return RecordSolverState{S}(s; RecordFactory(get_state(s), symbol)...)
 end
-function status_summary(rst::RecordSolverState)
+function status_summary(rst::RecordSolverState; context = :default)
+    _is_inline(context) && (return "a RecordSolverState for $(status_summary(rst.state; context = context))")
     if length(rst.recordDictionary) > 0
         return """
-        $(rst.state)
+        $(status_summary(rst.state; context = context))
 
         ## Record
         $(rst.recordDictionary)
         """
-    else
-        return "RecordSolverState($(rst.state), $(rst.recordDictionary))"
+    else # We indicate there is a record but no registered recordings
+        return """
+        $(status_summary(rst.state; context = context))
+
+        ## Record
+        No recordings registered.
+        """
     end
 end
-function show(io::IO, rst::RecordSolverState)
-    return print(io, status_summary(rst))
+# 2-argument show, used by Array show, print(obj) and repr(obj), keep it short
+function Base.show(io::IO, obj::RecordSolverState)
+    return print(io, "RecordSolverState($(obj.state), $(obj.recordDictionary))")
 end
+
 dispatch_state_decorator(::RecordSolverState) = Val(true)
 
 @doc """
@@ -501,7 +509,7 @@ function (r::RecordCost)(amp::AbstractManoptProblem, s::AbstractManoptSolverStat
     return record_or_reset!(r, get_cost(amp, get_iterate(s)), k)
 end
 show(io::IO, ::RecordCost) = print(io, "RecordCost()")
-status_summary(di::RecordCost) = ":Cost"
+status_summary(di::RecordCost; context = :short) = ":Cost"
 
 @doc """
     RecordChange <: RecordAction
@@ -730,8 +738,9 @@ function (rsr::RecordStoppingReason)(
     return (length(s) > 0) && record_or_reset!(rsr, s, k)
 end
 show(io::IO, ::RecordStoppingReason) = print(io, "RecordStoppingReason()")
-status_summary(di::RecordStoppingReason) = ":Stop"
-
+function status_summary(di::RecordStoppingReason; context = :default)
+    return (_is_inline(context) ? ":Stop" : "A record action to record the stopping reason")
+end
 @doc """
     RecordTime <: RecordAction
 
@@ -771,8 +780,11 @@ end
 function show(io::IO, ri::RecordTime)
     return print(io, "RecordTime(; mode=:$(ri.mode))")
 end
-status_summary(ri::RecordTime) = (ri.mode === :iterative ? ":IterativeTime" : ":Time")
-
+function status_summary(ri::RecordTime; context = :default)
+    (context == :short) && return (ri.mode === :iterative ? ":IterativeTime" : ":Time")
+    # Inline and Default:
+    return "A Rectord action for recording times" * (ri.mode == :iterative ? " iteratively" : ".")
+end
 #
 # Factory
 #

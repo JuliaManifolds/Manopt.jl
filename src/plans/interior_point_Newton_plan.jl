@@ -226,10 +226,11 @@ function get_message(ips::InteriorPointNewtonState)
     return get_message(ips.stepsize)
 end
 # pretty print state info
-function show(io::IO, ips::InteriorPointNewtonState)
+function status_summary(ips::InteriorPointNewtonState; context = :default)
     i = get_count(ips, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(ips)) – $(Iter) $(has_converged(ips) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Interior Point Newton Method
     $Iter
@@ -238,13 +239,13 @@ function show(io::IO, ips::InteriorPointNewtonState)
     * σ: $(ips.σ)
     * retraction method: $(ips.retraction_method)
 
-    ## Stopping criterion
-    $(status_summary(ips.stop))
     ## Stepsize
-    $(ips.stepsize)
-    This indicates convergence: $Conv
-    """
-    return print(io, s)
+    $(status_summary(ips.stepsize; context = context))
+
+    ## Stopping criterion
+    $(status_summary(ips.stop; context = context))
+    This indicates convergence: $Conv"""
+    return s
 end
 
 #
@@ -350,7 +351,7 @@ end
 
 function show(io::IO, CKKTvf::CondensedKKTVectorField)
     return print(
-        io, "CondensedKKTVectorField\n\twith μ=$(CKKTvf.μ), s=$(CKKTvf.s), β=$(CKKTvf.β)"
+        io, "CondensedKKTVectorField\n$(_MANOPT_INDENT)with μ=$(CKKTvf.μ), s=$(CKKTvf.s), β=$(CKKTvf.β)"
     )
 end
 
@@ -456,7 +457,7 @@ end
 function show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
     return print(
         io,
-        "CondensedKKTVectorFieldJacobian\n\twith μ=$(CKKTvfJ.μ), s=$(CKKTvfJ.s), β=$(CKKTvfJ.β)",
+        "CondensedKKTVectorFieldJacobian\n$(_MANOPT_INDENT)with μ=$(CKKTvfJ.μ), s=$(CKKTvfJ.s), β=$(CKKTvfJ.β)",
     )
 end
 
@@ -534,7 +535,7 @@ function (KKTvf::KKTVectorField)(N, Y, q)
     return Y
 end
 function show(io::IO, KKTvf::KKTVectorField)
-    return print(io, "KKTVectorField\nwith the objective\n\t$(KKTvf.cmo)")
+    return print(io, "KKTVectorField\nwith the objective\n$(_MANOPT_INDENT)$(KKTvf.cmo)")
 end
 
 @doc """
@@ -612,7 +613,7 @@ function (KKTvfJ::KKTVectorFieldJacobian)(N, Z, q, Y)
     return Z
 end
 function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
-    return print(io, "KKTVectorFieldJacobian\nwith the objective\n\t$(KKTvfJ.cmo)")
+    return print(io, "KKTVectorFieldJacobian\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfJ.cmo)")
 end
 
 @doc """
@@ -689,7 +690,7 @@ function (KKTvfAdJ::KKTVectorFieldAdjointJacobian)(N, Z, q, Y)
     return Z
 end
 function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
-    return print(io, "KKTVectorFieldAdjointJacobian\nwith the objective\n\t$(KKTvfAdJ.cmo)")
+    return print(io, "KKTVectorFieldAdjointJacobian\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfAdJ.cmo)")
 end
 
 @doc """
@@ -722,7 +723,7 @@ function (KKTvc::KKTVectorFieldNormSq)(N, q)
     return inner(N, q, Y, Y)
 end
 function show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
-    return print(io, "KKTVectorFieldNormSq\nwith the objective\n\t$(KKTvfNSq.cmo)")
+    return print(io, "KKTVectorFieldNormSq\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfNSq.cmo)")
 end
 
 @doc """
@@ -791,7 +792,7 @@ function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, Y, q)
 end
 function show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
     return print(
-        io, "KKTVectorFieldNormSqGradient\nwith the objective\n\t$(KKTvfNSqGrad.cmo)"
+        io, "KKTVectorFieldNormSqGradient\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfNSqGrad.cmo)"
     )
 end
 
@@ -974,14 +975,14 @@ function get_reason(c::StopWhenKKTResidualLess)
     end
     return ""
 end
-function status_summary(swrr::StopWhenKKTResidualLess)
+function status_summary(swrr::StopWhenKKTResidualLess; context = :default)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "‖F(p, λ, μ)‖ < ε:\t$s"
+    return (_is_inline(context) ? "‖F(p, λ, μ)‖ < ε = $(c.ε):$(_MANOPT_INDENT)" : "Stop when the KKT resudual is less than ε = $(c.ε)\n$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(::StopWhenKKTResidualLess) = true
 function show(io::IO, c::StopWhenKKTResidualLess)
-    return print(io, "StopWhenKKTResidualLess($(c.ε))\n    $(status_summary(c))")
+    return print(io, "StopWhenKKTResidualLess($(c.ε))")
 end
 
 # An internal function to compute the new σ

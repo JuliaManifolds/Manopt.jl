@@ -78,7 +78,8 @@ using ManifoldDiff: prox_distance, prox_distance!
         s2 = get_solver_result(r)
         @test isapprox(N, s1, s2)
         @test startswith(
-            repr(r), "# Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm"
+            Manopt.status_summary(r; context = :default),
+            "# Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm"
         )
         @testset "Caching" begin
             r2 = cyclic_proximal_point(
