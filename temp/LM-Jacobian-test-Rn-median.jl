@@ -22,42 +22,38 @@ Fs = [VectorGradientFunction(
 qc = median(M, pts)
 cost(M, p) = sum(distance(M, p, q) for q in pts)
 
-#=
 # Default Residual CG on this approach – works but probably allocates a bit too much (matrices coordinates/vector...)
 q1 = LevenbergMarquardt(
-    M, [f], p0;
-    β = 8.0, η = 0.01, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
-    robustifier = [0.05 ∘ HuberRobustifier()],
-    debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop],
-    stopping_criterion = StopWhenGradientNormLess(1.0e-16) | StopAfterIteration(190)
+    M, Fs, p0;
+    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1,# α_mode = :Strict,
+    robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)),
+    debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop, 100],
 )
 # ... but works
 @info "Cost of median (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q1)), difference (of q1 - qc): $(cost(M, q1) - cost(M, qc))"
-=#
 
 q2 = LevenbergMarquardt(
     M, Fs, p0;
-    β = 2.0, η = 0.2, damping_term_min = 1.0e-13,
+    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
     robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)),
-    debug = [:Iteration, :Cost, " ", :damping_term, "\n", :Stop],
+    debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop, 100],
     sub_state = CoordinatesNormalSystemState(M),
 )
 # ... but works
 @info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q2): $(cost(M, q2)), difference (of q2 - qc): $(cost(M, q2) - cost(M, qc))"
-#=
+
 q1b = copy(M, p0)
 
-(@b LevenbergMarquardt!(M, [f], q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [0.05 ∘ HuberRobustifier()])) |> repr |> println
+(@b LevenbergMarquardt!(M, Fs, q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)))) |> repr |> println
 @info distance(M, q1, q1b)
 
 q2b = copy(M, p0)
 
 (
     @b LevenbergMarquardt!(
-        M, [f], q2b;
-        β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [0.05 ∘ HuberRobustifier()], sub_state = CoordinatesNormalSystemState(M),
+        M, Fs, q2b;
+        β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)), sub_state = CoordinatesNormalSystemState(M),
     )
 ) |> repr |> println
 
 @info distance(M, q2, q2b)
-=#

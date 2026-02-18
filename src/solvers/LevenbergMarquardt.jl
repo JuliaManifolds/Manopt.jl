@@ -179,7 +179,7 @@ end
 function LevenbergMarquardt!(
         M::AbstractManifold, nlso::O, p;
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-        stopping_criterion::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
+        stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
         debug = [DebugWarnIfCostIncreases()],
         expect_zero_residual::Bool = false,
         β::Real = 5.0,
