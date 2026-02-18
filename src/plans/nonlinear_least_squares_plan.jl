@@ -435,11 +435,12 @@ shorthand `δ ∘ HuberRobustifier()`.
 struct HuberRobustifier <: AbstractRobustifierFunction end
 
 function get_robustifier_values(::HuberRobustifier, x::Real)
-    (x == 0) && (return (0.0, 1.0, 0.0))
-    a = x <= 1 ? x : 2 * sqrt(x) - 1
-    b = x <= 1 ? 1.0 : 1 / sqrt(x)
-    c = x <= 1 ? 0.0 : -1 / (2 * x^(3 / 2))
-    return (a, b, c)
+    if x <= 1
+        return (x, 1.0, 0.0)
+    else
+        sx = sqrt(x)
+        return (2 * sx - 1, 1 / sx, 1 / (2 * sx * x))
+    end
 end
 
 """
@@ -755,6 +756,11 @@ mutable struct LevenbergMarquardtState{
         )
     end
 end
+
+# TODO: implement the method because lms.X is the step taken instead of the gradient,
+# so the detault implementation is wrong
+# function get_gradient(lms::LevenbergMarquardtState)  
+# end
 
 function show(io::IO, lms::LevenbergMarquardtState)
     i = get_count(lms, :Iterations)
@@ -1262,7 +1268,12 @@ function linear_operator!(
     _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
     get_jacobian!(M, y, o, p, X)
     # Compute C y
+    @show X
+    @show operator_scaling
+    @show y
+    @show (I - operator_scaling * (value_cache * value_cache'))
     y .= sqrt(ρ_prime) .* (I - operator_scaling * (value_cache * value_cache')) * y
+    @show y
     return y
 end
 

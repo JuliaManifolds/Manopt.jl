@@ -1,9 +1,5 @@
 using Manopt, Manifolds, LinearAlgebra, Test, Chairmarks
 
-Rxy(α) = [cos(α) sin(α) 0.0; -sin(α) cos(α) 0; 0 0 1]
-Rxz(α) = [cos(α)  0.0 sin(α); 0 1 0; -sin(α) 0 cos(α)]
-Ryz(α) = [1.0 0 0; 0 cos(α) sin(α); 0 -sin(α) cos(α)]
-
 M = Euclidean(3)
 pts = [
     [0.0, 0.0, 1.0],
@@ -13,26 +9,15 @@ pts = [
 p0 = [0.0, 0.0, 78.0]
 # We do a full function approach here
 
-F(M, p) = [distance(M, p, q) for q in pts]
-function JF(M, p, B::AbstractBasis = DefaultOrthonormalBasis())
-    d = manifold_dimension(M)
-    n = length(pts)
-    J = zeros(n, d)
-    for (i, q) in enumerate(pts)
-        dpq = distance(M, p, q)
-        if dpq > 0
-            J[i, :] = -1 / dpq .* get_coordinates(M, p, log(M, p, q), B)
-        end
-    end
-    return J
-end
+Fi = [ (M, p) -> distance(M, p, q) for q in pts]
+grad_Fi = [ (M, p) -> distance(M, p, q) == 0 ? zero_vector(M, p) : (- log(M, p, q) / distance(M, p, q)) for q in pts]
 
-f = VectorGradientFunction(
-    F, JF, length(pts);
-    evaluation = AllocatingEvaluation(),
-    function_type = FunctionVectorialType(),
-    jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis())
-)
+# Block s normal ones
+Fs = [VectorGradientFunction(
+    [Fi[i]], [grad_Fi[i]], 1;
+    evaluation = AllocatingEvaluation(), function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType()
+) for i in eachindex(pts)]
+
 
 qc = median(M, pts)
 cost(M, p) = sum(distance(M, p, q) for q in pts)
@@ -51,9 +36,9 @@ q1 = LevenbergMarquardt(
 =#
 
 q2 = LevenbergMarquardt(
-    M, [f], p0;
+    M, Fs, p0;
     β = 2.0, η = 0.2, damping_term_min = 1.0e-13,
-    robustifier = [1e-12 ∘ HuberRobustifier()],
+    robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)),
     debug = [:Iteration, :Cost, " ", :damping_term, "\n", :Stop],
     sub_state = CoordinatesNormalSystemState(M),
 )
