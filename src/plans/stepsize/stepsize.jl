@@ -104,6 +104,10 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
         )
     end
 end
+function ArmijoLinesearchStepsize(M::AbstractManifold, p; kwargs...)
+    return ArmijoLinesearchStepsize(M; candidate_point = allocate(p), kwargs...)
+end
+
 function (a::ArmijoLinesearchStepsize)(
         mp::AbstractManoptProblem,
         s::AbstractManoptSolverState,
@@ -228,7 +232,7 @@ For the stop safe guards you can pass `:Messages` to a `debug=` to see `@info` m
 $(_note(:ManifoldDefaultFactory, "ArmijoLinesearchStepsize"))
 """
 function ArmijoLinesearch(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.ArmijoLinesearchStepsize, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.ArmijoLinesearchStepsize, args...; requires_point = true, kwargs...)
 end
 
 @doc """
@@ -298,6 +302,9 @@ function AdaptiveWNGradientStepsize(
         gradient_bound,
         0,
     )
+end
+function AdaptiveWNGradientStepsize(M::AbstractManifold, p; kwargs...)
+    return AdaptiveWNGradientStepsize(M; p = p, kwargs...)
 end
 function (awng::AdaptiveWNGradientStepsize)(
         mp::AbstractManoptProblem,
@@ -408,7 +415,7 @@ $(_kwargs(:p)) only used to define the `gradient_bound`
 $(_kwargs(:X)) only used to define the `gradient_bound`
 """
 function AdaptiveWNGradient(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.AdaptiveWNGradientStepsize, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.AdaptiveWNGradientStepsize, args...; requires_point = true, kwargs...)
 end
 
 """
@@ -514,6 +521,7 @@ $(_fields(:vector_transport_method))
 # Constructor
 
     CubicBracketingLinesearchStepsize(M::AbstractManifold; kwargs...)
+    CubicBracketingLinesearchStepsize(M::AbstractManifold, p; kwargs...)
 
 ## Keyword arguments
 
@@ -564,6 +572,13 @@ mutable struct CubicBracketingLinesearchStepsize{
         ) where {R <: Real, I <: Integer, TRM, VTM, P, T}
         return new{R, I, TRM, VTM, P, T}(candidate_direction, candidate_point, initial_stepsize, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize)
     end
+end
+function CubicBracketingLinesearchStepsize(M::AbstractManifold, p; kwargs...)
+    candidate_point = allocate(p)
+    candidate_direction = zero_vector(M, candidate_point)
+    return CubicBracketingLinesearchStepsize(
+        M; candidate_point = candidate_point, candidate_direction = candidate_direction, kwargs...
+    )
 end
 
 """
@@ -862,7 +877,7 @@ $(_kwargs(:vector_transport_method))
 $(_note(:ManifoldDefaultFactory, "CubicBracketingLinesearch"))
 """
 function CubicBracketingLinesearch(args...; kwargs...)
-    return ManifoldDefaultsFactory(CubicBracketingLinesearchStepsize, args...; kwargs...)
+    return ManifoldDefaultsFactory(CubicBracketingLinesearchStepsize, args...; requires_point = true, kwargs...)
 end
 
 
@@ -1006,8 +1021,8 @@ mutable struct DistanceOverGradientsStepsize{R <: Real, P} <: Stepsize
 end
 
 function DistanceOverGradientsStepsize(
-        M::AbstractManifold;
-        p = rand(M),
+        M::AbstractManifold,
+        p;
         initial_distance::R1 = 1.0e-3,
         use_curvature::Bool = false,
         sectional_curvature_bound::R2 = 0.0,
@@ -1178,7 +1193,7 @@ $(doc_DoG_main)
 $(_note(:ManifoldDefaultFactory, "DistanceOverGradientsStepsize"))
 """
 function DistanceOverGradients(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.DistanceOverGradientsStepsize, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.DistanceOverGradientsStepsize, args...; requires_point = true, kwargs...)
 end
 
 @doc """
@@ -1208,6 +1223,7 @@ $(_kwargs(:vector_transport_method))
 # Constructor
 
     NonmonotoneLinesearchStepsize(M::AbstractManifold; kwargs...)
+    NonmonotoneLinesearchStepsize(M::AbstractManifold, p; kwargs...)
 
 ## Keyword arguments
 
@@ -1328,6 +1344,9 @@ mutable struct NonmonotoneLinesearchStepsize{
             vector_transport_method,
         )
     end
+end
+function NonmonotoneLinesearchStepsize(M::AbstractManifold, p; kwargs...)
+    return NonmonotoneLinesearchStepsize(M; p = allocate(p), kwargs...)
 end
 function (a::NonmonotoneLinesearchStepsize)(
         mp::AbstractManoptProblem,
@@ -1551,7 +1570,7 @@ $(_kwargs(:retraction_method))
 * `stop_decreasing_at_step=1000`: last step size to decrease the stepsize (phase 2),
 """
 function NonmonotoneLinesearch(args...; kwargs...)
-    return ManifoldDefaultsFactory(NonmonotoneLinesearchStepsize, args...; kwargs...)
+    return ManifoldDefaultsFactory(NonmonotoneLinesearchStepsize, args...; requires_point = true, kwargs...)
 end
 
 @doc """
@@ -1662,6 +1681,7 @@ $(_fields(:vector_transport_method))
 # Constructor
 
     WolfePowellLinesearchStepsize(M::AbstractManifold; kwargs...)
+    WolfePowellLinesearchStepsize(M::AbstractManifold, p; kwargs...)
 
 ## Keyword arguments
 
@@ -1726,6 +1746,13 @@ mutable struct WolfePowellLinesearchStepsize{
             msgs,
         )
     end
+end
+function WolfePowellLinesearchStepsize(M::AbstractManifold, p; kwargs...)
+    candidate_point = allocate(p)
+    candidate_direction = zero_vector(M, candidate_point)
+    return WolfePowellLinesearchStepsize(
+        M; p = candidate_point, X = candidate_direction, kwargs...
+    )
 end
 function (a::WolfePowellLinesearchStepsize)(
         mp::AbstractManoptProblem,
@@ -1873,7 +1900,7 @@ $(_kwargs(:retraction_method))
 $(_kwargs(:vector_transport_method))
 """
 function WolfePowellLinesearch(args...; kwargs...)
-    return ManifoldDefaultsFactory(WolfePowellLinesearchStepsize, args...; kwargs...)
+    return ManifoldDefaultsFactory(WolfePowellLinesearchStepsize, args...; requires_point = true, kwargs...)
 end
 
 @doc """

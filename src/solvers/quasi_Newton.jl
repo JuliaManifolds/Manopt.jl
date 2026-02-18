@@ -379,7 +379,7 @@ function quasi_Newton!(
         else
             preconditioner
         end,
-        stepsize = _produce_type(stepsize, M),
+        stepsize = _produce_type(stepsize, M, p),
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
     )
