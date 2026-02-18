@@ -1268,12 +1268,7 @@ function linear_operator!(
     _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_p_norm2, ε, mode)
     get_jacobian!(M, y, o, p, X)
     # Compute C y
-    @show X
-    @show operator_scaling
-    @show y
-    @show (I - operator_scaling * (value_cache * value_cache'))
     y .= sqrt(ρ_prime) .* (I - operator_scaling * (value_cache * value_cache')) * y
-    @show y
     return y
 end
 
