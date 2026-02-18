@@ -376,8 +376,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         d4 = DebugEvery(d1, 4)
         @test repr(d4) == "DebugEvery($(d1), 4, true; activation_offset=1)"
         @test Manopt.status_summary(d4; context = :short) === "[$(Manopt.status_summary(d1; context = :short)), 4]"
-        ded = "a DebugAction wrapping the following DebugAction to only print it every"
-        @test startswith(Manopt.status_summary(d4), ded)
+        de_d = "a DebugAction wrapping the following DebugAction to only print it every"
+        @test startswith(Manopt.status_summary(d4), de_d)
         ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction=LogarithmicInverseRetraction())"
         @test repr(DebugChange()) == ts2
         @test Manopt.status_summary(DebugChange(); context = :short) == "(:Change, \"Last Change: %f\")"
