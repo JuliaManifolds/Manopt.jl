@@ -88,6 +88,7 @@ QuasiNewtonLimitedMemoryDirectionUpdate
 QuasiNewtonCautiousDirectionUpdate
 Manopt.initialize_update!
 QuasiNewtonPreconditioner
+QuasiNewtonLimitedMemoryBoxDirectionUpdate
 ```
 
 ## Hessian update rules

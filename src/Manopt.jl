@@ -13,11 +13,11 @@ import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 import ManifoldsBase: base_manifold, base_point, get_basis
 import ManifoldsBase: project, project!
-import LinearAlgebra: cross
+import LinearAlgebra: cross, LowerTriangular
 using ColorSchemes
 using ColorTypes
 using Colors
-using DataStructures: CircularBuffer, capacity, length, push!, size, isfull
+using DataStructures: CircularBuffer, capacity, length, push!, size, isfull, heapify!, heappop!
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using Glossaries
 using LinearAlgebra:
@@ -139,6 +139,7 @@ using ManifoldsBase:
     set_component!,
     shortest_geodesic,
     shortest_geodesic!,
+    submanifold_component,
     submanifold_components,
     vector_transport_to,
     vector_transport_to!,
@@ -423,7 +424,7 @@ export CondensedKKTVectorField, CondensedKKTVectorFieldJacobian
 export SymmetricLinearSystemObjective
 export ProximalGradientNonsmoothCost, ProximalGradientNonsmoothSubgradient
 
-export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
+export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate, QuasiNewtonLimitedMemoryBoxDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
 export QuasiNewtonPreconditioner
 export QuasiNewtonCautiousDirectionUpdate,
@@ -546,6 +547,7 @@ export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
 export DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
 export ProximalGradientMethodBacktracking
+export HagerZhangLinesearch
 #
 # Stopping Criteria
 export StoppingCriterion, StoppingCriterionSet
@@ -568,6 +570,7 @@ export StopAfter,
     StopWhenGradientChangeLess,
     StopWhenGradientMappingNormLess,
     StopWhenGradientNormLess,
+    StopWhenProjectedNegativeGradientNormLess,
     StopWhenFirstOrderProgress,
     StopWhenIterateNaN,
     StopWhenKKTResidualLess,
@@ -579,6 +582,7 @@ export StopAfter,
     StopWhenPopulationDiverges,
     StopWhenPopulationStronglyConcentrated,
     StopWhenProjectedGradientStationary,
+    StopWhenRelativeAPosterioriCostChangeLessOrEqual,
     StopWhenRelativeResidualLess,
     StopWhenRepeated,
     StopWhenSmallerOrEqual,
