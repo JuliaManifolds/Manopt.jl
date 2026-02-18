@@ -1,6 +1,6 @@
 name = "Manopt"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
-version = "0.5.32"
+version = "0.5.33"
 authors = ["Ronny Bergmann <manopt@ronnybergmann.net>"]
 
 [workspace]
@@ -54,7 +54,7 @@ LineSearches = "7.2.0"
 LinearAlgebra = "1.10"
 ManifoldDiff = "0.3.8, 0.4"
 Manifolds = "0.11.2"
-ManifoldsBase = "2.2.0"
+ManifoldsBase = "2.3.1"
 Markdown = "1.10"
 Plots = "1.30"
 Preferences = "1.4"

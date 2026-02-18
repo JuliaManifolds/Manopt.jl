@@ -284,7 +284,7 @@ function vectorbundle_newton!(
         X = X,
         retraction_method = retraction_method,
         stopping_criterion = stopping_criterion,
-        stepsize = _produce_type(stepsize, M)
+        stepsize = _produce_type(stepsize, M, p)
     )
     dvbs = decorate_state!(vbs; kwargs...)
     solve!(vbp, dvbs)
