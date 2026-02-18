@@ -171,7 +171,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test Manopt.get_message(dss) == ""
         # DebugEvery summary
         de = DebugEvery(DebugGroup([DebugDivider("|"), DebugIteration()]), 10)
-        @test Manopt.status_summary(de) == "[\"|\", (:Iteration, \"# %-6d\"), 10]"
+        @test Manopt.status_summary(de; context = :short) == "[\"|\", (:Iteration, \"# %-6d\"), 10]"
         # DebugGradientChange
         dgc = DebugGradientChange()
         dgc_s = "DebugGradientChange(; format=\"Last Change: %f\", vector_transport_method=ParallelTransport())"
