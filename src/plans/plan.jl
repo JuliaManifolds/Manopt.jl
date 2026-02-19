@@ -142,6 +142,8 @@ include("vectorial_plan.jl")
 # Linear systems
 include("conjugate_residual_plan.jl")
 include("linear_surrogate_plan.jl")
+# Robutsifiers
+include("robustifiers.jl")
 
 # Generic plans II: based on subsolvers
 include("subsolver_plan.jl")

@@ -311,7 +311,7 @@ export AbstractVectorFunction,
 export AbstractRobustifierFunction, SoftL1Robustifier, AbstractRobustifierFunction,
     CauchyRobustifier, TolerantRobustifier, TukeyRobustifier, ComposedRobustifierFunction,
     ArctanRobustifier, ScaledRobustifierFunction, RobustifierFunction, IdentityRobustifier,
-    HuberRobustifier
+    HuberRobustifier, ComponentwiseRobustifierFunction
 #
 # Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
