@@ -30,6 +30,8 @@ These three can also be passed as a [`AbstractVectorGradientFunction`](@ref) `vf
 
 * `robustifier` the robustifier function(s) to use, by default the [`IdentityRobustifier`](@ref) (for each component),
     which corresponds to the classical nonlinear least squares problem.
+    For a single [`AbstractVectorGradientFuntion`](@ref) `vf` this is always treated/wrapped into a [`ComponentwiseRobustifierFunction`](@ref).
+    To actually have one robustifier on the whole norm (squared) of `vf` use the third signature and provide `[vf,]` and  `[robustifier,]` there.
 
 # Keyword arguments
 
@@ -74,7 +76,8 @@ struct NonlinearLeastSquaresObjective{
             f::F,
             robustifier::R = IdentityRobustifier(),
         ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction}
-        return new{E, Vector{F}, Vector{R}}([f], [robustifier])
+        cr = ComponentwiseRobustifierFunction(robustifier)
+        return new{E, Vector{F}, Vector{typeof(cr)}}([f], [cr])
     end
 end
 
@@ -136,7 +139,6 @@ and ``f_{i,j}(p)`` its `j`-th component function.
 * `value_cache=nothing` : if provided, this vector is used to store the residuals ``F(p)``
   internally to avoid recomputations.
 """
-
 @doc "$(_doc_get_gradient_nlso)"
 function get_gradient(
         M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p

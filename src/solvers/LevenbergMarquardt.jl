@@ -102,7 +102,8 @@ function LevenbergMarquardt(
         robustifier = IdentityRobustifier(),
         kwargs...,
     )
-    nlso = NonlinearLeastSquaresObjective(vgf, robustifier)
+    # For a single vector gradient function, we always treat robustification componentwise
+    nlso = NonlinearLeastSquaresObjective(vgf, ComponentwiseRobustifierFunction(robustifier))
     return LevenbergMarquardt(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt(
