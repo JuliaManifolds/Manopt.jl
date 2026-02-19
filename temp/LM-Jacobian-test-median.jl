@@ -63,7 +63,7 @@ q1 = LevenbergMarquardt(
     M, Fs, p0;
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
     robustifier = hrs,
-    debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop, 25],
+    debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop, 5],
 )
 @info "Cost of median (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q1)), difference (of q1 - qc): $(cost(M, q1) - cost(M, qc))"
 
@@ -71,7 +71,7 @@ q2 = LevenbergMarquardt(
     M, Fs, p0;
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
     robustifier = hrs,
-    debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 25],
+    debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
     sub_state = CoordinatesNormalSystemState(M),
 )
 @info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q2): $(cost(M, q2)), difference (of q2 - qc): $(cost(M, q2) - cost(M, qc))"
@@ -80,8 +80,7 @@ q3 = LevenbergMarquardt(
     M, f, p0;
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
     robustifier = hr,
-    debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 25],
-    # Works a bit better in coordinates for now, i.e. when uncommenting the next line.
+    debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
     # sub_state = CoordinatesNormalSystemState(M),
 )
 @info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q3): $(cost(M, q3)), difference (of q3 - qc): $(cost(M, q3) - cost(M, qc))"
@@ -106,3 +105,14 @@ q2b = copy(M, p0)
 ) |> repr |> println
 
 @info "Distance from alloc q2 to in place q2b (from benchmark) $(distance(M, q2, q2b))"
+
+q3b = copy(M, p0)
+(
+    @b LevenbergMarquardt!(
+        M, f, q3b;
+        β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
+        robustifier = hr,
+    )
+) |> repr |> println
+
+@info "Distance from alloc q3 to in place q3b (from benchmark) $(distance(M, q3, q3b))"

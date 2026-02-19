@@ -111,12 +111,21 @@ function get_cost(
     )
     v = 0.0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        vi = sum(abs2, get_value(M, o, p))
-        (a, _, _) = get_robustifier_values(r, vi)
-        v += a
+        v += _get_cost(M, o, r, p)
     end
     v /= 2
     return v
+end
+function _get_cost(M, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
+    vi = sum(abs2, get_value(M, vgf, p))
+    (a, _, _) = get_robustifier_values(r, vi)
+    return a
+end
+function _get_cost(M, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p)
+    v = abs2.(get_value(M, vgf, p))
+    # componentwise robustify
+    (a, _, _) = get_robustifier_values(cr, v)
+    return sum(a)
 end
 #
 
