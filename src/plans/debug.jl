@@ -38,15 +38,13 @@ construct debug decorated options, where `dD` can be
 * a `Dict{Symbol,DebugAction}`.
 * an Array of Symbols, String and an Int for the [`DebugFactory`](@ref)
 """
-mutable struct DebugSolverState{S <: AbstractManoptSolverState, TED} <: AbstractManoptSolverState
+mutable struct DebugSolverState{S <: AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
     debugDictionary::Dict{Symbol, <:DebugAction}
-    empty_divider::TED
     function DebugSolverState{S}(
             st::S, dA::Dict{Symbol, <:DebugAction}
         ) where {S <: AbstractManoptSolverState}
-        empty_divider = DebugDivider("")
-        return new{S,typeof(empty_divider)}(st, dA, empty_divider)
+        return new(st, dA)
     end
 end
 function DebugSolverState(st::S, dD::D) where {S <: AbstractManoptSolverState, D <: DebugAction}

@@ -55,33 +55,29 @@ struct NonlinearLeastSquaresObjective{
         E <: AbstractEvaluationType,
         VF <: AbstractVectorGradientFunction{E},
         RF <: AbstractRobustifierFunction,
-        TVC <: AbstractVector,
     } <: AbstractManifoldFirstOrderObjective{E, Vector{VF}}
     objective::Vector{VF}
     robustifier::Vector{RF}
-    value_cache::TVC
     # block components case constructor
     function NonlinearLeastSquaresObjective(
             fs::Vector{VF},
             robustifiers::Vector{RV} = fill(IdentityRobustifier(), length(fs)),
-            value_cache::TVC = zeros(sum(length(f) for f in fs)),
-        ) where {E <: AbstractEvaluationType, VF <: AbstractVectorGradientFunction{E}, RV <: AbstractRobustifierFunction, TVC <: AbstractVector}
+        ) where {E <: AbstractEvaluationType, VF <: AbstractVectorGradientFunction{E}, RV <: AbstractRobustifierFunction}
         # we need to check that the lengths match
         (length(fs) != length(robustifiers)) && throw(
             ArgumentError(
                 "Number of functions ($(length(fs))) does not match number of robustifiers ($(length(robustifiers)))",
             ),
         )
-        return new{E, VF, RV, TVC}(fs, robustifiers, value_cache)
+        return new{E, VF, RV}(fs, robustifiers)
     end
     # single component case constructor
     function NonlinearLeastSquaresObjective(
             f::F,
             robustifier::R = IdentityRobustifier(),
-            value_cache::TVC = zeros(length(f)),
-        ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction, TVC <: AbstractVector}
+        ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction}
         cr = ComponentwiseRobustifierFunction(robustifier)
-        return new{E, F, typeof(cr), TVC}([f], [cr], value_cache)
+        return new{E, F, typeof(cr)}([f], [cr])
     end
 end
 
@@ -114,30 +110,19 @@ function get_cost(
         kwargs...,
     )
     v = 0.0
-    start = 0
-    get_residuals!(M, nlso.value_cache, nlso, p)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        len = length(o)
-        value_cache = view(nlso.value_cache, (start + 1):(start + len))
-        v += _get_cost(M, o, r, p; value_cache = value_cache)
-        start += len
+        v += _get_cost(M, o, r, p)
     end
     v /= 2
     return v
 end
-function _get_cost(
-        M, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        value_cache = get_value(M, vgf, p)
-    )
-    vi = sum(abs2, value_cache)
+function _get_cost(M, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
+    vi = sum(abs2, get_value(M, vgf, p))
     (a, _, _) = get_robustifier_values(r, vi)
     return a
 end
-function _get_cost(
-        M, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
-        value_cache = get_value(M, vgf, p)
-    )
-    v = abs2.(value_cache)
+function _get_cost(M, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p)
+    v = abs2.(get_value(M, vgf, p))
     # componentwise robustify
     (a, _, _) = get_robustifier_values(cr, v)
     return sum(a)
@@ -443,18 +428,13 @@ is the adjoint Jacobian.
     LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default )
 
 """
-mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R}} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
+mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
     objective::TO
     penalty::R
     ε::R
     mode::Symbol
-    value_cache::TVC
-    function LevenbergMarquardtLinearSurrogateObjective(
-            objective::NonlinearLeastSquaresObjective{E};
-            penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default,
-            residuals::TVC = zeros(sum(length(o) for o in get_objective(objective).objective)),
-        ) where {E, R <: Real, TVC <: AbstractVector}
-        return new{E, R, typeof(objective), TVC}(objective, penalty, ε, mode, residuals)
+    function LevenbergMarquardtLinearSurrogateObjective(objective::NonlinearLeastSquaresObjective{E}; penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default) where {E, R <: Real}
+        return new{E, R, typeof(objective)}(objective, penalty, ε, mode)
     end
 end
 
@@ -759,14 +739,8 @@ function linear_normal_operator!(
     # For every block
     zero_vector!(M, Y, p)
     Z = copy(M, p, Y)
-    Y_cache = zero_vector(M, p)
-    get_residuals!(M, lmsco.value_cache, nlso, p)
-    start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        len = length(o)
-        value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        linear_normal_operator!(M, Z, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache)
-        start += len
+        linear_normal_operator!(M, Z, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode)
         Y .+= Z
     end
     # Finally add the damping term
@@ -776,7 +750,7 @@ end
 # for a single block – the actual formula - but never with penalty
 function linear_normal_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = zero_vector(M, p)
+        value_cache = get_value(M, o, p), ε::Real, mode::Symbol
     )
     a = value_cache # evaluate residuals F(p)
     F_sq = sum(abs2, a)
@@ -784,7 +758,7 @@ function linear_normal_operator!(
     _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     b = zero(a)
-    get_jacobian!(M, b, o, p, X; Y_cache = Y_cache)
+    get_jacobian!(M, b, o, p, X)
     # Compute C^TCb = C^2 b (inplace of a)
 
     # The code below is mathematically equivalent to the following, but avoids allocating
@@ -797,7 +771,7 @@ function linear_normal_operator!(
     @. b = ρ_prime * (b + coef * a)
 
     # Now apply the adjoint
-    get_adjoint_jacobian!(M, Y, o, p, b; Y_cache = Y_cache)
+    get_adjoint_jacobian!(M, Y, o, p, b)
     # penalty is added once after summing up all blocks, so we do not add it here
     return Y
 end
@@ -955,14 +929,9 @@ function linear_operator!(
     # Init to zero
     fill!(y, 0)
     start = 0
-    get_residuals!(M, lmsco.value_cache, nlso, p)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
-        value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        linear_operator!(
-            M, view(y, (start + 1):(start + len)), o, r, p, X, value_cache;
-            ε = lmsco.ε, mode = lmsco.mode
-        )
+        linear_operator!(M, view(y, (start + 1):(start + len)), o, r, p, X; ε = lmsco.ε, mode = lmsco.mode)
         start += len
     end
     return y
@@ -1043,16 +1012,8 @@ function normal_vector_field!(
     # For every block
     zero_vector!(M, X, p)
     Z = copy(M, p, X)
-    get_residuals!(M, lmsco.value_cache, nlso, p)
-    start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        len = length(o)
-        value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        normal_vector_field!(
-            M, Z, o, r, p;
-            ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache
-        )
-        start += len
+        normal_vector_field!(M, Z, o, r, p; ε = lmsco.ε, mode = lmsco.mode)
         X .+= Z
     end
     return X
