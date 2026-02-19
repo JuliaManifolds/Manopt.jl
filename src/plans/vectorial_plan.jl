@@ -764,13 +764,13 @@ function get_jacobian!(
 end
 # (b) vector of gradient functions
 function get_jacobian!(
-        M::AbstractManifold, a, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:ComponentVectorialType}, p, X,
+        M::AbstractManifold, a, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:ComponentVectorialType}, p, X;
+        Y_cache = zero_vector(M, p),
     ) where {FT}
     n = vgf.range_dimension
-    Y = zero_vector(M, p)
     for i in 1:n
-        vgf.jacobian!![i](M, Y, p)
-        a[i] = inner(M, p, Y, X)
+        vgf.jacobian!![i](M, Y_cache, p)
+        a[i] = inner(M, p, Y_cache, X)
     end
     return a
 end
@@ -976,14 +976,14 @@ function get_adjoint_jacobian!(
 end
 # (b) vector of gradient functions
 function get_adjoint_jacobian!(
-        M::AbstractManifold, X, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:ComponentVectorialType}, p, a::AbstractVector
+        M::AbstractManifold, X, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:ComponentVectorialType}, p, a::AbstractVector;
+        Y_cache = zero_vector(M, p)
     ) where {FT}
     n = vgf.range_dimension
-    Y = zero_vector(M, p)
     zero_vector!(M, X, p)
     for i in 1:n
-        vgf.jacobian!![i](M, Y, p)
-        X .+= a[i] .* Y
+        vgf.jacobian!![i](M, Y_cache, p)
+        X .+= a[i] .* Y_cache
     end
     return X
 end

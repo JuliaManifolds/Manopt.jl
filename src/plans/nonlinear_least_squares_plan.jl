@@ -759,12 +759,13 @@ function linear_normal_operator!(
     # For every block
     zero_vector!(M, Y, p)
     Z = copy(M, p, Y)
+    Y_cache = zero_vector(M, p)
     get_residuals!(M, lmsco.value_cache, nlso, p)
     start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        linear_normal_operator!(M, Z, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache)
+        linear_normal_operator!(M, Z, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache)
         start += len
         Y .+= Z
     end
@@ -775,7 +776,7 @@ end
 # for a single block – the actual formula - but never with penalty
 function linear_normal_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol
+        value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = zero_vector(M, p)
     )
     a = value_cache # evaluate residuals F(p)
     F_sq = sum(abs2, a)
@@ -783,7 +784,7 @@ function linear_normal_operator!(
     _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     b = zero(a)
-    get_jacobian!(M, b, o, p, X)
+    get_jacobian!(M, b, o, p, X; Y_cache = Y_cache)
     # Compute C^TCb = C^2 b (inplace of a)
 
     # The code below is mathematically equivalent to the following, but avoids allocating
@@ -796,7 +797,7 @@ function linear_normal_operator!(
     @. b = ρ_prime * (b + coef * a)
 
     # Now apply the adjoint
-    get_adjoint_jacobian!(M, Y, o, p, b)
+    get_adjoint_jacobian!(M, Y, o, p, b; Y_cache = Y_cache)
     # penalty is added once after summing up all blocks, so we do not add it here
     return Y
 end
