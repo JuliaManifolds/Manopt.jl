@@ -331,5 +331,16 @@ end
         Manopt.linear_normal_operator!(M, Y, lmso, p0, X)
 
         Manopt.vector_field!(M, Y, lmso, p0)
+        initial_residuals = similar(X, sum(length(o) for o in get_objective(nlso).objective))
+
+        sub_objective = Manopt.SymmetricLinearSystem(
+            Manopt.LevenbergMarquardtLinearSurrogateObjective(nlso; residuals = copy(initial_residuals))
+        )
+        sub_problem = DefaultManoptProblem(TangentSpace(M, p0), sub_objective)
+
+        lms = LevenbergMarquardtState(M, initial_residuals; sub_problem = sub_problem)
+
+        Manopt.set_parameter!(lms.sub_problem, :Objective, :Penalty, 1.0)
+
     end
 end

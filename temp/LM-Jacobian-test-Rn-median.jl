@@ -96,4 +96,4 @@ end
 
 using Profile, ProfileView
 
-ProfileView.@profview run_n_times(run_lm_benchmark_1, 500)
+ProfileView.@profview run_n_times(run_lm_benchmark_1, 5000)

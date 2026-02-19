@@ -10,7 +10,7 @@ It might also be more verbose in explaining, or hide internal information.
 status_summary(e) = "$(e)"
 
 """
-    set_parameter!(f, element::Symbol , args...)
+    set_parameter!(f, element::Symbol, args...)
 
 For any `f` and a `Symbol` `e`, dispatch on its value so by default, to
 set some `args...` in `f` or one of uts sub elements.

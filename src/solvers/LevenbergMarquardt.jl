@@ -249,10 +249,9 @@ function step_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     FpSq = get_cost(M, nlso, lms.p)
-    # TODO: figure out why set_parameter! doesn't work when called with `Val` here
-    set_parameter!(lms.sub_problem, :Objective, :Penalty, lms.damping_term * FpSq)
+    set_parameter!(lms.sub_problem, Val(:Objective), Val(:Penalty), lms.damping_term * FpSq)
     # update base point of the tangent space the subproblem works on
-    set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
+    set_parameter!(lms.sub_problem, Val(:Manifold), Val(:Basepoint), lms.p)
     # Subsolver result
     lms.X .= -get_solver_result(lms.sub_problem, solve!(lms.sub_problem, lms.sub_state))
     if norm(M, lms.p, lms.X) > max_stepsize(M, lms.p)
