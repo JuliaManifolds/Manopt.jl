@@ -193,7 +193,7 @@ function LevenbergMarquardt!(
         ε::Real = 1.0e-6,
         α_mode::Symbol = :Default,
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
-        sub_objective = SymmetricLinearSystem(LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = damping_term_min, ε = ε, mode = α_mode)),
+        sub_objective = SymmetricLinearSystem(LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = damping_term_min, ε = ε, mode = α_mode, residuals = initial_residual_values)),
         # to keep this non-breaking for now, maybe:
         # TODO change default on next breaking release to no longer accept `linear_subsolver` here
         sub_problem = isnothing(linear_subsolver!) ? DefaultManoptProblem(TangentSpace(M, p), sub_objective) : linear_subsolver!,
@@ -245,9 +245,9 @@ function step_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     FpSq = get_cost(M, nlso, lms.p)
-    set_parameter!(lms.sub_problem, :Objective, :Penalty, lms.damping_term * FpSq)
+    set_parameter!(lms.sub_problem, Val(:Objective), Val(:Penalty), lms.damping_term * FpSq)
     # update base point of the tangent space the subproblem works on
-    set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
+    set_parameter!(lms.sub_problem, Val(:Manifold), Val(:Basepoint), lms.p)
     # Subsolver result
     lms.X .= -get_solver_result(lms.sub_problem, solve!(lms.sub_problem, lms.sub_state))
     if norm(M, lms.p, lms.X) > max_stepsize(M, lms.p)

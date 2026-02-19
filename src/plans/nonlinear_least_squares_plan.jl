@@ -55,29 +55,33 @@ struct NonlinearLeastSquaresObjective{
         E <: AbstractEvaluationType,
         VF <: AbstractVectorGradientFunction{E},
         RF <: AbstractRobustifierFunction,
+        TVC <: AbstractVector,
     } <: AbstractManifoldFirstOrderObjective{E, Vector{VF}}
     objective::Vector{VF}
     robustifier::Vector{RF}
+    value_cache::TVC
     # block components case constructor
     function NonlinearLeastSquaresObjective(
             fs::Vector{VF},
             robustifiers::Vector{RV} = fill(IdentityRobustifier(), length(fs)),
-        ) where {E <: AbstractEvaluationType, VF <: AbstractVectorGradientFunction{E}, RV <: AbstractRobustifierFunction}
+            value_cache::TVC = zeros(sum(length(f) for f in fs)),
+        ) where {E <: AbstractEvaluationType, VF <: AbstractVectorGradientFunction{E}, RV <: AbstractRobustifierFunction, TVC <: AbstractVector}
         # we need to check that the lengths match
         (length(fs) != length(robustifiers)) && throw(
             ArgumentError(
                 "Number of functions ($(length(fs))) does not match number of robustifiers ($(length(robustifiers)))",
             ),
         )
-        return new{E, VF, RV}(fs, robustifiers)
+        return new{E, VF, RV, TVC}(fs, robustifiers, value_cache)
     end
     # single component case constructor
     function NonlinearLeastSquaresObjective(
             f::F,
             robustifier::R = IdentityRobustifier(),
-        ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction}
+            value_cache::TVC = zeros(length(f)),
+        ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction, TVC <: AbstractVector}
         cr = ComponentwiseRobustifierFunction(robustifier)
-        return new{E, F, typeof(cr)}([f], [cr])
+        return new{E, F, typeof(cr), TVC}([f], [cr], value_cache)
     end
 end
 
@@ -110,19 +114,30 @@ function get_cost(
         kwargs...,
     )
     v = 0.0
+    start = 0
+    get_residuals!(M, nlso.value_cache, nlso, p)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        v += _get_cost(M, o, r, p)
+        len = length(o)
+        value_cache = view(nlso.value_cache, (start + 1):(start + len))
+        v += _get_cost(M, o, r, p; value_cache = value_cache)
+        start += len
     end
     v /= 2
     return v
 end
-function _get_cost(M, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
-    vi = sum(abs2, get_value(M, vgf, p))
+function _get_cost(
+        M, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
+        value_cache = get_value(M, vgf, p)
+    )
+    vi = sum(abs2, value_cache)
     (a, _, _) = get_robustifier_values(r, vi)
     return a
 end
-function _get_cost(M, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p)
-    v = abs2.(get_value(M, vgf, p))
+function _get_cost(
+        M, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
+        value_cache = get_value(M, vgf, p)
+    )
+    v = abs2.(value_cache)
     # componentwise robustify
     (a, _, _) = get_robustifier_values(cr, v)
     return sum(a)
@@ -428,13 +443,18 @@ is the adjoint Jacobian.
     LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default )
 
 """
-mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
+mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R}} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
     objective::TO
     penalty::R
     ε::R
     mode::Symbol
-    function LevenbergMarquardtLinearSurrogateObjective(objective::NonlinearLeastSquaresObjective{E}; penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default) where {E, R <: Real}
-        return new{E, R, typeof(objective)}(objective, penalty, ε, mode)
+    value_cache::TVC
+    function LevenbergMarquardtLinearSurrogateObjective(
+            objective::NonlinearLeastSquaresObjective{E};
+            penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default,
+            residuals::TVC = zeros(sum(length(o) for o in get_objective(objective).objective)),
+        ) where {E, R <: Real, TVC <: AbstractVector}
+        return new{E, R, typeof(objective), TVC}(objective, penalty, ε, mode, residuals)
     end
 end
 
@@ -739,8 +759,13 @@ function linear_normal_operator!(
     # For every block
     zero_vector!(M, Y, p)
     Z = copy(M, p, Y)
+    get_residuals!(M, lmsco.value_cache, nlso, p)
+    start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        linear_normal_operator!(M, Z, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode)
+        len = length(o)
+        value_cache = view(lmsco.value_cache, (start + 1):(start + len))
+        linear_normal_operator!(M, Z, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache)
+        start += len
         Y .+= Z
     end
     # Finally add the damping term
@@ -929,9 +954,14 @@ function linear_operator!(
     # Init to zero
     fill!(y, 0)
     start = 0
+    get_residuals!(M, lmsco.value_cache, nlso, p)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
-        linear_operator!(M, view(y, (start + 1):(start + len)), o, r, p, X; ε = lmsco.ε, mode = lmsco.mode)
+        value_cache = view(lmsco.value_cache, (start + 1):(start + len))
+        linear_operator!(
+            M, view(y, (start + 1):(start + len)), o, r, p, X, value_cache;
+            ε = lmsco.ε, mode = lmsco.mode
+        )
         start += len
     end
     return y
@@ -1012,8 +1042,16 @@ function normal_vector_field!(
     # For every block
     zero_vector!(M, X, p)
     Z = copy(M, p, X)
+    get_residuals!(M, lmsco.value_cache, nlso, p)
+    start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        normal_vector_field!(M, Z, o, r, p; ε = lmsco.ε, mode = lmsco.mode)
+        len = length(o)
+        value_cache = view(lmsco.value_cache, (start + 1):(start + len))
+        normal_vector_field!(
+            M, Z, o, r, p;
+            ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache
+        )
+        start += len
         X .+= Z
     end
     return X
