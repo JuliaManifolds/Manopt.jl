@@ -53,16 +53,16 @@ As well as for the first variant of having a single block
 """
 struct NonlinearLeastSquaresObjective{
         E <: AbstractEvaluationType,
-        VF <: Vector{<:AbstractVectorGradientFunction{E}},
-        RF <: Vector{<:AbstractRobustifierFunction},
-    } <: AbstractManifoldFirstOrderObjective{E, VF}
-    objective::VF
-    robustifier::RF
+        VF <: AbstractVectorGradientFunction{E},
+        RF <: AbstractRobustifierFunction,
+    } <: AbstractManifoldFirstOrderObjective{E, Vector{VF}}
+    objective::Vector{VF}
+    robustifier::Vector{RF}
     # block components case constructor
     function NonlinearLeastSquaresObjective(
-            fs::VF,
-            robustifiers::RV = fill(IdentityRobustifier(), length(fs)),
-        ) where {E <: AbstractEvaluationType, VF <: Vector{<:AbstractVectorGradientFunction{E}}, RV <: Vector{<:AbstractRobustifierFunction}}
+            fs::Vector{VF},
+            robustifiers::Vector{RV} = fill(IdentityRobustifier(), length(fs)),
+        ) where {E <: AbstractEvaluationType, VF <: AbstractVectorGradientFunction{E}, RV <: AbstractRobustifierFunction}
         # we need to check that the lengths match
         (length(fs) != length(robustifiers)) && throw(
             ArgumentError(
@@ -77,7 +77,7 @@ struct NonlinearLeastSquaresObjective{
             robustifier::R = IdentityRobustifier(),
         ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction}
         cr = ComponentwiseRobustifierFunction(robustifier)
-        return new{E, Vector{F}, Vector{typeof(cr)}}([f], [cr])
+        return new{E, F, typeof(cr)}([f], [cr])
     end
 end
 
@@ -428,18 +428,18 @@ is the adjoint Jacobian.
     LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default )
 
 """
-mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType, R} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
-    objective::NonlinearLeastSquaresObjective{E}
+mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
+    objective::TO
     penalty::R
     ε::R
     mode::Symbol
     function LevenbergMarquardtLinearSurrogateObjective(objective::NonlinearLeastSquaresObjective{E}; penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default) where {E, R <: Real}
-        return new{E, R}(objective, penalty, ε, mode)
+        return new{E, R, typeof(objective)}(objective, penalty, ε, mode)
     end
 end
 
 function show(io::IO, o::LevenbergMarquardtLinearSurrogateObjective{E}) where {E}
-    return print(io, "LevenbergMarquardtLinearSurrogateObjective{$E}($(o.objective); penalty=$(o.penalty), ε=$(o.ε), mode=$(o.mode))")
+    return print(io, "LevenbergMarquardtLinearSurrogateObjective{$E}($(o.objective); penalty=$(o.penalty), ε=$(o.ε), mode=:$(o.mode))")
 end
 
 """
@@ -726,14 +726,14 @@ See also [`normal_vector_field`](@ref) for evaluating the corresponding vector f
 """
 function linear_normal_operator(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        penalty = lmsco.penalty,
+        penalty::Real = lmsco.penalty,
     )
     Y = zero_vector(M, p)
     return linear_normal_operator!(M, Y, lmsco, p, X; penalty = penalty)
 end
 function linear_normal_operator!(
         M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        penalty = lmsco.penalty,
+        penalty::Real = lmsco.penalty,
     )
     nlso = get_objective(lmsco)
     # For every block
@@ -744,7 +744,7 @@ function linear_normal_operator!(
         Y .+= Z
     end
     # Finally add the damping term
-    (penalty != 0) && (Y .+= penalty * X)
+    (penalty != 0) && (Y .+= penalty .* X)
     return Y
 end
 # for a single block – the actual formula - but never with penalty
@@ -760,7 +760,16 @@ function linear_normal_operator!(
     b = zero(a)
     get_jacobian!(M, b, o, p, X)
     # Compute C^TCb = C^2 b (inplace of a)
-    b .= ρ_prime .* (I - operator_scaling * (a * a'))^2 * b
+
+    # The code below is mathematically equivalent to the following, but avoids allocating
+    # the outer product a * a' and the matrix-vector product (a * a') * b
+    # b .= ρ_prime .* (I - operator_scaling * (a * a'))^2 * b
+    t = dot(a, b)
+    aa = dot(a, a)
+    coef = operator_scaling * t * (operator_scaling * aa - 2)
+
+    @. b = ρ_prime * (b + coef * a)
+
     # Now apply the adjoint
     get_adjoint_jacobian!(M, Y, o, p, b)
     # penalty is added once after summing up all blocks, so we do not add it here
@@ -937,7 +946,9 @@ function linear_operator!(
     _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
     get_jacobian!(M, y, o, p, X)
     # Compute C y
-    y .= sqrt(ρ_prime) .* (I - operator_scaling * (value_cache * value_cache')) * y
+    α = sqrt(ρ_prime)
+    t = dot(value_cache, y)
+    @. y = α * (y - operator_scaling * t * value_cache)
     return y
 end
 # Componenwise: Decouple
@@ -1018,7 +1029,8 @@ function normal_vector_field!(
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
     residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
     # Compute y = ( ρ'(p) / (1-α)) F(p)
-    y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
+    γ = residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * dot(y, y))
+    @. y = γ * y
     # and apply the adjoint, i.e. compute J_F^*(p)[C^T y]
     get_adjoint_jacobian!(M, X, o, p, y)
     return X

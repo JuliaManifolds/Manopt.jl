@@ -787,7 +787,7 @@ J_F(p)[X] = DF(p)[X] ∈ ℝ^m
 ````
 
 where a basis ``$(_tex(:set, "Y_1,…,Y_n"))`` allows to decompose / provide the tangent vector
-in coordincates ``c`` given by ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "d")) c_iY_i``
+in coordinates ``c`` given by ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "d")) c_iY_i``
 and the computation simplifies to a matrix multiplication.
 
 This can be computed in-place of `a`.
@@ -1396,7 +1396,12 @@ end
 function get_value(
         M::AbstractManifold, vgf::AbstractVectorFunction{E, <:ComponentVectorialType}, p, i = :
     ) where {E <: AbstractEvaluationType}
-    return [f(M, p) for f in vgf.value!![i]]
+    if i === Colon()
+        return [f(M, p) for f in vgf.value!!]
+    else
+        return [f(M, p) for f in vgf.value!![i]]
+    end
+
 end
 function get_value(
         M::AbstractManifold,
@@ -1433,7 +1438,14 @@ end
 function get_value!(
         M::AbstractManifold, V, vgf::AbstractVectorFunction{E, <:ComponentVectorialType}, p, i = :
     ) where {E <: AbstractEvaluationType}
-    V .= [f(M, p) for f in vgf.value!![i]]
+    if i === Colon()
+        for i in eachindex(vgf.value!!, V)
+            V[i] = vgf.value!![i](M, p)
+        end
+    else
+        V .= [f(M, p) for f in vgf.value!![i]]
+    end
+
     return V
 end
 
