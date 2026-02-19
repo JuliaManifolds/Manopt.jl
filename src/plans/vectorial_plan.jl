@@ -721,7 +721,9 @@ end
 function get_jacobian!(
         M::AbstractManifold, a, vgf::VGF, p, X
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:FunctionVectorialType}}
+    n = vgf.range_dimension
     mP = PowerManifold(M, get_range(vgf.jacobian_type), n)
+    # TODO: make sure the power representation is consistent between mP and vgf.jacobian!!
     gradients = vgf.jacobian!!(M, p)
     for i in 1:n
         a[i] = inner(M, p, gradients[mP, i], X)
