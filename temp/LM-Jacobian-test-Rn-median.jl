@@ -13,10 +13,12 @@ Fi = [ (M, p) -> distance(M, p, q) for q in pts]
 grad_Fi = [ (M, p) -> distance(M, p, q) == 0 ? zero_vector(M, p) : (- log(M, p, q) / distance(M, p, q)) for q in pts]
 
 # Block s normal ones
-Fs = [VectorGradientFunction(
-    [Fi[i]], [grad_Fi[i]], 1;
-    evaluation = AllocatingEvaluation(), function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType()
-) for i in eachindex(pts)]
+Fs = [
+    VectorGradientFunction(
+            [Fi[i]], [grad_Fi[i]], 1;
+            evaluation = AllocatingEvaluation(), function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType()
+        ) for i in eachindex(pts)
+]
 
 
 qc = median(M, pts)
@@ -25,7 +27,7 @@ cost(M, p) = sum(distance(M, p, q) for q in pts)
 # Default Residual CG on this approach – works but probably allocates a bit too much (matrices coordinates/vector...)
 q1 = LevenbergMarquardt(
     M, Fs, p0;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1,# α_mode = :Strict,
+    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, # α_mode = :Strict,
     robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)),
     debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop, 100],
 )

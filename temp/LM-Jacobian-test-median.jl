@@ -13,8 +13,8 @@ pts = [
     Rxy(-0.05) * Rxz(0.125) * Ryz(-0.25),
     Rxy(0.05) * Rxz(-0.125) * Ryz(0.25),
     #outliers
-    Rxy(0.125)*Rxz(0.25)*Ryz(0.05),
-    Rxy(-0.125)*Rxz(0.25)*Ryz(0.05),
+    Rxy(0.125) * Rxz(0.25) * Ryz(0.05),
+    Rxy(-0.125) * Rxz(0.25) * Ryz(0.05),
 ]
 p0 = copy(M, pts[2])
 
@@ -22,11 +22,13 @@ Fi = [ (M, p) -> distance(M, p, q) for q in pts]
 grad_Fi = [ (M, p) -> distance(M, p, q) == 0 ? zero_vector(M, p) : (- log(M, p, q) / distance(M, p, q)) for q in pts]
 
 # Block s normal ones
-Fs = [VectorGradientFunction(
-    [Fi[i]], [grad_Fi[i]], 1;
-    evaluation = AllocatingEvaluation(), function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType()
-) for i in eachindex(pts)]
-rs = fill((1e-4) ∘ HuberRobustifier(), length(Fs))
+Fs = [
+    VectorGradientFunction(
+            [Fi[i]], [grad_Fi[i]], 1;
+            evaluation = AllocatingEvaluation(), function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType()
+        ) for i in eachindex(pts)
+]
+rs = fill((1.0e-4) ∘ HuberRobustifier(), length(Fs))
 
 #
 #
