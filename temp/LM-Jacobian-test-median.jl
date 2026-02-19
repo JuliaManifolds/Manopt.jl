@@ -81,7 +81,8 @@ q3 = LevenbergMarquardt(
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
     robustifier = hr,
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 25],
-    sub_state = CoordinatesNormalSystemState(M),
+    # Works a bit better in coordinates for now, i.e. when uncommenting the next line.
+    # sub_state = CoordinatesNormalSystemState(M),
 )
 @info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q3): $(cost(M, q3)), difference (of q3 - qc): $(cost(M, q3) - cost(M, qc))"
 

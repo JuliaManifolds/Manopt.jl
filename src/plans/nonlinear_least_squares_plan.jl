@@ -751,9 +751,9 @@ function linear_normal_operator!(
     b = zero(a)
     get_jacobian!(M, b, o, p, X)
     # Compute C^TCb = C^2 b (inplace of a)
-    a .= ρ_prime .* (I - operator_scaling * (a * a'))^2 * b
+    b .= ρ_prime .* (I - operator_scaling * (a * a'))^2 * b
     # Now apply the adjoint
-    get_adjoint_jacobian!(M, Y, o, p, a)
+    get_adjoint_jacobian!(M, Y, o, p, b)
     # penalty is added once after summing up all blocks, so we do not add it here
     return Y
 end
@@ -774,7 +774,7 @@ function linear_normal_operator!(
         b[i] = ρ_prime * (1 - operator_scaling * ai_sq)^2 * b[i]
     end
     # Now apply the adjoint
-    get_adjoint_jacobian!(M, Y, o, p, value_cache)
+    get_adjoint_jacobian!(M, Y, o, p, b)
     return Y
 end
 
@@ -937,18 +937,16 @@ function linear_operator!(
         value_cache = get_value(M, o, p); ε::Real, mode::Symbol,
     )
     a = value_cache
-    b = zero(a)
     r = cr.robustifier
+    get_jacobian!(M, y, o, p, X)
     for (i, ai) in enumerate(value_cache)
         ai_sq = abs(ai)^2
         (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
         _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
-        # get the “Jacobian” of the ith component, i.e.
-        b[i] = sqrt(ρ_prime) * (1 - operator_scaling * ai_sq)
+        # get the “Jacobian” of the ith component, i.e. y[i]
+        # C is justr a diagonal matrix here
+        y[i] = sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * y[i]
     end
-    get_jacobian!(M, y, o, p, X)
-    # C is justr a diagonal matrix here
-    y .= b .* y
     return y
 end
 
@@ -1021,15 +1019,14 @@ function normal_vector_field!(
         M::AbstractManifold, X, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
     )
-    a = value_cache
-    y = zero(a)
+    y = copy(value_cache)
     r = cr.robustifier
-    for (i, ai) in enumerate(a)
+    for (i, ai) in enumerate(y)
         ai_sq = abs(ai)^2
-        (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r)
+        (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
         residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
         # Compute y = ( ρ'(p) / (1-α)) F(p)
-        y[i] = residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * ai
+        y[i] = residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * y[i]
     end
     # and apply the adjoint, i.e. compute J_F^*(p)[C^T y]
     get_adjoint_jacobian!(M, X, o, p, y)
