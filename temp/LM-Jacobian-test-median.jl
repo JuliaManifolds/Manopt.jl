@@ -74,4 +74,4 @@ q2b = copy(M, p0)
     )
 ) |> repr |> println
 
-@info "Distance from alloc q2 to in place q1b (from benchmark) $(distance(M, q2, q2b))"
+@info "Distance from alloc q2 to in place q2b (from benchmark) $(distance(M, q2, q2b))"
