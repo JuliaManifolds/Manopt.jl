@@ -13,7 +13,7 @@ p0 = [0.0, 0.0, 78.0]
 struct Fi_block{TPI}
     p_i::TPI
 end
-(f::Fi_block)(::AbstractManifold, p) = distance(M, p, f.p_i)
+(f::Fi_block)(M::AbstractManifold, p) = distance(M, p, f.p_i)
 
 struct jacFi_block{TPI}
     p_i::TPI
@@ -93,3 +93,7 @@ function run_n_times(f, n)
     end
     return
 end
+
+using Profile, ProfileView
+
+ProfileView.@profview run_n_times(run_lm_benchmark_1, 500)
