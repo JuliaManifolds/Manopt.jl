@@ -859,7 +859,7 @@ function linear_normal_operator!(
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
     )
     a = value_cache # evaluate residuals F(p)
-    b = zeros(a)
+    b = zero(a)
     r = cr.robustifier
     for (i, ai) in enumerate(a)
         ai_sq = abs(ai)^2
@@ -1083,7 +1083,7 @@ function normal_vector_field!(
     )
     y = copy(value_cache) # evaluate residuals F(p)
     r = cr.robustifier
-    for (i, ai) in enumerate(a)
+    for (i, ai) in enumerate(y)
         ai_sq = abs(ai)^2
         (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
         residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)

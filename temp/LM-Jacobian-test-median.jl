@@ -28,7 +28,28 @@ Fs = [
             evaluation = AllocatingEvaluation(), function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType()
         ) for i in eachindex(pts)
 ]
-rs = fill((1.0e-4) ∘ HuberRobustifier(), length(Fs))
+hr = (1.0e-4) ∘ HuberRobustifier()
+hrs = fill(hr, length(Fs))
+
+F(M, p) = [distance(M, p, q) for q in pts]
+function JF(M, p, B::AbstractBasis = DefaultOrthonormalBasis())
+    d = manifold_dimension(M)
+    n = length(pts)
+    J = zeros(n, d)
+    for (i, q) in enumerate(pts)
+        dpq = distance(M, p, q)
+        if dpq > 0
+            J[i, :] = -1 / dpq .* get_coordinates(M, p, log(M, p, q), B)
+        end
+    end
+    return J
+end
+f = VectorGradientFunction(
+    F, JF, length(pts);
+    evaluation = AllocatingEvaluation(),
+    function_type = FunctionVectorialType(),
+    jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis())
+)
 
 #
 #
@@ -41,27 +62,34 @@ cost(M, p) = sum(distance(M, p, q) for q in pts)
 q1 = LevenbergMarquardt(
     M, Fs, p0;
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
-    robustifier = rs,
+    robustifier = hrs,
     debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop, 25],
 )
-# ... but works
 @info "Cost of median (qc) $(cost(M, qc)), Cost of LM (q1): $(cost(M, q1)), difference (of q1 - qc): $(cost(M, q1) - cost(M, qc))"
 
 q2 = LevenbergMarquardt(
     M, Fs, p0;
     β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
-    robustifier = rs,
+    robustifier = hrs,
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 25],
     sub_state = CoordinatesNormalSystemState(M),
 )
-# ... but works
 @info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q2): $(cost(M, q2)), difference (of q2 - qc): $(cost(M, q2) - cost(M, qc))"
+
+q3 = LevenbergMarquardt(
+    M, f, p0;
+    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
+    robustifier = hr,
+    debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 25],
+    sub_state = CoordinatesNormalSystemState(M),
+)
+@info "Cost of mean (qc) $(cost(M, qc)), Cost of LM (q3): $(cost(M, q3)), difference (of q3 - qc): $(cost(M, q3) - cost(M, qc))"
 
 q1b = copy(M, p0)
 
 (
     @b LevenbergMarquardt!(
-        M, Fs, q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = rs
+        M, Fs, q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = hrs
     )
 ) |> repr |> println
 
@@ -72,7 +100,7 @@ q2b = copy(M, p0)
     @b LevenbergMarquardt!(
         M, Fs, q2b;
         β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
-        robustifier = rs, sub_state = CoordinatesNormalSystemState(M),
+        robustifier = hrs, sub_state = CoordinatesNormalSystemState(M),
     )
 ) |> repr |> println
 
