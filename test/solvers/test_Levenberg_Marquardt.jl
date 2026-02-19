@@ -283,4 +283,53 @@ end
             evaluation = InplaceEvaluation(),
         )
     end
+
+    @testset "WIP test" begin
+        M = Euclidean(3)
+        pts = [
+            [0.0, 0.0, 1.0],
+            [sqrt(0.19), 0.0, 0.9],
+            [-1 / sqrt(2), 1 / sqrt(2), 0.0],
+        ]
+        p0 = [0.0, 0.0, 78.0]
+        # We do a full function approach here
+
+        struct Fib{TPI}
+            p_i::TPI
+        end
+        (f::Fib)(::AbstractManifold, p) = distance(M, p, f.p_i)
+
+        struct jacFi{TPI}
+            p_i::TPI
+        end
+        function (f::jacFi)(M::AbstractManifold, Y, p)
+            if distance(M, p, f.p_i) == 0
+                fill!(Y, 0.0)
+            else
+                copyto!(Y, -log(M, p, f.p_i) / distance(M, p, f.p_i))
+            end
+            return Y
+        end
+
+        Fi = [ Fib(q) for q in pts]
+        grad_Fi = [ jacFi(q) for q in pts]
+
+        # Block s normal ones
+        Fs = [
+            VectorGradientFunction(
+                    [Fi[i]], [grad_Fi[i]], 1;
+                    evaluation = InplaceEvaluation(), function_type = ComponentVectorialType(),
+                    jacobian_type = ComponentVectorialType()
+                ) for i in eachindex(pts)
+        ]
+        robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs))
+        nlso = NonlinearLeastSquaresObjective(Fs, robustifier)
+        lmso = LevenbergMarquardtLinearSurrogateObjective(nlso)
+
+        X = zero_vector(M, p0)
+        Y = similar(X)
+        Manopt.linear_normal_operator!(M, Y, lmso, p0, X)
+
+        Manopt.vector_field!(M, Y, lmso, p0)
+    end
 end
