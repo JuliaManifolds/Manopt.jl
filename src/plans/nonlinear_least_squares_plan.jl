@@ -192,7 +192,7 @@ function _get_gradient!(
         value_cache = get_value(M, vgf, p)
     )
     # get gradients for every component
-    len = length(o)
+    len = length(vgf)
     zero_vector!(M, X, p)
     Y = copy(M, p, X)
     for j in 1:len

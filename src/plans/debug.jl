@@ -1,3 +1,4 @@
+
 @doc """
     DebugAction
 
@@ -38,15 +39,13 @@ construct debug decorated options, where `dD` can be
 * a `Dict{Symbol,DebugAction}`.
 * an Array of Symbols, String and an Int for the [`DebugFactory`](@ref)
 """
-mutable struct DebugSolverState{S <: AbstractManoptSolverState, TED} <: AbstractManoptSolverState
+mutable struct DebugSolverState{S <: AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
     debugDictionary::Dict{Symbol, <:DebugAction}
-    empty_divider::TED
     function DebugSolverState{S}(
             st::S, dA::Dict{Symbol, <:DebugAction}
         ) where {S <: AbstractManoptSolverState}
-        empty_divider = DebugDivider("")
-        return new{S, typeof(empty_divider)}(st, dA, empty_divider)
+        return new{S}(st, dA)
     end
 end
 function DebugSolverState(st::S, dD::D) where {S <: AbstractManoptSolverState, D <: DebugAction}
@@ -395,6 +394,8 @@ function show(io::IO, di::DebugDivider)
     return print(io, "DebugDivider(; divider=\"$(escape_string(di.divider))\", at_init=$(di.at_init))")
 end
 status_summary(di::DebugDivider) = "\"$(escape_string(di.divider))\""
+# A global constant for empty debugs
+_EMPTY_DIVIDER = DebugDivider("")
 
 @doc """
     DebugEntry <: DebugAction
