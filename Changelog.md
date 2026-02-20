@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * A clarification on the use of AI in the [CONTRIBUTING.md](https://manoptjl.org/stable/contributing/) (#573)
 * `_produce_type` now accepts the point `p` as an optional third argument, which can be used to produce objects with specific point type for internal buffers. The addition has been utilized in `DirectionUpdateRule`s and `Stepsize`s to improve GPU and custom floating point type compatibility. (#577)
 * Added another package and paper using `Manopt.jl` to the about page (#576).
+* Added GPU/CUDA test suite (`test/test_cuda_ext.jl`) verifying that solvers (`gradient_descent`, `conjugate_gradient_descent`) work transparently with `CuArray`-backed manifold points. Tests cover `ConstantLength`, `ArmijoLinesearch` stepsizes, Float32/Float64, recording, Sphere, and CPU-vs-GPU equivalence. No solver extension is needed — the `_produce_type` fix from #577 handles GPU allocation natively.
 
 ### Fixed
 
