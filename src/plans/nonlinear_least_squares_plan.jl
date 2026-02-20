@@ -209,6 +209,7 @@ function _get_gradient!(
         value_cache = get_value(M, vgf, p)
     )
     # get gradients for every component
+    # TODO: there is no `o` here
     len = length(o)
     r = cr.robustifier
     zero_vector!(M, X, p)
@@ -833,7 +834,7 @@ end
 # Componentwise: A few things decouple
 function linear_normal_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol
+        value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = nothing,
     )
     b = zero(value_cache)
     get_jacobian!(M, b, o, p, X)
@@ -1108,7 +1109,7 @@ end
 # Componenwise C again reduces to a diagonal
 function normal_vector_field!(
         M::AbstractManifold, X, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
+        value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = nothing,
     )
     y = copy(value_cache)
     r = cr.robustifier
@@ -1167,7 +1168,7 @@ end
 # Compponentwise: decouple, C is a diagonalmatrix
 function normal_vector_field!(
         M::AbstractManifold, c, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, B::AbstractBasis;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
+        value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = nothing,
     )
     y = copy(value_cache) # evaluate residuals F(p)
     r = cr.robustifier
