@@ -1017,7 +1017,7 @@ end
 # Componenwise: Decouple
 function linear_operator!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X,
-        value_cache = get_value(M, o, p); ε::Real, mode::Symbol,
+        value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache = nothing,
     )
     a = value_cache
     r = cr.robustifier
