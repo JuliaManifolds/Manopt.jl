@@ -180,20 +180,47 @@ function get_gradient!(
     Y = copy(M, p, X)
     for (o, r) in zip(nlso.objective, nlso.robustifier) # for every block
         len = length(o)
-        Fi_p = isnothing(value_cache) ? get_value(M, o, p) : view(value_cache, (start + 1):(start + len))
-        # get gradients for every component
-        for j in 1:len
-            get_gradient!(M, Y, o, p, j) # gradient of f_{i,j}
-            Y .+= Fi_p[j] .* Y
-        end
-        # compute robustifier derivative
-        (_, b, _) = get_robustifier_values(r, sum(abs2, Fi_p))
-        X .+= b .* Y
+        Fi = isnothing(value_cache) ? get_value(M, o, p) : view(value_cache, (start + 1):(start + len))
+        _get_gradient!(M, Y, o, r, p; value_cache = Fi)
+        X .+= Y
         start += len
     end
     return X
 end
-
+function _get_gradient!(
+        M, X, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
+        value_cache = get_value(M, vgf, p)
+    )
+    # get gradients for every component
+    len = length(o)
+    zero_vector!(M, X, p)
+    Y = copy(M, p, X)
+    for j in 1:len
+        get_gradient!(M, Y, vgf, p, j) # gradient of f_{i,j}
+        X .+= value_cache[j] .* Y
+    end
+    # compute robustifier derivative
+    (_, b, _) = get_robustifier_values(r, sum(abs2, value_cache))
+    X .*= b
+    return X
+end
+function _get_gradient!(
+        M, X, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
+        value_cache = get_value(M, vgf, p)
+    )
+    # get gradients for every component
+    len = length(o)
+    r = cr.robustifier
+    zero_vector!(M, X, p)
+    Y = copy(M, p, X)
+    for j in 1:len
+        get_gradient!(M, Y, vgf, p, j) # gradient of f_{i,j}
+        (_, b, _) = get_robustifier_values(r, abs(value_cache[j])^2)
+        # compute robustifier derivative
+        X .+= (b * value_cache[j]) .* Y
+    end
+    return X
+end
 
 # --- Residuals
 _doc_get_residuals_nlso = """
