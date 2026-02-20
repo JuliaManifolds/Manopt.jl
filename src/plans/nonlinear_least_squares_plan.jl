@@ -375,7 +375,9 @@ end
 # so the detault implementation is wrong
 # function get_gradient(lms::LevenbergMarquardtState)
 # end
-
+# One thing we can provide is `get_gradient(M, nlso::NonlinearLeastSquaresObjective, p)` instead,
+# _or_ we store the result in lms.X (and move lms.X to either .Y or .direction or so)
+# When and where do we need this?
 function show(io::IO, lms::LevenbergMarquardtState)
     i = get_count(lms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -1030,7 +1032,7 @@ and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and comp
 
 @doc "$(_doc_normal_vector_field)"
 function normal_vector_field(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p; kwargs...
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
     )
     X = zero_vector(M, p)
     return normal_vector_field!(M, X, lmsco, p)
