@@ -209,8 +209,7 @@ function _get_gradient!(
         value_cache = get_value(M, vgf, p)
     )
     # get gradients for every component
-    # TODO: there is no `o` here
-    len = length(o)
+    len = length(vgf)
     r = cr.robustifier
     zero_vector!(M, X, p)
     Y = copy(M, p, X)
