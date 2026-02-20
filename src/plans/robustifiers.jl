@@ -158,7 +158,7 @@ function get_robustifier_values(crf::ComponentwiseRobustifierFunction, x::Real)
     return get_robustifier_values(crf.robustifier, x)
 end
 function get_robustifier_values(crf::ComponentwiseRobustifierFunction, x::AbstractArray)
-    # TODO turn form a vector of tuples into a tuple of vectors
+    # turn form a vector of tuples into a tuple of vectors
     return collect(zip([get_robustifier_values(crf, xi) for xi in x]...))
 end
 
