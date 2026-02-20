@@ -253,13 +253,14 @@ function step_solver!(
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, Val(:Manifold), Val(:Basepoint), lms.p)
     # Subsolver result
-    lms.X .= -get_solver_result(lms.sub_problem, solve!(lms.sub_problem, lms.sub_state))
-    if norm(M, lms.p, lms.X) > max_stepsize(M, lms.p)
+    solve!(lms.sub_problem, lms.sub_state)
+    lms.direction .= -get_solver_result(lms.sub_problem, lms.sub_state)
+    if norm(M, lms.p, lms.direction) > max_stepsize(M, lms.p)
         # Vector too long; we can reject the step without evaluating the objective
         lms.damping_term *= lms.β
         return lms
     end
-    model_improvement = (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.X)) / 2
+    model_improvement = (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.direction)) / 2
     if model_improvement < lms.minimum_acceptable_model_improvement
         if model_improvement < lms.model_worsening_warning_threshold * (1 + get_cost(lms.sub_problem, zero_vector(M, lms.p)))
             @warn "Model worsened by more than the warning threshold. The subsolver is likely at fault. Model improvement: $model_improvement, warning threshold: $(lms.model_worsening_warning_threshold)"
@@ -271,7 +272,7 @@ function step_solver!(
     end
     # New iterate candidate - maybe store in state?
 
-    q = retract(M, lms.p, lms.X, lms.retraction_method)
+    q = retract(M, lms.p, lms.direction, lms.retraction_method)
     if !is_point(M, q)
         # Retracted point is not valid, rejecting step
         # example scenario: exp(SymmetricPositiveDefinite(2), [1 0; 0 1], [-22.45160594421605 -57.9485939494495; -57.9485939494495 1284.8842829453467])
@@ -288,6 +289,7 @@ function step_solver!(
         if lms.expect_zero_residual # following Adachi et al.: If we expect a zero cost at the minimum, reduce damping on success.
             lms.damping_term = max(lms.damping_term_min, lms.damping_term / lms.β)
         end
+        get_gradient!(M, lms.X, nlso, lms.p)
     else # not enough improvement: reject, increase damping term
         lms.damping_term *= lms.β
     end
@@ -300,5 +302,5 @@ function get_last_stepsize(
         k,
     ) where {mT <: AbstractManifold}
     M = get_manifold(dmp)
-    return norm(M, lms.p, lms.X)
+    return norm(M, lms.p, lms.direction)
 end

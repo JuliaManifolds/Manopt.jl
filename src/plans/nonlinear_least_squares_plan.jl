@@ -336,6 +336,7 @@ mutable struct LevenbergMarquardtState{
     stop::TStop
     retraction_method::TRTM
     residual_values::Tresidual_values
+    direction::TGrad
     X::TGrad
     η::Tparams
     damping_term::Tparams
@@ -351,6 +352,7 @@ mutable struct LevenbergMarquardtState{
             initial_residual_values::Tresidual_values;
             p::P = rand(M),
             X::TGrad = zero_vector(M, p),
+            direction::TGrad = zero_vector(M, p),
             stopping_criterion::StoppingCriterion = StopAfterIteration(200) |
                 StopWhenGradientNormLess(1.0e-12) |
                 StopWhenStepsizeLess(1.0e-12),
@@ -388,7 +390,7 @@ mutable struct LevenbergMarquardtState{
             p,
             stopping_criterion, retraction_method,
             initial_residual_values,
-            X, η,
+            direction, X, η,
             damping_term, damping_term_min,
             β,
             expect_zero_residual,
