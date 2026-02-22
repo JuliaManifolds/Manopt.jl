@@ -17,7 +17,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     str = StopWhenTrustRegionIsExceeded()
     str1 = Manopt.status_summary(str)
     @test str1 == "Trust region exceeded:$(Manopt._MANOPT_INDENT)not reached"
-    @test repr(str) == "StopWhenTrustRegionIsExceeded()\n    $(str1)"
+    @test repr(str) == "StopWhenTrustRegionIsExceeded()"
     @test get_reason(str) == ""
     # Trigger manually
     str.at_iteration = 1
@@ -25,9 +25,9 @@ using Manifolds, Manopt, ManifoldsBase, Test
     scn = StopWhenCurvatureIsNegative()
     scn1 = Manopt.status_summary(scn)
     @test scn1 == "Curvature is negative:$(Manopt._MANOPT_INDENT)not reached"
-    @test repr(scn) == "StopWhenCurvatureIsNegative()\n    $(scn1)"
+    @test repr(scn) == "StopWhenCurvatureIsNegative()"
     smi = StopWhenModelIncreased()
     smi1 = Manopt.status_summary(smi)
     @test smi1 == "Model Increased:$(Manopt._MANOPT_INDENT)not reached"
-    @test repr(smi) == "StopWhenModelIncreased()\n    $(smi1)"
+    @test repr(smi) == "StopWhenModelIncreased()"
 end

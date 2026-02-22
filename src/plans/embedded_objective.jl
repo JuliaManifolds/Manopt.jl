@@ -381,7 +381,7 @@ function status_summary(emo::EmbeddedManifoldObjective{P, T}; context = :default
     _is_inline(context) && return "An embedded objective of $(status_summary(emo.objective; context = context))"
     p_str = !(ismissing(emo.p)) ? "* for a point of type $P" : ""
     X_str = !(ismissing(emo.X)) ? "* for a tangent vector of type $T" : ""
-    pX_str = (length(p_str) + length(X_str) > 0) ? "\n## Temporary memory (in the embedding)\n$(p_str)$(length(p_str) > 0 ? "\n" : "")$(X_str)" : ""
+    pX_str = (length(p_str) + length(X_str) > 0) ? "\n\n## Temporary memory (in the embedding)\n$(p_str)$(length(p_str) > 0 ? "\n" : "")$(X_str)" : ""
     return """
     An embedded objective
 

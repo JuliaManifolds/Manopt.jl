@@ -44,15 +44,9 @@ using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
     sub_p[sub_M, 1] = p
     sub_p[sub_M, 2] = λ
     coh = ConstrainedManifoldObjective(
-        f,
-        grad_f;
-        hess_f = hess_f,
-        g = g,
-        grad_g = grad_g,
-        hess_g = hess_g,
-        h = h,
-        grad_h = grad_h,
-        hess_h = hess_h,
+        f, grad_f; hess_f = hess_f,
+        g = g, grad_g = grad_g, hess_g = hess_g,
+        h = h, grad_h = grad_h, hess_h = hess_h,
         M = M,
     )
     sub_obj = SymmetricLinearSystemObjective(

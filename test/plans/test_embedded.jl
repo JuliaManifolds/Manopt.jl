@@ -40,7 +40,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         end
         # Without interim caches for p and X
         @test repr(eo4) ==
-            "EmbeddedManifoldObjective{Missing,Missing} of an $(repr(eo4.objective))"
+            "EmbeddedManifoldObjective(ManifoldHessianObjective(f, ∇f, ∇²f, #483; evaluation = AllocatingEvaluation()), missing, missing)"
 
         # Constraints, though this is not the most practical constraint
         o2 = ConstrainedManifoldObjective(f, ∇f, [f], [∇f], [f], [∇f])

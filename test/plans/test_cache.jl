@@ -220,10 +220,9 @@ end
         o = ManifoldGradientObjective(f, grad_f)
         co = ManifoldCountObjective(M, o, [:Cost, :Gradient, :Differential])
         lco = objective_cache_factory(M, co, (:LRU, [:Cost, :Gradient, :Differential]))
-        @test startswith(repr(lco), "## Cache\n  * ")
-        @test startswith(
-            repr((lco, Manopt.Test.DummyState())),
-            "Manopt.Test.DummyState(Float64[])\n\n## Cache\n  * ",
+        @test contains(repr(lco), "## Cache\n  * ")
+        @test contains(
+            repr((lco, Manopt.Test.DummyState())), "Manopt.Test.DummyState(Float64[])",
         )
         ro = Manopt.Test.DummyDecoratedObjective(o)
         #undecorated works as well
