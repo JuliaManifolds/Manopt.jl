@@ -275,7 +275,11 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:retraction_method))
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
 $(_fields(:stopping_criterion; name = "stop"))
-* `gradient`:             the current gradient of ``F``
+* `X`:             the current gradient of ``F``
+* `direction`:     the current search direction, which is the solution of the linearized
+  subproblem in each iteration.
+* `jacobian_f`:          the current Jacobian of ``F``. Either a matrix in coordinates or
+  `nothing` if the Jacobian is used only as a linear operator.
 * `step_vector`:          the tangent vector at `x` that is used to move to the next point
 * `last_stepsize`:        length of `step_vector`
 * `η`:                    Scaling factor for the sufficient cost decrease threshold required
@@ -314,7 +318,7 @@ The following fields are keyword arguments
 * `initial_gradient = `$(_link(:zero_vector))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
-* `minimum_acceptable_model_improvement::Real = eps(number_eltype(p))` TODO: Debug, remove later
+* `minimum_acceptable_model_improvement::Real = eps(number_eltype(p))`
 * `model_worsening_warning_threshold::Real = -sqrt(eps(number_eltype(p)))`  TODO: Debug, remove later
 
 # See also
@@ -327,6 +331,7 @@ mutable struct LevenbergMarquardtState{
         TRTM <: AbstractRetractionMethod,
         Tresidual_values,
         TGrad,
+        TJac,
         Tparams <: Real,
         Pr,
         St,
@@ -335,6 +340,7 @@ mutable struct LevenbergMarquardtState{
     stop::TStop
     retraction_method::TRTM
     residual_values::Tresidual_values
+    jacobian_f::TJac
     direction::TGrad
     X::TGrad
     η::Tparams
@@ -349,6 +355,7 @@ mutable struct LevenbergMarquardtState{
     function LevenbergMarquardtState(
             M::AbstractManifold,
             initial_residual_values::Tresidual_values;
+            initial_jacobian_f = nothing,
             p::P = rand(M),
             X::TGrad = zero_vector(M, p),
             direction::TGrad = zero_vector(M, p),
@@ -384,11 +391,11 @@ mutable struct LevenbergMarquardtState{
         SC = typeof(stopping_criterion)
         RM = typeof(retraction_method)
         return new{
-            P, SC, RM, Tresidual_values, TGrad, Tparams, Pr, St,
+            P, SC, RM, Tresidual_values, TGrad, typeof(initial_jacobian_f), Tparams, Pr, St,
         }(
             p,
             stopping_criterion, retraction_method,
-            initial_residual_values,
+            initial_residual_values, initial_jacobian_f,
             direction, X, η,
             damping_term, damping_term_min,
             β,

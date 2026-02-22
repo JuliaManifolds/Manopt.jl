@@ -132,8 +132,8 @@ function LevenbergMarquardt!(
         M::AbstractManifold, f, jacobian_f, p, num_components::Int = -1;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         jacobian_tangent_basis::AbstractBasis = default_basis(M, typeof(p)),
-        jacobian_type = CoefficientVectorialType(jacobian_tangent_basis),
-        function_type = FunctionVectorialType(),
+        jacobian_type::AbstractVectorialType = CoefficientVectorialType(jacobian_tangent_basis),
+        function_type::AbstractVectorialType = FunctionVectorialType(),
         kwargs...,
     )
     if num_components == -1
@@ -187,7 +187,8 @@ function LevenbergMarquardt!(
         η::Real = 0.2,
         damping_term_min::Real = 0.1,
         X = zero_vector(M, p),
-        initial_residual_values = similar(X, sum(length(o) for o in get_objective(nlso).objective)),
+        initial_residual_values = zeros(number_eltype(p), sum(length(o) for o in get_objective(nlso).objective)),
+        initial_jacobian_f = nothing,
         (linear_subsolver!) = nothing,
         #TODO better names for the next 2?
         ε::Real = 1.0e-6,
@@ -220,6 +221,7 @@ function LevenbergMarquardt!(
         sub_problem = sub_problem,
         sub_state = sub_state,
         minimum_acceptable_model_improvement = minimum_acceptable_model_improvement,
+        initial_jacobian_f = initial_jacobian_f,
     )
     dlms = decorate_state!(lms; debug = debug, kwargs...)
     solve!(nlsp, dlms)
@@ -235,6 +237,10 @@ function initialize_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     get_residuals!(M, lms.residual_values, nlso, lms.p)
+    if !isnothing(lms.jacobian_f)
+        # TODO: finish this
+        get_jacobian!(M, lms.jacobian_f, nlso, lms.p; basis=nlso.jacobian_type)
+    end
     get_gradient!(M, lms.X, nlso, lms.p)
     return lms
 end
