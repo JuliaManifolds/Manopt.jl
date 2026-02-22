@@ -6,17 +6,25 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.33] Unreleased
-
-### Added
-
-* A clarification on the use of AI in the [CONTRIBUTING.md](https://manoptjl.org/stable/contributing/) (#573)
+## [0.5.x] unreleased
 
 ### Fixed
 
 * Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (issue [#560](https://github.com/JuliaManifolds/Manopt.jl/issues/560)).
 * Fixed some text descriptions of a few stopping criteria.
 * unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
+
+## [0.5.33] February 18, 2026
+
+### Added
+
+* A clarification on the use of AI in the [CONTRIBUTING.md](https://manoptjl.org/stable/contributing/) (#573)
+* `_produce_type` now accepts the point `p` as an optional third argument, which can be used to produce objects with specific point type for internal buffers. The addition has been utilized in `DirectionUpdateRule`s and `Stepsize`s to improve GPU and custom floating point type compatibility. (#577)
+* Added another package and paper using `Manopt.jl` to the about page (#576).
+
+### Fixed
+
+* `DistanceOverGradientsStepsize` now requires explicitly passing a point as the second argument because it logically depends on receiving the initial point. (#577)
 
 ## [0.5.32] January 15, 2026
 

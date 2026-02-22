@@ -57,8 +57,10 @@ function GradientDescentState(
         X::T = zero_vector(M, p),
         stopping_criterion::SC = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8),
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
-        stepsize::S = default_stepsize(
-            M, GradientDescentState; retraction_method = retraction_method
+        stepsize::S = _produce_type(
+            default_stepsize(
+                M, GradientDescentState; retraction_method = retraction_method
+            ), M, p
         ),
         direction::D = IdentityUpdateRule(),
         kwargs..., # ignore rest
@@ -87,7 +89,7 @@ function default_stepsize(
         retraction_method = default_retraction_method(M),
     )
     # take a default with a slightly defensive initial step size.
-    return ArmijoLinesearchStepsize(
+    return ArmijoLinesearch(
         M; retraction_method = retraction_method, initial_stepsize = 1.0
     )
 end
@@ -252,8 +254,8 @@ function gradient_descent!(
         M;
         p = p,
         stopping_criterion = stopping_criterion,
-        stepsize = _produce_type(stepsize, M),
-        direction = _produce_type(direction, M),
+        stepsize = _produce_type(stepsize, M, p),
+        direction = _produce_type(direction, M, p),
         retraction_method = retraction_method,
         X = X,
     )

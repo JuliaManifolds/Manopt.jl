@@ -640,6 +640,7 @@ $(_fields(:X; name = "X_old"))
 
 
     MomentumGradientRule(M::AbstractManifold; kwargs...)
+    MomentumGradientRule(M::AbstractManifold, p; kwargs...)
 
 Initialize a momentum gradient rule to `s`, where `p` and `X` are memory for interim values.
 
@@ -661,6 +662,9 @@ mutable struct MomentumGradientRule{
     direction::D
     vector_transport_method::VTM
     X_old::T
+end
+function MomentumGradientRule(M::AbstractManifold, p; kwargs...)
+    return MomentumGradientRule(M; p = copy(M, p), kwargs...)
 end
 function MomentumGradientRule(
         M::AbstractManifold;
@@ -712,7 +716,7 @@ $(_kwargs(:vector_transport_method))
 $(_note(:ManifoldDefaultFactory, "MomentumGradientRule"))
 """
 function MomentumGradient(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; requires_point = true, kwargs...)
 end
 
 """
@@ -741,6 +745,7 @@ $(_kwargs(:vector_transport_method))
         last_iterate = deepcopy(x0),
         vector_transport_method = default_vector_transport_method(M, typeof(p))
     )
+    AverageGradientRule(M::AbstractManifold, p; kwargs...)
 
 Add average to a gradient problem, where
 
@@ -757,6 +762,9 @@ mutable struct AverageGradientRule{
     last_iterate::P
     direction::D
     vector_transport_method::VTM
+end
+function AverageGradientRule(M::AbstractManifold, p; kwargs...)
+    return AverageGradientRule(M; p = copy(M, p), kwargs...)
 end
 function AverageGradientRule(
         M::AbstractManifold;
@@ -810,7 +818,7 @@ $(_kwargs([:X, :vector_transport_method]))
 $(_note(:ManifoldDefaultFactory, "AverageGradientRule"))
 """
 function AverageGradient(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; requires_point = true, kwargs...)
 end
 
 @doc """
@@ -829,6 +837,7 @@ $(_kwargs(:inverse_retraction_method))
 # Constructor
 
     NesterovRule(M::AbstractManifold; kwargs...)
+    NesterovRule(M::AbstractManifold, p; kwargs...)
 
 ## Keyword arguments
 
@@ -848,6 +857,9 @@ mutable struct NesterovRule{P, R <: Real} <: DirectionUpdateRule
     v::P
     shrinkage::Function
     inverse_retraction_method::AbstractInverseRetractionMethod
+end
+function NesterovRule(M::AbstractManifold, p; kwargs...)
+    return NesterovRule(M; p = copy(M, p), kwargs...)
 end
 function NesterovRule(
         M::AbstractManifold;
@@ -923,7 +935,7 @@ $(_kwargs(:inverse_retraction_method))
 $(_note(:ManifoldDefaultFactory, "NesterovRule"))
 """
 function Nesterov(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.NesterovRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.NesterovRule, args...; requires_point = true, kwargs...)
 end
 
 """

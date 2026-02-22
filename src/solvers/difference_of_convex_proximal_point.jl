@@ -408,7 +408,7 @@ function difference_of_convex_proximal_point!(
         maybe_wrap_evaluation_type(sub_state);
         p = p,
         X = X,
-        stepsize = _produce_type(stepsize, M),
+        stepsize = _produce_type(stepsize, M, p),
         stopping_criterion = stopping_criterion,
         inverse_retraction_method = inverse_retraction_method,
         retraction_method = retraction_method,

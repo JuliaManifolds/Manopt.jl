@@ -264,7 +264,7 @@ end
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p = p)
             ds = DistanceOverGradientsStepsize(
-                M; p = p, initial_distance = 1.0, use_curvature = false
+                M, p; initial_distance = 1.0, use_curvature = false
             )
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
@@ -296,8 +296,7 @@ end
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p = p)
             ds = DistanceOverGradientsStepsize(
-                M;
-                p = p,
+                M, p;
                 initial_distance = 1.0,
                 use_curvature = true,
                 sectional_curvature_bound = 0.0,
@@ -319,7 +318,7 @@ end
             p = [1, 0]
             gds = GradientDescentState(M; p = p)
             ds = DistanceOverGradientsStepsize(
-                M; p = p, initial_distance = 1.0, use_curvature = false
+                M, p; initial_distance = 1.0, use_curvature = false
             )
             @test ds.gradient_sum == 0
             @test ds.max_distance == 1.0
@@ -338,8 +337,7 @@ end
             p = [1, 0]
             gds = GradientDescentState(M; p = p)
             ds = DistanceOverGradientsStepsize(
-                M;
-                p = p,
+                M, p;
                 initial_distance = 1.0,
                 use_curvature = true,
                 sectional_curvature_bound = 1.0,
@@ -368,8 +366,7 @@ end
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             gds = GradientDescentState(M; p = p)
             ds = DistanceOverGradientsStepsize(
-                M;
-                p = p,
+                M, p;
                 initial_distance = 1.0,
                 use_curvature = true,
                 sectional_curvature_bound = -1.0,

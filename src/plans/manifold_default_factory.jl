@@ -56,31 +56,63 @@ struct ManifoldDefaultsFactory{T, TM <: Union{<:AbstractManifold, Nothing}, A, K
     args::A
     kwargs::K
     constructor_requires_manifold::Bool
+    constructor_requires_point::Bool
 end
 function ManifoldDefaultsFactory(
-        T::Type, M::TM, args...; requires_manifold = true, kwargs...
+        T::Type, M::TM, args...; requires_manifold = true, requires_point = false, kwargs...
     ) where {TM <: AbstractManifold}
     return ManifoldDefaultsFactory{T, TM, typeof(args), typeof(kwargs)}(
-        M, args, kwargs, requires_manifold
+        M, args, kwargs, requires_manifold, requires_point
     )
 end
-function ManifoldDefaultsFactory(T::Type, args...; requires_manifold = true, kwargs...)
+function ManifoldDefaultsFactory(T::Type, args...; requires_manifold = true, requires_point = false, kwargs...)
     return ManifoldDefaultsFactory{T, Nothing, typeof(args), typeof(kwargs)}(
-        nothing, args, kwargs, requires_manifold
+        nothing, args, kwargs, requires_manifold, requires_point
     )
+end
+function (mdf::ManifoldDefaultsFactory{T})(M::AbstractManifold, p) where {T}
+    return if mdf.constructor_requires_manifold
+        if mdf.constructor_requires_point
+            return T(M, p, mdf.args...; mdf.kwargs...)
+        else
+            return T(M, mdf.args...; mdf.kwargs...)
+        end
+    else
+        if mdf.constructor_requires_point
+            return T(p, mdf.args...; mdf.kwargs...)
+        else
+            return T(mdf.args...; mdf.kwargs...)
+        end
+    end
 end
 function (mdf::ManifoldDefaultsFactory{T})(M::AbstractManifold) where {T}
-    if mdf.constructor_requires_manifold
-        return T(M, mdf.args...; mdf.kwargs...)
+    return if mdf.constructor_requires_manifold
+        if mdf.constructor_requires_point
+            return T(M, rand(M), mdf.args...; mdf.kwargs...)
+        else
+            return T(M, mdf.args...; mdf.kwargs...)
+        end
     else
-        return T(mdf.args...; mdf.kwargs...)
+        if mdf.constructor_requires_point
+            return T(rand(mdf.M), mdf.args...; mdf.kwargs...)
+        else
+            return T(mdf.args...; mdf.kwargs...)
+        end
     end
 end
 function (mdf::ManifoldDefaultsFactory{T, <:AbstractManifold})() where {T}
-    if mdf.constructor_requires_manifold
-        return T(mdf.M, mdf.args...; mdf.kwargs...)
+    return if mdf.constructor_requires_manifold
+        if mdf.constructor_requires_point
+            return T(mdf.M, rand(mdf.M), mdf.args...; mdf.kwargs...)
+        else
+            return T(mdf.M, mdf.args...; mdf.kwargs...)
+        end
     else
-        return T(mdf.args...; mdf.kwargs...)
+        if mdf.constructor_requires_point
+            return T(rand(mdf.M), mdf.args...; mdf.kwargs...)
+        else
+            return T(mdf.args...; mdf.kwargs...)
+        end
     end
 end
 function (mdf::ManifoldDefaultsFactory{T, Nothing})() where {T}
@@ -90,13 +122,20 @@ end
 """
     _produce_type(t::T, M::AbstractManifold)
     _produce_type(t::ManifoldDefaultsFactory{T}, M::AbstractManifold)
+    _produce_type(t::ManifoldDefaultsFactory{T}, M::AbstractManifold, p)
 
 Use the [`ManifoldDefaultsFactory`](@ref)`{T}` to produce an instance of type `T`.
 This acts transparent in the way that if you provide an instance `t::T` already, this will
 just be returned.
+
+If a point `p` on manifold `M` is provided, it is passed to the constructor `t` as a
+template for allocating points. It is no supposed to be modified by the constructor or
+stored in the produced object.
 """
 _produce_type(t, M::AbstractManifold) = t
+_produce_type(t, M::AbstractManifold, p) = t
 _produce_type(t::ManifoldDefaultsFactory, M::AbstractManifold) = t(M)
+_produce_type(t::ManifoldDefaultsFactory, M::AbstractManifold, p) = t(M, p)
 
 function show(io::IO, mdf::ManifoldDefaultsFactory{T, M}) where {T, M}
     rm = mdf.constructor_requires_manifold

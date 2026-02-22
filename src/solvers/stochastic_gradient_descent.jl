@@ -281,9 +281,9 @@ function stochastic_gradient_descent!(
         M;
         p = p,
         X = zero_vector(M, p),
-        direction = _produce_type(direction, M),
+        direction = _produce_type(direction, M, p),
         stopping_criterion = stopping_criterion,
-        stepsize = _produce_type(stepsize, M),
+        stepsize = _produce_type(stepsize, M, p),
         order_type = order_type,
         order = order,
         retraction_method = retraction_method,

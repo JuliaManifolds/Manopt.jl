@@ -676,7 +676,7 @@ function convex_bundle_method!(
         k_max = k_max,
         k_min = k_min,
         p_estimate = p_estimate,
-        stepsize = _produce_type(stepsize, M),
+        stepsize = _produce_type(stepsize, M, p),
         inverse_retraction_method = inverse_retraction_method,
         retraction_method = retraction_method,
         stopping_criterion = stopping_criterion,
