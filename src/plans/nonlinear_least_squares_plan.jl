@@ -961,9 +961,9 @@ end
 
 """
     linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
-    linear_operator(M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
+    linear_operator(M::AbstractManifold, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
     linear_operator!(M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
-    linear_operator!(M::AbstractManifold, y, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
+    linear_operator!(M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
 
 Compute the linear operator ``$(_tex(:Cal, "L"))`` corresponding to the optimality conditions of the
 Levenberg-Marquardt surrogate objective, i.e. the normal conditions

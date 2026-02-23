@@ -191,6 +191,112 @@ function read_bal_bz2(path::AbstractString; one_based_indices::Bool = true, T::T
     end
 end
 
+"""
+	subsample_bal_dataset(dataset, num_cameras, num_points)
+
+Create a reduced `BALDataset` containing only the first `num_cameras` cameras and
+the first `num_points` points.
+
+Observations are filtered to those that reference both selected cameras and points,
+and their indices are remapped to the new compact index ranges.
+"""
+function subsample_bal_dataset(dataset::BALDataset{T, I}, num_cameras::Integer, num_points::Integer) where {T <: Real, I <: Integer}
+    1 <= num_cameras <= dataset.num_cameras || throw(
+        ArgumentError("num_cameras must be in 1:$(dataset.num_cameras), got $num_cameras"),
+    )
+    1 <= num_points <= dataset.num_points || throw(
+        ArgumentError("num_points must be in 1:$(dataset.num_points), got $num_points"),
+    )
+
+    return subsample_bal_dataset(dataset, collect(1:num_cameras), collect(1:num_points))
+end
+
+"""
+	subsample_bal_dataset(dataset, camera_indices, point_indices)
+
+Create a reduced `BALDataset` from explicitly selected camera and point indices.
+Observations are kept only when both their camera and point are selected; indices
+in the returned observations are remapped to `1:length(camera_indices)` and
+`1:length(point_indices)`.
+"""
+function subsample_bal_dataset(
+        dataset::BALDataset{T, I},
+        camera_indices::AbstractVector{<:Integer},
+        point_indices::AbstractVector{<:Integer},
+    ) where {T <: Real, I <: Integer}
+    isempty(camera_indices) && throw(ArgumentError("camera_indices cannot be empty"))
+    isempty(point_indices) && throw(ArgumentError("point_indices cannot be empty"))
+
+    allunique(camera_indices) || throw(ArgumentError("camera_indices must be unique"))
+    allunique(point_indices) || throw(ArgumentError("point_indices must be unique"))
+
+    all(1 <= i <= dataset.num_cameras for i in camera_indices) || throw(
+        ArgumentError("camera_indices must be in 1:$(dataset.num_cameras)"),
+    )
+    all(1 <= i <= dataset.num_points for i in point_indices) || throw(
+        ArgumentError("point_indices must be in 1:$(dataset.num_points)"),
+    )
+
+    camera_map = Dict{I, I}(I(old_idx) => I(new_idx) for (new_idx, old_idx) in enumerate(camera_indices))
+    point_map = Dict{I, I}(I(old_idx) => I(new_idx) for (new_idx, old_idx) in enumerate(point_indices))
+
+    observations = BALObservation{T, I}[]
+    for obs in dataset.observations
+        haskey(camera_map, obs.camera_index) || continue
+        haskey(point_map, obs.point_index) || continue
+
+        push!(
+            observations,
+            BALObservation{T, I}(
+                camera_map[obs.camera_index],
+                point_map[obs.point_index],
+                obs.xy,
+            ),
+        )
+    end
+
+    cameras = dataset.cameras[Int.(camera_indices)]
+    points = dataset.points[Int.(point_indices)]
+
+    return BALDataset{T, I}(
+        length(cameras),
+        length(points),
+        length(observations),
+        observations,
+        cameras,
+        points,
+    )
+end
+
+"""
+	points_observed_by_cameras(dataset, camera_indices)
+
+Return unique point indices observed by any camera listed in `camera_indices`.
+The returned indices follow first-appearance order in `dataset.observations`.
+"""
+function points_observed_by_cameras(
+        dataset::BALDataset{T, I},
+        camera_indices::AbstractVector{<:Integer},
+    ) where {T <: Real, I <: Integer}
+    isempty(camera_indices) && throw(ArgumentError("camera_indices cannot be empty"))
+    all(1 <= i <= dataset.num_cameras for i in camera_indices) || throw(
+        ArgumentError("camera_indices must be in 1:$(dataset.num_cameras)"),
+    )
+
+    selected_cameras = Set{I}(I.(camera_indices))
+    seen_points = Set{I}()
+    points = I[]
+
+    for obs in dataset.observations
+        obs.camera_index in selected_cameras || continue
+        obs.point_index in seen_points && continue
+        push!(points, obs.point_index)
+        push!(seen_points, obs.point_index)
+    end
+
+    return points
+end
+
 # We can dowload data from here: https://grail.cs.washington.edu/projects/bal/
 data1 = read_bal_bz2("/home/mateusz/data/bal/ladybug/problem-49-7776-pre.txt.bz2")
 
@@ -260,7 +366,6 @@ function (f::jacFi_block_analytical)(
         M::AbstractManifold, J, p;
         basis_arg::DefaultOrthonormalBasis = DefaultOrthonormalBasis(),
     )
-    error("where?")
     M_cam, M_t, M_pt = M.manifolds
     p_cam, p_t, p_pt = p.x
     obs = f.dataset.observations[f.obs_idx]
@@ -364,4 +469,13 @@ function run_bundle_adjustment(data::BALDataset)
     return q
 end
 
+function subsample_bal(dataset::BALDataset, num_cameras::Int)
+	cam_indices = 1:num_cameras
+	pt_indices = points_observed_by_cameras(dataset, cam_indices)
+	return subsample_bal_dataset(dataset, cam_indices, pt_indices)
+end
+
 # run_bundle_adjustment(data1)
+
+# data1_sub = subsample_bal(data1, 3)
+# run_bundle_adjustment(data1_sub)
