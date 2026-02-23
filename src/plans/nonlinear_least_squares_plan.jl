@@ -908,17 +908,26 @@ function linear_normal_operator!(
     nlso = get_objective(lmsco)
     # For every block
     fill!(A, 0)
-    C = copy(A)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        linear_normal_operator!(M, C, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
-        A .+= C
+        accumulate_linear_normal_operator!(M, A, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
     end
     # Finally add the damping term
     (penalty != 0) && (A .= A + penalty * I)
     return A
 end
-function linear_normal_operator!(
-        M::AbstractManifold, A, o::AbstractVectorGradientFunction,
+"""
+    accumulate_linear_normal_operator!(
+        M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
+        r::AbstractRobustifierFunction, p, basis::AbstractBasis;
+        value_cache = get_value(M, o, p), ε::Real, mode::Symbol
+    )
+
+Accumulate the contribution of a single block (vectorial function with its robustifier) to
+the linear normal operator, i.e. compute ``A += J_F^*(p)[C^T C J_F(p)[X]]`` in-place of `A`
+for the given block.
+"""
+function accumulate_linear_normal_operator!(
+        M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
     )
@@ -930,12 +939,12 @@ function linear_normal_operator!(
     # (a) J_F is n-by-d so we have to allocate – where could we maybe store something like that and pass it down?
     JF = get_jacobian(M, o, p; basis = basis)
     # compute A' C^TC A (C^TC = C^2 here) inplace of A
-    A .= JF' * (ρ_prime .* (I - operator_scaling * (a * a'))^2) * JF
+    A .+= JF' * (ρ_prime .* (I - operator_scaling * (a * a'))^2) * JF
     # damping term is added once after summing up all blocks, so we do not add it here
     return A
 end
 # For the componentwise variant, the C^TC turns into a diagonal matrix
-function linear_normal_operator!(
+function accumulate_linear_normal_operator!(
         M::AbstractManifold, A, o::AbstractVectorGradientFunction,
         cr::ComponentwiseRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
@@ -953,7 +962,7 @@ function linear_normal_operator!(
     end
     JF = get_jacobian(M, o, p; basis = basis)
     # compute A' C^TC A (C^TC = C^2 here) inplace of A
-    A .= JF' * Diagonal(b) * JF
+    A .+= JF' * Diagonal(b) * JF
     # damping term is added once after summing up all blocks, so we do not add it here
     return A
 end
