@@ -72,6 +72,7 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("solvers/test_trust_regions.jl")
         include("solvers/test_vectorbundle_newton.jl")
     end
+    include("test_cuda_ext.jl")
     include("MOI_wrapper.jl")
     include("test_aqua.jl")
     include("test_deprecated.jl")
