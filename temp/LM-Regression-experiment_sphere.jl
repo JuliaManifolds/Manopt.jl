@@ -92,7 +92,7 @@ end
 function cost1_grad_X(M::AbstractManifold, p, X, ti::Real, di)
     z = exp(M, p, ti * X)
     gz = ManifoldDiff.grad_distance(M, di, z, 1)
-    return ManifoldDiff.adjoint_differential_exp_argument(M, p, ti * X, gz)
+    return ti * ManifoldDiff.adjoint_differential_exp_argument(M, p, ti * X, gz)
 end
 
 
@@ -100,14 +100,14 @@ end
 # X0 = rand(S; vector_at=p0)
 # p1 = rand(S)
 # Manopt.check_gradient(S,
-#     (M, p) -> cost1(M, p, parallel_transport_to(M, p0, X0, p), 1.0, p1),
-#     (M, p) -> cost1_grad_p(M, p, parallel_transport_to(M, p0, X0, p), 1.0, p1),
+#     (M, p) -> cost1(M, p, parallel_transport_to(M, p0, X0, p), 0.5, p1),
+#     (M, p) -> cost1_grad_p(M, p, parallel_transport_to(M, p0, X0, p), 0.5, p1),
 #     p0; plot=true
 #     )
 
 # Manopt.check_gradient(TangentSpace(S, p0),
-#     (M, X) -> cost1(S, p0, X, 1.0, p1),
-#     (M, X) -> cost1_grad_X(S, p0, X, 1.0, p1),
+#     (M, X) -> cost1(S, p0, X, 0.5, p1),
+#     (M, X) -> cost1_grad_X(S, p0, X, 0.5, p1),
 #     X0; plot=true
 #     )
 
