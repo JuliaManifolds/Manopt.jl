@@ -9,7 +9,7 @@ _doc_IPN = """
     interior_point_Newton(M, f, grad_f, Hess_f, p=rand(M); kwargs...)
     interior_point_Newton(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
     interior_point_Newton!(M, f, grad]_f, Hess_f, p; kwargs...)
-    interior_point_Newton(M, cmo::ConstrainedManifoldObjective, p; kwargs...)
+    interior_point_Newton!(M, cmo::ConstrainedManifoldObjective, p; kwargs...)
 
 perform the interior point Newton method following [LaiYoshise:2024](@cite).
 
