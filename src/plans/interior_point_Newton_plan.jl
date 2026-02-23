@@ -57,13 +57,19 @@ $(_fields([:retraction_method, :stepsize]))
         kwargs...
     )
     InteriorPointNewtonState(
+        M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr;
+        evaluation = AllocatingEvalutaion(), kwargs...
+    )
+    InteriorPointNewtonState(
         sub_problem::Pr, sub_state::St;
         kwargs...
     )
 
 Initialize the state, where both the [`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) and the [`ConstrainedManifoldObjective`](@ref)
 are used to fill in reasonable defaults for the keywords.
-The second constructor is considered an internal constructor accepting the same keywords,
+For a closed form solution of the sub solver, you can provide the evaluation either as `St` in the first
+constructor or as a keyword like in the second.
+The third constructor is considered an internal constructor accepting the same keywords,
 but those that are filled by defaults based on `M` or `cmo` become mandatory
 
 # Input
@@ -137,33 +143,19 @@ mutable struct InteriorPointNewtonState{
             SC <: StoppingCriterion, RTM <: AbstractRetractionMethod, S <: Stepsize,
         }
         ips = new{P, T, Pr, St, V, R, SC, RTM, S, StepPr, StepSt}()
-        ips.p = p
-        ips.sub_problem = sub_problem
-        ips.sub_state = sub_state
-        ips.μ = μ
-        ips.λ = λ
-        ips.s = s
-        ips.ρ = ρ
-        ips.σ = σ
-        ips.X = X
-        ips.Y = Y
-        ips.Z = Z
-        ips.W = W
+        ips.p = p; ips.sub_problem = sub_problem; ips.sub_state = sub_state
+        ips.μ = μ; ips.λ = λ; ips.s = s; ips.ρ = ρ; ips.σ = σ
+        ips.X = X; ips.Y = Y; ips.Z = Z; ips.W = W
         ips.stop = stopping_criterion
         ips.retraction_method = retraction_method
         ips.stepsize = stepsize
-        ips.step_problem = step_problem
-        ips.step_state = step_state
+        ips.step_problem = step_problem; ips.step_state = step_state
         ips.is_feasible_error = is_feasible_error
         return ips
     end
     function InteriorPointNewtonState(
-            M::AbstractManifold,
-            cmo::ConstrainedManifoldObjective,
-            sub_problem::Pr,
-            sub_state::St;
-            p = rand(M),
-            X = zero_vector(M, p),
+            M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr, sub_state::St;
+            p = rand(M), X = zero_vector(M, p),
             μ = ones(length(get_inequality_constraint(M, cmo, p, :))),
             λ = zeros(length(get_equality_constraint(M, cmo, p, :))),
             s = ones(length(get_inequality_constraint(M, cmo, p, :))),
@@ -171,13 +163,11 @@ mutable struct InteriorPointNewtonState{
             σ = calculate_σ(M, cmo, p, μ, λ, s),
             retraction_method::RTM = default_retraction_method(M),
             step_objective = ManifoldGradientObjective(
-                KKTVectorFieldNormSq(cmo),
-                KKTVectorFieldNormSqGradient(cmo);
+                KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo);
                 evaluation = InplaceEvaluation(),
             ),
             vector_space = Rn,
-            _step_M = M × vector_space(length(μ)) × vector_space(length(λ)) ×
-                vector_space(length(s)),
+            _step_M = M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
             step_problem::StepPr = DefaultManoptProblem(_step_M, step_objective),
             _step_p = rand(_step_M),
             step_state::StepSt = StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
@@ -185,8 +175,7 @@ mutable struct InteriorPointNewtonState{
             stepsize::S = ArmijoLinesearchStepsize(
                 get_manifold(step_problem);
                 retraction_method = default_retraction_method(get_manifold(step_problem)),
-                initial_stepsize = 1.0,
-                additional_decrease_condition = centrality_condition,
+                initial_stepsize = 1.0, additional_decrease_condition = centrality_condition,
             ),
             kwargs...,
         ) where {
