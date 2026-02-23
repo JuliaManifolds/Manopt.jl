@@ -239,7 +239,7 @@ function initialize_solver!(
     get_residuals!(M, lms.residual_values, nlso, lms.p)
     if !isnothing(lms.jacobian_f)
         # TODO: finish this
-        get_jacobian!(M, lms.jacobian_f, nlso, lms.p; basis=nlso.jacobian_type)
+        get_jacobian!(M, lms.jacobian_f, nlso, lms.p; basis = nlso.jacobian_type)
     end
     get_gradient!(M, lms.X, nlso, lms.p)
     return lms
