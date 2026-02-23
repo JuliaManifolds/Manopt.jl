@@ -58,7 +58,7 @@ $(_fields([:retraction_method, :stepsize]))
     )
     InteriorPointNewtonState(
         M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr;
-        evaluation = AllocatingEvalutaion(), kwargs...
+        evaluation = AllocatingEvaluation(), kwargs...
     )
     InteriorPointNewtonState(
         sub_problem::Pr, sub_state::St;
@@ -90,7 +90,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 * `Z=zero(λ)` tangent vector (gradient) for the equality constraints
 * `s=ones(m)` slack variables for the inequality constraints
 * `W=zero(s)` tangent vector (gradient) for the slack variables
-* `ρ=μ's/m`  stroage for the orthogonality check
+* `ρ=μ's/m`  storage for the orthogonality check
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)"))
 $(_kwargs(:retraction_method))
