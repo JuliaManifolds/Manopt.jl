@@ -363,9 +363,10 @@ struct jacFi_block_analytical{TD <: BALDataset}
 end
 
 function (f::jacFi_block_analytical)(
-        M::AbstractManifold, J, p;
+        M::AbstractManifold, J::JacobianBlock, p;
         basis_arg::DefaultOrthonormalBasis = DefaultOrthonormalBasis(),
     )
+
     M_cam, M_t, M_pt = M.manifolds
     p_cam, p_t, p_pt = p.x
     obs = f.dataset.observations[f.obs_idx]
@@ -414,8 +415,6 @@ function (f::jacFi_block_analytical)(
     J_t = J_proj_cam
     J_p = J_proj_cam * R
 
-    fill!(J, 0)
-
     d_cam = manifold_dimension(M_cam)
     d_t = manifold_dimension(M_t)
 
@@ -423,13 +422,51 @@ function (f::jacFi_block_analytical)(
     col_t = d_cam + (cam_idx - 1) * 3 + 1
     col_p = d_cam + d_t + (pt_idx - 1) * 3 + 1
 
-    @views J[:, col_cam:(col_cam + 2)] .= J_rot
-    @views J[:, col_t:(col_t + 2)] .= J_t
-    @views J[:, col_p:(col_p + 2)] .= J_p
+    row_starts = (1, 1, 1)
+    col_starts = (col_cam, col_t, col_p)
+    if J.row_starts != row_starts || J.col_starts != col_starts
+        error(
+            "jacFi_block_analytical received JacobianBlock with incompatible block layout. " *
+                "Expected row_starts=$(row_starts), col_starts=$(col_starts), got row_starts=$(J.row_starts), col_starts=$(J.col_starts).",
+        )
+    end
+
+    J.blocks[1] .= J_rot
+    J.blocks[2] .= J_t
+    J.blocks[3] .= J_p
 
     return J
 end
 
+function Manopt.allocate_jacobian(
+        M::AbstractManifold,
+        vgf::VectorGradientFunction{InplaceEvaluation, FunctionVectorialType{NestedPowerRepresentation}, <:CoefficientVectorialType, <:Fi_block, <:jacFi_block_analytical};
+        T::Type = Float64,
+    )
+    fJ = vgf.jacobian!!
+    obs = fJ.dataset.observations[fJ.obs_idx]
+
+    M_cam, M_t, _ = M.manifolds
+    d_cam = manifold_dimension(M_cam)
+    d_t = manifold_dimension(M_t)
+
+    col_cam = (obs.camera_index - 1) * 3 + 1
+    col_t = d_cam + (obs.camera_index - 1) * 3 + 1
+    col_p = d_cam + d_t + (obs.point_index - 1) * 3 + 1
+
+    blocks = (
+        zeros(T, vgf.range_dimension, 3),
+        zeros(T, vgf.range_dimension, 3),
+        zeros(T, vgf.range_dimension, 3),
+    )
+    return JacobianBlock(
+        vgf.range_dimension,
+        manifold_dimension(M),
+        (1, 1, 1),
+        (col_cam, col_t, col_p),
+        blocks,
+    )
+end
 
 function run_bundle_adjustment(data::BALDataset)
     M = ProductManifold(
@@ -469,13 +506,65 @@ function run_bundle_adjustment(data::BALDataset)
     return q
 end
 
+function test_analytical_jacobian_matches_ad(
+        data::BALDataset;
+        obs_indices = 1:min(data.num_observations, 10),
+        atol::Real = 1.0e-10,
+        rtol::Real = 1.0e-8,
+    )
+    M = ProductManifold(
+        PowerManifold(Rotations(3), ArrayPowerRepresentation(), data.num_cameras),
+        PowerManifold(Euclidean(3), ArrayPowerRepresentation(), data.num_cameras),
+        PowerManifold(Euclidean(3), ArrayPowerRepresentation(), data.num_points),
+    )
+
+    p0 = ArrayPartition(
+        stack([Matrix{Float64}(I, 3, 3) for _ in 1:data.num_cameras]),
+        ones(3, data.num_cameras),
+        zeros(3, data.num_points),
+    )
+
+    M_cam, M_t, _ = M.manifolds
+    d_cam = manifold_dimension(M_cam)
+    d_t = manifold_dimension(M_t)
+    ncols = manifold_dimension(M)
+
+    max_abs_err = 0.0
+    for obs_idx in obs_indices
+        obs = data.observations[obs_idx]
+
+        J_ad = zeros(Float64, 2, ncols)
+        jacFi_block_ad(data, obs_idx)(M, J_ad, p0)
+
+        col_cam = (obs.camera_index - 1) * 3 + 1
+        col_t = d_cam + (obs.camera_index - 1) * 3 + 1
+        col_p = d_cam + d_t + (obs.point_index - 1) * 3 + 1
+        J_an = JacobianBlock(
+            2,
+            ncols,
+            (1, 1, 1),
+            (col_cam, col_t, col_p),
+            (zeros(2, 3), zeros(2, 3), zeros(2, 3)),
+        )
+        jacFi_block_analytical(data, obs_idx)(M, J_an, p0)
+
+        J_an_dense = Matrix(J_an)
+        err = maximum(abs, J_an_dense .- J_ad)
+        max_abs_err = max(max_abs_err, err)
+        @test isapprox(J_an_dense, J_ad; atol = atol, rtol = rtol)
+    end
+
+    return max_abs_err
+end
+
 function subsample_bal(dataset::BALDataset, num_cameras::Int)
-	cam_indices = 1:num_cameras
-	pt_indices = points_observed_by_cameras(dataset, cam_indices)
-	return subsample_bal_dataset(dataset, cam_indices, pt_indices)
+    cam_indices = 1:num_cameras
+    pt_indices = points_observed_by_cameras(dataset, cam_indices)
+    return subsample_bal_dataset(dataset, cam_indices, pt_indices)
 end
 
 # run_bundle_adjustment(data1)
 
-# data1_sub = subsample_bal(data1, 3)
+# data1_sub = subsample_bal(data1, 1)
 # run_bundle_adjustment(data1_sub)
+# test_analytical_jacobian_matches_ad(data1_sub)

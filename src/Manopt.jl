@@ -22,9 +22,11 @@ using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using Glossaries
 using LinearAlgebra:
     cond,
+    Adjoint,
     Diagonal,
     I,
     Eigen,
+    LinearAlgebra,
     PosDefException,
     eigen,
     eigen!,
@@ -221,6 +223,7 @@ include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 
 include("helpers/checks.jl")
+include("helpers/jacobian_block.jl")
 include("helpers/exports/Asymptote.jl")
 include("helpers/LineSearchesTypes.jl")
 include("helpers//test.jl")
@@ -640,4 +643,5 @@ export get_count, reset_counters!
 #
 # Helpers
 export check_gradient, check_differential, check_Hessian
+export JacobianBlock
 end

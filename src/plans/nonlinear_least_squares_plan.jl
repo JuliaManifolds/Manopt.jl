@@ -938,8 +938,15 @@ function accumulate_linear_normal_operator!(
     # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     # (a) J_F is n-by-d so we have to allocate – where could we maybe store something like that and pass it down?
     JF = get_jacobian(M, o, p; basis = basis)
-    # compute A' C^TC A (C^TC = C^2 here) inplace of A
-    A .+= JF' * (ρ_prime .* (I - operator_scaling * (a * a'))^2) * JF
+    # (I - s*a*a')^2 = I + (-2s + s^2*||a||^2) * a*a'
+    # so JF' * (ρ' * (I - s*a*a')^2) * JF
+    #   = ρ' * (JF'JF) + ρ' * (-2s + s^2*||a||^2) * (JF'a) * (JF'a)'
+    rank1_scaling = ρ_prime * (-2 * operator_scaling + operator_scaling^2 * F_sq)
+    mul!(A, JF', JF, ρ_prime, true)
+    if !iszero(rank1_scaling)
+        JFa = JF' * a
+        mul!(A, JFa, JFa', rank1_scaling, true)
+    end
     # damping term is added once after summing up all blocks, so we do not add it here
     return A
 end

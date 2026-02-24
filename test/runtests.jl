@@ -37,6 +37,7 @@ using Manifolds, ManifoldsBase, Manopt, Test
     end
     @testset "Helper Tests       " begin
         include("helpers/test_checks.jl")
+        include("helpers/test_jacobian_block.jl")
         include("helpers/test_linesearches.jl")
         include("helpers/test_manifold_extra_functions.jl")
     end
