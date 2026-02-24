@@ -48,6 +48,7 @@ struct ManifoldCountObjective{
     counts::Dict{Symbol, I}
     objective::O
 end
+ManifoldCountObjective(::AbstractManifold, o::AbstractManifoldObjective, c) = ManifoldCountObjective(o, c)
 function ManifoldCountObjective(
         objective::O, counts::Dict{Symbol, I}
     ) where {

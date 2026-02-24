@@ -1082,7 +1082,10 @@ end
 function show(io::IO, dg::DebugGradient)
     return print(io, "DebugGradient(; format=\"$(dg.format)\", at_init=$(dg.at_init))")
 end
-status_summary(dg::DebugGradient) = "(:Gradient, \"$(dg.format)\")"
+function status_summary(dg::DebugGradient; context = :default)
+    _is_inline(context) && (return "(:Gradient, \"$(dg.format)\")")
+    return "A DebugAction to print the gradient at the current iterate “$(dg.format)”"
+end
 
 @doc """
     DebugGradientNorm <: DebugAction
