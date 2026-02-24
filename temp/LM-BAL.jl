@@ -363,9 +363,11 @@ struct jacFi_block_analytical{TD <: BALDataset}
 end
 
 function (f::jacFi_block_analytical)(
-        M::AbstractManifold, J::JacobianBlock, p;
+        M::AbstractManifold, J::BlockNonzeroMatrix, p;
         basis_arg::DefaultOrthonormalBasis = DefaultOrthonormalBasis(),
     )
+
+    # error("where?")
 
     M_cam, M_t, M_pt = M.manifolds
     p_cam, p_t, p_pt = p.x
@@ -426,7 +428,7 @@ function (f::jacFi_block_analytical)(
     col_starts = (col_cam, col_t, col_p)
     if J.row_starts != row_starts || J.col_starts != col_starts
         error(
-            "jacFi_block_analytical received JacobianBlock with incompatible block layout. " *
+            "jacFi_block_analytical received BlockNonzeroMatrix with incompatible block layout. " *
                 "Expected row_starts=$(row_starts), col_starts=$(col_starts), got row_starts=$(J.row_starts), col_starts=$(J.col_starts).",
         )
     end
@@ -459,7 +461,7 @@ function Manopt.allocate_jacobian(
         zeros(T, vgf.range_dimension, 3),
         zeros(T, vgf.range_dimension, 3),
     )
-    return JacobianBlock(
+    return BlockNonzeroMatrix(
         vgf.range_dimension,
         manifold_dimension(M),
         (1, 1, 1),
@@ -500,7 +502,8 @@ function run_bundle_adjustment(data::BALDataset)
         β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
         robustifier = hr,
         debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
-        # sub_state = CoordinatesNormalSystemState(M),
+        stopping_criterion = StopAfterIteration(20),
+        sub_state = CoordinatesNormalSystemState(M),
     )
 
     return q
@@ -539,7 +542,7 @@ function test_analytical_jacobian_matches_ad(
         col_cam = (obs.camera_index - 1) * 3 + 1
         col_t = d_cam + (obs.camera_index - 1) * 3 + 1
         col_p = d_cam + d_t + (obs.point_index - 1) * 3 + 1
-        J_an = JacobianBlock(
+        J_an = BlockNonzeroMatrix(
             2,
             ncols,
             (1, 1, 1),
@@ -565,6 +568,10 @@ end
 
 # run_bundle_adjustment(data1)
 
-# data1_sub = subsample_bal(data1, 1)
-# run_bundle_adjustment(data1_sub)
+data1_sub = subsample_bal(data1, 2)
+run_bundle_adjustment(data1_sub)
 # test_analytical_jacobian_matches_ad(data1_sub)
+
+using Profile, ProfileView
+
+# ProfileView.@profview run_bundle_adjustment(data1_sub)

@@ -374,6 +374,7 @@ export get_state,
     get_iterate,
     get_adjoint_jacobian,
     get_adjoint_jacobian!,
+    accumulate_adjoint_jacobian!,
     get_jacobian,
     get_jacobian!,
     get_gradients,
@@ -643,5 +644,5 @@ export get_count, reset_counters!
 #
 # Helpers
 export check_gradient, check_differential, check_Hessian
-export JacobianBlock
+export BlockNonzeroMatrix, BlockNonzeroVector
 end

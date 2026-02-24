@@ -26,6 +26,7 @@ Manopt.get_jacobian
 Manopt.get_jacobian!
 Manopt.get_adjoint_jacobian
 Manopt.get_adjoint_jacobian!
+Manopt.accumulate_adjoint_jacobian!
 Manopt.get_value
 Manopt.get_value_function
 Base.length(::VectorGradientFunction)

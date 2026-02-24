@@ -643,7 +643,8 @@ function get_gradient!(
     # add C^T y = C^T (sqrt(ρ(p)) / (1 - α) F(p)) (which overall has a ρ_prime upfront)
     b .+= residual_scaling .* sqrt(ρ_prime) .* (I - operator_scaling * (a * a')) * a
     # apply the adjoint
-    get_adjoint_jacobian!(M, Y, o, p, b)
+    zero_vector!(M, Y, p)
+    accumulate_adjoint_jacobian!(M, Y, o, p, b)
     return Y
 end
 # Componentwise
@@ -668,7 +669,8 @@ function get_gradient!(
         b[i] += residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * ai
     end
     # apply the adjoint
-    get_adjoint_jacobian!(M, Y, o, p, b)
+    zero_vector!(M, Y, p)
+    accumulate_adjoint_jacobian!(M, Y, o, p, b)
     return Y
 end
 
@@ -796,23 +798,21 @@ function linear_normal_operator!(
     nlso = get_objective(lmsco)
     # For every block
     zero_vector!(M, Y, p)
-    Z = copy(M, p, Y)
     Y_cache = zero_vector(M, p)
     get_residuals!(M, lmsco.value_cache, nlso, p)
     start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        linear_normal_operator!(M, Z, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache)
+        accumulate_linear_normal_operator!(M, Y, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache)
         start += len
-        Y .+= Z
     end
     # Finally add the damping term
     (penalty != 0) && (Y .+= penalty .* X)
     return Y
 end
 # for a single block – the actual formula - but never with penalty
-function linear_normal_operator!(
+function accumulate_linear_normal_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = zero_vector(M, p)
     )
@@ -835,7 +835,7 @@ function linear_normal_operator!(
     @. b = ρ_prime * (b + coef * a)
 
     # Now apply the adjoint
-    get_adjoint_jacobian!(M, Y, o, p, b; Y_cache = Y_cache)
+    accumulate_adjoint_jacobian!(M, Y, o, p, b; Y_cache = Y_cache)
     # penalty is added once after summing up all blocks, so we do not add it here
     return Y
 end
@@ -856,7 +856,8 @@ function linear_normal_operator!(
         b[i] = ρ_prime * (1 - operator_scaling * ai_sq)^2 * b[i]
     end
     # Now apply the adjoint
-    get_adjoint_jacobian!(M, Y, o, p, b)
+    zero_vector!(M, Y, p)
+    accumulate_adjoint_jacobian!(M, Y, o, p, b)
     return Y
 end
 
@@ -898,7 +899,7 @@ function linear_normal_operator(
         penalty = lmsco.penalty
     )
     d = number_of_coordinates(M, B)
-    A = zeros(eltype(p), d, d)
+    A = zeros(number_eltype(p), d, d)
     return linear_normal_operator!(M, A, lmsco, p, B; penalty = penalty)
 end
 function linear_normal_operator!(
@@ -912,7 +913,7 @@ function linear_normal_operator!(
         accumulate_linear_normal_operator!(M, A, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
     end
     # Finally add the damping term
-    (penalty != 0) && (A .= A + penalty * I)
+    (penalty != 0) && (LinearAlgebra.diagview(A) .+= penalty)
     return A
 end
 """
@@ -1010,13 +1011,15 @@ function linear_operator!(
     fill!(y, 0)
     start = 0
     Y_cache = zero_vector(M, p)
+    # TODO: use the actual basis? store it in the VGF instead maybe?
+    c_cache = allocate_result(M, get_coordinates, p, X, DefaultOrthonormalBasis())
     get_residuals!(M, lmsco.value_cache, nlso, p)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
         linear_operator!(
             M, view(y, (start + 1):(start + len)), o, r, p, X, value_cache;
-            ε = lmsco.ε, mode = lmsco.mode, Y_cache = Y_cache,
+            ε = lmsco.ε, mode = lmsco.mode, Y_cache = Y_cache, c_cache = c_cache,
         )
         start += len
     end
@@ -1025,12 +1028,12 @@ end
 # for a single block – the actual formula
 function linear_operator!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
-        value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache = zero_vector(M, p),
+        value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
     )
     F_sq = sum(abs2, value_cache)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
     _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
-    get_jacobian!(M, y, o, p, X; Y_cache = Y_cache)
+    get_jacobian!(M, y, o, p, X; Y_cache = Y_cache, c_cache = c_cache)
     # Compute C y
     α = sqrt(ρ_prime)
     t = dot(value_cache, y)
@@ -1040,7 +1043,7 @@ end
 # Componenwise: Decouple
 function linear_operator!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X,
-        value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache = nothing,
+        value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
     )
     a = value_cache
     r = cr.robustifier
@@ -1059,11 +1062,9 @@ end
 _doc_normal_vector_field = """
     normal_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
     normal_vector_field!(M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
-    normal_vector_field!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
 
     normal_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis)
     normal_vector_field!(M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis)
-    normal_vector_field!(M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis)
 
 Compute the normal linear operator tangent vector ``X`` corresponding to the optimality conditions of the
 Levenberg-Marquardt surrogate objective, i.e.,
@@ -1074,6 +1075,20 @@ X = J_F^*(p)[ C^T y], $(_tex(:quad)) y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1
 
 If you provide an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) `B` ``=$(_tex(:set, "Z_1,…,Z_d"))`` additionally,
 the result will be given in coordinates `c`, i.e. such that ``X = $(_tex(:sum, "i=1", "d")) c_iZ_i``.
+
+Note that this is done per every block (vectorial function with its robustifier) of the underlying
+[`NonlinearLeastSquaresObjective`](@ref) and summed up.
+
+See also [`linear_normal_operator`](@ref) for evaluating the corresponding linear operator of the (normal) linear system,
+and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and computation of ``C``.
+"""
+
+
+_doc_accumulate_normal_vector_field = """
+    accumulate_normal_vector_field!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
+    accumulate_normal_vector_field!(M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis)
+
+Accumulate the contribution of `o` / `r` to the normal linear operator tangent vector in `X` or `c`.
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
@@ -1127,7 +1142,8 @@ function normal_vector_field!(
     γ = residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * dot(y, y))
     @. y = γ * y
     # and apply the adjoint, i.e. compute J_F^*(p)[C^T y]
-    get_adjoint_jacobian!(M, X, o, p, y; Y_cache = Y_cache)
+    zero_vector!(M, X, p)
+    accumulate_adjoint_jacobian!(M, X, o, p, y; Y_cache = Y_cache)
     return X
 end
 # Componenwise C again reduces to a diagonal
@@ -1145,13 +1161,14 @@ function normal_vector_field!(
         y[i] = residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * y[i]
     end
     # and apply the adjoint, i.e. compute J_F^*(p)[C^T y]
-    get_adjoint_jacobian!(M, X, o, p, y)
+    zero_vector!(M, X, p)
+    accumulate_adjoint_jacobian!(M, X, o, p, y)
     return X
 end
 
 #
 # (b) in a basis
-@doc "$(_doc_normal_vector_field)"
+@doc "$(_doc_accumulate_normal_vector_field)"
 function normal_vector_field(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis,
     )
@@ -1159,23 +1176,21 @@ function normal_vector_field(
     return normal_vector_field!(M, c, lmsco, p, B)
 end
 
-@doc "$(_doc_normal_vector_field)"
+@doc "$(_doc_accumulate_normal_vector_field)"
 function normal_vector_field!(
         M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis,
     )
     nlso = get_objective(lmsco)
     # For every block
     fill!(c, 0)
-    d = copy(c)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        normal_vector_field!(M, d, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
-        c .+= d
+        accumulate_normal_vector_field!(M, c, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
     end
     return c
 end
 # for a single block – the actual formula
-@doc "$(_doc_normal_vector_field)"
-function normal_vector_field!(
+@doc "$(_doc_accumulate_normal_vector_field)"
+function accumulate_normal_vector_field!(
         M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
     )
@@ -1186,11 +1201,11 @@ function normal_vector_field!(
     # Compute y = ρ'(p) / (1-α)) F(p) and ...
     y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
     # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (inplace of y)
-    get_adjoint_jacobian!(M, c, o, p, y, B)
+    accumulate_adjoint_jacobian!(M, c, o, p, y, B)
     return c
 end
 # Compponentwise: decouple, C is a diagonalmatrix
-function normal_vector_field!(
+function accumulate_normal_vector_field!(
         M::AbstractManifold, c, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, B::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = nothing,
     )
@@ -1204,7 +1219,7 @@ function normal_vector_field!(
         y[i] = residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * ai
     end
     # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (inplace of y)
-    get_adjoint_jacobian!(M, c, o, p, y, B)
+    accumulate_adjoint_jacobian!(M, c, o, p, y, B)
     return c
 end
 
