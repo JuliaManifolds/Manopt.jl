@@ -83,13 +83,13 @@ function set_parameter!(ls::LanczosState, ::Val{:σ}, σ)
     ls.σ = σ
     return ls
 end
-
-function show(io::IO, ls::LanczosState)
+function status_summary(ls::LanczosState; context = default)
+    _is_inline(context) && return repr(ls)
     i = get_count(ls, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ls.stop) ? "Yes" : "No"
     vectors = length(ls.Lanczos_vectors)
-    s = """
+    return """
     # Solver state for `Manopt.jl`s Lanczos Iteration
     $Iter
     ## Parameters
@@ -102,7 +102,6 @@ function show(io::IO, ls::LanczosState)
     (b) For the Newton sub solver
     $(status_summary(ls.stop_newton))
     This indicates convergence: $Conv"""
-    return print(io, s)
 end
 
 #

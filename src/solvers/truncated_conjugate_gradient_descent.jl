@@ -191,6 +191,7 @@ function get_reason(c::StopWhenResidualIsReducedByFactorOrPower)
     return ""
 end
 function status_summary(c::StopWhenResidualIsReducedByFactorOrPower; context = :default)
+    context === :short && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "Residual reduced by factor $(c.κ) or power $(c.θ):$(_MANOPT_INDENT)" : "A stopping criterion used within tCG to check whether the residual is reduced by factor $(c.κ) or power 1+$(c.θ)\n$(_MANOPT_INDENT)") * "$s"
@@ -275,13 +276,13 @@ function get_reason(c::StopWhenTrustRegionIsExceeded)
     return ""
 end
 function status_summary(c::StopWhenTrustRegionIsExceeded; context = :default)
-    (context == :short) && return repr(sc)
+    (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "Trust region exceeded:$(_MANOPT_INDENT)" : "A stopping criterion to stop when the trust region radius ($(c.trr)) is exceeded.\n$(_MANOPT_INDENT)") * "$s"
 end
 function show(io::IO, c::StopWhenTrustRegionIsExceeded)
-    return print(io, "StopWhenTrustRegionIsExceeded()\n    $(status_summary(c))")
+    return print(io, "StopWhenTrustRegionIsExceeded()")
 end
 
 @doc """
@@ -333,12 +334,12 @@ function get_reason(c::StopWhenCurvatureIsNegative)
     return ""
 end
 function status_summary(c::StopWhenCurvatureIsNegative; context = :default)
-    (context == :short) && return repr(sc)
+    (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "Curvature is negative:$(_MANOPT_INDENT)" : "A stopping criterion to stop when the is negative\n$(_MANOPT_INDENT)") * "$s"
 end
-function show(io::IO, c::StopWhenCurvatureIsNegative)
+function show(io::IO, ::StopWhenCurvatureIsNegative)
     return print(io, "StopWhenCurvatureIsNegative()")
 end
 
@@ -389,13 +390,14 @@ function get_reason(c::StopWhenModelIncreased)
     end
     return ""
 end
-function status_summary(c::StopWhenModelIncreased)
+function status_summary(c::StopWhenModelIncreased; context = :default)
+    context === :short && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "Model Increased:$(_MANOPT_INDENT)$s"
 end
-function show(io::IO, c::StopWhenModelIncreased)
-    return print(io, "StopWhenModelIncreased()\n    $(status_summary(c))")
+function show(io::IO, ::StopWhenModelIncreased)
+    return print(io, "StopWhenModelIncreased()")
 end
 
 _doc_TCG_subproblem = raw"""

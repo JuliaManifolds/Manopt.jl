@@ -825,7 +825,7 @@ function status_summary(c::StopWhenStepsizeLess; context = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "stepsize s < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the step size is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "Stepsize s < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the step size is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenStepsizeLess)
     return print(io, "StopWhenStepsizeLess($(c.threshold))")

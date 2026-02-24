@@ -16,7 +16,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @test repr(srr) == "StopWhenResidualIsReducedByFactorOrPower(0.1, 1.0)"
     str = StopWhenTrustRegionIsExceeded()
     str1 = Manopt.status_summary(str)
-    @test str1 == "Trust region exceeded:$(Manopt._MANOPT_INDENT)not reached"
+    @test str1 == "A stopping criterion to stop when the trust region radius (0.0) is exceeded.\n$(Manopt._MANOPT_INDENT)not reached"
     @test repr(str) == "StopWhenTrustRegionIsExceeded()"
     @test get_reason(str) == ""
     # Trigger manually
@@ -24,7 +24,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @test length(get_reason(str)) > 0
     scn = StopWhenCurvatureIsNegative()
     scn1 = Manopt.status_summary(scn)
-    @test scn1 == "Curvature is negative:$(Manopt._MANOPT_INDENT)not reached"
+    @test scn1 == "A stopping criterion to stop when the is negative\n$(Manopt._MANOPT_INDENT)not reached"
     @test repr(scn) == "StopWhenCurvatureIsNegative()"
     smi = StopWhenModelIncreased()
     smi1 = Manopt.status_summary(smi)

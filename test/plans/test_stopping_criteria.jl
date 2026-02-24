@@ -79,7 +79,7 @@ end
         o = Manopt.Test.DummyState()
         s = StopAfter(Millisecond(30))
         @test !Manopt.indicates_convergence(s)
-        @test Manopt.status_summary(s) == "stopped after $(s.threshold):$(Manopt._MANOPT_INDENT)not reached"
+        @test Manopt.status_summary(s) == "A stopping criterion to stop after $(s.threshold)\n$(Manopt._MANOPT_INDENT)not reached"
         @test repr(s) == "StopAfter(Millisecond(30))"
         s(p, o, 0) # Start
         @test s(p, o, 1) == false
@@ -96,7 +96,7 @@ end
     @testset "Stopping Criterion &/| operators" begin
         a = StopAfterIteration(200)
         b = StopWhenChangeLess(Euclidean(), 1.0e-6)
-        sb = "StopWhenChangeLess with threshold 1.0e-6."
+        sb = "StopWhenChangeLess(1.0e-6; inverse_retraction_method=LogarithmicInverseRetraction())"
         @test repr(b) == sb
         @test get_reason(b) == ""
         b2 = StopWhenChangeLess(Euclidean(), 1.0e-6) # second constructor
@@ -130,9 +130,9 @@ end
 
     @testset "Stopping Criterion print&summary" begin
         f = StopWhenStepsizeLess(1.0e-6)
-        sf1 = "Stepsize s < 1.0e-6:$(Mantopt._MANOPT_INDENT)not reached"
+        sf1 = "Stepsize s < 1.0e-6:$(Manopt._MANOPT_INDENT)not reached"
         sf2 = "StopWhenStepsizeLess(1.0e-6)"
-        @test Manopt.status_summary(f) == "$sf2\n\n$sf1"
+        @test Manopt.status_summary(f) == "A stopping criterion to stop when the step size is less than 1.0e-6\n$(Manopt._MANOPT_INDENT)not reached"
         @test Manopt.status_summary(f; context = :inline) == sf1
         @test repr(f) == sf2
         g = StopWhenCostLess(1.0e-4)
@@ -325,7 +325,8 @@ end
         @test has_converged(sc) == has_converged(s)
         @test get_reason(sc) == ""
         @test startswith(repr(sc), "StopWhenRepeated(")
-        @test startswith(Manopt.status_summary(sc), "0 ≥ 3 (consecutive): not reached")
+        @test startswith(Manopt.status_summary(sc), "A stopping criterion to stop when the inner criterion has indicated to stop 3 (consecutive) times")
+        @test startswith(Manopt.status_summary(sc; context = :short), "StopWhenRepeated(StopAfterIteration(2))×3")
         @test !sc(p, o, 1) # still count 0
         @test !sc(p, o, 2) # 1
         @test !sc(p, o, 2) # 2
@@ -352,7 +353,7 @@ end
         @test has_converged(sc) == has_converged(s)
         @test get_reason(sc) == ""
         @test startswith(repr(sc), "StopWhenCriterionWithIterationCondition(")
-        @test startswith(Manopt.status_summary(sc), "Base.Fix2{typeof(>), Int64}(>, 5) &&")
+        @test startswith(Manopt.status_summary(sc; context = :short), repr(sc))
         sc2 = s ⩼ 5
         @test typeof(sc) === typeof(sc2)
         sc4 = s ≟ 5

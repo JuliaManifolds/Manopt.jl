@@ -48,7 +48,7 @@ function status_summary(pps::ProximalPointState; context = :default)
     i = get_count(pps, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pps.stop) ? "Yes" : "No"
-    inline && (return "$(repr(pps)) – $(Iter) $(has_converged(pps) ? "(converged)" : "")")
+    _is_inline(context) && (return "$(repr(pps)) – $(Iter) $(has_converged(pps) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Proximal Point Method
     $Iter

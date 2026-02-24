@@ -68,8 +68,8 @@ Random.seed!(29)
         @test isapprox(M, p1, p3)
         # SC
         f = StopWhenPopulationConcentrated(1.0e-1, 1.0e-2)
-        sf = "StopWhenPopulationConcentrated($(1.0e-1), $(1.0e-2))\n    $(Manopt.status_summary(f))"
-        @test Manopt.status_summary(f; context = :default) == sf
+        sf = "StopWhenPopulationConcentrated($(1.0e-1), $(1.0e-2))"
+        @test Manopt.status_summary(f; context = :short) == sf
     end
 
     @testset "Circle" begin

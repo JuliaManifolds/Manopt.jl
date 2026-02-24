@@ -404,7 +404,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
         @test repr(DebugGradient()) == "DebugGradient(; format=\"grad f(p):%s\", at_init=false)"
         dg_s = "(:Gradient, \"grad f(p):%s\")"
-        @test Manopt.status_summary(DebugGradient()) == dg_s
+        @test Manopt.status_summary(DebugGradient(); context = :short) == dg_s
     end
     @testset "Debug Messages" begin
         s = TestMessageState()

@@ -789,7 +789,8 @@ function (c::StopWhenPopulationStronglyConcentrated)(
     end
     return false
 end
-function status_summary(c::StopWhenPopulationStronglyConcentrated)
+function status_summary(c::StopWhenPopulationStronglyConcentrated; context = :default)
+    context === :short && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return "norm(s.deviations, Inf) < $(c.tol) && norm(s.σ * s.p_c, Inf) < $(c.tol) :$(_MANOPT_INDENT)$s"
@@ -801,9 +802,7 @@ function get_reason(c::StopWhenPopulationStronglyConcentrated)
     return ""
 end
 function show(io::IO, c::StopWhenPopulationStronglyConcentrated)
-    return print(
-        io, "StopWhenPopulationStronglyConcentrated($(c.tol))\n    $(status_summary(c))"
-    )
+    return print(io, "StopWhenPopulationStronglyConcentrated($(c.tol))")
 end
 
 """
@@ -838,7 +837,8 @@ function (c::StopWhenPopulationDiverges)(::AbstractManoptProblem, s::CMAESState,
     end
     return false
 end
-function status_summary(c::StopWhenPopulationDiverges)
+function status_summary(c::StopWhenPopulationDiverges; context = :default)
+    context === :short && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return "cur_σ_times_maxstddev / c.last_σ_times_maxstddev > $(c.tol) :$(_MANOPT_INDENT)$s"
@@ -850,7 +850,7 @@ function get_reason(c::StopWhenPopulationDiverges)
     return ""
 end
 function show(io::IO, c::StopWhenPopulationDiverges)
-    return print(io, "StopWhenPopulationDiverges($(c.tol))\n    $(status_summary(c))")
+    return print(io, "StopWhenPopulationDiverges($(c.tol))")
 end
 
 """
@@ -898,7 +898,8 @@ function (c::StopWhenPopulationCostConcentrated)(
     end
     return false
 end
-function status_summary(c::StopWhenPopulationCostConcentrated)
+function status_summary(c::StopWhenPopulationCostConcentrated; context = :default)
+    context === :short && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return "range of best objective values in the last $(length(c.best_value_history)) generations and all objective values in the current one < $(c.tol) :$(_MANOPT_INDENT)$s"
@@ -911,6 +912,6 @@ function get_reason(c::StopWhenPopulationCostConcentrated)
 end
 function show(io::IO, c::StopWhenPopulationCostConcentrated)
     return print(
-        io, "StopWhenPopulationCostConcentrated($(c.tol))\n    $(status_summary(c))"
+        io, "StopWhenPopulationCostConcentrated($(c.tol))"
     )
 end

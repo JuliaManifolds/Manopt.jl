@@ -16,7 +16,9 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     obj! = ManifoldHessianObjective(f, ∇f!, ∇²f!; evaluation = InplaceEvaluation())
     neg_obj = -obj
     @test neg_obj isa ScaledManifoldObjective
-    s = "ScaledManifoldObjective based on a $(obj) with scale -1"
+    s = repr(neg_obj)
+    @test startswith(s, "ScaledManifoldObjective(ManifoldHessianObjective(f, ∇f")
+    @test endswith(s, "-1)")
     @test repr(neg_obj) == s
     scaled_obj = -1 * obj
     @test scaled_obj == neg_obj

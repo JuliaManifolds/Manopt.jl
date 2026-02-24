@@ -8,7 +8,8 @@ function default_stepsize(
         M; retraction_method = retraction_method, initial_stepsize = 1.0
     )
 end
-function status_summary(cgds::ConjugateGradientDescentState)
+function status_summary(cgds::ConjugateGradientDescentState; context = :default)
+    _is_inline(context) && repr(cgds)
     i = get_count(cgds, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cgds.stop) ? "Yes" : "No"
