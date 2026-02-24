@@ -484,7 +484,7 @@ function get_reason(c::StopWhenPollSizeLess)
     end
     return ""
 end
-function status_summary(c::StopWhenPollSizeLess)
+function status_summary(c::StopWhenPollSizeLess; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "Poll step size s < $(c.threshold):$(_MANOPT_INDENT)" : "Stop when the poll step size is less than the threshold $(c.threshold)\n$(_MANOPT_INDENT)") * s

@@ -278,7 +278,18 @@ function status_summary(cmo::ConstrainedManifoldObjective; context = :default)
     ## Inequality constrains
     $(replace(status_summary(cmo.inequality_constraints; context = context), "\n" => "\n$(_MANOPT_INDENT)", "\n#" => "\n$(_MANOPT_INDENT)##"))"""
 end
-
+function show(io::IO, cmo::ConstrainedManifoldObjective)
+    print(io, "ConstrainedManifoldObjective("); print(io, cmo.objective)
+    print(io, "; atol = ")
+    print(io, cmo.atol)
+    if !isnothing(cmo.equality_constraints)
+        print(io, "; equality_constraints = "); print(io, cmo.equality_constraints)
+    end
+    if !isnothing(cmo.inequality_constraints)
+        print(io, "; inequality_constraints = "); print(io, cmo.inequality_constraints)
+    end
+    return print(io, ")")
+end
 @doc """
     ConstrainedManoptProblem{
         TM <: AbstractManifold,

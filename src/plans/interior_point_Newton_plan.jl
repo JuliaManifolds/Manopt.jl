@@ -135,7 +135,7 @@ mutable struct InteriorPointNewtonState{
             Y::V = zero(μ), Z::V = zero(λ), W::V = zero(s),
             stopping_criterion::SC = StopAfterIteration(200) | StopWhenChangeLess(1.0e-8),
             retraction_method::RTM,
-            step_problem::StepPr, step_state::StepSt, stepsize::S,
+            step_problem::StepPr, step_state::StepSt, stepsize::S, kwargs...
         ) where {
             P, T, V, R,
             Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
@@ -242,15 +242,15 @@ end
 function Base.show(io::IO, ipns::InteriorPointNewtonState)
     print(io, "InteriorPointNewtonState(")
     print(io, repr(ipns.sub_problem)); print(io, ", "); print(io, repr(ipns.sub_state)); print(io, ";\n")
-    print(io, "p = "); print(io, ipns.p); print(io, ", X = "); print(io, ipns.X)
-    print(io, ",\nμ = "); print(io, ipns.μ); print(io, ", Y = "); print(io, ipns.Y)
-    print(io, ",\nλ = "); print(io, ipns.λ); print(io, ", Z = "); print(io, ipns.Z)
-    print(io, ",\ns = "); print(io, ipns.s); print(io, ", W = "); print(io, ipns.W)
-    print(io, ",\nρ = "); print(io, ipns.ρ); print(io, ", σ = "); print(io, ipns.σ)
-    print(io, ", is_feasibility_error="); print(io, ipns.is_feasible_error)
-    print(io, ",\nretraction_method = $(ipns.retraction_method)")
+    print(io, "is_feasibility_error="); print(io, ipns.is_feasible_error)
+    print(io, ",retraction_method = $(ipns.retraction_method)")
+    print(io, ",\np = "); print(io, ipns.p); print(io, ", X = "); print(io, ipns.X)
+    print(io, ", μ = "); print(io, ipns.μ); print(io, ", Y = "); print(io, ipns.Y)
+    print(io, ", λ = "); print(io, ipns.λ); print(io, ", Z = "); print(io, ipns.Z)
+    print(io, ", s = "); print(io, ipns.s); print(io, ", W = "); print(io, ipns.W)
+    print(io, ", ρ = "); print(io, ipns.ρ); print(io, ", σ = "); print(io, ipns.σ)
     print(io, ",\nstep_problem = "); print(io, ipns.step_problem)
-    print(io, ",\nstep_state = ")
+    print(io, ", step_state = ")
     return print(io, ipns.step_state)
 end
 #
@@ -315,8 +315,7 @@ b(p,λ) = $(
 
     CondensedKKTVectorField(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorField{O <: ConstrainedManifoldObjective, T, R} <:
-    AbstractConstrainedSlackFunctor{T, R}
+mutable struct CondensedKKTVectorField{O <: ConstrainedManifoldObjective, T, R} <: AbstractConstrainedSlackFunctor{T, R}
     cmo::O
     μ::T
     s::T
@@ -353,11 +352,17 @@ function (cKKTvf::CondensedKKTVectorField)(N, Y, q)
     end
     return Y
 end
-
+function status_summary(CKKTvf::CondensedKKTVectorField; context = :default)
+    _is_inline(context) && (return repr(CKKTvf))
+    return """
+    The condensed KKT vector field for the constrained objective
+    $(_MANOPT_INDENT)$(replace(status_summary(CKKTvf.cmo; context = context), "\n" => "\n$(_MANOPT_INDENT)"))
+    with μ=$(CKKTvf.μ) s=$(CKKTvf.s) β=$(CKKTvf.β)"""
+end
 function show(io::IO, CKKTvf::CondensedKKTVectorField)
-    return print(
-        io, "CondensedKKTVectorField\n$(_MANOPT_INDENT)with μ=$(CKKTvf.μ), s=$(CKKTvf.s), β=$(CKKTvf.β)"
-    )
+    print(io, "CondensedKKTVectorField(")
+    print(io, CKKTvf.cmo)
+    return print(io, ", $(CKKTvf.μ), $(CKKTvf.s), $(CKKTvf.β))")
 end
 
 @doc """
@@ -416,8 +421,7 @@ $(
 
     CondensedKKTVectorFieldJacobian(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorFieldJacobian{O <: ConstrainedManifoldObjective, T, R} <:
-    AbstractConstrainedSlackFunctor{T, R}
+mutable struct CondensedKKTVectorFieldJacobian{O <: ConstrainedManifoldObjective, T, R} <: AbstractConstrainedSlackFunctor{T, R}
     cmo::O
     μ::T
     s::T
@@ -459,11 +463,17 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     end
     return Y
 end
+function status_summary(CKKTvfJ::CondensedKKTVectorFieldJacobian; context = :default)
+    _is_inline(context) && (return repr(CKKTvfJ))
+    return """
+    The Jacobian of the condensed KKT vector field for the constrained objective
+    $(_MANOPT_INDENT)$(replace(status_summary(CKKTvfJ.cmo; context = context), "\n" => "\n$(_MANOPT_INDENT)"))
+    with μ=$(CKKTvfJ.μ) s=$(CKKTvfJ.s) β=$(CKKTvfJ.β)"""
+end
 function show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
-    return print(
-        io,
-        "CondensedKKTVectorFieldJacobian\n$(_MANOPT_INDENT)with μ=$(CKKTvfJ.μ), s=$(CKKTvfJ.s), β=$(CKKTvfJ.β)",
-    )
+    print(io, "CondensedKKTVectorFieldJacobian(")
+    print(io, CKKTvfJ.cmo)
+    return print(io, ", $(CKKTvfJ.μ), $(CKKTvfJ.s), $(CKKTvfJ.β))")
 end
 
 @doc """
@@ -540,7 +550,13 @@ function (KKTvf::KKTVectorField)(N, Y, q)
     return Y
 end
 function show(io::IO, KKTvf::KKTVectorField)
-    return print(io, "KKTVectorField\nwith the objective\n$(_MANOPT_INDENT)$(KKTvf.cmo)")
+    print(io, "KKTVectorField(")
+    print(io, KKTvf.cmo)
+    return print(io, ")")
+end
+function status_summary(KKTvf::KKTVectorField; context = :default)
+    _is_inline(context) && (return repr(KKTvf))
+    return "The KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvf.cmo; context = context))"
 end
 
 @doc """
@@ -618,7 +634,13 @@ function (KKTvfJ::KKTVectorFieldJacobian)(N, Z, q, Y)
     return Z
 end
 function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
-    return print(io, "KKTVectorFieldJacobian\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfJ.cmo)")
+    print(io, "KKTVectorFieldJacobian(")
+    print(io, KKTvfJ.cmo)
+    return print(io, ")")
+end
+function status_summary(KKTvfJ::KKTVectorFieldJacobian; context = :default)
+    _is_inline(context) && (return repr(KKTvfJ))
+    return "The Jacobian of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfJ.cmo; context = context))"
 end
 
 @doc """
@@ -695,7 +717,13 @@ function (KKTvfAdJ::KKTVectorFieldAdjointJacobian)(N, Z, q, Y)
     return Z
 end
 function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
-    return print(io, "KKTVectorFieldAdjointJacobian\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfAdJ.cmo)")
+    print(io, "KKTVectorFieldAdjointJacobian(")
+    print(io, KKTvfAdJ.cmo)
+    return print(io, ")")
+end
+function status_summary(KKTvfAdJ::KKTVectorFieldAdjointJacobian; context = :default)
+    _is_inline(context) && (return repr(KKTvfAdJ))
+    return "The adjoint Jacobian of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfAdJ.cmo; context = context))"
 end
 
 @doc """
@@ -728,7 +756,13 @@ function (KKTvc::KKTVectorFieldNormSq)(N, q)
     return inner(N, q, Y, Y)
 end
 function show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
-    return print(io, "KKTVectorFieldNormSq\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfNSq.cmo)")
+    print(io, "KKTVectorFieldNormSq(")
+    print(io, KKTvfNSq.cmo)
+    return print(io, ")")
+end
+function status_summary(KKTvfNSq::KKTVectorFieldNormSq; context = :default)
+    _is_inline(context) && (return repr(KKTvfNSq))
+    return "The KKT vector field in normed squared for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfNSq.cmo; context = context))"
 end
 
 @doc """
@@ -796,11 +830,14 @@ function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, Y, q)
     return Y
 end
 function show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
-    return print(
-        io, "KKTVectorFieldNormSqGradient\nwith the objective\n$(_MANOPT_INDENT)$(KKTvfNSqGrad.cmo)"
-    )
+    print(io, "KKTVectorFieldNormSqGradient(")
+    print(io, KKTvfNSqGrad.cmo)
+    return print(io, ")")
 end
-
+function status_summary(KKTvfNSqGrad::KKTVectorFieldNormSqGradient; context = :default)
+    _is_inline(context) && (return repr(KKTvfNSqGrad))
+    return "The gradient of the KKT vector field in normed squared for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfNSqGrad.cmo; context = context))"
+end
 #
 #
 # A special linesearch for IP Newton
@@ -983,7 +1020,7 @@ end
 function status_summary(swrr::StopWhenKKTResidualLess; context = :default)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "‖F(p, λ, μ)‖ < ε = $(c.ε):$(_MANOPT_INDENT)" : "Stop when the KKT resudual is less than ε = $(c.ε)\n$(_MANOPT_INDENT)") * s
+    return (_is_inline(context) ? "‖F(p, λ, μ)‖ < ε = $(swrr.ε):$(_MANOPT_INDENT)" : "Stop when the KKT resudual is less than ε = $(c.ε)\n$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(::StopWhenKKTResidualLess) = true
 function show(io::IO, c::StopWhenKKTResidualLess)
