@@ -124,7 +124,7 @@ function decorate_objective!(
     # 3) _then_ cache,
     # count should not be affected by 1) but cache should be on manifold not embedding
     # => only count _after_ cache misses
-    # and always last wrapper: `ReturnObjective`.
+    # and always last wrapper: `ReturnManifoldObjective`.
     deco_o = o
     if objective_type ∈ [:Embedding, :Euclidean]
         deco_o = EmbeddedManifoldObjective(o, _embedded_p, _embedded_X)

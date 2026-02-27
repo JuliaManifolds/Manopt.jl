@@ -31,6 +31,9 @@ struct CoordinateVectorialType{B <: AbstractBasis} <: AbstractVectorialType
     basis::B
 end
 CoordinateVectorialType() = CoordinateVectorialType(DefaultOrthonormalBasis())
+
+Base.show(io::IO, cvt::CoordinateVectorialType) = print(io, "CoordinateVectorialType($(cvt.basis))")
+
 """
     get_basis(::AbstractVectorialType)
 
@@ -80,6 +83,7 @@ when it makes sense, especially for Hessian and gradient functions.
 struct FunctionVectorialType{P <: AbstractPowerRepresentation} <: AbstractVectorialType
     range::P
 end
+Base.show(io::IO, fvt::FunctionVectorialType) = print(io, "FunctionVectorialType($(fvt.range))")
 
 """
     get_range(::AbstractVectorialType)
@@ -115,7 +119,7 @@ For the [`ComponentVectorialType`](@ref) imagine that ``f`` could also be writte
 using its component functions,
 
 ```math
-f(p) = \bigl( f_1(p), f_2(p),…, f_n(p) \bigr)^{$(_tex(:rm, "T"))}
+f(p) = $(_tex(:bigl))( f_1(p), f_2(p),…, f_n(p) $(_tex(:bigr)))^{$(_tex(:rm, "T"))}
 ```
 
 In this representation `f` is given as a vector `[f1(M,p), f2(M,p), ..., fn(M,p)]`
@@ -131,6 +135,11 @@ that if this is expensive even to compute a single component, all of `f` has to 
 """
 abstract type AbstractVectorFunction{E <: AbstractEvaluationType, FT <: AbstractVectorialType} <:
 Function end
+
+function Base.show(io::IO, ::MIME"text/plain", avf::AbstractVectorFunction)
+    multiline = get(io, :multiline, true)
+    return multiline ? status_summary(io, avf) : show(io, avf)
+end
 
 @doc """
     VectorGradientFunction{E, FT, JT, F, J, I} <: AbstractManifoldObjective{E}
@@ -200,23 +209,32 @@ struct VectorGradientFunction{
 end
 
 function VectorGradientFunction(
-        f::F,
-        Jf::J,
-        range_dimension::I;
-        evaluation::E = AllocatingEvaluation(),
-        function_type::FT = FunctionVectorialType(),
-        jacobian_type::JT = FunctionVectorialType(),
+        f::F, Jf::J, range_dimension::I;
+        evaluation::E = AllocatingEvaluation(), function_type::FT = FunctionVectorialType(), jacobian_type::JT = FunctionVectorialType(),
     ) where {
-        I <: Integer,
-        F,
-        J,
-        E <: AbstractEvaluationType,
-        FT <: AbstractVectorialType,
+        I <: Integer, F, J, E <: AbstractEvaluationType, FT <: AbstractVectorialType,
         JT <: AbstractVectorialType,
     }
     return VectorGradientFunction{E, FT, JT, F, J, I}(
         f, function_type, Jf, jacobian_type, range_dimension
     )
+end
+
+function status_summary(vgf::VectorGradientFunction; context = :default)
+    _is_inline(context) && (return "A vectorial function including gradients of length $(length(vgf)) represented as $(vgf.cost_type) and gradients as $(vgf.jacobian_type)")
+    return """
+    A function defined on a manifold that maps into a vector space including gradients of the component functions.
+
+    * cost:$(_MANOPT_INDENT)$(vgf.value!!)$(_MANOPT_INDENT)(represented as $(vgf.cost_type)),
+    * gradient(s) or Jacobian:$(_MANOPT_INDENT)$(vgf.jacobian!!)$(_MANOPT_INDENT)(represented as $(vgf.jacobian_type))
+    * dimension:$(_MANOPT_INDENT)$(length(vgf))"""
+end
+function show(io::IO, vgf::VectorGradientFunction{E}) where {E}
+    print(io, "VectorGradientFunction("); print(io, vgf.value!!); print(io, ", ")
+    print(io, vgf.jacobian!!); print(io, ", "); print(io, vgf.range_dimension)
+    print(io, "; "); print(io, _to_kw(E))
+    print(io, ", function_type = "); print(io, vgf.cost_type); print(io, ", jacobian_type = ")
+    return print(io, vgf.jacobian_type)
 end
 
 _doc_vhf = """
@@ -258,13 +276,8 @@ inplace-variant, specified by the `evaluation=` keyword.
 @doc "$(_doc_vhf)"
 struct VectorHessianFunction{
         E <: AbstractEvaluationType,
-        FT <: AbstractVectorialType,
-        JT <: AbstractVectorialType,
-        HT <: AbstractVectorialType,
-        F,
-        J,
-        H,
-        I <: Integer,
+        FT <: AbstractVectorialType, JT <: AbstractVectorialType, HT <: AbstractVectorialType,
+        F, J, H, I <: Integer,
     } <: AbstractVectorGradientFunction{E, FT, JT}
     value!!::F
     cost_type::FT
@@ -276,23 +289,12 @@ struct VectorHessianFunction{
 end
 
 function VectorHessianFunction(
-        f::F,
-        Jf::J,
-        Hf::H,
-        range_dimension::I;
-        evaluation::E = AllocatingEvaluation(),
-        function_type::FT = FunctionVectorialType(),
-        jacobian_type::JT = FunctionVectorialType(),
-        hessian_type::HT = FunctionVectorialType(),
+        f::F, Jf::J, Hf::H, range_dimension::I;
+        evaluation::E = AllocatingEvaluation(), function_type::FT = FunctionVectorialType(),
+        jacobian_type::JT = FunctionVectorialType(), hessian_type::HT = FunctionVectorialType(),
     ) where {
-        I <: Integer,
-        F,
-        J,
-        H,
-        E <: AbstractEvaluationType,
-        FT <: AbstractVectorialType,
-        JT <: AbstractVectorialType,
-        HT <: AbstractVectorialType,
+        I <: Integer, F, J, H, E <: AbstractEvaluationType,
+        FT <: AbstractVectorialType, JT <: AbstractVectorialType, HT <: AbstractVectorialType,
     }
     return VectorHessianFunction{E, FT, JT, HT, F, J, H, I}(
         f, function_type, Jf, jacobian_type, Hf, hessian_type, range_dimension
@@ -303,6 +305,27 @@ _vgf_index_to_length(b::BitVector, n) = sum(b)
 _vgf_index_to_length(::Colon, n) = n
 _vgf_index_to_length(i::AbstractArray{<:Integer}, n) = length(i)
 _vgf_index_to_length(r::UnitRange{<:Integer}, n) = length(r)
+
+function status_summary(vhf::VectorHessianFunction; context = :default)
+    _is_inline(context) && (return "A vectorial function of length $(length(vhf)) including gradients and Hessians represented as $(vhf.cost_type), gradients as $(vhf.jacobian_type), and Hessians as $(vhf.hessian_type).")
+    return """
+    A function defined on a manifold that maps into a vector space including gradients and Hessians of the component functions.
+
+    * cost:$(_MANOPT_INDENT)$(vhf.value!!)$(_MANOPT_INDENT)(represented as $(vhf.cost_type)),
+    * gradient(s) or Jacobian:$(_MANOPT_INDENT)$(vhf.jacobian!!)$(_MANOPT_INDENT)(represented as $(vhf.jacobian_type))
+    * Hessian(s):$(_MANOPT_INDENT)$(vhf.hessians!!)$(_MANOPT_INDENT)(represented as $(vhf.hessian_type))
+    * dimension:$(_MANOPT_INDENT)$(length(vhf))"""
+end
+function show(io::IO, vhf::VectorHessianFunction{E}) where {E}
+    print(io, "VectorGradientFunction("); print(io, vhf.value!!); print(io, ", ")
+    print(io, vhf.jacobian!!); print(io, ", "); print(io, vhf.hessians!!); print(io, ", ")
+    print(io, vhf.range_dimension); print(io, "; "); print(io, _to_kw(E))
+    print(io, ", function_type = "); print(io, vhf.cost_type)
+    print(io, ", jacobian_type = "); print(io, vhf.jacobian_type)
+    print(io, ", hessian_type = ")
+    return print(io, vhf.hessian_type)
+end
+
 
 #
 #

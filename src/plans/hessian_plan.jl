@@ -23,9 +23,9 @@ specify a problem for Hessian based algorithms.
 # Fields
 
 * `cost`:           a function ``f:$(_math(:Manifold))nifold)))→ℝ`` to minimize
-* `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold))) → $(_math(:TangentBundle))`` of the cost function ``f``
-* `hessian`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TangentSpace; p = "x")) → $(_math(:TangentSpace; p = "x"))`` of the cost function ``f``
-* `preconditioner`: the symmetric, positive definite preconditioner
+* `gradient!!`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold))) → $(_math(:TangentBundle))`` of the cost function ``f``
+* `hessian!!`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TangentSpace; p = "x")) → $(_math(:TangentSpace; p = "x"))`` of the cost function ``f``
+* `preconditioner!!`: the symmetric, positive definite preconditioner
   as an approximation of the inverse of the Hessian of ``f``, a map with the same
   input variables as the `hessian` to numerically stabilize iterations when the Hessian is
   ill-conditioned
@@ -222,6 +222,29 @@ update_hessian!(M, f, p, p_proposal, X) = f
 
 update_hessian_basis!(M, f, p) = f
 
+function status_summary(mho::ManifoldHessianObjective{E}; context = :default) where {E}
+    _is_inline(context) && return "A second order objective with cost, gradient$(isnothing(mho.preconditioner!!) ? ", and" : "") Hessian$(isnothing(mho.preconditioner!!) ? "" : ", and a preconditioner")"
+    precon_str = isnothing(mho.preconditioner!!) ? "" : "\n* preconditioner: $(mho.preconditioner!!)"
+    return """
+    A second order objective providing a Hessian
+
+    ## Functions
+    * cost:           $(mho.cost)
+    * gradient:       $(mho.gradient!!)
+    * Hessian:        $(mho.hessian!!)$(precon_str)"""
+end
+
+function Base.show(io::IO, mho::ManifoldHessianObjective{E}) where {E}
+    print(io, "ManifoldHessianObjective(")
+    print(io, "$(mho.cost), ")
+    print(io, "$(mho.gradient!!), ")
+    print(io, "$(mho.hessian!!)")
+    !isnothing(mho.preconditioner!!) && print(io, ", $(mho.preconditioner!!)")
+    print(io, "; ")
+    print(io, _to_kw(E))
+    return print(io, ")")
+end
+
 @doc """
     AbstractApproxHessian <: Function
 
@@ -275,8 +298,7 @@ $(_kwargs(:evaluation))
 * `steplength=`2^{-14}``: step length ``c`` to approximate the gradient evaluations
 $(_kwargs([:retraction_method, :vector_transport_method]))
 """
-mutable struct ApproxHessianFiniteDifference{E, P, T, G, RTR, VTR, R <: Real} <:
-    AbstractApproxHessian
+mutable struct ApproxHessianFiniteDifference{E, P, T, G, RTR, VTR, R <: Real} <: AbstractApproxHessian
     p_dir::P
     gradient!!::G
     grad_tmp::T
@@ -364,8 +386,7 @@ $(_kwargs(:vector_transport_method)).
 * `nu` (`-1`)
 $(_kwargs([:evaluation, :vector_transport_method]))
 """
-mutable struct ApproxHessianSymmetricRankOne{E, P, G, T, B <: AbstractBasis{ℝ}, VTR, R <: Real} <:
-    AbstractApproxHessian
+mutable struct ApproxHessianSymmetricRankOne{E, P, G, T, B <: AbstractBasis{ℝ}, VTR, R <: Real} <: AbstractApproxHessian
     p_tmp::P
     gradient!!::G
     grad_tmp::T

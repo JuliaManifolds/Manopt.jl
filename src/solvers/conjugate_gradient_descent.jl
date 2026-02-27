@@ -8,10 +8,12 @@ function default_stepsize(
         M; retraction_method = retraction_method, initial_stepsize = 1.0
     )
 end
-function show(io::IO, cgds::ConjugateGradientDescentState)
+function status_summary(cgds::ConjugateGradientDescentState; context = :default)
+    _is_inline(context) && repr(cgds)
     i = get_count(cgds, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cgds.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(cgds)) – $(Iter) $(has_converged(cgds) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver
     $Iter
@@ -25,10 +27,9 @@ function show(io::IO, cgds::ConjugateGradientDescentState)
     $(cgds.stepsize)
 
     ## Stopping criterion
-
-    $(status_summary(cgds.stop))
+    $(status_summary(cgds.stop; context = context))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_CG_formula = raw"""

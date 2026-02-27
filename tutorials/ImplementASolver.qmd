@@ -303,7 +303,8 @@ end
 
 ## Ease of Use II: the state summary
 
-For the case that you set `return_state=true` the solver should return a summary of the run. When a `show` method is provided, users can easily read such summary in a terminal.
+For the case that you set `return_state=true` the solver should return a summary of the run.
+Internally this is mapped to the (human-readable) display of a `status_summary`
 It should reflect its main parameters, if they are not too verbose and provide information
 about the reason it stopped and whether this indicates convergence.
 
@@ -311,11 +312,12 @@ about the reason it stopped and whether this indicates convergence.
 
 ```{julia}
 #| output: false
-import Base: show
-function show(io::IO, rws::RandomWalkState)
+import Manopt: status_summary: show
+function status_summary(rws::RandomWalkState; context = :default)
     i = get_count(rws, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(rws.stop) ? "Yes" : "No"
+    Manopt._is_inline(context) && (return "$(repr(rws)) – $(Iter) $(has_converged(rws) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Tutorial Random Walk
     $Iter
@@ -324,10 +326,9 @@ function show(io::IO, rws::RandomWalkState)
     * σ                : $(rws.σ)
 
     ## Stopping criterion
-
     $(status_summary(rws.stop))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 ```
 

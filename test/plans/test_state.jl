@@ -10,7 +10,7 @@ struct NoIterateState <: AbstractManoptSolverState end
         s = Manopt.Test.DummyState()
         @test repr(Manopt.ReturnSolverState(s)) == "ReturnSolverState($s)"
         @test Manopt.status_summary(Manopt.ReturnSolverState(s)) ==
-            "Manopt.Test.DummyState(Float64[])"
+            "A Manopt Test state with storage Float64[]"
         a = ArmijoLinesearch(; initial_stepsize = 1.0)(M)
         @test get_last_stepsize(a) == 1.0
         @test get_initial_stepsize(a) == 1.0
@@ -104,7 +104,7 @@ struct NoIterateState <: AbstractManoptSolverState end
         ddo = Manopt.Test.DummyDecoratedObjective(o)
         s = Manopt.Test.DummyState()
         rs = Manopt.ReturnSolverState(s)
-        @test Manopt.get_solver_return(o, rs) == s #no ReturnObjective
+        @test Manopt.get_solver_return(o, rs) == s #no ReturnManifoldObjective
         # Return O & S
         (a, b) = Manopt.get_solver_return(ro, rs)
         @test a == o

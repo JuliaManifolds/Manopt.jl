@@ -149,10 +149,11 @@ mutable struct NelderMeadState{
         )
     end
 end
-function show(io::IO, nms::NelderMeadState)
+function status_summary(nms::NelderMeadState; context = :default)
     i = get_count(nms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(nms.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(nms)) – $(Iter) $(has_converged(nms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Nelder Mead Algorithm
     $Iter
@@ -165,10 +166,9 @@ function show(io::IO, nms::NelderMeadState)
     * retraction method:         $(nms.retraction_method)
 
     ## Stopping criterion
-
-    $(status_summary(nms.stop))
+    $(status_summary(nms.stop; context = context))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 get_iterate(O::NelderMeadState) = O.p
 function set_iterate!(O::NelderMeadState, ::AbstractManifold, p)
@@ -420,14 +420,13 @@ function get_reason(c::StopWhenPopulationConcentrated)
     end
     return ""
 end
-function status_summary(c::StopWhenPopulationConcentrated)
+function status_summary(c::StopWhenPopulationConcentrated; context = :default)
+    (context === :short) && (return repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):\t$s"
+    head = (!_is_inline(context) ? "Stop when the population of a swarm is concentrated in eher function values (tolerance: $(c.tol_f)) or points (tolerance: $(c.tol_p))\n$(_MANOPT_INDENT)" : "")
+    return head * "Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):$(_MANOPT_INDENT)$s"
 end
 function show(io::IO, c::StopWhenPopulationConcentrated)
-    return print(
-        io,
-        "StopWhenPopulationConcentrated($(c.tol_f), $(c.tol_p))\n    $(status_summary(c))",
-    )
+    return print(io, "StopWhenPopulationConcentrated($(c.tol_f), $(c.tol_p))")
 end

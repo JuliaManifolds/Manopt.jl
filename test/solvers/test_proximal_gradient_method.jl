@@ -17,7 +17,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
     pgms.X = [1.0, 0.0, 0.0]
     @testset "Special Stopping Criterion" begin
         sc1 = StopWhenGradientMappingNormLess(1.0e-8)
-        @test startswith(repr(sc1), "StopWhenGradientMappingNormLess(1.0e-8)\n")
+        @test startswith(repr(sc1), "StopWhenGradientMappingNormLess(1.0e-8)")
         @test get_reason(sc1) == ""
         # Trigger manually
         sc1.at_iteration = 2
@@ -27,7 +27,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
         pgb = Manopt.ProximalGradientMethodBacktrackingStepsize(M)
         @test get_initial_stepsize(pgb) == 1.0
         @test get_last_stepsize(pgb) == 1.0
-        @test startswith(repr(pgb), "ProximalGradientMethodBacktrackingStepsize(;\n")
+        @test startswith(repr(pgb), "ProximalGradientMethodBacktrackingStepsize(;")
     end
     @testset "Allocating Evaluation" begin
         g(M, q) = distance(M, q, p)^2
@@ -238,7 +238,8 @@ using Manopt, Manifolds, Test, ManifoldDiff
             return_state = true
         )
         @test startswith(
-            repr(pbm_s), "# Solver state for `Manopt.jl`s Proximal Gradient Method\n"
+            Manopt.status_summary(pbm_s; context = :default),
+            "# Solver state for `Manopt.jl`s Proximal Gradient Method\n"
         )
         q = get_solver_result(pbm_s)
         # with default parameters for both median and proximal gradient, this is not very precise

@@ -23,7 +23,10 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
         stopping_criterion = StopAfterIteration(200),
         stepsize = Manopt.DecreasingStepsize(M; length = 1.0, type = :absolute),
     )
-    @test startswith(repr(sgs), "# Solver state for `Manopt.jl`s Subgradient Method\n")
+    @test startswith(
+        Manopt.status_summary(sgs),
+        "# Solver state for `Manopt.jl`s Subgradient Method\n"
+    )
     @test get_iterate(sgs) == p0
     sgs.X = [1.0, 0.0]
     f(M, q) = distance(M, q, p)

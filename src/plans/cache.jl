@@ -17,7 +17,7 @@ It otherwise does call the original differential.
 This simple cache does not take into account, that some first order objectives have a
 common function for cost & grad. It only caches the function that is actually called.
 
-# Constructor
+# Constructors
 
     SimpleManifoldCachedObjective(M::AbstractManifold, obj::AbstractManifoldFirstOrderObjective; kwargs...)
 
@@ -28,6 +28,13 @@ common function for cost & grad. It only caches the function that is actually ca
   see also `initialize=`
 * `c=[`get_cost`](@ref)`(M, obj, p)` or `0.0`: a value to store the cost function in `initialize`
 * `initialized=true`: whether to initialize the cached `X` and `c` or not.
+
+where both for `p` and `X` copies are generated before they are stored.
+
+    SimpleManifoldCachedObjective(obj::AbstractManifoldFirstOrderObjective, p, X, c; initialized = false)
+
+Similar as above but initialising all fields directly and without copies and `initialized` indicated whether
+the three values correspond to an evaluation from `obj`.
 """
 mutable struct SimpleManifoldCachedObjective{
         E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}, P, T, C,
@@ -50,6 +57,14 @@ function SimpleManifoldCachedObjective(
     ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
     q = copy(M, p)
     return SimpleManifoldCachedObjective{E, O, typeof(q), typeof(X), typeof(c)}(
+        obj, q, X, initialized, c, initialized
+    )
+end
+
+function SimpleManifoldCachedObjective(
+        obj::O, p, X, c; initialized = false
+    ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
+    return SimpleManifoldCachedObjective{E, O, typeof(p), typeof(X), typeof(c)}(
         obj, q, X, initialized, c, initialized
     )
 end
@@ -160,6 +175,13 @@ function get_gradient_function(
     recursive && (return get_gradient_function(sco.objective, recursive))
     return (M, X, p) -> get_gradient!(M, X, sco, p)
 end
+
+function show(io::IO, smco::SimpleManifoldCachedObjective)
+    print(io, "SimpleManifoldCachedObjective(")
+    show(io, smco.objective)
+    return print(io, "; c = $(smco.c), initialized = $(smco.c_valid && smco.X_valid), p = $(smco.p), X = $(smco.X))")
+end
+
 
 #
 # ManifoldCachedObjective constructor which errors by default
@@ -1065,20 +1087,25 @@ function show(
     ) where {S <: AbstractManoptSolverState}
     return print(io, "$(t[2])\n\n$(status_summary(t[1]))")
 end
-
-function status_summary(smco::SimpleManifoldCachedObjective)
+function status_summary(smco::SimpleManifoldCachedObjective; context = :default)
+    _is_inline(context) && return "A simple cache objective caching one p, X, and c for $(status_summary(smco.objective; context = context))"
     s = """
     ## Cache
-    A `SimpleManifoldCachedObjective` to cache one point and one tangent vector for the iterate and gradient, respectively
+    A `SimpleManifoldCachedObjective` to cache one point, one tangent vector, and real number
+    for the iterate, the gradient, and the cost function, respectively.
+
+    At the current iterate
+    * the tangent vector is cached:$(_MANOPT_INDENT)$(smco.X_valid ? "Yes" : "No")
+    * the cost is cached:$(_MANOPT_INDENT)$(smco.c_valid ? "Yes" : "No")
     """
-    s2 = status_summary(smco.objective)
+    s2 = status_summary(smco.objective; context = :default)
     length(s2) > 0 && (s2 = "\n$(s2)")
     return "$(s)$(s2)"
 end
 function status_summary(mco::ManifoldCachedObjective)
     s = "## Cache\n"
     s2 = status_summary(mco.objective)
-    (length(s2) > 0) && (s2 = "\n$(s2)")
+    (length(s2) > 0) && (s2 = "$(s2)")
     length(mco.cache) == 0 && return "$(s)    No caches active\n$(s2)"
     longest_key_length = max(length.(["$k" for k in keys(mco.cache)])...)
     cache_strings = [
@@ -1087,5 +1114,5 @@ function status_summary(mco::ManifoldCachedObjective)
             " : $(v.currentsize)/$(v.maxsize) entries of type $(valtype(v)) used" for
             (k, v) in zip(keys(mco.cache), values(mco.cache))
     ]
-    return "$(s)$(join(cache_strings, "\n"))\n$s2"
+    return "$(s2)\n\n$(s)$(join(cache_strings, "\n"))\n"
 end

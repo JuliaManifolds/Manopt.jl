@@ -324,10 +324,11 @@ get_subgradient(bms::ConvexBundleMethodState) = bms.g
 function default_stepsize(M::AbstractManifold, ::Type{ConvexBundleMethodState})
     return ConstantStepsize(M)
 end
-function show(io::IO, cbms::ConvexBundleMethodState)
+function status_summary(cbms::ConvexBundleMethodState; context = :default)
     i = get_count(cbms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cbms.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(cbms)) – $(Iter) $(has_converged(cbms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Convex Bundle Method
     $Iter
@@ -345,9 +346,9 @@ function show(io::IO, cbms::ConvexBundleMethodState)
     * vector transport:                                 $(cbms.vector_transport_method)
 
     ## Stopping criterion
-    $(status_summary(cbms.stop))
+    $(status_summary(cbms.stop; context = context))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 function _domain_condition(M, q, p, t, length, domain)

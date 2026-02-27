@@ -27,7 +27,7 @@ The original options can still be accessed using the [`get_state`](@ref) functio
 # Fields
 
 * `options`:         the options that are extended by debug information
-* `debugDictionary`: a `Dict{Symbol,DebugAction}` to keep track of Debug for different actions
+* `debug_dictionary`: a `Dict{Symbol,DebugAction}` to keep track of Debug for different actions
 
 # Constructors
     DebugSolverState(o,dA)
@@ -40,7 +40,7 @@ construct debug decorated options, where `dD` can be
 """
 mutable struct DebugSolverState{S <: AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
-    debugDictionary::Dict{Symbol, <:DebugAction}
+    debug_dictionary::Dict{Symbol, <:DebugAction}
     function DebugSolverState{S}(
             st::S, dA::Dict{Symbol, <:DebugAction}
         ) where {S <: AbstractManoptSolverState}
@@ -75,10 +75,10 @@ end
 """
     set_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
 
-Set certain values specified by `args...` into the elements of the `debugDictionary`
+Set certain values specified by `args...` into the elements of the `debug_dictionary`
 """
 function set_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
-    for d in values(dss.debugDictionary)
+    for d in values(dss.debug_dictionary)
         set_parameter!(d, args...)
     end
     return dss
@@ -95,20 +95,21 @@ function get_parameter(dss::DebugSolverState, v::Val{T}, args...) where {T}
     return get_parameter(dss.state, v, args...)
 end
 
-function status_summary(dst::DebugSolverState)
-    if length(dst.debugDictionary) > 0
+function status_summary(dst::DebugSolverState; context = :default)
+    if length(dst.debug_dictionary) > 0
         s = ""
-        for (k, v) in dst.debugDictionary
-            s = "$s\n    :$k = $(status_summary(v))"
+        for (k, v) in dst.debug_dictionary
+            s = "$s\n    :$k = $(status_summary(v; context = context))"
         end
-        return "$(dst.state)\n\n## Debug$s"
-    else # for length 1 the group is equivalent to the summary of the single state
-        return status_summary(dst.state)
+        return "$(status_summary(dst.state; context = context))\n\n## Debug$s"
+    else # if the dictionary has no entries, there is no actual debug in pretty print
+        return status_summary(dst.state; context = context)
     end
 end
 function show(io::IO, dst::DebugSolverState)
-    return print(io, status_summary(dst))
+    return print(io, "DebugSolverState($(dst.state), $(dst.debug_dictionary))")
 end
+
 dispatch_state_decorator(::DebugSolverState) = Val(true)
 
 #
@@ -138,9 +139,12 @@ function (d::DebugGroup)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     end
     return
 end
-function status_summary(dg::DebugGroup)
-    str = join(["$(status_summary(di))" for di in dg.group], ", ")
-    return "[ $str ]"
+function status_summary(dg::DebugGroup; context = :default)
+    (context == :short) && return "[ " * join(["$(status_summary(di; context = context))" for di in dg.group], ", ") * " ]"
+    (context == :inline) && return "a DebugAction consisting of a group actions, " * join(["$(status_summary(di; context = context))" for di in dg.group], ", ", ", and ")
+    return """
+    A DebugAction consisting of a group with the following elements
+    $(join(["* $(status_summary(di; context = context))" for di in dg.group], "\n"))"""
 end
 function show(io::IO, dg::DebugGroup)
     s = join(["$(di)" for di in dg.group], ", ")
@@ -208,14 +212,16 @@ function show(io::IO, de::DebugEvery)
         "DebugEvery($(de.debug), $(de.every), $(de.always_update); activation_offset=$(de.activation_offset))",
     )
 end
-function status_summary(de::DebugEvery)
+function status_summary(de::DebugEvery; context = :default)
     s = ""
-    if de.debug isa DebugGroup
-        s = status_summary(de.debug)[3:(end - 2)]
-    else
-        s = "$(de.debug)"
+    if context == :short
+        s = status_summary(de.debug; context = context)
+        # If we have a group, remove outer brackets and spaces
+        (de.debug isa DebugGroup) && (s = s[3:(end - 2)])
+        return "[$s, $(de.every)]"
     end
-    return "[$s, $(de.every)]"
+    (context == :inline) && return "The Debug $(status_summary(de.debug; context = context)) only printed every $(de.every) iteration"
+    return "a DebugAction wrapping the following DebugAction to only print it every $(de.every)th iteration.\n$(replace(status_summary(de.debug; context = context), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))"
 end
 function set_parameter!(de::DebugEvery, e::Symbol, args...)
     set_parameter!(de, Val(e), args...)
@@ -261,10 +267,12 @@ function (d::DebugCallback)(
     return nothing
 end
 function show(io::IO, dc::DebugCallback{CB}) where {CB}
-    return print(io, "DebugCallback containing a $(CB) callback $(dc.callback)")
+    return print(io, "DebugCallback($(dc.callback))")
 end
-function status_summary(dc::DebugCallback)
-    return "$(dc.callback)"
+function status_summary(dc::DebugCallback; context = :default)
+    (context === :short) && return "$(dc.callback)"
+    # inline and default
+    return "a DebugAction with a callback that calls $(dc.callback)"
 end
 
 @doc """
@@ -331,8 +339,11 @@ function show(io::IO, dc::DebugChange)
         "DebugChange(; format=\"$(escape_string(dc.format))\", inverse_retraction=$(dc.inverse_retraction_method))",
     )
 end
-status_summary(dc::DebugChange) = "(:Change, \"$(escape_string(dc.format))\")"
-
+function status_summary(dc::DebugChange; context = :default)
+    (context === :short) && (return "(:Change, \"$(escape_string(dc.format))\")")
+    # Inline and Default
+    return "a DebugAction to print the change of the iterate from one iteration to the next with format “$(escape_string(dc.format))”"
+end
 @doc """
     DebugCost <: DebugAction
 
@@ -366,7 +377,11 @@ end
 function show(io::IO, di::DebugCost)
     return print(io, "DebugCost(; format=\"$(escape_string(di.format))\", at_init=$(di.at_init))")
 end
-status_summary(di::DebugCost) = "(:Cost, \"$(escape_string(di.format))\")"
+function status_summary(di::DebugCost; context = :default)
+    (context === :short) && return "(:Cost, \"$(escape_string(di.format))\")"
+    # inline & default
+    return "a DebugAction printing the current cost value"
+end
 
 @doc """
     DebugDivider <: DebugAction
@@ -392,7 +407,11 @@ end
 function show(io::IO, di::DebugDivider)
     return print(io, "DebugDivider(; divider=\"$(escape_string(di.divider))\", at_init=$(di.at_init))")
 end
-status_summary(di::DebugDivider) = "\"$(escape_string(di.divider))\""
+function status_summary(di::DebugDivider; context = :default)
+    (context === :short) && (return "\"$(escape_string(di.divider))\"")
+    # inline and default
+    return "a DebugAction printing the String “$(escape_string(di.divider))” as a divider"
+end
 
 @doc """
     DebugEntry <: DebugAction
@@ -500,9 +519,11 @@ function show(io::IO, d::DebugFeasibility)
     sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"
     return print(io, "DebugFeasibility($sf, at_init=$(d.at_init))")
 end
-function status_summary(d::DebugFeasibility)
+function status_summary(d::DebugFeasibility; context = :default)
     sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"
-    return "(:Feasibility, $sf)"
+    (context === :short) && (return "(:Feasibility, $sf)")
+    # inline and Default
+    return "a DebugAction printing Feasibility information of the current iterate, namely $sf"
 end
 
 @doc """
@@ -686,8 +707,10 @@ function show(io::IO, dgc::DebugGradientChange)
         "DebugGradientChange(; format=\"$(escape_string(dgc.format))\", vector_transport_method=$(dgc.vector_transport_method))",
     )
 end
-function status_summary(di::DebugGradientChange)
-    return "(:GradientChange, \"$(escape_string(di.format))\")"
+function status_summary(di::DebugGradientChange; context = :Default)
+    (context === :short) && (return "(:GradientChange, \"$(escape_string(di.format))\")")
+    # Inline and default
+    return "a DebugAction printing the change of the gradient with format “$(escape_string(di.format))”"
 end
 
 @doc """
@@ -727,7 +750,11 @@ end
 function show(io::IO, di::DebugIterate)
     return print(io, "DebugIterate(; format=\"$(escape_string(di.format))\", at_init=$(di.at_init))")
 end
-status_summary(di::DebugIterate) = "(:Iterate, \"$(escape_string(di.format))\")"
+function status_summary(di::DebugIterate; context = :default)
+    (context === :short) && (return "(:Iterate, \"$(escape_string(di.format))\")")
+    # Inline and default
+    return "a DebugAction printing the current iterate in format “$(escape_string(di.format))”"
+end
 
 @doc """
     DebugIteration <: DebugAction
@@ -756,8 +783,11 @@ end
 function show(io::IO, di::DebugIteration)
     return print(io, "DebugIteration(; format=\"$(escape_string(di.format))\")")
 end
-status_summary(di::DebugIteration) = "(:Iteration, \"$(escape_string(di.format))\")"
-
+function status_summary(di::DebugIteration; context = :default)
+    (context === :short) && return "(:Iteration, \"$(escape_string(di.format))\")"
+    # Inline and default
+    return "a DebugAction that prints the current iteration number in format “$(escape_string(di.format))”"
+end
 @doc """
     DebugMessages <: DebugAction
 
@@ -806,12 +836,17 @@ function (d::DebugMessages)(::AbstractManoptProblem, st::AbstractManoptSolverSta
     return nothing
 end
 show(io::IO, d::DebugMessages) = print(io, "DebugMessages(:$(d.mode), :$(d.status))")
-function status_summary(d::DebugMessages)
-    (d.mode == :Warning) && return "(:WarningMessages, :$(d.status))"
-    (d.mode == :Error) && return "(:ErrorMessages, :$(d.status))"
-    # default
-    # (d.mode == :Info) && return "(:InfoMessages, $(d.status)"
-    return "(:Messages, :$(d.status))"
+function status_summary(d::DebugMessages; context = :default)
+    if context === :short
+        (d.mode == :Warning) && return "(:WarningMessages, :$(d.status))"
+        (d.mode == :Error) && return "(:ErrorMessages, :$(d.status))"
+        # default
+        # (d.mode == :Info) && return "(:InfoMessages, $(d.status)"
+        return "(:Messages, :$(d.status))"
+    end
+    # Inline and default
+    m = "a $(d.mode == :Warning ? "warning " : (d.mode == :Error ? "error " : ""))message"
+    return "a DebugAction printing messages collected during the last iteration as $m"
 end
 
 @doc """
@@ -845,8 +880,10 @@ function show(io::IO, c::DebugStoppingCriterion)
     s = length(c.prefix) > 0 ? "\"$(c.prefix)\"" : ""
     return print(io, "DebugStoppingCriterion($s)")
 end
-function status_summary(c::DebugStoppingCriterion)
-    return length(c.prefix) == 0 ? ":Stop" : "(:Stop, \"$(c.prefix)\")"
+function status_summary(c::DebugStoppingCriterion; context = :default)
+    (context === :short) && (return length(c.prefix) == 0 ? ":Stop" : "(:Stop, \"$(c.prefix)\")")
+    # Inline and default
+    return "a DebugAction printing the reason why a solver has stopped."
 end
 
 @doc """
@@ -890,8 +927,18 @@ end
 function show(io::IO, dwa::DebugWhenActive)
     return print(io, "DebugWhenActive($(dwa.debug), $(dwa.active), $(dwa.always_update))")
 end
-function status_summary(dwa::DebugWhenActive)
-    return repr(dwa)
+function status_summary(dwa::DebugWhenActive; context = :default)
+    (context === :short) && (return repr(dwa))
+    (context === :inline) && return "a DebugAction only printing its internal criterion ($(status_summary(dwa.debug; context = context))) when active (currently: $(dwa.active))"
+    return """
+    a DebugActin only printing its internal DebugAction when activated
+
+    ## DebugAction
+    $(status_summary(dwa.debug; context = context))$(dwa.always_update ? "\nwhich is always updated for negative iteration numbers still." : "")
+
+    ## Current activity
+    $(dwa.active ? "active" : "inactive") – use `set_parameter!(debug_action, :Activity, $(!dwa.active))` to toggle
+    """
 end
 function set_parameter!(dwa::DebugWhenActive, v::Val, args...)
     set_parameter!(dwa.debug, v, args...)
@@ -956,11 +1003,15 @@ function show(io::IO, di::DebugTime)
         io, "DebugTime(; format=\"$(escape_string(di.format))\", mode=:$(di.mode))"
     )
 end
-function status_summary(di::DebugTime)
-    if di.mode === :iterative
-        return "(:IterativeTime, \"$(escape_string(di.format))\")"
+function status_summary(di::DebugTime; context = :default)
+    if context == :short
+        if di.mode === :iterative
+            return "(:IterativeTime, \"$(escape_string(di.format))\")"
+        end
+        return "(:Time, \"$(escape_string(di.format))\")"
     end
-    return "(:Time, \"$(escape_string(di.format))\")"
+    # Default and inline
+    return "a DebugActin to print time per step $(di.mode === :iterative ? "iteratively" : "cumulatively")"
 end
 """
     reset!(d::DebugTime)
@@ -1076,8 +1127,15 @@ function (d::DebugWarnIfCostNotFinite)(
     end
     return nothing
 end
-show(io::IO, ::DebugWarnIfCostNotFinite) = print(io, "DebugWarnIfCostNotFinite()")
-status_summary(::DebugWarnIfCostNotFinite) = ":WarnCost"
+show(io::IO, d::DebugWarnIfCostNotFinite) = print(io, "DebugWarnIfCostNotFinite(:$(d.status))")
+function status_summary(d::DebugWarnIfCostNotFinite; context = :default)
+    (context == :short) && (return ":WarnCost")
+    # Default and inline
+    s = ""
+    (d.status === :Once) && (s = " It will only warn once.")
+    (d.status === :No) && (s = " It either has warned already or was deactivated by setting its status to `:No`.")
+    return "a DebugAction to issue a warning when the cost is no longer finite.$s"
+end
 
 @doc """
     DebugWarnIfFieldNotFinite <: DebugAction
@@ -1135,7 +1193,14 @@ end
 function show(io::IO, dw::DebugWarnIfFieldNotFinite)
     return print(io, "DebugWarnIfFieldNotFinite(:$(dw.field), :$(dw.status))")
 end
-
+function status_summary(dw::DebugWarnIfFieldNotFinite; context = :default)
+    (context == :short) && (return repr(dw))
+    # Default and inline
+    s = ""
+    (d.status === :Once) && (s = " It will only warn once.")
+    (d.status === :No) && (s = " It either has warned already or was deactivated by setting its status to `:No`.")
+    return "a DebugAction to warn if the field “:$(dw.field)” is or has entries that are not finite.$s"
+end
 @doc """
     DebugWarnIfGradientNormTooLarge{T} <: DebugAction
 

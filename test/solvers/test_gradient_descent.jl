@@ -191,18 +191,13 @@ using ManifoldDiff: grad_distance
         n5 = copy(M, pts[1])
         r = gradient_descent!(M, f, grad_f, n5; return_state = true)
         @test isapprox(M, n5, n2)
-        @test startswith(repr(r), "# Solver state for `Manopt.jl`s Gradient Descent")
+        @test startswith(Manopt.status_summary(r; context = :default), "# Solver state for `Manopt.jl`s Gradient Descent")
         # State and a count objective, putting stats behind print
         n6 = gradient_descent(
-            M,
-            f,
-            grad_f,
-            pts[1];
-            count = [:Gradient],
-            return_objective = true,
-            return_state = true,
+            M, f, grad_f, pts[1];
+            count = [:Gradient], return_objective = true, return_state = true,
         )
-        @test repr(n6) == "$(n6[2])\n\n$(n6[1])"
+        @test Manopt.status_summary(n6; context = :default) == "$(Manopt.status_summary(n6[2]; context = :default))\n\n$(Manopt.status_summary(n6[1]; context = :default))"
     end
     @testset "Tutorial mode" begin
         M = Sphere(2)

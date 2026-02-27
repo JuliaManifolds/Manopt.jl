@@ -63,6 +63,15 @@ function VectorBundleNewtonState(
     )
 end
 
+function Base.show(io::IO, vbns::VectorBundleNewtonState)
+    print(io, "VectorBundleNewtonState(M, E, p, $(vbns.sub_problem), $(vbns.sub_state);\n$(_MANOPT_INDENT)")
+    print(io, "retraction_method = $(vbns.retraction_method),\n$(_MANOPT_INDENT)")
+    print(io, "stopping_criterion = $(status_summary(vbns.stop; context = :short)),\n$(_MANOPT_INDENT)")
+    print(io, "stepsize = $(vbns.stepsize),\n$(_MANOPT_INDENT)")
+    print(io, "X = $(vbns.X),\n")
+    return print(io, ")")
+end
+
 @doc """
 AffineCovariantStepsize <: Stepsize
 
@@ -159,10 +168,11 @@ end
 
 default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = ConstantStepsize(M)
 
-function show(io::IO, vbns::VectorBundleNewtonState)
+function status_summary(vbns::VectorBundleNewtonState; context = :default)
     i = get_count(vbns, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(vbns.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(vbns)) – $(Iter) $(has_converged(vbns) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Vector bundle Newton method
     $Iter
@@ -171,10 +181,9 @@ function show(io::IO, vbns::VectorBundleNewtonState)
     * step size: $(vbns.stepsize)
 
     ## Stopping criterion
-
-    $(status_summary(vbns.stop))
+    $(status_summary(vbns.stop; context = context))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 
@@ -190,6 +199,30 @@ struct VectorBundleManoptProblem{
     manifold::M
     vectorbundle::TV
     newton_equation::O
+end
+
+function Base.show(io::IO, vbmp::VectorBundleManoptProblem)
+    print(io, "VectorBundleManoptProblem(")
+    show(io, vbmp.manifold); print(io, ", ")
+    show(io, vbmp.vectorbundle); print(io, ", ")
+    show(io, vbmp.newton_equation); print(io, ")")
+    return io
+end
+
+function status_summary(vbmp::VectorBundleManoptProblem; context = :default)
+    _is_inline(context) && return "A vector bundle problem defined on $(vbmp.manifold) with range $(vbmp.vectorbundle) and newton equation $(vbmp.newton_equation)"
+    return """
+    A vector bundle problem representing a vector bundle newton equation objective
+
+    ## Manifold
+    $(_MANOPT_INDENT)$(replace("$(vbmp.manifold)", "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+
+    ## Range
+    $(_MANOPT_INDENT)$(replace("$(vbmp.vectorbundle)", "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+
+    ## Vector bundle newton equation
+    $(_MANOPT_INDENT)$(replace("$(vbmp.newton_equation)", "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+    """
 end
 
 @doc """

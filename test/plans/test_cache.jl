@@ -67,19 +67,15 @@ end
         mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
         # Init to copy of p - init cache
         sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p = copy(M, p))
-        @test repr(sco1) == "SimpleManifoldCachedObjective{AllocatingEvaluation,$(mgoa)}"
-        @test startswith(
-            repr((sco1, 1.0)),
-            """## Cache
-            A `SimpleManifoldCachedObjective`""",
-        )
-        @test startswith(
-            repr((sco1, Manopt.Test.DummyState())),
-            """Manopt.Test.DummyState(Float64[])
-
-            ## Cache
-            A `SimpleManifoldCachedObjective`""",
-        )
+        sco1r = repr(sco1)
+        @test startswith(sco1r, "SimpleManifoldCachedObjective")
+        @test contains(sco1r, "c = ")
+        @test contains(sco1r, "p = ")
+        @test contains(sco1r, "X = ")
+        @test contains(sco1r, "initialized = ")
+        sco1s = Manopt.status_summary(sco1)
+        @test startswith(sco1s, "## Cache")
+        @test contains(sco1s, Manopt.status_summary(mgoa))
         # evaluated on init -> 1
         @test sco1.objective.functions[:cost].i == 1
         @test sco1.objective.functions[:gradient].i == 1
@@ -224,10 +220,9 @@ end
         o = ManifoldGradientObjective(f, grad_f)
         co = ManifoldCountObjective(M, o, [:Cost, :Gradient, :Differential])
         lco = objective_cache_factory(M, co, (:LRU, [:Cost, :Gradient, :Differential]))
-        @test startswith(repr(lco), "## Cache\n  * ")
-        @test startswith(
-            repr((lco, Manopt.Test.DummyState())),
-            "Manopt.Test.DummyState(Float64[])\n\n## Cache\n  * ",
+        @test contains(repr(lco), "## Cache\n  * ")
+        @test contains(
+            repr((lco, Manopt.Test.DummyState())), "Manopt.Test.DummyState(Float64[])",
         )
         ro = Manopt.Test.DummyDecoratedObjective(o)
         #undecorated works as well

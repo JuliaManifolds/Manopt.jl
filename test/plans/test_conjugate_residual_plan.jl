@@ -51,7 +51,8 @@ using Manifolds, Manopt, Test
         @test set_gradient!(crs, TpM, X0) == crs # setters return state
         @test get_gradient(crs) == X0
         @test startswith(
-            repr(crs), "# Solver state for `Manopt.jl`s Conjugate Residual Method"
+            Manopt.status_summary(crs; context = :default),
+            "# Solver state for `Manopt.jl`s Conjugate Residual Method\n"
         )
         crs2 = ConjugateResidualState(TpM, slso2)
         @test set_iterate!(crs2, TpM, X0) == crs2 # setters return state
@@ -59,7 +60,8 @@ using Manifolds, Manopt, Test
         @test set_gradient!(crs2, TpM, X0) == crs2 # setters return state
         @test get_gradient(crs2) == X0
         @test startswith(
-            repr(crs2), "# Solver state for `Manopt.jl`s Conjugate Residual Method"
+            Manopt.status_summary(crs2; context = :default),
+            "# Solver state for `Manopt.jl`s Conjugate Residual Method\n"
         )
     end
     @testset "StopWhenRelativeResidualLess" begin

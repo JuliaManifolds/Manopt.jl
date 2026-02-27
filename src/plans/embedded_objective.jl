@@ -371,7 +371,20 @@ function get_grad_inequality_constraint!(
     Y .= [riemannian_gradient(M, p, X) for X in Z]
     return Y
 end
+function show(io::IO, emo::EmbeddedManifoldObjective)
+    return print(io, "EmbeddedManifoldObjective($(emo.objective), $(emo.p), $(emo.X))")
+end
+function status_summary(io::IO, emo::EmbeddedManifoldObjective; context = :default)
+    return print(io, status_summary(emo; context = context))
+end
+function status_summary(emo::EmbeddedManifoldObjective{P, T}; context = :default) where {P, T}
+    _is_inline(context) && return "An embedded objective of $(status_summary(emo.objective; context = context))"
+    p_str = !(ismissing(emo.p)) ? "* for a point of type $P" : ""
+    X_str = !(ismissing(emo.X)) ? "* for a tangent vector of type $T" : ""
+    pX_str = (length(p_str) + length(X_str) > 0) ? "\n\n## Temporary memory (in the embedding)\n$(p_str)$(length(p_str) > 0 ? "\n" : "")$(X_str)" : ""
+    return """
+    An embedded objective
 
-function show(io::IO, emo::EmbeddedManifoldObjective{P, T}) where {P, T}
-    return print(io, "EmbeddedManifoldObjective{$P,$T} of an $(emo.objective)")
+    ## Objective
+    $(_MANOPT_INDENT)$(replace(status_summary(emo.objective, context = context), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))$(pX_str)"""
 end

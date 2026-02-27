@@ -319,13 +319,8 @@ function get_differential(
     return real(inner(M, p, gradient, X))
 end
 function get_differential(
-        M::AbstractManifold,
-        mfo::ManifoldFirstOrderObjective,
-        p,
-        X;
-        gradient = nothing,
-        evaluated::Bool = false,
-        kwargs...,
+        M::AbstractManifold, mfo::ManifoldFirstOrderObjective, p, X;
+        gradient = nothing, evaluated::Bool = false, kwargs...,
     )
     # If we have a differential – evaluate that
     haskey(mfo.functions, :differential) && (return mfo.functions[:differential](M, p, X))
@@ -375,19 +370,14 @@ end
 
 # (a) alloc
 function get_gradient(
-        M::AbstractManifold,
-        mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple},
-        p,
+        M::AbstractManifold, mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple}, p,
     )
     haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient](M, p))
     haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, p)[2])
     return error("$mfo does not seem to provide a gradient")
 end
 function get_gradient!(
-        M::AbstractManifold,
-        X,
-        mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple},
-        p,
+        M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple}, p,
     )
     haskey(mfo.functions, :gradient) &&
         (return copyto!(M, X, p, mfo.functions[:gradient](M, p)))
@@ -403,14 +393,10 @@ function get_gradient(
     return get_gradient!(M, X, mfo, p)
 end
 function get_gradient!(
-        M::AbstractManifold,
-        X,
-        mfo::ManifoldFirstOrderObjective{InplaceEvaluation, <:NamedTuple},
-        p,
+        M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{InplaceEvaluation, <:NamedTuple}, p,
     )
     haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient](M, X, p))
-    haskey(mfo.functions, :costgradient) &&
-        (return mfo.functions[:costgradient](M, X, p)[2])
+    haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, X, p)[2])
     return error("$mfo does not seem to provide a gradient")
 end
 
@@ -524,8 +510,16 @@ function get_cost_and_gradient!(
 
     return error("$mfo seems to either have no access to a cost or a gradient")
 end
-function show(io::IO, ::ManifoldFirstOrderObjective{E, FG}) where {E, FG}
-    return print(io, "ManifoldFirstOrderObjective{$E, $FG}")
+function status_summary(mfo::ManifoldFirstOrderObjective; context = :default)
+    _is_inline(context) && (return "A first order objective with functions for $(join(keys(mfo.functions), ", ", (length(mfo.functions) > 2 ? "," : "") * " and "))")
+    return "A first order objective with $(length(mfo.functions)) provided functions.\n\n" * join([ "* $k:$(_MANOPT_INDENT) $(v)" for (k, v) in zip(keys(mfo.functions), mfo.functions) ], "\n")
+end
+function show(io::IO, mfo::ManifoldFirstOrderObjective{E}) where {E}
+    print(io, "ManifoldFirstOrderObjective(; ")
+    print(io, join([ "$k = $v" for (k, v) in zip(keys(mfo.functions), mfo.functions)], ", "))
+    print(io, ", ")
+    print(io, _to_kw(E))
+    return print(io, ")")
 end
 
 #
@@ -612,6 +606,9 @@ for the specific coefficient, but can also be replaced by a (common, global)
 individual one that provides these values.
 """
 abstract type DirectionUpdateRule end
+
+# These are usually short enough that their summary can just be the representation
+status_summary(dru::DirectionUpdateRule; context = :default) = repr(dru)
 
 """
     IdentityUpdateRule <: DirectionUpdateRule
@@ -1085,7 +1082,10 @@ end
 function show(io::IO, dg::DebugGradient)
     return print(io, "DebugGradient(; format=\"$(dg.format)\", at_init=$(dg.at_init))")
 end
-status_summary(dg::DebugGradient) = "(:Gradient, \"$(dg.format)\")"
+function status_summary(dg::DebugGradient; context = :default)
+    _is_inline(context) && (return "(:Gradient, \"$(dg.format)\")")
+    return "A DebugAction to print the gradient at the current iterate “$(dg.format)”"
+end
 
 @doc """
     DebugGradientNorm <: DebugAction

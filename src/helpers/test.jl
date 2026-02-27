@@ -34,6 +34,16 @@ function DummyDecoratedObjective(
     ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
     return DummyDecoratedObjective{E, O}(o)
 end
+function Manopt.status_summary(
+        ddo::DummyDecoratedObjective; kwargs...
+    )
+    return "A dummy decorator for " * Manopt.status_summary(ddo.objective; kwargs...)
+end
+function Base.show(io::IO, ddo::DummyDecoratedObjective)
+    print(io, "DummyDecoratedObjective(")
+    print(io, ddo.objective)
+    return print(io, ")")
+end
 
 struct DummyProblem{M <: AbstractManifold} <: AbstractManoptProblem{M} end
 struct DummyStoppingCriteriaSet <: StoppingCriterionSet end
@@ -43,6 +53,7 @@ mutable struct DummyState <: AbstractManoptSolverState
     storage::Vector{Float64}
 end
 DummyState() = DummyState([])
+Manopt.status_summary(ds::DummyState; context = :Default) = "A Manopt Test state with storage $(ds.storage)"
 Manopt.get_iterate(::DummyState) = NaN
 Manopt.set_parameter!(s::DummyState, ::Val, v) = s
 Manopt.set_parameter!(s::DummyState, ::Val{:StoppingCriterion}, v) = s
