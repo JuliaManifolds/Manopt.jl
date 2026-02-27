@@ -323,7 +323,7 @@ function status_summary(c::StopWhenChangeLess)
     s = has_stopped ? "reached" : "not reached"
     return "|Δp| < $(c.threshold): $s"
 end
-indicates_convergence(c::StopWhenChangeLess) = true
+indicates_convergence(c::StopWhenChangeLess) = false
 function show(io::IO, c::StopWhenChangeLess)
     s = ismissing(c.outer_norm) ? "" : "and outer norm $(c.outer_norm)"
     return print(
@@ -375,7 +375,7 @@ function (c::StopWhenCostChangeLess)(
         c.last_change = 2 * c.tolerance
     end
     c.last_change = c.last_cost
-    c.last_cost = get_cost(problem, get_iterate(state))
+    c.last_cost = get_cost(problem, state)
     c.last_change = c.last_change - c.last_cost
     if abs(c.last_change) < c.tolerance
         c.at_iteration = iteration
@@ -405,11 +405,11 @@ end
     StopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the
-optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p, s)`.
 
 # Constructor
 
-    StopWhenCostLess(ε)
+    StopWhenCostLess(ε::Real)
 
 initialize the stopping criterion to a threshold `ε`.
 """
@@ -427,7 +427,7 @@ function (c::StopWhenCostLess)(
     if k == 0 # reset on init
         c.at_iteration = -1
     end
-    c.last_cost = get_cost(p, get_iterate(s))
+    c.last_cost = get_cost(p, s)
     if c.last_cost < c.threshold
         c.at_iteration = k
         return true
@@ -457,6 +457,78 @@ Update the minimal cost below which the algorithm shall stop
 function set_parameter!(c::StopWhenCostLess, ::Val{:MinCost}, v)
     c.threshold = v
     return c
+end
+
+"""
+    StopWhenRelativeAPosterioriCostChangeLessOrEqual <: StoppingCriterion
+
+A stopping criterion to stop when
+
+````math
+\\frac{f_k - f_{k+1}}{\\max(\\lvert f_k \\rvert, \\lvert f_{k+1} \\rvert, 1)} ≤ tol,
+````
+
+based on Eq. (1) in [ZhuByrdLuNocedal:1997](@cite)
+
+# Fields
+* tolerance: the threshold `tol` in the above formula.
+$(_fields([:at_iteration, :last_change]))
+* `last_cost``: the last cost value
+
+# Constructor
+
+    StopWhenRelativeAPosterioriCostChangeLessOrEqual(tolerance::F)
+
+Initialize the stopping criterion to a threshold `tolerance` for the change of the cost function.
+
+    StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::Real=1.0e7)
+
+Initialize tolerance to `factr * eps(factr)`, following the convention in [ZhuByrdLuNocedal:1997](@cite).
+"""
+mutable struct StopWhenRelativeAPosterioriCostChangeLessOrEqual{F <: Real} <: StoppingCriterion
+    tolerance::F
+    at_iteration::Int
+    last_cost::F
+    last_change::F
+end
+function StopWhenRelativeAPosterioriCostChangeLessOrEqual(tol::F) where {F <: Real}
+    return StopWhenRelativeAPosterioriCostChangeLessOrEqual{F}(tol, -1, zero(tol), 2 * tol)
+end
+StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::F = 1.0e7) where {F <: Real} = StopWhenRelativeAPosterioriCostChangeLessOrEqual(factr * eps(typeof(factr)))
+function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(
+        problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
+    )
+    if iteration <= 0 # reset on init
+        c.at_iteration = -1
+        c.last_cost = Inf
+        c.last_change = 2 * c.tolerance
+    end
+    current_cost = get_cost(problem, state)
+    c.last_change = (c.last_cost - current_cost) / max(abs(c.last_cost), abs(current_cost), 1)
+    c.last_cost = current_cost
+    if iteration > 1 && c.last_change <= c.tolerance
+        c.at_iteration = iteration
+        return true
+    end
+    return false
+end
+indicates_convergence(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual) = false
+function get_reason(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
+    if c.at_iteration >= 0
+        return "At iteration $(c.at_iteration) the algorithm performed a step with a relative a posteriori cost change ($(abs(c.last_change))) less than or equal to $(c.tolerance)."
+    end
+    return ""
+end
+function status_summary(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
+    has_stopped = (c.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = $(abs(c.last_change)) ≤ $(c.tolerance):\t$s"
+end
+function Base.show(io::IO, ::MIME"text/plain", c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
+    return print(
+        io,
+        "StopWhenRelativeAPosterioriCostChangeLessOrEqual with threshold $(c.tolerance).\n    $(status_summary(c))",
+    )
 end
 
 @doc """
@@ -715,7 +787,7 @@ Create a stopping criterion with threshold `ε` for the gradient, that is, this 
 indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`,
 where the norm to use can be specified in the `norm=` keyword.
 """
-mutable struct StopWhenGradientNormLess{F, TF, N <: Union{Missing, Real}} <: StoppingCriterion
+mutable struct StopWhenGradientNormLess{F, TF <: Real, N <: Union{Missing, Real}} <: StoppingCriterion
     norm::F
     threshold::TF
     last_change::TF
@@ -723,7 +795,7 @@ mutable struct StopWhenGradientNormLess{F, TF, N <: Union{Missing, Real}} <: Sto
     outer_norm::N
     function StopWhenGradientNormLess(
             ε::TF; norm::F = norm, outer_norm::N = missing
-        ) where {F, TF, N <: Union{Missing, Real}}
+        ) where {F, TF <: Real, N <: Union{Missing, Real}}
         return new{F, TF, N}(norm, ε, zero(ε), -1, outer_norm)
     end
 end
@@ -762,11 +834,83 @@ function show(io::IO, c::StopWhenGradientNormLess)
 end
 
 """
-    set_parameter!(c::StopWhenGradientNormLess, :MinGradNorm, v::Float64)
+    set_parameter!(c::StopWhenGradientNormLess{F,TF}, ::Val{:MinGradNorm}, v::TF) where {F,TF<:Real}
 
 Update the minimal gradient norm when an algorithm shall stop
 """
-function set_parameter!(c::StopWhenGradientNormLess, ::Val{:MinGradNorm}, v::Float64)
+function set_parameter!(c::StopWhenGradientNormLess{F, TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF <: Real}
+    c.threshold = v
+    return c
+end
+
+"""
+    StopWhenProjectedNegativeGradientNormLess <: StoppingCriterion
+
+A stopping criterion similar to [`StopWhenGradientNormLess`](@ref), although it checks the
+norm of projected minus gradient. It is primarily useful for optimization involving
+[`Hyperrectangle`](@extref Manifolds.Hyperrectangle).
+
+On manifolds with boundary and manifolds with corners, for a tangent vector ``X``,
+``-X`` might not be a valid tangent vector. As an example, consider the objective
+``f(x)=x^2`` on the interval ``[1, 2]``. Its gradient at 1 is equal to 2, but because the
+point 1 is at the boundary of the interval, the projected negative gradient is equal to 0
+because we can't go in the negative direction.
+"""
+mutable struct StopWhenProjectedNegativeGradientNormLess{F, TF <: Real, N <: Union{Missing, Real}} <: StoppingCriterion
+    norm::F
+    threshold::TF
+    last_change::TF
+    at_iteration::Int
+    outer_norm::N
+    function StopWhenProjectedNegativeGradientNormLess(
+            ε::TF; norm::F = norm, outer_norm::N = missing
+        ) where {F, TF <: Real, N <: Union{Missing, Real}}
+        return new{F, TF, N}(norm, ε, zero(ε), -1, outer_norm)
+    end
+end
+
+function (sc::StopWhenProjectedNegativeGradientNormLess)(
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
+    M = get_manifold(mp)
+    if k == 0 # reset on init
+        sc.at_iteration = -1
+    end
+    if (k > 0)
+        r = (has_components(M) && !ismissing(sc.outer_norm)) ? (sc.outer_norm,) : ()
+        p = get_iterate(s)
+        mpg = -get_gradient(s)
+        embed_project!(M, mpg, p, mpg)
+        sc.last_change = sc.norm(M, p, mpg, r...)
+        if sc.last_change < sc.threshold
+            sc.at_iteration = k
+            return true
+        end
+    end
+    return false
+end
+function get_reason(c::StopWhenProjectedNegativeGradientNormLess)
+    if (c.last_change < c.threshold) && (c.at_iteration >= 0)
+        return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the gradient norm ($(c.last_change)) is less than $(c.threshold).\n"
+    end
+    return ""
+end
+function status_summary(c::StopWhenProjectedNegativeGradientNormLess)
+    has_stopped = (c.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return "|proj (-grad f)| < $(c.threshold): $s"
+end
+indicates_convergence(c::StopWhenProjectedNegativeGradientNormLess) = true
+function show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
+    return print(io, "StopWhenProjectedNegativeGradientNormLess($(c.threshold))\n    $(status_summary(c))")
+end
+
+"""
+    set_parameter!(c::StopWhenProjectedNegativeGradientNormLess{F,TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF<:Real}
+
+Update the minimal gradient norm when an algorithm shall stop.
+"""
+function set_parameter!(c::StopWhenProjectedNegativeGradientNormLess{F, TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF <: Real}
     c.threshold = v
     return c
 end
@@ -831,13 +975,14 @@ end
 """
     StopWhenCostNaN <: StoppingCriterion
 
-stop looking at the cost function of the optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+Stop the solver when the cost function of the optimization problem
+[`AbstractManoptProblem`](@ref) is `NaN`. The value is obtained using `get_cost(p, s)`.
 
 # Constructor
 
     StopWhenCostNaN()
 
-initialize the stopping criterion to NaN.
+initialize the stopping criterion with `at_iteration` equal to -1.
 """
 mutable struct StopWhenCostNaN <: StoppingCriterion
     at_iteration::Int
@@ -850,7 +995,7 @@ function (c::StopWhenCostNaN)(
         c.at_iteration = -1
     end
     # but still verify whether it yields NaN
-    if isnan(get_cost(p, get_iterate(s)))
+    if isnan(get_cost(p, s))
         c.at_iteration = k
         return true
     end
@@ -874,13 +1019,15 @@ end
 """
     StopWhenIterateNaN <: StoppingCriterion
 
-stop looking at the cost function of the optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+Stop the solver when the iterate of the optimization problem from within an
+[`AbstractManoptProblem`](@ref) contains `NaN` values.
+The value is obtained using [`get_iterate`](@ref)`(s)`.
 
 # Constructor
 
     StopWhenIterateNaN()
 
-initialize the stopping criterion to NaN.
+Initialize the stopping criterion.
 """
 mutable struct StopWhenIterateNaN <: StoppingCriterion
     at_iteration::Int

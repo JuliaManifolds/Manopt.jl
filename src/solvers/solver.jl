@@ -189,3 +189,20 @@ end
 function stop_solver!(p::AbstractManoptProblem, s::ReturnSolverState, k)
     return stop_solver!(p, s.state, k)
 end
+
+"""
+    get_cost(p::AbstractManoptProblem, s::AbstractManoptSolverState)
+
+Get cost at the current iterate of the solver state `s` for the problem `p`.
+The method may be implemented by particular solvers if they store the cost at the current
+iterate in the state, but by default it is obtained by calling `get_cost(p, get_iterate(s))`.
+"""
+function get_cost(p::AbstractManoptProblem, s::AbstractManoptSolverState)
+    return _get_cost(p, s, dispatch_state_decorator(s))
+end
+function _get_cost(p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{false})
+    return get_cost(p, get_iterate(s))
+end
+function _get_cost(p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{true})
+    return get_cost(p, s.state)
+end

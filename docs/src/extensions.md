@@ -45,10 +45,12 @@ x_opt = quasi_Newton(
 )
 ```
 
-In general this defines the following new [stepsize](@ref Stepsize)
+In general this defines the following new [stepsize](@ref Stepsize) with helper functions for setting and getting the maximum step size:
 
 ```@docs
 Manopt.LineSearchesStepsize
+Manopt.linesearches_get_max_alpha
+Manopt.linesearches_set_max_alpha
 ```
 
 ## Manifolds.jl

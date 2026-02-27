@@ -1,5 +1,5 @@
 using Manopt, Manifolds, Test
-using LinearAlgebra: I, eigvecs, tr, Diagonal
+using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
 
 mutable struct QuasiNewtonGradientDirectionUpdate{VT <: AbstractVectorTransportMethod} <:
     AbstractQuasiNewtonDirectionUpdate
@@ -230,6 +230,11 @@ end
             )
             @test isapprox(M, x_direction, x_solution; atol = rayleigh_atol)
         end
+
+        @testset "Byrd's nonpositive rule" begin
+            x1 = quasi_Newton(M, f, grad_f, x; nonpositive_curvature_behavior = :byrd, sy_tol = 1.0e8)
+            @test isapprox(M, x1, x_solution; atol = rayleigh_atol)
+        end
     end
 
     @testset "Brocket" begin
@@ -260,7 +265,7 @@ end
             vector_transport_method = ProjectionTransport(),
             retraction_method = QRRetraction(),
             cautious_update = true,
-            stopping_criterion = StopWhenGradientNormLess(1.0e-6),
+            stopping_criterion = StopWhenGradientNormLess(1.0e-6) | StopAfterIteration(100),
         )
 
         x_inverseBFGSHuang = quasi_Newton(
@@ -277,7 +282,7 @@ end
             vector_transport_method = ProjectionTransport(),
             retraction_method = QRRetraction(),
             cautious_update = true,
-            stopping_criterion = StopWhenGradientNormLess(1.0e-6),
+            stopping_criterion = StopWhenGradientNormLess(1.0e-6) | StopAfterIteration(100),
         )
         @test isapprox(M, x_inverseBFGSCautious, x_inverseBFGSHuang; atol = 2.0e-4)
     end
@@ -305,7 +310,7 @@ end
             x;
             basis = get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size = -1,
-            stopping_criterion = StopWhenGradientNormLess(1.0e-9),
+            stopping_criterion = StopWhenGradientNormLess(1.0e-9) | StopAfterIteration(1000),
         )
         @test norm(abs.(x_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
     end
@@ -406,13 +411,13 @@ end
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(M; p = p)
         # push zeros to memory
-        push!(qns.direction_update.memory_s, copy(p))
-        push!(qns.direction_update.memory_s, copy(p))
-        push!(qns.direction_update.memory_y, copy(p))
-        push!(qns.direction_update.memory_y, copy(p))
+        qns.yk = copy(p)
+        qns.sk = copy(p)
+        update_hessian!(qns.direction_update, mp, qns, p, 1)
+        update_hessian!(qns.direction_update, mp, qns, p, 2)
+        @test contains(qns.direction_update.message, "i=2,1,1")
         qns.direction_update(mp, qns)
         # Update (1) says at i=1 inner products are zero (2) all are zero -> gradient proposal
-        @test contains(qns.direction_update.message, "i=1,2")
         @test contains(qns.direction_update.message, "gradient")
     end
 
@@ -494,5 +499,82 @@ end
         # This triggers and cautious update that does not update the Hessian
         Manopt.update_hessian!(qns.direction_update, mp, qns, p, 1)
         # But I am not totally sure what to test for afterwards
+
+        @test startswith(repr(qdu), "QuasiNewtonLimitedMemoryDirectionUpdate with memory size")
+    end
+    @testset "Removing zero rho vectors" begin
+        M = Euclidean(2)
+        p = [0.0, 1.0]
+        f(M, p) = sum(p .^ 2)
+        # A wrong gradient
+        grad_f(M, p) = -2 .* p
+        gmp = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, gmp)
+        qdu = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 3)
+        # push three pairs; middle one has zero inner product
+        push!(qdu.memory_y, [1, 0])
+        push!(qdu.memory_s, [1, 0])
+
+        push!(qdu.memory_y, [1, 0])
+        push!(qdu.memory_s, [0, 1])
+
+        push!(qdu.memory_y, [0, 2])
+        push!(qdu.memory_s, [0, 2])
+        qdu.ρ = [1.0, 0.0, 4.0]
+        # delete the zero inner product pair and check that the removal was correct
+        Manopt._drop_zero_rho_vectors!(qdu)
+        @test length(qdu.memory_y) == 2
+        @test length(qdu.memory_s) == 2
+        @test qdu.ρ[[1, 2]] == [1.0, 4.0]
+        @test qdu.memory_y[1] == [1, 0]
+        @test qdu.memory_y[2] == [0, 2]
+    end
+
+    @testset "reforming_required + (start == 2)" begin
+        M = Euclidean(2)
+        p = [0.0, 0.0]
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 * sum(p)
+        gmp = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, gmp)
+        ha = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2; nonpositive_curvature_behavior = :byrd)
+        qns = QuasiNewtonState(M; p = p, nonpositive_curvature_behavior = :byrd, direction_update = ha)
+
+        qns.yk = [1.0, 1.0]
+        qns.sk = [1.0, 2.0]
+        update_hessian!(qns.direction_update, mp, qns, p, 1)
+
+        qns.yk = [2.0, 1.0]
+        qns.sk = [1.0, 2.0]
+        update_hessian!(qns.direction_update, mp, qns, p, 2)
+        ha.memory_s[2] = [0.0, 0.0]  # force reforming_required in next step
+        update_hessian!(qns.direction_update, mp, qns, p, 3)
+        # test that the zeroes out pair was replaced
+        @test qns.direction_update.memory_s[1] == [1.0, 2.0]
+        @test qns.direction_update.memory_s[2] == [1.0, 2.0]
+    end
+    @testset "get_cost specialization" begin
+        M = Euclidean(2)
+        p = [0.0, 1.0]
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        gmp = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, gmp)
+        ha = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2; nonpositive_curvature_behavior = :byrd)
+        qns = QuasiNewtonState(
+            M;
+            p = copy(M, p),
+            direction_update = ha,
+            nondescent_direction_behavior = :step_towards_negative_gradient,
+            stepsize = HagerZhangLinesearch()(M),
+        )
+        @test get_cost(mp, qns) == f(M, get_iterate(qns))
+        solve!(mp, qns)
+        @test get_cost(mp, qns) == f(M, get_iterate(qns))
+
+        @testset "get_cost with DebugSolverState" begin
+            dqns = DebugSolverState(qns, DebugMessages(:Info, :Always))
+            @test get_cost(mp, dqns) == f(M, get_iterate(dqns))
+        end
     end
 end

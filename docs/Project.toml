@@ -23,8 +23,8 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
 
-[sources.Manopt]
-path = ".."
+[sources]
+Manopt = {path = ".."}
 
 [compat]
 BenchmarkTools = "1.3"

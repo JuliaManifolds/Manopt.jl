@@ -62,4 +62,20 @@ using Test
     initialize_solver!(mp, st_qn)
     ls_mt = Manopt.LineSearchesStepsize(M, LineSearches.MoreThuente())
     @test_throws ErrorException ls_mt(mp_throw, st_qn, 1; fp = rosenbrock(M, x0))
+
+    # test max stepsize limit enforcement
+    @test ls_hz(mp, st_qn, 1, [1.0, 2.0, 3.0, 4.0, 0.0]; stop_when_stepsize_exceeds = 0.1) == 0.1
+
+    @testset "max stepsize limit setting" begin
+        lss = [
+            LineSearches.MoreThuente(),
+            LineSearches.HagerZhang(),
+        ]
+        for ls in lss
+            nls = Manopt.linesearches_set_max_alpha(ls, 0.5)
+            @test Manopt.linesearches_get_max_alpha(nls) == 0.5
+            nls2 = Manopt.linesearches_set_max_alpha(ls, Inf)
+            @test Manopt.linesearches_get_max_alpha(nls2) == Inf
+        end
+    end
 end

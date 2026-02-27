@@ -409,8 +409,8 @@ space ``T_{p_{k+1}} $(_tex(:Cal, "M"))``, preferably with an isometric vector tr
 
 # Provided functors
 
-* `(mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction
-* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
+* `(mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction
+* `(η, mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
 
 # Fields
 
@@ -511,6 +511,55 @@ function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
     copyto!(d.matrix, I)
     return d
 end
+"""
+    hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate, M, p, X)
+
+Evaluate the quadratic form associated with the stored quasi-Newton matrix.
+Returns the scalar ``c^{\top} B c`` where ``c`` are the coordinates of the
+tangent vector `X` at `p` (in the basis `d.basis`) and ``B`` is `d.matrix`.
+"""
+function hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+    c = get_coordinates(M, p, X, d.basis)
+    return dot(c, d.matrix, c)
+end
+
+"""
+    UnitVector{TB}
+
+A type representing a unit tangent vector on a `Hyperrectangle`-like manifold with corners,
+or a product of it with a standard manifold.
+The field `index` stores the index of the element equal to 1.
+All other elements are equal to 0.
+`its` stores the overall iterator over all bounds.
+"""
+struct UnitVector{TB}
+    index::TB
+end
+
+"""
+    hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate, M, p, X::UnitVector)
+
+Evaluate the quadratic form associated with the stored quasi-Newton matrix.
+Returns the scalar ``c^{\top} B c`` where ``c`` are the coordinates of the
+[`UnitVector`](@ref) `X` at `p` (in the basis `d.basis`) and ``B`` is `d.matrix`.
+"""
+function hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X::UnitVector) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+    b = to_coordinate_index(M, X, d.basis)
+    return d.matrix[b, b]
+end
+"""
+    hessian_value(d::QuasiNewtonMatrixDirectionUpdate, M, p, X::UnitVector, Y)
+
+Evaluate the quadratic form associated with the stored quasi-Newton matrix.
+Returns the scalar ``c_b^{\top} B c`` where ``c_b`` are the coordinates of the
+[`UnitVector`](@ref) `X` at `p` (assumed to correspond to the basis `d.basis`),
+``c`` are the coordinates of the tangent vector `Y` at `p` (in the basis `d.basis`)
+and ``B`` is `d.matrix`.
+"""
+function hessian_value(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X::UnitVector, Y) where {T <: Union{BFGS, DFP, SR1, Broyden}}
+    b = to_coordinate_index(M, X, d.basis)
+    return dot(d.matrix[b, :], get_coordinates(M, p, Y, d.basis))
+end
 
 _doc_QN_B = """
 ```math
@@ -562,6 +611,19 @@ function is always included and the old, probably no longer relevant, informatio
 $(_fields(:vector_transport_method))
 * `message`:                 a string containing a potential warning that might have appeared
 * `project!`:                a function to stabilize the update by projecting on the tangent space
+* `vector_transport_method`: method for transporting stored s and y directions to the new point
+* `nonpositive_curvature_behavior`: how non-positive-definite pairs (s, y) are detected and handled in vector transport.
+                             Allowed values are:
+                                - `:ignore` (default): pairs whose inner product is zero are
+                                  omitted from the current Hessian approximation but are
+                                  retained in memory for further iterations. This may lead
+                                  to non-positive-definite Hessians and non-descent directions
+                                  being selected and thus needs to be handled elsewhere.
+                                - `:byrd`: pairs such that `inner(M, p, X_s, Y_s) <= iszero_abstol * norm(M, p, Y_s)^2`
+                                  are removed from memory (see [ByrdLuNocedalZhu:1995](@cite),
+                                  Eq. (3.9) and its discussion).
+* `sy_tol`:                  tolerance for detecting non-positive-definite pairs (X_s, X_y).
+                             The pairs may lose positive-definiteness after vector transport.
 
 # Constructor
 
@@ -597,6 +659,8 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     initial_scale::G
     project!::Proj
     vector_transport_method::VT
+    nonpositive_curvature_behavior::Symbol
+    sy_tol::F
     message::String
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
@@ -608,6 +672,8 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
         initial_scale::G = 1.0,
         (project!)::Proj = (copyto!),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+        nonpositive_curvature_behavior::Symbol = :ignore,
+        sy_tol::Real = 1.0e-8,
     ) where {
         NT <: AbstractQuasiNewtonUpdateRule,
         T,
@@ -630,6 +696,8 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
         _initial_state,
         project!,
         vector_transport_method,
+        nonpositive_curvature_behavior,
+        sy_tol,
         "",
     )
 end
@@ -661,20 +729,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
     end
     # backward pass
     for i in m:-1:1
-        # what if division by zero happened here, setting to zero ignores this in the next step
-        # pre-compute in case inner is expensive
-        v = inner(M, p, d.memory_s[i], d.memory_y[i])
-        if iszero(v)
-            d.ρ[i] = zero(eltype(d.ρ))
-            if length(d.message) > 0
-                d.message = replace(d.message, " i=" => " i=$i,")
-                d.message = replace(d.message, "summand in" => "summands in")
-            else
-                d.message = "The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i, ignoring summand in approximation."
-            end
-        else
-            d.ρ[i] = 1 / v
-        end
+        # d.ρ is precomputed in the Hessian update
         d.ξ[i] = inner(M, p, d.memory_s[i], r) * d.ρ[i]
         r .-= d.ξ[i] .* d.memory_y[i]
     end
@@ -726,13 +781,17 @@ function initialize_update!(d::QuasiNewtonLimitedMemoryDirectionUpdate)
     return d
 end
 
+function show(io::IO, qns::QuasiNewtonLimitedMemoryDirectionUpdate)
+    return print(io, "QuasiNewtonLimitedMemoryDirectionUpdate with memory size $(length(qns.memory_s)) and $(qns.vector_transport_method) as vector transport.")
+end
+
 @doc """
     QuasiNewtonCautiousDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
 These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule,
 which are based on the idea of a so-called cautious update. The search direction is calculated
 as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref),
-butut the update  then is only executed if
+but the update then is only executed if
 
 ```math
 $(_tex(:frac, "g_{x_{k+1}}(y_k,s_k)", "$(_tex(:norm, "s_k"; index = "x_{k+1}"))^{2}")) ≥ θ $(_tex(:norm, "$(_tex(:grad))f(p_k)"; index = "p_k")),

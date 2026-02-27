@@ -145,12 +145,20 @@ function (hzi::HagerZhangInitialGuess{TF})(
         k::Int, last_stepsize::Real, η;
         lf0 = get_cost(mp, get_iterate(s)),
         Dlf0 = get_differential(mp, get_iterate(s), η),
+        kwargs...
     ) where {TF <: Real}
     M = get_manifold(mp)
     p = get_iterate(s)
     abs_lf0 = abs(lf0)
 
     alphamax = min(hzi.alphamax, max_stepsize(M, p))
+
+    if :stop_when_stepsize_exceeds in keys(kwargs)
+        alphamax = min(
+            kwargs[:stop_when_stepsize_exceeds],
+            alphamax,
+        )
+    end
 
     if k == 1
         point_d = hzi.point_distance(M, p)

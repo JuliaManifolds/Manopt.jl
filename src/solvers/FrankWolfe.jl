@@ -322,6 +322,7 @@ calls_with_kwargs(::typeof(Frank_Wolfe_method!)) = (decorate_objective!, decorat
 
 function initialize_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState)
     get_gradient!(amp, fws.X, fws.p)
+    initialize_stepsize!(fws.stepsize)
     return fws
 end
 function step_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState, k)
