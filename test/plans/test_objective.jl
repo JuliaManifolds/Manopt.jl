@@ -20,7 +20,7 @@ using ManifoldsBase, Manopt, Test
         # Still acts transparent for one of them
         @test Manopt.status_summary(r2) == "A dummy decorator for A cost function on a Riemannian manifold `f = (M,p) -> ℝ`."
         # repr contains all is much longer
-        @test repr(r2) == "ReturnManifoldObjective(DummyDecoratedObjective{AllocatingEvaluation})"
+        @test repr(r2) == "ReturnManifoldObjective(DummyDecoratedObjective($(repr(o))))"
     end
     @testset "set_parameter!" begin
         o = ManifoldCostObjective(x -> x)

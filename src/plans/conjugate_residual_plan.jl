@@ -53,6 +53,25 @@ function set_parameter!(slso::SymmetricLinearSystemObjective, symbol::Symbol, va
     return slso
 end
 
+function Base.show(io::IO, slso::SymmetricLinearSystemObjective{E}) where {E}
+    print(io, "SymmetricLinearSystemObjective(")
+    print(io, slso.A!!); print(io, ", "); print(io, slso.b!!); print(io, "; ")
+    print(io, _to_kw(E))
+    return print(io, ")")
+end
+
+function status_summary(slso::SymmetricLinearSystemObjective{E}; context = :default) where {E}
+    _is_inline(context) && (return repr(slso))
+    return """
+    An objetcive modelling a symmetric linear system Ax=b, i.e. with a symmetric matrix A
+    implemented as a function `(M, p, X) -> Y` performing the matrix vector multiplication in the tangent space,
+    and a function `b(M,p)` returning the vector on the right hand side in the current tangent space.
+    Both can also be defined in-place. Here they are $(E === InplaceEvaluation ? "in place" : "allocating").
+
+    # Fields
+    * A: $(slso.A!!)
+    * b: $(slso.b!!)"""
+end
 @doc """
     get_cost(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X)
 
@@ -222,29 +241,14 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
     function ConjugateResidualState(
             TpM::TangentSpace,
             slso::SymmetricLinearSystemObjective;
-            X::T = rand(TpM),
-            r::T = (-get_gradient(TpM, slso, X)),
-            d::T = copy(TpM, r),
-            Ar::T = get_hessian(TpM, slso, X, r),
-            Ad::T = copy(TpM, Ar),
-            α::R = 0.0,
-            β::R = 0.0,
-            stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
-                StopWhenGradientNormLess(1.0e-8),
+            X::T = rand(TpM), r::T = (-get_gradient(TpM, slso, X)), d::T = copy(TpM, r),
+            Ar::T = get_hessian(TpM, slso, X, r), Ad::T = copy(TpM, Ar), α::R = 0.0, β::R = 0.0,
+            stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) | StopWhenGradientNormLess(1.0e-8),
             kwargs...,
         ) where {T, R, SC <: StoppingCriterion}
-        M = base_manifold(TpM)
-        p = base_point(TpM)
         crs = new{T, R, SC}()
-        crs.X = X
-        crs.r = r
-        crs.d = d
-        crs.Ar = Ar
-        crs.Ad = Ad
-        crs.α = α
-        crs.β = β
-        crs.rAr = zero(R)
-        crs.stop = stopping_criterion
+        crs.X = X; crs.r = r; crs.d = d; crs.Ar = Ar; crs.Ad = Ad
+        crs.α = α; crs.β = β; crs.rAr = zero(R); crs.stop = stopping_criterion
         return crs
     end
 end

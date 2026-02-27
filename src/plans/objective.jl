@@ -226,10 +226,6 @@ function set_parameter!(amo::AbstractManifoldObjective, ::Val{:SubGradient}, arg
     return amo
 end
 
-function show(io::IO, o::AbstractManifoldObjective{E}) where {E}
-    return print(io, "$(nameof(typeof(o))){$E}")
-end
-
 # For decorators the human readable version is “transparent” by default, i.e.
 # if no special addition is done, it just prints the human readable string from the child
 function status_summary(io::IO, co::AbstractDecoratedManifoldObjective; context = :default)

@@ -39,6 +39,11 @@ function Manopt.status_summary(
     )
     return "A dummy decorator for " * Manopt.status_summary(ddo.objective; kwargs...)
 end
+function Base.show(io::IO, ddo::DummyDecoratedObjective)
+    print(io, "DummyDecoratedObjective(")
+    print(io, ddo.objective)
+    return print(io, ")")
+end
 
 struct DummyProblem{M <: AbstractManifold} <: AbstractManoptProblem{M} end
 struct DummyStoppingCriteriaSet <: StoppingCriterionSet end
