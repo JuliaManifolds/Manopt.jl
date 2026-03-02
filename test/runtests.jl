@@ -64,6 +64,7 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("solvers/test_proximal_gradient_method.jl")
         include("solvers/test_proximal_point.jl")
         include("solvers/test_quasi_Newton.jl")
+        include("solvers/test_quasi_Newton_box.jl")
         include("solvers/test_particle_swarm.jl")
         include("solvers/test_primal_dual_semismooth_Newton.jl")
         include("solvers/test_stochastic_gradient_descent.jl")

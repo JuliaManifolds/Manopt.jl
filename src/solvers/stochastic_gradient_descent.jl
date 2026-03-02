@@ -297,6 +297,7 @@ calls_with_kwargs(::typeof(stochastic_gradient_descent!)) = (decorate_objective!
 function initialize_solver!(::AbstractManoptProblem, s::StochasticGradientDescentState)
     s.k = 1
     (s.order_type == :FixedRandom) && (shuffle!(s.order))
+    initialize_stepsize!(s.stepsize)
     return s
 end
 function step_solver!(mp::AbstractManoptProblem, s::StochasticGradientDescentState, iter)

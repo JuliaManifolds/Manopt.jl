@@ -82,6 +82,7 @@ end
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
     @test startswith(repr(s3), "WolfePowellBinaryLinesearch(;")
+    @test get_last_stepsize(s3) == 0.0
     # no stepsize yet so `repr` and summary are the same
     @test repr(s3) == Manopt.status_summary(s3)
     s4 = WolfePowellLinesearch()(M)
@@ -254,6 +255,534 @@ end
         gs = GradientDescentState(M; p = p, X = grad_f(M, p))
         clbs = CubicBracketingLinesearch(; sufficient_curvature = 1.0e-16, min_bracket_width = 0.0, initial_stepsize = 0.5)(M)
         @test clbs(dmp, gs, 1) ≈ 1 / 6 atol = 5.0e-4
+    end
+    @testset "secant numerical stability" begin
+        # Large offset, small interval
+        a = 1.0e7
+        b = a + 1.0e-6
+
+        # Choose derivatives that differ slightly
+        ga = 1.0
+        gb = nextfloat(ga)   # smallest representable difference
+
+        # minimizer using affine formula
+        x_ref = a - ga * (b - a) / (gb - ga)
+
+        err_secant = abs(
+            Manopt.secant(
+                Manopt.UnivariateTriple(a, 0.0, ga),
+                Manopt.UnivariateTriple(b, 0.0, gb)
+            ) - x_ref
+        )
+        @test err_secant < 1.0e-6
+    end
+    @testset "HagerZhang Linesearch Stepsize" begin
+        M = Euclidean(2)
+        f_sum_sq(M, p) = sum(p .^ 2)
+        grad_f_sum_sq(M, p) = 2 .* p
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f_sum_sq, grad_f_sum_sq))
+        p = [1.0, 2.0]
+        η = -grad_f_sum_sq(M, p)
+        gs = GradientDescentState(M; p = p)
+
+        hzls = HagerZhangLinesearch()(M)
+        @test startswith(repr(hzls), "HagerZhangLinesearch(;")
+        @test startswith(Manopt.status_summary(hzls), "HagerZhangLinesearch(;")
+        @test Manopt.get_message(hzls) == ""
+
+        α = hzls(dmp, gs, 1, η)
+        @test isfinite(α)
+        @test α > 0
+        α2 = hzls(dmp, gs, 1, η; gradient = grad_f_sum_sq(M, p))
+        @test α2 ≈ α
+        @test hzls.last_stepsize == α
+        @test hzls.last_cost <= f_sum_sq(M, p) + 1.0e-12
+
+        hzls_limit = Manopt.HagerZhangLinesearchStepsize(M; stepsize_limit = 0.05)
+        α_limit = hzls_limit(dmp, gs, 1, η)
+        @test α_limit <= 0.05 + eps(0.05)
+        @test hzls_limit.last_stepsize == α_limit
+        α_limit_kw = hzls_limit(dmp, gs, 2, η; stop_when_stepsize_exceeds = 0.01)
+        @test α_limit_kw <= 0.01 + eps(0.01)
+        @testset "Running out of evaluations in _hz_evaluate_next_step" begin
+            N = length(hzls_limit.triples) - hzls_limit.last_evaluation_index
+            for i in 1:N
+                Manopt._hz_evaluate_next_step(hzls_limit, M, dmp, p, η, 0.1)
+            end
+            @test_throws ErrorException Manopt._hz_evaluate_next_step(hzls_limit, M, dmp, p, η, 0.1)
+        end
+        @testset "Wolfe condition modes" begin
+            hzls_default = Manopt.HagerZhangLinesearchStepsize(M)
+            hzls.current_mode = :invalid_mode
+            @test_throws ErrorException hzls(dmp, gs, 1, η)
+        end
+
+
+        hzls_approx = Manopt.HagerZhangLinesearchStepsize(
+            M; wolfe_condition_mode = :approximate, stepsize_limit = 0.2
+        )
+        α_approx = hzls_approx(dmp, gs, 1, η)
+        @test α_approx > 0
+
+        @testset "termination modes" begin
+            hzls_std = Manopt.HagerZhangLinesearchStepsize(
+                M;
+                wolfe_condition_mode = :standard,
+                initial_guess = Manopt.ConstantInitialGuess(0.5),
+                max_function_evaluations = 5,
+            )
+            α_std = hzls_std(dmp, gs, 1, η)
+            @test isapprox(α_std, 0.5; rtol = 1.0e-12, atol = 0.0)
+            @test hzls_std.current_mode == :standard
+
+            hzls_adapt = Manopt.HagerZhangLinesearchStepsize(
+                M;
+                wolfe_condition_mode = :adaptive,
+                initial_guess = Manopt.ConstantInitialGuess(0.5),
+                initial_last_cost = f_sum_sq(M, p),
+                ω = 1.0,
+                max_function_evaluations = 5,
+            )
+            α_adapt = hzls_adapt(dmp, gs, 1, η)
+            @test α_adapt > 0
+            @test hzls_adapt.current_mode == :approximate
+
+            hzls_eval = Manopt.HagerZhangLinesearchStepsize(
+                M;
+                wolfe_condition_mode = :standard,
+                initial_guess = Manopt.ConstantInitialGuess(1.0),
+                max_function_evaluations = 2,
+            )
+            α_eval = hzls_eval(dmp, gs, 1, η)
+            @test α_eval > 0
+            @test hzls_eval.last_evaluation_index == length(hzls_eval.triples)
+        end
+        @testset "B1 bracketing test" begin
+            M = Euclidean(1)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = 2 .* p
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [1.0]
+            η = -grad_f(M, p)
+            gs = GradientDescentState(M; p = p)
+            hzls_b1 = Manopt.HagerZhangLinesearchStepsize(
+                M;
+                initial_guess = Manopt.ConstantInitialGuess(0.75),
+                start_enforcing_wolfe_conditions_at_bracketing_iteration = 2,
+                max_bracket_iterations = 1,
+            )
+            α_b1 = hzls_b1(dmp, gs, 1, η)
+            @test α_b1 > 0
+        end
+        @testset "B2 bracketing test" begin
+            M = Euclidean(1)
+            # f(x) = -22 x^3 + 33 x^2 - x
+            # grad_f(x) = -66 x^2 + 66 x - 1
+            f(M, p) = -22 * p[1]^3 + 33 * p[1]^2 - p[1]
+            grad_f(M, p) = [-66 * p[1]^2 + 66 * p[1] - 1]
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [0.0]
+            η = [1.0] # Descent direction
+            gs = GradientDescentState(M; p = p)
+            hzls_b2 = Manopt.HagerZhangLinesearchStepsize(
+                M;
+                initial_guess = Manopt.ConstantInitialGuess(1.0),
+                start_enforcing_wolfe_conditions_at_bracketing_iteration = 2,
+                max_bracket_iterations = 2,
+            )
+            α = hzls_b2(dmp, gs, 1, η)
+            @test α > 0
+        end
+        @testset "B3 bracketing test" begin
+            M = Euclidean(1)
+            # f(x) = -x
+            # grad_f(x) = -1
+            f(M, p) = -p[1]
+            grad_f(M, p) = [-1.0]
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [0.0]
+            η = [1.0] # Descent direction
+            gs = GradientDescentState(M; p = p)
+            hzls_b3 = Manopt.HagerZhangLinesearchStepsize(
+                M;
+                initial_guess = Manopt.ConstantInitialGuess(1.0),
+                stepsize_limit = 2.0,
+                max_bracket_iterations = 2,
+            )
+            α = hzls_b3(dmp, gs, 1, η)
+            @test α > 0
+        end
+        @testset "U1 trigger test" begin
+            M = Euclidean(1)
+            # f(x) = x^2 / 2
+            # grad_f(x) = x
+            f(M, p) = p[1]^2 / 2
+            grad_f(M, p) = [p[1]]
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [1.0]
+            η = [-1.0] # Descent direction
+            gs = GradientDescentState(M; p = p)
+            hzls_u1 = Manopt.HagerZhangLinesearchStepsize(
+                M;
+                initial_guess = Manopt.ConstantInitialGuess(2.0),
+            )
+            # We expect U1 to be triggered during the update (secant is exact, slope 0 >= 0)
+            α = hzls_u1(dmp, gs, 1, η)
+            @test α > 0
+        end
+        @testset "U2 trigger test" begin
+            M = Euclidean(1)
+            # We mock f and grad_f to trigger U2 termination
+            # We need:
+            # 1. Starting at p=0 with descent direction (df < 0)
+            # 2. Bracketing finds a point with df > 0 (to finish bracketing) -> p=1.0, df=1.0
+            # 3. Refinement hits max evaluations at a point with df < 0 and f > f(0)+eps -> p=0.5, f=10.0, df=-0.1
+
+            function f_u2(M, q)
+                v = q[1]
+                if isapprox(v, 0.0; atol = 1.0e-9)
+                    return 0.0
+                elseif isapprox(v, 1.0; atol = 1.0e-9)
+                    return 0.0
+                elseif isapprox(v, 0.5; atol = 1.0e-9)
+                    return 10.0
+                end
+                return 0.0
+            end
+
+            function grad_f_u2(M, q)
+                v = q[1]
+                if isapprox(v, 0.0; atol = 1.0e-9)
+                    return [-1.0]
+                elseif isapprox(v, 1.0; atol = 1.0e-9)
+                    return [1.0]
+                elseif isapprox(v, 0.5; atol = 1.0e-9)
+                    return [-0.1]
+                end
+                return [0.0]
+            end
+
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f_u2, grad_f_u2))
+            p = [0.0]
+            η = [1.0]
+            gs = GradientDescentState(M; p = p)
+            hzls_u2 = Manopt.HagerZhangLinesearchStepsize(
+                M; initial_guess = Manopt.ConstantInitialGuess(1.0), max_function_evaluations = 3
+            )
+            α = hzls_u2(dmp, gs, 1, η)
+            @test α > 0
+        end
+        @testset "U3 trigger test" begin
+            M = Euclidean(1)
+            # Trigger U3 by having a point that satisfies conditions for U2 but f_eval is false.
+            # Same landscape as U2:
+            # p=0, df=-1 (start)
+            # p=1, df=1 (end of bracket)
+            # p=0.5, f=10, df=-0.1 (high function value, negative slope)
+
+            function f_u3(M, q)
+                v = q[1]
+                if isapprox(v, 0.0; atol = 1.0e-9)
+                    return 0.0
+                elseif isapprox(v, 1.0; atol = 1.0e-9)
+                    return 0.0
+                elseif isapprox(v, 0.5; atol = 1.0e-9)
+                    return 10.0
+                end
+                return 0.0
+            end
+
+            function grad_f_u3(M, q)
+                v = q[1]
+                if isapprox(v, 0.0; atol = 1.0e-9)
+                    return [-1.0]
+                elseif isapprox(v, 1.0; atol = 1.0e-9)
+                    return [1.0]
+                elseif isapprox(v, 0.5; atol = 1.0e-9)
+                    return [-0.1]
+                end
+                return [0.0]
+            end
+
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f_u3, grad_f_u3))
+            p = [0.0]
+            η = [1.0] # Descent direction
+            gs = GradientDescentState(M; p = p)
+            # Set max_function_evaluations > 3 so we don't hit U2 termination (f_eval=true)
+            hzls_u3 = Manopt.HagerZhangLinesearchStepsize(
+                M; initial_guess = Manopt.ConstantInitialGuess(1.0), max_function_evaluations = 5
+            )
+            α = hzls_u3(dmp, gs, 1, η)
+            @test α > 0
+        end
+        @testset "U3 (b) trigger test" begin
+            M = Euclidean(1)
+            # Force U3 (b) in _hz_u3:
+            # 1) At d=0.5 we need df < 0 and f(d) <= f(0) + ϵₖ with no termination,
+            #    so i_a_bar gets updated to i_d.
+            # 2) On the next U3 iteration we return from the loop.
+            function f_u3b(M, q)
+                return 0.0
+            end
+
+            function grad_f_u3b(M, q)
+                v = q[1]
+                if isapprox(v, 0.0; atol = 1.0e-12)
+                    return [-1.0]
+                elseif isapprox(v, 1.0; atol = 1.0e-12)
+                    return [1.0]
+                elseif isapprox(v, 0.5; atol = 1.0e-12)
+                    return [-1.0]
+                elseif isapprox(v, 0.75; atol = 1.0e-12)
+                    return [1.0]
+                end
+                return [0.0]
+            end
+
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f_u3b, grad_f_u3b))
+            p = [0.0]
+            η = [1.0]
+            hzls_u3b = Manopt.HagerZhangLinesearchStepsize(M; max_function_evaluations = 4)
+            Manopt.initialize_stepsize!(hzls_u3b)
+            Manopt._hz_evaluate_next_step(hzls_u3b, M, dmp, p, η, 0.0)
+            Manopt._hz_evaluate_next_step(hzls_u3b, M, dmp, p, η, 1.0)
+
+            (i_a, i_b, f_eval, f_wolfe) = Manopt._hz_u3(hzls_u3b, M, dmp, p, η, 1, 2)
+            @test (i_a, i_b) == (3, 4)
+            @test f_eval
+            @test !f_wolfe
+        end
+        @testset "U3 (c) info trigger test" begin
+            M = Euclidean(1)
+            # Force U3 (c) inside _hz_u3 by making the mid-point have
+            # negative slope but too large function value.
+            function f_u3c(M, q)
+                v = q[1]
+                if isapprox(v, 0.0; atol = 1.0e-12)
+                    return 0.0
+                elseif isapprox(v, 1.0; atol = 1.0e-12)
+                    return 0.0
+                elseif isapprox(v, 0.5; atol = 1.0e-12)
+                    return 1.0
+                elseif isapprox(v, 0.25; atol = 1.0e-12)
+                    return 0.0
+                end
+                return 0.0
+            end
+
+            function grad_f_u3c(M, q)
+                v = q[1]
+                if isapprox(v, 0.0; atol = 1.0e-12)
+                    return [-1.0]
+                elseif isapprox(v, 1.0; atol = 1.0e-12)
+                    return [1.0]
+                elseif isapprox(v, 0.5; atol = 1.0e-12)
+                    return [-0.1]
+                elseif isapprox(v, 0.25; atol = 1.0e-12)
+                    return [0.1]
+                end
+                return [0.0]
+            end
+
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f_u3c, grad_f_u3c))
+            p = [0.0]
+            η = [1.0]
+            hzls_u3c = Manopt.HagerZhangLinesearchStepsize(M; max_function_evaluations = 4)
+            Manopt.initialize_stepsize!(hzls_u3c)
+            Manopt._hz_evaluate_next_step(hzls_u3c, M, dmp, p, η, 0.0)
+            Manopt._hz_evaluate_next_step(hzls_u3c, M, dmp, p, η, 1.0)
+            @test (1, 4, true, false) == Manopt._hz_u3(hzls_u3c, M, dmp, p, η, 1, 2)
+        end
+        @testset "U3 max evaluations termination" begin
+            M = Euclidean(1)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = 2 .* p
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [0.0]
+            η = [1.0]
+
+            hzls_u3_max = Manopt.HagerZhangLinesearchStepsize(M; max_function_evaluations = 2)
+            Manopt.initialize_stepsize!(hzls_u3_max)
+            Manopt._hz_evaluate_next_step(hzls_u3_max, M, dmp, p, η, 0.0)
+            Manopt._hz_evaluate_next_step(hzls_u3_max, M, dmp, p, η, 1.0)
+            @test hzls_u3_max.last_evaluation_index == length(hzls_u3_max.triples)
+
+            (i_a, i_b, f_eval, f_wolfe) = Manopt._hz_u3(hzls_u3_max, M, dmp, p, η, 1, 2)
+            @test (i_a, i_b) == (1, 2)
+            @test !f_eval
+            @test !f_wolfe
+        end
+        @testset "U0 out-of-bracket early return" begin
+            M = Euclidean(1)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = 2 .* p
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [0.0]
+            η = [1.0]
+
+            hzls_u0 = Manopt.HagerZhangLinesearchStepsize(M; max_function_evaluations = 5)
+            Manopt.initialize_stepsize!(hzls_u0)
+            Manopt._hz_evaluate_next_step(hzls_u0, M, dmp, p, η, 0.0)
+            Manopt._hz_evaluate_next_step(hzls_u0, M, dmp, p, η, 1.0)
+
+            last_eval_before = hzls_u0.last_evaluation_index
+
+            # c is left of bracket [0, 1] -> U0 early return
+            @test (1, 2, -1, false, false) == Manopt._hz_update(hzls_u0, M, dmp, p, η, 1, 2, -0.1)
+            @test hzls_u0.last_evaluation_index == last_eval_before
+
+            # c is right of bracket [0, 1] -> U0 early return
+            @test (1, 2, -1, false, false) == Manopt._hz_update(hzls_u0, M, dmp, p, η, 1, 2, 1.1)
+            @test hzls_u0.last_evaluation_index == last_eval_before
+        end
+
+        @testset "S2 trigger test" begin
+            M = Euclidean(1)
+            # S2 is triggered within _hz_secant2 when the updated bracket point i_c is the new upper bound i_B
+            # This happens if slope at c is positive (U1 case in _hz_update).
+            # Sequence:
+            # 1. Start p=0, df=-1.
+            # 2. Initial bracket p=1, df=4 (df > 0 -> bracket found).
+            # 3. _hz_secant2 calls secant(0, 1) -> c = (0*4 - 1*(-1))/(4 - (-1)) = 0.2.
+            # 4. At c=0.2, we set df=0.1 (positive slope -> U1 -> i_c = i_B).
+            # 5. We also need f(0.2) high enough to fail Armijo so we don't return early with f_wolfe=true.
+            #    f(0)=0. f(0.2)=0.5. Armijo check: 0.5 <= 0 + 0.1*0.2*(-1) = -0.02 (False).
+
+            function f_s2(M, q)
+                v = q[1]
+                if isapprox(v, 0.0; atol = 1.0e-9)
+                    return 0.0
+                elseif isapprox(v, 1.0; atol = 1.0e-9)
+                    return 2.0 # Arbitrary high value
+                elseif isapprox(v, 0.2; atol = 1.0e-9)
+                    return 0.5 # Fail Armijo
+                end
+                return 0.0 # Fallback (e.g. for c_bar in S2)
+            end
+
+            function grad_f_s2(M, q)
+                v = q[1]
+                if isapprox(v, 0.0; atol = 1.0e-9)
+                    return [-1.0]
+                elseif isapprox(v, 1.0; atol = 1.0e-9)
+                    return [4.0]
+                elseif isapprox(v, 0.2; atol = 1.0e-9)
+                    return [0.1] # Positive slope triggers U1 -> i_c = i_B
+                end
+                return [0.0]
+            end
+
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f_s2, grad_f_s2))
+            p = [0.0]
+            η = [1.0]
+            gs = GradientDescentState(M; p = p)
+            hzls_s2 = Manopt.HagerZhangLinesearchStepsize(
+                M; initial_guess = Manopt.ConstantInitialGuess(1.0)
+            )
+            # We expect the S2 log
+            α = hzls_s2(dmp, gs, 1, η)
+            @test α > 0
+        end
+
+        @testset "S3 trigger test" begin
+            M = Euclidean(1)
+            # S3 is triggered within _hz_secant2 when the updated bracket point i_c is the new lower bound i_A
+            # (U2 case in _hz_update). We set up:
+            # 1. Start p=0, df=-1 (descent).
+            # 2. Bracket at p=1, df=4 (positive slope).
+            # 3. Secant gives c=0.2. At c, df=-0.1 and f=0 -> U2.
+
+            function f_s3(M, q)
+                return 0.0
+            end
+
+            function grad_f_s3(M, q)
+                v = q[1]
+                if isapprox(v, 0.0; atol = 1.0e-12)
+                    return [-1.0]
+                elseif isapprox(v, 1.0; atol = 1.0e-12)
+                    return [4.0]
+                elseif isapprox(v, 0.2; atol = 1.0e-12)
+                    return [-0.1]
+                end
+                return [0.0]
+            end
+
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f_s3, grad_f_s3))
+            p = [0.0]
+            η = [1.0]
+            hzls_s3 = Manopt.HagerZhangLinesearchStepsize(M; max_function_evaluations = 5)
+            Manopt.initialize_stepsize!(hzls_s3)
+            Manopt._hz_evaluate_next_step(hzls_s3, M, dmp, p, η, 0.0)
+            Manopt._hz_evaluate_next_step(hzls_s3, M, dmp, p, η, 1.0)
+
+            c = Manopt.secant(hzls_s3.triples[1], hzls_s3.triples[2])
+            (i_A, i_B, i_c, f_eval, f_wolfe) = Manopt._hz_secant2(hzls_s3, M, dmp, p, η, 1, 2)
+            @test !f_eval
+            @test !f_wolfe
+            @test hzls_s3.triples[i_A].t ≈ c atol = 1.0e-12
+
+            c_bar = Manopt.secant(hzls_s3.triples[1], hzls_s3.triples[i_A])
+            @test hzls_s3.triples[i_c].t ≈ c_bar atol = 1.0e-12
+            @test i_A != i_B
+        end
+
+        @testset "Hager-Zhang infinite at b" begin
+            # A function that is finite for small steps but infinite for larger ones
+            # and has positive slope where it is infinite to trigger the bracket condition.
+
+            M = Euclidean(1)
+
+            # f(x) = x^2 - x for x < 1.0
+            # f(x) = Inf for x >= 1.0
+            # Min at x = 0.5, f(0.5) = -0.25
+            function f_inf(M, p)
+                x = p[1]
+                if x < 1.0
+                    return x^2 - x
+                else
+                    return Inf
+                end
+            end
+
+            function grad_f_inf(M, p)
+                x = p[1]
+                if x < 1.0
+                    return [2 * x - 1]
+                else
+                    # Return a positive slope to satisfy _hz_bracket exit condition
+                    return [1.0]
+                end
+            end
+
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f_inf, grad_f_inf))
+
+            # Start at 0. f(0)=0. grad(0)=-1. Search direction +1.
+            s = GradientDescentState(M; p = [0.0])
+
+            # Force initial guess to be 2.0 (in the infinite region)
+            hzls = HagerZhangLinesearch(; initial_guess = Manopt.ConstantInitialGuess(2.0))(M)
+
+            # Because initial bracket will be [0, 2] with f(2)=Inf.
+            # Then bisection will eventually find 0.5.
+
+            step = hzls(dmp, s, 1, [1.0])
+            @test abs(step - 0.5) < 1.0e-1
+        end
+
+        @testset "Hager-Zhang initialize_stepsize!" begin
+            hzls = HagerZhangLinesearch()(M)
+            hzls.last_evaluation_index = 5
+            hzls.Qₖ = 2.0
+            hzls.Cₖ = 2.0
+            hzls.current_mode = :approximate
+            Manopt.initialize_stepsize!(hzls)
+            @test hzls.last_evaluation_index == 0
+            @test hzls.Qₖ == 0.0
+            @test hzls.Cₖ == 0.0
+            @test hzls.current_mode == :standard
+        end
+
     end
     @testset "Distance over Gradients Stepsize" begin
         @testset "does not use sectional cuvature (Eucludian)" begin

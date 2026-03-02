@@ -41,10 +41,10 @@ with the fields keyword arguments and the retraction is set to the default retra
 $(_kwargs(:retraction_method))
 * `contraction_factor=0.95`
 * `sufficient_decrease=0.1`
-* `last_stepsize=initialstepsize`
+* `last_stepsize=initial_stepsize`
 * `initial_guess=`[`ArmijoInitialGuess`](@ref)`()`
 * `stop_when_stepsize_less=0.0`: stop when the stepsize decreased below this version.
-* `stop_when_stepsize_exceeds=[`max_step`](@ref)`(M)`: provide an absolute maximal step size.
+* `stop_when_stepsize_exceeds=[`max_stepsize`](@ref)`(M)`: provide an absolute maximal step size.
 * `stop_increasing_at_step=100`: for the initial increase test, stop after these many steps
 * `stop_decreasing_at_step=1000`: in the backtrack, stop after these many steps
 """
@@ -118,13 +118,19 @@ function (a::ArmijoLinesearchStepsize)(
     )
     p = get_iterate(s)
     grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
-    return a(mp, p, grad, η; initial_guess = a.initial_guess(mp, s, k, a.last_stepsize, η))
+    return a(mp, p, grad, η; initial_guess = a.initial_guess(mp, s, k, a.last_stepsize, η), kwargs...)
 end
 function (a::ArmijoLinesearchStepsize)(
-        mp::AbstractManoptProblem, p, X, η; initial_guess = 1.0, kwargs...
+        mp::AbstractManoptProblem, p, X, η; initial_guess::Real = 1.0,
+        stop_when_stepsize_exceeds = nothing, kwargs...
     )
     reset_messages!(a.messages)
     l = norm(get_manifold(mp), p, η)
+    swse = if isnothing(stop_when_stepsize_exceeds)
+        (a.stop_when_stepsize_exceeds / l)
+    else
+        stop_when_stepsize_exceeds
+    end
     a.last_stepsize = linesearch_backtrack!(
         get_manifold(mp),
         a.candidate_point,
@@ -137,7 +143,7 @@ function (a::ArmijoLinesearchStepsize)(
         gradient = X,
         retraction_method = a.retraction_method,
         stop_when_stepsize_less = (a.stop_when_stepsize_less / l),
-        stop_when_stepsize_exceeds = (a.stop_when_stepsize_exceeds / l),
+        stop_when_stepsize_exceeds = swse,
         stop_increasing_at_step = a.stop_increasing_at_step,
         stop_decreasing_at_step = a.stop_decreasing_at_step,
         additional_decrease_condition = a.additional_decrease_condition,
@@ -671,17 +677,19 @@ end
 Returns the extremal of the quadratic polynomial ``p`` with
 ``p'(a.t)=a.df``, ``p'(b.t)=b.df``.
 
+The result is algebraically equivalent to `(a.t * b.df - b.t * a.df) / (b.df - a.df)`
+but the used formula is more numerically stable.
+
 # Input
 * `a::UnivariateTriple{R}`: triple of bracket value `a`
 * `b::UnivariateTriple{R}`: triple bracket value `b`
 """
 function secant(a::UnivariateTriple{R}, b::UnivariateTriple{R}) where {R}
-    return (a.t * b.df - b.t * a.df) / (b.df - a.df)
+    return (a.t + b.t) / 2 + (b.t - a.t) * (a.df + b.df) / (2 * (a.df - b.df))
 end
 
 """
     cubic_stepsize_update_step(a::Real, b::Real, c::Real, τ::Real)
-
 
 Step function to determine the stepsize update `c` described in
 [Hager:1989](@cite).
@@ -706,6 +714,8 @@ function cubic_stepsize_update_step(a::Real, b::Real, c::Real, τ::Real)
 end
 
 """
+    get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketingLinesearchStepsize, p, η, t::Real)
+
 Get the `UnivariateTriple` of the problem `mp` related to the step with
 stepsize ``t`` from ``p`` in direction ``η``.
 
@@ -716,7 +726,7 @@ stepsize ``t`` from ``p`` in direction ``η``.
 * `η`: search direction at `p`
 * `t::Real`: step size
 """
-function get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketingLinesearchStepsize, p, η, t)
+function get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketingLinesearchStepsize, p, η, t::Real)
     M = get_manifold(mp)
     cbls.last_stepsize = t
     ManifoldsBase.retract_fused!(M, cbls.candidate_point, p, η, t, cbls.retraction_method)
@@ -740,7 +750,11 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     check_curvature(c::UnivariateTriple) = abs(c.df) < cbls.sufficient_curvature * abs(init.df)
 
     n_iter = 0
-    t = cbls.last_stepsize
+    max_step = cbls.max_stepsize
+    if :stop_when_stepsize_exceeds in keys(kwargs)
+        max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
+    end
+    t = min(cbls.last_stepsize, max_step)
     c_old = init
     c = get_univariate_triple!(mp, cbls, p, η, t)
     a, b = nothing, nothing
@@ -755,9 +769,9 @@ function (cbls::CubicBracketingLinesearchStepsize)(
             (a, b) = c, c_old
             break
         end
-        (t == cbls.max_stepsize) && return t
+        (t == max_step) && return t
         t *= cbls.stepsize_increase
-        t = min(t, cbls.max_stepsize)
+        t = min(t, max_step)
         c_old = c
         c = get_univariate_triple!(mp, cbls, p, η, t)
     end
@@ -1268,7 +1282,7 @@ mutable struct NonmonotoneLinesearchStepsize{
             retraction_method::TRM = default_retraction_method(M),
             stepsize_reduction::R = 0.5,
             stop_when_stepsize_less::R = 0.0,
-            stop_when_stepsize_exceeds = real(max_stepsize(M)),
+            stop_when_stepsize_exceeds::R = real(max_stepsize(M)),
             stop_increasing_at_step::I = 100,
             stop_decreasing_at_step::I = 1000,
             storage::Union{Nothing, StoreStateAction} = StoreStateAction(
@@ -1362,7 +1376,8 @@ function (a::NonmonotoneLinesearchStepsize)(
         η,
         p_old,
         X_old,
-        k,
+        k;
+        kwargs...,
     )
 end
 function (a::NonmonotoneLinesearchStepsize)(
@@ -1428,6 +1443,13 @@ function (a::NonmonotoneLinesearchStepsize)(
     end
 
     #compute the new step size with the help of the Barzilai-Borwein step size
+    l = norm(M, p, η)
+    local swse # COV_EXCL_LINE
+    if :stop_when_stepsize_exceeds in keys(kwargs)
+        swse = kwargs[:stop_when_stepsize_exceeds]
+    else
+        swse = (a.stop_when_stepsize_exceeds / l)
+    end
     a.last_stepsize = linesearch_backtrack!(
         M,
         a.candidate_point,
@@ -1437,11 +1459,11 @@ function (a::NonmonotoneLinesearchStepsize)(
         a.sufficient_decrease,
         a.stepsize_reduction,
         η;
-        lf0 = maximum([a.old_costs[j] for j in 1:min(iter, memory_size)]),
+        lf0 = maximum(view(a.old_costs, 1:min(iter, memory_size))),
         gradient = X,
         retraction_method = a.retraction_method,
-        stop_when_stepsize_less = (a.stop_when_stepsize_less / norm(M, p, η)),
-        stop_when_stepsize_exceeds = (a.stop_when_stepsize_exceeds / norm(M, p, η)),
+        stop_when_stepsize_less = (a.stop_when_stepsize_less / l),
+        stop_when_stepsize_exceeds = swse,
         stop_increasing_at_step = a.stop_increasing_at_step,
         stop_decreasing_at_step = a.stop_decreasing_at_step,
         report_messages_in = a.messages,
@@ -1747,7 +1769,11 @@ function (a::WolfePowellLinesearchStepsize)(
     max_step_increase = ifelse(
         isfinite(a.max_stepsize), min(1.0e9, a.max_stepsize / grad_norm), 1.0e9
     )
+    if :stop_when_stepsize_exceeds in keys(kwargs)
+        max_step_increase = min(max_step_increase, kwargs[:stop_when_stepsize_exceeds])
+    end
     step = ifelse(isfinite(a.max_stepsize), min(1.0, a.max_stepsize / grad_norm), 1.0)
+    step = min(step, max_step_increase)
     s_plus = step
     s_minus = step
     # clear messages
@@ -1774,14 +1800,14 @@ function (a::WolfePowellLinesearchStepsize)(
                 break
             end
         end
-        s_plus = 2.0 * s_minus
+        s_plus = min(2.0 * s_minus, max_step_increase)
     else
         vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
         if get_differential(mp, a.candidate_point, a.candidate_direction; Y = Y) < a.sufficient_curvature * l
             i = 0
             while fNew <= f0 + a.sufficient_decrease * step * l && (s_plus < max_step_increase)
                 # increase
-                s_plus = s_plus * 2.0
+                s_plus = min(s_plus * 2.0, max_step_increase)
                 step = s_plus
                 ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
                 fNew = get_cost(mp, a.candidate_point)
@@ -2133,4 +2159,633 @@ function get_last_stepsize(step::WolfePowellLinesearchStepsize, ::Any...)
 end
 function get_last_stepsize(step::WolfePowellBinaryLinesearchStepsize, ::Any...)
     return step.last_stepsize
+end
+
+
+#### Hager-Zhang Linesearch
+
+
+@doc """
+    HagerZhangLinesearchStepsize{P,T,R<:Real} <: Linesearch
+
+Do a bracketing line search to find a step size ``α`` that finds a
+local minimum along the  search direction ``X`` starting from ``p``,
+utilizing cubic polynomial interpolation using the method described in
+[HagerZhang:2006:2](@cite). The function [`secant`](@ref) is used to find the minimum of the
+cubic polynomial fitted to values of the cost function and its derivative at the endpoints
+of the current interval.
+See [`HagerZhangLinesearch`](@ref) for the mathematical details.
+
+# Fields
+
+$(_fields(:p; name = "candidate_point"))
+  as temporary storage for candidates
+* `initial_stepsize::R`: the step size to start the search with
+$(_fields(:retraction_method))
+$(_fields(:vector_transport_method))
+* `initial_guess`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+* `stepsize_limit`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+* `max_bracket_iterations`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+* `start_enforcing_wolfe_conditions_at_bracketing_iteration`: see keyword arguments of
+  [`HagerZhangLinesearch`](@ref) for details.
+* `allow_early_maxstep_termination`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+* `wolfe_condition_mode`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+* `ϵ`, `δ`, `σ`, `ω`, `θ`, `γ`, `ρ`, `Δ`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+* `secant_acceptance_ratio`: see keyword arguments of [`HagerZhangLinesearch`](@ref) for details.
+*  `candidate_direction`, `temporary_tangent`: as temporary storage for tangent vectors
+* `triples`: temporary storage for function and derivative evaluations
+* `last_evaluation_index`: to keep track of the number of evaluations performed so far;
+  points at the last filled entry of `triples`.
+* `Qₖ`, `Cₖ`: to keep track of the parameters of the Wolfe condition when in adaptive mode
+* `current_mode`: to keep track of the current Wolfe condition mode when in adaptive mode
+* `last_stepsize`: last stepsize computed since reset
+* `last_cost`: last cost value computed since reset
+* `ϵₖ`: the current ϵ parameter used in the approximate Wolfe condition and bracketing
+
+# Constructor
+
+    HagerZhangLinesearchStepsize(M::AbstractManifold; kwargs...)
+"""
+mutable struct HagerZhangLinesearchStepsize{
+        TF <: Real,
+        TIG <: AbstractInitialLinesearchGuess,
+        TRM <: AbstractRetractionMethod,
+        TVTM <: AbstractVectorTransportMethod,
+        TP,
+        TX,
+    } <: Linesearch
+    # parameters
+    initial_guess::TIG
+    retraction_method::TRM
+    vector_transport_method::TVTM
+    stepsize_limit::TF
+    max_bracket_iterations::Int
+    start_enforcing_wolfe_conditions_at_bracketing_iteration::Int
+    allow_early_maxstep_termination::Bool
+    wolfe_condition_mode::Symbol # :standard, :approximate, :adaptive
+    ϵ::TF # approximate Wolfe termination parameter
+    δ::TF # used in approximate Wolfe condition
+    σ::TF # used in curvature condition
+    ω::TF
+    θ::TF # update rule parameter
+    γ::TF
+    ρ::TF
+    Δ::TF
+    secant_acceptance_ratio::TF
+    # storage for candidates
+    candidate_point::TP
+    candidate_direction::TX
+    temporary_tangent::TX
+    # storage for function evaluations
+    triples::Vector{UnivariateTriple{TF}}
+    last_evaluation_index::Int
+    # storage to be kept between outer solver iterations
+    Qₖ::TF
+    Cₖ::TF
+    current_mode::Symbol
+    # other storage
+    last_stepsize::TF
+    last_cost::TF
+    ϵₖ::TF
+    function HagerZhangLinesearchStepsize(
+            M::AbstractManifold;
+            initial_guess::TIG = HagerZhangInitialGuess(),
+            retraction_method::TRM = default_retraction_method(M),
+            vector_transport_method::TVTM = default_vector_transport_method(M),
+            initial_last_stepsize::TF = NaN,
+            initial_last_cost::TF = NaN,
+            stepsize_limit::TF = Inf,
+            candidate_point = allocate_result(M, rand),
+            candidate_direction = zero_vector(M, candidate_point),
+            max_bracket_iterations::Int = 10,
+            start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = initial_guess isa ConstantStepsize ? 2 : 1,
+            max_function_evaluations::Int = 20,
+            wolfe_condition_mode::Symbol = :adaptive,
+            allow_early_maxstep_termination::Bool = true,
+            ϵ::TF = 1.0e-6,
+            δ::TF = 0.1,
+            σ::TF = 0.9,
+            ω::TF = 1.0e-3,
+            θ::TF = 0.5,
+            γ::TF = 0.66,
+            ρ::TF = 5.0,
+            Δ::TF = 0.7,
+            secant_acceptance_ratio::TF = 1.0e-8,
+        ) where {
+            TIG <: AbstractInitialLinesearchGuess, TRM <: AbstractRetractionMethod,
+            TVTM <: AbstractVectorTransportMethod, TF <: Real,
+        }
+
+        # check parameters
+        @assert δ > 0 && δ < 0.5
+        @assert δ <= σ
+        @assert σ < 1
+        @assert ϵ >= 0
+        @assert ω >= 0 && ω <= 1
+        @assert Δ >= 0 && Δ <= 1
+        @assert θ > 0 && θ < 1
+        @assert γ > 0 && γ < 1
+        @assert ρ > 1
+        @assert stepsize_limit > 0
+        @assert wolfe_condition_mode in (:standard, :approximate, :adaptive)
+        @assert secant_acceptance_ratio >= 0
+
+        # allocate storage
+        triples = Vector{UnivariateTriple{TF}}(undef, max_function_evaluations)
+
+        initial_wolfe_mode = wolfe_condition_mode == :adaptive ? :standard : wolfe_condition_mode
+
+        return new{TF, TIG, TRM, TVTM, typeof(candidate_point), typeof(candidate_direction)}(
+            initial_guess, retraction_method, vector_transport_method, stepsize_limit,
+            max_bracket_iterations, start_enforcing_wolfe_conditions_at_bracketing_iteration,
+            allow_early_maxstep_termination, wolfe_condition_mode,
+            ϵ, δ, σ, ω, θ, γ, ρ, Δ, secant_acceptance_ratio,
+            candidate_point, candidate_direction, zero_vector(M, candidate_point),
+            triples, 0,
+            0.0, 0.0, # Qₖ, Cₖ
+            initial_wolfe_mode,
+            initial_last_stepsize, initial_last_cost, ϵ,
+        )
+    end
+end
+
+function initialize_stepsize!(hzls::HagerZhangLinesearchStepsize)
+    hzls.Qₖ = 0.0
+    hzls.Cₖ = 0.0
+    hzls.last_stepsize = NaN
+    hzls.last_cost = NaN
+    hzls.ϵₖ = hzls.ϵ
+    hzls.current_mode = hzls.wolfe_condition_mode
+    if hzls.current_mode === :adaptive
+        hzls.current_mode = :standard
+    end
+    hzls.last_evaluation_index = 0
+    return hzls
+end
+
+"""
+    _hz_evaluate_next_step(
+        hzls::HagerZhangLinesearchStepsize, M::AbstractManifold,
+        mp::AbstractManoptProblem, p, η, α::Real
+    )
+
+Evaluate and store the next trial step for the Hager-Zhang linesearch.
+
+Given the current iterate `p`, search direction `η` (in the tangent space at `p`), and a
+candidate step size `α`, this function
+
+1. Retracts from `p` along `η` by step `α` into `hzls.candidate_point` (using
+     `hzls.retraction_method`),
+2. Vector-transports `η` to the candidate point into `hzls.candidate_direction` (using
+     `hzls.vector_transport_method`),
+3. Evaluates the objective and directional derivative via
+     `get_cost_and_differential(mp, hzls.candidate_point, hzls.candidate_direction)`,
+4. Stores the resulting triple `(α, f, df)` in `hzls.triples` and increments
+     `hzls.last_evaluation_index`.
+
+This helper is side-effecting by design; it mutates `hzls`' internal storage.
+
+# Return value
+
+By default return a tuple with three values:
+-  the index `i_k::Int` at which the new evaluation was stored.
+- `evaluation_limit_termination`: `true` iff the maximum number of stored evaluations
+    has been reached.
+- `wolfe_termination` is `true` iff the (standard or approximate) Wolfe conditions are
+    satisfied for the current candidate, according to `hzls.current_mode`.
+
+# Errors
+
+Throws an error if called more often than the maximum number of allocated function
+evaluations (i.e. if `hzls.triples` would overflow).
+"""
+function _hz_evaluate_next_step(
+        hzls::HagerZhangLinesearchStepsize,
+        M::AbstractManifold,
+        mp::AbstractManoptProblem,
+        p,
+        η,
+        α::Real
+    )
+    triples = hzls.triples
+    max_evals = length(triples)
+    if hzls.last_evaluation_index + 1 > max_evals
+        # this should never happen if the calling code is correct
+        error("Hager-Zhang linesearch exceeded maximum number of function evaluations $(length(hzls.triples)).")
+    end
+    ManifoldsBase.retract_fused!(M, hzls.candidate_point, p, η, α, hzls.retraction_method)
+    vector_transport_to!(
+        M, hzls.candidate_direction, p, η, hzls.candidate_point, hzls.vector_transport_method
+    )
+    f, df = get_cost_and_differential(mp, hzls.candidate_point, hzls.candidate_direction; Y = hzls.temporary_tangent)
+    hzls.last_evaluation_index += 1
+    triples[hzls.last_evaluation_index] = UnivariateTriple(α, f, df)
+
+    wolfe_termination = false
+    evaluation_limit_termination = hzls.last_evaluation_index == max_evals
+    i_k = hzls.last_evaluation_index
+    if hzls.current_mode === :standard
+        # Eq (22) in HagerZhang:2006:2
+        # equivalent to the (T1) condition
+        wolfe_termination = (α * hzls.δ * triples[1].df >= (triples[i_k].f - triples[1].f)) &&
+            (triples[i_k].df >= hzls.σ * triples[1].df)
+    elseif hzls.current_mode === :approximate
+        # Eq (23) in HagerZhang:2006:2 + additional criterion in the (T2) condition
+        wolfe_termination = ((2 * hzls.δ - 1) * triples[1].df >= triples[i_k].df) &&
+            (triples[i_k].df >= hzls.σ * triples[1].df) && triples[i_k].f <= triples[1].f + hzls.ϵₖ
+    else
+        error("Unknown Wolfe condition mode $(hzls.current_mode).")
+    end
+
+    return hzls.last_evaluation_index, evaluation_limit_termination, wolfe_termination
+end
+
+"""
+    _hz_bracket(hzls::HagerZhangLinesearchStepsize, c::Real, max_alpha::Real)
+
+Perform the bracketing phase of the Hager-Zhang linesearch starting from an initial
+stepsize `c` and not exceeding `max_alpha`.
+
+Returns a tuple `(i_a, i_b, f_eval, f_wolfe, f_early_maxstep)` where `i_a` and `i_b` are
+the indices in the stored function evaluations such that the minimum is bracketed between
+`triples[i_a].t` and `triples[i_b].t`. `f_eval` is `true` if the maximum number of function
+evaluations has been reached during the bracketing phase. `f_wolfe` is `true` if the Wolfe
+conditions have been satisfied. `f_early_maxstep` is `true` if the maximum stepsize was
+reached early with negative slope and an improvement over the initial point.
+"""
+function _hz_bracket(
+        hzls::HagerZhangLinesearchStepsize, M::AbstractManifold,
+        mp::AbstractManoptProblem, p, η, c::Real, max_alpha::Real
+    )
+    # B0
+    current_step = c
+    local c_index, f_eval, f_wolfe # COV_EXCL_LINE
+    ls_early_exit = false
+    for j in 1:hzls.max_bracket_iterations
+        c_index, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, current_step)
+        if f_eval || (f_wolfe && j >= hzls.start_enforcing_wolfe_conditions_at_bracketing_iteration)
+            break
+        end
+        if hzls.triples[c_index].df >= 0
+            # B1 -- detecting a positive slope
+            # handled after the loop
+            break
+        else
+            if hzls.triples[c_index].f > hzls.triples[1].f + hzls.ϵₖ
+                # B2 -- function value gets sufficiently larger than at 0
+                # perform main bracketing loop (we can skip U0-U2 checks here)
+                (i_a_bar, i_b_bar, f_eval, f_wolfe) = _hz_u3(hzls, M, mp, p, η, 1, c_index)
+                return (i_a_bar, i_b_bar, f_eval, f_wolfe, false)
+            else
+                if current_step == max_alpha
+                    # we've reached maximum alpha so we can't expand anymore
+                    # we handle this case after the loop
+                    ls_early_exit = hzls.allow_early_maxstep_termination
+                    break
+                end
+                # B3 -- widen the bracket
+                current_step *= hzls.ρ
+                if current_step > max_alpha
+                    current_step = max_alpha
+                end
+            end
+        end
+    end
+    # we detected positive slope, ran out of iterations or reached max stepsize
+    # B1 seems to be the best choice for all three cases
+
+    if ls_early_exit
+        # additional termination condition: we reached the maximum stepsize with negative
+        # slope and an improvement over the initial point, so we can exit early with this step
+        return (1, c_index, f_eval, f_wolfe, true)
+    end
+
+    i_min = 1
+    for i in 2:(hzls.last_evaluation_index - 1)
+        if hzls.triples[i].f <= hzls.triples[1].f + hzls.ϵₖ
+            i_min = i
+        end
+    end
+    return (i_min, c_index, f_eval, f_wolfe, false)
+end
+
+"""
+    _hz_update(
+        hzls::HagerZhangLinesearchStepsize, M::AbstractManifold,
+        mp::AbstractManoptProblem, p, η, i_a::Int, i_b::Int, c::Real
+    )
+
+Perform an update procedure of the Hager-Zhang linesearch given the current bracketing
+indices `i_a` and `i_b` and a candidate stepsize `c`.
+
+Returns indices and termination information `(i_A, i_B, i_c, f_eval, f_wolfe)` where the
+minimum is now bracketed between `alpha_values[i_A]` and `alpha_values[i_B]`. Index `i_c`
+indicates the position at which evaluation of the candidate `c` was stored. If the
+candidate `c` is outside of the current bracket, the last index is returned as `-1`.
+`f_eval` is `true` if the maximum number of function evaluations has been reached.
+`f_wolfe` is `true` if the Wolfe conditions have been satisfied at the candidate `i_c`.
+"""
+function _hz_update(
+        hzls::HagerZhangLinesearchStepsize, M::AbstractManifold,
+        mp::AbstractManoptProblem, p, η, i_a::Int, i_b::Int, c::Real
+    )
+    # U0
+    if c < hzls.triples[i_a].t || c > hzls.triples[i_b].t
+        return (i_a, i_b, -1, false, false)
+    end
+    i_c, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, c)
+    if hzls.triples[i_c].df >= 0
+        # U1
+        return (i_a, i_c, i_c, f_eval, f_wolfe)
+    else
+        if hzls.triples[i_c].f <= hzls.triples[1].f + hzls.ϵₖ
+            # U2
+            return (i_c, i_b, i_c, f_eval, f_wolfe)
+        else
+            if f_eval || f_wolfe
+                # termination condition met
+                return (i_a, i_b, i_c, f_eval, f_wolfe)
+            else
+                # U3
+                i_a_bar, i_b_bar, f_eval, f_wolfe = _hz_u3(hzls, M, mp, p, η, i_a, i_c)
+                return (i_a_bar, i_b_bar, i_c, f_eval, f_wolfe)
+            end
+        end
+    end
+end
+
+function _hz_u3(
+        hzls::HagerZhangLinesearchStepsize, M::AbstractManifold,
+        mp::AbstractManoptProblem, p, η, i_a::Int, i_b::Int
+    )
+    i_a_bar = i_a
+    i_b_bar = i_b
+    # the loop should typically terminate before exceeding the number of evaluations
+    f_eval = false
+    f_wolfe = false
+    while hzls.last_evaluation_index < length(hzls.triples)
+        # U3 (a)
+        d = (1 - hzls.θ) * hzls.triples[i_a_bar].t + hzls.θ * hzls.triples[i_b_bar].t
+        i_d, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, d)
+        if hzls.triples[i_d].df >= 0 || f_eval || f_wolfe
+            return (i_a_bar, i_d, f_eval, f_wolfe)
+        else
+            if hzls.triples[i_d].f <= hzls.triples[1].f + hzls.ϵₖ
+                # U3 (b)
+                i_a_bar = i_d
+            else
+                # U3 (c)
+                i_b_bar = i_d
+            end
+        end
+    end
+    return (i_a_bar, i_b_bar, f_eval, f_wolfe)
+end
+
+"""
+    _hz_secant2(
+        hzls::HagerZhangLinesearchStepsize, M::AbstractManifold,
+        mp::AbstractManoptProblem, p, η, i_a::Int, i_b::Int
+    )
+
+Perform the secant-based update in the Hager-Zhang linesearch.
+
+Computes a trial step using a secant interpolation of the bracketing
+endpoints. If the trial step is too close to an endpoint, falls back to a
+bisection step. Returns the updated bracketing indices and termination flags
+from the internal update routine.
+
+# Arguments
+- `hzls`: linesearch state and storage.
+- `M`: manifold for retractions and transports.
+- `mp`: optimization problem providing cost and differential.
+- `p`: current iterate.
+- `η`: search direction in the tangent space at `p`.
+- `i_a`, `i_b`: indices of the current bracketing interval in `hzls.triples`.
+
+# Return value
+Returns `(i_A, i_B, i_c, f_eval, f_wolfe)` where
+- `i_A`, `i_B`: indices bracketing the minimum after the update,
+- `i_c`: index of the most recent evaluation (or `-1` if the candidate was out of range),
+- `f_eval`: `true` iff the evaluation limit has been reached,
+- `f_wolfe`: `true` iff the Wolfe conditions are satisfied.
+
+# Steps (S1-S4)
+- S1: compute a secant trial `c` from the current bracket and accept it unless too close to
+  an endpoint (otherwise use a bisection step).
+- S2/S3: if the trial becomes a new endpoint, perform an update from that side.
+- S4: return the updated bracket and termination flags.
+"""
+function _hz_secant2(
+        hzls::HagerZhangLinesearchStepsize, M::AbstractManifold,
+        mp::AbstractManoptProblem, p, η, i_a::Int, i_b::Int
+    )
+    # S1
+    c = secant(hzls.triples[i_a], hzls.triples[i_b])
+    width = hzls.triples[i_b].t - hzls.triples[i_a].t
+    if abs(c - hzls.triples[i_a].t) < hzls.secant_acceptance_ratio * width ||
+            abs(c - hzls.triples[i_b].t) < hzls.secant_acceptance_ratio * width
+        # secant too close to an endpoint, use bisection instead
+        # this case is not present in the original algorithm, but the following steps don't make much sense in this case
+        c = (hzls.triples[i_a].t + hzls.triples[i_b].t) / 2
+        return _hz_update(hzls, M, mp, p, η, i_a, i_b, c)
+    end
+    (i_A, i_B, i_c, f_eval, f_wolfe) = _hz_update(hzls, M, mp, p, η, i_a, i_b, c)
+    if f_eval || f_wolfe
+        # not present in the original algorithm, but this seems to be the right way to handle this case
+        return (i_A, i_B, i_c, f_eval, f_wolfe)
+    end
+    if i_c == i_B
+        # S2
+        c_bar = secant(hzls.triples[i_b], hzls.triples[i_B])
+        # S4, part 1
+        return _hz_update(hzls, M, mp, p, η, i_A, i_B, c_bar)
+    elseif i_c == i_A
+        # S3
+        c_bar = secant(hzls.triples[i_a], hzls.triples[i_A])
+        # S4, part 1
+        return _hz_update(hzls, M, mp, p, η, i_A, i_B, c_bar)
+    else
+        # S4, part 2
+        return (i_A, i_B, i_c, f_eval, f_wolfe)
+    end
+end
+
+function (hzls::HagerZhangLinesearchStepsize)(
+        mp::AbstractManoptProblem,
+        s::AbstractManoptSolverState,
+        k::Int,
+        η = (-get_gradient(mp, get_iterate(s)));
+        fp = get_cost(mp, get_iterate(s)),
+        gradient = nothing,
+        kwargs...,
+    )
+    M = get_manifold(mp)
+    p = get_iterate(s)
+
+    dphi_0 = if !isnothing(gradient)
+        real(inner(M, p, η, gradient))
+    else
+        get_differential(mp, p, η; Y = hzls.temporary_tangent)
+    end
+    hzls.triples[1] = UnivariateTriple(0.0, fp, dphi_0)
+    hzls.last_evaluation_index = 1
+
+    # update Qₖ, Cₖ
+    hzls.Qₖ = 1 + hzls.Qₖ * hzls.Δ
+    hzls.Cₖ += (abs(fp) - hzls.Cₖ) / hzls.Qₖ
+
+    if hzls.wolfe_condition_mode == :adaptive
+        # Checking the V3 condition
+        if abs(hzls.last_cost - fp) <= hzls.ω * hzls.Cₖ
+            hzls.current_mode = :approximate
+        end
+    end
+
+    # L0, initialization
+
+    # handle stepsize limit
+    max_alpha = hzls.stepsize_limit
+    if :stop_when_stepsize_exceeds in keys(kwargs)
+        max_alpha = min(
+            kwargs[:stop_when_stepsize_exceeds],
+            max_alpha,
+        )
+    end
+    # guess initial alpha
+    α0 = hzls.initial_guess(mp, s, k, hzls.last_stepsize, η; lf0 = fp, Dlf0 = dphi_0, stop_when_stepsize_exceeds = max_alpha)
+
+    # in case initial_guess does not take into account the stepsize limit, we enforce it here
+    α0 = min(α0, max_alpha)
+
+    # L0, bracket(c)
+    local i_a_j, i_b_j, f_eval, f_wolfe # COV_EXCL_LINE
+    (i_a_j, i_b_j, f_eval, f_wolfe, f_early_maxstep) = _hz_bracket(hzls, M, mp, p, η, α0, max_alpha)
+    !f_early_maxstep && while !(f_eval || f_wolfe)
+        # L1
+        finite_at_b = isfinite(hzls.triples[i_b_j].f)
+        if finite_at_b
+            # _hz_secant2 only makes sense if we have finite function values at both ends
+            # but _hz_update may still work
+            (i_a, i_b, _i_c, f_eval, f_wolfe) = _hz_secant2(hzls, M, mp, p, η, i_a_j, i_b_j)
+        else
+            (i_a, i_b) = (i_a_j, i_b_j)
+        end
+        # L2
+        # we additionally check that we can continue narrowing the bracket
+        if !(f_eval || f_wolfe) &&
+                (!finite_at_b || (hzls.triples[i_b].t - hzls.triples[i_a].t) > hzls.γ * (hzls.triples[i_b_j].t - hzls.triples[i_a_j].t))
+            # secant2 did not reduce the bracket sufficiently
+            # we need to do bisection
+            (i_a, i_b, _i_c, f_eval, f_wolfe) = _hz_update(
+                hzls, M, mp, p, η,
+                i_a, i_b,
+                (hzls.triples[i_a].t + hzls.triples[i_b].t) / 2,
+            )
+        end
+        # L3
+        i_a_j, i_b_j = i_a, i_b
+
+        # loop terminates when we generate a point satisfying T1 or T2, or when we run out
+        # of objective evaluations
+    end
+
+    hzls.last_stepsize = hzls.triples[hzls.last_evaluation_index].t
+    hzls.last_cost = hzls.triples[hzls.last_evaluation_index].f
+    return hzls.last_stepsize
+end
+
+function Base.show(io::IO, hzls::HagerZhangLinesearchStepsize)
+    return print(
+        io,
+        """
+        HagerZhangLinesearch(;
+            initial_guess = $(hzls.initial_guess),
+            retraction_method = $(hzls.retraction_method),
+            vector_transport_method = $(hzls.vector_transport_method),
+            stepsize_limit = $(hzls.stepsize_limit),
+            max_bracket_iterations = $(hzls.max_bracket_iterations),
+            start_enforcing_wolfe_conditions_at_bracketing_iteration = $(hzls.start_enforcing_wolfe_conditions_at_bracketing_iteration),
+            max_function_evaluations = $(length(hzls.triples)),
+            wolfe_condition_mode = $(hzls.wolfe_condition_mode),
+            ϵ = $(hzls.ϵ), δ = $(hzls.δ), σ = $(hzls.σ),
+            ω = $(hzls.ω),
+            θ = $(hzls.θ), γ = $(hzls.γ), secant_acceptance_ratio = $(hzls.secant_acceptance_ratio),
+            ρ = $(hzls.ρ),
+            Δ = $(hzls.Δ),
+        )""",
+    )
+end
+function status_summary(hzls::HagerZhangLinesearchStepsize)
+    return "$(hzls)\nand a computed last stepsize of $(hzls.last_stepsize)"
+end
+
+@doc """
+    HagerZhangLinesearch(; kwargs...)
+    HagerZhangLinesearch(M::AbstractManifold; kwargs...)
+
+A functor representing the curvature minimizing cubic bracketing scheme introduced
+in [HagerZhang:2006:2](@cite). 
+
+The following changes were made to the original algorithm from the paper:
+1. The algorithm bails out early out of a secant update that is too close to one of the end
+   points and switches to bisection. Original algorithm performs a similar check at a later
+   stage. This precaution prevents a non-productive evaluation of the objective.
+2. Added `start_enforcing_wolfe_conditions_at_bracketing_iteration`, since with a very low
+   stepsize initialization that satisfies Wolfe conditions we might accept the initial
+   stepsize and not notice that bracketing could help us reach the minimum earlier.
+   Setting `start_enforcing_wolfe_conditions_at_bracketing_iteration`` to 1 reproduces the
+   behavior of the original paper. For example a static initial stepsize equal to 1.0 could
+   benefit from having this parameter increased.
+3. The paper isn't entirely clear on what the final stepsize to return is. This
+   implementation returns the last evaluated stepsize.
+4. The original algorithm doesn't specify what to do when the maximum stepsize is reached
+   during the bracketing phase with a negative slope and an improvement over the initial
+   point. This implementation allows for an early termination in this case, which seems
+   reasonable since we can't expand the bracket anymore and this point is likely close to
+   the minimum. By default this early termination is allowed, but it can be turned off via
+   `allow_early_maxstep_termination` in which case the algorithm continues with the main
+   loop even in this case.
+
+## Keyword arguments
+
+$(_kwargs(:p; name = "candidate_point")) as temporary storage for candidates
+$(_kwargs(:retraction_method))
+$(_kwargs(:vector_transport_method))
+* `initial_guess::AbstractInitialLinesearchGuess=HagerZhangInitialGuess()`: initial linesearch guess strategy
+* `initial_last_stepsize::Real = NaN`: initial value for the stored last stepsize
+* `initial_last_cost::Real = NaN`: initial value for the stored last cost
+* `stepsize_limit::Real = Inf`: upper bound for trial stepsizes during bracketing
+* `candidate_point = allocate_result(M, rand)`: storage for trial points
+* `candidate_direction = zero_vector(M, candidate_point)`: storage for transported directions
+* `max_bracket_iterations::Int = 10`: maximum number of bracketing iterations
+* `start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = initial_guess isa ConstantStepsize ? 2 : 1`:
+  bracketing iteration number at which Wolfe conditions are started to be enforced;
+  setting to 1 may cause no bracketing to occur when the initial guess satisfies the Wolfe
+  conditions.
+* `max_function_evaluations::Int = 20`: maximum number of function evaluations per linesearch
+* `allow_early_maxstep_termination::Bool = true`: whether to allow early termination when
+  the maximum stepsize is reached with negative slope and an improvement over the initial point.
+* `wolfe_condition_mode::Symbol = :adaptive`: one of `:standard`, `:approximate`, or `:adaptive`.
+  Selects between (T1) and (T2) conditions in [HagerZhang:2006:2](@cite).
+* `ϵ::Real = 1.0e-6`: initial allowed increase in function value in termination condition (T2).
+  Allowed range: `ϵ >= 0`.
+* `δ::Real = 0.1`: parameter for approximate Wolfe condition.
+  Allowed range: `0 < δ < 0.5` and `δ <= σ`.
+* `σ::Real = 0.9`: curvature condition parameter. Allowed range: `δ <= σ < 1`.
+* `ω::Real = 1.0e-3`: interpolation safeguard parameter. Allowed range: `0 <= ω <= 1`.
+* `θ::Real = 0.5`: bisection update parameter. Allowed range: `0 < θ < 1`.
+* `γ::Real = 0.66`: determines when a bisection step is performed instead of secant.
+  Allowed range: `0 < γ < 1`.
+* `ρ::Real = 5.0`: bracketing expansion factor. Allowed range: `ρ > 1`.
+* `Δ::Real = 0.7`: Parameter controlling the rate of change of Qₖ.
+  Allowed range: `0 <= Δ <= 1`.
+* `secant_acceptance_ratio::Real = 1.0e-8`: minimum relative interval length
+  for accepting secant step. Allowed range: `secant_acceptance_ratio >= 0`.
+  In case of rejection, a bisection step is performed instead.
+
+$(_note(:ManifoldDefaultFactory, "HagerZhangLinesearch"))
+"""
+function HagerZhangLinesearch(args...; kwargs...)
+    return ManifoldDefaultsFactory(HagerZhangLinesearchStepsize, args...; kwargs...)
 end
