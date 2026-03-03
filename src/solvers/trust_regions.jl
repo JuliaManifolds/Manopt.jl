@@ -436,20 +436,20 @@ function trust_regions!(
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stopping_criterion::StoppingCriterion = StopAfterIteration(1000) |
             StopWhenGradientNormLess(1.0e-6),
-        max_trust_region_radius::R = sqrt(manifold_dimension(M)),
-        trust_region_radius::R = max_trust_region_radius / 8,
+        max_trust_region_radius::Real = sqrt(manifold_dimension(M)),
+        trust_region_radius::Real = max_trust_region_radius / 8,
         randomize::Bool = false, # Deprecated, remove on next release (use just `σ`)
         project!::Proj = (copyto!),
-        ρ_prime::R = 0.1, # Deprecated, remove on next breaking change (use `acceptance_rate``)
-        acceptance_rate::R = ρ_prime,
-        ρ_regularization = 1.0e3,
-        θ::R = 1.0,
-        κ::R = 0.1,
-        σ = randomize ? 1.0e-3 : 0.0,
-        reduction_threshold::R = 0.1,
-        reduction_factor::R = 0.25,
-        augmentation_threshold::R = 0.75,
-        augmentation_factor::R = 2.0,
+        ρ_prime::Real = 0.1, # Deprecated, remove on next breaking change (use `acceptance_rate`)
+        acceptance_rate::Real = ρ_prime,
+        ρ_regularization::Real = 1.0e3,
+        θ::Real = 1.0,
+        κ::Real = 0.1,
+        σ::Real = randomize ? 1.0e-3 : 0.0,
+        reduction_threshold::Real = 0.1,
+        reduction_factor::Real = 0.25,
+        augmentation_threshold::Real = 0.75,
+        augmentation_factor::Real = 2.0,
         sub_kwargs = (;),
         sub_objective = decorate_objective!(M, TrustRegionModelObjective(mho); sub_kwargs...),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
@@ -475,7 +475,33 @@ function trust_regions!(
             sub_kwargs...,
         ),
         kwargs..., #collect rest
-    ) where {Proj, O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective}, R}
+    ) where {Proj, O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
+    R = float(
+        promote_type(
+            typeof(max_trust_region_radius),
+            typeof(trust_region_radius),
+            typeof(acceptance_rate),
+            typeof(ρ_regularization),
+            typeof(θ),
+            typeof(κ),
+            typeof(σ),
+            typeof(reduction_threshold),
+            typeof(reduction_factor),
+            typeof(augmentation_threshold),
+            typeof(augmentation_factor),
+        ),
+    )
+    max_trust_region_radius = convert(R, max_trust_region_radius)
+    trust_region_radius = convert(R, trust_region_radius)
+    acceptance_rate = convert(R, acceptance_rate)
+    ρ_regularization = convert(R, ρ_regularization)
+    θ = convert(R, θ)
+    κ = convert(R, κ)
+    σ = convert(R, σ)
+    reduction_threshold = convert(R, reduction_threshold)
+    reduction_factor = convert(R, reduction_factor)
+    augmentation_threshold = convert(R, augmentation_threshold)
+    augmentation_factor = convert(R, augmentation_factor)
     (max_trust_region_radius <= 0) && throw(
         ErrorException(
             "max_trust_region_radius must be positive but it is $max_trust_region_radius.",
