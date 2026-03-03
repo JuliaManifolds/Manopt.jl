@@ -27,6 +27,7 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("plans/test_higher_order_primal_dual_plan.jl")
         include("plans/test_defaults_factory.jl")
         include("plans/test_record.jl")
+        include("plans/test_robustifiers.jl")
         include("plans/test_scaled_objective.jl")
         include("plans/test_stepsize.jl")
         include("plans/test_stochastic_gradient_plan.jl")
