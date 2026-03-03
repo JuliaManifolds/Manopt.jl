@@ -176,12 +176,14 @@ function get_gradient_function(
     return (M, X, p) -> get_gradient!(M, X, sco, p)
 end
 
-function show(io::IO, smco::SimpleManifoldCachedObjective)
+function Base.show(io::IO, smco::SimpleManifoldCachedObjective)
     print(io, "SimpleManifoldCachedObjective(")
-    show(io, smco.objective)
-    return print(io, "; c = $(smco.c), initialized = $(smco.c_valid && smco.X_valid), p = $(smco.p), X = $(smco.X))")
+    print(io, smco.objective); print(io, ", ")
+    print(io, smco.p); print(io, ", ")
+    print(io, smco.X); print(io, ", ")
+    print(io, smco.c)
+    return print(io, "; initialized = $(smco.X_valid && smco.c_valid))")
 end
-
 
 #
 # ManifoldCachedObjective constructor which errors by default
@@ -1071,13 +1073,10 @@ function objective_cache_factory(M, o, cache::Tuple{Symbol, <:AbstractArray})
     (cache[1] === :LRU) && return ManifoldCachedObjective(M, o, cache[2])
     return o
 end
-function show(io::IO, smco::SimpleManifoldCachedObjective{E}) where {E}
-    return print(io, "SimpleManifoldCachedObjective{$E,$(smco.objective)}")
-end
 function show(
         io::IO, t::Tuple{<:SimpleManifoldCachedObjective, S}
     ) where {S <: AbstractManoptSolverState}
-    return print(io, "$(t[2])\n\n$(status_summary(t[1]))")
+    return print(io, "$(t[2])\n\n$(t[1])")
 end
 function show(io::IO, mco::ManifoldCachedObjective)
     return print(io, "$(status_summary(mco))")
@@ -1099,8 +1098,8 @@ function status_summary(smco::SimpleManifoldCachedObjective; context = :default)
     * the cost is cached:$(_MANOPT_INDENT)$(smco.c_valid ? "Yes" : "No")
     """
     s2 = status_summary(smco.objective; context = :default)
-    length(s2) > 0 && (s2 = "\n$(s2)")
-    return "$(s)$(s2)"
+    length(s2) > 0 && (s2 = "$(s2)\n\n")
+    return "$(s2)$(s)"
 end
 function status_summary(mco::ManifoldCachedObjective)
     s = "## Cache\n"

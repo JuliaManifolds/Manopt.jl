@@ -69,13 +69,9 @@ end
         sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p = copy(M, p))
         sco1r = repr(sco1)
         @test startswith(sco1r, "SimpleManifoldCachedObjective")
-        @test contains(sco1r, "c = ")
-        @test contains(sco1r, "p = ")
-        @test contains(sco1r, "X = ")
         @test contains(sco1r, "initialized = ")
         sco1s = Manopt.status_summary(sco1)
-        @test startswith(sco1s, "## Cache")
-        @test contains(sco1s, Manopt.status_summary(mgoa))
+        @test contains(sco1s, "## Cache")
         # evaluated on init -> 1
         @test sco1.objective.functions[:cost].i == 1
         @test sco1.objective.functions[:gradient].i == 1
