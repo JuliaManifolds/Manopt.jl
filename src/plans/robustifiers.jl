@@ -432,7 +432,7 @@ struct TukeyRobustifier <: AbstractRobustifierFunction end
 function get_robustifier_values(::TukeyRobustifier, x::Real)
     (x == 0) && (return (0.0, 1.0, -2.0))
     if x <= 1
-        a = (1 / 3) * (1 - (1 - x)^3)
+        a = (1 - (1 - x)^3) / 3
         b = (1 - x)^2
         c = 2 * (x - 1)
         return (a, b, c)

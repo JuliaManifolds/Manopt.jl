@@ -44,19 +44,10 @@ get_gradient_function
 
 Inside the [`NonlinearLeastSquaresObjective`](@ref) one can use robustifiers. The following ones are provided
 
-```@docs
-SoftL1Robustifier
-AbstractRobustifierFunction
-CauchyRobustifier
-TolerantRobustifier
-TukeyRobustifier
-ComposedRobustifierFunction
-ArctanRobustifier
-ScaledRobustifierFunction
-RobustifierFunction
-IdentityRobustifier
-HuberRobustifier
-get_robustifier_values
+```@autodocs
+Modules = [Manopt]
+Pages = ["plans/robustifiers.jl"]
+Order = [:type, :function]
 ```
 
 ## Subgradient objectives
