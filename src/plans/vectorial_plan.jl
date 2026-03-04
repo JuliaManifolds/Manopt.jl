@@ -742,7 +742,7 @@ function get_jacobian!(
 end
 # (b) vector of gradient functions
 function get_jacobian!(
-        M::AbstractManifold, a, vgf::VGF, p, X; Y_cache = nothing
+        M::AbstractManifold, a, vgf::VGF, p, X; Y_cache = nothing, c_cache = nothing,
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:ComponentVectorialType}}
     n = vgf.range_dimension
     for i in 1:n
@@ -753,7 +753,7 @@ end
 # (c) Jacobian function – easiest: Decompose X and call the other, for both
 function get_jacobian!(
         M::AbstractManifold, a, vgf::AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:CoefficientVectorialType}, p, X;
-        range = nothing, Y_cache = nothing, c_cache = allocate_result(M, get_coordinates, X)
+        range = nothing, Y_cache = nothing, c_cache = allocate_result(M, get_coordinates, p, X, vgf.jacobian_type.basis)
     ) where {FT}
     B = vgf.jacobian_type.basis
     get_coordinates!(M, c_cache, p, X, B)

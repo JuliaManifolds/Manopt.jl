@@ -953,7 +953,7 @@ function accumulate_linear_normal_operator!(
 end
 # For the componentwise variant, the C^TC turns into a diagonal matrix
 function accumulate_linear_normal_operator!(
-        M::AbstractManifold, A, o::AbstractVectorGradientFunction,
+        M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         cr::ComponentwiseRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
     )
