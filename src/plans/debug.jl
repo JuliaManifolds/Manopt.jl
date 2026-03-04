@@ -221,7 +221,7 @@ function status_summary(de::DebugEvery; context = :default)
         return "[$s, $(de.every)]"
     end
     (context == :inline) && return "The Debug $(status_summary(de.debug; context = context)) only printed every $(de.every) iteration"
-    return "a DebugAction wrapping the following DebugAction to only print it every $(de.every)th iteration.\n$(replace(status_summary(de.debug; context = context), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))"
+    return "a DebugAction wrapping the following DebugAction to only print it every $(de.every)th iteration.\n$(_in_str(status_summary(de.debug; context = context)))"
 end
 function set_parameter!(de::DebugEvery, e::Symbol, args...)
     set_parameter!(de, Val(e), args...)

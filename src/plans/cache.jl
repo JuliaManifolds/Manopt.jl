@@ -1101,11 +1101,12 @@ function status_summary(smco::SimpleManifoldCachedObjective; context = :default)
     length(s2) > 0 && (s2 = "$(s2)\n\n")
     return "$(s2)$(s)"
 end
-function status_summary(mco::ManifoldCachedObjective)
+function status_summary(mco::ManifoldCachedObjective; context = :default)
+    _is_inline(context) && (return repr(mco))
     s = "## Cache\n"
-    s2 = status_summary(mco.objective)
-    (length(s2) > 0) && (s2 = "$(s2)")
-    length(mco.cache) == 0 && return "$(s)    No caches active\n$(s2)"
+    s2 = status_summary(mco.objective; context = context)
+    (length(s2) > 0) && (s2 = "$(s2)\n\n")
+    length(mco.cache) == 0 && return "$(s2)$(s)    No caches active"
     longest_key_length = max(length.(["$k" for k in keys(mco.cache)])...)
     cache_strings = [
         "  * :" *
@@ -1113,5 +1114,5 @@ function status_summary(mco::ManifoldCachedObjective)
             " : $(v.currentsize)/$(v.maxsize) entries of type $(valtype(v)) used" for
             (k, v) in zip(keys(mco.cache), values(mco.cache))
     ]
-    return "$(s2)\n\n$(s)$(join(cache_strings, "\n"))\n"
+    return "$(s2)$(s)$(join(cache_strings, "\n"))\n"
 end

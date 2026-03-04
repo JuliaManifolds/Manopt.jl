@@ -51,7 +51,7 @@ function status_summary(dmp::DefaultManoptProblem; context = :default)
     $(_MANOPT_INDENT)$(replace(repr(dmp.manifold), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
 
     ## Objective
-    $(_MANOPT_INDENT)$(replace(status_summary(dmp.objective, context = context), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))"""
+    $(_in_str(status_summary(dmp.objective, context = context); indent = 1))"""
 end
 
 """

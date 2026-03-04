@@ -30,8 +30,25 @@ status_summary(e; context::Symbol = :default)
 function status_summary(io::IO, e; context = :default)
     return print(io, status_summary(e; context = context))
 end
+#
+#
+# status_summary string format helper
+# ---
+# check whether a context is inline or less
 _is_inline(c) = (c == :inline || c == :short)
-
+# ind_str - indent a string for use within another one
+# * `indent = false` raise indentation by `indent_str` (`_MANOPT_INDENT` by default)
+# * `headers = true` increase headers also on Headers that are indented with `indent_str`
+function _in_str(s::String; indent = 0, headers = 1, indent_str = _MANOPT_INDENT)
+    t = s
+    for _ in 1:indent
+        t = replace("$(indent_str)$t", "\n" => "\n$(indent_str)")
+    end
+    for i in 1:headers
+        t = replace(t, Regex("(?m)^($(indent_str)*)(#+)") => s"\1#\2")
+    end
+    return t
+end
 """
     set_parameter!(f, element::Symbol , args...)
 

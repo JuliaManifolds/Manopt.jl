@@ -386,5 +386,5 @@ function status_summary(emo::EmbeddedManifoldObjective{P, T}; context = :default
     An embedded objective
 
     ## Objective
-    $(_MANOPT_INDENT)$(replace(status_summary(emo.objective, context = context), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))$(pX_str)"""
+    $(_in_str(status_summary(emo.objective, context = context)))$(pX_str)"""
 end

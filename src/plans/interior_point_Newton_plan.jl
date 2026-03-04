@@ -356,7 +356,7 @@ function status_summary(CKKTvf::CondensedKKTVectorField; context = :default)
     _is_inline(context) && (return repr(CKKTvf))
     return """
     The condensed KKT vector field for the constrained objective
-    $(_MANOPT_INDENT)$(replace(status_summary(CKKTvf.cmo; context = context), "\n" => "\n$(_MANOPT_INDENT)"))
+    $(_in_str(status_summary(CKKTvf.cmo; context = context); indent = 1))
     with μ=$(CKKTvf.μ) s=$(CKKTvf.s) β=$(CKKTvf.β)"""
 end
 function show(io::IO, CKKTvf::CondensedKKTVectorField)
@@ -467,7 +467,7 @@ function status_summary(CKKTvfJ::CondensedKKTVectorFieldJacobian; context = :def
     _is_inline(context) && (return repr(CKKTvfJ))
     return """
     The Jacobian of the condensed KKT vector field for the constrained objective
-    $(_MANOPT_INDENT)$(replace(status_summary(CKKTvfJ.cmo; context = context), "\n" => "\n$(_MANOPT_INDENT)"))
+    $(_in_str(status_summary(CKKTvfJ.cmo; context = context); indent = 1))
     with μ=$(CKKTvfJ.μ) s=$(CKKTvfJ.s) β=$(CKKTvfJ.β)"""
 end
 function show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)

@@ -30,8 +30,7 @@ Generate the proximal gradient objective given the total cost ``f = g + h``, smo
 * `evaluation=`[`AllocatingEvaluation`](@ref): whether the gradient and proximal map
   is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
 """
-struct ManifoldProximalGradientObjective{E <: AbstractEvaluationType, TC, TG, TGG, TP} <:
-    AbstractManifoldCostObjective{E, TC}
+struct ManifoldProximalGradientObjective{E <: AbstractEvaluationType, TC, TG, TGG, TP} <: AbstractManifoldCostObjective{E, TC}
     cost::TC # f = g + h
     cost_smooth::TG # smooth part
     gradient_g!!::TGG
@@ -77,6 +76,29 @@ function get_gradient!(
     return X
 end
 
+function Base.show(io::IO, mpgo::ManifoldProximalGradientObjective{E}) where {E}
+    print(io, "ManifoldProximalGradientObjective(")
+    print(io, mpgo.cost); print(io, ", ")
+    print(io, mpgo.cost_smooth); print(io, ", ")
+    print(io, mpgo.gradient_g!!); print(io, ", ")
+    print(io, mpgo.proximal_map_h!!); print(io, "; "); print(io, _to_kw(E))
+    return print(io, ")")
+end
+
+function status_summary(mpgo::ManifoldProximalGradientObjective{E}; context = :default) where {E}
+    (context === :short) && repr(mpgo)
+    s = "A proximal gradient objective `f = g + h`, where `g` is smooth and `h` is possibly nonsmooth."
+    (context === :inline) && (return s)
+    e = (E === AllocatingEvaluation ? " (allocating)" : " (in-place)")
+    return """
+    $s
+
+    # Components
+    * `f`:          $(mpgo.cost)
+    * `g`:          $(mpgo.cost_smooth)
+    * `gradient_g`: $(mpgo.gradient_g!!)$e
+    * `prox_h`:     $(mpgo.proximal_map_h!!)$e"""
+end
 """
     get_cost_smooth(M::AbstractManifold, objective, p)
 
@@ -102,11 +124,7 @@ function get_proximal_map(
 end
 
 function get_proximal_map!(
-        M::AbstractManifold,
-        q,
-        mpgo::ManifoldProximalGradientObjective{AllocatingEvaluation},
-        λ,
-        p,
+        M::AbstractManifold, q, mpgo::ManifoldProximalGradientObjective{AllocatingEvaluation}, λ, p,
     )
     copyto!(M, q, mpgo.proximal_map_h!!(M, λ, p))
     return q

@@ -1091,7 +1091,7 @@ function status_summary(c::StopWhenAll; context = :default)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop when _all_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r  * $(replace(status_summary(cs; context = :inline), "\n" => "\n    "))\n"
+        r = "$r  * $(_in_str(status_summary(cs; context = :inline); indent = 0, headers = 0))\n"
     end
     return (_is_inline(context) ? "$(r)Overall: $s" : "Stop when _all_ of the following are fulfilled:\n$(r)Overall: $s")
 end
@@ -1210,7 +1210,7 @@ function status_summary(c::StopWhenAny; context = :default)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop when _one_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r  * $(replace(status_summary(cs; context = :inline), "\n" => "\n    "))\n"
+        r = "$r  * $(_in_str(status_summary(cs; context = :inline); indent = 0, headers = 0))\n"
     end
     return "$(r)Overall: $s"
 end
@@ -1403,7 +1403,7 @@ function get_reason(sc::StopWhenRepeated)
         r = """At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n) $(c) times:
         $(sc.count) ≥ $(sc.n): $(s)
         last inner criterion status:
-        $(replace(status_summary(sc.stopping_criterion), "\n" => "\n    "))
+        $(_in_str(status_summary(sc.stopping_criterion); indent = 1, headers = 0))
         """
         return r
     end
@@ -1424,7 +1424,7 @@ function status_summary(sc::StopWhenRepeated; context = :default)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     c = sc.consecutive ? "consecutive" : ""
-    return (_is_inline(context) ? "$(status_summary(sc.stopping_criterion; cnontext = context)) × $(sc.count) ≥ $(sc.n) ($(c)):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the inner criterion has indicated to stop $(sc.n) ($(c)) times\n$(_MANOPT_INDENT) $(replace(status_summary(sc.stopping_criterion; context = context), "\n" => "\n    "))\n$(_MANOPT_INDENT)$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "$(status_summary(sc.stopping_criterion; cnontext = context)) × $(sc.count) ≥ $(sc.n) ($(c)):" : "A stopping criterion to stop when the inner criterion has indicated to stop $(sc.n) ($(c)) times.\n$(_in_str(status_summary(sc.stopping_criterion; context = context); indent = 1, headers = 0))\n$(_in_str(s; indent = 2, headers = 0))")
 end
 
 @doc """

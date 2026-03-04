@@ -511,7 +511,7 @@ function get_cost_and_gradient!(
     return error("$mfo seems to either have no access to a cost or a gradient")
 end
 function status_summary(mfo::ManifoldFirstOrderObjective; context = :default)
-    _is_inline(context) && (return "A first order objective with functions for $(join(keys(mfo.functions), ", ", (length(mfo.functions) > 2 ? "," : "") * " and "))")
+    _is_inline(context) && (return repr(mfo))
     return "A first order objective with $(length(mfo.functions)) provided functions.\n\n" * join([ "* $k:$(_MANOPT_INDENT) $(v)" for (k, v) in zip(keys(mfo.functions), mfo.functions) ], "\n")
 end
 function show(io::IO, mfo::ManifoldFirstOrderObjective{E}) where {E}
