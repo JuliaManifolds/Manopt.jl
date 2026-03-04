@@ -724,7 +724,7 @@ function get_jacobian(
         M::AbstractManifold, vgf::VGF, p, X; kwargs...
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:AbstractVectorialType}}
     n = vgf.range_dimension
-    a = zeros(eltype(X), n)
+    a = zeros(number_eltype(X), n)
     return get_jacobian!(M, a, vgf, p, X; kwargs...)
 end
 # (a) a single function, allocating
@@ -827,7 +827,7 @@ function get_jacobian(
         M::AbstractManifold, vgf::VGF, p, c, B::AbstractBasis; X = zero_vector(M, p), kwargs...
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:FunctionVectorialType}}
     n = vgf.range_dimension
-    a = zeros(eltype(X), n)
+    a = zeros(number_eltype(X), n)
     return get_jacobian!(M, a, vgf, p, c, B; X = X, kwargs...)
 end
 function get_jacobian!(
@@ -842,7 +842,7 @@ function get_jacobian(
         M::AbstractManifold, vgf::VGF, p, c, B::AbstractBasis, X = zero_vector(M, p), kwargs...
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:ComponentVectorialType}}
     n = vgf.range_dimension
-    a = zeros(eltype(X), n)
+    a = zeros(number_eltype(X), n)
     return get_jacobian!(M, a, vgf, p, c, B; X = X, kwargs...)
 end
 function get_jacobian!(
@@ -857,7 +857,7 @@ function get_jacobian(
         M::AbstractManifold, vgf::VGF, p, c, B::AbstractBasis; X = nothing, kwargs...
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:CoefficientVectorialType}}
     n = vgf.range_dimension
-    a = zeros(eltype(X), n)
+    a = zeros(number_eltype(X), n)
     return get_jacobian!(M, a, vgf, p, c, B; X = X, kwargs...)
 end
 function get_jacobian!(
@@ -1274,7 +1274,7 @@ function get_gradient!(
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     # a type wise safe way to allocate what usually should yield a n-times-d matrix
-    JF = allocate_jacobian(M, vgf; T = eltype(X))
+    JF = allocate_jacobian(M, vgf; T = number_eltype(X))
     vgf.jacobian!!(M, JF, p)
     get_vector!(M, X, p, JF[i, :], vgf.jacobian_type.basis)
     return X
@@ -1288,7 +1288,7 @@ function get_gradient!(
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     # a type wise safe way to allocate what usually should yield a n-times-d matrix
-    JF = allocate_jacobian(M, vgf; T = eltype(X))
+    JF = allocate_jacobian(M, vgf; T = number_eltype(X))
     vgf.jacobian!!(M, JF, p)
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
