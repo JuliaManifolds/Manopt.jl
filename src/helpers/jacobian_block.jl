@@ -37,8 +37,9 @@ end
 function BlockNonzeroVector(
         n_entries::Integer,
         starts::NTuple{N, <:Integer},
-        blocks::NTuple{N, AbstractVector{T}},
+        blocks::Tuple{AbstractVector{T}, Vararg{AbstractVector{T}}},
     ) where {N, T}
+    length(blocks) == N || throw(ArgumentError("The number of blocks does not match the length of starts."))
     starts_int = ntuple(i -> Int(starts[i]), Val(N))
     return BlockNonzeroVector{T, N, typeof(blocks)}(Int(n_entries), starts_int, blocks)
 end
@@ -164,8 +165,9 @@ function BlockNonzeroMatrix(
         n_cols::Integer,
         row_starts::NTuple{N, <:Integer},
         col_starts::NTuple{N, <:Integer},
-        blocks::NTuple{N, AbstractMatrix{T}},
+        blocks::Tuple{AbstractMatrix{T}, Vararg{AbstractMatrix{T}}},
     ) where {N, T}
+    length(blocks) == N || throw(ArgumentError("The number of blocks does not match the length of starts."))
     row_starts_int = ntuple(i -> Int(row_starts[i]), Val(N))
     col_starts_int = ntuple(i -> Int(col_starts[i]), Val(N))
     return BlockNonzeroMatrix{T, N, typeof(blocks)}(
@@ -304,6 +306,28 @@ function Base.:*(A::AbstractMatrix{T1}, B::BlockNonzeroMatrix{T2}) where {T1, T2
         C[:, _col_range(B, k)] .+= view(A, :, _row_range(B, k)) * B.blocks[k]
     end
     return C
+end
+
+function Base.:*(xt::Adjoint{T1, <:AbstractVector}, A::BlockNonzeroMatrix{T2}) where {T1, T2}
+    x = parent(xt)
+    length(x) == size(A, 1) || throw(DimensionMismatch("Matrix and vector dimensions mismatch."))
+    T = promote_type(T1, T2)
+    y = zeros(T, size(A, 2))
+    for k in eachindex(A.blocks)
+        y[_col_range(A, k)] .+= parent(adjoint(view(x, _row_range(A, k))) * A.blocks[k])
+    end
+    return adjoint(y)
+end
+
+function Base.:*(xt::LinearAlgebra.Transpose{T1, <:AbstractVector}, A::BlockNonzeroMatrix{T2}) where {T1, T2}
+    x = parent(xt)
+    length(x) == size(A, 1) || throw(DimensionMismatch("Matrix and vector dimensions mismatch."))
+    T = promote_type(T1, T2)
+    y = zeros(T, size(A, 2))
+    for k in eachindex(A.blocks)
+        y[_col_range(A, k)] .+= parent(transpose(view(x, _row_range(A, k))) * A.blocks[k])
+    end
+    return transpose(y)
 end
 
 function Base.:*(A::BlockNonzeroMatrix{T1}, B::BlockNonzeroMatrix{T2}) where {T1, T2}

@@ -111,9 +111,11 @@ end
 get_objective(slsmo::SymmetricLinearSystem) = slsmo.objective
 
 # set parameter just passes down to the inner objective
-function set_parameter!(slsmo::SymmetricLinearSystem, name::Val, value)
-    set_parameter!(slsmo.objective, name, value)
-    return slsmo
+for NT in [Val, Val{:Cost}, Val{:Gradient}, Val{:SubGradient}]
+    @eval function set_parameter!(slsmo::SymmetricLinearSystem, name::$NT, value)
+        set_parameter!(slsmo.objective, name, value)
+        return slsmo
+    end
 end
 function set_parameter!(slsmo::SymmetricLinearSystem, name::Symbol, value)
     set_parameter!(slsmo.objective, name, value)

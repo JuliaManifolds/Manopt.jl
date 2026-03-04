@@ -60,6 +60,10 @@ using Test
     LJ_expected = zeros(4, 6)
     LJ_expected[:, 3:4] .= L[:, 2:3] * B
     @test L * J == LJ_expected
+    @test y_expected' * J == y_expected' * Matrix(J)
+    @test y_expected' * J isa Adjoint
+    @test transpose(y_expected) * J == transpose(y_expected) * Matrix(J)
+    @test transpose(y_expected) * J isa Transpose
 
     J2 = BlockNonzeroMatrix(5, 6, (2,), (3,), (fill(1.0, 2, 2),))
     S = J + J2
@@ -95,6 +99,10 @@ using Test
     @test yct isa BlockNonzeroVector
     @test Vector(yct) == Matrix(Jc)' * xc
     @test transpose(Jc) * xc == transpose(Matrix(Jc)) * xc
+    @test xc' * Jc == xc' * Matrix(Jc)
+    @test xc' * Jc isa Adjoint
+    @test transpose(xc) * Jc == transpose(xc) * Matrix(Jc)
+    @test transpose(xc) * Jc isa Transpose
 
     B4 = [10.0 20.0]
     Jmulti = BlockNonzeroMatrix(5, 6, (2, 5), (3, 1), (B, B4))
