@@ -182,6 +182,7 @@ function LevenbergMarquardt!(
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
         debug = [DebugWarnIfCostIncreases()],
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         expect_zero_residual::Bool = false,
         β::Real = 5.0,
         η::Real = 0.2,
@@ -201,8 +202,12 @@ function LevenbergMarquardt!(
         ),
         # to keep this non-breaking for now, maybe:
         # TODO change default on next breaking release to no longer accept `linear_subsolver` here
-        sub_problem = isnothing(linear_subsolver!) ? DefaultManoptProblem(TangentSpace(M, p), sub_objective) : linear_subsolver!,
-        sub_state = isnothing(linear_subsolver!) ? ConjugateResidualState(TangentSpace(M, p), sub_objective) : InplaceEvaluation(),
+        sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
+        sub_state = if isnothing(linear_subsolver!)
+            ConjugateResidualState(TangentSpace(M, p), sub_objective)
+        else
+            CoordinatesNormalSystemState(M, p; linsolve = linear_subsolver!, evaluation = evaluation)
+        end,
         kwargs..., #collect rest
     ) where {O <: Union{NonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(LevenbergMarquardt!; kwargs...)

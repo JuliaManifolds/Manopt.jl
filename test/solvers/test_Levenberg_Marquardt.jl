@@ -174,10 +174,10 @@ end
         p0;
         return_state = true,
         expect_zero_residual = true,
-        (linear_subsolver!) = (test_lm_lin_solve!),
+        sub_state = CoordinatesNormalSystemState(M, p0; linsolve = test_lm_lin_solve!, evaluation = InplaceEvaluation()),
     )
     lms = get_state(ds)
-    @test lms.sub_problem === test_lm_lin_solve!
+    @test lms.sub_state.linsolve!! === test_lm_lin_solve!
     @test isapprox(M, p_star, lms.p; atol = p_atol)
 
     p1 = copy(M, p0)
@@ -207,8 +207,8 @@ end
     x0 = [4.0, 2.0]
     o_r2 = LevenbergMarquardtState(
         M,
-        similar(x0, length(ts_r2)),
-        similar(x0, 2 * length(ts_r2), 2);
+        similar(x0, length(ts_r2));
+        initial_jacobian_f = similar(x0, 2 * length(ts_r2), 2),
         p = x0,
         stopping_criterion = StopAfterIteration(20),
     )
@@ -241,8 +241,8 @@ end
     @testset "errors" begin
         @test_throws ArgumentError LevenbergMarquardtState(
             M,
-            similar(x0, length(ts_r2)),
-            similar(x0, 2 * length(ts_r2), 2);
+            similar(x0, length(ts_r2));
+            initial_jacobian_f = similar(x0, 2 * length(ts_r2), 2),
             p = x0,
             stopping_criterion = StopAfterIteration(20),
             η = 2,
@@ -250,8 +250,8 @@ end
 
         @test_throws ArgumentError LevenbergMarquardtState(
             M,
-            similar(x0, length(ts_r2)),
-            similar(x0, 2 * length(ts_r2), 2);
+            similar(x0, length(ts_r2));
+            initial_jacobian_f = similar(x0, 2 * length(ts_r2), 2),
             p = x0,
             stopping_criterion = StopAfterIteration(20),
             damping_term_min = -1,
@@ -259,8 +259,8 @@ end
 
         @test_throws ArgumentError LevenbergMarquardtState(
             M,
-            similar(x0, length(ts_r2)),
-            similar(x0, 2 * length(ts_r2), 2);
+            similar(x0, length(ts_r2));
+            initial_jacobian_f = similar(x0, 2 * length(ts_r2), 3),
             p = x0,
             stopping_criterion = StopAfterIteration(20),
             β = 0.5,

@@ -165,7 +165,7 @@ and ``f_{i,j}(p)`` its `j`-th component function.
 """
 @doc "$(_doc_get_gradient_nlso)"
 function get_gradient(
-        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p
+        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...,
     )
     X = zero_vector(M, p)
     return get_gradient!(M, X, nlso, p; kwargs...)
