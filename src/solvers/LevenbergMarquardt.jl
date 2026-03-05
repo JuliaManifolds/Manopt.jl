@@ -208,6 +208,7 @@ function LevenbergMarquardt!(
     keywords_accepted(LevenbergMarquardt!; kwargs...)
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
+    sub_state_ = maybe_wrap_evaluation_type(sub_state)
     lms = LevenbergMarquardtState(
         M, initial_residual_values;
         p = p,
@@ -219,7 +220,7 @@ function LevenbergMarquardt!(
         retraction_method = retraction_method,
         expect_zero_residual = expect_zero_residual,
         sub_problem = sub_problem,
-        sub_state = sub_state,
+        sub_state = sub_state_,
         minimum_acceptable_model_improvement = minimum_acceptable_model_improvement,
         initial_jacobian_f = initial_jacobian_f,
     )
@@ -259,8 +260,9 @@ function step_solver!(
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, Val(:Manifold), Val(:Basepoint), lms.p)
     # Subsolver result
-    solve!(lms.sub_problem, lms.sub_state)
-    lms.direction .= -get_solver_result(lms.sub_problem, lms.sub_state)
+    solve_LM_subproblem!(M, lms.direction, lms.p, lms.sub_problem, lms.sub_state)
+    #solve!(lms.sub_problem, lms.sub_state)
+    #lms.direction .= -get_solver_result(lms.sub_problem, lms.sub_state)
     if norm(M, lms.p, lms.direction) > max_stepsize(M, lms.p)
         # Vector too long; we can reject the step without evaluating the objective
         lms.damping_term *= lms.β
@@ -279,6 +281,7 @@ function step_solver!(
     # New iterate candidate - maybe store in state?
 
     q = retract(M, lms.p, lms.direction, lms.retraction_method)
+    # TODO: Can we maybe use an StabilizedExp instead? This way it is very hardcoded.
     if !is_point(M, q)
         # Retracted point is not valid, rejecting step
         # example scenario: exp(SymmetricPositiveDefinite(2), [1 0; 0 1], [-22.45160594421605 -57.9485939494495; -57.9485939494495 1284.8842829453467])
@@ -301,6 +304,32 @@ function step_solver!(
     end
     return lms
 end
+
+function solve_LM_subproblem!(
+    M::AbstractManifold, X, p, problem::P, state::S,
+) where {P <: AbstractManoptProblem, S <: AbstractManoptSolverState}
+    solve!(problem, state)
+    # TODO: One could discuss wether a generic `get_solver_result!` would make sense as well
+    return copyto!(M, X, p, -get_solver_result(lms.sub_problem, lms.sub_state))
+end
+
+function solve_LM_subproblem!(
+    M::AbstractManifold, X, p, problem::P, state::S,
+) where {P <: Function, S <: ClosedFormSubSolverState{AllocatingEvaluation}}
+    # TODO: Discuss Signature of closed form functions to call here
+    return copyto!(M, X, p, problem(M, p))
+end
+
+function solve_LM_subproblem!(
+    M::AbstractManifold, X, p, problem::P, state::S,
+) where {P <: Function, S <: ClosedFormSubSolverState{InplaceEvaluation}}
+    # TODO: Discuss Signature of closed form functions to call here
+    return problem!(M, X, p)
+end
+
+#
+#
+# Special cases for
 
 function get_last_stepsize(
         dmp::DefaultManoptProblem{mT, <:NonlinearLeastSquaresObjective},

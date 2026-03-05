@@ -463,8 +463,6 @@ function show(io::IO, mads::MeshAdaptiveDirectSearchState)
     return print(io, s)
 end
 
-get_solver_result(ips::MeshAdaptiveDirectSearchState) = ips.p
-
 function (c::StopWhenPollSizeLess)(
         p::AbstractManoptProblem, s::MeshAdaptiveDirectSearchState, k::Int
     )

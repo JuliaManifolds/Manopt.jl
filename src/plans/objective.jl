@@ -66,10 +66,9 @@ that does not allocate memory but work on their input, in place.
 struct AllocatingInplaceEvaluation <: AbstractEvaluationType end
 
 @doc """
-    ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
-       AbstractDecoratedManifoldObjective{E,O2}
+    ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <: AbstractDecoratedManifoldObjective{E,O2}
 
-A wrapper to indicate that `get_solver_result` should return the inner objective.
+A wrapper to indicate that [`get_solver_result`](@ref) should return the inner objective.
 
 The types are such that one can still dispatch on the undecorated type `O2` of the
 original objective as well.

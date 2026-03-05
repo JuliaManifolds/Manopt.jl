@@ -230,10 +230,10 @@ _get_iterate(s::AbstractManoptSolverState, ::Val{true}) = get_iterate(s.state)
 _set_iterate!(s::AbstractManoptSolverState, M, p, ::Val{true}) = set_iterate!(s.state, M, p)
 
 """
-    get_solver_result(ams::AbstractManoptSolverState)
+    get_solver_result(state::AbstractManoptSolverState)
     get_solver_result(tos::Tuple{AbstractManifoldObjective,AbstractManoptSolverState})
-    get_solver_result(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
-    get_solver_result(p::AbstractManoptProblem, s::AbstractManoptSolverState)
+    get_solver_result(objective::AbstractManifoldObjective, state::AbstractManoptSolverState)
+    get_solver_result(problem::AbstractManoptProblem, state::AbstractManoptSolverState)
 
 Return the final result after all iterations that is stored within
 the [`AbstractManoptSolverState`](@ref) `ams`, which was modified during the iterations.
@@ -249,31 +249,34 @@ This can be used to change the representation of a result stored in a state, e.g
 when a tangent vector is (part of) the result, changing between representations in
 coefficients and different tangent vector representations could be performed as a final step,
 depending on which problem was aimed to be solved
+
+Note that the returned value or point might still be aliased to the original `state`,
+use [`get_solver_result!`](@ref)`(M, p, ...)` to obtain the result in provided memory `p`.
 """
-function get_solver_result(s::AbstractManoptSolverState)
-    return _get_solver_result(s, dispatch_state_decorator(s))
+function get_solver_result(state::AbstractManoptSolverState)
+    return _get_solver_result(state, dispatch_state_decorator(state))
 end
 function get_solver_result(
         tos::Tuple{<:AbstractManifoldObjective, <:AbstractManoptSolverState}
     )
     return get_solver_result(tos...)
 end
+function get_solver_result(::AbstractManifoldObjective, state::AbstractManoptSolverState)
+    return get_solver_result(state)
+end
+#A problem or – hence untyped – a closed form solution / function
+function get_solver_result(pf, state::AbstractManoptSolverState)
+    return get_solver_result(state)
+end
 function get_solver_result(tos::Tuple{<:AbstractManifoldObjective, S}) where {S}
     return tos[2]
 end
-function get_solver_result(::AbstractManifoldObjective, s::AbstractManoptSolverState)
-    return get_solver_result(s)
-end
-#A poblem or – hence untyped – a closed form solution / function
-function get_solver_result(pf, s::AbstractManoptSolverState)
-    return get_solver_result(s)
-end
 # if the second one is anything else, assume it is a point/result -> return that
-function get_solver_result(::AbstractManifoldObjective, s)
-    return s
+function get_solver_result(::AbstractManifoldObjective, p)
+    return p
 end
-_get_solver_result(s::AbstractManoptSolverState, ::Val{false}) = get_iterate(s)
-_get_solver_result(s::AbstractManoptSolverState, ::Val{true}) = get_solver_result(s.state)
+_get_solver_result(state::AbstractManoptSolverState, ::Val{false}) = get_iterate(state)
+_get_solver_result(state::AbstractManoptSolverState, ::Val{true}) = get_solver_result(state.state)
 
 """
     set_iterate!(s::AbstractManoptSolverState, M::AbstractManifold, p)
