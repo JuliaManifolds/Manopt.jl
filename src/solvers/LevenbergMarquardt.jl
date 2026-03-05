@@ -201,8 +201,6 @@ function LevenbergMarquardt!(
                 nlso; penalty = damping_term_min, ε = ε, mode = α_mode, residuals = copy(initial_residual_values)
             )
         ),
-        # to keep this non-breaking for now, maybe:
-        # TODO change default on next breaking release to no longer accept `linear_subsolver` here
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_state = if isnothing(linear_subsolver!)
             ConjugateResidualState(TangentSpace(M, p), sub_objective)
@@ -245,7 +243,6 @@ function initialize_solver!(
     nlso = get_objective(dmp)
     get_residuals!(M, lms.residual_values, nlso, lms.p)
     if !isnothing(lms.jacobian_f)
-        # TODO: finish this
         get_jacobian!(M, lms.jacobian_f, nlso, lms.p; basis = nlso.jacobian_type)
     end
     get_gradient!(M, lms.X, nlso, lms.p)
