@@ -30,7 +30,7 @@ These three can also be passed as a [`AbstractVectorGradientFunction`](@ref) `vf
 
 * `robustifier` the robustifier function(s) to use, by default the [`IdentityRobustifier`](@ref) (for each component),
     which corresponds to the classical nonlinear least squares problem.
-    For a single [`AbstractVectorGradientFuntion`](@ref) `vf` this is always treated/wrapped into a [`ComponentwiseRobustifierFunction`](@ref).
+    For a single [`AbstractVectorGradientFunction`](@ref) `vf` this is always treated/wrapped into a [`ComponentwiseRobustifierFunction`](@ref).
     To actually have one robustifier on the whole norm (squared) of `vf` use the third signature and provide `[vf,]` and  `[robustifier,]` there.
 
 # Keyword arguments
@@ -408,7 +408,7 @@ mutable struct LevenbergMarquardtState{
 end
 
 # TODO: implement the method because lms.X is the step taken instead of the gradient,
-# so the detault implementation is wrong
+# so the default implementation is wrong
 # function get_gradient(lms::LevenbergMarquardtState)
 # end
 # One thing we can provide is `get_gradient(M, nlso::NonlinearLeastSquaresObjective, p)` instead,
@@ -595,9 +595,7 @@ function get_cost(
     return get_cost(M, slso.objective, p, X)
 end
 
-@doc """
-
-"""
+# TODO: Write docs.
 function get_gradient(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
         value_cache = get_residuals(M, lmsco.objective, p)

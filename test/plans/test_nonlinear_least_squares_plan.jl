@@ -62,21 +62,20 @@ using Manifolds, Manopt, Test
         G = zeros(2, 2)
         Gt = 1 / sqrt(2) .* [-1.0 1.0; 1.0 -1.0]
         for nlso in [nlsoFa, nlsoFi, nlsoCa, nlsoCi, nlsoJa, nlsoJi]
-            c = get_cost(M, nlso, p)
-            @test c ≈ 0.5
-            fill!(V, 0.0)
-            get_residuals!(M, V, nlso, p)
-            @test V == get_residuals(M, nlso, p)
-            @test V ≈ Vt
-            @test 0.5 * sum(abs.(V) .^ 2) ≈ c
-            fill!(G, 0.0)
-            get_jacobian!(M, G, nlso, p)
-            @test G == get_jacobian(M, nlso, p)
-            @test G == Gt
-            # since s1/s2 are the identity we can also always check against the allocating
-            # jacobian of the objective
-            G2 = get_jacobian(M, nlso.objective, p)
-            @test G2 == Gt
+            @testset "$(nlso) and its internal VGF" begin
+                vgf = nlso.objective[1] # the vector of VGFs is length 1 here for all cases.
+                c = get_cost(M, nlso, p)
+                @test c ≈ 0.5
+                fill!(V, 0.0)
+                get_residuals!(M, V, nlso, p)
+                @test V == get_residuals(M, nlso, p)
+                @test V ≈ Vt
+                @test 0.5 * sum(abs.(V) .^ 2) ≈ c
+                fill!(G, 0.0)
+                get_jacobian!(M, G, vgf, p)
+                @test G == get_jacobian(M, vgf, p)
+                @test G == Gt
+            end
         end
     end
     @testset "Test Change of basis" begin

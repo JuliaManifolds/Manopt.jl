@@ -605,7 +605,6 @@ get_jacobian!(M::AbstractManifold, JF, vgf::AbstractVectorGradientFunction, p)
 function get_jacobian(
         M::AbstractManifold, vgf::VGF, p; basis::AbstractBasis = get_basis(vgf.jacobian_type), kwargs...
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:AbstractVectorialType}}
-    # Can we avoid this allocation?
     JF = allocate_jacobian(M, vgf, basis; T = number_eltype(p))
     return get_jacobian!(M, JF, vgf, p; basis = basis, kwargs...)
 end
@@ -637,7 +636,7 @@ end
 function get_jacobian!(
         M::AbstractManifold, JF, vgf::VGF, p; basis::AbstractBasis = get_basis(vgf.jacobian_type), range = nothing,
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:CoefficientVectorialType}}
-    JF = vgf.jacobian!!(M, p)
+    JF .= vgf.jacobian!!(M, p)
     _change_basis!(M, JF, p, vgf.jacobian_type.basis, basis)
     return JF
 end
