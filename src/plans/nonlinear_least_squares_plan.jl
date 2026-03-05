@@ -407,13 +407,6 @@ mutable struct LevenbergMarquardtState{
     end
 end
 
-# TODO: implement the method because lms.X is the step taken instead of the gradient,
-# so the default implementation is wrong
-# function get_gradient(lms::LevenbergMarquardtState)
-# end
-# One thing we can provide is `get_gradient(M, nlso::NonlinearLeastSquaresObjective, p)` instead,
-# _or_ we store the result in lms.X (and move lms.X to either .Y or .direction or so)
-# When and where do we need this?
 function show(io::IO, lms::LevenbergMarquardtState)
     i = get_count(lms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
