@@ -315,21 +315,9 @@ function solve_LM_subproblem!(
         M::AbstractManifold, X, p, problem::P, state::S,
     ) where {P <: AbstractManoptProblem, S <: AbstractManoptSolverState}
     solve!(problem, state)
-    # TODO: One could discuss whether a generic `get_solver_result!` would make sense as well
     return copyto!(M, X, p, -get_solver_result(problem, state))
 end
-function solve_LM_subproblem!(
-        M::AbstractManifold, X, p, problem::P, ::S,
-    ) where {P <: Function, S <: ClosedFormSubSolverState{AllocatingEvaluation}}
-    # TODO: Discuss Signature of closed form functions to call here
-    return copyto!(M, X, p, problem(M, p))
-end
-function solve_LM_subproblem!(
-        M::AbstractManifold, X, p, problem!::P, ::S,
-    ) where {P <: Function, S <: ClosedFormSubSolverState{InplaceEvaluation}}
-    # TODO: Discuss Signature of closed form functions to call here
-    return problem!(M, X, p)
-end
+# We could add “fully” closed form solvers via dispatch here as well
 
 #
 #
