@@ -306,23 +306,23 @@ function step_solver!(
 end
 
 function solve_LM_subproblem!(
-    M::AbstractManifold, X, p, problem::P, state::S,
-) where {P <: AbstractManoptProblem, S <: AbstractManoptSolverState}
+        M::AbstractManifold, X, p, problem::P, state::S,
+    ) where {P <: AbstractManoptProblem, S <: AbstractManoptSolverState}
     solve!(problem, state)
     # TODO: One could discuss wether a generic `get_solver_result!` would make sense as well
     return copyto!(M, X, p, -get_solver_result(lms.sub_problem, lms.sub_state))
 end
 
 function solve_LM_subproblem!(
-    M::AbstractManifold, X, p, problem::P, state::S,
-) where {P <: Function, S <: ClosedFormSubSolverState{AllocatingEvaluation}}
+        M::AbstractManifold, X, p, problem::P, state::S,
+    ) where {P <: Function, S <: ClosedFormSubSolverState{AllocatingEvaluation}}
     # TODO: Discuss Signature of closed form functions to call here
     return copyto!(M, X, p, problem(M, p))
 end
 
 function solve_LM_subproblem!(
-    M::AbstractManifold, X, p, problem::P, state::S,
-) where {P <: Function, S <: ClosedFormSubSolverState{InplaceEvaluation}}
+        M::AbstractManifold, X, p, problem::P, state::S,
+    ) where {P <: Function, S <: ClosedFormSubSolverState{InplaceEvaluation}}
     # TODO: Discuss Signature of closed form functions to call here
     return problem!(M, X, p)
 end

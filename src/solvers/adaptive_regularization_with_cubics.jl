@@ -325,7 +325,7 @@ function adaptive_regularization_with_cubics!(
     return adaptive_regularization_with_cubics!(M, mho, p; evaluation = evaluation, kwargs...)
 end
 function adaptive_regularization_with_cubics!(
-        M::AbstractManifold, mho::O,  p = rand(M);
+        M::AbstractManifold, mho::O, p = rand(M);
         debug = if is_tutorial_mode()
             DebugIfEntry(
                 :ρ_denominator, >(-1.0e-8); message = "denominator nonpositive", type = :error
