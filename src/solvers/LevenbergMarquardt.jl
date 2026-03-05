@@ -315,7 +315,9 @@ function solve_LM_subproblem!(
         M::AbstractManifold, X, p, problem::P, state::S,
     ) where {P <: AbstractManoptProblem, S <: AbstractManoptSolverState}
     solve!(problem, state)
-    return copyto!(M, X, p, -get_solver_result(problem, state))
+    copyto!(M, X, p, get_solver_result(problem, state))
+    X .*= -1
+    return X
 end
 # We could add “fully” closed form solvers via dispatch here as well
 
