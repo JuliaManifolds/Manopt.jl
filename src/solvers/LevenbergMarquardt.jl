@@ -51,6 +51,7 @@ $(_kwargs(:evaluation))
 * `initial_residual_values`: the initial residual vector of the cost function `f`.
   By default this is a vector of length `num_components` of similar type as `p`.
 * `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
+* `sub_evaluation = `[`InplaceEvaluation`](@ref): an [`AbstractEvaluationType`](@ref) for `linear_subsolver!`.
 * `linear_subsolver! = nothing`: (deprecated) short form for specifying a closed form subsolver.
 $(_kwargs(:retraction_method))
 
@@ -182,7 +183,7 @@ function LevenbergMarquardt!(
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
         debug = [DebugWarnIfCostIncreases()],
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        sub_evaluation::AbstractEvaluationType = InplaceEvaluation(),
         expect_zero_residual::Bool = false,
         β::Real = 5.0,
         η::Real = 0.2,
@@ -206,7 +207,7 @@ function LevenbergMarquardt!(
         sub_state = if isnothing(linear_subsolver!)
             ConjugateResidualState(TangentSpace(M, p), sub_objective)
         else
-            CoordinatesNormalSystemState(M, p; linsolve = linear_subsolver!, evaluation = evaluation)
+            CoordinatesNormalSystemState(M, p; linsolve = linear_subsolver!, evaluation = sub_evaluation)
         end,
         kwargs..., #collect rest
     ) where {O <: Union{NonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}

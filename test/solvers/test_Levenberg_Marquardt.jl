@@ -174,7 +174,7 @@ end
         p0;
         return_state = true,
         expect_zero_residual = true,
-        sub_state = CoordinatesNormalSystemState(M, p0; linsolve = test_lm_lin_solve!, evaluation = InplaceEvaluation()),
+        linear_subsolver! = test_lm_lin_solve!,
     )
     lms = get_state(ds)
     @test lms.sub_state.linsolve!! === test_lm_lin_solve!

@@ -665,6 +665,29 @@ function get_gradient!(
     return Y
 end
 
+"""
+    default_lm_lin_solve!(sk, JJ, grad_f_c)
+
+Solve the system `JJ \\ grad_f_c` where JJ is (mathematically) a symmetric positive
+definite matrix and save the result to `sk`. In case of numerical errors the
+`PosDefException` is caught and the default symmetric solver `(Symmetric(JJ) \\ grad_f_c)`
+is used.
+
+The function is intended to be used with [`LevenbergMarquardt`](@ref).
+"""
+function default_lm_lin_solve!(sk, JJ, grad_f_c)
+    try
+        ldiv!(sk, cholesky(JJ), grad_f_c)
+    catch e
+        if e isa PosDefException
+            sk .= Symmetric(JJ) \ grad_f_c
+        else
+            rethrow()
+        end
+    end
+    return sk
+end
+
 #
 #
 # We can do a closed form solution of the Surrogate using \ as soon as we have a basis
@@ -690,7 +713,7 @@ mutable struct CoordinatesNormalSystemState{E <: AbstractEvaluationType, F, TA <
 end
 function CoordinatesNormalSystemState(
         M::AbstractManifold, p = rand(M);
-        evaluation::E = AllocatingEvaluation(), linsolve::F = \, basis::B = DefaultOrthonormalBasis()
+        evaluation::E = InplaceEvaluation(), linsolve::F = default_lm_lin_solve!, basis::B = DefaultOrthonormalBasis()
     ) where {E <: AbstractEvaluationType, F, B <: AbstractBasis}
     c = get_coordinates(M, p, zero_vector(M, p))
     n = length(c)
