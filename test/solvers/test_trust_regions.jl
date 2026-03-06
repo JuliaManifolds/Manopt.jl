@@ -362,4 +362,13 @@ include("trust_region_model.jl")
         @test f(M, q3) ≈ λ atol = 5 * 1.0e-8
         @test f(M, q4) ≈ λ atol = 5 * 1.0e-10
     end
+
+    @testset "Float32 support" begin
+        M = Euclidean(3, 3)
+        p = randn(Float32, 3, 3)
+        f(M::Euclidean, p) = sum(p .^ 2) / 2
+        grad(M::Euclidean, p) = p
+        hess(M::Euclidean, p, X) = X
+        trust_regions(M, f, grad, hess, p; max_trust_region_radius = 0.1f0)
+    end
 end

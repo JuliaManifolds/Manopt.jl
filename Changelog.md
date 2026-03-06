@@ -10,9 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (issue [#560](https://github.com/JuliaManifolds/Manopt.jl/issues/560)).
+* Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (#569)
+* Unified all `show` methods and their human readable analoga `status_summary` throughout the package (#569)
 * Fixed some text descriptions of a few stopping criteria.
 * unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
+
+## [0.5.34] March 3, 2026
+
+### Fixed
+
+* `Float32` support in `trust_regions` solver was broken in the previous release, which is now fixed.
 
 ## [0.5.33] February 18, 2026
 
