@@ -48,6 +48,16 @@ Base.size(v::BlockNonzeroVector) = (v.n_entries,)
 Base.length(v::BlockNonzeroVector) = v.n_entries
 Base.axes(v::BlockNonzeroVector) = (Base.OneTo(v.n_entries),)
 
+function Base.show(io::IO, v::BlockNonzeroVector)
+    block_reprs = [repr(b; context = :limit => false) for b in v.blocks]
+    blocks_str = join(block_reprs, ", ")
+    length(v.blocks) == 1 && (blocks_str *= ",")
+    return print(
+        io,
+        "BlockNonzeroVector($(repr(v.n_entries)), $(repr(v.starts)), ($(blocks_str)))",
+    )
+end
+
 _entry_range(v::BlockNonzeroVector, k::Integer) =
     v.starts[k]:(v.starts[k] + length(v.blocks[k]) - 1)
 
@@ -180,6 +190,16 @@ function BlockNonzeroMatrix(
 end
 
 Base.size(A::BlockNonzeroMatrix) = (A.n_rows, A.n_cols)
+
+function Base.show(io::IO, A::BlockNonzeroMatrix)
+    block_reprs = [repr(b; context = :limit => false) for b in A.blocks]
+    blocks_str = join(block_reprs, ", ")
+    length(A.blocks) == 1 && (blocks_str *= ",")
+    return print(
+        io,
+        "BlockNonzeroMatrix($(repr(A.n_rows)), $(repr(A.n_cols)), $(repr(A.row_starts)), $(repr(A.col_starts)), ($(blocks_str)))",
+    )
+end
 
 _row_range(A::BlockNonzeroMatrix, k::Integer) =
     A.row_starts[k]:(A.row_starts[k] + size(A.blocks[k], 1) - 1)

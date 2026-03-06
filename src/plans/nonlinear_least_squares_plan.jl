@@ -195,7 +195,7 @@ function _get_gradient!(
     # get gradients for every component
     len = length(vgf)
     zero_vector!(M, X, p)
-    Y = copy(M, p, X)
+    Y = allocate(M, X)
     if isnothing(jacobian_cache)
         for j in 1:len
             get_gradient!(M, Y, vgf, p, j) # gradient of f_{i,j}
@@ -680,7 +680,7 @@ The function is intended to be used with [`LevenbergMarquardt`](@ref).
 """
 function default_lm_lin_solve!(sk, JJ, grad_f_c)
     try
-        ldiv!(sk, cholesky(JJ), grad_f_c)
+        ldiv!(sk, cholesky(Symmetric(JJ)), grad_f_c)
     catch e
         if e isa PosDefException
             sk .= Symmetric(JJ) \ grad_f_c
@@ -716,11 +716,14 @@ mutable struct CoordinatesNormalSystemState{E <: AbstractEvaluationType, F, TA <
 end
 function CoordinatesNormalSystemState(
         M::AbstractManifold, p = rand(M);
-        evaluation::E = InplaceEvaluation(), linsolve::F = default_lm_lin_solve!, basis::B = DefaultOrthonormalBasis()
+        evaluation::E = InplaceEvaluation(), linsolve::F = default_lm_lin_solve!,
+        basis::B = DefaultOrthonormalBasis(), A = nothing
     ) where {E <: AbstractEvaluationType, F, B <: AbstractBasis}
-    c = get_coordinates(M, p, zero_vector(M, p))
-    n = length(c)
-    A = zeros(eltype(c), n, n)
+    n = number_of_coordinates(M, basis)
+    c = zeros(number_eltype(p), n)
+    if isnothing(A)
+        A = zeros(eltype(c), n, n)
+    end
     b = zeros(eltype(c), n)
     return CoordinatesNormalSystemState{E, F, typeof(A), typeof(b), B}(A, b, basis, c, linsolve)
 end
@@ -918,7 +921,7 @@ function linear_normal_operator(
     return linear_normal_operator!(M, A, lmsco, p, B; penalty = penalty)
 end
 function linear_normal_operator!(
-        M::AbstractManifold, A, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis;
+        M::AbstractManifold, A::AbstractMatrix, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis;
         penalty = lmsco.penalty
     )
     nlso = get_objective(lmsco)

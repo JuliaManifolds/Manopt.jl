@@ -10,6 +10,8 @@ using Test
     @test bv[2] == 1.0
     @test bv[6] == 4.0
     @test Vector(bv) == [0.0, 1.0, 2.0, 0.0, 3.0, 4.0]
+    @test repr(bv) == "BlockNonzeroVector(6, (2, 5), ([1.0, 2.0], [3.0, 4.0]))"
+    @test eval(Meta.parse(repr(bv))) == bv
     @test_throws ArgumentError BlockNonzeroVector(3, (3,), ([1.0, 2.0],))
 
     Cv = fill(2.0, 6, 6)
@@ -30,6 +32,8 @@ using Test
     @test J[1, 1] == 0.0
     @test J[2, 3] == 1.0
     @test J[3, 4] == 4.0
+    @test repr(J) == "BlockNonzeroMatrix(5, 6, (2,), (3,), ([1.0 2.0; 3.0 4.0],))"
+    @test eval(Meta.parse(repr(J))) == J
 
     @test Matrix(J) == [
         0.0 0.0 0.0 0.0 0.0 0.0
@@ -122,6 +126,9 @@ using Test
         10.0 20.0 0.0 0.0 0.0 0.0
     ]
     @test Matrix(Jmulti) == Mmulti
+    @test repr(Jmulti) ==
+        "BlockNonzeroMatrix(5, 6, (2, 5), (3, 1), ([1.0 2.0; 3.0 4.0], [10.0 20.0]))"
+    @test eval(Meta.parse(repr(Jmulti))) == Jmulti
     @test Jmulti[5, 1] == 10.0
     @test Jmulti[5, 2] == 20.0
     @test Jmulti[4, 1] == 0.0
@@ -144,4 +151,14 @@ using Test
 
     @test_throws DimensionMismatch mul!(zeros(size(J, 2) - 1), J', y_expected, 1.0, 0.0)
     @test_throws DimensionMismatch mul!(zeros(size(J, 2)), J', y_expected[1:(end - 1)], 1.0, 0.0)
+
+    @testset "mul! should make a Hermitian matrix" begin
+        rank1_scaling = 1.535239276942573e-10
+        JFa = BlockNonzeroVector(4005, (4, 10, 13), ([0.0, 0.0, 0.0], [80096.0, 226680.00000000003, -306776.00000000006], [80096.0, 226680.00000000003, -306776.00000000006]))
+        A = SparseMatrixCSC{Float64, Int}(undef, 4005, 4005)
+        mul!(A, JFa, JFa', rank1_scaling, true)
+        Adense = zeros(4005, 4005)
+        mul!(Adense, JFa, JFa', rank1_scaling, true)
+        @test A == Adense
+    end
 end

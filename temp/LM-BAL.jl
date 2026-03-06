@@ -4,6 +4,7 @@ using StaticArrays, RecursiveArrayTools
 
 using ManifoldDiff, DifferentiationInterface
 using ForwardDiff
+using SparseArrays
 
 struct BALObservation{T <: Real, I <: Integer}
     camera_index::I
@@ -495,6 +496,10 @@ function run_bundle_adjustment(data::BALDataset)
 
     hr = fill((1 / 30) ∘ HuberRobustifier(), length(F))
 
+    n = manifold_dimension(M)
+    A = SparseMatrixCSC{Float64, Int}(undef, n, n)
+    # A = Matrix{Float64}(undef, n, n)
+
     q = LevenbergMarquardt(
         M, f, p0;
         initial_jacobian_f = [Manopt.allocate_jacobian(M, fi) for fi in f],
@@ -502,7 +507,7 @@ function run_bundle_adjustment(data::BALDataset)
         robustifier = hr,
         debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
         stopping_criterion = StopAfterIteration(20),
-        sub_state = CoordinatesNormalSystemState(M),
+        sub_state = CoordinatesNormalSystemState(M; A = A),
     )
 
     return q
