@@ -85,7 +85,7 @@ struct NonlinearLeastSquaresObjective{
     end
 end
 
-# the old single function constructor – TODO: remove? No but carefully document that this is just one special case that has a nicer shortcut and calls the vectorial one
+# the old single function constructor – TODO: carefully document that this is just one special case that has a nicer shortcut and calls the vectorial one
 function NonlinearLeastSquaresObjective(
         f,
         jacobian,
@@ -368,6 +368,7 @@ mutable struct LevenbergMarquardtState{
             sub_state::St = nothing,
         ) where {P, Tresidual_values, TGrad, Pr, St}
         # TODO: what if initial:Jacobian_f is still nothing? Fill it?
+        # We could try checking if the provided sub_state actually needs `jacobian_f` or not but it's just about having a nicer error message.
         if isnothing(sub_problem) || isnothing(sub_state)
             s = "You have to specify a solver for the sub problem, that is, both a `sub_problem` to be solved"
             s = "$s and a `sub_state` specifying the solver."
@@ -385,7 +386,6 @@ mutable struct LevenbergMarquardtState{
         end
         (β <= 1) && throw(ArgumentError("Value of β must be strictly above 1, received $β"))
         _sub_state = maybe_wrap_evaluation_type(sub_state)
-        # TODO: What if initial_jacobian_f is not set?
         Tparams = promote_type(typeof(η), typeof(damping_term_min), typeof(β))
         SC = typeof(stopping_criterion)
         RM = typeof(retraction_method)
@@ -399,7 +399,7 @@ mutable struct LevenbergMarquardtState{
             damping_term, damping_term_min,
             β,
             expect_zero_residual,
-            minimum_acceptable_model_improvement, # TODO: discuss: Shall we keep this?
+            minimum_acceptable_model_improvement,
             sub_problem, sub_state,
         )
     end
@@ -731,7 +731,7 @@ function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNorm
     vector_field!(M, cnss.b, o, p, cnss.basis)
     cnss.c = cnss.linsolve!!(cnss.A, -cnss.b)
     X = get_vector(M, p, cnss.c, cnss.basis)
-    # TODO: Remove ?
+    # TODO: Remove when we are sure everything is correct, but for now check that the cost is not much worse than the zero step, which should never happen
     if get_cost(dmp, 0 * X) < get_cost(dmp, -X) - sqrt(eps()) * (1 + sqrt(eps()) * get_cost(dmp, 0 * X))
         @show get_cost(dmp, 0 * X)
         @show get_cost(dmp, -X)
