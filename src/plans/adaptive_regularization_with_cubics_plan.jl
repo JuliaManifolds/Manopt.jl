@@ -114,7 +114,7 @@ function status_summary(arcmo::AdaptiveRegularizationWithCubicsModelObjective; c
     (context === :short) && return repr(arcmo)
     (context === :inline) && return "The (tangent space) model for the adaptive regularization with cubics sub problem with parameter σ=$(arcmo.σ) for the objective $(status_summary(arcmo.objective; context = context))"
     return """
-    The cubic polynomial based model for the sub problem of the Adaptive Regularization weith Cubics solver
+    The cubic polynomial based model for the sub problem of the Adaptive Regularization with cubics solver
 
     ## Regularization parameter
     σ = $(arcmo.σ)
