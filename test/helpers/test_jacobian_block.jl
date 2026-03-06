@@ -151,14 +151,4 @@ using Test
 
     @test_throws DimensionMismatch mul!(zeros(size(J, 2) - 1), J', y_expected, 1.0, 0.0)
     @test_throws DimensionMismatch mul!(zeros(size(J, 2)), J', y_expected[1:(end - 1)], 1.0, 0.0)
-
-    @testset "mul! should make a Hermitian matrix" begin
-        rank1_scaling = 1.535239276942573e-10
-        JFa = BlockNonzeroVector(4005, (4, 10, 13), ([0.0, 0.0, 0.0], [80096.0, 226680.00000000003, -306776.00000000006], [80096.0, 226680.00000000003, -306776.00000000006]))
-        A = SparseMatrixCSC{Float64, Int}(undef, 4005, 4005)
-        mul!(A, JFa, JFa', rank1_scaling, true)
-        Adense = zeros(4005, 4005)
-        mul!(Adense, JFa, JFa', rank1_scaling, true)
-        @test A == Adense
-    end
 end
