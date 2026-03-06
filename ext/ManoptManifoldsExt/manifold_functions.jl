@@ -34,6 +34,15 @@ end
 max_stepsize(M::FixedRankMatrices) = manifold_dimension(M)
 
 """
+    max_stepsize(::SymmetricPositiveDefinite, p)
+
+Return the maximum stepsize on the [`SymmetricPositiveDefinite`](@extref) manifold.
+The injectivity radius of `SymmetricPositiveDefinite` is infinite, but we return the
+logarithm of the maximum floating-point number to avoid numerical issues.
+"""
+max_stepsize(::SymmetricPositiveDefinite, p) = log(floatmax(eltype(p)))
+
+"""
     max_stepsize(M::Hyperrectangle, p)
 
 The default maximum stepsize for `Hyperrectangle` manifold with corners is maximum

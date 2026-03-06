@@ -103,6 +103,10 @@ Random.seed!(42)
         M = Hyperrectangle([-3, -1.5], [3, 1.5])
         @test Manopt.max_stepsize(M) ≈ 6.0
         @test Manopt.max_stepsize(M, [-1, 0.5]) ≈ 4.0
+
+        M = SymmetricPositiveDefinite(2)
+        p = [1.0 0.0; 0.0 1.0]
+        @test Manopt.max_stepsize(M, p) == log(floatmax(eltype(p)))
     end
     @testset "Vector space default" begin
         @test Manopt.Rn(Val(:Manopt), 3) isa ManifoldsBase.DefaultManifold

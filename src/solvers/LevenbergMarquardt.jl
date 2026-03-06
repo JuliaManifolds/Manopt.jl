@@ -281,14 +281,7 @@ function step_solver!(
     # New iterate candidate - maybe store in state?
 
     q = retract(M, lms.p, lms.direction, lms.retraction_method)
-    # TODO: Try making this redundant by appropriately limiting the max_stepsize to what's numerically feasible.
-    # This way we resolve the issue generically in all solvers.
-    if !is_point(M, q)
-        # Retracted point is not valid, rejecting step
-        # example scenario: exp(SymmetricPositiveDefinite(2), [1 0; 0 1], [-22.45160594421605 -57.9485939494495; -57.9485939494495 1284.8842829453467])
-        lms.damping_term *= lms.β
-        return lms
-    end
+
     # Evaluate improvement of actual cost divided by predicted cost improvement
     cost_improvement = get_cost(M, nlso, lms.p) - get_cost(M, nlso, q)
     ρ = cost_improvement / model_improvement
