@@ -277,6 +277,40 @@ function Base.:*(At::Adjoint{<:Any, <:BlockNonzeroMatrix{T1}}, x::AbstractVector
     return BlockNonzeroVector(size(A, 2), A.col_starts, blocks)
 end
 
+function LinearAlgebra.mul!(
+        y::AbstractVector,
+        At::Adjoint{<:Any, <:BlockNonzeroMatrix},
+        x::AbstractVector,
+        α::Number,
+        β::Number,
+    )
+    A = parent(At)
+    size(A, 1) == length(x) || throw(DimensionMismatch("Matrix and vector dimensions mismatch."))
+    length(y) == size(A, 2) || throw(DimensionMismatch("Output vector has wrong length."))
+
+    if isone(β)
+        # nothing to do
+    elseif iszero(β)
+        fill!(y, zero(eltype(y)))
+    else
+        y .*= β
+    end
+
+    for k in eachindex(A.blocks)
+        mul!(view(y, _col_range(A, k)), A.blocks[k]', view(x, _row_range(A, k)), α, true)
+    end
+    return y
+end
+
+function LinearAlgebra.mul!(
+        y::AbstractVector,
+        At::Adjoint{<:Any, <:BlockNonzeroMatrix},
+        x::AbstractVector,
+    )
+    T = promote_type(eltype(y), eltype(parent(At)), eltype(x))
+    return mul!(y, At, x, one(T), zero(T))
+end
+
 function Base.:*(At::LinearAlgebra.Transpose{<:Any, <:BlockNonzeroMatrix{T1}}, x::AbstractVector{T2}) where {T1, T2}
     A = parent(At)
     size(A, 1) == length(x) || throw(DimensionMismatch("Matrix and vector dimensions mismatch."))

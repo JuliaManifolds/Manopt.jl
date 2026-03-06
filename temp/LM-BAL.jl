@@ -308,19 +308,18 @@ end
 
 
 function (f::Fi_block)(M::AbstractManifold, r, p)
-    M_cam, M_t, M_pt = M.manifolds
     p_cam, p_t, p_pt = p.x
     obs = f.dataset.observations[f.obs_idx]
 
     cam = BALCamera(
-        SMatrix{3, 3}(p_cam[M_cam, obs.camera_index]),
-        SVector{3}(p_t[M_t, obs.camera_index]),
+        SMatrix{3, 3}(view(p_cam, :, :, obs.camera_index)),
+        SVector{3}(view(p_t, :, obs.camera_index)),
         400.0, # focal length is not optimized in this example
         0.0, # radial distortion k1 is not optimized
         0.0, # radial distortion k2 is not optimized
     )
     pt_idx = f.dataset.observations[f.obs_idx].point_index
-    return r .= reprojection_error(cam, SVector{3}(p_pt[M_pt, pt_idx]), obs.xy)
+    return r .= reprojection_error(cam, SVector{3}(view(p_pt, :, pt_idx)), obs.xy)
 end
 
 struct jacFi_block_ad{TD <: BALDataset}
@@ -367,8 +366,6 @@ function (f::jacFi_block_analytical)(
         basis_arg::DefaultOrthonormalBasis = DefaultOrthonormalBasis(),
     )
 
-    # error("where?")
-
     M_cam, M_t, M_pt = M.manifolds
     p_cam, p_t, p_pt = p.x
     obs = f.dataset.observations[f.obs_idx]
@@ -376,9 +373,9 @@ function (f::jacFi_block_analytical)(
     cam_idx = obs.camera_index
     pt_idx = obs.point_index
 
-    R = SMatrix{3, 3}(p_cam[M_cam, cam_idx])
-    t = SVector{3}(p_t[M_t, cam_idx])
-    Xw = SVector{3}(p_pt[M_pt, pt_idx])
+    R = SMatrix{3, 3}(view(p_cam, :, :, cam_idx))
+    t = SVector{3}(view(p_t, :, cam_idx))
+    Xw = SVector{3}(view(p_pt, :, pt_idx))
 
     cam = BALCamera(
         R,
@@ -442,7 +439,8 @@ end
 
 function Manopt.allocate_jacobian(
         M::AbstractManifold,
-        vgf::VectorGradientFunction{InplaceEvaluation, FunctionVectorialType{NestedPowerRepresentation}, <:CoefficientVectorialType, <:Fi_block, <:jacFi_block_analytical};
+        vgf::VectorGradientFunction{InplaceEvaluation, FunctionVectorialType{NestedPowerRepresentation}, <:CoefficientVectorialType, <:Fi_block, <:jacFi_block_analytical},
+        ::AbstractBasis = DefaultOrthonormalBasis();
         T::Type = Float64,
     )
     fJ = vgf.jacobian!!
@@ -473,8 +471,8 @@ end
 function run_bundle_adjustment(data::BALDataset)
     M = ProductManifold(
         PowerManifold(Rotations(3), ArrayPowerRepresentation(), data.num_cameras), # camera rotations
-        PowerManifold(Euclidean(3), ArrayPowerRepresentation(), data.num_cameras), # camera translations
-        PowerManifold(Euclidean(3), ArrayPowerRepresentation(), data.num_points), # 3D point positions
+        Euclidean(3, data.num_cameras), # camera translations
+        Euclidean(3, data.num_points), # 3D point positions
     )
 
     F = [Fi_block(data, i) for i in 1:data.num_observations]
@@ -499,6 +497,7 @@ function run_bundle_adjustment(data::BALDataset)
 
     q = LevenbergMarquardt(
         M, f, p0;
+        initial_jacobian_f = [Manopt.allocate_jacobian(M, fi) for fi in f],
         β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
         robustifier = hr,
         debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],

@@ -47,7 +47,7 @@ $(_kwargs(:evaluation))
 * `damping_term_min=0.1`:      initial (and also minimal) value of the damping term
 * `β=5.0`:                     parameter by which the damping term is multiplied when the current new point is rejected
 * `function_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
-* `initial_jacobian_f`:      the initial Jacobian of the cost function `f`.
+* `initial_jacobian_f`:      the list of initial Jacobians of each block of the cost function `f`.
   By default this is a matrix of size `num_components` times the manifold dimension of similar type as `p`.
 * `initial_residual_values`: the initial residual vector of the cost function `f`.
   By default this is a vector of length `num_components` of similar type as `p`.
@@ -190,7 +190,7 @@ function LevenbergMarquardt!(
         damping_term_min::Real = 0.1,
         X = zero_vector(M, p),
         initial_residual_values = zeros(number_eltype(p), sum(length(o) for o in get_objective(nlso).objective)),
-        initial_jacobian_f = nothing,
+        initial_jacobian_f = fill(nothing, length(get_objective(nlso).objective)),
         (linear_subsolver!) = nothing,
         #TODO better names for the next 2?
         ε::Real = 1.0e-6,
@@ -243,10 +243,12 @@ function initialize_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     get_residuals!(M, lms.residual_values, nlso, lms.p)
-    if !isnothing(lms.jacobian_f)
-        get_jacobian!(M, lms.jacobian_f, nlso, lms.p; basis = nlso.jacobian_type)
+    for (o, jb) in zip(nlso.objective, lms.jacobian_f)
+        if !isnothing(jb)
+            get_jacobian!(M, jb, o, lms.p)
+        end
     end
-    get_gradient!(M, lms.X, nlso, lms.p)
+    get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_f)
     return lms
 end
 
@@ -292,7 +294,13 @@ function step_solver!(
         if lms.expect_zero_residual # following Adachi et al.: If we expect a zero cost at the minimum, reduce damping on success.
             lms.damping_term = max(lms.damping_term_min, lms.damping_term / lms.β)
         end
-        get_gradient!(M, lms.X, nlso, lms.p)
+        get_residuals!(M, lms.residual_values, nlso, lms.p)
+        for (o, jb) in zip(nlso.objective, lms.jacobian_f)
+            if !isnothing(jb)
+                get_jacobian!(M, jb, o, lms.p)
+            end
+        end
+        get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_f)
     else # not enough improvement: reject, increase damping term
         lms.damping_term *= lms.β
     end

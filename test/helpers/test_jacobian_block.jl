@@ -49,6 +49,14 @@ using Test
     yt = J' * y_expected
     @test yt isa BlockNonzeroVector
     @test Vector(yt) == Matrix(J)' * y_expected
+    yt_mul = fill(2.0, size(J, 2))
+    yt_mul_expected = copy(yt_mul)
+    mul!(yt_mul_expected, Matrix(J)', y_expected, 1.7, 0.3)
+    mul!(yt_mul, J', y_expected, 1.7, 0.3)
+    @test yt_mul == yt_mul_expected
+    yt_mul2 = similar(yt_mul)
+    mul!(yt_mul2, J', y_expected)
+    @test yt_mul2 == Matrix(J)' * y_expected
     @test transpose(J) * y_expected == transpose(Matrix(J)) * y_expected
 
     M = reshape(collect(1.0:18.0), 6, 3)
@@ -120,6 +128,11 @@ using Test
     ymulti = Jmulti * v
     @test ymulti isa BlockNonzeroVector
     @test Vector(ymulti) == Mmulti * v
+    ymulti_t = fill(1.0, size(Jmulti, 2))
+    ymulti_t_expected = copy(ymulti_t)
+    mul!(ymulti_t_expected, Matrix(Jmulti)', Vector(ymulti), 2.5, 0.25)
+    mul!(ymulti_t, Jmulti', Vector(ymulti), 2.5, 0.25)
+    @test ymulti_t == ymulti_t_expected
     @test Jmulti * M == Mmulti * M
     @test L * Jmulti == L * Mmulti
 
@@ -128,4 +141,7 @@ using Test
     mul!(Cmulti_expected, Matrix(Jmulti)', Matrix(Jmulti), 2.5, 0.25)
     mul!(Cmulti, Jmulti', Jmulti, 2.5, 0.25)
     @test Cmulti == Cmulti_expected
+
+    @test_throws DimensionMismatch mul!(zeros(size(J, 2) - 1), J', y_expected, 1.0, 0.0)
+    @test_throws DimensionMismatch mul!(zeros(size(J, 2)), J', y_expected[1:(end - 1)], 1.0, 0.0)
 end

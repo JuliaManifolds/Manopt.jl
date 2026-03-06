@@ -173,15 +173,16 @@ end
 
 # @doc "$(_doc_get_gradient_nlso)"
 function get_gradient!(
-        M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective, p; value_cache = nothing,
+        M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective, p;
+        value_cache = nothing, jacobian_cache = fill(nothing, length(nlso.objective)),
     )
     zero_vector!(M, X, p)
     start = 0
     Y = copy(M, p, X)
-    for (o, r) in zip(nlso.objective, nlso.robustifier) # for every block
+    for (o, r, jb) in zip(nlso.objective, nlso.robustifier, jacobian_cache) # for every block
         len = length(o)
         Fi = isnothing(value_cache) ? get_value(M, o, p) : view(value_cache, (start + 1):(start + len))
-        _get_gradient!(M, Y, o, r, p; value_cache = Fi)
+        _get_gradient!(M, Y, o, r, p; value_cache = Fi, jacobian_cache = jb)
         X .+= Y
         start += len
     end
@@ -189,15 +190,19 @@ function get_gradient!(
 end
 function _get_gradient!(
         M, X, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        value_cache = get_value(M, vgf, p)
+        value_cache = get_value(M, vgf, p), jacobian_cache = nothing
     )
     # get gradients for every component
     len = length(vgf)
     zero_vector!(M, X, p)
     Y = copy(M, p, X)
-    for j in 1:len
-        get_gradient!(M, Y, vgf, p, j) # gradient of f_{i,j}
-        X .+= value_cache[j] .* Y
+    if isnothing(jacobian_cache)
+        for j in 1:len
+            get_gradient!(M, Y, vgf, p, j) # gradient of f_{i,j}
+            X .+= value_cache[j] .* Y
+        end
+    else
+        get_vector!(M, Y, p, jacobian_cache' * value_cache, vgf.jacobian_type.basis)
     end
     # compute robustifier derivative
     (_, b, _) = get_robustifier_values(r, sum(abs2, value_cache))
@@ -206,7 +211,7 @@ function _get_gradient!(
 end
 function _get_gradient!(
         M, X, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
-        value_cache = get_value(M, vgf, p)
+        value_cache = get_value(M, vgf, p), jacobian_cache = nothing,
     )
     # get gradients for every component
     len = length(vgf)

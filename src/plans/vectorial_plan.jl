@@ -556,8 +556,8 @@ function _change_basis!(
     ) where {B1 <: AbstractBasis, B2 <: AbstractBasis}
     # change every row to new basis
     for i in 1:size(JF, 1) # every row
-        get_vector!(M, X, p, JF[i, :], from_basis)
-        get_coordinates!(M, JF[i, :], p, X, to_basis)
+        get_vector!(M, X, p, view(JF, i, :), from_basis)
+        get_coordinates!(M, view(JF, i, :), p, X, to_basis)
     end
     return JF
 end
@@ -628,7 +628,7 @@ function get_jacobian!(
         M::AbstractManifold, JF, vgf::VGF, p; basis::AbstractBasis = get_basis(vgf.jacobian_type), range = nothing,
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:ComponentVectorialType}}
     for i in 1:(vgf.range_dimension)
-        JF[i, :] .= get_coordinates(M, p, vgf.jacobian!![i](M, p), basis)
+        get_coordinates!(M, view(JF, i, :), p, vgf.jacobian!![i](M, p), basis)
     end
     return JF
 end
@@ -1070,10 +1070,11 @@ function add_adjoint_jacobian!(
         M::AbstractManifold, c, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:CoefficientVectorialType}, p, a::AbstractVector, B::AbstractBasis; X = nothing, Y_cache = nothing
     ) where {FT}
     J = allocate_jacobian(M, vgf; T = eltype(a))
-    cX = adjoint(vgf.jacobian!!(M, J, p)) * a
+    JFt = adjoint(vgf.jacobian!!(M, J, p))
     if vgf.jacobian_type.basis === B
-        c .+= cX
+        mul!(c, JFt, a, one(eltype(c)), one(eltype(c)))
     else
+        cX = JFt * a
         # `change_basis` may be expensive in general so we don't want to do it unless necessary
         c .+= change_basis(M, p, cX, vgf.jacobian_type.basis, B)
     end
@@ -1167,7 +1168,7 @@ function get_gradient!(
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     JF = vgf.jacobian!!(M, p)
-    get_vector!(M, X, p, JF[i, :], vgf.jacobian_type.basis) #convert rows to gradients
+    get_vector!(M, X, p, view(JF, i, :), vgf.jacobian_type.basis) #convert rows to gradients
     return X
 end
 function get_gradient!(
@@ -1185,7 +1186,7 @@ function get_gradient!(
     rep_size = representation_size(M)
     JF = vgf.jacobian!!(M, p) # yields a full Jacobian
     for (j, k) in zip(_to_iterable_indices([JF[:, 1]...], i), 1:n)
-        get_vector!(M, _write(pM, rep_size, X, (k,)), p, JF[j, :], vgf.jacobian_type.basis)
+        get_vector!(M, _write(pM, rep_size, X, (k,)), p, view(JF, j, :), vgf.jacobian_type.basis)
     end
     return X
 end
@@ -1275,7 +1276,7 @@ function get_gradient!(
     # a type wise safe way to allocate what usually should yield a n-times-d matrix
     JF = allocate_jacobian(M, vgf; T = number_eltype(X))
     vgf.jacobian!!(M, JF, p)
-    get_vector!(M, X, p, JF[i, :], vgf.jacobian_type.basis)
+    get_vector!(M, X, p, view(JF, i, :), vgf.jacobian_type.basis)
     return X
 end
 function get_gradient!(
@@ -1293,7 +1294,7 @@ function get_gradient!(
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
     for (j, k) in zip(_to_iterable_indices([JF[:, 1]...], i), 1:n)
-        get_vector!(M, _write(pM, rep_size, X, (k,)), p, JF[j, :], vgf.jacobian_type.basis)
+        get_vector!(M, _write(pM, rep_size, X, (k,)), p, view(JF, j, :), vgf.jacobian_type.basis)
     end
     return X
 end
