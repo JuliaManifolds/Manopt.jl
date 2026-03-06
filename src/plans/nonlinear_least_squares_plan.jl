@@ -259,9 +259,9 @@ end
 
 #
 #
-# Robustifiers
+# The solver state
 
-
+# TODO: Update keywords in docs
 @doc """
     LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
 
@@ -293,9 +293,6 @@ $(_fields(:stopping_criterion; name = "stop"))
 * `minimum_acceptable_model_improvement`: the minimum improvement in the model function that
   is required to accept a new point; if this is not met, the new point is rejected and
   the damping term is increased.
-* `model_worsening_warning_threshold`: if the subproblem worsens by more than this
-  threshold, a warning is issued. This is useful to detect numerical issues in the linear
-  subproblem solver.
 * `sub_problem`: the linear subproblem solver to use to solve the linearized
   subproblem in each iteration.
 * `sub_state`: the state to use for the linear subproblem solver.
@@ -319,7 +316,6 @@ The following fields are keyword arguments
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
 * `minimum_acceptable_model_improvement::Real = eps(number_eltype(p))`
-* `model_worsening_warning_threshold::Real = -sqrt(eps(number_eltype(p)))`  TODO: Debug, remove later
 
 # See also
 
@@ -349,7 +345,6 @@ mutable struct LevenbergMarquardtState{
     β::Tparams
     expect_zero_residual::Bool
     minimum_acceptable_model_improvement::Tparams
-    model_worsening_warning_threshold::Tparams
     sub_problem::Pr
     sub_state::St
     function LevenbergMarquardtState(
@@ -369,17 +364,19 @@ mutable struct LevenbergMarquardtState{
             β::Real = 5.0,
             expect_zero_residual::Bool = false,
             minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
-            model_worsening_warning_threshold::Real = -sqrt(eps(number_eltype(p))),
-            linear_subsolver! = nothing, #remove on next breaking release
-            sub_problem::Pr = linear_subsolver!, # TODO change default on next breaking release
-            sub_state::St = InplaceEvaluation(),
+            sub_problem::Pr = nothing,
+            sub_state::St = nothing,
         ) where {P, Tresidual_values, TGrad, Pr, St}
+        # TODO: what if initial:Jacobian_f is still nothing? Fill it?
+        if isnothing(sub_problem) || isnothing(sub_state)
+            s = "You have to specify a solver for the sub problem, that is, both a `sub_problem` to be solved"
+            s = "$s and a `sub_state` specifying the solver."
+            isnothing(sub_problem) && (s = "$s\n The `sub_problem` was not specified.")
+            isnothing(sub_problem) && (s = "$s\n The `sub_state` was not specified.")
+            throw(ArgumentError(s))
+        end
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
-        end
-        if linear_subsolver! !== nothing
-            @warn "The keyword argument `linear_subsolver!` is deprecated and will be removed in future releases. Please use `sub_problem` and `sub_state` instead."
-            sub_problem = linear_subsolver!
         end
         if damping_term_min <= 0
             throw(
@@ -387,11 +384,13 @@ mutable struct LevenbergMarquardtState{
             )
         end
         (β <= 1) && throw(ArgumentError("Value of β must be strictly above 1, received $β"))
+        _sub_state = maybe_wrap_evaluation_type(sub_state)
+        # TODO: What if initial_jacobian_f is not set?
         Tparams = promote_type(typeof(η), typeof(damping_term_min), typeof(β))
         SC = typeof(stopping_criterion)
         RM = typeof(retraction_method)
         return new{
-            P, SC, RM, Tresidual_values, TGrad, typeof(initial_jacobian_f), Tparams, Pr, St,
+            P, SC, RM, Tresidual_values, TGrad, typeof(initial_jacobian_f), Tparams, Pr, typeof(_sub_state),
         }(
             p,
             stopping_criterion, retraction_method,
@@ -400,8 +399,7 @@ mutable struct LevenbergMarquardtState{
             damping_term, damping_term_min,
             β,
             expect_zero_residual,
-            # TODO: Both are for now just for debug
-            minimum_acceptable_model_improvement, model_worsening_warning_threshold,
+            minimum_acceptable_model_improvement, # TODO: discuss: Shall we keep this?
             sub_problem, sub_state,
         )
     end
@@ -607,7 +605,7 @@ function get_gradient!(
     start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len_o = length(o)
-        get_gradient!(
+        _get_gradient!(
             M, Z, o, r, p, X;
             value_cache = value_cache[(start + 1):(start + len_o)], ε = lmsco.ε, mode = lmsco.mode,
         )
@@ -618,7 +616,7 @@ function get_gradient!(
     Y .+= lmsco.penalty .* X
     return Y
 end
-function get_gradient!(
+function _get_gradient!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
     )
@@ -639,7 +637,7 @@ function get_gradient!(
     return Y
 end
 # Componentwise
-function get_gradient!(
+function _get_gradient!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
     )
@@ -854,7 +852,7 @@ function accumulate_linear_normal_operator!(
     return Y
 end
 # Componentwise: A few things decouple
-function linear_normal_operator!(
+function _linear_normal_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = nothing,
     )
@@ -874,7 +872,6 @@ function linear_normal_operator!(
     accumulate_adjoint_jacobian!(M, Y, o, p, b)
     return Y
 end
-
 #
 # Basis case: (a) including coordinates
 function linear_normal_operator(
@@ -893,19 +890,18 @@ function linear_normal_operator!(
     fill!(d, 0)
     e = copy(d)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        linear_normal_operator!(M, e, o, r, p, c, B; ε = lmsco.ε, mode = lmsco.mode)
+        _linear_normal_operator!(M, e, o, r, p, c, B; ε = lmsco.ε, mode = lmsco.mode)
         d .+= e
     end
     # Finally add the damping term
     (penalty != 0) && (d .+= penalty * c)
     return d
 end
-function linear_normal_operator!(M::AbstractManifold, d, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, c, B::AbstractBasis; kwargs...)
+function _linear_normal_operator!(M::AbstractManifold, d, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, c, B::AbstractBasis; kwargs...)
     A = linear_normal_operator(M, o, r, p, B; kwargs...)
     d .= A * c
     return d
 end
-
 #
 # Basis case: (b) no coordinates -> compute a matrix representation
 function linear_normal_operator(
@@ -989,7 +985,6 @@ function accumulate_linear_normal_operator!(
     return A
 end
 
-
 """
     linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
     linear_operator(M::AbstractManifold, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
@@ -1031,7 +1026,7 @@ function linear_operator!(
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        linear_operator!(
+        _linear_operator!(
             M, view(y, (start + 1):(start + len)), o, r, p, X, value_cache;
             ε = lmsco.ε, mode = lmsco.mode, Y_cache = Y_cache, c_cache = c_cache,
         )
@@ -1040,7 +1035,7 @@ function linear_operator!(
     return y
 end
 # for a single block – the actual formula
-function linear_operator!(
+function _linear_operator!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
         value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
     )
@@ -1055,7 +1050,7 @@ function linear_operator!(
     return y
 end
 # Componenwise: Decouple
-function linear_operator!(
+function _linear_operator!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X,
         value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
     )
@@ -1076,7 +1071,6 @@ end
 _doc_normal_vector_field = """
     normal_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
     normal_vector_field!(M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
-
     normal_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis)
     normal_vector_field!(M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis)
 
@@ -1096,7 +1090,6 @@ Note that this is done per every block (vectorial function with its robustifier)
 See also [`linear_normal_operator`](@ref) for evaluating the corresponding linear operator of the (normal) linear system,
 and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and computation of ``C``.
 """
-
 
 _doc_accumulate_normal_vector_field = """
     accumulate_normal_vector_field!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
@@ -1133,7 +1126,7 @@ function normal_vector_field!(
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        normal_vector_field!(
+        _normal_vector_field!(
             M, Z, o, r, p;
             ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache,
         )
@@ -1143,8 +1136,7 @@ function normal_vector_field!(
     return X
 end
 # for a single block – the actual formula
-@doc "$(_doc_normal_vector_field)"
-function normal_vector_field!(
+function _normal_vector_field!(
         M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = zero_vector(M, p),
     )
@@ -1161,7 +1153,7 @@ function normal_vector_field!(
     return X
 end
 # Componenwise C again reduces to a diagonal
-function normal_vector_field!(
+function _normal_vector_field!(
         M::AbstractManifold, X, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = nothing,
     )
@@ -1182,7 +1174,7 @@ end
 
 #
 # (b) in a basis
-@doc "$(_doc_accumulate_normal_vector_field)"
+@doc "$(_doc_normal_vector_field)"
 function normal_vector_field(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis,
     )
@@ -1190,7 +1182,7 @@ function normal_vector_field(
     return normal_vector_field!(M, c, lmsco, p, B)
 end
 
-@doc "$(_doc_accumulate_normal_vector_field)"
+@doc "$(_doc_normal_vector_field)"
 function normal_vector_field!(
         M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis,
     )
@@ -1202,6 +1194,7 @@ function normal_vector_field!(
     end
     return c
 end
+
 # for a single block – the actual formula
 @doc "$(_doc_accumulate_normal_vector_field)"
 function accumulate_normal_vector_field!(
@@ -1272,13 +1265,13 @@ function vector_field!(
     start = 0
     # For every block
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; ε = lmsco.ε, mode = lmsco.mode)
+        _vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; ε = lmsco.ε, mode = lmsco.mode)
         start += length(o)
     end
     return y
 end
 # for a single block – the actual formula
-function vector_field!(
+function _vector_field!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
         ε::Real, mode::Symbol,
     )
@@ -1291,7 +1284,7 @@ function vector_field!(
     return y
 end
 # Componentwise, it decouples, C is diagonal
-function vector_field!(
+function _vector_field!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
         ε::Real, mode::Symbol,
     )

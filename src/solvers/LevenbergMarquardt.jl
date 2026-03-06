@@ -1,3 +1,4 @@
+# TODO: Update keywords in docs
 _doc_LM = """
     LevenbergMarquardt(M, f, jacobian_f, p, num_components=-1; kwargs...)
     LevenbergMarquardt(M, vgf, p; kwargs...)
@@ -183,7 +184,6 @@ function LevenbergMarquardt!(
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
         debug = [DebugWarnIfCostIncreases()],
-        sub_evaluation::AbstractEvaluationType = InplaceEvaluation(),
         expect_zero_residual::Bool = false,
         β::Real = 5.0,
         η::Real = 0.2,
@@ -196,6 +196,7 @@ function LevenbergMarquardt!(
         ε::Real = 1.0e-6,
         α_mode::Symbol = :Default,
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
+        sub_evaluation::AbstractEvaluationType = InplaceEvaluation(),
         sub_objective = SymmetricLinearSystem(
             LevenbergMarquardtLinearSurrogateObjective(
                 nlso; penalty = damping_term_min, ε = ε, mode = α_mode, residuals = copy(initial_residual_values)
@@ -273,10 +274,6 @@ function step_solver!(
     end
     model_improvement = (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.direction)) / 2
     if model_improvement < lms.minimum_acceptable_model_improvement
-        if model_improvement < lms.model_worsening_warning_threshold * (1 + get_cost(lms.sub_problem, zero_vector(M, lms.p)))
-            @warn "Model worsened by more than the warning threshold. The subsolver is likely at fault. Model improvement: $model_improvement, warning threshold: $(lms.model_worsening_warning_threshold)"
-        end
-
         # Model improvement insufficient, reject step and increase damping term
         lms.damping_term *= lms.β
         return lms
