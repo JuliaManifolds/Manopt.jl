@@ -20,12 +20,19 @@ For now the functions rescaled are
 # Constructors
 
     ScaledManifoldObjective(objective, scale::Real=1)
-    -objective
-    scale*objective
 
 Generate a scaled manifold objective based on `objective` with `scale` being `1` by default
 in the first, `scale=-1` in the second case. The multiplication from the left with a scalar
 is also overloaded.
+
+    -objective
+
+The single-parameter minus is overloaded to have a short notation turning a maximization problem
+into a minimization one, which would fit the framework provided within Manopt.jl
+
+    scale * objective
+
+Equivalent to the first constructor, but might be nicer to write in a few places.
 """
 struct ScaledManifoldObjective{
         E <: AbstractEvaluationType, O2, O1 <: AbstractManifoldObjective{E}, F,
@@ -126,9 +133,18 @@ function get_hessian_function(
     return (M, Y, p, X) -> get_hessian!(M, Y, scaled_objective, p, X)
 end
 
-function show(io::IO, scaled_objective::ScaledManifoldObjective{P, T}) where {P, T}
+function Base.show(io::IO, scaled_objective::ScaledManifoldObjective)
+    return print(
+        io, "ScaledManifoldObjective($(repr(scaled_objective.objective)), $(scaled_objective.scale))",
+    )
+end
+function status_summary(scaled_objective::ScaledManifoldObjective; context = :default)
+    # short and inline
+    context === :short && (return "$(scaled_objective.scale) * $(status_summary(scaled_objective.objective; context = context))")
+    context === :inline && (return "$(status_summary(scaled_objective.objective; context = context)) scaled by a factor of $(scaled_objective.scale)")
+    # default
     return print(
         io,
-        "ScaledManifoldObjective based on a $(scaled_objective.objective) with scale $(scaled_objective.scale)",
+        "A scaled version of the objective\n$(status_summary(scaled_objective.objective; context = context))\nscaled by a factor of $(scaled_objective.scale)",
     )
 end

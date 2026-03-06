@@ -16,8 +16,7 @@ Generate the [`ManifoldSubgradientObjective`](@ref) for a subgradient objective,
 of a (cost) function `f(M, p)` and a function `∂f(M, p)` that returns a not necessarily
 deterministic element from the subdifferential at `p` on a manifold `M`.
 """
-struct ManifoldSubgradientObjective{T <: AbstractEvaluationType, C, S} <:
-    AbstractManifoldCostObjective{T, C}
+struct ManifoldSubgradientObjective{T <: AbstractEvaluationType, C, S} <: AbstractManifoldCostObjective{T, C}
     cost::C
     subgradient!!::S
     function ManifoldSubgradientObjective(
@@ -105,4 +104,24 @@ function get_subgradient_function(amso::ManifoldSubgradientObjective, recursive 
 end
 function get_subgradient_function(admo::AbstractDecoratedManifoldObjective, recursive = false)
     return get_subgradient_function(get_objective(admo, recursive))
+end
+
+function Base.show(io::IO, mso::ManifoldSubgradientObjective{E}) where {E}
+    print(io, "ManifoldSubgradientObjective(")
+    print(io, mso.cost); print(io, ", "); print(io, mso.subgradient!!, "; ")
+    print(io, _to_kw(E))
+    return print(io, ")")
+end
+
+function status_summary(mso::ManifoldSubgradientObjective{E}; context = :default) where {E}
+    (context === :short) && repr(mso)
+    s = "A subgradient objective `f`"
+    (context === :inline) && (return s)
+    e = (E === AllocatingEvaluation ? " (allocating)" : " (in-place)")
+    return """
+    $s
+
+    ## Components
+    * `f`:  $(mso.cost)
+    * `∂f`: $(mso.subgradient!!)$e"""
 end

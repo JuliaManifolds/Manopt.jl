@@ -88,7 +88,8 @@ using Manopt, Manifolds, Test
         step_solver!(dmp1, sgds, 1)
         @test sgds.p == exp(M, p, get_gradient(dmp1, p, 1))
         @test startswith(
-            repr(sgds), "# Solver state for `Manopt.jl`s Stochastic Gradient Descent\n"
+            Manopt.status_summary(sgds; context = :default),
+            "# Solver state for `Manopt.jl`s Stochastic Gradient Descent\n"
         )
     end
     @testset "Comparing Stochastic Methods" begin

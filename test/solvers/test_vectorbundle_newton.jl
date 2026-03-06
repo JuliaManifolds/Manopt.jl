@@ -20,6 +20,8 @@ using LinearAlgebra: eigvals
             A::NM
             b::Nrhs
         end
+        # dummy to reduce output
+        Base.show(io::IO, ne::NewtonEquation) = print(io, "NewtonEquation($(ne.f_prime), $(ne.f_second_prime), A, b)")
 
         function NewtonEquation(M, f_pr, f_sp)
             A = zeros(N + 1, N + 1)
@@ -30,7 +32,7 @@ using LinearAlgebra: eigvals
         function (ne::NewtonEquation)(M, VB, p)
             ne.A .= hcat(vcat(ne.f_second_prime(p) - ne.f_prime(p) * p * Matrix{Float64}(I, N, N), p'), vcat(p, 0))
             ne.b .= vcat(ne.f_prime(p)', 0)
-            return
+            return ne
         end
 
         function solve_augmented_system(problem, newtonstate)
@@ -68,7 +70,7 @@ using LinearAlgebra: eigvals
 
 
         y3 = copy(M, y0) # avoid working inplace of y0
-        Manopt.vectorbundle_newton!(
+        vbns = Manopt.vectorbundle_newton!(
             M, TangentBundle(M), NE, y3; sub_problem = solve_augmented_system,
             alg_kwargs...
         )
@@ -83,6 +85,10 @@ using LinearAlgebra: eigvals
         # test access on the VB Problem
         vbp = VectorBundleManoptProblem(M, TangentBundle(M), NE)
         @test Manopt.get_newton_equation(vbp) === NE
+        @test startswith(Manopt.status_summary(vbp; context = :inline), "A vector bundle problem defined on $(M)")
+        vbp_s = Manopt.status_summary(vbp; context = :default)
+        @test startswith(vbp_s, "A vector bundle problem representing a vector bundle newton equation objective")
+        @test contains(vbp_s, "## Manifold")
     end
 
     @testset "Affine covariant stepsize" begin
@@ -143,14 +149,18 @@ using LinearAlgebra: eigvals
         )
         y1 = get_iterate(st)
         @test any(isapprox(f(M, y1), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
-        st_str = repr(st)
+        st_str = Manopt.status_summary(st; context = :default)
         @test occursin("Vector bundle Newton method", st_str)
         # we stopped since the change was small enough
-        @test occursin("* |Δp| < 1.0e-11: reached", st_str)
+        @test occursin("* |Δp| < 1.0e-11:$(Manopt._MANOPT_INDENT)reached", st_str)
         @test occursin("AffineCovariantStepsize", st_str)
         acs = st.stepsize
         @test get_initial_stepsize(acs) == acs.α
         @test get_last_stepsize(acs) > 0.0
         @test default_stepsize(M, VectorBundleNewtonState) isa Manopt.ConstantStepsize
+        st_repr = repr(st)
+        @test occursin("retraction_method =", st_repr)
+        @test occursin("stopping_criterion = ", st_repr)
+        @test occursin(" | ", st_repr) # that :short is actually used
     end
 end

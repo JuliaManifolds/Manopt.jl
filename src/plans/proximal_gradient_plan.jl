@@ -30,8 +30,7 @@ Generate the proximal gradient objective given the total cost ``f = g + h``, smo
 * `evaluation=`[`AllocatingEvaluation`](@ref): whether the gradient and proximal map
   is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
 """
-struct ManifoldProximalGradientObjective{E <: AbstractEvaluationType, TC, TG, TGG, TP} <:
-    AbstractManifoldCostObjective{E, TC}
+struct ManifoldProximalGradientObjective{E <: AbstractEvaluationType, TC, TG, TGG, TP} <: AbstractManifoldCostObjective{E, TC}
     cost::TC # f = g + h
     cost_smooth::TG # smooth part
     gradient_g!!::TGG
@@ -77,6 +76,29 @@ function get_gradient!(
     return X
 end
 
+function Base.show(io::IO, mpgo::ManifoldProximalGradientObjective{E}) where {E}
+    print(io, "ManifoldProximalGradientObjective(")
+    print(io, mpgo.cost); print(io, ", ")
+    print(io, mpgo.cost_smooth); print(io, ", ")
+    print(io, mpgo.gradient_g!!); print(io, ", ")
+    print(io, mpgo.proximal_map_h!!); print(io, "; "); print(io, _to_kw(E))
+    return print(io, ")")
+end
+
+function status_summary(mpgo::ManifoldProximalGradientObjective{E}; context = :default) where {E}
+    (context === :short) && repr(mpgo)
+    s = "A proximal gradient objective `f = g + h`, where `g` is smooth and `h` is possibly nonsmooth."
+    (context === :inline) && (return s)
+    e = (E === AllocatingEvaluation ? " (allocating)" : " (in-place)")
+    return """
+    $s
+
+    # Components
+    * `f`:          $(mpgo.cost)
+    * `g`:          $(mpgo.cost_smooth)
+    * `gradient_g`: $(mpgo.gradient_g!!)$e
+    * `prox_h`:     $(mpgo.proximal_map_h!!)$e"""
+end
 """
     get_cost_smooth(M::AbstractManifold, objective, p)
 
@@ -102,11 +124,7 @@ function get_proximal_map(
 end
 
 function get_proximal_map!(
-        M::AbstractManifold,
-        q,
-        mpgo::ManifoldProximalGradientObjective{AllocatingEvaluation},
-        λ,
-        p,
+        M::AbstractManifold, q, mpgo::ManifoldProximalGradientObjective{AllocatingEvaluation}, λ, p,
     )
     copyto!(M, q, mpgo.proximal_map_h!!(M, λ, p))
     return q
@@ -357,25 +375,23 @@ function set_iterate!(pgms::ProximalGradientMethodState, M, p)
     return pgms
 end
 
-function show(io::IO, pgms::ProximalGradientMethodState)
+function status_summary(pgms::ProximalGradientMethodState; context = :default)
     i = get_count(pgms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(pgms)) – $(Iter) $(has_converged(pgms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Proximal Gradient Method
     $Iter
-
     ## Parameters
-
     * retraction_method:              $(pgms.retraction_method)
     * stepsize:                       $(typeof(pgms.stepsize))
     * acceleration:                   $(typeof(pgms.acceleration))
 
     ## Stopping criterion
-
-    $(status_summary(pgms.stop))
+    $(status_summary(pgms.stop; context = context))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 #
 # Stepsize
@@ -713,18 +729,16 @@ function get_reason(c::StopWhenGradientMappingNormLess)
     return ""
 end
 
-function status_summary(c::StopWhenGradientMappingNormLess)
+function status_summary(c::StopWhenGradientMappingNormLess; context = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "|G| < $(c.threshold): $s"
+    return (_is_inline(context) ? "|G| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient mapping norm is less then a tolerance.\n$(_MANOPT_INDENT)") * s
 end
 
 indicates_convergence(c::StopWhenGradientMappingNormLess) = true
 
-function show(io::IO, c::StopWhenGradientMappingNormLess)
-    return print(
-        io, "StopWhenGradientMappingNormLess($(c.threshold))\n    $(status_summary(c))"
-    )
+function Base.show(io::IO, c::StopWhenGradientMappingNormLess)
+    return print(io, "StopWhenGradientMappingNormLess($(c.threshold))")
 end
 # If we are running on a prox grad backtrack, ignore the threshold from the DEbug and take the one from the stepsize
 function (d::DebugWarnIfStepsizeCollapsed)(

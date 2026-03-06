@@ -112,9 +112,7 @@ end
 function get_proximal_map(
         M::AbstractManifold,
         mpo::ManifoldProximalMapObjective{AllocatingEvaluation, F, <:Union{<:Tuple, <:Vector}},
-        λ,
-        p,
-        i,
+        λ, p, i,
     ) where {F}
     check_prox_number(mpo.proximal_maps!!, i)
     return mpo.proximal_maps!![i](M, λ, p)
@@ -128,9 +126,7 @@ function get_proximal_map!(
         M::AbstractManifold,
         q,
         mpo::ManifoldProximalMapObjective{AllocatingEvaluation, F, <:Union{<:Tuple, <:Vector}},
-        λ,
-        p,
-        i,
+        λ, p, i,
     ) where {F}
     check_prox_number(mpo.proximal_maps!!, i)
     copyto!(M, q, mpo.proximal_maps!![i](M, λ, p))
@@ -144,9 +140,7 @@ end
 function get_proximal_map(
         M::AbstractManifold,
         mpo::ManifoldProximalMapObjective{InplaceEvaluation, F, <:Union{<:Tuple, <:Vector}},
-        λ,
-        p,
-        i,
+        λ, p, i,
     ) where {F}
     check_prox_number(mpo.proximal_maps!!, i)
     q = allocate_result(M, get_proximal_map, p)
@@ -154,12 +148,9 @@ function get_proximal_map(
     return q
 end
 function get_proximal_map!(
-        M::AbstractManifold,
-        q,
+        M::AbstractManifold, q,
         mpo::ManifoldProximalMapObjective{InplaceEvaluation, F, <:Union{<:Tuple, <:Vector}},
-        λ,
-        p,
-        i,
+        λ, p, i,
     ) where {F}
     check_prox_number(mpo.proximal_maps!!, i)
     mpo.proximal_maps!![i](M, q, λ, p)
@@ -192,6 +183,18 @@ function get_proximal_map!(
     mpo.proximal_maps!!(M, q, λ, p)
     return q
 end
+function status_summary(mpo::ManifoldProximalMapObjective; context = :default)
+    return "A proximal map objective for a cost with $(mpo.number_of_proxes) proximal maps"
+end
+function show(io::IO, mpo::ManifoldProximalMapObjective{E}) where {E}
+    print(io, "ManifoldProximalMapObjective(")
+    print(io, mpo.cost); print(io, ", ")
+    print(io, mpo.proximal_maps!!); print(io, ", ")
+    print(io, mpo.number_of_proxes); print(io, "; ")
+    print(io, _to_kw(E))
+    return print(io, ")")
+end
+
 #
 #
 # Proximal based State

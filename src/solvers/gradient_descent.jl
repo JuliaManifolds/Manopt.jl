@@ -52,7 +52,7 @@ mutable struct GradientDescentState{
     retraction_method::TRTM
 end
 function GradientDescentState(
-        M::AbstractManifold;
+        M::AbstractManifold = ManifoldsBase.DefaultManifold();
         p::P = rand(M),
         X::T = zero_vector(M, p),
         stopping_criterion::SC = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8),
@@ -97,10 +97,26 @@ function get_message(gds::GradientDescentState)
     # for now only step size is quipped with messages
     return get_message(gds.stepsize)
 end
-function show(io::IO, gds::GradientDescentState)
+
+function Base.show(io::IO, gds::GradientDescentState)
+    return print(
+        io,
+        """GradientDescentState(;
+        $(_MANOPT_INDENT)direction = $(repr(gds.direction)),
+        $(_MANOPT_INDENT)p = $(repr(gds.p)),
+        $(_MANOPT_INDENT)stepsize = $(repr(gds.stepsize)),
+        $(_MANOPT_INDENT)stopping_criterion = $(status_summary(gds.stop; context = :short))"),
+        $(_MANOPT_INDENT)retraction_method = $(repr(gds.retraction_method)),
+        $(_MANOPT_INDENT)X=$(repr(gds.X)))"
+        )"""
+    )
+end
+
+function status_summary(gds::GradientDescentState; context = :default)
     i = get_count(gds, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(gds)) – $(Iter) $(has_converged(gds) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Gradient Descent
     $Iter
@@ -111,10 +127,9 @@ function show(io::IO, gds::GradientDescentState)
     $(gds.stepsize)
 
     ## Stopping criterion
-
-    $(status_summary(gds.stop))
+    $(status_summary(gds.stop; context = context))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_gd_iterate = raw"""

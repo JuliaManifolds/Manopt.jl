@@ -112,10 +112,16 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         inequality_constraints = 2,
         equality_constraints = 1,
     )
-    @test repr(cofa) === "ConstrainedManifoldObjective{AllocatingEvaluation}"
-    @test repr(cofm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
-    @test repr(cova) === "ConstrainedManifoldObjective{AllocatingEvaluation}"
-    @test repr(covm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
+    rcofa = repr(cofa); rcofm = repr(cofm); rcova = repr(cova); rcofm = repr(covm)
+    for r in [rcofa, rcofm, rcova, rcofm]
+        @test startswith(r, "ConstrainedManifoldObjective(ManifoldFirstOrderObjective(; cost = f")
+    end
+    for r in [rcofa, rcova]
+        @test contains(r, "evaluation = AllocatingEvaluation()")
+    end
+    for r in [rcofm, rcofm]
+        @test contains(r, "evaluation = InplaceEvaluation()")
+    end
     # Test cost/grad pass through
     @test Manopt.get_cost_function(cofa)(M, p) == f(M, p)
     @test Manopt.get_gradient_function(cofa)(M, p) == grad_f(M, p)
@@ -357,16 +363,9 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     end
     @testset "is_feasible & DebugFeasibility" begin
         coh = ConstrainedManifoldObjective(
-            f,
-            grad_f;
-            hess_f = hess_f,
-            g = g,
-            grad_g = grad_g,
-            hess_g = hess_g,
-            h = h,
-            grad_h = grad_h,
-            hess_h = hess_h,
-            M = M,
+            f, grad_f; M = M, hess_f = hess_f,
+            g = g, grad_g = grad_g, hess_g = hess_g,
+            h = h, grad_h = grad_h, hess_h = hess_h,
         )
         @test is_feasible(M, coh, [-2.0, 3.0, 0.5]; error = :info)
         @test_throws ErrorException is_feasible(M, coh, p; error = :error)
@@ -378,7 +377,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         df = DebugFeasibility(; io = io)
         @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible], at_init=true)"
         # short form:
-        @test Manopt.status_summary(df) === "(:Feasibility, [\"feasible: \", :Feasible])"
+        @test Manopt.status_summary(df; context = :short) === "(:Feasibility, [\"feasible: \", :Feasible])"
         df(mp, st, 1)
         @test String(take!(io)) == "feasible: No"
     end
@@ -439,7 +438,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @testset "Full KKT and its norm" begin
             # Full KKT Vector field
             KKTvf = KKTVectorField(coh)
-            @test startswith(repr(KKTvf), "KKTVectorField\n")
+            @test startswith(repr(KKTvf), "KKTVectorField(")
             Xp = LagrangianGradient(coh, μ, λ)(M, p) #Xμ = g + s; Xλ = h, Xs = μ .* s
             Y = KKTvf(N, q)
             @test Y[N, 1] == Xp
@@ -447,7 +446,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             @test Y[N, 3] == c[2]
             @test Y[N, 4] == μ .* s
             KKTvfJ = KKTVectorFieldJacobian(coh)
-            @test startswith(repr(KKTvfJ), "KKTVectorFieldJacobian\n")
+            @test startswith(repr(KKTvfJ), "KKTVectorFieldJacobian(")
             #
             Xp =
                 LagrangianHessian(coh, μ, λ)(M, p, Y[N, 1]) +
@@ -462,7 +461,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             @test Z[N, 4] == μ .* Y[N, 4] + s .* Y[N, 2]
 
             KKTvfAdJ = KKTVectorFieldAdjointJacobian(coh)
-            @test startswith(repr(KKTvfAdJ), "KKTVectorFieldAdjointJacobian\n")
+            @test startswith(repr(KKTvfAdJ), "KKTVectorFieldAdjointJacobian(")
             Xp2 =
                 LagrangianHessian(coh, μ, λ)(M, p, Y[N, 1]) +
                 sum(Y[N, 2] .* gg) +
@@ -477,11 +476,11 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
 
             # Full KKT Vector field norm – the Merit function
             KKTvfN = KKTVectorFieldNormSq(coh)
-            @test startswith(repr(KKTvfN), "KKTVectorFieldNormSq\n")
+            @test startswith(repr(KKTvfN), "KKTVectorFieldNormSq(")
             vfn = KKTvfN(N, q)
             @test vfn == norm(N, q, Y)^2
             KKTvfNG = KKTVectorFieldNormSqGradient(coh)
-            @test startswith(repr(KKTvfNG), "KKTVectorFieldNormSqGradient\n")
+            @test startswith(repr(KKTvfNG), "KKTVectorFieldNormSqGradient(")
             Zg1 = KKTvf(N, q)
             Zg2 = 2.0 * KKTvfAdJ(N, q, Zg1)
             W = KKTvfNG(N, q)
@@ -489,7 +488,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         end
         @testset "Condensed KKT, Jacobian" begin
             CKKTvf = CondensedKKTVectorField(coh, μ, s, β)
-            @test startswith(repr(CKKTvf), "CondensedKKTVectorField\n")
+            @test startswith(repr(CKKTvf), "CondensedKKTVectorField(")
             b1 =
                 gf +
                 sum(λ .* gh) +
@@ -507,7 +506,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             CKKTvf(Nc, V2, qc)
             @test V2 == V
             CKKTVfJ = CondensedKKTVectorFieldJacobian(coh, μ, s, β)
-            @test startswith(repr(CKKTVfJ), "CondensedKKTVectorFieldJacobian\n")
+            @test startswith(repr(CKKTVfJ), "CondensedKKTVectorFieldJacobian(")
             Yc = zero_vector(Nc, qc)
             Yc[Nc, 1] = [1.0, 3.0, 5.0]
             Yc[Nc, 2] = [7.0]

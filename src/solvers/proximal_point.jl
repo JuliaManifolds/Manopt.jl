@@ -44,19 +44,18 @@ function ProximalPointState(
     ) where {P, F, SC <: StoppingCriterion}
     return ProximalPointState{P, F, SC}(λ, p, stopping_criterion)
 end
-function show(io::IO, gds::ProximalPointState)
-    i = get_count(gds, :Iterations)
+function status_summary(pps::ProximalPointState; context = :default)
+    i = get_count(pps, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
+    Conv = indicates_convergence(pps.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(pps)) – $(Iter) $(has_converged(pps) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Proximal Point Method
     $Iter
-
     ## Stopping criterion
-
-    $(status_summary(gds.stop))
+    $(status_summary(pps.stop; context = context))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 #
 #

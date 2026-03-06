@@ -188,7 +188,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @testset "RecordStoppingReason" begin
         g = RecordStoppingReason()
         @test repr(g) == "RecordStoppingReason()"
-        @test Manopt.status_summary(g) == ":Stop"
+        @test Manopt.status_summary(g; context = :short) == ":Stop"
         @test length(get_record(g)) == 0
         stop_solver!(dmp, gds, 21) # trigger stop
         g(dmp, gds, 21) # record
@@ -283,7 +283,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @testset "RecordTime" begin
         h1 = RecordTime(; mode = :cumulative)
         @test repr(h1) == "RecordTime(; mode=:cumulative)"
-        @test Manopt.status_summary(h1) == ":Time"
+        @test Manopt.status_summary(h1, context = :short) == ":Time"
         t = h1.start
         @test t isa Nanosecond
         h1(dmp, gds, 1)

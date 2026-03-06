@@ -148,6 +148,7 @@ function (a::ArmijoLinesearchStepsize)(
 end
 get_initial_stepsize(a::ArmijoLinesearchStepsize) = a.initial_stepsize
 function show(io::IO, armijo_ls::ArmijoLinesearchStepsize)
+    # TODO: Refactor constructor, to this actually works
     return print(
         io,
         """
@@ -159,7 +160,8 @@ function show(io::IO, armijo_ls::ArmijoLinesearchStepsize)
         )""",
     )
 end
-function status_summary(armijo_ls::ArmijoLinesearchStepsize)
+function status_summary(armijo_ls::ArmijoLinesearchStepsize; context = :default)
+    # TODO: Refactor
     return "$(armijo_ls)\nand a computed last stepsize of $(armijo_ls.last_stepsize)"
 end
 function get_message(a::ArmijoLinesearchStepsize)

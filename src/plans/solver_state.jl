@@ -15,6 +15,15 @@ $(_fields(:stopping_criterion; name = "stop"))
 """
 abstract type AbstractManoptSolverState end
 
+function Base.show(io::IO, ::MIME"text/plain", ams::AbstractManoptSolverState)
+    multiline = get(io, :multiline, true)
+    if multiline
+        return status_summary(io, ams)
+    else
+        show(io, ams)
+    end
+end
+
 """
     ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState
 
@@ -303,6 +312,11 @@ a common `Type` for `AbstractStateActions` that might be triggered in decorators
 for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverState`](@ref).
 """
 abstract type AbstractStateAction end
+
+status_summary(asa::AbstractStateAction; context = :default) = repr(asa)
+status_summary(io::IO, asa::AbstractStateAction; context = :default) = print(io, status_summary(asa; context = context))
+
+Base.show(io::IO, ::MIME"text/plain", asa::AbstractStateAction) = status_summary(io::IO, asa; context = :default)
 
 mutable struct StorageRef{T}
     x::T

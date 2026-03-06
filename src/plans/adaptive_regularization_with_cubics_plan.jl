@@ -104,3 +104,21 @@ end
 function get_gradient_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective)
     return (TpM, X) -> get_gradient(TpM, arcmo, X)
 end
+function Base.show(io::IO, arcmo::AdaptiveRegularizationWithCubicsModelObjective)
+    print(io, "AdaptiveRegularizationWithCubicsModelObjective(")
+    print(io, arcmo.objective); print(io, ", ")
+    print(io, arcmo.σ)
+    return print(io, ")")
+end
+function status_summary(arcmo::AdaptiveRegularizationWithCubicsModelObjective; context = :default)
+    (context === :short) && return repr(arcmo)
+    (context === :inline) && return "The (tangent space) model for the adaptive regularization with cubics sub problem with parameter σ=$(arcmo.σ) for the objective $(status_summary(arcmo.objective; context = context))"
+    return """
+    The cubic polynomial based model for the sub problem of the Adaptive Regularization with cubics solver
+
+    ## Regularization parameter
+    σ = $(arcmo.σ)
+
+    ## Objective
+    $(_in_str(status_summary(arcmo.objective)))"""
+end
