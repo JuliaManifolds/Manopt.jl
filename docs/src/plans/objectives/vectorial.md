@@ -24,9 +24,6 @@ Manopt.FunctionVectorialType
 ```@docs
 Manopt.get_jacobian
 Manopt.get_jacobian!
-Manopt.get_adjoint_jacobian
-Manopt.get_adjoint_jacobian!
-Manopt.add_adjoint_jacobian!
 Manopt.get_value
 Manopt.get_value_function
 Base.length(::VectorGradientFunction)
@@ -39,4 +36,5 @@ Manopt._to_iterable_indices
 Manopt._change_basis!
 Manopt.get_basis
 Manopt.get_range
+Manopt.add_adjoint_jacobian!
 ```
