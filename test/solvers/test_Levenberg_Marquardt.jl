@@ -230,7 +230,7 @@ end
         @test_throws ArgumentError LevenbergMarquardtState(
             M, i_res; initial_jacobian_f = i_JF, p = x0, sub_problem = sub_fake_f
         )
-        # TODO:  When and why are these two expected to fail ? A comment would be nice
+        # The next two tests check that the error "For mutating evaluation num_components needs to be explicitly specified" is thrown
         @test_throws ArgumentError LevenbergMarquardt(
             M, F_reg_r2!, jacF_reg_r2!, x0; return_state = true, evaluation = InplaceEvaluation(),
         )

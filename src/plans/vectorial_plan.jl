@@ -886,12 +886,12 @@ _get_jacobian_basis(jt::CoefficientVectorialType) = jt.basis
 
 
 # TODO: consider optimizing these?
-function accumulate_get_vector!(M::AbstractManifold, X, p, c, basis::AbstractBasis)
+function add_vector!(M::AbstractManifold, X, p, c, basis::AbstractBasis)
     Y = get_vector(M, p, c, basis)
     X .+= Y
     return X
 end
-function accumulate_get_coordinates!(M::AbstractManifold, c, p, X, basis::AbstractBasis)
+function add_coordinates!(M::AbstractManifold, c, p, X, basis::AbstractBasis)
     cX = get_coordinates(M, p, X, basis)
     c .+= cX
     return c
@@ -901,8 +901,8 @@ end
 #
 # --- Adjoint Jacobian function in terms of gradients as a 1-1 tensor (basis free)
 
-_doc_accumulate_adjoint_jacobian_function_vector = """
-    accumulate_adjoint_jacobian!(M::AbstractManifold, X, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
+_doc_add_adjoint_jacobian_function_vector = """
+    add_adjoint_jacobian!(M::AbstractManifold, X, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
 
 Compute the adjoint Jacobian ``J_F^*(p)[a]`` of a vectorial function ``F: $(_math(:Manifold)) → ℝ^n``
 ``how it acts on a vector `a` at `p`, i.e., it is given by the relation
@@ -930,11 +930,11 @@ This can be computed in-place of `X`.
     if you used an [`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`).
 """
 
-@doc "$(_doc_accumulate_adjoint_jacobian_function_vector)"
-accumulate_adjoint_jacobian!(M::AbstractManifold, X, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
+@doc "$(_doc_add_adjoint_jacobian_function_vector)"
+add_adjoint_jacobian!(M::AbstractManifold, X, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
 
 # Part I: allocating vgf (a) single gradient function
-function accumulate_adjoint_jacobian!(
+function add_adjoint_jacobian!(
         M::AbstractManifold, X, vgf::VGF, p, a::AbstractVector; Y_cache = nothing,
     ) where {
         FT, VGF <: AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:FunctionVectorialType},
@@ -948,7 +948,7 @@ function accumulate_adjoint_jacobian!(
     return X
 end
 # (b) vector of gradient functions
-function accumulate_adjoint_jacobian!(
+function add_adjoint_jacobian!(
         M::AbstractManifold, X, vgf::VGF, p, a::AbstractVector; Y_cache = nothing,
     ) where {
         FT,
@@ -961,19 +961,19 @@ function accumulate_adjoint_jacobian!(
     return X
 end
 # (c) Jacobian function
-function accumulate_adjoint_jacobian!(
+function add_adjoint_jacobian!(
         M::AbstractManifold, X, vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:CoefficientVectorialType}, p, a;
         basis::B = default_basis(M, typeof(p)), Y_cache = nothing,
     ) where {FT, B <: AbstractBasis}
     n = vgf.range_dimension
     JF = vgf.jacobian!!(M, p)
     c = adjoint(JF) * a
-    accumulate_get_vector!(M, X, p, c, basis)
+    add_vector!(M, X, p, c, basis)
     return X
 end
 
 # Part II: mutating vgf (a) single gradient function
-function accumulate_adjoint_jacobian!(
+function add_adjoint_jacobian!(
         M::AbstractManifold, X, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:FunctionVectorialType}, p, a::AbstractVector
     ) where {FT}
     n = vgf.range_dimension
@@ -986,7 +986,7 @@ function accumulate_adjoint_jacobian!(
     return X
 end
 # (b) vector of gradient functions
-function accumulate_adjoint_jacobian!(
+function add_adjoint_jacobian!(
         M::AbstractManifold, X, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:ComponentVectorialType}, p, a::AbstractVector;
         Y_cache = zero_vector(M, p)
     ) where {FT}
@@ -998,13 +998,13 @@ function accumulate_adjoint_jacobian!(
     return X
 end
 # (c) Jacobian function
-function accumulate_adjoint_jacobian!(
+function add_adjoint_jacobian!(
         M::AbstractManifold, X, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:CoefficientVectorialType}, p, a::AbstractVector;
         Y_cache = nothing
     ) where {FT}
     J = allocate_jacobian(M, vgf; T = eltype(a))
     # TODO: actually use the right basis here
-    accumulate_get_vector!(M, X, p, adjoint(vgf.jacobian!!(M, J, p)) * a, DefaultOrthonormalBasis())
+    add_vector!(M, X, p, adjoint(vgf.jacobian!!(M, J, p)) * a, DefaultOrthonormalBasis())
     return X
 end
 
@@ -1012,8 +1012,8 @@ end
 #
 # --- Adjoint Jacobian function in terms of gradients as a matrix-vector product in a basis
 
-_doc_accumulate_adjoint_jacobian_function_coeff = """
-    accumulate_adjoint_jacobian!(M::AbstractManifold, c, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...)
+_doc_add_adjoint_jacobian_function_coeff = """
+    add_adjoint_jacobian!(M::AbstractManifold, c, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...)
 
 Compute the adjoint Jacobian ``J_F^*(p)[a]`` of a vectorial function ``F: $(_math(:Manifold)) → ℝ^n``
 ``how it acts on a vector `a` at `p`, i.e., it is given by the relation
@@ -1029,31 +1029,31 @@ Note that if `vgf` works internally in a basis different from the one provided, 
 """
 
 
-@doc "$(_doc_accumulate_adjoint_jacobian_function_coeff)"
-accumulate_adjoint_jacobian!(M::AbstractManifold, c, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...)
+@doc "$(_doc_add_adjoint_jacobian_function_coeff)"
+add_adjoint_jacobian!(M::AbstractManifold, c, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...)
 
 # Part I: allocating vgf (a) single gradient function
-function accumulate_adjoint_jacobian!(
+function add_adjoint_jacobian!(
         M::AbstractManifold, c, vgf::VGF, p, a::AbstractVector, B::AbstractBasis; X = zero_vector(M, p), Y_cache = nothing,
     ) where {
         FT, VGF <: AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:FunctionVectorialType},
     }
     # easiest: call the one for the vector and decompose into c
-    accumulate_adjoint_jacobian!(M, X, vgf, p, a)
-    return accumulate_get_coordinates!(M, c, p, X, B)
+    add_adjoint_jacobian!(M, X, vgf, p, a)
+    return add_coordinates!(M, c, p, X, B)
 end
 # (b) vector of gradient functions - same as above
-function accumulate_adjoint_jacobian!(
+function add_adjoint_jacobian!(
         M::AbstractManifold, c, vgf::VGF, p, a::AbstractVector, B::AbstractBasis; X = zero_vector(M, p), Y_cache = nothing,
     ) where {
         FT, VGF <: AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:ComponentVectorialType},
     }
-    accumulate_adjoint_jacobian!(M, X, vgf, p, a)
-    accumulate_get_coordinates!(M, c, p, X, B)
+    add_adjoint_jacobian!(M, X, vgf, p, a)
+    add_coordinates!(M, c, p, X, B)
     return c
 end
 # I allocating, (c) Jacobian function
-function accumulate_adjoint_jacobian!(
+function add_adjoint_jacobian!(
         M::AbstractManifold, c, vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:CoefficientVectorialType}, p, a::AbstractVector, B::AbstractBasis; X = nothing, Y_cache = nothing,
     ) where {FT}
     JF = vgf.jacobian!!(M, p)
@@ -1066,7 +1066,7 @@ function accumulate_adjoint_jacobian!(
     return c
 end
 # mutating, (c) Jacobian function
-function accumulate_adjoint_jacobian!(
+function add_adjoint_jacobian!(
         M::AbstractManifold, c, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:CoefficientVectorialType}, p, a::AbstractVector, B::AbstractBasis; X = nothing, Y_cache = nothing
     ) where {FT}
     J = allocate_jacobian(M, vgf; T = eltype(a))
