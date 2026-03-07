@@ -1,5 +1,6 @@
 using Manopt
 using LinearAlgebra
+using RecursiveArrayTools
 using Test
 
 @testset "BlockNonzeroMatrix and BlockNonzeroVector" begin
@@ -13,6 +14,10 @@ using Test
     @test repr(bv) == "BlockNonzeroVector(6, (2, 5), ([1.0, 2.0], [3.0, 4.0]))"
     @test eval(Meta.parse(repr(bv))) == bv
     @test_throws ArgumentError BlockNonzeroVector(3, (3,), ([1.0, 2.0],))
+    bv2 = copy(bv)
+    bv2 .*= 2
+    @test Vector(bv2) == 2 .* Vector(bv)
+    @test Vector(bv) == [0.0, 1.0, 2.0, 0.0, 3.0, 4.0]
 
     Cv = fill(2.0, 6, 6)
     Cv_expected = copy(Cv)
@@ -89,6 +94,17 @@ using Test
     @test Matrix(2.0 * J) == 2.0 * Matrix(J)
     @test Matrix(J * 2.0) == Matrix(J) * 2.0
 
+    Jcopy = copy(J)
+    Jcopy .*= 3
+    @test Matrix(Jcopy) == 3 .* Matrix(J)
+    @test Matrix(J) == [
+        0.0 0.0 0.0 0.0 0.0 0.0
+        0.0 0.0 1.0 2.0 0.0 0.0
+        0.0 0.0 3.0 4.0 0.0 0.0
+        0.0 0.0 0.0 0.0 0.0 0.0
+        0.0 0.0 0.0 0.0 0.0 0.0
+    ]
+
     J3 = BlockNonzeroMatrix(6, 4, (4,), (2,), ([5.0 6.0; 7.0 8.0],))
     @test Matrix(J * J3) == Matrix(J) * Matrix(J3)
 
@@ -151,4 +167,34 @@ using Test
 
     @test_throws DimensionMismatch mul!(zeros(size(J, 2) - 1), J', y_expected, 1.0, 0.0)
     @test_throws DimensionMismatch mul!(zeros(size(J, 2)), J', y_expected[1:(end - 1)], 1.0, 0.0)
+
+    @testset "ArrayPartition in-place add fast-path" begin
+        X = ArrayPartition(
+            reshape(collect(1.0:12.0), 2, 2, 3),
+            reshape(collect(13.0:18.0), 2, 3),
+            reshape(collect(19.0:24.0), 2, 3),
+        )
+        X_expected = deepcopy(X)
+
+        bv_fast = BlockNonzeroVector(
+            12,
+            (2, 6, 11),
+            ([1.0, 2.0], [3.0], [4.0, 5.0]),
+        )
+        Y = ArrayPartition(
+            zeros(2, 2, 3),
+            reshape(view(bv_fast, 1:6), 2, 3),
+            reshape(view(bv_fast, 7:12), 2, 3),
+        )
+
+        X_expected.x[1] .+= Y.x[1]
+        X_expected.x[2] .+= Y.x[2]
+        X_expected.x[3] .+= Y.x[3]
+
+        X .+= Y
+
+        @test X == X_expected
+        @test Vector(reshape(Y.x[2], :)) == Vector(view(bv_fast, 1:6))
+        @test Vector(reshape(Y.x[3], :)) == Vector(view(bv_fast, 7:12))
+    end
 end

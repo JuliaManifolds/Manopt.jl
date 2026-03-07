@@ -506,7 +506,7 @@ function run_bundle_adjustment(data::BALDataset)
         β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
         robustifier = hr,
         debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
-        stopping_criterion = StopAfterIteration(20),
+        stopping_criterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-8),
         sub_state = CoordinatesNormalSystemState(M; A = A),
     )
 

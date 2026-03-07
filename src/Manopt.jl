@@ -183,6 +183,14 @@ If you load `Manifolds.jl` this switches to using [`Euclidean`](@extref Manifold
 Rn_default() = :Manifolds
 Rn(::Val{T}, args...; kwargs...) where {T} = DefaultManifold(args...; kwargs...)
 
+"""
+    ZeroTangentVector
+
+A small internal helper type to represent the zero tangent vector to be able to dispatch
+on it in.
+"""
+struct ZeroTangentVector end
+
 include("plans/plan.jl")
 # solvers general framework
 include("solvers/solver.jl")

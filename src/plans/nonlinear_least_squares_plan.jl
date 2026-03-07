@@ -182,31 +182,32 @@ function get_gradient!(
     for (o, r, jb) in zip(nlso.objective, nlso.robustifier, jacobian_cache) # for every block
         len = length(o)
         Fi = isnothing(value_cache) ? get_value(M, o, p) : view(value_cache, (start + 1):(start + len))
-        _get_gradient!(M, Y, o, r, p; value_cache = Fi, jacobian_cache = jb)
-        X .+= Y
+        _add_gradient!(M, X, o, r, p; value_cache = Fi, jacobian_cache = jb)
         start += len
     end
     return X
 end
-function _get_gradient!(
+function _add_gradient!(
         M, X, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
         value_cache = get_value(M, vgf, p), jacobian_cache = nothing
     )
     # get gradients for every component
     len = length(vgf)
     zero_vector!(M, X, p)
-    Y = allocate(M, X)
-    if isnothing(jacobian_cache)
-        for j in 1:len
-            get_gradient!(M, Y, vgf, p, j) # gradient of f_{i,j}
-            X .+= value_cache[j] .* Y
-        end
-    else
-        get_vector!(M, Y, p, jacobian_cache' * value_cache, vgf.jacobian_type.basis)
-    end
+
     # compute robustifier derivative
     (_, b, _) = get_robustifier_values(r, sum(abs2, value_cache))
-    X .*= b
+    if isnothing(jacobian_cache)
+        Y = allocate(M, X)
+        for j in 1:len
+            get_gradient!(M, Y, vgf, p, j) # gradient of f_{i,j}
+            X .+= (b * value_cache[j]) .* Y
+        end
+    else
+        Jc = jacobian_cache' * value_cache
+        Jc .*= b
+        add_vector!(M, X, p, Jc, vgf.jacobian_type.basis)
+    end
     return X
 end
 function _get_gradient!(
@@ -574,6 +575,12 @@ function get_cost(
     cost = norm(linear_operator(M, lmsco, p, X) + vector_field(M, lmsco, p))^2 / 2
     # add the damping term
     cost += (lmsco.penalty / 2) * norm(M, p, X)^2
+    return cost
+end
+function get_cost(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, ::ZeroTangentVector
+    )
+    cost = norm(vector_field(M, lmsco, p))^2 / 2
     return cost
 end
 """

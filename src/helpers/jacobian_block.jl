@@ -48,6 +48,66 @@ Base.size(v::BlockNonzeroVector) = (v.n_entries,)
 Base.length(v::BlockNonzeroVector) = v.n_entries
 Base.axes(v::BlockNonzeroVector) = (Base.OneTo(v.n_entries),)
 
+function Base.copy(v::BlockNonzeroVector)
+    N = length(v.blocks)
+    blocks = ntuple(k -> copy(v.blocks[k]), Val(N))
+    return BlockNonzeroVector(v.n_entries, v.starts, blocks)
+end
+
+function _has_same_layout(v1::BlockNonzeroVector, v2::BlockNonzeroVector)
+    return (
+        v1.n_entries == v2.n_entries &&
+            v1.starts == v2.starts &&
+            all(length(v1.blocks[k]) == length(v2.blocks[k]) for k in eachindex(v1.blocks))
+    )
+end
+
+function _copyto_scaled!(dest::BlockNonzeroVector, src::BlockNonzeroVector, a::Number)
+    _has_same_layout(dest, src) ||
+        throw(DimensionMismatch("BlockNonzeroVector layouts do not match for broadcasted assignment."))
+    for k in eachindex(dest.blocks)
+        dest.blocks[k] .= src.blocks[k] .* a
+    end
+    return dest
+end
+
+function _copyto_mul!(
+        dest::BlockNonzeroVector,
+        bc::Base.Broadcast.Broadcasted{Style, Axes, typeof(*)},
+    ) where {Style, Axes}
+    bc = Base.Broadcast.instantiate(bc)
+    length(bc.args) == 2 ||
+        throw(MethodError(copyto!, (dest, bc)))
+    x, y = bc.args
+    if x isa BlockNonzeroVector && y isa Number
+        return _copyto_scaled!(dest, x, y)
+    elseif x isa Number && y isa BlockNonzeroVector
+        return _copyto_scaled!(dest, y, x)
+    end
+    throw(MethodError(copyto!, (dest, bc)))
+end
+
+function Base.copyto!(
+        dest::BlockNonzeroVector,
+        bc::Base.Broadcast.Broadcasted{Style, Axes, typeof(*)},
+    ) where {Style <: Base.Broadcast.AbstractArrayStyle{0}, Axes}
+    return _copyto_mul!(dest, bc)
+end
+
+function Base.copyto!(
+        dest::BlockNonzeroVector,
+        bc::Base.Broadcast.Broadcasted{Nothing, Axes, typeof(*)},
+    ) where {Axes}
+    return _copyto_mul!(dest, bc)
+end
+
+function Base.copyto!(
+        dest::BlockNonzeroVector,
+        bc::Base.Broadcast.Broadcasted{Style, Axes, typeof(*)},
+    ) where {Style <: Base.Broadcast.BroadcastStyle, Axes}
+    return _copyto_mul!(dest, bc)
+end
+
 function Base.show(io::IO, v::BlockNonzeroVector)
     block_reprs = [repr(b; context = :limit => false) for b in v.blocks]
     blocks_str = join(block_reprs, ", ")
@@ -191,6 +251,68 @@ end
 
 Base.size(A::BlockNonzeroMatrix) = (A.n_rows, A.n_cols)
 
+function Base.copy(A::BlockNonzeroMatrix)
+    N = length(A.blocks)
+    blocks = ntuple(k -> copy(A.blocks[k]), Val(N))
+    return BlockNonzeroMatrix(A.n_rows, A.n_cols, A.row_starts, A.col_starts, blocks)
+end
+
+function _has_same_layout(A1::BlockNonzeroMatrix, A2::BlockNonzeroMatrix)
+    return (
+        A1.n_rows == A2.n_rows &&
+            A1.n_cols == A2.n_cols &&
+            A1.row_starts == A2.row_starts &&
+            A1.col_starts == A2.col_starts &&
+            all(size(A1.blocks[k]) == size(A2.blocks[k]) for k in eachindex(A1.blocks))
+    )
+end
+
+function _copyto_scaled!(dest::BlockNonzeroMatrix, src::BlockNonzeroMatrix, a::Number)
+    _has_same_layout(dest, src) ||
+        throw(DimensionMismatch("BlockNonzeroMatrix layouts do not match for broadcasted assignment."))
+    for k in eachindex(dest.blocks)
+        dest.blocks[k] .= src.blocks[k] .* a
+    end
+    return dest
+end
+
+function _copyto_mul!(
+        dest::BlockNonzeroMatrix,
+        bc::Base.Broadcast.Broadcasted{Style, Axes, typeof(*)},
+    ) where {Style, Axes}
+    bc = Base.Broadcast.instantiate(bc)
+    length(bc.args) == 2 ||
+        throw(MethodError(copyto!, (dest, bc)))
+    x, y = bc.args
+    if x isa BlockNonzeroMatrix && y isa Number
+        return _copyto_scaled!(dest, x, y)
+    elseif x isa Number && y isa BlockNonzeroMatrix
+        return _copyto_scaled!(dest, y, x)
+    end
+    throw(MethodError(copyto!, (dest, bc)))
+end
+
+function Base.copyto!(
+        dest::BlockNonzeroMatrix,
+        bc::Base.Broadcast.Broadcasted{Style, Axes, typeof(*)},
+    ) where {Style <: Base.Broadcast.AbstractArrayStyle{0}, Axes}
+    return _copyto_mul!(dest, bc)
+end
+
+function Base.copyto!(
+        dest::BlockNonzeroMatrix,
+        bc::Base.Broadcast.Broadcasted{Nothing, Axes, typeof(*)},
+    ) where {Axes}
+    return _copyto_mul!(dest, bc)
+end
+
+function Base.copyto!(
+        dest::BlockNonzeroMatrix,
+        bc::Base.Broadcast.Broadcasted{Style, Axes, typeof(*)},
+    ) where {Style <: Base.Broadcast.BroadcastStyle, Axes}
+    return _copyto_mul!(dest, bc)
+end
+
 function Base.show(io::IO, A::BlockNonzeroMatrix)
     block_reprs = [repr(b; context = :limit => false) for b in A.blocks]
     blocks_str = join(block_reprs, ", ")
@@ -244,9 +366,10 @@ function LinearAlgebra.mul!(
             local_rows_B =
                 (overlap_start - first(rows_B) + 1):(overlap_end - first(rows_B) + 1)
 
-            C[cols_A, cols_B] .+= α .* (
-                A.blocks[i][local_rows_A, :]' * B.blocks[j][local_rows_B, :]
-            )
+            C_view = view(C, cols_A, cols_B)
+            A_view = view(A.blocks[i], local_rows_A, :)
+            B_view = view(B.blocks[j], local_rows_B, :)
+            mul!(C_view, A_view', B_view, α, one(eltype(C)))
         end
     end
     return C

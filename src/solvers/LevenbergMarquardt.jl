@@ -274,7 +274,7 @@ function step_solver!(
         lms.damping_term *= lms.β
         return lms
     end
-    model_improvement = (get_cost(lms.sub_problem, zero_vector(M, lms.p)) - get_cost(lms.sub_problem, lms.direction)) / 2
+    model_improvement = (get_cost(lms.sub_problem, ZeroTangentVector()) - get_cost(lms.sub_problem, lms.direction)) / 2
     if model_improvement < lms.minimum_acceptable_model_improvement
         # Model improvement insufficient, reject step and increase damping term
         lms.damping_term *= lms.β
