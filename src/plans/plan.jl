@@ -162,6 +162,7 @@ include("interior_point_Newton_plan.jl")
 include("quasi_newton_plan.jl")
 include("mesh_adaptive_plan.jl")
 include("nonlinear_least_squares_plan.jl")
+include("nls_coordinates_plan.jl")
 include("difference_of_convex_plan.jl")
 include("Douglas_Rachford_plan.jl")
 

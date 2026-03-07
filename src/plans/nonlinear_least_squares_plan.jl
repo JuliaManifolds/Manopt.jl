@@ -472,13 +472,16 @@ is the adjoint Jacobian.
 * `penalty::Real`: the damping term ``λ``
 * `ε::Real`:       stabilization for ``α ≤ 1-ε`` in the rescaling of the Jacobian, that
 * `mode::Symbol`:  which ode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
+* `value_cache`:   a vector to store the residuals ``F(p)`` at the current point `p` internally to avoid recomputations
 
 ## Constructor
 
     LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default )
 
 """
-mutable struct LevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R}} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
+mutable struct LevenbergMarquardtLinearSurrogateObjective{
+        E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R},
+    } <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
     objective::TO
     penalty::R
     ε::R
@@ -600,16 +603,15 @@ end
 
 # TODO: Write docs.
 function get_gradient(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        value_cache = get_residuals(M, lmsco.objective, p)
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
     Y = zero_vector(M, p)
-    return get_gradient!(M, Y, lmsco, p, X; value_cache = value_cache)
+    return get_gradient!(M, Y, lmsco, p, X)
 end
 function get_gradient!(
-        M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
-        value_cache = get_residuals(M, lmsco.objective, p),
+        M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
+    value_cache = lmsco.value_cache
     nlso = lmsco.objective
     # For every block
     zero_vector!(M, Y, p)
@@ -762,7 +764,8 @@ function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNorm
     o = get_objective(dmp) # implicit: SymmetricSystem ...
     linear_operator!(M, cnss.A, o, p, cnss.basis)
     vector_field!(M, cnss.b, o, p, cnss.basis)
-    cnss.linsolve!!(cnss.c, cnss.A, -cnss.b)
+    cnss.b .*= -1
+    cnss.linsolve!!(cnss.c, cnss.A, cnss.b)
     return cnss
 end
 # Maybe a bit too precise, but in this case we get a coefficient vector and we want a tangent vector
@@ -826,7 +829,7 @@ function linear_normal_operator!(
     # For every block
     zero_vector!(M, Y, p)
     Y_cache = zero_vector(M, p)
-    get_residuals!(M, lmsco.value_cache, nlso, p)
+    # lmsco.value_cache has been filled in step_solver! of LevenbergMarquardt, so we can just use it here
     start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
@@ -1037,7 +1040,7 @@ function linear_operator!(
     Y_cache = zero_vector(M, p)
     # TODO: use the actual basis? store it in the VGF instead maybe?
     c_cache = allocate_result(M, get_coordinates, p, X, DefaultOrthonormalBasis())
-    get_residuals!(M, lmsco.value_cache, nlso, p)
+    # lmsco.value_cache has been filled in step_solver! of LevenbergMarquardt, so we can just use it here
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
@@ -1135,7 +1138,7 @@ function normal_vector_field!(
     # For every block
     zero_vector!(M, X, p)
     Z = copy(M, p, X)
-    get_residuals!(M, lmsco.value_cache, nlso, p)
+    # lmsco.value_cache has been filled in step_solver! of LevenbergMarquardt, so we can just use it here
     Y_cache = zero_vector(M, p)
     start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)

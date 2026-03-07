@@ -197,10 +197,12 @@ function LevenbergMarquardt!(
         α_mode::Symbol = :Default,
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
         sub_evaluation::AbstractEvaluationType = InplaceEvaluation(),
+        sub_objective_constructor = LevenbergMarquardtLinearSurrogateObjective,
         sub_objective = SymmetricLinearSystem(
-            LevenbergMarquardtLinearSurrogateObjective(
-                nlso; penalty = damping_term_min, ε = ε, mode = α_mode, residuals = copy(initial_residual_values)
-            )
+            sub_objective_constructor(
+                nlso; penalty = damping_term_min, ε = ε, mode = α_mode,
+                residuals = initial_residual_values
+            ),
         ),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_state = if isnothing(linear_subsolver!)

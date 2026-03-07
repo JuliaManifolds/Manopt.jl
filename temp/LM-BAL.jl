@@ -508,6 +508,7 @@ function run_bundle_adjustment(data::BALDataset)
         debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
         stopping_criterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-8),
         sub_state = CoordinatesNormalSystemState(M; A = A),
+        sub_objective_constructor = Manopt.LevenbergMarquardtLinearCoordinatesSurrogateObjective,
     )
 
     return q
