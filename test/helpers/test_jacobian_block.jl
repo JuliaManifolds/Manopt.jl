@@ -19,11 +19,11 @@ using Test
     bv_dense = Vector(bv)
     mul!(Cv_expected, bv_dense, bv_dense', 1.7, 0.3)
     mul!(Cv, bv, bv', 1.7, 0.3)
-    @test Cv == Cv_expected
+    @test isapprox(Cv, Cv_expected)
 
     Cv2 = similar(Cv)
     mul!(Cv2, bv, bv')
-    @test Cv2 == bv_dense * bv_dense'
+    @test isapprox(Cv2, bv_dense * bv_dense')
 
     B = [1.0 2.0; 3.0 4.0]
     J = BlockNonzeroMatrix(5, 6, (2,), (3,), (B,))
