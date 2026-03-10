@@ -247,7 +247,9 @@ function get_cost(
         vf = zeros(number_eltype(p), n)
         vector_field!(M, vf, lnsco.objective, p)
         add_linear_operator_coord!(TpM, vf, lnsco.objective, p, cX)
-        return 0.5 * norm(vf)^2
+        cost = 0.5 * norm(vf)^2
+        cost += (lnsco.objective.penalty / 2) * norm(M, p, X)^2
+        return cost
     else
         return 0.5 * norm(M, p, linear_operator(TpM, lnsco.objective, p, X) + vector_field(TpM, lnsco.objective, p))^2
     end

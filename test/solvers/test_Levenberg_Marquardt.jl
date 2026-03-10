@@ -283,8 +283,7 @@ end
         X0 = Manopt.ZeroTangentVector()
         X = get_vector(M, p, [0.3, -0.5], B)
         @test isapprox(get_cost(TpM, slso, X0), get_cost(TpM, slco, X0); atol = 1.0e-12, rtol = 1.0e-12)
-        # TODO: investigate the source of the discrepancy here
-        @test isapprox(get_cost(TpM, slso, X), get_cost(TpM, slco, X); atol = 1.0e-3, rtol = 1.0e-12)
+        @test isapprox(get_cost(TpM, slso, X), get_cost(TpM, slco, X); atol = 1.0e-12, rtol = 1.0e-12)
     end
 
     @testset "WIP test" begin
