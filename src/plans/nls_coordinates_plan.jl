@@ -142,7 +142,7 @@ function add_normal_vector_field_coord!(
     y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
     # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (adding it to c)
     JFt = jacobian_cache'
-    mul!(c, jacobian_cache, y, true, true)
+    mul!(c, JFt, y, true, true)
     return c
 end
 
