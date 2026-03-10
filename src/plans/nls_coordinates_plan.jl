@@ -1,5 +1,5 @@
 @doc """
-    LevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
+    LevenbergMarquardtLinearCoordinatesSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
 
 
 A subobjective similar to `LevenbergMarquardtLinearSurrogateObjective` but which uses
@@ -56,18 +56,25 @@ function linear_normal_operator!(
     nlso = get_objective(lmsco.objective)
     # For every block
     fill!(A, 0)
-    for (o, r) in zip(nlso.objective, nlso.robustifier)
-        add_linear_normal_operator_coord!(M, A, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
+    start = 0
+    for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
+        len_o = length(o)
+        add_linear_normal_operator_coord!(
+            M, A, o, r, p, B; value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)), jacobian_cache = jc,
+            ε = lmsco.ε, mode = lmsco.mode
+        )
+        start += len_o
     end
     # Finally add the damping term
     (penalty != 0) && (LinearAlgebra.diagview(A) .+= penalty)
     return A
 end
+
 """
     add_linear_normal_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol
+        value_cache, jacobian_cache, ε::Real, mode::Symbol
     )
 
 Accumulate the contribution of a single block (vectorial function with its robustifier) to
@@ -77,7 +84,7 @@ for the given block.
 function add_linear_normal_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol
+        value_cache, jacobian_cache, ε::Real, mode::Symbol
     )
     a = value_cache # evaluate residuals F(p)
     F_sq = sum(abs2, a)
@@ -85,14 +92,13 @@ function add_linear_normal_operator_coord!(
     _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
     # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     # (a) J_F is n-by-d so we have to allocate – where could we maybe store something like that and pass it down?
-    JF = get_jacobian(M, o, p; basis = basis)
     # (I - s*a*a')^2 = I + (-2s + s^2*||a||^2) * a*a'
     # so JF' * (ρ' * (I - s*a*a')^2) * JF
     #   = ρ' * (JF'JF) + ρ' * (-2s + s^2*||a||^2) * (JF'a) * (JF'a)'
     rank1_scaling = ρ_prime * (-2 * operator_scaling + operator_scaling^2 * F_sq)
-    mul!(A, JF', JF, ρ_prime, true)
+    mul!(A, jacobian_cache', jacobian_cache, ρ_prime, true)
     if !iszero(rank1_scaling)
-        JFa = JF' * a
+        JFa = jacobian_cache' * a
         mul!(A, JFa, JFa', rank1_scaling, true)
     end
     # damping term is added once after summing up all blocks, so we do not add it here
@@ -107,7 +113,7 @@ function linear_operator!(
 end
 
 function normal_vector_field_coord!(
-        M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p, B::AbstractBasis,
+        M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p,
     )
     nlso = lmsco.objective
     # For every block
@@ -136,8 +142,59 @@ function add_normal_vector_field_coord!(
     y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
     # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (adding it to c)
     JFt = jacobian_cache'
-    mul!(c, JFt, y, true, true)
+    mul!(c, jacobian_cache, y, true, true)
     return c
+end
+
+function normal_vector_field_coord!(
+        M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p, B::AbstractBasis,
+    )
+    nlso = get_objective(lmsco)
+    # For every block
+    fill!(c, 0)
+    start = 0
+    for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
+        len_o = length(o)
+        add_normal_vector_field_coord!(
+            M, c, o, r, p, B;
+            value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)),
+            jacobian_cache = jc, ε = lmsco.ε, mode = lmsco.mode
+        )
+        start += len_o
+    end
+    return c
+end
+
+# for a single block – the actual formula
+@doc "$(_doc_add_normal_vector_field)"
+function add_normal_vector_field_coord!(
+        M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis;
+        value_cache, jacobian_cache, ε::Real, mode::Symbol,
+    )
+    y = copy(value_cache) # evaluate residuals F(p)
+    F_sq = sum(abs2, y)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
+    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    # Compute y = ρ'(p) / (1-α)) F(p) and ...
+    y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
+    # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (inplace of y)
+    mul!(c, jacobian_cache', y, true, true)
+    return c
+end
+
+function vector_field!(
+        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p
+    )
+    nlso = get_objective(lmsco)
+    # Init to zero
+    fill!(y, 0)
+    start = 0
+    # For every block
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        _vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; ε = lmsco.ε, mode = lmsco.mode)
+        start += length(o)
+    end
+    return y
 end
 
 function vector_field!(
@@ -156,7 +213,6 @@ function get_solver_result(
     TpM = get_manifold(dmp)
     M = base_manifold(TpM)
     p = base_point(TpM)
-    @show cnss.c
     return get_vector(M, p, cnss.c, cnss.basis)
 end
 
@@ -167,8 +223,9 @@ function get_cost(
     M = base_manifold(TpM)
     p = base_point(TpM)
     # TODO: optimize?
-    vf = zeros(number_of_coordinates(M, lnsco.objective.basis))
-    vector_field!(M, vf, lnsco, p, lnsco.objective.basis)
+    n = sum(length(o) for o in lnsco.objective.objective.objective)
+    vf = zeros(number_eltype(p), n)
+    vector_field!(M, vf, lnsco.objective, p)
     if lnsco.objective.basis === DefaultOrthonormalBasis()
         # really should work with any orthonormal basis
         return 0.5 * norm(vf)^2
@@ -186,10 +243,10 @@ function get_cost(
     # TODO: optimize?
     if lnsco.objective.basis === DefaultOrthonormalBasis()
         cX = get_coordinates(M, p, X)
-        vf = zeros(number_of_coordinates(M, lnsco.objective.basis))
-        vector_field!(M, vf, lnsco, p, lnsco.objective.basis)
-        add_linear_normal_operator_coord!(TpM, vf, lnsco.objective, p, cX)
-        @show 0.5 * norm(vf)^2
+        n = sum(length(o) for o in lnsco.objective.objective.objective)
+        vf = zeros(number_eltype(p), n)
+        vector_field!(M, vf, lnsco.objective, p)
+        add_linear_operator_coord!(TpM, vf, lnsco.objective, p, cX)
         return 0.5 * norm(vf)^2
     else
         return 0.5 * norm(M, p, linear_operator(TpM, lnsco.objective, p, X) + vector_field(TpM, lnsco.objective, p))^2
@@ -219,7 +276,7 @@ function add_linear_normal_operator_coord!(
 end
 # for a single block – the actual formula - but never with penalty
 function add_linear_normal_operator_coord!(
-        M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX;
+        M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector;
         value_cache, jacobian_cache, ε::Real, mode::Symbol
     )
     a = value_cache # residuals F(p)
@@ -240,7 +297,41 @@ function add_linear_normal_operator_coord!(
     @. b = ρ_prime * (b + coef * a)
 
     # Now apply the adjoint
-    mul!(c, jacobian_cache', b, true, true)
+    mul!(c, jacobian_cache, b, true, true)
     # penalty is added once after summing up all blocks, so we do not add it here
     return c
+end
+
+function add_linear_operator_coord!(
+        M::AbstractManifold, y::AbstractVector, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p, cX::AbstractVector
+    )
+    nlso = get_objective(lmsco)
+    # Init to zero
+    start = 0
+    # lmsco.value_cache has been filled in step_solver! of LevenbergMarquardt, so we can just use it here
+    for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
+        len = length(o)
+        value_cache = view(lmsco.value_cache, (start + 1):(start + len))
+        _add_linear_operator_coord!(
+            M, view(y, (start + 1):(start + len)), o, r, p, cX, value_cache, jc;
+            ε = lmsco.ε, mode = lmsco.mode
+        )
+        start += len
+    end
+    return y
+end
+
+function _add_linear_operator_coord!(
+        M::AbstractManifold, y::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector,
+        value_cache, jacobian_cache; ε::Real, mode::Symbol
+    )
+    F_sq = sum(abs2, value_cache)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    y_cache = jacobian_cache * cX
+    # Compute C y
+    α = sqrt(ρ_prime)
+    t = dot(value_cache, y)
+    @. y += α * (y_cache - operator_scaling * t * value_cache)
+    return y
 end

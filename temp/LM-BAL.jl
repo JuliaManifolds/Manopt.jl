@@ -512,7 +512,7 @@ function run_bundle_adjustment(data::BALDataset)
         return_state = true,
     )
 
-    q = lm_state.p
+    q = get_state(lm_state).p
     return q
 end
 

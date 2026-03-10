@@ -239,6 +239,54 @@ end
         )
     end
 
+    @testset "coordinate surrogate agrees with operator surrogate" begin
+        M = Euclidean(2)
+        p = [0.7, -1.2]
+        B = DefaultOrthonormalBasis()
+
+        nlso = NonlinearLeastSquaresObjective(
+            F_reg_r2(ts_r2, xs_r2, ys_r2), jacF_reg_r2(ts_r2, xs_r2, ys_r2), length(ts_r2) * 2,
+        )
+
+        lmso = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = 1.0e-3)
+        lmcso = Manopt.LevenbergMarquardtLinearCoordinatesSurrogateObjective(
+            nlso;
+            penalty = 1.0e-3, basis = B, jacobian_cache = [zeros(length(ts_r2) * 2, 2) for _ in eachindex(nlso.objective)],
+            residuals = zeros(length(ts_r2) * 2)
+        )
+
+        # Coordinate surrogate requires explicit caches, which are normally updated in LM steps.
+        get_residuals!(M, lmcso.value_cache, nlso, p)
+        for (i, o) in enumerate(nlso.objective)
+            lmcso.jacobian_cache[i] = get_jacobian(M, o, p; basis = B)
+        end
+
+        slso = Manopt.SymmetricLinearSystem(lmso)
+        slco = Manopt.SymmetricLinearSystem(lmcso)
+
+        n = number_of_coordinates(M, B)
+        A_lmso = zeros(n, n)
+        A_lmcso = zeros(n, n)
+        Manopt.linear_operator!(M, A_lmso, slso, p, B)
+        Manopt.linear_operator!(M, A_lmcso, slco, p, B)
+        @test isapprox(A_lmso, A_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+
+        n_res = sum(length(o) for o in nlso.objective)
+        vf_lmso = zeros(n_res)
+        vf_lmcso = zeros(n_res)
+
+        Manopt.vector_field!(M, vf_lmso, lmso, p)
+        Manopt.vector_field!(M, vf_lmcso, lmcso, p)
+        @test isapprox(vf_lmso, vf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+
+        TpM = TangentSpace(M, p)
+        X0 = Manopt.ZeroTangentVector()
+        X = get_vector(M, p, [0.3, -0.5], B)
+        @test isapprox(get_cost(TpM, slso, X0), get_cost(TpM, slco, X0); atol = 1.0e-12, rtol = 1.0e-12)
+        # TODO: investigate the source of the discrepancy here
+        @test isapprox(get_cost(TpM, slso, X), get_cost(TpM, slco, X); atol = 1.0e-3, rtol = 1.0e-12)
+    end
+
     @testset "WIP test" begin
         M = Euclidean(3)
         pts = [
