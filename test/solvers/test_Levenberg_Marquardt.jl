@@ -271,6 +271,12 @@ end
         Manopt.linear_operator!(M, A_lmcso, slco, p, B)
         @test isapprox(A_lmso, A_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
+        nvf_lmso = zeros(n)
+        nvf_lmcso = zeros(n)
+        Manopt.normal_vector_field!(M, nvf_lmso, lmso, p, B)
+        Manopt.normal_vector_field_coord!(M, nvf_lmcso, lmcso, p, B)
+        @test isapprox(nvf_lmso, nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+
         n_res = sum(length(o) for o in nlso.objective)
         vf_lmso = zeros(n_res)
         vf_lmcso = zeros(n_res)
@@ -281,9 +287,34 @@ end
 
         TpM = TangentSpace(M, p)
         X0 = Manopt.ZeroTangentVector()
-        X = get_vector(M, p, [0.3, -0.5], B)
+        cX = [0.3, -0.5]
+        X = get_vector(M, p, cX, B)
         @test isapprox(get_cost(TpM, slso, X0), get_cost(TpM, slco, X0); atol = 1.0e-12, rtol = 1.0e-12)
         @test isapprox(get_cost(TpM, slso, X), get_cost(TpM, slco, X); atol = 1.0e-12, rtol = 1.0e-12)
+
+        # Coordinate normal operator action should match the assembled normal matrix.
+        c_lmso = A_lmso * cX
+        c_lmcso = zeros(n)
+        Manopt.add_linear_normal_operator_coord!(M, c_lmcso, lmcso, p, cX)
+        @test isapprox(c_lmso, c_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+
+        # Coordinate residual-space operator action should match operator-form action.
+        y_lmso = zeros(n_res)
+        Manopt.linear_operator!(M, y_lmso, lmso, p, X)
+        y_lmcso = zeros(n_res)
+        Manopt.add_linear_operator_coord!(M, y_lmcso, lmcso, p, cX)
+        @test isapprox(y_lmso, y_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+
+        # Symmetric system coordinate RHS is minus the coordinate normal vector field.
+        rhs_slco = zeros(n)
+        Manopt.vector_field!(M, rhs_slco, slco, p, B)
+        @test isapprox(rhs_slco, -nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+
+        # Coordinate linear-system solution coefficients map back to the right tangent vector.
+        dmp = DefaultManoptProblem(TpM, slco)
+        cnss = Manopt.solve!(dmp, CoordinatesNormalSystemState(M, p; basis = B))
+        X_sub = get_vector(M, p, cnss.c, B)
+        @test isapprox(M, p, get_solver_result(dmp, cnss), X_sub; atol = 1.0e-12, rtol = 1.0e-12)
     end
 
     @testset "WIP test" begin

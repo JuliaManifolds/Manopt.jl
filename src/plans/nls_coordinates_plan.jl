@@ -147,7 +147,7 @@ function add_normal_vector_field_coord!(
 end
 
 function normal_vector_field_coord!(
-        M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p, B::AbstractBasis,
+        M::AbstractManifold, c::AbstractVector, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p, B::AbstractBasis,
     )
     nlso = get_objective(lmsco)
     # For every block
@@ -299,7 +299,7 @@ function add_linear_normal_operator_coord!(
     @. b = ρ_prime * (b + coef * a)
 
     # Now apply the adjoint
-    mul!(c, jacobian_cache, b, true, true)
+    mul!(c, jacobian_cache', b, true, true)
     # penalty is added once after summing up all blocks, so we do not add it here
     return c
 end
