@@ -31,7 +31,7 @@ using Manopt, Test
     end
     @testset "Huber robustifier" begin
         x = 1.5
-        a = 2 * sqrt(x) - 1; b = 1 / sqrt(x); c = 1 / (2 * x * sqrt(x))
+        a = 2 * sqrt(x) - 1; b = 1 / sqrt(x); c = -1 / (2 * x * sqrt(x))
         @test Manopt.get_robustifier_values(HuberRobustifier(), x) == (a, b, c)
         @test Manopt.get_robustifier_values(HuberRobustifier(), 0.5) == (0.5, 1.0, 0.0)
     end

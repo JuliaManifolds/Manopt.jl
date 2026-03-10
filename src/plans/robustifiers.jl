@@ -261,7 +261,7 @@ function get_robustifier_values(::HuberRobustifier, x::Real)
         return (x, 1.0, 0.0)
     else
         sx = sqrt(x)
-        return (2 * sx - 1, 1 / sx, 1 / (2 * sx * x))
+        return (2 * sx - 1, 1 / sx, -1 / (2 * sx * x))
     end
 end
 

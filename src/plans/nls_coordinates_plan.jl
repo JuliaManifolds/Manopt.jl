@@ -333,7 +333,7 @@ function _add_linear_operator_coord!(
     y_cache = jacobian_cache * cX
     # Compute C y
     α = sqrt(ρ_prime)
-    t = dot(value_cache, y)
+    t = dot(value_cache, y_cache)
     @. y += α * (y_cache - operator_scaling * t * value_cache)
     return y
 end
