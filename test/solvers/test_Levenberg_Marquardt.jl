@@ -388,7 +388,7 @@ end
             nlso = NonlinearLeastSquaresObjective([vgf], [r])
 
             lmso = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = penalty)
-            
+
             lmcso = Manopt.LevenbergMarquardtLinearCoordinatesSurrogateObjective(
                 nlso;
                 penalty = penalty,
