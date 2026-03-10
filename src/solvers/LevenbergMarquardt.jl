@@ -128,6 +128,25 @@ function LevenbergMarquardt(
 end
 calls_with_kwargs(::typeof(LevenbergMarquardt)) = (LevenbergMarquardt!,)
 
+function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso, damping_term_min, ε, α_mode, residuals, jacobian_f)
+    if use_fast_coordinate_subobjective
+        return SymmetricLinearSystem(
+            LevenbergMarquardtLinearCoordinatesSurrogateObjective(
+                nlso; penalty = damping_term_min, ε = ε, mode = α_mode,
+                residuals = residuals,
+                jacobian_cache = jacobian_f,
+            ),
+        )
+    else
+        return SymmetricLinearSystem(
+            LevenbergMarquardtLinearSurrogateObjective(
+                nlso; penalty = damping_term_min, ε = ε, mode = α_mode,
+                residuals = residuals,
+            ),
+        )
+    end
+end
+
 @doc "$(_doc_LM)"
 LevenbergMarquardt!(M::AbstractManifold, args...; kwargs...)
 function LevenbergMarquardt!(
@@ -197,13 +216,8 @@ function LevenbergMarquardt!(
         α_mode::Symbol = :Default,
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
         sub_evaluation::AbstractEvaluationType = InplaceEvaluation(),
-        sub_objective_constructor = LevenbergMarquardtLinearSurrogateObjective,
-        sub_objective = SymmetricLinearSystem(
-            sub_objective_constructor(
-                nlso; penalty = damping_term_min, ε = ε, mode = α_mode,
-                residuals = initial_residual_values
-            ),
-        ),
+        use_fast_coordinate_system::Bool = false,
+        sub_objective = construct_lm_subobjective(use_fast_coordinate_system, nlso, damping_term_min, ε, α_mode, initial_residual_values, initial_jacobian_f),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_state = if isnothing(linear_subsolver!)
             ConjugateResidualState(TangentSpace(M, p), sub_objective)

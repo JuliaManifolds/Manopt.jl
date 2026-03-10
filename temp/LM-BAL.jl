@@ -500,7 +500,7 @@ function run_bundle_adjustment(data::BALDataset)
     A = SparseMatrixCSC{Float64, Int}(undef, n, n)
     # A = Matrix{Float64}(undef, n, n)
 
-    q = LevenbergMarquardt(
+    lm_state = LevenbergMarquardt(
         M, f, p0;
         initial_jacobian_f = [Manopt.allocate_jacobian(M, fi) for fi in f],
         β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
@@ -508,9 +508,11 @@ function run_bundle_adjustment(data::BALDataset)
         debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
         stopping_criterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-8),
         sub_state = CoordinatesNormalSystemState(M; A = A),
-        sub_objective_constructor = Manopt.LevenbergMarquardtLinearCoordinatesSurrogateObjective,
+        use_fast_coordinate_system = true,
+        return_state = true,
     )
 
+    q = lm_state.p
     return q
 end
 
