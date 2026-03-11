@@ -69,9 +69,7 @@ end
     ) where {T}
     length(dest.x) == length(src.x) ||
         throw(DimensionMismatch("ArrayPartition blocks must have matching lengths for in-place addition."))
-    for i in eachindex(dest.x)
-        _axpy_partition!(dest.x[i], src.x[i])
-    end
+    map(_axpy_partition!, dest.x, src.x)
     return dest
 end
 

@@ -193,7 +193,6 @@ function _add_gradient!(
     )
     # get gradients for every component
     len = length(vgf)
-    zero_vector!(M, X, p)
 
     # compute robustifier derivative
     (_, b, _) = get_robustifier_values(r, sum(abs2, value_cache))
@@ -678,7 +677,7 @@ function _get_gradient!(
 end
 
 """
-    default_lm_lin_solve!(sk, JJ, grad_f_c)
+    default_lm_lin_solve!(sk, JJ::AbstractMatrix, grad_f_c)
 
 Solve the system `JJ \\ grad_f_c` where JJ is (mathematically) a symmetric positive
 definite matrix and save the result to `sk`. In case of numerical errors the
@@ -687,7 +686,7 @@ is used.
 
 The function is intended to be used with [`LevenbergMarquardt`](@ref).
 """
-function default_lm_lin_solve!(sk, JJ, grad_f_c)
+function default_lm_lin_solve!(sk, JJ::AbstractMatrix, grad_f_c)
     try
         ldiv!(sk, cholesky(Symmetric(JJ)), grad_f_c)
     catch e

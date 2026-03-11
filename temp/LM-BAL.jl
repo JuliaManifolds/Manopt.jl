@@ -362,6 +362,66 @@ struct jacFi_block_analytical{TD <: BALDataset}
     obs_idx::Int
 end
 
+"""
+    CachedLMSparseSolver()
+
+Cache for repeated sparse LM linear solves with a fixed sparsity pattern.
+Reuses symbolic factorization and updates only numeric values via `cholesky!`.
+"""
+mutable struct CachedLMSparseSolver
+    factorization::Any
+    rowval_objid::UInt
+    colptr_objid::UInt
+    rowval_len::Int
+    colptr_len::Int
+    CachedLMSparseSolver() = new(nothing, 0, 0, -1, -1)
+end
+
+function _solve_lm_cached!(sk, JJ::SparseMatrixCSC, grad_f_c, solver::CachedLMSparseSolver)
+    pattern_changed =
+        solver.rowval_objid != objectid(JJ.rowval) ||
+        solver.colptr_objid != objectid(JJ.colptr) ||
+        solver.rowval_len != length(JJ.rowval) ||
+        solver.colptr_len != length(JJ.colptr)
+
+    if pattern_changed
+        solver.factorization = nothing
+        solver.rowval_objid = objectid(JJ.rowval)
+        solver.colptr_objid = objectid(JJ.colptr)
+        solver.rowval_len = length(JJ.rowval)
+        solver.colptr_len = length(JJ.colptr)
+    end
+
+    try
+        if isnothing(solver.factorization)
+            solver.factorization = cholesky(Symmetric(JJ))
+        else
+            cholesky!(solver.factorization, Symmetric(JJ))
+        end
+        ldiv!(sk, solver.factorization, grad_f_c)
+    catch e
+        if e isa PosDefException
+            sk .= Symmetric(JJ) \ grad_f_c
+        elseif e isa ArgumentError || e isa DimensionMismatch
+            # Structure or dimensions changed; rebuild the cached factorization.
+            solver.factorization = cholesky(Symmetric(JJ))
+            ldiv!(sk, solver.factorization, grad_f_c)
+        else
+            rethrow()
+        end
+    end
+    return sk
+end
+
+function (solver::CachedLMSparseSolver)(sk, JJ::SparseMatrixCSC, grad_f_c)
+    return _solve_lm_cached!(sk, JJ, grad_f_c, solver)
+end
+
+function (solver::CachedLMSparseSolver)(sk, JJ::AbstractMatrix, grad_f_c)
+    # Dense fallback keeps behavior aligned with Manopt default.
+    return Manopt.default_lm_lin_solve!(sk, JJ, grad_f_c)
+end
+
 function (f::jacFi_block_analytical)(
         M::AbstractManifold, J::BlockNonzeroMatrix, p;
         basis_arg::DefaultOrthonormalBasis = DefaultOrthonormalBasis(),
@@ -497,7 +557,8 @@ function run_bundle_adjustment(data::BALDataset)
     hr = fill((1 / 30) ∘ HuberRobustifier(), length(F))
 
     n = manifold_dimension(M)
-    A = SparseMatrixCSC{Float64, Int}(undef, n, n)
+    A = spzeros(n, n)
+    sparse_lm_solver = CachedLMSparseSolver()
     # A = Matrix{Float64}(undef, n, n)
 
     lm_state = LevenbergMarquardt(
@@ -506,8 +567,12 @@ function run_bundle_adjustment(data::BALDataset)
         β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
         robustifier = hr,
         debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
-        stopping_criterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-8),
-        sub_state = CoordinatesNormalSystemState(M; A = A),
+        stopping_criterion = StopAfterIteration(10000) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-8),
+        sub_state = CoordinatesNormalSystemState(
+            M;
+            A = A,
+            linsolve = sparse_lm_solver
+        ),
         use_fast_coordinate_system = true,
         return_state = true,
     )
@@ -575,7 +640,7 @@ end
 
 # run_bundle_adjustment(data1)
 
-data1_sub = subsample_bal(data1, 2)
+data1_sub = subsample_bal(data1, 5)
 run_bundle_adjustment(data1_sub)
 # test_analytical_jacobian_matches_ad(data1_sub)
 
