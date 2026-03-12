@@ -944,7 +944,6 @@ function linear_normal_operator!(
     (penalty != 0) && (LinearAlgebra.diagview(A) .+= penalty)
     return A
 end
-# TODO (RB -> MB|RB, 12/03): Update docs, avoid “accumulate”
 """
     add_linear_normal_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
@@ -952,7 +951,7 @@ end
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
     )
 
-Accumulate the contribution of a single block (vectorial function with its robustifier) to
+Add the contribution of a single block (vectorial function with its robustifier) to
 the linear normal operator, i.e. compute ``A += J_F^*(p)[C^T C J_F(p)[X]]`` in-place of `A`
 for the given block.
 """
@@ -1021,7 +1020,7 @@ Note that this is done per every block (vectorial function with its robustifier)
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
 This can be computed in-place of `y`.
 
-See also [`vector_field`](@ref) for evaluating the corresponding vector field
+See also [`vector_field_residual`](@ref) for evaluating the corresponding vector field
 """
 function linear_operator_residual(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
@@ -1114,7 +1113,7 @@ _doc_add_normal_vector_field = """
     add_normal_vector_field!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
     add_normal_vector_field!(M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis)
 
-Accumulate the contribution of `o` / `r` to the normal linear operator tangent vector in `X` or `c`.
+Add the contribution of `o` / `r` to the normal linear operator tangent vector in `X` or `c`.
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
