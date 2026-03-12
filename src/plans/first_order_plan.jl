@@ -638,7 +638,6 @@ $(_fields(:X; name = "X_old"))
 
 # Constructors
 
-
     MomentumGradientRule(M::AbstractManifold; kwargs...)
     MomentumGradientRule(M::AbstractManifold, p; kwargs...)
 

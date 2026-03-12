@@ -17,9 +17,9 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
         return X .*= -1
     end
     p = ArrayPartition([0.0, 0.0, 1.0], [0.0, 0.0, 1.0])
+    objf = ManifoldAlternatingGradientObjective(f, grad_f)
 
     @testset "Test gradient access" begin
-        objf = ManifoldAlternatingGradientObjective(f, grad_f)
         Pf = DefaultManoptProblem(N, objf)
         objv = ManifoldAlternatingGradientObjective(f, [grad_f1, grad_f2])
         Pv = DefaultManoptProblem(N, objv)

@@ -229,9 +229,9 @@ function status_summary(mho::ManifoldHessianObjective{E}; context = :default) wh
     A second order objective providing a Hessian
 
     ## Functions
-    * cost:           $(mho.cost)
-    * gradient:       $(mho.gradient!!)
-    * Hessian:        $(mho.hessian!!)$(precon_str)"""
+    * cost:    $(_MANOPT_INDENT)$(mho.cost)
+    * gradient:$(_MANOPT_INDENT)$(mho.gradient!!)
+    * Hessian: $(_MANOPT_INDENT)$(mho.hessian!!)$(precon_str)"""
 end
 
 function Base.show(io::IO, mho::ManifoldHessianObjective{E}) where {E}
