@@ -12,7 +12,7 @@
 # I considered re-using `LevenbergMarquardtLinearSurrogateObjective` for this but the main problem
 # is, I can barely reason about the main NLS code. I needed to narrowly focus on one part to
 # understand it somewhat, so refactoring this is too hard for me.
-# Also note that this code is much less generic than yours -- `LevenbergMarquardtLinearCoordinatesSurrogateObjective`
+# Also note that this code is much less generic than yours -- `LevenbergMarquardtLinearSurrogateCoordinatesObjective`
 # assumes consistently working in a single basis. It opens multiple optimization opportunities
 # that I couldn't implement it in the generic `LevenbergMarquardtLinearSurrogateObjective`.
 
@@ -27,7 +27,7 @@
 # TODO (RB -> MB|RB, 12/03): All docs should be thoroughly written
 
 @doc """
-    LevenbergMarquardtLinearCoordinatesSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
+    LevenbergMarquardtLinearSurrogateCoordinatesObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
 
 
 A subobjective similar to `LevenbergMarquardtLinearSurrogateObjective` but which uses
@@ -46,10 +46,10 @@ linear operators.
 
 ## Constructor
 
-    LevenbergMarquardtLinearCoordinatesSurrogateObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default )
+    LevenbergMarquardtLinearSurrogateCoordinatesObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default )
 
 """
-mutable struct LevenbergMarquardtLinearCoordinatesSurrogateObjective{
+mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
         E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R}, TJC <: AbstractVector, TB <: AbstractBasis,
     } <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
     objective::TO
@@ -59,7 +59,7 @@ mutable struct LevenbergMarquardtLinearCoordinatesSurrogateObjective{
     value_cache::TVC
     jacobian_cache::TJC
     basis::TB
-    function LevenbergMarquardtLinearCoordinatesSurrogateObjective(
+    function LevenbergMarquardtLinearSurrogateCoordinatesObjective(
             objective::NonlinearLeastSquaresObjective{E};
             penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default,
             residuals::TVC = zeros(sum(length(o) for o in get_objective(objective).objective)),
@@ -70,17 +70,17 @@ mutable struct LevenbergMarquardtLinearCoordinatesSurrogateObjective{
     end
 end
 # TODO / temp remark: analogue to nlsplan:556
-get_objective(lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective) = lmsco.objective
+get_objective(lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective) = lmsco.objective
 
 # TODO / temp remark: analogue to nlsplan:551
-function set_parameter!(lmlso::LevenbergMarquardtLinearCoordinatesSurrogateObjective, ::Val{:Penalty}, penalty::Real)
+function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateCoordinatesObjective, ::Val{:Penalty}, penalty::Real)
     lmlso.penalty = penalty
     return lmlso
 end
 
 # TODO / temp remark: analogue to nlsplan:551
 function linear_normal_operator!(
-        M::AbstractManifold, A::AbstractMatrix, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p, B::AbstractBasis;
+        M::AbstractManifold, A::AbstractMatrix, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, B::AbstractBasis;
         penalty = lmsco.penalty
     )
     nlso = get_objective(lmsco.objective)
@@ -140,7 +140,7 @@ end
 # same as nlsqplan:1324-1344 - replaces 1334-1344?
 # With a supertype for both sub objectives we could reduce this maybe?
 function linear_operator!(
-        M::AbstractManifold, A::AbstractMatrix, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearCoordinatesSurrogateObjective}, p, B::AbstractBasis;
+        M::AbstractManifold, A::AbstractMatrix, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis;
         penalty::Real = slso.objective.penalty,
     ) where {E <: AbstractEvaluationType}
     return linear_normal_operator!(M, A, slso.objective, p, B; penalty = penalty)
@@ -149,7 +149,7 @@ end
 # TODO (RB -> MB, 12/03):
 # same remarks as for the last function but to nlsqplan:1345-1370, replaces 1358-1370?
 function normal_vector_field_coord!(
-        M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p,
+        M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p,
     )
     nlso = lmsco.objective
     # For every block
@@ -185,7 +185,7 @@ end
 # TODO (RB -> MB, 12/03): This is considered internal the same was as
 # nlsqplan:1216-1249 is?
 function normal_vector_field_coord!(
-        M::AbstractManifold, c::AbstractVector, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p, B::AbstractBasis,
+        M::AbstractManifold, c::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, B::AbstractBasis,
     )
     nlso = get_objective(lmsco)
     # For every block
@@ -223,7 +223,7 @@ end
 # TODO (RB -> MB, 12/03): This is considered internal the same was as
 # very similar but not the same as nlsqplan:1277–1290? Would a supertype for both remove this copy?
 function vector_field!(
-        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p
+        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p
     )
     nlso = get_objective(lmsco)
     # Init to zero
@@ -238,7 +238,7 @@ function vector_field!(
 end
 # TODO (RB -> MB, 12/03): same as nsqplan:1364-1370?
 function vector_field!(
-        M::AbstractManifold, c, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearCoordinatesSurrogateObjective}, p, B::AbstractBasis
+        M::AbstractManifold, c, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis
     ) where {E <: AbstractEvaluationType}
     normal_vector_field_coord!(M, c, slso.objective, p, B)
     c .*= -1
@@ -247,7 +247,7 @@ end
 
 # TODO (RB -> MB, 12/03): same as nslqplan:771-780?
 function get_solver_result(
-        dmp::DefaultManoptProblem{<:TangentSpace, <:SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearCoordinatesSurrogateObjective}},
+        dmp::DefaultManoptProblem{<:TangentSpace, <:SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}},
         cnss::CoordinatesNormalSystemState
     )
     TpM = get_manifold(dmp)
@@ -264,7 +264,7 @@ end
 # MB -> RB, 12/03: Yes, the second case was wrong, created at the time when I was confused
 # about the different variants of `vector_field!`.
 function get_cost(
-        TpM::TangentSpace, lnsco::SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearCoordinatesSurrogateObjective},
+        TpM::TangentSpace, lnsco::SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
         ::ZeroTangentVector
     )
     M = base_manifold(TpM)
@@ -278,7 +278,7 @@ end
 
 # TODO (RB -> MB, 12/03): simliar to nlsqplan:574-581 right?
 function get_cost(
-        TpM::TangentSpace, lnsco::SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearCoordinatesSurrogateObjective},
+        TpM::TangentSpace, lnsco::SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
         X,
     )
     M = base_manifold(TpM)
@@ -296,7 +296,7 @@ end
 
 # TODO (RB -> MB, 12/03): very similar to nslqplan:824–843
 function add_linear_normal_operator_coord!(
-        M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p, cX;
+        M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX;
         penalty::Real = lmsco.penalty,
     )
     nlso = get_objective(lmsco)
@@ -346,7 +346,7 @@ function add_linear_normal_operator_coord!(
 end
 # TODO (RB -> MB, 12/03): This actually does not have an analogon?
 function add_linear_operator_coord!(
-        M::AbstractManifold, y::AbstractVector, lmsco::LevenbergMarquardtLinearCoordinatesSurrogateObjective, p, cX::AbstractVector
+        M::AbstractManifold, y::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector
     )
     nlso = get_objective(lmsco)
     # Init to zero
