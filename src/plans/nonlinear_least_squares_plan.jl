@@ -582,7 +582,7 @@ end
 function get_cost(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, ::ZeroTangentVector
     )
-    cost = norm(vector_field(M, lmsco, p))^2 / 2
+    cost = norm(M, p, vector_field(M, lmsco, p))^2 / 2
     return cost
 end
 """
@@ -703,6 +703,7 @@ end
 #
 # We can do a closed form solution of the Surrogate using \ as soon as we have a basis
 # We can model that as a state of a solver for ease of use
+# TODO / temp remark: move to the coordinates file?
 """
     CoordinatesNormalSystemState <: AbstractManoptSolverState
 
@@ -943,6 +944,7 @@ function linear_normal_operator!(
     (penalty != 0) && (LinearAlgebra.diagview(A) .+= penalty)
     return A
 end
+# TODO (RB -> MB|RB, 12/03): Update docs, avoid “accumulate”
 """
     add_linear_normal_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
