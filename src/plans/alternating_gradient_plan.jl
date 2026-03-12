@@ -164,6 +164,5 @@ function status_summary(mago::ManifoldAlternatingGradientObjective; context = :d
 
     ## Functions
     * cost:    $(_MANOPT_INDENT)$(mago.cost)
-    * gradient:$(_MANOPT_INDENT)$(mago.gradient!!)
-    """
+    * gradient:$(_MANOPT_INDENT)$(mago.gradient!!)"""
 end

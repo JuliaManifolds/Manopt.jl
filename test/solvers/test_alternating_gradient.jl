@@ -47,6 +47,16 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             @test X[N, 2] == grad_f(N, p)[N, 2]
         end
     end
+    @testset "Test show/repr" begin
+        s1 = repr(objf)
+        @test startswith(s1, "ManifoldAlternatingGradientObjective(")
+        @test contains(s1, "AllocatingEvaluation()")
+        @test Manopt.status_summary(objf; context = :short) == s1
+        @test startswith(Manopt.status_summary(objf; context = :inline), "An alternating gradient objective")
+        s2 = Manopt.status_summary(objf)
+        @test startswith(s2, "An alternating gradient objective")
+        @test contains(s2, "## Functions")
+    end
     @testset "Test high level interface" begin
         q = allocate(p)
         copyto!(N, q, p)
