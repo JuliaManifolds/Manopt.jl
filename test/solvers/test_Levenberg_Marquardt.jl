@@ -334,8 +334,8 @@ end
         vf_lmso = zeros(n_res)
         vf_lmcso = zeros(n_res)
 
-        Manopt.vector_field!(M, vf_lmso, lmso, p)
-        Manopt.vector_field!(M, vf_lmcso, lmcso, p)
+        Manopt.vector_field_residual!(M, vf_lmso, lmso, p)
+        Manopt.vector_field_residual!(M, vf_lmcso, lmcso, p)
         @test isapprox(vf_lmso, vf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         TpM = TangentSpace(M, p)
@@ -353,9 +353,9 @@ end
 
         # Coordinate residual-space operator action should match operator-form action.
         y_lmso = zeros(n_res)
-        Manopt.linear_operator!(M, y_lmso, lmso, p, X)
+        Manopt.linear_operator_residual!(M, y_lmso, lmso, p, X)
         y_lmcso = zeros(n_res)
-        Manopt.add_linear_operator_coord!(M, y_lmcso, lmcso, p, cX)
+        Manopt.add_linear_operator_residual_coord!(M, y_lmcso, lmcso, p, cX)
         @test isapprox(y_lmso, y_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         # Symmetric system coordinate RHS is minus the coordinate normal vector field.
@@ -425,8 +425,8 @@ end
 
             vf_lmso = zeros(n_res)
             vf_lmcso = zeros(n_res)
-            Manopt.vector_field!(M, vf_lmso, lmso, p)
-            Manopt.vector_field!(M, vf_lmcso, lmcso, p)
+            Manopt.vector_field_residual!(M, vf_lmso, lmso, p)
+            Manopt.vector_field_residual!(M, vf_lmcso, lmcso, p)
             @test isapprox(vf_lmso, vf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
             TpM = TangentSpace(M, p)
@@ -683,7 +683,7 @@ end
         Y = similar(X)
         Manopt.linear_normal_operator!(M, Y, lmso, p0, X)
 
-        Manopt.vector_field!(M, Y, lmso, p0)
+        Manopt.vector_field_residual!(M, Y, lmso, p0)
         initial_residuals = similar(X, sum(length(o) for o in get_objective(nlso).objective))
 
         sub_objective = Manopt.SymmetricLinearSystem(

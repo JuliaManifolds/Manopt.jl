@@ -574,7 +574,7 @@ where
 function get_cost(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
-    cost = norm(linear_operator(M, lmsco, p, X) + vector_field(M, lmsco, p))^2 / 2
+    cost = norm(linear_operator_residual(M, lmsco, p, X) + vector_field_residual(M, lmsco, p))^2 / 2
     # add the damping term
     cost += (lmsco.penalty / 2) * norm(M, p, X)^2
     return cost
@@ -582,10 +582,7 @@ end
 function get_cost(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, ::ZeroTangentVector
     )
-    #TODO: (MB -> RB) I think the old variant with
-    # cost = norm(vector_field(M, lmsco, p))^2 / 2
-    # was correct
-    cost = norm(M, p, vector_field(M, lmsco, p))^2 / 2
+    cost = norm(vector_field_residual(M, lmsco, p))^2 / 2
     return cost
 end
 """
@@ -1008,10 +1005,10 @@ function add_linear_normal_operator!(
 end
 
 """
-    linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
-    linear_operator(M::AbstractManifold, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
-    linear_operator!(M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
-    linear_operator!(M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
+    linear_operator_residual(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
+    linear_operator_residual(M::AbstractManifold, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
+    linear_operator_residual!(M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
+    linear_operator_residual!(M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
 
 Compute the linear operator ``$(_tex(:Cal, "L"))`` corresponding to the optimality conditions of the
 Levenberg-Marquardt surrogate objective, i.e. the normal conditions
@@ -1026,15 +1023,15 @@ This can be computed in-place of `y`.
 
 See also [`vector_field`](@ref) for evaluating the corresponding vector field
 """
-function linear_operator(
+function linear_operator_residual(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
     nlso = get_objective(lmsco)
     n = sum(length(o) for o in nlso.objective)
     y = zeros(eltype(p), n)
-    return linear_operator!(M, y, lmsco, p, X)
+    return linear_operator_residual!(M, y, lmsco, p, X)
 end
-function linear_operator!(
+function linear_operator_residual!(
         M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
     nlso = get_objective(lmsco)
@@ -1048,7 +1045,7 @@ function linear_operator!(
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        _linear_operator!(
+        _linear_operator_residual!(
             M, view(y, (start + 1):(start + len)), o, r, p, X, value_cache;
             ε = lmsco.ε, mode = lmsco.mode, Y_cache = Y_cache, c_cache = c_cache,
         )
@@ -1057,7 +1054,7 @@ function linear_operator!(
     return y
 end
 # for a single block – the actual formula
-function _linear_operator!(
+function _linear_operator_residual!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
         value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
     )
@@ -1072,7 +1069,7 @@ function _linear_operator!(
     return y
 end
 # Componenwise: Decouple
-function _linear_operator!(
+function _linear_operator_residual!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X,
         value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
     )
@@ -1253,9 +1250,9 @@ function add_normal_vector_field!(
 end
 
 """
-    vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
-    vector_field!(M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
-    vector_field!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
+    vector_field_residual(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
+    vector_field_residual!(M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
+    vector_field_residual!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
 
 Compute the vector field ``y`` corresponding to the Levenberg-Marquardt surrogate objective, i.e.,
 
@@ -1270,15 +1267,15 @@ See also
 * [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling
 * [`linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
 """
-function vector_field(
+function vector_field_residual(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
     )
     nlso = get_objective(lmsco)
     n = sum(length(o) for o in nlso.objective)
     y = zeros(number_eltype(p), n)
-    return vector_field!(M, y, lmsco, p)
+    return vector_field_residual!(M, y, lmsco, p)
 end
-function vector_field!(
+function vector_field_residual!(
         M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
     )
     nlso = get_objective(lmsco)
@@ -1287,13 +1284,13 @@ function vector_field!(
     start = 0
     # For every block
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        _vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; ε = lmsco.ε, mode = lmsco.mode)
+        _vector_field_residual!(M, view(y, (start + 1):(start + length(o))), o, r, p; ε = lmsco.ε, mode = lmsco.mode)
         start += length(o)
     end
     return y
 end
 # for a single block – the actual formula
-function _vector_field!(
+function _vector_field_residual!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
         ε::Real, mode::Symbol,
     )
@@ -1306,7 +1303,7 @@ function _vector_field!(
     return y
 end
 # Componentwise, it decouples, C is diagonal
-function _vector_field!(
+function _vector_field_residual!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
         ε::Real, mode::Symbol,
     )
