@@ -582,6 +582,9 @@ end
 function get_cost(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, ::ZeroTangentVector
     )
+    #TODO: (MB -> RB) I think the old variant with
+    # cost = norm(vector_field(M, lmsco, p))^2 / 2
+    # was correct
     cost = norm(M, p, vector_field(M, lmsco, p))^2 / 2
     return cost
 end

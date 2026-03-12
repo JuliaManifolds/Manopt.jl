@@ -6,10 +6,23 @@
 # Would it make sense to not duplictae this but have the JacobianCache type to decide this?
 # Or would a commmon abstract supertype make sense?
 
+# (MB -> RB, 12/03): This surrogate can be used only by a narrow set of algorithms similar to LM
+# (specifically, it assumes least squares robust structure, penalty term and Triggs correction)
+# I doubt we would find uses for this outside of LM, though it's technically possible.
+# I considered re-using `LevenbergMarquardtLinearSurrogateObjective` for this but the main problem
+# is, I can barely reason about the main NLS code. I needed to narrowly focus on one part to
+# understand it somewhat, so refactoring this is too hard for me.
+# Also note that this code is much less generic than yours -- `LevenbergMarquardtLinearCoordinatesSurrogateObjective`
+# assumes consistently working in a single basis. It opens multiple optimization opportunities
+# that I couldn't implement it in the generic `LevenbergMarquardtLinearSurrogateObjective`.
+
 # TODO (RB -> MB, 12/03): Order functions here alphabetically
 
 # TODO (RB -> MB, 12/03): So now we store a basis (a) here in the objective (b) in the CoordinatesNormalSystemState (c) in keywords basis= of the function calls. This is very very redundant now? We should just do that in _one_ place maybe?
 # on VGF+Robustifier basis is fine but we should check the rest very carefully
+
+# MB -> RB: I'm not sure how to improve this. There is probably too much storage but I lack
+# the design overview to see which bases can be replaced and how.
 
 # TODO (RB -> MB|RB, 12/03): All docs should be thoroughly written
 
@@ -25,7 +38,7 @@ linear operators.
 * `objective`:     the [`NonlinearLeastSquaresObjective`](@ref) to penalize
 * `penalty::Real`: the damping term ``λ``
 * `ε::Real`:       stabilization for ``α ≤ 1-ε`` in the rescaling of the Jacobian, that
-* `mode::Symbol`:  which ode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
+* `mode::Symbol`:  which mode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
 * `value_cache`:   a vector to store the residuals ``F(p)`` at the current point `p` internally to avoid recomputations
 * `jacobian_cache`: a vector to store the coordinate-based Jacobian of the residuals at the
   current point `p` internally to avoid recomputations. If the Jacobian is used as a linear
@@ -89,7 +102,6 @@ end
 
 # TODO (RB -> MB, 12/03): This is considered internal the same was as
 # nlsqplan:845 is?
-# The docs should be changed from accumulate to add
 """
     add_linear_normal_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
@@ -97,7 +109,7 @@ end
         value_cache, jacobian_cache, ε::Real, mode::Symbol
     )
 
-Accumulate the contribution of a single block (vectorial function with its robustifier) to
+Add the contribution of a single block (vectorial function with its robustifier) to
 the linear normal operator, i.e. compute ``A += J_F^*(p)[C^T C J_F(p)[X]]`` in-place of `A`
 for the given block.
 """
@@ -248,6 +260,9 @@ end
 # I think either that function or this one if wrong.
 # The surrogate still maps into Rn, so I think the norm in the second case is wrong?
 # Otherwise the other function is wrong with just calling norm on the vector field? Then that should be the `norm(M, p, ...)` thing?
+
+# MB -> RB, 12/03: Yes, the second case was wrong, created at the time when I was confused
+# about the different variants of `vector_field!`.
 function get_cost(
         TpM::TangentSpace, lnsco::SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearCoordinatesSurrogateObjective},
         ::ZeroTangentVector
@@ -258,12 +273,7 @@ function get_cost(
     n = sum(length(o) for o in lnsco.objective.objective.objective)
     vf = zeros(number_eltype(p), n)
     vector_field!(M, vf, lnsco.objective, p)
-    if lnsco.objective.basis === DefaultOrthonormalBasis()
-        # really should work with any orthonormal basis
-        return 0.5 * norm(vf)^2
-    else
-        return 0.5 * norm(M, p, get_vector(M, p, vf))^2
-    end
+    return 0.5 * norm(vf)^2
 end
 
 # TODO (RB -> MB, 12/03): simliar to nlsqplan:574-581 right?
@@ -274,18 +284,14 @@ function get_cost(
     M = base_manifold(TpM)
     p = base_point(TpM)
     # TODO: optimize?
-    if lnsco.objective.basis === DefaultOrthonormalBasis()
-        cX = get_coordinates(M, p, X)
-        n = sum(length(o) for o in lnsco.objective.objective.objective)
-        vf = zeros(number_eltype(p), n)
-        vector_field!(M, vf, lnsco.objective, p)
-        add_linear_operator_coord!(TpM, vf, lnsco.objective, p, cX)
-        cost = 0.5 * norm(vf)^2
-        cost += (lnsco.objective.penalty / 2) * norm(M, p, X)^2
-        return cost
-    else
-        return 0.5 * norm(M, p, linear_operator(TpM, lnsco.objective, p, X) + vector_field(TpM, lnsco.objective, p))^2
-    end
+    cX = get_coordinates(M, p, X)
+    n = sum(length(o) for o in lnsco.objective.objective.objective)
+    vf = zeros(number_eltype(p), n)
+    vector_field!(M, vf, lnsco.objective, p)
+    add_linear_operator_coord!(TpM, vf, lnsco.objective, p, cX)
+    cost = 0.5 * norm(vf)^2
+    cost += (lnsco.objective.penalty / 2) * norm(M, p, X)^2
+    return cost
 end
 
 # TODO (RB -> MB, 12/03): very similar to nslqplan:824–843
