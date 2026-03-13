@@ -26,24 +26,24 @@ using Manifolds, Manopt, Test
         # Test all (new) possible combinations of vectorial cost and Jacobian
         # (1) Function (F, Gradient), Component (C, Gradients), [J] Coordinate (Jacobian in Basis)
         # (2) [a] allocating [i] in place
-        nlsoFa = NonlinearLeastSquaresObjective(
+        nlsoFa = ManifoldNonlinearLeastSquaresObjective(
             f, JF, 2; jacobian_type = FunctionVectorialType()
         )
-        nlsoFi = NonlinearLeastSquaresObjective(
+        nlsoFi = ManifoldNonlinearLeastSquaresObjective(
             f!,
             JF!,
             2;
             evaluation = InplaceEvaluation(),
             jacobian_type = FunctionVectorialType(),
         )
-        nlsoCa = NonlinearLeastSquaresObjective(
+        nlsoCa = ManifoldNonlinearLeastSquaresObjective(
             [f1, f2],
             [j1, j2],
             2;
             function_type = ComponentVectorialType(),
             jacobian_type = ComponentVectorialType(),
         )
-        nlsoCi = NonlinearLeastSquaresObjective(
+        nlsoCi = ManifoldNonlinearLeastSquaresObjective(
             [f1, f2],
             [j1!, j2!],
             2;
@@ -51,10 +51,10 @@ using Manifolds, Manopt, Test
             jacobian_type = ComponentVectorialType(),
             evaluation = InplaceEvaluation(),
         )
-        nlsoJa = NonlinearLeastSquaresObjective(
+        nlsoJa = ManifoldNonlinearLeastSquaresObjective(
             f, J, 2; jacobian_type = CoordinateVectorialType()
         )
-        nlsoJi = NonlinearLeastSquaresObjective(f!, J!, 2; evaluation = InplaceEvaluation())
+        nlsoJi = ManifoldNonlinearLeastSquaresObjective(f!, J!, 2; evaluation = InplaceEvaluation())
 
         p = [0.5, 0.5]
         V = [0.0, 0.0]

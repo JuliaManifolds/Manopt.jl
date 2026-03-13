@@ -214,7 +214,7 @@ end
     )
     p_r2 = DefaultManoptProblem(
         M,
-        NonlinearLeastSquaresObjective(
+        ManifoldNonlinearLeastSquaresObjective(
             F_reg_r2(ts_r2, xs_r2, ys_r2),
             jacF_reg_r2(ts_r2, xs_r2, ys_r2),
             length(ts_r2) * 2,
@@ -228,7 +228,7 @@ end
 
     p_r2_mut = DefaultManoptProblem(
         M,
-        NonlinearLeastSquaresObjective(
+        ManifoldNonlinearLeastSquaresObjective(
             F_reg_r2!, jacF_reg_r2!, length(ts_r2) * 2; evaluation = InplaceEvaluation()
         ),
     )

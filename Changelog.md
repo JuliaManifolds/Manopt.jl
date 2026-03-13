@@ -6,7 +6,10 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.x] unreleased
+## [0.6.0] unreleased
+
+This is a breaking release in order to move a few parts to a uinified naming and since weæ
+discontinue the `JuMP` extension. It will at some point return as a separate package.
 
 ### Fixed
 
@@ -14,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Unified all `show` methods and their human readable analoga `status_summary` throughout the package (#569)
 * Fixed some text descriptions of a few stopping criteria.
 * unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
+
+### Changes
+
+* `NonlinearLeastSquaresObjective` is now called `ManifoldNonlinearLeastSquaresObjective`.
+
 
 ## [0.5.34] March 3, 2026
 
