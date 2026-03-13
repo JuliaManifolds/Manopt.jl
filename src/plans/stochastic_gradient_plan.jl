@@ -348,6 +348,29 @@ function get_gradient!(
     return X
 end
 
+function Base.show(io::IO, msgo::ManifoldStochasticGradientObjective{E}) where {E}
+    print(io, "ManifoldStochasticGradientObjective(")
+    print(io, msgo.gradient!!)
+    print(io, "; ")
+    if !ismissing(msgo.cost)
+        print(io, "cost = ")
+        print(io, msgo.cost)
+        print(io, ", ")
+    end
+    print(io, _to_kw(E))
+    return print(io, ")")
+end
+function status_summary(msgo::ManifoldStochasticGradientObjective; context = :default)
+    (context === :short) && return repr(msgo)
+    cs = ismissing(msgo.cost) ? "" : "including the cost function"
+    (context === :inline) && return "A stochastic gradient objective $cs."
+    ics = ismissing(msgo.cost) ? "" : "\n* cost:          $(_MANOPT_INDENT)$(msgo.cost)"
+    return """
+    A stochastic gradient objective
+
+    ## Functions$(ics)
+    * subgradient ∂f:$(_MANOPT_INDENT)$(msgo.gradient!!)"""
+end
 """
     AbstractStochasticGradientDescentSolverState <: AbstractManoptSolverState
 

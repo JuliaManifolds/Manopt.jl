@@ -52,21 +52,18 @@ using ManifoldDiff:
     X = log(M, p0, m)
     Ξ = X
 
+    obj1 = PrimalDualManifoldSemismoothNewtonObjective(
+        f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ
+    )
+    obj2 = PrimalDualManifoldSemismoothNewtonObjective(
+        f, prox_f!, Dprox_F!, prox_g_dual!, Dprox_G_dual!, DΛ!, adjoint_DΛ!;
+        evaluation = InplaceEvaluation(),
+    )
+    obj3 = PrimalDualManifoldSemismoothNewtonObjective(
+        f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ, Λ = Λ
+    )
     @testset "test Mutating/Allocation Problem Variants" begin
-        obj1 = PrimalDualManifoldSemismoothNewtonObjective(
-            f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ
-        )
         p1 = TwoManifoldProblem(M, N, obj1)
-        obj2 = PrimalDualManifoldSemismoothNewtonObjective(
-            f,
-            prox_f!,
-            Dprox_F!,
-            prox_g_dual!,
-            Dprox_G_dual!,
-            DΛ!,
-            adjoint_DΛ!;
-            evaluation = InplaceEvaluation(),
-        )
         p2 = TwoManifoldProblem(M, N, obj2)
         x1 = get_differential_primal_prox(p1, 1.0, p0, X)
         x2 = get_differential_primal_prox(p2, 1.0, p0, X)
@@ -81,5 +78,20 @@ using ManifoldDiff:
         get_differential_dual_prox!(p1, ξ1, n, 1.0, ξ0, Ξ)
         get_differential_dual_prox!(p2, ξ2, n, 1.0, ξ0, Ξ)
         @test ξ1 ≈ ξ2 atol = 2 * 1.0e-16
+    end
+    @testset "show/repr and status_summary" begin
+        s1 = repr(obj1)
+        @test startswith(s1, "PrimalDualManifoldSemismoothNewtonObjective(f,")
+        s2 = repr(obj2)
+        @test startswith(s2, "PrimalDualManifoldSemismoothNewtonObjective(f,")
+        @test contains(s2, "InplaceEvaluation")
+        s3 = repr(obj3)
+        @test startswith(s3, "PrimalDualManifoldSemismoothNewtonObjective(f,")
+        @test contains(s3, "Λ = ")
+        s4 = Manopt.status_summary(obj1)
+        @test startswith(s4, "A primal dual semismooth Newton objective")
+        s5 = Manopt.status_summary(obj3)
+        @test startswith(s5, "A primal dual semismooth Newton objective")
+        @test contains(s5, "Λ")
     end
 end

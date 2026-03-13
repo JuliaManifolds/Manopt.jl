@@ -92,8 +92,8 @@ using Manifolds, Manopt, Test
     end
     @testset "show/repr and status_summary" begin
         M = Euclidean(3)
-        f(M,p) = p
-        J_f(M,p) = one(p)
+        f(M, p) = p
+        J_f(M, p) = one(p)
         mnlso = ManifoldNonlinearLeastSquaresObjective(f, J_f, 3)
     end
 end

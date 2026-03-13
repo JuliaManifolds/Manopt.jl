@@ -345,8 +345,7 @@ function status_summary(mnlso::ManifoldNonlinearLeastSquaresObjective; context =
     A nonlinear least squares objective.
 
     ## Vectorial objective
-    $(_in_str(status_summary(mnlso.objective; context = context); indent = 1))
-    """
+    $(_in_str(status_summary(mnlso.objective; context = context); indent = 1))"""
 end
 function Base.show(io::IO, mnlso::ManifoldNonlinearLeastSquaresObjective)
     print(io, "ManifoldNonlinearLeastSquaresObjective(")
