@@ -90,4 +90,10 @@ using Manifolds, Manopt, Test
         # In practice both are the same basis in coordinates, so Jtt stays as iss
         @test J == Jt
     end
+    @testset "show/repr and status_summary" begin
+        M = Euclidean(3)
+        f(M,p) = p
+        J_f(M,p) = one(p)
+        mnlso = ManifoldNonlinearLeastSquaresObjective(f, J_f, 3)
+    end
 end

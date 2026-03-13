@@ -70,7 +70,6 @@ function ManifoldNonlinearLeastSquaresObjective(
     )
     return ManifoldNonlinearLeastSquaresObjective(vgf; kwargs...)
 end
-
 # Cost
 function get_cost(
         M::AbstractManifold,
@@ -337,4 +336,20 @@ function status_summary(lms::LevenbergMarquardtState; context = :default)
     $(status_summary(lms.stop; context = context))
     This indicates convergence: $Conv"""
     return s
+end
+
+function status_summary(mnlso::ManifoldNonlinearLeastSquaresObjective; context = :default)
+    (context === :short) && (return repr(mnlso))
+    (context === :inline) && (return "A nonlinear least squares objective with the internal vector function given by $(status_summary(mnlso.objective; context = context))")
+    return """
+    A nonlinear least squares objective.
+
+    ## Vectorial objective
+    $(_in_str(status_summary(mnlso.objective; context = context); indent = 1))
+    """
+end
+function Base.show(io::IO, mnlso::ManifoldNonlinearLeastSquaresObjective)
+    print(io, "ManifoldNonlinearLeastSquaresObjective(")
+    print(io, mnlso.objective)
+    return print(io, ")")
 end
