@@ -225,9 +225,10 @@ function status_summary(vgf::VectorGradientFunction; context = :default)
     return """
     A function defined on a manifold that maps into a vector space including gradients of the component functions.
 
-    * cost:$(_MANOPT_INDENT)$(vgf.value!!)$(_MANOPT_INDENT)(represented as $(vgf.cost_type)),
-    * gradient(s) or Jacobian:$(_MANOPT_INDENT)$(vgf.jacobian!!)$(_MANOPT_INDENT)(represented as $(vgf.jacobian_type))
-    * dimension:$(_MANOPT_INDENT)$(length(vgf))"""
+    ## Components
+    * cost:                   $(_MANOPT_INDENT)$(vgf.value!!)$(_MANOPT_INDENT)(as $(vgf.cost_type)),
+    * gradient(s) or Jacobian:$(_MANOPT_INDENT)$(vgf.jacobian!!)$(_MANOPT_INDENT)(as $(vgf.jacobian_type))
+    * dimension:              $(_MANOPT_INDENT)$(length(vgf))"""
 end
 function show(io::IO, vgf::VectorGradientFunction{E}) where {E}
     print(io, "VectorGradientFunction("); print(io, vgf.value!!); print(io, ", ")
