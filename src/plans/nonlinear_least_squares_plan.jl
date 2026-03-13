@@ -106,6 +106,16 @@ function NonlinearLeastSquaresObjective(
     )
     return NonlinearLeastSquaresObjective(vgf, robustifier)
 end
+
+"""
+    residuals_count(nlso::NonlinearLeastSquaresObjective)
+
+Return the total number of residuals in [`NonlinearLeastSquaresObjective`](@ref) `nlso`.
+"""
+function residuals_count(nlso::NonlinearLeastSquaresObjective)
+    return sum(length(o) for o in nlso.objective)
+end
+
 # Cost
 function get_cost(
         M::AbstractManifold,
@@ -244,7 +254,7 @@ This can be computed in-place of `v`.
 function get_residuals(
         M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
     )
-    v = zeros(sum(length(o) for o in nlso.objective))
+    v = zeros(residuals_count(nlso))
     return get_residuals!(M, v, nlso, p; kwargs...)
 end
 
@@ -489,7 +499,7 @@ mutable struct LevenbergMarquardtLinearSurrogateObjective{
     function LevenbergMarquardtLinearSurrogateObjective(
             objective::NonlinearLeastSquaresObjective{E};
             penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default,
-            residuals::TVC = zeros(sum(length(o) for o in get_objective(objective).objective)),
+            residuals::TVC = zeros(residuals_count(get_objective(objective))),
         ) where {E, R <: Real, TVC <: AbstractVector}
         return new{E, R, typeof(objective), TVC}(objective, penalty, ε, mode, residuals)
     end
@@ -1026,7 +1036,7 @@ function linear_operator_residual(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
     nlso = get_objective(lmsco)
-    n = sum(length(o) for o in nlso.objective)
+    n = residuals_count(nlso)
     y = zeros(eltype(p), n)
     return linear_operator_residual!(M, y, lmsco, p, X)
 end
@@ -1264,13 +1274,13 @@ Note that this is done per every block (vectorial function with its robustifier)
 
 See also
 * [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling
-* [`linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
+* [`linear_operator_residual`](@ref) for evaluating the corresponding linear operator of the linear system
 """
 function vector_field_residual(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
     )
     nlso = get_objective(lmsco)
-    n = sum(length(o) for o in nlso.objective)
+    n = residuals_count(nlso)
     y = zeros(number_eltype(p), n)
     return vector_field_residual!(M, y, lmsco, p)
 end

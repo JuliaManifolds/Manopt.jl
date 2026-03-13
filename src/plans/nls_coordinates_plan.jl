@@ -62,7 +62,7 @@ mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
     function LevenbergMarquardtLinearSurrogateCoordinatesObjective(
             objective::NonlinearLeastSquaresObjective{E};
             penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default,
-            residuals::TVC = zeros(sum(length(o) for o in get_objective(objective).objective)),
+            residuals::TVC = zeros(residuals_count(get_objective(objective))),
             jacobian_cache::TJC = fill(nothing, length(get_objective(objective).objective)),
             basis::TB = DefaultOrthonormalBasis(),
         ) where {E, R <: Real, TVC <: AbstractVector, TJC <: AbstractVector, TB <: AbstractBasis}
@@ -270,7 +270,7 @@ function get_cost(
     M = base_manifold(TpM)
     p = base_point(TpM)
     # TODO: optimize?
-    n = sum(length(o) for o in lnsco.objective.objective.objective)
+    n = residuals_count(lnsco.objective.objective)
     vf = zeros(number_eltype(p), n)
     vector_field_residual!(M, vf, lnsco.objective, p)
     return 0.5 * norm(vf)^2
@@ -285,7 +285,7 @@ function get_cost(
     p = base_point(TpM)
     # TODO: optimize?
     cX = get_coordinates(M, p, X)
-    n = sum(length(o) for o in lnsco.objective.objective.objective)
+    n = residuals_count(lnsco.objective.objective)
     vf = zeros(number_eltype(p), n)
     vector_field_residual!(M, vf, lnsco.objective, p)
     add_linear_operator_residual_coord!(TpM, vf, lnsco.objective, p, cX)
