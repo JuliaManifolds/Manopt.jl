@@ -32,11 +32,11 @@ mutable struct PrimalDualManifoldSemismoothNewtonObjective{
 end
 function PrimalDualManifoldSemismoothNewtonObjective(
         cost::C, prox_F::PF, diff_prox_F::DPF, prox_G_dual::PG, diff_prox_G_dual::DPG,
-        linearized_forward_operator::LFO, adjoint_linearized_operator::ALO;
+        linearized_forward_operator::LFO, adjoint_linearized_operator::AL;
         Λ::L = missing, evaluation::E = AllocatingEvaluation(),
-    ) where {C, PF, DPF, PG, DPG, LFO, ALO, L, E <: AbstractEvaluationType}
+    ) where {C, PF, DPF, PG, DPG, LFO, AL, L, E <: AbstractEvaluationType}
     return PrimalDualManifoldSemismoothNewtonObjective{
-        E, C, PF, DPF, PG, DPG, LFO, ALO, L,
+        E, C, PF, DPF, PG, DPG, LFO, AL, L,
     }(
         cost, prox_F, diff_prox_F, prox_G_dual,
         diff_prox_G_dual, linearized_forward_operator, adjoint_linearized_operator, Λ,
