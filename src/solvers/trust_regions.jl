@@ -226,8 +226,7 @@ function status_summary(trs::TrustRegionsState; context = :default)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(trs)) – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
-    sub = repr(trs.sub_state)
-    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
+    sub = _in_str(status_summary(trs.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")
     s = """
     # Solver state for `Manopt.jl`s Trust Region Method
     $Iter
@@ -239,8 +238,8 @@ function status_summary(trs::TrustRegionsState; context = :default)
     * retraction method:      $(trs.retraction_method)
     * ρ_regularization:       $(trs.ρ_regularization)
     * trust region radius:    $(trs.trust_region_radius) (max: $(trs.max_trust_region_radius))
-    * sub solver state     :
-        | $(sub)
+    * sub solver state:
+    $(sub)
 
     ## Stopping criterion
     $(status_summary(trs.stop; context = context))

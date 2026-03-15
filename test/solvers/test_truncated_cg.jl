@@ -28,6 +28,6 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @test repr(scn) == "StopWhenCurvatureIsNegative()"
     smi = StopWhenModelIncreased()
     smi1 = Manopt.status_summary(smi)
-    @test smi1 == "Model Increased:$(Manopt._MANOPT_INDENT)not reached"
+    @test startswith(smi1, "A stopping criterion to indicate when the model increased.")
     @test repr(smi) == "StopWhenModelIncreased()"
 end

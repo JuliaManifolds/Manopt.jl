@@ -91,7 +91,15 @@ mutable struct TruncatedConjugateGradientState{T, R <: Real, SC <: StoppingCrite
                 StopWhenModelIncreased(),
             kwargs...,
         ) where {T, R <: Real, F}
-        tcgs = new{T, R, typeof(stopping_criterion), F}()
+        return TruncatedConjugateGradientState(;
+            X = X, trust_region_radius = trust_region_radius, randomize = randomize,
+            (project!) = project!, stopping_criterion = stopping_criterion,
+        )
+    end
+    function TruncatedConjugateGradientState(;
+            X::T, trust_region_radius::R, randomize::Bool, project!::F, stopping_criterion::SC,
+        ) where {T, R <: Real, F, SC <: StoppingCriterion}
+        tcgs = new{T, R, SC, F}()
         tcgs.stop = stopping_criterion
         tcgs.Y = X
         tcgs.trust_region_radius = trust_region_radius
@@ -101,12 +109,22 @@ mutable struct TruncatedConjugateGradientState{T, R <: Real, SC <: StoppingCrite
         return tcgs
     end
 end
+function Base.show(io::IO, tcgs::TruncatedConjugateGradientState)
+    print(io, "TruncatedConjugateGradientState(;")
+    print(io, "(project!) = $(tcgs.project!), ")
+    print(io, "randomize = $(tcgs.randomize), ")
+    print(io, "stopping_criterion = $(tcgs.stop), ")
+    print(io, "trust_region_radius = $(tcgs.trust_region_radius), ")
+    return print(io, "X = $(tcgs.Y))")
+end
 function status_summary(tcgs::TruncatedConjugateGradientState; context = :default)
+    (context === :short) && repr(tcgs)
     i = get_count(tcgs, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(tcgs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && "A solver state for the truncated conjugate gradient descent$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(tcgs.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(tcgs)) – $(Iter) $(has_converged(tcgs) ? "(converged)" : "")")
-    s = """
+    return """
     # Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent
     $Iter
     ## Parameters
@@ -116,8 +134,8 @@ function status_summary(tcgs::TruncatedConjugateGradientState; context = :defaul
     ## Stopping criterion
     $(status_summary(tcgs.stop; context = context))
     This indicates convergence: $Conv"""
-    return s
 end
+
 function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, Y)
     return tcgs.Y = Y
 end
@@ -191,10 +209,11 @@ function get_reason(c::StopWhenResidualIsReducedByFactorOrPower)
     return ""
 end
 function status_summary(c::StopWhenResidualIsReducedByFactorOrPower; context = :default)
-    context === :short && return repr(c)
+    (context === :short) && (return repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "Residual reduced by factor $(c.κ) or power $(c.θ):$(_MANOPT_INDENT)" : "A stopping criterion used within tCG to check whether the residual is reduced by factor $(c.κ) or power 1+$(c.θ)\n$(_MANOPT_INDENT)") * "$s"
+    (context === :inline) && (return "Residual reduced by factor $(c.κ) or power $(c.θ):$(_MANOPT_INDENT)$s")
+    return "A stopping criterion used within tCG to check whether the residual is reduced by factor $(c.κ) or power 1+$(c.θ)\n$(_MANOPT_INDENT)$s"
 end
 function show(io::IO, c::StopWhenResidualIsReducedByFactorOrPower)
     return print(io, "StopWhenResidualIsReducedByFactorOrPower($(c.κ), $(c.θ))")
@@ -276,12 +295,13 @@ function get_reason(c::StopWhenTrustRegionIsExceeded)
     return ""
 end
 function status_summary(c::StopWhenTrustRegionIsExceeded; context = :default)
-    (context == :short) && return repr(c)
+    (context === :short) && (return repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "Trust region exceeded:$(_MANOPT_INDENT)" : "A stopping criterion to stop when the trust region radius ($(c.trr)) is exceeded.\n$(_MANOPT_INDENT)") * "$s"
+    (context === :inline) && (return "Trust region exceeded:$(_MANOPT_INDENT)$s")
+    return "A stopping criterion to stop when the trust region radius (0.0) is exceeded.\n$(_MANOPT_INDENT)$s"
 end
-function show(io::IO, c::StopWhenTrustRegionIsExceeded)
+function show(io::IO, ::StopWhenTrustRegionIsExceeded)
     return print(io, "StopWhenTrustRegionIsExceeded()")
 end
 
@@ -334,10 +354,11 @@ function get_reason(c::StopWhenCurvatureIsNegative)
     return ""
 end
 function status_summary(c::StopWhenCurvatureIsNegative; context = :default)
-    (context == :short) && return repr(c)
+    (context === :short) && (return repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "Curvature is negative:$(_MANOPT_INDENT)" : "A stopping criterion to stop when the is negative\n$(_MANOPT_INDENT)") * "$s"
+    (context === :inline) && (return "Curvature is negative:$(_MANOPT_INDENT)$s")
+    return "A stopping criterion to stop when the is negative\n$(_MANOPT_INDENT)$s"
 end
 function show(io::IO, ::StopWhenCurvatureIsNegative)
     return print(io, "StopWhenCurvatureIsNegative()")
@@ -351,7 +372,7 @@ A functor for testing if the curvature of the model value increased.
 # Fields
 
 $(_fields(:at_iteration))
-* `model_value`stre the last model value
+* `model_value` store the last model value
 * `inc_model_value` store the model value that increased
 
 # Constructor
@@ -391,12 +412,13 @@ function get_reason(c::StopWhenModelIncreased)
     return ""
 end
 function status_summary(c::StopWhenModelIncreased; context = :default)
-    context === :short && return repr(c)
+    (context === :short) && (repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "Model Increased:$(_MANOPT_INDENT)$s"
+    (context === :inline) && (return "Model Increased:$(_MANOPT_INDENT)$s")
+    return "A stopping criterion to indicate when the model increased.\n$(_MANOPT_INDENT)$s"
 end
-function show(io::IO, ::StopWhenModelIncreased)
+function show(io::IO, c::StopWhenModelIncreased)
     return print(io, "StopWhenModelIncreased()")
 end
 
@@ -424,8 +446,8 @@ solve the trust-region subproblem
 
 $(_doc_TCG_subproblem)
 
-on a manifold ``$(_math(:Manifold))nifold)))`` by using the Steihaug-Toint truncated conjugate-gradient (tCG) method.
-This can be done inplace of `X`.
+on a manifold ``$(_math(:Manifold))`` by using the Steihaug-Toint truncated conjugate-gradient (tCG) method.
+This can be done in-place of `X`.
 
 For a description of the algorithm and theorems offering convergence guarantees,
 see [AbsilBakerGallivan:2006, ConnGouldToint:2000](@cite).
