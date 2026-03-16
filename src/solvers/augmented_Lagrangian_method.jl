@@ -170,7 +170,7 @@ function status_summary(alms::AugmentedLagrangianMethodState; context::Symbol = 
     (context === :short) && (return repr(alms))
     i = get_count(alms, :Iterations)
     conv_inl = (i > 0) ? (indicates_convergence(alms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the augmented Lagrandigan mathod$(conv_inl)"
+    (context === :inline) && return "A solver state for the augmented Lagrandigan method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(alms.stop) ? "Yes" : "No"
     s = """
