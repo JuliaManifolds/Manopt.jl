@@ -218,7 +218,7 @@ function get_message(ips::InteriorPointNewtonState)
     return get_message(ips.stepsize)
 end
 # pretty print state info
-function status_summary(ips::InteriorPointNewtonState; context = :default)
+function status_summary(ips::InteriorPointNewtonState; context::Symbol = :default)
     i = get_count(ips, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
@@ -352,7 +352,7 @@ function (cKKTvf::CondensedKKTVectorField)(N, Y, q)
     end
     return Y
 end
-function status_summary(CKKTvf::CondensedKKTVectorField; context = :default)
+function status_summary(CKKTvf::CondensedKKTVectorField; context::Symbol = :default)
     _is_inline(context) && (return repr(CKKTvf))
     return """
     The condensed KKT vector field for the constrained objective
@@ -463,7 +463,7 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     end
     return Y
 end
-function status_summary(CKKTvfJ::CondensedKKTVectorFieldJacobian; context = :default)
+function status_summary(CKKTvfJ::CondensedKKTVectorFieldJacobian; context::Symbol = :default)
     _is_inline(context) && (return repr(CKKTvfJ))
     return """
     The Jacobian of the condensed KKT vector field for the constrained objective
@@ -554,7 +554,7 @@ function show(io::IO, KKTvf::KKTVectorField)
     print(io, KKTvf.cmo)
     return print(io, ")")
 end
-function status_summary(KKTvf::KKTVectorField; context = :default)
+function status_summary(KKTvf::KKTVectorField; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvf))
     return "The KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvf.cmo; context = context))"
 end
@@ -638,7 +638,7 @@ function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
     print(io, KKTvfJ.cmo)
     return print(io, ")")
 end
-function status_summary(KKTvfJ::KKTVectorFieldJacobian; context = :default)
+function status_summary(KKTvfJ::KKTVectorFieldJacobian; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfJ))
     return "The Jacobian of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfJ.cmo; context = context))"
 end
@@ -721,7 +721,7 @@ function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
     print(io, KKTvfAdJ.cmo)
     return print(io, ")")
 end
-function status_summary(KKTvfAdJ::KKTVectorFieldAdjointJacobian; context = :default)
+function status_summary(KKTvfAdJ::KKTVectorFieldAdjointJacobian; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfAdJ))
     return "The adjoint Jacobian of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfAdJ.cmo; context = context))"
 end
@@ -760,7 +760,7 @@ function show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
     print(io, KKTvfNSq.cmo)
     return print(io, ")")
 end
-function status_summary(KKTvfNSq::KKTVectorFieldNormSq; context = :default)
+function status_summary(KKTvfNSq::KKTVectorFieldNormSq; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfNSq))
     return "The KKT vector field in normed squared for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfNSq.cmo; context = context))"
 end
@@ -834,7 +834,7 @@ function show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
     print(io, KKTvfNSqGrad.cmo)
     return print(io, ")")
 end
-function status_summary(KKTvfNSqGrad::KKTVectorFieldNormSqGradient; context = :default)
+function status_summary(KKTvfNSqGrad::KKTVectorFieldNormSqGradient; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfNSqGrad))
     return "The gradient of the KKT vector field in normed squared for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfNSqGrad.cmo; context = context))"
 end
@@ -1017,7 +1017,7 @@ function get_reason(c::StopWhenKKTResidualLess)
     end
     return ""
 end
-function status_summary(swrr::StopWhenKKTResidualLess; context = :default)
+function status_summary(swrr::StopWhenKKTResidualLess; context::Symbol = :default)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "‖F(p, λ, μ)‖ < ε = $(swrr.ε):$(_MANOPT_INDENT)" : "Stop when the KKT resudual is less than ε = $(c.ε)\n$(_MANOPT_INDENT)") * s

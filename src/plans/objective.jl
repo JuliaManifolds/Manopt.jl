@@ -228,9 +228,9 @@ end
 
 # For decorators the human readable version is “transparent” by default, i.e.
 # if no special addition is done, it just prints the human readable string from the child
-function status_summary(io::IO, co::AbstractDecoratedManifoldObjective; context = :default)
+function status_summary(io::IO, co::AbstractDecoratedManifoldObjective; context::Symbol = :default)
     return status_summary(io, get_objective(co, false); context = :default)
 end
-function status_summary(co::AbstractDecoratedManifoldObjective; context = :default)
+function status_summary(co::AbstractDecoratedManifoldObjective; context::Symbol = :default)
     return status_summary(get_objective(co, false))
 end

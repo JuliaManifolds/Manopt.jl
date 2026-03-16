@@ -442,7 +442,7 @@ function MeshAdaptiveDirectSearchState(
 end
 get_iterate(mads::MeshAdaptiveDirectSearchState) = mads.p
 
-function status_summary(mads::MeshAdaptiveDirectSearchState; context = :default)
+function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :default)
     i = get_count(mads, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     _is_inline(context) && (return "$(repr(mads)) – $(Iter) $(has_converged(mads) ? "(converged)" : "")")
@@ -484,7 +484,7 @@ function get_reason(c::StopWhenPollSizeLess)
     end
     return ""
 end
-function status_summary(c::StopWhenPollSizeLess; context = :default)
+function status_summary(c::StopWhenPollSizeLess; context::Symbol = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "Poll step size s < $(c.threshold):$(_MANOPT_INDENT)" : "Stop when the poll step size is less than the threshold $(c.threshold)\n$(_MANOPT_INDENT)") * s

@@ -269,7 +269,7 @@ function set_iterate!(pdsn::PrimalDualSemismoothNewtonState, p)
     return pdsn
 end
 
-function status_summary(pdsns::PrimalDualSemismoothNewtonState; context = :default)
+function status_summary(pdsns::PrimalDualSemismoothNewtonState; context::Symbol = :default)
     i = get_count(pdsns, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pdsns.stop) ? "Yes" : "No"
@@ -305,7 +305,7 @@ function Base.show(io::IO, pdmssno::PrimalDualManifoldSemismoothNewtonObjective{
     print(io, _to_kw(E))
     return print(io, ")")
 end
-function status_summary(pdmssno::PrimalDualManifoldSemismoothNewtonObjective; context = :default)
+function status_summary(pdmssno::PrimalDualManifoldSemismoothNewtonObjective; context::Symbol = :default)
     (context === :short) && return repr(pdmssno)
     (context === :inline) && return "A primal dual semismooth Newton objective"
     Λs = ismissing(pdmssno.Λ!!) ? "" : "\n* Λ:                $(_MANOPT_INDENT)$(pdmssno.Λ!!)"

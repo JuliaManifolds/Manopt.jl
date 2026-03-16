@@ -313,8 +313,8 @@ for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverSt
 """
 abstract type AbstractStateAction end
 
-status_summary(asa::AbstractStateAction; context = :default) = repr(asa)
-status_summary(io::IO, asa::AbstractStateAction; context = :default) = print(io, status_summary(asa; context = context))
+status_summary(asa::AbstractStateAction; context::Symbol = :default) = repr(asa)
+status_summary(io::IO, asa::AbstractStateAction; context::Symbol = :default) = print(io, status_summary(asa; context = context))
 
 Base.show(io::IO, ::MIME"text/plain", asa::AbstractStateAction) = status_summary(io::IO, asa; context = :default)
 

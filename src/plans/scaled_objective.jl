@@ -138,7 +138,7 @@ function Base.show(io::IO, scaled_objective::ScaledManifoldObjective)
         io, "ScaledManifoldObjective($(repr(scaled_objective.objective)), $(scaled_objective.scale))",
     )
 end
-function status_summary(scaled_objective::ScaledManifoldObjective; context = :default)
+function status_summary(scaled_objective::ScaledManifoldObjective; context::Symbol = :default)
     # short and inline
     context === :short && (return "$(scaled_objective.scale) * $(status_summary(scaled_objective.objective; context = context))")
     context === :inline && (return "$(status_summary(scaled_objective.objective; context = context)) scaled by a factor of $(scaled_objective.scale)")

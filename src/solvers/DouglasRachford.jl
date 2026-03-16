@@ -107,8 +107,11 @@ mutable struct DouglasRachfordState{
         )
     end
 end
-function status_summary(drs::DouglasRachfordState; context = :default)
+function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
+    (context === :short) && return repr(drs)
     i = get_count(drs, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(drs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the Douglas Rachford solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     refl_e = drs.reflection_evaluation == AllocatingEvaluation() ? "allocating" : "in place"
     Conv = indicates_convergence(drs.stop) ? "Yes" : "No"

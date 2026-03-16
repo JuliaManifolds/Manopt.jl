@@ -25,7 +25,7 @@ function show(io::IO, tmp::TwoManifoldProblem)
     print(io, ", "); show(io, tmp.objective)
     return print(io, ")")
 end
-function status_summary(tmp::TwoManifoldProblem; context = :default)
+function status_summary(tmp::TwoManifoldProblem; context::Symbol = :default)
     _is_inline(context) && return "An optimization problem to minimize $(tmp.objective) using a primal manifold $(tmp.first_manifold) and a dual manifold $(tmp.second_manifold)."
     return """
     An optimization problem for Manopt.jl requiring a primal and a dual manifold
@@ -408,7 +408,7 @@ function adjoint_linearized_operator!(
     return adjoint_linearized_operator!(M, N, X, get_objective(admo, false), m, n, Y)
 end
 
-function status_summary(pdmo::PrimalDualManifoldObjective; context = :default)
+function status_summary(pdmo::PrimalDualManifoldObjective; context::Symbol = :default)
     both_missing = ismissing(pdmo.Λ!!) && ismissing(pdmo.linearized_forward_operator!!)
     _is_inline(context) && ("A primal dual objective with a cost of f+g, a prox for f, a prox for the dual of g, as well as $(!ismissing(pdmo.Λ!!) ? "an operator Λ," : "") $(!ismissing(pdmo.linearized_forward_operator!!) ? "DΛ, " : "")$(!both_missing ? "and " : "")an adjoint D^*Λ")
 

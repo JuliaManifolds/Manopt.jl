@@ -183,7 +183,7 @@ function get_proximal_map!(
     mpo.proximal_maps!!(M, q, λ, p)
     return q
 end
-function status_summary(mpo::ManifoldProximalMapObjective; context = :default)
+function status_summary(mpo::ManifoldProximalMapObjective; context::Symbol = :default)
     return "A proximal map objective for a cost with $(mpo.number_of_proxes) proximal maps"
 end
 function show(io::IO, mpo::ManifoldProximalMapObjective{E}) where {E}

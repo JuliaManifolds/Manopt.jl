@@ -85,7 +85,7 @@ function Base.show(io::IO, mpgo::ManifoldProximalGradientObjective{E}) where {E}
     return print(io, ")")
 end
 
-function status_summary(mpgo::ManifoldProximalGradientObjective{E}; context = :default) where {E}
+function status_summary(mpgo::ManifoldProximalGradientObjective{E}; context::Symbol = :default) where {E}
     (context === :short) && repr(mpgo)
     s = "A proximal gradient objective `f = g + h`, where `g` is smooth and `h` is possibly nonsmooth."
     (context === :inline) && (return s)
@@ -375,7 +375,7 @@ function set_iterate!(pgms::ProximalGradientMethodState, M, p)
     return pgms
 end
 
-function status_summary(pgms::ProximalGradientMethodState; context = :default)
+function status_summary(pgms::ProximalGradientMethodState; context::Symbol = :default)
     i = get_count(pgms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
@@ -729,7 +729,7 @@ function get_reason(c::StopWhenGradientMappingNormLess)
     return ""
 end
 
-function status_summary(c::StopWhenGradientMappingNormLess; context = :default)
+function status_summary(c::StopWhenGradientMappingNormLess; context::Symbol = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "|G| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient mapping norm is less then a tolerance.\n$(_MANOPT_INDENT)") * s

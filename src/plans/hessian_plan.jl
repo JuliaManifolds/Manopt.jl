@@ -222,7 +222,7 @@ update_hessian!(M, f, p, p_proposal, X) = f
 
 update_hessian_basis!(M, f, p) = f
 
-function status_summary(mho::ManifoldHessianObjective{E}; context = :default) where {E}
+function status_summary(mho::ManifoldHessianObjective{E}; context::Symbol = :default) where {E}
     _is_inline(context) && return "A second order objective with cost, gradient$(isnothing(mho.preconditioner!!) ? ", and" : "") Hessian$(isnothing(mho.preconditioner!!) ? "" : ", and a preconditioner")"
     precon_str = isnothing(mho.preconditioner!!) ? "" : "\n* preconditioner: $(mho.preconditioner!!)"
     return """

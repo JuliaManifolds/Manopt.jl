@@ -140,7 +140,7 @@ function get_reason(sc::StopWhenLagrangeMultiplierLess)
     return ""
 end
 
-function status_summary(sc::StopWhenLagrangeMultiplierLess; context = :default)
+function status_summary(sc::StopWhenLagrangeMultiplierLess; context::Symbol = :default)
     s = (sc.at_iteration >= 0) ? "reached" : "not reached"
     msg = "Lagrange multipliers"
     isnothing(sc.names) && (msg *= " with tolerances $(sc.tolerances)")

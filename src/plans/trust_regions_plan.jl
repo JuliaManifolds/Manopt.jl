@@ -96,7 +96,7 @@ function Base.show(io::IO, trmo::TrustRegionModelObjective)
     print(io, trmo.objective)
     return print(io, ")")
 end
-function status_summary(trmo::TrustRegionModelObjective; context = :default)
+function status_summary(trmo::TrustRegionModelObjective; context::Symbol = :default)
     (context === :short) && return repr(arcmo)
     (context === :inline) && return "The (tangent space) model for the trust region solver for the objective $(status_summary(arcmo.objective; context = context))"
     return """

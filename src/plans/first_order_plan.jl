@@ -510,7 +510,7 @@ function get_cost_and_gradient!(
 
     return error("$mfo seems to either have no access to a cost or a gradient")
 end
-function status_summary(mfo::ManifoldFirstOrderObjective; context = :default)
+function status_summary(mfo::ManifoldFirstOrderObjective; context::Symbol = :default)
     _is_inline(context) && (return repr(mfo))
     return "A first order objective with $(length(mfo.functions)) provided functions.\n\n" * join([ "* $k:$(_MANOPT_INDENT) $(v)" for (k, v) in zip(keys(mfo.functions), mfo.functions) ], "\n")
 end
@@ -608,7 +608,7 @@ individual one that provides these values.
 abstract type DirectionUpdateRule end
 
 # These are usually short enough that their summary can just be the representation
-status_summary(dru::DirectionUpdateRule; context = :default) = repr(dru)
+status_summary(dru::DirectionUpdateRule; context::Symbol = :default) = repr(dru)
 
 """
     IdentityUpdateRule <: DirectionUpdateRule
@@ -1081,7 +1081,7 @@ end
 function show(io::IO, dg::DebugGradient)
     return print(io, "DebugGradient(; format=\"$(dg.format)\", at_init=$(dg.at_init))")
 end
-function status_summary(dg::DebugGradient; context = :default)
+function status_summary(dg::DebugGradient; context::Symbol = :default)
     _is_inline(context) && (return "(:Gradient, \"$(dg.format)\")")
     return "A DebugAction to print the gradient at the current iterate “$(dg.format)”"
 end

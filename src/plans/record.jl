@@ -74,7 +74,7 @@ end
 function RecordSolverState(s::S, symbol::Symbol) where {S <: AbstractManoptSolverState}
     return RecordSolverState{S}(s; RecordFactory(get_state(s), symbol)...)
 end
-function status_summary(rst::RecordSolverState; context = :default)
+function status_summary(rst::RecordSolverState; context::Symbol = :default)
     _is_inline(context) && (return "a RecordSolverState for $(status_summary(rst.state; context = context))")
     if length(rst.recordDictionary) > 0
         return """
@@ -738,8 +738,9 @@ function (rsr::RecordStoppingReason)(
     return (length(s) > 0) && record_or_reset!(rsr, s, k)
 end
 show(io::IO, ::RecordStoppingReason) = print(io, "RecordStoppingReason()")
-function status_summary(di::RecordStoppingReason; context = :default)
-    return (_is_inline(context) ? ":Stop" : "A record action to record the stopping reason")
+function status_summary(di::RecordStoppingReason; context::Symbol = :default)
+    (context === :short) && return ":Stop"
+    return "A record action to record the stopping reason"
 end
 @doc """
     RecordTime <: RecordAction
@@ -780,10 +781,10 @@ end
 function show(io::IO, ri::RecordTime)
     return print(io, "RecordTime(; mode=:$(ri.mode))")
 end
-function status_summary(ri::RecordTime; context = :default)
+function status_summary(ri::RecordTime; context::Symbol = :default)
     (context == :short) && return (ri.mode === :iterative ? ":IterativeTime" : ":Time")
     # Inline and Default:
-    return "A Rectord action for recording times" * (ri.mode == :iterative ? " iteratively" : ".")
+    return "A Record action for recording times" * (ri.mode == :iterative ? " iteratively" : ".")
 end
 #
 # Factory

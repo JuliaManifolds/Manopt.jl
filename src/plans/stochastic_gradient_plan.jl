@@ -360,7 +360,7 @@ function Base.show(io::IO, msgo::ManifoldStochasticGradientObjective{E}) where {
     print(io, _to_kw(E))
     return print(io, ")")
 end
-function status_summary(msgo::ManifoldStochasticGradientObjective; context = :default)
+function status_summary(msgo::ManifoldStochasticGradientObjective; context::Symbol = :default)
     (context === :short) && return repr(msgo)
     cs = ismissing(msgo.cost) ? "" : "including the cost function"
     (context === :inline) && return "A stochastic gradient objective $cs."

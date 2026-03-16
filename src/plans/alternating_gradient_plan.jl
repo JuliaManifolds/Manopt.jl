@@ -156,7 +156,7 @@ function Base.show(io::IO, mago::ManifoldAlternatingGradientObjective{E}) where 
     print(io, _to_kw(E))
     return print(io, ")")
 end
-function status_summary(mago::ManifoldAlternatingGradientObjective; context = :default)
+function status_summary(mago::ManifoldAlternatingGradientObjective; context::Symbol = :default)
     (context === :short) && (return repr(mago))
     (context === :inline) && (return "An alternating gradient objective on a manifold.")
     return """

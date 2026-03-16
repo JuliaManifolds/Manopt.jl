@@ -134,7 +134,7 @@ function Base.show(io::IO, doco::ManifoldDifferenceOfConvexObjective{E}) where {
     end
     return print(io, ")")
 end
-function status_summary(doco::ManifoldDifferenceOfConvexObjective; context = :default)
+function status_summary(doco::ManifoldDifferenceOfConvexObjective; context::Symbol = :default)
     (context === :short) && (return repr(doco))
     gs = isnothing(doco.gradient!!) ? "" : "including a gradient of the smooth component"
     (context === :inline) && (return "A difference of convex objective on a manifold $gs")
@@ -389,7 +389,7 @@ function Base.show(io::IO, dcpo::ManifoldDifferenceOfConvexProximalObjective{E})
     end
     return print(io, ")")
 end
-function status_summary(dcpo::ManifoldDifferenceOfConvexProximalObjective; context = :default)
+function status_summary(dcpo::ManifoldDifferenceOfConvexProximalObjective; context::Symbol = :default)
     (context === :short) && (return repr(dcpo))
     cs = isnothing(dcpo.cost) ? "" : "an overall cost"
     gs = isnothing(dcpo.gradient!!) ? "" : "an overall gradient"

@@ -142,7 +142,7 @@ function get_reason(c::StopAfter)
     end
     return ""
 end
-function status_summary(c::StopAfter; context = :default)
+function status_summary(c::StopAfter; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = (has_stopped ? "reached" : "not reached")
@@ -204,7 +204,7 @@ function get_reason(c::StopAfterIteration)
     end
     return ""
 end
-function status_summary(c::StopAfterIteration; context = :default)
+function status_summary(c::StopAfterIteration; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -332,7 +332,7 @@ function get_reason(c::StopWhenChangeLess)
     end
     return ""
 end
-function status_summary(c::StopWhenChangeLess; context = :default)
+function status_summary(c::StopWhenChangeLess; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -400,7 +400,7 @@ function get_reason(c::StopWhenCostChangeLess)
     end
     return ""
 end
-function status_summary(c::StopWhenCostChangeLess; context = :default)
+function status_summary(c::StopWhenCostChangeLess; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -450,7 +450,7 @@ function get_reason(c::StopWhenCostLess)
     end
     return ""
 end
-function status_summary(c::StopWhenCostLess; context = :default)
+function status_summary(c::StopWhenCostLess; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -541,7 +541,7 @@ function get_reason(sc::StopWhenEntryChangeLess)
     end
     return ""
 end
-function status_summary(sc::StopWhenEntryChangeLess; context = :default)
+function status_summary(sc::StopWhenEntryChangeLess; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -662,7 +662,7 @@ function get_reason(c::StopWhenGradientChangeLess)
     end
     return ""
 end
-function status_summary(c::StopWhenGradientChangeLess; context = :default)
+function status_summary(c::StopWhenGradientChangeLess; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -763,7 +763,7 @@ function get_reason(c::StopWhenGradientNormLess)
     return ""
 end
 indicates_convergence(c::StopWhenGradientNormLess) = true
-function status_summary(c::StopWhenGradientNormLess; context = :default)
+function status_summary(c::StopWhenGradientNormLess; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -821,7 +821,7 @@ function get_reason(c::StopWhenStepsizeLess)
     end
     return ""
 end
-function status_summary(c::StopWhenStepsizeLess; context = :default)
+function status_summary(c::StopWhenStepsizeLess; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -876,7 +876,7 @@ function get_reason(c::StopWhenCostNaN)
     end
     return ""
 end
-function status_summary(c::StopWhenCostNaN; context = :default)
+function status_summary(c::StopWhenCostNaN; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -920,7 +920,7 @@ function get_reason(c::StopWhenIterateNaN)
     return ""
 end
 indicates_convergence(c::StopWhenIterateNaN) = false
-function status_summary(c::StopWhenIterateNaN; context = :default)
+function status_summary(c::StopWhenIterateNaN; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -973,7 +973,7 @@ function get_reason(c::StopWhenSmallerOrEqual)
     end
     return ""
 end
-function status_summary(c::StopWhenSmallerOrEqual; context = :default)
+function status_summary(c::StopWhenSmallerOrEqual; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -1022,7 +1022,7 @@ function get_reason(c::StopWhenSubgradientNormLess)
     end
     return ""
 end
-function status_summary(c::StopWhenSubgradientNormLess; context = :default)
+function status_summary(c::StopWhenSubgradientNormLess; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -1078,7 +1078,7 @@ function get_reason(c::StopWhenAll)
     end
     return ""
 end
-function status_summary(c::StopWhenAll; context = :default)
+function status_summary(c::StopWhenAll; context::Symbol = :default)
     if context == :short
         return join(
             [
@@ -1197,7 +1197,7 @@ function get_reason(c::StopWhenAny)
     end
     return ""
 end
-function status_summary(c::StopWhenAny; context = :default)
+function status_summary(c::StopWhenAny; context::Symbol = :default)
     if context == :short
         return join(
             [
@@ -1419,7 +1419,7 @@ end
 function Base.show(io::IO, sc::StopWhenRepeated)
     return print(io, "StopWhenRepeated($(typeof(sc.stopping_criterion)), $(sc.n); consecutive=$(sc.consecutive))")
 end
-function status_summary(sc::StopWhenRepeated; context = :default)
+function status_summary(sc::StopWhenRepeated; context::Symbol = :default)
     (context == :short) && return "StopWhenRepeated($(repr(sc.stopping_criterion)))×$(sc.n)"
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -1522,7 +1522,7 @@ end
 function Base.show(io::IO, sc::StopWhenCriterionWithIterationCondition)
     return print(io, "StopWhenCriterionWithIterationCondition($(typeof(sc.stopping_criterion)), $(sc.comp))")
 end
-function status_summary(sc::StopWhenCriterionWithIterationCondition; context = :default)
+function status_summary(sc::StopWhenCriterionWithIterationCondition; context::Symbol = :default)
     (context == :short) && return repr(sc)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"

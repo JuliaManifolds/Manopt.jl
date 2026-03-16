@@ -322,7 +322,7 @@ function (c::StopWhenFirstOrderProgress)(
     prog && (c.at_iteration = k)
     return prog
 end
-function status_summary(c::StopWhenFirstOrderProgress; context = :default)
+function status_summary(c::StopWhenFirstOrderProgress; context::Symbol = :default)
     (context == :short) && return repr(sc)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"

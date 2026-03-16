@@ -221,8 +221,11 @@ function get_message(dcs::TrustRegionsState)
     # for now only the sub solver might have messages
     return get_message(dcs.sub_state)
 end
-function status_summary(trs::TrustRegionsState; context = :default)
+function status_summary(trs::TrustRegionsState; context::Symbol = :default)
+    (context === :short) && return repr(trs)
     i = get_count(trs, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(trs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the trust region solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(trs)) – $(Iter) $(has_converged(trs) ? "(converged)" : "")")

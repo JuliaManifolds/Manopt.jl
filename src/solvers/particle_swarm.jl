@@ -114,8 +114,11 @@ mutable struct ParticleSwarmState{
         return s
     end
 end
-function status_summary(pss::ParticleSwarmState; context = :default)
+function status_summary(pss::ParticleSwarmState; context::Symbol = :default)
+    (context === :short) && return repr(pss)
     i = get_count(pss, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(pss.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the particle swarm solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pss.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(pss)) – $(Iter) $(has_converged(pss) ? "(converged)" : "")")
@@ -408,7 +411,7 @@ function get_reason(c::StopWhenSwarmVelocityLess)
     end
     return ""
 end
-function status_summary(c::StopWhenSwarmVelocityLess; context = :default)
+function status_summary(c::StopWhenSwarmVelocityLess; context::Symbol = :default)
     has_stopped = (c.at_iteration >= 0) && (norm(c.velocity_norms) < c.threshold)
     s = has_stopped ? "reached" : "not reached"
     return "swarm velocity norm < $(c.threshold):$(_MANOPT_INDENT)$s"

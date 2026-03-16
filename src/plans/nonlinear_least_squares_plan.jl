@@ -317,7 +317,7 @@ mutable struct LevenbergMarquardtState{
     end
 end
 
-function status_summary(lms::LevenbergMarquardtState; context = :default)
+function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)
     i = get_count(lms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(lms.stop) ? "Yes" : "No"
@@ -338,7 +338,7 @@ function status_summary(lms::LevenbergMarquardtState; context = :default)
     return s
 end
 
-function status_summary(mnlso::ManifoldNonlinearLeastSquaresObjective; context = :default)
+function status_summary(mnlso::ManifoldNonlinearLeastSquaresObjective; context::Symbol = :default)
     (context === :short) && (return repr(mnlso))
     (context === :inline) && (return "A nonlinear least squares objective with the internal vector function given by $(status_summary(mnlso.objective; context = context))")
     return """

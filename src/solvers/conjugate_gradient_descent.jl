@@ -8,20 +8,21 @@ function default_stepsize(
         M; retraction_method = retraction_method, initial_stepsize = 1.0
     )
 end
-function status_summary(cgds::ConjugateGradientDescentState; context = :default)
-    _is_inline(context) && repr(cgds)
+function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :default)
+    (context === :short) && (return repr(cgs))
     i = get_count(cgds, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(cgds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the conjugate gradient descent solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cgds.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(cgds)) – $(Iter) $(has_converged(cgds) ? "(converged)" : "")")
-    s = """
+    return """
     # Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver
     $Iter
     ## Parameters
-    * conjugate gradient coefficient: $(cgds.coefficient) (last β=$(cgds.β))
-    * restart condition: $(cgds.restart_condition)
-    * retraction method: $(cgds.retraction_method)
-    * vector transport method: $(cgds.vector_transport_method)
+    * conjugate gradient coefficient:$(_MANOPT_INDENT)$(cgds.coefficient) (last β=$(cgds.β))
+    * restart condition:             $(_MANOPT_INDENT)$(cgds.restart_condition)
+    * retraction method:             $(_MANOPT_INDENT)$(cgds.retraction_method)
+    * vector transport method:       $(_MANOPT_INDENT)$(cgds.vector_transport_method)
 
     ## Stepsize
     $(cgds.stepsize)
@@ -29,7 +30,6 @@ function status_summary(cgds::ConjugateGradientDescentState; context = :default)
     ## Stopping criterion
     $(status_summary(cgds.stop; context = context))
     This indicates convergence: $Conv"""
-    return s
 end
 
 _doc_CG_formula = raw"""

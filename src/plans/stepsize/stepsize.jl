@@ -160,7 +160,7 @@ function show(io::IO, armijo_ls::ArmijoLinesearchStepsize)
         )""",
     )
 end
-function status_summary(armijo_ls::ArmijoLinesearchStepsize; context = :default)
+function status_summary(armijo_ls::ArmijoLinesearchStepsize; context::Symbol = :default)
     # TODO: Refactor
     return "$(armijo_ls)\nand a computed last stepsize of $(armijo_ls.last_stepsize)"
 end

@@ -148,11 +148,13 @@ function get_message(qns::QuasiNewtonState)
     d = "$(length(d) > 0 ? "\n" : "")$(msg3)"
     return d
 end
-function status_summary(qns::QuasiNewtonState; context = :default)
+function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
+    (context === :short) && return repr(qns)
     i = get_count(qns, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(qns.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the quasi Newton solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(qns.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(qns)) – $(Iter) $(has_converged(qns) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Quasi Newton Method
     $Iter

@@ -324,7 +324,7 @@ get_subgradient(bms::ConvexBundleMethodState) = bms.g
 function default_stepsize(M::AbstractManifold, ::Type{ConvexBundleMethodState})
     return ConstantStepsize(M)
 end
-function status_summary(cbms::ConvexBundleMethodState; context = :default)
+function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :default)
     i = get_count(cbms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cbms.stop) ? "Yes" : "No"

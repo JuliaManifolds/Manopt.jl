@@ -113,7 +113,7 @@ function Base.show(io::IO, mso::ManifoldSubgradientObjective{E}) where {E}
     return print(io, ")")
 end
 
-function status_summary(mso::ManifoldSubgradientObjective{E}; context = :default) where {E}
+function status_summary(mso::ManifoldSubgradientObjective{E}; context::Symbol = :default) where {E}
     (context === :short) && repr(mso)
     s = "A subgradient objective `f`"
     (context === :inline) && (return s)

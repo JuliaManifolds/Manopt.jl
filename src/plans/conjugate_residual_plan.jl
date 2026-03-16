@@ -60,7 +60,7 @@ function Base.show(io::IO, slso::SymmetricLinearSystemObjective{E}) where {E}
     return print(io, ")")
 end
 
-function status_summary(slso::SymmetricLinearSystemObjective{E}; context = :default) where {E}
+function status_summary(slso::SymmetricLinearSystemObjective{E}; context::Symbol = :default) where {E}
     _is_inline(context) && (return repr(slso))
     return """
     An objetcive modelling a symmetric linear system Ax=b, i.e. with a symmetric matrix A
@@ -265,7 +265,7 @@ function set_gradient!(crs::ConjugateResidualState, ::AbstractManifold, r)
     return crs
 end
 
-function status_summary(crs::ConjugateResidualState; context = :default)
+function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
     i = get_count(crs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(crs.stop) ? "Yes" : "No"
@@ -365,7 +365,7 @@ function get_reason(swrr::StopWhenRelativeResidualLess)
     end
     return ""
 end
-function status_summary(swrr::StopWhenRelativeResidualLess; context = :default)
+function status_summary(swrr::StopWhenRelativeResidualLess; context::Symbol = :default)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return _is_inline(context) ? "‖r^(k)‖ / c < ε:$(_MANOPT_INDENT)$s" : "A stopping criterion to stop when the relative residual is less than the threshold of $(swrr.ϵ)\n$(_MANOPT_INDENT)$s"

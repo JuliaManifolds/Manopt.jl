@@ -149,11 +149,13 @@ mutable struct NelderMeadState{
         )
     end
 end
-function status_summary(nms::NelderMeadState; context = :default)
+function status_summary(nms::NelderMeadState; context::Symbol = :default)
+    (context === :short) && return repr(nms)
     i = get_count(nms, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(nms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the Nelder-Mead solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(nms.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(nms)) – $(Iter) $(has_converged(nms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Nelder Mead Algorithm
     $Iter
@@ -420,7 +422,7 @@ function get_reason(c::StopWhenPopulationConcentrated)
     end
     return ""
 end
-function status_summary(c::StopWhenPopulationConcentrated; context = :default)
+function status_summary(c::StopWhenPopulationConcentrated; context::Symbol = :default)
     (context === :short) && (return repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"

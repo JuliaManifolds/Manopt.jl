@@ -168,8 +168,11 @@ end
 
 default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = ConstantStepsize(M)
 
-function status_summary(vbns::VectorBundleNewtonState; context = :default)
+function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :default)
+    (context === :short) && return repr(vbns)
     i = get_count(vbns, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(vbns.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the vector bundle Newton solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(vbns.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(vbns)) – $(Iter) $(has_converged(vbns) ? "(converged)" : "")")
@@ -209,8 +212,9 @@ function Base.show(io::IO, vbmp::VectorBundleManoptProblem)
     return io
 end
 
-function status_summary(vbmp::VectorBundleManoptProblem; context = :default)
-    _is_inline(context) && return "A vector bundle problem defined on $(vbmp.manifold) with range $(vbmp.vectorbundle) and newton equation $(vbmp.newton_equation)"
+function status_summary(vbmp::VectorBundleManoptProblem; context::Symbol = :default)
+    (context === :short) && return repr(vbmp)
+    (context === :inline) && return "A vector bundle problem defined on $(vbmp.manifold) with range $(vbmp.vectorbundle) and newton equation $(vbmp.newton_equation)"
     return """
     A vector bundle problem representing a vector bundle newton equation objective
 

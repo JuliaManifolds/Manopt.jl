@@ -117,7 +117,7 @@ function Base.show(io::IO, tcgs::TruncatedConjugateGradientState)
     print(io, "trust_region_radius = $(tcgs.trust_region_radius), ")
     return print(io, "X = $(tcgs.Y))")
 end
-function status_summary(tcgs::TruncatedConjugateGradientState; context = :default)
+function status_summary(tcgs::TruncatedConjugateGradientState; context::Symbol = :default)
     (context === :short) && repr(tcgs)
     i = get_count(tcgs, :Iterations)
     conv_inl = (i > 0) ? (indicates_convergence(tcgs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
@@ -208,7 +208,7 @@ function get_reason(c::StopWhenResidualIsReducedByFactorOrPower)
     end
     return ""
 end
-function status_summary(c::StopWhenResidualIsReducedByFactorOrPower; context = :default)
+function status_summary(c::StopWhenResidualIsReducedByFactorOrPower; context::Symbol = :default)
     (context === :short) && (return repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -294,7 +294,7 @@ function get_reason(c::StopWhenTrustRegionIsExceeded)
     end
     return ""
 end
-function status_summary(c::StopWhenTrustRegionIsExceeded; context = :default)
+function status_summary(c::StopWhenTrustRegionIsExceeded; context::Symbol = :default)
     (context === :short) && (return repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -353,7 +353,7 @@ function get_reason(c::StopWhenCurvatureIsNegative)
     end
     return ""
 end
-function status_summary(c::StopWhenCurvatureIsNegative; context = :default)
+function status_summary(c::StopWhenCurvatureIsNegative; context::Symbol = :default)
     (context === :short) && (return repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -411,7 +411,7 @@ function get_reason(c::StopWhenModelIncreased)
     end
     return ""
 end
-function status_summary(c::StopWhenModelIncreased; context = :default)
+function status_summary(c::StopWhenModelIncreased; context::Symbol = :default)
     (context === :short) && (repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"

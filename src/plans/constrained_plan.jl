@@ -262,7 +262,7 @@ function ConstrainedManifoldObjective(
     return ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h; kwargs...)
 end
 
-function status_summary(cmo::ConstrainedManifoldObjective; context = :default)
+function status_summary(cmo::ConstrainedManifoldObjective; context::Symbol = :default)
     _is_inline(context) && (return "A constrained objective based on $(status_summary(cmo.objective; context = context)) with $(length(cmo.equality_constraints)) equality and $(length(cmo.inequality_constraints)) inequality constraints.")
     s = status_summary(cmo.objective; context = context)
     return """
@@ -382,7 +382,7 @@ function show(io::IO, cmp::ConstrainedManoptProblem)
     return print(io, ")")
 end
 
-function status_summary(cmp::ConstrainedManoptProblem; context = :default)
+function status_summary(cmp::ConstrainedManoptProblem; context::Symbol = :default)
     _is_inline(context) && return "A constrained optimization problem to minimize $(cmp.objective) on the manifold $(cmp.manifold)"
     return """
     A constrained optimization problem for Manopt.jl

@@ -138,11 +138,13 @@ function set_gradient!(s::AdaptiveRegularizationState, X)
     return s
 end
 
-function status_summary(arcs::AdaptiveRegularizationState; context = :default)
+function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :default)
+    (context === :short) && (return repr(arcs))
     i = get_count(arcs, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(tcgs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the adaptive regularization with cubics solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(arcs.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(arcs)) – $(Iter) $(has_converged(arcs) ? "(converged)" : "")")
     sub = status_summary(arcs.sub_state; context = context)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
     s = """
@@ -158,7 +160,7 @@ function status_summary(arcs::AdaptiveRegularizationState; context = :default)
         | $(sub)
 
     ## Stopping criterion
-    $(status_summary(arcs.stop; context = :default))
+    $(status_summary(arcs.stop; context = context))
 
     This indicates convergence: $Conv"""
     return s

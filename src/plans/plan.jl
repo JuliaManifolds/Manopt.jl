@@ -27,7 +27,7 @@ The summary is meant to be used in different contexts
 status_summary(e; context::Symbol = :default)
 
 @doc "$(_doc_status_summary)"
-function status_summary(io::IO, e; context = :default)
+function status_summary(io::IO, e; context::Symbol = :default)
     return print(io, status_summary(e; context = context))
 end
 #

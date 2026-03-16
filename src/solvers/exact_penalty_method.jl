@@ -125,8 +125,11 @@ function set_iterate!(epms::ExactPenaltyMethodState, M, p)
     epms.p = p
     return epms
 end
-function status_summary(epms::ExactPenaltyMethodState; context = :default)
+function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :default)
+    (context === :short) && return repr(epms)
     i = get_count(epms, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(epms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the exact panelty method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(epms.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(epms)) – $(Iter) $(has_converged(epms) ? "(converged)" : "")")

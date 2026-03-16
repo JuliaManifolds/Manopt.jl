@@ -125,8 +125,11 @@ function get_message(dcs::DifferenceOfConvexProximalState)
     # for now only the sub solver might have messages
     return get_message(dcs.sub_state)
 end
-function status_summary(dcps::DifferenceOfConvexProximalState; context = :default)
+function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol = :default)
+    (context === :short) && return repr(dcps)
     i = get_count(dcps, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(dcps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the difference of convex proximal point algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(dcps.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(dcps)) – $(Iter) $(has_converged(dcps) ? "(converged)" : "")")

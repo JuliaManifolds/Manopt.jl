@@ -154,11 +154,14 @@ function Manopt.ChambollePockState(
         vector_transport_method_dual,
     )
 end
-function status_summary(cps::ChambollePockState; context = :default)
+function status_summary(cps::ChambollePockState; context::Symbol = :default)
+    (context === :short) && return repr(cps)
+    i = get_count(cps, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(cps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for Chambolle-Pock algorithm$(conv_inl)"
     i = get_count(cps, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cps.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(cps)) – $(Iter) $(has_converged(cps) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Chambolle-Pock Algorithm
     $Iter

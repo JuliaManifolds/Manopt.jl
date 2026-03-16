@@ -86,11 +86,13 @@ function get_message(dcs::DifferenceOfConvexState)
     return get_message(dcs.sub_state)
 end
 
-function status_summary(dcs::DifferenceOfConvexState; context = :default)
+function status_summary(dcs::DifferenceOfConvexState; context::Symbol = :default)
+    (context === :short) && return repr(s)
     i = get_count(dcs, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(dcs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the differencce of convex algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(dcs.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(dcs)) – $(Iter) $(has_converged(dcs) ? "(converged)" : "")")
     sub = status_summary(dcs.sub_state; context = context)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
     s = """

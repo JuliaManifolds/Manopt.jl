@@ -197,11 +197,13 @@ function CMAESState(
     )
 end
 
-function status_summary(s::CMAESState; context = :default)
+function status_summary(s::CMAESState; context::Symbol = :default)
+    (context === :short) && return repr(s)
     i = get_count(s, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(s.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the conjugate gradient descent solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(s.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(s)) – $(Iter) $(has_converged(s) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy
     $Iter
@@ -571,7 +573,7 @@ function get_reason(c::StopWhenCovarianceIllConditioned)
     end
     return ""
 end
-function status_summary(c::StopWhenCovarianceIllConditioned; context = :default)
+function status_summary(c::StopWhenCovarianceIllConditioned; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = c.at_iteration > 0
     s = has_stopped ? "reached" : "not reached"
@@ -629,7 +631,7 @@ function (c::StopWhenBestCostInGenerationConstant)(
     end
     return false
 end
-function status_summary(c::StopWhenBestCostInGenerationConstant; context = :default)
+function status_summary(c::StopWhenBestCostInGenerationConstant; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
@@ -709,8 +711,8 @@ function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState,
     end
     return false
 end
-function status_summary(c::StopWhenEvolutionStagnates; context = :default)
-    (context == :short) && return repr(sc)
+function status_summary(c::StopWhenEvolutionStagnates; context::Symbol = :default)
+    (context == :short) && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     N = length(c.best_history)
@@ -789,7 +791,7 @@ function (c::StopWhenPopulationStronglyConcentrated)(
     end
     return false
 end
-function status_summary(c::StopWhenPopulationStronglyConcentrated; context = :default)
+function status_summary(c::StopWhenPopulationStronglyConcentrated; context::Symbol = :default)
     context === :short && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
@@ -837,7 +839,7 @@ function (c::StopWhenPopulationDiverges)(::AbstractManoptProblem, s::CMAESState,
     end
     return false
 end
-function status_summary(c::StopWhenPopulationDiverges; context = :default)
+function status_summary(c::StopWhenPopulationDiverges; context::Symbol = :default)
     context === :short && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
@@ -898,7 +900,7 @@ function (c::StopWhenPopulationCostConcentrated)(
     end
     return false
 end
-function status_summary(c::StopWhenPopulationCostConcentrated; context = :default)
+function status_summary(c::StopWhenPopulationCostConcentrated; context::Symbol = :default)
     context === :short && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"

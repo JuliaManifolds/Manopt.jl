@@ -1086,8 +1086,9 @@ function show(
     ) where {S <: AbstractManoptSolverState}
     return print(io, "$(t[2])\n\n$(status_summary(t[1]))")
 end
-function status_summary(smco::SimpleManifoldCachedObjective; context = :default)
-    _is_inline(context) && return "A simple cache objective caching one p, X, and c for $(status_summary(smco.objective; context = context))"
+function status_summary(smco::SimpleManifoldCachedObjective; context::Symbol = :default)
+    (context === :short) && (return repr(smco))
+    (context === :inline) && (return "A simple cache objective caching one p, X, and c for $(status_summary(smco.objective; context = context))")
     s = """
     ## Cache
     A `SimpleManifoldCachedObjective` to cache one point, one tangent vector, and real number
@@ -1097,11 +1098,11 @@ function status_summary(smco::SimpleManifoldCachedObjective; context = :default)
     * the tangent vector is cached:$(_MANOPT_INDENT)$(smco.X_valid ? "Yes" : "No")
     * the cost is cached:$(_MANOPT_INDENT)$(smco.c_valid ? "Yes" : "No")
     """
-    s2 = status_summary(smco.objective; context = :default)
+    s2 = status_summary(smco.objective; context = context)
     length(s2) > 0 && (s2 = "$(s2)\n\n")
     return "$(s2)$(s)"
 end
-function status_summary(mco::ManifoldCachedObjective; context = :default)
+function status_summary(mco::ManifoldCachedObjective; context::Symbol = :default)
     _is_inline(context) && (return repr(mco))
     s = "## Cache\n"
     s2 = status_summary(mco.objective; context = context)

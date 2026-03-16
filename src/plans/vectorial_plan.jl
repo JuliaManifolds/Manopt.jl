@@ -220,7 +220,7 @@ function VectorGradientFunction(
     )
 end
 
-function status_summary(vgf::VectorGradientFunction; context = :default)
+function status_summary(vgf::VectorGradientFunction; context::Symbol = :default)
     _is_inline(context) && (return "A vectorial function including gradients of length $(length(vgf)) represented as $(vgf.cost_type) and gradients as $(vgf.jacobian_type)")
     return """
     A function defined on a manifold that maps into a vector space including gradients of the component functions.
@@ -307,7 +307,7 @@ _vgf_index_to_length(::Colon, n) = n
 _vgf_index_to_length(i::AbstractArray{<:Integer}, n) = length(i)
 _vgf_index_to_length(r::UnitRange{<:Integer}, n) = length(r)
 
-function status_summary(vhf::VectorHessianFunction; context = :default)
+function status_summary(vhf::VectorHessianFunction; context::Symbol = :default)
     _is_inline(context) && (return "A vectorial function of length $(length(vhf)) including gradients and Hessians represented as $(vhf.cost_type), gradients as $(vhf.jacobian_type), and Hessians as $(vhf.hessian_type).")
     return """
     A function defined on a manifold that maps into a vector space including gradients and Hessians of the component functions.

@@ -110,7 +110,7 @@ function Base.show(io::IO, arcmo::AdaptiveRegularizationWithCubicsModelObjective
     print(io, arcmo.σ)
     return print(io, ")")
 end
-function status_summary(arcmo::AdaptiveRegularizationWithCubicsModelObjective; context = :default)
+function status_summary(arcmo::AdaptiveRegularizationWithCubicsModelObjective; context::Symbol = :default)
     (context === :short) && return repr(arcmo)
     (context === :inline) && return "The (tangent space) model for the adaptive regularization with cubics sub problem with parameter σ=$(arcmo.σ) for the objective $(status_summary(arcmo.objective; context = context))"
     return """

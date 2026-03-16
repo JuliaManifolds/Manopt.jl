@@ -374,10 +374,10 @@ end
 function show(io::IO, emo::EmbeddedManifoldObjective)
     return print(io, "EmbeddedManifoldObjective($(emo.objective), $(emo.p), $(emo.X))")
 end
-function status_summary(io::IO, emo::EmbeddedManifoldObjective; context = :default)
+function status_summary(io::IO, emo::EmbeddedManifoldObjective; context::Symbol = :default)
     return print(io, status_summary(emo; context = context))
 end
-function status_summary(emo::EmbeddedManifoldObjective{P, T}; context = :default) where {P, T}
+function status_summary(emo::EmbeddedManifoldObjective{P, T}; context::Symbol = :default) where {P, T}
     _is_inline(context) && return "An embedded objective of $(status_summary(emo.objective; context = context))"
     p_str = !(ismissing(emo.p)) ? "* for a point of type $P" : ""
     X_str = !(ismissing(emo.X)) ? "* for a tangent vector of type $T" : ""
