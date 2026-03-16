@@ -44,8 +44,8 @@ for (iteratively) solving Newton-like equations.
 
 # Fields
 
-* `A!!`: a symmetric, linear operator on the tangent space
-* `b!!`: a gradient function,
+* `A!!`: a symmetric, linear operator on the tangent space, see [`get_linear_operator`](@ref)
+* `b!!`: a tangent vector function, see [`get_vector_field`](@ref)
 
 where `A!!` can work as an allocating operator `(M, p, X) -> Y` or an in-place one `(M, Y, p, X) -> Y`,
 and similarly `b!!` can either be a function `(M, p) -> X` or `(M, X, p) -> X`.
