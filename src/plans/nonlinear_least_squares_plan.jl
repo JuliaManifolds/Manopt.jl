@@ -844,7 +844,7 @@ function get_linear_normal_operator!(
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        add_get_linear_normal_operator!(M, Y, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache)
+        add_linear_normal_operator!(M, Y, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache)
         start += len
     end
     # Finally add the damping term
@@ -852,7 +852,7 @@ function get_linear_normal_operator!(
     return Y
 end
 # for a single block – the actual formula - but never with penalty
-function add_get_linear_normal_operator!(
+function add_linear_normal_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = zero_vector(M, p)
     )
@@ -948,14 +948,14 @@ function get_linear_normal_operator!(
     # For every block
     fill!(A, 0)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        add_get_linear_normal_operator!(M, A, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
+        add_linear_normal_operator!(M, A, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
     end
     # Finally add the damping term
     (penalty != 0) && (LinearAlgebra.diagview(A) .+= penalty)
     return A
 end
 """
-    add_get_linear_normal_operator!(
+    add_linear_normal_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
@@ -965,7 +965,7 @@ Add the contribution of a single block (vectorial function with its robustifier)
 the linear normal operator, i.e. compute ``A += J_F^*(p)[C^T C J_F(p)[X]]`` in-place of `A`
 for the given block.
 """
-function add_get_linear_normal_operator!(
+function add_linear_normal_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
@@ -990,7 +990,7 @@ function add_get_linear_normal_operator!(
     return A
 end
 # For the componentwise variant, the C^TC turns into a diagonal matrix
-function add_get_linear_normal_operator!(
+function add_linear_normal_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         cr::ComponentwiseRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
@@ -1119,9 +1119,9 @@ See also [`get_linear_normal_operator`](@ref) for evaluating the corresponding l
 and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and computation of ``C``.
 """
 
-_doc_add_get_normal_vector_field = """
-    add_get_normal_vector_field!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
-    add_get_normal_vector_field!(M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis)
+_doc_add_normal_vector_field = """
+    add_normal_vector_field!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
+    add_normal_vector_field!(M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis)
 
 Add the contribution of `o` / `r` to the normal linear operator tangent vector in `X` or `c`.
 
@@ -1218,14 +1218,14 @@ function get_normal_vector_field!(
     # For every block
     fill!(c, 0)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        add_get_normal_vector_field!(M, c, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
+        add_normal_vector_field!(M, c, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
     end
     return c
 end
 
 # for a single block – the actual formula
-@doc "$(_doc_add_get_normal_vector_field)"
-function add_get_normal_vector_field!(
+@doc "$(_doc_add_normal_vector_field)"
+function add_normal_vector_field!(
         M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
     )
@@ -1240,7 +1240,7 @@ function add_get_normal_vector_field!(
     return c
 end
 # Compponentwise: decouple, C is a diagonalmatrix
-function add_get_normal_vector_field!(
+function add_normal_vector_field!(
         M::AbstractManifold, c, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, B::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = nothing,
     )

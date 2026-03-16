@@ -279,13 +279,13 @@ end
         Manopt.get_normal_vector_field_coord!(M, nvf_lmcso, lmcso, p, B)
         @test isapprox(nvf_lmso, nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
-        # Directly test add_get_normal_vector_field_coord! (no-basis overload that uses mul!).
+        # Directly test add_normal_vector_field_coord! (no-basis overload that uses mul!).
         len_o = length(nlso.objective[1])
         val_cache = view(lmcso.value_cache, 1:len_o)
         jc = lmcso.jacobian_cache[1]
 
         nvf_direct = zeros(n)
-        Manopt.add_get_normal_vector_field_coord!(
+        Manopt.add_normal_vector_field_coord!(
             M,
             nvf_direct,
             nlso.objective[1],
@@ -301,7 +301,7 @@ end
         # Verify accumulation semantics from mul!(..., true, true).
         seed = fill(0.7, n)
         nvf_acc = copy(seed)
-        Manopt.add_get_normal_vector_field_coord!(
+        Manopt.add_normal_vector_field_coord!(
             M,
             nvf_acc,
             nlso.objective[1],
@@ -314,9 +314,9 @@ end
         )
         @test isapprox(nvf_acc, seed .+ nvf_direct; atol = 1.0e-12, rtol = 1.0e-12)
 
-        # Cross-check with the basis overload of add_get_normal_vector_field_coord!.
+        # Cross-check with the basis overload of add_normal_vector_field_coord!.
         nvf_direct_B = zeros(n)
-        Manopt.add_get_normal_vector_field_coord!(
+        Manopt.add_normal_vector_field_coord!(
             M,
             nvf_direct_B,
             nlso.objective[1],
@@ -348,14 +348,14 @@ end
         # Coordinate normal operator action should match the assembled normal matrix.
         c_lmso = A_lmso * cX
         c_lmcso = zeros(n)
-        Manopt.add_get_linear_normal_operator_coord!(M, c_lmcso, lmcso, p, cX)
+        Manopt.add_linear_normal_operator_coord!(M, c_lmcso, lmcso, p, cX)
         @test isapprox(c_lmso, c_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         # Coordinate residual-space operator action should match operator-form action.
         y_lmso = zeros(n_res)
         Manopt.get_linear_operator!(M, y_lmso, lmso, p, X)
         y_lmcso = zeros(n_res)
-        Manopt.add_get_linear_operator_residual_coord!(M, y_lmcso, lmcso, p, cX)
+        Manopt.add_linear_operator_residual_coord!(M, y_lmcso, lmcso, p, cX)
         @test isapprox(y_lmso, y_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         # Symmetric system coordinate RHS is minus the coordinate normal vector field.

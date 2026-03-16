@@ -89,7 +89,7 @@ function get_linear_normal_operator!(
     start = 0
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len_o = length(o)
-        add_get_linear_normal_operator_coord!(
+        add_linear_normal_operator_coord!(
             M, A, o, r, p, B; value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)), jacobian_cache = jc,
             ε = lmsco.ε, mode = lmsco.mode
         )
@@ -103,7 +103,7 @@ end
 # TODO (RB -> MB, 12/03): This is considered internal the same was as
 # nlsqplan:845 is?
 """
-    add_get_linear_normal_operator_coord!(
+    add_linear_normal_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache, jacobian_cache, ε::Real, mode::Symbol
@@ -113,7 +113,7 @@ Add the contribution of a single block (vectorial function with its robustifier)
 the linear normal operator, i.e. compute ``A += J_F^*(p)[C^T C J_F(p)[X]]`` in-place of `A`
 for the given block.
 """
-function add_get_linear_normal_operator_coord!(
+function add_linear_normal_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache, jacobian_cache, ε::Real, mode::Symbol
@@ -157,7 +157,7 @@ function get_normal_vector_field_coord!(
     start = 0
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len_o = length(o)
-        add_get_normal_vector_field_coord!(
+        add_normal_vector_field_coord!(
             M, c, o, r, p;
             value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)), jacobian_cache = jc, ε = lmsco.ε, mode = lmsco.mode
         )
@@ -166,7 +166,7 @@ function get_normal_vector_field_coord!(
     return c
 end
 
-function add_get_normal_vector_field_coord!(
+function add_normal_vector_field_coord!(
         M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
         value_cache, jacobian_cache, ε::Real, mode::Symbol,
     )
@@ -193,7 +193,7 @@ function get_normal_vector_field_coord!(
     start = 0
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len_o = length(o)
-        add_get_normal_vector_field_coord!(
+        add_normal_vector_field_coord!(
             M, c, o, r, p, B;
             value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)),
             jacobian_cache = jc, ε = lmsco.ε, mode = lmsco.mode
@@ -204,8 +204,8 @@ function get_normal_vector_field_coord!(
 end
 
 # for a single block – the actual formula
-@doc "$(_doc_add_get_normal_vector_field)"
-function add_get_normal_vector_field_coord!(
+@doc "$(_doc_add_normal_vector_field)"
+function add_normal_vector_field_coord!(
         M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis;
         value_cache, jacobian_cache, ε::Real, mode::Symbol,
     )
@@ -288,14 +288,14 @@ function get_cost(
     n = residuals_count(lnsco.objective.objective)
     vf = zeros(number_eltype(p), n)
     get_vector_field!(M, vf, lnsco.objective, p)
-    add_get_linear_operator_residual_coord!(TpM, vf, lnsco.objective, p, cX)
+    add_linear_operator_residual_coord!(TpM, vf, lnsco.objective, p, cX)
     cost = 0.5 * norm(vf)^2
     cost += (lnsco.objective.penalty / 2) * norm(M, p, X)^2
     return cost
 end
 
 # TODO (RB -> MB, 12/03): very similar to nslqplan:824–843
-function add_get_linear_normal_operator_coord!(
+function add_linear_normal_operator_coord!(
         M::AbstractManifold, c::AbstractVector,
         lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector;
         penalty::Real = lmsco.penalty,
@@ -307,7 +307,7 @@ function add_get_linear_normal_operator_coord!(
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        add_get_linear_normal_operator_coord!(
+        add_linear_normal_operator_coord!(
             M, c, o, r, p, cX;
             ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, jacobian_cache = jc
         )
@@ -319,7 +319,7 @@ function add_get_linear_normal_operator_coord!(
 end
 # TODO (RB -> MB, 12/03): very similar to nslqplan:844–871
 # for a single block – the actual formula - but never with penalty
-function add_get_linear_normal_operator_coord!(
+function add_linear_normal_operator_coord!(
         M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector;
         value_cache, jacobian_cache, ε::Real, mode::Symbol
     )
@@ -346,7 +346,7 @@ function add_get_linear_normal_operator_coord!(
     return c
 end
 # TODO (RB -> MB, 12/03): This actually does not have an analogon?
-function add_get_linear_operator_residual_coord!(
+function add_linear_operator_residual_coord!(
         M::AbstractManifold, y::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector
     )
     nlso = get_objective(lmsco)
@@ -358,7 +358,7 @@ function add_get_linear_operator_residual_coord!(
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        _add_get_linear_operator_residual_coord!(
+        _add_linear_operator_residual_coord!(
             M, view(y, (start + 1):(start + len)), o, r, p, cX, value_cache, jc;
             ε = lmsco.ε, mode = lmsco.mode
         )
@@ -367,7 +367,7 @@ function add_get_linear_operator_residual_coord!(
     return y
 end
 # TODO (RB -> MB, 12/03): This actually does not have an analogon?
-function _add_get_linear_operator_residual_coord!(
+function _add_linear_operator_residual_coord!(
         M::AbstractManifold, y::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector,
         value_cache, jacobian_cache; ε::Real, mode::Symbol
     )

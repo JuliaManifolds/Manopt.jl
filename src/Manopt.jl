@@ -186,10 +186,12 @@ Rn(::Val{T}, args...; kwargs...) where {T} = DefaultManifold(args...; kwargs...)
 """
     ZeroTangentVector
 
-A small internal helper type to represent the zero tangent vector to be able to dispatch
-on it in.
+A small internal helper type to represent the zero tangent vector with two advantages
+
+* we avoid to allocate it
+* we can dispatch on it
 """
-struct ZeroTangentVector end
+struct ZeroTangentVector <: ManifoldsBase.AbstractTangentVector end
 
 include("plans/plan.jl")
 # solvers general framework
