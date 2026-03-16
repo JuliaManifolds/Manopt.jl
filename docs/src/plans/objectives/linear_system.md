@@ -14,9 +14,9 @@ Manopt.SymmetricLinearSystem
 ## Internal functions
 
 ```@docs
-Manopt.linear_operator
-Manopt.vector_field
-Manopt.linear_normal_operator
-Manopt.normal_vector_field
-Manopt.normal_vector_field!
+Manopt.get_linear_operator
+Manopt.get_vector_field
+Manopt.get_linear_normal_operator
+Manopt.get_normal_vector_field
+Manopt.get_normal_vector_field!
 ```

@@ -201,8 +201,8 @@ and ``Λ:$(_math(:Manifold)) → $(_math(:Manifold; M = "N"))``.
 """
 
 _doc_ChambollePock = """
-    ChambollePock(M, N, f, p, X, m, n, prox_G, prox_G_dual, adjoint_linear_operator; kwargs...)
-    ChambollePock!(M, N, f, p, X, m, n, prox_G, prox_G_dual, adjoint_linear_operator; kwargs...)
+    ChambollePock(M, N, f, p, X, m, n, prox_G, prox_G_dual, get_adjoint_linear_operator; kwargs...)
+    ChambollePock!(M, N, f, p, X, m, n, prox_G, prox_G_dual, get_adjoint_linear_operator; kwargs...)
 
 
 Perform the Riemannian Chambolle—Pock algorithm.
@@ -265,7 +265,7 @@ function ChambollePock(
         n::Q,
         prox_F::Function,
         prox_G_dual::Function,
-        adjoint_linear_operator::Function;
+        get_adjoint_linear_operator::Function;
         Λ::Union{Function, Missing} = missing,
         linearized_forward_operator::Union{Function, Missing} = missing,
         kwargs...,
@@ -285,7 +285,7 @@ function ChambollePock(
         n2,
         prox_F,
         prox_G_dual,
-        adjoint_linear_operator;
+        get_adjoint_linear_operator;
         Λ = Λ,
         linearized_forward_operator = linearized_forward_operator,
         kwargs...,
@@ -304,7 +304,7 @@ function ChambollePock!(
         n::Q,
         prox_F::Function,
         prox_G_dual::Function,
-        adjoint_linear_operator::Function;
+        get_adjoint_linear_operator::Function;
         Λ::Union{Function, Missing} = missing,
         linearized_forward_operator::Union{Function, Missing} = missing,
         acceleration = 0.05,
@@ -333,7 +333,7 @@ function ChambollePock!(
         cost,
         prox_F,
         prox_G_dual,
-        adjoint_linear_operator;
+        get_adjoint_linear_operator;
         linearized_forward_operator = linearized_forward_operator,
         Λ = Λ,
     )

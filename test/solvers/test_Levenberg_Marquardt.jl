@@ -269,23 +269,23 @@ end
         n = number_of_coordinates(M, B)
         A_lmso = zeros(n, n)
         A_lmcso = zeros(n, n)
-        Manopt.linear_operator!(M, A_lmso, slso, p, B)
-        Manopt.linear_operator!(M, A_lmcso, slco, p, B)
+        Manopt.get_linear_operator!(M, A_lmso, slso, p, B)
+        Manopt.get_linear_operator!(M, A_lmcso, slco, p, B)
         @test isapprox(A_lmso, A_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         nvf_lmso = zeros(n)
         nvf_lmcso = zeros(n)
-        Manopt.normal_vector_field!(M, nvf_lmso, lmso, p, B)
-        Manopt.normal_vector_field_coord!(M, nvf_lmcso, lmcso, p, B)
+        Manopt.get_normal_vector_field!(M, nvf_lmso, lmso, p, B)
+        Manopt.get_normal_vector_field_coord!(M, nvf_lmcso, lmcso, p, B)
         @test isapprox(nvf_lmso, nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
-        # Directly test add_normal_vector_field_coord! (no-basis overload that uses mul!).
+        # Directly test add_get_normal_vector_field_coord! (no-basis overload that uses mul!).
         len_o = length(nlso.objective[1])
         val_cache = view(lmcso.value_cache, 1:len_o)
         jc = lmcso.jacobian_cache[1]
 
         nvf_direct = zeros(n)
-        Manopt.add_normal_vector_field_coord!(
+        Manopt.add_get_normal_vector_field_coord!(
             M,
             nvf_direct,
             nlso.objective[1],
@@ -301,7 +301,7 @@ end
         # Verify accumulation semantics from mul!(..., true, true).
         seed = fill(0.7, n)
         nvf_acc = copy(seed)
-        Manopt.add_normal_vector_field_coord!(
+        Manopt.add_get_normal_vector_field_coord!(
             M,
             nvf_acc,
             nlso.objective[1],
@@ -314,9 +314,9 @@ end
         )
         @test isapprox(nvf_acc, seed .+ nvf_direct; atol = 1.0e-12, rtol = 1.0e-12)
 
-        # Cross-check with the basis overload of add_normal_vector_field_coord!.
+        # Cross-check with the basis overload of add_get_normal_vector_field_coord!.
         nvf_direct_B = zeros(n)
-        Manopt.add_normal_vector_field_coord!(
+        Manopt.add_get_normal_vector_field_coord!(
             M,
             nvf_direct_B,
             nlso.objective[1],
@@ -334,8 +334,8 @@ end
         vf_lmso = zeros(n_res)
         vf_lmcso = zeros(n_res)
 
-        Manopt.vector_field_residual!(M, vf_lmso, lmso, p)
-        Manopt.vector_field_residual!(M, vf_lmcso, lmcso, p)
+        Manopt.get_vector_field!(M, vf_lmso, lmso, p)
+        Manopt.get_vector_field!(M, vf_lmcso, lmcso, p)
         @test isapprox(vf_lmso, vf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         TpM = TangentSpace(M, p)
@@ -348,19 +348,19 @@ end
         # Coordinate normal operator action should match the assembled normal matrix.
         c_lmso = A_lmso * cX
         c_lmcso = zeros(n)
-        Manopt.add_linear_normal_operator_coord!(M, c_lmcso, lmcso, p, cX)
+        Manopt.add_get_linear_normal_operator_coord!(M, c_lmcso, lmcso, p, cX)
         @test isapprox(c_lmso, c_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         # Coordinate residual-space operator action should match operator-form action.
         y_lmso = zeros(n_res)
-        Manopt.linear_operator_residual!(M, y_lmso, lmso, p, X)
+        Manopt.get_linear_operator!(M, y_lmso, lmso, p, X)
         y_lmcso = zeros(n_res)
-        Manopt.add_linear_operator_residual_coord!(M, y_lmcso, lmcso, p, cX)
+        Manopt.add_get_linear_operator_residual_coord!(M, y_lmcso, lmcso, p, cX)
         @test isapprox(y_lmso, y_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         # Symmetric system coordinate RHS is minus the coordinate normal vector field.
         rhs_slco = zeros(n)
-        Manopt.vector_field!(M, rhs_slco, slco, p, B)
+        Manopt.get_vector_field!(M, rhs_slco, slco, p, B)
         @test isapprox(rhs_slco, -nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         # Coordinate linear-system solution coefficients map back to the right tangent vector.
@@ -413,20 +413,20 @@ end
 
             A_lmso = zeros(n, n)
             A_lmcso = zeros(n, n)
-            Manopt.linear_operator!(M, A_lmso, slso, p, B)
-            Manopt.linear_operator!(M, A_lmcso, slco, p, B)
+            Manopt.get_linear_operator!(M, A_lmso, slso, p, B)
+            Manopt.get_linear_operator!(M, A_lmcso, slco, p, B)
             @test isapprox(A_lmso, A_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
             nvf_lmso = zeros(n)
             nvf_lmcso = zeros(n)
-            Manopt.normal_vector_field!(M, nvf_lmso, lmso, p, B)
-            Manopt.normal_vector_field_coord!(M, nvf_lmcso, lmcso, p, B)
+            Manopt.get_normal_vector_field!(M, nvf_lmso, lmso, p, B)
+            Manopt.get_normal_vector_field_coord!(M, nvf_lmcso, lmcso, p, B)
             @test isapprox(nvf_lmso, nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
             vf_lmso = zeros(n_res)
             vf_lmcso = zeros(n_res)
-            Manopt.vector_field_residual!(M, vf_lmso, lmso, p)
-            Manopt.vector_field_residual!(M, vf_lmcso, lmcso, p)
+            Manopt.get_vector_field!(M, vf_lmso, lmso, p)
+            Manopt.get_vector_field!(M, vf_lmcso, lmcso, p)
             @test isapprox(vf_lmso, vf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
             TpM = TangentSpace(M, p)
@@ -681,9 +681,9 @@ end
 
         X = zero_vector(M, p0)
         Y = similar(X)
-        Manopt.linear_normal_operator!(M, Y, lmso, p0, X)
+        Manopt.get_linear_normal_operator!(M, Y, lmso, p0, X)
 
-        Manopt.vector_field_residual!(M, Y, lmso, p0)
+        Manopt.get_vector_field!(M, Y, lmso, p0)
         initial_residuals = similar(X, sum(length(o) for o in get_objective(nlso).objective))
 
         sub_objective = Manopt.SymmetricLinearSystem(

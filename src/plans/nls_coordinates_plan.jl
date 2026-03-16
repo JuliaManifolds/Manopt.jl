@@ -79,7 +79,7 @@ function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateCoordinatesObjec
 end
 
 # TODO / temp remark: analogue to nlsplan:551
-function linear_normal_operator!(
+function get_linear_normal_operator!(
         M::AbstractManifold, A::AbstractMatrix, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, B::AbstractBasis;
         penalty = lmsco.penalty
     )
@@ -89,7 +89,7 @@ function linear_normal_operator!(
     start = 0
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len_o = length(o)
-        add_linear_normal_operator_coord!(
+        add_get_linear_normal_operator_coord!(
             M, A, o, r, p, B; value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)), jacobian_cache = jc,
             ε = lmsco.ε, mode = lmsco.mode
         )
@@ -103,7 +103,7 @@ end
 # TODO (RB -> MB, 12/03): This is considered internal the same was as
 # nlsqplan:845 is?
 """
-    add_linear_normal_operator_coord!(
+    add_get_linear_normal_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache, jacobian_cache, ε::Real, mode::Symbol
@@ -113,7 +113,7 @@ Add the contribution of a single block (vectorial function with its robustifier)
 the linear normal operator, i.e. compute ``A += J_F^*(p)[C^T C J_F(p)[X]]`` in-place of `A`
 for the given block.
 """
-function add_linear_normal_operator_coord!(
+function add_get_linear_normal_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache, jacobian_cache, ε::Real, mode::Symbol
@@ -139,16 +139,16 @@ end
 # TODO (RB -> MB, 12/03):
 # same as nlsqplan:1324-1344 - replaces 1334-1344?
 # With a supertype for both sub objectives we could reduce this maybe?
-function linear_operator!(
+function get_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis;
         penalty::Real = slso.objective.penalty,
     ) where {E <: AbstractEvaluationType}
-    return linear_normal_operator!(M, A, slso.objective, p, B; penalty = penalty)
+    return get_linear_normal_operator!(M, A, slso.objective, p, B; penalty = penalty)
 end
 
 # TODO (RB -> MB, 12/03):
 # same remarks as for the last function but to nlsqplan:1345-1370, replaces 1358-1370?
-function normal_vector_field_coord!(
+function get_normal_vector_field_coord!(
         M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p,
     )
     nlso = lmsco.objective
@@ -157,7 +157,7 @@ function normal_vector_field_coord!(
     start = 0
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len_o = length(o)
-        add_normal_vector_field_coord!(
+        add_get_normal_vector_field_coord!(
             M, c, o, r, p;
             value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)), jacobian_cache = jc, ε = lmsco.ε, mode = lmsco.mode
         )
@@ -166,7 +166,7 @@ function normal_vector_field_coord!(
     return c
 end
 
-function add_normal_vector_field_coord!(
+function add_get_normal_vector_field_coord!(
         M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
         value_cache, jacobian_cache, ε::Real, mode::Symbol,
     )
@@ -184,7 +184,7 @@ end
 
 # TODO (RB -> MB, 12/03): This is considered internal the same was as
 # nlsqplan:1216-1249 is?
-function normal_vector_field_coord!(
+function get_normal_vector_field_coord!(
         M::AbstractManifold, c::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, B::AbstractBasis,
     )
     nlso = get_objective(lmsco)
@@ -193,7 +193,7 @@ function normal_vector_field_coord!(
     start = 0
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len_o = length(o)
-        add_normal_vector_field_coord!(
+        add_get_normal_vector_field_coord!(
             M, c, o, r, p, B;
             value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)),
             jacobian_cache = jc, ε = lmsco.ε, mode = lmsco.mode
@@ -204,8 +204,8 @@ function normal_vector_field_coord!(
 end
 
 # for a single block – the actual formula
-@doc "$(_doc_add_normal_vector_field)"
-function add_normal_vector_field_coord!(
+@doc "$(_doc_add_get_normal_vector_field)"
+function add_get_normal_vector_field_coord!(
         M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis;
         value_cache, jacobian_cache, ε::Real, mode::Symbol,
     )
@@ -222,7 +222,7 @@ end
 
 # TODO (RB -> MB, 12/03): This is considered internal the same was as
 # very similar but not the same as nlsqplan:1277–1290? Would a supertype for both remove this copy?
-function vector_field_residual!(
+function get_vector_field!(
         M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p
     )
     nlso = get_objective(lmsco)
@@ -231,16 +231,16 @@ function vector_field_residual!(
     start = 0
     # For every block
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        _vector_field_residual!(M, view(y, (start + 1):(start + length(o))), o, r, p; ε = lmsco.ε, mode = lmsco.mode)
+        _get_vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; ε = lmsco.ε, mode = lmsco.mode)
         start += length(o)
     end
     return y
 end
 # TODO (RB -> MB, 12/03): same as nsqplan:1364-1370?
-function vector_field!(
+function get_vector_field!(
         M::AbstractManifold, c, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis
     ) where {E <: AbstractEvaluationType}
-    normal_vector_field_coord!(M, c, slso.objective, p, B)
+    get_normal_vector_field_coord!(M, c, slso.objective, p, B)
     c .*= -1
     return c
 end
@@ -262,7 +262,7 @@ end
 # Otherwise the other function is wrong with just calling norm on the vector field? Then that should be the `norm(M, p, ...)` thing?
 
 # MB -> RB, 12/03: Yes, the second case was wrong, created at the time when I was confused
-# about the different variants of `vector_field!`.
+# about the different variants of `get_vector_field!`.
 function get_cost(
         TpM::TangentSpace, lnsco::SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
         ::ZeroTangentVector
@@ -272,7 +272,7 @@ function get_cost(
     # TODO: optimize?
     n = residuals_count(lnsco.objective.objective)
     vf = zeros(number_eltype(p), n)
-    vector_field_residual!(M, vf, lnsco.objective, p)
+    get_vector_field!(M, vf, lnsco.objective, p)
     return 0.5 * norm(vf)^2
 end
 
@@ -287,15 +287,15 @@ function get_cost(
     cX = get_coordinates(M, p, X)
     n = residuals_count(lnsco.objective.objective)
     vf = zeros(number_eltype(p), n)
-    vector_field_residual!(M, vf, lnsco.objective, p)
-    add_linear_operator_residual_coord!(TpM, vf, lnsco.objective, p, cX)
+    get_vector_field!(M, vf, lnsco.objective, p)
+    add_get_linear_operator_residual_coord!(TpM, vf, lnsco.objective, p, cX)
     cost = 0.5 * norm(vf)^2
     cost += (lnsco.objective.penalty / 2) * norm(M, p, X)^2
     return cost
 end
 
 # TODO (RB -> MB, 12/03): very similar to nslqplan:824–843
-function add_linear_normal_operator_coord!(
+function add_get_linear_normal_operator_coord!(
         M::AbstractManifold, c::AbstractVector,
         lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector;
         penalty::Real = lmsco.penalty,
@@ -307,7 +307,7 @@ function add_linear_normal_operator_coord!(
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        add_linear_normal_operator_coord!(
+        add_get_linear_normal_operator_coord!(
             M, c, o, r, p, cX;
             ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, jacobian_cache = jc
         )
@@ -319,7 +319,7 @@ function add_linear_normal_operator_coord!(
 end
 # TODO (RB -> MB, 12/03): very similar to nslqplan:844–871
 # for a single block – the actual formula - but never with penalty
-function add_linear_normal_operator_coord!(
+function add_get_linear_normal_operator_coord!(
         M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector;
         value_cache, jacobian_cache, ε::Real, mode::Symbol
     )
@@ -346,7 +346,7 @@ function add_linear_normal_operator_coord!(
     return c
 end
 # TODO (RB -> MB, 12/03): This actually does not have an analogon?
-function add_linear_operator_residual_coord!(
+function add_get_linear_operator_residual_coord!(
         M::AbstractManifold, y::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector
     )
     nlso = get_objective(lmsco)
@@ -358,7 +358,7 @@ function add_linear_operator_residual_coord!(
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        _add_linear_operator_residual_coord!(
+        _add_get_linear_operator_residual_coord!(
             M, view(y, (start + 1):(start + len)), o, r, p, cX, value_cache, jc;
             ε = lmsco.ε, mode = lmsco.mode
         )
@@ -367,7 +367,7 @@ function add_linear_operator_residual_coord!(
     return y
 end
 # TODO (RB -> MB, 12/03): This actually does not have an analogon?
-function _add_linear_operator_residual_coord!(
+function _add_get_linear_operator_residual_coord!(
         M::AbstractManifold, y::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector,
         value_cache, jacobian_cache; ε::Real, mode::Symbol
     )
