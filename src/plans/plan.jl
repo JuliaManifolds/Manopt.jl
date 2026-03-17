@@ -141,7 +141,6 @@ include("vectorial_plan.jl")
 
 # Linear systems
 include("conjugate_residual_plan.jl")
-include("linear_surrogate_plan.jl")
 # Robutsifiers
 include("robustifiers.jl")
 
@@ -161,8 +160,9 @@ include("frank_wolfe_plan.jl")
 include("interior_point_Newton_plan.jl")
 include("quasi_newton_plan.jl")
 include("mesh_adaptive_plan.jl")
-include("nonlinear_least_squares_plan.jl")
-include("nls_coordinates_plan.jl")
+include("nonlinear_least_squares/linear_surrogate_plan.jl")
+include("nonlinear_least_squares/nls_vector_plan.jl")
+include("nonlinear_least_squares/nls_in_coordinates_plan.jl")
 include("difference_of_convex_plan.jl")
 include("Douglas_Rachford_plan.jl")
 

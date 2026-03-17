@@ -15,7 +15,7 @@ Provide a linear surrogate model for the given [`AbstractManifoldObjective`](@re
 
 where ``$(_tex(:Cal, "L"))`` is a linear operator on the tangent space at a point ``p ∈ M``
 that maps into some vector space ``V`` and ``y ∈ V`` is a fixed vector in that space
-and ``$(_tex(:norm, "?"))`` is a norm on ``V``.
+and ``$(_tex(:norm, "⋅"))`` is a norm on ``V``.
 
 Both ``$(_tex(:Cal, "L"))`` and ``y`` are derived from the objective `O` and usually depend
 on the base point ``p ∈ M``.

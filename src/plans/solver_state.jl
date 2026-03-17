@@ -250,8 +250,7 @@ when a tangent vector is (part of) the result, changing between representations 
 coefficients and different tangent vector representations could be performed as a final step,
 depending on which problem was aimed to be solved
 
-Note that the returned value or point might still be aliased to the original `state`,
-use [`get_solver_result!`](@ref)`(M, p, ...)` to obtain the result in provided memory `p`.
+Note that the returned value or point might still be aliased to the original `state`.
 """
 function get_solver_result(state::AbstractManoptSolverState)
     return _get_solver_result(state, dispatch_state_decorator(state))

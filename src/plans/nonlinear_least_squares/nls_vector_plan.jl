@@ -1030,7 +1030,7 @@ Note that this is done per every block (vectorial function with its robustifier)
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
 This can be computed in-place of `y`.
 
-See also [`get_vector_field_residual`](@ref) for evaluating the corresponding vector field
+See also [`get_vector_field`](@ref) for evaluating the corresponding vector field
 """
 function get_linear_operator(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
@@ -1274,7 +1274,7 @@ Note that this is done per every block (vectorial function with its robustifier)
 
 See also
 * [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling
-* [`get_linear_operator_residual`](@ref) for evaluating the corresponding linear operator of the linear system
+* [`get_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
 """
 function get_vector_field(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p

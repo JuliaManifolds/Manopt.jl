@@ -288,7 +288,7 @@ function get_cost(
     n = residuals_count(lnsco.objective.objective)
     vf = zeros(number_eltype(p), n)
     get_vector_field!(M, vf, lnsco.objective, p)
-    add_linear_operator_residual_coord!(TpM, vf, lnsco.objective, p, cX)
+    add_linear_operator_coord!(TpM, vf, lnsco.objective, p, cX)
     cost = 0.5 * norm(vf)^2
     cost += (lnsco.objective.penalty / 2) * norm(M, p, X)^2
     return cost
@@ -346,7 +346,7 @@ function add_linear_normal_operator_coord!(
     return c
 end
 # TODO (RB -> MB, 12/03): This actually does not have an analogon?
-function add_linear_operator_residual_coord!(
+function add_linear_operator_coord!(
         M::AbstractManifold, y::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector
     )
     nlso = get_objective(lmsco)
@@ -358,7 +358,7 @@ function add_linear_operator_residual_coord!(
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        _add_linear_operator_residual_coord!(
+        _add_linear_operator_coord!(
             M, view(y, (start + 1):(start + len)), o, r, p, cX, value_cache, jc;
             ε = lmsco.ε, mode = lmsco.mode
         )
@@ -367,7 +367,7 @@ function add_linear_operator_residual_coord!(
     return y
 end
 # TODO (RB -> MB, 12/03): This actually does not have an analogon?
-function _add_linear_operator_residual_coord!(
+function _add_linear_operator_coord!(
         M::AbstractManifold, y::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector,
         value_cache, jacobian_cache; ε::Real, mode::Symbol
     )

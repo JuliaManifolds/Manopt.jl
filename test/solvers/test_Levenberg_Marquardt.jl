@@ -355,7 +355,7 @@ end
         y_lmso = zeros(n_res)
         Manopt.get_linear_operator!(M, y_lmso, lmso, p, X)
         y_lmcso = zeros(n_res)
-        Manopt.add_linear_operator_residual_coord!(M, y_lmcso, lmcso, p, cX)
+        Manopt.add_linear_operator_coord!(M, y_lmcso, lmcso, p, cX)
         @test isapprox(y_lmso, y_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         # Symmetric system coordinate RHS is minus the coordinate normal vector field.
