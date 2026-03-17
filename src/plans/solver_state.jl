@@ -43,6 +43,8 @@ function ClosedFormSubSolverState(;
     ) where {E <: AbstractEvaluationType}
     return ClosedFormSubSolverState(evaluation)
 end
+Base.show(io::IO, cfss::ClosedFormSubSolverState{E}) where {E} = print(io, "ClosedFormSubSolverState(; $(_to_kw(E)))")
+status_summary(cfss::ClosedFormSubSolverState; context = :default) = repr(cfss)
 
 maybe_wrap_evaluation_type(s::AbstractManoptSolverState) = s
 function maybe_wrap_evaluation_type(::E) where {E <: AbstractEvaluationType}

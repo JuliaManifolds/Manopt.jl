@@ -30,19 +30,23 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
 
 [`proximal_point`](@ref)
 """
-mutable struct ProximalPointState{P, Tλ, TStop <: StoppingCriterion} <:
-    AbstractGradientSolverState
+mutable struct ProximalPointState{P, Tλ, TStop <: StoppingCriterion} <: AbstractGradientSolverState
     λ::Tλ
     p::P
     stop::TStop
+    function ProximalPointState(
+            M::AbstractManifold;
+            λ::F = k -> 1.0, p::P = rand(M), stopping_criterion::SC = StopAfterIteration(200),
+        ) where {P, F, SC <: StoppingCriterion}
+        return ProximalPointState(; λ = λ, p = p, stopping_criterion = stopping_criterion)
+    end
+    function ProximalPointState(; λ::F, p::P, stopping_criterion::SC) where {P, F, SC <: StoppingCriterion}
+        return new{P, F, SC}(λ, p, stopping_criterion)
+    end
 end
-function ProximalPointState(
-        M::AbstractManifold;
-        λ::F = k -> 1.0,
-        p::P = rand(M),
-        stopping_criterion::SC = StopAfterIteration(200),
-    ) where {P, F, SC <: StoppingCriterion}
-    return ProximalPointState{P, F, SC}(λ, p, stopping_criterion)
+function Base.show(io::IO, pps::ProximalPointState)
+    print(io, "ProximalPointState(")
+    return print(io, "λ = $(pps.λ), p = $(pps.p), stopping_criterion = $(pps.stop))")
 end
 function status_summary(pps::ProximalPointState; context::Symbol = :default)
     (context === :short) && return repr(pps)

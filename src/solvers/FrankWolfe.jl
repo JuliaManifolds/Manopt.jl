@@ -48,14 +48,9 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 where the remaining fields from before are keyword arguments.
 """
 mutable struct FrankWolfeState{
-        P,
-        T,
-        Pr,
-        St <: AbstractManoptSolverState,
-        TStep <: Stepsize,
-        TStop <: StoppingCriterion,
-        TM <: AbstractRetractionMethod,
-        ITM <: AbstractInverseRetractionMethod,
+        P, T, Pr, St <: AbstractManoptSolverState,
+        TStep <: Stepsize, TStop <: StoppingCriterion,
+        TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
     } <: AbstractGradientSolverState
     p::P
     X::T
@@ -66,44 +61,45 @@ mutable struct FrankWolfeState{
     retraction_method::TM
     inverse_retraction_method::ITM
     function FrankWolfeState(
-            M::AbstractManifold,
-            sub_problem::Pr,
-            sub_state::St;
-            p::P = rand(M),
-            X::T = zero_vector(M, p),
+            M::AbstractManifold, sub_problem; evaluation::E = AllocatingEvaluation(), kwargs...
+        ) where {E <: AbstractEvaluationType}
+        cfs = ClosedFormSubSolverState(; evaluation = evaluation)
+        return FrankWolfeState(M, sub_problem, cfs; kwargs...)
+    end
+    function FrankWolfeState(
+            M::AbstractManifold, sub_problem::Pr, sub_state::St;
+            p::P = rand(M), X::T = zero_vector(M, p),
             stopping_criterion::TStop = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-6),
             stepsize::TStep = default_stepsize(M, FrankWolfeState),
             retraction_method::TM = default_retraction_method(M, typeof(p)),
             inverse_retraction_method::ITM = default_inverse_retraction_method(M, typeof(p)),
         ) where {
-            P,
-            T,
-            Pr <: Union{AbstractManoptProblem, F} where {F},
-            St <: AbstractManoptSolverState,
-            TStop <: StoppingCriterion,
-            TStep <: Stepsize,
-            TM <: AbstractRetractionMethod,
-            ITM <: AbstractInverseRetractionMethod,
+            P, T,
+            Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+            TStop <: StoppingCriterion, TStep <: Stepsize,
+            TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
+        }
+        return FrankWolfeState(
+            sub_problem, sub_state;
+            p = p, X = X, stopping_criterion = stopping_criterion, stepsize = stepsize,
+            retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method
+        )
+    end
+    function FrankWolfeState(
+            sub_problem::Pr, sub_state::St;
+            p::P, X::T, stopping_criterion::TStop, stepsize::TStep,
+            retraction_method::TM, inverse_retraction_method::ITM
+        ) where {
+            P, T, Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+            TStop <: StoppingCriterion, TStep <: Stepsize,
+            TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
         }
         return new{P, T, Pr, St, TStep, TStop, TM, ITM}(
-            p,
-            X,
-            sub_problem,
-            sub_state,
-            stopping_criterion,
-            stepsize,
-            retraction_method,
-            inverse_retraction_method,
+            p, X, sub_problem, sub_state,
+            stopping_criterion, stepsize, retraction_method, inverse_retraction_method,
         )
     end
 end
-function FrankWolfeState(
-        M::AbstractManifold, sub_problem; evaluation::E = AllocatingEvaluation(), kwargs...
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
-    return FrankWolfeState(M, sub_problem, cfs; kwargs...)
-end
-
 function default_stepsize(M::AbstractManifold, ::Type{FrankWolfeState})
     return DecreasingStepsize(M; length = 2.0, shift = 2.0)
 end
@@ -118,6 +114,16 @@ function set_iterate!(fws::FrankWolfeState, p)
     fws.p = p
     return fws
 end
+function Base.show(io::IO, fws::FrankWolfeState)
+    print(io, "FrankWolfeState("); print(io, fws.sub_problem); print(io, ", "); print(io, fws.sub_state)
+    print(io, "; ")
+    print(io, "inverse_retraction_method = $(fws.inverse_retraction_methoid), ")
+    print(io, "p = $(fws.p), ")
+    print(io, "retraction_method = $(fws.retraction_method), ")
+    print(io, "stopping_criterion = $(fws.stop), ")
+    print(io, "stepsize = $(fws.stepsize), ")
+    return print(io, "X = $(fws.X))")
+end
 function status_summary(fws::FrankWolfeState; context::Symbol = :default)
     (context === :short) && return repr(fws)
     i = get_count(fws, :Iterations)
@@ -125,8 +131,7 @@ function status_summary(fws::FrankWolfeState; context::Symbol = :default)
     (context === :inline) && return "A solver state for the Frank Wolfe algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(fws.stop) ? "Yes" : "No"
-    sub = repr(fws.sub_state)
-    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
+    sub = _in_str(status_summary(fws.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")
     return """
     # Solver state for `Manopt.jl`s Frank Wolfe Method
     $Iter
@@ -134,7 +139,7 @@ function status_summary(fws::FrankWolfeState; context::Symbol = :default)
     * inverse retraction method: $(fws.inverse_retraction_method)
     * retraction method: $(fws.retraction_method)
     * sub solver state:
-        | $(sub)
+    $(sub)
 
     ## Stepsize
     $(fws.stepsize)

@@ -1,4 +1,4 @@
-using ManifoldsBase, Manopt, Random, Test, LinearAlgebra
+using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
 
 @testset "Frank Wolfe Method" begin
     M = ManifoldsBase.DefaultManifold(3)
