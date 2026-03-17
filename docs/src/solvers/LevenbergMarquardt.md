@@ -18,6 +18,8 @@ LevenbergMarquardtState
 ## Sub-problem
 
 ```@docs
+Manopt.AbstractLinearSurrogateObjective
+Manopt.SymmetricLinearSystem
 Manopt.LevenbergMarquardtLinearSurrogateObjective
 Manopt.CoordinatesNormalSystemState
 ```

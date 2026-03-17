@@ -5,10 +5,8 @@ CurrentModule = Manopt
 ```
 
 ```@docs
-SymmetricLinearSystemObjective
 Manopt.AbstractSymmetricLinearSystemObjective
-Manopt.AbstractLinearSurrogateObjective
-Manopt.SymmetricLinearSystem
+SymmetricLinearSystemObjective
 ```
 
 ## Internal functions

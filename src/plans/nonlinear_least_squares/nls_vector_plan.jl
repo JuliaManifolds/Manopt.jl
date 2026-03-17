@@ -85,7 +85,6 @@ struct NonlinearLeastSquaresObjective{
     end
 end
 
-# the old single function constructor – TODO: carefully document that this is just one special case that has a nicer shortcut and calls the vectorial one
 function NonlinearLeastSquaresObjective(
         f,
         jacobian,
@@ -110,19 +109,27 @@ end
 """
     residuals_count(nlso::NonlinearLeastSquaresObjective)
 
-Return the total number of residuals in [`NonlinearLeastSquaresObjective`](@ref) `nlso`.
+Return the total number of residuals in [`NonlinearLeastSquaresObjective`](@ref) `nlso`,
+which is the sum of the single block compnents lengths.
 """
 function residuals_count(nlso::NonlinearLeastSquaresObjective)
     return sum(length(o) for o in nlso.objective)
 end
 
-# Cost
-function get_cost(
-        M::AbstractManifold,
-        nlso::NonlinearLeastSquaresObjective,
-        p;
-        kwargs...,
-    )
+"""
+    get_cost(M::AbstractManifold, nlso::NonLinearLeastSquaresObjective, p)
+
+Compute the cost of the least squares objective, i.e.
+
+```math
+$(_tex(:frac, "1", "2")) $(_tex(:sum, "i=1", "m")) ρ_i $(_tex(:bigl))( $(_tex(:norm, "F_i(p)"))^2 $(_tex(:bigr))),
+```
+
+where ``F_i: $(_math(:Manifold)) → ℝ^{n_i}`` is the ``i``th block component of length ``n_i > 0``
+and each ``ρ_i: ℝ → ℝ`` is a [* R robustifier function, cf. [`AbstractRobustifierFunction`](@ref),
+for each such a block component.
+"""
+function get_cost(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p)
     v = 0.0
     start = 0
     get_residuals!(M, nlso.value_cache, nlso, p)
@@ -135,6 +142,7 @@ function get_cost(
     v /= 2
     return v
 end
+# For a single block – or one summand in the docs of the previous function
 function _get_cost(
         M, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
         value_cache = get_value(M, vgf, p)
@@ -143,6 +151,7 @@ function _get_cost(
     (a, _, _) = get_robustifier_values(r, vi)
     return a
 end
+# For a single vectorial function where the robustifier is abblied to every in dex separately.
 function _get_cost(
         M, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
         value_cache = get_value(M, vgf, p)
@@ -152,7 +161,6 @@ function _get_cost(
     (a, _, _) = get_robustifier_values(cr, v)
     return sum(a)
 end
-#
 
 _doc_get_gradient_nlso = """
     get_gradient(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
@@ -170,8 +178,10 @@ where ``F_i(p) ∈ ℝ^{n_i}`` is the vector of residuals for the `i`-th block c
 and ``f_{i,j}(p)`` its `j`-th component function.
 
 # Keyword arguments
-* `value_cache=nothing` : if provided, this vector is used to store the residuals ``F(p)``
-  internally to avoid recomputations.
+* `value_cache=nothing`: if provided, this vector is used to store the residuals ``F(p)``
+  internally to avoid re-computations.
+* `jacobian_cache=fill(nothing, length(nlso.objective))`: if provided, this is used to store
+  the Jacobians of the component functions.
 """
 @doc "$(_doc_get_gradient_nlso)"
 function get_gradient(
@@ -180,8 +190,6 @@ function get_gradient(
     X = zero_vector(M, p)
     return get_gradient!(M, X, nlso, p; kwargs...)
 end
-
-# @doc "$(_doc_get_gradient_nlso)"
 function get_gradient!(
         M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective, p;
         value_cache = nothing, jacobian_cache = fill(nothing, length(nlso.objective)),
@@ -197,6 +205,7 @@ function get_gradient!(
     end
     return X
 end
+# Gradient for a single summand from above, that is a single (robustified) block
 function _add_gradient!(
         M, X, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
         value_cache = get_value(M, vgf, p), jacobian_cache = nothing
@@ -219,6 +228,8 @@ function _add_gradient!(
     end
     return X
 end
+# Gradient for a single summand from above, that is a single (robustified) block where the
+# robustifier is applied to every component / coordinate
 function _get_gradient!(
         M, X, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
         value_cache = get_value(M, vgf, p), jacobian_cache = nothing,
@@ -248,6 +259,9 @@ of the components of the the [`NonlinearLeastSquaresObjective`](@ref) `nlso`
 at the current point ``p`` on `M`.
 
 This can be computed in-place of `v`.
+
+Note that even in the presence of [`RobustifierFunction`](@ref)s, these are not respected here,
+this function computes the “pure” residuals.
 """
 
 @doc "$(_doc_get_residuals_nlso)"
@@ -337,15 +351,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(
 [`gradient_descent`](@ref), [`LevenbergMarquardt`](@ref)
 """
 mutable struct LevenbergMarquardtState{
-        P,
-        TStop <: StoppingCriterion,
-        TRTM <: AbstractRetractionMethod,
-        Tresidual_values,
-        TGrad,
-        TJac,
-        Tparams <: Real,
-        Pr,
-        St,
+        P, TStop <: StoppingCriterion, TRTM <: AbstractRetractionMethod,
+        Tresidual_values, TGrad, TJac, Tparams <: Real, Pr, St,
     } <: AbstractGradientSolverState
     p::P
     stop::TStop
@@ -419,7 +426,8 @@ mutable struct LevenbergMarquardtState{
         )
     end
 end
-
+#
+# TODO: Update / Merge according to PR #569
 function show(io::IO, lms::LevenbergMarquardtState)
     i = get_count(lms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -453,7 +461,7 @@ end
 
 Given an [`NonlinearLeastSquaresObjective`](@ref) `objective` and a damping term `damping_term`,
 this objective represents the penalized objective for the sub-problem to solve within every step
-of the Levenberg-Marquardt algorithm given by
+of the Levenberg-Marquardt algorithm following the ideas of [TriggsMcLauchlanHartleyFitzgibbon:2000](@cite) given by
 
 ```math
 μ_p(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, _tex(:Cal, "L") * "(X) + y"; index = "2"))^2
@@ -461,9 +469,12 @@ of the Levenberg-Marquardt algorithm given by
   $(_tex(:qquad))$(_tex(:text, " for "))X ∈ $(_math(:TangentSpace)), λ ≥ 0,
 ```
 
-where ``X ∈ $(_math(:TangentSpace))`` and ``λ ≥ 0`` is the damping or penalty term.
+where ``X ∈ $(_math(:TangentSpace))``, ``λ ≥ 0`` is the damping or penalty term,
+``$(_tex(:Cal, "L")): $(_math(:TangentSpace)) → ℝ^n`` is a linear operator,
+and ``y = y(p) ∈ ℝ¨n`` is a vector field.
+For the derivation of the Riemannian case, see [BaranBergmann:2026](@cite).
 
-In order to build a surrogate also for the robutsified Levenberg-Marquardt, introduce
+In order to build a surrogate also for the robustified Levenberg-Marquardt, introduce
 ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``
 and set ``y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p)`` and ``$(_tex(:Cal, "L"))(X) = CJ_F^*(p)[F(p)]``
 with
@@ -474,19 +485,23 @@ C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)
 
 where ``F(p) ∈ ℝ^n`` is the vector of residuals at point ``p ∈ M`` and ``J_F^*(p): ℝ^n → $(_math(:TangentSpace))```
 is the adjoint Jacobian.
+These two can be accessed with [`get_vector_field`](@ref) for ``y`` and [`get_linear_operator`](@ref) for ``$(_tex(:Cal, "L"))``,
+respectively.
+Furthermore, since ``n`` is usually much larger than the dimension of the manifold, the normal equation
+can be used to find the solution of minimal norm (squared), see
+[`get_vector_field`](@ref) and [`get_normal_linear_operator`](@ref), respectively.
 
 ## Fields
 
 * `objective`:     the [`NonlinearLeastSquaresObjective`](@ref) to penalize
 * `penalty::Real`: the damping term ``λ``
-* `ε::Real`:       stabilization for ``α ≤ 1-ε`` in the rescaling of the Jacobian, that
+* `ε::Real`:       stabilization for ``α ≤ 1-ε`` in the rescaling of the Jacobian
 * `mode::Symbol`:  which ode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
-* `value_cache`:   a vector to store the residuals ``F(p)`` at the current point `p` internally to avoid recomputations
+* `value_cache`:   a vector to store the residuals ``F(p)`` at the current point `p` internally to avoid re-computations
 
 ## Constructor
 
-    LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default )
-
+    LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default)
 """
 mutable struct LevenbergMarquardtLinearSurrogateObjective{
         E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R},
@@ -505,17 +520,18 @@ mutable struct LevenbergMarquardtLinearSurrogateObjective{
     end
 end
 
-function show(io::IO, o::LevenbergMarquardtLinearSurrogateObjective{E}) where {E}
-    return print(io, "LevenbergMarquardtLinearSurrogateObjective{$E}($(o.objective); penalty=$(o.penalty), ε=$(o.ε), mode=:$(o.mode))")
+function show(io::IO, o::LevenbergMarquardtLinearSurrogateObjective)
+    return print(io, "LevenbergMarquardtLinearSurrogateObjective($(o.objective); penalty=$(o.penalty), ε=$(o.ε), mode=:$(o.mode))")
 end
 
 """
     residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FSq::Real, ε::Real, mode::Symbol)
 
-Compute the scaling ``$(_tex(:frac, _tex(:sqrt, "ρ'"), "1 - α"))`` for the residula ``y`` and
+Compute the scaling ``$(_tex(:frac, _tex(:sqrt, "ρ'"), "1 - α"))`` for the residual ``y`` and
 the scaling ``$(_tex(:frac, "α", _tex(:norm, "F"; index = "2") * "^2"))`` that are required for the robust
 rescaling within [`LevenbergMarquardt`](@ref)s [`get_vector_field`](@ref) and [`get_linear_operator`](@ref),
-respectively. The value for ``α`` is given by
+respectively.
+The value for ``α`` is given by
 
 ```math
     α = 1-$(_tex(:sqrt, "1 + 2$(_tex(:frac, "ρ_k''", "ρ_k'"))$(_tex(:norm, "F_k"; index = "2"))"))
@@ -563,7 +579,9 @@ function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateObjective, ::Val
     return lmlso
 end
 
+## TODO: RB: Continue documentation here.
 get_objective(lmsco::LevenbergMarquardtLinearSurrogateObjective) = lmsco.objective
+
 """
     get_cost(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
