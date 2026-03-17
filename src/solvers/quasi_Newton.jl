@@ -44,15 +44,10 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 [`quasi_Newton`](@ref)
 """
 mutable struct QuasiNewtonState{
-        P,
-        T,
-        D <: AbstractQuasiNewtonDirectionUpdate,
-        SC <: StoppingCriterion,
-        S <: Stepsize,
-        RTR <: AbstractRetractionMethod,
-        VT <: AbstractVectorTransportMethod,
-        R,
-        TPrecon <: QuasiNewtonPreconditioner,
+        P, T, D <: AbstractQuasiNewtonDirectionUpdate,
+        SC <: StoppingCriterion, S <: Stepsize,
+        RTR <: AbstractRetractionMethod, VT <: AbstractVectorTransportMethod,
+        R, TPrecon <: QuasiNewtonPreconditioner,
     } <: AbstractGradientSolverState
     p::P
     p_old::P
@@ -69,65 +64,55 @@ mutable struct QuasiNewtonState{
     vector_transport_method::VT
     nondescent_direction_behavior::Symbol
     nondescent_direction_value::R
-end
-function QuasiNewtonState(
-        M::AbstractManifold;
-        p::P = rand(M),
-        initial_vector::T = zero_vector(M, p), # deprecated
-        X::T = initial_vector,
-        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
-        preconditioner::Union{QuasiNewtonPreconditioner, Nothing} = nothing,
-        initial_scale::Union{<:Real, Nothing} = isnothing(preconditioner) ? 1.0 : nothing,
-        memory_size::Int = 20,
-        direction_update::D = QuasiNewtonLimitedMemoryDirectionUpdate(
-            M,
-            p,
-            InverseBFGS(),
-            memory_size;
-            vector_transport_method = vector_transport_method,
-            initial_scale = initial_scale,
-        ),
-        stopping_criterion::SC = StopAfterIteration(1000) | StopWhenGradientNormLess(1.0e-6),
-        retraction_method::RM = default_retraction_method(M, typeof(p)),
-        stepsize::S = default_stepsize(
-            M,
-            QuasiNewtonState;
-            retraction_method = retraction_method,
-            vector_transport_method = vector_transport_method,
-        ),
-        nondescent_direction_behavior::Symbol = :reinitialize_direction_update,
-        kwargs..., # collect but ignore rest to be more tolerant
-    ) where {
-        P,
-        T,
-        D <: AbstractQuasiNewtonDirectionUpdate,
-        SC <: StoppingCriterion,
-        S <: Stepsize,
-        RM <: AbstractRetractionMethod,
-        VTM <: AbstractVectorTransportMethod,
-    }
-    precon = if isnothing(preconditioner)
-        QuasiNewtonPreconditioner((M, p, X) -> X)
-    else
-        preconditioner
+    function QuasiNewtonState(
+            M::AbstractManifold;
+            p::P = rand(M),
+            initial_vector::T = zero_vector(M, p), # deprecated
+            X::T = initial_vector,
+            vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+            preconditioner::Union{QuasiNewtonPreconditioner, Nothing} = nothing,
+            initial_scale::Union{<:Real, Nothing} = isnothing(preconditioner) ? 1.0 : nothing,
+            memory_size::Int = 20,
+            direction_update::D = QuasiNewtonLimitedMemoryDirectionUpdate(
+                M, p, InverseBFGS(), memory_size;
+                vector_transport_method = vector_transport_method, initial_scale = initial_scale,
+            ),
+            stopping_criterion::SC = StopAfterIteration(1000) | StopWhenGradientNormLess(1.0e-6),
+            retraction_method::RM = default_retraction_method(M, typeof(p)),
+            stepsize::S = default_stepsize(
+                M, QuasiNewtonState;
+                retraction_method = retraction_method, vector_transport_method = vector_transport_method,
+            ),
+            nondescent_direction_behavior::Symbol = :reinitialize_direction_update,
+            kwargs...,
+        ) where {
+            P, T, D <: AbstractQuasiNewtonDirectionUpdate, SC <: StoppingCriterion,
+            S <: Stepsize, RM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
+        }
+        precon = isnothing(preconditioner) ? QuasiNewtonPreconditioner((M, p, X) -> X) : preconditioner
+        return QuasiNewtonState(;
+            p = p, p_old = copy(M, p), η = copy(M, p, X), X = X, sk = copy(M, p, X), yk = copy(M, p, X),
+            direction_update = direction_update, preconditioner = precon,
+            retraction_method = retraction_method, stepsize = stepsize, stopping_criterion = stopping_criterion,
+            X_old = copy(M, p, X), vector_transport_method = vector_transport_method,
+            nondescent_direction_behavior = nondescent_direction_behavior, nondescent_direction_value = 1.0
+        )
     end
-    return QuasiNewtonState{P, T, D, SC, S, RM, VTM, Float64, typeof(precon)}(
-        p,
-        copy(M, p),
-        copy(M, p, X),
-        X,
-        copy(M, p, X),
-        copy(M, p, X),
-        direction_update,
-        precon,
-        retraction_method,
-        stepsize,
-        stopping_criterion,
-        copy(M, p, X),
-        vector_transport_method,
-        nondescent_direction_behavior,
-        1.0,
-    )
+    function QuasiNewtonState(;
+            p::P, p_old::P, η::T, X::T, sk::T, yk::T, direction_update::D, preconditioner::TP,
+            retraction_method::RTR, stepsize::S, stopping_criterion::SC, X_old::T, vector_transport_method::VTM,
+            nondescent_direction_behavior::Symbol, nondescent_direction_value::R
+        ) where {
+            P, T, D <: AbstractQuasiNewtonDirectionUpdate,
+            SC <: StoppingCriterion, S <: Stepsize,
+            RTR <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, R, TP <: QuasiNewtonPreconditioner,
+        }
+        return new{P, T, D, SC, S, RTR, VTM, R, TP}(
+            p, p_old, η, X, sk, yk,
+            direction_update, preconditioner, retraction_method, stepsize, stopping_criterion,
+            X_old, vector_transport_method, nondescent_direction_behavior, nondescent_direction_value,
+        )
+    end
 end
 function get_message(qns::QuasiNewtonState)
     # collect messages from
@@ -147,6 +132,17 @@ function get_message(qns::QuasiNewtonState)
     d = "$(length(d) > 0 ? "\n" : "")$(msg2)"
     d = "$(length(d) > 0 ? "\n" : "")$(msg3)"
     return d
+end
+function Base.show(io::IO, qns::QuasiNewtonState)
+    print(io, "QuasiNewtonState(;")
+    print(io, "direction_update = $(qns.direction_update), ")
+    print(io, "p = $(qns.p), p_old = $(qns.p_old), η = $(qns.η), X = $(qns.X), sk = $(qns.sk), yk = $(qns.yk), ")
+    print(io, "nondescent_direction_behavior = $(qns.nondescent_direction_behavior), nondescent_direction_value = $(qns.nondescent_direction_value), ")
+    print(io, "preconditioner = $(qns.preconditioner), ")
+    print(io, "retraction_method = $(qns.retraction_method), stepsize = $(qns.stepsize), ")
+    print(io, "stopping_criertion = $(qns.stop), ")
+    print(io, "X_old = $(qns.X_old)), ")
+    return print(io, "vector_transport_method = $(qns.vector_transport_method))")
 end
 function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
     (context === :short) && return repr(qns)

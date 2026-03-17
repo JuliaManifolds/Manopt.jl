@@ -151,13 +151,7 @@ function show(io::IO, armijo_ls::ArmijoLinesearchStepsize)
     # TODO: Refactor constructor, to this actually works
     return print(
         io,
-        """
-        ArmijoLinesearch(;
-            initial_stepsize=$(armijo_ls.initial_stepsize),
-            retraction_method=$(armijo_ls.retraction_method),
-            contraction_factor=$(armijo_ls.contraction_factor),
-            sufficient_decrease=$(armijo_ls.sufficient_decrease),
-        )""",
+        "ArmijoLinesearch(; initial_stepsize=$(armijo_ls.initial_stepsize), retraction_method=$(armijo_ls.retraction_method), contraction_factor=$(armijo_ls.contraction_factor), sufficient_decrease=$(armijo_ls.sufficient_decrease))",
     )
 end
 function status_summary(armijo_ls::ArmijoLinesearchStepsize; context::Symbol = :default)
@@ -343,17 +337,7 @@ end
 get_initial_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
 get_last_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
 function show(io::IO, awng::AdaptiveWNGradientStepsize)
-    s = """
-    AdaptiveWNGradient(;
-      count_threshold = $(awng.count_threshold),
-      minimal_bound = $(awng.minimal_bound),
-      alternate_bound = $(awng.alternate_bound),
-      gradient_reduction = $(awng.gradient_reduction),
-      gradient_bound = $(awng.gradient_bound)
-    )
-
-    as well as internally the weight ω_k = $(awng.weight) and current count c_k = $(awng.count).
-    """
+    s = "AdaptiveWNGradient(; count_threshold = $(awng.count_threshold), minimal_bound = $(awng.minimal_bound), alternate_bound = $(awng.alternate_bound), gradient_reduction = $(awng.gradient_reduction), gradient_bound = $(awng.gradient_bound))"
     return print(io, s)
 end
 """
@@ -803,17 +787,7 @@ end
 function show(io::IO, cbls::CubicBracketingLinesearchStepsize)
     return print(
         io,
-        """
-        CubicBracketingLinesearch(;
-            initial_stepsize = $(cbls.initial_stepsize),
-            stepsize_increase = $(cbls.stepsize_increase),
-            sufficient_curvature = $(cbls.sufficient_curvature),
-            min_bracket_width = $(cbls.min_bracket_width),
-            hybrid = $(cbls.hybrid),
-            retraction_method = $(cbls.retraction_method),
-            vector_transport_method = $(cbls.vector_transport_method),
-            max_stepsize = $(cbls.max_stepsize)
-        )""",
+        "CubicBracketingLinesearch(; initial_stepsize = $(cbls.initial_stepsize),  stepsize_increase = $(cbls.stepsize_increase),  sufficient_curvature = $(cbls.sufficient_curvature),  min_bracket_width = $(cbls.min_bracket_width),  hybrid = $(cbls.hybrid),  retraction_method = $(cbls.retraction_method),  vector_transport_method = $(cbls.vector_transport_method),  max_stepsize = $(cbls.max_stepsize))",
     )
 end
 function status_summary(cbls::CubicBracketingLinesearchStepsize)
@@ -1110,18 +1084,7 @@ get_initial_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
 get_last_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
 
 function show(io::IO, rdog::DistanceOverGradientsStepsize)
-    s = """
-    DistanceOverGradients(;
-      initial_distance = $(rdog.initial_distance),
-      use_curvature = $(rdog.use_curvature),
-      sectional_curvature_bound = $(rdog.sectional_curvature_bound)
-    )
-
-    Current state:
-      max_distance = $(rdog.max_distance)
-      gradient_sum = $(rdog.gradient_sum)
-      last_stepsize = $(rdog.last_stepsize)
-    """
+    s = "DistanceOverGradients(; initial_distance = $(rdog.initial_distance), use_curvature = $(rdog.use_curvature), sectional_curvature_bound = $(rdog.sectional_curvature_bound))"
     return print(io, s)
 end
 
@@ -1453,18 +1416,7 @@ end
 function show(io::IO, a::NonmonotoneLinesearchStepsize)
     return print(
         io,
-        """
-        NonmonotoneLinesearch(;
-            last_stepsize = $(a.last_stepsize),
-            bb_max_stepsize = $(a.bb_max_stepsize),
-            bb_min_stepsize = $(a.bb_min_stepsize),
-            memory_size = $(length(a.old_costs)),
-            stepsize_reduction = $(a.stepsize_reduction),
-            strategy = :$(a.strategy),
-            sufficient_decrease = $(a.sufficient_decrease),
-            retraction_method = $(a.retraction_method),
-            vector_transport_method = $(a.vector_transport_method)
-        )""",
+        "NonmonotoneLinesearch(; last_stepsize = $(a.last_stepsize), bb_max_stepsize = $(a.bb_max_stepsize), bb_min_stepsize = $(a.bb_min_stepsize), memory_size = $(length(a.old_costs)), stepsize_reduction = $(a.stepsize_reduction), strategy = :$(a.strategy), sufficient_decrease = $(a.sufficient_decrease), retraction_method = $(a.retraction_method), vector_transport_method = $(a.vector_transport_method))",
     )
 end
 function get_message(a::NonmonotoneLinesearchStepsize)
@@ -1595,14 +1547,7 @@ function (ps::PolyakStepsize)(
     return α
 end
 function show(io::IO, ps::PolyakStepsize)
-    return print(
-        io,
-        """
-        Polyak()
-        A stepsize with keyword parameters
-           * initial_cost_estimate = $(ps.best_cost_value)
-        """,
-    )
+    return print(io, "Polyak(; γ = $(ps.γ))")
 end
 """
     Polyak(; kwargs...)
@@ -1821,16 +1766,7 @@ end
 function show(io::IO, a::WolfePowellLinesearchStepsize)
     return print(
         io,
-        """
-        WolfePowellLinesearch(;
-            sufficient_decrease = $(a.sufficient_decrease),
-            sufficient_curvature = $(a.sufficient_curvature),
-            retraction_method = $(a.retraction_method),
-            vector_transport_method = $(a.vector_transport_method),
-            stop_when_stepsize_less = $(a.stop_when_stepsize_less),
-            stop_increasing_at_step = $(a.stop_increasing_at_step),
-            stop_decreasing_at_step = $(a.stop_decreasing_at_step),
-        )""",
+        "WolfePowellLinesearch(; sufficient_decrease = $(a.sufficient_decrease), sufficient_curvature = $(a.sufficient_curvature), retraction_method = $(a.retraction_method), vector_transport_method = $(a.vector_transport_method), stop_when_stepsize_less = $(a.stop_when_stepsize_less), stop_increasing_at_step = $(a.stop_increasing_at_step), stop_decreasing_at_step = $(a.stop_decreasing_at_step))",
     )
 end
 function status_summary(a::WolfePowellLinesearchStepsize)
@@ -1982,14 +1918,7 @@ end
 function show(io::IO, a::WolfePowellBinaryLinesearchStepsize)
     return print(
         io,
-        """
-        WolfePowellBinaryLinesearch(;
-            sufficient_decrease = $(a.sufficient_decrease),
-            sufficient_curvature = $(a.sufficient_curvature),
-            retraction_method = $(a.retraction_method),
-            vector_transport_method = $(a.vector_transport_method),
-            stop_when_stepsize_less = $(a.stop_when_stepsize_less),
-        )""",
+        "WolfePowellBinaryLinesearch(; sufficient_decrease = $(a.sufficient_decrease), sufficient_curvature = $(a.sufficient_curvature), retraction_method = $(a.retraction_method), vector_transport_method = $(a.vector_transport_method), stop_when_stepsize_less = $(a.stop_when_stepsize_less))",
     )
 end
 function status_summary(a::WolfePowellBinaryLinesearchStepsize)
