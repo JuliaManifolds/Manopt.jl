@@ -330,7 +330,7 @@ end
         )
         @test isapprox(nvf_direct_B, nvf_direct; atol = 1.0e-12, rtol = 1.0e-12)
 
-        n_res = sum(length(o) for o in nlso.objective)
+        n_res = Manopt.residuals_count(nlso)
         vf_lmso = zeros(n_res)
         vf_lmcso = zeros(n_res)
 
@@ -409,7 +409,7 @@ end
             slco = Manopt.SymmetricLinearSystem(lmcso)
 
             n = number_of_coordinates(M, B)
-            n_res = sum(length(o) for o in nlso.objective)
+            n_res = Manopt.residuals_count(nlso)
 
             A_lmso = zeros(n, n)
             A_lmcso = zeros(n, n)
@@ -684,7 +684,7 @@ end
         Manopt.get_linear_normal_operator!(M, Y, lmso, p0, X)
 
         Manopt.get_vector_field!(M, Y, lmso, p0)
-        initial_residuals = similar(X, sum(length(o) for o in get_objective(nlso).objective))
+        initial_residuals = similar(X, Manopt.residuals_count(nlso))
 
         sub_objective = Manopt.SymmetricLinearSystem(
             Manopt.LevenbergMarquardtLinearSurrogateObjective(nlso; residuals = copy(initial_residuals))

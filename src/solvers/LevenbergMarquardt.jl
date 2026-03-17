@@ -208,7 +208,7 @@ function LevenbergMarquardt!(
         η::Real = 0.2,
         damping_term_min::Real = 0.1,
         X = zero_vector(M, p),
-        initial_residual_values = zeros(number_eltype(p), sum(length(o) for o in get_objective(nlso).objective)),
+        initial_residual_values = zeros(number_eltype(p), residuals_count(get_objective(nlso))),
         initial_jacobian_f = fill(nothing, length(get_objective(nlso).objective)),
         (linear_subsolver!) = nothing,
         #TODO better names for the next 2?
