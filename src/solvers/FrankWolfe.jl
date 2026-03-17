@@ -85,6 +85,7 @@ mutable struct FrankWolfeState{
             retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method
         )
     end
+    FrankWolfeState(::AbstractManifold, ::AbstractManoptSolverState; kwargs...) = error("No sub problem provided.")
     function FrankWolfeState(
             sub_problem::Pr, sub_state::St;
             p::P, X::T, stopping_criterion::TStop, stepsize::TStep,
@@ -100,6 +101,7 @@ mutable struct FrankWolfeState{
         )
     end
 end
+
 function default_stepsize(M::AbstractManifold, ::Type{FrankWolfeState})
     return DecreasingStepsize(M; length = 2.0, shift = 2.0)
 end

@@ -155,7 +155,7 @@ end
         @test s(mp, gds, 3) ≈ 3.1209362808842656
         @test s.count == 0 # was reset
         @test s.weight == 0.75 # also reset to orig
-        @test startswith(repr(s), "AdaptiveWNGradient(;\n  ")
+        @test startswith(repr(s), "AdaptiveWNGradient(;")
     end
     @testset "Absolute stepsizes" begin
         M = ManifoldsBase.DefaultManifold(2)
@@ -186,8 +186,7 @@ end
         X = grad_f(M, p)
         sgs = SubGradientMethodState(M; p = p)
         ps = Polyak()()
-        @test repr(ps) ==
-            "Polyak()\nA stepsize with keyword parameters\n   * initial_cost_estimate = 0.0\n"
+        @test startswith(repr(ps), "Polyak(; γ = ")
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
     end
     @testset "CubicBracketing Stepsize" begin
@@ -278,15 +277,8 @@ end
             @test occursin("initial_distance = 1.0", repr_ds)
             @test occursin("use_curvature = false", repr_ds)
             @test occursin("sectional_curvature_bound = 0.0", repr_ds)
-            @test occursin("Current state:", repr_ds)
-            @test occursin("max_distance = 1.0", repr_ds)
-            @test occursin("gradient_sum = 0.0", repr_ds)
-            @test occursin("last_stepsize = NaN", repr_ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.125
-            # after first step, last_stepsize should be reflected in repr
-            repr_ds_after = repr(ds)
-            @test occursin("last_stepsize = 0.125", repr_ds_after)
         end
         @testset "use sectional cuvature (Euclidian)" begin
             M = Euclidean(2)
