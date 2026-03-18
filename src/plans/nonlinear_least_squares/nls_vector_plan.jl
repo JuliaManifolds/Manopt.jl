@@ -321,9 +321,6 @@ $(_fields(:stopping_criterion; name = "stop"))
   new point is rejected
 * `β_reduction`           parameter by which the damping term is multiplied when the
   improvement quotient exceeds `damping_reduction_threshold`.
-* `expect_zero_residual`: if true, the algorithm expects that the value of
-  the residual (objective) at minimum is equal to 0. TODO: deprecate in favor of more
-  general `damping_reduction_threshold` and 
 * `minimum_acceptable_model_improvement`: the minimum improvement in the model function that
   is required to accept a new point; if this is not met, the new point is rejected and
   the damping term is increased.
@@ -347,7 +344,6 @@ The following fields are keyword arguments
 * `damping_term = damping_term_min`
 * `damping_reduction_threshold = Inf`
 * `η = 0.2`,
-* `expect_zero_residual = false` (# TODO: remove in favour of the more general `damping_reduction_threshold`)
 * `initial_gradient = `$(_link(:zero_vector))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
@@ -374,7 +370,6 @@ mutable struct LevenbergMarquardtState{
     damping_term::Tparams
     damping_term_min::Tparams
     β::Tparams
-    expect_zero_residual::Bool
     minimum_acceptable_model_improvement::Tparams
     sub_problem::Pr
     sub_state::St
@@ -395,7 +390,6 @@ mutable struct LevenbergMarquardtState{
             damping_term_min::Real = 0.1,
             damping_term::Real = damping_term_min,
             β::Real = 5.0,
-            expect_zero_residual::Bool = false,
             minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
             sub_problem::Pr = nothing,
             sub_state::St = nothing,
@@ -433,7 +427,6 @@ mutable struct LevenbergMarquardtState{
             β_reduction,
             damping_term, damping_term_min,
             β,
-            expect_zero_residual,
             minimum_acceptable_model_improvement,
             sub_problem, sub_state,
         )
@@ -450,9 +443,10 @@ function show(io::IO, lms::LevenbergMarquardtState)
     $Iter
     ## Parameters
     * β: $(lms.β)
+    * damping reduction threshold: $(lms.damping_reduction_threshold)
+    * β_reduction: $(lms.β_reduction)
     * damping term_ $(lms.damping_term) (min: $(lms.damping_term_min))
     * η: $(lms.η)
-    * expect zero residual: $(lms.expect_zero_residual)
     * retraction method: $(lms.retraction_method)
 
     ## Stopping criterion

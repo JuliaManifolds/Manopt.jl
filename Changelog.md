@@ -17,8 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * (breaking change) renamed `CoordinateVectorialType` to `CoefficientVectorialType` to have a
   consistent naming that anything with respect to a basis is called “coefficients”
-* removed the old closed-form-in-coordinates subsolver for `LevenbergMarquardt`; if you implemented your own, pass it to `sub_problem`,
+* moved the old closed-form-in-coordinates subsolver for `LevenbergMarquardt` handling to the subsolver; if you implemented your own, pass it to `sub_problem`,
 set the `sub_state` to indicate allocating or in-place evaluation and change the signature as documented; make especially sure to return a tangent vector now and not coordinates.
+* (breaking change) `expect_zero_residual` in `LevenbergMarquardt` is replaced by more general `damping_reduction_threshold` and `β_reduction`. To recover the behavior of `expect_zero_residual=true`, set `damping_reduction_threshold` to the same value as `η` and `β_reduction` to `β`.
 
 ### Fixed
 

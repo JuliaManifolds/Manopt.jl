@@ -157,7 +157,7 @@ end
     M = Euclidean(2)
     ds = LevenbergMarquardt(
         M, F_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2), jacF_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2), p0;
-        return_state = true, expect_zero_residual = true, linear_subsolver! = test_lm_lin_solve!,
+        return_state = true, damping_reduction_threshold = 0.2, linear_subsolver! = test_lm_lin_solve!,
     )
     lms = get_state(ds)
     @test lms.sub_state.linsolve!! === test_lm_lin_solve!
@@ -166,7 +166,7 @@ end
     p1 = copy(M, p0)
     LevenbergMarquardt!(
         M, F_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2), jacF_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2), p1;
-        expect_zero_residual = true,
+        damping_reduction_threshold = 0.2,
     )
     @test isapprox(M, p_star, p1; atol = p_atol)
 
@@ -626,6 +626,8 @@ end
             robustifier = robustifier,
             stopping_criterion = StopAfterIteration(75) | StopWhenGradientNormLess(1.0e-11) | StopWhenStepsizeLess(1.0e-11),
             sub_state = CoordinatesNormalSystemState(M; A = A),
+            β_reduction = 0.3,
+            damping_reduction_threshold = 0.5,
             use_fast_coordinate_system = true,
             return_state = true,
         )

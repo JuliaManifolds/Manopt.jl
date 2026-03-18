@@ -42,8 +42,6 @@ Alternatively, passing a [`NonlinearLeastSquaresObjective`](@ref) `nlso`.
 
 $(_kwargs(:evaluation))
 * `η=0.2`:                   scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < η < 1`.
-* `expect_zero_residual=false`: whether or not the algorithm might expect that the value of
-  residual (objective) at minimum is equal to 0.
 * `damping_term_min=0.1`:      initial (and also minimal) value of the damping term
 * `β=5.0`:                     parameter by which the damping term is multiplied when the current new point is rejected
 * `function_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
@@ -203,7 +201,6 @@ function LevenbergMarquardt!(
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
         debug = [DebugWarnIfCostIncreases()],
-        expect_zero_residual::Bool = false,
         β::Real = 5.0,
         damping_reduction_threshold::Real = Inf,
         β_reduction::Real = 0.5,
@@ -243,7 +240,6 @@ function LevenbergMarquardt!(
         damping_term_min,
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,
-        expect_zero_residual = expect_zero_residual,
         sub_problem = sub_problem,
         sub_state = sub_state_,
         minimum_acceptable_model_improvement = minimum_acceptable_model_improvement,
@@ -314,10 +310,6 @@ function step_solver!(
     end
     if ρ >= lms.η # enough improvement: accept, decrease damping term
         copyto!(M, lms.p, q)
-        if lms.expect_zero_residual # following Adachi et al.: If we expect a zero cost at the minimum, reduce damping on success.
-            # TODO: remove this
-            lms.damping_term = max(lms.damping_term_min, lms.damping_term / lms.β)
-        end
         get_residuals!(M, lms.residual_values, nlso, lms.p)
         for (o, jb) in zip(nlso.objective, lms.jacobian_f)
             if !isnothing(jb)
