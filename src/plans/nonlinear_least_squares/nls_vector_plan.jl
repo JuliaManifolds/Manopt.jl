@@ -579,7 +579,6 @@ function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateObjective, ::Val
     return lmlso
 end
 
-## TODO: RB: Continue documentation here.
 get_objective(lmsco::LevenbergMarquardtLinearSurrogateObjective) = lmsco.objective
 
 """
@@ -612,20 +611,6 @@ function get_cost(
     )
     cost = norm(get_vector_field(M, lmsco, p))^2 / 2
     return cost
-end
-"""
-    get_cost(TpM::TangentSpace, slso::SymmetricLInearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, X)
-
-Compute the surrogate cost when solving its normal equation, see also
-[`get_cost(::AbstractManifold, ::LevenbergMarquardtLinearSurrogateObjective, p, X)`](@ref),
-[`get_linear_operator`](@ref), and [`get_vector_field`](@ref) for more details.
-"""
-function get_cost(
-        TpM::TangentSpace, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, X
-    ) where {E <: AbstractEvaluationType}
-    M = base_manifold(TpM)
-    p = base_point(TpM)
-    return get_cost(M, slso.objective, p, X)
 end
 
 _docs_grad_LMSurrogate_grad = """
@@ -732,6 +717,8 @@ function _get_gradient!(
     return Y
 end
 
+## TODO: RB: Continue documentation here.
+
 """
     default_lm_lin_solve!(sk, JJ::AbstractMatrix, grad_f_c)
 
@@ -824,6 +811,184 @@ function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNorm
     cnss.linsolve!!(cnss.c, cnss.A, cnss.b)
     return cnss
 end
+
+
+"""
+    get_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
+    get_linear_operator(M::AbstractManifold, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
+    get_linear_operator!(M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
+    get_linear_operator!(M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
+
+Compute the linear operator ``$(_tex(:Cal, "L"))`` corresponding to the optimality conditions of the
+Levenberg-Marquardt surrogate objective, i.e. the normal conditions
+
+```math
+$(_tex(:Cal, "L"))(X) = C J_F(p)[X] $(_tex(:bigr))],
+```
+
+Note that this is done per every block (vectorial function with its robustifier) of the underlying
+[`NonlinearLeastSquaresObjective`](@ref) and summed up.
+This can be computed in-place of `y`.
+
+See also [`get_vector_field`](@ref) for evaluating the corresponding vector field
+"""
+function get_linear_operator(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
+    )
+    nlso = get_objective(lmsco)
+    n = residuals_count(nlso)
+    y = zeros(eltype(p), n)
+    return get_linear_operator!(M, y, lmsco, p, X)
+end
+function get_linear_operator!(
+        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
+    )
+    nlso = get_objective(lmsco)
+    # Init to zero
+    fill!(y, 0)
+    start = 0
+    Y_cache = zero_vector(M, p)
+    # TODO: use the actual basis? store it in the VGF instead maybe?
+    c_cache = allocate_result(M, get_coordinates, p, X, DefaultOrthonormalBasis())
+    # lmsco.value_cache has been filled in step_solver! of LevenbergMarquardt, so we can just use it here
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        len = length(o)
+        value_cache = view(lmsco.value_cache, (start + 1):(start + len))
+        _get_linear_operator!(
+            M, view(y, (start + 1):(start + len)), o, r, p, X, value_cache;
+            ε = lmsco.ε, mode = lmsco.mode, Y_cache = Y_cache, c_cache = c_cache,
+        )
+        start += len
+    end
+    return y
+end
+# for a single block – the actual formula
+function _get_linear_operator!(
+        M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
+        value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
+    )
+    F_sq = sum(abs2, value_cache)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    get_jacobian!(M, y, o, p, X; Y_cache = Y_cache, c_cache = c_cache)
+    # Compute C y
+    α = sqrt(ρ_prime)
+    t = dot(value_cache, y)
+    @. y = α * (y - operator_scaling * t * value_cache)
+    return y
+end
+# Componenwise: Decouple
+function _get_linear_operator!(
+        M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X,
+        value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
+    )
+    a = value_cache
+    r = cr.robustifier
+    get_jacobian!(M, y, o, p, X)
+    for (i, ai) in enumerate(value_cache)
+        ai_sq = abs(ai)^2
+        (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
+        _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
+        # get the “Jacobian” of the ith component, i.e. y[i]
+        # C is justr a diagonal matrix here
+        y[i] = sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * y[i]
+    end
+    return y
+end
+
+"""
+    get_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
+    get_vector_field!(M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
+    get_vector_field!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
+
+Compute the vector field ``y`` corresponding to the Levenberg-Marquardt surrogate objective, i.e.,
+
+```math
+y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p).
+```
+
+Note that this is done per every block (vectorial function with its robustifier) of the underlying
+[`NonlinearLeastSquaresObjective`](@ref) and summed up.
+
+See also
+* [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling
+* [`get_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
+"""
+function get_vector_field(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
+    )
+    nlso = get_objective(lmsco)
+    n = residuals_count(nlso)
+    y = zeros(number_eltype(p), n)
+    return get_vector_field!(M, y, lmsco, p)
+end
+function get_vector_field!(
+        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
+    )
+    nlso = get_objective(lmsco)
+    # Init to zero
+    fill!(y, 0)
+    start = 0
+    # For every block
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        _get_vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; ε = lmsco.ε, mode = lmsco.mode)
+        start += length(o)
+    end
+    return y
+end
+# for a single block – the actual formula
+function _get_vector_field!(
+        M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
+        ε::Real, mode::Symbol,
+    )
+    get_value!(M, y, o, p) # evaluate residuals F(p)
+    F_sq = sum(abs2, y)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
+    residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    # Compute y = sqrt(ρ(p)) / (1-α) * F(p)
+    y .*= residual_scaling
+    return y
+end
+# Componentwise, it decouples, C is diagonal
+function _get_vector_field!(
+        M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
+        ε::Real, mode::Symbol,
+    )
+    get_value!(M, y, o, p) # evaluate residuals F(p)
+    r = cr.robustifier
+    for (i, ai) in enumerate(y)
+        ai_sq = abs(ai)^2
+        (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
+        residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
+        # Compute y = sqrt(ρ(p)) / (1-α) * F(p)
+        y[i] *= residual_scaling
+    end
+    return y
+end
+
+
+
+
+
+
+#
+#
+# TODO: Old Struct, refactor to a NOrmalEq wrapper
+
+"""
+    get_cost(TpM::TangentSpace, slso::SymmetricLInearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, X)
+
+Compute the surrogate cost when solving its normal equation, see also
+[`get_cost(::AbstractManifold, ::LevenbergMarquardtLinearSurrogateObjective, p, X)`](@ref),
+[`get_linear_operator`](@ref), and [`get_vector_field`](@ref) for more details.
+"""
+function get_cost(
+        TpM::TangentSpace, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, X
+    ) where {E <: AbstractEvaluationType}
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return get_cost(M, slso.objective, p, X)
+end
 # Maybe a bit too precise, but in this case we get a coefficient vector and we want a tangent vector
 function get_solver_result(
         dmp::DefaultManoptProblem{<:TangentSpace, <:SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateObjective}},
@@ -836,7 +1001,7 @@ function get_solver_result(
 end
 #
 #
-#
+# TODO: These are the old terms that should be refactored to not use _normal_ since that moves to the surrogate wrapper
 """
     get_linear_normal_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
     get_linear_normal_operator(M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
@@ -1059,89 +1224,6 @@ function add_linear_normal_operator!(
     return A
 end
 
-"""
-    get_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
-    get_linear_operator(M::AbstractManifold, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
-    get_linear_operator!(M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
-    get_linear_operator!(M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
-
-Compute the linear operator ``$(_tex(:Cal, "L"))`` corresponding to the optimality conditions of the
-Levenberg-Marquardt surrogate objective, i.e. the normal conditions
-
-```math
-$(_tex(:Cal, "L"))(X) = C J_F(p)[X] $(_tex(:bigr))],
-```
-
-Note that this is done per every block (vectorial function with its robustifier) of the underlying
-[`NonlinearLeastSquaresObjective`](@ref) and summed up.
-This can be computed in-place of `y`.
-
-See also [`get_vector_field`](@ref) for evaluating the corresponding vector field
-"""
-function get_linear_operator(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
-    )
-    nlso = get_objective(lmsco)
-    n = residuals_count(nlso)
-    y = zeros(eltype(p), n)
-    return get_linear_operator!(M, y, lmsco, p, X)
-end
-function get_linear_operator!(
-        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
-    )
-    nlso = get_objective(lmsco)
-    # Init to zero
-    fill!(y, 0)
-    start = 0
-    Y_cache = zero_vector(M, p)
-    # TODO: use the actual basis? store it in the VGF instead maybe?
-    c_cache = allocate_result(M, get_coordinates, p, X, DefaultOrthonormalBasis())
-    # lmsco.value_cache has been filled in step_solver! of LevenbergMarquardt, so we can just use it here
-    for (o, r) in zip(nlso.objective, nlso.robustifier)
-        len = length(o)
-        value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        _get_linear_operator!(
-            M, view(y, (start + 1):(start + len)), o, r, p, X, value_cache;
-            ε = lmsco.ε, mode = lmsco.mode, Y_cache = Y_cache, c_cache = c_cache,
-        )
-        start += len
-    end
-    return y
-end
-# for a single block – the actual formula
-function _get_linear_operator!(
-        M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
-        value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
-    )
-    F_sq = sum(abs2, value_cache)
-    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
-    get_jacobian!(M, y, o, p, X; Y_cache = Y_cache, c_cache = c_cache)
-    # Compute C y
-    α = sqrt(ρ_prime)
-    t = dot(value_cache, y)
-    @. y = α * (y - operator_scaling * t * value_cache)
-    return y
-end
-# Componenwise: Decouple
-function _get_linear_operator!(
-        M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X,
-        value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
-    )
-    a = value_cache
-    r = cr.robustifier
-    get_jacobian!(M, y, o, p, X)
-    for (i, ai) in enumerate(value_cache)
-        ai_sq = abs(ai)^2
-        (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
-        _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
-        # get the “Jacobian” of the ith component, i.e. y[i]
-        # C is justr a diagonal matrix here
-        y[i] = sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * y[i]
-    end
-    return y
-end
-
 _doc_get_normal_vector_field = """
     get_normal_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
     get_normal_vector_field!(M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
@@ -1304,75 +1386,9 @@ function add_normal_vector_field!(
     return c
 end
 
-"""
-    get_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
-    get_vector_field!(M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
-    get_vector_field!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
-
-Compute the vector field ``y`` corresponding to the Levenberg-Marquardt surrogate objective, i.e.,
-
-```math
-y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p).
-```
-
-Note that this is done per every block (vectorial function with its robustifier) of the underlying
-[`NonlinearLeastSquaresObjective`](@ref) and summed up.
-
-See also
-* [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling
-* [`get_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
-"""
-function get_vector_field(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
-    )
-    nlso = get_objective(lmsco)
-    n = residuals_count(nlso)
-    y = zeros(number_eltype(p), n)
-    return get_vector_field!(M, y, lmsco, p)
-end
-function get_vector_field!(
-        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
-    )
-    nlso = get_objective(lmsco)
-    # Init to zero
-    fill!(y, 0)
-    start = 0
-    # For every block
-    for (o, r) in zip(nlso.objective, nlso.robustifier)
-        _get_vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; ε = lmsco.ε, mode = lmsco.mode)
-        start += length(o)
-    end
-    return y
-end
-# for a single block – the actual formula
-function _get_vector_field!(
-        M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        ε::Real, mode::Symbol,
-    )
-    get_value!(M, y, o, p) # evaluate residuals F(p)
-    F_sq = sum(abs2, y)
-    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
-    # Compute y = sqrt(ρ(p)) / (1-α) * F(p)
-    y .*= residual_scaling
-    return y
-end
-# Componentwise, it decouples, C is diagonal
-function _get_vector_field!(
-        M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
-        ε::Real, mode::Symbol,
-    )
-    get_value!(M, y, o, p) # evaluate residuals F(p)
-    r = cr.robustifier
-    for (i, ai) in enumerate(y)
-        ai_sq = abs(ai)^2
-        (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
-        residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
-        # Compute y = sqrt(ρ(p)) / (1-α) * F(p)
-        y[i] *= residual_scaling
-    end
-    return y
-end
+#
+#
+# TODO: Refactor the above _normal_ functions to be the _ functions without normal for the following
 
 #
 # The Symmetric Linear System (e.g. in CGRes) for the LM Surrogate is its normal equations and vector.

@@ -1,7 +1,6 @@
 #
 #
 # A linear surrogate model for use with certain objectives.
-# TODO: Currently this only has one concrete subtype,. maybe this abstract one is hence not needed?
 """
     AbstractLinearSurrogateObjective{E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}} <: AbstractManifoldObjective{E}
 
@@ -92,6 +91,7 @@ get_normal_vector_field(M::AbstractManifold, lsmo::AbstractLinearSurrogateObject
 #
 #
 # Wrapper to symmetric linear systems where the normal eq becomes the linear one
+# TODO: Refactor to a `NormalEquations` struct
 """
     SymmetricLinearSystem{E <: AbstractEvaluationType, O<: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}
 

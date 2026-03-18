@@ -78,6 +78,7 @@ function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateCoordinatesObjec
     return lmlso
 end
 
+# TODO (next work package RB): Refactor the _normal_ equations to be the get_VF and get_LO of a NormalEquation wrapper.
 # TODO / temp remark: analogue to nlsplan:551
 function get_linear_normal_operator!(
         M::AbstractManifold, A::AbstractMatrix, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, B::AbstractBasis;
