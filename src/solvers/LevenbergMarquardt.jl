@@ -205,6 +205,8 @@ function LevenbergMarquardt!(
         debug = [DebugWarnIfCostIncreases()],
         expect_zero_residual::Bool = false,
         β::Real = 5.0,
+        damping_reduction_threshold::Real = Inf,
+        β_reduction::Real = 0.5,
         η::Real = 0.2,
         damping_term_min::Real = 0.1,
         X = zero_vector(M, p),
@@ -235,6 +237,8 @@ function LevenbergMarquardt!(
         p = p,
         # TODO Rename to have either only math symbols or only speaking names but not both
         β = β,
+        damping_reduction_threshold = damping_reduction_threshold,
+        β_reduction = β_reduction,
         η = η,
         damping_term_min,
         stopping_criterion = stopping_criterion,
