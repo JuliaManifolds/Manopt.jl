@@ -313,12 +313,17 @@ $(_fields(:stopping_criterion; name = "stop"))
 * `last_stepsize`:        length of `step_vector`
 * `η`:                    Scaling factor for the sufficient cost decrease threshold required
   to accept new proposal points. Allowed range: `0 < η < 1`.
+* `damping_reduction_threshold`: Factor similar to `η` above which damping will be decreased
+  by ``
 * `damping_term`:         current value of the damping term
 * `damping_term_min`:     initial (and also minimal) value of the damping term
 * `β`:                    parameter by which the damping term is multiplied when the current
   new point is rejected
+* `β_reduction`           parameter by which the damping term is multiplied when the
+  improvement quotient exceeds `damping_reduction_threshold`.
 * `expect_zero_residual`: if true, the algorithm expects that the value of
-  the residual (objective) at minimum is equal to 0.
+  the residual (objective) at minimum is equal to 0. TODO: deprecate in favor of more
+  general `damping_reduction_threshold` and 
 * `minimum_acceptable_model_improvement`: the minimum improvement in the model function that
   is required to accept a new point; if this is not met, the new point is rejected and
   the damping term is increased.
@@ -337,10 +342,12 @@ Generate the Levenberg-Marquardt solver state.
 The following fields are keyword arguments
 
 * `β = 5.0`
+* `β_reduction = 0.5`
 * `damping_term_min = 0.1`
 * `damping_term = damping_term_min`
+* `damping_reduction_threshold = Inf`
 * `η = 0.2`,
-* `expect_zero_residual = false`
+* `expect_zero_residual = false` (# TODO: remove in favour of the more general `damping_reduction_threshold`)
 * `initial_gradient = `$(_link(:zero_vector))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
@@ -362,6 +369,8 @@ mutable struct LevenbergMarquardtState{
     direction::TGrad
     X::TGrad
     η::Tparams
+    damping_reduction_threshold::Tparams
+    β_reduction::Tparams
     damping_term::Tparams
     damping_term_min::Tparams
     β::Tparams
@@ -381,6 +390,8 @@ mutable struct LevenbergMarquardtState{
                 StopWhenStepsizeLess(1.0e-12),
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
             η::Real = 0.2,
+            damping_reduction_threshold::Real = Inf,
+            β_reduction::Real = 0.5,
             damping_term_min::Real = 0.1,
             damping_term::Real = damping_term_min,
             β::Real = 5.0,
@@ -407,8 +418,9 @@ mutable struct LevenbergMarquardtState{
             )
         end
         (β <= 1) && throw(ArgumentError("Value of β must be strictly above 1, received $β"))
+        (β_reduction >= 1) && throw(ArgumentError("Value of β_reduction must be strictly below 1, received $β_reduction"))
         _sub_state = maybe_wrap_evaluation_type(sub_state)
-        Tparams = promote_type(typeof(η), typeof(damping_term_min), typeof(β))
+        Tparams = promote_type(typeof(η), typeof(damping_term_min), typeof(β), typeof(β_reduction))
         SC = typeof(stopping_criterion)
         RM = typeof(retraction_method)
         return new{
@@ -417,7 +429,8 @@ mutable struct LevenbergMarquardtState{
             p,
             stopping_criterion, retraction_method,
             initial_residual_values, initial_jacobian_f,
-            direction, X, η,
+            direction, X, η, damping_reduction_threshold,
+            β_reduction,
             damping_term, damping_term_min,
             β,
             expect_zero_residual,
@@ -965,10 +978,6 @@ function _get_vector_field!(
     end
     return y
 end
-
-
-
-
 
 
 #

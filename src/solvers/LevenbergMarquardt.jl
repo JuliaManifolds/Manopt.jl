@@ -305,9 +305,13 @@ function step_solver!(
     ρ = cost_improvement / model_improvement
     # Update damping term and iterate
     # TODO Abstract this to a generic update for η?
+    if ρ >= lms.damping_reduction_threshold
+        lms.damping_term *= lms.β_reduction
+    end
     if ρ >= lms.η # enough improvement: accept, decrease damping term
         copyto!(M, lms.p, q)
         if lms.expect_zero_residual # following Adachi et al.: If we expect a zero cost at the minimum, reduce damping on success.
+            # TODO: remove this
             lms.damping_term = max(lms.damping_term_min, lms.damping_term / lms.β)
         end
         get_residuals!(M, lms.residual_values, nlso, lms.p)
