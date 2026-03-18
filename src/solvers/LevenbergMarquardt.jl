@@ -7,7 +7,7 @@ _doc_LM = """
     LevenbergMarquardt!(M, vgf, p, num_components=-1; kwargs...)
     LevenbergMarquardt!(M, nlso, p, num_components=-1; kwargs...)
 
-compute the the Riemannian Levenberg-Marquardt algorithm [Peeters:1993, AdachiOkunoTakeda:2022](@cite)
+compute the the Riemannian Levenberg-Marquardt algorithm [Peeters:1993, AdachiOkunoTakeda:2022, BaranBergmann:2026](@cite)
 to solve
 
 $(_problem(:NonLinearLeastSquares))
