@@ -901,18 +901,18 @@ end
 #
 # --- Adjoint Jacobian function in terms of gradients as a 1-1 tensor (basis free)
 
-_doc_add_adjoint_jacobian_function_vector = """
-    add_adjoint_jacobian!(M::AbstractManifold, X, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
+_doc_get_adjoint_jacobian_vector = """
+    get_adjoint_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
+    get_adjoint_jacobian!(M::AbstractManifold, X, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
 
 Compute the adjoint Jacobian ``J_F^*(p)[a]`` of a vectorial function ``F: $(_math(:Manifold)) → ℝ^n``
-``how it acts on a vector `a` at `p`, i.e., it is given by the relation
+how it acts on a vector `a` at `p`, i.e., it is given by the relation
 
 ````math
 $(_tex(:inner, "J_F^*(p)[a]", "X"; index = "p")) = $(_tex(:inner, "a", "J_F(p)[X]")),
 ````
 
-where the inner product on the right hand side is the standard Euclidean inner product on ``ℝ^m``.
-
+where the inner product on the right hand side is the standard Euclidean inner product on ``ℝ^n``.
 To be precise, the adjoint Jacobian is defined using the Riemannian gradients of the component functions
 ``F_i`` of ``F`` as
 
@@ -923,11 +923,36 @@ J_F^*(p)[a] = $(_tex(:sum, "i=1", "m")) a_i $(_tex(:grad))F_i(p),
 ````
 
 This can be computed in-place of `X`.
+To directly add a Jacobian to `X` see [`add_adjoint_jacobian!`](@ref)
 
 !!! note
     For the case of a matrix representation, i.e. the function signature
     `get_jacobian!(M, JF, vgf, p)` the resulting matrix can just be transposed to obtain the adjoint,
     if you used an [`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`).
+"""
+
+@doc "$(_doc_get_adjoint_jacobian_vector)"
+function get_adjoint_jacobian(
+        M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, a::AbstractVector; kwargs...
+    )
+    X = zero_vector(M, p)
+    return add_adjoint_jacobian!(M, X, vgf, p, a, kwargs...)
+end
+
+@doc "$(_doc_get_adjoint_jacobian_vector)"
+function get_adjoint_jacobian!(
+        M::AbstractManifold, X, vgf::AbstractVectorGradientFunction, p, a::AbstractVector; kwargs...
+    )
+    zero_vector!(M, X, p)
+    return add_adjoint_jacobian!(M, X, vgf, p, a, kwargs...)
+end
+
+_doc_add_adjoint_jacobian_function_vector = """
+    add_adjoint_jacobian!(M::AbstractManifold, X, vgf::AbstractVectorGradientFunction, p, a; kwargs...)
+
+Compute the adjoint Jacobian ``J_F^*(p)[a]`` of a vectorial function ``F: $(_math(:Manifold)) → ℝ^n``
+and add it to `X`.
+For more details see [`get_adjoint_jacobian`](@ref).
 """
 
 @doc "$(_doc_add_adjoint_jacobian_function_vector)"
@@ -1012,11 +1037,12 @@ end
 #
 # --- Adjoint Jacobian function in terms of gradients as a matrix-vector product in a basis
 
-_doc_add_adjoint_jacobian_function_coeff = """
-    add_adjoint_jacobian!(M::AbstractManifold, c, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...)
+_doc_get_adjoint_jacobian_function_coeff = """
+    get_adjoint_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...)
+    get_adjoint_jacobian!(M::AbstractManifold, c, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...)
 
 Compute the adjoint Jacobian ``J_F^*(p)[a]`` of a vectorial function ``F: $(_math(:Manifold)) → ℝ^n``
-``how it acts on a vector `a` at `p`, i.e., it is given by the relation
+how it acts on a vector `a` at `p`, i.e., it is given by the relation
 
 ````math
 $(_tex(:inner, "J_F^*(p)[a]", "X"; index = "p")) = $(_tex(:inner, "a", "J_F(p)[X]")),
@@ -1028,6 +1054,29 @@ This can be done in-place of `c`.
 Note that if `vgf` works internally in a basis different from the one provided, and additional change of basis is performed.
 """
 
+
+@doc "$(_doc_get_adjoint_jacobian_function_coeff)"
+function get_adjoint_jacobian(
+        M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...
+    )
+    c = get_coordinates(M, p, zero_vector(M, p), B)
+    return add_adjoint_jacobian!(M, c, vgf, p, a, B, kwargs...)
+end
+
+@doc "$(_doc_get_adjoint_jacobian_function_coeff)"
+function get_adjoint_jacobian!(
+        M::AbstractManifold, c, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...
+    )
+    fill!(c, 0)
+    return add_adjoint_jacobian!(M, c, vgf, p, a, kwargs...)
+end
+
+_doc_add_adjoint_jacobian_function_coeff = """
+    add_adjoint_jacobian!(M::AbstractManifold, c, vgf::AbstractVectorGradientFunction, p, a, B::AbstractBasis; kwargs...)
+
+Compute the adjoint Jacobian ``J_F^*(p)[a]`` of a vectorial function ``F: $(_math(:Manifold)) → ℝ^n`` as a matrix in a tangent space.
+For more details see [`get_adjoint_jacobian`](@ref).
+"""
 
 @doc "$(_doc_add_adjoint_jacobian_function_coeff)"
 add_adjoint_jacobian!(M::AbstractManifold, c, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...)
@@ -1090,7 +1139,7 @@ end
     get_gradient!(M::AbstractManifold, X, vgf::VectorGradientFunction, p, i)
     get_gradient!(M::AbstractManifold, X, vgf::VectorGradientFunction, p, i, range)
 
-Evaluate the gradients of the vector function `vgf` on the manifold `M` at `p` and
+Evaluate the gradient(s) of the vector function `vgf` on the manifold `M` at `p` and
 the values given in `range`, specifying the representation of the gradients.
 
 Since `i` is assumed to be a linear index, you can provide

@@ -3,6 +3,7 @@ methodes = "methodes" # french
 Serie = "Serie" # french
 sur = "sur" # french
 cmo = "cmo" # often used abbreviation for constrained manifold objective
+BA = "BA" # Maybe rename that shortened version in the tests
 
 [files]
 extend-exclude = [

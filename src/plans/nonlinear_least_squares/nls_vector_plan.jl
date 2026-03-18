@@ -110,7 +110,7 @@ end
     residuals_count(nlso::NonlinearLeastSquaresObjective)
 
 Return the total number of residuals in [`NonlinearLeastSquaresObjective`](@ref) `nlso`,
-which is the sum of the single block compnents lengths.
+which is the sum of the single block components lengths.
 """
 function residuals_count(nlso::NonlinearLeastSquaresObjective)
     return sum(length(o) for o in nlso.objective)
@@ -628,13 +628,40 @@ function get_cost(
     return get_cost(M, slso.objective, p, X)
 end
 
-# TODO: Write docs.
+_docs_grad_LMSurrogate_grad = """
+    get_gradient(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
+    get_gradient!(M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
+
+Compute the gradient of the [`LevenbergMarquardtLinearSurrogateObjective`](@ref), which is given by
+
+```math
+$(
+    _tex(
+        :aligned,
+        "$(_tex(:grad)) μ_p(X) &= $(_tex(:sum, "i=1", "m")) $(_tex(:Cal, "L"))^*$(_tex(:bigl))$(_tex(:Cal, "L"))(X) + y $(_tex(:bigr)))",
+        """&= $(_tex(:sum, "i=1", "m")) J_F^*(p)$(_tex(:Bigl))[
+        ρ_i' $(_tex(:bigl))(I- b F(p)F(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_F(p)[X] + a$(_tex(:sqrt, "ρ_i'"))$(_tex(:bigl))(I- b F(p)F(p)^{$(_tex(:transp))}$(_tex(:bigr))) F(p)
+        $(_tex(:Bigr))]
+        """
+    )
+),
+```
+where ``ρ_i' = ρ_i'($(_tex(:norm, "F_i(p)"))_2^2)``, ``ρ_i'' = ρ_i''($(_tex(:norm, "F_i(p)"))_2^2)``
+are the values from the [`AbstractRobustifierFunction`](@ref) `ρ` its first and second derivative, respectively,
+and ``a,b`` are the [`get_LevenbergMarquardt_scaling`](@ref) values of scaling the residual and operator, respectively.
+See also [`get_jacobian`](@ref) and [`get_adjoint_jacobian`](@ref).
+
+This can be computed inplace of `Y`.
+"""
+
+@doc "$(_docs_grad_LMSurrogate_grad)"
 function get_gradient(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
     Y = zero_vector(M, p)
     return get_gradient!(M, Y, lmsco, p, X)
 end
+@doc "$(_docs_grad_LMSurrogate_grad)"
 function get_gradient!(
         M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
     )
@@ -657,6 +684,7 @@ function get_gradient!(
     Y .+= lmsco.penalty .* X
     return Y
 end
+# For each single summand, we are on the level of a single vectorial function and a robustifier.
 function _get_gradient!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
@@ -668,7 +696,7 @@ function _get_gradient!(
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
     b = zero(a)
     get_jacobian!(M, b, o, p, X)
-    # Compute C^TCa = C^2 a (inplace of a)
+    # Compute C^TCb = C^2 b (inplace of b)
     b .= ρ_prime .* (I - operator_scaling * (a * a'))^2 * b
     # add C^T y = C^T (sqrt(ρ(p)) / (1 - α) F(p)) (which overall has a ρ_prime upfront)
     b .+= residual_scaling .* sqrt(ρ_prime) .* (I - operator_scaling * (a * a')) * a

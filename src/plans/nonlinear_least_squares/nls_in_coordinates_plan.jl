@@ -1,10 +1,10 @@
 # TODO (RB -> MB, 12/03): This name is a but long and Clumsy now,
 # The “linear surrogate” should stay one term,
 # If we want to keep such a long name, then LevenbergMarquardtLinearSurrogateCoordinatesObjective?
-# We vould also skip the LM since the Surrogate is not necessarily only for that alg?
+# We would also skip the LM since the Surrogate is not necessarily only for that alg?
 # (yes naming is hard) and we should then adapt the other one as well...
-# Would it make sense to not duplictae this but have the JacobianCache type to decide this?
-# Or would a commmon abstract supertype make sense?
+# Would it make sense to not duplicate this but have the JacobianCache type to decide this?
+# Or would a common abstract supertype make sense?
 
 # (MB -> RB, 12/03): This surrogate can be used only by a narrow set of algorithms similar to LM
 # (specifically, it assumes least squares robust structure, penalty term and Triggs correction)
@@ -276,7 +276,7 @@ function get_cost(
     return 0.5 * norm(vf)^2
 end
 
-# TODO (RB -> MB, 12/03): simliar to nlsqplan:574-581 right?
+# TODO (RB -> MB, 12/03): similar to nlsqplan:574-581 right?
 function get_cost(
         TpM::TangentSpace, lnsco::SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
         X,

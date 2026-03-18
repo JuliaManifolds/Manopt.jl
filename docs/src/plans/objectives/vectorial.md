@@ -22,6 +22,8 @@ Manopt.FunctionVectorialType
 ## Access functions
 
 ```@docs
+Manopt.get_adjoint_jacobian
+Manopt.get_adjoint_jacobian!
 Manopt.get_jacobian
 Manopt.get_jacobian!
 Manopt.get_value

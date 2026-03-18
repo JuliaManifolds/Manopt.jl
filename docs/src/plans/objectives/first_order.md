@@ -27,6 +27,7 @@ ManifoldCostGradientObjective
 
 ```@docs
 get_gradient
+get_gradient!
 get_gradients
 get_differential
 get_residuals
