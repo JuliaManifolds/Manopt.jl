@@ -747,7 +747,7 @@ using a linear system in coordinates of the tangent space at the current iterate
 ## Fields
 
 * `A` an ``n×n`` matrix to store the normal equations linear from [`get_linear_operator`](@ref) in coordinates, where `n` is the number of coordinates
-* `b` a ``n`` vector storing the right hand side of the normal equations from the corresponding [`get_vector`](@ref)
+* `b` a ``n`` vector storing the right hand side of the normal equations in coordinates
 * `basis::`[`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`)
 * `linsolve` a functor `(A,b) -> c` to solve the linear system or `(c, A, b) -> c` depending on the evaluation type specified in `solve!`
 

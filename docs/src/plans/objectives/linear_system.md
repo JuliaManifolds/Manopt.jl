@@ -13,7 +13,9 @@ SymmetricLinearSystemObjective
 
 ```@docs
 Manopt.get_linear_operator
+Manopt.get_linear_operator!
 Manopt.get_vector_field
+Manopt.get_vector_field!
 Manopt.get_normal_linear_operator
 Manopt.get_normal_vector_field
 Manopt.get_normal_vector_field!

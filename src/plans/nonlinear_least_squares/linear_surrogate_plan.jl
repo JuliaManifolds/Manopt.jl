@@ -27,7 +27,7 @@ for a concrete subtype of `AbstractLinearSurrogateObjective`
 * [`get_vector_field`](@ref) to compute/evaluate the vector ``y``
 * [`get_objective`](@ref) to provide access to the underlying objective `O`
 
-See also [`NormalEquations`](@ref) for the corresponding normal equations.
+See also the [`NormalEquationsObjective`](@ref) for the corresponding normal equations.
 """
 abstract type AbstractLinearSurrogateObjective{E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}} <: AbstractManifoldObjective{E} end
 
@@ -105,7 +105,7 @@ This wrapper provides the same three functions as the wrapped surrogate
 * [`get_objective`](@ref) to provide access to the underlying surrogate
 
 so that we obtain a symmetric linear system of equations, that can be
-* solved with an iterative method like [`cojugate_gradient`](@ref) or [`conjugate_residual`](@ref)
+* solved with an iterative method like [`conjugate_gradient`](@ref) or [`conjugate_residual`](@ref)
 * solved as a linear system in a basis of the corresponding tangent space.
 """
 struct NormalEquationsObjective{E <: AbstractEvaluationType, O <: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}

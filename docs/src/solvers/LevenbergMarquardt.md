@@ -21,6 +21,7 @@ LevenbergMarquardtState
 Manopt.AbstractLinearSurrogateObjective
 Manopt.NormalEquationsObjective
 Manopt.LevenbergMarquardtLinearSurrogateObjective
+Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective
 Manopt.CoordinatesNormalSystemState
 ```
 
@@ -28,6 +29,8 @@ Manopt.CoordinatesNormalSystemState
 
 ```@docs
 Manopt.get_LevenbergMarquardt_scaling
+Manopt.get_linear_operator!
+Manopt.residuals_count
 ```
 
 ## [Technical details](@id sec-lm-technical-details)
@@ -45,9 +48,7 @@ This is a temporary area before sorting them correctly to first get the docs to 
 
 ```@docs
 Manopt.default_lm_lin_solve!
-Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective
 Manopt.BlockNonzeroVector
-Manopt.residuals_count
 Manopt.BlockNonzeroMatrix
 Manopt.add_normal_vector_field_coord!
 Manopt.add_normal_vector_field!
