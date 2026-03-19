@@ -80,7 +80,7 @@ end
 
 # TODO (next work package RB): Refactor the _normal_ equations to be the get_VF and get_LO of a NormalEquation wrapper.
 # TODO / temp remark: analogue to nlsplan:551
-function get_linear_normal_operator!(
+function get_normal_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, B::AbstractBasis;
         penalty = lmsco.penalty
     )
@@ -90,7 +90,7 @@ function get_linear_normal_operator!(
     start = 0
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len_o = length(o)
-        add_linear_normal_operator_coord!(
+        add_normal_linear_operator_coord!(
             M, A, o, r, p, B; value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)), jacobian_cache = jc,
             ε = lmsco.ε, mode = lmsco.mode
         )
@@ -104,7 +104,7 @@ end
 # TODO (RB -> MB, 12/03): This is considered internal the same was as
 # nlsqplan:845 is?
 """
-    add_linear_normal_operator_coord!(
+    add_normal_linear_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache, jacobian_cache, ε::Real, mode::Symbol
@@ -114,7 +114,7 @@ Add the contribution of a single block (vectorial function with its robustifier)
 the linear normal operator, i.e. compute ``A += J_F^*(p)[C^T C J_F(p)[X]]`` in-place of `A`
 for the given block.
 """
-function add_linear_normal_operator_coord!(
+function add_normal_linear_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache, jacobian_cache, ε::Real, mode::Symbol
@@ -144,7 +144,7 @@ function get_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis;
         penalty::Real = neo.objective.penalty,
     ) where {E <: AbstractEvaluationType}
-    return get_linear_normal_operator!(M, A, neo.objective, p, B; penalty = penalty)
+    return get_normal_linear_operator!(M, A, neo.objective, p, B; penalty = penalty)
 end
 
 # TODO (RB -> MB, 12/03):
@@ -257,13 +257,6 @@ function get_solver_result(
     return get_vector(M, p, cnss.c, cnss.basis)
 end
 
-# TODO (RB -> MB, 12/03): Is this the analogue of nlsqplan:582–587?
-# I think either that function or this one if wrong.
-# The surrogate still maps into Rn, so I think the norm in the second case is wrong?
-# Otherwise the other function is wrong with just calling norm on the vector field? Then that should be the `norm(M, p, ...)` thing?
-
-# MB -> RB, 12/03: Yes, the second case was wrong, created at the time when I was confused
-# about the different variants of `get_vector_field!`.
 function get_cost(
         TpM::TangentSpace, lnsco::NormalEquationsObjective{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
         ::ZeroTangentVector
@@ -296,7 +289,7 @@ function get_cost(
 end
 
 # TODO (RB -> MB, 12/03): very similar to nslqplan:824–843
-function add_linear_normal_operator_coord!(
+function add_normal_linear_operator_coord!(
         M::AbstractManifold, c::AbstractVector,
         lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector;
         penalty::Real = lmsco.penalty,
@@ -308,7 +301,7 @@ function add_linear_normal_operator_coord!(
     for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        add_linear_normal_operator_coord!(
+        add_normal_linear_operator_coord!(
             M, c, o, r, p, cX;
             ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, jacobian_cache = jc
         )
@@ -320,7 +313,7 @@ function add_linear_normal_operator_coord!(
 end
 # TODO (RB -> MB, 12/03): very similar to nslqplan:844–871
 # for a single block – the actual formula - but never with penalty
-function add_linear_normal_operator_coord!(
+function add_normal_linear_operator_coord!(
         M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector;
         value_cache, jacobian_cache, ε::Real, mode::Symbol
     )

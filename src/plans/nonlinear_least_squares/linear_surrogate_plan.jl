@@ -63,13 +63,13 @@ Return the vector `y` of the linear surrogate model `lsmo` at the point ``p ∈ 
 """
 get_vector_field(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p)
 
-function get_linear_normal_operator end
+function get_normal_linear_operator end
 """
-    get_linear_normal_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p)
-    get_linear_normal_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
-    get_linear_normal_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X)
-    get_linear_normal_operator!(M::AbstractManifold, N, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
-    get_linear_normal_operator!(M::AbstractManifold, Y, lsmo::AbstractLinearSurrogateObjective, p, X)
+    get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p)
+    get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
+    get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X)
+    get_normal_linear_operator!(M::AbstractManifold, N, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
+    get_normal_linear_operator!(M::AbstractManifold, Y, lsmo::AbstractLinearSurrogateObjective, p, X)
 
 Return/Evaluate the normal operator ``$(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))`` of the linear surrogate model `lsmo` at the point ``p ∈ M``.
 
@@ -77,7 +77,7 @@ If a tangent vector `X` is provided, evaluate ``$(_tex(:Cal, "L"))^* $(_tex(:Cal
 If a basis `B` is provided, return the matrix representation of ``$(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))`` with respect to that basis.
 Otherwise return the operator as a function `(TpM, X) -> Y`.
 """
-get_linear_normal_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X = nothing)
+get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X = nothing)
 
 function get_normal_vector_field end
 """

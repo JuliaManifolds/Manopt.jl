@@ -1003,19 +1003,12 @@ function get_solver_result(
     p = base_point(TpM)
     return get_vector(M, p, cnss.c, cnss.basis)
 end
-#
-#
-# TODO: These are the old terms that should be refactored to not use _normal_ since that moves to the surrogate wrapper
-"""
-    get_linear_normal_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_linear_normal_operator(M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_linear_normal_operator!(M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_linear_normal_operator!(M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X; ε = lmsco.ε, mode = lmsco.mod)
 
-    get_linear_normal_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_linear_normal_operator(M::AbstractManifold, lmsco::o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_linear_normal_operator!(M::AbstractManifold, [A | b], lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_linear_normal_operator!(M::AbstractManifold, [A | b], o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode)
+"""
+    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
+    get_normal_linear_operator!(M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
+    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
+    get_normal_linear_operator!(M::AbstractManifold, [A | b], lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
 
 Compute the linear operator ``$(_tex(:Cal, "A"))`` corresponding to the optimality conditions of the
 modified Levenberg-Marquardt surrogate objective, i.e. the normal conditions
@@ -1025,28 +1018,32 @@ $(_tex(:Cal, "A"))(X) = $(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))(X) + λX
 = J_F^*(p)$(_tex(:bigl))[ C^T C J_F(p)[X] $(_tex(:bigr))] + λX,
 ```
 
-where ``λ = ```penalty` is a damping parameter.
-While this can be set as a keyword, e.g. when computing the cost, its default is the internally
-stored `penalty` from the surrogate objective ``μ_k``.
+where ``λ = ```penalty` is a damping parameter and with
+``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``
+we have
 
-Note that this is done per every block (vectorial function with its robustifier) of the underlying
-[`NonlinearLeastSquaresObjective`](@ref) and summed up.
+```math
+C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2") * "^2")),
+```
 
-If you provide an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) `B` ``Z_1,…,Z_d`` instead, the operator is returned in Matrix form `A`,
-with respect to these coordinates, i.e. if you provide furthermore `X`
-in coordinates `c` as ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=0", "d")) c_iZ_i``,
-then the result ``Y = $(_tex(:displaystyle))$(_tex(:sum, "i=0", "d")) b_iZ_i`` with ``b = Ac`` is computed.
+See [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and `α`.
+and [`get_jacobian`](@ref) and [`get_adjoint_jacobian`](@ref) concerning ``J_F`` and ``J_F^*``, respectively.
+
+There are three variants to use this function to use the corresponding linear operator
+* if you provide a tangent vector `X`, then the linear operator is evaluated at `X`, the corresponding gradient `Y` is returned
+* if you provide `X` in coordinates `c` with respect to a basis `B` the linear operator is evaluated and the coordinates `b` of the result are returned
+* if you provide (just) a basis `B` of the tangent space, then the matrix `A` of the linear operator represented in this basis is returned. The relation to the second case is that ``b = Ac``.
 
 See also [`get_normal_vector_field`](@ref) for evaluating the corresponding vector field.
 """
-function get_linear_normal_operator(
+function get_normal_linear_operator(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
         penalty::Real = lmsco.penalty,
     )
     Y = zero_vector(M, p)
-    return get_linear_normal_operator!(M, Y, lmsco, p, X; penalty = penalty)
+    return get_normal_linear_operator!(M, Y, lmsco, p, X; penalty = penalty)
 end
-function get_linear_normal_operator!(
+function get_normal_linear_operator!(
         M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X;
         penalty::Real = lmsco.penalty,
     )
@@ -1059,7 +1056,7 @@ function get_linear_normal_operator!(
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        add_linear_normal_operator!(M, Y, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache)
+        add_normal_linear_operator!(M, Y, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache)
         start += len
     end
     # Finally add the damping term
@@ -1067,7 +1064,7 @@ function get_linear_normal_operator!(
     return Y
 end
 # for a single block – the actual formula - but never with penalty
-function add_linear_normal_operator!(
+function add_normal_linear_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = zero_vector(M, p)
     )
@@ -1095,7 +1092,7 @@ function add_linear_normal_operator!(
     return Y
 end
 # Componentwise: A few things decouple
-function _get_linear_normal_operator!(
+function _get_normal_linear_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = nothing,
     )
@@ -1117,14 +1114,14 @@ function _get_linear_normal_operator!(
 end
 #
 # Basis case: (a) including coordinates
-function get_linear_normal_operator(
+function get_normal_linear_operator(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, c, B::AbstractBasis;
         penalty = lmsco.penalty
     )
     d = zero(c)
-    return get_linear_normal_operator!(M, d, lmsco, p, c, B; penalty = penalty)
+    return get_normal_linear_operator!(M, d, lmsco, p, c, B; penalty = penalty)
 end
-function get_linear_normal_operator!(
+function get_normal_linear_operator!(
         M::AbstractManifold, d, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, c, B::AbstractBasis;
         penalty = lmsco.penalty
     )
@@ -1133,29 +1130,29 @@ function get_linear_normal_operator!(
     fill!(d, 0)
     e = copy(d)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        _get_linear_normal_operator!(M, e, o, r, p, c, B; ε = lmsco.ε, mode = lmsco.mode)
+        _get_normal_linear_operator!(M, e, o, r, p, c, B; ε = lmsco.ε, mode = lmsco.mode)
         d .+= e
     end
     # Finally add the damping term
     (penalty != 0) && (d .+= penalty * c)
     return d
 end
-function _get_linear_normal_operator!(M::AbstractManifold, d, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, c, B::AbstractBasis; kwargs...)
-    A = get_linear_normal_operator(M, o, r, p, B; kwargs...)
+function _get_normal_linear_operator!(M::AbstractManifold, d, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, c, B::AbstractBasis; kwargs...)
+    A = get_normal_linear_operator(M, o, r, p, B; kwargs...)
     d .= A * c
     return d
 end
 #
 # Basis case: (b) no coordinates -> compute a matrix representation
-function get_linear_normal_operator(
+function get_normal_linear_operator(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis;
         penalty = lmsco.penalty
     )
     d = number_of_coordinates(M, B)
     A = zeros(number_eltype(p), d, d)
-    return get_linear_normal_operator!(M, A, lmsco, p, B; penalty = penalty)
+    return get_normal_linear_operator!(M, A, lmsco, p, B; penalty = penalty)
 end
-function get_linear_normal_operator!(
+function get_normal_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis;
         penalty = lmsco.penalty
     )
@@ -1163,14 +1160,14 @@ function get_linear_normal_operator!(
     # For every block
     fill!(A, 0)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        add_linear_normal_operator!(M, A, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
+        add_normal_linear_operator!(M, A, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
     end
     # Finally add the damping term
     (penalty != 0) && (LinearAlgebra.diagview(A) .+= penalty)
     return A
 end
 """
-    add_linear_normal_operator!(
+    add_normal_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
@@ -1179,8 +1176,9 @@ end
 Add the contribution of a single block (vectorial function with its robustifier) to
 the linear normal operator, i.e. compute ``A += J_F^*(p)[C^T C J_F(p)[X]]`` in-place of `A`
 for the given block.
+See [`get_normal_linear_operator`](@ref) for details
 """
-function add_linear_normal_operator!(
+function add_normal_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
@@ -1205,7 +1203,7 @@ function add_linear_normal_operator!(
     return A
 end
 # For the componentwise variant, the C^TC turns into a diagonal matrix
-function add_linear_normal_operator!(
+function add_normal_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         cr::ComponentwiseRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
@@ -1234,7 +1232,7 @@ _doc_get_normal_vector_field = """
     get_normal_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis)
     get_normal_vector_field!(M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis)
 
-Compute the normal linear operator tangent vector ``X`` corresponding to the optimality conditions of the
+Compute the normal linear operator tangent vector ``X`` corresponding to the normal equations (optimality conditions) of the
 Levenberg-Marquardt surrogate objective, i.e.,
 
 ```math
@@ -1246,8 +1244,7 @@ the result will be given in coordinates `c`, i.e. such that ``X = $(_tex(:sum, "
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
-
-See also [`get_linear_normal_operator`](@ref) for evaluating the corresponding linear operator of the (normal) linear system,
+See also [`get_normal_linear_operator`](@ref) for evaluating the corresponding linear operator of the (normal) linear system,
 and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and computation of ``C``.
 """
 
@@ -1256,14 +1253,13 @@ _doc_add_normal_vector_field = """
     add_normal_vector_field!(M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis)
 
 Add the contribution of `o` / `r` to the normal linear operator tangent vector in `X` or `c`.
-
+See [`get_normal_vector_field`](@ref) for the mathematical details.
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
 
-See also [`get_linear_normal_operator`](@ref) for evaluating the corresponding linear operator of the (normal) linear system,
+See also [`get_normal_linear_operator`](@ref) for evaluating the corresponding linear operator of the (normal) linear system,
 and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and computation of ``C``.
 """
-
 @doc "$(_doc_get_normal_vector_field)"
 function get_normal_vector_field(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
@@ -1391,39 +1387,69 @@ function add_normal_vector_field!(
 end
 
 #
-#
-# TODO: Refactor the above _normal_ functions to be the _ functions without normal for the following
-
-#
 # The Symmetric Linear System (e.g. in CGRes) for the LM Surrogate is its normal equations and vector.
 # (a) a vector X or a basis B
+_doc_linOp_NEO = """
+    get_linear_operator(M::AbstractManifold, neo::NormalEquationsObjective, p, X)
+    get_linear_operator(M::AbstractManifold, neo::NormalEquationsObjective, p, c, B)
+    get_linear_operator(M::AbstractManifold, neo::NormalEquationsObjective, p, B)
+    get_linear_operator!(M::AbstractManifold, Y, neo::NormalEquationsObjective, p, X)
+    get_linear_operator!(M::AbstractManifold, b, neo::NormalEquationsObjective, p, c, B)
+    get_linear_operator!(M::AbstractManifold, A, neo::NormalEquationsObjective, p, B)
+
+    Evaluate the linear operator related to the normal equations of the [`LevenbergMarquardtLinearSurrogateObjective`](@ref),
+    see [`get_normal_linear_operator`](@ref) for details.
+"""
+
+@doc "$(_doc_linOp_NEO)"
 function get_linear_operator(
         M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
     ) where {E <: AbstractEvaluationType}
-    return get_linear_normal_operator(M, neo.objective, p, XB)
+    return get_normal_linear_operator(M, neo.objective, p, XB)
 end
+@doc "$(_doc_linOp_NEO)"
 function get_linear_operator!(
         M::AbstractManifold, YA, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
     ) where {E <: AbstractEvaluationType}
-    return get_linear_normal_operator!(M, YA, neo.objective, p, XB)
+    return get_normal_linear_operator!(M, YA, neo.objective, p, XB)
 end
 # (b) coefficients in a basis
 function get_linear_operator(
         M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
     ) where {E <: AbstractEvaluationType}
-    return get_linear_normal_operator(M, neo.objective, p, c, B)
+    return get_normal_linear_operator(M, neo.objective, p, c, B)
 end
 function get_linear_operator!(
         M::AbstractManifold, Y, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
     ) where {E <: AbstractEvaluationType}
-    return get_linear_normal_operator!(M, Y, neo.objective, p, c, B)
+    return get_normal_linear_operator!(M, Y, neo.objective, p, c, B)
 end
+
+_doc_vecField_NEO = """
+    get_vector_field(M::AbstractManifold, neo::NormalEquationsObjective, p)
+    get_vector_field(M::AbstractManifold, neo::NormalEquationsObjective, p, B)
+    get_vector_field!(M::AbstractManifold, Y, neo::NormalEquationsObjective, p)
+    get_vector_field!(M::AbstractManifold, c, neo::NormalEquationsObjective, p, B)
+
+    Evaluate the vector field related to the normal equations of the [`LevenbergMarquardtLinearSurrogateObjective`](@ref),
+    see [`get_normal_vector_field`](@ref) for details,
+    but note that for the [`NormalEquationsObjective`](@ref) the format is slightly different:
+    For the variant with `_normal` the result is similar to the surrogate, namely we have
+    ``$(_tex(:Cal, "L"))(X) + y`` for the surrogate and hence also the same form ``$(_tex(:Cal, "N"))(X) + z``,
+    which has to be set to zero to find ``X``.
+
+    For the objective here we consider ````$(_tex(:Cal, "N"))(X) = z'``, i.e. the `get_vector_field` `z' = -z``
+    differs by a sign.
+"""
+
 # RHS as a tangent vector
+@dpc "$(_doc_vecField_NEO)"
 function get_vector_field(
         M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
     ) where {E <: AbstractEvaluationType}
     return -get_normal_vector_field(M, neo.objective, p)
 end
+@dpc "$(_doc_vecField_NEO)"
 function get_vector_field!(
         M::AbstractManifold, Y, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
     ) where {E <: AbstractEvaluationType}

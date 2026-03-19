@@ -348,7 +348,7 @@ end
         # Coordinate normal operator action should match the assembled normal matrix.
         c_lmso = A_lmso * cX
         c_lmcso = zeros(n)
-        Manopt.add_linear_normal_operator_coord!(M, c_lmcso, lmcso, p, cX)
+        Manopt.add_normal_linear_operator_coord!(M, c_lmcso, lmcso, p, cX)
         @test isapprox(c_lmso, c_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         # Coordinate residual-space operator action should match operator-form action.
@@ -683,7 +683,7 @@ end
 
         X = zero_vector(M, p0)
         Y = similar(X)
-        Manopt.get_linear_normal_operator!(M, Y, lmso, p0, X)
+        Manopt.get_normal_linear_operator!(M, Y, lmso, p0, X)
 
         Manopt.get_vector_field!(M, Y, lmso, p0)
         initial_residuals = similar(X, Manopt.residuals_count(nlso))

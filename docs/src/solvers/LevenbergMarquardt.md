@@ -52,8 +52,8 @@ Manopt.BlockNonzeroMatrix
 Manopt.add_normal_vector_field_coord!
 Manopt.add_normal_vector_field!
 Manopt.ZeroTangentVector
-Manopt.add_linear_normal_operator!
-Manopt.add_linear_normal_operator_coord!
+Manopt.add_normal_linear_operator!
+Manopt.add_normal_linear_operator_coord!
 ```
 
 ## Literature
