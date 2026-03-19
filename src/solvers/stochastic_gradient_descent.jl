@@ -34,22 +34,27 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 
 """
 mutable struct StochasticGradientDescentState{
-        TX,
-        TV,
-        D <: DirectionUpdateRule,
-        TStop <: StoppingCriterion,
-        TStep <: Stepsize,
-        RM <: AbstractRetractionMethod,
+        P, T, D <: DirectionUpdateRule, SC <: StoppingCriterion, S <: Stepsize, RM <: AbstractRetractionMethod, V <: Vector{<:Int},
     } <: AbstractGradientSolverState
-    p::TX
-    X::TV
+    p::P
+    X::T
     direction::D
-    stop::TStop
-    stepsize::TStep
+    stop::SC
+    stepsize::S
     order_type::Symbol
-    order::Vector{<:Int}
+    order::V
     retraction_method::RM
     k::Int # current iterate
+    function StochasticGradientDescentState(;
+            direction::D, p::P, X::T, stopping_criterion::SC, stepsize::S,
+            order_type::Symbol, order::V, retraction_method::RM, k = 0
+        ) where {
+            P, T, D <: DirectionUpdateRule, SC <: StoppingCriterion, S <: Stepsize, RM <: AbstractRetractionMethod, V <: Vector{<:Int},
+        }
+        return new{P, T, D, SC, S, RM, V}(
+            p, X, direction, stopping_criterion, stepsize, order_type, order, retraction_method, k
+        )
+    end
 end
 
 function StochasticGradientDescentState(
@@ -63,24 +68,24 @@ function StochasticGradientDescentState(
         stopping_criterion::SC = StopAfterIteration(1000),
         stepsize::S = default_stepsize(M, StochasticGradientDescentState),
     ) where {
-        P,
-        T,
-        D <: DirectionUpdateRule,
-        RM <: AbstractRetractionMethod,
-        SC <: StoppingCriterion,
-        S <: Stepsize,
+        P, T, D <: DirectionUpdateRule, RM <: AbstractRetractionMethod, SC <: StoppingCriterion, S <: Stepsize,
     }
-    return StochasticGradientDescentState{P, T, D, SC, S, RM}(
-        p,
-        X,
-        direction,
-        stopping_criterion,
-        stepsize,
-        order_type,
-        order,
-        retraction_method,
-        0,
+    return StochasticGradientDescentState(;
+        p = p, X = X, direction = direction, stopping_criterion = stopping_criterion,
+        stepsize = stepsize, order_type = order_type, order = order, retraction_method = retraction_method, k = 0,
     )
+end
+function Base.show(io::IO, sgds::StochasticGradientDescentState)
+    print(io, "StochasticGradientDescentState(; ")
+    print(io, "direction = "); print(io, sgds.direction); print(io, ", ")
+    print(io, "order = "); print(io, sgds.order); print(io, ", ")
+    print(io, "order_type = :$(sgds.order_type), ")
+    print(io, "p = $(sgds.p), ")
+    print(io, "retraction_method = "); print(io, sgds.retraction_method); print(io, ", ")
+    print(io, "stepsize = "); print(io, sgds.stepsize); print(io, ", ")
+    print(io, "stopping_crierion = "); print(io, sgds.stop); print(io, ", ")
+    print(io, "X = "); print(io, sgds.X)
+    return print(io, ")")
 end
 function status_summary(sgds::StochasticGradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(sgds)
