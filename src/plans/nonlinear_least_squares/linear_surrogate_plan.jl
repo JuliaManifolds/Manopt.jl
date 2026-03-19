@@ -25,9 +25,9 @@ for a concrete subtype of `AbstractLinearSurrogateObjective`
 
 * [`get_linear_operator`](@ref) to compute/evaluate the linear operator ``$(_tex(:Cal, "L"))``
 * [`get_vector_field`](@ref) to compute/evaluate the vector ``y``
-* [`get_linear_normal_operator`](@ref) to compute/evaluate the normal operator ``$(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))``
-* [`get_normal_vector_field`](@ref) to compute/evaluate the normal vector ``$(_tex(:Cal, "L"))^*(y)``
 * [`get_objective`](@ref) to provide access to the underlying objective `O`
+
+See also [`NormalEquations`](@ref) for the corresponding normal equations.
 """
 abstract type AbstractLinearSurrogateObjective{E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}} <: AbstractManifoldObjective{E} end
 
@@ -89,35 +89,44 @@ Return the normal vector ``$(_tex(:Cal, "L"))^*(y)`` of the linear surrogate mod
 get_normal_vector_field(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p)
 
 #
-#
-# Wrapper to symmetric linear systems where the normal eq becomes the linear one
-# TODO: Refactor to a `NormalEquations` struct
+# A wrapper to model the linear operator and vector field of the normal equations of the surrogate
 """
-    SymmetricLinearSystem{E <: AbstractEvaluationType, O<: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}
+    NormalEquationsObjective{E <: AbstractEvaluationType, O<: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}
 
-A wrapper type to turn an
-[`AbstractLinearSurrogateObjective`](@ref) `O` into a
-[`AbstractSymmetricLinearSystemObjective`](@ref) by interpreting the normal equations of `O`
-as the symmetric linear system.
+A [`AbstractLinearSurrogateObjective`](@ref) might be overdetermined, and it usually is overdetermined,
+e.g. for the case of the [`LevenbergMarquardt`](@ref) algorithm.
+For this case, one considers the [normal equations](https://en.wikipedia.org/wiki/Non-linear_least_squares).
+
+This wrapper provides the same three functions as the wrapped surrogate
+
+* [`get_linear_operator`](@ref) to compute/evaluate the linear operator ``$(_tex(:Cal, "L"))``
+* [`get_vector_field`](@ref) to compute/evaluate the vector ``y``
+* [`get_objective`](@ref) to provide access to the underlying surrogate
+
+so that we obtain a symmetric linear system of equations, that can be
+* solved with an iterative method like [`cojugate_gradient`](@ref) or [`conjugate_residual`](@ref)
+* solved as a linear system in a basis of the corresponding tangent space.
 """
-struct SymmetricLinearSystem{E <: AbstractEvaluationType, O <: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}
+struct NormalEquationsObjective{E <: AbstractEvaluationType, O <: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}
     objective::O
 end
 
-function show(io::IO, o::SymmetricLinearSystem{E}) where {E}
-    return print(io, "SymmetricLinearSystem{$E}($(o.objective))")
+function show(io::IO, neo::NormalEquationsObjective{E}) where {E}
+    print(io, "NormalEquationsObjective(")
+    print(io, neo.objective)
+    return print(io, ")")
 end
 
-get_objective(slsmo::SymmetricLinearSystem) = slsmo.objective
+get_objective(slsmo::NormalEquationsObjective) = slsmo.objective
 
 # set parameter just passes down to the inner objective
 for NT in [Val, Val{:Cost}, Val{:Gradient}, Val{:SubGradient}]
-    @eval function set_parameter!(slsmo::SymmetricLinearSystem, name::$NT, value)
-        set_parameter!(slsmo.objective, name, value)
-        return slsmo
+    @eval function set_parameter!(neo::NormalEquationsObjective, name::$NT, value)
+        set_parameter!(neo.objective, name, value)
+        return neo
     end
 end
-function set_parameter!(slsmo::SymmetricLinearSystem, name::Symbol, value)
-    set_parameter!(slsmo.objective, name, value)
-    return slsmo
+function set_parameter!(neo::NormalEquationsObjective, name::Symbol, value)
+    set_parameter!(neo.objective, name, value)
+    return neo
 end

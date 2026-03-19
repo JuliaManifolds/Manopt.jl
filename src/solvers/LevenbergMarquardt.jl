@@ -128,7 +128,7 @@ calls_with_kwargs(::typeof(LevenbergMarquardt)) = (LevenbergMarquardt!,)
 
 function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso, damping_term_min, ε, α_mode, residuals, jacobian_f)
     if use_fast_coordinate_subobjective
-        return SymmetricLinearSystem(
+        return NormalEquationsObjective(
             LevenbergMarquardtLinearSurrogateCoordinatesObjective(
                 nlso; penalty = damping_term_min, ε = ε, mode = α_mode,
                 residuals = residuals,
@@ -136,7 +136,7 @@ function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso,
             ),
         )
     else
-        return SymmetricLinearSystem(
+        return NormalEquationsObjective(
             LevenbergMarquardtLinearSurrogateObjective(
                 nlso; penalty = damping_term_min, ε = ε, mode = α_mode,
                 residuals = residuals,

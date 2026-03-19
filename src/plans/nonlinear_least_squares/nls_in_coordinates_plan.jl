@@ -141,10 +141,10 @@ end
 # same as nlsqplan:1324-1344 - replaces 1334-1344?
 # With a supertype for both sub objectives we could reduce this maybe?
 function get_linear_operator!(
-        M::AbstractManifold, A::AbstractMatrix, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis;
-        penalty::Real = slso.objective.penalty,
+        M::AbstractManifold, A::AbstractMatrix, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis;
+        penalty::Real = neo.objective.penalty,
     ) where {E <: AbstractEvaluationType}
-    return get_linear_normal_operator!(M, A, slso.objective, p, B; penalty = penalty)
+    return get_linear_normal_operator!(M, A, neo.objective, p, B; penalty = penalty)
 end
 
 # TODO (RB -> MB, 12/03):
@@ -239,16 +239,16 @@ function get_vector_field!(
 end
 # TODO (RB -> MB, 12/03): same as nsqplan:1364-1370?
 function get_vector_field!(
-        M::AbstractManifold, c, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis
+        M::AbstractManifold, c, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis
     ) where {E <: AbstractEvaluationType}
-    get_normal_vector_field_coord!(M, c, slso.objective, p, B)
+    get_normal_vector_field_coord!(M, c, neo.objective, p, B)
     c .*= -1
     return c
 end
 
 # TODO (RB -> MB, 12/03): same as nslqplan:771-780?
 function get_solver_result(
-        dmp::DefaultManoptProblem{<:TangentSpace, <:SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}},
+        dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective}},
         cnss::CoordinatesNormalSystemState
     )
     TpM = get_manifold(dmp)
@@ -265,7 +265,7 @@ end
 # MB -> RB, 12/03: Yes, the second case was wrong, created at the time when I was confused
 # about the different variants of `get_vector_field!`.
 function get_cost(
-        TpM::TangentSpace, lnsco::SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
+        TpM::TangentSpace, lnsco::NormalEquationsObjective{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
         ::ZeroTangentVector
     )
     M = base_manifold(TpM)
@@ -279,7 +279,7 @@ end
 
 # TODO (RB -> MB, 12/03): similar to nlsqplan:574-581 right?
 function get_cost(
-        TpM::TangentSpace, lnsco::SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
+        TpM::TangentSpace, lnsco::NormalEquationsObjective{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
         X,
     )
     M = base_manifold(TpM)

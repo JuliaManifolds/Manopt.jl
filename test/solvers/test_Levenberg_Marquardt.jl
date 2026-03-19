@@ -263,8 +263,8 @@ end
             lmcso.jacobian_cache[i] = get_jacobian(M, o, p; basis = B)
         end
 
-        slso = Manopt.SymmetricLinearSystem(lmso)
-        slco = Manopt.SymmetricLinearSystem(lmcso)
+        slso = Manopt.NormalEquationsObjective(lmso)
+        slco = Manopt.NormalEquationsObjective(lmcso)
 
         n = number_of_coordinates(M, B)
         A_lmso = zeros(n, n)
@@ -405,8 +405,8 @@ end
                 lmcso.jacobian_cache[i] = get_jacobian(M, o, p; basis = B)
             end
 
-            slso = Manopt.SymmetricLinearSystem(lmso)
-            slco = Manopt.SymmetricLinearSystem(lmcso)
+            slso = Manopt.NormalEquationsObjective(lmso)
+            slco = Manopt.NormalEquationsObjective(lmcso)
 
             n = number_of_coordinates(M, B)
             n_res = Manopt.residuals_count(nlso)
@@ -688,7 +688,7 @@ end
         Manopt.get_vector_field!(M, Y, lmso, p0)
         initial_residuals = similar(X, Manopt.residuals_count(nlso))
 
-        sub_objective = Manopt.SymmetricLinearSystem(
+        sub_objective = Manopt.NormalEquationsObjective(
             Manopt.LevenbergMarquardtLinearSurrogateObjective(nlso; residuals = copy(initial_residuals))
         )
         sub_problem = DefaultManoptProblem(TangentSpace(M, p0), sub_objective)

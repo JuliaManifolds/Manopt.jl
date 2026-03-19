@@ -13,32 +13,36 @@ $(_problem(:NonLinearLeastSquares))
   depending on the specified [`AbstractVectorialType`](@ref)s.
 * `robustifier`: a vector of [`AbstractRobustifierFunction`](@ref)`s`, one for each
   block component cost function ``F_i``.
+* `value_cache::AbstractVector` and internal cache to store the result of evaluating the cost functions
 
 # Constructors
 
     NonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer, robustifier=IdentityRobustifier(); kwargs...)
+
+Create a nonlinear least squares objective for a single vectorial function `f` and its `jacobian`,
+where `range_dimension` is the dimension of the vector space `f` maps into. These three are internally
+wrapped into a [`VectorGradientFunction`](@ref) and calls the following constructor.
+
     NonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction, robustifier::AbstractRobustifierFunction=IdentityRobustifier())
+
+Create a nonlinear least squares objective for a given vectorial function.
+Note that for this constructor the `robustifier` is applied componentwise to each component of `vf`,
+i.e. wrapped in a [`ComponentwiseRobustifierFunction`](@ref).
+Internally this wraps both `vf` and `robustifier` in an array and calls the next constructor.
+Hence to not use the componentwise robustifier but a global one, pass `[vf,]` and `[robustifier,]` instead.
+
     NonlinearLeastSquaresObjective(fs::Vector{<:AbstractVectorGradientFunction}, robustifiers::Vector{<:AbstractRobustifierFunction}=fill(IdentityRobustifier(), length(fs)))
 
-# Arguments
-
-* `f` the vectorial cost function ``f: $(_math(:Manifold)) → ℝ^m``
-* `jacobian` the Jacobian, might also be a vector of gradients of the component functions of `f`
-* `range_dimension::Integer` the number of dimensions `m` the function `f` maps into
-
-These three can also be passed as a [`AbstractVectorGradientFunction`](@ref) `vf` already.
-
-* `robustifier` the robustifier function(s) to use, by default the [`IdentityRobustifier`](@ref) (for each component),
-    which corresponds to the classical nonlinear least squares problem.
-    For a single [`AbstractVectorGradientFunction`](@ref) `vf` this is always treated/wrapped into a [`ComponentwiseRobustifierFunction`](@ref).
-    To actually have one robustifier on the whole norm (squared) of `vf` use the third signature and provide `[vf,]` and  `[robustifier,]` there.
+Given a vector of [`AbstractVectorGradientFunction`](@ref)`s to represent the single blocks
+and a vector of robustifiers, one for each block, create the corresponding nonlinear least squares objective.
 
 # Keyword arguments
 
+The first constructor allows to pass the following keyword arguments, that are passed on to
+the corresponding
+the constructor of the As well as for the first variant of having a single block
+
 $(_kwargs(:evaluation))
-
-As well as for the first variant of having a single block
-
 * `function_type::`[`AbstractVectorialType`](@ref)`=`[`FunctionVectorialType`](@ref)`()`: specify
   the format the residuals are given in. By default a function returning a vector.
 * `jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis()`; shortcut to specify
@@ -151,7 +155,7 @@ function _get_cost(
     (a, _, _) = get_robustifier_values(r, vi)
     return a
 end
-# For a single vectorial function where the robustifier is abblied to every in dex separately.
+# For a single vectorial function where the robustifier is applied to every in dex separately.
 function _get_cost(
         M, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
         value_cache = get_value(M, vgf, p)
@@ -260,7 +264,7 @@ at the current point ``p`` on `M`.
 
 This can be computed in-place of `v`.
 
-Note that even in the presence of [`RobustifierFunction`](@ref)s, these are not respected here,
+Note that even in the presence of [`RobustifierFunction`](@ref)s, these are not applied here,
 this function computes the “pure” residuals.
 """
 
@@ -291,6 +295,7 @@ end
 # The solver state
 
 # TODO: Update keywords in docs
+# TODO: Document the fields with ??? To me (RB) currently unclear what they are used for
 @doc """
     LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
 
@@ -298,35 +303,30 @@ Describes a Gradient based descent algorithm, with
 
 # Fields
 
-A default value is given in brackets if a parameter can be left out in initialization.
+* `damping_term`:                 current value of the damping term
+* `damping_term_min`:             lower bound for the damping term
+* `β` :                           parameter by which the damping term is multiplied when the current
+  new point is rejected
+* `β_reduction` :                 parameter by which the damping term is multiplied when the
+  improvement quotient exceeds `damping_reduction_threshold`.
+* `damping_reduction_threshold` : ???
 
+* `direction`:                    the current search direction, which is the solution of the linearized
+  subproblem in each iteration.
+* `η`:                            Scaling factor for the sufficient cost decrease threshold required
+  to accept new proposal points. Allowed range: `0 < η < 1`.
+* `jacobian_f`:                   the current Jacobian of ``F`` in matrix form. Set to `nothing` if
+  another representation is used.
+* `minimum_acceptable_model_improvement`: the minimum improvement in the model function that
+  is required to accept a new point; if this is not met, the new point is rejected and
+  the damping term is increased.
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:retraction_method))
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
 $(_fields(:stopping_criterion; name = "stop"))
+* `sub_problem`: the linear sub problem solver to use to solve the surrogate.
+* `sub_state`: state specifying the algorithm to solve the sub problem
 * `X`:             the current gradient of ``F``
-* `direction`:     the current search direction, which is the solution of the linearized
-  subproblem in each iteration.
-* `jacobian_f`:          the current Jacobian of ``F``. Either a matrix in coordinates or
-  `nothing` if the Jacobian is used only as a linear operator.
-* `step_vector`:          the tangent vector at `x` that is used to move to the next point
-* `last_stepsize`:        length of `step_vector`
-* `η`:                    Scaling factor for the sufficient cost decrease threshold required
-  to accept new proposal points. Allowed range: `0 < η < 1`.
-* `damping_reduction_threshold`: Factor similar to `η` above which damping will be decreased
-  by ``
-* `damping_term`:         current value of the damping term
-* `damping_term_min`:     initial (and also minimal) value of the damping term
-* `β`:                    parameter by which the damping term is multiplied when the current
-  new point is rejected
-* `β_reduction`           parameter by which the damping term is multiplied when the
-  improvement quotient exceeds `damping_reduction_threshold`.
-* `minimum_acceptable_model_improvement`: the minimum improvement in the model function that
-  is required to accept a new point; if this is not met, the new point is rejected and
-  the damping term is increased.
-* `sub_problem`: the linear subproblem solver to use to solve the linearized
-  subproblem in each iteration.
-* `sub_state`: the state to use for the linear subproblem solver.
 
 # Constructor
 
@@ -400,7 +400,7 @@ mutable struct LevenbergMarquardtState{
             s = "You have to specify a solver for the sub problem, that is, both a `sub_problem` to be solved"
             s = "$s and a `sub_state` specifying the solver."
             isnothing(sub_problem) && (s = "$s\n The `sub_problem` was not specified.")
-            isnothing(sub_problem) && (s = "$s\n The `sub_state` was not specified.")
+            isnothing(sub_state) && (s = "$s\n The `sub_state` was not specified.")
             throw(ArgumentError(s))
         end
         if η <= 0 || η >= 1
@@ -461,12 +461,11 @@ end
 # --- Subproblems ----
 
 #
-# ----- A cost/grad objective to e.g. do CG, or Gauß-Newton ----
-
+# TODO: Mention to cap alpha?
 @doc """
     LevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
 
-Given an [`NonlinearLeastSquaresObjective`](@ref) `objective` and a damping term `damping_term`,
+Given an [`NonlinearLeastSquaresObjective`](@ref) `objective` and a `penalty` ``λ``,
 this objective represents the penalized objective for the sub-problem to solve within every step
 of the Levenberg-Marquardt algorithm following the ideas of [TriggsMcLauchlanHartleyFitzgibbon:2000](@cite) given by
 
@@ -493,16 +492,13 @@ C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)
 where ``F(p) ∈ ℝ^n`` is the vector of residuals at point ``p ∈ M`` and ``J_F^*(p): ℝ^n → $(_math(:TangentSpace))```
 is the adjoint Jacobian.
 These two can be accessed with [`get_vector_field`](@ref) for ``y`` and [`get_linear_operator`](@ref) for ``$(_tex(:Cal, "L"))``,
-respectively.
-Furthermore, since ``n`` is usually much larger than the dimension of the manifold, the normal equation
-can be used to find the solution of minimal norm (squared), see
-[`get_vector_field`](@ref) and [`get_normal_linear_operator`](@ref), respectively.
+respectively. For technical details on the scaling using ``α`` see [`get_LevenbergMarquardt_scaling`](@ref)
 
 ## Fields
 
 * `objective`:     the [`NonlinearLeastSquaresObjective`](@ref) to penalize
-* `penalty::Real`: the damping term ``λ``
-* `ε::Real`:       stabilization for ``α ≤ 1-ε`` in the rescaling of the Jacobian
+* `penalty::R`: the damping term ``λ``
+* `ε::R`:       stabilization for ``α ≤ 1-ε`` in the rescaling of the Jacobian
 * `mode::Symbol`:  which ode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
 * `value_cache`:   a vector to store the residuals ``F(p)`` at the current point `p` internally to avoid re-computations
 
@@ -724,12 +720,11 @@ function _get_gradient!(
     return Y
 end
 
-## TODO: RB: Continue documentation here.
-
+## TODO: Find a better name?
 """
     default_lm_lin_solve!(sk, JJ::AbstractMatrix, grad_f_c)
 
-Solve the system `JJ \\ grad_f_c` where JJ is (mathematically) a symmetric positive
+Solve the linear system of equations of the normal equations `JJ \\ grad_f_c` where JJ is a symmetric positive
 definite matrix and save the result to `sk`. In case of numerical errors the
 `PosDefException` is caught and the default symmetric solver `(Symmetric(JJ) \\ grad_f_c)`
 is used.
@@ -749,22 +744,30 @@ function default_lm_lin_solve!(sk, JJ::AbstractMatrix, grad_f_c)
     return sk
 end
 
-#
-#
-# We can do a closed form solution of the Surrogate using \ as soon as we have a basis
-# We can model that as a state of a solver for ease of use
-# TODO / temp remark: move to the coordinates file?
 """
     CoordinatesNormalSystemState <: AbstractManoptSolverState
 
 A solver state indicating that we solve the [`LevenbergMarquardtLinearSurrogateObjective`](@ref)
 using a linear system in coordinates of the tangent space at the current iterate
 
-# Fields
-* `A` an ``n×n`` matrix to store the normal operator in coordinates, where `n` is the number of coordinates
-* `b` a ``n`` vector storing the right hand side of the system of normal equations
+## Fields
+
+* `A` an ``n×n`` matrix to store the normal equations linear from [`get_linear_operator`](@ref) in coordinates, where `n` is the number of coordinates
+* `b` a ``n`` vector storing the right hand side of the normal equations from the corresponding [`get_vector`](@ref)
 * `basis::`[`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`)
 * `linsolve` a functor `(A,b) -> c` to solve the linear system or `(c, A, b) -> c` depending on the evaluation type specified in `solve!`
+
+## Constructor
+    CoordinatesNormalSystemState(
+        M::AbstractManifold, p = rand(M);
+        evaluation = InplaceEvaluation(),
+        linsolve = default_lm_lin_solve!,
+        basis = DefaultOrthonormalBasis(),
+        A = nothing
+    )
+
+Construct the state, where not providing a memory for `A` uses the `eltype` of `p` to
+determine the element type of the matrix to store.
 """
 mutable struct CoordinatesNormalSystemState{E <: AbstractEvaluationType, F, TA <: AbstractMatrix, TB <: AbstractVector, TBA <: AbstractBasis} <: AbstractManoptSolverState
     A::TA
@@ -788,53 +791,51 @@ function CoordinatesNormalSystemState(
 end
 
 # The objective here should be a LevenbergMarquardtLinearSurrogateObjective, but might be decorated as well, so for now lets not type it (yet?)
-function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNormalSystemState{AllocatingEvaluation})
+function solve!(dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective}, cnss::CoordinatesNormalSystemState{AllocatingEvaluation})
     # Update A and b
     TpM = get_manifold(dmp)
     M = base_manifold(TpM)
     p = base_point(TpM)
-    o = get_objective(dmp)
-    get_linear_operator!(M, cnss.A, o, p, cnss.basis)
-    get_vector_field!(M, cnss.b, o, p, cnss.basis)
+    neo = get_objective(dmp)
+    get_linear_operator!(M, cnss.A, neo, p, cnss.basis)
+    get_vector_field!(M, cnss.b, neo, p, cnss.basis)
     cnss.c = cnss.linsolve!!(cnss.A, -cnss.b)
-    X = get_vector(M, p, cnss.c, cnss.basis)
-    # TODO: Remove when we are sure everything is correct, but for now check that the cost is not much worse than the zero step, which should never happen
-    if get_cost(dmp, 0 * X) < get_cost(dmp, -X) - sqrt(eps()) * (1 + sqrt(eps()) * get_cost(dmp, 0 * X))
-        @show get_cost(dmp, 0 * X)
-        @show get_cost(dmp, -X)
-        error("model cost is much worse than zero step, something is wrong")
-    end
     return cnss
 end
-function solve!(dmp::DefaultManoptProblem{<:TangentSpace}, cnss::CoordinatesNormalSystemState{InplaceEvaluation})
+function solve!(dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective}, cnss::CoordinatesNormalSystemState{InplaceEvaluation})
     # Update A and b
     TpM = get_manifold(dmp)
     M = base_manifold(TpM)
     p = base_point(TpM)
-    o = get_objective(dmp) # implicit: SymmetricSystem ...
-    get_linear_operator!(M, cnss.A, o, p, cnss.basis)
-    get_vector_field!(M, cnss.b, o, p, cnss.basis)
+    neo = get_objective(dmp)
+    get_linear_operator!(M, cnss.A, neo, p, cnss.basis)
+    get_vector_field!(M, cnss.b, neo, p, cnss.basis)
     cnss.b .*= -1
     cnss.linsolve!!(cnss.c, cnss.A, cnss.b)
     return cnss
 end
 
-
 """
     get_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
-    get_linear_operator(M::AbstractManifold, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
     get_linear_operator!(M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
-    get_linear_operator!(M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X)
 
-Compute the linear operator ``$(_tex(:Cal, "L"))`` corresponding to the optimality conditions of the
-Levenberg-Marquardt surrogate objective, i.e. the normal conditions
+Evaluate the linear operator ``$(_tex(:Cal, "L"))`` corresponding to the Levenberg-Marquardt surrogate objective, i.e.,
 
 ```math
 $(_tex(:Cal, "L"))(X) = C J_F(p)[X] $(_tex(:bigr))],
 ```
 
+with
+
+```math
+C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2") * "^2")),
+```
+
+where ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``.
+
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
+
 This can be computed in-place of `y`.
 
 See also [`get_vector_field`](@ref) for evaluating the corresponding vector field
@@ -906,19 +907,20 @@ end
 """
     get_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
     get_vector_field!(M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
-    get_vector_field!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
 
 Compute the vector field ``y`` corresponding to the Levenberg-Marquardt surrogate objective, i.e.,
 
 ```math
-y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p).
+y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p)
 ```
+
+where the scaling uses ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`NonlinearLeastSquaresObjective`](@ref) and summed up.
 
 See also
-* [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling
+* [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling factor
 * [`get_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
 """
 function get_vector_field(
@@ -973,28 +975,27 @@ function _get_vector_field!(
     return y
 end
 
-
 #
 #
-# TODO: Old Struct, refactor to a NOrmalEq wrapper
+# For the Normal Equations Objective
 
 """
-    get_cost(TpM::TangentSpace, slso::SymmetricLInearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, X)
+    get_cost(TpM::TangentSpace, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, X)
 
 Compute the surrogate cost when solving its normal equation, see also
 [`get_cost(::AbstractManifold, ::LevenbergMarquardtLinearSurrogateObjective, p, X)`](@ref),
 [`get_linear_operator`](@ref), and [`get_vector_field`](@ref) for more details.
 """
 function get_cost(
-        TpM::TangentSpace, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, X
+        TpM::TangentSpace, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, X
     ) where {E <: AbstractEvaluationType}
     M = base_manifold(TpM)
     p = base_point(TpM)
-    return get_cost(M, slso.objective, p, X)
+    return get_cost(M, neo.objective, p, X)
 end
 # Maybe a bit too precise, but in this case we get a coefficient vector and we want a tangent vector
 function get_solver_result(
-        dmp::DefaultManoptProblem{<:TangentSpace, <:SymmetricLinearSystem{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateObjective}},
+        dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateObjective}},
         cnss::CoordinatesNormalSystemState
     )
     TpM = get_manifold(dmp)
@@ -1397,49 +1398,49 @@ end
 # The Symmetric Linear System (e.g. in CGRes) for the LM Surrogate is its normal equations and vector.
 # (a) a vector X or a basis B
 function get_linear_operator(
-        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
+        M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
     ) where {E <: AbstractEvaluationType}
-    return get_linear_normal_operator(M, slso.objective, p, XB)
+    return get_linear_normal_operator(M, neo.objective, p, XB)
 end
 function get_linear_operator!(
-        M::AbstractManifold, YA, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
+        M::AbstractManifold, YA, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
     ) where {E <: AbstractEvaluationType}
-    return get_linear_normal_operator!(M, YA, slso.objective, p, XB)
+    return get_linear_normal_operator!(M, YA, neo.objective, p, XB)
 end
 # (b) coefficients in a basis
 function get_linear_operator(
-        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
+        M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
     ) where {E <: AbstractEvaluationType}
-    return get_linear_normal_operator(M, slso.objective, p, c, B)
+    return get_linear_normal_operator(M, neo.objective, p, c, B)
 end
 function get_linear_operator!(
-        M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
+        M::AbstractManifold, Y, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
     ) where {E <: AbstractEvaluationType}
-    return get_linear_normal_operator!(M, Y, slso.objective, p, c, B)
+    return get_linear_normal_operator!(M, Y, neo.objective, p, c, B)
 end
 # RHS as a tangent vector
 function get_vector_field(
-        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
+        M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
     ) where {E <: AbstractEvaluationType}
-    return -get_normal_vector_field(M, slso.objective, p)
+    return -get_normal_vector_field(M, neo.objective, p)
 end
 function get_vector_field!(
-        M::AbstractManifold, Y, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
+        M::AbstractManifold, Y, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
     ) where {E <: AbstractEvaluationType}
-    get_normal_vector_field!(M, Y, slso.objective, p)
+    get_normal_vector_field!(M, Y, neo.objective, p)
     Y .*= -1
     return Y
 end
 # RHS in coordinates
 function get_vector_field(
-        M::AbstractManifold, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
+        M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
     ) where {E <: AbstractEvaluationType}
-    return -get_normal_vector_field(M, slso.objective, p, B)
+    return -get_normal_vector_field(M, neo.objective, p, B)
 end
 function get_vector_field!(
-        M::AbstractManifold, c, slso::SymmetricLinearSystem{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
+        M::AbstractManifold, c, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
     ) where {E <: AbstractEvaluationType}
-    get_normal_vector_field!(M, c, slso.objective, p, B)
+    get_normal_vector_field!(M, c, neo.objective, p, B)
     c .*= -1
     return c
 end
