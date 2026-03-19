@@ -310,7 +310,6 @@ Describes a Gradient based descent algorithm, with
 * `β_reduction` :                 parameter by which the damping term is multiplied when the
   improvement quotient exceeds `damping_reduction_threshold`.
 * `damping_reduction_threshold` : ???
-
 * `direction`:                    the current search direction, which is the solution of the linearized
   subproblem in each iteration.
 * `η`:                            Scaling factor for the sufficient cost decrease threshold required
@@ -460,10 +459,8 @@ end
 #
 # --- Subproblems ----
 
-#
-# TODO: Mention to cap alpha?
 @doc """
-    LevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractManifoldFirstOrderObjective{E, VF}
+    LevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLinearSurrogateObjective{E, VF}
 
 Given an [`NonlinearLeastSquaresObjective`](@ref) `objective` and a `penalty` ``λ``,
 this objective represents the penalized objective for the sub-problem to solve within every step
@@ -507,8 +504,7 @@ respectively. For technical details on the scaling using ``α`` see [`get_Levenb
     LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default)
 """
 mutable struct LevenbergMarquardtLinearSurrogateObjective{
-        E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R},
-    } <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
+        E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R}} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
     objective::TO
     penalty::R
     ε::R
@@ -581,8 +577,6 @@ function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateObjective, ::Val
     lmlso.penalty = penalty
     return lmlso
 end
-
-get_objective(lmsco::LevenbergMarquardtLinearSurrogateObjective) = lmsco.objective
 
 """
     get_cost(
@@ -1443,13 +1437,13 @@ _doc_vecField_NEO = """
 """
 
 # RHS as a tangent vector
-@dpc "$(_doc_vecField_NEO)"
+@doc "$(_doc_vecField_NEO)"
 function get_vector_field(
         M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
     ) where {E <: AbstractEvaluationType}
     return -get_normal_vector_field(M, neo.objective, p)
 end
-@dpc "$(_doc_vecField_NEO)"
+@doc "$(_doc_vecField_NEO)"
 function get_vector_field!(
         M::AbstractManifold, Y, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
     ) where {E <: AbstractEvaluationType}

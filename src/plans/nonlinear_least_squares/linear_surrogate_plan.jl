@@ -35,8 +35,9 @@ abstract type AbstractLinearSurrogateObjective{E <: AbstractEvaluationType, O <:
     get_objective(also::AbstractLinearSurrogateObjective)
 
 Return the objective `O` associated with the linear surrogate model `also`.
+By default, this returns `also.objective`.
 """
-get_objective(also::AbstractLinearSurrogateObjective)
+get_objective(also::AbstractLinearSurrogateObjective) = also.objective
 
 function get_linear_operator end
 """
