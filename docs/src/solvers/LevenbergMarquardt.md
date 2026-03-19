@@ -29,7 +29,6 @@ Manopt.CoordinatesNormalSystemState
 
 ```@docs
 Manopt.get_LevenbergMarquardt_scaling
-Manopt.get_linear_operator!
 Manopt.residuals_count
 ```
 
@@ -50,11 +49,9 @@ This is a temporary area before sorting them correctly to first get the docs to 
 Manopt.default_lm_lin_solve!
 Manopt.BlockNonzeroVector
 Manopt.BlockNonzeroMatrix
-Manopt.add_normal_vector_field_coord!
 Manopt.add_normal_vector_field!
 Manopt.ZeroTangentVector
 Manopt.add_normal_linear_operator!
-Manopt.add_normal_linear_operator_coord!
 ```
 
 ## Literature

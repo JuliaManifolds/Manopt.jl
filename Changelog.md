@@ -170,7 +170,7 @@ so a constant initial guess is recommended here. The initial guess may be refact
 * a `gradient=` keyword in several `Stepsize`s, such that one can avoid to internally avoid computing the gradient again.
 * used the ``gradient=` keyword in
   * `alternating_gradient_descent`
-  * `conjugate_gradient`
+  * `conjugate_gradient_descent`
   * `Frank_Wolfe_method`
   * `gradient_descent`
   * `interior_point_newton`

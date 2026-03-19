@@ -105,7 +105,7 @@ This wrapper provides the same three functions as the wrapped surrogate
 * [`get_objective`](@ref) to provide access to the underlying surrogate
 
 so that we obtain a symmetric linear system of equations, that can be
-* solved with an iterative method like [`conjugate_gradient`](@ref) or [`conjugate_residual`](@ref)
+* solved with an iterative method like [`conjugate_gradient_descent`](@ref) or [`conjugate_residual`](@ref)
 * solved as a linear system in a basis of the corresponding tangent space.
 """
 struct NormalEquationsObjective{E <: AbstractEvaluationType, O <: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}
