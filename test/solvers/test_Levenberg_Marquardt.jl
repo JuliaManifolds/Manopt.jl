@@ -276,7 +276,7 @@ end
         nvf_lmso = zeros(n)
         nvf_lmcso = zeros(n)
         Manopt.get_normal_vector_field!(M, nvf_lmso, lmso, p, B)
-        Manopt.get_normal_vector_field_coord!(M, nvf_lmcso, lmcso, p, B)
+        Manopt.get_normal_vector_field_coord!(M, nvf_lmcso, lmcso, p)
         @test isapprox(nvf_lmso, nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
         # Directly test add_normal_vector_field_coord! (no-basis overload that uses mul!).
@@ -321,8 +321,7 @@ end
             nvf_direct_B,
             nlso.objective[1],
             nlso.robustifier[1],
-            p,
-            B;
+            p;
             value_cache = val_cache,
             jacobian_cache = jc,
             ε = lmcso.ε,
@@ -420,7 +419,7 @@ end
             nvf_lmso = zeros(n)
             nvf_lmcso = zeros(n)
             Manopt.get_normal_vector_field!(M, nvf_lmso, lmso, p, B)
-            Manopt.get_normal_vector_field_coord!(M, nvf_lmcso, lmcso, p, B)
+            Manopt.get_normal_vector_field_coord!(M, nvf_lmcso, lmcso, p)
             @test isapprox(nvf_lmso, nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
             vf_lmso = zeros(n_res)
