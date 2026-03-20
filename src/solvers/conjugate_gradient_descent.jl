@@ -160,8 +160,8 @@ function conjugate_gradient_descent!(
         M;
         p = p,
         stopping_criterion = stopping_criterion,
-        stepsize = _produce_type(stepsize, M),
-        coefficient = _produce_type(coefficient, M),
+        stepsize = _produce_type(stepsize, M, p),
+        coefficient = _produce_type(coefficient, M, p),
         restart_condition = restart_condition,
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,

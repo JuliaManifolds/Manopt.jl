@@ -30,6 +30,23 @@ set the `sub_state` to indicate allocating or in-place evaluation and change the
   As a remedy, you can access the (now vector of) `VectorGradientFunction`s in the objective directly
   to call their Jacobians.
 
+## [0.5.34] March 3, 2026
+
+### Fixed
+
+* `Float32` support in `trust_regions` solver was broken in the previous release, which is now fixed.
+
+## [0.5.33] February 18, 2026
+
+### Added
+
+* A clarification on the use of AI in the [CONTRIBUTING.md](https://manoptjl.org/stable/contributing/) (#573)
+* `_produce_type` now accepts the point `p` as an optional third argument, which can be used to produce objects with specific point type for internal buffers. The addition has been utilized in `DirectionUpdateRule`s and `Stepsize`s to improve GPU and custom floating point type compatibility. (#577)
+* Added another package and paper using `Manopt.jl` to the about page (#576).
+
+### Fixed
+
+* `DistanceOverGradientsStepsize` now requires explicitly passing a point as the second argument because it logically depends on receiving the initial point. (#577)
 
 ## [0.5.32] January 15, 2026
 

@@ -179,7 +179,7 @@ function subgradient_method!(
         M;
         p = p,
         stopping_criterion = stopping_criterion,
-        stepsize = _produce_type(stepsize, M),
+        stepsize = _produce_type(stepsize, M, p),
         retraction_method = retraction_method,
         X = X,
     )
