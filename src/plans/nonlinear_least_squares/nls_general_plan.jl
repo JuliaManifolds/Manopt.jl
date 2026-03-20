@@ -463,8 +463,17 @@ end
 #
 # --- Subproblems ----
 
+"""
+    AbstractLevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType}
+
+Abstract supertype for Levenberg-Marquardt surrogates like
+[`LevenbergMarquardtLinearSurrogateObjective`](@ref) and
+[`LevenbergMarquardtLinearSurrogateCoordinatesObjective`](@ref).
+"""
+abstract type AbstractLevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}} end
+
 @doc """
-    LevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLinearSurrogateObjective{E, VF}
+    LevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
 
 Given an [`NonlinearLeastSquaresObjective`](@ref) `objective` and a `penalty` ``λ``,
 this objective represents the penalized objective for the sub-problem to solve within every step
@@ -508,7 +517,8 @@ respectively. For technical details on the scaling using ``α`` see [`get_Levenb
     LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default)
 """
 mutable struct LevenbergMarquardtLinearSurrogateObjective{
-        E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R}} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}}
+        E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R},
+    } <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
     objective::TO
     penalty::R
     ε::R
@@ -930,7 +940,7 @@ function get_vector_field(
     return get_vector_field!(M, y, lmsco, p)
 end
 function get_vector_field!(
-        M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
+        M::AbstractManifold, y, lmsco::AbstractLevenbergMarquardtLinearSurrogateObjective, p
     )
     nlso = get_objective(lmsco)
     # Init to zero
