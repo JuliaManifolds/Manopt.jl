@@ -305,6 +305,7 @@ Describes a Gradient based descent algorithm, with
 
 * `damping_term`:                 current value of the damping term
 * `damping_term_min`:             lower bound for the damping term
+* `damping_term_max`:             upper bound for the damping term
 * `β` :                           parameter by which the damping term is multiplied when the current
   new point is rejected
 * `β_reduction` :                 parameter by which the damping term is multiplied when the
@@ -340,6 +341,7 @@ The following fields are keyword arguments
 * `β = 5.0`
 * `β_reduction = 0.5`
 * `damping_term_min = 0.1`
+* `damping_term_max = Inf`
 * `damping_term = damping_term_min`
 * `damping_reduction_threshold = Inf`
 * `η = 0.2`,
@@ -368,6 +370,7 @@ mutable struct LevenbergMarquardtState{
     β_reduction::Tparams
     damping_term::Tparams
     damping_term_min::Tparams
+    damping_term_max::Tparams
     β::Tparams
     minimum_acceptable_model_improvement::Tparams
     sub_problem::Pr
@@ -387,6 +390,7 @@ mutable struct LevenbergMarquardtState{
             damping_reduction_threshold::Real = Inf,
             β_reduction::Real = 0.5,
             damping_term_min::Real = 0.1,
+            damping_term_max::Real = Inf,
             damping_term::Real = damping_term_min,
             β::Real = 5.0,
             minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
@@ -424,7 +428,7 @@ mutable struct LevenbergMarquardtState{
             initial_residual_values, initial_jacobian_f,
             direction, X, η, damping_reduction_threshold,
             β_reduction,
-            damping_term, damping_term_min,
+            damping_term, damping_term_min, damping_term_max,
             β,
             minimum_acceptable_model_improvement,
             sub_problem, sub_state,

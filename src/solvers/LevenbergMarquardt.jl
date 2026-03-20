@@ -14,6 +14,10 @@ $(_problem(:NonLinearLeastSquares))
 
 The second block of signatures perform the optimization in-place of `p`.
 
+The regularization parameter is updated using a generalized scheme proposed in [Yuan:2015, Fan:2006](@cite)
+which offers separate thresholds for the acceptance of new points (`η`) and decreasing the
+regularization parameter (`damping_reduction_threshold`).
+
 # Input
 
 $(_args(:M))
@@ -307,6 +311,7 @@ function step_solver!(
     # TODO Abstract this to a generic update for η?
     if ρ >= lms.damping_reduction_threshold
         lms.damping_term *= lms.β_reduction
+        lms.damping_term = max(lms.damping_term, lms.damping_term_min)
     end
     if ρ >= lms.η # enough improvement: accept, decrease damping term
         copyto!(M, lms.p, q)
@@ -319,6 +324,7 @@ function step_solver!(
         get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_f)
     else # not enough improvement: reject, increase damping term
         lms.damping_term *= lms.β
+        lms.damping_term = min(lms.damping_term, lms.damping_term_max)
     end
     return lms
 end
