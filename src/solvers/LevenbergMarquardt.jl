@@ -233,6 +233,9 @@ function LevenbergMarquardt!(
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
     sub_state_ = maybe_wrap_evaluation_type(sub_state)
+    if has_anisotropic_max_stepsize(M)
+        sub_state_ = LevenbergMarquardtBoxSubsolver(M, sub_state_, p)
+    end
     lms = LevenbergMarquardtState(
         M, initial_residual_values;
         p = p,
@@ -286,7 +289,7 @@ function step_solver!(
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, Val(:Manifold), Val(:Basepoint), lms.p)
     # Subsolver result
-    solve_LM_subproblem!(M, lms.direction, lms.p, lms.sub_problem, lms.sub_state)
+    solve_LM_subproblem!(M, lms.direction, lms.p, lms.sub_problem, lms.sub_state, lms.X)
     #solve!(lms.sub_problem, lms.sub_state)
     #lms.direction .= -get_solver_result(lms.sub_problem, lms.sub_state)
     if norm(M, lms.p, lms.direction) > max_stepsize(M, lms.p)
@@ -330,7 +333,7 @@ function step_solver!(
 end
 
 function solve_LM_subproblem!(
-        M::AbstractManifold, X, p, problem::P, state::S,
+        M::AbstractManifold, X, p, problem::P, state::S, grad_Y,
     ) where {P <: AbstractManoptProblem, S <: AbstractManoptSolverState}
     solve!(problem, state)
     copyto!(M, X, p, get_solver_result(problem, state))

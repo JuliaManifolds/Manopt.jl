@@ -17,7 +17,7 @@ import LinearAlgebra: cross
 using ColorSchemes
 using ColorTypes
 using Colors
-using DataStructures: CircularBuffer, capacity, length, push!, size, isfull
+using DataStructures: CircularBuffer, capacity, length, push!, size, isfull, heapify!
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using Glossaries
 using LinearAlgebra:
