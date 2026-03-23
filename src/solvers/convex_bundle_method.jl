@@ -250,7 +250,7 @@ mutable struct ConvexBundleMethodState{
             X::T, ε::R, ξ::R, λ::A, ϱ::R
         ) where {
             P, T, Pr <: (Union{F, AbstractManoptProblem} where {F}), St <: AbstractManoptSolverState,
-            R, A <: AbstractVector{<:R}, B <: AbstractVector{Tuple{<:P,<:T}}, C <: AbstractVector{<:T},
+            R <: Real, A <: AbstractVector, B <: AbstractVector{<:Tuple}, C <: AbstractVector,
             D, I,
             IR <: AbstractInverseRetractionMethod, TR <: AbstractRetractionMethod,
             TS <: Stepsize, TSC <: StoppingCriterion, VT <: AbstractVectorTransportMethod,
