@@ -226,9 +226,8 @@ for that element is less than `t_current`, set the element of `d_out` to the dis
 set the element to 0.
 """
 function Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, d, t_current::Real)
-
     for i in eachindex(d_out, d)
-        bound = get_stepsize_bound(M, p, d, i)
+        bound = Manopt.get_stepsize_bound(M, p, d, i)
         if bound > 0
             if bound < t_current && d_out[i] != 0
                 d_out[i] = d[i] > 0 ? M.ub[i] - p[i] : M.lb[i] - p[i]

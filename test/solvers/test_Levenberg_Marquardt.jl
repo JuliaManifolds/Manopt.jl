@@ -699,13 +699,14 @@ end
     end
 end
 
-# @testset "LM on Hyperrectangle" begin
-#     M = Hyperrectangle([-1.0, -1.0], [1.0, 1.0])
-#     p0 = [0.5, -0.5]
+@testset "LM on Hyperrectangle" begin
+    M = Hyperrectangle([-1.0, -1.0], [1.0, 1.0])
+    p0 = [0.5, -0.5]
 
-#     ds = LevenbergMarquardt(
-#         M, F_reg_r2(ts_r2, xs_r2, ys_r2), jacF_reg_r2(ts_r2, xs_r2, ys_r2), p0, length(ts_r2) * 2;
-#         return_state = true,
-#     )
-#     @test is_point(M, get_state(ds).p)
-# end
+    ds = LevenbergMarquardt(
+        M, F_reg_r2(ts_r2, xs_r2, ys_r2), jacF_reg_r2(ts_r2, xs_r2, ys_r2), p0, length(ts_r2) * 2;
+        return_state = true,
+        sub_state = CoordinatesNormalSystemState(M),
+    )
+    @test is_point(M, get_state(ds).p)
+end

@@ -4,6 +4,36 @@ mutable struct LevenbergMarquardtBoxSubsolver{TSt <: AbstractManoptSolverState, 
     last_gcd_stepsize::F
 end
 
+"""
+    hessian_value_diag(ha::LevenbergMarquardtBoxSubsolver, M, p, X::UnitVector)
+
+Evaluate the quadratic form associated with the stored Hessian approximation.
+"""
+function hessian_value_diag(ha::LevenbergMarquardtBoxSubsolver, M::AbstractManifold, p, X)
+    return hessian_value_diag(ha.internal_state, M, p, X)
+end
+function hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X::UnitVector)
+    b = to_coordinate_index(M, X, ha.basis)
+    return ha.A[b, b]
+end
+function hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X)
+    c = get_coordinates(M, p, X, ha.basis)
+    return dot(c, ha.A, c)
+end
+
+"""
+    hessian_value(ha::LevenbergMarquardtBoxSubsolver, M, p, X::UnitVector, Y)
+
+Evaluate the quadratic form associated with the stored Hessian approximation.
+"""
+function hessian_value(ha::LevenbergMarquardtBoxSubsolver, M::AbstractManifold, p, X::UnitVector, Y)
+    return hessian_value(ha.internal_state, M, p, X, Y)
+end
+function hessian_value(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X::UnitVector, Y)
+    b = to_coordinate_index(M, X, ha.basis)
+    return dot(view(ha.A, b, :), get_coordinates(M, p, Y, ha.basis))
+end
+
 function initialize_solver!(amp::AbstractManoptProblem, dss::LevenbergMarquardtBoxSubsolver)
     initialize_solver!(amp, dss.internal_state)
     return dss
@@ -29,7 +59,8 @@ function solve_LM_subproblem!(
     copyto!(M, X, p, get_solver_result(problem, state.internal_state))
     X .*= -1
     # trim to box using GCD
-    gcd = GeneralizedCauchyDirectionSubsolver(M, p, X)
+    gcd = GeneralizedCauchyDirectionSubsolver(M, p, state)
     state.last_gcd_result, state.last_gcd_stepsize = find_generalized_cauchy_direction!(M, gcd, X, p, X, grad_Y)
+    X .*= state.last_gcd_stepsize
     return X
 end
