@@ -144,22 +144,12 @@ $(_kwargs(:X))
 $(_kwargs(:vector_transport_method))
 """
 mutable struct ConvexBundleMethodState{
-        P,
-        T,
-        Pr <: Union{F, AbstractManoptProblem} where {F},
-        St <: AbstractManoptSolverState,
-        R,
-        A <: AbstractVector{<:R},
-        B <: AbstractVector{Tuple{<:P, <:T}},
-        C <: AbstractVector{T},
-        D,
-        I,
-        IR <: AbstractInverseRetractionMethod,
-        TR <: AbstractRetractionMethod,
-        TS <: Stepsize,
-        TSC <: StoppingCriterion,
-        VT <: AbstractVectorTransportMethod,
-    } <: AbstractManoptSolverState where {R <: Real, P, T, I <: Int, Pr}
+        P, T, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
+        R <: Real, A <: AbstractVector{<:R}, B <: AbstractVector{Tuple{<:P, <:T}}, C <: AbstractVector{T},
+        D, I <: Int,
+        IR <: AbstractInverseRetractionMethod, TR <: AbstractRetractionMethod,
+        TS <: Stepsize, TSC <: StoppingCriterion, VT <: AbstractVectorTransportMethod,
+    } <: AbstractManoptSolverState
     atol_λ::R
     atol_errors::R
     bundle::B
@@ -189,44 +179,26 @@ mutable struct ConvexBundleMethodState{
     sub_state::St
     ϱ::R
     function ConvexBundleMethodState(
-            M::TM,
-            sub_problem::Pr,
-            sub_state::St;
-            p::P = rand(M),
-            p_estimate = p,
-            atol_λ::R = eps(),
-            atol_errors::R = eps(),
-            bundle_cap::I = 25,
-            m::R = 1.0e-2,
-            diameter::R = 50.0,
-            domain::D = (M, p) -> isfinite(f(M, p)),
-            k_max = nothing,
-            k_min = nothing,
-            k_size = 100,
+            M::TM, sub_problem::Pr, sub_state::St;
+            p::P = rand(M), p_estimate = p, atol_λ::R = eps(), atol_errors::R = eps(),
+            bundle_cap::I = 25, m::R = 1.0e-2, diameter::R = 50.0,
+            domain::D = (M, p) -> isfinite(f(M, p)), k_max = nothing, k_min = nothing, k_size = 100,
             last_stepsize = one(number_eltype(atol_λ)),
             stepsize::S = default_stepsize(M, ConvexBundleMethodState),
             inverse_retraction_method::IR = default_inverse_retraction_method(M, typeof(p)),
             retraction_method::TR = default_retraction_method(M, typeof(p)),
-            stopping_criterion::SC = StopWhenLagrangeMultiplierLess(1.0e-8) |
-                StopAfterIteration(5000),
+            stopping_criterion::SC = StopWhenLagrangeMultiplierLess(1.0e-8) | StopAfterIteration(5000),
             X::T = zero_vector(M, p),
             vector_transport_method::VT = default_vector_transport_method(M, typeof(p)),
             ϱ = nothing,
         ) where {
-            D,
-            IR <: AbstractInverseRetractionMethod,
-            P,
-            T,
-            Pr <: Union{AbstractManoptProblem, F} where {F},
-            St <: AbstractManoptSolverState,
-            I,
-            TM <: AbstractManifold,
-            TR <: AbstractRetractionMethod,
-            SC <: StoppingCriterion,
-            S <: Stepsize,
-            VT <: AbstractVectorTransportMethod,
-            R <: Real,
+            D, IR <: AbstractInverseRetractionMethod, P, T,
+            Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+            I, TM <: AbstractManifold, TR <: AbstractRetractionMethod,
+            SC <: StoppingCriterion, S <: Stepsize, VT <: AbstractVectorTransportMethod,R <: Real,
         }
+        @info "A"
+        @info R
         bundle = Vector{Tuple{P, T}}()
         g = zero_vector(M, p)
         null_stepsize = one(R)
@@ -257,51 +229,39 @@ mutable struct ConvexBundleMethodState{
             (k_max === nothing) && (k_max = maximum(s))
             ϱ = max(ζ_1(k_min, diameter) - one(k_min), one(k_max) - ζ_2(k_max, diameter))
         end
-        return new{
-            P,
-            T,
-            Pr,
-            St,
-            R,
-            typeof(linearization_errors),
-            typeof(bundle),
-            typeof(transported_subgradients),
-            D,
-            I,
-            IR,
-            TR,
-            S,
-            SC,
-            VT,
-        }(
-            atol_λ,
-            atol_errors,
-            bundle,
-            bundle_cap,
-            diameter,
-            domain,
-            g,
-            inverse_retraction_method,
-            k_max,
-            k_min,
-            last_stepsize,
-            null_stepsize,
-            linearization_errors,
-            m,
-            p,
-            copy(M, p),
-            retraction_method,
-            stepsize,
-            stopping_criterion,
-            transported_subgradients,
-            vector_transport_method,
-            X,
-            ε,
-            ξ,
-            λ,
-            sub_problem,
-            sub_state,
-            ϱ,
+        return ConvexBundleMethodState(
+            sub_problem, sub_state;
+            atol_λ = atol_λ, atol_errors = atol_errors, bundle = bundle, bundle_cap = bundle_cap,
+            diameter = diameter, domain = domain, g = g, inverse_retraction_method = inverse_retraction_method,
+            k_max = k_max, k_min = k_min, last_stepsize = last_stepsize, null_stepsize = null_stepsize,
+            linearization_errors = linearization_errors, m = m, p = p, p_last_serious = copy(M, p),
+            retraction_method = retraction_method, stepsize = stepsize, stopping_criterion = stopping_criterion,
+            transported_subgradients = transported_subgradients, vector_transport_method = vector_transport_method,
+            X = X, ε = ε, ξ = ξ, λ = λ, ϱ = ϱ
+        )
+    end
+    function ConvexBundleMethodState(
+            sub_problem::Pr, sub_state::St;
+            atol_λ::R, atol_errors::R, bundle::B, bundle_cap::I, diameter::R, domain::D,
+            g::T, inverse_retraction_method::IR, k_max::R, k_min::R, last_stepsize::R,
+            null_stepsize::R, linearization_errors::A, m::R, p::P, p_last_serious::P,
+            retraction_method::TR, stepsize::TS, stopping_criterion::TSC,
+            transported_subgradients::C, vector_transport_method::VT,
+            X::T, ε::R, ξ::R, λ::A, ϱ::R
+        ) where {
+            P, T, Pr <: (Union{F, AbstractManoptProblem} where {F}), St <: AbstractManoptSolverState,
+            R, A <: AbstractVector{<:R}, B <: AbstractVector{Tuple{<:P,<:T}}, C <: AbstractVector{<:T},
+            D, I,
+            IR <: AbstractInverseRetractionMethod, TR <: AbstractRetractionMethod,
+            TS <: Stepsize, TSC <: StoppingCriterion, VT <: AbstractVectorTransportMethod,
+        }
+        @info "B"
+        @info R
+        return new{P, T, Pr, St, R, A, B, C, D, I, IR, TR, TS, TSC, VT}(
+            atol_λ, atol_errors, bundle, bundle_cap, diameter, domain, g,
+            inverse_retraction_method, k_max, k_min, last_stepsize,
+            null_stepsize, linearization_errors, m, p, p_last_serious, retraction_method,
+            stepsize, stopping_criterion, transported_subgradients, vector_transport_method, X, ε, ξ, λ, sub_problem, sub_state, ϱ
         )
     end
 end
@@ -324,8 +284,40 @@ get_subgradient(bms::ConvexBundleMethodState) = bms.g
 function default_stepsize(M::AbstractManifold, ::Type{ConvexBundleMethodState})
     return ConstantStepsize(M)
 end
+function show(io::IO, cmbs::ConvexBundleMethodState)
+    print(io, "ConvexBundleMethodState(")
+    print(io, cmbs.sub_problem); print(io, ", "); print(io, cmbs.sub_state); print(io, "; ")
+    print(io, "atol_λ = "); print(io, cmbs.atol_λ); print(io, ", ")
+    print(io, "atol_errors = "); print(io, cmbs.atol_errors); print(io, ", ")
+    print(io, "bundle = "); print(io, cmbs.bundle); print(io, ", ")
+    print(io, "bundle_cap = "); print(io, cmbs.bundle_cap); print(io, ", ")
+    print(io, "diameter = "); print(io, cmbs.diameter); print(io, ", ")
+    print(io, "domain = "); print(io, cmbs.domain); print(io, ", ")
+    print(io, "g = "); print(io, cmbs.g); print(io, ", ")
+    print(io, "inverse_retraction_method = "); print(io, cmbs.inverse_retraction_method); print(io, ", ")
+    print(io, "k_max = "); print(io, cmbs.k_max); print(io, ", ")
+    print(io, "k_min = "); print(io, cmbs.k_min); print(io, ", ")
+    print(io, "last_stepsize = "); print(io, cmbs.last_stepsize); print(io, ", ")
+    print(io, "null_stepsize = "); print(io, cmbs.null_stepsize); print(io, ", ")
+    print(io, "linearization_errors = "); print(io, cmbs.linearization_errors); print(io, ", ")
+    print(io, "m = "); print(io, cmbs.m); print(io, ", ")
+    print(io, "p = "); print(io, cmbs.p); print(io, ", ")
+    print(io, "p_last_serious = "); print(io, cmbs.p_last_serious); print(io, ", ")
+    print(io, "retraction_method = "); print(io, cmbs.retraction_method); print(io, ", ")
+    print(io, "stepsize = "); print(io, cmbs.stepsize); print(io, ", ")
+    print(io, "stopping_criterion = "); print(io, cmbs.stopping_criterion); print(io, ", ")
+    print(io, "transported_subgradients = "); print(io, cmbs.transported_subgradients); print(io, ", ")
+    print(io, "vector_transport_method = "); print(io, cmbs.vector_transport_method); print(io, ", ")
+    print(io, "X = "); print(io, cmbs.X); print(io, ", "); print(io, "ε = "); print(io, cmbs.ε); print(io, ", ")
+    print(io, "ξ = "); print(io, cmbs.ξ); print(io, ", "); print(io, "λ = "); print(io, cmbs.λ); print(io, ", ")
+    print(io, "ϱ = "); print(io, cmbs.ϱ)
+    return print(io, ")")
+end
 function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :default)
-    i = get_count(cbms, :Iterations)
+    (context === :short) && return repr(cmbs)
+    i = get_count(cmbs, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(cmbs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the Convex Bundle Method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cbms.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(cbms)) – $(Iter) $(has_converged(cbms) ? "(converged)" : "")")
