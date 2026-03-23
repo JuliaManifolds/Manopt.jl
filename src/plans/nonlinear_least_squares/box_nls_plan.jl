@@ -12,10 +12,24 @@ Evaluate the quadratic form associated with the stored Hessian approximation.
 function hessian_value_diag(ha::LevenbergMarquardtBoxSubsolver, M::AbstractManifold, p, X)
     return hessian_value_diag(ha.internal_state, M, p, X)
 end
+"""
+    hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X::UnitVector)
+
+Evaluate the quadratic form associated with the Hessian approximation [`CoordinatesNormalSystemState`].
+Returns the scalar ``c^{\top} A c`` where ``c`` are the coordinates of the
+[`UnitVector`](@ref) `X` at `p` (in the basis `ha.basis`) and ``B`` is `ha.A`.
+"""
 function hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X::UnitVector)
     b = to_coordinate_index(M, X, ha.basis)
     return ha.A[b, b]
 end
+"""
+    hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X)
+
+Evaluate the quadratic form associated with the Hessian approximation [`CoordinatesNormalSystemState`].
+Returns the scalar ``c^{\top} A c`` where ``c`` are the coordinates of `X` at `p`
+(in the basis `ha.basis`) and ``A`` is `ha.A`.
+"""
 function hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X)
     c = get_coordinates(M, p, X, ha.basis)
     return dot(c, ha.A, c)
@@ -29,6 +43,16 @@ Evaluate the quadratic form associated with the stored Hessian approximation.
 function hessian_value(ha::LevenbergMarquardtBoxSubsolver, M::AbstractManifold, p, X::UnitVector, Y)
     return hessian_value(ha.internal_state, M, p, X, Y)
 end
+
+"""
+    hessian_value(ha::CoordinatesNormalSystemState, M, p, X::UnitVector, Y)
+
+Evaluate the quadratic form associated with the stored Hessian approximation.
+Returns the scalar ``c_b^{\top} B c`` where ``c_b`` are the coordinates of the
+[`UnitVector`](@ref) `X` at `p` (assumed to correspond to the basis `ha.basis`),
+``c`` are the coordinates of the tangent vector `Y` at `p` (in the basis `ha.basis`)
+and ``B`` is `ha.A`.
+"""
 function hessian_value(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X::UnitVector, Y)
     b = to_coordinate_index(M, X, ha.basis)
     return dot(view(ha.A, b, :), get_coordinates(M, p, Y, ha.basis))
