@@ -309,15 +309,15 @@ end
 
 
 function (f::Fi_block)(M::AbstractManifold, r, p)
-    p_cam, p_t, p_pt = p.x
+    p_cam, p_t, p_intr, p_pt = p.x
     obs = f.dataset.observations[f.obs_idx]
 
     cam = BALCamera(
         SMatrix{3, 3}(view(p_cam, :, :, obs.camera_index)),
         SVector{3}(view(p_t, :, obs.camera_index)),
-        400.0, # focal length is not optimized in this example
-        0.0, # radial distortion k1 is not optimized
-        0.0, # radial distortion k2 is not optimized
+        p_intr[1, obs.camera_index],
+        p_intr[2, obs.camera_index],
+        p_intr[3, obs.camera_index],
     )
     pt_idx = f.dataset.observations[f.obs_idx].point_index
     return r .= reprojection_error(cam, SVector{3}(view(p_pt, :, pt_idx)), obs.xy)
@@ -335,23 +335,26 @@ function (f::jacFi_block_ad)(
     fi = Fi_block(f.dataset, f.obs_idx)
     Rot3 = Rotations(3)
 
-    M_cam, M_t, M_pt = M.manifolds
-    p_cam, p_t, p_pt = p.x
+    M_cam, M_t, M_intr, M_pt = M.manifolds
+    p_cam, p_t, p_intr, p_pt = p.x
     obs = f.dataset.observations[f.obs_idx]
 
     pt_idx = f.dataset.observations[f.obs_idx].point_index
 
     ManifoldDiff._jacobian!(J, zeros(manifold_dimension(M)), AutoForwardDiff()) do cY
         Y = get_vector(M, p, cY, basis_arg)
-        Y_cam, Y_t, Y_pt = Y.x
+        Y_cam, Y_t, Y_intr, Y_pt = Y.x
+        Y_t_proj = project(M_t, p_t, Y_t)
+        Y_intr_proj = project(M_intr, p_intr, Y_intr)
+        Y_pt_proj = project(M_pt, p_pt, Y_pt)
         cam = BALCamera(
             SMatrix{3, 3}(exp(Rot3, SMatrix{3, 3}(p_cam[M_cam, obs.camera_index]), Y_cam[M_cam, obs.camera_index])),
-            SVector{3}(p_t[M_t, obs.camera_index] + Y_t[M_t, obs.camera_index]),
-            400.0, # focal length is not optimized in this example
-            0.0, # radial distortion k1 is not optimized
-            0.0, # radial distortion k2 is not optimized
+            SVector{3}(p_t[M_t, obs.camera_index] + Y_t_proj[M_t, obs.camera_index]),
+            p_intr[M_intr, obs.camera_index][1] + Y_intr_proj[M_intr, obs.camera_index][1],
+            p_intr[M_intr, obs.camera_index][2] + Y_intr_proj[M_intr, obs.camera_index][2],
+            p_intr[M_intr, obs.camera_index][3] + Y_intr_proj[M_intr, obs.camera_index][3],
         )
-        return reprojection_error(cam, SVector{3}(p_pt[M_pt, pt_idx]) + Y_pt[M_pt, pt_idx], obs.xy)
+        return reprojection_error(cam, SVector{3}(p_pt[M_pt, pt_idx]) + Y_pt_proj[M_pt, pt_idx], obs.xy)
     end
 
     return J
@@ -422,13 +425,59 @@ function (solver::CachedLMSparseSolver)(sk, JJ::AbstractMatrix, grad_f_c)
     return Manopt.default_lm_lin_solve!(sk, JJ, grad_f_c)
 end
 
+function project_jacobian_to_tangent!(J, M::AbstractManifold, p, idx::Integer)
+    return J
+end
+function project_jacobian_to_tangent!(J, M::Hyperrectangle, p, idx::Integer)
+    lb = M.lb
+    ub = M.ub
+    p_idx = view(p, :, idx)
+    atol = sqrt(eps(eltype(p)))
+    zero_j = zero(eltype(J))
+
+    for j in axes(J, 2)
+        pj = p_idx[j]
+        lbj = lb[j, idx]
+        ubj = ub[j, idx]
+        if pj <= lbj + atol
+            @views J[:, j] .= max.(J[:, j], zero_j)
+        end
+        if pj >= ubj - atol
+            @views J[:, j] .= min.(J[:, j], zero_j)
+        end
+    end
+
+    return J
+end
+
+function _check_project_jacobian_to_tangent!()
+    J = [
+        -1.0 2.0
+        3.0 -4.0
+    ]
+    p = reshape([0.0, 1.0], 2, 1)
+    lb = reshape([0.0, 0.0], 2, 1)
+    ub = reshape([1.0, 1.0], 2, 1)
+    M = Hyperrectangle(lb, ub)
+    project_jacobian_to_tangent!(J, M, p, 1)
+    @assert J[:, 1] == [0.0, 3.0]
+    @assert J[:, 2] == [0.0, -4.0]
+
+    J_e = [1.0 -2.0; 3.0 -4.0]
+    J_e_ref = copy(J_e)
+    project_jacobian_to_tangent!(J_e, Euclidean(2), zeros(2, 1), 1)
+    @assert J_e == J_e_ref
+    return nothing
+end
+_check_project_jacobian_to_tangent!()
+
 function (f::jacFi_block_analytical)(
         M::AbstractManifold, J::BlockNonzeroMatrix, p;
         basis_arg::DefaultOrthonormalBasis = DefaultOrthonormalBasis(),
     )
 
-    M_cam, M_t, M_pt = M.manifolds
-    p_cam, p_t, p_pt = p.x
+    M_cam, M_t, M_intr, M_pt = M.manifolds
+    p_cam, p_t, p_intr, p_pt = p.x
     obs = f.dataset.observations[f.obs_idx]
 
     cam_idx = obs.camera_index
@@ -441,9 +490,9 @@ function (f::jacFi_block_analytical)(
     cam = BALCamera(
         R,
         t,
-        400.0,
-        0.0,
-        0.0,
+        p_intr[1, cam_idx],
+        p_intr[2, cam_idx],
+        p_intr[3, cam_idx],
     )
 
     xc = R * Xw + t
@@ -473,17 +522,25 @@ function (f::jacFi_block_analytical)(
     rot_lie_jac = (-inv(sqrt(eltype(xc)(2)))) * _skew((Xw[1], Xw[2], Xw[3]))
     J_rot = J_proj_cam * (R * rot_lie_jac)
     J_t = J_proj_cam
+    project_jacobian_to_tangent!(J_t, M_t, p_t, cam_idx)
+    J_intr = @MArray [
+        radial * xn cam.f * r2 * xn cam.f * r2^2 * xn
+        radial * yn cam.f * r2 * yn cam.f * r2^2 * yn
+    ]
+    project_jacobian_to_tangent!(J_intr, M_intr, p_intr, cam_idx)
     J_p = J_proj_cam * R
 
     d_cam = manifold_dimension(M_cam)
     d_t = manifold_dimension(M_t)
+    d_intr = manifold_dimension(M_intr)
 
     col_cam = (cam_idx - 1) * 3 + 1
     col_t = d_cam + (cam_idx - 1) * 3 + 1
-    col_p = d_cam + d_t + (pt_idx - 1) * 3 + 1
+    col_intr = d_cam + d_t + (cam_idx - 1) * 3 + 1
+    col_p = d_cam + d_t + d_intr + (pt_idx - 1) * 3 + 1
 
-    row_starts = (1, 1, 1)
-    col_starts = (col_cam, col_t, col_p)
+    row_starts = (1, 1, 1, 1)
+    col_starts = (col_cam, col_t, col_intr, col_p)
     if J.row_starts != row_starts || J.col_starts != col_starts
         error(
             "jacFi_block_analytical received BlockNonzeroMatrix with incompatible block layout. " *
@@ -493,7 +550,8 @@ function (f::jacFi_block_analytical)(
 
     J.blocks[1] .= J_rot
     J.blocks[2] .= J_t
-    J.blocks[3] .= J_p
+    J.blocks[3] .= J_intr
+    J.blocks[4] .= J_p
 
     return J
 end
@@ -507,15 +565,18 @@ function Manopt.allocate_jacobian(
     fJ = vgf.jacobian!!
     obs = fJ.dataset.observations[fJ.obs_idx]
 
-    M_cam, M_t, _ = M.manifolds
+    M_cam, M_t, M_intr, _ = M.manifolds
     d_cam = manifold_dimension(M_cam)
     d_t = manifold_dimension(M_t)
+    d_intr = manifold_dimension(M_intr)
 
     col_cam = (obs.camera_index - 1) * 3 + 1
     col_t = d_cam + (obs.camera_index - 1) * 3 + 1
-    col_p = d_cam + d_t + (obs.point_index - 1) * 3 + 1
+    col_intr = d_cam + d_t + (obs.camera_index - 1) * 3 + 1
+    col_p = d_cam + d_t + d_intr + (obs.point_index - 1) * 3 + 1
 
     blocks = (
+        zeros(T, vgf.range_dimension, 3),
         zeros(T, vgf.range_dimension, 3),
         zeros(T, vgf.range_dimension, 3),
         zeros(T, vgf.range_dimension, 3),
@@ -523,8 +584,8 @@ function Manopt.allocate_jacobian(
     return BlockNonzeroMatrix(
         vgf.range_dimension,
         manifold_dimension(M),
-        (1, 1, 1),
-        (col_cam, col_t, col_p),
+        (1, 1, 1, 1),
+        (col_cam, col_t, col_intr, col_p),
         blocks,
     )
 end
@@ -532,9 +593,12 @@ end
 function run_bundle_adjustment(data::BALDataset)
     # M_point_pos = Euclidean(3, data.num_points)
     M_point_pos = Hyperrectangle(fill(-1.0, 3, data.num_points), fill(1.0, 3, data.num_points))
+    intrinsics_bounds_low = reduce(hcat, [SVector(350, 0.0, 0.0) for cam in data.cameras])
+    intrinsics_bounds_upp = reduce(hcat, [SVector(450, 0.0, 0.0) for cam in data.cameras])
     M = ProductManifold(
         PowerManifold(Rotations(3), ArrayPowerRepresentation(), data.num_cameras), # camera rotations
         Euclidean(3, data.num_cameras), # camera translations
+        Hyperrectangle(intrinsics_bounds_low, intrinsics_bounds_upp), # camera intrinsics [f, k1, k2]
         M_point_pos, # 3D point positions
     )
 
@@ -553,6 +617,7 @@ function run_bundle_adjustment(data::BALDataset)
     p0 = ArrayPartition(
         stack([Matrix{Float64}(I, 3, 3) for _ in 1:data.num_cameras]), # camera rotations
         ones(3, data.num_cameras), # camera translations
+        stack([SVector(400.0, 0.0, 0.0) for cam in data.cameras]), # camera intrinsics [f, k1, k2]
         zeros(3, data.num_points), # 3D point positions
     )
 
@@ -593,18 +658,21 @@ function test_analytical_jacobian_matches_ad(
     M = ProductManifold(
         PowerManifold(Rotations(3), ArrayPowerRepresentation(), data.num_cameras),
         PowerManifold(Euclidean(3), ArrayPowerRepresentation(), data.num_cameras),
+        PowerManifold(Euclidean(3), ArrayPowerRepresentation(), data.num_cameras),
         PowerManifold(Euclidean(3), ArrayPowerRepresentation(), data.num_points),
     )
 
     p0 = ArrayPartition(
         stack([Matrix{Float64}(I, 3, 3) for _ in 1:data.num_cameras]),
         ones(3, data.num_cameras),
+        stack([SVector(400.0, 0.0, 0.0) for cam in data.cameras]),
         zeros(3, data.num_points),
     )
 
-    M_cam, M_t, _ = M.manifolds
+    M_cam, M_t, M_intr, _ = M.manifolds
     d_cam = manifold_dimension(M_cam)
     d_t = manifold_dimension(M_t)
+    d_intr = manifold_dimension(M_intr)
     ncols = manifold_dimension(M)
 
     max_abs_err = 0.0
@@ -616,13 +684,14 @@ function test_analytical_jacobian_matches_ad(
 
         col_cam = (obs.camera_index - 1) * 3 + 1
         col_t = d_cam + (obs.camera_index - 1) * 3 + 1
-        col_p = d_cam + d_t + (obs.point_index - 1) * 3 + 1
+        col_intr = d_cam + d_t + (obs.camera_index - 1) * 3 + 1
+        col_p = d_cam + d_t + d_intr + (obs.point_index - 1) * 3 + 1
         J_an = BlockNonzeroMatrix(
             2,
             ncols,
-            (1, 1, 1),
-            (col_cam, col_t, col_p),
-            (zeros(2, 3), zeros(2, 3), zeros(2, 3)),
+            (1, 1, 1, 1),
+            (col_cam, col_t, col_intr, col_p),
+            (zeros(2, 3), zeros(2, 3), zeros(2, 3), zeros(2, 3)),
         )
         jacFi_block_analytical(data, obs_idx)(M, J_an, p0)
 

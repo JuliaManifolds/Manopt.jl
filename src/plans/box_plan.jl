@@ -365,3 +365,86 @@ function find_generalized_cauchy_direction!(
         return (:found_unlimited, Inf)
     end
 end
+
+"""
+    struct MaxStepsizeInDirectionSubsolver end
+
+Helper container for finding the maximum stepsize in a direction. Stores the manifold `M`,
+container for the list of bounds `F_list`, and the bound indices.
+
+## Constructor
+
+    MaxStepsizeInDirectionSubsolver(M::AbstractManifold, p)
+
+Initialize the `MaxStepsizeInDirectionSubsolver` for manifold `M` and point `p`. The `F_list`
+is initialized to be empty and will be populated during the search for the maximum stepsize
+in a direction. Floating point type of the elements bounds in `F_list` is determined by the
+number type of `p`.
+
+The `MaxStepsizeInDirectionSubsolver` can be reused for multiple different points and
+directions on the same manifold, but it is not thread-safe.
+"""
+struct MaxStepsizeInDirectionSubsolver{TFT <: Tuple{<:Real, Any}, TBI}
+    F_list::Vector{TFT}
+    bounds_indices::TBI
+end
+function MaxStepsizeInDirectionSubsolver(M::AbstractManifold, p)
+    bounds_indices = get_bounds_index(M)
+    TInd = eltype(bounds_indices)
+    TF = number_eltype(p)
+    F_list = Tuple{TF, TInd}[]
+    sizehint!(F_list, length(bounds_indices) + 1)
+    return MaxStepsizeInDirectionSubsolver{Tuple{TF, TInd}, typeof(bounds_indices)}(F_list, bounds_indices)
+end
+
+"""
+    find_max_stepsize_in_direction(M::AbstractManifold, gcd::MaxStepsizeInDirectionSubsolver, p, d)
+
+Find the maximum stepsize that can be performed from point `p` in direction `d`.
+
+The function returns a pair (status, max_stepsize) where `status` is a symbol describing
+the result of the search, and `max_stepsize` is the maximum stepsize that can be taken in
+the direction `d_out`.
+
+The `status` can be one of the following:
+* `:found_limited` if the point was found and we can perform a step of length at most 1
+  in direction `d_out` afterwards,
+* `:found_unlimited` if the point was found and we can perform a step of length at most
+  `max_stepsize(M, p)` in direction `d_out` afterwards,
+* `:not_found` if the search cannot be performed in direction `d`.
+"""
+function find_max_stepsize_in_direction(
+        M::AbstractManifold,
+        sdf::MaxStepsizeInDirectionSubsolver{<:Tuple{TF, Any}},
+        p, d
+    ) where {TF <: Real}
+
+    F_list = sdf.F_list
+    empty!(F_list)
+    bounds_indices = sdf.bounds_indices
+
+    # isotropic limits
+    has_finite_limit, smallest_positive_limit = collect_isotropic_limits!(M, F_list, p, d)
+    # anisotropic limits
+    for i in bounds_indices
+        sbi = get_stepsize_bound(M, p, d, i)::TF
+
+        if sbi > 0
+            push!(F_list, (sbi, i))
+            if sbi < smallest_positive_limit
+                smallest_positive_limit = sbi
+            end
+        end
+        has_finite_limit |= isfinite(sbi)
+    end
+
+    if isempty(F_list)
+        return (:not_found, NaN)
+    end
+    if has_finite_limit
+        return (:found_limited, smallest_positive_limit)
+    else
+        return (:found_unlimited, Inf)
+    end
+
+end
