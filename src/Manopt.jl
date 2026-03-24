@@ -12,7 +12,7 @@ import Base: &, copy, getindex, identity, length, setindex!, show, |
 import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 import ManifoldsBase: base_manifold, base_point, get_basis
-import ManifoldsBase: project, project!
+import ManifoldsBase: project, project!, submanifold_component
 import LinearAlgebra: cross
 using ColorSchemes
 using ColorTypes

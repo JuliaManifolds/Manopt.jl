@@ -85,6 +85,7 @@ function solve_LM_subproblem!(
     # trim to box using GCD
     gcd = GeneralizedCauchyDirectionSubsolver(M, p, state)
     state.last_gcd_result, state.last_gcd_stepsize = find_generalized_cauchy_direction!(M, gcd, X, p, X, grad_Y)
-    X .*= state.last_gcd_stepsize
+    # even if step size larger than 1 is possible, we shouldn't try to go further
+    X .*= min(one(state.last_gcd_stepsize), state.last_gcd_stepsize)
     return X
 end

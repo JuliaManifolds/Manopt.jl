@@ -137,7 +137,7 @@ function get_bounds_index(M::ProductManifold)
 end
 
 function get_at_bound_index(M::ProductManifold, X, b::Tuple{Int, Any})
-    return get_at_bound_index(M.manifolds[b[1]], submanifold_component(M, X, Val(1)), b[2])
+    return get_at_bound_index(M.manifolds[b[1]], submanifold_component(M, X, b[1]), b[2])
 end
 
 

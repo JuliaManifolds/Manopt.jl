@@ -530,10 +530,12 @@ function Manopt.allocate_jacobian(
 end
 
 function run_bundle_adjustment(data::BALDataset)
+    # M_point_pos = Euclidean(3, data.num_points)
+    M_point_pos = Hyperrectangle(fill(-1.0, 3, data.num_points), fill(1.0, 3, data.num_points))
     M = ProductManifold(
         PowerManifold(Rotations(3), ArrayPowerRepresentation(), data.num_cameras), # camera rotations
         Euclidean(3, data.num_cameras), # camera translations
-        Euclidean(3, data.num_points), # 3D point positions
+        M_point_pos, # 3D point positions
     )
 
     F = [Fi_block(data, i) for i in 1:data.num_observations]
@@ -642,7 +644,7 @@ end
 # run_bundle_adjustment(data1)
 
 data1_sub = subsample_bal(data1, 5)
-run_bundle_adjustment(data1_sub)
+p_data1_sub = run_bundle_adjustment(data1_sub)
 # test_analytical_jacobian_matches_ad(data1_sub)
 
 using Profile, ProfileView
