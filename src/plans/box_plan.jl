@@ -113,7 +113,7 @@ end
 get_update_vector_transport(u::QuasiNewtonLimitedMemoryBoxDirectionUpdate) = get_update_vector_transport(u.qn_du)
 
 function get_at_bound_index(M::ProductManifold, X, b::Tuple{Int, Any})
-    return get_at_bound_index(M.manifolds[b[1]], submanifold_component(M, X, Val(1)), b[2])
+    return get_at_bound_index(M.manifolds[b[1]], submanifold_component(M, X, b[1]), b[2])
 end
 
 @doc raw"""
