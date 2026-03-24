@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Line searches consistently respect `stop_when_stepsize_exceeds` keyword argument as a hard limit. (#554)
 * `StopWhenChangeLess` falsely claimed to indicate convergence. This is now fixed. (#554)
 
+## [0.5.35] unreleased
+
+* Improved formatting of the references in the Readme.md (#586)
+
+## [0.5.34] March 3, 2026
+
+### Fixed
+
+* `Float32` support in `trust_regions` solver was broken in the previous release, which is now fixed.
+
 ## [0.5.33] February 18, 2026
 
 ### Added
