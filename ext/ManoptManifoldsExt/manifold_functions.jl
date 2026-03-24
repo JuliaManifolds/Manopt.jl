@@ -1,3 +1,10 @@
+function Manopt.add_vector!(M::Hyperrectangle, X, p, c::AbstractVector, basis::AbstractBasis{ℝ})
+    S = representation_size(M)
+    X .+= reshape(c, S)
+    return X
+end
+
+
 """
     default_point_distance(::DefaultManifold, p)
 

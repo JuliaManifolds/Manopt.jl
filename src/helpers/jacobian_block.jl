@@ -141,6 +141,113 @@ function Base.Vector(v::BlockNonzeroVector{T}) where {T}
     return result
 end
 
+function _add_reshaped_blocknonzero_vector!(
+        dest::AbstractArray,
+        y::Base.ReshapedArray{<:Any, <:Any, <:BlockNonzeroVector},
+    )
+    axes(dest) == axes(y) ||
+        throw(DimensionMismatch("Destination and reshaped BlockNonzeroVector axes mismatch."))
+    v = parent(y)
+    cartesian_indices = CartesianIndices(axes(dest))
+    for k in eachindex(v.blocks)
+        start = v.starts[k]
+        for (offset, value) in enumerate(v.blocks[k])
+            dest[cartesian_indices[start + offset - 1]] += value
+        end
+    end
+    return dest
+end
+
+function _add_reshaped_blocknonzero_vector!(
+        dest::AbstractArray,
+        y::Base.ReshapedArray{<:Any, <:Any, <:SubArray{<:Any, 1, <:BlockNonzeroVector}},
+    )
+    axes(dest) == axes(y) ||
+        throw(DimensionMismatch("Destination and reshaped BlockNonzeroVector axes mismatch."))
+    yv = parent(y)
+    v = parent(yv)
+    idx = parentindices(yv)[1]
+    cartesian_indices = CartesianIndices(axes(dest))
+
+    if idx isa AbstractUnitRange
+        first_idx = first(idx)
+        step_idx = step(idx)
+        for k in eachindex(v.blocks)
+            start = v.starts[k]
+            for (offset, value) in enumerate(v.blocks[k])
+                source_idx = start + offset - 1
+                if source_idx in idx
+                    local_idx = div(source_idx - first_idx, step_idx) + 1
+                    dest[cartesian_indices[local_idx]] += value
+                end
+            end
+        end
+        return dest
+    end
+
+    for k in eachindex(v.blocks)
+        start = v.starts[k]
+        for (offset, value) in enumerate(v.blocks[k])
+            source_idx = start + offset - 1
+            local_idx = findfirst(isequal(source_idx), idx)
+            isnothing(local_idx) || (dest[cartesian_indices[local_idx]] += value)
+        end
+    end
+    return dest
+end
+
+function Base.copyto!(
+        dest::D,
+        bc::Base.Broadcast.Broadcasted{
+            Style,
+            Axes,
+            typeof(+),
+            Tuple{D, R},
+        },
+    ) where {
+        D <: AbstractArray,
+        Style,
+        Axes,
+        R <: Base.ReshapedArray{
+            <:Any,
+            <:Any,
+            <:Union{BlockNonzeroVector, SubArray{<:Any, 1, <:BlockNonzeroVector}},
+        },
+    }
+    bc = Base.Broadcast.instantiate(bc)
+    x, y = bc.args
+    if x !== dest
+        copyto!(dest, x)
+    end
+    return _add_reshaped_blocknonzero_vector!(dest, y)
+end
+
+function Base.copyto!(
+        dest::D,
+        bc::Base.Broadcast.Broadcasted{
+            Style,
+            Axes,
+            typeof(+),
+            Tuple{R, D},
+        },
+    ) where {
+        D <: AbstractArray,
+        Style,
+        Axes,
+        R <: Base.ReshapedArray{
+            <:Any,
+            <:Any,
+            <:Union{BlockNonzeroVector, SubArray{<:Any, 1, <:BlockNonzeroVector}},
+        },
+    }
+    bc = Base.Broadcast.instantiate(bc)
+    y, x = bc.args
+    if x !== dest
+        copyto!(dest, x)
+    end
+    return _add_reshaped_blocknonzero_vector!(dest, y)
+end
+
 function LinearAlgebra.mul!(
         C::AbstractMatrix,
         x::BlockNonzeroVector,

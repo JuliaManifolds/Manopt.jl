@@ -30,6 +30,41 @@ using Test
     mul!(Cv2, bv, bv')
     @test isapprox(Cv2, bv_dense * bv_dense')
 
+    @testset "Reshaped BlockNonzeroVector in-place add" begin
+        bv_reshape = BlockNonzeroVector(
+            12,
+            (2, 6, 11),
+            ([1.0, 2.0], [3.0], [4.0, 5.0]),
+        )
+        Y_reshape = reshape(bv_reshape, 2, 2, 3)
+
+        X = reshape(collect(1.0:12.0), 2, 2, 3)
+        X_expected = copy(X)
+        X_expected .+= reshape(Vector(bv_reshape), 2, 2, 3)
+        X .+= Y_reshape
+        @test X == X_expected
+
+        X2 = fill(10.0, 2, 2, 3)
+        X2_expected = copy(X2)
+        X2_expected .+= reshape(Vector(bv_reshape), 2, 2, 3)
+        X2 .= X2 .+ Y_reshape
+        @test X2 == X2_expected
+
+        Y_view_reshape = reshape(view(bv_reshape, 2:11), 2, 5)
+
+        X3 = fill(7.0, 2, 5)
+        X3_expected = copy(X3)
+        X3_expected .+= reshape(Vector(view(bv_reshape, 2:11)), 2, 5)
+        X3 .+= Y_view_reshape
+        @test X3 == X3_expected
+
+        X4 = fill(-3.0, 2, 5)
+        X4_expected = copy(X4)
+        X4_expected .+= reshape(Vector(view(bv_reshape, 2:11)), 2, 5)
+        X4 .= Y_view_reshape .+ X4
+        @test X4 == X4_expected
+    end
+
     B = [1.0 2.0; 3.0 4.0]
     J = BlockNonzeroMatrix(5, 6, (2,), (3,), (B,))
 
