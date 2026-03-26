@@ -48,18 +48,21 @@ mutable struct DifferenceOfConvexState{
     sub_state::St
     stop::SC
     function DifferenceOfConvexState(
-            M::AbstractManifold,
-            sub_problem::Pr,
-            sub_state::St;
-            p::P = rand(M),
-            X::T = zero_vector(M, p),
+            M::AbstractManifold, sub_problem::Pr, sub_state::St; p::P = rand(M), X::T = zero_vector(M, p),
             stopping_criterion::SC = StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9),
         ) where {
-            P,
-            T,
-            Pr <: Union{AbstractManoptProblem, F} where {F},
-            St <: AbstractManoptSolverState,
-            SC <: StoppingCriterion,
+            P, T, Pr <: Union{AbstractManoptProblem, F} where {F},
+            St <: AbstractManoptSolverState, SC <: StoppingCriterion,
+        }
+        return DifferenceOfConvexState(sub_problem, sub_state; p = p, X = X, stopping_criterion = stopping_criterion)
+    end
+    # resolve an ambiguity
+    DifferenceOfConvexState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Difference of Convex Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
+    function DifferenceOfConvexState(
+            sub_problem::Pr, sub_state::St; p::P, X::T, stopping_criterion::SC
+        ) where {
+            P, T, Pr <: Union{AbstractManoptProblem, F} where {F},
+            St <: AbstractManoptSolverState, SC <: StoppingCriterion,
         }
         return new{P, T, Pr, St, SC}(p, X, sub_problem, sub_state, stopping_criterion)
     end
@@ -85,7 +88,13 @@ function get_message(dcs::DifferenceOfConvexState)
     # for now only the sub solver might have messages
     return get_message(dcs.sub_state)
 end
-
+function Base.show(io::IO, dcs::DifferenceOfConvexState)
+    print(io, "DifferenceOfConvexState("); print(io, dcs.sub_problem); print(io, dcs.sub_state); print(io, "; )")
+    print(io, "p = "); print(io, dcs.p); print(io, ", ")
+    print(io, "X = "); print(io, dcs.X); print(io, ", ")
+    print(io, "stopping_criterion = "); print(io, dcs.stop)
+    return print(io, ")")
+end
 function status_summary(dcs::DifferenceOfConvexState; context::Symbol = :default)
     (context === :short) && return repr(s)
     i = get_count(dcs, :Iterations)
@@ -177,15 +186,9 @@ $(_note(:OutputSection))
 @doc "$(_doc_DoC)"
 difference_of_convex_algorithm(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_algorithm(
-        M::AbstractManifold,
-        f,
-        g,
-        ∂h,
-        p = rand(M);
+        M::AbstractManifold, f, g, ∂h, p = rand(M);
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        grad_g = nothing,
-        gradient = nothing,
-        kwargs...,
+        grad_g = nothing, gradient = nothing, kwargs...,
     )
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
@@ -197,14 +200,8 @@ function difference_of_convex_algorithm(
         f_, ∂h_; gradient = gradient_, evaluation = evaluation
     )
     rs = difference_of_convex_algorithm(
-        M,
-        mdco,
-        p_;
-        g = g_,
-        evaluation = evaluation,
-        gradient = gradient_,
-        grad_g = grad_g_,
-        kwargs...,
+        M, mdco, p_;
+        g = g_, evaluation = evaluation, gradient = gradient_, grad_g = grad_g_, kwargs...,
     )
     return _ensure_matching_output(p, rs)
 end
@@ -220,38 +217,23 @@ calls_with_kwargs(::typeof(difference_of_convex_algorithm)) = (difference_of_con
 @doc "$(_doc_DoC)"
 difference_of_convex_algorithm!(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_algorithm!(
-        M::AbstractManifold,
-        f,
-        g,
-        ∂h,
-        p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        gradient = nothing,
-        kwargs...,
+        M::AbstractManifold, f, g, ∂h, p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), gradient = nothing, kwargs...,
     )
-    mdco = ManifoldDifferenceOfConvexObjective(
-        f, ∂h; gradient = gradient, evaluation = evaluation
-    )
-    return difference_of_convex_algorithm!(
-        M, mdco, p; g = g, evaluation = evaluation, kwargs...
-    )
+    mdco = ManifoldDifferenceOfConvexObjective(f, ∂h; gradient = gradient, evaluation = evaluation)
+    return difference_of_convex_algorithm!(M, mdco, p; g = g, evaluation = evaluation, kwargs...)
 end
 function difference_of_convex_algorithm!(
-        M::AbstractManifold,
-        mdco::O,
-        p;
+        M::AbstractManifold, mdco::O, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        g = nothing,
-        grad_g = nothing,
+        g = nothing, grad_g = nothing,
         gradient = nothing,
         X = zero_vector(M, p),
         objective_type = :Riemannian,
         stopping_criterion = if isnothing(gradient)
             StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9)
         else
-            StopAfterIteration(300) |
-                StopWhenChangeLess(M, 1.0e-9) |
-                StopWhenGradientNormLess(1.0e-9)
+            StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9) | StopWhenGradientNormLess(1.0e-9)
         end,
         # Subsolver Magic Cascade.
         sub_cost = if isnothing(g)
@@ -275,9 +257,7 @@ function difference_of_convex_algorithm!(
                 if isnothing(sub_hess)
                     ManifoldGradientObjective(sub_cost, sub_grad; evaluation = evaluation)
                 else
-                    ManifoldHessianObjective(
-                        sub_cost, sub_grad, sub_hess; evaluation = evaluation
-                    )
+                    ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation = evaluation)
                 end;
                 objective_type = objective_type,
                 sub_kwargs...,
@@ -297,18 +277,12 @@ function difference_of_convex_algorithm!(
             decorate_state!(
                 if isnothing(sub_hess)
                     GradientDescentState(
-                        M;
-                        p = copy(M, p),
-                        stopping_criterion = sub_stopping_criterion,
-                        sub_kwargs...,
+                        M; p = copy(M, p), stopping_criterion = sub_stopping_criterion, sub_kwargs...
                     )
                 else
                     TrustRegionsState(
-                        M,
-                        sub_objective;
-                        p = copy(M, p),
-                        stopping_criterion = sub_stopping_criterion,
-                        sub_kwargs...,
+                        M, sub_objective;
+                        p = copy(M, p), stopping_criterion = sub_stopping_criterion, sub_kwargs...
                     )
                 end;
                 sub_kwargs...,
@@ -329,12 +303,8 @@ function difference_of_convex_algorithm!(
         """,
     )
     dcs = DifferenceOfConvexState(
-        M,
-        sub_problem,
-        maybe_wrap_evaluation_type(sub_state);
-        p = p,
-        stopping_criterion = stopping_criterion,
-        X = X,
+        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        p = p, stopping_criterion = stopping_criterion, X = X,
     )
     ddcs = decorate_state!(dcs; kwargs...)
     solve!(dmp, ddcs)

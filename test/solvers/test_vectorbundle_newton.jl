@@ -144,7 +144,7 @@ using LinearAlgebra: eigvals
             M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
             stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
             retraction_method = ProjectionRetraction(),
-            stepsize = Manopt.AffineCovariantStepsize(M, θ_des = 0.1),
+            stepsize = AffineCovariantStepsize(M, θ_des = 0.1),
             return_state = true,
         )
         y1 = get_iterate(st)
@@ -157,6 +157,7 @@ using LinearAlgebra: eigvals
         acs = st.stepsize
         @test get_initial_stepsize(acs) == acs.α
         @test get_last_stepsize(acs) > 0.0
+        @test startswith(repr(acs), "AffineCovariantStepsize(; ")
         @test default_stepsize(M, VectorBundleNewtonState) isa Manopt.ConstantStepsize
         st_repr = repr(st)
         @test occursin("retraction_method =", st_repr)

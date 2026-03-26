@@ -131,7 +131,15 @@ function AffineCovariantStepsize(
     ) where {N <: Union{Real, Missing}}
     return AffineCovariantStepsize{typeof(α), typeof(θ), N}(α, θ, θ_des, θ_acc, 1.0, outer_norm)
 end
-
+function show(io::IO, acs::AffineCovariantStepsize)
+    print(io, "AffineCovariantStepsize(; ")
+    print(io, "α = $(acs.α), ")
+    print(io, "θ = $(acs.θ), ")
+    print(io, "θ_des = $(acs.θ_des)")
+    print("θ_acc = $(acs.θ_acc)")
+    !(ismissing(acs.outer_norm)) && print(io, ", outer_norm = $(acs.outer_norm)")
+    return print(io, ")")
+end
 function (acs::AffineCovariantStepsize)(
         amp::AbstractManoptProblem, ams::VectorBundleNewtonState, ::Any, args...; kwargs...
     )
