@@ -86,7 +86,7 @@ function set_parameter!(ls::LanczosState, ::Val{:σ}, σ)
     ls.σ = σ
     return ls
 end
-function Base.show(io, ls::LanczosState)
+function Base.show(io::IO, ls::LanczosState)
     print(io, "LanczosState(;"),
         print(io, "X = "); print(io, ls.X); print(io, ", ")
     print(io, "σ = "); print(io, ls.X); print(io, ", ")

@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] unreleased
 
 This is a breaking release in order to move a few parts to a unified naming and since weæ
-discontinue the `JuMP` extension. It will at some point return as a separate package.
+discontinue the `JuMP` extension. It will at some point return as a separate package, see (#532)
+for the last of the discussions around that.
 
 ### Fixed
 
@@ -20,7 +21,7 @@ discontinue the `JuMP` extension. It will at some point return as a separate pac
 
 ### Changes
 
-* `NonlinearLeastSquaresObjective` is now called `ManifoldNonlinearLeastSquaresObjective`.
+* `NonlinearLeastSquaresObjective` is now called `ManifoldNonlinearLeastSquaresObjective` (#569).
 * Improved formatting of the references in the Readme.md (#586)
 
 ## [0.5.34] March 3, 2026
