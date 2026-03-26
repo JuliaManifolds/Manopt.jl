@@ -634,13 +634,12 @@ Compute the gradient of the [`LevenbergMarquardtLinearSurrogateObjective`](@ref)
 $(
     _tex(
         :aligned,
-        "$(_tex(:grad)) μ_p(X) &= $(_tex(:sum, "i=1", "m")) $(_tex(:Cal, "L"))^*$(_tex(:bigl))$(_tex(:Cal, "L"))(X) + y $(_tex(:bigr)))",
-        """&= $(_tex(:sum, "i=1", "m")) J_F^*(p)$(_tex(:Bigl))[
-        ρ_i' $(_tex(:bigl))(I- b F(p)F(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_F(p)[X] + a$(_tex(:sqrt, "ρ_i'"))$(_tex(:bigl))(I- b F(p)F(p)^{$(_tex(:transp))}$(_tex(:bigr))) F(p)
-        $(_tex(:Bigr))]
-        """
+        "$(_tex(:grad)) μ_p(X) &= $(_tex(:sum, "i=1", "m")) $(_tex(:Cal, "L"))_i^*$(_tex(:bigl))($(_tex(:Cal, "L"))_i(X) + y_i $(_tex(:bigr))) + λX",
+        """&= $(_tex(:sum, "i=1", "m")) J_{F_i}^*(p)$(_tex(:Bigl))[
+        ρ_i' $(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_{F_i}(p)[X] + a$(_tex(:sqrt, "ρ_i'"))$(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr))) F_i(p) + λX
+        $(_tex(:Bigr))]"""
     )
-),
+)
 ```
 where ``ρ_i' = ρ_i'($(_tex(:norm, "F_i(p)"))_2^2)``, ``ρ_i'' = ρ_i''($(_tex(:norm, "F_i(p)"))_2^2)``
 are the values from the [`AbstractRobustifierFunction`](@ref) `ρ` its first and second derivative, respectively,
@@ -665,23 +664,21 @@ function get_gradient!(
     nlso = lmsco.objective
     # For every block
     zero_vector!(M, Y, p)
-    Z = copy(M, p, Y)
     start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len_o = length(o)
-        _get_gradient!(
-            M, Z, o, r, p, X;
+        _add_gradient!(
+            M, Y, o, r, p, X;
             value_cache = value_cache[(start + 1):(start + len_o)], ε = lmsco.ε, mode = lmsco.mode,
         )
-        Y .+= Z
         start += len_o
     end
     # add penalty term
     Y .+= lmsco.penalty .* X
     return Y
 end
-# For each single summand, we are on the level of a single vectorial function and a robustifier.
-function _get_gradient!(
+# For each single summand, we are on the level of a single vectorial function and a robustifier – and add it directly
+function _add_gradient!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
     )
@@ -697,18 +694,16 @@ function _get_gradient!(
     # add C^T y = C^T (sqrt(ρ(p)) / (1 - α) F(p)) (which overall has a ρ_prime upfront)
     b .+= residual_scaling .* sqrt(ρ_prime) .* (I - operator_scaling * (a * a')) * a
     # apply the adjoint
-    zero_vector!(M, Y, p)
     add_adjoint_jacobian!(M, Y, o, p, b)
     return Y
 end
 # Componentwise
-function _get_gradient!(
+function _add_gradient!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
     )
     # per single component a for-loop similar to the one for the blocks
     r = cr.robustifier
-    zero_vector!(M, Y, p)
     b = zero(value_cache)
     get_jacobian!(M, b, o, p, X)
     # Componentwise a few things decouple
@@ -723,9 +718,104 @@ function _get_gradient!(
         b[i] += residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * ai
     end
     # apply the adjoint
-    zero_vector!(M, Y, p)
     add_adjoint_jacobian!(M, Y, o, p, b)
     return Y
+end
+
+
+_docs_grad_LMSurrogate_Hess = """
+    get_hessian(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X, Y)
+    get_hessian!(M::AbstractManifold, Z, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X, Y)
+
+Compute the Hessian of the [`LevenbergMarquardtLinearSurrogateObjective`](@ref), which is given by
+
+```math
+$(
+    _tex(
+        :aligned,
+        "$(_tex(:Hess)) μ_p(X)[Y] &= $(_tex(:sum, "i=1", "m")) $(_tex(:Cal, "L"))_i^*$(_tex(:bigl))($(_tex(:Cal, "L"))_i(Y)$(_tex(:bigr))) + λY",
+        """&= $(_tex(:sum, "i=1", "m")) J_{F_i}^*(p)$(_tex(:Bigl))[
+        ρ_i' $(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_{F_i}(p)[Y] + λY
+        $(_tex(:Bigr))]"""
+    )
+)
+```
+where ``ρ_i' = ρ_i'($(_tex(:norm, "F_i(p)"))_2^2)``, ``ρ_i'' = ρ_i''($(_tex(:norm, "F_i(p)"))_2^2)``
+are the values from the [`AbstractRobustifierFunction`](@ref) `ρ` its first and second derivative, respectively,
+and ``b`` is the [`get_LevenbergMarquardt_scaling`](@ref) values of scaling the operator.
+See also [`get_jacobian`](@ref) and [`get_adjoint_jacobian`](@ref).
+
+This can be computed inplace of `Z`.
+"""
+
+
+@doc "$(_docs_grad_LMSurrogate_Hess)"
+function get_hessian(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X, Y
+    )
+    Z = zero_vector(M, p)
+    return get_hessian!(M, Z, lmsco, p, X, Y)
+end
+@doc "$(_docs_grad_LMSurrogate_Hess)"
+function get_hessian!(
+        M::AbstractManifold, Z, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X, Y
+    )
+    value_cache = lmsco.value_cache
+    nlso = lmsco.objective
+    # For every block
+    zero_vector!(M, Z, p)
+    start = 0
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        len_o = length(o)
+        _add_hessian!(
+            M, Z, o, r, p, X, Y;
+            value_cache = value_cache[(start + 1):(start + len_o)], ε = lmsco.ε, mode = lmsco.mode,
+        )
+        start += len_o
+    end
+    # add penalty term
+    Z .+= lmsco.penalty .* Y
+    return Z
+end
+# For each single summand, we are on the level of a single vectorial function and a robustifier.
+function _get_hessian!(
+        M::AbstractManifold, Z, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X, Y;
+        value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
+    )
+    a = value_cache # evaluate residuals F(p)
+    F_sq = sum(abs2, a)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    # Compute J_F^*(p)[C^T C J_F(p)[Y]], but since C is symmetric, we can do that squared idrectly
+    b = zero(a)
+    get_jacobian!(M, b, o, p, Y)
+    # Compute C^TCb = C^2 b (inplace of b)
+    b .= ρ_prime .* (I - operator_scaling * (a * a'))^2 * b
+    # apply the adjoint
+    add_adjoint_jacobian!(M, Z, o, p, b)
+    return Z
+end
+# Componentwise
+function _get_hessian!(
+        M::AbstractManifold, Z, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X, Y;
+        value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
+    )
+    # per single component a for-loop similar to the one for the blocks
+    r = cr.robustifier
+    b = zero(value_cache)
+    get_jacobian!(M, b, o, p, X)
+    # Componentwise a few things decouple
+    for (i, ai) in enumerate(value_cache)
+        ai_sq = abs(ai)^2
+        (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
+        _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
+        # get the “Jacobian” of the ith component, i.e. its
+        # Compute C^TCa = C^2 a (inplace of a)
+        b[i] = ρ_prime * (1 - operator_scaling * ai_sq)^2 * b[i]
+    end
+    # apply the adjoint
+    add_adjoint_jacobian!(M, Z, o, p, b)
+    return Z
 end
 
 ## TODO: Find a better name?

@@ -31,9 +31,9 @@ __tex_formatter = Glossaries.Math()
 _tex(args...; kwargs...) = __tex_formatter(_glossary_tex_terms, args...; kwargs...)
 
 function _tex_aligned(lines...)
-    return raw"\begin{aligned}\n" *
-        "$(join(["   $(line)" for line in lines], raw"\\\\ "))" *
-        raw"\n\end{aligned}\n"
+    return raw"\begin{aligned}" * "\n" *
+        "$(join(["   $(line)" for line in lines], raw"\\\\ " * "\n"))" *
+        "\n" * raw"\end{aligned}" * "\n"
 end
 Glossaries.define!(_glossary_tex_terms, :aligned, :math, _tex_aligned)
 _tex_abs(v) = raw"\lvert " * "$v" * raw" \rvert"

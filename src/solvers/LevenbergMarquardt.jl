@@ -311,7 +311,6 @@ function step_solver!(
     cost_improvement = get_cost(M, nlso, lms.p) - get_cost(M, nlso, q)
     ρ = cost_improvement / model_improvement
     # Update damping term and iterate
-    # TODO Abstract this to a generic update for η?
     if ρ >= lms.damping_reduction_threshold
         lms.damping_term *= lms.β_reduction
         lms.damping_term = max(lms.damping_term, lms.damping_term_min)
