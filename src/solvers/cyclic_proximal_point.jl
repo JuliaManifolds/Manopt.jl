@@ -1,21 +1,3 @@
-function status_summary(cpps::CyclicProximalPointState; context::Symbol = :default)
-    (context === :short) && return repr(cpps)
-    i = get_count(cpps, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(cpps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the cyclic proximal point algorithm$(conv_inl)"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(cpps.stop) ? "Yes" : "No"
-    s = """
-    # Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm
-    $Iter
-    ## Parameters
-    * evaluation order of the proximal maps: :$(cpps.order_type)
-
-    ## Stopping criterion
-    $(status_summary(cpps.stop; context = context))
-    This indicates convergence: $Conv"""
-    return s
-end
 _doc_CPPA = """
     cyclic_proximal_point(M, f, proxes_f, p; kwargs...)
     cyclic_proximal_point(M, mpo, p; kwargs...)

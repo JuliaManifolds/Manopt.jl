@@ -234,13 +234,17 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)")
 
 [`cyclic_proximal_point`](@ref)
 """
-mutable struct CyclicProximalPointState{P, TStop <: StoppingCriterion, Tλ} <:
-    AbstractManoptSolverState
+mutable struct CyclicProximalPointState{P, SC <: StoppingCriterion, Tλ, A <: AbstractVector{<:Int}} <: AbstractManoptSolverState
     p::P
-    stop::TStop
+    stop::SC
     λ::Tλ
     order_type::Symbol
-    order::AbstractVector{Int}
+    order::A
+    function CyclicProximalPointState(;
+            p::P, stopping_criterion::SC, λ::Tλ, order_type::Symbol, order::A,
+        ) where {P, SC <: StoppingCriterion, Tλ, A <: AbstractVector{<:Int}}
+        return new{P, SC, Tλ, A}(p, stopping_criterion, λ, order_type, order)
+    end
 end
 
 function CyclicProximalPointState(
@@ -250,12 +254,39 @@ function CyclicProximalPointState(
         λ::F = (i) -> 1.0 / i,
         evaluation_order::Symbol = :LinearOrder,
     ) where {P, S, F}
-    return CyclicProximalPointState{P, S, F}(p, stopping_criterion, λ, evaluation_order, [])
+    return CyclicProximalPointState(; p = p, stopping_criterion = stopping_criterion, λ = λ, order_type = evaluation_order, order = Int[])
 end
 get_iterate(cpps::CyclicProximalPointState) = cpps.p
 function set_iterate!(cpps::CyclicProximalPointState, p)
     cpps.p = p
     return p
+end
+function Base.show(io::IO, cpps::CyclicProximalPointState)
+    print(io, "CyclicProximalPointState(; ")
+    print(io, "p = "); print(io, cpps.p); print(io, ", ")
+    print(io, "stopping_crierion = "); print(io, cpps.stop); print(io, ", ")
+    print(io, "λ = "); print(io, cpps.λ); print(io, ", ")
+    print(io, "order = "); print(io, cpps.order); print(io, ", ")
+    print(io, "order_type = "); print(io, cpps.order_type)
+    return print(io, ")")
+end
+function status_summary(cpps::CyclicProximalPointState; context::Symbol = :default)
+    (context === :short) && return repr(cpps)
+    i = get_count(cpps, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(cpps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the cyclic proximal point algorithm$(conv_inl)"
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(cpps.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm
+    $Iter
+    ## Parameters
+    * evaluation order of the proximal maps: :$(cpps.order_type)
+
+    ## Stopping criterion
+    $(status_summary(cpps.stop; context = context))
+    This indicates convergence: $Conv"""
+    return s
 end
 
 #
