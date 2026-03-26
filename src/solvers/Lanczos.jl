@@ -45,6 +45,15 @@ mutable struct LanczosState{T, R, SC, SCN, B, TM, C} <: AbstractManoptSolverStat
     Hp::T              # `Hess_f`` A temporary vector for evaluations of the Hessian
     Hp_residual::T     # A residual vector
     S::T               # store the tangent vector that solves the minimization problem
+    function LanczosState(;
+            X::T, σ::R, stopping_criterion::SC, stopping_criterion_newton::SCN, Lanczos_vectors::B,
+            tridig_matrix::TM, coefficients::C, Hp::T, Hp_residual::T, S::T
+        ) where {T, SC <: StoppingCriterion, SCN <: StoppingCriterion, R, B, TM, C}
+        return new{T, R, SC, SCN, B, TM, C}(
+            X, σ, stopping_criterion, stopping_criterion_newton, Lanczos_vectors,
+            tridig_matrix, coefficients, Hp, Hp_residual, S
+        )
+    end
 end
 function LanczosState(
         TpM::TangentSpace;
@@ -59,17 +68,11 @@ function LanczosState(
     tridig = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
     coeffs = zeros(maxIterLanczos)
     Lanczos_vectors = typeof(X)[]
-    return LanczosState{T, R, SC, SCN, typeof(Lanczos_vectors), typeof(tridig), typeof(coeffs)}(
-        X,
-        σ,
-        stopping_criterion,
-        stopping_criterion_newton,
-        Lanczos_vectors,
-        tridig,
-        coeffs,
-        copy(TpM, X),
-        copy(TpM, X),
-        copy(TpM, X),
+    return LanczosState(;
+        X = X, σ = σ, stopping_criterion = stopping_criterion,
+        stopping_criterion_newton = stopping_criterion_newton,
+        Lanczos_vectors = Lanczos_vectors, tridig_matrix = tridig, coefficients = coeffs,
+        Hp = copy(TpM, X), Hp_residual = copy(TpM, X), S = copy(TpM, X),
     )
 end
 function get_solver_result(ls::LanczosState)
@@ -82,6 +85,20 @@ end
 function set_parameter!(ls::LanczosState, ::Val{:σ}, σ)
     ls.σ = σ
     return ls
+end
+function Base.show(io, ls::LanczosState)
+    print(io, "LanczosState(;"),
+        print(io, "X = "); print(io, ls.X); print(io, ", ")
+    print(io, "σ = "); print(io, ls.X); print(io, ", ")
+    print(io, "stopping_criterion = "); print(io, ls.stop); print(io, ", ")
+    print(io, "stopping_criterion_newton = "); print(io, ls.stop_newton); print(io, ", ")
+    print(io, "Lanczos_vectors = "); print(io, ls.Lanczos_vectors); print(io, ", ")
+    print(io, "tridig_matrix = "); print(io, ls.tridig_matrix); print(io, ", ")
+    print(io, "coefficients = "); print(io, ls.X); print(io, ", ")
+    print(io, "Hp = "); print(io, ls.Hp); print(io, ", ")
+    print(io, "Hp_residual = "); print(io, ls.Hp_residual); print(io, ", ")
+    print(io, "S = "); print(io, ls.S)
+    return print(io, ")")
 end
 function status_summary(ls::LanczosState; context = default)
     _is_inline(context) && return repr(ls)
