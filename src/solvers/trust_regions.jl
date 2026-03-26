@@ -58,14 +58,8 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 [`trust_regions`](@ref)
 """
 mutable struct TrustRegionsState{
-        P,
-        T,
-        Pr,
-        St <: AbstractManoptSolverState,
-        SC <: StoppingCriterion,
-        RTR <: AbstractRetractionMethod,
-        R <: Real,
-        Proj,
+        P, T, Pr, St <: AbstractManoptSolverState,
+        SC <: StoppingCriterion, RTR <: AbstractRetractionMethod, R <: Real, Proj,
     } <: AbstractSubProblemSolverState
     p::P
     X::T
@@ -112,14 +106,8 @@ mutable struct TrustRegionsState{
             augmentation_factor = 2.0,
             σ::R = random ? 1.0e-6 : 0.0,
         ) where {
-            P,
-            T,
-            Pr,
-            St <: AbstractManoptSolverState,
-            SC <: StoppingCriterion,
-            RTR <: AbstractRetractionMethod,
-            R <: Real,
-            Proj,
+            P, T, Pr, St <: AbstractManoptSolverState,
+            SC <: StoppingCriterion, RTR <: AbstractRetractionMethod, R <: Real, Proj,
         }
         trs = new{P, T, Pr, St, SC, RTR, R, Proj}()
         trs.p = p
@@ -144,11 +132,8 @@ mutable struct TrustRegionsState{
 end
 
 function TrustRegionsState(
-        M::AbstractManifold,
-        sub_problem::Pr,
-        sub_state::St;
-        p::P = rand(M),
-        X::T = zero_vector(M, p),
+        M::AbstractManifold, sub_problem::Pr, sub_state::St;
+        p::P = rand(M), X::T = zero_vector(M, p),
         acceptance_rate = 0.1,
         ρ_regularization::R = 1000.0,
         randomize::Bool = false,
@@ -163,10 +148,7 @@ function TrustRegionsState(
         project!::Proj = (copyto!),
         σ = randomize ? 1.0e-4 : 0.0,
     ) where {
-        P,
-        T,
-        Pr <: Union{AbstractManoptProblem, F} where {F},
-        St <: AbstractManoptSolverState,
+        P, T, Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
         R <: Real,
         SC <: StoppingCriterion,
         RTR <: AbstractRetractionMethod,
@@ -323,11 +305,7 @@ function trust_regions(
 end
 # Hessian (Function) and point
 function trust_regions(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        Hess_f::TH,
-        p;
+        M::AbstractManifold, f, grad_f, Hess_f::TH, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         preconditioner = if evaluation isa InplaceEvaluation
             (M, Y, p, X) -> (Y .= X)
@@ -365,14 +343,8 @@ function trust_regions(
         M, copy(M, p), grad_f; evaluation = evaluation, retraction_method = retraction_method
     )
     return trust_regions(
-        M,
-        f,
-        grad_f,
-        hess_f,
-        p;
-        evaluation = evaluation,
-        retraction_method = retraction_method,
-        kwargs...,
+        M, f, grad_f, hess_f, p;
+        evaluation = evaluation, retraction_method = retraction_method, kwargs...,
     )
 end
 # Objective
@@ -402,11 +374,7 @@ function trust_regions!(
         M, copy(M, p), grad_f; evaluation = evaluation, retraction_method = retraction_method
     )
     return trust_regions!(
-        M,
-        f,
-        grad_f,
-        hess_f,
-        p;
+        M, f, grad_f, hess_f, p;
         evaluation = evaluation,
         retraction_method = retraction_method,
         kwargs...,
