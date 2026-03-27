@@ -6,6 +6,8 @@ using ManifoldDiff, DifferentiationInterface
 using ForwardDiff
 using SparseArrays
 
+using LinearSolve
+
 struct BALObservation{T <: Real, I <: Integer}
     camera_index::I
     point_index::I
@@ -425,6 +427,90 @@ function (solver::CachedLMSparseSolver)(sk, JJ::AbstractMatrix, grad_f_c)
     return Manopt.default_lm_lin_solve!(sk, JJ, grad_f_c)
 end
 
+"""
+    CachedLMLinearSolveSolver(; alg = nothing, solve_kwargs...)
+
+Cache for repeated sparse LM linear solves backed by `LinearSolve.jl`.
+Reuses the internal `LinearSolve` cache across iterations and refreshes it when
+the sparsity pattern changes.
+"""
+mutable struct CachedLMLinearSolveSolver
+    linsolve_cache::Any
+    alg::Any
+    solve_kwargs::NamedTuple
+    rowval_objid::UInt
+    colptr_objid::UInt
+    rowval_len::Int
+    colptr_len::Int
+
+    function CachedLMLinearSolveSolver(; alg = nothing, solve_kwargs...)
+        return new(nothing, alg, (; solve_kwargs...), 0, 0, -1, -1)
+    end
+end
+
+function _linearsolve_init(prob, alg)
+    return init(prob)
+end
+
+function _linearsolve_solve!(cache, solve_kwargs::NamedTuple)
+    return isempty(solve_kwargs) ? LinearSolve.solve!(cache) : LinearSolve.solve!(cache; solve_kwargs...)
+end
+
+function _solve_lm_linearsolve_cached!(
+        sk,
+        JJ::SparseMatrixCSC,
+        grad_f_c,
+        solver::CachedLMLinearSolveSolver,
+    )
+    pattern_changed =
+        solver.rowval_objid != objectid(JJ.rowval) ||
+        solver.colptr_objid != objectid(JJ.colptr) ||
+        solver.rowval_len != length(JJ.rowval) ||
+        solver.colptr_len != length(JJ.colptr)
+
+    if pattern_changed || isnothing(solver.linsolve_cache)
+        solver.rowval_objid = objectid(JJ.rowval)
+        solver.colptr_objid = objectid(JJ.colptr)
+        solver.rowval_len = length(JJ.rowval)
+        solver.colptr_len = length(JJ.colptr)
+
+        prob = LinearProblem(Symmetric(JJ), grad_f_c)
+        solver.linsolve_cache = _linearsolve_init(prob, solver.alg)
+    else
+        solver.linsolve_cache.A = Symmetric(JJ)
+        solver.linsolve_cache.b = grad_f_c
+    end
+
+    try
+        sol = _linearsolve_solve!(solver.linsolve_cache, solver.solve_kwargs)
+        sk .= sol.u
+    catch e
+        if e isa PosDefException
+            sk .= Symmetric(JJ) \ grad_f_c
+        elseif e isa ArgumentError || e isa DimensionMismatch
+            # Structure or dimensions changed unexpectedly; rebuild the cache.
+            prob = LinearProblem(Symmetric(JJ), grad_f_c)
+            solver.linsolve_cache = _linearsolve_init(prob, solver.alg)
+            sol = _linearsolve_solve!(solver.linsolve_cache, solver.solve_kwargs)
+            sk .= sol.u
+        else
+            rethrow()
+        end
+    end
+    return sk
+end
+
+function (solver::CachedLMLinearSolveSolver)(sk, JJ::SparseMatrixCSC, grad_f_c)
+    return _solve_lm_linearsolve_cached!(sk, JJ, grad_f_c, solver)
+end
+
+function (solver::CachedLMLinearSolveSolver)(sk, JJ::AbstractMatrix, grad_f_c)
+    prob = LinearProblem(Symmetric(JJ), grad_f_c)
+    sol = isnothing(solver.alg) ? solve(prob; solver.solve_kwargs...) : solve(prob, solver.alg; solver.solve_kwargs...)
+    sk .= sol.u
+    return sk
+end
+
 function project_jacobian_to_tangent!(J, M::AbstractManifold, p, idx::Integer)
     return J
 end
@@ -626,6 +712,8 @@ function run_bundle_adjustment(data::BALDataset)
     n = manifold_dimension(M)
     A = spzeros(n, n)
     sparse_lm_solver = CachedLMSparseSolver()
+    # sparse_lm_solver = CachedLMLinearSolveSolver(alg = CholeskyFactorization())
+
     # A = Matrix{Float64}(undef, n, n)
 
     lm_state = LevenbergMarquardt(
