@@ -24,13 +24,8 @@ using LinearAlgebra: I, tr
     )
     sol_lqh3 = copy(M, p0)
     exact_penalty_method!(
-        M,
-        f,
-        grad_f,
-        sol_lqh3;
-        g = g,
-        grad_g = grad_g,
-        smoothing = LinearQuadraticHuber(),
+        M, f, grad_f, sol_lqh3;
+        g = g, grad_g = grad_g, smoothing = LinearQuadraticHuber(),
         gradient_inequality_range = NestedPowerRepresentation(),
     )
     a_tol_emp = 8.0e-2
@@ -47,6 +42,7 @@ using LinearAlgebra: I, tr
     set_iterate!(epms, M, 2 .* p0)
     @test get_iterate(epms) == 2 .* p0
     @test startswith(Manopt.status_summary(epms; context = :default), "# Solver state for `Manopt.jl`s Exact Penalty Method\n")
+    @test startswith(repr(epms), "ExactPenaltyMethodState($(dmp)")
     # With dummy closed form solution
     epmsc = ExactPenaltyMethodState(M, f)
     @test epmsc.sub_state isa Manopt.ClosedFormSubSolverState
@@ -57,13 +53,8 @@ using LinearAlgebra: I, tr
         ge(M, p) = -p # inequality constraint p ≥ 0
         grad_ge(M, p) = -1
         s = exact_penalty_method(
-            Me,
-            fe,
-            grad_fe,
-            4.0;
-            g = ge,
-            grad_g = grad_ge,
-            stopping_criterion = StopAfterIteration(20),
+            Me, fe, grad_fe, 4.0;
+            g = ge, grad_g = grad_ge, stopping_criterion = StopAfterIteration(20),
             return_state = true,
         )
         q = get_solver_result(s)[]

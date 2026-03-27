@@ -49,11 +49,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(
 [`exact_penalty_method`](@ref)
 """
 mutable struct ExactPenaltyMethodState{
-        P,
-        Pr <: Union{F, AbstractManoptProblem} where {F},
-        St <: AbstractManoptSolverState,
-        R <: Real,
-        TStopping <: StoppingCriterion,
+        P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
+        R <: Real, TStopping <: StoppingCriterion,
     } <: AbstractSubProblemSolverState
     p::P
     sub_problem::Pr
@@ -68,45 +65,33 @@ mutable struct ExactPenaltyMethodState{
     θ_ϵ::R
     stop::TStopping
     function ExactPenaltyMethodState(
-            M::AbstractManifold,
-            sub_problem::Pr,
-            sub_state::St;
+            M::AbstractManifold, sub_problem::Pr, sub_state::St;
             p::P = rand(M),
-            ϵ::R = 1.0e-3,
-            ϵ_min::R = 1.0e-6,
-            ϵ_exponent = 1 / 100,
-            θ_ϵ = (ϵ_min / ϵ)^(ϵ_exponent),
-            u::R = 1.0e-1,
-            u_min::R = 1.0e-6,
-            u_exponent = 1 / 100,
-            θ_u = (u_min / u)^(u_exponent),
-            ρ::R = 1.0,
-            θ_ρ::R = 0.3,
-            stopping_criterion::SC = StopAfterIteration(300) | (
-                StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(M, 1.0e-10)
-            ),
+            ϵ::Real = 1.0e-3, ϵ_min::Real = 1.0e-6, ϵ_exponent::Real = 1 / 100,
+            θ_ϵ::Real = (ϵ_min / ϵ)^(ϵ_exponent),
+            u::Real = 1.0e-1, u_min::Real = 1.0e-6, u_exponent::Real = 1 / 100,
+            θ_u::Real = (u_min / u)^(u_exponent), ρ::Real = 1.0, θ_ρ::Real = 0.3,
+            stopping_criterion::SC = StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(M, 1.0e-10)),
         ) where {
-            P,
-            Pr <: Union{F, AbstractManoptProblem} where {F},
-            St <: AbstractManoptSolverState,
-            R <: Real,
-            SC <: StoppingCriterion,
+            P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState, SC <: StoppingCriterion,
         }
-        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
-        epms = new{P, Pr, typeof(sub_state_storage), R, SC}()
-        epms.p = p
-        epms.sub_problem = sub_problem
-        epms.sub_state = sub_state_storage
-        epms.ϵ = ϵ
-        epms.ϵ_min = ϵ_min
-        epms.u = u
-        epms.u_min = u_min
-        epms.ρ = ρ
-        epms.θ_ρ = θ_ρ
-        epms.θ_u = θ_u
-        epms.θ_ϵ = θ_ϵ
-        epms.stop = stopping_criterion
-        return epms
+        _sub_state = maybe_wrap_evaluation_type(sub_state)
+        # unify real type – for the keyword args that are stored in the state
+        R = float(promote_type(typeof.([ϵ, ϵ_min, u, u_min, ρ, θ_u, θ_ϵ, θ_ρ])...))
+        ϵ = convert(R, ϵ); ϵ_min = convert(R, ϵ_min); u = convert(R, u); u_min = convert(R, u_min)
+        θ_ϵ = convert(R, θ_ϵ); θ_u = convert(R, θ_u); θ_ρ = convert(R, θ_ρ); ρ = convert(R, ρ)
+        return ExactPenaltyMethodState(
+            sub_problem, _sub_state; p = p, stopping_criterion = stopping_criterion,
+            ϵ = ϵ, ϵ_min = ϵ_min, u = u, u_min = u_min, ρ = ρ, θ_ρ = θ_ρ, θ_u = θ_u, θ_ϵ = θ_ϵ,
+        )
+    end
+    function ExactPenaltyMethodState(
+            sub_problem::Pr, sub_state::St;
+            p::P, ϵ::R, ϵ_min::R, θ_ϵ::R, u::R, u_min::R, θ_u::R, ρ::R, θ_ρ::R, stopping_criterion::SC
+        ) where {P, R, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState, SC <: StoppingCriterion}
+        return new{P, Pr, St, R, SC}(
+            p, sub_problem, sub_state, ϵ, ϵ_min, u, u_min, ρ, θ_ρ, θ_u, θ_ϵ, stopping_criterion
+        )
     end
 end
 function ExactPenaltyMethodState(
@@ -115,7 +100,8 @@ function ExactPenaltyMethodState(
     cfs = ClosedFormSubSolverState(; evaluation = evaluation)
     return ExactPenaltyMethodState(M, sub_problem, cfs; kwargs...)
 end
-
+# resolve an ambiguity
+ExactPenaltyMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Exact penalty method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 get_iterate(epms::ExactPenaltyMethodState) = epms.p
 function get_message(epms::ExactPenaltyMethodState)
     # for now only the sub solver might have messages
@@ -124,6 +110,14 @@ end
 function set_iterate!(epms::ExactPenaltyMethodState, M, p)
     epms.p = p
     return epms
+end
+function Base.show(io::IO, epms::ExactPenaltyMethodState)
+    print(io, "ExactPenaltyMethodState("); print(io, epms.sub_problem); print(io, ", "); print(io, epms.sub_state)
+    print(io, "; ")
+    print(io, "p = $(epms.p), ϵ = $(epms.ϵ), ϵ_min = $(epms.ϵ_min), θ_ϵ = $(epms.θ_ϵ), ")
+    print(io, "u = $(epms.u), u_min = $(epms.u_min), θ_u = $(epms.θ_u), ρ = $(epms.ρ), θ_ρ = $(epms.θ_ρ), ")
+    print(io, "stopping_criterion = $(epms.stop)")
+    return print(io, ")")
 end
 function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :default)
     (context === :short) && return repr(epms)
