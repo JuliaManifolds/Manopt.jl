@@ -75,7 +75,8 @@ function RecordSolverState(s::S, symbol::Symbol) where {S <: AbstractManoptSolve
     return RecordSolverState{S}(s; RecordFactory(get_state(s), symbol)...)
 end
 function status_summary(rst::RecordSolverState; context::Symbol = :default)
-    _is_inline(context) && (return "a RecordSolverState for $(status_summary(rst.state; context = context))")
+    (context === :short) && return repr(rst)
+    (context === :inline) && (return "a RecordSolverState for $(status_summary(rst.state; context = context))")
     if length(rst.recordDictionary) > 0
         return """
         $(status_summary(rst.state; context = context))

@@ -290,24 +290,16 @@ $(_kwargs(:sub_state; default = _glossary[:Variable][:evaluation][:default]))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct ProximalGradientMethodState{
-        P,
-        T,
-        Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F},
-        St <: Union{<:AbstractManoptSolverState, Nothing},
-        A,
-        S <: StoppingCriterion,
-        TStepsize <: Stepsize,
-        RM <: AbstractRetractionMethod,
-        IRM <: AbstractInverseRetractionMethod,
-        R,
+        P, T, Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F}, St <: Union{<:AbstractManoptSolverState, Nothing},
+        A, SC <: StoppingCriterion, S <: Stepsize, RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, R,
     } <: AbstractManoptSolverState
     a::P
     acceleration::A
-    stepsize::TStepsize
+    stepsize::S
     last_stepsize::R
     p::P
     q::P
-    stop::S
+    stop::SC
     X::T
     retraction_method::RM
     inverse_retraction_method::IRM
@@ -322,35 +314,22 @@ function ProximalGradientMethodState(
             copyto!(get_manifold(pr), st.a, st.p)
             return st
         end,
-        stepsize::TS = default_stepsize(M, ProximalGradientMethodState),
-        stopping_criterion::S = StopWhenGradientMappingNormLess(1.0e-2) |
-            StopAfterIteration(5000) |
-            StopWhenChangeLess(M, 1.0e-9),
+        stepsize::S = default_stepsize(M, ProximalGradientMethodState),
+        stopping_criterion::SC = StopWhenGradientMappingNormLess(1.0e-2) | StopAfterIteration(5000) | StopWhenChangeLess(M, 1.0e-9),
         X::T = zero_vector(M, p),
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
         sub_problem::Pr = nothing,
         sub_state::St = nothing, #AllocatingEvaluation(),
     ) where {
-        P,
-        T,
-        S <: StoppingCriterion,
-        A,
-        Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F},
-        St <: Union{<:AbstractManoptSolverState, <:AbstractEvaluationType, Nothing},
-        RM <: AbstractRetractionMethod,
-        IRM <: AbstractInverseRetractionMethod,
-        TS <: Stepsize,
+        P, T, SC <: StoppingCriterion, A,
+        Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F}, St <: Union{<:AbstractManoptSolverState, <:AbstractEvaluationType, Nothing},
+        RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, S <: Stepsize,
     }
-    _sub_state = if sub_state isa AbstractEvaluationType
-        ClosedFormSubSolverState(; evaluation = sub_state)
-    else
-        sub_state
-    end
-
+    _sub_state = maybe_wrap_evaluation_type(sub_state)
     last_stepsize = zero(number_eltype(p))
     return ProximalGradientMethodState{
-        P, T, Pr, typeof(_sub_state), A, S, TS, RM, IRM, typeof(last_stepsize),
+        P, T, Pr, typeof(_sub_state), A, SC, S, RM, IRM, typeof(last_stepsize),
     }(
         copy(M, p),
         acceleration,
