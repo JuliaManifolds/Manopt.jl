@@ -99,15 +99,8 @@ $(_fields([:retraction_method, :vector_transport_method]))
 $(_kwargs([:retraction_method, :vector_transport_method, :X]))
 """
 mutable struct LowerTriangularAdaptivePoll{
-        P,
-        T,
-        F <: Real,
-        V <: AbstractVector{F},
-        M <: AbstractMatrix{F},
-        I <: Int,
-        B,
-        VTM <: AbstractVectorTransportMethod,
-        RM <: AbstractRetractionMethod,
+        P, T, F <: Real, V <: AbstractVector{F}, M <: AbstractMatrix{F},
+        I <: Int, B, VTM <: AbstractVectorTransportMethod, RM <: AbstractRetractionMethod,
     } <: AbstractMeshPollFunction
     base_point::P
     candidate::P
@@ -353,12 +346,8 @@ function show(io::IO, dmads::DefaultMeshAdaptiveDirectSearch)
     return print(io, s)
 end
 function (dmads::DefaultMeshAdaptiveDirectSearch)(
-        amp::AbstractManoptProblem,
-        mesh_size::Real,
-        p,
-        X;
-        scale_mesh::Real = 1.0,
-        max_stepsize::Real = Inf,
+        amp::AbstractManoptProblem, mesh_size::Real, p, X;
+        scale_mesh::Real = 1.0, max_stepsize::Real = Inf,
     )
     M = get_manifold(amp)
     dmads.X .= (4 * mesh_size * scale_mesh) .* X
@@ -391,11 +380,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
 """
 mutable struct MeshAdaptiveDirectSearchState{
-        P,
-        F <: Real,
-        PT <: AbstractMeshPollFunction,
-        ST <: AbstractMeshSearchFunction,
-        SC <: StoppingCriterion,
+        P, F <: Real, PT <: AbstractMeshPollFunction, ST <: AbstractMeshSearchFunction, SC <: StoppingCriterion,
     } <: AbstractManoptSolverState
     p::P
     mesh_size::F
@@ -407,8 +392,7 @@ mutable struct MeshAdaptiveDirectSearchState{
     search::ST
 end
 function MeshAdaptiveDirectSearchState(
-        M::AbstractManifold,
-        p::P = rand(M);
+        M::AbstractManifold, p::P = rand(M);
         mesh_basis::B = default_basis(M, typeof(p)),
         scale_mesh::F = injectivity_radius(M) / 2,
         max_stepsize::F = injectivity_radius(M),
@@ -428,12 +412,8 @@ function MeshAdaptiveDirectSearchState(
             M, copy(M, p); retraction_method = retraction_method
         ),
     ) where {
-        P,
-        F,
-        PT <: AbstractMeshPollFunction,
-        ST <: AbstractMeshSearchFunction,
-        SC <: StoppingCriterion,
-        B <: AbstractBasis,
+        P, F, PT <: AbstractMeshPollFunction, ST <: AbstractMeshSearchFunction,
+        SC <: StoppingCriterion, B <: AbstractBasis,
     }
     poll_s = manifold_dimension(M) * 1.0
     return MeshAdaptiveDirectSearchState{P, F, PT, ST, SC}(
@@ -443,9 +423,13 @@ end
 get_iterate(mads::MeshAdaptiveDirectSearchState) = mads.p
 
 function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :default)
-    i = get_count(mads, :Iterations)
+    (context === :short) && repr(mads)
+    i = get_count(trs, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(trs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the trust region solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    _is_inline(context) && (return "$(repr(mads)) – $(Iter) $(has_converged(mads) ? "(converged)" : "")")
+    Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
+    (context === :inline) && (return "A trust regions method state – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s mesh adaptive direct search
     $Iter
@@ -454,11 +438,12 @@ function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :
     * scale_mesh: $(mads.scale_mesh)
     * max_stepsize: $(mads.max_stepsize)
     * poll_size: $(mads.poll_size)
-    * poll:\n  $(replace(repr(mads.poll), "\n" => "\n  ")[1:(end - 3)])
-    * search:\n  $(replace(repr(mads.search), "\n" => "\n  ")[1:(end - 3)])
+    * poll:\n  $(_in_str(repr(mads.poll); indent = 1))
+    * search:\n  $(_in_str(repr(mads.search); indent = 1))
 
     ## Stopping criterion
     $(status_summary(mads.stop; context = context))
+    This indicates convergence: $Conv
     """
     return s
 end

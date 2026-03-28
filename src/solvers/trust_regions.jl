@@ -75,6 +75,11 @@ mutable struct TrustRegionsState{
     sub_state::St
     p_proposal::P
     f_proposal::R
+    σ::R
+    reduction_threshold::R
+    reduction_factor::R
+    augmentation_threshold::R
+    augmentation_factor::R
     # Only required for Random mode Random
     HX::T
     Y::T
@@ -82,29 +87,21 @@ mutable struct TrustRegionsState{
     Z::T
     HZ::T
     τ::R
-    σ::R
-    reduction_threshold::R
-    reduction_factor::R
-    augmentation_threshold::R
-    augmentation_factor::R
-    function TrustRegionsState{P, T, Pr, St, SC, RTR, R, Proj}(
-            p::P,
-            X::T,
-            trust_region_radius::R,
-            max_trust_region_radius::R,
-            acceptance_rate::R,
-            ρ_regularization::R,
-            randomize::Bool,
-            stopping_criterion::SC,
-            retraction_method::RTR,
-            reduction_threshold::R,
-            augmentation_threshold::R,
-            sub_problem::Pr,
-            sub_state::St,
-            project!::Proj = (copyto!),
-            reduction_factor = 0.25,
-            augmentation_factor = 2.0,
-            σ::R = random ? 1.0e-6 : 0.0,
+    function TrustRegionsState(
+            sub_problem::Pr, sub_state::St;
+            p::P, X::T,
+            trust_region_radius::R, max_trust_region_radius::R, acceptance_rate::R,
+            ρ_regularization::R, randomize::Bool,
+            stopping_criterion::SC, retraction_method::RTR, reduction_threshold::R,
+            augmentation_threshold::R, project!::Proj = (copyto!),
+            reduction_factor::R, augmentation_factor::R, σ::R,
+            #random mode ones can stay uninitielized if not provided
+            HX::Union{T, Nothing} = nothing,
+            Y::Union{T, Nothing} = nothing,
+            HY::Union{T, Nothing} = nothing,
+            Z::Union{T, Nothing} = nothing,
+            HZ::Union{T, Nothing} = nothing,
+            τ::Union{R, Nothing} = nothing,
         ) where {
             P, T, Pr, St <: AbstractManoptSolverState,
             SC <: StoppingCriterion, RTR <: AbstractRetractionMethod, R <: Real, Proj,
@@ -127,51 +124,52 @@ mutable struct TrustRegionsState{
         trs.augmentation_factor = augmentation_factor
         trs.project! = project!
         trs.σ = σ
+        !isnothing(HX) && (trs.HX = HX)
+        !isnothing(Y) && (trs.Y = Y)
+        !isnothing(HY) && (trs.HY = HY)
+        !isnothing(Z) && (trs.HZ = Z)
+        !isnothing(HZ) && (trs.HZ = HZ)
+        !isnothing(τ) && (trs.τ = τ)
         return trs
     end
 end
-
+TrustRegionsState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Trust region method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function TrustRegionsState(
         M::AbstractManifold, sub_problem::Pr, sub_state::St;
         p::P = rand(M), X::T = zero_vector(M, p),
-        acceptance_rate = 0.1,
-        ρ_regularization::R = 1000.0,
+        acceptance_rate::Real = 0.1, ρ_regularization::Real = 1000.0,
         randomize::Bool = false,
         stopping_criterion::SC = StopAfterIteration(1000) | StopWhenGradientNormLess(1.0e-6),
-        max_trust_region_radius::R = sqrt(manifold_dimension(M)),
-        trust_region_radius::R = max_trust_region_radius / 8,
+        max_trust_region_radius::Real = sqrt(manifold_dimension(M)),
+        trust_region_radius::Real = max_trust_region_radius / 8,
         retraction_method::RTR = default_retraction_method(M, typeof(p)),
-        reduction_threshold::R = 0.1,
-        reduction_factor = 0.25,
-        augmentation_threshold::R = 0.75,
-        augmentation_factor = 2.0,
-        project!::Proj = (copyto!),
-        σ = randomize ? 1.0e-4 : 0.0,
+        reduction_threshold::Real = 0.1, reduction_factor = 0.25,
+        augmentation_threshold::Real = 0.75, augmentation_factor::Real = 2.0,
+        project!::Proj = (copyto!), σ::Real = randomize ? 1.0e-4 : 0.0,
     ) where {
         P, T, Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
-        R <: Real,
-        SC <: StoppingCriterion,
-        RTR <: AbstractRetractionMethod,
-        Proj,
+        SC <: StoppingCriterion, RTR <: AbstractRetractionMethod, Proj,
     }
-    return TrustRegionsState{P, T, Pr, St, SC, RTR, R, Proj}(
-        p,
-        X,
-        trust_region_radius,
-        max_trust_region_radius,
-        acceptance_rate,
-        ρ_regularization,
-        randomize,
-        stopping_criterion,
-        retraction_method,
-        reduction_threshold,
-        augmentation_threshold,
-        sub_problem,
-        sub_state,
-        project!,
-        reduction_factor,
-        augmentation_factor,
-        σ,
+    R = promote_type(
+        typeof(acceptance_rate), typeof(ρ_regularization), typeof(max_trust_region_radius),
+        typeof(trust_region_radius), typeof(reduction_threshold), typeof(reduction_factor),
+        typeof(augmentation_factor), typeof(augmentation_threshold), typeof(σ)
+    )
+    acceptance_rate = convert(R, acceptance_rate); ρ_regularization = convert(R, ρ_regularization)
+    max_trust_region_radius = convert(R, max_trust_region_radius); trust_region_radius = convert(R, trust_region_radius)
+    reduction_threshold = convert(R, reduction_threshold); reduction_factor = convert(R, reduction_factor)
+    augmentation_factor = convert(R, augmentation_factor); augmentation_threshold = convert(R, augmentation_threshold)
+    σ = convert(R, σ)
+
+    return TrustRegionsState(
+        sub_problem, sub_state;
+        p = p, X = X,
+        trust_region_radius = trust_region_radius, max_trust_region_radius = max_trust_region_radius,
+        acceptance_rate = acceptance_rate, ρ_regularization = ρ_regularization,
+        (project!) = project!, randomize = randomize, σ = σ,
+        stopping_criterion = stopping_criterion, retraction_method = retraction_method,
+        reduction_threshold = reduction_threshold, augmentation_threshold = augmentation_threshold,
+        reduction_factor = reduction_factor, augmentation_factor = augmentation_factor,
     )
 end
 function TrustRegionsState(
@@ -203,6 +201,23 @@ function get_message(dcs::TrustRegionsState)
     # for now only the sub solver might have messages
     return get_message(dcs.sub_state)
 end
+function Base.show(io::IO, trs::TrustRegionsState)
+    print(io, "TrustRegionsState("); print(io, trs.sub_problem); print(io, ", "); print(io, trs.sub_state)
+    print(io, "; ")
+    print(io, "p = $(trs.p), X = $(trs.X), ")
+    print(io, "trust_region_radius = $(trs.trust_region_radius), max_trust_region_radius = $(trs.max_trust_region_radius), ")
+    print(io, "acceptance_rate = $(trs.acceptance_rate), ρ_regularization = $(trs.ρ_regularization), randomize = $(trs.randomize), ")
+    print(io, "reduction_threshold = $(trs.reduction_threshold), augmentation_threshold = $(trs.augmentation_threshold), ")
+    print(io, "(project!) = $(trs.project!), reduction_factor = $(trs.reduction_factor), augmentation_factor = $(trs.augmentation_factor), σ = $(trs.σ), ")
+    isdefined(trs, :HX) && print(io, "HX = $(trs.HX), ")
+    isdefined(trs, :Y) && print(io, "Y = $(trs.Y), ")
+    isdefined(trs, :HY) && print(io, "HY = $(trs.HY), ")
+    isdefined(trs, :Z) && print(io, "Z = $(trs.Z), ")
+    isdefined(trs, :HZ) && print(io, "HZ = $(trs.HZ), ")
+    isdefined(trs, :τ) && print(io, "τ = $(trs.τ), ")
+    print(io, "stopping_criterion = $(trs.stop), retraction_method = $(trs.retraction_method)")
+    return print(io, ")")
+end
 function status_summary(trs::TrustRegionsState; context::Symbol = :default)
     (context === :short) && return repr(trs)
     i = get_count(trs, :Iterations)
@@ -210,7 +225,7 @@ function status_summary(trs::TrustRegionsState; context::Symbol = :default)
     (context === :inline) && return "A solver state for the trust region solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(trs)) – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
+    (context === :inline) && (return "A trust regions method state – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
     sub = _in_str(status_summary(trs.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")
     s = """
     # Solver state for `Manopt.jl`s Trust Region Method

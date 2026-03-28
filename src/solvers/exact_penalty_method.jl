@@ -126,7 +126,7 @@ function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :defaul
     (context === :inline) && return "A solver state for the exact panelty method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(epms.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(epms)) – $(Iter) $(has_converged(epms) ? "(converged)" : "")")
+    (context === :inline) && (return "An exact penalty method state – $(Iter) $(has_converged(epms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Exact Penalty Method
     $Iter
