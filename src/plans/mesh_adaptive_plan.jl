@@ -424,12 +424,12 @@ get_iterate(mads::MeshAdaptiveDirectSearchState) = mads.p
 
 function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :default)
     (context === :short) && repr(mads)
-    i = get_count(trs, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(trs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    i = get_count(mads, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(mads.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the trust region solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
-    (context === :inline) && (return "A trust regions method state – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
+    Conv = indicates_convergence(mads.stop) ? "Yes" : "No"
+    (context === :inline) && (return "A Mesh adaptive direct search state – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s mesh adaptive direct search
     $Iter
