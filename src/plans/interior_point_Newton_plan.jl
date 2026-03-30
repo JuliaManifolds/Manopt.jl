@@ -176,7 +176,7 @@ mutable struct InteriorPointNewtonState{
             _step_M = M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
             step_problem::StepPr = DefaultManoptProblem(_step_M, step_objective),
             _step_p = rand(_step_M),
-            step_state::StepSt = StepsizeState(; p=_step_p, X=zero_vector(_step_M, _step_p)),
+            step_state::StepSt = StepsizeState(; p = _step_p, X = zero_vector(_step_M, _step_p)),
             centrality_condition = (N, p) -> true,
             stepsize::S = ArmijoLinesearchStepsize(
                 get_manifold(step_problem);

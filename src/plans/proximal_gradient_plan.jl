@@ -305,8 +305,21 @@ mutable struct ProximalGradientMethodState{
     inverse_retraction_method::IRM
     sub_problem::Pr
     sub_state::St
+    function ProximalGradientMethodState(
+            sub_problem::Pr, sub_state::St;
+            a::P, acceleration::A, stepsize::S, last_stepsize::R, p::P, q::P,
+            stopping_criterion::SC, X::T, retraction_method::RM, inverse_retraction_method::IRM,
+        ) where {
+            P, T, Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F}, St <: Union{<:AbstractManoptSolverState, Nothing},
+            A, SC <: StoppingCriterion, S <: Stepsize, RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, R,
+        }
+        return new{P, T, Pr, St, A, SC, S, RM, IRM, R}(
+            a, acceleration, stepsize, last_stepsize, p, q, stopping_criterion, X,
+            retraction_method, inverse_retraction_method, sub_problem, sub_state
+        )
+    end
 end
-
+ProximalGradientMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Gradient Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function ProximalGradientMethodState(
         M::AbstractManifold;
         p::P = rand(M),
@@ -326,23 +339,13 @@ function ProximalGradientMethodState(
         Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F}, St <: Union{<:AbstractManoptSolverState, <:AbstractEvaluationType, Nothing},
         RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, S <: Stepsize,
     }
-    _sub_state = maybe_wrap_evaluation_type(sub_state)
-    last_stepsize = zero(number_eltype(p))
-    return ProximalGradientMethodState{
-        P, T, Pr, typeof(_sub_state), A, SC, S, RM, IRM, typeof(last_stepsize),
-    }(
-        copy(M, p),
-        acceleration,
-        stepsize,
-        last_stepsize,
-        p,
-        copy(M, p),
-        stopping_criterion,
-        X,
-        retraction_method,
-        inverse_retraction_method,
-        sub_problem,
-        _sub_state,
+    return ProximalGradientMethodState(
+        sub_problem, maybe_wrap_evaluation_type(sub_state);
+        a = copy(M, p), acceleration = acceleration,
+        stepsize = stepsize, last_stepsize = zero(number_eltype(p)),
+        p = p, q = copy(M, p),
+        stopping_criterion = stopping_criterion, X = X,
+        retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method,
     )
 end
 
@@ -353,7 +356,14 @@ function set_iterate!(pgms::ProximalGradientMethodState, M, p)
     copyto!(M, pgms.p, p)
     return pgms
 end
-
+function Base.show(io::IO, pgms::ProximalGradientMethodState)
+    print(io, "ProximalGradientMethodState(", pgms.sub_problem, ", ", pgms.sub_problem, ";")
+    print(io, " a = ", pgms.a, ", acceleration = ", pgms.acceleration, ", stepsize = ", pgms.stepsize)
+    print(io, ", last_stepsize = ", pgms.last_stepsize, ", p = ", pgms.p, ", q = ", pgms.q)
+    print(io, ", stopping_criterion = ", pgms.stop, ", X = ", pgms.X)
+    print(io, ", retraction_method = ", pgms.retraction_method, ", inverse_retraction_method = ", pgms.inverse_retraction_method)
+    return print(io, ")")
+end
 function status_summary(pgms::ProximalGradientMethodState; context::Symbol = :default)
     i = get_count(pgms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -611,11 +621,16 @@ $(_args(:M))
 * `p` - initial point
 * `X` - initial tangent vector
 """
-mutable struct ProximalGradientMethodAcceleration{P, T, F, ITR}
+mutable struct ProximalGradientMethodAcceleration{P, T, F, ITR <: AbstractInverseRetractionMethod}
     β::F
     inverse_retraction_method::ITR
     p::P
     X::T
+    function ProximalGradientMethodAcceleration(;
+            β::F, inverse_retraction_method::ITR, p::P, X::T
+        ) where {P, T, F, ITR <: AbstractInverseRetractionMethod}
+        return new{P, T, F, ITR}(β, inverse_retraction_method, p, X)
+    end
 end
 
 function ProximalGradientMethodAcceleration(
@@ -625,7 +640,9 @@ function ProximalGradientMethodAcceleration(
         β::F = (k) -> (k - 1) / (k + 2),
         inverse_retraction_method::I = default_inverse_retraction_method(M, typeof(p)),
     ) where {P, T, F, I <: AbstractInverseRetractionMethod}
-    return ProximalGradientMethodAcceleration{P, T, F, I}(β, inverse_retraction_method, p, X)
+    return ProximalGradientMethodAcceleration(
+        β = β, inverse_retraction_method = inverse_retraction_method, p = p, X = X
+    )
 end
 
 function (pga::ProximalGradientMethodAcceleration)(
@@ -643,14 +660,9 @@ function (pga::ProximalGradientMethodAcceleration)(
 end
 
 function Base.show(io::IO, pga::ProximalGradientMethodAcceleration)
-    s = """
-    ProximalGradientMethodAcceleration with parameters
-    * p=$(pga.p)
-    * X=$(pga.X)
-    * β=$(pga.β)
-    * inverse_retraction_method=$(pga.inverse_retraction_method)
-    """
-    return print(io, s)
+    print(io, "ProximalGradientMethodAcceleration(; p = ", pga.p, ", X = ", pga.X)
+    print(io, ", β = ", pga.β, ", inverse_retraction_method = ", pga.inverse_retraction_method)
+    return print(io, ")")
 end
 
 """

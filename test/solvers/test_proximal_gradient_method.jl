@@ -49,11 +49,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
         @test_throws MethodError get_gradient(mp, 1.0, pgms.p)
         @test_throws MethodError get_proximal_map(mp, 1.0, pgms.p, 1)
         pgm = proximal_gradient_method(
-            M,
-            f,
-            g,
-            grad_g,
-            p0;
+            M, f, g, grad_g, p0;
             prox_nonsmooth = prox_h,
             stopping_criterion = StopAfterIteration(10),
             return_state = true,
@@ -99,8 +95,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
             @test_logs (:warn,) (:warn,) dw1(mp, pgms_warn, 1)
             dw2 = DebugWarnIfStepsizeCollapsed(1.0, :Once)
             pgms_const = ProximalGradientMethodState(
-                M;
-                p = p0,
+                M; p = p0,
                 stepsize = Manopt.ConstantStepsize(M, 1.0),
                 stopping_criterion = StopAfterIteration(2),
             )
@@ -117,13 +112,8 @@ using Manopt, Manifolds, Test, ManifoldDiff
         # Test subsolver with subgradient
         ∂h(M, q) = ManifoldDiff.subgrad_distance(M, p, q, 1; atol = 1.0e-8)
         sub_pgm = proximal_gradient_method(
-            M,
-            f,
-            g,
-            grad_g,
-            p0;
-            cost_nonsmooth = h,
-            subgradient_nonsmooth = ∂h,
+            M, f, g, grad_g, p0;
+            cost_nonsmooth = h, subgradient_nonsmooth = ∂h,
             stopping_criterion = StopAfterIteration(10),
         )
         @test_throws ErrorException proximal_gradient_method(M, f, g, grad_g, p0)
@@ -148,7 +138,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
         # Since this is experimental, we for now just check that it does not error,
         # but we can not yet verify the result
         pgma(mp, pgms, 1)
-        @test startswith(repr(pgma), "ProximalGradientMethodAcceleration with parameters\n")
+        @test startswith(repr(pgma), "ProximalGradientMethodAcceleration(; ")
     end
     @testset "Inplace Evaluation" begin
         g(M, q) = distance(M, q, p)^2
