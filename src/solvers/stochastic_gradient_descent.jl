@@ -199,7 +199,7 @@ then using the `cost=` keyword does not have any effect since if so, the cost is
 
 * `cost=missing`: you can provide a cost function for example to track the function value
 * `direction=`[`StochasticGradient`](@ref)`(`$(_link(:zero_vector))`)` add a post-processor to
-  the direction obtained from evaluting the sub-gradient.
+  the direction obtained from evaluating the sub-gradient.
 $(_kwargs(:evaluation))
 * `evaluation_order=:Random`: specify whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Linear`) or the default `:Random` one.

@@ -112,6 +112,7 @@ function status_summary(gds::GradientDescentState; context::Symbol = :default)
     $Iter
     ## Parameters
     * retraction method: $(gds.retraction_method)
+    * direction: $(status_summary(gds.direction; context = :inline))
 
     ## Stepsize
     $(gds.stepsize)

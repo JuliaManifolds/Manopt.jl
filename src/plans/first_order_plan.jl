@@ -762,9 +762,9 @@ mutable struct AverageGradientRule{
     direction::D
     vector_transport_method::VTM
     function AverageGradientRule(;
-        gradients::A, last_iterate::P, direction::D, vector_transport_method::VTM
-    ) where {P, T, A <: AbstractVector, D <: DirectionUpdateRule, VTM <: AbstractVectorTransportMethod}
-    return new{P,T,D,VTM,A}(gradients, last_iterate,direction, vector_transport_method)
+            gradients::A, last_iterate::P, direction::D, vector_transport_method::VTM
+        ) where {P, A <: AbstractVector, D <: DirectionUpdateRule, VTM <: AbstractVectorTransportMethod}
+        return new{P, eltype(gradients), D, VTM, A}(gradients, last_iterate, direction, vector_transport_method)
     end
 end
 function AverageGradientRule(M::AbstractManifold, p; kwargs...)
@@ -780,7 +780,7 @@ function AverageGradientRule(
     ) where {P, VTM}
     dir = _produce_type(direction, M)
     return AverageGradientRule(;
-        gradients=gradients, last_iterate = copy(M, p), direction = dir,
+        gradients = gradients, last_iterate = copy(M, p), direction = dir,
         vector_transport_method = vector_transport_method,
     )
 end
