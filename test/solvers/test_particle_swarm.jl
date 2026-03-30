@@ -15,6 +15,7 @@ using Random
             Manopt.status_summary(o; context = :default),
             "# Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm\n"
         )
+        @test startswith(repr(o), "ParticleSwarmState(;")
         g = get_solver_result(o)
 
         initF = min(f.(Ref(M), p1)...)
