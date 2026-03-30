@@ -304,7 +304,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test length(h3.recorded_values) == 1
         @test repr(RecordGradientNorm()) == "RecordGradientNorm()"
         # since only the type is stored can test
-        @test repr(RecordGradient(zeros(3))) == "RecordGradient{Vector{Float64}}()"
+        @test repr(RecordGradient(zeros(3))) == "RecordGradient(Vector{Float64})"
     end
     @testset "Record and parameter passthrough" begin
         s = TestRecordParameterState(0)

@@ -400,7 +400,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
         @test repr(DebugGradientNorm()) == "DebugGradientNorm(; format=\"|grad f(p)|:%s\", at_init=true)"
         dgn_s = "(:GradientNorm, \"|grad f(p)|:%s\")"
-        @test Manopt.status_summary(DebugGradientNorm()) == dgn_s
+        @test Manopt.status_summary(DebugGradientNorm(); context = :short) == dgn_s
+        @test startswith(Manopt.status_summary(DebugGradientNorm(); context = :default), "A debug action to display the gradient norm")
 
         @test repr(DebugGradient()) == "DebugGradient(; format=\"grad f(p):%s\", at_init=false)"
         dg_s = "(:Gradient, \"grad f(p):%s\")"

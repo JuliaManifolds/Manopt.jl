@@ -1104,7 +1104,7 @@ function show(io::IO, dg::DebugGradient)
     return print(io, "DebugGradient(; format=\"$(dg.format)\", at_init=$(dg.at_init))")
 end
 function status_summary(dg::DebugGradient; context::Symbol = :default)
-    _is_inline(context) && (return "(:Gradient, \"$(dg.format)\")")
+    (context === :short) && (return "(:Gradient, \"$(dg.format)\")")
     return "A DebugAction to print the gradient at the current iterate “$(dg.format)”"
 end
 
@@ -1129,9 +1129,7 @@ mutable struct DebugGradientNorm <: DebugAction
     function DebugGradientNorm(;
             long::Bool = false,
             prefix = long ? "Norm of the Gradient: " : "|grad f(p)|:",
-            format = "$prefix%s",
-            io::IO = stdout,
-            at_init::Bool = true,
+            format = "$prefix%s", io::IO = stdout, at_init::Bool = true,
         )
         return new(io, format, at_init)
     end
@@ -1150,8 +1148,10 @@ end
 function show(io::IO, dgn::DebugGradientNorm)
     return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\", at_init=$(dgn.at_init))")
 end
-status_summary(dgn::DebugGradientNorm) = "(:GradientNorm, \"$(dgn.format)\")"
-
+function status_summary(dgn::DebugGradientNorm; context = :default)
+    (context === :short) && return "(:GradientNorm, \"$(dgn.format)\")"
+    return "A debug action to display the gradient norm (format. \"$(dgn.format)\")"
+end
 @doc """
     DebugStepsize <: DebugAction
 
@@ -1210,7 +1210,7 @@ function (r::RecordGradient{T})(
     ) where {T}
     return record_or_reset!(r, get_gradient(s), k)
 end
-show(io::IO, ::RecordGradient{T}) where {T} = print(io, "RecordGradient{$T}()")
+show(io::IO, ::RecordGradient{T}) where {T} = print(io, "RecordGradient($T)")
 
 @doc """
     RecordGradientNorm <: RecordAction
