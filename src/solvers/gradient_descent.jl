@@ -25,7 +25,7 @@ $(_args(:M))
 
 ## Keyword arguments
 
-* `direction=`[`IdentityUpdateRule`](@ref)`()`
+* `direction=`[`IdentityUpdateRule`](@ref)`()` specify a processor to modify the gradient direction
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientDescentState`](@ref)`; retraction_method=retraction_method)"))
@@ -53,8 +53,7 @@ mutable struct GradientDescentState{
 end
 function GradientDescentState(
         M::AbstractManifold = ManifoldsBase.DefaultManifold();
-        p::P = rand(M),
-        X::T = zero_vector(M, p),
+        p::P = rand(M), X::T = zero_vector(M, p),
         stopping_criterion::SC = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8),
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
         stepsize::S = _produce_type(
@@ -65,12 +64,8 @@ function GradientDescentState(
         direction::D = IdentityUpdateRule(),
         kwargs..., # ignore rest
     ) where {
-        P,
-        T,
-        SC <: StoppingCriterion,
-        RTM <: AbstractRetractionMethod,
-        S <: Stepsize,
-        D <: DirectionUpdateRule,
+        P, T, SC <: StoppingCriterion, RTM <: AbstractRetractionMethod,
+        S <: Stepsize, D <: DirectionUpdateRule,
     }
     return GradientDescentState{P, T, SC, S, D, RTM}(
         p, X, direction, stepsize, stopping_criterion, retraction_method
@@ -99,17 +94,10 @@ function get_message(gds::GradientDescentState)
 end
 
 function Base.show(io::IO, gds::GradientDescentState)
-    return print(
-        io,
-        """GradientDescentState(;
-        $(_MANOPT_INDENT)direction = $(repr(gds.direction)),
-        $(_MANOPT_INDENT)p = $(repr(gds.p)),
-        $(_MANOPT_INDENT)stepsize = $(repr(gds.stepsize)),
-        $(_MANOPT_INDENT)stopping_criterion = $(status_summary(gds.stop; context = :short))"),
-        $(_MANOPT_INDENT)retraction_method = $(repr(gds.retraction_method)),
-        $(_MANOPT_INDENT)X=$(repr(gds.X)))"
-        )"""
-    )
+    print(io, "GradientDescentState(; direction = ", gds.direction, " p = ", gds.p)
+    print(io, ", stepsize = ", gds.stepsize, ", stopping_criterion = ", status_summary(gds.stop; context = :short))
+    print(io, ", retraction_method = ", gds.retraction_method, " X= ", gds.X)
+    return print(io, ")")
 end
 
 function status_summary(gds::GradientDescentState; context::Symbol = :default)

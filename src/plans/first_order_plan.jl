@@ -755,12 +755,17 @@ Add average to a gradient problem, where
 $(_kwargs(:vector_transport_method))
 """
 mutable struct AverageGradientRule{
-        P, T, D <: DirectionUpdateRule, VTM <: AbstractVectorTransportMethod,
+        P, T, D <: DirectionUpdateRule, VTM <: AbstractVectorTransportMethod, A <: AbstractVector{<:T},
     } <: DirectionUpdateRule
-    gradients::AbstractVector{T}
+    gradients::A
     last_iterate::P
     direction::D
     vector_transport_method::VTM
+    function AverageGradientRule(;
+        gradients::A, last_iterate::P, direction::D, vector_transport_method::VTM
+    ) where {P, T, A <: AbstractVector, D <: DirectionUpdateRule, VTM <: AbstractVectorTransportMethod}
+    return new{P,T,D,VTM,A}(gradients, last_iterate,direction, vector_transport_method)
+    end
 end
 function AverageGradientRule(M::AbstractManifold, p; kwargs...)
     return AverageGradientRule(M; p = copy(M, p), kwargs...)
@@ -774,8 +779,9 @@ function AverageGradientRule(
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
     ) where {P, VTM}
     dir = _produce_type(direction, M)
-    return AverageGradientRule{P, eltype(gradients), typeof(dir), VTM}(
-        gradients, copy(M, p), dir, vector_transport_method
+    return AverageGradientRule(;
+        gradients=gradients, last_iterate = copy(M, p), direction = dir,
+        vector_transport_method = vector_transport_method,
     )
 end
 function (a::AverageGradientRule)(
@@ -793,7 +799,23 @@ function (a::AverageGradientRule)(
     copyto!(M, a.last_iterate, p)
     return 1.0, 1 / length(a.gradients) .* sum(a.gradients)
 end
+function show(io::IO, agr::AverageGradientRule)
+    print(io, "AverageGradientRule(; gradients = ", agr.gradients)
+    print(io, "last_iterate = ", agr.last_iterate, ", direction = ", agr.direction)
+    print(io, "vector_transport_method = ", agr.vector_transport_method)
+    return print(io, ")")
+end
+function status_summary(agr::AverageGradientRule; context = :default)
+    (context === :short) && return repr(agr)
+    (context === :inline) && return "An average gradient direction processor with n=$(length(agr.gradients)) gradients to average over using $(agr.vector_transport_method)"
+    return """
+    Average Gradient Rule
 
+    # Parameters
+    * direction:              $(_MANOPT_INDENT)$(status_summary(agr.direction; context = context))
+    * number of gradients:    $(_MANOPT_INDENT)$(length(agr.gradients))
+    * vector transport method:$(_MANOPT_INDENT)$(agr.vector_transport_method)"""
+end
 """
     AverageGradient(; kwargs...)
     AverageGradient(M::AbstractManifold; kwargs...)

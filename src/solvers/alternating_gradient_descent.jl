@@ -118,7 +118,7 @@ function Base.show(io::IO, agds::AlternatingGradientDescentState)
     print(io, "order = $(agds.order), ")
     print(io, "retraction_method = $(agds.retraction_method), ")
     print(io, "stepsize = $(agds.stepsize), ")
-    print(io, "stopping_criterion = $(agds.stop), ")
+    print(io, "stopping_criterion = $(status_summary(agds.stop, context = :short)), ")
     return print(io, "i = $(agds.i), k = $(agds.k))")
 end
 function status_summary(agds::AlternatingGradientDescentState; context::Symbol = :default)
@@ -132,6 +132,7 @@ function status_summary(agds::AlternatingGradientDescentState; context::Symbol =
     ## Parameters
     * order: :$(agds.order_type)
     * retraction method: $(agds.retraction_method)
+    * direction: $(status_summary(agds.direction; context = :inline))
 
     ## Stepsize
     $(agds.stepsize)

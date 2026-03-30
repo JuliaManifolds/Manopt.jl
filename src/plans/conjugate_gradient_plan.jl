@@ -80,7 +80,7 @@ mutable struct ConjugateGradientDescentState{
     retraction_method::TRetr
     vector_transport_method::VTM
     function ConjugateGradientDescentState(;
-            p::P, p_old::P, stopping_criterion::SC, stepsize::TStep, direction::D,
+            p::P, p_old::P, stopping_criterion::SC, stepsize::TStep, coefficient::D,
             restart_condition::TRC, retraction_method::TRetr,
             vector_transport_method::VTM, X::T, δ::T, β::F
         ) where {
@@ -88,7 +88,7 @@ mutable struct ConjugateGradientDescentState{
             TRC <: AbstractRestartCondition, TRetr <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
         }
         return new{P, T, F, TStep, SC, D, TRC, TRetr, VTM}(
-            p, p_old, X, δ, β, direction, restart_condition, stepsize, stopping_criterion, retraction_method, vector_transport_method
+            p, p_old, X, δ, β, coefficient, restart_condition, stepsize, stopping_criterion, retraction_method, vector_transport_method
         )
     end
 end
@@ -108,13 +108,13 @@ function ConjugateGradientDescentState(
         P, T, SC <: StoppingCriterion, TStep <: Stepsize,
         TRC <: AbstractRestartCondition, TRetr <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
     }
-    direction = DirectionUpdateRuleStorage(M, _produce_type(coefficient, M); p_init = p, X_init = initial_gradient)
+    _coefficient = DirectionUpdateRuleStorage(M, _produce_type(coefficient, M); p_init = p, X_init = initial_gradient)
     return ConjugateGradientDescentState(;
         p = p, p_old = copy(M, p),
         X = initial_gradient, δ = copy(M, p, initial_gradient),
         β = zero(allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))),
-        stopping_criterion = stopping_criterion,
-        stepsize = stepsize, direction = direction, restart_condition = restart_condition,
+        stopping_criterion = stopping_criterion, coefficient = _coefficient,
+        stepsize = stepsize, restart_condition = restart_condition,
         retraction_method = retraction_method, vector_transport_method = vector_transport_method,
     )
 end
@@ -129,16 +129,17 @@ end
 function Base.show(io::IO, cgs::ConjugateGradientDescentState)
     print(io, "ConjugateGradientDescentState(;")
     print(io, " p = $(cgs.p)")
-    print(io, " p_old = $(cgs.p_old)")
-    print(io, " X = $(cgs.X)")
-    print(io, " δ = $(cgs.δ)")
-    print(io, " β = $(cgs.β)")
-    print(io, " stopping_criterion = $(cgs.stop)")
-    print(io, " stepsize = $(cgs.stepsize)")
-    print(io, " direction = $(cgs.direction)")
-    print(io, " restart_condition = $(cgs.restart_condition)")
-    print(io, " retraction_method = $(cgs.retraction_method)")
-    return print(io, " vector_transport_method = $(cgs.vector_transport_method)")
+    print(io, " p_old = $(cgs.p_old),")
+    print(io, " X = $(cgs.X),")
+    print(io, " δ = $(cgs.δ),")
+    print(io, " β = $(cgs.β),")
+    print(io, " stopping_criterion = $(status_summary(cgs.stop; context = :short)),")
+    print(io, " stepsize = $(cgs.stepsize),")
+    print(io, " coefficient = $(cgs.coefficient),")
+    print(io, " restart_condition = $(cgs.restart_condition),")
+    print(io, " retraction_method = $(cgs.retraction_method),")
+    print(io, " vector_transport_method = $(cgs.vector_transport_method)")
+    return print(io, ")")
 end
 
 _doc_CG_notation = """
