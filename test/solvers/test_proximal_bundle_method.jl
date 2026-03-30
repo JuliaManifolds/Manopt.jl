@@ -94,10 +94,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         @test_throws MethodError get_gradient(mp, pbms.p)
         @test_throws MethodError get_proximal_map(mp, 1.0, pbms.p, 1)
         s2 = proximal_bundle_method(
-            M,
-            f,
-            ∂f!,
-            copy(p0);
+            M, f, ∂f!, copy(p0);
             stopping_criterion = StopAfterIteration(200),
             evaluation = InplaceEvaluation(),
             sub_state = AllocatingEvaluation(), # keep the default allocating subsolver here
@@ -126,6 +123,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             Manopt.status_summary(pbm_s; context = :default),
             "# Solver state for `Manopt.jl`s Proximal Bundle Method\n"
         )
+        @test startswith(repr(pbm_s), "ProximalBundleMethodState(")
         q = get_solver_result(pbm_s)
         # with default parameters for both median and proximal bundle, this is not very precise
         m = median(M, data)

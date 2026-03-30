@@ -371,7 +371,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test_throws ErrorException is_feasible(M, coh, p; error = :error)
         @test_logs (:info,) !is_feasible(M, coh, p; error = :info)
         @test_logs (:warn,) !is_feasible(M, coh, p; error = :warn)
-        st = Manopt.StepsizeState(p, X)
+        st = Manopt.StepsizeState(; p=p, X=X)
         mp = DefaultManoptProblem(M, coh)
         io = IOBuffer()
         df = DebugFeasibility(; io = io)

@@ -4,9 +4,11 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
     @testset "StepsizeState" begin
         M = Manifolds.Sphere(2)
         a = StepsizeState(M)
-        b = StepsizeState(a.p, a.X)
+        b = StepsizeState(; p = a.p, X = a.X)
         @test a.p === b.p
         @test a.X === b.X
+        @test startswith(repr(b), "StepsizeState(; ")
+        @test startswith(Manopt.status_summary(b), "A state for a stepsize")
     end
     @testset "A solver run on the Sphere" begin
         # We can take a look at debug prints of one run and plot the result

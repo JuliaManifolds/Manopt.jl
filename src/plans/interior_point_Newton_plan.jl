@@ -21,12 +21,18 @@ if these are different from the iterate and search direction of the main solver.
 struct StepsizeState{P, T} <: AbstractManoptSolverState
     p::P
     X::T
+    StepsizeState(; p::P, X::T) where {P, T} = new{P, T}(p, X)
 end
-StepsizeState(M::AbstractManifold; p = rand(M), X = zero_vector(M, p)) = StepsizeState(p, X)
+StepsizeState(M::AbstractManifold; p = rand(M), X = zero_vector(M, p)) = StepsizeState(; p = p, X = X)
 get_iterate(s::StepsizeState) = s.p
 get_gradient(s::StepsizeState) = s.X
 set_iterate!(s::StepsizeState, M, p) = copyto!(M, s.p, p)
 set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
+Base.show(io::IO, sss::StepsizeState) = print(io, "StepsizeState(; p = ", sss.p, ", X = ", sss.X, ")")
+function status_summary(sss::StepsizeState{P, T}; context = :default) where {P, T}
+    (context === :short) && return repr(sss)
+    return "A state for a stepsize problem."
+end
 
 @doc """
     InteriorPointNewtonState{P,T} <: AbstractHessianSolverState
@@ -170,7 +176,7 @@ mutable struct InteriorPointNewtonState{
             _step_M = M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
             step_problem::StepPr = DefaultManoptProblem(_step_M, step_objective),
             _step_p = rand(_step_M),
-            step_state::StepSt = StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
+            step_state::StepSt = StepsizeState(; p=_step_p, X=zero_vector(_step_M, _step_p)),
             centrality_condition = (N, p) -> true,
             stepsize::S = ArmijoLinesearchStepsize(
                 get_manifold(step_problem);
@@ -250,8 +256,8 @@ function Base.show(io::IO, ipns::InteriorPointNewtonState)
     print(io, ", s = "); print(io, ipns.s); print(io, ", W = "); print(io, ipns.W)
     print(io, ", ρ = "); print(io, ipns.ρ); print(io, ", σ = "); print(io, ipns.σ)
     print(io, ",\nstep_problem = "); print(io, ipns.step_problem)
-    print(io, ", step_state = ")
-    return print(io, ipns.step_state)
+    print(io, ", step_state = ", ipns.step_state)
+    return print(io, ")")
 end
 #
 # Constraint functors
