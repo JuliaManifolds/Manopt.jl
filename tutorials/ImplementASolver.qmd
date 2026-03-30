@@ -97,9 +97,7 @@ We can defined this as
 ```{julia}
 #| output: false
 mutable struct RandomWalkState{
-    P,
-    R<:AbstractRetractionMethod,
-    S<:StoppingCriterion,
+    P, R<:AbstractRetractionMethod, S<:StoppingCriterion,
 } <: AbstractManoptSolverState
   p::P
   q::P
@@ -269,9 +267,7 @@ given start point unchanged would just add a `copy(M, p)` upfront.
 
 ```{julia}
 function random_walk_algorithm!(
-    M::AbstractManifold,
-    mgo::ManifoldCostObjective,
-    p;
+    M::AbstractManifold, mgo::ManifoldCostObjective, p;
     σ = 0.1,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200),
@@ -280,8 +276,7 @@ function random_walk_algorithm!(
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     s = RandomWalkState(M, [1.0, 0.0, 0.0];
-        σ=0.1,
-        retraction_method=retraction_method, stopping_criterion=stopping_criterion,
+        σ=0.1, retraction_method=retraction_method, stopping_criterion=stopping_criterion,
     )
     ds = decorate_state!(s; kwargs...)
     solve!(dmp, ds)
@@ -307,12 +302,14 @@ For the case that you set `return_state=true` the solver should return a summary
 Internally this is mapped to the (human-readable) display of a `status_summary`
 It should reflect its main parameters, if they are not too verbose and provide information
 about the reason it stopped and whether this indicates convergence.
+Compared to Julias own `show(io::IO, state)` method, the status summary aims to be
+in prose text.
 
- Here it would for example look like
+Here it would for example look like
 
 ```{julia}
 #| output: false
-import Manopt: status_summary: show
+import Manopt: status_summary
 function status_summary(rws::RandomWalkState; context::Symbol = :default)
     (context === :short) && return repr(rws)
     i = get_count(rws, :Iterations)
@@ -328,7 +325,7 @@ function status_summary(rws::RandomWalkState; context::Symbol = :default)
     * σ                : $(rws.σ)
 
     ## Stopping criterion
-    $(status_summary(rws.stop))
+    $(status_summary(rws.stop; context = context))
     This indicates convergence: $Conv"""
     return s
 end
