@@ -14,7 +14,8 @@ using ManifoldsBase, Manifolds, Manopt, Test, Random
         p2 = [2.0, 0.0, 0.0]
         @test Manopt.update_basepoint!(M, ltap, p2) === ltap
         @test Manopt.get_basepoint(ltap) == p2
-        @test startswith(repr(ltap), "LowerTriangularAdaptivePoll\n")
+        @test startswith(repr(ltap), "LowerTriangularAdaptivePoll(; ")
+        @test startswith(Manopt.status_summary(ltap), "A Lower triangular adaptive poll\n\n")
         # test call
         Random.seed!(42)
         ltap(cmp, mesh_size)
@@ -34,7 +35,8 @@ using ManifoldsBase, Manifolds, Manopt, Test, Random
         dmads = DefaultMeshAdaptiveDirectSearch(M, p)
         @test !Manopt.is_successful(dmads)
         @test Manopt.get_candidate(dmads) == dmads.p
-        @test startswith(repr(dmads), "DefaultMeshAdaptiveDirectSearch\n")
+        @test startswith(repr(dmads), "DefaultMeshAdaptiveDirectSearch(; ")
+        @test startswith(Manopt.status_summary(dmads), "The default mesh adaptive direct search\nalong one given direction X.\n\n")
         X = -ones(3)
         # This step would bring us to zero, but we only allow a max step 1.0
         dmads(cmp, 1.0, p, X; max_stepsize = 1.0)
