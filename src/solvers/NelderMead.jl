@@ -27,7 +27,6 @@ the tangent space at point `p`.
 struct NelderMeadSimplex{TP, T <: AbstractVector{TP}}
     pts::T
 end
-
 function NelderMeadSimplex(M::AbstractManifold)
     return NelderMeadSimplex([rand(M) for i in 1:(manifold_dimension(M) + 1)])
 end
@@ -46,6 +45,7 @@ function NelderMeadSimplex(
     pts = map(X -> retract(M, p_, X, retraction_method), vecs)
     return NelderMeadSimplex(pts)
 end
+Base.show(io::IO, nms::NelderMeadSimplex) = print(io, "NelderMeadSimplex(", nms.pts, ")")
 
 @doc """
     NelderMeadState <: AbstractManoptSolverState
@@ -90,64 +90,52 @@ $(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `p=copy(M, population.pts[1])`: initialise the storage for the best point (iterate)¨
 """
 mutable struct NelderMeadState{
-        T,
-        S <: StoppingCriterion,
-        Tα <: Real,
-        Tγ <: Real,
-        Tρ <: Real,
-        Tσ <: Real,
-        TR <: AbstractRetractionMethod,
-        TI <: AbstractInverseRetractionMethod,
+        P, S <: StoppingCriterion, F <: Real, A <: AbstractVector{<:Real},
+        TR <: AbstractRetractionMethod, TI <: AbstractInverseRetractionMethod,
     } <: AbstractManoptSolverState
-    population::NelderMeadSimplex{T}
+    population::NelderMeadSimplex{P}
     stop::S
-    α::Tα
-    γ::Tγ
-    ρ::Tρ
-    σ::Tσ
-    p::T
-    costs::Vector{Float64}
+    α::F
+    γ::F
+    ρ::F
+    σ::F
+    p::P
+    costs::A
     retraction_method::TR
     inverse_retraction_method::TI
+    function NelderMeadState(;
+            population::NelderMeadSimplex{P}, stopping_criterion::S, α::F, γ::F, ρ::F, σ::F, p::P, costs::A,
+            retraction_method::TR, inverse_retraction_method::TI
+        ) where {
+            P, S <: StoppingCriterion, F <: Real, A <: AbstractVector{<:Real},
+            TR <: AbstractRetractionMethod, TI <: AbstractInverseRetractionMethod,
+        }
+        return new{P, S, F, A, TR, TI}(
+            population, stopping_criterion, α, γ, ρ, σ, p, costs, retraction_method, inverse_retraction_method
+        )
+    end
     function NelderMeadState(
             M::AbstractManifold;
             population::NelderMeadSimplex{T} = NelderMeadSimplex(M),
-            stopping_criterion::StoppingCriterion = StopAfterIteration(2000) |
-                StopWhenPopulationConcentrated(),
-            α = 1.0,
-            γ = 2.0,
-            ρ = 1 / 2,
-            σ = 1 / 2,
-            retraction_method::AbstractRetractionMethod = default_retraction_method(
-                M, eltype(population.pts)
-            ),
-            inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
-                M, eltype(population.pts)
-            ),
+            stopping_criterion::StoppingCriterion = StopAfterIteration(2000) | StopWhenPopulationConcentrated(),
+            α::Real = 1.0, γ::Real = 2.0, ρ::Real = 1 / 2, σ::Real = 1 / 2,
+            retraction_method::AbstractRetractionMethod = default_retraction_method(M, eltype(population.pts)),
+            inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M, eltype(population.pts)),
             p::T = copy(M, population.pts[1]),
         ) where {T}
-        return new{
-            T,
-            typeof(stopping_criterion),
-            typeof(α),
-            typeof(γ),
-            typeof(ρ),
-            typeof(σ),
-            typeof(retraction_method),
-            typeof(inverse_retraction_method),
-        }(
-            population,
-            stopping_criterion,
-            α,
-            γ,
-            ρ,
-            σ,
-            p,
-            [],
-            retraction_method,
-            inverse_retraction_method,
+        R = promote_type(typeof(α), typeof(γ), typeof(ρ), typeof(σ))
+        α = convert(R, α); γ = convert(R, γ); ρ = convert(R, ρ); σ = convert(R, σ)
+        return NelderMeadState(;
+            population = population, stopping_criterion = stopping_criterion, α = α, γ = γ, ρ = ρ, σ = σ,
+            p = p, costs = R[], retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method,
         )
     end
+end
+function Base.show(io::IO, nms::NelderMeadState)
+    print(io, "NelderMeadState(; population = ", nms.population, ", α = ", nms.α, ", γ = ", nms.γ, "ρ = ", nms.ρ, " σ = ", nms.σ)
+    print(io, "p = ", nms.p, ", costs = ", nms.costs, ", stopping_criterion = ", nms.stop)
+    print(io, ", retraction_method = ", nms.retraction_method, ", inverse_retraction_method = ", nms.inverse_retraction_method)
+    return print(io, ")")
 end
 function status_summary(nms::NelderMeadState; context::Symbol = :default)
     (context === :short) && return repr(nms)
@@ -265,36 +253,20 @@ function NelderMead!(M::AbstractManifold, f, population::NelderMeadSimplex; kwar
     return NelderMead!(M, mco, population; kwargs...)
 end
 function NelderMead!(
-        M::AbstractManifold,
-        mco::O,
-        population::NelderMeadSimplex;
-        stopping_criterion::StoppingCriterion = StopAfterIteration(2000) |
-            StopWhenPopulationConcentrated(),
-        α = 1.0,
-        γ = 2.0,
-        ρ = 1 / 2,
-        σ = 1 / 2,
-        retraction_method::AbstractRetractionMethod = default_retraction_method(
-            M, eltype(population.pts)
-        ),
-        inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
-            M, eltype(population.pts)
-        ),
+        M::AbstractManifold, mco::O, population::NelderMeadSimplex;
+        stopping_criterion::StoppingCriterion = StopAfterIteration(2000) | StopWhenPopulationConcentrated(),
+        α::Real = 1.0, γ::Real = 2.0, ρ::Real = 1 / 2, σ::Real = 1 / 2,
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, eltype(population.pts)),
+        inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M, eltype(population.pts)),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(NelderMead; kwargs...)
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     s = NelderMeadState(
-        M;
-        population = population,
-        stopping_criterion = stopping_criterion,
-        α = α,
-        γ = γ,
-        ρ = ρ,
-        σ = σ,
-        retraction_method = retraction_method,
-        inverse_retraction_method = inverse_retraction_method,
+        M; population = population,
+        stopping_criterion = stopping_criterion, α = α, γ = γ, ρ = ρ, σ = σ,
+        retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method,
     )
     s = decorate_state!(s; kwargs...)
     solve!(mp, s)
@@ -354,14 +326,11 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     if continue_steps
         for i in 2:length(ind)
             ManifoldsBase.retract_fused!(
-                M,
-                s.population.pts[i],
-                s.population.pts[1],
+                M, s.population.pts[i], s.population.pts[1],
                 inverse_retract(
                     M, s.population.pts[1], s.population.pts[i], s.inverse_retraction_method
                 ),
-                s.σ,
-                s.retraction_method,
+                s.σ, s.retraction_method,
             )
             # update cost
             s.costs[i] = get_cost(mp, s.population.pts[i])

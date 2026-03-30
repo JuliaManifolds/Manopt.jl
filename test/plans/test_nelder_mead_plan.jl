@@ -4,6 +4,8 @@ using Manifolds, Manopt, Test
     @testset "Nelder Mead State" begin
         M = Euclidean(2)
         o = NelderMeadState(M)
+        @test startswith(Manopt.status_summary(o), "# Solver state for `Manopt.jl`s Nelder Mead Algorithm")
+        @test startswith(repr(o), "NelderMeadState(; ")
         o2 = NelderMeadState(M; population = o.population)
         @test o.p == o2.p
         @test o.population == o2.population
@@ -17,6 +19,8 @@ using Manifolds, Manopt, Test
             obj = ManifoldCostObjective(f)
             mp = DefaultManoptProblem(M, obj)
             s = StopWhenPopulationConcentrated(0.1, 0.1)
+            @test startswith(Manopt.status_summary(s), "Stop when the population of a swarm is")
+            @test startswith(repr(s), "StopWhenPopulationConcentrated(")
             # tweak an iteration
             o.costs = [0.0, 0.1]
             @test !s(mp, o, 1)
