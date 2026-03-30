@@ -136,7 +136,7 @@ function show(io::IO, acs::AffineCovariantStepsize)
     print(io, "α = $(acs.α), ")
     print(io, "θ = $(acs.θ), ")
     print(io, "θ_des = $(acs.θ_des)")
-    print("θ_acc = $(acs.θ_acc)")
+    print(io, "θ_acc = $(acs.θ_acc)")
     !(ismissing(acs.outer_norm)) && print(io, ", outer_norm = $(acs.outer_norm)")
     return print(io, ")")
 end
