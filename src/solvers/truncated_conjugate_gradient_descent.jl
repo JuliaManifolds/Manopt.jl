@@ -118,7 +118,7 @@ function Base.show(io::IO, tcgs::TruncatedConjugateGradientState)
     return print(io, "X = $(tcgs.Y))")
 end
 function status_summary(tcgs::TruncatedConjugateGradientState; context::Symbol = :default)
-    (context === :short) && repr(tcgs)
+    (context === :short) && return repr(tcgs)
     i = get_count(tcgs, :Iterations)
     conv_inl = (i > 0) ? (indicates_convergence(tcgs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && "A solver state for the truncated conjugate gradient descent$(conv_inl)"

@@ -604,21 +604,22 @@ mutable struct DebugDualResidual <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
+    at_init::Bool
     function DebugDualResidual(;
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout, prefix = "Dual Residual: ", format = "$prefix%s",
+            io::IO = stdout, prefix = "Dual Residual: ", format = "$prefix%s", at_init::Bool = false,
         )
-        return new(io, format, storage)
+        return new(io, format, storage, at_init)
     end
     function DebugDualResidual(
             initial_values::Tuple{P, T, Q};
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout, prefix = "Dual Residual: ", format = "$prefix%s",
+            io::IO = stdout, prefix = "Dual Residual: ", format = "$prefix%s", at_init::Bool = false,
         ) where {P, T, Q}
         update_storage!(
             storage, Dict(k => v for (k, v) in zip((:Iterate, :X, :n), initial_values))
         )
-        return new(io, format, storage)
+        return new(io, format, storage, at_init)
     end
 end
 function (d::DebugDualResidual)(
@@ -627,7 +628,7 @@ function (d::DebugDualResidual)(
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
-    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && k > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && (k >= (d.at_init ? 0 : 1)) # all values stored
         #fetch
         p_old = get_storage(d.storage, :Iterate)
         X_old = get_storage(d.storage, :X)
@@ -638,6 +639,13 @@ function (d::DebugDualResidual)(
         )
     end
     return d.storage(tmp, apds, k)
+end
+function show(io::IO, d::DebugDualResidual)
+    return print(io, "DebugDualResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+end
+function status_summary(d::DebugDualResidual; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    return "A DebugAction to print the dual residual with format \"$(escape_string(d.format))\""
 end
 @doc """
     DebugPrimalResidual <: DebugAction
@@ -661,19 +669,20 @@ mutable struct DebugPrimalResidual <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
+    at_init::Bool
     function DebugPrimalResidual(;
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout, prefix = "Primal Residual: ", format = "$prefix%s",
+            io::IO = stdout, prefix = "Primal Residual: ", format = "$prefix%s", at_init::Bool = false
         )
-        return new(io, format, storage)
+        return new(io, format, storage, at_init)
     end
     function DebugPrimalResidual(
             values::Tuple{P, T, Q};
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout, prefix = "Primal Residual: ", format = "$prefix%s",
+            io::IO = stdout, prefix = "Primal Residual: ", format = "$prefix%s", at_init::Bool = false,
         ) where {P, T, Q}
         update_storage!(storage, Dict(k => v for (k, v) in zip((:Iterate, :X, :n), values)))
-        return new(io, format, storage)
+        return new(io, format, storage, at_init)
     end
 end
 function (d::DebugPrimalResidual)(
@@ -682,7 +691,7 @@ function (d::DebugPrimalResidual)(
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
-    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && k > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && (k >= (d.at_init ? 0 : 1)) # all values stored
         #fetch
         p_old = get_storage(d.storage, :Iterate)
         X_old = get_storage(d.storage, :X)
@@ -693,6 +702,13 @@ function (d::DebugPrimalResidual)(
         )
     end
     return d.storage(tmp, apds, k)
+end
+function show(io::IO, d::DebugPrimalResidual)
+    return print(io, "DebugPrimalResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+end
+function status_summary(d::DebugPrimalResidual; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    return "A DebugAction to print the primal residual with format \"$(escape_string(d.format))\""
 end
 @doc """
     DebugPrimalDualResidual <: DebugAction
@@ -718,19 +734,20 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
+    at_init::Bool
     function DebugPrimalDualResidual(;
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout, prefix = "PD Residual: ", format = "$prefix%s",
+            io::IO = stdout, prefix = "PD Residual: ", format = "$prefix%s", at_init::Bool = false,
         )
-        return new(io, format, storage)
+        return new(io, format, storage, at_init)
     end
     function DebugPrimalDualResidual(
             values::Tuple{P, T, Q};
             storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
-            io::IO = stdout, prefix = "PD Residual: ", format = "$prefix%s",
+            io::IO = stdout, prefix = "PD Residual: ", format = "$prefix%s", at_init::Bool = false,
         ) where {P, Q, T}
         update_storage!(storage, Dict(k => v for (k, v) in zip((:Iterate, :X, :n), values)))
-        return new(io, format, storage)
+        return new(io, format, storage, at_init)
     end
 end
 function (d::DebugPrimalDualResidual)(
@@ -739,7 +756,7 @@ function (d::DebugPrimalDualResidual)(
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
-    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && k > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && (k >= (d.at_init ? 0 : 1)) # all values stored
         #fetch
         p_old = get_storage(d.storage, :Iterate)
         X_old = get_storage(d.storage, :X)
@@ -749,7 +766,13 @@ function (d::DebugPrimalDualResidual)(
     end
     return d.storage(tmp, apds, k)
 end
-
+function show(io::IO, d::DebugPrimalDualResidual)
+    return print(io, "DebugPrimalDualResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+end
+function status_summary(d::DebugPrimalDualResidual; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    return "A DebugAction to print the primal dual residual with format \"$(escape_string(d.format))\""
+end
 #
 # Debugs
 #
@@ -793,9 +816,10 @@ mutable struct DebugDualChange <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
+    at_init::Bool
     function DebugDualChange(;
             storage::StoreStateAction = StoreStateAction([:X, :n]),
-            io::IO = stdout, prefix = "Dual Change: ", format = "$prefix%s",
+            io::IO = stdout, prefix = "Dual Change: ", format = "$prefix%s", at_init::Bool = false,
         )
         return new(io, format, storage)
     end
@@ -824,9 +848,16 @@ function (d::DebugDualChange)(
                 N, n_old, X_old, apds.n, apds.vector_transport_method_dual
             ) - apds.X,
         )
-        Printf.format(d.io, Printf.Format(d.format), v)
+        (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), v)
     end
     return d.storage(tmp, apds, k)
+end
+function show(io::IO, ddc::DebugDualChange)
+    return print(io, "DebugDualChange(; io = ", ddc.io, ", format =\"$(escape_string(ddc.format))\", at_init=$(ddc.at_init))")
+end
+function status_summary(ddc::DebugDualChange; context::Symbol = :default)
+    (context === :short) && return repr(ddc)
+    return "A DebugAction to print the change of the dual variable with format \"$(escape_string(ddc.format))\""
 end
 
 """

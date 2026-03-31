@@ -181,6 +181,12 @@ mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
         return new(warn, Float64(Inf), tol)
     end
 end
-function show(io::IO, di::DebugWarnIfLagrangeMultiplierIncreases)
-    return print(io, "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"$(di.tol)\")")
+function show(io::IO, d::DebugWarnIfLagrangeMultiplierIncreases)
+    m = (d.status === :No ? "" : ":$(d.status)")
+    return print(io, "DebugWarnIfLagrangeMultiplierIncreases($(m); tol=\"$(d.tol)\")")
+end
+function status_summary(d::DebugWarnIfLagrangeMultiplierIncreases; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    m = (d.status === :Once) ? "once" : (d.status === :No ? "(inactive)" : "")
+    return "a DebugAction warning if the lagange multiplier increases in an iteration $m."
 end

@@ -320,7 +320,16 @@ function (d::DebugProximalParameter)(
     (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(k))
     return nothing
 end
-
+function show(io::IO, d::DebugProximalParameter)
+    return print(
+        io, "DebugGradientChange(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init = $(d.at_init))",
+    )
+end
+function status_summary(d::DebugProximalParameter; context = :Default)
+    (context === :short) && (return "(:ProxParameter, \"$(escape_string(d.format))\")")
+    # Inline and default
+    return "a DebugAction printing the proximal parameter “$(escape_string(d.format))”"
+end
 #
 # Record
 @doc """

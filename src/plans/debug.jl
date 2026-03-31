@@ -299,15 +299,10 @@ mutable struct DebugChange{IR <: AbstractInverseRetractionMethod} <: DebugAction
     function DebugChange(
             M::AbstractManifold = DefaultManifold();
             storage::Union{Nothing, StoreStateAction} = nothing,
-            io::IO = stdout,
-            prefix::String = "Last Change: ",
-            format::String = "$(prefix)%f",
-            inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
-                M
-            ),
+            io::IO = stdout, prefix::String = "Last Change: ", format::String = "$(prefix)%f",
+            inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M),
         )
         irm = inverse_retraction_method
-        # Deprecated, remove in Manopt 0.5
         if isnothing(storage)
             if M isa DefaultManifold
                 storage = StoreStateAction(M; store_fields = [:Iterate])
@@ -324,9 +319,7 @@ function (d::DebugChange)(mp::AbstractManoptProblem, st::AbstractManoptSolverSta
         d.io,
         Printf.Format(d.format),
         distance(
-            M,
-            get_iterate(st),
-            get_storage(d.storage, PointStorageKey(:Iterate)),
+            M, get_iterate(st), get_storage(d.storage, PointStorageKey(:Iterate)),
             d.inverse_retraction_method,
         ),
     )
@@ -443,6 +436,10 @@ function (d::DebugEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState,
 end
 function show(io::IO, di::DebugEntry)
     return print(io, "DebugEntry(:$(di.field); format=\"$(escape_string(di.format))\", at_init=$(di.at_init))")
+end
+function status_summary(di::DebugEntry; context::Symbol = :default)
+    (context === :short) && return "(:$(di.field), format=\"$(escape_string(di.format))\")"
+    return "A DebugAction to print the field :$(di.field) of the solver style with format \"$(escape_string(di.format))\""
 end
 
 """
@@ -574,10 +571,14 @@ function (d::DebugIfEntry)(::AbstractManoptProblem, st::AbstractManoptSolverStat
     end
     return nothing
 end
-function show(io::IO, di::DebugIfEntry)
-    return print(io, "DebugIfEntry(:$(di.field), $(di.check); type=:$(di.type), at_init=$(di.at_init))")
+function show(io::IO, d::DebugIfEntry)
+    return print(io, "DebugIfEntry(:$(d.field), $(d.check); type=:$(d.type), at_init=$(d.at_init))")
 end
-
+function status_summary(d::DebugIfEntry; context = :Default)
+    (context === :short) && (return repr(d))
+    # Inline and default
+    return "a DebugAction printing the entry :$(d.field) of the solver state if $(d.check) of that field is true, in format “$(escape_string(d.msg))” as $(d.type)"
+end
 @doc """
     DebugEntryChange{T} <: DebugAction
 
@@ -644,6 +645,10 @@ function show(io::IO, dec::DebugEntryChange)
         io,
         "DebugEntryChange(:$(dec.field), $(dec.distance); format=\"$(escape_string(dec.format))\")",
     )
+end
+function status_summary(d::DebugEntryChange; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    return "a DebugAction that prints the change of the entry :$(d.field) of the solver state in format “$(escape_string(di.format))”"
 end
 
 @doc """
@@ -838,15 +843,16 @@ end
 show(io::IO, d::DebugMessages) = print(io, "DebugMessages(:$(d.mode), :$(d.status))")
 function status_summary(d::DebugMessages; context::Symbol = :default)
     if context === :short
-        (d.mode == :Warning) && return "(:WarningMessages, :$(d.status))"
-        (d.mode == :Error) && return "(:ErrorMessages, :$(d.status))"
-        # default
-        # (d.mode == :Info) && return "(:InfoMessages, $(d.status)"
-        return "(:Messages, :$(d.status))"
+        s = ":Messages"
+        (d.mode == :Warning) && (s = ":WarningMessages")
+        (d.mode == :Error) && (s = ":ErrorMessages")
+        (d.mode == :Info) && (s = ":InfoMessages")
+        return d.status === :No ? s : "($s, :$(d.status))"
     end
     # Inline and default
     m = "a $(d.mode == :Warning ? "warning " : (d.mode == :Error ? "error " : ""))message"
-    return "a DebugAction printing messages collected during the last iteration as $m"
+    s = d.status === :No ? " (inactive)" : (d.status === :Once ? " once" : "")
+    return "a DebugAction printing messages collected during the last iteration as $(m)$(s)."
 end
 
 @doc """
@@ -1087,8 +1093,14 @@ function (d::DebugWarnIfCostIncreases)(
     end
     return nothing
 end
-function show(io::IO, di::DebugWarnIfCostIncreases)
-    return print(io, "DebugWarnIfCostIncreases(; tol=\"$(di.tol)\")")
+function show(io::IO, d::DebugWarnIfCostIncreases)
+    m = (d.status === :No ? "" : ":$(d.status)")
+    return print(io, "DebugWarnIfCostIncreases($(m); tol=\"$(d.tol)\")")
+end
+function status_summary(d::DebugWarnIfCostIncreases; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    m = (d.status === :Once) ? "once" : (d.status === :No ? "(inactive)" : "")
+    return "a DebugAction warning if the cost increases in an iteration $m."
 end
 
 @doc """
@@ -1251,7 +1263,14 @@ function (d::DebugWarnIfGradientNormTooLarge)(
     return nothing
 end
 function show(io::IO, d::DebugWarnIfGradientNormTooLarge)
-    return print(io, "DebugWarnIfGradientNormTooLarge($(d.factor), :$(d.status))")
+    # only print status if active
+    m = (d.status === :No ? "" : ", :$(d.status)")
+    return print(io, "DebugWarnIfGradientNormTooLarge($(d.factor)$(m))")
+end
+function status_summary(d::DebugWarnIfGradientNormTooLarge; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    m = (d.status === :Once) ? " once" : (d.status === :No ? " (inactive)" : "")
+    return "a DebugAction warning if the gradient norm gets larger than the maximal stepsize$m."
 end
 
 @doc """
@@ -1278,9 +1297,6 @@ mutable struct DebugWarnIfStepsizeCollapsed{T} <: DebugAction
         return new{T}(warn, tol)
     end
 end
-function show(io::IO, di::DebugWarnIfStepsizeCollapsed)
-    return print(io, "DebugWarnIfStepsizeCollapsed($(di.stop_when_stepsize_less), :$(di.status))")
-end
 function (d::DebugWarnIfStepsizeCollapsed)(
         amp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
@@ -1296,7 +1312,15 @@ function (d::DebugWarnIfStepsizeCollapsed)(
     end
     return nothing
 end
-
+function show(io::IO, d::DebugWarnIfStepsizeCollapsed)
+    m = (d.status === :No ? "" : ", :$(d.status)")
+    return print(io, "DebugWarnIfStepsizeCollapsed($(d.stop_when_stepsize_less)$(m))")
+end
+function status_summary(d::DebugWarnIfStepsizeCollapsed; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    m = (d.status === :Once) ? " once" : (d.status === :No ? " (inactive)" : "")
+    return "a DebugAction warning if the step size collapses (below $(d.stop_when_stepsize_less))$m."
+end
 #
 # Convenience constructors using Symbols
 #
@@ -1461,13 +1485,14 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
+* `:ProxParameter` creates a [`DebugProximalParameter`](@ref)`()`
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:Stop` creates a [`StoppingCriterion`](@ref)`()`
+* `:Time` creates a [`DebugTime`](@ref)
 * `:WarnStepsize` creates a [`DebugWarnIfStepsizeCollapsed`](@ref)
 * `:WarnBundle` creates a [`DebugWarnIfLagrangeMultiplierIncreases`](@ref)
 * `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
 * `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `::Gradient`.
-* `:Time` creates a [`DebugTime`](@ref)
 * `:WarningMessages` creates a [`DebugMessages`](@ref)`(:Warning)`
 * `:InfoMessages` creates a [`DebugMessages`](@ref)`(:Info)`
 * `:ErrorMessages` creates a [`DebugMessages`](@ref)`(:Error)`
@@ -1484,6 +1509,7 @@ function DebugActionFactory(d::Symbol)
     (d == :Iterate) && return DebugIterate()
     (d == :Iteration) && return DebugIteration()
     (d == :Feasibility) && return DebugFeasibility()
+    (d == :ProxParameter) && return DebugProximalParameter()
     (d == :Stepsize) && return DebugStepsize()
     (d == :Stop) && return DebugStoppingCriterion()
     (d == :WarnStepsize) && return DebugWarnIfStepsizeCollapsed()
@@ -1516,6 +1542,7 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
+* `:ProxParameter` creates a [`DebugProximalParameter`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:Stop` creates a [`DebugStoppingCriterion`](@ref)
 * `:Time` creates a [`DebugTime`](@ref)
@@ -1533,11 +1560,12 @@ function DebugActionFactory(t::Tuple{Symbol, Any})
     (t[1] == :Iteration) && return DebugIteration(; format = t[2])
     (t[1] == :Iterate) && return DebugIterate(; format = t[2])
     (t[1] == :IterativeTime) && return DebugTime(; mode = :Iterative, format = t[2])
+    (t[1] == :ProxParameter) && return DebugProximalParameter(; format = t[2])
     (t[1] == :Stepsize) && return DebugStepsize(; format = t[2])
     (t[1] == :Stop) && return DebugStoppingCriterion(t[2])
     (t[1] == :Time) && return DebugTime(; format = t[2])
     ((t[1] == :Messages) || (t[1] == :InfoMessages)) && return DebugMessages(:Info, t[2])
     (t[1] == :WarningMessages) && return DebugMessages(:Warning, t[2])
-    (t[1] == :ErrorMessages) && return DebugMessages(:error, t[2])
+    (t[1] == :ErrorMessages) && return DebugMessages(:Error, t[2])
     return DebugEntry(t[1]; format = t[2])
 end

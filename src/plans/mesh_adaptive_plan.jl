@@ -356,7 +356,7 @@ function Base.show(io::IO, dmads::DefaultMeshAdaptiveDirectSearch)
     return print(io, ")")
 end
 function status_summary(dmads::DefaultMeshAdaptiveDirectSearch; context = :default)
-    (context === :short) && repr(dmads)
+    (context === :short) && return repr(dmads)
     (context === :inline) && "The default mesh adaptive direct search along a given direction using the $(dmads.retraction_method)"
     return """The default mesh adaptive direct search
     along one given direction X.
@@ -450,7 +450,7 @@ function Base.show(io::IO, mads::MeshAdaptiveDirectSearchState)
     return print(io, "stopping_criterion = ", mads.stop, ", poll = ", mads.poll, ", search = ", mads.search, ")")
 end
 function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :default)
-    (context === :short) && repr(mads)
+    (context === :short) && return repr(mads)
     i = get_count(mads, :Iterations)
     conv_inl = (i > 0) ? (indicates_convergence(mads.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the trust region solver$(conv_inl)"

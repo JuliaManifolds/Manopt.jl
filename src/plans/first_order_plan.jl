@@ -1184,9 +1184,12 @@ function (d::DebugStepsize)(
     return nothing
 end
 function show(io::IO, ds::DebugStepsize)
-    return print(io, "DebugStepsize(; format=\"$(ds.format)\", at_init=$(ds.at_init))")
+    return print(io, "DebugStepsize(; format=\"$(escape_string(ds.format))\", at_init=$(ds.at_init))")
 end
-status_summary(ds::DebugStepsize) = "(:Stepsize, \"$(ds.format)\")"
+function status_summary(ds::DebugStepsize; context::Symbol = :default)
+    (context === :short) && return "(:Stepsize, \"$(escape_string(ds.format))\")"
+    return "A DebugAction that prints the current step size to $(ds.io) in format “$(escape_string(ds.format))”"
+end
 #
 # Records
 #

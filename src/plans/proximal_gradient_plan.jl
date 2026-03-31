@@ -86,7 +86,7 @@ function Base.show(io::IO, mpgo::ManifoldProximalGradientObjective{E}) where {E}
 end
 
 function status_summary(mpgo::ManifoldProximalGradientObjective{E}; context::Symbol = :default) where {E}
-    (context === :short) && repr(mpgo)
+    (context === :short) && return repr(mpgo)
     s = "A proximal gradient objective `f = g + h`, where `g` is smooth and `h` is possibly nonsmooth."
     (context === :inline) && (return s)
     e = (E === AllocatingEvaluation ? " (allocating)" : " (in-place)")
@@ -743,7 +743,7 @@ function (d::DebugWarnIfStepsizeCollapsed)(
         if s.last_stepsize ≤ s.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(s.stop_when_stepsize_less)."
             if d.status === :Once
-                @warn "Further warnings will be suppressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
+                @warn "Further warnings will be suppressed, use DebugWarnIfStepsizeCollapsed(:Always) to get all warnings."
                 d.status = :No
             end
         end

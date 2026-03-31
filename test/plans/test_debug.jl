@@ -396,7 +396,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test repr(DebugEntry(:a)) == "DebugEntry(:a; format=\"a: %s\", at_init=true)"
 
         @test repr(DebugStepsize()) == "DebugStepsize(; format=\"s:%s\", at_init=true)"
-        @test Manopt.status_summary(DebugStepsize()) == "(:Stepsize, \"s:%s\")"
+        @test Manopt.status_summary(DebugStepsize(); context = :short) == "(:Stepsize, \"s:%s\")"
+        @test startswith(Manopt.status_summary(DebugStepsize()), "A DebugAction that prints the current step size")
 
         @test repr(DebugGradientNorm()) == "DebugGradientNorm(; format=\"|grad f(p)|:%s\", at_init=true)"
         dgn_s = "(:GradientNorm, \"|grad f(p)|:%s\")"
@@ -412,8 +413,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         mp = DefaultManoptProblem(Euclidean(2), ManifoldCostObjective(x -> x))
         d = DebugMessages(:Info, :Always)
         @test repr(d) == "DebugMessages(:Info, :Always)"
-        @test Manopt.status_summary(d; context = :short) == "(:Messages, :Always)"
-        @test Manopt.status_summary(d) == "a DebugAction printing messages collected during the last iteration as a message"
+        @test Manopt.status_summary(d; context = :short) == "(:InfoMessages, :Always)"
+        @test startswith(Manopt.status_summary(d), "a DebugAction printing messages collected during the last iteration")
         @test_logs (:info, "DebugTest") d(mp, s, 0)
     end
     @testset "DebugIfEntry" begin
@@ -421,10 +422,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         M = ManifoldsBase.DefaultManifold(2)
         p = [-4.0, 2.0]
         st = GradientDescentState(
-            M;
-            p = p,
-            stopping_criterion = StopAfterIteration(20),
-            stepsize = Manopt.ConstantStepsize(M),
+            M; p = p,
+            stopping_criterion = StopAfterIteration(20), stepsize = Manopt.ConstantStepsize(M),
         )
         f(M, y) = Inf
         grad_f(M, y) = Inf .* ones(2)

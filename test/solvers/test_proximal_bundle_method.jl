@@ -59,12 +59,12 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         # Test warnings
         dw1 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 0.0)
         dw1(mp, pbms, 1) #do one normal run.
-        @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"0.0\")"
+        @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"0.0\")"
         pbms.ν = 101.0
         @test_logs (:warn,) dw1(mp, pbms, 2)
         dw2 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 1.0e1)
         dw2.old_value = -101.0
-        @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"10.0\")"
+        @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"10.0\")"
         pbms.ν = -1.0
         @test_logs (:warn,) (:warn,) dw2(mp, pbms, 1)
     end
