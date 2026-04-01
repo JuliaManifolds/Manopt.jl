@@ -310,7 +310,10 @@ Describes a Gradient based descent algorithm, with
   new point is rejected
 * `β_reduction` :                 parameter by which the damping term is multiplied when the
   improvement quotient exceeds `damping_reduction_threshold`.
-* `damping_reduction_threshold` : ???
+* `damping_reduction_threshold` : threshold for the improvement quotient above which the damping term is reduced by
+  multiplying it with `β_reduction`.
+* `damping_increase_threshold` : threshold for the improvement quotient below which the damping term is increased by
+  multiplying it with `β`.
 * `direction`:                    the current search direction, which is the solution of the linearized
   subproblem in each iteration.
 * `η`:                            Scaling factor for the sufficient cost decrease threshold required
@@ -344,6 +347,7 @@ The following fields are keyword arguments
 * `damping_term_max = Inf`
 * `damping_term = damping_term_min`
 * `damping_reduction_threshold = Inf`
+* `damping_increase_threshold = η`
 * `η = 0.2`,
 * `initial_gradient = `$(_link(:zero_vector))
 $(_kwargs(:retraction_method))
@@ -367,6 +371,7 @@ mutable struct LevenbergMarquardtState{
     X::TGrad
     η::Tparams
     damping_reduction_threshold::Tparams
+    damping_increase_threshold::Tparams
     β_reduction::Tparams
     damping_term::Tparams
     damping_term_min::Tparams
@@ -388,6 +393,7 @@ mutable struct LevenbergMarquardtState{
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
             η::Real = 0.2,
             damping_reduction_threshold::Real = Inf,
+            damping_increase_threshold::Real = η,
             β_reduction::Real = 0.5,
             damping_term_min::Real = 0.1,
             damping_term_max::Real = Inf,
@@ -426,7 +432,7 @@ mutable struct LevenbergMarquardtState{
             p,
             stopping_criterion, retraction_method,
             initial_residual_values, initial_jacobian_f,
-            direction, X, η, damping_reduction_threshold,
+            direction, X, η, damping_reduction_threshold, damping_increase_threshold,
             β_reduction,
             damping_term, damping_term_min, damping_term_max,
             β,
@@ -447,6 +453,7 @@ function show(io::IO, lms::LevenbergMarquardtState)
     ## Parameters
     * β: $(lms.β)
     * damping reduction threshold: $(lms.damping_reduction_threshold)
+    * damping increase threshold: $(lms.damping_increase_threshold)
     * β_reduction: $(lms.β_reduction)
     * damping term_ $(lms.damping_term) (min: $(lms.damping_term_min))
     * η: $(lms.η)

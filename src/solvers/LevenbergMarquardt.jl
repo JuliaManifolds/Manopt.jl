@@ -14,9 +14,11 @@ $(_problem(:NonLinearLeastSquares))
 
 The second block of signatures perform the optimization in-place of `p`.
 
-The regularization parameter is updated using a generalized scheme proposed in [Yuan:2015, Fan:2006](@cite)
-which offers separate thresholds for the acceptance of new points (`η`) and decreasing the
-regularization parameter (`damping_reduction_threshold`).
+The regularization parameter is updated using a generalized scheme proposed in [Fan:2006](@cite),
+Eq. (2.2). See also [Yuan:2015](@ref) for other schemes.
+The generalized scheme offers separate thresholds for the acceptance of new points (`η`),
+decreasing the regularization parameter (`damping_reduction_threshold`) and increasing
+the regularization parameter (`damping_increase_threshold`).
 
 # Input
 
@@ -312,10 +314,15 @@ function step_solver!(
     ρ = cost_improvement / model_improvement
     # Update damping term and iterate
     if ρ >= lms.damping_reduction_threshold
+        # very good match between model and actual cost: decrease damping term
         lms.damping_term *= lms.β_reduction
         lms.damping_term = max(lms.damping_term, lms.damping_term_min)
+    elseif ρ < lms.damping_increase_threshold
+        # poor match between model and actual cost: increase damping term
+        lms.damping_term *= lms.β
+        lms.damping_term = min(lms.damping_term, lms.damping_term_max)
     end
-    if ρ >= lms.η # enough improvement: accept, decrease damping term
+    if ρ >= lms.η # enough improvement: accept
         copyto!(M, lms.p, q)
         get_residuals!(M, lms.residual_values, nlso, lms.p)
         for (o, jb) in zip(nlso.objective, lms.jacobian_f)
@@ -324,9 +331,6 @@ function step_solver!(
             end
         end
         get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_f)
-    else # not enough improvement: reject, increase damping term
-        lms.damping_term *= lms.β
-        lms.damping_term = min(lms.damping_term, lms.damping_term_max)
     end
     return lms
 end
