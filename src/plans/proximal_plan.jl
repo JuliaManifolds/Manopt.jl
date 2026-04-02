@@ -343,7 +343,7 @@ record the current iterates proximal point algorithm parameter given by in
 """
 mutable struct RecordProximalParameter{R <: Real} <: RecordAction
     recorded_values::Array{R, 1}
-    RecordProximalParameter(r::Type{<:Real}) = new{r}(Array{r, 1}())
+    RecordProximalParameter(r::Type{<:Real} = Float64) = new{r}(Array{r, 1}())
 end
 function (r::RecordProximalParameter)(
         ::AbstractManoptProblem, cpps::CyclicProximalPointState, k::Int

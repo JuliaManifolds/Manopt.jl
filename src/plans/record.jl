@@ -267,9 +267,9 @@ function status_summary(re::RecordEvery; context::Symbol = :default)
     if context === :short
         s = ""
         if re.record isa RecordGroup
-            s = status_summary(re.record)[3:(end - 2)]
+            s = status_summary(re.record; context = context)[2:(end - 1)]
         else
-            s = "$(re.record)"
+            s = "$(status_summary(re.record; context = context))"
         end
         return "[$s, $(re.every)]"
     end
@@ -280,8 +280,8 @@ function status_summary(re::RecordEvery; context::Symbol = :default)
     (re.every == 1) && (s = "every")
     (context === :inline) && return "A RecordAction that records its inner action $s iteration"
     return """
-    A RecordAction that records $s iteration with\n
-    $(_in_str(status_summary(re.record; context = context); indent = 1))
+    A RecordAction that records $s iteration with
+    $(_MANOPT_INDENT)$(_in_str(status_summary(re.record; context = context); indent = 1))
     """
 end
 get_record(r::RecordEvery) = get_record(r.record)
@@ -361,7 +361,7 @@ function (d::RecordGroup)(p::AbstractManoptProblem, s::AbstractManoptSolverState
     return
 end
 function status_summary(rg::RecordGroup; context::Symbol = :default)
-    (context === :short) && (return "[ $(join(["$(status_summary(ri))" for ri in rg.group], ", ")) ]")
+    (context === :short) && (return "[$(join(["$(status_summary(ri; context = context))" for ri in rg.group], ", "))]")
     (context === :inline) && (return "A group of $(length(rg.group)) RecordActions")
     return "A group of $(length(rg.group)) RecordActions:\n $(join(["* $(status_summary(ri; context = context))" for ri in rg.group], "\n"))\n"
 end
@@ -444,13 +444,15 @@ end
 function show(io::IO, rsr::RecordSubsolver{R}) where {R}
     return print(io, "RecordSubsolver(; record=$(rsr.record), record_type=$R)")
 end
-function status_summary(::RecordSubsolver{R}; context::Symbol = :default) where {R}
+function status_summary(rsr::RecordSubsolver{R}; context::Symbol = :default) where {R}
     (context === :short) && return ":Subsolver"
-    (context === :inline) && return "A RecordAction to specify something to record from each subolver run"
-    return
-    """
-    A RecordAction to record elements of type $R in from each subsolver run
+    (context === :inline) && return "A RecordAction to specify something to record from each subsolver run"
+    return """
+    A RecordAction to record elements in from each subsolver run of type $R.
 
+    ## Recorded values
+    The following recorded symbols from the sub state are recorded in every iteration of the (outer) solver
+    $(join([ "  * :$(s)" for s in rsr.record], "\n"))
     """
 end
 
@@ -458,10 +460,9 @@ end
     RecordWhenActive <: RecordAction
 
 record action that only records if the `active` boolean is set to true.
-This can be set from outside and is for example triggered by |`RecordEvery`](@ref)
-on recordings of the subsolver.
-While this is for sub solvers maybe not completely necessary, recording values that
-are never accessible, is not that useful.
+This can be set from outside and is for example triggered by [`RecordEvery`](@ref)
+on recordings of a subsolver. While this is for sub solvers maybe not completely necessary,
+recording values that are never accessible, is not that useful.
 
 # Fields
 
@@ -482,7 +483,6 @@ mutable struct RecordWhenActive{R <: RecordAction} <: RecordAction
         return new{R}(r, active, always_update)
     end
 end
-
 function (rwa::RecordWhenActive)(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
     )
@@ -495,8 +495,13 @@ end
 function show(io::IO, rwa::RecordWhenActive)
     return print(io, "RecordWhenActive($(rwa.record), $(rwa.active), $(rwa.always_update))")
 end
-function status_summary(rwa::RecordWhenActive)
-    return repr(rwa)
+function status_summary(rwa::RecordWhenActive; context::Symbol = :default)
+    (context === :short) && (return repr(rwa))
+    (context === :inline) && (return "A RecordAction that only records its inner action when active (currently: $(rwa.active ? "" : "in")active)")
+    return """
+    Record the following only, when active (currently: $(rwa.active ? "" : "in")active)
+    $(_in_str(status_summary(rwa.record; context = context), indent = 1, headers = 0))
+    """
 end
 function set_parameter!(rwa::RecordWhenActive, v::Val, args...)
     set_parameter!(rwa.record, v, args...)
@@ -615,7 +620,7 @@ end
 show(io::IO, ::RecordCost) = print(io, "RecordCost()")
 function status_summary(::RecordCost; context::Symbol = :default)
     (context === :short) && return ":Cost"
-    return "A RecordAction to record the cost value."
+    return "A RecordAction to record the cost value"
 end
 
 @doc """

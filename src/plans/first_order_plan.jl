@@ -1228,7 +1228,7 @@ record the norm of the current gradient
 """
 mutable struct RecordGradientNorm{R <: Real} <: RecordAction
     recorded_values::Array{R, 1}
-    RecordGradientNorm(r::Type{<:Real}) = new{r}(Array{r, 1}())
+    RecordGradientNorm(r::Type{<:Real} = Float64) = new{r}(Array{r, 1}())
 end
 function (r::RecordGradientNorm)(
         mp::AbstractManoptProblem, ast::AbstractManoptSolverState, k::Int
