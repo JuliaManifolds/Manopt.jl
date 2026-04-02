@@ -254,6 +254,7 @@ calls_with_kwargs(::typeof(gradient_descent!)) = (decorate_objective!, decorate_
 #
 function initialize_solver!(mp::AbstractManoptProblem, s::GradientDescentState)
     get_gradient!(mp, s.X, s.p)
+    initialize_stepsize!(s.stepsize)
     return s
 end
 function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, k)

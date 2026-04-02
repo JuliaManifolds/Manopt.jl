@@ -193,6 +193,7 @@ function initialize_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodSta
     M = get_manifold(mp)
     copyto!(M, sgs.p_star, sgs.p)
     sgs.X = zero_vector(M, sgs.p)
+    initialize_stepsize!(sgs.stepsize)
     return sgs
 end
 function step_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState, k)
