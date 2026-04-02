@@ -202,7 +202,7 @@ function Base.show(io::IO, ltap::LowerTriangularAdaptivePoll)
     print(io, "vector_transport_method = ", ltap.vector_transport_method)
     return print(io, ")")
 end
-function status_summary(ltap::LowerTriangularAdaptivePoll; context = :default)
+function status_summary(ltap::LowerTriangularAdaptivePoll; context::Symbol = :default)
     (context === :short) && return repr(ltap)
     (context === :inline) && return "A lower triangular adaptive poll using the $(ltap.retraction_method) and $(ltap.vector_transport_method)"
     s = """A Lower triangular adaptive poll
@@ -355,7 +355,7 @@ function Base.show(io::IO, dmads::DefaultMeshAdaptiveDirectSearch)
     print(io, ", retraction_method = ", dmads.retraction_method)
     return print(io, ")")
 end
-function status_summary(dmads::DefaultMeshAdaptiveDirectSearch; context = :default)
+function status_summary(dmads::DefaultMeshAdaptiveDirectSearch; context::Symbol = :default)
     (context === :short) && return repr(dmads)
     (context === :inline) && "The default mesh adaptive direct search along a given direction using the $(dmads.retraction_method)"
     return """The default mesh adaptive direct search

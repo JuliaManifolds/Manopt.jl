@@ -805,7 +805,7 @@ function show(io::IO, agr::AverageGradientRule)
     print(io, "vector_transport_method = ", agr.vector_transport_method)
     return print(io, ")")
 end
-function status_summary(agr::AverageGradientRule; context = :default)
+function status_summary(agr::AverageGradientRule; context::Symbol = :default)
     (context === :short) && return repr(agr)
     (context === :inline) && return "An average gradient direction processor with n=$(length(agr.gradients)) gradients to average over using $(agr.vector_transport_method)"
     return """
@@ -1148,7 +1148,7 @@ end
 function show(io::IO, dgn::DebugGradientNorm)
     return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\", at_init=$(dgn.at_init))")
 end
-function status_summary(dgn::DebugGradientNorm; context = :default)
+function status_summary(dgn::DebugGradientNorm; context::Symbol = :default)
     (context === :short) && return "(:GradientNorm, \"$(dgn.format)\")"
     return "A debug action to display the gradient norm (format. \"$(dgn.format)\")"
 end

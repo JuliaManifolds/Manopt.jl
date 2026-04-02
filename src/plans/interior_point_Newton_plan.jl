@@ -29,7 +29,7 @@ get_gradient(s::StepsizeState) = s.X
 set_iterate!(s::StepsizeState, M, p) = copyto!(M, s.p, p)
 set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
 Base.show(io::IO, sss::StepsizeState) = print(io, "StepsizeState(; p = ", sss.p, ", X = ", sss.X, ")")
-function status_summary(sss::StepsizeState{P, T}; context = :default) where {P, T}
+function status_summary(sss::StepsizeState{P, T}; context::Symbol = :default) where {P, T}
     (context === :short) && return repr(sss)
     return "A state for a stepsize problem."
 end

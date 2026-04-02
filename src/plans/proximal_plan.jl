@@ -325,7 +325,7 @@ function show(io::IO, d::DebugProximalParameter)
         io, "DebugGradientChange(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init = $(d.at_init))",
     )
 end
-function status_summary(d::DebugProximalParameter; context = :Default)
+function status_summary(d::DebugProximalParameter; context::Symbol = :Default)
     (context === :short) && (return "(:ProxParameter, \"$(escape_string(d.format))\")")
     # Inline and default
     return "a DebugAction printing the proximal parameter “$(escape_string(d.format))”"

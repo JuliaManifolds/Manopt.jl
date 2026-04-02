@@ -44,7 +44,7 @@ function ClosedFormSubSolverState(;
     return ClosedFormSubSolverState(evaluation)
 end
 Base.show(io::IO, cfss::ClosedFormSubSolverState{E}) where {E} = print(io, "ClosedFormSubSolverState(; $(_to_kw(E)))")
-status_summary(cfss::ClosedFormSubSolverState; context = :default) = repr(cfss)
+status_summary(cfss::ClosedFormSubSolverState; context::Symbol = :default) = repr(cfss)
 
 maybe_wrap_evaluation_type(s::AbstractManoptSolverState) = s
 maybe_wrap_evaluation_type(n::Nothing) = n

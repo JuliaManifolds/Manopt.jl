@@ -574,7 +574,7 @@ end
 function show(io::IO, d::DebugIfEntry)
     return print(io, "DebugIfEntry(:$(d.field), $(d.check); type=:$(d.type), at_init=$(d.at_init))")
 end
-function status_summary(d::DebugIfEntry; context = :Default)
+function status_summary(d::DebugIfEntry; context::Symbol = :Default)
     (context === :short) && (return repr(d))
     # Inline and default
     return "a DebugAction printing the entry :$(d.field) of the solver state if $(d.check) of that field is true, in format “$(escape_string(d.msg))” as $(d.type)"
@@ -712,7 +712,7 @@ function show(io::IO, dgc::DebugGradientChange)
         "DebugGradientChange(; format=\"$(escape_string(dgc.format))\", vector_transport_method=$(dgc.vector_transport_method))",
     )
 end
-function status_summary(di::DebugGradientChange; context = :Default)
+function status_summary(di::DebugGradientChange; context::Symbol = :Default)
     (context === :short) && (return "(:GradientChange, \"$(escape_string(di.format))\")")
     # Inline and default
     return "a DebugAction printing the change of the gradient with format “$(escape_string(di.format))”"
