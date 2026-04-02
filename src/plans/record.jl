@@ -264,14 +264,25 @@ function show(io::IO, re::RecordEvery)
     return print(io, "RecordEvery($(re.record), $(re.every), $(re.always_update))")
 end
 function status_summary(re::RecordEvery; context::Symbol = :default)
-    if context
-    s = ""
-    if re.record isa RecordGroup
-        s = status_summary(re.record)[3:(end - 2)]
-    else
-        s = "$(re.record)"
+    if context === :short
+        s = ""
+        if re.record isa RecordGroup
+            s = status_summary(re.record)[3:(end - 2)]
+        else
+            s = "$(re.record)"
+        end
+        return "[$s, $(re.every)]"
     end
-    return "[$s, $(re.every)]"
+    s = ""
+    (re.every % 10 == 2) && (s = "every $(re.every)nd")
+    (re.every % 10 == 3) && (s = "every $(re.every)rd")
+    (re.every % 10 ∉ [2, 3]) && (s = "every $(re.every)th")
+    (re.every == 1) && (s = "every")
+    (context === :inline) && return "A RecordAction that records its inner action $s iteration"
+    return """
+    A RecordAction that records $s iteration with\n
+    $(_in_str(status_summary(re.record; context = context); indent = 1))
+    """
 end
 get_record(r::RecordEvery) = get_record(r.record)
 get_record(r::RecordEvery, k) = get_record(r.record, k)
@@ -352,7 +363,7 @@ end
 function status_summary(rg::RecordGroup; context::Symbol = :default)
     (context === :short) && (return "[ $(join(["$(status_summary(ri))" for ri in rg.group], ", ")) ]")
     (context === :inline) && (return "A group of $(length(rg.group)) RecordActions")
-    return "A group of $(length(rg.group)) RecordActions:\n $(join( ["* $(status_summary(ri; context=context))" for ri in rg.group], "\n"))\n"
+    return "A group of $(length(rg.group)) RecordActions:\n $(join(["* $(status_summary(ri; context = context))" for ri in rg.group], "\n"))\n"
 end
 function show(io::IO, rg::RecordGroup)
     s = join(["$(ri)" for ri in rg.group], ", ")
@@ -433,7 +444,15 @@ end
 function show(io::IO, rsr::RecordSubsolver{R}) where {R}
     return print(io, "RecordSubsolver(; record=$(rsr.record), record_type=$R)")
 end
-status_summary(::RecordSubsolver) = ":Subsolver"
+function status_summary(::RecordSubsolver{R}; context::Symbol = :default) where {R}
+    (context === :short) && return ":Subsolver"
+    (context === :inline) && return "A RecordAction to specify something to record from each subolver run"
+    return
+    """
+    A RecordAction to record elements of type $R in from each subsolver run
+
+    """
+end
 
 @doc """
     RecordWhenActive <: RecordAction
@@ -736,8 +755,10 @@ function (r::RecordIteration)(::AbstractManoptProblem, ::AbstractManoptSolverSta
     return record_or_reset!(r, k, k)
 end
 show(io::IO, ::RecordIteration) = print(io, "RecordIteration()")
-status_summary(::RecordIteration) = ":Iteration"
-
+function status_summary(::RecordIteration; context::Symbol = :default)
+    (context === :short) && return ":Iteration"
+    return "A RecordAction to record the current iteration number"
+end
 @doc """
     RecordStoppingReason <: RecordAction
 
@@ -929,15 +950,15 @@ create a [`RecordAction`](@ref) where
 * a [`RecordAction`](@ref) is passed through
 * a [`Symbol`] creates
   * `:Change`        to record the change of the iterates, see [`RecordChange`](@ref)
+  * `:Cost`          to record the current cost function value
   * `:Gradient`      to record the gradient, see [`RecordGradient`](@ref)
   * `:GradientNorm   to record the norm of the gradient, see [`RecordGradientNorm`](@ref)
   * `:Iterate`       to record the iterate
   * `:Iteration`     to record the current iteration number
-  * `IterativeTime`  to record the time iteratively
-  * `:Cost`          to record the current cost function value
+  * `:IterativeTime` to record the times taken for each iteration.
+  * `:ProximalParameter` to record the proximal parameter, see [`RecordProximalParameter`](@ref)
   * `:Stepsize`      to record the current step size
   * `:Time`          to record the total time taken after every iteration
-  * `:IterativeTime` to record the times taken for each iteration.
 
 and every other symbol is passed to [`RecordEntry`](@ref), which results in recording the
 field of the state with the symbol indicating the field of the solver to record.
@@ -952,6 +973,7 @@ function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Iterate) && return RecordIterate(get_iterate(s))
     (symbol == :Iteration) && return RecordIteration()
     (symbol == :IterativeTime) && return RecordTime(; mode = :iterative)
+    (symbol == :ProximalParameter) && return RecordProximalParameter()
     (symbol == :Stepsize) && return RecordStepsize()
     (symbol == :Stop) && return RecordStoppingReason()
     (symbol == :Subsolver) && return RecordSubsolver()

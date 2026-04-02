@@ -1214,15 +1214,21 @@ function (r::RecordGradient{T})(
     return record_or_reset!(r, get_gradient(s), k)
 end
 show(io::IO, ::RecordGradient{T}) where {T} = print(io, "RecordGradient($T)")
-
+function status_summary(rg::RecordGradient; context::Symbol = :default)
+    (context === :short) && return ":Gradient"
+    return "A RecordAction to record the current gradient"
+end
 @doc """
-    RecordGradientNorm <: RecordAction
+    RecordGradientNorm{R<:Real} <: RecordAction
 
 record the norm of the current gradient
+
+## Constructor
+    RecordGradientNorm(r::Type{<:Real}=Float64)
 """
-mutable struct RecordGradientNorm <: RecordAction
-    recorded_values::Array{Float64, 1}
-    RecordGradientNorm() = new(Array{Float64, 1}())
+mutable struct RecordGradientNorm{R <: Real} <: RecordAction
+    recorded_values::Array{R, 1}
+    RecordGradientNorm(r::Type{<:Real}) = new{r}(Array{r, 1}())
 end
 function (r::RecordGradientNorm)(
         mp::AbstractManoptProblem, ast::AbstractManoptSolverState, k::Int
@@ -1231,16 +1237,28 @@ function (r::RecordGradientNorm)(
     return record_or_reset!(r, norm(M, get_iterate(ast), get_gradient(ast)), k)
 end
 show(io::IO, ::RecordGradientNorm) = print(io, "RecordGradientNorm()")
+function status_summary(rg::RecordGradientNorm; context::Symbol = :default)
+    (context === :short) && return ":GradientNorm"
+    return "A RecordAction to record the current gradient norm"
+end
 
 @doc """
     RecordStepsize <: RecordAction
 
-record the step size
+record the step size.
+
+## Constructor
+    RecordStepsise(r::Type{<:Real}=Float64)
 """
-mutable struct RecordStepsize <: RecordAction
-    recorded_values::Array{Float64, 1}
-    RecordStepsize() = new(Array{Float64, 1}())
+mutable struct RecordStepsize{R <: Real} <: RecordAction
+    recorded_values::Array{R, 1}
+    RecordStepsize(r::Type{<:Real} = Float64) = new{r}(Array{r, 1}())
 end
 function (r::RecordStepsize)(p::AbstractManoptProblem, s::AbstractGradientSolverState, k)
     return record_or_reset!(r, get_last_stepsize(p, s, k), k)
+end
+show(io::IO, ::RecordStepsize{R}) where {R} = print(io, "RecordStepsize($R)")
+function status_summary(rg::RecordStepsize{R}; context::Symbol = :default) where {R}
+    (context === :short) && return ":Stepsize"
+    return "A RecordAction to record the current stepsize (of type $R)"
 end

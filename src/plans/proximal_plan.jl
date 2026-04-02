@@ -333,17 +333,25 @@ end
 #
 # Record
 @doc """
-    RecordProximalParameter <: RecordAction
+    RecordProximalParameter{R <: Real} <: RecordAction
 
 record the current iterates proximal point algorithm parameter given by in
 [`AbstractManoptSolverState`](@ref)s `o.λ`.
+
+## Constructor
+    RecordProximalParameter(r::Type{<:Real}=Float64)
 """
-mutable struct RecordProximalParameter <: RecordAction
-    recorded_values::Array{Float64, 1}
-    RecordProximalParameter() = new(Array{Float64, 1}())
+mutable struct RecordProximalParameter{R <: Real} <: RecordAction
+    recorded_values::Array{R, 1}
+    RecordProximalParameter(r::Type{<:Real}) = new{r}(Array{r, 1}())
 end
 function (r::RecordProximalParameter)(
         ::AbstractManoptProblem, cpps::CyclicProximalPointState, k::Int
     )
     return record_or_reset!(r, cpps.λ(k), k)
+end
+show(io::IO, ::RecordProximalParameter{R}) where {R} = print(io, "RecordProximalParameter($R)")
+function status_summary(rg::RecordProximalParameter{R}; context::Symbol = :default) where {R}
+    (context === :short) && return ":ProximalParameter"
+    return "A RecordAction to record the current proximal parameter (of type $R)"
 end
