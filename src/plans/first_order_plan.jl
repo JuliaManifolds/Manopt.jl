@@ -514,7 +514,7 @@ function status_summary(mfo::ManifoldFirstOrderObjective; context::Symbol = :def
     _is_inline(context) && (return repr(mfo))
     return "A first order objective with $(length(mfo.functions)) provided functions.\n\n" * join([ "* $k:$(_MANOPT_INDENT) $(v)" for (k, v) in zip(keys(mfo.functions), mfo.functions) ], "\n")
 end
-function show(io::IO, mfo::ManifoldFirstOrderObjective{E}) where {E}
+function Base.show(io::IO, mfo::ManifoldFirstOrderObjective{E}) where {E}
     print(io, "ManifoldFirstOrderObjective(; ")
     print(io, join([ "$k = $v" for (k, v) in zip(keys(mfo.functions), mfo.functions)], ", "))
     print(io, ", ")
@@ -620,6 +620,11 @@ this parameter-free instantiation to later.
 """
 struct IdentityUpdateRule <: DirectionUpdateRule end
 Gradient() = ManifoldDefaultsFactory(Manopt.IdentityUpdateRule; requires_manifold = false)
+Base.show(io::IO, agr::IdentityUpdateRule) = print(io, "IdentityUpdateRule()")
+function status_summary(ir::IdentityUpdateRule; context::Symbol = :default)
+    (context === :short) && return repr(ir)
+    return "A gradient processor that evaluates the gradient"
+end
 
 """
     MomentumGradientRule <: DirectionUpdateRule
@@ -661,6 +666,11 @@ mutable struct MomentumGradientRule{
     direction::D
     vector_transport_method::VTM
     X_old::T
+    function MomentumGradientRule(;
+            momentum::R, p_old::P, direction::D, vector_transport_method::VTM, X_old::T
+        ) where {P, T, D <: DirectionUpdateRule, R <: Real, VTM <: AbstractVectorTransportMethod}
+        return new{P, T, D, R, VTM}(momentum, p_old, direction, vector_transport_method, X_old)
+    end
 end
 function MomentumGradientRule(M::AbstractManifold, p; kwargs...)
     return MomentumGradientRule(M; p = copy(M, p), kwargs...)
@@ -674,8 +684,8 @@ function MomentumGradientRule(
         momentum::F = 0.2,
     ) where {P, Q, F <: Real, VTM <: AbstractVectorTransportMethod}
     dir = _produce_type(direction, M)
-    return MomentumGradientRule{P, Q, typeof(dir), F, VTM}(
-        momentum, p, dir, vector_transport_method, X
+    return MomentumGradientRule(;
+        momentum = momentum, p_old = p, direction = dir, vector_transport_method = vector_transport_method, X_old = X,
     )
 end
 function (mg::MomentumGradientRule)(
@@ -690,6 +700,24 @@ function (mg::MomentumGradientRule)(
         step .* dir
     copyto!(M, mg.p_old, p)
     return step, -mg.X_old
+end
+function Base.show(io::IO, mgr::MomentumGradientRule)
+    print(io, "MomentumGradientRule(; momentum = ", mgr.momentum)
+    print(io, ", p_old = ", mgr.p_old, ", X_old ", mgr.X_old)
+    print(io, ", direction = ", mgr.direction)
+    print(io, "vector_transport_method = ", mgr.vector_transport_method)
+    return print(io, ")")
+end
+function status_summary(mgr::MomentumGradientRule; context::Symbol = :default)
+    (context === :short) && return repr(agr)
+    (context === :inline) && return "A momentum gradient direction processor with m=$(mgr.momentum)) using $(agr.vector_transport_method)"
+    return """
+    Momentum Gradient Rule
+
+    ## Parameters
+    * direction:              $(_MANOPT_INDENT)$(status_summary(mgr.direction; context = context))
+    * momentum:               $(_MANOPT_INDENT)$(mgr.momentum)
+    * vector transport method:$(_MANOPT_INDENT)$(mgr.vector_transport_method)"""
 end
 
 """
@@ -799,7 +827,7 @@ function (a::AverageGradientRule)(
     copyto!(M, a.last_iterate, p)
     return 1.0, 1 / length(a.gradients) .* sum(a.gradients)
 end
-function show(io::IO, agr::AverageGradientRule)
+function Base.show(io::IO, agr::AverageGradientRule)
     print(io, "AverageGradientRule(; gradients = ", agr.gradients)
     print(io, "last_iterate = ", agr.last_iterate, ", direction = ", agr.direction)
     print(io, "vector_transport_method = ", agr.vector_transport_method)
@@ -811,7 +839,7 @@ function status_summary(agr::AverageGradientRule; context::Symbol = :default)
     return """
     Average Gradient Rule
 
-    # Parameters
+    ## Parameters
     * direction:              $(_MANOPT_INDENT)$(status_summary(agr.direction; context = context))
     * number of gradients:    $(_MANOPT_INDENT)$(length(agr.gradients))
     * vector transport method:$(_MANOPT_INDENT)$(agr.vector_transport_method)"""
@@ -872,29 +900,30 @@ $(_kwargs(:inverse_retraction_method))
 
 [`Nesterov`](@ref)
 """
-mutable struct NesterovRule{P, R <: Real} <: DirectionUpdateRule
+mutable struct NesterovRule{P, R <: Real, IRM <: AbstractInverseRetractionMethod, RM <: AbstractRetractionMethod, F} <: DirectionUpdateRule
     γ::R
     μ::R
     v::P
-    shrinkage::Function
-    inverse_retraction_method::AbstractInverseRetractionMethod
+    shrinkage::F
+    inverse_retraction_method::IRM
+    retraction_method::RM
+    function NesterovRule(;
+            γ::R, μ::R, v::P, shrinkage::F, inverse_retraction_method::IRM, retraction_method::RM
+        ) where {P, R <: Real, IRM <: AbstractInverseRetractionMethod, RM <: AbstractRetractionMethod, F}
+        return new{P, R, IRM, RM, F}(γ, μ, v, shrinkage, inverse_retraction_method, retraction_method)
+    end
 end
 function NesterovRule(M::AbstractManifold, p; kwargs...)
     return NesterovRule(M; p = copy(M, p), kwargs...)
 end
 function NesterovRule(
-        M::AbstractManifold;
-        p::P = rand(M),
-        γ::T = 0.001,
-        μ::T = 0.9,
-        shrinkage::Function = i -> 0.8,
-        inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
-            M, typeof(p)
-        ),
+        M::AbstractManifold; p::P = rand(M), γ::T = 0.001, μ::T = 0.9, shrinkage::Function = i -> 0.8,
+        inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M, typeof(p)),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
     ) where {P, T}
     p_ = _ensure_mutating_variable(p)
-    return NesterovRule{typeof(p_), T}(
-        γ, μ, copy(M, p_), shrinkage, inverse_retraction_method
+    return NesterovRule(
+        γ = γ, μ = μ, v = copy(M, p_), shrinkage = shrinkage, inverse_retraction_method = inverse_retraction_method, retraction_method = retraction_method,
     )
 end
 function (n::NesterovRule)(mp::AbstractManoptProblem, s::AbstractGradientSolverState, k)
@@ -904,19 +933,36 @@ function (n::NesterovRule)(mp::AbstractManoptProblem, s::AbstractGradientSolverS
     α = (h * (n.γ - n.μ) + sqrt(h^2 * (n.γ - n.μ)^2 + 4 * h * n.γ)) / 2
     γbar = (1 - α) * n.γ + α * n.μ
     y = retract(
-        M,
-        p,
-        ((α * n.γ) / (n.γ + α * n.μ)) *
-            inverse_retract(M, p, n.v, n.inverse_retraction_method),
+        M, p,
+        ((α * n.γ) / (n.γ + α * n.μ)) * inverse_retract(M, p, n.v, n.inverse_retraction_method),
+        n.retraction_method,
     )
     gradf_yk = get_gradient(mp, y)
-    xn = retract(M, y, -h * gradf_yk)
+    xn = retract(M, y, -h * gradf_yk, n.retraction_method)
     d =
         (((1 - α) * n.γ) / γbar) * inverse_retract(M, y, n.v, n.inverse_retraction_method) -
         (α / γbar) * gradf_yk
-    n.v = retract(M, y, d, s.retraction_method)
+    retract!(M, n.v, y, d, n.retraction_method)
     n.γ = 1 / (1 + n.shrinkage(k)) * γbar
     return h, (-1 / h) * inverse_retract(M, p, xn, n.inverse_retraction_method) # outer update
+end
+function Base.show(io::IO, nr::NesterovRule)
+    print(io, "NesterovRule(; γ = ", nr.γ, ", μ = ", nr.μ, ", v = ", nr.v, ", shrinkage = ", nr.shrinkage)
+    return print(io, ", inverse_retraction_method = ", nr. inverse_retraction_method, ", retraction_method = ", nr.retraction_method, ")")
+end
+function status_summary(nr::NesterovRule; context::Symbol = :default)
+    (context === :short) && return repr(nr)
+    (context === :inline) && return "A Nesterov gradient direction processor using $(nr.retraction_method) and $(nr.inverse_retraction_method)"
+    return """
+    Nestrow Rule
+
+    ## Parameters
+    γ:                        $(_MANOPT_INDENT)$(nr.γ)
+    μ:                        $(_MANOPT_INDENT)$(nr.μ)
+    shrinkage:                $(_MANOPT_INDENT)$(nr.shrinkage)
+    inverse_retraction_method:$(_MANOPT_INDENT)$(nr.inverse_retraction_method)
+    retraction_method:        $(_MANOPT_INDENT)$(nr.retraction_method)
+    """
 end
 
 @doc """
@@ -1100,7 +1146,7 @@ function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverStat
     Printf.format(d.io, Printf.Format(d.format), get_gradient(s))
     return nothing
 end
-function show(io::IO, dg::DebugGradient)
+function Base.show(io::IO, dg::DebugGradient)
     return print(io, "DebugGradient(; format=\"$(dg.format)\", at_init=$(dg.at_init))")
 end
 function status_summary(dg::DebugGradient; context::Symbol = :default)
@@ -1145,7 +1191,7 @@ function (d::DebugGradientNorm)(
     )
     return nothing
 end
-function show(io::IO, dgn::DebugGradientNorm)
+function Base.show(io::IO, dgn::DebugGradientNorm)
     return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\", at_init=$(dgn.at_init))")
 end
 function status_summary(dgn::DebugGradientNorm; context::Symbol = :default)
@@ -1183,7 +1229,7 @@ function (d::DebugStepsize)(
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, k))
     return nothing
 end
-function show(io::IO, ds::DebugStepsize)
+function Base.show(io::IO, ds::DebugStepsize)
     return print(io, "DebugStepsize(; format=\"$(escape_string(ds.format))\", at_init=$(ds.at_init))")
 end
 function status_summary(ds::DebugStepsize; context::Symbol = :default)

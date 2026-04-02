@@ -18,6 +18,7 @@ for the last of the discussions around that.
 * Unified all `show` methods and their human readable analoga `status_summary` throughout the package (#569)
 * Fixed some text descriptions of a few stopping criteria.
 * unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
+* the `NesterovRule` now also stores an. `AbstractRetractionMethod` instead of implicitly always using the default one.
 
 ### Changes
 
