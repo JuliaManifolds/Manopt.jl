@@ -156,7 +156,7 @@ end
         @test s(mp, gds, 3) ≈ 3.1209362808842656
         @test s.count == 0 # was reset
         @test s.weight == 0.75 # also reset to orig
-        @test startswith(repr(s), "AdaptiveWNGradient(;")
+        @test startswith(repr(s), "AdaptiveWNGradientStepsize(;")
     end
     @testset "Absolute stepsizes" begin
         M = ManifoldsBase.DefaultManifold(2)
@@ -270,11 +270,11 @@ end
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === get_initial_stepsize(ds)
-            @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
             # test printed representation before first step
             repr_ds = repr(ds)
-            @test occursin("DistanceOverGradients(;", repr_ds)
+            @test occursin("DistanceOverGradientStepsize(;", repr_ds)
             @test occursin("initial_distance = 1.0", repr_ds)
             @test occursin("use_curvature = false", repr_ds)
             @test occursin("sectional_curvature_bound = 0.0", repr_ds)
@@ -298,7 +298,7 @@ end
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === get_initial_stepsize(ds)
-            @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.125
@@ -317,7 +317,7 @@ end
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === get_initial_stepsize(ds)
-            @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.5
@@ -339,7 +339,7 @@ end
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === get_initial_stepsize(ds)
-            @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.5
@@ -369,7 +369,7 @@ end
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === get_initial_stepsize(ds)
-            @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
 
             # Expected initial step:

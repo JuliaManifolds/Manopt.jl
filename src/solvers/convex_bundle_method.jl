@@ -407,11 +407,7 @@ function (dbt::DomainBackTrackingStepsize)(
     M = get_manifold(amp)
     dbt.last_stepsize = 1.0
     retract!(
-        M,
-        dbt.candidate_point,
-        cbms.p_last_serious,
-        -dbt.last_stepsize * cbms.g,
-        dbt.retraction_method,
+        M, dbt.candidate_point, cbms.p_last_serious, -dbt.last_stepsize * cbms.g, dbt.retraction_method,
     )
     while _domain_condition(
             M,
@@ -423,11 +419,7 @@ function (dbt::DomainBackTrackingStepsize)(
         )
         dbt.last_stepsize *= dbt.contraction_factor
         retract!(
-            M,
-            dbt.candidate_point,
-            cbms.p_last_serious,
-            -dbt.last_stepsize * cbms.g,
-            dbt.retraction_method,
+            M, dbt.candidate_point, cbms.p_last_serious, -dbt.last_stepsize * cbms.g, dbt.retraction_method,
         )
     end
     return dbt.last_stepsize

@@ -126,7 +126,7 @@ mutable struct AffineCovariantStepsize{R <: Real, N <: Union{Real, Missing}} <: 
     outer_norm::N
 end
 function AffineCovariantStepsize(
-        M::AbstractManifold = DefaultManifold(2);
+        ::AbstractManifold = DefaultManifold(2);
         α::Real = 1.0, θ::Real = 1.3, θ_des::Real = 0.5, θ_acc::Real = 1.1 * θ_des, outer_norm::N = missing
     ) where {N <: Union{Real, Missing}}
     R = promote_type(typeof(α), typeof(θ), typeof(θ_des), typeof(θ_acc))
@@ -135,17 +135,25 @@ function AffineCovariantStepsize(
     )
 end
 function Base.show(io::IO, acs::AffineCovariantStepsize)
-    print(io, "AffineCovariantStepsize(; ")
-    print(io, "α = $(acs.α), ")
-    print(io, "θ = $(acs.θ), ")
-    print(io, "θ_des = $(acs.θ_des)")
-    print(io, "θ_acc = $(acs.θ_acc)")
-    !(ismissing(acs.outer_norm)) && print(io, ", outer_norm = $(acs.outer_norm)")
+    print(io, "AffineCovariantStepsize(; α = ", acs.α, ", θ = ", acs.θ, ", θ_des = ", acs.θ_des)
+    print(io, ", θ_acc = ", acs.θ_acc)
+    !(ismissing(acs.outer_norm)) && print(io, ", outer_norm = ", acs.outer_norm)
     return print(io, ")")
 end
-function status_summary(::AffineCovariantStepsize; context = :default)
-    @warn "AffineCovariant Stepsize status summary still missing"
-    return ""
+function status_summary(acs::AffineCovariantStepsize; context = :default)
+    (context === :short) && repr(acs)
+    (context === :inline) && return "An affine covariant step size (last step size: $(acs.last_stepsize))"
+    on = ismissing(acs.outer_norm) ? "" : "\n* outer norm:       $(_MANOPT_INDENT)$(acs.outer_norm)"
+    return """
+    An affine covariant step size
+    (last step size: $(acs.last_stepsize))
+
+    ## Parameters
+    * damping factor α: $(_MANOPT_INDENT)$(acs.α)
+    * θ:                $(_MANOPT_INDENT)$(acs.θ)
+    * desired θ:        $(_MANOPT_INDENT)$(acs.θ_des)
+    * acceptable θ:     $(_MANOPT_INDENT)$(acs.θ_acc)$(on)
+    """
 end
 function (acs::AffineCovariantStepsize)(
         amp::AbstractManoptProblem, ams::VectorBundleNewtonState, ::Any, args...; kwargs...

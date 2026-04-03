@@ -275,45 +275,41 @@ mutable struct AdaptiveWNGradientStepsize{I <: Integer, R <: Real, F <: Function
     gradient_bound::R
     weight::R
     count::I
+    function AdaptiveWNGradientStepsize(;
+            count_threshold::I, minimal_bound::R, alternate_bound::F, gradient_reduction::R,
+            gradient_bound::R, weight::R, count::I
+        ) where {I <: Integer, R <: Real, F}
+        return new{I, R, F}(
+            count_threshold, minimal_bound, alternate_bound, gradient_reduction, gradient_bound, weight, count
+        )
+    end
 end
+
 function AdaptiveWNGradientStepsize(
         M::AbstractManifold;
-        p = rand(M),
-        X = zero_vector(M, p),
-        adaptive::Bool = true,
+        p = rand(M), X = zero_vector(M, p), adaptive::Bool = true,
         count_threshold::I = 4,
-        minimal_bound::R = 1.0e-4,
-        gradient_reduction::R = adaptive ? 0.9 : 0.0,
-        gradient_bound::R = norm(M, p, X),
-        alternate_bound::F = (bk, hat_c) -> min(
+        minimal_bound::Real = 1.0e-4,
+        gradient_reduction::Real = adaptive ? 0.9 : 0.0,
+        gradient_bound::Real = norm(M, p, X),
+        alternate_bound = (bk, hat_c) -> min(
             gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c))
-        ),
-        kwargs...,
-    ) where {I <: Integer, R <: Real, F <: Function}
-    if gradient_bound == 0
-        # If the gradient bound defaults to zero, set it to 1
-        gradient_bound = 1.0
-    end
-    return AdaptiveWNGradientStepsize{I, R, F}(
-        count_threshold,
-        minimal_bound,
-        alternate_bound,
-        gradient_reduction,
-        gradient_bound,
-        gradient_bound,
-        0,
+        ), kwargs...,
+    ) where {I <: Integer}
+    R = promote_type(typeof(minimal_bound), typeof(gradient_reduction), typeof(gradient_bound))
+    g = gradient_bound == 0 ? one(R) : convert(R, gradient_bound)
+    return AdaptiveWNGradientStepsize(;
+        count_threshold = count_threshold, count = zero(I),
+        minimal_bound = convert(R, minimal_bound), alternate_bound = alternate_bound,
+        gradient_reduction = convert(R, gradient_reduction), gradient_bound = g, weight = g,
     )
 end
 function AdaptiveWNGradientStepsize(M::AbstractManifold, p; kwargs...)
     return AdaptiveWNGradientStepsize(M; p = p, kwargs...)
 end
 function (awng::AdaptiveWNGradientStepsize)(
-        mp::AbstractManoptProblem,
-        s::AbstractGradientSolverState,
-        i,
-        args...;
-        gradient = nothing,
-        kwargs...,
+        mp::AbstractManoptProblem, s::AbstractGradientSolverState, i, args...;
+        gradient = nothing, kwargs...,
     )
     grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
     M = get_manifold(mp)
@@ -348,8 +344,24 @@ end
 get_initial_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
 get_last_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
 function Base.show(io::IO, awng::AdaptiveWNGradientStepsize)
-    s = "AdaptiveWNGradient(; count_threshold = $(awng.count_threshold), minimal_bound = $(awng.minimal_bound), alternate_bound = $(awng.alternate_bound), gradient_reduction = $(awng.gradient_reduction), gradient_bound = $(awng.gradient_bound))"
-    return print(io, s)
+    print(io, "AdaptiveWNGradientStepsize(; count_threshold = ", awng.count_threshold, ", count = ", awng.count)
+    print(io, ", minimal_bound = ", awng.minimal_bound, ", alternate_bound = ", awng.alternate_bound)
+    print(io, ", gradient_reduction = ", awng.gradient_reduction, ", gradient_bound = ", awng.gradient_bound)
+    print(io, ", weight = ", awng.weight)
+    return print(io, ")")
+end
+function status_summary(awng::AdaptiveWNGradientStepsize; context::Symbol = :default)
+    (context === :short) && return repr(awng)
+    (context === :inline) && return "A Adaptive WN Gradient step size"
+    return """
+    An adaptive Gradient WN step size
+    (last step size: $(1 / awng.gradient_bound))
+
+    ## Parameters
+    * count threshold:   $(_MANOPT_INDENT)$(awng.count_threshold)
+    * minimal_bound:     $(_MANOPT_INDENT)$(awng.minimal_bound)
+    * gradient reduction:$(_MANOPT_INDENT)$(awng.gradient_reduction)
+    """
 end
 """
     AdaptiveWNGradient(; kwargs...)
@@ -1018,26 +1030,26 @@ mutable struct DistanceOverGradientsStepsize{R <: Real, P} <: Stepsize
     use_curvature::Bool
     sectional_curvature_bound::R
     last_stepsize::R
+    function DistanceOverGradientsStepsize(;
+            initial_distance::R, max_distance::R, gradient_sum::R, initial_point::P,
+            use_curvature::Bool, sectional_curvature_bound::R, last_stepsize::R
+        ) where {R <: Real, P}
+        return new{R, P}(
+            initial_distance, max_distance, gradient_sum, initial_point, use_curvature,
+            sectional_curvature_bound, last_stepsize,
+        )
+    end
 end
-
 function DistanceOverGradientsStepsize(
-        M::AbstractManifold,
-        p;
-        initial_distance::R1 = 1.0e-3,
-        use_curvature::Bool = false,
-        sectional_curvature_bound::R2 = 0.0,
+        M::AbstractManifold, p;
+        initial_distance::R1 = 1.0e-3, use_curvature::Bool = false, sectional_curvature_bound::R2 = 0.0,
     ) where {R1 <: Real, R2 <: Real}
     R = promote_type(R1, R2)
     id = convert(R, initial_distance)
     κ = convert(R, sectional_curvature_bound)
-    return DistanceOverGradientsStepsize{R, typeof(p)}(
-        id,
-        id,  # max_distance starts at initial_distance
-        zero(R),          # gradient_sum starts at 0
-        copy(M, p),       # store initial point
-        use_curvature,
-        κ,
-        NaN,              # last_stepsize
+    return DistanceOverGradientsStepsize(;
+        initial_distance = id, max_distance = id, gradient_sum = zero(R), initial_point = copy(M, p),
+        use_curvature = use_curvature, sectional_curvature_bound = κ, last_stepsize = zero(R)
     )
 end
 
@@ -1067,17 +1079,12 @@ function geometric_curvature_function(κ::Real, d::Real)
 end
 
 function (rdog::DistanceOverGradientsStepsize{R, P})(
-        mp::AbstractManoptProblem,
-        s::AbstractManoptSolverState,
-        i,
-        args...;
-        gradient = nothing,
-        kwargs...,
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, i, args...;
+        gradient = nothing, kwargs...,
     ) where {R, P}
     M = get_manifold(mp)
     p = get_iterate(s)
     grad = isnothing(gradient) ? get_gradient(mp, p) : gradient
-
     # Compute gradient norm
     grad_norm_sq = clamp(norm(M, p, grad)^2, eps(R), typemax(R))
     if i == 0
@@ -1113,7 +1120,6 @@ function (rdog::DistanceOverGradientsStepsize{R, P})(
             stepsize = rdog.max_distance / sqrt(rdog.gradient_sum)
         end
     end
-
     rdog.last_stepsize = stepsize
     return stepsize
 end
@@ -1122,10 +1128,27 @@ get_initial_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
 get_last_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
 
 function Base.show(io::IO, rdog::DistanceOverGradientsStepsize)
-    s = "DistanceOverGradients(; initial_distance = $(rdog.initial_distance), use_curvature = $(rdog.use_curvature), sectional_curvature_bound = $(rdog.sectional_curvature_bound))"
-    return print(io, s)
+    print(io, "DistanceOverGradientStepsize(; initial_distance = ", rdog.initial_distance)
+    print(io, "use_curvature = ", rdog.use_curvature, ", sectional_curvature_bound = ", rdog.sectional_curvature_bound)
+    print(io, "max_distance = ", rdog.max_distance, ", gradient_sum = ", rdog.gradient_sum)
+    print(io, "initial_point = ", rdog.initial_point, ", last_stepsize = ", rdog.last_stepsize)
+    return print(io, ")")
 end
+function status_summary(rdog::DistanceOverGradientsStepsize; context::Symbol = :default)
+    (context === :short) && return repr(rdog)
+    s = rdog.use_curvature ? "including a curvature correction" : ""
+    (context === :inline) && return "A distance over gradients step size $s (last stepsize: $(rdog.last_stepsize))"
+    s2 = !rdog.use_curvature ? "" : "* sectional curvature bound:$(_MANOPT_INDENT)$(rdog.sectional_curvature_bound)"
+    return """
+    A distance over gradients step size
+    (last stepsize: $(rdog.last_stepsize))
 
+    ## Parameters
+    * use curvature correction: $(_MANOPT_INDENT)$(rdog.use_curvature)$(s2)
+    * sum of gradients:         %(_MANOPT_INDENT)$(rdog.gradient_sum)
+    * maximal distance r_t:     $(_MANOPT_INDENT)$(rdog.max_distance)
+    """
+end
 doc_DoG_main = raw"""
     DistanceOverGradients(; kwargs...)
     DistanceOverGradients(M::AbstractManifold; kwargs...)
@@ -1555,10 +1578,7 @@ A functor `(problem, state, ...) -> s` to provide a step size due to Polyak, cf.
 
 # Constructor
 
-    PolyakStepsize(;
-        γ = i -> 1/i,
-        initial_cost_estimate=0.0
-    )
+    PolyakStepsize(; γ = i -> 1/i,  initial_cost_estimate=0.0)
 
 Construct a stepsize of Polyak type.
 
@@ -1569,8 +1589,8 @@ mutable struct PolyakStepsize{F, R} <: Stepsize
     γ::F
     best_cost_value::R
 end
-function PolyakStepsize(; γ::F = (i) -> 1 / i, initial_cost_estimate::R = 0.0) where {F, R}
-    return PolyakStepsize{F, R}(γ, initial_cost_estimate)
+function PolyakStepsize(; γ = (i) -> 1 / i, initial_cost_estimate = 0.0)
+    return PolyakStepsize(γ, initial_cost_estimate)
 end
 function (ps::PolyakStepsize)(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int, args...; kwargs...
@@ -1586,6 +1606,10 @@ function (ps::PolyakStepsize)(
 end
 function Base.show(io::IO, ps::PolyakStepsize)
     return print(io, "Polyak(; γ = $(ps.γ))")
+end
+function status_summary(ps::PolyakStepsize; context::Symbol = :default)
+    (context === :short) && return repr(ps)
+    return "Polyak step size with γ = $(ps.γ) and current best minimum estimate $(ps.best_cost_value)"
 end
 """
     Polyak(; kwargs...)
@@ -1616,9 +1640,7 @@ initialize the Polyak stepsize to a certain sequence and an initial estimate of 
 $(_note(:ManifoldDefaultFactory, "PolyakStepsize"))
 """
 function Polyak(args...; kwargs...)
-    return ManifoldDefaultsFactory(
-        Manopt.PolyakStepsize, args...; requires_manifold = false, kwargs...
-    )
+    return ManifoldDefaultsFactory(Manopt.PolyakStepsize, args...; requires_manifold = false, kwargs...)
 end
 
 @doc """
