@@ -1055,7 +1055,7 @@ function PreconditionedDirectionRule(
         evaluation::E = AllocatingEvaluation(),
     ) where {E <: AbstractEvaluationType, F}
     dir = _produce_type(direction, M)
-    return PreconditionedDirectionRule(; preconditioner = preconditioner, direction = direction, evaluation = evaluation)
+    return PreconditionedDirectionRule(; preconditioner = preconditioner, direction = dir, evaluation = evaluation)
 end
 function (pg::PreconditionedDirectionRule{AllocatingEvaluation})(
         mp::AbstractManoptProblem, s::AbstractGradientSolverState, k

@@ -905,9 +905,9 @@ mutable struct DecreasingStepsize{R <: Real} <: Stepsize
     shift::R
     type::Symbol
     function DecreasingStepsize(;
-        length::R, factor::R, subtrahend::R, exponent::R, shift::R,type::Symbol
-    ) where {R}
-    return new{R}(length, factor, subtrahend, exponent, shift, type)
+            length::R, factor::R, subtrahend::R, exponent::R, shift::R, type::Symbol
+        ) where {R}
+        return new{R}(length, factor, subtrahend, exponent, shift, type)
     end
 end
 function DecreasingStepsize(
@@ -919,7 +919,7 @@ function DecreasingStepsize(
     R = promote_type(typeof(length), typeof(factor), typeof(subtrahend), typeof(exponent), typeof(shift))
     l = convert(R, length); f = convert(R, factor); s = convert(R, subtrahend); e = convert(R, exponent); t = convert(R, shift)
     return DecreasingStepsize(;
-        length=l, factor=f, subtrahend=s, exponent=e, shift=t, type=type
+        length = l, factor = f, subtrahend = s, exponent = e, shift = t, type = type
     )
 end
 function (s::DecreasingStepsize)(
@@ -936,7 +936,7 @@ function (s::DecreasingStepsize)(
 end
 get_initial_stepsize(s::DecreasingStepsize) = s.length
 function Base.show(io::IO, s::DecreasingStepsize)
-    print(io,"DecreasingLength(; length = ", s.length, ", exponent = ", s.exponent, ", factor = ", s.factor)
+    print(io, "DecreasingLength(; length = ", s.length, ", exponent = ", s.exponent, ", factor = ", s.factor)
     return print(io, ", subtrahend = ", s.subtrahend, ", shift = ", s.shift, ", type = :$(s.type))")
 end
 function status_summary(s::DecreasingStepsize; context::Symbol = :default)
@@ -1807,7 +1807,8 @@ function Base.show(io::IO, a::WolfePowellLinesearchStepsize)
         "WolfePowellLinesearch(; sufficient_decrease = $(a.sufficient_decrease), sufficient_curvature = $(a.sufficient_curvature), retraction_method = $(a.retraction_method), vector_transport_method = $(a.vector_transport_method), stop_when_stepsize_less = $(a.stop_when_stepsize_less), stop_increasing_at_step = $(a.stop_increasing_at_step), stop_decreasing_at_step = $(a.stop_decreasing_at_step))",
     )
 end
-function status_summary(a::WolfePowellLinesearchStepsize)
+function status_summary(a::WolfePowellLinesearchStepsize; context::Symbol = :default)
+    @warn "TODO: WolfePowell status summary still needs and update"
     s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
     return "$a$s"
 end

@@ -395,10 +395,11 @@ function get_reason(c::StopWhenAllLanczosVectorsUsed)
     end
     return ""
 end
-function status_summary(c::StopWhenAllLanczosVectorsUsed)
+function status_summary(c::StopWhenAllLanczosVectorsUsed; context::Symbol = :default)
+    (context === :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "" : "Stop when all Lanczos vectors are used\n$(_MANOPT_INDENT)":"All Lanczos vectors ($(c.maxLanczosVectors)) used:$(_MANOPT_INDENT)") * s
+    return (context === :inline ? "" : "Stop when all Lanczos vectors are used\n$(_MANOPT_INDENT)":"All Lanczos vectors ($(c.maxLanczosVectors)) used:$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(c::StopWhenAllLanczosVectorsUsed) = false
 function show(io::IO, c::StopWhenAllLanczosVectorsUsed)

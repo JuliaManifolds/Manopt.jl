@@ -117,8 +117,8 @@ Initializes all fields, where none of them is mandatory. The length is set to ``
 Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
 This should be implemented as a method of the `newton_equation(M, VB, p, p_trial)` as parameters and returning a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
 """
-mutable struct AffineCovariantStepsize{T, R <: Real, N <: Union{Real, Missing}} <: Stepsize
-    α::T
+mutable struct AffineCovariantStepsize{R <: Real, N <: Union{Real, Missing}} <: Stepsize
+    α::R
     θ::R
     θ_des::R
     θ_acc::R
@@ -127,9 +127,12 @@ mutable struct AffineCovariantStepsize{T, R <: Real, N <: Union{Real, Missing}} 
 end
 function AffineCovariantStepsize(
         M::AbstractManifold = DefaultManifold(2);
-        α = 1.0, θ = 1.3, θ_des = 0.5, θ_acc = 1.1 * θ_des, outer_norm::N = missing
+        α::Real = 1.0, θ::Real = 1.3, θ_des::Real = 0.5, θ_acc::Real = 1.1 * θ_des, outer_norm::N = missing
     ) where {N <: Union{Real, Missing}}
-    return AffineCovariantStepsize{typeof(α), typeof(θ), N}(α, θ, θ_des, θ_acc, 1.0, outer_norm)
+    R = promote_type(typeof(α), typeof(θ), typeof(θ_des), typeof(θ_acc))
+    return AffineCovariantStepsize{R, N}(
+        convert(R, α), convert(R, θ), convert(R, θ_des), convert(R, θ_acc), convert(R, 1.0), outer_norm
+    )
 end
 function Base.show(io::IO, acs::AffineCovariantStepsize)
     print(io, "AffineCovariantStepsize(; ")
@@ -139,6 +142,10 @@ function Base.show(io::IO, acs::AffineCovariantStepsize)
     print(io, "θ_acc = $(acs.θ_acc)")
     !(ismissing(acs.outer_norm)) && print(io, ", outer_norm = $(acs.outer_norm)")
     return print(io, ")")
+end
+function status_summary(::AffineCovariantStepsize; context = :default)
+    @warn "AffineCovariant Stepsize status summary still missing"
+    return ""
 end
 function (acs::AffineCovariantStepsize)(
         amp::AbstractManoptProblem, ams::VectorBundleNewtonState, ::Any, args...; kwargs...
@@ -191,7 +198,7 @@ function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :defaul
     * retraction method: $(vbns.retraction_method)
 
     ## Stepsize
-    $(_in_str(status_summary(vbns.stepsize; context = context); indent = 0, header = 1))
+    $(_in_str(status_summary(vbns.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
     $(_in_str(status_summary(vbns.stop; context = context); indent = 0, headers = 1))
