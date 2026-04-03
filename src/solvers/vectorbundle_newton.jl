@@ -189,10 +189,12 @@ function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :defaul
     $Iter
     ## Parameters
     * retraction method: $(vbns.retraction_method)
-    * step size: $(vbns.stepsize)
+
+    ## Stepsize
+    $(_in_str(status_summary(vbns.stepsize; context = context); indent = 0, header = 1))
 
     ## Stopping criterion
-    $(status_summary(vbns.stop; context = context))
+    $(_in_str(status_summary(vbns.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

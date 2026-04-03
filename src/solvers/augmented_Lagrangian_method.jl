@@ -185,7 +185,7 @@ function status_summary(alms::AugmentedLagrangianMethodState; context::Symbol = 
     * current penalty: $(alms.penalty)
 
     ## Stopping criterion
-    $(status_summary(alms.stop; context = context))
+    $(_in_str(status_summary(alms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

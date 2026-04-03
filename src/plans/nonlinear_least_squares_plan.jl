@@ -333,7 +333,7 @@ function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default
     * retraction method: $(lms.retraction_method)
 
     ## Stopping criterion
-    $(status_summary(lms.stop; context = context))
+    $(_in_str(status_summary(lms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

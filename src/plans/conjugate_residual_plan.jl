@@ -278,7 +278,7 @@ function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
     * β: $(crs.β)
 
     ## Stopping criterion
-    $(status_summary(crs.stop; context = context))
+    $(_in_str(status_summary(crs.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv
     """
     return s

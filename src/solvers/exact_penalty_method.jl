@@ -136,7 +136,7 @@ function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :defaul
     * ρ: $(epms.ρ) (θ_ρ: $(epms.θ_ρ))
 
     ## Stopping criterion
-    $(status_summary(epms.stop))
+    $(_in_str(status_summary(epms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

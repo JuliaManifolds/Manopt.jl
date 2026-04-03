@@ -132,7 +132,7 @@ function status_summary(tcgs::TruncatedConjugateGradientState; context::Symbol =
     * trust region radius: $(tcgs.trust_region_radius)
 
     ## Stopping criterion
-    $(status_summary(tcgs.stop; context = context))
+    $(_in_str(status_summary(tcgs.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
 end
 

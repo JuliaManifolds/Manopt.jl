@@ -469,8 +469,7 @@ function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :
     * search:\n  $(_in_str(status_summary(mads.search; context = context); indent = 1))
 
     ## Stopping criterion
-    $(status_summary(mads.stop; context = context))
-    This indicates convergence: $Conv
+    $(_in_str(status_summary(mads.stop; context = context); indent = 0, headers = 1))    This indicates convergence: $Conv
     """
     return s
 end

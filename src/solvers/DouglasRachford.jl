@@ -129,7 +129,7 @@ function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
     using an $(refl_e) reflection.
 
     ## Stopping criterion
-    $(status_summary(drs.stop))
+    $(_in_str(status_summary(drs.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

@@ -115,10 +115,10 @@ function status_summary(gds::GradientDescentState; context::Symbol = :default)
     * direction: $(status_summary(gds.direction; context = :inline))
 
     ## Stepsize
-    $(gds.stepsize)
+    $(_in_str(status_summary(gds.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(status_summary(gds.stop; context = context))
+    $(_in_str(status_summary(gds.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

@@ -85,13 +85,13 @@ function status_summary(pgms::ProjectedGradientMethodState; context::Symbol = :d
     * retraction method: $(pgms.retraction_method)
 
     ## Stepsize for the gradient step
-    $(pgms.stepsize)
+    $(_in_str(status_summary(pgms.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stepsize for the complete step
-    $(pgms.backtrack)
+    $(_in_str(status_summary(pgms.backtrack; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(status_summary(pgms.stop; context = context))
+    $(_in_str(status_summary(pgms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

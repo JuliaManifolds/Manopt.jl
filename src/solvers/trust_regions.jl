@@ -242,7 +242,7 @@ function status_summary(trs::TrustRegionsState; context::Symbol = :default)
     $(sub)
 
     ## Stopping criterion
-    $(status_summary(trs.stop; context = context))
+    $(_in_str(status_summary(trs.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

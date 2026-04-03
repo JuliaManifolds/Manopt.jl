@@ -378,7 +378,7 @@ function status_summary(pgms::ProximalGradientMethodState; context::Symbol = :de
     * acceleration:                   $(typeof(pgms.acceleration))
 
     ## Stopping criterion
-    $(status_summary(pgms.stop; context = context))
+    $(_in_str(status_summary(pgms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

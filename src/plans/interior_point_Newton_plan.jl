@@ -238,11 +238,10 @@ function status_summary(ips::InteriorPointNewtonState; context::Symbol = :defaul
     * retraction method: $(ips.retraction_method)
 
     ## Stepsize
-    $(status_summary(ips.stepsize; context = context))
+    $(_in_str(status_summary(ips.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(status_summary(ips.stop; context = context))
-    This indicates convergence: $Conv"""
+    $(_in_str(status_summary(ips.stop; context = context); indent = 0, headers = 1))    This indicates convergence: $Conv"""
     return s
 end
 function Base.show(io::IO, ipns::InteriorPointNewtonState)

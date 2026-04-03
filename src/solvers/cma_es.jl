@@ -231,7 +231,7 @@ function status_summary(s::CMAESState; context::Symbol = :default)
     * σ:                          $(s.σ)
 
     ## Stopping criterion
-    $(status_summary(s.stop; context = context))
+    $(_in_str(status_summary(s.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

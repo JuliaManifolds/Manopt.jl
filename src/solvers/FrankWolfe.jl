@@ -144,10 +144,10 @@ function status_summary(fws::FrankWolfeState; context::Symbol = :default)
     $(sub)
 
     ## Stepsize
-    $(fws.stepsize)
+    $(_in_str(status_summary(fws.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(status_summary(fws.stop))
+    $(_in_str(status_summary(fws.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
 end
 

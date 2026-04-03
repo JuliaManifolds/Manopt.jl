@@ -25,10 +25,10 @@ function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :
     * vector transport method:       $(_MANOPT_INDENT)$(cgds.vector_transport_method)
 
     ## Stepsize
-    $(cgds.stepsize)
+    $(_in_str(status_summary(cgds.stop; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(status_summary(cgds.stop; context = context))
+    $(_in_str(status_summary(cgds.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
 end
 

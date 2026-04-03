@@ -183,7 +183,7 @@ function status_summary(pbms::ProximalBundleMethodState; context::Symbol = :defa
     * proximal parameter μ:                       $(pbms.μ)
 
     ## Stopping criterion
-    $(status_summary(pbms.stop; context = context))
+    $(_in_str(status_summary(pbms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

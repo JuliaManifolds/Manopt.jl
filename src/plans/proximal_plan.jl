@@ -284,7 +284,7 @@ function status_summary(cpps::CyclicProximalPointState; context::Symbol = :defau
     * evaluation order of the proximal maps: :$(cpps.order_type)
 
     ## Stopping criterion
-    $(status_summary(cpps.stop; context = context))
+    $(_in_str(status_summary(cpps.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

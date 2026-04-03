@@ -349,7 +349,7 @@ function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :defaul
     * vector transport:                                 $(cbms.vector_transport_method)
 
     ## Stopping criterion
-    $(status_summary(cbms.stop; context = context))
+    $(_in_str(status_summary(cbms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

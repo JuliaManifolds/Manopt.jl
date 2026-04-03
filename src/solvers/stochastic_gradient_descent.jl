@@ -103,10 +103,10 @@ function status_summary(sgds::StochasticGradientDescentState; context::Symbol = 
     * retraction method: $(sgds.retraction_method)
 
     ## Stepsize
-    $(sgds.stepsize)
+    $(_in_str(status_summary(sgds.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(status_summary(sgds.stop))
+    $(_in_str(status_summary(sgds.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

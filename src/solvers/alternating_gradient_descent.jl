@@ -144,7 +144,7 @@ function status_summary(agds::AlternatingGradientDescentState; context::Symbol =
     $(agds.stepsize)
 
     ## Stopping criterion
-    $(status_summary(agds.stop; context = context))
+    $(_in_str(status_summary(agds.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

@@ -150,10 +150,10 @@ function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol =
         | $(sub)
 
     ## Stepsize
-    $(dcps.stepsize)
+    $(_in_str(status_summary(dcps.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(status_summary(dcps.stop; context = context))
+    $(_in_str(status_summary(dcps.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

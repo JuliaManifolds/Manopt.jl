@@ -160,10 +160,10 @@ function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
     * vector transport method: $(qns.vector_transport_method)
 
     ## Stepsize
-    $(qns.stepsize)
+    $(_in_str(status_summary(qns.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(status_summary(qns.stop; context = context))
+    $(_in_str(status_summary(qns.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

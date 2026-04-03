@@ -286,7 +286,7 @@ function status_summary(pdsns::PrimalDualSemismoothNewtonState; context::Symbol 
     * vector_transport_method:  $(_MANOPT_INDENT)$(pdsns.vector_transport_method)
 
     ## Stopping criterion
-    $(status_summary(pdsns.stop; context = context))
+    $(_in_str(status_summary(pdsns.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end
