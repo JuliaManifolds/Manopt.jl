@@ -41,7 +41,6 @@ with the fields keyword arguments and the retraction is set to the default retra
 $(_kwargs(:retraction_method))
 * `contraction_factor=0.95`
 * `sufficient_decrease=0.1`
-* `last_stepsize=initialstepsize`
 * `initial_guess=`[`ArmijoInitialGuess`](@ref)`()`
 * `stop_when_stepsize_less=0.0`: stop when the stepsize decreased below this version.
 * `stop_when_stepsize_exceeds=[`max_step`](@ref)`(M)`: provide an absolute maximal step size.
@@ -64,21 +63,39 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
     additional_decrease_condition::DF
     additional_increase_condition::IF
     messages::MSGS
+    function ArmijoLinesearchStepsize(;
+            additional_decrease_condition::DF, additional_increase_condition::IF,
+            candidate_point::P, contraction_factor::F, initial_stepsize::F, last_stepsize::F,
+            initial_guess::IGF, retraction_method::TRM,
+            stop_when_stepsize_less::F, stop_when_stepsize_exceeds::F, sufficient_decrease::F,
+            stop_increasing_at_step::I, stop_decreasing_at_step::I, messages::MSGS
+        ) where {TRM <: AbstractRetractionMethod, P, I <: Integer, F <: Real, IGF, DF, IF, MSGS}
+        return new{TRM, P, I, F, IGF, DF, IF, MSGS}(
+            candidate_point, contraction_factor, initial_guess, initial_stepsize, initial_stepsize,
+            last_stepsize, retraction_method, sufficient_decrease,
+            stop_when_stepsize_less, stop_when_stepsize_exceeds, stop_increasing_at_step, stop_decreasing_at_step,
+            additional_decrease_condition, additional_increase_condition, messages,
+        )
+    end
     function ArmijoLinesearchStepsize(
             M::AbstractManifold;
-            additional_decrease_condition::DF = (M, p) -> true,
-            additional_increase_condition::IF = (M, p) -> true,
+            additional_decrease_condition::DF = (M, p) -> true, additional_increase_condition::IF = (M, p) -> true,
             candidate_point::P = allocate_result(M, rand),
-            contraction_factor::F = 0.95,
-            initial_stepsize::F = 1.0,
-            initial_guess::IGF = ArmijoInitialGuess(),
-            retraction_method::TRM = default_retraction_method(M),
-            stop_when_stepsize_less::F = 0.0,
-            stop_when_stepsize_exceeds::Real = max_stepsize(M),
-            stop_increasing_at_step::I = 100,
-            stop_decreasing_at_step::I = 1000,
-            sufficient_decrease = 0.1,
-        ) where {TRM <: AbstractRetractionMethod, P, I, F <: Real, IGF, DF, IF}
+            contraction_factor::Real = 0.95, initial_stepsize::Real = 1.0,
+            initial_guess::IGF = ArmijoInitialGuess(), retraction_method::TRM = default_retraction_method(M),
+            stop_when_stepsize_less::Real = 0.0, stop_when_stepsize_exceeds::Real = max_stepsize(M),
+            stop_increasing_at_step::Integer = 100, stop_decreasing_at_step::Integer = 1000,
+            sufficient_decrease::Real = 0.1,
+        ) where {TRM <: AbstractRetractionMethod, P, IGF, DF, IF}
+        R = promote_type(
+            typeof(contraction_factor), typeof(initial_stepsize),
+            typeof(stop_when_stepsize_exceeds), typeof(stop_when_stepsize_less), typeof(sufficient_decrease),
+        )
+        cf = convert(R, contraction_factor); is = convert(R, initial_stepsize)
+        swse = convert(R, stop_when_stepsize_exceeds); swsl = convert(R, stop_when_stepsize_less)
+        sd = convert(R, sufficient_decrease)
+        I = promote_type(typeof(stop_increasing_at_step), typeof(stop_decreasing_at_step))
+        sias = convert(R, stop_increasing_at_step); sdas = convert(R, stop_decreasing_at_step)
         msgs = (;
             non_descent_direction = StepsizeMessage{F, F}(),
             stop_decreasing = StepsizeMessage{Int, F}(),
@@ -86,35 +103,22 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
             stepsize_less = StepsizeMessage{F, F}(),
             stepsize_exceeds = StepsizeMessage{F, F}(),
         )
-        return new{TRM, P, I, F, IGF, DF, IF, typeof(msgs)}(
-            candidate_point,
-            contraction_factor,
-            initial_guess,
-            initial_stepsize,
-            initial_stepsize,
-            retraction_method,
-            sufficient_decrease,
-            stop_when_stepsize_less,
-            stop_when_stepsize_exceeds,
-            stop_increasing_at_step,
-            stop_decreasing_at_step,
-            additional_decrease_condition,
-            additional_increase_condition,
-            msgs,
+        return ArmijoLinesearchStepsize(;
+            additional_decrease_condition = additional_decrease_condition,
+            additional_increase_condition = additional_increase_condition,
+            candidate_point = candidate_point, contraction_factor = cf, initial_stepsize = is, last_stepsize = is,
+            initial_guess = initial_guess, retraction_method = retraction_method,
+            stop_when_stepsize_less = swsl, stop_when_stepsize_exceeds = swse, sufficient_decrease = sd,
+            stop_increasing_at_step = sias, stop_decreasing_at_step = sdas, messages = msgs
         )
     end
 end
 function ArmijoLinesearchStepsize(M::AbstractManifold, p; kwargs...)
     return ArmijoLinesearchStepsize(M; candidate_point = allocate(p), kwargs...)
 end
-
 function (a::ArmijoLinesearchStepsize)(
-        mp::AbstractManoptProblem,
-        s::AbstractManoptSolverState,
-        k::Int,
-        η = (-get_gradient(mp, get_iterate(s)));
-        gradient = nothing,
-        kwargs...,
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s)));
+        gradient = nothing, kwargs...,
     )
     p = get_iterate(s)
     grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
@@ -126,16 +130,10 @@ function (a::ArmijoLinesearchStepsize)(
     reset_messages!(a.messages)
     l = norm(get_manifold(mp), p, η)
     a.last_stepsize = linesearch_backtrack!(
-        get_manifold(mp),
-        a.candidate_point,
-        (M, p) -> get_cost_function(get_objective(mp))(M, p),
-        p,
-        initial_guess,
-        a.sufficient_decrease,
-        a.contraction_factor,
-        η;
-        gradient = X,
-        retraction_method = a.retraction_method,
+        get_manifold(mp), a.candidate_point,
+        (M, p) -> get_cost_function(get_objective(mp))(M, p), p,
+        initial_guess, a.sufficient_decrease, a.contraction_factor, η;
+        gradient = X, retraction_method = a.retraction_method,
         stop_when_stepsize_less = (a.stop_when_stepsize_less / l),
         stop_when_stepsize_exceeds = (a.stop_when_stepsize_exceeds / l),
         stop_increasing_at_step = a.stop_increasing_at_step,
@@ -147,16 +145,31 @@ function (a::ArmijoLinesearchStepsize)(
     return a.last_stepsize
 end
 get_initial_stepsize(a::ArmijoLinesearchStepsize) = a.initial_stepsize
-function show(io::IO, armijo_ls::ArmijoLinesearchStepsize)
-    # TODO: Refactor constructor, to this actually works
-    return print(
-        io,
-        "ArmijoLinesearch(; initial_stepsize=$(armijo_ls.initial_stepsize), retraction_method=$(armijo_ls.retraction_method), contraction_factor=$(armijo_ls.contraction_factor), sufficient_decrease=$(armijo_ls.sufficient_decrease))",
-    )
+function show(io::IO, a_ls::ArmijoLinesearchStepsize)
+    print(io, "ArmijoLinesearch(; additional_decrease_condition = ", a_ls.additional_decrease_condition)
+    print(io, ", additional_increase_condition = ", a_ls.additional_increase_condition)
+    print(io, ", candidate_point = ", a_ls.candidate_point, ", contraction_factor = ", a_ls.contraction_factor)
+    print(io, ", initial_stepsize = ", a_ls.initial_stepsize, ", initial_guess = ", a_ls.initial_guess)
+    print(io, ", last_stepsize = ", a_ls.last_stepsize)
+    print(io, ", retraction_method = ", a_ls.retraction_method, ", stop_when_stepsize_less = ", a_ls.stop_when_stepsize_less)
+    print(io, ", stop_when_stepsize_exceeds = ", a_ls.stop_when_stepsize_exceeds, ", sufficient_decrease = ", a_ls.sufficient_decrease)
+    print(io, ", stop_increasing_at_step = ", a_ls.stop_increasing_at_step, ", stop_decreasing_at_step = ", a_ls.stop_decreasing_at_step)
+    return print(io, ", messages = ", a_ls.messages, ")")
 end
-function status_summary(armijo_ls::ArmijoLinesearchStepsize; context::Symbol = :default)
-    # TODO: Refactor
-    return "$(armijo_ls)\nand a computed last stepsize of $(armijo_ls.last_stepsize)"
+function status_summary(a_ls::ArmijoLinesearchStepsize; context::Symbol = :default)
+    (context === :short) && return repr(a_ls)
+    (conmtext === :inline) && return "An Armijo backtracking linesearch (last stepsize: $(a_ls.last_stepsize))"
+    return """
+    Armijo backtracking Linesearch
+    A line search based on sufficient decrease backtracking (last stepsize: $(a_ls.last_stepsize))
+
+    ## Parameters
+    * contraction_factor:  $(_MANOPT_INDENT)$(a_ls.contraction_factor)
+    * initial guess:       $(_MANOPT_INDENT)$(a_ls.initial_guess)
+    * initial stepsize:    $(_MANOPT_INDENT)$(a_ls.initial_stepsize)
+    * retraction method:   $(_MANOPT_INDENT)$(a_ls.retraction_method)
+    * sufficient decrease: $(_MANOPT_INDENT)$(a_ls.sufficient_decrease)
+    """
 end
 function get_message(a::ArmijoLinesearchStepsize)
     s = [get_message(kv[1], kv[2]) for kv in pairs(a.messages)]
