@@ -449,8 +449,13 @@ function (cs::ConstantStepsize)(
     return s
 end
 get_initial_stepsize(s::ConstantStepsize) = s.length
-function show(io::IO, cs::ConstantStepsize)
+function Base.show(io::IO, cs::ConstantStepsize)
     return print(io, "ConstantLength($(cs.length); type=:$(cs.type))")
+end
+function status_summary(s::ConstantStepsize; context::Symbol = :default)
+    (context === :short) && return repr(s)
+    s = (cs.type === :absolute ? "absolute" : "relative")
+    return "A $s constant step size of length $(s.length)"
 end
 
 """
