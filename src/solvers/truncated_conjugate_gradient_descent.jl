@@ -215,7 +215,7 @@ function status_summary(c::StopWhenResidualIsReducedByFactorOrPower; context::Sy
     (context === :inline) && (return "Residual reduced by factor $(c.κ) or power $(c.θ):$(_MANOPT_INDENT)$s")
     return "A stopping criterion used within tCG to check whether the residual is reduced by factor $(c.κ) or power 1+$(c.θ)\n$(_MANOPT_INDENT)$s"
 end
-function show(io::IO, c::StopWhenResidualIsReducedByFactorOrPower)
+function Base.show(io::IO, c::StopWhenResidualIsReducedByFactorOrPower)
     return print(io, "StopWhenResidualIsReducedByFactorOrPower($(c.κ), $(c.θ))")
 end
 
@@ -301,7 +301,7 @@ function status_summary(c::StopWhenTrustRegionIsExceeded; context::Symbol = :def
     (context === :inline) && (return "Trust region exceeded:$(_MANOPT_INDENT)$s")
     return "A stopping criterion to stop when the trust region radius (0.0) is exceeded.\n$(_MANOPT_INDENT)$s"
 end
-function show(io::IO, ::StopWhenTrustRegionIsExceeded)
+function Base.show(io::IO, ::StopWhenTrustRegionIsExceeded)
     return print(io, "StopWhenTrustRegionIsExceeded()")
 end
 
@@ -360,7 +360,7 @@ function status_summary(c::StopWhenCurvatureIsNegative; context::Symbol = :defau
     (context === :inline) && (return "Curvature is negative:$(_MANOPT_INDENT)$s")
     return "A stopping criterion to stop when the is negative\n$(_MANOPT_INDENT)$s"
 end
-function show(io::IO, ::StopWhenCurvatureIsNegative)
+function Base.show(io::IO, ::StopWhenCurvatureIsNegative)
     return print(io, "StopWhenCurvatureIsNegative()")
 end
 
@@ -418,7 +418,7 @@ function status_summary(c::StopWhenModelIncreased; context::Symbol = :default)
     (context === :inline) && (return "Model Increased:$(_MANOPT_INDENT)$s")
     return "A stopping criterion to indicate when the model increased.\n$(_MANOPT_INDENT)$s"
 end
-function show(io::IO, c::StopWhenModelIncreased)
+function Base.show(io::IO, c::StopWhenModelIncreased)
     return print(io, "StopWhenModelIncreased()")
 end
 

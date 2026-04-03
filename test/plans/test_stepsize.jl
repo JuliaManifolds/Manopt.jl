@@ -70,9 +70,10 @@ end
     @test Manopt.get_message(Manopt.ConstantStepsize(M, 1.0)) == ""
     s = Manopt.ArmijoLinesearchStepsize(Euclidean())
     @test startswith(repr(s), "ArmijoLinesearch(;")
-    s_stat = Manopt.status_summary(s)
+    s_stat = Manopt.status_summary(s; context = :short)
     @test startswith(s_stat, "ArmijoLinesearch(;")
-    @test endswith(s_stat, "of 1.0")
+    s_stat2 = Manopt.status_summary(s)
+    @test startswith(s_stat2, "Armijo backtracking line search")
     @test Manopt.get_message(s) == ""
 
     s2 = NonmonotoneLinesearch()(M)

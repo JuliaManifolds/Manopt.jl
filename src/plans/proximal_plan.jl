@@ -186,7 +186,7 @@ end
 function status_summary(mpo::ManifoldProximalMapObjective; context::Symbol = :default)
     return "A proximal map objective for a cost with $(mpo.number_of_proxes) proximal maps"
 end
-function show(io::IO, mpo::ManifoldProximalMapObjective{E}) where {E}
+function Base.show(io::IO, mpo::ManifoldProximalMapObjective{E}) where {E}
     print(io, "ManifoldProximalMapObjective(")
     print(io, mpo.cost); print(io, ", ")
     print(io, mpo.proximal_maps!!); print(io, ", ")
@@ -320,7 +320,7 @@ function (d::DebugProximalParameter)(
     (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(k))
     return nothing
 end
-function show(io::IO, d::DebugProximalParameter)
+function Base.show(io::IO, d::DebugProximalParameter)
     return print(
         io, "DebugGradientChange(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init = $(d.at_init))",
     )

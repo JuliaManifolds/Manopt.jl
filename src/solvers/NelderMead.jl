@@ -398,6 +398,6 @@ function status_summary(c::StopWhenPopulationConcentrated; context::Symbol = :de
     head = (!_is_inline(context) ? "Stop when the population of a swarm is concentrated in eher function values (tolerance: $(c.tol_f)) or points (tolerance: $(c.tol_p))\n$(_MANOPT_INDENT)" : "")
     return head * "Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):$(_MANOPT_INDENT)$s"
 end
-function show(io::IO, c::StopWhenPopulationConcentrated)
+function Base.show(io::IO, c::StopWhenPopulationConcentrated)
     return print(io, "StopWhenPopulationConcentrated($(c.tol_f), $(c.tol_p))")
 end

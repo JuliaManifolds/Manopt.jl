@@ -406,6 +406,6 @@ function status_summary(c::StopWhenSwarmVelocityLess; context::Symbol = :default
     s = has_stopped ? "reached" : "not reached"
     return "swarm velocity norm < $(c.threshold):$(_MANOPT_INDENT)$s"
 end
-function show(io::IO, c::StopWhenSwarmVelocityLess)
+function Base.show(io::IO, c::StopWhenSwarmVelocityLess)
     return print(io, "StopWhenSwarmVelocityLess($(c.threshold))")
 end

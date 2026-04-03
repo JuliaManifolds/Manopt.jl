@@ -131,7 +131,7 @@ function AffineCovariantStepsize(
     ) where {N <: Union{Real, Missing}}
     return AffineCovariantStepsize{typeof(α), typeof(θ), N}(α, θ, θ_des, θ_acc, 1.0, outer_norm)
 end
-function show(io::IO, acs::AffineCovariantStepsize)
+function Base.show(io::IO, acs::AffineCovariantStepsize)
     print(io, "AffineCovariantStepsize(; ")
     print(io, "α = $(acs.α), ")
     print(io, "θ = $(acs.θ), ")

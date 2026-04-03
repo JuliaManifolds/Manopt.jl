@@ -260,7 +260,7 @@ function (re::RecordEvery)(
     )
     return nothing
 end
-function show(io::IO, re::RecordEvery)
+function Base.show(io::IO, re::RecordEvery)
     return print(io, "RecordEvery($(re.record), $(re.every), $(re.always_update))")
 end
 function status_summary(re::RecordEvery; context::Symbol = :default)
@@ -365,7 +365,7 @@ function status_summary(rg::RecordGroup; context::Symbol = :default)
     (context === :inline) && (return "A group of $(length(rg.group)) RecordActions")
     return "A group of $(length(rg.group)) RecordActions:\n $(join(["* $(status_summary(ri; context = context))" for ri in rg.group], "\n"))\n"
 end
-function show(io::IO, rg::RecordGroup)
+function Base.show(io::IO, rg::RecordGroup)
     s = join(["$(ri)" for ri in rg.group], ", ")
     return print(io, "RecordGroup([$s])")
 end
@@ -441,7 +441,7 @@ function (rsr::RecordSubsolver)(
     record_or_reset!(rsr, get_record(get_sub_state(ams), rsr.record...), k)
     return nothing
 end
-function show(io::IO, rsr::RecordSubsolver{R}) where {R}
+function Base.show(io::IO, rsr::RecordSubsolver{R}) where {R}
     return print(io, "RecordSubsolver(; record=$(rsr.record), record_type=$R)")
 end
 function status_summary(rsr::RecordSubsolver{R}; context::Symbol = :default) where {R}
@@ -492,7 +492,7 @@ function (rwa::RecordWhenActive)(
         rwa.record(amp, ams, k)
     end
 end
-function show(io::IO, rwa::RecordWhenActive)
+function Base.show(io::IO, rwa::RecordWhenActive)
     return print(io, "RecordWhenActive($(rwa.record), $(rwa.active), $(rwa.always_update))")
 end
 function status_summary(rwa::RecordWhenActive; context::Symbol = :default)
@@ -587,7 +587,7 @@ function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverSt
     r.storage(amp, s, k)
     return r.recorded_values
 end
-function show(io::IO, rc::RecordChange)
+function Base.show(io::IO, rc::RecordChange)
     return print(
         io, "RecordChange(; inverse_retraction_method=$(rc.inverse_retraction_method))"
     )
@@ -657,7 +657,7 @@ function (r::RecordEntry{T})(
     ) where {T}
     return record_or_reset!(r, getfield(s, r.field), i)
 end
-function show(io::IO, ra::RecordEntry)
+function Base.show(io::IO, ra::RecordEntry)
     return print(io, "RecordEntry(:$(ra.field))")
 end
 function status_summary(ra::RecordEntry; context::Symbol = :default)
@@ -702,7 +702,7 @@ function (r::RecordEntryChange)(
     r.storage(amp, ams, k)
     return record_or_reset!(r, value, k)
 end
-function show(io::IO, ra::RecordEntryChange)
+function Base.show(io::IO, ra::RecordEntryChange)
     return print(io, "RecordEntryChange(:$(ra.field), $(ra.distance))")
 end
 function status_summary(ra::RecordEntryChange; context::Symbol = :default)
@@ -739,7 +739,7 @@ function (r::RecordIterate{T})(
     ) where {T}
     return record_or_reset!(r, get_iterate(s), i)
 end
-function show(io::IO, ri::RecordIterate)
+function Base.show(io::IO, ri::RecordIterate)
     return print(io, "RecordIterate($(eltype(ri.recorded_values)))")
 end
 function status_summary(di::RecordIterate; context::Symbol = :default)
@@ -821,7 +821,7 @@ function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState,
         return record_or_reset!(r, t, k)
     end
 end
-function show(io::IO, ri::RecordTime)
+function Base.show(io::IO, ri::RecordTime)
     return print(io, "RecordTime(; mode=:$(ri.mode))")
 end
 function status_summary(ri::RecordTime; context::Symbol = :default)
