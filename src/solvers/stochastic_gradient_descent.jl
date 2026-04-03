@@ -141,7 +141,6 @@ function StochasticGradientRule(
     ) where {T}
     return StochasticGradientRule{T}(X)
 end
-
 function (sg::StochasticGradientRule)(
         apm::AbstractManoptProblem, sgds::StochasticGradientDescentState, k
     )
@@ -151,7 +150,13 @@ function (sg::StochasticGradientRule)(
     j = sgds.order_type == :Random ? rand(1:length(sgds.order)) : sgds.order[sgds.k]
     return sgds.stepsize(apm, sgds, k), get_gradient!(apm, sg.X, sgds.p, j)
 end
-
+function Base.show(io::IO, sg::StochasticGradientRule)
+    return print(io, "StochasticGradientRule($(sg.X)")
+end
+function status_summary(sg::StochasticGradientRule; context::Symbol = :default)
+    (context === :short) && return repr(sg)
+    return "A stochastic gradient processor"
+end
 @doc """
     StochasticGradient(; kwargs...)
     StochasticGradient(M::AbstractManifold; kwargs...)

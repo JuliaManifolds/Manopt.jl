@@ -27,7 +27,13 @@ function AlternatingGradientRule(
     ) where {T}
     return AlternatingGradientRule{T}(X)
 end
-
+function Base.show(io::IO, ag::AlternatingGradientRule)
+    return print(io, "AlternatingGradientRule($(ag.X)")
+end
+function status_summary(ag::AlternatingGradientRule; context::Symbol = :default)
+    (context === :short) && return repr(ag)
+    return "A alternating gradient processor"
+end
 """
     AlternatingGradientDescentState <: AbstractGradientDescentSolverState
 

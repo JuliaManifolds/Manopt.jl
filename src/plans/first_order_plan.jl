@@ -1042,6 +1042,11 @@ mutable struct PreconditionedDirectionRule{
     } <: DirectionUpdateRule
     preconditioner::F
     direction::D
+    function PreconditionedDirectionRule(;
+            preconditioner::F, direction::D, evaluation::E
+        ) where {E <: AbstractEvaluationType, D <: DirectionUpdateRule, F}
+        return new{E, D, F}(preconditioner, direction)
+    end
 end
 function PreconditionedDirectionRule(
         M::AbstractManifold,
@@ -1050,7 +1055,7 @@ function PreconditionedDirectionRule(
         evaluation::E = AllocatingEvaluation(),
     ) where {E <: AbstractEvaluationType, F}
     dir = _produce_type(direction, M)
-    return PreconditionedDirectionRule{E, typeof(dir), F}(preconditioner, dir)
+    return PreconditionedDirectionRule(; preconditioner = preconditioner, direction = direction, evaluation = evaluation)
 end
 function (pg::PreconditionedDirectionRule{AllocatingEvaluation})(
         mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
@@ -1071,6 +1076,22 @@ function (pg::PreconditionedDirectionRule{InplaceEvaluation})(
     step, dir = pg.direction(mp, s, k) # get inner direction and step size
     pg.preconditioner(M, dir, p, dir)
     return step, dir
+end
+function Base.show(io::IO, pg::PreconditionedDirectionRule{E}) where {E <: AbstractEvaluationType}
+    print(io, "PreconditionedDirectionRule(; direction = ", pg.direction, ", preconditioner = ", pg.preconditioner, ", ", _to_kw(E))
+    return print(io, ")")
+end
+function status_summary(pg::PreconditionedDirectionRule; context::Symbol = :default)
+    (context === :short) && return repr(pg)
+    (context === :inline) && return "A preconditioner gradient processor"
+    return """
+    Preconditioned Direction Rule
+
+    ## Parameters
+    preconditioner: $(_MANOPT_INDENT)$(nr.μ)
+    ## Direction Rule
+    $(_in_str(status_summary(pg.direction; context = context); indent = 1, headers = 1))
+    """
 end
 
 """
