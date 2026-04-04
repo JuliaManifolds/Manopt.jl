@@ -39,8 +39,9 @@ using ManifoldDiff: prox_distance, prox_distance!
 
     #test getter/set
     s = DouglasRachfordState(M; p = d1)
-    sr = "# Solver state for `Manopt.jl`s  Douglas Rachford Algorithm\n"
-    @test startswith(repr(s), sr)
+    sr = "# Solver state for `Manopt.jl`s Douglas Rachford Algorithm\n"
+    @test startswith(Manopt.status_summary(s; context = :default), sr)
+    @test startswith(repr(s), "DouglasRachfordState(; ")
     set_iterate!(s, d2)
     @test get_iterate(s) == d2
     @testset "Debug and Record prox parameter" begin

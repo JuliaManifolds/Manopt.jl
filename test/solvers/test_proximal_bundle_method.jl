@@ -11,17 +11,13 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
     pbms.X = [1.0, 0.0, 0.0, 0.0, 0.0]
     @testset "Special Stopping Criteria" begin
         sc1 = StopWhenLagrangeMultiplierLess(1.0e-8)
-        @test startswith(
-            repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)\n"
-        )
+        @test startswith(repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)")
         @test get_reason(sc1) == ""
         # Trigger manually
         sc1.at_iteration = 2
         @test length(get_reason(sc1)) > 0
         sc2 = StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode = :both)
-        @test startswith(
-            repr(sc2), "StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode=:both)\n"
-        )
+        @test startswith(repr(sc2), "StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode=:both)")
         @test get_reason(sc2) == ""
         # Trigger manually
         sc2.at_iteration = 2
@@ -63,12 +59,12 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         # Test warnings
         dw1 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 0.0)
         dw1(mp, pbms, 1) #do one normal run.
-        @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"0.0\")"
+        @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"0.0\")"
         pbms.ν = 101.0
         @test_logs (:warn,) dw1(mp, pbms, 2)
         dw2 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 1.0e1)
         dw2.old_value = -101.0
-        @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"10.0\")"
+        @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"10.0\")"
         pbms.ν = -1.0
         @test_logs (:warn,) (:warn,) dw2(mp, pbms, 1)
     end
@@ -98,10 +94,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         @test_throws MethodError get_gradient(mp, pbms.p)
         @test_throws MethodError get_proximal_map(mp, 1.0, pbms.p, 1)
         s2 = proximal_bundle_method(
-            M,
-            f,
-            ∂f!,
-            copy(p0);
+            M, f, ∂f!, copy(p0);
             stopping_criterion = StopAfterIteration(200),
             evaluation = InplaceEvaluation(),
             sub_state = AllocatingEvaluation(), # keep the default allocating subsolver here
@@ -127,8 +120,10 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         p0 = p1
         pbm_s = proximal_bundle_method(M, f, ∂f, p0; return_state = true)
         @test startswith(
-            repr(pbm_s), "# Solver state for `Manopt.jl`s Proximal Bundle Method\n"
+            Manopt.status_summary(pbm_s; context = :default),
+            "# Solver state for `Manopt.jl`s Proximal Bundle Method\n"
         )
+        @test startswith(repr(pbm_s), "ProximalBundleMethodState(")
         q = get_solver_result(pbm_s)
         # with default parameters for both median and proximal bundle, this is not very precise
         m = median(M, data)
@@ -138,10 +133,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         @test norm(M, q, get_subgradient(pbm_s)) < 1.0e-4
         # test the other stopping criterion mode
         q2 = proximal_bundle_method(
-            M,
-            f,
-            ∂f,
-            p0;
+            M, f, ∂f, p0;
             stopping_criterion = StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode = :both),
         )
         @test distance(M, q2, m) < 2 * 1.0e-3
@@ -155,14 +147,8 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             return X
         end
         proximal_bundle_method!(
-            M,
-            f,
-            ∂f!,
-            p_size;
-            bundle_size = 2,
-            evaluation = InplaceEvaluation(),
-            stopping_criterion = StopAfterIteration(200),
-            sub_problem = (proximal_bundle_method_subsolver!),
+            M, f, ∂f!, p_size; bundle_size = 2, stopping_criterion = StopAfterIteration(200),
+            evaluation = InplaceEvaluation(), sub_problem = (proximal_bundle_method_subsolver!),
         )
     end
     @testset "Trigger the case where the bundle is not transported" begin

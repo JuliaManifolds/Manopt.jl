@@ -26,36 +26,45 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(5000)")
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct SubGradientMethodState{
-        TR <: AbstractRetractionMethod, TS <: Stepsize, TSC <: StoppingCriterion, P, T,
+        P, T, RM <: AbstractRetractionMethod, S <: Stepsize, SC <: StoppingCriterion,
     } <: AbstractManoptSolverState where {P, T}
     p::P
     p_star::P
-    retraction_method::TR
-    stepsize::TS
-    stop::TSC
+    retraction_method::RM
+    stepsize::S
+    stop::SC
     X::T
+    function SubGradientMethodState(;
+            p::P, p_star::P, retraction_method::RM, stepsize::S, stopping_criterion::SC, X::T
+        ) where {P, T, RM <: AbstractRetractionMethod, S <: Stepsize, SC <: StoppingCriterion}
+        return new{P, T, RM, S, SC}(p, p_star, retraction_method, stepsize, stopping_criterion, X)
+    end
     function SubGradientMethodState(
-            M::TM;
-            p::P = rand(M),
+            M::TM; p::P = rand(M),
             stopping_criterion::SC = StopAfterIteration(5000),
             stepsize::S = default_stepsize(M, SubGradientMethodState),
             X::T = zero_vector(M, p),
             retraction_method::TR = default_retraction_method(M, typeof(p)),
         ) where {
-            TM <: AbstractManifold,
-            P,
-            T,
-            SC <: StoppingCriterion,
-            S <: Stepsize,
-            TR <: AbstractRetractionMethod,
+            TM <: AbstractManifold, P, T, SC <: StoppingCriterion, S <: Stepsize, TR <: AbstractRetractionMethod,
         }
-        return new{TR, S, SC, P, T}(
-            p, copy(M, p), retraction_method, stepsize, stopping_criterion, X
+        return SubGradientMethodState(;
+            p = p, p_star = copy(M, p), retraction_method = retraction_method, stepsize = stepsize,
+            stopping_criterion = stopping_criterion, X = X
         )
     end
 end
-function show(io::IO, sgms::SubGradientMethodState)
+function Base.show(io::IO, sgms::SubGradientMethodState)
+    print(io, "SubGradientMethodState(; p = ", sgms.p, "p_star = ", sgms.p_star)
+    print(io, ", retraction_method = ", sgms.retraction_method)
+    print(io, ", stepsize = ", sgms.stepsize, ", stopping_criterion = ", sgms.stop, ", X = ", sgms.X)
+    return print(io, ")")
+end
+function status_summary(sgms::SubGradientMethodState; context::Symbol = :default)
+    (context === :short) && return repr(sgms)
     i = get_count(sgms, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(sgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the subgradient method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(sgms.stop) ? "Yes" : "No"
     s = """
@@ -65,13 +74,12 @@ function show(io::IO, sgms::SubGradientMethodState)
     * retraction method: $(sgms.retraction_method)
 
     ## Stepsize
-    $(sgms.stepsize)
+    $(_in_str(status_summary(sgms.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-
-    $(status_summary(sgms.stop))
+    $(_in_str(status_summary(sgms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 get_iterate(sgs::SubGradientMethodState) = sgs.p
 get_subgradient(sgs::SubGradientMethodState) = sgs.X

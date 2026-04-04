@@ -113,7 +113,7 @@ end
 
     lm_r = LevenbergMarquardt(M, F_RLM, jacF_RLM, p0, length(pts_LM); return_state = true)
     lm_rs = "# Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm\n"
-    @test startswith(repr(lm_r), lm_rs)
+    @test startswith(Manopt.status_summary(lm_r; context = :default), lm_rs)
     p_opt = get_state(lm_r).p
     @test norm(M, p_opt, get_gradient(lm_r)) < 2.0e-3
     p_atol = 1.5e-2
@@ -214,7 +214,7 @@ end
     )
     p_r2 = DefaultManoptProblem(
         M,
-        NonlinearLeastSquaresObjective(
+        ManifoldNonlinearLeastSquaresObjective(
             F_reg_r2(ts_r2, xs_r2, ys_r2),
             jacF_reg_r2(ts_r2, xs_r2, ys_r2),
             length(ts_r2) * 2,
@@ -228,7 +228,7 @@ end
 
     p_r2_mut = DefaultManoptProblem(
         M,
-        NonlinearLeastSquaresObjective(
+        ManifoldNonlinearLeastSquaresObjective(
             F_reg_r2!, jacF_reg_r2!, length(ts_r2) * 2; evaluation = InplaceEvaluation()
         ),
     )

@@ -9,13 +9,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     p0 = [1.0 0.0; 0.0 1.0]
     f(M, p) = opnorm(B - A * p)
     Random.seed!(42)
-    s = mesh_adaptive_direct_search(
-        M,
-        f,
-        p0;
-        # debug=[:Iteration, :Cost, " ", :poll_size, " ", :mesh_size, " ", :Stop, "\n"],
-        return_state = true,
-    )
+    s = mesh_adaptive_direct_search(M, f, p0; return_state = true)
     @test distance(M, get_solver_result(s), W) < 1.0e-9
     @test startswith(get_reason(s), "The algorithm computed a poll step size")
     #

@@ -5,25 +5,18 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
     p = [4.0, 2.0]
     p0 = [5.0, 2.0]
     q0 = [10.0, 5.0]
+    sc = StopAfterIteration(200)
     sgs = SubGradientMethodState(
-        M;
-        p = p0,
-        stopping_criterion = StopAfterIteration(200),
-        stepsize = Manopt.ConstantStepsize(M),
+        M; p = p0, stopping_criterion = sc, stepsize = Manopt.ConstantStepsize(M),
     )
     sgs_ac = SubGradientMethodState(
-        M;
-        p = q0,
-        stopping_criterion = StopAfterIteration(200),
-        stepsize = Manopt.ConstantStepsize(M, 1.0; type = :absolute),
+        M; p = q0, stopping_criterion = sc, stepsize = Manopt.ConstantStepsize(M, 1.0; type = :absolute),
     )
     sgs_ad = SubGradientMethodState(
-        M;
-        p = q0,
-        stopping_criterion = StopAfterIteration(200),
-        stepsize = Manopt.DecreasingStepsize(M; length = 1.0, type = :absolute),
+        M; p = q0, stopping_criterion = sc, stepsize = Manopt.DecreasingStepsize(M; length = 1.0, type = :absolute),
     )
-    @test startswith(repr(sgs), "# Solver state for `Manopt.jl`s Subgradient Method\n")
+    @test startswith(Manopt.status_summary(sgs), "# Solver state for `Manopt.jl`s Subgradient Method\n")
+    @test startswith(repr(sgs), "SubGradientMethodState(; ")
     @test get_iterate(sgs) == p0
     sgs.X = [1.0, 0.0]
     f(M, q) = distance(M, q, p)

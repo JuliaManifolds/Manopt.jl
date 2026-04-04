@@ -74,21 +74,30 @@ end
 function RecordSolverState(s::S, symbol::Symbol) where {S <: AbstractManoptSolverState}
     return RecordSolverState{S}(s; RecordFactory(get_state(s), symbol)...)
 end
-function status_summary(rst::RecordSolverState)
+function status_summary(rst::RecordSolverState; context::Symbol = :default)
+    (context === :short) && return repr(rst)
+    (context === :inline) && (return "a RecordSolverState for $(status_summary(rst.state; context = context))")
     if length(rst.recordDictionary) > 0
         return """
-        $(rst.state)
+        $(status_summary(rst.state; context = context))
 
         ## Record
         $(rst.recordDictionary)
         """
-    else
-        return "RecordSolverState($(rst.state), $(rst.recordDictionary))"
+    else # We indicate there is a record but no registered recordings
+        return """
+        $(status_summary(rst.state; context = context))
+
+        ## Record
+        No recordings registered.
+        """
     end
 end
-function show(io::IO, rst::RecordSolverState)
-    return print(io, status_summary(rst))
+# 2-argument show, used by Array show, print(obj) and repr(obj), keep it short
+function Base.show(io::IO, obj::RecordSolverState)
+    return print(io, "RecordSolverState($(obj.state), $(obj.recordDictionary))")
 end
+
 dispatch_state_decorator(::RecordSolverState) = Val(true)
 
 @doc """
@@ -251,17 +260,29 @@ function (re::RecordEvery)(
     )
     return nothing
 end
-function show(io::IO, re::RecordEvery)
+function Base.show(io::IO, re::RecordEvery)
     return print(io, "RecordEvery($(re.record), $(re.every), $(re.always_update))")
 end
-function status_summary(re::RecordEvery)
-    s = ""
-    if re.record isa RecordGroup
-        s = status_summary(re.record)[3:(end - 2)]
-    else
-        s = "$(re.record)"
+function status_summary(re::RecordEvery; context::Symbol = :default)
+    if context === :short
+        s = ""
+        if re.record isa RecordGroup
+            s = status_summary(re.record; context = context)[2:(end - 1)]
+        else
+            s = "$(status_summary(re.record; context = context))"
+        end
+        return "[$s, $(re.every)]"
     end
-    return "[$s, $(re.every)]"
+    s = ""
+    (re.every % 10 == 2) && (s = "every $(re.every)nd")
+    (re.every % 10 == 3) && (s = "every $(re.every)rd")
+    (re.every % 10 ∉ [2, 3]) && (s = "every $(re.every)th")
+    (re.every == 1) && (s = "every")
+    (context === :inline) && return "A RecordAction that records its inner action $s iteration"
+    return """
+    A RecordAction that records $s iteration with
+    $(_MANOPT_INDENT)$(_in_str(status_summary(re.record; context = context); indent = 1))
+    """
 end
 get_record(r::RecordEvery) = get_record(r.record)
 get_record(r::RecordEvery, k) = get_record(r.record, k)
@@ -339,10 +360,12 @@ function (d::RecordGroup)(p::AbstractManoptProblem, s::AbstractManoptSolverState
     end
     return
 end
-function status_summary(rg::RecordGroup)
-    return "[ $(join(["$(status_summary(ri))" for ri in rg.group], ", ")) ]"
+function status_summary(rg::RecordGroup; context::Symbol = :default)
+    (context === :short) && (return "[$(join(["$(status_summary(ri; context = context))" for ri in rg.group], ", "))]")
+    (context === :inline) && (return "A group of $(length(rg.group)) RecordActions")
+    return "A group of $(length(rg.group)) RecordActions:\n $(join(["* $(status_summary(ri; context = context))" for ri in rg.group], "\n"))\n"
 end
-function show(io::IO, rg::RecordGroup)
+function Base.show(io::IO, rg::RecordGroup)
     s = join(["$(ri)" for ri in rg.group], ", ")
     return print(io, "RecordGroup([$s])")
 end
@@ -418,19 +441,28 @@ function (rsr::RecordSubsolver)(
     record_or_reset!(rsr, get_record(get_sub_state(ams), rsr.record...), k)
     return nothing
 end
-function show(io::IO, rsr::RecordSubsolver{R}) where {R}
+function Base.show(io::IO, rsr::RecordSubsolver{R}) where {R}
     return print(io, "RecordSubsolver(; record=$(rsr.record), record_type=$R)")
 end
-status_summary(::RecordSubsolver) = ":Subsolver"
+function status_summary(rsr::RecordSubsolver{R}; context::Symbol = :default) where {R}
+    (context === :short) && return ":Subsolver"
+    (context === :inline) && return "A RecordAction to specify something to record from each subsolver run"
+    return """
+    A RecordAction to record elements in from each subsolver run of type $R.
+
+    ## Recorded values
+    The following recorded symbols from the sub state are recorded in every iteration of the (outer) solver
+    $(join([ "  * :$(s)" for s in rsr.record], "\n"))
+    """
+end
 
 @doc """
     RecordWhenActive <: RecordAction
 
 record action that only records if the `active` boolean is set to true.
-This can be set from outside and is for example triggered by |`RecordEvery`](@ref)
-on recordings of the subsolver.
-While this is for sub solvers maybe not completely necessary, recording values that
-are never accessible, is not that useful.
+This can be set from outside and is for example triggered by [`RecordEvery`](@ref)
+on recordings of a subsolver. While this is for sub solvers maybe not completely necessary,
+recording values that are never accessible, is not that useful.
 
 # Fields
 
@@ -451,7 +483,6 @@ mutable struct RecordWhenActive{R <: RecordAction} <: RecordAction
         return new{R}(r, active, always_update)
     end
 end
-
 function (rwa::RecordWhenActive)(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
     )
@@ -461,11 +492,16 @@ function (rwa::RecordWhenActive)(
         rwa.record(amp, ams, k)
     end
 end
-function show(io::IO, rwa::RecordWhenActive)
+function Base.show(io::IO, rwa::RecordWhenActive)
     return print(io, "RecordWhenActive($(rwa.record), $(rwa.active), $(rwa.always_update))")
 end
-function status_summary(rwa::RecordWhenActive)
-    return repr(rwa)
+function status_summary(rwa::RecordWhenActive; context::Symbol = :default)
+    (context === :short) && (return repr(rwa))
+    (context === :inline) && (return "A RecordAction that only records its inner action when active (currently: $(rwa.active ? "" : "in")active)")
+    return """
+    Record the following only, when active (currently: $(rwa.active ? "" : "in")active)
+    $(_in_str(status_summary(rwa.record; context = context), indent = 1, headers = 0))
+    """
 end
 function set_parameter!(rwa::RecordWhenActive, v::Val, args...)
     set_parameter!(rwa.record, v, args...)
@@ -479,30 +515,6 @@ get_record(r::RecordWhenActive, args...) = get_record(r.record, args...)
 #
 # Specific Record types
 #
-
-@doc """
-    RecordCost <: RecordAction
-
-Record the current cost function value, see [`get_cost`](@ref).
-
-# Fields
-
-* `recorded_values` : to store the recorded values
-
-# Constructor
-
-    RecordCost()
-"""
-mutable struct RecordCost <: RecordAction
-    recorded_values::Array{Float64, 1}
-    RecordCost() = new(Array{Float64, 1}())
-end
-function (r::RecordCost)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    return record_or_reset!(r, get_cost(amp, get_iterate(s)), k)
-end
-show(io::IO, ::RecordCost) = print(io, "RecordCost()")
-status_summary(di::RecordCost) = ":Cost"
-
 @doc """
     RecordChange <: RecordAction
 
@@ -549,12 +561,9 @@ mutable struct RecordChange{
         return new{typeof(irm), typeof(storage)}(Vector{Float64}(), storage, irm)
     end
     function RecordChange(
-            p,
-            a::StoreStateAction = StoreStateAction([:Iterate]);
+            p, a::StoreStateAction = StoreStateAction([:Iterate]);
             manifold::AbstractManifold = DefaultManifold(1),
-            inverse_retraction_method::IRT = default_inverse_retraction_method(
-                manifold, typeof(p)
-            ),
+            inverse_retraction_method::IRT = default_inverse_retraction_method(manifold, typeof(p)),
         ) where {IRT <: AbstractInverseRetractionMethod}
         update_storage!(a, Dict(:Iterate => p))
         return new{IRT, typeof(a)}(Vector{Float64}(), a, inverse_retraction_method)
@@ -567,8 +576,7 @@ function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverSt
         if has_storage(r.storage, PointStorageKey(:Iterate))
             distance(
                 M,
-                get_iterate(s),
-                get_storage(r.storage, PointStorageKey(:Iterate)),
+                get_iterate(s), get_storage(r.storage, PointStorageKey(:Iterate)),
                 r.inverse_retraction_method,
             )
         else
@@ -579,12 +587,41 @@ function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverSt
     r.storage(amp, s, k)
     return r.recorded_values
 end
-function show(io::IO, rc::RecordChange)
+function Base.show(io::IO, rc::RecordChange)
     return print(
         io, "RecordChange(; inverse_retraction_method=$(rc.inverse_retraction_method))"
     )
 end
-status_summary(rc::RecordChange) = ":Change"
+function status_summary(::RecordChange; context::Symbol = :default)
+    (context === :short) && return ":Change"
+    return "A RecordAction to record the change of the iterate"
+end
+
+@doc """
+    RecordCost <: RecordAction
+
+Record the current cost function value, see [`get_cost`](@ref).
+
+# Fields
+
+* `recorded_values` : to store the recorded values
+
+# Constructor
+
+    RecordCost()
+"""
+mutable struct RecordCost <: RecordAction
+    recorded_values::Array{Float64, 1}
+    RecordCost() = new(Array{Float64, 1}())
+end
+function (r::RecordCost)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
+    return record_or_reset!(r, get_cost(amp, get_iterate(s)), k)
+end
+show(io::IO, ::RecordCost) = print(io, "RecordCost()")
+function status_summary(::RecordCost; context::Symbol = :default)
+    (context === :short) && return ":Cost"
+    return "A RecordAction to record the cost value"
+end
 
 @doc """
     RecordEntry{T} <: RecordAction
@@ -620,8 +657,12 @@ function (r::RecordEntry{T})(
     ) where {T}
     return record_or_reset!(r, getfield(s, r.field), i)
 end
-function show(io::IO, di::RecordEntry)
-    return print(io, "RecordEntry(:$(di.field))")
+function Base.show(io::IO, ra::RecordEntry)
+    return print(io, "RecordEntry(:$(ra.field))")
+end
+function status_summary(ra::RecordEntry; context::Symbol = :default)
+    (context === :short) && return ":$(ra.field)"
+    return "A RecordAction to record the solver state field :$(ra.field)"
 end
 
 @doc """
@@ -661,8 +702,12 @@ function (r::RecordEntryChange)(
     r.storage(amp, ams, k)
     return record_or_reset!(r, value, k)
 end
-function show(io::IO, rec::RecordEntryChange)
-    return print(io, "RecordEntryChange(:$(rec.field), $(rec.distance))")
+function Base.show(io::IO, ra::RecordEntryChange)
+    return print(io, "RecordEntryChange(:$(ra.field), $(ra.distance))")
+end
+function status_summary(ra::RecordEntryChange; context::Symbol = :default)
+    (context === :short) && return repr(ra)
+    return "A RecordAction to record the solver state field's :$(ra.field) change using the function $(ra.distance)"
 end
 
 @doc """
@@ -694,10 +739,13 @@ function (r::RecordIterate{T})(
     ) where {T}
     return record_or_reset!(r, get_iterate(s), i)
 end
-function show(io::IO, ri::RecordIterate)
+function Base.show(io::IO, ri::RecordIterate)
     return print(io, "RecordIterate($(eltype(ri.recorded_values)))")
 end
-status_summary(di::RecordIterate) = ":Iterate"
+function status_summary(di::RecordIterate; context::Symbol = :default)
+    (context === :short) && return ":Iterate"
+    return "A RecordAction to record the current iterate"
+end
 
 @doc """
     RecordIteration <: RecordAction
@@ -712,8 +760,10 @@ function (r::RecordIteration)(::AbstractManoptProblem, ::AbstractManoptSolverSta
     return record_or_reset!(r, k, k)
 end
 show(io::IO, ::RecordIteration) = print(io, "RecordIteration()")
-status_summary(::RecordIteration) = ":Iteration"
-
+function status_summary(::RecordIteration; context::Symbol = :default)
+    (context === :short) && return ":Iteration"
+    return "A RecordAction to record the current iteration number"
+end
 @doc """
     RecordStoppingReason <: RecordAction
 
@@ -730,7 +780,10 @@ function (rsr::RecordStoppingReason)(
     return (length(s) > 0) && record_or_reset!(rsr, s, k)
 end
 show(io::IO, ::RecordStoppingReason) = print(io, "RecordStoppingReason()")
-status_summary(di::RecordStoppingReason) = ":Stop"
+function status_summary(::RecordStoppingReason; context::Symbol = :default)
+    (context === :short) && return ":Stop"
+    return "A record action to record the stopping reason"
+end
 
 @doc """
     RecordTime <: RecordAction
@@ -768,15 +821,18 @@ function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState,
         return record_or_reset!(r, t, k)
     end
 end
-function show(io::IO, ri::RecordTime)
+function Base.show(io::IO, ri::RecordTime)
     return print(io, "RecordTime(; mode=:$(ri.mode))")
 end
-status_summary(ri::RecordTime) = (ri.mode === :iterative ? ":IterativeTime" : ":Time")
+function status_summary(ri::RecordTime; context::Symbol = :default)
+    (context == :short) && return (ri.mode === :iterative ? ":IterativeTime" : ":Time")
+    # Inline and Default:
+    return "A Record action for recording times" * (ri.mode == :iterative ? " iteratively" : ".")
+end
 
 #
 # Factory
 #
-
 @doc """
     RecordFactory(s::AbstractManoptSolverState, a)
 
@@ -899,15 +955,15 @@ create a [`RecordAction`](@ref) where
 * a [`RecordAction`](@ref) is passed through
 * a [`Symbol`] creates
   * `:Change`        to record the change of the iterates, see [`RecordChange`](@ref)
+  * `:Cost`          to record the current cost function value
   * `:Gradient`      to record the gradient, see [`RecordGradient`](@ref)
   * `:GradientNorm   to record the norm of the gradient, see [`RecordGradientNorm`](@ref)
   * `:Iterate`       to record the iterate
   * `:Iteration`     to record the current iteration number
-  * `IterativeTime`  to record the time iteratively
-  * `:Cost`          to record the current cost function value
+  * `:IterativeTime` to record the times taken for each iteration.
+  * `:ProximalParameter` to record the proximal parameter, see [`RecordProximalParameter`](@ref)
   * `:Stepsize`      to record the current step size
   * `:Time`          to record the total time taken after every iteration
-  * `:IterativeTime` to record the times taken for each iteration.
 
 and every other symbol is passed to [`RecordEntry`](@ref), which results in recording the
 field of the state with the symbol indicating the field of the solver to record.
@@ -922,6 +978,7 @@ function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Iterate) && return RecordIterate(get_iterate(s))
     (symbol == :Iteration) && return RecordIteration()
     (symbol == :IterativeTime) && return RecordTime(; mode = :iterative)
+    (symbol == :ProximalParameter) && return RecordProximalParameter()
     (symbol == :Stepsize) && return RecordStepsize()
     (symbol == :Stop) && return RecordStoppingReason()
     (symbol == :Subsolver) && return RecordSubsolver()

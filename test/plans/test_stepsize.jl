@@ -70,9 +70,10 @@ end
     @test Manopt.get_message(Manopt.ConstantStepsize(M, 1.0)) == ""
     s = Manopt.ArmijoLinesearchStepsize(Euclidean())
     @test startswith(repr(s), "ArmijoLinesearch(;")
-    s_stat = Manopt.status_summary(s)
+    s_stat = Manopt.status_summary(s; context = :short)
     @test startswith(s_stat, "ArmijoLinesearch(;")
-    @test endswith(s_stat, "of 1.0")
+    s_stat2 = Manopt.status_summary(s)
+    @test startswith(s_stat2, "Armijo backtracking line search")
     @test Manopt.get_message(s) == ""
 
     s2 = NonmonotoneLinesearch()(M)
@@ -81,13 +82,12 @@ end
 
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
-    @test startswith(repr(s3), "WolfePowellBinaryLinesearch(;")
+    @test startswith(repr(s3), "WolfePowellBinaryLinesearchStepsize(;")
+    @test startswith(Manopt.status_summary(s3), "A Wolfe Powell bisection line search")
     # no stepsize yet so `repr` and summary are the same
-    @test repr(s3) == Manopt.status_summary(s3)
     s4 = WolfePowellLinesearch()(M)
-    @test startswith(repr(s4), "WolfePowellLinesearch(;")
-    # no stepsize yet so `repr` and summary are the same
-    @test repr(s4) == Manopt.status_summary(s4)
+    @test startswith(repr(s4), "WolfePowellLinesearchStepsize(;")
+    @test startswith(Manopt.status_summary(s4), "A Wolfe Powell line search")
     @test Manopt.get_message(s4) == ""
     @testset "Armijo setter / getters" begin
         # Check that the passdowns work, though; since the defaults are functions, they return nothing
@@ -155,7 +155,7 @@ end
         @test s(mp, gds, 3) ≈ 3.1209362808842656
         @test s.count == 0 # was reset
         @test s.weight == 0.75 # also reset to orig
-        @test startswith(repr(s), "AdaptiveWNGradient(;\n  ")
+        @test startswith(repr(s), "AdaptiveWNGradientStepsize(;")
     end
     @testset "Absolute stepsizes" begin
         M = ManifoldsBase.DefaultManifold(2)
@@ -186,8 +186,7 @@ end
         X = grad_f(M, p)
         sgs = SubGradientMethodState(M; p = p)
         ps = Polyak()()
-        @test repr(ps) ==
-            "Polyak()\nA stepsize with keyword parameters\n   * initial_cost_estimate = 0.0\n"
+        @test startswith(repr(ps), "Polyak(; γ = ")
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
     end
     @testset "CubicBracketing Stepsize" begin
@@ -270,23 +269,16 @@ end
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === get_initial_stepsize(ds)
-            @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
             # test printed representation before first step
             repr_ds = repr(ds)
-            @test occursin("DistanceOverGradients(;", repr_ds)
+            @test occursin("DistanceOverGradientStepsize(;", repr_ds)
             @test occursin("initial_distance = 1.0", repr_ds)
             @test occursin("use_curvature = false", repr_ds)
             @test occursin("sectional_curvature_bound = 0.0", repr_ds)
-            @test occursin("Current state:", repr_ds)
-            @test occursin("max_distance = 1.0", repr_ds)
-            @test occursin("gradient_sum = 0.0", repr_ds)
-            @test occursin("last_stepsize = NaN", repr_ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.125
-            # after first step, last_stepsize should be reflected in repr
-            repr_ds_after = repr(ds)
-            @test occursin("last_stepsize = 0.125", repr_ds_after)
         end
         @testset "use sectional cuvature (Euclidian)" begin
             M = Euclidean(2)
@@ -305,7 +297,7 @@ end
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === get_initial_stepsize(ds)
-            @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.125
@@ -324,7 +316,7 @@ end
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === get_initial_stepsize(ds)
-            @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.5
@@ -346,7 +338,7 @@ end
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === get_initial_stepsize(ds)
-            @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
             @test lr == 0.5
@@ -376,7 +368,7 @@ end
             @test ds.max_distance == 1.0
             @test ds.initial_point == p
             @test ds.last_stepsize === get_initial_stepsize(ds)
-            @test ds.last_stepsize === NaN
+            @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
 
             # Expected initial step:

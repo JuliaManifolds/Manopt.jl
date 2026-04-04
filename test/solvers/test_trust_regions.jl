@@ -30,6 +30,7 @@ include("trust_region_model.jl")
         sub_state = TruncatedConjugateGradientState(TpM; X = get_gradient(M, mho, p))
         trs1 = TrustRegionsState(M, sub_problem)
         trs2 = TrustRegionsState(M, sub_problem, sub_state)
+        @test_throws ErrorException TrustRegionsState(M, sub_state)
         trs3 = TrustRegionsState(M, sub_problem; p = p)
         @test Manopt.get_gradient_function(sub_objective)(M, p) == X
     end
@@ -54,7 +55,13 @@ include("trust_region_model.jl")
         s = trust_regions(
             M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, return_state = true
         )
-        @test startswith(repr(s), "# Solver state for `Manopt.jl`s Trust Region Method\n")
+        @test startswith(
+            Manopt.status_summary(s; context = :default),
+            "# Solver state for `Manopt.jl`s Trust Region Method\n"
+        )
+        @test startswith(repr(s), "TrustRegionsState(")
+        # not a random one -> does not contain HZ
+        @test !contains(repr(s), "HZ = ")
         p1 = get_solver_result(s)
         q = copy(M, p)
         set_gradient!(s, M, p, zero_vector(M, p))
@@ -62,10 +69,14 @@ include("trust_region_model.jl")
         trust_regions!(M, f, rgrad, rhess, q; max_trust_region_radius = 8.0)
         @test isapprox(M, p1, q)
         Random.seed!(42)
-        p2 = trust_regions(
-            M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, randomize = true
+        s2 = trust_regions(
+            M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, randomize = true, return_state = true
         )
+        @test startswith(repr(s2), "TrustRegionsState(")
+        # a random one -> does contain HZ
+        @test contains(repr(s2), "HZ = ")
 
+        p2 = get_solver_result(s2)
         @test f(M, p2) ≈ f(M, p1)
 
         p3 = trust_regions(

@@ -24,26 +24,26 @@ using Manifolds, Manopt, Test
         # Smoothing types
 
         # Test all (new) possible combinations of vectorial cost and Jacobian
-        # (1) [F] Function (Gradient), [C] Component (Gradients), [J] Coordinate (Jacobian in Basis)
+        # (1) Function (F, Gradient), Component (C, Gradients), [J] Coordinate (Jacobian in Basis)
         # (2) [a] allocating [i] in place
-        nlsoFa = NonlinearLeastSquaresObjective(
+        nlsoFa = ManifoldNonlinearLeastSquaresObjective(
             f, JF, 2; jacobian_type = FunctionVectorialType()
         )
-        nlsoFi = NonlinearLeastSquaresObjective(
+        nlsoFi = ManifoldNonlinearLeastSquaresObjective(
             f!,
             JF!,
             2;
             evaluation = InplaceEvaluation(),
             jacobian_type = FunctionVectorialType(),
         )
-        nlsoCa = NonlinearLeastSquaresObjective(
+        nlsoCa = ManifoldNonlinearLeastSquaresObjective(
             [f1, f2],
             [j1, j2],
             2;
             function_type = ComponentVectorialType(),
             jacobian_type = ComponentVectorialType(),
         )
-        nlsoCi = NonlinearLeastSquaresObjective(
+        nlsoCi = ManifoldNonlinearLeastSquaresObjective(
             [f1, f2],
             [j1!, j2!],
             2;
@@ -51,10 +51,10 @@ using Manifolds, Manopt, Test
             jacobian_type = ComponentVectorialType(),
             evaluation = InplaceEvaluation(),
         )
-        nlsoJa = NonlinearLeastSquaresObjective(
+        nlsoJa = ManifoldNonlinearLeastSquaresObjective(
             f, J, 2; jacobian_type = CoordinateVectorialType()
         )
-        nlsoJi = NonlinearLeastSquaresObjective(f!, J!, 2; evaluation = InplaceEvaluation())
+        nlsoJi = ManifoldNonlinearLeastSquaresObjective(f!, J!, 2; evaluation = InplaceEvaluation())
 
         p = [0.5, 0.5]
         V = [0.0, 0.0]
@@ -89,5 +89,11 @@ using Manifolds, Manopt, Test
         Manopt._change_basis!(M, J, p, B1, B2)
         # In practice both are the same basis in coordinates, so Jtt stays as iss
         @test J == Jt
+    end
+    @testset "show/repr and status_summary" begin
+        M = Euclidean(3)
+        f(M, p) = p
+        J_f(M, p) = one(p)
+        mnlso = ManifoldNonlinearLeastSquaresObjective(f, J_f, 3)
     end
 end

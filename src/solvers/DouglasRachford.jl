@@ -43,14 +43,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)"))
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 """
 mutable struct DouglasRachfordState{
-        P,
-        Tλ,
-        Tα,
-        TR,
-        S,
-        E <: AbstractEvaluationType,
-        TM <: AbstractRetractionMethod,
-        ITM <: AbstractInverseRetractionMethod,
+        P, Tλ, Tα, TR, S,
+        E <: AbstractEvaluationType, TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
     } <: AbstractManoptSolverState
     p::P
     p_tmp::P
@@ -65,10 +59,7 @@ mutable struct DouglasRachfordState{
     stop::S
     parallel::Bool
     function DouglasRachfordState(
-            M::AbstractManifold;
-            p::P = rand(M),
-            λ::Fλ = i -> 1.0,
-            α::Fα = i -> 0.9,
+            M::AbstractManifold; p::P = rand(M), λ::Fλ = i -> 1.0, α::Fα = i -> 0.9,
             reflection_evaluation::E = AllocatingEvaluation(),
             R::FR = (
                 if reflection_evaluation isa AllocatingEvaluation
@@ -82,47 +73,65 @@ mutable struct DouglasRachfordState{
             retraction_method::TM = default_retraction_method(M, typeof(p)),
             inverse_retraction_method::ITM = default_inverse_retraction_method(M, typeof(p)),
         ) where {
-            P,
-            Fλ,
-            Fα,
-            FR,
-            S <: StoppingCriterion,
-            E <: AbstractEvaluationType,
-            TM <: AbstractRetractionMethod,
-            ITM <: AbstractInverseRetractionMethod,
+            P, Fλ, Fα, FR, S <: StoppingCriterion, E <: AbstractEvaluationType,
+            TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
+        }
+        return DouglasRachfordState(;
+            p = p, p_tmp = copy(M, p), s = copy(M, p), s_tmp = copy(M, p),
+            λ = λ, α = α, R = R, reflection_evaluation = reflection_evaluation,
+            retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method,
+            stopping_criterion = stopping_criterion, parallel = parallel,
+        )
+    end
+    function DouglasRachfordState(;
+            p::P, p_tmp::P, s::P, s_tmp::P, λ::Fλ, α::Fα, R::FR,
+            reflection_evaluation::E, retraction_method::TM, inverse_retraction_method::ITM,
+            stopping_criterion::S, parallel::Bool
+        ) where {
+            P, Fλ, Fα, FR, S <: StoppingCriterion, E <: AbstractEvaluationType,
+            TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
         }
         return new{P, Fλ, Fα, FR, S, E, TM, ITM}(
-            p,
-            copy(M, p),
-            copy(M, p),
-            copy(M, p),
-            λ,
-            α,
-            R,
-            reflection_evaluation,
-            retraction_method,
-            inverse_retraction_method,
-            stopping_criterion,
-            parallel,
+            p, p_tmp, s, s_tmp, λ, α, R, reflection_evaluation,
+            retraction_method, inverse_retraction_method, stopping_criterion, parallel,
         )
     end
 end
-function show(io::IO, drs::DouglasRachfordState)
+function Base.show(io::IO, drs::DouglasRachfordState)
+    print(io, "DouglasRachfordState(; ")
+    print(io, "p = "); print(io, drs.p); print(io, ", ")
+    print(io, "p_tmp = "); print(io, drs.p_tmp); print(io, ", ")
+    print(io, "s = "); print(io, drs.s); print(io, ", ")
+    print(io, "s_tmp = "); print(io, drs.s_tmp); print(io, ", ")
+    print(io, "α = "); print(io, drs.α); print(io, ", ")
+    print(io, "λ = "); print(io, drs.λ); print(io, ", ")
+    print(io, "R = "); print(io, drs.R); print(io, ", ")
+    print(io, "reflection_evaluation = "); print(io, drs.reflection_evaluation); print(io, ", ")
+    print(io, "retraction_method = "); print(io, drs.retraction_method); print(io, ", ")
+    print(io, "inverse_retraction_method = "); print(io, drs.inverse_retraction_method); print(io, ", ")
+    print(io, "stopping_criterion = "); print(io, drs.stop); print(io, ", ")
+    print(io, "parallel = "); print(io, drs.parallel)
+    return print(io, ")")
+end
+function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
+    (context === :short) && return repr(drs)
     i = get_count(drs, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(drs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the Douglas Rachford solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     refl_e = drs.reflection_evaluation == AllocatingEvaluation() ? "allocating" : "in place"
     Conv = indicates_convergence(drs.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(drs)) – $(Iter) $(has_converged(drs) ? "(converged)" : "")")
     P = drs.parallel ? "Parallel " : ""
     s = """
-    # Solver state for `Manopt.jl`s $P Douglas Rachford Algorithm
+    # Solver state for `Manopt.jl`s $(P)Douglas Rachford Algorithm
     $Iter
     using an $(refl_e) reflection.
 
     ## Stopping criterion
-
-    $(status_summary(drs.stop))
+    $(_in_str(status_summary(drs.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 get_iterate(drs::DouglasRachfordState) = drs.p
 function set_iterate!(drs::DouglasRachfordState, p)

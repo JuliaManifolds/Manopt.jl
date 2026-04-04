@@ -149,3 +149,20 @@ function get_gradient!(
     mago.gradient!![k](M, X, p)
     return X
 end
+
+function Base.show(io::IO, mago::ManifoldAlternatingGradientObjective{E}) where {E}
+    print(io, "ManifoldAlternatingGradientObjective(")
+    print(io, mago.cost); print(io, ", "); print(io, mago.gradient!!); print(io, "; ")
+    print(io, _to_kw(E))
+    return print(io, ")")
+end
+function status_summary(mago::ManifoldAlternatingGradientObjective; context::Symbol = :default)
+    (context === :short) && (return repr(mago))
+    (context === :inline) && (return "An alternating gradient objective on a manifold.")
+    return """
+    An alternating gradient objective providing the gradient as components with which to alternate
+
+    ## Functions
+    * cost:    $(_MANOPT_INDENT)$(mago.cost)
+    * gradient:$(_MANOPT_INDENT)$(mago.gradient!!)"""
+end

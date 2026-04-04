@@ -15,6 +15,15 @@ $(_fields(:stopping_criterion; name = "stop"))
 """
 abstract type AbstractManoptSolverState end
 
+function Base.show(io::IO, ::MIME"text/plain", ams::AbstractManoptSolverState)
+    multiline = get(io, :multiline, true)
+    if multiline
+        return status_summary(io, ams)
+    else
+        show(io, ams)
+    end
+end
+
 """
     ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState
 
@@ -34,8 +43,11 @@ function ClosedFormSubSolverState(;
     ) where {E <: AbstractEvaluationType}
     return ClosedFormSubSolverState(evaluation)
 end
+Base.show(io::IO, cfss::ClosedFormSubSolverState{E}) where {E} = print(io, "ClosedFormSubSolverState(; $(_to_kw(E)))")
+status_summary(cfss::ClosedFormSubSolverState; context::Symbol = :default) = repr(cfss)
 
 maybe_wrap_evaluation_type(s::AbstractManoptSolverState) = s
+maybe_wrap_evaluation_type(n::Nothing) = n
 function maybe_wrap_evaluation_type(::E) where {E <: AbstractEvaluationType}
     return ClosedFormSubSolverState{E}()
 end
@@ -303,6 +315,11 @@ a common `Type` for `AbstractStateActions` that might be triggered in decorators
 for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverState`](@ref).
 """
 abstract type AbstractStateAction end
+
+status_summary(asa::AbstractStateAction; context::Symbol = :default) = repr(asa)
+status_summary(io::IO, asa::AbstractStateAction; context::Symbol = :default) = print(io, status_summary(asa; context = context))
+
+Base.show(io::IO, ::MIME"text/plain", asa::AbstractStateAction) = status_summary(io::IO, asa; context = :default)
 
 mutable struct StorageRef{T}
     x::T

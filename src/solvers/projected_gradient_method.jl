@@ -69,10 +69,14 @@ end
 get_iterate(pgms::ProjectedGradientMethodState) = pgms.p
 get_gradient(pgms::ProjectedGradientMethodState) = pgms.X
 
-function show(io::IO, pgms::ProjectedGradientMethodState)
+function status_summary(pgms::ProjectedGradientMethodState; context::Symbol = :default)
+    (context === :short) && return repr(pgms)
     i = get_count(pgms, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(pgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the projected gradient solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(pdsns)) – $(Iter) $(has_converged(pdsns) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Projected Gradient Method
     $Iter
@@ -81,16 +85,15 @@ function show(io::IO, pgms::ProjectedGradientMethodState)
     * retraction method: $(pgms.retraction_method)
 
     ## Stepsize for the gradient step
-    $(pgms.stepsize)
+    $(_in_str(status_summary(pgms.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stepsize for the complete step
-    $(pgms.backtrack)
+    $(_in_str(status_summary(pgms.backtrack; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-
-    $(status_summary(pgms.stop))
+    $(_in_str(status_summary(pgms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 #
@@ -146,13 +149,14 @@ end
 indicates_convergence(c::StopWhenProjectedGradientStationary) = true
 function show(io::IO, c::StopWhenProjectedGradientStationary)
     return print(
-        io, "StopWhenProjectedGradientStationary($(c.threshold))\n    $(status_summary(c))"
+        io, "StopWhenProjectedGradientStationary($(c.threshold))"
     )
 end
-function status_summary(c::StopWhenProjectedGradientStationary)
+function status_summary(c::StopWhenProjectedGradientStationary; context::Symbol = :default)
+    (context === :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "projected gradient stationary (<$(c.threshold)): \t$s"
+    return (_is_inline(context) ? "projected gradient stationary (<$(c.threshold)):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the projected gradient is stationary, i.e. in norm less than $(c.threshold).\n$(_MANOPT_INDENT)") * s
 end
 #
 #

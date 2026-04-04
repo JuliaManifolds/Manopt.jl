@@ -48,13 +48,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
 $(_kwargs(:X))
 """
 mutable struct AdaptiveRegularizationState{
-        P,
-        T,
-        Pr,
-        St <: AbstractManoptSolverState,
-        TStop <: StoppingCriterion,
-        R,
-        TRTM <: AbstractRetractionMethod,
+        P, T, Pr, St <: AbstractManoptSolverState,
+        SC <: StoppingCriterion, R, TRTM <: AbstractRetractionMethod,
     } <: AbstractManoptSolverState
     p::P
     X::T
@@ -67,58 +62,41 @@ mutable struct AdaptiveRegularizationState{
     ρ::R
     ρ_denominator::R
     ρ_regularization::R
-    stop::TStop
+    stop::SC
     retraction_method::TRTM
     σmin::R
     η1::R
     η2::R
     γ1::R
     γ2::R
+    function AdaptiveRegularizationState(
+            sub_problem::Pr, sub_state::St;
+            p::P, X::T, q::P, H::T, S::T, σ::R, ρ::R, ρ_denominator::R, ρ_regularization::R,
+            stopping_criterion::SC, retraction_method::TRTM, σmin::R, η1::R, η2::R, γ1::R, γ2::R,
+        ) where {
+            P, T, Pr, St <: AbstractManoptSolverState, SC <: StoppingCriterion, R, TRTM <: AbstractRetractionMethod,
+        }
+        return new{P, T, Pr, St, SC, R, TRTM}(
+            p, X, sub_problem, sub_state, q, H, S, σ, ρ,
+            ρ_denominator, ρ_regularization, stopping_criterion, retraction_method, σmin, η1, η2, γ1, γ2
+        )
+    end
 end
-
 function AdaptiveRegularizationState(
-        M::AbstractManifold,
-        sub_problem::Pr,
-        sub_state::St;
-        p::P = rand(M),
-        X::T = zero_vector(M, p),
-        σ::R = 100.0 / sqrt(manifold_dimension(M)), # Had this to initial value of 0.01. However try same as in MATLAB: 100/sqrt(dim(M))
-        ρ_regularization::R = 1.0e3,
-        stopping_criterion::SC = StopAfterIteration(100),
+        M::AbstractManifold, sub_problem::Pr, sub_state::St;
+        p::P = rand(M), X::T = zero_vector(M, p), σ::R = 100.0 / sqrt(manifold_dimension(M)),
+        ρ_regularization::R = 1.0e3, stopping_criterion::SC = StopAfterIteration(100),
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
-        σmin::R = 1.0e-10,
-        η1::R = 0.1,
-        η2::R = 0.9,
-        γ1::R = 0.1,
-        γ2::R = 2.0,
+        σmin::R = 1.0e-10, η1::R = 0.1, η2::R = 0.9, γ1::R = 0.1, γ2::R = 2.0,
     ) where {
-        P,
-        T,
-        R,
-        Pr <: Union{<:AbstractManoptProblem, F} where {F},
-        St <: AbstractManoptSolverState,
-        SC <: StoppingCriterion,
-        RTM <: AbstractRetractionMethod,
+        P, T, R, Pr <: Union{<:AbstractManoptProblem, F} where {F},
+        St <: AbstractManoptSolverState, SC <: StoppingCriterion, RTM <: AbstractRetractionMethod,
     }
-    return AdaptiveRegularizationState{P, T, Pr, St, SC, R, RTM}(
-        p,
-        X,
-        sub_problem,
-        sub_state,
-        copy(M, p),
-        copy(M, p, X),
-        copy(M, p, X),
-        σ,
-        one(σ),
-        one(σ),
-        ρ_regularization,
-        stopping_criterion,
-        retraction_method,
-        σmin,
-        η1,
-        η2,
-        γ1,
-        γ2,
+    return AdaptiveRegularizationState(
+        sub_problem, sub_state;
+        p = p, X = X, q = copy(M, p), H = copy(M, p, X), S = copy(M, p, X), σ, ρ = one(σ),
+        ρ_denominator = one(σ), ρ_regularization = ρ_regularization, stopping_criterion = stopping_criterion,
+        retraction_method = retraction_method, σmin = σmin, η1 = η1, η2 = η2, γ1 = γ1, γ2 = γ2
     )
 end
 function AdaptiveRegularizationState(
@@ -137,13 +115,36 @@ function set_gradient!(s::AdaptiveRegularizationState, X)
     s.X = X
     return s
 end
-
-function show(io::IO, arcs::AdaptiveRegularizationState)
+function Base.show(io::IO, arcs::AdaptiveRegularizationState)
+    print(io, "AdaptiveRegularizationState(")
+    print(io, arcs.sub_problem); print(io, ", "); print(io, arcs.sub_state); print(io, "; ")
+    print(io, "p = "); print(io, arcs.p); print(io, ", ")
+    print(io, "q = "); print(io, arcs.q); print(io, ", ")
+    print(io, "H = "); print(io, arcs.H); print(io, ", ")
+    print(io, "S = "); print(io, arcs.S); print(io, ", ")
+    print(io, "retraction_method = "); print(io, arcs.retraction_method); print(io, ", ")
+    print(io, "stopping_criterion = "); print(io, arcs.stop); print(io, ", ")
+    print(io, "X = "); print(io, arcs.X); print(io, ", ")
+    print(io, "η1 = "); print(io, arcs.η1); print(io, ", ")
+    print(io, "η2 = "); print(io, arcs.η2); print(io, ", ")
+    print(io, "γ1 = "); print(io, arcs.γ1); print(io, ", ")
+    print(io, "γ2 = "); print(io, arcs.γ2); print(io, ", ")
+    print(io, "ρ = "); print(io, arcs.ρ); print(io, ", ")
+    print(io, "ρ_denominator = "); print(io, arcs.ρ_denominator); print(io, ", ")
+    print(io, "ρ_regularization = "); print(io, arcs.ρ_regularization); print(io, ", ")
+    print(io, "σ = "); print(io, arcs.σ); print(io, ", ")
+    print(io, "σmin = "); print(io, arcs.σmin)
+    return print(io, ")")
+end
+function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :default)
+    (context === :short) && (return repr(arcs))
     i = get_count(arcs, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(tcgs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the adaptive regularization with cubics solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(arcs.stop) ? "Yes" : "No"
-    sub = repr(arcs.sub_state)
-    sub = replace(sub, "\n" => "\n    | ")
+    sub = status_summary(arcs.sub_state; context = context)
+    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
     s = """
     # Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)
     $Iter
@@ -157,10 +158,9 @@ function show(io::IO, arcs::AdaptiveRegularizationState)
         | $(sub)
 
     ## Stopping criterion
-
-    $(status_summary(arcs.stop))
+    $(_in_str(status_summary(arcs.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_ARC_model = """

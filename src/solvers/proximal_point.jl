@@ -30,33 +30,38 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
 
 [`proximal_point`](@ref)
 """
-mutable struct ProximalPointState{P, Tλ, TStop <: StoppingCriterion} <:
-    AbstractGradientSolverState
+mutable struct ProximalPointState{P, Tλ, TStop <: StoppingCriterion} <: AbstractGradientSolverState
     λ::Tλ
     p::P
     stop::TStop
+    function ProximalPointState(
+            M::AbstractManifold;
+            λ::F = k -> 1.0, p::P = rand(M), stopping_criterion::SC = StopAfterIteration(200),
+        ) where {P, F, SC <: StoppingCriterion}
+        return ProximalPointState(; λ = λ, p = p, stopping_criterion = stopping_criterion)
+    end
+    function ProximalPointState(; λ::F, p::P, stopping_criterion::SC) where {P, F, SC <: StoppingCriterion}
+        return new{P, F, SC}(λ, p, stopping_criterion)
+    end
 end
-function ProximalPointState(
-        M::AbstractManifold;
-        λ::F = k -> 1.0,
-        p::P = rand(M),
-        stopping_criterion::SC = StopAfterIteration(200),
-    ) where {P, F, SC <: StoppingCriterion}
-    return ProximalPointState{P, F, SC}(λ, p, stopping_criterion)
+function Base.show(io::IO, pps::ProximalPointState)
+    print(io, "ProximalPointState(")
+    return print(io, "λ = $(pps.λ), p = $(pps.p), stopping_criterion = $(pps.stop))")
 end
-function show(io::IO, gds::ProximalPointState)
-    i = get_count(gds, :Iterations)
+function status_summary(pps::ProximalPointState; context::Symbol = :default)
+    (context === :short) && return repr(pps)
+    i = get_count(pps, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(pps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the proximal point algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
+    Conv = indicates_convergence(pps.stop) ? "Yes" : "No"
     s = """
     # Solver state for `Manopt.jl`s Proximal Point Method
     $Iter
-
     ## Stopping criterion
-
-    $(status_summary(gds.stop))
+    $(_in_str(status_summary(pps.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 #
 #

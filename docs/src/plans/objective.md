@@ -115,7 +115,7 @@ AbstractManifoldFirstOrderObjective
 ManifoldFirstOrderObjective
 ManifoldAlternatingGradientObjective
 ManifoldStochasticGradientObjective
-NonlinearLeastSquaresObjective
+ManifoldNonlinearLeastSquaresObjective
 ```
 
 While the [`ManifoldFirstOrderObjective`](@ref) allows to provide different

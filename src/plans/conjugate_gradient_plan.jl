@@ -47,7 +47,7 @@ and `δ` is initialized to a copy of this vector.
 
 ## Keyword arguments
 
-The following fields from above <re keyword arguments
+The following fields from above are keyword arguments
 
 $(_kwargs(:X; name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
@@ -63,15 +63,10 @@ $(_kwargs(:vector_transport_method))
 [`conjugate_gradient_descent`](@ref), [`DefaultManoptProblem`](@ref), [`ArmijoLinesearch`](@ref)
 """
 mutable struct ConjugateGradientDescentState{
-        P,
-        T,
-        F,
-        TStepsize <: Stepsize,
-        TStop <: StoppingCriterion,
-        TCoeff <: DirectionUpdateRuleStorage,
-        TRC <: AbstractRestartCondition,
-        TRetr <: AbstractRetractionMethod,
-        VTM <: AbstractVectorTransportMethod,
+        P, T, F,
+        TStepsize <: Stepsize, TStop <: StoppingCriterion,
+        TCoeff <: DirectionUpdateRuleStorage, TRC <: AbstractRestartCondition,
+        TRetr <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
     } <: AbstractGradientSolverState
     p::P
     p_old::P
@@ -84,43 +79,19 @@ mutable struct ConjugateGradientDescentState{
     stop::TStop
     retraction_method::TRetr
     vector_transport_method::VTM
-    function ConjugateGradientDescentState(
-            M::AbstractManifold,
-            p::P,
-            sC::TsC,
-            s::TStep,
-            dC::DirectionUpdateRule,
-            res_cond::TRC = NeverRestart(),
-            retr::TRetr = default_retraction_method(M, typeof(p)),
-            vtr::VTM = default_vector_transport_method(M),
-            initial_gradient::T = zero_vector(M, p),
+    function ConjugateGradientDescentState(;
+            p::P, p_old::P, stopping_criterion::SC, stepsize::TStep, coefficient::D,
+            restart_condition::TRC, retraction_method::TRetr,
+            vector_transport_method::VTM, X::T, δ::T, β::F
         ) where {
-            P,
-            T,
-            TsC <: StoppingCriterion,
-            TStep <: Stepsize,
-            TRC <: AbstractRestartCondition,
-            TRetr <: AbstractRetractionMethod,
-            VTM <: AbstractVectorTransportMethod,
+            P, T, F, SC <: StoppingCriterion, TStep <: Stepsize, D <: DirectionUpdateRuleStorage,
+            TRC <: AbstractRestartCondition, TRetr <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
         }
-        coef = DirectionUpdateRuleStorage(M, dC; p_init = p, X_init = initial_gradient)
-        βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
-        cgs = new{P, T, βT, TStep, TsC, typeof(coef), TRC, TRetr, VTM}()
-        cgs.p = p
-        cgs.p_old = copy(M, p)
-        cgs.X = initial_gradient
-        cgs.δ = copy(M, p, initial_gradient)
-        cgs.stop = sC
-        cgs.retraction_method = retr
-        cgs.stepsize = s
-        cgs.coefficient = coef
-        cgs.restart_condition = res_cond
-        cgs.vector_transport_method = vtr
-        cgs.β = zero(βT)
-        return cgs
+        return new{P, T, F, TStep, SC, D, TRC, TRetr, VTM}(
+            p, p_old, X, δ, β, coefficient, restart_condition, stepsize, stopping_criterion, retraction_method, vector_transport_method
+        )
     end
 end
-
 function ConjugateGradientDescentState(
         M::AbstractManifold;
         p::P = rand(M),
@@ -130,28 +101,21 @@ function ConjugateGradientDescentState(
         stepsize::TStep = default_stepsize(
             M, ConjugateGradientDescentState; retraction_method = retraction_method
         ),
-        stopping_criterion::TsC = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-8),
+        stopping_criterion::SC = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-8),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
         initial_gradient::T = zero_vector(M, p),
     ) where {
-        P,
-        T,
-        TsC <: StoppingCriterion,
-        TStep <: Stepsize,
-        TRC <: AbstractRestartCondition,
-        TRetr <: AbstractRetractionMethod,
-        VTM <: AbstractVectorTransportMethod,
+        P, T, SC <: StoppingCriterion, TStep <: Stepsize,
+        TRC <: AbstractRestartCondition, TRetr <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
     }
-    return ConjugateGradientDescentState(
-        M,
-        p,
-        stopping_criterion,
-        stepsize,
-        _produce_type(coefficient, M),
-        restart_condition,
-        retraction_method,
-        vector_transport_method,
-        initial_gradient,
+    _coefficient = DirectionUpdateRuleStorage(M, _produce_type(coefficient, M); p_init = p, X_init = initial_gradient)
+    return ConjugateGradientDescentState(;
+        p = p, p_old = copy(M, p),
+        X = initial_gradient, δ = copy(M, p, initial_gradient),
+        β = zero(allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))),
+        stopping_criterion = stopping_criterion, coefficient = _coefficient,
+        stepsize = stepsize, restart_condition = restart_condition,
+        retraction_method = retraction_method, vector_transport_method = vector_transport_method,
     )
 end
 
@@ -159,9 +123,23 @@ function get_message(cgs::ConjugateGradientDescentState)
     # for now only step size is quipped with messages
     return get_message(cgs.stepsize)
 end
-
 function get_gradient(cgs::ConjugateGradientDescentState)
     return cgs.X
+end
+function Base.show(io::IO, cgs::ConjugateGradientDescentState)
+    print(io, "ConjugateGradientDescentState(;")
+    print(io, " p = $(cgs.p)")
+    print(io, " p_old = $(cgs.p_old),")
+    print(io, " X = $(cgs.X),")
+    print(io, " δ = $(cgs.δ),")
+    print(io, " β = $(cgs.β),")
+    print(io, " stopping_criterion = $(status_summary(cgs.stop; context = :short)),")
+    print(io, " stepsize = $(cgs.stepsize),")
+    print(io, " coefficient = $(cgs.coefficient),")
+    print(io, " restart_condition = $(cgs.restart_condition),")
+    print(io, " retraction_method = $(cgs.retraction_method),")
+    print(io, " vector_transport_method = $(cgs.vector_transport_method)")
+    return print(io, ")")
 end
 
 _doc_CG_notation = """

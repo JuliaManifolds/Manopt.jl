@@ -82,18 +82,15 @@ using RecursiveArrayTools
     @test all(get_iterate(s_exact) .== p0)
 
     osm = PrimalDualSemismoothNewtonState(
-        M;
-        m = m,
-        n = n,
-        p = zero.(p0),
-        X = X0,
-        primal_stepsize = 0.0,
-        dual_stepsize = 0.0,
-        regularization_parameter = 0.0,
+        M; m = m, n = n, p = zero.(p0), X = X0,
+        primal_stepsize = 0.0, dual_stepsize = 0.0, regularization_parameter = 0.0,
     )
     set_iterate!(osm, p0)
     @test all(get_iterate(osm) .== p0)
 
+    @testset "show/repr" begin
+
+    end
     @testset "test Mutating/Allocation Problem Variants" begin
         pdmoa = PrimalDualManifoldObjective(
             f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator = DΛ, Λ = Λ

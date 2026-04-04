@@ -21,12 +21,18 @@ if these are different from the iterate and search direction of the main solver.
 struct StepsizeState{P, T} <: AbstractManoptSolverState
     p::P
     X::T
+    StepsizeState(; p::P, X::T) where {P, T} = new{P, T}(p, X)
 end
-StepsizeState(M::AbstractManifold; p = rand(M), X = zero_vector(M, p)) = StepsizeState(p, X)
+StepsizeState(M::AbstractManifold; p = rand(M), X = zero_vector(M, p)) = StepsizeState(; p = p, X = X)
 get_iterate(s::StepsizeState) = s.p
 get_gradient(s::StepsizeState) = s.X
 set_iterate!(s::StepsizeState, M, p) = copyto!(M, s.p, p)
 set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
+Base.show(io::IO, sss::StepsizeState) = print(io, "StepsizeState(; p = ", sss.p, ", X = ", sss.X, ")")
+function status_summary(sss::StepsizeState{P, T}; context::Symbol = :default) where {P, T}
+    (context === :short) && return repr(sss)
+    return "A state for a stepsize problem."
+end
 
 @doc """
     InteriorPointNewtonState{P,T} <: AbstractHessianSolverState
@@ -53,15 +59,24 @@ $(_fields([:retraction_method, :stepsize]))
 # Constructor
 
     InteriorPointNewtonState(
-        M::AbstractManifold,
-        cmo::ConstrainedManifoldObjective,
-        sub_problem::Pr,
-        sub_state::St;
+        M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr, sub_state::St;
+        kwargs...
+    )
+    InteriorPointNewtonState(
+        M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr;
+        evaluation = AllocatingEvaluation(), kwargs...
+    )
+    InteriorPointNewtonState(
+        sub_problem::Pr, sub_state::St;
         kwargs...
     )
 
 Initialize the state, where both the [`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) and the [`ConstrainedManifoldObjective`](@ref)
 are used to fill in reasonable defaults for the keywords.
+For a closed form solution of the sub solver, you can provide the evaluation either as `St` in the first
+constructor or as a keyword like in the second.
+The third constructor is considered an internal constructor accepting the same keywords,
+but those that are filled by defaults based on `M` or `cmo` become mandatory
 
 # Input
 
@@ -74,14 +89,14 @@ $(_args([:sub_problem, :sub_state]))
 Let `m` and `n` denote the number of inequality and equality constraints, respectively
 
 $(_kwargs(:p; add_properties = [:as_Initial]))
-* `μ=ones(m)`
+* `μ=ones(m)` Lagrange multipliers for the inequality constraints
+* `λ=zeros(n)` Lagrange multipliers for the equality constraints
 * `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`
-* `Y=zero(μ)`
-* `λ=zeros(n)`
-* `Z=zero(λ)`
-* `s=ones(m)`
-* `W=zero(s)`
-* `ρ=μ's/m`
+* `Y=zero(μ)` tangent vector (gradient) for the inequality constraints
+* `Z=zero(λ)` tangent vector (gradient) for the equality constraints
+* `s=ones(m)` slack variables for the inequality constraints
+* `W=zero(s)` tangent vector (gradient) for the slack variables
+* `ρ=μ's/m`  storage for the orthogonality check
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)"))
 $(_kwargs(:retraction_method))
@@ -96,17 +111,10 @@ $(_kwargs(:stepsize; default = " `[`ArmijoLinesearch`](@ref)`()"))
 and internally `_step_M` and `_step_p` for the manifold and point in the stepsize.
 """
 mutable struct InteriorPointNewtonState{
-        P,
-        T,
-        Pr <: Union{AbstractManoptProblem, F} where {F},
-        St <: AbstractManoptSolverState,
-        V,
-        R <: Real,
-        SC <: StoppingCriterion,
-        TRTM <: AbstractRetractionMethod,
-        TStepsize <: Stepsize,
-        TStepPr <: AbstractManoptProblem,
-        TStepSt <: AbstractManoptSolverState,
+        P, T, Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+        V, R <: Real,
+        SC <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TStepsize <: Stepsize,
+        TStepPr <: AbstractManoptProblem, TStepSt <: AbstractManoptSolverState,
     } <: AbstractHessianSolverState
     p::P
     X::T
@@ -127,76 +135,66 @@ mutable struct InteriorPointNewtonState{
     step_state::TStepSt
     is_feasible_error::Symbol
     function InteriorPointNewtonState(
-            M::AbstractManifold,
-            cmo::ConstrainedManifoldObjective,
-            sub_problem::Pr,
-            sub_state::St;
-            p::P = rand(M),
-            X::T = zero_vector(M, p),
-            μ::V = ones(length(get_inequality_constraint(M, cmo, p, :))),
-            Y::V = zero(μ),
-            λ::V = zeros(length(get_equality_constraint(M, cmo, p, :))),
-            Z::V = zero(λ),
-            s::V = ones(length(get_inequality_constraint(M, cmo, p, :))),
-            W::V = zero(s),
-            ρ::R = μ's / length(get_inequality_constraint(M, cmo, p, :)),
-            σ::R = calculate_σ(M, cmo, p, μ, λ, s),
+            sub_problem::Pr, sub_state::St;
+            p::P, X::T, μ::V, λ::V, s::V,
+            ρ::R, σ::R, is_feasible_error::Symbol = :error,
+            Y::V = zero(μ), Z::V = zero(λ), W::V = zero(s),
             stopping_criterion::SC = StopAfterIteration(200) | StopWhenChangeLess(1.0e-8),
-            retraction_method::RTM = default_retraction_method(M),
-            step_objective = ManifoldGradientObjective(
-                KKTVectorFieldNormSq(cmo),
-                KKTVectorFieldNormSqGradient(cmo);
-                evaluation = InplaceEvaluation(),
-            ),
-            vector_space = Rn,
-            _step_M = M × vector_space(length(μ)) × vector_space(length(λ)) ×
-                vector_space(length(s)),
-            step_problem::StepPr = DefaultManoptProblem(_step_M, step_objective),
-            _step_p = rand(_step_M),
-            step_state::StepSt = StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
-            centrality_condition::F = (N, p) -> true,
-            stepsize::S = ArmijoLinesearchStepsize(
-                get_manifold(step_problem);
-                retraction_method = default_retraction_method(get_manifold(step_problem)),
-                initial_stepsize = 1.0,
-                additional_decrease_condition = centrality_condition,
-            ),
-            is_feasible_error::Symbol = :error,
-            kwargs...,
+            retraction_method::RTM,
+            step_problem::StepPr, step_state::StepSt, stepsize::S, kwargs...
         ) where {
-            P,
-            T,
-            Pr <: Union{AbstractManoptProblem, F} where {F},
-            St <: AbstractManoptSolverState,
-            V,
-            R,
-            F,
-            SC <: StoppingCriterion,
-            StepPr <: AbstractManoptProblem,
-            StepSt <: AbstractManoptSolverState,
-            RTM <: AbstractRetractionMethod,
-            S <: Stepsize,
+            P, T, V, R,
+            Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+            StepPr <: AbstractManoptProblem, StepSt <: AbstractManoptSolverState,
+            SC <: StoppingCriterion, RTM <: AbstractRetractionMethod, S <: Stepsize,
         }
         ips = new{P, T, Pr, St, V, R, SC, RTM, S, StepPr, StepSt}()
-        ips.p = p
-        ips.sub_problem = sub_problem
-        ips.sub_state = sub_state
-        ips.μ = μ
-        ips.λ = λ
-        ips.s = s
-        ips.ρ = ρ
-        ips.σ = σ
-        ips.X = X
-        ips.Y = Y
-        ips.Z = Z
-        ips.W = W
+        ips.p = p; ips.sub_problem = sub_problem; ips.sub_state = sub_state
+        ips.μ = μ; ips.λ = λ; ips.s = s; ips.ρ = ρ; ips.σ = σ
+        ips.X = X; ips.Y = Y; ips.Z = Z; ips.W = W
         ips.stop = stopping_criterion
         ips.retraction_method = retraction_method
         ips.stepsize = stepsize
-        ips.step_problem = step_problem
-        ips.step_state = step_state
+        ips.step_problem = step_problem; ips.step_state = step_state
         ips.is_feasible_error = is_feasible_error
         return ips
+    end
+    function InteriorPointNewtonState(
+            M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr, sub_state::St;
+            p = rand(M), X = zero_vector(M, p),
+            μ = ones(length(get_inequality_constraint(M, cmo, p, :))),
+            λ = zeros(length(get_equality_constraint(M, cmo, p, :))),
+            s = ones(length(get_inequality_constraint(M, cmo, p, :))),
+            ρ = μ's / length(get_inequality_constraint(M, cmo, p, :)),
+            σ = calculate_σ(M, cmo, p, μ, λ, s),
+            retraction_method::RTM = default_retraction_method(M),
+            step_objective = ManifoldGradientObjective(
+                KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo);
+                evaluation = InplaceEvaluation(),
+            ),
+            vector_space = Rn,
+            _step_M = M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
+            step_problem::StepPr = DefaultManoptProblem(_step_M, step_objective),
+            _step_p = rand(_step_M),
+            step_state::StepSt = StepsizeState(; p = _step_p, X = zero_vector(_step_M, _step_p)),
+            centrality_condition = (N, p) -> true,
+            stepsize::S = ArmijoLinesearchStepsize(
+                get_manifold(step_problem);
+                retraction_method = default_retraction_method(get_manifold(step_problem)),
+                initial_stepsize = 1.0, additional_decrease_condition = centrality_condition,
+            ),
+            kwargs...,
+        ) where {
+            Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+            RTM <: AbstractRetractionMethod, S <: Stepsize,
+            StepPr <: AbstractManoptProblem, StepSt <: AbstractManoptSolverState,
+        }
+        return InteriorPointNewtonState(
+            sub_problem, sub_state;
+            p = p, X = X, μ = μ, λ = λ, s = s, ρ = ρ, σ = σ, retraction_method = retraction_method,
+            step_problem = step_problem, step_state, stepsize = stepsize,
+            kwargs...
+        )
     end
 end
 function InteriorPointNewtonState(
@@ -226,10 +224,11 @@ function get_message(ips::InteriorPointNewtonState)
     return get_message(ips.stepsize)
 end
 # pretty print state info
-function show(io::IO, ips::InteriorPointNewtonState)
+function status_summary(ips::InteriorPointNewtonState; context::Symbol = :default)
     i = get_count(ips, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(ips)) – $(Iter) $(has_converged(ips) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Interior Point Newton Method
     $Iter
@@ -238,15 +237,27 @@ function show(io::IO, ips::InteriorPointNewtonState)
     * σ: $(ips.σ)
     * retraction method: $(ips.retraction_method)
 
-    ## Stopping criterion
-    $(status_summary(ips.stop))
     ## Stepsize
-    $(ips.stepsize)
-    This indicates convergence: $Conv
-    """
-    return print(io, s)
-end
+    $(_in_str(status_summary(ips.stepsize; context = context); indent = 0, headers = 1))
 
+    ## Stopping criterion
+    $(_in_str(status_summary(ips.stop; context = context); indent = 0, headers = 1))    This indicates convergence: $Conv"""
+    return s
+end
+function Base.show(io::IO, ipns::InteriorPointNewtonState)
+    print(io, "InteriorPointNewtonState(")
+    print(io, repr(ipns.sub_problem)); print(io, ", "); print(io, repr(ipns.sub_state)); print(io, ";\n")
+    print(io, "is_feasibility_error="); print(io, ipns.is_feasible_error)
+    print(io, ",retraction_method = $(ipns.retraction_method)")
+    print(io, ",\np = "); print(io, ipns.p); print(io, ", X = "); print(io, ipns.X)
+    print(io, ", μ = "); print(io, ipns.μ); print(io, ", Y = "); print(io, ipns.Y)
+    print(io, ", λ = "); print(io, ipns.λ); print(io, ", Z = "); print(io, ipns.Z)
+    print(io, ", s = "); print(io, ipns.s); print(io, ", W = "); print(io, ipns.W)
+    print(io, ", ρ = "); print(io, ipns.ρ); print(io, ", σ = "); print(io, ipns.σ)
+    print(io, ",\nstep_problem = "); print(io, ipns.step_problem)
+    print(io, ", step_state = ", ipns.step_state)
+    return print(io, ")")
+end
 #
 # Constraint functors
 #
@@ -309,8 +320,7 @@ b(p,λ) = $(
 
     CondensedKKTVectorField(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorField{O <: ConstrainedManifoldObjective, T, R} <:
-    AbstractConstrainedSlackFunctor{T, R}
+mutable struct CondensedKKTVectorField{O <: ConstrainedManifoldObjective, T, R} <: AbstractConstrainedSlackFunctor{T, R}
     cmo::O
     μ::T
     s::T
@@ -347,11 +357,17 @@ function (cKKTvf::CondensedKKTVectorField)(N, Y, q)
     end
     return Y
 end
-
-function show(io::IO, CKKTvf::CondensedKKTVectorField)
-    return print(
-        io, "CondensedKKTVectorField\n\twith μ=$(CKKTvf.μ), s=$(CKKTvf.s), β=$(CKKTvf.β)"
-    )
+function status_summary(CKKTvf::CondensedKKTVectorField; context::Symbol = :default)
+    _is_inline(context) && (return repr(CKKTvf))
+    return """
+    The condensed KKT vector field for the constrained objective
+    $(_in_str(status_summary(CKKTvf.cmo; context = context); indent = 1))
+    with μ=$(CKKTvf.μ) s=$(CKKTvf.s) β=$(CKKTvf.β)"""
+end
+function Base.show(io::IO, CKKTvf::CondensedKKTVectorField)
+    print(io, "CondensedKKTVectorField(")
+    print(io, CKKTvf.cmo)
+    return print(io, ", $(CKKTvf.μ), $(CKKTvf.s), $(CKKTvf.β))")
 end
 
 @doc """
@@ -410,8 +426,7 @@ $(
 
     CondensedKKTVectorFieldJacobian(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorFieldJacobian{O <: ConstrainedManifoldObjective, T, R} <:
-    AbstractConstrainedSlackFunctor{T, R}
+mutable struct CondensedKKTVectorFieldJacobian{O <: ConstrainedManifoldObjective, T, R} <: AbstractConstrainedSlackFunctor{T, R}
     cmo::O
     μ::T
     s::T
@@ -453,11 +468,17 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     end
     return Y
 end
-function show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
-    return print(
-        io,
-        "CondensedKKTVectorFieldJacobian\n\twith μ=$(CKKTvfJ.μ), s=$(CKKTvfJ.s), β=$(CKKTvfJ.β)",
-    )
+function status_summary(CKKTvfJ::CondensedKKTVectorFieldJacobian; context::Symbol = :default)
+    _is_inline(context) && (return repr(CKKTvfJ))
+    return """
+    The Jacobian of the condensed KKT vector field for the constrained objective
+    $(_in_str(status_summary(CKKTvfJ.cmo; context = context); indent = 1))
+    with μ=$(CKKTvfJ.μ) s=$(CKKTvfJ.s) β=$(CKKTvfJ.β)"""
+end
+function Base.show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
+    print(io, "CondensedKKTVectorFieldJacobian(")
+    print(io, CKKTvfJ.cmo)
+    return print(io, ", $(CKKTvfJ.μ), $(CKKTvfJ.s), $(CKKTvfJ.β))")
 end
 
 @doc """
@@ -533,8 +554,14 @@ function (KKTvf::KKTVectorField)(N, Y, q)
     (m > 0) && (Y4 .= μ .* s)
     return Y
 end
-function show(io::IO, KKTvf::KKTVectorField)
-    return print(io, "KKTVectorField\nwith the objective\n\t$(KKTvf.cmo)")
+function Base.show(io::IO, KKTvf::KKTVectorField)
+    print(io, "KKTVectorField(")
+    print(io, KKTvf.cmo)
+    return print(io, ")")
+end
+function status_summary(KKTvf::KKTVectorField; context::Symbol = :default)
+    _is_inline(context) && (return repr(KKTvf))
+    return "The KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvf.cmo; context = context))"
 end
 
 @doc """
@@ -611,8 +638,14 @@ function (KKTvfJ::KKTVectorFieldJacobian)(N, Z, q, Y)
     Z4 .= μ .* Y4 .+ s .* Y2
     return Z
 end
-function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
-    return print(io, "KKTVectorFieldJacobian\nwith the objective\n\t$(KKTvfJ.cmo)")
+function Base.show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
+    print(io, "KKTVectorFieldJacobian(")
+    print(io, KKTvfJ.cmo)
+    return print(io, ")")
+end
+function status_summary(KKTvfJ::KKTVectorFieldJacobian; context::Symbol = :default)
+    _is_inline(context) && (return repr(KKTvfJ))
+    return "The Jacobian of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfJ.cmo; context = context))"
 end
 
 @doc """
@@ -688,8 +721,14 @@ function (KKTvfAdJ::KKTVectorFieldAdjointJacobian)(N, Z, q, Y)
     Z4 .= μ .* Y4 .+ Y2
     return Z
 end
-function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
-    return print(io, "KKTVectorFieldAdjointJacobian\nwith the objective\n\t$(KKTvfAdJ.cmo)")
+function Base.show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
+    print(io, "KKTVectorFieldAdjointJacobian(")
+    print(io, KKTvfAdJ.cmo)
+    return print(io, ")")
+end
+function status_summary(KKTvfAdJ::KKTVectorFieldAdjointJacobian; context::Symbol = :default)
+    _is_inline(context) && (return repr(KKTvfAdJ))
+    return "The adjoint Jacobian of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfAdJ.cmo; context = context))"
 end
 
 @doc """
@@ -721,8 +760,14 @@ function (KKTvc::KKTVectorFieldNormSq)(N, q)
     KKTVectorField(KKTvc.cmo)(N, Y, q)
     return inner(N, q, Y, Y)
 end
-function show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
-    return print(io, "KKTVectorFieldNormSq\nwith the objective\n\t$(KKTvfNSq.cmo)")
+function Base.show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
+    print(io, "KKTVectorFieldNormSq(")
+    print(io, KKTvfNSq.cmo)
+    return print(io, ")")
+end
+function status_summary(KKTvfNSq::KKTVectorFieldNormSq; context::Symbol = :default)
+    _is_inline(context) && (return repr(KKTvfNSq))
+    return "The KKT vector field in normed squared for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfNSq.cmo; context = context))"
 end
 
 @doc """
@@ -789,12 +834,15 @@ function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, Y, q)
     Y .*= 2
     return Y
 end
-function show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
-    return print(
-        io, "KKTVectorFieldNormSqGradient\nwith the objective\n\t$(KKTvfNSqGrad.cmo)"
-    )
+function Base.show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
+    print(io, "KKTVectorFieldNormSqGradient(")
+    print(io, KKTvfNSqGrad.cmo)
+    return print(io, ")")
 end
-
+function status_summary(KKTvfNSqGrad::KKTVectorFieldNormSqGradient; context::Symbol = :default)
+    _is_inline(context) && (return repr(KKTvfNSqGrad))
+    return "The gradient of the KKT vector field in normed squared for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfNSqGrad.cmo; context = context))"
+end
 #
 #
 # A special linesearch for IP Newton
@@ -974,14 +1022,14 @@ function get_reason(c::StopWhenKKTResidualLess)
     end
     return ""
 end
-function status_summary(swrr::StopWhenKKTResidualLess)
+function status_summary(swrr::StopWhenKKTResidualLess; context::Symbol = :default)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "‖F(p, λ, μ)‖ < ε:\t$s"
+    return (_is_inline(context) ? "‖F(p, λ, μ)‖ < ε = $(swrr.ε):$(_MANOPT_INDENT)" : "Stop when the KKT resudual is less than ε = $(c.ε)\n$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(::StopWhenKKTResidualLess) = true
-function show(io::IO, c::StopWhenKKTResidualLess)
-    return print(io, "StopWhenKKTResidualLess($(c.ε))\n    $(status_summary(c))")
+function Base.show(io::IO, c::StopWhenKKTResidualLess)
+    return print(io, "StopWhenKKTResidualLess($(c.ε))")
 end
 
 # An internal function to compute the new σ

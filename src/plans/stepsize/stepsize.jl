@@ -41,7 +41,6 @@ with the fields keyword arguments and the retraction is set to the default retra
 $(_kwargs(:retraction_method))
 * `contraction_factor=0.95`
 * `sufficient_decrease=0.1`
-* `last_stepsize=initialstepsize`
 * `initial_guess=`[`ArmijoInitialGuess`](@ref)`()`
 * `stop_when_stepsize_less=0.0`: stop when the stepsize decreased below this version.
 * `stop_when_stepsize_exceeds=[`max_step`](@ref)`(M)`: provide an absolute maximal step size.
@@ -64,57 +63,60 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
     additional_decrease_condition::DF
     additional_increase_condition::IF
     messages::MSGS
+    function ArmijoLinesearchStepsize(;
+            additional_decrease_condition::DF, additional_increase_condition::IF,
+            candidate_point::P, contraction_factor::F, initial_stepsize::F, last_stepsize::F,
+            initial_guess::IGF, retraction_method::TRM,
+            stop_when_stepsize_less::F, stop_when_stepsize_exceeds::F, sufficient_decrease::F,
+            stop_increasing_at_step::I, stop_decreasing_at_step::I, messages::MSGS
+        ) where {TRM <: AbstractRetractionMethod, P, I <: Integer, F <: Real, IGF, DF, IF, MSGS}
+        return new{TRM, P, I, F, IGF, DF, IF, MSGS}(
+            candidate_point, contraction_factor, initial_guess, initial_stepsize,
+            last_stepsize, retraction_method, sufficient_decrease,
+            stop_when_stepsize_less, stop_when_stepsize_exceeds, stop_increasing_at_step, stop_decreasing_at_step,
+            additional_decrease_condition, additional_increase_condition, messages,
+        )
+    end
     function ArmijoLinesearchStepsize(
             M::AbstractManifold;
-            additional_decrease_condition::DF = (M, p) -> true,
-            additional_increase_condition::IF = (M, p) -> true,
+            additional_decrease_condition::DF = (M, p) -> true, additional_increase_condition::IF = (M, p) -> true,
             candidate_point::P = allocate_result(M, rand),
-            contraction_factor::F = 0.95,
-            initial_stepsize::F = 1.0,
-            initial_guess::IGF = ArmijoInitialGuess(),
-            retraction_method::TRM = default_retraction_method(M),
-            stop_when_stepsize_less::F = 0.0,
-            stop_when_stepsize_exceeds::Real = max_stepsize(M),
-            stop_increasing_at_step::I = 100,
-            stop_decreasing_at_step::I = 1000,
-            sufficient_decrease = 0.1,
-        ) where {TRM <: AbstractRetractionMethod, P, I, F <: Real, IGF, DF, IF}
-        msgs = (;
-            non_descent_direction = StepsizeMessage{F, F}(),
-            stop_decreasing = StepsizeMessage{Int, F}(),
-            stop_increasing = StepsizeMessage{Int, F}(),
-            stepsize_less = StepsizeMessage{F, F}(),
-            stepsize_exceeds = StepsizeMessage{F, F}(),
+            contraction_factor::Real = 0.95, initial_stepsize::Real = 1.0,
+            initial_guess::IGF = ArmijoInitialGuess(), retraction_method::TRM = default_retraction_method(M),
+            stop_when_stepsize_less::Real = 0.0, stop_when_stepsize_exceeds::Real = max_stepsize(M),
+            stop_increasing_at_step::Integer = 100, stop_decreasing_at_step::Integer = 1000,
+            sufficient_decrease::Real = 0.1,
+        ) where {TRM <: AbstractRetractionMethod, P, IGF, DF, IF}
+        R = promote_type(
+            typeof(contraction_factor), typeof(initial_stepsize),
+            typeof(stop_when_stepsize_exceeds), typeof(stop_when_stepsize_less), typeof(sufficient_decrease),
         )
-        return new{TRM, P, I, F, IGF, DF, IF, typeof(msgs)}(
-            candidate_point,
-            contraction_factor,
-            initial_guess,
-            initial_stepsize,
-            initial_stepsize,
-            retraction_method,
-            sufficient_decrease,
-            stop_when_stepsize_less,
-            stop_when_stepsize_exceeds,
-            stop_increasing_at_step,
-            stop_decreasing_at_step,
-            additional_decrease_condition,
-            additional_increase_condition,
-            msgs,
+        cf = convert(R, contraction_factor); is = convert(R, initial_stepsize)
+        swse = convert(R, stop_when_stepsize_exceeds); swsl = convert(R, stop_when_stepsize_less)
+        sd = convert(R, sufficient_decrease)
+        I = promote_type(typeof(stop_increasing_at_step), typeof(stop_decreasing_at_step))
+        sias = convert(I, stop_increasing_at_step); sdas = convert(I, stop_decreasing_at_step)
+        msgs = (;
+            non_descent_direction = StepsizeMessage{R, R}(),
+            stop_decreasing = StepsizeMessage{I, R}(), stop_increasing = StepsizeMessage{I, R}(),
+            stepsize_less = StepsizeMessage{R, R}(), stepsize_exceeds = StepsizeMessage{R, R}(),
+        )
+        return ArmijoLinesearchStepsize(;
+            additional_decrease_condition = additional_decrease_condition,
+            additional_increase_condition = additional_increase_condition,
+            candidate_point = candidate_point, contraction_factor = cf, initial_stepsize = is, last_stepsize = is,
+            initial_guess = initial_guess, retraction_method = retraction_method,
+            stop_when_stepsize_less = swsl, stop_when_stepsize_exceeds = swse, sufficient_decrease = sd,
+            stop_increasing_at_step = sias, stop_decreasing_at_step = sdas, messages = msgs
         )
     end
 end
 function ArmijoLinesearchStepsize(M::AbstractManifold, p; kwargs...)
     return ArmijoLinesearchStepsize(M; candidate_point = allocate(p), kwargs...)
 end
-
 function (a::ArmijoLinesearchStepsize)(
-        mp::AbstractManoptProblem,
-        s::AbstractManoptSolverState,
-        k::Int,
-        η = (-get_gradient(mp, get_iterate(s)));
-        gradient = nothing,
-        kwargs...,
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s)));
+        gradient = nothing, kwargs...,
     )
     p = get_iterate(s)
     grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
@@ -126,16 +128,10 @@ function (a::ArmijoLinesearchStepsize)(
     reset_messages!(a.messages)
     l = norm(get_manifold(mp), p, η)
     a.last_stepsize = linesearch_backtrack!(
-        get_manifold(mp),
-        a.candidate_point,
-        (M, p) -> get_cost_function(get_objective(mp))(M, p),
-        p,
-        initial_guess,
-        a.sufficient_decrease,
-        a.contraction_factor,
-        η;
-        gradient = X,
-        retraction_method = a.retraction_method,
+        get_manifold(mp), a.candidate_point,
+        (M, p) -> get_cost_function(get_objective(mp))(M, p), p,
+        initial_guess, a.sufficient_decrease, a.contraction_factor, η;
+        gradient = X, retraction_method = a.retraction_method,
         stop_when_stepsize_less = (a.stop_when_stepsize_less / l),
         stop_when_stepsize_exceeds = (a.stop_when_stepsize_exceeds / l),
         stop_increasing_at_step = a.stop_increasing_at_step,
@@ -147,20 +143,31 @@ function (a::ArmijoLinesearchStepsize)(
     return a.last_stepsize
 end
 get_initial_stepsize(a::ArmijoLinesearchStepsize) = a.initial_stepsize
-function show(io::IO, armijo_ls::ArmijoLinesearchStepsize)
-    return print(
-        io,
-        """
-        ArmijoLinesearch(;
-            initial_stepsize=$(armijo_ls.initial_stepsize),
-            retraction_method=$(armijo_ls.retraction_method),
-            contraction_factor=$(armijo_ls.contraction_factor),
-            sufficient_decrease=$(armijo_ls.sufficient_decrease),
-        )""",
-    )
+function Base.show(io::IO, a_ls::ArmijoLinesearchStepsize)
+    print(io, "ArmijoLinesearch(; additional_decrease_condition = ", a_ls.additional_decrease_condition)
+    print(io, ", additional_increase_condition = ", a_ls.additional_increase_condition)
+    print(io, ", candidate_point = ", a_ls.candidate_point, ", contraction_factor = ", a_ls.contraction_factor)
+    print(io, ", initial_stepsize = ", a_ls.initial_stepsize, ", initial_guess = ", a_ls.initial_guess)
+    print(io, ", last_stepsize = ", a_ls.last_stepsize)
+    print(io, ", retraction_method = ", a_ls.retraction_method, ", stop_when_stepsize_less = ", a_ls.stop_when_stepsize_less)
+    print(io, ", stop_when_stepsize_exceeds = ", a_ls.stop_when_stepsize_exceeds, ", sufficient_decrease = ", a_ls.sufficient_decrease)
+    print(io, ", stop_increasing_at_step = ", a_ls.stop_increasing_at_step, ", stop_decreasing_at_step = ", a_ls.stop_decreasing_at_step)
+    return print(io, ", messages = ", a_ls.messages, ")")
 end
-function status_summary(armijo_ls::ArmijoLinesearchStepsize)
-    return "$(armijo_ls)\nand a computed last stepsize of $(armijo_ls.last_stepsize)"
+function status_summary(a_ls::ArmijoLinesearchStepsize; context::Symbol = :default)
+    (context === :short) && return repr(a_ls)
+    (context === :inline) && return "An Armijo backtracking line search (last stepsize: $(a_ls.last_stepsize))"
+    return """
+    Armijo backtracking line search
+    A line search based on sufficient decrease backtracking (last stepsize: $(a_ls.last_stepsize))
+
+    ## Parameters
+    * contraction_factor:  $(_MANOPT_INDENT)$(a_ls.contraction_factor)
+    * initial guess:       $(_MANOPT_INDENT)$(a_ls.initial_guess)
+    * initial stepsize:    $(_MANOPT_INDENT)$(a_ls.initial_stepsize)
+    * retraction method:   $(_MANOPT_INDENT)$(a_ls.retraction_method)
+    * sufficient decrease: $(_MANOPT_INDENT)$(a_ls.sufficient_decrease)
+    """
 end
 function get_message(a::ArmijoLinesearchStepsize)
     s = [get_message(kv[1], kv[2]) for kv in pairs(a.messages)]
@@ -268,45 +275,41 @@ mutable struct AdaptiveWNGradientStepsize{I <: Integer, R <: Real, F <: Function
     gradient_bound::R
     weight::R
     count::I
+    function AdaptiveWNGradientStepsize(;
+            count_threshold::I, minimal_bound::R, alternate_bound::F, gradient_reduction::R,
+            gradient_bound::R, weight::R, count::I
+        ) where {I <: Integer, R <: Real, F}
+        return new{I, R, F}(
+            count_threshold, minimal_bound, alternate_bound, gradient_reduction, gradient_bound, weight, count
+        )
+    end
 end
+
 function AdaptiveWNGradientStepsize(
         M::AbstractManifold;
-        p = rand(M),
-        X = zero_vector(M, p),
-        adaptive::Bool = true,
+        p = rand(M), X = zero_vector(M, p), adaptive::Bool = true,
         count_threshold::I = 4,
-        minimal_bound::R = 1.0e-4,
-        gradient_reduction::R = adaptive ? 0.9 : 0.0,
-        gradient_bound::R = norm(M, p, X),
-        alternate_bound::F = (bk, hat_c) -> min(
+        minimal_bound::Real = 1.0e-4,
+        gradient_reduction::Real = adaptive ? 0.9 : 0.0,
+        gradient_bound::Real = norm(M, p, X),
+        alternate_bound = (bk, hat_c) -> min(
             gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c))
-        ),
-        kwargs...,
-    ) where {I <: Integer, R <: Real, F <: Function}
-    if gradient_bound == 0
-        # If the gradient bound defaults to zero, set it to 1
-        gradient_bound = 1.0
-    end
-    return AdaptiveWNGradientStepsize{I, R, F}(
-        count_threshold,
-        minimal_bound,
-        alternate_bound,
-        gradient_reduction,
-        gradient_bound,
-        gradient_bound,
-        0,
+        ), kwargs...,
+    ) where {I <: Integer}
+    R = promote_type(typeof(minimal_bound), typeof(gradient_reduction), typeof(gradient_bound))
+    g = gradient_bound == 0 ? one(R) : convert(R, gradient_bound)
+    return AdaptiveWNGradientStepsize(;
+        count_threshold = count_threshold, count = zero(I),
+        minimal_bound = convert(R, minimal_bound), alternate_bound = alternate_bound,
+        gradient_reduction = convert(R, gradient_reduction), gradient_bound = g, weight = g,
     )
 end
 function AdaptiveWNGradientStepsize(M::AbstractManifold, p; kwargs...)
     return AdaptiveWNGradientStepsize(M; p = p, kwargs...)
 end
 function (awng::AdaptiveWNGradientStepsize)(
-        mp::AbstractManoptProblem,
-        s::AbstractGradientSolverState,
-        i,
-        args...;
-        gradient = nothing,
-        kwargs...,
+        mp::AbstractManoptProblem, s::AbstractGradientSolverState, i, args...;
+        gradient = nothing, kwargs...,
     )
     grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
     M = get_manifold(mp)
@@ -340,19 +343,25 @@ function (awng::AdaptiveWNGradientStepsize)(
 end
 get_initial_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
 get_last_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
-function show(io::IO, awng::AdaptiveWNGradientStepsize)
-    s = """
-    AdaptiveWNGradient(;
-      count_threshold = $(awng.count_threshold),
-      minimal_bound = $(awng.minimal_bound),
-      alternate_bound = $(awng.alternate_bound),
-      gradient_reduction = $(awng.gradient_reduction),
-      gradient_bound = $(awng.gradient_bound)
-    )
+function Base.show(io::IO, awng::AdaptiveWNGradientStepsize)
+    print(io, "AdaptiveWNGradientStepsize(; count_threshold = ", awng.count_threshold, ", count = ", awng.count)
+    print(io, ", minimal_bound = ", awng.minimal_bound, ", alternate_bound = ", awng.alternate_bound)
+    print(io, ", gradient_reduction = ", awng.gradient_reduction, ", gradient_bound = ", awng.gradient_bound)
+    print(io, ", weight = ", awng.weight)
+    return print(io, ")")
+end
+function status_summary(awng::AdaptiveWNGradientStepsize; context::Symbol = :default)
+    (context === :short) && return repr(awng)
+    (context === :inline) && return "A Adaptive WN Gradient step size"
+    return """
+    An adaptive Gradient WN step size
+    (last step size: $(1 / awng.gradient_bound))
 
-    as well as internally the weight ω_k = $(awng.weight) and current count c_k = $(awng.count).
+    ## Parameters
+    * count threshold:   $(_MANOPT_INDENT)$(awng.count_threshold)
+    * minimal_bound:     $(_MANOPT_INDENT)$(awng.minimal_bound)
+    * gradient reduction:$(_MANOPT_INDENT)$(awng.gradient_reduction)
     """
-    return print(io, s)
 end
 """
     AdaptiveWNGradient(; kwargs...)
@@ -463,8 +472,13 @@ function (cs::ConstantStepsize)(
     return s
 end
 get_initial_stepsize(s::ConstantStepsize) = s.length
-function show(io::IO, cs::ConstantStepsize)
+function Base.show(io::IO, cs::ConstantStepsize)
     return print(io, "ConstantLength($(cs.length); type=:$(cs.type))")
+end
+function status_summary(s::ConstantStepsize; context::Symbol = :default)
+    (context === :short) && return repr(s)
+    r = (s.type === :absolute ? "absolute" : "relative")
+    return "A $r constant step size of length $(s.length)"
 end
 
 """
@@ -798,20 +812,10 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     end
     return t
 end
-function show(io::IO, cbls::CubicBracketingLinesearchStepsize)
+function Base.show(io::IO, cbls::CubicBracketingLinesearchStepsize)
     return print(
         io,
-        """
-        CubicBracketingLinesearch(;
-            initial_stepsize = $(cbls.initial_stepsize),
-            stepsize_increase = $(cbls.stepsize_increase),
-            sufficient_curvature = $(cbls.sufficient_curvature),
-            min_bracket_width = $(cbls.min_bracket_width),
-            hybrid = $(cbls.hybrid),
-            retraction_method = $(cbls.retraction_method),
-            vector_transport_method = $(cbls.vector_transport_method),
-            max_stepsize = $(cbls.max_stepsize)
-        )""",
+        "CubicBracketingLinesearch(; initial_stepsize = $(cbls.initial_stepsize),  stepsize_increase = $(cbls.stepsize_increase),  sufficient_curvature = $(cbls.sufficient_curvature),  min_bracket_width = $(cbls.min_bracket_width),  hybrid = $(cbls.hybrid),  retraction_method = $(cbls.retraction_method),  vector_transport_method = $(cbls.vector_transport_method),  max_stepsize = $(cbls.max_stepsize))",
     )
 end
 function status_summary(cbls::CubicBracketingLinesearchStepsize)
@@ -883,10 +887,10 @@ A functor `(problem, state, ...) -> s` to provide a constant step size `s`.
 * `type`:       a symbol that indicates whether the stepsize is relatively (:relative),
     with respect to the gradient norm, or absolutely (:absolute) constant.
 
-In total the complete formulae reads for the ``i``th iterate as
+In total the complete formulae reads for the ``k``th iterate as
 
 ```math
-s_i = $(_tex(:frac, "(l - i a)f^i", "(i+s)^e"))
+s_k = $(_tex(:frac, "(l -  k a)f^k", "(k + s)^e"))
 ```
 
 and hence the default simplifies to just ``s_i = \frac{l}{i}``
@@ -912,17 +916,23 @@ mutable struct DecreasingStepsize{R <: Real} <: Stepsize
     exponent::R
     shift::R
     type::Symbol
+    function DecreasingStepsize(;
+            length::R, factor::R, subtrahend::R, exponent::R, shift::R, type::Symbol
+        ) where {R}
+        return new{R}(length, factor, subtrahend, exponent, shift, type)
+    end
 end
 function DecreasingStepsize(
         M::AbstractManifold;
-        length::R = isinf(manifold_dimension(M)) ? 1.0 : manifold_dimension(M) / 2,
-        factor::R = 1.0,
-        subtrahend::R = 0.0,
-        exponent::R = 1.0,
-        shift::R = 0.0,
+        length::Real = isinf(manifold_dimension(M)) ? 1.0 : manifold_dimension(M) / 2,
+        factor::Real = 1.0, subtrahend::Real = 0.0, exponent::Real = 1.0, shift::Real = 0.0,
         type::Symbol = :relative,
-    ) where {R}
-    return DecreasingStepsize(length, factor, subtrahend, exponent, shift, type)
+    )
+    R = promote_type(typeof(length), typeof(factor), typeof(subtrahend), typeof(exponent), typeof(shift))
+    l = convert(R, length); f = convert(R, factor); s = convert(R, subtrahend); e = convert(R, exponent); t = convert(R, shift)
+    return DecreasingStepsize(;
+        length = l, factor = f, subtrahend = s, exponent = e, shift = t, type = type
+    )
 end
 function (s::DecreasingStepsize)(
         amp::P, ams::O, k::Int, args...; kwargs...
@@ -937,11 +947,27 @@ function (s::DecreasingStepsize)(
     return ds
 end
 get_initial_stepsize(s::DecreasingStepsize) = s.length
-function show(io::IO, s::DecreasingStepsize)
-    return print(
-        io,
-        "DecreasingLength(; length=$(s.length),  factor=$(s.factor),  subtrahend=$(s.subtrahend),  shift=$(s.shift), type=$(s.type))",
-    )
+function Base.show(io::IO, s::DecreasingStepsize)
+    print(io, "DecreasingLength(; length = ", s.length, ", exponent = ", s.exponent, ", factor = ", s.factor)
+    return print(io, ", subtrahend = ", s.subtrahend, ", shift = ", s.shift, ", type = :$(s.type))")
+end
+function status_summary(s::DecreasingStepsize; context::Symbol = :default)
+    (context === :short) && return repr(s)
+    (context === :inline) && return "A decreasing stepsize ($(s.length) - k*$(s.subtrahend)) * $(s.factor)^k) / (k + $(s.shift))^$(s.exponent)"
+    return """
+    A decreasing step size
+    For the `k`th iterate compute
+
+    ((l -  k*a)f^k) / (k + s)^e
+
+    ## Parameters
+    * length l: $(_MANOPT_INDENT)$(s.length)
+    * subtrahend a: $(_MANOPT_INDENT)$(s.subtrahend)
+    * factor f: $(_MANOPT_INDENT)$(s.factor)
+    * shift s: $(_MANOPT_INDENT)$(s.shift)
+    * exponent e: $(_MANOPT_INDENT)$(s.exponent)
+    * type : $(_MANOPT_INDENT):$(s.type)
+    """
 end
 """
     DegreasingLength(; kwargs...)
@@ -1004,26 +1030,26 @@ mutable struct DistanceOverGradientsStepsize{R <: Real, P} <: Stepsize
     use_curvature::Bool
     sectional_curvature_bound::R
     last_stepsize::R
+    function DistanceOverGradientsStepsize(;
+            initial_distance::R, max_distance::R, gradient_sum::R, initial_point::P,
+            use_curvature::Bool, sectional_curvature_bound::R, last_stepsize::R
+        ) where {R <: Real, P}
+        return new{R, P}(
+            initial_distance, max_distance, gradient_sum, initial_point, use_curvature,
+            sectional_curvature_bound, last_stepsize,
+        )
+    end
 end
-
 function DistanceOverGradientsStepsize(
-        M::AbstractManifold,
-        p;
-        initial_distance::R1 = 1.0e-3,
-        use_curvature::Bool = false,
-        sectional_curvature_bound::R2 = 0.0,
+        M::AbstractManifold, p;
+        initial_distance::R1 = 1.0e-3, use_curvature::Bool = false, sectional_curvature_bound::R2 = 0.0,
     ) where {R1 <: Real, R2 <: Real}
     R = promote_type(R1, R2)
     id = convert(R, initial_distance)
     κ = convert(R, sectional_curvature_bound)
-    return DistanceOverGradientsStepsize{R, typeof(p)}(
-        id,
-        id,  # max_distance starts at initial_distance
-        zero(R),          # gradient_sum starts at 0
-        copy(M, p),       # store initial point
-        use_curvature,
-        κ,
-        NaN,              # last_stepsize
+    return DistanceOverGradientsStepsize(;
+        initial_distance = id, max_distance = id, gradient_sum = zero(R), initial_point = copy(M, p),
+        use_curvature = use_curvature, sectional_curvature_bound = κ, last_stepsize = zero(R)
     )
 end
 
@@ -1053,17 +1079,12 @@ function geometric_curvature_function(κ::Real, d::Real)
 end
 
 function (rdog::DistanceOverGradientsStepsize{R, P})(
-        mp::AbstractManoptProblem,
-        s::AbstractManoptSolverState,
-        i,
-        args...;
-        gradient = nothing,
-        kwargs...,
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, i, args...;
+        gradient = nothing, kwargs...,
     ) where {R, P}
     M = get_manifold(mp)
     p = get_iterate(s)
     grad = isnothing(gradient) ? get_gradient(mp, p) : gradient
-
     # Compute gradient norm
     grad_norm_sq = clamp(norm(M, p, grad)^2, eps(R), typemax(R))
     if i == 0
@@ -1099,7 +1120,6 @@ function (rdog::DistanceOverGradientsStepsize{R, P})(
             stepsize = rdog.max_distance / sqrt(rdog.gradient_sum)
         end
     end
-
     rdog.last_stepsize = stepsize
     return stepsize
 end
@@ -1107,22 +1127,28 @@ end
 get_initial_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
 get_last_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
 
-function show(io::IO, rdog::DistanceOverGradientsStepsize)
-    s = """
-    DistanceOverGradients(;
-      initial_distance = $(rdog.initial_distance),
-      use_curvature = $(rdog.use_curvature),
-      sectional_curvature_bound = $(rdog.sectional_curvature_bound)
-    )
-
-    Current state:
-      max_distance = $(rdog.max_distance)
-      gradient_sum = $(rdog.gradient_sum)
-      last_stepsize = $(rdog.last_stepsize)
-    """
-    return print(io, s)
+function Base.show(io::IO, rdog::DistanceOverGradientsStepsize)
+    print(io, "DistanceOverGradientStepsize(; initial_distance = ", rdog.initial_distance)
+    print(io, "use_curvature = ", rdog.use_curvature, ", sectional_curvature_bound = ", rdog.sectional_curvature_bound)
+    print(io, "max_distance = ", rdog.max_distance, ", gradient_sum = ", rdog.gradient_sum)
+    print(io, "initial_point = ", rdog.initial_point, ", last_stepsize = ", rdog.last_stepsize)
+    return print(io, ")")
 end
+function status_summary(rdog::DistanceOverGradientsStepsize; context::Symbol = :default)
+    (context === :short) && return repr(rdog)
+    s = rdog.use_curvature ? "including a curvature correction" : ""
+    (context === :inline) && return "A distance over gradients step size $s (last stepsize: $(rdog.last_stepsize))"
+    s2 = !rdog.use_curvature ? "" : "* sectional curvature bound:$(_MANOPT_INDENT)$(rdog.sectional_curvature_bound)"
+    return """
+    A distance over gradients step size
+    (last stepsize: $(rdog.last_stepsize))
 
+    ## Parameters
+    * use curvature correction: $(_MANOPT_INDENT)$(rdog.use_curvature)$(s2)
+    * sum of gradients:         %(_MANOPT_INDENT)$(rdog.gradient_sum)
+    * maximal distance r_t:     $(_MANOPT_INDENT)$(rdog.max_distance)
+    """
+end
 doc_DoG_main = raw"""
     DistanceOverGradients(; kwargs...)
     DistanceOverGradients(M::AbstractManifold; kwargs...)
@@ -1448,21 +1474,10 @@ function (a::NonmonotoneLinesearchStepsize)(
     )
     return a.last_stepsize
 end
-function show(io::IO, a::NonmonotoneLinesearchStepsize)
+function Base.show(io::IO, a::NonmonotoneLinesearchStepsize)
     return print(
         io,
-        """
-        NonmonotoneLinesearch(;
-            last_stepsize = $(a.last_stepsize),
-            bb_max_stepsize = $(a.bb_max_stepsize),
-            bb_min_stepsize = $(a.bb_min_stepsize),
-            memory_size = $(length(a.old_costs)),
-            stepsize_reduction = $(a.stepsize_reduction),
-            strategy = :$(a.strategy),
-            sufficient_decrease = $(a.sufficient_decrease),
-            retraction_method = $(a.retraction_method),
-            vector_transport_method = $(a.vector_transport_method)
-        )""",
+        "NonmonotoneLinesearch(; last_stepsize = $(a.last_stepsize), bb_max_stepsize = $(a.bb_max_stepsize), bb_min_stepsize = $(a.bb_min_stepsize), memory_size = $(length(a.old_costs)), stepsize_reduction = $(a.stepsize_reduction), strategy = :$(a.strategy), sufficient_decrease = $(a.sufficient_decrease), retraction_method = $(a.retraction_method), vector_transport_method = $(a.vector_transport_method))",
     )
 end
 function get_message(a::NonmonotoneLinesearchStepsize)
@@ -1563,10 +1578,7 @@ A functor `(problem, state, ...) -> s` to provide a step size due to Polyak, cf.
 
 # Constructor
 
-    PolyakStepsize(;
-        γ = i -> 1/i,
-        initial_cost_estimate=0.0
-    )
+    PolyakStepsize(; γ = i -> 1/i,  initial_cost_estimate=0.0)
 
 Construct a stepsize of Polyak type.
 
@@ -1577,8 +1589,8 @@ mutable struct PolyakStepsize{F, R} <: Stepsize
     γ::F
     best_cost_value::R
 end
-function PolyakStepsize(; γ::F = (i) -> 1 / i, initial_cost_estimate::R = 0.0) where {F, R}
-    return PolyakStepsize{F, R}(γ, initial_cost_estimate)
+function PolyakStepsize(; γ = (i) -> 1 / i, initial_cost_estimate = 0.0)
+    return PolyakStepsize(γ, initial_cost_estimate)
 end
 function (ps::PolyakStepsize)(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int, args...; kwargs...
@@ -1592,15 +1604,12 @@ function (ps::PolyakStepsize)(
     α = (c - ps.best_cost_value + ps.γ(k)) / (norm(M, p, X)^2)
     return α
 end
-function show(io::IO, ps::PolyakStepsize)
-    return print(
-        io,
-        """
-        Polyak()
-        A stepsize with keyword parameters
-           * initial_cost_estimate = $(ps.best_cost_value)
-        """,
-    )
+function Base.show(io::IO, ps::PolyakStepsize)
+    return print(io, "Polyak(; γ = $(ps.γ))")
+end
+function status_summary(ps::PolyakStepsize; context::Symbol = :default)
+    (context === :short) && return repr(ps)
+    return "Polyak step size with γ = $(ps.γ) and current best minimum estimate $(ps.best_cost_value)"
 end
 """
     Polyak(; kwargs...)
@@ -1631,9 +1640,7 @@ initialize the Polyak stepsize to a certain sequence and an initial estimate of 
 $(_note(:ManifoldDefaultFactory, "PolyakStepsize"))
 """
 function Polyak(args...; kwargs...)
-    return ManifoldDefaultsFactory(
-        Manopt.PolyakStepsize, args...; requires_manifold = false, kwargs...
-    )
+    return ManifoldDefaultsFactory(Manopt.PolyakStepsize, args...; requires_manifold = false, kwargs...)
 end
 
 @doc """
@@ -1686,42 +1693,54 @@ mutable struct WolfePowellLinesearchStepsize{
     retraction_method::TRM
     stop_when_stepsize_less::R
     vector_transport_method::VTM
-    stop_increasing_at_step::Int
-    stop_decreasing_at_step::Int
+    stop_increasing_at_step::I
+    stop_decreasing_at_step::I
     messages::TMSG
+    function WolfePowellLinesearchStepsize(;
+            sufficient_decrease::R, sufficient_curvature::R, candidate_direction::T, candidate_point::P,
+            last_stepsize::R, max_stepsize::R, retraction_method::TRM, stop_when_stepsize_less::R,
+            vector_transport_method::VTM, stop_increasing_at_step::I, stop_decreasing_at_step::I,
+            messages::TMSG
+        ) where {R <: Real, TRM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T, I <: Integer, TMSG}
+        return new{R, TRM, VTM, P, T, I, TMSG}(
+            sufficient_decrease, sufficient_curvature,
+            candidate_direction, candidate_point, last_stepsize, max_stepsize, retraction_method,
+            stop_when_stepsize_less, vector_transport_method, stop_increasing_at_step, stop_decreasing_at_step, messages
+        )
+    end
     function WolfePowellLinesearchStepsize(
             M::AbstractManifold;
             p::P = allocate_result(M, rand),
             X::T = zero_vector(M, p),
             max_stepsize::Real = max_stepsize(M),
             retraction_method::TRM = default_retraction_method(M),
-            sufficient_decrease::R = 1.0e-4,
-            sufficient_curvature::R = 0.999,
+            sufficient_decrease::Real = 1.0e-4,
+            sufficient_curvature::Real = 0.999,
             vector_transport_method::VTM = default_vector_transport_method(M),
-            stop_when_stepsize_less::R = 0.0,
-            stop_increasing_at_step::I = 100,
-            stop_decreasing_at_step::I = 1000,
-        ) where {TRM, VTM, P, T, R, I}
+            stop_when_stepsize_less::Real = 0.0,
+            stop_increasing_at_step::Integer = 100,
+            stop_decreasing_at_step::Integer = 1000,
+        ) where {TRM, VTM, P, T}
+        R = promote_type(
+            typeof(max_stepsize), typeof(sufficient_curvature), typeof(sufficient_decrease),
+            typeof(stop_when_stepsize_less),
+        )
+        I = promote_type(typeof(stop_decreasing_at_step), typeof(stop_increasing_at_step))
         msgs = (;
             non_descent_direction = StepsizeMessage{R, R}(),
-            stop_decreasing = StepsizeMessage{Int, R}(),
-            stop_increasing = StepsizeMessage{Int, R}(),
+            stop_decreasing = StepsizeMessage{I, R}(),
+            stop_increasing = StepsizeMessage{I, R}(),
             stepsize_less = StepsizeMessage{R, R}(),
             stepsize_exceeds = StepsizeMessage{R, R}(),
         )
-        return new{R, TRM, VTM, P, T, I, typeof(msgs)}(
-            sufficient_decrease,
-            sufficient_curvature,
-            X,
-            p,
-            0.0,
-            max_stepsize,
-            retraction_method,
-            stop_when_stepsize_less,
-            vector_transport_method,
-            stop_increasing_at_step,
-            stop_decreasing_at_step,
-            msgs,
+        return WolfePowellLinesearchStepsize(;
+            sufficient_decrease = convert(R, sufficient_decrease), sufficient_curvature = convert(R, sufficient_curvature),
+            candidate_direction = X, candidate_point = p, last_stepsize = convert(R, 0.0),
+            max_stepsize = convert(R, max_stepsize), retraction_method = retraction_method,
+            stop_when_stepsize_less = convert(R, stop_when_stepsize_less),
+            vector_transport_method = vector_transport_method,
+            stop_increasing_at_step = convert(I, stop_increasing_at_step), stop_decreasing_at_step = convert(I, stop_decreasing_at_step),
+            messages = msgs
         )
     end
 end
@@ -1733,10 +1752,7 @@ function WolfePowellLinesearchStepsize(M::AbstractManifold, p; kwargs...)
     )
 end
 function (a::WolfePowellLinesearchStepsize)(
-        mp::AbstractManoptProblem,
-        ams::AbstractManoptSolverState,
-        k::Int,
-        η = (-get_gradient(mp, get_iterate(ams)));
+        mp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(ams)));
         kwargs...,
     )
     # For readability extract a few variables
@@ -1816,24 +1832,29 @@ function (a::WolfePowellLinesearchStepsize)(
     a.last_stepsize = step
     return step
 end
-function show(io::IO, a::WolfePowellLinesearchStepsize)
-    return print(
-        io,
-        """
-        WolfePowellLinesearch(;
-            sufficient_decrease = $(a.sufficient_decrease),
-            sufficient_curvature = $(a.sufficient_curvature),
-            retraction_method = $(a.retraction_method),
-            vector_transport_method = $(a.vector_transport_method),
-            stop_when_stepsize_less = $(a.stop_when_stepsize_less),
-            stop_increasing_at_step = $(a.stop_increasing_at_step),
-            stop_decreasing_at_step = $(a.stop_decreasing_at_step),
-        )""",
-    )
+function Base.show(io::IO, a::WolfePowellLinesearchStepsize)
+    print(io, "WolfePowellLinesearchStepsize(; sufficient_decrease = ", a.sufficient_decrease)
+    print(io, ", sufficient_curvature = ", a.sufficient_curvature, ", candidate_direction = ", a.candidate_direction, ", candidate_point = ", a.candidate_point)
+    print(io, ", last_stepsize = ", a.last_stepsize, ", max_stepsize = ", a.max_stepsize)
+    print(io, ", retraction_method = ", a.retraction_method, ", stop_when_stepsize_less = ", a.stop_when_stepsize_less)
+    print(io, ", vector_transport_method = ", a.vector_transport_method)
+    print(io, ", stop_increasing_at_step = ", a.stop_increasing_at_step, ", stop_decreasing_at_step = ", a.stop_decreasing_at_step)
+    return print(io, ", messages = ", a.messages, ")")
 end
-function status_summary(a::WolfePowellLinesearchStepsize)
-    s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
-    return "$a$s"
+function status_summary(a::WolfePowellLinesearchStepsize; context::Symbol = :default)
+    (context === :short) && return repr(a)
+    (context === :inline) && return "A Wolfe Powell step size (last stepsize: $(a.last_stepsize))"
+    return """
+    A Wolfe Powell line search based step size
+    (last stepsize: $(a.last_stepsize))
+
+    ## Parameters
+    * maximal step size:       $(_MANOPT_INDENT)$(a.max_stepsize)
+    * retraction method:       $(_MANOPT_INDENT)$(a.retraction_method)
+    * vector transport method: $(_MANOPT_INDENT)$(a.retraction_method)
+    * sufficient decrease:     $(_MANOPT_INDENT)$(a.sufficient_decrease)
+    * sufficient curvature:    $(_MANOPT_INDENT)$(a.sufficient_curvature)
+    """
 end
 function get_message(a::WolfePowellLinesearchStepsize)
     s = [get_message(kv[1], kv[2]) for kv in pairs(a.messages)]
@@ -1916,22 +1937,20 @@ mutable struct WolfePowellBinaryLinesearchStepsize{
     sufficient_curvature::F
     last_stepsize::F
     stop_when_stepsize_less::F
-
     function WolfePowellBinaryLinesearchStepsize(
-            M::AbstractManifold = DefaultManifold();
-            sufficient_decrease::F = 10^(-4),
-            sufficient_curvature::F = 0.999,
+            M::AbstractManifold;
+            sufficient_decrease::Real = 10^(-4),
+            sufficient_curvature::Real = 0.999,
             retraction_method::RTM = default_retraction_method(M),
             vector_transport_method::VTM = default_vector_transport_method(M),
-            stop_when_stepsize_less::F = 0.0,
-        ) where {VTM <: AbstractVectorTransportMethod, RTM <: AbstractRetractionMethod, F}
+            stop_when_stepsize_less::Real = 0.0,
+            last_stepsize::Real = 0.0,
+        ) where {VTM <: AbstractVectorTransportMethod, RTM <: AbstractRetractionMethod}
+        F = promote_type(typeof(sufficient_decrease), typeof(sufficient_curvature), typeof(stop_when_stepsize_less), typeof(last_stepsize))
         return new{RTM, VTM, F}(
-            retraction_method,
-            vector_transport_method,
-            sufficient_decrease,
-            sufficient_curvature,
-            0.0,
-            stop_when_stepsize_less,
+            retraction_method, vector_transport_method,
+            convert(F, sufficient_decrease), convert(F, sufficient_curvature),
+            convert(F, last_stepsize), convert(F, stop_when_stepsize_less),
         )
     end
 end
@@ -1977,22 +1996,27 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     a.last_stepsize = t
     return t
 end
-function show(io::IO, a::WolfePowellBinaryLinesearchStepsize)
-    return print(
-        io,
-        """
-        WolfePowellBinaryLinesearch(;
-            sufficient_decrease = $(a.sufficient_decrease),
-            sufficient_curvature = $(a.sufficient_curvature),
-            retraction_method = $(a.retraction_method),
-            vector_transport_method = $(a.vector_transport_method),
-            stop_when_stepsize_less = $(a.stop_when_stepsize_less),
-        )""",
-    )
+function Base.show(io::IO, a::WolfePowellBinaryLinesearchStepsize)
+    print(io, "WolfePowellBinaryLinesearchStepsize(; sufficient_decrease = ", a.sufficient_decrease)
+    print(io, ", sufficient_curvature = ", a.sufficient_curvature)
+    print(io, ", last_stepsize = ", a.last_stepsize)
+    print(io, ", retraction_method = ", a.retraction_method, ", stop_when_stepsize_less = ", a.stop_when_stepsize_less)
+    print(io, ", vector_transport_method = ", a.vector_transport_method)
+    return print(io, ")")
 end
-function status_summary(a::WolfePowellBinaryLinesearchStepsize)
-    s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
-    return "$a$s"
+function status_summary(a::WolfePowellBinaryLinesearchStepsize; context::Symbol = :default)
+    (context === :short) && return repr(a)
+    (context === :inline) && return "A Wolfe Powell bisection dissection step size (last stepsize: $(a.last_stepsize))"
+    return """
+    A Wolfe Powell bisection line search based step size
+    (last stepsize: $(a.last_stepsize))
+
+    ## Parameters
+    * retraction method:       $(_MANOPT_INDENT)$(a.retraction_method)
+    * vector transport method: $(_MANOPT_INDENT)$(a.retraction_method)
+    * sufficient decrease:     $(_MANOPT_INDENT)$(a.sufficient_decrease)
+    * sufficient curvature:    $(_MANOPT_INDENT)$(a.sufficient_curvature)
+    """
 end
 
 _doc_WPBL_algorithm = """With
