@@ -418,42 +418,33 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
     last_stepsize::T
     stop_when_stepsize_less::T
     warm_start_factor::T
-
+    function ProximalGradientMethodBacktrackingStepsize(;
+            initial_stepsize::T, sufficient_decrease::T, contraction_factor::T, strategy::Symbol,
+            candidate_point::P, last_stepsize::T, stop_when_stepsize_less::T, warm_start_factor::T
+        ) where {P, T <: Real}
+        return new{P, T}(
+            initial_stepsize, sufficient_decrease, contraction_factor, strategy,
+            candidate_point, last_stepsize, stop_when_stepsize_less, warm_start_factor
+        )
+    end
     function ProximalGradientMethodBacktrackingStepsize(
             M::AbstractManifold;
-            initial_stepsize::T = 1.0,
-            sufficient_decrease::T = 0.5,
-            contraction_factor::T = 0.5,
-            strategy::Symbol = :nonconvex,
-            stop_when_stepsize_less::T = 1.0e-8,
-            warm_start_factor::T = 1.0,
-        ) where {T}
-        0 < sufficient_decrease < 1 ||
-            throw(DomainError(sufficient_decrease, "sufficient_decrease must be in (0, 1)"))
-        0 < contraction_factor < 1 ||
-            throw(DomainError(contraction_factor, "contraction_factor must be in (0, 1)"))
-        initial_stepsize > 0 ||
-            throw(DomainError(initial_stepsize, "initial_stepsize must be positive"))
-        strategy in [:convex, :nonconvex] ||
-            throw(DomainError(strategy, "strategy must be either :convex or :nonconvex"))
-        stop_when_stepsize_less > 0 || throw(
-            DomainError(
-                stop_when_stepsize_less, "stop_when_stepsize_less must be positive"
-            ),
+            p = rand(M),
+            initial_stepsize::Real = 1.0, sufficient_decrease::Real = 0.5, contraction_factor::Real = 0.5,
+            strategy::Symbol = :nonconvex, stop_when_stepsize_less::Real = 1.0e-8, warm_start_factor::Real = 1.0,
         )
-        warm_start_factor > 0 ||
-            throw(DomainError(warm_start_factor, "warm_start_factor must be positive"))
-
-        p = rand(M)
-        return new{typeof(p), T}(
-            initial_stepsize,
-            sufficient_decrease,
-            contraction_factor,
-            strategy,
-            p,
-            initial_stepsize,
-            stop_when_stepsize_less,
-            warm_start_factor,
+        T = promote_type(typeof(initial_stepsize), typeof(sufficient_decrease), typeof(contraction_factor), typeof(stop_when_stepsize_less), typeof(warm_start_factor))
+        0 < sufficient_decrease < 1 || throw(DomainError(sufficient_decrease, "sufficient_decrease ($(sufficient_decrease)) must be in (0, 1)"))
+        0 < contraction_factor < 1 || throw(DomainError(contraction_factor, "contraction_factor ($(contraction_factor)) must be in (0, 1)"))
+        initial_stepsize > 0 || throw(DomainError(initial_stepsize, "initial_stepsize ($(initial_stepsize)) must be positive"))
+        strategy in [:convex, :nonconvex] || throw(DomainError(strategy, "strategy (:$(strategy)) must be either :convex or :nonconvex"))
+        stop_when_stepsize_less > 0 || throw(DomainError(stop_when_stepsize_less, "stop_when_stepsize_less ($(stop_when_stepsize_less)) must be positive"))
+        warm_start_factor > 0 || throw(DomainError(warm_start_factor, "warm_start_factor ($(warm_start_factor)) must be positive"))
+        return ProximalGradientMethodBacktrackingStepsize(;
+            initial_stepsize = convert(T, initial_stepsize), sufficient_decrease = convert(T, sufficient_decrease),
+            contraction_factor = convert(T, contraction_factor), strategy = strategy, candidate_point = p,
+            last_stepsize = convert(T, initial_stepsize), stop_when_stepsize_less = convert(T, stop_when_stepsize_less),
+            warm_start_factor = convert(T, warm_start_factor),
         )
     end
 end
@@ -462,19 +453,28 @@ get_initial_stepsize(s::ProximalGradientMethodBacktrackingStepsize) = s.initial_
 get_last_stepsize(s::ProximalGradientMethodBacktrackingStepsize) = s.last_stepsize
 
 function Base.show(io::IO, pgb::ProximalGradientMethodBacktrackingStepsize)
-    s = """
-    ProximalGradientMethodBacktrackingStepsize(;
-        contraction_factor=$(pgb.contraction_factor),
-        initial_stepsize=$(pgb.initial_stepsize),
-        stop_when_stepsize_less=$(pgb.stop_when_stepsize_less),
-        sufficient_decrease=$(pgb.sufficient_decrease),
-        strategy=$(pgb.strategy),
-        warm_start_factor=$(pgb.warm_start_factor),
-    )
-    """
-    return print(io, s)
+    print(io, "ProximalGradientMethodBacktrackingStepsize(; initial_stepsize = ", pgb.initial_stepsize)
+    print(io, ", sufficient_decrease = ", pgb.sufficient_decrease, ", contraction_factor = ", pgb.contraction_factor)
+    print(io, ", strategy = :$(pgb.strategy), candidate_point = ", pgb.candidate_point)
+    print(io, ", last_stepsize = ", pgb.last_stepsize, ", stop_when_stepsize_less = ", pgb.stop_when_stepsize_less)
+    print(io, ", warm_start_factor = ", pgb.warm_start_factor)
+    return print(io, ")")
 end
+function status_summary(pgb::ProximalGradientMethodBacktrackingStepsize; context::Symbol = :default)
+    (context === :short) && return (repr(pgb))
+    (context === :inline) && return "A proximal gradient backtracking step size (last step size: $(pgb.last_stepsize))"
+    return """
+    A backtracking method tailored for the proximal gradient method
+    (last step size: $(pgb.last_stepsize))
 
+    ## Parameters
+    * contraction factor:       $(_MANOPT_INDENT)$(pgb.contraction_factor)
+    * sufficient decrease:      $(_MANOPT_INDENT)$(pgb.sufficient_decrease)
+    * strategy:                 $(_MANOPT_INDENT):$(pgb.strategy)
+    * stop when step size less: $(_MANOPT_INDENT)$(pgb.stop_when_stepsize_less)
+    * warm start factor:        $(_MANOPT_INDENT)$(pgb.warm_start_factor)
+    """
+end
 function (s::ProximalGradientMethodBacktrackingStepsize)(
         mp::AbstractManoptProblem, st::ProximalGradientMethodState, i::Int, args...; kwargs...
     )
@@ -497,12 +497,9 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
     # Temporary state for backtracking that doesn't affect the main state
     pgm_temp = ProximalGradientMethodState(
         M;
-        p = copy(M, p),  # Start from current (possibly) accelerated point
-        X = zero_vector(M, p),
-        sub_problem = st.sub_problem,
-        sub_state = st.sub_state,
-        retraction_method = st.retraction_method,
-        inverse_retraction_method = st.inverse_retraction_method,
+        p = copy(M, p), X = zero_vector(M, p),
+        sub_problem = st.sub_problem, sub_state = st.sub_state,
+        retraction_method = st.retraction_method, inverse_retraction_method = st.inverse_retraction_method,
     )
 
     while λ > s.stop_when_stepsize_less

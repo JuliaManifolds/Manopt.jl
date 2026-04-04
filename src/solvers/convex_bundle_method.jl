@@ -384,20 +384,25 @@ mutable struct DomainBackTrackingStepsize{TRM <: AbstractRetractionMethod, P, F}
     last_stepsize::F
     message::String
     retraction_method::TRM
+    function DomainBackTrackingStepsize(;
+            candidate_point::P, contraction_factor::F, initial_stepsize::F, last_stepsize::F, message::String, retraction_method::TRM
+        ) where {TRM <: AbstractRetractionMethod, P, F}
+        return new{TRM, P, F}(
+            candidate_point, contraction_factor, initial_stepsize, last_stepsize, message, retraction_method,
+        )
+    end
     function DomainBackTrackingStepsize(
             M::AbstractManifold;
             candidate_point::P = allocate_result(M, rand),
-            contraction_factor::F = 0.95,
-            initial_stepsize::F = 1.0,
+            contraction_factor::Real = 0.95,
+            initial_stepsize::Real = 1.0,
             retraction_method::TRM = default_retraction_method(M),
-        ) where {TRM, P, F}
-        return new{TRM, P, F}(
-            candidate_point,
-            contraction_factor,
-            initial_stepsize,
-            initial_stepsize,
-            "", # initialize an empty message
-            retraction_method,
+        ) where {TRM, P}
+        F = promote_type(typeof(contraction_factor), typeof(initial_stepsize))
+        return DomainBackTrackingStepsize(;
+            candidate_point = candidate_point, contraction_factor = convert(F, contraction_factor),
+            initial_stepsize = convert(F, initial_stepsize), last_stepsize = convert(F, initial_stepsize),
+            message = "", retraction_method = retraction_method,
         )
     end
 end
@@ -410,12 +415,7 @@ function (dbt::DomainBackTrackingStepsize)(
         M, dbt.candidate_point, cbms.p_last_serious, -dbt.last_stepsize * cbms.g, dbt.retraction_method,
     )
     while _domain_condition(
-            M,
-            dbt.candidate_point,
-            cbms.p_last_serious,
-            dbt.last_stepsize,
-            norm(M, cbms.p_last_serious, cbms.g),
-            cbms.domain,
+            M, dbt.candidate_point, cbms.p_last_serious, dbt.last_stepsize, norm(M, cbms.p_last_serious, cbms.g), cbms.domain,
         )
         dbt.last_stepsize *= dbt.contraction_factor
         retract!(
@@ -425,19 +425,24 @@ function (dbt::DomainBackTrackingStepsize)(
     return dbt.last_stepsize
 end
 get_initial_stepsize(dbt::DomainBackTrackingStepsize) = dbt.initial_stepsize
-function show(io::IO, dbt::DomainBackTrackingStepsize)
-    return print(
-        io,
-        """
-        DomainBackTracking(;
-            initial_stepsize=$(dbt.initial_stepsize)
-            retraction_method=$(dbt.retraction_method)
-            contraction_factor=$(dbt.contraction_factor)
-        )""",
-    )
+function Base.show(io::IO, dbt::DomainBackTrackingStepsize)
+    print(io, "DomainBackTrackingStepsize(; candidate_point = ", dbt.candidate_point)
+    print(io, ", contraction_factor = ", dbt.contraction_factor, ", initial_stepsize = ", dbt.initial_stepsize)
+    print(io, ", last_stepsize = ", dbt.last_stepsize, " message = ", dbt.message)
+    print(io, ", retraction_method = ", dbt.retraction_method)
+    return print(io, ")")
 end
-function status_summary(dbt::DomainBackTrackingStepsize)
-    return "$(dbt)\nand a computed last stepsize of $(dbt.last_stepsize)"
+function status_summary(dbt::DomainBackTrackingStepsize; context::Symbol = :default)
+    (context === :short) && return repr(dbt)
+    (context === :inline) && return "A domain backtracking step size (last step size: $(dbt.last_stepsize))"
+    return """
+    A domain backtracking stepsize
+    (last step size: $(dbt.last_stepsize))
+
+    ## Parameters
+    * contraction factor:$(_MANOPT_INDENT)$(dbt.contraction_factor)
+    * retraction method: $(_MANOPT_INDENT)$(dbt.retraction_method)
+    """
 end
 get_message(dbt::DomainBackTrackingStepsize) = dbt.message
 function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:Iterate})
@@ -478,22 +483,26 @@ mutable struct NullStepBackTrackingStepsize{TRM <: AbstractRetractionMethod, P, 
     message::String
     retraction_method::TRM
     X::T
+    function NullStepBackTrackingStepsize(;
+            candidate_point::P, contraction_factor::F, initial_stepsize::F, last_stepsize::F, message::String, retraction_method::TRM, X::T
+        ) where {TRM <: AbstractRetractionMethod, P, F, T}
+        return new{TRM, P, F, T}(
+            candidate_point, contraction_factor, initial_stepsize, last_stepsize, message, retraction_method, X
+        )
+    end
     function NullStepBackTrackingStepsize(
             M::AbstractManifold;
             candidate_point::P = allocate_result(M, rand),
-            contraction_factor::F = 0.95,
-            initial_stepsize::F = 1.0,
+            contraction_factor::Real = 0.95,
+            initial_stepsize::Real = 1.0,
             retraction_method::TRM = default_retraction_method(M),
             X::T = zero_vector(M, candidate_point),
-        ) where {TRM, P, F, T}
-        return new{TRM, P, F, T}(
-            candidate_point,
-            contraction_factor,
-            initial_stepsize,
-            initial_stepsize,
-            "", # initialize an empty message
-            retraction_method,
-            X,
+        ) where {TRM, P, T}
+        F = promote_type(typeof(contraction_factor), typeof(initial_stepsize))
+        return NullStepBackTrackingStepsize(;
+            candidate_point = candidate_point, contraction_factor = convert(F, contraction_factor),
+            initial_stepsize = convert(F, initial_stepsize), last_stepsize = convert(F, initial_stepsize),
+            message = "", retraction_method = retraction_method, X = X,
         )
     end
 end
@@ -503,34 +512,17 @@ function (nsbt::NullStepBackTrackingStepsize)(
     M = get_manifold(amp)
     nsbt.last_stepsize = cbms.last_stepsize
     retract!(
-        M,
-        nsbt.candidate_point,
-        cbms.p_last_serious,
-        -nsbt.last_stepsize * cbms.g,
-        nsbt.retraction_method,
+        M, nsbt.candidate_point, cbms.p_last_serious, -nsbt.last_stepsize * cbms.g, nsbt.retraction_method,
     )
     get_subgradient!(amp, nsbt.X, nsbt.candidate_point)
     while _null_condition(
-            amp,
-            M,
-            nsbt.candidate_point,
-            cbms.p_last_serious,
-            nsbt.X,
-            cbms.g,
-            cbms.vector_transport_method,
-            cbms.inverse_retraction_method,
-            cbms.m,
-            nsbt.last_stepsize,
-            cbms.ξ,
-            cbms.ϱ,
+            amp, M, nsbt.candidate_point, cbms.p_last_serious, nsbt.X, cbms.g,
+            cbms.vector_transport_method, cbms.inverse_retraction_method,
+            cbms.m, nsbt.last_stepsize, cbms.ξ, cbms.ϱ,
         )
         nsbt.last_stepsize *= nsbt.contraction_factor
         retract!(
-            M,
-            nsbt.candidate_point,
-            cbms.p_last_serious,
-            -nsbt.last_stepsize * cbms.g,
-            nsbt.retraction_method,
+            M, nsbt.candidate_point, cbms.p_last_serious, -nsbt.last_stepsize * cbms.g, nsbt.retraction_method,
         )
         get_subgradient!(amp, nsbt.X, nsbt.candidate_point)
     end
@@ -544,21 +536,23 @@ function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Subgradient})
     return nsbt.X
 end
 function show(io::IO, nsbt::NullStepBackTrackingStepsize)
-    return print(
-        io,
-        """
-        NullStepBackTracking(;
-            initial_stepsize=$(nsbt.initial_stepsize)
-            retraction_method=$(nsbt.retraction_method)
-            contraction_factor=$(nsbt.contraction_factor)
-            candidate_point=$(nsbt.candidate_point)
-            X=$(nsbt.X)
-            last_stepsize=$(nsbt.last_stepsize)
-        )""",
-    )
+    print(io, "NullStepBackTrackingStepsize(; candidate_point = ", nsbt.candidate_point)
+    print(io, ", contraction_factor = ", nsbt.contraction_factor, ", initial_stepsize = ", nsbt.initial_stepsize)
+    print(io, ", last_stepsize = ", nsbt.last_stepsize, " message = ", nsbt.message)
+    print(io, ", retraction_method = ", nsbt.retraction_method, ", X = ", nsbt.X)
+    return print(io, ")")
 end
-function status_summary(nsbt::NullStepBackTrackingStepsize)
-    return "$(nsbt)\nand a computed last stepsize of $(nsbt.last_stepsize)"
+function status_summary(nsbt::NullStepBackTrackingStepsize; context::Symbol = :default)
+    (context === :short) && return repr(nsbt)
+    (context === :inline) && return "A null step backtracking step size (last step size: $(nsbt.last_stepsize))"
+    return """
+    A null step backtracking stepsize
+    (last step size: $(nsbt.last_stepsize))
+
+    ## Parameters
+    * contraction factor:$(_MANOPT_INDENT)$(nsbt.contraction_factor)
+    * retraction method: $(_MANOPT_INDENT)$(nsbt.retraction_method)
+    """
 end
 get_message(nsbt::NullStepBackTrackingStepsize) = nsbt.message
 

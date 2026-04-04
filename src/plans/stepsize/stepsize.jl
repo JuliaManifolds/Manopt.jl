@@ -1693,42 +1693,54 @@ mutable struct WolfePowellLinesearchStepsize{
     retraction_method::TRM
     stop_when_stepsize_less::R
     vector_transport_method::VTM
-    stop_increasing_at_step::Int
-    stop_decreasing_at_step::Int
+    stop_increasing_at_step::I
+    stop_decreasing_at_step::I
     messages::TMSG
+    function WolfePowellLinesearchStepsize(;
+            sufficient_decrease::R, sufficient_curvature::R, candidate_direction::T, candidate_point::P,
+            last_stepsize::R, max_stepsize::R, retraction_method::TRM, stop_when_stepsize_less::R,
+            vector_transport_method::VTM, stop_increasing_at_step::I, stop_decreasing_at_step::I,
+            messages::TMSG
+        ) where {R <: Real, TRM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T, I <: Integer, TMSG}
+        return new{R, TRM, VTM, P, T, I, TMSG}(
+            sufficient_decrease, sufficient_curvature,
+            candidate_direction, candidate_point, last_stepsize, max_stepsize, retraction_method,
+            stop_when_stepsize_less, vector_transport_method, stop_increasing_at_step, stop_decreasing_at_step, messages
+        )
+    end
     function WolfePowellLinesearchStepsize(
             M::AbstractManifold;
             p::P = allocate_result(M, rand),
             X::T = zero_vector(M, p),
             max_stepsize::Real = max_stepsize(M),
             retraction_method::TRM = default_retraction_method(M),
-            sufficient_decrease::R = 1.0e-4,
-            sufficient_curvature::R = 0.999,
+            sufficient_decrease::Real = 1.0e-4,
+            sufficient_curvature::Real = 0.999,
             vector_transport_method::VTM = default_vector_transport_method(M),
-            stop_when_stepsize_less::R = 0.0,
-            stop_increasing_at_step::I = 100,
-            stop_decreasing_at_step::I = 1000,
-        ) where {TRM, VTM, P, T, R, I}
+            stop_when_stepsize_less::Real = 0.0,
+            stop_increasing_at_step::Integer = 100,
+            stop_decreasing_at_step::Integer = 1000,
+        ) where {TRM, VTM, P, T}
+        R = promote_type(
+            typeof(max_stepsize), typeof(sufficient_curvature), typeof(sufficient_decrease),
+            typeof(stop_when_stepsize_less),
+        )
+        I = promote_type(typeof(stop_decreasing_at_step), typeof(stop_increasing_at_step))
         msgs = (;
             non_descent_direction = StepsizeMessage{R, R}(),
-            stop_decreasing = StepsizeMessage{Int, R}(),
-            stop_increasing = StepsizeMessage{Int, R}(),
+            stop_decreasing = StepsizeMessage{I, R}(),
+            stop_increasing = StepsizeMessage{I, R}(),
             stepsize_less = StepsizeMessage{R, R}(),
             stepsize_exceeds = StepsizeMessage{R, R}(),
         )
-        return new{R, TRM, VTM, P, T, I, typeof(msgs)}(
-            sufficient_decrease,
-            sufficient_curvature,
-            X,
-            p,
-            0.0,
-            max_stepsize,
-            retraction_method,
-            stop_when_stepsize_less,
-            vector_transport_method,
-            stop_increasing_at_step,
-            stop_decreasing_at_step,
-            msgs,
+        return WolfePowellLinesearchStepsize(;
+            sufficient_decrease = convert(R, sufficient_decrease), sufficient_curvature = convert(R, sufficient_curvature),
+            candidate_direction = X, candidate_point = p, last_stepsize = convert(R, 0.0),
+            max_stepsize = convert(R, max_stepsize), retraction_method = retraction_method,
+            stop_when_stepsize_less = convert(R, stop_when_stepsize_less),
+            vector_transport_method = vector_transport_method,
+            stop_increasing_at_step = convert(I, stop_increasing_at_step), stop_decreasing_at_step = convert(I, stop_decreasing_at_step),
+            messages = msgs
         )
     end
 end
@@ -1740,10 +1752,7 @@ function WolfePowellLinesearchStepsize(M::AbstractManifold, p; kwargs...)
     )
 end
 function (a::WolfePowellLinesearchStepsize)(
-        mp::AbstractManoptProblem,
-        ams::AbstractManoptSolverState,
-        k::Int,
-        η = (-get_gradient(mp, get_iterate(ams)));
+        mp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(ams)));
         kwargs...,
     )
     # For readability extract a few variables
@@ -1824,15 +1833,28 @@ function (a::WolfePowellLinesearchStepsize)(
     return step
 end
 function Base.show(io::IO, a::WolfePowellLinesearchStepsize)
-    return print(
-        io,
-        "WolfePowellLinesearch(; sufficient_decrease = $(a.sufficient_decrease), sufficient_curvature = $(a.sufficient_curvature), retraction_method = $(a.retraction_method), vector_transport_method = $(a.vector_transport_method), stop_when_stepsize_less = $(a.stop_when_stepsize_less), stop_increasing_at_step = $(a.stop_increasing_at_step), stop_decreasing_at_step = $(a.stop_decreasing_at_step))",
-    )
+    print(io, "WolfePowellLinesearchStepsize(; sufficient_decrease = ", a.sufficient_decrease)
+    print(io, ", sufficient_curvature = ", a.sufficient_curvature, ", candidate_direction = ", a.candidate_direction, ", candidate_point = ", a.candidate_point)
+    print(io, ", last_stepsize = ", a.last_stepsize, ", max_stepsize = ", a.max_stepsize)
+    print(io, ", retraction_method = ", a.retraction_method, ", stop_when_stepsize_less = ", a.stop_when_stepsize_less)
+    print(io, ", vector_transport_method = ", a.vector_transport_method)
+    print(io, ", stop_increasing_at_step = ", a.stop_increasing_at_step, ", stop_decreasing_at_step = ", a.stop_decreasing_at_step)
+    return print(io, ", messages = ", a.messages, ")")
 end
 function status_summary(a::WolfePowellLinesearchStepsize; context::Symbol = :default)
-    @warn "TODO: WolfePowell status summary still needs and update"
-    s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
-    return "$a$s"
+    (context === :short) && return repr(a)
+    (context === :inline) && return "A Wolfe Powell step size (last stepsize: $(a.last_stepsize))"
+    return """
+    A Wolfe Powell line search based step size
+    (last stepsize: $(a.last_stepsize))
+
+    ## Parameters
+    * maximal step size:       $(_MANOPT_INDENT)$(a.max_stepsize)
+    * retraction method:       $(_MANOPT_INDENT)$(a.retraction_method)
+    * vector transport method: $(_MANOPT_INDENT)$(a.retraction_method)
+    * sufficient decrease:     $(_MANOPT_INDENT)$(a.sufficient_decrease)
+    * sufficient curvature:    $(_MANOPT_INDENT)$(a.sufficient_curvature)
+    """
 end
 function get_message(a::WolfePowellLinesearchStepsize)
     s = [get_message(kv[1], kv[2]) for kv in pairs(a.messages)]
@@ -1915,22 +1937,20 @@ mutable struct WolfePowellBinaryLinesearchStepsize{
     sufficient_curvature::F
     last_stepsize::F
     stop_when_stepsize_less::F
-
     function WolfePowellBinaryLinesearchStepsize(
-            M::AbstractManifold = DefaultManifold();
-            sufficient_decrease::F = 10^(-4),
-            sufficient_curvature::F = 0.999,
+            M::AbstractManifold;
+            sufficient_decrease::Real = 10^(-4),
+            sufficient_curvature::Real = 0.999,
             retraction_method::RTM = default_retraction_method(M),
             vector_transport_method::VTM = default_vector_transport_method(M),
-            stop_when_stepsize_less::F = 0.0,
-        ) where {VTM <: AbstractVectorTransportMethod, RTM <: AbstractRetractionMethod, F}
+            stop_when_stepsize_less::Real = 0.0,
+            last_stepsize::Real = 0.0,
+        ) where {VTM <: AbstractVectorTransportMethod, RTM <: AbstractRetractionMethod}
+        F = promote_type(typeof(sufficient_decrease), typeof(sufficient_curvature), typeof(stop_when_stepsize_less), typeof(last_stepsize))
         return new{RTM, VTM, F}(
-            retraction_method,
-            vector_transport_method,
-            sufficient_decrease,
-            sufficient_curvature,
-            0.0,
-            stop_when_stepsize_less,
+            retraction_method, vector_transport_method,
+            convert(F, sufficient_decrease), convert(F, sufficient_curvature),
+            convert(F, last_stepsize), convert(F, stop_when_stepsize_less),
         )
     end
 end
@@ -1977,14 +1997,26 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     return t
 end
 function Base.show(io::IO, a::WolfePowellBinaryLinesearchStepsize)
-    return print(
-        io,
-        "WolfePowellBinaryLinesearch(; sufficient_decrease = $(a.sufficient_decrease), sufficient_curvature = $(a.sufficient_curvature), retraction_method = $(a.retraction_method), vector_transport_method = $(a.vector_transport_method), stop_when_stepsize_less = $(a.stop_when_stepsize_less))",
-    )
+    print(io, "WolfePowellBinaryLinesearchStepsize(; sufficient_decrease = ", a.sufficient_decrease)
+    print(io, ", sufficient_curvature = ", a.sufficient_curvature)
+    print(io, ", last_stepsize = ", a.last_stepsize)
+    print(io, ", retraction_method = ", a.retraction_method, ", stop_when_stepsize_less = ", a.stop_when_stepsize_less)
+    print(io, ", vector_transport_method = ", a.vector_transport_method)
+    return print(io, ")")
 end
-function status_summary(a::WolfePowellBinaryLinesearchStepsize)
-    s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
-    return "$a$s"
+function status_summary(a::WolfePowellBinaryLinesearchStepsize; context::Symbol = :default)
+    (context === :short) && return repr(a)
+    (context === :inline) && return "A Wolfe Powell bisection dissection step size (last stepsize: $(a.last_stepsize))"
+    return """
+    A Wolfe Powell bisection line search based step size
+    (last stepsize: $(a.last_stepsize))
+
+    ## Parameters
+    * retraction method:       $(_MANOPT_INDENT)$(a.retraction_method)
+    * vector transport method: $(_MANOPT_INDENT)$(a.retraction_method)
+    * sufficient decrease:     $(_MANOPT_INDENT)$(a.sufficient_decrease)
+    * sufficient curvature:    $(_MANOPT_INDENT)$(a.sufficient_curvature)
+    """
 end
 
 _doc_WPBL_algorithm = """With

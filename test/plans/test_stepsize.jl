@@ -82,13 +82,12 @@ end
 
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
-    @test startswith(repr(s3), "WolfePowellBinaryLinesearch(;")
+    @test startswith(repr(s3), "WolfePowellBinaryLinesearchStepsize(;")
+    @test startswith(Manopt.status_summary(s3), "A Wolfe Powell bisection line search")
     # no stepsize yet so `repr` and summary are the same
-    @test repr(s3) == Manopt.status_summary(s3)
     s4 = WolfePowellLinesearch()(M)
-    @test startswith(repr(s4), "WolfePowellLinesearch(;")
-    # no stepsize yet so `repr` and summary are the same
-    @test repr(s4) == Manopt.status_summary(s4)
+    @test startswith(repr(s4), "WolfePowellLinesearchStepsize(;")
+    @test startswith(Manopt.status_summary(s4), "A Wolfe Powell line search")
     @test Manopt.get_message(s4) == ""
     @testset "Armijo setter / getters" begin
         # Check that the passdowns work, though; since the defaults are functions, they return nothing

@@ -224,15 +224,13 @@ using Manopt: estimate_sectional_curvature
         @test nsbt(mp, cbms, 1) < 1.0e-15 # Expected value?
 
         # nsbt show/status
-        @test startswith(repr(nsbt), "NullStepBackTracking(;\n")
-        @test startswith(Manopt.status_summary(nsbt), "NullStepBackTracking(;\n")
-        @test endswith(Manopt.status_summary(nsbt), "e-16")
+        @test startswith(repr(nsbt), "NullStepBackTrackingStepsize(;")
+        @test startswith(Manopt.status_summary(nsbt), "A null step backtracking stepsize")
         # Test show/summary on domainbt
         dbt = DomainBackTrackingStepsize(M; contraction_factor = 0.975)
         @test get_initial_stepsize(dbt) == 1
-        @test startswith(repr(dbt), "DomainBackTracking(;\n")
-        @test startswith(Manopt.status_summary(dbt), "DomainBackTracking(;\n")
-        @test endswith(Manopt.status_summary(dbt), "of 1.0")
+        @test startswith(repr(dbt), "DomainBackTrackingStepsize(;")
+        @test startswith(Manopt.status_summary(dbt), "A domain backtracking stepsize")
         # a newly setup stepsize has now message (yet)
         @test Manopt.get_message(dbt) == ""
     end
