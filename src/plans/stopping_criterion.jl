@@ -1169,8 +1169,11 @@ end
 
 # `_fast_any(f, tup::Tuple)`` is functionally equivalent to `any(f, tup)`` but on Julia 1.10
 # this implementation is faster on heterogeneous tuples
+# for length zero -> return false
 @inline _fast_any(f, tup::Tuple{}) = false
+# for one-element tuples, evaluate that one element
 @inline _fast_any(f, tup::Tuple{T}) where {T} = f(tup[1])
+# for more than that -> finish fast, if the first is true end checks, otherwise continue with tail
 @inline function _fast_any(f, tup::Tuple)
     if f(tup[1])
         return true

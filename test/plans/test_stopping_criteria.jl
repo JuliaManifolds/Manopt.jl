@@ -48,7 +48,8 @@ end
         @test get_reason(sn) == ""
         @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iterations
         @test repr(sn) == "StopWhenAny([$(repr(sn1)), $(repr(s3))])"
-        @test_broken Manopt._fast_any(x -> false, ())
+        # or over an empty set has to be false for any function
+        @test !Manopt._fast_any(x -> false, ())
 
         sn2 = StopAfterIteration(10) | s3
         @test get_stopping_criteria(sn)[1].max_iterations ==
