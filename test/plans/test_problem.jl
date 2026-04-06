@@ -13,6 +13,10 @@ using Manopt, Manifolds, Test
         moi = ManifoldGradientObjective(f, grad_f!; evaluation = InplaceEvaluation())
         cpi = DefaultManoptProblem(M, moi)
         @test Manopt.evaluation_type(cpi) === InplaceEvaluation
+
+        io = IOBuffer()
+        show(io, MIME"text/plain"(), cpa)
+        @test startswith(String(take!(io)), "An optimization problem for Manopt.jl")
     end
     @testset "set_parameter functions" begin
         f(M, p) = 1 # dummy cost

@@ -16,8 +16,13 @@ end
         s = StopWhenAll(sa, sb)
         @test !Manopt.indicates_convergence(s) #both are false so this is false
         @test repr(s) == "StopWhenAll([$(repr(sa)), $(repr(sb))])"
+        @test Manopt.status_summary(s; context = :short) == "$(repr(sa)) & $(repr(sb))"
         @test startswith(Manopt.status_summary(s), "Stop when")
         @test get_reason(s) === ""
+        io = IOBuffer()
+        show(io, MIME"text/plain"(), sa)
+        @test startswith(String(take!(io)), "A stopping criterion to stop after 10 iterations")
+
         # Trigger second one manually
         s.criteria[2].last_change = 0.05
         s.criteria[2].at_iteration = 3
@@ -138,6 +143,8 @@ end
         g = StopWhenCostLess(1.0e-4)
         @test Manopt.status_summary(g; context = :inline) == "f(x) < $(1.0e-4):$(Manopt._MANOPT_INDENT)not reached"
         @test repr(g) == "StopWhenCostLess(0.0001)"
+        @test startswith(Manopt.status_summary(g), "A stopping criterion to stop when the cost function")
+        @test !Manopt.indicates_convergence(g)
         gf(M, p) = norm(p)
         grad_gf(M, p) = p
         gp = DefaultManoptProblem(Euclidean(2), ManifoldGradientObjective(gf, grad_gf))
@@ -151,6 +158,7 @@ end
         @test length(get_reason(g)) > 0
         h = StopWhenSmallerOrEqual(:p, 1.0e-4)
         @test repr(h) == "StopWhenSmallerOrEqual(:p, $(1.0e-4))"
+        @test !Manopt.indicates_convergence(h)
         @test get_reason(h) == ""
         # Trigger manually
         h.at_iteration = 1
@@ -160,6 +168,7 @@ end
         for swgcl in [swgcl1, swgcl2]
             repr(swgcl) ==
                 "StopWhenGradientChangeLess($(1.0e-8); vector_transport_method=ParallelTransport())\n $(Manopt.status_summary(swgcl))"
+            @test !Manopt.indicates_convergence(swgcl)
             swgcl(gp, gs, 0) # reset
             @test get_reason(swgcl) == ""
             @test swgcl(gp, gs, 1) # change 0 -> true
@@ -211,6 +220,7 @@ end
             stepsize = Manopt.ConstantStepsize(Euclidean()),
         )
         s1 = StopWhenStepsizeLess(0.5)
+        @test !Manopt.indicates_convergence(s1)
         @test !s1(dmp, gds, 1)
         @test length(get_reason(s1)) == 0
         gds.stepsize = Manopt.ConstantStepsize(Euclidean(), 0.25)
@@ -233,6 +243,8 @@ end
         )
         swecl = StopWhenEntryChangeLess(:p, (p, s, v, w) -> norm(w - v), 1.0e-5)
         @test startswith(repr(swecl), "StopWhenEntryChangeLess(")
+        @test !Manopt.indicates_convergence(swecl)
+        @test startswith(Manopt.status_summary(swecl), "A stopping criterion to stop when the change of ")
         Manopt.set_parameter!(swecl, :Threshold, 1.0e-4)
         @test swecl.threshold == 1.0e-4
         @test !swecl(dmp, gds, 1) #First call stores
@@ -257,6 +269,8 @@ end
         mp = DefaultManoptProblem(M, mso)
         c2 = StopWhenSubgradientNormLess(1.0e-6)
         @test repr(c2) == "StopWhenSubgradientNormLess(1.0e-6)"
+        @test startswith(Manopt.status_summary(c2), "A stopping criterion to stop when the subgradient norm")
+
         st = SubGradientMethodState(M; p = p, stopping_criterion = c2)
         st.X = ∂f(M, 2p)
         @test !c2(mp, st, 1)
@@ -272,6 +286,8 @@ end
 
     @testset "StopWhenCostNaN, StopWhenCostChangeLess, StopWhenIterateNaN" begin
         sc1 = StopWhenCostNaN()
+        @test !Manopt.indicates_convergence(sc1)
+        @test startswith(Manopt.status_summary(sc1), "A stopping criterion to stop when the cost function is")
         f(M, p) = norm(p) > 2 ? NaN : norm(p)
         M = Euclidean(2)
         p = [1.0, 2.0]
@@ -291,6 +307,8 @@ end
 
         sc2 = StopWhenCostChangeLess(1.0e-6)
         @test startswith(repr(sc2), "StopWhenCostChangeLess(1.0e-6)")
+        @test startswith(Manopt.status_summary(sc2), "A stopping criterion to stop when the change of the cost")
+        @test !Manopt.indicates_convergence(sc2)
         @test get_reason(sc2) == ""
         s.p = [0.0, 0.1]
         @test !sc2(mp, s, 1) # Init check
@@ -304,6 +322,9 @@ end
         s.p .= NaN
         sc3 = StopWhenIterateNaN()
         @test startswith(repr(sc3), "StopWhenIterateNaN()")
+        @test !Manopt.indicates_convergence(sc3)
+        @test startswith(Manopt.status_summary(sc3), "A stopping criterion to stop when an entry of the iterate is")
+
         @test sc3(mp, s, 1) #always returns true since p was now set to NaN
         @test length(get_reason(sc3)) > 0
         s.p = p
@@ -354,6 +375,7 @@ end
         @test get_reason(sc) == ""
         @test startswith(repr(sc), "StopWhenCriterionWithIterationCondition(")
         @test startswith(Manopt.status_summary(sc; context = :short), repr(sc))
+        @test startswith(Manopt.status_summary(sc), "A stopping criterion to stop when the inner criterion is met and")
         sc2 = s ⩼ 5
         @test typeof(sc) === typeof(sc2)
         sc4 = s ≟ 5

@@ -948,7 +948,7 @@ function (s::DecreasingStepsize)(
 end
 get_initial_stepsize(s::DecreasingStepsize) = s.length
 function Base.show(io::IO, s::DecreasingStepsize)
-    print(io, "DecreasingLength(; length = ", s.length, ", exponent = ", s.exponent, ", factor = ", s.factor)
+    print(io, "DecreasingStepsize(; length = ", s.length, ", exponent = ", s.exponent, ", factor = ", s.factor)
     return print(io, ", subtrahend = ", s.subtrahend, ", shift = ", s.shift, ", type = :$(s.type))")
 end
 function status_summary(s::DecreasingStepsize; context::Symbol = :default)

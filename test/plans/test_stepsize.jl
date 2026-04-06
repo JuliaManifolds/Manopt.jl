@@ -141,6 +141,8 @@ end
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
         s = AdaptiveWNGradient(; gradient_reduction = 0.5, count_threshold = 2)(M)
+        @test startswith(Manopt.status_summary(s), "An adaptive Gradient WN step size")
+        @test startswith(repr(s), "AdaptiveWNGradientStepsize(; ")
         gds = GradientDescentState(M; p = p)
         @test get_initial_stepsize(s) == 1.0
         @test get_last_stepsize(s) == 1.0
@@ -170,6 +172,7 @@ end
         abs_dec_step = Manopt.DecreasingStepsize(
             M; length = 10.0, factor = 1.0, subtrahend = 0.0, exponent = 1.0, type = :absolute
         )
+        @test startswith(repr(abs_dec_step), "DecreasingStepsize(; ")
         solve!(mp, gds)
         @test abs_dec_step(mp, gds, 1) ==
             10.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
@@ -188,6 +191,7 @@ end
         ps = Polyak()()
         @test startswith(repr(ps), "Polyak(; γ = ")
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
+        @test startswith(Manopt.status_summary(ps), "Polyak step size with γ = ")
     end
     @testset "CubicBracketing Stepsize" begin
         M = Euclidean(2)
@@ -277,6 +281,8 @@ end
             @test occursin("initial_distance = 1.0", repr_ds)
             @test occursin("use_curvature = false", repr_ds)
             @test occursin("sectional_curvature_bound = 0.0", repr_ds)
+            summary = Manopt.status_summary(ds)
+            @test startswith(summary, "A distance over gradients step size")
             lr = ds(dmp, gds, 0)
             @test lr == 0.125
         end
