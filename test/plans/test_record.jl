@@ -154,7 +154,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         set_iterate!(gds, M, p)
         f = RecordEntry(p, :p)
         @test repr(f) == "RecordEntry(:p)"
-        @test Manopt.status_summary(f) == "A RecordAction to record the solver. state field :p"
+        @test Manopt.status_summary(f) == "A RecordAction to record the solver state field :p"
         f(dmp, gds, 1)
         @test f.recorded_values == [p]
         f2 = RecordEntry(typeof(p), :p)
