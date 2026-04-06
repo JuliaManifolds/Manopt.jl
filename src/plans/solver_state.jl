@@ -17,11 +17,7 @@ abstract type AbstractManoptSolverState end
 
 function Base.show(io::IO, ::MIME"text/plain", ams::AbstractManoptSolverState)
     multiline = get(io, :multiline, true)
-    if multiline
-        return status_summary(io, ams)
-    else
-        show(io, ams)
-    end
+    return multiline ? status_summary(io, ams) : show(io, ams)
 end
 
 """
@@ -128,8 +124,8 @@ should be returned at the end of a solver instead of the usual minimizer.
 struct ReturnSolverState{S <: AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
 end
-status_summary(rst::ReturnSolverState) = status_summary(rst.state)
-show(io::IO, rst::ReturnSolverState) = print(io, "ReturnSolverState($(rst.state))")
+status_summary(rst::ReturnSolverState; context::Symbol = :default) = status_summary(rst.state; context = context)
+show(io::IO, rst::ReturnSolverState) = print(io, "ReturnSolverState(", rst.state, ")")
 dispatch_state_decorator(::ReturnSolverState) = Val(true)
 
 """
@@ -317,9 +313,11 @@ for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverSt
 abstract type AbstractStateAction end
 
 status_summary(asa::AbstractStateAction; context::Symbol = :default) = repr(asa)
-status_summary(io::IO, asa::AbstractStateAction; context::Symbol = :default) = print(io, status_summary(asa; context = context))
 
-Base.show(io::IO, ::MIME"text/plain", asa::AbstractStateAction) = status_summary(io::IO, asa; context = :default)
+function Base.show(io::IO, ::MIME"text/plain", asa::AbstractStateAction)
+    multiline = get(io, :multiline, true)
+    return multiline ? status_summary(io, asa) : show(io, asa)
+end
 
 mutable struct StorageRef{T}
     x::T

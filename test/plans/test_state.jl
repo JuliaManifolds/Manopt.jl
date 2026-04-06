@@ -9,8 +9,12 @@ struct NoIterateState <: AbstractManoptSolverState end
         pr = Manopt.Test.DummyProblem{typeof(M)}()
         s = Manopt.Test.DummyState()
         @test repr(Manopt.ReturnSolverState(s)) == "ReturnSolverState($s)"
-        @test Manopt.status_summary(Manopt.ReturnSolverState(s)) ==
-            "A Manopt Test state with storage Float64[]"
+        srst = "A Manopt Test state with storage Float64[]"
+        @test Manopt.status_summary(Manopt.ReturnSolverState(s)) == srst
+        io = IOBuffer()
+        show(io, MIME"text/plain"(), Manopt.ReturnSolverState(s))
+        @test startswith(String(take!(io)), srst)
+
         a = ArmijoLinesearch(; initial_stepsize = 1.0)(M)
         @test get_last_stepsize(a) == 1.0
         @test get_initial_stepsize(a) == 1.0
