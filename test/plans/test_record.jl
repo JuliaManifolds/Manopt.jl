@@ -165,6 +165,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         set_iterate!(gds, M, p)
         e = RecordEntryChange(:p, (p, o, x, y) -> distance(get_manifold(p), x, y))
         @test startswith(repr(e), "RecordEntryChange(:p")
+        @test startswith(Manopt.status_summary(e), "A RecordAction to record the solver state field's :p change")
         @test update_storage!(e.storage, dmp, gds) == [:p]
         e(dmp, gds, 1)
         @test e.recorded_values == [0.0]
@@ -197,6 +198,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         g = RecordStoppingReason()
         @test repr(g) == "RecordStoppingReason()"
         @test Manopt.status_summary(g; context = :short) == ":Stop"
+        @test startswith(Manopt.status_summary(g), "A RecordAction to record the stopping reason")
         @test length(get_record(g)) == 0
         stop_solver!(dmp, gds, 21) # trigger stop
         g(dmp, gds, 21) # record
@@ -294,6 +296,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         h1 = RecordTime(; mode = :cumulative)
         @test repr(h1) == "RecordTime(; mode=:cumulative)"
         @test Manopt.status_summary(h1, context = :short) == ":Time"
+        @test startswith(Manopt.status_summary(h1), "A RecordAction for recording times")
         t = h1.start
         @test t isa Nanosecond
         h1(dmp, gds, 1)

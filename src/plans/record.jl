@@ -782,7 +782,7 @@ end
 show(io::IO, ::RecordStoppingReason) = print(io, "RecordStoppingReason()")
 function status_summary(::RecordStoppingReason; context::Symbol = :default)
     (context === :short) && return ":Stop"
-    return "A record action to record the stopping reason"
+    return "A RecordAction to record the stopping reason"
 end
 
 @doc """
@@ -827,7 +827,7 @@ end
 function status_summary(ri::RecordTime; context::Symbol = :default)
     (context == :short) && return (ri.mode === :iterative ? ":IterativeTime" : ":Time")
     # Inline and Default:
-    return "A Record action for recording times" * (ri.mode == :iterative ? " iteratively" : ".")
+    return "A RecordAction for recording times" * (ri.mode == :iterative ? " iteratively" : ".")
 end
 
 #
