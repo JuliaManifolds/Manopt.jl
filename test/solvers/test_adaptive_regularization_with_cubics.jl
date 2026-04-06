@@ -33,13 +33,13 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         X1 = similar(X0)
         Manopt.get_objective_preconditioner!(M, X1, arcmo, p0, X0)
         isapprox(M, p0, X1, get_preconditioner(M, mho, p0, X0))
+        @test startswith(repr(arcmo), "AdaptiveRegularizationWithCubicsModelObjective(")
+        @test startswith(Manopt.status_summary(arcmo), "The cubic polynomial based model for the sub problem of the Adaptive")
     end
 
     @testset "State and repr" begin
         arcs = AdaptiveRegularizationState(
-            M,
-            DefaultManoptProblem(M2, arcmo),
-            GradientDescentState(M2; p = zero_vector(M, p0));
+            M, DefaultManoptProblem(M2, arcmo), GradientDescentState(M2; p = zero_vector(M, p0));
             p = p0,
         )
         @test startswith(

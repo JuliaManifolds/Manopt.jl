@@ -48,24 +48,22 @@ mutable struct SimpleManifoldCachedObjective{
 end
 
 function SimpleManifoldCachedObjective(
-        M::AbstractManifold,
-        obj::O;
-        initialized = true,
-        p = rand(M),
+        M::AbstractManifold, obj::O;
+        initialized = true, p = rand(M),
         X = initialized ? get_gradient(M, obj, p) : zero_vector(M, p),
         c = initialized ? get_cost(M, obj, p) : 0.0,
     ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
     q = copy(M, p)
-    return SimpleManifoldCachedObjective{E, O, typeof(q), typeof(X), typeof(c)}(
-        obj, q, X, initialized, c, initialized
+    return SimpleManifoldCachedObjective(
+        obj, q, X, c; initialized = initialized
     )
 end
 
 function SimpleManifoldCachedObjective(
-        obj::O, p, X, c; initialized = false
+        obj::O, p, X, c; initialized::Bool = false
     ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
     return SimpleManifoldCachedObjective{E, O, typeof(p), typeof(X), typeof(c)}(
-        obj, q, X, initialized, c, initialized
+        obj, p, X, initialized, c, initialized
     )
 end
 
@@ -780,11 +778,7 @@ function get_grad_inequality_constraint!(
     return X
 end
 function get_grad_inequality_constraint!(
-        M::AbstractManifold,
-        X,
-        co::ManifoldCachedObjective,
-        p,
-        i,
+        M::AbstractManifold, X, co::ManifoldCachedObjective, p, i,
         range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
     )
     key = copy(M, p)
@@ -831,8 +825,7 @@ end
 function get_hessian(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
     !(haskey(co.cache, :Hessian)) && return get_hessian(M, co.objective, p, X)
     return copy(
-        M,
-        p,
+        M, p,
         get!(co.cache[:Hessian], (copy(M, p), copy(M, p, X))) do
             get_hessian(M, co.objective, p, X)
         end,
@@ -841,9 +834,7 @@ end
 function get_hessian!(M::AbstractManifold, Y, co::ManifoldCachedObjective, p, X)
     !(haskey(co.cache, :Hessian)) && return get_hessian!(M, Y, co.objective, p, X)
     copyto!(
-        M,
-        Y,
-        p, # perform an in-place cache evaluation, see also `get_gradient!`
+        M, Y, p, # perform an in-place cache evaluation, see also `get_gradient!`
         get!(co.cache[:Hessian], (copy(M, p), copy(M, p, X))) do
             get_hessian!(M, Y, co.objective, p, X)
             copy(M, p, Y) #store a copy of Y
@@ -867,8 +858,7 @@ end
 function get_preconditioner(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
     !(haskey(co.cache, :Preconditioner)) && return get_preconditioner(M, co.objective, p, X)
     return copy(
-        M,
-        p,
+        M, p,
         get!(co.cache[:Preconditioner], (copy(M, p), copy(M, p, X))) do
             get_preconditioner(M, co.objective, p, X)
         end,
@@ -878,9 +868,7 @@ function get_preconditioner!(M::AbstractManifold, Y, co::ManifoldCachedObjective
     !(haskey(co.cache, :Preconditioner)) &&
         return get_preconditioner!(M, Y, co.objective, p, X)
     copyto!(
-        M,
-        Y,
-        p, # perform an in-place cache evaluation, see also `get_gradient!`
+        M, Y, p, # perform an in-place cache evaluation, see also `get_gradient!`
         get!(co.cache[:Preconditioner], (copy(M, p), copy(M, p, X))) do
             get_preconditioner!(M, Y, co.objective, p, X)
             copy(M, p, Y)
@@ -904,8 +892,7 @@ function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCachedObjective, 
     !(haskey(co.cache, :ProximalMap)) &&
         return get_proximal_map!(M, q, co.objective, λ, p, i)
     copyto!(
-        M,
-        q,
+        M, q,
         get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do
             get_proximal_map!(M, q, co.objective, λ, p, i) #compute in-place of q
             copy(M, q) #store copy of q
@@ -918,8 +905,7 @@ end
 function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
     !(haskey(co.cache, :StochasticGradient)) && return get_gradient(M, co.objective, p, i)
     return copy(
-        M,
-        p,
+        M, p,
         get!(co.cache[:StochasticGradient], (copy(M, p), i)) do
             get_gradient(M, co.objective, p, i)
         end,
@@ -929,9 +915,7 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p, i
     !(haskey(co.cache, :StochasticGradient)) &&
         return get_gradient!(M, X, co.objective, p, i)
     copyto!(
-        M,
-        X,
-        p,
+        M, X, p,
         get!(co.cache[:StochasticGradient], (copy(M, p), i)) do
             # This evaluates in place of X
             get_gradient!(M, X, co.objective, p, i)
@@ -944,8 +928,7 @@ end
 function get_gradients(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :StochasticGradients)) && return get_gradients(M, co.objective, p)
     return copy.(
-        Ref(M),
-        Ref(p),
+        Ref(M), Ref(p),
         get!(co.cache[:StochasticGradients], copy(M, p)) do
             get_gradients(M, co.objective, p)
         end,
@@ -970,8 +953,7 @@ end
 function get_subgradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :SubGradient)) && return get_subgradient(M, co.objective, p)
     return copy(
-        M,
-        p,
+        M, p,
         get!(co.cache[:SubGradient], copy(M, p)) do
             get_subgradient(M, co.objective, p)
         end,
@@ -980,9 +962,7 @@ end
 function get_subgradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :SubGradient)) && return get_subgradient!(M, X, co.objective, p)
     copyto!(
-        M,
-        X,
-        p, # perform an in-place cache evaluation, see also `get_gradient!`
+        M, X, p, # perform an in-place cache evaluation, see also `get_gradient!`
         get!(co.cache[:SubGradient], copy(M, p)) do
             get_subgradient!(M, X, co.objective, p)
             copy(M, p, X)
@@ -997,8 +977,7 @@ function get_subtrahend_gradient(M::AbstractManifold, co::ManifoldCachedObjectiv
     !(haskey(co.cache, :SubtrahendGradient)) &&
         return get_subtrahend_gradient(M, co.objective, p)
     return copy(
-        M,
-        p,
+        M, p,
         get!(co.cache[:SubtrahendGradient], copy(M, p)) do
             get_subtrahend_gradient(M, co.objective, p)
         end,
@@ -1008,8 +987,7 @@ function get_subtrahend_gradient!(M::AbstractManifold, X, co::ManifoldCachedObje
     !(haskey(co.cache, :SubtrahendGradient)) &&
         return get_subtrahend_gradient!(M, X, co.objective, p)
     copyto!(
-        M,
-        X,
+        M, X,
         p, # perform an in-place cache evaluation, see also `get_gradient!`
         get!(co.cache[:SubtrahendGradient], copy(M, p)) do
             get_subtrahend_gradient!(M, X, co.objective, p)
@@ -1076,7 +1054,7 @@ end
 function show(
         io::IO, t::Tuple{<:SimpleManifoldCachedObjective, S}
     ) where {S <: AbstractManoptSolverState}
-    return print(io, "$(t[2])\n\n$(t[1])")
+    return print(io, "$(status_summary(t[2]))\n\n$(status_summary(t[1]))")
 end
 function show(io::IO, mco::ManifoldCachedObjective)
     return print(io, "$(status_summary(mco))")

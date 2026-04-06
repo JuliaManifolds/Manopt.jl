@@ -22,14 +22,11 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         dU = SteepestDescentCoefficient()
         s1 = ConjugateGradientDescentState(
             M;
-            p = x0,
-            stopping_criterion = sC,
-            stepsize = s,
-            coefficient = dU,
-            retraction_method = retr,
-            vector_transport_method = vtm,
+            p = x0, stopping_criterion = sC, stepsize = s,
+            coefficient = dU, retraction_method = retr, vector_transport_method = vtm,
             initial_gradient = zero_vector(M, x0),
         )
+        @test startswith(repr(s1), "ConjugateGradientDescentState(; ")
         @test s1.coefficient(dmp, s1, 1) == 0
         @test default_stepsize(M, typeof(s1)) isa Manopt.ArmijoLinesearchStepsize
         @test Manopt.get_message(s1) == ""
@@ -37,12 +34,8 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         dU = Manopt.ConjugateDescentCoefficient()
         s2 = ConjugateGradientDescentState(
             M;
-            p = x0,
-            stopping_criterion = sC,
-            stepsize = s,
-            coefficient = dU,
-            retraction_method = retr,
-            vector_transport_method = vtm,
+            p = x0, stopping_criterion = sC, stepsize = s, coefficient = dU,
+            retraction_method = retr, vector_transport_method = vtm,
             initial_gradient = zero_vector(M, x0),
         )
         s2.X = grad_1

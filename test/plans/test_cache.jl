@@ -72,6 +72,10 @@ end
         @test contains(sco1r, "initialized = ")
         sco1s = Manopt.status_summary(sco1)
         @test contains(sco1s, "## Cache")
+        # together with a state -> append cache information after state
+        sco1t = repr((sco1, GradientDescentState(M)))
+        @test contains(sco1t, "# Solver state for `Manopt.jl`s Gradient Descent")
+        @test contains(sco1t, "## Cache")
         # evaluated on init -> 1
         @test sco1.objective.functions[:cost].i == 1
         @test sco1.objective.functions[:gradient].i == 1

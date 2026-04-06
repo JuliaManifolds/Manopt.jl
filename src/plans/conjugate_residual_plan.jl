@@ -238,18 +238,24 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
     α::R
     β::R
     stop::TStop
+    function ConjugateResidualState(;
+            X::T, r::T, d::T, Ar::T, Ad::T, α::R, β::R, rAr::R, stopping_criterion::SC,
+        ) where {T, R, SC <: StoppingCriterion}
+        crs = new{T, R, SC}()
+        crs.X = X; crs.r = r; crs.d = d; crs.Ar = Ar; crs.Ad = Ad
+        crs.α = α; crs.β = β; crs.rAr = rAr; crs.stop = stopping_criterion
+        return crs
+    end
     function ConjugateResidualState(
             TpM::TangentSpace,
             slso::SymmetricLinearSystemObjective;
             X::T = rand(TpM), r::T = (-get_gradient(TpM, slso, X)), d::T = copy(TpM, r),
-            Ar::T = get_hessian(TpM, slso, X, r), Ad::T = copy(TpM, Ar), α::R = 0.0, β::R = 0.0,
+            Ar::T = get_hessian(TpM, slso, X, r), Ad::T = copy(TpM, Ar), α::Real = 0.0, β::Real = 0.0,
             stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) | StopWhenGradientNormLess(1.0e-8),
             kwargs...,
-        ) where {T, R, SC <: StoppingCriterion}
-        crs = new{T, R, SC}()
-        crs.X = X; crs.r = r; crs.d = d; crs.Ar = Ar; crs.Ad = Ad
-        crs.α = α; crs.β = β; crs.rAr = zero(R); crs.stop = stopping_criterion
-        return crs
+        ) where {T, SC <: StoppingCriterion}
+        R = promote_type(typeof(α), typeof(β))
+        return ConjugateResidualState(; X = X, r = r, d = d, Ar = Ar, Ad = Ad, α = α, β = β, rAr = zero(R), stopping_criterion = stopping_criterion)
     end
 end
 
@@ -285,13 +291,10 @@ function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
 end
 
 function Base.show(io::IO, crs::ConjugateResidualState)
-    print(io, "ConjugateResidualState(tangent_space, sym_lin_sys_obj;")
-    print(io, ", X=$(crs.X)")
-    print(io, ", d=$(crs.d)")
-    print(io, ", r=$(crs.r)")
-    print(io, ", α=$(crs.α)")
-    print(io, ", β=$(crs.β)")
-    print(io, ", stopping_criterion = $(status_summary(crs.stop; context = :short))")
+    print(io, "ConjugateResidualState(;")
+    print(io, " X = ", crs.X, ", d = ", crs.d, ", r = ", crs.r, ", α = ", crs.α, ", β = ", crs.β)
+    print(io, "Ar = ", crs.Ar, ", Ad = ", crs.Ad, ", rAr = ", crs.rAr)
+    print(io, ", stopping_criterion = ", status_summary(crs.stop; context = :short))
     return print(io, ")")
 end
 
@@ -368,7 +371,7 @@ end
 function status_summary(swrr::StopWhenRelativeResidualLess; context::Symbol = :default)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return _is_inline(context) ? "‖r^(k)‖ / c < ε:$(_MANOPT_INDENT)$s" : "A stopping criterion to stop when the relative residual is less than the threshold of $(swrr.ϵ)\n$(_MANOPT_INDENT)$s"
+    return _is_inline(context) ? "‖r^(k)‖ / c < ε:$(_MANOPT_INDENT)$s" : "A stopping criterion to stop when the relative residual is less than the threshold of $(swrr.ε)\n$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(::StopWhenRelativeResidualLess) = true
 function show(io::IO, swrr::StopWhenRelativeResidualLess)
