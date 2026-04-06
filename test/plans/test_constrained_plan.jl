@@ -71,46 +71,20 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         f, grad_f, g, grad_g, h, grad_h; inequality_constraints = 2, equality_constraints = 1
     )
     cofaA = ConstrainedManifoldObjective( # Array representation tangent vector
-        f,
-        grad_f,
-        g,
-        grad_gA,
-        h,
-        grad_hA;
-        inequality_constraints = 2,
-        equality_constraints = 1,
+        f, grad_f, g, grad_gA, h, grad_hA;
+        inequality_constraints = 2, equality_constraints = 1,
     )
     cofm = ConstrainedManifoldObjective(
-        f,
-        grad_f!,
-        g!,
-        grad_g!,
-        h!,
-        grad_h!;
-        evaluation = InplaceEvaluation(),
-        inequality_constraints = 2,
-        equality_constraints = 1,
+        f, grad_f!, g!, grad_g!, h!, grad_h!;
+        evaluation = InplaceEvaluation(), inequality_constraints = 2, equality_constraints = 1,
     )
     cova = ConstrainedManifoldObjective(
-        f,
-        grad_f,
-        [g1, g2],
-        [grad_g1, grad_g2],
-        [h1],
-        [grad_h1];
-        inequality_constraints = 2,
-        equality_constraints = 1,
+        f, grad_f, [g1, g2], [grad_g1, grad_g2], [h1], [grad_h1];
+        inequality_constraints = 2, equality_constraints = 1,
     )
     covm = ConstrainedManifoldObjective(
-        f,
-        grad_f!,
-        [g1, g2],
-        [grad_g1!, grad_g2!],
-        [h1],
-        [grad_h1!];
-        evaluation = InplaceEvaluation(),
-        inequality_constraints = 2,
-        equality_constraints = 1,
+        f, grad_f!, [g1, g2], [grad_g1!, grad_g2!], [h1], [grad_h1!];
+        evaluation = InplaceEvaluation(), inequality_constraints = 2, equality_constraints = 1,
     )
     rcofa = repr(cofa); rcofm = repr(cofm); rcova = repr(cova); rcofm = repr(covm)
     for r in [rcofa, rcofm, rcova, rcofm]
@@ -141,69 +115,34 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
 
     @test Manopt.get_unconstrained_objective(cofa) isa ManifoldFirstOrderObjective
     cofha = ConstrainedManifoldObjective(
-        f,
-        grad_f,
-        g,
-        grad_g,
-        h,
-        grad_h;
-        hess_f = hess_f,
-        hess_g = hess_g,
-        hess_h = hess_h,
-        inequality_constraints = 2,
-        equality_constraints = 1,
+        f, grad_f, g, grad_g, h, grad_h;
+        hess_f = hess_f, hess_g = hess_g, hess_h = hess_h,
+        inequality_constraints = 2, equality_constraints = 1,
     )
     cofhm = ConstrainedManifoldObjective(
-        f,
-        grad_f!,
-        g!,
-        grad_g!,
-        h!,
-        grad_h!;
-        hess_f = (hess_f!),
-        hess_g = (hess_g!),
-        hess_h = (hess_h!),
-        evaluation = InplaceEvaluation(),
-        inequality_constraints = 2,
-        equality_constraints = 1,
+        f, grad_f!, g!, grad_g!, h!, grad_h!;
+        hess_f = (hess_f!), hess_g = (hess_g!), hess_h = (hess_h!),
+        evaluation = InplaceEvaluation(), inequality_constraints = 2, equality_constraints = 1,
     )
     covha = ConstrainedManifoldObjective(
-        f,
-        grad_f,
-        [g1, g2],
-        [grad_g1, grad_g2],
-        [h1],
-        [grad_h1];
-        hess_f = hess_f,
-        hess_g = [hess_g1, hess_g2],
-        hess_h = [hess_h1],
-        inequality_constraints = 2,
-        equality_constraints = 1,
+        f, grad_f, [g1, g2], [grad_g1, grad_g2], [h1], [grad_h1];
+        hess_f = hess_f, hess_g = [hess_g1, hess_g2], hess_h = [hess_h1],
+        inequality_constraints = 2, equality_constraints = 1,
     )
     covhm = ConstrainedManifoldObjective(
-        f,
-        grad_f!,
-        [g1, g2],
-        [grad_g1!, grad_g2!],
-        [h1],
-        [grad_h1!];
-        hess_f = (hess_f!),
-        hess_g = [hess_g1!, hess_g2!],
-        hess_h = [hess_h1!],
-        evaluation = InplaceEvaluation(),
-        inequality_constraints = 2,
-        equality_constraints = 1,
+        f, grad_f!, [g1, g2], [grad_g1!, grad_g2!], [h1], [grad_h1!];
+        hess_f = (hess_f!), hess_g = [hess_g1!, hess_g2!], hess_h = [hess_h1!],
+        evaluation = InplaceEvaluation(), inequality_constraints = 2, equality_constraints = 1,
     )
 
     mp = DefaultManoptProblem(M, cofha)
     cop = ConstrainedManoptProblem(M, cofha)
     cop2 = ConstrainedManoptProblem(
-        M,
-        cofaA;
-        gradient_equality_range = ArrayPowerRepresentation(),
-        gradient_inequality_range = ArrayPowerRepresentation(),
+        M, cofaA;
+        gradient_equality_range = ArrayPowerRepresentation(), gradient_inequality_range = ArrayPowerRepresentation(),
     )
-
+    @test startswith(Manopt.status_summary(cop), "A constrained optimization problem for Manopt.jl")
+    @test startswith(repr(cop), "ConstrainedManoptProblem(")
     @testset "ConstrainedManoptProblem special cases" begin
         Y = zero_vector(M, p)
         for mcp in [mp, cop]
@@ -394,17 +333,10 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         q[N, 3] = λ
         q[N, 4] = s
         coh = ConstrainedManifoldObjective(
-            f,
-            grad_f;
-            hess_f = hess_f,
-            g = g,
-            grad_g = grad_g,
-            hess_g = hess_g,
-            h = h,
-            grad_h = grad_h,
-            hess_h = hess_h,
-            M = M,
+            f, grad_f; hess_f = hess_f,
+            g = g, grad_g = grad_g, hess_g = hess_g, h = h, grad_h = grad_h, hess_h = hess_h, M = M,
         )
+        @test startswith(Manopt.status_summary(coh), "A constrained objective with")
         @testset "Lagrangian Cost, Grad and Hessian" begin
             Lc = LagrangianCost(coh, μ, λ)
             @test startswith(repr(Lc), "LagrangianCost")

@@ -1209,8 +1209,8 @@ function status_summary(dw::DebugWarnIfFieldNotFinite; context::Symbol = :defaul
     (context == :short) && (return repr(dw))
     # Default and inline
     s = ""
-    (d.status === :Once) && (s = " It will only warn once.")
-    (d.status === :No) && (s = " It either has warned already or was deactivated by setting its status to `:No`.")
+    (dw.status === :Once) && (s = " It will only warn once.")
+    (dw.status === :No) && (s = " It either has warned already or was deactivated by setting its status to `:No`.")
     return "A DebugAction to warn if the field “:$(dw.field)” is or has entries that are not finite.$s"
 end
 @doc """

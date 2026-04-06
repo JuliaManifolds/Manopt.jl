@@ -373,12 +373,11 @@ get_manifold(cmp::ConstrainedManoptProblem) = cmp.manifold
 get_objective(cmp::ConstrainedManoptProblem) = cmp.objective
 
 function show(io::IO, cmp::ConstrainedManoptProblem)
-    print(io, "ConstrainedManoptProblem("); show(io, cmp.manifold)
-    print(io, ", "); show(io, cmp.objective)
-    print(io, "; gradient_equality_range = "); print(io, cmp.grad_equality_range)
-    print(io, ", gradient_inequality_range = "); print(io, cmp.grad_inequality_range)
-    print(io, ", hessian_equality_range = "); print(io, cmp.hess_equality_range)
-    print(io, ", hessian_inequality_range = "); print(io, cmp.hess_inequality_range)
+    print(io, "ConstrainedManoptProblem(", cmp.manifold, ", ", cmp.objective, ";")
+    print(io, " gradient_equality_range = ", cmp.grad_equality_range)
+    print(io, ", gradient_inequality_range = ", cmp.grad_inequality_range)
+    print(io, ", hessian_equality_range = ", cmp.hess_equality_range)
+    print(io, ", hessian_inequality_range = ", cmp.hess_inequality_range)
     return print(io, ")")
 end
 
@@ -1057,11 +1056,4 @@ function get_feasibility_status(
         h_violated > 0 ? "The sum of violation is $(sum(abs.(h)))." : ""
     )
     """
-end
-
-function Base.show(
-        io::IO, ::ConstrainedManifoldObjective{E, V, Eq, IEq}
-    ) where {E <: AbstractEvaluationType, V, Eq, IEq}
-    #    return print(io, "ConstrainedManifoldObjective{$E,$V,$Eq,$IEq}.")
-    return print(io, "ConstrainedManifoldObjective{$E}")
 end

@@ -254,7 +254,6 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
         w1 = DebugWarnIfCostNotFinite()
         @test repr(w1) == "DebugWarnIfCostNotFinite(:Once)"
-        @test startswith(Manopt.status_summary(w1), "A DebugAction warning if the cost increases")
         @test Manopt.status_summary(w1; context = :short) == ":WarnCost"
         @test Manopt.status_summary(w1) == "A DebugAction to issue a warning when the cost is no longer finite. It will only warn once."
         @test_logs (:warn,) (:warn,) w1(mp, st, 0)
