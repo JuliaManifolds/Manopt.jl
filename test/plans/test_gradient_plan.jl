@@ -66,6 +66,7 @@ using ManifoldsBase, Manopt, Test
         @test b2.recorded_values == [1.0]
         b3 = RecordStepsize()
         @test startswith(Manopt.status_summary(b3), "A RecordAction to record the current stepsize")
+        @test startswith(b3, "RecordStepsize(")
         b3(mp, gst, 1)
         b3(mp, gst, 2)
         b3(mp, gst, 3)
