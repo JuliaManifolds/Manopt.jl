@@ -238,23 +238,18 @@ function status_summary(ips::InteriorPointNewtonState; context::Symbol = :defaul
     * retraction method: $(ips.retraction_method)
 
     ## Stepsize
-    $(_in_str(status_summary(ips.stepsize; context = context); indent = 0, headers = 1))
+    $(_in_str(status_summary(ips.stepsize; context = context); indent = 1, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(ips.stop; context = context); indent = 0, headers = 1))    This indicates convergence: $Conv"""
+    $(_in_str(status_summary(ips.stop; context = context); indent = 1, headers = 1))    This indicates convergence: $Conv"""
     return s
 end
 function Base.show(io::IO, ipns::InteriorPointNewtonState)
-    print(io, "InteriorPointNewtonState(")
-    print(io, repr(ipns.sub_problem)); print(io, ", "); print(io, repr(ipns.sub_state)); print(io, ";\n")
-    print(io, "is_feasibility_error="); print(io, ipns.is_feasible_error)
-    print(io, ",retraction_method = $(ipns.retraction_method)")
-    print(io, ",\np = "); print(io, ipns.p); print(io, ", X = "); print(io, ipns.X)
-    print(io, ", μ = "); print(io, ipns.μ); print(io, ", Y = "); print(io, ipns.Y)
-    print(io, ", λ = "); print(io, ipns.λ); print(io, ", Z = "); print(io, ipns.Z)
-    print(io, ", s = "); print(io, ipns.s); print(io, ", W = "); print(io, ipns.W)
-    print(io, ", ρ = "); print(io, ipns.ρ); print(io, ", σ = "); print(io, ipns.σ)
-    print(io, ",\nstep_problem = "); print(io, ipns.step_problem)
+    print(io, "InteriorPointNewtonState(", ipns.sub_problem, ", ", ipns.sub_state, ";")
+    print(io, " is_feasibility_error = ", ipns.is_feasible_error, ", retraction_method = ", ipns.retraction_method)
+    print(io, ", p = ", ipns.p, ", X = ", ipns.X, ", μ = ", ipns.μ, ", Y = ", ipns.Y)
+    print(io, ", λ = ", ipns.λ, ", Z = ", ipns.Z, ", s = ", ipns.s, ", W = ", ipns.W)
+    print(io, ", ρ = ", ipns.ρ, ", σ = ", ipns.σ, ", step_problem = ", ipns.step_problem)
     print(io, ", step_state = ", ipns.step_state)
     return print(io, ")")
 end
@@ -1025,7 +1020,7 @@ end
 function status_summary(swrr::StopWhenKKTResidualLess; context::Symbol = :default)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "‖F(p, λ, μ)‖ < ε = $(swrr.ε):$(_MANOPT_INDENT)" : "Stop when the KKT resudual is less than ε = $(c.ε)\n$(_MANOPT_INDENT)") * s
+    return (_is_inline(context) ? "‖F(p, λ, μ)‖ < ε = $(swrr.ε):$(_MANOPT_INDENT)" : "Stop when the KKT residual is less than ε = $(swrr.ε)\n$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(::StopWhenKKTResidualLess) = true
 function Base.show(io::IO, c::StopWhenKKTResidualLess)

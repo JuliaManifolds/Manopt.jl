@@ -31,7 +31,7 @@ function status_summary(tmp::TwoManifoldProblem; context::Symbol = :default)
     An optimization problem for Manopt.jl requiring a primal and a dual manifold
 
     ## Manifolds
-    * $(_in_str(repr(tmp.first_manifold), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+    * $(_in_str(repr(tmp.first_manifold); indent = 1))
     * $(_in_str(repr(tmp.second_manifold); indent = 1))
 
     ## Objective
@@ -423,15 +423,11 @@ function status_summary(pdmo::PrimalDualManifoldObjective; context::Symbol = :de
     * D^*Λ:    $(pdmo.adjoint_linearized_operator!!)$(maybe_line1)$(maybe_line2)"""
 end
 function show(io::IO, pdmo::PrimalDualManifoldObjective{E}) where {E}
-    print(io, "PrimalDualManifoldObjective(")
-    show(io, pdmo.cost); print(io, ", ")
-    show(io, pdmo.prox_f!!); print(io, ", ")
-    show(io, pdmo.prox_g_dual!!); print(io, ", ")
-    show(io, pdmo.adjoint_linearized_operator!!); print(io, ";\n$(_MANOPT_INDENT)")
-    print(io, _to_kw(E)); print(io, ",")
-    !ismissing(pdmo.Λ!!) && (print(io, " Λ = "); show(io, pdmo.Λ!!); print(io, ","))
-    !ismissing(pdmo.linearized_forward_operator!!) && (print(io, " linearized_forward_operator = "); show(io, pdmo.linearized_forward_operator!!); print(io, ","))
-    print(io, "\n")
+    print(io, "PrimalDualManifoldObjective(", pdmo.cost, ", ", pdmo.prox_f!!, ", ")
+    print(io, pdmo.prox_g_dual!!, ", ", pdmo.adjoint_linearized_operator!!, "; ")
+    print(io, _to_kw(E))
+    !ismissing(pdmo.Λ!!) && (print(io, ", Λ = ", pdmo.Λ!!))
+    !ismissing(pdmo.linearized_forward_operator!!) && (print(io, ", linearized_forward_operator = ", pdmo.linearized_forward_operator!!))
     return print(io, ")")
 end
 

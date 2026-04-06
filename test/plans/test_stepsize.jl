@@ -75,6 +75,10 @@ end
     s_stat2 = Manopt.status_summary(s)
     @test startswith(s_stat2, "Armijo backtracking line search")
     @test Manopt.get_message(s) == ""
+    io = IOBuffer()
+    show(io, MIME"text/plain"(), s)
+    s_stat3 = String(take!(io))
+    @test s_stat2 == s_stat3
 
     s2 = NonmonotoneLinesearch()(M)
     @test startswith(repr(s2), "NonmonotoneLinesearch(;")

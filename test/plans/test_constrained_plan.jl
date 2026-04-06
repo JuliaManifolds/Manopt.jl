@@ -376,6 +376,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         io = IOBuffer()
         df = DebugFeasibility(; io = io)
         @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible], at_init=true)"
+        @test startswith(Manopt.status_summary(df), "A DebugAction printing Feasibility information of the current iterate")
         # short form:
         @test Manopt.status_summary(df; context = :short) === "(:Feasibility, [\"feasible: \", :Feasible])"
         df(mp, st, 1)
@@ -439,6 +440,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             # Full KKT Vector field
             KKTvf = KKTVectorField(coh)
             @test startswith(repr(KKTvf), "KKTVectorField(")
+            @test startswith(Manopt.status_summary(KKTvf), "The KKT vector field for the constrained objective")
             Xp = LagrangianGradient(coh, μ, λ)(M, p) #Xμ = g + s; Xλ = h, Xs = μ .* s
             Y = KKTvf(N, q)
             @test Y[N, 1] == Xp
@@ -447,6 +449,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             @test Y[N, 4] == μ .* s
             KKTvfJ = KKTVectorFieldJacobian(coh)
             @test startswith(repr(KKTvfJ), "KKTVectorFieldJacobian(")
+            @test startswith(Manopt.status_summary(KKTvfJ), "The Jacobian of the KKT vector field for the constrained objective")
             #
             Xp =
                 LagrangianHessian(coh, μ, λ)(M, p, Y[N, 1]) +
@@ -462,10 +465,9 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
 
             KKTvfAdJ = KKTVectorFieldAdjointJacobian(coh)
             @test startswith(repr(KKTvfAdJ), "KKTVectorFieldAdjointJacobian(")
-            Xp2 =
-                LagrangianHessian(coh, μ, λ)(M, p, Y[N, 1]) +
-                sum(Y[N, 2] .* gg) +
-                sum(Y[N, 3] .* gh)
+            @test startswith(Manopt.status_summary(KKTvfAdJ), "The adjoint Jacobian of the KKT vector field for the constrained objective")
+
+            Xp2 = LagrangianHessian(coh, μ, λ)(M, p, Y[N, 1]) + sum(Y[N, 2] .* gg) + sum(Y[N, 3] .* gh)
             Xμ2 = [inner(M, p, gg[i], Y[N, 1]) + s[i] * Y[N, 4][i] for i in 1:length(gg)]
             Xλ2 = [inner(M, p, gh[j], Y[N, 1]) for j in 1:length(gh)]
             Z2 = KKTvfAdJ(N, q, Y)
@@ -477,10 +479,12 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             # Full KKT Vector field norm – the Merit function
             KKTvfN = KKTVectorFieldNormSq(coh)
             @test startswith(repr(KKTvfN), "KKTVectorFieldNormSq(")
+            @test startswith(Manopt.status_summary(KKTvfN), "The KKT vector field in normed squared for the constrained objective")
             vfn = KKTvfN(N, q)
             @test vfn == norm(N, q, Y)^2
             KKTvfNG = KKTVectorFieldNormSqGradient(coh)
             @test startswith(repr(KKTvfNG), "KKTVectorFieldNormSqGradient(")
+            @test startswith(Manopt.status_summary(KKTvf), "The KKT vector field for the constrained objective")
             Zg1 = KKTvf(N, q)
             Zg2 = 2.0 * KKTvfAdJ(N, q, Zg1)
             W = KKTvfNG(N, q)

@@ -89,7 +89,10 @@ using RecursiveArrayTools
     @test all(get_iterate(osm) .== p0)
 
     @testset "show/repr" begin
-
+        for o in [pdmol, pdmoe]
+            @test startswith(Manopt.status_summary(o), "A primal dual objective")
+            @test startswith(repr(o), "PrimalDualManifoldObjective(")
+        end
     end
     @testset "test Mutating/Allocation Problem Variants" begin
         pdmoa = PrimalDualManifoldObjective(
@@ -217,6 +220,8 @@ using RecursiveArrayTools
         d7(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Change:")
+        @test startswith(repr(d7), "A DebugActionDualChange(; ")
+        @test startswith(Manopt.status_summary(d7), "A A DebugActionAction to print the change of the dual variable")
 
         d7a = DebugDualChange((X0, n); storage = a, io = io)
         d7a(p_exact, s_exact, 1)

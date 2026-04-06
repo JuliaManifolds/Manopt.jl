@@ -78,6 +78,9 @@ using ManifoldDiff:
         get_differential_dual_prox!(p1, ξ1, n, 1.0, ξ0, Ξ)
         get_differential_dual_prox!(p2, ξ2, n, 1.0, ξ0, Ξ)
         @test ξ1 ≈ ξ2 atol = 2 * 1.0e-16
+
+        @test startswith(repr(p1), "TwoManifoldProblem")
+        @test startswith(Manopt.status_summary(p1), "An optimization problem for Manopt.jl requiring a primal and a dual manifold")
     end
     @testset "show/repr and status_summary" begin
         s1 = repr(obj1)
