@@ -7,6 +7,14 @@ using ManifoldsBase, Manopt, Test
         @test (get_objective(d) isa ManifoldCostObjective)
         @test Manopt.is_objective_decorator(d)
         @test !Manopt.is_objective_decorator(o)
+        io = IOBuffer()
+        show(io, MIME"text/plain"(), o)
+        @test startswith(String(take!(io)), "A cost function on a Riemannian manifold")
+        d = Manopt.Test.DummyEmptyDecoratedObjective(o)
+        # Check both default pass throughs
+        Manopt.status_summary(io, d)
+        @test startswith(String(take!(io)), "A cost function on a Riemannian manifold")
+        @test startswith(Manopt.status_summary(d), "A cost function on a Riemannian manifold")
     end
     @testset "ReturnManifoldObjective" begin
         o = ManifoldCostObjective(x -> x)

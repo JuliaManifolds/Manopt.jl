@@ -27,7 +27,10 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
             end
             return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
         end
-        mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
+        o = ManifoldSubgradientObjective(f, ∂f)
+        @test startswith(repr(o), "ManifoldSubgradientObjective(")
+        @test startswith(Manopt.status_summary(o), "A subgradient objective")
+        mp = DefaultManoptProblem(M, o)
         X = zero_vector(M, p)
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)

@@ -5,16 +5,15 @@ using Manopt, Manifolds, Test, ManifoldDiff
     p = [0.0, 0.0, 1.0]
     p0 = [1.0, 0.0, √2]
     pgms = ProximalGradientMethodState(
-        M;
-        p = p0,
-        stepsize = Manopt.ProximalGradientMethodBacktrackingStepsize(
-            M; initial_stepsize = 1.0, strategy = :convex
-        ),
+        M; p = p0,
+        stepsize = Manopt.ProximalGradientMethodBacktrackingStepsize(M; initial_stepsize = 1.0, strategy = :convex),
         stopping_criterion = StopAfterIteration(200),
     )
     @test get_iterate(pgms) == p0
-
     pgms.X = [1.0, 0.0, 0.0]
+    @test startswith(repr(pgms), "ProximalGradientMethodState(")
+    # Manifold+substate errors, since a sub problem is missing
+    @test_throws ErrorException ProximalGradientMethodState(M, NelderMeadState(M))
     @testset "Special Stopping Criterion" begin
         sc1 = StopWhenGradientMappingNormLess(1.0e-8)
         @test startswith(repr(sc1), "StopWhenGradientMappingNormLess(1.0e-8)")
@@ -28,6 +27,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
         @test get_initial_stepsize(pgb) == 1.0
         @test get_last_stepsize(pgb) == 1.0
         @test startswith(repr(pgb), "ProximalGradientMethodBacktrackingStepsize(;")
+        @test startswith(Manopt.status_summary(pgb), "A backtracking method tailored for the proximal gradient method")
     end
     @testset "Allocating Evaluation" begin
         g(M, q) = distance(M, q, p)^2
@@ -54,9 +54,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
             stopping_criterion = StopAfterIteration(10),
             return_state = true,
             debug = [],
-            stepsize = ProximalGradientMethodBacktracking(;
-                initial_stepsize = 1.0, strategy = :convex
-            ),
+            stepsize = ProximalGradientMethodBacktracking(; initial_stepsize = 1.0, strategy = :convex),
             sub_state = AllocatingEvaluation(),
         )
         p_star2 = get_solver_result(pgm)
@@ -149,9 +147,9 @@ using Manopt, Manifolds, Test, ManifoldDiff
         h(M, q) = distance(M, q, p)
         prox_h!(M, a, λ, q) = ManifoldDiff.prox_distance!(M, a, λ, p, q, 1)
         f(M, q) = g(M, q) + h(M, q)
-        ieob = ManifoldProximalGradientObjective(
-            f, g, grad_g!, prox_h!; evaluation = InplaceEvaluation()
-        )
+        ieob = ManifoldProximalGradientObjective(f, g, grad_g!, prox_h!; evaluation = InplaceEvaluation())
+        @test startswith(repr(ieob), "ManifoldProximalGradientObjective(")
+        @test startswith(Manopt.status_summary(ieob), "A proximal gradient objective")
         mp = DefaultManoptProblem(M, ieob)
         X = zero_vector(M, p)
         Y = get_gradient(mp, p)
@@ -165,19 +163,11 @@ using Manopt, Manifolds, Test, ManifoldDiff
         sr = solve!(mp, pgms)
         xHat = get_solver_result(sr)
         s2 = proximal_gradient_method(
-            M,
-            f,
-            g,
-            grad_g!,
-            copy(p0);
+            M, f, g, grad_g!, copy(p0);
             prox_nonsmooth = prox_h!,
-            stepsize = ProximalGradientMethodBacktracking(;
-                initial_stepsize = 1.0, strategy = :convex
-            ),
-            stopping_criterion = StopAfterIteration(200),
-            evaluation = InplaceEvaluation(),
-            return_state = true,
-            debug = [],
+            stepsize = ProximalGradientMethodBacktracking(; initial_stepsize = 1.0, strategy = :convex),
+            stopping_criterion = StopAfterIteration(200), evaluation = InplaceEvaluation(),
+            return_state = true, debug = [],
         )
         p_star2 = get_solver_result(s2)
         @test f(M, p_star2) <= f(M, p0)
@@ -186,19 +176,11 @@ using Manopt, Manifolds, Test, ManifoldDiff
         @test get_proximal_map(M, ieob, 1.0, p) == a
         p2 = copy(M, p0)
         proximal_gradient_method!(
-            M,
-            f,
-            g,
-            grad_g!,
-            p2;
+            M, f, g, grad_g!, p2;
             prox_nonsmooth = prox_h!,
-            stepsize = ProximalGradientMethodBacktracking(;
-                initial_stepsize = 1.0, strategy = :convex
-            ),
-            stopping_criterion = StopAfterIteration(200),
-            evaluation = InplaceEvaluation(),
-            return_state = true,
-            debug = [],
+            stepsize = ProximalGradientMethodBacktracking(; initial_stepsize = 1.0, strategy = :convex),
+            stopping_criterion = StopAfterIteration(200), evaluation = InplaceEvaluation(),
+            return_state = true, debug = [],
         )
         @test isapprox(M, p2, p_star2)
     end

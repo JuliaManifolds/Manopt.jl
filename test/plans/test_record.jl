@@ -14,10 +14,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     M = ManifoldsBase.DefaultManifold(2)
     p = [4.0, 2.0]
     gds = GradientDescentState(
-        M;
-        p = copy(p),
-        stopping_criterion = StopAfterIteration(10),
-        stepsize = Manopt.ConstantStepsize(M),
+        M; p = copy(p),
+        stopping_criterion = StopAfterIteration(10), stepsize = Manopt.ConstantStepsize(M),
     )
     f(M, q) = distance(M, q, p) .^ 2
     grad_f(M, q) = -2 * log(M, q, p)
@@ -35,6 +33,9 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @test_throws MethodError get_state(dmp)
     Manopt.set_parameter!(rs, :StoppingCriterion, :MaxIteration, 20)
     @test rs.state.stop.max_iterations == 20 #Maybe turn into a getter?
+    #
+    rs_empty = RecordSolverState(gds, [])
+    @test contains(Manopt.status_summary(rs_empty), "No recordings registered.")
     #
     @test get_initial_stepsize(dmp, rs) == 1.0
     @test get_stepsize(dmp, rs, 1) == 1.0
@@ -153,6 +154,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         set_iterate!(gds, M, p)
         f = RecordEntry(p, :p)
         @test repr(f) == "RecordEntry(:p)"
+        @test Manopt.status_summary(f) == "A RecordAction to record the solver. state field :p"
         f(dmp, gds, 1)
         @test f.recorded_values == [p]
         f2 = RecordEntry(typeof(p), :p)

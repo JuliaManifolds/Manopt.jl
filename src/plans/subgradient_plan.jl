@@ -107,15 +107,12 @@ function get_subgradient_function(admo::AbstractDecoratedManifoldObjective, recu
 end
 
 function Base.show(io::IO, mso::ManifoldSubgradientObjective{E}) where {E}
-    print(io, "ManifoldSubgradientObjective(")
-    print(io, mso.cost); print(io, ", "); print(io, mso.subgradient!!, "; ")
-    print(io, _to_kw(E))
-    return print(io, ")")
+    return print(io, "ManifoldSubgradientObjective(", mso.cost, ", ", mso.subgradient!!, "; ", _to_kw(E), ")")
 end
 
 function status_summary(mso::ManifoldSubgradientObjective{E}; context::Symbol = :default) where {E}
     (context === :short) && return repr(mso)
-    s = "A subgradient objective `f`"
+    s = "A subgradient objective "
     (context === :inline) && (return s)
     e = (E === AllocatingEvaluation ? " (allocating)" : " (in-place)")
     return """

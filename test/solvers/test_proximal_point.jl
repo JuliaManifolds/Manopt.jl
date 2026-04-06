@@ -32,4 +32,13 @@ using ManifoldDiff: prox_distance, prox_distance!
         Manopt.status_summary(pps; context = :default),
         "# Solver state for `Manopt.jl`s Proximal Point Method\n"
     )
+    @test startswith(repr(obj), "ManifoldProximalMapObjective(")
+    @test startswith(Manopt.status_summary(obj), "A proximal map objective")
+
+    dpp = DebugProximalParameter()
+    @test startswith(repr(dpp), "DebugGradientChange(; io")
+    @test startswith(Manopt.status_summary(dpp), "A DebugAction printing the proximal parameter")
+    rpp = RecordProximalParameter()
+    @test startswith(repr(rpp), "RecordProximalParameter(")
+    @test startswith(Manopt.status_summary(rpp), "A RecordAction to record the current proximal parameter")
 end

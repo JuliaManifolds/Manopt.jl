@@ -184,14 +184,12 @@ function get_proximal_map!(
     return q
 end
 function status_summary(mpo::ManifoldProximalMapObjective; context::Symbol = :default)
+    (context === :short) && (return repr(mpo))
     return "A proximal map objective for a cost with $(mpo.number_of_proxes) proximal maps"
 end
 function Base.show(io::IO, mpo::ManifoldProximalMapObjective{E}) where {E}
-    print(io, "ManifoldProximalMapObjective(")
-    print(io, mpo.cost); print(io, ", ")
-    print(io, mpo.proximal_maps!!); print(io, ", ")
-    print(io, mpo.number_of_proxes); print(io, "; ")
-    print(io, _to_kw(E))
+    print(io, "ManifoldProximalMapObjective(", mpo.cost, ", ", mpo.proximal_maps!!, ", ")
+    print(io, mpo.number_of_proxes, "; ", _to_kw(E))
     return print(io, ")")
 end
 
@@ -328,7 +326,7 @@ end
 function status_summary(d::DebugProximalParameter; context::Symbol = :Default)
     (context === :short) && (return "(:ProxParameter, \"$(escape_string(d.format))\")")
     # Inline and default
-    return "a DebugAction printing the proximal parameter “$(escape_string(d.format))”"
+    return "A DebugAction printing the proximal parameter as “$(escape_string(d.format))”"
 end
 #
 # Record

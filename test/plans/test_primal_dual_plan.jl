@@ -190,16 +190,22 @@ using RecursiveArrayTools
         d1(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Residual:")
+        @test startswith(Manopt.status_summary(d1), "A DebugAction to print the dual residual with format")
+        @test startswith(repr(d1), "DebugDualResidual(; ")
 
         d2 = DebugPrimalResidual(; storage = a, io = io)
         d2(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Residual: ")
+        @test startswith(Manopt.status_summary(d2), "A DebugAction to print the primal residual with format")
+        @test startswith(repr(d2), "DebugPrimalResidual(; ")
 
         d3 = DebugPrimalDualResidual(; storage = a, io = io)
         d3(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "PD Residual: ")
+        @test startswith(Manopt.status_summary(d3), "A DebugAction to print the primal dual residual with format")
+        @test startswith(repr(d3), "DebugPrimalDualResidual(; ")
 
         d4 = DebugPrimalChange(; storage = a, prefix = "Primal Change: ", io = io)
         d4(p_exact, s_exact, 1)

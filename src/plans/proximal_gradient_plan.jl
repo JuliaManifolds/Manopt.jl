@@ -77,11 +77,8 @@ function get_gradient!(
 end
 
 function Base.show(io::IO, mpgo::ManifoldProximalGradientObjective{E}) where {E}
-    print(io, "ManifoldProximalGradientObjective(")
-    print(io, mpgo.cost); print(io, ", ")
-    print(io, mpgo.cost_smooth); print(io, ", ")
-    print(io, mpgo.gradient_g!!); print(io, ", ")
-    print(io, mpgo.proximal_map_h!!); print(io, "; "); print(io, _to_kw(E))
+    print(io, "ManifoldProximalGradientObjective(", mpgo.cost, ", ", mpgo.cost_smooth, ", ")
+    print(io, mpgo.gradient_g!!, ", ", mpgo.proximal_map_h!!, "; ", _to_kw(E))
     return print(io, ")")
 end
 
