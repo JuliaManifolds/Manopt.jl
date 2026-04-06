@@ -50,6 +50,8 @@ include("trust_region_model.jl")
         @test get_hessian(TpM, trmo, Y, X) == H
         get_hessian!(TpM, Y, trmo, Y, X)
         @test Y == H
+        @test startswith(repr(trmo), "TrustRegionModelObjective(")
+        @test startswith(Manopt.status_summary(trmo), "The trust region model for ")
     end
     @testset "Allocating Variant" begin
         s = trust_regions(
@@ -80,21 +82,13 @@ include("trust_region_model.jl")
         @test f(M, p2) ≈ f(M, p1)
 
         p3 = trust_regions(
-            M,
-            f,
-            rgrad,
-            p;
-            max_trust_region_radius = 8.0,
+            M, f, rgrad, p; max_trust_region_radius = 8.0,
             stopping_criterion = StopAfterIteration(2000) | StopWhenGradientNormLess(1.0e-6),
         )
         q2 = copy(M, p)
         trust_regions!(
-            M,
-            f,
-            rgrad,
-            q2;
+            M, f, rgrad, q2; max_trust_region_radius = 8.0,
             stopping_criterion = StopAfterIteration(2000) | StopWhenGradientNormLess(1.0e-6),
-            max_trust_region_radius = 8.0,
         )
         @test isapprox(M, p3, q2; atol = 1.0e-6)
         @test f(M, p3) ≈ f(M, p1)

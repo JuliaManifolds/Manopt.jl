@@ -209,9 +209,7 @@ end
 function get_preconditioner!(
         M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
     )
-    isnothing(mho.preconditioner!!) && return copyto!(M, Y, p, X)
-    mho.preconditioner!!(M, Y, p, X)
-    return Y
+    return isnothing(mho.preconditioner!!) ? copyto!(M, Y, p, X) : mho.preconditioner!!(M, Y, p, X)
 end
 
 update_hessian!(M, f, p, p_proposal, X) = f

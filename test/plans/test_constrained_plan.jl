@@ -416,7 +416,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             @test vfn == norm(N, q, Y)^2
             KKTvfNG = KKTVectorFieldNormSqGradient(coh)
             @test startswith(repr(KKTvfNG), "KKTVectorFieldNormSqGradient(")
-            @test startswith(Manopt.status_summary(KKTvf), "The KKT vector field for the constrained objective")
+            @test startswith(Manopt.status_summary(KKTvfNG), "The gradient of the KKT vector field in normed squared for the constrained objective")
             Zg1 = KKTvf(N, q)
             Zg2 = 2.0 * KKTvfAdJ(N, q, Zg1)
             W = KKTvfNG(N, q)

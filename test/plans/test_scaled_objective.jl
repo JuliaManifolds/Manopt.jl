@@ -25,7 +25,7 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     scaled_obj! = -1.0 * obj!
     # just verify that this also works for double decorated ones.
     deco_obj = ScaledManifoldObjective(ManifoldCountObjective(M, obj, [:Cost]), 0.5)
-
+    @test startswith(Manopt.status_summary(scaled_obj), "A scaled version of the objective")
     #
     # Test and compare all accessors
     #

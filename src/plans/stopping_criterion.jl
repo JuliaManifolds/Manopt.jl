@@ -17,11 +17,7 @@ abstract type StoppingCriterion end
 
 function Base.show(io::IO, ::MIME"text/plain", asc::StoppingCriterion)
     multiline = get(io, :multiline, true)
-    if multiline
-        return status_summary(io, asc)
-    else
-        show(io, asc)
-    end
+    return multiline ? status_summary(io, asc) : show(io, asc)
 end
 
 

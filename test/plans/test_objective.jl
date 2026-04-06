@@ -44,9 +44,7 @@ using ManifoldsBase, Manopt, Test
         @test Manopt.get_gradient_function(oa)(M, p) == p
         @test Manopt.get_hessian_function(oa)(M, p, X) == X
         oi = ManifoldHessianObjective(
-            (M, p) -> p[1],
-            (M, X, p) -> (X .= p),
-            (M, Y, p, X) -> (Y .= X);
+            (M, p) -> p[1], (M, X, p) -> (X .= p), (M, Y, p, X) -> (Y .= X);
             evaluation = InplaceEvaluation(),
         )
         @test Manopt.get_cost_function(oi)(M, p) == p[1]
@@ -55,5 +53,7 @@ using ManifoldsBase, Manopt, Test
         @test Y == p
         @test Manopt.get_hessian_function(oi)(M, Y, p, X) == X
         @test Y == X
+        @test Manopt._to_kw(Manopt.ParentEvaluationType) == "evaluation = ParentEvaluationType()"
+        @test Manopt._to_kw(Manopt.AllocatingInplaceEvaluation) == "evaluation = AllocatingInplaceEvaluation()"
     end
 end
