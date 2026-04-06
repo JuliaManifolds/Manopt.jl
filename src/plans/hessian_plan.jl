@@ -56,13 +56,7 @@ struct ManifoldHessianObjective{T <: AbstractEvaluationType, C, G, H, Pre} <:
             precond = nothing;
             evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         ) where {C, G, H}
-        if isnothing(precond)
-            if evaluation isa InplaceEvaluation
-                precond = (M, Y, p, X) -> (Y .= X)
-            else
-                precond = (M, p, X) -> X
-            end
-        end
+        # We store `Nothing` as a type for the preconditioner
         return new{typeof(evaluation), C, G, H, typeof(precond)}(cost, grad, hess, precond)
     end
 end
@@ -173,7 +167,6 @@ end
 function get_preconditioner!(amp::AbstractManoptProblem, Y, p, X)
     return get_preconditioner!(get_manifold(amp), Y, get_objective(amp), p, X)
 end
-
 @doc """
     get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
 
@@ -185,12 +178,14 @@ tangent vector `X`.
 function get_preconditioner(
         M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
     )
+    isnothing(mho.preconditioner!!) && return (copy(M, p, X))
     return mho.preconditioner!!(M, p, X)
 end
 function get_preconditioner(
         M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
     )
     Y = zero_vector(M, p)
+    isnothing(mho.preconditioner!!) && return copyto!(M, Y, p, X)
     mho.preconditioner!!(M, Y, p, X)
     return Y
 end
@@ -203,7 +198,7 @@ end
 function get_preconditioner!(
         M::AbstractManifold, Y, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
     )
-    copyto!(M, Y, p, mho.preconditioner!!(M, p, X))
+    copyto!(M, Y, p, isnothing(mho.preconditioner!!) ? X : mho.preconditioner!!(M, p, X))
     return Y
 end
 function get_preconditioner!(
@@ -214,6 +209,7 @@ end
 function get_preconditioner!(
         M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
     )
+    isnothing(mho.preconditioner!!) && return copyto!(M, Y, p, X)
     mho.preconditioner!!(M, Y, p, X)
     return Y
 end
@@ -226,7 +222,7 @@ function status_summary(mho::ManifoldHessianObjective{E}; context::Symbol = :def
     _is_inline(context) && return "A second order objective with cost, gradient$(isnothing(mho.preconditioner!!) ? ", and" : "") Hessian$(isnothing(mho.preconditioner!!) ? "" : ", and a preconditioner")"
     precon_str = isnothing(mho.preconditioner!!) ? "" : "\n* preconditioner: $(mho.preconditioner!!)"
     return """
-    A second order objective providing a Hessian
+    A second order objective providing a cost, a gradient$(isnothing(mho.preconditioner!!) ? ", and" : "") a Hessian$(isnothing(mho.preconditioner!!) ? "" : ", and a preconditioner")
 
     ## Functions
     * cost:    $(_MANOPT_INDENT)$(mho.cost)

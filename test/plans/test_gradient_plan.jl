@@ -11,10 +11,8 @@ using ManifoldsBase, Manopt, Test
     p = [1.0, 2.0]
     X = [0.2, 0.3]
     gst = GradientDescentState(
-        M;
-        p = zero(p),
-        stopping_criterion = StopAfterIteration(20),
-        stepsize = Manopt.ConstantStepsize(M),
+        M; p = zero(p),
+        stopping_criterion = StopAfterIteration(20), stepsize = Manopt.ConstantStepsize(M),
     )
     set_iterate!(gst, M, q)
     @test get_iterate(gst) == q
@@ -38,6 +36,7 @@ using ManifoldsBase, Manopt, Test
     @test_throws MethodError get_proximal_map(mp, 1.0, gst.p, 1)
     @testset "Debug Gradient" begin
         a1 = DebugGradient(; long = false, io = io)
+        @test startswith(Manopt.status_summary(a1), "A DebugAction to print the gradient")
         a1(mp, gst, 1)
         @test String(take!(io)) == "grad f(p):[1.0, 0.0]"
         a1a = DebugGradient(; prefix = "s:", io = io)
@@ -58,12 +57,15 @@ using ManifoldsBase, Manopt, Test
     end
     @testset "Record Gradient" begin
         b1 = RecordGradient(gst.X)
+        @test startswith(Manopt.status_summary(b1), "A RecordAction to record the current gradient")
         b1(mp, gst, 1)
         @test b1.recorded_values == [gst.X]
         b2 = RecordGradientNorm()
+        @test startswith(Manopt.status_summary(b2), "A RecordAction to record the current gradient norm")
         b2(mp, gst, 1)
         @test b2.recorded_values == [1.0]
         b3 = RecordStepsize()
+        @test startswith(Manopt.status_summary(b3), "A RecordAction to record the current stepsize")
         b3(mp, gst, 1)
         b3(mp, gst, 2)
         b3(mp, gst, 3)
@@ -97,7 +99,7 @@ using ManifoldsBase, Manopt, Test
         @test get_count(cmcgo, :Gradient) == 2
         @test get_count(cmcgo, :Cost) == 3
     end
-    @testset "Objective Decorator passthrough" begin
+    @testset "Objective Decorator pass through" begin
         ddo = Manopt.Test.DummyDecoratedObjective(mgo)
         @test get_cost(M, mgo, p) == get_cost(M, ddo, p)
         @test get_gradient(M, mgo, p) == get_gradient(M, ddo, p)
@@ -211,5 +213,27 @@ using ManifoldsBase, Manopt, Test
             @test_throws ErrorException Manopt.get_cost_and_gradient(M, mfo_f, q)
             @test_throws ErrorException Manopt.get_cost_and_gradient!(M, Y, mfo_f, q)
         end
+    end
+    @testset "DirectionUpdateRules" begin
+        M = ManifoldsBase.DefaultManifold(2)
+        idr = Gradient()(M) # Gradient factory yields IdentityUpdateRule
+        @test typeof(idr) == Manopt.IdentityUpdateRule
+        @test contains(Manopt.status_summary(idr), "evaluates the gradient")
+
+        mgr = MomentumGradient()(M) # Actually produces a rule
+        @test startswith(repr(mgr), "MomentumGradientRule")
+        @test contains(Manopt.status_summary(mgr), "Momentum Gradient Rule")
+
+        agr = AverageGradient()(M) # Actually produces a rule
+        @test startswith(repr(agr), "AverageGradientRule")
+        @test contains(Manopt.status_summary(agr), "Average Gradient Rule")
+
+        nr = Nesterov()(M) # Actually produces a rule
+        @test startswith(repr(nr), "NesterovRule")
+        @test contains(Manopt.status_summary(nr), "Nesterov Rule")
+
+        pr = PreconditionedDirection((M, Y, p, X) -> copyto!(M, Y, p, X); evaluation = InplaceEvaluation())(M)
+        @test startswith(repr(pr), "PreconditionedDirectionRule")
+        @test contains(Manopt.status_summary(pr), "Preconditioned Direction Rule")
     end
 end

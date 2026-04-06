@@ -607,9 +607,6 @@ individual one that provides these values.
 """
 abstract type DirectionUpdateRule end
 
-# These are usually short enough that their summary can just be the representation
-status_summary(dru::DirectionUpdateRule; context::Symbol = :default) = repr(dru)
-
 """
     IdentityUpdateRule <: DirectionUpdateRule
 
@@ -954,7 +951,7 @@ function status_summary(nr::NesterovRule; context::Symbol = :default)
     (context === :short) && return repr(nr)
     (context === :inline) && return "A Nesterov gradient direction processor using $(nr.retraction_method) and $(nr.inverse_retraction_method)"
     return """
-    Nestrow Rule
+    Nesterov Rule
 
     ## Parameters
     γ:                        $(_MANOPT_INDENT)$(nr.γ)
@@ -1088,7 +1085,8 @@ function status_summary(pg::PreconditionedDirectionRule; context::Symbol = :defa
     Preconditioned Direction Rule
 
     ## Parameters
-    preconditioner: $(_MANOPT_INDENT)$(nr.μ)
+    preconditioner: $(_MANOPT_INDENT)$(pg.preconditioner)
+
     ## Direction Rule
     $(_in_str(status_summary(pg.direction; context = context); indent = 1, headers = 1))
     """
