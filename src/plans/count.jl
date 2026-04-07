@@ -60,7 +60,7 @@ function ManifoldCountObjective(
 end
 # Store the undecorated type of the input is decorated
 function ManifoldCountObjective(
-        ::AbstractManifold, objective::O, counts::Dict{Symbol, I}
+        objective::O, counts::Dict{Symbol, I}
     ) where {
         E <: AbstractEvaluationType,
         I <: Union{<:Integer, AbstractVector{<:Integer}},

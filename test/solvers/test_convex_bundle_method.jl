@@ -41,6 +41,8 @@ using Manopt: estimate_sectional_curvature
         stepsize = Manopt.DomainBackTrackingStepsize(M; contraction_factor = 0.975),
         stopping_criterion = StopAfterIteration(200),
     )
+    # A state can not be created with just a manifold and a substate, then the problem is missing
+    @test_throws ErrorException ConvexBundleMethodState(M, Manopt.Test.DummyState())
     @test get_iterate(cbms) == p0
     cbms.X = [1.0, 0.0, 0.0, 0.0, 0.0]
 

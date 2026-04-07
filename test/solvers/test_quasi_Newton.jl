@@ -57,13 +57,8 @@ end
         @test norm(x_lrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
         # with State
         lrbfgs_s = quasi_Newton(
-            M,
-            f,
-            grad_f,
-            p;
-            stopping_criterion = StopWhenGradientNormLess(10^(-6)),
-            return_state = true,
-            debug = [],
+            M, f, grad_f, p;
+            stopping_criterion = StopWhenGradientNormLess(10^(-6)), return_state = true, debug = [],
         )
         # Verify that Newton update direction works also allocating
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
@@ -76,6 +71,7 @@ end
             Manopt.status_summary(lrbfgs_s; context = :default),
             "# Solver state for `Manopt.jl`s Quasi Newton Method\n"
         )
+        @test startswith(repr(lrbfgs_s), "QuasiNewtonState(; ")
         @test get_last_stepsize(dmp, lrbfgs_s, lrbfgs_s.stepsize) > 0
         @test Manopt.get_iterate(lrbfgs_s) == x_lrbfgs
         set_gradient!(lrbfgs_s, M, p, grad_f(M, p))

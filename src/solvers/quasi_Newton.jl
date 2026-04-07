@@ -134,12 +134,12 @@ function get_message(qns::QuasiNewtonState)
     return d
 end
 function Base.show(io::IO, qns::QuasiNewtonState)
-    print(io, "QuasiNewtonState(;")
-    print(io, "direction_update = $(qns.direction_update), ")
-    print(io, "p = ", qns.p, ", p_old = ", qns.p_old, ", η = ", qns.η, ", X = ", qns.X, ", sk = ", qns.sk, ", yk = ", qns.yk, ", ")
+    print(io, "QuasiNewtonState(; ")
+    print(io, "direction_update = ", qns.direction_update, ", p = ", qns.p, ", p_old = ", qns.p_old)
+    print(io, ", η = ", qns.η, ", X = ", qns.X, ", sk = ", qns.sk, ", yk = ", qns.yk, ", ")
     print(io, "nondescent_direction_behavior = ", qns.nondescent_direction_behavior, ", nondescent_direction_value = ", qns.nondescent_direction_value, ", ")
     print(io, "preconditioner = ", qns.preconditioner, ", retraction_method = ", qns.retraction_method, ", stepsize = ", qns.stepsize, ", ")
-    print(io, "stopping_criertion = ". qns.stop, ", X_old = ", qns.X_old, ", vector_transport_method = ", qns.vector_transport_method)
+    print(io, "stopping_critertion = ", qns.stop, ", X_old = ", qns.X_old, ", vector_transport_method = ", qns.vector_transport_method)
     return print(io, ")")
 end
 function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
