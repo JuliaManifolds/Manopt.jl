@@ -77,6 +77,8 @@ using Manifolds, Manopt, Test
             # jacobian of the objective
             G2 = get_jacobian(M, nlso.objective, p)
             @test G2 == Gt
+            @test startswith(repr(nlso), "ManifoldNonlinearLeastSquaresObjective(")
+            @test startswith(Manopt.status_summary(nlso), "A nonlinear least squares objective")
         end
     end
     @testset "Test Change of basis" begin

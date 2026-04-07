@@ -53,7 +53,11 @@ using LinearAlgebra: Symmetric
         @test get_count(c_obj3, :Gradient) == 2
         @test get_count(c_obj3, :Cost) == -1 # nonexistent
         @test startswith(repr(c_obj), "ManifoldCountObjective(ManifoldFirstOrderObjective")
-        @test contains(Manopt.status_summary(c_obj), "## Statistics")
+        status_obj = Manopt.status_summary(c_obj)
+        @test contains(status_obj, "## Statistics")
+        io = IOBuffer()
+        Manopt.status_summary(io, c_obj)
+        @test String(take!(io)) == status_obj
         @test contains(Manopt.status_summary(c_obj; context = :inline), "(statistics:")
         rc_obj = Manopt.Test.DummyDecoratedObjective(c_obj)
         @test get_count(rc_obj, :Gradient) == 4 #still works if count is encapsulated

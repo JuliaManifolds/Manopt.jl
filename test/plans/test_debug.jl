@@ -287,6 +287,9 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test startswith(Manopt.status_summary(w8), "A DebugAction warning if the step size collapses")
         @test_logs (:warn,) (:warn,) w8(mp2, st, 1)
 
+        w9 = DebugWarnIfCostIncreases()
+        @test startswith(repr(w9), "DebugWarnIfCostIncreases(")
+
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:Iteration], DebugWarnIfCostNotFinite)
         df2 = DebugFactory([:WarnGradient])
@@ -374,6 +377,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test Manopt.status_summary(DebugDivider("a")) == "A DebugAction printing the String “a” as a divider"
 
         @test repr(DebugEntry(:a)) == "DebugEntry(:a; format=\"a: %s\", at_init=true)"
+        @test startswith(Manopt.status_summary(DebugEntry(:a)), "A DebugAction to print the field :a")
 
         @test repr(DebugStepsize()) == "DebugStepsize(; format=\"s:%s\", at_init=true)"
         @test Manopt.status_summary(DebugStepsize(); context = :short) == "(:Stepsize, \"s:%s\")"

@@ -439,7 +439,7 @@ function show(io::IO, di::DebugEntry)
 end
 function status_summary(di::DebugEntry; context::Symbol = :default)
     (context === :short) && return "(:$(di.field), format=\"$(escape_string(di.format))\")"
-    return "A DebugAction to print the field :$(di.field) of the solver style with format \"$(escape_string(di.format))\""
+    return "A DebugAction to print the field :$(di.field) of the solver state with format \"$(escape_string(di.format))\""
 end
 
 """
