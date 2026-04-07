@@ -8,11 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.0] unreleased
 
+This is a breaking change since the JuMP extension is dropped.
+
 ### Changed
 
-This is a breaking release in order to move a few parts to a unified naming and since weæ
-discontinue the `JuMP` extension. It will at some point return as a separate package, see (#532)
-for the last of the discussions around that.
+* `NonlinearLeastSquaresObjective` is now called `ManifoldNonlinearLeastSquaresObjective` (#569).
+* This is a breaking release in order to move a few parts to a unified naming and since we
+discontinue the `JuMP` extension. (#532)
+* Improved formatting of the references in the Readme.md (#586)
+* Bump compat for RecursiveArrayTools.jl to include version 4
+* deactivate CompatHelper Action and solely use dependabot
 
 ### Fixed
 
@@ -22,12 +27,6 @@ for the last of the discussions around that.
 * unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
 * the `NesterovRule` now also stores an actual `AbstractRetractionMethod` instead of implicitly always using the default one.
 
-### Changes
-
-* `NonlinearLeastSquaresObjective` is now called `ManifoldNonlinearLeastSquaresObjective` (#569).
-* Improved formatting of the references in the Readme.md (#586)
-* Bump compat for RecursiveArrayTools.jl to include version 4
-* deactivate CompatHelper Action and solely use dependabot
 
 ## [0.5.34] March 3, 2026
 
