@@ -8,19 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.0] unreleased
 
-This is a breaking change since the JuMP extension is dropped. 
+This is a breaking change since the JuMP extension is dropped.
 
 ### Changed
 
-* removed the JuMP extension, since it was a bit incomplete and hard to maintain, and not possible to extend to all manifolds. The main reason is, that matrices are a bit tough to represent in JuMP, which is vector based, and types points are nearly impossible to represent. Distinguishing between points and tangent vectors is also a bit hard to track.
- 
-## [0.5.35] April 3, 2026
-
-### Changed
-
+* `NonlinearLeastSquaresObjective` is now called `ManifoldNonlinearLeastSquaresObjective` (#569).
+* This is a breaking release in order to move a few parts to a unified naming and since we
+discontinue the `JuMP` extension. (#532)
 * Improved formatting of the references in the Readme.md (#586)
 * Bump compat for RecursiveArrayTools.jl to include version 4
 * deactivate CompatHelper Action and solely use dependabot
+
+### Fixed
+
+* Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (#569)
+* Unified all `show` methods and their human readable analoga `status_summary` throughout the package (#569)
+* Fixed some text descriptions of a few stopping criteria.
+* unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
+* the `NesterovRule` now also stores an actual `AbstractRetractionMethod` instead of implicitly always using the default one.
+
 
 ## [0.5.34] March 3, 2026
 

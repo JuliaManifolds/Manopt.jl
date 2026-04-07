@@ -35,7 +35,7 @@ $(_args(:p))
   for mutating evaluation this value must be explicitly specified.
 
 You can also provide the cost and its Jacobian already as a[`VectorGradientFunction`](@ref) `vgf`,
-Alternatively, passing a [`NonlinearLeastSquaresObjective`](@ref) `nlso`.
+Alternatively, passing a [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`.
 
 # Keyword arguments
 
@@ -114,12 +114,12 @@ function LevenbergMarquardt(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    nlso = NonlinearLeastSquaresObjective(vgf)
+    nlso = ManifoldNonlinearLeastSquaresObjective(vgf)
     return LevenbergMarquardt(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt(
         M::AbstractManifold, nlso::O, p; kwargs...
-    ) where {O <: Union{NonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
+    ) where {O <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(LevenbergMarquardt; kwargs...)
     q = copy(M, p)
     return LevenbergMarquardt!(M, nlso, q; kwargs...)
@@ -151,7 +151,7 @@ function LevenbergMarquardt!(
             )
         end
     end
-    nlso = NonlinearLeastSquaresObjective(
+    nlso = ManifoldNonlinearLeastSquaresObjective(
         f,
         jacobian_f,
         num_components;
@@ -180,7 +180,7 @@ function LevenbergMarquardt!(
         ),
         (linear_subsolver!) = (default_lm_lin_solve!),
         kwargs..., #collect rest
-    ) where {O <: Union{NonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
+    ) where {O <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(LevenbergMarquardt!; kwargs...)
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
@@ -206,7 +206,7 @@ calls_with_kwargs(::typeof(LevenbergMarquardt!)) = (decorate_objective!, decorat
 # Solver functions
 #
 function initialize_solver!(
-        dmp::DefaultManoptProblem{mT, <:NonlinearLeastSquaresObjective},
+        dmp::DefaultManoptProblem{mT, <:ManifoldNonlinearLeastSquaresObjective},
         lms::LevenbergMarquardtState,
     ) where {mT <: AbstractManifold}
     M = get_manifold(dmp)
@@ -241,7 +241,7 @@ function default_lm_lin_solve!(sk, JJ, grad_f_c)
 end
 
 function step_solver!(
-        dmp::DefaultManoptProblem{mT, <:NonlinearLeastSquaresObjective},
+        dmp::DefaultManoptProblem{mT, <:ManifoldNonlinearLeastSquaresObjective},
         lms::LevenbergMarquardtState,
         ::Integer,
     ) where {mT <: AbstractManifold}

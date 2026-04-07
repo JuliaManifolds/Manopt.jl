@@ -90,3 +90,18 @@ function get_hessian!(TpM::TangentSpace, W, trmo::TrustRegionModelObjective, X, 
     p = TpM.point
     return get_objective_hessian!(M, W, trmo, p, V)
 end
+
+function Base.show(io::IO, trmo::TrustRegionModelObjective)
+    print(io, "TrustRegionModelObjective(")
+    print(io, trmo.objective)
+    return print(io, ")")
+end
+function status_summary(trmo::TrustRegionModelObjective; context::Symbol = :default)
+    (context === :short) && return repr(arcmo)
+    (context === :inline) && return "The (tangent space) model for the trust region solver for the objective $(status_summary(arcmo.objective; context = context))"
+    return """
+    The trust region model for the sub problem in the tangent space
+
+    ## Objective
+    $(_in_str(status_summary(trmo.objective)))"""
+end

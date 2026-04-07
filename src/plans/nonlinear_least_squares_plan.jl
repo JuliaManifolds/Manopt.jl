@@ -1,5 +1,5 @@
 @doc """
-    NonlinearLeastSquaresObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
+    ManifoldNonlinearLeastSquaresObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
 An objective to model the nonlinear least squares problem
 
@@ -13,13 +13,13 @@ Specify a nonlinear least squares problem
   cost functions ``f_i`` (or a function returning a vector of costs) as well as their
   gradients ``$(_tex(:grad)) f_i`` (or Jacobian of the vector-valued function).
 
-This `NonlinearLeastSquaresObjective` then has the same [`AbstractEvaluationType`](@ref) `T`
+This `ManifoldNonlinearLeastSquaresObjective` then has the same [`AbstractEvaluationType`](@ref) `T`
 as the (inner) `objective`.
 
 # Constructors
 
-    NonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer; kwargs...)
-    NonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction)
+    ManifoldNonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer; kwargs...)
+    ManifoldNonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction)
 
 # Arguments
 
@@ -44,13 +44,13 @@ $(_kwargs(:evaluation))
 
 [`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref)
 """
-struct NonlinearLeastSquaresObjective{
+struct ManifoldNonlinearLeastSquaresObjective{
         E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E},
     } <: AbstractManifoldFirstOrderObjective{E, F}
     objective::F
 end
 
-function NonlinearLeastSquaresObjective(
+function ManifoldNonlinearLeastSquaresObjective(
         f,
         jacobian,
         range_dimension::Integer;
@@ -68,13 +68,12 @@ function NonlinearLeastSquaresObjective(
         jacobian_type = jacobian_type,
         function_type = function_type,
     )
-    return NonlinearLeastSquaresObjective(vgf; kwargs...)
+    return ManifoldNonlinearLeastSquaresObjective(vgf; kwargs...)
 end
-
 # Cost
 function get_cost(
         M::AbstractManifold,
-        nlso::NonlinearLeastSquaresObjective{
+        nlso::ManifoldNonlinearLeastSquaresObjective{
             E, <:AbstractVectorFunction{E, <:ComponentVectorialType},
         },
         p;
@@ -89,7 +88,7 @@ function get_cost(
 end
 function get_cost(
         M::AbstractManifold,
-        nlso::NonlinearLeastSquaresObjective{
+        nlso::ManifoldNonlinearLeastSquaresObjective{
             E, <:AbstractVectorFunction{E, <:FunctionVectorialType},
         },
         p;
@@ -99,7 +98,7 @@ function get_cost(
 end
 
 function get_jacobian(
-        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+        M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...
     )
     J = zeros(length(nlso.objective), manifold_dimension(M))
     get_jacobian!(M, J, nlso, p; kwargs...)
@@ -107,13 +106,13 @@ function get_jacobian(
 end
 # The jacobian is now just a pass-through
 function get_jacobian!(
-        M::AbstractManifold, J, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+        M::AbstractManifold, J, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...
     )
     get_jacobian!(M, J, nlso.objective, p; kwargs...)
     return J
 end
 function get_gradient(
-        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+        M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...
     )
     X = zero_vector(M, p)
     return get_gradient!(M, X, nlso, p; kwargs...)
@@ -121,7 +120,7 @@ end
 function get_gradient!(
         M::AbstractManifold,
         X,
-        nlso::NonlinearLeastSquaresObjective,
+        nlso::ManifoldNonlinearLeastSquaresObjective,
         p;
         basis = get_basis(nlso.objective.jacobian_type),
         jacobian_cache = get_jacobian(M, nlso, p; basis = basis),
@@ -134,30 +133,30 @@ end
 #
 # --- Residuals
 _doc_get_residuals_nlso = """
-    get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p)
-    get_residuals!(M::AbstractManifold, V, nlso::NonlinearLeastSquaresObjective, p)
+    get_residuals(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p)
+    get_residuals!(M::AbstractManifold, V, nlso::ManifoldNonlinearLeastSquaresObjective, p)
 
 Compute the vector of residuals ``f_i(p)``, ``i=1,…,m`` given the manifold `M`,
-the [`NonlinearLeastSquaresObjective`](@ref) `nlso` and a current point ``p`` on `M`.
+the [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso` and a current point ``p`` on `M`.
 """
 
 @doc "$(_doc_get_residuals_nlso)"
-get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
+get_residuals(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...)
 
 function get_residuals(
-        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+        M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...
     )
     V = zeros(length(nlso.objective))
     return get_residuals!(M, V, nlso, p; kwargs...)
 end
 
 @doc "$(_doc_get_residuals_nlso)"
-get_residuals!(M::AbstractManifold, V, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
+get_residuals!(M::AbstractManifold, V, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...)
 
 function get_residuals!(
         M::AbstractManifold,
         V,
-        nlso::NonlinearLeastSquaresObjective{
+        nlso::ManifoldNonlinearLeastSquaresObjective{
             E, <:AbstractVectorFunction{E, <:ComponentVectorialType},
         },
         p;
@@ -171,7 +170,7 @@ end
 function get_residuals!(
         M::AbstractManifold,
         V,
-        nlso::NonlinearLeastSquaresObjective{
+        nlso::ManifoldNonlinearLeastSquaresObjective{
             E, <:AbstractVectorFunction{E, <:FunctionVectorialType},
         },
         p,
@@ -318,10 +317,11 @@ mutable struct LevenbergMarquardtState{
     end
 end
 
-function show(io::IO, lms::LevenbergMarquardtState)
+function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)
     i = get_count(lms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(lms.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(lms)) – $(Iter) $(has_converged(lms) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm
     $Iter
@@ -333,8 +333,22 @@ function show(io::IO, lms::LevenbergMarquardtState)
     * retraction method: $(lms.retraction_method)
 
     ## Stopping criterion
-
-    $(status_summary(lms.stop))
+    $(_in_str(status_summary(lms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
+end
+
+function status_summary(mnlso::ManifoldNonlinearLeastSquaresObjective; context::Symbol = :default)
+    (context === :short) && (return repr(mnlso))
+    (context === :inline) && (return "A nonlinear least squares objective with the internal vector function given by $(status_summary(mnlso.objective; context = context))")
+    return """
+    A nonlinear least squares objective.
+
+    ## Vectorial objective
+    $(_in_str(status_summary(mnlso.objective; context = context); indent = 1))"""
+end
+function Base.show(io::IO, mnlso::ManifoldNonlinearLeastSquaresObjective)
+    print(io, "ManifoldNonlinearLeastSquaresObjective(")
+    print(io, mnlso.objective)
+    return print(io, ")")
 end
