@@ -1,7 +1,7 @@
 name = "Manopt"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 version = "0.5.34"
-authors = ["Ronny Bergmann <manopt@ronnybergmann.net>"]
+authors = [{family-names = "Bergmann", given-names = "Ronny", alias = "kellertuer", city = "Trondheim", affiliation = "Norwegian University of Science and Technology", country = "NO", email = "manopt@ronnybergmann.net", orcid = "https://orcid.org/0000-0001-8342-7218", website = "https://ronnybergmann.net"}]
 
 [workspace]
 projects = ["test", "docs", "tutorials"]
@@ -61,7 +61,7 @@ Preferences = "1.4"
 Printf = "1.10"
 QuadraticModels = "0.9"
 Random = "1.10"
-RecursiveArrayTools = "2, 3"
+RecursiveArrayTools = "2, 3, 4"
 RipQP = "0.6.4, 0.7"
 SparseArrays = "1.10"
 Statistics = "1.10"
