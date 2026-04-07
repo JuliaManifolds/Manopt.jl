@@ -7,7 +7,8 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
     p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
     pbms = ProximalBundleMethodState(M; p = p0, stopping_criterion = StopAfterIteration(200))
     @test get_iterate(pbms) == p0
-
+    # Check that Manifold+State is erroring since a problem is missing
+    @test_throws ErrorException ProximalBundleMethodState(M, Manopt.Test.DummyState())
     pbms.X = [1.0, 0.0, 0.0, 0.0, 0.0]
     @testset "Special Stopping Criteria" begin
         sc1 = StopWhenLagrangeMultiplierLess(1.0e-8)
@@ -43,13 +44,8 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         @test_throws MethodError get_gradient(mp, pbms.p)
         @test_throws MethodError get_proximal_map(mp, 1.0, pbms.p, 1)
         pbms2 = proximal_bundle_method(
-            M,
-            f,
-            ∂f,
-            p0;
-            stopping_criterion = StopAfterIteration(200),
-            return_state = true,
-            debug = [],
+            M, f, ∂f, p0;
+            stopping_criterion = StopAfterIteration(200), return_state = true, debug = [],
         )
         p_star2 = get_solver_result(pbms2)
         @test get_subgradient(pbms2) == -∂f(M, p_star2)

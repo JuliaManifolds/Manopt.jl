@@ -142,7 +142,7 @@ function Base.show(io::IO, ::MIME"text/plain", avf::AbstractVectorFunction)
 end
 
 @doc """
-    VectorGradientFunction{E, FT, JT, F, J, I} <: AbstractManifoldObjective{E}
+    VectorGradientFunction{E, FT, JT, F, J, I} <: AbstractVectorFunction{E}
 
 Represent an abstract vectorial function ``f:$(_math(:Manifold))) → ℝ^n`` that provides a (component wise)
 gradient.

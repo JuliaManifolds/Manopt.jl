@@ -42,6 +42,8 @@ import Manifolds: inner
         @test Manopt.get_message(dcs) == ""
         dcsc = DifferenceOfConvexState(M, f)
         @test dcsc.sub_state isa Manopt.ClosedFormSubSolverState
+        # Test that the combination Manifold+State errors (since a problem is required)
+        @test_throws ErrorException DifferenceOfConvexState(M, Manopt.Test.DummyState())
 
         set_iterate!(dcs, M, p1)
         @test dcs.p == p1
@@ -112,6 +114,7 @@ import Manifolds: inner
         @test startswith(
             Manopt.status_summary(s1), "# Solver state for `Manopt.jl`s Difference of Convex Algorithm\n"
         )
+        @test_throws ErrorException DifferenceOfConvexProximalState(M, Manopt.Test.DummyState())
         @test startswith(repr(s1), "DifferenceOfConvexState(DefaultManoptProblem(")
         p3 = get_solver_result(s1)
         @test Manopt.get_message(s1) == "" # no message in last step

@@ -91,6 +91,7 @@ using Manopt, Manifolds, Test
             Manopt.status_summary(sgds; context = :default),
             "# Solver state for `Manopt.jl`s Stochastic Gradient Descent\n"
         )
+        @test startswith(repr(sgds), "StochasticGradientDescentState(; ")
     end
     @testset "Comparing Stochastic Methods" begin
         q1 = stochastic_gradient_descent(M, sgrad_f1, p; order_type = :Linear)

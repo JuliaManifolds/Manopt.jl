@@ -45,7 +45,7 @@ mutable struct ProximalPointState{P, Tλ, TStop <: StoppingCriterion} <: Abstrac
     end
 end
 function Base.show(io::IO, pps::ProximalPointState)
-    print(io, "ProximalPointState(")
+    print(io, "ProximalPointState(; ")
     return print(io, "λ = $(pps.λ), p = $(pps.p), stopping_criterion = $(pps.stop))")
 end
 function status_summary(pps::ProximalPointState; context::Symbol = :default)

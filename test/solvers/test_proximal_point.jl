@@ -32,6 +32,7 @@ using ManifoldDiff: prox_distance, prox_distance!
         Manopt.status_summary(pps; context = :default),
         "# Solver state for `Manopt.jl`s Proximal Point Method\n"
     )
+    @test startswith(repr(pps), "ProximalPointState(; ")
     @test startswith(repr(obj), "ManifoldProximalMapObjective(")
     @test startswith(Manopt.status_summary(obj), "A proximal map objective")
 

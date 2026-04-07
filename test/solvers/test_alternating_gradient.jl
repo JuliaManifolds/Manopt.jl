@@ -31,8 +31,9 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             f, [grad_f1!, grad_f2!]; evaluation = InplaceEvaluation()
         )
         Pv! = DefaultManoptProblem(N, objv!)
+        X = zero_vector(N, p)
+        @test repr(Manopt.AlternatingGradientRule(X)) == "AlternatingGradientRule($X)"
         for P in [Pf, Pv, Pf!, Pv!]
-            X = zero_vector(N, p)
             @test get_gradient(P, p)[N, 1] == grad_f(N, p)[N, 1]
             @test get_gradient(P, p)[N, 2] == grad_f(N, p)[N, 2]
             get_gradient!(P, X, p)
