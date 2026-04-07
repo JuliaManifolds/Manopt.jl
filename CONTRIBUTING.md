@@ -17,6 +17,7 @@ The following is a set of guidelines to [`Manopt.jl`](https://juliamanifolds.git
     - [Provide a new example](#Provide-a-new-example)
     - [Code style](#Code-style)
     - [Concerning the documentation](#Concerning-the-documentation)
+    - [Spell checking](#Spell-checking)
 ## I just have a question
 
 The developer can most easily be reached in the Julia Slack channel [#manifolds](https://julialang.slack.com/archives/CP4QF0K5Z).
@@ -84,3 +85,19 @@ Please follow a few internal conventions:
 If you implement a new feature, a tutorial how to use it would be appreciated as well. Tutorials are written as [Quarto](https://quarto.org/) documents and stored in the `tutorials/` folder. This is rendered automatically into the documentation page, you just have to add a menu entry within the tutorial sub menu.
 
 If you implement an algorithm with a certain numerical example in mind, it would be great, if this could be added to the [ManoptExamples.jl](https://github.com/JuliaManifolds/ManoptExamples.jl) package as well.
+
+### Spell checking
+
+We use [crate-ci/typos](https://github.com/crate-ci/typos) for spell checking, which is run automatically on GitHub Actions, but you can also run it locally using their command line tool.
+
+### On the use of AI
+
+Following the [Julia Discourse Guidelines – Keep it tidy](https://discourse.julialang.org/faq#keep-tidy),
+please do not open PRs or issues that are pure AI generated. `Manopt.jl` is in its aspects,
+especially the code, the documentation, as well as the tests, carefully curated to be concise,
+well-documented, comprehensive, but in tests also in a (hopefully) good balance between
+ensuring functionality and “over testing”.
+
+Of course it is ok to get help from an AI, e.g. when refactoring parts of the code,
+but please always carefully reflect on the results proposed and do not “[vibe code](https://en.wikipedia.org/wiki/Vibe_coding)”. That usually does not work well nor fit the exact mathematical definitions,
+reliability and stability as well as and abstractions of the provided algorithms `Manopt.jl` aims to provide.

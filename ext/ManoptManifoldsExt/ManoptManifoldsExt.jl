@@ -2,7 +2,7 @@ module ManoptManifoldsExt
 
 using ManifoldsBase: exp, log, ParallelTransport, vector_transport_to
 using Manopt
-using Manopt: _math, _tex, _var, ManifoldDefaultsFactory, _produce_type
+using Manopt: _math, _tex, ManifoldDefaultsFactory, _produce_type
 import Manopt:
     max_stepsize,
     get_gradient,

@@ -9,7 +9,7 @@ import Manopt:
     get_gradient,
     get_gradient!,
     set_parameter!
-using Manopt: _tex, _var, ManifoldDefaultsFactory, _produce_type
+using Manopt: _tex, ManifoldDefaultsFactory, _produce_type
 
 using RecursiveArrayTools
 

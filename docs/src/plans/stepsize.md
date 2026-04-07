@@ -41,7 +41,7 @@ ArmijoInitialGuess
 HagerZhangInitialGuess
 ```
 
-Onw implementations can also (just) be functions.
+Own implementations can also (just) be functions.
 
 Some step sizes use [`max_stepsize`](@ref) function as a rough upper estimate for the trust region size.
 It is by default equal to injectivity radius of the exponential map but in some cases a different value is used.

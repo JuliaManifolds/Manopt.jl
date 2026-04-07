@@ -33,7 +33,7 @@ end
 """
     get_message(a)
 
-Given a certain structure `a` from within `Manopt.jl`, retireve its last message of
+Given a certain structure `a` from within `Manopt.jl`, retrieve its last message of
 information, e.g. warnings from a step size.
 If no message is available, an empty string is returned.
 """

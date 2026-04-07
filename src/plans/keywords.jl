@@ -9,7 +9,7 @@ A small internal struct to represent a set of keywords,
 * `deprecated=Set{Symbol}()` a `Set` of symbols of keywords a certain function has deprecated
 * `from=nothing` the function the keywords are (directly or indirectly) come from or accepted in.
   to indicate that these are not associated with a certain function, use `nothing`.
-  to Indicate ane empty set, use `nothing`.
+  to Indicate an empty set, use `nothing`.
 * `origins` a dictionary that specifies for every keyword the function it is passed to.
   this usually should point to the function it is _directly_ passed to.
 

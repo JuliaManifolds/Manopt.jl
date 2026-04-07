@@ -11,11 +11,10 @@ see also [`alternating_gradient_descent`](@ref).
   a per cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
 * `inner_iterations`: how many gradient steps to take in a component before alternating to the next
 * `order`: the current permutation
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :stepsize))
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :X; add = [:as_Gradient]))
+$(_fields([:retraction_method, :stepsize]))
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:X; add_properties = [:as_Gradient]))
 * `k`, ì`:              internal counters for the outer and inner iterations, respectively.
 
 # Constructors
@@ -24,12 +23,12 @@ $(_var(:Field, :X; add = [:as_Gradient]))
 
 # Keyword arguments
 * `inner_iterations=5`
-$(_var(:Keyword, :p))
+$(_kwargs(:p))
 * `order_type::Symbol=:Linear`
 * `order::Vector{<:Int}=Int[]`
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`"))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, AlternatingGradientDescentState)`"))
-$(_var(:Keyword, :X))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, AlternatingGradientDescentState)"))
+$(_kwargs(:X))
 
 Generate the options for point `p` and where `inner_iterations`, `order_type`, `order`,
 `retraction_method`, `stopping_criterion`, and `stepsize`` are keyword arguments
@@ -120,7 +119,7 @@ partial evaluation of the gradient in-place.
 
 # Fields
 
-$(_var(:Field, :X))
+$(_fields(:X))
 
 # Constructor
 
@@ -161,8 +160,8 @@ in order to do a alternating gradient descent.
 
 # Keyword arguments
 
-$(_var(:Keyword, :X, "initial_gradient"))
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:X, name = "initial_gradient"))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 
 $(_note(:ManifoldDefaultFactory, "AlternatingGradientRule"))
 """
@@ -212,23 +211,22 @@ perform an alternating gradient descent. This can be done in-place of the start 
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
+$(_args([:M, :f]))
 * `grad_f`: a gradient, that can be of two cases
   * is a single function returning an `ArrayPartition` from [`RecursiveArrayTools.jl`](https://docs.sciml.ai/RecursiveArrayTools/stable/array_types/) or
   * is a vector functions each returning a component part of the whole gradient
-$(_var(:Argument, :p))
+$(_args(:p))
 
 # Keyword arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle permuted sequence (`:Random`) or the default `:Linear` one.
 * `inner_iterations=5`:  how many gradient steps to take in a component before alternating to the next
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`)"))
-$(_var(:Keyword, :stepsize; default = "[`ArmijoLinesearch`](@ref)`()`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`)"))
+$(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
 * `order=[1:n]`:         the initial permutation, where `n` is the number of gradients in `gradF`.
-$(_var(:Keyword, :retraction_method))
+$(_kwargs(:retraction_method))
 
 # Output
 

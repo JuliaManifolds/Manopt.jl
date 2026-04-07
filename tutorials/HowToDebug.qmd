@@ -179,8 +179,8 @@ You can also write your own [`DebugAction`](@ref) functor, where the function to
 
 ```{julia}
 #| eval: false
-mutable struct DebugDivider{TIO<:IO} <: DebugAction
-    io::TIO
+mutable struct DebugDivider{TypeIO<:IO} <: DebugAction
+    io::TypeIO
     divider::String
     DebugDivider(divider=" | "; io::IO=stdout) = new{typeof(io)}(io, divider)
 end

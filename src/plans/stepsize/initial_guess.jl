@@ -153,13 +153,13 @@ function (hzi::HagerZhangInitialGuess{TF})(
     alphamax = min(hzi.alphamax, max_stepsize(M, p))
 
     if k == 1
-        pn = hzi.point_distance(M, p)
+        point_d = hzi.point_distance(M, p)
         # Step I0
         if isnan(hzi.constant_guess)
-            if pn > hzi.zero_abstol
+            if point_d > hzi.zero_abstol
                 # I0.(a)
                 ηn = hzi.vector_norm(M, p, η)
-                return min(hzi.ψ0 * pn / ηn, alphamax)
+                return min(hzi.ψ0 * point_d / ηn, alphamax)
             elseif abs_lf0 > hzi.zero_abstol
                 # I0.(b)
                 return min(hzi.ψ0 * abs_lf0 / norm(M, p, η)^2, alphamax)

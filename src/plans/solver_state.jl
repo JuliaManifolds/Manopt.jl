@@ -10,8 +10,8 @@ A general super type for all solver states.
 The following fields are assumed to be default. If you use different ones,
 adapt the the access functions [`get_iterate`](@ref) and [`get_stopping_criterion`](@ref) accordingly
 
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:stopping_criterion; name = "stop"))
 """
 abstract type AbstractManoptSolverState end
 
@@ -383,7 +383,7 @@ is necessity for the construction.
 as vectors of symbols each referring to fields of the state (lower case symbols)
 or semantic ones (upper case).
 
-* `p_init` (`rand(M)`) but making sure this is not a number but a (mutatable) array
+* `p_init` (`rand(M)`) but making sure this is not a number but a (mutable) array
 * `X_init` (`zero_vector(M, p_init)`)
 
 are used to initialize the point and vector storage, change these if you use other

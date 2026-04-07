@@ -376,7 +376,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         mp = DefaultManoptProblem(M, coh)
         io = IOBuffer()
         df = DebugFeasibility(; io = io)
-        @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible])"
+        @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible], at_init=true)"
         # short form:
         @test Manopt.status_summary(df) === "(:Feasibility, [\"feasible: \", :Feasible])"
         df(mp, st, 1)

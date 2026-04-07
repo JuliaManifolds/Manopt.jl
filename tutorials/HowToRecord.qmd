@@ -70,7 +70,7 @@ R = gradient_descent(M, f, grad_f, data[1]; record=:Cost, return_state=true)
 From the returned state, we see that the [`GradientDescentState`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.GradientDescentState) are encapsulated (decorated) within a [`RecordSolverState`](https://manoptjl.org/stable/plans/record/#Manopt.RecordSolverState).
 
 For such a state, one can attach different recorders to some operations, currently to `:Start`. `:Stop`, and `:Iteration`, where `:Iteration` is the default when using the `record=` keyword with a [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction) or a `Symbol` as we just did.
-We can access all values recorded during the iterations by calling `get_record(R, :Iteation)` or since this is the default even shorter
+We can access all values recorded during the iterations by calling `get_record(R, :Iteration)` or since this is the default even shorter
 
 ```{julia}
 get_record(R)

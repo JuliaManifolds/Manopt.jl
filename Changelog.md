@@ -6,18 +6,70 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.30] unreleased
+## [0.6.0] unreleased
+
+This is a breaking change since the JuMP extension is dropped. 
 
 ### Changed
 
-* removed the JuMP extension, since it was a bit incomplete and hard to maintain,
- and not possible to extend to all manifolds. The main reason is, that matrices are a bit tough to represent in JuMP, which is vector based, and types points are nearly impossible to represent. Distinguishing between points and tangent vectors is also a bit hard to track.
+* removed the JuMP extension, since it was a bit incomplete and hard to maintain, and not possible to extend to all manifolds. The main reason is, that matrices are a bit tough to represent in JuMP, which is vector based, and types points are nearly impossible to represent. Distinguishing between points and tangent vectors is also a bit hard to track.
+ 
+## [0.5.35] April 3, 2026
+
+### Changed
+
+* Improved formatting of the references in the Readme.md (#586)
+* Bump compat for RecursiveArrayTools.jl to include version 4
+* deactivate CompatHelper Action and solely use dependabot
+
+## [0.5.34] March 3, 2026
+
+### Fixed
+
+* `Float32` support in `trust_regions` solver was broken in the previous release, which is now fixed.
+
+## [0.5.33] February 18, 2026
+
+### Added
+
+* A clarification on the use of AI in the [CONTRIBUTING.md](https://manoptjl.org/stable/contributing/) (#573)
+* `_produce_type` now accepts the point `p` as an optional third argument, which can be used to produce objects with specific point type for internal buffers. The addition has been utilized in `DirectionUpdateRule`s and `Stepsize`s to improve GPU and custom floating point type compatibility. (#577)
+* Added another package and paper using `Manopt.jl` to the about page (#576).
+
+### Fixed
+
+* `DistanceOverGradientsStepsize` now requires explicitly passing a point as the second argument because it logically depends on receiving the initial point. (#577)
+
+## [0.5.32] January 15, 2026
+
+### Fixed
+
+* Fixed failing precompilation related to the release of Glossaries.jl v0.1.1 (#567).
+
+## [0.5.31] January 11, 2026
+
+### Changed
+
+Moved the documentation glossaries to using the new [Glossaries.jl](https://github.com/JuliaManifolds/Glossaries.jl) package.
+
+## [0.5.30] December 10, 2025
+
+### Added
+
+* add keyword argument `is_feasible_error` to `interior_point_Newton` to control how to handle infeasible starting points (#556)
+* add keyword argument `at_init` to some debug options to control whether they print already at the initialisation and hence before the first iteration (#552)
+
+### Fixed
+
+* fixed a few typos in the documentation (#557)
+* fixed a bug in `StopWhenRepeated` where it stopped already at initialisation if the interior stopping criterion was satisfied (#558)
 
 ## [0.5.29] November 26, 2025
 
 ### Added
 
 * a keyword argument `atol` to the `ConstrainedManifoldObjective` to set a tolerance for constraint satisfaction. (#545)
+* a spell checker following [crate-ci/typos](https://github.com/crate-ci/typos)
 
 ### Fixed
 
@@ -28,7 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Removed `atol` from `DebugFeasibility` and instead use the one newly added `atol` from the `ConstrainedManifoldObjective`. (#546)
 * Move from CompatHelper to dependabot to keep track of dependency updates in Julia packages. (#547)
 * moved the `ManoptTestSuite` module to a sub module `Manopt.Test` within `Manopt.jl`,
-so it can be easier resused by others as well (#550)
+so it can be easier reused by others as well (#550)
 * moved to using a `Project.toml` for tests and an overall `[Workspace]`.
   This also allows finally to run single test files without installing all packages manually, but instead just switching to and instantiating the test environment. (#550)
 * for compatibility, state also `[source]` entries consistently in the sub `Project.toml` files. (#550)
@@ -253,7 +305,7 @@ present; they were changed to `retact_fused!`.
 * A scaling error that appeared only when calling `get_cost_function` on the new `ScaledManifoldObjective`.
 * Documentation issues for quasi-Newton solvers.
 * fixes a scaling error in quasi newton
-* Fixes printing of JuMP models containg Manopt solver.
+* Fixes printing of JuMP models containing Manopt solver.
 
 ## [0.5.12] April 13, 2025
 

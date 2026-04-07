@@ -61,14 +61,14 @@ after the description
 
 * `population::`[`NelderMeadSimplex`](@ref): a population (set) of ``d+1`` points ``x_i``, ``i=1,…,n+1``, where ``d``
   is the $(_link(:manifold_dimension; M = "")) of `M`.
-$(_var(:Field, :stepsize))
+$(_fields(:stepsize))
 * `α`: the reflection parameter ``α > 0``:
 * `γ` the expansion parameter ``γ > 0``:
 * `ρ`: the contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ`: the shrinkage coefficient, ``0 < σ ≤ 1``
-$(_var(:Field, :p; add = " storing the current best point"))
-$(_var(:Field, :inverse_retraction_method))
-$(_var(:Field, :retraction_method))
+$(_fields(:p))
+  storing the current best point
+$(_fields([:inverse_retraction_method, :retraction_method]))
 
 # Constructors
 
@@ -80,14 +80,13 @@ Construct a Nelder-Mead Option with a default population (if not provided) of se
 # Keyword arguments
 
 * `population=`[`NelderMeadSimplex`](@ref)`(M)`
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
   a [`StoppingCriterion`](@ref)
 * `α=1.0`: reflection parameter ``α > 0``:
 * `γ=2.0` expansion parameter ``γ``:
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ=1/2`: shrink coefficient, ``0 < σ ≤ 1``
-$(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :retraction_method))
+$(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `p=copy(M, population.pts[1])`: initialise the storage for the best point (iterate)¨
 """
 mutable struct NelderMeadState{
@@ -185,7 +184,7 @@ _doc_NelderMead = """
 
 Solve a Nelder-Mead minimization problem for the cost function ``f: $(_tex(:Cal, "M")) → ℝ`` on the
 manifold `M`. If the initial [`NelderMeadSimplex`](@ref) is not provided, a random set of
-points is chosen. The compuation can be performed in-place of the `population`.
+points is chosen. The computation can be performed in-place of the `population`.
 
 The algorithm consists of the following steps. Let ``d`` denote the dimension of the manifold ``$(_tex(:Cal, "M"))``.
 
@@ -194,7 +193,7 @@ The algorithm consists of the following steps. Let ``d`` denote the dimension of
     of the simplex vertices ``p_1,…,p_{d+1}``.
 3. Reflect the point with the worst point at the mean ``p_{$(_tex(:text, "r"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl( - α$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} (p_{d+1}) \\bigr)``
     If ``f(p_1) ≤ f(p_{$(_tex(:text, "r"))}) ≤ f(p_{d})`` then set ``p_{d+1} = p_{$(_tex(:text, "r"))}`` and go to step 1.
-4. Expand the simplex if ``f(p_{$(_tex(:text, "r"))}) < f(p_1)`` by computing the expantion point ``p_{$(_tex(:text, "e"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl( - γα$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} (p_{d+1}) \\bigr)``,
+4. Expand the simplex if ``f(p_{$(_tex(:text, "r"))}) < f(p_1)`` by computing the expansion point ``p_{$(_tex(:text, "e"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl( - γα$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} (p_{d+1}) \\bigr)``,
     which in this formulation allows to reuse the tangent vector from the inverse retraction from before.
     If ``f(p_{$(_tex(:text, "e"))}) < f(p_{$(_tex(:text, "r"))})`` then set ``p_{d+1} = p_{$(_tex(:text, "e"))}`` otherwise set set ``p_{d+1} = p_{$(_tex(:text, "r"))}``. Then go to Step 1.
 5. Contract the simplex if ``f(p_{$(_tex(:text, "r"))}) ≥ f(p_d)``.
@@ -212,21 +211,19 @@ or Algorithm 4.1 in [http://www.optimization-online.org/DB_FILE/2007/08/1742.pdf
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
+$(_args([:M, :f]))
 * `population::`[`NelderMeadSimplex`](@ref)`=`[`NelderMeadSimplex`](@ref)`(M)`: an initial simplex of ``d+1`` points, where ``d``
   is the $(_link(:manifold_dimension; M = "")) of `M`.
 
 # Keyword arguments
 
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
   a [`StoppingCriterion`](@ref)
 * `α=1.0`: reflection parameter ``α > 0``:
 * `γ=2.0` expansion parameter ``γ``:
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ=1/2`: shrink coefficient, ``0 < σ ≤ 1``
-$(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :retraction_method))
+$(_kwargs([:inverse_retraction_method, :retraction_method]))
 
 $(_note(:OtherKeywords))
 

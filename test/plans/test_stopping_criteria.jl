@@ -3,7 +3,7 @@ using Manifolds, ManifoldsBase, Manopt, Test, ManifoldsBase, Dates
 @testset "StoppingCriteria" begin
     @testset "Generic Tests" begin
         @test_throws ErrorException get_stopping_criteria(
-            Manopt.Test.DummmyStoppingCriteriaSet()
+            Manopt.Test.DummyStoppingCriteriaSet()
         )
 
         s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1))

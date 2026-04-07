@@ -170,7 +170,7 @@ end
         get_gradient!(M, X, sco3, p)
         @test X == p
         @test get_cost(M, sco3, p) == norm(p)
-        # for seperate calls this is a 2
+        # for separate calls this is a 2
 
         @test sco3.objective.functions[:costgradient].i == 2
         @test get_gradient(M, sco3, q) == q

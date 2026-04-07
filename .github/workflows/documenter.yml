@@ -18,10 +18,10 @@ jobs:
         with:
           version: "1.12"
       - name: Julia Cache
-        uses: julia-actions/cache@v2
+        uses: julia-actions/cache@v3
       - name: Cache Quarto
         id: cache-quarto
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         env:
           cache-name: cache-quarto
         with:
@@ -31,7 +31,7 @@ jobs:
             ${{ runner.os }}-${{ env.cache-name }}-
       - name: Cache Documenter
         id: cache-documenter
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         env:
           cache-name: cache-documenter
         with:
