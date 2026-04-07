@@ -39,9 +39,10 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
             end
         end
         # Without interim caches for p and X
-        @test repr(eo4) ==
-            "EmbeddedManifoldObjective{Missing,Missing} of an $(repr(eo4.objective))"
-
+        eo4repr = repr(eo4)
+        @test startswith(eo4repr, "EmbeddedManifoldObjective(ManifoldHessianObjective(")
+        @test endswith(eo4repr, "missing, missing)")
+        @test startswith(Manopt.status_summary(eo4), "An embedded objective\n\n")
         # Constraints, though this is not the most practical constraint
         o2 = ConstrainedManifoldObjective(f, ∇f, [f], [∇f], [f], [∇f])
         eco1 = EmbeddedManifoldObjective(M, o2)

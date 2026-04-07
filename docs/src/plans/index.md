@@ -28,7 +28,7 @@ The following symbols are used.
 | `:Activity` | [`DebugWhenActive`](@ref) | activity of the debug action stored within |
 | `:Basepoint` | [`TangentSpace`](@extref ManifoldsBase `ManifoldsBase.TangentSpace`) | the point the tangent space is at |
 | `:Cost` | generic |the cost function (within an objective, as pass down) |
-| `:Debug` | [`DebugSolverState`](@ref) | the stored `debugDictionary` |
+| `:Debug` | [`DebugSolverState`](@ref) | the stored `debug_dictionary` |
 | `:Gradient` | generic | the gradient function (within an objective, as pass down) |
 | `:Iterate` | generic | the (current) iterate, similar to [`set_iterate!`](@ref), within a state |
 | `:Manifold` | generic |the manifold (within a problem, as pass down) |

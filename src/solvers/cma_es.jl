@@ -197,8 +197,11 @@ function CMAESState(
     )
 end
 
-function show(io::IO, s::CMAESState)
+function status_summary(s::CMAESState; context::Symbol = :default)
+    (context === :short) && return repr(s)
     i = get_count(s, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(s.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the conjugate gradient descent solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(s.stop) ? "Yes" : "No"
     s = """
@@ -228,10 +231,9 @@ function show(io::IO, s::CMAESState)
     * σ:                          $(s.σ)
 
     ## Stopping criterion
-
-    $(status_summary(s.stop))
+    $(_in_str(status_summary(s.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 #
 # Access functions
@@ -565,20 +567,21 @@ function (c::StopWhenCovarianceIllConditioned)(
     end
     return false
 end
-function status_summary(c::StopWhenCovarianceIllConditioned)
-    has_stopped = c.at_iteration > 0
-    s = has_stopped ? "reached" : "not reached"
-    return "cond(s.covariance_matrix) > $(c.threshold):\t$s"
-end
 function get_reason(c::StopWhenCovarianceIllConditioned)
     if c.at_iteration >= 0
         return "At iteration $(c.at_iteration) the condition number of covariance matrix ($(c.last_cond)) exceeded the threshold ($(c.threshold)).\n"
     end
     return ""
 end
+function status_summary(c::StopWhenCovarianceIllConditioned; context::Symbol = :default)
+    (context == :short) && return repr(c)
+    has_stopped = c.at_iteration > 0
+    s = has_stopped ? "reached" : "not reached"
+    return (_is_inline(context) ? "cond(s.covariance_matrix) > $(c.threshold):\t" : "Stop when the covariance matrix is ill-conditioned, i.e. the last condition number is larger than the threshold of $(c.threshold)\n$(_MANOPT_INDENT)") * s
+end
 function show(io::IO, c::StopWhenCovarianceIllConditioned)
     return print(
-        io, "StopWhenCovarianceIllConditioned($(c.threshold))\n    $(status_summary(c))"
+        io, "StopWhenCovarianceIllConditioned($(c.threshold))"
     )
 end
 
@@ -628,7 +631,8 @@ function (c::StopWhenBestCostInGenerationConstant)(
     end
     return false
 end
-function status_summary(c::StopWhenBestCostInGenerationConstant)
+function status_summary(c::StopWhenBestCostInGenerationConstant; context::Symbol = :default)
+    (context == :short) && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return "c.iterations_since_change > $(c.iteration_range):\t$s"
@@ -707,12 +711,13 @@ function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState,
     end
     return false
 end
-function status_summary(c::StopWhenEvolutionStagnates)
+function status_summary(c::StopWhenEvolutionStagnates; context::Symbol = :default)
+    (context == :short) && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     N = length(c.best_history)
     if N == 0
-        return "best and median fitness not yet filled, stopping criterion:\t$s"
+        return "best and median fitness not yet filled, stopping criterion:$(_MANOPT_INDENT)$s"
     end
     threshold_low = Int(ceil(N * c.fraction))
     threshold_high = Int(floor(N * (1 - c.fraction)))
@@ -720,7 +725,14 @@ function status_summary(c::StopWhenEvolutionStagnates)
     median_best_new = median(c.best_history[threshold_high:end])
     median_median_old = median(c.median_history[1:threshold_low])
     median_median_new = median(c.median_history[threshold_high:end])
-    return "generation >= $(c.min_size) && $(median_best_old) <= $(median_best_new) && $(median_median_old) <= $(median_median_new):\t$s"
+    inline = "generation >= $(c.min_size) && $(median_best_old) <= $(median_best_new) && $(median_median_old) <= $(median_median_new):$(_MANOPT_INDENT)"
+    _is_inline(context) && return "$(inline)$s"
+    return """
+    A stopping criterion to stop when the evolution stagnates, i.e.
+    * generation >= $(c.min_size)
+    * the best mean did not decrease $(median_best_old) <= $(median_best_new)"
+    * the median did not decrease $(median_median_old) <= $(median_median_new)
+    overall:$(_MANOPT_INDENT)$s"""
 end
 function get_reason(c::StopWhenEvolutionStagnates)
     if c.at_iteration >= 0
@@ -779,10 +791,11 @@ function (c::StopWhenPopulationStronglyConcentrated)(
     end
     return false
 end
-function status_summary(c::StopWhenPopulationStronglyConcentrated)
+function status_summary(c::StopWhenPopulationStronglyConcentrated; context::Symbol = :default)
+    context === :short && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
-    return "norm(s.deviations, Inf) < $(c.tol) && norm(s.σ * s.p_c, Inf) < $(c.tol) :\t$s"
+    return "norm(s.deviations, Inf) < $(c.tol) && norm(s.σ * s.p_c, Inf) < $(c.tol) :$(_MANOPT_INDENT)$s"
 end
 function get_reason(c::StopWhenPopulationStronglyConcentrated)
     if c.at_iteration >= 0
@@ -791,9 +804,7 @@ function get_reason(c::StopWhenPopulationStronglyConcentrated)
     return ""
 end
 function show(io::IO, c::StopWhenPopulationStronglyConcentrated)
-    return print(
-        io, "StopWhenPopulationStronglyConcentrated($(c.tol))\n    $(status_summary(c))"
-    )
+    return print(io, "StopWhenPopulationStronglyConcentrated($(c.tol))")
 end
 
 """
@@ -828,10 +839,11 @@ function (c::StopWhenPopulationDiverges)(::AbstractManoptProblem, s::CMAESState,
     end
     return false
 end
-function status_summary(c::StopWhenPopulationDiverges)
+function status_summary(c::StopWhenPopulationDiverges; context::Symbol = :default)
+    context === :short && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
-    return "cur_σ_times_maxstddev / c.last_σ_times_maxstddev > $(c.tol) :\t$s"
+    return "cur_σ_times_maxstddev / c.last_σ_times_maxstddev > $(c.tol) :$(_MANOPT_INDENT)$s"
 end
 function get_reason(c::StopWhenPopulationDiverges)
     if c.at_iteration >= 0
@@ -840,7 +852,7 @@ function get_reason(c::StopWhenPopulationDiverges)
     return ""
 end
 function show(io::IO, c::StopWhenPopulationDiverges)
-    return print(io, "StopWhenPopulationDiverges($(c.tol))\n    $(status_summary(c))")
+    return print(io, "StopWhenPopulationDiverges($(c.tol))")
 end
 
 """
@@ -888,10 +900,11 @@ function (c::StopWhenPopulationCostConcentrated)(
     end
     return false
 end
-function status_summary(c::StopWhenPopulationCostConcentrated)
+function status_summary(c::StopWhenPopulationCostConcentrated; context::Symbol = :default)
+    context === :short && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
-    return "range of best objective values in the last $(length(c.best_value_history)) generations and all objective values in the current one < $(c.tol) :\t$s"
+    return "range of best objective values in the last $(length(c.best_value_history)) generations and all objective values in the current one < $(c.tol) :$(_MANOPT_INDENT)$s"
 end
 function get_reason(c::StopWhenPopulationCostConcentrated)
     if c.at_iteration >= 0
@@ -901,6 +914,6 @@ function get_reason(c::StopWhenPopulationCostConcentrated)
 end
 function show(io::IO, c::StopWhenPopulationCostConcentrated)
     return print(
-        io, "StopWhenPopulationCostConcentrated($(c.tol))\n    $(status_summary(c))"
+        io, "StopWhenPopulationCostConcentrated($(c.tol))"
     )
 end

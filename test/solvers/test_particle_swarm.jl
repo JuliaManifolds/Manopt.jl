@@ -12,8 +12,10 @@ using Random
         Random.seed!(35)
         o = particle_swarm(M, f, p1; return_state = true)
         @test startswith(
-            repr(o), "# Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm"
+            Manopt.status_summary(o; context = :default),
+            "# Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm\n"
         )
+        @test startswith(repr(o), "ParticleSwarmState(;")
         g = get_solver_result(o)
 
         initF = min(f.(Ref(M), p1)...)

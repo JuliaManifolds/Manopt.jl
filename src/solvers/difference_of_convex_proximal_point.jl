@@ -47,15 +47,8 @@ $(_kwargs(:stopping_criterion; default = "`[StopWhenChangeLess`](@ref)`(1e-8)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct DifferenceOfConvexProximalState{
-        P,
-        T,
-        Pr,
-        St <: AbstractManoptSolverState,
-        S <: Stepsize,
-        SC <: StoppingCriterion,
-        RTR <: AbstractRetractionMethod,
-        ITR <: AbstractInverseRetractionMethod,
-        Tλ,
+        P, T, Pr, St <: AbstractManoptSolverState, S <: Stepsize, SC <: StoppingCriterion,
+        RTR <: AbstractRetractionMethod, ITR <: AbstractInverseRetractionMethod, Tλ,
     } <: AbstractSubProblemSolverState
     λ::Tλ
     p::P
@@ -69,42 +62,42 @@ mutable struct DifferenceOfConvexProximalState{
     stepsize::S
     stop::SC
     function DifferenceOfConvexProximalState(
-            M::AbstractManifold,
-            sub_problem::Pr,
-            sub_state::St;
-            p::P = rand(M),
-            X::T = zero_vector(M, p),
+            M::AbstractManifold, sub_problem::Pr, sub_state::St;
+            p::P = rand(M), X::T = zero_vector(M, p),
             stepsize::S = ConstantStepsize(M),
             stopping_criterion::SC = StopWhenChangeLess(M, 1.0e-8),
             inverse_retraction_method::I = default_inverse_retraction_method(M, typeof(p)),
             retraction_method::R = default_retraction_method(M, typeof(p)),
             λ::Fλ = i -> 1,
         ) where {
-            P,
-            T,
-            Pr <: Union{AbstractManoptProblem, F} where {F},
-            S <: Stepsize,
-            St <: AbstractManoptSolverState,
-            SC <: StoppingCriterion,
-            I <: AbstractInverseRetractionMethod,
-            R <: AbstractRetractionMethod,
-            Fλ,
+            P, T, Pr <: Union{AbstractManoptProblem, F} where {F},
+            S <: Stepsize, St <: AbstractManoptSolverState, SC <: StoppingCriterion,
+            I <: AbstractInverseRetractionMethod, R <: AbstractRetractionMethod, Fλ,
+        }
+        return DifferenceOfConvexState(
+            sub_problem, sub_state;
+            λ = λ, p = p, q = copy(M, p), r = copy(M, p), X = X,
+            retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method,
+            stepsize = stepsize, stopping_criterion = stopping_criterion,
+        )
+    end
+    function DifferenceOfConvexState(
+            sub_problem::Pr, sub_state::St;
+            λ::Fλ, p::P, q::P, r::P, X::T,
+            retraction_method::R, inverse_retraction_method::I, stepsize::S, stopping_criterion::SC
+        ) where {
+            P, T, Pr <: Union{AbstractManoptProblem, F} where {F},
+            S <: Stepsize, St <: AbstractManoptSolverState, SC <: StoppingCriterion,
+            I <: AbstractInverseRetractionMethod, R <: AbstractRetractionMethod, Fλ,
         }
         return new{P, T, Pr, St, S, SC, R, I, Fλ}(
-            λ,
-            p,
-            copy(M, p),
-            copy(M, p),
-            sub_problem,
-            sub_state,
-            X,
-            retraction_method,
-            inverse_retraction_method,
-            stepsize,
-            stopping_criterion,
+            λ, p, q, r, sub_problem, sub_state, X,
+            retraction_method, inverse_retraction_method, stepsize, stopping_criterion,
         )
     end
 end
+# resolve an ambiguity
+DifferenceOfConvexProximalState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Difference of Convex Proximal Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function DifferenceOfConvexProximalState(
         M::AbstractManifold, sub_problem; evaluation::E = AllocatingEvaluation(), kwargs...
     ) where {E <: AbstractEvaluationType}
@@ -125,12 +118,28 @@ function get_message(dcs::DifferenceOfConvexProximalState)
     # for now only the sub solver might have messages
     return get_message(dcs.sub_state)
 end
-function show(io::IO, dcps::DifferenceOfConvexProximalState)
+function Base.show(io::IO, dcps::DifferenceOfConvexProximalState)
+    print(io, "DifferenceOfConvexProximalState("); print(io, dcps.sub_problem); print(io, dcps.sub_state); print(io, "; )")
+    print(io, "p = "); print(io, dcps.p); print(io, ", ")
+    print(io, "q = "); print(io, dcps.q); print(io, ", ")
+    print(io, "r = "); print(io, dcps.r); print(io, ", ")
+    print(io, "λ = "); print(io, dcps.λ); print(io, ", ")
+    print(io, "retraction_method = "); print(io, dcps.retraction_method); print(io, ", ")
+    print(io, "inverse_retraction_method = "); print(io, dcps.inverse_retraction_method); print(io, ", ")
+    print(io, "stopping_criterion = "); print(io, dcps.stop); print(io, ", ")
+    print(io, "stepsize = "); print(io, dcps.stepsize)
+    return print(io, ")")
+end
+function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol = :default)
+    (context === :short) && return repr(dcps)
     i = get_count(dcps, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(dcps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the difference of convex proximal point algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(dcps.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(dcps)) – $(Iter) $(has_converged(dcps) ? "(converged)" : "")")
     sub = repr(dcps.sub_state)
-    sub = replace(sub, "\n" => "\n    | ")
+    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm
     $Iter
@@ -141,13 +150,12 @@ function show(io::IO, dcps::DifferenceOfConvexProximalState)
         | $(sub)
 
     ## Stepsize
-    $(dcps.stepsize)
+    $(_in_str(status_summary(dcps.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-
-    $(status_summary(dcps.stop))
+    $(_in_str(status_summary(dcps.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 #
 # Prox approach
@@ -231,15 +239,9 @@ $(_note(:OutputSection))
 @doc "$(_doc_DCPPA)"
 difference_of_convex_proximal_point(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_proximal_point(
-        M::AbstractManifold,
-        grad_h,
-        p = rand(M);
-        cost = nothing,
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        gradient = nothing,
-        g = nothing,
-        grad_g = nothing,
-        prox_g = nothing,
+        M::AbstractManifold, grad_h, p = rand(M);
+        cost = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        gradient = nothing, g = nothing, grad_g = nothing, prox_g = nothing,
         kwargs...,
     )
     keywords_accepted(difference_of_convex_proximal_point; kwargs...)
@@ -255,15 +257,9 @@ function difference_of_convex_proximal_point(
         grad_h_; cost = cost_, gradient = gradient_, evaluation = evaluation
     )
     rs = difference_of_convex_proximal_point(
-        M,
-        mdcpo,
-        p_;
-        cost = cost_,
-        evaluation = evaluation,
-        gradient = gradient_,
-        g = g_,
-        grad_g = grad_g_,
-        prox_g = prox_g_,
+        M, mdcpo, p_;
+        cost = cost_, evaluation = evaluation,
+        gradient = gradient_, g = g_, grad_g = grad_g_, prox_g = prox_g_,
         kwargs...,
     )
     return _ensure_matching_output(p, rs)
@@ -283,13 +279,9 @@ calls_with_kwargs(::typeof(difference_of_convex_proximal_point)) = (difference_o
 @doc "$(_doc_DCPPA)"
 difference_of_convex_proximal_point!(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_proximal_point!(
-        M::AbstractManifold,
-        grad_h,
-        p;
+        M::AbstractManifold, grad_h, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        cost = nothing,
-        gradient = nothing,
-        kwargs...,
+        cost = nothing, gradient = nothing, kwargs...,
     )
     mdcpo = ManifoldDifferenceOfConvexProximalObjective(
         grad_h; cost = cost, gradient = gradient, evaluation = evaluation
@@ -299,12 +291,8 @@ function difference_of_convex_proximal_point!(
     )
 end
 function difference_of_convex_proximal_point!(
-        M::AbstractManifold,
-        mdcpo::O,
-        p;
-        g = nothing,
-        grad_g = nothing,
-        prox_g = nothing,
+        M::AbstractManifold, mdcpo::O, p;
+        g = nothing, grad_g = nothing, prox_g = nothing,
         X = zero_vector(M, p),
         λ = i -> 1 / 2,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
@@ -315,9 +303,7 @@ function difference_of_convex_proximal_point!(
         stopping_criterion = if isnothing(get_gradient_function(mdcpo))
             StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9)
         else
-            StopAfterIteration(300) |
-                StopWhenChangeLess(M, 1.0e-9) |
-                StopWhenGradientNormLess(1.0e-9)
+            StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9) | StopWhenGradientNormLess(1.0e-9)
         end,
         sub_cost = isnothing(g) ? nothing : ProximalDCCost(g, copy(M, p), λ(1)),
         sub_grad = if isnothing(grad_g)
@@ -403,12 +389,8 @@ function difference_of_convex_proximal_point!(
     dmdcpo = decorate_objective!(M, mdcpo; objective_type = objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmdcpo)
     dcps = DifferenceOfConvexProximalState(
-        M,
-        sub_problem,
-        maybe_wrap_evaluation_type(sub_state);
-        p = p,
-        X = X,
-        stepsize = _produce_type(stepsize, M, p),
+        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        p = p, X = X, stepsize = _produce_type(stepsize, M, p),
         stopping_criterion = stopping_criterion,
         inverse_retraction_method = inverse_retraction_method,
         retraction_method = retraction_method,
@@ -449,9 +431,7 @@ end
 =#
 function step_solver!(
         amp::AbstractManoptProblem,
-        dcps::DifferenceOfConvexProximalState{
-            P, T, <:Function, ClosedFormSubSolverState{InplaceEvaluation},
-        },
+        dcps::DifferenceOfConvexProximalState{P, T, <:Function, ClosedFormSubSolverState{InplaceEvaluation}},
         k,
     ) where {P, T}
     M = get_manifold(amp)
@@ -469,9 +449,7 @@ end
 =#
 function step_solver!(
         amp::AbstractManoptProblem,
-        dcps::DifferenceOfConvexProximalState{
-            P, T, <:AbstractManoptProblem, <:AbstractManoptSolverState,
-        },
+        dcps::DifferenceOfConvexProximalState{P, T, <:AbstractManoptProblem, <:AbstractManoptSolverState},
         k,
     ) where {P, T}
     M = get_manifold(amp)

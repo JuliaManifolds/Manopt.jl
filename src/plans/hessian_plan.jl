@@ -23,9 +23,9 @@ specify a problem for Hessian based algorithms.
 # Fields
 
 * `cost`:           a function ``f:$(_math(:Manifold))nifold)))→ℝ`` to minimize
-* `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold))) → $(_math(:TangentBundle))`` of the cost function ``f``
-* `hessian`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TangentSpace; p = "x")) → $(_math(:TangentSpace; p = "x"))`` of the cost function ``f``
-* `preconditioner`: the symmetric, positive definite preconditioner
+* `gradient!!`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold))) → $(_math(:TangentBundle))`` of the cost function ``f``
+* `hessian!!`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TangentSpace; p = "x")) → $(_math(:TangentSpace; p = "x"))`` of the cost function ``f``
+* `preconditioner!!`: the symmetric, positive definite preconditioner
   as an approximation of the inverse of the Hessian of ``f``, a map with the same
   input variables as the `hessian` to numerically stabilize iterations when the Hessian is
   ill-conditioned
@@ -56,13 +56,7 @@ struct ManifoldHessianObjective{T <: AbstractEvaluationType, C, G, H, Pre} <:
             precond = nothing;
             evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         ) where {C, G, H}
-        if isnothing(precond)
-            if evaluation isa InplaceEvaluation
-                precond = (M, Y, p, X) -> (Y .= X)
-            else
-                precond = (M, p, X) -> X
-            end
-        end
+        # We store `Nothing` as a type for the preconditioner
         return new{typeof(evaluation), C, G, H, typeof(precond)}(cost, grad, hess, precond)
     end
 end
@@ -173,7 +167,6 @@ end
 function get_preconditioner!(amp::AbstractManoptProblem, Y, p, X)
     return get_preconditioner!(get_manifold(amp), Y, get_objective(amp), p, X)
 end
-
 @doc """
     get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
 
@@ -185,12 +178,14 @@ tangent vector `X`.
 function get_preconditioner(
         M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
     )
+    isnothing(mho.preconditioner!!) && return (copy(M, p, X))
     return mho.preconditioner!!(M, p, X)
 end
 function get_preconditioner(
         M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
     )
     Y = zero_vector(M, p)
+    isnothing(mho.preconditioner!!) && return copyto!(M, Y, p, X)
     mho.preconditioner!!(M, Y, p, X)
     return Y
 end
@@ -203,7 +198,7 @@ end
 function get_preconditioner!(
         M::AbstractManifold, Y, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
     )
-    copyto!(M, Y, p, mho.preconditioner!!(M, p, X))
+    copyto!(M, Y, p, isnothing(mho.preconditioner!!) ? X : mho.preconditioner!!(M, p, X))
     return Y
 end
 function get_preconditioner!(
@@ -214,13 +209,35 @@ end
 function get_preconditioner!(
         M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
     )
-    mho.preconditioner!!(M, Y, p, X)
-    return Y
+    return isnothing(mho.preconditioner!!) ? copyto!(M, Y, p, X) : mho.preconditioner!!(M, Y, p, X)
 end
 
 update_hessian!(M, f, p, p_proposal, X) = f
 
 update_hessian_basis!(M, f, p) = f
+
+function status_summary(mho::ManifoldHessianObjective{E}; context::Symbol = :default) where {E}
+    _is_inline(context) && return "A second order objective with cost, gradient$(isnothing(mho.preconditioner!!) ? ", and" : "") Hessian$(isnothing(mho.preconditioner!!) ? "" : ", and a preconditioner")"
+    precon_str = isnothing(mho.preconditioner!!) ? "" : "\n* preconditioner: $(mho.preconditioner!!)"
+    return """
+    A second order objective providing a cost, a gradient$(isnothing(mho.preconditioner!!) ? ", and" : "") a Hessian$(isnothing(mho.preconditioner!!) ? "" : ", and a preconditioner")
+
+    ## Functions
+    * cost:    $(_MANOPT_INDENT)$(mho.cost)
+    * gradient:$(_MANOPT_INDENT)$(mho.gradient!!)
+    * Hessian: $(_MANOPT_INDENT)$(mho.hessian!!)$(precon_str)"""
+end
+
+function Base.show(io::IO, mho::ManifoldHessianObjective{E}) where {E}
+    print(io, "ManifoldHessianObjective(")
+    print(io, "$(mho.cost), ")
+    print(io, "$(mho.gradient!!), ")
+    print(io, "$(mho.hessian!!)")
+    !isnothing(mho.preconditioner!!) && print(io, ", $(mho.preconditioner!!)")
+    print(io, "; ")
+    print(io, _to_kw(E))
+    return print(io, ")")
+end
 
 @doc """
     AbstractApproxHessian <: Function
@@ -275,8 +292,7 @@ $(_kwargs(:evaluation))
 * `steplength=`2^{-14}``: step length ``c`` to approximate the gradient evaluations
 $(_kwargs([:retraction_method, :vector_transport_method]))
 """
-mutable struct ApproxHessianFiniteDifference{E, P, T, G, RTR, VTR, R <: Real} <:
-    AbstractApproxHessian
+mutable struct ApproxHessianFiniteDifference{E, P, T, G, RTR, VTR, R <: Real} <: AbstractApproxHessian
     p_dir::P
     gradient!!::G
     grad_tmp::T
@@ -364,8 +380,7 @@ $(_kwargs(:vector_transport_method)).
 * `nu` (`-1`)
 $(_kwargs([:evaluation, :vector_transport_method]))
 """
-mutable struct ApproxHessianSymmetricRankOne{E, P, G, T, B <: AbstractBasis{ℝ}, VTR, R <: Real} <:
-    AbstractApproxHessian
+mutable struct ApproxHessianSymmetricRankOne{E, P, G, T, B <: AbstractBasis{ℝ}, VTR, R <: Real} <: AbstractApproxHessian
     p_tmp::P
     gradient!!::G
     grad_tmp::T

@@ -140,20 +140,20 @@ function get_reason(sc::StopWhenLagrangeMultiplierLess)
     return ""
 end
 
-function status_summary(sc::StopWhenLagrangeMultiplierLess)
+function status_summary(sc::StopWhenLagrangeMultiplierLess; context::Symbol = :default)
     s = (sc.at_iteration >= 0) ? "reached" : "not reached"
     msg = "Lagrange multipliers"
     isnothing(sc.names) && (msg *= " with tolerances $(sc.tolerances)")
     if !isnothing(sc.names)
         msg *= join(["$si < $bi" for (si, bi) in zip(sc.names, sc.tolerances)], ", ")
     end
-    return "$(msg) :\t$(s)"
+    return (_is_inline(context) ? "" : "A stopping criterion to stop when the Lagrange multipliers are less than $(sc.tolerances).\n$(_MANOPT_INDENT)") * "$(msg):$(_MANOPT_INDENT)$(s)"
 end
 function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
     n = isnothing(sc.names) ? "" : ", $(names)"
     return print(
         io,
-        "StopWhenLagrangeMultiplierLess($(sc.tolerances); mode=:$(sc.mode)$n)\n    $(status_summary(sc))",
+        "StopWhenLagrangeMultiplierLess($(sc.tolerances); mode=:$(sc.mode)$n)",
     )
 end
 
@@ -181,6 +181,12 @@ mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
         return new(warn, Float64(Inf), tol)
     end
 end
-function show(io::IO, di::DebugWarnIfLagrangeMultiplierIncreases)
-    return print(io, "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"$(di.tol)\")")
+function show(io::IO, d::DebugWarnIfLagrangeMultiplierIncreases)
+    m = (d.status === :No ? "" : ":$(d.status)")
+    return print(io, "DebugWarnIfLagrangeMultiplierIncreases($(m); tol=\"$(d.tol)\")")
+end
+function status_summary(d::DebugWarnIfLagrangeMultiplierIncreases; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    m = (d.status === :Once) ? "once" : (d.status === :No ? "(inactive)" : "")
+    return "a DebugAction warning if the lagange multiplier increases in an iteration $m."
 end

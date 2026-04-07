@@ -110,4 +110,19 @@ using LinearAlgebra, LRUCache, Manifolds, Manopt, Test
             end
         end
     end
+    @testset "show/repr and status_summary" begin
+        s1 = repr(msgo_ff)
+        @test startswith(s1, "ManifoldStochasticGradientObjective(")
+        @test contains(s1, " cost = ")
+        s2 = Manopt.status_summary(msgo_ff)
+        @test contains(s2, "stochastic gradient objective")
+        @test contains(s2, "cost")
+        # missing cost
+        msgo_fm = ManifoldStochasticGradientObjective(sgrad_f1)
+        s3 = repr(msgo_fm)
+        @test !contains(s3, "cost")
+        s4 = Manopt.status_summary(msgo_fm)
+        @test contains(s4, "stochastic gradient objective")
+        @test !contains(s4, "cost")
+    end
 end

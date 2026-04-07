@@ -9,7 +9,7 @@ _doc_IPN = """
     interior_point_Newton(M, f, grad_f, Hess_f, p=rand(M); kwargs...)
     interior_point_Newton(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
     interior_point_Newton!(M, f, grad]_f, Hess_f, p; kwargs...)
-    interior_point_Newton(M, ConstrainedManifoldObjective, p; kwargs...)
+    interior_point_Newton!(M, cmo::ConstrainedManifoldObjective, p; kwargs...)
 
 perform the interior point Newton method following [LaiYoshise:2024](@cite).
 
@@ -69,8 +69,8 @@ $(_kwargs(:retraction_method))
 * `s=copy(μ)`: initial value for the slack variables
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`:  scaling factor for the barrier parameter `β` in the sub problem, which is updated during the iterations
 * `step_objective`: a [`ManifoldGradientObjective`](@ref) of the norm of the KKT vector field [`KKTVectorFieldNormSq`](@ref) and its gradient [`KKTVectorFieldNormSqGradient`](@ref)
-* `step_problem`: the manifold ``$(_math(:Manifold))nifold))) × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
-  as the problem the linesearch `stepsize=` employs for determining a step size
+* `step_problem`: the manifold ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
+  as the problem the line search `stepsize=` employs for determining a step size
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 $(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
   with the `centrality_condition` keyword as additional criterion to accept a step, if this is provided"))
@@ -193,7 +193,7 @@ function interior_point_Newton!(
         ),
         step_problem = DefaultManoptProblem(_step_M, step_objective),
         _step_p = rand(_step_M),
-        step_state = StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
+        step_state = StepsizeState(; p = _step_p, X = zero_vector(_step_M, _step_p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = ArmijoLinesearch(
             _step_M;
             retraction_method = default_retraction_method(_step_M),
