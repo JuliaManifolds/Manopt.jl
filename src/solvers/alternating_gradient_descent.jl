@@ -115,7 +115,7 @@ mutable struct AlternatingGradientDescentState{
     end
 end
 function Base.show(io::IO, agds::AlternatingGradientDescentState)
-    print(io, "AlternatingGradientDescentState(;")
+    print(io, "AlternatingGradientDescentState(; ")
     print(io, "p = $(agds.p), ")
     print(io, "X = $(agds.X), ")
     print(io, "direction = $(agds.direction), ")

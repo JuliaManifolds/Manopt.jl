@@ -46,25 +46,24 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
             Manopt.status_summary(arcs; context = :default),
             "# Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)",
         )
+        @test startswith(repr(arcs), "AdaptiveRegularizationState(")
         p1 = rand(M)
         X1 = rand(M; vector_at = p1)
         set_iterate!(arcs, p1)
         @test arcs.p == p1
         set_gradient!(arcs, X1)
         @test arcs.X == X1
+        lst = LanczosState(M2; maxIterLanczos = 1)
+        @test startswith(repr(lst), "LanczosState(; ")
+        @test startswith(Manopt.status_summary(lst), "# Solver state for `Manopt.jl`s Lanczos Iteration")
         arcs2 = AdaptiveRegularizationState(
-            M,
-            DefaultManoptProblem(M2, arcmo),
-            LanczosState(M2; maxIterLanczos = 1);
-            p = p0,
-            stopping_criterion = StopWhenAllLanczosVectorsUsed(1),
+            M, DefaultManoptProblem(M2, arcmo), lst; p = p0, stopping_criterion = StopWhenAllLanczosVectorsUsed(1),
         )
         #add a fake Lanczos
         push!(arcs2.sub_state.Lanczos_vectors, X1)
         # 1 Lanczos was reached
         @test stop_solver!(arcs2.sub_problem, arcs2.sub_state, 1)
         @test stop_solver!(arcs2.sub_problem, arcs2, 1)
-
         arcs3 = AdaptiveRegularizationState(
             M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos = 2); p = p0
         )
@@ -74,12 +73,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         step_solver!(arcs3.sub_problem, arcs3.sub_state, 2) # to introduce a random new one
         # test orthogonality of the new 2 ones
         @test isapprox(
-            inner(
-                M,
-                p1,
-                arcs3.sub_state.Lanczos_vectors[1],
-                arcs3.sub_state.Lanczos_vectors[2],
-            ),
+            inner(M, p1, arcs3.sub_state.Lanczos_vectors[1], arcs3.sub_state.Lanczos_vectors[2]),
             0.0,
             atol = 1.0e-14,
         )
@@ -93,12 +87,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         step_solver!(arcs4.sub_problem, arcs4.sub_state, 2) # to introduce a random new one but copy to 2
         # test orthogonality of the new 2 ones
         @test isapprox(
-            inner(
-                M,
-                p1,
-                arcs4.sub_state.Lanczos_vectors[1],
-                arcs4.sub_state.Lanczos_vectors[2],
-            ),
+            inner(M, p1, arcs4.sub_state.Lanczos_vectors[1], arcs4.sub_state.Lanczos_vectors[2]),
             0.0,
             atol = 1.0e-14,
         )
@@ -115,6 +104,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
 
         st2 = StopWhenAllLanczosVectorsUsed(2)
         @test startswith(repr(st2), "StopWhenAllLanczosVectorsUsed(2)")
+        @test startswith(Manopt.status_summary(st2), "Stop when all 2 Lanczos vectors are used")
         @test !Manopt.indicates_convergence(st2)
         @test startswith(
             Manopt.status_summary(arcs2.sub_state; context = :default),

@@ -25,6 +25,7 @@ using Manopt: estimate_sectional_curvature
         curvature_cbms = ConvexBundleMethodState(M; p = p0)
         @test ω ≤ curvature_cbms.k_min
         @test Ω ≥ curvature_cbms.k_max
+        @test startswith(repr(curvature_cbms), "ConvexBundleMethodState(")
     end
 
     @testset "Close Point Function" begin

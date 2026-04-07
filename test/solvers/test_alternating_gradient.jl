@@ -33,6 +33,7 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
         Pv! = DefaultManoptProblem(N, objv!)
         X = zero_vector(N, p)
         @test repr(Manopt.AlternatingGradientRule(X)) == "AlternatingGradientRule($X)"
+
         for P in [Pf, Pv, Pf!, Pv!]
             @test get_gradient(P, p)[N, 1] == grad_f(N, p)[N, 1]
             @test get_gradient(P, p)[N, 2] == grad_f(N, p)[N, 2]
@@ -74,6 +75,7 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             Manopt.status_summary(r; context = :default),
             "# Solver state for `Manopt.jl`s Alternating Gradient Descent Solver"
         )
+        @test startswith(repr(r), "AlternatingGradientDescentState(; ")
         # r has the same message as the internal stepsize
         @test Manopt.get_message(r) == Manopt.get_message(r.stepsize)
         @test isapprox(N, q3, q)

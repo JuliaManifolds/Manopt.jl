@@ -87,21 +87,15 @@ function set_parameter!(ls::LanczosState, ::Val{:σ}, σ)
     return ls
 end
 function Base.show(io::IO, ls::LanczosState)
-    print(io, "LanczosState(;"),
-        print(io, "X = "); print(io, ls.X); print(io, ", ")
-    print(io, "σ = "); print(io, ls.X); print(io, ", ")
-    print(io, "stopping_criterion = "); print(io, ls.stop); print(io, ", ")
-    print(io, "stopping_criterion_newton = "); print(io, ls.stop_newton); print(io, ", ")
-    print(io, "Lanczos_vectors = "); print(io, ls.Lanczos_vectors); print(io, ", ")
-    print(io, "tridig_matrix = "); print(io, ls.tridig_matrix); print(io, ", ")
-    print(io, "coefficients = "); print(io, ls.X); print(io, ", ")
-    print(io, "Hp = "); print(io, ls.Hp); print(io, ", ")
-    print(io, "Hp_residual = "); print(io, ls.Hp_residual); print(io, ", ")
-    print(io, "S = "); print(io, ls.S)
+    print(io, "LanczosState(; X = ", ls.X, ", σ = ", ls.σ, ", stopping_criterion = ", ls.stop)
+    print(io, ", stopping_criterion_newton = ", ls.stop_newton, ", ")
+    print(io, "Lanczos_vectors = ", ls.Lanczos_vectors, ", ", "tridig_matrix = ", ls.tridig_matrix, ", ")
+    print(io, "coefficients = ", ls.X); print(io, ", Hp = ", ls.Hp, ", ")
+    print(io, "Hp_residual = ", ls.Hp_residual, ", ", "S = ", ls.S)
     return print(io, ")")
 end
-function status_summary(ls::LanczosState; context = default)
-    _is_inline(context) && return repr(ls)
+function status_summary(ls::LanczosState; context::Symbol = :default)
+    (context === :short) && return repr(ls)
     i = get_count(ls, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ls.stop) ? "Yes" : "No"
@@ -399,7 +393,7 @@ function status_summary(c::StopWhenAllLanczosVectorsUsed; context::Symbol = :def
     (context === :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (context === :inline ? "" : "Stop when all Lanczos vectors are used\n$(_MANOPT_INDENT)":"All Lanczos vectors ($(c.maxLanczosVectors)) used:$(_MANOPT_INDENT)") * s
+    return (context === :inline ? "All $(c.maxLanczosVectors) Lanczos vectors used:$(_MANOPT_INDENT)" : "Stop when all $(c.maxLanczosVectors) Lanczos vectors are used\n$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(c::StopWhenAllLanczosVectorsUsed) = false
 function show(io::IO, c::StopWhenAllLanczosVectorsUsed)

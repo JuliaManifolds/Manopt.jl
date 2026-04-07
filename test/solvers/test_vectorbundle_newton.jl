@@ -89,6 +89,7 @@ using LinearAlgebra: eigvals
         vbp_s = Manopt.status_summary(vbp; context = :default)
         @test startswith(vbp_s, "A vector bundle problem representing a vector bundle newton equation objective")
         @test contains(vbp_s, "## Manifold")
+        @test startswith(repr(vbp), "VectorBundleManoptProblem(")
     end
 
     @testset "Affine covariant stepsize" begin
@@ -151,6 +152,7 @@ using LinearAlgebra: eigvals
         @test any(isapprox(f(M, y1), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
         st_str = Manopt.status_summary(st; context = :default)
         @test occursin("Vector bundle Newton method", st_str)
+        @test startswith(repr(st), "VectorBundleNewtonState(")
         # we stopped since the change was small enough
         @test occursin("* |Δp| < 1.0e-11:$(Manopt._MANOPT_INDENT)reached", st_str)
         acs = st.stepsize

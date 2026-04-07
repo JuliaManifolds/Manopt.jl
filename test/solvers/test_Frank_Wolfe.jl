@@ -35,6 +35,9 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
         s = FrankWolfeState(M, oracle!; evaluation = InplaceEvaluation(), p = p)
         @test Manopt.get_message(s) == ""
         @test startswith(Manopt.status_summary(s; context = :default), "# Solver state for `Manopt.jl`s Frank Wolfe Method\n")
+        @test startswith(repr(s), "FrankWolfeState(")
+        # Manifold+State errors since problem is missing
+        @test_throws ErrorException FrankWolfeState(M, Manopt.Test.DummyState())
         set_iterate!(s, 2 .* p)
         @test get_iterate(s) == 2 .* p
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(FC, FG))

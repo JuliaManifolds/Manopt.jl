@@ -46,6 +46,12 @@ mutable struct VectorBundleNewtonState{
     stop::TStop
     stepsize::TStep
     retraction_method::TRTM
+    function VectorBundleNewtonState(
+            sub_problem::Pr, sub_state::St;
+            p::P, p_trial::P, X::T, stopping_criterion::TStop, stepsize::TStep, retraction_method::TRTM
+        ) where {P, T, Pr, St, TStop <: StoppingCriterion, TStep <: Stepsize, TRTM <: AbstractRetractionMethod}
+        return new{P, T, Pr, St, TStop, TStep, TRTM}(p, p_trial, X, sub_problem, sub_state, stopping_criterion, stepsize, retraction_method)
+    end
 end
 
 function VectorBundleNewtonState(
@@ -57,18 +63,16 @@ function VectorBundleNewtonState(
     ) where {
         P, T, Pr, Op, RM <: AbstractRetractionMethod, SC <: StoppingCriterion, S <: Stepsize,
     }
-    return VectorBundleNewtonState{P, T, Pr, Op, SC, S, RM}(
-        p, copy(M, p), X,
-        sub_problem, sub_state, stopping_criterion, stepsize, retraction_method
+    return VectorBundleNewtonState(
+        sub_problem, sub_state; p = p, p_trial = copy(M, p), X = X,
+        stopping_criterion = stopping_criterion, stepsize = stepsize, retraction_method = retraction_method
     )
 end
 
 function Base.show(io::IO, vbns::VectorBundleNewtonState)
-    print(io, "VectorBundleNewtonState(M, E, p, $(vbns.sub_problem), $(vbns.sub_state);\n$(_MANOPT_INDENT)")
-    print(io, "retraction_method = $(vbns.retraction_method),\n$(_MANOPT_INDENT)")
-    print(io, "stopping_criterion = $(status_summary(vbns.stop; context = :short)),\n$(_MANOPT_INDENT)")
-    print(io, "stepsize = $(vbns.stepsize),\n$(_MANOPT_INDENT)")
-    print(io, "X = $(vbns.X),\n")
+    print(io, "VectorBundleNewtonState(", vbns.sub_problem, ", ", vbns.sub_state, "; p = ", vbns.p)
+    print(io, "retraction_method = ", vbns.retraction_method, ", stopping_criterion = $(status_summary(vbns.stop; context = :short)),")
+    print(io, "stepsize = ", vbns.stepsize, ", X = ", vbns.X)
     return print(io, ")")
 end
 
@@ -230,11 +234,8 @@ struct VectorBundleManoptProblem{
 end
 
 function Base.show(io::IO, vbmp::VectorBundleManoptProblem)
-    print(io, "VectorBundleManoptProblem(")
-    show(io, vbmp.manifold); print(io, ", ")
-    show(io, vbmp.vectorbundle); print(io, ", ")
-    show(io, vbmp.newton_equation); print(io, ")")
-    return io
+    print(io, "VectorBundleManoptProblem(", vbmp.manifold, ", ", vbmp.vectorbundle, ", ")
+    return print(io, vbmp.newton_equation, ")")
 end
 
 function status_summary(vbmp::VectorBundleManoptProblem; context::Symbol = :default)
@@ -244,13 +245,13 @@ function status_summary(vbmp::VectorBundleManoptProblem; context::Symbol = :defa
     A vector bundle problem representing a vector bundle newton equation objective
 
     ## Manifold
-    $(_MANOPT_INDENT)$(replace("$(vbmp.manifold)", "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+    $(_in_str(repr(vbmp.manifold); indent = 1))
 
     ## Range
-    $(_MANOPT_INDENT)$(replace("$(vbmp.vectorbundle)", "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+    $(_in_str(repr(vbmp.vectorbundle); indent = 1))
 
     ## Vector bundle newton equation
-    $(_MANOPT_INDENT)$(replace("$(vbmp.newton_equation)", "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+    $(_in_str(repr(vbmp.newton_equation); indent = 1))
     """
 end
 
