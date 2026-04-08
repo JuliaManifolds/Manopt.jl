@@ -44,15 +44,9 @@ using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
     sub_p[sub_M, 1] = p
     sub_p[sub_M, 2] = λ
     coh = ConstrainedManifoldObjective(
-        f,
-        grad_f;
-        hess_f = hess_f,
-        g = g,
-        grad_g = grad_g,
-        hess_g = hess_g,
-        h = h,
-        grad_h = grad_h,
-        hess_h = hess_h,
+        f, grad_f; hess_f = hess_f,
+        g = g, grad_g = grad_g, hess_g = hess_g,
+        h = h, grad_h = grad_h, hess_h = hess_h,
         M = M,
     )
     sub_obj = SymmetricLinearSystemObjective(
@@ -70,13 +64,17 @@ using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
     @test set_gradient!(ipns, M, 3 * p) == ipns
     @test get_gradient(ipns) == 3 * p
     show_str = "# Solver state for `Manopt.jl`s Interior Point Newton Method\n"
-    @test startswith(repr(ipns), show_str)
-    #
+    @test startswith(Manopt.status_summary(ipns; context = :default), show_str)
+    @test startswith(repr(ipns), "InteriorPointNewtonState(")
+    # status summary of KKT Vectorfields
+    @test startswith(Manopt.status_summary(sub_obj.A!!), "The Jacobian of the condensed KKT vector field for the constrained objective")
+    @test startswith(Manopt.status_summary(sub_obj.b!!), "The condensed KKT vector field for the constrained objective")
     sc = StopWhenKKTResidualLess(1.0e-5)
     @test length(get_reason(sc)) == 0
     @test !sc(dmp, ipns, 1) #not yet reached
     @test Manopt.indicates_convergence(sc)
-    @test startswith(repr(sc), "StopWhenKKTResidualLess(1.0e-5)\n")
+    @test startswith(repr(sc), "StopWhenKKTResidualLess(1.0e-5)")
+    @test startswith(Manopt.status_summary(sc), "Stop when the KKT residual is less than ")
     # Fake stop
     sc.residual = 1.0e-7
     sc.at_iteration = 1

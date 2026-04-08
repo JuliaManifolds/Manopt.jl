@@ -46,6 +46,12 @@ mutable struct VectorBundleNewtonState{
     stop::TStop
     stepsize::TStep
     retraction_method::TRTM
+    function VectorBundleNewtonState(
+            sub_problem::Pr, sub_state::St;
+            p::P, p_trial::P, X::T, stopping_criterion::TStop, stepsize::TStep, retraction_method::TRTM
+        ) where {P, T, Pr, St, TStop <: StoppingCriterion, TStep <: Stepsize, TRTM <: AbstractRetractionMethod}
+        return new{P, T, Pr, St, TStop, TStep, TRTM}(p, p_trial, X, sub_problem, sub_state, stopping_criterion, stepsize, retraction_method)
+    end
 end
 
 function VectorBundleNewtonState(
@@ -57,10 +63,17 @@ function VectorBundleNewtonState(
     ) where {
         P, T, Pr, Op, RM <: AbstractRetractionMethod, SC <: StoppingCriterion, S <: Stepsize,
     }
-    return VectorBundleNewtonState{P, T, Pr, Op, SC, S, RM}(
-        p, copy(M, p), X,
-        sub_problem, sub_state, stopping_criterion, stepsize, retraction_method
+    return VectorBundleNewtonState(
+        sub_problem, sub_state; p = p, p_trial = copy(M, p), X = X,
+        stopping_criterion = stopping_criterion, stepsize = stepsize, retraction_method = retraction_method
     )
+end
+
+function Base.show(io::IO, vbns::VectorBundleNewtonState)
+    print(io, "VectorBundleNewtonState(", vbns.sub_problem, ", ", vbns.sub_state, "; p = ", vbns.p)
+    print(io, "retraction_method = ", vbns.retraction_method, ", stopping_criterion = $(status_summary(vbns.stop; context = :short)),")
+    print(io, "stepsize = ", vbns.stepsize, ", X = ", vbns.X)
+    return print(io, ")")
 end
 
 @doc """
@@ -108,8 +121,8 @@ Initializes all fields, where none of them is mandatory. The length is set to ``
 Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
 This should be implemented as a method of the `newton_equation(M, VB, p, p_trial)` as parameters and returning a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
 """
-mutable struct AffineCovariantStepsize{T, R <: Real, N <: Union{Real, Missing}} <: Stepsize
-    α::T
+mutable struct AffineCovariantStepsize{R <: Real, N <: Union{Real, Missing}} <: Stepsize
+    α::R
     θ::R
     θ_des::R
     θ_acc::R
@@ -117,12 +130,35 @@ mutable struct AffineCovariantStepsize{T, R <: Real, N <: Union{Real, Missing}} 
     outer_norm::N
 end
 function AffineCovariantStepsize(
-        M::AbstractManifold = DefaultManifold(2);
-        α = 1.0, θ = 1.3, θ_des = 0.5, θ_acc = 1.1 * θ_des, outer_norm::N = missing
+        ::AbstractManifold = DefaultManifold(2);
+        α::Real = 1.0, θ::Real = 1.3, θ_des::Real = 0.5, θ_acc::Real = 1.1 * θ_des, outer_norm::N = missing
     ) where {N <: Union{Real, Missing}}
-    return AffineCovariantStepsize{typeof(α), typeof(θ), N}(α, θ, θ_des, θ_acc, 1.0, outer_norm)
+    R = promote_type(typeof(α), typeof(θ), typeof(θ_des), typeof(θ_acc))
+    return AffineCovariantStepsize{R, N}(
+        convert(R, α), convert(R, θ), convert(R, θ_des), convert(R, θ_acc), convert(R, 1.0), outer_norm
+    )
 end
+function Base.show(io::IO, acs::AffineCovariantStepsize)
+    print(io, "AffineCovariantStepsize(; α = ", acs.α, ", θ = ", acs.θ, ", θ_des = ", acs.θ_des)
+    print(io, ", θ_acc = ", acs.θ_acc)
+    !(ismissing(acs.outer_norm)) && print(io, ", outer_norm = ", acs.outer_norm)
+    return print(io, ")")
+end
+function status_summary(acs::AffineCovariantStepsize; context = :default)
+    (context === :short) && repr(acs)
+    (context === :inline) && return "An affine covariant step size (last step size: $(acs.last_stepsize))"
+    on = ismissing(acs.outer_norm) ? "" : "\n* outer norm:       $(_MANOPT_INDENT)$(acs.outer_norm)"
+    return """
+    An affine covariant step size
+    (last step size: $(acs.last_stepsize))
 
+    ## Parameters
+    * damping factor α: $(_MANOPT_INDENT)$(acs.α)
+    * θ:                $(_MANOPT_INDENT)$(acs.θ)
+    * desired θ:        $(_MANOPT_INDENT)$(acs.θ_des)
+    * acceptable θ:     $(_MANOPT_INDENT)$(acs.θ_acc)$(on)
+    """
+end
 function (acs::AffineCovariantStepsize)(
         amp::AbstractManoptProblem, ams::VectorBundleNewtonState, ::Any, args...; kwargs...
     )
@@ -159,22 +195,27 @@ end
 
 default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = ConstantStepsize(M)
 
-function show(io::IO, vbns::VectorBundleNewtonState)
+function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :default)
+    (context === :short) && return repr(vbns)
     i = get_count(vbns, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(vbns.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the vector bundle Newton solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(vbns.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(vbns)) – $(Iter) $(has_converged(vbns) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Vector bundle Newton method
     $Iter
     ## Parameters
     * retraction method: $(vbns.retraction_method)
-    * step size: $(vbns.stepsize)
+
+    ## Stepsize
+    $(_in_str(status_summary(vbns.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-
-    $(status_summary(vbns.stop))
+    $(_in_str(status_summary(vbns.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 
@@ -190,6 +231,28 @@ struct VectorBundleManoptProblem{
     manifold::M
     vectorbundle::TV
     newton_equation::O
+end
+
+function Base.show(io::IO, vbmp::VectorBundleManoptProblem)
+    print(io, "VectorBundleManoptProblem(", vbmp.manifold, ", ", vbmp.vectorbundle, ", ")
+    return print(io, vbmp.newton_equation, ")")
+end
+
+function status_summary(vbmp::VectorBundleManoptProblem; context::Symbol = :default)
+    (context === :short) && return repr(vbmp)
+    (context === :inline) && return "A vector bundle problem defined on $(vbmp.manifold) with range $(vbmp.vectorbundle) and newton equation $(vbmp.newton_equation)"
+    return """
+    A vector bundle problem representing a vector bundle newton equation objective
+
+    ## Manifold
+    $(_in_str(repr(vbmp.manifold); indent = 1))
+
+    ## Range
+    $(_in_str(repr(vbmp.vectorbundle); indent = 1))
+
+    ## Vector bundle newton equation
+    $(_in_str(repr(vbmp.newton_equation); indent = 1))
+    """
 end
 
 @doc """

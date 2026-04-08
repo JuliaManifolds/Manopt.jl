@@ -42,6 +42,8 @@ import Manifolds: inner
         @test Manopt.get_message(dcs) == ""
         dcsc = DifferenceOfConvexState(M, f)
         @test dcsc.sub_state isa Manopt.ClosedFormSubSolverState
+        # Test that the combination Manifold+State errors (since a problem is required)
+        @test_throws ErrorException DifferenceOfConvexState(M, Manopt.Test.DummyState())
 
         set_iterate!(dcs, M, p1)
         @test dcs.p == p1
@@ -52,9 +54,7 @@ import Manifolds: inner
 
         dcppa_sub_cost = ProximalDCCost(g, copy(M, p0), 1.0)
         dcppa_sub_grad = ProximalDCGrad(grad_g, copy(M, p0), 1.0)
-        dcppa_sub_grad! = ProximalDCGrad(
-            grad_g!, copy(M, p0), 1.0; evaluation = InplaceEvaluation()
-        )
+        dcppa_sub_grad! = ProximalDCGrad(grad_g!, copy(M, p0), 1.0; evaluation = InplaceEvaluation())
         Y1 = dcppa_sub_grad!(M, p0)
         Y2 = similar(Y1)
         dcppa_sub_grad(M, Y2, p0)
@@ -63,12 +63,8 @@ import Manifolds: inner
         dcppa_sub_objective = ManifoldGradientObjective(dcppa_sub_cost, dcppa_sub_grad)
         dcppa_sub_problem = DefaultManoptProblem(M, dcppa_sub_objective)
         dcppa_sub_state = GradientDescentState(M; p = copy(M, p0))
-
-        dcps = DifferenceOfConvexProximalState( #Initialize with random point
-            M,
-            dcppa_sub_problem,
-            dcppa_sub_state,
-        )
+        # Initialize with random point
+        dcps = DifferenceOfConvexProximalState(M, dcppa_sub_problem, dcppa_sub_state)
         set_iterate!(dcps, M, p1)
         @test dcps.p == p1
         set_gradient!(dcps, M, p1, X1)
@@ -116,8 +112,10 @@ import Manifolds: inner
             M, f, g, grad_h, p0; grad_g = grad_g, gradient = grad_f, return_state = true
         )
         @test startswith(
-            repr(s1), "# Solver state for `Manopt.jl`s Difference of Convex Algorithm\n"
+            Manopt.status_summary(s1), "# Solver state for `Manopt.jl`s Difference of Convex Algorithm\n"
         )
+        @test_throws ErrorException DifferenceOfConvexProximalState(M, Manopt.Test.DummyState())
+        @test startswith(repr(s1), "DifferenceOfConvexState(DefaultManoptProblem(")
         p3 = get_solver_result(s1)
         @test Manopt.get_message(s1) == "" # no message in last step
         @test isapprox(M, p1, p2)
@@ -139,21 +137,17 @@ import Manifolds: inner
         p5b = difference_of_convex_proximal_point(M, grad_h; g = g, grad_g = grad_g)
         # using gradient descent
         p5c = difference_of_convex_proximal_point(
-            M,
-            grad_h,
-            p0;
-            g = g,
-            grad_g = grad_g,
-            sub_hess = nothing,
+            M, grad_h, p0; g = g, grad_g = grad_g, sub_hess = nothing,
             stopping_criterion = StopAfterIteration(10), # is not that stable
         )
         s2 = difference_of_convex_proximal_point(
             M, grad_h, p0; g = g, grad_g = grad_g, gradient = grad_f, return_state = true
         )
         @test startswith(
-            repr(s2),
+            Manopt.status_summary(s2; context = :default),
             "# Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm\n",
         )
+        @test startswith(repr(s2), "DifferenceOfConvexProximalState(DefaultManoptProblem(")
         p6 = get_solver_result(s2)
         @test Manopt.get_message(s2) == ""
 

@@ -72,9 +72,7 @@ calls_with_kwargs(::typeof(conjugate_residual)) = (conjugate_residual!,)
 conjugate_residual!(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual!(
-        TpM::TangentSpace,
-        slso::SymmetricLinearSystemObjective,
-        X;
+        TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X;
         stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
             StopWhenRelativeResidualLess(
             norm(base_manifold(TpM), base_point(TpM), get_b(TpM, slso)), 1.0e-8
@@ -82,9 +80,7 @@ function conjugate_residual!(
         kwargs...,
     ) where {SC <: StoppingCriterion}
     keywords_accepted(conjugate_residual!; kwargs...)
-    crs = ConjugateResidualState(
-        TpM, slso; stopping_criterion = stopping_criterion, kwargs...
-    )
+    crs = ConjugateResidualState(TpM, slso; stopping_criterion = stopping_criterion, kwargs...)
     dslso = decorate_objective!(TpM, slso; kwargs...)
     dmp = DefaultManoptProblem(TpM, dslso)
     dcrs = decorate_state!(crs; kwargs...)

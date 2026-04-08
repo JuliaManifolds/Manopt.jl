@@ -53,116 +53,89 @@ $(_kwargs(:vector_transport_method))
 $(_kwargs(:X)) to specify the type of tangent vector to use.
 """
 mutable struct ProximalBundleMethodState{
-        P,
-        T,
-        Pr,
-        St <: AbstractManoptSolverState,
-        R <: Real,
-        IR <: AbstractInverseRetractionMethod,
-        TR <: AbstractRetractionMethod,
-        TSC <: StoppingCriterion,
-        VT <: AbstractVectorTransportMethod,
-    } <: AbstractManoptSolverState where {P, T, Pr}
-    approx_errors::AbstractVector{R}
-    bundle::AbstractVector{Tuple{P, T}}
+        P, T, Pr, St <: AbstractManoptSolverState, R <: Real,
+        IR <: AbstractInverseRetractionMethod, TR <: AbstractRetractionMethod,
+        TSC <: StoppingCriterion, VTM <: AbstractVectorTransportMethod,
+        VR <: AbstractVector{<:R}, VPT <: AbstractVector{<:Tuple{<:P, <:T}}, VT <: AbstractVector{<:T},
+    } <: AbstractManoptSolverState
+    approx_errors::VR
+    bundle::VPT
     c::R
     d::T
     inverse_retraction_method::IR
-    lin_errors::AbstractVector{R}
+    lin_errors::VR
     m::R
     p::P
     p_last_serious::P
     retraction_method::TR
     bundle_size::Integer
     stop::TSC
-    transported_subgradients::AbstractVector{T}
-    vector_transport_method::VT
+    transported_subgradients::VT
+    vector_transport_method::VTM
     X::T
     α::R
     α₀::R
     ε::R
     δ::R
     η::R
-    λ::AbstractVector{R}
+    λ::VR
     μ::R
     ν::R
     sub_problem::Pr
     sub_state::St
     function ProximalBundleMethodState(
-            M::TM,
-            sub_problem::Pr,
-            sub_state::St;
+            M::TM, sub_problem::Pr, sub_state::St;
             p::P = rand(M),
-            m::R = 0.0125,
             inverse_retraction_method::IR = default_inverse_retraction_method(M, typeof(p)),
             retraction_method::TR = default_retraction_method(M, typeof(p)),
-            stopping_criterion::SC = StopWhenLagrangeMultiplierLess(1.0e-8) |
-                StopAfterIteration(5000),
+            stopping_criterion::SC = StopWhenLagrangeMultiplierLess(1.0e-8) | StopAfterIteration(5000),
             bundle_size::Integer = 50,
             vector_transport_method::VT = default_vector_transport_method(M, typeof(p)),
             X::T = zero_vector(M, p),
-            α₀::R = 1.2,
-            ε::R = 1.0e-2,
-            δ::R = 1.0,
-            μ::R = 0.5,
+            m::Real = 0.0125, α₀::Real = 1.2, ε::Real = 1.0e-2, δ::Real = 1.0, μ::Real = 0.5,
         ) where {
-            P,
-            T,
-            Pr <: Union{AbstractManoptProblem, F} where {F},
-            St <: AbstractManoptSolverState,
-            R <: Real,
-            IR <: AbstractInverseRetractionMethod,
-            TM <: AbstractManifold,
-            TR <: AbstractRetractionMethod,
-            SC <: StoppingCriterion,
-            VT <: AbstractVectorTransportMethod,
+            P, T, TM <: AbstractManifold,
+            Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+            IR <: AbstractInverseRetractionMethod, TR <: AbstractRetractionMethod,
+            SC <: StoppingCriterion, VT <: AbstractVectorTransportMethod,
         }
-        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
-        # Initialize index set, bundle points, linearization errors, and stopping parameter
-        approx_errors = [zero(R)]
-        bundle = [(copy(M, p), copy(M, p, X))]
-        c = zero(R)
-        d = copy(M, p, X)
-        lin_errors = [zero(R)]
-        transported_subgradients = [copy(M, p, X)]
-        α = zero(R)
-        λ = [zero(R)]
-        η = zero(R)
-        ν = zero(R)
-        return new{P, T, Pr, St, R, IR, TR, SC, VT}(
-            approx_errors,
-            bundle,
-            c,
-            d,
-            inverse_retraction_method,
-            lin_errors,
-            m,
-            p,
-            copy(M, p),
-            retraction_method,
-            bundle_size,
-            stopping_criterion,
-            transported_subgradients,
-            vector_transport_method,
-            X,
-            α,
-            α₀,
-            ε,
-            δ,
-            η,
-            λ,
-            μ,
-            ν,
-            sub_problem,
-            sub_state,
+        R = promote_type(typeof(m), typeof(α₀), typeof(ε), typeof(δ), typeof(μ))
+        m = convert(R, m); α₀ = convert(R, α₀); ε = convert(R, ε); δ = convert(R, δ); μ = convert(R, μ)
+        _sub_state = maybe_wrap_evaluation_type(sub_state)
+        return ProximalBundleMethodState(
+            sub_problem, _sub_state;
+            approx_errors = [zero(R)], bundle = [(copy(M, p), copy(M, p, X))], c = zero(R), d = copy(M, p, X),
+            inverse_retraction_method = inverse_retraction_method, lin_errors = [zero(R)],
+            m = m, p = p, p_last_serious = copy(M, p), retraction_method = retraction_method,
+            bundle_size = bundle_size, stopping_criterion = stopping_criterion, transported_subgradients = [copy(M, p, X)],
+            vector_transport_method = vector_transport_method, X = X, α = zero(R), α₀ = α₀, ε = ε, δ = δ, μ = μ,
+            λ = [zero(R)], η = zero(R), ν = zero(R)
+        )
+    end
+    function ProximalBundleMethodState(
+            sub_problem::Pr, sub_state::St;
+            approx_errors::VR, bundle::VPT, c::R, d::T, inverse_retraction_method::IR,
+            lin_errors::VR, m::R, p::P, p_last_serious::P, retraction_method::TR, bundle_size::Integer,
+            stopping_criterion::TSC, transported_subgradients::VT, vector_transport_method::VTM,
+            X::T, α::R, α₀::R, ε::R, δ::R, η::R, λ::VR, μ::R, ν::R
+        ) where {
+            P, T, Pr, St <: AbstractManoptSolverState, R <: Real,
+            IR <: AbstractInverseRetractionMethod, TR <: AbstractRetractionMethod,
+            TSC <: StoppingCriterion, VTM <: AbstractVectorTransportMethod,
+            VR <: AbstractVector, VPT <: AbstractVector, VT <: AbstractVector,
+        }
+        return new{P, T, Pr, St, R, IR, TR, TSC, VTM, VR, VPT, VT}(
+            approx_errors, bundle, c, d, inverse_retraction_method,
+            lin_errors, m, p, p_last_serious, retraction_method, bundle_size,
+            stopping_criterion, transported_subgradients, vector_transport_method,
+            X, α, α₀, ε, δ, η, λ, μ, ν, sub_problem, sub_state,
         )
     end
 end
+ProximalBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Bunde Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function ProximalBundleMethodState(
-        M::AbstractManifold,
-        sub_problem = proximal_bundle_method_subsolver;
-        evaluation::E = AllocatingEvaluation(),
-        kwargs...,
+        M::AbstractManifold, sub_problem = proximal_bundle_method_subsolver;
+        evaluation::E = AllocatingEvaluation(), kwargs...,
     ) where {E <: AbstractEvaluationType}
     cfs = ClosedFormSubSolverState(; evaluation = evaluation)
     return ProximalBundleMethodState(M, sub_problem, cfs; kwargs...)
@@ -176,15 +149,27 @@ end
 get_subgradient(pbms::ProximalBundleMethodState) = pbms.d
 
 function show(io::IO, pbms::ProximalBundleMethodState)
+    print(io, "ProximalBundleMethodState(", pbms.sub_problem, ", ", pbms.sub_state, "; ")
+    print(io, "approx_errors = ", pbms.approx_errors, ", bundle = ", pbms.bundle, ", c = ", pbms.c)
+    print(io, ", d = ", pbms.d, "inverse_retraction_method = ", pbms.inverse_retraction_method)
+    print(io, ", lin_errors = ", pbms.lin_errors, ", m = ", pbms.m, ", p = ", pbms.p, ", p_last_serious = ", pbms.p_last_serious)
+    print(io, ", retraction_method = ", pbms.retraction_method, ", bundle_size = ", pbms.bundle_size)
+    print(io, ", stopping_criterion = ", pbms.stop, ", transported_subgradients = ", pbms.transported_subgradients)
+    print(io, ", vector_transport_method = ", pbms.vector_transport_method, ", X = ", pbms.X)
+    print(io, ", α = ", pbms.α, ", α₀ = ", pbms.α₀, ", ε = ", pbms.ε, "δ = ", pbms.δ, "η = ", pbms.η, "λ = ", pbms.λ, ", μ = ", pbms.μ, ", ν = ", pbms.ν)
+    return print(io, ")")
+end
+function status_summary(pbms::ProximalBundleMethodState; context::Symbol = :default)
+    (context === :short) && return repr(pbms)
     i = get_count(pbms, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(pbms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the proximal bundle method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pbms.stop) ? "Yes" : "No"
     s = """
     # Solver state for `Manopt.jl`s Proximal Bundle Method
     $Iter
-
     ## Parameters
-
     * bundle size:                                $(pbms.bundle_size)
     * inverse retraction:                         $(pbms.inverse_retraction_method)
     * descent test parameter:                     $(pbms.m)
@@ -198,9 +183,9 @@ function show(io::IO, pbms::ProximalBundleMethodState)
     * proximal parameter μ:                       $(pbms.μ)
 
     ## Stopping criterion
-    $(status_summary(pbms.stop))
+    $(_in_str(status_summary(pbms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_PBM_dk = raw"""

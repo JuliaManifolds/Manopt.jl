@@ -10,16 +10,19 @@ using Test, Manopt, ManifoldsBase, Manifolds
         X_zero = zero_vector(M, p)
 
         st = GradientDescentState(
-            M;
-            p = p,
-            stopping_criterion = StopAfterIteration(20),
-            stepsize = Manopt.ConstantStepsize(M),
+            M; p = p,
+            stopping_criterion = StopAfterIteration(20), stepsize = Manopt.ConstantStepsize(M),
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 
         a = StoreStateAction(M; store_fields = [:p, :X])
+
+        @test Manopt.status_summary(a) == repr(a)
+        io = IOBuffer()
+        show(io, MIME"text/plain"(), a)
+        @test String(take!(io)) == repr(a)
 
         @test !has_storage(a, Manopt.PointStorageKey(:p))
         @test !has_storage(a, Manopt.VectorStorageKey(:X))

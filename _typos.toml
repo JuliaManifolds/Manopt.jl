@@ -3,7 +3,7 @@ methodes = "methodes" # french
 Serie = "Serie" # french
 sur = "sur" # french
 cmo = "cmo" # often used abbreviation for constrained manifold objective
-
+nd = "nd" # like in 2nd
 [files]
 extend-exclude = [
 "tutorials/*.html",

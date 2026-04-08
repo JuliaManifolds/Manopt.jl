@@ -45,6 +45,15 @@ mutable struct LanczosState{T, R, SC, SCN, B, TM, C} <: AbstractManoptSolverStat
     Hp::T              # `Hess_f`` A temporary vector for evaluations of the Hessian
     Hp_residual::T     # A residual vector
     S::T               # store the tangent vector that solves the minimization problem
+    function LanczosState(;
+            X::T, σ::R, stopping_criterion::SC, stopping_criterion_newton::SCN, Lanczos_vectors::B,
+            tridig_matrix::TM, coefficients::C, Hp::T, Hp_residual::T, S::T
+        ) where {T, SC <: StoppingCriterion, SCN <: StoppingCriterion, R, B, TM, C}
+        return new{T, R, SC, SCN, B, TM, C}(
+            X, σ, stopping_criterion, stopping_criterion_newton, Lanczos_vectors,
+            tridig_matrix, coefficients, Hp, Hp_residual, S
+        )
+    end
 end
 function LanczosState(
         TpM::TangentSpace;
@@ -59,17 +68,11 @@ function LanczosState(
     tridig = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
     coeffs = zeros(maxIterLanczos)
     Lanczos_vectors = typeof(X)[]
-    return LanczosState{T, R, SC, SCN, typeof(Lanczos_vectors), typeof(tridig), typeof(coeffs)}(
-        X,
-        σ,
-        stopping_criterion,
-        stopping_criterion_newton,
-        Lanczos_vectors,
-        tridig,
-        coeffs,
-        copy(TpM, X),
-        copy(TpM, X),
-        copy(TpM, X),
+    return LanczosState(;
+        X = X, σ = σ, stopping_criterion = stopping_criterion,
+        stopping_criterion_newton = stopping_criterion_newton,
+        Lanczos_vectors = Lanczos_vectors, tridig_matrix = tridig, coefficients = coeffs,
+        Hp = copy(TpM, X), Hp_residual = copy(TpM, X), S = copy(TpM, X),
     )
 end
 function get_solver_result(ls::LanczosState)
@@ -83,13 +86,21 @@ function set_parameter!(ls::LanczosState, ::Val{:σ}, σ)
     ls.σ = σ
     return ls
 end
-
-function show(io::IO, ls::LanczosState)
+function Base.show(io::IO, ls::LanczosState)
+    print(io, "LanczosState(; X = ", ls.X, ", σ = ", ls.σ, ", stopping_criterion = ", ls.stop)
+    print(io, ", stopping_criterion_newton = ", ls.stop_newton, ", ")
+    print(io, "Lanczos_vectors = ", ls.Lanczos_vectors, ", ", "tridig_matrix = ", ls.tridig_matrix, ", ")
+    print(io, "coefficients = ", ls.X); print(io, ", Hp = ", ls.Hp, ", ")
+    print(io, "Hp_residual = ", ls.Hp_residual, ", ", "S = ", ls.S)
+    return print(io, ")")
+end
+function status_summary(ls::LanczosState; context::Symbol = :default)
+    (context === :short) && return repr(ls)
     i = get_count(ls, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ls.stop) ? "Yes" : "No"
     vectors = length(ls.Lanczos_vectors)
-    s = """
+    return """
     # Solver state for `Manopt.jl`s Lanczos Iteration
     $Iter
     ## Parameters
@@ -102,7 +113,6 @@ function show(io::IO, ls::LanczosState)
     (b) For the Newton sub solver
     $(status_summary(ls.stop_newton))
     This indicates convergence: $Conv"""
-    return print(io, s)
 end
 
 #
@@ -239,7 +249,7 @@ end
 #
 _math_sc_firstorder = raw"""
 ```math
-m(X_k) \leq m(0)
+m(X_k) ≤ m(0)
 \quad\text{ and }\quad
 \lVert \operatorname{grad} m(X_k) \rVert ≤ θ \lVert X_k \rVert^2
 ```
@@ -253,7 +263,7 @@ solver indicating that the model function at the current (outer) iterate,
 
 $_doc_ARC_model
 
-defined on the tangent space ``$(_math(:TangentSpace))entSpace)))`` fulfills at the current iterate ``X_k`` that
+defined on the tangent space ``$(_math(:TangentSpace))`` fulfils at the current iterate ``X_k`` that
 
 $_math_sc_firstorder
 
@@ -323,10 +333,12 @@ function (c::StopWhenFirstOrderProgress)(
     prog && (c.at_iteration = k)
     return prog
 end
-function status_summary(c::StopWhenFirstOrderProgress)
+function status_summary(c::StopWhenFirstOrderProgress; context::Symbol = :default)
+    (context == :short) && return repr(sc)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "First order progress with θ=$(c.θ):\t$s"
+    _is_inline(context) && return "First order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
+    return "A stopping criterion to stop when the Lanczos model has fpund a certain first order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(c::StopWhenFirstOrderProgress) = true
 function show(io::IO, c::StopWhenFirstOrderProgress)
@@ -377,15 +389,13 @@ function get_reason(c::StopWhenAllLanczosVectorsUsed)
     end
     return ""
 end
-function status_summary(c::StopWhenAllLanczosVectorsUsed)
+function status_summary(c::StopWhenAllLanczosVectorsUsed; context::Symbol = :default)
+    (context === :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "All Lanczos vectors ($(c.maxLanczosVectors)) used:\t$s"
+    return (context === :inline ? "All $(c.maxLanczosVectors) Lanczos vectors used:$(_MANOPT_INDENT)" : "Stop when all $(c.maxLanczosVectors) Lanczos vectors are used\n$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(c::StopWhenAllLanczosVectorsUsed) = false
 function show(io::IO, c::StopWhenAllLanczosVectorsUsed)
-    return print(
-        io,
-        "StopWhenAllLanczosVectorsUsed($(repr(c.maxLanczosVectors)))\n    $(status_summary(c))",
-    )
+    return print(io, "StopWhenAllLanczosVectorsUsed($(repr(c.maxLanczosVectors)))")
 end

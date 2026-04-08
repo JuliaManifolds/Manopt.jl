@@ -166,8 +166,11 @@ function get_message(alms::AugmentedLagrangianMethodState)
     return get_message(alms.sub_state)
 end
 
-function show(io::IO, alms::AugmentedLagrangianMethodState)
+function status_summary(alms::AugmentedLagrangianMethodState; context::Symbol = :default)
+    (context === :short) && (return repr(alms))
     i = get_count(alms, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(alms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the augmented Lagrandigan method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(alms.stop) ? "Yes" : "No"
     s = """
@@ -182,10 +185,9 @@ function show(io::IO, alms::AugmentedLagrangianMethodState)
     * current penalty: $(alms.penalty)
 
     ## Stopping criterion
-
-    $(status_summary(alms.stop))
+    $(_in_str(status_summary(alms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_alm_λ_update = raw"""

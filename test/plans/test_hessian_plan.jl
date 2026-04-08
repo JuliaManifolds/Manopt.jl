@@ -32,12 +32,15 @@ using LRUCache, Manifolds, Manopt, Test, Random
         @test get_hessian(mp, p, X) == 0.5 * X
         get_hessian!(mp, Y, p, X)
         @test Y == 0.5 * X
-        # precondition
+        # precondition - alweays identity, since the precon we use in mho2 is id as well
         @test get_preconditioner(mp, p, X) == X
         get_preconditioner!(mp, Y, p, X)
         @test Y == X
+        # show / status summary
+        @test startswith(Manopt.status_summary(mho), "A second order objective providing a cost, a gradient")
+        @test contains(Manopt.status_summary(mho), "preconditioner") == (mho === mho2)
     end
-    @testset "Objective Decorator passthrough" begin
+    @testset "Objective Decorator pass through" begin
         Y1 = zero_vector(M, p)
         Y2 = zero_vector(M, p)
         for obj in [mho1, mho2, mho3, mho4]

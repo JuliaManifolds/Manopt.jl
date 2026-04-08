@@ -82,18 +82,18 @@ using RecursiveArrayTools
     @test all(get_iterate(s_exact) .== p0)
 
     osm = PrimalDualSemismoothNewtonState(
-        M;
-        m = m,
-        n = n,
-        p = zero.(p0),
-        X = X0,
-        primal_stepsize = 0.0,
-        dual_stepsize = 0.0,
-        regularization_parameter = 0.0,
+        M; m = m, n = n, p = zero.(p0), X = X0,
+        primal_stepsize = 0.0, dual_stepsize = 0.0, regularization_parameter = 0.0,
     )
     set_iterate!(osm, p0)
     @test all(get_iterate(osm) .== p0)
 
+    @testset "show/repr" begin
+        for o in [pdmol, pdmoe]
+            @test startswith(Manopt.status_summary(o), "A primal dual objective")
+            @test startswith(repr(o), "PrimalDualManifoldObjective(")
+        end
+    end
     @testset "test Mutating/Allocation Problem Variants" begin
         pdmoa = PrimalDualManifoldObjective(
             f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator = DΛ, Λ = Λ
@@ -190,16 +190,22 @@ using RecursiveArrayTools
         d1(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Residual:")
+        @test startswith(Manopt.status_summary(d1), "A DebugAction to print the dual residual with format")
+        @test startswith(repr(d1), "DebugDualResidual(; ")
 
         d2 = DebugPrimalResidual(; storage = a, io = io)
         d2(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Primal Residual: ")
+        @test startswith(Manopt.status_summary(d2), "A DebugAction to print the primal residual with format")
+        @test startswith(repr(d2), "DebugPrimalResidual(; ")
 
         d3 = DebugPrimalDualResidual(; storage = a, io = io)
         d3(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "PD Residual: ")
+        @test startswith(Manopt.status_summary(d3), "A DebugAction to print the primal dual residual with format")
+        @test startswith(repr(d3), "DebugPrimalDualResidual(; ")
 
         d4 = DebugPrimalChange(; storage = a, prefix = "Primal Change: ", io = io)
         d4(p_exact, s_exact, 1)
@@ -220,6 +226,8 @@ using RecursiveArrayTools
         d7(p_exact, s_exact, 1)
         s = String(take!(io))
         @test startswith(s, "Dual Change:")
+        @test startswith(repr(d7), "DebugDualChange(; ")
+        @test startswith(Manopt.status_summary(d7), "A DebugAction to print the change of the dual variable")
 
         d7a = DebugDualChange((X0, n); storage = a, io = io)
         d7a(p_exact, s_exact, 1)

@@ -23,6 +23,11 @@ abstract type Stepsize end
 
 get_message(::S) where {S <: Stepsize} = ""
 
+function Base.show(io::IO, ::MIME"text/plain", ams::Stepsize)
+    multiline = get(io, :multiline, true)
+    return multiline ? status_summary(io, ams) : show(io, ams)
+end
+
 """
     initialize_stepsize!(sm::Stepsize)
 
@@ -183,22 +188,13 @@ end
 
 @doc "$_doc_linesearch_backtrack"
 function linesearch_backtrack!(
-        M::AbstractManifold,
-        q,
-        f::TF,
-        p,
-        s,
-        decrease,
-        contract,
-        η::T;
-        lf0::Real = f(M, p),
-        gradient = nothing,
+        M::AbstractManifold, q, f::TF, p, s, decrease, contract, η::T;
+        lf0::Real = f(M, p), gradient = nothing,
         Dlf0 = isnothing(gradient) ? nothing : real(inner(M, p, gradient, η)),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         additional_increase_condition = (M, p) -> true,
         additional_decrease_condition = (M, p) -> true,
-        stop_when_stepsize_less::Real = 0.0,
-        stop_when_stepsize_exceeds::Real = max_stepsize(M, p) / norm(M, p, η),
+        stop_when_stepsize_less::Real = 0.0, stop_when_stepsize_exceeds::Real = max_stepsize(M, p) / norm(M, p, η),
         stop_increasing_at_step = 100,
         stop_decreasing_at_step = 1000,
         report_messages_in::NamedTuple = (;),

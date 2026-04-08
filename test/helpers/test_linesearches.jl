@@ -26,12 +26,8 @@ using Test
     x0 = vcat(zeros(n_dims - 1), 1.0)
     ls_hz = Manopt.LineSearchesStepsize(M, LineSearches.HagerZhang())
     x_opt = quasi_Newton(
-        M,
-        rosenbrock,
-        rosenbrock_grad!,
-        x0;
-        stepsize = ls_hz,
-        debug = [],
+        M, rosenbrock, rosenbrock_grad!, x0;
+        stepsize = ls_hz, debug = [],
         evaluation = InplaceEvaluation(),
         stopping_criterion = StopAfterIteration(1000) | StopWhenGradientNormLess(1.0e-6),
         return_state = true,
@@ -39,6 +35,7 @@ using Test
 
     @test rosenbrock(M, get_iterate(x_opt)) < 1.503084
     @test startswith(sprint(show, ls_hz), "LineSearchesStepsize(HagerZhang")
+    @test startswith(Manopt.status_summary(ls_hz), "A step size wrapper for LineSearches.jl")
 
     # make sure get_last_stepsize works
     mgo = ManifoldGradientObjective(

@@ -8,6 +8,9 @@
 """
 module Manopt
 
+# When indenting something in print, use two spaces (or maybe \t later?)
+_MANOPT_INDENT = "  "
+
 import Base: &, copy, getindex, identity, length, setindex!, show, |
 import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
@@ -287,7 +290,7 @@ export AbstractDecoratedManifoldObjective,
     EmbeddedManifoldObjective,
     ScaledManifoldObjective,
     ManifoldCountObjective,
-    NonlinearLeastSquaresObjective,
+    ManifoldNonlinearLeastSquaresObjective,
     ManifoldAlternatingGradientObjective,
     ManifoldCostGradientObjective,
     ManifoldCostObjective,
@@ -342,6 +345,7 @@ export AbstractGradientSolverState,
     ProjectedGradientMethodState,
     ProximalBundleMethodState,
     ProximalGradientMethodState,
+    ProximalPointState,
     RecordSolverState,
     StepsizeState,
     StochasticGradientDescentState,
@@ -599,7 +603,7 @@ export render_asymptote
 #
 # Debugs
 export DebugSolverState, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
-export DebugChange, DebugGradientChange
+export DebugCallback, DebugChange, DebugGradientChange
 export DebugIterate, DebugIteration, DebugDivider, DebugTime
 export DebugFeasibility
 export DebugCost, DebugStoppingCriterion
