@@ -314,9 +314,9 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
     end
     function ConjugateResidualState(
             TpM::TangentSpace,
-            slso::SymmetricLinearSystemObjective;
-            X::T = rand(TpM), r::T = (-get_gradient(TpM, slso, X)), d::T = copy(TpM, r),
-            Ar::T = get_hessian(TpM, slso, X, r), Ad::T = copy(TpM, Ar), α::Real = 0.0, β::Real = 0.0,
+            aslso::AbstractSymmetricLinearSystemObjective;
+            X::T = rand(TpM), r::T = (-get_gradient(TpM, aslso, X)), d::T = copy(TpM, r),
+            Ar::T = get_hessian(TpM, aslso, X, r), Ad::T = copy(TpM, Ar), α::Real = 0.0, β::Real = 0.0,
             stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) | StopWhenGradientNormLess(1.0e-8),
             warm_start::Bool = true,
             kwargs...,

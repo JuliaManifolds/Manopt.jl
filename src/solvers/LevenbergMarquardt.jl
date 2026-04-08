@@ -190,14 +190,14 @@ function LevenbergMarquardt!(
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
         damping_increase_factor::Real = 5.0,
-        damping_reduction_threshold::Real = Inf,
         damping_increase_threshold::Real = Inf,
+        damping_reduction_threshold::Real = Inf,
         damping_reduction_factor::Real = 1 / damping_increase_factor,
         damping_term_min::Real = 0.1,
         damping_term_max::Real = Inf,
         initial_damping_term::Real = damping_term_min,
         debug = [DebugWarnIfCostIncreases()],
-        candidate_accepance_threshold::Real = 0.2,
+        candidate_acceptance_threshold::Real = 0.2,
         X = zero_vector(M, p),
         initial_residual_values = zeros(number_eltype(p), residuals_count(get_objective(nlso))),
         initial_jacobian_f = fill(nothing, length(get_objective(nlso).objective)),
@@ -232,11 +232,10 @@ function LevenbergMarquardt!(
         damping_reduction_threshold = damping_reduction_threshold,
         damping_reduction_factor = damping_reduction_factor,
         candidate_acceptance_threshold = candidate_acceptance_threshold,
-        damping_term_min,
+        damping_term_min = damping_term_min, damping_term_max = damping_term_max,
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,
         minimum_acceptable_model_improvement = minimum_acceptable_model_improvement,
-        initial_jacobian_f = initial_jacobian_f,
     )
     dlms = decorate_state!(lms; debug = debug, kwargs...)
     solve!(nlsp, dlms)
@@ -296,7 +295,7 @@ function step_solver!(
     retract!(M, lms.q, lms.p, lms.direction, lms.retraction_method)
 
     # Evaluate improvement of actual cost divided by predicted cost improvement
-    cost_improvement = get_cost(M, nlso, lms.p) - get_cost(M, nlso, q)
+    cost_improvement = get_cost(M, nlso, lms.p) - get_cost(M, nlso, lms.q)
     ρ = cost_improvement / model_improvement
     # Update damping term and iterate
     if ρ >= lms.damping_reduction_threshold
@@ -308,7 +307,7 @@ function step_solver!(
         lms.damping_term *= lms.damping_increase_factor
         lms.damping_term = min(lms.damping_term, lms.damping_term_max)
     end
-    if ρ >= lms.candidate_acceptance_factor # enough improvement: accept candidate
+    if ρ >= lms.candidate_acceptance_threshold # enough improvement: accept candidate
         copyto!(M, lms.p, lms.q)
         get_residuals!(M, lms.residual_values, nlso, lms.p)
         for (o, jb) in zip(nlso.objective, lms.jacobian_f)

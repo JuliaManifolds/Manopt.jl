@@ -389,9 +389,9 @@ mutable struct LevenbergMarquardtState{
             p = rand(M), X = zero_vector(M, p), direction = zero_vector(M, p),
             stopping_criterion::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-            candidate_acceptance_factor::Real = 0.2,
+            candidate_acceptance_threshold::Real = 0.2,
             damping_increase_factor::Real = 5.0,
-            damping_increase_threshold::Real = candidate_acceptance_factor,
+            damping_increase_threshold::Real = candidate_acceptance_threshold,
             damping_reduction_threshold::Real = Inf,
             damping_reduction_factor::Real = 0.5,
             damping_term_min::Real = 0.1,
@@ -401,15 +401,15 @@ mutable struct LevenbergMarquardtState{
         )
         # TODO: what if initial:Jacobian_f is still nothing? Fill it?
         # We could try checking if the provided sub_state actually needs `jacobian_f` or not but it's just about having a nicer error message.
-        (candidate_acceptance_factor <= 0 || candidate_acceptance_factor >= 1) && throw(ArgumentError("The value of `candidate_acceptance_factor` must be strictly between 0 and 1, received $candidate_acceptance_factor"))
+        (candidate_acceptance_threshold <= 0 || candidate_acceptance_threshold >= 1) && throw(ArgumentError("The value of `candidate_acceptance_threshold` must be strictly between 0 and 1, received $(candidate_acceptance_threshold)"))
         (damping_term_min <= 0) && throw(ArgumentError("The value of damping_term_min must be strictly above 0, received $damping_term_min"))
         (damping_increase_factor <= 1) && throw(ArgumentError("The value of `damping_increase_factor must be strictly above 1, received $damping_increase_factor"))
-        (damping_decrease_factor >= 1) && throw(ArgumentError("The value of `damping_reduction_factor must be strictly below 1, received $β_reduction"))
+        (damping_reduction_factor >= 1) && throw(ArgumentError("The value of `damping_reduction_factor must be strictly below 1, received $β_reduction"))
         _sub_state = maybe_wrap_evaluation_type(sub_state)
         R = promote_type(
-            typeof(candidate_acceptance_factor), typeof(damping_term_min), typeof(dampiing_increase_factor), typeof(damping_increase_threshold),
+            typeof(candidate_acceptance_threshold), typeof(damping_term_min), typeof(damping_increase_factor), typeof(damping_increase_threshold),
             typeof(damping_reduction_threshold), typeof(damping_reduction_factor), typeof(damping_term_min),
-            typeof(damoing_term_max), typeof(damping_term), typeof(minimum_acceptable_model_improvement)
+            typeof(damping_term_max), typeof(damping_term), typeof(minimum_acceptable_model_improvement)
         )
         return LevenbergMarquardtState(
             sub_problem, sub_state;

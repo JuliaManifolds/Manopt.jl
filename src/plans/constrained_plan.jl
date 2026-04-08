@@ -106,10 +106,8 @@ respectively, is created.
 Feasibility of points with respect to the constraints is determined up to the tolerance `atol`.
 """
 struct ConstrainedManifoldObjective{
-        E <: AbstractEvaluationType,
-        MO <: AbstractManifoldObjective,
-        EMO <: Union{AbstractVectorGradientFunction, Nothing},
-        IMO <: Union{AbstractVectorGradientFunction, Nothing},
+        E <: AbstractEvaluationType, MO <: AbstractManifoldObjective,
+        EMO <: Union{AbstractVectorGradientFunction, Nothing}, IMO <: Union{AbstractVectorGradientFunction, Nothing},
     } <: AbstractManifoldObjective{E}
     objective::MO
     equality_constraints::EMO
@@ -132,8 +130,7 @@ end
 
 # Try to infer the number of constraints
 function _number_of_constraints(
-        g,
-        grad_g;
+        g, grad_g;
         function_type::Union{AbstractVectorialType, Nothing} = nothing,
         jacobian_type::Union{AbstractVectorialType, Nothing} = nothing,
         M::Union{AbstractManifold, Nothing} = nothing,
@@ -1039,11 +1036,8 @@ You can also provide the evaluated vectors for the values of `g` and `h` as keyw
 in case you had them evaluated before.
 """
 function get_feasibility_status(
-        M,
-        cmo,
-        p;
-        g = get_inequality_constraints(M, cmo, p),
-        h = get_equality_constraints(M, cmo, p),
+        M, cmo, p;
+        g = get_inequality_constraints(M, cmo, p), h = get_equality_constraints(M, cmo, p),
     )
     g_violated = sum(g .> 0)
     h_violated = sum(h .!= 0)

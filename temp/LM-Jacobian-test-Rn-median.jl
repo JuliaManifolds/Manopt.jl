@@ -45,7 +45,7 @@ cost(M, p) = sum(distance(M, p, q) for q in pts)
 # Default Residual CG on this approach – works but probably allocates a bit too much (matrices coordinates/vector...)
 q1 = LevenbergMarquardt(
     M, Fs, p0;
-    damping_increase_factor = 8.0, candidate_accepance_threshold = 0.2,
+    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2,
     damping_term_min = 1.0e-5, ε = 1.0e-1, # α_mode = :Strict,
     robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)),
     debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop, 100],
@@ -55,7 +55,7 @@ q1 = LevenbergMarquardt(
 
 q2 = LevenbergMarquardt(
     M, Fs, p0;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
+    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
     robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)),
     debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop, 100],
     sub_state = CoordinatesNormalSystemState(M),
@@ -65,7 +65,7 @@ q2 = LevenbergMarquardt(
 
 function run_lm_benchmark_1()
     q1b = copy(M, p0)
-    LevenbergMarquardt!(M, Fs, q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)))
+    LevenbergMarquardt!(M, Fs, q1b; damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)))
     return q1b
 end
 
@@ -77,7 +77,7 @@ function run_lm_benchmark_2()
     q2b = copy(M, p0)
     LevenbergMarquardt!(
         M, Fs, q2b;
-        β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)), sub_state = CoordinatesNormalSystemState(M),
+        damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)), sub_state = CoordinatesNormalSystemState(M),
     )
     return q2b
 end
