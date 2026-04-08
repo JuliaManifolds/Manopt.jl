@@ -248,7 +248,7 @@ end
 
         x = [0.7011245948687502, -0.1726003159556036, 0.38798265967671103, -0.5728026616491424]
         x_lrbfgs = quasi_Newton(
-            M, F, grad_f, x; memory_size = -1,
+            M, F, grad_f, x;
             basis = get_basis(M, x, DefaultOrthonormalBasis()),
             memory_size = -1,
             stopping_criterion = StopWhenGradientNormLess(1.0e-9) | StopAfterIteration(1000),

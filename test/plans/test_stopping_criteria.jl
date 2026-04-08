@@ -424,9 +424,9 @@ end
 
         @test startswith(
             to_display_string(sc),
-            "StopWhenProjectedNegativeGradientNormLess(1.0e-10)\n",
+            "A StoppingCriterion to stop when the negative projected gradient norm is less than",
         )
-        @test startswith(Manopt.status_summary(sc), "|proj (-grad f)| < 1.0e-10")
+        @test startswith(Manopt.status_summary(sc; context = :inline), "|proj (-grad f)| < 1.0e-10")
 
         Manopt.set_parameter!(sc, Val(:MinGradNorm), 1.0e-5)
         @test sc.threshold == 1.0e-5

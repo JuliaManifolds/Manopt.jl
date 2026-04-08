@@ -903,14 +903,18 @@ function get_reason(c::StopWhenProjectedNegativeGradientNormLess)
     end
     return ""
 end
-function status_summary(c::StopWhenProjectedNegativeGradientNormLess)
+function status_summary(c::StopWhenProjectedNegativeGradientNormLess; context::Symbol = :default)
+    (context === :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "|proj (-grad f)| < $(c.threshold): $s"
+    (context === :inline) && return "|proj (-grad f)| < $(c.threshold): $s"
+    return "A StoppingCriterion to stop when the negative projected gradient norm is less than a threshold of $(c.threshold):\n$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(c::StopWhenProjectedNegativeGradientNormLess) = true
 function show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
-    return print(io, "StopWhenProjectedNegativeGradientNormLess($(c.threshold))\n    $(status_summary(c))")
+    print(io, "StopWhenProjectedNegativeGradientNormLess(", c.threshold, "; norm = ", c.norm)
+    !ismissing(c.outer_norm) && print(io, ", outer_norm = ", c.outer_norm)
+    return print(io, ")")
 end
 
 """
