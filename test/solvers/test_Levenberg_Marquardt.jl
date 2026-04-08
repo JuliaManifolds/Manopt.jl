@@ -246,7 +246,7 @@ end
         p = [0.7, -1.2]
         B = DefaultOrthonormalBasis()
 
-        nlso = NonlinearLeastSquaresObjective(
+        nlso = ManifoldNonlinearLeastSquaresObjective(
             F_reg_r2(ts_r2, xs_r2, ys_r2), jacF_reg_r2(ts_r2, xs_r2, ys_r2), length(ts_r2) * 2,
         )
 
@@ -386,7 +386,7 @@ end
                 jacobian_type = CoefficientVectorialType(B),
             )
             # Build as a single block with one robustifier (not componentwise wrapping).
-            nlso = NonlinearLeastSquaresObjective([vgf], [r])
+            nlso = ManifoldNonlinearLeastSquaresObjective([vgf], [r])
 
             lmso = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = penalty)
 
@@ -612,7 +612,7 @@ end
         ]
 
         robustifier = fill((1 / 20) ∘ HuberRobustifier(), length(Fs))
-        nlso = NonlinearLeastSquaresObjective(Fs, robustifier)
+        nlso = ManifoldNonlinearLeastSquaresObjective(Fs, robustifier)
         init_cost = get_cost(M, nlso, p0)
 
         A = spzeros(manifold_dimension(M), manifold_dimension(M))
@@ -677,7 +677,7 @@ end
                 ) for i in eachindex(pts)
         ]
         robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs))
-        nlso = NonlinearLeastSquaresObjective(Fs, robustifier)
+        nlso = ManifoldNonlinearLeastSquaresObjective(Fs, robustifier)
         lmso = LevenbergMarquardtLinearSurrogateObjective(nlso)
 
         X = zero_vector(M, p0)

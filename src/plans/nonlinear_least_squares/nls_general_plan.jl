@@ -1,5 +1,5 @@
 @doc """
-    NonlinearLeastSquaresObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{E}
+    ManifoldNonlinearLeastSquaresObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{E}
 
 An objective to model the robustified nonlinear least squares problem
 
@@ -17,13 +17,13 @@ $(_problem(:NonLinearLeastSquares))
 
 # Constructors
 
-    NonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer, robustifier=IdentityRobustifier(); kwargs...)
+    ManifoldNonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer, robustifier=IdentityRobustifier(); kwargs...)
 
 Create a nonlinear least squares objective for a single vectorial function `f` and its `jacobian`,
 where `range_dimension` is the dimension of the vector space `f` maps into. These three are internally
 wrapped into a [`VectorGradientFunction`](@ref) and calls the following constructor.
 
-    NonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction, robustifier::AbstractRobustifierFunction=IdentityRobustifier())
+    ManifoldNonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction, robustifier::AbstractRobustifierFunction=IdentityRobustifier())
 
 Create a nonlinear least squares objective for a given vectorial function.
 Note that for this constructor the `robustifier` is applied componentwise to each component of `vf`,
@@ -31,7 +31,7 @@ i.e. wrapped in a [`ComponentwiseRobustifierFunction`](@ref).
 Internally this wraps both `vf` and `robustifier` in an array and calls the next constructor.
 Hence to not use the componentwise robustifier but a global one, pass `[vf,]` and `[robustifier,]` instead.
 
-    NonlinearLeastSquaresObjective(fs::Vector{<:AbstractVectorGradientFunction}, robustifiers::Vector{<:AbstractRobustifierFunction}=fill(IdentityRobustifier(), length(fs)))
+    ManifoldNonlinearLeastSquaresObjective(fs::Vector{<:AbstractVectorGradientFunction}, robustifiers::Vector{<:AbstractRobustifierFunction}=fill(IdentityRobustifier(), length(fs)))
 
 Given a vector of [`AbstractVectorGradientFunction`](@ref)`s to represent the single blocks
 and a vector of robustifiers, one for each block, create the corresponding nonlinear least squares objective.
@@ -55,17 +55,15 @@ $(_kwargs(:evaluation))
 
 [`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref)
 """
-struct NonlinearLeastSquaresObjective{
-        E <: AbstractEvaluationType,
-        VF <: AbstractVectorGradientFunction{E},
-        RF <: AbstractRobustifierFunction,
-        TVC <: AbstractVector,
+struct ManifoldNonlinearLeastSquaresObjective{
+        E <: AbstractEvaluationType, VF <: AbstractVectorGradientFunction{E},
+        RF <: AbstractRobustifierFunction, TVC <: AbstractVector,
     } <: AbstractManifoldFirstOrderObjective{E, Vector{VF}}
     objective::Vector{VF}
     robustifier::Vector{RF}
     value_cache::TVC
     # block components case constructor
-    function NonlinearLeastSquaresObjective(
+    function ManifoldNonlinearLeastSquaresObjective(
             fs::Vector{VF},
             robustifiers::Vector{RV} = fill(IdentityRobustifier(), length(fs)),
             value_cache::TVC = zeros(sum(length(f) for f in fs)),
@@ -79,7 +77,7 @@ struct NonlinearLeastSquaresObjective{
         return new{E, VF, RV, TVC}(fs, robustifiers, value_cache)
     end
     # single component case constructor
-    function NonlinearLeastSquaresObjective(
+    function ManifoldNonlinearLeastSquaresObjective(
             f::F,
             robustifier::R = IdentityRobustifier(),
             value_cache::TVC = zeros(length(f)),
@@ -88,11 +86,8 @@ struct NonlinearLeastSquaresObjective{
         return new{E, F, typeof(cr), TVC}([f], [cr], value_cache)
     end
 end
-
-function NonlinearLeastSquaresObjective(
-        f,
-        jacobian,
-        range_dimension::Integer,
+function ManifoldNonlinearLeastSquaresObjective(
+        f, jacobian, range_dimension::Integer,
         robustifier::AbstractRobustifierFunction = IdentityRobustifier();
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         jacobian_tangent_basis::AbstractBasis = DefaultOrthonormalBasis(),
@@ -100,28 +95,24 @@ function NonlinearLeastSquaresObjective(
         function_type::AbstractVectorialType = FunctionVectorialType(),
     )
     vgf = VectorGradientFunction(
-        f,
-        jacobian,
-        range_dimension;
-        evaluation = evaluation,
-        jacobian_type = jacobian_type,
-        function_type = function_type,
+        f, jacobian, range_dimension;
+        evaluation = evaluation, jacobian_type = jacobian_type, function_type = function_type,
     )
-    return NonlinearLeastSquaresObjective(vgf, robustifier)
+    return ManifoldNonlinearLeastSquaresObjective(vgf, robustifier)
 end
 
 """
-    residuals_count(nlso::NonlinearLeastSquaresObjective)
+    residuals_count(nlso::ManifoldNonlinearLeastSquaresObjective)
 
-Return the total number of residuals in [`NonlinearLeastSquaresObjective`](@ref) `nlso`,
+Return the total number of residuals in [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`,
 which is the sum of the single block components lengths.
 """
-function residuals_count(nlso::NonlinearLeastSquaresObjective)
+function residuals_count(nlso::ManifoldNonlinearLeastSquaresObjective)
     return sum(length(o) for o in nlso.objective)
 end
 
 """
-    get_cost(M::AbstractManifold, nlso::NonLinearLeastSquaresObjective, p)
+    get_cost(M::AbstractManifold, nlso::ManifoldNonLinearLeastSquaresObjective, p)
 
 Compute the cost of the least squares objective, i.e.
 
@@ -133,7 +124,7 @@ where ``F_i: $(_math(:Manifold)) → ℝ^{n_i}`` is the ``i``th block component 
 and each ``ρ_i: ℝ → ℝ`` is a [* R robustifier function, cf. [`AbstractRobustifierFunction`](@ref),
 for each such a block component.
 """
-function get_cost(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p)
+function get_cost(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p)
     v = 0.0
     start = 0
     get_residuals!(M, nlso.value_cache, nlso, p)
@@ -167,10 +158,10 @@ function _get_cost(
 end
 
 _doc_get_gradient_nlso = """
-    get_gradient(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
-    get_gradient!(M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
+    get_gradient(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...)
+    get_gradient!(M::AbstractManifold, X, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...)
 
-Compute the gradient for the [`NonlinearLeastSquaresObjective`](@ref) `nlso` at the point ``p ∈ M``,
+Compute the gradient for the [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso` at the point ``p ∈ M``,
 i.e.
 
 ```math
@@ -189,13 +180,13 @@ and ``f_{i,j}(p)`` its `j`-th component function.
 """
 @doc "$(_doc_get_gradient_nlso)"
 function get_gradient(
-        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...,
+        M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...,
     )
     X = zero_vector(M, p)
     return get_gradient!(M, X, nlso, p; kwargs...)
 end
 function get_gradient!(
-        M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective, p;
+        M::AbstractManifold, X, nlso::ManifoldNonlinearLeastSquaresObjective, p;
         value_cache = nothing, jacobian_cache = fill(nothing, length(nlso.objective)),
     )
     zero_vector!(M, X, p)
@@ -254,12 +245,12 @@ end
 
 # --- Residuals
 _doc_get_residuals_nlso = """
-    get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p)
-    get_residuals!(M::AbstractManifold, v, nlso::NonlinearLeastSquaresObjective, p)
+    get_residuals(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p)
+    get_residuals!(M::AbstractManifold, v, nlso::ManifoldNonlinearLeastSquaresObjective, p)
 
 Compute the vector of residuals ``F(p) ∈ ℝ^n``, ``n = $(_tex(:sum, "1", "m")) n_i``.
 In other words this is the concatenation of the residual vectors ``F_i(p)``, ``i=1,…,m``
-of the components of the the [`NonlinearLeastSquaresObjective`](@ref) `nlso`
+of the components of the the [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`
 at the current point ``p`` on `M`.
 
 This can be computed in-place of `v`.
@@ -270,7 +261,7 @@ this function computes the “pure” residuals.
 
 @doc "$(_doc_get_residuals_nlso)"
 function get_residuals(
-        M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+        M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...
     )
     v = zeros(residuals_count(nlso))
     return get_residuals!(M, v, nlso, p; kwargs...)
@@ -278,7 +269,7 @@ end
 
 @doc "$(_doc_get_residuals_nlso)"
 function get_residuals!(
-        M::AbstractManifold, v, nlso::NonlinearLeastSquaresObjective, p; kwargs...,
+        M::AbstractManifold, v, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...,
     )
     start = 0
     for o in nlso.objective # for every block
@@ -306,9 +297,7 @@ Describes a Gradient based descent algorithm, with
 * `damping_term`:                 current value of the damping term
 * `damping_term_min`:             lower bound for the damping term
 * `damping_term_max`:             upper bound for the damping term
-* `β` :                           parameter by which the damping term is multiplied when the current
-  new point is rejected
-* `β_reduction` :                 parameter by which the damping term is multiplied when the
+* `damping_increase_factor` :
   improvement quotient exceeds `damping_reduction_threshold`.
 * `damping_reduction_threshold` : threshold for the improvement quotient above which the damping term is reduced by
   multiplying it with `β_reduction`.
@@ -316,7 +305,7 @@ Describes a Gradient based descent algorithm, with
   multiplying it with `β`.
 * `direction`:                    the current search direction, which is the solution of the linearized
   subproblem in each iteration.
-* `η`:                            Scaling factor for the sufficient cost decrease threshold required
+* `candidate_acceptance_threshold`: Scaling factor for the sufficient cost decrease threshold required
   to accept new proposal points. Allowed range: `0 < η < 1`.
 * `jacobian_f`:                   the current Jacobian of ``F`` in matrix form. Set to `nothing` if
   another representation is used.
@@ -359,112 +348,112 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(
 [`gradient_descent`](@ref), [`LevenbergMarquardt`](@ref)
 """
 mutable struct LevenbergMarquardtState{
-        P, TStop <: StoppingCriterion, TRTM <: AbstractRetractionMethod,
-        Tresidual_values, TGrad, TJac, Tparams <: Real, Pr, St,
+        P, T, R <: Real, Pr, St, TStop <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac
     } <: AbstractGradientSolverState
-    p::P
-    stop::TStop
-    retraction_method::TRTM
-    residual_values::Tresidual_values
+    candidate_acceptance_threshold::R
+    damping_increase_factor::R
+    damping_increase_threshold::R
+    damping_reduction_threshold::R
+    damping_reduction_factor::R
+    damping_term::R
+    damping_term_min::R
+    damping_term_max::R
+    direction::T
     jacobian_f::TJac
-    direction::TGrad
-    X::TGrad
-    η::Tparams
-    damping_reduction_threshold::Tparams
-    damping_increase_threshold::Tparams
-    β_reduction::Tparams
-    damping_term::Tparams
-    damping_term_min::Tparams
-    damping_term_max::Tparams
-    β::Tparams
-    minimum_acceptable_model_improvement::Tparams
+    minimum_acceptable_model_improvement::R
+    p::P
+    q::P
+    residual_values::TRes
+    retraction_method::TRTM
+    stop::TStop
     sub_problem::Pr
     sub_state::St
+    X::T
+    function LevenbergMarquardtState(sub_problem::Pr, sub_state::St;
+        candidate_acceptance_threshold::R, damping_increase_factor::R, damping_increase_threshold::R,
+        damping_reduction_threshold::R, damping_reduction_factor::R, damping_term::R,
+        damping_term_min::R, damping_term_max::R,
+        direction::T, jacobian_f::TJac, minimum_acceptable_model_improvement::R, p::P, q::P,
+        residual_values::TRes, retraction_method::TRTM, stopping_criterion::SC, X::T
+    ) where {P, T, R <: Real, Pr, St, SC <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac}
+        return new{P, T, R, Pr, St, SC, TRTM, TRes, TJac}(
+        candidate_acceptance_threshold, damping_increase_factor, damping_increase_threshold,
+        damping_reduction_threshold, damping_reduction_factor, damping_term, damping_term_min, damping_term_max,
+        direction, jacobian_f, minimum_acceptable_model_improvement, p, q, residual_values,
+        retraction_method, stopping_criterion, sub_problem, sub_state, X
+        )
+    end
     function LevenbergMarquardtState(
-            M::AbstractManifold,
-            initial_residual_values::Tresidual_values;
-            initial_jacobian_f = nothing,
-            p::P = rand(M),
-            X::TGrad = zero_vector(M, p),
-            direction::TGrad = zero_vector(M, p),
-            stopping_criterion::StoppingCriterion = StopAfterIteration(200) |
-                StopWhenGradientNormLess(1.0e-12) |
-                StopWhenStepsizeLess(1.0e-12),
+            M::AbstractManifold, sub_problem, sub_state, initial_residual_values, initial_jacobian_f = nothing;
+            p = rand(M), X = zero_vector(M, p), direction = zero_vector(M, p),
+            stopping_criterion::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-            η::Real = 0.2,
+            candidate_acceptance_factor::Real = 0.2,
+            damping_increase_factor::Real = 5.0,
+            damping_increase_threshold::Real = candidate_acceptance_factor,
             damping_reduction_threshold::Real = Inf,
-            damping_increase_threshold::Real = η,
-            β_reduction::Real = 0.5,
+            damping_reduction_factor::Real = 0.5,
             damping_term_min::Real = 0.1,
             damping_term_max::Real = Inf,
             damping_term::Real = damping_term_min,
-            β::Real = 5.0,
             minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
-            sub_problem::Pr = nothing,
-            sub_state::St = nothing,
-        ) where {P, Tresidual_values, TGrad, Pr, St}
+        )
         # TODO: what if initial:Jacobian_f is still nothing? Fill it?
         # We could try checking if the provided sub_state actually needs `jacobian_f` or not but it's just about having a nicer error message.
-        if isnothing(sub_problem) || isnothing(sub_state)
-            s = "You have to specify a solver for the sub problem, that is, both a `sub_problem` to be solved"
-            s = "$s and a `sub_state` specifying the solver."
-            isnothing(sub_problem) && (s = "$s\n The `sub_problem` was not specified.")
-            isnothing(sub_state) && (s = "$s\n The `sub_state` was not specified.")
-            throw(ArgumentError(s))
-        end
-        if η <= 0 || η >= 1
-            throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
-        end
-        if damping_term_min <= 0
-            throw(
-                ArgumentError("Value of damping_term_min must be strictly above 0, received $damping_term_min"),
-            )
-        end
-        (β <= 1) && throw(ArgumentError("Value of β must be strictly above 1, received $β"))
-        (β_reduction >= 1) && throw(ArgumentError("Value of β_reduction must be strictly below 1, received $β_reduction"))
+        (candidate_acceptance_factor <= 0 || candidate_acceptance_factor >= 1) && throw(ArgumentError("The value of `candidate_acceptance_factor` must be strictly between 0 and 1, received $candidate_acceptance_factor"))
+        (damping_term_min <= 0) && throw(ArgumentError("The value of damping_term_min must be strictly above 0, received $damping_term_min"))
+        (damping_increase_factor <= 1) && throw(ArgumentError("The value of `damping_increase_factor must be strictly above 1, received $damping_increase_factor"))
+        (damping_decrease_factor >= 1) && throw(ArgumentError("The value of `damping_reduction_factor must be strictly below 1, received $β_reduction"))
         _sub_state = maybe_wrap_evaluation_type(sub_state)
-        Tparams = promote_type(typeof(η), typeof(damping_term_min), typeof(β), typeof(β_reduction))
-        SC = typeof(stopping_criterion)
-        RM = typeof(retraction_method)
-        return new{
-            P, SC, RM, Tresidual_values, TGrad, typeof(initial_jacobian_f), Tparams, Pr, typeof(_sub_state),
-        }(
-            p,
-            stopping_criterion, retraction_method,
-            initial_residual_values, initial_jacobian_f,
-            direction, X, η, damping_reduction_threshold, damping_increase_threshold,
-            β_reduction,
-            damping_term, damping_term_min, damping_term_max,
-            β,
-            minimum_acceptable_model_improvement,
-            sub_problem, sub_state,
+        R = promote_type(
+            typeof(candidate_acceptance_factor), typeof(damping_term_min), typeof(dampiing_increase_factor), typeof(damping_increase_threshold),
+            typeof(damping_reduction_threshold), typeof(damping_reduction_factor), typeof(damping_term_min),
+            typeof(damoing_term_max), typeof(damping_term), typeof(minimum_acceptable_model_improvement)
+        )
+        return LevenbergMarquardtState(sub_problem, sub_state;
+        candidate_acceptance_threshold = convert(R, candidate_acceptance_threshold),
+        damping_increase_factor = convert(R, damping_increase_factor), damping_increase_threshold = convert(R, damping_increase_threshold),
+        damping_reduction_threshold = convert(R, damping_reduction_threshold), damping_reduction_factor = convert(R, damping_reduction_factor),
+        damping_term = convert(R, damping_term), damping_term_min = convert(R, damping_term_min), damping_term_max = convert(R, damping_term_max),
+        direction = direction, jacobian_f = initial_jacobian_f, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
+        p=p, q = copy(M,p), residual_values = initial_residual_values, retraction_method = retraction_method, stopping_criterion = stopping_criterion, X=X,
         )
     end
 end
 #
-# TODO: write a show method
 function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)
+    (context === :short) && return repr(lms)
     i = get_count(lms, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(gds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the Levenberg–Marquardt algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(lms.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(lms)) – $(Iter) $(has_converged(lms) ? "(converged)" : "")")
-    s = """
+    return """
     # Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm
     $Iter
     ## Parameters
-    * β: $(lms.β)
-    * damping reduction threshold: $(lms.damping_reduction_threshold)
-    * damping increase threshold: $(lms.damping_increase_threshold)
-    * β_reduction: $(lms.β_reduction)
-    * damping term_ $(lms.damping_term) (min: $(lms.damping_term_min))
-    * η: $(lms.η)
+    * candidate acceptance threshold: $(lms.candidate_acceptance_threshold)
+    * damping reduction threshold: $(_MANOPT_INDENT)$(lms.damping_reduction_threshold)
+    * damping reduction factor:    $(_MANOPT_INDENT)$(lms.damping_reduction_factor)
+    * damping increase threshold:  $(_MANOPT_INDENT)$(lms.damping_increase_threshold)
+    * damping increase factor:     $(_MANOPT_INDENT)$(lms.damping_increase_factor)
+    * damping term:                $(_MANOPT_INDENT)$(lms.damping_term) (min: $(lms.damping_term_min) | max: $(lms.damping_term_max))
     * retraction method: $(lms.retraction_method)
 
     ## Stopping criterion
 
-    $(status_summary(lms.stop))
+    $(status_summary(lms.stop; context = context))
     This indicates convergence: $Conv"""
-    return s
+end
+function show(io::IO, lms::LevenbergMarquardtState)
+    print(io, "LevenbergMarquardtState(", lms.sub_problem, ", ", sub_state, "; ")
+    print(io, "candidate_acceptance_threshold = ", lms.candidate_acceptance_threshold)
+    print(io, ", damping_increase_factor = ", lms.damping_increase_factor, ", damping_increase_threshold = ", lms.damping_increase_threshold)
+    print(io, ", damping_reduction_threshold = ", lms.damping_reduction_threshold, ", damping_reduction_factor = ", lms.damping_reduction_factor)
+    print(io, ", damping_term = ", lms.damping_term, ", damping_term_min = ", lms.damping_term_min, ", damping_term_max = ", lms.damping_term_max)
+    print(io, ", direction = ", lms.direction, ", jacobian_f = ", lms.jacobian_f, ". minimum_acceptable_model_improvement = ", lms.minimum_acceptable_model_improvement)
+    print(io, ", p= ", lms.p, ", q = ", lms.q, ", residual_values = ", lms.residual_values, ", retraction_method = ", lms.retraction_method, ", stopping_criterion = ", lms.stop, ", X = ",lms.X)
+    return print(io, ")")
 end
 
 #
@@ -478,12 +467,12 @@ Abstract supertype for Levenberg-Marquardt surrogates like
 [`LevenbergMarquardtLinearSurrogateObjective`](@ref) and
 [`LevenbergMarquardtLinearSurrogateCoordinatesObjective`](@ref).
 """
-abstract type AbstractLevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType} <: AbstractLinearSurrogateObjective{E, NonlinearLeastSquaresObjective{E}} end
+abstract type AbstractLevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType} <: AbstractLinearSurrogateObjective{E, ManifoldNonlinearLeastSquaresObjective{E}} end
 
 @doc """
     LevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
 
-Given an [`NonlinearLeastSquaresObjective`](@ref) `objective` and a `penalty` ``λ``,
+Given an [`ManifoldNonlinearLeastSquaresObjective`](@ref) `objective` and a `penalty` ``λ``,
 this objective represents the penalized objective for the sub-problem to solve within every step
 of the Levenberg-Marquardt algorithm following the ideas of [TriggsMcLauchlanHartleyFitzgibbon:2000](@cite) given by
 
@@ -514,7 +503,7 @@ respectively. For technical details on the scaling using ``α`` see [`get_Levenb
 
 ## Fields
 
-* `objective`:     the [`NonlinearLeastSquaresObjective`](@ref) to penalize
+* `objective`:     the [`ManifoldNonlinearLeastSquaresObjective`](@ref) to penalize
 * `penalty::R`: the damping term ``λ``
 * `ε::R`:       stabilization for ``α ≤ 1-ε`` in the rescaling of the Jacobian
 * `mode::Symbol`:  which ode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
@@ -525,7 +514,7 @@ respectively. For technical details on the scaling using ``α`` see [`get_Levenb
     LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default)
 """
 mutable struct LevenbergMarquardtLinearSurrogateObjective{
-        E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R},
+        E <: AbstractEvaluationType, R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R},
     } <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
     objective::TO
     penalty::R
@@ -533,7 +522,7 @@ mutable struct LevenbergMarquardtLinearSurrogateObjective{
     mode::Symbol
     value_cache::TVC
     function LevenbergMarquardtLinearSurrogateObjective(
-            objective::NonlinearLeastSquaresObjective{E};
+            objective::ManifoldNonlinearLeastSquaresObjective{E};
             penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default,
             residuals::TVC = zeros(residuals_count(get_objective(objective))),
         ) where {E, R <: Real, TVC <: AbstractVector}
@@ -607,7 +596,7 @@ end
 
 Compute the surrogate cost. Let ``F`` denote the vector of residuals (of a block),
 ``ρ, ρ'``, ``ρ''`` the value, first, and second derivative of the [`AbstractRobustifierFunction`](@ref)
-of the inner [`NonlinearLeastSquaresObjective`](@ref)
+of the inner [`ManifoldNonlinearLeastSquaresObjective`](@ref)
 
 ```math
 σ_k(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; index = "2"))^2, $(_tex(:qquad)) X ∈ $(_math(:TangentSpace))
@@ -940,7 +929,7 @@ C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)
 where ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``.
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
-[`NonlinearLeastSquaresObjective`](@ref) and summed up.
+[`ManifoldNonlinearLeastSquaresObjective`](@ref) and summed up.
 
 This can be computed in-place of `y`.
 
@@ -1023,7 +1012,7 @@ y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p)
 where the scaling uses ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
-[`NonlinearLeastSquaresObjective`](@ref) and summed up.
+[`ManifoldNonlinearLeastSquaresObjective`](@ref) and summed up.
 
 See also
 * [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling factor
@@ -1349,7 +1338,7 @@ If you provide an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) `B` `
 the result will be given in coordinates `c`, i.e. such that ``X = $(_tex(:sum, "i=1", "d")) c_iZ_i``.
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
-[`NonlinearLeastSquaresObjective`](@ref) and summed up.
+[`ManifoldNonlinearLeastSquaresObjective`](@ref) and summed up.
 See also [`get_normal_linear_operator`](@ref) for evaluating the corresponding linear operator of the (normal) linear system,
 and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and computation of ``C``.
 """
@@ -1361,7 +1350,7 @@ _doc_add_normal_vector_field = """
 Add the contribution of `o` / `r` to the normal linear operator tangent vector in `X` or `c`.
 See [`get_normal_vector_field`](@ref) for the mathematical details.
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
-[`NonlinearLeastSquaresObjective`](@ref) and summed up.
+[`ManifoldNonlinearLeastSquaresObjective`](@ref) and summed up.
 
 See also [`get_normal_linear_operator`](@ref) for evaluating the corresponding linear operator of the (normal) linear system,
 and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and computation of ``C``.

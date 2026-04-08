@@ -69,8 +69,7 @@ $(_note(:OutputSection))
 LevenbergMarquardt(M::AbstractManifold, args...; kwargs...)
 function LevenbergMarquardt(
         M::AbstractManifold, f, jacobian_f, num_components::Int = -1;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
     return LevenbergMarquardt(
         M, f, jacobian_f, rand(M), num_components; evaluation = evaluation, kwargs...
@@ -88,9 +87,7 @@ function LevenbergMarquardt(
             num_components = length(f(M, p))
         else
             throw(
-                ArgumentError(
-                    "For mutating evaluation num_components needs to be explicitly specified",
-                ),
+                ArgumentError("For mutating evaluation num_components needs to be explicitly specified"),
             )
         end
     end
@@ -101,21 +98,16 @@ function LevenbergMarquardt(
     return LevenbergMarquardt(M, vgf, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt(
-        M::AbstractManifold,
-        vgf::VectorGradientFunction,
-        p;
+        M::AbstractManifold, vgf::VectorGradientFunction, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        robustifier = IdentityRobustifier(),
-        kwargs...,
+        robustifier = IdentityRobustifier(), kwargs...,
     )
     # For a single vector gradient function, we always treat robustification componentwise
     nlso = ManifoldNonlinearLeastSquaresObjective(vgf, ComponentwiseRobustifierFunction(robustifier))
     return LevenbergMarquardt(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt(
-        M::AbstractManifold,
-        vgf::Vector{<:VectorGradientFunction},
-        p;
+        M::AbstractManifold, vgf::Vector{<:VectorGradientFunction}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         robustifier::Vector{<:AbstractRobustifierFunction} = [IdentityRobustifier() for _ in 1:length(vgf)],
         kwargs...,
@@ -158,27 +150,20 @@ function LevenbergMarquardt!(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         jacobian_tangent_basis::AbstractBasis = default_basis(M, typeof(p)),
         jacobian_type::AbstractVectorialType = CoefficientVectorialType(jacobian_tangent_basis),
-        function_type::AbstractVectorialType = FunctionVectorialType(),
-        kwargs...,
+        function_type::AbstractVectorialType = FunctionVectorialType(), kwargs...,
     )
     if num_components == -1
         if evaluation === AllocatingEvaluation()
             num_components = length(f(M, p))
         else
             throw(
-                ArgumentError(
-                    "For mutating evaluation num_components needs to be explicitly specified",
-                ),
+                ArgumentError("For mutating evaluation num_components needs to be explicitly specified"),
             )
         end
     end
     nlso = ManifoldNonlinearLeastSquaresObjective(
-        f,
-        jacobian_f,
-        num_components;
-        evaluation = evaluation,
-        jacobian_type = jacobian_type,
-        function_type = function_type,
+        f, jacobian_f, num_components;
+        evaluation = evaluation, jacobian_type = jacobian_type, function_type = function_type,
     )
     return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
 end
@@ -188,30 +173,31 @@ function LevenbergMarquardt!(
         robustifier = IdentityRobustifier(),
         kwargs...,
     )
-    nlso = NonlinearLeastSquaresObjective(vgf, robustifier)
+    nlso = ManifoldNonlinearLeastSquaresObjective(vgf, robustifier)
     return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt!(
-        M::AbstractManifold,
-        vgf::Vector{<:VectorGradientFunction},
-        p;
+        M::AbstractManifold, vgf::Vector{<:VectorGradientFunction}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         robustifier::Vector{<:AbstractRobustifierFunction} = [IdentityRobustifier() for _ in 1:length(vgf)],
         kwargs...,
     )
-    nlso = NonlinearLeastSquaresObjective(vgf, robustifier)
+    nlso = ManifoldNonlinearLeastSquaresObjective(vgf, robustifier)
     return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt!(
         M::AbstractManifold, nlso::O, p;
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
-        debug = [DebugWarnIfCostIncreases()],
-        β::Real = 5.0,
+        damping_increase_factor::Real = 5.0,
         damping_reduction_threshold::Real = Inf,
-        β_reduction::Real = 0.5,
-        η::Real = 0.2,
+        damping_increase_threshold::Real = Inf,
+        damping_reduction_factor::Real = 1/increase_factor,
         damping_term_min::Real = 0.1,
+        damping_term_max::Real = Inf,
+        initial_damping_term::Real = damping_term_min,
+        debug = [DebugWarnIfCostIncreases()],
+        candidate_accepance_threshold::Real = 0.2,
         X = zero_vector(M, p),
         initial_residual_values = zeros(number_eltype(p), residuals_count(get_objective(nlso))),
         initial_jacobian_f = fill(nothing, length(get_objective(nlso).objective)),
@@ -241,10 +227,11 @@ function LevenbergMarquardt!(
     lms = LevenbergMarquardtState(
         M, initial_residual_values;
         p = p,
-        # TODO Rename to have either only math symbols or only speaking names but not both
-        β = β,
+        damping_increase_factor = damping_increase_factor,
+        damping_increase_threshold = damping_reduction_threshold,
         damping_reduction_threshold = damping_reduction_threshold,
-        β_reduction = β_reduction,
+        damping_reduction_factor = damping_decrease_factor,
+
         η = η,
         damping_term_min,
         stopping_criterion = stopping_criterion,
@@ -295,19 +282,21 @@ function step_solver!(
     #solve!(lms.sub_problem, lms.sub_state)
     #lms.direction .= -get_solver_result(lms.sub_problem, lms.sub_state)
     if norm(M, lms.p, lms.direction) > max_stepsize(M, lms.p)
-        # Vector too long; we can reject the step without evaluating the objective
-        lms.damping_term *= lms.β
+        # Vector too long:
+        # we reject the step without evaluating the objective
+        # and increase damping
+        lms.damping_term *= lms.damping_increase_factor
         return lms
     end
     model_improvement = (get_cost(lms.sub_problem, ZeroTangentVector()) - get_cost(lms.sub_problem, lms.direction)) / 2
     if model_improvement < lms.minimum_acceptable_model_improvement
         # Model improvement insufficient, reject step and increase damping term
-        lms.damping_term *= lms.β
+        lms.damping_term *= lms.damping_increase_factor
+        lms.damping_term = min(lms.damping_term, lms.damping_term_max)
         return lms
     end
-    # New iterate candidate - maybe store in state?
-
-    q = retract(M, lms.p, lms.direction, lms.retraction_method)
+    # New iterate candidate
+    retract!(M, lms.q, lms.p, lms.direction, lms.retraction_method)
 
     # Evaluate improvement of actual cost divided by predicted cost improvement
     cost_improvement = get_cost(M, nlso, lms.p) - get_cost(M, nlso, q)
@@ -315,15 +304,15 @@ function step_solver!(
     # Update damping term and iterate
     if ρ >= lms.damping_reduction_threshold
         # very good match between model and actual cost: decrease damping term
-        lms.damping_term *= lms.β_reduction
+        lms.damping_term *= lms.damping_reduction_factor
         lms.damping_term = max(lms.damping_term, lms.damping_term_min)
     elseif ρ < lms.damping_increase_threshold
         # poor match between model and actual cost: increase damping term
-        lms.damping_term *= lms.β
+        lms.damping_term *= lms.damping_increase_factor
         lms.damping_term = min(lms.damping_term, lms.damping_term_max)
     end
-    if ρ >= lms.η # enough improvement: accept
-        copyto!(M, lms.p, q)
+    if ρ >= lms.candidate_acceptance_factor # enough improvement: accept candidate
+        copyto!(M, lms.p, lms.q)
         get_residuals!(M, lms.residual_values, nlso, lms.p)
         for (o, jb) in zip(nlso.objective, lms.jacobian_f)
             if !isnothing(jb)
@@ -350,7 +339,7 @@ end
 # Special cases for
 
 function get_last_stepsize(
-        dmp::DefaultManoptProblem{mT, <:NonlinearLeastSquaresObjective},
+        dmp::DefaultManoptProblem{mT, <:ManifoldNonlinearLeastSquaresObjective},
         lms::LevenbergMarquardtState,
         k,
     ) where {mT <: AbstractManifold}

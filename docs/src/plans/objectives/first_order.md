@@ -11,7 +11,7 @@ AbstractManifoldFirstOrderObjective
 ManifoldFirstOrderObjective
 ManifoldAlternatingGradientObjective
 ManifoldStochasticGradientObjective
-NonlinearLeastSquaresObjective
+ManifoldNonlinearLeastSquaresObjective
 ```
 
 While the [`ManifoldFirstOrderObjective`](@ref) allows to provide different
@@ -43,7 +43,7 @@ get_gradient_function
 
 #### Robustifiers
 
-Inside the [`NonlinearLeastSquaresObjective`](@ref) one can use robustifiers. The following ones are provided
+Inside the [`ManifoldNonlinearLeastSquaresObjective`](@ref) one can use robustifiers. The following ones are provided
 
 ```@autodocs
 Modules = [Manopt]

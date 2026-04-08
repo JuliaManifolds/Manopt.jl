@@ -10,7 +10,7 @@ coordinate-based Jacobians in a single, selected basis instead of being centered
 linear operators.
 ## Fields
 
-* `objective`:     the [`NonlinearLeastSquaresObjective`](@ref) to penalize
+* `objective`:     the [`ManifoldNonlinearLeastSquaresObjective`](@ref) to penalize
 * `penalty::Real`: the damping term ``λ``
 * `ε::Real`:       stabilization for ``α ≤ 1-ε`` in the rescaling of the Jacobian, that
 * `mode::Symbol`:  which mode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
@@ -24,7 +24,7 @@ linear operators.
     LevenbergMarquardtLinearSurrogateCoordinatesObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default )
 """
 mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
-        E <: AbstractEvaluationType, R <: Real, TO <: NonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R}, TJC <: AbstractVector, TB <: AbstractBasis,
+        E <: AbstractEvaluationType, R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R}, TJC <: AbstractVector, TB <: AbstractBasis,
     } <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
     objective::TO
     penalty::R
@@ -34,7 +34,7 @@ mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
     jacobian_cache::TJC
     basis::TB
     function LevenbergMarquardtLinearSurrogateCoordinatesObjective(
-            objective::NonlinearLeastSquaresObjective{E};
+            objective::ManifoldNonlinearLeastSquaresObjective{E};
             penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default,
             residuals::TVC = zeros(residuals_count(get_objective(objective))),
             jacobian_cache::TJC = fill(nothing, length(get_objective(objective).objective)),
@@ -147,7 +147,7 @@ end
     )
 
 Add the (Triggs correction, residual-like) linear operator corresponding to the `lmsco`
-surrogate to vector `y`. It is assumed that `lmsco.value_cache` has been filled in 
+surrogate to vector `y`. It is assumed that `lmsco.value_cache` has been filled in
 `step_solver!` of `LevenbergMarquardt``, so we can just use it here.
 """
 function add_linear_operator_coord!(

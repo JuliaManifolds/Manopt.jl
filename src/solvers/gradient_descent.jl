@@ -37,12 +37,8 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 [`gradient_descent`](@ref)
 """
 mutable struct GradientDescentState{
-        P,
-        T,
-        TStop <: StoppingCriterion,
-        TStepsize <: Stepsize,
-        TDirection <: DirectionUpdateRule,
-        TRTM <: AbstractRetractionMethod,
+        P, T, TStop <: StoppingCriterion, TStepsize <: Stepsize,
+        TDirection <: DirectionUpdateRule, TRTM <: AbstractRetractionMethod,
     } <: AbstractGradientSolverState
     p::P
     X::T
