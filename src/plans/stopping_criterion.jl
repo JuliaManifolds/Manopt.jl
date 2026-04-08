@@ -321,7 +321,6 @@ function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSol
     c.storage(mp, s, k)
     return false
 end
-indicates_convergence(c::StopWhenChangeLess) = false
 function get_reason(c::StopWhenChangeLess)
     if (c.last_change < c.threshold) && (c.at_iteration >= 0)
         return "At iteration $(c.at_iteration) the algorithm performed a step with a change ($(c.last_change)) less than $(c.threshold).\n"
