@@ -6,8 +6,9 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6] unreleased
+## [0.6.0] unreleased
 
+This is a breaking change since the JuMP extension is dropped.
 ### Added
 
 * A robustified version of the Riemannian Levenberg Marquardt algorithm
@@ -15,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* `NonlinearLeastSquaresObjective` is now called `ManifoldNonlinearLeastSquaresObjective` (#569).
+* (breaking) discontinue the `JuMP` extension. (#532)
+* Improved formatting of the references in the Readme.md (#586)
+* Bump compat for RecursiveArrayTools.jl to include version 4
+* deactivate CompatHelper Action and solely use dependabot
 * (breaking change) renamed `CoordinateVectorialType` to `CoefficientVectorialType` to have a
   consistent naming that anything with respect to a basis is called “coefficients”
 * moved the old closed-form-in-coordinates subsolver for `LevenbergMarquardt` handling to the subsolver; if you implemented your own, pass it to `sub_problem`,
@@ -23,6 +29,11 @@ set the `sub_state` to indicate allocating or in-place evaluation and change the
 
 ### Fixed
 
+* Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (#569)
+* Unified all `show` methods and their human readable analoga `status_summary` throughout the package (#569)
+* Fixed some text descriptions of a few stopping criteria.
+* unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
+* the `NesterovRule` now also stores an actual `AbstractRetractionMethod` instead of implicitly always using the default one.
 * formerly the `NonlinearLeastSquaresObjective` would “pass through” the `get_jacobian` to its
   inner `VectorGradientFunction`, which was misleading, since the objective itself maps into the
   reals and hence has a differential or a gradient, but mot a matrix (or vector of gradients) Jacobian.

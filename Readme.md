@@ -61,6 +61,15 @@ The following packages are related to `Manopt.jl`
 
 If you use `Manopt.jl` in your work, please cite the following
 
+> _Bergmann, R._ (2022).
+> **Manopt.jl: Optimization on Manifolds in Julia**,
+> Journal of Open Source Software, 7(70), 3866.<br/>
+> doi: [10.21105/joss.03866](https://doi.org/10.21105/joss.03866)
+
+<details>
+
+<summary><code>Bergmann:2022</code> (BibLaTeX) </summary>
+
 ```biblatex
 @article{Bergmann2022,
     Author    = {Ronny Bergmann},
@@ -75,7 +84,16 @@ If you use `Manopt.jl` in your work, please cite the following
 }
 ```
 
+</details>
+
 To refer to a certain version or the source code in general please cite for example
+
+> _Bergmann, R._ (2026). **Manopt.jl**, Zenodo. <br/>
+> doi: [10.5281/zenodo.4290905](https://doi.org/10.5281/zenodo.4290905)
+
+<details>
+
+  <summary><code>Manoptjl-zenodo-mostrecent</code> (BibLaTeX)</summary>
 
 ```biblatex
 @software{manoptjl-zenodo-mostrecent,
@@ -88,9 +106,21 @@ To refer to a certain version or the source code in general please cite for exam
 }
 ```
 
-for the most recent version or a corresponding version specific DOI, see [the list of all versions](https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224290905%22&sort=-version&all_versions=True).
+</details>
+
+for the most recent version.
+For a corresponding version specific DOI, see [the list of all versions](https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224290905%22&sort=-version&all_versions=True).
 
 If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/) please consider to cite
+
+> _Axen, S. D., Baran, M., Bergmann, R., Rzecki, K._ (2023).
+> **Manifolds.jl: An Extensible Julia Framework for Data Analysis on Manifolds**,
+> ACM Transactions on Mathematical Software, Volume 49, Issue 4, Article No. 33, pages 1–23. <br>
+> doi: [10.1145/3618296](https://doi.org/10.1145/3618296),
+> arXiv: [2106.08777](https://arxiv.org/abs/2106.08777)
+<details>
+
+  <summary><code>AxenBaranBergmannRzecki:2023</code>(BibLaTeX)</summary>
 
 ```biblatex
 @article{AxenBaranBergmannRzecki:2023,
@@ -100,14 +130,15 @@ If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifold
     JOURNAL   = {ACM Transactions on Mathematical Software},
     MONTH     = {dec},
     NUMBER    = {4},
-    TITLE     = {Manifolds.jl: An Extensible Julia Framework for Data Analysis on Manifolds},
+    TITLE     = {Manifolds.Jl: An Extensible Julia Framework for Data Analysis on Manifolds},
     VOLUME    = {49},
     YEAR      = {2023}
 }
 ```
 
+</details>
+
 as well.
-Note that all citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format.
 
 `Manopt.jl` belongs to the Manopt family:
 

@@ -74,6 +74,25 @@ function set_parameter!(slso::SymmetricLinearSystemObjective, symbol::Symbol, va
     return slso
 end
 
+function Base.show(io::IO, slso::SymmetricLinearSystemObjective{E}) where {E}
+    print(io, "SymmetricLinearSystemObjective(")
+    print(io, slso.A!!); print(io, ", "); print(io, slso.b!!); print(io, "; ")
+    print(io, _to_kw(E))
+    return print(io, ")")
+end
+
+function status_summary(slso::SymmetricLinearSystemObjective{E}; context::Symbol = :default) where {E}
+    _is_inline(context) && (return repr(slso))
+    return """
+    An objetcive modelling a symmetric linear system Ax=b, i.e. with a symmetric matrix A
+    implemented as a function `(M, p, X) -> Y` performing the matrix vector multiplication in the tangent space,
+    and a function `b(M,p)` returning the vector on the right hand side in the current tangent space.
+    Both can also be defined in-place. Here they are $(E === InplaceEvaluation ? "in place" : "allocating").
+
+    # Fields
+    * A: $(slso.A!!)
+    * b: $(slso.b!!)"""
+end
 @doc """
     get_cost(TpM::TangentSpace, aslso::SymmetricLinearSystemObjective, X)
 
@@ -284,32 +303,26 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
     β::R
     stop::TStop
     warm_start::Bool
-    function ConjugateResidualState(
-            TpM::TangentSpace, slso::AbstractSymmetricLinearSystemObjective;
-            X::T = rand(TpM),
-            r::T = (-get_gradient(TpM, slso, X)),
-            d::T = copy(TpM, r),
-            Ar::T = get_hessian(TpM, slso, X, r),
-            Ad::T = copy(TpM, Ar),
-            α::R = 0.0,
-            β::R = 0.0,
-            stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
-                StopWhenGradientNormLess(1.0e-8),
-            warm_start::Bool = true,
-            kwargs...,
+    function ConjugateResidualState(;
+            X::T, r::T, d::T, Ar::T, Ad::T, α::R, β::R, rAr::R, stopping_criterion::SC, warm_start::Bool
         ) where {T, R, SC <: StoppingCriterion}
         crs = new{T, R, SC}()
-        crs.X = X
-        crs.r = r
-        crs.d = d
-        crs.Ar = Ar
-        crs.Ad = Ad
-        crs.α = α
-        crs.β = β
-        crs.rAr = zero(R)
-        crs.stop = stopping_criterion
+        crs.X = X; crs.r = r; crs.d = d; crs.Ar = Ar; crs.Ad = Ad
+        crs.α = α; crs.β = β; crs.rAr = rAr; crs.stop = stopping_criterion
         crs.warm_start = warm_start
         return crs
+    end
+    function ConjugateResidualState(
+            TpM::TangentSpace,
+            slso::SymmetricLinearSystemObjective;
+            X::T = rand(TpM), r::T = (-get_gradient(TpM, slso, X)), d::T = copy(TpM, r),
+            Ar::T = get_hessian(TpM, slso, X, r), Ad::T = copy(TpM, Ar), α::Real = 0.0, β::Real = 0.0,
+            stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) | StopWhenGradientNormLess(1.0e-8),
+            warm_start::Bool = true,
+            kwargs...,
+        ) where {T, SC <: StoppingCriterion}
+        R = promote_type(typeof(α), typeof(β))
+        return ConjugateResidualState(; X = X, r = r, d = d, Ar = Ar, Ad = Ad, α = α, β = β, rAr = zero(R), stopping_criterion = stopping_criterion, warm_start = warm_start)
     end
 end
 
@@ -325,10 +338,11 @@ function set_gradient!(crs::ConjugateResidualState, ::AbstractManifold, r)
     return crs
 end
 
-function show(io::IO, crs::ConjugateResidualState)
+function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
     i = get_count(crs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(crs.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(crs)) – $(Iter) $(has_converged(crs) ? "(converged)" : "")")
     s = """
     # Solver state for `Manopt.jl`s Conjugate Residual Method
     $Iter
@@ -337,11 +351,18 @@ function show(io::IO, crs::ConjugateResidualState)
     * β: $(crs.β)
 
     ## Stopping criterion
-    $(status_summary(crs.stop))
-
+    $(_in_str(status_summary(crs.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv
     """
-    return print(io, s)
+    return s
+end
+
+function Base.show(io::IO, crs::ConjugateResidualState)
+    print(io, "ConjugateResidualState(;")
+    print(io, " X = ", crs.X, ", d = ", crs.d, ", r = ", crs.r, ", α = ", crs.α, ", β = ", crs.β)
+    print(io, "Ar = ", crs.Ar, ", Ad = ", crs.Ad, ", rAr = ", crs.rAr)
+    print(io, ", stopping_criterion = ", status_summary(crs.stop; context = :short))
+    return print(io, ")")
 end
 
 #
@@ -414,15 +435,12 @@ function get_reason(swrr::StopWhenRelativeResidualLess)
     end
     return ""
 end
-function status_summary(swrr::StopWhenRelativeResidualLess)
+function status_summary(swrr::StopWhenRelativeResidualLess; context::Symbol = :default)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "‖r^(k)‖ / c < ε:\t$s"
+    return _is_inline(context) ? "‖r^(k)‖ / c < ε:$(_MANOPT_INDENT)$s" : "A stopping criterion to stop when the relative residual is less than the threshold of $(swrr.ε)\n$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(::StopWhenRelativeResidualLess) = true
 function show(io::IO, swrr::StopWhenRelativeResidualLess)
-    return print(
-        io,
-        "StopWhenRelativeResidualLess($(swrr.c), $(swrr.ε))\n    $(status_summary(swrr))",
-    )
+    return print(io, "StopWhenRelativeResidualLess($(swrr.c), $(swrr.ε))")
 end

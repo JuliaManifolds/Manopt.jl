@@ -4,6 +4,7 @@ Serie = "Serie" # french
 sur = "sur" # french
 cmo = "cmo" # often used abbreviation for constrained manifold objective
 BA = "BA" # Maybe rename that shortened version in the tests
+nd = "nd" # like in 2nd
 
 [files]
 extend-exclude = [

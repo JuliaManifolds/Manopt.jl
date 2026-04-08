@@ -25,14 +25,27 @@ using ManifoldDiff
 # Dummy types
 struct DummyManifold <: AbstractManifold{ManifoldsBase.ℝ} end
 
-struct DummyDecoratedObjective{E, O <: AbstractManifoldObjective} <:
-    Manopt.AbstractDecoratedManifoldObjective{E, O}
+struct DummyDecoratedObjective{E, O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{E, O}
     objective::O
 end
-function DummyDecoratedObjective(
-        o::O
-    ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
+function DummyDecoratedObjective(o::O) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
     return DummyDecoratedObjective{E, O}(o)
+end
+function Manopt.status_summary(
+        ddo::DummyDecoratedObjective; kwargs...
+    )
+    return "A dummy decorator for " * Manopt.status_summary(ddo.objective; kwargs...)
+end
+function Base.show(io::IO, ddo::DummyDecoratedObjective)
+    print(io, "DummyDecoratedObjective(")
+    print(io, ddo.objective)
+    return print(io, ")")
+end
+struct DummyEmptyDecoratedObjective{E, O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{E, O}
+    objective::O
+    function DummyEmptyDecoratedObjective(o::O) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
+        return new{E, O}(o)
+    end
 end
 
 struct DummyProblem{M <: AbstractManifold} <: AbstractManoptProblem{M} end
@@ -43,6 +56,8 @@ mutable struct DummyState <: AbstractManoptSolverState
     storage::Vector{Float64}
 end
 DummyState() = DummyState([])
+Manopt.status_summary(ds::DummyState; context = :Default) = "A Manopt Test state with storage $(ds.storage)"
+Base.show(io::IO, ds::DummyState) = print(io, "Manopt.Test.DummyState($(ds.storage))")
 Manopt.get_iterate(::DummyState) = NaN
 Manopt.set_parameter!(s::DummyState, ::Val, v) = s
 Manopt.set_parameter!(s::DummyState, ::Val{:StoppingCriterion}, v) = s

@@ -29,6 +29,9 @@ using Manopt: get_value, get_value_function, get_gradient_function
     hess_g2!(M, Y, p, X) = copyto!(Y, -X)
     # verify a few case
     vgf_fa = VectorGradientFunction(g, grad_g, 2)
+    io = IOBuffer()
+    show(io, MIME"text/plain"(), vgf_fa)
+    @test String(take!(io)) == Manopt.status_summary(vgf_fa)
     @test get_value_function(vgf_fa) === g
     @test get_gradient_function(vgf_fa) == grad_g
     vgf_va = VectorGradientFunction(
@@ -141,4 +144,5 @@ using Manopt: get_value, get_value_function, get_gradient_function
         get_hessian!(M, Z, vhf, p, X, 2)
         @test Z == gh[2]
     end
+    @test repr(CoordinateVectorialType(DefaultOrthonormalBasis(ℝ))) == "CoordinateVectorialType(DefaultOrthonormalBasis(ℝ))"
 end

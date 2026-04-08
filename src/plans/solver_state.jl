@@ -15,6 +15,11 @@ $(_fields(:stopping_criterion; name = "stop"))
 """
 abstract type AbstractManoptSolverState end
 
+function Base.show(io::IO, ::MIME"text/plain", ams::AbstractManoptSolverState)
+    multiline = get(io, :multiline, true)
+    return multiline ? status_summary(io, ams) : show(io, ams)
+end
+
 """
     ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState
 
@@ -34,8 +39,11 @@ function ClosedFormSubSolverState(;
     ) where {E <: AbstractEvaluationType}
     return ClosedFormSubSolverState(evaluation)
 end
+Base.show(io::IO, cfss::ClosedFormSubSolverState{E}) where {E} = print(io, "ClosedFormSubSolverState(; $(_to_kw(E)))")
+status_summary(cfss::ClosedFormSubSolverState; context::Symbol = :default) = repr(cfss)
 
 maybe_wrap_evaluation_type(s::AbstractManoptSolverState) = s
+maybe_wrap_evaluation_type(n::Nothing) = n
 function maybe_wrap_evaluation_type(::E) where {E <: AbstractEvaluationType}
     return ClosedFormSubSolverState{E}()
 end
@@ -116,8 +124,8 @@ should be returned at the end of a solver instead of the usual minimizer.
 struct ReturnSolverState{S <: AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
 end
-status_summary(rst::ReturnSolverState) = status_summary(rst.state)
-show(io::IO, rst::ReturnSolverState) = print(io, "ReturnSolverState($(rst.state))")
+status_summary(rst::ReturnSolverState; context::Symbol = :default) = status_summary(rst.state; context = context)
+show(io::IO, rst::ReturnSolverState) = print(io, "ReturnSolverState(", rst.state, ")")
 dispatch_state_decorator(::ReturnSolverState) = Val(true)
 
 """
@@ -319,6 +327,13 @@ a common `Type` for `AbstractStateActions` that might be triggered in decorators
 for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverState`](@ref).
 """
 abstract type AbstractStateAction end
+
+status_summary(asa::AbstractStateAction; context::Symbol = :default) = repr(asa)
+
+function Base.show(io::IO, ::MIME"text/plain", asa::AbstractStateAction)
+    multiline = get(io, :multiline, true)
+    return multiline ? status_summary(io, asa) : show(io, asa)
+end
 
 mutable struct StorageRef{T}
     x::T

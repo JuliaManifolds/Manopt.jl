@@ -68,9 +68,7 @@ calls_with_kwargs(::typeof(conjugate_residual)) = (conjugate_residual!,)
 conjugate_residual!(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual!(
-        TpM::TangentSpace,
-        aslso::AbstractSymmetricLinearSystemObjective,
-        X;
+        TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X;
         stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
             StopWhenRelativeResidualLess(
             norm(base_manifold(TpM), base_point(TpM), get_vector_field(TpM, aslso)), 1.0e-8

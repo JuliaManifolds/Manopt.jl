@@ -9,7 +9,7 @@ _doc_IPN = """
     interior_point_Newton(M, f, grad_f, Hess_f, p=rand(M); kwargs...)
     interior_point_Newton(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
     interior_point_Newton!(M, f, grad]_f, Hess_f, p; kwargs...)
-    interior_point_Newton(M, ConstrainedManifoldObjective, p; kwargs...)
+    interior_point_Newton!(M, cmo::ConstrainedManifoldObjective, p; kwargs...)
 
 perform the interior point Newton method following [LaiYoshise:2024](@cite).
 
@@ -193,7 +193,7 @@ function interior_point_Newton!(
         ),
         step_problem = DefaultManoptProblem(_step_M, step_objective),
         _step_p = rand(_step_M),
-        step_state = StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
+        step_state = StepsizeState(; p = _step_p, X = zero_vector(_step_M, _step_p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = ArmijoLinesearch(
             _step_M;
             retraction_method = default_retraction_method(_step_M),
