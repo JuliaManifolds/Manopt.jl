@@ -8,11 +8,11 @@ ptc = NamedColors.load_paul_tol()
 export_asy = true
 show_plots = true
 add_gaussian_noise = true
-σ = π / 12
+σ = π / 18
 # For outliers we use a fixed size and a random angle to disturb them into
 r = π / 4
-N = 39 # on the range these are 0.05 apart for 39
-outlier_indices = [3, 5, 7, 35, 37]
+N = 77 # on the range these are 0.05 apart for 39
+outlier_indices = [3,4,5,6,7,8,9, 69,70,71,72,73,74,75]
 
 S = Manifolds.Sphere(2)
 M = TangentBundle(S)
@@ -50,7 +50,7 @@ Random.seed!(42)
 data = [
     if i ∈ outlier_indices
             # sample random angle
-            #α = rand(Uniform(0,2π))
+            # α = rand(Uniform(0,2π))
             # all are outliers to the left or right
             α = π / 2
             c = get_coordinates(S, q, parallel_transport_to(S, p_true, X_true, q), DefaultOrthonormalBasis())
@@ -125,12 +125,13 @@ f = VectorGradientFunction(
 )
 
 m = mean(S, data)
-p0 = ArrayPartition(m, log(S, m, data[1]))
+X0 = log(S, m, data[end])
+p0 = ArrayPartition(m, X0)
 
 # Least Squares
 P_star = LevenbergMarquardt(
     M, f, p0;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
+    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
     retraction_method = StabilizedRetraction(default_retraction_method(M)),
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
 )
@@ -143,13 +144,12 @@ qs_star = geodesic(S, p_star, X_star, ts_true)
 P_ast = LevenbergMarquardt(
     M, f, p0;
     damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
-    robustifier = 1.0e-7 ∘ HuberRobustifier(),
+    robustifier = 1.0e-12 ∘ HuberRobustifier(),
     retraction_method = StabilizedRetraction(default_retraction_method(M)),
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
 )
 p_ast = P_ast[M, :point]
 X_ast = P_ast[M, :vector]
-
 qs_ast = geodesic(S, p_ast, X_ast, ts_true)
 
 if show_plots
