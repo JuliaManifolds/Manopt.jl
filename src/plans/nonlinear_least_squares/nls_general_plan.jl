@@ -348,7 +348,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(
 [`gradient_descent`](@ref), [`LevenbergMarquardt`](@ref)
 """
 mutable struct LevenbergMarquardtState{
-        P, T, R <: Real, Pr, St, TStop <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac
+        P, T, R <: Real, Pr, St, TStop <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac,
     } <: AbstractGradientSolverState
     candidate_acceptance_threshold::R
     damping_increase_factor::R
@@ -369,18 +369,19 @@ mutable struct LevenbergMarquardtState{
     sub_problem::Pr
     sub_state::St
     X::T
-    function LevenbergMarquardtState(sub_problem::Pr, sub_state::St;
-        candidate_acceptance_threshold::R, damping_increase_factor::R, damping_increase_threshold::R,
-        damping_reduction_threshold::R, damping_reduction_factor::R, damping_term::R,
-        damping_term_min::R, damping_term_max::R,
-        direction::T, jacobian_f::TJac, minimum_acceptable_model_improvement::R, p::P, q::P,
-        residual_values::TRes, retraction_method::TRTM, stopping_criterion::SC, X::T
-    ) where {P, T, R <: Real, Pr, St, SC <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac}
+    function LevenbergMarquardtState(
+            sub_problem::Pr, sub_state::St;
+            candidate_acceptance_threshold::R, damping_increase_factor::R, damping_increase_threshold::R,
+            damping_reduction_threshold::R, damping_reduction_factor::R, damping_term::R,
+            damping_term_min::R, damping_term_max::R,
+            direction::T, jacobian_f::TJac, minimum_acceptable_model_improvement::R, p::P, q::P,
+            residual_values::TRes, retraction_method::TRTM, stopping_criterion::SC, X::T
+        ) where {P, T, R <: Real, Pr, St, SC <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac}
         return new{P, T, R, Pr, St, SC, TRTM, TRes, TJac}(
-        candidate_acceptance_threshold, damping_increase_factor, damping_increase_threshold,
-        damping_reduction_threshold, damping_reduction_factor, damping_term, damping_term_min, damping_term_max,
-        direction, jacobian_f, minimum_acceptable_model_improvement, p, q, residual_values,
-        retraction_method, stopping_criterion, sub_problem, sub_state, X
+            candidate_acceptance_threshold, damping_increase_factor, damping_increase_threshold,
+            damping_reduction_threshold, damping_reduction_factor, damping_term, damping_term_min, damping_term_max,
+            direction, jacobian_f, minimum_acceptable_model_improvement, p, q, residual_values,
+            retraction_method, stopping_criterion, sub_problem, sub_state, X
         )
     end
     function LevenbergMarquardtState(
@@ -410,13 +411,14 @@ mutable struct LevenbergMarquardtState{
             typeof(damping_reduction_threshold), typeof(damping_reduction_factor), typeof(damping_term_min),
             typeof(damoing_term_max), typeof(damping_term), typeof(minimum_acceptable_model_improvement)
         )
-        return LevenbergMarquardtState(sub_problem, sub_state;
-        candidate_acceptance_threshold = convert(R, candidate_acceptance_threshold),
-        damping_increase_factor = convert(R, damping_increase_factor), damping_increase_threshold = convert(R, damping_increase_threshold),
-        damping_reduction_threshold = convert(R, damping_reduction_threshold), damping_reduction_factor = convert(R, damping_reduction_factor),
-        damping_term = convert(R, damping_term), damping_term_min = convert(R, damping_term_min), damping_term_max = convert(R, damping_term_max),
-        direction = direction, jacobian_f = initial_jacobian_f, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
-        p=p, q = copy(M,p), residual_values = initial_residual_values, retraction_method = retraction_method, stopping_criterion = stopping_criterion, X=X,
+        return LevenbergMarquardtState(
+            sub_problem, sub_state;
+            candidate_acceptance_threshold = convert(R, candidate_acceptance_threshold),
+            damping_increase_factor = convert(R, damping_increase_factor), damping_increase_threshold = convert(R, damping_increase_threshold),
+            damping_reduction_threshold = convert(R, damping_reduction_threshold), damping_reduction_factor = convert(R, damping_reduction_factor),
+            damping_term = convert(R, damping_term), damping_term_min = convert(R, damping_term_min), damping_term_max = convert(R, damping_term_max),
+            direction = direction, jacobian_f = initial_jacobian_f, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
+            p = p, q = copy(M, p), residual_values = initial_residual_values, retraction_method = retraction_method, stopping_criterion = stopping_criterion, X = X,
         )
     end
 end
@@ -452,7 +454,7 @@ function show(io::IO, lms::LevenbergMarquardtState)
     print(io, ", damping_reduction_threshold = ", lms.damping_reduction_threshold, ", damping_reduction_factor = ", lms.damping_reduction_factor)
     print(io, ", damping_term = ", lms.damping_term, ", damping_term_min = ", lms.damping_term_min, ", damping_term_max = ", lms.damping_term_max)
     print(io, ", direction = ", lms.direction, ", jacobian_f = ", lms.jacobian_f, ". minimum_acceptable_model_improvement = ", lms.minimum_acceptable_model_improvement)
-    print(io, ", p= ", lms.p, ", q = ", lms.q, ", residual_values = ", lms.residual_values, ", retraction_method = ", lms.retraction_method, ", stopping_criterion = ", lms.stop, ", X = ",lms.X)
+    print(io, ", p= ", lms.p, ", q = ", lms.q, ", residual_values = ", lms.residual_values, ", retraction_method = ", lms.retraction_method, ", stopping_criterion = ", lms.stop, ", X = ", lms.X)
     return print(io, ")")
 end
 

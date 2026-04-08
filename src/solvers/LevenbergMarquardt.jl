@@ -16,7 +16,7 @@ The second block of signatures perform the optimization in-place of `p`.
 
 The regularization parameter is updated using a generalized scheme proposed in [Fan:2006](@cite),
 Eq. (2.2). See also [Yuan:2015](@ref) for other schemes.
-The generalized scheme offers separate thresholds for the acceptance of new points (`η`),
+The generalized scheme offers separate thresholds for the acceptance of new points (`candidate_acceptance_threshold`),
 decreasing the regularization parameter (`damping_reduction_threshold`) and increasing
 the regularization parameter (`damping_increase_threshold`).
 
@@ -47,7 +47,7 @@ Alternatively, passing a [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`
 # Keyword arguments
 
 $(_kwargs(:evaluation))
-* `η=0.2`:                   scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < η < 1`.
+* `candidate_acceptance_threshold=0.2`:                   scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < candidate_acceptance_threshold < 1`.
 * `damping_term_min=0.1`:      initial (and also minimal) value of the damping term
 * `β=5.0`:                     parameter by which the damping term is multiplied when the current new point is rejected
 * `function_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
@@ -192,7 +192,7 @@ function LevenbergMarquardt!(
         damping_increase_factor::Real = 5.0,
         damping_reduction_threshold::Real = Inf,
         damping_increase_threshold::Real = Inf,
-        damping_reduction_factor::Real = 1/increase_factor,
+        damping_reduction_factor::Real = 1 / damping_increase_factor,
         damping_term_min::Real = 0.1,
         damping_term_max::Real = Inf,
         initial_damping_term::Real = damping_term_min,
@@ -225,19 +225,16 @@ function LevenbergMarquardt!(
         sub_state_ = LevenbergMarquardtBoxSubsolver(M, sub_state_, p)
     end
     lms = LevenbergMarquardtState(
-        M, initial_residual_values;
+        M, sub_problem, sub_state, initial_residual_values, initial_jacobian_f;
         p = p,
         damping_increase_factor = damping_increase_factor,
         damping_increase_threshold = damping_reduction_threshold,
         damping_reduction_threshold = damping_reduction_threshold,
-        damping_reduction_factor = damping_decrease_factor,
-
-        η = η,
+        damping_reduction_factor = damping_reduction_factor,
+        candidate_acceptance_threshold = candidate_acceptance_threshold,
         damping_term_min,
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,
-        sub_problem = sub_problem,
-        sub_state = sub_state_,
         minimum_acceptable_model_improvement = minimum_acceptable_model_improvement,
         initial_jacobian_f = initial_jacobian_f,
     )
