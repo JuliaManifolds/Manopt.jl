@@ -719,8 +719,8 @@ function run_bundle_adjustment(data::BALDataset)
     lm_state = LevenbergMarquardt(
         M, f, p0;
         initial_jacobian_f = [Manopt.allocate_jacobian(M, fi) for fi in f],
-        β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
-        β_reduction = 0.2, damping_reduction_threshold = 0.5,
+        damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
+        damping_reduction_factor = 0.2, damping_reduction_threshold = 0.5,
         robustifier = hr,
         debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
         stopping_criterion = StopAfterIteration(10000) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-11),
