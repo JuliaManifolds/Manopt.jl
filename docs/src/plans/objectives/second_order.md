@@ -13,6 +13,7 @@ ManifoldHessianObjective
 
 ```@docs
 get_hessian
+get_hessian!
 get_preconditioner
 ```
 
