@@ -15,7 +15,7 @@ $(_problem(:NonLinearLeastSquares))
 The second block of signatures perform the optimization in-place of `p`.
 
 The regularization parameter is updated using a generalized scheme proposed in [Fan:2006](@cite),
-Eq. (2.2). See also [Yuan:2015](@ref) for other schemes.
+Eq. (2.2). See also [Yuan:2015](@cite) for other schemes.
 The generalized scheme offers separate thresholds for the acceptance of new points (`candidate_acceptance_threshold`),
 decreasing the regularization parameter (`damping_reduction_threshold`) and increasing
 the regularization parameter (`damping_increase_threshold`).
