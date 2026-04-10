@@ -8,11 +8,12 @@ ptc = NamedColors.load_paul_tol()
 export_asy = true
 show_plots = true
 add_gaussian_noise = true
-σ = π / 18
+σ = 0 * π / 16
 # For outliers we use a fixed size and a random angle to disturb them into
 r = π / 4
-N = 77 # on the range these are 0.05 apart for 39
-outlier_indices = [3,4,5,6,7,8,9, 69,70,71,72,73,74,75]
+N = 100 # on the range these are 0.05 apart for 39
+oN = 7
+outlier_indices = [7:(7+oN-1)..., [(N-6):-1:(N-6-oN+1)...]...]
 
 S = Manifolds.Sphere(2)
 M = TangentBundle(S)
@@ -20,9 +21,15 @@ R(α) = [cos(α) sin(α); -sin(α) cos(α)]
 
 # True data
 p_true = [0.0, 1.0, 0.0]
-X_true = 1.5 .* [1.0, 0.0, 1.0]
-ts_true = collect(range(; start = -0.95, stop = 0.95, length = N))
+X_true = 1.25 * [1.0, 0.0, 1.0]
+ts_true = collect(range(; start = -1.0, stop = 1.0, length = N))
 qs_true = geodesic(S, p_true, X_true, ts_true)
+
+orig_color = ptc["mutedcyan"]
+noisy_color = ptc["mutedwine"]
+
+lsq_color = ptc["mutedsand"]
+robust_color = ptc["mutedgreen"]
 
 if show_plots
     n = 30; u = range(0, stop = 2 * π, length = n); v = range(0, stop = π, length = n)
@@ -37,13 +44,13 @@ if show_plots
     wireframe!(ax1, sx, sy, sz, color = ptc["paleblue"]; transparency = true, alpha = 0.2)
     geo_line = geodesic(S, p_true, X_true, range(-1.0, 1.0; length = 1000))
     scatterlines!(
-        ax1, Point3d.(geo_line); markersize = 0, color = ptc["mutedteal"], linewidth = 2,
+        ax1, Point3d.(geo_line); markersize = 0, color = orig_color, linewidth = 2,
     )
-    scatter!(ax1, Point3d.([p_true]); markersize = 12, color = ptc["mutedteal"])
-    scatter!(ax1, Point3d.(qs_true); markersize = 8, color = ptc["mutedteal"])
+    scatter!(ax1, Point3d.([p_true]); markersize = 12, color = orig_color)
+    scatter!(ax1, Point3d.(qs_true); markersize = 8, color = orig_color)
     arrows3d!(
         ax1, Point3d.([p_true]), Point3d.([X_true]);
-        color = ptc["mutedteal"], transparency = true, shaftradius = 0.005, tiplength = 0.15, tipradius = 0.025,
+        color = orig_color, transparency = true, shaftradius = 0.0025, tiplength = 0.075, tipradius = 0.0125,
     )
 end
 Random.seed!(42)
@@ -60,7 +67,7 @@ data = [
             exp(S, q, get_vector(S, q, add_gaussian_noise ? σ * randn(2) : zeros(2), DefaultOrthonormalBasis()))
     end for (i, q) in enumerate(qs_true)
 ]
-show_plots && scatter!(ax1, Point3d.(data); markersize = 12, color = ptc["mutedrose"])
+show_plots && scatter!(ax1, Point3d.(data); markersize = 12, color = noisy_color)
 
 # Cost (Vectorial) and its gradients (Jacobian) on the tangent bundle
 # maybe as a struct / functor ?
@@ -84,7 +91,7 @@ function JF(M, P; t = ts_true, d = data)
 end
 
 function cost1(M::AbstractManifold, p, X, ti::Real, di)
-    return distance(M, exp(M, p, ti * X), di)
+    return 1/2 * distance(M, exp(M, p, ti * X), di)^2
 end
 
 function cost1_grad_p(M::AbstractManifold, p, X, ti::Real, di)
@@ -155,27 +162,27 @@ qs_ast = geodesic(S, p_ast, X_ast, ts_true)
 if show_plots
     geo_line_mean = geodesic(S, p_star, X_star, range(-1.0, 1.0; length = 1000))
     scatterlines!(
-        ax1, Point3d.(geo_line_mean); markersize = 0, color = ptc["mutedindigo"], linewidth = 2,
+        ax1, Point3d.(geo_line_mean); markersize = 0, color = lsq_color, linewidth = 2,
     )
-    scatter!(ax1, Point3d.([p_star]); markersize = 12, color = ptc["mutedindigo"])
-    scatter!(ax1, Point3d.(qs_star); markersize = 8, color = ptc["mutedindigo"])
+    scatter!(ax1, Point3d.([p_star]); markersize = 12, color = lsq_color)
+    scatter!(ax1, Point3d.(qs_star); markersize = 8, color = lsq_color)
     arrows3d!(
         ax1, Point3d.([p_star]), Point3d.([X_star]);
-        color = ptc["mutedindigo"], transparency = true, shaftradius = 0.005, tiplength = 0.15, tipradius = 0.025,
+        color = lsq_color, transparency = true, shaftradius = 0.0025, tiplength = 0.075, tipradius = 0.0125,
     )
 
     geo_line_robust = geodesic(S, p_ast, X_ast, range(-1.0, 1.0; length = 1000))
     scatterlines!(
-        ax1, Point3d.(geo_line_robust); markersize = 0, color = ptc["mutedgreen"], linewidth = 2,
+        ax1, Point3d.(geo_line_robust); markersize = 0, color = robust_color, linewidth = 2,
     )
-    scatter!(ax1, Point3d.([p_ast]); markersize = 12, color = ptc["mutedgreen"])
-    scatter!(ax1, Point3d.(qs_ast); markersize = 8, color = ptc["mutedgreen"])
+    scatter!(ax1, Point3d.([p_ast]); markersize = 12, color = robust_color)
+    scatter!(ax1, Point3d.(qs_ast); markersize = 8, color = robust_color)
     arrows3d!(
         ax1, Point3d.([p_ast]), Point3d.([X_ast]);
-        color = ptc["mutedgreen"], transparency = true, shaftradius = 0.005, tiplength = 0.15, tipradius = 0.025,
+        color = robust_color, transparency = true, shaftradius = 0.0025, tiplength = 0.075, tipradius = 0.0125,
     )
 end
 
-@info "Error on sample points least squares: $(norm([distance(S, qi, qmi) for (qi, qmi) in zip(qs_true, qs_star)]))"
-@info "Error on sample points robust: $(norm([distance(S, qi, qri) for (qi, qri) in zip(qs_true, qs_ast)]))"
+@info "Mean error on sample points least squares: $(1/N * norm([distance(S, qi, qmi) for (qi, qmi) in zip(qs_true, qs_star)]))"
+@info "Mean error on sample points robust: $(1/N * norm([distance(S, qi, qri) for (qi, qri) in zip(qs_true, qs_ast)]))"
 fig1
