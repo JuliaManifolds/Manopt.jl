@@ -98,6 +98,7 @@ using RecursiveArrayTools
         st = QuasiNewtonState(M)
 
         @test startswith(repr(ha), "QuasiNewtonLimitedMemoryBoxDirectionUpdate with internal state:")
+        @test startswith(Manopt.status_summary(ha), "limited memory direction update with support for box constraints; internal direction update status: ")
 
         f(M, p) = sum(p .^ 2)
         grad_f(M, p) = 2 * p

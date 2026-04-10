@@ -50,6 +50,12 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     last_gcd_stepsize::F
 end
 
+function status_summary(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    s = "limited memory direction update with support for box constraints; "
+    s *= "internal direction update status: $(status_summary(d.qn_du))"
+    return s
+end
+
 function get_parameter(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate, ::Val{:max_stepsize})
     if d.last_gcd_result === :found_limited
         return d.last_gcd_stepsize
