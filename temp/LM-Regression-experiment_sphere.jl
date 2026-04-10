@@ -1,19 +1,21 @@
 #
 #
 # --- Regession on the sphere with outliers
-using Distributions, GLMakie, Makie, ManifoldDiff, Manifolds, Manopt, NamedColors, Random, RecursiveArrayTools
+using Colors, Distributions, GLMakie, Makie, ManifoldDiff, Manifolds, Manopt, NamedColors, Random, RecursiveArrayTools
 ptc = NamedColors.load_paul_tol()
 
 # Parameters
 export_asy = true
-show_plots = true
+show_plots = false
 add_gaussian_noise = true
-σ = 0 * π / 16
+name = "S2-Robust-Regression_2"
+σ = 1 * π / 16
 # For outliers we use a fixed size and a random angle to disturb them into
 r = π / 4
 N = 100 # on the range these are 0.05 apart for 39
 oN = 7
 outlier_indices = [7:(7+oN-1)..., [(N-6):-1:(N-6-oN+1)...]...]
+
 
 S = Manifolds.Sphere(2)
 M = TangentBundle(S)
@@ -31,6 +33,8 @@ noisy_color = ptc["mutedwine"]
 lsq_color = ptc["mutedsand"]
 robust_color = ptc["mutedgreen"]
 
+geo_line = geodesic(S, p_true, X_true, range(-1.0, 1.0; length = 1000))
+
 if show_plots
     n = 30; u = range(0, stop = 2 * π, length = n); v = range(0, stop = π, length = n)
     sx = [cos(ui) * sin(vj) for ui in u, vj in v]
@@ -42,7 +46,6 @@ if show_plots
     hidedecorations!(ax1)
     hidespines!(ax1)
     wireframe!(ax1, sx, sy, sz, color = ptc["paleblue"]; transparency = true, alpha = 0.2)
-    geo_line = geodesic(S, p_true, X_true, range(-1.0, 1.0; length = 1000))
     scatterlines!(
         ax1, Point3d.(geo_line); markersize = 0, color = orig_color, linewidth = 2,
     )
@@ -159,8 +162,9 @@ p_ast = P_ast[M, :point]
 X_ast = P_ast[M, :vector]
 qs_ast = geodesic(S, p_ast, X_ast, ts_true)
 
+geo_line_mean = geodesic(S, p_star, X_star, range(-1.0, 1.0; length = 1000))
+geo_line_robust = geodesic(S, p_ast, X_ast, range(-1.0, 1.0; length = 1000))
 if show_plots
-    geo_line_mean = geodesic(S, p_star, X_star, range(-1.0, 1.0; length = 1000))
     scatterlines!(
         ax1, Point3d.(geo_line_mean); markersize = 0, color = lsq_color, linewidth = 2,
     )
@@ -171,7 +175,6 @@ if show_plots
         color = lsq_color, transparency = true, shaftradius = 0.0025, tiplength = 0.075, tipradius = 0.0125,
     )
 
-    geo_line_robust = geodesic(S, p_ast, X_ast, range(-1.0, 1.0; length = 1000))
     scatterlines!(
         ax1, Point3d.(geo_line_robust); markersize = 0, color = robust_color, linewidth = 2,
     )
@@ -183,6 +186,27 @@ if show_plots
     )
 end
 
+if export_asy
+    asymptote_export_S2_signals(
+        name * ".asy";
+        curves = [geo_line, geo_line_mean, geo_line_robust],
+        points = [data, qs_true, qs_star, qs_ast],
+        tangent_vectors = [ [(p_true, X_true),], [(p_star,X_star),], [(p_ast, X_ast)]],
+        colors = Dict(
+            :curves => Colors.RGBA{Float64}.([orig_color, lsq_color, robust_color]),
+            :tvectors => Colors.RGBA{Float64}.([orig_color, lsq_color, robust_color]),
+            :points => Colors.RGBA{Float64}.([noisy_color, orig_color, lsq_color, robust_color]),
+        ),
+        camera_position = (.3, 0.7, 0.4),
+        arrow_head_size=18.0,
+        dot_sizes = 4 .* [2.5, 2.5, 2.5, 2.5],
+        line_width = 4.0,
+        sphere_line_width=2.0,
+        size = (1024,1024),
+    )
+    render_asymptote(name * ".asy"; render = 4)
+end
+
 @info "Mean error on sample points least squares: $(1/N * norm([distance(S, qi, qmi) for (qi, qmi) in zip(qs_true, qs_star)]))"
 @info "Mean error on sample points robust: $(1/N * norm([distance(S, qi, qri) for (qi, qri) in zip(qs_true, qs_ast)]))"
-fig1
+show_plots && fig1
