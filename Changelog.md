@@ -6,13 +6,17 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.35] April 3, 2026
+## [0.5.35] April 16, 2026
 
 ### Changed
 
 * Improved formatting of the references in the Readme.md (#586)
 * Bump compat for RecursiveArrayTools.jl to include version 4
 * deactivate CompatHelper Action and solely use dependabot
+
+### Fixed
+
+* The default line search in `conjugate_gradient_descent` is now `ArmijoLinesearchStepsize` instead of `ArmijoLinesearch`, which makes it work well with custom point types.
 
 ## [0.5.34] March 3, 2026
 
