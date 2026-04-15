@@ -7,25 +7,27 @@ ptc = NamedColors.load_paul_tol()
 # Parameters
 export_asy = true
 show_plots = false
-add_gaussian_noise = true
-name = "S2-Robust-Regression_2"
+add_gaussian_noise = false
+name = "S2-Robust-Regression"
 σ = 1 * π / 16
 # For outliers we use a fixed size and a random angle to disturb them into
 r = π / 4
 N = 100 # on the range these are 0.05 apart for 39
 oN = 7
-outlier_indices = [7:(7+oN-1)..., [(N-6):-1:(N-6-oN+1)...]...]
+outlier_indices = [8:(8+oN-1)..., [(N-7):-1:(N-7-oN+1)...]...]
 
 
 S = Manifolds.Sphere(2)
 M = TangentBundle(S)
-R(α) = [cos(α) sin(α); -sin(α) cos(α)]
+R(α) = [cos(α) -sin(α); sin(α) cos(α)]
+T = 1.0
 
 # True data
 p_true = [0.0, 1.0, 0.0]
-X_true = 1.25 * [1.0, 0.0, 1.0]
-ts_true = collect(range(; start = -1.0, stop = 1.0, length = N))
+X_true = π/2 .* [1.0, 0.0, 1.0]
+ts_true = collect(range(; start = -T, stop = T, length = N))
 qs_true = geodesic(S, p_true, X_true, ts_true)
+geo_line = geodesic(S, p_true, X_true, range(-T, T; length = 1000))
 
 orig_color = ptc["mutedcyan"]
 noisy_color = ptc["mutedwine"]
@@ -33,7 +35,6 @@ noisy_color = ptc["mutedwine"]
 lsq_color = ptc["mutedsand"]
 robust_color = ptc["mutedgreen"]
 
-geo_line = geodesic(S, p_true, X_true, range(-1.0, 1.0; length = 1000))
 
 if show_plots
     n = 30; u = range(0, stop = 2 * π, length = n); v = range(0, stop = π, length = n)
@@ -143,7 +144,7 @@ P_star = LevenbergMarquardt(
     M, f, p0;
     damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
     retraction_method = StabilizedRetraction(default_retraction_method(M)),
-    debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
+    debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop],
 )
 p_star = P_star[M, :point]
 X_star = P_star[M, :vector]
@@ -156,14 +157,14 @@ P_ast = LevenbergMarquardt(
     damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
     robustifier = 1.0e-12 ∘ HuberRobustifier(),
     retraction_method = StabilizedRetraction(default_retraction_method(M)),
-    debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
+    debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop],
 )
 p_ast = P_ast[M, :point]
 X_ast = P_ast[M, :vector]
 qs_ast = geodesic(S, p_ast, X_ast, ts_true)
 
-geo_line_mean = geodesic(S, p_star, X_star, range(-1.0, 1.0; length = 1000))
-geo_line_robust = geodesic(S, p_ast, X_ast, range(-1.0, 1.0; length = 1000))
+geo_line_mean = geodesic(S, p_star, X_star, range(-T, T; length = 1000))
+geo_line_robust = geodesic(S, p_ast, X_ast, range(-T, T; length = 1000))
 if show_plots
     scatterlines!(
         ax1, Point3d.(geo_line_mean); markersize = 0, color = lsq_color, linewidth = 2,
@@ -187,22 +188,38 @@ if show_plots
 end
 
 if export_asy
-    asymptote_export_S2_signals(
-        name * ".asy";
-        curves = [geo_line, geo_line_mean, geo_line_robust],
-        points = [data, qs_true, qs_star, qs_ast],
-        tangent_vectors = [ [(p_true, X_true),], [(p_star,X_star),], [(p_ast, X_ast)]],
-        colors = Dict(
-            :curves => Colors.RGBA{Float64}.([orig_color, lsq_color, robust_color]),
-            :tvectors => Colors.RGBA{Float64}.([orig_color, lsq_color, robust_color]),
-            :points => Colors.RGBA{Float64}.([noisy_color, orig_color, lsq_color, robust_color]),
-        ),
-        camera_position = (.3, 0.7, 0.4),
+    kwargs = (; camera_position = (0.75, 0.5, 0.125),
         arrow_head_size=18.0,
         dot_sizes = 4 .* [2.5, 2.5, 2.5, 2.5],
         line_width = 4.0,
         sphere_line_width=2.0,
         size = (1024,1024),
+    )
+    tvec_scale = 0.5
+    asymptote_export_S2_signals(
+        name * "-orig.asy";
+        curves = [geo_line],
+        points = [data, qs_true],
+        tangent_vectors = [ [(p_true, tvec_scale .* X_true),], ],
+        colors = Dict(
+            :curves => Colors.RGBA{Float64}.([orig_color,]),
+            :tvectors => Colors.RGBA{Float64}.([orig_color,]),
+            :points => Colors.RGBA{Float64}.([noisy_color, orig_color]),
+        ),
+        kwargs...
+    )
+    render_asymptote(name * "-orig.asy"; render = 4)
+    asymptote_export_S2_signals(
+        name * ".asy";
+        curves = [geo_line, geo_line_mean, geo_line_robust],
+        points = [data, qs_star, qs_ast,qs_true,],
+        tangent_vectors = [ [(p_star, tvec_scale .* X_star),], [(p_ast, tvec_scale .* X_ast)], [(p_true, tvec_scale .* X_true),],],
+        colors = Dict(
+            :curves => Colors.RGBA{Float64}.([orig_color, lsq_color, robust_color]),
+            :tvectors => Colors.RGBA{Float64}.([lsq_color, robust_color, orig_color,]),
+            :points => Colors.RGBA{Float64}.([noisy_color, lsq_color, robust_color, orig_color, ]),
+        ),
+        kwargs...
     )
     render_asymptote(name * ".asy"; render = 4)
 end
