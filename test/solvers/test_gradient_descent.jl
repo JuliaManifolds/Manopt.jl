@@ -169,7 +169,7 @@ using ManifoldDiff: grad_distance
             return_objective = true,
             return_state = true,
         )
-        @test stopped_at(n6) > 0
+        @test stopped_at(n6[2]) > 0
         @test repr(n6) == "$(n6[2])\n\n$(n6[1])"
     end
     @testset "Tutorial mode" begin
