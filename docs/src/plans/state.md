@@ -14,6 +14,7 @@ AbstractManoptSolverState
 get_state
 Manopt.get_count
 Manopt.has_converged(::AbstractManoptSolverState)
+stopped_at
 ```
 
 Since every subtype of an [`AbstractManoptSolverState`](@ref) directly relate to a solver,

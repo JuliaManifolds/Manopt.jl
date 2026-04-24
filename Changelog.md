@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* a function `stopped_at(state)` to access the number of iterations it took a solver to stop.
+* a function `stopped_at(state)` to access the number of iterations it took a solver to stop. (#599)
 
 ### Fixed
 
-* a small bug where `get_count(sc::StopWhenAny, Val(:Iteration))` wrongly reported it stopped before the first iteration when it actually did not yet stop.
+* a small bug where `get_count(sc::StopWhenAny, Val(:Iteration))` wrongly reported it stopped before the first iteration when it actually did not yet stop. (#599)
 
 ## [0.5.35] April 16, 2026
 
