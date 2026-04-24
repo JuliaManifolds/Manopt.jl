@@ -330,6 +330,18 @@ _storage_copy_vector(M::AbstractManifold, X) = copy(M, X)
 _storage_copy_vector(::AbstractManifold, X::Number) = StorageRef(X)
 
 @doc """
+    stopped_at(state::AbstractManoptSolverState)
+
+Return the number of iterations the solver represented by the `state` took to stop.
+If the solver has not yet stopped, this function returns `-1`.
+
+By default, this function calls `get_count` function on the state's stopping criterion to access its `:Iteration` count.
+"""
+function stopped_at(state::AbstractManoptSolverState)
+    return get_count(get_stopping_criterion(state), Val(:Iterations))
+end
+
+@doc """
     StoreStateAction <: AbstractStateAction
 
 internal storage for [`AbstractStateAction`](@ref)s to store a tuple of fields from an

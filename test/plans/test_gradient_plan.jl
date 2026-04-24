@@ -16,6 +16,7 @@ using ManifoldsBase, Manopt, Test
         stopping_criterion = StopAfterIteration(20),
         stepsize = Manopt.ConstantStepsize(M),
     )
+    @test stopped_at(gst) == -1
     set_iterate!(gst, M, q)
     @test get_iterate(gst) == q
     set_gradient!(gst, M, p, [1.0, 0.0])

@@ -6,6 +6,16 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.36] April 24, 2026
+
+### Added
+
+* a function `stopped_at(state)` to access the number of iterations it took a solver to stop.
+
+### Fixed
+
+* a small bug where `get_count(sc::StopWhenAny, Val(:Iteration))` wrongly reported it stopped before the first iteration when it actually did not yet stop.
+
 ## [0.5.35] April 16, 2026
 
 ### Changed

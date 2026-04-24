@@ -72,7 +72,7 @@ struct NoIterateState <: AbstractManoptSolverState end
         @test_throws ErrorException get_iterate(s2)
     end
 
-    @testset "Iteration and Gradient setters" begin
+    @testset "Iterate and Gradient setters" begin
         M = Euclidean(3)
         s1 = NelderMeadState(M)
         s2 = GradientDescentState(M)
