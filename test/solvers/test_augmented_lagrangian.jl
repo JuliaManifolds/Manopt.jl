@@ -68,4 +68,32 @@ using LinearAlgebra: I, tr
         @test q isa Real
         @test f(M, q) < f(M, 4)
     end
+
+    @testset "Customizable subsolver direction update" begin
+        d = 20
+        M = Sphere(d - 1)
+        S = [ones(4)..., zeros(d - 4)...]
+        v0 = project(M, S)
+        Z = v0 * v0'
+        f(M, p) = -tr(transpose(p) * Z * p) / 2
+        grad_f(M, p) = project(M, p, -transpose.(Z) * p / 2 - Z * p / 2)
+        g(M, p) = -p # in other words p ≥ 0
+        mI = -Matrix{Float64}(I, d, d)
+        grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
+        p0 = project(M, ones(d))
+        s = augmented_Lagrangian_method(
+            M,
+            f,
+            grad_f,
+            p0;
+            g = g,
+            grad_g = grad_g,
+            sub_direction_update = QuasiNewtonLimitedMemoryDirectionUpdate(
+                M, copy(M, p0), InverseBFGS(), 5
+            ),
+            stopping_criterion = StopAfterIteration(20),
+            return_state = true,
+        )
+        @test s.sub_state.direction_update.memory_s.capacity == 5
+    end
 end

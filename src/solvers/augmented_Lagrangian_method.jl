@@ -325,6 +325,8 @@ $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objec
 $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` ")), where more precisely
   as quasi newton method, the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used.
 * `sub_stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`,
+* `sub_direction_update::AbstractQuasiNewtonDirectionUpdate=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, copy(M, p), InverseBFGS(), min(manifold_dimension(M), 30))`:
+  the direction update rule for the sub solver, where by default a limited memory quasi-Newton method with inverse BFGS update is used.
 
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
@@ -452,6 +454,9 @@ function augmented_Lagrangian_method!(
         sub_cost = AugmentedLagrangianCost(cmo, ρ, μ, λ),
         sub_grad = AugmentedLagrangianGrad(cmo, ρ, μ, λ),
         sub_kwargs = (;),
+        sub_direction_update::AbstractQuasiNewtonDirectionUpdate = QuasiNewtonLimitedMemoryDirectionUpdate(
+            M, copy(M, p), InverseBFGS(), min(manifold_dimension(M), 30)
+        ),
         sub_stopping_criterion::StoppingCriterion = StopAfterIteration(300) |
             StopWhenGradientNormLess(ϵ) |
             StopWhenStepsizeLess(1.0e-8),
@@ -460,9 +465,7 @@ function augmented_Lagrangian_method!(
                 M;
                 p = copy(M, p),
                 X = zero_vector(M, p),
-                direction_update = QuasiNewtonLimitedMemoryDirectionUpdate(
-                    M, copy(M, p), InverseBFGS(), min(manifold_dimension(M), 30)
-                ),
+                direction_update = sub_direction_update,
                 stopping_criterion = sub_stopping_criterion,
                 stepsize = default_stepsize(M, QuasiNewtonState),
                 sub_kwargs...,

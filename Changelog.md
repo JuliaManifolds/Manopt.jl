@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.37] April 25, 2026
+
+### Added
+
+* Customizable subsolver direction update for augmented Lagrangian method.
+
 ## [0.5.36] April 24, 2026
 
 ### Added
