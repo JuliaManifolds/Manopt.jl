@@ -326,7 +326,7 @@ $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` ")), where more 
   as quasi newton method, the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used.
 * `sub_stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`,
 * `sub_direction_update::AbstractQuasiNewtonDirectionUpdate=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, copy(M, p), InverseBFGS(), min(manifold_dimension(M), 30))`:
-  the direction update rule for the sub solver, where by default a limited memory quasi-Newton method with inverse BFGS update is used.
+  the direction update rule for the default sub solver, a quasi-Newton method with limited memory inverse BFGS. This keyword is used within the `sub_state`, so it has no effect, if you set the sub solver manually.
 
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
