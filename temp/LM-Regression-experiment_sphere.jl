@@ -14,7 +14,7 @@ name = "S2-Robust-Regression"
 r = π / 4
 N = 100 # on the range these are 0.05 apart for 39
 oN = 7
-outlier_indices = [8:(8+oN-1)..., [(N-7):-1:(N-7-oN+1)...]...]
+outlier_indices = [8:(8 + oN - 1)..., [(N - 7):-1:(N - 7 - oN + 1)...]...]
 
 
 S = Manifolds.Sphere(2)
@@ -24,7 +24,7 @@ T = 1.0
 
 # True data
 p_true = [0.0, 1.0, 0.0]
-X_true = π/2 .* [1.0, 0.0, 1.0]
+X_true = π / 2 .* [1.0, 0.0, 1.0]
 ts_true = collect(range(; start = -T, stop = T, length = N))
 qs_true = geodesic(S, p_true, X_true, ts_true)
 geo_line = geodesic(S, p_true, X_true, range(-T, T; length = 1000))
@@ -95,7 +95,7 @@ function JF(M, P; t = ts_true, d = data)
 end
 
 function cost1(M::AbstractManifold, p, X, ti::Real, di)
-    return 1/2 * distance(M, exp(M, p, ti * X), di)^2
+    return 1 / 2 * distance(M, exp(M, p, ti * X), di)^2
 end
 
 function cost1_grad_p(M::AbstractManifold, p, X, ti::Real, di)
@@ -188,22 +188,23 @@ if show_plots
 end
 
 if export_asy
-    kwargs = (; camera_position = (0.75, 0.5, 0.125),
-        arrow_head_size=18.0,
+    kwargs = (;
+        camera_position = (0.75, 0.5, 0.125),
+        arrow_head_size = 18.0,
         dot_sizes = 4 .* [2.5, 2.5, 2.5, 2.5],
         line_width = 4.0,
-        sphere_line_width=2.0,
-        size = (1024,1024),
+        sphere_line_width = 2.0,
+        size = (1024, 1024),
     )
     tvec_scale = 0.5
     asymptote_export_S2_signals(
         name * "-orig.asy";
         curves = [geo_line],
         points = [data, qs_true],
-        tangent_vectors = [ [(p_true, tvec_scale .* X_true),], ],
+        tangent_vectors = [[(p_true, tvec_scale .* X_true)]],
         colors = Dict(
-            :curves => Colors.RGBA{Float64}.([orig_color,]),
-            :tvectors => Colors.RGBA{Float64}.([orig_color,]),
+            :curves => Colors.RGBA{Float64}.([orig_color]),
+            :tvectors => Colors.RGBA{Float64}.([orig_color]),
             :points => Colors.RGBA{Float64}.([noisy_color, orig_color]),
         ),
         kwargs...
@@ -212,18 +213,18 @@ if export_asy
     asymptote_export_S2_signals(
         name * ".asy";
         curves = [geo_line, geo_line_mean, geo_line_robust],
-        points = [data, qs_star, qs_ast,qs_true,],
-        tangent_vectors = [ [(p_star, tvec_scale .* X_star),], [(p_ast, tvec_scale .* X_ast)], [(p_true, tvec_scale .* X_true),],],
+        points = [data, qs_star, qs_ast, qs_true],
+        tangent_vectors = [[(p_star, tvec_scale .* X_star)], [(p_ast, tvec_scale .* X_ast)], [(p_true, tvec_scale .* X_true)]],
         colors = Dict(
             :curves => Colors.RGBA{Float64}.([orig_color, lsq_color, robust_color]),
-            :tvectors => Colors.RGBA{Float64}.([lsq_color, robust_color, orig_color,]),
-            :points => Colors.RGBA{Float64}.([noisy_color, lsq_color, robust_color, orig_color, ]),
+            :tvectors => Colors.RGBA{Float64}.([lsq_color, robust_color, orig_color]),
+            :points => Colors.RGBA{Float64}.([noisy_color, lsq_color, robust_color, orig_color]),
         ),
         kwargs...
     )
     render_asymptote(name * ".asy"; render = 4)
 end
 
-@info "Mean error on sample points least squares: $(1/N * norm([distance(S, qi, qmi) for (qi, qmi) in zip(qs_true, qs_star)]))"
-@info "Mean error on sample points robust: $(1/N * norm([distance(S, qi, qri) for (qi, qri) in zip(qs_true, qs_ast)]))"
+@info "Mean error on sample points least squares: $(1 / N * norm([distance(S, qi, qmi) for (qi, qmi) in zip(qs_true, qs_star)]))"
+@info "Mean error on sample points robust: $(1 / N * norm([distance(S, qi, qri) for (qi, qri) in zip(qs_true, qs_ast)]))"
 show_plots && fig1
