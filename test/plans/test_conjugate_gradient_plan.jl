@@ -1,7 +1,8 @@
 using Manopt, Manifolds, Test
 
 struct DummyCGCoeff <: DirectionUpdateRule end
-(u::Manopt.DirectionUpdateRuleStorage{DummyCGCoeff})(p, s, k) = 0.2
+(::DummyCGCoeff)(pr, st, k; kwagrs...) = 0.2
+(::Manopt.DirectionUpdateRuleStorage{DummyCGCoeff})(pr, st, k) = 0.2
 Manopt.update_rule_storage_points(::DummyCGCoeff) = Tuple{}
 Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
 
@@ -16,8 +17,7 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         p0 = [1.0, 0.0]
         pr = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         cgs2 = ConjugateGradientDescentState(
-            M;
-            p = p0,
+            M; p = p0,
             stopping_criterion = StopAfterIteration(2),
             stepsize = Manopt.ConstantStepsize(M, 1.0),
             coefficient = dur2,
@@ -25,8 +25,7 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         cgs2.X = [0.0, 0.2]
         @test cgs2.coefficient(pr, cgs2, 1) != 0
         cgs3 = ConjugateGradientDescentState(
-            M;
-            p = p0,
+            M; p = p0,
             stopping_criterion = StopAfterIteration(2),
             stepsize = Manopt.ConstantStepsize(M, 1.0),
             coefficient = dur3,

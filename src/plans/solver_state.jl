@@ -500,10 +500,11 @@ end
     get_storage(a::AbstractStateAction, key::Symbol)
 
 Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
-`Symbol` `key`.
+`Symbol` `key`. Returns `nothing` if the key does not exist
 """
-get_storage(a::AbstractStateAction, key::Symbol) = a.values[key]
-
+function get_storage(a::AbstractStateAction, key::Symbol)
+    return get(a.values, key, nothing)
+end
 """
     get_storage(a::AbstractStateAction, ::PointStorageKey{key}) where {key}
 

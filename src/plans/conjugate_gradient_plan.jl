@@ -283,28 +283,32 @@ end
 update_rule_storage_points(::DaiYuanCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::DaiYuanCoefficientRule) = Tuple{:Gradient, :δ}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (dy::DaiYuanCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ, kwargs...
+    )
+    M = get_manifold(amp)
+    Xtr = vector_transport_to(M, p, X, cgs.p, dy.vector_transport_method)
+    ν = cgs.X - Xtr # notation y from [HZ06]
+    δtr = vector_transport_to(M, p, δ, cgs.p, dy.vector_transport_method)
+    # previously: nominator = inner(M, cgs.p, cgs.X, cgs.X)
+    nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
+    return nominator / inner(M, p, δtr, ν)
+end
 function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
             !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
-
-    gradienttr = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    ν = cgs.X - gradienttr #notation y from [HZ06]
-    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.vector_transport_method)
-    # previously: nominator = inner(M, cgs.p, cgs.X, cgs.X)
-    nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
-    β = nominator / inner(M, p_old, δtr, ν)
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ = get_storage(u.storage, VectorStorageKey(:δ))
+    β = u.coefficient(amp, cgs, i; p = p, X = X, δ = δ)
     update_storage!(u.storage, amp, cgs)
     return β
 end
@@ -373,6 +377,18 @@ struct FletcherReevesCoefficientRule <: DirectionUpdateRule end
 update_rule_storage_points(::FletcherReevesCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::FletcherReevesCoefficientRule) = Tuple{:Gradient}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (fr::FletcherReevesCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, kwargs...
+    )
+    # old version:
+    # inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p, X, X)
+    # now using (potentially) differentials
+    nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
+    denominator = get_differential(amp, p, X; gradient = X, evaluated = true)
+    return nominator / denominator
+end
 function (u::DirectionUpdateRuleStorage{FletcherReevesCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
@@ -381,15 +397,11 @@ function (u::DirectionUpdateRuleStorage{FletcherReevesCoefficientRule})(
             !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    # old version:
-    # inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, X_old, X_old)
-    nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
-    denominator = get_differential(amp, p_old, X_old; gradient = X_old, evaluated = true)
-    coeff = nominator / denominator
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    β = u.coefficient(amp, cgs, i; p = p, X = X)
     update_storage!(u.storage, amp, cgs)
-    return coeff
+    return β
 end
 function show(io::IO, ::FletcherReevesCoefficientRule)
     return print(io, "Manopt.FletcherReevesCoefficientRule()")
@@ -460,48 +472,50 @@ end
 update_rule_storage_points(::HagerZhangCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::HagerZhangCoefficientRule) = Tuple{:Gradient, :δ}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (hz::HagerZhangCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+    )
+    M = get_manifold(amp)
+    Xtr = vector_transport_to(
+        M, p, X, cgs.p, hz.vector_transport_method
+    )
+    ν = cgs.X - Xtr #notation y from [HZ06]
+    δtr = vector_transport_to(M, p, δ, cgs.p, hz.vector_transport_method)
+    denom = inner(M, cgs.p, δtr, ν)
+    if abs(denom) > hz.denom_threshold
+        # when abs(denom) is small, we lose numerical stability.
+        νknormsq = inner(M, cgs.p, ν, ν)
+        β = inner(M, cgs.p, ν, cgs.X) / denom - 2 * νknormsq * inner(M, cgs.p, δtr, cgs.X) / denom^2
+        # Numerical stability from Manopt / Hager-Zhang paper
+        ξn = norm(M, cgs.p, cgs.X)
+        η = -1 / (ξn * min(0.01, norm(M, p, X)))
+        β = max(β, η)
+    else
+        β = zero(eltype(denom))
+    end
+    return β
+end
 function (u::DirectionUpdateRuleStorage{<:HagerZhangCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
             !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
-
-    gradienttr = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    ν = cgs.X - gradienttr #notation y from [HZ06]
-    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.vector_transport_method)
-    denom = inner(M, cgs.p, δtr, ν)
-    if abs(denom) > u.coefficient.denom_threshold
-        # when abs(denom) is small, we lose numerical stability.
-        νknormsq = inner(M, cgs.p, ν, ν)
-        β =
-            inner(M, cgs.p, ν, cgs.X) / denom -
-            2 * νknormsq * inner(M, cgs.p, δtr, cgs.X) / denom^2
-        # Numerical stability from Manopt / Hager-Zhang paper
-        ξn = norm(M, cgs.p, cgs.X)
-        η = -1 / (ξn * min(0.01, norm(M, p_old, X_old)))
-        coef = max(β, η)
-    else
-        coef = zero(eltype(denom))
-    end
-
-
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ = get_storage(u.storage, VectorStorageKey(:δ))
+    β = u.coefficient(amp, cgs, i; p = p, X = X, δ = δ)
     update_storage!(u.storage, amp, cgs)
-    return coef
+    return β
 end
 function show(io::IO, u::HagerZhangCoefficientRule)
     return print(
-        io,
-        "Manopt.HagerZhangCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
+        io, "Manopt.HagerZhangCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
     )
 end
 
@@ -577,39 +591,38 @@ end
 update_rule_storage_points(::HestenesStiefelCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::HestenesStiefelCoefficientRule) = Tuple{:Gradient, :δ}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (hs::HestenesStiefelCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+    )
+    M = get_manifold(amp)
+    Xtr = vector_transport_to(M, p, X, cgs.p, hs.vector_transport_method)
+    δtr = vector_transport_to(M, p, δ, cgs.p, hs.vector_transport_method)
+    ν = cgs.X - Xtr #notation from [HZ06]
+    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
+    denominator = get_differential(amp, cgs.p, δtr; gradient = cgs.X, evaluated = true) - get_differential(amp, p, δ; gradient = X, evaluated = true)
+    return max(0, nominator / denominator)
+end
 function (u::DirectionUpdateRuleStorage{<:HestenesStiefelCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
             !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
-
-    gradienttr = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.vector_transport_method)
-    ν = cgs.X - gradienttr #notation from [HZ06]
-    # old with inners:
-    # β = inner(M, cgs.p, cgs.X, ν) / inner(M, cgs.p, δtr, ν)
-    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
-    denominator =
-        get_differential(amp, cgs.p, δtr; gradient = cgs.X, evaluated = true) -
-        get_differential(amp, p_old, δ_old; gradient = X_old, evaluated = true)
-    β = nominator / denominator
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ = get_storage(u.storage, VectorStorageKey(:δ))
+    β = u.coefficient(amp, cgs, i; p = p, X = X, δ = δ)
     update_storage!(u.storage, amp, cgs)
-    return max(0, β)
+    return β
 end
 function show(io::IO, u::HestenesStiefelCoefficientRule)
     return print(
-        io,
-        "Manopt.HestenesStiefelCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
+        io, "Manopt.HestenesStiefelCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
     )
 end
 
@@ -703,27 +716,32 @@ end
 update_rule_storage_points(::LiuStoreyCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::LiuStoreyCoefficientRule) = Tuple{:Gradient, :δ}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (ls::LiuStoreyCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+    )
+    M = get_manifold(amp)
+    Xtr = vector_transport_to(M, p, X, cgs.p, ls.vector_transport_method)
+    ν = cgs.X - Xtr # notation y from [HZ06]
+    # old:
+    # β = inner(M, cgs.p, cgs.X, ν) / inner(M, p, -δ, X)
+    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
+    denominator = get_differential(amp, p, δ; gradient = X, evaluated = true)
+    return -nominator / denominator
+end
 function (u::DirectionUpdateRuleStorage{<:LiuStoreyCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
             !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
-    gradienttr = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    ν = cgs.X - gradienttr # notation y from [HZ06]
-    # old:
-    # β = inner(M, cgs.p, cgs.X, ν) / inner(M, p_old, -δ_old, X_old)
-    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
-    denominator = get_differential(amp, p_old, δ_old; gradient = X_old, evaluated = true)
-    β = -nominator / denominator
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ = get_storage(u.storage, VectorStorageKey(:δ))
+    β = u.coefficient(amp, cgs, i; p = p, X = X, δ = δ)
     update_storage!(u.storage, amp, cgs)
     return β
 end
@@ -799,34 +817,39 @@ end
 update_rule_storage_points(::PolakRibiereCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::PolakRibiereCoefficientRule) = Tuple{:Gradient}
 
+
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (pr::PolakRibiereCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X
+    )
+    M = get_manifold(amp)
+    Xtr = vector_transport_to(M, p, X, cgs.p, pr.vector_transport_method)
+    ν = cgs.X - Xtr
+    # old
+    # β = real(inner(M, cgs.p, cgs.X, ν)) / real(inner(M, p, X, X))
+    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
+    denominator = get_differential(amp, p, X; gradient = X, evaluated = true)
+    β = nominator / denominator
+    # numerical stability from Manopt
+    return max(zero(β), β)
+end
 function (u::DirectionUpdateRuleStorage{<:PolakRibiereCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-
-    gradienttr = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    ν = cgs.X - gradienttr
-    # old
-    # β = real(inner(M, cgs.p, cgs.X, ν)) / real(inner(M, p_old, X_old, X_old))
-    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
-    denominator = get_differential(amp, p_old, X_old; gradient = X_old, evaluated = true)
-    β = nominator / denominator
-    # numerical stability from Manopt
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    β = u.coefficient(amp, cgs, i; p = p, X = X)
     update_storage!(u.storage, amp, cgs)
-    return max(zero(β), β)
+    return β
 end
 function show(io::IO, u::PolakRibiereCoefficientRule)
     return print(
-        io,
-        "Manopt.PolakRibiereCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
+        io, "Manopt.PolakRibiereCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
     )
 end
 
@@ -882,10 +905,15 @@ struct SteepestDescentCoefficientRule <: DirectionUpdateRule end
 update_rule_storage_points(::SteepestDescentCoefficientRule) = Tuple{}
 update_rule_storage_vectors(::SteepestDescentCoefficientRule) = Tuple{}
 
-function (u::DirectionUpdateRuleStorage{SteepestDescentCoefficientRule})(
-        ::DefaultManoptProblem, ::ConjugateGradientDescentState, i
+function (sd::SteepestDescentCoefficientRule)(
+        ::DefaultManoptProblem, ::ConjugateGradientDescentState, i; kwargs...
     )
     return 0.0
+end
+function (u::DirectionUpdateRuleStorage{SteepestDescentCoefficientRule})(
+        amp::DefaultManoptProblem, cgs::ConjugateGradientDescentState, i
+    )
+    return u.coefficient(amp, cgs, i)
 end
 @doc """
     SteepestDescentCoefficient()
@@ -985,30 +1013,28 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestartRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
     )
     M = get_manifold(amp)
-    if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
-            !has_storage(u.storage, VectorStorageKey(:Gradient))
-        update_storage!(u.storage, amp, cgs) # if not given store current as old
+    if k == 0
+        # store current values as old and return 0
+        update_storage!(u.storage, amp, cgs)
+        return 0.0
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-
+    # If a rule does not have these, they should return nothing
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ = get_storage(u.storage, VectorStorageKey(:δ))
     # call actual rule
-    dir_wrapped = DirectionUpdateRuleStorage(u.coefficient.direction_update, u.storage)
-    β = dir_wrapped(amp, cgs, k)
+    β = u.coefficient.direction_update(amp, cgs, k; p = p, X = X, δ = δ)
 
     denom = norm(M, cgs.p, cgs.X)
-    Xoldpk = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    num = inner(M, cgs.p, cgs.X, Xoldpk)
+    Xtr = vector_transport_to(M, p, X, cgs.p, u.coefficient.vector_transport_method)
+    num = inner(M, cgs.p, cgs.X, Xtr)
     # update storage only after that in case they share
     update_storage!(u.storage, amp, cgs)
     return real(num / denom) > u.coefficient.threshold ? zero(β) : β
 end
 function show(io::IO, u::ConjugateGradientBealeRestartRule)
     return print(
-        io,
-        "Manopt.ConjugateGradientBealeRestartRule($(repr(u.direction_update)); threshold=$(u.threshold), vector_transport_method=$(u.vector_transport_method))",
+        io, "Manopt.ConjugateGradientBealeRestartRule($(repr(u.direction_update)); threshold=$(u.threshold), vector_transport_method=$(u.vector_transport_method))",
     )
 end
 
@@ -1100,12 +1126,17 @@ end
 update_rule_storage_points(::HybridCoefficientRule) = Tuple{}
 update_rule_storage_vectors(::HybridCoefficientRule) = Tuple{}
 
+function (hc::HybridCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; kwargs...
+    )
+    βs = [c(amp, cgs, i) for c in hc.coefficients]
+    β_lower_bound = hc.lower_bound(amp, cgs, i)
+    return max(hc.lower_bound_scale * β_lower_bound, min(βs...))
+end
 function (u::DirectionUpdateRuleStorage{<:HybridCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    βs = [c(amp, cgs, i) for c in u.coefficient.coefficients]
-    β_lower_bound = u.coefficient.lower_bound(amp, cgs, i)
-    return max(u.coefficient.lower_bound_scale * β_lower_bound, min(βs...))
+    return u.coefficient(amp, cgs, i)
 end
 function show(io::IO, u::HybridCoefficientRule)
     coefficient_str = join([repr(c.coefficient) for c in u.coefficients], ", ")

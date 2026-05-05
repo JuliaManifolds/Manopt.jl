@@ -6,12 +6,13 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.37] May 5, 2026
 
 ### Changed
 
-* The default restart rule for `conjugate_gradient_descent` is now `RestartOnNonDescent` instead of `NeverRestart`, which makes the algorithm more robust to non-convexity and numerical issues. The old default can still be used by explicitly passing `restart_condition=NeverRestart()`.
-* `HagerZhangCoefficientRule` now has a safeguard against the denominator being too close to zero (the `denom_threshold` field). By default it is set to 1.0e-10. You can set it to a lower positive value (or even zero) to weaken the safeguard, but it is recommended to keep it to avoid numerical issues.
+* The default restart rule for `conjugate_gradient_descent` is now `RestartOnNonDescent` instead of `NeverRestart`, which makes the algorithm more robust to non-convexity and numerical issues. The old default can still be used by explicitly passing `restart_condition=NeverRestart()`. (#604)
+* `HagerZhangCoefficientRule` now has a safeguard against the denominator being too close to zero (the `denom_threshold` field). By default it is set to 1.0e-10. You can set it to a lower positive value (or even zero) to weaken the safeguard, but it is recommended to keep it to avoid numerical issues. (#604)
+* introduce for all `Rule`s also a variant without being encapsulated in a memory, where the old values have to be passed as keywords. This is now used by the `ConjugateGradientBealeRestartRule` when evaluating its inner rule. (#604)
 
 ## [0.5.36] April 24, 2026
 
