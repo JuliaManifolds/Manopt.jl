@@ -52,7 +52,7 @@ The following fields from above <re keyword arguments
 $(_kwargs(:X; name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
-* `restart_condition=`[`NeverRestart`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to never restart.
+* `restart_condition=`[`RestartOnNonDescent`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to [`RestartOnNonDescent`](@ref).
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:retraction_method))
@@ -90,7 +90,7 @@ mutable struct ConjugateGradientDescentState{
             sC::TsC,
             s::TStep,
             dC::DirectionUpdateRule,
-            res_cond::TRC = NeverRestart(),
+            res_cond::TRC = RestartOnNonDescent(),
             retr::TRetr = default_retraction_method(M, typeof(p)),
             vtr::VTM = default_vector_transport_method(M),
             initial_gradient::T = zero_vector(M, p),
@@ -125,7 +125,7 @@ function ConjugateGradientDescentState(
         M::AbstractManifold;
         p::P = rand(M),
         coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
-        restart_condition::TRC = NeverRestart(),
+        restart_condition::TRC = RestartOnNonDescent(),
         retraction_method::TRetr = default_retraction_method(M, typeof(p)),
         stepsize::TStep = default_stepsize(
             M, ConjugateGradientDescentState; retraction_method = retraction_method
@@ -431,19 +431,23 @@ Construct the Hager-Zhang coefficient update rule based on [HagerZhang:2005](@ci
 # Keyword arguments
 
 $(_kwargs(:vector_transport_method))
+* `denom_threshold::Real=1e-10`: a threshold to avoid numerical instabilities when the inner
+  product `δ` and difference of gradients is close to zero.
 
 # See also
 
 [`HagerZhangCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
 """
-mutable struct HagerZhangCoefficientRule{VTM <: AbstractVectorTransportMethod} <:
+mutable struct HagerZhangCoefficientRule{VTM <: AbstractVectorTransportMethod, TF<:Real} <:
     DirectionUpdateRule
     vector_transport_method::VTM
+    denom_threshold::TF
 end
 function HagerZhangCoefficientRule(
-        M::AbstractManifold; vector_transport_method::VTM = default_vector_transport_method(M)
-    ) where {VTM <: AbstractVectorTransportMethod}
-    return HagerZhangCoefficientRule{VTM}(vector_transport_method)
+        M::AbstractManifold; vector_transport_method::VTM = default_vector_transport_method(M),
+        denom_threshold::TF = 1e-10,
+    ) where {VTM <: AbstractVectorTransportMethod, TF <: Real}
+    return HagerZhangCoefficientRule{VTM,TF}(vector_transport_method, denom_threshold)
 end
 
 update_rule_storage_points(::HagerZhangCoefficientRule) = Tuple{:Iterate}
@@ -469,14 +473,21 @@ function (u::DirectionUpdateRuleStorage{<:HagerZhangCoefficientRule})(
     ν = cgs.X - gradienttr #notation y from [HZ06]
     δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.vector_transport_method)
     denom = inner(M, cgs.p, δtr, ν)
-    νknormsq = inner(M, cgs.p, ν, ν)
-    β =
-        inner(M, cgs.p, ν, cgs.X) / denom -
-        2 * νknormsq * inner(M, cgs.p, δtr, cgs.X) / denom^2
-    # Numerical stability from Manopt / Hager-Zhang paper
-    ξn = norm(M, cgs.p, cgs.X)
-    η = -1 / (ξn * min(0.01, norm(M, p_old, X_old)))
-    coef = max(β, η)
+    if abs(denom) > u.coefficient.denom_threshold
+        # when abs(denom) is small, we lose numerical stability.
+        νknormsq = inner(M, cgs.p, ν, ν)
+        β =
+            inner(M, cgs.p, ν, cgs.X) / denom -
+            2 * νknormsq * inner(M, cgs.p, δtr, cgs.X) / denom^2
+        # Numerical stability from Manopt / Hager-Zhang paper
+        ξn = norm(M, cgs.p, cgs.X)
+        η = -1 / (ξn * min(0.01, norm(M, p_old, X_old)))
+        coef = max(β, η)
+    else
+        coef = zero(eltype(denom))
+    end
+    
+
     update_storage!(u.storage, amp, cgs)
     return coef
 end
@@ -975,7 +986,8 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestartRule})(
     X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
 
     # call actual rule
-    β = u.coefficient.direction_update(amp, cgs, k)
+    dir_wrapped = DirectionUpdateRuleStorage(u.coefficient.direction_update, u.storage)
+    β = dir_wrapped(amp, cgs, k)
 
     denom = norm(M, cgs.p, cgs.X)
     Xoldpk = vector_transport_to(
@@ -1182,7 +1194,7 @@ function (corr::RestartOnNonDescent)(
 end
 
 @doc """
-RestartOnNonSufficientDescent <: AbstractRestartCondition
+    RestartOnNonSufficientDescent <: AbstractRestartCondition
 
 ## Fields
 * `κ`: the sufficient decrease factor

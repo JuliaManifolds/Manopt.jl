@@ -404,4 +404,24 @@ using ManifoldDiff: grad_distance
         grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
         @test conjugate_gradient_descent(M, f, grad_f, data[1]) isa PoincareBallPoint
     end
+
+    @testset "Issue #603: CG with HZ rule on a numerically challenging problem" begin
+        M = Sphere(2)
+        p0 = [1.0, 0.0, 0.0]
+
+        a = [0.0, 1.0, 0.0]
+
+        f(M, p) = 0.5 * norm(p - a)^2
+        grad_f(M, p) = project(M, p, p - a)
+
+        cgs = conjugate_gradient_descent(
+            M,
+            f,
+            grad_f,
+            p0;
+            coefficient = ConjugateGradientBealeRestart(HagerZhangCoefficient()),
+            return_state = true,
+        )
+        @test 
+    end
 end
