@@ -217,25 +217,32 @@ end
 update_rule_storage_points(::ConjugateDescentCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::ConjugateDescentCoefficientRule) = Tuple{:Gradient}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (cdcr::ConjugateDescentCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, kwargs...
+    )
+    # previously
+    # β = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p, -cgs.δ, X)
+    # now via differential, but also provide gradients for the fallbacks
+    nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
+    denominator = get_differential(amp, p, -cgs.δ; gradient = X, evaluated = true)
+    return nominator / denominator
+end
 function (u::DirectionUpdateRuleStorage{ConjugateDescentCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    # previously
-    # coeff = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, -cgs.δ, X_old)
-    # now via differential, but also provide gradients for the fallbacks
-    nom = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
-    denom = get_differential(amp, p_old, -cgs.δ; gradient = X_old, evaluated = true)
-    coeff = nom / denom
+    # previous iterate and gradient
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    β = u.coefficient(amp, cgs, i; p = p, X = X)
     update_storage!(u.storage, amp, cgs)
-    return coeff
+    return β
 end
 function show(io::IO, ::ConjugateDescentCoefficientRule)
     return print(io, "Manopt.ConjugateDescentCoefficientRule()")
