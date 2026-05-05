@@ -23,6 +23,9 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
             coefficient = dur2,
         )
         cgs2.X = [0.0, 0.2]
+        # Fake update history to get a certain old X and old p
+        cgs2.coefficient(pr, cgs2, 0)
+        # the inner check is 0.2 which is still less than 0.3
         @test cgs2.coefficient(pr, cgs2, 1) != 0
         cgs3 = ConjugateGradientDescentState(
             M; p = p0,
@@ -31,6 +34,9 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
             coefficient = dur3,
         )
         cgs3.X = [0.0, 0.2]
+        # Fake update history to get a certain old X and old p
+        cgs3.coefficient(pr, cgs3, 0)
+        # then we are above the threshold 0.1 (namely at 0.2) and we get a descent step
         @test cgs3.coefficient(pr, cgs3, 1) == 0
     end
     @testset "representation and summary of Coefficients" begin
