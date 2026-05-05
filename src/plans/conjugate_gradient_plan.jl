@@ -438,16 +438,16 @@ $(_kwargs(:vector_transport_method))
 
 [`HagerZhangCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
 """
-mutable struct HagerZhangCoefficientRule{VTM <: AbstractVectorTransportMethod, TF<:Real} <:
+mutable struct HagerZhangCoefficientRule{VTM <: AbstractVectorTransportMethod, TF <: Real} <:
     DirectionUpdateRule
     vector_transport_method::VTM
     denom_threshold::TF
 end
 function HagerZhangCoefficientRule(
         M::AbstractManifold; vector_transport_method::VTM = default_vector_transport_method(M),
-        denom_threshold::TF = 1e-10,
+        denom_threshold::TF = 1.0e-10,
     ) where {VTM <: AbstractVectorTransportMethod, TF <: Real}
-    return HagerZhangCoefficientRule{VTM,TF}(vector_transport_method, denom_threshold)
+    return HagerZhangCoefficientRule{VTM, TF}(vector_transport_method, denom_threshold)
 end
 
 update_rule_storage_points(::HagerZhangCoefficientRule) = Tuple{:Iterate}
@@ -486,7 +486,7 @@ function (u::DirectionUpdateRuleStorage{<:HagerZhangCoefficientRule})(
     else
         coef = zero(eltype(denom))
     end
-    
+
 
     update_storage!(u.storage, amp, cgs)
     return coef

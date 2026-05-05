@@ -422,6 +422,6 @@ using ManifoldDiff: grad_distance
             coefficient = ConjugateGradientBealeRestart(HagerZhangCoefficient()),
             return_state = true,
         )
-        @test 
+        @test norm(M, cgs.p, grad_f(M, cgs.p)) < 1.0e-8
     end
 end
