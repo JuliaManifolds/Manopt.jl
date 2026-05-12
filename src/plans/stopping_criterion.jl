@@ -480,22 +480,22 @@ A stopping criterion to stop when
 based on Eq. (1) in [ZhuByrdLuNocedal:1997](@cite)
 
 # Fields
-* tolerance: the threshold `tol` in the above formula.
+* _`threshold`: the threshold `tol` in the above formula.
 $(_fields([:at_iteration, :last_change]))
-* `last_cost``: the last cost value
+* `last_cost`: the last cost value
 
 # Constructor
 
-    StopWhenRelativeAPosterioriCostChangeLessOrEqual(tolerance::F)
+    StopWhenRelativeAPosterioriCostChangeLessOrEqual(threshold::F)
 
-Initialize the stopping criterion to a threshold `tolerance` for the change of the cost function.
+Initialize the stopping criterion to a `threshold` for the change of the cost function.
 
     StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::Real=1.0e7)
 
-Initialize tolerance to `factr * eps(factr)`, following the convention in [ZhuByrdLuNocedal:1997](@cite).
+Initialize threshold to `factr * eps(factr)`, following the convention in [ZhuByrdLuNocedal:1997](@cite).
 """
 mutable struct StopWhenRelativeAPosterioriCostChangeLessOrEqual{F <: Real} <: StoppingCriterion
-    tolerance::F
+    threshold::F
     at_iteration::Int
     last_cost::F
     last_change::F
@@ -510,12 +510,12 @@ function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(
     if iteration <= 0 # reset on init
         c.at_iteration = -1
         c.last_cost = Inf
-        c.last_change = 2 * c.tolerance
+        c.last_change = 2 * c.threshold
     end
     current_cost = get_cost(problem, state)
     c.last_change = (c.last_cost - current_cost) / max(abs(c.last_cost), abs(current_cost), 1)
     c.last_cost = current_cost
-    if iteration > 1 && c.last_change <= c.tolerance
+    if iteration > 1 && c.last_change <= c.threshold
         c.at_iteration = iteration
         return true
     end
@@ -524,20 +524,18 @@ end
 indicates_convergence(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual) = false
 function get_reason(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
     if c.at_iteration >= 0
-        return "At iteration $(c.at_iteration) the algorithm performed a step with a relative a posteriori cost change ($(abs(c.last_change))) less than or equal to $(c.tolerance)."
+        return "At iteration $(c.at_iteration) the algorithm performed a step with a relative a posteriori cost change ($(abs(c.last_change))) less than or equal to $(c.threshold)."
     end
     return ""
 end
-function status_summary(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
+function status_summary(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual; context::Symbol = short)
+    (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = $(abs(c.last_change)) ≤ $(c.tolerance):\t$s"
+    return (_is_inline(context) ? "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = $(abs(c.last_change)) ≤ $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the relative posteriori cost change is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
-function Base.show(io::IO, ::MIME"text/plain", c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
-    return print(
-        io,
-        "StopWhenRelativeAPosterioriCostChangeLessOrEqual with threshold $(c.tolerance).\n    $(status_summary(c))",
-    )
+function Base.show(io::IO, c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
+    return print(io, "StopWhenRelativeAPosterioriCostChangeLessOrEqual($(c.threshold))")
 end
 
 @doc """
@@ -911,10 +909,8 @@ function status_summary(c::StopWhenProjectedNegativeGradientNormLess; context::S
     return "A StoppingCriterion to stop when the negative projected gradient norm is less than a threshold of $(c.threshold):\n$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(c::StopWhenProjectedNegativeGradientNormLess) = true
-function show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
-    print(io, "StopWhenProjectedNegativeGradientNormLess(", c.threshold, "; norm = ", c.norm)
-    !ismissing(c.outer_norm) && print(io, ", outer_norm = ", c.outer_norm)
-    return print(io, ")")
+function Base.show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
+    return print(io, "StopWhenProjectedNegativeGradientNormLess($(c.threshold); norm = $(c.norm))")
 end
 
 """

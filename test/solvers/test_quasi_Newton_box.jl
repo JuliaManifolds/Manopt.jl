@@ -23,7 +23,6 @@ using RecursiveArrayTools
         @test Manopt.get_stepsize_bound(M, p, d, 2) ≈ Inf
     end
 
-
     @testset "update_fp_fpp - basic d = -g" begin
         M = Hyperrectangle([0.0, 1.0], [3.0, 3.0])
 
@@ -56,7 +55,6 @@ using RecursiveArrayTools
         @test hv_eb_dz == original_hv_eb_dz
         @test hv_eb_d == original_hv_eb_d
     end
-
 
     @testset "update_fp_fpp - basic d = [-2.0, -1.0]" begin
         M = Hyperrectangle([0.0, 1.0], [3.0, 3.0])
@@ -316,6 +314,12 @@ using RecursiveArrayTools
 
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test distance(M, p_opt, ArrayPartition(px, [0 2; 0 0])) < 0.1
+    end
+
+    @testset "Specialised Stopping criteria" begin
+        sc = StopWhenProjectedNegativeGradientNormLess(1.0e-9)
+        @test startswith(repr(sc), "StopWhenProjectedNegativeGradientNormLess(1.0e-9")
+        @test startswith(Manopt.status_summary(sc), "A StoppingCriterion to stop when the negative projected gradient norm is less than")
     end
 end
 
