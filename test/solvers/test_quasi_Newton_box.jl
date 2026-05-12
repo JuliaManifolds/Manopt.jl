@@ -315,12 +315,6 @@ using RecursiveArrayTools
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test distance(M, p_opt, ArrayPartition(px, [0 2; 0 0])) < 0.1
     end
-
-    @testset "Specialised Stopping criteria" begin
-        sc = StopWhenProjectedNegativeGradientNormLess(1.0e-9)
-        @test startswith(repr(sc), "StopWhenProjectedNegativeGradientNormLess(1.0e-9")
-        @test startswith(Manopt.status_summary(sc), "A StoppingCriterion to stop when the negative projected gradient norm is less than")
-    end
 end
 
 @testset "MaxStepsizeInDirection" begin

@@ -403,15 +403,18 @@ end
         @test sc(prob, s, 2)
         @test length(get_reason(sc)) > 0
         @test startswith(
-            to_display_string(sc),
-            "StopWhenRelativeAPosterioriCostChangeLessOrEqual with threshold",
+            Manopt.status_summary(sc),
+            "A stopping criterion to stop when the relative posteriori cost change is less than",
         )
-        @test startswith(Manopt.status_summary(sc), "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = ")
+        @test startswith(Manopt.status_summary(sc; context = :inline), "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = ")
         @test !Manopt.indicates_convergence(sc)
     end
 
     @testset "StopWhenProjectedNegativeGradientNormLess" begin
         sc = StopWhenProjectedNegativeGradientNormLess(1.0e-10)
+        @test startswith(repr(sc), "StopWhenProjectedNegativeGradientNormLess(")
+        @test startswith(Manopt.status_summary(sc), "A StoppingCriterion to stop when the negative projected gradient norm is less than")
+
         M = Hyperrectangle([1.0], [2.0])
         prob = DefaultManoptProblem(
             M, ManifoldGradientObjective((M, x) -> x^2, x -> 2x)

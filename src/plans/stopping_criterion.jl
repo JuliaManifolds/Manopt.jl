@@ -528,7 +528,7 @@ function get_reason(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
     end
     return ""
 end
-function status_summary(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual; context::Symbol = short)
+function status_summary(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
