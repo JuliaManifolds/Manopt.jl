@@ -18,6 +18,35 @@ This is a breaking change since the JuMP extension is dropped.
 * `HagerZhangLinesearch` stepsize, a state-of-the-art line search for smooth objectives with cubic interpolation and adaptive Wolfe condition checking. (#554)
 * Stopping criteria can now be initialized using `initialize_stepsize!`, similar to solvers. (#554)
 
+### Fixed
+
+* Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (#569)
+* Unified all `show` methods and their human readable analoga `status_summary` throughout the package (#569)
+* Fixed some text descriptions of a few stopping criteria.
+* unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
+* the `NesterovRule` now also stores an actual `AbstractRetractionMethod` instead of implicitly always using the default one.
+* Line searches consistently respect `stop_when_stepsize_exceeds` keyword argument as a hard limit. (#554)
+* `StopWhenChangeLess` falsely claimed to indicate convergence. This is now fixed. (#554)
+
+## [0.5.37] May 5, 2026
+
+### Changed
+
+* The default restart rule for `conjugate_gradient_descent` is now `RestartOnNonDescent` instead of `NeverRestart`, which makes the algorithm more robust to non-convexity and numerical issues. The old default can still be used by explicitly passing `restart_condition=NeverRestart()`. (#604)
+* `HagerZhangCoefficientRule` now has a safeguard against the denominator being too close to zero (the `denom_threshold` field). By default it is set to 1.0e-10. You can set it to a lower positive value (or even zero) to weaken the safeguard, but it is recommended to keep it to avoid numerical issues. (#604)
+* introduce for all `Rule`s also a variant without being encapsulated in a memory, where the old values have to be passed as keywords. This is now used by the `ConjugateGradientBealeRestartRule` when evaluating its inner rule. (#604)
+
+## [0.5.36] April 24, 2026
+
+### Added
+
+* a function `stopped_at(state)` to access the number of iterations it took a solver to stop. (#599)
+
+### Fixed
+
+* a small bug where `get_count(sc::StopWhenAny, Val(:Iteration))` wrongly reported it stopped before the first iteration when it actually did not yet stop. (#599)
+
+## [0.5.35] April 16, 2026
 
 ### Changed
 
@@ -30,13 +59,7 @@ discontinue the `JuMP` extension. (#532)
 
 ### Fixed
 
-* Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (#569)
-* Unified all `show` methods and their human readable analoga `status_summary` throughout the package (#569)
-* Fixed some text descriptions of a few stopping criteria.
-* unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
-* the `NesterovRule` now also stores an actual `AbstractRetractionMethod` instead of implicitly always using the default one.
-* Line searches consistently respect `stop_when_stepsize_exceeds` keyword argument as a hard limit. (#554)
-* `StopWhenChangeLess` falsely claimed to indicate convergence. This is now fixed. (#554)
+* The default line search in `conjugate_gradient_descent` is now `ArmijoLinesearchStepsize` instead of `ArmijoLinesearch`, which makes it work well with custom point types.
 
 ## [0.5.34] March 3, 2026
 

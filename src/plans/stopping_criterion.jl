@@ -1371,7 +1371,7 @@ function has_converged(c::StopWhenAny)
 end
 function get_count(c::StopWhenAny, v::Val{:Iterations})
     iters = filter(x -> x > 0, [get_count(ci, v) for ci in c.criteria])
-    (length(iters) == 0) && (return 0)
+    (length(iters) == 0) && (return -1) # None indicated to stop yet, so we also do not
     return minimum(iters)
 end
 function Base.show(io::IO, c::StopWhenAny)

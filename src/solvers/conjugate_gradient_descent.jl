@@ -4,7 +4,7 @@ function default_stepsize(
         retraction_method = default_retraction_method(M),
     )
     # take a default with a slightly defensive initial step size.
-    return ArmijoLinesearchStepsize(
+    return ArmijoLinesearch(
         M; retraction_method = retraction_method, initial_stepsize = 1.0
     )
 end
@@ -143,7 +143,7 @@ function conjugate_gradient_descent!(
         mgo::O,
         p;
         coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
-        restart_condition::AbstractRestartCondition = NeverRestart(),
+        restart_condition::AbstractRestartCondition = RestartOnNonDescent(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, ConjugateGradientDescentState; retraction_method = retraction_method
@@ -197,7 +197,8 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
     cgs.δ .-= cgs.X
     if (cgs.restart_condition(amp, cgs, k))
         # restart solver; set dir to -grad
-        cgs.δ = -copy(get_manifold(amp), cgs.p, cgs.X)
+        copyto!(M, cgs.δ, cgs.X)
+        cgs.δ .*= -1
         update_storage!(cgs.coefficient.storage, amp, cgs)
         cgs.β = 0.0
     end
