@@ -407,6 +407,7 @@ end
             "A stopping criterion to stop when the relative posteriori cost change is less than",
         )
         @test startswith(Manopt.status_summary(sc; context = :inline), "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = ")
+        @test startswith(repr(sc), "StopWhenRelativeAPosterioriCostChangeLessOrEqual(")
         @test !Manopt.indicates_convergence(sc)
     end
 
