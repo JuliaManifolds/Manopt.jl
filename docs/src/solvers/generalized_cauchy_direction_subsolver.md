@@ -1,6 +1,6 @@
 # Generalized Cauchy direction subsolver
 
-The generalized Cauchy direction (GCD) subsolver is a component in optimization algorithms that handle problems with bound constraints. It solves the following problem
+The generalized Cauchy direction (GCD) subsolver is a component in optimization algorithms that handle problems with bound constraints [BaranBergmannPrzybysz:2026](@cite). It solves the following problem
 
 ```math
 \begin{align*}
