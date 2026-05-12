@@ -236,7 +236,7 @@ end
 """
     Manopt.has_anisotropic_max_stepsize(::Hyperrectangle)
 
-Returns `true`, as `Hyperrectangle` manifold requires generalized Cauchy point computation in solvers.
+Returns `true`, as [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`) manifold requires generalized Cauchy point computation in solvers.
 """
 Manopt.has_anisotropic_max_stepsize(::Hyperrectangle) = true
 
