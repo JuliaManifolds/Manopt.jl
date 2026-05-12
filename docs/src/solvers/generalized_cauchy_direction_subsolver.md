@@ -71,3 +71,7 @@ Manopt.LimitedMemorySegmentHessianUpdater
 Manopt.hessian_value_from_inner_products
 Manopt.update_current_scale!
 ```
+
+```@bibliography
+Canonical=false
+```
