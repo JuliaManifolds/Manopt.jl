@@ -18,6 +18,8 @@ The following is a set of guidelines to [`Manopt.jl`](https://juliamanifolds.git
     - [Code style](#Code-style)
     - [Concerning the documentation](#Concerning-the-documentation)
     - [Spell checking](#Spell-checking)
+    - [On the use of AI](#On-the-use-of-AI)
+
 ## I just have a question
 
 The developer can most easily be reached in the Julia Slack channel [#manifolds](https://julialang.slack.com/archives/CP4QF0K5Z).

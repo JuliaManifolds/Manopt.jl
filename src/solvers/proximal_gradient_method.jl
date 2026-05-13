@@ -182,6 +182,7 @@ function initialize_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMe
     M = get_manifold(amp)
     zero_vector!(M, pgms.X, pgms.p)
     copyto!(M, pgms.a, pgms.p)
+    initialize_stepsize!(pgms.stepsize)
     return pgms
 end
 

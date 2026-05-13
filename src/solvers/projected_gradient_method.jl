@@ -266,6 +266,7 @@ calls_with_kwargs(::typeof(projected_gradient_method!)) = (decorate_objective!, 
 
 function initialize_solver!(amp::AbstractManoptProblem, pgms::ProjectedGradientMethodState)
     get_gradient!(amp, pgms.X, pgms.p)
+    initialize_stepsize!(pgms.stepsize)
     return pgms
 end
 
