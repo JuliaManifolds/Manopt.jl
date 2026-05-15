@@ -17,9 +17,10 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         p0 = [1.0, 0.0]
         pr = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         cgs2 = ConjugateGradientDescentState(
-            M;
-            p = p0, stopping_criterion = StopAfterIteration(2),
-            stepsize = Manopt.ConstantStepsize(M, 1.0), coefficient = dur2,
+            M; p = p0,
+            stopping_criterion = StopAfterIteration(2),
+            stepsize = Manopt.ConstantStepsize(M, 1.0),
+            coefficient = dur2,
         )
         cgs2.X = [0.0, 0.2]
         # Fake update history to get a certain old X and old p
@@ -27,9 +28,10 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         # the inner check is 0.2 which is still less than 0.3
         @test cgs2.coefficient(pr, cgs2, 1) != 0
         cgs3 = ConjugateGradientDescentState(
-            M;
-            p = p0, stopping_criterion = StopAfterIteration(2),
-            stepsize = Manopt.ConstantStepsize(M, 1.0), coefficient = dur3,
+            M; p = p0,
+            stopping_criterion = StopAfterIteration(2),
+            stepsize = Manopt.ConstantStepsize(M, 1.0),
+            coefficient = dur3,
         )
         cgs3.X = [0.0, 0.2]
         # Fake update history to get a certain old X and old p
