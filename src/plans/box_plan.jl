@@ -1,17 +1,4 @@
 """
-    UnitVector{TB}
-
-A type representing a unit tangent vector on a `Hyperrectangle`-like manifold with corners,
-or a product of it with a standard manifold.
-The field `index` stores the index of the element equal to 1.
-All other elements are equal to 0.
-`its` stores the overall iterator over all bounds.
-"""
-struct UnitVector{TB}
-    index::TB
-end
-
-"""
     has_anisotropic_max_stepsize(M::AbstractManifold)
 
 Return `true` if `M` has `max_stepsize` that depends on the direction.
@@ -20,6 +7,338 @@ with a standard manifold. Otherwise return `false`.
 """
 has_anisotropic_max_stepsize(::AbstractManifold) = false
 has_anisotropic_max_stepsize(M::ProductManifold) = any(has_anisotropic_max_stepsize, M.manifolds)
+
+@doc raw"""
+    LimitedMemoryHessianApproximation <: AbstractQuasiNewtonDirectionUpdate
+
+An approximation of Hessian of a scalar function of the form ``B_0 = θ I``,
+``B_{k+1} = B_k - W_k M_k W_k^{\mathrm{T}}``,
+where ``θ > 0`` is an initial scaling guess.
+Matrix ``M_k = \left(\begin{smallmatrix}M₁₁ & M₂₁^{\mathrm{T}}\\ M₂₁ & M₂₂\end{smallmatrix}\right)``
+is stored using its blocks.
+Blocks ``W_k`` are (implicitly) composed from `memory_y` and `memory_s` stored in `qn_du`
+of type [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref).
+
+Initial scale ``θ`` is stored in the field `initial_scale` but if the memory isn't empty,
+the current scale is set to squared norm of $s_k$ divided by inner product of ``s_k`` and ``y_k``
+where ``k`` is the oldest index for which the denominator is not equal to 0.
+
+`last_gcd_result` stores the result of the last generalized Cauchy direction search.
+
+See [ByrdNocedalSchnabel:1994](@cite) for details.
+"""
+mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
+        TDU <: QuasiNewtonLimitedMemoryDirectionUpdate,
+        F <: Real,
+        T_HM <: AbstractMatrix,
+        V <: AbstractVector,
+    } <: AbstractQuasiNewtonDirectionUpdate
+    # this approximates inverse Hessian
+    qn_du::TDU
+
+    # fields for approximating the Hessian
+    current_scale::F
+    M_11::T_HM
+    M_21::T_HM
+    M_22::T_HM
+    # buffer for calculating W_k blocks
+    buffer_inner_Sk_X::V
+    buffer_inner_Sk_Y::V
+    buffer_inner_Yk_X::V
+    buffer_inner_Yk_Y::V
+    last_gcd_result::Symbol
+    last_gcd_stepsize::F
+end
+
+function status_summary(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    s = "limited memory direction update with support for box constraints; "
+    s *= "internal direction update status: $(status_summary(d.qn_du))"
+    return s
+end
+
+function get_parameter(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate, ::Val{:max_stepsize})
+    if d.last_gcd_result === :found_limited
+        return d.last_gcd_stepsize
+    else
+        return Inf
+    end
+end
+
+function QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+        qn_du::QuasiNewtonLimitedMemoryDirectionUpdate{<:AbstractQuasiNewtonUpdateRule, T, F}
+    ) where {T, F <: Real}
+    memory_size = capacity(qn_du.memory_s)
+    M_11 = zeros(F, memory_size, memory_size)
+    M_21 = zeros(F, memory_size, memory_size)
+    M_22 = zeros(F, memory_size, memory_size)
+    buffer_inner_Sk_X = zeros(F, memory_size)
+    buffer_inner_Sk_Y = zeros(F, memory_size)
+    buffer_inner_Yk_X = zeros(F, memory_size)
+    buffer_inner_Yk_Y = zeros(F, memory_size)
+    return QuasiNewtonLimitedMemoryBoxDirectionUpdate{
+        typeof(qn_du), F, typeof(M_11), typeof(buffer_inner_Sk_X),
+    }(
+        qn_du,
+        qn_du.initial_scale,
+        M_11,
+        M_21,
+        M_22,
+        buffer_inner_Sk_X,
+        buffer_inner_Sk_Y,
+        buffer_inner_Yk_X,
+        buffer_inner_Yk_Y,
+        :not_searched,
+        NaN,
+    )
+end
+
+function initialize_update!(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    initialize_update!(ha.qn_du)
+    ha.last_gcd_result = :not_searched
+    return ha
+end
+
+function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
+        mp::AbstractManoptProblem, st
+    )
+    r = zero_vector(get_manifold(mp), get_iterate(st))
+    return d(r, mp, st)
+end
+function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
+        r, mp::AbstractManoptProblem, st
+    )
+    d.qn_du(r, mp, st)
+    M = get_manifold(mp)
+    p = get_iterate(st)
+    X = get_gradient(st)
+    gcd = GeneralizedCauchyDirectionSubsolver(M, p, d)
+    d.last_gcd_result, d.last_gcd_stepsize = find_generalized_cauchy_direction!(M, gcd, r, p, r, X)
+    return r
+end
+
+get_update_vector_transport(u::QuasiNewtonLimitedMemoryBoxDirectionUpdate) = get_update_vector_transport(u.qn_du)
+
+function get_at_bound_index(M::ProductManifold, X, b::Tuple{Int, Any})
+    return get_at_bound_index(M.manifolds[b[1]], submanifold_component(M, X, b[1]), b[2])
+end
+
+@doc raw"""
+    hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
+
+Compute ``⟨X, B X⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`.
+"""
+function hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X)
+    m = length(gh.qn_du.memory_s)
+    num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
+
+    normX_sqr = norm(M, p, X)^2
+
+    if m == 0 || num_nonzero_rho == 0
+        return gh.qn_du.initial_scale \ normX_sqr
+    end
+
+    ii = 1
+    for i in 1:m
+        iszero(gh.qn_du.ρ[i]) && continue
+        gh.buffer_inner_Yk_X[ii] = inner(M, p, gh.qn_du.memory_y[i], X)
+        gh.buffer_inner_Sk_X[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], X)
+
+        ii += 1
+    end
+    buffer_inner_Yk = view(gh.buffer_inner_Yk_X, 1:num_nonzero_rho)
+    buffer_inner_Sk = view(gh.buffer_inner_Sk_X, 1:num_nonzero_rho)
+
+    return hessian_value_from_inner_products(gh, normX_sqr, buffer_inner_Yk, buffer_inner_Sk, buffer_inner_Yk, buffer_inner_Sk)
+end
+
+@doc raw"""
+    hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X::UnitVector)
+
+Compute ``⟨X, B X⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`, and `X` is the
+[`UnitVector`](@ref).
+"""
+function hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X::UnitVector)
+    b = X.index
+    m = length(gh.qn_du.memory_s)
+    num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
+
+    if m == 0 || num_nonzero_rho == 0
+        return inv(gh.qn_du.initial_scale)
+    end
+
+    ii = 1
+    for i in 1:m
+        iszero(gh.qn_du.ρ[i]) && continue
+        gh.buffer_inner_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
+        gh.buffer_inner_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
+
+        ii += 1
+    end
+    buffer_inner_Yk = view(gh.buffer_inner_Yk_X, 1:num_nonzero_rho)
+    buffer_inner_Sk = view(gh.buffer_inner_Sk_X, 1:num_nonzero_rho)
+
+    return hessian_value_from_inner_products(gh, one(eltype(gh.qn_du.ρ)), buffer_inner_Yk, buffer_inner_Sk, buffer_inner_Yk, buffer_inner_Sk)
+end
+
+@doc raw"""
+    hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X::UnitVector, Y)
+
+Compute ``⟨X, B Y⟩``, where ``B`` is the (1, 1)-Hessian represented by `gh`, where `X` is the
+[`UnitVector`](@ref).
+"""
+function hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X::UnitVector, Y)
+    b = X.index
+
+    m = length(gh.qn_du.memory_s)
+    num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
+
+    Yb = get_at_bound_index(M, Y, b)
+    if m == 0 || num_nonzero_rho == 0
+        return gh.qn_du.initial_scale * Yb
+    end
+
+    ii = 1
+    for i in 1:m
+        iszero(gh.qn_du.ρ[i]) && continue
+        gh.buffer_inner_Yk_X[ii] = get_at_bound_index(M, gh.qn_du.memory_y[i], b)
+        gh.buffer_inner_Sk_X[ii] = gh.current_scale * get_at_bound_index(M, gh.qn_du.memory_s[i], b)
+
+        gh.buffer_inner_Yk_Y[ii] = inner(M, p, gh.qn_du.memory_y[i], Y)
+        gh.buffer_inner_Sk_Y[ii] = gh.current_scale * inner(M, p, gh.qn_du.memory_s[i], Y)
+        ii += 1
+    end
+    buffer_inner_Yk_X = view(gh.buffer_inner_Yk_X, 1:num_nonzero_rho)
+    buffer_inner_Yk_Y = view(gh.buffer_inner_Yk_Y, 1:num_nonzero_rho)
+    buffer_inner_Sk_X = view(gh.buffer_inner_Sk_X, 1:num_nonzero_rho)
+    buffer_inner_Sk_Y = view(gh.buffer_inner_Sk_Y, 1:num_nonzero_rho)
+
+    return hessian_value_from_inner_products(gh, Yb, buffer_inner_Yk_X, buffer_inner_Sk_X, buffer_inner_Yk_Y, buffer_inner_Sk_Y)
+end
+
+@doc raw"""
+    update_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+
+Refresh the scaling factor and blockwise Hessian approximation stored in `gh` using the
+nonzero curvature pairs currently in memory.
+
+- Identifies the most recent index with nonzero ``ρ_i`` to scale the initial Hessian guess
+    by ``ρ_i‖y_i‖^2 / θ``.
+- Builds ``L_k`` and ``S_k^\top S_k`` from the stored ``(s_i, y_i)`` pairs and updates the
+    block matrices ``M₁₁``, ``M₂₁``, and ``M₂₂`` via the blockwise inverse formula.
+- If all ``ρ_i`` vanish, resets `current_scale` to the inverse of `initial_scale` and
+    clears the block matrices.
+
+Returns the mutated `gh`.
+"""
+function update_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    m = length(gh.qn_du.memory_s)
+    last_safe_index = -1
+    for i in eachindex(gh.qn_du.ρ)
+        if abs(gh.qn_du.ρ[i]) > 0
+            last_safe_index = i
+        end
+    end
+
+    if (last_safe_index == -1)
+        # All memory yield zero inner products
+        gh.current_scale = inv(gh.qn_du.initial_scale)
+        gh.M_11 = fill(0.0, 0, 0)
+        gh.M_21 = fill(0.0, 0, 0)
+        gh.M_22 = fill(0.0, 0, 0)
+        return gh
+    end
+
+    invA = Diagonal([-ri for ri in gh.qn_du.ρ if !iszero(ri)])
+    num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
+
+    Lk = LowerTriangular(zeros(num_nonzero_rho, num_nonzero_rho))
+
+    # total scaling factor for the initial Hessian
+    # written this way to avoid floating point overflow (when ynorm is finite but ynorm^2 is Inf)
+    # see CUTEst EXPQUAD problem for an example
+    ynorm = norm(M, p, gh.qn_du.memory_y[last_safe_index])
+    gh.current_scale = ((gh.qn_du.ρ[last_safe_index] * ynorm) * ynorm) / gh.qn_du.initial_scale
+
+    tsksk = Symmetric(zeros(num_nonzero_rho, num_nonzero_rho))
+    ii = 1
+    # fill Dk and Lk
+    for i in 1:m
+        iszero(gh.qn_du.ρ[i]) && continue
+        jj = 1
+        for j in 1:m
+            iszero(gh.qn_du.ρ[j]) && continue
+            if jj < ii
+                Lk[ii, jj] = inner(M, p, gh.qn_du.memory_s[i], gh.qn_du.memory_y[j])
+            end
+            if ii <= jj
+                tsksk.data[ii, jj] = inner(M, p, gh.qn_du.memory_s[i], gh.qn_du.memory_s[j])
+            end
+            jj += 1
+        end
+        ii += 1
+    end
+    tsksk.data .*= gh.current_scale
+
+    # matrix inversion using the blockwise formula for speed
+    # Schur complement of -Dk is the only non-diagonal matrix we actually need to inverse in this step
+    W1 = Lk * invA
+    W2 = W1 * Lk'
+    gh.M_22 = inv(Symmetric(tsksk - W2))
+    W3 = gh.M_22 * W1
+    W4 = W1' * W3
+
+    gh.M_11 = invA + W4
+    gh.M_21 = -W3
+
+    return gh
+end
+
+@doc raw"""
+    hessian_value_from_inner_products(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
+
+Evaluate the quadratic form defined by the current blockwise Hessian approximation stored in
+`gh`, given precomputed coordinate vectors.
+
+Arguments:
+- `iss`: inner product of original vectors.
+- `cy1`, `cy2`: coordinates of ``y``-like vectors in the ``Y_k`` basis.
+- `cs1`, `cs2`: coordinates of ``s``-like vectors in the scaled ``S_k`` basis.
+
+The result is ``θ·iss - cy₁ᵀ M₁₁ cy₂ - 2·cs₁ᵀ M₂₁ cy₂ - cs₁ᵀ M₂₂ cs₂`` using the blocks
+``M₁₁``, ``M₂₁``, ``M₂₂`` stored in `gh` and the current scale ``θ``. Returns the scalar value.
+"""
+function hessian_value_from_inner_products(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
+    result = gh.current_scale * iss
+    if length(cy1) == 0
+        return result
+    end
+    result -= dot(cy1, gh.M_11, cy2)
+    result -= 2 * dot(cs1, gh.M_21, cy2)
+    result -= dot(cs1, gh.M_22, cs2)
+
+    return result
+end
+
+
+@doc raw"""
+    update_hessian!(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, p)
+
+Update Hessian approximation `gh` by moving it to point `p` and updating the stored `s` and
+`y` vectors.
+"""
+function update_hessian!(
+        gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate,
+        mp::AbstractManoptProblem,
+        st::AbstractManoptSolverState,
+        p_old,
+        k::Int,
+    )
+    (capacity(gh.qn_du.memory_s) == 0) && return gh
+    update_hessian!(gh.qn_du, mp, st, p_old, k)
+    update_current_scale!(get_manifold(mp), get_iterate(st), gh)
+    return gh
+end
+
 
 """
     abstract type AbstractSegmentHessianUpdater end
@@ -30,12 +349,12 @@ line segments in [`GeneralizedCauchyDirectionSubsolver`](@ref).
 abstract type AbstractSegmentHessianUpdater end
 
 """
-    init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha)
+    init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
 
 Method for initialization of `AbstractSegmentHessianUpdater` `hessian_segment_updater` just before the loop
 that examines subsequent intervals for GCD.
 """
-init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha)
+init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
 
 """
     struct GenericSegmentHessianUpdater <: AbstractSegmentHessianUpdater end
@@ -48,18 +367,18 @@ struct GenericSegmentHessianUpdater{TX} <: AbstractSegmentHessianUpdater
     d_tmp::TX
 end
 
-function get_default_hessian_segment_updater(M::AbstractManifold, p, ::Any)
+function get_default_hessian_segment_updater(M::AbstractManifold, p, ::AbstractQuasiNewtonDirectionUpdate)
     return GenericSegmentHessianUpdater(zero_vector(M, p), zero_vector(M, p))
 end
 
-function init_updater!(M::AbstractManifold, hessian_segment_updater::GenericSegmentHessianUpdater, p, d, ha)
+function init_updater!(M::AbstractManifold, hessian_segment_updater::GenericSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
     zero_vector!(M, hessian_segment_updater.d_z, p)
     copyto!(M, hessian_segment_updater.d_tmp, d)
     return hessian_segment_updater
 end
 
 @doc raw"""
-    (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha)
+    (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha::AbstractQuasiNewtonDirectionUpdate)
 
 Calculate Hessian values ``⟨e_b, B d_z⟩`` and ``⟨e_b, B d_tmp⟩`` for the generalized Cauchy
 point line search using the generic approach via `hessian_value` with [`UnitVector`](@ref).
@@ -75,6 +394,99 @@ function (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt
     return hv_eb_dz, hv_eb_d
 end
 
+"""
+    struct LimitedMemorySegmentHessianUpdater{TV <: AbstractVector} <: AbstractSegmentHessianUpdater
+
+Hessian value calculation for generalized Cauchy direction line segments that is optimized for
+[`QuasiNewtonLimitedMemoryBoxDirectionUpdate`](@ref). It relies on a specific Hessian structure.
+"""
+struct LimitedMemorySegmentHessianUpdater{TV <: AbstractVector} <: AbstractSegmentHessianUpdater
+    p_s::TV
+    p_y::TV
+    c_s::TV
+    c_y::TV
+end
+
+function get_default_hessian_segment_updater(::AbstractManifold, p, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    return LimitedMemorySegmentHessianUpdater(similar(ha.qn_du.ρ), similar(ha.qn_du.ρ), similar(ha.qn_du.ρ), similar(ha.qn_du.ρ))
+end
+
+function init_updater!(M::AbstractManifold, hessian_segment_updater::LimitedMemorySegmentHessianUpdater, p, d, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    fill!(hessian_segment_updater.c_s, 0)
+    fill!(hessian_segment_updater.c_y, 0)
+    ii = 1
+    for i in eachindex(ha.qn_du.ρ)
+        if iszero(ha.qn_du.ρ[i])
+            continue
+        end
+
+        hessian_segment_updater.p_s[ii] = ha.current_scale * inner(M, p, ha.qn_du.memory_s[i], d)
+        hessian_segment_updater.p_y[ii] = inner(M, p, ha.qn_du.memory_y[i], d)
+        ii += 1
+    end
+    return hessian_segment_updater
+end
+
+@doc raw"""
+    (hessian_segment_updater::LimitedMemorySegmentHessianUpdater)(
+        M::AbstractManifold, p,
+        t::Real, dt::Real, b, db, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate
+    )
+
+Calculate Hessian values ``⟨e_b, B d_z⟩`` and ``⟨e_b, B d⟩`` for the generalized Cauchy
+point line search using the limited-memory block Hessian stored in `ha`.
+``d_z`` start with 0 and is updated in-place by adding `dt * d` to it.
+
+## Arguments:
+
+- `M`: manifold.
+- `p`: current iterate.
+- `t`: current step length from `p`.
+- `dt`: step length increment from the last step.
+- `b`: bound index of the current segment.
+- `db`: search direction component at the bound index `b`.
+
+The updater reuses cached coordinate projections in `hessian_segment_updater` to cheaply
+evaluate Hessian quadratic forms via `hessian_value_from_inner_products`.
+"""
+function (hessian_segment_updater::LimitedMemorySegmentHessianUpdater)(
+        M::AbstractManifold, p,
+        t::Real, dt::Real, b, db, ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate
+    )
+
+    m = length(ha.qn_du.memory_s)
+    num_nonzero_rho = count(!iszero, ha.qn_du.ρ)
+
+    ii = 1
+    for i in 1:m
+        iszero(ha.qn_du.ρ[i]) && continue
+        # setting _X to w_b from the paper
+        ha.buffer_inner_Yk_X[ii] = get_at_bound_index(M, ha.qn_du.memory_y[i], b)
+        ha.buffer_inner_Sk_X[ii] = ha.current_scale * get_at_bound_index(M, ha.qn_du.memory_s[i], b)
+
+        ii += 1
+    end
+
+    buffer_inner_Yk_eb = view(ha.buffer_inner_Yk_X, 1:num_nonzero_rho)
+    buffer_inner_Sk_eb = view(ha.buffer_inner_Sk_X, 1:num_nonzero_rho)
+
+    buffer_inner_cy = view(hessian_segment_updater.c_y, 1:num_nonzero_rho)
+    buffer_inner_cs = view(hessian_segment_updater.c_s, 1:num_nonzero_rho)
+    buffer_inner_py = view(hessian_segment_updater.p_y, 1:num_nonzero_rho)
+    buffer_inner_ps = view(hessian_segment_updater.p_s, 1:num_nonzero_rho)
+
+    buffer_inner_cy .+= dt .* buffer_inner_py
+    buffer_inner_cs .+= dt .* buffer_inner_ps
+
+    eb_B_z = hessian_value_from_inner_products(ha, t * db, buffer_inner_Yk_eb, buffer_inner_Sk_eb, buffer_inner_cy, buffer_inner_cs)
+
+    eb_B_d = hessian_value_from_inner_products(ha, db, buffer_inner_Yk_eb, buffer_inner_Sk_eb, buffer_inner_py, buffer_inner_ps)
+
+    buffer_inner_py .-= db .* buffer_inner_Yk_eb
+    buffer_inner_ps .-= db .* buffer_inner_Sk_eb
+
+    return eb_B_z, eb_B_d
+end
 
 struct ProductIndex{T <: Tuple}
     ranges::T
@@ -136,11 +548,6 @@ function get_bounds_index(M::ProductManifold)
     return iter
 end
 
-function get_at_bound_index(M::ProductManifold, X, b::Tuple{Int, Any})
-    return get_at_bound_index(M.manifolds[b[1]], submanifold_component(M, X, b[1]), b[2])
-end
-
-
 """
     get_stepsize_bound(M::AbstractManifold, x, d, i)
 
@@ -191,17 +598,17 @@ function set_stepsize_bound!(M::ProductManifold, d_out, p, d, t_current::Real)
 end
 
 @doc raw"""
-    GeneralizedCauchyDirectionSubsolver{TM <: AbstractManifold, TP, T_HA, TFU <: AbstractSegmentHessianUpdater}
+    GeneralizedCauchyDirectionSubsolver{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
 
 Helper container for generalized Cauchy direction search. Stores the manifold `M`, cached
-original descent direction (`d_original`), the Hessian approximation (`ha`), and the
+original descent direction (`d_original`), the quasi-Newton direction update `ha`, and the
 `hessian_segment_updater`, which computes certain values of the Hessian while advancing segments.
 Instances are reused across segments during [`find_generalized_cauchy_direction!`](@ref) to
 avoid allocations.
 """
 struct GeneralizedCauchyDirectionSubsolver{
         TX,
-        T_HA, TFU <: AbstractSegmentHessianUpdater, TFT <: Tuple{<:Real, Any}, TBI,
+        T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater, TFT <: Tuple{<:Real, Any}, TBI,
         TO <: Base.Order.Ordering,
     }
     d_original::TX
@@ -213,7 +620,7 @@ struct GeneralizedCauchyDirectionSubsolver{
 end
 
 function GeneralizedCauchyDirectionSubsolver(
-        M::AbstractManifold, p, ha;
+        M::AbstractManifold, p, ha::AbstractQuasiNewtonDirectionUpdate;
         hessian_segment_updater::AbstractSegmentHessianUpdater = get_default_hessian_segment_updater(M, p, ha)
     )
     bounds_indices = get_bounds_index(M)
@@ -274,7 +681,7 @@ The `status` can be one of the following:
 function find_generalized_cauchy_direction!(
         M::AbstractManifold,
         gcd::GeneralizedCauchyDirectionSubsolver{
-            <:Any, <:Any,
+            <:Any, <:AbstractQuasiNewtonDirectionUpdate,
             <:AbstractSegmentHessianUpdater, <:Tuple{TF, Any},
         },
         d_out, p, d, X
@@ -447,4 +854,9 @@ function find_max_stepsize_in_direction(
         return (:found_unlimited, Inf)
     end
 
+end
+
+function show(io::IO, qns::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    print(io, "QuasiNewtonLimitedMemoryBoxDirectionUpdate with internal state:\n")
+    return print(io, qns.qn_du)
 end

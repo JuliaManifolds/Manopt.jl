@@ -102,6 +102,9 @@ function max_stepsize(M::Hyperrectangle)
     end
     return ms
 end
+function max_stepsize(M::ProbabilitySimplex)
+    return 1.0
+end
 
 """
     mid_point(M, p, q, x)
@@ -232,8 +235,9 @@ for that element is less than `t_current`, set the element of `d_out` to the dis
 set the element to 0.
 """
 function Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, d, t_current::Real)
+
     for i in eachindex(d_out, d)
-        bound = Manopt.get_stepsize_bound(M, p, d, i)
+        bound = get_stepsize_bound(M, p, d, i)
         if bound > 0
             if bound < t_current && d_out[i] != 0
                 d_out[i] = d[i] > 0 ? M.ub[i] - p[i] : M.lb[i] - p[i]
@@ -248,7 +252,7 @@ end
 """
     Manopt.has_anisotropic_max_stepsize(::Hyperrectangle)
 
-Returns `true`, as `Hyperrectangle` manifold requires generalized Cauchy point computation in solvers.
+Returns `true`, as [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`) manifold requires generalized Cauchy point computation in solvers.
 """
 Manopt.has_anisotropic_max_stepsize(::Hyperrectangle) = true
 

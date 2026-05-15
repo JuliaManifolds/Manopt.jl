@@ -176,7 +176,6 @@ include("stepsize/stepsize.jl")
 include("keywords.jl")
 
 # Generic plans I: based on objective structure
-include("box_plan.jl")
 include("bundle_plan.jl")
 include("cost_plan.jl")
 include("first_order_plan.jl")
@@ -218,6 +217,8 @@ include("primal_dual_plan.jl")
 include("higher_order_primal_dual_plan.jl")
 
 include("stochastic_gradient_plan.jl")
+
+include("box_plan.jl")
 
 include("embedded_objective.jl")
 include("scaled_objective.jl")

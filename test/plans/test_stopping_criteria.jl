@@ -1,16 +1,14 @@
 using Manifolds, ManifoldsBase, Manopt, Test, ManifoldsBase, Dates
 
-function repl_show_string(e)
-    a = IOBuffer()
-    Base.show(a, MIME"text/plain"(), e)
-    return String(take!(a))
+function to_display_string(obj)
+    buf = IOBuffer()
+    Base.show(buf, MIME"text/plain"(), obj)
+    return String(take!(buf))
 end
 
 @testset "StoppingCriteria" begin
     @testset "Generic Tests" begin
-        @test_throws ErrorException get_stopping_criteria(
-            Manopt.Test.DummyStoppingCriteriaSet()
-        )
+        @test_throws ErrorException get_stopping_criteria(Manopt.Test.DummyStoppingCriteriaSet())
         sa = StopAfterIteration(10)
         sb = StopWhenChangeLess(Euclidean(), 0.1)
         s = StopWhenAll(sa, sb)
@@ -28,8 +26,7 @@ end
         s.criteria[2].at_iteration = 3
         @test length(get_reason(s.criteria[2])) > 0
         s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1)])
-        @test get_stopping_criteria(s)[1].max_iterations ==
-            get_stopping_criteria(s2)[1].max_iterations
+        @test get_stopping_criteria(s)[1].max_iterations == get_stopping_criteria(s2)[1].max_iterations
 
         s3 = StopWhenCostLess(0.1)
         p = DefaultManoptProblem(
@@ -390,6 +387,54 @@ end
         @test length(get_reason(sc)) > 0
         sc(mp, st, 0) # reset
         @test length(get_reason(sc)) == 0
+    end
+
+    @testset "StopWhenRelativeAPosterioriCostChangeLessOrEqual" begin
+        sc = StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr = 100.0)
+        prob = DefaultManoptProblem(
+            Euclidean(), ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
+        )
+        s = GradientDescentState(Euclidean(); p = 1.0)
+        @test !sc(prob, s, -1)
+        @test !sc(prob, s, 1)
+        @test length(get_reason(sc)) == 0
+        s.p = 1.0 - 1.0e-14
+
+        @test sc(prob, s, 2)
+        @test length(get_reason(sc)) > 0
+        @test startswith(
+            Manopt.status_summary(sc),
+            "A stopping criterion to stop when the relative posteriori cost change is less than",
+        )
+        @test startswith(Manopt.status_summary(sc; context = :inline), "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = ")
+        @test startswith(repr(sc), "StopWhenRelativeAPosterioriCostChangeLessOrEqual(")
+        @test !Manopt.indicates_convergence(sc)
+    end
+
+    @testset "StopWhenProjectedNegativeGradientNormLess" begin
+        sc = StopWhenProjectedNegativeGradientNormLess(1.0e-10)
+        @test startswith(repr(sc), "StopWhenProjectedNegativeGradientNormLess(")
+        @test startswith(Manopt.status_summary(sc), "A StoppingCriterion to stop when the negative projected gradient norm is less than")
+
+        M = Hyperrectangle([1.0], [2.0])
+        prob = DefaultManoptProblem(
+            M, ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
+        )
+        s = GradientDescentState(M; p = [1.0], X = [2.0])
+        @test !sc(prob, s, -1)
+        @test length(get_reason(sc)) == 0
+        @test sc(prob, s, 1)
+        @test length(get_reason(sc)) > 0
+
+        @test startswith(
+            to_display_string(sc),
+            "A StoppingCriterion to stop when the negative projected gradient norm is less than",
+        )
+        @test startswith(Manopt.status_summary(sc; context = :inline), "|proj (-grad f)| < 1.0e-10")
+
+        Manopt.set_parameter!(sc, Val(:MinGradNorm), 1.0e-5)
+        @test sc.threshold == 1.0e-5
+        @test Manopt.indicates_convergence(sc)
     end
 
     @testset "has_converged" begin

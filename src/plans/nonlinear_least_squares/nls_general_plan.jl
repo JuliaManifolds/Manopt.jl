@@ -426,7 +426,7 @@ end
 function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)
     (context === :short) && return repr(lms)
     i = get_count(lms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(gds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (indicates_convergence(lms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the Levenberg–Marquardt algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(lms.stop) ? "Yes" : "No"

@@ -16,7 +16,7 @@ import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 import ManifoldsBase: base_manifold, base_point, get_basis
 import ManifoldsBase: project, project!, submanifold_component
-import LinearAlgebra: cross
+import LinearAlgebra: cross, LowerTriangular
 using ColorSchemes
 using ColorTypes
 using Colors
@@ -144,6 +144,7 @@ using ManifoldsBase:
     set_component!,
     shortest_geodesic,
     shortest_geodesic!,
+    submanifold_component,
     submanifold_components,
     vector_transport_to,
     vector_transport_to!,
@@ -448,7 +449,7 @@ export CondensedKKTVectorField, CondensedKKTVectorFieldJacobian
 export SymmetricLinearSystemObjective
 export ProximalGradientNonsmoothCost, ProximalGradientNonsmoothSubgradient
 
-export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
+export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate, QuasiNewtonLimitedMemoryBoxDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
 export QuasiNewtonPreconditioner
 export QuasiNewtonCautiousDirectionUpdate,
@@ -571,6 +572,7 @@ export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
 export DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
 export ProximalGradientMethodBacktracking
+export HagerZhangLinesearch
 #
 # Stopping Criteria
 export StoppingCriterion, StoppingCriterionSet
@@ -593,6 +595,7 @@ export StopAfter,
     StopWhenGradientChangeLess,
     StopWhenGradientMappingNormLess,
     StopWhenGradientNormLess,
+    StopWhenProjectedNegativeGradientNormLess,
     StopWhenFirstOrderProgress,
     StopWhenIterateNaN,
     StopWhenKKTResidualLess,
@@ -604,6 +607,7 @@ export StopAfter,
     StopWhenPopulationDiverges,
     StopWhenPopulationStronglyConcentrated,
     StopWhenProjectedGradientStationary,
+    StopWhenRelativeAPosterioriCostChangeLessOrEqual,
     StopWhenRelativeResidualLess,
     StopWhenRepeated,
     StopWhenSmallerOrEqual,
@@ -612,7 +616,7 @@ export StopAfter,
     StopWhenSwarmVelocityLess,
     StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria,
-    get_stopping_criteria, get_reason, get_stopping_criterion
+    get_stopping_criteria, get_reason, get_stopping_criterion, stopped_at
 #
 # Exports
 export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD
