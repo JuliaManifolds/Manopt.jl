@@ -144,5 +144,5 @@ using Manopt: get_value, get_value_function, get_gradient_function
         get_hessian!(M, Z, vhf, p, X, 2)
         @test Z == gh[2]
     end
-    @test repr(CoordinateVectorialType(DefaultOrthonormalBasis(ℝ))) == "CoordinateVectorialType(DefaultOrthonormalBasis(ℝ))"
+    @test repr(CoefficientVectorialType(DefaultOrthonormalBasis(ℝ))) == "CoefficientVectorialType(DefaultOrthonormalBasis(ℝ))"
 end
