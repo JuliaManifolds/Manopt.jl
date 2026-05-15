@@ -71,13 +71,13 @@ mutable struct AdaptiveRegularizationState{
     γ2::R
     function AdaptiveRegularizationState(
             sub_problem::Pr, sub_state::St;
-            p::P, X::T, q::P, H::T, S::T, σ::R, ρ::R, ρ_denominator::R, ρ_regularization::R,
+            p::P, X::T, q::P, H::T, s::T, σ::R, ρ::R, ρ_denominator::R, ρ_regularization::R,
             stopping_criterion::SC, retraction_method::TRTM, σmin::R, η1::R, η2::R, γ1::R, γ2::R,
         ) where {
             P, T, Pr, St <: AbstractManoptSolverState, SC <: StoppingCriterion, R, TRTM <: AbstractRetractionMethod,
         }
         return new{P, T, Pr, St, SC, R, TRTM}(
-            p, X, sub_problem, sub_state, q, H, S, σ, ρ,
+            p, X, sub_problem, sub_state, q, H, s, σ, ρ,
             ρ_denominator, ρ_regularization, stopping_criterion, retraction_method, σmin, η1, η2, γ1, γ2
         )
     end
@@ -94,7 +94,7 @@ function AdaptiveRegularizationState(
     }
     return AdaptiveRegularizationState(
         sub_problem, sub_state;
-        p = p, X = X, q = copy(M, p), H = copy(M, p, X), S = copy(M, p, X), σ, ρ = one(σ),
+        p = p, X = X, q = copy(M, p), H = copy(M, p, X), s = copy(M, p, X), σ, ρ = one(σ),
         ρ_denominator = one(σ), ρ_regularization = ρ_regularization, stopping_criterion = stopping_criterion,
         retraction_method = retraction_method, σmin = σmin, η1 = η1, η2 = η2, γ1 = γ1, γ2 = γ2
     )
@@ -117,7 +117,7 @@ function set_gradient!(s::AdaptiveRegularizationState, X)
 end
 function Base.show(io::IO, arcs::AdaptiveRegularizationState)
     print(io, "AdaptiveRegularizationState(", arcs.sub_problem, ", ", arcs.sub_state, "; ")
-    print(io, "p = ", arcs.p, ", q = ", arcs.q, ", H = ", arcs.H, ", S = ", arcs.S, ", ")
+    print(io, "p = ", arcs.p, ", q = ", arcs.q, ", H = ", arcs.H, ", s = ", arcs.s, ", ")
     print(io, "retraction_method = ", arcs.retraction_method, ", stopping_criterion = ", arcs.stop, ", ")
     print(io, "X = ", arcs.X, ", η1 = ", arcs.η1, ", η2 = ", arcs.η2, ", γ1 = ", arcs.γ1, ", ")
     print(io, "γ2 = ", arcs.γ2, ", ρ = ", arcs.ρ, ", ")
