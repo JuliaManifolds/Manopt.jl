@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 This is a breaking change since the JuMP extension is dropped.
 
+### Removed
+
+* The JuMP extension was dropped.
+
+### Changed
+
+* In Levenberg-Marquardt the `η` parameter has been renamed to `candidate_acceptance_threshold`, `β` to `damping_increase_factor` and `β_reduction` to `damping_reduction_factor`.
+
 ### Added
 
 * A robustified version of the Riemannian Levenberg Marquardt algorithm

@@ -210,19 +210,19 @@ end
         i_JF = similar(x0, 2 * length(ts_r2), 2)
         # η too large (≥ 1)
         @test_throws ArgumentError LevenbergMarquardtState(
-            M, i_res; initial_jacobian_f = i_JF, p = x0, η = 2, sub_problem = sub_fake_f, sub_state = sub_state
+            M, i_res; initial_jacobian_f = i_JF, p = x0, candidate_acceptance_threshold = 2, sub_problem = sub_fake_f, sub_state = sub_state
         )
         # η too small (≤ 0)
         @test_throws ArgumentError LevenbergMarquardtState(
-            M, i_res; initial_jacobian_f = i_JF, p = x0, η = -1, sub_problem = sub_fake_f, sub_state = sub_state
+            M, i_res; initial_jacobian_f = i_JF, p = x0, candidate_acceptance_threshold = -1, sub_problem = sub_fake_f, sub_state = sub_state
         )
         # damping term negative
         @test_throws ArgumentError LevenbergMarquardtState(
             M, i_res; initial_jacobian_f = i_JF, p = x0, damping_term_min = -1, sub_problem = sub_fake_f, sub_state = sub_state
         )
-        # β too small (≤ 1)
+        # damping_increase_factor too small (≤ 1)
         @test_throws ArgumentError LevenbergMarquardtState(
-            M, i_res; initial_jacobian_f = i_JF, p = x0, β = 0.5, sub_problem = sub_fake_f, sub_state = sub_state
+            M, i_res; initial_jacobian_f = i_JF, p = x0, damping_increase_factor = 0.5, sub_problem = sub_fake_f, sub_state = sub_state
         )
         # no sub problem provided
         @test_throws ArgumentError LevenbergMarquardtState(
@@ -625,7 +625,7 @@ end
             robustifier = robustifier,
             stopping_criterion = StopAfterIteration(75) | StopWhenGradientNormLess(1.0e-11) | StopWhenStepsizeLess(1.0e-11),
             sub_state = CoordinatesNormalSystemState(M; A = A),
-            β_reduction = 0.3,
+            damping_reduction_factor = 0.3,
             damping_reduction_threshold = 0.5,
             use_fast_coordinate_system = true,
             return_state = true,

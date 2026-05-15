@@ -228,10 +228,11 @@ function LevenbergMarquardt!(
         M, sub_problem, sub_state, initial_residual_values, initial_jacobian_f;
         p = p,
         damping_increase_factor = damping_increase_factor,
-        damping_increase_threshold = damping_reduction_threshold,
+        damping_increase_threshold = damping_increase_threshold,
         damping_reduction_threshold = damping_reduction_threshold,
         damping_reduction_factor = damping_reduction_factor,
         candidate_acceptance_threshold = candidate_acceptance_threshold,
+        damping_term = initial_damping_term,
         damping_term_min = damping_term_min, damping_term_max = damping_term_max,
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,
