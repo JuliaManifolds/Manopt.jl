@@ -281,6 +281,19 @@ function get_residuals!(
     return v
 end
 
+function Base.show(io::IO, nlso::ManifoldNonlinearLeastSquaresObjective)
+    print(io, "ManifoldNonlinearLeastSquaresObjective(")
+    print(io, nlso.objective, ", ", nlso.robustifier, ", ", nlso.value_cache)
+    return print(io, ")")
+end
+function status_summary(nlso::ManifoldNonlinearLeastSquaresObjective; context::Symbol = :default)
+    (context === :short) && (return repr(nlso))
+    # (context === :inline) &&
+    # we could maybe extend this if we find a good multiline idea here
+    n = length(nlso.objective)
+    return ("A nonlinear least squares objective $(n) vectorial block$(n > 1 ? "s" : "")")
+end
+
 #
 #
 # The solver state
