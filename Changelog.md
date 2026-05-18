@@ -39,7 +39,7 @@ We also unified a few of the internal solver state constructors.
 ### Removed
 
 * The JuMP extension was dropped.
-
+* `linear_subsolver! = ` was removed from the [`LevenbergMarquardt`](https://manoptjl.org/stable/solvers/LevenbergMarquardt/) solver interface, since it is imprecise. If you use a closed form solver before, specify it by passing the function to `sub_problem` and set `sub_state` to the corresponding evaluation type
 
 ## [0.5.37] May 5, 2026
 

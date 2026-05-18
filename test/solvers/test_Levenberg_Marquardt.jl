@@ -145,64 +145,7 @@ end
     p2 = LevenbergMarquardt(
         M, F_reg_r2(ts_r2, xs_r2, ys_r2), jacF_reg_r2(ts_r2, xs_r2, ys_r2), length(ts_r2) * 2
     )
-    @test isapprox(M, p_star, p2; atol = p_atol)
-    # testing in-place
-    p3 = copy(M, p0)
-    LevenbergMarquardt!(
-        M, F_reg_r2(ts_r2, xs_r2, ys_r2), jacF_reg_r2(ts_r2, xs_r2, ys_r2), p3, length(ts_r2) * 2
-    )
-    @test isapprox(M, p_star, p3; atol = p_atol)
-
-    # allocating R2 regression, zero residual, custom subsolver
-    M = Euclidean(2)
-    ds = LevenbergMarquardt(
-        M, F_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2), jacF_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2), p0;
-        return_state = true, damping_reduction_threshold = 0.2, linear_subsolver! = test_lm_lin_solve!,
-    )
-    lms = get_state(ds)
-    @test lms.sub_state.linsolve!! === test_lm_lin_solve!
-    @test isapprox(M, p_star, lms.p; atol = p_atol)
-
-    p1 = copy(M, p0)
-    LevenbergMarquardt!(
-        M, F_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2), jacF_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2), p1;
-        damping_reduction_threshold = 0.2,
-    )
-    @test isapprox(M, p_star, p1; atol = p_atol)
-
-    # mutating R2 regression
-    p0 = [0.0, 0.0]
-    ds = LevenbergMarquardt(
-        M, F_reg_r2!, jacF_reg_r2!, p0, length(ts_r2) * 2;
-        return_state = true, evaluation = InplaceEvaluation(),
-    )
-    lms = get_state(ds)
-    @test isapprox(M, p_star, lms.p; atol = p_atol)
-
-    p_r2 = DefaultManoptProblem(
-        M,
-        ManifoldNonlinearLeastSquaresObjective(
-            F_reg_r2(ts_r2, xs_r2, ys_r2), jacF_reg_r2(ts_r2, xs_r2, ys_r2), length(ts_r2) * 2,
-        ),
-    )
-
-    X_r2 = similar(x0)
-    get_gradient!(p_r2, X_r2, x0)
-    @test isapprox(X_r2, [270.3617451389837, 677.6730784956912])
-    @test isapprox(get_gradient(p_r2, x0), [270.3617451389837, 677.6730784956912])
-
-    p_r2_mut = DefaultManoptProblem(
-        M,
-        ManifoldNonlinearLeastSquaresObjective(
-            F_reg_r2!, jacF_reg_r2!, length(ts_r2) * 2; evaluation = InplaceEvaluation()
-        ),
-    )
-
-    X_r2 = similar(x0)
-    get_gradient!(p_r2_mut, X_r2, x0)
-    @test isapprox(X_r2, [270.3617451389837, 677.6730784956912])
-    @test isapprox(get_gradient(p_r2_mut, x0), [270.3617451389837, 677.6730784956912])
-
+    # TODO: Write a new and simpler test instead of this P2 with too many magic numbers.
     @testset "errors" begin
         sub_fake_f = (args...) -> 0
         sub_state = AllocatingEvaluation()

@@ -297,9 +297,6 @@ end
 #
 #
 # The solver state
-
-# TODO: Update keywords in docs
-# TODO: Document the fields with ??? To me (RB) currently unclear what they are used for
 @doc """
     LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
 
@@ -307,30 +304,30 @@ Describes a Gradient based descent algorithm, with
 
 # Fields
 
-* `damping_term`:                   current value of the damping term
-* `damping_term_min`:               lower bound for the damping term
-* `damping_term_max`:               upper bound for the damping term
-* `damping_increase_factor`:        improvement quotient exceeds `damping_reduction_threshold`.
-* `damping_reduction_threshold`:    threshold for the improvement quotient above which
+* `damping_term`:                         current value of the damping term
+* `damping_term_min`:                     lower bound for the damping term
+* `damping_term_max`:                     upper bound for the damping term
+* `damping_increase_factor`:              improvement quotient exceeds `damping_reduction_threshold`.
+* `damping_reduction_threshold`:          threshold for the improvement quotient above which
   the damping term is reduced by multiplying it with `β_reduction`.
-* `damping_increase_threshold` :    threshold for the improvement quotient below which
+* `damping_increase_threshold` :          threshold for the improvement quotient below which
   the damping term is increased by multiplying it with `β`.
-* `direction`:                      the current search direction, which is the solution of
+* `direction`:                            the current search direction, which is the solution of
   the linearized subproblem in each iteration.
-* `candidate_acceptance_threshold`: Scaling factor for the sufficient cost decrease threshold required
+* `candidate_acceptance_threshold`:       Scaling factor for the sufficient cost decrease threshold required
   to accept new proposal points. Allowed range: `0 < η < 1`.
-* `jacobian_f`:                   the current Jacobian of ``F`` in matrix form. Set to `nothing` if
+* `jacobian_f`:                           the current Jacobian of ``F`` in matrix form. Set to `nothing` if
   another representation is used.
 * `minimum_acceptable_model_improvement`: the minimum improvement in the model function that
   is required to accept a new point; if this is not met, the new point is rejected and
   the damping term is increased.
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:retraction_method))
-* `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
+* `residual_values`:                       values of the residuals calculated in the solver setup or the previous iteration
 $(_fields(:stopping_criterion; name = "stop"))
-* `sub_problem`: the linear sub problem solver to use to solve the surrogate.
-* `sub_state`: state specifying the algorithm to solve the sub problem
-* `X`:             the current gradient of ``F``
+$(_fields(:sub_problem))
+$(_fields(:sub_state))
+$(_fields(:X))
 
 # Constructor
 
@@ -342,15 +339,17 @@ Generate the Levenberg-Marquardt solver state.
 
 The following fields are keyword arguments
 
-* `β = 5.0`
-* `β_reduction = 0.5`
+* `candidate_acceptance_threshold = 0.2`,
+* `damping_increase_factor = 5.0`
+* `damping_reduction_factor = 0.5`
 * `damping_term_min = 0.1`
 * `damping_term_max = Inf`
 * `damping_term = damping_term_min`
 * `damping_reduction_threshold = Inf`
-* `damping_increase_threshold = η`
-* `η = 0.2`,
-* `initial_gradient = `$(_link(:zero_vector))
+* `damping_increase_threshold = candidate_acceptance_threshold`
+* `direction = `copy(M, p, X)`
+* `p = `$(_link(:rand))
+* `X = `$(_link(:zero_vector))``
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
 * `minimum_acceptable_model_improvement::Real = eps(number_eltype(p))`
@@ -398,7 +397,7 @@ mutable struct LevenbergMarquardtState{
     end
     function LevenbergMarquardtState(
             M::AbstractManifold, sub_problem, sub_state, initial_residual_values, initial_jacobian_f = nothing;
-            p = rand(M), X = zero_vector(M, p), direction = zero_vector(M, p),
+            p = rand(M), X = zero_vector(M, p), direction = copy(M, p, X),
             stopping_criterion::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
             candidate_acceptance_threshold::Real = 0.2,

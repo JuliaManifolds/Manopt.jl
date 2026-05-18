@@ -49,7 +49,7 @@ Alternatively, passing a [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`
 $(_kwargs(:evaluation))
 * `candidate_acceptance_threshold=0.2`:                   scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < candidate_acceptance_threshold < 1`.
 * `damping_term_min=0.1`:      initial (and also minimal) value of the damping term
-* `β=5.0`:                     parameter by which the damping term is multiplied when the current new point is rejected
+* `damping_increase_factor=5.0`:                     parameter by which the damping term is multiplied when the current new point is rejected
 * `function_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
 * `initial_jacobian_f`:      the list of initial Jacobians of each block of the cost function `f`.
   By default this is a matrix of size `num_components` times the manifold dimension of similar type as `p`.
@@ -57,9 +57,8 @@ $(_kwargs(:evaluation))
   By default this is a vector of length `num_components` of similar type as `p`.
 * `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
 * `sub_evaluation = `[`InplaceEvaluation`](@ref): an [`AbstractEvaluationType`](@ref) for `linear_subsolver!`.
-* `linear_subsolver! = nothing`: (deprecated) short form for specifying a closed form subsolver.
 $(_kwargs(:retraction_method))
-
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-12)$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-12)"))
 $(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
@@ -196,25 +195,20 @@ function LevenbergMarquardt!(
         damping_term_min::Real = 0.1,
         damping_term_max::Real = Inf,
         initial_damping_term::Real = damping_term_min,
-        debug = [DebugWarnIfCostIncreases()],
+        debug = is_tutorial_mode() ? [DebugWarnIfCostIncreases()] : [],
         candidate_acceptance_threshold::Real = 0.2,
         X = zero_vector(M, p),
         initial_residual_values = zeros(number_eltype(p), residuals_count(get_objective(nlso))),
         initial_jacobian_f = fill(nothing, length(get_objective(nlso).objective)),
-        (linear_subsolver!) = nothing,
-        #TODO better names for the next 2?
         ε::Real = 1.0e-6,
         α_mode::Symbol = :Default,
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
-        sub_evaluation::AbstractEvaluationType = InplaceEvaluation(),
+        # TODO (RB -> MB): What is this and how to document it?
         use_fast_coordinate_system::Bool = false,
+        # TODO (RB -> MB): What is this and how to document it?
         sub_objective = construct_lm_subobjective(use_fast_coordinate_system, nlso, damping_term_min, ε, α_mode, initial_residual_values, initial_jacobian_f),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
-        sub_state = if isnothing(linear_subsolver!)
-            ConjugateResidualState(TangentSpace(M, p), sub_objective)
-        else
-            CoordinatesNormalSystemState(M, p; linsolve = linear_subsolver!, evaluation = sub_evaluation)
-        end,
+        sub_state = ConjugateResidualState(TangentSpace(M, p), sub_objective),
         kwargs..., #collect rest
     ) where {O <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(LevenbergMarquardt!; kwargs...)
