@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
+using Manopt, Manifolds, Test, ManifoldDiff
 
 @testset "The Proximal Gradient Method" begin
     M = Hyperbolic(2)
@@ -138,7 +135,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         @test Manopt.get_parameter(pgng, :proximity_point) == p
 
         # prox pass through with dummy objective deco
-        dob = ManoptTestSuite.DummyDecoratedObjective(ob)
+        dob = Manopt.Test.DummyDecoratedObjective(ob)
         @test get_proximal_map(M, ob, 0.1, p) == get_proximal_map(M, dob, 0.1, p)
         q1 = copy(M, p)
         q2 = copy(M, p)

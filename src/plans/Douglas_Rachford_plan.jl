@@ -4,7 +4,7 @@ function reflect end
     reflect!(M, q, f, x; kwargs...)
 
 reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f: $(_math(:M)) → $(_math(:M))``, given by
+function ``f: $(_math(:Manifold))) → $(_math(:Manifold)))``, given by
 
 ````math
     $(_tex(:reflect))_f(x) = $(_tex(:reflect))_{f(x)}(x),
@@ -29,10 +29,9 @@ where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an in
 
 This can also be done in place of `q`.
 
-## Keyword arguments
+## Keyword Arguments
 
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :inverse_retraction_method))
+$(_kwargs([:retraction_method, :inverse_retraction_method]))
 
 and for the `reflect!` additionally
 

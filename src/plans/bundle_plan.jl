@@ -1,5 +1,5 @@
 #
-# Common files for bunlde-based solvers
+# Common files for bundle-based solvers
 #
 
 function convex_bundle_method_subsolver end

@@ -9,7 +9,7 @@ import Manopt:
     get_gradient,
     get_gradient!,
     set_parameter!
-using Manopt: _tex, _var, ManifoldDefaultsFactory, _produce_type
+using Manopt: _tex, ManifoldDefaultsFactory, _produce_type
 
 using RecursiveArrayTools
 
@@ -128,4 +128,6 @@ function alternating_gradient_descent!(
     Manopt.solve!(dmp, agds)
     return Manopt.get_solver_return(get_objective(dmp), agds)
 end
+
+## Prox TV on
 end

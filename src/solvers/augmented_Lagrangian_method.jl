@@ -17,17 +17,16 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `λ`:     the Lagrange multiplier with respect to the equality constraints
 * `λ_max`: an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min`: a lower bound for the Lagrange multiplier belonging to the equality constraints
-$(_var(:Field, :p; add = [:as_Iterate]))
+$(_fields(:p; add_properties = [:as_Iterate]))
 * `penalty`: evaluation of the current penalty term, initialized to `Inf`.
 * `μ`:     the Lagrange multiplier with respect to the inequality constraints
 * `μ_max`: an upper bound for the Lagrange multiplier belonging to the inequality constraints
 * `ρ`:     the penalty parameter
-$(_var(:Field, :sub_problem))
-$(_var(:Field, :sub_state))
+$(_fields([:sub_problem, :sub_state]))
 * `τ`:     factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ`:   the scaling factor of the penalty parameter
 * `θ_ϵ`:   the scaling factor of the accuracy tolerance
-$(_var(:Field, :stopping_criterion, "stop"))
+$(_fields(:stopping_criterion; name = "stop"))
 
 # Constructor
 
@@ -56,7 +55,7 @@ the following keyword arguments are available to initialise the corresponding fi
 * `λ_min=- λ_max`
 * `μ=ones(m)`: `m` is the number of inequality constraints in the [`ConstrainedManifoldObjective`](@ref) `co`.
 * `μ_max=20.0`
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 * `ρ=1.0`
 * `τ=0.8`
 * `θ_ρ=0.3`
@@ -267,9 +266,7 @@ where ``θ_ρ ∈ (0,1)`` is a constant scaling factor.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
+$(_args([:M, :f, :grad_f]))
 
 # Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
 
@@ -283,7 +280,7 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 
 # Keyword Arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `ϵ=1e-3`:           the accuracy tolerance
 * `ϵ_min=1e-6`:       the lower bound for the accuracy tolerance
 * `ϵ_exponent=1/100`: exponent of the ϵ update factor;
@@ -321,11 +318,12 @@ $(_var(:Keyword, :evaluation))
 * `sub_grad=[`AugmentedLagrangianGrad`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian gradient, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
   $(_note(:KeywordUsedIn, "sub_problem"))
 
-$(_var(:Keyword, :sub_kwargs))
+$(_kwargs(:sub_kwargs))
 
-$(_var(:Keyword, :stopping_criterion; default = _sc_alm_default))
-$(_var(:Keyword, :sub_problem; default = "[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
-$(_var(:Keyword, :sub_state; default = "[`QuasiNewtonState`](@ref)", add = "as the quasi newton method, the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used."))
+$(_kwargs(:stopping_criterion; default = "`$(_sc_alm_default)` "))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
+$(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` ")), where more precisely
+  as quasi newton method, the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used.
 * `sub_stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`,
 
 

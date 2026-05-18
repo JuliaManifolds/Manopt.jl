@@ -222,14 +222,11 @@ For the storage a [`StoreStateAction`](@ref) is used.
 # Fields
 
 
-$(_var(:Field, :at_iteration))
-$(_var(:Field, :last_change))
-$(_var(:Field, :inverse_retraction_method))
-$(_var(:Field, :storage))
+$(_fields([:at_iteration, :last_change, :inverse_retraction_method, :storage]))
 * `at_iteration::Int`: indicate at which iteration this stopping criterion was last active.
 * `inverse_retraction`: An [`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) that can be passed
   to approximate the distance by this inverse retraction and a norm on the tangent space.
-  This can be used if neither the distance nor the logarithmic map are availannle on `M`.
+  This can be used if neither the distance nor the logarithmic map are available on `M`.
 * `last_change`: store the last change
 * `storage`: A [`StoreStateAction`](@ref) to access the previous iterate.
 * `threshold`: the threshold for the change to check (run under to stop)
@@ -239,12 +236,12 @@ $(_var(:Field, :storage))
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:M))``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold))nifold))) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold)))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold)))``
 is given by
 
-```
+```math
 $(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distance))(p_k,q_k)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
@@ -351,8 +348,7 @@ end
 A stopping criterion to stop when the change of the cost function is less than a certain threshold.
 
 # Fields
-$(_var(:Field, :at_iteration))
-$(_var(:Field, :last_change))
+$(_fields([:at_iteration, :last_change]))
 * `last_cost``: the last cost value
 
 # Constructor
@@ -529,7 +525,7 @@ function (sc::StopWhenEntryChangeLess)(
 end
 function get_reason(sc::StopWhenEntryChangeLess)
     if (sc.last_change < sc.threshold) && (sc.at_iteration >= 0)
-        return "At iteation $(sc.at_iteration) the algorithm performed a step with a change ($(sc.last_change)) in $(sc.field) less than $(sc.threshold).\n"
+        return "At iteration $(sc.at_iteration) the algorithm performed a step with a change ($(sc.last_change)) in $(sc.field) less than $(sc.threshold).\n"
     end
     return ""
 end
@@ -559,10 +555,7 @@ A stopping criterion based on the change of the gradient.
 
 # Fields
 
-$(_var(:Field, :at_iteration))
-$(_var(:Field, :last_change))
-$(_var(:Field, :vector_transport_method))
-$(_var(:Field, :storage))
+$(_fields([:at_iteration, :last_change, :vector_transport_method, :storage]))
 * `threshold`: the threshold for the change to check (run under to stop)
 * `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
   that is used to compute the overall distance based on the element-wise distance.
@@ -570,12 +563,12 @@ $(_var(:Field, :storage))
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradien ``X,Y ∈ $(_math(:M))``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold))) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold)))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradien ``X,Y ∈ $(_math(:Manifold)))``
 is given by
 
-```
+```math
 $(_tex(:norm, "X-Y"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k-Y_k"; index = "p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
@@ -686,8 +679,8 @@ A stopping criterion based on the current gradient norm.
 # Fields
 
 * `norm`:      a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm
-  of the gradient `X` in the tangent space at `p` on `M``.
-  For manifolds with components provide `(M::AbstractManifold, p, X, r) -> ℝ`.
+  of the gradient `X` in the tangent space at `p` on `M`.
+  For manifolds with components provide a function `(M::AbstractManifold, p, X, r) -> ℝ`.
 * `threshold`: the threshold to indicate to stop when the distance is below this value
 * `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
   that is used to compute the overall distance based on the element-wise distance.
@@ -699,12 +692,12 @@ A stopping criterion based on the current gradient norm.
 
 # Example
 
-On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:M))``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold))) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold)))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:Manifold)))``
 is given by
 
-```
+```math
 $(_tex(:norm, "X"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k"; index = "p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
@@ -1188,7 +1181,7 @@ function has_converged(c::StopWhenAny)
 end
 function get_count(c::StopWhenAny, v::Val{:Iterations})
     iters = filter(x -> x > 0, [get_count(ci, v) for ci in c.criteria])
-    (length(iters) == 0) && (return 0)
+    (length(iters) == 0) && (return -1) # None indicated to stop yet, so we also do not
     return minimum(iters)
 end
 function show(io::IO, c::StopWhenAny)
@@ -1283,7 +1276,7 @@ end
 @doc """
     StopWhenRepeated <: StoppingCriterion
 
-A stopping Criterion that indicates to stop when the (internal) stoppoing criterion it wraps,
+A stopping Criterion that indicates to stop when the (internal) stopping criterion it wraps,
 has indicated to stop for `n` (consecutive) times
 
 # Fields
@@ -1301,15 +1294,17 @@ has indicated to stop for `n` (consecutive) times
 
 Create a stopping criterion that indicates to stop when the `criterion` has indicated to stop
 `n` times (consecutively, if `consecutive=true` for the first constructor).
-Note that the cross product is in general noncommutative, and here only the order `sc × n`` is possible.
+Note that the cross product is in general noncommutative, and here only the order `sc × n` is possible.
 
 # Examples
 
 A stopping criterion that indicates to stop whenever the gradient norm is less that `1e-6` for three consecutive iterations:
+
     StopWhenRepeated(StopWhenGradientNormLess(1e-6), 3)
     StopWhenGradientNormLess(1e-6) × 3
 
 A stopping criterion that indicates to stop whenever the gradient norm is less that `1e-6` at three iterations (not necessarily consecutive):
+
     StopWhenRepeated(StopWhenGradientNormLess(1e-6), 3; consecutive=false)
 """
 mutable struct StopWhenRepeated{SC <: StoppingCriterion} <: StoppingCriterion
@@ -1334,7 +1329,6 @@ function (c::StopWhenRepeated)(
     if k <= 0 # reset on init
         c.count = zero(c.count)
         c.at_iteration = -1
-        return c.stopping_criterion(p, s, k) # reset the criterion
     end
     # evaluate the inner stopping criterion
     stop = c.stopping_criterion(p, s, k)
@@ -1353,7 +1347,7 @@ function get_reason(sc::StopWhenRepeated)
     has_stopped = (sc.at_iteration >= 0)
     if (sc.at_iteration >= 0)
         s = has_stopped ? "reached" : "not reached"
-        c = sc.consecutive ? "consecutive " : ""
+        c = sc.consecutive ? "consecutive" : ""
         # we can only get the last reason, unless we do more allocations
         r = """At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n) $(c) times:
         $(sc.count) ≥ $(sc.n): $(s)
@@ -1392,7 +1386,9 @@ A stopping criterion, that only evaluates a certain (inner) stopping based on a 
 on the iterate `k`.
 The condition is a function `condition(k) -> Bool`.
 
-## Example `(k) -> >(n)` would only activate that stopping criterion after `n` iterations.`.
+## Example
+
+`(k) -> >(n)` would only activate that stopping criterion after `n` iterations.
 
 ## Fields
 
@@ -1409,6 +1405,7 @@ check the inner criterion. The `n` is ignored if you provide a manual functor `c
 ## Examples
 
 A stopping criterion that indicates to stop when the gradient norm is small but only after the third iteration
+
     StopWhenCriterionWithIterationCondition(StopWhenGradientNormLess(1e-6), 3)
 
 You can also use the infix operators `≟` (`\\questeq` on REPL),  `⩻` (`\\ltquest`), and `⩼` (`\\gtquest`) to create such a criterion:

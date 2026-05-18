@@ -1,6 +1,6 @@
 using Manifolds, Manopt, Random, Test
 
-@testset "Constained set objective" begin
+@testset "Constrained set objective" begin
     M = Hyperbolic(2)
     c = Manifolds._hyperbolize(M, [0, 0])
     r = 1.0

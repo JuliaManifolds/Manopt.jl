@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using LinearAlgebra, LRUCache, Manifolds, Manopt, ManoptTestSuite, Test
+using LinearAlgebra, LRUCache, Manifolds, Manopt, Test
 
 @testset "Stochastic Gradient Plan" begin
     M = Sphere(2)
@@ -37,7 +34,7 @@ using LinearAlgebra, LRUCache, Manifolds, Manopt, ManoptTestSuite, Test
         Xa = [zero_vector(M, p) for p in pts]
         Ya = [zero_vector(M, p) for p in pts]
         for obj in [msgo_ff, msgo_vf, msgo_fv, msgo_vv]
-            ddo = ManoptTestSuite.DummyDecoratedObjective(obj)
+            ddo = Manopt.Test.DummyDecoratedObjective(obj)
             @test get_gradients(M, obj, p) == get_gradients(M, ddo, p)
             get_gradients!(M, Xa, obj, p)
             get_gradients!(M, Ya, ddo, p)

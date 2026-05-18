@@ -5,13 +5,13 @@ Describes the state of a gradient based descent algorithm.
 
 # Fields
 
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :X; add = [:as_Gradient]))
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :stepsize))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:X; add_properties = [:as_Gradient]))
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields(:stepsize))
 * `direction::`[`DirectionUpdateRule`](@ref) : a processor to handle the obtained gradient and compute a
   direction to “walk into”.
-$(_var(:Field, :retraction_method))
+$(_fields(:retraction_method))
 
 # Constructor
 
@@ -21,16 +21,16 @@ Initialize the gradient descent solver state, where
 
 ## Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
 
 ## Keyword arguments
 
 * `direction=`[`IdentityUpdateRule`](@ref)`()`
-$(_var(:Keyword, :p; add = :as_Initial))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(100)`"))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, GradientDescentState; retraction_method=retraction_method)`"))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :X; add = :as_Memory))
+$(_kwargs(:p; add_properties = [:as_Initial]))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientDescentState`](@ref)`; retraction_method=retraction_method)"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 
 # See also
 
@@ -57,8 +57,10 @@ function GradientDescentState(
         X::T = zero_vector(M, p),
         stopping_criterion::SC = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8),
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
-        stepsize::S = default_stepsize(
-            M, GradientDescentState; retraction_method = retraction_method
+        stepsize::S = _produce_type(
+            default_stepsize(
+                M, GradientDescentState; retraction_method = retraction_method
+            ), M, p
         ),
         direction::D = IdentityUpdateRule(),
         kwargs..., # ignore rest
@@ -87,7 +89,7 @@ function default_stepsize(
         retraction_method = default_retraction_method(M),
     )
     # take a default with a slightly defensive initial step size.
-    return ArmijoLinesearchStepsize(
+    return ArmijoLinesearch(
         M; retraction_method = retraction_method, initial_stepsize = 1.0
     )
 end
@@ -135,25 +137,22 @@ The algorithm can be performed in-place of `p`.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :grad_f, :p]))
 
 $(_note(:GradientObjective))
 
 # Keyword arguments
 
 
-$(_var(:Keyword, :differential))
+$(_kwargs(:differential))
 * `direction=`[`IdentityUpdateRule`](@ref)`()`:
   specify to perform a certain processing of the direction, for example
   [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref).
-$(_var(:Keyword, :evaluation; add = :GradientExample))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, GradientDescentState)`"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
-$(_var(:Keyword, :X; add = :as_Gradient))
+$(_kwargs(:evaluation; add_properties = [:GradientExample]))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientDescentState`](@ref)`; retraction_method=retraction_method)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
+$(_kwargs(:X; add_properties = [:as_Gradient]))
 
 $(_note(:OtherKeywords))
 
@@ -240,8 +239,8 @@ function gradient_descent!(
         M;
         p = p,
         stopping_criterion = stopping_criterion,
-        stepsize = _produce_type(stepsize, M),
-        direction = _produce_type(direction, M),
+        stepsize = _produce_type(stepsize, M, p),
+        direction = _produce_type(direction, M, p),
         retraction_method = retraction_method,
         X = X,
     )

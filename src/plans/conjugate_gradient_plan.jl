@@ -26,16 +26,16 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 # Fields
 
-$(_var(:Field, :p; add = [:as_Iterate]))
-$(_var(:Field, :X))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:X))
 * `δ`:                       the current descent direction, also a tangent vector
 * `β`:                       the current update coefficient rule, see .
 * `coefficient`:             function to determine the new `β`
 * `restart_condition`:       an [`AbstractRestartCondition`](@ref) to determine how to handle non-descent directions.
-$(_var(:Field, :stepsize))
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :vector_transport_method))
+$(_fields(:stepsize))
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields(:retraction_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -49,14 +49,14 @@ and `δ` is initialized to a copy of this vector.
 
 The following fields from above <re keyword arguments
 
-$(_var(:Keyword, :X, "initial_gradient"))
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:X; name = "initial_gradient"))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
-* `restart_condition=`[`NeverRestart`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to never restart.
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`)"))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :vector_transport_method))
+* `restart_condition=`[`RestartOnNonDescent`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to [`RestartOnNonDescent`](@ref).
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:vector_transport_method))
 
 # See also
 
@@ -90,7 +90,7 @@ mutable struct ConjugateGradientDescentState{
             sC::TsC,
             s::TStep,
             dC::DirectionUpdateRule,
-            res_cond::TRC = NeverRestart(),
+            res_cond::TRC = RestartOnNonDescent(),
             retr::TRetr = default_retraction_method(M, typeof(p)),
             vtr::VTM = default_vector_transport_method(M),
             initial_gradient::T = zero_vector(M, p),
@@ -125,7 +125,7 @@ function ConjugateGradientDescentState(
         M::AbstractManifold;
         p::P = rand(M),
         coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
-        restart_condition::TRC = NeverRestart(),
+        restart_condition::TRC = RestartOnNonDescent(),
         retraction_method::TRetr = default_retraction_method(M, typeof(p)),
         stepsize::TStep = default_stepsize(
             M, ConjugateGradientDescentState; retraction_method = retraction_method
@@ -164,7 +164,7 @@ function get_gradient(cgs::ConjugateGradientDescentState)
     return cgs.X
 end
 
-_doc_CG_notaion = """
+_doc_CG_notation = """
 Denote the last iterate and gradient by ``p_k,X_k``,
 the current iterate and gradient by ``p_{k+1}, X_{k+1}``, respectively,
 as well as the last update direction by ``δ_k``.
@@ -195,7 +195,7 @@ struct ConjugateDescentCoefficientRule <: DirectionUpdateRule end
 
 Compute the (classical) conjugate gradient coefficient based on [Fletcher:1987](@cite) adapted to manifolds
 
-$(_doc_CG_notaion)
+$(_doc_CG_notation)
 
 Then the coefficient reads
 ```math
@@ -217,25 +217,32 @@ end
 update_rule_storage_points(::ConjugateDescentCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::ConjugateDescentCoefficientRule) = Tuple{:Gradient}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (cdcr::ConjugateDescentCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, kwargs...
+    )
+    # previously
+    # β = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p, -cgs.δ, X)
+    # now via differential, but also provide gradients for the fallbacks
+    nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
+    denominator = get_differential(amp, p, -cgs.δ; gradient = X, evaluated = true)
+    return nominator / denominator
+end
 function (u::DirectionUpdateRuleStorage{ConjugateDescentCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    # previously
-    # coeff = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, -cgs.δ, X_old)
-    # now via differential, but also provide gradients for the fallbacks
-    nom = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
-    denom = get_differential(amp, p_old, -cgs.δ; gradient = X_old, evaluated = true)
-    coeff = nom / denom
+    # previous iterate and gradient
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    β = u.coefficient(amp, cgs, i; p = p, X = X)
     update_storage!(u.storage, amp, cgs)
-    return coeff
+    return β
 end
 function show(io::IO, ::ConjugateDescentCoefficientRule)
     return print(io, "Manopt.ConjugateDescentCoefficientRule()")
@@ -248,7 +255,7 @@ A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update
 
 # Fields
 
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -258,7 +265,7 @@ Construct the Dai—Yuan coefficient update rule.
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 # See also
 
@@ -276,28 +283,32 @@ end
 update_rule_storage_points(::DaiYuanCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::DaiYuanCoefficientRule) = Tuple{:Gradient, :δ}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (dy::DaiYuanCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ, kwargs...
+    )
+    M = get_manifold(amp)
+    Xtr = vector_transport_to(M, p, X, cgs.p, dy.vector_transport_method)
+    ν = cgs.X - Xtr # notation y from [HZ06]
+    δtr = vector_transport_to(M, p, δ, cgs.p, dy.vector_transport_method)
+    # previously: nominator = inner(M, cgs.p, cgs.X, cgs.X)
+    nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
+    return nominator / inner(M, p, δtr, ν)
+end
 function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
             !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
-
-    gradienttr = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    ν = cgs.X - gradienttr #notation y from [HZ06]
-    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.vector_transport_method)
-    # previously: nominator = inner(M, cgs.p, cgs.X, cgs.X)
-    nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
-    β = nominator / inner(M, p_old, δtr, ν)
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ = get_storage(u.storage, VectorStorageKey(:δ))
+    β = u.coefficient(amp, cgs, i; p = p, X = X, δ = δ)
     update_storage!(u.storage, amp, cgs)
     return β
 end
@@ -315,9 +326,9 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [DaiYuan:1999](@cite) adapted to
 Riemannian manifolds.
 
-$(_doc_CG_notaion)
-Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
+$(_doc_CG_notation)
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 ````math
@@ -329,7 +340,7 @@ $(
     _tex(
         :frac,
         _tex(:norm, "X_{k+1}"; index = "p_{k+1}") * "^2",
-        "⟨$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"
+        "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"
     )
 )
 ````
@@ -339,7 +350,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "DaiYuanCoefficientRule"))
 """
@@ -366,6 +377,18 @@ struct FletcherReevesCoefficientRule <: DirectionUpdateRule end
 update_rule_storage_points(::FletcherReevesCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::FletcherReevesCoefficientRule) = Tuple{:Gradient}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (fr::FletcherReevesCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, kwargs...
+    )
+    # old version:
+    # inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p, X, X)
+    # now using (potentially) differentials
+    nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
+    denominator = get_differential(amp, p, X; gradient = X, evaluated = true)
+    return nominator / denominator
+end
 function (u::DirectionUpdateRuleStorage{FletcherReevesCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
@@ -374,15 +397,11 @@ function (u::DirectionUpdateRuleStorage{FletcherReevesCoefficientRule})(
             !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    # old version:
-    # inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, X_old, X_old)
-    nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
-    denominator = get_differential(amp, p_old, X_old; gradient = X_old, evaluated = true)
-    coeff = nominator / denominator
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    β = u.coefficient(amp, cgs, i; p = p, X = X)
     update_storage!(u.storage, amp, cgs)
-    return coeff
+    return β
 end
 function show(io::IO, ::FletcherReevesCoefficientRule)
     return print(io, "Manopt.FletcherReevesCoefficientRule()")
@@ -394,7 +413,7 @@ end
 
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [FletcherReeves:1964](@cite) adapted to manifolds
 
-$(_doc_CG_notaion)
+$(_doc_CG_notation)
 
 Then the coefficient reads
 ```math
@@ -420,7 +439,7 @@ A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update
 
 # Fields
 
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -430,60 +449,73 @@ Construct the Hager-Zhang coefficient update rule based on [HagerZhang:2005](@ci
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
+* `denom_threshold::Real=1e-10`: a threshold to avoid numerical instabilities when the inner
+  product `δ` and difference of gradients is close to zero.
 
 # See also
 
 [`HagerZhangCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
 """
-mutable struct HagerZhangCoefficientRule{VTM <: AbstractVectorTransportMethod} <:
+mutable struct HagerZhangCoefficientRule{VTM <: AbstractVectorTransportMethod, TF <: Real} <:
     DirectionUpdateRule
     vector_transport_method::VTM
+    denom_threshold::TF
 end
 function HagerZhangCoefficientRule(
-        M::AbstractManifold; vector_transport_method::VTM = default_vector_transport_method(M)
-    ) where {VTM <: AbstractVectorTransportMethod}
-    return HagerZhangCoefficientRule{VTM}(vector_transport_method)
+        M::AbstractManifold; vector_transport_method::VTM = default_vector_transport_method(M),
+        denom_threshold::TF = 1.0e-10,
+    ) where {VTM <: AbstractVectorTransportMethod, TF <: Real}
+    return HagerZhangCoefficientRule{VTM, TF}(vector_transport_method, denom_threshold)
 end
 
 update_rule_storage_points(::HagerZhangCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::HagerZhangCoefficientRule) = Tuple{:Gradient, :δ}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (hz::HagerZhangCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+    )
+    M = get_manifold(amp)
+    Xtr = vector_transport_to(
+        M, p, X, cgs.p, hz.vector_transport_method
+    )
+    ν = cgs.X - Xtr #notation y from [HZ06]
+    δtr = vector_transport_to(M, p, δ, cgs.p, hz.vector_transport_method)
+    denom = inner(M, cgs.p, δtr, ν)
+    if abs(denom) > hz.denom_threshold
+        # when abs(denom) is small, we lose numerical stability.
+        νknormsq = inner(M, cgs.p, ν, ν)
+        β = inner(M, cgs.p, ν, cgs.X) / denom - 2 * νknormsq * inner(M, cgs.p, δtr, cgs.X) / denom^2
+        # Numerical stability from Manopt / Hager-Zhang paper
+        ξn = norm(M, cgs.p, cgs.X)
+        η = -1 / (ξn * min(0.01, norm(M, p, X)))
+        β = max(β, η)
+    else
+        β = zero(eltype(denom))
+    end
+    return β
+end
 function (u::DirectionUpdateRuleStorage{<:HagerZhangCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
             !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
-
-    gradienttr = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    ν = cgs.X - gradienttr #notation y from [HZ06]
-    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.vector_transport_method)
-    denom = inner(M, cgs.p, δtr, ν)
-    νknormsq = inner(M, cgs.p, ν, ν)
-    β =
-        inner(M, cgs.p, ν, cgs.X) / denom -
-        2 * νknormsq * inner(M, cgs.p, δtr, cgs.X) / denom^2
-    # Numerical stability from Manopt / Hager-Zhang paper
-    ξn = norm(M, cgs.p, cgs.X)
-    η = -1 / (ξn * min(0.01, norm(M, p_old, X_old)))
-    coef = max(β, η)
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ = get_storage(u.storage, VectorStorageKey(:δ))
+    β = u.coefficient(amp, cgs, i; p = p, X = X, δ = δ)
     update_storage!(u.storage, amp, cgs)
-    return coef
+    return β
 end
 function show(io::IO, u::HagerZhangCoefficientRule)
     return print(
-        io,
-        "Manopt.HagerZhangCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
+        io, "Manopt.HagerZhangCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
     )
 end
 
@@ -493,9 +525,9 @@ end
 
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [FletcherReeves:1964](@cite) adapted to manifolds
 
-$(_doc_CG_notaion)
-Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
+$(_doc_CG_notation)
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 ```math
@@ -503,11 +535,11 @@ Then the coefficient reads
     _tex(
         :frac,
         "2$(_tex(:norm, "ν_k"; index = "p_{k+1}"))^2",
-        "⟨$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}",
+        "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}",
     )
 )
-  $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k,
-  $(_tex(:frac, "X_{k+1}", "⟨$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"))
+  $(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k,
+  $(_tex(:frac, "X_{k+1}", "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"))
 $(_tex(:Bigr))⟩_{p_{k+1}}.
 ```
 
@@ -515,7 +547,7 @@ This method includes a numerical stability proposed by those authors.
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "HagerZhangCoefficientRule"))
 """
@@ -530,7 +562,7 @@ A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update
 
 # Fields
 
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -540,7 +572,7 @@ Construct the Hestenes-Stiefel coefficient update rule based on [HestenesStiefel
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 # See also
 
@@ -559,39 +591,38 @@ end
 update_rule_storage_points(::HestenesStiefelCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::HestenesStiefelCoefficientRule) = Tuple{:Gradient, :δ}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (hs::HestenesStiefelCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+    )
+    M = get_manifold(amp)
+    Xtr = vector_transport_to(M, p, X, cgs.p, hs.vector_transport_method)
+    δtr = vector_transport_to(M, p, δ, cgs.p, hs.vector_transport_method)
+    ν = cgs.X - Xtr #notation from [HZ06]
+    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
+    denominator = get_differential(amp, cgs.p, δtr; gradient = cgs.X, evaluated = true) - get_differential(amp, p, δ; gradient = X, evaluated = true)
+    return max(0, nominator / denominator)
+end
 function (u::DirectionUpdateRuleStorage{<:HestenesStiefelCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
             !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
         return 0.0
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
-
-    gradienttr = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.vector_transport_method)
-    ν = cgs.X - gradienttr #notation from [HZ06]
-    # old with inners:
-    # β = inner(M, cgs.p, cgs.X, ν) / inner(M, cgs.p, δtr, ν)
-    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
-    denominator =
-        get_differential(amp, cgs.p, δtr; gradient = cgs.X, evaluated = true) -
-        get_differential(amp, p_old, δ_old; gradient = X_old, evaluated = true)
-    β = nominator / denominator
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ = get_storage(u.storage, VectorStorageKey(:δ))
+    β = u.coefficient(amp, cgs, i; p = p, X = X, δ = δ)
     update_storage!(u.storage, amp, cgs)
-    return max(0, β)
+    return β
 end
 function show(io::IO, u::HestenesStiefelCoefficientRule)
     return print(
-        io,
-        "Manopt.HestenesStiefelCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
+        io, "Manopt.HestenesStiefelCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
     )
 end
 
@@ -602,9 +633,9 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [HestenesStiefel:1952](@cite) adapted to manifolds
 
 
-$(_doc_CG_notaion)
-Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
+$(_doc_CG_notation)
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 
@@ -615,21 +646,21 @@ Then the coefficient reads
     _tex(
         :frac,
         "$(_tex(:diff))f(p_{k+1})[ν_k]",
-        "$(_tex(:diff))f(p_{k+1})[$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k] - $(_tex(:diff))f(p_k)[δ_k]",
+        "$(_tex(:diff))f(p_{k+1})[$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k] - $(_tex(:diff))f(p_k)[δ_k]",
     )
 )
 \\\\&= $(
     _tex(
         :frac,
         "$(_tex(:inner, "X_{k+1}", "ν_k"; index = "p_{k+1}"))",
-        "$(_tex(:inner, "$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k", "X_{k+1}"; index = "p_{k+1}")) - $(_tex(:inner, "δ_k", "X_k"; index = "p_{k}"))",
+        "$(_tex(:inner, "$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k", "X_{k+1}"; index = "p_{k+1}")) - $(_tex(:inner, "δ_k", "X_k"; index = "p_{k}"))",
     )
 )
 \\\\&= $(
     _tex(
         :frac,
         "$(_tex(:inner, "X_{k+1}", "ν_k"; index = "p_{k+1}"))",
-        "$(_tex(:inner, "$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k", "ν_k"; index = "p_{k+1}"))",
+        "$(_tex(:inner, "$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k", "ν_k"; index = "p_{k+1}"))",
     )
 ),
 \\end{aligned}
@@ -640,7 +671,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "HestenesStiefelCoefficientRule"))
 """
@@ -657,7 +688,7 @@ A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update
 
 # Fields
 
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -667,7 +698,7 @@ Construct the Lui-Storey coefficient update rule based on [LiuStorey:1991](@cite
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 # See also
 
@@ -685,27 +716,32 @@ end
 update_rule_storage_points(::LiuStoreyCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::LiuStoreyCoefficientRule) = Tuple{:Gradient, :δ}
 
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (ls::LiuStoreyCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+    )
+    M = get_manifold(amp)
+    Xtr = vector_transport_to(M, p, X, cgs.p, ls.vector_transport_method)
+    ν = cgs.X - Xtr # notation y from [HZ06]
+    # old:
+    # β = inner(M, cgs.p, cgs.X, ν) / inner(M, p, -δ, X)
+    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
+    denominator = get_differential(amp, p, δ; gradient = X, evaluated = true)
+    return -nominator / denominator
+end
 function (u::DirectionUpdateRuleStorage{<:LiuStoreyCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
             !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    δ_old = get_storage(u.storage, VectorStorageKey(:δ))
-    gradienttr = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    ν = cgs.X - gradienttr # notation y from [HZ06]
-    # old:
-    # β = inner(M, cgs.p, cgs.X, ν) / inner(M, p_old, -δ_old, X_old)
-    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
-    denominator = get_differential(amp, p_old, δ_old; gradient = X_old, evaluated = true)
-    β = -nominator / denominator
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ = get_storage(u.storage, VectorStorageKey(:δ))
+    β = u.coefficient(amp, cgs, i; p = p, X = X, δ = δ)
     update_storage!(u.storage, amp, cgs)
     return β
 end
@@ -722,9 +758,9 @@ end
 
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [LiuStorey:1991](@cite) adapted to manifolds
 
-$(_doc_CG_notaion)
-Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
+$(_doc_CG_notation)
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 ```math
@@ -738,7 +774,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "LiuStoreyCoefficientRule"))
 """
@@ -753,7 +789,7 @@ A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update
 
 # Fields
 
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -763,7 +799,7 @@ Construct the Dai—Yuan coefficient update rule.
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 # See also
 [`PolakRibiereCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
@@ -781,34 +817,39 @@ end
 update_rule_storage_points(::PolakRibiereCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::PolakRibiereCoefficientRule) = Tuple{:Gradient}
 
+
+# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# keywords, i.e. the state has the current values, the keywords are the old ones
+function (pr::PolakRibiereCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X
+    )
+    M = get_manifold(amp)
+    Xtr = vector_transport_to(M, p, X, cgs.p, pr.vector_transport_method)
+    ν = cgs.X - Xtr
+    # old
+    # β = real(inner(M, cgs.p, cgs.X, ν)) / real(inner(M, p, X, X))
+    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
+    denominator = get_differential(amp, p, X; gradient = X, evaluated = true)
+    β = nominator / denominator
+    # numerical stability from Manopt
+    return max(zero(β), β)
+end
 function (u::DirectionUpdateRuleStorage{<:PolakRibiereCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-
-    gradienttr = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    ν = cgs.X - gradienttr
-    # old
-    # β = real(inner(M, cgs.p, cgs.X, ν)) / real(inner(M, p_old, X_old, X_old))
-    nominator = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
-    denominator = get_differential(amp, p_old, X_old; gradient = X_old, evaluated = true)
-    β = nominator / denominator
-    # numerical stability from Manopt
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    β = u.coefficient(amp, cgs, i; p = p, X = X)
     update_storage!(u.storage, amp, cgs)
-    return max(zero(β), β)
+    return β
 end
 function show(io::IO, u::PolakRibiereCoefficientRule)
     return print(
-        io,
-        "Manopt.PolakRibiereCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
+        io, "Manopt.PolakRibiereCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
     )
 end
 
@@ -819,9 +860,9 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based
 on [PolakRibiere:1969](@cite) adapted to Riemannian manifolds.
 
-$(_doc_CG_notaion)
-Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
-where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
+$(_doc_CG_notation)
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 
@@ -836,7 +877,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 # Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "PolakRibiereCoefficientRule"))
 """
@@ -864,10 +905,15 @@ struct SteepestDescentCoefficientRule <: DirectionUpdateRule end
 update_rule_storage_points(::SteepestDescentCoefficientRule) = Tuple{}
 update_rule_storage_vectors(::SteepestDescentCoefficientRule) = Tuple{}
 
-function (u::DirectionUpdateRuleStorage{SteepestDescentCoefficientRule})(
-        ::DefaultManoptProblem, ::ConjugateGradientDescentState, i
+function (sd::SteepestDescentCoefficientRule)(
+        ::DefaultManoptProblem, ::ConjugateGradientDescentState, i; kwargs...
     )
     return 0.0
+end
+function (u::DirectionUpdateRuleStorage{SteepestDescentCoefficientRule})(
+        amp::DefaultManoptProblem, cgs::ConjugateGradientDescentState, i
+    )
+    return u.coefficient(amp, cgs, i)
 end
 @doc """
     SteepestDescentCoefficient()
@@ -891,14 +937,14 @@ end
     ConjugateGradientBealeRestartRule <: DirectionUpdateRule
 
 A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update coefficient
-based on a restart idea of [Beale:1972](@cite), following [HagerZhang:2006; page 12](@cite)
+based on a restart idea of [Beale:1972](@cite), following [HagerZhang:2006:1; page 12](@cite)
 adapted to manifolds.
 
 # Fields
 
 * `direction_update::DirectionUpdateRule`: the actual rule, that is restarted
 * `threshold::Real`: a threshold for the restart check.
-$(_var(:Field, :vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructor
 
@@ -916,14 +962,14 @@ Construct the Beale restart coefficient update rule adapted to manifolds.
 
 ## Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
   If this is not provided, the `DefaultManifold()` from $(_link(:ManifoldsBase)) is used.
 * `direction_update`: a [`DirectionUpdateRule`](@ref) or a corresponding
   [`ManifoldDefaultsFactory`](@ref) to produce such a rule.
 
 ## Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 * `threshold=0.2`
 
 # See also
@@ -967,29 +1013,28 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestartRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
     )
     M = get_manifold(amp)
-    if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
-            !has_storage(u.storage, VectorStorageKey(:Gradient))
-        update_storage!(u.storage, amp, cgs) # if not given store current as old
+    if k == 0
+        # store current values as old and return 0
+        update_storage!(u.storage, amp, cgs)
+        return 0.0
     end
-    p_old = get_storage(u.storage, PointStorageKey(:Iterate))
-    X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-
+    # If a rule does not have these, they should return nothing
+    p = get_storage(u.storage, PointStorageKey(:Iterate))
+    X = get_storage(u.storage, VectorStorageKey(:Gradient))
+    δ = get_storage(u.storage, VectorStorageKey(:δ))
     # call actual rule
-    β = u.coefficient.direction_update(amp, cgs, k)
+    β = u.coefficient.direction_update(amp, cgs, k; p = p, X = X, δ = δ)
 
     denom = norm(M, cgs.p, cgs.X)
-    Xoldpk = vector_transport_to(
-        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
-    )
-    num = inner(M, cgs.p, cgs.X, Xoldpk)
+    Xtr = vector_transport_to(M, p, X, cgs.p, u.coefficient.vector_transport_method)
+    num = inner(M, cgs.p, cgs.X, Xtr)
     # update storage only after that in case they share
     update_storage!(u.storage, amp, cgs)
     return real(num / denom) > u.coefficient.threshold ? zero(β) : β
 end
 function show(io::IO, u::ConjugateGradientBealeRestartRule)
     return print(
-        io,
-        "Manopt.ConjugateGradientBealeRestartRule($(repr(u.direction_update)); threshold=$(u.threshold), vector_transport_method=$(u.vector_transport_method))",
+        io, "Manopt.ConjugateGradientBealeRestartRule($(repr(u.direction_update)); threshold=$(u.threshold), vector_transport_method=$(u.vector_transport_method))",
     )
 end
 
@@ -998,11 +1043,11 @@ end
     ConjugateGradientBealeRestart(M::AbstractManifold, direction_update::Union{DirectionUpdateRule,ManifoldDefaultsFactory}; kwargs...)
 
 Compute a conjugate gradient coefficient with a potential restart, when two directions are
-nearly orthogonal. See [HagerZhang:2006; page 12](@cite) (in the preprint, page 46 in Journal page numbers).
+nearly orthogonal. See [HagerZhang:2006:1; page 12](@cite) (in the preprint, page 46 in Journal page numbers).
 This method is named after E. Beale from his proceedings paper in 1972 [Beale:1972](@cite).
 This method acts as a _decorator_ to any existing [`DirectionUpdateRule`](@ref) `direction_update`.
 
-$(_doc_CG_notaion)
+$(_doc_CG_notation)
 
 Then a restart is performed, hence ``β_k = 0`` returned if
 
@@ -1010,7 +1055,7 @@ Then a restart is performed, hence ``β_k = 0`` returned if
   $(
     _tex(
         :frac,
-        "⟨X_{k+1}, $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k⟩",
+        "⟨X_{k+1}, $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k⟩",
         _tex(:norm, "X_k", index = "p_k")
     )
 ) > ε,
@@ -1024,7 +1069,7 @@ where ``ε`` is the `threshold`, which is set by default to `0.2`, see [Powell:1
 
 ## Keyword arguments
 
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 * `threshold=0.2`
 
 $(_note(:ManifoldDefaultFactory, "ConjugateGradientBealeRestartRule"))
@@ -1081,12 +1126,17 @@ end
 update_rule_storage_points(::HybridCoefficientRule) = Tuple{}
 update_rule_storage_vectors(::HybridCoefficientRule) = Tuple{}
 
+function (hc::HybridCoefficientRule)(
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; kwargs...
+    )
+    βs = [c(amp, cgs, i) for c in hc.coefficients]
+    β_lower_bound = hc.lower_bound(amp, cgs, i)
+    return max(hc.lower_bound_scale * β_lower_bound, min(βs...))
+end
 function (u::DirectionUpdateRuleStorage{<:HybridCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    βs = [c(amp, cgs, i) for c in u.coefficient.coefficients]
-    β_lower_bound = u.coefficient.lower_bound(amp, cgs, i)
-    return max(u.coefficient.lower_bound_scale * β_lower_bound, min(βs...))
+    return u.coefficient(amp, cgs, i)
 end
 function show(io::IO, u::HybridCoefficientRule)
     coefficient_str = join([repr(c.coefficient) for c in u.coefficients], ", ")
@@ -1182,7 +1232,7 @@ function (corr::RestartOnNonDescent)(
 end
 
 @doc """
-RestartOnNonSufficientDescent <: AbstractRestartCondition
+    RestartOnNonSufficientDescent <: AbstractRestartCondition
 
 ## Fields
 * `κ`: the sufficient decrease factor

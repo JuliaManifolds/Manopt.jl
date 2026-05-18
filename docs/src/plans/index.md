@@ -41,7 +41,7 @@ The following symbols are used.
 | `:TrustRegionRadius` | [`TrustRegionsState`](@ref) | the trust region radius, equivalent to `:σ` |
 | `:ρ`, `:u` | [`ExactPenaltyCost`](@ref), [`ExactPenaltyGrad`](@ref) | Parameters within the exact penalty objective |
 | `:ρ`, `:μ`, `:λ` | [`AugmentedLagrangianCost`](@ref), [`AugmentedLagrangianGrad`](@ref) | Parameters of the Lagrangian function |
-| `:p`, `:X` | [`LinearizedDCCost`](@ref), [`LinearizedDCGrad`](@ref) | Parameters withing the linearized functional used for the sub problem of the [difference of convex algorithm](@ref solver-difference-of-convex) |
+| `:p`, `:X` | [`LinearizedDCCost`](@ref), [`LinearizedDCGrad`](@ref) | Parameters within the linearized functional used for the sub problem of the [difference of convex algorithm](@ref solver-difference-of-convex) |
 
 Any other lower case name or letter as well as single upper case letters access fields of the corresponding first argument.
 for example `:p` could be used to access the field `s.p` of a state.

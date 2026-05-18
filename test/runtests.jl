@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test
+using Manifolds, ManifoldsBase, Manopt, Test
 
 @testset "Manopt.jl" begin
     @testset "Plan Tests         " begin

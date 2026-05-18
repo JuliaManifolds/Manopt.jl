@@ -22,7 +22,7 @@ function (cs::Manopt.LineSearchesStepsize)(
     dphi_0 = get_differential(mp, p, η; Y = X_tmp)
 
     # guess initial alpha
-    α0 = 1.0
+    α0 = cs.initial_guess(mp, s, k, cs.last_stepsize, η; lf0 = fp, Dlf0 = dphi_0)
 
     # perform actual line-search
 
@@ -42,6 +42,7 @@ function (cs::Manopt.LineSearchesStepsize)(
     end
 
     α, fp = cs.linesearch(ϕ, dϕ, ϕdϕ, α0, fp, dphi_0)
+    cs.last_stepsize = α
     return α
 end
 

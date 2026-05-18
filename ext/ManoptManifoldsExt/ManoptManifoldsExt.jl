@@ -2,7 +2,7 @@ module ManoptManifoldsExt
 
 using ManifoldsBase: exp, log, ParallelTransport, vector_transport_to
 using Manopt
-using Manopt: _math, _tex, _var, ManifoldDefaultsFactory, _produce_type
+using Manopt: _math, _tex, ManifoldDefaultsFactory, _produce_type
 import Manopt:
     max_stepsize,
     get_gradient,
@@ -26,4 +26,5 @@ Rn(::Val{:Manifolds}, args...; kwargs...) = Euclidean(args...; kwargs...)
 const NONMUTATINGMANIFOLDS = Union{Circle, PositiveNumbers, Euclidean{Tuple{}}}
 include("manifold_functions.jl")
 include("ChambollePockManifolds.jl")
+include("test_examples.jl")
 end

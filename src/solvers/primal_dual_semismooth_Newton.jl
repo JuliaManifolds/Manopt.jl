@@ -14,10 +14,10 @@ Perform the Primal-Dual Riemannian semismooth Newton algorithm.
 
 $(_doc_PDSN_formula)
 
-* `p, X`:                          primal and dual start points ``p∈$(_math(:M))`` and ``X ∈ T_n$(_tex(:Cal, "N"))``
-* `m,n`:                           base points on ``$(_math(:M))`` and ``$(_tex(:Cal, "N"))``, respectively.
+* `p, X`:                          primal and dual start points ``p∈$(_math(:Manifold))nifold))nifold))nifold))`` and ``X ∈ T_n$(_tex(:Cal, "N"))``
+* `m,n`:                           base points on ``$(_math(:Manifold)))`` and ``$(_tex(:Cal, "N"))``, respectively.
 * `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_math(:TpM; p = "m")) → $(_math(:TpM; M = "N", p = "Λ(m)"))``
+* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_math(:TangentSpace; p = "m")) → $(_math(:TangentSpace; M = "N", p = "Λ(m)"))``
 * `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 * `diff_prox_F, diff_prox_dual_G`: the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
@@ -26,18 +26,17 @@ For more details on the algorithm, see [DiepeveenLellmann:2021](@cite).
 # Keyword arguments
 
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
-$(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :inverse_retraction_method))
+$(_kwargs([:evaluation, :inverse_retraction_method]))
 * `Λ=missing`: the exact operator, that is required if `Λ(m)=n` does not hold;
   `missing` indicates, that the forward operator is exact.
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
 * `reg_param=1e-5`: regularisation parameter for the Newton matrix
   Note that this changes the arguments the `forward_operator` is called.
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(50)`"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:OtherKeywords))
 
@@ -46,19 +45,9 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_PDSN)"
 function primal_dual_semismooth_Newton(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        cost::TF,
-        p::P,
-        X::T,
-        m::P,
-        n::Q,
-        prox_F::Function,
-        diff_prox_F::Function,
-        prox_G_dual::Function,
-        diff_prox_G_dual::Function,
-        linearized_forward_operator::Function,
-        adjoint_linearized_operator::Function;
+        M::AbstractManifold, N::AbstractManifold, cost::TF, p::P, X::T, m::P, n::Q,
+        prox_F::Function, diff_prox_F::Function, prox_G_dual::Function, diff_prox_G_dual::Function,
+        linearized_forward_operator::Function, adjoint_linearized_operator::Function;
         Λ::Union{Function, Missing} = missing,
         kwargs...,
     ) where {TF, P, T, Q}
@@ -68,40 +57,19 @@ function primal_dual_semismooth_Newton(
     m_res = copy(M, m)
     n_res = copy(N, n)
     return primal_dual_semismooth_Newton!(
-        M,
-        N,
-        cost,
-        x_res,
-        ξ_res,
-        m_res,
-        n_res,
-        prox_F,
-        diff_prox_F,
-        prox_G_dual,
-        diff_prox_G_dual,
-        linearized_forward_operator,
-        adjoint_linearized_operator;
-        Λ = Λ,
-        kwargs...,
+        M, N, cost, x_res, ξ_res, m_res, n_res,
+        prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual,
+        linearized_forward_operator, adjoint_linearized_operator;
+        Λ = Λ, kwargs...,
     )
 end
 calls_with_kwargs(::typeof(primal_dual_semismooth_Newton)) = (primal_dual_semismooth_Newton!,)
 
 @doc "$(_doc_PDSN)"
 function primal_dual_semismooth_Newton!(
-        M::mT,
-        N::nT,
-        cost::Function,
-        p::P,
-        X::T,
-        m::P,
-        n::Q,
-        prox_F::Function,
-        diff_prox_F::Function,
-        prox_G_dual::Function,
-        diff_prox_G_dual::Function,
-        linearized_forward_operator::Function,
-        adjoint_linearized_operator::Function;
+        M::mT, N::nT, cost::Function, p::P, X::T, m::P, n::Q,
+        prox_F::Function, diff_prox_F::Function, prox_G_dual::Function, diff_prox_G_dual::Function,
+        linearized_forward_operator::Function, adjoint_linearized_operator::Function;
         dual_stepsize = 1 / sqrt(8),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         Λ::Union{Function, Missing} = missing,
@@ -115,24 +83,13 @@ function primal_dual_semismooth_Newton!(
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
         kwargs...,
     ) where {
-        mT <: AbstractManifold,
-        nT <: AbstractManifold,
-        P,
-        Q,
-        T,
-        RM <: AbstractRetractionMethod,
-        IRM <: AbstractInverseRetractionMethod,
-        VTM <: AbstractVectorTransportMethod,
+        mT <: AbstractManifold, nT <: AbstractManifold, P, Q, T,
+        RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, VTM <: AbstractVectorTransportMethod,
     }
     keywords_accepted(primal_dual_semismooth_Newton!; kwargs...)
     pdmsno = PrimalDualManifoldSemismoothNewtonObjective(
-        cost,
-        prox_F,
-        diff_prox_F,
-        prox_G_dual,
-        diff_prox_G_dual,
-        linearized_forward_operator,
-        adjoint_linearized_operator;
+        cost, prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual,
+        linearized_forward_operator, adjoint_linearized_operator;
         Λ = Λ,
         evaluation = evaluation,
     )
@@ -184,22 +141,17 @@ function primal_dual_step!(tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNe
     N = get_manifold(tmp, 2)
     # construct X
     X = construct_primal_dual_residual_vector(tmp, pdsn)
-
     # construct matrix
     ∂X = construct_primal_dual_residual_covariant_derivative_matrix(tmp, pdsn)
     ∂X += pdsn.regularization_parameter * sparse(I, size(∂X))  # prevent singular matrix at solution
-
     # solve matrix -> find coordinates
     d_coords = ∂X \ -X
-
     dims = manifold_dimension(M)
     dx_coords = d_coords[1:dims]
     dξ_coords = d_coords[(dims + 1):end]
-
     # compute step
     dx = get_vector(M, pdsn.p, dx_coords, DefaultOrthonormalBasis())
     dξ = get_vector(N, pdsn.n, dξ_coords, DefaultOrthonormalBasis())
-
     # do step
     pdsn.p = retract(M, pdsn.p, dx, pdsn.retraction_method)
     return pdsn.X = pdsn.X + dξ
@@ -226,8 +178,7 @@ function construct_primal_dual_residual_vector(
             vector_transport_to(
                 M,
                 pdsn.m,
-                -pdsn.primal_stepsize *
-                    (adjoint_linearized_operator(tmp, pdsn.m, pdsn.n, pdsn.X)),
+                -pdsn.primal_stepsize * (adjoint_linearized_operator(tmp, pdsn.m, pdsn.n, pdsn.X)),
                 pdsn.p,
                 pdsn.vector_transport_method,
             ),
@@ -248,17 +199,10 @@ function construct_primal_dual_residual_vector(
         pdsn.n,
     )
     # (2) if p.Λ is missing, assume that n = Λ(m) and do not PT
-    ξ_update = if !hasproperty(obj, :Λ!!) || ismissing(obj.Λ!!)
-        ξ_update
-    else
-        vector_transport_to(
-            N,
-            forward_operator(tmp, pdsn.m),
-            ξ_update,
-            pdsn.n,
-            pdsn.vector_transport_method,
+    noPT = !hasproperty(obj, :Λ!!) || ismissing(obj.Λ!!)
+    ξ_update = noPT ? ξ_update : vector_transport_to(
+            N, forward_operator(tmp, pdsn.m), ξ_update, pdsn.n, pdsn.vector_transport_method,
         )
-    end
     # (3) the dual update
     ξ_update = get_dual_prox(
         tmp, pdsn.n, pdsn.dual_stepsize, pdsn.X + pdsn.dual_stepsize * ξ_update
@@ -304,13 +248,11 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
         pdsn.n,
     )
     # (2) if p.Λ is missing, assume that n = Λ(m) and do  not PT
-    η₁ = if !hasproperty(obj, :Λ!!) || ismissing(obj.Λ!!)
-        η₁
-    else
-        vector_transport_to(
+    noPT = !hasproperty(obj, :Λ!!) || ismissing(obj.Λ!!)
+
+    η₁ = noPT ? η₁ : vector_transport_to(
             N, forward_operator(tmp, pdsn.m), η₁, pdsn.n, pdsn.vector_transport_method
         )
-    end
     # (3) to the dual update
     η₁ = pdsn.X + pdsn.dual_stepsize * η₁
     # construct ∂X₁₁ and ∂X₂₁
@@ -343,17 +285,13 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
         ∂X₁₁[:, j] = sp_∂X₁₁j
 
         Mⱼ = differential_log_argument(M, pdsn.m, pdsn.p, Θⱼ)
-        Kⱼ = if !hasproperty(obj, :Λ!!) || ismissing(obj.Λ!!)
-            pdsn.dual_stepsize * linearized_forward_operator(tmp, pdsn.m, Mⱼ, pdsn.n)
-        else
-            pdsn.dual_stepsize * vector_transport_to(
-                N,
-                forward_operator(tmp, pdsn.m),
-                linearized_forward_operator(tmp, pdsn.m, Mⱼ, pdsn.n),
-                pdsn.n,
-                pdsn.vector_transport_method,
-            )
-        end
+        noPT = !hasproperty(obj, :Λ!!) || ismissing(obj.Λ!!)
+        Kⱼ = pdsn.dual_stepsize * (
+            noPT ? linearized_forward_operator(tmp, pdsn.m, Mⱼ, pdsn.n) : vector_transport_to(
+                    N, forward_operator(tmp, pdsn.m), linearized_forward_operator(tmp, pdsn.m, Mⱼ, pdsn.n), pdsn.n,
+                    pdsn.vector_transport_method,
+                )
+        )
         Jⱼ = get_differential_dual_prox(tmp, pdsn.n, pdsn.dual_stepsize, η₁, Kⱼ)
         ∂X₂₁j = get_coordinates(N, pdsn.n, -Jⱼ, DefaultOrthonormalBasis())
 

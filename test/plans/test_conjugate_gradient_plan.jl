@@ -1,7 +1,8 @@
 using Manopt, Manifolds, Test
 
 struct DummyCGCoeff <: DirectionUpdateRule end
-(u::DummyCGCoeff)(p, s, k) = 0.2
+(::DummyCGCoeff)(pr, st, k; kwagrs...) = 0.2
+(::Manopt.DirectionUpdateRuleStorage{DummyCGCoeff})(pr, st, k) = 0.2
 Manopt.update_rule_storage_points(::DummyCGCoeff) = Tuple{}
 Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
 
@@ -16,22 +17,26 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         p0 = [1.0, 0.0]
         pr = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         cgs2 = ConjugateGradientDescentState(
-            M;
-            p = p0,
+            M; p = p0,
             stopping_criterion = StopAfterIteration(2),
             stepsize = Manopt.ConstantStepsize(M, 1.0),
             coefficient = dur2,
         )
         cgs2.X = [0.0, 0.2]
+        # Fake update history to get a certain old X and old p
+        cgs2.coefficient(pr, cgs2, 0)
+        # the inner check is 0.2 which is still less than 0.3
         @test cgs2.coefficient(pr, cgs2, 1) != 0
         cgs3 = ConjugateGradientDescentState(
-            M;
-            p = p0,
+            M; p = p0,
             stopping_criterion = StopAfterIteration(2),
             stepsize = Manopt.ConstantStepsize(M, 1.0),
             coefficient = dur3,
         )
         cgs3.X = [0.0, 0.2]
+        # Fake update history to get a certain old X and old p
+        cgs3.coefficient(pr, cgs3, 0)
+        # then we are above the threshold 0.1 (namely at 0.2) and we get a descent step
         @test cgs3.coefficient(pr, cgs3, 1) == 0
     end
     @testset "representation and summary of Coefficients" begin

@@ -4,7 +4,7 @@ function default_stepsize(
         retraction_method = default_retraction_method(M),
     )
     # take a default with a slightly defensive initial step size.
-    return ArmijoLinesearchStepsize(
+    return ArmijoLinesearch(
         M; retraction_method = retraction_method, initial_stepsize = 1.0
     )
 end
@@ -72,10 +72,7 @@ $(_doc_update_delta_k)
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :grad_f, :p]))
 
 # Keyword arguments
 
@@ -87,12 +84,10 @@ $(_var(:Argument, :p))
   rule when the algorithm should restart, i.e. use the negative gradient instead of the computed direction,
   as a functior where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
-$(_var(:Keyword, :differential))
-$(_var(:Keyword, :evaluation))
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default = "[`ArmijoLinesearch`](@ref)`()`"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs([:differential, :evaluation, :retraction_method]))
+$(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
+$(_kwargs(:vector_transport_method))
 
 If you provide the [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
@@ -147,7 +142,7 @@ function conjugate_gradient_descent!(
         mgo::O,
         p;
         coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
-        restart_condition::AbstractRestartCondition = NeverRestart(),
+        restart_condition::AbstractRestartCondition = RestartOnNonDescent(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, ConjugateGradientDescentState; retraction_method = retraction_method
@@ -165,8 +160,8 @@ function conjugate_gradient_descent!(
         M;
         p = p,
         stopping_criterion = stopping_criterion,
-        stepsize = _produce_type(stepsize, M),
-        coefficient = _produce_type(coefficient, M),
+        stepsize = _produce_type(stepsize, M, p),
+        coefficient = _produce_type(coefficient, M, p),
         restart_condition = restart_condition,
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
@@ -200,7 +195,8 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
     cgs.δ .-= cgs.X
     if (cgs.restart_condition(amp, cgs, k))
         # restart solver; set dir to -grad
-        cgs.δ = -copy(get_manifold(amp), cgs.p, cgs.X)
+        copyto!(M, cgs.δ, cgs.X)
+        cgs.δ .*= -1
         update_storage!(cgs.coefficient.storage, amp, cgs)
         cgs.β = 0.0
     end

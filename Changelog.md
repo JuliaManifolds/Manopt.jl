@@ -6,14 +6,115 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.37] May 5, 2026
+
+### Changed
+
+* The default restart rule for `conjugate_gradient_descent` is now `RestartOnNonDescent` instead of `NeverRestart`, which makes the algorithm more robust to non-convexity and numerical issues. The old default can still be used by explicitly passing `restart_condition=NeverRestart()`. (#604)
+* `HagerZhangCoefficientRule` now has a safeguard against the denominator being too close to zero (the `denom_threshold` field). By default it is set to 1.0e-10. You can set it to a lower positive value (or even zero) to weaken the safeguard, but it is recommended to keep it to avoid numerical issues. (#604)
+* introduce for all `Rule`s also a variant without being encapsulated in a memory, where the old values have to be passed as keywords. This is now used by the `ConjugateGradientBealeRestartRule` when evaluating its inner rule. (#604)
+
+## [0.5.36] April 24, 2026
+
+### Added
+
+* a function `stopped_at(state)` to access the number of iterations it took a solver to stop. (#599)
+
+### Fixed
+
+* a small bug where `get_count(sc::StopWhenAny, Val(:Iteration))` wrongly reported it stopped before the first iteration when it actually did not yet stop. (#599)
+
+## [0.5.35] April 16, 2026
+
+### Changed
+
+* Improved formatting of the references in the Readme.md (#586)
+* Bump compat for RecursiveArrayTools.jl to include version 4
+* deactivate CompatHelper Action and solely use dependabot
+
+### Fixed
+
+* The default line search in `conjugate_gradient_descent` is now `ArmijoLinesearchStepsize` instead of `ArmijoLinesearch`, which makes it work well with custom point types.
+
+## [0.5.34] March 3, 2026
+
+### Fixed
+
+* `Float32` support in `trust_regions` solver was broken in the previous release, which is now fixed.
+
+## [0.5.33] February 18, 2026
+
+### Added
+
+* A clarification on the use of AI in the [CONTRIBUTING.md](https://manoptjl.org/stable/contributing/) (#573)
+* `_produce_type` now accepts the point `p` as an optional third argument, which can be used to produce objects with specific point type for internal buffers. The addition has been utilized in `DirectionUpdateRule`s and `Stepsize`s to improve GPU and custom floating point type compatibility. (#577)
+* Added another package and paper using `Manopt.jl` to the about page (#576).
+
+### Fixed
+
+* `DistanceOverGradientsStepsize` now requires explicitly passing a point as the second argument because it logically depends on receiving the initial point. (#577)
+
+## [0.5.32] January 15, 2026
+
+### Fixed
+
+* Fixed failing precompilation related to the release of Glossaries.jl v0.1.1 (#567).
+
+## [0.5.31] January 11, 2026
+
+### Changed
+
+Moved the documentation glossaries to using the new [Glossaries.jl](https://github.com/JuliaManifolds/Glossaries.jl) package.
+
+## [0.5.30] December 10, 2025
+
+### Added
+
+* add keyword argument `is_feasible_error` to `interior_point_Newton` to control how to handle infeasible starting points (#556)
+* add keyword argument `at_init` to some debug options to control whether they print already at the initialisation and hence before the first iteration (#552)
+
+### Fixed
+
+* fixed a few typos in the documentation (#557)
+* fixed a bug in `StopWhenRepeated` where it stopped already at initialisation if the interior stopping criterion was satisfied (#558)
+
+## [0.5.29] November 26, 2025
+
+### Added
+
+* a keyword argument `atol` to the `ConstrainedManifoldObjective` to set a tolerance for constraint satisfaction. (#545)
+* a spell checker following [crate-ci/typos](https://github.com/crate-ci/typos)
+
+### Fixed
+
+* Fixed a typo in `DebugFeasibility`, where an undefined variable was used. (#544)
+
+### Changed
+
+* Removed `atol` from `DebugFeasibility` and instead use the one newly added `atol` from the `ConstrainedManifoldObjective`. (#546)
+* Move from CompatHelper to dependabot to keep track of dependency updates in Julia packages. (#547)
+* moved the `ManoptTestSuite` module to a sub module `Manopt.Test` within `Manopt.jl`,
+so it can be easier reused by others as well (#550)
+* moved to using a `Project.toml` for tests and an overall `[Workspace]`.
+  This also allows finally to run single test files without installing all packages manually, but instead just switching to and instantiating the test environment. (#550)
+* for compatibility, state also `[source]` entries consistently in the sub `Project.toml` files. (#550)
+
+
+## [0.5.28] November 17, 2025
+
+### Changed
+
+* Unified the interfaces for line search related functions, especially,
+  * `linesearch_backtrack(M, F, p, X, s, decrease, contract, η, f0; kwargs...)` now has `lf0=` and `gradient=` keyword arguments instead of positional ones for `X` and the last `f0`, respectively. It additionally has a `Dlf0=` keyword argument to pass the evaluated differential instead of the gradient, which otherwise defaults to calling the inner product.
+* Refactor the nonmonotone linesearch stepsize to have an initial guess that can be set. For now it still afterwards performs the Barzilai-Borwein initial guess,
+so a constant initial guess is recommended here. The initial guess may be refactored in the future in a non-breaking release and the meaning of the initial guess in nonmonotone line search may change.
 
 ### Fixed
 
 * Change the construction of the product manifold in `interior_point_newton` from `×` to `ProductManifold`, so that the algorithm also work on Product manifolds `M`, where it now correctly wraps `M` instead of extending it.
-* unifies the doc strings for constrained problems
-* fixes a few typos in the doc strings of matrix update formulae within the quasi-Newton and CG solver.
-* covers one last line in `proximal_gradient_plan`
+* Unified the doc strings for constrained problems.
+* Fixed a few typos in the doc strings of matrix update formulae within the quasi-Newton and CG solver.
+* Covered one last line in `proximal_gradient_plan`
 
 ## [0.5.27] November 11, 2025
 
@@ -218,7 +319,7 @@ present; they were changed to `retact_fused!`.
 * A scaling error that appeared only when calling `get_cost_function` on the new `ScaledManifoldObjective`.
 * Documentation issues for quasi-Newton solvers.
 * fixes a scaling error in quasi newton
-* Fixes printing of JuMP models containg Manopt solver.
+* Fixes printing of JuMP models containing Manopt solver.
 
 ## [0.5.12] April 13, 2025
 

@@ -24,10 +24,7 @@ using ManifoldDiff: grad_distance
             500,
         )
         s = gradient_descent(
-            M,
-            f,
-            grad_f,
-            data[1];
+            M, f, grad_f, data[1];
             stopping_criterion = StopAfterIteration(200) | StopWhenChangeLess(M, 1.0e-16),
             stepsize = ArmijoLinesearch(; contraction_factor = 0.99),
             debug = d,
@@ -38,10 +35,7 @@ using ManifoldDiff: grad_distance
         res_debug = String(take!(my_io))
         @test res_debug === " f(x): 1.357071\n"
         p2 = gradient_descent(
-            M,
-            f,
-            grad_f,
-            data[1];
+            M, f, grad_f, data[1];
             stopping_criterion = StopAfterIteration(200) | StopWhenChangeLess(M, 1.0e-16),
             stepsize = ArmijoLinesearch(; contraction_factor = 0.99),
         )
@@ -56,10 +50,7 @@ using ManifoldDiff: grad_distance
             stop_when_stepsize_exceeds = 0.9 * π,
         )
         p3 = gradient_descent(
-            M,
-            f,
-            grad_f,
-            data[1];
+            M, f, grad_f, data[1];
             stopping_criterion = StopAfterIteration(1000) | StopWhenChangeLess(M, 1.0e-16),
             stepsize = step,
             debug = [], # do not warn about increasing step here
@@ -75,10 +66,7 @@ using ManifoldDiff: grad_distance
             stop_when_stepsize_exceeds = 0.9 * π,
         )
         p4 = gradient_descent(
-            M,
-            f,
-            grad_f,
-            data[1];
+            M, f, grad_f, data[1];
             stopping_criterion = StopAfterIteration(1000) | StopWhenChangeLess(M, 1.0e-16),
             stepsize = step2,
             debug = [], # do not warn about increasing step here
@@ -94,40 +82,28 @@ using ManifoldDiff: grad_distance
             stop_when_stepsize_exceeds = 0.9 * π,
         )
         p5 = gradient_descent(
-            M,
-            f,
-            grad_f,
-            data[1];
+            M, f, grad_f, data[1];
             stopping_criterion = StopAfterIteration(1000) | StopWhenChangeLess(M, 1.0e-16),
             stepsize = step3,
             debug = [], # do not warn about increasing step here
         )
         @test isapprox(M, p, p5; atol = 1.0e-13)
         p6 = gradient_descent(
-            M,
-            f,
-            grad_f,
-            data[1];
+            M, f, grad_f, data[1];
             stopping_criterion = StopAfterIteration(1000) | StopWhenChangeLess(M, 1.0e-16),
             direction = Nesterov(; p = copy(M, data[1])),
         )
         @test isapprox(M, p, p6; atol = 1.0e-13)
         # Precon in simple scale down by 2
         p7 = gradient_descent(
-            M,
-            f,
-            grad_f,
-            data[1];
+            M, f, grad_f, data[1];
             stopping_criterion = StopAfterIteration(1000) | StopWhenChangeLess(M, 1.0e-16),
             direction = PreconditionedDirection((M, p, X) -> 0.5 .* X),
         )
         @test isapprox(M, p, p7; atol = 1.0e-13)
         # Precon in simple scale down by 2 – inplace
         p8 = gradient_descent(
-            M,
-            f,
-            grad_f,
-            data[1];
+            M, f, grad_f, data[1];
             stopping_criterion = StopAfterIteration(1000) | StopWhenChangeLess(M, 1.0e-16),
             direction = PreconditionedDirection(
                 (M, Y, p, X) -> (Y .= 0.5 .* X); evaluation = InplaceEvaluation()
@@ -170,20 +146,14 @@ using ManifoldDiff: grad_distance
         # `gradient_descent` allocated n2 newly
         @test isapprox(M, north, n2a)
         n3 = gradient_descent(
-            M,
-            f,
-            grad_f,
-            pts[1];
+            M, f, grad_f, pts[1];
             direction = MomentumGradient(),
             stepsize = ConstantLength(),
             debug = [], # do not warn about increasing step here
         )
         @test isapprox(M, north, n3)
         n4 = gradient_descent(
-            M,
-            f,
-            grad_f,
-            pts[1];
+            M, f, grad_f, pts[1];
             direction = AverageGradient(M; n = 5),
             stopping_criterion = StopAfterIteration(800),
         )
@@ -194,14 +164,12 @@ using ManifoldDiff: grad_distance
         @test startswith(repr(r), "# Solver state for `Manopt.jl`s Gradient Descent")
         # State and a count objective, putting stats behind print
         n6 = gradient_descent(
-            M,
-            f,
-            grad_f,
-            pts[1];
+            M, f, grad_f, pts[1];
             count = [:Gradient],
             return_objective = true,
             return_state = true,
         )
+        @test stopped_at(n6[2]) > 0
         @test repr(n6) == "$(n6[2])\n\n$(n6[1])"
     end
     @testset "Tutorial mode" begin

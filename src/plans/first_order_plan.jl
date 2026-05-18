@@ -52,7 +52,7 @@ They can also be addressed by their alternate constructors
 * `gradient=nothing` the gradient function `g(M, p)` or in-place `g!(M, X, p)`
 * `costgradient = nothing` the combined cost and gradient function `fg(M,p)` or in-place `fg!(M, X, p))`
 * `costdifferential = nothing` the combined cost and differential function  `fdf(M, p, X)`
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 
 Where:
  * At least one of `cost`, `costgradient` or `costdifferential` must be provided.
@@ -78,20 +78,20 @@ function ManifoldFirstOrderObjective(;
         costdifferential = nothing,
         evaluation::E = AllocatingEvaluation(),
     ) where {E <: AbstractEvaluationType}
-    nc = isnothing(cost)
-    nd = isnothing(differential)
-    ng = isnothing(gradient)
+    no_cost = isnothing(cost)
+    no_diff = isnothing(differential)
+    no_grad = isnothing(gradient)
     ncg = isnothing(costgradient)
     ncd = isnothing(costdifferential)
 
-    if nc && ncg && ncd
+    if no_cost && ncg && ncd
         throw(
             ArgumentError(
                 "Either cost, costgradient or costdifferential keyword argument needs to be provided",
             ),
         )
     end
-    if ng && ncg && nd && ncd
+    if no_grad && ncg && no_diff && ncd
         throw(
             ArgumentError(
                 "Either gradient, costgradient, differential or costdifferential keyword argument needs to be provided",
@@ -100,13 +100,13 @@ function ManifoldFirstOrderObjective(;
     end
 
     nt = (;)
-    if !nc
+    if !no_cost
         nt = merge(nt, (; cost = cost))
     end
-    if !ng
+    if !no_grad
         nt = merge(nt, (; gradient = gradient))
     end
-    if !nd
+    if !no_diff
         nt = merge(nt, (; differential = differential))
     end
     if !ncg
@@ -632,28 +632,27 @@ direction update.
 
 # Fields
 
-$(_var(:Field, :p, "p_old"))
+$(_fields(:p; name = "p_old"))
 * `momentum::Real`: factor for the momentum
 * `direction`: internal [`DirectionUpdateRule`](@ref) to determine directions
   to add the momentum to.
-$(_var(:Field, :vector_transport_method))
-$(_var(:Field, :X, "X_old"))
+$(_fields(:vector_transport_method))
+$(_fields(:X; name = "X_old"))
 
 # Constructors
 
 
     MomentumGradientRule(M::AbstractManifold; kwargs...)
+    MomentumGradientRule(M::AbstractManifold, p; kwargs...)
 
 Initialize a momentum gradient rule to `s`, where `p` and `X` are memory for interim values.
 
 ## Keyword arguments
 
-$(_var(:Keyword, :p))
+$(_kwargs(:p))
 * `s=`[`IdentityUpdateRule`](@ref)`()`
 * `momentum=0.2`
-$(_var(:Keyword, :vector_transport_method))
-$(_var(:Keyword, :X))
-
+$(_kwargs([:vector_transport_method, :X]))
 
 # See also
 [`MomentumGradient`](@ref)
@@ -666,6 +665,9 @@ mutable struct MomentumGradientRule{
     direction::D
     vector_transport_method::VTM
     X_old::T
+end
+function MomentumGradientRule(M::AbstractManifold, p; kwargs...)
+    return MomentumGradientRule(M; p = copy(M, p), kwargs...)
 end
 function MomentumGradientRule(
         M::AbstractManifold;
@@ -708,16 +710,16 @@ last direction multiplied by momentum ``m``.
 
 # Keyword arguments
 
-$(_var(:Keyword, :p))
+$(_kwargs(:p))
 * `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
-$(_var(:Keyword, :X))
+$(_kwargs(:X))
 * `momentum=0.2` amount of momentum to use
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "MomentumGradientRule"))
 """
 function MomentumGradient(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; requires_point = true, kwargs...)
 end
 
 """
@@ -733,7 +735,7 @@ them to the current iterates tangent space.
 * `gradients`:               the last `n` gradient/direction updates
 * `last_iterate`:            last iterate (needed to transport the gradients)
 * `direction`:               internal [`DirectionUpdateRule`](@ref) to determine directions to apply the averaging to
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 
 # Constructors
 
@@ -746,6 +748,7 @@ $(_var(:Keyword, :vector_transport_method))
         last_iterate = deepcopy(x0),
         vector_transport_method = default_vector_transport_method(M, typeof(p))
     )
+    AverageGradientRule(M::AbstractManifold, p; kwargs...)
 
 Add average to a gradient problem, where
 
@@ -753,7 +756,7 @@ Add average to a gradient problem, where
 * `direction`:               is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
 * `gradients`:               can be pre-filled with some history
 * `last_iterate`:            stores the last iterate
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:vector_transport_method))
 """
 mutable struct AverageGradientRule{
         P, T, D <: DirectionUpdateRule, VTM <: AbstractVectorTransportMethod,
@@ -762,6 +765,9 @@ mutable struct AverageGradientRule{
     last_iterate::P
     direction::D
     vector_transport_method::VTM
+end
+function AverageGradientRule(M::AbstractManifold, p; kwargs...)
+    return AverageGradientRule(M; p = copy(M, p), kwargs...)
 end
 function AverageGradientRule(
         M::AbstractManifold;
@@ -802,21 +808,20 @@ them to the current iterates tangent space.
 
 # Input
 
-$(_var(:Argument, :M; type = true)) (optional)
+$(_args(:M)) (optional)
 
 # Keyword arguments
 
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 * `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
 * `gradients=[zero_vector(M, p) for _ in 1:n]` how to initialise the internal storage
 * `n=10` number of gradient evaluations to take the mean over
-$(_var(:Keyword, :X))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs([:X, :vector_transport_method]))
 
 $(_note(:ManifoldDefaultFactory, "AverageGradientRule"))
 """
 function AverageGradient(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; requires_point = true, kwargs...)
 end
 
 @doc """
@@ -830,19 +835,20 @@ See [`Nesterov`](@ref) for details
 * `γ::Real`, `μ::Real`: coefficients from the last iterate
 * `v::P`:      an interim point to compute the next gradient evaluation point `y_k`
 * `shrinkage`: a function `k -> ...` to compute the shrinkage ``β_k`` per iterate `k``.
-$(_var(:Keyword, :inverse_retraction_method))
+$(_kwargs(:inverse_retraction_method))
 
 # Constructor
 
     NesterovRule(M::AbstractManifold; kwargs...)
+    NesterovRule(M::AbstractManifold, p; kwargs...)
 
 ## Keyword arguments
 
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 * `γ=0.001``
 * `μ=0.9``
 * `shrinkage = k -> 0.8`
-$(_var(:Keyword, :inverse_retraction_method))
+$(_kwargs(:inverse_retraction_method))
 
 # See also
 
@@ -854,6 +860,9 @@ mutable struct NesterovRule{P, R <: Real} <: DirectionUpdateRule
     v::P
     shrinkage::Function
     inverse_retraction_method::AbstractInverseRetractionMethod
+end
+function NesterovRule(M::AbstractManifold, p; kwargs...)
+    return NesterovRule(M; p = copy(M, p), kwargs...)
 end
 function NesterovRule(
         M::AbstractManifold;
@@ -916,20 +925,20 @@ Then the direction from ``p_k`` to ``p_k+1`` by ``d = $(_tex(:invretr))_{p_k}p_{
 
 # Input
 
-$(_var(:Argument, :M; type = true)) (optional)
+$(_args(:M)) (optional)
 
 # Keyword arguments
 
-$(_var(:Keyword, :p; add = :as_Initial))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 * `γ=0.001`
 * `μ=0.9`
 * `shrinkage = k -> 0.8`
-$(_var(:Keyword, :inverse_retraction_method))
+$(_kwargs(:inverse_retraction_method))
 
 $(_note(:ManifoldDefaultFactory, "NesterovRule"))
 """
 function Nesterov(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.NesterovRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.NesterovRule, args...; requires_point = true, kwargs...)
 end
 
 """
@@ -956,12 +965,12 @@ Add preconditioning to a gradient problem.
 
 # Input
 
-$(_var(:Argument, :M; type = true))
+$(_args(:M))
 * `preconditioner`:   preconditioner function, either as a `(M, p, X)` -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
 
 # Keyword arguments
 
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 * `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
 """
 mutable struct PreconditionedDirectionRule{
@@ -1005,7 +1014,7 @@ end
     PreconditionedDirection(M::AbstractManifold, preconditioner; kwargs...)
 
 Add a preconditioner to a gradient processor following the [motivation for optimization](https://en.wikipedia.org/wiki/Preconditioner#Preconditioning_in_optimization),
-as a linear invertible map ``P: $(_math(:TpM)) → $(_math(:TpM))`` that usually should be
+as a linear invertible map ``P: $(_math(:TangentSpace)) → $(_math(:TangentSpace))`` that usually should be
 
 * symmetric: ``⟨X, P(Y)⟩ = ⟨P(X), Y⟩``
 * positive definite ``⟨X, P(X)⟩ > 0`` for ``X`` not the zero-vector
@@ -1018,13 +1027,13 @@ you turn a gradient descent into a Newton method.
 
 # Arguments
 
-$(_var(:Argument, :M; type = true)) (optional)
+$(_args(:M)) (optional)
 * `preconditioner`:   preconditioner function, either as a `(M, p, X) -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
 
 # Keyword arguments
 
 * `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
-$(_var(:Keyword, :evaluation))
+$(_kwargs(:evaluation))
 
 $(_note(:ManifoldDefaultFactory, "PreconditionedDirectionRule"))
 """
@@ -1049,7 +1058,7 @@ abstract type AbstractRestartCondition end
 debug for the gradient evaluated at the current iterate
 
 # Constructors
-    DebugGradient(; long=false, prefix= , format= "\$prefix%s", io=stdout)
+    DebugGradient(; long=false, prefix= , format= "\$prefix%s", io=stdout, at_init=false)
 
 display the short (`false`) or long (`true`) default text for the gradient,
 or set the `prefix` manually. Alternatively the complete format can be set.
@@ -1057,22 +1066,24 @@ or set the `prefix` manually. Alternatively the complete format can be set.
 mutable struct DebugGradient <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugGradient(;
             long::Bool = false,
             prefix = long ? "Gradient: " : "grad f(p):",
             format = "$prefix%s",
             io::IO = stdout,
+            at_init::Bool = false,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    (k < 1) && return nothing
+    (k < (d.at_init ? 0 : 1)) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_gradient(s))
     return nothing
 end
 function show(io::IO, dg::DebugGradient)
-    return print(io, "DebugGradient(; format=\"$(dg.format)\")")
+    return print(io, "DebugGradient(; format=\"$(dg.format)\", at_init=$(dg.at_init))")
 end
 status_summary(dg::DebugGradient) = "(:Gradient, \"$(dg.format)\")"
 
@@ -1082,7 +1093,7 @@ status_summary(dg::DebugGradient) = "(:Gradient, \"$(dg.format)\")"
 debug for gradient evaluated at the current iterate.
 
 # Constructors
-    DebugGradientNorm([long=false,p=print])
+    DebugGradientNorm([long=false, format= "\$prefix%s", io=stdout, at_init=true])
 
 display the short (`false`) or long (`true`) default text for the gradient norm.
 
@@ -1093,19 +1104,21 @@ display the a `prefix` in front of the gradient norm.
 mutable struct DebugGradientNorm <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugGradientNorm(;
             long::Bool = false,
             prefix = long ? "Norm of the Gradient: " : "|grad f(p)|:",
             format = "$prefix%s",
             io::IO = stdout,
+            at_init::Bool = true,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugGradientNorm)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
-    (k < 1) && return nothing
+    (k < (d.at_init ? 0 : 1)) && return nothing
     Printf.format(
         d.io,
         Printf.Format(d.format),
@@ -1114,7 +1127,7 @@ function (d::DebugGradientNorm)(
     return nothing
 end
 function show(io::IO, dgn::DebugGradientNorm)
-    return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\")")
+    return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\", at_init=$(dgn.at_init))")
 end
 status_summary(dgn::DebugGradientNorm) = "(:GradientNorm, \"$(dgn.format)\")"
 
@@ -1124,31 +1137,33 @@ status_summary(dgn::DebugGradientNorm) = "(:GradientNorm, \"$(dgn.format)\")"
 debug for the current step size.
 
 # Constructors
-    DebugStepsize(;long=false,prefix="step size:", format="\$prefix%s", io=stdout)
+    DebugStepsize(;long=false,prefix="step size:", format="\$prefix%s", io=stdout, at_init=true)
 
 display the a `prefix` in front of the step size.
 """
 mutable struct DebugStepsize <: DebugAction
     io::IO
     format::String
+    at_init::Bool
     function DebugStepsize(;
             long::Bool = false,
             io::IO = stdout,
             prefix = long ? "step size:" : "s:",
             format = "$prefix%s",
+            at_init::Bool = true,
         )
-        return new(io, format)
+        return new(io, format, at_init)
     end
 end
 function (d::DebugStepsize)(
         p::P, s::O, k::Int
     ) where {P <: AbstractManoptProblem, O <: AbstractGradientSolverState}
-    (k < 1) && return nothing
+    (k < (d.at_init ? 0 : 1)) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, k))
     return nothing
 end
 function show(io::IO, ds::DebugStepsize)
-    return print(io, "DebugStepsize(; format=\"$(ds.format)\")")
+    return print(io, "DebugStepsize(; format=\"$(ds.format)\", at_init=$(ds.at_init))")
 end
 status_summary(ds::DebugStepsize) = "(:Stepsize, \"$(ds.format)\")"
 #

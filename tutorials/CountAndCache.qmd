@@ -36,7 +36,7 @@ both these capabilities on the level of calling a solver.
 
 The two ingredients for a solver in [Manopt.jl](https://manoptjl.org)
 are the [`AbstractManoptProblem`](@ref) and the [`AbstractManoptSolverState`](@ref), where the
-former consists of the domain, that is the ``[`AsbtractManifold`](@extref `ManifoldsBase.AbstractManifold`)``{=commonmark} and [`AbstractManifoldObjective`](@ref).
+former consists of the domain, that is the ``[`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`)``{=commonmark} and [`AbstractManifoldObjective`](@ref).
 
 Both recording and debug capabilities are implemented in a decorator pattern to the solver state.
 They can be easily added using the `record=` and `debug=` in any solver call.

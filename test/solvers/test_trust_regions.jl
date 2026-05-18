@@ -1,7 +1,4 @@
-s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
-!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
-
-using LinearAlgebra, Manifolds, Manopt, ManoptTestSuite, Random, Test
+using LinearAlgebra, Manifolds, Manopt, Random, Test
 
 include("trust_region_model.jl")
 
@@ -28,11 +25,13 @@ include("trust_region_model.jl")
         X = rgrad(M, p)
         TpM = TangentSpace(M, copy(M, p))
         mho = ManifoldHessianObjective(f, rgrad, rhess)
-        sub_problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
+        sub_objective = TrustRegionModelObjective(mho)
+        sub_problem = DefaultManoptProblem(TpM, sub_objective)
         sub_state = TruncatedConjugateGradientState(TpM; X = get_gradient(M, mho, p))
         trs1 = TrustRegionsState(M, sub_problem)
         trs2 = TrustRegionsState(M, sub_problem, sub_state)
         trs3 = TrustRegionsState(M, sub_problem; p = p)
+        @test Manopt.get_gradient_function(sub_objective)(M, p) == X
     end
     @testset "Objective accessors" begin
         mho = ManifoldHessianObjective(f, rgrad, rhess)
@@ -326,7 +325,7 @@ include("trust_region_model.jl")
         end
     end
     @testset "on the Circle" begin
-        Mc, fc, grad_fc, pc0, pc_star = ManoptTestSuite.Circle_mean_task()
+        Mc, fc, grad_fc, pc0, pc_star = Manopt.Test.Circle_mean_task()
         hess_fc(Mc, p, X) = 1.0
         s = trust_regions(Mc, fc, grad_fc, hess_fc; return_state = true)
         q = get_solver_result(s)
@@ -359,5 +358,14 @@ include("trust_region_model.jl")
         q4 = trust_regions(M, f, grad_f, Hess_f, p0)
         @test f(M, q3) ≈ λ atol = 5 * 1.0e-8
         @test f(M, q4) ≈ λ atol = 5 * 1.0e-10
+    end
+
+    @testset "Float32 support" begin
+        M = Euclidean(3, 3)
+        p = randn(Float32, 3, 3)
+        f(M::Euclidean, p) = sum(p .^ 2) / 2
+        grad(M::Euclidean, p) = p
+        hess(M::Euclidean, p, X) = X
+        trust_regions(M, f, grad, hess, p; max_trust_region_radius = 0.1f0)
     end
 end

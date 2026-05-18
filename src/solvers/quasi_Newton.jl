@@ -10,15 +10,14 @@ all necessary fields.
 * `η`:                             the current update direction
 * `nondescent_direction_behavior`: a `Symbol` to specify how to handle direction that are not descent ones.
 * `nondescent_direction_value`:    the value from the last inner product from checking for descent directions
-$(_var(:Field, :p; add = [:as_Iterate]))
+$(_fields(:p; add_properties = [:as_Iterate]))
 * `p_old`:                         the last iterate
 * `preconditioner`                 an [`QuasiNewtonPreconditioner`](@ref)
 * `sk`:                            the current step
 * `yk`:                            the current gradient difference
-$(_var(:Field, :retraction_method))
-$(_var(:Field, :stepsize))
-$(_var(:Field, :stopping_criterion, "stop"))
-$(_var(:Field, :X; add = [:as_Gradient]))
+$(_fields([:retraction_method, :stepsize]))
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields(:X; add_properties = [:as_Gradient]))
 * `X_old`:                         the last gradient
 
 
@@ -31,14 +30,14 @@ Generate the Quasi Newton state on the manifold `M` with start point `p`.
 ## Keyword arguments
 
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), memory_size; vector_transport_method=vector_transport_method)`
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
-* `initial_scale=1.0`: a realtive initial scale. By default deactivated when using a preconditioner.
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
+* `initial_scale=1.0`: a relative initial scale. By default deactivated when using a preconditioner.
 * `memory_size=20`: a shortcut to set the memory in the default direction update
 * `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, Nothing} = nothing` specify a preconditioner or deactivate by passing `nothing`.
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, QuasiNewtonState)`"))
-$(_var(:Keyword, :vector_transport_method))
-$(_var(:Keyword, :X; add = :as_Memory))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`QuasiNewtonState`](@ref)`)"))
+$(_kwargs(:vector_transport_method))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 
 # See also
 
@@ -203,10 +202,7 @@ The ``k``th iteration consists of
 
 # Input
 
-$(_var(:Argument, :M; type = true))
-$(_var(:Argument, :f))
-$(_var(:Argument, :grad_f))
-$(_var(:Argument, :p))
+$(_args([:M, :f, :grad_f, :p]))
 
 # Keyword arguments
 
@@ -215,14 +211,14 @@ $(_var(:Argument, :p))
   the Hessian (inverse) for the cases where it is stored in full (matrix) form.
 * `cautious_update=false`:
    whether or not to use the [`QuasiNewtonCautiousDirectionUpdate`](@ref)
-   which wraps the `direction_upate`.
+   which wraps the `direction_update`.
 * `cautious_function=(x) -> x * 1e-4`:
   a monotone increasing function for the cautious update that is zero at ``x=0``
   and strictly increasing at ``0``
-$(_var(:Keyword, :differential))
+$(_kwargs(:differential))
 * `direction_update=`[`InverseBFGS`](@ref)`()`:
   the [`AbstractQuasiNewtonUpdateRule`](@ref) to use.
-$(_var(:Keyword, :evaluation; add = :GradientExample))
+$(_kwargs(:evaluation; add_properties = [:GradientExample]))
 * `initial_operator= initial_scale*Matrix{Float64}(I, n, n)`:
    initial matrix to use in case the Hessian (inverse) approximation is stored as a full matrix,
    that is `n=manifold_dimension(M)`. This matrix is only allocated for the full matrix case.
@@ -241,14 +237,14 @@ $(_var(:Keyword, :evaluation; add = :GradientExample))
 * `preconditioner=nothing` specify a preconditioner, either
   * the default `nothing` does not activate a preconditioning
   * a function of the form `(M, p, X) -> Y` or mutating `(M, Y, p, X) -> Y` depending on the `evaluation`
-  * a [`PreconditionedDirection`](@ref). See also their docs for mor details on the preconditioner.
+  * a [`PreconditionedDirection`](@ref). See also their docs for more details on the preconditioner.
   Note that the preconditioner is applied to the gradient, i.e. the right hand side _before_ solving the linear system.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-$(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default = "[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`"))
-$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
-$(_var(:Keyword, :vector_transport_method))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stepsize; default = "`[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:OtherKeywords))
 
@@ -375,7 +371,7 @@ function quasi_Newton!(
         else
             preconditioner
         end,
-        stepsize = _produce_type(stepsize, M),
+        stepsize = _produce_type(stepsize, M, p),
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
     )
@@ -766,7 +762,6 @@ function update_hessian!(
     p = get_iterate(st)
     bound = d.θ(norm(M, p_old, get_gradient(mp, p_old)))
     sk_normsq = norm(M, p, st.sk)^2
-
     # if the decision rule is fulfilled, the new `sk` and `yk` are added
     if sk_normsq != 0 && real(inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
         update_hessian!(d.update, mp, st, p_old, iter)
@@ -774,20 +769,10 @@ function update_hessian!(
         # the stored vectors are just transported to the new tangent space; `sk` and `yk` are not added
         for i in 1:length(d.update.memory_s)
             vector_transport_to!(
-                M,
-                d.update.memory_s[i],
-                p_old,
-                d.update.memory_s[i],
-                p,
-                d.update.vector_transport_method,
+                M, d.update.memory_s[i], p_old, d.update.memory_s[i], p, d.update.vector_transport_method,
             )
             vector_transport_to!(
-                M,
-                d.update.memory_y[i],
-                p_old,
-                d.update.memory_y[i],
-                p,
-                d.update.vector_transport_method,
+                M, d.update.memory_y[i], p_old, d.update.memory_y[i], p, d.update.vector_transport_method,
             )
         end
     end

@@ -19,6 +19,7 @@ using ColorTypes
 using Colors
 using DataStructures: CircularBuffer, capacity, length, push!, size, isfull
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
+using Glossaries
 using LinearAlgebra:
     cond,
     Diagonal,
@@ -171,11 +172,11 @@ Rn(args...; kwargs...) = Rn(Val(Rn_default()), args...; kwargs...)
     Rn_default()
 
 Specify a default value to dispatch [`Rn`](@ref) on.
-This default is set to `Manifolds`, indicating, that when this package is loded,
+This default is set to `Manifolds`, indicating, that when this package is loaded,
 it is the preferred package to ask for a vector space space.
 
 The default within `Manopt.jl` is to use the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) from `ManifoldsBase.jl`.
-If you load `Manifolds.jl` this switches to using [`Euclidan`](@extref Manifolds.Euclidean).
+If you load `Manifolds.jl` this switches to using [`Euclidean`](@extref Manifolds.Euclidean).
 """
 Rn_default() = :Manifolds
 Rn(::Val{T}, args...; kwargs...) where {T} = DefaultManifold(args...; kwargs...)
@@ -218,9 +219,12 @@ include("solvers/subgradient.jl")
 include("solvers/vectorbundle_newton.jl")
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
+
 include("helpers/checks.jl")
 include("helpers/exports/Asymptote.jl")
 include("helpers/LineSearchesTypes.jl")
+include("helpers//test.jl")
+
 include("deprecated.jl")
 
 function JuMP_Optimizer end
@@ -583,7 +587,7 @@ export StopAfter,
     StopWhenSwarmVelocityLess,
     StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria,
-    get_stopping_criteria, get_reason, get_stopping_criterion
+    get_stopping_criteria, get_reason, get_stopping_criterion, stopped_at
 #
 # Exports
 export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD
