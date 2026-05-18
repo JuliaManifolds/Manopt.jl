@@ -43,7 +43,7 @@ The [`LevenbergMarquardt`](@ref) solver requires the following functions of a ma
 
 ### TEMP
 
-This is a temporary area before sorting them correctly to first get the docs to rendfer
+This is a temporary area before sorting them correctly to first get the docs to render
 
 ```@docs
 Manopt.default_lm_lin_solve!
@@ -52,25 +52,8 @@ Manopt.BlockNonzeroMatrix
 Manopt.add_normal_vector_field!
 Manopt.ZeroTangentVector
 Manopt.add_normal_linear_operator!
-Manopt.MaxStepsizeInDirectionSubsolver
 Manopt.add_linear_operator_coord!
-Manopt.AbstractSegmentHessianUpdater
-Manopt.init_updater!
-Manopt.get_stepsize_bound
-Manopt.get_at_bound_index
-Manopt.UnitVector
-Manopt.set_stepsize_bound!
 Manopt.AbstractLevenbergMarquardtLinearSurrogateObjective
-Manopt.set_zero_at_index!
-Manopt.GenericSegmentHessianUpdater
-Manopt.hessian_value
-Manopt.to_coordinate_index
-Manopt.hessian_value_diag
-Manopt.has_anisotropic_max_stepsize
-Manopt.GeneralizedCauchyDirectionSubsolver
-Manopt.find_generalized_cauchy_direction!
-Manopt.get_bounds_index
-Manopt.find_max_stepsize_in_direction
 ```
 
 ## Literature
