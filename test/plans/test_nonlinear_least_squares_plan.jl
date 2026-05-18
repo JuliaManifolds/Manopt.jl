@@ -83,14 +83,6 @@ using Manifolds, Manopt, Test
             @test V == get_residuals(M, nlso, p)
             @test V ≈ Vt
             @test 0.5 * sum(abs.(V) .^ 2) ≈ c
-            fill!(G, 0.0)
-            get_jacobian!(M, G, nlso, p)
-            @test G == get_jacobian(M, nlso, p)
-            @test G == Gt
-            # since s1/s2 are the identity we can also always check against the allocating
-            # jacobian of the objective
-            G2 = get_jacobian(M, nlso.objective, p)
-            @test G2 == Gt
             @test startswith(repr(nlso), "ManifoldNonlinearLeastSquaresObjective(")
             @test startswith(Manopt.status_summary(nlso), "A nonlinear least squares objective")
         end

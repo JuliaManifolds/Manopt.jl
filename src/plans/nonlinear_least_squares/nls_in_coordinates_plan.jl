@@ -4,7 +4,6 @@
 @doc """
     LevenbergMarquardtLinearSurrogateCoordinatesObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
 
-
 A subobjective similar to `LevenbergMarquardtLinearSurrogateObjective` but which uses
 coordinate-based Jacobians in a single, selected basis instead of being centered around
 linear operators.

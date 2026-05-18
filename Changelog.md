@@ -9,27 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] unreleased
 
 This is a breaking change since the JuMP extension is dropped.
-
-### Removed
-
-* The JuMP extension was dropped.
-
-### Changed
-
-* In Levenberg-Marquardt the `η` parameter has been renamed to `candidate_acceptance_threshold`, `β` to `damping_increase_factor` and `β_reduction` to `damping_reduction_factor`.
+We also unified a few of the internal solver state constructors.
 
 ### Added
 
-* A robustified version of the Riemannian Levenberg Marquardt algorithm
+* A robustified version of the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/)
 * An option to disable the warm start the conjugate residual currently does when used as a subsolver.
-
-### Added
-
 * `nonpositive_curvature_behavior` for `QuasiNewtonLimitedMemoryDirectionUpdate` that determines how transported (y, s) vector pairs are treated after transport; if their inner product gets too low, it may lead to non-positive-definite Hessians which needs to be avoided. This resolves issue #549. (#554)
 * `GeneralizedCauchyDirectionSubsolver` for handling direction selection in the presence of box (`Hyperrectangle`) constraints in quasi-Newton methods. This allows for L-BFGS-B-style box constraint handling. (#554)
 * New stopping criteria: `StopWhenRelativeAPosterioriCostChangeLessOrEqual` and `StopWhenProjectedNegativeGradientNormLess`. (#554).
 * `HagerZhangLinesearch` stepsize, a state-of-the-art line search for smooth objectives with cubic interpolation and adaptive Wolfe condition checking. (#554)
 * Stopping criteria can now be initialized using `initialize_stepsize!`, similar to solvers. (#554)
+
+### Changed
+
+* In the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/)t the `η` parameter has been renamed to `candidate_acceptance_threshold`, `β` to `damping_increase_factor` and `β_reduction` to `damping_reduction_factor`.
+* the constructor for the [Levenberg-Marquardt state](https://manoptjl.org/stable/solvers/LevenbergMarquardt/#Manopt.LevenbergMarquardtState) has been unified with the remaining states, to take the `sub_problem` and `sub_state` arguments as second and third positional arguments, respectively.
 
 ### Fixed
 
@@ -40,6 +35,11 @@ This is a breaking change since the JuMP extension is dropped.
 * the `NesterovRule` now also stores an actual `AbstractRetractionMethod` instead of implicitly always using the default one.
 * Line searches consistently respect `stop_when_stepsize_exceeds` keyword argument as a hard limit. (#554)
 * `StopWhenChangeLess` falsely claimed to indicate convergence. This is now fixed. (#554)
+
+### Removed
+
+* The JuMP extension was dropped.
+
 
 ## [0.5.37] May 5, 2026
 
