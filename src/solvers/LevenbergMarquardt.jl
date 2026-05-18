@@ -52,6 +52,12 @@ $(_kwargs(:evaluation))
 * `function_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
 * `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
 
+as well as then these are already combined in a single [`VectorGradientFunction`](@ref) `vgf`
+
+* `robustifier::`[`AbstractRobustifierFunction`](@ref)` = `[`IdentityRobustifier`](@ref)`()`:
+  for the robust variant, specify how the robustification is meant to take place. The default of the idendity disables the robust version
+  If you provide a vector of  [`VectorGradientFunction`](@ref)s, this argument has to be a vector of robustifiers of same length.
+
 as well as in general
 
 * `candidate_acceptance_threshold=0.2`:                   scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < candidate_acceptance_threshold < 1`.
@@ -104,7 +110,7 @@ end
 function LevenbergMarquardt(
         M::AbstractManifold, vgf::VectorGradientFunction, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        robustifier = IdentityRobustifier(), kwargs...,
+        robustifier::AbstractRobustifierFunction = IdentityRobustifier(), kwargs...,
     )
     # For a single vector gradient function, we always treat robustification componentwise
     nlso = ManifoldNonlinearLeastSquaresObjective(vgf, ComponentwiseRobustifierFunction(robustifier))
@@ -205,6 +211,7 @@ function LevenbergMarquardt!(
         X = zero_vector(M, p),
         initial_residual_values = zeros(number_eltype(p), residuals_count(get_objective(nlso))),
         initial_jacobian_f = fill(nothing, length(get_objective(nlso).objective)),
+        # TODO: Do we have nicer names for the following two as well? All other keywords have nice speaking names
         ε::Real = 1.0e-6,
         α_mode::Symbol = :Default,
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
@@ -221,6 +228,7 @@ function LevenbergMarquardt!(
     nlsp = DefaultManoptProblem(M, dnlso)
     sub_state_ = maybe_wrap_evaluation_type(sub_state)
     if has_anisotropic_max_stepsize(M)
+        # TODO (RB -> MB) what is this and that is the anisotropic thing?
         sub_state_ = LevenbergMarquardtBoxSubsolver(M, sub_state_, p)
     end
     lms = LevenbergMarquardtState(
