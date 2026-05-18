@@ -347,9 +347,9 @@ The following fields are keyword arguments
 * `damping_term = damping_term_min`
 * `damping_reduction_threshold = Inf`
 * `damping_increase_threshold = candidate_acceptance_threshold`
-* `direction = `copy(M, p, X)`
+* `direction = copy(M, p, X)`
 * `p = `$(_link(:rand))
-* `X = `$(_link(:zero_vector))``
+* `X = `$(_link(:zero_vector))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
 * `minimum_acceptable_model_improvement::Real = eps(number_eltype(p))`

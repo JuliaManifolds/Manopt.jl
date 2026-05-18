@@ -23,8 +23,8 @@ the regularization parameter (`damping_increase_threshold`).
 # Input
 
 $(_args(:M))
-* `f`: a cost function ``f: $(_math(:Manifold))→ℝ^m``.
-  The cost function can be provided in two different ways
+* `f`: a residual function ``f: $(_math(:Manifold))→ℝ^m``.
+  The residual function can be provided in two different ways
     * as a single function returning a vector ``f(p) ∈ ℝ^m``
     * as a vector of functions, where each single function returns a scalar ``f_i(p) ∈ ℝ``
   The type is determined by the `function_type=` keyword argument.
@@ -69,7 +69,7 @@ as well as in general
   By default this is a vector of length `num_components` of similar type as `p`.
 * `sub_evaluation = `[`InplaceEvaluation`](@ref): an [`AbstractEvaluationType`](@ref) for `linear_subsolver!`.
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-12)$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-12)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-12)`"))
 $(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
@@ -212,6 +212,8 @@ function LevenbergMarquardt!(
         initial_residual_values = zeros(number_eltype(p), residuals_count(get_objective(nlso))),
         initial_jacobian_f = fill(nothing, length(get_objective(nlso).objective)),
         # TODO: Do we have nicer names for the following two as well? All other keywords have nice speaking names
+        # I propose scaling_threshold for ε and scaling_mode for the α_mode
+        # (in the corresponding function/objective then just threshold and mode)
         ε::Real = 1.0e-6,
         α_mode::Symbol = :Default,
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
