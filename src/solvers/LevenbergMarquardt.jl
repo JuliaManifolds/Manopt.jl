@@ -41,8 +41,8 @@ $(_args(:p))
   calling `f` one additional time. This is only possible when `evaluation` is [`AllocatingEvaluation`](@ref),
   for mutating evaluation this value must be explicitly specified.
 
-You can also provide the cost and its Jacobian already as a[`VectorGradientFunction`](@ref) `vgf`,
-Alternatively, passing a [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`.
+You can also provide the cost and its Jacobian already as a [`VectorGradientFunction`](@ref) `vgf` to indicate you are working on a single block,
+Alternatively, passing a [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso` also works.
 
 # Keyword arguments
 

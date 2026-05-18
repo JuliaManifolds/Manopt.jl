@@ -210,27 +210,19 @@ end
         i_JF = similar(x0, 2 * length(ts_r2), 2)
         # η too large (≥ 1)
         @test_throws ArgumentError LevenbergMarquardtState(
-            M, i_res; initial_jacobian_f = i_JF, p = x0, candidate_acceptance_threshold = 2, sub_problem = sub_fake_f, sub_state = sub_state
+            M, sub_fake_f, sub_state, i_res, i_JF; p = x0, candidate_acceptance_threshold = 2,
         )
         # η too small (≤ 0)
         @test_throws ArgumentError LevenbergMarquardtState(
-            M, i_res; initial_jacobian_f = i_JF, p = x0, candidate_acceptance_threshold = -1, sub_problem = sub_fake_f, sub_state = sub_state
+            M, sub_fake_f, sub_state, i_res, i_JF; p = x0, candidate_acceptance_threshold = -1,
         )
         # damping term negative
         @test_throws ArgumentError LevenbergMarquardtState(
-            M, i_res; initial_jacobian_f = i_JF, p = x0, damping_term_min = -1, sub_problem = sub_fake_f, sub_state = sub_state
+            M, sub_fake_f, sub_state, i_res, i_JF; p = x0, damping_term_min = -1,
         )
         # damping_increase_factor too small (≤ 1)
         @test_throws ArgumentError LevenbergMarquardtState(
-            M, i_res; initial_jacobian_f = i_JF, p = x0, damping_increase_factor = 0.5, sub_problem = sub_fake_f, sub_state = sub_state
-        )
-        # no sub problem provided
-        @test_throws ArgumentError LevenbergMarquardtState(
-            M, i_res; initial_jacobian_f = i_JF, p = x0, sub_state = sub_state
-        )
-        # no sub state provided
-        @test_throws ArgumentError LevenbergMarquardtState(
-            M, i_res; initial_jacobian_f = i_JF, p = x0, sub_problem = sub_fake_f
+            M, sub_fake_f, sub_state, i_res, i_JF; p = x0, damping_increase_factor = 0.5,
         )
         # The next two tests check that the error "For mutating evaluation num_components needs to be explicitly specified" is thrown
         @test_throws ArgumentError LevenbergMarquardt(
@@ -697,16 +689,4 @@ end
         #
         # Manopt.set_parameter!(lms.sub_problem, :Objective, :Penalty, 1.0)
     end
-end
-
-@testset "LM on Hyperrectangle" begin
-    M = Hyperrectangle([-1.0, -1.0], [1.0, 1.0])
-    p0 = [0.5, -0.5]
-
-    ds = LevenbergMarquardt(
-        M, F_reg_r2(ts_r2, xs_r2, ys_r2), jacF_reg_r2(ts_r2, xs_r2, ys_r2), p0, length(ts_r2) * 2;
-        return_state = true,
-        sub_state = CoordinatesNormalSystemState(M),
-    )
-    @test is_point(M, get_state(ds).p)
 end

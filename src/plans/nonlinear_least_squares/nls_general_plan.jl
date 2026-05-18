@@ -294,17 +294,16 @@ Describes a Gradient based descent algorithm, with
 
 # Fields
 
-* `damping_term`:                 current value of the damping term
-* `damping_term_min`:             lower bound for the damping term
-* `damping_term_max`:             upper bound for the damping term
-* `damping_increase_factor` :
-  improvement quotient exceeds `damping_reduction_threshold`.
-* `damping_reduction_threshold` : threshold for the improvement quotient above which the damping term is reduced by
-  multiplying it with `β_reduction`.
-* `damping_increase_threshold` : threshold for the improvement quotient below which the damping term is increased by
-  multiplying it with `β`.
-* `direction`:                    the current search direction, which is the solution of the linearized
-  subproblem in each iteration.
+* `damping_term`:                   current value of the damping term
+* `damping_term_min`:               lower bound for the damping term
+* `damping_term_max`:               upper bound for the damping term
+* `damping_increase_factor`:        improvement quotient exceeds `damping_reduction_threshold`.
+* `damping_reduction_threshold`:    threshold for the improvement quotient above which
+  the damping term is reduced by multiplying it with `β_reduction`.
+* `damping_increase_threshold` :    threshold for the improvement quotient below which
+  the damping term is increased by multiplying it with `β`.
+* `direction`:                      the current search direction, which is the solution of
+  the linearized subproblem in each iteration.
 * `candidate_acceptance_threshold`: Scaling factor for the sufficient cost decrease threshold required
   to accept new proposal points. Allowed range: `0 < η < 1`.
 * `jacobian_f`:                   the current Jacobian of ``F`` in matrix form. Set to `nothing` if
@@ -322,7 +321,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
 # Constructor
 
-    LevenbergMarquardtState(M, initial_residual_values, initial_jacobian; kwargs...)
+    LevenbergMarquardtState(M, sub_problem, sub_state, initial_residual_values, initial_jacobian; kwargs...)
 
 Generate the Levenberg-Marquardt solver state.
 
@@ -376,7 +375,7 @@ mutable struct LevenbergMarquardtState{
             damping_term_min::R, damping_term_max::R,
             direction::T, jacobian_f::TJac, minimum_acceptable_model_improvement::R, p::P, q::P,
             residual_values::TRes, retraction_method::TRTM, stopping_criterion::SC, X::T
-        ) where {P, T, R <: Real, Pr, St, SC <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac}
+        ) where {P, T, R <: Real, Pr, St <: AbstractManoptSolverState, SC <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac}
         return new{P, T, R, Pr, St, SC, TRTM, TRes, TJac}(
             candidate_acceptance_threshold, damping_increase_factor, damping_increase_threshold,
             damping_reduction_threshold, damping_reduction_factor, damping_term, damping_term_min, damping_term_max,
@@ -434,13 +433,13 @@ function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default
     # Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm
     $Iter
     ## Parameters
-    * candidate acceptance threshold: $(lms.candidate_acceptance_threshold)
-    * damping reduction threshold: $(_MANOPT_INDENT)$(lms.damping_reduction_threshold)
-    * damping reduction factor:    $(_MANOPT_INDENT)$(lms.damping_reduction_factor)
-    * damping increase threshold:  $(_MANOPT_INDENT)$(lms.damping_increase_threshold)
-    * damping increase factor:     $(_MANOPT_INDENT)$(lms.damping_increase_factor)
-    * damping term:                $(_MANOPT_INDENT)$(lms.damping_term) (min: $(lms.damping_term_min) | max: $(lms.damping_term_max))
-    * retraction method: $(lms.retraction_method)
+    * candidate acceptance threshold:$(_MANOPT_INDENT)$(lms.candidate_acceptance_threshold)
+    * damping reduction threshold:   $(_MANOPT_INDENT)$(lms.damping_reduction_threshold)
+    * damping reduction factor:      $(_MANOPT_INDENT)$(lms.damping_reduction_factor)
+    * damping increase threshold:    $(_MANOPT_INDENT)$(lms.damping_increase_threshold)
+    * damping increase factor:       $(_MANOPT_INDENT)$(lms.damping_increase_factor)
+    * damping term:                  $(_MANOPT_INDENT)$(lms.damping_term) (min: $(lms.damping_term_min) | max: $(lms.damping_term_max))
+    * retraction method:             $(_MANOPT_INDENT)$(lms.retraction_method)
 
     ## Stopping criterion
 
