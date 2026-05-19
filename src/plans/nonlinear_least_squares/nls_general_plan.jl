@@ -272,8 +272,8 @@ and hence the scaling of the residual and the within the projection of the opera
 
 ```math
 $(_tex(:frac, _tex(:sqrt, "ρ'(s)"), "1-α"))
-$(_tex(:qquad))$(_tex(:text," and "))$(_tex(:qquad))
-$(_tex(:cases, "$(_tex(:frac, "α","s")) & $(_tex(:text, " if ")) s ≠ 0", "0 & $(_tex(:text, " else,"))"))
+$(_tex(:qquad))$(_tex(:text, " and "))$(_tex(:qquad))
+$(_tex(:cases, "$(_tex(:frac, "α", "s")) & $(_tex(:text, " if ")) s ≠ 0", "0 & $(_tex(:text, " else,"))"))
 ```
 
 respectively.
@@ -297,7 +297,7 @@ This function offers two `mode`s
 """
 function get_LevenbergMarquardt_scaling(
         ρ_prime::Real, ρ_double_prime::Real, FkSq::Real,
-        threshold::Real=1.0e-5, mode::Symbol=:Default
+        threshold::Real = 1.0e-5, mode::Symbol = :Default
     )
     # second derivative existent and negative: In strict mode (motivated by ceres) -> return sqrt(ρ_prime), 0
     (ismissing(ρ_double_prime) || (ρ_double_prime < 0 && mode == :Strict)) && return (sqrt(ρ_prime), 0.0)
@@ -779,10 +779,10 @@ function _get_vector_field!(
 end
 # Componentwise, it decouples, C is diagonal
 function _get_vector_field!(
-        M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, threshold;
+        M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
         threshold::Real, mode::Symbol,
     )
-    get_value!(M, y, o, threshold) # evaluate residuals F(p)
+    get_value!(M, y, o, p) # evaluate residuals F(p)
     r = cr.robustifier
     for (i, ai) in enumerate(y)
         ai_sq = abs(ai)^2
