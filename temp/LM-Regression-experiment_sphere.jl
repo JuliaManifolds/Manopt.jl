@@ -5,16 +5,18 @@ using Colors, Distributions, GLMakie, Makie, ManifoldDiff, Manifolds, Manopt, Na
 ptc = NamedColors.load_paul_tol()
 
 # Parameters
-export_asy = false
+export_asy = true
 show_plots = false
-add_gaussian_noise = true
+add_gaussian_noise = false
 name = "S2-Robust-Regression"
 σ = 1 * π / 32
 # For outliers we use a fixed size and a random angle to disturb them into
 r = π / 4
 N = 100 # on the range these are 0.05 apart for 39
 oN = 7
-outlier_indices = [8:(8 + oN - 1)..., [(N - 7):-1:(N - 7 - oN + 1)...]...]
+# the following outliers are a bit too symmetric
+# outlier_indices = [8:(8 + oN - 1)..., [(N - 7):-1:(N - 7 - oN + 1)...]...]
+outlier_indices = [4:(4 + oN - 1)..., [(N - 11):-1:(N - 11 - oN + 1)...]...]
 
 
 S = Manifolds.Sphere(2)
