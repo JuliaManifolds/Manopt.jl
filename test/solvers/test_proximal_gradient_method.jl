@@ -233,7 +233,9 @@ using Manopt, Manifolds, Test, ManifoldDiff
             inverse_retraction_method = ProjectionInverseRetraction(),
             stepsize = ProximalGradientMethodBacktracking(;
                 initial_stepsize = 1.0,
-                strategy = :convex
+                strategy = :convex,
+                k_max = 1.0,
+                δ = 1.0e-2,
             ),
             return_state = true
         )

@@ -403,6 +403,8 @@ A functor for backtracking line search in proximal gradient methods.
 * `sufficient_decrease=0.5`: sufficient decrease parameter
 * `contraction_factor=0.5`: step size reduction factor
 * `strategy=:nonconvex`: backtracking strategy, either `:convex` or `:nonconvex`
+* `k_max=0.0`: an upper bound to the sectional curvatures of the manifold, only for the `:convex` strategy
+* `δ=0.0`: parameter for backtracking in case `k_max > 0`, only for the `:convex` strategy
 """
 mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
     initial_stepsize::T
@@ -413,6 +415,8 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
     last_stepsize::T
     stop_when_stepsize_less::T
     warm_start_factor::T
+    k_max::T
+    δ::T
 
     function ProximalGradientMethodBacktrackingStepsize(
             M::AbstractManifold;
@@ -422,6 +426,8 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
             strategy::Symbol = :nonconvex,
             stop_when_stepsize_less::T = 1.0e-8,
             warm_start_factor::T = 1.0,
+            k_max::T = 0.0,
+            δ::T = 0.0,
         ) where {T}
         0 < sufficient_decrease < 1 ||
             throw(DomainError(sufficient_decrease, "sufficient_decrease must be in (0, 1)"))
@@ -449,6 +455,8 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
             initial_stepsize,
             stop_when_stepsize_less,
             warm_start_factor,
+            k_max,
+            δ
         )
     end
 end
@@ -465,6 +473,8 @@ function Base.show(io::IO, pgb::ProximalGradientMethodBacktrackingStepsize)
         sufficient_decrease=$(pgb.sufficient_decrease),
         strategy=$(pgb.strategy),
         warm_start_factor=$(pgb.warm_start_factor),
+        k_max=$(pgb.k_max),
+        δ=$(pgb.δ)
     )
     """
     return print(io, s)
@@ -522,8 +532,10 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
             g_p = get_cost_smooth(M, objective, p)
             g_q = get_cost_smooth(M, objective, candidate_point)
 
+            ζ_δ = s.k_max ≤ zero(eltype(s.k_max)) ? one(eltype(s.k_max)) : π / (2 + s.δ) * cot(π / (2 + s.δ))
+
             # Convex descent condition
-            if g_q <= g_p + inner(M, p, X, log_p_q) + (1 / 2λ) * squared_distance
+            if g_q <= g_p + inner(M, p, X, log_p_q) + (ζ_δ / 2λ) * squared_distance
                 s.last_stepsize = λ
                 return λ
             end
@@ -552,7 +564,7 @@ where ``G_{λ}(p) = (1/λ) * $(_tex(:log))_p(T_{λ}(p))`` is the gradient mappin
 For the convex case, the condition is:
 
 ```math
-g(T_{λ}(p)) ≤ g(p) + ⟨$(_tex(:grad)) g(p), $(_tex(:log))_p T_{λ}(p)⟩ + $(_tex(:frac, "1", "2λ")) $(_math(:distance))^2(p, T_{λ}(p))
+g(T_{λ}(p)) ≤ g(p) + ⟨$(_tex(:grad)) g(p), $(_tex(:log))_p T_{λ}(p)⟩ + $(_tex(:frac, "ζ_δ", "2λ")) $(_math(:distance))^2(p, T_{λ}(p))
 ```
 
 Returns a stepsize `λ` that satisfies the specified condition.
