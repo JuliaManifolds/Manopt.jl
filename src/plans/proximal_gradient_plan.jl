@@ -404,7 +404,7 @@ A functor for backtracking line search in proximal gradient methods.
 * `contraction_factor=0.5`: step size reduction factor
 * `strategy=:nonconvex`: backtracking strategy, either `:convex` or `:nonconvex`
 * `k_max=0.0`: an upper bound to the sectional curvatures of the manifold, only for the `:convex` strategy
-* `δ=0.0`: parameter for backtracking in case `k_max > 0`, only for the `:convex` strategy
+* `δ=1e-2`: parameter for backtracking in case `k_max > 0`, only for the `:convex` strategy
 """
 mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
     initial_stepsize::T
@@ -427,7 +427,7 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
             stop_when_stepsize_less::T = 1.0e-8,
             warm_start_factor::T = 1.0,
             k_max::T = 0.0,
-            δ::T = 0.0,
+            δ::T = 1.0e-2,
         ) where {T}
         0 < sufficient_decrease < 1 ||
             throw(DomainError(sufficient_decrease, "sufficient_decrease must be in (0, 1)"))
@@ -444,6 +444,9 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
         )
         warm_start_factor > 0 ||
             throw(DomainError(warm_start_factor, "warm_start_factor must be positive"))
+
+        (k_max > 0 && δ ≤ 0) &&
+            throw(DomainError(δ, "the tolerance parameter δ must be positive if k_max > 0"))
 
         p = rand(M)
         return new{typeof(p), T}(
@@ -531,6 +534,7 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
         elseif s.strategy === :convex
             g_p = get_cost_smooth(M, objective, p)
             g_q = get_cost_smooth(M, objective, candidate_point)
+
 
             ζ_δ = s.k_max ≤ zero(eltype(s.k_max)) ? one(eltype(s.k_max)) : π / (2 + s.δ) * cot(π / (2 + s.δ))
 

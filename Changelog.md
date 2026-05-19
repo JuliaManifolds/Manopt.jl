@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.38] May 19, 2026
+
+### Changed
+
+* the `:convex` backtracking strategy for `proximal_gradient_method` now entails a slightly different condition whenever the upper bound on the sectional curvature of the manifold, input via the `k_max` kwarg, is positive. This comes with a "tolerance" type parameter, `δ`, which must be positive.
+
 ## [0.5.37] May 5, 2026
 
 ### Changed
@@ -98,7 +104,6 @@ so it can be easier reused by others as well (#550)
 * moved to using a `Project.toml` for tests and an overall `[Workspace]`.
   This also allows finally to run single test files without installing all packages manually, but instead just switching to and instantiating the test environment. (#550)
 * for compatibility, state also `[source]` entries consistently in the sub `Project.toml` files. (#550)
-
 
 ## [0.5.28] November 17, 2025
 
