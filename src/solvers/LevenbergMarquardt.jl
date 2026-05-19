@@ -83,7 +83,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(
   - if `true` to the [`LevenbergMarquardtLinearSurrogateCoordinatesObjective`](@ref) which always works in coordinates of one single basis per tangent space and allows to cache Jacobian evaluations
   - if `false` to the [`LevenbergMarquardtLinearSurrogateObjective`](@ref) that can work either with linear operators or in (even different) coordinates.
 
-  This keyword is ignored if you set the `sub_problem` keyword directly
+  This keyword is ignored if you set the `sub_problem` and/or `sub_state` keyword directly
 * `sub_problem = `[`DefaultManoptProblem`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the sub problem to be solved. This should usually be phrased on the tangent space at the current iterate
 * `sub_state = `[`ConjugateResidualState`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the solver for the surrogate, see also [`conjugate_residual`](@ref)
 * `use_unified_basis = false`:           specify to use a single basis for all Jacobian evaluations at a certain iterate, see `sub_objective`
