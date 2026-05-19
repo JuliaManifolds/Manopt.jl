@@ -200,7 +200,7 @@ of the Levenberg-Marquardt algorithm following the ideas of [TriggsMcLauchlanHar
 
 where ``X ∈ $(_math(:TangentSpace))``, ``λ ≥ 0`` is the damping or penalty term,
 ``$(_tex(:Cal, "L")): $(_math(:TangentSpace)) → ℝ^n`` is a linear operator,
-and ``y = y(p) ∈ ℝ¨n`` is a vector field.
+and ``y = y(p) ∈ ℝ^n`` is a vector field.
 For the derivation of the Riemannian case, see [BaranBergmann:2026](@cite).
 
 In order to build a surrogate also for the robustified Levenberg-Marquardt, introduce
@@ -212,7 +212,7 @@ with
 C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)^" * _tex(:rm, "T"), _tex(:norm, "F(p)"; index = "2") * "^2")),
 ```
 
-where ``F(p) ∈ ℝ^n`` is the vector of residuals at point ``p ∈ M`` and ``J_F^*(p): ℝ^n → $(_math(:TangentSpace))```
+where ``F(p) ∈ ℝ^n`` is the vector of residuals at point ``p ∈ M`` and ``J_F^*(p): ℝ^n → $(_math(:TangentSpace))``
 is the adjoint Jacobian.
 These two can be accessed with [`get_vector_field`](@ref) for ``y`` and [`get_linear_operator`](@ref) for ``$(_tex(:Cal, "L"))``,
 respectively.

@@ -195,6 +195,7 @@ Glossaries.define!(_glossary_links, :rand, :link, _link_rand)
 function _link_zero_vector(; M = "M", p = "p")
     return "[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)$(length(M) > 0 ? "`($M, $p)`" : "")"
 end
+Glossaries.define!(_glossary_links, :TangentSpace, :link, "[`TangentSpace`](@extref `ManifoldsBase.TangentSpace`)")
 Glossaries.define!(_glossary_links, :zero_vector, :link, _link_zero_vector)
 
 #

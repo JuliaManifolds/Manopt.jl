@@ -535,17 +535,13 @@ end
         A = spzeros(manifold_dimension(M), manifold_dimension(M))
 
         lms = LevenbergMarquardt(
-            M,
-            Fs,
-            p0;
+            M, Fs, p0;
             initial_jacobian_f = [Manopt.allocate_jacobian(M, fi) for fi in Fs],
             robustifier = robustifier,
             stopping_criterion = StopAfterIteration(75) | StopWhenGradientNormLess(1.0e-11) | StopWhenStepsizeLess(1.0e-11),
             sub_state = CoordinatesNormalSystemState(M; A = A),
-            damping_reduction_factor = 0.3,
-            damping_reduction_threshold = 0.5,
-            use_fast_coordinate_system = true,
-            return_state = true,
+            damping_reduction_factor = 0.3, damping_reduction_threshold = 0.5,
+            use_unified_basis = true, return_state = true,
         )
         s = get_state(lms)
 

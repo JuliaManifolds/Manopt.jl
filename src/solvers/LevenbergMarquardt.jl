@@ -4,8 +4,8 @@ _doc_LM = """
     LevenbergMarquardt(M, vgf, p; kwargs...)
     LevenbergMarquardt(M, nlso, p; kwargs...)
     LevenbergMarquardt!(M, f, jacobian_f, p, num_components=-1; kwargs...)
-    LevenbergMarquardt!(M, vgf, p, num_components=-1; kwargs...)
-    LevenbergMarquardt!(M, nlso, p, num_components=-1; kwargs...)
+    LevenbergMarquardt!(M, vgf, p; kwargs...)
+    LevenbergMarquardt!(M, nlso, p; kwargs...)
 
 compute the the Riemannian Levenberg-Marquardt algorithm [Peeters:1993, AdachiOkunoTakeda:2022, BaranBergmann:2026](@cite)
 to solve
@@ -51,25 +51,43 @@ If you provide `f` and its jacobian
 $(_kwargs(:evaluation))
 * `function_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
 * `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
+$(_kwargs(:evaluation))
 
 as well as then these are already combined in a single [`VectorGradientFunction`](@ref) `vgf`
 
 * `robustifier::`[`AbstractRobustifierFunction`](@ref)` = `[`IdentityRobustifier`](@ref)`()`:
   for the robust variant, specify how the robustification is meant to take place. The default of the identity disables the robust version
   If you provide a vector of  [`VectorGradientFunction`](@ref)s, this argument has to be a vector of robustifiers of same length.
+$(_kwargs(:evaluation))
 
-as well as in general
+as well as in general using the model imprevement parameter ``m_k`` in several places, cf [BaranBergmann:2026](@cite)
 
-* `candidate_acceptance_threshold=0.2`:                   scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < candidate_acceptance_threshold < 1`.
-* `damping_term_min=0.1`:      initial (and also minimal) value of the damping term
-* `damping_increase_factor=5.0`:                     parameter by which the damping term is multiplied when the current new point is rejected
-* `initial_jacobian_f`:      the list of initial Jacobians of each block of the cost function `f`.
-  By default this is a matrix of size `num_components` times the manifold dimension of similar type as `p`.
-* `initial_residual_values`: the initial residual vector of the cost function `f`.
-  By default this is a vector of length `num_components` of similar type as `p`.
-* `sub_evaluation = `[`InplaceEvaluation`](@ref): an [`AbstractEvaluationType`](@ref) for `linear_subsolver!`.
+* `candidate_acceptance_threshold=0.2`: sufficient model improvement ``η ∈ (0,1)``, i.e. ``m_k > η`` to accept a candidate point
+* `damping_increase_factor=5.0`:        factor ``β_{$(_tex(:text, "i"))}`` to increase damping, when the model is inaccurate
+* `damping_increase_threshold=candidate_acceptance_threshold`: threshold ``η_{$(_tex(:text, "l"))}`` the value ``m_k``has to be below to increase damping.
+  The default yields, that we increase damping when we reject a candidate.
+* `damping_reduction_factor= 1 / damping_increase_factor`: factor ``β_{$(_tex(:text, "d"))}`` to reduce damping, when the model is accurate
+* `damping_reduction_threshold=Inf`:    threshold ``β_{$(_tex(:text, "d"))}`` to reduce damping, when the model is accurate
+  The default means, that we never reduce damping.
+* `damping_term_min = 0.1`:             lower bound ``μ_{$(_tex(:text, "l"))}`` for the damping ``μ_k`` throughout the iterations
+* `damping_term_max = Inf`:             upper bound ``μ_{$(_tex(:text, "u"))}`` for the damping ``μ_k`` throughout the iterations
+* `initial_damping_term=damping_term_min`: initial damping ``μ_0``
+* `initial_residual_values = zeros(m)`: a cache for the vector of residuals, `m` is the number of residual blocks
+* `initial_jacobian_f`: a cache for the evaluated Jacobians (currently only used if `use_unified_basis = true`)
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-12)`"))
+* `scaling_threshold = 1.0e-6`:         a threshold `ε` to bound the scaling parameter `α` in the robust case away from `1`, see [`get_LevenbergMarquardt_scaling`](@ref)
+* `scaling_mode = :Default`:            specify the scaling stabilization mode, see [`get_LevenbergMarquardt_scaling`](@ref)
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-12)"))
+* `sub_objective`                      : specify the objective for the surrogate sub problem to solver in every iteration.
+  This is set depending on the `use_unified_basis`
+  - if `true` to the [`LevenbergMarquardtLinearSurrogateCoordinatesObjective`](@ref) which always works in coordinates of one single basis per tangent space and allows to cache Jacobian evaluations
+  - if `false` to the [`LevenbergMarquardtLinearSurrogateObjective`](@ref) that can work either with linear operators or in (even different) coordinates.
+
+  This keyword is ignored if you set the `sub_problem` keyword directly
+* `sub_problem = `[`DefaultManoptProblem`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the sub problem to be solved. This should usually be phrased on the tangent space at the current iterate
+* `sub_state = `[`ConjugateResidualState`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the solver for the surrogate, see also [`conjugate_residual`](@ref)
+* `use_unified_basis = false`:           specify to use a single basis for all Jacobian evaluations at a certain iterate, see `sub_objective`
+
 $(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
@@ -139,8 +157,7 @@ function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso,
         return NormalEquationsObjective(
             LevenbergMarquardtLinearSurrogateCoordinatesObjective(
                 nlso; penalty = damping_term_min, threshold = threshold, mode = mode,
-                residuals = residuals,
-                jacobian_cache = jacobian_f,
+                residuals = residuals, jacobian_cache = jacobian_f,
             ),
         )
     else
@@ -199,25 +216,22 @@ function LevenbergMarquardt!(
         M::AbstractManifold, nlso::O, p;
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
+        candidate_acceptance_threshold::Real = 0.2,
         damping_increase_factor::Real = 5.0,
-        damping_increase_threshold::Real = Inf,
+        damping_increase_threshold::Real = candidate_acceptance_threshold,
         damping_reduction_threshold::Real = Inf,
         damping_reduction_factor::Real = 1 / damping_increase_factor,
         damping_term_min::Real = 0.1,
         damping_term_max::Real = Inf,
         initial_damping_term::Real = damping_term_min,
         debug = is_tutorial_mode() ? [DebugWarnIfCostIncreases()] : [],
-        candidate_acceptance_threshold::Real = 0.2,
-        X = zero_vector(M, p),
         initial_residual_values = zeros(number_eltype(p), residuals_count(get_objective(nlso))),
         initial_jacobian_f = fill(nothing, length(get_objective(nlso).objective)),
         scaling_threshold::Real = 1.0e-6,
         scaling_mode::Symbol = :Default,
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
-        # TODO (RB -> MB): What is this and how to document it?
-        use_fast_coordinate_system::Bool = false,
-        # TODO (RB -> MB): What is this and how to document it?
-        sub_objective = construct_lm_subobjective(use_fast_coordinate_system, nlso, damping_term_min, scaling_threshold, scaling_mode, initial_residual_values, initial_jacobian_f),
+        use_unified_basis::Bool = false,
+        sub_objective = construct_lm_subobjective(use_unified_basis, nlso, damping_term_min, scaling_threshold, scaling_mode, initial_residual_values, initial_jacobian_f),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_state = ConjugateResidualState(TangentSpace(M, p), sub_objective),
         kwargs..., #collect rest
