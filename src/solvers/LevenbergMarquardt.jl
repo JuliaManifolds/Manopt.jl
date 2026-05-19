@@ -134,11 +134,11 @@ function LevenbergMarquardt(
 end
 calls_with_kwargs(::typeof(LevenbergMarquardt)) = (LevenbergMarquardt!,)
 
-function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso, damping_term_min, ε, α_mode, residuals, jacobian_f)
+function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso, damping_term_min, threshold, mode, residuals, jacobian_f)
     if use_fast_coordinate_subobjective
         return NormalEquationsObjective(
             LevenbergMarquardtLinearSurrogateCoordinatesObjective(
-                nlso; penalty = damping_term_min, ε = ε, mode = α_mode,
+                nlso; penalty = damping_term_min, threshold = threshold, mode = mode,
                 residuals = residuals,
                 jacobian_cache = jacobian_f,
             ),
@@ -146,7 +146,7 @@ function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso,
     else
         return NormalEquationsObjective(
             LevenbergMarquardtLinearSurrogateObjective(
-                nlso; penalty = damping_term_min, ε = ε, mode = α_mode,
+                nlso; penalty = damping_term_min, threshold = threshold, mode = mode,
                 residuals = residuals,
             ),
         )
@@ -211,16 +211,13 @@ function LevenbergMarquardt!(
         X = zero_vector(M, p),
         initial_residual_values = zeros(number_eltype(p), residuals_count(get_objective(nlso))),
         initial_jacobian_f = fill(nothing, length(get_objective(nlso).objective)),
-        # TODO: Do we have nicer names for the following two as well? All other keywords have nice speaking names
-        # I propose scaling_threshold for ε and scaling_mode for the α_mode
-        # (in the corresponding function/objective then just threshold and mode)
-        ε::Real = 1.0e-6,
-        α_mode::Symbol = :Default,
+        scaling_threshold::Real = 1.0e-6,
+        scaling_mode::Symbol = :Default,
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
         # TODO (RB -> MB): What is this and how to document it?
         use_fast_coordinate_system::Bool = false,
         # TODO (RB -> MB): What is this and how to document it?
-        sub_objective = construct_lm_subobjective(use_fast_coordinate_system, nlso, damping_term_min, ε, α_mode, initial_residual_values, initial_jacobian_f),
+        sub_objective = construct_lm_subobjective(use_fast_coordinate_system, nlso, damping_term_min, scaling_threshold, scaling_mode, initial_residual_values, initial_jacobian_f),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_state = ConjugateResidualState(TangentSpace(M, p), sub_objective),
         kwargs..., #collect rest

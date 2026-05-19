@@ -1,299 +1,3 @@
-@doc """
-    ManifoldNonlinearLeastSquaresObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{E}
-
-An objective to model the robustified nonlinear least squares problem
-
-$(_problem(:NonLinearLeastSquares))
-
-# Fields
-
-* `objective`: a vector of [`AbstractVectorGradientFunction`](@ref)`{E}`s, one for each
-  block component cost function ``F_i``, which might internally also be a vector of component costs ``(F_i)_j``,
-  as well as their Jacobian ``J_{F_i}`` or a vector of gradients ``$(_tex(:grad)) (F_i)_j``
-  depending on the specified [`AbstractVectorialType`](@ref)s.
-* `robustifier`: a vector of [`AbstractRobustifierFunction`](@ref)`s`, one for each
-  block component cost function ``F_i``.
-* `value_cache::AbstractVector` and internal cache to store the result of evaluating the cost functions
-
-# Constructors
-
-    ManifoldNonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer, robustifier=IdentityRobustifier(); kwargs...)
-
-Create a nonlinear least squares objective for a single vectorial function `f` and its `jacobian`,
-where `range_dimension` is the dimension of the vector space `f` maps into. These three are internally
-wrapped into a [`VectorGradientFunction`](@ref) and calls the following constructor.
-
-    ManifoldNonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction, robustifier::AbstractRobustifierFunction=IdentityRobustifier())
-
-Create a nonlinear least squares objective for a given vectorial function.
-Note that for this constructor the `robustifier` is applied componentwise to each component of `vf`,
-i.e. wrapped in a [`ComponentwiseRobustifierFunction`](@ref).
-Internally this wraps both `vf` and `robustifier` in an array and calls the next constructor.
-Hence to not use the componentwise robustifier but a global one, pass `[vf,]` and `[robustifier,]` instead.
-
-    ManifoldNonlinearLeastSquaresObjective(fs::Vector{<:AbstractVectorGradientFunction}, robustifiers::Vector{<:AbstractRobustifierFunction}=fill(IdentityRobustifier(), length(fs)))
-
-Given a vector of [`AbstractVectorGradientFunction`](@ref)`s to represent the single blocks
-and a vector of robustifiers, one for each block, create the corresponding nonlinear least squares objective.
-
-# Keyword arguments
-
-The first constructor allows to pass the following keyword arguments, that are passed on to
-the corresponding
-the constructor of the As well as for the first variant of having a single block
-
-$(_kwargs(:evaluation))
-* `function_type::`[`AbstractVectorialType`](@ref)`=`[`FunctionVectorialType`](@ref)`()`: specify
-  the format the residuals are given in. By default a function returning a vector.
-* `jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis()`; shortcut to specify
-  the basis the Jacobian matrix is build with.
-* `jacobian_type::`[`AbstractVectorialType`](@ref)`=`[`CoefficientVectorialType`](@ref)`(jacobian_tangent_basis)`:
-  specify the format the Jacobian is given in. By default a matrix of the differential with
-  respect to a certain basis of the tangent space.
-
-# See also
-
-[`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref)
-"""
-struct ManifoldNonlinearLeastSquaresObjective{
-        E <: AbstractEvaluationType, VF <: AbstractVectorGradientFunction{E},
-        RF <: AbstractRobustifierFunction, TVC <: AbstractVector,
-    } <: AbstractManifoldFirstOrderObjective{E, Vector{VF}}
-    objective::Vector{VF}
-    robustifier::Vector{RF}
-    value_cache::TVC
-    # block components case constructor
-    function ManifoldNonlinearLeastSquaresObjective(
-            fs::Vector{VF},
-            robustifiers::Vector{RV} = fill(IdentityRobustifier(), length(fs)),
-            value_cache::TVC = zeros(sum(length(f) for f in fs)),
-        ) where {E <: AbstractEvaluationType, VF <: AbstractVectorGradientFunction{E}, RV <: AbstractRobustifierFunction, TVC <: AbstractVector}
-        # we need to check that the lengths match
-        (length(fs) != length(robustifiers)) && throw(
-            ArgumentError(
-                "Number of functions ($(length(fs))) does not match number of robustifiers ($(length(robustifiers)))",
-            ),
-        )
-        return new{E, VF, RV, TVC}(fs, robustifiers, value_cache)
-    end
-    # single component case constructor
-    function ManifoldNonlinearLeastSquaresObjective(
-            f::F,
-            robustifier::R = IdentityRobustifier(),
-            value_cache::TVC = zeros(length(f)),
-        ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction, TVC <: AbstractVector}
-        cr = ComponentwiseRobustifierFunction(robustifier)
-        return new{E, F, typeof(cr), TVC}([f], [cr], value_cache)
-    end
-end
-function ManifoldNonlinearLeastSquaresObjective(
-        f, jacobian, range_dimension::Integer,
-        robustifier::AbstractRobustifierFunction = IdentityRobustifier();
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        jacobian_tangent_basis::AbstractBasis = DefaultOrthonormalBasis(),
-        jacobian_type::AbstractVectorialType = CoefficientVectorialType(jacobian_tangent_basis),
-        function_type::AbstractVectorialType = FunctionVectorialType(),
-    )
-    vgf = VectorGradientFunction(
-        f, jacobian, range_dimension;
-        evaluation = evaluation, jacobian_type = jacobian_type, function_type = function_type,
-    )
-    return ManifoldNonlinearLeastSquaresObjective(vgf, robustifier)
-end
-
-"""
-    residuals_count(nlso::ManifoldNonlinearLeastSquaresObjective)
-
-Return the total number of residuals in [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`,
-which is the sum of the single block components lengths.
-"""
-function residuals_count(nlso::ManifoldNonlinearLeastSquaresObjective)
-    return sum(length(o) for o in nlso.objective)
-end
-
-"""
-    get_cost(M::AbstractManifold, nlso::ManifoldNonLinearLeastSquaresObjective, p)
-
-Compute the cost of the least squares objective, i.e.
-
-```math
-$(_tex(:frac, "1", "2")) $(_tex(:sum, "i=1", "m")) ρ_i $(_tex(:bigl))( $(_tex(:norm, "F_i(p)"))^2 $(_tex(:bigr))),
-```
-
-where ``F_i: $(_math(:Manifold)) → ℝ^{n_i}`` is the ``i``th block component of length ``n_i > 0``
-and each ``ρ_i: ℝ → ℝ`` is a [* R robustifier function, cf. [`AbstractRobustifierFunction`](@ref),
-for each such a block component.
-"""
-function get_cost(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p)
-    v = 0.0
-    start = 0
-    get_residuals!(M, nlso.value_cache, nlso, p)
-    for (o, r) in zip(nlso.objective, nlso.robustifier)
-        len = length(o)
-        value_cache = view(nlso.value_cache, (start + 1):(start + len))
-        v += _get_cost(M, o, r, p; value_cache = value_cache)
-        start += len
-    end
-    v /= 2
-    return v
-end
-# For a single block – or one summand in the docs of the previous function
-function _get_cost(
-        M, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        value_cache = get_value(M, vgf, p)
-    )
-    vi = sum(abs2, value_cache)
-    (a, _, _) = get_robustifier_values(r, vi)
-    return a
-end
-# For a single vectorial function where the robustifier is applied to every in dex separately.
-function _get_cost(
-        M, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
-        value_cache = get_value(M, vgf, p)
-    )
-    v = abs2.(value_cache)
-    # componentwise robustify
-    (a, _, _) = get_robustifier_values(cr, v)
-    return sum(a)
-end
-
-_doc_get_gradient_nlso = """
-    get_gradient(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...)
-    get_gradient!(M::AbstractManifold, X, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...)
-
-Compute the gradient for the [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso` at the point ``p ∈ M``,
-i.e.
-
-```math
-$(_tex(:grad)) f(p) = $(_tex(:sum, "i=1", "m")) ρ'_i$(_tex(:bigl))($(_tex(:norm, "F_i(p)"; index = "2"))^2$(_tex(:bigr)))
-$(_tex(:sum, "j=1", "n_i")) f_{i,j}(p) $(_tex(:grad)) f_{i,j}(p)
-```
-
-where ``F_i(p) ∈ ℝ^{n_i}`` is the vector of residuals for the `i`-th block component cost function
-and ``f_{i,j}(p)`` its `j`-th component function.
-
-# Keyword arguments
-* `value_cache=nothing`: if provided, this vector is used to store the residuals ``F(p)``
-  internally to avoid re-computations.
-* `jacobian_cache=fill(nothing, length(nlso.objective))`: if provided, this is used to store
-  the Jacobians of the component functions.
-"""
-@doc "$(_doc_get_gradient_nlso)"
-function get_gradient(
-        M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...,
-    )
-    X = zero_vector(M, p)
-    return get_gradient!(M, X, nlso, p; kwargs...)
-end
-function get_gradient!(
-        M::AbstractManifold, X, nlso::ManifoldNonlinearLeastSquaresObjective, p;
-        value_cache = nothing, jacobian_cache = fill(nothing, length(nlso.objective)),
-    )
-    zero_vector!(M, X, p)
-    start = 0
-    Y = copy(M, p, X)
-    for (o, r, jb) in zip(nlso.objective, nlso.robustifier, jacobian_cache) # for every block
-        len = length(o)
-        Fi = isnothing(value_cache) ? get_value(M, o, p) : view(value_cache, (start + 1):(start + len))
-        _add_gradient!(M, X, o, r, p; value_cache = Fi, jacobian_cache = jb)
-        start += len
-    end
-    return X
-end
-# Gradient for a single summand from above, that is a single (robustified) block
-function _add_gradient!(
-        M, X, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        value_cache = get_value(M, vgf, p), jacobian_cache = nothing
-    )
-    # get gradients for every component
-    len = length(vgf)
-
-    # compute robustifier derivative
-    (_, b, _) = get_robustifier_values(r, sum(abs2, value_cache))
-    if isnothing(jacobian_cache)
-        Y = allocate(M, X)
-        for j in 1:len
-            get_gradient!(M, Y, vgf, p, j) # gradient of f_{i,j}
-            X .+= (b * value_cache[j]) .* Y
-        end
-    else
-        Jc = jacobian_cache' * value_cache
-        Jc .*= b
-        add_vector!(M, X, p, Jc, vgf.jacobian_type.basis)
-    end
-    return X
-end
-# Gradient for a single summand from above, that is a single (robustified) block where the
-# robustifier is applied to every component / coordinate
-function _get_gradient!(
-        M, X, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
-        value_cache = get_value(M, vgf, p), jacobian_cache = nothing,
-    )
-    # get gradients for every component
-    len = length(vgf)
-    r = cr.robustifier
-    zero_vector!(M, X, p)
-    Y = copy(M, p, X)
-    for j in 1:len
-        get_gradient!(M, Y, vgf, p, j) # gradient of f_{i,j}
-        (_, b, _) = get_robustifier_values(r, abs(value_cache[j])^2)
-        # compute robustifier derivative
-        X .+= (b * value_cache[j]) .* Y
-    end
-    return X
-end
-
-# --- Residuals
-_doc_get_residuals_nlso = """
-    get_residuals(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p)
-    get_residuals!(M::AbstractManifold, v, nlso::ManifoldNonlinearLeastSquaresObjective, p)
-
-Compute the vector of residuals ``F(p) ∈ ℝ^n``, ``n = $(_tex(:sum, "1", "m")) n_i``.
-In other words this is the concatenation of the residual vectors ``F_i(p)``, ``i=1,…,m``
-of the components of the the [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`
-at the current point ``p`` on `M`.
-
-This can be computed in-place of `v`.
-
-Note that even in the presence of [`RobustifierFunction`](@ref)s, these are not applied here,
-this function computes the “pure” residuals.
-"""
-
-@doc "$(_doc_get_residuals_nlso)"
-function get_residuals(
-        M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...
-    )
-    v = zeros(residuals_count(nlso))
-    return get_residuals!(M, v, nlso, p; kwargs...)
-end
-
-@doc "$(_doc_get_residuals_nlso)"
-function get_residuals!(
-        M::AbstractManifold, v, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...,
-    )
-    start = 0
-    for o in nlso.objective # for every block
-        len = length(o)
-        view_v = view(v, (start + 1):(start + len))
-        get_value!(M, view_v, o, p)
-        start += len
-    end
-    return v
-end
-
-function Base.show(io::IO, nlso::ManifoldNonlinearLeastSquaresObjective)
-    print(io, "ManifoldNonlinearLeastSquaresObjective(")
-    print(io, nlso.objective, ", ", nlso.robustifier, ", ", nlso.value_cache)
-    return print(io, ")")
-end
-function status_summary(nlso::ManifoldNonlinearLeastSquaresObjective; context::Symbol = :default)
-    (context === :short) && (return repr(nlso))
-    # (context === :inline) &&
-    # we could maybe extend this if we find a good multiline idea here
-    n = length(nlso.objective)
-    return ("A nonlinear least squares objective $(n) vectorial block$(n > 1 ? "s" : "")")
-end
-
 #
 #
 # The solver state
@@ -472,7 +176,6 @@ end
 #
 #
 # --- Subproblems ----
-
 """
     AbstractLevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType}
 
@@ -512,87 +215,95 @@ C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)
 where ``F(p) ∈ ℝ^n`` is the vector of residuals at point ``p ∈ M`` and ``J_F^*(p): ℝ^n → $(_math(:TangentSpace))```
 is the adjoint Jacobian.
 These two can be accessed with [`get_vector_field`](@ref) for ``y`` and [`get_linear_operator`](@ref) for ``$(_tex(:Cal, "L"))``,
-respectively. For technical details on the scaling using ``α`` see [`get_LevenbergMarquardt_scaling`](@ref)
+respectively.
+For technical details on the scaling using ``α``, especially how the `threshold` and `mode`
+act as safeguards, see [`get_LevenbergMarquardt_scaling`](@ref)
 
 ## Fields
 
 * `objective`:     the [`ManifoldNonlinearLeastSquaresObjective`](@ref) to penalize
-* `penalty::R`: the damping term ``λ``
-* `ε::R`:       stabilization for ``α ≤ 1-ε`` in the rescaling of the Jacobian
+* `penalty::Real`: the damping term ``λ``
+* `threshold::Real`: threshold ``ε`` for stabilization of ``α`` as ``α ≤ 1-ε``, see  [`get_LevenbergMarquardt_scaling`](@ref)
 * `mode::Symbol`:  which ode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
 * `value_cache`:   a vector to store the residuals ``F(p)`` at the current point `p` internally to avoid re-computations
 
 ## Constructor
 
-    LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default)
+    LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, threshold::Real = 1e-4, mode::Symbol = :Default)
 """
 mutable struct LevenbergMarquardtLinearSurrogateObjective{
         E <: AbstractEvaluationType, R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R},
     } <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
     objective::TO
     penalty::R
-    ε::R
+    threshold::R
     mode::Symbol
     value_cache::TVC
     function LevenbergMarquardtLinearSurrogateObjective(
             objective::ManifoldNonlinearLeastSquaresObjective{E};
-            penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default,
+            penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Default,
             residuals::TVC = zeros(residuals_count(get_objective(objective))),
         ) where {E, R <: Real, TVC <: AbstractVector}
-        return new{E, R, typeof(objective), TVC}(objective, penalty, ε, mode, residuals)
+        return new{E, R, typeof(objective), TVC}(objective, penalty, threshold, mode, residuals)
     end
 end
 
 function show(io::IO, o::LevenbergMarquardtLinearSurrogateObjective)
-    return print(io, "LevenbergMarquardtLinearSurrogateObjective($(o.objective); penalty=$(o.penalty), ε=$(o.ε), mode=:$(o.mode))")
+    return print(io, "LevenbergMarquardtLinearSurrogateObjective($(o.objective); penalty=$(o.penalty), threshold=$(o.threshold), mode=:$(o.mode))")
 end
 
 """
-    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FSq::Real, ε::Real, mode::Symbol)
+    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FSq::Real, threshold::Real=1.0e-5, mode::Symbol=:Default)
 
-Compute the scaling ``$(_tex(:frac, _tex(:sqrt, "ρ'"), "1 - α"))`` for the residual ``y`` and
-the scaling ``$(_tex(:frac, "α", _tex(:norm, "F"; index = "2") * "^2"))`` that are required for the robust
+Compute the scalings for the residual ``y`` and within the operator ``C`` that are required for the robust
 rescaling within [`LevenbergMarquardt`](@ref)s [`get_vector_field`](@ref) and [`get_linear_operator`](@ref),
 respectively.
+Here `FSq` denotes ``s = $(_tex(:norm, "F(p)"; index = "2"))^2`` of the residual vector function ``F`` evaluated at some point ``p``,
+and `ρ_prime``=ρ'(s)` and `ρ_double_prime``=ρ''(s)` denote the current [`AbstractRobustifierFunction`](@ref)s
+first and second derivative evaluated at ``s``.
+
 The value for ``α`` is given by
 
 ```math
-    α = 1-$(_tex(:sqrt, "1 + 2$(_tex(:frac, "ρ_k''", "ρ_k'"))$(_tex(:norm, "F_k"; index = "2"))"))
+    α = 1 - $(_tex(:sqrt, "1 + 2$(_tex(:frac, "ρ''(s)", "ρ'(s)"))s"))
 ```
 
-where
-* ``ρ'`` is the first derivative of the [`AbstractRobustifierFunction`](@ref) at ``$(_tex(:norm, "F"; index = "2"))``
-* ``ρ''`` is the second derivative of the [`AbstractRobustifierFunction`](@ref) at ``$(_tex(:norm, "k"; index = "2"))``
-* `FSq` is the value ``$(_tex(:norm, "F"; index = "2"))``
+and hence the scaling of the residual and the within the projection of the operator are
+
+```math
+$(_tex(:frac, _tex(:sqrt, "ρ'(s)"), "1-α"))
+$(_tex(:qquad))$(_tex(:text," and "))$(_tex(:qquad))
+$(_tex(:cases, "$(_tex(:frac, "α","s")) & $(_tex(:text, " if ")) s ≠ 0", "0 & $(_tex(:text, " else,"))"))
+```
+
+respectively.
 
 ## Numerical stability
 
 For a unique solution that is a minimizer in a Levenberg-Marquardt step,
-we require `α < 1` and [TriggsMcLauchlanHartleyFitzgibbon:2000](@cite) recommends to bound this even by ``1-ε``.
+we require `α < 1` and [TriggsMcLauchlanHartleyFitzgibbon:2000](@cite) recommends to bound this even by ``1-ε``
+for some `threshold` ``ε > 0``.
 
-Furthermore if ``ρ´_k + 2ρ''_k $(_tex(:norm, "F"; index = "2")) ≤ 0`` the Hessian is also indefinite.
-This can be caught by making sure the argument of the ``√`` is ensured to be nonnegative.
+Furthermore if ``ρ'(s) + 2ρ''(s)⋅s ≤ 0`` the Hessian is also indefinite.
+This can be caught by making sure the argument of the ``√`` is ensured to be non-negative.
 
 The [Ceres solver](http://ceres-solver.org/nnls_modeling.html#theory) even omits the second term
-in the square root already if ``ρ_k'' < 0`` for stability reason, which means setting ``α = 0``.
-In the case ``$(_tex(:norm, "F"; index = "2"))`` we also set the operator scaling ``α / FkSq = 0``.
+in the square root already if ``ρ(s)'' < 0`` for stability reason, which means setting ``α = 0``.
+In the case ``s = 0`` we also set the operator scaling ``α / s = 0``.
 
-## Additional arguments
-
-* `ε::Real`: the stability for ``α`` to not be too close to one.
-* `mode::Symbol` specify the mode of calculation
-  - `:Default` keeps negative ``ρ''_k < 0`` but makes sure the square root is well-defined.
-  - `:Strict` set ``α = 0`` when ``ρ''_k < 0`` like Ceres does
+This function offers two `mode`s
+- `:Default` keeps negative ``ρ''(s) < 0`` but makes sure the square root is well-defined.
+- `:Strict` set ``α = 0`` when ``ρ''(s) < 0`` or when ``s = 0``
 """
 function get_LevenbergMarquardt_scaling(
         ρ_prime::Real, ρ_double_prime::Real, FkSq::Real,
-        ε::Real, mode::Symbol
+        threshold::Real=1.0e-5, mode::Symbol=:Default
     )
     # second derivative existent and negative: In strict mode (motivated by ceres) -> return sqrt(ρ_prime), 0
     (ismissing(ρ_double_prime) || (ρ_double_prime < 0 && mode == :Strict)) && return (sqrt(ρ_prime), 0.0)
     (iszero(FkSq) && mode == :Strict) && return (sqrt(ρ_prime), 0.0)
     α = 1 - sqrt(max(1 + 2 * (ρ_double_prime / ρ_prime) * FkSq, 0.0))
-    α = min(α, 1 - ε)
+    α = min(α, 1 - threshold)
     residual_scaling = sqrt(ρ_prime) / (1 - α)
     operator_scaling = ifelse(iszero(FkSq), 0.0, α / FkSq)
     return residual_scaling, operator_scaling
@@ -690,13 +401,13 @@ end
 # For each single summand, we are on the level of a single vectorial function and a robustifier – and add it directly
 function _add_gradient!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
     a = value_cache # evaluate residuals F(p)
     F_sq = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
-    # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
+    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
+    # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indrectly
     b = zero(a)
     get_jacobian!(M, b, o, p, X)
     # Compute C^TCb = C^2 b (inplace of b)
@@ -710,7 +421,7 @@ end
 # Componentwise
 function _add_gradient!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
     # per single component a for-loop similar to the one for the blocks
     r = cr.robustifier
@@ -720,7 +431,7 @@ function _add_gradient!(
     for (i, ai) in enumerate(value_cache)
         ai_sq = abs(ai)^2
         (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
-        residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
+        residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, threshold, mode)
         # get the “Jacobian” of the ith component, i.e. its
         # Compute C^TCa = C^2 a (inplace of a)
         b[i] = ρ_prime * (1 - operator_scaling * ai_sq)^2 * b[i]
@@ -790,13 +501,13 @@ end
 # For each single summand, we are on the level of a single vectorial function and a robustifier.
 function _get_hessian!(
         M::AbstractManifold, Z, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X, Y;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
     a = value_cache # evaluate residuals F(p)
     F_sq = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
-    # Compute J_F^*(p)[C^T C J_F(p)[Y]], but since C is symmetric, we can do that squared idrectly
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
+    # Compute J_F^*(p)[C^T C J_F(p)[Y]], but since C is symmetric, we can do that squared indirectly
     b = zero(a)
     get_jacobian!(M, b, o, p, Y)
     # Compute C^TCb = C^2 b (inplace of b)
@@ -808,7 +519,7 @@ end
 # Componentwise
 function _get_hessian!(
         M::AbstractManifold, Z, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X, Y;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
     # per single component a for-loop similar to the one for the blocks
     r = cr.robustifier
@@ -818,7 +529,7 @@ function _get_hessian!(
     for (i, ai) in enumerate(value_cache)
         ai_sq = abs(ai)^2
         (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
-        _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
+        _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, threshold, mode)
         # get the “Jacobian” of the ith component, i.e. its
         # Compute C^TCa = C^2 a (inplace of a)
         b[i] = ρ_prime * (1 - operator_scaling * ai_sq)^2 * b[i]
@@ -981,11 +692,11 @@ end
 # for a single block – the actual formula
 function _get_linear_operator!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
-        value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
+        value_cache = get_value(M, o, p); threshold::Real, mode::Symbol, Y_cache, c_cache
     )
     F_sq = sum(abs2, value_cache)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
     get_jacobian!(M, y, o, p, X; Y_cache = Y_cache, c_cache = c_cache)
     # Compute C y
     α = sqrt(ρ_prime)
@@ -996,7 +707,7 @@ end
 # Componenwise: Decouple
 function _get_linear_operator!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X,
-        value_cache = get_value(M, o, p); ε::Real, mode::Symbol, Y_cache, c_cache
+        value_cache = get_value(M, o, p); threshold::Real, mode::Symbol, Y_cache, c_cache
     )
     a = value_cache
     r = cr.robustifier
@@ -1004,7 +715,7 @@ function _get_linear_operator!(
     for (i, ai) in enumerate(value_cache)
         ai_sq = abs(ai)^2
         (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
-        _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
+        _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, threshold, mode)
         # get the “Jacobian” of the ith component, i.e. y[i]
         # C is justr a diagonal matrix here
         y[i] = sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * y[i]
@@ -1056,27 +767,27 @@ end
 # for a single block – the actual formula
 function _get_vector_field!(
         M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        ε::Real, mode::Symbol,
+        threshold::Real, mode::Symbol,
     )
     get_value!(M, y, o, p) # evaluate residuals F(p)
     F_sq = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
     # Compute y = sqrt(ρ(p)) / (1-α) * F(p)
     y .*= residual_scaling
     return y
 end
 # Componentwise, it decouples, C is diagonal
 function _get_vector_field!(
-        M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
-        ε::Real, mode::Symbol,
+        M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, threshold;
+        threshold::Real, mode::Symbol,
     )
-    get_value!(M, y, o, p) # evaluate residuals F(p)
+    get_value!(M, y, o, threshold) # evaluate residuals F(p)
     r = cr.robustifier
     for (i, ai) in enumerate(y)
         ai_sq = abs(ai)^2
         (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
-        residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
+        residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, threshold, mode)
         # Compute y = sqrt(ρ(p)) / (1-α) * F(p)
         y[i] *= residual_scaling
     end
@@ -1174,13 +885,13 @@ end
 # for a single block – the actual formula - but never with penalty
 function add_normal_linear_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = zero_vector(M, p)
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = zero_vector(M, p)
     )
     a = value_cache # evaluate residuals F(p)
     F_sq = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
-    # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
+    # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indirectly
     b = zero(a)
     get_jacobian!(M, b, o, p, X; Y_cache = Y_cache)
     # Compute C^TCb = C^2 b (inplace of a)
@@ -1202,7 +913,7 @@ end
 # Componentwise: A few things decouple
 function _get_normal_linear_operator!(
         M::AbstractManifold, Y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = nothing,
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = nothing,
     )
     b = zero(value_cache)
     get_jacobian!(M, b, o, p, X)
@@ -1210,8 +921,8 @@ function _get_normal_linear_operator!(
     for (i, ai) in enumerate(value_cache)
         ai_sq = abs(ai)^2
         (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
-        _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
-        # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
+        _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, threshold, mode)
+        # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indirectly
         # Compute C^TCb = C^2 b (inplace of a)
         b[i] = ρ_prime * (1 - operator_scaling * ai_sq)^2 * b[i]
     end
@@ -1289,13 +1000,13 @@ See [`get_normal_linear_operator`](@ref) for details
 function add_normal_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol
     )
     a = value_cache # evaluate residuals F(p)
     F_sq = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
-    # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
+    # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indirectly
     # (a) J_F is n-by-d so we have to allocate – where could we maybe store something like that and pass it down?
     JF = get_jacobian(M, o, p; basis = basis)
     # (I - s*a*a')^2 = I + (-2s + s^2*||a||^2) * a*a'
@@ -1314,7 +1025,7 @@ end
 function add_normal_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         cr::ComponentwiseRobustifierFunction, p, basis::AbstractBasis;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol
     )
     a = value_cache # evaluate residuals F(p)
     b = zero(a)
@@ -1322,8 +1033,8 @@ function add_normal_linear_operator!(
     for (i, ai) in enumerate(a)
         ai_sq = abs(ai)^2
         (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
-        _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
-        # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
+        _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, threshold, mode)
+        # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indirectly
         # (a) J_F is n-by-d so we have to allocate – where could we maybe store something like that and pass it down?
         b[i] = ρ_prime * (1 - operator_scaling * ai_sq)^2
     end
@@ -1402,12 +1113,12 @@ end
 # for a single block – the actual formula
 function _get_normal_vector_field!(
         M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = zero_vector(M, p),
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = zero_vector(M, p),
     )
     y = copy(value_cache)
     F_sq = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
     # Compute y = ( ρ'(p) / (1-α)) F(p)
     γ = residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * dot(y, y))
     @. y = γ * y
@@ -1419,14 +1130,14 @@ end
 # Componenwise C again reduces to a diagonal
 function _get_normal_vector_field!(
         M::AbstractManifold, X, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = nothing,
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = nothing,
     )
     y = copy(value_cache)
     r = cr.robustifier
     for (i, ai) in enumerate(y)
         ai_sq = abs(ai)^2
         (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
-        residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
+        residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, threshold, mode)
         # Compute y = ( ρ'(p) / (1-α)) F(p)
         y[i] = residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * y[i]
     end
@@ -1463,12 +1174,12 @@ end
 @doc "$(_doc_add_normal_vector_field)"
 function add_normal_vector_field!(
         M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol,
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
     y = copy(value_cache) # evaluate residuals F(p)
     F_sq = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
     # Compute y = ρ'(p) / (1-α)) F(p) and ...
     y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
     # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (inplace of y)
@@ -1478,14 +1189,14 @@ end
 # Compponentwise: decouple, C is a diagonalmatrix
 function add_normal_vector_field!(
         M::AbstractManifold, c, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, B::AbstractBasis;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol, Y_cache = nothing,
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = nothing,
     )
     y = copy(value_cache) # evaluate residuals F(p)
     r = cr.robustifier
     for (i, ai) in enumerate(y)
         ai_sq = abs(ai)^2
         (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
-        residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, ε, mode)
+        residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, threshold, mode)
         # Compute y = ρ'(p) / (1-α)) F(p) and ...
         y[i] = residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * ai
     end

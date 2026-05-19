@@ -1,5 +1,3 @@
-# TODO (RB -> MB, 12/03): Order functions here alphabetically
-# TODO (RB -> MB|RB, 12/03): All docs should be thoroughly written
 
 @doc """
     LevenbergMarquardtLinearSurrogateCoordinatesObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
@@ -11,7 +9,7 @@ linear operators.
 
 * `objective`:     the [`ManifoldNonlinearLeastSquaresObjective`](@ref) to penalize
 * `penalty::Real`: the damping term ``λ``
-* `ε::Real`:       stabilization for ``α ≤ 1-ε`` in the rescaling of the Jacobian, that
+* `threshold::Real`: stabilization ``ε`` for ``α ≤ 1-ε`` in the rescaling of the residual and jacobian, see [`get_LevenbergMarquardt_scaling`](@ref)
 * `mode::Symbol`:  which mode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
 * `value_cache`:   a vector to store the residuals ``F(p)`` at the current point `p` internally to avoid recomputations
 * `jacobian_cache`: a vector to store the coordinate-based Jacobian of the residuals at the
@@ -20,26 +18,26 @@ linear operators.
 
 ## Constructor
 
-    LevenbergMarquardtLinearSurrogateCoordinatesObjective(objective; penalty::Real = 1e-6, ε::Real = 1e-4, mode::Symbol = :Default )
+    LevenbergMarquardtLinearSurrogateCoordinatesObjective(objective; penalty::Real = 1e-6, threshold::Real = 1e-4, mode::Symbol = :Default )
 """
 mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
         E <: AbstractEvaluationType, R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R}, TJC <: AbstractVector, TB <: AbstractBasis,
     } <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
     objective::TO
     penalty::R
-    ε::R
+    threshold::R
     mode::Symbol
     value_cache::TVC
     jacobian_cache::TJC
     basis::TB
     function LevenbergMarquardtLinearSurrogateCoordinatesObjective(
             objective::ManifoldNonlinearLeastSquaresObjective{E};
-            penalty::R = 1.0e-6, ε::R = 1.0e-4, mode::Symbol = :Default,
+            penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Default,
             residuals::TVC = zeros(residuals_count(get_objective(objective))),
             jacobian_cache::TJC = fill(nothing, length(get_objective(objective).objective)),
             basis::TB = DefaultOrthonormalBasis(),
         ) where {E, R <: Real, TVC <: AbstractVector, TJC <: AbstractVector, TB <: AbstractBasis}
-        return new{E, R, typeof(objective), TVC, TJC, TB}(objective, penalty, ε, mode, residuals, jacobian_cache, basis)
+        return new{E, R, typeof(objective), TVC, TJC, TB}(objective, penalty, threshold, mode, residuals, jacobian_cache, basis)
     end
 end
 
@@ -57,7 +55,7 @@ function get_normal_linear_operator!(
         len_o = length(o)
         add_normal_linear_operator_coord!(
             M, A, o, r, p, B; value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)), jacobian_cache = jc,
-            ε = lmsco.ε, mode = lmsco.mode
+            threshold = lmsco.threshold, mode = lmsco.mode
         )
         start += len_o
     end
@@ -71,13 +69,13 @@ end
 function add_normal_linear_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
-        value_cache, jacobian_cache, ε::Real, mode::Symbol
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol
     )
     a = value_cache # evaluate residuals F(p)
     F_sq = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
-    # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared idrectly
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
+    # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indrectly
     # (a) J_F is n-by-d so we have to allocate – where could we maybe store something like that and pass it down?
     # (I - s*a*a')^2 = I + (-2s + s^2*||a||^2) * a*a'
     # so JF' * (ρ' * (I - s*a*a')^2) * JF
@@ -106,7 +104,7 @@ function add_normal_linear_operator_coord!(
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
         add_normal_linear_operator_coord!(
             M, c, o, r, p, cX;
-            ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, jacobian_cache = jc
+            threshold = lmsco.threshold, mode = lmsco.mode, value_cache = value_cache, jacobian_cache = jc
         )
         start += len
     end
@@ -116,12 +114,12 @@ function add_normal_linear_operator_coord!(
 end
 function add_normal_linear_operator_coord!(
         M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector;
-        value_cache, jacobian_cache, ε::Real, mode::Symbol
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol
     )
     a = value_cache # residuals F(p)
     F_sq = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indirectly
     # maybe TODO: maybe make this do a more generic conversion?
     b = convert(Vector, jacobian_cache * cX)
@@ -161,7 +159,7 @@ function add_linear_operator_coord!(
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
         _add_linear_operator_coord!(
             M, view(y, (start + 1):(start + len)), o, r, p, cX, value_cache, jc;
-            ε = lmsco.ε, mode = lmsco.mode
+            threshold = lmsco.threshold, mode = lmsco.mode
         )
         start += len
     end
@@ -169,11 +167,11 @@ function add_linear_operator_coord!(
 end
 function _add_linear_operator_coord!(
         M::AbstractManifold, y::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector,
-        value_cache, jacobian_cache; ε::Real, mode::Symbol
+        value_cache, jacobian_cache; threshold::Real, mode::Symbol
     )
     F_sq = sum(abs2, value_cache)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
     y_cache = jacobian_cache * cX
     # Compute C y
     α = sqrt(ρ_prime)
@@ -184,12 +182,12 @@ end
 
 function add_normal_vector_field_coord!(
         M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        value_cache, jacobian_cache, ε::Real, mode::Symbol,
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol,
     )
     y = copy(value_cache) # evaluate residuals F(p)
     F_sq = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
     # Compute y = ρ'(p) / (1-α)) F(p) and ...
     y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
     # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (adding it to c)
@@ -241,7 +239,7 @@ function get_normal_vector_field_coord!(
         add_normal_vector_field_coord!(
             M, c, o, r, p;
             value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)),
-            jacobian_cache = jc, ε = lmsco.ε, mode = lmsco.mode
+            jacobian_cache = jc, threshold = lmsco.threshold, mode = lmsco.mode
         )
         start += len_o
     end
@@ -251,12 +249,12 @@ end
 # for a single block – the actual formula cf. nls_general 1348
 function add_normal_vector_field_coord!(
         M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
-        value_cache, jacobian_cache, ε::Real, mode::Symbol,
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol,
     )
     y = copy(value_cache) # evaluate residuals F(p)
     F_sq = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, ε, mode)
+    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
     # Compute y = ρ'(p) / (1-α)) F(p) and ...
     y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
     # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (inplace of y)
@@ -283,7 +281,7 @@ function get_normal_vector_field_coord!(
         len_o = length(o)
         add_normal_vector_field_coord!(
             M, c, o, r, p;
-            value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)), jacobian_cache = jc, ε = lmsco.ε, mode = lmsco.mode
+            value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)), jacobian_cache = jc, threshold = lmsco.threshold, mode = lmsco.mode
         )
         start += len_o
     end
