@@ -75,7 +75,7 @@ function add_normal_linear_operator_coord!(
     F_sq = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
     _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
-    # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indrectly
+    # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indirectly
     # (a) J_F is n-by-d so we have to allocate – where could we maybe store something like that and pass it down?
     # (I - s*a*a')^2 = I + (-2s + s^2*||a||^2) * a*a'
     # so JF' * (ρ' * (I - s*a*a')^2) * JF

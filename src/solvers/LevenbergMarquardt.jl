@@ -55,7 +55,7 @@ $(_kwargs(:evaluation))
 as well as then these are already combined in a single [`VectorGradientFunction`](@ref) `vgf`
 
 * `robustifier::`[`AbstractRobustifierFunction`](@ref)` = `[`IdentityRobustifier`](@ref)`()`:
-  for the robust variant, specify how the robustification is meant to take place. The default of the idendity disables the robust version
+  for the robust variant, specify how the robustification is meant to take place. The default of the identity disables the robust version
   If you provide a vector of  [`VectorGradientFunction`](@ref)s, this argument has to be a vector of robustifiers of same length.
 
 as well as in general

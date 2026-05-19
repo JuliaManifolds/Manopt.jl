@@ -407,7 +407,7 @@ function _add_gradient!(
     F_sq = sum(abs2, a)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
     residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
-    # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indrectly
+    # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indirectly
     b = zero(a)
     get_jacobian!(M, b, o, p, X)
     # Compute C^TCb = C^2 b (inplace of b)
