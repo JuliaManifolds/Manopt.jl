@@ -7,9 +7,9 @@ ptc = NamedColors.load_paul_tol()
 # Parameters
 export_asy = false
 show_plots = false
-add_gaussian_noise = false
+add_gaussian_noise = true
 name = "S2-Robust-Regression"
-σ = 1 * π / 16
+σ = 1 * π / 32
 # For outliers we use a fixed size and a random angle to disturb them into
 r = π / 4
 N = 100 # on the range these are 0.05 apart for 39
@@ -139,16 +139,22 @@ m = mean(S, data)
 X0 = log(S, m, data[end])
 p0 = ArrayPartition(m, X0)
 
+@show p0
+
 # Least Squares
 P_star = LevenbergMarquardt(
     M, f, p0;
-    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5,
+    damping_increase_factor = 2.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5,
+    damping_increase_threshold = 0.2,
+    damping_reduction_threshold = 0.5,
     scaling_threshold = 1.0e-1, scaling_mode = :Strict,
     retraction_method = StabilizedRetraction(default_retraction_method(M)),
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop],
 )
 p_star = P_star[M, :point]
 X_star = P_star[M, :vector]
+
+@show p0
 
 qs_star = geodesic(S, p_star, X_star, ts_true)
 
@@ -157,10 +163,13 @@ P_ast = LevenbergMarquardt(
     M, f, p0;
     damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5,
     scaling_threshold = 1.0e-1, scaling_mode = :Strict,
-    robustifier = 1.0e-12 ∘ HuberRobustifier(),
+    damping_increase_threshold = 0.2,
+    damping_reduction_threshold = 0.5,
+    robustifier = 1.0e-4 ∘ HuberRobustifier(),
     retraction_method = StabilizedRetraction(default_retraction_method(M)),
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop],
 )
+@show P_ast
 p_ast = P_ast[M, :point]
 X_ast = P_ast[M, :vector]
 qs_ast = geodesic(S, p_ast, X_ast, ts_true)
