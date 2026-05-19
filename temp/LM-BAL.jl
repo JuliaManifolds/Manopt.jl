@@ -719,7 +719,7 @@ function run_bundle_adjustment(data::BALDataset)
     lm_state = LevenbergMarquardt(
         M, f, p0;
         initial_jacobian_f = [Manopt.allocate_jacobian(M, fi) for fi in f],
-        damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
+        damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, scaling_threshold = 1.0e-1, scaling_mode = :Strict,
         damping_reduction_factor = 0.2, damping_reduction_threshold = 0.5,
         robustifier = hr,
         debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
@@ -729,7 +729,7 @@ function run_bundle_adjustment(data::BALDataset)
             A = A,
             linsolve = sparse_lm_solver
         ),
-        use_fast_coordinate_system = true,
+        use_unified_basis = true,
         return_state = true,
     )
 

@@ -46,7 +46,7 @@ cost(M, p) = sum(distance(M, p, q) for q in pts)
 q1 = LevenbergMarquardt(
     M, Fs, p0;
     damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2,
-    damping_term_min = 1.0e-5, ε = 1.0e-1, # α_mode = :Strict,
+    damping_term_min = 1.0e-5, scaling_threshold = 1.0e-1, # scaling_mode = :Strict,
     robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)),
     debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop, 100],
 )
@@ -55,7 +55,7 @@ q1 = LevenbergMarquardt(
 
 q2 = LevenbergMarquardt(
     M, Fs, p0;
-    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
+    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, scaling_threshold = 1.0e-1, scaling_mode = :Strict,
     robustifier = fill((1 / 30) ∘ HuberRobustifier(), length(Fs)),
     debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop, 100],
     sub_state = CoordinatesNormalSystemState(M),

@@ -49,7 +49,7 @@ cost(M, p) = 0.5 * sum(distance(M, p, q)^2 for q in pts)
 # Default Residual CG on this approach – works but probably allocates a bit too much (matrices coordinates/vector...)
 q1 = LevenbergMarquardt(
     M, [f], p0;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
+    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5,
     robustifier = [IdentityRobustifier()],
     debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop],
 )
@@ -59,7 +59,7 @@ q1 = LevenbergMarquardt(
 
 q2 = LevenbergMarquardt(
     M, [f], p0;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
+    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5,
     robustifier = [IdentityRobustifier()],
     debug = [:Iteration, :Cost, " ", :damping_term, "\n", :Stop],
     sub_state = CoordinatesNormalSystemState(M),
@@ -69,7 +69,7 @@ q2 = LevenbergMarquardt(
 
 q1b = copy(M, p0)
 
-(@b LevenbergMarquardt!(M, [f], q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()])) |> repr |> println
+(@b LevenbergMarquardt!(M, [f], q1b; damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()])) |> repr |> println
 @info distance(M, q1, q1b)
 
 q2b = copy(M, p0)
@@ -77,7 +77,7 @@ q2b = copy(M, p0)
 (
     @b LevenbergMarquardt!(
         M, [f], q2b;
-        β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()], sub_state = CoordinatesNormalSystemState(M),
+        damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, robustifier = [IdentityRobustifier()], sub_state = CoordinatesNormalSystemState(M),
     )
 ) |> repr |> println
 

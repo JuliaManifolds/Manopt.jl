@@ -61,7 +61,7 @@ cost(M, p) = sum(distance(M, p, q) for q in pts)
 # Default Residual CG on this approach – works but probably allocates a bit too much (matrices coordinates/vector...)
 q1 = LevenbergMarquardt(
     M, Fs, p0;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
+    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, scaling_threshold = 1.0e-1, scaling_mode = :Strict,
     robustifier = hrs,
     debug = [:Iteration, :Cost, " ", :Change, " ", :damping_term, "\n", :Stop, 5],
 )
@@ -69,7 +69,7 @@ q1 = LevenbergMarquardt(
 
 q2 = LevenbergMarquardt(
     M, Fs, p0;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
+    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, scaling_threshold = 1.0e-1, scaling_mode = :Strict,
     robustifier = hrs,
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
     sub_state = CoordinatesNormalSystemState(M),
@@ -78,7 +78,7 @@ q2 = LevenbergMarquardt(
 
 q3 = LevenbergMarquardt(
     M, f, p0;
-    β = 8.0, η = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
+    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, scaling_threshold = 1.0e-1, scaling_mode = :Strict,
     robustifier = hr,
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop, 5],
     # sub_state = CoordinatesNormalSystemState(M),
@@ -89,7 +89,7 @@ q1b = copy(M, p0)
 
 (
     @b LevenbergMarquardt!(
-        M, Fs, q1b; β = 8.0, η = 0.2, damping_term_min = 1.0e-5, robustifier = hrs
+        M, Fs, q1b; damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, robustifier = hrs
     )
 ) |> repr |> println
 
@@ -99,7 +99,7 @@ q2b = copy(M, p0)
 (
     @b LevenbergMarquardt!(
         M, Fs, q2b;
-        β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
+        damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5,
         robustifier = hrs, sub_state = CoordinatesNormalSystemState(M),
     )
 ) |> repr |> println
@@ -110,7 +110,7 @@ q3b = copy(M, p0)
 (
     @b LevenbergMarquardt!(
         M, f, q3b;
-        β = 8.0, η = 0.2, damping_term_min = 1.0e-5,
+        damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5,
         robustifier = hr,
     )
 ) |> repr |> println
