@@ -390,7 +390,7 @@ function get_gradient!(
         len_o = length(o)
         _add_gradient!(
             M, Y, o, r, p, X;
-            value_cache = value_cache[(start + 1):(start + len_o)], ε = lmsco.ε, mode = lmsco.mode,
+            value_cache = value_cache[(start + 1):(start + len_o)], threshold = lmsco.threshold, mode = lmsco.mode,
         )
         start += len_o
     end
@@ -490,7 +490,7 @@ function get_hessian!(
         len_o = length(o)
         _add_hessian!(
             M, Z, o, r, p, X, Y;
-            value_cache = value_cache[(start + 1):(start + len_o)], ε = lmsco.ε, mode = lmsco.mode,
+            value_cache = value_cache[(start + 1):(start + len_o)], threshold = lmsco.threshold, mode = lmsco.mode,
         )
         start += len_o
     end
@@ -683,7 +683,7 @@ function get_linear_operator!(
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
         _get_linear_operator!(
             M, view(y, (start + 1):(start + len)), o, r, p, X, value_cache;
-            ε = lmsco.ε, mode = lmsco.mode, Y_cache = Y_cache, c_cache = c_cache,
+            threshold = lmsco.threshold, mode = lmsco.mode, Y_cache = Y_cache, c_cache = c_cache,
         )
         start += len
     end
@@ -759,7 +759,7 @@ function get_vector_field!(
     start = 0
     # For every block
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        _get_vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; ε = lmsco.ε, mode = lmsco.mode)
+        _get_vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; threshold = lmsco.threshold, mode = lmsco.mode)
         start += length(o)
     end
     return y
@@ -824,10 +824,10 @@ function get_solver_result(
 end
 
 """
-    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_normal_linear_operator!(M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_normal_linear_operator!(M::AbstractManifold, [A | b], lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; ε = lmsco.ε, mode = lmsco.mode, penalty = lmsco.penalty)
+    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
+    get_normal_linear_operator!(M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
+    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
+    get_normal_linear_operator!(M::AbstractManifold, [A | b], lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
 
 Compute the linear operator ``$(_tex(:Cal, "A"))`` corresponding to the optimality conditions of the
 modified Levenberg-Marquardt surrogate objective, i.e. the normal conditions
@@ -875,7 +875,7 @@ function get_normal_linear_operator!(
     for (o, r) in zip(nlso.objective, nlso.robustifier)
         len = length(o)
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
-        add_normal_linear_operator!(M, Y, o, r, p, X; ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache)
+        add_normal_linear_operator!(M, Y, o, r, p, X; threshold = lmsco.threshold, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache)
         start += len
     end
     # Finally add the damping term
@@ -949,7 +949,7 @@ function get_normal_linear_operator!(
     fill!(d, 0)
     e = copy(d)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        _get_normal_linear_operator!(M, e, o, r, p, c, B; ε = lmsco.ε, mode = lmsco.mode)
+        _get_normal_linear_operator!(M, e, o, r, p, c, B; threshold = lmsco.threshold, mode = lmsco.mode)
         d .+= e
     end
     # Finally add the damping term
@@ -979,7 +979,7 @@ function get_normal_linear_operator!(
     # For every block
     fill!(A, 0)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        add_normal_linear_operator!(M, A, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
+        add_normal_linear_operator!(M, A, o, r, p, B; threshold = lmsco.threshold, mode = lmsco.mode)
     end
     # Finally add the damping term
     (penalty != 0) && (LinearAlgebra.diagview(A) .+= penalty)
@@ -1103,7 +1103,7 @@ function get_normal_vector_field!(
         value_cache = view(lmsco.value_cache, (start + 1):(start + len))
         _get_normal_vector_field!(
             M, Z, o, r, p;
-            ε = lmsco.ε, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache,
+            threshold = lmsco.threshold, mode = lmsco.mode, value_cache = value_cache, Y_cache = Y_cache,
         )
         start += len
         X .+= Z
@@ -1165,7 +1165,7 @@ function get_normal_vector_field!(
     # For every block
     fill!(c, 0)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        add_normal_vector_field!(M, c, o, r, p, B; ε = lmsco.ε, mode = lmsco.mode)
+        add_normal_vector_field!(M, c, o, r, p, B; threshold = lmsco.threshold, mode = lmsco.mode)
     end
     return c
 end

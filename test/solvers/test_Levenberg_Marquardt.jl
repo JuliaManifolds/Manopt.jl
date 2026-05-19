@@ -221,15 +221,9 @@ end
 
         nvf_direct = zeros(n)
         Manopt.add_normal_vector_field_coord!(
-            M,
-            nvf_direct,
-            nlso.objective[1],
-            nlso.robustifier[1],
-            p;
-            value_cache = val_cache,
-            jacobian_cache = jc,
-            ε = lmcso.ε,
-            mode = lmcso.mode,
+            M, nvf_direct, nlso.objective[1], nlso.robustifier[1], p;
+            value_cache = val_cache, jacobian_cache = jc,
+            threshold = lmcso.threshold, mode = lmcso.mode,
         )
         @test isapprox(nvf_direct, nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
@@ -237,30 +231,18 @@ end
         seed = fill(0.7, n)
         nvf_acc = copy(seed)
         Manopt.add_normal_vector_field_coord!(
-            M,
-            nvf_acc,
-            nlso.objective[1],
-            nlso.robustifier[1],
-            p;
-            value_cache = val_cache,
-            jacobian_cache = jc,
-            ε = lmcso.ε,
-            mode = lmcso.mode,
+            M, nvf_acc, nlso.objective[1], nlso.robustifier[1], p;
+            value_cache = val_cache, jacobian_cache = jc,
+            threshold = lmcso.threshold, mode = lmcso.mode,
         )
         @test isapprox(nvf_acc, seed .+ nvf_direct; atol = 1.0e-12, rtol = 1.0e-12)
 
         # Cross-check with the basis overload of add_normal_vector_field_coord!.
         nvf_direct_B = zeros(n)
         Manopt.add_normal_vector_field_coord!(
-            M,
-            nvf_direct_B,
-            nlso.objective[1],
-            nlso.robustifier[1],
-            p;
-            value_cache = val_cache,
-            jacobian_cache = jc,
-            ε = lmcso.ε,
-            mode = lmcso.mode,
+            M, nvf_direct_B, nlso.objective[1], nlso.robustifier[1], p;
+            value_cache = val_cache, jacobian_cache = jc,
+            threshold = lmcso.threshold, mode = lmcso.mode,
         )
         @test isapprox(nvf_direct_B, nvf_direct; atol = 1.0e-12, rtol = 1.0e-12)
 
