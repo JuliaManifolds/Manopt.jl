@@ -5,7 +5,7 @@ using Colors, Distributions, GLMakie, Makie, ManifoldDiff, Manifolds, Manopt, Na
 ptc = NamedColors.load_paul_tol()
 
 # Parameters
-export_asy = true
+export_asy = false
 show_plots = false
 add_gaussian_noise = false
 name = "S2-Robust-Regression"
@@ -142,7 +142,8 @@ p0 = ArrayPartition(m, X0)
 # Least Squares
 P_star = LevenbergMarquardt(
     M, f, p0;
-    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
+    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5,
+    scaling_threshold = 1.0e-1, scaling_mode = :Strict,
     retraction_method = StabilizedRetraction(default_retraction_method(M)),
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop],
 )
@@ -154,7 +155,8 @@ qs_star = geodesic(S, p_star, X_star, ts_true)
 # Robust
 P_ast = LevenbergMarquardt(
     M, f, p0;
-    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5, ε = 1.0e-1, α_mode = :Strict,
+    damping_increase_factor = 8.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5,
+    scaling_threshold = 1.0e-1, scaling_mode = :Strict,
     robustifier = 1.0e-12 ∘ HuberRobustifier(),
     retraction_method = StabilizedRetraction(default_retraction_method(M)),
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop],
