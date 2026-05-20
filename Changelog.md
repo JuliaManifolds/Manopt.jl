@@ -28,6 +28,12 @@ This is a breaking change since the JuMP extension is dropped.
 * Line searches consistently respect `stop_when_stepsize_exceeds` keyword argument as a hard limit. (#554)
 * `StopWhenChangeLess` falsely claimed to indicate convergence. This is now fixed. (#554)
 
+### Removed
+
+* The extension to JuMP. A replacement as a separate package is planned when the support for variables beyond vectors is more accessible in JuMP
+* the plotting functions to `Asymptote`. They can now be found in the separate package [`ManifoldAsymptote.jl`]()
+  this way, `Manopt.jl` has less dependencies, especially the color and colorschemes dependencies are dropped
+
 ## [0.5.37] May 5, 2026
 
 ### Changed
