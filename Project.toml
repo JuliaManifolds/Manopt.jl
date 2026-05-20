@@ -1,15 +1,11 @@
 name = "Manopt"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 version = "0.5.37"
-authors = [{family-names = "Bergmann", given-names = "Ronny", alias = "kellertuer", city = "Trondheim", affiliation = "Norwegian University of Science and Technology", country = "NO", email = "manopt@ronnybergmann.net", orcid = "https://orcid.org/0000-0001-8342-7218", website = "https://ronnybergmann.net"}]
 
 [workspace]
 projects = ["test", "docs", "tutorials"]
 
 [deps]
-ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-ColorTypes = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Glossaries = "8f48dd54-e453-4cdc-9500-53b96149560b"
@@ -41,9 +37,6 @@ ManoptRecursiveArrayToolsExt = "RecursiveArrayTools"
 ManoptRipQPQuadraticModelsExt = ["RipQP", "QuadraticModels"]
 
 [compat]
-ColorSchemes = "3.5.0"
-ColorTypes = "0.9.1, 0.10, 0.11, 0.12"
-Colors = "0.11.2, 0.12, 0.13"
 DataStructures = "0.17, 0.18, 0.19"
 Dates = "1.10"
 Glossaries = "0.1.1"
@@ -65,3 +58,14 @@ RipQP = "0.6.4, 0.7"
 SparseArrays = "1.10"
 Statistics = "1.10"
 julia = "1.10"
+
+[[authors]]
+affiliation = "Norwegian University of Science and Technology"
+alias = "kellertuer"
+city = "Trondheim"
+country = "NO"
+email = "manopt@ronnybergmann.net"
+family-names = "Bergmann"
+given-names = "Ronny"
+orcid = "https://orcid.org/0000-0001-8342-7218"
+website = "https://ronnybergmann.net"

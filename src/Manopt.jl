@@ -17,9 +17,6 @@ import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_
 import ManifoldsBase: base_manifold, base_point, get_basis
 import ManifoldsBase: project, project!
 import LinearAlgebra: cross, LowerTriangular
-using ColorSchemes
-using ColorTypes
-using Colors
 using DataStructures: CircularBuffer, capacity, length, push!, size, isfull, heapify!, heappop!
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using Glossaries
@@ -225,13 +222,10 @@ include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 
 include("helpers/checks.jl")
-include("helpers/exports/Asymptote.jl")
 include("helpers/LineSearchesTypes.jl")
 include("helpers//test.jl")
 
 include("deprecated.jl")
-
-function JuMP_Optimizer end
 
 function __init__()
     #
@@ -252,17 +246,6 @@ function __init__()
                     "\nThe `proximal_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
                 )
                 printstyled(io, "`using QuadraticModels, RipQP`"; color = :cyan)
-            end
-            if exc.f === Manopt.JuMP_Optimizer
-                print(
-                    io,
-                    """
-
-                    The `Manopt.JuMP_Optimizer` is not yet properly initialized.
-                    It requires the package `JuMP.jl`, so please load it e.g. via
-                    """,
-                )
-                printstyled(io, "`using JuMP`"; color = :cyan)
             end
         end
     end
@@ -596,10 +579,6 @@ export StopAfter,
     StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria,
     get_stopping_criteria, get_reason, get_stopping_criterion, stopped_at
-#
-# Exports
-export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD
-export render_asymptote
 #
 # Debugs
 export DebugSolverState, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
