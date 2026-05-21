@@ -707,7 +707,8 @@ function run_bundle_adjustment(data::BALDataset)
         zeros(3, data.num_points), # 3D point positions
     )
 
-    hr = fill((1 / 30) ∘ HuberRobustifier(), length(F))
+    #hr = fill((1 / 30) ∘ HuberRobustifier(), length(F))
+    hr = fill(HuberRobustifier(), length(F))
 
     n = manifold_dimension(M)
     A = spzeros(n, n)

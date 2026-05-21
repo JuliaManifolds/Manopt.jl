@@ -242,10 +242,11 @@ function LevenbergMarquardt!(
     sub_state_ = maybe_wrap_evaluation_type(sub_state)
     if has_anisotropic_max_stepsize(M)
         # TODO (RB -> MB) what is this and that is the anisotropic thing?
+        # That's for handling box constraints
         sub_state_ = LevenbergMarquardtBoxSubsolver(M, sub_state_, p)
     end
     lms = LevenbergMarquardtState(
-        M, sub_problem, sub_state, initial_residual_values, initial_jacobian_f;
+        M, sub_problem, sub_state_, initial_residual_values, initial_jacobian_f;
         p = p,
         damping_increase_factor = damping_increase_factor,
         damping_increase_threshold = damping_increase_threshold,
