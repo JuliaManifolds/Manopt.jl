@@ -614,7 +614,7 @@ function (d::DebugEntryChange)(
     end
     x = get_storage(d.storage, d.field)
     v = d.distance(p, st, getproperty(st, d.field), x)
-    Printf.format(d.io, Printf.Format(d.format), v)
+    (k > 0) && Printf.format(d.io, Printf.Format(d.format), v)
     d.storage(p, st, k)
     return nothing
 end
@@ -1062,6 +1062,7 @@ end
 function (d::DebugWarnIfCostNotFinite)(
         p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < 0) && (return nothing)
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
         if !isfinite(cost)
@@ -1108,6 +1109,7 @@ end
 function (d::DebugWarnIfFieldNotFinite)(
         ::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < 0) && (return nothing)
     if d.status !== :No
         if d.field == :Iterate
             v = get_iterate(st)
@@ -1167,6 +1169,7 @@ end
 function (d::DebugWarnIfGradientNormTooLarge)(
         mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < 0) && (return nothing)
     if d.status !== :No
         M = get_manifold(mp)
         p = get_iterate(st)
