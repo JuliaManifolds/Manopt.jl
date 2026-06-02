@@ -1011,7 +1011,6 @@ end
 function (d::DebugWarnIfCostIncreases)(
         p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
-    (k < 0) && (return nothing)
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
         if cost > d.old_cost + d.tol
@@ -1062,7 +1061,6 @@ end
 function (d::DebugWarnIfCostNotFinite)(
         p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
-    (k < 0) && (return nothing)
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
         if !isfinite(cost)
@@ -1109,7 +1107,6 @@ end
 function (d::DebugWarnIfFieldNotFinite)(
         ::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
-    (k < 0) && (return nothing)
     if d.status !== :No
         if d.field == :Iterate
             v = get_iterate(st)
@@ -1169,7 +1166,6 @@ end
 function (d::DebugWarnIfGradientNormTooLarge)(
         mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
-    (k < 0) && (return nothing)
     if d.status !== :No
         M = get_manifold(mp)
         p = get_iterate(st)
@@ -1222,7 +1218,7 @@ end
 function (d::DebugWarnIfStepsizeCollapsed)(
         amp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
-    (k < 1) && (return nothing)
+    (k == 0) && (return nothing)
     if d.status !== :No
         if get_last_stepsize(amp, st, k) ≤ d.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(d.stop_when_stepsize_less)."
