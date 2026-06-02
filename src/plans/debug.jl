@@ -939,15 +939,15 @@ end
 function (d::DebugTime)(::AbstractManoptProblem, ::AbstractManoptSolverState, k)
     if k == 0 || d.last_time == Nanosecond(0) # init
         d.last_time = Nanosecond(time_ns())
-    else
+    elseif k > 0
         t = time_ns()
         p = Nanosecond(t) - d.last_time
         Printf.format(
             d.io, Printf.Format(d.format), canonicalize(round(p, d.time_accuracy))
         )
-    end
-    if d.mode == :iterative
-        d.last_time = Nanosecond(time_ns())
+        if d.mode == :iterative
+            d.last_time = Nanosecond(time_ns())
+        end
     end
     return nothing
 end
