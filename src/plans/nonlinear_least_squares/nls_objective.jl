@@ -7,7 +7,7 @@ $(_problem(:NonLinearLeastSquares))
 
 # Fields
 
-* `objective`: a vector of [`AbstractVectorGradientFunction`](@ref)`{E}`s, one for each
+* `objective`: a vector of [`AbstractFirstOrderVectorFunction`](@ref)`{E}`s, one for each
   block component cost function ``F_i``, which might internally also be a vector of component costs ``(F_i)_j``,
   as well as their Jacobian ``J_{F_i}`` or a vector of gradients ``$(_tex(:grad)) (F_i)_j``
   depending on the specified [`AbstractVectorialType`](@ref)s.
@@ -23,7 +23,7 @@ Create a nonlinear least squares objective for a single vectorial function `f` a
 where `range_dimension` is the dimension of the vector space `f` maps into. These three are internally
 wrapped into a [`VectorGradientFunction`](@ref) and calls the following constructor.
 
-    ManifoldNonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction, robustifier::AbstractRobustifierFunction=IdentityRobustifier())
+    ManifoldNonlinearLeastSquaresObjective(vf::AbstractFirstOrderVectorFunction, robustifier::AbstractRobustifierFunction=IdentityRobustifier())
 
 Create a nonlinear least squares objective for a given vectorial function.
 Note that for this constructor the `robustifier` is applied componentwise to each component of `vf`,
@@ -31,9 +31,9 @@ i.e. wrapped in a [`ComponentwiseRobustifierFunction`](@ref).
 Internally this wraps both `vf` and `robustifier` in an array and calls the next constructor.
 Hence to not use the componentwise robustifier but a global one, pass `[vf,]` and `[robustifier,]` instead.
 
-    ManifoldNonlinearLeastSquaresObjective(fs::Vector{<:AbstractVectorGradientFunction}, robustifiers::Vector{<:AbstractRobustifierFunction}=fill(IdentityRobustifier(), length(fs)))
+    ManifoldNonlinearLeastSquaresObjective(fs::Vector{<:AbstractFirstOrderVectorFunction}, robustifiers::Vector{<:AbstractRobustifierFunction}=fill(IdentityRobustifier(), length(fs)))
 
-Given a vector of [`AbstractVectorGradientFunction`](@ref)`s to represent the single blocks
+Given a vector of [`AbstractFirstOrderVectorFunction`](@ref)`s to represent the single blocks
 and a vector of robustifiers, one for each block, create the corresponding nonlinear least squares objective.
 
 # Keyword arguments
@@ -56,7 +56,7 @@ $(_kwargs(:evaluation))
 [`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref)
 """
 struct ManifoldNonlinearLeastSquaresObjective{
-        E <: AbstractEvaluationType, VF <: AbstractVectorGradientFunction{E},
+        E <: AbstractEvaluationType, VF <: AbstractFirstOrderVectorFunction{E},
         RF <: AbstractRobustifierFunction, TVC <: AbstractVector,
     } <: AbstractManifoldFirstOrderObjective{E, Vector{VF}}
     objective::Vector{VF}
@@ -67,7 +67,11 @@ struct ManifoldNonlinearLeastSquaresObjective{
             fs::Vector{VF},
             robustifiers::Vector{RV} = fill(IdentityRobustifier(), length(fs)),
             value_cache::TVC = zeros(sum(length(f) for f in fs)),
-        ) where {E <: AbstractEvaluationType, VF <: AbstractVectorGradientFunction{E}, RV <: AbstractRobustifierFunction, TVC <: AbstractVector}
+        ) where {
+            E <: AbstractEvaluationType,
+            VF <: AbstractFirstOrderVectorFunction{E},
+            RV <: AbstractRobustifierFunction, TVC <: AbstractVector
+        }
         # we need to check that the lengths match
         (length(fs) != length(robustifiers)) && throw(
             ArgumentError(
@@ -81,7 +85,7 @@ struct ManifoldNonlinearLeastSquaresObjective{
             f::F,
             robustifier::R = IdentityRobustifier(),
             value_cache::TVC = zeros(length(f)),
-        ) where {E <: AbstractEvaluationType, F <: AbstractVectorGradientFunction{E}, R <: AbstractRobustifierFunction, TVC <: AbstractVector}
+        ) where {E <: AbstractEvaluationType, F <: AbstractFirstOrderVectorFunction{E}, R <: AbstractRobustifierFunction, TVC <: AbstractVector}
         cr = ComponentwiseRobustifierFunction(robustifier)
         return new{E, F, typeof(cr), TVC}([f], [cr], value_cache)
     end
@@ -139,7 +143,7 @@ function get_cost(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObject
 end
 # For a single block – or one summand in the docs of the previous function
 function _get_cost(
-        M, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
+        M, vgf::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p;
         value_cache = get_value(M, vgf, p)
     )
     vi = sum(abs2, value_cache)
@@ -148,7 +152,7 @@ function _get_cost(
 end
 # For a single vectorial function where the robustifier is applied to every in dex separately.
 function _get_cost(
-        M, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
+        M, vgf::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p;
         value_cache = get_value(M, vgf, p)
     )
     v = abs2.(value_cache)
@@ -202,7 +206,7 @@ function get_gradient!(
 end
 # Gradient for a single summand from above, that is a single (robustified) block
 function _add_gradient!(
-        M, X, vgf::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
+        M, X, vgf::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p;
         value_cache = get_value(M, vgf, p), jacobian_cache = nothing
     )
     # get gradients for every component
@@ -226,7 +230,7 @@ end
 # Gradient for a single summand from above, that is a single (robustified) block where the
 # robustifier is applied to every component / coordinate
 function _get_gradient!(
-        M, X, vgf::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
+        M, X, vgf::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p;
         value_cache = get_value(M, vgf, p), jacobian_cache = nothing,
     )
     # get gradients for every component

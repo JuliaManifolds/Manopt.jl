@@ -126,7 +126,7 @@ function LevenbergMarquardt(
     return LevenbergMarquardt(M, vgf, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt(
-        M::AbstractManifold, vgf::VectorGradientFunction, p;
+        M::AbstractManifold, vgf::Union{VectorGradientFunction, VectorDifferentialFunction}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         robustifier::AbstractRobustifierFunction = IdentityRobustifier(), kwargs...,
     )
@@ -135,7 +135,7 @@ function LevenbergMarquardt(
     return LevenbergMarquardt(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt(
-        M::AbstractManifold, vgf::Vector{<:VectorGradientFunction}, p;
+        M::AbstractManifold, vgf::Union{Vector{<:VectorGradientFunction}, Vector{<:VectorDifferentialFunction}}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         robustifier::Vector{<:AbstractRobustifierFunction} = [IdentityRobustifier() for _ in 1:length(vgf)],
         kwargs...,

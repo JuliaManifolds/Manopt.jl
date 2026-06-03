@@ -321,8 +321,8 @@ export AbstractDecoratedManifoldObjective,
     SimpleManifoldCachedObjective,
     ManifoldCachedObjective
 # Functions
-export AbstractVectorFunction,
-    AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
+export AbstractVectorFunction, VectorDifferentialFunction
+export AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
 # Robustifiers
 export AbstractRobustifierFunction, SoftL1Robustifier, AbstractRobustifierFunction,
     CauchyRobustifier, TolerantRobustifier, TukeyRobustifier, ComposedRobustifierFunction,

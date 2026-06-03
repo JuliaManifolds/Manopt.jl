@@ -400,8 +400,8 @@ function get_gradient!(
 end
 # For each single summand, we are on the level of a single vectorial function and a robustifier – and add it directly
 function _add_gradient!(
-        M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
-        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
+        M::AbstractManifold, Y, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, X;
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, jacobian_cache = nothing
     )
     a = value_cache # evaluate residuals F(p)
     F_sq = sum(abs2, a)
@@ -420,8 +420,8 @@ function _add_gradient!(
 end
 # Componentwise
 function _add_gradient!(
-        M::AbstractManifold, Y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X;
-        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
+        M::AbstractManifold, Y, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p, X;
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, jacobian_cache = nothing
     )
     # per single component a for-loop similar to the one for the blocks
     r = cr.robustifier
@@ -500,7 +500,7 @@ function get_hessian!(
 end
 # For each single summand, we are on the level of a single vectorial function and a robustifier.
 function _get_hessian!(
-        M::AbstractManifold, Z, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X, Y;
+        M::AbstractManifold, Z, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, X, Y;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
     a = value_cache # evaluate residuals F(p)
@@ -518,7 +518,7 @@ function _get_hessian!(
 end
 # Componentwise
 function _get_hessian!(
-        M::AbstractManifold, Z, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X, Y;
+        M::AbstractManifold, Z, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p, X, Y;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
     # per single component a for-loop similar to the one for the blocks
@@ -691,7 +691,7 @@ function get_linear_operator!(
 end
 # for a single block – the actual formula
 function _get_linear_operator!(
-        M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X,
+        M::AbstractManifold, y, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, X,
         value_cache = get_value(M, o, p); threshold::Real, mode::Symbol, Y_cache, c_cache
     )
     F_sq = sum(abs2, value_cache)
@@ -706,7 +706,7 @@ function _get_linear_operator!(
 end
 # Componenwise: Decouple
 function _get_linear_operator!(
-        M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X,
+        M::AbstractManifold, y, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p, X,
         value_cache = get_value(M, o, p); threshold::Real, mode::Symbol, Y_cache, c_cache
     )
     a = value_cache
@@ -766,7 +766,7 @@ function get_vector_field!(
 end
 # for a single block – the actual formula
 function _get_vector_field!(
-        M::AbstractManifold, y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
+        M::AbstractManifold, y, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p;
         threshold::Real, mode::Symbol,
     )
     get_value!(M, y, o, p) # evaluate residuals F(p)
@@ -779,7 +779,7 @@ function _get_vector_field!(
 end
 # Componentwise, it decouples, C is diagonal
 function _get_vector_field!(
-        M::AbstractManifold, y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
+        M::AbstractManifold, y, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p;
         threshold::Real, mode::Symbol,
     )
     get_value!(M, y, o, p) # evaluate residuals F(p)
@@ -884,7 +884,7 @@ function get_normal_linear_operator!(
 end
 # for a single block – the actual formula - but never with penalty
 function add_normal_linear_operator!(
-        M::AbstractManifold, Y, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, X;
+        M::AbstractManifold, Y, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = zero_vector(M, p)
     )
     a = value_cache # evaluate residuals F(p)
@@ -912,7 +912,7 @@ function add_normal_linear_operator!(
 end
 # Componentwise: A few things decouple
 function _get_normal_linear_operator!(
-        M::AbstractManifold, Y, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, X;
+        M::AbstractManifold, Y, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = nothing,
     )
     b = zero(value_cache)
@@ -956,7 +956,7 @@ function get_normal_linear_operator!(
     (penalty != 0) && (d .+= penalty * c)
     return d
 end
-function _get_normal_linear_operator!(M::AbstractManifold, d, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, c, B::AbstractBasis; kwargs...)
+function _get_normal_linear_operator!(M::AbstractManifold, d, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, c, B::AbstractBasis; kwargs...)
     A = get_normal_linear_operator(M, o, r, p, B; kwargs...)
     d .= A * c
     return d
@@ -987,7 +987,7 @@ function get_normal_linear_operator!(
 end
 """
     add_normal_linear_operator!(
-        M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
+        M::AbstractManifold, A::AbstractMatrix, o::AbstractFirstOrderVectorFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), ε::Real, mode::Symbol
     )
@@ -998,7 +998,7 @@ for the given block.
 See [`get_normal_linear_operator`](@ref) for details
 """
 function add_normal_linear_operator!(
-        M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
+        M::AbstractManifold, A::AbstractMatrix, o::AbstractFirstOrderVectorFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol
     )
@@ -1023,7 +1023,7 @@ function add_normal_linear_operator!(
 end
 # For the componentwise variant, the C^TC turns into a diagonal matrix
 function add_normal_linear_operator!(
-        M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
+        M::AbstractManifold, A::AbstractMatrix, o::AbstractFirstOrderVectorFunction,
         cr::ComponentwiseRobustifierFunction, p, basis::AbstractBasis;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol
     )
@@ -1068,8 +1068,8 @@ and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and comp
 """
 
 _doc_add_normal_vector_field = """
-    add_normal_vector_field!(M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p)
-    add_normal_vector_field!(M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis)
+    add_normal_vector_field!(M::AbstractManifold, X, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p)
+    add_normal_vector_field!(M::AbstractManifold, c, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis)
 
 Add the contribution of `o` / `r` to the normal linear operator tangent vector in `X` or `c`.
 See [`get_normal_vector_field`](@ref) for the mathematical details.
@@ -1112,7 +1112,7 @@ function get_normal_vector_field!(
 end
 # for a single block – the actual formula
 function _get_normal_vector_field!(
-        M::AbstractManifold, X, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
+        M::AbstractManifold, X, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = zero_vector(M, p),
     )
     y = copy(value_cache)
@@ -1129,7 +1129,7 @@ function _get_normal_vector_field!(
 end
 # Componenwise C again reduces to a diagonal
 function _get_normal_vector_field!(
-        M::AbstractManifold, X, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p;
+        M::AbstractManifold, X, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = nothing,
     )
     y = copy(value_cache)
@@ -1173,7 +1173,7 @@ end
 # for a single block – the actual formula
 @doc "$(_doc_add_normal_vector_field)"
 function add_normal_vector_field!(
-        M::AbstractManifold, c, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis;
+        M::AbstractManifold, c, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
     y = copy(value_cache) # evaluate residuals F(p)
@@ -1188,7 +1188,7 @@ function add_normal_vector_field!(
 end
 # Compponentwise: decouple, C is a diagonalmatrix
 function add_normal_vector_field!(
-        M::AbstractManifold, c, o::AbstractVectorGradientFunction, cr::ComponentwiseRobustifierFunction, p, B::AbstractBasis;
+        M::AbstractManifold, c, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p, B::AbstractBasis;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = nothing,
     )
     y = copy(value_cache) # evaluate residuals F(p)

@@ -1,6 +1,5 @@
 using Manopt, Manifolds, LinearAlgebra
 
-
 raw"""
     generate_data(d)
 
@@ -51,19 +50,25 @@ F_i(p) = (A - pB)_i = a_i - pb_i
 Fi(M, p; i, A, B) = A[:,i] - p*B[:,i]
 
 """
-    DFi(M, p, X; i, A, B)
+    DFi!(M, y, p, X; i, A, B)
 
 For given matrices ``A, B ∈ ℝ^{d,n}`` compute the differential of the residual of the ith column
 with respect to the rotation ``p`` that is, ``X ∈ 𝔰𝔬(d)`` which reads
 
 ```math
-DF_i(p)[X] = -pXb_i
+\\mathcal J_{F_i}(p)[X] = DF_i(p)[X] = -pXb_i
 ```
+
+This is computed in-place of `y`
+
 """
+DFi!(M, y, p, X; i, A, B) = (y .= - p*X*B[:,i])
+
 DFi(M, p, X; i, A, B) = - p*X*B[:,i]
 
+
 raw"""
-    JacobianFi(M, p, y; i, A, B)
+    adjointDFi!(M, X, p, y; i, A, B)
 
 For given matrices ``A, B ∈ ℝ^{d,n}`` compute the adjoint differential of the residual of the ith column
 with respect to the rotation ``p`` that is, ``y ∈ ℝn`` but mapping into the Lie algebra ``𝔰𝔬(d)``.
@@ -72,8 +77,13 @@ This is also referred to as the Jacobian
 ```math
 D*{F_i}(p)[y] = -\mathrm{skew}(p^{\mathrm{T}}yb_i^{\mathrm{T}})
 ```
+
+This is computed in-place of `X`.
 """
-JacobianFi(M, p, y; i, A, B) = - skew(p'*y*B[:,i])
+adjointDFi!(M, a, p, y; i, A, B) = (a .= - skew(p'*y*B[:,i]'))
+
+adjointDFi(M, p, y; i, A, B) = - skew(p'*y*B[:,i]')
+
 
 #
 #
@@ -107,17 +117,22 @@ function F(M,p)
     return [Fi(M, p; i=i, A=A, B=B) for i ∈ 1:n]
 end
 
-# Collected Jacobians
-function JF(M, p, y)
-    return [JFi(M, p, y; i=i, A=A, B=B) for i ∈ 1:n]
-end
+# start simple: Allocating: we take each single Fi as one component, so we use
+# a vector of Differential functions
 
-vgf = VectorGradientFunction(
-    F, JF, size(A,2);
-    evaluation = AllocatingEvaluation(),
-    function_type = FunctionVectorialType(),
-    jacobian_type = FunctionVectorialType(),
-)
+vgfs = [
+    VectorDifferentialFunction(
+        (M,p) -> Fi(M, p; i=i, A=A, B=B),
+        (M, p, X) -> DFi(M, p, X; i=i, A=A, B=B),
+        (M, p, y) -> adjointDFi(M, p, y; i=i, A=A, B=B),
+        d;
+        evaluation = AllocatingEvaluation(),
+        function_type = FunctionVectorialType(),
+        jacobian_type = FunctionVectorialType(),
+        adjoint_jacobian_type = FunctionVectorialType()
+    ) for i=1:n
+]
+rs = [ 1.0e-4 ∘ HuberRobustifier() for _ = 1:n ]
 
 M = Rotations(3)
 # Start with the identity
@@ -125,10 +140,11 @@ p0 = Matrix{Float64}(I,d,d)
 
 # Least Squares
 p_1 = LevenbergMarquardt(
-    M, vgf, p0;
-    #damping_increase_factor = 2.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5,
-    #damping_increase_threshold = 0.2,
-    #damping_reduction_threshold = 0.5,
-    #scaling_threshold = 1.0e-1, scaling_mode = :Strict,
+    M, vgfs, p0;
+    damping_increase_factor = 2.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-5,
+    damping_increase_threshold = 0.2,
+    damping_reduction_threshold = 0.5,
+    scaling_threshold = 1.0e-1, scaling_mode = :Strict,
+    robustifier = rs,
     debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, :Change, "\n", :Stop],
 )
