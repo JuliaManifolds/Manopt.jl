@@ -70,7 +70,7 @@ struct ManifoldNonlinearLeastSquaresObjective{
         ) where {
             E <: AbstractEvaluationType,
             VF <: AbstractFirstOrderVectorFunction{E},
-            RV <: AbstractRobustifierFunction, TVC <: AbstractVector
+            RV <: AbstractRobustifierFunction, TVC <: AbstractVector,
         }
         # we need to check that the lengths match
         (length(fs) != length(robustifiers)) && throw(

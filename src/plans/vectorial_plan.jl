@@ -308,7 +308,7 @@ by the `evaluation=` keyword.
 """
 struct VectorDifferentialFunction{
         E <: AbstractEvaluationType,
-        FT <: AbstractVectorialType, JT <: AbstractVectorialType, AT <: Union{<:AbstractVectorialType,Missing},
+        FT <: AbstractVectorialType, JT <: AbstractVectorialType, AT <: Union{<:AbstractVectorialType, Missing},
         F, J, A, I <: Integer,
     } <: AbstractFirstOrderVectorFunction{E, FT, JT}
     value!!::F
@@ -337,7 +337,7 @@ function VectorDifferentialFunction(
         jacobian_type::JT = FunctionVectorialType(), adjoint_jacobian_type::AJT = FunctonVectorialType(),
     ) where {
         I <: Integer, F, J, A, E <: AbstractEvaluationType, FT <: AbstractVectorialType,
-        JT <: AbstractVectorialType, AJT <: Union{<:AbstractVectorialType,Missing}
+        JT <: AbstractVectorialType, AJT <: Union{<:AbstractVectorialType, Missing},
     }
     return VectorDifferentialFunction{E, FT, JT, AJT, F, J, A, I}(
         f, function_type, Jf, jacobian_type, AJf, adjoint_jacobian_type, range_dimension
@@ -363,11 +363,11 @@ function show(io::IO, vgf::VectorDifferentialFunction{E}) where {E}
     end
     print(io, ", "); print(io, vgf.range_dimension)
     print(io, "; "); print(io, _to_kw(E))
-    print(io, ", function_type = "); print(io, vgf.cost_type);
+    print(io, ", function_type = "); print(io, vgf.cost_type)
     if !ismissing(vgf.adjoint_jacobian_type)
         print(io, ", adjoint_jacobian_type = "); print(io, vgf.adjoint_jacobian_type)
     end
-    print(io, ", jacobian_type = ");
+    print(io, ", jacobian_type = ")
     return print(io, vgf.jacobian_type)
 end
 
@@ -900,7 +900,7 @@ function get_jacobian!(
         M::AbstractManifold, a, vgf::VectorDifferentialFunction{<:InplaceEvaluation, FT, <:FunctionVectorialType}, p, X;
         range = nothing, Y_cache = nothing, c_cache = allocate_result(M, get_coordinates, p, X, get_basis(vgf.jacobian_type))
     ) where {FT}
-    return vgf.jacodian!!(M, a, p, X)
+    return vgf.jacobian!!(M, a, p, X)
 end
 
 # --- Jacobian function in terms of gradients as a 1-1 tensor in a basis (hence in matrix form) ---
@@ -1332,11 +1332,8 @@ Since `i` is assumed to be a linear index, you can provide
 * `:` to return the vector of all gradients
 """
 get_gradient(
-    M::AbstractManifold,
-    vgf::AbstractVectorGradientFunction,
-    p,
-    i,
-    range::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    M::AbstractManifold, vgf::AbstractFirstOrderVectorFunction,
+    p, i, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
 )
 
 # Generic case, allocate (a) a single tangent vector
@@ -1383,7 +1380,28 @@ function get_gradient(
     X = zero_vector(M, p)
     return vgf.jacobian!![i](M, X, p)
 end
-
+# (d) diff and adjoint diff
+function get_gradient(
+        M::AbstractManifold,
+        vgf::VectorDifferentialFunction{<:AllocatingEvaluation, FT, JT, <:FunctionVectorialType},
+        p, i::Integer,
+        ::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    ) where {FT <: AbstractVectorialType, JT <: AbstractVectorialType}
+    n = vgf.range_dimension
+    ei = zeros(n); ei[i] = 1
+    return vgf.adjoint_jacobian!!(M, p, ei)
+end
+function get_gradient(
+        M::AbstractManifold,
+        vgf::VectorDifferentialFunction{<:InplaceEvaluation, FT, JT, <:FunctionVectorialType},
+        p, i::Integer,
+        ::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    ) where {FT <: AbstractVectorialType, JT <: AbstractVectorialType}
+    n = vgf.range_dimension
+    ei = zeros(n); ei[i] = 1
+    X = zero_vector(M, p)
+    return vgf.adjoint_jacobian!!(M, X, p, ei)
+end
 #
 #
 # Part I: allocation
@@ -1488,6 +1506,18 @@ function get_gradient!(
     copyto!(M, X, p, vgf.jacobian!!(M, p)[mP, i])
     return X
 end
+# Part I(d) adjoint differentials
+function get_gradient!(
+        M::AbstractManifold,
+        X,
+        vgf::VectorDifferentialFunction{<:AllocatingEvaluation, FT, JT, <:FunctionVectorialType},
+        p, i::Integer,
+        ::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    ) where {FT <: AbstractVectorialType, JT <: AbstractVectorialType}
+    n = vgf.range_dimension
+    ei = zeros(n); ei[i] = 1
+    return copyto!(M, X, p, vgf.adjoint_jacobian!!(M, p, ei))
+end
 #
 #
 # Part II: in-place evaluations
@@ -1584,6 +1614,18 @@ function get_gradient!(
     # Luckily all documented access functions work directly on `x[pM_temp,...]`
     copyto!(pM_out, X, P[pM_temp, i], x[pM_temp, i])
     return X
+end
+# II(d) adjoint
+function get_gradient!(
+        M::AbstractManifold,
+        X,
+        vgf::VectorDifferentialFunction{<:InplaceEvaluation, FT, JT, <:FunctionVectorialType},
+        p, i::Integer,
+        ::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    ) where {FT <: AbstractVectorialType, JT <: AbstractVectorialType}
+    n = vgf.range_dimension
+    ei = zeros(n); ei[i] = 1
+    return vgf.adjoint_jacobian!!(M, X, p, ei)
 end
 
 get_gradient_function(vgf::VectorGradientFunction, recursive = false) = vgf.jacobian!!
