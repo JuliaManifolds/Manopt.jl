@@ -6,11 +6,11 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.39] June 2, 2026
+## [0.5.39] June 3, 2026
 
 ### Fixed
 
-* a small bug where debug statements were printed even though they should not be due to `DebugEvery`. (#609)
+* a small bug where debug statements were printed even though they should not be due to `DebugEvery` and unified warnings to print independent of `DebugEntry`. (#609)
 
 ## [0.5.38] May 19, 2026
 
