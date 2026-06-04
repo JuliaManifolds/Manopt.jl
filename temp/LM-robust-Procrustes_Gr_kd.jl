@@ -25,8 +25,6 @@ function generate_data(d)
     return A
 end
 
-skew(A) = 0.5 .* (A - A')
-
 """
     f(M, p; i, A, B, robustifier = )
 
@@ -53,7 +51,6 @@ This can be computed in-place of `v`
 Fi(M, p; i, A, B) = A[:, i] - p * B[:, i]
 Fi!(M, v, p; i, A, B) = (v .= A[:, i] .- p * B[:, i])
 
-# TODO: Recompute / Check differentials
 """
     DFi(M, p, X; i, A, B)
     DFi!(M, y, p, X; i, A, B)
@@ -68,27 +65,29 @@ with respect to the rotation ``p`` that is, ``X ∈ 𝔰𝔬(d)`` which reads
 This is computed in-place of `y`
 
 """
-DFi(M, p, X; i, A, B) = - p * X * B[:, i]
-DFi!(M, y, p, X; i, A, B) = (y .= - p * X * B[:, i])
-
+DFi(M, p, X; i, A, B) = - X * B[:, i]
+DFi!(M, y, p, X; i, A, B) = (y .= - X * B[:, i])
 
 raw"""
     adjointDFi(M, p, y; i, A, B)
     adjointDFi!(M, X, p, y; i, A, B)
 
 For given matrices ``A, B ∈ ℝ^{d,n}`` compute the adjoint differential of the residual of the ith column
-with respect to the rotation ``p`` that is, ``y ∈ ℝn`` but mapping into the Lie algebra ``𝔰𝔬(d)``.
+with respect to the rotation ``p`` that is, ``y ∈ ℝn`` but mapping into the tangent space at p
 This is also referred to as the Jacobian
 
+Since the Euclidean adoint of DF_i is here just ``-yb_i^{\mathrm{T}}``,
+the only thing left is to project onto the tangent space, for which we can employ
+`project(M, p, X)`for the Grassmann manifold here.
+
 ```math
-D*{F_i}(p)[y] = -\mathrm{skew}(p^{\mathrm{T}}yb_i^{\mathrm{T}})
+D^*F_i(p)[y] = (I-pp^{\mathrm{T}})(-yb_i^{\mathrm{T}})
 ```
 
 This is computed in-place of `X`.
 """
-adjointDFi(M, p, y; i, A, B) = - skew(p' * y * B[:, i]')
-adjointDFi!(M, a, p, y; i, A, B) = (a .= - skew(p' * y * B[:, i]'))
-
+adjointDFi(M, p, y; i, A, B) = project(M, p, - y * B[:, i]')
+adjointDFi!(M, X, p, y; i, A, B) = project!(M, X, p, - y * B[:, i]')
 
 #
 #
@@ -108,8 +107,8 @@ function rotation_matrix(d, i, j, α)
     return R
 end
 
-d = 7
-k = 4
+d = 30
+k = 25
 A = generate_data(d)
 n = size(A, 2) # number of summands in the vectorial cost sum
 p_star = Matrix{Float64}(I,d,d)
@@ -126,6 +125,7 @@ B[1, 6] += 0.1
 # Because we can build a mask
 B = p_star' * B
 B = B[1:k,:]
+p_star = p_star[:,1:k]
 
 # Hence on the mask we can measure the actual reconstruction error – or looking at the distance to p_star
 
@@ -149,6 +149,7 @@ vgfs = [
 ]
 rs = [ 1.0e-7 ∘ HuberRobustifier() for _ in 1:n ]
 
+# M = Stiefel(d,k)
 M = Grassmann(d,k)
 
 # Start with the identity
@@ -163,7 +164,7 @@ p1 = LevenbergMarquardt(
         :Stop,
     ],
 )
-@info "d=$d n=$n"
+@info "d=$d    k=$k    n=$n"
 @info "LM time"
 time1 = @be LevenbergMarquardt(
     $M, $vgfs, $p0; robustifier = $rs,
@@ -171,9 +172,17 @@ time1 = @be LevenbergMarquardt(
 ) samples=5 evals=3
 show(stdout, MIME"text/plain"(),time1)
 println()
-p2 = mesh_adaptive_direct_search(M, (M, p) -> f(M, p; A = A, B = B), p0; debug = [:Stop])
-@info "LTMADS time"
-time2 = @be mesh_adaptive_direct_search($M, $((M, p) -> f(M, p; A = A, B = B)), $p0) samples=5 evals=3
+if M isa Stiefel
+    p2 = mesh_adaptive_direct_search(M, (M, p) -> f(M, p; A = A, B = B), p0; debug = [:Stop])
+    @info "LTMADS time"
+    time2 = @be mesh_adaptive_direct_search($M, $((M, p) -> f(M, p; A = A, B = B)), $p0)
+    println()
+else
+    # Problem with Grassmann: LTMADS needs an ONB, and we do not have that for Gr
+    p2 = NelderMead(M, (M, p) -> f(M, p; A = A, B = B); debug = [:Stop])
+    @info "NelderMead time"
+    time2 = @be NelderMead($M, $((M, p) -> f(M, p; A = A, B = B))) samples=5 evals=3
+end
 show(stdout, MIME"text/plain"(),time2)
 println()
 @info "Solution difference: $(distance(M, p1, p2)); costs LM: $(f(M, p1; A = A, B = B)) LTMADS: $(f(M, p2; A = A, B = B))"
