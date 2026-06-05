@@ -88,11 +88,6 @@ This is computed in-place of `X`.
 adjointDFi(M, p, y; i, A, B) = - skew(p' * y * B[:, i]')
 adjointDFi!(M, a, p, y; i, A, B) = (a .= - skew(p' * y * B[:, i]'))
 
-
-#
-#
-# A first experiment
-
 """
     rotation_matrix(d, i, j, α)
 

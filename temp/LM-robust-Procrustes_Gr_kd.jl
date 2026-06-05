@@ -103,8 +103,10 @@ function rotation_matrix(d, i, j, α)
     return R
 end
 
-# Statistics:
+# Statistics: all are 13 experiments
 matrix_sizes = collect(3:15)
+# matrix_sizes = collect(3:3:39)
+# matrix_sizes = collect(5:5:65)
 reduced = [Int(d-ceil(d/3)) for d in matrix_sizes]
 num_experiments = length(matrix_sizes)
 num_columns = zeros(Int,num_experiments)
@@ -120,8 +122,9 @@ for (i,(d,k)) = enumerate(zip(matrix_sizes,reduced))
     A = generate_data(d)
     n = size(A, 2) # number of summands in the vectorial cost sum
     p_star = Matrix{Float64}(I,d,d)
-    for j = 1:(d-1)
-        p_star *= rotation_matrix(d, j, j+1, π / (4*(d-1)))
+    # split on the k ones, since otherwise 1/3 vanishes later in the quotient
+    for j = 1:(k-1)
+        p_star *= rotation_matrix(d, j, j+1, π / (4*(k-1)))
     end
     B = copy(A)
     # and generate a few outliers in [3,6] so it also works already for d=3
@@ -129,6 +132,8 @@ for (i,(d,k)) = enumerate(zip(matrix_sizes,reduced))
     mask = B .== A
     # then rotate
     B = p_star' * B
+    B = B[1:k,:]
+    p_star = p_star[:,1:k]
     # Seting cost and vectorial block function
     F(M, p) = [Fi(M, p; i = i, A = A, B = B) for i in 1:n]
     vgfs = [
@@ -143,11 +148,14 @@ for (i,(d,k)) = enumerate(zip(matrix_sizes,reduced))
     ]
     rs = [ 1.0e-5 ∘ HuberRobustifier() for _ in 1:n ]
 
-    M = Grassmann(d,k)
-
+    # M = Grassmann(d,k)
+    # Grassmann does work in principle but in practice the algorithms both do not “move”
+    M = Stiefel(d,k)
     @info "d=$d, k=$k (n=$n) dim: $(manifold_dimension(M))"
     # Start with the identity
     p0 = Matrix{Float64}(I, d, d)
+    # cut to Grassmann
+    p0 = p0[:,1:k]
     #
     # Solver runs. Both (a) an individual run to obtain stats like maxiter
     #
@@ -182,8 +190,12 @@ for (i,(d,k)) = enumerate(zip(matrix_sizes,reduced))
     iterations_LTMADS[i] = iter2
     @info "rLM   : #$(iter1) | $(mean(time1).time) s | $(final_cost_rLM[i])"
     @info "LTMADS: #$(iter2) | $(mean(time2).time) s | $(final_cost_LTMADS[i])"
+    @info "Cost diff f2-f1 : $(final_cost_LTMADS[i] - final_cost_rLM[i])"
+    @info "Cost p_star : $(f(M, p_star; A=A, B=B)) p0: $(f(M, p0; A=A, B=B)) and distance $(distance(M, p1, p_star))"
 end
-CSV.write("Grdk.csv",
+CSV.write(
+    #"Grdk.csv",
+    "Stdk.csv",
     DataFrame(;
     d = matrix_sizes,
     k = reduced,
