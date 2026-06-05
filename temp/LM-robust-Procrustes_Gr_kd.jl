@@ -108,7 +108,7 @@ function rotation_matrix(d, i, j, α)
 end
 
 d = 30
-k = 25
+k = 26
 A = generate_data(d)
 n = size(A, 2) # number of summands in the vectorial cost sum
 p_star = Matrix{Float64}(I,d,d)
@@ -172,17 +172,10 @@ time1 = @be LevenbergMarquardt(
 ) samples=5 evals=3
 show(stdout, MIME"text/plain"(),time1)
 println()
-if M isa Stiefel
+#if M isa Stiefel
     p2 = mesh_adaptive_direct_search(M, (M, p) -> f(M, p; A = A, B = B), p0; debug = [:Stop])
     @info "LTMADS time"
     time2 = @be mesh_adaptive_direct_search($M, $((M, p) -> f(M, p; A = A, B = B)), $p0)
-    println()
-else
-    # Problem with Grassmann: LTMADS needs an ONB, and we do not have that for Gr
-    p2 = NelderMead(M, (M, p) -> f(M, p; A = A, B = B); debug = [:Stop])
-    @info "NelderMead time"
-    time2 = @be NelderMead($M, $((M, p) -> f(M, p; A = A, B = B))) samples=5 evals=3
-end
 show(stdout, MIME"text/plain"(),time2)
-println()
+    println()
 @info "Solution difference: $(distance(M, p1, p2)); costs LM: $(f(M, p1; A = A, B = B)) LTMADS: $(f(M, p2; A = A, B = B))"
