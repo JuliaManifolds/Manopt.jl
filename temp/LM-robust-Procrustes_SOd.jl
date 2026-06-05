@@ -108,7 +108,7 @@ function rotation_matrix(d, i, j, α)
 end
 
 # Statistics:
-matrix_sizes = collect(3:30)
+matrix_sizes = collect(3:15)
 num_experiments = length(matrix_sizes)
 num_columns = zeros(Int,num_experiments)
 manifold_dimensions = zeros(Int,num_experiments)
@@ -144,7 +144,7 @@ for (i,d) = enumerate(matrix_sizes)
             adjoint_jacobian_type = FunctionVectorialType(), evaluation = InplaceEvaluation(),
         ) for i in 1:n
     ]
-    rs = [ 1.0e-7 ∘ HuberRobustifier() for _ in 1:n ]
+    rs = [ 1.0e-5 ∘ HuberRobustifier() for _ in 1:n ]
 
     M = Rotations(d)
     @info "d=$d (n=$n) dim: $(manifold_dimension(M))"
@@ -165,10 +165,10 @@ for (i,d) = enumerate(matrix_sizes)
         damping_increase_factor = 4.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-7,
     ) samples=5 evals=3
     state2 = mesh_adaptive_direct_search(M, (M, p) -> f(M, p; A = A, B = B), p0;
-    stopping_criterion = StoppingCriterion=StopAfterIteration(5000) | StopWhenPollSizeLess(1e-10),
+    stopping_criterion = StoppingCriterion=StopAfterIteration(20000) | StopWhenPollSizeLess(1e-10),
     return_state=true)
     time2 = @be mesh_adaptive_direct_search($M, $((M, p) -> f(M, p; A = A, B = B)), $p0;
-    stopping_criterion = $(StoppingCriterion=StopAfterIteration(5000) | StopWhenPollSizeLess(1e-10))
+    stopping_criterion = $(StoppingCriterion=StopAfterIteration(20000) | StopWhenPollSizeLess(1e-10))
     ) samples=5 evals=3
     iter2 = get_count(get_state(state2), :Iterations)
     p2 = get_solver_result(state2)
@@ -182,8 +182,8 @@ for (i,d) = enumerate(matrix_sizes)
     final_cost_LTMADS[i] = f(M, p2; A=A, B=B)
     iterations_rLM[i] = iter1
     iterations_LTMADS[i] = iter2
-    @info "rLM   : #$(iter1) | $(mean(time1).time) ms | $(final_cost_rLM[i])"
-    @info "LTMADS: #$(iter2) | $(mean(time2).time) ms | $(final_cost_LTMADS[i])"
+    @info "rLM   : #$(iter1) | $(mean(time1).time) s | $(final_cost_rLM[i])"
+    @info "LTMADS: #$(iter2) | $(mean(time2).time) s | $(final_cost_LTMADS[i])"
 end
 CSV.write("SOd.csv",
     DataFrame(;
@@ -198,4 +198,3 @@ CSV.write("SOd.csv",
     iter2 = iterations_LTMADS,
     )
 )
-@info pwd()
