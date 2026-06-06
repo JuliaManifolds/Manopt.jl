@@ -1,4 +1,4 @@
-using Chairmarks, Manopt, Manifolds, LinearAlgebra
+using Chairmarks, CSV, DataFrames, Manopt, Manifolds, LinearAlgebra
 
 raw"""
     generate_data(d)
@@ -81,7 +81,7 @@ the only thing left is to project onto the tangent space, for which we can emplo
 `project(M, p, X)`for the Grassmann manifold here.
 
 ```math
-D^*F_i(p)[y] = (I-pp^{\mathrm{T}})(-yb_i^{\mathrm{T}})
+D^*F_i(p)[y] = \\operatorname{proj}_{T_p\\mnathcal M}(-yb_i^{\mathrm{T}})
 ```
 
 This is computed in-place of `X`.
@@ -148,8 +148,6 @@ for (i,(d,k)) = enumerate(zip(matrix_sizes,reduced))
     ]
     rs = [ 1.0e-5 ∘ HuberRobustifier() for _ in 1:n ]
 
-    # M = Grassmann(d,k)
-    # Grassmann does work in principle but in practice the algorithms both do not “move”
     M = Stiefel(d,k)
     @info "d=$d, k=$k (n=$n) dim: $(manifold_dimension(M))"
     # Start with the identity
@@ -194,7 +192,6 @@ for (i,(d,k)) = enumerate(zip(matrix_sizes,reduced))
     @info "Cost p_star : $(f(M, p_star; A=A, B=B)) p0: $(f(M, p0; A=A, B=B)) and distance $(distance(M, p1, p_star))"
 end
 CSV.write(
-    #"Grdk.csv",
     "Stdk.csv",
     DataFrame(;
     d = matrix_sizes,
