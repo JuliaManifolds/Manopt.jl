@@ -21,6 +21,20 @@ using Manopt, Manifolds, Test, ManifoldDiff
         # Trigger manually
         sc1.at_iteration = 2
         @test length(get_reason(sc1)) > 0
+
+        pgms.last_stepsize = 1.0
+        g(M, q) = distance(M, q, p)^2
+        grad_g(M, q) = -2 * log(M, q, p)
+        h(M, q) = distance(M, q, p)
+        prox_h(M, λ, q) = ManifoldDiff.prox_distance(M, λ, p, q, 1)
+        f(M, q) = g(M, q) + h(M, q)
+        ob = ManifoldProximalGradientObjective(f, g, grad_g, prox_h)
+        mp = DefaultManoptProblem(M, ob)
+
+        @test sc1.last_change < sc1.threshold
+        @test sc1.at_iteration == 2
+        @test sc1(mp, pgms, 2) == true
+        pgms.last_stepsize = 0.0
     end
     @testset "Proximal Gradient Backtracking" begin
         pgb = Manopt.ProximalGradientMethodBacktrackingStepsize(M)
@@ -77,6 +91,9 @@ using Manopt, Manifolds, Test, ManifoldDiff
         )
         @test_throws DomainError Manopt.ProximalGradientMethodBacktrackingStepsize(
             M; warm_start_factor = -1.0
+        )
+        @test_throws DomainError Manopt.ProximalGradientMethodBacktrackingStepsize(
+            M; initial_stepsize = 1.0, strategy = :convex, stop_when_stepsize_less = 2.0, k_max = 1.0, δ = -1.0
         )
 
         @testset "Backtracking Warnings" begin
@@ -205,7 +222,9 @@ using Manopt, Manifolds, Test, ManifoldDiff
             inverse_retraction_method = ProjectionInverseRetraction(),
             stepsize = ProximalGradientMethodBacktracking(;
                 initial_stepsize = 1.0,
-                strategy = :convex
+                strategy = :convex,
+                k_max = 1.0,
+                δ = 1.0e-2,
             ),
             return_state = true
         )

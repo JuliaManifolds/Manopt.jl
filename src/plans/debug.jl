@@ -636,7 +636,7 @@ function (d::DebugEntryChange)(
     end
     x = get_storage(d.storage, d.field)
     v = d.distance(p, st, getproperty(st, d.field), x)
-    Printf.format(d.io, Printf.Format(d.format), v)
+    (k > 0) && Printf.format(d.io, Printf.Format(d.format), v)
     d.storage(p, st, k)
     return nothing
 end
@@ -992,15 +992,15 @@ end
 function (d::DebugTime)(::AbstractManoptProblem, ::AbstractManoptSolverState, k)
     if k == 0 || d.last_time == Nanosecond(0) # init
         d.last_time = Nanosecond(time_ns())
-    else
+    elseif k > 0
         t = time_ns()
         p = Nanosecond(t) - d.last_time
         Printf.format(
             d.io, Printf.Format(d.format), canonicalize(round(p, d.time_accuracy))
         )
-    end
-    if d.mode == :iterative
-        d.last_time = Nanosecond(time_ns())
+        if d.mode == :iterative
+            d.last_time = Nanosecond(time_ns())
+        end
     end
     return nothing
 end
@@ -1068,7 +1068,6 @@ end
 function (d::DebugWarnIfCostIncreases)(
         p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
-    (k < 0) && (return nothing)
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
         if cost > d.old_cost + d.tol
@@ -1300,7 +1299,7 @@ end
 function (d::DebugWarnIfStepsizeCollapsed)(
         amp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
-    (k < 1) && (return nothing)
+    (k == 0) && (return nothing)
     if d.status !== :No
         if get_last_stepsize(amp, st, k) ≤ d.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(d.stop_when_stepsize_less)."
