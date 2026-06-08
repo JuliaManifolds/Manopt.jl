@@ -329,6 +329,7 @@ function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :defaul
     * bundle cap size:                                  $(cbms.bundle_cap)
     * current bundle size:                              $(length(cbms.bundle))
     * curvature upper bound:                            $(cbms.k_max)
+    * curvature lower bound:                            $(cbms.k_min)
     * descent test parameter:                           $(cbms.m)
     * diameter:                                         $(cbms.diameter)
     * inverse retraction:                               $(cbms.inverse_retraction_method)

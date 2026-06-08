@@ -38,8 +38,22 @@ We also unified a few of the internal solver state constructors.
 
 ### Removed
 
-* The JuMP extension was dropped.
+* The extension to JuMP. A replacement as a separate package is planned when the support for variables beyond vectors is more accessible in JuMP
+* the plotting functions to `Asymptote`. They can now be found in the separate package [`ManifoldAsymptote.jl`]()
+  this way, `Manopt.jl` has less dependencies, especially the color and colorschemes dependencies are dropped
 * `linear_subsolver! = ` was removed from the [`LevenbergMarquardt`](https://manoptjl.org/stable/solvers/LevenbergMarquardt/) solver interface, since it is imprecise. If you use a closed form solver before, specify it by passing the function to `sub_problem` and set `sub_state` to the corresponding evaluation type
+
+## [0.5.39] June 3, 2026
+
+### Fixed
+
+* a small bug where debug statements were printed even though they should not be due to `DebugEvery` and unified warnings to print independent of `DebugEvery`. (#609)
+
+## [0.5.38] May 19, 2026
+
+### Changed
+
+* the `:convex` backtracking strategy for `proximal_gradient_method` now entails a slightly different condition whenever the upper bound on the sectional curvature of the manifold, input via the `k_max` kwarg, is positive. This comes with a "tolerance" type parameter, `δ`, which must be positive.
 
 ## [0.5.37] May 5, 2026
 
@@ -158,7 +172,6 @@ Moved the documentation glossaries to using the new [Glossaries.jl](https://gith
 * moved to using a `Project.toml` for tests and an overall `[Workspace]`.
   This also allows finally to run single test files without installing all packages manually, but instead just switching to and instantiating the test environment. (#550)
 * for compatibility, state also `[source]` entries consistently in the sub `Project.toml` files. (#550)
-
 
 ## [0.5.28] November 17, 2025
 
