@@ -7,6 +7,8 @@ CurrentModule = Manopt
 ```@docs
 Manopt.AbstractVectorFunction
 Manopt.AbstractVectorGradientFunction
+Manopt.AbstractFirstOrderVectorFunction
+Manopt.VectorDifferentialFunction
 Manopt.VectorGradientFunction
 Manopt.VectorHessianFunction
 ```

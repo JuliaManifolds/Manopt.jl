@@ -150,13 +150,28 @@ function Base.show(io::IO, ::MIME"text/plain", avf::AbstractVectorFunction)
     return multiline ? status_summary(io, avf) : show(io, avf)
 end
 
+@doc """
+    AbstractFirstOrderVectorFunction{E, FT, JT, F, J, I} <: AbstractManifoldObjective{E}
+
+Represent an abstract vectorial function ``f:$(_math(:Manifold)) → ℝ^n`` that provides
+some first oder diffential information.
+
+The [`AbstractEvaluationType`](@ref) `E` indicates the evaluation type,
+and the [`AbstractVectorialType`](@ref)s `FT` and `JT` the formats in which
+the function and the first order information, e.g.
+
+* a gradient – see [`AbstractVectorGradientFunction`](@ref)
+* a differential (or Jacobian) – see [`VectorDifferentialFunction`](@ref)
+
+are provided, respectively.
+"""
 abstract type AbstractFirstOrderVectorFunction{
     E <: AbstractEvaluationType, FT <: AbstractVectorialType, JT <: AbstractVectorialType,
 } <: AbstractVectorFunction{E, FT} end
 
 
 @doc """
-    AbstractVectorGradientFunction{E, FT, JT, F, J, I} <: AbstractManifoldObjective{E}
+    AbstractVectorGradientFunction{E, FT, JT} <: AbstractFirstOrderVectorFunction{E, FT, JT}
 
 Represent an abstract vectorial function ``f:$(_math(:Manifold)) → ℝ^n`` that provides a (component wise)
 gradient.
