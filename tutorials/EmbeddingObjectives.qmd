@@ -35,7 +35,7 @@ using LinearAlgebra, Random, Colors, Plots
 Random.seed!(123)
 ```
 
-We consider the cost function on the [`Grassmann`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/grassmann.html) manifold given by
+We consider the cost function on the ``[`Grassmann`](@extref `Manifolds.Grassmann`)``{=commonmark} manifold given by
 
 ```{julia}
 n = 5
@@ -87,7 +87,7 @@ While they look reasonable here and were already derived, for the general case t
 might be more complicated.
 
 Luckily there exist two functions in [`ManifoldDiff.jl`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/) that are implemented for several
-manifolds from [`Manifolds.jl`](https://github.com/JuliaManifolds/Manifolds.jl), namely [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any})`(M, p, eG)` that converts a Riemannian gradient
+manifolds from ``[`Manifolds.jl`](@extref Manifolds :std:doc:`index`)``{=commonmark}, namely [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any})`(M, p, eG)` that converts a Riemannian gradient
 `eG=`$\nabla \tilde f(p)$  into a the Riemannian one $\operatorname{grad} f(p)$
  and [`riemannian_Hessian`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_Hessian-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any})`(M, p, eG, eH, X)`
  which converts the Euclidean Hessian `eH=`$\nabla^2 \tilde f(p)[X]$  into $\operatorname{Hess} f(p)[X]$,

@@ -3,7 +3,7 @@ title: "How to do constrained optimization"
 author: "Ronny Bergmann"
 ---
 
-This tutorial is a short introduction to using solvers for constraint optimisation in [`Manopt.jl`](https://manoptjl.org).
+This tutorial is a short introduction to using solvers for constraint optimisation in [`Manopt.jl`](../index.md).
 
 ## Introduction
 
@@ -115,7 +115,7 @@ maximum(g(M, p0))
 ```
 
 
-Now as a first method we can just call the [Augmented Lagrangian Method](https://manoptjl.org/stable/solvers/augmented_Lagrangian_method/) with a simple call:
+Now as a first method we can just call the [Augmented Lagrangian Method](../solvers/augmented_Lagrangian_method.md) with a simple call:
 
 ```{julia}
 @time v1 = augmented_Lagrangian_method(
@@ -171,7 +171,7 @@ We obtain
 	);
 ```
 
-As a technical remark: note that (by default) the change to [`InplaceEvaluation`](https://manoptjl.org/stable/plans/problem/#Manopt.InplaceEvaluation)s affects both the constrained solver as well as the inner solver of the subproblem in each iteration.
+As a technical remark: note that (by default) the change to [`InplaceEvaluation`](@ref)s affects both the constrained solver as well as the inner solver of the subproblem in each iteration.
 
 
 ```{julia}
@@ -187,9 +187,9 @@ These are the very similar to the previous values but the solver took much less 
 
 ## Exact penalty method
 
-As a second solver, we have the [Exact Penalty Method](https://manoptjl.org/stable/solvers/exact_penalty_method/), which currently is available with two smoothing variants, which make an inner solver for smooth optimization, that is by default again [quasi Newton] possible:
-[`LogarithmicSumOfExponentials`](https://manoptjl.org/stable/solvers/exact_penalty_method/#Manopt.LogarithmicSumOfExponentials)
-and [`LinearQuadraticHuber`](https://manoptjl.org/stable/solvers/exact_penalty_method/#Manopt.LinearQuadraticHuber). We compare both here as well. The first smoothing technique is the default, so we can just call
+As a second solver, we have the ``[Exact Penalty Method](@ref exact_penalty_method)``{=commonmark}, which currently is available with two smoothing variants, which make an inner solver for smooth optimization, that is by default again [quasi Newton] possible:
+[`LogarithmicSumOfExponentials`](@ref)
+and [`LinearQuadraticHuber`](@ref). We compare both here as well. The first smoothing technique is the default, so we can just call
 
 ```{julia}
 @time v3 = exact_penalty_method(

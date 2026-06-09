@@ -4,7 +4,7 @@ author: Ronny Bergmann
 ---
 
 This tutorial both introduces the basics of optimisation on manifolds as well as
-how to use [`Manopt.jl`](https://manoptjl.org) to perform optimisation on manifolds in [Julia](https://julialang.org).
+how to use [`Manopt.jl`](../index.md) to perform optimisation on manifolds in [Julia](https://julialang.org).
 
 For more theoretical background, see for example [doCarmo:1992](@cite) for an introduction to Riemannian manifolds
 and [AbsilMahonySepulchre:2008](@cite) or [Boumal:2023](@cite) to read more about optimisation thereon.
@@ -67,7 +67,7 @@ using ManifoldDiff: grad_distance, prox_distance
 Random.seed!(42);
 ```
 
-Now assume we are on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html)
+Now assume we are on the ``[Sphere](@extref `Manifolds.Sphere`)``{=commonmark}
 $\mathcal M = \mathbb S^2$ and we generate some random points “around” some initial point $p$
 
 ```{julia}
@@ -86,7 +86,7 @@ f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
 ```
 
-and just call [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/).
+and just call [`gradient_descent`](@ref).
 For a first start, we do not have to provide more than the manifold, the cost, the gradient,
 and a starting point, which we just set to the first data point
 
@@ -108,7 +108,7 @@ but where we also want to fix the display format for the change and the cost
 numbers (the `[...]`) to have a certain format. Furthermore, the reason why the solver stopped should be printed at the end
 
 These can easily be specified using either a Symbol when using the default format for numbers, or a tuple of a symbol and a format-string in the `debug=` keyword that is available for every solver.
-We can also, for illustration reasons, just look at the first 6 steps by setting a [`stopping_criterion=`](https://manoptjl.org/stable/plans/stopping_criteria/)
+We can also, for illustration reasons, just look at the first 6 steps by setting a [`stopping_criterion=`](../plans/stopping_criteria.md)
 
 ```{julia}
 m2 = gradient_descent(M, f, grad_f, data[1];
@@ -118,14 +118,14 @@ m2 = gradient_descent(M, f, grad_f, data[1];
   )
 ```
 
-See [here](https://manoptjl.org/stable/plans/debug/#Manopt.DebugActionFactory-Tuple{Symbol}) for the list of available symbols.
+See ``[here](@ref Manopt.RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))``{=commonmark} for the list of available symbols.
 
 ```{=commonmark}
 !!! info "Technical Detail"
-    The `debug=` keyword is actually a list of [`DebugActions`](https://manoptjl.org/stable/plans/debug/#Manopt.DebugAction) added to every iteration, allowing you to write your own ones even. Additionally, `:Stop` is an action added to the end of the solver to display the reason why the solver stopped.
+    The `debug=` keyword is actually a list of [`DebugAction`](@ref)s added to every iteration, allowing you to write your own ones even. Additionally, `:Stop` is an action added to the end of the solver to display the reason why the solver stopped.
 ```
 
-The default stopping criterion for [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/) is, to either stop when the gradient is small (`<1e-9`) or a max number of iterations is reached (as a fallback).
+The default stopping criterion for [`gradient_descent`](@ref) is, to either stop when the gradient is small (`<1e-9`) or a max number of iterations is reached (as a fallback).
 Combining stopping-criteria can be done by `|` or `&`.
 We further pass a number `25` to `debug=` to only an output every `25`th iteration:
 
@@ -138,7 +138,7 @@ m3 = gradient_descent(M, f, grad_f, data[1];
 ```
 
 We can finally use another way to determine the stepsize, for example
-a little more expensive [`ArmijoLineSearch`](https://manoptjl.org/stable/plans/stepsize/#Manopt.ArmijoLinesearch) than the default [stepsize](https://manoptjl.org/stable/plans/stepsize/) rule used on the Sphere.
+a little more expensive [`ArmijoLinesearch`](@ref) than the default [stepsize](../plans/stepsize.md) rule used on the Sphere.
 
 ```{julia}
 m4 = gradient_descent(M, f, grad_f, data[1];
@@ -157,7 +157,7 @@ Then we reach approximately the same point as in the previous run, but in far le
 
 ## Using the tutorial mode
 
-Since a few things on manifolds are a bit different from (classical) Euclidean optimization, `Manopt.jl` has a mode to warn about a few pitfalls.
+Since a few things on manifolds are a bit different from (classical) Euclidean optimization, [`Manopt.jl`](../index.md) has a mode to warn about a few pitfalls.
 
 It can be set using
 
@@ -215,7 +215,7 @@ Manopt.set_parameter!(:Mode, "")
 
 ## Example 2: computing the median of symmetric positive definite matrices
 
-For the second example let's consider the manifold of [$3 × 3$ symmetric positive definite matrices](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/symmetricpositivedefinite.html) and again 100 random points
+For the second example let's consider the manifold of ``[$3 × 3$ symmetric positive definite matrices](@extref `Manifolds.SymmetricPositiveDefinite`)``{=commonmark} and again 100 random points
 
 ```{julia}
 N = SymmetricPositiveDefinite(3)
@@ -235,14 +235,14 @@ g(N, q) = sum(1 / (2 * m) * distance.(Ref(N), Ref(q), data2))
 ```
 
 Since the function is non-smooth, we can not use a gradient-based approach.
-But since for every summand the [proximal map](https://manoptjl.org/stable/functions/proximal_maps/#Manopt.prox_distance) is available, we can use the
-[cyclic proximal point algorithm (CPPA)](https://manoptjl.org/stable/solvers/cyclic_proximal_point/). We hence define the vector of proximal maps as
+But since every is a distance and its ``[proximal map](@extref ManifoldDiff :jl:function:`ManifoldDiff.prox_distance`)``{=commonmark} is available in ``[ManifoldDiff.jl](@extref ManifoldDiff :std:doc:`index`)``{=commonmark}, we can use the
+``[cyclic proximal point algorithm (CPPA)](@ref Manopt.cyclic_proximal_point)``{=commonmark}. We hence define the vector of proximal maps as
 
 ```{julia}
 proxes_g = Function[(N, λ, q) -> prox_distance(N, λ / m, di, q, 1) for di in data2];
 ```
 
-Besides also looking at a some debug prints, we can also easily record these values. Similarly to `debug=`, `record=` also accepts Symbols, see list [here](https://manoptjl.org/stable/plans/record/#Manopt.RecordFactory-Tuple{AbstractManoptSolverState,%20Vector}), to indicate things to record. We further set `return_state` to true to obtain not just the (approximate) minimizer.
+Besides also looking at a some debug prints, we can also easily record these values. Similarly to `debug=`, `record=` also accepts Symbols, see list ``[here](@ref Manopt.RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))``{=commonmark}, to indicate things to record. We further set `return_state` to true to obtain not just the (approximate) minimizer.
 
 ```{julia}
 res = cyclic_proximal_point(N, g, proxes_g, data2[1];
@@ -255,7 +255,7 @@ res = cyclic_proximal_point(N, g, proxes_g, data2[1];
 
 ```{=commonmark}
 !!! note "Technical Detail"
-    The recording is realised by [`RecordActions`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction) that are (also) executed at every iteration. These can also be individually implemented and added to the `record=` array instead of symbols.
+    The recording is realised by [`RecordAction`](@ref)s that are (also) executed at every iteration. These can also be individually implemented and added to the `record=` array instead of symbols.
 ```
 
 First, the computed median can be accessed as
