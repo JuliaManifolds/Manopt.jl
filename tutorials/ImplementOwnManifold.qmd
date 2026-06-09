@@ -12,7 +12,7 @@ CurrentModule = Manopt
 When you have used a few solvers from [`Manopt.jl`](https://manoptjl.org/) for example like in the opening
 tutorial [🏔️ Get started with Manopt.jl](getstarted.md)
 and also familiarized yourself with how to work with manifolds in general at
-[🚀 Get Started with `Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/tutorials/getstarted.html),
+[🚀 Get Started with `Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/tutorials/getstarted/),
 you might come across the point that you want to
 ``[implementing a manifold](@extref :doc:`tutorials/implement-a-manifold`)``{=commonmark}
 yourself and use it within [`Manopt.jl`](https://manoptjl.org/).
@@ -112,7 +112,7 @@ pts = [ r/norm(p) .* p for p in pts]
 
 Then, before starting with optimization, we need the distance on the manifold,
 to define the cost function, as well as the logarithmic map to defined the gradient.
-For both, we here use the “lazy” approach of using the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) as a fallback.
+For both, we here use the “lazy” approach of using the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere/) as a fallback.
 Finally, we have to provide information about how points and tangent vectors are stored on the
 manifold by implementing their ``[`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)``{=commonmark} function, which is often required when allocating memory.
 While we could
@@ -141,7 +141,7 @@ grad_f(M,q) = sum( - log(M, q, p) for p in pts)
 
 The documentation usually lists the necessary functions in a
 section “Technical Details” close to the end of the documentation of a solver,
-for our case that is [The gradient descent's Technical Details](https://manoptjl.org/stable/solvers/gradient_descent.html#Technical-Details),
+for our case that is [The gradient descent's Technical Details](https://manoptjl.org/stable/solvers/gradient_descent/#sec-gradient-descent-technical-details),
 
 They list all details, but we can start even step by step here if we are a bit careful.
 
@@ -243,7 +243,7 @@ But we for example automatically also get the possibility to obtain debug inform
 gradient_descent(M, f, grad_f, p0; debug = [:Iteration, :Cost, :Stepsize, 25, :GradientNorm, :Stop, "\n"]);
 ```
 
-see [How to Print Debug Output](https://manoptjl.org/stable/tutorials/HowToDebug.html)
+see [How to Print Debug Output](https://manoptjl.org/stable/tutorials/HowToDebug/)
 for more details.
 
 ## Technical details
