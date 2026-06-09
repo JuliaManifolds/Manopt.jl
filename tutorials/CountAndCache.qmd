@@ -10,7 +10,7 @@ introductory tutorial [🏔️ Get started with Manopt.jl](getstarted.md).
 ## Introduction
 
 There are surely many ways to keep track for example of how often the cost function is called,
-for example with a [functor](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects), as we used in an example in [How to Record Data](https://manoptjl.org/stable/tutorials/HowtoRecord.html)
+for example with a [functor](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects), as we used in an example in [How to Record Data](https://manoptjl.org/stable/tutorials/HowToRecord/)
 
 ```{julia}
 #| eval: false

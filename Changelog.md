@@ -27,6 +27,7 @@ This is a breaking change since the JuMP extension is dropped.
 * the `NesterovRule` now also stores an actual `AbstractRetractionMethod` instead of implicitly always using the default one.
 * Line searches consistently respect `stop_when_stepsize_exceeds` keyword argument as a hard limit. (#554)
 * `StopWhenChangeLess` falsely claimed to indicate convergence. This is now fixed. (#554)
+* miscellaneous broken links in the documentation. (#614)
 
 ### Removed
 

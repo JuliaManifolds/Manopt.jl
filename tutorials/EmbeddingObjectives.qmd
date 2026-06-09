@@ -35,7 +35,7 @@ using LinearAlgebra, Random, Colors, Plots
 Random.seed!(123)
 ```
 
-We consider the cost function on the [`Grassmann`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/grassmann.html) manifold given by
+We consider the cost function on the [`Grassmann`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/grassmann/) manifold given by
 
 ```{julia}
 n = 5

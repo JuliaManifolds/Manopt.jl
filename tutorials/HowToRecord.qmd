@@ -55,7 +55,7 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 
 ## First examples
 
-For the high level interfaces of the solvers, like [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html) we have to set `return_state` to `true` to obtain the whole [solver state](https://manoptjl.org/stable/plans/state/) and not only the resulting minimizer.
+For the high level interfaces of the solvers, like [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/) we have to set `return_state` to `true` to obtain the whole [solver state](https://manoptjl.org/stable/plans/state/) and not only the resulting minimizer.
 
 Then we can easily use the `record=` option to add recorded values. This keyword accepts [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s
 as well as several symbols as shortcuts, for example `:Cost` to record the cost, or if your options have a field `f`, `:f` would record that entry.
@@ -118,7 +118,7 @@ To illustrate a complicated example let's record:
 * the iteration number, cost and gradient field, but only every sixth iteration;
 * the iteration at which we stop.
 
-We first generate the problem and the state, to also illustrate the low-level works when not using the high-level interface [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html).
+We first generate the problem and the state, to also illustrate the low-level works when not using the high-level interface [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/).
 
 ```{julia}
 p = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
