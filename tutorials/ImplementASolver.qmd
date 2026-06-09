@@ -156,7 +156,7 @@ If your choice is different, you need to reimplement
 - `get_iterate(rws)` to access the current iterate
 
 We recommend to follow the general scheme with the `stop` field. If you have specific criteria
-when to stop, consider implementing your own [stopping criterion](https://manoptjl.org/stable/plans/stopping_criteria/) instead.
+when to stop, consider implementing your own [stopping criterion](../plans/stopping_criteria.md) instead.
 
 ### Initialization and iterate access
 
@@ -197,12 +197,12 @@ end
 Performance wise we could improve the number of allocations by making `X` also a field of
 our `rws` but let's keep it simple here.
 We could also store the cost of `q` in the state, but we shall see how to easily also enable
-this solver to allow for [caching](https://manoptjl.org/stable/tutorials/CountAndCache/#How-to-Count-and-Cache-Function-Calls).
+this solver to allow for ``[caching](CountAndCache.md).
 In practice, however, it is preferable to cache intermediate values like cost of `q` in the state when it can be easily achieved. This way we do not have to deal with overheads of an external cache.
 
 Now we can just run the solver already. We take the same example as for the other tutorials
 
-We first define our task, the Riemannian Center of Mass from the [Get started: optimize](https://manoptjl.org/stable/tutorials/md) tutorial.
+We first define our task, the Riemannian Center of Mass from the [Get started: optimize](getstarted.md) tutorial.
 
 ```{julia}
 #| output: false
