@@ -11,6 +11,10 @@ using Manopt: get_value, get_value_function, get_gradient_function
     # since the ONB of M is just the identity in coefficients, JF is gradients'
     jac_g(M, p) = [1.0 0.0; 0.0 -1.0; 0.0 0.0]'
     jac_g!(M, J, p) = (J .= [1.0 0.0; 0.0 -1.0; 0.0 0.0]')
+    Dg(M, p, X) = [X[1], -X[2]]
+    Dg!(M, y, p, X) = (y .= [X[1], -X[2]])
+    aDg(M, p, y) = [y[1], -y[2], 0.0]
+    aDg!(M, X, p, y) = (X .= [y[1], -y[2], 0.0])
     function grad_g!(M, X, p)
         X[1] .= [1.0, 0.0, 0.0]
         X[2] .= [0.0, -1.0, 0.0]
@@ -54,12 +58,18 @@ using Manopt: get_value, get_value_function, get_gradient_function
         g, jac_g, 2; jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis())
     )
     vgf_ji = VectorGradientFunction(
-        g!,
-        jac_g!,
-        2;
+        g!, jac_g!, 2;
         jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis()),
         evaluation = InplaceEvaluation(),
     )
+    vgf_dfn = VectorDifferentialFunction(g, Dg, 2; jacobian_type = FunctionVectorialType())
+    @test ismissing(vgf_dfn.adjoint_jacobian!!)
+    vgf_df = VectorDifferentialFunction(g, Dg, aDg, 2; jacobian_type = FunctionVectorialType())
+    vgf_dfi = VectorDifferentialFunction(
+        g!, Dg!, aDg!, 2;
+        jacobian_type = FunctionVectorialType(), evaluation = InplaceEvaluation(),
+    )
+
     @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis
     @test Manopt.get_jacobian_basis(vgf_vi) == DefaultOrthonormalBasis()
     vgf_jib = VectorGradientFunction(
@@ -100,20 +110,23 @@ using Manopt: get_value, get_value_function, get_gradient_function
     )
 
     for vgf in
-        [vgf_fa, vgf_va, vgf_fi, vgf_vi, vgf_ja, vgf_ji, vhf_fa, vhf_fi, vhf_va, vhf_vi]
+        [vgf_fa, vgf_va, vgf_fi, vgf_vi, vgf_ja, vgf_ji, vhf_fa, vhf_fi, vhf_va, vhf_vi, vgf_df]
         @test length(vgf) == 2
         @test get_value(M, vgf, p) == c
         @test get_value(M, vgf, p, :) == c
         @test get_value(M, vgf, p, 1) == c[1]
-        @test get_gradient(M, vgf, p) == gg
-        @test get_gradient(M, vgf, p, :) == gg
-        @test get_gradient(M, vgf, p, 1:2) == gg
-        @test get_gradient(M, vgf, p, [1, 2]) == gg
+        if !(vgf isa VectorDifferentialFunction)
+            # range access not yet implemented / too expensive for VDF
+            @test get_gradient(M, vgf, p) == gg
+            @test get_gradient(M, vgf, p, :) == gg
+            @test get_gradient(M, vgf, p, 1:2) == gg
+            @test get_gradient(M, vgf, p, [1, 2]) == gg
+            Y = [zero_vector(M, p), zero_vector(M, p)]
+            get_gradient!(M, Y, vgf, p, :)
+            @test Y == gg
+        end
         @test get_gradient(M, vgf, p, 1) == gg[1]
         @test get_gradient(M, vgf, p, 2) == gg[2]
-        Y = [zero_vector(M, p), zero_vector(M, p)]
-        get_gradient!(M, Y, vgf, p, :)
-        @test Y == gg
         Z = zero_vector(M, p)
         get_gradient!(M, Z, vgf, p, 1)
         @test Z == gg[1]

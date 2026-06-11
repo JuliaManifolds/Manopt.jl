@@ -105,21 +105,21 @@ end
 # Statistics:
 matrix_sizes = collect(3:15)
 num_experiments = length(matrix_sizes)
-num_columns = zeros(Int,num_experiments)
-manifold_dimensions = zeros(Int,num_experiments)
-mean_time_rLM = zeros(Float64,num_experiments)
-mean_time_LTMADS = zeros(Float64,num_experiments)
-final_cost_rLM = zeros(Float64,num_experiments)
-final_cost_LTMADS = zeros(Float64,num_experiments)
-iterations_rLM = zeros(Int,num_experiments)
-iterations_LTMADS = zeros(Int,num_experiments)
+num_columns = zeros(Int, num_experiments)
+manifold_dimensions = zeros(Int, num_experiments)
+mean_time_rLM = zeros(Float64, num_experiments)
+mean_time_LTMADS = zeros(Float64, num_experiments)
+final_cost_rLM = zeros(Float64, num_experiments)
+final_cost_LTMADS = zeros(Float64, num_experiments)
+iterations_rLM = zeros(Int, num_experiments)
+iterations_LTMADS = zeros(Int, num_experiments)
 
-for (i,d) = enumerate(matrix_sizes)
+for (i, d) in enumerate(matrix_sizes)
     A = generate_data(d)
     n = size(A, 2) # number of summands in the vectorial cost sum
-    p_star = Matrix{Float64}(I,d,d)
-    for j = 1:(d-1)
-        p_star *= rotation_matrix(d, j, j+1, π / (4*(d-1)))
+    p_star = Matrix{Float64}(I, d, d)
+    for j in 1:(d - 1)
+        p_star *= rotation_matrix(d, j, j + 1, π / (4 * (d - 1)))
     end
     B = copy(A)
     # and generate a few outliers in [3,6] so it also works already for d=3
@@ -131,13 +131,13 @@ for (i,d) = enumerate(matrix_sizes)
     F(M, p) = [Fi(M, p; i = i, A = A, B = B) for i in 1:n]
     vgfs = [
         VectorDifferentialFunction(
-            (M, c, p) -> Fi!(M, c, p; i = i, A = A, B = B),
-            (M, y, p, X) -> DFi!(M, y, p, X; i = i, A = A, B = B),
-            (M, X, p, y) -> adjointDFi!(M, X, p, y; i = i, A = A, B = B),
-            d;
-            function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
-            adjoint_jacobian_type = FunctionVectorialType(), evaluation = InplaceEvaluation(),
-        ) for i in 1:n
+                (M, c, p) -> Fi!(M, c, p; i = i, A = A, B = B),
+                (M, y, p, X) -> DFi!(M, y, p, X; i = i, A = A, B = B),
+                (M, X, p, y) -> adjointDFi!(M, X, p, y; i = i, A = A, B = B),
+                d;
+                function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
+                adjoint_jacobian_type = FunctionVectorialType(), evaluation = InplaceEvaluation(),
+            ) for i in 1:n
     ]
     rs = [ 1.0e-5 ∘ HuberRobustifier() for _ in 1:n ]
 
@@ -150,21 +150,24 @@ for (i,d) = enumerate(matrix_sizes)
     #
     # Least Squares Hubertized
     state1 = LevenbergMarquardt(
-    M, vgfs, p0; robustifier = rs, damping_increase_factor = 4.0,
-    candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-7, return_state = true
+        M, vgfs, p0; robustifier = rs, damping_increase_factor = 4.0,
+        candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-7, return_state = true
     )
     iter1 = get_count(state1, :Iterations)
     p1 = get_solver_result(state1)
     time1 = @be LevenbergMarquardt(
         $M, $vgfs, $p0; robustifier = $rs,
         damping_increase_factor = 4.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-7,
-    ) samples=5 evals=3
-    state2 = mesh_adaptive_direct_search(M, (M, p) -> f(M, p; A = A, B = B), p0;
-    stopping_criterion = StoppingCriterion=StopAfterIteration(20000) | StopWhenPollSizeLess(1e-10),
-    return_state=true)
-    time2 = @be mesh_adaptive_direct_search($M, $((M, p) -> f(M, p; A = A, B = B)), $p0;
-    stopping_criterion = $(StoppingCriterion=StopAfterIteration(20000) | StopWhenPollSizeLess(1e-10))
-    ) samples=5 evals=3
+    ) samples = 5 evals = 3
+    state2 = mesh_adaptive_direct_search(
+        M, (M, p) -> f(M, p; A = A, B = B), p0;
+        stopping_criterion = StoppingCriterion = StopAfterIteration(20000) | StopWhenPollSizeLess(1.0e-10),
+        return_state = true
+    )
+    time2 = @be mesh_adaptive_direct_search(
+        $M, $((M, p) -> f(M, p; A = A, B = B)), $p0;
+        stopping_criterion = $(StoppingCriterion = StopAfterIteration(20000) | StopWhenPollSizeLess(1.0e-10))
+    ) samples = 5 evals = 3
     iter2 = get_count(get_state(state2), :Iterations)
     p2 = get_solver_result(state2)
 
@@ -173,23 +176,24 @@ for (i,d) = enumerate(matrix_sizes)
     manifold_dimensions[i] = manifold_dimension(M)
     mean_time_rLM[i] = mean(time1).time
     mean_time_LTMADS[i] = mean(time2).time
-    final_cost_rLM[i] = f(M, p1; A=A, B=B)
-    final_cost_LTMADS[i] = f(M, p2; A=A, B=B)
+    final_cost_rLM[i] = f(M, p1; A = A, B = B)
+    final_cost_LTMADS[i] = f(M, p2; A = A, B = B)
     iterations_rLM[i] = iter1
     iterations_LTMADS[i] = iter2
     @info "rLM   : #$(iter1) | $(mean(time1).time) s | $(final_cost_rLM[i])"
     @info "LTMADS: #$(iter2) | $(mean(time2).time) s | $(final_cost_LTMADS[i])"
 end
-CSV.write("SOd.csv",
+CSV.write(
+    "SOd.csv",
     DataFrame(;
-    d = matrix_sizes,
-    dim = manifold_dimensions,
-    n = num_columns,
-    t1 = mean_time_rLM,
-    t2 = mean_time_LTMADS,
-    f1 = final_cost_rLM,
-    f2 = final_cost_LTMADS,
-    iter1 = iterations_rLM,
-    iter2 = iterations_LTMADS,
+        d = matrix_sizes,
+        dim = manifold_dimensions,
+        n = num_columns,
+        t1 = mean_time_rLM,
+        t2 = mean_time_LTMADS,
+        f1 = final_cost_rLM,
+        f2 = final_cost_LTMADS,
+        iter1 = iterations_rLM,
+        iter2 = iterations_LTMADS,
     )
 )

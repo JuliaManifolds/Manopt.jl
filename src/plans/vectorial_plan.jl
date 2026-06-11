@@ -318,7 +318,7 @@ All 3 can be either single functions [`FunctionVectorialType`](@ref) or vector o
 Create a `VectorGradientFunction` of `f`  and its Jacobian `Jf`, and optionally its adjoint Jacobian.
 If the adjoint is not provided, its type is also set to `Nothing`
 
-The Jacobian snf its adjoinbt can further be given as an allocating variant or an in-place variant, specified
+The Jacobian snf its adjoint can further be given as an allocating variant or an in-place variant, specified
 by the `evaluation=` keyword.
 """
 struct VectorDifferentialFunction{
@@ -342,14 +342,14 @@ function VectorDifferentialFunction(
         I <: Integer, F, J, E <: AbstractEvaluationType, FT <: AbstractVectorialType,
         JT <: AbstractVectorialType,
     }
-    return VectorDifferentialFunction{E, FT, JT, Nothing, F, J, Missing, I}(
-        f, function_type, Jf, jacobian_type, missing, nothing, range_dimension
+    return VectorDifferentialFunction{E, FT, JT, Missing, F, J, Missing, I}(
+        f, function_type, Jf, jacobian_type, missing, missing, range_dimension
     )
 end
 function VectorDifferentialFunction(
         f::F, Jf::J, AJf::A, range_dimension::I;
         evaluation::E = AllocatingEvaluation(), function_type::FT = FunctionVectorialType(),
-        jacobian_type::JT = FunctionVectorialType(), adjoint_jacobian_type::AJT = FunctonVectorialType(),
+        jacobian_type::JT = FunctionVectorialType(), adjoint_jacobian_type::AJT = FunctionVectorialType(),
     ) where {
         I <: Integer, F, J, A, E <: AbstractEvaluationType, FT <: AbstractVectorialType,
         JT <: AbstractVectorialType, AJT <: Union{<:AbstractVectorialType, Missing},

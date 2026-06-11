@@ -1,6 +1,7 @@
 using Manifolds, ManifoldsBase, Manopt, Test
 
 @testset "Manopt.jl" begin
+    @test Manopt.Rn_default() === :Manifolds
     @testset "Plan Tests         " begin
         include("plans/test_objective.jl")
         include("plans/test_problem.jl")
