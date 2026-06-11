@@ -1103,7 +1103,7 @@ To directly add a Jacobian to `X` see [`add_adjoint_jacobian!`](@ref)
 
 @doc "$(_doc_get_adjoint_jacobian_vector)"
 function get_adjoint_jacobian(
-        M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, a::AbstractVector; kwargs...
+        M::AbstractManifold, vgf::AbstractFirstOrderVectorFunction, p, a::AbstractVector; kwargs...
     )
     X = zero_vector(M, p)
     return add_adjoint_jacobian!(M, X, vgf, p, a, kwargs...)
@@ -1111,7 +1111,7 @@ end
 
 @doc "$(_doc_get_adjoint_jacobian_vector)"
 function get_adjoint_jacobian!(
-        M::AbstractManifold, X, vgf::AbstractVectorGradientFunction, p, a::AbstractVector; kwargs...
+        M::AbstractManifold, X, vgf::AbstractFirstOrderVectorFunction, p, a::AbstractVector; kwargs...
     )
     zero_vector!(M, X, p)
     return add_adjoint_jacobian!(M, X, vgf, p, a, kwargs...)
@@ -1211,7 +1211,7 @@ end
 # (d) Jacobian function
 function add_adjoint_jacobian!(
         M::AbstractManifold, X, vgf::VectorDifferentialFunction{<:InplaceEvaluation, FT, JT, <:FunctionVectorialType}, p, a::AbstractVector;
-        Y_cache = nothing
+        Y_cache = zero_vector(M, p)
     ) where {FT, JT}
     zero_vector!(M, Y_cache, p)
     vgf.adjoint_jacobian!!(M, Y_cache, p, a)
@@ -1242,7 +1242,7 @@ Note that if `vgf` works internally in a basis different from the one provided, 
 
 @doc "$(_doc_get_adjoint_jacobian_function_coeff)"
 function get_adjoint_jacobian(
-        M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...
+        M::AbstractManifold, vgf::AbstractFirstOrderVectorFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...
     )
     c = get_coordinates(M, p, zero_vector(M, p), B)
     return add_adjoint_jacobian!(M, c, vgf, p, a, B, kwargs...)
@@ -1250,7 +1250,7 @@ end
 
 @doc "$(_doc_get_adjoint_jacobian_function_coeff)"
 function get_adjoint_jacobian!(
-        M::AbstractManifold, c, vgf::AbstractVectorGradientFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...
+        M::AbstractManifold, c, vgf::AbstractFirstOrderVectorFunction, p, a::AbstractVector, B::AbstractBasis; kwargs...
     )
     fill!(c, 0)
     return add_adjoint_jacobian!(M, c, vgf, p, a, kwargs...)
@@ -1321,10 +1321,10 @@ function add_adjoint_jacobian!(
 end
 # (d) Jacobian function
 function add_adjoint_jacobian!(
-        M::AbstractManifold, c, vgf::VectorDifferentialFunction{<:InplaceEvaluation, FT, JT, <:FunctionVectorialType}, p, a::AbstractVector, B::AbstractBasis; X = nothing, Y_cache = nothing
+        M::AbstractManifold, c, vgf::VectorDifferentialFunction{<:InplaceEvaluation, FT, JT, <:FunctionVectorialType}, p, a::AbstractVector, B::AbstractBasis; X = nothing, Y_cache = zero_vector(M, p)
     ) where {FT, JT}
     vgf.adjoint_jacobian!!(M, Y_cache, p, a)
-    add_coordinates!(M, c, p, vgf.adjoint_jacobian!!(M, p, a), B)
+    add_coordinates!(M, c, p, Y_cache, B)
     return c
 end
 #

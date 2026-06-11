@@ -67,8 +67,9 @@ using Manopt: get_value, get_value_function, get_gradient_function
     @test Manopt.get_jacobian_basis(vgf_vi) == DefaultOrthonormalBasis()
     p = [1.0, 2.0, 3.0]
     c = [0.0, -3.0]
+    jc = [0.0, 3.0, 0.0] #see above c1, -c2, 0
     X = [1.0, 0.5, 0.25]
-    jXc = [1.0, -0.5] # from above X[1] - X[2]
+    jX = [1.0, -0.5] # from above X[1], - X[2]
     gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
 
     # With Hessian
@@ -110,10 +111,15 @@ using Manopt: get_value, get_value_function, get_gradient_function
         # Jacobian access
         b = DefaultOrthonormalBasis()
         j1 = get_jacobian(M, vgf, p, X, b)
-        @test j1 == jXc
+        @test j1 == jX
         j2 = similar(j1)
         get_jacobian!(M, j2, vgf, p, X, b)
         @test j2 == j1
+        aj1 = get_adjoint_jacobian(M, vgf, p, c, b)
+        @test aj1 == jc
+        aj2 = similar(aj1)
+        get_adjoint_jacobian!(M, aj2, vgf, p, c, b)
+        @test aj2 == aj1
     end
 
 
