@@ -1353,10 +1353,7 @@ get_gradient(
 
 # Generic case, allocate (a) a single tangent vector
 function get_gradient(
-        M::AbstractManifold,
-        vgf::AbstractVectorGradientFunction,
-        p,
-        i::Integer,
+        M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, i::Integer,
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     )
     X = zero_vector(M, p)
@@ -1364,10 +1361,8 @@ function get_gradient(
 end
 # (b) UnitRange and AbstractVector allow to use length for BitVector its sum
 function get_gradient(
-        M::AbstractManifold,
-        vgf::AbstractVectorGradientFunction,
-        p,
-        i = :, # as long as the length can be found it should work, see _vgf_index_to_length
+        M::AbstractManifold, vgf::AbstractVectorGradientFunction,
+        p, i = :, # as long as the length can be found it should work, see _vgf_index_to_length
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     )
     n = _vgf_index_to_length(i, vgf.range_dimension)
@@ -1379,18 +1374,14 @@ end
 function get_gradient(
         M::AbstractManifold,
         vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:ComponentVectorialType},
-        p,
-        i::Integer,
-        (::Union{AbstractPowerRepresentation, Nothing}) = nothing,
+        p, i::Integer, ::Union{AbstractPowerRepresentation, Nothing} = nothing,
     ) where {FT <: AbstractVectorialType}
     return vgf.jacobian!![i](M, p)
 end
 function get_gradient(
         M::AbstractManifold,
         vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:ComponentVectorialType},
-        p,
-        i::Integer,
-        (::Union{AbstractPowerRepresentation, Nothing}) = nothing,
+        p, i::Integer, ::Union{AbstractPowerRepresentation, Nothing} = nothing,
     ) where {FT <: AbstractVectorialType}
     X = zero_vector(M, p)
     return vgf.jacobian!![i](M, X, p)
@@ -1399,8 +1390,7 @@ end
 function get_gradient(
         M::AbstractManifold,
         vgf::VectorDifferentialFunction{<:AllocatingEvaluation, FT, JT, <:FunctionVectorialType},
-        p, i::Integer,
-        ::Union{AbstractPowerRepresentation, Nothing} = nothing,
+        p, i::Integer, ::Union{AbstractPowerRepresentation, Nothing} = nothing,
     ) where {FT <: AbstractVectorialType, JT <: AbstractVectorialType}
     n = vgf.range_dimension
     ei = zeros(n); ei[i] = 1
@@ -1422,11 +1412,9 @@ end
 # Part I: allocation
 # I (a) Internally a Jacobian
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:CoefficientVectorialType},
-        p,
-        i::Integer,
+        p, i::Integer,
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     JF = vgf.jacobian!!(M, p)
@@ -1434,12 +1422,9 @@ function get_gradient!(
     return X
 end
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:CoefficientVectorialType},
-        p,
-        i = :,
-        range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
+        p, i = :, range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
@@ -1452,22 +1437,17 @@ function get_gradient!(
 end
 # Part I(b) a vector of functions
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:ComponentVectorialType},
-        p,
-        i::Integer,
+        p, i::Integer,
         (::Union{AbstractPowerRepresentation, Nothing}) = nothing,
     ) where {FT <: AbstractVectorialType}
     return copyto!(M, X, p, vgf.jacobian!![i](M, p))
 end
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:ComponentVectorialType},
-        p,
-        i,
-        range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
+        p, i, range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
@@ -1480,11 +1460,9 @@ function get_gradient!(
     return X
 end
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:ComponentVectorialType},
-        p,
-        i::Colon,
+        p, i::Colon,
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
@@ -1497,12 +1475,9 @@ function get_gradient!(
 end
 # Part I(c) A single gradient function
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:FunctionVectorialType},
-        p,
-        i,
-        range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
+        p, i, range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     mP = PowerManifold(M, range, n)
@@ -1510,11 +1485,9 @@ function get_gradient!(
     return X
 end
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:FunctionVectorialType},
-        p,
-        i::Integer,
+        p, i::Integer,
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     mP = PowerManifold(M, range, vgf.range_dimension)
@@ -1523,8 +1496,7 @@ function get_gradient!(
 end
 # Part I(d) adjoint differentials
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::VectorDifferentialFunction{<:AllocatingEvaluation, FT, JT, <:FunctionVectorialType},
         p, i::Integer,
         ::Union{AbstractPowerRepresentation, Nothing} = nothing,
@@ -1538,11 +1510,9 @@ end
 # Part II: in-place evaluations
 # (a) Jacobian
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:CoefficientVectorialType},
-        p,
-        i::Integer,
+        p, i::Integer,
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     # a type wise safe way to allocate what usually should yield a n-times-d matrix
@@ -1552,11 +1522,9 @@ function get_gradient!(
     return X
 end
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:CoefficientVectorialType},
-        p,
-        i,
+        p, i,
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     # a type wise safe way to allocate what usually should yield a n-times-d matrix
@@ -1572,21 +1540,17 @@ function get_gradient!(
 end
 #II (b) a vector of functions
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:ComponentVectorialType},
-        p,
-        i::Integer,
+        p, i::Integer,
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     return vgf.jacobian!![i](M, X, p)
 end
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:ComponentVectorialType},
-        p,
-        i,
+        p, i,
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
@@ -1601,11 +1565,9 @@ function get_gradient!(
 end
 # II(c) a single function
 function get_gradient!(
-        M::AbstractManifold,
-        X,
+        M::AbstractManifold, X,
         vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:FunctionVectorialType},
-        p,
-        i::Integer,
+        p, i::Integer,
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
     ) where {FT <: AbstractVectorialType}
     pM = PowerManifold(M, range, vgf.range_dimension...)
@@ -1670,11 +1632,7 @@ function get_value(
         M::AbstractManifold, vgf::AbstractVectorFunction{E, <:FunctionVectorialType}, p, i = :
     ) where {E <: AllocatingEvaluation}
     c = vgf.value!!(M, p)
-    if isa(c, Number)
-        return c
-    else
-        return c[i]
-    end
+    return isa(c, Number) ? c : c[i]
 end
 function get_value(
         M::AbstractManifold,
@@ -1687,30 +1645,19 @@ end
 function get_value(
         M::AbstractManifold, vgf::AbstractVectorFunction{E, <:ComponentVectorialType}, p, i = :
     ) where {E <: AbstractEvaluationType}
-    if i === Colon()
-        return [f(M, p) for f in vgf.value!!]
-    else
-        return [f(M, p) for f in vgf.value!![i]]
-    end
-
+    return i === Colon() ? [f(M, p) for f in vgf.value!!] : [f(M, p) for f in vgf.value!![i]]
 end
 function get_value(
-        M::AbstractManifold,
-        vgf::AbstractVectorFunction{E, <:FunctionVectorialType},
-        p,
-        i = :;
-        value_cache = zeros(vgf.range_dimension),
+        M::AbstractManifold, vgf::AbstractVectorFunction{E, <:FunctionVectorialType},
+        p, i = :; value_cache = zeros(vgf.range_dimension),
     ) where {E <: InplaceEvaluation}
     vgf.value!!(M, value_cache, p)
     return value_cache[i]
 end
 
 function get_value!(
-        M::AbstractManifold,
-        V,
-        vgf::AbstractVectorFunction{AllocatingEvaluation, <:FunctionVectorialType},
-        p,
-        i = :,
+        M::AbstractManifold, V, vgf::AbstractVectorFunction{AllocatingEvaluation, <:FunctionVectorialType},
+        p, i = :,
     )
     c = vgf.value!!(M, p)
     V .= c[i]

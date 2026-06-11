@@ -48,6 +48,7 @@ using Manopt: get_value, get_value_function, get_gradient_function
         g!, jac_g!, 2; evaluation = InplaceEvaluation(),
         jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis()),
     )
+
     vgf_dfn = VectorDifferentialFunction(g, Dg, 2; jacobian_type = FunctionVectorialType())
     @test ismissing(vgf_dfn.adjoint_jacobian!!)
     vgf_df = VectorDifferentialFunction(g, Dg, aDg, 2; jacobian_type = FunctionVectorialType())
@@ -55,7 +56,9 @@ using Manopt: get_value, get_value_function, get_gradient_function
         g!, Dg!, aDg!, 2;
         jacobian_type = FunctionVectorialType(), evaluation = InplaceEvaluation(),
     )
-
+    show(io, MIME"text/plain"(), vgf_df)
+    @test String(take!(io)) == Manopt.status_summary(vgf_df)
+    @test startswith(repr(vgf_df), "VectorDifferentialFunction")
     @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis
     @test Manopt.get_jacobian_basis(vgf_vi) == DefaultOrthonormalBasis()
     vgf_jib = VectorGradientFunction(
