@@ -989,7 +989,7 @@ function get_jacobian(
         M::AbstractManifold, vgf::VGF, p, c, B::AbstractBasis; X = nothing, kwargs...
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:CoefficientVectorialType}}
     n = vgf.range_dimension
-    a = zeros(number_eltype(X), n)
+    a = zeros(number_eltype(isnothing(X) ? c : X), n)
     return get_jacobian!(M, a, vgf, p, c, B; X = X, kwargs...)
 end
 function get_jacobian!(
@@ -1004,7 +1004,7 @@ function get_jacobian(
         M::AbstractManifold, vgf::VGF, p, c, B::AbstractBasis; X = nothing, kwargs...
     ) where {FT, VGF <: VectorDifferentialFunction{<:AbstractEvaluationType, FT, <:FunctionVectorialType}}
     n = vgf.range_dimension
-    a = zeros(number_eltype(X), n)
+    a = zeros(number_eltype(isnothing(X) ? c : X), n)
     return get_jacobian!(M, a, vgf, p, c, B; X = X, kwargs...)
 end
 function get_jacobian!(
