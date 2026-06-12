@@ -1,7 +1,6 @@
 using Manifolds, Manopt, Test, ManifoldsBase
 
 @testset "The (robust) Riemannian Levenberg Marquardt Algorithm" begin
-
     @testset "Linear Regression" begin
         # Linear regression with bounds
         q1(x; a, b) = a * x + b
@@ -34,6 +33,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
     @testset "Geodesic Regression on the Sphere" begin
         # TODO
     end
+    # TODO: Allocating vs in-place F and JacF
     @testset "errors" begin
         sub_fake_f = (args...) -> 0
         sub_state = AllocatingEvaluation()
@@ -56,6 +56,10 @@ using Manifolds, Manopt, Test, ManifoldsBase
         # damping_increase_factor too small (≤ 1)
         @test_throws ArgumentError LevenbergMarquardtState(
             M, sub_fake_f, sub_state, i_res, i_JF; p = x0, damping_increase_factor = 0.5,
+        )
+        # For the evaluating case num_components can not be derived in code, hence this errors
+        @test_throws ArgumentError LevenbergMarquardt(
+            M, (M, v, p) -> v, (M, X, p) -> X, x0; evaluation = InplaceEvaluation(),
         )
     end
 end
