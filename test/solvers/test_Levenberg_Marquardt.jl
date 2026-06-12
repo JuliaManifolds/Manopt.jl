@@ -22,12 +22,12 @@ using Manifolds, Manopt, Test, ManifoldsBase
         p1 = [0.0, 0.0]
         r1 = LevenbergMarquardt(M1, vgf1, p1)
         # the error is less than the deviation from above
-        @test norm(F1(M, r1)) < 0.2
+        @test norm(F1(M1, r1)) < 0.2
         M1b = Hyperrectangle([-1.0, -1.0], [1.0, 1.0])
         # Then b is out of bounds and we get something where b is on the boundary, namely 1
         # and a is chosen accordingly
         # We have to sue the normal coordinates subsolver here then.
-        r1b = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M))
+        r1b = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M1b))
         @test is_point(M1b, r1b)
     end
     @testset "Geodesic Regression on the Sphere" begin
