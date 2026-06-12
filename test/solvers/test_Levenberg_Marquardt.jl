@@ -26,7 +26,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
         M1b = Hyperrectangle([-1.0, -1.0], [1.0, 1.0])
         # Then b is out of bounds and we get something where b is on the boundary, namely 1
         # and a is chosen accordingly
-        # We have to sue the normal coordinates subsolver here then.
+        # We have to use the normal coordinates subsolver here then.
         r1b = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M1b))
         @test is_point(M1b, r1b)
     end
