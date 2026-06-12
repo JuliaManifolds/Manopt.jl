@@ -21,6 +21,9 @@ using Manifolds, Manopt, Test, ManifoldsBase
         )
         p1 = [0.0, 0.0]
         r1 = LevenbergMarquardt(M1, vgf1, p1)
+        # F1 is in default form, but for JF1 we have to declare it; we can also start without p1
+        r1_2 = LevenbergMarquardt(M1, F1, JF1; jacobian_type = FunctionVectorialType())
+        @test isapprox(M1, r1, r1_2)
         # the error is less than the deviation from above
         @test norm(F1(M1, r1)) < 0.2
         M1b = Hyperrectangle([-1.0, -1.0], [1.0, 1.0])
@@ -30,8 +33,8 @@ using Manifolds, Manopt, Test, ManifoldsBase
         r1b = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M1b))
         @test is_point(M1b, r1b)
     end
-    @testset "Geodesic Regression on the Sphere" begin
-        # TODO
+    @testset "Robust Geodesic Regression on the Sphere" begin
+        # TODO vector of vgfs and vector of robustifiers
     end
     # TODO: Allocating vs in-place F and JacF
     @testset "errors" begin
