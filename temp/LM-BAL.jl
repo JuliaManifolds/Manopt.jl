@@ -5,6 +5,7 @@ using StaticArrays, RecursiveArrayTools
 using ManifoldDiff, DifferentiationInterface
 using ForwardDiff
 using SparseArrays
+using DelimitedFiles
 
 using LinearSolve
 
@@ -676,16 +677,15 @@ function Manopt.allocate_jacobian(
     )
 end
 
-function run_bundle_adjustment(data::BALDataset)
-    # M_point_pos = Euclidean(3, data.num_points)
+function construct_bal_problem(data::BALDataset)
     M_point_pos = Hyperrectangle(fill(-1.0, 3, data.num_points), fill(1.0, 3, data.num_points))
     intrinsics_bounds_low = reduce(hcat, [SVector(350, 0.0, 0.0) for cam in data.cameras])
     intrinsics_bounds_upp = reduce(hcat, [SVector(450, 0.0, 0.0) for cam in data.cameras])
     M = ProductManifold(
-        PowerManifold(Rotations(3), ArrayPowerRepresentation(), data.num_cameras), # camera rotations
-        Euclidean(3, data.num_cameras), # camera translations
-        Hyperrectangle(intrinsics_bounds_low, intrinsics_bounds_upp), # camera intrinsics [f, k1, k2]
-        M_point_pos, # 3D point positions
+        PowerManifold(Rotations(3), ArrayPowerRepresentation(), data.num_cameras),
+        Euclidean(3, data.num_cameras),
+        Hyperrectangle(intrinsics_bounds_low, intrinsics_bounds_upp),
+        M_point_pos,
     )
 
     F = [Fi_block(data, i) for i in 1:data.num_observations]
@@ -693,12 +693,38 @@ function run_bundle_adjustment(data::BALDataset)
 
     f = [
         VectorGradientFunction(
-                F[i], JF[i], 2;
-                evaluation = InplaceEvaluation(),
-                function_type = FunctionVectorialType(),
-                jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis())
-            ) for i in 1:data.num_observations
+            F[i], JF[i], 2;
+            evaluation = InplaceEvaluation(),
+            function_type = FunctionVectorialType(),
+            jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis()),
+        ) for i in 1:data.num_observations
     ]
+
+    return M, f, F
+end
+
+function point_from_bal_state(
+        cameras::AbstractVector{<:BALCamera},
+        points::AbstractVector{<:BALPoint},
+    )
+    n_cameras = length(cameras)
+    n_points = length(points)
+
+    p_cam = stack([Matrix{Float64}(cam.R) for cam in cameras])
+    p_t = reduce(hcat, [SVector{3, Float64}(cam.t...) for cam in cameras])
+    p_intr = stack([SVector{3, Float64}(cam.f, cam.k1, cam.k2) for cam in cameras])
+    p_pt = reduce(hcat, [SVector{3, Float64}(pt...) for pt in points])
+
+    size(p_cam, 3) == n_cameras || throw(ArgumentError("Invalid camera rotation layout."))
+    size(p_t, 2) == n_cameras || throw(ArgumentError("Invalid camera translation layout."))
+    size(p_intr, 2) == n_cameras || throw(ArgumentError("Invalid camera intrinsics layout."))
+    size(p_pt, 2) == n_points || throw(ArgumentError("Invalid point layout."))
+
+    return ArrayPartition(p_cam, p_t, p_intr, p_pt)
+end
+
+function run_bundle_adjustment(data::BALDataset)
+    M, f, F = construct_bal_problem(data)
 
     p0 = ArrayPartition(
         stack([Matrix{Float64}(I, 3, 3) for _ in 1:data.num_cameras]), # camera rotations
@@ -799,11 +825,72 @@ function subsample_bal(dataset::BALDataset, num_cameras::Int)
     return subsample_bal_dataset(dataset, cam_indices, pt_indices)
 end
 
+"""
+    read_python_solution_csv(camera_csv_path, points_csv_path; T = Float64)
+
+Load the CSV files exported by `LM-BAL-ls.py` and return:
+- `camera_params`: matrix with rows `[r1,r2,r3,tx,ty,tz,f,k1,k2]`
+- `points_3d`: matrix with rows `[x,y,z]`
+- `cameras`: `Vector{BALCamera}` converted from Rodrigues vectors
+- `points`: `Vector{BALPoint}`
+"""
+function read_python_solution_csv(camera_csv_path::AbstractString, points_csv_path::AbstractString; T::Type = Float64)
+    camera_params_raw = readdlm(camera_csv_path, ',', T)
+    points_3d_raw = readdlm(points_csv_path, ',', T)
+
+    camera_params = ndims(camera_params_raw) == 1 ? reshape(camera_params_raw, 1, :) : Matrix(camera_params_raw)
+    points_3d = ndims(points_3d_raw) == 1 ? reshape(points_3d_raw, 1, :) : Matrix(points_3d_raw)
+
+    size(camera_params, 2) == 9 || throw(ArgumentError("Expected 9 camera parameters per row, got $(size(camera_params, 2))."))
+    size(points_3d, 2) == 3 || throw(ArgumentError("Expected 3 point coordinates per row, got $(size(points_3d, 2))."))
+
+    cameras = Vector{BALCamera{T, T, T, T, T}}(undef, size(camera_params, 1))
+    for i in axes(camera_params, 1)
+        r = (camera_params[i, 1], camera_params[i, 2], camera_params[i, 3])
+        t = SVector{3, T}(camera_params[i, 4], camera_params[i, 5], camera_params[i, 6])
+        f = camera_params[i, 7]
+        k1 = camera_params[i, 8]
+        k2 = camera_params[i, 9]
+        cameras[i] = BALCamera{T, T, T, T, T}(rodrigues_to_rotation_matrix(r), t, f, k1, k2)
+    end
+
+    points = [BALPoint{T}(points_3d[i, 1], points_3d[i, 2], points_3d[i, 3]) for i in axes(points_3d, 1)]
+
+    return camera_params, points_3d, cameras, points
+end
+
 # run_bundle_adjustment(data1)
 
 data1_sub = subsample_bal(data1, 5)
+data1_sub2 = subsample_bal(data1, 20)
+# p_data1 = run_bundle_adjustment(data1)
+
 p_data1_sub = run_bundle_adjustment(data1_sub)
+# p_data1_sub2 = run_bundle_adjustment(data1_sub2)
 # test_analytical_jacobian_matches_ad(data1_sub)
+
+function test_py()
+    python_solution_dir = joinpath(@__DIR__, "bal_csv_solution")
+    python_camera_csv = joinpath(python_solution_dir, "python_opt_camera_params.csv")
+    python_points_csv = joinpath(python_solution_dir, "python_opt_points_3d.csv")
+
+    if isfile(python_camera_csv) && isfile(python_points_csv)
+        py_camera_params, py_points_3d, py_cameras, py_points = read_python_solution_csv(
+            python_camera_csv,
+            python_points_csv,
+        )
+        @info "Loaded Python CSV solution" num_cameras = size(py_camera_params, 1) num_points = size(py_points_3d, 1)
+
+        py_data = subsample_bal(data1, size(py_camera_params, 1))
+        M_py, f_py, F_py = construct_bal_problem(py_data)
+        p_py = point_from_bal_state(py_cameras, py_points)
+        robustifier = fill(HuberRobustifier(), length(F_py))
+        nlso_py = ManifoldNonlinearLeastSquaresObjective(f_py, robustifier)
+
+        py_objective = get_cost(M_py, nlso_py, p_py)
+        @info "Python objective from Julia: " objective = py_objective
+    end
+end
 
 using Profile, ProfileView
 
