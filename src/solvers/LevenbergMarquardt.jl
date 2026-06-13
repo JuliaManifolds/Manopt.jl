@@ -56,8 +56,10 @@ $(_kwargs(:evaluation))
 as well as then these are already combined in a single [`VectorGradientFunction`](@ref) `vgf`
 
 * `robustifier::`[`AbstractRobustifierFunction`](@ref)` = `[`IdentityRobustifier`](@ref)`()`:
-  for the robust variant, specify how the robustification is meant to take place. The default of the identity disables the robust version
-  If you provide a vector of  [`VectorGradientFunction`](@ref)s, this argument has to be a vector of robustifiers of same length.
+  for the robust variant, specify how the robustification is meant to take place.
+  - if you provide a single vectorial function and its Jacobian, a single robustifer is applied
+    to every component function of this vectorial function (each component is a block in the sum)
+  - if you provide a vector of [`VectorGradientFunction`](@ref)s, each needs a robustifier.
 $(_kwargs(:evaluation))
 
 as well as in general using the model imprevement parameter ``m_k`` in several places, cf [BaranBergmann:2026](@cite)
@@ -268,10 +270,10 @@ calls_with_kwargs(::typeof(LevenbergMarquardt!)) = (decorate_objective!, decorat
 # Solver functions
 #
 function initialize_solver!(
-        dmp::DefaultManoptProblem{mT, <:ManifoldNonlinearLeastSquaresObjective}, lms::LevenbergMarquardtState,
-    ) where {mT <: AbstractManifold}
+        dmp::DefaultManoptProblem, lms::LevenbergMarquardtState,
+    )
     M = get_manifold(dmp)
-    nlso = get_objective(dmp)
+    nlso = get_objective(dmp, true) # unwarp decorators
     get_residuals!(M, lms.residual_values, nlso, lms.p)
     for (o, jb) in zip(nlso.objective, lms.jacobian_f)
         if !isnothing(jb)
@@ -283,14 +285,14 @@ function initialize_solver!(
 end
 
 function step_solver!(
-        dmp::DefaultManoptProblem{mT, <:ManifoldNonlinearLeastSquaresObjective},
+        dmp::DefaultManoptProblem,
         lms::LevenbergMarquardtState,
         ::Integer,
-    ) where {mT <: AbstractManifold}
+    )
     # Update damping term in the surrogate
     # should this be with (currently) or without robustifier?
     M = get_manifold(dmp)
-    nlso = get_objective(dmp)
+    nlso = get_objective(dmp, true)
     FpSq = get_cost(M, nlso, lms.p)
     set_parameter!(lms.sub_problem, Val(:Objective), Val(:Penalty), lms.damping_term * FpSq)
     # update base point of the tangent space the subproblem works on
@@ -357,10 +359,10 @@ end
 # Special cases for
 
 function get_last_stepsize(
-        dmp::DefaultManoptProblem{mT, <:ManifoldNonlinearLeastSquaresObjective},
+        dmp::DefaultManoptProblem,
         lms::LevenbergMarquardtState,
         k,
-    ) where {mT <: AbstractManifold}
+    )
     M = get_manifold(dmp)
     return norm(M, lms.p, lms.direction)
 end

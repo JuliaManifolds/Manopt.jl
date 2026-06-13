@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test, ManifoldsBase
+using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
 
 @testset "The (robust) Riemannian Levenberg Marquardt Algorithm" begin
     @testset "Linear Regression" begin
@@ -23,7 +23,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
         r1 = LevenbergMarquardt(M1, vgf1, p1)
         # F1 is in default form, but for JF1 we have to declare it; we can also start without p1
         r1_2 = LevenbergMarquardt(M1, F1, JF1; jacobian_type = FunctionVectorialType())
-        @test isapprox(M1, r1, r1_2)
+        @test isapprox(M1, r1, r1_2; atol = 1.0e-7)
         # the error is less than the deviation from above
         @test norm(F1(M1, r1)) < 0.2
         M1b = Hyperrectangle([-1.0, -1.0], [1.0, 1.0])
@@ -34,7 +34,73 @@ using Manifolds, Manopt, Test, ManifoldsBase
         @test is_point(M1b, r1b)
     end
     @testset "Robust Geodesic Regression on the Sphere" begin
-        # TODO vector of vgfs and vector of robustifiers
+        # Testing the case of one vector function and a single robustifier, so that it is applied componentwise
+        M2 = Manifolds.Sphere(2); p1 = [0.0, 0.0, 1.0]; p2 = [0.0, 1.0, 0.0]
+        ts = [0.0, 1 / 3, 2 / 3, 1.0]
+        qs = shortest_geodesic(M2, p1, p2, ts)
+        # Move the last two “east”, the other two “west”
+        ps = [exp(M2, p, [i == 2 ? 0.1 : (i == 3 ? -0.1 : 0.0), 0.0, 0.0]) for (i, p) in enumerate(qs)]
+        TM2 = TangentBundle(M2)
+        function F2(TM::TangentBundle, P; time, data)
+            M = base_manifold(TM); p = P[TM, :point]; X = P[TM, :vector]
+            return [distance(M, geodesic(M, p, X, ti), di) for (ti, di) in zip(time, data)]
+        end
+        function f2(TM::TangentBundle, P; time, data)
+            M = base_manifold(TM); p = P[TM, :point]; X = P[TM, :vector]
+            return 1 / 2 * sum(distance(M, exp(M, p, ti * X), di)^2 for (ti, di) in zip(time, data))
+        end
+        function f2_robust(TM::TangentBundle, P; time, data)
+            M = base_manifold(TM); p = P[TM, :point]; X = P[TM, :vector]
+            return sum(distance(M, exp(M, p, ti * X), di) for (ti, di) in zip(time, data))
+        end
+        function f2_comp_grad(TM::TangentBundle, P; t, d)
+            M = base_manifold(TM); p = P[TM, :point]; X = P[TM, :vector]
+            g = ManifoldDiff.grad_distance(M, d, exp(M, p, t * X), 1)
+            return ArrayPartition(
+                ManifoldDiff.adjoint_differential_exp_basepoint(M, p, t * X, g), # w.r.t. base point p
+                t * ManifoldDiff.adjoint_differential_exp_argument(M, p, t * X, g), # w.r.t. argument X
+            )
+        end
+        JF2(TM, P; time, data) = [f2_comp_grad(TM, P; t = ti, d = di) for (ti, di) in zip(time, data)]
+        vgf2 = VectorGradientFunction(
+            (TM, P) -> F2(TM, P; time = ts, data = ps), (TM, P) -> JF2(TM, P; time = ts, data = ps), length(ps);
+            evaluation = AllocatingEvaluation(), function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
+        )
+        p0 = 1 / sqrt(2) .* [0.0, 1.0, 1.0]; X0 = [1.0, 0.0, 0.0]
+        P0 = ArrayPartition(p0, X0)
+        # LSQ
+        P2a = LevenbergMarquardt(
+            TM2, vgf2, P0;
+            retraction_method = StabilizedRetraction(default_retraction_method(TM2)),
+            # debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop],
+        )
+        @test is_point(TM2, P2a)
+        # robust – and test both decorators for state and objective
+        (o2, s2) = LevenbergMarquardt(
+            TM2, vgf2, P0;
+            robustifier = 1.0e-4 ∘ HuberRobustifier(), return_objective = true, return_state = true,
+            retraction_method = StabilizedRetraction(default_retraction_method(TM2)),
+            # debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop],\
+        );
+        P2b = get_solver_result(s2)
+        @test is_point(TM2, P2b)
+        @test f2(TM2, P2a; time = ts, data = ps) < f2(TM2, P2b; time = ts, data = ps)
+        @test f2_robust(TM2, P2b; time = ts, data = ps) < f2_robust(TM2, P2a; time = ts, data = ps)
+        p2a = P2a[TM2, :point]; X2a = P2a[TM2, :vector]; p2b = P2b[TM2, :point]; X2b = P2b[TM2, :vector]
+        geoa = geodesic(M2, p2a, X2a, range(0.0, 1.0, 100)); geob = geodesic(M2, p2b, X2b, range(0.0, 1.0, 100))
+        # for the robust case: end points are closer to data than for lsq
+        @test distance(M2, geob[1], ps[1]) < distance(M2, geoa[1], ps[1])
+        @test distance(M2, geob[end], ps[end]) < distance(M2, geoa[end], ps[end])
+        # You can easily plot this as
+        # using ManifoldMakie
+        # scatter(M2, ps); geodesics!(M2, geob); geodesics!(M2, geoa);
+        # the first curve (same color as points) should hit the end points, the second is “skewed”
+        @testset "show/repr on the LevenbergMarquardt state on NL objective" begin
+            @test startswith(repr(o2), "ManifoldNonlinearLeastSquaresObjective(")
+            @test Manopt.status_summary(o2) == "A nonlinear least squares objective 1 vectorial block"
+            @test startswith(repr(s2), "LevenbergMarquardtState(")
+            @test startswith(Manopt.status_summary(s2), "# Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm")
+        end
     end
     # TODO: Allocating vs in-place F and JacF
     @testset "errors" begin

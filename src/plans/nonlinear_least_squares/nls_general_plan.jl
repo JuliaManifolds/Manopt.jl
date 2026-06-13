@@ -163,7 +163,7 @@ function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default
     This indicates convergence: $Conv"""
 end
 function show(io::IO, lms::LevenbergMarquardtState)
-    print(io, "LevenbergMarquardtState(", lms.sub_problem, ", ", sub_state, "; ")
+    print(io, "LevenbergMarquardtState(", lms.sub_problem, ", ", lms.sub_state, "; ")
     print(io, "candidate_acceptance_threshold = ", lms.candidate_acceptance_threshold)
     print(io, ", damping_increase_factor = ", lms.damping_increase_factor, ", damping_increase_threshold = ", lms.damping_increase_threshold)
     print(io, ", damping_reduction_threshold = ", lms.damping_reduction_threshold, ", damping_reduction_factor = ", lms.damping_reduction_factor)

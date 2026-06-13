@@ -114,6 +114,7 @@ which is the sum of the single block components lengths.
 function residuals_count(nlso::ManifoldNonlinearLeastSquaresObjective)
     return sum(length(o) for o in nlso.objective)
 end
+residuals_count(admo::AbstractDecoratedManifoldObjective) = residuals_count(get_objective(admo, false))
 
 """
     get_cost(M::AbstractManifold, nlso::ManifoldNonLinearLeastSquaresObjective, p)
@@ -265,10 +266,10 @@ this function computes the “pure” residuals.
 
 @doc "$(_doc_get_residuals_nlso)"
 function get_residuals(
-        M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p; kwargs...
+        M::AbstractManifold, o::AbstractManifoldObjective, p; kwargs...
     )
-    v = zeros(residuals_count(nlso))
-    return get_residuals!(M, v, nlso, p; kwargs...)
+    v = zeros(residuals_count(o))
+    return get_residuals!(M, v, o, p; kwargs...)
 end
 
 @doc "$(_doc_get_residuals_nlso)"
@@ -284,6 +285,9 @@ function get_residuals!(
     end
     return v
 end
+function get_residuals!(M::AbstractManifold, v, admo::AbstractDecoratedManifoldObjective, p; kwargs...)
+    return get_residuals!(M, v, get_objective(admo, false), p; kwargs...)
+end
 
 function Base.show(io::IO, nlso::ManifoldNonlinearLeastSquaresObjective)
     print(io, "ManifoldNonlinearLeastSquaresObjective(")
@@ -292,8 +296,6 @@ function Base.show(io::IO, nlso::ManifoldNonlinearLeastSquaresObjective)
 end
 function status_summary(nlso::ManifoldNonlinearLeastSquaresObjective; context::Symbol = :default)
     (context === :short) && (return repr(nlso))
-    # (context === :inline) &&
-    # we could maybe extend this if we find a good multiline idea here
     n = length(nlso.objective)
     return ("A nonlinear least squares objective $(n) vectorial block$(n > 1 ? "s" : "")")
 end

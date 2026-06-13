@@ -2,6 +2,7 @@
 #
 # --- Regession on the sphere with outliers
 using Colors, Distributions, GLMakie, Makie, ManifoldDiff, Manifolds, Manopt, NamedColors, Random, RecursiveArrayTools
+using ManifoldAsymptote
 ptc = NamedColors.load_paul_tol()
 
 # Parameters
