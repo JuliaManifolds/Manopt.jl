@@ -252,6 +252,23 @@ function show(io::IO, o::LevenbergMarquardtLinearSurrogateObjective)
     return print(io, "LevenbergMarquardtLinearSurrogateObjective($(o.objective); penalty=$(o.penalty), threshold=$(o.threshold), mode=:$(o.mode))")
 end
 
+function status_summary(lmlso::LevenbergMarquardtLinearSurrogateObjective; context::Symbol = :default)
+    (context === :short) && (return repr(lmlso))
+    (context === :inline) && (return "A linear surrogate objective for the Levenberg Marquardt algorithm based on $(status_summary(lmlso.objective; context = context)) with penalty $(lmlso.penalty)")
+    return """
+    A linear surrogate objective for the Levenberg Marquardt Algorithm
+
+    ## Objective
+    $(_in_str(status_summary(lmlso.objective, context = context); indent = 1))
+
+    ## Parameters
+    * penalty:   $(_MANOPT_INDENT)$(lmlso.penalty)
+    * threshold: $(_MANOPT_INDENT)$(lmlso.threshold)
+    * mode:      $(_MANOPT_INDENT)$(lmlso.mode)
+    """
+end
+
+
 """
     residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FSq::Real, threshold::Real=1.0e-5, mode::Symbol=:Default)
 

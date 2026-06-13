@@ -40,6 +40,31 @@ mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
     end
 end
 
+function show(io::IO, lmlsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective)
+    print(io, "LevenbergMarquardtLinearSurrogateCoordinatesObjective(", lmlsco.objective, "; ")
+    print(io, "penalty=", lmlsco.penalty, ", threshold=", lmlsco.threshold, ", mode=:", lmlsco.mode)
+    print(io, ", basis = ", lmlsco.basis)
+    print(io, ", residuals=", lmlsco.value_cache, ", jacoian_cache=", lmlsco.jacobian_cache)
+    return print(io, ")")
+end
+
+function status_summary(lmlsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective; context::Symbol = :default)
+    (context === :short) && (return repr(lmlsco))
+    (context === :inline) && (return "A linear surrogate objective in coordinates for the Levenberg Marquardt algorithm based on $(status_summary(lmlsco.objective; context = context)) with penalty $(lmlsco.penalty)")
+    return """
+    A linear surrogate objective in coordinates for the Levenberg Marquardt Algorithm
+
+    ## Objective
+    $(_in_str(status_summary(lmlsco.objective, context = context); indent = 1))
+
+    ## Parameters
+    * basis:     $(_MANOPT_INDENT)$(lmlsco.basis)
+    * mode:      $(_MANOPT_INDENT)$(lmlsco.mode)
+    * penalty:   $(_MANOPT_INDENT)$(lmlsco.penalty)
+    * threshold: $(_MANOPT_INDENT)$(lmlsco.threshold)
+    """
+end
+
 # Adapt the get_normal_linear_operator! to also pass down the Jacobian cache.
 # similar to nls_general line 1149 (second in case (b)) for the case with different bases.
 function get_normal_linear_operator!(

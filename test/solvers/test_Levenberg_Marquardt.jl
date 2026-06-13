@@ -14,9 +14,9 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         M1 = Euclidean(2)
         F1(M::AbstractManifold, p) = res1(p[1], p[2]; X = X1, Y = Y1)
         JF1(M::AbstractManifold, p) = Dres1(p[1], p[2]; X = X1, Y = Y1)
+        JF1mat(M::AbstractManifold, p) = hcat(Dres1(p[1], p[2]; X = X1, Y = Y1)...)'
         vgf1 = VectorGradientFunction(
-            F1, JF1, length(X1);
-            evaluation = AllocatingEvaluation(),
+            F1, JF1, length(X1); evaluation = AllocatingEvaluation(),
             function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
         )
         p1 = [0.0, 0.0]
@@ -32,6 +32,171 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         # We have to use the normal coordinates subsolver here then.
         r1b = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M1b))
         @test is_point(M1b, r1b)
+
+        @testset "coordinate surrogate agrees with operator surrogate" begin
+            B1 = DefaultOrthonormalBasis(); n1 = length(X1)
+            nlso = ManifoldNonlinearLeastSquaresObjective(
+                F1, JF1, n1;
+                evaluation = AllocatingEvaluation(),
+                function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
+            )
+            lmso = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = 1.0e-3)
+            @test startswith(Manopt.status_summary(lmso), "A linear surrogate objective for")
+            @test startswith(repr(lmso), "LevenbergMarquardtLinearSurrogateObjective(")
+            lmcso = Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(
+                nlso; penalty = 1.0e-3, basis = B1, jacobian_cache = [zeros(n, 2) for _ in eachindex(nlso.objective)],
+                residuals = zeros(length(X1))
+            )
+            @test startswith(Manopt.status_summary(lmcso), "A linear surrogate objective in coordinates for")
+            @test startswith(repr(lmcso), "LevenbergMarquardtLinearSurrogateCoordinatesObjective(")
+            # Coordinate surrogate requires explicit caches, which are normally updated in LM steps.
+            get_residuals!(M1, lmcso.value_cache, nlso, p1)
+            for (i, o) in enumerate(nlso.objective)
+                lmcso.jacobian_cache[i] = get_jacobian(M1, o, p1; basis = B1)
+            end
+            slso = Manopt.NormalEquationsObjective(lmso)
+            slco = Manopt.NormalEquationsObjective(lmcso)
+            # Test accessors
+            d = number_of_coordinates(M1, B1)
+            A_lmso = zeros(d, d); A_lmcso = zeros(d, d)
+            Manopt.get_linear_operator!(M1, A_lmso, slso, p1, B1)
+            Manopt.get_linear_operator!(M1, A_lmcso, slco, p1, B1)
+            @test isapprox(A_lmso, A_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+            nvf_lmso = zeros(d)
+            nvf_lmcso = zeros(d)
+            Manopt.get_normal_vector_field!(M1, nvf_lmso, lmso, p1, B1)
+            Manopt.get_normal_vector_field_coord!(M1, nvf_lmcso, lmcso, p1)
+            @test isapprox(nvf_lmso, nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+            # Directly test add_normal_vector_field_coord! (no-basis overload that uses mul!).
+            len_o = length(nlso.objective[1])
+            val_cache = view(lmcso.value_cache, 1:len_o)
+            jc = lmcso.jacobian_cache[1]
+            nvf_direct = zeros(d)
+            Manopt.add_normal_vector_field_coord!(
+                M1, nvf_direct, nlso.objective[1], nlso.robustifier[1], p1;
+                value_cache = val_cache, jacobian_cache = jc,
+                threshold = lmcso.threshold, mode = lmcso.mode,
+            )
+            @test isapprox(nvf_direct, nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+            # Verify accumulation semantics from mul!(..., true, true).
+            seed = fill(0.7, d)
+            nvf_acc = copy(seed)
+            Manopt.add_normal_vector_field_coord!(
+                M1, nvf_acc, nlso.objective[1], nlso.robustifier[1], p1;
+                value_cache = val_cache, jacobian_cache = jc,
+                threshold = lmcso.threshold, mode = lmcso.mode,
+            )
+            @test isapprox(nvf_acc, seed .+ nvf_direct; atol = 1.0e-12, rtol = 1.0e-12)
+
+            # Cross-check with the basis overload of add_normal_vector_field_coord!.
+            nvf_direct_B = zeros(d)
+            Manopt.add_normal_vector_field_coord!(
+                M1, nvf_direct_B, nlso.objective[1], nlso.robustifier[1], p1;
+                value_cache = val_cache, jacobian_cache = jc,
+                threshold = lmcso.threshold, mode = lmcso.mode,
+            )
+            @test isapprox(nvf_direct_B, nvf_direct; atol = 1.0e-12, rtol = 1.0e-12)
+            n_res = Manopt.residuals_count(nlso)
+            vf_lmso = zeros(n_res)
+            vf_lmcso = zeros(n_res)
+            Manopt.get_vector_field!(M1, vf_lmso, lmso, p1)
+            Manopt.get_vector_field!(M1, vf_lmcso, lmcso, p1)
+            @test isapprox(vf_lmso, vf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+            TpM1 = TangentSpace(M1, p1)
+            X0 = Manopt.ZeroTangentVector()
+            cX = [0.3, -0.5]
+            X = get_vector(M1, p1, cX, B1)
+            @test isapprox(get_cost(TpM1, slso, X0), get_cost(TpM1, slco, X0); atol = 1.0e-12, rtol = 1.0e-12)
+            @test isapprox(get_cost(TpM1, slso, X), get_cost(TpM1, slco, X); atol = 1.0e-12, rtol = 1.0e-12)
+
+            # Coordinate normal operator action should match the assembled normal matrix.
+            c_lmso = A_lmso * cX
+            c_lmcso = zeros(d)
+            Manopt.add_normal_linear_operator_coord!(M1, c_lmcso, lmcso, p1, cX)
+            @test isapprox(c_lmso, c_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+
+            # Coordinate residual-space operator action should match operator-form action.
+            y_lmso = zeros(n_res)
+            Manopt.get_linear_operator!(M1, y_lmso, lmso, p1, X)
+            y_lmcso = zeros(n_res)
+            Manopt.add_linear_operator_coord!(M1, y_lmcso, lmcso, p1, cX)
+            @test isapprox(y_lmso, y_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+
+            # Symmetric system coordinate RHS is minus the coordinate normal vector field.
+            rhs_slco = zeros(d)
+            Manopt.get_vector_field!(M1, rhs_slco, slco, p1, B1)
+            @test isapprox(rhs_slco, -nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+
+            # Coordinate linear-system solution coefficients map back to the right tangent vector.
+            dmp = DefaultManoptProblem(TpM1, slco)
+            cnss = Manopt.solve!(dmp, CoordinatesNormalSystemState(M1, p1; basis = B1))
+            X_sub = get_vector(M1, p1, cnss.c, B1)
+            @test isapprox(M1, p1, get_solver_result(dmp, cnss), X_sub; atol = 1.0e-12, rtol = 1.0e-12)
+        end
+
+        @testset "coordinate surrogate robustified high-damping regression" begin
+            B2 = DefaultOrthonormalBasis(); n = length(X1)
+            c2X = [0.3, -0.5]
+            X2 = get_vector(M1, p1, c2X, B2)
+            penalty = 1.0e3
+
+            for r in (CauchyRobustifier(), SoftL1Robustifier())
+                vgf = VectorGradientFunction(
+                    F1, JF1mat, n; function_type = FunctionVectorialType(),
+                    jacobian_type = CoefficientVectorialType(B2),
+                )
+                # Build as a single block with one robustifier (not componentwise wrapping).
+                nlso = ManifoldNonlinearLeastSquaresObjective([vgf], [r])
+                lmso = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = penalty)
+                lmcso = Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(
+                    nlso;
+                    penalty = penalty, basis = B2,
+                    jacobian_cache = [zeros(n, 2) for _ in eachindex(nlso.objective)],
+                    residuals = zeros(n),
+                )
+                # Coordinate surrogate requires explicit caches, which are normally updated in LM steps.
+                get_residuals!(M1, lmcso.value_cache, nlso, p1)
+                for (i, o) in enumerate(nlso.objective)
+                    lmcso.jacobian_cache[i] = get_jacobian(M1, o, p1; basis = B2)
+                end
+
+                slso = Manopt.NormalEquationsObjective(lmso)
+                slco = Manopt.NormalEquationsObjective(lmcso)
+
+                d = number_of_coordinates(M1, B2)
+                n_res = Manopt.residuals_count(nlso)
+                A_lmso = zeros(d, d)
+                A_lmcso = zeros(d, d)
+                Manopt.get_linear_operator!(M1, A_lmso, slso, p1, B2)
+                Manopt.get_linear_operator!(M1, A_lmcso, slco, p1, B2)
+                @test isapprox(A_lmso, A_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+
+                nvf_lmso = zeros(d)
+                nvf_lmcso = zeros(d)
+                Manopt.get_normal_vector_field!(M1, nvf_lmso, lmso, p1, B2)
+                Manopt.get_normal_vector_field_coord!(M1, nvf_lmcso, lmcso, p1)
+                @test isapprox(nvf_lmso, nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+                vf_lmso = zeros(n_res)
+                vf_lmcso = zeros(n_res)
+                Manopt.get_vector_field!(M1, vf_lmso, lmso, p1)
+                Manopt.get_vector_field!(M1, vf_lmcso, lmcso, p1)
+                @test isapprox(vf_lmso, vf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+
+                TpM1 = TangentSpace(M1, p1)
+                X0 = Manopt.ZeroTangentVector()
+                @test isapprox(get_cost(TpM1, slso, X0), get_cost(TpM1, slco, X0); atol = 1.0e-12, rtol = 1.0e-12)
+                # The LM-relevant regression: both surrogate systems should produce the same step.
+                dmp_so = DefaultManoptProblem(TpM1, slso)
+                dmp_co = DefaultManoptProblem(TpM1, slco)
+                cnss_so = Manopt.solve!(dmp_so, CoordinatesNormalSystemState(M1, p1; basis = B2))
+                cnss_co = Manopt.solve!(dmp_co, CoordinatesNormalSystemState(M1, p1; basis = B2))
+                @test isapprox(cnss_so.c, cnss_co.c; atol = 1.0e-12, rtol = 1.0e-12)
+                @test isapprox(
+                    M1, p1, get_solver_result(dmp_so, cnss_so), get_solver_result(dmp_co, cnss_co);
+                    atol = 1.0e-12, rtol = 1.0e-12,
+                )
+            end
+        end
     end
     @testset "Robust Geodesic Regression on the Sphere" begin
         # Testing the case of one vector function and a single robustifier, so that it is applied componentwise
@@ -81,7 +246,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             robustifier = 1.0e-4 ∘ HuberRobustifier(), return_objective = true, return_state = true,
             retraction_method = StabilizedRetraction(default_retraction_method(TM2)),
             # debug = [:Iteration, (:Cost, "f(x): %8.8e "), :damping_term, "\n", :Stop],\
-        );
+        )
         P2b = get_solver_result(s2)
         @test is_point(TM2, P2b)
         @test f2(TM2, P2a; time = ts, data = ps) < f2(TM2, P2b; time = ts, data = ps)
