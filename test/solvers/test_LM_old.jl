@@ -11,6 +11,7 @@ using SparseArrays
 
 @testset "LevenbergMarquardt" begin
     # TODO: Rewrite the following two sets in an easier fashion?
+    # The following block I am not sure what it aims to do or test? More than the accessors from before?
     @testset "Coordinate-based LM tests" begin
         struct TinyBAObservation
             camera_index::Int
@@ -195,6 +196,7 @@ using SparseArrays
         @test get_cost(M, nlso, s.p) < init_cost
         @test norm(M, s.p, get_gradient(lms)) < 1.0e-5
     end
+    # Is this a block approach? We also would need something like that for sure.
     @testset "WIP test" begin
         M = Euclidean(3)
         pts = [

@@ -40,11 +40,11 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
                 evaluation = AllocatingEvaluation(),
                 function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
             )
-            lmso = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = 1.0e-3)
+            lmso = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = 1.0e-5)
             @test startswith(Manopt.status_summary(lmso), "A linear surrogate objective for")
             @test startswith(repr(lmso), "LevenbergMarquardtLinearSurrogateObjective(")
             lmcso = Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(
-                nlso; penalty = 1.0e-3, basis = B1, jacobian_cache = [zeros(n, 2) for _ in eachindex(nlso.objective)],
+                nlso; penalty = 1.0e-5, basis = B1, jacobian_cache = [zeros(n1, 2) for _ in eachindex(nlso.objective)],
                 residuals = zeros(length(X1))
             )
             @test startswith(Manopt.status_summary(lmcso), "A linear surrogate objective in coordinates for")
@@ -57,6 +57,12 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             slso = Manopt.NormalEquationsObjective(lmso)
             slco = Manopt.NormalEquationsObjective(lmcso)
             # Test accessors
+            Manopt.set_parameter!(slso, :Penalty, 1.0e-3)
+            Manopt.set_parameter!(slco, :Penalty, 1.0e-3)
+            @test get_objective(slso) === lmso
+            @test get_objective(slco) === lmcso
+            @test lmso.penalty == 1.0e-3
+            @test lmcso.penalty == 1.0e-3
             d = number_of_coordinates(M1, B1)
             A_lmso = zeros(d, d); A_lmcso = zeros(d, d)
             Manopt.get_linear_operator!(M1, A_lmso, slso, p1, B1)
