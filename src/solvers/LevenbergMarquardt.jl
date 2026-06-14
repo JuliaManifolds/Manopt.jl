@@ -243,8 +243,7 @@ function LevenbergMarquardt!(
     nlsp = DefaultManoptProblem(M, dnlso)
     sub_state_ = maybe_wrap_evaluation_type(sub_state)
     if has_anisotropic_max_stepsize(M)
-        # TODO (RB -> MB) what is this and that is the anisotropic thing?
-        # That's for handling box constraints
+        # This is how to recognize the box constraints as for example Hyperrectangle does
         sub_state_ = LevenbergMarquardtBoxSubsolver(M, sub_state_, p)
     end
     lms = LevenbergMarquardtState(
@@ -276,9 +275,7 @@ function initialize_solver!(
     nlso = get_objective(dmp, true) # unwarp decorators
     get_residuals!(M, lms.residual_values, nlso, lms.p)
     for (o, jb) in zip(nlso.objective, lms.jacobian_f)
-        if !isnothing(jb)
-            get_jacobian!(M, jb, o, lms.p)
-        end
+        !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
     end
     get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_f)
     return lms
@@ -335,9 +332,7 @@ function step_solver!(
         copyto!(M, lms.p, lms.q)
         get_residuals!(M, lms.residual_values, nlso, lms.p)
         for (o, jb) in zip(nlso.objective, lms.jacobian_f)
-            if !isnothing(jb)
-                get_jacobian!(M, jb, o, lms.p)
-            end
+            !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
         end
         get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_f)
     end

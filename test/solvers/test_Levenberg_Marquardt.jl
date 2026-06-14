@@ -44,25 +44,53 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()
         )
         @test norm(F1(M1, r1a1)) < 0.2
-        # Interface II: vgf
-        r1a2 = LevenbergMarquardt(M1, vgf1, p1)
+        # We can even leave out m
+        r1a2 = LevenbergMarquardt(
+            M1, F1, JF1, p1;
+            function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()
+        )
         @test isapprox(M1, r1a1, r1a2; atol = 1.0e-7)
-        # Inferface III: Functions, inplace
+        # We can do the same for in-place
+        r1a3 = copy(M1, p1)
+        LevenbergMarquardt!(
+            M1, F1, JF1, r1a3;
+            function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()
+        )
+        @test isapprox(M1, r1a1, r1a3; atol = 1.0e-7)
+        # We can even leave out both p1 _and_ m
+        r1a4 = LevenbergMarquardt(
+            M1, F1, JF1;
+            function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()
+        )
+        @test isapprox(M1, r1a1, r1a4; atol = 1.0e-7)
+        # Interface II: vgf
+        r1a5 = LevenbergMarquardt(M1, vgf1, p1)
+        @test isapprox(M1, r1a1, r1a5; atol = 1.0e-7)
+        # also in place vgf
+        r1a6 = copy(M1, p1)
+        LevenbergMarquardt!(M1, vgf1, r1a6)
+        @test isapprox(M1, r1a1, r1a6; atol = 1.0e-7)
+        # Inferface III: Functions, in-place
         r1i1 = LevenbergMarquardt(
             M1, F1!, JF1!, p1, m; evaluation = InplaceEvaluation(),
             function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()
         )
         @test isapprox(M1, r1a1, r1i1; atol = 1.0e-7)
-        # Interface IV: vgf inplace
+        # Interface IV: vgf in-place
         r1i2 = LevenbergMarquardt(M1, vgf1!, p1)
         @test isapprox(M1, r1i1, r1i2; atol = 1.0e-7)
+        # try one with accepting early
+        r1i3 = LevenbergMarquardt(M1, vgf1!, p1; damping_reduction_threshold = 0.1)
+        @test isapprox(M1, r1i1, r1i3; atol = 1.0e-7)
+
         # the error is less than the deviation from above
         M1b = Hyperrectangle([-1.0, -1.0], [1.0, 1.0])
         # Then b is out of bounds and we get something where b is on the boundary, namely 1
         # and a is chosen accordingly
         # We have to use the normal coordinates subsolver here then.
-        r1c = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M1b))
-        @test is_point(M1b, r1c)
+        r1c1 = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M1b))
+        @test is_point(M1b, r1c1)
+        # TODO: Can we do that here in a reduced basis as well or do we need a new experiment?
 
         @testset "coordinate surrogate agrees with operator surrogate" begin
             B1 = DefaultOrthonormalBasis(); n1 = length(X1)
@@ -240,7 +268,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         M2 = Manifolds.Sphere(2); p1 = [0.0, 0.0, 1.0]; p2 = [0.0, 1.0, 0.0]
         ts = [0.0, 1 / 3, 2 / 3, 1.0]
         qs = shortest_geodesic(M2, p1, p2, ts)
-        # Move the last two “east”, the other two “west”
+        # Move the middle two “east”, the other two “west”
         ps = [exp(M2, p, [i == 2 ? 0.1 : (i == 3 ? -0.1 : 0.0), 0.0, 0.0]) for (i, p) in enumerate(qs)]
         TM2 = TangentBundle(M2)
         function F2(TM::TangentBundle, P; time, data)
@@ -297,6 +325,24 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         # using ManifoldMakie
         # scatter(M2, ps); geodesics!(M2, geob); geodesics!(M2, geoa);
         # the first curve (same color as points) should hit the end points, the second is “skewed”
+        @testset "Block Robust Geodesic Regression on the Sphere" begin
+            # We group the 4 points from before into start/end (nonrobust) and middle (robust)
+            b1 = [1, 4]; m1 = length(b1)
+            b2 = [2, 3]; m2 = length(b2)
+            vgf2b1 = VectorGradientFunction(
+                (TM, P) -> F2(TM, P; time = ts[b1], data = ps[b1]), (TM, P) -> JF2(TM, P; time = ts[b1], data = ps[b1]), m1;
+                evaluation = AllocatingEvaluation(), function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
+            )
+            vgf2b2 = VectorGradientFunction(
+                (TM, P) -> F2(TM, P; time = ts[b2], data = ps[b2]), (TM, P) -> JF2(TM, P; time = ts[b2], data = ps[b2]), m2;
+                evaluation = AllocatingEvaluation(), function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
+            )
+            P2c = LevenbergMarquardt(TM2, [vgf2b1, vgf2b2], P0; robustifier = [IdentityRobustifier(), 1.0e-4 ∘ HuberRobustifier()])
+            P2d = copy(TM2, P0)
+            LevenbergMarquardt!(TM2, [vgf2b1, vgf2b2], P2d; robustifier = [IdentityRobustifier(), 1.0e-4 ∘ HuberRobustifier()])
+            isapprox(M2, P2c[TM2, :point], P2d[TM2, :point]; atol = 1.0e-5)
+            @test norm(P2c[TM2, :vector] - P2d[TM2, :vector]) < 1.0e-4
+        end
         @testset "show/repr on the LevenbergMarquardt state on NL objective" begin
             @test startswith(repr(o2), "ManifoldNonlinearLeastSquaresObjective(")
             @test Manopt.status_summary(o2) == "A nonlinear least squares objective 1 vectorial block"
@@ -304,7 +350,6 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             @test startswith(Manopt.status_summary(s2), "# Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm")
         end
     end
-    # TODO: Allocating vs in-place F and JacF
     @testset "errors" begin
         sub_fake_f = (args...) -> 0
         sub_state = AllocatingEvaluation()
@@ -330,6 +375,9 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         )
         # For the evaluating case num_components can not be derived in code, hence this errors
         @test_throws ArgumentError LevenbergMarquardt(
+            M, (M, v, p) -> v, (M, X, p) -> X, x0; evaluation = InplaceEvaluation(),
+        )
+        @test_throws ArgumentError LevenbergMarquardt!(
             M, (M, v, p) -> v, (M, X, p) -> X, x0; evaluation = InplaceEvaluation(),
         )
     end

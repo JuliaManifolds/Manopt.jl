@@ -845,7 +845,7 @@ function get_jacobian(
 end
 # (a) a single function, allocating
 function get_jacobian!(
-        M::AbstractManifold, a, vgf::VGF, p, X; Y_cache = nothing,
+        M::AbstractManifold, a, vgf::VGF, p, X; Y_cache = nothing, c_cache = nothing
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:FunctionVectorialType}}
     n = vgf.range_dimension
     mP = PowerManifold(M, get_range(vgf.jacobian_type), n)
