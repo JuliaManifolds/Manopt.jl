@@ -5,33 +5,64 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         # Linear regression with bounds
         q1(x; a, b) = a * x + b
         X1 = [1.0, 2.0, 3.0]
-        # the first two are outliers, the third fits q(x) = 0.5x + 2
+        m = length(X1)
         Y1 = [2.6, 2.9, 3.5]
         # the vectorial function hence is q(x) - y
         res1(a, b; X, Y) = [q1(x; a = a, b = b) - y for (x, y) in zip(X, Y)]
+        function res1!(v, a, b; X, Y)
+            for (i, (x, y)) in enumerate(zip(X, Y))
+                v[i] = q1(x; a = a, b = b) - y
+            end
+            return v
+        end
         # its differential is x for a and 1 for b
         Dres1(a, b; X, Y) = [[x, one(x)] for (x, y) in zip(X, Y)]
+        function Dres1!(D, a, b; X, Y)
+            for (i, (x, y)) in enumerate(zip(X, Y))
+                D[i] .= [x, one(x)]
+            end
+            return D
+        end
         M1 = Euclidean(2)
         F1(M::AbstractManifold, p) = res1(p[1], p[2]; X = X1, Y = Y1)
+        F1!(M::AbstractManifold, v, p) = res1!(v, p[1], p[2]; X = X1, Y = Y1)
         JF1(M::AbstractManifold, p) = Dres1(p[1], p[2]; X = X1, Y = Y1)
+        JF1!(M::AbstractManifold, J, p) = Dres1!(J, p[1], p[2]; X = X1, Y = Y1)
         JF1mat(M::AbstractManifold, p) = hcat(Dres1(p[1], p[2]; X = X1, Y = Y1)...)'
         vgf1 = VectorGradientFunction(
-            F1, JF1, length(X1); evaluation = AllocatingEvaluation(),
+            F1, JF1, m; evaluation = AllocatingEvaluation(),
+            function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
+        )
+        vgf1! = VectorGradientFunction(
+            F1!, JF1!, m; evaluation = InplaceEvaluation(),
             function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
         )
         p1 = [0.0, 0.0]
-        r1 = LevenbergMarquardt(M1, vgf1, p1)
-        # F1 is in default form, but for JF1 we have to declare it; we can also start without p1
-        r1_2 = LevenbergMarquardt(M1, F1, JF1; jacobian_type = FunctionVectorialType())
-        @test isapprox(M1, r1, r1_2; atol = 1.0e-7)
+        # Interfacve I: Functions
+        r1a1 = LevenbergMarquardt(
+            M1, F1, JF1, p1, m;
+            function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()
+        )
+        @test norm(F1(M1, r1a1)) < 0.2
+        # Interface II: vgf
+        r1a2 = LevenbergMarquardt(M1, vgf1, p1)
+        @test isapprox(M1, r1a1, r1a2; atol = 1.0e-7)
+        # Inferface III: Functions, inplace
+        r1i1 = LevenbergMarquardt(
+            M1, F1!, JF1!, p1, m; evaluation = InplaceEvaluation(),
+            function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()
+        )
+        @test isapprox(M1, r1a1, r1i1; atol = 1.0e-7)
+        # Interface IV: vgf inplace
+        r1i2 = LevenbergMarquardt(M1, vgf1!, p1)
+        @test isapprox(M1, r1i1, r1i2; atol = 1.0e-7)
         # the error is less than the deviation from above
-        @test norm(F1(M1, r1)) < 0.2
         M1b = Hyperrectangle([-1.0, -1.0], [1.0, 1.0])
         # Then b is out of bounds and we get something where b is on the boundary, namely 1
         # and a is chosen accordingly
         # We have to use the normal coordinates subsolver here then.
-        r1b = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M1b))
-        @test is_point(M1b, r1b)
+        r1c = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M1b))
+        @test is_point(M1b, r1c)
 
         @testset "coordinate surrogate agrees with operator surrogate" begin
             B1 = DefaultOrthonormalBasis(); n1 = length(X1)

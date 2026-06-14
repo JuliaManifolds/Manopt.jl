@@ -887,6 +887,7 @@ end
 function get_jacobian!(
         M::AbstractManifold, a, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:FunctionVectorialType}, p, X;
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
+        Y_cache = nothing,
     ) where {FT}
     n = vgf.range_dimension
     mP = PowerManifold(M, range, n)
@@ -1175,7 +1176,8 @@ function add_adjoint_jacobian!(
 end
 # Part II: mutating vgf (a) single gradient function
 function add_adjoint_jacobian!(
-        M::AbstractManifold, X, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:FunctionVectorialType}, p, a::AbstractVector
+        M::AbstractManifold, X, vgf::AbstractVectorGradientFunction{<:InplaceEvaluation, FT, <:FunctionVectorialType}, p, a::AbstractVector;
+        Y_cache = nothing,
     ) where {FT}
     n = vgf.range_dimension
     mP = PowerManifold(M, get_range(vgf.jacobian_type), n)
