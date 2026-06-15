@@ -28,6 +28,7 @@ We also unified a few of the internal solver state constructors.
 * the keyword `initial_jacobian_f` within `LevenbergMarquardt` is unified in naming to the residual values vector and called `initial_jacobian_matrices`.
   if you call `LevenbergMarquardt` with a single vector component, also a single matrix is allowed.
 * an internal field of the solver state of Levenberg-Marqwuardt was called `jacobian_f` the same as the functions whose result it meant to cache if applicable. To distinguish both, the field is now called `jacobian_matrices`.
+* title of "How to define the cost in the embedding" tutorial (#615)
 
 ### Fixed
 
