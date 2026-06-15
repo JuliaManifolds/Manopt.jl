@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.40] unreleased
 
+### Changed
+
+* title of "How to define the cost in the embedding" tutorial (#615)
+
 ### Fixed
 
 * miscellaneous broken links in the documentation. (#614)
