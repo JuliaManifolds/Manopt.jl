@@ -230,7 +230,7 @@ function _add_gradient!(
 end
 # Gradient for a single summand from above, that is a single (robustified) block where the
 # robustifier is applied to every component / coordinate
-function _get_gradient!(
+function _add_gradient!(
         M, X, vgf::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p;
         value_cache = get_value(M, vgf, p), jacobian_cache = nothing,
     )
