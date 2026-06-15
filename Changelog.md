@@ -27,7 +27,7 @@ We also unified a few of the internal solver state constructors.
 * the constructor for the [Levenberg-Marquardt state](https://manoptjl.org/stable/solvers/LevenbergMarquardt/#Manopt.LevenbergMarquardtState) has been unified with the remaining states, to take the `sub_problem` and `sub_state` arguments as second and third positional arguments, respectively.
 * the keyword `initial_jacobian_f` within `LevenbergMarquardt` is unified in naming to the residual values vector and called `initial_jacobian_matrices`.
   if you call `LevenbergMarquardt` with a single vector component, also a single matrix is allowed.
-* an internal field of the solver state of Levenberg-Marqwuadrt was called `jacobian_f` the same as the functions whose result it meant to cache if applicable. To distinguish both, the field is now called `jacobian_matrices`.
+* an internal field of the solver state of Levenberg-Marqwuardt was called `jacobian_f` the same as the functions whose result it meant to cache if applicable. To distinguish both, the field is now called `jacobian_matrices`.
 
 ### Fixed
 
