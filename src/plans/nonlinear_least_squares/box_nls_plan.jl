@@ -58,15 +58,6 @@ function hessian_value(ha::CoordinatesNormalSystemState, M::AbstractManifold, p,
     return dot(view(ha.A, b, :), get_coordinates(M, p, Y, ha.basis))
 end
 
-function initialize_solver!(amp::AbstractManoptProblem, dss::LevenbergMarquardtBoxSubsolver)
-    initialize_solver!(amp, dss.internal_state)
-    return dss
-end
-function stop_solver!(amp::AbstractManoptProblem, ams::LevenbergMarquardtBoxSubsolver, k)
-    return stop_solver!(amp, ams.internal_state, k)
-end
-
-
 function LevenbergMarquardtBoxSubsolver(::AbstractManifold, sub_state_::AbstractManoptSolverState, p)
     return LevenbergMarquardtBoxSubsolver{typeof(sub_state_), number_eltype(p)}(
         sub_state_,
