@@ -20,8 +20,8 @@ Describes a Gradient based descent algorithm, with
   the linearized subproblem in each iteration.
 * `candidate_acceptance_threshold`:       Scaling factor for the sufficient cost decrease threshold required
   to accept new proposal points. Allowed range: `0 < η < 1`.
-* `jacobian_f`:                           the current Jacobian of ``F`` in matrix form. Set to `nothing` if
-  another representation is used.
+* `jacobian_matrices`:                           the current Jacobian of ``F`` in matrix form per block, hence a vector of matrices.
+   This is (by default) set to `nothing` if another representation is used.
 * `minimum_acceptable_model_improvement`: the minimum improvement in the model function that
   is required to accept a new point; if this is not met, the new point is rejected and
   the damping term is increased.
@@ -74,7 +74,7 @@ mutable struct LevenbergMarquardtState{
     damping_term_min::R
     damping_term_max::R
     direction::T
-    jacobian_f::TJac
+    jacobian_matrices::TJac
     minimum_acceptable_model_improvement::R
     p::P
     q::P
@@ -89,18 +89,18 @@ mutable struct LevenbergMarquardtState{
             candidate_acceptance_threshold::R, damping_increase_factor::R, damping_increase_threshold::R,
             damping_reduction_threshold::R, damping_reduction_factor::R, damping_term::R,
             damping_term_min::R, damping_term_max::R,
-            direction::T, jacobian_f::TJac, minimum_acceptable_model_improvement::R, p::P, q::P,
+            direction::T, jacobian_matrices::TJac, minimum_acceptable_model_improvement::R, p::P, q::P,
             residual_values::TRes, retraction_method::TRTM, stopping_criterion::SC, X::T
         ) where {P, T, R <: Real, Pr, St <: AbstractManoptSolverState, SC <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac}
         return new{P, T, R, Pr, St, SC, TRTM, TRes, TJac}(
             candidate_acceptance_threshold, damping_increase_factor, damping_increase_threshold,
             damping_reduction_threshold, damping_reduction_factor, damping_term, damping_term_min, damping_term_max,
-            direction, jacobian_f, minimum_acceptable_model_improvement, p, q, residual_values,
+            direction, jacobian_matrices, minimum_acceptable_model_improvement, p, q, residual_values,
             retraction_method, stopping_criterion, sub_problem, sub_state, X
         )
     end
     function LevenbergMarquardtState(
-            M::AbstractManifold, sub_problem, sub_state, initial_residual_values, initial_jacobian_f = nothing;
+            M::AbstractManifold, sub_problem, sub_state, initial_residual_values, initial_jacobian_matrices = nothing;
             p = rand(M), X = zero_vector(M, p), direction = copy(M, p, X),
             stopping_criterion::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
@@ -115,7 +115,7 @@ mutable struct LevenbergMarquardtState{
             minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
         )
         # TODO: what if initial:Jacobian_f is still nothing? Fill it?
-        # We could try checking if the provided sub_state actually needs `jacobian_f` or not but it's just about having a nicer error message.
+        # We could try checking if the provided sub_state actually needs `jacobian_matrices` or not but it's just about having a nicer error message.
         (candidate_acceptance_threshold <= 0 || candidate_acceptance_threshold >= 1) && throw(ArgumentError("The value of `candidate_acceptance_threshold` must be strictly between 0 and 1, received $(candidate_acceptance_threshold)"))
         (damping_term_min <= 0) && throw(ArgumentError("The value of damping_term_min must be strictly above 0, received $damping_term_min"))
         (damping_increase_factor <= 1) && throw(ArgumentError("The value of `damping_increase_factor must be strictly above 1, received $damping_increase_factor"))
@@ -132,7 +132,7 @@ mutable struct LevenbergMarquardtState{
             damping_increase_factor = convert(R, damping_increase_factor), damping_increase_threshold = convert(R, damping_increase_threshold),
             damping_reduction_threshold = convert(R, damping_reduction_threshold), damping_reduction_factor = convert(R, damping_reduction_factor),
             damping_term = convert(R, damping_term), damping_term_min = convert(R, damping_term_min), damping_term_max = convert(R, damping_term_max),
-            direction = direction, jacobian_f = initial_jacobian_f, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
+            direction = direction, jacobian_matrices = initial_jacobian_matrices, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
             p = p, q = copy(M, p), residual_values = initial_residual_values, retraction_method = retraction_method, stopping_criterion = stopping_criterion, X = X,
         )
     end
@@ -168,7 +168,7 @@ function show(io::IO, lms::LevenbergMarquardtState)
     print(io, ", damping_increase_factor = ", lms.damping_increase_factor, ", damping_increase_threshold = ", lms.damping_increase_threshold)
     print(io, ", damping_reduction_threshold = ", lms.damping_reduction_threshold, ", damping_reduction_factor = ", lms.damping_reduction_factor)
     print(io, ", damping_term = ", lms.damping_term, ", damping_term_min = ", lms.damping_term_min, ", damping_term_max = ", lms.damping_term_max)
-    print(io, ", direction = ", lms.direction, ", jacobian_f = ", lms.jacobian_f, ". minimum_acceptable_model_improvement = ", lms.minimum_acceptable_model_improvement)
+    print(io, ", direction = ", lms.direction, ", jacobian_matrices = ", lms.jacobian_matrices, ". minimum_acceptable_model_improvement = ", lms.minimum_acceptable_model_improvement)
     print(io, ", p= ", lms.p, ", q = ", lms.q, ", residual_values = ", lms.residual_values, ", retraction_method = ", lms.retraction_method, ", stopping_criterion = ", lms.stop, ", X = ", lms.X)
     return print(io, ")")
 end

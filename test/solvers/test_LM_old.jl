@@ -182,7 +182,7 @@ using SparseArrays
 
         lms = LevenbergMarquardt(
             M, Fs, p0;
-            initial_jacobian_f = [Manopt.allocate_jacobian(M, fi) for fi in Fs],
+            initial_jacobian_matrices = [Manopt.allocate_jacobian(M, fi) for fi in Fs],
             robustifier = robustifier,
             stopping_criterion = StopAfterIteration(75) | StopWhenGradientNormLess(1.0e-11) | StopWhenStepsizeLess(1.0e-11),
             sub_state = CoordinatesNormalSystemState(M; A = A),
@@ -192,7 +192,7 @@ using SparseArrays
         s = get_state(lms)
 
         @test s.sub_state isa CoordinatesNormalSystemState
-        @test all(J isa BlockNonzeroMatrix for J in s.jacobian_f)
+        @test all(J isa BlockNonzeroMatrix for J in s.jacobian_matrices)
         @test get_cost(M, nlso, s.p) < init_cost
         @test norm(M, s.p, get_gradient(lms)) < 1.0e-5
     end

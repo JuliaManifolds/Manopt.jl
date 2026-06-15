@@ -75,7 +75,7 @@ as well as in general using the model imprevement parameter ``m_k`` in several p
 * `damping_term_max = Inf`:             upper bound ``μ_{$(_tex(:text, "u"))}`` for the damping ``μ_k`` throughout the iterations
 * `initial_damping_term=damping_term_min`: initial damping ``μ_0``
 * `initial_residual_values = zeros(m)`: a cache for the vector of residuals, `m` is the number of residual blocks
-* `initial_jacobian_f`: a cache for the evaluated Jacobians (currently only used if `use_unified_basis = true`)
+* `initial_jacobian_matrices`: a cache for the evaluated Jacobians (currently only used if `use_unified_basis = true`)
 $(_kwargs(:retraction_method))
 * `scaling_threshold = 1.0e-6`:         a threshold `ε` to bound the scaling parameter `α` in the robust case away from `1`, see [`get_LevenbergMarquardt_scaling`](@ref)
 * `scaling_mode = :Default`:            specify the scaling stabilization mode, see [`get_LevenbergMarquardt_scaling`](@ref)
@@ -154,12 +154,15 @@ function LevenbergMarquardt(
 end
 calls_with_kwargs(::typeof(LevenbergMarquardt)) = (LevenbergMarquardt!,)
 
-function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso, damping_term_min, threshold, mode, residuals, jacobian_f)
+function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso, damping_term_min, threshold, mode, residuals, jacobian_matrices)
     if use_fast_coordinate_subobjective
+        # If we just have one vector function, the jacobians in the following should be a [M,] of a single matrix
+        # ...to make this a bit easier for a user, we also accept a matrix here and wrap it if necessary
+        _jm = jacobian_matrices isa AbstractMatrix ? [jacobian_matrices] : jacobian_matrices
         return NormalEquationsObjective(
             LevenbergMarquardtLinearSurrogateCoordinatesObjective(
                 nlso; penalty = damping_term_min, threshold = threshold, mode = mode,
-                residuals = residuals, jacobian_cache = jacobian_f,
+                residuals = residuals, jacobian_cache = _jm,
             ),
         )
     else
@@ -228,12 +231,16 @@ function LevenbergMarquardt!(
         initial_damping_term::Real = damping_term_min,
         debug = is_tutorial_mode() ? [DebugWarnIfCostIncreases()] : [],
         initial_residual_values = zeros(number_eltype(p), residuals_count(get_objective(nlso))),
-        initial_jacobian_f = fill(nothing, length(get_objective(nlso).objective)),
+        use_unified_basis::Bool = false,
+        initial_jacobian_matrices = if use_unified_basis
+            [Manopt.allocate_jacobian(M, vgf; T = eltype(p)) for vgf in get_objective(nlso).objective]
+        else # one nothing per block
+            fill(nothing, length(get_objective(nlso).objective))
+        end,
         scaling_threshold::Real = 1.0e-6,
         scaling_mode::Symbol = :Default,
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
-        use_unified_basis::Bool = false,
-        sub_objective = construct_lm_subobjective(use_unified_basis, nlso, damping_term_min, scaling_threshold, scaling_mode, initial_residual_values, initial_jacobian_f),
+        sub_objective = construct_lm_subobjective(use_unified_basis, nlso, damping_term_min, scaling_threshold, scaling_mode, initial_residual_values, initial_jacobian_matrices),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_state = ConjugateResidualState(TangentSpace(M, p), sub_objective),
         kwargs..., #collect rest
@@ -247,7 +254,7 @@ function LevenbergMarquardt!(
         sub_state_ = LevenbergMarquardtBoxSubsolver(M, sub_state_, p)
     end
     lms = LevenbergMarquardtState(
-        M, sub_problem, sub_state_, initial_residual_values, initial_jacobian_f;
+        M, sub_problem, sub_state_, initial_residual_values, initial_jacobian_matrices;
         p = p,
         damping_increase_factor = damping_increase_factor,
         damping_increase_threshold = damping_increase_threshold,
@@ -274,10 +281,10 @@ function initialize_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp, true) # unwarp decorators
     get_residuals!(M, lms.residual_values, nlso, lms.p)
-    for (o, jb) in zip(nlso.objective, lms.jacobian_f)
+    for (o, jb) in zip(nlso.objective, lms.jacobian_matrices)
         !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
     end
-    get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_f)
+    get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_matrices)
     return lms
 end
 
@@ -331,10 +338,10 @@ function step_solver!(
     if ρ >= lms.candidate_acceptance_threshold # enough improvement: accept candidate
         copyto!(M, lms.p, lms.q)
         get_residuals!(M, lms.residual_values, nlso, lms.p)
-        for (o, jb) in zip(nlso.objective, lms.jacobian_f)
+        for (o, jb) in zip(nlso.objective, lms.jacobian_matrices)
             !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
         end
-        get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_f)
+        get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_matrices)
     end
     return lms
 end
@@ -354,9 +361,7 @@ end
 # Special cases for
 
 function get_last_stepsize(
-        dmp::DefaultManoptProblem,
-        lms::LevenbergMarquardtState,
-        k,
+        dmp::DefaultManoptProblem, lms::LevenbergMarquardtState, k,
     )
     M = get_manifold(dmp)
     return norm(M, lms.p, lms.direction)

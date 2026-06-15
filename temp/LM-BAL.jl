@@ -693,11 +693,11 @@ function construct_bal_problem(data::BALDataset)
 
     f = [
         VectorGradientFunction(
-            F[i], JF[i], 2;
-            evaluation = InplaceEvaluation(),
-            function_type = FunctionVectorialType(),
-            jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis()),
-        ) for i in 1:data.num_observations
+                F[i], JF[i], 2;
+                evaluation = InplaceEvaluation(),
+                function_type = FunctionVectorialType(),
+                jacobian_type = CoefficientVectorialType(DefaultOrthonormalBasis()),
+            ) for i in 1:data.num_observations
     ]
 
     return M, f, F
