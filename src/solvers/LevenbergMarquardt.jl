@@ -75,7 +75,7 @@ as well as in general using the model imprevement parameter ``m_k`` in several p
 * `damping_term_max = Inf`:             upper bound ``μ_{$(_tex(:text, "u"))}`` for the damping ``μ_k`` throughout the iterations
 * `initial_damping_term=damping_term_min`: initial damping ``μ_0``
 * `initial_residual_values = zeros(m)`: a cache for the vector of residuals, `m` is the number of residual blocks
-* `initial_jacobian_matrices`: a cache for the evaluated Jacobians (currently only used if `use_unified_basis = true`)
+* `initial_jacobian_matrices`: a cache for the evaluated Jacobians (currently only used if `use_unified_basis = true`, then initialised to a vector of jacobian matrices, otherwise ignored)
 $(_kwargs(:retraction_method))
 * `scaling_threshold = 1.0e-6`:         a threshold `ε` to bound the scaling parameter `α` in the robust case away from `1`, see [`get_LevenbergMarquardt_scaling`](@ref)
 * `scaling_mode = :Default`:            specify the scaling stabilization mode, see [`get_LevenbergMarquardt_scaling`](@ref)
@@ -89,7 +89,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(
 * `sub_problem = `[`DefaultManoptProblem`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the sub problem to be solved. This should usually be phrased on the tangent space at the current iterate
 * `sub_state = `[`ConjugateResidualState`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the solver for the surrogate, see also [`conjugate_residual`](@ref)
 * `use_unified_basis = false`:           specify to use a single basis for all Jacobian evaluations at a certain iterate, see `sub_objective`
-
+  this requires that all Jacobians involved are of tupe [`CoefficientVectorialType`](@ref), since only then a jacobian can be represented as a matrix,
+  and then here unified in the sense that all use the same basis.
 $(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
