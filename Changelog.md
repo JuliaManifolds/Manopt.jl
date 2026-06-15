@@ -18,6 +18,10 @@ This is a breaking change since the JuMP extension is dropped.
 * `HagerZhangLinesearch` stepsize, a state-of-the-art line search for smooth objectives with cubic interpolation and adaptive Wolfe condition checking. (#554)
 * Stopping criteria can now be initialized using `initialize_stepsize!`, similar to solvers. (#554)
 
+### Changed
+
+* title of "How to define the cost in the embedding" tutorial (#615)
+
 ### Fixed
 
 * Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (#569)

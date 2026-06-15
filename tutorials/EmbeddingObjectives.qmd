@@ -1,5 +1,5 @@
 ---
-title: "How to define the cost in the embedding"
+title: "Obtain the Riemannian gradient and Hessian from their Euclidean analogues in the embedding"
 author: "Ronny Bergmann"
 ---
 
