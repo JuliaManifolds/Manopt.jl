@@ -135,13 +135,19 @@ for (i, d) in enumerate(matrix_sizes)
     #
     # Least Squares Hubertized
     state1 = LevenbergMarquardt(
-        M, vgfs, p0; robustifier = rs, damping_increase_factor = 4.0,
-        candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-7, return_state = true
-    )
+        M, vgfs, p0;
+        robustifier = rs,
+        scaling_mode = :Strict,
+        scaling_threshold = 1.0e-4,
+        damping_increase_factor = 4.0,
+        candidate_acceptance_threshold = 0.2,
+        damping_term_min = 1.0e-7,
+        return_state = true,
+        )
     iter1 = get_count(state1, :Iterations)
     p1 = get_solver_result(state1)
     time1 = @be LevenbergMarquardt(
-        $M, $vgfs, $p0; robustifier = $rs,
+        $M, $vgfs, $p0; robustifier = $rs, scaling_mode = :Strict, scaling_threshold = 1.0e-4,
         damping_increase_factor = 4.0, candidate_acceptance_threshold = 0.2, damping_term_min = 1.0e-7,
     ) samples = 5 evals = 3
     state2 = mesh_adaptive_direct_search(
