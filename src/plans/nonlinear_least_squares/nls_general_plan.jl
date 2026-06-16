@@ -970,7 +970,10 @@ function get_normal_linear_operator!(
     return d
 end
 function get_normal_linear_operator!(M::AbstractManifold, d, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, c, B::AbstractBasis; kwargs...)
-    A = get_normal_linear_operator(M, o, r, p, B; kwargs...)
+    # Lazy fallback: Create matrix and perform Ac inplace of d
+    dA = number_of_coordinates(M, B)
+    A = zeros(eltype(d), dA, dA)
+    A = add_normal_linear_operator!(M, A, o, r, p, B; kwargs...)
     d .= A * c
     return d
 end
