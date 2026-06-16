@@ -37,6 +37,10 @@ using Manifolds, Manopt, Test
             [f1, f2], [j1, j2], 2;
             function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType(),
         )
+        vgf1 = VectorGradientFunction(f, JF, 2; jacobian_type = FunctionVectorialType())
+        nlsoRobust = ManifoldNonlinearLeastSquaresObjective(
+            [vgf1, vgf1], [HuberRobustifier(), IdentityRobustifier()]
+        )
         nlsoCi = ManifoldNonlinearLeastSquaresObjective(
             [f1, f2], [j1!, j2!], 2; evaluation = InplaceEvaluation(),
             function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType(),
@@ -68,17 +72,6 @@ using Manifolds, Manopt, Test
                 @test G == get_jacobian(M, vgf, p)
                 @test G == Gt
             end
-            @testset "Linear Surrogate" begin
-                lmlso = LevenbergMarquardtLinearSurrogateObjective(nlso)
-                sG = get_gradient(M, lmlso, p, X)
-                sG! = zero_vector(M, p)
-                sG = get_gradient!(M, sG!, lmlso, p, X)
-                @test isapprox(M, p, sG, sG!)
-                sH = get_hessian(M, lmlso, p, X, Y)
-                sH! = zero_vector(M, p)
-                sH = get_hessian!(M, sH!, lmlso, p, X, Y)
-                @test isapprox(M, p, sH, sH!)
-            end
             c = get_cost(M, nlso, p)
             @test c ≈ 0.5
             fill!(V, 0.0)
@@ -89,6 +82,33 @@ using Manifolds, Manopt, Test
             @test startswith(repr(nlso), "ManifoldNonlinearLeastSquaresObjective(")
             @test startswith(Manopt.status_summary(nlso), "A nonlinear least squares objective")
         end
+        @testset "Linear Surrogate accessors" begin
+            X = [0.25, 0.25]
+            Y = [0.25, -0.25]
+            for nlso in [nlsoFa, nlsoFi, nlsoCa, nlsoRobust, nlsoCi, nlsoJa, nlsoJi]
+                lmlso = LevenbergMarquardtLinearSurrogateObjective(nlso)
+                sG = get_gradient(M, lmlso, p, X)
+                sG! = zero_vector(M, p)
+                sG = get_gradient!(M, sG!, lmlso, p, X)
+                @test isapprox(M, p, sG, sG!)
+                sH = get_hessian(M, lmlso, p, X, Y)
+                sH! = zero_vector(M, p)
+                sH = get_hessian!(M, sH!, lmlso, p, X, Y)
+                @test isapprox(M, p, sH, sH!)
+                nvf = Manopt.get_normal_vector_field(M, lmlso, p, DefaultOrthogonalBasis())
+                nvf! = zeros(2)
+                Manopt.get_normal_vector_field!(M, nvf!, lmlso, p, DefaultOrthogonalBasis())
+                @test isapprox(nvf, nvf!)
+                @test norm(nvf) ≈ 0 atol=1e-14
+                nlo = Manopt.get_normal_linear_operator(M, lmlso, p, X)
+                nlo! = zeros(2)
+                Manopt.get_normal_linear_operator!(M, nlo!, lmlso, p, X)
+                @test isapprox(nlo, nlo!)
+            end
+        end
+    end
+    @testset "Dummy decorator pass through" begin
+
     end
     @testset "Test Change of basis" begin
         J = ones(2, 2)
