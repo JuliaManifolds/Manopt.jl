@@ -33,7 +33,7 @@ qs_true = geodesic(S, p_true, X_true, ts_true)
 geo_line = geodesic(S, p_true, X_true, range(-T, T; length = 1000))
 
 orig_color = ptc["mutedcyan"]
-noisy_color = ptc["mutedwine"]
+noisy_color = ptc["mutedpurple"]
 
 lsq_color = ptc["mutedsand"]
 robust_color = ptc["mutedgreen"]

@@ -1,4 +1,4 @@
-using Chairmarks, CSV, DataFrames, Manopt, Manifolds, LinearAlgebra
+using Chairmarks, CSV, DataFrames, LinearAlgebra, Manopt, Manifolds,  Random
 
 raw"""
     generate_data(d)
@@ -70,7 +70,6 @@ This is computed in-place of `y`
 DFi(M, p, X; i, A, B) = - p * X * B[:, i]
 DFi!(M, y, p, X; i, A, B) = (y .= - p * X * B[:, i])
 
-
 raw"""
     adjointDFi(M, p, y; i, A, B)
     adjointDFi!(M, X, p, y; i, A, B)
@@ -88,20 +87,6 @@ This is computed in-place of `X`.
 adjointDFi(M, p, y; i, A, B) = - skew(p' * y * B[:, i]')
 adjointDFi!(M, a, p, y; i, A, B) = (a .= - skew(p' * y * B[:, i]'))
 
-"""
-    rotation_matrix(d, i, j, α)
-
-Create the rotation matrix in ``ℝ^{d×d}`` with a rotation in the ``i,j``-plance of an angle of `α`.
-"""
-function rotation_matrix(d, i, j, α)
-    R = Matrix{Float64}(I, d, d)
-    R[i, i] = cos(α)
-    R[j, i] = cos(α)
-    R[j, i] = -sin(α)
-    R[i, j] = sin(α)
-    return R
-end
-
 # Statistics:
 matrix_sizes = collect(3:15)
 num_experiments = length(matrix_sizes)
@@ -117,10 +102,10 @@ iterations_LTMADS = zeros(Int, num_experiments)
 for (i, d) in enumerate(matrix_sizes)
     A = generate_data(d)
     n = size(A, 2) # number of summands in the vectorial cost sum
-    p_star = Matrix{Float64}(I, d, d)
-    for j in 1:(d - 1)
-        p_star *= rotation_matrix(d, j, j + 1, π / (4 * (d - 1)))
-    end
+    M = Rotations(d)
+    Random.seed!(42)
+    e = Matrix{Float64}(I, d, d)
+    p_star = exp(M, e, rand(M; vector_at=e, σ = 0.5/d))
     B = copy(A)
     # and generate a few outliers in [3,6] so it also works already for d=3
     B[2, 4] += 0.1;  B[3, 1] += 0.1; B[3, 2] += 0.1; B[1, 6] += 0.1
@@ -141,10 +126,10 @@ for (i, d) in enumerate(matrix_sizes)
     ]
     rs = [ 1.0e-5 ∘ HuberRobustifier() for _ in 1:n ]
 
-    M = Rotations(d)
-    @info "d=$d (n=$n) dim: $(manifold_dimension(M))"
     # Start with the identity
     p0 = Matrix{Float64}(I, d, d)
+    @info " "
+    @info "d=$d (n=$n) dim=$(manifold_dimension(M)), distance=$(distance(M, p0, p_star))"
     #
     # Solver runs. Both (a) an individual run to obtain stats like maxiter
     #
@@ -182,6 +167,8 @@ for (i, d) in enumerate(matrix_sizes)
     iterations_LTMADS[i] = iter2
     @info "rLM   : #$(iter1) | $(mean(time1).time) s | $(final_cost_rLM[i])"
     @info "LTMADS: #$(iter2) | $(mean(time2).time) s | $(final_cost_LTMADS[i])"
+    @info "Cost diff f2-f1 : $(final_cost_LTMADS[i] - final_cost_rLM[i])"
+    @info "Cost p_star : $(f(M, p_star; A = A, B = B)) p0: $(f(M, p0; A = A, B = B)) and dist p1-pstar $(distance(M, p1, p_star))"
 end
 CSV.write(
     "SOd.csv",

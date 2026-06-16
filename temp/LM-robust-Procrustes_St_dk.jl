@@ -1,4 +1,4 @@
-using Chairmarks, CSV, DataFrames, Manopt, Manifolds, LinearAlgebra
+using Chairmarks, CSV, DataFrames,  LinearAlgebra, Manopt, Manifolds, Random
 
 raw"""
     generate_data(d)
@@ -89,20 +89,6 @@ This is computed in-place of `X`.
 adjointDFi(M, p, y; i, A, B) = project(M, p, - y * B[:, i]')
 adjointDFi!(M, X, p, y; i, A, B) = project!(M, X, p, - y * B[:, i]')
 
-"""
-    rotation_matrix(d, i, j, α)
-
-Create the rotation matrix in ``ℝ^{d×d}`` with a rotation in the ``i,j``-plance of an angle of `α`.
-"""
-function rotation_matrix(d, i, j, α)
-    R = Matrix{Float64}(I, d, d)
-    R[i, i] = cos(α)
-    R[j, i] = cos(α)
-    R[j, i] = -sin(α)
-    R[i, j] = sin(α)
-    return R
-end
-
 # Statistics: all are 13 experiments
 matrix_sizes = collect(3:15)
 # matrix_sizes = collect(3:3:39)
@@ -121,11 +107,12 @@ iterations_LTMADS = zeros(Int, num_experiments)
 for (i, (d, k)) in enumerate(zip(matrix_sizes, reduced))
     A = generate_data(d)
     n = size(A, 2) # number of summands in the vectorial cost sum
-    p_star = Matrix{Float64}(I, d, d)
-    # split on the k ones, since otherwise 1/3 vanishes later in the quotient
-    for j in 1:(k - 1)
-        p_star *= rotation_matrix(d, j, j + 1, π / (4 * (k - 1)))
-    end
+
+    Mr = Rotations(d)
+    Random.seed!(42)
+    e = Matrix{Float64}(I, d, d)
+    p_star = exp(Mr, e, rand(Mr; vector_at=e, σ = 0.5/d))
+
     B = copy(A)
     # and generate a few outliers in [3,6] so it also works already for d=3
     B[2, 4] += 0.1;  B[3, 1] += 0.1; B[3, 2] += 0.1; B[1, 6] += 0.1
@@ -149,11 +136,12 @@ for (i, (d, k)) in enumerate(zip(matrix_sizes, reduced))
     rs = [ 1.0e-5 ∘ HuberRobustifier() for _ in 1:n ]
 
     M = Stiefel(d, k)
-    @info "d=$d, k=$k (n=$n) dim: $(manifold_dimension(M))"
     # Start with the identity
     p0 = Matrix{Float64}(I, d, d)
     # cut to Grassmann
     p0 = p0[:, 1:k]
+    @info " "
+    @info "d=$d, k=$k (n=$n) dim=$(manifold_dimension(M)) distance=$(distance(M, p0, p_star))"
     #
     # Solver runs. Both (a) an individual run to obtain stats like maxiter
     #
