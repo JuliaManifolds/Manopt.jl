@@ -623,18 +623,7 @@ function CoordinatesNormalSystemState(
 end
 
 # The objective here should be a LevenbergMarquardtLinearSurrogateObjective, but might be decorated as well, so for now lets not type it (yet?)
-function solve!(dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective}, cnss::CoordinatesNormalSystemState{AllocatingEvaluation})
-    # Update A and b
-    TpM = get_manifold(dmp)
-    M = base_manifold(TpM)
-    p = base_point(TpM)
-    neo = get_objective(dmp)
-    get_linear_operator!(M, cnss.A, neo, p, cnss.basis)
-    get_vector_field!(M, cnss.b, neo, p, cnss.basis)
-    cnss.c = cnss.linsolve!!(cnss.A, -cnss.b)
-    return cnss
-end
-function solve!(dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective}, cnss::CoordinatesNormalSystemState{InplaceEvaluation})
+function solve!(dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective}, cnss::CoordinatesNormalSystemState{E}) where {E<:AbstractEvaluationType}
     # Update A and b
     TpM = get_manifold(dmp)
     M = base_manifold(TpM)
@@ -643,7 +632,7 @@ function solve!(dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjec
     get_linear_operator!(M, cnss.A, neo, p, cnss.basis)
     get_vector_field!(M, cnss.b, neo, p, cnss.basis)
     cnss.b .*= -1
-    cnss.linsolve!!(cnss.c, cnss.A, cnss.b)
+    (E===AllocatingEvaluation) ? (cnss.c = cnss.linsolve!!(cnss.A, cnss.b)) : (cnss.linsolve!!(cnss.c, cnss.A, cnss.b))
     return cnss
 end
 
