@@ -118,6 +118,18 @@ function show(io::IO, neo::NormalEquationsObjective{E}) where {E}
     return print(io, ")")
 end
 
+function status_summary(neo::NormalEquationsObjective; context::Symbol = :default)
+    (context === :short) && return repr(neo)
+    (context === :inline) && return "Normal equation objective for the objective $(status_summary(neo.objective; context = context))"
+    return """
+    A Normal equation objective to be used within Levenberg Marquardt to solve the surrogate
+
+    ## Objective
+    $(_in_str(status_summary(neo.objective; context=context); headers = 1, indent = 1))"""
+end
+
+
+
 get_objective(slsmo::NormalEquationsObjective) = slsmo.objective
 
 # set parameter just passes down to the inner objective

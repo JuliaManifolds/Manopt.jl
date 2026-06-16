@@ -128,6 +128,8 @@ using Manifolds, Manopt, Test
                 @test isapprox(nloBA, nloBA!)
                 # the normal ones are mapped to _ ones for the NormalEq and the vector gets a minus
                 no = Manopt.NormalEquationsObjective(lmlso)
+                @test startswith(repr(no), "NormalEquationsObjective(")
+                @test startswith(Manopt.status_summary(no), "A Normal equation objective")
                 # its vector field is the negative of the normal one above
                 # Evaluate normal vector field of the surrogate
                 nevf = Manopt.get_vector_field(M, no, p)
