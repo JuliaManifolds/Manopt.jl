@@ -102,12 +102,18 @@ using Manifolds, Manopt, Test
                 sH! = zero_vector(M, p)
                 sH = get_hessian!(M, sH!, lmlso, p, X, Y)
                 @test isapprox(M, p, sH, sH!)
-                # Evaluate normal vector field of the surrogate
-                nvf = Manopt.get_normal_vector_field(M, lmlso, p, DefaultOrthogonalBasis())
+                # Evaluate normal vector field of the surrogate as tangent vectors
+                nvf = Manopt.get_normal_vector_field(M, lmlso, p)
                 nvf! = zeros(2)
-                Manopt.get_normal_vector_field!(M, nvf!, lmlso, p, DefaultOrthogonalBasis())
+                Manopt.get_normal_vector_field!(M, nvf!, lmlso, p)
                 @test isapprox(nvf, nvf!)
                 @test norm(nvf) ≈ 0 atol = 1.0e-14
+                # and in a basis
+                nvfB = Manopt.get_normal_vector_field(M, lmlso, p, DefaultOrthogonalBasis())
+                nvfB! = zeros(2)
+                Manopt.get_normal_vector_field!(M, nvfB!, lmlso, p, DefaultOrthogonalBasis())
+                @test isapprox(nvfB, nvfB!)
+                @test norm(nvfB) ≈ 0 atol = 1.0e-14
                 nlo = Manopt.get_normal_linear_operator(M, lmlso, p, X)
                 nlo! = zeros(2)
                 Manopt.get_normal_linear_operator!(M, nlo!, lmlso, p, X)
@@ -124,11 +130,17 @@ using Manifolds, Manopt, Test
                 no = Manopt.NormalEquationsObjective(lmlso)
                 # its vector field is the negative of the normal one above
                 # Evaluate normal vector field of the surrogate
-                nevf = Manopt.get_vector_field(M, no, p, DefaultOrthogonalBasis())
+                nevf = Manopt.get_vector_field(M, no, p)
                 nevf! = zeros(2)
-                Manopt.get_vector_field!(M, nevf!, no, p, DefaultOrthogonalBasis())
+                Manopt.get_vector_field!(M, nevf!, no, p)
                 @test isapprox(nevf, nevf!)
                 @test isapprox(nevf, -nvf)
+                # Evaluate normal vector field of the surrogate in a basis
+                nevfB = Manopt.get_vector_field(M, no, p, DefaultOrthogonalBasis())
+                nevfB! = zeros(2)
+                Manopt.get_vector_field!(M, nevfB!, no, p, DefaultOrthogonalBasis())
+                @test isapprox(nevfB, nevfB!)
+                @test isapprox(nevfB, -nvfB)
                 # Manopt.get_normal_vector_field!(M, nvf!, lmlso, p, DefaultOrthogonalBasis())
                 # its linear operator and vector field (in a basis)
                 neo = Manopt.get_linear_operator(M, no, p, X)
@@ -153,7 +165,6 @@ using Manifolds, Manopt, Test
                 end
             end
             @testset "Gradient with caching test" begin
-                @info nlsoRobustJa
                 Z = get_gradient(M, nlsoRobustJa, p)
                 jc = [ get_jacobian(M, vgf, p; basis = vgf.jacobian_type.basis) for vgf in nlsoRobustJa.objective]
                 V = get_residuals(M, nlsoRobustJa, p)
