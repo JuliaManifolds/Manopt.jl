@@ -73,8 +73,6 @@ gradient functions ``$(_tex(:grad)) f_i: $(_math(:Manifold)) → $(_math(:Tangen
 """
 struct ComponentVectorialType <: AbstractVectorialType end
 
-# TODO: Discuss, whether the Differential is maybe the more natural “Function” type and
-# the gradients approach here should get its own type (that the differential currently has)
 @doc """
     FunctionVectorialType{P<:AbstractPowerRepresentation} <: AbstractVectorialType
 
@@ -849,7 +847,6 @@ function get_jacobian!(
     ) where {FT, VGF <: AbstractVectorGradientFunction{<:AllocatingEvaluation, FT, <:FunctionVectorialType}}
     n = vgf.range_dimension
     mP = PowerManifold(M, get_range(vgf.jacobian_type), n)
-    # TODO: make sure the power representation is consistent between mP and vgf.jacobian!!
     gradients = vgf.jacobian!!(M, p)
     for i in 1:n
         a[i] = inner(M, p, gradients[mP, i], X)
@@ -1039,8 +1036,6 @@ end
 _get_jacobian_basis(jt::AbstractVectorialType) = DefaultOrthonormalBasis()
 _get_jacobian_basis(jt::CoefficientVectorialType) = jt.basis
 
-
-# TODO: consider optimizing these?
 function add_vector!(M::AbstractManifold, X, p, c, basis::AbstractBasis)
     Y = get_vector(M, p, c, basis)
     X .+= Y
@@ -1206,8 +1201,7 @@ function add_adjoint_jacobian!(
         Y_cache = nothing
     ) where {FT}
     J = allocate_jacobian(M, vgf; T = eltype(a))
-    # TODO: actually use the right basis here
-    add_vector!(M, X, p, adjoint(vgf.jacobian!!(M, J, p)) * a, DefaultOrthonormalBasis())
+    add_vector!(M, X, p, adjoint(vgf.jacobian!!(M, J, p)) * a, vgf.jacobian_type.basis)
     return X
 end
 # (d) Jacobian function

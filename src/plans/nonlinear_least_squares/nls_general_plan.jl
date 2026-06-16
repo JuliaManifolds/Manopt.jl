@@ -114,8 +114,6 @@ mutable struct LevenbergMarquardtState{
             damping_term::Real = damping_term_min,
             minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
         )
-        # TODO: what if initial:Jacobian_f is still nothing? Fill it?
-        # We could try checking if the provided sub_state actually needs `jacobian_matrices` or not but it's just about having a nicer error message.
         (candidate_acceptance_threshold <= 0 || candidate_acceptance_threshold >= 1) && throw(ArgumentError("The value of `candidate_acceptance_threshold` must be strictly between 0 and 1, received $(candidate_acceptance_threshold)"))
         (damping_term_min <= 0) && throw(ArgumentError("The value of damping_term_min must be strictly above 0, received $damping_term_min"))
         (damping_increase_factor <= 1) && throw(ArgumentError("The value of `damping_increase_factor must be strictly above 1, received $damping_increase_factor"))
@@ -127,7 +125,7 @@ mutable struct LevenbergMarquardtState{
             typeof(damping_term_max), typeof(damping_term), typeof(minimum_acceptable_model_improvement)
         )
         return LevenbergMarquardtState(
-            sub_problem, sub_state;
+            sub_problem, _sub_state;
             candidate_acceptance_threshold = convert(R, candidate_acceptance_threshold),
             damping_increase_factor = convert(R, damping_increase_factor), damping_increase_threshold = convert(R, damping_increase_threshold),
             damping_reduction_threshold = convert(R, damping_reduction_threshold), damping_reduction_factor = convert(R, damping_reduction_factor),
@@ -556,7 +554,7 @@ function _add_hessian!(
     return Z
 end
 
-## TODO: Find a better name?
+## The name is not optimal but it is merely something internal with a small safeguard
 """
     default_lm_lin_solve!(sk, JJ::AbstractMatrix, grad_f_c)
 
@@ -677,7 +675,6 @@ function get_linear_operator!(
     fill!(y, 0)
     start = 0
     Y_cache = zero_vector(M, p)
-    # TODO: use the actual basis? store it in the VGF instead maybe?
     c_cache = allocate_result(M, get_coordinates, p, X, DefaultOrthonormalBasis())
     # lmsco.value_cache has been filled in step_solver! of LevenbergMarquardt, so we can just use it here
     for (o, r) in zip(nlso.objective, nlso.robustifier)

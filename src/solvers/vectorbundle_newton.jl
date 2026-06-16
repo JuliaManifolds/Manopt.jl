@@ -358,7 +358,7 @@ function initialize_solver!(::VectorBundleManoptProblem, s::VectorBundleNewtonSt
     return s
 end
 
-# TODO: When needed: add the variant of iterative solvers for the Newton equation's sub problem
+# When needed: add the variant of iterative solvers for the Newton equation's sub problem
 
 # Closed form solution of the sub-problem, allocating variant
 function step_solver!(

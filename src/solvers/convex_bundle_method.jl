@@ -790,7 +790,8 @@ function _convex_bundle_subsolver!(
     )
     return bms
 end
-# (c) TODO: implement the case where problem and state are given and `solve!` is called
+# (c) the case where problem and state are given and `solve!` is called
+# currently not covered and not needed; if needed not too hard to add
 
 #
 # Lagrange stopping criterion

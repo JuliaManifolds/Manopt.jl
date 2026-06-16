@@ -145,7 +145,6 @@ function add_normal_linear_operator_coord!(
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
     _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indirectly
-    # maybe TODO: maybe make this do a more generic conversion?
     b = convert(Vector, jacobian_cache * cX)
     # Compute C^TCb = C^2 b
     # The code below is mathematically equivalent to the following, but avoids allocating
@@ -210,7 +209,6 @@ function get_cost(
     )
     M = base_manifold(TpM)
     p = base_point(TpM)
-    # TODO: optimize?
     n = residuals_count(lnsco.objective.objective)
     vf = zeros(number_eltype(p), n)
     get_vector_field!(M, vf, lnsco.objective, p)
@@ -223,7 +221,6 @@ function get_cost(
     )
     M = base_manifold(TpM)
     p = base_point(TpM)
-    # TODO: optimize?
     cX = get_coordinates(M, p, X)
     n = residuals_count(lnsco.objective.objective)
     vf = zeros(number_eltype(p), n)

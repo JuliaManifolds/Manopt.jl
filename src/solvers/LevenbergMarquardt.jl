@@ -1,4 +1,3 @@
-# TODO: Update keywords in docs
 _doc_LM = """
     LevenbergMarquardt(M, f, jacobian_f, p, num_components=-1; kwargs...)
     LevenbergMarquardt(M, vgf, p; kwargs...)
