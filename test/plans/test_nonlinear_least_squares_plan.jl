@@ -30,26 +30,16 @@ using Manifolds, Manopt, Test
             f, JF, 2; jacobian_type = FunctionVectorialType()
         )
         nlsoFi = ManifoldNonlinearLeastSquaresObjective(
-            f!,
-            JF!,
-            2;
-            evaluation = InplaceEvaluation(),
-            jacobian_type = FunctionVectorialType(),
+            f!, JF!, 2;
+            evaluation = InplaceEvaluation(), jacobian_type = FunctionVectorialType(),
         )
         nlsoCa = ManifoldNonlinearLeastSquaresObjective(
-            [f1, f2],
-            [j1, j2],
-            2;
-            function_type = ComponentVectorialType(),
-            jacobian_type = ComponentVectorialType(),
+            [f1, f2], [j1, j2], 2;
+            function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType(),
         )
         nlsoCi = ManifoldNonlinearLeastSquaresObjective(
-            [f1, f2],
-            [j1!, j2!],
-            2;
-            function_type = ComponentVectorialType(),
-            jacobian_type = ComponentVectorialType(),
-            evaluation = InplaceEvaluation(),
+            [f1, f2], [j1!, j2!], 2; evaluation = InplaceEvaluation(),
+            function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType(),
         )
         nlsoJa = ManifoldNonlinearLeastSquaresObjective(
             f, J, 2; jacobian_type = CoefficientVectorialType()
@@ -57,6 +47,8 @@ using Manifolds, Manopt, Test
         nlsoJi = ManifoldNonlinearLeastSquaresObjective(f!, J!, 2; evaluation = InplaceEvaluation())
 
         p = [0.5, 0.5]
+        X = [0.25, 0.25]
+        Y = [0.25, -0.25]
         V = [0.0, 0.0]
         Vt = [1 / sqrt(2), 1 / sqrt(2)]
         G = zeros(2, 2)
@@ -75,6 +67,17 @@ using Manifolds, Manopt, Test
                 get_jacobian!(M, G, vgf, p)
                 @test G == get_jacobian(M, vgf, p)
                 @test G == Gt
+            end
+            @testset "Linear Surrogate" begin
+                lmlso = LevenbergMarquardtLinearSurrogateObjective(nlso)
+                sG = get_gradient(M, lmlso, p, X)
+                sG! = zero_vector(M, p)
+                sG = get_gradient!(M, sG!, lmlso, p, X)
+                @test isapprox(M, p, sG, sG!)
+                sH = get_hessian(M, lmlso, p, X, Y)
+                sH! = zero_vector(M, p)
+                sH = get_hessian!(M, sH!, lmlso, p, X, Y)
+                @test isapprox(M, p, sH, sH!)
             end
             c = get_cost(M, nlso, p)
             @test c ≈ 0.5
@@ -103,5 +106,10 @@ using Manifolds, Manopt, Test
         f(M, p) = p
         J_f(M, p) = one(p)
         mnlso = ManifoldNonlinearLeastSquaresObjective(f, J_f, 3)
+    end
+    @testset "Inner consistency checks" begin
+        s = zeros(2)
+        Manopt.default_lm_lin_solve!(s, [0.2 0.4; 0.4 0.2], [0.6, 0.0])
+        @test s ≈ [-1.0, 2.0]
     end
 end

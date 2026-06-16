@@ -516,7 +516,7 @@ function get_hessian!(
     return Z
 end
 # For each single summand, we are on the level of a single vectorial function and a robustifier.
-function _get_hessian!(
+function _add_hessian!(
         M::AbstractManifold, Z, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, X, Y;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
@@ -534,7 +534,7 @@ function _get_hessian!(
     return Z
 end
 # Componentwise
-function _get_hessian!(
+function _add_hessian!(
         M::AbstractManifold, Z, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p, X, Y;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
@@ -571,11 +571,7 @@ function default_lm_lin_solve!(sk, JJ::AbstractMatrix, grad_f_c)
     try
         ldiv!(sk, cholesky(Symmetric(JJ)), grad_f_c)
     catch e
-        if e isa PosDefException
-            sk .= Symmetric(JJ) \ grad_f_c
-        else
-            rethrow()
-        end
+        e isa PosDefException ? (sk .= Symmetric(JJ) \ grad_f_c) : rethrow()
     end
     return sk
 end
