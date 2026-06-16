@@ -95,11 +95,12 @@ using Manifolds, Manopt, Test
                 sH! = zero_vector(M, p)
                 sH = get_hessian!(M, sH!, lmlso, p, X, Y)
                 @test isapprox(M, p, sH, sH!)
+                # Evaluate normal vector field of the surrogate
                 nvf = Manopt.get_normal_vector_field(M, lmlso, p, DefaultOrthogonalBasis())
                 nvf! = zeros(2)
                 Manopt.get_normal_vector_field!(M, nvf!, lmlso, p, DefaultOrthogonalBasis())
                 @test isapprox(nvf, nvf!)
-                @test norm(nvf) ≈ 0 atol=1e-14
+                @test norm(nvf) ≈ 0 atol = 1.0e-14
                 nlo = Manopt.get_normal_linear_operator(M, lmlso, p, X)
                 nlo! = zeros(2)
                 Manopt.get_normal_linear_operator!(M, nlo!, lmlso, p, X)
@@ -109,14 +110,37 @@ using Manifolds, Manopt, Test
                 Manopt.get_normal_linear_operator!(M, nloB!, lmlso, p, [1.0, 2.0], DefaultOrthogonalBasis())
                 @test isapprox(nloB, nloB!)
                 nloBA = Manopt.get_normal_linear_operator(M, lmlso, p, DefaultOrthogonalBasis())
-                nloBA! = zeros(2,2)
+                nloBA! = zeros(2, 2)
                 Manopt.get_normal_linear_operator!(M, nloBA!, lmlso, p, DefaultOrthogonalBasis())
                 @test isapprox(nloBA, nloBA!)
                 # the normal ones are mapped to _ ones for the NormalEq and the vector gets a minus
-                neo = Manopt.NormalEquationsObjective(lmlso)
+                no = Manopt.NormalEquationsObjective(lmlso)
+                # its vector field is the negative of the normal one above
+                # Evaluate normal vector field of the surrogate
+                nevf = Manopt.get_vector_field(M, no, p, DefaultOrthogonalBasis())
+                nevf! = zeros(2)
+                Manopt.get_vector_field!(M, nevf!, no, p, DefaultOrthogonalBasis())
+                @test isapprox(nevf, nevf!)
+                @test isapprox(nevf, -nvf)
+                # Manopt.get_normal_vector_field!(M, nvf!, lmlso, p, DefaultOrthogonalBasis())
                 # its linear operator and vector field (in a basis)
-                # TODO Adapt calls similar to the previous two once the normal lin op works
-
+                neo = Manopt.get_linear_operator(M, no, p, X)
+                neo! = zeros(2)
+                Manopt.get_linear_operator!(M, neo!, no, p, X)
+                @test isapprox(neo, neo!)
+                @test isapprox(neo, nlo)
+                # Coordinates in a basis
+                neoB = Manopt.get_linear_operator(M, no, p, [1.0, 2.0], DefaultOrthogonalBasis())
+                neoB! = zeros(2)
+                Manopt.get_linear_operator!(M, neoB!, no, p, [1.0, 2.0], DefaultOrthogonalBasis())
+                @test isapprox(neoB, neoB!)
+                @test isapprox(neoB, nloB)
+                #Matrix in a basis
+                neoBA = Manopt.get_linear_operator(M, no, p, DefaultOrthogonalBasis())
+                neoBA! = zeros(2, 2)
+                Manopt.get_linear_operator!(M, neoBA!, no, p, DefaultOrthogonalBasis())
+                @test isapprox(neoBA, neoBA!)
+                @test isapprox(neoBA, nloBA)
             end
         end
     end
