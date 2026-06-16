@@ -196,7 +196,6 @@ function get_gradient!(
     )
     zero_vector!(M, X, p)
     start = 0
-    Y = copy(M, p, X)
     for (o, r, jb) in zip(nlso.objective, nlso.robustifier, jacobian_cache) # for every block
         len = length(o)
         Fi = isnothing(value_cache) ? get_value(M, o, p) : view(value_cache, (start + 1):(start + len))

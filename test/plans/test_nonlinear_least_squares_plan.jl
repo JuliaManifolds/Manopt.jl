@@ -49,7 +49,10 @@ using Manifolds, Manopt, Test
             f, J, 2; jacobian_type = CoefficientVectorialType()
         )
         nlsoJi = ManifoldNonlinearLeastSquaresObjective(f!, J!, 2; evaluation = InplaceEvaluation())
-
+        vgf2 = VectorGradientFunction(f, J, 2; jacobian_type = CoefficientVectorialType())
+        nlsoRobustJa = ManifoldNonlinearLeastSquaresObjective(
+            [vgf2, vgf2], [HuberRobustifier(), IdentityRobustifier()]
+        )
         p = [0.5, 0.5]
         X = [0.25, 0.25]
         Y = [0.25, -0.25]
@@ -81,6 +84,10 @@ using Manifolds, Manopt, Test
             @test 0.5 * sum(abs.(V) .^ 2) ≈ c
             @test startswith(repr(nlso), "ManifoldNonlinearLeastSquaresObjective(")
             @test startswith(Manopt.status_summary(nlso), "A nonlinear least squares objective")
+            Z = get_gradient(M, nlso, p)
+            Z! = zero_vector(M, p)
+            get_gradient!(M, Z!, nlso, p)
+            @test isapprox(M, p, Z, Z!)
         end
         @testset "Linear Surrogate accessors" begin
             X = [0.25, 0.25]
@@ -141,7 +148,30 @@ using Manifolds, Manopt, Test
                 Manopt.get_linear_operator!(M, neoBA!, no, p, DefaultOrthogonalBasis())
                 @test isapprox(neoBA, neoBA!)
                 @test isapprox(neoBA, nloBA)
+                # and a call with filled jacobian case if we have a basis
+                if (nlso === nlsoJa) || (nlso === nlsoRobust)
+                end
             end
+            @testset "Gradient with caching test" begin
+                @info nlsoRobustJa
+                Z = get_gradient(M, nlsoRobustJa, p)
+                jc = [ get_jacobian(M, vgf, p; basis = vgf.jacobian_type.basis) for vgf in nlsoRobustJa.objective]
+                V = get_residuals(M, nlsoRobustJa, p)
+                Zc = get_gradient(M, nlsoRobustJa, p; value_cache = V, jacobian_cache = jc)
+                Zc! = zero_vector(M, p)
+                get_gradient!(M, Zc!, nlsoRobustJa, p; value_cache = V, jacobian_cache = jc)
+                @test isapprox(M, p, Z, Zc; atol = 1.0e-15)
+                @test isapprox(M, p, Zc, Zc!)
+            end
+        end
+        @testset "Dummy decorator pass through" begin
+            dnlso = Manopt.Test.DummyDecoratedObjective(nlsoFa)
+            @test Manopt.residuals_count(dnlso) == Manopt.residuals_count(nlsoFa)
+            V = get_residuals(M, nlsoFa, p)
+            V! = zero(V)
+            get_residuals!(M, V!, dnlso, p)
+            @test isapprox(V, V!)
+            @test isapprox(V, get_residuals(M, dnlso, p))
         end
     end
     @testset "Dummy decorator pass through" begin
