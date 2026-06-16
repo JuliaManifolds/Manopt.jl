@@ -104,6 +104,16 @@ using Manifolds, Manopt, Test
                 nlo! = zeros(2)
                 Manopt.get_normal_linear_operator!(M, nlo!, lmlso, p, X)
                 @test isapprox(nlo, nlo!)
+                # or in coordinates TODO: Some cases seem missing here in the implementation so the following errors
+                nloB = Manopt.get_normal_linear_operator(M, lmlso, p, [1.0, 2.0], DefaultOrthogonalBasis())
+                nloB! = zeros(2)
+                Manopt.get_normal_linear_operator!(M, nloB!, lmlso, p, [1.0, 2.0], DefaultOrthogonalBasis())
+                @test isapprox(nloB, nloB!)
+                # the normal ones are mapped to _ ones for the NormalEq and the vector gets a minus
+                neo = Manopt.NormalEquationsObjective(lmlso)
+                # its linear operator and vector field (in a basis)
+                # TODO Adapt calls similar to the previous two once the normal lin op works
+
             end
         end
     end

@@ -924,7 +924,7 @@ function add_normal_linear_operator!(
     return Y
 end
 # Componentwise: A few things decouple
-function _get_normal_linear_operator!(
+function add_normal_linear_operator!(
         M::AbstractManifold, Y, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p, X;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = nothing,
     )
@@ -960,16 +960,16 @@ function get_normal_linear_operator!(
     nlso = get_objective(lmsco)
     # For every block
     fill!(d, 0)
-    e = copy(d)
+    e = zero(d)
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        _get_normal_linear_operator!(M, e, o, r, p, c, B; threshold = lmsco.threshold, mode = lmsco.mode)
+        get_normal_linear_operator!(M, e, o, r, p, c, B; threshold = lmsco.threshold, mode = lmsco.mode)
         d .+= e
     end
     # Finally add the damping term
     (penalty != 0) && (d .+= penalty * c)
     return d
 end
-function _get_normal_linear_operator!(M::AbstractManifold, d, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, c, B::AbstractBasis; kwargs...)
+function get_normal_linear_operator!(M::AbstractManifold, d, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, c, B::AbstractBasis; kwargs...)
     A = get_normal_linear_operator(M, o, r, p, B; kwargs...)
     d .= A * c
     return d
