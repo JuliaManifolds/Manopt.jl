@@ -70,7 +70,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         r1a6 = copy(M1, p1)
         LevenbergMarquardt!(M1, vgf1, r1a6)
         @test isapprox(M1, r1a1, r1a6; atol = 1.0e-7)
-        # Inferface III: Functions, in-place
+        # Interface III: Functions, in-place
         r1i1 = LevenbergMarquardt(
             M1, F1!, JF1!, p1, m; evaluation = InplaceEvaluation(),
             function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()

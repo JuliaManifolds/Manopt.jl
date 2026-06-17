@@ -152,7 +152,7 @@ end
     AbstractFirstOrderVectorFunction{E, FT, JT, F, J, I} <: AbstractManifoldObjective{E}
 
 Represent an abstract vectorial function ``f:$(_math(:Manifold)) → ℝ^n`` that provides
-some first oder diffential information.
+some first order differential information.
 
 The [`AbstractEvaluationType`](@ref) `E` indicates the evaluation type,
 and the [`AbstractVectorialType`](@ref)s `FT` and `JT` the formats in which

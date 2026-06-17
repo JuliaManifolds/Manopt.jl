@@ -61,7 +61,7 @@ as well as then these are already combined in a single [`VectorGradientFunction`
   - if you provide a vector of [`VectorGradientFunction`](@ref)s, each needs a robustifier.
 $(_kwargs(:evaluation))
 
-as well as in general using the model imprevement parameter ``m_k`` in several places, cf [BaranBergmann:2026](@cite)
+as well as in general using the model improvement parameter ``m_k`` in several places, cf [BaranBergmann:2026](@cite)
 
 * `candidate_acceptance_threshold=0.2`: sufficient model improvement ``η ∈ (0,1)``, i.e. ``m_k > η`` to accept a candidate point
 * `damping_increase_factor=5.0`:        factor ``β_{$(_tex(:text, "i"))}`` to increase damping, when the model is inaccurate
@@ -88,7 +88,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(
 * `sub_problem = `[`DefaultManoptProblem`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the sub problem to be solved. This should usually be phrased on the tangent space at the current iterate
 * `sub_state = `[`ConjugateResidualState`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the solver for the surrogate, see also [`conjugate_residual`](@ref)
 * `use_unified_basis = false`:           specify to use a single basis for all Jacobian evaluations at a certain iterate, see `sub_objective`
-  this requires that all Jacobians involved are of tupe [`CoefficientVectorialType`](@ref), since only then a jacobian can be represented as a matrix,
+  this requires that all Jacobians involved are of type [`CoefficientVectorialType`](@ref), since only then a jacobian can be represented as a matrix,
   and then here unified in the sense that all use the same basis.
 $(_note(:OtherKeywords))
 
