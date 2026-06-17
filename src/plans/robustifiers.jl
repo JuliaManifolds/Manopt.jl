@@ -137,7 +137,7 @@ A robustifier to indicate that for a certain [`AbstractVectorGradientFunction`](
 robustifier should be applied component wise.
 
 ## Fields
-* `robustifier::R` the robustifer to be applied componentwise
+* `robustifier::R` the robustifier to be applied componentwise
 
 ## Constructor
 
