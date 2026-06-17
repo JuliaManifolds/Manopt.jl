@@ -168,7 +168,7 @@ end
 
 Add the (Triggs correction, residual-like) linear operator corresponding to the `lmsco`
 surrogate to vector `y`. It is assumed that `lmsco.value_cache` has been filled in
-`step_solver!` of `LevenbergMarquardt``, so we can just use it here.
+`step_solver!` of [`LevenbergMarquardt`](@ref), so we can just use it here.
 """
 function add_linear_operator_coord!(
         M::AbstractManifold, y::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector

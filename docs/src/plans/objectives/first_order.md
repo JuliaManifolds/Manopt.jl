@@ -12,6 +12,7 @@ ManifoldFirstOrderObjective
 ManifoldAlternatingGradientObjective
 ManifoldStochasticGradientObjective
 ManifoldNonlinearLeastSquaresObjective
+Manopt.residuals_count
 ```
 
 While the [`ManifoldFirstOrderObjective`](@ref) allows to provide different
