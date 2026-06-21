@@ -10,7 +10,7 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: "1.7.29"
