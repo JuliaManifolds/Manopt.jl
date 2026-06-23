@@ -143,7 +143,7 @@ struct ZeroTangentVector <: ManifoldsBase.AbstractTangentVector end
 @static if VERSION >= v"1.12.0"
     _diagview(A::AbstractMatrix) = LinearAlgebra.diagview(A)
 else
-    _diagview(A::AbstractMatrix) = @view A[diagind(A)] 
+    _diagview(A::AbstractMatrix) = @view A[diagind(A)]
 end
 
 
