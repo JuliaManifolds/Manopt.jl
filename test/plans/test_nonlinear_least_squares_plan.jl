@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test
+using Manifolds, Manopt, RecursiveArrayTools, Test
 
 @testset "Nonlinear lest squares plan" begin
     @testset "Test cost/residual/jacobian cases" begin
@@ -187,13 +187,21 @@ using Manifolds, Manopt, Test
             @test isapprox(V, get_residuals(M, dnlso, p))
         end
     end
-    @testset "Dummy decorator pass through" begin
+    @testset "Add_vector! on special manifolds" begin
         M = Hyperrectangle([0.0, 0.0], [1.0, 1.0])
         p = [0.5, 0.5]
         X = [0.0, 0.0]
         c = [0.1, 0.1]
         Manopt.add_vector!(M, X, p, c, DefaultOrthonormalBasis())
         @test X == c
+        M2 = Euclidean(2)
+        M3 = M2 × M2
+        p3 = ArrayPartition([1.0, 0.0], [0.0, 1.0])
+        X3 = ArrayPartition([0.0, 0.0], [0.0, 0.0])
+        c3 = [1.0, 2.0, 3.0, 4.0]
+        Manopt.add_vector!(M3, X3, p3, c3, DefaultOrthonormalBasis())
+        @test X3[M3, 1] == c3[1:2]
+        @test X3[M3, 2] == c3[3:4]
     end
     @testset "Test Change of basis" begin
         J = ones(2, 2)
