@@ -84,7 +84,7 @@ function get_normal_linear_operator!(
         start += len_o
     end
     # Finally add the damping term
-    (penalty != 0) && (LinearAlgebra.diagview(A) .+= penalty)
+    (penalty != 0) && (_diagview(A) .+= penalty)
     return A
 end
 

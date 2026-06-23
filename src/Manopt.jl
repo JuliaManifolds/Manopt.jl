@@ -140,6 +140,13 @@ A small internal helper type to represent the zero tangent vector with two advan
 """
 struct ZeroTangentVector <: ManifoldsBase.AbstractTangentVector end
 
+@static if VERSION >= v"1.12.0"
+    _diagview(A::AbstractMatrix) = LinearAlgebra.diagview(A)
+else
+    _diagview(A::AbstractMatrix) = @view A[diagind(A)] 
+end
+
+
 include("plans/plan.jl")
 # solvers general framework
 include("solvers/solver.jl")

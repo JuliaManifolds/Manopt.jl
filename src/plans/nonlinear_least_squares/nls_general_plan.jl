@@ -984,7 +984,7 @@ function get_normal_linear_operator!(
         add_normal_linear_operator!(M, A, o, r, p, B; threshold = lmsco.threshold, mode = lmsco.mode)
     end
     # Finally add the damping term
-    (penalty != 0) && (LinearAlgebra.diagview(A) .+= penalty)
+    (penalty != 0) && (_diagview(A) .+= penalty)
     return A
 end
 """
