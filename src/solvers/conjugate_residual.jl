@@ -85,7 +85,7 @@ function conjugate_residual!(
     solve!(dmp, dcrs)
     return get_solver_return(get_objective(dmp), dcrs)
 end
-calls_with_kwargs(::typeof(conjugate_residual!)) = (decorate_objective!, decorate_state!)
+calls_with_kwargs(::typeof(conjugate_residual!)) = (ConjugateResidualState, decorate_objective!, decorate_state!)
 
 function initialize_solver!(
         amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState

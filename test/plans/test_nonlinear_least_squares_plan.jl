@@ -188,7 +188,12 @@ using Manifolds, Manopt, Test
         end
     end
     @testset "Dummy decorator pass through" begin
-
+        M = Hyperrectangle([0.0, 0.0], [1.0, 1.0])
+        p = [0.5, 0.5]
+        X = [0.0, 0.0]
+        c = [0.1, 0.1]
+        Manopt.add_vector!(M, X, p, c, DefaultOrthonormalBasis())
+        @test X == c
     end
     @testset "Test Change of basis" begin
         J = ones(2, 2)

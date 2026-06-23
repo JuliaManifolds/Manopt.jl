@@ -25,6 +25,8 @@ using Manifolds, Manopt, Test
     cgrs = conjugate_residual(TpM, slso, X0; return_state = true)
     @test startswith(Manopt.status_summary(cgrs), "# Solver state for `Manopt.jl`s Conjugate Residual Method")
     @test startswith(repr(cgrs), "ConjugateResidualState(; ")
+    # Start without warmstart – though for this setting we get a NaN
+    X1 = conjugate_residual(TpM, slso, pT; warm_start = false)
 
     scs = StopWhenRelativeResidualLess(1.0, 0.1)
     @test repr(scs) == "StopWhenRelativeResidualLess(1.0, 0.1)"
