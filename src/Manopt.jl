@@ -187,7 +187,6 @@ include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 
 include("helpers/checks.jl")
-include("helpers/jacobian_block.jl")
 include("helpers/LineSearchesTypes.jl")
 include("helpers/test.jl")
 
