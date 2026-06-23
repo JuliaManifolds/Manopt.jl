@@ -52,11 +52,9 @@ Manopt.add_linear_operator_coord!
 
 ### Internal structures
 
-In several places, especially when the Jacobian matrices or tangent vectors involved are spares, the following structures help to avoid allocating unnecessary zero matrices or vectors.
+The following structure helps to avoid allocating unnecessary zero vectors.
 
 ```@docs
-Manopt.BlockNonzeroVector
-Manopt.BlockNonzeroMatrix
 Manopt.ZeroTangentVector
 ```
 
