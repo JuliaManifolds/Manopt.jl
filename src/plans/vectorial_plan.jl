@@ -696,7 +696,7 @@ get_jacobian!(M::AbstractManifold, JF, vgf::AbstractVectorGradientFunction, p)
 
 function get_jacobian(
         M::AbstractManifold, vgf::VGF, p; basis::AbstractBasis = get_basis(vgf.jacobian_type), kwargs...
-    ) where {FT, VGF <: AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:AbstractVectorialType}}
+    ) where {FT, VGF <: AbstractFirstOrderVectorFunction{<:AbstractEvaluationType, FT, <:AbstractVectorialType}}
     JF = allocate_jacobian(M, vgf, basis; T = number_eltype(p))
     return get_jacobian!(M, JF, vgf, p; basis = basis, kwargs...)
 end
@@ -736,10 +736,9 @@ end
 function get_jacobian!(
         M::AbstractManifold, JF, vgf::VGF, p; basis::AbstractBasis = get_basis(vgf.jacobian_type), range = nothing,
     ) where {FT, VGF <: VectorDifferentialFunction{<:AllocatingEvaluation, FT, <:FunctionVectorialType}}
-    n = vgf.range_dimension
     V = get_vectors(M, p, get_basis(M, p, basis))
-    for i in 1:n
-        c = @view JF[i, :]
+    for i in 1:length(V)
+        c = @view JF[:, i]
         c .= vgf.jacobian!!(M, p, V[i])
     end
     return JF
@@ -787,10 +786,9 @@ end
 function get_jacobian!(
         M::AbstractManifold, JF, vgf::VGF, p; basis::AbstractBasis = get_basis(vgf.jacobian_type), range = nothing,
     ) where {FT, VGF <: VectorDifferentialFunction{<:InplaceEvaluation, FT, <:FunctionVectorialType}}
-    n = vgf.range_dimension
     V = get_vectors(M, p, get_basis(M, p, basis))
-    for i in 1:n
-        vgf.jacobian!!(M, view(JF, i, :), p, V[i])
+    for i in 1:length(V)
+        vgf.jacobian!!(M, view(JF, :, i), p, V[i])
     end
     return JF
 end
@@ -836,7 +834,7 @@ get_jacobian!(M::AbstractManifold, a, vgf::AbstractVectorGradientFunction, p, X;
 # For the allocating one, we just need to allocate a
 function get_jacobian(
         M::AbstractManifold, vgf::VGF, p, X; kwargs...
-    ) where {FT, VGF <: AbstractVectorGradientFunction{<:AbstractEvaluationType, FT, <:AbstractVectorialType}}
+    ) where {FT, VGF <: AbstractFirstOrderVectorFunction{<:AbstractEvaluationType, FT, <:AbstractVectorialType}}
     n = vgf.range_dimension
     a = zeros(number_eltype(X), n)
     return get_jacobian!(M, a, vgf, p, X; kwargs...)

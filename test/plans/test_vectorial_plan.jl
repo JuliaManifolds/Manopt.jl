@@ -123,6 +123,11 @@ using Manopt: get_value, get_value_function, get_gradient_function
         aj2 = similar(aj1)
         get_adjoint_jacobian!(M, aj2, vgf, p, c, b)
         @test aj2 == aj1
+        # Jacobian Matrix access
+        J = get_jacobian(M, vgf, p)
+        J2 = zeros(2, 3)
+        get_jacobian!(M, J2, vgf, p)
+        @test J == J2
     end
 
 
