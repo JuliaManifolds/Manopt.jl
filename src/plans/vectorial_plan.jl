@@ -1675,7 +1675,7 @@ function get_value!(
             V[i] = vgf.value!![i](M, p)
         end
     else
-        V .= [f(M, p) for f in vgf.value!![i]]
+        V .= i isa Number ? [vgf.value!![i](M, p)] : [f(M, p) for f in vgf.value!![i]]
     end
 
     return V

@@ -1,5 +1,5 @@
 using Manopt, ManifoldsBase, Test
-using Manopt: get_value, get_value_function, get_gradient_function
+using Manopt: get_value, get_value!, get_value_function, get_gradient_function
 @testset "VectorialGradientCost" begin
     M = ManifoldsBase.DefaultManifold(3)
     g(M, p) = [p[1] - 1, -p[2] - 1]
@@ -94,6 +94,12 @@ using Manopt: get_value, get_value_function, get_gradient_function
         @test get_value(M, vgf, p) == c
         @test get_value(M, vgf, p, :) == c
         @test get_value(M, vgf, p, 1) == c[1]
+        ca = similar(c)
+        get_value!(M, ca, vgf, p, :)
+        @test ca == c
+        ci = similar([c[1]])
+        get_value!(M, ci, vgf, p, 1)
+        @test ci[1] == c[1]
         if !(vgf isa VectorDifferentialFunction)
             # range access not yet implemented / too expensive for VDF
             @test get_gradient(M, vgf, p) == gg
@@ -118,11 +124,24 @@ using Manopt: get_value, get_value_function, get_gradient_function
         j2 = similar(j1)
         get_jacobian!(M, j2, vgf, p, X, b)
         @test j2 == j1
+        # and without basis
+        j3 = get_jacobian(M, vgf, p, X)
+        @test j3 == jX
+        j4 = similar(j3)
+        get_jacobian!(M, j4, vgf, p, X)
+        @test j3 == j4
+        # Adjoint cases
         aj1 = get_adjoint_jacobian(M, vgf, p, c, b)
         @test aj1 == jc
         aj2 = similar(aj1)
         get_adjoint_jacobian!(M, aj2, vgf, p, c, b)
         @test aj2 == aj1
+        # and without basis
+        aj3 = get_adjoint_jacobian(M, vgf, p, c)
+        @test aj3 == jc
+        aj4 = similar(aj3)
+        get_adjoint_jacobian!(M, aj4, vgf, p, c)
+        @test aj3 == aj4
         # Jacobian Matrix access
         J = get_jacobian(M, vgf, p)
         J2 = zeros(2, 3)
