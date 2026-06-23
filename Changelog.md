@@ -13,9 +13,9 @@ We also unified a few of the internal solver state constructors.
 
 ### Added
 
-* A robustified version of the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/)
+* A robustified version of the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/) (#617)
 * An option to disable the warm start the conjugate residual currently does when used as a subsolver.
-* `nonpositive_curvature_behavior` for `QuasiNewtonLimitedMemoryDirectionUpdate` that determines how transported (y, s) vector pairs are treated after transport; if their inner product gets too low, it may lead to non-positive-definite Hessians which needs to be avoided. This resolves issue #549. (#554)
+* `nonpositive_curvature_behavior` for `QuasiNewtonLimitedMemoryDirectionUpdate` that determines how transported (y, s) vector pairs are treated after transport; if their inner product gets too low, it may lead to non-positive-definite Hessians which needs to be avoided. This resolves issue (#549). (#554)
 * `GeneralizedCauchyDirectionSubsolver` for handling direction selection in the presence of box (`Hyperrectangle`) constraints in quasi-Newton methods. This allows for L-BFGS-B-style box constraint handling. (#554)
 * New stopping criteria: `StopWhenRelativeAPosterioriCostChangeLessOrEqual` and `StopWhenProjectedNegativeGradientNormLess`. (#554).
 * `HagerZhangLinesearch` stepsize, a state-of-the-art line search for smooth objectives with cubic interpolation and adaptive Wolfe condition checking. (#554)
@@ -23,11 +23,10 @@ We also unified a few of the internal solver state constructors.
 
 ### Changed
 
-* In the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/)t the `η` parameter has been renamed to `candidate_acceptance_threshold`, `β` to `damping_increase_factor` and `β_reduction` to `damping_reduction_factor`.
-* the constructor for the [Levenberg-Marquardt state](https://manoptjl.org/stable/solvers/LevenbergMarquardt/#Manopt.LevenbergMarquardtState) has been unified with the remaining states, to take the `sub_problem` and `sub_state` arguments as second and third positional arguments, respectively.
-* the keyword `initial_jacobian_f` within `LevenbergMarquardt` is unified in naming to the residual values vector and called `initial_jacobian_matrices`.
-  if you call `LevenbergMarquardt` with a single vector component, also a single matrix is allowed.
-* an internal field of the solver state of Levenberg-Marqwuardt was called `jacobian_f` the same as the functions whose result it meant to cache if applicable. To distinguish both, the field is now called `jacobian_matrices`.
+* In the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/)t the `η` parameter has been renamed to `candidate_acceptance_threshold`, `β` to `damping_increase_factor` and `β_reduction` to `damping_reduction_factor`. (#617)
+* the constructor for the [Levenberg-Marquardt state](https://manoptjl.org/stable/solvers/LevenbergMarquardt/#Manopt.LevenbergMarquardtState) has been unified with the remaining states, to take the `sub_problem` and `sub_state` arguments as second and third positional arguments, respectively. (#617)
+* the keyword `initial_jacobian_f` within `LevenbergMarquardt` is unified in naming to the residual values vector and called `initial_jacobian_matrices`. If you call `LevenbergMarquardt` with a single vector component, also a single matrix is allowed. (#617)
+* an internal field of the solver state of Levenberg-Marqwuardt was called `jacobian_f` the same as the functions whose result it meant to cache if applicable. To distinguish both, the field is now called `jacobian_matrices`. (#617)
 * title of "How to define the cost in the embedding" tutorial (#615)
 
 ### Fixed
@@ -44,7 +43,7 @@ We also unified a few of the internal solver state constructors.
 ### Removed
 
 * The extension to JuMP. A replacement as a separate package is planned when the support for variables beyond vectors is more accessible in JuMP
-* the plotting functions to `Asymptote`. They can now be found in the separate package [`ManifoldAsymptote.jl`]()
+* the plotting functions to `Asymptote`. They can now be found in the separate package [`ManifoldAsymptote.jl`](https://github.com/JuliaManifolds/ManifoldAsymptote.jl)
   this way, `Manopt.jl` has less dependencies, especially the color and colorschemes dependencies are dropped
 * `linear_subsolver! = ` was removed from the [`LevenbergMarquardt`](https://manoptjl.org/stable/solvers/LevenbergMarquardt/) solver interface, since it is imprecise. If you use a closed form solver before, specify it by passing the function to `sub_problem` and set `sub_state` to the corresponding evaluation type
 

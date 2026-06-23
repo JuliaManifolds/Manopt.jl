@@ -125,9 +125,8 @@ function status_summary(neo::NormalEquationsObjective; context::Symbol = :defaul
     A Normal equation objective to be used within Levenberg Marquardt to solve the surrogate
 
     ## Objective
-    $(_in_str(status_summary(neo.objective; context=context); headers = 1, indent = 1))"""
+    $(_in_str(status_summary(neo.objective; context = context); headers = 1, indent = 1))"""
 end
-
 
 
 get_objective(slsmo::NormalEquationsObjective) = slsmo.objective
