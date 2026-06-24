@@ -315,7 +315,7 @@ function get_LevenbergMarquardt_scaling(
         threshold::Real = 1.0e-5, mode::Symbol = :Strict
     )
     # second derivative existent and negative: In strict mode (motivated by ceres) -> return sqrt(ρ_prime), 0
-    (ismissing(ρ_double_prime) || (ρ_double_prime < 0 && mode == :Strict)) && return (sqrt(ρ_prime), 0.0)
+    ((ρ_double_prime < 0 && mode == :Strict)) && return (sqrt(ρ_prime), 0.0)
     (iszero(FkSq) && mode == :Strict) && return (sqrt(ρ_prime), 0.0)
     α = 1 - sqrt(max(1 + 2 * (ρ_double_prime / ρ_prime) * FkSq, 0.0))
     α = min(α, 1 - threshold)
