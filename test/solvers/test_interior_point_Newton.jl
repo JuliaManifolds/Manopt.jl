@@ -4,9 +4,11 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
     @testset "StepsizeState" begin
         M = Manifolds.Sphere(2)
         a = StepsizeState(M)
-        b = StepsizeState(a.p, a.X)
+        b = StepsizeState(; p = a.p, X = a.X)
         @test a.p === b.p
         @test a.X === b.X
+        @test startswith(repr(b), "StepsizeState(; ")
+        @test startswith(Manopt.status_summary(b), "A state for a stepsize")
     end
     @testset "A solver run on the Sphere" begin
         # We can take a look at debug prints of one run and plot the result
@@ -35,37 +37,18 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
         p_opt = [0.0, 0.0, 1.0]
         record = [:Iterate]
         dbg = [
-            :Iteration,
-            " ",
-            :Cost,
-            " ",
-            :Stepsize,
-            " ",
-            :Change,
-            " ",
-            :Feasibility,
-            "\n",
-            :Stop,
-            10,
-            DebugMessages(:Info, :Always),
+            :Iteration, " ", :Cost, " ", :Stepsize, " ", :Change, " ", :Feasibility, "\n",
+            :Stop, 10, DebugMessages(:Info, :Always),
         ]
 
         sc = StopAfterIteration(800) | StopWhenKKTResidualLess(1.0e-2)
         # (a) classical call w/ recording
         res = interior_point_Newton(
-            M,
-            f,
-            grad_f,
-            Hess_f,
-            p_0;
-            g = g,
-            grad_g = grad_g,
-            Hess_g = Hess_g,
+            M, f, grad_f, Hess_f, p_0;
+            g = g, grad_g = grad_g, Hess_g = Hess_g,
             stopping_criterion = sc,
-            debug = _debug ? dbg : [],
-            record = _debug_iterates_plot ? record : [],
-            return_state = true,
-            return_objective = true,
+            debug = _debug ? dbg : [], record = _debug_iterates_plot ? record : [],
+            return_state = true, return_objective = true,
         )
 
         q = get_solver_result(res)
@@ -74,15 +57,8 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
         # (b) inplace call
         q2 = copy(M, p_0)
         interior_point_Newton!(
-            M,
-            f,
-            grad_f,
-            Hess_f,
-            q2;
-            g = g,
-            grad_g = grad_g,
-            Hess_g = Hess_g,
-            stopping_criterion = sc,
+            M, f, grad_f, Hess_f, q2;
+            g = g, grad_g = grad_g, Hess_g = Hess_g, stopping_criterion = sc,
         )
         @test q == q2
 

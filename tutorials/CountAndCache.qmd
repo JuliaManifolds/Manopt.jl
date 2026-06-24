@@ -4,13 +4,13 @@ author: Ronny Bergmann
 ---
 
 In this tutorial, we want to investigate the caching and counting (statistics) features
-of [Manopt.jl](https://manoptjl.org). We reuse the optimization tasks from the
+of [Manopt.jl](../index.md). We reuse the optimization tasks from the
 introductory tutorial [🏔️ Get started with Manopt.jl](getstarted.md).
 
 ## Introduction
 
 There are surely many ways to keep track for example of how often the cost function is called,
-for example with a [functor](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects), as we used in an example in [How to Record Data](https://manoptjl.org/stable/tutorials/HowToRecord/)
+for example with a [function like object](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects), as we used in an example in [How to Record Data](HowToRecord.md)
 
 ```{julia}
 #| eval: false
@@ -29,12 +29,12 @@ This still leaves a bit of work to the user, especially for tracking more than j
 When a function like the objective or gradient is expensive to compute, it may make sense to cache its results.
 Manopt.jl tries to minimize the number of repeated calls but sometimes they are necessary and harmless when the function is cheap to compute.
 Caching of expensive function calls can for example be added using [Memoize.jl](https://github.com/JuliaCollections/Memoize.jl) by the user.
-The approach in the solvers of [Manopt.jl](https://manoptjl.org) aims to simplify adding
+The approach in the solvers of [Manopt.jl](../index.md) aims to simplify adding
 both these capabilities on the level of calling a solver.
 
 ## Technical background
 
-The two ingredients for a solver in [Manopt.jl](https://manoptjl.org)
+The two ingredients for a solver in [Manopt.jl](../index.md)
 are the [`AbstractManoptProblem`](@ref) and the [`AbstractManoptSolverState`](@ref), where the
 former consists of the domain, that is the ``[`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`)``{=commonmark} and [`AbstractManifoldObjective`](@ref).
 
@@ -45,7 +45,7 @@ This is how both caching and counting are implemented, as decorators of the [`Ab
 and hence for example changing/extending the behaviour of a call to [`get_cost`](@ref).
 
 Let's finish off the technical background by loading the necessary packages.
-Besides [Manopt.jl](https://manoptjl.org) and [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) we also need
+Besides [Manopt.jl](../index.md) and ``[Manifolds.jl]@extref Manifolds :std:doc:`index`)``{=commoinmark} we also need
 [LRUCaches.jl](https://github.com/JuliaCollections/LRUCache.jl) which are (since Julia 1.9) a weak dependency and provide
 the _least recently used_ strategy for our caches.
 

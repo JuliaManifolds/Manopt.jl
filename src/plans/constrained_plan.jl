@@ -62,9 +62,9 @@ $(_problem(:Constrained))
 * `objective`: an [`AbstractManifoldObjective`](@ref) representing the unconstrained
   objective, that is containing cost ``f``, the gradient of the cost ``f`` and maybe the Hessian.
 * `equality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the equality constraints
-``h: $(_math(:Manifold))) → ℝ^n`` also possibly containing its gradient and/or Hessian
+``h: $(_math(:Manifold)) → ℝ^n`` also possibly containing its gradient and/or Hessian
 * `inequality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the inequality constraints
-``g: $(_math(:Manifold))) → ℝ^m`` also possibly containing its gradient and/or Hessian
+``g: $(_math(:Manifold)) → ℝ^m`` also possibly containing its gradient and/or Hessian
 
 # Constructors
     ConstrainedManifoldObjective(f, grad_f;
@@ -106,10 +106,8 @@ respectively, is created.
 Feasibility of points with respect to the constraints is determined up to the tolerance `atol`.
 """
 struct ConstrainedManifoldObjective{
-        E <: AbstractEvaluationType,
-        MO <: AbstractManifoldObjective,
-        EMO <: Union{AbstractVectorGradientFunction, Nothing},
-        IMO <: Union{AbstractVectorGradientFunction, Nothing},
+        E <: AbstractEvaluationType, MO <: AbstractManifoldObjective,
+        EMO <: Union{AbstractVectorGradientFunction, Nothing}, IMO <: Union{AbstractVectorGradientFunction, Nothing},
     } <: AbstractManifoldObjective{E}
     objective::MO
     equality_constraints::EMO
@@ -132,8 +130,7 @@ end
 
 # Try to infer the number of constraints
 function _number_of_constraints(
-        g,
-        grad_g;
+        g, grad_g;
         function_type::Union{AbstractVectorialType, Nothing} = nothing,
         jacobian_type::Union{AbstractVectorialType, Nothing} = nothing,
         M::Union{AbstractManifold, Nothing} = nothing,
@@ -160,15 +157,8 @@ function _number_of_constraints(
 end
 
 function ConstrainedManifoldObjective(
-        f,
-        grad_f,
-        g,
-        grad_g,
-        h,
-        grad_h;
-        hess_f = nothing,
-        hess_g = nothing,
-        hess_h = nothing,
+        f, grad_f, g, grad_g, h, grad_h;
+        hess_f = nothing, hess_g = nothing, hess_h = nothing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         equality_type::AbstractVectorialType = _vector_function_type_hint(h),
         equality_gradient_type::AbstractVectorialType = _vector_function_type_hint(grad_h),
@@ -178,9 +168,7 @@ function ConstrainedManifoldObjective(
         inequality_hessian_type::AbstractVectorialType = _vector_function_type_hint(hess_g),
         equality_constraints::Union{Integer, Nothing} = nothing,
         inequality_constraints::Union{Integer, Nothing} = nothing,
-        M::Union{AbstractManifold, Nothing} = nothing,
-        p = isnothing(M) ? nothing : rand(M),
-        atol = 0,
+        M::Union{AbstractManifold, Nothing} = nothing, p = isnothing(M) ? nothing : rand(M), atol = 0,
     )
     if isnothing(hess_f)
         objective = ManifoldGradientObjective(f, grad_f; evaluation = evaluation)
@@ -194,37 +182,22 @@ function ConstrainedManifoldObjective(
         if isnothing(equality_constraints)
             # try to guess
             num_eq = _number_of_constraints(
-                h,
-                grad_h;
-                function_type = equality_type,
-                jacobian_type = equality_gradient_type,
-                M = M,
-                p = p,
+                h, grad_h;
+                function_type = equality_type, jacobian_type = equality_gradient_type,
+                M = M, p = p,
             )
         end
         # if it is still < 0, this can not be used
-        (num_eq < 0) && error(
-            "Please specify a positive number of `equality_constraints` (provided $(equality_constraints))",
-        )
+        (num_eq < 0) && error("Please specify a positive number of `equality_constraints` (provided $(equality_constraints))")
         if isnothing(hess_h)
             eq = VectorGradientFunction(
-                h,
-                grad_h,
-                num_eq;
-                evaluation = evaluation,
-                function_type = equality_type,
-                jacobian_type = equality_gradient_type,
+                h, grad_h, num_eq; evaluation = evaluation,
+                function_type = equality_type, jacobian_type = equality_gradient_type,
             )
         else
             eq = VectorHessianFunction(
-                h,
-                grad_h,
-                hess_h,
-                num_eq;
-                evaluation = evaluation,
-                function_type = equality_type,
-                jacobian_type = equality_gradient_type,
-                hessian_type = equality_hessian_type,
+                h, grad_h, hess_h, num_eq; evaluation = evaluation,
+                function_type = equality_type, jacobian_type = equality_gradient_type, hessian_type = equality_hessian_type,
             )
         end
     end
@@ -235,37 +208,22 @@ function ConstrainedManifoldObjective(
         if isnothing(inequality_constraints)
             # try to guess
             num_ineq = _number_of_constraints(
-                g,
-                grad_g;
-                function_type = inequality_type,
-                jacobian_type = inequality_gradient_type,
-                M = M,
-                p = p,
+                g, grad_g;
+                function_type = inequality_type, jacobian_type = inequality_gradient_type,
+                M = M, p = p,
             )
         end
         # if it is still < 0, this can not be used
-        (num_ineq < 0) && error(
-            "Please specify a positive number of `inequality_constraints` (provided $(inequality_constraints))",
-        )
+        (num_ineq < 0) && error("Please specify a positive number of `inequality_constraints` (provided $(inequality_constraints))")
         if isnothing(hess_g)
             ineq = VectorGradientFunction(
-                g,
-                grad_g,
-                num_ineq;
-                evaluation = evaluation,
-                function_type = inequality_type,
-                jacobian_type = inequality_gradient_type,
+                g, grad_g, num_ineq; evaluation = evaluation,
+                function_type = inequality_type, jacobian_type = inequality_gradient_type,
             )
         else
             ineq = VectorHessianFunction(
-                g,
-                grad_g,
-                hess_g,
-                num_ineq;
-                evaluation = evaluation,
-                function_type = inequality_type,
-                jacobian_type = inequality_gradient_type,
-                hessian_type = inequality_hessian_type,
+                g, grad_g, hess_g, num_ineq; evaluation = evaluation,
+                function_type = inequality_type, jacobian_type = inequality_gradient_type, hessian_type = inequality_hessian_type,
             )
         end
     end
@@ -274,11 +232,8 @@ function ConstrainedManifoldObjective(
     )
 end
 function ConstrainedManifoldObjective(
-        objective::MO;
-        equality_constraints::EMO = nothing,
-        inequality_constraints::IMO = nothing,
-        atol = 0,
-        kwargs...,
+        objective::MO; atol = 0,
+        equality_constraints::EMO = nothing, inequality_constraints::IMO = nothing, kwargs...,
     ) where {E <: AbstractEvaluationType, MO <: AbstractManifoldObjective{E}, IMO, EMO}
     if isnothing(equality_constraints) && isnothing(inequality_constraints)
         throw(
@@ -304,6 +259,34 @@ function ConstrainedManifoldObjective(
     return ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h; kwargs...)
 end
 
+function status_summary(cmo::ConstrainedManifoldObjective; context::Symbol = :default)
+    _is_inline(context) && (return "A constrained objective based on $(status_summary(cmo.objective; context = context)) with $(length(cmo.equality_constraints)) equality and $(length(cmo.inequality_constraints)) inequality constraints.")
+    s = status_summary(cmo.objective; context = context)
+    return """
+    A constrained objective with $(length(cmo.equality_constraints)) equality and $(cmo.inequality_constraints) inequality constraints.
+    For verifications, the inequalities are checked with an absolute tolerance of `atol = $(cmo.atol)`
+
+    ## Unconstrained Objective
+    $(_in_str(s))
+
+    ## Equality constrains
+    $(_in_str(status_summary(cmo.equality_constraints; context = context)))
+
+    ## Inequality constrains
+    $(_in_str(status_summary(cmo.inequality_constraints; context = context)))"""
+end
+function show(io::IO, cmo::ConstrainedManifoldObjective)
+    print(io, "ConstrainedManifoldObjective("); print(io, cmo.objective)
+    print(io, "; atol = ")
+    print(io, cmo.atol)
+    if !isnothing(cmo.equality_constraints)
+        print(io, "; equality_constraints = "); print(io, cmo.equality_constraints)
+    end
+    if !isnothing(cmo.inequality_constraints)
+        print(io, "; inequality_constraints = "); print(io, cmo.inequality_constraints)
+    end
+    return print(io, ")")
+end
 @doc """
     ConstrainedManoptProblem{
         TM <: AbstractManifold,
@@ -323,7 +306,7 @@ correctly, they work as follows:
 Assume the objective is
 ```math
 \\begin{aligned}
- $(_tex(:argmin))_{p ∈ $(_math(:Manifold)))} & f(p)\\\\
+ $(_tex(:argmin))_{p ∈ $(_math(:Manifold))} & f(p)\\\\
  $(_tex(:text, "subject to ")) & g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, " for all ")) i=1,…,m,\\
  $(_tex(:quad)) & h_j(p)=0 $(_tex(:quad)) $(_tex(:text, " for all ")) j=1,…,n.
 \\end{aligned}
@@ -334,7 +317,7 @@ components gradients, for example
 ``$(_tex(:bigl))($(_tex(:grad)) g_1(p), $(_tex(:grad)) g_2(p), …, $(_tex(:grad)) g_m(p) $(_tex(:bigr)))``.
 
 In another interpretation, this can be considered a point on the tangent space
-at ``P = (p,…,p) ∈ $(_math(:Manifold)))^m``, so in the tangent space to the [`PowerManifold`](@extref `ManifoldsBase.PowerManifold`) ``$(_math(:Manifold)))^m``.
+at ``P = (p,…,p) ∈ $(_math(:Manifold))^m``, so in the tangent space to the [`PowerManifold`](@extref `ManifoldsBase.PowerManifold`) ``$(_math(:Manifold))^m``.
 The case where this is a [`NestedPowerRepresentation`](@extref `ManifoldsBase.NestedPowerRepresentation`) this agrees with the
 interpretation from before, but on power manifolds, more efficient representations exist.
 
@@ -356,12 +339,9 @@ Creates a constrained Manopt problem specifying an [`AbstractPowerRepresentation
 for both the `gradient_equality_range` and the `gradient_inequality_range`, respectively.
 """
 struct ConstrainedManoptProblem{
-        TM <: AbstractManifold,
-        O <: AbstractManifoldObjective,
-        HR <: Union{AbstractPowerRepresentation, Nothing},
-        GR <: Union{AbstractPowerRepresentation, Nothing},
-        HHR <: Union{AbstractPowerRepresentation, Nothing},
-        GHR <: Union{AbstractPowerRepresentation, Nothing},
+        TM <: AbstractManifold, O <: AbstractManifoldObjective,
+        HR <: Union{AbstractPowerRepresentation, Nothing}, GR <: Union{AbstractPowerRepresentation, Nothing},
+        HHR <: Union{AbstractPowerRepresentation, Nothing}, GHR <: Union{AbstractPowerRepresentation, Nothing},
     } <: AbstractManoptProblem{TM}
     manifold::TM
     grad_equality_range::HR
@@ -372,32 +352,51 @@ struct ConstrainedManoptProblem{
 end
 
 function ConstrainedManoptProblem(
-        M::TM,
-        objective::O;
+        M::TM, objective::O;
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
-        gradient_equality_range::HR = range,
-        gradient_inequality_range::GR = range,
-        hessian_equality_range::HHR = range,
-        hessian_inequality_range::GHR = range,
+        gradient_equality_range::HR = range, gradient_inequality_range::GR = range,
+        hessian_equality_range::HHR = range, hessian_inequality_range::GHR = range,
     ) where {
-        TM <: AbstractManifold,
-        O <: AbstractManifoldObjective,
-        GR <: Union{AbstractPowerRepresentation, Nothing},
-        HR <: Union{AbstractPowerRepresentation, Nothing},
-        GHR <: Union{AbstractPowerRepresentation, Nothing},
-        HHR <: Union{AbstractPowerRepresentation, Nothing},
+        TM <: AbstractManifold, O <: AbstractManifoldObjective,
+        GR <: Union{AbstractPowerRepresentation, Nothing}, HR <: Union{AbstractPowerRepresentation, Nothing},
+        GHR <: Union{AbstractPowerRepresentation, Nothing}, HHR <: Union{AbstractPowerRepresentation, Nothing},
     }
     return ConstrainedManoptProblem{TM, O, HR, GR, HHR, GHR}(
-        M,
-        gradient_equality_range,
-        gradient_inequality_range,
-        hessian_equality_range,
-        hessian_inequality_range,
-        objective,
+        M, gradient_equality_range, gradient_inequality_range,
+        hessian_equality_range, hessian_inequality_range, objective,
     )
 end
 get_manifold(cmp::ConstrainedManoptProblem) = cmp.manifold
 get_objective(cmp::ConstrainedManoptProblem) = cmp.objective
+
+function show(io::IO, cmp::ConstrainedManoptProblem)
+    print(io, "ConstrainedManoptProblem(", cmp.manifold, ", ", cmp.objective, ";")
+    print(io, " gradient_equality_range = ", cmp.grad_equality_range)
+    print(io, ", gradient_inequality_range = ", cmp.grad_inequality_range)
+    print(io, ", hessian_equality_range = ", cmp.hess_equality_range)
+    print(io, ", hessian_inequality_range = ", cmp.hess_inequality_range)
+    return print(io, ")")
+end
+
+function status_summary(cmp::ConstrainedManoptProblem; context::Symbol = :default)
+    _is_inline(context) && return "A constrained optimization problem to minimize $(cmp.objective) on the manifold $(cmp.manifold)"
+    return """
+    A constrained optimization problem for Manopt.jl
+
+    ## Manifold
+    $(_in_str(repr(cmp.manifold); indent = 1, headers = 0))
+
+    ## Objective
+    $(_in_str(status_summary(cmp.objective, context = context); indent = 1))
+
+    ## Ranges
+    * gradient equality range: $(_MANOPT_INDENT)$(cmp.grad_equality_range)
+    * gradient inequality range: $(_MANOPT_INDENT)$(cmp.grad_inequality_range)
+    * hessian equality range: $(_MANOPT_INDENT)$(cmp.hess_equality_range)
+    * hessian inequality range: $(_MANOPT_INDENT)$(cmp.hess_inequality_range)
+    """
+end
+
 
 @doc """
     LagrangianCost{CO,T} <: AbstractConstrainedFunctor{T}
@@ -441,7 +440,7 @@ function (lc::LagrangianCost)(M, p)
     return c
 end
 function show(io::IO, lc::LagrangianCost)
-    return print(io, "LagrangianCost\n\twith μ=$(lc.μ), λ=$(lc.λ)")
+    return print(io, "LagrangianCost\n$(_MANOPT_INDENT)with μ=$(lc.μ), λ=$(lc.λ)")
 end
 
 @doc """
@@ -495,7 +494,7 @@ function (lg::LagrangianGradient)(M, X, p)
     return X
 end
 function show(io::IO, lg::LagrangianGradient)
-    return print(io, "LagrangianGradient\n\twith μ=$(lg.μ), λ=$(lg.λ)")
+    return print(io, "LagrangianGradient\n$(_MANOPT_INDENT)with μ=$(lg.μ), λ=$(lg.λ)")
 end
 
 @doc """
@@ -549,7 +548,7 @@ function (lH::LagrangianHessian)(M, Y, p, X)
     return Y
 end
 function show(io::IO, lh::LagrangianHessian)
-    return print(io, "LagrangianHessian\n\twith μ=$(lh.μ), λ=$(lh.λ)")
+    return print(io, "LagrangianHessian\n$(_MANOPT_INDENT)with μ=$(lh.μ), λ=$(lh.λ)")
 end
 
 @doc """
@@ -988,14 +987,15 @@ end
     is_feasible(M::AbstractManifold, o::AbstractDecoratedManifoldObjective, p, kwargs...)
 
 Evaluate whether a point `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo`.
-That is for the provided inequality constraints ``g: $(_math(:Manifold))) → ℝ^m`` and equality constraints ``h: $(_math(:Manifold))) \to ℝ^m``
-from within `cmo`, the point ``p ∈ $(_math(:Manifold)))`` is feasible if
+That is for the provided inequality constraints ``g: $(_math(:Manifold)) → ℝ^m`` and equality constraints ``h: $(_math(:Manifold)) → ℝ^m``
+from within `cmo`, the point ``p ∈ $(_math(:Manifold))`` is feasible if
+
 ```math
-g_i(p) ≤ 0, \text{ for all } i=1,…,m$(_tex(:quad))\text{ and }$(_tex(:quad)) h_j(p) = 0, \text{ for all } j=1,…,n.
+g_i(p) ≤ 0, $(_tex(:text, " for all ")) i=1,…,m$(_tex(:quad))\text{ and }$(_tex(:quad)) h_j(p) = 0, \text{ for all } j=1,…,n.
 ```
 
 # Keyword arguments
-* `check_point::Bool=true`: whether to also verify that ``p∈$(_math(:Manifold)))` holds, using [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
+* `check_point::Bool=true`: whether to also verify that ``p∈$(_math(:Manifold))` holds, using [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
 * `error::Symbol=:none`: if the point is not feasible, this symbol determines how to report the error.
     * `:error`: throws an error
     * `:info`: displays the error message as an @info
@@ -1036,11 +1036,8 @@ You can also provide the evaluated vectors for the values of `g` and `h` as keyw
 in case you had them evaluated before.
 """
 function get_feasibility_status(
-        M,
-        cmo,
-        p;
-        g = get_inequality_constraints(M, cmo, p),
-        h = get_equality_constraints(M, cmo, p),
+        M, cmo, p;
+        g = get_inequality_constraints(M, cmo, p), h = get_equality_constraints(M, cmo, p),
     )
     g_violated = sum(g .> 0)
     h_violated = sum(h .!= 0)
@@ -1054,11 +1051,4 @@ function get_feasibility_status(
         h_violated > 0 ? "The sum of violation is $(sum(abs.(h)))." : ""
     )
     """
-end
-
-function Base.show(
-        io::IO, ::ConstrainedManifoldObjective{E, V, Eq, IEq}
-    ) where {E <: AbstractEvaluationType, V, Eq, IEq}
-    #    return print(io, "ConstrainedManifoldObjective{$E,$V,$Eq,$IEq}.")
-    return print(io, "ConstrainedManifoldObjective{$E}")
 end

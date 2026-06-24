@@ -8,145 +8,94 @@
 """
 module Manopt
 
+# When indenting something in print, use two spaces (or maybe \t later?)
+_MANOPT_INDENT = "  "
+
 import Base: &, copy, getindex, identity, length, setindex!, show, |
 import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 import ManifoldsBase: base_manifold, base_point, get_basis
-import ManifoldsBase: project, project!
-import LinearAlgebra: cross
-using ColorSchemes
-using ColorTypes
-using Colors
-using DataStructures: CircularBuffer, capacity, length, push!, size, isfull
+import ManifoldsBase: project, project!, submanifold_component
+import LinearAlgebra: cross, LowerTriangular
+using DataStructures: CircularBuffer, capacity, length, push!, size, isfull, heapify!, heappop!
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using Glossaries
 using LinearAlgebra:
-    cond,
-    Diagonal,
-    I,
-    Eigen,
-    PosDefException,
-    eigen,
-    eigen!,
-    eigvals,
-    ldiv!,
-    tril,
-    Symmetric,
-    dot,
-    cholesky,
-    eigmin,
-    opnorm,
-    mul!
+    Adjoint, Diagonal, I, Eigen, LinearAlgebra, PosDefException, Symmetric,
+    cholesky, cond, dot,
+    eigen, eigen!, eigmin, eigvals,
+    ldiv!, mul!, opnorm, tril
 using ManifoldDiff:
-    adjoint_differential_log_argument,
-    adjoint_differential_log_argument!,
-    differential_exp_argument,
-    differential_exp_argument!,
-    differential_exp_basepoint,
-    differential_exp_basepoint!,
-    differential_log_argument,
-    differential_log_argument!,
-    differential_log_basepoint,
-    differential_log_basepoint!,
-    differential_shortest_geodesic_endpoint,
-    differential_shortest_geodesic_endpoint!,
-    differential_shortest_geodesic_startpoint,
-    differential_shortest_geodesic_startpoint!,
-    jacobi_field,
-    jacobi_field!,
-    riemannian_gradient,
-    riemannian_gradient!,
-    riemannian_Hessian,
-    riemannian_Hessian!
+    adjoint_differential_log_argument, adjoint_differential_log_argument!,
+    differential_exp_argument, differential_exp_argument!,
+    differential_exp_basepoint, differential_exp_basepoint!,
+    differential_log_argument, differential_log_argument!,
+    differential_log_basepoint, differential_log_basepoint!,
+    differential_shortest_geodesic_endpoint, differential_shortest_geodesic_endpoint!,
+    differential_shortest_geodesic_startpoint, differential_shortest_geodesic_startpoint!,
+    jacobi_field, jacobi_field!,
+    riemannian_gradient, riemannian_gradient!,
+    riemannian_Hessian, riemannian_Hessian!
 using ManifoldsBase
 using ManifoldsBase:
     AbstractBasis,
     AbstractDecoratorManifold,
     AbstractInverseRetractionMethod,
-    AbstractManifold,
-    AbstractPowerManifold,
+    AbstractManifold, AbstractPowerManifold,
     AbstractPowerRepresentation,
     AbstractRetractionMethod,
     AbstractVectorTransportMethod,
     CachedBasis,
     DefaultManifold,
-    DefaultOrthonormalBasis,
-    DiagonalizingOrthonormalBasis,
-    ExponentialRetraction,
-    LogarithmicInverseRetraction,
+    DefaultOrthonormalBasis, DiagonalizingOrthonormalBasis,
+    ExponentialRetraction, LogarithmicInverseRetraction,
     NestedPowerRepresentation,
     ParallelTransport,
-    PowerManifold,
-    ProductManifold,
+    PowerManifold, ProductManifold,
     ProjectionTransport,
     QRRetraction,
     TangentSpace,
-    ^,
-    _read,
-    _write,
-    allocate,
-    allocate_result,
-    allocate_result_type,
+    ^, _read, _write,
+    allocate, allocate_result, allocate_result_type,
     base_manifold,
-    copy,
-    copyto!,
+    copy, copyto!,
     default_inverse_retraction_method,
     default_retraction_method,
     default_vector_transport_method,
     distance,
-    embed,
-    embed_project,
-    embed_project!,
-    exp,
-    exp!,
-    geodesic,
+    embed, embed_project, embed_project!,
+    exp, exp!, geodesic,
     get_basis,
     get_component,
-    get_coordinates,
-    get_coordinates!,
+    get_coordinates, get_coordinates!,
     get_embedding,
     get_iterator,
-    get_vector,
-    get_vector!,
-    get_vectors,
+    get_vector, get_vector!, get_vectors,
     has_components,
     injectivity_radius,
     inner,
-    inverse_retract,
-    inverse_retract!,
-    is_flat,
-    is_point,
-    is_vector,
-    log,
-    log!,
+    inverse_retract, inverse_retract!,
+    is_flat, is_point, is_vector,
+    log, log!,
     manifold_dimension,
-    mid_point,
-    mid_point!,
+    mid_point, mid_point!,
     norm,
-    number_eltype,
-    number_of_coordinates,
+    number_eltype, number_of_coordinates,
     power_dimensions,
     project,
     project!,
     rand!,
-    riemann_tensor,
-    riemann_tensor!,
+    riemann_tensor, riemann_tensor!,
     representation_size,
     requires_caching,
-    retract,
-    retract!,
+    retract, retract!,
     sectional_curvature,
     set_component!,
-    shortest_geodesic,
-    shortest_geodesic!,
-    submanifold_components,
-    vector_transport_to,
-    vector_transport_to!,
-    zero_vector,
-    zero_vector!,
-    ×,
-    ℂ,
-    ℝ
+    shortest_geodesic, shortest_geodesic!,
+    submanifold_component, submanifold_components,
+    vector_transport_to, vector_transport_to!,
+    zero_vector, zero_vector!,
+    ×, ℂ, ℝ
 using Markdown
 using Preferences:
     @load_preference, @set_preferences!, @has_preference, @delete_preferences!
@@ -180,6 +129,23 @@ If you load `Manifolds.jl` this switches to using [`Euclidean`](@extref Manifold
 """
 Rn_default() = :Manifolds
 Rn(::Val{T}, args...; kwargs...) where {T} = DefaultManifold(args...; kwargs...)
+
+"""
+    ZeroTangentVector
+
+A small internal helper type to represent the zero tangent vector with two advantages
+
+* we avoid to allocate it
+* we can dispatch on it
+"""
+struct ZeroTangentVector <: ManifoldsBase.AbstractTangentVector end
+
+@static if VERSION >= v"1.12.0"
+    _diagview(A::AbstractMatrix) = LinearAlgebra.diagview(A)
+else
+    _diagview(A::AbstractMatrix) = @view A[LinearAlgebra.diagind(A)]
+end
+
 
 include("plans/plan.jl")
 # solvers general framework
@@ -221,13 +187,10 @@ include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 
 include("helpers/checks.jl")
-include("helpers/exports/Asymptote.jl")
 include("helpers/LineSearchesTypes.jl")
-include("helpers//test.jl")
+include("helpers/test.jl")
 
 include("deprecated.jl")
-
-function JuMP_Optimizer end
 
 function __init__()
     #
@@ -248,17 +211,6 @@ function __init__()
                     "\nThe `proximal_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
                 )
                 printstyled(io, "`using QuadraticModels, RipQP`"; color = :cyan)
-            end
-            if exc.f === Manopt.JuMP_Optimizer
-                print(
-                    io,
-                    """
-
-                    The `Manopt.JuMP_Optimizer` is not yet properly initialized.
-                    It requires the package `JuMP.jl`, so please load it e.g. via
-                    """,
-                )
-                printstyled(io, "`using JuMP`"; color = :cyan)
             end
         end
     end
@@ -286,7 +238,7 @@ export AbstractDecoratedManifoldObjective,
     EmbeddedManifoldObjective,
     ScaledManifoldObjective,
     ManifoldCountObjective,
-    NonlinearLeastSquaresObjective,
+    ManifoldNonlinearLeastSquaresObjective,
     ManifoldAlternatingGradientObjective,
     ManifoldCostGradientObjective,
     ManifoldCostObjective,
@@ -304,13 +256,18 @@ export AbstractDecoratedManifoldObjective,
     SimpleManifoldCachedObjective,
     ManifoldCachedObjective
 # Functions
-export AbstractVectorFunction,
-    AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
+export AbstractVectorFunction, VectorDifferentialFunction
+export AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
+# Robustifiers
+export AbstractRobustifierFunction, SoftL1Robustifier, AbstractRobustifierFunction,
+    CauchyRobustifier, TolerantRobustifier, TukeyRobustifier, ComposedRobustifierFunction,
+    ArctanRobustifier, ScaledRobustifierFunction, RobustifierFunction, IdentityRobustifier,
+    HuberRobustifier, ComponentwiseRobustifierFunction
 #
 # Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
 export AbstractVectorialType
-export CoordinateVectorialType, ComponentVectorialType, FunctionVectorialType
+export CoefficientVectorialType, ComponentVectorialType, FunctionVectorialType
 #
 # AbstractManoptSolverState
 export AbstractGradientSolverState,
@@ -324,6 +281,7 @@ export AbstractGradientSolverState,
     ChambollePockState,
     ConjugateGradientDescentState,
     ConjugateResidualState,
+    CoordinatesNormalSystemState,
     CyclicProximalPointState,
     DifferenceOfConvexState,
     DifferenceOfConvexProximalState,
@@ -341,6 +299,7 @@ export AbstractGradientSolverState,
     ProjectedGradientMethodState,
     ProximalBundleMethodState,
     ProximalGradientMethodState,
+    ProximalPointState,
     RecordSolverState,
     StepsizeState,
     StochasticGradientDescentState,
@@ -362,55 +321,37 @@ export get_proximal_map, get_proximal_map!
 export get_state,
     get_initial_stepsize,
     get_iterate,
-    get_jacobian,
-    get_jacobian!,
-    get_gradients,
-    get_gradients!,
+    get_adjoint_jacobian, get_adjoint_jacobian!,
+    get_jacobian, get_jacobian!,
+    get_gradients, get_gradients!,
     get_manifold,
-    get_preconditioner,
-    get_preconditioner!,
-    get_primal_prox,
-    get_primal_prox!,
-    get_projected_point,
-    get_projected_point!,
-    get_differential_primal_prox,
-    get_differential_primal_prox!,
-    get_dual_prox,
-    get_dual_prox!,
-    get_differential_dual_prox,
-    get_differential_dual_prox!,
-    set_gradient!,
-    set_iterate!,
-    get_residuals,
-    get_residuals!,
-    has_converged,
-    linearized_forward_operator,
-    linearized_forward_operator!,
-    adjoint_linearized_operator,
-    adjoint_linearized_operator!,
-    forward_operator,
-    forward_operator!,
+    get_preconditioner, get_preconditioner!,
+    get_primal_prox, get_primal_prox!,
+    get_projected_point, get_projected_point!,
+    get_differential_primal_prox, get_differential_primal_prox!,
+    get_dual_prox, get_dual_prox!,
+    get_differential_dual_prox, get_differential_dual_prox!,
     get_objective,
-    get_unconstrained_objective
+    get_residuals, get_residuals!,
+    get_unconstrained_objective,
+    has_converged,
+    linearized_forward_operator, linearized_forward_operator!,
+    adjoint_linearized_operator, adjoint_linearized_operator!,
+    forward_operator, forward_operator!,
+    set_gradient!, set_iterate!
 export get_hessian, get_hessian!
 export get_differential
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
 export equality_constraints_length,
-    get_constraints,
-    get_inequality_constraint,
-    get_equality_constraint,
-    get_grad_inequality_constraint,
-    get_grad_inequality_constraint!,
-    get_grad_equality_constraint,
-    get_grad_equality_constraint!,
-    get_hess_inequality_constraint,
-    get_hess_inequality_constraint!,
-    get_hess_equality_constraint,
-    get_hess_equality_constraint!,
-    inequality_constraints_length,
-    is_feasible
+    get_constraints, get_inequality_constraint, get_equality_constraint,
+    get_grad_inequality_constraint, get_grad_inequality_constraint!,
+    get_grad_equality_constraint, get_grad_equality_constraint!,
+    get_hess_inequality_constraint, get_hess_inequality_constraint!,
+    get_hess_equality_constraint, get_hess_equality_constraint!,
+    get_robustifier_values,
+    inequality_constraints_length, is_feasible
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export KKTVectorField, KKTVectorFieldJacobian, KKTVectorFieldAdjointJacobian
@@ -418,12 +359,13 @@ export KKTVectorFieldNormSq, KKTVectorFieldNormSqGradient
 export LagrangianCost, LagrangianGradient, LagrangianHessian
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 export FrankWolfeCost, FrankWolfeGradient
+export LevenbergMarquardtLinearSurrogateObjective
 export TrustRegionModelObjective
 export CondensedKKTVectorField, CondensedKKTVectorFieldJacobian
 export SymmetricLinearSystemObjective
 export ProximalGradientNonsmoothCost, ProximalGradientNonsmoothSubgradient
 
-export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
+export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate, QuasiNewtonLimitedMemoryBoxDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
 export QuasiNewtonPreconditioner
 export QuasiNewtonCautiousDirectionUpdate,
@@ -463,67 +405,37 @@ export NeverRestart,
 export adaptive_regularization_with_cubics,
     accepted_keywords,
     adaptive_regularization_with_cubics!,
-    alternating_gradient_descent,
-    alternating_gradient_descent!,
-    augmented_Lagrangian_method,
-    augmented_Lagrangian_method!,
-    convex_bundle_method,
-    convex_bundle_method!,
-    convex_bundle_method_subsolver,
-    convex_bundle_method_subsolver!,
-    ChambollePock,
-    ChambollePock!,
-    cma_es,
-    cma_es!,
-    conjugate_gradient_descent,
-    conjugate_gradient_descent!,
-    conjugate_residual,
-    conjugate_residual!,
-    cyclic_proximal_point,
-    cyclic_proximal_point!,
-    difference_of_convex_algorithm,
-    difference_of_convex_algorithm!,
-    difference_of_convex_proximal_point,
-    difference_of_convex_proximal_point!,
-    DouglasRachford,
-    DouglasRachford!,
-    exact_penalty_method,
-    exact_penalty_method!,
-    Frank_Wolfe_method,
-    Frank_Wolfe_method!,
-    gradient_descent,
-    gradient_descent!,
-    interior_point_Newton,
-    interior_point_Newton!,
-    LevenbergMarquardt,
-    LevenbergMarquardt!,
-    mesh_adaptive_direct_search,
-    mesh_adaptive_direct_search!,
-    NelderMead,
-    NelderMead!,
-    particle_swarm,
-    particle_swarm!,
+    alternating_gradient_descent, alternating_gradient_descent!,
+    augmented_Lagrangian_method, augmented_Lagrangian_method!,
+    convex_bundle_method, convex_bundle_method!,
+    convex_bundle_method_subsolver, convex_bundle_method_subsolver!,
+    ChambollePock, ChambollePock!,
+    cma_es, cma_es!,
+    conjugate_gradient_descent, conjugate_gradient_descent!,
+    conjugate_residual, conjugate_residual!,
+    cyclic_proximal_point, cyclic_proximal_point!,
+    difference_of_convex_algorithm, difference_of_convex_algorithm!,
+    difference_of_convex_proximal_point, difference_of_convex_proximal_point!,
+    DouglasRachford, DouglasRachford!,
+    exact_penalty_method, exact_penalty_method!,
+    Frank_Wolfe_method, Frank_Wolfe_method!,
+    gradient_descent, gradient_descent!,
+    interior_point_Newton, interior_point_Newton!,
+    LevenbergMarquardt, LevenbergMarquardt!,
+    mesh_adaptive_direct_search, mesh_adaptive_direct_search!,
+    NelderMead, NelderMead!,
+    particle_swarm, particle_swarm!,
     primal_dual_semismooth_Newton,
-    projected_gradient_method,
-    projected_gradient_method!,
-    proximal_bundle_method,
-    proximal_bundle_method!,
-    proximal_gradient_method,
-    proximal_gradient_method!,
-    proximal_point,
-    proximal_point!,
-    quasi_Newton,
-    quasi_Newton!,
-    stochastic_gradient_descent,
-    stochastic_gradient_descent!,
-    subgradient_method,
-    subgradient_method!,
-    truncated_conjugate_gradient_descent,
-    truncated_conjugate_gradient_descent!,
-    trust_regions,
-    trust_regions!,
-    vectorbundle_newton,
-    vectorbundle_newton!
+    projected_gradient_method, projected_gradient_method!,
+    proximal_bundle_method, proximal_bundle_method!,
+    proximal_gradient_method, proximal_gradient_method!,
+    proximal_point, proximal_point!,
+    quasi_Newton, quasi_Newton!,
+    stochastic_gradient_descent, stochastic_gradient_descent!,
+    subgradient_method, subgradient_method!,
+    truncated_conjugate_gradient_descent, truncated_conjugate_gradient_descent!,
+    trust_regions, trust_regions!,
+    vectorbundle_newton, vectorbundle_newton!
 #
 # Solver helpers
 export decorate_state!, decorate_objective!
@@ -546,40 +458,32 @@ export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
 export DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
 export ProximalGradientMethodBacktracking
+export HagerZhangLinesearch
 #
 # Stopping Criteria
 export StoppingCriterion, StoppingCriterionSet
-export StopAfter,
-    StopAfterIteration,
+export StopAfter, StopAfterIteration,
     StopWhenResidualIsReducedByFactorOrPower,
-    StopWhenAll,
-    StopWhenAllLanczosVectorsUsed,
-    StopWhenAny,
+    StopWhenAll, StopWhenAllLanczosVectorsUsed, StopWhenAny,
     StopWhenBestCostInGenerationConstant,
     StopWhenChangeLess,
-    StopWhenCostLess,
-    StopWhenCostChangeLess,
-    StopWhenCostNaN,
+    StopWhenCostLess, StopWhenCostChangeLess, StopWhenCostNaN,
     StopWhenCovarianceIllConditioned,
     StopWhenCurvatureIsNegative,
     StopWhenCriterionWithIterationCondition,
     StopWhenEntryChangeLess,
     StopWhenEvolutionStagnates,
-    StopWhenGradientChangeLess,
-    StopWhenGradientMappingNormLess,
-    StopWhenGradientNormLess,
+    StopWhenGradientChangeLess, StopWhenGradientMappingNormLess, StopWhenGradientNormLess,
+    StopWhenProjectedNegativeGradientNormLess,
     StopWhenFirstOrderProgress,
     StopWhenIterateNaN,
     StopWhenKKTResidualLess,
     StopWhenLagrangeMultiplierLess,
     StopWhenModelIncreased,
     StopWhenPollSizeLess,
-    StopWhenPopulationCostConcentrated,
-    StopWhenPopulationConcentrated,
-    StopWhenPopulationDiverges,
-    StopWhenPopulationStronglyConcentrated,
+    StopWhenPopulationCostConcentrated, StopWhenPopulationConcentrated, StopWhenPopulationDiverges, StopWhenPopulationStronglyConcentrated,
     StopWhenProjectedGradientStationary,
-    StopWhenRelativeResidualLess,
+    StopWhenRelativeAPosterioriCostChangeLessOrEqual, StopWhenRelativeResidualLess,
     StopWhenRepeated,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
@@ -589,13 +493,9 @@ export StopAfter,
 export get_active_stopping_criteria,
     get_stopping_criteria, get_reason, get_stopping_criterion, stopped_at
 #
-# Exports
-export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD
-export render_asymptote
-#
 # Debugs
 export DebugSolverState, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
-export DebugChange, DebugGradientChange
+export DebugCallback, DebugChange, DebugGradientChange
 export DebugIterate, DebugIteration, DebugDivider, DebugTime
 export DebugFeasibility
 export DebugCost, DebugStoppingCriterion

@@ -10,10 +10,10 @@ AbstractManifoldObjective{T} end
     ManifoldCostObjective{T, TC} <: AbstractManifoldCostObjective{T, TC}
 
 specify an [`AbstractManifoldObjective`](@ref) that does only have information about
-the cost function ``f:  $(_math(:Manifold))) → ℝ`` implemented as a function `(M, p) -> c`
+the cost function ``f:  $(_math(:Manifold)) → ℝ`` implemented as a function `(M, p) -> c`
 to compute the cost value `c` at `p` on the manifold `M`.
 
-* `cost`: a function ``f: $(_math(:Manifold))) → ℝ`` to minimize
+* `cost`: a function ``f: $(_math(:Manifold)) → ℝ`` to minimize
 
 # Constructors
 
@@ -57,4 +57,11 @@ or all wrappers (`true`) should be “unwrapped” at once.
 get_cost_function(mco::AbstractManifoldCostObjective, recursive = false) = mco.cost
 function get_cost_function(admo::AbstractDecoratedManifoldObjective, recursive = false)
     return get_cost_function(get_objective(admo, recursive))
+end
+
+function show(io::IO, ::ManifoldCostObjective{E, TC}) where {E, TC}
+    return print(io, "ManifoldCostObjective(f)")
+end
+function status_summary(::ManifoldCostObjective{E, TC}; context::Symbol = :default) where {E, TC}
+    return "A cost function on a Riemannian manifold `f = (M,p) -> ℝ`."
 end

@@ -45,10 +45,12 @@ x_opt = quasi_Newton(
 )
 ```
 
-In general this defines the following new [stepsize](@ref Stepsize)
+In general this defines the following new [stepsize](@ref Stepsize) with helper functions for setting and getting the maximum step size:
 
 ```@docs
 Manopt.LineSearchesStepsize
+Manopt.linesearches_get_max_alpha
+Manopt.linesearches_set_max_alpha
 ```
 
 ## Manifolds.jl
@@ -68,53 +70,4 @@ Euclidean space when needed as
 ```@docs
 Manopt.Rn
 Manopt.Rn_default
-```
-
-## [JuMP.jl](@extref JuMP :std:doc:`index`)
-
-Manopt can be used from within [`JuMP.jl`](@extref JuMP :std:doc:`index`).
-The manifold is provided in the `@variable` macro. Note that until now,
-only variables (points on manifolds) are supported, that are arrays, especially structs do not yet work.
-The algebraic expression of the objective function is specified in the `@objective` macro.
-The `descent_state_type` attribute specifies the solver.
-
-```julia
-using JuMP, Manopt, Manifolds
-model = Model(Manopt.JuMP_Optimizer)
-# Change the solver with this option, `GradientDescentState` is the default
-set_attribute(model, "descent_state_type", GradientDescentState)
-@variable(model, U[1:2, 1:2] in Stiefel(2, 2), start = 1.0)
-@objective(model, Min, sum((A - U) .^ 2))
-optimize!(model)
-solution_summary(model)
-```
-
-Several functions from the [Mathematical Optimization Interface (MOI)](@extref JuMP :std:label:`The-MOI-interface`) are
-extended when both `Manopt.jl` and [`JuMP.jl`](@extref JuMP :std:doc:`index`) are loaded:
-
-```@docs
-Manopt.JuMP_Optimizer
-```
-
-### Internal functions
-
-```@docs
-JuMP.build_variable
-MOI.add_constrained_variables
-MOI.copy_to
-MOI.empty!
-MOI.dimension
-MOI.supports_add_constrained_variables
-MOI.get
-MOI.is_valid
-MOI.supports
-MOI.supports_incremental_interface
-MOI.set
-```
-
-### Internal wrappers and their functions
-
-```@autodocs
-Modules = [Base.get_extension(Manopt, :ManoptJuMPExt)]
-Order   = [:type, :function]
 ```

@@ -5,7 +5,7 @@ title: "Using automatic differentiation in Manopt.jl"
 Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) 0.7, the support of automatic differentiation support has been extended.
 
 This tutorial explains how to use Euclidean tools to derive a gradient for a real-valued function $f:  \mathcal M → ℝ$.
-Two methods are considered: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimization algorithm in [Manopt.jl](https://manoptjl.org).
+Two methods are considered: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimization algorithm in [Manopt.jl](../index.md).
 
 While by default [FiniteDifferences.jl](https://juliadiff.org/FiniteDifferences.jl/latest/)are used,
 one can also use [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl), [ForwardDiff.jl](https://juliadiff.org/ForwardDiff.jl/stable/), [ReverseDiff.jl](https://juliadiff.org/ReverseDiff.jl/), or [Zygote.jl](https://fluxml.ai/Zygote.jl/).

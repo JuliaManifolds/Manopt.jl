@@ -8,6 +8,8 @@ function ManifoldsBase.default_inverse_retraction_method(::TestPolarManifold)
 end
 
 struct TestDebugAction <: DebugAction end
+Base.show(io::IO, ::TestDebugAction) = print(io, "TestDebugAction()")
+
 
 struct TestMessageState <: AbstractManoptSolverState end
 Manopt.get_message(::TestMessageState) = "DebugTest"
@@ -27,25 +29,33 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         M = ManifoldsBase.DefaultManifold(2)
         p = [4.0, 2.0]
         st = GradientDescentState(
-            M;
-            p = p,
-            stopping_criterion = StopAfterIteration(10),
-            stepsize = Manopt.ConstantStepsize(M),
+            M; p = p,
+            stopping_criterion = StopAfterIteration(10), stepsize = Manopt.ConstantStepsize(M),
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
-        # summary fallback to show
+        tda = TestDebugAction()
+        # summary fallback to show - inherited from AbstractStateAction(s)
         @test Manopt.status_summary(TestDebugAction()) === "TestDebugAction()"
+        show(io, tda)
+        @test String(take!(io)) === "TestDebugAction()"
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         a1 = DebugDivider("|"; io = io)
-        @test Manopt.dispatch_state_decorator(DebugSolverState(st, a1)) === Val{true}()
+        dst = DebugSolverState(st, a1)
+        dst_empty = DebugSolverState(st, [])
+        @test Manopt.dispatch_state_decorator(dst) === Val{true}()
         # constructors
-        @test DebugSolverState(st, a1).debugDictionary[:Iteration] == a1
-        @test DebugSolverState(st, [a1]).debugDictionary[:Iteration].group[1] == a1
-        @test DebugSolverState(st, Dict(:A => a1)).debugDictionary[:A] == a1
-        @test DebugSolverState(st, ["|"]).debugDictionary[:Iteration].divider == a1.divider
-        @test endswith(repr(DebugSolverState(st, a1)), "\"|\"")
-        @test repr(DebugSolverState(st, Dict{Symbol, DebugAction}())) == repr(st)
+        @test DebugSolverState(st, a1).debug_dictionary[:Iteration] == a1
+        @test DebugSolverState(st, [a1]).debug_dictionary[:Iteration].group[1] == a1
+        @test DebugSolverState(st, Dict(:A => a1)).debug_dictionary[:A] == a1
+        @test DebugSolverState(st, ["|"]).debug_dictionary[:Iteration].divider == a1.divider
+        @test endswith(Manopt.status_summary(dst), "A DebugAction printing the String “|” as a divider")
+        # Without any actual debug, do not print debug
+        @test !contains(Manopt.status_summary(dst_empty), "## Debug")
+        @test Manopt.status_summary(a1; context = :short) == "\"|\""
+        @test Manopt.status_summary(a1; context = :default) == "A DebugAction printing the String “|” as a divider"
+        empty_dbg = Dict{Symbol, DebugAction}()
+        @test repr(DebugSolverState(st, empty_dbg)) == "DebugSolverState($(repr(st)), $(repr(empty_dbg)))"
         # Passthrough
         dss = DebugSolverState(st, a1)
         Manopt.set_parameter!(dss, :StoppingCriterion, :MaxIteration, 20)
@@ -74,10 +84,9 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test String(take!(io)) == ""
         # Change of Iterate and recording a custom field
         a2 = DebugChange(;
-            storage = StoreStateAction(M; store_points = Tuple{:Iterate}, p_init = p),
-            prefix = "Last: ",
-            io = io,
+            storage = StoreStateAction(M; store_points = Tuple{:Iterate}, p_init = p), prefix = "Last: ", io = io,
         )
+        @test startswith(Manopt.status_summary(a2), "A DebugAction to print the change of the iterate ")
         a2(mp, st, 0) # init
         st.p = [3.0, 2.0]
         a2(mp, st, 1)
@@ -115,11 +124,13 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         DebugIteration(; io = io)(mp, st, 23)
         @test String(take!(io)) == "# 23    "
         @test repr(DebugIteration()) == "DebugIteration(; format=\"# %-6d\")"
-        @test Manopt.status_summary(DebugIteration()) == "(:Iteration, \"# %-6d\")"
+        @test Manopt.status_summary(DebugIteration(); context = :short) == "(:Iteration, \"# %-6d\")"
+        @test Manopt.status_summary(DebugIteration()) == "A DebugAction that prints the current iteration number in format “# %-6d”"
         # `DebugEntryChange`
         dec = DebugEntryChange(:p, x -> x)
         @test startswith(repr(dec), "DebugEntryChange(:p")
-        # DEbugEntryChange - reset
+        @test startswith(Manopt.status_summary(dec), "A DebugAction that prints the change of the entry")
+        # DebugEntryChange - reset
         st.p = p
         a3 = DebugEntryChange(
             :p,
@@ -155,19 +166,21 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test String(take!(io)) ==
             "At iteration 20 the algorithm reached its maximal number of iterations (20).\n"
         @test repr(DebugStoppingCriterion()) == "DebugStoppingCriterion()"
-        @test Manopt.status_summary(DebugStoppingCriterion()) == ":Stop"
+        @test Manopt.status_summary(DebugStoppingCriterion(); context = :short) == ":Stop"
+        @test Manopt.status_summary(DebugStoppingCriterion()) == "A DebugAction printing the reason why a solver has stopped."
         # Status for multiple dictionaries
         dss = DebugSolverState(st, DebugFactory([:Stop, 20, "|"]))
         @test contains(Manopt.status_summary(dss), ":Stop")
         @test Manopt.get_message(dss) == ""
         # DebugEvery summary
         de = DebugEvery(DebugGroup([DebugDivider("|"), DebugIteration()]), 10)
-        @test Manopt.status_summary(de) == "[\"|\", (:Iteration, \"# %-6d\"), 10]"
+        @test Manopt.status_summary(de; context = :short) == "[\"|\", (:Iteration, \"# %-6d\"), 10]"
         # DebugGradientChange
         dgc = DebugGradientChange()
         dgc_s = "DebugGradientChange(; format=\"Last Change: %f\", vector_transport_method=ParallelTransport())"
         @test repr(dgc) == dgc_s
-        @test Manopt.status_summary(dgc) == "(:GradientChange, \"Last Change: %f\")"
+        @test Manopt.status_summary(dgc; context = :short) == "(:GradientChange, \"Last Change: %f\")"
+        @test Manopt.status_summary(dgc) == "A DebugAction printing the change of the gradient with format “Last Change: %f”"
         # Faster storage
         dgc2 = DebugGradientChange(Euclidean(2))
         @test repr(dgc2) == dgc_s
@@ -179,30 +192,13 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test isa(df[:Iteration], DebugDivider)
         df = DebugFactory([:Stop, "|", 20])
         @test isa(df[:Iteration], DebugEvery)
-        s = [
-            :Change,
-            :GradientChange,
-            :Iteration,
-            :Iterate,
-            :Cost,
-            :Stepsize,
-            :p,
-            :Time,
-            :IterativeTime,
-        ]
+        s = [:Change, :GradientChange, :Iteration, :Iterate, :Cost, :Stepsize, :p, :Time, :IterativeTime]
         @test all(
             isa.(
                 DebugFactory(s)[:Iteration].group,
                 [
-                    DebugChange,
-                    DebugGradientChange,
-                    DebugIteration,
-                    DebugIterate,
-                    DebugCost,
-                    DebugStepsize,
-                    DebugEntry,
-                    DebugTime,
-                    DebugTime,
+                    DebugChange, DebugGradientChange, DebugIteration, DebugIterate, DebugCost,
+                    DebugStepsize, DebugEntry, DebugTime, DebugTime,
                 ],
             ),
         )
@@ -211,15 +207,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
             isa.(
                 DebugFactory([(t, "A") for t in s])[:Iteration].group,
                 [
-                    DebugChange,
-                    DebugGradientChange,
-                    DebugIteration,
-                    DebugIterate,
-                    DebugCost,
-                    DebugStepsize,
-                    DebugEntry,
-                    DebugTime,
-                    DebugTime,
+                    DebugChange, DebugGradientChange, DebugIteration, DebugIterate, DebugCost,
+                    DebugStepsize, DebugEntry, DebugTime, DebugTime,
                 ],
             ),
         )
@@ -264,8 +253,9 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 
         w1 = DebugWarnIfCostNotFinite()
-        @test repr(w1) == "DebugWarnIfCostNotFinite()"
-        @test Manopt.status_summary(w1) == ":WarnCost"
+        @test repr(w1) == "DebugWarnIfCostNotFinite(:Once)"
+        @test Manopt.status_summary(w1; context = :short) == ":WarnCost"
+        @test Manopt.status_summary(w1) == "A DebugAction to issue a warning when the cost is no longer finite. It will only warn once."
         @test_logs (:warn,) (:warn,) w1(mp, st, 0)
         w2 = DebugWarnIfCostNotFinite(:Always)
         @test_logs (:warn,) w2(mp, st, 0)
@@ -273,6 +263,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         st.X = grad_f(M, p)
         w3 = DebugWarnIfFieldNotFinite(:X)
         @test repr(w3) == "DebugWarnIfFieldNotFinite(:X, :Once)"
+        @test startswith(Manopt.status_summary(w3), "A DebugAction to warn if the field")
         @test_logs (:warn,) (:warn,) w3(mp, st, 0)
         w4 = DebugWarnIfFieldNotFinite(:X, :Always)
         @test_logs (:warn,) w4(mp, st, 1)
@@ -283,6 +274,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         mp2 = DefaultManoptProblem(M2, ManifoldGradientObjective(f, grad_f))
         w6 = DebugWarnIfGradientNormTooLarge(1.0, :Once)
         @test repr(w6) == "DebugWarnIfGradientNormTooLarge(1.0, :Once)"
+        @test startswith(Manopt.status_summary(w6), "A DebugAction warning if the gradient norm gets larger than")
         st.X .= [4.0, 0.0] # > π in norm
         @test_logs (:warn,) (:warn,) w6(mp2, st, 1)
 
@@ -292,7 +284,12 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
         w8 = DebugWarnIfStepsizeCollapsed(1.0, :Once)
         @test repr(w8) == "DebugWarnIfStepsizeCollapsed(1.0, :Once)"
+        @test startswith(Manopt.status_summary(w8), "A DebugAction warning if the step size collapses")
         @test_logs (:warn,) (:warn,) w8(mp2, st, 1)
+
+        w9 = DebugWarnIfCostIncreases()
+        @test startswith(repr(w9), "DebugWarnIfCostIncreases(")
+        @test startswith(Manopt.status_summary(w9), "A DebugAction warning if the cost increases")
 
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:Iteration], DebugWarnIfCostNotFinite)
@@ -341,53 +338,68 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         drs = "DebugTime(; format=\"time spent: %s\", mode=:cumulative)"
         @test repr(DebugTime()) == drs
         drs2 = "(:IterativeTime, \"time spent: %s\")"
-        @test Manopt.status_summary(DebugTime(; mode = :iterative)) == drs2
+        drs2h = "a DebugActin to print time per step iteratively"
+        @test Manopt.status_summary(DebugTime(; mode = :iterative); context = :short) == drs2
+        @test Manopt.status_summary(DebugTime(; mode = :iterative)) == drs2h
         drs3 = "(:Time, \"time spent: %s\")"
-        @test Manopt.status_summary(DebugTime(; mode = :cumulative)) == drs3
+        drs3h = "a DebugActin to print time per step cumulatively"
+        @test Manopt.status_summary(DebugTime(; mode = :cumulative); context = :short) == drs3
+        @test Manopt.status_summary(DebugTime(; mode = :cumulative)) == drs3h
     end
     @testset "Debug show/summaries" begin
         d1 = DebugDivider("|")
         d2 = DebugIterate()
         d3 = DebugGroup([d1, d2])
         @test repr(d3) == "DebugGroup([$(d1), $(d2)])"
-        ts = "[ $(Manopt.status_summary(d1)), $(Manopt.status_summary(d2)) ]"
-        @test Manopt.status_summary(d3) == ts
-
+        ts = "[ $(Manopt.status_summary(d1; context = :short)), $(Manopt.status_summary(d2; context = :short)) ]"
+        @test Manopt.status_summary(d3; context = :short) == ts
+        tsi = "A DebugAction consisting of a group actions, $(Manopt.status_summary(d1; context = :inline)), and $(Manopt.status_summary(d2; context = :inline))"
+        @test Manopt.status_summary(d3; context = :inline) == tsi
+        tsd = "A DebugAction consisting of a group with the following elements\n* $(Manopt.status_summary(d1))\n* $(Manopt.status_summary(d2))"
+        @test Manopt.status_summary(d3) == tsd
         d4 = DebugEvery(d1, 4)
         @test repr(d4) == "DebugEvery($(d1), 4, true; activation_offset=1)"
-        @test Manopt.status_summary(d4) === "[$(d1), 4]"
-
+        @test Manopt.status_summary(d4; context = :short) === "[$(Manopt.status_summary(d1; context = :short)), 4]"
+        de_d = "A DebugAction wrapping the following DebugAction to only print it every"
+        @test startswith(Manopt.status_summary(d4), de_d)
         ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction=LogarithmicInverseRetraction())"
         @test repr(DebugChange()) == ts2
-        @test Manopt.status_summary(DebugChange()) == "(:Change, \"Last Change: %f\")"
+        @test Manopt.status_summary(DebugChange(); context = :short) == "(:Change, \"Last Change: %f\")"
+        @test startswith(Manopt.status_summary(DebugChange()), "A DebugAction to print the change of")
         # verify that a non-default manifold works as well - not sure how to test this then
         d = DebugChange(Euclidean(2))
 
         @test repr(DebugCost()) == "DebugCost(; format=\"f(x): %f\", at_init=true)"
-        @test Manopt.status_summary(DebugCost()) == "(:Cost, \"f(x): %f\")"
+        @test Manopt.status_summary(DebugCost(); context = :short) == "(:Cost, \"f(x): %f\")"
+        @test Manopt.status_summary(DebugCost()) == "A DebugAction printing the current cost value"
 
         @test repr(DebugDivider("|")) == "DebugDivider(; divider=\"|\", at_init=true)"
-        @test Manopt.status_summary(DebugDivider("a")) == "\"a\""
+        @test Manopt.status_summary(DebugDivider("a"); context = :short) == "\"a\""
+        @test Manopt.status_summary(DebugDivider("a")) == "A DebugAction printing the String “a” as a divider"
 
         @test repr(DebugEntry(:a)) == "DebugEntry(:a; format=\"a: %s\", at_init=true)"
+        @test startswith(Manopt.status_summary(DebugEntry(:a)), "A DebugAction to print the field :a")
 
         @test repr(DebugStepsize()) == "DebugStepsize(; format=\"s:%s\", at_init=true)"
-        @test Manopt.status_summary(DebugStepsize()) == "(:Stepsize, \"s:%s\")"
+        @test Manopt.status_summary(DebugStepsize(); context = :short) == "(:Stepsize, \"s:%s\")"
+        @test startswith(Manopt.status_summary(DebugStepsize()), "A DebugAction that prints the current step size")
 
         @test repr(DebugGradientNorm()) == "DebugGradientNorm(; format=\"|grad f(p)|:%s\", at_init=true)"
         dgn_s = "(:GradientNorm, \"|grad f(p)|:%s\")"
-        @test Manopt.status_summary(DebugGradientNorm()) == dgn_s
+        @test Manopt.status_summary(DebugGradientNorm(); context = :short) == dgn_s
+        @test startswith(Manopt.status_summary(DebugGradientNorm(); context = :default), "A debug action to display the gradient norm")
 
         @test repr(DebugGradient()) == "DebugGradient(; format=\"grad f(p):%s\", at_init=false)"
         dg_s = "(:Gradient, \"grad f(p):%s\")"
-        @test Manopt.status_summary(DebugGradient()) == dg_s
+        @test Manopt.status_summary(DebugGradient(); context = :short) == dg_s
     end
     @testset "Debug Messages" begin
         s = TestMessageState()
         mp = DefaultManoptProblem(Euclidean(2), ManifoldCostObjective(x -> x))
         d = DebugMessages(:Info, :Always)
         @test repr(d) == "DebugMessages(:Info, :Always)"
-        @test Manopt.status_summary(d) == "(:Messages, :Always)"
+        @test Manopt.status_summary(d; context = :short) == "(:InfoMessages, :Always)"
+        @test startswith(Manopt.status_summary(d), "A DebugAction printing messages collected during the last iteration")
         @test_logs (:info, "DebugTest") d(mp, s, 0)
     end
     @testset "DebugIfEntry" begin
@@ -395,10 +407,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         M = ManifoldsBase.DefaultManifold(2)
         p = [-4.0, 2.0]
         st = GradientDescentState(
-            M;
-            p = p,
-            stopping_criterion = StopAfterIteration(20),
-            stepsize = Manopt.ConstantStepsize(M),
+            M; p = p,
+            stopping_criterion = StopAfterIteration(20), stepsize = Manopt.ConstantStepsize(M),
         )
         f(M, y) = Inf
         grad_f(M, y) = Inf .* ones(2)
@@ -406,6 +416,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
         die1 = DebugIfEntry(:p, p -> p[1] > 0.0; type = :warn, message = "test1")
         @test startswith(repr(die1), "DebugIfEntry(:p, ")
+        @test startswith(Manopt.status_summary(die1), "A DebugAction printing the entry ")
         @test_logs (:warn, "test1") die1(mp, st, 1)
         die2 = DebugIfEntry(:p, p -> p[1] > 0.0; type = :info, message = "test2")
         @test_logs (:info, "test2") die2(mp, st, 1)
@@ -435,7 +446,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         Manopt.set_parameter!(dA, :Activity, true) # activate
         @test dA.active
         @test repr(dA) == "DebugWhenActive($(repr(dD)), true, true)"
-        @test Manopt.status_summary(dA) == repr(dA)
+        @test contains(Manopt.status_summary(dA), "## Current activity\nactive")
         #issue active
         dA(mp, st, 1)
         @test endswith(String(take!(io)), " | ")
@@ -496,7 +507,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         end
         test_simple_callback()
         dbc = Manopt.DebugCallback(() -> nothing; simple = true)
-        @test startswith(repr(dbc), "DebugCallback containing")
-        @test startswith(Manopt.status_summary(dbc), "#")
+        @test startswith(repr(dbc), "DebugCallback(")
+        @test startswith(Manopt.status_summary(dbc; context = :short), "#")
+        @test startswith(Manopt.status_summary(dbc), "A DebugAction with a callback that calls #")
     end
 end

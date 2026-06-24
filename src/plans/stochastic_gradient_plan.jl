@@ -5,8 +5,8 @@ A stochastic gradient objective consists of
 
 * a(n optional) cost function ``f(p) = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) f_i(p)``
 * an array of gradients, ``$(_tex(:grad)) f_i(p), i=1,…,n`` which can be given in two forms
-  * as one single function ``($(_math(:Manifold))nifold))nifold))), p) ↦ (X_1,…,X_n) ∈ ($(_math(:TangentSpace))n``
-  * as a vector of functions ``$(_tex(:bigl))( ($(_math(:Manifold))), p) ↦ X_1, …, ($(_math(:Manifold))), p) ↦ X_n$(_tex(:bigr)))``.
+  * as one single function ``($(_math(:Manifold)), p) ↦ (X_1,…,X_n) ∈ ($(_math(:TangentSpace))n``
+  * as a vector of functions ``$(_tex(:bigl))( ($(_math(:Manifold)), p) ↦ X_1, …, ($(_math(:Manifold)), p) ↦ X_n$(_tex(:bigr)))``.
 
 Where both variants can also be provided as [`InplaceEvaluation`](@ref) functions
 `(M, X, p) -> X`, where `X` is the vector of `X1,...,Xn` and `(M, X1, p) -> X1, ..., (M, Xn, p) -> Xn`,
@@ -348,6 +348,29 @@ function get_gradient!(
     return X
 end
 
+function Base.show(io::IO, msgo::ManifoldStochasticGradientObjective{E}) where {E}
+    print(io, "ManifoldStochasticGradientObjective(")
+    print(io, msgo.gradient!!)
+    print(io, "; ")
+    if !ismissing(msgo.cost)
+        print(io, "cost = ")
+        print(io, msgo.cost)
+        print(io, ", ")
+    end
+    print(io, _to_kw(E))
+    return print(io, ")")
+end
+function status_summary(msgo::ManifoldStochasticGradientObjective; context::Symbol = :default)
+    (context === :short) && return repr(msgo)
+    cs = ismissing(msgo.cost) ? "" : "including the cost function"
+    (context === :inline) && return "A stochastic gradient objective $cs."
+    ics = ismissing(msgo.cost) ? "" : "\n* cost:          $(_MANOPT_INDENT)$(msgo.cost)"
+    return """
+    A stochastic gradient objective
+
+    ## Functions$(ics)
+    * subgradient ∂f:$(_MANOPT_INDENT)$(msgo.gradient!!)"""
+end
 """
     AbstractStochasticGradientDescentSolverState <: AbstractManoptSolverState
 

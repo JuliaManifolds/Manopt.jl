@@ -26,12 +26,8 @@ using Test
     x0 = vcat(zeros(n_dims - 1), 1.0)
     ls_hz = Manopt.LineSearchesStepsize(M, LineSearches.HagerZhang())
     x_opt = quasi_Newton(
-        M,
-        rosenbrock,
-        rosenbrock_grad!,
-        x0;
-        stepsize = ls_hz,
-        debug = [],
+        M, rosenbrock, rosenbrock_grad!, x0;
+        stepsize = ls_hz, debug = [],
         evaluation = InplaceEvaluation(),
         stopping_criterion = StopAfterIteration(1000) | StopWhenGradientNormLess(1.0e-6),
         return_state = true,
@@ -39,6 +35,7 @@ using Test
 
     @test rosenbrock(M, get_iterate(x_opt)) < 1.503084
     @test startswith(sprint(show, ls_hz), "LineSearchesStepsize(HagerZhang")
+    @test startswith(Manopt.status_summary(ls_hz), "A step size wrapper for LineSearches.jl")
 
     # make sure get_last_stepsize works
     mgo = ManifoldGradientObjective(
@@ -62,4 +59,20 @@ using Test
     initialize_solver!(mp, st_qn)
     ls_mt = Manopt.LineSearchesStepsize(M, LineSearches.MoreThuente())
     @test_throws ErrorException ls_mt(mp_throw, st_qn, 1; fp = rosenbrock(M, x0))
+
+    # test max stepsize limit enforcement
+    @test ls_hz(mp, st_qn, 1, [1.0, 2.0, 3.0, 4.0, 0.0]; stop_when_stepsize_exceeds = 0.1) == 0.1
+
+    @testset "max stepsize limit setting" begin
+        lss = [
+            LineSearches.MoreThuente(),
+            LineSearches.HagerZhang(),
+        ]
+        for ls in lss
+            nls = Manopt.linesearches_set_max_alpha(ls, 0.5)
+            @test Manopt.linesearches_get_max_alpha(nls) == 0.5
+            nls2 = Manopt.linesearches_set_max_alpha(ls, Inf)
+            @test Manopt.linesearches_get_max_alpha(nls2) == Inf
+        end
+    end
 end

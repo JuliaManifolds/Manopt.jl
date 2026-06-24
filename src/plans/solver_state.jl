@@ -15,6 +15,11 @@ $(_fields(:stopping_criterion; name = "stop"))
 """
 abstract type AbstractManoptSolverState end
 
+function Base.show(io::IO, ::MIME"text/plain", ams::AbstractManoptSolverState)
+    multiline = get(io, :multiline, true)
+    return multiline ? status_summary(io, ams) : show(io, ams)
+end
+
 """
     ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState
 
@@ -34,8 +39,11 @@ function ClosedFormSubSolverState(;
     ) where {E <: AbstractEvaluationType}
     return ClosedFormSubSolverState(evaluation)
 end
+Base.show(io::IO, cfss::ClosedFormSubSolverState{E}) where {E} = print(io, "ClosedFormSubSolverState(; $(_to_kw(E)))")
+status_summary(cfss::ClosedFormSubSolverState; context::Symbol = :default) = repr(cfss)
 
 maybe_wrap_evaluation_type(s::AbstractManoptSolverState) = s
+maybe_wrap_evaluation_type(n::Nothing) = n
 function maybe_wrap_evaluation_type(::E) where {E <: AbstractEvaluationType}
     return ClosedFormSubSolverState{E}()
 end
@@ -116,8 +124,8 @@ should be returned at the end of a solver instead of the usual minimizer.
 struct ReturnSolverState{S <: AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
 end
-status_summary(rst::ReturnSolverState) = status_summary(rst.state)
-show(io::IO, rst::ReturnSolverState) = print(io, "ReturnSolverState($(rst.state))")
+status_summary(rst::ReturnSolverState; context::Symbol = :default) = status_summary(rst.state; context = context)
+show(io::IO, rst::ReturnSolverState) = print(io, "ReturnSolverState(", rst.state, ")")
 dispatch_state_decorator(::ReturnSolverState) = Val(true)
 
 """
@@ -230,36 +238,52 @@ _get_iterate(s::AbstractManoptSolverState, ::Val{true}) = get_iterate(s.state)
 _set_iterate!(s::AbstractManoptSolverState, M, p, ::Val{true}) = set_iterate!(s.state, M, p)
 
 """
-    get_solver_result(ams::AbstractManoptSolverState)
+    get_solver_result(state::AbstractManoptSolverState)
     get_solver_result(tos::Tuple{AbstractManifoldObjective,AbstractManoptSolverState})
-    get_solver_result(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
+    get_solver_result(objective::AbstractManifoldObjective, state::AbstractManoptSolverState)
+    get_solver_result(problem::AbstractManoptProblem, state::AbstractManoptSolverState)
 
 Return the final result after all iterations that is stored within
 the [`AbstractManoptSolverState`](@ref) `ams`, which was modified during the iterations.
 
-For the case the objective is passed as well, but default, the objective is ignored,
-and the solver result for the state is called.
+For the case an [`AbstractManifoldObjective`](@ref) `o` the objective is passed as well
+– either as a Tuple or as two parameters –, by default, the objective is ignored,
+and the solver result for the state is called; this is due to display reasons in REPL
+related to statistics, where such a Tuple might appear
+
+For the case an [`AbstractManoptProblem`](@ref) `p` is passed as well as
+a first optional parameter, by default the problem is ignored.
+This can be used to change the representation of a result stored in a state, e.g.
+when a tangent vector is (part of) the result, changing between representations in
+coefficients and different tangent vector representations could be performed as a final step,
+depending on which problem was aimed to be solved
+
+Note that the returned value or point might still be aliased to the original `state`.
 """
-function get_solver_result(s::AbstractManoptSolverState)
-    return _get_solver_result(s, dispatch_state_decorator(s))
+function get_solver_result(state::AbstractManoptSolverState)
+    return _get_solver_result(state, dispatch_state_decorator(state))
 end
 function get_solver_result(
         tos::Tuple{<:AbstractManifoldObjective, <:AbstractManoptSolverState}
     )
     return get_solver_result(tos...)
 end
+function get_solver_result(::AbstractManifoldObjective, state::AbstractManoptSolverState)
+    return get_solver_result(state)
+end
+#A problem or – hence untyped – a closed form solution / function
+function get_solver_result(pf, state::AbstractManoptSolverState)
+    return get_solver_result(state)
+end
 function get_solver_result(tos::Tuple{<:AbstractManifoldObjective, S}) where {S}
     return tos[2]
 end
-function get_solver_result(::AbstractManifoldObjective, s::AbstractManoptSolverState)
-    return get_solver_result(s)
-end
 # if the second one is anything else, assume it is a point/result -> return that
-function get_solver_result(::AbstractManifoldObjective, s)
-    return s
+function get_solver_result(::AbstractManifoldObjective, p)
+    return p
 end
-_get_solver_result(s::AbstractManoptSolverState, ::Val{false}) = get_iterate(s)
-_get_solver_result(s::AbstractManoptSolverState, ::Val{true}) = get_solver_result(s.state)
+_get_solver_result(state::AbstractManoptSolverState, ::Val{false}) = get_iterate(state)
+_get_solver_result(state::AbstractManoptSolverState, ::Val{true}) = get_solver_result(state.state)
 
 """
     set_iterate!(s::AbstractManoptSolverState, M::AbstractManifold, p)
@@ -303,6 +327,13 @@ a common `Type` for `AbstractStateActions` that might be triggered in decorators
 for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverState`](@ref).
 """
 abstract type AbstractStateAction end
+
+status_summary(asa::AbstractStateAction; context::Symbol = :default) = repr(asa)
+
+function Base.show(io::IO, ::MIME"text/plain", asa::AbstractStateAction)
+    multiline = get(io, :multiline, true)
+    return multiline ? status_summary(io, asa) : show(io, asa)
+end
 
 mutable struct StorageRef{T}
     x::T

@@ -14,17 +14,16 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     M = ManifoldsBase.DefaultManifold(2)
     p = [4.0, 2.0]
     gds = GradientDescentState(
-        M;
-        p = copy(p),
-        stopping_criterion = StopAfterIteration(10),
-        stepsize = Manopt.ConstantStepsize(M),
+        M; p = copy(p),
+        stopping_criterion = StopAfterIteration(10), stepsize = Manopt.ConstantStepsize(M),
     )
     f(M, q) = distance(M, q, p) .^ 2
     grad_f(M, q) = -2 * log(M, q, p)
     dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
     a = RecordIteration()
     @test repr(a) == "RecordIteration()"
-    @test Manopt.status_summary(a) == ":Iteration"
+    @test Manopt.status_summary(a; context = :short) == ":Iteration"
+    @test Manopt.status_summary(a) == "A RecordAction to record the current iteration number"
     # constructors
     rs = RecordSolverState(gds, a)
     Manopt.set_parameter!(rs, :Record, RecordCost())
@@ -34,6 +33,9 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @test_throws MethodError get_state(dmp)
     Manopt.set_parameter!(rs, :StoppingCriterion, :MaxIteration, 20)
     @test rs.state.stop.max_iterations == 20 #Maybe turn into a getter?
+    #
+    rs_empty = RecordSolverState(gds, [])
+    @test contains(Manopt.status_summary(rs_empty), "No recordings registered.")
     #
     @test get_initial_stepsize(dmp, rs) == 1.0
     @test get_stepsize(dmp, rs, 1) == 1.0
@@ -85,7 +87,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @test_throws ErrorException RecordGroup(RecordAction[], Dict(:a => 1))
     @test_throws ErrorException RecordGroup(RecordAction[], Dict(:a => 0))
     b = RecordGroup([RecordIteration(), RecordIteration()], Dict(:It1 => 1, :It2 => 2))
-    @test Manopt.status_summary(b) == "[ :Iteration, :Iteration ]"
+    @test Manopt.status_summary(b; context = :short) == "[:Iteration, :Iteration]"
+    @test startswith(Manopt.status_summary(b), "A group of 2 RecordActions:\n")
     @test repr(b) == "RecordGroup([RecordIteration(), RecordIteration()])"
     b(dmp, gds, 1)
     b(dmp, gds, 2)
@@ -102,7 +105,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @testset "RecordEvery" begin
         c = RecordEvery(a, 10, true)
         @test repr(c) == "RecordEvery(RecordIteration(), 10, true)"
-        @test Manopt.status_summary(c) == "[RecordIteration(), 10]"
+        @test Manopt.status_summary(c; context = :short) == "[:Iteration, 10]"
+        @test startswith(Manopt.status_summary(c), "A RecordAction that records every 10th iteration with\n")
         c(dmp, gds, 0)
         @test length(get_record(c)) === 0
         c(dmp, gds, 1)
@@ -118,7 +122,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
             10,
         )
         @test repr(c2) == "RecordEvery($(repr(c2.record)), 10, true)"
-        @test Manopt.status_summary(c2) == "[:Iteration, :Iteration, 10]"
+        @test Manopt.status_summary(c2; context = :short) == "[:Iteration, :Iteration, 10]"
         c2(dmp, gds, 5)
         c2(dmp, gds, 10)
         c2(dmp, gds, 20)
@@ -129,7 +133,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         d = RecordChange()
         sd = "RecordChange(; inverse_retraction_method=LogarithmicInverseRetraction())"
         @test repr(d) == sd
-        @test Manopt.status_summary(d) == ":Change"
+        @test Manopt.status_summary(d; context = :short) == ":Change"
+        @test startswith(Manopt.status_summary(d), "A RecordAction to record the change of the iterate")
         d(dmp, gds, 1)
         @test d.recorded_values == [0.0] # no p0 -> assume p is the first iterate
         set_iterate!(gds, M, p + [1.0, 0.0])
@@ -149,6 +154,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         set_iterate!(gds, M, p)
         f = RecordEntry(p, :p)
         @test repr(f) == "RecordEntry(:p)"
+        @test Manopt.status_summary(f) == "A RecordAction to record the solver state field :p"
         f(dmp, gds, 1)
         @test f.recorded_values == [p]
         f2 = RecordEntry(typeof(p), :p)
@@ -159,6 +165,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         set_iterate!(gds, M, p)
         e = RecordEntryChange(:p, (p, o, x, y) -> distance(get_manifold(p), x, y))
         @test startswith(repr(e), "RecordEntryChange(:p")
+        @test startswith(Manopt.status_summary(e), "A RecordAction to record the solver state field's :p change")
         @test update_storage!(e.storage, dmp, gds) == [:p]
         e(dmp, gds, 1)
         @test e.recorded_values == [0.0]
@@ -169,7 +176,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @testset "RecordIterate" begin
         set_iterate!(gds, M, p)
         f = RecordIterate(p)
-        @test Manopt.status_summary(f) == ":Iterate"
+        @test Manopt.status_summary(f; context = :short) == ":Iterate"
+        @test Manopt.status_summary(f) == "A RecordAction to record the current iterate"
         @test repr(f) == "RecordIterate(Vector{Float64})"
         @test_throws ErrorException RecordIterate()
         f(dmp, gds, 1)
@@ -178,7 +186,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @testset "RecordCost" begin
         g = RecordCost()
         @test repr(g) == "RecordCost()"
-        @test Manopt.status_summary(g) == ":Cost"
+        @test Manopt.status_summary(g; context = :short) == ":Cost"
+        @test Manopt.status_summary(g) == "A RecordAction to record the cost value"
         g(dmp, gds, 1)
         @test g.recorded_values == [0.0]
         gds.p = [3.0, 2.0]
@@ -188,7 +197,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @testset "RecordStoppingReason" begin
         g = RecordStoppingReason()
         @test repr(g) == "RecordStoppingReason()"
-        @test Manopt.status_summary(g) == ":Stop"
+        @test Manopt.status_summary(g; context = :short) == ":Stop"
+        @test startswith(Manopt.status_summary(g), "A RecordAction to record the stopping reason")
         @test length(get_record(g)) == 0
         stop_solver!(dmp, gds, 21) # trigger stop
         g(dmp, gds, 21) # record
@@ -198,7 +208,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @testset "RecordSubsolver" begin
         rss = RecordSubsolver()
         @test repr(rss) == "RecordSubsolver(; record=[:Iteration], record_type=Any)"
-        @test Manopt.status_summary(rss) == ":Subsolver"
+        @test Manopt.status_summary(rss; context = :short) == ":Subsolver"
+        @test startswith(Manopt.status_summary(rss), "A RecordAction to record elements in from each subsolver")
         epms = ExactPenaltyMethodState(M, dmp, rs)
         rss(dmp, epms, 1)
     end
@@ -206,7 +217,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         i = RecordIteration()
         rwa = RecordWhenActive(i)
         @test repr(rwa) == "RecordWhenActive(RecordIteration(), true, true)"
-        @test Manopt.status_summary(rwa) == repr(rwa)
+        @test Manopt.status_summary(rwa; context = :short) == repr(rwa)
+        @test startswith(Manopt.status_summary(rwa), "Record the following only, when active")
         rwa(dmp, gds, 1)
         @test length(get_record(rwa)) == 1
         rwa(dmp, gds, -1) # Reset
@@ -283,7 +295,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @testset "RecordTime" begin
         h1 = RecordTime(; mode = :cumulative)
         @test repr(h1) == "RecordTime(; mode=:cumulative)"
-        @test Manopt.status_summary(h1) == ":Time"
+        @test Manopt.status_summary(h1, context = :short) == ":Time"
+        @test startswith(Manopt.status_summary(h1), "A RecordAction for recording times")
         t = h1.start
         @test t isa Nanosecond
         h1(dmp, gds, 1)
@@ -304,7 +317,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test length(h3.recorded_values) == 1
         @test repr(RecordGradientNorm()) == "RecordGradientNorm()"
         # since only the type is stored can test
-        @test repr(RecordGradient(zeros(3))) == "RecordGradient{Vector{Float64}}()"
+        @test repr(RecordGradient(zeros(3))) == "RecordGradient(Vector{Float64})"
     end
     @testset "Record and parameter passthrough" begin
         s = TestRecordParameterState(0)

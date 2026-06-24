@@ -124,7 +124,7 @@ function decorate_objective!(
     # 3) _then_ cache,
     # count should not be affected by 1) but cache should be on manifold not embedding
     # => only count _after_ cache misses
-    # and always last wrapper: `ReturnObjective`.
+    # and always last wrapper: `ReturnManifoldObjective`.
     deco_o = o
     if objective_type ∈ [:Embedding, :Euclidean]
         deco_o = EmbeddedManifoldObjective(o, _embedded_p, _embedded_X)
@@ -188,4 +188,21 @@ function stop_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState
 end
 function stop_solver!(p::AbstractManoptProblem, s::ReturnSolverState, k)
     return stop_solver!(p, s.state, k)
+end
+
+"""
+    get_cost(p::AbstractManoptProblem, s::AbstractManoptSolverState)
+
+Get cost at the current iterate of the solver state `s` for the problem `p`.
+The method may be implemented by particular solvers if they store the cost at the current
+iterate in the state, but by default it is obtained by calling `get_cost(p, get_iterate(s))`.
+"""
+function get_cost(p::AbstractManoptProblem, s::AbstractManoptSolverState)
+    return _get_cost(p, s, dispatch_state_decorator(s))
+end
+function _get_cost(p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{false})
+    return get_cost(p, get_iterate(s))
+end
+function _get_cost(p::AbstractManoptProblem, s::AbstractManoptSolverState, ::Val{true})
+    return get_cost(p, s.state)
 end

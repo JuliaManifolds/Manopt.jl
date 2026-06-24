@@ -31,35 +31,15 @@ mutable struct PrimalDualManifoldSemismoothNewtonObjective{
     Λ!!::L
 end
 function PrimalDualManifoldSemismoothNewtonObjective(
-        cost,
-        prox_F,
-        diff_prox_F,
-        prox_G_dual,
-        diff_prox_G_dual,
-        linearized_forward_operator,
-        adjoint_linearized_operator;
-        Λ = missing,
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-    )
+        cost::C, prox_F::PF, diff_prox_F::DPF, prox_G_dual::PG, diff_prox_G_dual::DPG,
+        linearized_forward_operator::LFO, adjoint_linearized_operator::AL;
+        Λ::L = missing, evaluation::E = AllocatingEvaluation(),
+    ) where {C, PF, DPF, PG, DPG, LFO, AL, L, E <: AbstractEvaluationType}
     return PrimalDualManifoldSemismoothNewtonObjective{
-        typeof(evaluation),
-        typeof(cost),
-        typeof(prox_F),
-        typeof(diff_prox_F),
-        typeof(prox_G_dual),
-        typeof(diff_prox_G_dual),
-        typeof(linearized_forward_operator),
-        typeof(adjoint_linearized_operator),
-        typeof(Λ),
+        E, C, PF, DPF, PG, DPG, LFO, AL, L,
     }(
-        cost,
-        prox_F,
-        diff_prox_F,
-        prox_G_dual,
-        diff_prox_G_dual,
-        linearized_forward_operator,
-        adjoint_linearized_operator,
-        Λ,
+        cost, prox_F, diff_prox_F, prox_G_dual,
+        diff_prox_G_dual, linearized_forward_operator, adjoint_linearized_operator, Λ,
     )
 end
 
@@ -107,12 +87,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)`"))
 $(_kwargs(:vector_transport_method))
 """
 mutable struct PrimalDualSemismoothNewtonState{
-        P,
-        Q,
-        T,
-        RM <: AbstractRetractionMethod,
-        IRM <: AbstractInverseRetractionMethod,
-        VTM <: AbstractVectorTransportMethod,
+        P, Q, T, RM <: AbstractRetractionMethod,
+        IRM <: AbstractInverseRetractionMethod, VTM <: AbstractVectorTransportMethod,
     } <: AbstractPrimalDualSolverState
     m::P
     n::Q
@@ -127,13 +103,9 @@ mutable struct PrimalDualSemismoothNewtonState{
     retraction_method::RM
     inverse_retraction_method::IRM
     vector_transport_method::VTM
-
     function PrimalDualSemismoothNewtonState(
             M::AbstractManifold;
-            m::P = rand(M),
-            n::Q = rand(N),
-            p::P = rand(M),
-            X::T = zero_vector(M, p),
+            m::P = rand(M), n::Q = rand(N), p::P = rand(M), X::T = zero_vector(M, p),
             primal_stepsize::Float64 = 1 / sqrt(8),
             dual_stepsize::Float64 = 1 / sqrt(8),
             regularization_parameter::Float64 = 1.0e-5,
@@ -144,56 +116,18 @@ mutable struct PrimalDualSemismoothNewtonState{
             inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
             vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
         ) where {
-            P,
-            Q,
-            T,
-            RM <: AbstractRetractionMethod,
-            IRM <: AbstractInverseRetractionMethod,
-            VTM <: AbstractVectorTransportMethod,
+            P, Q, T, RM <: AbstractRetractionMethod,
+            IRM <: AbstractInverseRetractionMethod, VTM <: AbstractVectorTransportMethod,
         }
         return new{P, Q, T, RM, IRM, VTM}(
-            m,
-            n,
-            p,
-            X,
-            primal_stepsize,
-            dual_stepsize,
-            regularization_parameter,
-            stopping_criterion,
-            update_primal_base,
-            update_dual_base,
-            retraction_method,
-            inverse_retraction_method,
-            vector_transport_method,
+            m, n, p, X,
+            primal_stepsize, dual_stepsize, regularization_parameter,
+            stopping_criterion, update_primal_base, update_dual_base,
+            retraction_method, inverse_retraction_method, vector_transport_method,
         )
     end
 end
-function show(io::IO, pdsns::PrimalDualSemismoothNewtonState)
-    i = get_count(pdsns, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(pdsns.stop) ? "Yes" : "No"
-    s = """
-    # Solver state for `Manopt.jl`s primal dual semismooth Newton
-    $Iter
-    ## Parameters
-    * primal_stepsize:           $(pdsns.primal_stepsize)
-    * dual_stepsize:             $(pdsns.dual_stepsize)
-    * regularization_parameter:  $(pdsns.regularization_parameter)
-    * retraction_method:         $(pdsns.retraction_method)
-    * inverse_retraction_method: $(pdsns.inverse_retraction_method)
-    * vector_transport_method:   $(pdsns.vector_transport_method)
 
-    ## Stopping criterion
-
-    $(status_summary(pdsns.stop))
-    This indicates convergence: $Conv"""
-    return print(io, s)
-end
-get_iterate(pdsn::PrimalDualSemismoothNewtonState) = pdsn.p
-function set_iterate!(pdsn::PrimalDualSemismoothNewtonState, p)
-    pdsn.p = p
-    return pdsn
-end
 @doc """
     y = get_differential_primal_prox(M::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective σ, x)
     get_differential_primal_prox!(p::TwoManifoldProblem, y, σ, x)
@@ -224,19 +158,13 @@ end
 
 function get_differential_primal_prox(
         M::AbstractManifold,
-        pdsno::PrimalDualManifoldSemismoothNewtonObjective{AllocatingEvaluation},
-        σ,
-        p,
-        X,
+        pdsno::PrimalDualManifoldSemismoothNewtonObjective{AllocatingEvaluation}, σ, p, X,
     )
     return pdsno.diff_prox_f!!(M, σ, p, X)
 end
 function get_differential_primal_prox(
         M::AbstractManifold,
-        pdsno::PrimalDualManifoldSemismoothNewtonObjective{InplaceEvaluation},
-        σ,
-        p,
-        X,
+        pdsno::PrimalDualManifoldSemismoothNewtonObjective{InplaceEvaluation}, σ, p, X,
     )
     Y = allocate_result(M, get_differential_primal_prox, p, X)
     pdsno.diff_prox_f!!(M, Y, σ, p, X)
@@ -248,23 +176,15 @@ function get_differential_primal_prox(
     return get_differential_primal_prox(M, get_objective(admo, false), σ, p, X)
 end
 function get_differential_primal_prox!(
-        M::AbstractManifold,
-        Y,
-        pdsno::PrimalDualManifoldSemismoothNewtonObjective{AllocatingEvaluation},
-        σ,
-        p,
-        X,
+        M::AbstractManifold, Y,
+        pdsno::PrimalDualManifoldSemismoothNewtonObjective{AllocatingEvaluation}, σ, p, X,
     )
     copyto!(M, Y, p, pdsno.diff_prox_f!!(M, σ, p, X))
     return Y
 end
 function get_differential_primal_prox!(
-        M::AbstractManifold,
-        Y,
-        pdsno::PrimalDualManifoldSemismoothNewtonObjective{InplaceEvaluation},
-        σ,
-        p,
-        X,
+        M::AbstractManifold, Y,
+        pdsno::PrimalDualManifoldSemismoothNewtonObjective{InplaceEvaluation}, σ, p, X,
     )
     pdsno.diff_prox_f!!(M, Y, σ, p, X)
     return Y
@@ -288,9 +208,7 @@ D$(_tex(:prox))_{τG_n^*}(X)[ξ]
 which can also be computed in place of `η`.
 """
 get_differential_dual_prox(
-    ::AbstractManifold,
-    ::PrimalDualManifoldSemismoothNewtonObjective{AllocatingEvaluation},
-    Any...,
+    ::AbstractManifold, ::PrimalDualManifoldSemismoothNewtonObjective{AllocatingEvaluation}, Any...,
 )
 
 function get_differential_dual_prox(tmo::TwoManifoldProblem, n, τ, X, ξ)
@@ -307,21 +225,13 @@ end
 
 function get_differential_dual_prox(
         N::AbstractManifold,
-        pdsno::PrimalDualManifoldSemismoothNewtonObjective{AllocatingEvaluation},
-        n,
-        τ,
-        X,
-        ξ,
+        pdsno::PrimalDualManifoldSemismoothNewtonObjective{AllocatingEvaluation}, n, τ, X, ξ,
     )
     return pdsno.diff_prox_g_dual!!(N, n, τ, X, ξ)
 end
 function get_differential_dual_prox(
         N::AbstractManifold,
-        pdsno::PrimalDualManifoldSemismoothNewtonObjective{InplaceEvaluation},
-        n,
-        τ,
-        X,
-        ξ,
+        pdsno::PrimalDualManifoldSemismoothNewtonObjective{InplaceEvaluation}, n, τ, X, ξ,
     )
     η = allocate_result(N, get_differential_dual_prox, X, ξ)
     pdsno.diff_prox_g_dual!!(N, η, n, τ, X, ξ)
@@ -333,25 +243,15 @@ function get_differential_dual_prox(
     return get_differential_dual_prox(M, get_objective(admo, false), n, τ, X, ξ)
 end
 function get_differential_dual_prox!(
-        N::AbstractManifold,
-        η,
-        pdsno::PrimalDualManifoldSemismoothNewtonObjective{AllocatingEvaluation},
-        n,
-        τ,
-        X,
-        ξ,
+        N::AbstractManifold, η,
+        pdsno::PrimalDualManifoldSemismoothNewtonObjective{AllocatingEvaluation}, n, τ, X, ξ,
     )
     copyto!(N, n, η, pdsno.diff_prox_g_dual!!(N, n, τ, X, ξ))
     return η
 end
 function get_differential_dual_prox!(
-        N::AbstractManifold,
-        η,
-        pdsno::PrimalDualManifoldSemismoothNewtonObjective{InplaceEvaluation},
-        n,
-        τ,
-        X,
-        ξ,
+        N::AbstractManifold, η,
+        pdsno::PrimalDualManifoldSemismoothNewtonObjective{InplaceEvaluation}, n, τ, X, ξ,
     )
     pdsno.diff_prox_g_dual!!(N, η, n, τ, X, ξ)
     return η
@@ -360,4 +260,64 @@ function get_differential_dual_prox!(
         M::AbstractManifold, η, admo::AbstractDecoratedManifoldObjective, n, τ, X, ξ
     )
     return get_differential_dual_prox!(M, η, get_objective(admo, false), n, τ, X, ξ)
+end
+
+get_iterate(pdsn::PrimalDualSemismoothNewtonState) = pdsn.p
+
+function set_iterate!(pdsn::PrimalDualSemismoothNewtonState, p)
+    pdsn.p = p
+    return pdsn
+end
+
+function status_summary(pdsns::PrimalDualSemismoothNewtonState; context::Symbol = :default)
+    i = get_count(pdsns, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(pdsns.stop) ? "Yes" : "No"
+    _is_inline(context) && (return "$(repr(pdsns)) – $(Iter) $(has_converged(pdsns) ? "(converged)" : "")")
+    s = """
+    # Solver state for `Manopt.jl`s primal dual semismooth Newton
+    $Iter
+    ## Parameters
+    * primal_stepsize:          $(_MANOPT_INDENT)$(pdsns.primal_stepsize)
+    * dual_stepsize:            $(_MANOPT_INDENT)$(pdsns.dual_stepsize)
+    * regularization_parameter: $(_MANOPT_INDENT)$(pdsns.regularization_parameter)
+    * retraction_method:        $(_MANOPT_INDENT)$(pdsns.retraction_method)
+    * inverse_retraction_method:$(_MANOPT_INDENT)$(pdsns.inverse_retraction_method)
+    * vector_transport_method:  $(_MANOPT_INDENT)$(pdsns.vector_transport_method)
+
+    ## Stopping criterion
+    $(_in_str(status_summary(pdsns.stop; context = context); indent = 0, headers = 1))
+    This indicates convergence: $Conv"""
+    return s
+end
+function Base.show(io::IO, pdmssno::PrimalDualManifoldSemismoothNewtonObjective{E}) where {E}
+    print(io, "PrimalDualManifoldSemismoothNewtonObjective(")
+    print(io, pdmssno.cost); print(io, ", ")
+    print(io, pdmssno.prox_f!!); print(io, ", ")
+    print(io, pdmssno.diff_prox_f!!); print(io, ", ")
+    print(io, pdmssno.prox_g_dual!!); print(io, ", ")
+    print(io, pdmssno.diff_prox_g_dual!!); print(io, ", ")
+    print(io, pdmssno.linearized_forward_operator!!); print(io, ", ")
+    print(io, pdmssno.adjoint_linearized_operator!!); print(io, "; ")
+    if !ismissing(pdmssno.Λ!!)
+        print(io, "Λ = "); print(io, pdmssno.Λ!!); print(io, ", ")
+    end
+    print(io, _to_kw(E))
+    return print(io, ")")
+end
+function status_summary(pdmssno::PrimalDualManifoldSemismoothNewtonObjective; context::Symbol = :default)
+    (context === :short) && return repr(pdmssno)
+    (context === :inline) && return "A primal dual semismooth Newton objective"
+    Λs = ismissing(pdmssno.Λ!!) ? "" : "\n* Λ:                $(_MANOPT_INDENT)$(pdmssno.Λ!!)"
+    return """
+    A primal dual semismooth Newton objective
+
+    ## Functions
+    * cost:             $(_MANOPT_INDENT)$(pdmssno.cost)
+    * prox_f:           $(_MANOPT_INDENT)$(pdmssno.prox_f!!)
+    * D prox_f:         $(_MANOPT_INDENT)$(pdmssno.diff_prox_f!!)
+    * prox_g*:          $(_MANOPT_INDENT)$(pdmssno.prox_g_dual!!)
+    * D prox_g*:        $(_MANOPT_INDENT)$(pdmssno.diff_prox_g_dual!!)
+    * lin. forward Op:  $(_MANOPT_INDENT)$(pdmssno.linearized_forward_operator!!)
+    * adj. lin. fw. Op.:$(_MANOPT_INDENT)$(pdmssno.adjoint_linearized_operator!!)$(Λs)"""
 end

@@ -87,13 +87,13 @@ Together they form a [plan](plans/index.md).
 
 ## Manifolds
 
-This project is build upon [ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`), a generic interface to implement manifolds. Certain functions are extended for specific manifolds from [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/), but all other manifolds from that package can be used here, too.
+This project is build upon [ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`), a generic interface to implement manifolds. Certain functions are extended for specific manifolds from [Manifolds.jl](@extref Manifolds :std:doc:`index`), but all other manifolds from that package can be used here, too.
 
-The notation in the documentation aims to follow the same [notation](https://juliamanifolds.github.io/Manifolds.jl/stable/misc/notation/) from these packages.
+The notation in the documentation aims to follow the same [notation](@extref Manifolds :std:doc:`misc/notation`) from these packages.
 
 ### Visualization
 
-To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](helpers/exports.md). Furthermore a system to get [debug](plans/debug.md) during the iterations of an algorithms as well as [record](plans/record.md) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
+To visualize and interpret results, `Manopt.jl` provides a system to get [debug](plans/debug.md) during the iterations of an algorithms as well as [record](plans/record.md) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
 [`RecordIterate`](@ref). Take a look at the [🏔️ Get started with Manopt.jl](tutorials/getstarted.md) tutorial on how to easily activate this.
 
 ## Literature

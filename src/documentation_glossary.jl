@@ -31,9 +31,9 @@ __tex_formatter = Glossaries.Math()
 _tex(args...; kwargs...) = __tex_formatter(_glossary_tex_terms, args...; kwargs...)
 
 function _tex_aligned(lines...)
-    return raw"\begin{aligned}\n" *
-        "$(join(["   $(line)" for line in lines], raw"\\\\ "))" *
-        raw"\n\end{aligned}\n"
+    return raw"\begin{aligned}" * "\n" *
+        "$(join(["   $(line)" for line in lines], raw"\\\\ " * "\n"))" *
+        "\n" * raw"\end{aligned}" * "\n"
 end
 Glossaries.define!(_glossary_tex_terms, :aligned, :math, _tex_aligned)
 _tex_abs(v) = raw"\lvert " * "$v" * raw" \rvert"
@@ -42,6 +42,7 @@ Glossaries.define!(_glossary_tex_terms, :argmin, :math, raw"\operatorname*{arg\,
 Glossaries.define!(_glossary_tex_terms, :ast, :math, raw"\ast")
 _tex_bar(letter) = raw"\bar" * "$(letter)"
 Glossaries.define!(_glossary_tex_terms, :bar, :math, _tex_bar)
+Glossaries.define!(_glossary_tex_terms, :bf, :math, (letter) -> raw"\mathbf{" * "$letter" * "}")
 Glossaries.define!(_glossary_tex_terms, :big, :math, raw"\big")
 Glossaries.define!(_glossary_tex_terms, :bigl, :math, raw"\bigl")
 Glossaries.define!(_glossary_tex_terms, :bigr, :math, raw"\bigr")
@@ -80,7 +81,9 @@ Glossaries.define!(_glossary_tex_terms, :inner, :math, _tex_inner)
 Glossaries.define!(_glossary_tex_terms, :log, :math, raw"\log")
 Glossaries.define!(_glossary_tex_terms, :max, :math, raw"\max")
 Glossaries.define!(_glossary_tex_terms, :min, :math, raw"\min")
-_tex_norm(v; index = "") = raw"\lVert " * "$v" * raw" \rVert" * (length(index) > 0 ? "_{$index}" : "")
+function _tex_norm(v; index = "", size = "")
+    return (length(size) > 0 ? "\\$(size)l" : "") * raw"\lVert " * "$v" * (length(size) > 0 ? "\\$(size)r" : "") * raw" \rVert" * (length(index) > 0 ? "_{$index}" : "")
+end
 Glossaries.define!(_glossary_tex_terms, :norm, :math, _tex_norm)
 _tex_pmatrix(lines...) = raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}"
 Glossaries.define!(_glossary_tex_terms, :pmatrix, :math, _tex_pmatrix)
@@ -97,7 +100,7 @@ Glossaries.define!(_glossary_tex_terms, :rm, :math, _tex_rm)
 _tex_sqrt(s) = raw"\sqrt{" * "$s" * "}"
 Glossaries.define!(_glossary_tex_terms, :sqrt, :math, _tex_sqrt)
 Glossaries.define!(_glossary_tex_terms, :subgrad, :math, raw"∂")
-_tex_set(s) = raw"\set{" * "$s" * "}"
+_tex_set(s) = raw"\{" * "$s" * raw"\}"
 Glossaries.define!(_glossary_tex_terms, :set, :math, _tex_set)
 _tex_sum(b = "", t = "") = raw"\sum" * (length(b) > 0 ? "_{$b}" : "") * (length(t) > 0 ? "^{$t}" : "")
 Glossaries.define!(_glossary_tex_terms, :sum, :math, _tex_sum)
@@ -132,11 +135,11 @@ Glossaries.define!(_glossary_math_terms, :Iterate, :math, _math_iterate)
 Glossaries.define!(_glossary_math_terms, :Iterate, :description, "the current iterate at iteration ``k``")
 _math_sequence(var, ind, from, to) = raw"\{" * "$(var)_$(ind)" * raw"\}" * "_{$(ind)=$from}^{$to}"
 Glossaries.define!(_glossary_math_terms, :Sequence, :math, _math_sequence)
-_math_TangentBundle(; M = "M") = "T$(_tex(:Cal, M))"
+_math_TangentBundle(; M = "M") = "T$(_math(:Manifold; M = M))"
 Glossaries.define!(_glossary_math_terms, :TangentBundle, :math, _math_TangentBundle)
 _math_TangentBundle_description(; M = "M") = "the tangent bundle of the manifold $(_math(:Manifold; M = M))"
 Glossaries.define!(_glossary_math_terms, :TangentBundle, :description, _math_TangentBundle_description)
-_math_TangentSpace(; M = "M", p = "p") = "T_{$p}$(_tex(:Cal, M))"
+_math_TangentSpace(; M = "M", p = "p") = "T_{$p}$(_math(:Manifold; M = M))"
 Glossaries.define!(_glossary_math_terms, :TangentSpace, :math, _math_TangentSpace)
 _math_TangentSpace_description(; M = "M", p = "p") = "the tangent space at the point ``$p`` on the manifold ``$(_math(:Manifold; M = M))``"
 Glossaries.define!(_glossary_math_terms, :TangentSpace, :description, _math_TangentSpace_description)
@@ -192,6 +195,7 @@ Glossaries.define!(_glossary_links, :rand, :link, _link_rand)
 function _link_zero_vector(; M = "M", p = "p")
     return "[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)$(length(M) > 0 ? "`($M, $p)`" : "")"
 end
+Glossaries.define!(_glossary_links, :TangentSpace, :link, "[`TangentSpace`](@extref `ManifoldsBase.TangentSpace`)")
 Glossaries.define!(_glossary_links, :zero_vector, :link, _link_zero_vector)
 
 #
@@ -285,11 +289,16 @@ Glossaries.define!(
     _glossary_problems, :NonLinearLeastSquares, :problem,
     (; M = "M", p = "p") -> """
     ```math
-    $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} $(_tex(:frac, 1, 2)) $(_tex(:sum, "i=1", "m")) $(_tex(:abs, "f_i($p)"))^2
+    $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} f($p),
+    $(_tex(:qquad)) f($p) = $(_tex(:frac, "1", "2")) $(_tex(:sum, "i=1", "m"))
+        ρ_i $(_tex(:bigl))( $(_tex(:norm, "F_i($p)"))^2 $(_tex(:bigr)))
     ```
 
-    where ``f: $(_math(:Manifold; M = M)) → ℝ^m`` is written with component functions ``f_i: $(_math(:Manifold; M = M)) → ℝ``, ``i=1,…,m``,
-    and each component function is continuously differentiable.
+    where ``F_i: $(_math(:Manifold; M = M)) → ℝ^{n_i}`` is the ``i``th block component of length ``n_i > 0``
+    and each ``ρ_i: ℝ → ℝ`` is a robustifier function, cf. [`AbstractRobustifierFunction`](@ref),
+    for each such a block component.
+    The overall residual function is denoted by ``F: $(_math(:Manifold; M = M)) → ℝ^{n}`` with ``n = $(_tex(:sum, "i=1", "m")) n_i``
+    and concatenates all block components.
     """,
 )
 
@@ -365,7 +374,7 @@ Glossaries.define!(_glossary_variables, :f)
 Glossaries.define!(
     _glossary_variables, :f, :description,
     function (; M = "M", p = "p")
-        return "a cost function ``f: $(_tex(:Cal, M))→ ℝ`` implemented as `($M, $p) -> v`"
+        return "a cost function ``f: $(_math(:Manifold, M = M))→ ℝ`` implemented as `($M, $p) -> v`"
     end,
 )
 
@@ -406,14 +415,14 @@ Glossaries.define!(_glossary_variables, :last_change, :type, "Real")
 Glossaries.define!(_glossary_variables, :M)
 Glossaries.define!(
     _glossary_variables, :M, :description,
-    (; M = "M") -> "a Riemannian manifold ``$(_tex(:Cal, M))``"
+    (; M = "M") -> "a Riemannian manifold ``$(_math(:Manifold, M = M))``"
 )
 Glossaries.define!(_glossary_variables, :M, :type, "`$(_link(:AbstractManifold))` ")
 
 Glossaries.define!(_glossary_variables, :p)
 Glossaries.define!(
     _glossary_variables, :p, :description,
-    (; M = "M") -> "a point on the manifold ``$(_tex(:Cal, M))``"
+    (; M = "M") -> "a point on the manifold ``$(_math(:Manifold, M = M))``"
 )
 Glossaries.define!(_glossary_variables, :p, :type, "P")
 Glossaries.define!(_glossary_variables, :p, :default, (; M = "M") -> "`$(_link(:rand; M = M))` ")
@@ -492,7 +501,7 @@ Glossaries.define!(_glossary_variables, :X)
 Glossaries.define!(
     _glossary_variables, :X, :description,
     (; M = "M", p = "p") ->
-    "a tangent vector at the point ``$p`` on the manifold ``$(_tex(:Cal, M))``",
+    "a tangent vector at the point ``$p`` on the manifold ``$(_math(:Manifold, M = M))``",
 )
 Glossaries.define!(_glossary_variables, :X, :type, "T")
 Glossaries.define!(_glossary_variables, :X, :default, (; M = "M", p = "p") -> "`$(_link(:zero_vector; M = M, p = p))` ")

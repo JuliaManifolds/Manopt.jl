@@ -22,8 +22,21 @@ using Manifolds, Manopt, Test
         @test get_cost(TpM, slso, X0) ≈ cost_value
         @test get_cost(TpM, slso2, X0) ≈ cost_value
 
-        @test Manopt.get_b(TpM, slso) == bv
-        @test Manopt.get_b(TpM, slso2) == bv
+        @test Manopt.get_vector_field(M, slso, p) == bv
+        @test Manopt.get_vector_field(M, slso2, p) == bv
+        X1 = [0.0, 0.0]
+        Manopt.get_vector_field!(M, X1, slso, p)
+        @test X1 == bv
+        Manopt.get_vector_field!(M, X1, slso2, p)
+        @test X1 == bv
+
+        @test Manopt.get_vector_field(TpM, slso) == bv
+        @test Manopt.get_vector_field(TpM, slso2) == bv
+        Manopt.get_vector_field!(TpM, X1, slso)
+        @test X1 == bv
+        Manopt.get_vector_field!(TpM, X1, slso2)
+        @test X1 == bv
+
 
         @test get_gradient(TpM, slso, X0) == grad_value
         @test get_gradient(TpM, slso2, X0) == grad_value
@@ -51,7 +64,8 @@ using Manifolds, Manopt, Test
         @test set_gradient!(crs, TpM, X0) == crs # setters return state
         @test get_gradient(crs) == X0
         @test startswith(
-            repr(crs), "# Solver state for `Manopt.jl`s Conjugate Residual Method"
+            Manopt.status_summary(crs; context = :default),
+            "# Solver state for `Manopt.jl`s Conjugate Residual Method\n"
         )
         crs2 = ConjugateResidualState(TpM, slso2)
         @test set_iterate!(crs2, TpM, X0) == crs2 # setters return state
@@ -59,7 +73,8 @@ using Manifolds, Manopt, Test
         @test set_gradient!(crs2, TpM, X0) == crs2 # setters return state
         @test get_gradient(crs2) == X0
         @test startswith(
-            repr(crs2), "# Solver state for `Manopt.jl`s Conjugate Residual Method"
+            Manopt.status_summary(crs2; context = :default),
+            "# Solver state for `Manopt.jl`s Conjugate Residual Method\n"
         )
     end
     @testset "StopWhenRelativeResidualLess" begin

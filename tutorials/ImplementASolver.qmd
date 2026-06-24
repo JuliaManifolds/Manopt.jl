@@ -97,9 +97,7 @@ We can defined this as
 ```{julia}
 #| output: false
 mutable struct RandomWalkState{
-    P,
-    R<:AbstractRetractionMethod,
-    S<:StoppingCriterion,
+    P, R<:AbstractRetractionMethod, S<:StoppingCriterion,
 } <: AbstractManoptSolverState
   p::P
   q::P
@@ -158,7 +156,7 @@ If your choice is different, you need to reimplement
 - `get_iterate(rws)` to access the current iterate
 
 We recommend to follow the general scheme with the `stop` field. If you have specific criteria
-when to stop, consider implementing your own [stopping criterion](https://manoptjl.org/stable/plans/stopping_criteria/) instead.
+when to stop, consider implementing your own [stopping criterion](../plans/stopping_criteria.md) instead.
 
 ### Initialization and iterate access
 
@@ -199,12 +197,12 @@ end
 Performance wise we could improve the number of allocations by making `X` also a field of
 our `rws` but let's keep it simple here.
 We could also store the cost of `q` in the state, but we shall see how to easily also enable
-this solver to allow for [caching](https://manoptjl.org/stable/tutorials/CountAndCache/#How-to-Count-and-Cache-Function-Calls).
+this solver to allow for ``[caching](CountAndCache.md).
 In practice, however, it is preferable to cache intermediate values like cost of `q` in the state when it can be easily achieved. This way we do not have to deal with overheads of an external cache.
 
 Now we can just run the solver already. We take the same example as for the other tutorials
 
-We first define our task, the Riemannian Center of Mass from the [Get started: optimize](https://manoptjl.org/stable/tutorials/md) tutorial.
+We first define our task, the Riemannian Center of Mass from the [Get started: optimize](getstarted.md) tutorial.
 
 ```{julia}
 #| output: false
@@ -269,9 +267,7 @@ given start point unchanged would just add a `copy(M, p)` upfront.
 
 ```{julia}
 function random_walk_algorithm!(
-    M::AbstractManifold,
-    mgo::ManifoldCostObjective,
-    p;
+    M::AbstractManifold, mgo::ManifoldCostObjective, p;
     σ = 0.1,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200),
@@ -280,8 +276,7 @@ function random_walk_algorithm!(
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     s = RandomWalkState(M, [1.0, 0.0, 0.0];
-        σ=0.1,
-        retraction_method=retraction_method, stopping_criterion=stopping_criterion,
+        σ=0.1, retraction_method=retraction_method, stopping_criterion=stopping_criterion,
     )
     ds = decorate_state!(s; kwargs...)
     solve!(dmp, ds)
@@ -303,17 +298,23 @@ end
 
 ## Ease of Use II: the state summary
 
-For the case that you set `return_state=true` the solver should return a summary of the run. When a `show` method is provided, users can easily read such summary in a terminal.
+For the case that you set `return_state=true` the solver should return a summary of the run.
+Internally this is mapped to the (human-readable) display of a `status_summary`
 It should reflect its main parameters, if they are not too verbose and provide information
 about the reason it stopped and whether this indicates convergence.
+Compared to Julias own `show(io::IO, state)` method, the status summary aims to be
+in prose text.
 
- Here it would for example look like
+Here it would for example look like
 
 ```{julia}
 #| output: false
-import Base: show
-function show(io::IO, rws::RandomWalkState)
+import Manopt: status_summary
+function status_summary(rws::RandomWalkState; context::Symbol = :default)
+    (context === :short) && return repr(rws)
     i = get_count(rws, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(rws.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the random walk algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(rws.stop) ? "Yes" : "No"
     s = """
@@ -324,10 +325,9 @@ function show(io::IO, rws::RandomWalkState)
     * σ                : $(rws.σ)
 
     ## Stopping criterion
-
-    $(status_summary(rws.stop))
+    $(status_summary(rws.stop; context = context))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 ```
 

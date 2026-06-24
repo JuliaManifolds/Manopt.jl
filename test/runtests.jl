@@ -1,6 +1,7 @@
 using Manifolds, ManifoldsBase, Manopt, Test
 
 @testset "Manopt.jl" begin
+    @test Manopt.Rn_default() === :Manifolds
     @testset "Plan Tests         " begin
         include("plans/test_objective.jl")
         include("plans/test_problem.jl")
@@ -27,6 +28,7 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("plans/test_higher_order_primal_dual_plan.jl")
         include("plans/test_defaults_factory.jl")
         include("plans/test_record.jl")
+        include("plans/test_robustifiers.jl")
         include("plans/test_scaled_objective.jl")
         include("plans/test_stepsize.jl")
         include("plans/test_stochastic_gradient_plan.jl")
@@ -64,6 +66,7 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("solvers/test_proximal_gradient_method.jl")
         include("solvers/test_proximal_point.jl")
         include("solvers/test_quasi_Newton.jl")
+        include("solvers/test_quasi_Newton_box.jl")
         include("solvers/test_particle_swarm.jl")
         include("solvers/test_primal_dual_semismooth_Newton.jl")
         include("solvers/test_stochastic_gradient_descent.jl")
@@ -72,7 +75,6 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("solvers/test_trust_regions.jl")
         include("solvers/test_vectorbundle_newton.jl")
     end
-    include("MOI_wrapper.jl")
     include("test_aqua.jl")
     include("test_deprecated.jl")
 end

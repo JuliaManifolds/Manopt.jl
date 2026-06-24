@@ -6,15 +6,48 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.40] unreleased
+## [0.6.0] June 24, 2026
+
+This is a breaking change since the JuMP extension is dropped.
+We also unified a few of the internal solver state constructors.
+
+### Added
+
+* A robustified version of the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/) (#617)
+* An option to disable the warm start the conjugate residual currently does when used as a subsolver.
+* `nonpositive_curvature_behavior` for `QuasiNewtonLimitedMemoryDirectionUpdate` that determines how transported (y, s) vector pairs are treated after transport; if their inner product gets too low, it may lead to non-positive-definite Hessians which needs to be avoided. This resolves issue (#549). (#554)
+* `GeneralizedCauchyDirectionSubsolver` for handling direction selection in the presence of box (`Hyperrectangle`) constraints in quasi-Newton methods. This allows for L-BFGS-B-style box constraint handling. (#554)
+* New stopping criteria: `StopWhenRelativeAPosterioriCostChangeLessOrEqual` and `StopWhenProjectedNegativeGradientNormLess`. (#554).
+* `HagerZhangLinesearch` stepsize, a state-of-the-art line search for smooth objectives with cubic interpolation and adaptive Wolfe condition checking. (#554)
+* Stopping criteria can now be initialized using `initialize_stepsize!`, similar to solvers. (#554)
+* The `ConjugateResidualState` now has a `warm_start=` option when used multiple times, for example in every iteration as a subsolver, to reuse the last state from the previous run.
 
 ### Changed
 
+* In the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/)t the `η` parameter has been renamed to `candidate_acceptance_threshold`, `β` to `damping_increase_factor` and `β_reduction` to `damping_reduction_factor`. (#617)
+* the constructor for the [Levenberg-Marquardt state](https://manoptjl.org/stable/solvers/LevenbergMarquardt/#Manopt.LevenbergMarquardtState) has been unified with the remaining states, to take the `sub_problem` and `sub_state` arguments as second and third positional arguments, respectively. (#617)
+* the keyword `initial_jacobian_f` within `LevenbergMarquardt` is unified in naming to the residual values vector and called `initial_jacobian_matrices`. If you call `LevenbergMarquardt` with a single vector component, also a single matrix is allowed. (#617)
+* an internal field of the solver state of Levenberg-Marqwuardt was called `jacobian_f` the same as the functions whose result it meant to cache if applicable. To distinguish both, the field is now called `jacobian_matrices`. (#617)
+* the `max_stepsize(M)` on the [`SymmetricPositiveDefinite`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/symmetricpositivedefinite/) manifold was changed from returning `Inf`, which is the mathematical maximal stepsize to returning the square root of the maximum (floating point) value to avoid numerical instabilities.
 * title of "How to define the cost in the embedding" tutorial (#615)
 
 ### Fixed
 
+* Fixed `show` methods of various state and stopping criteria to properly handle both `repr` and multiline printing (#569)
+* Unified all `show` methods and their human readable analoga `status_summary` throughout the package (#569)
+* Fixed some text descriptions of a few stopping criteria.
+* unify naming of fields, `debugDictionary` of the debug state is now called `debug_dictionary`
+* the `NesterovRule` now also stores an actual `AbstractRetractionMethod` instead of implicitly always using the default one.
+* Line searches consistently respect `stop_when_stepsize_exceeds` keyword argument as a hard limit. (#554)
+* `StopWhenChangeLess` falsely claimed to indicate convergence. This is now fixed. (#554)
 * miscellaneous broken links in the documentation. (#614)
+
+### Removed
+
+* The extension to JuMP. A replacement as a separate package is planned when the support for variables beyond vectors is more accessible in JuMP
+* the plotting functions to `Asymptote`. They can now be found in the separate package [`ManifoldAsymptote.jl`](https://github.com/JuliaManifolds/ManifoldAsymptote.jl)
+  this way, `Manopt.jl` has less dependencies, especially the color and colorschemes dependencies are dropped
+* `linear_subsolver! = ` was removed from the [`LevenbergMarquardt`](https://manoptjl.org/stable/solvers/LevenbergMarquardt/) solver interface, since it is imprecise. If you use a closed form solver before, specify it by passing the function to `sub_problem` and set `sub_state` to the corresponding evaluation type
 
 ## [0.5.39] June 3, 2026
 
@@ -50,9 +83,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* The default restart rule for `conjugate_gradient_descent` is now `RestartOnNonDescent` instead of `NeverRestart`, which makes the algorithm more robust to non-convexity and numerical issues. The old default can still be used by explicitly passing `restart_condition=NeverRestart()`. (#604)
+* `HagerZhangCoefficientRule` now has a safeguard against the denominator being too close to zero (the `denom_threshold` field). By default it is set to 1.0e-10. You can set it to a lower positive value (or even zero) to weaken the safeguard, but it is recommended to keep it to avoid numerical issues. (#604)
+* introduce for all `Rule`s also a variant without being encapsulated in a memory, where the old values have to be passed as keywords. This is now used by the `ConjugateGradientBealeRestartRule` when evaluating its inner rule. (#604)
+
+## [0.5.36] April 24, 2026
+
+### Added
+
+* a function `stopped_at(state)` to access the number of iterations it took a solver to stop. (#599)
+
+### Fixed
+
+* a small bug where `get_count(sc::StopWhenAny, Val(:Iteration))` wrongly reported it stopped before the first iteration when it actually did not yet stop. (#599)
+
+## [0.5.35] April 16, 2026
+
+### Changed
+
+* `NonlinearLeastSquaresObjective` is now called `ManifoldNonlinearLeastSquaresObjective` (#569).
+* (breaking) discontinue the `JuMP` extension. (#532)
 * Improved formatting of the references in the Readme.md (#586)
 * Bump compat for RecursiveArrayTools.jl to include version 4
 * deactivate CompatHelper Action and solely use dependabot
+* (breaking change) renamed `CoordinateVectorialType` to `CoefficientVectorialType` to have a
+  consistent naming that anything with respect to a basis is called “coefficients”
+* moved the old closed-form-in-coordinates subsolver for `LevenbergMarquardt` handling to the subsolver; if you implemented your own, pass it to `sub_problem`,
+set the `sub_state` to indicate allocating or in-place evaluation and change the signature as documented; make especially sure to return a tangent vector now and not coordinates.
+* (breaking change) `expect_zero_residual` in `LevenbergMarquardt` is replaced by more general `damping_reduction_threshold` and `β_reduction`. To recover the behavior of `expect_zero_residual=true`, set `damping_reduction_threshold` to the same value as `η` and `β_reduction` to `β`.
 
 ### Fixed
 
@@ -116,7 +174,7 @@ Moved the documentation glossaries to using the new [Glossaries.jl](https://gith
 * Removed `atol` from `DebugFeasibility` and instead use the one newly added `atol` from the `ConstrainedManifoldObjective`. (#546)
 * Move from CompatHelper to dependabot to keep track of dependency updates in Julia packages. (#547)
 * moved the `ManoptTestSuite` module to a sub module `Manopt.Test` within `Manopt.jl`,
-so it can be easier reused by others as well (#550)
+  so it can be easier reused by others as well (#550)
 * moved to using a `Project.toml` for tests and an overall `[Workspace]`.
   This also allows finally to run single test files without installing all packages manually, but instead just switching to and instantiating the test environment. (#550)
 * for compatibility, state also `[source]` entries consistently in the sub `Project.toml` files. (#550)
@@ -214,7 +272,7 @@ so a constant initial guess is recommended here. The initial guess may be refact
 * a `gradient=` keyword in several `Stepsize`s, such that one can avoid to internally avoid computing the gradient again.
 * used the ``gradient=` keyword in
   * `alternating_gradient_descent`
-  * `conjugate_gradient`
+  * `conjugate_gradient_descent`
   * `Frank_Wolfe_method`
   * `gradient_descent`
   * `interior_point_newton`

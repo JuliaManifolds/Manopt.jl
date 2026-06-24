@@ -8,7 +8,7 @@ abstract type AbstractEvaluationType end
 @doc """
     AbstractManifoldObjective{E<:AbstractEvaluationType}
 
-Describe the collection of the optimization function ``f: $(_math(:Manifold))nifold))nifold))) → ℝ`` (or even a vectorial range)
+Describe the collection of the optimization function ``f: $(_math(:Manifold)) → ℝ`` (or even a vectorial range)
 and its corresponding elements, which might for example be a gradient or (one or more) proximal maps.
 
 All these elements should usually be implemented as functions
@@ -21,6 +21,11 @@ All these elements should usually be implemented as functions
 the type `T` indicates the global [`AbstractEvaluationType`](@ref).
 """
 abstract type AbstractManifoldObjective{E <: AbstractEvaluationType} end
+
+function Base.show(io::IO, ::MIME"text/plain", amo::AbstractManifoldObjective)
+    multiline = get(io, :multiline, true)
+    return multiline ? status_summary(io, amo) : show(io, amo)
+end
 
 @doc """
     AbstractDecoratedManifoldObjective{E<:AbstractEvaluationType,O<:AbstractManifoldObjective}
@@ -38,6 +43,7 @@ A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating tha
 the problem contains or the function(s) allocate memory for their result, they work out of place.
 """
 struct AllocatingEvaluation <: AbstractEvaluationType end
+_to_kw(::Type{AllocatingEvaluation}) = "evaluation = AllocatingEvaluation()"
 
 @doc """
     InplaceEvaluation <: AbstractEvaluationType
@@ -46,6 +52,7 @@ A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating tha
 the problem contains or the function(s) do not allocate memory but work on their input, in place.
 """
 struct InplaceEvaluation <: AbstractEvaluationType end
+_to_kw(::Type{InplaceEvaluation}) = "evaluation = InplaceEvaluation()"
 
 @doc """
     ParentEvaluationType <: AbstractEvaluationType
@@ -55,6 +62,7 @@ the problem contains or the function(s) do inherit their property from a parent
 [`AbstractManoptProblem`](@ref) or function.
 """
 struct ParentEvaluationType <: AbstractEvaluationType end
+_to_kw(::Type{ParentEvaluationType}) = "evaluation = ParentEvaluationType()"
 
 @doc """
     AllocatingInplaceEvaluation <: AbstractEvaluationType
@@ -64,12 +72,12 @@ the problem contains or the function(s) that provides both an allocating variant
 that does not allocate memory but work on their input, in place.
 """
 struct AllocatingInplaceEvaluation <: AbstractEvaluationType end
+_to_kw(::Type{AllocatingInplaceEvaluation}) = "evaluation = AllocatingInplaceEvaluation()"
 
 @doc """
-    ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
-       AbstractDecoratedManifoldObjective{E,O2}
+    ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <: AbstractDecoratedManifoldObjective{E,O2}
 
-A wrapper to indicate that `get_solver_result` should return the inner objective.
+A wrapper to indicate that [`get_solver_result`](@ref) should return the inner objective.
 
 The types are such that one can still dispatch on the undecorated type `O2` of the
 original objective as well.
@@ -92,7 +100,15 @@ function ReturnManifoldObjective(
     }
     return ReturnManifoldObjective{E, O2, O1}(o)
 end
-
+# The human readable version is “transparent” by default here
+function status_summary(o::ReturnManifoldObjective; kwargs...)
+    return status_summary(o.objective; kwargs...)
+end
+function Base.show(io::IO, ro::ReturnManifoldObjective)
+    print(io, "ReturnManifoldObjective(")
+    show(io, ro.objective)
+    return print(io, ")")
+end
 #
 # Internal converters if the variable in the high-level interface is a number.
 #
@@ -209,25 +225,11 @@ function set_parameter!(amo::AbstractManifoldObjective, ::Val{:SubGradient}, arg
     return amo
 end
 
-function show(io::IO, o::AbstractManifoldObjective{E}) where {E}
-    return print(io, "$(nameof(typeof(o))){$E}")
+# For decorators the human readable version is “transparent” by default, i.e.
+# if no special addition is done, it just prints the human readable string from the child
+function status_summary(io::IO, co::AbstractDecoratedManifoldObjective; context::Symbol = :default)
+    return status_summary(io, get_objective(co, false); context = :default)
 end
-# Default: remove decorator for show
-function show(io::IO, co::AbstractDecoratedManifoldObjective)
-    return show(io, get_objective(co, false))
-end
-function show(io::IO, t::Tuple{<:AbstractManifoldObjective, P}) where {P}
-    s = "$(status_summary(t[1]))"
-    length(s) > 0 && (s = "$(s)\n\n")
-    return print(
-        io, "$(s)To access the solver result, call `get_solver_result` on this variable."
-    )
-end
-
-function status_summary(::AbstractManifoldObjective{E}) where {E}
-    return ""
-end
-# Default: remove decorator for status summary
-function status_summary(co::AbstractDecoratedManifoldObjective)
+function status_summary(co::AbstractDecoratedManifoldObjective; context::Symbol = :default)
     return status_summary(get_objective(co, false))
 end

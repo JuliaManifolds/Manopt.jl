@@ -25,7 +25,7 @@ $(_args(:M))
 
 ## Keyword arguments
 
-* `direction=`[`IdentityUpdateRule`](@ref)`()`
+* `direction=`[`IdentityUpdateRule`](@ref)`()` specify a processor to modify the gradient direction
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientDescentState`](@ref)`; retraction_method=retraction_method)"))
@@ -37,12 +37,8 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 [`gradient_descent`](@ref)
 """
 mutable struct GradientDescentState{
-        P,
-        T,
-        TStop <: StoppingCriterion,
-        TStepsize <: Stepsize,
-        TDirection <: DirectionUpdateRule,
-        TRTM <: AbstractRetractionMethod,
+        P, T, TStop <: StoppingCriterion, TStepsize <: Stepsize,
+        TDirection <: DirectionUpdateRule, TRTM <: AbstractRetractionMethod,
     } <: AbstractGradientSolverState
     p::P
     X::T
@@ -52,9 +48,8 @@ mutable struct GradientDescentState{
     retraction_method::TRTM
 end
 function GradientDescentState(
-        M::AbstractManifold;
-        p::P = rand(M),
-        X::T = zero_vector(M, p),
+        M::AbstractManifold = ManifoldsBase.DefaultManifold();
+        p::P = rand(M), X::T = zero_vector(M, p),
         stopping_criterion::SC = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8),
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
         stepsize::S = _produce_type(
@@ -65,12 +60,8 @@ function GradientDescentState(
         direction::D = IdentityUpdateRule(),
         kwargs..., # ignore rest
     ) where {
-        P,
-        T,
-        SC <: StoppingCriterion,
-        RTM <: AbstractRetractionMethod,
-        S <: Stepsize,
-        D <: DirectionUpdateRule,
+        P, T, SC <: StoppingCriterion, RTM <: AbstractRetractionMethod,
+        S <: Stepsize, D <: DirectionUpdateRule,
     }
     return GradientDescentState{P, T, SC, S, D, RTM}(
         p, X, direction, stepsize, stopping_criterion, retraction_method
@@ -97,8 +88,19 @@ function get_message(gds::GradientDescentState)
     # for now only step size is quipped with messages
     return get_message(gds.stepsize)
 end
-function show(io::IO, gds::GradientDescentState)
+
+function Base.show(io::IO, gds::GradientDescentState)
+    print(io, "GradientDescentState(; direction = ", gds.direction, " p = ", gds.p)
+    print(io, ", stepsize = ", gds.stepsize, ", stopping_criterion = ", status_summary(gds.stop; context = :short))
+    print(io, ", retraction_method = ", gds.retraction_method, " X= ", gds.X)
+    return print(io, ")")
+end
+
+function status_summary(gds::GradientDescentState; context::Symbol = :default)
+    (context === :short) && return repr(gds)
     i = get_count(gds, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(gds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the gradient descent solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
     s = """
@@ -106,15 +108,15 @@ function show(io::IO, gds::GradientDescentState)
     $Iter
     ## Parameters
     * retraction method: $(gds.retraction_method)
+    * direction: $(status_summary(gds.direction; context = :inline))
 
     ## Stepsize
-    $(gds.stepsize)
+    $(_in_str(status_summary(gds.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-
-    $(status_summary(gds.stop))
+    $(_in_str(status_summary(gds.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_gd_iterate = raw"""
@@ -254,6 +256,7 @@ calls_with_kwargs(::typeof(gradient_descent!)) = (decorate_objective!, decorate_
 #
 function initialize_solver!(mp::AbstractManoptProblem, s::GradientDescentState)
     get_gradient!(mp, s.X, s.p)
+    initialize_stepsize!(s.stepsize)
     return s
 end
 function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, k)

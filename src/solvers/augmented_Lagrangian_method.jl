@@ -2,7 +2,7 @@
 # State
 #
 
-_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))([`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`"
+_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min) `$(_sc(:All))` `[`StopWhenChangeLess`](@ref)`(1e-10))`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(M, 1.0e-10)`"
 @doc """
     AugmentedLagrangianMethodState{P,T} <: AbstractManoptSolverState
 
@@ -60,7 +60,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 * `τ=0.8`
 * `θ_ρ=0.3`
 * `θ_ϵ=(ϵ_min/ϵ)^(ϵ_exponent)`
-* stopping_criterion=$_sc_alm_default.
+* `stopping_criterion=`$(_sc_alm_default)
 
 # See also
 
@@ -92,10 +92,7 @@ mutable struct AugmentedLagrangianMethodState{
     stop::TStopping
     last_stepsize::R
     function AugmentedLagrangianMethodState(
-            M::AbstractManifold,
-            co::ConstrainedManifoldObjective,
-            sub_problem::Pr,
-            sub_state::St;
+            M::AbstractManifold, co::ConstrainedManifoldObjective, sub_problem::Pr, sub_state::St;
             p::P = rand(M),
             ϵ::R = 1.0e-3,
             ϵ_min::R = 1.0e-6,
@@ -110,19 +107,11 @@ mutable struct AugmentedLagrangianMethodState{
             ϵ_exponent = 1 / 100,
             θ_ϵ = (ϵ_min / ϵ)^(ϵ_exponent),
             stopping_criterion::SC = StopAfterIteration(300) |
-                (
-                StopWhenSmallerOrEqual(:ϵ, ϵ_min) &
-                    StopWhenChangeLess(M, 1.0e-10)
-            ) |
-                StopWhenChangeLess(M, 1.0e-10),
+                (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1.0e-10)) | StopWhenChangeLess(M, 1.0e-10),
             kwargs...,
         ) where {
-            P,
-            Pr <: Union{F, AbstractManoptProblem} where {F},
-            St <: AbstractManoptSolverState,
-            R <: Real,
-            V,
-            SC <: StoppingCriterion,
+            P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
+            R <: Real, V, SC <: StoppingCriterion,
         }
         alms = new{P, Pr, St, R, V, SC}()
         alms.p = p
@@ -166,8 +155,11 @@ function get_message(alms::AugmentedLagrangianMethodState)
     return get_message(alms.sub_state)
 end
 
-function show(io::IO, alms::AugmentedLagrangianMethodState)
+function status_summary(alms::AugmentedLagrangianMethodState; context::Symbol = :default)
+    (context === :short) && (return repr(alms))
     i = get_count(alms, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(alms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the augmented Lagrandigan method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(alms.stop) ? "Yes" : "No"
     s = """
@@ -182,10 +174,9 @@ function show(io::IO, alms::AugmentedLagrangianMethodState)
     * current penalty: $(alms.penalty)
 
     ## Stopping criterion
-
-    $(status_summary(alms.stop))
+    $(_in_str(status_summary(alms.stop; context = context); indent = 0, headers = 1))
     This indicates convergence: $Conv"""
-    return print(io, s)
+    return s
 end
 
 _doc_alm_λ_update = raw"""
@@ -235,7 +226,7 @@ $(_problem(:Constrained))
 where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "n"))`` and ``$(_math(:Sequence, "h", "j", "1", "m"))``
 are twice continuously differentiable functions from `M` to ℝ.
 In every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
- ``$(_doc_AL_Cost("k"))`` is minimized on $(_tex(:Cal, "M")),
+ ``$(_doc_AL_Cost("k"))`` is minimized on ``$(_math(:Manifold))``,
   where ``μ^{(k)} ∈ ℝ^n`` and ``λ^{(k)} ∈ ℝ^m`` are the current iterates of the Lagrange multipliers and ``ρ^{(k)}`` is the current penalty parameter.
 
 The Lagrange multipliers are then updated by
@@ -275,8 +266,8 @@ $(_args([:M, :f, :grad_f]))
 * `grad_g=nothing`: the gradient of the inequality constraints
 * `grad_h=nothing`: the gradient of the equality constraints
 
-Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
-Otherwise the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
+Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) have to be provided.
+But if neither of them is provided the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
 
 # Keyword Arguments
 

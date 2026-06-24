@@ -11,7 +11,7 @@ This tutorial illustrates how to:
 * record within a subsolver
 * define an own `RecordAction` to perform individual recordings.
 
-Several predefined recordings exist, for example [`RecordCost`](@ref) or [`RecordGradient`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.RecordGradient), if the problem the solver uses provides a gradient.
+Several predefined recordings exist, for example [`RecordCost`](@ref) or [`RecordGradient`](@ref), if the problem the solver uses provides a gradient.
 For fields of the `State` the recording can also be done [`RecordEntry`](@ref).
 For other recordings, for example more advanced computations before storing a value, an own `RecordAction` can be defined.
 
@@ -55,11 +55,11 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 
 ## First examples
 
-For the high level interfaces of the solvers, like [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/) we have to set `return_state` to `true` to obtain the whole [solver state](https://manoptjl.org/stable/plans/state/) and not only the resulting minimizer.
+For the high level interfaces of the solvers, like [`gradient_descent`](@ref) we have to set `return_state` to `true` to obtain the whole [solver state](../plans/state.md) and not only the resulting minimizer.
 
-Then we can easily use the `record=` option to add recorded values. This keyword accepts [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s
+Then we can easily use the `record=` option to add recorded values. This keyword accepts [`RecordAction`](@ref)s
 as well as several symbols as shortcuts, for example `:Cost` to record the cost, or if your options have a field `f`, `:f` would record that entry.
-An overview of the symbols that can be used is given [here](https://manoptjl.org/stable/plans/record/#Manopt.RecordActionFactory-Tuple{AbstractManoptSolverState,%20RecordAction}).
+An overview of the symbols that can be used is given ``[here](@ref Manopt.RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))``{=commonmark}.
 
 We first just record the cost after every iteration
 
@@ -67,22 +67,22 @@ We first just record the cost after every iteration
 R = gradient_descent(M, f, grad_f, data[1]; record=:Cost, return_state=true)
 ```
 
-From the returned state, we see that the [`GradientDescentState`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.GradientDescentState) are encapsulated (decorated) within a [`RecordSolverState`](https://manoptjl.org/stable/plans/record/#Manopt.RecordSolverState).
+From the returned state, we see that the [`GradientDescentState`](@ref) are encapsulated (decorated) within a [`RecordSolverState`](@ref).
 
-For such a state, one can attach different recorders to some operations, currently to `:Start`. `:Stop`, and `:Iteration`, where `:Iteration` is the default when using the `record=` keyword with a [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction) or a `Symbol` as we just did.
+For such a state, one can attach different recorders to some operations, currently to `:Start`. `:Stop`, and `:Iteration`, where `:Iteration` is the default when using the `record=` keyword with a [`RecordAction`](@ref) or a `Symbol` as we just did.
 We can access all values recorded during the iterations by calling `get_record(R, :Iteration)` or since this is the default even shorter
 
 ```{julia}
 get_record(R)
 ```
 
-To record more than one value, you can pass an array of a mix of symbols and [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s which formally introduces [`RecordGroup`](https://manoptjl.org/stable/plans/record/#Manopt.RecordGroup). Such a group records a tuple of values in every iteration:
+To record more than one value, you can pass an array of a mix of symbols and [`RecordAction`](@ref)s which formally introduces [`RecordGroup`](@ref). Such a group records a tuple of values in every iteration:
 
 ```{julia}
 R2 = gradient_descent(M, f, grad_f, data[1]; record=[:Iteration, :Cost], return_state=true)
 ```
 
-Here, the symbol `:Cost` is mapped to using the [`RecordCost`](https://manoptjl.org/stable/plans/record/#Manopt.RecordCost) action. The same holds for `:Iteration` obviously records the current iteration number `i`.
+Here, the symbol `:Cost` is mapped to using the [`RecordCost`](@ref) action. The same holds for `:Iteration` obviously records the current iteration number `i`.
 To access these you can first extract the group of records (that is where the `:Iteration`s are recorded; note the plural) and then access the `:Cost`
 """
 
@@ -97,7 +97,7 @@ To access single recorded values, one can use
 get_record_action(R2)[:Cost]
 ```
 
-This can be also done by using a the high level interface [`get_record`](https://manoptjl.org/stable/plans/record/#Manopt.get_record)
+This can be also done by using a the high level interface [`get_record`](@ref)
 
 ```{julia}
 get_record(R2, :Iteration, :Cost)
@@ -118,7 +118,7 @@ To illustrate a complicated example let's record:
 * the iteration number, cost and gradient field, but only every sixth iteration;
 * the iteration at which we stop.
 
-We first generate the problem and the state, to also illustrate the low-level works when not using the high-level interface [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/).
+We first generate the problem and the state, to also illustrate the low-level works when not using the high-level interface [`gradient_descent`](@ref).
 
 ```{julia}
 p = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
@@ -129,7 +129,7 @@ s = GradientDescentState(
 )
 ```
 
-We now first build a  [`RecordGroup`](https://manoptjl.org/stable/plans/record/#Manopt.RecordGroup) to group the three entries we want to record per iteration. We then put this into a [`RecordEvery`](https://manoptjl.org/stable/plans/record/#Manopt.RecordEvery) to only record this every sixth iteration
+We now first build a  [`RecordGroup`](@ref) to group the three entries we want to record per iteration. We then put this into a [`RecordEvery`](@ref) to only record this every sixth iteration
 
 ```{julia}
 rI = RecordEvery(
@@ -150,9 +150,9 @@ For recording the final iteration number
 sI = RecordIteration()
 ```
 
-We now combine both into the [`RecordSolverState`](https://manoptjl.org/stable/plans/record/#Manopt.RecordSolverState) decorator. It acts completely the same as any [`AbstractManoptSolverState`](https://manoptjl.org/stable/plans/state/#Manopt.AbstractManoptSolverState) but records something in every iteration additionally. This is stored in a dictionary of [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s, where `:Iteration` is the action (here the only every sixth iteration group) and the `sI` which is executed at stop.
+We now combine both into the [`RecordSolverState`](@ref) decorator. It acts completely the same as any [`AbstractManoptSolverState`](@ref) but records something in every iteration additionally. This is stored in a dictionary of [`RecordAction`](@ref)s, where `:Iteration` is the action (here the only every sixth iteration group) and the `sI` which is executed at stop.
 
-Note that the keyword `record=` in the high level interface `gradient_descent` only would fill the `:Iteration` symbol of said dictionary, but we could also pass pairs like in the following,
+Note that the keyword `record=` in the high level interface [`gradient_descent`](@ref) only would fill the `:Iteration` symbol of said dictionary, but we could also pass pairs like in the following,
 that is in the form `Symbol => RecordAction` into that keyword to obtain the same as in
 
 ```{julia}
@@ -238,12 +238,8 @@ When adding a number to not record on every iteration, the `:Subsolver` keyword 
 ```{julia}
 #| output: false
 s2 = exact_penalty_method(
-    M2,
-    f2,
-    grad_f2,
-    p0;
-    g = g,
-    grad_g = grad_g,
+    M2, f2, grad_f2, p0;
+    g = g, grad_g = grad_g,
     record = [:Iteration, :Cost, :Subsolver, 25],
     sub_kwargs = [:record => [:Iteration, :Cost, :WhenActive]],
     return_state=true,
@@ -279,7 +275,7 @@ Then the following displays also the reasons why each of the recorded sub solver
 get_record(s3)
 ```
 
-## Writing an own [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s
+## Writing an own [`RecordAction`](@ref)s
 
 Let's investigate where we want to count the number of function evaluations, again just to illustrate, since for the gradient this is just one evaluation per iteration.
 We first define a cost, that counts its own calls.
@@ -296,7 +292,7 @@ function (c::MyCost)(M, x)
 end
 ```
 
-and we define an own, new [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction), which is a functor, that is a struct that is also a function. The function we have to implement is similar to a single solver step in signature, since it might get called every iteration:
+and we define an own, new [`RecordAction`](@ref), which is a functor, that is a struct that is also a function. The function we have to implement is similar to a single solver step in signature, since it might get called every iteration:
 
 ```{julia}
 mutable struct RecordCount <: RecordAction
@@ -325,14 +321,9 @@ We also only look at the first 20 iterations to keep this example small in recor
 
 ```{julia}
 R3 = gradient_descent(
-    M,
-    f3,
-    grad_f,
-    data[1];
+    M, f3, grad_f, data[1];
     record=[:Iteration => [
-        :Iteration,
-        RecordCount() => :Count,
-        :Cost],
+        :Iteration, RecordCount() => :Count, :Cost],
     ],
     stepsize = ConstantLength(1.0),
     stopping_criterion=StopAfterIteration(20),
@@ -366,12 +357,8 @@ To not get too many entries let's just look at the first 20 iterations again
 
 ```{julia}
 R4 = gradient_descent(
-    M,
-    f4,
-    grad_f,
-    data[1];
-    record=[RecordCount(),],
-    return_state=true,
+    M, f4, grad_f, data[1];
+    record=[RecordCount(),], return_state=true,
 )
 ```
 

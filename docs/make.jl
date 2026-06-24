@@ -45,6 +45,7 @@ tutorials_menu =
     "Implement a solver" => "tutorials/ImplementASolver.md",
     "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
     "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
+    "Do optimization with bounds" => "tutorials/BoxDomain.md",
 ]
 # Check whether all tutorials are rendered, issue a warning if not (and quarto if not set)
 all_tutorials_exist = true
@@ -101,7 +102,7 @@ end
 # (c) load necessary packages for the docs
 using Documenter
 using DocumenterCitations, DocumenterInterLinks
-using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
+using LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
 
 # (d) add contributing.md and changelog.md to the docs – and link to releases and issues
@@ -162,7 +163,6 @@ makedocs(;
     ),
     modules = [
         Manopt,
-        Base.get_extension(Manopt, :ManoptJuMPExt),
         Base.get_extension(Manopt, :ManoptLineSearchesExt),
         Base.get_extension(Manopt, :ManoptLRUCacheExt),
         Base.get_extension(Manopt, :ManoptManifoldsExt),
@@ -189,6 +189,7 @@ makedocs(;
             "Douglas—Rachford" => "solvers/DouglasRachford.md",
             "Exact Penalty Method" => "solvers/exact_penalty_method.md",
             "Frank-Wolfe" => "solvers/FrankWolfe.md",
+            "Generalized Cauchy direction subsolver" => "solvers/generalized_cauchy_direction_subsolver.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Interior Point Newton" => "solvers/interior_point_Newton.md",
             "Levenberg–Marquardt" => "solvers/LevenbergMarquardt.md",
@@ -209,7 +210,18 @@ makedocs(;
         "Plans" => [
             "Specify a Solver" => "plans/index.md",
             "Problem" => "plans/problem.md",
-            "Objective" => "plans/objective.md",
+            "Objective" => [
+                "Introduction" => "plans/objective.md",
+                "Cost objectvies" => "plans/objectives/cost.md",
+                "First-order objectives" => "plans/objectives/first_order.md",
+                "Second-order objectives" => "plans/objectives/second_order.md",
+                "Constrained objectives" => "plans/objectives/constrained.md",
+                "Splitting-based objectives" => "plans/objectives/splitting_based.md",
+                "Subproblem objectives" => "plans/objectives/sub.md",
+                "Vectorial objectives" => "plans/objectives/vectorial.md",
+                "Linear Systems" => "plans/objectives/linear_system.md",
+                "Decorators for objectives" => "plans/objectives/decorated.md",
+            ],
             "Solver State" => "plans/state.md",
             "Stepsize" => "plans/stepsize.md",
             "Stopping Criteria" => "plans/stopping_criteria.md",
@@ -218,7 +230,6 @@ makedocs(;
         ],
         "Helpers" => [
             "Checks" => "helpers/checks.md",
-            "Exports" => "helpers/exports.md",
             "Test" => "helpers/test.md",
         ],
         "Contributing to Manopt.jl" => "contributing.md",
