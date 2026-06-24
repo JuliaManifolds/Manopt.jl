@@ -77,7 +77,7 @@ as well as in general using the model improvement parameter ``m_k`` in several p
 * `initial_jacobian_matrices`: a cache for the evaluated Jacobians (currently only used if `use_unified_basis = true`, then initialised to a vector of jacobian matrices, otherwise ignored)
 $(_kwargs(:retraction_method))
 * `scaling_threshold = 1.0e-6`:         a threshold `ε` to bound the scaling parameter `α` in the robust case away from `1`, see [`get_LevenbergMarquardt_scaling`](@ref)
-* `scaling_mode = :Strict`:            specify the scaling stabilization mode, see [`get_LevenbergMarquardt_scaling`](@ref)
+* `scaling_mode = :Default`:            specify the scaling stabilization mode, see [`get_LevenbergMarquardt_scaling`](@ref)
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-12)"))
 * `sub_objective`                      : specify the objective for the surrogate sub problem to solver in every iteration.
   This is set depending on the `use_unified_basis`
@@ -238,7 +238,7 @@ function LevenbergMarquardt!(
             fill(nothing, length(get_objective(nlso).objective))
         end,
         scaling_threshold::Real = 1.0e-6,
-        scaling_mode::Symbol = :Strict,
+        scaling_mode::Symbol = :Default,
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
         sub_objective = construct_lm_subobjective(use_unified_basis, nlso, damping_term_min, scaling_threshold, scaling_mode, initial_residual_values, initial_jacobian_matrices),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),

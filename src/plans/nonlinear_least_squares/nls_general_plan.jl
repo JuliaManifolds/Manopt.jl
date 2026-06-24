@@ -239,7 +239,7 @@ mutable struct LevenbergMarquardtLinearSurrogateObjective{
     value_cache::TVC
     function LevenbergMarquardtLinearSurrogateObjective(
             objective::ManifoldNonlinearLeastSquaresObjective{E};
-            penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Strict,
+            penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Default,
             residuals::TVC = zeros(residuals_count(get_objective(objective))),
         ) where {E, R <: Real, TVC <: AbstractVector}
         return new{E, R, typeof(objective), TVC}(objective, penalty, threshold, mode, residuals)
@@ -268,7 +268,7 @@ end
 
 
 """
-    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FSq::Real, threshold::Real=1.0e-5, mode::Symbol=:Strict)
+    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FSq::Real, threshold::Real=1.0e-5, mode::Symbol=:Default)
 
 Compute the scalings for the residual ``y`` and within the operator ``C`` that are required for the robust
 rescaling within [`LevenbergMarquardt`](@ref)s [`get_vector_field`](@ref) and [`get_linear_operator`](@ref),
@@ -312,7 +312,7 @@ This function offers two `mode`s
 """
 function get_LevenbergMarquardt_scaling(
         ρ_prime::Real, ρ_double_prime::Real, FkSq::Real,
-        threshold::Real = 1.0e-5, mode::Symbol = :Strict
+        threshold::Real = 1.0e-5, mode::Symbol = :Default
     )
     # second derivative existent and negative: In strict mode (motivated by ceres) -> return sqrt(ρ_prime), 0
     (ismissing(ρ_double_prime) || (ρ_double_prime < 0 && mode == :Strict)) && return (sqrt(ρ_prime), 0.0)
