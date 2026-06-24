@@ -221,6 +221,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
                 # Build as a single block with one robustifier (not componentwise wrapping).
                 nlso = ManifoldNonlinearLeastSquaresObjective([vgf], [r])
                 lmso = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = penalty)
+                lmso_normal = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = penalty, mode = :Normal)
                 lmcso = Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(
                     nlso;
                     penalty = penalty, basis = B2,
@@ -234,6 +235,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
                 end
 
                 slso = Manopt.NormalEquationsObjective(lmso)
+                slso_normal = Manopt.NormalEquationsObjective(lmso_normal)
                 slco = Manopt.NormalEquationsObjective(lmcso)
 
                 d = number_of_coordinates(M1, B2)
@@ -260,10 +262,13 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
                 @test isapprox(get_cost(TpM1, slso, X0), get_cost(TpM1, slco, X0); atol = 1.0e-12, rtol = 1.0e-12)
                 # The LM-relevant regression: both surrogate systems should produce the same step.
                 dmp_so = DefaultManoptProblem(TpM1, slso)
+                dmp_so_normal = DefaultManoptProblem(TpM1, slso_normal)
                 dmp_co = DefaultManoptProblem(TpM1, slco)
                 cnss_so = Manopt.solve!(dmp_so, CoordinatesNormalSystemState(M1, p1; basis = B2))
+                cnss_so_normal = Manopt.solve!(dmp_so_normal, CoordinatesNormalSystemState(M1, p1; basis = B2))
                 cnss_co = Manopt.solve!(dmp_co, CoordinatesNormalSystemState(M1, p1; basis = B2))
                 @test isapprox(cnss_so.c, cnss_co.c; atol = 1.0e-12, rtol = 1.0e-12)
+                @test !isapprox(cnss_so_normal.c, cnss_co.c; atol = 1.0e-12, rtol = 1.0e-12)
                 @test isapprox(
                     M1, p1, get_solver_result(dmp_so, cnss_so), get_solver_result(dmp_co, cnss_co);
                     atol = 1.0e-12, rtol = 1.0e-12,
@@ -340,10 +345,23 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
                 robustifier = 1.0e-4 ∘ HuberRobustifier(), return_objective = true, return_state = true,
                 retraction_method = StabilizedRetraction(default_retraction_method(TM2)),
                 scaling_mode = :Normal,
+                sub_state = CoordinatesNormalSystemState(TM2),
             )
+
+            (o2_ns_ub, s2_ns_ub) = LevenbergMarquardt(
+                TM2, vgf2, P0;
+                robustifier = 1.0e-4 ∘ HuberRobustifier(), return_objective = true, return_state = true,
+                retraction_method = StabilizedRetraction(default_retraction_method(TM2)),
+                scaling_mode = :Normal,
+                sub_state = CoordinatesNormalSystemState(TM2),
+                use_unified_basis = true,
+            )
+
             @test isapprox(TM2, s2.p, s2_ns.p; atol = 1.0e-2)
+            @test isapprox(TM2, s2_ns.p, s2_ns_ub.p; atol = 1.0e+1)
             # due to different scaling they should be a bit different
             @test !isapprox(TM2, s2.p, s2_ns.p; atol = 1.0e-8)
+            @test !isapprox(TM2, s2.p, s2_ns_ub.p; atol = 1.0e-8)
         end
 
         @testset "Block Robust Geodesic Regression on the Sphere" begin
