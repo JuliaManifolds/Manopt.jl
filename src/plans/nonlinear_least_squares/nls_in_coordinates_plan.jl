@@ -17,7 +17,7 @@ linear operators.
 
 ## Constructor
 
-    LevenbergMarquardtLinearSurrogateCoordinatesObjective(objective; penalty::Real = 1e-6, threshold::Real = 1e-4, mode::Symbol = :Default )
+    LevenbergMarquardtLinearSurrogateCoordinatesObjective(objective; penalty::Real = 1e-6, threshold::Real = 1e-4, mode::Symbol = :Strict)
 """
 mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
         E <: AbstractEvaluationType, R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R}, TJC <: AbstractVector, TB <: AbstractBasis,
@@ -31,7 +31,7 @@ mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
     basis::TB
     function LevenbergMarquardtLinearSurrogateCoordinatesObjective(
             objective::ManifoldNonlinearLeastSquaresObjective{E};
-            penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Default,
+            penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Strict,
             residuals::TVC = zeros(residuals_count(get_objective(objective))),
             jacobian_cache::TJC = fill(nothing, length(get_objective(objective).objective)),
             basis::TB = DefaultOrthonormalBasis(),

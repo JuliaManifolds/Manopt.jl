@@ -227,7 +227,7 @@ act as safeguards, see [`get_LevenbergMarquardt_scaling`](@ref)
 
 ## Constructor
 
-    LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, threshold::Real = 1e-4, mode::Symbol = :Default)
+    LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, threshold::Real = 1e-4, mode::Symbol = :Strict)
 """
 mutable struct LevenbergMarquardtLinearSurrogateObjective{
         E <: AbstractEvaluationType, R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R},
@@ -239,7 +239,7 @@ mutable struct LevenbergMarquardtLinearSurrogateObjective{
     value_cache::TVC
     function LevenbergMarquardtLinearSurrogateObjective(
             objective::ManifoldNonlinearLeastSquaresObjective{E};
-            penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Default,
+            penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Strict,
             residuals::TVC = zeros(residuals_count(get_objective(objective))),
         ) where {E, R <: Real, TVC <: AbstractVector}
         return new{E, R, typeof(objective), TVC}(objective, penalty, threshold, mode, residuals)
@@ -268,7 +268,7 @@ end
 
 
 """
-    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FSq::Real, threshold::Real=1.0e-5, mode::Symbol=:Default)
+    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FSq::Real, threshold::Real=1.0e-5, mode::Symbol=:Strict)
 
 Compute the scalings for the residual ``y`` and within the operator ``C`` that are required for the robust
 rescaling within [`LevenbergMarquardt`](@ref)s [`get_vector_field`](@ref) and [`get_linear_operator`](@ref),
@@ -307,12 +307,12 @@ in the square root already if ``ρ(s)'' < 0`` for stability reason, which means 
 In the case ``s = 0`` we also set the operator scaling ``α / s = 0``.
 
 This function offers two `mode`s
-- `:Default` keeps negative ``ρ''(s) < 0`` but makes sure the square root is well-defined.
-- `:Strict` set ``α = 0`` when ``ρ''(s) < 0`` or when ``s = 0``
+- `:Normal` keeps negative ``ρ''(s) < 0`` but makes sure the square root is well-defined.
+- `:Strict` (default) set ``α = 0`` when ``ρ''(s) < 0`` or when ``s = 0``
 """
 function get_LevenbergMarquardt_scaling(
         ρ_prime::Real, ρ_double_prime::Real, FkSq::Real,
-        threshold::Real = 1.0e-5, mode::Symbol = :Default
+        threshold::Real = 1.0e-5, mode::Symbol = :Strict
     )
     # second derivative existent and negative: In strict mode (motivated by ceres) -> return sqrt(ρ_prime), 0
     (ismissing(ρ_double_prime) || (ρ_double_prime < 0 && mode == :Strict)) && return (sqrt(ρ_prime), 0.0)

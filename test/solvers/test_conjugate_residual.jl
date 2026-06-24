@@ -21,7 +21,7 @@ using Manifolds, Manopt, Test
     s = repr(slso)
     @test startswith(s, "SymmetricLinearSystemObjective")
     s2 = Manopt.status_summary(slso)
-    @test startswith(s2, "An objetcive modelling a symmetric linear system")
+    @test startswith(s2, "An objective modelling a symmetric linear system")
     cgrs = conjugate_residual(TpM, slso, X0; return_state = true)
     @test startswith(Manopt.status_summary(cgrs), "# Solver state for `Manopt.jl`s Conjugate Residual Method")
     @test startswith(repr(cgrs), "ConjugateResidualState(; ")

@@ -84,7 +84,7 @@ end
 function status_summary(slso::SymmetricLinearSystemObjective{E}; context::Symbol = :default) where {E}
     _is_inline(context) && (return repr(slso))
     return """
-    An objetcive modelling a symmetric linear system Ax=b, i.e. with a symmetric matrix A
+    An objective modelling a symmetric linear system Ax=b, i.e. with a symmetric matrix A
     implemented as a function `(M, p, X) -> Y` performing the matrix vector multiplication in the tangent space,
     and a function `b(M,p)` returning the vector on the right hand side in the current tangent space.
     Both can also be defined in-place. Here they are $(E === InplaceEvaluation ? "in place" : "allocating").
