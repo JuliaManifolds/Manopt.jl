@@ -30,7 +30,7 @@ Evaluate the robustifier ``ρ`` and its first two derivatives at `x`.
 A tuple `(a, b, c)` with
 * `a = ρ(x)`
 * `b = ρ'(x)`
-* `c = ρ''(x)` (might be `missing` if not defined)
+* `c = ρ''(x)`
 """
 get_robustifier_values(ρ::AbstractRobustifierFunction, x::Real)
 
@@ -52,17 +52,14 @@ and second derivative ``ρ'`` and ``ρ''``, respectively.
 
 Generate a `RobustifierFunction` given the function `ρ` and its first and second derivative.
 """
-struct RobustifierFunction{F <: Function, G <: Function, H <: Union{Function, Missing}} <: AbstractRobustifierFunction
+struct RobustifierFunction{F <: Function, G <: Function, H <: Function} <: AbstractRobustifierFunction
     ρ::F
     ρ_prime::G
     ρ_double_prime::H
 end
 
 function get_robustifier_values(ρf::RobustifierFunction, x::Real)
-    a = ρf.ρ(x)
-    b = ρf.ρ_prime(x)
-    c = ismissing(ρf.ρ_double_prime) ? missing : ρf.ρ_double_prime(x)
-    return (a, b, c)
+    return (ρf.ρ(x), ρf.ρ_prime(x), ρf.ρ_double_prime(x))
 end
 
 #
@@ -204,7 +201,7 @@ function get_robustifier_values(
     (a1, b1, c1) = get_robustifier_values(crf.ρ1, a2)
     a = a1
     b = b1 * b2
-    c = (ismissing(c1) || ismissing(c2)) ? missing : c1 * b2^2 + b1 * c2
+    c = c1 * b2^2 + b1 * c2
     return (a, b, c)
 end
 
@@ -314,7 +311,7 @@ function get_robustifier_values(srf::ScaledRobustifierFunction, x::Real)
     (a, b, c) = get_robustifier_values(srf.robustifier, x / s2)
     a_scaled = s2 * a
     b_scaled = b
-    c_scaled = ismissing(c) ? missing : c / s2
+    c_scaled = c / s2
     return (a_scaled, b_scaled, c_scaled)
 end
 
