@@ -1,3 +1,10 @@
+function Manopt.add_vector!(M::Hyperrectangle, X, p, c::AbstractVector, basis::AbstractBasis{ℝ})
+    S = representation_size(M)
+    X .+= reshape(c, S)
+    return X
+end
+
+
 """
     default_point_distance(::DefaultManifold, p)
 
@@ -59,6 +66,15 @@ function max_stepsize(M::FixedRankMatrices, p)
     return max_stepsize(M)
 end
 max_stepsize(M::FixedRankMatrices) = manifold_dimension(M)
+
+"""
+    max_stepsize(::SymmetricPositiveDefinite, p)
+
+Return the maximum stepsize on the [`SymmetricPositiveDefinite`](@extref) manifold.
+The injectivity radius of `SymmetricPositiveDefinite` is infinite, but we return the
+logarithm of the maximum floating-point number to avoid numerical issues.
+"""
+max_stepsize(::SymmetricPositiveDefinite, p) = log(floatmax(eltype(p)))
 
 """
     max_stepsize(M::Hyperrectangle, p)
@@ -133,7 +149,7 @@ end
     reflect!(M, q, f, x; kwargs...)
 
 reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f: $(Manopt._math(:Manifold))) → $(Manopt._math(:Manifold)))``, given by
+function ``f: $(Manopt._math(:Manifold)) → $(Manopt._math(:Manifold))``, given by
 
 ````math
 $(Manopt._tex(:operatorname, "refl"))_f(x) = $(Manopt._tex(:operatorname, "refl"))_{f(x)}(x),

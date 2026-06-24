@@ -10,8 +10,8 @@ Describe a Riemannian optimization problem with all static (not-changing) proper
 
 The most prominent features that should always be stated here are
 
-* the [`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) ``$(_math(:Manifold))nifold)))``
-* the cost function ``f:  $(_math(:Manifold))) → ℝ``
+* the [`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) ``$(_math(:Manifold))``
+* the cost function ``f:  $(_math(:Manifold)) → ℝ``
 
 Usually the cost should be within an [`AbstractManifoldObjective`](@ref).
 """

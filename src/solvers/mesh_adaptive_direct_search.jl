@@ -5,7 +5,7 @@ _doc_mads = """
     mesh_adaptive_direct_search!(M, f, p; kwargs...)
     mesh_adaptive_direct_search!(M, mco::AbstractManifoldCostObjective, p; kwargs..)
 
-The Mesh Adaptive Direct Search (MADS) algorithm minimizes an objective function ``f: $(_math(:Manifold))nifold))) → ℝ`` on the manifold `M`.
+The Mesh Adaptive Direct Search (MADS) algorithm minimizes an objective function ``f: $(_math(:Manifold)) → ℝ`` on the manifold `M`.
 The algorithm constructs an implicit mesh in the tangent space ``$(_math(:TangentSpace))`` at the current candidate ``p``.
 Each iteration consists of a search step and a poll step.
 

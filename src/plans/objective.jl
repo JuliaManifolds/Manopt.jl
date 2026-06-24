@@ -8,7 +8,7 @@ abstract type AbstractEvaluationType end
 @doc """
     AbstractManifoldObjective{E<:AbstractEvaluationType}
 
-Describe the collection of the optimization function ``f: $(_math(:Manifold))nifold))nifold))) → ℝ`` (or even a vectorial range)
+Describe the collection of the optimization function ``f: $(_math(:Manifold)) → ℝ`` (or even a vectorial range)
 and its corresponding elements, which might for example be a gradient or (one or more) proximal maps.
 
 All these elements should usually be implemented as functions
@@ -75,10 +75,9 @@ struct AllocatingInplaceEvaluation <: AbstractEvaluationType end
 _to_kw(::Type{AllocatingInplaceEvaluation}) = "evaluation = AllocatingInplaceEvaluation()"
 
 @doc """
-    ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
-       AbstractDecoratedManifoldObjective{E,O2}
+    ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <: AbstractDecoratedManifoldObjective{E,O2}
 
-A wrapper to indicate that `get_solver_result` should return the inner objective.
+A wrapper to indicate that [`get_solver_result`](@ref) should return the inner objective.
 
 The types are such that one can still dispatch on the undecorated type `O2` of the
 original objective as well.

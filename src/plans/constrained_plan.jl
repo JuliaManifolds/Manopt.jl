@@ -62,9 +62,9 @@ $(_problem(:Constrained))
 * `objective`: an [`AbstractManifoldObjective`](@ref) representing the unconstrained
   objective, that is containing cost ``f``, the gradient of the cost ``f`` and maybe the Hessian.
 * `equality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the equality constraints
-``h: $(_math(:Manifold))) → ℝ^n`` also possibly containing its gradient and/or Hessian
+``h: $(_math(:Manifold)) → ℝ^n`` also possibly containing its gradient and/or Hessian
 * `inequality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the inequality constraints
-``g: $(_math(:Manifold))) → ℝ^m`` also possibly containing its gradient and/or Hessian
+``g: $(_math(:Manifold)) → ℝ^m`` also possibly containing its gradient and/or Hessian
 
 # Constructors
     ConstrainedManifoldObjective(f, grad_f;
@@ -106,10 +106,8 @@ respectively, is created.
 Feasibility of points with respect to the constraints is determined up to the tolerance `atol`.
 """
 struct ConstrainedManifoldObjective{
-        E <: AbstractEvaluationType,
-        MO <: AbstractManifoldObjective,
-        EMO <: Union{AbstractVectorGradientFunction, Nothing},
-        IMO <: Union{AbstractVectorGradientFunction, Nothing},
+        E <: AbstractEvaluationType, MO <: AbstractManifoldObjective,
+        EMO <: Union{AbstractVectorGradientFunction, Nothing}, IMO <: Union{AbstractVectorGradientFunction, Nothing},
     } <: AbstractManifoldObjective{E}
     objective::MO
     equality_constraints::EMO
@@ -132,8 +130,7 @@ end
 
 # Try to infer the number of constraints
 function _number_of_constraints(
-        g,
-        grad_g;
+        g, grad_g;
         function_type::Union{AbstractVectorialType, Nothing} = nothing,
         jacobian_type::Union{AbstractVectorialType, Nothing} = nothing,
         M::Union{AbstractManifold, Nothing} = nothing,
@@ -309,7 +306,7 @@ correctly, they work as follows:
 Assume the objective is
 ```math
 \\begin{aligned}
- $(_tex(:argmin))_{p ∈ $(_math(:Manifold)))} & f(p)\\\\
+ $(_tex(:argmin))_{p ∈ $(_math(:Manifold))} & f(p)\\\\
  $(_tex(:text, "subject to ")) & g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, " for all ")) i=1,…,m,\\
  $(_tex(:quad)) & h_j(p)=0 $(_tex(:quad)) $(_tex(:text, " for all ")) j=1,…,n.
 \\end{aligned}
@@ -320,7 +317,7 @@ components gradients, for example
 ``$(_tex(:bigl))($(_tex(:grad)) g_1(p), $(_tex(:grad)) g_2(p), …, $(_tex(:grad)) g_m(p) $(_tex(:bigr)))``.
 
 In another interpretation, this can be considered a point on the tangent space
-at ``P = (p,…,p) ∈ $(_math(:Manifold)))^m``, so in the tangent space to the [`PowerManifold`](@extref `ManifoldsBase.PowerManifold`) ``$(_math(:Manifold)))^m``.
+at ``P = (p,…,p) ∈ $(_math(:Manifold))^m``, so in the tangent space to the [`PowerManifold`](@extref `ManifoldsBase.PowerManifold`) ``$(_math(:Manifold))^m``.
 The case where this is a [`NestedPowerRepresentation`](@extref `ManifoldsBase.NestedPowerRepresentation`) this agrees with the
 interpretation from before, but on power manifolds, more efficient representations exist.
 
@@ -990,14 +987,15 @@ end
     is_feasible(M::AbstractManifold, o::AbstractDecoratedManifoldObjective, p, kwargs...)
 
 Evaluate whether a point `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo`.
-That is for the provided inequality constraints ``g: $(_math(:Manifold))) → ℝ^m`` and equality constraints ``h: $(_math(:Manifold))) \to ℝ^m``
-from within `cmo`, the point ``p ∈ $(_math(:Manifold)))`` is feasible if
+That is for the provided inequality constraints ``g: $(_math(:Manifold)) → ℝ^m`` and equality constraints ``h: $(_math(:Manifold)) → ℝ^m``
+from within `cmo`, the point ``p ∈ $(_math(:Manifold))`` is feasible if
+
 ```math
-g_i(p) ≤ 0, \text{ for all } i=1,…,m$(_tex(:quad))\text{ and }$(_tex(:quad)) h_j(p) = 0, \text{ for all } j=1,…,n.
+g_i(p) ≤ 0, $(_tex(:text, " for all ")) i=1,…,m$(_tex(:quad))\text{ and }$(_tex(:quad)) h_j(p) = 0, \text{ for all } j=1,…,n.
 ```
 
 # Keyword arguments
-* `check_point::Bool=true`: whether to also verify that ``p∈$(_math(:Manifold)))` holds, using [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
+* `check_point::Bool=true`: whether to also verify that ``p∈$(_math(:Manifold))` holds, using [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
 * `error::Symbol=:none`: if the point is not feasible, this symbol determines how to report the error.
     * `:error`: throws an error
     * `:info`: displays the error message as an @info
@@ -1038,11 +1036,8 @@ You can also provide the evaluated vectors for the values of `g` and `h` as keyw
 in case you had them evaluated before.
 """
 function get_feasibility_status(
-        M,
-        cmo,
-        p;
-        g = get_inequality_constraints(M, cmo, p),
-        h = get_equality_constraints(M, cmo, p),
+        M, cmo, p;
+        g = get_inequality_constraints(M, cmo, p), h = get_equality_constraints(M, cmo, p),
     )
     g_violated = sum(g .> 0)
     h_violated = sum(h .!= 0)

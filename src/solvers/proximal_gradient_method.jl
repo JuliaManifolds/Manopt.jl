@@ -11,7 +11,7 @@ See also [FengHuangSongYingZeng:2021](@cite) for a similar approach.
 Given the minimization problem
 
 ```math
-$(_tex(:argmin))_{p∈$(_tex(:Cal, "M"))} f(p),
+$(_tex(:argmin))_{p∈$(_math(:Manifold))} f(p),
 $(_tex(:quad)) $(_tex(:text, " where ")) $(_tex(:quad)) f(p) = g(p) + h(p).
 ```
 
@@ -46,7 +46,7 @@ $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ProximalGradi
   that by default uses a [`ProximalGradientMethodBacktracking`](@ref).
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
-$(_kwargs(:sub_problem; type = "Union{AbstractManoptProblem, F, Nothing}", default = "nothing"))
+$(_kwargs(:sub_problem; type = "Union{`[`AbstractManoptProblem`](@ref)`, F, Nothing}", default = "nothing"))
   or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
 $(_kwargs(:sub_state; default = "evaluation")). This field is ignored, if the `sub_problem` is `Nothing`.
 

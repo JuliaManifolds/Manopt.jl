@@ -56,7 +56,7 @@ function _in_str(s::String; indent = 0, headers = 1, indent_str = _MANOPT_INDENT
     return t
 end
 """
-    set_parameter!(f, element::Symbol , args...)
+    set_parameter!(f, element::Symbol, args...)
 
 For any `f` and a `Symbol` `e`, dispatch on its value so by default, to
 set some `args...` in `f` or one of uts sub elements.
@@ -175,6 +175,7 @@ include("stepsize/stepsize.jl")
 
 include("keywords.jl")
 
+# Generic plans I: based on objective structure
 include("bundle_plan.jl")
 include("cost_plan.jl")
 include("first_order_plan.jl")
@@ -184,22 +185,32 @@ include("proximal_gradient_plan.jl")
 include("subgradient_plan.jl")
 include("vectorial_plan.jl")
 
+# Linear systems
+include("conjugate_residual_plan.jl")
+# Robutsifiers
+include("robustifiers.jl")
+
+# Generic plans II: based on subsolvers
 include("subsolver_plan.jl")
 include("constrained_plan.jl")
 include("constrained_set_plan.jl")
 include("trust_regions_plan.jl")
 
+# Specific solver plans
 include("adaptive_regularization_with_cubics_plan.jl")
 include("alternating_gradient_plan.jl")
 include("augmented_lagrangian_plan.jl")
 include("conjugate_gradient_plan.jl")
-include("conjugate_residual_plan.jl")
 include("exact_penalty_method_plan.jl")
 include("frank_wolfe_plan.jl")
 include("interior_point_Newton_plan.jl")
 include("quasi_newton_plan.jl")
 include("mesh_adaptive_plan.jl")
-include("nonlinear_least_squares_plan.jl")
+include("nonlinear_least_squares/linear_surrogate_plan.jl")
+include("nonlinear_least_squares/nls_objective.jl")
+include("nonlinear_least_squares/nls_general_plan.jl")
+include("nonlinear_least_squares/nls_in_coordinates_plan.jl")
+include("nonlinear_least_squares/box_nls_plan.jl")
 include("difference_of_convex_plan.jl")
 include("Douglas_Rachford_plan.jl")
 

@@ -289,6 +289,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
         w9 = DebugWarnIfCostIncreases()
         @test startswith(repr(w9), "DebugWarnIfCostIncreases(")
+        @test startswith(Manopt.status_summary(w9), "A DebugAction warning if the cost increases")
 
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:Iteration], DebugWarnIfCostNotFinite)

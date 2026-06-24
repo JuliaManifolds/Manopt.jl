@@ -57,7 +57,7 @@ mutable struct AdaptiveRegularizationState{
     sub_state::St
     q::P
     H::T
-    S::T
+    s::T
     σ::R
     ρ::R
     ρ_denominator::R
@@ -71,13 +71,13 @@ mutable struct AdaptiveRegularizationState{
     γ2::R
     function AdaptiveRegularizationState(
             sub_problem::Pr, sub_state::St;
-            p::P, X::T, q::P, H::T, S::T, σ::R, ρ::R, ρ_denominator::R, ρ_regularization::R,
+            p::P, X::T, q::P, H::T, s::T, σ::R, ρ::R, ρ_denominator::R, ρ_regularization::R,
             stopping_criterion::SC, retraction_method::TRTM, σmin::R, η1::R, η2::R, γ1::R, γ2::R,
         ) where {
             P, T, Pr, St <: AbstractManoptSolverState, SC <: StoppingCriterion, R, TRTM <: AbstractRetractionMethod,
         }
         return new{P, T, Pr, St, SC, R, TRTM}(
-            p, X, sub_problem, sub_state, q, H, S, σ, ρ,
+            p, X, sub_problem, sub_state, q, H, s, σ, ρ,
             ρ_denominator, ρ_regularization, stopping_criterion, retraction_method, σmin, η1, η2, γ1, γ2
         )
     end
@@ -94,7 +94,7 @@ function AdaptiveRegularizationState(
     }
     return AdaptiveRegularizationState(
         sub_problem, sub_state;
-        p = p, X = X, q = copy(M, p), H = copy(M, p, X), S = copy(M, p, X), σ, ρ = one(σ),
+        p = p, X = X, q = copy(M, p), H = copy(M, p, X), s = copy(M, p, X), σ, ρ = one(σ),
         ρ_denominator = one(σ), ρ_regularization = ρ_regularization, stopping_criterion = stopping_criterion,
         retraction_method = retraction_method, σmin = σmin, η1 = η1, η2 = η2, γ1 = γ1, γ2 = γ2
     )
@@ -117,7 +117,7 @@ function set_gradient!(s::AdaptiveRegularizationState, X)
 end
 function Base.show(io::IO, arcs::AdaptiveRegularizationState)
     print(io, "AdaptiveRegularizationState(", arcs.sub_problem, ", ", arcs.sub_state, "; ")
-    print(io, "p = ", arcs.p, ", q = ", arcs.q, ", H = ", arcs.H, ", S = ", arcs.S, ", ")
+    print(io, "p = ", arcs.p, ", q = ", arcs.q, ", H = ", arcs.H, ", s = ", arcs.s, ", ")
     print(io, "retraction_method = ", arcs.retraction_method, ", stopping_criterion = ", arcs.stop, ", ")
     print(io, "X = ", arcs.X, ", η1 = ", arcs.η1, ", η2 = ", arcs.η2, ", γ1 = ", arcs.γ1, ", ")
     print(io, "γ2 = ", arcs.γ2, ", ρ = ", arcs.ρ, ", ")
@@ -280,14 +280,8 @@ function adaptive_regularization_with_cubics(
         M, copy(M, p), grad_f; evaluation = evaluation, retraction_method = retraction_method
     )
     return adaptive_regularization_with_cubics(
-        M,
-        f,
-        grad_f,
-        Hess_f,
-        p;
-        evaluation = evaluation,
-        retraction_method = retraction_method,
-        kwargs...,
+        M, f, grad_f, Hess_f, p;
+        evaluation = evaluation, retraction_method = retraction_method, kwargs...,
     )
 end
 function adaptive_regularization_with_cubics(
@@ -302,34 +296,21 @@ calls_with_kwargs(::typeof(adaptive_regularization_with_cubics)) = (adaptive_reg
 @doc "$_doc_ARC"
 adaptive_regularization_with_cubics!(M::AbstractManifold, args...; kwargs...)
 function adaptive_regularization_with_cubics!(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        p;
+        M::AbstractManifold, f, grad_f, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         kwargs...,
     )
-    hess_f = ApproxHessianFiniteDifference(
+    Hess_f = ApproxHessianFiniteDifference(
         M, copy(M, p), grad_f; evaluation = evaluation, retraction_method = retraction_method
     )
     return adaptive_regularization_with_cubics!(
-        M,
-        f,
-        grad_f,
-        hess_f,
-        p;
-        evaluation = evaluation,
-        retraction_method = retraction_method,
-        kwargs...,
+        M, f, grad_f, Hess_f, p;
+        evaluation = evaluation, retraction_method = retraction_method, kwargs...,
     )
 end
 function adaptive_regularization_with_cubics!(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        Hess_f::TH,
-        p;
+        M::AbstractManifold, f, grad_f, Hess_f::TH, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     ) where {TH <: Function}
@@ -337,9 +318,7 @@ function adaptive_regularization_with_cubics!(
     return adaptive_regularization_with_cubics!(M, mho, p; evaluation = evaluation, kwargs...)
 end
 function adaptive_regularization_with_cubics!(
-        M::AbstractManifold,
-        mho::O,
-        p = rand(M);
+        M::AbstractManifold, mho::O, p = rand(M);
         debug = if is_tutorial_mode()
             DebugIfEntry(
                 :ρ_denominator, >(-1.0e-8); message = "denominator nonpositive", type = :error
@@ -395,24 +374,17 @@ function adaptive_regularization_with_cubics!(
     if isnothing(sub_problem)
         sub_problem = DefaultManoptProblem(TangentSpace(M, copy(M, p)), sub_objective)
     end
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
+    sub_state_ = maybe_wrap_evaluation_type(sub_state)
     X = copy(M, p, initial_tangent_vector)
     dmp = DefaultManoptProblem(M, dmho)
     arcs = AdaptiveRegularizationState(
-        M,
-        sub_problem,
-        sub_state_storage;
-        p = p,
-        X = X,
-        σ = σ,
+        M, sub_problem, sub_state_;
+        p = p, X = X, σ = σ,
         ρ_regularization = ρ_regularization,
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,
         σmin = σmin,
-        η1 = η1,
-        η2 = η2,
-        γ1 = γ1,
-        γ2 = γ2,
+        η1 = η1, η2 = η2, γ1 = γ1, γ2 = γ2,
     )
     darcs = decorate_state!(arcs; debug, kwargs...)
     solve!(dmp, darcs)
@@ -436,13 +408,13 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     set_iterate!(arcs.sub_state, M, copy(M, arcs.p, arcs.X))
     set_parameter!(arcs.sub_state, :σ, arcs.σ)
     #Solve the `sub_problem` via dispatch depending on type
-    solve_arc_subproblem!(M, arcs.S, arcs.sub_problem, arcs.sub_state, arcs.p)
+    solve_arc_subproblem!(M, arcs.s, arcs.sub_problem, arcs.sub_state, arcs.p)
     # Compute ρ
-    retract!(M, arcs.q, arcs.p, arcs.S, arcs.retraction_method)
+    retract!(M, arcs.q, arcs.p, arcs.s, arcs.retraction_method)
     cost = get_cost(M, mho, arcs.p)
     ρ_num = cost - get_cost(M, mho, arcs.q)
-    ρ_vec = arcs.X + 0.5 * get_hessian(M, mho, arcs.p, arcs.S)
-    ρ_den = -inner(M, arcs.p, arcs.S, ρ_vec)
+    ρ_vec = arcs.X + 0.5 * get_hessian(M, mho, arcs.p, arcs.s)
+    ρ_den = -inner(M, arcs.p, arcs.s, ρ_vec)
     ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
     arcs.ρ_denominator = ρ_den + ρ_reg # <= 0 -> the default debug kicks in
     arcs.ρ = (ρ_num + ρ_reg) / (ρ_den + ρ_reg)

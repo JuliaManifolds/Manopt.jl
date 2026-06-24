@@ -474,8 +474,6 @@ function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :
     return s
 end
 
-get_solver_result(ips::MeshAdaptiveDirectSearchState) = ips.p
-
 function (c::StopWhenPollSizeLess)(
         p::AbstractManoptProblem, s::MeshAdaptiveDirectSearchState, k::Int
     )

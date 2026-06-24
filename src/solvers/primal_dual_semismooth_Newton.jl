@@ -14,8 +14,8 @@ Perform the Primal-Dual Riemannian semismooth Newton algorithm.
 
 $(_doc_PDSN_formula)
 
-* `p, X`:                          primal and dual start points ``p∈$(_math(:Manifold))nifold))nifold))nifold))`` and ``X ∈ T_n$(_tex(:Cal, "N"))``
-* `m,n`:                           base points on ``$(_math(:Manifold)))`` and ``$(_tex(:Cal, "N"))``, respectively.
+* `p, X`:                          primal and dual start points ``p∈$(_math(:Manifold))`` and ``X ∈ T_n$(_math(:Manifold, M = "N"))``
+* `m,n`:                           base points on ``$(_math(:Manifold))`` and ``$(_math(:Manifold, M = "N"))``, respectively.
 * `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
 * `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_math(:TangentSpace; p = "m")) → $(_math(:TangentSpace; M = "N", p = "Λ(m)"))``
 * `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``

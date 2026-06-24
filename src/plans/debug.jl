@@ -44,7 +44,7 @@ mutable struct DebugSolverState{S <: AbstractManoptSolverState} <: AbstractManop
     function DebugSolverState{S}(
             st::S, dA::Dict{Symbol, <:DebugAction}
         ) where {S <: AbstractManoptSolverState}
-        return new(st, dA)
+        return new{S}(st, dA)
     end
 end
 function DebugSolverState(st::S, dD::D) where {S <: AbstractManoptSolverState, D <: DebugAction}
@@ -405,6 +405,8 @@ function status_summary(di::DebugDivider; context::Symbol = :default)
     # inline and default
     return "A DebugAction printing the String “$(escape_string(di.divider))” as a divider"
 end
+# A global constant for empty debugs
+_EMPTY_DIVIDER = DebugDivider("")
 
 @doc """
     DebugEntry <: DebugAction

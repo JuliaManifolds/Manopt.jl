@@ -198,11 +198,8 @@ mutable struct InteriorPointNewtonState{
     end
 end
 function InteriorPointNewtonState(
-        M::AbstractManifold,
-        cmo::ConstrainedManifoldObjective,
-        sub_problem;
-        evaluation::E = AllocatingEvaluation(),
-        kwargs...,
+        M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem;
+        evaluation::E = AllocatingEvaluation(), kwargs...,
     ) where {E <: AbstractEvaluationType}
     cfs = ClosedFormSubSolverState(; evaluation = evaluation)
     return InteriorPointNewtonState(M, cmo, sub_problem, cfs; kwargs...)
@@ -266,7 +263,7 @@ Given the constrained optimization problem
 $(
     _tex(
         :aligned,
-        "$(_tex(:min))_{p ∈ $(_math(:Manifold))nifold)))} & f(p)",
+        "$(_tex(:min))_{p ∈ $(_math(:Manifold))} & f(p)",
         "$(_tex(:text, " subject to ")) &g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, " for ")) i= 1, …, m,",
         "$(_tex(:quad)) & h_j(p) = 0 $(_tex(:quad))$(_tex(:text, " for ")) j=1,…,n,",
     )
@@ -285,14 +282,14 @@ using a slack variable ``s ∈ ℝ^m`` and a barrier parameter ``β``
 and the Riemannian gradient of the Lagrangian with respect to the first parameter
 ``$(_tex(:grad))_p L(p, μ, λ)``.
 
-Let ``$(_tex(:Cal, "N")) = $(_math(:Manifold))) × ℝ^n``. We obtain the linear system
+Let ``$(_math(:Manifold, M = "N")) = $(_math(:Manifold)) × ℝ^n``. We obtain the linear system
 
 ```math
-$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where ")) (X,Y) ∈ T_{(p,λ)}$(_tex(:Cal, "N"))
+$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where ")) (X,Y) ∈ $(_math(:TangentSpace; p = "(p, λ)", M = "N"))
 ```
 
-where ``$(_tex(:Cal, "A")): T_{(p,λ)}$(_tex(:Cal, "N")) → T_{(p,λ)}$(_tex(:Cal, "N"))`` is a linear operator and
-this struct models the right hand side ``b(p,λ) ∈ T_{(p,λ)}$(_math(:Manifold)))`` given by
+where ``$(_tex(:Cal, "A")): $(_math(:TangentSpace; p = "(p, λ)", M = "N")) → $(_math(:TangentSpace; p = "(p, λ)", M = "N"))`` is a linear operator and
+this struct models the right hand side ``b(p,λ) ∈ T_{(p,λ)}$(_math(:Manifold))`` given by
 
 ```math
 b(p,λ) = $(
@@ -374,7 +371,7 @@ Given the constrained optimization problem
 $(
     _tex(
         :aligned,
-        "$(_tex(:min))_{p ∈ $(_math(:Manifold)))} & f(p)",
+        "$(_tex(:min))_{p ∈ $(_math(:Manifold))} & f(p)",
         "$(_tex(:text, "subject to")) & g_i(p) ≤ 0 $(_tex(:quad))$(_tex(:text, " for ")) i= 1, …, m,",
         "$(_tex(:quad)) & h_j(p)=0 $(_tex(:quad)) $(_tex(:text, " for ")) j=1,…,n,",
     )
@@ -391,13 +388,13 @@ $(_tex(:Cal, "L"))(p, μ, λ) = f(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p) +$(_
 in a perturbed / barrier method enhanced as well as condensed form as using ``$(_tex(:grad))_o L(p, μ, λ)``
 the Riemannian gradient of the Lagrangian with respect to the first parameter.
 
-Let ``$(_tex(:Cal, "N")) = $(_math(:Manifold))) × ℝ^n``. We obtain the linear system
+Let ``$(_math(:Manifold; M = "N")) = $(_math(:Manifold)) × ℝ^n``. We obtain the linear system
 
 ```math
-$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where ")) X ∈ T_p$(_math(:Manifold))), Y ∈ ℝ^n
+$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where ")) X ∈ T_p$(_math(:Manifold)), Y ∈ ℝ^n
 ```
-where ``$(_tex(:Cal, "A")): T_{(p,λ)}$(_tex(:Cal, "N")) → T_{(p,λ)}$(_tex(:Cal, "N"))`` is a linear operator
-on ``T_{(p,λ)}$(_tex(:Cal, "N")) = T_p$(_math(:Manifold))) × ℝ^n`` given by
+where ``$(_tex(:Cal, "A")): T_{(p,λ)}$(_math(:Manifold; M = "N")) → T_{(p,λ)}$(_math(:Manifold; M = "N"))`` is a linear operator
+on ``T_{(p,λ)}$(_math(:Manifold; M = "N")) = T_p$(_math(:Manifold)) × ℝ^n`` given by
 
 ```math
 $(_tex(:Cal, "A"))(p,λ)[X,Y] =
@@ -508,7 +505,7 @@ F(p, μ, λ, s) = $(
     )
 ),
 ```
-where ``p ∈ $(_math(:Manifold))nifold))nifold)))``, ``μ, s ∈ ℝ^m`` and ``λ ∈ ℝ^n``,
+where ``p ∈ $(_math(:Manifold))``, ``μ, s ∈ ℝ^m`` and ``λ ∈ ℝ^n``,
 and ``⊙`` denotes the Hadamard (or elementwise) product
 
 # Fields
@@ -525,7 +522,7 @@ in the computations. Furthermore Both fields together also clarify the product m
 # Example
 
 Define `F = KKTVectorField(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``$(_math(:Manifold))nifold)))×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `F(N, q)` or as the in-place variant `F(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` for the result.
 """
@@ -594,7 +591,7 @@ Generate the Jacobian of the KKT vector field related to some [`ConstrainedManif
 # Example
 
 Define `JF = KKTVectorFieldJacobian(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``$(_math(:Manifold))nifold)))×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `JF(N, q, Y)` or as the in-place variant `JF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are a tangent vector at `q`.
 """
@@ -678,7 +675,7 @@ Generate the Adjoint Jacobian of the KKT vector field related to some [`Constrai
 # Example
 
 Define `AdJF = KKTVectorFieldAdjointJacobian(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``$(_math(:Manifold)))×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `AdJF(N, q, Y)` or as the in-place variant `AdJF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are a tangent vector at `q`.
 """
@@ -744,7 +741,7 @@ In [LaiYoshise:2024](@cite) this is called the merit function.
 # Example
 
 Define `f = KKTVectorFieldNormSq(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``$(_math(:Manifold))nifold)))×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `f(N, q)`, where `q` is a point on `N`.
 """
 mutable struct KKTVectorFieldNormSq{O <: ConstrainedManifoldObjective}
@@ -780,7 +777,7 @@ $(_tex(:grad)) φ = 2$(_tex(:operatorname, "J"))^* F(p, μ, λ, s)[F(p, μ, λ, 
 
 and hence is computed with [`KKTVectorFieldAdjointJacobian`](@ref) and [`KKTVectorField`](@ref).
 
-For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = $(_tex(:grad))_p $(_tex(:Cal, "L"))(p,μ,λ) ∈ T_p$(_math(:Manifold)))``,
+For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = $(_tex(:grad))_p $(_tex(:Cal, "L"))(p,μ,λ) ∈ T_p$(_math(:Manifold))``,
 for a shorthand of the first component of ``F``, as
 
 ```math
@@ -797,7 +794,7 @@ $(
     )
 ),
 ```
-where ``⊙`` denotes the Hadamard (or elementwise) product.
+where ``⊙`` denotes the Hadamard (or element wise) product.
 
 # Fields
 
@@ -810,7 +807,7 @@ where ``⊙`` denotes the Hadamard (or elementwise) product.
 # Example
 
 Define `grad_f = KKTVectorFieldNormSqGradient(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``$(_math(:Manifold)))×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `grad_f(N, q)` or as the in-place variant `grad_f(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` returning the resulting gradient at.
 """
@@ -861,7 +858,7 @@ Section 6 of [LaiYoshise:2024](@cite) propose the following additional condition
 inspired by the Euclidean case described in Section 6 [El-BakryTapiaTsuchiyaZhang:1996](@cite):
 
 For a given [`ConstrainedManifoldObjective`](@ref) assume consider the [`KKTVectorField`](@ref) ``F``,
-that is we are at a point ``q = (p, λ, μ, s)``  on ``$(_math(:Manifold))) × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
+that is we are at a point ``q = (p, λ, μ, s)``  on ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
 
 Then, let
 
@@ -1041,7 +1038,7 @@ where ``F`` is the KKT vector field, hence the [`KKTVectorFieldNormSq`](@ref) is
 # Keyword arguments
 
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
-* `N` the manifold ``$(_math(:Manifold))) × ℝ^m × ℝ^n × ℝ^m`` the vector field lives on (generated using `vector_space`)
+* `N` the manifold ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m`` the vector field lives on (generated using `vector_space`)
 * `q` provide memory on `N` for interims evaluation of the vector field
 """
 function calculate_σ(

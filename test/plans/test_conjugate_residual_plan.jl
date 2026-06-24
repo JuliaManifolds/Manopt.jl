@@ -22,8 +22,21 @@ using Manifolds, Manopt, Test
         @test get_cost(TpM, slso, X0) ≈ cost_value
         @test get_cost(TpM, slso2, X0) ≈ cost_value
 
-        @test Manopt.get_b(TpM, slso) == bv
-        @test Manopt.get_b(TpM, slso2) == bv
+        @test Manopt.get_vector_field(M, slso, p) == bv
+        @test Manopt.get_vector_field(M, slso2, p) == bv
+        X1 = [0.0, 0.0]
+        Manopt.get_vector_field!(M, X1, slso, p)
+        @test X1 == bv
+        Manopt.get_vector_field!(M, X1, slso2, p)
+        @test X1 == bv
+
+        @test Manopt.get_vector_field(TpM, slso) == bv
+        @test Manopt.get_vector_field(TpM, slso2) == bv
+        Manopt.get_vector_field!(TpM, X1, slso)
+        @test X1 == bv
+        Manopt.get_vector_field!(TpM, X1, slso2)
+        @test X1 == bv
+
 
         @test get_gradient(TpM, slso, X0) == grad_value
         @test get_gradient(TpM, slso2, X0) == grad_value

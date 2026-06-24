@@ -22,10 +22,10 @@ specify a problem for Hessian based algorithms.
 
 # Fields
 
-* `cost`:           a function ``f:$(_math(:Manifold))nifold)))→ℝ`` to minimize
-* `gradient!!`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold))) → $(_math(:TangentBundle))`` of the cost function ``f``
-* `hessian!!`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TangentSpace; p = "x")) → $(_math(:TangentSpace; p = "x"))`` of the cost function ``f``
-* `preconditioner!!`: the symmetric, positive definite preconditioner
+* `cost`:           a function ``f:$(_math(:Manifold))→ℝ`` to minimize
+* `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold)) → $(_math(:TangentBundle))`` of the cost function ``f``
+* `hessian`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TangentSpace; p = "x")) → $(_math(:TangentSpace; p = "x"))`` of the cost function ``f``
+* `preconditioner`: the symmetric, positive definite preconditioner
   as an approximation of the inverse of the Hessian of ``f``, a map with the same
   input variables as the `hessian` to numerically stabilize iterations when the Hessian is
   ill-conditioned
@@ -289,7 +289,7 @@ $(_kwargs([:retraction_method, :vector_transport_method]))
 ## Keyword arguments
 
 $(_kwargs(:evaluation))
-* `steplength=`2^{-14}``: step length ``c`` to approximate the gradient evaluations
+* `steplength=2^{-14}`: step length ``c`` to approximate the gradient evaluations
 $(_kwargs([:retraction_method, :vector_transport_method]))
 """
 mutable struct ApproxHessianFiniteDifference{E, P, T, G, RTR, VTR, R <: Real} <: AbstractApproxHessian
@@ -375,8 +375,8 @@ $(_kwargs(:vector_transport_method)).
 
 ## Keyword arguments
 
-* `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
-* `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
+* `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
+* `basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)
 $(_kwargs([:evaluation, :vector_transport_method]))
 """
@@ -519,7 +519,7 @@ $(_fields(:vector_transport_method))
 ## Keyword arguments
 
 * `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
-* `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
+* `basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`)) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)
 $(_kwargs([:evaluation, :vector_transport_method]))
 """

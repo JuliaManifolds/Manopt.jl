@@ -5,8 +5,8 @@ A stochastic gradient objective consists of
 
 * a(n optional) cost function ``f(p) = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) f_i(p)``
 * an array of gradients, ``$(_tex(:grad)) f_i(p), i=1,…,n`` which can be given in two forms
-  * as one single function ``($(_math(:Manifold))nifold))nifold))), p) ↦ (X_1,…,X_n) ∈ ($(_math(:TangentSpace))n``
-  * as a vector of functions ``$(_tex(:bigl))( ($(_math(:Manifold))), p) ↦ X_1, …, ($(_math(:Manifold))), p) ↦ X_n$(_tex(:bigr)))``.
+  * as one single function ``($(_math(:Manifold)), p) ↦ (X_1,…,X_n) ∈ ($(_math(:TangentSpace))n``
+  * as a vector of functions ``$(_tex(:bigl))( ($(_math(:Manifold)), p) ↦ X_1, …, ($(_math(:Manifold)), p) ↦ X_n$(_tex(:bigr)))``.
 
 Where both variants can also be provided as [`InplaceEvaluation`](@ref) functions
 `(M, X, p) -> X`, where `X` is the vector of `X1,...,Xn` and `(M, X1, p) -> X1, ..., (M, Xn, p) -> Xn`,

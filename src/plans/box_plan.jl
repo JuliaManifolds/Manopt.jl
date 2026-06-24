@@ -349,12 +349,12 @@ line segments in [`GeneralizedCauchyDirectionSubsolver`](@ref).
 abstract type AbstractSegmentHessianUpdater end
 
 """
-    init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
+    init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha)
 
 Method for initialization of `AbstractSegmentHessianUpdater` `hessian_segment_updater` just before the loop
 that examines subsequent intervals for GCD.
 """
-init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
+init_updater!(::AbstractManifold, hessian_segment_updater::AbstractSegmentHessianUpdater, p, d, ha)
 
 """
     struct GenericSegmentHessianUpdater <: AbstractSegmentHessianUpdater end
@@ -367,18 +367,18 @@ struct GenericSegmentHessianUpdater{TX} <: AbstractSegmentHessianUpdater
     d_tmp::TX
 end
 
-function get_default_hessian_segment_updater(M::AbstractManifold, p, ::AbstractQuasiNewtonDirectionUpdate)
+function get_default_hessian_segment_updater(M::AbstractManifold, p, ::Any)
     return GenericSegmentHessianUpdater(zero_vector(M, p), zero_vector(M, p))
 end
 
-function init_updater!(M::AbstractManifold, hessian_segment_updater::GenericSegmentHessianUpdater, p, d, ha::AbstractQuasiNewtonDirectionUpdate)
+function init_updater!(M::AbstractManifold, hessian_segment_updater::GenericSegmentHessianUpdater, p, d, ha)
     zero_vector!(M, hessian_segment_updater.d_z, p)
     copyto!(M, hessian_segment_updater.d_tmp, d)
     return hessian_segment_updater
 end
 
 @doc raw"""
-    (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha::AbstractQuasiNewtonDirectionUpdate)
+    (upd::GenericSegmentHessianUpdater)(M::AbstractManifold, p, t::Real, dt::Real, b, db, ha)
 
 Calculate Hessian values ``⟨e_b, B d_z⟩`` and ``⟨e_b, B d_tmp⟩`` for the generalized Cauchy
 point line search using the generic approach via `hessian_value` with [`UnitVector`](@ref).
@@ -513,7 +513,6 @@ function _iterate(ranges, i, st)
     end
 end
 
-
 """
     to_coordinate_index(M::ProductManifold, b::UnitVector, B::AbstractBasis)
 
@@ -609,7 +608,7 @@ avoid allocations.
 """
 struct GeneralizedCauchyDirectionSubsolver{
         TX,
-        T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater, TFT <: Tuple{<:Real, Any}, TBI,
+        T_HA, TFU <: AbstractSegmentHessianUpdater, TFT <: Tuple{<:Real, Any}, TBI,
         TO <: Base.Order.Ordering,
     }
     d_original::TX
@@ -621,7 +620,7 @@ struct GeneralizedCauchyDirectionSubsolver{
 end
 
 function GeneralizedCauchyDirectionSubsolver(
-        M::AbstractManifold, p, ha::AbstractQuasiNewtonDirectionUpdate;
+        M::AbstractManifold, p, ha;
         hessian_segment_updater::AbstractSegmentHessianUpdater = get_default_hessian_segment_updater(M, p, ha)
     )
     bounds_indices = get_bounds_index(M)
@@ -682,7 +681,7 @@ The `status` can be one of the following:
 function find_generalized_cauchy_direction!(
         M::AbstractManifold,
         gcd::GeneralizedCauchyDirectionSubsolver{
-            <:Any, <:AbstractQuasiNewtonDirectionUpdate,
+            <:Any, <:Any,
             <:AbstractSegmentHessianUpdater, <:Tuple{TF, Any},
         },
         d_out, p, d, X

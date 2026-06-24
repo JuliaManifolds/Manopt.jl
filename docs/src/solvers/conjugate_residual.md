@@ -15,22 +15,10 @@ conjugate_residual!
 ConjugateResidualState
 ```
 
-## Objective
-
-```@docs
-SymmetricLinearSystemObjective
-```
-
 ## Additional stopping criterion
 
 ```@docs
 StopWhenRelativeResidualLess
-```
-
-## Internal functions
-
-```@docs
-Manopt.get_b
 ```
 
 ## Literature

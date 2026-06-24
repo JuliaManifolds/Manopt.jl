@@ -9,17 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] unreleased
 
 This is a breaking change since the JuMP extension is dropped.
+We also unified a few of the internal solver state constructors.
 
 ### Added
 
-* `nonpositive_curvature_behavior` for `QuasiNewtonLimitedMemoryDirectionUpdate` that determines how transported (y, s) vector pairs are treated after transport; if their inner product gets too low, it may lead to non-positive-definite Hessians which needs to be avoided. This resolves issue #549. (#554)
+* A robustified version of the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/) (#617)
+* An option to disable the warm start the conjugate residual currently does when used as a subsolver.
+* `nonpositive_curvature_behavior` for `QuasiNewtonLimitedMemoryDirectionUpdate` that determines how transported (y, s) vector pairs are treated after transport; if their inner product gets too low, it may lead to non-positive-definite Hessians which needs to be avoided. This resolves issue (#549). (#554)
 * `GeneralizedCauchyDirectionSubsolver` for handling direction selection in the presence of box (`Hyperrectangle`) constraints in quasi-Newton methods. This allows for L-BFGS-B-style box constraint handling. (#554)
 * New stopping criteria: `StopWhenRelativeAPosterioriCostChangeLessOrEqual` and `StopWhenProjectedNegativeGradientNormLess`. (#554).
 * `HagerZhangLinesearch` stepsize, a state-of-the-art line search for smooth objectives with cubic interpolation and adaptive Wolfe condition checking. (#554)
 * Stopping criteria can now be initialized using `initialize_stepsize!`, similar to solvers. (#554)
+* The `ConjugateResidualState` now has a `warm_start=` option when used multiple times, for example in every iteration as a subsolver, to reuse the last state from the previous run.
 
 ### Changed
 
+* In the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/)t the `η` parameter has been renamed to `candidate_acceptance_threshold`, `β` to `damping_increase_factor` and `β_reduction` to `damping_reduction_factor`. (#617)
+* the constructor for the [Levenberg-Marquardt state](https://manoptjl.org/stable/solvers/LevenbergMarquardt/#Manopt.LevenbergMarquardtState) has been unified with the remaining states, to take the `sub_problem` and `sub_state` arguments as second and third positional arguments, respectively. (#617)
+* the keyword `initial_jacobian_f` within `LevenbergMarquardt` is unified in naming to the residual values vector and called `initial_jacobian_matrices`. If you call `LevenbergMarquardt` with a single vector component, also a single matrix is allowed. (#617)
+* an internal field of the solver state of Levenberg-Marqwuardt was called `jacobian_f` the same as the functions whose result it meant to cache if applicable. To distinguish both, the field is now called `jacobian_matrices`. (#617)
+* the `max_stepsize(M)` on the [`SymmetricPositiveDefinite`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/symmetricpositivedefinite/) manifold was changed from returning `Inf`, which is the mathematical maximal stepsize to returning the square root of the maximum (floating point) value to avoid numerical instabilities.
 * title of "How to define the cost in the embedding" tutorial (#615)
 
 ### Fixed
@@ -36,8 +45,9 @@ This is a breaking change since the JuMP extension is dropped.
 ### Removed
 
 * The extension to JuMP. A replacement as a separate package is planned when the support for variables beyond vectors is more accessible in JuMP
-* the plotting functions to `Asymptote`. They can now be found in the separate package [`ManifoldAsymptote.jl`]()
+* the plotting functions to `Asymptote`. They can now be found in the separate package [`ManifoldAsymptote.jl`](https://github.com/JuliaManifolds/ManifoldAsymptote.jl)
   this way, `Manopt.jl` has less dependencies, especially the color and colorschemes dependencies are dropped
+* `linear_subsolver! = ` was removed from the [`LevenbergMarquardt`](https://manoptjl.org/stable/solvers/LevenbergMarquardt/) solver interface, since it is imprecise. If you use a closed form solver before, specify it by passing the function to `sub_problem` and set `sub_state` to the corresponding evaluation type
 
 ## [0.5.39] June 3, 2026
 
@@ -92,11 +102,15 @@ This is a breaking change since the JuMP extension is dropped.
 ### Changed
 
 * `NonlinearLeastSquaresObjective` is now called `ManifoldNonlinearLeastSquaresObjective` (#569).
-* This is a breaking release in order to move a few parts to a unified naming and since we
-discontinue the `JuMP` extension. (#532)
+* (breaking) discontinue the `JuMP` extension. (#532)
 * Improved formatting of the references in the Readme.md (#586)
 * Bump compat for RecursiveArrayTools.jl to include version 4
 * deactivate CompatHelper Action and solely use dependabot
+* (breaking change) renamed `CoordinateVectorialType` to `CoefficientVectorialType` to have a
+  consistent naming that anything with respect to a basis is called “coefficients”
+* moved the old closed-form-in-coordinates subsolver for `LevenbergMarquardt` handling to the subsolver; if you implemented your own, pass it to `sub_problem`,
+set the `sub_state` to indicate allocating or in-place evaluation and change the signature as documented; make especially sure to return a tangent vector now and not coordinates.
+* (breaking change) `expect_zero_residual` in `LevenbergMarquardt` is replaced by more general `damping_reduction_threshold` and `β_reduction`. To recover the behavior of `expect_zero_residual=true`, set `damping_reduction_threshold` to the same value as `η` and `β_reduction` to `β`.
 
 ### Fixed
 
@@ -258,7 +272,7 @@ so a constant initial guess is recommended here. The initial guess may be refact
 * a `gradient=` keyword in several `Stepsize`s, such that one can avoid to internally avoid computing the gradient again.
 * used the ``gradient=` keyword in
   * `alternating_gradient_descent`
-  * `conjugate_gradient`
+  * `conjugate_gradient_descent`
   * `Frank_Wolfe_method`
   * `gradient_descent`
   * `interior_point_newton`
