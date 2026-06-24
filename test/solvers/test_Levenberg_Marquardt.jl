@@ -38,7 +38,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
         )
         p1 = [0.0, 0.0]
-        # Interfacve I: Functions
+        # Interface I: Functions
         r1a1 = LevenbergMarquardt(
             M1, F1, JF1, p1, m;
             function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()
@@ -333,6 +333,19 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         # using ManifoldMakie
         # scatter(M2, ps); geodesics!(M2, geob); geodesics!(M2, geoa);
         # the first curve (same color as points) should hit the end points, the second is “skewed”
+
+        @testset "mode selection" begin
+            (o2_ns, s2_ns) = LevenbergMarquardt(
+                TM2, vgf2, P0;
+                robustifier = 1.0e-4 ∘ HuberRobustifier(), return_objective = true, return_state = true,
+                retraction_method = StabilizedRetraction(default_retraction_method(TM2)),
+                scaling_mode = :Normal,
+            )
+            @test isapprox(TM2, s2.p, s2_ns.p; atol = 1.0e-2)
+            # due to different scaling they should be a bit different
+            @test !isapprox(TM2, s2.p, s2_ns.p; atol = 1.0e-8)
+        end
+
         @testset "Block Robust Geodesic Regression on the Sphere" begin
             # We group the 4 points from before into start/end (nonrobust) and middle (robust)
             b1 = [1, 4]; m1 = length(b1)
