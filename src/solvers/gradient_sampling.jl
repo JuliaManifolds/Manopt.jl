@@ -65,12 +65,13 @@ function GradientSamplingState(
         stepsize::S = default_stepsize(
             M, GradientSamplingState; retraction_method = retraction_method
         ),
-        vector_transport:method::VTM = default_vector_transport_method(M, typeof(p))
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p))
     ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod}
     return GradientSamplingState(;
         p = p, X = X, sampling_radius = sampling_radius,
         subgradient_norm_tolerance = subgradient_norm_tolerance, optimal_subgradient_norm = optimal_subgradient_norm,
         optimal_sampling_radius = optimal_sampling_radius, stepsize = stepsize, stopping_criterion = stopping_criterion, retraction_method = retraction_method,
+        vector_transport_method = vector_transport_method,
     )
 end
 
