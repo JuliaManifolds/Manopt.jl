@@ -167,7 +167,7 @@ that is done by `Manopt.jl`. For the iterate access we just have to pass `p`.
 ```{julia}
 #| output: false
 function initialize_solver!(mp::AbstractManoptProblem, rws::RandomWalkState)
-    copyto!(M, rws.q, rws.p) # Set p^{(0)} = q
+    copyto!(M, rws.q, rws.p) # Set best q to p^{(0)}
     return rws
 end
 get_iterate(rws::RandomWalkState) = rws.p
@@ -182,13 +182,13 @@ the one we need is [`get_cost`](@ref).
 #| output: false
 function step_solver!(mp::AbstractManoptProblem, rws::RandomWalkState, i)
     M = get_manifold(mp) # for ease of use get the manifold from the problem
-    X = rand(M; vector_at=p)     # generate a direction
-    X .*= rws.σ/norm(M, p, X)
+    X = rand(M; vector_at=rws.p)     # generate a direction
+    X .*= rws.σ/norm(M, rws.p, X)
     # Walk
     retract!(M, rws.p, rws.p, X, rws.retraction_method)
     # is the new point better? Then store it
     if get_cost(mp, rws.p) < get_cost(mp, rws.q)
-        copyto!(M, rws.p, rws.q)
+        copyto!(M, rws.q, rws.p)
     end
     return rws
 end
