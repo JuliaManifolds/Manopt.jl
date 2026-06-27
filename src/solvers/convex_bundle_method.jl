@@ -641,9 +641,7 @@ function convex_bundle_method!(
     mp = DefaultManoptProblem(M, dsgo)
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     bms = ConvexBundleMethodState(
-        M,
-        sub_problem,
-        maybe_wrap_evaluation_type(sub_state);
+        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
         p = p,
         atol_λ = atol_λ,
         atol_errors = atol_errors,

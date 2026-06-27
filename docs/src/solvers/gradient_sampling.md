@@ -15,6 +15,13 @@ gradient_sampling!
 GradientSamplingState
 ```
 
+
+## Helpers and internal functions
+
+```@docs
+gradient_sampling_subsolver
+```
+
 ## [Technical details](@id sec-gradient-sampling-technical-details)
 
 The [`gradient_sampling`](@ref) solver requires the following functions of a manifold to be available
