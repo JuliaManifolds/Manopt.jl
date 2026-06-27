@@ -7,43 +7,54 @@ A state for the [gradient sampling algorithm](@ref gradient_sampling).
 
 # Fields
 $(_fields(:p; add_properties = [:as_Iterate]))
-$(_fields(:X; add_properties = [:as_Gradient]))
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields([:stepsize, :retraction_method, :vector_transport_method]))
+$(_fields([:sub_problem, :sub_state]))
+$(_fields(:X; add_properties = [:as_Gradient]))
 
 # Constructor
 
 """
 mutable struct GradientSamplingState{
-        P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod,
-        VTM <: AbstractVectorTransportMethod,
+        P, T, R <: Real,
+        SP <: AbstractVector{<:P}, ST <: AbstractVector{<:T},
+        Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
+        SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
     }
-    p::P # (In paper: xₗ)
-    X::T # (In paper: wₗ)
+    p::P
+    sampled_points::SP
+    sampled_vectors::ST
     sampling_radius::R # (In paper: εₗ)
-    subgradient_norm_tolerance::R # (In paper: δₗ)
-    # maybe call these two tolerances: ?
-    optimal_subgradient_norm::R # (In paper: δₒₚₜ)
-    optimal_sampling_radius::R # (In paper: εₒₚₜ)
-    # Missing
-    # number of samples – m in the paper
-    # how to shrink sampling radius –  θ_ε in the paper
-    # how to shrink subgradient norm tolerancen θ_δ in the paper
-    # temporary storage for m points and m tangent vectors (first to rand to generate pi then to evaluate gradients)
-    # subproblem, substate
+    sampling_radius_reduction::R # in HU17 θ_ε
+    sampling_radius_threshold::R # in HU17 εₒₚₜ)
+    subgradient_norm_reduction::R # in HU17 θ_δ
+    subgradient_norm_threshold::R # in HU17 δₒₚₜ)
+    subgradient_norm_tolerance::R # in HU17 δₗ)
+    sub_problem::Pr
+    sub_state::St
     stepsize::S
     stop::SC
     retraction_method::RTM
     vector_transport_method::VTM
+    X::T
     function GradientSamplingState(;
-            p::P, X::T, norm_X::R,
-            sampling_radius::R, subgradient_norm_tolerance::R, optimal_subgradient_norm::R,
-            optimal_sampling_radius::R,
+            p::P, X::T,
+            sampled_point::SP, sampled_vectors::ST,
+            sampling_radius::R, sampling_radius_reduction::R, sampling_radius_threshold::R,
+            subgradient_norm_reduction::R, subgradient_norm_threshold::R, subgradient_norm_tolerance::R,
+            sub_problem::Pr, sub_state::St,
             stepsize::S, stopping_criterion::SC, retraction_method::RTM, vector_transport_method::VTM
-        ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod}
-        return new{P, T, R, SC, S, RTM, VTM}(
-            p, X, norm_X, sampling_radius, subgradient_norm_tolerance, optimal_subgradient_norm,
-            optimal_sampling_radius, stepsize, stopping_criterion, retraction_method, vector_transport_method
+        ) where {
+            P, T, R <: Real,
+            SP <: AbstractVector, ST <: AbstractVector,
+            Pr <: Union{G, AbstractManoptProblem} where {G}, St <: AbstractManoptSolverState,
+            SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
+        }
+        return new{P, T, R, SP, ST, Pr, St, SC, S, RTM, VTM}(
+            p, X, sampled_point, sampled_vectors,
+            sampling_radius, sampling_radius_reduction, sampling_radius_threshold,
+            subgradient_norm_reduction, subgradient_norm_threshold, subgradient_norm_tolerance,
+            sub_problem, sub_state, stepsize, stopping_criterion, retraction_method, vector_transport_method
         )
     end
 end
@@ -52,25 +63,45 @@ function GradientSamplingState(
         M::AbstractManifold;
         p::P = rand(M),
         X::T = zero_vector(M, p),
-        sampling_radius::R = 0.5,
-        subgradient_norm_tolerance::R = 0.1,
-        optimal_subgradient_norm::R = 1.0e-3,
-        optimal_sampling_radius::R = 1.0e-2,
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
+        sample_size::Int = 5,
+        sampled_points::Vector{P} = [copy(M, p) for _ in 1:sample_size],
+        sampled_vectors::Vector{T} = [copy(M, p, X) for _ in 1:sample_size],
+        sampling_radius::R = 0.5,
+        sampling_radius_reduction::R = 0.5,
+        sampling_radius_threshold::R = 1.0e-2,
+        subgradient_norm_reduction::R = 0.5,
+        subgradient_norm_tolerance::R = 0.1,
+        subgradient_norm_threshold::R = 1.0e-3,
         stopping_criterion::SC = StopAfterIteration(200) | (
-            StopWhenGradientNormLess(optimal_subgradient_norm) & (
-                StopWhenSmallerOrEqual(:sampling_radius, optimal_sampling_radius)
+            StopWhenGradientNormLess(subgradient_norm_threshold) & (
+                StopWhenSmallerOrEqual(:sampling_radius, sampling_radius_threshold)
             )
         ),
         stepsize::S = default_stepsize(
             M, GradientSamplingState; retraction_method = retraction_method
         ),
-        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p))
+        # TODO: Can we maybe adapt / reuse the QP solver from convex / prox bundle?
+        sub_problem = [],
+        sub_state = [],
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
     ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod}
+    m1 = length(sampled_points)
+    m2 = length(sampled_vectors)
+    (m1 != m1) && throw(
+        ErrorException(
+            """
+            The temporary storage of points ($(m1)) and vectors ($(m2)) does not agree in length.
+            It should be automatically generated with length $(sample_size). Make sure you pass the correct amounts of temporary storages.
+            """
+        )
+    )
     return GradientSamplingState(;
-        p = p, X = X, sampling_radius = sampling_radius,
-        subgradient_norm_tolerance = subgradient_norm_tolerance, optimal_subgradient_norm = optimal_subgradient_norm,
-        optimal_sampling_radius = optimal_sampling_radius, stepsize = stepsize, stopping_criterion = stopping_criterion, retraction_method = retraction_method,
+        p = p, X = X, sampled_points = sampled_points, sampled_vectors = sampled_vectors,
+        sampling_radius = sampling_radius, sampling_radius_reduction = sampling_radius_reduction, sampling_radius_threshold = sampling_radius_threshold,
+        subgradient_norm_tolerance = subgradient_norm_tolerance, subgradient_norm_threshold = subgradient_norm_threshold, subgradient_norm_reduction = subgradient_norm_reduction,
+        sub_problem = sub_problem, sub_state = sub_state,
+        stepsize = stepsize, stopping_criterion = stopping_criterion, retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
     )
 end
@@ -125,7 +156,22 @@ _doc_gradient_sampling = """
     gradient_sampling!(M, f, grad_f, p; kwargs...)
     gradient_sampling!(M, gradient_objective, p; kwargs...)
 
-perform the gradient sampling algorithm as introduced in [HosseiniUschmajew:2017](@cite)
+perform the gradient sampling algorithm as introduced in [HosseiniUschmajew:2017](@cite).
+
+# Input
+
+$(_args([:M, :f, :grad_f, :p]))
+
+$(_note(:GradientObjective))
+
+# Keyword arguments
+
+$(_kwargs(:differential))
+$(_kwargs(:evaluation; add_properties = [:GradientExample]))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientSamplingState`](@ref)`; retraction_method=retraction_method)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
+$(_kwargs(:X; add_properties = [:as_Gradient]))
 """
 
 @doc "$(_doc_gradient_sampling)"
@@ -203,14 +249,34 @@ function step_solver!(
         mp::AbstractManoptProblem, gss::GradientSamplingState, i
     )
     M = get_manifold(mp)
+    # resample on TpM, map to manifold and make sure they are within radius
+    for (ps, Xs) in zip(gss.sampled_points, gss.sampled_vectors)
+        rand!(M, Xs; vector_at = gss.p, σ = gss.sampling_radius / 2)
+        retract!(M, ps, Xs, gss.retraction_method)
+        while distance(M, gss.p, ps) > gss.sampling_radius
+            Xs ./= 2
+            retract!(M, ps, Xs, gss.retraction_method)
+        end
+    end
+    # re-use the tangent vector memory to evaluate the gradients
+    # and transport them to the current iterate
+    for (ps, Xs) in zip(gss.sampled_points, gss.sampled_vectors)
+        get_gradient!(mp, Xs, ps)
+        vector_transport_to!(M, Xs, ps, Xs, gss.p)
+    end
+    # TODO: solve sub problem in some Y
+    Y = zero_vector(M, p)
+    # Decide whether to accept the step or update radius
+    if norm(M, gss.p, Y) < gss.subgradient_norm_threshold
+        gss.sampling_radius *= gss.sampling_radius_reduction
+        gss.subgradient_norm_tolerance *= gss.subgradient_norm_reduction
+    else
+        copyto!(M, gss.X, gss.p, -Y)
+        step = get_stepsize(mp, gss, i)
+        ManifoldsBase.retract_fused!(M, gss.p, gss.p, gss.X, step, gss.retraction_method)
+    end
     # TODO
-    # Take the kwargs of this function in the notebook and turn them into
-    # parameters in the state - see above.
-    # the remaining rtol & atol are part of the subsolver
-
-    #
-    # use subproblem / substate for the subsolver
+    # the remaining rtol & atol from Ole Gunnars step! are part of the sub_solver?
     # check RipQP as a solver instead of JuMP, maybe also the other new QP?
-
     return gss
 end
