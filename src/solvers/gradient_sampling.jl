@@ -264,7 +264,9 @@ function step_solver!(
         get_gradient!(mp, Xs, ps)
         vector_transport_to!(M, Xs, ps, Xs, gss.p)
     end
-    # TODO: solve sub problem in some Y
+    get_gradient!(mp, gss.X, gss.p)
+    # TODO: Remember that the convex Hull is also build using p and X
+    # TODO: solve sub problem in some Y (w_l in HU17)=
     Y = zero_vector(M, p)
     # Decide whether to accept the step or update radius
     if norm(M, gss.p, Y) < gss.subgradient_norm_threshold

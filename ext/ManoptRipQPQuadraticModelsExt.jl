@@ -34,9 +34,11 @@ function convex_bundle_method_subsolver!(
     qm = QuadraticModel(
         linearization_errors,
         sparse(tril(H));
+        # ∑ λ = 1
         A = reshape(ones(d), 1, d),
         lcon = [one(eltype(linearization_errors))],
         ucon = [one(eltype(linearization_errors))],
+        # λ ≥ 0
         lvar = zeros(d),
         uvar = [Inf for i in 1:d],
         c0 = zero(eltype(linearization_errors)),
@@ -67,9 +69,11 @@ function proximal_bundle_method_subsolver!(
     qm = QuadraticModel(
         approximation_errors,
         sparse(tril(H));
+        # ∑ λ = 1
         A = reshape(ones(d), 1, d),
         lcon = [one(eltype(approximation_errors))],
         ucon = [one(eltype(approximation_errors))],
+        # λ ≥ 0
         lvar = zeros(d),
         uvar = [Inf for i in 1:d],
         c0 = zero(eltype(approximation_errors)),
