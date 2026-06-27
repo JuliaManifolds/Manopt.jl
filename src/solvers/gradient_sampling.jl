@@ -66,7 +66,7 @@ function GradientSamplingState(
             M, GradientSamplingState; retraction_method = retraction_method
         ),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p))
-    ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod}
+    ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod}
     return GradientSamplingState(;
         p = p, X = X, sampling_radius = sampling_radius,
         subgradient_norm_tolerance = subgradient_norm_tolerance, optimal_subgradient_norm = optimal_subgradient_norm,
@@ -89,9 +89,120 @@ get_gradient(gss::GradientSamplingState) = gss.X
 
 initialize_solver!(::AbstractManoptProblem, gss::GradientSamplingState) = gss
 
+function Base.show(io::IO, gss::GradientSamplingState)
+    print(io, "GradientSamplingState(;")
+    error("TODO")
+    return print(io, ")")
+end
+
+function status_summary(gss::GradientSamplingState; context::Symbol = :default)
+    (context === :short) && return repr(gss)
+    i = get_count(gss, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(gss.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the gradient sampling solver$(conv_inl)"
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(gss.stop) ? "Yes" : "No"
+    error("TODO")
+    s = """
+    # Solver state for `Manopt.jl`s Gradient Sampling Algorithm
+    $Iter
+    ## Parameters
+    * retraction method: $(gss.retraction_method)
+
+    ## Stepsize
+    $(_in_str(status_summary(gss.stepsize; context = context); indent = 0, headers = 1))
+
+    ## Stopping criterion
+    $(_in_str(status_summary(gss.stop; context = context); indent = 0, headers = 1))
+    This indicates convergence: $Conv"""
+    return s
+end
+
+# TODO:
+_doc_gradient_sampling = """
+    gradient_sampling(M, f, grad_f, p=rand(M); kwargs...)
+    gradient_sampling(M, gradient_objective, p=rand(M); kwargs...)
+    gradient_sampling!(M, f, grad_f, p; kwargs...)
+    gradient_sampling!(M, gradient_objective, p; kwargs...)
+
+perform the gradient sampling algorithm as introduced in [HosseiniUschmajew:2017](@cite)
+"""
+
+@doc "$(_doc_gradient_sampling)"
+gradient_sampling(M::AbstractManifold, args...; kwargs...)
+
+function gradient_sampling(
+        M::AbstractManifold, f, grad_f, p = rand(M);
+        differential = nothing,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    )
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    mgo = ManifoldGradientObjective(
+        f_, grad_f_; evaluation = evaluation, differential = differential
+    )
+    rs = gradient_sampling(M, mgo, p_; kwargs...)
+    return _ensure_matching_output(p, rs)
+end
+function gradient_sampling(
+        M::AbstractManifold, mgo::O, p = rand(M); kwargs...
+    ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
+    q = copy(M, p)
+    return gradient_sampling!(M, mgo, q; kwargs...)
+end
+calls_with_kwargs(::typeof(gradient_sampling)) = (gradient_sampling!,)
+
+"$(_doc_gradient_sampling)"
+gradient_sampling!(M::AbstractManifold, args...; kwargs...)
+
+function gradient_sampling!(
+        M::AbstractManifold, f, grad_f, p;
+        differential = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    )
+    keywords_accepted(gradient_sampling; kwargs...)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential = differential, evaluation = evaluation
+    )
+    return gradient_sampling!(M, mgo, p; kwargs...)
+end
+function gradient_sampling!(
+        M::AbstractManifold, mgo::O, p;
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
+        stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
+            M, GradientSamplingState; retraction_method = retraction_method
+        ),
+        X = zero_vector(M, p),
+        # TODO: all other kwargs from the state here
+        kwargs..., #collect rest
+    ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
+    # all explicit others others from above are anyways accepted here, so we only have to pass kwargs in
+    keywords_accepted(gradient_sampling!; kwargs...)
+    dmgo = decorate_objective!(M, mgo; kwargs...)
+    dmp = DefaultManoptProblem(M, dmgo)
+    s = GradientSamplingState(
+        M;
+        p = p,
+        stepsize = _produce_type(stepsize, M, p),
+        retraction_method = retraction_method,
+        X = X,
+    )
+    ds = decorate_state!(s; debug = debug, kwargs...)
+    solve!(dmp, ds)
+    return get_solver_return(get_objective(dmp), ds)
+end
+calls_with_kwargs(::typeof(gradient_sampling!)) = (decorate_objective!, decorate_state!)
+
+#
+#
+# Solver implementation
+
 function step_solver!(
         mp::AbstractManoptProblem, gss::GradientSamplingState, i
     )
+    M = get_manifold(mp)
     # TODO
     # Take the kwargs of this function in the notebook and turn them into
     # parameters in the state - see above.

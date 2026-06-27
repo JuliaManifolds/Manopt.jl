@@ -69,6 +69,6 @@ Furthermore, within the Lanczos subsolver, generating a random vector (at `p`) u
 ## Literature
 
 ```@bibliography
-Pages = ["adaptive-regularization-with-cubics.md"]
+Pages = ["adaptive_regularization_with_cubics.md"]
 Canonical=false
 ```

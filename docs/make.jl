@@ -176,7 +176,7 @@ makedocs(;
         (tutorials_in_menu ? [tutorials_menu] : [])...,
         "Solvers" => [
             "List of Solvers" => "solvers/index.md",
-            "Adaptive Regularization with Cubics" => "solvers/adaptive-regularization-with-cubics.md",
+            "Adaptive Regularization with Cubics" => "solvers/adaptive_regularization_with_cubics.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
             "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",
             "Chambolle-Pock" => "solvers/ChambollePock.md",
@@ -191,6 +191,7 @@ makedocs(;
             "Frank-Wolfe" => "solvers/FrankWolfe.md",
             "Generalized Cauchy direction subsolver" => "solvers/generalized_cauchy_direction_subsolver.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
+            "Gradient Sampling" => "solvers/gradient_sampling.md",
             "Interior Point Newton" => "solvers/interior_point_Newton.md",
             "Levenberg–Marquardt" => "solvers/LevenbergMarquardt.md",
             "Mesh Adaptive Direct Search" => "solvers/mesh_adaptive_direct_search.md",

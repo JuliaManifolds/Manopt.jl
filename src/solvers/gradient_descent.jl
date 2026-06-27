@@ -170,10 +170,7 @@ $(_note(:OutputSection))
 gradient_descent(M::AbstractManifold, args...; kwargs...)
 
 function gradient_descent(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        p = rand(M);
+        M::AbstractManifold, f, grad_f, p = rand(M);
         differential = nothing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,

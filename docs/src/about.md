@@ -12,7 +12,7 @@ Thanks to the following contributors to `Manopt.jl`:
 * [Willem Diepeveen](https://www.maths.cam.ac.uk/person/wd292) implemented the [primal-dual Riemannian semismooth Newton](solvers/primal_dual_semismooth_Newton.md) solver.
 * [Hajg Jasa](https://www.ntnu.edu/employees/hajg.jasa) implemented the [convex bundle method](solvers/convex_bundle_method.md) and the [proximal bundle method](solvers/proximal_bundle_method.md) and a default subsolver each of them.
 * Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](solvers/FrankWolfe.md) solver.
-* Mathias Ravn Munkvold contributed most of the implementation of the [Adaptive Regularization with Cubics](solvers/adaptive-regularization-with-cubics.md) solver as well as its [Lanczos](@ref arc-Lanczos) subsolver
+* Mathias Ravn Munkvold contributed most of the implementation of the [Adaptive Regularization with Cubics](solvers/adaptive_regularization_with_cubics.md) solver as well as its [Lanczos](@ref arc-Lanczos) subsolver
 * [Sander Engen Oddsen](https://github.com/oddsen) contributed to the implementation of the [LTMADS](solvers/mesh_adaptive_direct_search.md) solver.
 * [Jonas Püschel](https://www.uni-augsburg.de/de/fakultaet/mntf/math/prof/numa/team/jonas-pueschel/) contributed [restart rules for the conjugate gradient solver](@ref cg-restart).
 * [Patryk Przybysz](https://www.linkedin.com/in/patryk-przybysz-5644aa1a1/) contributed to the [Generalized Cauchy Direction](solvers/generalized_cauchy_direction_subsolver.md).

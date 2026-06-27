@@ -45,7 +45,7 @@ While the subgradient might be set-valued, the function should provide one of th
 
 ## Second order
 
-* [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md) 🏅 locally builds a cubic model to determine the next descent direction.
+* [Adaptive Regularisation with Cubics](adaptive_regularization_with_cubics.md) 🏅 locally builds a cubic model to determine the next descent direction.
 * The [Riemannian Trust-Regions Solver](trust_regions.md) builds a quadratic model within a trust region to determine the next descent direction.
 
 ## Splitting based
@@ -72,6 +72,7 @@ If the gradient does not exist everywhere, that is if the splitting yields summa
 * [Difference of Convex Algorithm](@ref solver-difference-of-convex) (DCA) uses a splitting of the (non-convex) function ``f = g - h`` into a difference of two functions; for each of these it is required to have access to the gradient of ``g`` and the subgradient of ``h`` to state a sub problem in every iteration to be solved.
 * [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) uses a splitting of the (non-convex) function ``f = g - h`` into a difference of two functions; provided the proximal map of ``g`` and the subgradient of ``h``, the next iterate is computed. Compared to DCA, the corresponding sub problem is here written in a form that yields the proximal map.
 * [Douglas—Rachford](DouglasRachford.md) uses a splitting ``f(p) = F(x) + G(x)`` and their proximal maps to compute a minimizer of ``f``, which can be non-smooth.
+* The [Gradient Sampling Algorithm](gradient_sampling.md) samples the gradient at points in a ball around the current iterate to build a surrogate and solve that instead to find a next iterate.
 * [Primal-dual Riemannian semismooth Newton Algorithm](@ref solver-pdrssn) extends Chambolle-Pock and requires the differentials of the proximal maps additionally.
 * The [Proximal Point](proximal_point.md) uses the proximal map of ``f`` iteratively.
 
@@ -103,7 +104,7 @@ For these you can use
 
 | Solver   | Function        | State   |
 |:---------|:----------------|:---------|
-| [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md) | [`adaptive_regularization_with_cubics`](@ref) | [`AdaptiveRegularizationState`](@ref) |
+| [Adaptive Regularisation with Cubics](adaptive_regularization_with_cubics.md) | [`adaptive_regularization_with_cubics`](@ref) | [`AdaptiveRegularizationState`](@ref) |
 | [Augmented Lagrangian Method](augmented_Lagrangian_method.md) | [`augmented_Lagrangian_method`](@ref) | [`AugmentedLagrangianMethodState`](@ref) |
 | [Chambolle-Pock](ChambollePock.md) | [`ChambollePock`](@ref) | [`ChambollePockState`](@ref) |
 | [Conjugate Gradient Descent](conjugate_gradient_descent.md) | [`conjugate_gradient_descent`](@ref) | [`ConjugateGradientDescentState`](@ref) |
@@ -116,7 +117,8 @@ For these you can use
 | [Exact Penalty Method](exact_penalty_method.md) | [`exact_penalty_method`](@ref) |  [`ExactPenaltyMethodState`](@ref) |
 | [Frank-Wolfe algorithm](FrankWolfe.md) | [`Frank_Wolfe_method`](@ref) | [`FrankWolfeState`](@ref) |
 | [Gradient Descent](gradient_descent.md) | [`gradient_descent`](@ref) |  [`GradientDescentState`](@ref) |
-| [Interior Point Newton](interior_point_Newton.md) | [`interior_point_Newton`](@ref) | |
+| [Gradient Sampling](gradient_descent.md) | [`gradient_sampling`](@ref) |  [`GradientSamplingState`](@ref) |
+| [Interior Point Newton](interior_point_Newton.md) | [`interior_point_Newton`](@ref) | [`InteriorPointNewtonState`](@ref) |
 | [Levenberg-Marquardt](LevenbergMarquardt.md) | [`LevenbergMarquardt`](@ref) | [`LevenbergMarquardtState`](@ref) | ``f = \sum_i f_i`` ``\operatorname{grad} f_i`` (Jacobian)|
 | [Nelder-Mead](NelderMead.md) | [`NelderMead`](@ref) | [`NelderMeadState`](@ref) |
 | [Particle Swarm](particle_swarm.md) | [`particle_swarm`](@ref) | [`ParticleSwarmState`](@ref) |
