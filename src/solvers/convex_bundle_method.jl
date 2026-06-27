@@ -605,10 +605,7 @@ calls_with_kwargs(::typeof(convex_bundle_method)) = (convex_bundle_method!,)
 
 @doc "$(_doc_convex_bundle_method)"
 function convex_bundle_method!(
-        M::AbstractManifold,
-        f::TF,
-        ∂f!!::TdF,
-        p;
+        M::AbstractManifold, f::TF, ∂f!!::TdF, p;
         atol_λ::R = sqrt(eps()),
         atol_errors::R = sqrt(eps()),
         bundle_cap::Int = 25,

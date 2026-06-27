@@ -5,7 +5,9 @@ import Manopt:
     convex_bundle_method_subsolver,
     convex_bundle_method_subsolver!,
     proximal_bundle_method_subsolver,
-    proximal_bundle_method_subsolver!
+    proximal_bundle_method_subsolver!,
+    gradient_sampling_subsolver,
+    gradient_sampling_subsolver!
 using ManifoldsBase
 using LinearAlgebra: tril
 using SparseArrays: sparse

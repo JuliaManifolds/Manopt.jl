@@ -17,14 +17,16 @@ grad_f(M, p) = sum(1 / d * grad_distance.(Ref(M), data, Ref(p)))
 
 # For comparison
 m1 = gradient_descent(
-   M, f, grad_f, p0;
-   return_state = true,
-   record = [:Iteration, :Cost, RecordGradientNorm()]
+    M, f, grad_f, p0;
+    return_state = true,
+    record = [:Iteration, :Cost, RecordGradientNorm()]
 );
 
-m2 = gradient_sampling(M, f, grad_f, p0;
-   return_state = true,
-   record = [:Iteration, :Cost, RecordGradientNorm()]
+m2 = gradient_sampling(
+    M, f, grad_f, p0;
+    return_state = true,
+    debug = [:Iteration, :Cost, :Stepsize, "\n", :Stop],
+    record = [:Iteration, :Cost, RecordGradientNorm()]
 )
 
 p1 = get_solver_result(m1)

@@ -224,10 +224,10 @@ function status_summary(gss::GradientSamplingState; context::Symbol = :default)
     * vector transport method:   $(_MANOPT_INDENT)$(gss.vector_transport_method)
 
     ## Stepsize
-    $(_in_str(status_summary(gss.stepsize; context = context); indent = 0, headers = 1))
+    $(_in_str(status_summary(gss.stepsize; context = context); indent = 1, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(gss.stop; context = context); indent = 0, headers = 1))
+    $(_in_str(status_summary(gss.stop; context = context); indent = 1, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end
@@ -371,10 +371,10 @@ function step_solver!(
             copyto!(M, pj, gss.p)
         else
             rand!(M, Xj; vector_at = gss.p, σ = gss.sampling_radius / 2)
-            retract!(M, pj, pj, Xj, gss.retraction_method)
+            retract!(M, pj, gss.p, Xj, gss.retraction_method)
             while distance(M, gss.p, pj) > gss.sampling_radius
                 Xj ./= 2
-                retract!(M, pj, Xj, gss.retraction_method)
+                retract!(M, pj, gss.p, Xj, gss.retraction_method)
             end
         end
     end
@@ -405,16 +405,25 @@ function step_solver!(
 end
 
 function _gradient_sampling_subsolver(
-        M, gss::GradientSamplingState{P, T, R, ClosedFormSubSolverState{AllocatingEvaluation}}
-    ) where {P, T, R}
+        M, gss::GradientSamplingState{P, T, R, F, ClosedFormSubSolverState{AllocatingEvaluation}}
+    ) where {P, T, R, F} # Point, Vector, Reals, Function (of closed form problem)
     gss.convex_hull_coeffs = gss.sub_problem(M, gss.p, gss.sampled_vectors)
     return gss
 end
 # (b) closed form in-place
 function _gradient_sampling_subsolver(
-        M, gss::GradientSamplingState{P, T, R, ClosedFormSubSolverState{InplaceEvaluation}}
-    ) where {P, T, R}
+        M, gss::GradientSamplingState{P, T, R, F, ClosedFormSubSolverState{InplaceEvaluation}}
+    ) where {P, T, R, F}
     gss.sub_problem(M, gss.convex_hull_coeffs, gss.p, gss.sampled_vectors)
     return gss
 end
 # (c) (not yet needed / implemented) an actual sub solver call
+
+
+function (d::DebugStepsize)(
+        dmp::P, gss::GradientSamplingState, k::Int
+    ) where {P <: AbstractManoptProblem}
+    (k < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(dmp, gss, k))
+    return nothing
+end
