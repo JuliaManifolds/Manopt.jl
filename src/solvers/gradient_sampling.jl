@@ -74,7 +74,7 @@ $(_kwargs(:retraction_method))
 * `sampling_radius_reduction = 0.5`
 * `sampling_radius_threshold = 1.0e-2` a threshold ``ϵ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientSamplingState`](@ref)`; retraction_method=retraction_method)"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)(200)`$(_sc(:Any))([`StopWhenGradientNormLess`](@ref)`(subgradient_norm_threshold)`$(_sc(:All))[`StopWhenSmallerOrEqual`](@ref)`(:sampling_radius, sampling_radius_threshold)`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))([`StopWhenGradientNormLess`](@ref)`(subgradient_norm_threshold)`$(_sc(:All))[`StopWhenSmallerOrEqual`](@ref)`(:sampling_radius, sampling_radius_threshold))"))
 * `subgradient_norm_reduction = 0.5`
 * `subgradient_norm_tolerance = 0.1`
 * `subgradient_norm_threshold = 1.0e-3` a threshold ``δ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion
@@ -86,7 +86,7 @@ mutable struct GradientSamplingState{
         Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
         SP <: AbstractVector{<:P}, ST <: AbstractVector{<:T}, A <: AbstractVector{<:R},
         SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
-    }
+    } <: AbstractManoptSolverState
     convex_hull_coeffs::A
     p::P
     sampled_points::SP
@@ -105,7 +105,7 @@ mutable struct GradientSamplingState{
     Y::T
     function GradientSamplingState(;
             p::P, convex_hull_coeffs::A,
-            sampled_point::SP, sampled_vectors::ST,
+            sampled_points::SP, sampled_vectors::ST,
             sampling_radius::R, sampling_radius_reduction::R,
             subgradient_norm_reduction::R, subgradient_norm_tolerance::R,
             sub_problem::Pr, sub_state::St,
@@ -119,7 +119,7 @@ mutable struct GradientSamplingState{
         }
         return new{P, T, R, Pr, St, SP, ST, A, SC, S, RTM, VTM}(
             convex_hull_coeffs,
-            p, sampled_point, sampled_vectors,
+            p, sampled_points, sampled_vectors,
             sampling_radius, sampling_radius_reduction,
             subgradient_norm_reduction, subgradient_norm_tolerance,
             sub_problem, sub_state, stepsize, stopping_criterion, retraction_method, vector_transport_method,
@@ -167,7 +167,9 @@ function GradientSamplingState(
         )
     )
     return GradientSamplingState(;
-        p = p, sampled_points = sampled_points, sampled_vectors = sampled_vectors,
+        convex_hull_coeffs = convex_hull_coeffs,
+        p = p,
+        sampled_points = sampled_points, sampled_vectors = sampled_vectors,
         sampling_radius = sampling_radius, sampling_radius_reduction = sampling_radius_reduction,
         subgradient_norm_tolerance = subgradient_norm_tolerance, subgradient_norm_reduction = subgradient_norm_reduction,
         sub_problem = sub_problem, sub_state = sub_state,
@@ -256,7 +258,7 @@ $(_kwargs(:retraction_method))
 * `sampling_radius_reduction = 0.5`
 * `sampling_radius_threshold = 1.0e-2` a threshold ``ϵ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientSamplingState`](@ref)`; retraction_method=retraction_method)"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)(200)`$(_sc(:Any))([`StopWhenGradientNormLess`](@ref)`(subgradient_norm_threshold)`$(_sc(:All))[`StopWhenSmallerOrEqual`](@ref)`(:sampling_radius, sampling_radius_threshold)`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))([`StopWhenGradientNormLess`](@ref)`(subgradient_norm_threshold)`$(_sc(:All))[`StopWhenSmallerOrEqual`](@ref)`(:sampling_radius, sampling_radius_threshold))"))
 * `subgradient_norm_reduction = 0.5`
 * `subgradient_norm_tolerance = 0.1`
 * `subgradient_norm_threshold = 1.0e-3` a threshold ``δ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion
@@ -315,11 +317,8 @@ function gradient_sampling!(
         sampling_radius::Real = 0.5,
         sub_problem = gradient_sampling_subsolver!,
         sub_state = InplaceEvaluation(),
-        sampling_radius_reduction::Real = 0.5,
-        sampling_radius_threshold::Real = 1.0e-2,
-        subgradient_norm_reduction::Real = 0.5,
-        subgradient_norm_tolerance::Real = 0.1,
-        subgradient_norm_threshold::Real = 1.0e-3,
+        sampling_radius_reduction::Real = 0.5, sampling_radius_threshold::Real = 1.0e-2,
+        subgradient_norm_reduction::Real = 0.5, subgradient_norm_tolerance::Real = 0.1, subgradient_norm_threshold::Real = 1.0e-3,
         stopping_criterion::StoppingCriterion = StopAfterIteration(200) | (
             StopWhenGradientNormLess(subgradient_norm_threshold) & (
                 StopWhenSmallerOrEqual(:sampling_radius, sampling_radius_threshold)
@@ -336,7 +335,7 @@ function gradient_sampling!(
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     s = GradientSamplingState(
-        M, sub_problem, sub_state;
+        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
         p = p,
         sample_size = sample_size,
         convex_hull_coeffs = convex_hull_coeffs,
@@ -351,7 +350,6 @@ function gradient_sampling!(
         stopping_criterion = stopping_criterion,
         vector_transport_method = vector_transport_method,
         X = X,
-        kwargs...
     )
     ds = decorate_state!(s; kwargs...)
     solve!(dmp, ds)
@@ -373,7 +371,7 @@ function step_solver!(
             copyto!(M, pj, gss.p)
         else
             rand!(M, Xj; vector_at = gss.p, σ = gss.sampling_radius / 2)
-            retract!(M, pj, Xj, gss.retraction_method)
+            retract!(M, pj, pj, Xj, gss.retraction_method)
             while distance(M, gss.p, pj) > gss.sampling_radius
                 Xj ./= 2
                 retract!(M, pj, Xj, gss.retraction_method)
