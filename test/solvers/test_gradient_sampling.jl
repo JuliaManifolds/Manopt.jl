@@ -25,7 +25,7 @@ m1 = gradient_descent(
 m2 = gradient_sampling(
     M, f, grad_f, p0;
     return_state = true,
-    debug = [:Iteration, :Cost, :Stepsize, "\n", :Stop],
+    debug = [:Iteration, :Cost, " ", :Stepsize, " ", :GradientNorm, "\n", :Stop],
     record = [:Iteration, :Cost, RecordGradientNorm()]
 )
 
@@ -33,3 +33,7 @@ p1 = get_solver_result(m1)
 p2 = get_solver_result(m2)
 @info "p1 " p1 "with cost " f(M, p1)
 @info "p2 " p2 "with cost " f(M, p2)
+
+fig, ax, plt = lines(get_record(m2, :Iteration, 1),get_record(m2, :Iteration, 2))
+lines!(ax, get_record(m1, :Iteration, 1),get_record(m1, :Iteration, 2))
+fig

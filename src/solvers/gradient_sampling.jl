@@ -398,8 +398,10 @@ function step_solver!(
         gss.subgradient_norm_tolerance *= gss.subgradient_norm_reduction
     else
         copyto!(M, gss.X, gss.p, -gss.Y)
+        # TODO: HU17 does linesearch with a normed direction?
         step = get_stepsize(mp, gss, i)
         ManifoldsBase.retract_fused!(M, gss.p, gss.p, gss.X, step, gss.retraction_method)
+        get_gradient!(mp, gss.X, gss.p)
     end
     return gss
 end
