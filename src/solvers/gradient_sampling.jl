@@ -181,7 +181,7 @@ end
 function default_stepsize(
         M::AbstractManifold, ::Type{GradientSamplingState}; retraction_method = default_retraction_method(M),
     )
-    return ArmijoLinesearchStepsize(M; stop_increasing_at_step = 1, retraction_method = retraction_method, initial_stepsize = 1.0)
+    return ArmijoLinesearchStepsize(M; retraction_method = retraction_method)
 end
 #
 #
@@ -317,7 +317,7 @@ function gradient_sampling!(
         sub_state = InplaceEvaluation(),
         sampling_radius_reduction::Real = 0.5, sampling_radius_threshold::Real = 1.0e-2,
         subgradient_norm_reduction::Real = 0.5, subgradient_norm_tolerance::Real = 0.1, subgradient_norm_threshold::Real = 1.0e-3,
-        stopping_criterion::StoppingCriterion = StopAfterIteration(200) | (
+        stopping_criterion::StoppingCriterion = StopAfterIteration(100) | (
             StopWhenGradientNormLess(subgradient_norm_threshold) & (
                 StopWhenSmallerOrEqual(:sampling_radius, sampling_radius_threshold)
             )
@@ -338,12 +338,10 @@ function gradient_sampling!(
         sample_size = sample_size,
         convex_hull_coeffs = convex_hull_coeffs,
         retraction_method = retraction_method,
-        sampled_points = sampled_points,
-        sampled_vectors = sampled_vectors,
+        sampled_points = sampled_points, sampled_vectors = sampled_vectors,
         sampling_radius = sampling_radius,
         sampling_radius_reduction = sampling_radius_reduction,
-        subgradient_norm_reduction = subgradient_norm_reduction,
-        subgradient_norm_tolerance = subgradient_norm_tolerance,
+        subgradient_norm_reduction = subgradient_norm_reduction, subgradient_norm_tolerance = subgradient_norm_tolerance,
         stepsize = _produce_type(stepsize, M, p),
         stopping_criterion = stopping_criterion,
         vector_transport_method = vector_transport_method,
@@ -401,8 +399,8 @@ function step_solver!(
     else
         # We already have the gradient in the sampled vectors[1]
         # and set normed -Y as search direction
-        step = get_stepsize(mp, gss, i, -gss.Y / norm(M, gss.p, gss.Y))
-        ManifoldsBase.retract_fused!(M, gss.p, gss.p, gss.X, step, gss.retraction_method)
+        step = get_stepsize(mp, gss, i, -gss.Y / norm(M, gss.p, gss.Y); gradient = gss.sampled_vectors[1])
+        ManifoldsBase.retract_fused!(M, gss.p, gss.p, -gss.Y / norm(M, gss.p, gss.Y), step, gss.retraction_method)
         get_gradient!(mp, gss.X, gss.p)
     end
     return gss
