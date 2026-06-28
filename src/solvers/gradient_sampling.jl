@@ -181,7 +181,7 @@ end
 function default_stepsize(
         M::AbstractManifold, ::Type{GradientSamplingState}; retraction_method = default_retraction_method(M),
     )
-    return ArmijoLinesearchStepsize(M; retraction_method = retraction_method, initial_stepsize = 1.0)
+    return ArmijoLinesearchStepsize(M; stop_increasing_at_step = 1, retraction_method = retraction_method, initial_stepsize = 1.0)
 end
 #
 #
@@ -189,8 +189,6 @@ end
 get_iterate(gss::GradientSamplingState) = gss.p
 get_solver_result(gss::GradientSamplingState) = gss.p
 get_gradient(gss::GradientSamplingState) = gss.X
-
-initialize_solver!(::AbstractManoptProblem, gss::GradientSamplingState) = gss
 
 function Base.show(io::IO, gss::GradientSamplingState)
     print(io, "GradientSamplingState(; ")
@@ -360,6 +358,10 @@ calls_with_kwargs(::typeof(gradient_sampling!)) = (decorate_objective!, decorate
 #
 #
 # Solver implementation
+function initialize_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState)
+    get_gradient!(mp, gss.X, gss.p)
+    return gss
+end
 
 function step_solver!(
         mp::AbstractManoptProblem, gss::GradientSamplingState, i
@@ -397,9 +399,9 @@ function step_solver!(
         gss.sampling_radius *= gss.sampling_radius_reduction
         gss.subgradient_norm_tolerance *= gss.subgradient_norm_reduction
     else
-        copyto!(M, gss.X, gss.p, -gss.Y)
-        # TODO: HU17 does linesearch with a normed direction?
-        step = get_stepsize(mp, gss, i)
+        # We already have the gradient in the sampled vectors[1]
+        # and set normed -Y as search direction
+        step = get_stepsize(mp, gss, i, -gss.Y / norm(M, gss.p, gss.Y))
         ManifoldsBase.retract_fused!(M, gss.p, gss.p, gss.X, step, gss.retraction_method)
         get_gradient!(mp, gss.X, gss.p)
     end
