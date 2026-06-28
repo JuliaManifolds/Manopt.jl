@@ -64,7 +64,7 @@ $(_args(:M))
 $(_args(:sub_problem))
 $(_args(:sub_state))
 
-## Keyowrd arguments
+## Keyword arguments
 
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
@@ -250,7 +250,7 @@ $(_note(:GradientObjective))
 $(_kwargs(:differential))
 $(_kwargs(:evaluation; add_properties = [:GradientExample]))
 $(_kwargs(:retraction_method))
-* `sample_size = 5` set the number of sampling points. If you initialise `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
+* `sample_size = `$(_link(:manifold_dimension))`+1` set the number of sampling points. If you initialise `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
   this parameter has no effect.
 * `sampling_radius = 0.5`
 * `sampling_radius_reduction = 0.5`
@@ -307,7 +307,7 @@ end
 function gradient_sampling!(
         M::AbstractManifold, mgo::O, p;
         X = zero_vector(M, p),
-        sample_size::Int = 5,
+        sample_size::Int = manifold_dimension(M)+1,
         convex_hull_coeffs::AbstractVector = [0.0 for _ in 1:(sample_size + 1)],
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         sampled_points::AbstractVector = [copy(M, p) for _ in 1:(sample_size + 1)],

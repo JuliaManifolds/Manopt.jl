@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] unreleased
+
+### Added
+
+* the [gradient sampling algorithm](https://manoptjl.org/stable/solvers/gradient_sampling/) based on the paper by [Hosseini and Uschmajew](https://doi.org/10.1137/16m1069298) (#618)
+
 ## [0.6.0] June 24, 2026
 
 This is a breaking change since the JuMP extension is dropped.

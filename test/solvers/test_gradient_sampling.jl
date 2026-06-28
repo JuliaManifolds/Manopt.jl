@@ -20,14 +20,13 @@ grad_f(M, p) = sum(1 / d * grad_distance.(Ref(M), data, Ref(p)))
 m1 = gradient_descent(
     M, f, grad_f, p0;
     return_state = true,
-    debug = _debug_gradient_sampling ? [:Iteration, :Cost, " ", :Stepsize, " ", :GradientNorm, "\n", :Stop] : [],
     record = [:Iteration, :Cost, RecordGradientNorm()]
 );
 
 m2 = gradient_sampling(
     M, f, grad_f, p0;
     return_state = true,
-    debug = _debug_gradient_sampling ? [:Iteration, :Cost, " ", :Stepsize, " ", :GradientNorm, " ", :Change, "\n", :Stop] : [],
+    debug = _debug_gradient_sampling ? [:Iteration, :Cost, " ", :subgradient_norm_tolerance, " ", :sampling_radius, " | ", :GradientNorm, " ", :Change, "\n", :Stop, 100] : [],
     record = [:Iteration, :Cost, RecordGradientNorm()]
 )
 
