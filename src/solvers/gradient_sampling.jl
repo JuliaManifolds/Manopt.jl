@@ -307,7 +307,7 @@ end
 function gradient_sampling!(
         M::AbstractManifold, mgo::O, p;
         X = zero_vector(M, p),
-        sample_size::Int = manifold_dimension(M)+1,
+        sample_size::Int = manifold_dimension(M) + 1,
         convex_hull_coeffs::AbstractVector = [0.0 for _ in 1:(sample_size + 1)],
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         sampled_points::AbstractVector = [copy(M, p) for _ in 1:(sample_size + 1)],
