@@ -62,6 +62,6 @@ _debug_gradient_sampling = false
         using CairoMakie
         fig, ax, plt = lines(get_record(m2, :Iteration, 1), get_record(m2, :Iteration, 2))
         lines!(ax, get_record(m1, :Iteration, 1), get_record(m1, :Iteration, 2))
-        fig
+        display(fig)
     end
 end
