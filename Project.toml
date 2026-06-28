@@ -20,7 +20,6 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [weakdeps]
-JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
 LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
@@ -39,7 +38,6 @@ ManoptRipQPQuadraticModelsExt = ["RipQP", "QuadraticModels"]
 DataStructures = "0.17, 0.18, 0.19"
 Dates = "1.10"
 Glossaries = "0.1.1"
-JuMP = "1.15"
 LRUCache = "1.4"
 LineSearches = "7.2.0"
 LinearAlgebra = "1.10"
