@@ -238,6 +238,14 @@ _doc_gradient_sampling = """
 
 perform the gradient sampling algorithm as introduced in [HosseiniUschmajew:2017](@cite).
 
+The algorithm samples a set of `sampling_size = ```m`` many points in a ball around the current iterate,
+evaluates the gradient at these points and transports these to the current iterate.
+It then builds a surrogate in the tangent space consisting of these ``m`` tangent vectors
+and the gradient at the current iterate to determine a new descent direction in the convex
+hull of these. See [`gradient_sampling_subsolver`](@ref) for the actual sub problem that is solved.
+If this  direction exceeds, the `subgradient_norm_tolerance` the step is rejected and both
+the ball radius and this tolerance are reduced.
+
 # Input
 
 $(_args([:M, :f, :grad_f, :p]))
