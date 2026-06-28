@@ -86,7 +86,7 @@ mutable struct GradientSamplingState{
         Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
         SP <: AbstractVector{<:P}, ST <: AbstractVector{<:T}, A <: AbstractVector{<:R},
         SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
-    } <: AbstractManoptSolverState
+    } <: AbstractGradientSolverState
     convex_hull_coeffs::A
     p::P
     sampled_points::SP
@@ -177,7 +177,6 @@ function GradientSamplingState(
         vector_transport_method = vector_transport_method, X = X, Y = copy(M, p, X),
     )
 end
-
 function default_stepsize(
         M::AbstractManifold, ::Type{GradientSamplingState}; retraction_method = default_retraction_method(M),
     )
@@ -387,13 +386,13 @@ function step_solver!(
     # solve sub problem in convex_hull_coeffs
     _gradient_sampling_subsolver(M, gss)
     # reconstruct tangent vector from the coefficients (w_l in HU17) in Y
-    zero_vector!(M, gss.p, gss.Y)
+    zero_vector!(M, gss.Y, gss.p)
     for (λj, Xj) in zip(gss.convex_hull_coeffs, gss.sampled_vectors)
         gss.Y .+= λj * Xj
     end
     # Decide whether to accept the step or update radius
     if norm(M, gss.p, gss.Y) < gss.subgradient_norm_tolerance
-        # do not accept
+        # do not accept this step but decrease radius and tolerance
         gss.sampling_radius *= gss.sampling_radius_reduction
         gss.subgradient_norm_tolerance *= gss.subgradient_norm_reduction
     else
@@ -420,12 +419,3 @@ function _gradient_sampling_subsolver(
     return gss
 end
 # (c) (not yet needed / implemented) an actual sub solver call
-
-
-function (d::DebugStepsize)(
-        dmp::P, gss::GradientSamplingState, k::Int
-    ) where {P <: AbstractManoptProblem}
-    (k < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(dmp, gss, k))
-    return nothing
-end

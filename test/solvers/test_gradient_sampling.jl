@@ -26,10 +26,11 @@ _debug_gradient_sampling = false
         record = [:Iteration, :Cost, RecordGradientNorm()]
     )
 
+    Random.seed!(23)
     m2 = gradient_sampling(
         M, f, grad_f, p0;
         return_state = true,
-        debug = _debug_gradient_sampling ? [:Iteration, :Cost, " ", :subgradient_norm_tolerance, " ", :sampling_radius, " | ", :GradientNorm, " ", :Change, "\n", :Stop, 100] : [],
+        debug = _debug_gradient_sampling ? [:Iteration, :Cost, " ", :subgradient_norm_tolerance, " ", :sampling_radius, " | ", :GradientNorm, " ", :Change, "\n", :Stop, 10] : [],
         record = [:Iteration, :Cost, RecordGradientNorm()]
     )
 
@@ -39,6 +40,19 @@ _debug_gradient_sampling = false
 
     p2 = get_solver_result(s2)
     @test f(M, p2) < f(M, p0)
+
+    p3 = copy(M, p0)
+    Random.seed!(23)
+    gradient_sampling!(
+        M, f, grad_f, p3;
+        sampling_radius = 0.1,
+        subgradient_norm_tolerance = 0.02,
+        sub_problem = gradient_sampling_subsolver,
+        sub_state = AllocatingEvaluation(),
+    )
+    # The parameters of this run are chosen so that reduction is necessary,
+    # they hence to not work that well and we end up a bit further away.
+    @test isapprox(M, p2, p3; atol = 2.0e-3)
 
     if _debug_gradient_sampling
         p1 = get_solver_result(m1)
