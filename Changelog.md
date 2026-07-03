@@ -6,6 +6,13 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] July 3, 2026
+
+### Fixed
+
+* Fix a typo in Riemannian Levenberg–Marquardt documentation.  (#621)
+* Fixed a coordinate-cache allocation in the `VectorDifferentialFunction` Jacobian-action path. (#622)
+
 ## [0.6.0] June 24, 2026
 
 This is a breaking change since the JuMP extension is dropped.
