@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* Fix a typo in Riemannian Levenberg–Marquardt documentation. 
-* Fixed a coordinate-cache allocation in the `VectorDifferentialFunction` Jacobian-action path. (#621)
+* Fix a typo in Riemannian Levenberg–Marquardt documentation.  (#621)
+* Fixed a coordinate-cache allocation in the `VectorDifferentialFunction` Jacobian-action path. (#622)
 
 ## [0.6.0] June 24, 2026
 
