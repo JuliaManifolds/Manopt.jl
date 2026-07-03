@@ -211,7 +211,7 @@ C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)
 ```
 
 where ``F(p) ∈ ℝ^n`` is the vector of residuals at point ``p ∈ M`` and ``J_F(p): $(_math(:TangentSpace)) → ℝ^n``
-is the Jacobian as a linear operator.
+is the Jacobian.
 These two can be accessed with [`get_vector_field`](@ref) for ``y`` and [`get_linear_operator`](@ref) for ``$(_tex(:Cal, "L"))``,
 respectively.
 For technical details on the scaling using ``α``, especially how the `threshold` and `mode`
