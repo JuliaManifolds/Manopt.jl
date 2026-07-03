@@ -873,7 +873,7 @@ end
 # (d) Jacobian differential – easiest: just call it
 function get_jacobian!(
         M::AbstractManifold, a, vgf::VectorDifferentialFunction{<:AbstractEvaluationType, FT, <:FunctionVectorialType}, p, X;
-        range = nothing, Y_cache = nothing, c_cache = allocate_result(M, get_coordinates, p, X, get_basis(vgf.jacobian_type))
+        range = nothing, Y_cache = nothing, c_cache = nothing
     ) where {FT}
     a .= vgf.jacobian!!(M, p, X)
     return a
