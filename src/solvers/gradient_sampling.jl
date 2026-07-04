@@ -28,9 +28,6 @@ The subproblem then reads
     is available if these two packages are loaded.
 """
 gradient_sampling_subsolver(M::AbstractManifold, p, sampled_gradients)
-
-# TODO Document all fields and refer to their names in the paper as well
-#
 """
     GradientSamplingState
 
@@ -91,10 +88,10 @@ mutable struct GradientSamplingState{
     p::P
     sampled_points::SP
     sampled_vectors::ST
-    sampling_radius::R # (In paper: εₗ)
+    sampling_radius::R # in HU17 εₗ
     sampling_radius_reduction::R # in HU17 θ_ε
     subgradient_norm_reduction::R # in HU17 θ_δ
-    subgradient_norm_tolerance::R # in HU17 δₗ)
+    subgradient_norm_tolerance::R # in HU17 δₗ
     sub_problem::Pr
     sub_state::St
     stepsize::S
