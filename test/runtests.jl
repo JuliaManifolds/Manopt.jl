@@ -57,6 +57,7 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("solvers/test_exact_penalty.jl")
         include("solvers/test_Frank_Wolfe.jl")
         include("solvers/test_gradient_descent.jl")
+        include("solvers/test_gradient_sampling.jl")
         include("solvers/test_interior_point_Newton.jl")
         include("solvers/test_Levenberg_Marquardt.jl")
         include("solvers/test_mesh_adaptive_direct_search.jl")

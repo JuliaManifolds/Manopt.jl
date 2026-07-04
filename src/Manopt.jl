@@ -164,6 +164,7 @@ include("solvers/difference_of_convex_algorithm.jl")
 include("solvers/difference_of_convex_proximal_point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/exact_penalty_method.jl")
+include("solvers/gradient_sampling.jl")
 include("solvers/projected_gradient_method.jl")
 include("solvers/Lanczos.jl")
 include("solvers/NelderMead.jl")
@@ -198,17 +199,10 @@ function __init__()
     #
     @static if isdefined(Base.Experimental, :register_error_hint) # COV_EXCL_LINE
         Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
-            if exc.f === convex_bundle_method_subsolver
+            if (exc.f === convex_bundle_method_subsolver) || (exc.f === proximal_bundle_method_subsolver) || (exc.f === gradient_sampling_subsolver)
                 print(
                     io,
-                    "\nThe `convex_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
-                )
-                printstyled(io, "`using QuadraticModels, RipQP`"; color = :cyan)
-            end
-            if exc.f === proximal_bundle_method_subsolver
-                print(
-                    io,
-                    "\nThe `proximal_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
+                    "\nThe `$(exc.f)` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
                 )
                 printstyled(io, "`using QuadraticModels, RipQP`"; color = :cyan)
             end
@@ -420,6 +414,8 @@ export adaptive_regularization_with_cubics,
     exact_penalty_method, exact_penalty_method!,
     Frank_Wolfe_method, Frank_Wolfe_method!,
     gradient_descent, gradient_descent!,
+    gradient_sampling, gradient_sampling!,
+    gradient_sampling_subsolver, gradient_sampling_subsolver!,
     interior_point_Newton, interior_point_Newton!,
     LevenbergMarquardt, LevenbergMarquardt!,
     mesh_adaptive_direct_search, mesh_adaptive_direct_search!,

@@ -5,7 +5,9 @@ import Manopt:
     convex_bundle_method_subsolver,
     convex_bundle_method_subsolver!,
     proximal_bundle_method_subsolver,
-    proximal_bundle_method_subsolver!
+    proximal_bundle_method_subsolver!,
+    gradient_sampling_subsolver,
+    gradient_sampling_subsolver!
 using ManifoldsBase
 using LinearAlgebra: tril
 using SparseArrays: sparse
@@ -34,9 +36,11 @@ function convex_bundle_method_subsolver!(
     qm = QuadraticModel(
         linearization_errors,
         sparse(tril(H));
+        # ∑ λ = 1
         A = reshape(ones(d), 1, d),
         lcon = [one(eltype(linearization_errors))],
         ucon = [one(eltype(linearization_errors))],
+        # λ ≥ 0
         lvar = zeros(d),
         uvar = [Inf for i in 1:d],
         c0 = zero(eltype(linearization_errors)),
@@ -67,12 +71,39 @@ function proximal_bundle_method_subsolver!(
     qm = QuadraticModel(
         approximation_errors,
         sparse(tril(H));
+        # ∑ λ = 1
         A = reshape(ones(d), 1, d),
         lcon = [one(eltype(approximation_errors))],
         ucon = [one(eltype(approximation_errors))],
+        # λ ≥ 0
         lvar = zeros(d),
         uvar = [Inf for i in 1:d],
         c0 = zero(eltype(approximation_errors)),
+    )
+    λ .= ripqp(qm; display = false).solution
+    return λ
+end
+
+function gradient_sampling_subsolver(
+        M::AbstractManifold, p, sampled_gradients
+    )
+    λ = zeros(length(sampled_gradients))
+    gradient_sampling_subsolver!(M, λ, p, sampled_gradients)
+    return λ
+end
+function gradient_sampling_subsolver!(
+        M::AbstractManifold, λ, p, sampled_gradients
+    )
+    d = length(sampled_gradients)
+    T = eltype(λ)
+    H = [inner(M, p, X, Y) for X in sampled_gradients, Y in sampled_gradients]
+    qm = QuadraticModel(
+        zeros(d), sparse(tril(H));
+        c0 = zero(T),
+        # ∑ λ = 1
+        A = reshape(ones(d), 1, d), lcon = [one(T)], ucon = [one(T)],
+        # λ ≥ 0
+        lvar = zeros(d), uvar = [Inf for i in 1:d],
     )
     λ .= ripqp(qm; display = false).solution
     return λ

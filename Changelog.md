@@ -6,7 +6,11 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.1] July 3, 2026
+## [0.6.1] July 4, 2026
+
+### Added
+
+* the [gradient sampling algorithm](https://manoptjl.org/stable/solvers/gradient_sampling/) based on the paper by [Hosseini and Uschmajew](https://doi.org/10.1137/16m1069298) (#618)
 
 ### Fixed
 

@@ -50,7 +50,6 @@ If you provide `f` and its jacobian
 $(_kwargs(:evaluation))
 * `function_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
 * `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
-$(_kwargs(:evaluation))
 
 as well as then these are already combined in a single [`VectorGradientFunction`](@ref) `vgf`
 

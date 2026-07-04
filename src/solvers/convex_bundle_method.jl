@@ -605,10 +605,7 @@ calls_with_kwargs(::typeof(convex_bundle_method)) = (convex_bundle_method!,)
 
 @doc "$(_doc_convex_bundle_method)"
 function convex_bundle_method!(
-        M::AbstractManifold,
-        f::TF,
-        ∂f!!::TdF,
-        p;
+        M::AbstractManifold, f::TF, ∂f!!::TdF, p;
         atol_λ::R = sqrt(eps()),
         atol_errors::R = sqrt(eps()),
         bundle_cap::Int = 25,
@@ -641,9 +638,7 @@ function convex_bundle_method!(
     mp = DefaultManoptProblem(M, dsgo)
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     bms = ConvexBundleMethodState(
-        M,
-        sub_problem,
-        maybe_wrap_evaluation_type(sub_state);
+        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
         p = p,
         atol_λ = atol_λ,
         atol_errors = atol_errors,

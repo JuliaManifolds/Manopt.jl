@@ -396,12 +396,7 @@ function augmented_Lagrangian_method!(
         equality_constraints = _number_of_constraints(h, grad_h; M = M, p = p)
     end
     cmo = ConstrainedManifoldObjective(
-        f,
-        grad_f,
-        g,
-        grad_g,
-        h,
-        grad_h;
+        f, grad_f, g, grad_g, h, grad_h;
         evaluation = evaluation,
         equality_constraints = equality_constraints,
         inequality_constraints = inequality_constraints,
@@ -410,9 +405,7 @@ function augmented_Lagrangian_method!(
     )
     dcmo = decorate_objective!(M, cmo; kwargs...)
     return augmented_Lagrangian_method!(
-        M,
-        dcmo,
-        p;
+        M, dcmo, p;
         evaluation = evaluation,
         equality_constraints = equality_constraints,
         inequality_constraints = inequality_constraints,
@@ -420,19 +413,14 @@ function augmented_Lagrangian_method!(
     )
 end
 function augmented_Lagrangian_method!(
-        M::AbstractManifold,
-        cmo::O,
-        p;
+        M::AbstractManifold, cmo::O, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        ϵ::Real = 1.0e-3,
-        ϵ_min::Real = 1.0e-6,
-        ϵ_exponent::Real = 1 / 100,
+        ϵ::Real = 1.0e-3, ϵ_min::Real = 1.0e-6, ϵ_exponent::Real = 1 / 100,
         θ_ϵ::Real = (ϵ_min / ϵ)^(ϵ_exponent),
         μ::Vector = ones(length(get_inequality_constraint(M, cmo, p, :))),
         μ_max::Real = 20.0,
         λ::Vector = ones(length(get_equality_constraint(M, cmo, p, :))),
-        λ_max::Real = 20.0,
-        λ_min::Real = (-λ_max),
+        λ_max::Real = 20.0, λ_min::Real = (-λ_max),
         τ::Real = 0.8,
         ρ::Real = 1.0,
         θ_ρ::Real = 0.3,
@@ -481,22 +469,10 @@ function augmented_Lagrangian_method!(
     keywords_accepted(augmented_Lagrangian_method!; kwargs...)
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     alms = AugmentedLagrangianMethodState(
-        M,
-        cmo,
-        sub_problem,
-        sub_state_storage;
+        M, cmo, sub_problem, sub_state_storage;
         p = p,
-        ϵ = ϵ,
-        ϵ_min = ϵ_min,
-        λ_max = λ_max,
-        λ_min = λ_min,
-        μ_max = μ_max,
-        μ = μ,
-        λ = λ,
-        ρ = ρ,
-        τ = τ,
-        θ_ρ = θ_ρ,
-        θ_ϵ = θ_ϵ,
+        ϵ = ϵ, ϵ_min = ϵ_min, λ_max = λ_max, λ_min = λ_min, μ_max = μ_max,
+        μ = μ, λ = λ, ρ = ρ, τ = τ, θ_ρ = θ_ρ, θ_ϵ = θ_ϵ,
         stopping_criterion = stopping_criterion,
     )
     dcmo = decorate_objective!(M, cmo; objective_type = objective_type, kwargs...)

@@ -249,9 +249,7 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_QN)"
 function quasi_Newton(
-        M::AbstractManifold,
-        f::TF,
-        grad_f::TDF,
+        M::AbstractManifold, f::TF, grad_f::TDF,
         p = rand(M);
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         differential = nothing,
@@ -278,10 +276,7 @@ calls_with_kwargs(::typeof(quasi_Newton)) = (quasi_Newton!,)
 @doc "$(_doc_QN)"
 quasi_Newton!(M::AbstractManifold, params...; kwargs...)
 function quasi_Newton!(
-        M::AbstractManifold,
-        f::TF,
-        grad_f::TDF,
-        p;
+        M::AbstractManifold, f::TF, grad_f::TDF, p;
         differential = nothing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
@@ -292,9 +287,7 @@ function quasi_Newton!(
     return quasi_Newton!(M, mgo, p; kwargs...)
 end
 function quasi_Newton!(
-        M::AbstractManifold,
-        mgo::O,
-        p;
+        M::AbstractManifold, mgo::O, p;
         cautious_update::Bool = false,
         cautious_function::Function = x -> x * 1.0e-4,
         debug = is_tutorial_mode() ? [DebugWarnIfGradientNormTooLarge()] : [],
@@ -316,8 +309,7 @@ function quasi_Newton!(
         preconditioner = nothing,
         initial_scale::Union{<:Real, Nothing} = isnothing(preconditioner) ? 1.0 : nothing,
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
-            M,
-            QuasiNewtonState;
+            M, QuasiNewtonState;
             retraction_method = retraction_method,
             vector_transport_method = vector_transport_method,
         ),
@@ -334,10 +326,7 @@ function quasi_Newton!(
     local local_dir_upd # COV_EXCL_LINE
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
-            M,
-            p,
-            direction_update,
-            memory_size;
+            M, p, direction_update, memory_size;
             initial_scale = initial_scale,
             (project!) = (project!),
             vector_transport_method = vector_transport_method,
@@ -349,10 +338,7 @@ function quasi_Newton!(
         end
     else
         local_dir_upd = QuasiNewtonMatrixDirectionUpdate(
-            M,
-            direction_update,
-            basis,
-            initial_operator;
+            M, direction_update, basis, initial_operator;
             initial_scale = initial_scale,
             vector_transport_method = vector_transport_method,
         )
