@@ -146,8 +146,20 @@ else
     _diagview(A::AbstractMatrix) = @view A[LinearAlgebra.diagind(A)]
 end
 
+#
+#
+# A (work in progress) separate folder scheme for abstract types and design ideas
+include("base/problem/abstract_problem.jl")
+include("base/state/abstract_state.jl")
+include("base/state/callback.jl")
+include("base/state/decorator.jl")
 
+#
+#
+# Common Solver plans
 include("plans/plan.jl")
+#
+#
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers

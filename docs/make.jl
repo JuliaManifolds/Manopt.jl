@@ -229,6 +229,15 @@ makedocs(;
             "Debug Output" => "plans/debug.md",
             "Recording values" => "plans/record.md",
         ],
+        "Developer Guide" => [
+            "Introduction" => "base/index.md",
+            "Problem" => "base/problem.md",
+            "Solver State" => [
+                "Overview" => "base/state/index.md",
+                "Callbacks" => "base/state/callbacks.md",
+                "Decorator" => "base/state/decorator.md",
+            ],
+        ],
         "Helpers" => [
             "Checks" => "helpers/checks.md",
             "Test" => "helpers/test.md",

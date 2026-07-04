@@ -63,6 +63,7 @@ init_caches
 
 ```@docs
 ManifoldCountObjective
+get_count
 ```
 
 ### Internal decorators and functions

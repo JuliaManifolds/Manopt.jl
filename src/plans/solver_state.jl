@@ -1,25 +1,5 @@
 @inline _extract_val(::Val{T}) where {T} = T
 
-@doc """
-    AbstractManoptSolverState
-
-A general super type for all solver states.
-
-# Fields
-
-The following fields are assumed to be default. If you use different ones,
-adapt the the access functions [`get_iterate`](@ref) and [`get_stopping_criterion`](@ref) accordingly
-
-$(_fields(:p; add_properties = [:as_Iterate]))
-$(_fields(:stopping_criterion; name = "stop"))
-"""
-abstract type AbstractManoptSolverState end
-
-function Base.show(io::IO, ::MIME"text/plain", ams::AbstractManoptSolverState)
-    multiline = get(io, :multiline, true)
-    return multiline ? status_summary(io, ams) : show(io, ams)
-end
-
 """
     ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState
 
@@ -62,54 +42,6 @@ It assumes that
 [`GradientDescentState`](@ref), [`StochasticGradientDescentState`](@ref), [`SubGradientMethodState`](@ref), [`QuasiNewtonState`](@ref).
 """
 abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
-
-"""
-    dispatch_state_decorator(s::AbstractManoptSolverState)
-
-Indicate internally, whether an [`AbstractManoptSolverState`](@ref) `s` is of decorating type,
-and stores (encapsulates) a state in itself, by default in the field `s.state`.
-
-Decorators indicate this by returning `Val{true}` for further dispatch.
-
-The default is `Val{false}`, so by default a state is not decorated.
-"""
-dispatch_state_decorator(::AbstractManoptSolverState) = Val(false)
-
-@doc """
-    get_message(du::AbstractManoptSolverState)
-
-get a message (String) from internal functors, in a summary.
-This should return any message a sub-step might have issued as well.
-"""
-function get_message(s::AbstractManoptSolverState)
-    return _get_message(s, dispatch_state_decorator(s))
-end
-_get_message(s::AbstractManoptSolverState, ::Val{true}) = get_message(s.state)
-#INtroduce a default that there is no message
-_get_message(s::AbstractManoptSolverState, ::Val{false}) = ""
-
-@doc """
-    get_stopping_criterion(ams::AbstractManoptSolverState)
-
-Return the [`StoppingCriterion`](@ref) stored within the [`AbstractManoptSolverState`](@ref) `ams`.
-
-For an undecorated state, this is assumed to be in `ams.stop`.
-Overwrite `_get_stopping_criterion(yms::YMS)`
-to change this for your manopt solver (`yms`) assuming it has type YMS`.
-"""
-function get_stopping_criterion(ams::AbstractManoptSolverState)
-    return _get_stopping_criterion(get_state(ams, true))
-end
-_get_stopping_criterion(ams::AbstractManoptSolverState) = ams.stop
-
-"""
-    is_state_decorator(s::AbstractManoptSolverState)
-
-Indicate, whether [`AbstractManoptSolverState`](@ref) `s` are of decorator type.
-"""
-function is_state_decorator(s::AbstractManoptSolverState)
-    return _extract_val(dispatch_state_decorator(s))
-end
 
 @doc """
     ReturnSolverState{O<:AbstractManoptSolverState} <: AbstractManoptSolverState
@@ -165,28 +97,6 @@ function get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverSt
     return o.objective, get_solver_return(s)
 end
 
-@doc """
-    get_state(s::AbstractManoptSolverState, recursive::Bool=true)
-
-return the (one step) undecorated [`AbstractManoptSolverState`](@ref) of the (possibly) decorated `s`.
-As long as your decorated state stores the state within `s.state` and
-the [`dispatch_objective_decorator`](@ref) is set to `Val{true}`,
-the internal state are extracted automatically.
-
-By default the state that is stored within a decorated state is assumed to be at
-`s.state`. Overwrite `_get_state(s, ::Val{true}, recursive) to change this behaviour for your state `s`
-for both the recursive and the direct case.
-
-If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
-"""
-function get_state(s::AbstractManoptSolverState, recursive::Bool = true)
-    return _get_state(s, dispatch_state_decorator(s), recursive)
-end
-_get_state(s::AbstractManoptSolverState, ::Val{false}, rec = true) = s
-function _get_state(s::AbstractManoptSolverState, ::Val{true}, rec = true)
-    return rec ? get_state(s.state) : s.state
-end
-
 """
     get_gradient(s::AbstractManoptSolverState)
 
@@ -216,26 +126,6 @@ end
 function _set_gradient!(s::AbstractManoptSolverState, M, p, X, ::Val{true})
     return set_gradient!(s.state, M, p, X)
 end
-
-"""
-    get_iterate(O::AbstractManoptSolverState)
-
-return the (last stored) iterate within [`AbstractManoptSolverState`](@ref)` `s`.
-This should usually refer to a single point on the manifold the solver is working on
-
-By default this also removes all decorators of the state beforehand.
-"""
-get_iterate(s::AbstractManoptSolverState) = _get_iterate(s, dispatch_state_decorator(s))
-function _get_iterate(s::AbstractManoptSolverState, ::Val{false})
-    return error(
-        "It seems the AbstractManoptSolverState $s do not provide access to an iterate.
-        If it has the iterate stored internally, please implement `get_iterate(s::$(typeof(s))).`
-        ",
-    )
-end
-_get_iterate(s::AbstractManoptSolverState, ::Val{true}) = get_iterate(s.state)
-
-_set_iterate!(s::AbstractManoptSolverState, M, p, ::Val{true}) = set_iterate!(s.state, M, p)
 
 """
     get_solver_result(state::AbstractManoptSolverState)
@@ -284,20 +174,6 @@ function get_solver_result(::AbstractManifoldObjective, p)
 end
 _get_solver_result(state::AbstractManoptSolverState, ::Val{false}) = get_iterate(state)
 _get_solver_result(state::AbstractManoptSolverState, ::Val{true}) = get_solver_result(state.state)
-
-"""
-    set_iterate!(s::AbstractManoptSolverState, M::AbstractManifold, p)
-
-set the iterate within an [`AbstractManoptSolverState`](@ref) to some (start) value `p`.
-"""
-function set_iterate!(s::AbstractManoptSolverState, M, p)
-    return _set_iterate!(s, M, p, dispatch_state_decorator(s))
-end
-function _set_iterate!(s::AbstractManoptSolverState, ::Any, ::Any, ::Val{false})
-    return error(
-        "It seems the AbstractManoptSolverState $s do not provide (write) access to an iterate",
-    )
-end
 
 """
     struct PointStorageKey{key} end
@@ -359,18 +235,6 @@ Make a copy of tangent vector `X` from manifold `M` for storage in [`StoreStateA
 """
 _storage_copy_vector(M::AbstractManifold, X) = copy(M, X)
 _storage_copy_vector(::AbstractManifold, X::Number) = StorageRef(X)
-
-@doc """
-    stopped_at(state::AbstractManoptSolverState)
-
-Return the number of iterations the solver represented by the `state` took to stop.
-If the solver has not yet stopped, this function returns `-1`.
-
-By default, this function calls `get_count` function on the state's stopping criterion to access its `:Iteration` count.
-"""
-function stopped_at(state::AbstractManoptSolverState)
-    return get_count(get_stopping_criterion(state), Val(:Iterations))
-end
 
 @doc """
     StoreStateAction <: AbstractStateAction
@@ -679,32 +543,6 @@ function update_storage!(a::AbstractStateAction, d::Dict{Symbol, <:Any})
     # update keys
     return a.keys = collect(keys(a.values))
 end
-
-"""
-    get_count(ams::AbstractManoptSolverState, ::Symbol)
-
-Obtain the count for a certain countable size, for example the `:Iterations`.
-This function returns 0 if there was nothing to count
-
-Available symbols from within the solver state
-
-* `:Iterations` is passed on to the `stop` field to obtain the
-  iteration at which the solver stopped.
-"""
-function get_count(ams::AbstractManoptSolverState, s::Symbol)
-    return get_count(ams, Val(s))
-end
-
-function get_count(ams::AbstractManoptSolverState, v::Val{:Iterations})
-    return get_count(ams.stop, v)
-end
-
-"""
-    has_converged(ams::AbstractManoptSolverState)
-
-Return whether the solver has converged, based on the internal [`StoppingCriterion`](@ref).
-"""
-has_converged(ams::AbstractManoptSolverState) = has_converged(get_stopping_criterion(ams))
 
 # in general, ignore printing the objective by default
 function show(io::IO, t::Tuple{<:AbstractManifoldObjective, <:AbstractManoptSolverState})
