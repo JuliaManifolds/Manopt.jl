@@ -16,7 +16,8 @@ Access the callback of `name` and call it with `problem, state, iteration`
 function callback(
         name::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
     )
-    return get_callbacks(state)[name](problem, state, iteration)
+    cb = get(get_callbacks(state), name, (problem, state, iteration) -> nothing)
+    return cb(problem, state, iteration)
 end
 
 """
@@ -26,11 +27,8 @@ Access the callbacks dictionary of the [`AbstractManoptSolverState`](@ref) `stat
 """
 get_callbacks(state::AbstractManoptSolverState) = _get_callbacks(state, dispatch_state_decorator(s))
 function _get_callbacks(state::AbstractManoptSolverState, ::Val{false})
-    return error(
-        "It seems the solver state $state do not provide access to callbacks
-        If it has the callbacks stored internally, please implement `get_callbacks(state::$(typeof(state))).`
-        ",
-    )
+    # Fallback: No callbacks, so return an empty Dictionary
+    return Dict{Symbol, Function}()
 end
 _get_callbacks(state::AbstractManoptSolverState, ::Val{true}) = get_iterate(state.state)
 
