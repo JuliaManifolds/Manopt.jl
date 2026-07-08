@@ -1,4 +1,6 @@
 const _MANOPT_DEFAULT_CALLBACKS = [:BeforeInit, :BeforeStep, :BeforeStop, :Init, :Step, :Stop]
+const _MANOPT_EMPTY_CALLBACK = (problem, state, iteration) -> nothing
+const _MANOPT_EMPTY_ANY_CALLBACK = (symbol::Symbol, problem, state, iteration) -> nothing
 
 """
     available_callbacks(state::AbstractManoptSolverState)
@@ -18,8 +20,12 @@ Access the callback of `name` and call it with `problem, state, iteration`
 function callback(
         name::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
     )
-    cb = get(get_callbacks(state), name, (problem, state, iteration) -> nothing)
-    return cb(problem, state, iteration)
+    cb = get_callbacks(state)
+    cbs = get(cb, name, _MANOPT_EMPTY_CALLBACK)
+    cbs(problem, state, iteration)
+    cba = get(cb, :Any, _MANOPT_EMPTY_ANY_CALLBACK)
+    cba(name, problem, state, iteration)
+    return nothing
 end
 
 """
