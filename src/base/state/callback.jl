@@ -1,3 +1,5 @@
+const _MANOPT_DEFAULT_CALLBACKS = [:BeforeInit, :BeforeStep, :BeforeStop, :Init, :Step, :Stop]
+
 """
     available_callbacks(state::AbstractManoptSolverState)
 
@@ -27,8 +29,13 @@ Access the callbacks dictionary of the [`AbstractManoptSolverState`](@ref) `stat
 """
 get_callbacks(state::AbstractManoptSolverState) = _get_callbacks(state, dispatch_state_decorator(s))
 function _get_callbacks(state::AbstractManoptSolverState, ::Val{false})
+    @warn """
+        This is a safety fallback! Upon initialization/setup, reaching this means your callback(s)
+        are not stored in the state.
+        Reaching this during a solver run, means your callbacks will not be called
+    """
     # Fallback: No callbacks, so return an empty Dictionary
-    return Dict{Symbol, Function}()
+    return Dict{Symbol, Any}()
 end
 _get_callbacks(state::AbstractManoptSolverState, ::Val{true}) = get_iterate(state.state)
 
@@ -39,5 +46,5 @@ For a solver of type `S` return the callbacks actually available by returning a 
 `Symbol`s that can be used.
 """
 function possible_callbacks(::Type{S}) where {S <: AbstractManoptSolverState}
-    return Symbol[]
+    return _MANOPT_DEFAULT_CALLBACKS
 end

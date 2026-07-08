@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   this should not break other peoples code, but in the documentation, namely “hard link”s to any `plans/`
   element might break
+* the `callback = ` still accepts a single function, but now adds it to `:Step` of the new `callbacks = ` keyword
+
+### Deprecated
+
+* with actual callbacks available, the `DebugCallback` action from before is now obsolete and deprecated
 
 ## [0.6.1] July 4, 2026
 
