@@ -208,7 +208,10 @@ makedocs(;
             "Trust-Regions Solver" => "solvers/trust_regions.md",
             "Vector Bundle Newton Method" => "solvers/vectorbundle_newton.md",
         ],
-        "Plans" => [
+        "Commons (WIP)" => [
+            "Debug Output" => "commons/debug.md",
+        ],
+        "Plans (deprecated)" => [
             "Specify a Solver" => "plans/index.md",
             "Problem" => "plans/problem.md",
             "Objective" => [
@@ -226,7 +229,6 @@ makedocs(;
             "Solver State" => "plans/state.md",
             "Stepsize" => "plans/stepsize.md",
             "Stopping Criteria" => "plans/stopping_criteria.md",
-            "Debug Output" => "plans/debug.md",
             "Recording values" => "plans/record.md",
         ],
         "Developer Guide" => [
