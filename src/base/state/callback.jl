@@ -63,7 +63,8 @@ function possible_callbacks(::Type{S}) where {S <: AbstractManoptSolverState}
 end
 
 """
-    process_callbacks_arg(callbacks)
+    process_callbacks_arg(callbacks::Array)
+    process_callbacks_arg(callbacks::Dict) = callbacks
 
 Given an array `callbacks` a user has passed to a solver, this helper function processes the
 array in the following way
@@ -76,6 +77,9 @@ array in the following way
 The result is then wrapped into a dictionary. Be aware that from an array of pairs this function
 reduces, the dictionary “takes” the last `:Hook` pair as the entry in the dictionary. This
 function does not check for duplicates.
+
+This function keeps a dictionary unchanged. Hence they are only processed once
+even if this function is applied multiple times.
 """
 function process_callbacks_arg(callbacks::Array)
     c = Pair{Symbol, Any}[]
@@ -96,3 +100,4 @@ function process_callbacks_arg(callbacks::Array)
     end
     return Dict(c...)
 end
+process_callbacks_arg(callbacks::Dict) = callbacks
