@@ -15,7 +15,11 @@ end
 """
     callback(name::Symbol, problem::AbstractManoptProblem, state::AbstractManoptState, iteration::Int)
 
-Access the callback of `name` and call it with `problem, state, iteration`
+Perform a callback.
+
+This function performs a call to both possible approaches
+* if a callback exists in the dictionary under the symbol `name` it is called with the parameters `problem, state, iteration`
+* if a callback exists in the dictionary that shall be called `:Any` time, this one is called with `name, problem, state, iteration`
 """
 function callback(
         name::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
