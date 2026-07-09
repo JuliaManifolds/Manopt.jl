@@ -82,6 +82,10 @@ function does not check for duplicates.
 
 This function keeps a dictionary unchanged. Hence they are only processed once
 even if this function is applied multiple times.
+
+If a `statetype` is provided, the final dictionary of callbacks is validated against
+the provided callback hooks by that state and a warning is issued if there are hooks that
+do not have an effect.
 """
 function process_callbacks_arg(callbacks::Array, statetype = missing)
     c = Pair{Symbol, Any}[]
@@ -112,7 +116,7 @@ this element in the [`process_callbacks_arg`](@ref process_callbacks_arg(::Array
 """
 process_callbacks_arg(callback, statetype = missing) = process_callbacks_arg([callback], statetype)
 #
-function process_callbacks_arg(callbacks::Dict, statetype)
+function process_callbacks_arg(callbacks::Dict, statetype = missing)
     _warn_if_unused_callbacks(callbacks, statetype)
     return callbacks
 end
