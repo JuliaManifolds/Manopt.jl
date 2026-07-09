@@ -47,7 +47,7 @@ get_callbacks(state::AbstractManoptSolverState) = _get_callbacks(state, dispatch
 function _get_callbacks(state::AbstractManoptSolverState, ::Val{false})
     @warn """
         This is a safety fallback! Upon initialization/setup, reaching this means your callback(s)
-        are not stored in the state.
+        are not stored in the state of type $(typeof(state).name).
         Reaching this during a solver run, means your callbacks will not be called
     """
     # Fallback: No callbacks, so return an empty Dictionary
