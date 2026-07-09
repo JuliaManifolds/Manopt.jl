@@ -358,7 +358,7 @@ Glossaries.define!(
 Glossaries.define!(_glossary_variables, :callbacks, :type, "D")
 Glossaries.define!(_glossary_variables, :callbacks, :as_dict, "provided as a dictionary symbols as keys")
 Glossaries.define!(_glossary_variables, :callbacks, :process_note, "A single function `(symbol, problem, state, k)` called in every hook, a (vector of) pairs `:hook => function` will be processed by [`` ,YOu can either pass an array of Pairsassumed to be stored in a dictionary like structure with symbols as keys")
-Glossaries.define!(_glossary_variables, :callbacks, :default, "Dict{Symbol,Function}()",)
+Glossaries.define!(_glossary_variables, :callbacks, :default, "Dict{Symbol,Function}()")
 
 Glossaries.define!(_glossary_variables, :differential)
 Glossaries.define!(

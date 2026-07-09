@@ -11,7 +11,7 @@ See also: [`provided_fallbacks`](@ref).
 """
 function active_callbacks(state::AbstractManoptSolverState)
     dk = keys(get_callbacks(state))
-    return Symbol[ intersect(dk, provided_fallbacks(typeof(state))) ... ]
+    return Symbol[intersect(dk, provided_fallbacks(typeof(state))) ...]
 end
 
 """
@@ -83,7 +83,7 @@ function does not check for duplicates.
 This function keeps a dictionary unchanged. Hence they are only processed once
 even if this function is applied multiple times.
 """
-function process_callbacks_arg(callbacks::Array, statetype=missing)
+function process_callbacks_arg(callbacks::Array, statetype = missing)
     c = Pair{Symbol, Any}[]
     for cb in callbacks
         if cb isa Pair
@@ -110,13 +110,13 @@ end
 Passing a single callback nadles this as if it is an array of length one with
 this element in the [`process_callbacks_arg`](@ref process_callbacks_arg(::Array)) array case.
 """
-process_callbacks_arg(callback, statetype=missing) = process_callbacks_arg([callback,], statetype)
+process_callbacks_arg(callback, statetype = missing) = process_callbacks_arg([callback], statetype)
 #
 function process_callbacks_arg(callbacks::Dict, statetype)
     _warn_if_unused_callbacks(callbacks, statetype)
     return callbacks
 end
-function _warn_if_unused_callbacks(callbacks::Dict, statetype=missing)
+function _warn_if_unused_callbacks(callbacks::Dict, statetype = missing)
     if !ismissing(statetype)
         ck = keys(callbacks)
         pk = provided_fallbacks(statetype)

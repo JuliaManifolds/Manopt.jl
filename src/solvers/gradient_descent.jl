@@ -40,7 +40,7 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct GradientDescentState{
         P, T, TStop <: StoppingCriterion, TStepsize <: Stepsize,
-        C<:AbstractDict{Symbol}, TDirection <: DirectionUpdateRule, TRTM <: AbstractRetractionMethod
+        C <: AbstractDict{Symbol}, TDirection <: DirectionUpdateRule, TRTM <: AbstractRetractionMethod,
     } <: AbstractGradientSolverState
     callbacks::C
     direction::TDirection
@@ -65,9 +65,9 @@ function GradientDescentState(
         kwargs..., # ignore rest
     ) where {
         P, T, SC <: StoppingCriterion, RTM <: AbstractRetractionMethod,
-        S <: Stepsize, D <: DirectionUpdateRule, C <: AbstractDict{Symbol}
+        S <: Stepsize, D <: DirectionUpdateRule, C <: AbstractDict{Symbol},
     }
-    return GradientDescentState{P, T, SC, S, C, D, RTM, }(
+    return GradientDescentState{P, T, SC, S, C, D, RTM}(
         callbacks, direction, p, stepsize, stopping_criterion, retraction_method, X,
     )
 end
@@ -156,7 +156,7 @@ $(_note(:GradientObjective))
 # Keyword arguments
 
 
-$(_kwargs(:callbacks; add_properties=[:process_note]))
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:differential))
 * `direction=`[`IdentityUpdateRule`](@ref)`()`:
   specify to perform a certain processing of the direction, for example
@@ -221,7 +221,7 @@ function gradient_descent!(
         M::AbstractManifold,
         mgo::O,
         p;
-        callbacks = Dict{Symbol,Function}(),
+        callbacks = Dict{Symbol, Function}(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, GradientDescentState; retraction_method = retraction_method
