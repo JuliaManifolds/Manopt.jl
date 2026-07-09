@@ -248,7 +248,7 @@ function gradient_descent!(
     dmp = DefaultManoptProblem(M, dmgo)
     s = GradientDescentState(
         M;
-        callbacks = process_callbacks_arg(callbacks),
+        callbacks = process_callbacks_arg(callbacks, GradientDescentState),
         p = p,
         stopping_criterion = stopping_criterion,
         stepsize = _produce_type(stepsize, M, p),

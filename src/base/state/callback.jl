@@ -1,4 +1,4 @@
-const _MANOPT_DEFAULT_CALLBACKS = [:BeforeInit, :BeforeStep, :BeforeStop, :Init, :Step, :Stop]
+const _MANOPT_DEFAULT_CALLBACKS = [:Any, :BeforeInit, :BeforeStep, :BeforeStop, :Init, :Step, :Stop]
 const _MANOPT_EMPTY_CALLBACK = (problem, state, iteration) -> nothing
 const _MANOPT_EMPTY_ANY_CALLBACK = (symbol::Symbol, problem, state, iteration) -> nothing
 
@@ -11,8 +11,7 @@ See also: [`provided_fallbacks`](@ref).
 """
 function active_callbacks(state::AbstractManoptSolverState)
     dk = keys(get_callbacks(state))
-    (:Any in dk) && return Symbol[ provided_fallbacks(typeof(state)) ... ]
-    return Symbol[ intersect(keys(get_callbacks(state)), provided_fallbacks(typeof(state))) ... ]
+    return Symbol[ intersect(dk, provided_fallbacks(typeof(state))) ... ]
 end
 
 """
@@ -50,7 +49,8 @@ function _get_callbacks(state::AbstractManoptSolverState, ::Val{false})
     # Fallback: No callbacks, so return an empty Dictionary
     return Dict{Symbol, Any}()
 end
-_get_callbacks(state::AbstractManoptSolverState, ::Val{true}) = get_iterate(state.state)
+# For all decorators: Pass down
+_get_callbacks(state::AbstractManoptSolverState, ::Val{true}) = get_callbacks(state.state)
 
 """
     provided_fallbacks(state_type::Type{S}) where {S<:AbstractManoptSolverState})
@@ -65,8 +65,8 @@ function provided_fallbacks(::Type{S}) where {S <: AbstractManoptSolverState}
 end
 
 """
-    process_callbacks_arg(callbacks::Array)
-    process_callbacks_arg(callbacks::Dict) = callbacks
+    process_callbacks_arg(callbacks::Array, statetype=missing)
+    process_callbacks_arg(callbacks::Dict, statetype=missing) = callbacks
 
 Given an array `callbacks` a user has passed to a solver, this helper function processes the
 array in the following way
@@ -83,7 +83,7 @@ function does not check for duplicates.
 This function keeps a dictionary unchanged. Hence they are only processed once
 even if this function is applied multiple times.
 """
-function process_callbacks_arg(callbacks::Array)
+function process_callbacks_arg(callbacks::Array, statetype=missing)
     c = Pair{Symbol, Any}[]
     for cb in callbacks
         if cb isa Pair
@@ -100,7 +100,9 @@ function process_callbacks_arg(callbacks::Array)
             push!(c, :Any => cb)
         end
     end
-    return Dict{Symbol, Any}(c...)
+    res = Dict{Symbol, Any}(c...)
+    _warn_if_unused_callbacks(res, statetype)
+    return res
 end
 """
     process_callbacks_arg(callback)
@@ -108,6 +110,18 @@ end
 Passing a single callback nadles this as if it is an array of length one with
 this element in the [`process_callbacks_arg`](@ref process_callbacks_arg(::Array)) array case.
 """
-process_callbacks_arg(callback) = process_callbacks_arg([callback,])
+process_callbacks_arg(callback, statetype=missing) = process_callbacks_arg([callback,], statetype)
 #
-process_callbacks_arg(callbacks::Dict) = callbacks
+function process_callbacks_arg(callbacks::Dict, statetype)
+    _warn_if_unused_callbacks(callbacks, statetype)
+    return callbacks
+end
+function _warn_if_unused_callbacks(callbacks::Dict, statetype=missing)
+    if !ismissing(statetype)
+        ck = keys(callbacks)
+        pk = provided_fallbacks(statetype)
+        uk = [setdiff(ck, pk)...]
+        (length(uk) > 0) && (@warn "The following brovided callback hooks are not used by $(statetype):\n\t$(uk)\nThe corresponding function will be ignored.\nAvailable hooks: $(pk)")
+    end
+    return nothing
+end
