@@ -128,7 +128,7 @@ function _warn_if_unused_callbacks(callbacks::Dict, statetype = missing)
     if !ismissing(statetype)
         ck = keys(callbacks)
         pk = provided_fallbacks(statetype)
-        uk = setdiff(ck, pk)
+        uk = collect(setdiff(ck, pk))
         (length(uk) > 0) && (@warn "The following provided callback hooks are not used by $(statetype):\n\t$(uk)\nThe corresponding function will be ignored.\nAvailable hooks: $(pk)")
     end
     return nothing
