@@ -110,8 +110,7 @@ function status_summary(ls::LanczosState; context::Symbol = :default)
     return """
     # Solver state for `Manopt.jl`s Lanczos Iteration
     $Iter
-    ## Parameters
-    * callbacks               : $(ls.callbacks)$(as)
+    ## Parameters$(as)
     * σ                         : $(ls.σ)
     * # of Lanczos vectors used : $(vectors)
 

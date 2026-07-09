@@ -147,8 +147,7 @@ function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :de
     s = """
     # Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)
     $Iter
-    ## Parameters
-    * callbacks            : $(arcs.callbacks)$(as)
+    ## Parameters$(as)
     * η1 | η2              : $(arcs.η1) | $(arcs.η2)
     * γ1 | γ2              : $(arcs.γ1) | $(arcs.γ2)
     * σ (σmin)             : $(arcs.σ) ($(arcs.σmin))
