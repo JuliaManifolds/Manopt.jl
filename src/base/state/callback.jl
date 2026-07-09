@@ -11,7 +11,7 @@ See also: [`provided_fallbacks`](@ref).
 """
 function active_callbacks(state::AbstractManoptSolverState)
     dk = keys(get_callbacks(state))
-    return Symbol[intersect(dk, provided_fallbacks(typeof(state))) ...]
+    return collect(intersect(dk, provided_fallbacks(typeof(state))))
 end
 
 """
@@ -27,6 +27,10 @@ function callback(
         name::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
     )
     cb = get_callbacks(state)
+    if isempty(cb)
+        # avoid checks when no callbacks are provided, this is a performance optimization
+        return nothing
+    end
     cbs = get(cb, name, _MANOPT_EMPTY_CALLBACK)
     cbs(problem, state, iteration)
     cba = get(cb, :Any, _MANOPT_EMPTY_ANY_CALLBACK)
@@ -65,11 +69,11 @@ function provided_fallbacks(::Type{S}) where {S <: AbstractManoptSolverState}
 end
 
 """
-    process_callbacks_arg(callbacks::Array, statetype=missing)
+    process_callbacks_arg(callbacks::Vector, statetype=missing)
     process_callbacks_arg(callbacks::Dict, statetype=missing) = callbacks
 
-Given an array `callbacks` a user has passed to a solver, this helper function processes the
-array in the following way
+Given a vector `callbacks` a user has passed to a solver, this helper function processes the
+vector in the following way
 
 * a pair `:Hook => fct` is kept as is, where the `fct`` can also be some callable structure
 * a single element `function` is turned into `:Any => fct` allowing the case a single callback
@@ -87,7 +91,7 @@ If a `statetype` is provided, the final dictionary of callbacks is validated aga
 the provided callback hooks by that state and a warning is issued if there are hooks that
 do not have an effect.
 """
-function process_callbacks_arg(callbacks::Array, statetype = missing)
+function process_callbacks_arg(callbacks::Vector, statetype = missing)
     c = Pair{Symbol, Any}[]
     for cb in callbacks
         if cb isa Pair
@@ -98,7 +102,7 @@ function process_callbacks_arg(callbacks::Array, statetype = missing)
                     push!(c, s => cb[2])
                 end
             else
-                error("Unkown key $(cb[1])")
+                error("Unknown key $(cb[1])")
             end
         else
             push!(c, :Any => cb)
@@ -109,10 +113,10 @@ function process_callbacks_arg(callbacks::Array, statetype = missing)
     return res
 end
 """
-    process_callbacks_arg(callback)
+    process_callbacks_arg(callback, statetype = missing)
 
-Passing a single callback nadles this as if it is an array of length one with
-this element in the [`process_callbacks_arg`](@ref process_callbacks_arg(::Array)) array case.
+Passing a single callback handles this as if it is an array of length one with
+this element in the [`process_callbacks_arg`](@ref process_callbacks_arg(::Vector)) array case.
 """
 process_callbacks_arg(callback, statetype = missing) = process_callbacks_arg([callback], statetype)
 #
@@ -124,8 +128,8 @@ function _warn_if_unused_callbacks(callbacks::Dict, statetype = missing)
     if !ismissing(statetype)
         ck = keys(callbacks)
         pk = provided_fallbacks(statetype)
-        uk = [setdiff(ck, pk)...]
-        (length(uk) > 0) && (@warn "The following brovided callback hooks are not used by $(statetype):\n\t$(uk)\nThe corresponding function will be ignored.\nAvailable hooks: $(pk)")
+        uk = setdiff(ck, pk)
+        (length(uk) > 0) && (@warn "The following provided callback hooks are not used by $(statetype):\n\t$(uk)\nThe corresponding function will be ignored.\nAvailable hooks: $(pk)")
     end
     return nothing
 end

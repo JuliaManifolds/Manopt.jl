@@ -168,6 +168,14 @@ using ManifoldDiff: grad_distance
             count = [:Gradient], return_objective = true, return_state = true,
         )
         @test Manopt.status_summary(n6; context = :default) == "$(Manopt.status_summary(n6[2]; context = :default))\n\n$(Manopt.status_summary(n6[1]; context = :default))"
+
+        @testset "Callbacks" begin
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
+            gradient_descent(M, f, grad_f, pts[1]; callbacks = cb)
+            @test sk_record[1:6] == [(:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0), (:BeforeStep, 1), (:Stepsize, 1), (:Step, 1)]
+            @test sk_record[end-5:end] == Any[(:BeforeStop, 71), (:BeforeStep, 72), (:Stepsize, 72), (:Step, 72), (:BeforeStop, 72), (:Stop, 72)]
+        end
     end
     @testset "Tutorial mode" begin
         M = Sphere(2)
