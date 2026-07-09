@@ -3,15 +3,16 @@ const _MANOPT_EMPTY_CALLBACK = (problem, state, iteration) -> nothing
 const _MANOPT_EMPTY_ANY_CALLBACK = (symbol::Symbol, problem, state, iteration) -> nothing
 
 """
-    available_callbacks(state::AbstractManoptSolverState)
+    active_callbacks(state::AbstractManoptSolverState)
 
 For a given state, indicate, which callbacks are in use, i.e. stored and also called from this solver.
 
-See also: [`possible_callbacks`](@ref).
+See also: [`provided_fallbacks`](@ref).
 """
-function available_callbacks(state::AbstractManoptSolverState)
-    ac = intersect(keys(get_callbacks(state)), possible_callbacks(typeof(state)))
-    return Symbol[ac...]
+function active_callbacks(state::AbstractManoptSolverState)
+    dk = keys(get_callbacks(state))
+    (:Any in dk) && return Symbol[ provided_fallbacks(typeof(state)) ... ]
+    return Symbol[ intersect(keys(get_callbacks(state)), provided_fallbacks(typeof(state))) ... ]
 end
 
 """
@@ -39,7 +40,7 @@ end
 
 Access the callbacks dictionary of the [`AbstractManoptSolverState`](@ref) `state`.
 """
-get_callbacks(state::AbstractManoptSolverState) = _get_callbacks(state, dispatch_state_decorator(s))
+get_callbacks(state::AbstractManoptSolverState) = _get_callbacks(state, dispatch_state_decorator(state))
 function _get_callbacks(state::AbstractManoptSolverState, ::Val{false})
     @warn """
         This is a safety fallback! Upon initialization/setup, reaching this means your callback(s)
@@ -52,13 +53,14 @@ end
 _get_callbacks(state::AbstractManoptSolverState, ::Val{true}) = get_iterate(state.state)
 
 """
-    possible_callbacks(state_type::Type{S}) where {S<:AbstractManoptSolverState})
+    provided_fallbacks(state_type::Type{S}) where {S<:AbstractManoptSolverState})
 
-For a solver of type `S` return the callbacks actually uses in practive, i.e. the ones
-which from within the solver are actually called. This function returns a vector
-`Symbol`s that can be used.
+For a solver of type `S` return the callbacks the solver provides, i.e. all ones
+that are called during the solver run.
+This function returns a vector `Symbol`s representing the hooks. These can be kays in
+a dictionary of callbacks.
 """
-function possible_callbacks(::Type{S}) where {S <: AbstractManoptSolverState}
+function provided_fallbacks(::Type{S}) where {S <: AbstractManoptSolverState}
     return _MANOPT_DEFAULT_CALLBACKS
 end
 
@@ -98,6 +100,14 @@ function process_callbacks_arg(callbacks::Array)
             push!(c, :Any => cb)
         end
     end
-    return Dict(c...)
+    return Dict{Symbol, Any}(c...)
 end
+"""
+    process_callbacks_arg(callback)
+
+Passing a single callback nadles this as if it is an array of length one with
+this element in the [`process_callbacks_arg`](@ref process_callbacks_arg(::Array)) array case.
+"""
+process_callbacks_arg(callback) = process_callbacks_arg([callback,])
+#
 process_callbacks_arg(callbacks::Dict) = callbacks

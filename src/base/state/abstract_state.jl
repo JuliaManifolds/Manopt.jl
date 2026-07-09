@@ -11,7 +11,7 @@ If you use different ones, adapt the the access functions
 and [`get_callbacks`](@ref)  accordingly
 
 $(_fields(:p; add_properties = [:as_Iterate]))
-$(_fields(:callbacks; add_properties = [:as_dictionary]))
+$(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:stopping_criterion; name = "stop"))
 """
 abstract type AbstractManoptSolverState end
