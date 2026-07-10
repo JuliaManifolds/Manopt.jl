@@ -111,8 +111,7 @@ function status_summary(gds::GradientDescentState; context::Symbol = :default)
     (context === :inline) && return "A solver state for the gradient descent solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
-    ac = active_callbacks(gds)
-    as = length(ac) > 0 ? "\n* active callbacks: :$(join(ac, ", :"))" : ""
+    as = _callbacks_summary(gds)
     s = """
     # Solver state for `Manopt.jl`s Gradient Descent
     $Iter

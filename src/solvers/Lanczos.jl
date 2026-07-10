@@ -104,8 +104,7 @@ function status_summary(ls::LanczosState; context::Symbol = :default)
     i = get_count(ls, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ls.stop) ? "Yes" : "No"
-    ac = active_callbacks(ls)
-    as = length(ac) > 0 ? "\n* active callbacks: :$(join(ac, ", :"))" : ""
+    as = _callbacks_summary(ls)
     vectors = length(ls.Lanczos_vectors)
     return """
     # Solver state for `Manopt.jl`s Lanczos Iteration

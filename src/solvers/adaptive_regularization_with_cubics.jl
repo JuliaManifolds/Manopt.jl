@@ -140,8 +140,7 @@ function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :de
     (context === :inline) && return "A solver state for the adaptive regularization with cubics solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(arcs.stop) ? "Yes" : "No"
-    ac = active_callbacks(arcs)
-    as = length(ac) > 0 ? "\n* active callbacks: :$(join(ac, ", :"))" : ""
+    as = _callbacks_summary(arcs)
     sub = status_summary(arcs.sub_state; context = context)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
     s = """
