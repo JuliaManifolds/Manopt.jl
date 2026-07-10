@@ -176,7 +176,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             Manopt.get_vector_field!(M1, vf_lmcso, lmcso, p1)
             @test isapprox(vf_lmso, vf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
             TpM1 = TangentSpace(M1, p1)
-            X0 = Manopt.ZeroTangentVector()
+            X0 = Manopt.ZeroVector()
             cX = [0.3, -0.5]
             X = get_vector(M1, p1, cX, B1)
             @test isapprox(get_cost(TpM1, slso, X0), get_cost(TpM1, slco, X0); atol = 1.0e-12, rtol = 1.0e-12)
@@ -258,7 +258,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
                 @test isapprox(vf_lmso, vf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
 
                 TpM1 = TangentSpace(M1, p1)
-                X0 = Manopt.ZeroTangentVector()
+                X0 = Manopt.ZeroVector()
                 @test isapprox(get_cost(TpM1, slso, X0), get_cost(TpM1, slco, X0); atol = 1.0e-12, rtol = 1.0e-12)
                 # The LM-relevant regression: both surrogate systems should produce the same step.
                 dmp_so = DefaultManoptProblem(TpM1, slso)
