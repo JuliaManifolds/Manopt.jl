@@ -50,14 +50,6 @@ Manopt.add_normal_linear_operator!
 Manopt.add_linear_operator_coord!
 ```
 
-### Internal structures
-
-The following structure helps to avoid allocating unnecessary zero vectors.
-
-```@docs
-Manopt.ZeroTangentVector
-```
-
 ## [Technical details](@id sec-lm-technical-details)
 
 The [`LevenbergMarquardt`](@ref) solver requires the following functions of a manifold to be available

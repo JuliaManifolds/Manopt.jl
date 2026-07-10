@@ -55,6 +55,7 @@ using ManifoldsBase:
     ProjectionTransport,
     QRRetraction,
     TangentSpace,
+    ZeroVector,
     ^, _read, _write,
     allocate, allocate_result, allocate_result_type,
     base_manifold,
@@ -129,16 +130,6 @@ If you load `Manifolds.jl` this switches to using [`Euclidean`](@extref Manifold
 """
 Rn_default() = :Manifolds
 Rn(::Val{T}, args...; kwargs...) where {T} = DefaultManifold(args...; kwargs...)
-
-"""
-    ZeroTangentVector
-
-A small internal helper type to represent the zero tangent vector with two advantages
-
-* we avoid to allocate it
-* we can dispatch on it
-"""
-struct ZeroTangentVector <: ManifoldsBase.AbstractTangentVector end
 
 @static if VERSION >= v"1.12.0"
     _diagview(A::AbstractMatrix) = LinearAlgebra.diagview(A)

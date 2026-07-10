@@ -354,7 +354,7 @@ function get_cost(
     return cost
 end
 function get_cost(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, ::ZeroTangentVector
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, ::ZeroVector
     )
     cost = norm(get_vector_field(M, lmsco, p))^2 / 2
     return cost

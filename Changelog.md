@@ -10,21 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* a `callbacks = ` keyword to all solvers (WIP)
+* a `callbacks = ` keyword to all solvers (#626)
 
 ### Changed
 
-* internally restructure the `plans/` code folder and documentation and split it into two parts
+* Replaced internal `ZeroTangentVector` with `ZeroVector` from ManifoldsBase.jl. (#625)
+* internally restructure the `plans/` code folder and documentation and split it into two parts (#626)
   - a `base/` folder defining inderfaces and documenting design ideas of these
   - a `commons/` folder collecting things (some or all) solvers have in common
 
   this should not break other peoples code, but in the documentation, namely “hard link”s to any `plans/`
   element might break
-* the `callback = ` still accepts a single function, but now adds it to `:Step` of the new `callbacks = ` keyword
+* the `callback = ` still accepts a single function, but now adds it to `:Step` of the new `callbacks = ` keyword (#626)
 
 ### Deprecated
 
-* with actual callbacks available, the `DebugCallback` action from before is now obsolete and deprecated
+* with actual callbacks available, the `DebugCallback` action from before is now obsolete and deprecated (#626)
 
 ## [0.6.1] July 4, 2026
 
