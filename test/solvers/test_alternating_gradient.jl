@@ -80,4 +80,25 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
         @test Manopt.get_message(r) == Manopt.get_message(r.stepsize)
         @test isapprox(N, q3, q)
     end
+    @testset "Callbacks" begin
+        sk_record = Tuple{Symbol, Int}[]
+        cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
+        alternating_gradient_descent(
+            N, f, [grad_f1!, grad_f2!], p;
+            order_type = :Linear,
+            evaluation = InplaceEvaluation(),
+            stopping_criterion = StopAfterIteration(1),
+            callbacks = cb,
+        )
+        @test sk_record == [
+            (:BeforeInit, 0),
+            (:Init, 0),
+            (:BeforeStop, 0),
+            (:BeforeStep, 1),
+            (:Stepsize, 1),
+            (:Step, 1),
+            (:BeforeStop, 1),
+            (:Stop, 1),
+        ]
+    end
 end

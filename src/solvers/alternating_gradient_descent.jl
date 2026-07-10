@@ -42,6 +42,7 @@ see also [`alternating_gradient_descent`](@ref).
 
 # Fields
 
+$(_fields(:callbacks; add_properties = [:as_dict]))
 * `direction::`[`DirectionUpdateRule`](@ref)
 * `evaluation_order::Symbol`: whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
@@ -60,6 +61,7 @@ $(_fields(:X; add_properties = [:as_Gradient]))
 # Keyword arguments
 * `inner_iterations=5`
 $(_kwargs(:p))
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `order_type::Symbol=:Linear`
 * `order::Vector{<:Int}=Int[]`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
@@ -73,9 +75,10 @@ For internal use, there also exists a constructor solely having the fields as ke
 but then all of them are mandatory.
 """
 mutable struct AlternatingGradientDescentState{
-        P, T, D <: DirectionUpdateRule, TStop <: StoppingCriterion, TStep <: Stepsize,
-        RM <: AbstractRetractionMethod,
+        P, T, C <: AbstractDict{Symbol}, D <: DirectionUpdateRule,
+        TStop <: StoppingCriterion, TStep <: Stepsize, RM <: AbstractRetractionMethod,
     } <: AbstractGradientSolverState
+    callbacks::C
     p::P
     X::T
     direction::D
@@ -90,13 +93,15 @@ mutable struct AlternatingGradientDescentState{
     function AlternatingGradientDescentState(
             M::AbstractManifold;
             p::P = rand(M), X::T = zero_vector(M, p),
+            callbacks::C = Dict{Symbol, Function}(),
             inner_iterations::Int = 5,
             order_type::Symbol = :Linear, order::Vector{<:Int} = Int[],
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
             stopping_criterion::StoppingCriterion = StopAfterIteration(1000),
             stepsize::Stepsize = default_stepsize(M, AlternatingGradientDescentState),
-        ) where {P, T}
+        ) where {P, T, C <: AbstractDict{Symbol}}
         return AlternatingGradientDescentState(;
+            callbacks = callbacks,
             p = p, X = X, direction = _produce_type(AlternatingGradient(; p = p, X = X), M),
             inner_iterations = inner_iterations,
             order_type = order_type, order = order,
@@ -105,17 +110,18 @@ mutable struct AlternatingGradientDescentState{
         )
     end
     function AlternatingGradientDescentState(;
-            p::P, X::T, direction::D, inner_iterations::Int, order_type::Symbol, order::Vector{<:Int},
+            callbacks::CA, p::P, X::T, direction::D, inner_iterations::Int, order_type::Symbol, order::Vector{<:Int},
             retraction_method::RTM, stopping_criterion::SC, stepsize::S, k::Int = 0, i::Int = 0
-        ) where {P, T, RTM <: AbstractRetractionMethod, SC <: StoppingCriterion, S <: Stepsize, D <: AlternatingGradientRule}
-        return new{P, T, D, SC, S, RTM}(
-            p, X, direction, stopping_criterion, stepsize,
+        ) where {P, T, CA <: AbstractDict{Symbol}, RTM <: AbstractRetractionMethod, SC <: StoppingCriterion, S <: Stepsize, D <: AlternatingGradientRule}
+        return new{P, T, CA, D, SC, S, RTM}(
+            callbacks, p, X, direction, stopping_criterion, stepsize,
             order_type, order, retraction_method, k, i, inner_iterations,
         )
     end
 end
 function Base.show(io::IO, agds::AlternatingGradientDescentState)
     print(io, "AlternatingGradientDescentState(; ")
+    print(io, "callbacks = ", agds.callbacks, ", ")
     print(io, "p = $(agds.p), ")
     print(io, "X = $(agds.X), ")
     print(io, "direction = $(agds.direction), ")
@@ -132,10 +138,11 @@ function status_summary(agds::AlternatingGradientDescentState; context::Symbol =
     Iter = (agds.i > 0) ? "After $(agds.i) iterations\n" : ""
     Conv = indicates_convergence(agds.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(agds)) – $(Iter) $(has_converged(agds) ? "(converged)" : "")")
+    as = _callbacks_summary(agds)
     s = """
     # Solver state for `Manopt.jl`s Alternating Gradient Descent Solver
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * order: :$(agds.order_type)
     * retraction method: $(agds.retraction_method)
     * direction: $(status_summary(agds.direction; context = :inline))
@@ -152,6 +159,8 @@ function get_message(agds::AlternatingGradientDescentState)
     # for now only step size is quipped with messages
     return get_message(agds.stepsize)
 end
+get_callbacks(agds::AlternatingGradientDescentState) = agds.callbacks
+provided_fallbacks(::Type{AlternatingGradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
 
 function (ag::AlternatingGradientRule)(
         amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, k
@@ -274,6 +283,7 @@ end
 function step_solver!(amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, k)
     M = get_manifold(amp)
     step, agds.X = agds.direction(amp, agds, k)
+    callback(:Stepsize, amp, agds, k)
     j = agds.order[agds.k]
     retract!(M[j], agds.p[M, j], agds.p[M, j], -step * agds.X[M, j])
     agds.i += 1

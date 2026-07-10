@@ -69,6 +69,19 @@ function provided_fallbacks(::Type{S}) where {S <: AbstractManoptSolverState}
 end
 
 """
+    _callbacks_summary(state::AbstractManoptSolverState)
+
+Generate callback summary for a given solver state `s`. This function returns a string
+that contains the active callbacks in the solver state. If no callbacks are active,
+an empty string is returned.
+"""
+function _callbacks_summary(state::AbstractManoptSolverState)
+    ac = active_callbacks(state)
+    as = length(ac) > 0 ? "\n* active callbacks: :$(join(ac, ", :"))" : ""
+    return as
+end
+
+"""
     process_callbacks_arg(callbacks::Vector, statetype=missing)
     process_callbacks_arg(callbacks::Dict, statetype=missing) = callbacks
 
