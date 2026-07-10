@@ -98,7 +98,7 @@ end
 
 function Base.show(io::IO, gds::GradientDescentState)
     print(io, "GradientDescentState(; callbacks = ", gds.callbacks, ", ")
-    println(". direction = ", gds.direction, " p = ", gds.p)
+    print(io, ", direction = ", gds.direction, " p = ", gds.p)
     print(io, ", stepsize = ", gds.stepsize, ", stopping_criterion = ", status_summary(gds.stop; context = :short))
     print(io, ", retraction_method = ", gds.retraction_method, " X= ", gds.X)
     return print(io, ")")
