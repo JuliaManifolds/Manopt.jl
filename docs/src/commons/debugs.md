@@ -1,4 +1,4 @@
-## [Common Debug Ouptut](@id sec-debug)
+## [Common Debug Output](@id sec-debug)
 
 ```@meta
 CurrentModule = Manopt
@@ -9,7 +9,7 @@ This is handles by the [`DebugActionFactory`](@ref).
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["commons/debug.jl"]
+Pages = ["commons/debugs.jl"]
 Order = [:type, :function]
 Public = true
 Private = false
@@ -19,7 +19,7 @@ Private = false
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["commons/debug.jl"]
+Pages = ["commons/debugs.jl"]
 Order = [:type, :function]
 Public = false
 Private = true
