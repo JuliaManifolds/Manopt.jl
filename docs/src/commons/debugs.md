@@ -4,13 +4,24 @@
 CurrentModule = Manopt
 ```
 
-Debug output can easily be added to any solver run.
-On the high level interfaces, like [`gradient_descent`](@ref), you can just use the `debug=` keyword.
+Debug output can easily be added to any solver run, since all solvers accept the `debug=` keyword.
+This is handles by the [`DebugActionFactory`](@ref).
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["plans/debug.jl"]
+Pages = ["commons/debug.jl"]
 Order = [:type, :function]
+Public = true
+Private = false
+```
+
+## Internal functions
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["commons/debug.jl"]
+Order = [:type, :function]
+Public = false
 Private = true
 ```
 
@@ -19,11 +30,4 @@ Private = true
 The decorator to print debug during the iterations can be activated by
 decorating the state of a solver and implementing
 your own [`DebugAction`](@ref)s.
-For example printing a gradient from the [`GradientDescentState`](@ref) is
-automatically available, as explained in the [`gradient_descent`](@ref) solver.
-
-```@docs
-initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
-step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k)
-stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k::Int)
-```
+For more details, see [the debug solver state decorator](../base/state/debug.md).

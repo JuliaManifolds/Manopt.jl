@@ -209,7 +209,8 @@ makedocs(;
             "Vector Bundle Newton Method" => "solvers/vectorbundle_newton.md",
         ],
         "Commons (WIP)" => [
-            "Debug Output" => "commons/debug.md",
+            "Overview" => "commons/index.md",
+            "Debug Outputs" => "commons/debugs.md",
         ],
         "Plans (deprecated)" => [
             "Specify a Solver" => "plans/index.md",
@@ -231,12 +232,14 @@ makedocs(;
             "Stopping Criteria" => "plans/stopping_criteria.md",
             "Recording values" => "plans/record.md",
         ],
-        "Developer Guide" => [
+        "Developer Guide (WIP)" => [
             "Introduction" => "base/index.md",
             "Problem" => "base/problem.md",
             "Solver State" => [
                 "Overview" => "base/state/index.md",
-                "Callbacks" => "base/state/callbacks.md",
+                "Action" => "base/state/action.md",
+                "Callback" => "base/state/callback.md",
+                "Debug" => "base/state/debug.md",
                 "Decorator" => "base/state/decorator.md",
             ],
         ],

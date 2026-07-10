@@ -163,7 +163,6 @@ include("objective.jl")
 include("problem.jl")
 include("solver_state.jl")
 
-include("debug.jl")
 include("record.jl")
 
 include("stopping_criterion.jl")

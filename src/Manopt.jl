@@ -151,11 +151,16 @@ end
 # A (work in progress) separate folder scheme for abstract types and design ideas
 include("base/problem/abstract_problem.jl")
 include("base/state/abstract_state.jl")
+include("base/state/action.jl")
+include("base/state/debug.jl")
 include("base/state/callback.jl")
 include("base/state/decorator.jl")
 
 #
 #
+# Commons – a collection of types or functions that are common to more than one solver
+include("commons/debug.jl")
+
 # Common Solver plans
 include("plans/plan.jl")
 #
