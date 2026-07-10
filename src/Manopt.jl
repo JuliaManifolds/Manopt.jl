@@ -159,7 +159,7 @@ include("base/state/decorator.jl")
 #
 #
 # Commons – a collection of types or functions that are common to more than one solver
-include("commons/debug.jl")
+include("commons/debugs.jl")
 
 # Common Solver plans
 include("plans/plan.jl")
