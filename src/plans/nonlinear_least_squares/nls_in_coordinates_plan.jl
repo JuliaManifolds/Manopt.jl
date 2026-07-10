@@ -205,7 +205,7 @@ end
 
 function get_cost(
         TpM::TangentSpace, lnsco::NormalEquationsObjective{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
-        ::ZeroTangentVector
+        ::ZeroVector
     )
     M = base_manifold(TpM)
     p = base_point(TpM)
