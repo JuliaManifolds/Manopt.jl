@@ -71,7 +71,7 @@ function GradientDescentState(
         callbacks, direction, p, stepsize, stopping_criterion, retraction_method, X,
     )
 end
-provided_fallbacks(::Type{GradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
+provided_callbacks(::Type{GradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
 get_callbacks(state::GradientDescentState) = state.callbacks
 
 function (r::IdentityUpdateRule)(

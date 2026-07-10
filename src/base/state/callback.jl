@@ -7,11 +7,11 @@ const _MANOPT_EMPTY_ANY_CALLBACK = (symbol::Symbol, problem, state, iteration) -
 
 For a given state, indicate, which callbacks are in use, i.e. stored and also called from this solver.
 
-See also: [`provided_fallbacks`](@ref).
+See also: [`provided_callbacks`](@ref).
 """
 function active_callbacks(state::AbstractManoptSolverState)
     dk = keys(get_callbacks(state))
-    return collect(intersect(dk, provided_fallbacks(typeof(state))))
+    return collect(intersect(dk, provided_callbacks(typeof(state))))
 end
 
 """
@@ -57,14 +57,14 @@ end
 _get_callbacks(state::AbstractManoptSolverState, ::Val{true}) = get_callbacks(state.state)
 
 """
-    provided_fallbacks(state_type::Type{S}) where {S<:AbstractManoptSolverState})
+    provided_callbacks(state_type::Type{S}) where {S<:AbstractManoptSolverState})
 
 For a solver of type `S` return the callbacks the solver provides, i.e. all ones
 that are called during the solver run.
 This function returns a vector `Symbol`s representing the hooks. These can be kays in
 a dictionary of callbacks.
 """
-function provided_fallbacks(::Type{S}) where {S <: AbstractManoptSolverState}
+function provided_callbacks(::Type{S}) where {S <: AbstractManoptSolverState}
     return _MANOPT_DEFAULT_CALLBACKS
 end
 
@@ -140,7 +140,7 @@ end
 function _warn_if_unused_callbacks(callbacks::Dict, statetype = missing)
     if !ismissing(statetype)
         ck = keys(callbacks)
-        pk = provided_fallbacks(statetype)
+        pk = provided_callbacks(statetype)
         uk = collect(setdiff(ck, pk))
         (length(uk) > 0) && (@warn "The following provided callback hooks are not used by $(statetype):\n\t$(uk)\nThe corresponding function will be ignored.\nAvailable hooks: $(pk)")
     end
