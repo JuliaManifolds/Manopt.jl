@@ -143,7 +143,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
                 (:Step, 1),
                 (:BeforeStop, 1),
             ]
-            @test sk_record[end-1:end] == [(:BeforeStop, sk_record[end - 1][2]), (:Stop, sk_record[end][2])]
+            @test sk_record[(end - 1):end] == [(:BeforeStop, sk_record[end - 1][2]), (:Stop, sk_record[end][2])]
         end
 
         f1(M, p) = p
