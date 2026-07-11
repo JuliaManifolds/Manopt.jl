@@ -74,7 +74,7 @@ function VectorBundleNewtonState(
     )
 end
 provided_callbacks(::Type{VectorBundleNewtonState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubSolver, :Stepsize, :SubSolver])
-get_callbacks(state::VectorBundleNewtonState) = state.callbacks
+get_callbacks(vbns::VectorBundleNewtonState) = vbns.callbacks
 
 function Base.show(io::IO, vbns::VectorBundleNewtonState)
     print(io, "VectorBundleNewtonState(", vbns.sub_problem, ", ", vbns.sub_state, "; ")
