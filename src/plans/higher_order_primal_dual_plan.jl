@@ -137,7 +137,6 @@ mutable struct PrimalDualSemismoothNewtonState{
         )
     end
 end
-provided_callbacks(::Type{PrimalDualSemismoothNewtonState}) = _MANOPT_DEFAULT_CALLBACKS
 get_callbacks(pdsn::PrimalDualSemismoothNewtonState) = pdsn.callbacks
 
 @doc """
