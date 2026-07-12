@@ -115,7 +115,7 @@ function process_callbacks_arg(callbacks::Vector, statetype = missing)
                     push!(c, s => cb[2])
                 end
             else
-                error("Unknown key $(cb[1])")
+                throw(ArgumentError("Unknown key $(cb[1]) of type $(typeof(cb[1])). Expected a Symbol or an array of symbols"))
             end
         else
             push!(c, :Any => cb)
