@@ -53,6 +53,7 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
         Manopt.status_summary(s; context = :default),
         "# Solver state for `Manopt.jl`s primal dual semismooth Newton"
     )
+    @test startswith(repr(s), "PrimalDualSemismoothNewtonState(; ")
     y = get_solver_result(s)
     @test x_hat ≈ y atol = 2 * 1.0e-7
 
