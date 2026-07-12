@@ -7,6 +7,6 @@ using Manifolds, Manopt, Test
     @test cb2 == Dict(:A => sin, :B => cos, :C => cos)
     # Providing something else than these two yields an error
     @test_throws ArgumentError Manopt.process_callbacks_arg(["A" => sin])
-    # test warning for unkown callbacks – GD does not have a :A callback
+    # test warning for unknown callbacks – GD does not have a :A callback
     @test_logs (:warn,) Manopt.process_callbacks_arg([:A => sin], GradientDescentState)
 end

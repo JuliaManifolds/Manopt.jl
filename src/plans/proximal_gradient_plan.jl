@@ -252,6 +252,7 @@ State for the [`proximal_gradient_method`](@ref) solver.
 
 # Fields
 
+$(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 * `a` - point after acceleration step
 $(_fields(:p; add_properties = [:as_Iterate]))
@@ -279,6 +280,7 @@ $(_args(:M))
 # Keyword arguments
 
 * `stepsize=default_stepsize(M, ProximalGradientMethodState)`
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
@@ -290,37 +292,47 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct ProximalGradientMethodState{
         P, T, Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F}, St <: Union{<:AbstractManoptSolverState, Nothing},
+        C <: AbstractDict{Symbol},
         A, SC <: StoppingCriterion, S <: Stepsize, RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, R,
     } <: AbstractManoptSolverState
     a::P
     acceleration::A
-    stepsize::S
+    callbacks::C
+    inverse_retraction_method::IRM
     last_stepsize::R
     p::P
     q::P
-    stop::SC
-    X::T
     retraction_method::RM
-    inverse_retraction_method::IRM
+    stepsize::S
+    stop::SC
     sub_problem::Pr
     sub_state::St
+    X::T
     function ProximalGradientMethodState(
             sub_problem::Pr, sub_state::St;
-            a::P, acceleration::A, stepsize::S, last_stepsize::R, p::P, q::P,
-            stopping_criterion::SC, X::T, retraction_method::RM, inverse_retraction_method::IRM,
+            a::P, acceleration::A,
+            callbacks::C = Dict{Symbol, Function}(),
+            inverse_retraction_method::IRM, last_stepsize::R,
+            p::P, q::P,
+            retraction_method::RM, stepsize::S, stopping_criterion::SC,
+            X::T,
         ) where {
             P, T, Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F}, St <: Union{<:AbstractManoptSolverState, Nothing},
+            C <: AbstractDict{Symbol},
             A, SC <: StoppingCriterion, S <: Stepsize, RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, R,
         }
-        return new{P, T, Pr, St, A, SC, S, RM, IRM, R}(
-            a, acceleration, stepsize, last_stepsize, p, q, stopping_criterion, X,
-            retraction_method, inverse_retraction_method, sub_problem, sub_state
+        return new{P, T, Pr, St, C, A, SC, S, RM, IRM, R}(
+            a, acceleration, callbacks,
+            inverse_retraction_method, last_stepsize, p, q,
+            retraction_method, stepsize, stopping_criterion,
+            sub_problem, sub_state, X,
         )
     end
 end
 ProximalGradientMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Gradient Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function ProximalGradientMethodState(
         M::AbstractManifold;
+        callbacks::C = Dict{Symbol, Function}(),
         p::P = rand(M),
         acceleration::A = function (pr, st, k)
             copyto!(get_manifold(pr), st.a, st.p)
@@ -337,9 +349,11 @@ function ProximalGradientMethodState(
         P, T, SC <: StoppingCriterion, A,
         Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F}, St <: Union{<:AbstractManoptSolverState, <:AbstractEvaluationType, Nothing},
         RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, S <: Stepsize,
+        C <: AbstractDict{Symbol},
     }
     return ProximalGradientMethodState(
         sub_problem, maybe_wrap_evaluation_type(sub_state);
+        callbacks = callbacks,
         a = copy(M, p), acceleration = acceleration,
         stepsize = stepsize, last_stepsize = zero(number_eltype(p)),
         p = p, q = copy(M, p),
@@ -355,8 +369,12 @@ function set_iterate!(pgms::ProximalGradientMethodState, M, p)
     copyto!(M, pgms.p, p)
     return pgms
 end
+provided_callbacks(::Type{ProximalGradientMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubSolver, :Stepsize, :SubSolver])
+get_callbacks(pgms::ProximalGradientMethodState) = pgms.callbacks
+
 function Base.show(io::IO, pgms::ProximalGradientMethodState)
     print(io, "ProximalGradientMethodState(", pgms.sub_problem, ", ", pgms.sub_problem, ";")
+    print(io, " callbacks = ", pgms.callbacks, ",")
     print(io, " a = ", pgms.a, ", acceleration = ", pgms.acceleration, ", stepsize = ", pgms.stepsize)
     print(io, ", last_stepsize = ", pgms.last_stepsize, ", p = ", pgms.p, ", q = ", pgms.q)
     print(io, ", stopping_criterion = ", pgms.stop, ", X = ", pgms.X)
@@ -368,10 +386,11 @@ function status_summary(pgms::ProximalGradientMethodState; context::Symbol = :de
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(pgms)) – $(Iter) $(has_converged(pgms) ? "(converged)" : "")")
+    as = _callbacks_summary(pgms)
     s = """
     # Solver state for `Manopt.jl`s Proximal Gradient Method
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * retraction_method:              $(pgms.retraction_method)
     * stepsize:                       $(typeof(pgms.stepsize))
     * acceleration:                   $(typeof(pgms.acceleration))
@@ -742,9 +761,9 @@ end
 # If we are running on a prox grad backtrack, ignore the threshold from the DEbug and take the one from the stepsize
 function (d::DebugWarnIfStepsizeCollapsed)(
         ::AbstractManoptProblem,
-        st::ProximalGradientMethodState{P, T, Pr, St, A, S, TStS},
+        st::ProximalGradientMethodState{P, T, Pr, St, C, A, SC, TStS},
         k::Int,
-    ) where {P, T, Pr, St, A, S, TStS <: ProximalGradientMethodBacktrackingStepsize}
+    ) where {P, T, Pr, St, C, A, SC, TStS <: ProximalGradientMethodBacktrackingStepsize}
     (k < 1) && (return nothing)
     s = st.stepsize
     if d.status !== :No
