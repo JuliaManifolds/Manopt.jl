@@ -598,8 +598,8 @@ function truncated_conjugate_gradient_descent!(
     mp = DefaultManoptProblem(TpM, dtrm)
     tcgs = TruncatedConjugateGradientState(
         TpM;
-        callbacks = callbacks, X = X,
-        trust_region_radius = trust_region_radius,
+        callbacks = process_callbacks_arg(callbacks, TruncatedConjugateGradientState),
+        X = X, trust_region_radius = trust_region_radius,
         randomize = randomize, θ = θ, κ = κ,
         stopping_criterion = stopping_criterion, (project!) = (project!),
     )

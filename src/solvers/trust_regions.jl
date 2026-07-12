@@ -492,7 +492,7 @@ function trust_regions!(
     dmp = DefaultManoptProblem(M, dmho)
     trs = TrustRegionsState(
         M, sub_problem, maybe_wrap_evaluation_type(sub_state);
-        callbacks = callbacks,
+        callbacks = process_callbacks_arg(callbacks, TrustRegionsState),
         p = p, X = get_gradient(dmp, p),
         trust_region_radius = trust_region_radius,
         max_trust_region_radius = max_trust_region_radius,
