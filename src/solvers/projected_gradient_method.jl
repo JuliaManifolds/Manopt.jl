@@ -81,8 +81,7 @@ get_gradient(pgms::ProjectedGradientMethodState) = pgms.X
 
 function Base.show(io::IO, pgms::ProjectedGradientMethodState)
     print(io, "ProjectedGradientMethodState(; ")
-    print(io, "backtrack = ", pgms.backtrack, ", ")
-    print(io, "callbacks = ", pgms.callbacks, ", ")
+    print(io, "backtrack = ", pgms.backtrack, ", callbacks = ", pgms.callbacks, ", ")
     print(io, "inverse_retraction_method = ", pgms.inverse_retraction_method, ", ")
     print(io, "p = ", pgms.p, ", q = ", pgms.q, ", ")
     print(io, "retraction_method = ", pgms.retraction_method, ", ")
