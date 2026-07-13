@@ -5,6 +5,7 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 
 # Fields
 
+$(_fields(:callbacks; add_properties = [:as_dict]))
 * `acceleration::R`:    acceleration factor
 * `dual_stepsize::R`:   proximal parameter of the dual prox
 $(_fields(:inverse_retraction_method))
@@ -42,6 +43,7 @@ If you activate these to be different from the default identity, you have to pro
 
 # Keyword arguments
 
+* `callbacks=`[`Dict{Symbol, Function}`](@ref)
 * `n=``$(Manopt._link(:rand; M = "N"))
 * `p=`$(Manopt._link(:rand))
 * `m=`$(Manopt._link(:rand))
@@ -68,6 +70,7 @@ mutable struct ChambollePockState{
         Q,
         T,
         R,
+        C <: AbstractDict{Symbol},
         SC <: StoppingCriterion,
         RM <: AbstractRetractionMethod,
         IRM <: AbstractInverseRetractionMethod,
@@ -75,6 +78,7 @@ mutable struct ChambollePockState{
         VTM <: AbstractVectorTransportMethod,
         VTM_Dual <: AbstractVectorTransportMethod,
     } <: AbstractPrimalDualSolverState
+    callbacks::C
     m::P
     n::Q
     p::P
@@ -103,6 +107,7 @@ function Manopt.ChambollePockState(
         n::Q = rand(N),
         p::P = rand(M),
         X::T = zero_vector(M, p),
+        callbacks::C = Dict{Symbol, Function}(),
         primal_stepsize::R = 1 / sqrt(8),
         dual_stepsize::R = 1 / sqrt(8),
         acceleration::R = 0.0,
@@ -124,6 +129,7 @@ function Manopt.ChambollePockState(
         Q,
         T,
         R,
+        C <: AbstractDict{Symbol},
         SC <: StoppingCriterion,
         RM <: AbstractRetractionMethod,
         IRM <: AbstractInverseRetractionMethod,
@@ -131,7 +137,8 @@ function Manopt.ChambollePockState(
         VTM <: AbstractVectorTransportMethod,
         VTM_Dual <: AbstractVectorTransportMethod,
     }
-    return ChambollePockState{P, Q, T, R, SC, RM, IRM, IRM_Dual, VTM, VTM_Dual}(
+    return ChambollePockState{P, Q, T, R, C, SC, RM, IRM, IRM_Dual, VTM, VTM_Dual}(
+        callbacks,
         m,
         n,
         p,
@@ -154,6 +161,8 @@ function Manopt.ChambollePockState(
         vector_transport_method_dual,
     )
 end
+provided_callbacks(::Type{ChambollePockState}) = _MANOPT_DEFAULT_CALLBACKS
+get_callbacks(state::ChambollePockState) = state.callbacks
 function status_summary(cps::ChambollePockState; context::Symbol = :default)
     (context === :short) && return repr(cps)
     i = get_count(cps, :Iterations)
@@ -162,10 +171,11 @@ function status_summary(cps::ChambollePockState; context::Symbol = :default)
     i = get_count(cps, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cps.stop) ? "Yes" : "No"
+    as = _callbacks_summary(cps)
     s = """
     # Solver state for `Manopt.jl`s Chambolle-Pock Algorithm
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * primal_stepsize:  $(cps.primal_stepsize)
     * dual_stepsize:    $(cps.dual_stepsize)
     * acceleration:     $(cps.acceleration)
@@ -308,6 +318,7 @@ function ChambollePock!(
         prox_F::Function,
         prox_G_dual::Function,
         get_adjoint_linear_operator::Function;
+        callbacks = Dict{Symbol, Function}(),
         Λ::Union{Function, Missing} = missing,
         linearized_forward_operator::Union{Function, Missing} = missing,
         acceleration = 0.05,
@@ -350,6 +361,7 @@ function ChambollePock!(
         n = n,
         p = p,
         X = X,
+        callbacks = process_callbacks_arg(callbacks, ChambollePockState),
         primal_stepsize = primal_stepsize,
         dual_stepsize = dual_stepsize,
         acceleration = acceleration,

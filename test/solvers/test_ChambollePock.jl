@@ -91,4 +91,24 @@ using ManifoldDiff: prox_distance, prox_distance!
         )
         @test o2a ≈ o3
     end
+    @testset "Callbacks" begin
+        sk_record = Tuple{Symbol, Int}[]
+        cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
+        ChambollePock(
+            M, N, f, x0, ξ0, m, n, prox_f, prox_g_dual, adjoint_DΛ;
+            Λ = Λ,
+            callbacks = cb,
+            stopping_criterion = StopAfterIteration(1),
+            variant = :exact,
+        )
+        @test sk_record == [
+            (:BeforeInit, 0),
+            (:Init, 0),
+            (:BeforeStop, 0),
+            (:BeforeStep, 1),
+            (:Step, 1),
+            (:BeforeStop, 1),
+            (:Stop, 1),
+        ]
+    end
 end
