@@ -48,6 +48,36 @@ using LinearAlgebra: I, tr
         # With dummy closed form solution
         almsc = AugmentedLagrangianMethodState(M, co, f)
         @test almsc.sub_state isa Manopt.ClosedFormSubSolverState
+
+        alm_record = Tuple{Symbol, Int}[]
+        alm_cb(symbol, problem, state, k) = append!(alm_record, [(symbol, k)])
+        augmented_Lagrangian_method(
+            M,
+            f,
+            grad_f,
+            p0;
+            g = g,
+            grad_g = grad_g,
+            stopping_criterion = StopAfterIteration(1),
+            callbacks = alm_cb,
+        )
+        @test alm_record == [
+            (:BeforeInit, 0),
+            (:Init, 0),
+            (:BeforeStop, 0),
+            (:BeforeStep, 1),
+            (:SubSolver, 1),
+            (:Step, 1),
+            (:BeforeStop, 1),
+            (:Stop, 1),
+        ]
+        almsc_cb = AugmentedLagrangianMethodState(
+            M,
+            co,
+            f;
+            callbacks = Dict(:Step => alm_cb),
+        )
+        @test occursin("active callbacks", Manopt.status_summary(almsc_cb; context = :default))
     end
     @testset "Numbers" begin
         M = Euclidean()
