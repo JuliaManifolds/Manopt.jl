@@ -424,21 +424,17 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
             M,
             cps.p,
             vector_transport_to(
-                M,
-                cps.m,
+                M, cps.m,
                 -cps.primal_stepsize *
                     (adjoint_linearized_operator(tmp, cps.m, cps.n, ptXn)),
-                cps.p,
-                cps.vector_transport_method,
+                cps.p, cps.vector_transport_method,
             ),
             cps.retraction_method,
         ),
     )
     update_prox_parameters!(cps)
     retract!(
-        M,
-        cps.pbar,
-        cps.p,
+        M, cps.pbar, cps.p,
         -cps.relaxation * inverse_retract(M, cps.p, p_old, cps.inverse_retraction_method),
         cps.retraction_method,
     )
@@ -455,11 +451,7 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
         ptXbar = cps.Xbar
     else
         ptXbar = vector_transport_to(
-            N,
-            cps.n,
-            cps.Xbar,
-            forward_operator(tmp, cps.m),
-            cps.vector_transport_method_dual,
+            N, cps.n, cps.Xbar, forward_operator(tmp, cps.m), cps.vector_transport_method_dual,
         )
     end
     get_primal_prox!(
@@ -470,12 +462,9 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
             M,
             cps.p,
             vector_transport_to(
-                M,
-                cps.m,
-                -cps.primal_stepsize *
-                    (adjoint_linearized_operator(tmp, cps.m, cps.n, ptXbar)),
-                cps.p,
-                cps.vector_transport_method,
+                M, cps.m,
+                -cps.primal_stepsize * (adjoint_linearized_operator(tmp, cps.m, cps.n, ptXbar)),
+                cps.p, cps.vector_transport_method,
             ),
             cps.retraction_method,
         ),
@@ -502,12 +491,7 @@ function dual_update!(
     )
     # (2) if p.Λ is missing, if n = Λ(m) and do not PT, otherwise do
     (hasproperty(obj, :Λ!!) && !ismissing(obj.Λ!!)) && vector_transport_to!(
-        N,
-        X_update,
-        forward_operator(tmp, cps.m),
-        X_update,
-        cps.n,
-        cps.vector_transport_method_dual,
+        N, X_update, forward_operator(tmp, cps.m), X_update, cps.n, cps.vector_transport_method_dual,
     )
     # (3) to the dual update
     get_dual_prox!(

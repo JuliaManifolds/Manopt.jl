@@ -195,6 +195,19 @@ using Manopt: estimate_sectional_curvature
             M, f, ∂f, p0; k_max = 1.0, diameter = diam, domain = domf,
             stopping_criterion = StopAfterIteration(3),
         )
+        @testset "Callback test" begin
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
+            convex_bundle_method(
+                M, f, ∂f, p0; k_max = 1.0, diameter = diam, domain = domf,
+                stopping_criterion = StopAfterIteration(1), callbacks = cb
+            )
+            @test sk_record == [
+                (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+                (:BeforeStep, 1), (:BeforeSubSolver, 1), (:SubSolver, 1), (:Stepsize, 1),
+                (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            ]
+        end
     end
 
     @testset "Null Step Backtracking Stepsize Loop" begin

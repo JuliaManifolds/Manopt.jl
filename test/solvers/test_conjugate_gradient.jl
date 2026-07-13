@@ -261,19 +261,13 @@ using ManifoldDiff: grad_distance
         end
         # should be zero after 2 steps
         p1 = conjugate_gradient_descent(
-            M,
-            f,
-            grad_f,
-            p0;
+            M, f, grad_f, p0;
             stepsize = CGStepsize(),
             stopping_criterion = StopAfterIteration(2),
         )
         p2 = copy(M, p0)
         conjugate_gradient_descent!(
-            M,
-            f,
-            grad_f,
-            p2;
+            M, f, grad_f, p2;
             stepsize = CGStepsize(),
             stopping_criterion = StopAfterIteration(2),
         )
@@ -331,18 +325,13 @@ using ManifoldDiff: grad_distance
         )
 
         p2 = conjugate_gradient_descent(
-            M,
-            obj,
-            p0;
+            M, obj, p0;
             restart_condition = RestartOnNonDescent(),
-            stopping_criterion,
-            stepsize = get_stepsize(),
+            stopping_criterion, stepsize = get_stepsize(),
         )
 
         p3 = conjugate_gradient_descent(
-            M,
-            obj,
-            p0;
+            M, obj, p0;
             restart_condition = RestartOnNonSufficientDescent(0.5),
             stopping_criterion,
             stepsize = get_stepsize(),
@@ -408,10 +397,7 @@ using ManifoldDiff: grad_distance
         grad_f(M, p) = project(M, p, p - a)
 
         cgs = conjugate_gradient_descent(
-            M,
-            f,
-            grad_f,
-            p0;
+            M, f, grad_f, p0;
             coefficient = ConjugateGradientBealeRestart(HagerZhangCoefficient()),
             return_state = true,
         )
