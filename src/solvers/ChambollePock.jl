@@ -43,7 +43,7 @@ If you activate these to be different from the default identity, you have to pro
 
 # Keyword arguments
 
-* `callbacks=`[`Dict{Symbol, Function}`](@ref)
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `n=``$(Manopt._link(:rand; M = "N"))
 * `p=`$(Manopt._link(:rand))
 * `m=`$(Manopt._link(:rand))
