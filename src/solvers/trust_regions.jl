@@ -199,7 +199,7 @@ function get_message(trs::TrustRegionsState)
     return get_message(trs.sub_state)
 end
 get_iterate(trs::TrustRegionsState) = trs.p
-provided_callbacks(::Type{TrustRegionsState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:SubSolver])
+provided_callbacks(::Type{TrustRegionsState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Subsolver])
 
 function set_gradient!(agst::TrustRegionsState, M, p, X)
     copyto!(M, agst.X, p, X)
@@ -547,7 +547,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     set_parameter!(trs.sub_state, :Iterate, copy(M, trs.p, trs.Y))
     set_parameter!(trs.sub_state, :TrustRegionRadius, trs.trust_region_radius)
     solve!(trs.sub_problem, trs.sub_state)
-    callback(:SubSolver, mp, trs, k)
+    callback(:Subsolver, mp, trs, k)
     #
     copyto!(M, trs.Y, trs.p, get_solver_result(trs.sub_state))
     f = get_cost(mp, trs.p)

@@ -66,7 +66,7 @@ using LinearAlgebra: I, tr
             (:Init, 0),
             (:BeforeStop, 0),
             (:BeforeStep, 1),
-            (:SubSolver, 1),
+            (:Subsolver, 1),
             (:Step, 1),
             (:BeforeStop, 1),
             (:Stop, 1),

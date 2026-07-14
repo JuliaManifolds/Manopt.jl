@@ -152,7 +152,7 @@ end
 
 get_iterate(alms::AugmentedLagrangianMethodState) = alms.p
 get_callbacks(alms::AugmentedLagrangianMethodState) = alms.callbacks
-provided_callbacks(::Type{AugmentedLagrangianMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:SubSolver])
+provided_callbacks(::Type{AugmentedLagrangianMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Subsolver])
 function set_iterate!(alms::AugmentedLagrangianMethodState, M, p)
     alms.p = p
     return alms
@@ -523,7 +523,7 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     set_parameter!(alms, :StoppingCriterion, :MinIterateChange, alms.ϵ)
 
     new_p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
-    callback(:SubSolver, mp, alms, iter)
+    callback(:Subsolver, mp, alms, iter)
     alms.last_stepsize = distance(M, alms.p, new_p, default_inverse_retraction_method(M))
     copyto!(M, alms.p, new_p)
 

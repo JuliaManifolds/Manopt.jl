@@ -73,7 +73,7 @@ function VectorBundleNewtonState(
         stopping_criterion = stopping_criterion, stepsize = stepsize, retraction_method = retraction_method
     )
 end
-provided_callbacks(::Type{VectorBundleNewtonState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubSolver, :Stepsize, :SubSolver])
+provided_callbacks(::Type{VectorBundleNewtonState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
 get_callbacks(vbns::VectorBundleNewtonState) = vbns.callbacks
 
 function Base.show(io::IO, vbns::VectorBundleNewtonState)
@@ -377,9 +377,9 @@ function step_solver!(
     # update Newton matrix and right hand side
     mp.newton_equation(M, E, s.p)
     # compute Newton direction
-    callback(:BeforeSubSolver, mp, s, k)
+    callback(:BeforeSubsolver, mp, s, k)
     s.X = s.sub_problem(mp, s)
-    callback(:SubSolver, mp, s, k)
+    callback(:Subsolver, mp, s, k)
     #compute a stepsize
     step = s.stepsize(mp, s, k)
     callback(:Stepsize, mp, s, k)
@@ -398,9 +398,9 @@ function step_solver!(
     # update Newton matrix and right hand side
     mp.newton_equation(M, E, s.p)
     # compute Newton direction (in-place)
-    callback(:BeforeSubSolver, mp, s, k)
+    callback(:BeforeSubsolver, mp, s, k)
     s.sub_problem(mp, s.X, s)
-    callback(:SubSolver, mp, s, k)
+    callback(:Subsolver, mp, s, k)
     step = s.stepsize(mp, s, k)
     callback(:Stepsize, mp, s, k)
     # retract

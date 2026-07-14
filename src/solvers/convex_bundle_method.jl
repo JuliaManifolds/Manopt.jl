@@ -309,7 +309,7 @@ get_subgradient(bms::ConvexBundleMethodState) = bms.g
 function default_stepsize(M::AbstractManifold, ::Type{ConvexBundleMethodState})
     return ConstantStepsize(M)
 end
-provided_callbacks(::Type{ConvexBundleMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubSolver, :Stepsize, :SubSolver])
+provided_callbacks(::Type{ConvexBundleMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
 get_callbacks(bms::ConvexBundleMethodState) = bms.callbacks
 function show(io::IO, cbms::ConvexBundleMethodState)
     print(io, "ConvexBundleMethodState(")
@@ -703,9 +703,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
             M, bms.transported_subgradients[j], qj, Xj, bms.p_last_serious, bms.vector_transport_method,
         )
     end
-    callback(:BeforeSubSolver, mp, bms, k)
+    callback(:BeforeSubsolver, mp, bms, k)
     _convex_bundle_subsolver!(M, bms)
-    callback(:SubSolver, mp, bms, k)
+    callback(:Subsolver, mp, bms, k)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.linearization_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)

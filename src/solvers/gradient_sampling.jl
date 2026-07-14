@@ -193,7 +193,7 @@ end
 get_iterate(gss::GradientSamplingState) = gss.p
 get_solver_result(gss::GradientSamplingState) = gss.p
 get_gradient(gss::GradientSamplingState) = gss.X
-provided_callbacks(::Type{GradientSamplingState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubSolver, :Stepsize, :SubSolver])
+provided_callbacks(::Type{GradientSamplingState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
 get_callbacks(gss::GradientSamplingState) = gss.callbacks
 
 function Base.show(io::IO, gss::GradientSamplingState)
@@ -403,9 +403,9 @@ function step_solver!(
         (i > 1) && vector_transport_to!(M, Xj, pj, Xj, gss.p)
     end
     # solve sub problem in convex_hull_coeffs
-    callback(:BeforeSubSolver, mp, gss, i)
+    callback(:BeforeSubsolver, mp, gss, i)
     _gradient_sampling_subsolver(M, gss)
-    callback(:SubSolver, mp, gss, i)
+    callback(:Subsolver, mp, gss, i)
     # reconstruct tangent vector from the coefficients (w_l in HU17) in Y
     zero_vector!(M, gss.Y, gss.p)
     for (λj, Xj) in zip(gss.convex_hull_coeffs, gss.sampled_vectors)

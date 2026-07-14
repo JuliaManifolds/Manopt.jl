@@ -194,9 +194,9 @@ function step_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMethodSt
     retract!(M, pgms.a, pgms.a, -pgms.last_stepsize * pgms.X, pgms.retraction_method)
 
     # Proximal step with chosen stepsize
-    callback(:BeforeSubSolver, amp, pgms, k)
+    callback(:BeforeSubsolver, amp, pgms, k)
     _pgm_proximal_step(amp, pgms, pgms.last_stepsize)
-    callback(:SubSolver, amp, pgms, k)
+    callback(:Subsolver, amp, pgms, k)
 
     return pgms
 end

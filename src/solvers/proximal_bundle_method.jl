@@ -157,7 +157,7 @@ function set_iterate!(pbms::ProximalBundleMethodState, M, p)
     return pbms
 end
 get_subgradient(pbms::ProximalBundleMethodState) = pbms.d
-provided_callbacks(::Type{ProximalBundleMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubSolver, :SubSolver])
+provided_callbacks(::Type{ProximalBundleMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver])
 get_callbacks(pbms::ProximalBundleMethodState) = pbms.callbacks
 
 function show(io::IO, pbms::ProximalBundleMethodState)
@@ -346,9 +346,9 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
     else
         pbms.η = pbms.α₀ + max(pbms.α₀, pbms.α)
     end
-    callback(:BeforeSubSolver, mp, pbms, k)
+    callback(:BeforeSubsolver, mp, pbms, k)
     _proximal_bundle_subsolver!(M, pbms)
-    callback(:SubSolver, mp, pbms, k)
+    callback(:Subsolver, mp, pbms, k)
     pbms.c = sum(pbms.λ .* pbms.approx_errors)
     pbms.d .= -1 / pbms.μ .* sum(pbms.λ .* pbms.transported_subgradients)
     norm_d = norm(M, pbms.p_last_serious, pbms.d)
