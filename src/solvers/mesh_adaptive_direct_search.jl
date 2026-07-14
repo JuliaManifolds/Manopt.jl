@@ -372,6 +372,7 @@ end
 
 # Fields
 
+$(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `mesh_size`: the current (internal) mesh size
 * `scale_mesh`: the current scaling of the internal mesh size, yields the actual mesh size used
@@ -383,28 +384,32 @@ $(_fields(:stopping_criterion; name = "stop"))
 
 """
 mutable struct MeshAdaptiveDirectSearchState{
-        P, F <: Real, PT <: AbstractMeshPollFunction, ST <: AbstractMeshSearchFunction, SC <: StoppingCriterion,
+        P, F <: Real, C <: AbstractDict{Symbol}, PT <: AbstractMeshPollFunction, ST <: AbstractMeshSearchFunction, SC <: StoppingCriterion,
     } <: AbstractManoptSolverState
-    p::P
-    mesh_size::F
-    scale_mesh::F
+    callbacks::C
     max_stepsize::F
-    poll_size::F
-    stop::SC
+    mesh_size::F
+    p::P
     poll::PT
+    poll_size::F
+    scale_mesh::F
     search::ST
+    stop::SC
     function MeshAdaptiveDirectSearchState(;
-            p::P, mesh_size::F, scale_mesh::F, max_stepsize::F, poll_size::F, stopping_criterion::SC, poll::PT, search::ST
-        ) where {P, F <: Real, PT <: AbstractMeshPollFunction, ST <: AbstractMeshSearchFunction, SC <: StoppingCriterion}
-        return new{P, F, PT, ST, SC}(p, mesh_size, scale_mesh, max_stepsize, poll_size, stopping_criterion, poll, search)
+            callbacks::C = Dict{Symbol, Function}(),
+            max_stepsize::F, mesh_size::F, p::P, poll::PT, poll_size::F, scale_mesh::F, search::ST, stopping_criterion::SC
+        ) where {P, F <: Real, C <: AbstractDict{Symbol}, PT <: AbstractMeshPollFunction, ST <: AbstractMeshSearchFunction, SC <: StoppingCriterion}
+        return new{P, F, C, PT, ST, SC}(callbacks, max_stepsize, mesh_size, p, poll, poll_size, scale_mesh, search, stopping_criterion)
     end
 end
 function MeshAdaptiveDirectSearchState(
         M::AbstractManifold, p::P = rand(M);
-        mesh_basis::B = default_basis(M, typeof(p)), scale_mesh::Real = injectivity_radius(M) / 2,
-        max_stepsize::Real = injectivity_radius(M), poll_size::Real = manifold_dimension(M),
-        stopping_criterion::SC = StopAfterIteration(500) | StopWhenPollSizeLess(1.0e-7),
+        callbacks::C = Dict{Symbol, Function}(),
+        max_stepsize::Real = injectivity_radius(M), mesh_basis::B = default_basis(M, typeof(p)),
+        poll_size::Real = manifold_dimension(M),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
+        scale_mesh::Real = injectivity_radius(M) / 2,
+        stopping_criterion::SC = StopAfterIteration(500) | StopWhenPollSizeLess(1.0e-7),
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(M, typeof(p)),
         poll::PT = LowerTriangularAdaptivePoll(
             M, copy(M, p);
@@ -414,7 +419,7 @@ function MeshAdaptiveDirectSearchState(
             M, copy(M, p); retraction_method = retraction_method
         ),
     ) where {
-        P, PT <: AbstractMeshPollFunction, ST <: AbstractMeshSearchFunction,
+        P, C <: AbstractDict{Symbol}, PT <: AbstractMeshPollFunction, ST <: AbstractMeshSearchFunction,
         SC <: StoppingCriterion, B <: AbstractBasis,
     }
     R = promote_type(typeof(scale_mesh), typeof(max_stepsize))
@@ -422,15 +427,18 @@ function MeshAdaptiveDirectSearchState(
     max_stepsize = convert(R, max_stepsize)
     poll_size = convert(R, poll_size)
     return MeshAdaptiveDirectSearchState(;
-        p = p, mesh_size = one(R), scale_mesh = scale_mesh, max_stepsize = max_stepsize, poll_size = poll_size,
-        stopping_criterion = stopping_criterion, poll = poll, search = search
+        callbacks = callbacks, max_stepsize = max_stepsize, mesh_size = one(R), p = p, poll = poll,
+        poll_size = poll_size, scale_mesh = scale_mesh, search = search, stopping_criterion = stopping_criterion
     )
 end
 get_iterate(mads::MeshAdaptiveDirectSearchState) = mads.p
+get_callbacks(mads::MeshAdaptiveDirectSearchState) = mads.callbacks
+provided_callbacks(::Type{MeshAdaptiveDirectSearchState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Search, :Poll])
 function Base.show(io::IO, mads::MeshAdaptiveDirectSearchState)
-    print(io, "MeshAdaptiveDirectSearchState(; p = ", mads.p)
-    print(io, ", mesh_size = ", mads.mesh_size, ", scale_mesh = ", mads.scale_mesh, ", max_stepsize = ", mads.max_stepsize, ", poll_size = ", mads.poll_size)
-    return print(io, "stopping_criterion = ", mads.stop, ", poll = ", mads.poll, ", search = ", mads.search, ")")
+    print(io, "MeshAdaptiveDirectSearchState(; callbacks = ", mads.callbacks, ", max_stepsize = ", mads.max_stepsize)
+    print(io, ", mesh_size = ", mads.mesh_size, ", p = ", mads.p, ", poll = ", mads.poll, ", poll_size = ", mads.poll_size)
+    print(io, ", scale_mesh = ", mads.scale_mesh, ", search = ", mads.search)
+    return print(io, ", stopping_criterion = ", mads.stop, ")")
 end
 function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :default)
     (context === :short) && return repr(mads)
@@ -440,10 +448,11 @@ function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(mads.stop) ? "Yes" : "No"
     (context === :inline) && (return "A Mesh adaptive direct search state – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
+    as = _callbacks_summary(mads)
     s = """
     # Solver state for `Manopt.jl`s mesh adaptive direct search
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * mesh_size: $(mads.mesh_size)
     * scale_mesh: $(mads.scale_mesh)
     * max_stepsize: $(mads.max_stepsize)
@@ -531,10 +540,11 @@ $(_args([:M, :f, :p]))
 
 # Keyword arguments
 
-* `mesh_basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`):
-  a basis to generate the mesh in. The mesh is generated in coordinates of this basis in every tangent space
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 * `max_stepsize=`$(_link(:injectivity_radius))`(M)`: a maximum step size to take.
   any vector generated on the mesh is shortened to this length to avoid leaving the injectivity radius,
+* `mesh_basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`):
+  a basis to generate the mesh in. The mesh is generated in coordinates of this basis in every tangent space
 * `poll::`[`AbstractMeshPollFunction`](@ref)`=`[`LowerTriangularAdaptivePoll`](@ref)`(M, copy(M,p))`:
   the poll function to use. The `mesh_basis` (as `basis`), `retraction_method`, and `vector_transport_method` are passed to this default as well.
 $(_kwargs(:retraction_method))
@@ -576,20 +586,19 @@ function mesh_adaptive_direct_search!(
         M::AbstractManifold,
         mco::AbstractManifoldCostObjective,
         p;
-        mesh_basis::B = default_basis(M, typeof(p)),
-        scale_mesh::Real = injectivity_radius(M) / 4,
+        callbacks = Dict{Symbol, Function}(),
         max_stepsize::Real = injectivity_radius(M),
+        mesh_basis::B = default_basis(M, typeof(p)),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, eltype(p)),
+        scale_mesh::Real = injectivity_radius(M) / 4,
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) |
             StopWhenPollSizeLess(1.0e-10),
-        retraction_method::AbstractRetractionMethod = default_retraction_method(M, eltype(p)),
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(
             M, eltype(p)
         ),
         poll::PT = LowerTriangularAdaptivePoll(
-            M,
-            copy(M, p);
-            basis = mesh_basis,
-            retraction_method = retraction_method,
+            M, copy(M, p);
+            basis = mesh_basis, retraction_method = retraction_method,
             vector_transport_method = vector_transport_method,
         ),
         search::ST = DefaultMeshAdaptiveDirectSearch(
@@ -601,16 +610,16 @@ function mesh_adaptive_direct_search!(
     dmco = decorate_objective!(M, mco; kwargs...)
     dmp = DefaultManoptProblem(M, dmco)
     madss = MeshAdaptiveDirectSearchState(
-        M,
-        p;
-        mesh_basis = mesh_basis,
-        scale_mesh = scale_mesh,
+        M, p;
+        callbacks = process_callbacks_arg(callbacks, MeshAdaptiveDirectSearchState),
         max_stepsize = oftype(scale_mesh, max_stepsize),
-        stopping_criterion = stopping_criterion,
-        retraction_method = retraction_method,
-        vector_transport_method = vector_transport_method,
+        mesh_basis = mesh_basis,
         poll = poll,
+        retraction_method = retraction_method,
+        scale_mesh = scale_mesh,
         search = search,
+        stopping_criterion = stopping_criterion,
+        vector_transport_method = vector_transport_method,
     )
     dmadss = decorate_state!(madss; kwargs...)
     solve!(dmp, dmadss)
@@ -647,6 +656,7 @@ function step_solver!(amp::AbstractManoptProblem, madss::MeshAdaptiveDirectSearc
             scale_mesh = madss.scale_mesh,
             max_stepsize = madss.max_stepsize,
         )
+        callback(:Search, amp, madss, k)
     end
     # For successful search, copy over iterate - skip poll, but update base
     if is_successful(madss.search)
@@ -655,11 +665,10 @@ function step_solver!(amp::AbstractManoptProblem, madss::MeshAdaptiveDirectSearc
     else #search was not successful: poll
         update_basepoint!(M, madss.poll, madss.p)
         madss.poll(
-            amp,
-            madss.mesh_size;
-            scale_mesh = madss.scale_mesh,
-            max_stepsize = madss.max_stepsize,
+            amp, madss.mesh_size;
+            scale_mesh = madss.scale_mesh, max_stepsize = madss.max_stepsize,
         )
+        callback(:Poll, amp, madss, k)
         # For successful poll, copy over iterate
         if is_successful(madss.poll)
             copyto!(M, madss.p, get_candidate(madss.poll))

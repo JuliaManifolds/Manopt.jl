@@ -47,6 +47,7 @@ or a [`ConstrainedManifoldObjective`](@ref) `cmo` containing `f`, `grad_f`, `Hes
 The keyword arguments related to the constraints (the first eleven) are ignored if you
 pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 * `centrality_condition=missing`; an additional condition when to accept a step size.
   This can be used to ensure that the resulting iterate is still an interior point if you provide a check `(N,q) -> true/false`,
   where `N` is the manifold of the `step_problem`.
@@ -167,6 +168,7 @@ function interior_point_Newton!(
 end
 function interior_point_Newton!(
         M::AbstractManifold, cmo::O, p;
+        callbacks = Dict{Symbol, Function}(),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         X = get_gradient(M, cmo, p),
         μ::AbstractVector = ones(inequality_constraints_length(cmo)),
@@ -186,10 +188,7 @@ function interior_point_Newton!(
             KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation = evaluation
         ),
         _step_M::AbstractManifold = ProductManifold(
-            M,
-            vector_space(length(μ)),
-            vector_space(length(λ)),
-            vector_space(length(s)),
+            M, vector_space(length(μ)), vector_space(length(λ)), vector_space(length(s)),
         ),
         step_problem = DefaultManoptProblem(_step_M, step_objective),
         _step_p = rand(_step_M),
@@ -245,6 +244,7 @@ function interior_point_Newton!(
     dmp = DefaultManoptProblem(M, dcmo)
     ips = InteriorPointNewtonState(
         M, cmo, sub_problem, sub_state;
+        callbacks = process_callbacks_arg(callbacks, InteriorPointNewtonState),
         p = p, X = X, Y = Y, Z = Z, W = W, μ = μ, λ = λ, s = s,
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,
@@ -281,8 +281,9 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     set_parameter!(ips.sub_problem, :Objective, :s, ips.s)
     set_parameter!(ips.sub_problem, :Objective, :β, ips.ρ * ips.σ)
     # product manifold on which to perform linesearch
-
+    callback(:BeforeSubsolver, amp, ips, k)
     X2 = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
+    callback(:Subsolver, amp, ips, k)
     ips.X, ips.Z = submanifold_components(N, X2) #for p and λ
 
     # Compute the remaining part of the solution
@@ -320,6 +321,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     set_parameter!(ips.stepsize, :DecreaseCondition, :τ, N, q)
     # determine stepsize
     α = ips.stepsize(ips.step_problem, ips.step_state, k; gradient = X)
+    callback(:Stepsize, amp, ips, k)
     # Update Parameters and slack
     retract!(M, ips.p, ips.p, α * ips.X, ips.retraction_method)
     if m > 0
