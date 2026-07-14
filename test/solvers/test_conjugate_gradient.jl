@@ -176,6 +176,29 @@ using ManifoldDiff: grad_distance
         )
 
     end
+    @testset "Callbacks" begin
+        M = Euclidean(2)
+        f(M, x) = norm(x)^2
+        grad_f(::Euclidean, x) = 2 * x
+        sk_record = Tuple{Symbol, Int}[]
+        cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
+        conjugate_gradient_descent(
+            M, f, grad_f, [1.0, 0.0];
+            callbacks = cb,
+            stepsize = Manopt.ConstantStepsize(M),
+            stopping_criterion = StopAfterIteration(1),
+        )
+        @test sk_record == [
+            (:BeforeInit, 0),
+            (:Init, 0),
+            (:BeforeStop, 0),
+            (:BeforeStep, 1),
+            (:Stepsize, 1),
+            (:Step, 1),
+            (:BeforeStop, 1),
+            (:Stop, 1),
+        ]
+    end
     @testset "Conjugate Gradient runs – Low Rank matrix approx" begin
         A = Diagonal([2.0, 1.1, 1.0])
         M = Sphere(size(A, 1) - 1)

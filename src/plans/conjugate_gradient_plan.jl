@@ -26,6 +26,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 # Fields
 
+$(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:X))
 * `δ`:                       the current descent direction, also a tangent vector
@@ -67,7 +68,9 @@ mutable struct ConjugateGradientDescentState{
         TStepsize <: Stepsize, TStop <: StoppingCriterion,
         TCoeff <: DirectionUpdateRuleStorage, TRC <: AbstractRestartCondition,
         TRetr <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
+        C <: AbstractDict{Symbol},
     } <: AbstractGradientSolverState
+    callbacks::C
     p::P
     p_old::P
     X::T
@@ -80,20 +83,22 @@ mutable struct ConjugateGradientDescentState{
     retraction_method::TRetr
     vector_transport_method::VTM
     function ConjugateGradientDescentState(;
-            p::P, p_old::P, stopping_criterion::SC, stepsize::TStep, coefficient::D,
+            callbacks::C, p::P, p_old::P, stopping_criterion::SC, stepsize::TStep, coefficient::D,
             restart_condition::TRC, retraction_method::TRetr,
             vector_transport_method::VTM, X::T, δ::T, β::F
         ) where {
             P, T, F, SC <: StoppingCriterion, TStep <: Stepsize, D <: DirectionUpdateRuleStorage,
             TRC <: AbstractRestartCondition, TRetr <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
+            C <: AbstractDict{Symbol},
         }
-        return new{P, T, F, TStep, SC, D, TRC, TRetr, VTM}(
-            p, p_old, X, δ, β, coefficient, restart_condition, stepsize, stopping_criterion, retraction_method, vector_transport_method
+        return new{P, T, F, TStep, SC, D, TRC, TRetr, VTM, C}(
+            callbacks, p, p_old, X, δ, β, coefficient, restart_condition, stepsize, stopping_criterion, retraction_method, vector_transport_method
         )
     end
 end
 function ConjugateGradientDescentState(
         M::AbstractManifold;
+        callbacks::C = Dict{Symbol, Function}(),
         p::P = rand(M),
         coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
         restart_condition::TRC = RestartOnNonDescent(),
@@ -107,9 +112,11 @@ function ConjugateGradientDescentState(
     ) where {
         P, T, SC <: StoppingCriterion, TStep <: Stepsize,
         TRC <: AbstractRestartCondition, TRetr <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
+        C <: AbstractDict{Symbol},
     }
     _coefficient = DirectionUpdateRuleStorage(M, _produce_type(coefficient, M); p_init = p, X_init = initial_gradient)
     return ConjugateGradientDescentState(;
+        callbacks = callbacks,
         p = p, p_old = copy(M, p),
         X = initial_gradient, δ = copy(M, p, initial_gradient),
         β = zero(allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))),
@@ -118,6 +125,8 @@ function ConjugateGradientDescentState(
         retraction_method = retraction_method, vector_transport_method = vector_transport_method,
     )
 end
+provided_callbacks(::Type{ConjugateGradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
+get_callbacks(state::ConjugateGradientDescentState) = state.callbacks
 
 function get_message(cgs::ConjugateGradientDescentState)
     # for now only step size is quipped with messages
@@ -128,6 +137,7 @@ function get_gradient(cgs::ConjugateGradientDescentState)
 end
 function Base.show(io::IO, cgs::ConjugateGradientDescentState)
     print(io, "ConjugateGradientDescentState(;")
+    print(io, " callbacks = $(cgs.callbacks),")
     print(io, " p = $(cgs.p)")
     print(io, " p_old = $(cgs.p_old),")
     print(io, " X = $(cgs.X),")
