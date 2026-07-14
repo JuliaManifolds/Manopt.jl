@@ -597,10 +597,8 @@ function mesh_adaptive_direct_search!(
             M, eltype(p)
         ),
         poll::PT = LowerTriangularAdaptivePoll(
-            M,
-            copy(M, p);
-            basis = mesh_basis,
-            retraction_method = retraction_method,
+            M, copy(M, p);
+            basis = mesh_basis, retraction_method = retraction_method,
             vector_transport_method = vector_transport_method,
         ),
         search::ST = DefaultMeshAdaptiveDirectSearch(
@@ -612,8 +610,7 @@ function mesh_adaptive_direct_search!(
     dmco = decorate_objective!(M, mco; kwargs...)
     dmp = DefaultManoptProblem(M, dmco)
     madss = MeshAdaptiveDirectSearchState(
-        M,
-        p;
+        M, p;
         callbacks = process_callbacks_arg(callbacks, MeshAdaptiveDirectSearchState),
         max_stepsize = oftype(scale_mesh, max_stepsize),
         mesh_basis = mesh_basis,

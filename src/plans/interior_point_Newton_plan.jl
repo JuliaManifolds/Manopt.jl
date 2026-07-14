@@ -39,6 +39,7 @@ end
 
 # Fields
 
+$(_fields(:callbacks; add_properties = [:as_dict]))
 * `λ`:           the Lagrange multiplier with respect to the equality constraints
 * `μ`:           the Lagrange multiplier with respect to the inequality constraints
 $(_fields(:p; add_properties = [:as_Iterate]))
@@ -88,79 +89,92 @@ $(_args([:sub_problem, :sub_state]))
 
 Let `m` and `n` denote the number of inequality and equality constraints, respectively
 
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+* `is_feasible_error=:error`: specify how to handle infeasible starting points, see [`is_feasible`](@ref) for options.
 $(_kwargs(:p; add_properties = [:as_Initial]))
-* `μ=ones(m)` Lagrange multipliers for the inequality constraints
-* `λ=zeros(n)` Lagrange multipliers for the equality constraints
-* `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`
-* `Y=zero(μ)` tangent vector (gradient) for the inequality constraints
-* `Z=zero(λ)` tangent vector (gradient) for the equality constraints
-* `s=ones(m)` slack variables for the inequality constraints
-* `W=zero(s)` tangent vector (gradient) for the slack variables
-* `ρ=μ's/m`  storage for the orthogonality check
-* `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)"))
 $(_kwargs(:retraction_method))
+* `s=ones(m)` slack variables for the inequality constraints
 * `step_objective=`[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
-* `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `step_problem`: wrap the manifold ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m``
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 $(_kwargs(:stepsize; default = " `[`ArmijoLinesearch`](@ref)`()"))
   with the [`InteriorPointCentralityCondition`](@ref) as additional condition to accept a step"))
-* `is_feasible_error=:error`: specify how to handle infeasible starting points, see [`is_feasible`](@ref) for options.
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)"))
+* `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
+* `W=zero(s)` tangent vector (gradient) for the slack variables
+* `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`
+* `Y=zero(μ)` tangent vector (gradient) for the inequality constraints
+* `Z=zero(λ)` tangent vector (gradient) for the equality constraints
+* `λ=zeros(n)` Lagrange multipliers for the equality constraints
+* `μ=ones(m)` Lagrange multipliers for the inequality constraints
+* `ρ=μ's/m`  storage for the orthogonality check
+* `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`
 
 and internally `_step_M` and `_step_p` for the manifold and point in the stepsize.
 """
 mutable struct InteriorPointNewtonState{
         P, T, Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+        C <: AbstractDict{Symbol},
         V, R <: Real,
         SC <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TStepsize <: Stepsize,
         TStepPr <: AbstractManoptProblem, TStepSt <: AbstractManoptSolverState,
     } <: AbstractHessianSolverState
+    callbacks::C
+    is_feasible_error::Symbol
     p::P
-    X::T
-    sub_problem::Pr
-    sub_state::St
-    μ::V
-    λ::V
-    s::V
-    Y::V
-    Z::V
-    W::V
-    ρ::R
-    σ::R
-    stop::SC
     retraction_method::TRTM
-    stepsize::TStepsize
+    s::V
     step_problem::TStepPr
     step_state::TStepSt
-    is_feasible_error::Symbol
+    stepsize::TStepsize
+    stop::SC
+    sub_problem::Pr
+    sub_state::St
+    W::V
+    X::T
+    Y::V
+    Z::V
+    λ::V
+    μ::V
+    ρ::R
+    σ::R
     function InteriorPointNewtonState(
             sub_problem::Pr, sub_state::St;
-            p::P, X::T, μ::V, λ::V, s::V,
-            ρ::R, σ::R, is_feasible_error::Symbol = :error,
-            Y::V = zero(μ), Z::V = zero(λ), W::V = zero(s),
+            callbacks::C = Dict{Symbol, Function}(),
+            is_feasible_error::Symbol = :error,
+            p::P, retraction_method::RTM, s::V,
+            step_problem::StepPr, step_state::StepSt, stepsize::S,
             stopping_criterion::SC = StopAfterIteration(200) | StopWhenChangeLess(1.0e-8),
-            retraction_method::RTM,
-            step_problem::StepPr, step_state::StepSt, stepsize::S, kwargs...
+            λ::V, μ::V,
+            W::V = zero(s), X::T, Y::V = zero(μ), Z::V = zero(λ),
+            ρ::R, σ::R, kwargs...
         ) where {
             P, T, V, R,
             Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+            C <: AbstractDict{Symbol},
             StepPr <: AbstractManoptProblem, StepSt <: AbstractManoptSolverState,
             SC <: StoppingCriterion, RTM <: AbstractRetractionMethod, S <: Stepsize,
         }
-        ips = new{P, T, Pr, St, V, R, SC, RTM, S, StepPr, StepSt}()
-        ips.p = p; ips.sub_problem = sub_problem; ips.sub_state = sub_state
-        ips.μ = μ; ips.λ = λ; ips.s = s; ips.ρ = ρ; ips.σ = σ
-        ips.X = X; ips.Y = Y; ips.Z = Z; ips.W = W
-        ips.stop = stopping_criterion
-        ips.retraction_method = retraction_method
-        ips.stepsize = stepsize
-        ips.step_problem = step_problem; ips.step_state = step_state
+        ips = new{P, T, Pr, St, C, V, R, SC, RTM, S, StepPr, StepSt}()
+        ips.callbacks = callbacks
         ips.is_feasible_error = is_feasible_error
+        ips.p = p
+        ips.retraction_method = retraction_method
+        ips.s = s
+        ips.step_problem = step_problem; ips.step_state = step_state
+        ips.stepsize = stepsize
+        ips.stop = stopping_criterion
+        ips.sub_problem = sub_problem; ips.sub_state = sub_state
+        ips.W = W
+        ips.X = X
+        ips.Y = Y; ips.Z = Z
+        ips.λ = λ; ips.μ = μ
+        ips.ρ = ρ; ips.σ = σ
         return ips
     end
     function InteriorPointNewtonState(
             M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr, sub_state::St;
+            callbacks::C = Dict{Symbol, Function}(),
             p = rand(M), X = zero_vector(M, p),
             μ = ones(length(get_inequality_constraint(M, cmo, p, :))),
             λ = zeros(length(get_equality_constraint(M, cmo, p, :))),
@@ -186,13 +200,15 @@ mutable struct InteriorPointNewtonState{
             kwargs...,
         ) where {
             Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+            C <: AbstractDict{Symbol},
             RTM <: AbstractRetractionMethod, S <: Stepsize,
             StepPr <: AbstractManoptProblem, StepSt <: AbstractManoptSolverState,
         }
         return InteriorPointNewtonState(
             sub_problem, sub_state;
-            p = p, X = X, μ = μ, λ = λ, s = s, ρ = ρ, σ = σ, retraction_method = retraction_method,
-            step_problem = step_problem, step_state, stepsize = stepsize,
+            callbacks = callbacks, p = p, retraction_method = retraction_method, s = s,
+            step_problem = step_problem, step_state = step_state, stepsize = stepsize,
+            λ = λ, μ = μ, X = X, ρ = ρ, σ = σ,
             kwargs...
         )
     end
@@ -220,16 +236,19 @@ end
 function get_message(ips::InteriorPointNewtonState)
     return get_message(ips.stepsize)
 end
+provided_callbacks(::Type{InteriorPointNewtonState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubSolver, :Stepsize, :SubSolver])
+get_callbacks(ips::InteriorPointNewtonState) = ips.callbacks
 # pretty print state info
 function status_summary(ips::InteriorPointNewtonState; context::Symbol = :default)
     i = get_count(ips, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(ips)) – $(Iter) $(has_converged(ips) ? "(converged)" : "")")
+    as = _callbacks_summary(ips)
     s = """
     # Solver state for `Manopt.jl`s Interior Point Newton Method
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * ρ: $(ips.ρ)
     * σ: $(ips.σ)
     * retraction method: $(ips.retraction_method)
@@ -243,7 +262,7 @@ function status_summary(ips::InteriorPointNewtonState; context::Symbol = :defaul
 end
 function Base.show(io::IO, ipns::InteriorPointNewtonState)
     print(io, "InteriorPointNewtonState(", ipns.sub_problem, ", ", ipns.sub_state, ";")
-    print(io, " is_feasibility_error = ", ipns.is_feasible_error, ", retraction_method = ", ipns.retraction_method)
+    print(io, " callbacks = ", ipns.callbacks, ", is_feasibility_error = ", ipns.is_feasible_error, ", retraction_method = ", ipns.retraction_method)
     print(io, ", p = ", ipns.p, ", X = ", ipns.X, ", μ = ", ipns.μ, ", Y = ", ipns.Y)
     print(io, ", λ = ", ipns.λ, ", Z = ", ipns.Z, ", s = ", ipns.s, ", W = ", ipns.W)
     print(io, ", ρ = ", ipns.ρ, ", σ = ", ipns.σ, ", step_problem = ", ipns.step_problem)
