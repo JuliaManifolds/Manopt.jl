@@ -63,4 +63,16 @@ using LinearAlgebra: I, tr
         @test q isa Real
         @test fe(M, q) < fe(M, 4.0)
     end
+    @testset "Callbacks" begin
+        sk_record = Tuple{Symbol, Int}[]
+        cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
+        exact_penalty_method!(
+            M, f, grad_f, sol_lqh2; g = g, grad_g = grad_g, smoothing = LinearQuadraticHuber(),
+            callbacks = cb, stopping_criterion = StopAfterIteration(1)
+        )
+        @test sk_record == [
+            (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+            (:BeforeStep, 1), (:BeforeSubSolver, 1), (:SubSolver, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+        ]
+    end
 end
