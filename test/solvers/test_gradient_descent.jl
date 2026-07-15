@@ -13,12 +13,8 @@ using ManifoldDiff: grad_distance
         d = DebugEvery(
             DebugGroup(
                 [
-                    DebugIterate(; io = my_io),
-                    DebugDivider(" "; io = my_io),
-                    DebugCost(; io = my_io),
-                    DebugStoppingCriterion(; io = my_io),
-                    DebugDivider("\n"; io = my_io),
-                    DebugMessages(),
+                    DebugIterate(; io = my_io), DebugDivider(" "; io = my_io), DebugCost(; io = my_io),
+                    DebugStoppingCriterion(; io = my_io), DebugDivider("\n"; io = my_io), DebugMessages(),
                 ]
             ),
             500,
@@ -172,9 +168,11 @@ using ManifoldDiff: grad_distance
         @testset "Callbacks" begin
             sk_record = Tuple{Symbol, Int}[]
             cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
-            gradient_descent(M, f, grad_f, pts[1]; callbacks = cb)
-            @test sk_record[1:6] == [(:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0), (:BeforeStep, 1), (:Stepsize, 1), (:Step, 1)]
-            @test sk_record[(end - 5):end] == Any[(:BeforeStop, 71), (:BeforeStep, 72), (:Stepsize, 72), (:Step, 72), (:BeforeStop, 72), (:Stop, 72)]
+            gradient_descent(M, f, grad_f, pts[1]; callbacks = cb, stopping_criterion = StopAfterIteration(1))
+            @test sk_record == [
+                (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+                (:BeforeStep, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            ]
         end
     end
     @testset "Tutorial mode" begin
