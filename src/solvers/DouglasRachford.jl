@@ -1,3 +1,45 @@
+function reflect end
+@doc """
+    reflect(M, f, x; kwargs...)
+    reflect!(M, q, f, x; kwargs...)
+
+reflect the point `x` from the manifold `M` at the point `f(x)` of the
+function ``f: $(_math(:Manifold)) → $(_math(:Manifold))``, given by
+
+````math
+    $(_tex(:reflect))_f(x) = $(_tex(:reflect))_{f(x)}(x),
+````
+
+Compute the result in `q`.
+
+see also [`reflect`](@ref reflect(M::AbstractManifold, p, x))`(M,p,x)`, to which the keywords are also passed to.
+"""
+reflect(M::AbstractManifold, pr::Function, x; kwargs...)
+
+@doc """
+    reflect(M, p, x, kwargs...)
+    reflect!(M, q, p, x, kwargs...)
+
+Reflect the point `x` from the manifold `M` at point `p`, given by
+
+```math
+$(_tex(:reflect))_p(q) = $(_tex(:retr))_p(-$(_tex(:invretr))_p q),
+```
+where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an inverse retraction, respectively.
+
+This can also be done in place of `q`.
+
+## Keyword Arguments
+
+$(_kwargs([:retraction_method, :inverse_retraction_method]))
+
+and for the `reflect!` additionally
+
+* `X=zero_vector(M,p)`: a temporary memory to compute the inverse retraction in place.
+  otherwise this is the memory that would be allocated anyways.
+"""
+reflect(M::AbstractManifold, p::Any, x; kwargs...)
+
 @doc """
     DouglasRachfordState <: AbstractManoptSolverState
 
@@ -8,6 +50,7 @@ Store all options required for the DouglasRachford algorithm,
 * `α`:                         relaxation of the step from old to new iterate, to be precise
   ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result of the double
   reflection involved in the DR algorithm
+$(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 * `λ`:                         function to provide the value for the proximal parameter during the calls
 * `parallel`:                  indicate whether to use a parallel Douglas-Rachford or not.
@@ -31,6 +74,7 @@ $(_args(:M))
 
 * `α= k -> 0.9`: relaxation of the step from old to new iterate, to be precise
   ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result of the double reflection involved in the DR algorithm
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter
   during the calls
@@ -43,23 +87,25 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)"))
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 """
 mutable struct DouglasRachfordState{
-        P, Tλ, Tα, TR, S,
+        P, C <: AbstractDict{Symbol}, Tλ, Tα, TR, S,
         E <: AbstractEvaluationType, TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
     } <: AbstractManoptSolverState
-    p::P
-    p_tmp::P
-    s::P
-    s_tmp::P
-    λ::Tλ
     α::Tα
+    callbacks::C
+    inverse_retraction_method::ITM
+    λ::Tλ
+    p::P
+    parallel::Bool
+    p_tmp::P
     R::TR
     reflection_evaluation::E
     retraction_method::TM
-    inverse_retraction_method::ITM
+    s::P
+    s_tmp::P
     stop::S
-    parallel::Bool
     function DouglasRachfordState(
             M::AbstractManifold; p::P = rand(M), λ::Fλ = i -> 1.0, α::Fα = i -> 0.9,
+            callbacks::C = Dict{Symbol, Function}(),
             reflection_evaluation::E = AllocatingEvaluation(),
             R::FR = (
                 if reflection_evaluation isa AllocatingEvaluation
@@ -73,44 +119,47 @@ mutable struct DouglasRachfordState{
             retraction_method::TM = default_retraction_method(M, typeof(p)),
             inverse_retraction_method::ITM = default_inverse_retraction_method(M, typeof(p)),
         ) where {
-            P, Fλ, Fα, FR, S <: StoppingCriterion, E <: AbstractEvaluationType,
+            P, C <: AbstractDict{Symbol}, Fλ, Fα, FR, S <: StoppingCriterion, E <: AbstractEvaluationType,
             TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
         }
         return DouglasRachfordState(;
             p = p, p_tmp = copy(M, p), s = copy(M, p), s_tmp = copy(M, p),
-            λ = λ, α = α, R = R, reflection_evaluation = reflection_evaluation,
+            λ = λ, α = α, R = R, callbacks = callbacks, reflection_evaluation = reflection_evaluation,
             retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method,
             stopping_criterion = stopping_criterion, parallel = parallel,
         )
     end
     function DouglasRachfordState(;
             p::P, p_tmp::P, s::P, s_tmp::P, λ::Fλ, α::Fα, R::FR,
-            reflection_evaluation::E, retraction_method::TM, inverse_retraction_method::ITM,
+            callbacks::C, reflection_evaluation::E, retraction_method::TM, inverse_retraction_method::ITM,
             stopping_criterion::S, parallel::Bool
         ) where {
-            P, Fλ, Fα, FR, S <: StoppingCriterion, E <: AbstractEvaluationType,
+            P, C <: AbstractDict{Symbol}, Fλ, Fα, FR, S <: StoppingCriterion, E <: AbstractEvaluationType,
             TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
         }
-        return new{P, Fλ, Fα, FR, S, E, TM, ITM}(
-            p, p_tmp, s, s_tmp, λ, α, R, reflection_evaluation,
-            retraction_method, inverse_retraction_method, stopping_criterion, parallel,
+        return new{P, C, Fλ, Fα, FR, S, E, TM, ITM}(
+            α, callbacks, inverse_retraction_method, λ, p, parallel, p_tmp,
+            R, reflection_evaluation, retraction_method, s, s_tmp, stopping_criterion,
         )
     end
 end
+provided_callbacks(::Type{DouglasRachfordState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:FirstReflection, :ProximalMap, :SecondReflection])
+get_callbacks(drs::DouglasRachfordState) = drs.callbacks
 function Base.show(io::IO, drs::DouglasRachfordState)
     print(io, "DouglasRachfordState(; ")
-    print(io, "p = "); print(io, drs.p); print(io, ", ")
-    print(io, "p_tmp = "); print(io, drs.p_tmp); print(io, ", ")
-    print(io, "s = "); print(io, drs.s); print(io, ", ")
-    print(io, "s_tmp = "); print(io, drs.s_tmp); print(io, ", ")
     print(io, "α = "); print(io, drs.α); print(io, ", ")
+    print(io, "callbacks = "); print(io, drs.callbacks); print(io, ", ")
+    print(io, "inverse_retraction_method = "); print(io, drs.inverse_retraction_method); print(io, ", ")
     print(io, "λ = "); print(io, drs.λ); print(io, ", ")
+    print(io, "p = "); print(io, drs.p); print(io, ", ")
+    print(io, "parallel = "); print(io, drs.parallel); print(io, ", ")
+    print(io, "p_tmp = "); print(io, drs.p_tmp); print(io, ", ")
     print(io, "R = "); print(io, drs.R); print(io, ", ")
     print(io, "reflection_evaluation = "); print(io, drs.reflection_evaluation); print(io, ", ")
     print(io, "retraction_method = "); print(io, drs.retraction_method); print(io, ", ")
-    print(io, "inverse_retraction_method = "); print(io, drs.inverse_retraction_method); print(io, ", ")
-    print(io, "stopping_criterion = "); print(io, drs.stop); print(io, ", ")
-    print(io, "parallel = "); print(io, drs.parallel)
+    print(io, "s = "); print(io, drs.s); print(io, ", ")
+    print(io, "s_tmp = "); print(io, drs.s_tmp); print(io, ", ")
+    print(io, "stopping_criterion = "); print(io, status_summary(drs.stop; context = :short))
     return print(io, ")")
 end
 function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
@@ -122,11 +171,13 @@ function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
     refl_e = drs.reflection_evaluation == AllocatingEvaluation() ? "allocating" : "in place"
     Conv = indicates_convergence(drs.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(drs)) – $(Iter) $(has_converged(drs) ? "(converged)" : "")")
+    as = _callbacks_summary(drs)
     P = drs.parallel ? "Parallel " : ""
     s = """
     # Solver state for `Manopt.jl`s $(P)Douglas Rachford Algorithm
     $Iter
     using an $(refl_e) reflection.
+    ## Parameters$(as)
 
     ## Stopping criterion
     $(_in_str(status_summary(drs.stop; context = context); indent = 0, headers = 1))
@@ -183,6 +234,7 @@ $(_args(:p))
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 * `α= k -> 0.9`: relaxation of the step from old to new iterate, to be precise
   ``p^{(k+1)} = g(α_k; p^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double reflection
   involved in the DR algorithm and ``g`` is a curve induced by the retraction and its inverse.
@@ -256,6 +308,7 @@ function DouglasRachford!(
         M::AbstractManifold,
         mpo::O,
         p;
+        callbacks = Dict{Symbol, Function}(),
         λ::Tλ = (iter) -> 1.0,
         α::Tα = (iter) -> 0.9,
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
@@ -298,6 +351,7 @@ function DouglasRachford!(
     dmp = DefaultManoptProblem(M, dmpo)
     drs = DouglasRachfordState(
         M;
+        callbacks = process_callbacks_arg(callbacks, DouglasRachfordState),
         p = p,
         λ = λ,
         α = α,
@@ -368,8 +422,11 @@ function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, k)
     get_proximal_map!(amp, drs.p_tmp, drs.λ(k), drs.s, 1)
     #dispatch on allocation type for the reflection, see below.
     _reflect!(M, drs.s_tmp, drs.p_tmp, drs.s, drs.R, drs.reflection_evaluation)
+    callback(:FirstReflection, amp, drs, k)
     get_proximal_map!(amp, drs.p, drs.λ(k), drs.s_tmp, 2)
+    callback(:ProximalMap, amp, drs, k)
     _reflect!(M, drs.s_tmp, drs.p, drs.s_tmp, drs.R, drs.reflection_evaluation)
+    callback(:SecondReflection, amp, drs, k)
     # relaxation
     drs.s = ManifoldsBase.retract_fused(
         M,
@@ -387,10 +444,3 @@ function _reflect!(M, r, p, x, R, ::AllocatingEvaluation)
     return r
 end
 _reflect!(M, r, p, x, R, ::InplaceEvaluation) = R(M, r, p, x)
-
-@doc """
-    DouglasRachford(M, f, proxes_f, p; kwargs...)
-
-a doc string with some math ``t_{k+1} = g(α_k; t_k, s_k)``
-"""
-DouglasRachford(M, f, proxes_f, p; kwargs...)
