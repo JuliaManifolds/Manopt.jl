@@ -66,10 +66,7 @@ using ManifoldDiff: prox_distance, prox_distance!
             N, f, proxes, q; λ = i -> π / (2 * i), stopping_criterion = StopAfterIteration(100)
         )
         r = cyclic_proximal_point(
-            N,
-            f,
-            proxes!,
-            q;
+            N, f, proxes!, q;
             λ = i -> π / (2 * i),
             stopping_criterion = StopAfterIteration(100),
             evaluation = InplaceEvaluation(),
@@ -84,10 +81,7 @@ using ManifoldDiff: prox_distance, prox_distance!
         @test startswith(repr(r), "CyclicProximalPointState(; ")
         @testset "Caching" begin
             r2 = cyclic_proximal_point(
-                N,
-                f,
-                proxes!,
-                q;
+                N, f, proxes!, q;
                 λ = i -> π / (2 * i),
                 cache = (:LRU, [:Cost, :ProximalMap], 50),
                 stopping_criterion = StopAfterIteration(100),
@@ -95,6 +89,20 @@ using ManifoldDiff: prox_distance, prox_distance!
                 return_state = true,
                 return_objective = true,
             )
+        end
+        @testset "Callbacks" begin
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
+            s1 = cyclic_proximal_point(
+                N, f, proxes, q; λ = i -> π / (2 * i),
+                callbacks = cb, stopping_criterion = StopAfterIteration(1)
+            )
+
+            @test sk_record == [
+                (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+                (:BeforeStep, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            ]
+
         end
     end
     @testset "Problem access functions" begin
