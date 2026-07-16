@@ -476,7 +476,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         M = ManifoldsBase.DefaultManifold(2)
         p = [4.0, 2.0]
         st = GradientDescentState(
-                M; p = p, stopping_criterion = StopAfterIteration(20), stepsize = Manopt.ConstantStepsize(M),
+            M; p = p, stopping_criterion = StopAfterIteration(20), stepsize = Manopt.ConstantStepsize(M),
         )
         cb() = (n += 1)
         @test_logs (:warn,) (decorate_state!(st; callback = cb))
@@ -487,6 +487,6 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test startswith(repr(dbc), "DebugCallback(")
         @test startswith(Manopt.status_summary(dbc; context = :short), "#")
         @test startswith(Manopt.status_summary(dbc), "A DebugAction with a callback that calls #")
-       end
+    end
     # / Deprecated
 end
