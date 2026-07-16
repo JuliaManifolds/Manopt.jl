@@ -470,45 +470,23 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         Manopt.set_parameter!(dst, :Debug, :Activity, true)
         @test dA.active
     end
+    # Deprecated – remove on next breaking release
     @testset "decorate_state! and callbacks" begin
         # Wrap this in a function so the callback uses right scope for n
-        function test_simple_callback()
-            M = ManifoldsBase.DefaultManifold(2)
-            p = [4.0, 2.0]
-            st = GradientDescentState(
-                M;
-                p = p,
-                stopping_criterion = StopAfterIteration(20),
-                stepsize = Manopt.ConstantStepsize(M),
-            )
-            f(M, q) = distance(M, q, p) .^ 2
-            grad_f(M, q) = -2 * log(M, q, p)
-            mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
-            n = 0
-            cb() = (n += 1)
-            dst = decorate_state!(st; callback = cb)
-            step_solver!(mp, dst, 1)
-            @test n == 1
-            dst = decorate_state!(st; callback = cb, debug = DebugDivider(""))
-            step_solver!(mp, dst, 1)
-            @test n == 2
-            cb2(p, s, k) = ((k > 1) && (n += 1))
-            # Advanced 2, pass to debug
-            dst2 = decorate_state!(st; debug = cb2)
-            step_solver!(mp, dst2, 1)
-            step_solver!(mp, dst2, 2)
-            @test n == 3
-            #Equivalent to 2.
-            dst3 = decorate_state!(st; debug = Manopt.DebugCallback(cb2))
-            step_solver!(mp, dst3, 1)
-            step_solver!(mp, dst3, 2)
-            @test n == 4
-            return nothing
-        end
-        test_simple_callback()
+        M = ManifoldsBase.DefaultManifold(2)
+        p = [4.0, 2.0]
+        st = GradientDescentState(
+                M; p = p, stopping_criterion = StopAfterIteration(20), stepsize = Manopt.ConstantStepsize(M),
+        )
+        cb() = (n += 1)
+        @test_logs (:warn,) (decorate_state!(st; callback = cb))
+        @test_logs (:warn,) (decorate_state!(st; callback = cb, debug = DebugDivider("")))
+        cb2(p, s, k) = ((k > 1) && (n += 1))
+        @test_logs (:warn,) dst2 = decorate_state!(st; debug = cb2)
         dbc = Manopt.DebugCallback(() -> nothing; simple = true)
         @test startswith(repr(dbc), "DebugCallback(")
         @test startswith(Manopt.status_summary(dbc; context = :short), "#")
         @test startswith(Manopt.status_summary(dbc), "A DebugAction with a callback that calls #")
-    end
+       end
+    # / Deprecated
 end

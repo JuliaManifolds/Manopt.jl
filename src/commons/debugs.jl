@@ -1231,8 +1231,16 @@ create a [`DebugAction`](@ref) where
 """
 DebugActionFactory(d::String) = DebugDivider(d)
 DebugActionFactory(a::A) where {A <: DebugAction} = a
-DebugActionFactory(f::F) where {F <: Function} = DebugCallback(f)
-
+# Depreacted
+function DebugActionFactory(f::F) where {F <: Function}
+    @warn """
+            the `DebugCallback` struct is deprecated. Passing functions to `debug = `
+            will no longer word in the next release. Use
+            `callbacks = [:Step => [...]]` to add your callback to the (end of)
+            an iteration step
+        """
+    return DebugCallback(f)
+end
 """
     DebugActionFactory(s::Symbol)
 

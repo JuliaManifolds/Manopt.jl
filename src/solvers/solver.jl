@@ -47,7 +47,7 @@ function decorate_state!(
             Dict{Symbol, RecordAction}, # a dictionary for precise settings
             Array{<:Any, 1}, # a formatted string with symbols or AbstractStateActions
         } = missing,
-        callback = missing, # a (simple) callback function
+        callback = missing, # a (simple) callback function – deprecated
         return_state = false,
         kwargs..., # ignore all others
     ) where {S <: AbstractManoptSolverState}
