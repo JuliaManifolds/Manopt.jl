@@ -7,7 +7,7 @@ author: Ronny Bergmann
 This tutorial illustrates how to use custom callbacks.
 `Manopt.jl` 0.6.2 introduces a generic way to work with callbacks within solvers.
 While simple [debug](HowToDebug.md) and [recording](HowToRecord.md) are available,
-callbacks offer a more flexible war to interact with a solver run.
+callbacks offer a more flexible way to interact with a solver run.
 
 The framework of callbacks allows to call user-defined functions to be called
 at specific places, referred to as “hooks” in the following, during the run of a solver.
