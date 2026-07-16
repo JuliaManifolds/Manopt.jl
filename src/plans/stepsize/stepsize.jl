@@ -2741,7 +2741,9 @@ function Base.show(io::IO, hzls::HagerZhangLinesearchStepsize)
         )""",
     )
 end
-function status_summary(hzls::HagerZhangLinesearchStepsize)
+function status_summary(hzls::HagerZhangLinesearchStepsize; context::Symbol = :default)
+    (context === :short) && (return repr(hzls))
+    (context === :inline) && (return "A Hager-Zhang linesearch stepsize method.")
     return "$(hzls)\nand a computed last stepsize of $(hzls.last_stepsize)"
 end
 
