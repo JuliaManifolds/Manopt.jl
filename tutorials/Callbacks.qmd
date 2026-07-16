@@ -46,7 +46,7 @@ Passing one function to `callbacks` registers it at the `:Any` hook, so it recei
 In this example the output contains generic lifecycle hooks such as `:BeforeStep` and `:Stop` as well as Levenberg-Marquardt-specific hooks such as `:Stepsize`, `:CandidateAccept`, and any applicable damping-update hook.
 You can use the `provided_callbacks` function to test what callbacks are available for a given solver.
 ```{julia}
-provided_callbacks(LevenbergMarquardtState)
+Manopt.provided_callbacks(LevenbergMarquardtState)
 ```
 
 To react only to a particular event, pass a dictionary (or a `Symbol => function` pair) instead.
