@@ -46,6 +46,7 @@ tutorials_menu =
     "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
     "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
     "Do optimization with bounds" => "tutorials/BoxDomain.md",
+    "Use callbacks" => "tutorials/Callbacks.md",
 ]
 # Check whether all tutorials are rendered, issue a warning if not (and quarto if not set)
 all_tutorials_exist = true

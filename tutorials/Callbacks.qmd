@@ -1,0 +1,71 @@
+---
+title: "How to use callbacks"
+author: "Mateusz Baran"
+---
+
+# Using callbacks in optimization
+
+`Manopt.jl` has advanced callback capabilities for inspecting solver state at different moments of a solver step or even modifying the problem during solver execution.
+
+
+## Example
+
+Consider fitting the line $y = ax + b$ to three measurements. The residual vector is the difference between the model prediction and the observations.
+We use a callback to record the callbacks emitted by the solver and print a concise message when a candidate step is accepted.
+
+```{julia}
+using Manopt, Manifolds, LinearAlgebra
+
+M = Euclidean(2) # The point p = [a, b] stores the slope and intercept.
+x = [1.0, 2.0, 3.0]
+y = [2.6, 2.9, 3.5]
+
+residuals(M, p) = p[1] .* x .+ p[2] .- y
+jacobian_residuals(M, p) = hcat(x, ones(length(x)))
+
+events = Tuple{Symbol, Int}[]
+function record_callbacks(hook::Symbol, problem, state::LevenbergMarquardtState, iteration::Int)
+	push!(events, (hook, iteration))
+	if hook == :CandidateAccept
+		println("accepted iteration $(iteration): p = $(state.p), damping = $(state.damping_term)")
+	end
+	return nothing
+end
+
+p = LevenbergMarquardt(
+	M, residuals, jacobian_residuals, zeros(2), length(x);
+	callbacks = record_callbacks,
+)
+
+@show p
+@show events
+norm(residuals(M, p))
+```
+
+Passing one function to `callbacks` registers it at the `:Any` hook, so it receives every callback name as its first argument. 
+In this example the output contains generic lifecycle hooks such as `:BeforeStep` and `:Stop` as well as Levenberg-Marquardt-specific hooks such as `:Stepsize`, `:CandidateAccept`, and any applicable damping-update hook.
+You can use the `provided_callbacks` function to test what callbacks are available for a given solver.
+```{julia}
+provided_callbacks(LevenbergMarquardtState)
+```
+
+To react only to a particular event, pass a dictionary (or a `Symbol => function` pair) instead.
+The callback below records the damping term only when a candidate is rejected.
+
+```{julia}
+rejected_damping = Float64[]
+callbacks = Dict(
+	:CandidateReject => (problem, state, iteration) -> push!(rejected_damping, state.damping_term),
+)
+
+LevenbergMarquardt(
+	M, residuals, jacobian_residuals, zeros(2), length(x);
+	callbacks = callbacks,
+)
+
+rejected_damping
+```
+
+Callbacks receive the current solver state and can therefore inspect or even modify state fields.
+For example, a callback can adjust `state.damping_term` based on external information.
+Keep such changes deliberate: the solver normally updates this quantity based on its model-improvement rules.

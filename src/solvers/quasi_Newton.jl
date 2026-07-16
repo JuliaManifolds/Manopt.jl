@@ -847,7 +847,7 @@ end
 
 function get_cost(
         mp::AbstractManoptProblem, s::QuasiNewtonState{
-            P, T, <:AbstractQuasiNewtonDirectionUpdate, <:StoppingCriterion, <:HagerZhangLinesearchStepsize,
+            P, T, <:AbstractQuasiNewtonDirectionUpdate, <:Dict, <:StoppingCriterion, <:HagerZhangLinesearchStepsize,
         }
     ) where {P, T}
 
