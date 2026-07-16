@@ -53,7 +53,7 @@ There are two different variants to introduce callbacks: A single callback that 
 
 The general callback function has to have the signature of the form
 ```
-cb(hook::Symbol, problem::AbstractManoiptProblem, state::AbstractManoptSolverState, k::Int)
+cb(hook::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverState, k::Int)
 ```
 
 where the `hook` is the specific hook name currently calling `cb`,
@@ -115,7 +115,7 @@ one can of course use the method from the last section and use the `if` variant 
 a signature not requiring the symbol as before, that is
 
 ```
-cb(problem::AbstractManoiptProblem, state::AbstractManoptSolverState, k::Int)
+cb(problem::AbstractManoptProblem, state::AbstractManoptSolverState, k::Int)
 ```
 
 and add it to just one of the hooks.

@@ -1231,7 +1231,7 @@ create a [`DebugAction`](@ref) where
 """
 DebugActionFactory(d::String) = DebugDivider(d)
 DebugActionFactory(a::A) where {A <: DebugAction} = a
-# Depreacted
+# Deprecated
 function DebugActionFactory(f::F) where {F <: Function}
     @warn """
         the `DebugCallback` struct is deprecated. Passing functions to `debug = `
