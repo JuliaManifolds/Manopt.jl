@@ -195,20 +195,31 @@ Canonical=false
 ```
 ````
 
-## Technical details
-
+````{=commonmark}
+```@raw html
+<details>
+  <summary>Technical Details</summary>
+```
+````
 This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
 #| code-fold: true
+#| code-summary: "Package versions"
 #| echo: false
 using Pkg
 Pkg.status()
 ```
+
 ```{julia}
-#| code-fold: true
 #| echo: false
 #| output: asis
 using Dates
-println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, H:M:S")).");
 ```
+
+````{=commonmark}
+```@raw html
+</details>
+```
+````

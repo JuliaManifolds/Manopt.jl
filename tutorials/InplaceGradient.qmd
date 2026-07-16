@@ -56,7 +56,7 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 We further set the stopping criterion to be a little more strict. Then we obtain
 
 ```{julia}
-sc = StopWhenGradientNormLess(3e-10)
+sc = StopWhenGradientNormLess(5e-9)
 p0 = zeros(Float64, m + 1); p0[1] = 1/sqrt(2); p0[2] = 1/sqrt(2)
 m1 = gradient_descent(M, f, grad_f, p0; stopping_criterion=sc);
 ```
@@ -120,20 +120,31 @@ Note that the results `m1` and `m2` are of course the same.
 distance(M, m1, m2)
 ```
 
-## Technical details
-
+````{=commonmark}
+```@raw html
+<details>
+  <summary>Technical Details</summary>
+```
+````
 This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
 #| code-fold: true
+#| code-summary: "Package versions"
 #| echo: false
 using Pkg
 Pkg.status()
 ```
+
 ```{julia}
-#| code-fold: true
 #| echo: false
 #| output: asis
 using Dates
-println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, H:M:S")).");
 ```
+
+````{=commonmark}
+```@raw html
+</details>
+```
+````

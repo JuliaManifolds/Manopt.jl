@@ -42,6 +42,7 @@ tutorials_menu =
     "Count and use a cache" => "tutorials/CountAndCache.md",
     "Print debug output" => "tutorials/HowToDebug.md",
     "Record values" => "tutorials/HowToRecord.md",
+    "Use callbacks" => "tutorials/HowToCallback.md",
     "Implement a solver" => "tutorials/ImplementASolver.md",
     "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
     "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
@@ -216,7 +217,6 @@ makedocs(;
             "Specify a Solver" => "plans/index.md",
             "Problem" => "plans/problem.md",
             "Objective" => [
-                "Introduction" => "plans/objective.md",
                 "Cost objectvies" => "plans/objectives/cost.md",
                 "First-order objectives" => "plans/objectives/first_order.md",
                 "Second-order objectives" => "plans/objectives/second_order.md",
@@ -235,8 +235,9 @@ makedocs(;
         "Developer Guide (WIP)" => [
             "Introduction" => "base/index.md",
             "Problem" => "base/problem.md",
+            "Objective" => "base/objective.md",
             "Solver State" => [
-                "Overview" => "base/state/index.md",
+                "Overview" => "base/state.md",
                 "Action" => "base/state/action.md",
                 "Callback" => "base/state/callback.md",
                 "Debug" => "base/state/debug.md",

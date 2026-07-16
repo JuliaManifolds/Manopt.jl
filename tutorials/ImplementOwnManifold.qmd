@@ -245,29 +245,40 @@ gradient_descent(M, f, grad_f, p0; debug = [:Iteration, :Cost, :Stepsize, 25, :G
 
 see [How to Print Debug Output](HowToDebug.md) for more details.
 
-## Technical details
-
-This tutorial is cached. It was last run on the following package versions.
-
-```{julia}
-#| code-fold: true
-#| echo: false
-using Pkg
-Pkg.status()
-```
-```{julia}
-#| code-fold: true
-#| echo: false
-#| output: asis
-using Dates
-println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
-```
-
 ## Literature
 
 ````{=commonmark}
 ```@bibliography
 Pages = ["ImplementOwnManifold.md"]
 Canonical=false
+```
+````
+
+````{=commonmark}
+```@raw html
+<details>
+  <summary>Technical Details</summary>
+```
+````
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+#| code-summary: "Package versions"
+#| echo: false
+using Pkg
+Pkg.status()
+```
+
+```{julia}
+#| echo: false
+#| output: asis
+using Dates
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, H:M:S")).");
+```
+
+````{=commonmark}
+```@raw html
+</details>
 ```
 ````

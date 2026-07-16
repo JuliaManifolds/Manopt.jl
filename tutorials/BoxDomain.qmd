@@ -76,3 +76,32 @@ nothing
 ```
 
 We see that despite the original covariance matrix having variances ranging from 0.5 to 20.0, the estimated covariance matrix respects the box constraints of variances between 1.0 and 100.0.
+
+````{=commonmark}
+```@raw html
+<details>
+  <summary>Technical Details</summary>
+```
+````
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+#| code-summary: "Package versions"
+#| echo: false
+using Pkg
+Pkg.status()
+```
+
+```{julia}
+#| echo: false
+#| output: asis
+using Dates
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, H:M:S")).");
+```
+
+````{=commonmark}
+```@raw html
+</details>
+```
+````

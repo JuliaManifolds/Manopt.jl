@@ -237,20 +237,31 @@ isapprox(M, q, G1, G2; atol=2 * 1e-12)
 
 This tutorial illustrates how to use tools from Euclidean spaces, finite differences or automatic differentiation, to compute gradients on Riemannian manifolds. The scheme allows to use _any_ differentiation framework within the embedding to derive a Riemannian gradient.
 
-## Technical details
-
+````{=commonmark}
+```@raw html
+<details>
+  <summary>Technical Details</summary>
+```
+````
 This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
 #| code-fold: true
+#| code-summary: "Package versions"
 #| echo: false
 using Pkg
 Pkg.status()
 ```
+
 ```{julia}
-#| code-fold: true
 #| echo: false
 #| output: asis
 using Dates
-println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, H:M:S")).");
 ```
+
+````{=commonmark}
+```@raw html
+</details>
+```
+````

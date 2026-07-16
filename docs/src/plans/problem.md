@@ -4,7 +4,7 @@
 CurrentModule = Manopt
 ```
 
-A problem is determined by the manifold or domain of the optimisation and the objective with all its properties used within an algorithm, see [The Objective](objective.md). For that one can just use
+A problem is determined by the manifold or domain of the optimisation and the objective with all its properties used within an algorithm, see [The Objective](../base/objective.md). For that one can just use
 
 ```@docs
 DefaultManoptProblem
