@@ -345,6 +345,7 @@ export get_state,
     set_gradient!, set_iterate!
 export get_hessian, get_hessian!
 export get_differential
+export provided_callbacks
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual

@@ -100,6 +100,14 @@ vhs |> print
 And we see that an additional hook is available: `:Stepsize`.
 This is placed _after_ the step size is computed but before the actual step is taken.
 
+Solvers might offer several further hooks. Given a state type, these can be seen calling
+
+```{julia}
+provided_callbacks(GradientDescentState)
+```
+
+We further see the `:Any` hook. This is used internally to store the general fallback we constructed in this section.
+
 ## Specific callbacks for single hooks.
 
 If there is some computation that shall only be performed on a single hook,
