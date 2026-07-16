@@ -139,13 +139,16 @@ end
 
 #
 #
-# A (work in progress) separate folder scheme for abstract types and design ideas
+# Base – A (work in progress) separate folder scheme for abstract types and design ideas
 include("base/problem/abstract_problem.jl")
+include("base/objective/evaluation.jl")
+include("base/objective/abstract_objective.jl")
 include("base/state/abstract_state.jl")
 include("base/state/action.jl")
 include("base/state/debug.jl")
 include("base/state/callback.jl")
 include("base/state/decorator.jl")
+include("base/default_factory.jl")
 
 #
 #

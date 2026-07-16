@@ -158,8 +158,6 @@ is_tutorial_mode() = (get_parameter(:Mode) == "Tutorial")
 
 # include this first because all following elements might define keyword helpers.
 
-include("manifold_default_factory.jl")
-include("objective.jl")
 include("problem.jl")
 include("solver_state.jl")
 
