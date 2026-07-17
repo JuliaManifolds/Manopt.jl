@@ -6,7 +6,7 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.2] unreleased
+## [0.6.2] July 17, 2026
 
 ### Added
 
@@ -19,14 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - a `base/` folder defining inderfaces and documenting design ideas of these
   - a `commons/` folder collecting things (some or all) solvers have in common
 
-  this should not break other peoples code, but in the documentation, namely “hard link”s to any `plans/`
-  element might break
-
+  this should not break other peoples code, but in the documentation, namely “hard link”s to any `plans/` element might break – and will all break in the future. When you are linking to these from another documentation, consider using `DocumenterInterlinks` instead.
 
 ### Deprecated
 
-* the `callback = ` is deprecated (#626)
 * with actual callbacks available, the `DebugCallback` action from before is now obsolete and deprecated (#626)
+* the `callback = ` is deprecated, since it only served `DebugCallback` (#626)
 
 ## [0.6.1] July 4, 2026
 
