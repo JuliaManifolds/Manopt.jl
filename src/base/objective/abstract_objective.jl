@@ -1,7 +1,7 @@
 @doc """
     AbstractManifoldObjective
 
-Describe the objective function ``f: $(_math(:Manifold)) → ℝ`` and all its necessary ingerdients,
+Describe the objective function ``f: $(_math(:Manifold)) → ℝ`` and all its necessary ingredients,
 for example when it consists of several summands.
 
 Subtypes might depend on the kind of objective in order to distinguish different available
@@ -52,8 +52,10 @@ Wrapper for a function that does not work in-place but allocates, i.e. a functio
 struct AllocatingManifoldFunction{F}
     f::F
     result::Symbol
+    function AllocatingManifoldFunction(f::F, result::Symbol = :Point) where {F}
+        return new{F}(f, result)
+    end
 end
-AllocatingManifoldFunction(f::F, result::Symbol = :Point) where {F} = AllocatingEvaluation{F}(f,result)
 function (f!::AllocatingManifoldFunction)(M, v, args...)
     (f!.result === :Point) && return copyto!(M, v, f!.f(M, args...))
     (f!.result === :TangentVector) && return copyto!(M, v, first(args...), f!.f(M, args...))

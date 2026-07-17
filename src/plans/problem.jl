@@ -35,13 +35,6 @@ function status_summary(dmp::DefaultManoptProblem; context::Symbol = :default)
     $(_in_str(status_summary(dmp.objective, context = context); indent = 1))"""
 end
 
-"""
-    evaluation_type(::AbstractManifoldObjective{Teval})
-
-Get the [`AbstractEvaluationType`](@ref) of the objective.
-"""
-evaluation_type(::AbstractManifoldObjective{Teval}) where {Teval} = Teval
-
 get_manifold(amp::DefaultManoptProblem) = amp.manifold
 
 function get_objective(amp::DefaultManoptProblem, recursive = false)

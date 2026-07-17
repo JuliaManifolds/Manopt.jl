@@ -143,6 +143,7 @@ end
 include("base/problem/abstract_problem.jl")
 include("base/objective/evaluation.jl")
 include("base/objective/abstract_objective.jl")
+include("base/objective/cost.jl")
 include("base/state/abstract_state.jl")
 include("base/state/action.jl")
 include("base/state/debug.jl")
@@ -154,6 +155,7 @@ include("base/default_factory.jl")
 #
 # Commons – a collection of types or functions that are common to more than one solver
 include("commons/debugs.jl")
+include("commons/objectives.jl")
 
 # Common Solver plans
 include("plans/plan.jl")

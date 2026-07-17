@@ -174,7 +174,6 @@ include("keywords.jl")
 
 # Generic plans I: based on objective structure
 include("bundle_plan.jl")
-include("cost_plan.jl")
 include("first_order_plan.jl")
 include("hessian_plan.jl")
 include("proximal_plan.jl")
