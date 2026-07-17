@@ -1,33 +1,75 @@
 @doc """
-    AbstractManifoldObjective{E<:AbstractEvaluationType}
+    AbstractManifoldObjective
 
-Describe the collection of the optimization function ``f: $(_math(:Manifold)) → ℝ`` (or even a vectorial range)
-and its corresponding elements, which might for example be a gradient or (one or more) proximal maps.
+Describe the objective function ``f: $(_math(:Manifold)) → ℝ`` and all its necessary ingerdients,
+for example when it consists of several summands.
 
-All these elements should usually be implemented as functions
-`(M, p) -> ...`, or `(M, X, p) -> ...` that is
+Subtypes might depend on the kind of objective in order to distinguish different available
+access functionality, e.g. to a gradient, or a proximal map.
 
-* the first argument of these functions should be the manifold `M` they are defined on
-* the argument `X` is present, if the computation is performed in-place of `X` (see [`InplaceEvaluation`](@ref))
-* the argument `p` is the place the function (``f`` or one of its elements) is evaluated __at__.
+Such a default component of the objective like the cost itself or the gradient
+should be implemented in the form
 
-the type `T` indicates the global [`AbstractEvaluationType`](@ref).
+```
+(M, v, args...) -> [...]; v
+```
+
+where `M` is a $(_link(:AbstractManifold)), `v` is memory the result is computed in,
+as well as further arguments, most prominently usually the current iterate `p`.
+
+For an allocating variant, internally the wrapper [`AllocatingFunction`](@ref) is used.
 """
-abstract type AbstractManifoldObjective{E <: AbstractEvaluationType} end
+abstract type AbstractManifoldObjective end
 
 function Base.show(io::IO, ::MIME"text/plain", amo::AbstractManifoldObjective)
     multiline = get(io, :multiline, true)
     return multiline ? status_summary(io, amo) : show(io, amo)
 end
 
+"""
+    AllocatingManifoldFunction{F}
+
+Wrapper for a function that does not work in-place but allocates, i.e. a function of the form
+`f(M, args...) = v` is wrapped herein to work as an in-place variant
+`f!(M, v, args...) = v` to be used within Manopt
+
+# Fields
+* `f::F` : the function to be wrapped of the form `(M, args...) -> v`
+* `result::Symbol`: specify the type
+  * `:Point` uses the corresponding `copyto!` for points
+  * `:TangentVector` uses the corresponding `copyto!` for tangentvectors
+    this type assumes, that the first argument is the point `p` the tangent vector is at.
+  * `:Number` the result is a number and hence can not use `copyto!`, we hence assume `v`
+    is a 0-dimensional array.
+
+  all other symbols use a call of `copyto!`
+
+
+# Constructor
+
+    AllocatingManifoldFunction(f, result = :Point)
+"""
+struct AllocatingManifoldFunction{F}
+    f::F
+    result::Symbol
+end
+AllocatingManifoldFunction(f::F, result::Symbol = :Point) where {F} = AllocatingEvaluation{F}(f,result)
+function (f!::AllocatingManifoldFunction)(M, v, args...)
+    (f!.result === :Point) && return copyto!(M, v, f!.f(M, args...))
+    (f!.result === :TangentVector) && return copyto!(M, v, first(args...), f!.f(M, args...))
+    (f!.result === :Number) && return (v[] = f!.f(M, args...))
+    # default: Just copyto!
+    return copyto!(v, f!.f(M, args...))
+end
+
 @doc """
-    AbstractDecoratedManifoldObjective{E<:AbstractEvaluationType,O<:AbstractManifoldObjective}
+    AbstractDecoratedManifoldObjective{O<:AbstractManifoldObjective}
 
 A common supertype for all decorators of [`AbstractManifoldObjective`](@ref)s to simplify dispatch.
-    The second parameter should refer to the undecorated objective (the most inner one).
+The second parameter should refer to the undecorated objective, i.e. even for multiple decorators
+provide insight into the most inner one.
 """
-abstract type AbstractDecoratedManifoldObjective{E, O <: AbstractManifoldObjective} <:
-AbstractManifoldObjective{E} end
+abstract type AbstractDecoratedManifoldObjective{O <: AbstractManifoldObjective} <: AbstractManifoldObjective end
 
 @doc """
     ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <: AbstractDecoratedManifoldObjective{E,O2}
@@ -37,23 +79,22 @@ A wrapper to indicate that [`get_solver_result`](@ref) should return the inner o
 The types are such that one can still dispatch on the undecorated type `O2` of the
 original objective as well.
 """
-struct ReturnManifoldObjective{E, O2, O1 <: AbstractManifoldObjective{E}} <:
-    AbstractDecoratedManifoldObjective{E, O2}
+struct ReturnManifoldObjective{O2, O1 <: AbstractManifoldObjective} <:
+    AbstractDecoratedManifoldObjective{O2}
     objective::O1
 end
 function ReturnManifoldObjective(
         o::O
-    ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
-    return ReturnManifoldObjective{E, O, O}(o)
+    ) where {O <: AbstractManifoldObjective}
+    return ReturnManifoldObjective{O, O}(o)
 end
 function ReturnManifoldObjective(
         o::O1
     ) where {
-        E <: AbstractEvaluationType,
         O2 <: AbstractManifoldObjective,
-        O1 <: AbstractDecoratedManifoldObjective{E, O2},
+        O1 <: AbstractDecoratedManifoldObjective{O2},
     }
-    return ReturnManifoldObjective{E, O2, O1}(o)
+    return ReturnManifoldObjective{O2, O1}(o)
 end
 # The human readable version is “transparent” by default here
 function status_summary(o::ReturnManifoldObjective; kwargs...)
@@ -66,8 +107,9 @@ function Base.show(io::IO, ro::ReturnManifoldObjective)
 end
 
 #
-# Internal converters if the variable in the high-level interface is a number.
-#
+# internal automatic wrappers to ensure mutability
+# TODO: Rework to the wrapper above.
+# TODO: Continue rework without allocation type here.
 
 function _ensure_mutating_cost(cost, q::Number)
     return isnothing(cost) ? cost : (M, p) -> cost(M, p[])
