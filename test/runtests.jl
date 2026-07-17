@@ -2,7 +2,10 @@ using Manifolds, ManifoldsBase, Manopt, Test
 
 @testset "Manopt.jl" begin
     @test Manopt.Rn_default() === :Manifolds
-    @testset "Plan Tests         " begin
+    @testset "Base Interface tests" begin
+        include("base/test_callbacks.jl")
+    end
+    @testset "Plan Tests          " begin
         include("plans/test_objective.jl")
         include("plans/test_problem.jl")
         include("plans/test_state.jl")
@@ -37,12 +40,12 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("plans/test_subgradient_plan.jl")
         include("plans/test_vectorial_plan.jl")
     end
-    @testset "Helper Tests       " begin
+    @testset "Helper Tests        " begin
         include("helpers/test_checks.jl")
         include("helpers/test_linesearches.jl")
         include("helpers/test_manifold_extra_functions.jl")
     end
-    @testset "Solver Tests       " begin
+    @testset "Solver Tests        " begin
         include("solvers/test_adaptive_regularization_with_cubics.jl")
         include("solvers/test_alternating_gradient.jl")
         include("solvers/test_augmented_lagrangian.jl")

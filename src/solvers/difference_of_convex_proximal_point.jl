@@ -7,6 +7,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
+$(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:p; name = "q"))
@@ -38,6 +39,7 @@ $(_args([:M, :sub_problem, :sub_state]))
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
@@ -47,22 +49,24 @@ $(_kwargs(:stopping_criterion; default = "`[StopWhenChangeLess`](@ref)`(1e-8)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct DifferenceOfConvexProximalState{
-        P, T, Pr, St <: AbstractManoptSolverState, S <: Stepsize, SC <: StoppingCriterion,
+        P, T, Pr, St <: AbstractManoptSolverState, C <: AbstractDict{Symbol}, S <: Stepsize, SC <: StoppingCriterion,
         RTR <: AbstractRetractionMethod, ITR <: AbstractInverseRetractionMethod, Tλ,
     } <: AbstractSubProblemSolverState
+    callbacks::C
+    inverse_retraction_method::ITR
     λ::Tλ
     p::P
     q::P
     r::P
+    retraction_method::RTR
+    stepsize::S
+    stop::SC
     sub_problem::Pr
     sub_state::St
     X::T
-    retraction_method::RTR
-    inverse_retraction_method::ITR
-    stepsize::S
-    stop::SC
     function DifferenceOfConvexProximalState(
             M::AbstractManifold, sub_problem::Pr, sub_state::St;
+            callbacks::C = Dict{Symbol, Function}(),
             p::P = rand(M), X::T = zero_vector(M, p),
             stepsize::S = ConstantStepsize(M),
             stopping_criterion::SC = StopWhenChangeLess(M, 1.0e-8),
@@ -70,32 +74,34 @@ mutable struct DifferenceOfConvexProximalState{
             retraction_method::R = default_retraction_method(M, typeof(p)),
             λ::Fλ = i -> 1,
         ) where {
-            P, T, Pr <: Union{AbstractManoptProblem, F} where {F},
+            P, T, C <: AbstractDict{Symbol}, Pr <: Union{AbstractManoptProblem, F} where {F},
             S <: Stepsize, St <: AbstractManoptSolverState, SC <: StoppingCriterion,
             I <: AbstractInverseRetractionMethod, R <: AbstractRetractionMethod, Fλ,
         }
-        return DifferenceOfConvexState(
+        return DifferenceOfConvexProximalState(
             sub_problem, sub_state;
-            λ = λ, p = p, q = copy(M, p), r = copy(M, p), X = X,
+            callbacks = callbacks, λ = λ, p = p, q = copy(M, p), r = copy(M, p), X = X,
             retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method,
             stepsize = stepsize, stopping_criterion = stopping_criterion,
         )
     end
-    function DifferenceOfConvexState(
+    function DifferenceOfConvexProximalState(
             sub_problem::Pr, sub_state::St;
-            λ::Fλ, p::P, q::P, r::P, X::T,
+            callbacks::C, λ::Fλ, p::P, q::P, r::P, X::T,
             retraction_method::R, inverse_retraction_method::I, stepsize::S, stopping_criterion::SC
         ) where {
-            P, T, Pr <: Union{AbstractManoptProblem, F} where {F},
+            P, T, C <: AbstractDict{Symbol}, Pr <: Union{AbstractManoptProblem, F} where {F},
             S <: Stepsize, St <: AbstractManoptSolverState, SC <: StoppingCriterion,
             I <: AbstractInverseRetractionMethod, R <: AbstractRetractionMethod, Fλ,
         }
-        return new{P, T, Pr, St, S, SC, R, I, Fλ}(
-            λ, p, q, r, sub_problem, sub_state, X,
-            retraction_method, inverse_retraction_method, stepsize, stopping_criterion,
+        return new{P, T, Pr, St, C, S, SC, R, I, Fλ}(
+            callbacks, inverse_retraction_method, λ, p, q, r,
+            retraction_method, stepsize, stopping_criterion, sub_problem, sub_state, X,
         )
     end
 end
+provided_callbacks(::Type{DifferenceOfConvexProximalState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver, :Stepsize])
+get_callbacks(dcps::DifferenceOfConvexProximalState) = dcps.callbacks
 # resolve an ambiguity
 DifferenceOfConvexProximalState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Difference of Convex Proximal Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function DifferenceOfConvexProximalState(
@@ -119,15 +125,17 @@ function get_message(dcs::DifferenceOfConvexProximalState)
     return get_message(dcs.sub_state)
 end
 function Base.show(io::IO, dcps::DifferenceOfConvexProximalState)
-    print(io, "DifferenceOfConvexProximalState("); print(io, dcps.sub_problem); print(io, dcps.sub_state); print(io, "; )")
+    print(io, "DifferenceOfConvexProximalState(", dcps.sub_problem, ", ", dcps.sub_state, "; ")
+    print(io, "callbacks = "); print(io, dcps.callbacks); print(io, ", ")
+    print(io, "inverse_retraction_method = "); print(io, dcps.inverse_retraction_method); print(io, ", ")
+    print(io, "λ = "); print(io, dcps.λ); print(io, ", ")
     print(io, "p = "); print(io, dcps.p); print(io, ", ")
     print(io, "q = "); print(io, dcps.q); print(io, ", ")
     print(io, "r = "); print(io, dcps.r); print(io, ", ")
-    print(io, "λ = "); print(io, dcps.λ); print(io, ", ")
     print(io, "retraction_method = "); print(io, dcps.retraction_method); print(io, ", ")
-    print(io, "inverse_retraction_method = "); print(io, dcps.inverse_retraction_method); print(io, ", ")
-    print(io, "stopping_criterion = "); print(io, dcps.stop); print(io, ", ")
-    print(io, "stepsize = "); print(io, dcps.stepsize)
+    print(io, "stepsize = "); print(io, dcps.stepsize); print(io, ", ")
+    print(io, "stopping_criterion = "); print(io, status_summary(dcps.stop; context = :short)); print(io, ", ")
+    print(io, "X = "); print(io, dcps.X)
     return print(io, ")")
 end
 function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol = :default)
@@ -138,12 +146,13 @@ function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol =
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(dcps.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(dcps)) – $(Iter) $(has_converged(dcps) ? "(converged)" : "")")
+    as = _callbacks_summary(dcps)
     sub = repr(dcps.sub_state)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * retraction method:         $(dcps.retraction_method)
     * inverse retraction method: $(dcps.inverse_retraction_method)
     * sub solver state:
@@ -202,6 +211,7 @@ $(_args(:p))
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 * `λ`:                          ( `k -> 1/2` ) a function returning the sequence of prox parameters ``λ_k``
 * `cost=nothing`: provide the cost `f`, for debug reasons / analysis
 $(_kwargs(:evaluation))
@@ -292,6 +302,7 @@ function difference_of_convex_proximal_point!(
 end
 function difference_of_convex_proximal_point!(
         M::AbstractManifold, mdcpo::O, p;
+        callbacks = Dict{Symbol, Function}(),
         g = nothing, grad_g = nothing, prox_g = nothing,
         X = zero_vector(M, p),
         λ = i -> 1 / 2,
@@ -390,6 +401,7 @@ function difference_of_convex_proximal_point!(
     dmp = DefaultManoptProblem(M, dmdcpo)
     dcps = DifferenceOfConvexProximalState(
         M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        callbacks = process_callbacks_arg(callbacks, DifferenceOfConvexProximalState),
         p = p, X = X, stepsize = _produce_type(stepsize, M, p),
         stopping_criterion = stopping_criterion,
         inverse_retraction_method = inverse_retraction_method,
@@ -419,9 +431,12 @@ function step_solver!(
     # each line is one step in the documented solver steps. Note the reuse of `dcps.X`
     get_subtrahend_gradient!(amp, dcps.X, dcps.p)
     retract!(M, dcps.q, dcps.p, dcps.λ(k) * dcps.X, dcps.retraction_method)
+    callback(:BeforeSubsolver, amp, dcps, k)
     copyto!(M, dcps.r, dcps.sub_problem(M, dcps.λ(k), dcps.q))
+    callback(:Subsolver, amp, dcps, k)
     inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
     s = dcps.stepsize(amp, dcps, k)
+    callback(:Stepsize, amp, dcps, k)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
     return dcps
 end
@@ -438,9 +453,12 @@ function step_solver!(
     # each line is one step in the documented solver steps. Note the reuse of `dcps.X`
     get_subtrahend_gradient!(amp, dcps.X, dcps.p)
     retract!(M, dcps.q, dcps.p, dcps.λ(k) * dcps.X, dcps.retraction_method)
+    callback(:BeforeSubsolver, amp, dcps, k)
     dcps.sub_problem(M, dcps.r, dcps.λ(k), dcps.q)
+    callback(:Subsolver, amp, dcps, k)
     inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
     s = dcps.stepsize(amp, dcps, k)
+    callback(:Stepsize, amp, dcps, k)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
     return dcps
 end
@@ -463,12 +481,15 @@ function step_solver!(
     set_parameter!(dcps.sub_problem, :Objective, :Gradient, :p, dcps.q)
     set_parameter!(dcps.sub_problem, :Objective, :Gradient, :λ, dcps.λ(k))
     set_iterate!(dcps.sub_state, M, copy(M, dcps.q))
+    callback(:BeforeSubsolver, amp, dcps, k)
     solve!(dcps.sub_problem, dcps.sub_state)
     copyto!(M, dcps.r, get_solver_result(dcps.sub_state))
+    callback(:Subsolver, amp, dcps, k)
     # use that direction
     inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
     # to determine a step size
     s = dcps.stepsize(amp, dcps, k)
+    callback(:Stepsize, amp, dcps, k)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
     if !isnothing(get_gradient_function(get_objective(amp)))
         get_gradient!(amp, dcps.X, dcps.p)

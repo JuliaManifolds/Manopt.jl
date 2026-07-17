@@ -57,6 +57,17 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
             Frank_Wolfe_method!(M, f, grad_f, p2c; sub_problem = oracle)
             @test f(M, p2c) < f(M, p)
         end
+        @testset "Callbacks" begin
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
+            Frank_Wolfe_method(
+                M, f, grad_f, p; callbacks = cb, stopping_criterion = StopAfterIteration(1)
+            )
+            @test sk_record == [
+                (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+                (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            ]
+        end
         @testset "Testing with an Subsolver" begin
             # This is not a useful run since the subproblem is not constraint
             p3 = Frank_Wolfe_method(

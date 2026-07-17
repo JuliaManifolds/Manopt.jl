@@ -35,6 +35,7 @@ A state for the [gradient sampling algorithm](@ref gradient_sampling).
 The mathematical symbols are adapted from [HosseiniUschmajew:2017](@cite)
 
 # Fields
+$(_fields(:callbacks; add_properties = [:as_dict]))
 * `convex_hull_coefficients<:AbstractVector{R}` store the solution vector of the sub problem, i.e. the coefficients of the result in the convex hull
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `sampled_points<:AbstractVector{P}` memory to store the vector of sampled points
@@ -63,6 +64,7 @@ $(_args(:sub_state))
 
 ## Keyword arguments
 
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 * `sample_size = 5` set the number of sampling points. If you initialise `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
@@ -81,26 +83,29 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 mutable struct GradientSamplingState{
         P, T, R <: Real,
         Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
+        C <: AbstractDict{Symbol},
         SP <: AbstractVector{<:P}, ST <: AbstractVector{<:T}, A <: AbstractVector{<:R},
         SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
     } <: AbstractGradientSolverState
+    callbacks::C
     convex_hull_coeffs::A
     p::P
+    retraction_method::RTM
     sampled_points::SP
     sampled_vectors::ST
     sampling_radius::R # in HU17 εₗ
     sampling_radius_reduction::R # in HU17 θ_ε
+    stepsize::S
+    stop::SC
     subgradient_norm_reduction::R # in HU17 θ_δ
     subgradient_norm_tolerance::R # in HU17 δₗ
     sub_problem::Pr
     sub_state::St
-    stepsize::S
-    stop::SC
-    retraction_method::RTM
     vector_transport_method::VTM
     X::T
     Y::T
     function GradientSamplingState(;
+            callbacks::C = Dict{Symbol, Function}(),
             p::P, convex_hull_coeffs::A,
             sampled_points::SP, sampled_vectors::ST,
             sampling_radius::R, sampling_radius_reduction::R,
@@ -113,13 +118,14 @@ mutable struct GradientSamplingState{
             SP <: AbstractVector, ST <: AbstractVector, A <: AbstractVector,
             Pr <: Union{G, AbstractManoptProblem} where {G}, St <: AbstractManoptSolverState,
             SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
+            C <: AbstractDict{Symbol},
         }
-        return new{P, T, R, Pr, St, SP, ST, A, SC, S, RTM, VTM}(
-            convex_hull_coeffs,
-            p, sampled_points, sampled_vectors,
-            sampling_radius, sampling_radius_reduction,
-            subgradient_norm_reduction, subgradient_norm_tolerance,
-            sub_problem, sub_state, stepsize, stopping_criterion, retraction_method, vector_transport_method,
+        return new{P, T, R, Pr, St, C, SP, ST, A, SC, S, RTM, VTM}(
+            callbacks, convex_hull_coeffs,
+            p, retraction_method,
+            sampled_points, sampled_vectors, sampling_radius, sampling_radius_reduction,
+            stepsize, stopping_criterion, subgradient_norm_reduction, subgradient_norm_tolerance,
+            sub_problem, sub_state, vector_transport_method,
             X, Y,
         )
     end
@@ -129,6 +135,7 @@ function GradientSamplingState(
         M::AbstractManifold,
         sub_problem = gradient_sampling_subsolver!,
         sub_state = InplaceEvaluation();
+        callbacks::C = Dict{Symbol, Function}(),
         p::P = rand(M),
         X::T = zero_vector(M, p),
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
@@ -151,7 +158,7 @@ function GradientSamplingState(
             M, GradientSamplingState; retraction_method = retraction_method
         ),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
-    ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod}
+    ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, C <: AbstractDict{Symbol}}
     m1 = length(sampled_points)
     m2 = length(sampled_vectors)
     m3 = length(convex_hull_coeffs)
@@ -164,6 +171,7 @@ function GradientSamplingState(
         )
     )
     return GradientSamplingState(;
+        callbacks = callbacks,
         convex_hull_coeffs = convex_hull_coeffs,
         p = p,
         sampled_points = sampled_points, sampled_vectors = sampled_vectors,
@@ -185,9 +193,12 @@ end
 get_iterate(gss::GradientSamplingState) = gss.p
 get_solver_result(gss::GradientSamplingState) = gss.p
 get_gradient(gss::GradientSamplingState) = gss.X
+provided_callbacks(::Type{GradientSamplingState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
+get_callbacks(gss::GradientSamplingState) = gss.callbacks
 
 function Base.show(io::IO, gss::GradientSamplingState)
     print(io, "GradientSamplingState(; ")
+    print(io, "callbacks = ", gss.callbacks, ", ")
     print(io, "convex_hull_coeffs = ", gss.convex_hull_coeffs, ", p = ", gss.p, ", ")
     print(io, "sampled_point = ", gss.sampled_points, ", sampled_vectors = ", gss.sampled_vectors, ", ")
     print(io, "sampling_radius = ", gss.sampling_radius, ", sampling_radius_reduction = ", gss.sampling_radius_reduction, ", ")
@@ -206,10 +217,11 @@ function status_summary(gss::GradientSamplingState; context::Symbol = :default)
     (context === :inline) && return "A solver state for the gradient sampling solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(gss.stop) ? "Yes" : "No"
+    as = _callbacks_summary(gss)
     s = """
     # Solver state for `Manopt.jl`s Gradient Sampling Algorithm
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * retraction method:         $(_MANOPT_INDENT)$(gss.retraction_method)
     * sampling radius:           $(_MANOPT_INDENT)$(gss.sampling_radius)
     * sampling radius reduction: $(_MANOPT_INDENT)$(gss.sampling_radius_reduction)
@@ -226,7 +238,6 @@ function status_summary(gss::GradientSamplingState; context::Symbol = :default)
     return s
 end
 
-# TODO:
 _doc_gradient_sampling = """
     gradient_sampling(M, f, grad_f, p=rand(M); kwargs...)
     gradient_sampling(M, gradient_objective, p=rand(M); kwargs...)
@@ -251,6 +262,7 @@ $(_note(:GradientObjective))
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:differential))
 $(_kwargs(:evaluation; add_properties = [:GradientExample]))
 $(_kwargs(:retraction_method))
@@ -310,6 +322,7 @@ function gradient_sampling!(
 end
 function gradient_sampling!(
         M::AbstractManifold, mgo::O, p;
+        callbacks = Dict{Symbol, Function}(),
         X = zero_vector(M, p),
         sample_size::Int = manifold_dimension(M) + 1,
         convex_hull_coeffs::AbstractVector = [0.0 for _ in 1:(sample_size + 1)],
@@ -338,6 +351,7 @@ function gradient_sampling!(
     dmp = DefaultManoptProblem(M, dmgo)
     s = GradientSamplingState(
         M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        callbacks = process_callbacks_arg(callbacks, GradientSamplingState),
         p = p,
         sample_size = sample_size,
         convex_hull_coeffs = convex_hull_coeffs,
@@ -389,7 +403,9 @@ function step_solver!(
         (i > 1) && vector_transport_to!(M, Xj, pj, Xj, gss.p)
     end
     # solve sub problem in convex_hull_coeffs
+    callback(:BeforeSubsolver, mp, gss, i)
     _gradient_sampling_subsolver(M, gss)
+    callback(:Subsolver, mp, gss, i)
     # reconstruct tangent vector from the coefficients (w_l in HU17) in Y
     zero_vector!(M, gss.Y, gss.p)
     for (λj, Xj) in zip(gss.convex_hull_coeffs, gss.sampled_vectors)
@@ -404,6 +420,7 @@ function step_solver!(
         # We already have the gradient in the sampled vectors[1]
         # and set normed -Y as search direction
         step = get_stepsize(mp, gss, i, -gss.Y / norm(M, gss.p, gss.Y); gradient = gss.sampled_vectors[1])
+        callback(:Stepsize, mp, gss, i)
         ManifoldsBase.retract_fused!(M, gss.p, gss.p, -gss.Y / norm(M, gss.p, gss.Y), step, gss.retraction_method)
         get_gradient!(mp, gss.X, gss.p)
     end

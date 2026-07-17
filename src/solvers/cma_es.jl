@@ -10,6 +10,7 @@ State of covariance matrix adaptation evolution strategy.
 
 $(_fields(:p))
   storing the best point found so far
+$(_fields(:callbacks; add_properties = [:as_dict]))
 * `p_obj`                       objective value at `p`
 * `μ`                           parent number
 * `λ`                           population size
@@ -86,9 +87,11 @@ mutable struct CMAESState{
         TVTM <: AbstractVectorTransportMethod,
         TB <: AbstractBasis,
         TRng <: AbstractRNG,
+        C <: AbstractDict{Symbol},
     } <: AbstractManoptSolverState
     p::P
     p_obj::TParams
+    callbacks::C
     μ::Int
     λ::Int
     μ_eff::TParams
@@ -138,6 +141,7 @@ function CMAESState(
         covariance_matrix::Matrix{TParams},
         σ::TParams,
         recombination_weights::Vector{TParams};
+        callbacks::C = Dict{Symbol, Function}(),
         retraction_method::TRetraction = default_retraction_method(M, typeof(p_m)),
         vector_transport_method::TVTM = default_vector_transport_method(M, typeof(p_m)),
         basis::TB = default_basis(M, P),
@@ -150,6 +154,7 @@ function CMAESState(
         TVTM <: AbstractVectorTransportMethod,
         TB <: AbstractBasis,
         TRng <: AbstractRNG,
+        C <: AbstractDict{Symbol},
     }
     n_coords = number_of_coordinates(M, basis)
     # approximation of expected value of norm of standard n_coords-variate normal distribution
@@ -160,9 +165,10 @@ function CMAESState(
     @assert sum(recombination_weights[1:μ]) ≈ 1
     cov_eig = eigen(covariance_matrix)
 
-    return CMAESState{P, TParams, TStopping, TRetraction, TVTM, TB, TRng}(
+    return CMAESState{P, TParams, TStopping, TRetraction, TVTM, TB, TRng, C}(
         allocate(M, p_m),
         Inf,
+        callbacks,
         μ,
         λ,
         μ_eff,
@@ -196,6 +202,9 @@ function CMAESState(
         rng,
     )
 end
+
+provided_callbacks(::Type{CMAESState}) = _MANOPT_DEFAULT_CALLBACKS
+get_callbacks(state::CMAESState) = state.callbacks
 
 function status_summary(s::CMAESState; context::Symbol = :default)
     (context === :short) && return repr(s)
@@ -377,6 +386,7 @@ setting.
   absolute difference between subsequent point but actually computed from distribution
   parameters.
 $(_kwargs(:stopping_criterion; default = "`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`"))
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs([:retraction_method, :vector_transport_method]))
 * `basis`               (`DefaultOrthonormalBasis()`) basis used to represent covariance in
 * `rng=default_rng()`: random number generator for generating new points
@@ -437,6 +447,7 @@ function cma_es!(
         ),
         basis::AbstractBasis = default_basis(M, typeof(p_m)),
         rng::AbstractRNG = default_rng(),
+        callbacks = Dict{Symbol, Function}(),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(cma_es; kwargs...)
@@ -486,6 +497,7 @@ function cma_es!(
         covariance_matrix,
         σ,
         recombination_weights;
+        callbacks = process_callbacks_arg(callbacks, CMAESState),
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
         basis = basis,

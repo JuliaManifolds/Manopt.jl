@@ -194,100 +194,6 @@ function Base.show(io::IO, mpo::ManifoldProximalMapObjective{E}) where {E}
 end
 
 #
-#
-# Proximal based State
-#
-#
-@doc """
-    CyclicProximalPointState <: AbstractManoptSolverState
-
-stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
-
-# Fields
-
-$(_fields(:p; add_properties = [:as_Iterate]))
-$(_fields(:stopping_criterion; name = "stop"))
-* `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``k``
-* `order_type`: whether to use a randomly permuted sequence (`:FixedRandomOrder`),
-  a per cycle permuted sequence (`:RandomOrder`) or the default linear one.
-
-# Constructor
-
-    CyclicProximalPointState(M::AbstractManifold; kwargs...)
-
-Generate the options
-
-## Input
-
-$(_args(:M))
-
-# Keyword arguments
-
-* `evaluation_order=:LinearOrder`: soecify the `order_type`
-* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_math(:Manifold; M = "N"))``,
-$(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)"))
-
-# See also
-
-[`cyclic_proximal_point`](@ref)
-"""
-mutable struct CyclicProximalPointState{P, SC <: StoppingCriterion, Tλ, A <: AbstractVector{<:Int}} <: AbstractManoptSolverState
-    p::P
-    stop::SC
-    λ::Tλ
-    order_type::Symbol
-    order::A
-    function CyclicProximalPointState(;
-            p::P, stopping_criterion::SC, λ::Tλ, order_type::Symbol, order::A,
-        ) where {P, SC <: StoppingCriterion, Tλ, A <: AbstractVector{<:Int}}
-        return new{P, SC, Tλ, A}(p, stopping_criterion, λ, order_type, order)
-    end
-end
-
-function CyclicProximalPointState(
-        M::AbstractManifold;
-        p::P = rand(M),
-        stopping_criterion::S = StopAfterIteration(2000),
-        λ::F = (i) -> 1.0 / i,
-        evaluation_order::Symbol = :LinearOrder,
-    ) where {P, S, F}
-    return CyclicProximalPointState(; p = p, stopping_criterion = stopping_criterion, λ = λ, order_type = evaluation_order, order = Int[])
-end
-get_iterate(cpps::CyclicProximalPointState) = cpps.p
-function set_iterate!(cpps::CyclicProximalPointState, p)
-    cpps.p = p
-    return p
-end
-function Base.show(io::IO, cpps::CyclicProximalPointState)
-    print(io, "CyclicProximalPointState(; ")
-    print(io, "p = "); print(io, cpps.p); print(io, ", ")
-    print(io, "stopping_crierion = "); print(io, cpps.stop); print(io, ", ")
-    print(io, "λ = "); print(io, cpps.λ); print(io, ", ")
-    print(io, "order = "); print(io, cpps.order); print(io, ", ")
-    print(io, "order_type = "); print(io, cpps.order_type)
-    return print(io, ")")
-end
-function status_summary(cpps::CyclicProximalPointState; context::Symbol = :default)
-    (context === :short) && return repr(cpps)
-    i = get_count(cpps, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(cpps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the cyclic proximal point algorithm$(conv_inl)"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(cpps.stop) ? "Yes" : "No"
-    s = """
-    # Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm
-    $Iter
-    ## Parameters
-    * evaluation order of the proximal maps: :$(cpps.order_type)
-
-    ## Stopping criterion
-    $(_in_str(status_summary(cpps.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
-    return s
-end
-
-#
 # Debug
 #
 # Debug the Cyclic Proximal point parameter
@@ -311,12 +217,6 @@ mutable struct DebugProximalParameter <: DebugAction
         )
         return new(io, format, at_init)
     end
-end
-function (d::DebugProximalParameter)(
-        ::AbstractManoptProblem, cpps::CyclicProximalPointState, k::Int
-    )
-    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(k))
-    return nothing
 end
 function Base.show(io::IO, d::DebugProximalParameter)
     return print(
@@ -342,11 +242,6 @@ record the current iterates proximal point algorithm parameter given by in
 mutable struct RecordProximalParameter{R <: Real} <: RecordAction
     recorded_values::Array{R, 1}
     RecordProximalParameter(r::Type{<:Real} = Float64) = new{r}(Array{r, 1}())
-end
-function (r::RecordProximalParameter)(
-        ::AbstractManoptProblem, cpps::CyclicProximalPointState, k::Int
-    )
-    return record_or_reset!(r, cpps.λ(k), k)
 end
 show(io::IO, ::RecordProximalParameter{R}) where {R} = print(io, "RecordProximalParameter($R)")
 function status_summary(rg::RecordProximalParameter{R}; context::Symbol = :default) where {R}

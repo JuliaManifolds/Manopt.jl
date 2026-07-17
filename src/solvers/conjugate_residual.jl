@@ -40,6 +40,7 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 # Keyword arguments
 
 $(_kwargs(:evaluation))
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
   ,  where `c` is ``$(_tex(:norm, "b"))
 $(_note(:OutputSection))
@@ -69,6 +70,7 @@ conjugate_residual!(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual!(
         TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X;
+        callbacks = Dict{Symbol, Function}(),
         stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
             StopWhenRelativeResidualLess(
             norm(base_manifold(TpM), base_point(TpM), get_vector_field(TpM, aslso)), 1.0e-8
@@ -77,7 +79,7 @@ function conjugate_residual!(
     ) where {SC <: StoppingCriterion}
     keywords_accepted(conjugate_residual!; kwargs...)
     crs = ConjugateResidualState(
-        TpM, aslso; stopping_criterion = stopping_criterion, kwargs...
+        TpM, aslso; callbacks = process_callbacks_arg(callbacks, ConjugateResidualState), stopping_criterion = stopping_criterion, kwargs...
     )
     dslso = decorate_objective!(TpM, aslso; kwargs...)
     dmp = DefaultManoptProblem(TpM, dslso)
@@ -86,6 +88,8 @@ function conjugate_residual!(
     return get_solver_return(get_objective(dmp), dcrs)
 end
 calls_with_kwargs(::typeof(conjugate_residual!)) = (ConjugateResidualState, decorate_objective!, decorate_state!)
+
+provided_callbacks(::Type{ConjugateResidualState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
 
 function initialize_solver!(
         amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
@@ -120,6 +124,7 @@ function step_solver!(
     M = base_manifold(TpM)
     p = base_point(TpM)
     crs.α = inner(M, p, crs.r, crs.Ar) / inner(M, p, crs.Ad, crs.Ad)
+    callback(:Stepsize, amp, crs, i)
     crs.X .+= crs.α .* crs.d
     crs.rAr = inner(M, p, crs.r, crs.Ar)
     crs.r .-= crs.α .* crs.Ad

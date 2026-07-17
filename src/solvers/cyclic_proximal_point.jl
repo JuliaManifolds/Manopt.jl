@@ -1,3 +1,113 @@
+@doc """
+    CyclicProximalPointState <: AbstractManoptSolverState
+
+stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
+
+# Fields
+
+$(_fields(:callbacks; add_properties = [:as_dict]))
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:stopping_criterion; name = "stop"))
+* `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``k``
+* `order_type`: whether to use a randomly permuted sequence (`:FixedRandomOrder`),
+  a per cycle permuted sequence (`:RandomOrder`) or the default linear one.
+
+# Constructor
+
+    CyclicProximalPointState(M::AbstractManifold; kwargs...)
+
+Generate the options
+
+## Input
+
+$(_args(:M))
+
+# Keyword arguments
+
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+* `evaluation_order=:LinearOrder`: soecify the `order_type`
+* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_math(:Manifold; M = "N"))``,
+$(_kwargs(:p; add_properties = [:as_Initial]))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)"))
+
+# See also
+
+[`cyclic_proximal_point`](@ref)
+"""
+mutable struct CyclicProximalPointState{P, C <: AbstractDict{Symbol}, SC <: StoppingCriterion, Tλ, A <: AbstractVector{<:Int}} <: AbstractManoptSolverState
+    callbacks::C
+    order::A
+    order_type::Symbol
+    p::P
+    stop::SC
+    λ::Tλ
+    function CyclicProximalPointState(;
+            callbacks::C = Dict{Symbol, Function}(),
+            order::A, order_type::Symbol, p::P, stopping_criterion::SC, λ::Tλ,
+        ) where {P, C <: AbstractDict{Symbol}, SC <: StoppingCriterion, Tλ, A <: AbstractVector{<:Int}}
+        return new{P, C, SC, Tλ, A}(callbacks, order, order_type, p, stopping_criterion, λ)
+    end
+end
+
+function CyclicProximalPointState(
+        M::AbstractManifold;
+        callbacks::C = Dict{Symbol, Function}(),
+        evaluation_order::Symbol = :LinearOrder,
+        p::P = rand(M),
+        stopping_criterion::S = StopAfterIteration(2000),
+        λ::F = (i) -> 1.0 / i,
+    ) where {P, C <: AbstractDict{Symbol}, S, F}
+    return CyclicProximalPointState(; callbacks = callbacks, order = Int[], order_type = evaluation_order, p = p, stopping_criterion = stopping_criterion, λ = λ)
+end
+get_iterate(cpps::CyclicProximalPointState) = cpps.p
+function set_iterate!(cpps::CyclicProximalPointState, p)
+    cpps.p = p
+    return p
+end
+get_callbacks(cpps::CyclicProximalPointState) = cpps.callbacks
+function Base.show(io::IO, cpps::CyclicProximalPointState)
+    print(io, "CyclicProximalPointState(; ")
+    print(io, "callbacks = "); print(io, cpps.callbacks); print(io, ", ")
+    print(io, "order = "); print(io, cpps.order); print(io, ", ")
+    print(io, "order_type = "); print(io, cpps.order_type); print(io, ", ")
+    print(io, "p = "); print(io, cpps.p); print(io, ", ")
+    print(io, "stopping_crierion = "); print(io, cpps.stop); print(io, ", ")
+    print(io, "λ = "); print(io, cpps.λ)
+    return print(io, ")")
+end
+function status_summary(cpps::CyclicProximalPointState; context::Symbol = :default)
+    (context === :short) && return repr(cpps)
+    i = get_count(cpps, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(cpps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the cyclic proximal point algorithm$(conv_inl)"
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(cpps.stop) ? "Yes" : "No"
+    as = _callbacks_summary(cpps)
+    s = """
+    # Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm
+    $Iter
+    ## Parameters$(as)
+    * evaluation order of the proximal maps: :$(cpps.order_type)
+
+    ## Stopping criterion
+    $(_in_str(status_summary(cpps.stop; context = context); indent = 0, headers = 1))
+    This indicates convergence: $Conv"""
+    return s
+end
+
+function (d::DebugProximalParameter)(
+        ::AbstractManoptProblem, cpps::CyclicProximalPointState, k::Int
+    )
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(k))
+    return nothing
+end
+
+function (r::RecordProximalParameter)(
+        ::AbstractManoptProblem, cpps::CyclicProximalPointState, k::Int
+    )
+    return record_or_reset!(r, cpps.λ(k), k)
+end
+
 _doc_CPPA = """
     cyclic_proximal_point(M, f, proxes_f, p; kwargs...)
     cyclic_proximal_point(M, mpo, p; kwargs...)
@@ -16,6 +126,7 @@ where `f` and the proximal maps `proxes_f` can also be given directly as a [`Man
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
 * `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Random`) or the default linear one.
@@ -30,12 +141,8 @@ $(_note(:OutputSection))
 @doc "$(_doc_CPPA)"
 cyclic_proximal_point(M::AbstractManifold, args...; kwargs...)
 function cyclic_proximal_point(
-        M::AbstractManifold,
-        f,
-        proxes_f::Union{Tuple, AbstractVector},
-        p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        M::AbstractManifold, f, proxes_f::Union{Tuple, AbstractVector}, p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
@@ -56,12 +163,8 @@ calls_with_kwargs(::typeof(cyclic_proximal_point)) = (cyclic_proximal_point!,)
 @doc "$(_doc_CPPA)"
 cyclic_proximal_point!(M::AbstractManifold, args...; kwargs...)
 function cyclic_proximal_point!(
-        M::AbstractManifold,
-        f,
-        proxes_f::Union{Tuple, AbstractVector},
-        p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        M::AbstractManifold, f, proxes_f::Union{Tuple, AbstractVector}, p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
     mpo = ManifoldProximalMapObjective(f, proxes_f; evaluation = evaluation)
     return cyclic_proximal_point!(M, mpo, p; evaluation = evaluation, kwargs...)
@@ -70,6 +173,7 @@ function cyclic_proximal_point!(
         M::AbstractManifold,
         mpo::O,
         p;
+        callbacks = Dict{Symbol, Function}(),
         evaluation_order::Symbol = :Linear,
         stopping_criterion::StoppingCriterion = StopAfterIteration(5000) |
             StopWhenChangeLess(M, 1.0e-12),
@@ -81,6 +185,7 @@ function cyclic_proximal_point!(
     dmp = DefaultManoptProblem(M, dmpo)
     cpps = CyclicProximalPointState(
         M;
+        callbacks = process_callbacks_arg(callbacks, CyclicProximalPointState),
         p = p,
         stopping_criterion = stopping_criterion,
         λ = λ,

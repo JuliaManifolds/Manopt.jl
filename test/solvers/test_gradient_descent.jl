@@ -13,12 +13,8 @@ using ManifoldDiff: grad_distance
         d = DebugEvery(
             DebugGroup(
                 [
-                    DebugIterate(; io = my_io),
-                    DebugDivider(" "; io = my_io),
-                    DebugCost(; io = my_io),
-                    DebugStoppingCriterion(; io = my_io),
-                    DebugDivider("\n"; io = my_io),
-                    DebugMessages(),
+                    DebugIterate(; io = my_io), DebugDivider(" "; io = my_io), DebugCost(; io = my_io),
+                    DebugStoppingCriterion(; io = my_io), DebugDivider("\n"; io = my_io), DebugMessages(),
                 ]
             ),
             500,
@@ -168,6 +164,16 @@ using ManifoldDiff: grad_distance
             count = [:Gradient], return_objective = true, return_state = true,
         )
         @test Manopt.status_summary(n6; context = :default) == "$(Manopt.status_summary(n6[2]; context = :default))\n\n$(Manopt.status_summary(n6[1]; context = :default))"
+
+        @testset "Callbacks" begin
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
+            gradient_descent(M, f, grad_f, pts[1]; callbacks = cb, stopping_criterion = StopAfterIteration(1))
+            @test sk_record == [
+                (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+                (:BeforeStep, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            ]
+        end
     end
     @testset "Tutorial mode" begin
         M = Sphere(2)

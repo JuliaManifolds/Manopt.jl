@@ -25,6 +25,7 @@ For more details on the algorithm, see [DiepeveenLellmann:2021](@cite).
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
 $(_kwargs([:evaluation, :inverse_retraction_method]))
 * `Λ=missing`: the exact operator, that is required if `Λ(m)=n` does not hold;
@@ -70,6 +71,7 @@ function primal_dual_semismooth_Newton!(
         M::mT, N::nT, cost::Function, p::P, X::T, m::P, n::Q,
         prox_F::Function, diff_prox_F::Function, prox_G_dual::Function, diff_prox_G_dual::Function,
         linearized_forward_operator::Function, adjoint_linearized_operator::Function;
+        callbacks = Dict{Symbol, Function}(),
         dual_stepsize = 1 / sqrt(8),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         Λ::Union{Function, Missing} = missing,
@@ -97,6 +99,7 @@ function primal_dual_semismooth_Newton!(
     tmp = TwoManifoldProblem(M, N, dpdmsno)
     pdsn = PrimalDualSemismoothNewtonState(
         M;
+        callbacks = process_callbacks_arg(callbacks, PrimalDualSemismoothNewtonState),
         m = m,
         n = n,
         p = p,

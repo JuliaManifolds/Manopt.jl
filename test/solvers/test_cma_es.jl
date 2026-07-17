@@ -46,6 +46,26 @@ flat_example(::AbstractManifold, p) = 0.0
             "# Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy",
         )
 
+        @testset "Callbacks" begin
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
+            cma_es(
+                M, griewank, [10.0, 10.0];
+                callbacks = cb,
+                stopping_criterion = StopAfterIteration(1),
+                rng = MersenneTwister(123),
+            )
+            @test sk_record == [
+                (:BeforeInit, 0),
+                (:Init, 0),
+                (:BeforeStop, 0),
+                (:BeforeStep, 1),
+                (:Step, 1),
+                (:BeforeStop, 1),
+                (:Stop, 1),
+            ]
+        end
+
         o_d = cma_es(
             M, divergent_example, [10.0, 10.0]; σ = 10.0, rng = MersenneTwister(123),
             return_state = true,

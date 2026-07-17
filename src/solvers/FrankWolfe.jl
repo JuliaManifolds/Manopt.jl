@@ -1,3 +1,56 @@
+#
+#
+# Helper functions for modelling the sub problem
+@doc """
+    FrankWolfeCost{P,T}
+
+A structure to represent the oracle sub problem in the [`Frank_Wolfe_method`](@ref).
+The cost function reads
+
+```math
+F(q) = ⟨X, $(_tex(:log))_p q⟩
+```
+
+The values `p` and `X` are stored within this functor and should be references to the
+iterate and gradient from within [`FrankWolfeState`](@ref).
+"""
+mutable struct FrankWolfeCost{P, T}
+    p::P
+    X::T
+end
+function (FWO::FrankWolfeCost)(M, q)
+    return real(inner(M, FWO.p, FWO.X, log(M, FWO.p, q)))
+end
+
+@doc """
+    FrankWolfeGradient{P,T}
+
+A structure to represent the gradient of the oracle sub problem in the [`Frank_Wolfe_method`](@ref),
+that is for a given point `p` and a tangent vector `X` the function reads
+
+```math
+F(q) = ⟨X, $(_tex(:log))_p q⟩
+```
+
+Its gradient can be computed easily using `adjoint_differential_log_argument`.
+
+The values `p` and `X` are stored within this functor and should be references to the
+iterate and gradient from within [`FrankWolfeState`](@ref).
+"""
+mutable struct FrankWolfeGradient{P, T}
+    p::P
+    X::T
+end
+function (FWG::FrankWolfeGradient)(M, Y, q)
+    return adjoint_differential_log_argument!(M, Y, FWG.p, q, FWG.X)
+end
+function (FWG::FrankWolfeGradient)(M, q)
+    return adjoint_differential_log_argument(M, FWG.p, q, FWG.X)
+end
+
+#
+#
+# Solver State
 _doc_FW_sub = """
 ```math
    $(_tex(:argmin))_{q ∈ C} ⟨$(_tex(:grad)) f(p_k), $(_tex(:log))_{p_k}q⟩.
@@ -13,6 +66,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
+$(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:X; add_properties = [:as_Gradient]))
 $(_fields([:inverse_retraction_method, :sub_problem, :sub_state]))
@@ -39,6 +93,7 @@ $(_args([:M, :sub_problem, :sub_state]))
 
 ## Keyword arguments
 
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
@@ -48,10 +103,11 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 where the remaining fields from before are keyword arguments.
 """
 mutable struct FrankWolfeState{
-        P, T, Pr, St <: AbstractManoptSolverState,
+        P, T, Pr, St <: AbstractManoptSolverState, C <: AbstractDict{Symbol},
         TStep <: Stepsize, TStop <: StoppingCriterion,
         TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
     } <: AbstractGradientSolverState
+    callbacks::C
     p::P
     X::T
     sub_problem::Pr
@@ -68,35 +124,37 @@ mutable struct FrankWolfeState{
     end
     function FrankWolfeState(
             M::AbstractManifold, sub_problem::Pr, sub_state::St;
+            callbacks::C = Dict{Symbol, Function}(),
             p::P = rand(M), X::T = zero_vector(M, p),
             stopping_criterion::TStop = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-6),
             stepsize::TStep = default_stepsize(M, FrankWolfeState),
             retraction_method::TM = default_retraction_method(M, typeof(p)),
             inverse_retraction_method::ITM = default_inverse_retraction_method(M, typeof(p)),
         ) where {
-            P, T,
+            P, T, C <: AbstractDict{Symbol},
             Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
             TStop <: StoppingCriterion, TStep <: Stepsize,
             TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
         }
         return FrankWolfeState(
             sub_problem, sub_state;
+            callbacks = callbacks,
             p = p, X = X, stopping_criterion = stopping_criterion, stepsize = stepsize,
             retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method
         )
     end
     FrankWolfeState(::AbstractManifold, ::AbstractManoptSolverState; kwargs...) = error("No sub problem provided.")
     function FrankWolfeState(
-            sub_problem::Pr, sub_state::St;
+            sub_problem::Pr, sub_state::St; callbacks::C = Dict{Symbol, Function}(),
             p::P, X::T, stopping_criterion::TStop, stepsize::TStep,
             retraction_method::TM, inverse_retraction_method::ITM
         ) where {
             P, T, Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
-            TStop <: StoppingCriterion, TStep <: Stepsize,
+            C <: AbstractDict{Symbol}, TStop <: StoppingCriterion, TStep <: Stepsize,
             TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
         }
-        return new{P, T, Pr, St, TStep, TStop, TM, ITM}(
-            p, X, sub_problem, sub_state,
+        return new{P, T, Pr, St, C, TStep, TStop, TM, ITM}(
+            callbacks, p, X, sub_problem, sub_state,
             stopping_criterion, stepsize, retraction_method, inverse_retraction_method,
         )
     end
@@ -105,12 +163,14 @@ end
 function default_stepsize(M::AbstractManifold, ::Type{FrankWolfeState})
     return DecreasingStepsize(M; length = 2.0, shift = 2.0)
 end
+get_callbacks(fws::FrankWolfeState) = fws.callbacks
 get_gradient(fws::FrankWolfeState) = fws.X
 get_iterate(fws::FrankWolfeState) = fws.p
 function get_message(fws::FrankWolfeState)
     # for now only the sub solver might have messages
     return get_message(fws.sub_state)
 end
+provided_callbacks(::Type{FrankWolfeState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver, :Stepsize])
 
 function set_iterate!(fws::FrankWolfeState, p)
     fws.p = p
@@ -118,6 +178,7 @@ function set_iterate!(fws::FrankWolfeState, p)
 end
 function Base.show(io::IO, fws::FrankWolfeState)
     print(io, "FrankWolfeState(", fws.sub_problem, ", ", fws.sub_state, "; ")
+    print(io, "callbacks = ", fws.callbacks, ", ")
     print(io, "inverse_retraction_method = ", fws.inverse_retraction_method)
     print(io, ", p = ", fws.p, ", retraction_method = ", fws.retraction_method)
     print(io, ", stopping_criterion = ", fws.stop, ", stepsize = ", fws.stepsize)
@@ -131,10 +192,11 @@ function status_summary(fws::FrankWolfeState; context::Symbol = :default)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(fws.stop) ? "Yes" : "No"
     sub = _in_str(status_summary(fws.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")
+    as = _callbacks_summary(fws)
     return """
     # Solver state for `Manopt.jl`s Frank Wolfe Method
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * inverse retraction method: $(fws.inverse_retraction_method)
     * retraction method: $(fws.retraction_method)
     * sub solver state:
@@ -148,6 +210,9 @@ function status_summary(fws::FrankWolfeState; context::Symbol = :default)
     This indicates convergence: $Conv"""
 end
 
+#
+#
+# Highlevel Interface
 _doc_FW_problem = """
 ```math
     $(_tex(:argmin))_{p∈$(_tex(:Cal, "C"))} f(p),
@@ -187,6 +252,7 @@ $(_note(:GradientObjective))
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs([:differential, :evaluation, :retraction_method]))
 $(_kwargs(:stepsize; default = "`[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)"))
@@ -220,10 +286,7 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 @doc "$_doc_Frank_Wolfe_method"
 Frank_Wolfe_method(M::AbstractManifold, args...; kwargs...)
 function Frank_Wolfe_method(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        p = rand(M);
+        M::AbstractManifold, f, grad_f, p = rand(M);
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
@@ -246,12 +309,8 @@ calls_with_kwargs(::typeof(Frank_Wolfe_method)) = (Frank_Wolfe_method!,)
 @doc "$_doc_Frank_Wolfe_method"
 Frank_Wolfe_method!(M::AbstractManifold, args...; kwargs...)
 function Frank_Wolfe_method!(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        p;
-        differential = nothing,
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        M::AbstractManifold, f, grad_f, p;
+        differential = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
     mgo = ManifoldGradientObjective(
@@ -260,9 +319,8 @@ function Frank_Wolfe_method!(
     return Frank_Wolfe_method!(M, mgo, p; evaluation = evaluation, kwargs...)
 end
 function Frank_Wolfe_method!(
-        M::AbstractManifold,
-        mgo::O,
-        p;
+        M::AbstractManifold, mgo::O, p;
+        callbacks = Dict{Symbol, Function}(),
         X = zero_vector(M, p),
         evaluation = AllocatingEvaluation(),
         objective_type = :Riemannian,
@@ -310,11 +368,9 @@ function Frank_Wolfe_method!(
     dmp = DefaultManoptProblem(M, dmgo)
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     fws = FrankWolfeState(
-        M,
-        sub_problem,
-        sub_state_storage;
-        p = p,
-        X = X,
+        M, sub_problem, sub_state_storage;
+        callbacks = process_callbacks_arg(callbacks, FrankWolfeState),
+        p = p, X = X,
         retraction_method = retraction_method,
         stepsize = _produce_type(stepsize, M, p),
         stopping_criterion = stopping_criterion,
@@ -325,6 +381,9 @@ function Frank_Wolfe_method!(
 end
 calls_with_kwargs(::typeof(Frank_Wolfe_method!)) = (decorate_objective!, decorate_state!)
 
+#
+#
+# Solver implementation
 function initialize_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState)
     get_gradient!(amp, fws.X, fws.p)
     initialize_stepsize!(fws.stepsize)
@@ -335,14 +394,15 @@ function step_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState, k)
     # update gradient
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F(p), store the result in fws.X
     # solve sub task
+    callback(:BeforeSubsolver, amp, fws, k)
     solve!(fws.sub_problem, fws.sub_state) # call the subsolver
+    callback(:Subsolver, amp, fws, k)
     q = get_solver_result(fws.sub_state)
     s = fws.stepsize(amp, fws, k; gradient = fws.X)
+    callback(:Stepsize, amp, fws, k)
     # step along the geodesic
     retract!(
-        M,
-        fws.p,
-        fws.p,
+        M, fws.p, fws.p,
         s .* inverse_retract(M, fws.p, q, fws.inverse_retraction_method),
         fws.retraction_method,
     )

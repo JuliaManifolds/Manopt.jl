@@ -10,12 +10,9 @@ using Manifolds, Manopt, Random, Test
     # N random points moved to top left to have a mean outside
     pts = [
         exp(
-                M,
-                c,
+                M, c,
                 get_vector(
-                    M,
-                    c,
-                    σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
+                    M, c, σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
                     DefaultOrthonormalBasis(),
                 ),
             ) for _ in 1:N
@@ -49,34 +46,20 @@ using Manifolds, Manopt, Random, Test
         return q
     end
     mean_pg_1 = projected_gradient_method(
-        M,
-        f,
-        grad_f,
-        project_C,
-        c;
-        stopping_criterion = StopAfterIteration(150) |
-            StopWhenProjectedGradientStationary(M, 1.0e-7),
+        M, f, grad_f, project_C, c;
+        stopping_criterion = StopAfterIteration(150) | StopWhenProjectedGradientStationary(M, 1.0e-7),
     )
     Random.seed!(42)
     mean_pg_2 = projected_gradient_method(
-        M,
-        f,
-        grad_f,
-        project_C;
-        stopping_criterion = StopAfterIteration(150) |
-            StopWhenProjectedGradientStationary(M, 1.0e-7),
+        M, f, grad_f, project_C;
+        stopping_criterion = StopAfterIteration(150) | StopWhenProjectedGradientStationary(M, 1.0e-7),
     )
     @test isapprox(M, mean_pg_1, mean_pg_2)
     mean_pg_3 = copy(M, c)
     st = projected_gradient_method!(
-        M,
-        f,
-        grad_f!,
-        project_C!,
-        mean_pg_3;
+        M, f, grad_f!, project_C!, mean_pg_3;
         evaluation = InplaceEvaluation(),
-        stopping_criterion = StopAfterIteration(150) |
-            StopWhenProjectedGradientStationary(M, 1.0e-7),
+        stopping_criterion = StopAfterIteration(150) | StopWhenProjectedGradientStationary(M, 1.0e-7),
         return_state = true,
     )
     @test isapprox(M, mean_pg_1, mean_pg_3)
@@ -84,6 +67,7 @@ using Manifolds, Manopt, Random, Test
         Manopt.status_summary(st; context = :default),
         "# Solver state for `Manopt.jl`s Projected Gradient Method\n"
     )
+    @test startswith(repr(st), "ProjectedGradientMethodState(; ")
     stop_when_stationary = st.stop.criteria[2]
     @test Manopt.indicates_convergence(stop_when_stationary)
     @test repr(stop_when_stationary) == "StopWhenProjectedGradientStationary($(stop_when_stationary.threshold))"

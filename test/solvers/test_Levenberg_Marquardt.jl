@@ -83,6 +83,21 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         r1i3 = LevenbergMarquardt(M1, vgf1!, p1; damping_reduction_threshold = 0.1)
         @test isapprox(M1, r1i1, r1i3; atol = 1.0e-7)
 
+        @testset "Callbacks" begin
+            @test Manopt.provided_callbacks(Manopt.LevenbergMarquardtState) == [:Any, :BeforeInit, :BeforeStep, :BeforeStop, :Init, :Step, :Stop, :Stepsize, :DampingIncreaseStepTooLong, :DampingIncreaseModelInadequate, :DampingDecreaseImprovementTooGood, :DampingIncreaseImprovementTooPoor, :CandidateAccept, :CandidateReject]
+
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
+            s1cb = LevenbergMarquardt(
+                M1, F1, JF1, p1, m;
+                function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
+                callbacks = cb, return_state = true,
+            )
+            @test s1cb isa Manopt.LevenbergMarquardtState
+            @test sk_record[1:6] == [(:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0), (:BeforeStep, 1), (:Stepsize, 1), (:CandidateAccept, 1)]
+            @test first.(sk_record[(end - 1):end]) == [:BeforeStop, :Stop]
+        end
+
         # the error is less than the deviation from above
         M1b = Hyperrectangle([-1.0, -1.0], [1.0, 1.0])
         # Then b is out of bounds and we get something where b is on the boundary, namely 1

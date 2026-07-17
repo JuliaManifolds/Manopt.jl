@@ -42,6 +42,7 @@ tutorials_menu =
     "Count and use a cache" => "tutorials/CountAndCache.md",
     "Print debug output" => "tutorials/HowToDebug.md",
     "Record values" => "tutorials/HowToRecord.md",
+    "Use callbacks" => "tutorials/HowToCallback.md",
     "Implement a solver" => "tutorials/ImplementASolver.md",
     "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
     "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
@@ -208,11 +209,14 @@ makedocs(;
             "Trust-Regions Solver" => "solvers/trust_regions.md",
             "Vector Bundle Newton Method" => "solvers/vectorbundle_newton.md",
         ],
-        "Plans" => [
+        "Commons (WIP)" => [
+            "Overview" => "commons/index.md",
+            "Debug Outputs" => "commons/debugs.md",
+        ],
+        "Plans (deprecated)" => [
             "Specify a Solver" => "plans/index.md",
             "Problem" => "plans/problem.md",
             "Objective" => [
-                "Introduction" => "plans/objective.md",
                 "Cost objectvies" => "plans/objectives/cost.md",
                 "First-order objectives" => "plans/objectives/first_order.md",
                 "Second-order objectives" => "plans/objectives/second_order.md",
@@ -226,8 +230,19 @@ makedocs(;
             "Solver State" => "plans/state.md",
             "Stepsize" => "plans/stepsize.md",
             "Stopping Criteria" => "plans/stopping_criteria.md",
-            "Debug Output" => "plans/debug.md",
             "Recording values" => "plans/record.md",
+        ],
+        "Developer Guide (WIP)" => [
+            "Introduction" => "base/index.md",
+            "Problem" => "base/problem.md",
+            "Objective" => "base/objective.md",
+            "Solver State" => [
+                "Overview" => "base/state.md",
+                "Action" => "base/state/action.md",
+                "Callback" => "base/state/callback.md",
+                "Debug" => "base/state/debug.md",
+                "Decorator" => "base/state/decorator.md",
+            ],
         ],
         "Helpers" => [
             "Checks" => "helpers/checks.md",

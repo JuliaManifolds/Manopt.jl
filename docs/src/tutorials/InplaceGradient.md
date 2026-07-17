@@ -47,7 +47,7 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 We further set the stopping criterion to be a little more strict. Then we obtain
 
 ``` julia
-sc = StopWhenGradientNormLess(3e-10)
+sc = StopWhenGradientNormLess(5e-9)
 p0 = zeros(Float64, m + 1); p0[1] = 1/sqrt(2); p0[2] = 1/sqrt(2)
 m1 = gradient_descent(M, f, grad_f, p0; stopping_criterion=sc);
 ```
@@ -58,16 +58,16 @@ We can also benchmark this as
 @benchmark gradient_descent($M, $f, $grad_f, $p0; stopping_criterion=$sc)
 ```
 
-    BenchmarkTools.Trial: 90 samples with 1 evaluation per sample.
-     Range (min … max):  51.678 ms … 134.204 ms  ┊ GC (min … max):  9.64% … 38.77%
-     Time  (median):     53.536 ms               ┊ GC (median):    11.71%
-     Time  (mean ± σ):   55.776 ms ±   9.262 ms  ┊ GC (mean ± σ):  12.53% ±  3.19%
+    BenchmarkTools.Trial: 100 samples with 1 evaluation per sample.
+     Range (min … max):  40.245 ms … 261.552 ms  ┊ GC (min … max):  0.00% … 84.25%
+     Time  (median):     43.807 ms               ┊ GC (median):    13.40%
+     Time  (mean ± σ):   50.333 ms ±  29.326 ms  ┊ GC (mean ± σ):  20.86% ± 10.83%
 
-      █▇▁▇▁▅▂     ▁                                                 
-      ███████▆▅▆▆▆█▁▃▆▅▃▃▅▃▁▁▁▁▁▁▁▃▁▁▁▁▁▁▁▃▁▁▁▁▁▁▅▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▅ ▁
-      51.7 ms         Histogram: frequency by time         71.5 ms <
+      ██                                                            
+      ██▃▄▃▃▁▁▁▃▁▁▂▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂ ▂
+      40.2 ms         Histogram: frequency by time          231 ms <
 
-     Memory estimate: 173.76 MiB, allocs estimate: 1167364.
+     Memory estimate: 129.51 MiB, allocs estimate: 862005.
 
 ## In-place computation of the gradient
 
@@ -97,8 +97,8 @@ end
 ```
 
 For the actual call to the solver, we first have to generate an instance of `GradF!`
-and tell the solver, that the gradient is provided in an [`InplaceEvaluation`](https://manoptjl.org/stable/plans/objective/#Manopt.InplaceEvaluation).
-We can further also use [`gradient_descent!`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.gradient_descent!) to even work in-place of the initial point we pass.
+and tell the solver, that the gradient is provided in an [`InplaceEvaluation`](@ref).
+We can further also use [`gradient_descent!`](@ref) to even work in-place of the initial point we pass.
 
 ``` julia
 grad_f2! = GradF!(data, similar(data[1]))
@@ -116,16 +116,16 @@ We can again benchmark this
 ) setup = (m2 = deepcopy($p0))
 ```
 
-    BenchmarkTools.Trial: 137 samples with 1 evaluation per sample.
-     Range (min … max):  35.297 ms … 49.118 ms  ┊ GC (min … max): 0.00% … 25.92%
-     Time  (median):     35.863 ms              ┊ GC (median):    0.00%
-     Time  (mean ± σ):   36.604 ms ±  1.640 ms  ┊ GC (mean ± σ):  0.67% ±  2.89%
+    BenchmarkTools.Trial: 165 samples with 1 evaluation per sample.
+     Range (min … max):  29.907 ms …  32.496 ms  ┊ GC (min … max): 0.00% … 0.00%
+     Time  (median):     30.206 ms               ┊ GC (median):    0.00%
+     Time  (mean ± σ):   30.390 ms ± 411.446 μs  ┊ GC (mean ± σ):  0.60% ± 1.15%
 
-       ▇▇█                                                         
-      ▇███▃▅▄▅▄▃▃▅▅▅▃█▇▄▃▃▃▃▃▁▃▃▃▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃ ▃
-      35.3 ms         Histogram: frequency by time        44.1 ms <
+           ▁▃   █▅▄ ▄                                               
+      ▃▁▄▅▇██▆▄▇███▇█▇▅▃▆▅▃▃▃▃▁▃▄▃▁▃▁▁▁▁▁▁▃▃▁▃▁▁▄█▇▄▅▃▆▃▃▃▃▅▁▁▁▁▁▃ ▃
+      29.9 ms         Histogram: frequency by time         31.3 ms <
 
-     Memory estimate: 3.72 MiB, allocs estimate: 6879.
+     Memory estimate: 4.46 MiB, allocs estimate: 10312.
 
 which is faster by about a factor of 2 compared to the first solver-call.
 Note that the results `m1` and `m2` are of course the same.
@@ -134,25 +134,36 @@ Note that the results `m1` and `m2` are of course the same.
 distance(M, m1, m2)
 ```
 
-    4.8317610992693745e-11
+    9.962086562301663e-9
 
-## Technical details
+```@raw html
+<details>
+  <summary>Technical Details</summary>
+```
 
 This tutorial is cached. It was last run on the following package versions.
 
     Status `~/Repositories/Julia/Manopt.jl/tutorials/Project.toml`
-      [47edcb42] ADTypes v1.14.0
-      [6e4b80f9] BenchmarkTools v1.6.0
-      [5ae59095] Colors v0.13.0
-      [31c24e10] Distributions v0.25.119
-      [26cc04aa] FiniteDifferences v0.12.32
-      [7073ff75] IJulia v1.27.0
+    ⌃ [47edcb42] ADTypes v1.22.1
+      [6e4b80f9] BenchmarkTools v1.8.0
+      [5ae59095] Colors v0.13.1
+    ⌃ [a0c0ee7d] DifferentiationInterface v0.7.19
+      [31c24e10] Distributions v0.25.129
+      [26cc04aa] FiniteDifferences v0.12.34
+      [f6369f11] ForwardDiff v1.4.1
       [8ac3fa9e] LRUCache v1.6.2
-      [af67fdf4] ManifoldDiff v0.4.2
-      [1cead3c2] Manifolds v0.10.17
-      [3362f125] ManifoldsBase v1.1.0
-      [0fc0a36d] Manopt v0.5.14 `..`
-      [91a5bcdd] Plots v1.40.13
-      [731186ca] RecursiveArrayTools v3.33.0
+      [af67fdf4] ManifoldDiff v0.4.5
+      [1cead3c2] Manifolds v0.11.28
+      [3362f125] ManifoldsBase v2.5.0
+      [0fc0a36d] Manopt v0.6.2 `.`
+      [91a5bcdd] Plots v1.41.6
+    ⌃ [731186ca] RecursiveArrayTools v4.3.2
+      [37e2e46d] LinearAlgebra v1.12.0
+      [9a3f8284] Random v1.11.0
+    Info Packages marked with ⌃ have new versions available and may be upgradable.
 
-This tutorial was last rendered May 2, 2025, 15:48:41.
+This tutorial was last rendered July 16, 2026, 10:53:10.
+
+```@raw html
+</details>
+```

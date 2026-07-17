@@ -132,8 +132,8 @@ If a point `p` on manifold `M` is provided, it is passed to the constructor `t` 
 template for allocating points. It is no supposed to be modified by the constructor or
 stored in the produced object.
 """
-_produce_type(t, M::AbstractManifold) = t
-_produce_type(t, M::AbstractManifold, p) = t
+_produce_type(t, ::AbstractManifold) = t
+_produce_type(t, ::AbstractManifold, p) = t
 _produce_type(t::ManifoldDefaultsFactory, M::AbstractManifold) = t(M)
 _produce_type(t::ManifoldDefaultsFactory, M::AbstractManifold, p) = t(M, p)
 

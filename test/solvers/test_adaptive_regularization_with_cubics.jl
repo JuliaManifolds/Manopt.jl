@@ -56,6 +56,18 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         lst = LanczosState(M2; maxIterLanczos = 1)
         @test startswith(repr(lst), "LanczosState(; ")
         @test startswith(Manopt.status_summary(lst), "# Solver state for `Manopt.jl`s Lanczos Iteration")
+        @testset "Lanczos Callback" begin
+            lanczos_record = Tuple{Symbol, Int}[]
+            lanczos_cb(symbol, problem, state, k) = append!(lanczos_record, [(symbol, k)])
+            lst_cb = LanczosState(M2; maxIterLanczos = 1, callbacks = Dict(:Any => lanczos_cb))
+            solve!(DefaultManoptProblem(M2, arcmo), lst_cb)
+            @test lanczos_record == [
+                (:BeforeInit, 0),
+                (:Init, 0),
+                (:BeforeStop, 0),
+                (:Stop, 0),
+            ]
+        end
         arcs2 = AdaptiveRegularizationState(
             M, DefaultManoptProblem(M2, arcmo), lst; p = p0, stopping_criterion = StopWhenAllLanczosVectorsUsed(1),
         )
@@ -114,6 +126,25 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         # manually trigger
         st2.at_iteration = 1
         @test length(get_reason(st2)) > 0
+
+        @testset "Callbacks" begin
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
+            p_cb = adaptive_regularization_with_cubics(
+                M, f, grad_f, p0;
+                θ = 0.5, σ = 100.0, callbacks = cb, retraction_method = PolarRetraction(),
+            )
+            @test isapprox(M, p_min, p_cb)
+            @test sk_record[1:6] == [
+                (:BeforeInit, 0),
+                (:Init, 0),
+                (:BeforeStop, 0),
+                (:BeforeStep, 1),
+                (:Step, 1),
+                (:BeforeStop, 1),
+            ]
+            @test sk_record[(end - 1):end] == [(:BeforeStop, sk_record[end - 1][2]), (:Stop, sk_record[end][2])]
+        end
 
         f1(M, p) = p
         f1!(M, q, p) = copyto!(M, q, p)

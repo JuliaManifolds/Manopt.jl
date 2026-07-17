@@ -9,16 +9,17 @@ function default_stepsize(
     )
 end
 function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :default)
-    (context === :short) && (return repr(cgs))
+    (context === :short) && (return repr(cgds))
     i = get_count(cgds, :Iterations)
     conv_inl = (i > 0) ? (indicates_convergence(cgds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the conjugate gradient descent solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cgds.stop) ? "Yes" : "No"
+    as = _callbacks_summary(cgds)
     return """
     # Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * conjugate gradient coefficient:$(_MANOPT_INDENT)$(cgds.coefficient) (last β=$(cgds.β))
     * restart condition:             $(_MANOPT_INDENT)$(cgds.restart_condition)
     * retraction method:             $(_MANOPT_INDENT)$(cgds.retraction_method)
@@ -86,6 +87,7 @@ $(_args([:M, :f, :grad_f, :p]))
   as a functior where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
 $(_kwargs([:differential, :evaluation, :retraction_method]))
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:vector_transport_method))
@@ -142,6 +144,7 @@ function conjugate_gradient_descent!(
         M::AbstractManifold,
         mgo::O,
         p;
+        callbacks = Dict{Symbol, Function}(),
         coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
         restart_condition::AbstractRestartCondition = RestartOnNonDescent(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
@@ -159,6 +162,7 @@ function conjugate_gradient_descent!(
     dmp = DefaultManoptProblem(M, dmgo)
     cgs = ConjugateGradientDescentState(
         M;
+        callbacks = process_callbacks_arg(callbacks, ConjugateGradientDescentState),
         p = p,
         stopping_criterion = stopping_criterion,
         stepsize = _produce_type(stepsize, M, p),
@@ -187,6 +191,7 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
     M = get_manifold(amp)
     copyto!(M, cgs.p_old, cgs.p)
     current_stepsize = get_stepsize(amp, cgs, k, cgs.δ; gradient = cgs.X)
+    callback(:Stepsize, amp, cgs, k)
     ManifoldsBase.retract_fused!(
         M, cgs.p, cgs.p, cgs.δ, current_stepsize, cgs.retraction_method
     )

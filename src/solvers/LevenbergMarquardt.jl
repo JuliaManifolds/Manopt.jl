@@ -218,6 +218,7 @@ function LevenbergMarquardt!(
 end
 function LevenbergMarquardt!(
         M::AbstractManifold, nlso::O, p;
+        callbacks = Dict{Symbol, Function}(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
         candidate_acceptance_threshold::Real = 0.2,
@@ -254,6 +255,7 @@ function LevenbergMarquardt!(
     end
     lms = LevenbergMarquardtState(
         M, sub_problem, sub_state_, initial_residual_values, initial_jacobian_matrices;
+        callbacks = process_callbacks_arg(callbacks, LevenbergMarquardtState),
         p = p,
         damping_increase_factor = damping_increase_factor,
         damping_increase_threshold = damping_increase_threshold,
@@ -290,7 +292,7 @@ end
 function step_solver!(
         dmp::DefaultManoptProblem,
         lms::LevenbergMarquardtState,
-        ::Integer,
+        k::Integer,
     )
     # Update damping term in the surrogate
     # should this be with (currently) or without robustifier?
@@ -302,6 +304,7 @@ function step_solver!(
     set_parameter!(lms.sub_problem, Val(:Manifold), Val(:Basepoint), lms.p)
     # Subsolver result
     solve_LM_subproblem!(M, lms.direction, lms.p, lms.sub_problem, lms.sub_state, lms.X)
+    callback(:Stepsize, dmp, lms, k)
     #solve!(lms.sub_problem, lms.sub_state)
     #lms.direction .= -get_solver_result(lms.sub_problem, lms.sub_state)
     if norm(M, lms.p, lms.direction) > max_stepsize(M, lms.p)
@@ -309,6 +312,7 @@ function step_solver!(
         # we reject the step without evaluating the objective
         # and increase damping
         lms.damping_term *= lms.damping_increase_factor
+        callback(:DampingIncreaseStepTooLong, dmp, lms, k)
         return lms
     end
     model_improvement = (get_cost(lms.sub_problem, ZeroVector()) - get_cost(lms.sub_problem, lms.direction)) / 2
@@ -316,6 +320,7 @@ function step_solver!(
         # Model improvement insufficient, reject step and increase damping term
         lms.damping_term *= lms.damping_increase_factor
         lms.damping_term = min(lms.damping_term, lms.damping_term_max)
+        callback(:DampingIncreaseModelInadequate, dmp, lms, k)
         return lms
     end
     # New iterate candidate
@@ -329,18 +334,23 @@ function step_solver!(
         # very good match between model and actual cost: decrease damping term
         lms.damping_term *= lms.damping_reduction_factor
         lms.damping_term = max(lms.damping_term, lms.damping_term_min)
+        callback(:DampingDecreaseImprovementTooGood, dmp, lms, k)
     elseif ρ < lms.damping_increase_threshold
         # poor match between model and actual cost: increase damping term
         lms.damping_term *= lms.damping_increase_factor
         lms.damping_term = min(lms.damping_term, lms.damping_term_max)
+        callback(:DampingIncreaseImprovementTooPoor, dmp, lms, k)
     end
     if ρ >= lms.candidate_acceptance_threshold # enough improvement: accept candidate
+        callback(:CandidateAccept, dmp, lms, k)
         copyto!(M, lms.p, lms.q)
         get_residuals!(M, lms.residual_values, nlso, lms.p)
         for (o, jb) in zip(nlso.objective, lms.jacobian_matrices)
             !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
         end
         get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_matrices)
+    else
+        callback(:CandidateReject, dmp, lms, k)
     end
     return lms
 end

@@ -146,6 +146,19 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             M, f, ∂f!, p_size; bundle_size = 2, stopping_criterion = StopAfterIteration(200),
             evaluation = InplaceEvaluation(), sub_problem = (proximal_bundle_method_subsolver!),
         )
+        @testset "Callback test" begin
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
+            proximal_bundle_method!(
+                M, f, ∂f!, p_size; bundle_size = 2,
+                evaluation = InplaceEvaluation(), sub_problem = (proximal_bundle_method_subsolver!),
+                stopping_criterion = StopAfterIteration(1), callbacks = cb
+            )
+            @test sk_record == [
+                (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+                (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            ]
+        end
     end
     @testset "Trigger the case where the bundle is not transported" begin
         M = Hyperbolic(4)

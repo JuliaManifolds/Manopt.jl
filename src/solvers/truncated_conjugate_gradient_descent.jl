@@ -7,6 +7,7 @@ describe the Steihaug-Toint truncated conjugate-gradient method, with
 
 Let `T` denote the type of a tangent vector and `R <: Real`.
 
+$(_fields(:callbacks; add_properties = [:as_dict]))
 * `δ::T`:                     the conjugate gradient search direction
 * `δHδ`, `YPδ`, `δPδ`, `YPδ`: temporary inner products with `Hδ` and preconditioned inner products.
 * `Hδ`, `HY`:                 temporary results of the Hessian applied to `δ` and `Y`, respectively.
@@ -35,6 +36,7 @@ Initialise the TCG state.
 
 ## Keyword arguments
 
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `κ=0.1`
 * `project!::F=copyto!`: initialise the numerical stabilisation to just copy the result
 * `randomize=false`
@@ -52,8 +54,8 @@ $(_kwargs(:X))
 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct TruncatedConjugateGradientState{T, R <: Real, SC <: StoppingCriterion, Proj} <:
-    AbstractHessianSolverState
+mutable struct TruncatedConjugateGradientState{T, R <: Real, C <: AbstractDict{Symbol}, SC <: StoppingCriterion, Proj} <: AbstractHessianSolverState
+    callbacks::C
     stop::SC
     X::T
     Y::T
@@ -74,6 +76,7 @@ mutable struct TruncatedConjugateGradientState{T, R <: Real, SC <: StoppingCrite
     initialResidualNorm::Float64
     function TruncatedConjugateGradientState(
             TpM::TangentSpace;
+            callbacks::C = Dict{Symbol, Function}(),
             X::T = rand(TpM),
             trust_region_radius::R = injectivity_radius(base_manifold(TpM)) / 4.0,
             randomize::Bool = false,
@@ -90,16 +93,18 @@ mutable struct TruncatedConjugateGradientState{T, R <: Real, SC <: StoppingCrite
                 StopWhenCurvatureIsNegative() |
                 StopWhenModelIncreased(),
             kwargs...,
-        ) where {T, R <: Real, F}
+        ) where {T, R <: Real, F, C <: AbstractDict{Symbol}}
         return TruncatedConjugateGradientState(;
-            X = X, trust_region_radius = trust_region_radius, randomize = randomize,
-            (project!) = project!, stopping_criterion = stopping_criterion,
+            callbacks = callbacks, X = X, trust_region_radius = trust_region_radius,
+            randomize = randomize, (project!) = project!, stopping_criterion = stopping_criterion,
         )
     end
     function TruncatedConjugateGradientState(;
             X::T, trust_region_radius::R, randomize::Bool, project!::F, stopping_criterion::SC,
-        ) where {T, R <: Real, F, SC <: StoppingCriterion}
-        tcgs = new{T, R, SC, F}()
+            callbacks::C
+        ) where {T, R <: Real, F, SC <: StoppingCriterion, C <: AbstractDict{Symbol}}
+        tcgs = new{T, R, C, SC, F}()
+        tcgs.callbacks = callbacks
         tcgs.stop = stopping_criterion
         tcgs.Y = X
         tcgs.trust_region_radius = trust_region_radius
@@ -111,6 +116,7 @@ mutable struct TruncatedConjugateGradientState{T, R <: Real, SC <: StoppingCrite
 end
 function Base.show(io::IO, tcgs::TruncatedConjugateGradientState)
     print(io, "TruncatedConjugateGradientState(;")
+    print(io, "callbacks = ", tcgs.callbacks, ", ")
     print(io, "(project!) = $(tcgs.project!), ")
     print(io, "randomize = $(tcgs.randomize), ")
     print(io, "stopping_criterion = $(tcgs.stop), ")
@@ -124,18 +130,19 @@ function status_summary(tcgs::TruncatedConjugateGradientState; context::Symbol =
     (context === :inline) && "A solver state for the truncated conjugate gradient descent$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(tcgs.stop) ? "Yes" : "No"
+    as = _callbacks_summary(tcgs)
     return """
     # Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * randomize: $(tcgs.randomize)
     * trust region radius: $(tcgs.trust_region_radius)
 
     ## Stopping criterion
-    $(_in_str(status_summary(tcgs.stop; context = context); indent = 0, headers = 1))
+    $(_in_str(status_summary(tcgs.stop; context = context); indent = 1, headers = 1))
     This indicates convergence: $Conv"""
 end
-
+get_callbacks(tcgs::TruncatedConjugateGradientState) = tcgs.callbacks
 function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, Y)
     return tcgs.Y = Y
 end
@@ -462,6 +469,7 @@ directly.
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
 * `preconditioner`:       a preconditioner for the Hessian H.
   This is either an allocating function `(M, p, X) -> Y` or an in-place function `(M, Y, p, X) -> Y`,
@@ -494,11 +502,7 @@ truncated_conjugate_gradient_descent(M::AbstractManifold, args; kwargs...)
 # No Hessian, no point/vector
 function truncated_conjugate_gradient_descent(
         M::AbstractManifold,
-        f,
-        grad_f,
-        Hess_f,
-        p = rand(M),
-        X = rand(M; vector_at = p);
+        f, grad_f, Hess_f, p = rand(M), X = rand(M; vector_at = p);
         evaluation = AllocatingEvaluation(),
         preconditioner = if evaluation isa InplaceEvaluation
             (M, Y, p, X) -> (Y .= X)
@@ -551,12 +555,7 @@ calls_with_kwargs(::typeof(truncated_conjugate_gradient_descent)) = (truncated_c
 @doc "$(_doc_TCGD)"
 truncated_conjugate_gradient_descent!(M::AbstractManifold, args...; kwargs...)
 function truncated_conjugate_gradient_descent!(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        Hess_f,
-        p,
-        X;
+        M::AbstractManifold, f, grad_f, Hess_f, p, X;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         preconditioner = if evaluation isa InplaceEvaluation
             (M, Y, p, X) -> (Y .= X)
@@ -578,10 +577,8 @@ function truncated_conjugate_gradient_descent!(
     return truncated_conjugate_gradient_descent!(TpM, trmo, p, X; kwargs...)
 end
 function truncated_conjugate_gradient_descent!(
-        TpM::TangentSpace,
-        trm::TrustRegionModelObjective,
-        p,
-        X;
+        TpM::TangentSpace, trm::TrustRegionModelObjective, p, X;
+        callbacks = Dict{Symbol, Function}(),
         trust_region_radius::Float64 = injectivity_radius(TpM) / 4,
         θ::Float64 = 1.0,
         κ::Float64 = 0.1,
@@ -601,13 +598,10 @@ function truncated_conjugate_gradient_descent!(
     mp = DefaultManoptProblem(TpM, dtrm)
     tcgs = TruncatedConjugateGradientState(
         TpM;
-        X = X,
-        trust_region_radius = trust_region_radius,
-        randomize = randomize,
-        θ = θ,
-        κ = κ,
-        stopping_criterion = stopping_criterion,
-        (project!) = (project!),
+        callbacks = process_callbacks_arg(callbacks, TruncatedConjugateGradientState),
+        X = X, trust_region_radius = trust_region_radius,
+        randomize = randomize, θ = θ, κ = κ,
+        stopping_criterion = stopping_criterion, (project!) = (project!),
     )
     dtcgs = decorate_state!(tcgs; kwargs...)
     solve!(mp, dtcgs)

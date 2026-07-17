@@ -39,4 +39,13 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     p3 = get_solver_result(s3)
     @test f3(M3, p3) < f3(M3, p2)
     @test is_point(M3, p3; error = :error)
+    @testset "Callback Test" begin
+        sk_record = Tuple{Symbol, Int}[]
+        cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
+        s4 = mesh_adaptive_direct_search(M3, f3, p2; stopping_criterion = StopAfterIteration(1), callbacks = cb, return_state = true)
+        @test sk_record == [
+            (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+            (:BeforeStep, 1), (:Search, 1), (:Poll, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+        ]
+    end
 end

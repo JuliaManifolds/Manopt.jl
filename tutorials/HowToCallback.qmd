@@ -1,0 +1,173 @@
+
+---
+title: "How to use callbacks"
+author: Ronny Bergmann
+---
+
+This tutorial illustrates how to use custom callbacks.
+`Manopt.jl` 0.6.2 introduces a generic way to work with callbacks within solvers.
+While simple [debug](HowToDebug.md) and [recording](HowToRecord.md) are available,
+callbacks offer a more flexible way to interact with a solver run.
+
+The framework of callbacks allows to call user-defined functions to be called
+at specific places, referred to as “hooks” in the following, during the run of a solver.
+
+```{julia}
+#| echo: false
+#| code-fold: true
+#| output: false
+using Pkg;
+cd(@__DIR__)
+Pkg.activate(".");
+```
+```{julia}
+using Manopt, Manifolds, Random, LinearAlgebra, ManifoldDiff
+using ManifoldDiff: grad_distance
+Random.seed!(42);
+```
+
+We consider the same example as in the [Introductory tutorial](getstarted.md) to compute the Riemannian center of mass
+
+```{julia}
+n = 100
+σ = π / 8
+M = Sphere(2)
+p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
+data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
+f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
+grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
+```
+
+And we also use [`gradient_descent`](@ref) as the example solver for this tutorial.
+
+The general callback function is called at every hook a solver has. By default there are at least
+
+* `:BeforeInit` and `:Init` before and after [`initialize_solver!`](@ref) is executed,
+* `:BeforeStep` and `:Step` before and after a [`step_solver!`](@ref) is performed.
+* `:BeforeStop` before the stopping criterion is evaluated, and
+* `:Stop` when the stopping criterion indicated to stop.
+
+There are two different variants to introduce callbacks: A single callback that is called at every hook and specific callbacks for single hooks.
+
+## A general callback for all hooks
+
+The general callback function has to have the signature of the form
+```
+cb(hook::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverState, k::Int)
+```
+
+where the `hook` is the specific hook name currently calling `cb`,
+and `problem` and `state` can of course be more precisely specified to fit the solver you run.
+
+As an example here, we generate a list of the Hooks visited when only performing the first step of the solver run. We collect them in a string,
+that starts before the initialisation, and generates a list for every step.
+All this is collected in a globak string
+
+```{julia}
+#| output: false
+vhs = ""
+function visited_hooks(hook, problem, state, k)
+    if hook === :BeforeInit # Reset string on start
+        global vhs = """
+            # Visited Hooks during this solver run
+
+            ## Initialisation
+            """
+    end
+    if hook === :BeforeStep # Start new list every step
+        vhs *= """
+
+            ## Step #$(k)
+            """
+    end # For all: Add an item of the current hook name
+    vhs *= "* :$(hook)\n"
+    return nothing
+end
+```
+
+To pass this to the solver, the general `callbacks = ` can be used.
+For the callback for all hooks, we can just pass the function we just defined. This fills the string `vhs` as follows
+
+```{julia}
+gradient_descent(
+    M, f, grad_f, data[1];
+    callbacks = visited_hooks,
+    stopping_criterion = StopAfterIteration(1),
+)
+vhs |> print
+```
+
+And we see that an additional hook is available: `:Stepsize`.
+This is placed _after_ the step size is computed but before the actual step is taken.
+
+Solvers might offer several further hooks. Given a state type, these can be seen calling
+
+```{julia}
+provided_callbacks(GradientDescentState)
+```
+
+We further see the `:Any` hook. This is used internally to store the general fallback we constructed in this section.
+
+## Specific callbacks for single hooks.
+
+If there is some computation that shall only be performed on a single hook,
+one can of course use the method from the last section and use the `if` variant as already used there as well. Alternatively, one can also specify a callback with
+a signature not requiring the symbol as before, that is
+
+```
+cb(problem::AbstractManoptProblem, state::AbstractManoptSolverState, k::Int)
+```
+
+and add it to just one of the hooks.
+As an example, while recording allows to record fields, we maybe want to modify
+the state as well. Here – as a toy example – we want to modify the descent direction after the step size is computed but before the step is taken. We could for example shorten it a bit, but also only for the first 10 steps.
+
+```{julia}
+#| output: false
+function stepsize_callback(problem, state, k)
+    if k <= 10
+        state.X ./= 2
+        (k==10) && (@info "Stop shortening direction at k=10")
+    end
+end
+```
+
+Adding this to a certain hook is done by passing a vector of Pairs to the `callbacks = ` keyword.
+
+
+```{julia}
+gradient_descent(
+    M, f, grad_f, data[1]; callbacks = [:Stepsize => stepsize_callback]
+);
+```
+
+Both approaches can also be mixed, by just adding `visited_hooks` into the  `callbacks = ` array. This is equivalent to passing `:Any => visited_hooks` as a pair therein as well.
+
+````{=commonmark}
+```@raw html
+<details>
+  <summary>Technical Details</summary>
+```
+````
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+#| code-summary: "Package versions"
+#| echo: false
+using Pkg
+Pkg.status()
+```
+
+```{julia}
+#| echo: false
+#| output: asis
+using Dates
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, H:M:S")).");
+```
+
+````{=commonmark}
+```@raw html
+</details>
+```
+````

@@ -5,6 +5,7 @@ Is state for the vector bundle Newton method
 
 # Fields
 
+$(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:p; name = "p_trial"))
   next iterate needed for simplified Newton
@@ -29,48 +30,55 @@ $(_args([:p, :sub_state, :sub_problem]))
 
 # Keyword arguments
 
-$(_kwargs(:X; add_properties = [:as_Memory]))
-$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`VectorBundleNewtonState`](@ref)`)"))
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:retraction_method))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`VectorBundleNewtonState`](@ref)`)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct VectorBundleNewtonState{
-        P, T, Pr, St,
+        P, T, Pr, St, C <: AbstractDict{Symbol},
         TStop <: StoppingCriterion, TStep <: Stepsize, TRTM <: AbstractRetractionMethod,
     } <: AbstractGradientSolverState
+    callbacks::C
     p::P
     p_trial::P
-    X::T
+    retraction_method::TRTM
+    stepsize::TStep
+    stop::TStop
     sub_problem::Pr
     sub_state::St
-    stop::TStop
-    stepsize::TStep
-    retraction_method::TRTM
+    X::T
     function VectorBundleNewtonState(
             sub_problem::Pr, sub_state::St;
-            p::P, p_trial::P, X::T, stopping_criterion::TStop, stepsize::TStep, retraction_method::TRTM
-        ) where {P, T, Pr, St, TStop <: StoppingCriterion, TStep <: Stepsize, TRTM <: AbstractRetractionMethod}
-        return new{P, T, Pr, St, TStop, TStep, TRTM}(p, p_trial, X, sub_problem, sub_state, stopping_criterion, stepsize, retraction_method)
+            callbacks::C, p::P, p_trial::P, X::T, stopping_criterion::TStop, stepsize::TStep, retraction_method::TRTM
+        ) where {P, T, Pr, St, C <: AbstractDict{Symbol}, TStop <: StoppingCriterion, TStep <: Stepsize, TRTM <: AbstractRetractionMethod}
+        return new{P, T, Pr, St, C, TStop, TStep, TRTM}(callbacks, p, p_trial, retraction_method, stepsize, stopping_criterion, sub_problem, sub_state, X)
     end
 end
 
 function VectorBundleNewtonState(
-        M::AbstractManifold, E::AbstractManifold, p::P, sub_problem::Pr, sub_state::Op;
+        M::AbstractManifold, E::AbstractManifold, p::P, sub_problem::Pr, sub_state::St;
+        callbacks::C = Dict{Symbol, Function}(),
         X::T = zero_vector(M, p),
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         stopping_criterion::SC = StopAfterIteration(1000),
         stepsize::S = default_stepsize(M, VectorBundleNewtonState)
     ) where {
-        P, T, Pr, Op, RM <: AbstractRetractionMethod, SC <: StoppingCriterion, S <: Stepsize,
+        P, T, Pr, St, C <: AbstractDict{Symbol}, RM <: AbstractRetractionMethod, SC <: StoppingCriterion, S <: Stepsize,
     }
     return VectorBundleNewtonState(
-        sub_problem, sub_state; p = p, p_trial = copy(M, p), X = X,
+        sub_problem, sub_state;
+        callbacks = callbacks, p = p, p_trial = copy(M, p), X = X,
         stopping_criterion = stopping_criterion, stepsize = stepsize, retraction_method = retraction_method
     )
 end
+provided_callbacks(::Type{VectorBundleNewtonState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
+get_callbacks(vbns::VectorBundleNewtonState) = vbns.callbacks
 
 function Base.show(io::IO, vbns::VectorBundleNewtonState)
-    print(io, "VectorBundleNewtonState(", vbns.sub_problem, ", ", vbns.sub_state, "; p = ", vbns.p)
+    print(io, "VectorBundleNewtonState(", vbns.sub_problem, ", ", vbns.sub_state, "; ")
+    print(io, "callbacks = ", vbns.callbacks, ", p = ", vbns.p, ", ")
     print(io, "retraction_method = ", vbns.retraction_method, ", stopping_criterion = $(status_summary(vbns.stop; context = :short)),")
     print(io, "stepsize = ", vbns.stepsize, ", X = ", vbns.X)
     return print(io, ")")
@@ -203,10 +211,11 @@ function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :defaul
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(vbns.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(vbns)) – $(Iter) $(has_converged(vbns) ? "(converged)" : "")")
+    as = _callbacks_summary(vbns)
     s = """
     # Solver state for `Manopt.jl`s Vector bundle Newton method
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * retraction method: $(vbns.retraction_method)
 
     ## Stepsize
@@ -303,13 +312,14 @@ $(_args(:p))
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`VectorBundleNewtonState`](@ref)`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
 $(_kwargs(:sub_problem; default = "nothing")), i.e. you have to provide a method for solving the Newton equation.
   Currently only the closed form solution is implemented, that is, this is a functor that maps either
   `(problem::`[`VectorBundleManoptProblem`](@ref)`, state::VectorBundleNewtonState) -> X` or `(problem, X, state) -> X` to compute the Newton direction.
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
-$(_kwargs(:retraction_method))
-$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`VectorBundleNewtonState`](@ref)`)"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 
@@ -324,26 +334,22 @@ end
 @doc "$(doc_vector_bundle_newton)"
 function vectorbundle_newton!(
         M::AbstractManifold, E::AbstractManifold, NE::O, p::P;
-        sub_problem::Pr = nothing,
-        sub_state::Op = AllocatingEvaluation(),
-        X::T = zero_vector(M, p),
+        callbacks = Dict{Symbol, Function}(),
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         stopping_criterion::SC = StopAfterIteration(1000),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, VectorBundleNewtonState
         ),
+        sub_problem::Pr = nothing,
+        sub_state::Op = AllocatingEvaluation(),
+        X::T = zero_vector(M, p),
         kwargs...,
     ) where {O, P, T, Pr, Op, RM <: AbstractRetractionMethod, SC <: StoppingCriterion}
     isnothing(sub_problem) && error("Please provide a sub_problem (method that solves the Newton equation)")
-
     vbp = VectorBundleManoptProblem(M, E, NE)
-
     vbs = VectorBundleNewtonState(
-        M,
-        E,
-        p,
-        sub_problem,
-        sub_state;
+        M, E, p, sub_problem, sub_state;
+        callbacks = process_callbacks_arg(callbacks, VectorBundleNewtonState),
         X = X,
         retraction_method = retraction_method,
         stopping_criterion = stopping_criterion,
@@ -371,9 +377,12 @@ function step_solver!(
     # update Newton matrix and right hand side
     mp.newton_equation(M, E, s.p)
     # compute Newton direction
+    callback(:BeforeSubsolver, mp, s, k)
     s.X = s.sub_problem(mp, s)
+    callback(:Subsolver, mp, s, k)
     #compute a stepsize
     step = s.stepsize(mp, s, k)
+    callback(:Stepsize, mp, s, k)
     # retract
     ManifoldsBase.retract_fused!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
     s.p_trial = copy(get_manifold(mp), s.p) # needed for affine covariant damping (can be ignored if this stepsize computation is not used)
@@ -389,8 +398,11 @@ function step_solver!(
     # update Newton matrix and right hand side
     mp.newton_equation(M, E, s.p)
     # compute Newton direction (in-place)
+    callback(:BeforeSubsolver, mp, s, k)
     s.sub_problem(mp, s.X, s)
+    callback(:Subsolver, mp, s, k)
     step = s.stepsize(mp, s, k)
+    callback(:Stepsize, mp, s, k)
     # retract
     ManifoldsBase.retract_fused!(M, s.p, s.p, s.X, step, s.retraction_method)
     s.p_trial = copy(M, s.p) # needed for affine covariant damping (can be ignored if this stepsize computation is not used)

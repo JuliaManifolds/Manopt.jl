@@ -1,4 +1,6 @@
-# A manifold objective
+# The Objective
+
+The [Problem](problem.md) to be solved
 
 ```@meta
 CurrentModule = Manopt
@@ -17,9 +19,7 @@ The general abstract type for these is
 AbstractManifoldObjective
 ```
 
-For components of the objective, there might be different ways they can be evaluated,
-most prominently, whether for example a function providing the gradient ``\operatorname{grad} f``
-would allocate new memory or work inplace.
+One parameter of the objective specifies the type of evaluation:
 
 ```@docs
 AbstractEvaluationType

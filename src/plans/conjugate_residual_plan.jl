@@ -252,13 +252,14 @@ function get_vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObje
 end
 
 @doc """
-    ConjugateResidualState{T,R,TStop<:StoppingCriterion} <: AbstractManoptSolverState
+    ConjugateResidualState{T,R,TStop<:StoppingCriterion,C<:AbstractDict{Symbol}} <: AbstractManoptSolverState
 
 A state for the [`conjugate_residual`](@ref) solver.
 
 # Fields
 
 * `X::T`: the iterate
+* `callbacks::C`: the callbacks dictionary
 * `r::T`: the residual ``r = -b(p) - $(_tex(:Cal, "A"))(p)[X]``
 * `d::T`: the conjugate direction
 * `Ar::T`, `Ad::T`: storages for ``$(_tex(:Cal, "A"))(p)[d]``, ``$(_tex(:Cal, "A"))(p)[r]``
@@ -284,6 +285,7 @@ Initialise the state with default values.
 * `Ad=copy(TpM, Ar)`
 * `α::R=0.0`
 * `β::R=0.0`
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:X))
 
@@ -291,8 +293,9 @@ $(_kwargs(:X))
 
 [`conjugate_residual`](@ref)
 """
-mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
+mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion, C <: AbstractDict{Symbol}} <:
     AbstractManoptSolverState
+    callbacks::C
     X::T
     r::T
     d::T
@@ -304,10 +307,10 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
     stop::TStop
     warm_start::Bool
     function ConjugateResidualState(;
-            X::T, r::T, d::T, Ar::T, Ad::T, α::R, β::R, rAr::R, stopping_criterion::SC, warm_start::Bool
-        ) where {T, R, SC <: StoppingCriterion}
-        crs = new{T, R, SC}()
-        crs.X = X; crs.r = r; crs.d = d; crs.Ar = Ar; crs.Ad = Ad
+            callbacks::C, X::T, r::T, d::T, Ar::T, Ad::T, α::R, β::R, rAr::R, stopping_criterion::SC, warm_start::Bool
+        ) where {T, R, SC <: StoppingCriterion, C <: AbstractDict{Symbol}}
+        crs = new{T, R, SC, C}()
+        crs.callbacks = callbacks; crs.X = X; crs.r = r; crs.d = d; crs.Ar = Ar; crs.Ad = Ad
         crs.α = α; crs.β = β; crs.rAr = rAr; crs.stop = stopping_criterion
         crs.warm_start = warm_start
         return crs
@@ -315,16 +318,19 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
     function ConjugateResidualState(
             TpM::TangentSpace,
             aslso::AbstractSymmetricLinearSystemObjective;
+            callbacks::C = Dict{Symbol, Function}(),
             X::T = rand(TpM), r::T = (-get_gradient(TpM, aslso, X)), d::T = copy(TpM, r),
             Ar::T = get_hessian(TpM, aslso, X, r), Ad::T = copy(TpM, Ar), α::Real = 0.0, β::Real = 0.0,
             stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) | StopWhenGradientNormLess(1.0e-8),
             warm_start::Bool = true,
             kwargs...,
-        ) where {T, SC <: StoppingCriterion}
+        ) where {T, SC <: StoppingCriterion, C <: AbstractDict{Symbol}}
         R = promote_type(typeof(α), typeof(β))
-        return ConjugateResidualState(; X = X, r = r, d = d, Ar = Ar, Ad = Ad, α = α, β = β, rAr = zero(R), stopping_criterion = stopping_criterion, warm_start = warm_start)
+        return ConjugateResidualState(; callbacks = callbacks, X = X, r = r, d = d, Ar = Ar, Ad = Ad, α = α, β = β, rAr = zero(R), stopping_criterion = stopping_criterion, warm_start = warm_start)
     end
 end
+
+get_callbacks(crs::ConjugateResidualState) = crs.callbacks
 
 get_iterate(crs::ConjugateResidualState) = crs.X
 function set_iterate!(crs::ConjugateResidualState, ::AbstractManifold, X)
@@ -343,10 +349,11 @@ function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(crs.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(crs)) – $(Iter) $(has_converged(crs) ? "(converged)" : "")")
+    as = _callbacks_summary(crs)
     s = """
     # Solver state for `Manopt.jl`s Conjugate Residual Method
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * α: $(crs.α)
     * β: $(crs.β)
 

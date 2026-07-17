@@ -71,6 +71,17 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             M, coh, p_0; stopping_criterion = sc, centrality_condition = ipcc
         )
         @test distance(M, q3, [0.0, 0.0, 1.0]) < 2.0e-4
+        @testset "Callback Test" begin
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
+            q4 = interior_point_Newton(
+                M, coh, p_0; stopping_criterion = StopAfterIteration(1), centrality_condition = ipcc, callbacks = cb
+            )
+            @test sk_record == [
+                (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+                (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            ]
+        end
         if _debug_iterates_plot
             using GLMakie, Makie, GeometryTypes
             rec = get_record(res[2])

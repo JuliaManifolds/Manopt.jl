@@ -137,8 +137,28 @@ else
     _diagview(A::AbstractMatrix) = @view A[LinearAlgebra.diagind(A)]
 end
 
+#
+#
+# Base – A (work in progress) separate folder scheme for abstract types and design ideas
+include("base/problem/abstract_problem.jl")
+include("base/objective/evaluation.jl")
+include("base/objective/abstract_objective.jl")
+include("base/state/abstract_state.jl")
+include("base/state/action.jl")
+include("base/state/debug.jl")
+include("base/state/callback.jl")
+include("base/state/decorator.jl")
+include("base/default_factory.jl")
 
+#
+#
+# Commons – a collection of types or functions that are common to more than one solver
+include("commons/debugs.jl")
+
+# Common Solver plans
 include("plans/plan.jl")
+#
+#
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
@@ -264,6 +284,7 @@ export AbstractGradientSolverState,
     AugmentedLagrangianMethodState,
     ConvexBundleMethodState,
     ChambollePockState,
+    CMAESState,
     ConjugateGradientDescentState,
     ConjugateResidualState,
     CoordinatesNormalSystemState,
@@ -274,6 +295,7 @@ export AbstractGradientSolverState,
     ExactPenaltyMethodState,
     FrankWolfeState,
     GradientDescentState,
+    GradientSamplingState,
     InteriorPointNewtonState,
     LanczosState,
     LevenbergMarquardtState,
@@ -326,6 +348,7 @@ export get_state,
     set_gradient!, set_iterate!
 export get_hessian, get_hessian!
 export get_differential
+export provided_callbacks
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual

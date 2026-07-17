@@ -236,6 +236,28 @@ import Manifolds: inner
         )
         @test isapprox(M, p13, p14)
         @test f(M, p13) ≈ 0.0 atol = 1.0e-15
+        @testset "Callbacks" begin
+            cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
+            sk_record = Tuple{Symbol, Int}[]
+            difference_of_convex_proximal_point(
+                M, grad_h, p0; prox_g = prox_g,
+                callbacks = cb, stopping_criterion = StopAfterIteration(1)
+            )
+            @test sk_record == [
+                (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+                (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            ]
+            sk_record = Tuple{Symbol, Int}[]
+            difference_of_convex_algorithm(
+                M, f, g, grad_h, p0; sub_problem = dca_sub,
+                callbacks = cb, stopping_criterion = StopAfterIteration(1)
+            )
+            @test sk_record == [
+                (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+                (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            ]
+        end
+
     end
     @testset "On positive numbers" begin
         # Define in Manifolds.jl?

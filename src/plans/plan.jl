@@ -158,12 +158,9 @@ is_tutorial_mode() = (get_parameter(:Mode) == "Tutorial")
 
 # include this first because all following elements might define keyword helpers.
 
-include("manifold_default_factory.jl")
-include("objective.jl")
 include("problem.jl")
 include("solver_state.jl")
 
-include("debug.jl")
 include("record.jl")
 
 include("stopping_criterion.jl")
@@ -202,17 +199,14 @@ include("alternating_gradient_plan.jl")
 include("augmented_lagrangian_plan.jl")
 include("conjugate_gradient_plan.jl")
 include("exact_penalty_method_plan.jl")
-include("frank_wolfe_plan.jl")
 include("interior_point_Newton_plan.jl")
 include("quasi_newton_plan.jl")
-include("mesh_adaptive_plan.jl")
 include("nonlinear_least_squares/linear_surrogate_plan.jl")
 include("nonlinear_least_squares/nls_objective.jl")
 include("nonlinear_least_squares/nls_general_plan.jl")
 include("nonlinear_least_squares/nls_in_coordinates_plan.jl")
 include("nonlinear_least_squares/box_nls_plan.jl")
 include("difference_of_convex_plan.jl")
-include("Douglas_Rachford_plan.jl")
 
 include("primal_dual_plan.jl")
 include("higher_order_primal_dual_plan.jl")

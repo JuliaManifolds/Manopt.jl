@@ -1,20 +1,7 @@
-# [Solver state](@id sec-solver-state)
+# [Solver states](@id sec-solver-state)
 
 ```@meta
 CurrentModule = Manopt
-```
-
-Given an [`AbstractManoptProblem`](@ref), that is a certain optimisation task,
-the state specifies the solver to use. It contains the parameters of a solver and all
-fields necessary during the algorithm, for example the current iterate, a [`StoppingCriterion`](@ref)
-or a [`Stepsize`](@ref).
-
-```@docs
-AbstractManoptSolverState
-get_state
-Manopt.get_count
-Manopt.has_converged(::AbstractManoptSolverState)
-stopped_at
 ```
 
 Since every subtype of an [`AbstractManoptSolverState`](@ref) directly relate to a solver,
