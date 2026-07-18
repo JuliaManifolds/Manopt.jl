@@ -25,11 +25,11 @@ using ManifoldDiff
 # Dummy types
 struct DummyManifold <: AbstractManifold{ManifoldsBase.ℝ} end
 
-struct DummyDecoratedObjective{E, O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{E, O}
+struct DummyDecoratedObjective{O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{O}
     objective::O
 end
-function DummyDecoratedObjective(o::O) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
-    return DummyDecoratedObjective{E, O}(o)
+function DummyDecoratedObjective(o::O) where {O <: AbstractManifoldObjective}
+    return DummyDecoratedObjective{O}(o)
 end
 function Manopt.status_summary(
         ddo::DummyDecoratedObjective; kwargs...
@@ -41,10 +41,10 @@ function Base.show(io::IO, ddo::DummyDecoratedObjective)
     print(io, ddo.objective)
     return print(io, ")")
 end
-struct DummyEmptyDecoratedObjective{E, O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{E, O}
+struct DummyEmptyDecoratedObjective{O <: OldDeprecatedAbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{O}
     objective::O
-    function DummyEmptyDecoratedObjective(o::O) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
-        return new{E, O}(o)
+    function DummyEmptyDecoratedObjective(o::O) where {O <: OldDeprecatedAbstractManifoldObjective}
+        return new{O}(o)
     end
 end
 
