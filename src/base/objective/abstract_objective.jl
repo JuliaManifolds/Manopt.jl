@@ -109,46 +109,13 @@ function Base.show(io::IO, ro::ReturnManifoldObjective)
 end
 
 #
-# internal automatic wrappers to ensure mutability
-# TODO: Rework to the wrapper above.
-# TODO: Continue rework without allocation type here.
-
-function _ensure_mutating_cost(cost, q::Number)
-    return isnothing(cost) ? cost : (M, p) -> cost(M, p[])
-end
-function _ensure_mutating_cost(cost, p)
-    return cost
-end
-
-function _ensure_mutating_gradient(grad_f, p, evaluation::AbstractEvaluationType)
-    return grad_f
-end
-function _ensure_mutating_gradient(grad_f, q::Number, evaluation::AllocatingEvaluation)
-    return isnothing(grad_f) ? grad_f : (M, p) -> [grad_f(M, p[])]
-end
-function _ensure_mutating_gradient(grad_f, q::Number, evaluation::InplaceEvaluation)
-    return isnothing(grad_f) ? grad_f : (M, X, p) -> (X .= [grad_f(M, p[])])
-end
-
-function _ensure_mutating_hessian(hess_f, p, evaluation::AbstractEvaluationType)
-    return hess_f
-end
-function _ensure_mutating_hessian(hess_f, q::Number, evaluation::AllocatingEvaluation)
-    return isnothing(hess_f) ? hess_f : (M, p, X) -> [hess_f(M, p[], X[])]
-end
-function _ensure_mutating_hessian(hess_f, q::Number, evaluation::InplaceEvaluation)
-    return isnothing(hess_f) ? hess_f : (M, Y, p, X) -> (Y .= [hess_f(M, p[], X[])])
-end
-
-function _ensure_mutating_prox(prox_f, p, evaluation::AbstractEvaluationType)
-    return prox_f
-end
-function _ensure_mutating_prox(prox_f, q::Number, evaluation::AllocatingEvaluation)
-    return isnothing(prox_f) ? prox_f : (M, λ, p) -> [prox_f(M, λ, p[])]
-end
-function _ensure_mutating_prox(prox_f, q::Number, evaluation::InplaceEvaluation)
-    return isnothing(prox_f) ? prox_f : (M, q, λ, p) -> (q .= [prox_f(M, λ, p[])])
-end
+# internal automatic wrappers to ensure mutability of the iterate
+_ensure_mutating_cost(cost, q::Number) = isnothing(cost) ? cost : (M, p) -> cost(M, p[])
+_ensure_mutating_cost(cost, p) = cost
+_ensure_mutating_gradient(grad_f, q) = grad_f
+# Here the grad is already mutating – i.e. wrapped
+_ensure_mutating_gradient(grad_f, q::Number) = (M, X, p) -> (X .= [grad_f(M, p[])])
+# ToDo – find. a way to “easy-wrap” alloc gradients.
 
 _ensure_mutating_variable(p) = p
 _ensure_mutating_variable(q::Number) = [q]

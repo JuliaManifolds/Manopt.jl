@@ -34,7 +34,7 @@ function get_cost_and_gradient(M, objective::AbstractManifoldFirstOrderObjective
 end
 
 @doc """
-    d = get_differential(M, objective::AbstractManifoldFirstOrderObjective, p, X; Y=nothing)
+    d = get_differential(M, objective::AbstractManifoldFirstOrderObjective, p, X; gradient=nothing)
 
 Evaluate the differential of a [`AbstractManifoldFirstOrderObjective`] `objective` at a point `p` in direction `X`.
 
