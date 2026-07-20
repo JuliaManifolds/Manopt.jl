@@ -531,7 +531,10 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
 
     while λ > s.stop_when_stepsize_less
         # Perform gradient step with current λ
-        retract!(M, pgm_temp.a, p, -λ * X, st.retraction_method)
+        direction = -λ * X
+        retract!(M, pgm_temp.a, p, direction, st.retraction_method)
+        distance_gradient = norm(M, p, direction)
+
 
         # Perform proximal step with current λ
         _pgm_proximal_step(mp, pgm_temp, λ)
@@ -539,25 +542,31 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
 
         # Compute log_p(candidate_point) and its squared norm for the conditions
         log_p_q = inverse_retract(M, p, candidate_point, st.inverse_retraction_method)
-        squared_distance = norm(M, p, log_p_q)^2
-        if s.strategy === :nonconvex
-            # Nonconvex descent condition
-            if get_cost(mp, p) - get_cost(mp, candidate_point) >=
-                    (s.sufficient_decrease / λ) * squared_distance
-                s.last_stepsize = λ
-                return λ
-            end
-        elseif s.strategy === :convex
-            g_p = get_cost_smooth(M, objective, p)
-            g_q = get_cost_smooth(M, objective, candidate_point)
+        distance_candidate = norm(M, p, log_p_q)
+        squared_distance = distance_candidate^2
+        π_k = s.k_max ≤ eps(eltype(s.k_max)) ? Inf : π / √s.k_max
+        r_δ = π_k / (2 + s.δ)
+
+        if max(distance_gradient, distance_candidate) ≤ r_δ
+            if s.strategy === :nonconvex
+                # Nonconvex descent condition
+                if get_cost(mp, p) - get_cost(mp, candidate_point) >=
+                        (s.sufficient_decrease / λ) * squared_distance
+                    s.last_stepsize = λ
+                    return λ
+                end
+            elseif s.strategy === :convex
+                g_p = get_cost_smooth(M, objective, p)
+                g_q = get_cost_smooth(M, objective, candidate_point)
 
 
-            ζ_δ = s.k_max ≤ zero(eltype(s.k_max)) ? one(eltype(s.k_max)) : π / (2 + s.δ) * cot(π / (2 + s.δ))
+                ζ_δ = s.k_max ≤ zero(eltype(s.k_max)) ? one(eltype(s.k_max)) : π / (2 + s.δ) * cot(π / (2 + s.δ))
 
-            # Convex descent condition
-            if g_q <= g_p + inner(M, p, X, log_p_q) + (ζ_δ / 2λ) * squared_distance
-                s.last_stepsize = λ
-                return λ
+                # Convex descent condition
+                if g_q <= g_p + inner(M, p, X, log_p_q) + (ζ_δ / 2λ) * squared_distance
+                    s.last_stepsize = λ
+                    return λ
+                end
             end
         end
 
