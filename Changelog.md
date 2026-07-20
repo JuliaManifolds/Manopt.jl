@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* an extra condition in the backtracking `ProximalGradientMethodBacktrackingStepsize` for the `proximal_gradient_method`.
+* an extra condition in the backtracking `ProximalGradientMethodBacktrackingStepsize` for the `proximal_gradient_method`. (#629)
 
 ## [0.6.2] July 17, 2026
 
