@@ -17,6 +17,17 @@ $(_fields(:stopping_criterion; name = "stop"))
 abstract type AbstractManoptSolverState end
 
 """
+    AbstractRestartCondition
+
+A general struct, that indicates then to restart.
+It is used within the [`ConjugateGradientDescentState`](@ref).
+
+It is implemented to work as a functor `(problem, state, iteration) -> true|false`
+and what is done in the restart case (`true`) is decided by the single solver.
+"""
+abstract type AbstractRestartCondition end
+
+"""
     get_count(ams::AbstractManoptSolverState, ::Symbol)
 
 Obtain the count for a certain countable size, for example the `:Iterations`.
@@ -34,6 +45,13 @@ end
 function get_count(ams::AbstractManoptSolverState, v::Val{:Iterations})
     return get_count(ams.stop, v)
 end
+@doc """
+    get_gradient(agst::AbstractGradientSolverState)
+
+return the gradient stored within gradient options.
+THe default returns `agst.X`.
+"""
+get_gradient(agst::AbstractGradientSolverState) = agst.X
 
 """
     get_iterate(state::AbstractManoptSolverState)
@@ -52,6 +70,15 @@ function _get_iterate(s::AbstractManoptSolverState, ::Val{false})
     )
 end
 _get_iterate(s::AbstractManoptSolverState, ::Val{true}) = get_iterate(s.state)
+
+@doc """
+    get_iterate(agst::AbstractGradientSolverState)
+
+return the iterate stored within gradient options.
+THe default returns `agst.p`.
+"""
+get_iterate(agst::AbstractGradientSolverState) = agst.p
+
 
 _set_iterate!(s::AbstractManoptSolverState, M, p, ::Val{true}) = set_iterate!(s.state, M, p)
 
@@ -110,6 +137,17 @@ _get_stopping_criterion(ams::AbstractManoptSolverState) = ams.stop
 Return whether the solver has converged, based on the internal [`StoppingCriterion`](@ref).
 """
 has_converged(ams::AbstractManoptSolverState) = has_converged(get_stopping_criterion(ams))
+
+@doc """
+    set_gradient!(state::AbstractGradientSolverState, M, p, X)
+
+set the (current) gradient stored within an [`AbstractGradientSolverState`](@ref) to `X`.
+The default function modifies `state.X`.
+"""
+function set_gradient!(state::AbstractGradientSolverState, M, p, X)
+    copyto!(M, state.X, p, X)
+    return state
+end
 
 """
     set_iterate!(s::AbstractManoptSolverState, M::AbstractManifold, p)

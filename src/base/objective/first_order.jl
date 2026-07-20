@@ -10,6 +10,16 @@ An abstract type for all objectives that provide
 abstract type AbstractManifoldFirstOrderObjective{F, G} <:
 AbstractManifoldCostObjective{F} end
 
+"""
+    DirectionUpdateRule
+
+A general functor, that handles direction update rules. It's fields are usually
+only a [`StoreStateAction`](@ref) by default initialized to the fields required
+for the specific coefficient, but can also be replaced by a (common, global)
+individual one that provides these values.
+"""
+abstract type DirectionUpdateRule end
+
 @doc """
     (c, d) = get_cost_and_differential(M, objective::AbstractManifoldFirstOrderObjective, p, X; Y=nothing)
 

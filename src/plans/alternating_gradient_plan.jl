@@ -150,10 +150,9 @@ function get_gradient!(
     return X
 end
 
-function Base.show(io::IO, mago::ManifoldAlternatingGradientObjective{E}) where {E}
+function Base.show(io::IO, mago::ManifoldAlternatingGradientObjective)
     print(io, "ManifoldAlternatingGradientObjective(")
     print(io, mago.cost); print(io, ", "); print(io, mago.gradient!!); print(io, "; ")
-    print(io, _to_kw(E))
     return print(io, ")")
 end
 function status_summary(mago::ManifoldAlternatingGradientObjective; context::Symbol = :default)

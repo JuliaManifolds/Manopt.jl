@@ -417,6 +417,44 @@ function status_summary(d::DebugEntryChange; context::Symbol = :default)
 end
 
 @doc """
+    DebugGradient <: DebugAction
+
+debug for the gradient evaluated at the current iterate
+
+# Constructors
+    DebugGradient(; long=false, prefix= , format= "\$prefix%s", io=stdout, at_init=false)
+
+display the short (`false`) or long (`true`) default text for the gradient,
+or set the `prefix` manually. Alternatively the complete format can be set.
+"""
+mutable struct DebugGradient <: DebugAction
+    io::IO
+    format::String
+    at_init::Bool
+    function DebugGradient(;
+            long::Bool = false,
+            prefix = long ? "Gradient: " : "grad f(p):",
+            format = "$prefix%s",
+            io::IO = stdout,
+            at_init::Bool = false,
+        )
+        return new(io, format, at_init)
+    end
+end
+function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
+    (k < (d.at_init ? 0 : 1)) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), get_gradient(s))
+    return nothing
+end
+function Base.show(io::IO, dg::DebugGradient)
+    return print(io, "DebugGradient(; format=\"$(dg.format)\", at_init=$(dg.at_init))")
+end
+function status_summary(dg::DebugGradient; context::Symbol = :default)
+    (context === :short) && (return "(:Gradient, \"$(dg.format)\")")
+    return "A DebugAction to print the gradient at the current iterate “$(dg.format)”"
+end
+
+@doc """
     DebugGradientChange()
 
 debug for the amount of change of the gradient (stored in `get_gradient(o)` of the [`AbstractManoptSolverState`](@ref) `o`)
@@ -481,6 +519,51 @@ function status_summary(di::DebugGradientChange; context::Symbol = :Default)
     (context === :short) && (return "(:GradientChange, \"$(escape_string(di.format))\")")
     # Inline and default
     return "A DebugAction printing the change of the gradient with format “$(escape_string(di.format))”"
+end
+
+@doc """
+    DebugGradientNorm <: DebugAction
+
+debug for gradient evaluated at the current iterate.
+
+# Constructors
+    DebugGradientNorm([long=false, format= "\$prefix%s", io=stdout, at_init=true])
+
+display the short (`false`) or long (`true`) default text for the gradient norm.
+
+    DebugGradientNorm(prefix[, p=print])
+
+display the a `prefix` in front of the gradient norm.
+"""
+mutable struct DebugGradientNorm <: DebugAction
+    io::IO
+    format::String
+    at_init::Bool
+    function DebugGradientNorm(;
+            long::Bool = false,
+            prefix = long ? "Norm of the Gradient: " : "|grad f(p)|:",
+            format = "$prefix%s", io::IO = stdout, at_init::Bool = true,
+        )
+        return new(io, format, at_init)
+    end
+end
+function (d::DebugGradientNorm)(
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
+    (k < (d.at_init ? 0 : 1)) && return nothing
+    Printf.format(
+        d.io,
+        Printf.Format(d.format),
+        norm(get_manifold(mp), get_iterate(s), get_gradient(s)),
+    )
+    return nothing
+end
+function Base.show(io::IO, dgn::DebugGradientNorm)
+    return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\", at_init=$(dgn.at_init))")
+end
+function status_summary(dgn::DebugGradientNorm; context::Symbol = :default)
+    (context === :short) && return "(:GradientNorm, \"$(dgn.format)\")"
+    return "A debug action to display the gradient norm (format. \"$(dgn.format)\")"
 end
 
 @doc """
@@ -618,6 +701,42 @@ function status_summary(d::DebugMessages; context::Symbol = :default)
     m = "a $(d.mode == :Warning ? "warning " : (d.mode == :Error ? "error " : ""))message"
     s = d.status === :No ? " (inactive)" : (d.status === :Once ? " once" : "")
     return "A DebugAction printing messages collected during the last iteration as $(m)$(s)."
+end
+
+@doc """
+    DebugStepsize <: DebugAction
+
+debug for the current step size.
+
+# Constructors
+    DebugStepsize(;long=false,prefix="step size:", format="\$prefix%s", io=stdout, at_init=true)
+
+display the a `prefix` in front of the step size.
+"""
+mutable struct DebugStepsize <: DebugAction
+    io::IO
+    format::String
+    at_init::Bool
+    function DebugStepsize(;
+            at_init::Bool = true, format = "$prefix%s", io::IO = stdout, long::Bool = false,
+            prefix = long ? "step size:" : "s:",
+        )
+        return new(io, format, at_init)
+    end
+end
+function (d::DebugStepsize)(
+        p::P, s::O, k::Int
+    ) where {P <: AbstractManoptProblem, O <: AbstractGradientSolverState}
+    (k < (d.at_init ? 0 : 1)) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, k))
+    return nothing
+end
+function Base.show(io::IO, ds::DebugStepsize)
+    return print(io, "DebugStepsize(; format=\"$(escape_string(ds.format))\", at_init=$(ds.at_init))")
+end
+function status_summary(ds::DebugStepsize; context::Symbol = :default)
+    (context === :short) && return "(:Stepsize, \"$(escape_string(ds.format))\")"
+    return "A DebugAction that prints the current step size to $(ds.io) in format “$(escape_string(ds.format))”"
 end
 
 @doc """
