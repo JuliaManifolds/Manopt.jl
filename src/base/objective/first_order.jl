@@ -106,21 +106,32 @@ end
 
 
 @doc """
+    get_gradient(problem::AbstractManoptProblem, p)
     get_gradient(M, objective::AbstractManifoldFirstOrderObjective, p)
+    get_gradient!(problem::AbstractManoptProblem, X, p)
     get_gradient!(M, X, objective::AbstractManifoldFirstOrderObjective, p)
 
-Evaluate the gradient of a [`AbstractManifoldFirstOrderObjective`] `objective` at a point `p`.
-This can be evaluated in-place of `X`.
+Evaluate the gradient of a [`AbstractManifoldFirstOrderObjective`] `objective` on an $(_link(:AbstractManifold)) `M` at a point `p`.
+This can be evaluated in-place of `X` and also when passing and [`AbstractManoptProblem`](@ref) `problem`.
 """
 function get_gradient(M, objective::AbstractManifoldFirstOrderObjective, p)
     X = zero_vector(M, p)
     return get_gradient!(M, X, objective, p)
 end
 
-# Decorator case
+### Decorator
 function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
     return get_gradient(M, get_objective(admo, false), p)
 end
 function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
     return get_gradient!(M, X, get_objective(admo, false), p)
+end
+
+### Problem
+function get_gradient(problem::AbstractManoptProblem, p)
+    X = zero_vector(get_manifold(problem), p)
+    return get_gradient!(problem, X, p)
+end
+function get_gradient!(problem::AbstractManoptProblem, X, p)
+    return get_gradient!(get_manifold(problem), X, get_objective(problem), p)
 end
