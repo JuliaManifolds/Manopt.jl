@@ -198,9 +198,9 @@ function get_cost(
     return error("$mfo does not seem to provide a cost")
 end
 
+#TODO: Since Y is a keyword, maybe a better name is gradient_cache? and add the evaluated bool here as well
 function get_cost_and_differential(
-        M::AbstractManifold, mfo::ManifoldFirstOrderObjective,
-        p, X; Y = nothing,
+        M::AbstractManifold, mfo::ManifoldFirstOrderObjective, p, X; Y = nothing,
     )
     if haskey(mfo.functions, :costdifferential)
         return mfo.functions[:costdifferential](M, p, X)
@@ -217,4 +217,31 @@ function get_cost_and_differential(
         return (cost, real(inner(M, p, X, grad)))
     end
     return error("$mfo does not provide a cost and a differential")
+end
+
+function get_cost_function(
+        mfo::ManifoldFirstOrderObjective, recursive::Bool = false
+    )
+    if haskey(mfo.functions, :cost)
+        return mfo.functions[:cost]
+    else
+        return (M, p) -> get_cost(M, mfo, p)
+    end
+end
+
+function get_differential(
+        M::AbstractManifold, mfo::ManifoldFirstOrderObjective, p, X;
+        gradient = nothing, evaluated::Bool = false, kwargs...,
+    )
+    # If we have a differential – evaluate that
+    haskey(mfo.functions, :differential) && (return mfo.functions[:differential](M, p, X))
+    haskey(mfo.functions, :costdifferential) &&
+        (return mfo.functions[:costdifferential](M, p, X)[2])
+    # default: inner with gradient
+    # (a) we have gradient but it is not evaluated -> eval
+    (!evaluated && !isnothing(gradient)) && (get_gradient!(M, gradient, mfo, p))
+    # if grad is nothing -> allocated gradient
+    isnothing(gradient) && (gradient = get_gradient(M, mfo, p))
+    # -> we have a gradient!
+    return real(inner(M, p, gradient, X))
 end
