@@ -29,21 +29,6 @@ function maybe_wrap_evaluation_type(::E) where {E <: AbstractEvaluationType}
 end
 
 @doc """
-    AbstractGradientSolverState <: AbstractManoptSolverState
-
-A generic [`AbstractManoptSolverState`](@ref) type for gradient based options data.
-
-It assumes that
-
-* the iterate is stored in the field `p`
-* the gradient at `p` is stored in `X`.
-
-# See also
-[`GradientDescentState`](@ref), [`StochasticGradientDescentState`](@ref), [`SubGradientMethodState`](@ref), [`QuasiNewtonState`](@ref).
-"""
-abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
-
-@doc """
     ReturnSolverState{O<:AbstractManoptSolverState} <: AbstractManoptSolverState
 
 This internal type is used to indicate that the contained [`AbstractManoptSolverState`](@ref) `state`
