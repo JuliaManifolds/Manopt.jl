@@ -130,6 +130,7 @@ include("base/objective/cost.jl")
 include("base/objective/first_order.jl")
 include("base/objective/first_order_nonsmooth.jl")
 include("base/objective/second_order.jl")
+include("base/objective/vectorial.jl")
 # ## State
 include("base/state/abstract_state.jl")
 include("base/state/action.jl")
@@ -154,11 +155,11 @@ include("commons/records.jl")
 include("commons/stopping_criteria.jl")
 
 # DEPRECATED: Common Solver plans
-include("plans/plan.jl")
+include("plans/plan.jl") #TODO: Move all its content either to base/ commons/ or the solvers
 #
 #
 # solvers general framework
-include("solvers/solver.jl")
+include("solvers/solver.jl") #TODO: Move to base/
 # specific solvers
 include("solvers/adaptive_regularization_with_cubics.jl")
 include("solvers/alternating_gradient_descent.jl")

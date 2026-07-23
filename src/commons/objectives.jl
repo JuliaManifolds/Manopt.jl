@@ -511,3 +511,79 @@ function get_proximal_map!(
     )
     return mpgo.proximal_map_h!!(M, q, λ, p)
 end
+
+@doc """
+    ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:AbstractManifoldCostObjective{T, C}
+
+A structure to store information about a objective for a subgradient based optimization problem
+
+# Fields
+
+* `cost`:        the function ``f`` to be minimized
+* `subgradient`: a function returning a subgradient ``∂f`` of ``f``
+
+# Constructor
+
+    ManifoldSubgradientObjective(f, ∂f)
+
+Generate the [`ManifoldSubgradientObjective`](@ref) for a subgradient objective, consisting
+of a (cost) function `f(M, p)` and a function `∂f(M, p)` that returns a not necessarily
+deterministic element from the subdifferential at `p` on a manifold `M`.
+"""
+struct ManifoldSubgradientObjective{C, S} <: AbstractManifoldCostObjective{C}
+    cost::C
+    subgradient!!::S
+    function ManifoldSubgradientObjective(cost::C, subgrad::S) where {C, S}
+        return new{C, S}(cost, subgrad)
+    end
+end
+
+"""
+    X = get_subgradient(M;;AbstractManifold, sgo::ManifoldSubgradientObjective, p)
+    get_subgradient!(M;;AbstractManifold, X, sgo::ManifoldSubgradientObjective, p)
+
+Evaluate the (sub)gradient of a [`ManifoldSubgradientObjective`](@ref) `sgo`
+at the point `p`.
+
+The evaluation is done in place of `X` for the `!`-variant.
+The result might not be deterministic, _one_ element of the subdifferential is returned.
+"""
+function get_subgradient(M::AbstractManifold, sgo::ManifoldSubgradientObjective, p)
+    X = zero_vector(M, p)
+    return sgo.subgradient!!(M, X, p)
+end
+function get_subgradient!(
+        M::AbstractManifold, X, sgo::ManifoldSubgradientObjective, p
+    )
+    return sgo.subgradient!!(M, X, p)
+end
+
+@doc """
+    get_subgradient_function(objective::ManifoldSubgradientObjective, recursive=false)
+
+return the function to evaluate (just) the gradient ``$(_tex(:grad)) f(p)``
+and is of the form `(M, X, p) -> X` to work in-place of `X`,
+where either the gradient function using the decorator or without the decorator is used.
+
+By default `recursive` is set to `false`, since usually to just pass the gradient function
+somewhere, one still wants for example the cached one or the one that still counts calls.
+"""
+function get_subgradient_function(objective::ManifoldSubgradientObjective, recursive = false)
+    return objective.subgradient!!
+end
+
+function Base.show(io::IO, objective::ManifoldSubgradientObjective)
+    return print(io, "ManifoldSubgradientObjective(", objective.cost, ", ", objective.subgradient!!, ")")
+end
+
+function status_summary(objective::ManifoldSubgradientObjective; context::Symbol = :default)
+    (context === :short) && return repr(objective)
+    s = "A subgradient objective "
+    (context === :inline) && (return s)
+    return """
+    $s
+
+    ## Components
+    * `f`:  $(objective.cost)
+    * `∂f`: $(objective.subgradient!!)"""
+end

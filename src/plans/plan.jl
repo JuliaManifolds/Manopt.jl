@@ -80,7 +80,6 @@ include("stepsize/stepsize.jl")
 # Generic plans I: based on objective structure
 include("bundle_plan.jl")
 include("hessian_plan.jl")
-include("subgradient_plan.jl")
 include("vectorial_plan.jl")
 
 # Linear systems
