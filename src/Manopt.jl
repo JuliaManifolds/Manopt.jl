@@ -138,7 +138,7 @@ include("base/state/callback.jl")
 include("base/state/debug.jl")
 include("base/state/decorator.jl")
 include("base/state/record.jl")
-# General
+# ## General further interfaces
 include("base/parameter.jl")
 include("base/keyword.jl")
 include("base/default_factory.jl")
@@ -159,7 +159,7 @@ include("plans/plan.jl") #TODO: Move all its content either to base/ commons/ or
 #
 #
 # solvers general framework
-include("solvers/solver.jl") #TODO: Move to base/
+include("solvers/solver.jl") #TODO: Move to base/ & commons/
 # specific solvers
 include("solvers/adaptive_regularization_with_cubics.jl")
 include("solvers/alternating_gradient_descent.jl")
@@ -195,7 +195,7 @@ include("solvers/stochastic_gradient_descent.jl")
 include("solvers/subgradient.jl")
 include("solvers/vectorbundle_newton.jl")
 #
-# Last: Debug & Record
+# TODO: Debug & Record -> move to commons/?
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 
