@@ -704,6 +704,38 @@ function status_summary(d::DebugMessages; context::Symbol = :default)
 end
 
 @doc """
+    DebugProximalParameter <: DebugAction
+
+print the current iterates proximal point algorithm parameter given by
+[`AbstractManoptSolverState`](@ref)s `o.λ`.
+"""
+mutable struct DebugProximalParameter <: DebugAction
+    io::IO
+    format::String
+    at_init::Bool
+    function DebugProximalParameter(;
+            long::Bool = false,
+            prefix = long ? "Proximal Map Parameter λ(i):" : "λ:",
+            format = "$prefix%s",
+            io::IO = stdout,
+            at_init::Bool = true,
+        )
+        return new(io, format, at_init)
+    end
+end
+function Base.show(io::IO, d::DebugProximalParameter)
+    return print(
+        io, "DebugGradientChange(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init = $(d.at_init))",
+    )
+end
+function status_summary(d::DebugProximalParameter; context::Symbol = :Default)
+    (context === :short) && (return "(:ProxParameter, \"$(escape_string(d.format))\")")
+    # Inline and default
+    return "A DebugAction printing the proximal parameter as “$(escape_string(d.format))”"
+end
+
+
+@doc """
     DebugStepsize <: DebugAction
 
 debug for the current step size.

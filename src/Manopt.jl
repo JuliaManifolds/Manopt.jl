@@ -142,6 +142,8 @@ include("base/default_factory.jl")
 include("commons/debugs.jl")
 include("commons/objectives.jl")
 include("commons/direction_updates.jl")
+include("commons/parameters.jl")
+include("commons/problems.jl")
 include("commons/records.jl")
 
 # DEPRECATED: Common Solver plans

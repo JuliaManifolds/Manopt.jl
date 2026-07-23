@@ -1,8 +1,3 @@
-#
-# Define a global problem and its constructors
-#
-# ---
-
 @doc """
     DefaultManoptProblem{TM <: AbstractManifold, Objective <: AbstractManifoldObjective}
 
@@ -39,16 +34,4 @@ get_manifold(amp::DefaultManoptProblem) = amp.manifold
 
 function get_objective(amp::DefaultManoptProblem, recursive = false)
     return recursive ? get_objective(amp.objective, true) : amp.objective
-end
-
-@doc """
-    get_cost(M::AbstractManifold, obj::AbstractManifoldObjective, p)
-
-evaluate the cost function `f` defined on `M` stored within the [`AbstractManifoldObjective`](@ref) at the point `p`.
-"""
-get_cost(::AbstractManifold, ::AbstractManifoldObjective, p)
-
-function set_parameter!(TpM::TangentSpace, ::Union{Val{:Basepoint}, Val{:p}}, p)
-    copyto!(TpM.manifold, TpM.point, p)
-    return TpM
 end

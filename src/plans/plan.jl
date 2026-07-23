@@ -158,7 +158,6 @@ is_tutorial_mode() = (get_parameter(:Mode) == "Tutorial")
 
 # include this first because all following elements might define keyword helpers.
 
-include("problem.jl")
 include("solver_state.jl")
 
 include("stopping_criterion.jl")
@@ -173,7 +172,6 @@ include("keywords.jl")
 # Generic plans I: based on objective structure
 include("bundle_plan.jl")
 include("hessian_plan.jl")
-include("proximal_plan.jl")
 include("proximal_gradient_plan.jl")
 include("subgradient_plan.jl")
 include("vectorial_plan.jl")
