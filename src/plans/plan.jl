@@ -161,8 +161,6 @@ is_tutorial_mode() = (get_parameter(:Mode) == "Tutorial")
 include("problem.jl")
 include("solver_state.jl")
 
-include("record.jl")
-
 include("stopping_criterion.jl")
 
 include("stepsize/initial_guess.jl")
@@ -174,7 +172,6 @@ include("keywords.jl")
 
 # Generic plans I: based on objective structure
 include("bundle_plan.jl")
-include("first_order_plan.jl")
 include("hessian_plan.jl")
 include("proximal_plan.jl")
 include("proximal_gradient_plan.jl")
