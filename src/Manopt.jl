@@ -121,20 +121,25 @@ end
 #
 #
 # Base – A (work in progress) separate folder scheme for abstract types and design ideas
+# ## Problem
 include("base/problem/abstract_problem.jl")
+# ## Objective
 include("base/objective/evaluation.jl")
 include("base/objective/abstract_objective.jl")
 include("base/objective/cost.jl")
 include("base/objective/first_order.jl")
 include("base/objective/first_order_nonsmooth.jl")
 include("base/objective/second_order.jl")
-#
+# ## State
 include("base/state/abstract_state.jl")
 include("base/state/action.jl")
 include("base/state/callback.jl")
 include("base/state/debug.jl")
 include("base/state/decorator.jl")
 include("base/state/record.jl")
+# General
+include("base/parameter.jl")
+include("base/keyword.jl")
 include("base/default_factory.jl")
 #
 #

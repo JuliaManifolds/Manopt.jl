@@ -342,7 +342,7 @@ mutable struct ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostOb
     end
     function ManifoldProximalMapObjective(
             f::F, proxes_f::Union{Tuple, AbstractVector}, nOP::Vector{<:Integer}
-        ) where {E <: AbstractEvaluationType, F}
+        ) where {F}
         return if length(nOP) != length(proxes_f)
             throw(
                 ErrorException(
