@@ -218,6 +218,21 @@ function get_cost_and_differential(
     end
     return error("$mfo does not provide a cost and a differential")
 end
+function get_cost_and_gradient!(
+        M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective, p
+    )
+    haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, X, p))
+    if haskey(mfo.functions, :cost) && haskey(mfo.functions, :gradient)
+        return mfo.functions[:cost](M, p), mfo.functions[:gradient](M, X, p)
+    end
+    Y = zero_vector(M, p)
+    if haskey(mfo.functions, :costdifferential) && haskey(mfo.functions, :gradient)
+        return (
+            mfo.functions[:costdifferential](M, p, Y)[1], mfo.functions[:gradient](M, X, p),
+        )
+    end
+    return error("$mfo seems to either have no access to a cost or a gradient")
+end
 
 function get_cost_function(
         mfo::ManifoldFirstOrderObjective, recursive::Bool = false
@@ -244,4 +259,39 @@ function get_differential(
     isnothing(gradient) && (gradient = get_gradient(M, mfo, p))
     # -> we have a gradient!
     return real(inner(M, p, gradient, X))
+end
+
+function get_differential_function(
+        mfo::ManifoldFirstOrderObjective, recursive::Bool = false
+    )
+    if haskey(mfo.functions, :differential)
+        return mfo.functions[:differential]
+    else
+        return (M, p, X; kwargs...) -> get_differential(M, mfo, p, X, kwargs...)
+    end
+end
+function get_gradient!(
+        M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{<:NamedTuple}, p,
+    )
+    haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient](M, X, p))
+    haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, X, p)[2])
+    return error("$mfo does not seem to provide a gradient")
+end
+
+function get_gradient_function(
+        mfo::ManifoldFirstOrderObjective, recursive = false
+    )
+    haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient])
+    return (M, X, p) -> get_gradient!(M, X, mfo, p)
+end
+
+function status_summary(mfo::ManifoldFirstOrderObjective; context::Symbol = :default)
+    _is_inline(context) && (return repr(mfo))
+    return "A first order objective with $(length(mfo.functions)) provided functions.\n\n" * join([ "* $k:$(_MANOPT_INDENT) $(v)" for (k, v) in zip(keys(mfo.functions), mfo.functions) ], "\n")
+end
+function Base.show(io::IO, mfo::ManifoldFirstOrderObjective)
+    print(io, "ManifoldFirstOrderObjective(; ")
+    print(io, join([ "$k = $v" for (k, v) in zip(keys(mfo.functions), mfo.functions)], ", "))
+    print(io, ", ")
+    return print(io, ")")
 end

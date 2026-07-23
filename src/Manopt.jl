@@ -131,18 +131,20 @@ include("base/objective/second_order.jl")
 #
 include("base/state/abstract_state.jl")
 include("base/state/action.jl")
-include("base/state/debug.jl")
 include("base/state/callback.jl")
+include("base/state/debug.jl")
 include("base/state/decorator.jl")
+include("base/state/record.jl")
 include("base/default_factory.jl")
-
 #
 #
 # Commons – a collection of types or functions that are common to more than one solver
 include("commons/debugs.jl")
 include("commons/objectives.jl")
 include("commons/direction_updates.jl")
-# Common Solver plans
+include("commons/records.jl")
+
+# DEPRECATED: Common Solver plans
 include("plans/plan.jl")
 #
 #
