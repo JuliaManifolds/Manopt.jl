@@ -184,6 +184,8 @@ include("solvers/trust_regions.jl")
 include("solvers/stochastic_gradient_descent.jl")
 include("solvers/subgradient.jl")
 include("solvers/vectorbundle_newton.jl")
+#
+# Last: Debug & Record
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 
