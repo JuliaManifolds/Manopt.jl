@@ -141,6 +141,7 @@ include("base/state/record.jl")
 include("base/parameter.jl")
 include("base/keyword.jl")
 include("base/default_factory.jl")
+include("base/stopping_criterion.jl")
 #
 #
 # Commons – a collection of types or functions that are common to more than one solver
@@ -150,6 +151,7 @@ include("commons/direction_updates.jl")
 include("commons/parameters.jl")
 include("commons/problems.jl")
 include("commons/records.jl")
+include("commons/stopping_criteria.jl")
 
 # DEPRECATED: Common Solver plans
 include("plans/plan.jl")

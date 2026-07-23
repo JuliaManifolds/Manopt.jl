@@ -298,7 +298,7 @@ end
 
 
 @doc """
-    ManifoldProximalMapObjective{E<:AbstractEvaluationType, TC, TP, V <: Vector{<:Integer}} <: AbstractManifoldCostObjective{E, TC}
+    ManifoldProximalMapObjective{TC, TP, V <: Vector{<:Integer}} <: AbstractManifoldCostObjective{E, TC}
 
 specify a problem for solvers based on the evaluation of proximal maps,
 which represents proximal maps ``$(_tex(:prox))_{λf_i}`` for summands ``f = f_1 + f_2+ … + f_N`` of the cost function ``f``.
@@ -316,13 +316,12 @@ which represents proximal maps ``$(_tex(:prox))_{λf_i}`` for summands ``f = f_1
 
 # Constructor
 
-    ManifoldProximalMapObjective(f, proxes_f::Union{Tuple,AbstractVector}, number_of_proxes=onex(length(proxes));
-       evaluation=Allocating)
+    ManifoldProximalMapObjective( f, proxes_f::Union{Tuple,AbstractVector}, number_of_proxes=onex(length(proxes)) )
 
 Generate a proximal problem with a tuple or vector of functions, where by default every function computes a single prox
 of one component of ``f``.
 
-    ManifoldProximalMapObjective(f, prox_f); evaluation=Allocating)
+    ManifoldProximalMapObjective(f, prox_f)
 
 Generate a proximal objective for ``f`` and its proxial map ``$(_tex(:prox))_{λf}``
 
@@ -414,4 +413,101 @@ function Base.show(io::IO, mpo::ManifoldProximalMapObjective)
     print(io, "ManifoldProximalMapObjective(", mpo.cost, ", ", mpo.proximal_maps!!, ", ")
     print(io, mpo.number_of_proxes)
     return print(io, ")")
+end
+
+
+@doc """
+    ManifoldProximalGradientObjective{TC, TG, TGG, TP} <: AbstractManifoldObjective{TC,TGG}
+
+Model an objective of the form
+
+```math
+f(p) = g(p) + h(p), $(_tex(:qquad)) p ∈ $(_math(:Manifold)),
+```
+
+where ``g: $(_math(:Manifold)) → $(_tex(:eR))`` is a differentiable function
+and ``h: → $(_tex(:eR))`` is a (possibly) lower semicontinous, and proper function.
+
+This objective provides the total cost ``f``, its smooth component ``g``,
+as well as ``$(_tex(:grad)) g`` and ``$(_tex(:prox))_{λ h}``.
+
+# Fields
+
+* `cost`: the overall cost ``f = g + h``
+* `cost_smooth`: the smooth cost component ``g``
+* `gradient_g!!`: the gradient ``$(_tex(:grad)) g``
+* `proximal_map_h!!`: the proximal map ``$(_tex(:prox))_{λ h}``
+
+# Constructor
+    ManifoldProximalGradientObjective(f, g, grad_g, prox_h)
+
+Generate the proximal gradient objective given the total cost ``f = g + h``, smooth cost ``g``, the gradient of the smooth component ``$(_tex(:grad)) g``, and the proximal map of the nonsmooth component ``$(_tex(:prox))_{λ h}``.
+"""
+struct ManifoldProximalGradientObjective{TC, TG, TGG, TP} <: AbstractManifoldCostObjective{TC}
+    cost::TC # f = g + h
+    cost_smooth::TG # smooth part
+    gradient_g!!::TGG
+    proximal_map_h!!::TP
+    function ManifoldProximalGradientObjective(
+            f::TC, g::TG, grad_g::TGG, prox_h::TP
+        ) where {TC, TG, TGG, TP}
+        return new{TC, TG, TGG, TP}(f, g, grad_g, prox_h)
+    end
+end
+
+"""
+    get_gradient(M::AbstractManifold, mgo::ManifoldProximalGradientObjective, p)
+    get_gradient!(M::AbstractManifold, X, mgo::ManifoldProximalGradientObjective, p)
+
+Evaluate the gradient of the smooth part of a [`ManifoldProximalGradientObjective`](@ref) `mgo` at `p`.
+"""
+get_gradient(::AbstractManifold, ::ManifoldProximalGradientObjective, p)
+
+function get_gradient!(M::AbstractManifold, X, mpgo::ManifoldProximalGradientObjective, p)
+    return mpgo.gradient_g!!(M, X, p)
+end
+
+function Base.show(io::IO, mpgo::ManifoldProximalGradientObjective{E}) where {E}
+    print(io, "ManifoldProximalGradientObjective(", mpgo.cost, ", ", mpgo.cost_smooth, ", ")
+    print(io, mpgo.gradient_g!!, ", ", mpgo.proximal_map_h!!)
+    return print(io, ")")
+end
+
+function status_summary(mpgo::ManifoldProximalGradientObjective; context::Symbol = :default)
+    (context === :short) && return repr(mpgo)
+    s = "A proximal gradient objective `f = g + h`, where `g` is smooth and `h` is possibly nonsmooth."
+    (context === :inline) && (return s)
+    return """
+    $s
+
+    # Components
+    * `f`:          $(mpgo.cost)
+    * `g`:          $(mpgo.cost_smooth)
+    * `gradient_g`: $(mpgo.gradient_g!!)
+    * `prox_h`:     $(mpgo.proximal_map_h!!)"""
+end
+"""
+    get_cost_smooth(M::AbstractManifold, objective, p)
+
+Helper function to extract the smooth part `g` of a proximal gradient objective at the point `p`.
+"""
+function get_cost_smooth(
+        M::AbstractManifold, objective::ManifoldProximalGradientObjective, p
+    )
+    return objective.cost_smooth(M, p)
+end
+
+@doc """
+    q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalGradientObjective, λ, p)
+    get_proximal_map!(M::AbstractManifold, q, mpo::ManifoldProximalGradientObjective, λ, p)
+
+Evaluate proximal map of the nonsmooth component ``h`` of the [`ManifoldProximalGradientObjective`](@ref)` mpo`
+at the point `p` on `M` with parameter ``λ>0``.
+"""
+get_proximal_map(M::AbstractManifold, mpgo::ManifoldProximalGradientObjective, λ, p)
+
+function get_proximal_map!(
+        M::AbstractManifold, q, mpgo::ManifoldProximalGradientObjective, λ, p
+    )
+    return mpgo.proximal_map_h!!(M, q, λ, p)
 end
