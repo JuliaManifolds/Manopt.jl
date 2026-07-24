@@ -54,19 +54,42 @@ function status_summary(slso::SymmetricLinearSystemObjective; context::Symbol = 
     * A: $(slso.A!!)
     * b: $(slso.b!!)"""
 end
+
+# TODO: Docs – maybe even over on the general setup?
+function get_linear_operator(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p, X)
+    Y = copy(M, p, X)
+    slso.A!!(M, Y, p, X)
+    return Y
+end
+function get_linear_operator!(M::AbstractManifold, W, slso::SymmetricLinearSystemObjective, p, X)
+    return slso.A!!(M, W, p, X)
+end
+
 @doc """
-    get_cost(TpM::TangentSpace, aslso::SymmetricLinearSystemObjective, X)
+    get_vector_field(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p)
+    get_vector_field!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p)
+    get_vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjective)
+    get_vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective)
 
-evaluate the cost
-
-$(_doc_CR_cost)
-
-at `X`.
+evaluate the stored value for computing the right hand side ``b`` in ``$(_tex(:Cal, "A"))=-b``,
+either providing a tangent space or a manifold and a point.
 """
-function get_cost(
-        TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X
-    )
+function get_vector_field(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p)
+    Y = zero_vector(M, p)
+    return slso.b!!(M, Y, p)
+end
+function get_vector_field!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p)
+    return slso.b!!(M, Y, p)
+end
+# Also on TpM – shortcuts
+function get_vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjective)
     M = base_manifold(TpM)
     p = base_point(TpM)
-    return 0.5 * norm(M, p, get_linear_operator(TpM, aslso, p, X) + get_vector_field(TpM, aslso, p))^2
+    Y = zero_vector(M, p)
+    return slso.b!!(M, Y, p)
+end
+function get_vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective)
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return slso.b!!(M, Y, p)
 end
