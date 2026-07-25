@@ -88,7 +88,6 @@ include("conjugate_residual_plan.jl")
 include("robustifiers.jl")
 
 # Generic plans II: based on subsolvers
-include("constrained_plan.jl")
 include("constrained_set_plan.jl")
 include("trust_regions_plan.jl")
 

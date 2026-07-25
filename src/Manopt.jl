@@ -123,6 +123,9 @@ end
 # Base – A (work in progress) separate folder scheme for abstract types and design ideas
 # ## Problem
 include("base/problem/abstract_problem.jl")
+# ## Function
+include("base/function/constrained_function.jl")
+include("base/function/vectorial_function.jl")
 # ## Objective
 include("base/objective/evaluation.jl")
 include("base/objective/abstract_objective.jl")
@@ -132,7 +135,7 @@ include("base/objective/first_order_nonsmooth.jl")
 include("base/objective/linear_system.jl")
 include("base/objective/second_order.jl")
 include("base/objective/sub_objective.jl")
-include("base/objective/vectorial.jl")
+include("base/objective/vectorial_objective.jl")
 # ## State
 include("base/state/abstract_state.jl")
 include("base/state/action.jl")
@@ -150,6 +153,7 @@ include("base/stopping_criterion.jl")
 #
 # Commons – a collection of types or functions that are common to more than one solver
 include("commons/debugs.jl")
+include("commons/functions.jl")
 include("commons/objectives.jl")
 include("commons/direction_updates.jl")
 include("commons/linear_systems.jl")
