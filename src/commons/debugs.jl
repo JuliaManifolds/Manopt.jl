@@ -809,6 +809,41 @@ function status_summary(c::DebugStoppingCriterion; context::Symbol = :default)
 end
 
 @doc """
+    DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
+
+print a warning if the Lagrange parameter based value ``-ξ`` of the bundle method increases.
+
+# Constructor
+
+    DebugWarnIfLagrangeMultiplierIncreases(warn=:Once; tol=1e2)
+
+Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e2`.
+
+The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+to `:Always` to report an increase every time it happens, and it can be set to `:No`
+to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
+All other symbols are handled as if they were `:Always`.
+"""
+mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
+    status::Symbol
+    old_value::Float64
+    tol::Float64
+    function DebugWarnIfLagrangeMultiplierIncreases(warn::Symbol = :Once; tol = 1.0e2)
+        return new(warn, Float64(Inf), tol)
+    end
+end
+function show(io::IO, d::DebugWarnIfLagrangeMultiplierIncreases)
+    m = (d.status === :No ? "" : ":$(d.status)")
+    return print(io, "DebugWarnIfLagrangeMultiplierIncreases($(m); tol=\"$(d.tol)\")")
+end
+function status_summary(d::DebugWarnIfLagrangeMultiplierIncreases; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    m = (d.status === :Once) ? "once" : (d.status === :No ? "(inactive)" : "")
+    return "a DebugAction warning if the lagange multiplier increases in an iteration $m."
+end
+
+
+@doc """
     DebugWhenActive <: DebugAction
 
 evaluate and print debug only if the active boolean is set.

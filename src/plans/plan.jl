@@ -78,7 +78,6 @@ include("stepsize/linesearch.jl")
 include("stepsize/stepsize.jl")
 
 # Generic plans I: based on objective structure
-include("bundle_plan.jl")
 include("hessian_plan.jl")
 include("vectorial_plan.jl")
 

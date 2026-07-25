@@ -202,6 +202,40 @@ function status_summary(pbms::ProximalBundleMethodState; context::Symbol = :defa
     return s
 end
 
+
+function proximal_bundle_method_subsolver end
+function proximal_bundle_method_subsolver! end
+@doc """
+    λ = proximal_bundle_method_subsolver(M, p_last_serious, μ, approximation_errors, transported_subgradients)
+    proximal_bundle_method_subsolver!(M, λ, p_last_serious, μ, approximation_errors, transported_subgradients)
+
+solver for the subproblem of the proximal bundle method.
+
+The subproblem for the proximal bundle method is
+```math
+\\begin{align*}
+    $(_tex(:argmin))_{λ ∈ ℝ^{$(_tex(:abs, "L_l"))}} &
+    $(_tex(:frac, "1", "2 μ_l")) $(_tex(:Bigl)) \\lVert $(_tex(:sum, "j ∈ L_l")) λ_j $(_tex(:rm, "P"))_{p_k←q_j} X_{q_j}$(_tex(:Bigr))\\rVert^2
+    + $(_tex(:sum, "j ∈ L_l")) "λ_j \\, c_j^k
+    \\\\
+    $(_tex(:text, "s. t.")) $(_tex(:quad)) &
+    $(_tex(:sum, "j ∈ L_l")) λ_j = 1,
+    $(_tex(:quad)) λ_j ≥ 0
+    $(_tex(:quad)) $(_tex(:text, "for all ")) j ∈ L_l,
+\\end{align*}
+```
+where ``L_l = $(_tex(:set, "k"))`` if ``q_k`` is a serious iterate, and ``L_l = L_{l-1}  ∪ $(_tex(:set, "k"))`` otherwise.
+See [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
+
+!!! tip
+    A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
+    is available if these two packages are loaded.
+"""
+proximal_bundle_method_subsolver(
+    M, p_last_serious, μ, approximation_errors, transported_subgradients
+)
+
+
 _doc_PBM_dk = raw"""
 ```math
 d_k = \frac{1}{\mu_k} \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},

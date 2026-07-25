@@ -563,6 +563,50 @@ function status_summary(nsbt::NullStepBackTrackingStepsize; context::Symbol = :d
 end
 get_message(nsbt::NullStepBackTrackingStepsize) = nsbt.message
 
+
+function convex_bundle_method_subsolver end
+function convex_bundle_method_subsolver! end
+@doc """
+    λ = convex_bundle_method_subsolver(M, p_last_serious, linearization_errors, transported_subgradients)
+    convex_bundle_method_subsolver!(M, λ, p_last_serious, linearization_errors, transported_subgradients)
+
+solver for the subproblem of the convex bundle method
+at the last serious iterate ``p_k`` given the current linearization errors ``c_j^k``,
+and transported subgradients ``$(_tex(:rm, "P"))_{p_k←q_j} X_{q_j}``.
+
+The computation can also be done in-place of `λ`.
+
+The subproblem for the convex bundle method is
+```math
+\\begin{align*}
+    $(_tex(:argmin))_{λ ∈ ℝ^{$(_tex(:abs, "J_k"))}}
+    &
+    $(_tex(:frac, "1", "2"))
+    $(_tex(:Bigl))\\lVert
+    $(_tex(:sum, "j ∈ J_k")) λ_j $(_tex(:rm, "P"))_{p_k←q_j} X_{q_j}
+    $(_tex(:Bigl))\\rVert^2
+    + $(_tex(:sum, "j ∈ J_k")) λ_jc_j^k
+    \\\\
+    $(_tex(:text, "s. t."))$(_tex(:quad)) &
+    $(_tex(:sum, "j ∈ J_k")) λ_j = 1,
+    $(_tex(:quad)) λ_j ≥ 0
+    $(_tex(:quad)) $(_tex(:text, "for all "))
+    j ∈ J_k,
+\\end{align*}
+```
+
+where ``J_k = $(_tex(:set, "j ∈ J_{k-1} \\ | \\ λ_j > 0")) ∪ $(_tex(:set, "k"))``.
+See [BergmannHerzogJasa:2024](@cite) for more details
+
+!!! tip
+    A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
+    is available if these two packages are loaded.
+"""
+convex_bundle_method_subsolver(
+    M, p_last_serious, linearization_errors, transported_subgradients
+)
+
+
 _doc_cbm_gk = """
 ```math
 g_k = $(_tex(:sum, "j ∈ J_k")) λ_j^k $(_tex(:rm, "P"))_{p_k←q_j}X_{q_j},
