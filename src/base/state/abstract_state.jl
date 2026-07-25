@@ -179,6 +179,22 @@ function _set_iterate!(s::AbstractManoptSolverState, ::Any, ::Any, ::Val{false})
     )
 end
 
+"""
+    set_parameter!(ams::AbstractManoptSolverState, element::Symbol, args...)
+
+Set a certain field or semantic element from the [`AbstractManoptSolverState`](@ref) `ams` to `value`.
+This function passes to `Val(element)` and specific setters should dispatch on `Val{element}`.
+
+By default, this function just does nothing.
+"""
+function set_parameter!(ams::AbstractManoptSolverState, e::Symbol, args...)
+    return set_parameter!(ams, Val(e), args...)
+end
+# Default: do nothing
+function set_parameter!(ams::AbstractManoptSolverState, ::Val, args...)
+    return ams
+end
+
 @doc """
     stopped_at(state::AbstractManoptSolverState)
 
