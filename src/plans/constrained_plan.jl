@@ -1,26 +1,26 @@
 """
-    AbstractConstrainedFunctor{T}
+    AbstractConstrainedFunction{T}
 
 A common supertype for functors that model constraint functions.
 
 This supertype provides access for the fields ``λ`` and ``μ``, the dual variables of
 constraints of type `T`.
 """
-abstract type AbstractConstrainedFunctor{T} end
+abstract type AbstractConstrainedFunction{T} end
 
-function set_parameter!(acf::AbstractConstrainedFunctor{T}, ::Val{:μ}, μ::T) where {T}
+function set_parameter!(acf::AbstractConstrainedFunction{T}, ::Val{:μ}, μ::T) where {T}
     acf.μ = μ
     return acf
 end
-get_parameter(acf::AbstractConstrainedFunctor, ::Val{:μ}) = acf.μ
-function set_parameter!(acf::AbstractConstrainedFunctor{T}, ::Val{:λ}, λ::T) where {T}
+get_parameter(acf::AbstractConstrainedFunction, ::Val{:μ}) = acf.μ
+function set_parameter!(acf::AbstractConstrainedFunction{T}, ::Val{:λ}, λ::T) where {T}
     acf.λ = λ
     return acf
 end
-get_parameter(acf::AbstractConstrainedFunctor, ::Val{:λ}) = acf.λ
+get_parameter(acf::AbstractConstrainedFunction, ::Val{:λ}) = acf.λ
 
 """
-    AbstractConstrainedSlackFunctor{T,R}
+    AbstractConstrainedSlackFunction{T,R}
 
 A common supertype for functors that model constraint functions with slack.
 
@@ -30,25 +30,25 @@ This supertype additionally provides access for the fields
 * `β::R` the  the barrier parameter
 which is also of type `T`.
 """
-abstract type AbstractConstrainedSlackFunctor{T, R} end
+abstract type AbstractConstrainedSlackFunction{T, R} end
 
-function set_parameter!(acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:s}, s::T) where {T}
+function set_parameter!(acsf::AbstractConstrainedSlackFunction{T}, ::Val{:s}, s::T) where {T}
     acsf.s = s
     return acsf
 end
-get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:s}) = acsf.s
-function set_parameter!(acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:μ}, μ::T) where {T}
+get_parameter(acsf::AbstractConstrainedSlackFunction, ::Val{:s}) = acsf.s
+function set_parameter!(acsf::AbstractConstrainedSlackFunction{T}, ::Val{:μ}, μ::T) where {T}
     acsf.μ = μ
     return acsf
 end
-get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:μ}) = acsf.μ
+get_parameter(acsf::AbstractConstrainedSlackFunction, ::Val{:μ}) = acsf.μ
 function set_parameter!(
-        acsf::AbstractConstrainedSlackFunctor{T, R}, ::Val{:β}, β::R
+        acsf::AbstractConstrainedSlackFunction{T, R}, ::Val{:β}, β::R
     ) where {T, R}
     acsf.β = β
     return acsf
 end
-get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:β}) = acsf.β
+get_parameter(acsf::AbstractConstrainedSlackFunction, ::Val{:β}) = acsf.β
 
 """
     ConstrainedManifoldObjective{T<:AbstractEvaluationType, C<:ConstraintType} <: AbstractManifoldObjective{T}
@@ -399,7 +399,7 @@ end
 
 
 @doc """
-    LagrangianCost{CO,T} <: AbstractConstrainedFunctor{T}
+    LagrangianCost{CO,T} <: AbstractConstrainedFunction{T}
 
 Implement the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`.
 
@@ -426,7 +426,7 @@ you can also call
 LagrangianCost(co, μ, λ)(M,p)
 ```
 """
-mutable struct LagrangianCost{CO, T} <: AbstractConstrainedFunctor{T}
+mutable struct LagrangianCost{CO, T} <: AbstractConstrainedFunction{T}
     co::CO
     μ::T
     λ::T
@@ -469,7 +469,7 @@ Create a functor for the Lagrangian with fixed dual variables.
 When you directly want to evaluate the gradient of the Lagrangian ``$(_tex(:grad))_p $(_tex(:Cal, "L"))``
 you can also call `LagrangianGradient(co, μ, λ)(M,p)` or `LagrangianGradient(co, μ, λ)(M,X,p)` for the in-place variant.
 """
-mutable struct LagrangianGradient{CO, T} <: AbstractConstrainedFunctor{T}
+mutable struct LagrangianGradient{CO, T} <: AbstractConstrainedFunction{T}
     co::CO
     μ::T
     λ::T
@@ -523,7 +523,7 @@ Create a functor for the Lagrangian with fixed dual variables.
 When you directly want to evaluate the Hessian of the Lagrangian ``$(_tex(:Hess))_p $(_tex(:Cal, "L"))``
 you can also call `LagrangianHessian(co, μ, λ)(M, p, X)` or `LagrangianHessian(co, μ, λ)(M, Y, p, X)` for the in-place variant.
 """
-mutable struct LagrangianHessian{CO, T} <: AbstractConstrainedFunctor{T}
+mutable struct LagrangianHessian{CO, T} <: AbstractConstrainedFunction{T}
     co::CO
     μ::T
     λ::T

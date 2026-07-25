@@ -16,8 +16,8 @@ ConstrainedManoptProblem
 as well as the helper functions
 
 ```@docs
-AbstractConstrainedFunctor
-AbstractConstrainedSlackFunctor
+AbstractConstrainedFunction
+AbstractConstrainedSlackFunction
 LagrangianCost
 LagrangianGradient
 LagrangianHessian

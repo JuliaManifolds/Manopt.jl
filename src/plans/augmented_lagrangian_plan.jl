@@ -32,7 +32,7 @@ number type used and ``T`` the vector type.
 
     AugmentedLagrangianCost(co, ρ, μ, λ)
 """
-mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunctor{T}
+mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunction{T}
     co::CO
     ρ::R
     μ::T
@@ -57,7 +57,7 @@ function (L::AugmentedLagrangianCost)(M::AbstractManifold, p)
 end
 
 @doc """
-    AugmentedLagrangianGrad{CO,R,T} <: AbstractConstrainedFunctor{T}
+    AugmentedLagrangianGrad{CO,R,T} <: AbstractConstrainedFunction{T}
 
 Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
 of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
@@ -82,7 +82,7 @@ number type used and ``T`` the vector type.
     AugmentedLagrangianGrad(co, ρ, μ, λ)
 
 """
-mutable struct AugmentedLagrangianGrad{CO, R, T} <: AbstractConstrainedFunctor{T}
+mutable struct AugmentedLagrangianGrad{CO, R, T} <: AbstractConstrainedFunction{T}
     co::CO
     ρ::R
     μ::T

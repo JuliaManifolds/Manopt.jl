@@ -274,7 +274,7 @@ end
 #
 
 @doc """
-    CondensedKKTVectorField{O<:ConstrainedManifoldObjective,T,R} <: AbstractConstrainedSlackFunctor{T,R}
+    CondensedKKTVectorField{O<:ConstrainedManifoldObjective,T,R} <: AbstractConstrainedSlackFunction{T,R}
 
 Given the constrained optimization problem
 
@@ -331,7 +331,7 @@ b(p,λ) = $(
 
     CondensedKKTVectorField(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorField{O <: ConstrainedManifoldObjective, T, R} <: AbstractConstrainedSlackFunctor{T, R}
+mutable struct CondensedKKTVectorField{O <: ConstrainedManifoldObjective, T, R} <: AbstractConstrainedSlackFunction{T, R}
     cmo::O
     μ::T
     s::T
@@ -382,7 +382,7 @@ function Base.show(io::IO, CKKTvf::CondensedKKTVectorField)
 end
 
 @doc """
-    CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,T,R}  <: AbstractConstrainedSlackFunctor{T,R}
+    CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,T,R}  <: AbstractConstrainedSlackFunction{T,R}
 
 Given the constrained optimization problem
 
@@ -437,7 +437,7 @@ $(
 
     CondensedKKTVectorFieldJacobian(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorFieldJacobian{O <: ConstrainedManifoldObjective, T, R} <: AbstractConstrainedSlackFunctor{T, R}
+mutable struct CondensedKKTVectorFieldJacobian{O <: ConstrainedManifoldObjective, T, R} <: AbstractConstrainedSlackFunction{T, R}
     cmo::O
     μ::T
     s::T

@@ -20,8 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * concrete types and their implementations have either been used to the specific solver where they are used / defined,
     especially for solver states, or now reside in a `commons/` folder, when they are of general use for multiple solvers.
     This structure is also reflected in the documentation.
-* the internal supertype `AbstractConstrainedFunctor` has been renamed to `AbstractConstrainedFunction` for consistency.
-  While this might be considered breaking, we decided not to consider it that, since this is merely for internal hierarchy of types
+* a few internal abstract supertypes have been renamed for the new scheme that puts more focus on functions. The word “functor” is now avoided for structs that actually just represent functions. to stay more consistent.
+  * `AbstractConstrainedFunctor` has been renamed to `AbstractConstrainedFunction`
+  * `AbstractConstrainedSlackFunctor` has been renamed to `AbstractConstrainedSlackFunctor`
 
 
 ## [0.6.3] July 20, 2026
