@@ -1,4 +1,122 @@
 @doc """
+    AdaptiveRegularizationWithCubicsModelObjective <: AbstractManifoldSubObjective
+
+A model for the adaptive regularization with Cubics
+
+```math
+m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p
+       +  $(_tex(:frac, "σ", "3")) $(_tex(:norm, "X"))^3,
+```
+
+cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite)
+
+# Fields
+
+* `objective`: an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
+* `σ`:         the current (cubic) regularization parameter
+
+# Constructors
+
+    AdaptiveRegularizationWithCubicsModelObjective(mho, σ=1.0)
+
+with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective.
+"""
+mutable struct AdaptiveRegularizationWithCubicsModelObjective{
+        O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective}, R,
+    } <: AbstractManifoldSubObjective{O}
+    objective::O
+    σ::R
+end
+function AdaptiveRegularizationWithCubicsModelObjective(
+        mho::O, σ::R = 1.0
+    ) where {O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective}, R}
+    return AdaptiveRegularizationWithCubicsModelObjective{O, R}(mho, σ)
+end
+function set_parameter!(
+        f::AdaptiveRegularizationWithCubicsModelObjective, ::Union{Val{:σ}, Val{:RegularizationParameter}}, σ,
+    )
+    f.σ = σ
+    return f
+end
+get_objective(arcmo::AdaptiveRegularizationWithCubicsModelObjective) = arcmo.objective
+
+@doc """
+    get_cost(TpM, trmo::AdaptiveRegularizationWithCubicsModelObjective, X)
+
+Evaluate the tangent space [`AdaptiveRegularizationWithCubicsModelObjective`](@ref)
+
+```math
+m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p
+       + $(_tex(:frac, "σ", "3")) $(_tex(:norm, "X"))^3,
+```
+
+at `X`, cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite).
+"""
+function get_cost(
+        TpM::TangentSpace, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X
+    )
+    M = base_manifold(TpM)
+    p = TpM.point
+    c = get_objective_cost(M, arcmo, p)
+    G = get_objective_gradient(M, arcmo, p)
+    Y = get_objective_hessian(M, arcmo, p, X)
+    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X) + arcmo.σ / 3 * norm(M, p, X)^3
+end
+function get_cost_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective)
+    return (TpM, X) -> get_cost(TpM, arcmo, X)
+end
+@doc """
+    get_gradient(TpM, trmo::AdaptiveRegularizationWithCubicsModelObjective, X)
+
+Evaluate the gradient of the [`AdaptiveRegularizationWithCubicsModelObjective`](@ref)
+
+```math
+$(_tex(:grad)) m(X) = $(_tex(:grad)) f(p) + $(_tex(:Hess)) f(p)[X]
+       + σ$(_tex(:norm, "X")) X,
+```
+
+at `X`, cf. Eq. (37) in [AgarwalBoumalBullinsCartis:2020](@cite).
+"""
+function get_gradient(
+        TpM::TangentSpace, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X
+    )
+    M = base_manifold(TpM)
+    p = TpM.point
+    G = get_objective_gradient(M, arcmo, p)
+    return G + get_objective_hessian(M, arcmo, p, X) + arcmo.σ * norm(M, p, X) * X
+end
+function get_gradient!(
+        TpM::TangentSpace, Y, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X
+    )
+    M = base_manifold(TpM)
+    p = TpM.point
+    get_objective_hessian!(M, Y, arcmo, p, X)
+    Y .= Y + get_objective_gradient(M, arcmo, p) + arcmo.σ * norm(M, p, X) * X
+    return Y
+end
+function get_gradient_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective)
+    return (TpM, X) -> get_gradient(TpM, arcmo, X)
+end
+function Base.show(io::IO, arcmo::AdaptiveRegularizationWithCubicsModelObjective)
+    print(io, "AdaptiveRegularizationWithCubicsModelObjective(")
+    print(io, arcmo.objective); print(io, ", ")
+    print(io, arcmo.σ)
+    return print(io, ")")
+end
+function status_summary(arcmo::AdaptiveRegularizationWithCubicsModelObjective; context::Symbol = :default)
+    (context === :short) && return repr(arcmo)
+    (context === :inline) && return "The (tangent space) model for the adaptive regularization with cubics sub problem with parameter σ=$(arcmo.σ) for the objective $(status_summary(arcmo.objective; context = context))"
+    return """
+    The cubic polynomial based model for the sub problem of the Adaptive Regularization with cubics solver
+
+    ## Regularization parameter
+    σ = $(arcmo.σ)
+
+    ## Objective
+    $(_in_str(status_summary(arcmo.objective)))"""
+end
+
+@doc """
     AdaptiveRegularizationState{P,T} <: AbstractHessianSolverState
 
 A state for the [`adaptive_regularization_with_cubics`](@ref) solver.

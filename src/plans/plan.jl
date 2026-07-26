@@ -13,11 +13,7 @@ include("conjugate_residual_plan.jl")
 # Robutsifiers
 include("robustifiers.jl")
 
-# Generic plans II: based on subsolvers
-include("trust_regions_plan.jl")
-
 # Specific solver plans
-include("adaptive_regularization_with_cubics_plan.jl")
 include("alternating_gradient_plan.jl")
 include("augmented_lagrangian_plan.jl")
 include("conjugate_gradient_plan.jl")
