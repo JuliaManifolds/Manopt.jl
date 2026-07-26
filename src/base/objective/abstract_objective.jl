@@ -135,6 +135,8 @@ The default is `Val{false}`, so by default an state is not decorated.
 dispatch_objective_decorator(::AbstractManifoldObjective) = Val(false)
 dispatch_objective_decorator(::AbstractDecoratedManifoldObjective) = Val(true)
 
+@inline _extract_val(::Val{T}) where {T} = T
+
 """
     is_object_decorator(s::AbstractManifoldObjective)
 

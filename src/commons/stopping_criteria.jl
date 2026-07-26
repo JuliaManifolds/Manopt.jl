@@ -111,7 +111,6 @@ function get_reason(sc::StopWhenLagrangeMultiplierLess)
     end
     return ""
 end
-
 function status_summary(sc::StopWhenLagrangeMultiplierLess; context::Symbol = :default)
     s = (sc.at_iteration >= 0) ? "reached" : "not reached"
     msg = "Lagrange multipliers"

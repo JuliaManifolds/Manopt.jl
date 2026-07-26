@@ -12,10 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * All `AbstractManifoldObjectives` had an evaluation type as first parameter.
   this has been refactored “down to” the function level and function in the objective are now
-  all expected to be in-place. This allows to combine allocationg and in-place variants
+  all expected to be in-place. This allows to combine allocation and in-place variants
   The constructors, however, have not changed
 * the file structure has been changed and the `plan/` folder has been split with the following motivation
-  * all abstract types and generic implementation and documentaion of functions has been moved to `base/`.
+  * all abstract types and generic implementation and documentation of functions has been moved to `base/`.
     This is also reflected in the documentation, where the new `base/` files reflect a developer documentation that additionally includes descriptions of the design choices
   * concrete types and their implementations have either been used to the specific solver where they are used / defined,
     especially for solver states, or now reside in a `commons/` folder, when they are of general use for multiple solvers.

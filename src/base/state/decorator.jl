@@ -13,7 +13,7 @@ dispatch_state_decorator(::AbstractManoptSolverState) = Val(false)
 """
     is_state_decorator(s::AbstractManoptSolverState)
 
-Indicate, whether [`AbstractManoptSolverState`](@ref) `s` are of decorator type.
+Indicate, whether an [`AbstractManoptSolverState`](@ref) `s` is of decorator type.
 """
 function is_state_decorator(s::AbstractManoptSolverState)
     return _extract_val(dispatch_state_decorator(s))

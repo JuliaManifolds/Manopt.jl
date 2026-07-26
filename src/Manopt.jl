@@ -124,8 +124,8 @@ end
 # ## Problem
 include("base/problem/abstract_problem.jl")
 # ## Function
-include("base/function/constrained_function.jl")
-include("base/function/vectorial_function.jl")
+include("base/function/constrained.jl")
+include("base/function/vectorial.jl")
 # ## Objective
 include("base/objective/evaluation.jl")
 include("base/objective/abstract_objective.jl")
@@ -135,7 +135,6 @@ include("base/objective/first_order_nonsmooth.jl")
 include("base/objective/linear_system.jl")
 include("base/objective/second_order.jl")
 include("base/objective/sub_objective.jl")
-include("base/objective/vectorial_objective.jl")
 # ## State
 include("base/state/abstract_state.jl")
 include("base/state/action.jl")
@@ -145,9 +144,11 @@ include("base/state/decorator.jl")
 include("base/state/record.jl")
 include("base/state/sub_state.jl")
 # ## General further interfaces
-include("base/parameter.jl")
-include("base/keyword.jl")
 include("base/default_factory.jl")
+include("base/keyword.jl")
+include("base/parameter.jl")
+include("base/manifold.jl")
+include("base/repl.jl")
 include("base/stopping_criterion.jl")
 #
 #
@@ -161,6 +162,7 @@ include("commons/parameters.jl")
 include("commons/problems.jl")
 include("commons/records.jl")
 include("commons/stopping_criteria.jl")
+include("commons/vectorial_functions.jl")
 
 # DEPRECATED: Common Solver plans
 include("plans/plan.jl") #TODO: Move all its content either to base/ commons/ or the solvers

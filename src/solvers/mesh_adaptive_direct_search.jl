@@ -276,7 +276,7 @@ end
 """
     DefaultMeshAdaptiveDirectSearch <: AbstractMeshSearchFunction
 
-# Functtion
+# Function
 
     (s::DefaultMeshAdaptiveDirectSearch)(problem, mesh_size::Real, X; scale_mesh::Real=1.0, max_stepsize::Real=inf)
 
