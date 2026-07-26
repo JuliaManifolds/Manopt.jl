@@ -1,3 +1,41 @@
+"""
+    AllocatingManifoldFunction{F}
+
+Wrapper for a function that does not work in-place but allocates, i.e. a function of the form
+`f(M, args...) = v` is wrapped herein to work as an in-place variant
+`f!(M, v, args...) = v` to be used within Manopt
+
+# Fields
+* `f::F` : the function to be wrapped of the form `(M, args...) -> v`
+* `result::Symbol`: specify the type
+  * `:Point` uses the corresponding `copyto!` for points
+  * `:TangentVector` uses the corresponding `copyto!` for tangentvectors
+    this type assumes, that the first argument is the point `p` the tangent vector is at.
+  * `:Number` the result is a number and hence can not use `copyto!`, we hence assume `v`
+    is a 0-dimensional array.
+
+  all other symbols use a call of `copyto!`
+
+
+# Constructor
+
+    AllocatingManifoldFunction(f, result = :Point)
+"""
+struct AllocatingManifoldFunction{F}
+    f::F
+    result::Symbol
+    function AllocatingManifoldFunction(f::F, result::Symbol = :Point) where {F}
+        return new{F}(f, result)
+    end
+end
+function (f!::AllocatingManifoldFunction)(M, v, args...)
+    (f!.result === :Point) && return copyto!(M, v, f!.f(M, args...))
+    (f!.result === :TangentVector) && return copyto!(M, v, first(args...), f!.f(M, args...))
+    (f!.result === :Number) && return (v[] = f!.f(M, args...))
+    # default: Just copyto!
+    return copyto!(v, f!.f(M, args...))
+end
+
 @doc """
     LagrangianCost{CO,T} <: AbstractConstrainedFunction{T}
 
