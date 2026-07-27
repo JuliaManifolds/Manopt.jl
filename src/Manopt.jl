@@ -158,18 +158,19 @@ include("base/stopping_criterion.jl")
 # Robustifiers are used in the objective.jl, so they come first
 include("commons/robustifiers.jl")
 # The remainder is alphabetically ordered.
-include("commons/debugs.jl")
 include("commons/functions.jl")
 include("commons/objectives.jl")
 include("commons/direction_updates.jl")
 include("commons/linear_systems.jl")
 include("commons/parameters.jl")
 include("commons/problems.jl")
-include("commons/records.jl")
 include("commons/stopping_criteria.jl")
 include("commons/sub_objectives.jl")
 include("commons/subsolver_states.jl")
 include("commons/vectorial_functions.jl")
+# Debug and Record might require common problems and objectives
+include("commons/debugs.jl")
+include("commons/records.jl")
 
 # DEPRECATED: Common Solver plans
 include("plans/plan.jl") #TODO: Move all its content either to base/ commons/ or the solvers

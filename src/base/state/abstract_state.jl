@@ -319,3 +319,85 @@ function Base.show(io::IO, ::MIME"text/plain", ams::AbstractManoptSolverState)
     multiline = get(io, :multiline, true)
     return multiline ? status_summary(io, ams) : show(io, ams)
 end
+
+#
+#
+# ---
+@doc """
+    AbstractPrimalDualSolverState
+
+A general type for all primal dual based options to be used within primal dual
+based algorithms
+"""
+abstract type AbstractPrimalDualSolverState <: AbstractManoptSolverState end
+
+function dual_residual(
+        M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective,
+        apds::AbstractPrimalDualSolverState, p_old, X_old, n_old,
+    )
+    if apds.variant === :linearized
+        return norm(
+            N,
+            apds.n,
+            1 / apds.dual_stepsize * (
+                vector_transport_to(N, n_old, X_old, apds.n, apds.vector_transport_method_dual) - apds.X
+            ) - linearized_forward_operator(
+                M, N, apdmo, apds.m,
+                vector_transport_to(
+                    M, apds.p,
+                    inverse_retract(M, apds.p, p_old, apds.inverse_retraction_method),
+                    apds.m, apds.vector_transport_method,
+                ),
+                apds.n,
+            ),
+        )
+    elseif apds.variant === :exact
+        return norm(
+            N,
+            apds.n,
+            1 / apds.dual_stepsize * (
+                vector_transport_to(N, n_old, X_old, apds.n, apds.vector_transport_method_dual) - apds.n
+            ) - inverse_retract(
+                N, apds.n,
+                forward_operator(
+                    M, N, apdmo,
+                    retract(
+                        M, apds.m,
+                        vector_transport_to(
+                            M, apds.p,
+                            inverse_retract(M, apds.p, p_old, apds.inverse_retraction_method),
+                            apds.m, apds.vector_transport_method,
+                        ),
+                        apds.retraction_method,
+                    ),
+                ),
+                apds.inverse_retraction_method_dual,
+            ),
+        )
+    else
+        throw(
+            DomainError(
+                apds.variant, "Unknown Chambolle—Pock variant, allowed are `:exact` or `:linearized`.",
+            ),
+        )
+    end
+end
+function primal_residual(
+        M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective,
+        apds::AbstractPrimalDualSolverState, p_old, X_old, n_old,
+    )
+    return norm(
+        M,
+        apds.p,
+        1 / apds.primal_stepsize *
+            inverse_retract(M, apds.p, p_old, apds.inverse_retraction_method) -
+            vector_transport_to(
+            M, apds.m,
+            adjoint_linearized_operator(
+                M, N, apdmo, apds.m, apds.n,
+                vector_transport_to(N, n_old, X_old, apds.n, apds.vector_transport_method_dual) - apds.X,
+            ),
+            apds.p, apds.vector_transport_method,
+        ),
+    )
+end

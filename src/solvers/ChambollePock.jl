@@ -1,3 +1,83 @@
+#
+#
+# ---
+@doc """
+    PrimalDualManifoldObjective{T<:AbstractEvaluationType} <: AbstractPrimalDualManifoldObjective{T}
+
+Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@cite), [ChambollePock:2011](@cite)
+
+# Fields
+
+All fields with `!!` can either be in-place or allocating functions, which should be set
+depending on the `evaluation=` keyword in the constructor and stored in `T <: AbstractEvaluationType`.
+
+* `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
+* `linearized_forward_operator!`: linearized operator for the forward operation in the algorithm ``DΛ``
+* `linearized_adjoint_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → T$(_math(:Manifold))``
+* `prox_f!`:                      the proximal map belonging to ``f``
+* `prox_G_dual!`:                 the proximal map belonging to ``g_n^*``
+* `Λ!`:                           the  forward operator (if given) ``Λ: $(_math(:Manifold)) → $(_math(:Manifold; M = "N"))``
+
+Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
+
+# Constructor
+
+    PrimalDualManifoldObjective(cost, prox_f, prox_G_dual, adjoint_linearized_operator;
+        linearized_forward_operator::Union{Function,Missing}=missing,
+        Λ::Union{Function,Missing}=missing,
+    )
+
+The last optional argument can be used to provide the 4 or 5 functions as in place.
+Note that the first argument is always the manifold under consideration, the mutated one is
+the second.
+"""
+mutable struct PrimalDualManifoldObjective{
+        T <: AbstractEvaluationType, TC, TP, TDP, LFO, ALFO, L,
+    } <: AbstractPrimalDualManifoldObjective{T, TC, TP}
+    cost::TC
+    prox_f!::TP
+    prox_g_dual!::TDP
+    linearized_forward_operator!::LFO
+    adjoint_linearized_operator!::ALFO
+    Λ!::L
+end
+function PrimalDualManifoldObjective(
+        cost::C,
+        prox_f::F,
+        prox_g_dual::G,
+        adjoint_linearized_operator::A;
+        linearized_forward_operator::Union{Function, Missing} = missing,
+        Λ::Union{Function, Missing} = missing,
+    ) where {C, F, G, A}
+    return PrimalDualManifoldObjective{
+        C, F, G, typeof(linearized_forward_operator), A, typeof(Λ),
+    }(
+        cost, prox_f, prox_g_dual, linearized_forward_operator, adjoint_linearized_operator, Λ,
+    )
+end
+
+function status_summary(pdmo::PrimalDualManifoldObjective; context::Symbol = :default)
+    both_missing = ismissing(pdmo.Λ!) && ismissing(pdmo.linearized_forward_operator!)
+    _is_inline(context) && ("A primal dual objective with a cost of f+g, a prox for f, a prox for the dual of g, as well as $(!ismissing(pdmo.Λ!) ? "an operator Λ," : "") $(!ismissing(pdmo.linearized_forward_operator!) ? "DΛ, " : "")$(!both_missing ? "and " : "")an adjoint D^*Λ")
+
+    maybe_line1 = ismissing(pdmo.Λ!) ? "" : "\n* Λ:       $(pdmo.Λ!)"
+    maybe_line2 = ismissing(pdmo.linearized_forward_operator!) ? "" : "\n* DΛ:      $(pdmo.linearized_forward_operator!)"
+    return """
+    A primal dual objective with
+
+    * cost:    $(pdmo.cost)
+    * prox_f:  $(pdmo.prox_f!)
+    * prox_g*: $(pdmo.prox_g_dual!)
+    * D^*Λ:    $(pdmo.adjoint_linearized_operator!)$(maybe_line1)$(maybe_line2)"""
+end
+function show(io::IO, pdmo::PrimalDualManifoldObjective)
+    print(io, "PrimalDualManifoldObjective(", pdmo.cost, ", ", pdmo.prox_f!, ", ")
+    print(io, pdmo.prox_g_dual!, ", ", pdmo.adjoint_linearized_operator!, "; ")
+    !ismissing(pdmo.Λ!) && (print(io, ", Λ = ", pdmo.Λ!))
+    !ismissing(pdmo.linearized_forward_operator!) && (print(io, ", linearized_forward_operator = ", pdmo.linearized_forward_operator!))
+    return print(io, ")")
+end
+
 @doc """
     ChambollePockState <: AbstractPrimalDualSolverState
 

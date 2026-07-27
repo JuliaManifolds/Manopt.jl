@@ -228,3 +228,148 @@ get_manifold(amp::DefaultManoptProblem) = amp.manifold
 function get_objective(amp::DefaultManoptProblem, recursive = false)
     return recursive ? get_objective(amp.objective, true) : amp.objective
 end
+
+#
+#
+# ---
+@doc """
+    TwoManifoldProblem{
+        MT<:AbstractManifold,NT<:AbstractManifold,O<:AbstractManifoldObjective
+    } <: AbstractManoptProblem{MT}
+
+An abstract type for problems that require two manifolds, for example the primal-dual-based problems.
+"""
+struct TwoManifoldProblem{
+        MT <: AbstractManifold, NT <: AbstractManifold, S <: AbstractManifoldObjective,
+    } <: AbstractManoptProblem{MT}
+    first_manifold::MT
+    second_manifold::NT
+    objective::S
+end
+
+function adjoint_linearized_operator(tmp::TwoManifoldProblem, m, n, Y)
+    return adjoint_linearized_operator(get_manifold(tmp, 1), get_manifold(tmp, 2), get_objective(tmp), m, n, Y)
+end
+function adjoint_linearized_operator!(tmp::TwoManifoldProblem, X, m, n, Y)
+    return adjoint_linearized_operator!(get_manifold(tmp, 1), get_manifold(tmp, 2), X, get_objective(tmp), m, n, Y)
+end
+
+@doc """
+    dual_residual(p, o, x_old, X_old, n_old)
+
+Compute the dual residual at current iterate ``k`` given the necessary values ``x_{k-1},
+X_{k-1}``, and ``n_{k-1}`` from the previous iterate. The formula is slightly different depending
+on the `o.variant` used:
+
+For the `:linearized` it reads
+```math
+$(
+    _tex(
+        :norm,
+        "$(_tex(:frac, "1", "τ"))$(_tex(:bigl))( V_{n_{k}← n_{k-1}}(X_{k-1}) - X_k $(_tex(:bigr)) ) - DΛ(m_k)$(_tex(:bigl))[ V_{m_k← x_k}$(_tex(:retr))^{-1}_{x_{k}}(x_{k-1})$(_tex(:bigr))]"
+    )
+)
+```
+
+and for the `:exact` variant
+
+```math
+$(
+    _tex(
+        :norm,
+        "$(_tex(:frac, "1", "τ")) V_{n_{k}← n_{k-1}}(X_{k-1}) - $(_tex(:retr))^{-1}_{n_{k}}$(_tex(:bigl))( Λ($(_tex(:retr))_{m_{k}}(V_{m_k← x_k}$(_tex(:retr))^{-1}_{x_{k}}x_{k-1}))$(_tex(:bigr)))"
+    )
+)
+```
+
+where in both cases ``V_{⋅←⋅}`` is the vector transport used in the [`ChambollePockState`](@ref).
+"""
+function dual_residual(
+        tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old
+    )
+    return dual_residual(
+        get_manifold(tmp, 1), get_manifold(tmp, 2), get_objective(tmp), apds, p_old, X_old, n_old,
+    )
+end
+
+function forward_operator(tmp::TwoManifoldProblem, p)
+    return forward_operator(get_manifold(tmp, 1), get_manifold(tmp, 2), get_objective(tmp), p)
+end
+function forward_operator!(tmp::TwoManifoldProblem, q, p)
+    return forward_operator!(get_manifold(tmp, 1), get_manifold(tmp, 2), q, get_objective(tmp), p)
+end
+
+
+get_manifold(tmp::TwoManifoldProblem) = get_manifold(tmp, 1)
+get_manifold(tmp::TwoManifoldProblem, i) = _get_manifold(tmp, Val(i))
+_get_manifold(tmp::TwoManifoldProblem, ::Val{1}) = tmp.first_manifold
+_get_manifold(tmp::TwoManifoldProblem, ::Val{2}) = tmp.second_manifold
+
+get_objective(tmo::TwoManifoldProblem) = tmo.objective
+
+function get_dual_prox(tmp::TwoManifoldProblem, n, τ, X)
+    return get_dual_prox(get_manifold(tmp, 2), get_objective(tmp), n, τ, X)
+end
+function get_dual_prox!(tmp::TwoManifoldProblem, Y, n, τ, X)
+    get_dual_prox!(get_manifold(tmp, 2), Y, get_objective(tmp), n, τ, X)
+    return Y
+end
+
+function get_primal_prox(tmp::TwoManifoldProblem, σ, p)
+    return get_primal_prox(get_manifold(tmp, 1), get_objective(tmp), σ, p)
+end
+function get_primal_prox!(tmp::TwoManifoldProblem, q, σ, p)
+    get_primal_prox!(get_manifold(tmp, 1), q, get_objective(tmp), σ, p)
+    return q
+end
+
+function linearized_forward_operator(tmp::TwoManifoldProblem, m, X, n)
+    return linearized_forward_operator(get_manifold(tmp, 1), get_manifold(tmp, 2), get_objective(tmp), m, X, n)
+end
+function linearized_forward_operator!(tmp::TwoManifoldProblem, Y, m, X, n)
+    linearized_forward_operator!(get_manifold(tmp, 1), get_manifold(tmp, 2), Y, get_objective(tmp), m, X, n)
+    return Y
+end
+
+@doc """
+    primal_residual(p, o, x_old, X_old, n_old)
+
+Compute the primal residual at current iterate ``k`` given the necessary values ``x_{k-1},
+X_{k-1}``, and ``n_{k-1}`` from the previous iterate.
+
+```math
+$(
+    _tex(
+        :norm,
+        "$(_tex(:frac, "1", "σ"))$(_tex(:retr))^{-1}_{x_{k}}x_{k-1} - V_{x_k←m_k} $(_tex(:bigl))( DΛ^*(m_k)$(_tex(:bigl))[V_{n_k← n_{k-1}}X_{k-1} - X_k $(_tex(:bigr))]$(_tex(:bigr)))"
+    )
+)
+```
+where ``V_{⋅←⋅}`` is the vector transport used in the [`ChambollePockState`](@ref)
+"""
+function primal_residual(
+        tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old
+    )
+    return primal_residual(
+        get_manifold(tmp, 1), get_manifold(tmp, 2), get_objective(tmp), apds, p_old, X_old, n_old,
+    )
+end
+
+function show(io::IO, tmp::TwoManifoldProblem)
+    print(io, "TwoManifoldProblem("); show(io, tmp.first_manifold)
+    print(io, ", "); show(io, tmp.second_manifold)
+    print(io, ", "); show(io, tmp.objective)
+    return print(io, ")")
+end
+function status_summary(tmp::TwoManifoldProblem; context::Symbol = :default)
+    _is_inline(context) && return "An optimization problem to minimize $(tmp.objective) using a primal manifold $(tmp.first_manifold) and a dual manifold $(tmp.second_manifold)."
+    return """
+    An optimization problem for Manopt.jl requiring a primal and a dual manifold
+
+    ## Manifolds
+    * $(_in_str(repr(tmp.first_manifold); indent = 1))
+    * $(_in_str(repr(tmp.second_manifold); indent = 1))
+
+    ## Objective
+    $(_in_str(status_summary(tmp.objective, context = context); indent = 1))"""
+end

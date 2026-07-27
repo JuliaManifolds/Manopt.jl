@@ -20,9 +20,6 @@ include("interior_point_Newton_plan.jl")
 include("quasi_newton_plan.jl")
 include("difference_of_convex_plan.jl")
 
-include("primal_dual_plan.jl")
-include("higher_order_primal_dual_plan.jl")
-
 include("stochastic_gradient_plan.jl")
 
 include("box_plan.jl")
