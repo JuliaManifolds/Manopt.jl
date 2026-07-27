@@ -10,8 +10,6 @@ include("hessian_plan.jl")
 
 # Linear systems
 include("conjugate_residual_plan.jl")
-# Robutsifiers
-include("robustifiers.jl")
 
 # Specific solver plans
 include("alternating_gradient_plan.jl")
@@ -20,11 +18,6 @@ include("conjugate_gradient_plan.jl")
 include("exact_penalty_method_plan.jl")
 include("interior_point_Newton_plan.jl")
 include("quasi_newton_plan.jl")
-include("nonlinear_least_squares/linear_surrogate_plan.jl")
-include("nonlinear_least_squares/nls_objective.jl")
-include("nonlinear_least_squares/nls_general_plan.jl")
-include("nonlinear_least_squares/nls_in_coordinates_plan.jl")
-include("nonlinear_least_squares/box_nls_plan.jl")
 include("difference_of_convex_plan.jl")
 
 include("primal_dual_plan.jl")

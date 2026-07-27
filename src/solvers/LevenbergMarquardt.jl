@@ -1,3 +1,200 @@
+## The name is not optimal but it is merely something internal with a small safeguard
+"""
+    default_lm_lin_solve!(sk, JJ::AbstractMatrix, grad_f_c)
+
+Solve the linear system of equations of the normal equations `JJ \\ grad_f_c` where JJ is a symmetric positive
+definite matrix and save the result to `sk`. In case of numerical errors the
+`PosDefException` is caught and the default symmetric solver `(Symmetric(JJ) \\ grad_f_c)`
+is used.
+
+The function is intended to be used with [`LevenbergMarquardt`](@ref).
+"""
+function default_lm_lin_solve!(sk, JJ::AbstractMatrix, grad_f_c)
+    try
+        ldiv!(sk, cholesky(Symmetric(JJ)), grad_f_c)
+    catch e
+        e isa PosDefException ? (sk .= Symmetric(JJ) \ grad_f_c) : rethrow()
+    end
+    return sk
+end
+
+@doc """
+    LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
+
+Describes a Gradient based descent algorithm, with
+
+# Fields
+
+* `damping_term`:                         current value of the damping term
+* `damping_term_min`:                     lower bound for the damping term
+* `damping_term_max`:                     upper bound for the damping term
+* `damping_increase_factor`:              improvement quotient exceeds `damping_reduction_threshold`.
+* `damping_reduction_threshold`:          threshold for the improvement quotient above which
+  the damping term is reduced by multiplying it with `β_reduction`.
+* `damping_increase_threshold` :          threshold for the improvement quotient below which
+  the damping term is increased by multiplying it with `β`.
+* `direction`:                            the current search direction, which is the solution of
+  the linearized subproblem in each iteration.
+* `candidate_acceptance_threshold`:       Scaling factor for the sufficient cost decrease threshold required
+  to accept new proposal points. Allowed range: `0 < η < 1`.
+* `callbacks`:                            the callbacks dictionary
+* `jacobian_matrices`:                           the current Jacobian of ``F`` in matrix form per block, hence a vector of matrices.
+   This is (by default) set to `nothing` if another representation is used.
+* `minimum_acceptable_model_improvement`: the minimum improvement in the model function that
+  is required to accept a new point; if this is not met, the new point is rejected and
+  the damping term is increased.
+$(_fields(:p; add_properties = [:as_Iterate]))
+$(_fields(:retraction_method))
+* `residual_values`:                       values of the residuals calculated in the solver setup or the previous iteration
+$(_fields(:stopping_criterion; name = "stop"))
+$(_fields(:sub_problem))
+$(_fields(:sub_state))
+$(_fields(:X))
+
+# Constructor
+
+    LevenbergMarquardtState(M, sub_problem, sub_state, initial_residual_values, initial_jacobian; kwargs...)
+
+Generate the Levenberg-Marquardt solver state.
+
+# Keyword arguments
+
+The following fields are keyword arguments
+
+* `candidate_acceptance_threshold = 0.2`,
+* `damping_increase_factor = 5.0`
+* `damping_reduction_factor = 0.5`
+* `damping_term_min = 0.1`
+* `damping_term_max = Inf`
+* `damping_term = damping_term_min`
+* `damping_reduction_threshold = Inf`
+* `damping_increase_threshold = candidate_acceptance_threshold`
+* `direction = copy(M, p, X)`
+* `p = `$(_link(:rand))
+* `X = `$(_link(:zero_vector))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+* `minimum_acceptable_model_improvement::Real = eps(number_eltype(p))`
+
+# See also
+
+[`gradient_descent`](@ref), [`LevenbergMarquardt`](@ref)
+"""
+mutable struct LevenbergMarquardtState{
+        P, T, R <: Real, C <: AbstractDict{Symbol}, Pr, St, TStop <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac,
+    } <: AbstractGradientSolverState
+    candidate_acceptance_threshold::R
+    damping_increase_factor::R
+    damping_increase_threshold::R
+    damping_reduction_threshold::R
+    damping_reduction_factor::R
+    damping_term::R
+    damping_term_min::R
+    damping_term_max::R
+    direction::T
+    callbacks::C
+    jacobian_matrices::TJac
+    minimum_acceptable_model_improvement::R
+    p::P
+    q::P
+    residual_values::TRes
+    retraction_method::TRTM
+    stop::TStop
+    sub_problem::Pr
+    sub_state::St
+    X::T
+    function LevenbergMarquardtState(
+            sub_problem::Pr, sub_state::St;
+            candidate_acceptance_threshold::R, damping_increase_factor::R, damping_increase_threshold::R,
+            damping_reduction_threshold::R, damping_reduction_factor::R, damping_term::R,
+            damping_term_min::R, damping_term_max::R,
+            direction::T, callbacks::C, jacobian_matrices::TJac, minimum_acceptable_model_improvement::R, p::P, q::P,
+            residual_values::TRes, retraction_method::TRTM, stopping_criterion::SC, X::T
+        ) where {P, T, R <: Real, C <: AbstractDict{Symbol}, Pr, St <: AbstractManoptSolverState, SC <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac}
+        return new{P, T, R, C, Pr, St, SC, TRTM, TRes, TJac}(
+            candidate_acceptance_threshold, damping_increase_factor, damping_increase_threshold,
+            damping_reduction_threshold, damping_reduction_factor, damping_term, damping_term_min, damping_term_max,
+            direction, callbacks, jacobian_matrices, minimum_acceptable_model_improvement, p, q, residual_values,
+            retraction_method, stopping_criterion, sub_problem, sub_state, X
+        )
+    end
+    function LevenbergMarquardtState(
+            M::AbstractManifold, sub_problem, sub_state, initial_residual_values, initial_jacobian_matrices = nothing;
+            p = rand(M), X = zero_vector(M, p), direction = copy(M, p, X),
+            callbacks = Dict{Symbol, Function}(),
+            stopping_criterion::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
+            retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
+            candidate_acceptance_threshold::Real = 0.2,
+            damping_increase_factor::Real = 5.0,
+            damping_increase_threshold::Real = candidate_acceptance_threshold,
+            damping_reduction_threshold::Real = Inf,
+            damping_reduction_factor::Real = 0.5,
+            damping_term_min::Real = 0.1,
+            damping_term_max::Real = Inf,
+            damping_term::Real = damping_term_min,
+            minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
+        )
+        (candidate_acceptance_threshold <= 0 || candidate_acceptance_threshold >= 1) && throw(ArgumentError("The value of `candidate_acceptance_threshold` must be strictly between 0 and 1, received $(candidate_acceptance_threshold)"))
+        (damping_term_min <= 0) && throw(ArgumentError("The value of damping_term_min must be strictly above 0, received $damping_term_min"))
+        (damping_increase_factor <= 1) && throw(ArgumentError("The value of `damping_increase_factor must be strictly above 1, received $damping_increase_factor"))
+        (damping_reduction_factor >= 1) && throw(ArgumentError("The value of `damping_reduction_factor must be strictly below 1, received $β_reduction"))
+        _sub_state = maybe_wrap_evaluation_type(sub_state)
+        R = promote_type(
+            typeof(candidate_acceptance_threshold), typeof(damping_term_min), typeof(damping_increase_factor), typeof(damping_increase_threshold),
+            typeof(damping_reduction_threshold), typeof(damping_reduction_factor), typeof(damping_term_min),
+            typeof(damping_term_max), typeof(damping_term), typeof(minimum_acceptable_model_improvement)
+        )
+        return LevenbergMarquardtState(
+            sub_problem, _sub_state;
+            candidate_acceptance_threshold = convert(R, candidate_acceptance_threshold),
+            damping_increase_factor = convert(R, damping_increase_factor), damping_increase_threshold = convert(R, damping_increase_threshold),
+            damping_reduction_threshold = convert(R, damping_reduction_threshold), damping_reduction_factor = convert(R, damping_reduction_factor),
+            damping_term = convert(R, damping_term), damping_term_min = convert(R, damping_term_min), damping_term_max = convert(R, damping_term_max),
+            direction = direction, callbacks = callbacks, jacobian_matrices = initial_jacobian_matrices, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
+            p = p, q = copy(M, p), residual_values = initial_residual_values, retraction_method = retraction_method, stopping_criterion = stopping_criterion, X = X,
+        )
+    end
+end
+provided_callbacks(::Type{LevenbergMarquardtState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize, :DampingIncreaseStepTooLong, :DampingIncreaseModelInadequate, :DampingDecreaseImprovementTooGood, :DampingIncreaseImprovementTooPoor, :CandidateAccept, :CandidateReject])
+get_callbacks(lms::LevenbergMarquardtState) = lms.callbacks
+#
+function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)
+    (context === :short) && return repr(lms)
+    i = get_count(lms, :Iterations)
+    conv_inl = (i > 0) ? (indicates_convergence(lms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the Levenberg–Marquardt algorithm$(conv_inl)"
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(lms.stop) ? "Yes" : "No"
+    as = _callbacks_summary(lms)
+    return """
+    # Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm
+    $Iter
+    ## Parameters$(as)
+    * candidate acceptance threshold:$(_MANOPT_INDENT)$(lms.candidate_acceptance_threshold)
+    * damping reduction threshold:   $(_MANOPT_INDENT)$(lms.damping_reduction_threshold)
+    * damping reduction factor:      $(_MANOPT_INDENT)$(lms.damping_reduction_factor)
+    * damping increase threshold:    $(_MANOPT_INDENT)$(lms.damping_increase_threshold)
+    * damping increase factor:       $(_MANOPT_INDENT)$(lms.damping_increase_factor)
+    * damping term:                  $(_MANOPT_INDENT)$(lms.damping_term) (min: $(lms.damping_term_min) | max: $(lms.damping_term_max))
+    * retraction method:             $(_MANOPT_INDENT)$(lms.retraction_method)
+
+    ## Stopping criterion
+
+    $(status_summary(lms.stop; context = context))
+    This indicates convergence: $Conv"""
+end
+function show(io::IO, lms::LevenbergMarquardtState)
+    print(io, "LevenbergMarquardtState(", lms.sub_problem, ", ", lms.sub_state, "; ")
+    print(io, "candidate_acceptance_threshold = ", lms.candidate_acceptance_threshold)
+    print(io, ", damping_increase_factor = ", lms.damping_increase_factor, ", damping_increase_threshold = ", lms.damping_increase_threshold)
+    print(io, ", damping_reduction_threshold = ", lms.damping_reduction_threshold, ", damping_reduction_factor = ", lms.damping_reduction_factor)
+    print(io, ", damping_term = ", lms.damping_term, ", damping_term_min = ", lms.damping_term_min, ", damping_term_max = ", lms.damping_term_max)
+    print(io, ", direction = ", lms.direction, ", callbacks = ", lms.callbacks, ", jacobian_matrices = ", lms.jacobian_matrices, ". minimum_acceptable_model_improvement = ", lms.minimum_acceptable_model_improvement)
+    print(io, ", p= ", lms.p, ", q = ", lms.q, ", residual_values = ", lms.residual_values, ", retraction_method = ", lms.retraction_method, ", stopping_criterion = ", lms.stop, ", X = ", lms.X)
+    return print(io, ")")
+end
+
 _doc_LM = """
     LevenbergMarquardt(M, f, jacobian_f, p, num_components=-1; kwargs...)
     LevenbergMarquardt(M, vgf, p; kwargs...)
@@ -363,11 +560,24 @@ function solve_LM_subproblem!(
     X .*= -1
     return X
 end
-# We could add “fully” closed form solvers via dispatch here as well
+# We could add “fully” closed form solvers via dispatch here as well – for now this is not used yet
 
-#
-#
-# Special cases for
+# Special Case: With box constraints
+function solve_LM_subproblem!(
+        M::AbstractManifold, X, p, problem::AbstractManoptProblem,
+        state::LevenbergMarquardtBoxSubsolver, grad_Y,
+    )
+    solve!(problem, state.internal_state)
+    copyto!(M, X, p, get_solver_result(problem, state.internal_state))
+    X .*= -1
+    # trim to box using GCD
+    gcd = GeneralizedCauchyDirectionSubsolver(M, p, state)
+    state.last_gcd_result, state.last_gcd_stepsize = find_generalized_cauchy_direction!(M, gcd, X, p, X, grad_Y)
+    # even if step size larger than 1 is possible, we shouldn't try to go further
+    X .*= min(one(state.last_gcd_stepsize), state.last_gcd_stepsize)
+    return X
+end
+
 
 function get_last_stepsize(
         dmp::DefaultManoptProblem, lms::LevenbergMarquardtState, k,

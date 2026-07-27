@@ -1,186 +1,3 @@
-#
-#
-# The solver state
-@doc """
-    LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
-
-Describes a Gradient based descent algorithm, with
-
-# Fields
-
-* `damping_term`:                         current value of the damping term
-* `damping_term_min`:                     lower bound for the damping term
-* `damping_term_max`:                     upper bound for the damping term
-* `damping_increase_factor`:              improvement quotient exceeds `damping_reduction_threshold`.
-* `damping_reduction_threshold`:          threshold for the improvement quotient above which
-  the damping term is reduced by multiplying it with `β_reduction`.
-* `damping_increase_threshold` :          threshold for the improvement quotient below which
-  the damping term is increased by multiplying it with `β`.
-* `direction`:                            the current search direction, which is the solution of
-  the linearized subproblem in each iteration.
-* `candidate_acceptance_threshold`:       Scaling factor for the sufficient cost decrease threshold required
-  to accept new proposal points. Allowed range: `0 < η < 1`.
-* `callbacks`:                            the callbacks dictionary
-* `jacobian_matrices`:                           the current Jacobian of ``F`` in matrix form per block, hence a vector of matrices.
-   This is (by default) set to `nothing` if another representation is used.
-* `minimum_acceptable_model_improvement`: the minimum improvement in the model function that
-  is required to accept a new point; if this is not met, the new point is rejected and
-  the damping term is increased.
-$(_fields(:p; add_properties = [:as_Iterate]))
-$(_fields(:retraction_method))
-* `residual_values`:                       values of the residuals calculated in the solver setup or the previous iteration
-$(_fields(:stopping_criterion; name = "stop"))
-$(_fields(:sub_problem))
-$(_fields(:sub_state))
-$(_fields(:X))
-
-# Constructor
-
-    LevenbergMarquardtState(M, sub_problem, sub_state, initial_residual_values, initial_jacobian; kwargs...)
-
-Generate the Levenberg-Marquardt solver state.
-
-# Keyword arguments
-
-The following fields are keyword arguments
-
-* `candidate_acceptance_threshold = 0.2`,
-* `damping_increase_factor = 5.0`
-* `damping_reduction_factor = 0.5`
-* `damping_term_min = 0.1`
-* `damping_term_max = Inf`
-* `damping_term = damping_term_min`
-* `damping_reduction_threshold = Inf`
-* `damping_increase_threshold = candidate_acceptance_threshold`
-* `direction = copy(M, p, X)`
-* `p = `$(_link(:rand))
-* `X = `$(_link(:zero_vector))
-$(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
-* `minimum_acceptable_model_improvement::Real = eps(number_eltype(p))`
-
-# See also
-
-[`gradient_descent`](@ref), [`LevenbergMarquardt`](@ref)
-"""
-mutable struct LevenbergMarquardtState{
-        P, T, R <: Real, C <: AbstractDict{Symbol}, Pr, St, TStop <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac,
-    } <: AbstractGradientSolverState
-    candidate_acceptance_threshold::R
-    damping_increase_factor::R
-    damping_increase_threshold::R
-    damping_reduction_threshold::R
-    damping_reduction_factor::R
-    damping_term::R
-    damping_term_min::R
-    damping_term_max::R
-    direction::T
-    callbacks::C
-    jacobian_matrices::TJac
-    minimum_acceptable_model_improvement::R
-    p::P
-    q::P
-    residual_values::TRes
-    retraction_method::TRTM
-    stop::TStop
-    sub_problem::Pr
-    sub_state::St
-    X::T
-    function LevenbergMarquardtState(
-            sub_problem::Pr, sub_state::St;
-            candidate_acceptance_threshold::R, damping_increase_factor::R, damping_increase_threshold::R,
-            damping_reduction_threshold::R, damping_reduction_factor::R, damping_term::R,
-            damping_term_min::R, damping_term_max::R,
-            direction::T, callbacks::C, jacobian_matrices::TJac, minimum_acceptable_model_improvement::R, p::P, q::P,
-            residual_values::TRes, retraction_method::TRTM, stopping_criterion::SC, X::T
-        ) where {P, T, R <: Real, C <: AbstractDict{Symbol}, Pr, St <: AbstractManoptSolverState, SC <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TRes, TJac}
-        return new{P, T, R, C, Pr, St, SC, TRTM, TRes, TJac}(
-            candidate_acceptance_threshold, damping_increase_factor, damping_increase_threshold,
-            damping_reduction_threshold, damping_reduction_factor, damping_term, damping_term_min, damping_term_max,
-            direction, callbacks, jacobian_matrices, minimum_acceptable_model_improvement, p, q, residual_values,
-            retraction_method, stopping_criterion, sub_problem, sub_state, X
-        )
-    end
-    function LevenbergMarquardtState(
-            M::AbstractManifold, sub_problem, sub_state, initial_residual_values, initial_jacobian_matrices = nothing;
-            p = rand(M), X = zero_vector(M, p), direction = copy(M, p, X),
-            callbacks = Dict{Symbol, Function}(),
-            stopping_criterion::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
-            retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-            candidate_acceptance_threshold::Real = 0.2,
-            damping_increase_factor::Real = 5.0,
-            damping_increase_threshold::Real = candidate_acceptance_threshold,
-            damping_reduction_threshold::Real = Inf,
-            damping_reduction_factor::Real = 0.5,
-            damping_term_min::Real = 0.1,
-            damping_term_max::Real = Inf,
-            damping_term::Real = damping_term_min,
-            minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
-        )
-        (candidate_acceptance_threshold <= 0 || candidate_acceptance_threshold >= 1) && throw(ArgumentError("The value of `candidate_acceptance_threshold` must be strictly between 0 and 1, received $(candidate_acceptance_threshold)"))
-        (damping_term_min <= 0) && throw(ArgumentError("The value of damping_term_min must be strictly above 0, received $damping_term_min"))
-        (damping_increase_factor <= 1) && throw(ArgumentError("The value of `damping_increase_factor must be strictly above 1, received $damping_increase_factor"))
-        (damping_reduction_factor >= 1) && throw(ArgumentError("The value of `damping_reduction_factor must be strictly below 1, received $β_reduction"))
-        _sub_state = maybe_wrap_evaluation_type(sub_state)
-        R = promote_type(
-            typeof(candidate_acceptance_threshold), typeof(damping_term_min), typeof(damping_increase_factor), typeof(damping_increase_threshold),
-            typeof(damping_reduction_threshold), typeof(damping_reduction_factor), typeof(damping_term_min),
-            typeof(damping_term_max), typeof(damping_term), typeof(minimum_acceptable_model_improvement)
-        )
-        return LevenbergMarquardtState(
-            sub_problem, _sub_state;
-            candidate_acceptance_threshold = convert(R, candidate_acceptance_threshold),
-            damping_increase_factor = convert(R, damping_increase_factor), damping_increase_threshold = convert(R, damping_increase_threshold),
-            damping_reduction_threshold = convert(R, damping_reduction_threshold), damping_reduction_factor = convert(R, damping_reduction_factor),
-            damping_term = convert(R, damping_term), damping_term_min = convert(R, damping_term_min), damping_term_max = convert(R, damping_term_max),
-            direction = direction, callbacks = callbacks, jacobian_matrices = initial_jacobian_matrices, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
-            p = p, q = copy(M, p), residual_values = initial_residual_values, retraction_method = retraction_method, stopping_criterion = stopping_criterion, X = X,
-        )
-    end
-end
-provided_callbacks(::Type{LevenbergMarquardtState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize, :DampingIncreaseStepTooLong, :DampingIncreaseModelInadequate, :DampingDecreaseImprovementTooGood, :DampingIncreaseImprovementTooPoor, :CandidateAccept, :CandidateReject])
-get_callbacks(lms::LevenbergMarquardtState) = lms.callbacks
-#
-function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)
-    (context === :short) && return repr(lms)
-    i = get_count(lms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(lms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the Levenberg–Marquardt algorithm$(conv_inl)"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(lms.stop) ? "Yes" : "No"
-    as = _callbacks_summary(lms)
-    return """
-    # Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm
-    $Iter
-    ## Parameters$(as)
-    * candidate acceptance threshold:$(_MANOPT_INDENT)$(lms.candidate_acceptance_threshold)
-    * damping reduction threshold:   $(_MANOPT_INDENT)$(lms.damping_reduction_threshold)
-    * damping reduction factor:      $(_MANOPT_INDENT)$(lms.damping_reduction_factor)
-    * damping increase threshold:    $(_MANOPT_INDENT)$(lms.damping_increase_threshold)
-    * damping increase factor:       $(_MANOPT_INDENT)$(lms.damping_increase_factor)
-    * damping term:                  $(_MANOPT_INDENT)$(lms.damping_term) (min: $(lms.damping_term_min) | max: $(lms.damping_term_max))
-    * retraction method:             $(_MANOPT_INDENT)$(lms.retraction_method)
-
-    ## Stopping criterion
-
-    $(status_summary(lms.stop; context = context))
-    This indicates convergence: $Conv"""
-end
-function show(io::IO, lms::LevenbergMarquardtState)
-    print(io, "LevenbergMarquardtState(", lms.sub_problem, ", ", lms.sub_state, "; ")
-    print(io, "candidate_acceptance_threshold = ", lms.candidate_acceptance_threshold)
-    print(io, ", damping_increase_factor = ", lms.damping_increase_factor, ", damping_increase_threshold = ", lms.damping_increase_threshold)
-    print(io, ", damping_reduction_threshold = ", lms.damping_reduction_threshold, ", damping_reduction_factor = ", lms.damping_reduction_factor)
-    print(io, ", damping_term = ", lms.damping_term, ", damping_term_min = ", lms.damping_term_min, ", damping_term_max = ", lms.damping_term_max)
-    print(io, ", direction = ", lms.direction, ", callbacks = ", lms.callbacks, ", jacobian_matrices = ", lms.jacobian_matrices, ". minimum_acceptable_model_improvement = ", lms.minimum_acceptable_model_improvement)
-    print(io, ", p= ", lms.p, ", q = ", lms.q, ", residual_values = ", lms.residual_values, ", retraction_method = ", lms.retraction_method, ", stopping_criterion = ", lms.stop, ", X = ", lms.X)
-    return print(io, ")")
-end
-
-#
-#
-# --- Subproblems ----
 """
     AbstractLevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType}
 
@@ -188,10 +5,256 @@ Abstract supertype for Levenberg-Marquardt surrogates like
 [`LevenbergMarquardtLinearSurrogateObjective`](@ref) and
 [`LevenbergMarquardtLinearSurrogateCoordinatesObjective`](@ref).
 """
-abstract type AbstractLevenbergMarquardtLinearSurrogateObjective{E <: AbstractEvaluationType} <: AbstractLinearSurrogateObjective{E, ManifoldNonlinearLeastSquaresObjective{E}} end
+abstract type AbstractLevenbergMarquardtLinearSurrogateObjective <: AbstractLinearSurrogateObjective{ManifoldNonlinearLeastSquaresObjective} end
 
+#
+#
+# ---
 @doc """
-    LevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
+    LevenbergMarquardtLinearSurrogateCoordinatesObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
+
+A subobjective similar to `LevenbergMarquardtLinearSurrogateObjective` but which uses
+coordinate-based Jacobians in a single, selected basis instead of being centered around
+linear operators.
+## Fields
+
+* `objective`:     the [`ManifoldNonlinearLeastSquaresObjective`](@ref) to penalize
+* `penalty::Real`: the damping term ``λ``
+* `threshold::Real`: stabilization ``ε`` for ``α ≤ 1-ε`` in the rescaling of the residual and jacobian, see [`get_LevenbergMarquardt_scaling`](@ref)
+* `mode::Symbol`:  which mode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
+* `value_cache`:   a vector to store the residuals ``F(p)`` at the current point `p` internally to avoid recomputations
+* `jacobian_cache`: a vector to store the coordinate-based Jacobian of the residuals at the
+  current point `p` internally to avoid recomputations. If the Jacobian is used as a linear
+  operator, this is just a vector of `nothing`s.
+
+## Constructor
+
+    LevenbergMarquardtLinearSurrogateCoordinatesObjective(objective; penalty::Real = 1e-6, threshold::Real = 1e-4, mode::Symbol = :Strict)
+"""
+mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
+        R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective, TVC <: AbstractVector{R}, TJC <: AbstractVector, TB <: AbstractBasis,
+    } <: AbstractLevenbergMarquardtLinearSurrogateObjective
+    objective::TO
+    penalty::R
+    threshold::R
+    mode::Symbol
+    value_cache::TVC
+    jacobian_cache::TJC
+    basis::TB
+    function LevenbergMarquardtLinearSurrogateCoordinatesObjective(
+            objective::ManifoldNonlinearLeastSquaresObjective;
+            penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Strict,
+            residuals::TVC = zeros(residuals_count(get_objective(objective))),
+            jacobian_cache::TJC = fill(nothing, length(get_objective(objective).objective)),
+            basis::TB = DefaultOrthonormalBasis(),
+        ) where {R <: Real, TVC <: AbstractVector, TJC <: AbstractVector, TB <: AbstractBasis}
+        return new{R, typeof(objective), TVC, TJC, TB}(objective, penalty, threshold, mode, residuals, jacobian_cache, basis)
+    end
+end
+
+function get_normal_linear_operator!(
+        M::AbstractManifold, A::AbstractMatrix, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, B::AbstractBasis;
+        penalty = lmsco.penalty
+    )
+    nlso = get_objective(lmsco.objective)
+    # For every block
+    fill!(A, 0)
+    start = 0
+    for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
+        len_o = length(o)
+        add_normal_linear_operator_coord!(
+            M, A, o, r, p, B; value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)), jacobian_cache = jc,
+            threshold = lmsco.threshold, mode = lmsco.mode
+        )
+        start += len_o
+    end
+    # Finally add the damping term
+    (penalty != 0) && (_diagview(A) .+= penalty)
+    return A
+end
+function add_normal_linear_operator_coord!(
+        M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
+        r::AbstractRobustifierFunction, p, basis::AbstractBasis;
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol
+    )
+    a = value_cache # evaluate residuals F(p)
+    F_sq = sum(abs2, a)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
+    # to Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indirectly
+    # (a) J_F is n-by-d so we have to allocate – where could we maybe store something like that and pass it down?
+    # (I - s*a*a')^2 = I + (-2s + s^2*||a||^2) * a*a'
+    # so JF' * (ρ' * (I - s*a*a')^2) * JF
+    #   = ρ' * (JF'JF) + ρ' * (-2s + s^2*||a||^2) * (JF'a) * (JF'a)'
+    rank1_scaling = ρ_prime * (-2 * operator_scaling + operator_scaling^2 * F_sq)
+    mul!(A, jacobian_cache', jacobian_cache, ρ_prime, true)
+    if !iszero(rank1_scaling)
+        JFa = jacobian_cache' * a
+        mul!(A, JFa, JFa', rank1_scaling, true)
+    end
+    # damping term is added once after summing up all blocks, so we do not add it here
+    return A
+end
+
+function add_normal_linear_operator_coord!(
+        M::AbstractManifold, c::AbstractVector,
+        lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector;
+        penalty::Real = lmsco.penalty,
+    )
+    nlso = get_objective(lmsco)
+    # For every block
+    # lmsco.value_cache has been filled in step_solver! of LevenbergMarquardt, so we can just use it here
+    start = 0
+    for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
+        len = length(o)
+        value_cache = view(lmsco.value_cache, (start + 1):(start + len))
+        add_normal_linear_operator_coord!(
+            M, c, o, r, p, cX;
+            threshold = lmsco.threshold, mode = lmsco.mode, value_cache = value_cache, jacobian_cache = jc
+        )
+        start += len
+    end
+    # Finally add the damping term
+    (penalty != 0) && (c .+= penalty .* cX)
+    return c
+end
+function add_normal_linear_operator_coord!(
+        M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector;
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol
+    )
+    a = value_cache # residuals F(p)
+    F_sq = sum(abs2, a)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
+    # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indirectly
+    b = convert(Vector, jacobian_cache * cX)
+    # Compute C^TCb = C^2 b
+    # The code below is mathematically equivalent to the following, but avoids allocating
+    # the outer product a * a' and the matrix-vector product (a * a') * b
+    # b .= ρ_prime .* (I - operator_scaling * (a * a'))^2 * b
+    t = dot(a, b)
+    aa = dot(a, a)
+    coef = operator_scaling * t * (operator_scaling * aa - 2)
+
+    @. b = ρ_prime * (b + coef * a)
+
+    # Now apply the adjoint
+    mul!(c, jacobian_cache', b, true, true)
+    # penalty is added once after summing up all blocks, so we do not add it here
+    return c
+end
+"""
+    add_linear_operator_coord!(
+        M::AbstractManifold, y::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector
+    )
+
+Add the (Triggs correction, residual-like) linear operator corresponding to the `lmsco`
+surrogate to vector `y`. It is assumed that `lmsco.value_cache` has been filled in
+`step_solver!` of [`LevenbergMarquardt`](@ref), so we can just use it here.
+"""
+function add_linear_operator_coord!(
+        M::AbstractManifold, y::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector
+    )
+    nlso = get_objective(lmsco)
+    # Init to zero
+    start = 0
+    # lmsco.value_cache has been filled in step_solver! of LevenbergMarquardt, so we can just use it here
+    for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
+        len = length(o)
+        value_cache = view(lmsco.value_cache, (start + 1):(start + len))
+        _add_linear_operator_coord!(
+            M, view(y, (start + 1):(start + len)), o, r, p, cX, value_cache, jc;
+            threshold = lmsco.threshold, mode = lmsco.mode
+        )
+        start += len
+    end
+    return y
+end
+function _add_linear_operator_coord!(
+        M::AbstractManifold, y::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p, cX::AbstractVector,
+        value_cache, jacobian_cache; threshold::Real, mode::Symbol
+    )
+    F_sq = sum(abs2, value_cache)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
+    _, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
+    y_cache = jacobian_cache * cX
+    # Compute C y
+    α = sqrt(ρ_prime)
+    t = dot(value_cache, y_cache)
+    @. y += α * (y_cache - operator_scaling * t * value_cache)
+    return y
+end
+
+function get_normal_vector_field_coord!(
+        M::AbstractManifold, c::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p,
+    )
+    nlso = get_objective(lmsco)
+    # For every block
+    fill!(c, 0)
+    start = 0
+    for (o, r, jc) in zip(nlso.objective, nlso.robustifier, lmsco.jacobian_cache)
+        len_o = length(o)
+        add_normal_vector_field_coord!(
+            M, c, o, r, p;
+            value_cache = view(lmsco.value_cache, (start + 1):(start + len_o)),
+            jacobian_cache = jc, threshold = lmsco.threshold, mode = lmsco.mode
+        )
+        start += len_o
+    end
+    return c
+end
+
+# for a single block – the actual formula cf. nls_general 1348
+function add_normal_vector_field_coord!(
+        M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol,
+    )
+    y = copy(value_cache) # evaluate residuals F(p)
+    F_sq = sum(abs2, y)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
+    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
+    # Compute y = ρ'(p) / (1-α)) F(p) and ...
+    y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
+    # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (inplace of y)
+    mul!(c, jacobian_cache', y, true, true)
+    return c
+end
+
+function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateCoordinatesObjective, ::Val{:Penalty}, penalty::Real)
+    lmlso.penalty = penalty
+    return lmlso
+end
+
+function show(io::IO, lmlsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective)
+    print(io, "LevenbergMarquardtLinearSurrogateCoordinatesObjective(", lmlsco.objective, "; ")
+    print(io, "penalty=", lmlsco.penalty, ", threshold=", lmlsco.threshold, ", mode=:", lmlsco.mode)
+    print(io, ", basis = ", lmlsco.basis)
+    print(io, ", residuals=", lmlsco.value_cache, ", jacoian_cache=", lmlsco.jacobian_cache)
+    return print(io, ")")
+end
+
+function status_summary(lmlsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective; context::Symbol = :default)
+    (context === :short) && (return repr(lmlsco))
+    (context === :inline) && (return "A linear surrogate objective in coordinates for the Levenberg Marquardt algorithm based on $(status_summary(lmlsco.objective; context = context)) with penalty $(lmlsco.penalty)")
+    return """
+    A linear surrogate objective in coordinates for the Levenberg Marquardt Algorithm
+
+    ## Objective
+    $(_in_str(status_summary(lmlsco.objective, context = context); indent = 1))
+
+    ## Parameters
+    * basis:     $(_MANOPT_INDENT)$(lmlsco.basis)
+    * mode:      $(_MANOPT_INDENT)$(lmlsco.mode)
+    * penalty:   $(_MANOPT_INDENT)$(lmlsco.penalty)
+    * threshold: $(_MANOPT_INDENT)$(lmlsco.threshold)
+    """
+end
+
+#
+#
+# ---
+@doc """
+    LevenbergMarquardtLinearSurrogateObjective{VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective
 
 Given an [`ManifoldNonlinearLeastSquaresObjective`](@ref) `objective` and a `penalty` ``λ``,
 this objective represents the penalized objective for the sub-problem to solve within every step
@@ -237,42 +300,21 @@ act as safeguards, see [`get_LevenbergMarquardt_scaling`](@ref)
     LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, threshold::Real = 1e-4, mode::Symbol = :Strict)
 """
 mutable struct LevenbergMarquardtLinearSurrogateObjective{
-        E <: AbstractEvaluationType, R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective{E}, TVC <: AbstractVector{R},
-    } <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
+        R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective, TVC <: AbstractVector{R},
+    } <: AbstractLevenbergMarquardtLinearSurrogateObjective
     objective::TO
     penalty::R
     threshold::R
     mode::Symbol
     value_cache::TVC
     function LevenbergMarquardtLinearSurrogateObjective(
-            objective::ManifoldNonlinearLeastSquaresObjective{E};
+            objective::ManifoldNonlinearLeastSquaresObjective;
             penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Strict,
             residuals::TVC = zeros(residuals_count(get_objective(objective))),
-        ) where {E, R <: Real, TVC <: AbstractVector}
-        return new{E, R, typeof(objective), TVC}(objective, penalty, threshold, mode, residuals)
+        ) where {R <: Real, TVC <: AbstractVector}
+        return new{R, typeof(objective), TVC}(objective, penalty, threshold, mode, residuals)
     end
 end
-
-function show(io::IO, o::LevenbergMarquardtLinearSurrogateObjective)
-    return print(io, "LevenbergMarquardtLinearSurrogateObjective($(o.objective); penalty=$(o.penalty), threshold=$(o.threshold), mode=:$(o.mode))")
-end
-
-function status_summary(lmlso::LevenbergMarquardtLinearSurrogateObjective; context::Symbol = :default)
-    (context === :short) && (return repr(lmlso))
-    (context === :inline) && (return "A linear surrogate objective for the Levenberg Marquardt algorithm based on $(status_summary(lmlso.objective; context = context)) with penalty $(lmlso.penalty)")
-    return """
-    A linear surrogate objective for the Levenberg Marquardt Algorithm
-
-    ## Objective
-    $(_in_str(status_summary(lmlso.objective, context = context); indent = 1))
-
-    ## Parameters
-    * penalty:   $(_MANOPT_INDENT)$(lmlso.penalty)
-    * threshold: $(_MANOPT_INDENT)$(lmlso.threshold)
-    * mode:      $(_MANOPT_INDENT)$(lmlso.mode)
-    """
-end
-
 
 """
     residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FSq::Real, threshold::Real=1.0e-5, mode::Symbol=:Strict)
@@ -329,10 +371,6 @@ function get_LevenbergMarquardt_scaling(
     residual_scaling = sqrt(ρ_prime) / (1 - α)
     operator_scaling = ifelse(iszero(FkSq), 0.0, α / FkSq)
     return residual_scaling, operator_scaling
-end
-function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateObjective, ::Val{:Penalty}, penalty::Real)
-    lmlso.penalty = penalty
-    return lmlso
 end
 
 """
@@ -561,86 +599,6 @@ function _add_hessian!(
     return Z
 end
 
-## The name is not optimal but it is merely something internal with a small safeguard
-"""
-    default_lm_lin_solve!(sk, JJ::AbstractMatrix, grad_f_c)
-
-Solve the linear system of equations of the normal equations `JJ \\ grad_f_c` where JJ is a symmetric positive
-definite matrix and save the result to `sk`. In case of numerical errors the
-`PosDefException` is caught and the default symmetric solver `(Symmetric(JJ) \\ grad_f_c)`
-is used.
-
-The function is intended to be used with [`LevenbergMarquardt`](@ref).
-"""
-function default_lm_lin_solve!(sk, JJ::AbstractMatrix, grad_f_c)
-    try
-        ldiv!(sk, cholesky(Symmetric(JJ)), grad_f_c)
-    catch e
-        e isa PosDefException ? (sk .= Symmetric(JJ) \ grad_f_c) : rethrow()
-    end
-    return sk
-end
-
-"""
-    CoordinatesNormalSystemState <: AbstractManoptSolverState
-
-A solver state indicating that we solve the [`LevenbergMarquardtLinearSurrogateObjective`](@ref)
-using a linear system in coordinates of the tangent space at the current iterate
-
-## Fields
-
-* `A` an ``n×n`` matrix to store the normal equations linear from [`get_linear_operator`](@ref) in coordinates, where `n` is the number of coordinates
-* `b` a ``n`` vector storing the right hand side of the normal equations in coordinates
-* `basis::`[`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`)
-* `linsolve` a functor `(A,b) -> c` to solve the linear system or `(c, A, b) -> c` depending on the evaluation type specified in `solve!`
-
-## Constructor
-    CoordinatesNormalSystemState(
-        M::AbstractManifold, p = rand(M);
-        evaluation = InplaceEvaluation(),
-        linsolve = default_lm_lin_solve!,
-        basis = DefaultOrthonormalBasis(),
-        A = nothing
-    )
-
-Construct the state, where not providing a memory for `A` uses the `eltype` of `p` to
-determine the element type of the matrix to store.
-"""
-mutable struct CoordinatesNormalSystemState{E <: AbstractEvaluationType, F, TA <: AbstractMatrix, TB <: AbstractVector, TBA <: AbstractBasis} <: AbstractManoptSolverState
-    A::TA
-    b::TB
-    basis::TBA
-    c::TB
-    linsolve!!::F
-end
-function CoordinatesNormalSystemState(
-        M::AbstractManifold, p = rand(M);
-        evaluation::E = InplaceEvaluation(), linsolve::F = default_lm_lin_solve!,
-        basis::B = DefaultOrthonormalBasis(), A = nothing
-    ) where {E <: AbstractEvaluationType, F, B <: AbstractBasis}
-    n = number_of_coordinates(M, basis)
-    c = zeros(number_eltype(p), n)
-    if isnothing(A)
-        A = zeros(eltype(c), n, n)
-    end
-    b = zeros(eltype(c), n)
-    return CoordinatesNormalSystemState{E, F, typeof(A), typeof(b), B}(A, b, basis, c, linsolve)
-end
-
-# The objective here should be a LevenbergMarquardtLinearSurrogateObjective, but might be decorated as well, so for now lets not type it (yet?)
-function solve!(dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective}, cnss::CoordinatesNormalSystemState{E}) where {E <: AbstractEvaluationType}
-    # Update A and b
-    TpM = get_manifold(dmp)
-    M = base_manifold(TpM)
-    p = base_point(TpM)
-    neo = get_objective(dmp)
-    get_linear_operator!(M, cnss.A, neo, p, cnss.basis)
-    get_vector_field!(M, cnss.b, neo, p, cnss.basis)
-    cnss.b .*= -1
-    (E === AllocatingEvaluation) ? (cnss.c = cnss.linsolve!!(cnss.A, cnss.b)) : (cnss.linsolve!!(cnss.c, cnss.A, cnss.b))
-    return cnss
-end
-
 """
     get_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
     get_linear_operator!(M::AbstractManifold, y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X)
@@ -727,106 +685,6 @@ function _get_linear_operator!(
         y[i] = sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * y[i]
     end
     return y
-end
-
-"""
-    get_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
-    get_vector_field!(M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
-
-Compute the vector field ``y`` corresponding to the Levenberg-Marquardt surrogate objective, i.e.,
-
-```math
-y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p)
-```
-
-where the scaling uses ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``
-
-Note that this is done per every block (vectorial function with its robustifier) of the underlying
-[`ManifoldNonlinearLeastSquaresObjective`](@ref) and summed up.
-
-See also
-* [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling factor
-* [`get_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
-"""
-function get_vector_field(
-        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
-    )
-    nlso = get_objective(lmsco)
-    n = residuals_count(nlso)
-    y = zeros(number_eltype(p), n)
-    return get_vector_field!(M, y, lmsco, p)
-end
-function get_vector_field!(
-        M::AbstractManifold, y, lmsco::AbstractLevenbergMarquardtLinearSurrogateObjective, p
-    )
-    nlso = get_objective(lmsco)
-    # Init to zero
-    fill!(y, 0)
-    start = 0
-    # For every block
-    for (o, r) in zip(nlso.objective, nlso.robustifier)
-        _get_vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; threshold = lmsco.threshold, mode = lmsco.mode)
-        start += length(o)
-    end
-    return y
-end
-# for a single block – the actual formula
-function _get_vector_field!(
-        M::AbstractManifold, y, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p;
-        threshold::Real, mode::Symbol,
-    )
-    get_value!(M, y, o, p) # evaluate residuals F(p)
-    F_sq = sum(abs2, y)
-    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
-    residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
-    # Compute y = sqrt(ρ(p)) / (1-α) * F(p)
-    y .*= residual_scaling
-    return y
-end
-# Componentwise, it decouples, C is diagonal
-function _get_vector_field!(
-        M::AbstractManifold, y, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p;
-        threshold::Real, mode::Symbol,
-    )
-    get_value!(M, y, o, p) # evaluate residuals F(p)
-    r = cr.robustifier
-    for (i, ai) in enumerate(y)
-        ai_sq = abs(ai)^2
-        (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
-        residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, threshold, mode)
-        # Compute y = sqrt(ρ(p)) / (1-α) * F(p)
-        y[i] *= residual_scaling
-    end
-    return y
-end
-
-#
-#
-# For the Normal Equations Objective
-
-"""
-    get_cost(TpM::TangentSpace, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, X)
-
-Compute the surrogate cost when solving its normal equation, see also
-[`get_cost(::AbstractManifold, ::LevenbergMarquardtLinearSurrogateObjective, p, X)`](@ref),
-[`get_linear_operator`](@ref), and [`get_vector_field`](@ref) for more details.
-"""
-function get_cost(
-        TpM::TangentSpace, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, X
-    ) where {E <: AbstractEvaluationType}
-    M = base_manifold(TpM)
-    p = base_point(TpM)
-    return get_cost(M, neo.objective, p, X)
-end
-# Maybe a bit too precise, but in this case we get a coefficient vector and we want a tangent vector
-function get_solver_result(
-        dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective{<:AbstractEvaluationType, <:LevenbergMarquardtLinearSurrogateObjective}},
-        cnss::CoordinatesNormalSystemState
-    )
-    TpM = get_manifold(dmp)
-    M = base_manifold(TpM)
-    p = base_point(TpM)
-    return get_vector(M, p, cnss.c, cnss.basis)
 end
 
 """
@@ -1214,9 +1072,167 @@ function add_normal_vector_field!(
     return c
 end
 
+"""
+    get_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
+    get_vector_field!(M::AbstractManifold, X, lmsco::LevenbergMarquardtLinearSurrogateObjective, p)
+
+Compute the vector field ``y`` corresponding to the Levenberg-Marquardt surrogate objective, i.e.,
+
+```math
+y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p)
+```
+
+where the scaling uses ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``
+
+Note that this is done per every block (vectorial function with its robustifier) of the underlying
+[`ManifoldNonlinearLeastSquaresObjective`](@ref) and summed up.
+
+See also
+* [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling factor
+* [`get_linear_operator`](@ref) for evaluating the corresponding linear operator of the linear system
+"""
+function get_vector_field(
+        M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p
+    )
+    nlso = get_objective(lmsco)
+    n = residuals_count(nlso)
+    y = zeros(number_eltype(p), n)
+    return get_vector_field!(M, y, lmsco, p)
+end
+function get_vector_field!(
+        M::AbstractManifold, y, lmsco::AbstractLevenbergMarquardtLinearSurrogateObjective, p
+    )
+    nlso = get_objective(lmsco)
+    # Init to zero
+    fill!(y, 0)
+    start = 0
+    # For every block
+    for (o, r) in zip(nlso.objective, nlso.robustifier)
+        _get_vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; threshold = lmsco.threshold, mode = lmsco.mode)
+        start += length(o)
+    end
+    return y
+end
+# for a single block – the actual formula
+function _get_vector_field!(
+        M::AbstractManifold, y, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p;
+        threshold::Real, mode::Symbol,
+    )
+    get_value!(M, y, o, p) # evaluate residuals F(p)
+    F_sq = sum(abs2, y)
+    (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
+    residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
+    # Compute y = sqrt(ρ(p)) / (1-α) * F(p)
+    y .*= residual_scaling
+    return y
+end
+# Componentwise, it decouples, C is diagonal
+function _get_vector_field!(
+        M::AbstractManifold, y, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p;
+        threshold::Real, mode::Symbol,
+    )
+    get_value!(M, y, o, p) # evaluate residuals F(p)
+    r = cr.robustifier
+    for (i, ai) in enumerate(y)
+        ai_sq = abs(ai)^2
+        (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
+        residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, ai_sq, threshold, mode)
+        # Compute y = sqrt(ρ(p)) / (1-α) * F(p)
+        y[i] *= residual_scaling
+    end
+    return y
+end
+
+function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateObjective, ::Val{:Penalty}, penalty::Real)
+    lmlso.penalty = penalty
+    return lmlso
+end
+
+function show(io::IO, o::LevenbergMarquardtLinearSurrogateObjective)
+    return print(io, "LevenbergMarquardtLinearSurrogateObjective($(o.objective); penalty=$(o.penalty), threshold=$(o.threshold), mode=:$(o.mode))")
+end
+
+function status_summary(lmlso::LevenbergMarquardtLinearSurrogateObjective; context::Symbol = :default)
+    (context === :short) && (return repr(lmlso))
+    (context === :inline) && (return "A linear surrogate objective for the Levenberg Marquardt algorithm based on $(status_summary(lmlso.objective; context = context)) with penalty $(lmlso.penalty)")
+    return """
+    A linear surrogate objective for the Levenberg Marquardt Algorithm
+
+    ## Objective
+    $(_in_str(status_summary(lmlso.objective, context = context); indent = 1))
+
+    ## Parameters
+    * penalty:   $(_MANOPT_INDENT)$(lmlso.penalty)
+    * threshold: $(_MANOPT_INDENT)$(lmlso.threshold)
+    * mode:      $(_MANOPT_INDENT)$(lmlso.mode)
+    """
+end
+
 #
-# The Symmetric Linear System (e.g. in CGRes) for the LM Surrogate is its normal equations and vector.
-# (a) a vector X or a basis B
+#
+# ---
+"""
+    NormalEquationsObjective{E <: AbstractEvaluationType, O<: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}
+
+A [`AbstractLinearSurrogateObjective`](@ref) might be overdetermined, and it usually is overdetermined,
+e.g. for the case of the [`LevenbergMarquardt`](@ref) algorithm.
+For this case, one considers the [normal equations](https://en.wikipedia.org/wiki/Non-linear_least_squares).
+
+This wrapper provides the same three functions as the wrapped surrogate
+
+* [`get_linear_operator`](@ref) to compute/evaluate the linear operator ``$(_tex(:Cal, "L"))``
+* [`get_vector_field`](@ref) to compute/evaluate the vector ``y``
+* [`get_objective`](@ref) to provide access to the underlying surrogate
+
+so that we obtain a symmetric linear system of equations, that can be
+* solved with an iterative method like [`conjugate_gradient_descent`](@ref) or [`conjugate_residual`](@ref)
+* solved as a linear system in a basis of the corresponding tangent space.
+"""
+struct NormalEquationsObjective{O <: AbstractLinearSurrogateObjective} <: AbstractSymmetricLinearSystemObjective
+    objective::O
+end
+
+"""
+    get_cost(TpM::TangentSpace, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, X)
+
+Compute the surrogate cost when solving its normal equation, see also
+[`get_cost(::AbstractManifold, ::LevenbergMarquardtLinearSurrogateObjective, p, X)`](@ref),
+[`get_linear_operator`](@ref), and [`get_vector_field`](@ref) for more details.
+"""
+function get_cost(
+        TpM::TangentSpace, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, X
+    )
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return get_cost(M, neo.objective, p, X)
+end
+function get_cost(
+        TpM::TangentSpace, lnsco::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
+        ::ZeroVector
+    )
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    n = residuals_count(lnsco.objective.objective)
+    vf = zeros(number_eltype(p), n)
+    get_vector_field!(M, vf, lnsco.objective, p)
+    return 0.5 * norm(vf)^2
+end
+function get_cost(
+        TpM::TangentSpace, lnsco::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateCoordinatesObjective},
+        X,
+    )
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    cX = get_coordinates(M, p, X)
+    n = residuals_count(lnsco.objective.objective)
+    vf = zeros(number_eltype(p), n)
+    get_vector_field!(M, vf, lnsco.objective, p)
+    add_linear_operator_coord!(TpM, vf, lnsco.objective, p, cX)
+    cost = 0.5 * norm(vf)^2
+    cost += (lnsco.objective.penalty / 2) * norm(M, p, X)^2
+    return cost
+end
+
 _doc_linOp_NEO = """
     get_linear_operator(M::AbstractManifold, neo::NormalEquationsObjective, p, X)
     get_linear_operator(M::AbstractManifold, neo::NormalEquationsObjective, p, c, B)
@@ -1231,26 +1247,40 @@ _doc_linOp_NEO = """
 
 @doc "$(_doc_linOp_NEO)"
 function get_linear_operator(
-        M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
-    ) where {E <: AbstractEvaluationType}
+        M::AbstractManifold, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p, XB
+    )
     return get_normal_linear_operator(M, neo.objective, p, XB)
 end
 @doc "$(_doc_linOp_NEO)"
 function get_linear_operator!(
-        M::AbstractManifold, YA, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, XB
-    ) where {E <: AbstractEvaluationType}
+        M::AbstractManifold, YA, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p, XB
+    )
     return get_normal_linear_operator!(M, YA, neo.objective, p, XB)
 end
 # (b) coefficients in a basis
 function get_linear_operator(
-        M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
-    ) where {E <: AbstractEvaluationType}
+        M::AbstractManifold, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
+    )
     return get_normal_linear_operator(M, neo.objective, p, c, B)
 end
 function get_linear_operator!(
-        M::AbstractManifold, Y, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
-    ) where {E <: AbstractEvaluationType}
+        M::AbstractManifold, Y, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
+    )
     return get_normal_linear_operator!(M, Y, neo.objective, p, c, B)
+end
+function get_linear_operator!(
+        M::AbstractManifold, A::AbstractMatrix, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis;
+        penalty::Real = neo.objective.penalty,
+    )
+    return get_normal_linear_operator!(M, A, neo.objective, p, B; penalty = penalty)
+end
+
+function get_vector_field!(
+        M::AbstractManifold, c, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis
+    )
+    get_normal_vector_field_coord!(M, c, neo.objective, p)
+    c .*= -1
+    return c
 end
 
 _doc_vecField_NEO = """
@@ -1273,28 +1303,58 @@ _doc_vecField_NEO = """
 # RHS as a tangent vector
 @doc "$(_doc_vecField_NEO)"
 function get_vector_field(
-        M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
-    ) where {E <: AbstractEvaluationType}
+        M::AbstractManifold, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p
+    )
     return -get_normal_vector_field(M, neo.objective, p)
 end
 @doc "$(_doc_vecField_NEO)"
 function get_vector_field!(
-        M::AbstractManifold, Y, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p
-    ) where {E <: AbstractEvaluationType}
+        M::AbstractManifold, Y, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p
+    )
     get_normal_vector_field!(M, Y, neo.objective, p)
     Y .*= -1
     return Y
 end
 # RHS in coordinates
 function get_vector_field(
-        M::AbstractManifold, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
-    ) where {E <: AbstractEvaluationType}
+        M::AbstractManifold, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
+    )
     return -get_normal_vector_field(M, neo.objective, p, B)
 end
 function get_vector_field!(
-        M::AbstractManifold, c, neo::NormalEquationsObjective{E, <:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
-    ) where {E <: AbstractEvaluationType}
+        M::AbstractManifold, c, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
+    )
     get_normal_vector_field!(M, c, neo.objective, p, B)
     c .*= -1
     return c
+end
+
+function show(io::IO, neo::NormalEquationsObjective)
+    print(io, "NormalEquationsObjective(")
+    print(io, neo.objective)
+    return print(io, ")")
+end
+
+function status_summary(neo::NormalEquationsObjective; context::Symbol = :default)
+    (context === :short) && return repr(neo)
+    (context === :inline) && return "Normal equation objective for the objective $(status_summary(neo.objective; context = context))"
+    return """
+    A Normal equation objective to be used within Levenberg Marquardt to solve the surrogate
+
+    ## Objective
+    $(_in_str(status_summary(neo.objective; context = context); headers = 1, indent = 1))"""
+end
+
+get_objective(slsmo::NormalEquationsObjective) = slsmo.objective
+
+# set parameter just passes down to the inner objective – the first few here resolve an ambiguity.
+for NT in [Val, Val{:Cost}, Val{:Gradient}, Val{:SubGradient}]
+    @eval function set_parameter!(neo::NormalEquationsObjective, name::$NT, value)
+        set_parameter!(neo.objective, name, value)
+        return neo
+    end
+end
+function set_parameter!(neo::NormalEquationsObjective, name::Symbol, value)
+    set_parameter!(neo.objective, name, value)
+    return neo
 end

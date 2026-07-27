@@ -524,19 +524,6 @@ function hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractM
 end
 
 """
-    UnitVector{TB}
-
-A type representing a unit tangent vector on a `Hyperrectangle`-like manifold with corners,
-or a product of it with a standard manifold.
-The field `index` stores the index of the element equal to 1.
-All other elements are equal to 0.
-`its` stores the overall iterator over all bounds.
-"""
-struct UnitVector{TB}
-    index::TB
-end
-
-"""
     hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate, M, p, X::UnitVector)
 
 Evaluate the quadratic form associated with the stored quasi-Newton matrix.

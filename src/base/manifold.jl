@@ -1,4 +1,16 @@
 # Helpers for general manifold functions
+"""
+    UnitVector{TB}
+
+A type representing a unit tangent vector on a `Hyperrectangle`-like manifold with corners,
+or a product of it with a standard manifold.
+The field `index` stores the index of the element equal to 1.
+All other elements are equal to 0.
+`its` stores the overall iterator over all bounds.
+"""
+struct UnitVector{TB}
+    index::TB
+end
 
 function add_vector!(M::AbstractManifold, X, p, c, basis::AbstractBasis)
     Y = get_vector(M, p, c, basis)

@@ -125,6 +125,7 @@ end
 include("base/problem/abstract_problem.jl")
 # ## Function
 include("base/function/constrained.jl")
+include("base/function/robustifier.jl")
 include("base/function/vectorial.jl")
 # ## Objective
 include("base/objective/evaluation.jl")
@@ -153,6 +154,10 @@ include("base/stopping_criterion.jl")
 #
 #
 # Commons – a collection of types or functions that are common to more than one solver
+
+# Robustifiers are used in the objective.jl, so they come first
+include("commons/robustifiers.jl")
+# The remainder is alphabetically ordered.
 include("commons/debugs.jl")
 include("commons/functions.jl")
 include("commons/objectives.jl")
@@ -162,6 +167,8 @@ include("commons/parameters.jl")
 include("commons/problems.jl")
 include("commons/records.jl")
 include("commons/stopping_criteria.jl")
+include("commons/sub_objectives.jl")
+include("commons/subsolver_states.jl")
 include("commons/vectorial_functions.jl")
 
 # DEPRECATED: Common Solver plans
