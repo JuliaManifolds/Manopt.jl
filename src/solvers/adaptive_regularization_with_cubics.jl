@@ -225,9 +225,10 @@ function AdaptiveRegularizationState(
     )
 end
 function AdaptiveRegularizationState(
-        M, sub_problem; evaluation::E = AllocatingEvaluation(), kwargs...
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
+        M, sub_problem; kwargs...
+    )
+    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
+    cfs = ClosedFormSubSolverState()
     return AdaptiveRegularizationState(M, sub_problem, cfs; kwargs...)
 end
 get_iterate(s::AdaptiveRegularizationState) = s.p

@@ -293,10 +293,10 @@ end
 function ConvexBundleMethodState(
         M::AbstractManifold,
         sub_problem = convex_bundle_method_subsolver;
-        evaluation::E = AllocatingEvaluation(),
         kwargs...,
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
+    )
+    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
+    cfs = ClosedFormSubSolverState()
     return ConvexBundleMethodState(M, sub_problem, cfs; kwargs...)
 end
 

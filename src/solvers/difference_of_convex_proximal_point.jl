@@ -204,10 +204,9 @@ provided_callbacks(::Type{DifferenceOfConvexProximalState}) = union(_MANOPT_DEFA
 get_callbacks(dcps::DifferenceOfConvexProximalState) = dcps.callbacks
 # resolve an ambiguity
 DifferenceOfConvexProximalState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Difference of Convex Proximal Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
-function DifferenceOfConvexProximalState(
-        M::AbstractManifold, sub_problem; evaluation::E = AllocatingEvaluation(), kwargs...
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
+function DifferenceOfConvexProximalState(M::AbstractManifold, sub_problem; kwargs...)
+    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
+    cfs = ClosedFormSubSolverState()
     return DifferenceOfConvexProximalState(M, sub_problem, cfs; kwargs...)
 end
 get_iterate(dcps::DifferenceOfConvexProximalState) = dcps.p

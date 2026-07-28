@@ -127,9 +127,7 @@ a closed form solution for the sub task.
 
 Generate the state either using a solver from Manopt, given by
 an [`AbstractManoptProblem`](@ref) `sub_problem` and an [`AbstractManoptSolverState`](@ref) `sub_state`,
-or a closed form solution `sub_solver` for the sub-problem the function expected to be of the form `(M, p, X) -> q` or `(M, q, p, X) -> q`,
-where by default its [`AbstractEvaluationType`](@ref) `evaluation` is in-place of `q`.
-Here the elements passed are the current iterate `p` and the subgradient `X` of `h` can be passed to that function.
+or a closed form solution `sub_solver` for the sub-problem the function expected to be of the form `(M, q, p, X) -> q`.
 
 ## further keyword arguments
 
@@ -173,10 +171,9 @@ mutable struct DifferenceOfConvexState{
 end
 provided_callbacks(::Type{DifferenceOfConvexState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver])
 get_callbacks(dcs::DifferenceOfConvexState) = dcs.callbacks
-function DifferenceOfConvexState(
-        M::AbstractManifold, sub_problem; evaluation::E = AllocatingEvaluation(), kwargs...
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
+function DifferenceOfConvexState(M::AbstractManifold, sub_problem; kwargs...)
+    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
+    cfs = ClosedFormSubSolverState()
     return DifferenceOfConvexState(M, sub_problem, cfs; kwargs...)
 end
 

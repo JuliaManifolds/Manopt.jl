@@ -2420,10 +2420,9 @@ end
 #
 # ---
 @doc """
-    ManifoldFirstOrderObjective{E<:AbstractEvaluationType, F} <: AbstractManifoldFirstOrderObjective{E, F}
+    ManifoldFirstOrderObjective{F} <: AbstractManifoldFirstOrderObjective{F}
 
-specify an objective containing a cost and its gradient or differential,
-where the [`AbstractEvaluationType`](@ref) `E` indicates the type of evaluation for a gradient.
+specify an objective containing a cost and its gradient or differential.
 
 # Fields
 
@@ -2481,6 +2480,7 @@ function ManifoldFirstOrderObjective(;
         cost = nothing, differential = nothing, gradient = nothing,
         costgradient = nothing, costdifferential = nothing,
     )
+    # TODO: Readd evaluation
     no_cost = isnothing(cost)
     no_diff = isnothing(differential)
     no_grad = isnothing(gradient)
@@ -2552,14 +2552,9 @@ const ManifoldCostGradientObjective{FG} = ManifoldFirstOrderObjective{
     },
 }
 @doc """
-    ManifoldCostGradientObjective(costgrad; evaluation::E=AllocatingEvaluation(), kwargs...)
+    ManifoldCostGradientObjective(costgrad; kwargs...)
 
 create an objective containing one function to perform a combined computation of cost and its gradient
-
-Depending on the [`AbstractEvaluationType`](@ref) `E` the gradient can have to forms
-
-* as a function `(M, p) -> (c, X)` that allocates memory for the gradient `X`, an [`AllocatingEvaluation`](@ref)
-* as a function `(M, X, p) -> (c, X)` that work in place of `X`, an [`InplaceEvaluation`](@ref)
 
 Internally this is stored in a [`ManifoldFirstOrderObjective`](@ref). The `kwargs...`
 are also passed to this representation, which allows to add a special function
@@ -2732,7 +2727,7 @@ end
 #
 # ---
 @doc """
-    ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldHessianObjective{T,C,G,H}
+    ManifoldHessianObjective{C,G,H,Pre} <: AbstractManifoldHessianObjective{C,G,H}
 
 specify a problem for Hessian based algorithms.
 
@@ -2745,11 +2740,6 @@ specify a problem for Hessian based algorithms.
   as an approximation of the inverse of the Hessian of ``f``, a map with the same
   input variables as the `hessian` to numerically stabilize iterations when the Hessian is
   ill-conditioned
-
-Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient and can have to forms
-
-* as a function `(M, p) -> X`  and `(M, p, X) -> Y`, resp., an [`AllocatingEvaluation`](@ref)
-* as a function `(M, X, p) -> X` and (M, Y, p, X), resp., an [`InplaceEvaluation`](@ref)
 
 # Constructor
     ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner = (M, p, X) -> X;
@@ -2767,6 +2757,7 @@ struct ManifoldHessianObjective{C, G, H, Pre} <: AbstractManifoldHessianObjectiv
     function ManifoldHessianObjective(
             cost::C, grad::G, hess::H, precond = nothing
         ) where {C, G, H}
+        # TODO: readd evaluation= keyword and wrap accordingly
         # We store `Nothing` as a type for the preconditioner
         return new{C, G, H, typeof(precond)}(cost, grad, hess, precond)
     end
@@ -3560,7 +3551,7 @@ end
 #
 # ---
 @doc """
-    ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:AbstractManifoldCostObjective{T, C}
+    ManifoldSubgradientObjective{C,S} <:AbstractManifoldCostObjective{C}
 
 A structure to store information about a objective for a subgradient based optimization problem
 
@@ -3581,6 +3572,7 @@ struct ManifoldSubgradientObjective{C, S} <: AbstractManifoldCostObjective{C}
     cost::C
     subgradient!::S
     function ManifoldSubgradientObjective(cost::C, subgrad::S) where {C, S}
+        # TODO: readd evaluation= keyword and wrap accordingly
         return new{C, S}(cost, subgrad)
     end
 end

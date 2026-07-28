@@ -325,7 +325,7 @@ $(_tex(:hat, "η_k")) = - B_k $(_tex(:widehat, "$(_tex(:grad))f(p_k)")),
 """
 
 """
-    QuasiNewtonPreconditioner{E<:AbstractEvaluationType, F}
+    QuasiNewtonPreconditioner{F}
 
 Add a preconditioning
 
@@ -335,10 +335,7 @@ Add a preconditioning
 
 # Constructors
 
-    QuasiNewtonPreconditioner(
-        preconditioner;
-        evaluation::AbstractEvaluationType=AllocatingEvaluation()
-    )
+    QuasiNewtonPreconditioner(preconditioner)
 
 Add preconditioning to a gradient problem.
 
@@ -351,8 +348,7 @@ Add preconditioning to a gradient problem.
 struct QuasiNewtonPreconditioner{F}
     preconditioner!::F
 end
-#
-#
+# TODO: add evaluation keyword and wrap accordingly.
 # Internally this always works in-place of X
 function (pg::QuasiNewtonPreconditioner)(
         X, mp::AbstractManoptProblem, s::AbstractGradientSolverState

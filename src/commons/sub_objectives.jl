@@ -1,5 +1,5 @@
 """
-    AbstractLevenbergMarquardtLinearSurrogateObjective{E<:AbstractEvaluationType}
+    AbstractLevenbergMarquardtLinearSurrogateObjective
 
 Abstract supertype for Levenberg-Marquardt surrogates like
 [`LevenbergMarquardtLinearSurrogateObjective`](@ref) and
@@ -136,7 +136,7 @@ end
 #
 # ---
 @doc """
-    LevenbergMarquardtLinearSurrogateCoordinatesObjective{E<:AbstractEvaluationType, VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
+    LevenbergMarquardtLinearSurrogateCoordinatesObjective{VF<:AbstractManifoldFirstOrderObjective, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
 
 A subobjective similar to `LevenbergMarquardtLinearSurrogateObjective` but which uses
 coordinate-based Jacobians in a single, selected basis instead of being centered around
@@ -1297,7 +1297,7 @@ end
 #
 # ---
 """
-    NormalEquationsObjective{E <: AbstractEvaluationType, O<: AbstractLinearSurrogateObjective{E}} <: AbstractSymmetricLinearSystemObjective{E}
+    NormalEquationsObjective{O <: AbstractLinearSurrogateObjective} <: AbstractSymmetricLinearSystemObjective
 
 A [`AbstractLinearSurrogateObjective`](@ref) might be overdetermined, and it usually is overdetermined,
 e.g. for the case of the [`LevenbergMarquardt`](@ref) algorithm.

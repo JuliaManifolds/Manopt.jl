@@ -394,7 +394,7 @@ function Nesterov(args...; kwargs...)
 end
 
 """
-    PreconditionedDirectionRule{E<:AbstractEvaluationType} <: DirectionUpdateRule
+    PreconditionedDirectionRule <: DirectionUpdateRule
 
 Add a preconditioning as gradient processor, see [`PreconditionedDirection`](@ref)
 for more mathematical background.
@@ -430,6 +430,7 @@ mutable struct PreconditionedDirectionRule{D <: DirectionUpdateRule, F} <: Direc
     function PreconditionedDirectionRule(;
             preconditioner::F, direction::D
         ) where {D <: DirectionUpdateRule, F}
+        # TODO: Readd evaluation and wrapping
         return new{D, F}(preconditioner, direction)
     end
 end

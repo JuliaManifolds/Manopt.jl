@@ -105,9 +105,10 @@ mutable struct ExactPenaltyMethodState{
     end
 end
 function ExactPenaltyMethodState(
-        M::AbstractManifold, sub_problem; evaluation::E = AllocatingEvaluation(), kwargs...
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
+        M::AbstractManifold, sub_problem; kwargs...
+    )
+    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
+    cfs = ClosedFormSubSolverState()
     return ExactPenaltyMethodState(M, sub_problem, cfs; kwargs...)
 end
 # resolve an ambiguity

@@ -179,9 +179,10 @@ function TrustRegionsState(
     )
 end
 function TrustRegionsState(
-        M::AbstractManifold, sub_problem; evaluation::E = AllocatingEvaluation(), kwargs...
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
+        M::AbstractManifold, sub_problem; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...
+    )
+    # TODO: wrap sub_problem if alloc
+    cfs = ClosedFormSubSolverState()
     return TrustRegionsState(M, sub_problem, cfs; kwargs...)
 end
 function TrustRegionsState(

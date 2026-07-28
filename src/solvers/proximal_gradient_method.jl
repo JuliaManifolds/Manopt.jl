@@ -208,6 +208,7 @@ function ProximalGradientMethodState(
         RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, S <: Stepsize,
         C <: AbstractDict{Symbol},
     }
+    #TODO adapt wrapping
     return ProximalGradientMethodState(
         sub_problem, maybe_wrap_evaluation_type(sub_state);
         callbacks = callbacks,

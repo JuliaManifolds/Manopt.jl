@@ -40,6 +40,8 @@ and for the `reflect!` additionally
 """
 reflect(M::AbstractManifold, p::Any, x; kwargs...)
 
+# TODO: Refactor reflection to be in-place and have a wrapper
+
 @doc """
     DouglasRachfordState <: AbstractManoptSolverState
 

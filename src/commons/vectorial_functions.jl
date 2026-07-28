@@ -272,7 +272,6 @@ or a single tangent space of the power manifold of length `n`.
 # Constructor
 
     VectorHessianFunction(f, Jf, Hess_f, range_dimension;
-        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
         function_type::AbstractVectorialType=FunctionVectorialType(),
         jacobian_type::AbstractVectorialType=FunctionVectorialType(),
         hessian_type::AbstractVectorialType=FunctionVectorialType(),
@@ -307,6 +306,7 @@ function VectorHessianFunction(
         I <: Integer, F, J, H,
         FT <: AbstractVectorialType, JT <: AbstractVectorialType, HT <: AbstractVectorialType,
     }
+    # TODO: Readd evaluation keyword and wrap accordingly
     return VectorHessianFunction{FT, JT, HT, F, J, H, I}(
         f, function_type, Jf, jacobian_type, Hf, hessian_type, range_dimension
     )

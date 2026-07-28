@@ -181,11 +181,6 @@ where either the gradient function using the decorator or without the decorator 
 
 By default `recursive` is set to `false`, since usually to just pass the gradient function
 somewhere, one still wants for example the cached one or the one that still counts calls.
-
-Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
-
-* `(M, p) -> X` for the [`AllocatingEvaluation`](@ref) case
-* `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref) working in-place of `X`.
 """
 get_gradient_function(::AbstractManifoldFirstOrderObjective; recursive = false)
 

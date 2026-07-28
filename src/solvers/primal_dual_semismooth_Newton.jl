@@ -1,5 +1,5 @@
 @doc """
-    PrimalDualManifoldSemismoothNewtonObjective{E<:AbstractEvaluationType, TC, LO, TALO, PF, DPF, PG, DPG, L} <: AbstractPrimalDualManifoldObjective{E, TC, PF}
+    PrimalDualManifoldSemismoothNewtonObjective{TC, LO, TALO, PF, DPF, PG, DPG, L} <: AbstractPrimalDualManifoldObjective{TC, PF}
 
 Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [DiepeveenLellmann:2021](@cite)
 

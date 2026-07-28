@@ -8,9 +8,6 @@ Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [Bergma
 
 # Fields
 
-All fields with `!!` can either be in-place or allocating functions, which should be set
-depending on the `evaluation=` keyword in the constructor and stored in `T <: AbstractEvaluationType`.
-
 * `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_forward_operator!`: linearized operator for the forward operation in the algorithm ``DΛ``
 * `linearized_adjoint_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → T$(_math(:Manifold))``
@@ -314,11 +311,6 @@ $(_args(:p; name = "m"))
 $(_args(:p; name = "n", M = "N"))
 * `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$(_tex_DΛ)``
 * `prox_F, prox_G_Dual`:          the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
-
-note that depending on the [`AbstractEvaluationType`](@ref) `evaluation` the last three parameters
-as well as the forward operator `Λ` and the `linearized_forward_operator` can be given as
-allocating functions `(Manifolds, parameters) -> result`  or as mutating functions
-`(Manifold, result, parameters)` -> result` to spare allocations.
 
 By default, this performs the exact Riemannian Chambolle Pock algorithm, see the optional parameter
 `DΛ` for their linearized variant.

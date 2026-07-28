@@ -325,6 +325,7 @@ function proximal_bundle_method!(
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
+    #TODO: Adapt sub problem wrapping for closed form solution
     pbms = ProximalBundleMethodState(
         M,
         sub_problem,

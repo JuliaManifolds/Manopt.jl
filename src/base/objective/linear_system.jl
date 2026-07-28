@@ -5,7 +5,7 @@ f(X) = $(_tex(:frac, 1, 2)) $(_tex(:norm, _tex(:Cal, "A") * "[X] + b"; index = "
 """
 
 """
-    AbstractSymmetricLinearSystemObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{E}
+    AbstractSymmetricLinearSystemObjective <: AbstractManifoldObjective
 
 Model the objective
 

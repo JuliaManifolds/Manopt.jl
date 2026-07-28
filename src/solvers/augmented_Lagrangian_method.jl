@@ -143,10 +143,10 @@ function AugmentedLagrangianMethodState(
         M::AbstractManifold,
         co::ConstrainedManifoldObjective,
         sub_problem;
-        evaluation::E = AllocatingEvaluation(),
         kwargs...,
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
+    )
+    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
+    cfs = ClosedFormSubSolverState()
     return AugmentedLagrangianMethodState(M, co, sub_problem, cfs; kwargs...)
 end
 
@@ -337,10 +337,7 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_alm)"
 function augmented_Lagrangian_method(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        p = rand(M);
+        M::AbstractManifold, f, grad_f, p = rand(M);
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         g = nothing,
         h = nothing,
@@ -385,10 +382,7 @@ calls_with_kwargs(::typeof(augmented_Lagrangian_method)) = (augmented_Lagrangian
 
 @doc "$(_doc_alm)"
 function augmented_Lagrangian_method!(
-        M::AbstractManifold,
-        f::TF,
-        grad_f::TGF,
-        p;
+        M::AbstractManifold, f::TF, grad_f::TGF, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         g = nothing,
         h = nothing,
