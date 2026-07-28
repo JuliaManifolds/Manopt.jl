@@ -1831,8 +1831,8 @@ Generate a problem. While this Problem does not have any allocating functions,
 struct ManifoldCostObjective{F} <: AbstractManifoldCostObjective{F}
     cost::F
 end
-function show(io::IO, ::ManifoldCostObjective{F}) where {F}
-    return print(io, "ManifoldCostObjective(mco.cost)")
+function show(io::IO, mco::ManifoldCostObjective{F}) where {F}
+    return print(io, "ManifoldCostObjective($(mco.cost))")
 end
 function status_summary(::ManifoldCostObjective{F}; context::Symbol = :default) where {F}
     return "A cost function on a Riemannian manifold `f = (M,p) -> ℝ`."

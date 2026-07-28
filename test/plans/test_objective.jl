@@ -17,10 +17,11 @@ using ManifoldsBase, Manopt, Test
         @test startswith(Manopt.status_summary(d), "A cost function on a Riemannian manifold")
     end
     @testset "ReturnManifoldObjective" begin
-        o = ManifoldCostObjective(x -> x)
+        f(x) = x
+        o = ManifoldCostObjective(f)
         r = Manopt.ReturnManifoldObjective(o)
-        @test repr(o) == "ManifoldCostObjective(f)"
-        @test repr(r) == "ReturnManifoldObjective(ManifoldCostObjective(f))"
+        @test repr(o) == "ManifoldCostObjective($(f))"
+        @test repr(r) == "ReturnManifoldObjective(ManifoldCostObjective($(f)))"
         @test Manopt.status_summary(o) == "A cost function on a Riemannian manifold `f = (M,p) -> ℝ`."
         @test Manopt.status_summary(r) == "A cost function on a Riemannian manifold `f = (M,p) -> ℝ`."
         d = Manopt.Test.DummyDecoratedObjective(o)

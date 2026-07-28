@@ -17,14 +17,6 @@ function Base.show(io::IO, ::MIME"text/plain", amp::AbstractManoptProblem)
     return multiline ? status_summary(io, amp) : show(io, amp)
 end
 
-"""
-    evaluation_type(mp::AbstractManoptProblem)
-
-Get the [`AbstractEvaluationType`](@ref) of the objective in [`AbstractManoptProblem`](@ref)
-`mp`.
-"""
-evaluation_type(amp::AbstractManoptProblem) = evaluation_type(get_objective(amp))
-
 @doc """
     get_preconditioner(amp::AbstractManoptProblem, p, X)
 
@@ -83,6 +75,9 @@ evaluate the cost function `f` stored within the [`AbstractManifoldObjective`](@
 function get_cost(amp::AbstractManoptProblem, p)
     return get_cost(get_manifold(amp), get_objective(amp), p)
 end
+
+
+
 
 function get_gradient(mp::AbstractManoptProblem, p)
     return get_gradient(get_manifold(mp), get_objective(mp), p)

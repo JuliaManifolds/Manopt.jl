@@ -158,7 +158,7 @@ end
 Evaluate the gradient of a [`AbstractManifoldFirstOrderObjective`] `objective` on an $(_link(:AbstractManifold)) `M` at a point `p`.
 This can be evaluated in-place of `X` and also when passing and [`AbstractManoptProblem`](@ref) `problem`.
 """
-function get_gradient(M, objective::AbstractManifoldFirstOrderObjective, p)
+function get_gradient(M::AbstractManifold, objective::AbstractManifoldFirstOrderObjective, p)
     X = zero_vector(M, p)
     return get_gradient!(M, X, objective, p)
 end

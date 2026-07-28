@@ -20,7 +20,7 @@ end
 return the function to evaluate (just) the Hessian ``$(_tex(:Hess)) f(p)``,
 which has the form `(M, Y, p, X) -> Y` working in-place of `Y`.
 """
-get_hessian_function(mho::AbstractManifoldHessianObjective, recursive::Bool = false) = mho.hessian!!
+get_hessian_function(mho::AbstractManifoldHessianObjective, recursive::Bool = false) = mho.hessian!
 
 
 function get_hessian_function(

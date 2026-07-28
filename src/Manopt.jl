@@ -291,7 +291,7 @@ export AbstractRobustifierFunction, SoftL1Robustifier, AbstractRobustifierFuncti
     HuberRobustifier, ComponentwiseRobustifierFunction
 #
 # Evaluation & Vectorial Types
-export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
+export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation
 export AbstractVectorialType
 export CoefficientVectorialType, ComponentVectorialType, FunctionVectorialType
 #
