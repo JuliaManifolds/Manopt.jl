@@ -46,7 +46,7 @@ TrustRegionsState
 as well as their (non-exported) common supertype
 
 ```@docs
-Manopt.AbstractApproxHessian
+Manopt.AbstractApproximateHessianFunction
 ```
 
 ## [Technical details](@id sec-tr-technical-details)

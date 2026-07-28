@@ -96,11 +96,6 @@ struct NoIterateState <: AbstractManoptSolverState end
         @test has_converged(d2) === has_converged(s2)
     end
 
-    @testset "Closed Form State" begin
-        @test Manopt.ClosedFormSubSolverState() isa
-            Manopt.ClosedFormSubSolverState{AllocatingEvaluation}
-    end
-
     @testset "Generic Objective and State solver returns" begin
         f(M, p) = 1
         o = ManifoldCostObjective(f)

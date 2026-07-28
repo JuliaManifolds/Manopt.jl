@@ -149,14 +149,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         f1(M, p) = p
         f1!(M, q, p) = copyto!(M, q, p)
         r = copy(M, p1)
-        Manopt.solve_arc_subproblem!(
-            M, r, f1, Manopt.ClosedFormSubSolverState{AllocatingEvaluation}(), p0
-        )
-        @test r == p0
-        r = copy(M, p1)
-        Manopt.solve_arc_subproblem!(
-            M, r, f1!, Manopt.ClosedFormSubSolverState{InplaceEvaluation}(), p0
-        )
+        Manopt.solve_arc_subproblem!(M, r, f1!, Manopt.ClosedFormSubSolverState(), p0)
         @test r == p0
         # Dummy construction with a function for the `sub_problem`
         arcs4 = AdaptiveRegularizationState(M, f1; p = p0)

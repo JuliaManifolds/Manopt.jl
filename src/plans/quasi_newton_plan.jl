@@ -349,32 +349,21 @@ Add preconditioning to a gradient problem.
 
 $(_kwargs(:evaluation))
 """
-struct QuasiNewtonPreconditioner{E <: AbstractEvaluationType, F}
-    preconditioner::F
+struct QuasiNewtonPreconditioner{F}
+    preconditioner!::F
 end
-function QuasiNewtonPreconditioner(
-        preconditioner::F; evaluation::E = AllocatingEvaluation()
-    ) where {E <: AbstractEvaluationType, F}
-    return QuasiNewtonPreconditioner{E, F}(preconditioner)
+function QuasiNewtonPreconditioner(preconditioner::F)
+    return QuasiNewtonPreconditioner{F}(preconditioner)
 end
 #
 #
 # Internally this always works in-place of X
-function (qnp::QuasiNewtonPreconditioner{AllocatingEvaluation})(
+function (pg::QuasiNewtonPreconditioner)(
         X, mp::AbstractManoptProblem, s::AbstractGradientSolverState
     )
     M = get_manifold(mp)
     p = get_iterate(s)
-    copyto!(M, X, p, qnp.preconditioner(M, p, X))
-    return X
-end
-function (pg::QuasiNewtonPreconditioner{InplaceEvaluation})(
-        X, mp::AbstractManoptProblem, s::AbstractGradientSolverState
-    )
-    M = get_manifold(mp)
-    p = get_iterate(s)
-    pg.preconditioner(M, X, p, X)
-    return X
+    return pg.preconditioner!(M, X, p, X)
 end
 
 @doc """

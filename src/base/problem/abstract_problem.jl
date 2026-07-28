@@ -26,6 +26,21 @@ Get the [`AbstractEvaluationType`](@ref) of the objective in [`AbstractManoptPro
 evaluation_type(amp::AbstractManoptProblem) = evaluation_type(get_objective(amp))
 
 @doc """
+    get_preconditioner(amp::AbstractManoptProblem, p, X)
+
+evaluate the symmetric, positive definite preconditioner (approximation of the
+inverse of the Hessian of the cost function `f`) of a
+[`AbstractManoptProblem`](@ref) `amp`s objective at the point `p` applied to a
+tangent vector `X`.
+"""
+function get_preconditioner(amp::AbstractManoptProblem, p, X)
+    return get_preconditioner(get_manifold(amp), get_objective(amp), p, X)
+end
+function get_preconditioner!(amp::AbstractManoptProblem, Y, p, X)
+    return get_preconditioner!(get_manifold(amp), Y, get_objective(amp), p, X)
+end
+
+@doc """
     Y = get_hessian(amp::AbstractManoptProblem{T}, p, X)
     get_hessian!(amp::AbstractManoptProblem{T}, Y, p, X)
 

@@ -21,48 +21,18 @@ Evaluate all summands gradients at a point `p` on the `ProductManifold M` (in pl
 """
 get_gradient(M::ProductManifold, ::ManifoldAlternatingGradientObjective, ::Any...)
 
-function get_gradient(
-        M::AbstractManifold,
-        mago::ManifoldAlternatingGradientObjective{AllocatingEvaluation, TC, <:AbstractVector},
-        p,
-    ) where {TC}
-    return ArrayPartition([gi(M, p) for gi in mago.gradient!!]...)
-end
-
 @doc """
     X = get_gradient(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, p, i)
     get_gradient!(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, X, p, i)
 
 Evaluate one of the component gradients ``$(_tex(:grad)) f_i``, ``i∈ $(_tex(:set, "1,…,n"))``, at `x` (in place of `Y`).
 """
-function get_gradient(
-        M::ProductManifold,
-        mago::ManifoldAlternatingGradientObjective{AllocatingEvaluation, TC, <:Function},
-        p,
-        i,
-    ) where {TC}
-    return get_gradient(M, mago, p)[M, i]
-end
 function get_gradient!(
-        M::AbstractManifold,
-        X,
-        mago::ManifoldAlternatingGradientObjective{InplaceEvaluation, TC, <:AbstractVector},
-        p,
+        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{TC, <:AbstractVector}, p,
     ) where {TC}
     for (gi, Xi) in zip(mago.gradient!!, submanifold_components(M, X))
         gi(M, Xi, p)
     end
-    return X
-end
-
-function get_gradient!(
-        M::ProductManifold,
-        X,
-        mago::ManifoldAlternatingGradientObjective{AllocatingEvaluation, TC, <:Function},
-        p,
-        k,
-    ) where {TC}
-    copyto!(M[k], X, mago.gradient!!(M, p)[M, k])
     return X
 end
 
@@ -130,6 +100,4 @@ function alternating_gradient_descent!(
     Manopt.solve!(dmp, agds)
     return Manopt.get_solver_return(get_objective(dmp), agds)
 end
-
-## Prox TV on
 end

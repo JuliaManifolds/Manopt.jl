@@ -85,14 +85,8 @@ the forward operator ``Λ`` might be `missing` in `p`.
 adjoint_linearized_operator(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 
 function adjoint_linearized_operator(
-        ::AbstractManifold, N::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, m, n, Y,
-    )
-    return apdmo.adjoint_linearized_operator!!(N, m, n, Y)
-end
-function adjoint_linearized_operator(
         M::AbstractManifold, N::AbstractManifold,
-        apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, m, n, Y,
+        apdmo::AbstractPrimalDualManifoldObjective, m, n, Y,
     )
     X = zero_vector(M, m)
     apdmo.adjoint_linearized_operator!!(N, X, m, n, Y)
@@ -106,15 +100,8 @@ function adjoint_linearized_operator(
 end
 
 function adjoint_linearized_operator!(
-        M::AbstractManifold, N::AbstractManifold,
-        X, apdmo::AbstractPrimalDualManifoldObjective{AllocatingEvaluation}, m, n, Y,
-    )
-    copyto!(M, X, apdmo.adjoint_linearized_operator!!(N, m, n, Y))
-    return X
-end
-function adjoint_linearized_operator!(
         ::AbstractManifold, N::AbstractManifold,
-        X, apdmo::AbstractPrimalDualManifoldObjective{InplaceEvaluation}, m, n, Y,
+        X, apdmo::AbstractPrimalDualManifoldObjective, m, n, Y,
     )
     apdmo.adjoint_linearized_operator!!(N, X, m, n, Y)
     return X

@@ -621,14 +621,14 @@ where ``$(_tex(:Cal, "C")) ⊂ $(_math(:Manifold))`` is a convex closed subset.
 
 * `objective::AbstractManifoldObjective` the (unconstrained) objective, which
   contains ``f`` and for example its gradient ``$(_tex(:grad)) f``.
-* `project!!::PF` a projection function ``$(_tex(:proj))_{$(_tex(:Cal, "C"))}: $(_math(:Manifold)) → $(_tex(:Cal, "C"))`` that projects onto the set ``$(_tex(:Cal, "C"))``.
+* `project!::PF` a projection function ``$(_tex(:proj))_{$(_tex(:Cal, "C"))}: $(_math(:Manifold)) → $(_tex(:Cal, "C"))`` that projects onto the set ``$(_tex(:Cal, "C"))``.
 * `indicator::IF` the indicator function ``ι_{$(_tex(:Cal, "C"))}(p) = $(_tex(:cases, "0 &" * _tex(:text, " for ") * "p∈" * _tex(:Cal, "C"), "∞ &" * _tex(:text, " else.")))``
 
 # Constructor
 
-    ManifoldConstrainedSetObjective(f, grad_f, project!!; kwargs...)
+    ManifoldConstrainedSetObjective(f, grad_f, project!; kwargs...)
 
-Generate the constrained objective for a given function `f` its gradient `grad_f` and a projection `project!!` ``$(_tex(:proj))_{$(_tex(:Cal, "C"))}``.
+Generate the constrained objective for a given function `f` its gradient `grad_f` and a projection `project!` ``$(_tex(:proj))_{$(_tex(:Cal, "C"))}``.
 
 ## Keyword arguments
 
@@ -637,26 +637,26 @@ Generate the constrained objective for a given function `f` its gradient `grad_f
 """
 struct ManifoldConstrainedSetObjective{MO <: AbstractManifoldObjective, PF, IF} <: AbstractManifoldObjective
     objective::MO
-    project!!::PF
+    project!::PF
     indicator::IF
 end
 
 function ManifoldConstrainedSetObjective(
-        f, grad_f, project!!::PF; indicator = nothing
+        f, grad_f, project!::PF; indicator = nothing
     ) where {PF}
     obj = ManifoldGradientObjective(f, grad_f)
     if isnothing(indicator)
         ind = function (M, p)
             q = rand(M)
-            project!!(M, q, p)
+            project!(M, q, p)
             return distance(M, p, q) ≈ 0 ? 0 : Inf
         end
-        return ManifoldConstrainedSetObjective{typeof(obj), typeof(project!!), typeof(ind)}(
-            obj, project!!, ind
+        return ManifoldConstrainedSetObjective{typeof(obj), typeof(project!), typeof(ind)}(
+            obj, project!, ind
         )
     end
-    return ManifoldConstrainedSetObjective{typeof(obj), typeof(project!!), typeof(indicator)}(
-        obj, project!!, indicator
+    return ManifoldConstrainedSetObjective{typeof(obj), typeof(project!), typeof(indicator)}(
+        obj, project!, indicator
     )
 end
 
@@ -701,13 +701,13 @@ function get_projected_point(
         M::AbstractManifold, cso::ManifoldConstrainedSetObjective, p
     )
     q = copy(M, p)
-    cso.project!!(M, q, p)
+    cso.project!(M, q, p)
     return q
 end
 @doc "$(_doc_get_projected_point)"
 get_projected_point!(M::AbstractManifold, q, cso::ManifoldConstrainedSetObjective, p)
 function get_projected_point!(M::AbstractManifold, q, cso::ManifoldConstrainedSetObjective, p)
-    cso.project!!(M, q, p)
+    cso.project!(M, q, p)
     return q
 end
 
@@ -1931,7 +1931,7 @@ function _get_counter_size(
     (s === :GradInequalityConstraint) &&
         (return length(get_inequality_constraint(M, o, p, :)))
     # For now this only appears in ProximalMapObjective, access its field
-    (s === :ProximalMap) && (return length(get_objective(o).proximal_maps!!))
+    (s === :ProximalMap) && (return length(get_objective(o).proximal_maps!))
     (s === :StochasticGradient) && (return length(get_gradients(M, o, p)))
     return 1 #number - default
 end
@@ -2645,6 +2645,125 @@ end
 #
 # ---
 @doc """
+    ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldHessianObjective{T,C,G,H}
+
+specify a problem for Hessian based algorithms.
+
+# Fields
+
+* `cost`:           a function ``f:$(_math(:Manifold))→ℝ`` to minimize
+* `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold)) → $(_math(:TangentBundle))`` of the cost function ``f``
+* `hessian`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TangentSpace; p = "x")) → $(_math(:TangentSpace; p = "x"))`` of the cost function ``f``
+* `preconditioner`: the symmetric, positive definite preconditioner
+  as an approximation of the inverse of the Hessian of ``f``, a map with the same
+  input variables as the `hessian` to numerically stabilize iterations when the Hessian is
+  ill-conditioned
+
+Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient and can have to forms
+
+* as a function `(M, p) -> X`  and `(M, p, X) -> Y`, resp., an [`AllocatingEvaluation`](@ref)
+* as a function `(M, X, p) -> X` and (M, Y, p, X), resp., an [`InplaceEvaluation`](@ref)
+
+# Constructor
+    ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner = (M, p, X) -> X;
+        evaluation=AllocatingEvaluation())
+
+# See also
+
+[`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
+"""
+struct ManifoldHessianObjective{C, G, H, Pre} <: AbstractManifoldHessianObjective{C, G, H}
+    cost::C
+    gradient!::G
+    hessian!::H
+    preconditioner!::Pre
+    function ManifoldHessianObjective(
+            cost::C, grad::G, hess::H, precond = nothing
+        ) where {C, G, H}
+        # We store `Nothing` as a type for the preconditioner
+        return new{C, G, H, typeof(precond)}(cost, grad, hess, precond)
+    end
+end
+function get_gradient(M::AbstractManifold, mho::ManifoldHessianObjective, p)
+    X = zero_vector(M, p)
+    mho.gradient!(M, X, p)
+    return X
+end
+function get_gradient!(M::AbstractManifold, Y, mho::ManifoldHessianObjective, p)
+    return mho.gradient!(M, Y, p)
+end
+function get_gradient_function(mho::ManifoldHessianObjective, recursive = false)
+    return mho.gradient!
+end
+function get_hessian(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
+    Y = zero_vector(M, p)
+    mho.hessian!(M, Y, p, X)
+    return Y
+end
+function get_hessian!(M::AbstractManifold, Y, mho::ManifoldHessianObjective, p, X)
+    mho.hessian!(M, Y, p, X)
+    return Y
+end
+
+function get_preconditioner end
+@doc """
+    get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
+
+evaluate the symmetric, positive definite preconditioner (approximation of the
+inverse of the Hessian of the cost function `F`) of a
+[`ManifoldHessianObjective`](@ref) `mho` at the point `p` applied to a
+tangent vector `X`.
+"""
+function get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
+    Y = zero_vector(M, p)
+    isnothing(mho.preconditioner!) && return copyto!(M, Y, p, X)
+    mho.preconditioner!(M, Y, p, X)
+    return Y
+end
+function get_preconditioner(
+        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X
+    )
+    return get_preconditioner(M, get_objective(admo, false), p, X)
+end
+function get_preconditioner!(
+        M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p, X
+    )
+    return get_preconditioner!(M, Y, get_objective(admo, false), p, X)
+end
+function get_preconditioner!(M::AbstractManifold, Y, mho::ManifoldHessianObjective, p, X)
+    return isnothing(mho.preconditioner!) ? copyto!(M, Y, p, X) : mho.preconditioner!(M, Y, p, X)
+end
+
+update_hessian!(M, f, p, p_proposal, X) = f
+
+update_hessian_basis!(M, f, p) = f
+
+function status_summary(mho::ManifoldHessianObjective{E}; context::Symbol = :default) where {E}
+    _is_inline(context) && return "A second order objective with cost, gradient$(isnothing(mho.preconditioner!) ? ", and" : "") Hessian$(isnothing(mho.preconditioner!) ? "" : ", and a preconditioner")"
+    precon_str = isnothing(mho.preconditioner!) ? "" : "\n* preconditioner: $(mho.preconditioner!)"
+    return """
+    A second order objective providing a cost, a gradient$(isnothing(mho.preconditioner!) ? ", and" : "") a Hessian$(isnothing(mho.preconditioner!) ? "" : ", and a preconditioner")
+
+    ## Functions
+    * cost:    $(_MANOPT_INDENT)$(mho.cost)
+    * gradient:$(_MANOPT_INDENT)$(mho.gradient!)
+    * Hessian: $(_MANOPT_INDENT)$(mho.hessian!)$(precon_str)"""
+end
+
+function Base.show(io::IO, mho::ManifoldHessianObjective)
+    print(io, "ManifoldHessianObjective(")
+    print(io, "$(mho.cost), ")
+    print(io, "$(mho.gradient!), ")
+    print(io, "$(mho.hessian!)")
+    !isnothing(mho.preconditioner!) && print(io, ", $(mho.preconditioner!)")
+    return print(io, ")")
+end
+
+
+#
+#
+# ---
+@doc """
     ManifoldNonlinearLeastSquaresObjectives <: AbstractManifoldObjective
 
 An objective to model the robustified nonlinear least squares problem
@@ -2979,7 +3098,7 @@ Generate a proximal objective for ``f`` and its proxial map ``$(_tex(:prox))_{λ
 """
 mutable struct ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostObjective{TC}
     cost::TC
-    proximal_maps!!::TP
+    proximal_maps!::TP
     number_of_proxes::V
     function ManifoldProximalMapObjective(f, proxes_f::Union{Tuple, AbstractVector})
         np = ones(length(proxes_f))
@@ -3027,17 +3146,17 @@ function get_proximal_map(
         mpo::ManifoldProximalMapObjective{F, <:Union{<:Tuple, <:Vector}},
         λ, p, i,
     ) where {F}
-    _check_prox_number(mpo.proximal_maps!!, i)
+    _check_prox_number(mpo.proximal_maps!, i)
     q = allocate_result(M, get_proximal_map, p)
-    mpo.proximal_maps!![i](M, q, λ, p)
+    mpo.proximal_maps![i](M, q, λ, p)
     return q
 end
 function get_proximal_map!(
         M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{F, <:Union{<:Tuple, <:Vector}},
         λ, p, i,
     ) where {F}
-    _check_prox_number(mpo.proximal_maps!!, i)
-    mpo.proximal_maps!![i](M, q, λ, p)
+    _check_prox_number(mpo.proximal_maps!, i)
+    mpo.proximal_maps![i](M, q, λ, p)
     return q
 end
 
@@ -3045,20 +3164,20 @@ function get_proximal_map(
         M::AbstractManifold, mpo::ManifoldProximalMapObjective, λ, p
     )
     q = allocate_result(M, get_proximal_map, p)
-    mpo.proximal_maps!!(M, q, λ, p)
+    mpo.proximal_maps!(M, q, λ, p)
     return q
 end
 function get_proximal_map!(
         M::AbstractManifold, q, mpo::ManifoldProximalMapObjective, λ, p
     )
-    return mpo.proximal_maps!!(M, q, λ, p)
+    return mpo.proximal_maps!(M, q, λ, p)
 end
 function status_summary(mpo::ManifoldProximalMapObjective; context::Symbol = :default)
     (context === :short) && (return repr(mpo))
     return "A proximal map objective for a cost with $(mpo.number_of_proxes) proximal maps"
 end
 function Base.show(io::IO, mpo::ManifoldProximalMapObjective)
-    print(io, "ManifoldProximalMapObjective(", mpo.cost, ", ", mpo.proximal_maps!!, ", ")
+    print(io, "ManifoldProximalMapObjective(", mpo.cost, ", ", mpo.proximal_maps!, ", ")
     print(io, mpo.number_of_proxes)
     return print(io, ")")
 end
@@ -3083,8 +3202,8 @@ as well as ``$(_tex(:grad)) g`` and ``$(_tex(:prox))_{λ h}``.
 
 * `cost`: the overall cost ``f = g + h``
 * `cost_smooth`: the smooth cost component ``g``
-* `gradient_g!!`: the gradient ``$(_tex(:grad)) g``
-* `proximal_map_h!!`: the proximal map ``$(_tex(:prox))_{λ h}``
+* `gradient_g!`: the gradient ``$(_tex(:grad)) g``
+* `proximal_map_h!`: the proximal map ``$(_tex(:prox))_{λ h}``
 
 # Constructor
     ManifoldProximalGradientObjective(f, g, grad_g, prox_h)
@@ -3094,8 +3213,8 @@ Generate the proximal gradient objective given the total cost ``f = g + h``, smo
 struct ManifoldProximalGradientObjective{TC, TG, TGG, TP} <: AbstractManifoldCostObjective{TC}
     cost::TC # f = g + h
     cost_smooth::TG # smooth part
-    gradient_g!!::TGG
-    proximal_map_h!!::TP
+    gradient_g!::TGG
+    proximal_map_h!::TP
     function ManifoldProximalGradientObjective(
             f::TC, g::TG, grad_g::TGG, prox_h::TP
         ) where {TC, TG, TGG, TP}
@@ -3112,12 +3231,12 @@ Evaluate the gradient of the smooth part of a [`ManifoldProximalGradientObjectiv
 get_gradient(::AbstractManifold, ::ManifoldProximalGradientObjective, p)
 
 function get_gradient!(M::AbstractManifold, X, mpgo::ManifoldProximalGradientObjective, p)
-    return mpgo.gradient_g!!(M, X, p)
+    return mpgo.gradient_g!(M, X, p)
 end
 
 function Base.show(io::IO, mpgo::ManifoldProximalGradientObjective{E}) where {E}
     print(io, "ManifoldProximalGradientObjective(", mpgo.cost, ", ", mpgo.cost_smooth, ", ")
-    print(io, mpgo.gradient_g!!, ", ", mpgo.proximal_map_h!!)
+    print(io, mpgo.gradient_g!, ", ", mpgo.proximal_map_h!)
     return print(io, ")")
 end
 
@@ -3131,8 +3250,8 @@ function status_summary(mpgo::ManifoldProximalGradientObjective; context::Symbol
     # Components
     * `f`:          $(mpgo.cost)
     * `g`:          $(mpgo.cost_smooth)
-    * `gradient_g`: $(mpgo.gradient_g!!)
-    * `prox_h`:     $(mpgo.proximal_map_h!!)"""
+    * `gradient_g`: $(mpgo.gradient_g!)
+    * `prox_h`:     $(mpgo.proximal_map_h!)"""
 end
 """
     get_cost_smooth(M::AbstractManifold, objective, p)
@@ -3157,7 +3276,7 @@ get_proximal_map(M::AbstractManifold, mpgo::ManifoldProximalGradientObjective, �
 function get_proximal_map!(
         M::AbstractManifold, q, mpgo::ManifoldProximalGradientObjective, λ, p
     )
-    return mpgo.proximal_map_h!!(M, q, λ, p)
+    return mpgo.proximal_map_h!(M, q, λ, p)
 end
 
 @doc """
@@ -3180,7 +3299,7 @@ deterministic element from the subdifferential at `p` on a manifold `M`.
 """
 struct ManifoldSubgradientObjective{C, S} <: AbstractManifoldCostObjective{C}
     cost::C
-    subgradient!!::S
+    subgradient!::S
     function ManifoldSubgradientObjective(cost::C, subgrad::S) where {C, S}
         return new{C, S}(cost, subgrad)
     end
@@ -3198,12 +3317,12 @@ The result might not be deterministic, _one_ element of the subdifferential is r
 """
 function get_subgradient(M::AbstractManifold, sgo::ManifoldSubgradientObjective, p)
     X = zero_vector(M, p)
-    return sgo.subgradient!!(M, X, p)
+    return sgo.subgradient!(M, X, p)
 end
 function get_subgradient!(
         M::AbstractManifold, X, sgo::ManifoldSubgradientObjective, p
     )
-    return sgo.subgradient!!(M, X, p)
+    return sgo.subgradient!(M, X, p)
 end
 
 @doc """
@@ -3217,11 +3336,11 @@ By default `recursive` is set to `false`, since usually to just pass the gradien
 somewhere, one still wants for example the cached one or the one that still counts calls.
 """
 function get_subgradient_function(objective::ManifoldSubgradientObjective, recursive = false)
-    return objective.subgradient!!
+    return objective.subgradient!
 end
 
 function Base.show(io::IO, objective::ManifoldSubgradientObjective)
-    return print(io, "ManifoldSubgradientObjective(", objective.cost, ", ", objective.subgradient!!, ")")
+    return print(io, "ManifoldSubgradientObjective(", objective.cost, ", ", objective.subgradient!, ")")
 end
 
 function status_summary(objective::ManifoldSubgradientObjective; context::Symbol = :default)
@@ -3233,7 +3352,7 @@ function status_summary(objective::ManifoldSubgradientObjective; context::Symbol
 
     ## Components
     * `f`:  $(objective.cost)
-    * `∂f`: $(objective.subgradient!!)"""
+    * `∂f`: $(objective.subgradient!)"""
 end
 
 @doc """

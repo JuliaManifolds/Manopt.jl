@@ -482,31 +482,22 @@ and `set_parameter!(::ProximalDCGrad, ::Val{:λ}, λ)`, respectively.
 Where you specify whether `grad_g` is [`AllocatingEvaluation`](@ref) or [`InplaceEvaluation`](@ref),
 while this function still always provides _both_ signatures.
 """
-mutable struct ProximalDCGrad{E <: AbstractEvaluationType, P, TG, R}
-    grad_g!!::TG
+mutable struct ProximalDCGrad{P, TG, R}
+    grad_g!::TG
     pk::P
     λ::R
-    function ProximalDCGrad(
-            grad_g::TG, pk::P, λ::R; evaluation::E = AllocatingEvaluation()
-        ) where {TG, P, R, E <: AbstractEvaluationType}
-        return new{E, P, TG, R}(grad_g, pk, λ)
+    function ProximalDCGrad(grad_g::TG, pk::P, λ::R) where {TG, P, R}
+        return new{P, TG, R}(grad_g, pk, λ)
     end
 end
-function (grad_f::ProximalDCGrad{AllocatingEvaluation})(M, p)
-    return grad_f.grad_g!!(M, p) - 1 / grad_f.λ * log(M, p, grad_f.pk)
-end
-function (grad_f::ProximalDCGrad{AllocatingEvaluation})(M, X, p)
-    copyto!(M, X, p, grad_f.grad_g!!(M, p) - 1 / grad_f.λ * log(M, p, grad_f.pk))
-    return X
-end
-function (grad_f!::ProximalDCGrad{InplaceEvaluation})(M, X, p)
-    grad_f!.grad_g!!(M, X, p)
+function (grad_f!::ProximalDCGrad)(M, X, p)
+    grad_f!.grad_g!(M, X, p)
     X .-= 1 / grad_f!.λ * log(M, p, grad_f!.pk)
     return X
 end
-function (grad_f!::ProximalDCGrad{InplaceEvaluation})(M, p)
+function (grad_f!::ProximalDCGrad)(M, p)
     X = zero_vector(M, p)
-    grad_f!.grad_g!!(M, X, p)
+    grad_f!.grad_g!(M, X, p)
     X .-= 1 / grad_f!.λ * log(M, p, grad_f!.pk)
     return X
 end

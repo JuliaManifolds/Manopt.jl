@@ -199,7 +199,7 @@ D$(_tex(:prox))_{τG_n^*}(X)[ξ]
 which can also be computed in place of `η`.
 """
 get_differential_dual_prox(
-    ::AbstractManifold, ::PrimalDualManifoldSemismoothNewtonObjective{AllocatingEvaluation}, Any...,
+    ::AbstractManifold, ::PrimalDualManifoldSemismoothNewtonObjective, Any...,
 )
 
 function get_differential_dual_prox(tmo::TwoManifoldProblem, n, τ, X, ξ)

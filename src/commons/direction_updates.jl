@@ -418,22 +418,19 @@ Add preconditioning to a gradient problem.
 # Input
 
 $(_args(:M))
-* `preconditioner`:   preconditioner function, either as a `(M, p, X)` -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
+* `preconditioner`:   preconditioner function, either as a `(M, Y, p, X) -> Y` mutating function
 
 # Keyword arguments
 
-$(_kwargs(:evaluation))
 * `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
 """
-mutable struct PreconditionedDirectionRule{
-        E <: AbstractEvaluationType, D <: DirectionUpdateRule, F,
-    } <: DirectionUpdateRule
+mutable struct PreconditionedDirectionRule{D <: DirectionUpdateRule, F} <: DirectionUpdateRule
     preconditioner::F
     direction::D
     function PreconditionedDirectionRule(;
-            preconditioner::F, direction::D, evaluation::E
-        ) where {E <: AbstractEvaluationType, D <: DirectionUpdateRule, F}
-        return new{E, D, F}(preconditioner, direction)
+            preconditioner::F, direction::D
+        ) where {D <: DirectionUpdateRule, F}
+        return new{D, F}(preconditioner, direction)
     end
 end
 function PreconditionedDirectionRule(
@@ -445,18 +442,7 @@ function PreconditionedDirectionRule(
     dir = _produce_type(direction, M)
     return PreconditionedDirectionRule(; preconditioner = preconditioner, direction = dir, evaluation = evaluation)
 end
-function (pg::PreconditionedDirectionRule{AllocatingEvaluation})(
-        mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
-    )
-    M = get_manifold(mp)
-    p = get_iterate(s)
-    # get inner direction and step size
-    step, dir = pg.direction(mp, s, k)
-    # precondition and set as gradient
-    set_gradient!(s, M, p, pg.preconditioner(M, p, dir))
-    return step, get_gradient(s)
-end
-function (pg::PreconditionedDirectionRule{InplaceEvaluation})(
+function (pg::PreconditionedDirectionRule)(
         mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
     )
     M = get_manifold(mp)
@@ -465,8 +451,8 @@ function (pg::PreconditionedDirectionRule{InplaceEvaluation})(
     pg.preconditioner(M, dir, p, dir)
     return step, dir
 end
-function Base.show(io::IO, pg::PreconditionedDirectionRule{E}) where {E <: AbstractEvaluationType}
-    print(io, "PreconditionedDirectionRule(; direction = ", pg.direction, ", preconditioner = ", pg.preconditioner, ", ", _to_kw(E))
+function Base.show(io::IO, pg::PreconditionedDirectionRule)
+    print(io, "PreconditionedDirectionRule(; direction = ", pg.direction, ", preconditioner = ", pg.preconditioner)
     return print(io, ")")
 end
 function status_summary(pg::PreconditionedDirectionRule; context::Symbol = :default)
