@@ -147,7 +147,8 @@ function ProximalBundleMethodState(
         M::AbstractManifold, sub_problem = proximal_bundle_method_subsolver;
         evaluation::E = AllocatingEvaluation(), kwargs...,
     ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
+    #TODO: Handle sub_problem wrapping for closed form solution
+    cfs = ClosedFormSubSolverState()
     return ProximalBundleMethodState(M, sub_problem, cfs; kwargs...)
 end
 
