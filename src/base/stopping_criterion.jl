@@ -1,48 +1,29 @@
 @doc """
-    StoppingCriterion
+    StoppingCriterion <: Function
 
-An abstract type for the functors representing stopping criteria, so they are
-callable structures. The naming Scheme follows functions, see for
-example [`StopAfterIteration`](@ref).
+An abstract type for the functions representing stopping criteria, so they are callable structures.
+The naming Scheme follows functions, see for example [`StopAfterIteration`](@ref).
 
 Every StoppingCriterion has to provide a constructor and its function has to have
-the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
-and the current number of iterations are the arguments and returns a boolean whether
-to stop or not.
+the interface `(p,s,i)` where a [`AbstractManoptProblem`](@ref) `p` as well as a [`AbstractManoptSolverState`](@ref) `s`
+and the current iteration step `i` are the arguments.
+The function always returns a boolean whether to stop or not.
 
-By default each `StoppingCriterion` should provide a fields `reason` to provide
-details when a criterion is met (and that is empty otherwise).
+By default each `StoppingCriterion` should provide a field `at_iteration` to provide
+the iteration it (lst) indicated to stop. Further fields should provide enough information,
+such that a human-readable reason can be assembled, see [`get_reason`](@ref).
 """
-abstract type StoppingCriterion end
+abstract type StoppingCriterion <: Function end
 
-function Base.show(io::IO, ::MIME"text/plain", asc::StoppingCriterion)
-    multiline = get(io, :multiline, true)
-    return multiline ? status_summary(io, asc) : show(io, asc)
-end
+@doc """
+    StoppingCriterionGroup <: StoppingCriterion
 
-
+An abstract type for a Stopping Criterion that itself consists of a set of
+Stopping criteria. In total it acts as a stopping criterion itself. Examples
+are [`StopWhenAny`](@ref) and [`StopWhenAll`](@ref) that can be used to
+combine stopping criteria.
 """
-    indicates_convergence(c::StoppingCriterion)
-
-Return whether a [`StoppingCriterion`](@ref) does _always_
-mean that, when it indicates to stop, the solver has converged to a
-minimizer or critical point.
-
-Note that this is independent of the actual state of the stopping criterion,
-whether some of them indicate to stop, but a purely type-based, static
-decision.
-
-# Examples
-
-With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` the indicator yields
-
-* `indicates_convergence(s1)` is `false`
-* `indicates_convergence(s2)` is `true`
-* `indicates_convergence(s1 | s2)` is `false`, since this might also stop after 20 iterations,
-  or in other words, for [`StopWhenAny`](@ref) _all_ its criteria have to indicate convergence, for this to return true.
-* `indicates_convergence(s1 & s2)` is `true`, since `s2` is fulfilled if this stops.
-"""
-indicates_convergence(c::StoppingCriterion) = false
+abstract type StoppingCriterionSet <: StoppingCriterion end
 
 """
     has_converged(c::StoppingCriterion)
@@ -71,4 +52,99 @@ function get_count(c::StoppingCriterion, ::Val{:Iterations})
     else
         return 0
     end
+end
+
+@doc """
+    get_active_stopping_criteria(c)
+
+returns all active stopping criteria, if any, that are within a
+[`StoppingCriterion`](@ref) `c`, and indicated a stop, that is their reason is nonempty.
+To be precise for a simple stopping criterion, this returns either an empty
+array if no stop is indicated or the stopping criterion as the only element of
+an array. For a [`StoppingCriterionSet`](@ref) all internal (even nested)
+criteria that indicate to stop are returned.
+"""
+function get_active_stopping_criteria(c::sCS) where {sCS <: StoppingCriterionSet}
+    c = get_active_stopping_criteria.(get_stopping_criteria(c))
+    return vcat(c...)
+end
+# for non-array containing stopping criteria, the recursion ends in either
+# returning nothing or an 1-element array containing itself
+function get_active_stopping_criteria(c::sC) where {sC <: StoppingCriterion}
+    if is_active_stopping_criterion(c)
+        return [c] # recursion top
+    else
+        return []
+    end
+end
+
+
+function get_reason end
+
+@doc """
+    get_reason(s::StoppingCriterion)
+
+return the reason why a [`StoppingCriterion`](@ref) has indicate to stop.
+This reason is empty (`""`) if the criterion has never been met.
+"""
+get_reason(s::StoppingCriterion)
+
+@doc """
+    get_reason(s::AbstractManoptSolverState)
+
+return the current reason stored within the [`StoppingCriterion`](@ref) from
+within the [`AbstractManoptSolverState`](@ref).
+This reason is empty (`""`) if the criterion has never been met.
+"""
+get_reason(s::AbstractManoptSolverState) = get_reason(get_state(s).stop)
+
+
+function get_stopping_criteria end
+@doc """
+    get_stopping_criteria(c::StoppingCriterionSet)
+
+return the array of internally stored [stopping criteria](@ref StoppingCriterion)
+for a [`StoppingCriterionSet`](@ref) `c`.
+"""
+get_stopping_criteria(c::StoppingCriterionSet)
+
+"""
+    indicates_convergence(c::StoppingCriterion)
+
+Return whether a [`StoppingCriterion`](@ref) does _always_
+mean that, when it indicates to stop, the solver has converged to a
+minimizer or critical point.
+
+Note that this is independent of the actual state of the stopping criterion,
+whether some of them indicate to stop, but a purely type-based, static
+decision.
+
+# Examples
+
+With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` the indicator yields
+
+* `indicates_convergence(s1)` is `false`
+* `indicates_convergence(s2)` is `true`
+* `indicates_convergence(s1 | s2)` is `false`, since this might also stop after 20 iterations,
+  or in other words, for [`StopWhenAny`](@ref) _all_ its criteria have to indicate convergence, for this to return true.
+* `indicates_convergence(s1 & s2)` is `true`, since `s2` is fulfilled if this stops.
+"""
+indicates_convergence(c::StoppingCriterion) = false
+
+"""
+    is_active_stopping_criterion(c::StoppingCriterion)
+
+Return whether a [`StoppingCriterion`](@ref) is active, i.e. it has been called and indicates to stop.
+"""
+is_active_stopping_criterion(c::StoppingCriterion) = (c.at_iteration >= 0)
+
+function set_parameter!(s::AbstractManoptSolverState, ::Val{:StoppingCriterion}, args...)
+    set_parameter!(s.stop, args...)
+    return s
+end
+
+
+function Base.show(io::IO, ::MIME"text/plain", asc::StoppingCriterion)
+    multiline = get(io, :multiline, true)
+    return multiline ? status_summary(io, asc) : show(io, asc)
 end

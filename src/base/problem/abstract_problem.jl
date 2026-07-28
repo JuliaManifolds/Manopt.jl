@@ -84,6 +84,26 @@ function get_cost(amp::AbstractManoptProblem, p)
     return get_cost(get_manifold(amp), get_objective(amp), p)
 end
 
+function get_gradient(mp::AbstractManoptProblem, p)
+    return get_gradient(get_manifold(mp), get_objective(mp), p)
+end
+function get_gradient!(mp::AbstractManoptProblem, X, p)
+    return get_gradient!(get_manifold(mp), X, get_objective(mp), p)
+end
+function get_gradient(mp::AbstractManoptProblem, p, k)
+    return get_gradient(get_manifold(mp), get_objective(mp), p, k)
+end
+function get_gradient!(mp::AbstractManoptProblem, X, p, k)
+    return get_gradient!(get_manifold(mp), X, get_objective(mp), p, k)
+end
+
+function get_gradients(mp::AbstractManoptProblem, p)
+    return get_gradients(get_manifold(mp), get_objective(mp), p)
+end
+function get_gradients!(mp::AbstractManoptProblem, X, p)
+    return get_gradients!(get_manifold(mp), X, get_objective(mp), p)
+end
+
 """
     set_parameter!(ams::AbstractManoptProblem, element::Symbol, field::Symbol , value)
 

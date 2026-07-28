@@ -7,6 +7,131 @@ Abstract supertype for Levenberg-Marquardt surrogates like
 """
 abstract type AbstractLevenbergMarquardtLinearSurrogateObjective <: AbstractLinearSurrogateObjective{ManifoldNonlinearLeastSquaresObjective} end
 
+_doc_AL_Cost(iter) = "$(_tex(:Cal, "L"))_{ρ^{($iter)}}(p, μ^{($iter)}, λ^{($iter)})"
+_doc_AL_Cost_long = """
+```math
+$(_tex(:Cal, "L"))_ρ(p, μ, λ)
+= f(x) + $(_tex(:frac, "ρ", "2"))$(_tex(:biggl))(
+  $(_tex(:sum, "j=1", "n"))$(_tex(:Bigl))(
+    h_j(p) + $(_tex(:frac, "λ_j", "ρ"))
+  $(_tex(:Bigr)))^2
+  +
+  $(_tex(:sum, "i=1", "m"))$(_tex(:max))$(_tex(:set, "0, $(_tex(:frac, "μ_i", "ρ")) + g_i(p)"))^2
+$(_tex(:biggr)))
+```
+"""
+
+@doc """
+    AugmentedLagrangianCost{CO,R,T}
+
+Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
+of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
+
+This struct is also a functor `(M,p) -> v` that can be used as a cost function within a solver,
+based on the internal [`ConstrainedManifoldObjective`](@ref) it computes
+
+$_doc_AL_Cost_long
+
+## Fields
+
+* `co::CO`, `ρ::R`, `μ::T`, `λ::T` as mentioned in the formula, where ``R`` should be the
+number type used and ``T`` the vector type.
+
+# Constructor
+
+    AugmentedLagrangianCost(co, ρ, μ, λ)
+"""
+mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunction{T}
+    co::CO
+    ρ::R
+    μ::T
+    λ::T
+end
+function set_parameter!(alc::AugmentedLagrangianCost, ::Val{:ρ}, ρ)
+    alc.ρ = ρ
+    return alc
+end
+get_parameter(alc::AugmentedLagrangianCost, ::Val{:ρ}) = alc.ρ
+
+function (L::AugmentedLagrangianCost)(M::AbstractManifold, p)
+    gp = get_inequality_constraint(M, L.co, p, :)
+    hp = get_equality_constraint(M, L.co, p, :)
+    m = length(gp)
+    n = length(hp)
+    c = get_cost(M, L.co, p)
+    d = 0.0
+    (m > 0) && (d += sum(max.(zeros(m), L.μ ./ L.ρ .+ gp) .^ 2))
+    (n > 0) && (d += sum((hp .+ L.λ ./ L.ρ) .^ 2))
+    return c + (L.ρ / 2) * d
+end
+
+@doc """
+    AugmentedLagrangianGrad{CO,R,T} <: AbstractConstrainedFunction{T}
+
+Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
+of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
+
+This struct is also a functor in both formats
+* `(M, p) -> X` to compute the gradient in allocating fashion.
+* `(M, X, p)` to compute the gradient in in-place fashion.
+
+additionally this gradient does accept a positional last argument to specify the `range`
+for the internal gradient call of the constrained objective.
+
+based on the internal [`ConstrainedManifoldObjective`](@ref) and computes the gradient
+`$(_tex(:grad))$(_tex(:Cal, "L"))_{ρ}(p, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
+
+## Fields
+
+* `co::CO`, `ρ::R`, `μ::T`, `λ::T` as mentioned in the formula, where ``R`` should be the
+number type used and ``T`` the vector type.
+
+# Constructor
+
+    AugmentedLagrangianGrad(co, ρ, μ, λ)
+
+"""
+mutable struct AugmentedLagrangianGrad{CO, R, T} <: AbstractConstrainedFunction{T}
+    co::CO
+    ρ::R
+    μ::T
+    λ::T
+end
+function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, p)
+    X = zero_vector(M, p)
+    return LG(M, X, p)
+end
+function set_parameter!(alg::AugmentedLagrangianGrad, ::Val{:ρ}, ρ)
+    alg.ρ = ρ
+    return alg
+end
+get_parameter(alg::AugmentedLagrangianGrad, ::Val{:ρ}) = alg.ρ
+# default, that is especially when the `grad_g` and `grad_h` are functions.
+function (LG::AugmentedLagrangianGrad)(
+        M::AbstractManifold, X, p, range = NestedPowerRepresentation()
+    )
+    gp = get_inequality_constraint(M, LG.co, p, :)
+    hp = get_equality_constraint(M, LG.co, p, :)
+    m = length(gp)
+    n = length(hp)
+    get_gradient!(M, X, LG.co, p)
+    if m > 0
+        indices = (gp .+ LG.μ ./ LG.ρ) .> 0
+        if sum(indices) > 0
+            weights = (gp .* LG.ρ .+ LG.μ)[indices]
+            X .+= sum(
+                weights .* get_grad_inequality_constraint(M, LG.co, p, indices, range)
+            )
+        end
+    end
+    if n > 0
+        X .+= sum(
+            (hp .* LG.ρ .+ LG.λ) .* get_grad_equality_constraint(M, LG.co, p, :, range)
+        )
+    end
+    return X
+end
+
 #
 #
 # ---
@@ -1357,4 +1482,109 @@ end
 function set_parameter!(neo::NormalEquationsObjective, name::Symbol, value)
     set_parameter!(neo.objective, name, value)
     return neo
+end
+
+
+@doc """
+    TrustRegionModelObjective{O<:AbstractManifoldHessianObjective} <: AbstractManifoldSubObjective{O}
+
+A trust region model of the form
+
+```math
+    m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p
+```
+
+# Fields
+
+* `objective`: an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
+
+# Constructors
+
+    TrustRegionModelObjective(objective)
+
+with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective
+"""
+struct TrustRegionModelObjective{
+        O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective},
+    } <: AbstractManifoldSubObjective{O}
+    objective::O
+end
+function TrustRegionModelObjective(
+        mho::O
+    ) where {O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
+    return TrustRegionModelObjective{O}(mho)
+end
+get_objective(trmo::TrustRegionModelObjective) = trmo.objective
+
+@doc """
+    get_cost(TpM, trmo::TrustRegionModelObjective, X)
+
+Evaluate the tangent space [`TrustRegionModelObjective`](@ref)
+
+```math
+m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p.
+```
+"""
+function get_cost(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
+    M = base_manifold(TpM)
+    p = TpM.point
+    c = get_objective_cost(M, trmo, p)
+    G = get_objective_gradient(M, trmo, p)
+    Y = get_objective_hessian(M, trmo, p, X)
+    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X)
+end
+@doc """
+    get_gradient(TpM, trmo::TrustRegionModelObjective, X)
+
+Evaluate the gradient of the [`TrustRegionModelObjective`](@ref)
+
+```math
+$(_tex(:grad)) m(X) = $(_tex(:grad)) f(p) + $(_tex(:Hess)) f(p)[X].
+```
+"""
+function get_gradient(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
+    M = base_manifold(TpM)
+    p = TpM.point
+    return get_objective_gradient(M, trmo, p) + get_objective_hessian(M, trmo, p, X)
+end
+function get_gradient!(TpM::TangentSpace, Y, trmo::TrustRegionModelObjective, X)
+    M = base_manifold(TpM)
+    p = TpM.point
+    get_objective_hessian!(M, Y, trmo, p, X)
+    Y .+= get_objective_gradient(M, trmo, p)
+    return Y
+end
+@doc """
+    get_hessian(TpM, trmo::TrustRegionModelObjective, X)
+
+Evaluate the Hessian of the [`TrustRegionModelObjective`](@ref)
+
+```math
+$(_tex(:Hess)) m(X)[Y] = $(_tex(:Hess)) f(p)[Y].
+```
+"""
+function get_hessian(TpM::TangentSpace, trmo::TrustRegionModelObjective, X, V)
+    M = base_manifold(TpM)
+    p = TpM.point
+    return get_objective_hessian(M, trmo, p, V)
+end
+function get_hessian!(TpM::TangentSpace, W, trmo::TrustRegionModelObjective, X, V)
+    M = base_manifold(TpM)
+    p = TpM.point
+    return get_objective_hessian!(M, W, trmo, p, V)
+end
+
+function Base.show(io::IO, trmo::TrustRegionModelObjective)
+    print(io, "TrustRegionModelObjective(")
+    print(io, trmo.objective)
+    return print(io, ")")
+end
+function status_summary(trmo::TrustRegionModelObjective; context::Symbol = :default)
+    (context === :short) && return repr(trmo)
+    (context === :inline) && return "The (tangent space) model for the trust region solver for the objective $(status_summary(trmo.objective; context = context))"
+    return """
+    The trust region model for the sub problem in the tangent space
+
+    ## Objective
+    $(_in_str(status_summary(trmo.objective)))"""
 end

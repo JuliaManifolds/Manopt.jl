@@ -346,14 +346,9 @@ Add preconditioning to a gradient problem.
 * `preconditioner`:   preconditioner function, either as a `(M, p, X) -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
 
 # Keyword arguments
-
-$(_kwargs(:evaluation))
 """
 struct QuasiNewtonPreconditioner{F}
     preconditioner!::F
-end
-function QuasiNewtonPreconditioner(preconditioner::F)
-    return QuasiNewtonPreconditioner{F}(preconditioner)
 end
 #
 #

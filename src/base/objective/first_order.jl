@@ -20,6 +20,14 @@ individual one that provides these values.
 """
 abstract type DirectionUpdateRule end
 
+"""
+    AbstractGradientGroupDirectionRule <: DirectionUpdateRule
+
+A generic type for all options [`DirectionUpdateRule`](@ref) working with certain splittiungs of the overall gradient in the direction processing.
+"""
+abstract type AbstractGradientGroupDirectionRule <: DirectionUpdateRule end
+
+
 @doc """
     (c, d) = get_cost_and_differential(problem::AbstractManoptProblem, p, X; kwargs...)
     (c, d) = get_cost_and_differential(M, objective::AbstractManifoldFirstOrderObjective, p, X; kwargs...)
@@ -161,15 +169,6 @@ function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObject
 end
 function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
     return get_gradient!(M, X, get_objective(admo, false), p)
-end
-
-### Problem
-function get_gradient(problem::AbstractManoptProblem, p)
-    X = zero_vector(get_manifold(problem), p)
-    return get_gradient!(problem, X, p)
-end
-function get_gradient!(problem::AbstractManoptProblem, X, p)
-    return get_gradient!(get_manifold(problem), X, get_objective(problem), p)
 end
 
 function get_gradient_function end

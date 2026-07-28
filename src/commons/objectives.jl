@@ -3279,6 +3279,199 @@ function get_proximal_map!(
     return mpgo.proximal_map_h!(M, q, λ, p)
 end
 
+
+#
+#
+# ---
+@doc """
+    ManifoldStochasticGradientObjective{F, G} <: AbstractManifoldFirstOrderObjective{F, G}
+
+A stochastic gradient objective consists of
+
+* a(n optional) cost function ``f(p) = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) f_i(p)``
+* an array of gradients, ``$(_tex(:grad)) f_i(p), i=1,…,n`` which can be given in two forms
+  * as one single function ``($(_math(:Manifold)), p) ↦ (X_1,…,X_n) ∈ ($(_math(:TangentSpace))n``
+  * as a vector of functions ``$(_tex(:bigl))( ($(_math(:Manifold)), p) ↦ X_1, …, ($(_math(:Manifold)), p) ↦ X_n$(_tex(:bigr)))``.
+
+Where both variants arefunctions `(M, X, p) -> X`, where `X` is the vector of `X1,...,Xn` and `(M, X1, p) -> X1, ..., (M, Xn, p) -> Xn`,
+respectively.
+
+# Constructors
+
+    ManifoldStochasticGradientObjective(grad_f::Function; cost=Missing())
+    ManifoldStochasticGradientObjective(grad_f::AbstractVector{<:Function}; cost=Missing())
+
+Create a Stochastic gradient problem with the gradient either as one
+function (returning an array of tangent vectors) or a vector of functions (each returning one tangent vector).
+
+The optional cost can also be given as either a single function (returning a number)
+pr a vector of functions, each returning a value.
+
+# Used with
+[`stochastic_gradient_descent`](@ref)
+
+Note that this can also be used with a [`gradient_descent`](@ref), since the (complete) gradient
+is just the sums of the single gradients.
+"""
+struct ManifoldStochasticGradientObjective{C, G} <: AbstractManifoldFirstOrderObjective{C, G}
+    cost::C
+    gradient!::G
+end
+function ManifoldStochasticGradientObjective(
+        grad_f!::G; cost::C = Missing()
+    ) where {G <: Union{Function, AbstractVector{<:Function}}, C <: Union{Function, AbstractVector{<:Function}, Missing}}
+    return ManifoldStochasticGradientObjective{C, G}(cost, grad_f!)
+end
+function get_cost(
+        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C}, p
+    ) where {C <: AbstractVector{<:Function}}
+    return sum(f(M, p) for f in sgo.cost)
+end
+
+@doc """
+    get_cost(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, i)
+
+Evaluate the `i`th summand of the cost.
+
+If you use a single function for the stochastic cost, then only the index `ì=1`` is available
+to evaluate the whole cost.
+"""
+function get_cost(
+        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C}, p, i
+    ) where {C <: AbstractVector{<:Function}}
+    return sgo.cost[i](M, p)
+end
+function get_cost(
+        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C}, p, i
+    ) where {C <: Function}
+    (i == 1) && return sgo.cost(M, p)
+    return error(
+        "The cost is implemented as a single function and can not be accessed element wise at $i since the index is larger than 1.",
+    )
+end
+
+function get_gradients end
+@doc """
+    get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
+
+Evaluate all summands gradients ``$(_math(:Sequence, "$(_tex(:grad))f", "i", "1", "n")) at `p` (in place of `X`).
+
+If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
+since the length (or number of elements of the gradient) can not be determined.
+"""
+get_gradients!(M::AbstractManifold, X, admo::ManifoldStochasticGradientObjective, p)
+function get_gradients(
+        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C, <:AbstractVector}, p,
+    ) where {C}
+    X = [zero_vector(M, p) for _ in sgo.gradient!]
+    get_gradients!(M, X, sgo, p)
+    return X
+end
+function get_gradients!(
+        M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective{C, <:Function}, p,
+    ) where {C}
+    sgo.gradient!(M, X, p)
+    return X
+end
+function get_gradients!(
+        M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective{C, <:AbstractVector}, p,
+    ) where {C}
+    for (Xi, grad_i) in zip(X, sgo.gradient!)
+        grad_i(M, Xi, p)
+    end
+    return X
+end
+function get_gradients!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradients!(M, X, get_objective(admo, false), p)
+end
+
+
+@doc """
+    get_gradient(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, k)
+    get_gradient!(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, Y, p, k)
+
+Evaluate one of the summands gradients ``$(_tex(:grad))f_k``, ``k ∈ $(_tex(:set, "1,…,n"))``, at `p` (in place of `Y`).
+
+If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
+since the length (or number of elements of the gradient required for allocation) can not be determined.
+"""
+function get_gradient(
+        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C}, p, k,
+    ) where {C}
+    X = zero_vector(M, p)
+    return get_gradient!(M, X, sgo, p, k)
+end
+function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, k)
+    return get_gradient(M, get_objective(admo, false), p, k)
+end
+function get_gradient!(
+        M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective{C, <:AbstractVector}, p, k
+    ) where {C}
+    return sgo.gradient![k](M, X, p)
+end
+function get_gradient!(
+        M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p, k
+    )
+    return get_gradient!(M, X, get_objective(admo, false), p, k)
+end
+
+# Pass down from problem
+
+@doc """
+    get_gradient(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p)
+    get_gradient!(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, X, p)
+
+Evaluate the complete gradient ``$(_tex(:grad)) f = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) $(_tex(:grad)) f_i(p)`` at `p` (in place of `X`).
+
+If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
+since the length (or number of elements of the gradient required for allocation) can not be determined.
+"""
+function get_gradient(
+        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C, <:Function}, p
+    ) where {C}
+    # even if the function is in-place, allocation of the full vector of tangent vectors still required
+    return sum(get_gradients(M, sgo, p))
+end
+function get_gradient(
+        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C, <:AbstractVector}, p,
+    ) where {C}
+    X = zero_vector(M, p)
+    get_gradient!(M, X, sgo, p)
+    return X
+end
+function get_gradient!(
+        M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective{C, <:AbstractVector}, p,
+    ) where {C}
+    zero_vector!(M, X, p)
+    Y = copy(M, p, X)
+    for grad_i in sgo.gradient!
+        grad_i(M, Y, p)
+        X += Y
+    end
+    return X
+end
+function Base.show(io::IO, msgo::ManifoldStochasticGradientObjective)
+    print(io, "ManifoldStochasticGradientObjective(", msgo.gradient!, "; ")
+    if !ismissing(msgo.cost)
+        print(io, "cost = ", msgo.cost, ", ")
+    end
+    return print(io, ")")
+end
+function status_summary(msgo::ManifoldStochasticGradientObjective; context::Symbol = :default)
+    (context === :short) && return repr(msgo)
+    cs = ismissing(msgo.cost) ? "" : "including the cost function"
+    (context === :inline) && return "A stochastic gradient objective $cs."
+    ics = ismissing(msgo.cost) ? "" : "\n* cost:          $(_MANOPT_INDENT)$(msgo.cost)"
+    return """
+    A stochastic gradient objective
+
+    ## Functions$(ics)
+    * subgradient ∂f:$(_MANOPT_INDENT)$(msgo.gradient!)"""
+end
+
+#
+#
+# ---
 @doc """
     ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:AbstractManifoldCostObjective{T, C}
 
@@ -3719,108 +3912,4 @@ function objective_cache_factory(M, o, cache::Tuple{Symbol, <:AbstractArray})
     (cache[1] === :Simple) && return SimpleManifoldCachedObjective(M, o)
     (cache[1] === :LRU) && return ManifoldCachedObjective(M, o, cache[2])
     return o
-end
-
-@doc """
-    TrustRegionModelObjective{O<:AbstractManifoldHessianObjective} <: AbstractManifoldSubObjective{O}
-
-A trust region model of the form
-
-```math
-    m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p
-```
-
-# Fields
-
-* `objective`: an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
-
-# Constructors
-
-    TrustRegionModelObjective(objective)
-
-with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective
-"""
-struct TrustRegionModelObjective{
-        O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective},
-    } <: AbstractManifoldSubObjective{O}
-    objective::O
-end
-function TrustRegionModelObjective(
-        mho::O
-    ) where {O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
-    return TrustRegionModelObjective{O}(mho)
-end
-get_objective(trmo::TrustRegionModelObjective) = trmo.objective
-
-@doc """
-    get_cost(TpM, trmo::TrustRegionModelObjective, X)
-
-Evaluate the tangent space [`TrustRegionModelObjective`](@ref)
-
-```math
-m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p.
-```
-"""
-function get_cost(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
-    M = base_manifold(TpM)
-    p = TpM.point
-    c = get_objective_cost(M, trmo, p)
-    G = get_objective_gradient(M, trmo, p)
-    Y = get_objective_hessian(M, trmo, p, X)
-    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X)
-end
-@doc """
-    get_gradient(TpM, trmo::TrustRegionModelObjective, X)
-
-Evaluate the gradient of the [`TrustRegionModelObjective`](@ref)
-
-```math
-$(_tex(:grad)) m(X) = $(_tex(:grad)) f(p) + $(_tex(:Hess)) f(p)[X].
-```
-"""
-function get_gradient(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
-    M = base_manifold(TpM)
-    p = TpM.point
-    return get_objective_gradient(M, trmo, p) + get_objective_hessian(M, trmo, p, X)
-end
-function get_gradient!(TpM::TangentSpace, Y, trmo::TrustRegionModelObjective, X)
-    M = base_manifold(TpM)
-    p = TpM.point
-    get_objective_hessian!(M, Y, trmo, p, X)
-    Y .+= get_objective_gradient(M, trmo, p)
-    return Y
-end
-@doc """
-    get_hessian(TpM, trmo::TrustRegionModelObjective, X)
-
-Evaluate the Hessian of the [`TrustRegionModelObjective`](@ref)
-
-```math
-$(_tex(:Hess)) m(X)[Y] = $(_tex(:Hess)) f(p)[Y].
-```
-"""
-function get_hessian(TpM::TangentSpace, trmo::TrustRegionModelObjective, X, V)
-    M = base_manifold(TpM)
-    p = TpM.point
-    return get_objective_hessian(M, trmo, p, V)
-end
-function get_hessian!(TpM::TangentSpace, W, trmo::TrustRegionModelObjective, X, V)
-    M = base_manifold(TpM)
-    p = TpM.point
-    return get_objective_hessian!(M, W, trmo, p, V)
-end
-
-function Base.show(io::IO, trmo::TrustRegionModelObjective)
-    print(io, "TrustRegionModelObjective(")
-    print(io, trmo.objective)
-    return print(io, ")")
-end
-function status_summary(trmo::TrustRegionModelObjective; context::Symbol = :default)
-    (context === :short) && return repr(trmo)
-    (context === :inline) && return "The (tangent space) model for the trust region solver for the objective $(status_summary(trmo.objective; context = context))"
-    return """
-    The trust region model for the sub problem in the tangent space
-
-    ## Objective
-    $(_in_str(status_summary(trmo.objective)))"""
 end
