@@ -1,3 +1,4 @@
+# TODO: use the evaluation keyword to wrap allocating closed form subsolver functions
 """
     ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState
 

@@ -426,16 +426,9 @@ function step_solver!(
     end
     return gss
 end
-
+# closed form in-place
 function _gradient_sampling_subsolver(
-        M, gss::GradientSamplingState{P, T, R, F, ClosedFormSubSolverState{AllocatingEvaluation}}
-    ) where {P, T, R, F} # Point, Vector, Reals, Function (of closed form problem)
-    gss.convex_hull_coeffs = gss.sub_problem(M, gss.p, gss.sampled_vectors)
-    return gss
-end
-# (b) closed form in-place
-function _gradient_sampling_subsolver(
-        M, gss::GradientSamplingState{P, T, R, F, ClosedFormSubSolverState{InplaceEvaluation}}
+        M, gss::GradientSamplingState{P, T, R, F, ClosedFormSubSolverState}
     ) where {P, T, R, F}
     gss.sub_problem(M, gss.convex_hull_coeffs, gss.p, gss.sampled_vectors)
     return gss

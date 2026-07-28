@@ -31,6 +31,13 @@ It assumes that
 """
 abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
 
+@doc """
+    AbstractHessianSolverState <: AbstractGradientSolverState
+
+An [`AbstractManoptSolverState`](@ref) type to represent algorithms that employ the Hessian.
+These options are assumed to have a field (`gradient`) to store the current gradient ``$(_tex(:grad))f(x)``
+"""
+abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
 
 """
     AbstractRestartCondition

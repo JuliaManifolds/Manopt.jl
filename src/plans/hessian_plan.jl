@@ -1,21 +1,4 @@
 @doc """
-    AbstractHessianSolverState <: AbstractGradientSolverState
-
-An [`AbstractManoptSolverState`](@ref) type to represent algorithms that employ the Hessian.
-These options are assumed to have a field (`gradient`) to store the current gradient ``$(_tex(:grad))f(x)``
-"""
-abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
-
-"""
-    AbstractManifoldHessianObjective{E<:AbstractEvaluationType,F, G, H} <: AbstractManifoldFirstOrderObjective{E,Tuple{F,G}}
-
-An abstract type for all objectives that provide a (full) Hessian, where
-`T` is a [`AbstractEvaluationType`](@ref) for the gradient and Hessian functions.
-"""
-abstract type AbstractManifoldHessianObjective{E <: AbstractEvaluationType, F, G, H} <:
-AbstractManifoldFirstOrderObjective{E, Tuple{F, G}} end
-
-@doc """
     ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldHessianObjective{T,C,G,H}
 
 specify a problem for Hessian based algorithms.

@@ -819,22 +819,8 @@ end
 #
 #
 # Dispatching on different types of sub solvers
-# (a) closed form allocating
-function _convex_bundle_subsolver!(
-        M, bms::ConvexBundleMethodState{P, T, F, ClosedFormSubSolverState{AllocatingEvaluation}}
-    ) where {P, T, F}
-    bms.λ = bms.sub_problem(
-        M, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients
-    )
-    return bms
-end
-# (b) closed form in-place
-function _convex_bundle_subsolver!(
-        M, bms::ConvexBundleMethodState{P, T, F, ClosedFormSubSolverState{InplaceEvaluation}}
-    ) where {P, T, F}
-    bms.sub_problem(
-        M, bms.λ, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients
-    )
+function _convex_bundle_subsolver!(M, bms::ConvexBundleMethodState{P, T, F, ClosedFormSubSolverState}) where {P, T, F}
+    bms.sub_problem(M, bms.λ, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients)
     return bms
 end
 # (c) the case where problem and state are given and `solve!` is called

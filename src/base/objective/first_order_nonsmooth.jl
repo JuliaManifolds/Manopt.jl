@@ -65,7 +65,7 @@ end
 #
 # ---
 @doc """
-    AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P} <: AbstractManifoldCostObjective{E,C}
+    AbstractPrimalDualManifoldObjective{C,P} <: AbstractManifoldCostObjective{C}
 
 A common abstract super type for objectives that consider primal-dual problems.
 """

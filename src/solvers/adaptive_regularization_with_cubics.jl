@@ -571,13 +571,7 @@ function solve_arc_subproblem!(
     return s
 end
 function solve_arc_subproblem!(
-        M, s, problem::P, ::ClosedFormSubSolverState{AllocatingEvaluation}, p
-    ) where {P <: Function}
-    copyto!(M, s, p, problem(M, p))
-    return s
-end
-function solve_arc_subproblem!(
-        M, s, problem!::P, ::ClosedFormSubSolverState{InplaceEvaluation}, p
+        M, s, problem!::P, ::ClosedFormSubSolverState, p
     ) where {P <: Function}
     problem!(M, s, p)
     return s

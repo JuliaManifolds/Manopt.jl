@@ -464,18 +464,9 @@ get_solver_result(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 #
 #
 # Dispatching on different types of sub solvers
-# (a) closed form allocating
+# closed form in-place
 function _proximal_bundle_subsolver!(
-        M, pbms::ProximalBundleMethodState{P, T, F, ClosedFormSubSolverState{AllocatingEvaluation}}
-    ) where {P, T, F}
-    pbms.λ = pbms.sub_problem(
-        M, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients
-    )
-    return pbms
-end
-# (b) closed form in-place
-function _proximal_bundle_subsolver!(
-        M, pbms::ProximalBundleMethodState{P, T, F, ClosedFormSubSolverState{InplaceEvaluation}}
+        M, pbms::ProximalBundleMethodState{P, T, F, ClosedFormSubSolverState}
     ) where {P, T, F}
     pbms.sub_problem(
         M, pbms.λ, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients,

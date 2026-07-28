@@ -25,7 +25,23 @@ Get the [`AbstractEvaluationType`](@ref) of the objective in [`AbstractManoptPro
 """
 evaluation_type(amp::AbstractManoptProblem) = evaluation_type(get_objective(amp))
 
+@doc """
+    Y = get_hessian(amp::AbstractManoptProblem{T}, p, X)
+    get_hessian!(amp::AbstractManoptProblem{T}, Y, p, X)
+
+evaluate the Hessian of an [`AbstractManoptProblem`](@ref) `amp` at `p`
+applied to a tangent vector `X`, computing ``$(_tex(:Hess))f(q)[X]``,
+which can also happen in-place of `Y`.
+"""
+function get_hessian(amp::AbstractManoptProblem, p, X)
+    return get_hessian(get_manifold(amp), get_objective(amp), p, X)
+end
+function get_hessian!(amp::AbstractManoptProblem, Y, p, X)
+    return get_hessian!(get_manifold(amp), Y, get_objective(amp), p, X)
+end
+
 function get_manifold end
+
 @doc """
     get_manifold(amp::AbstractManoptProblem)
 

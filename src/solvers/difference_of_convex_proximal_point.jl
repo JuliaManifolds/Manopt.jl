@@ -418,35 +418,11 @@ function initialize_solver!(::AbstractManoptProblem, dcps::DifferenceOfConvexPro
     return dcps
 end
 #=
-    Variant I: allocating closed form of the prox
+    Variant I: closed form of the prox
 =#
 function step_solver!(
         amp::AbstractManoptProblem,
-        dcps::DifferenceOfConvexProximalState{
-            P, T, <:Function, ClosedFormSubSolverState{AllocatingEvaluation},
-        },
-        k,
-    ) where {P, T}
-    M = get_manifold(amp)
-    # each line is one step in the documented solver steps. Note the reuse of `dcps.X`
-    get_subtrahend_gradient!(amp, dcps.X, dcps.p)
-    retract!(M, dcps.q, dcps.p, dcps.λ(k) * dcps.X, dcps.retraction_method)
-    callback(:BeforeSubsolver, amp, dcps, k)
-    copyto!(M, dcps.r, dcps.sub_problem(M, dcps.λ(k), dcps.q))
-    callback(:Subsolver, amp, dcps, k)
-    inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
-    s = dcps.stepsize(amp, dcps, k)
-    callback(:Stepsize, amp, dcps, k)
-    retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
-    return dcps
-end
-
-#=
-    Variant II: in-place closed form of the prox
-=#
-function step_solver!(
-        amp::AbstractManoptProblem,
-        dcps::DifferenceOfConvexProximalState{P, T, <:Function, ClosedFormSubSolverState{InplaceEvaluation}},
+        dcps::DifferenceOfConvexProximalState{P, T, <:Function, ClosedFormSubSolverState},
         k,
     ) where {P, T}
     M = get_manifold(amp)
@@ -463,7 +439,7 @@ function step_solver!(
     return dcps
 end
 #=
-    Variant III: subsolver variant of the prox
+    Variant II: subsolver variant of the prox
 =#
 function step_solver!(
         amp::AbstractManoptProblem,

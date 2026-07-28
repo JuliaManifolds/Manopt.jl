@@ -542,7 +542,7 @@ function truncated_conjugate_gradient_descent(
     ) where {
         O <: Union{
             AbstractManifoldSubObjective,
-            AbstractDecoratedManifoldObjective{E, <:AbstractManifoldSubObjective} where {E},
+            AbstractDecoratedManifoldObjective{<:AbstractManifoldSubObjective},
         },
     }
     keywords_accepted(truncated_conjugate_gradient_descent; kwargs...)

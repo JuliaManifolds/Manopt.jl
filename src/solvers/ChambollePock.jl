@@ -2,7 +2,7 @@
 #
 # ---
 @doc """
-    PrimalDualManifoldObjective{T<:AbstractEvaluationType} <: AbstractPrimalDualManifoldObjective{T}
+    PrimalDualManifoldObjective <: AbstractPrimalDualManifoldObjective
 
 Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@cite), [ChambollePock:2011](@cite)
 
@@ -32,8 +32,8 @@ Note that the first argument is always the manifold under consideration, the mut
 the second.
 """
 mutable struct PrimalDualManifoldObjective{
-        T <: AbstractEvaluationType, TC, TP, TDP, LFO, ALFO, L,
-    } <: AbstractPrimalDualManifoldObjective{T, TC, TP}
+        TC, TP, TDP, LFO, ALFO, L,
+    } <: AbstractPrimalDualManifoldObjective{TC, TP}
     cost::TC
     prox_f!::TP
     prox_g_dual!::TDP

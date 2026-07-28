@@ -715,6 +715,1102 @@ end
 #
 # ---
 @doc """
+    EmbeddedManifoldObjective{P, T, O2, O1<:AbstractManifoldObjective} <:
+       AbstractDecoratedManifoldObjective{O2}
+
+Declare an objective to be defined in the embedding.
+This also declares the gradient to be defined in the embedding,
+and especially being the Riesz representer with respect to the metric in the embedding.
+The types can be used to still dispatch on also the undecorated objective type `O2`,
+in case the objective being stored here is decorated, e.g. with a cache.
+
+# Fields
+
+* `objective`: the objective that is defined in the embedding
+* `p=nothing`: a point in the embedding.
+* `X=nothing`: a tangent vector in the embedding
+
+When a point in the embedding `p` is provided, `embed!` is used in place of this point to reduce
+memory allocations. Similarly `X` is used when embedding tangent vectors
+"""
+struct EmbeddedManifoldObjective{P, T, O2, O1 <: AbstractManifoldObjective} <: AbstractDecoratedManifoldObjective{O2}
+    objective::O1
+    p::P
+    X::T
+end
+function EmbeddedManifoldObjective(o::O, p::P = missing, X::T = missing) where {P, T, O <: AbstractManifoldObjective}
+    return EmbeddedManifoldObjective{P, T, O, O}(o, p, X)
+end
+function EmbeddedManifoldObjective(
+        o::O1, p::P = missing, X::T = missing
+    ) where {
+        P, T, O2 <: AbstractManifoldObjective, O1 <: AbstractDecoratedManifoldObjective{O2},
+    }
+    return EmbeddedManifoldObjective{P, T, O2, O1}(o, p, X)
+end
+function EmbeddedManifoldObjective(
+        M::AbstractManifold, o::O;
+        q = rand(M), p::P = embed(M, q), X::T = embed(M, q, rand(M; vector_at = q)),
+    ) where {P, T, O <: AbstractManifoldObjective}
+    return EmbeddedManifoldObjective(o, p, X)
+end
+# dispatch whether to do this in place or not
+function local_embed!(M::AbstractManifold, ::EmbeddedManifoldObjective{Missing}, p)
+    return embed(M, p)
+end
+function local_embed!(M::AbstractManifold, emo::EmbeddedManifoldObjective{P}, p) where {P}
+    embed!(M, emo.p, p)
+    return emo.p
+end
+@doc """
+    get_cost(M::AbstractManifold,emo::EmbeddedManifoldObjective, p)
+
+Evaluate the cost function of an objective defined in the embedding by first embedding `p`
+before calling the cost function stored in the [`EmbeddedManifoldObjective`](@ref).
+"""
+function get_cost(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
+    q = local_embed!(M, emo, p)
+    return get_cost(get_embedding(M, typeof(p)), emo.objective, q)
+end
+function get_cost_function(emo::EmbeddedManifoldObjective, recursive = false)
+    recursive && (return get_cost_function(emo.objective, recursive))
+    return (M, p) -> get_cost(M, emo, p)
+end
+@doc """
+    get_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
+    get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p)
+
+Evaluate the gradient function of an objective defined in the embedding, that is embed `p`
+before calling the gradient function stored in the [`EmbeddedManifoldObjective`](@ref).
+
+The returned gradient is then converted to a Riemannian gradient calling
+[`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}).
+"""
+function get_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p) where {P}
+    q = local_embed!(M, emo, p)
+    return riemannian_gradient(M, p, get_gradient(get_embedding(M, typeof(p)), emo.objective, q))
+end
+function get_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p) where {P, T}
+    q = local_embed!(M, emo, p)
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q)
+    return riemannian_gradient(M, p, emo.X)
+end
+function get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P, Missing}, p) where {P}
+    q = local_embed!(M, emo, p)
+    riemannian_gradient!(M, X, p, get_gradient(get_embedding(M, typeof(p)), emo.objective, q))
+    return X
+end
+function get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P, T}, p) where {P, T}
+    q = local_embed!(M, emo, p)
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q)
+    riemannian_gradient!(M, X, p, emo.X)
+    return X
+end
+function get_gradient_function(emo::EmbeddedManifoldObjective{P, T}, recursive = false) where {P, T}
+    recursive && (return get_gradient_function(emo.objective, recursive))
+    return (M, X, p) -> get_gradient!(M, X, emo, p)
+end
+@doc """
+    get_hessian(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, X)
+    get_hessian!(M::AbstractManifold, Y, emo::EmbeddedManifoldObjective, p, X)
+
+Evaluate the Hessian of an objective defined in the embedding, that is embed `p` and `X`
+before calling the Hessian function stored in the [`EmbeddedManifoldObjective`](@ref).
+
+The returned Hessian is then converted to a Riemannian Hessian calling
+ [`riemannian_Hessian`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_Hessian-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}).
+"""
+function get_hessian(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, X) where {P}
+    q = local_embed!(M, emo, p)
+    return riemannian_Hessian(
+        M, p, get_gradient(get_embedding(M, typeof(p)), emo.objective, q),
+        get_hessian(get_embedding(M, typeof(p)), emo.objective, q, embed(M, p, X)), X,
+    )
+end
+function get_hessian(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, X) where {P, T}
+    q = local_embed!(M, emo, p)
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, embed(M, p))
+    return riemannian_Hessian(
+        M, p, emo.X, get_hessian(get_embedding(M, typeof(p)), emo.objective, q, embed(M, p, X)), X
+    )
+end
+function get_hessian!(M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, X) where {P}
+    q = local_embed!(M, emo, p)
+    riemannian_Hessian!(
+        M, Y, p, get_gradient(get_embedding(M, typeof(p)), emo.objective, q),
+        get_hessian(get_embedding(M, typeof(p)), emo.objective, q, embed(M, p, X)), X,
+    )
+    return Y
+end
+function get_hessian!(M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, X) where {P, T}
+    q = local_embed!(M, emo, p)
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, embed(M, p))
+    riemannian_Hessian!(
+        M, Y, p, emo.X, get_hessian(get_embedding(M, typeof(p)), emo.objective, q, embed(M, p, X)), X
+    )
+    return Y
+end
+function get_hessian_function(emo::EmbeddedManifoldObjective{P, T}, recursive::Bool = false) where {P, T}
+    recursive && (return get_hessian_function(emo.objective, recursive))
+    return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)
+end
+
+function get_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
+    q = local_embed!(M, emo, p)
+    return [
+        get_inequality_constraint(M, emo.objective, q, :),
+        get_equality_constraint(M, emo.objective, q, :),
+    ]
+end
+@doc """
+    get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
+
+evaluate the `j`s equality constraint ``h_j(p)`` defined in the embedding, that is embed `p`
+before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
+"""
+function get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
+    q = local_embed!(M, emo, p)
+    return get_equality_constraint(M, emo.objective, q, j)
+end
+@doc """
+    get_inequality_constraint(M::AbstractManifold, ems::EmbeddedManifoldObjective, p, i)
+
+Evaluate the `i`s inequality constraint ``g_i(p)`` defined in the embedding, that is embed `p`
+before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
+"""
+function get_inequality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective, p, i
+    )
+    q = local_embed!(M, emo, p)
+    return get_inequality_constraint(M, emo.objective, q, i)
+end
+@doc """
+    X = get_grad_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
+    get_grad_equality_constraint!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p, j)
+
+Evaluate the gradient of the `j`th equality constraint ``$(_tex(:grad)) h_j(p)``
+defined in the embedding, that is embed `p` before calling the gradient function stored in
+the [`EmbeddedManifoldObjective`](@ref).
+
+The returned gradient is then converted to a Riemannian gradient calling
+[`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}).
+"""
+function get_grad_equality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j::Integer
+    ) where {P}
+    q = local_embed!(M, emo, p)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    return riemannian_gradient(M, p, Z)
+end
+function get_grad_equality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j
+    ) where {P}
+    q = local_embed!(M, emo, p)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    return [riemannian_gradient(M, p, X) for X in Z]
+end
+function get_grad_equality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j::Integer
+    ) where {P, T}
+    q = local_embed!(M, emo, p)
+    get_grad_equality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, j)
+    return riemannian_gradient(M, p, emo.X)
+end
+function get_grad_equality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j
+    ) where {P, T}
+    q = local_embed!(M, emo, p)
+    Xs = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Ys = [riemannian_gradient(M, p, X) for X in Xs]
+    return Ys
+end
+function get_grad_equality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j::Integer
+    ) where {P}
+    q = local_embed!(M, emo, p)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    riemannian_gradient!(M, Y, p, Z)
+    return Y
+end
+function get_grad_equality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j
+    ) where {P}
+    q = local_embed!(M, emo, p)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Y .= [riemannian_gradient(M, p, X) for X in Z]
+    return Y
+end
+function get_grad_equality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j::Integer
+    ) where {P, T}
+    q = local_embed!(M, emo, p)
+    get_grad_equality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, j)
+    riemannian_gradient!(M, Y, p, emo.X)
+    return Y
+end
+function get_grad_equality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j
+    ) where {P, T}
+    q = local_embed!(M, emo, p)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Y .= [riemannian_gradient(M, p, X) for X in Z]
+    return Y
+end
+@doc """
+    X = get_grad_inequality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
+    get_grad_inequality_constraint!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p, j)
+
+Evaluate the gradient of the `j`th inequality constraint ``$(_tex(:grad)) g_j(p)``
+defined in the embedding, that is embed `p` before calling the gradient function stored in
+the [`EmbeddedManifoldObjective`](@ref).
+
+The returned gradient is then converted to a Riemannian gradient calling
+[`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}).
+"""
+function get_grad_inequality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, i::Integer
+    ) where {P}
+    q = local_embed!(M, emo, p)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, i)
+    return riemannian_gradient(M, p, Z)
+end
+function get_grad_inequality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j
+    ) where {P}
+    q = local_embed!(M, emo, p)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    return [riemannian_gradient(M, p, X) for X in Z]
+end
+function get_grad_inequality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, i::Integer
+    ) where {P, T}
+    q = local_embed!(M, emo, p)
+    get_grad_inequality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, i)
+    return riemannian_gradient(M, p, emo.X)
+end
+function get_grad_inequality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j
+    ) where {P, T}
+    q = local_embed!(M, emo, p)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    return [riemannian_gradient(M, p, X) for X in Z]
+end
+function get_grad_inequality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, i::Integer
+    ) where {P}
+    q = local_embed!(M, emo, p)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, i)
+    riemannian_gradient!(M, Y, p, Z)
+    return Y
+end
+function get_grad_inequality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j
+    ) where {P}
+    q = local_embed!(M, emo, p)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Y .= [riemannian_gradient(M, p, X) for X in Z]
+    return Y
+end
+function get_grad_inequality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, i::Integer
+    ) where {P, T}
+    q = local_embed!(M, emo, p)
+    get_grad_inequality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, i)
+    riemannian_gradient!(M, Y, p, emo.X)
+    return Y
+end
+function get_grad_inequality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j
+    ) where {P, T}
+    q = local_embed!(M, emo, p)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Y .= [riemannian_gradient(M, p, X) for X in Z]
+    return Y
+end
+function show(io::IO, emo::EmbeddedManifoldObjective)
+    return print(io, "EmbeddedManifoldObjective($(emo.objective), $(emo.p), $(emo.X))")
+end
+function status_summary(emo::EmbeddedManifoldObjective{P, T}; context::Symbol = :default) where {P, T}
+    (context === :short) && return repr(emo)
+    (context === :inline) && return "An embedded objective of $(status_summary(emo.objective; context = context))"
+    p_str = !(ismissing(emo.p)) ? "* for a point of type $P" : ""
+    X_str = !(ismissing(emo.X)) ? "* for a tangent vector of type $T" : ""
+    pX_str = (length(p_str) + length(X_str) > 0) ? "\n\n## Temporary memory (in the embedding)\n$(p_str)$(length(p_str) > 0 ? "\n" : "")$(X_str)" : ""
+    return """
+    An embedded objective
+
+    ## Objective
+    $(_in_str(status_summary(emo.objective, context = context); indent = 1, headers = 1))$(pX_str)"""
+end
+
+@doc """
+    ManifoldCachedObjective{O,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractDecoratedManifoldObjective{O}
+
+Create a cache for an objective, based on a `NamedTuple` that stores some kind of cache.
+
+# Constructor
+
+    ManifoldCachedObjective(M, o::AbstractManifoldObjective, caches::Vector{Symbol}; kwargs...)
+
+Create a cache for the [`AbstractManifoldObjective`](@ref) where the Symbols in `caches` indicate,
+which function evaluations to cache.
+
+# Supported symbols
+
+| Symbol                      | Caches calls to (incl. `!` variants)            | Comment
+| :-------------------------- | :---------------------------------------------- | :------------------------ |
+| `:Cost`                     | [`get_cost`](@ref)                              |                           |
+| `:Differential`             | [`get_differential`](@ref)`(M, p, X)`.          |                           |
+| `:EqualityConstraint`       | [`get_equality_constraint`](@ref)`(M, p, i)`    |                           |
+| `:EqualityConstraints`      | [`get_equality_constraint`](@ref)`(M, p, :)`    |                           |
+| `:GradEqualityConstraint`   | [`get_grad_equality_constraint`](@ref)          | tangent vector per (p,i)  |
+| `:GradInequalityConstraint` | [`get_inequality_constraint`](@ref)             | tangent vector per (p,i)  |
+| `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`                   | tangent vectors           |
+| `:Hessian`                  | [`get_hessian`](@ref)                           | tangent vectors           |
+| `:InequalityConstraint`     | [`get_inequality_constraint`](@ref)`(M, p, j)`  |                           |
+| `:InequalityConstraints`    | [`get_inequality_constraint`](@ref)`(M, p, :)`  |                           |
+| `:Preconditioner`           | [`get_preconditioner`](@ref)                    | tangent vectors           |
+| `:ProximalMap`              | [`get_proximal_map`](@ref)                      | point per `(p,λ,i)`       |
+| `:StochasticGradients`      | [`get_gradients`](@ref)                         | vector of tangent vectors |
+| `:StochasticGradient`       | [`get_gradient`](@ref)`(M, p, i)`               | tangent vector per (p,i)  |
+| `:SubGradient`              | [`get_subgradient`](@ref)                       | tangent vectors           |
+| `:SubtrahendGradient`       | [`get_subtrahend_gradient`](@ref)               | tangent vectors           |
+
+# Keyword arguments
+
+* `p=rand(M)`:
+  the type of the keys to be used in the caches. Defaults to the default representation on `M`.
+* `value=get_cost(M, objective, p)`:
+  the type of values for numeric values in the cache
+* `X=zero_vector(M,p)`:
+  the type of values to be cached for gradient and Hessian calls.
+* `cache=[:Cost]`:
+  a vector of symbols indicating which function calls should be cached.
+* `cache_size=10`:
+  number of (least recently used) calls to cache
+* `cache_sizes=Dict{Symbol,Int}()`:
+  a named tuple or dictionary specifying the sizes individually for each cache.
+"""
+struct ManifoldCachedObjective{P, O <: AbstractManifoldObjective, C <: NamedTuple{}} <: AbstractDecoratedManifoldObjective{P}
+    objective::O
+    cache::C
+end
+function ManifoldCachedObjective(
+        M::AbstractManifold,
+        objective::O,
+        caches::AbstractVector{<:Symbol} = [:Cost];
+        p::P = rand(M),
+        value::R = get_cost(M, objective, p),
+        X::T = zero_vector(M, p),
+        cache_size::Int = 10,
+        cache_sizes::Dict{Symbol, Int} = Dict{Symbol, Int}(),
+    ) where {O <: AbstractManifoldObjective, R <: Real, P, T}
+    c = init_caches(
+        M, caches; p = p, value = value, X = X, cache_size = cache_size, cache_sizes = cache_sizes
+    )
+    return ManifoldCachedObjective{O, O, typeof(c)}(objective, c)
+end
+function ManifoldCachedObjective(
+        M::AbstractManifold,
+        objective::O,
+        caches::AbstractVector{<:Symbol} = [:Cost];
+        p::P = rand(M),
+        value::R = get_cost(M, objective, p),
+        X::T = zero_vector(M, p),
+        cache_size::Int = 10,
+        cache_sizes::Dict{Symbol, Int} = Dict{Symbol, Int}(),
+    ) where {O2, O <: AbstractDecoratedManifoldObjective{O2}, R <: Real, P, T}
+    c = init_caches(
+        M, caches; p = p, value = value, X = X, cache_size = cache_size, cache_sizes = cache_sizes
+    )
+    return ManifoldCachedObjective{O2, O, typeof(c)}(objective, c)
+end
+
+"""
+    init_caches(M::AbstractManifold, caches, T; kwargs...)
+
+Given a vector of symbols `caches`, this function sets up the
+`NamedTuple` of caches for points/vectors on `M`,
+where `T` is the type of cache to use.
+"""
+function init_caches(M::AbstractManifold, caches, T = Nothing; kwargs...)
+    return throw(
+        DomainError(
+            T,
+            """
+            No function `init_caches` available for a caches $T.
+            For a good default load `LRUCache.jl`, for example:
+            Enter `using LRUCache`.
+            """,
+        )
+    )
+end
+
+#
+# Default implementations: if field exists -> try to get cache
+function get_cost(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :Cost)) && return get_cost(M, co.objective, p) #No Cost cache
+    # If so, check whether we should cache
+    return get!(co.cache[:Cost], copy(M, p)) do
+        get_cost(M, co.objective, p)
+    end
+end
+
+function get_cost_function(co::ManifoldCachedObjective, recursive = false)
+    recursive && (return get_cost_function(co.objective, recursive))
+    return (M, p) -> get_cost(M, co, p)
+end
+
+function get_differential(M::AbstractManifold, co::ManifoldCachedObjective, p, X; kwargs...)
+    # No Differential Cache
+    !(haskey(co.cache, :Differential)) &&
+        return get_differential(M, co.objective, p, X; kwargs...)
+    # If so, check whether we should cache
+    return get!(co.cache[:Differential], (copy(M, p), copy(M, p, X))) do
+        get_differential(M, co.objective, p, X; kwargs...)
+    end
+end
+
+function get_differential_function(mco::ManifoldCachedObjective, recursive = false)
+    recursive && (return get_differential_function(mco.objective, recursive))
+    return (M, p, X; kwargs...) -> get_differential(M, mco, p, X; kwargs...)
+end
+
+function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :Gradient)) && return get_gradient(M, co.objective, p)
+    return copy(
+        M,
+        p,
+        get!(co.cache[:Gradient], copy(M, p)) do
+            get_gradient(M, co.objective, p)
+        end,
+    )
+end
+function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :Gradient)) && return get_gradient!(M, X, co.objective, p)
+    copyto!(
+        M,
+        X,
+        p,
+        get!(co.cache[:Gradient], copy(M, p)) do
+            # This evaluates in place of X
+            get_gradient!(M, X, co.objective, p)
+            copy(M, p, X) #this creates a copy to be placed in the cache
+        end, #and copy the values back to X
+    )
+    return X
+end
+
+function get_gradient_function(
+        sco::ManifoldCachedObjective, recursive = false
+    )
+    recursive && (return get_gradient_function(sco.objective, recursive))
+    return (M, X, p) -> get_gradient!(M, X, sco, p)
+end
+
+function get_cost_and_gradient(M::AbstractManifold, mco::ManifoldCachedObjective, p)
+    #Neither cost not grad cached -> evaluate normally
+    all(.!(haskey.(Ref(mco.cache), [:Cost, :Gradient]))) &&
+        return get_cost_and_gradient(M, mco.objective, p)
+    # Otherwise -> check whether any of the does not have this index:
+    # No cost case or no grad case
+    nc = !haskey(mco.cache, :Cost) || !haskey(mco.cache[:Cost], p)
+    ng = !haskey(mco.cache, :Gradient) || !haskey(mco.cache[:Gradient], p)
+    if nc || ng # one of them does not exist, either full cache or entry -> eval
+        c, X = get_cost_and_gradient(M, mco.objective, p)
+        # Cache if cache present
+        haskey(mco.cache, :Cost) && setindex!(mco.cache[:Cost], c, copy(M, p))
+        haskey(mco.cache, :Gradient) &&
+            setindex!(mco.cache[:Gradient], copy(M, p, X), copy(M, p))
+        return c, X
+    else # both exist and are cached, return them
+        return mco.cache[:Cost][p], copy(M, p, mco.cache[:Gradient][p])
+    end
+end
+function get_cost_and_gradient!(M::AbstractManifold, X, mco::ManifoldCachedObjective, p)
+    #Neither cost not grad cached -> evaluate normally
+    all(.!(haskey.(Ref(mco.cache), [:Cost, :Gradient]))) &&
+        return get_cost_and_gradient!(M, X, mco.objective, p)
+    # Otherwise -> check whether any of the does not have this index:
+    # No cost case or no grad case
+    nc = !haskey(mco.cache, :Cost) || !haskey(mco.cache[:Cost], p)
+    ng = !haskey(mco.cache, :Gradient) || !haskey(mco.cache[:Gradient], p)
+    if nc || ng # one of them does not exist, either full cache or entry -> eval
+        c, _ = get_cost_and_gradient!(M, X, mco.objective, p)
+        # Cache if cache present
+        haskey(mco.cache, :Cost) && setindex!(mco.cache[:Cost], c, copy(M, p))
+        haskey(mco.cache, :Gradient) &&
+            setindex!(mco.cache[:Gradient], copy(M, p, X), copy(M, p))
+        return c, X
+    else # both exist and are cached, return them
+        copyto!(M, X, p, mco.cache[:Gradient][p])
+        return mco.cache[:Cost][p], X
+    end
+end
+
+function get_equality_constraint(
+        M::AbstractManifold, co::ManifoldCachedObjective, p, j::Integer
+    )
+    (!haskey(co.cache, :EqualityConstraint)) &&
+        return get_equality_constraint(M, co.objective, p, j)
+    return copy(# Return a copy of the version in the cache
+        get!(co.cache[:EqualityConstraint], (copy(M, p), j)) do
+            get_equality_constraint(M, co.objective, p, j)
+        end,
+    )
+end
+function get_equality_constraint(
+        M::AbstractManifold, co::ManifoldCachedObjective, p, i::Colon
+    )
+    (!haskey(co.cache, :EqualityConstraints)) &&
+        return get_equality_constraint(M, co.objective, p, i)
+    return copy(# Return a copy of the version in the cache
+        get!(co.cache[:EqualityConstraints], copy(M, p)) do
+            get_equality_constraint(M, co.objective, p, i)
+        end,
+    )
+end
+function get_equality_constraint(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
+    key = copy(M, p)
+    if haskey(co.cache, :EqualityConstraints) # full constraints are stored
+        if haskey(co.cache[:EqualityConstraints], key)
+            return co.cache[:EqualityConstraints][key][i]
+            #but caching is not possible here, since that requires evaluating all
+        end
+    end
+    if haskey(co.cache, :EqualityConstraint) # storing the index constraints
+        return [
+            copy(
+                    get!(co.cache[:EqualityConstraint], (key, j)) do
+                        get_equality_constraint(M, co.objective, p, j)
+                end,
+                ) for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        ]
+    end # neither cache: pass down to objective
+    return get_equality_constraint(M, co.objective, p, i)
+end
+function get_inequality_constraint(
+        M::AbstractManifold, co::ManifoldCachedObjective, p, i::Integer
+    )
+    (!haskey(co.cache, :InequalityConstraint)) &&
+        return get_inequality_constraint(M, co.objective, p, i)
+    return copy(# Return a copy of the version in the cache
+        get!(co.cache[:InequalityConstraint], (copy(M, p), i)) do
+            get_inequality_constraint(M, co.objective, p, i)
+        end,
+    )
+end
+function get_inequality_constraint(
+        M::AbstractManifold, co::ManifoldCachedObjective, p, i::Colon
+    )
+    (!haskey(co.cache, :InequalityConstraints)) &&
+        return get_inequality_constraint(M, co.objective, p, i)
+    return copy(# Return a copy of the version in the cache
+        get!(co.cache[:InequalityConstraints], copy(M, p)) do
+            get_inequality_constraint(M, co.objective, p, i)
+        end,
+    )
+end
+function get_inequality_constraint(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
+    key = copy(M, p)
+    if haskey(co.cache, :InequalityConstraints) # full constraints are stored
+        if haskey(co.cache[:InequalityConstraints], key)
+            return co.cache[:InequalityConstraints][key][i]
+            #but caching is not possible here, since that requires evaluating all
+        end
+    end
+    if haskey(co.cache, :InequalityConstraint) # storing the index constraints
+        return [
+            copy(
+                    get!(co.cache[:InequalityConstraint], (key, j)) do
+                        get_inequality_constraint(M, co.objective, p, j)
+                end,
+                ) for
+                j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
+        ]
+    end # neither cache: pass down to objective
+    return get_inequality_constraint(M, co.objective, p, i)
+end
+
+function get_grad_equality_constraint(
+        M::AbstractManifold, co::ManifoldCachedObjective, p, j::Integer,
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    )
+    !(haskey(co.cache, :GradEqualityConstraint)) &&
+        return get_grad_equality_constraint(M, co.objective, p, j)
+    return copy(# Return a copy of the version in the cache
+        M,
+        p,
+        get!(co.cache[:GradEqualityConstraint], (copy(M, p), j)) do
+            get_grad_equality_constraint(M, co.objective, p, j)
+        end,
+    )
+end
+function get_grad_equality_constraint(
+        M::AbstractManifold, co::ManifoldCachedObjective{E, <:ConstrainedManifoldObjective}, p, j::Colon,
+        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+    ) where {E}
+    !(haskey(co.cache, :GradEqualityConstraints)) &&
+        return get_grad_equality_constraint(M, co.objective, p, j)
+    pM = PowerManifold(M, range, length(get_objective(co, true).equality_constraints))
+    P = fill(p, pM)
+    return copy(# Return a copy of the version in the cache
+        pM,
+        P,
+        get!(co.cache[:GradEqualityConstraints], (copy(M, p))) do
+            get_grad_equality_constraint(M, co.objective, p, j)
+        end,
+    )
+end
+function get_grad_equality_constraint(
+        M::AbstractManifold, co::ManifoldCachedObjective, p, i,
+        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+    )
+    key = copy(M, p)
+    n = _vgf_index_to_length(i, equality_constraints_length(co.objective))
+    pM = PowerManifold(M, range, n)
+    rep_size = representation_size(M)
+    P = fill(p, pM)
+    if haskey(co.cache, :GradEqualityConstraints) # full constraints are stored
+        if haskey(co.cache[:GradEqualityConstraints], key)
+            return co.cache[:GradEqualityConstraints][key][i]
+            #but caching is not possible here, since that requires evaluating all
+        end
+    end
+    if haskey(co.cache, :GradEqualityConstraint) # storing the index constraints
+        # allocate a tangent vector
+        X = zero_vector(pM, P)
+        # access is subsampled with j, result linear in k
+        for (k, j) in
+            zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
+            copyto!(
+                M, _write(pM, rep_size, X, (k,)), p,
+                get!(co.cache[:GradEqualityConstraint], (key, j)) do
+                    get_grad_equality_constraint(M, co.objective, p, j)
+                end,
+            )
+        end
+        return X
+    end # neither cache: pass down to objective
+    return get_grad_equality_constraint(M, co.objective, p, i)
+end
+function get_grad_equality_constraint!(
+        M::AbstractManifold, X, co::ManifoldCachedObjective, p, j::Integer,
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    )
+    !(haskey(co.cache, :GradEqualityConstraint)) &&
+        return get_grad_equality_constraint!(M, X, co.objective, p, j)
+    copyto!(
+        M, X, p,
+        get!(co.cache[:GradEqualityConstraint], (copy(M, p), j)) do
+            # This evaluates in place of X
+            get_grad_equality_constraint!(M, X, co.objective, p, j)
+            copy(M, p, X) #this creates a copy to be placed in the cache
+        end, #and copy the values back to X
+    )
+    return X
+end
+function get_grad_equality_constraint!(
+        M::AbstractManifold, X, co::ManifoldCachedObjective{<:ConstrainedManifoldObjective}, p, i::Colon,
+        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+    )
+    !(haskey(co.cache, :GradEqualityConstraints)) &&
+        return get_grad_equality_constraint!(M, X, co.objective, p, i)
+    pM = PowerManifold(M, range, length(get_objective(co, true).equality_constraints))
+    P = fill(p, pM)
+    copyto!(
+        pM, X, P,
+        get!(co.cache[:GradEqualityConstraints], (copy(M, p))) do
+            # This evaluates in place of X
+            get_grad_equality_constraint!(M, X, co.objective, p, i)
+            copy(pM, P, X) #this creates a copy to be placed in the cache
+        end, #and copy the values back to X
+    )
+    return X
+end
+function get_grad_equality_constraint!(
+        M::AbstractManifold, X, co::ManifoldCachedObjective, p, i,
+        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+    )
+    key = copy(M, p)
+    n = _vgf_index_to_length(i, equality_constraints_length(co.objective))
+    pM = PowerManifold(M, range, n)
+    rep_size = representation_size(M)
+    if haskey(co.cache, :GradEqualityConstraints) # full constraints are stored
+        if haskey(co.cache[:GradEqualityConstraints], key)
+            # access is subsampled with j, result linear in k
+            for (k, j) in zip(
+                    1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+                )
+                copyto!(
+                    M,
+                    _write(pM, rep_size, X, (k,)),
+                    p,
+                    co.cache[:GradEqualityConstraints][key][j],
+                )
+            end
+            return X
+            #but caching is not possible here, since that requires evaluating all
+        end
+    end
+    if haskey(co.cache, :GradEqualityConstraint) # store the index constraints
+        # allocate a tangent vector
+        # access is subsampled with j, result linear in k
+        for (k, j) in
+            zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
+            copyto!(
+                M,
+                _write(pM, rep_size, X, (k,)),
+                p,
+                get!(co.cache[:GradEqualityConstraint], (key, j)) do
+                    get_grad_equality_constraint(M, co.objective, p, j)
+                end,
+            )
+        end
+        return X
+    end # neither cache: pass down to objective
+    return get_grad_equality_constraint!(M, X, co.objective, p, i)
+end
+
+#
+#
+# Inequality Constraint
+function get_grad_inequality_constraint(
+        M::AbstractManifold, co::ManifoldCachedObjective, p, i::Integer,
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    )
+    !(haskey(co.cache, :GradInequalityConstraint)) &&
+        return get_grad_inequality_constraint(M, co.objective, p, i)
+    return copy(
+        M,
+        p,
+        get!(co.cache[:GradInequalityConstraint], (copy(M, p), i)) do
+            get_grad_inequality_constraint(M, co.objective, p, i)
+        end,
+    )
+end
+function get_grad_inequality_constraint(
+        M::AbstractManifold, co::ManifoldCachedObjective{<:ConstrainedManifoldObjective}, p, i::Colon,
+        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+    )
+    !(haskey(co.cache, :GradInequalityConstraints)) &&
+        return get_grad_inequality_constraint(M, co.objective, p, i)
+    pM = PowerManifold(M, range, length(get_objective(co, true).inequality_constraints))
+    P = fill(p, pM)
+    return copy(# Return a copy of the version in the cache
+        pM,
+        P,
+        get!(co.cache[:GradInequalityConstraints], (copy(M, p))) do
+            get_grad_inequality_constraint(M, co.objective, p, i)
+        end,
+    )
+end
+function get_grad_inequality_constraint(
+        M::AbstractManifold, co::ManifoldCachedObjective, p, i,
+        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+    )
+    key = copy(M, p)
+    n = _vgf_index_to_length(i, inequality_constraints_length(co.objective))
+    pM = PowerManifold(M, range, n)
+    rep_size = representation_size(M)
+    P = fill(p, pM)
+    if haskey(co.cache, :GradInequalityConstraints) # full constraints are stored
+        if haskey(co.cache[:GradInequalityConstraints], key)
+            return co.cache[:GradInequalityConstraints][key][i]
+            #but caching is not possible here, since that requires evaluating all
+        end
+    end
+    if haskey(co.cache, :GradInequalityConstraint) # storing the index constraints
+        # allocate a tangent vector
+        X = zero_vector(pM, P)
+        # access is subsampled with j, result linear in k
+        for (k, j) in
+            zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
+            copyto!(
+                M,
+                _write(pM, rep_size, X, (k,)),
+                p,
+                get!(co.cache[:GradInequalityConstraint], (key, j)) do
+                    get_grad_inequality_constraint(M, co.objective, p, j)
+                end,
+            )
+        end
+        return X
+    end # neither cache: pass down to objective
+    return get_grad_inequality_constraint(M, co.objective, p, i)
+end
+function get_grad_inequality_constraint!(
+        M::AbstractManifold, X, co::ManifoldCachedObjective, p,
+        i::Integer, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    )
+    !(haskey(co.cache, :GradInequalityConstraint)) &&
+        return get_grad_inequality_constraint!(M, X, co.objective, p, i)
+    copyto!(
+        M, X, p,
+        get!(co.cache[:GradInequalityConstraint], (copy(M, p), i)) do
+            # This evaluates in place of X
+            get_grad_inequality_constraint!(M, X, co.objective, p, i)
+            copy(M, p, X) #this creates a copy to be placed in the cache
+        end, #and copy the values back to X
+    )
+    return X
+end
+function get_grad_inequality_constraint!(
+        M::AbstractManifold,
+        X,
+        co::ManifoldCachedObjective{E, <:ConstrainedManifoldObjective},
+        p,
+        j::Colon,
+        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+    ) where {E}
+    !(haskey(co.cache, :GradInequalityConstraints)) &&
+        return get_grad_inequality_constraint!(M, X, co.objective, p, j)
+    pM = PowerManifold(M, range, length(get_objective(co, true).inequality_constraints))
+    P = fill(p, pM)
+    copyto!(
+        pM,
+        X,
+        P,
+        get!(co.cache[:GradInequalityConstraints], (copy(M, p))) do
+            # This evaluates in place of X
+            get_grad_inequality_constraint!(M, X, co.objective, p, j)
+            copy(pM, P, X) #this creates a copy to be placed in the cache
+        end, #and copy the values back to X
+    )
+    return X
+end
+function get_grad_inequality_constraint!(
+        M::AbstractManifold, X, co::ManifoldCachedObjective, p, i,
+        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+    )
+    key = copy(M, p)
+    n = _vgf_index_to_length(i, inequality_constraints_length(co.objective))
+    pM = PowerManifold(M, range, n)
+    rep_size = representation_size(M)
+    if haskey(co.cache, :GradInequalityConstraints) # full constraints are stored
+        if haskey(co.cache[:GradInequalityConstraints], key)
+            # access is subsampled with j, result linear in k
+            for (k, j) in zip(
+                    1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+                )
+                copyto!(
+                    M,
+                    _write(pM, rep_size, X, (k,)),
+                    p,
+                    co.cache[:GradInequalityConstraints][key][j],
+                )
+            end
+            return X
+            #but caching is not possible here, since that requires evaluating all
+        end
+    end
+    if haskey(co.cache, :GradInequalityConstraint) # storing the index constraints
+        # access is subsampled with j, result linear in k
+        for (k, j) in
+            zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
+            copyto!(
+                M,
+                _write(pM, rep_size, X, (k,)),
+                p,
+                get!(co.cache[:GradInequalityConstraint], (key, j)) do
+                    get_grad_inequality_constraint(M, co.objective, p, j)
+                end,
+            )
+        end
+        return X
+    end # neither cache: pass down to objective
+    return get_grad_inequality_constraint!(M, X, co.objective, p, i)
+end
+
+function get_hessian(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
+    !(haskey(co.cache, :Hessian)) && return get_hessian(M, co.objective, p, X)
+    return copy(
+        M, p,
+        get!(co.cache[:Hessian], (copy(M, p), copy(M, p, X))) do
+            get_hessian(M, co.objective, p, X)
+        end,
+    )
+end
+function get_hessian!(M::AbstractManifold, Y, co::ManifoldCachedObjective, p, X)
+    !(haskey(co.cache, :Hessian)) && return get_hessian!(M, Y, co.objective, p, X)
+    copyto!(
+        M, Y, p, # perform an in-place cache evaluation, see also `get_gradient!`
+        get!(co.cache[:Hessian], (copy(M, p), copy(M, p, X))) do
+            get_hessian!(M, Y, co.objective, p, X)
+            copy(M, p, Y) #store a copy of Y
+        end,
+    )
+    return Y
+end
+
+function get_hessian_function(
+        emo::ManifoldCachedObjective, recursive::Bool = false
+    )
+    recursive && (return get_hessian_function(emo.objective, recursive))
+    return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)
+end
+function get_preconditioner(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
+    !(haskey(co.cache, :Preconditioner)) && return get_preconditioner(M, co.objective, p, X)
+    return copy(
+        M, p,
+        get!(co.cache[:Preconditioner], (copy(M, p), copy(M, p, X))) do
+            get_preconditioner(M, co.objective, p, X)
+        end,
+    )
+end
+function get_preconditioner!(M::AbstractManifold, Y, co::ManifoldCachedObjective, p, X)
+    !(haskey(co.cache, :Preconditioner)) &&
+        return get_preconditioner!(M, Y, co.objective, p, X)
+    copyto!(
+        M, Y, p, # perform an in-place cache evaluation, see also `get_gradient!`
+        get!(co.cache[:Preconditioner], (copy(M, p), copy(M, p, X))) do
+            get_preconditioner!(M, Y, co.objective, p, X)
+            copy(M, p, Y)
+        end,
+    )
+    return Y
+end
+
+function get_proximal_map(M::AbstractManifold, co::ManifoldCachedObjective, λ, p, i)
+    !(haskey(co.cache, :ProximalMap)) && return get_proximal_map(M, co.objective, λ, p, i)
+    return copy(
+        M,
+        get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do  # use the tuple (p,i) as key
+            get_proximal_map(M, co.objective, λ, p, i)
+        end,
+    )
+end
+function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCachedObjective, λ, p, i)
+    !(haskey(co.cache, :ProximalMap)) &&
+        return get_proximal_map!(M, q, co.objective, λ, p, i)
+    copyto!(
+        M, q,
+        get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do
+            get_proximal_map!(M, q, co.objective, λ, p, i) #compute in-place of q
+            copy(M, q) #store copy of q
+        end,
+    )
+    return q
+end
+
+function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
+    !(haskey(co.cache, :StochasticGradient)) && return get_gradient(M, co.objective, p, i)
+    return copy(
+        M, p,
+        get!(co.cache[:StochasticGradient], (copy(M, p), i)) do
+            get_gradient(M, co.objective, p, i)
+        end,
+    )
+end
+function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p, i)
+    !(haskey(co.cache, :StochasticGradient)) &&
+        return get_gradient!(M, X, co.objective, p, i)
+    copyto!(
+        M, X, p,
+        get!(co.cache[:StochasticGradient], (copy(M, p), i)) do
+            # This evaluates in place of X
+            get_gradient!(M, X, co.objective, p, i)
+            copy(M, p, X) #this creates a copy to be placed in the cache
+        end, #and copy the values back to X
+    )
+    return X
+end
+
+function get_gradients(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :StochasticGradients)) && return get_gradients(M, co.objective, p)
+    return copy.(
+        Ref(M), Ref(p),
+        get!(co.cache[:StochasticGradients], copy(M, p)) do
+            get_gradients(M, co.objective, p)
+        end,
+    )
+end
+function get_gradients!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :StochasticGradients)) && return get_gradients(M, X, co.objective, p)
+    copyto!.(
+        Ref(M),
+        X,
+        Ref(p),
+        get!(co.cache[:StochasticGradients], copy(M, p)) do
+            # This evaluates in place of X
+            get_gradients!(M, X, co.objective, p)
+            copy.(Ref(M), Ref(p), X) #this creates a copy to be placed in the cache
+        end, #and copy the values back to X
+    )
+    return X
+end
+
+function get_subgradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :SubGradient)) && return get_subgradient(M, co.objective, p)
+    return copy(
+        M, p,
+        get!(co.cache[:SubGradient], copy(M, p)) do
+            get_subgradient(M, co.objective, p)
+        end,
+    )
+end
+function get_subgradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :SubGradient)) && return get_subgradient!(M, X, co.objective, p)
+    copyto!(
+        M, X, p, # perform an in-place cache evaluation, see also `get_gradient!`
+        get!(co.cache[:SubGradient], copy(M, p)) do
+            get_subgradient!(M, X, co.objective, p)
+            copy(M, p, X)
+        end,
+    )
+    return X
+end
+# Subtrahend gradient (from DC)
+function get_subtrahend_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :SubtrahendGradient)) && return get_subtrahend_gradient(M, co.objective, p)
+    return copy(
+        M, p,
+        get!(co.cache[:SubtrahendGradient], copy(M, p)) do
+            get_subtrahend_gradient(M, co.objective, p)
+        end,
+    )
+end
+function get_subtrahend_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :SubtrahendGradient)) && return get_subtrahend_gradient!(M, X, co.objective, p)
+    copyto!(
+        M, X,
+        p, # perform an in-place cache evaluation, see also `get_gradient!`
+        get!(co.cache[:SubtrahendGradient], copy(M, p)) do
+            get_subtrahend_gradient!(M, X, co.objective, p)
+            copy(M, p, X)
+        end,
+    )
+    return X
+end
+
+function show(io::IO, mco::ManifoldCachedObjective)
+    return print(io, "$(status_summary(mco))")
+end
+function show(
+        io::IO, t::Tuple{<:ManifoldCachedObjective, S}
+    ) where {S <: AbstractManoptSolverState}
+    return print(io, "$(t[2])\n\n$(status_summary(t[1]))")
+end
+function status_summary(mco::ManifoldCachedObjective; context::Symbol = :default)
+    _is_inline(context) && (return repr(mco))
+    s = "## Cache\n"
+    s2 = status_summary(mco.objective; context = context)
+    (length(s2) > 0) && (s2 = "$(s2)\n\n")
+    length(mco.cache) == 0 && return "$(s2)$(s)    No caches active"
+    longest_key_length = max(length.(["$k" for k in keys(mco.cache)])...)
+    cache_strings = [
+        "  * :" *
+            rpad("$k", longest_key_length, " ") *
+            " : $(v.currentsize)/$(v.maxsize) entries of type $(valtype(v)) used" for
+            (k, v) in zip(keys(mco.cache), values(mco.cache))
+    ]
+    return "$(s2)$(s)$(join(cache_strings, "\n"))\n"
+end
+
+#
+#
+# ---
+@doc """
     ManifoldCostObjective{F} <: AbstractManifoldCostObjective{F}
 
 specify an [`AbstractManifoldObjective`](@ref) that does only have information about
@@ -735,12 +1831,503 @@ Generate a problem. While this Problem does not have any allocating functions,
 struct ManifoldCostObjective{F} <: AbstractManifoldCostObjective{F}
     cost::F
 end
-function show(io::IO, mco::ManifoldCostObjective{F}) where {F}
+function show(io::IO, ::ManifoldCostObjective{F}) where {F}
     return print(io, "ManifoldCostObjective(mco.cost)")
 end
 function status_summary(::ManifoldCostObjective{F}; context::Symbol = :default) where {F}
     return "A cost function on a Riemannian manifold `f = (M,p) -> ℝ`."
 end
+
+"""
+    ManifoldCountObjective{P,O<:AbstractManifoldObjective,I<:Integer} <: AbstractDecoratedManifoldObjective{P}
+
+A wrapper for any [`AbstractManifoldObjective`](@ref) of type `O` to count different calls
+to parts of the objective.
+
+# Fields
+
+* `counts` a dictionary of symbols mapping to integers keeping the counted values
+* `objective` the wrapped objective
+
+# Supported symbols
+
+| Symbol                      | Counts calls to (incl. `!` variants)   | Comment                      |
+| :-------------------------- | :------------------------------------- | :--------------------------- |
+| `:Cost`                     | [`get_cost`](@ref)                     |                              |
+| `:Differential`             | [`get_differential`](@ref).            |
+| `:EqualityConstraint`       | [`get_equality_constraint`](@ref)      | requires vector of counters  |
+| `:EqualityConstraints`      | [`get_equality_constraint`](@ref)      | when evaluating all of them with `:` |
+| `:GradEqualityConstraint`   | [`get_grad_equality_constraint`](@ref) | requires vector of counters  |
+| `:GradEqualityConstraints`  | [`get_grad_equality_constraint`](@ref) | when evaluating all of them with `:`  |
+| `:GradInequalityConstraint` | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
+| `:GradInequalityConstraints`| [`get_inequality_constraint`](@ref)    | when evaluating all of them with `:`  |
+| `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`          |                              |
+| `:Hessian`                  | [`get_hessian`](@ref)                  |                              |
+| `:InequalityConstraint`     | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
+| `:InequalityConstraints`    | [`get_inequality_constraint`](@ref)    | when evaluating all of them with `:`  |
+| `:Preconditioner`           | [`get_preconditioner`](@ref)           |                              |
+| `:ProximalMap`              | [`get_proximal_map`](@ref)             |                              |
+| `:StochasticGradients`      | [`get_gradients`](@ref)                |                              |
+| `:StochasticGradient`       | [`get_gradient`](@ref)`(M, p, i)`      |                              |
+| `:SubGradient`              | [`get_subgradient`](@ref)              |                              |
+| `:SubtrahendGradient`       | [`get_subtrahend_gradient`](@ref)      |                              |
+
+# Constructors
+
+    ManifoldCountObjective(objective::AbstractManifoldObjective, counts::Dict{Symbol, <:Integer})
+
+Initialise the `ManifoldCountObjective` to wrap `objective` initializing the set of counts
+
+    ManifoldCountObjective(M::AbstractManifold, objective::AbstractManifoldObjective, count::AbstractVecor{Symbol}, init=0)
+
+Count function calls on `objective` using the symbols in `count` initialising all entries to `init`.
+"""
+struct ManifoldCountObjective{
+        P, O <: AbstractManifoldObjective, I <: Union{<:Integer, AbstractVector{<:Integer}},
+    } <: AbstractDecoratedManifoldObjective{P}
+    counts::Dict{Symbol, I}
+    objective::O
+end
+ManifoldCountObjective(::AbstractManifold, o::AbstractManifoldObjective, c) = ManifoldCountObjective(o, c)
+function ManifoldCountObjective(
+        objective::O, counts::Dict{Symbol, I}
+    ) where {
+        I <: Union{<:Integer, AbstractVector{<:Integer}}, O <: AbstractManifoldObjective,
+    }
+    return ManifoldCountObjective{O, O, I}(counts, objective)
+end
+# Store the undecorated type of the input is decorated
+function ManifoldCountObjective(
+        objective::O, counts::Dict{Symbol, I}
+    ) where {
+        I <: Union{<:Integer, AbstractVector{<:Integer}},
+        P <: AbstractManifoldObjective, O <: AbstractDecoratedManifoldObjective{P},
+    }
+    return ManifoldCountObjective{P, O, I}(counts, objective)
+end
+function ManifoldCountObjective(
+        M::AbstractManifold,
+        objective::O,
+        count::AbstractVector{Symbol},
+        init::I = 0;
+        p::P = rand(M),
+    ) where {P, I <: Integer, O <: AbstractManifoldObjective}
+    # Infer the sizes of the counters from the symbols if possible
+    counts = Pair{Symbol, Union{I, Vector{I}}}[]
+    for symbol in count
+        l = _get_counter_size(M, objective, symbol, p)
+        push!(counts, Pair(symbol, l == 1 ? init : fill(init, l)))
+    end
+    return ManifoldCountObjective(objective, Dict(counts))
+end
+
+function _get_counter_size(
+        M::AbstractManifold, o::O, s::Symbol, p::P = rand(M)
+    ) where {P, O <: AbstractManifoldObjective}
+    # vectorial counting cases
+    (s === :EqualityConstraint) && (return length(get_equality_constraint(M, o, p, :)))
+    (s === :GradEqualityConstraint) && (return length(get_equality_constraint(M, o, p, :)))
+    (s === :InequalityConstraint) && (return length(get_inequality_constraint(M, o, p, :)))
+    (s === :GradInequalityConstraint) &&
+        (return length(get_inequality_constraint(M, o, p, :)))
+    # For now this only appears in ProximalMapObjective, access its field
+    (s === :ProximalMap) && (return length(get_objective(o).proximal_maps!!))
+    (s === :StochasticGradient) && (return length(get_gradients(M, o, p)))
+    return 1 #number - default
+end
+
+function _count_if_exists(co::ManifoldCountObjective, s::Symbol)
+    return haskey(co.counts, s) && (co.counts[s] += 1)
+end
+function _count_if_exists(co::ManifoldCountObjective, s::Symbol, i::Integer)
+    return if haskey(co.counts, s)
+        if (i == 1) && (ndims(co.counts[s]) == 0)
+            return co.counts[s] += 1
+        elseif length(i) == ndims(co.counts[s]) && all(i .<= size(co.counts[s]))
+            return co.counts[s][i] += 1
+        end
+    end
+end
+
+"""
+    get_count(co::ManifoldCountObjective, s::Symbol, mode::Symbol=:None)
+
+Get the number of counts for a certain symbol `s`.
+
+Depending on the `mode` different results appear if the symbol does not exist in the dictionary
+
+* `:None`:  (default) silent mode, returns `-1` for non-existing entries
+* `:warn`:  issues a warning if a field does not exist
+* `:error`: issues an error if a field does not exist
+"""
+function get_count(co::ManifoldCountObjective, s::Symbol, mode::Symbol = :None)
+    if !haskey(co.counts, s)
+        msg = "There is no recorded count for $s."
+        (mode === :warn) && (@warn msg)
+        (mode === :error) && (error(msg))
+        return -1
+    end
+    return co.counts[s]
+end
+function get_count(o::AbstractManifoldObjective, s::Symbol, mode::Symbol = :None)
+    return _get_count(o, dispatch_objective_decorator(o), s, mode)
+end
+function _get_count(o::AbstractManifoldObjective, ::Val{false}, s, m)
+    return error("It seems $o does not provide access to a `ManifoldCountObjective`.")
+end
+function _get_count(o::AbstractManifoldObjective, ::Val{true}, s, m)
+    return get_count(get_objective(o, false), s, m)
+end
+
+function get_count(co::ManifoldCountObjective, s::Symbol, i, mode::Symbol = :None)
+    if !haskey(co.counts, s)
+        msg = "There is no recorded count for :$s."
+        (mode === :warn) && (@warn msg)
+        (mode === :error) && (error(msg))
+        return -1
+    end
+    if !(ndims(i) == 0 && ndims(co.counts[s]) == 1) && ndims(i) != ndims(co.counts[s])
+        msg = "The entry for :$s has $(ndims(co.counts[s])) dimensions but the index you provided has $(ndims(i))"
+        (mode === :warn) && (@warn msg)
+        (mode === :error) && (error(msg))
+        return -1
+    end
+    if ndims(i) == 0 && ndims(co.counts[s]) == 0
+        if i > 1
+            msg = "The entry for :$s is a number, but you provided the index $i > 1"
+            (mode === :warn) && (@warn msg)
+            (mode === :error) && (error(msg))
+            return -1
+        end
+        return co.counts[s]
+    end
+    if any(i .> size(co.counts[s]))
+        msg = "The index $i is out of range for the stored counts in :$s ($(size(co.counts[s])))."
+        (mode === :warn) && (@warn msg)
+        (mode === :error) && (error(msg))
+        return -1
+    end
+    return co.counts[s][i...]
+end
+function get_count(o::AbstractManifoldObjective, s::Symbol, i, mode::Symbol = :None)
+    return _get_count(o, dispatch_objective_decorator(o), s, i, mode)
+end
+function _get_count(o::AbstractManifoldObjective, ::Val{false}, s, i, m)
+    return error("It seems $o does not provide access to a `ManifoldCountObjective`.")
+end
+function _get_count(o::AbstractManifoldObjective, ::Val{true}, s, i, m)
+    return get_count(get_objective(o, false), s, i, m)
+end
+
+"""
+    reset_counters(co::ManifoldCountObjective, value::Integer=0)
+
+Reset all values in the count objective to `value`.
+"""
+function reset_counters!(co::ManifoldCountObjective, value::Integer = 0)
+    for s in keys(co.counts)
+        if (ndims(co.counts[s]) == 0)
+            co.counts[s] = value
+        else
+            co.counts[s] .= value
+        end
+    end
+    return co
+end
+function reset_counters!(o::AbstractDecoratedManifoldObjective, value::Integer = 0)
+    return reset_counters!(get_objective(o, false), value)
+end
+function reset_counters!(o::AbstractManifoldObjective, value::Integer = 0)
+    return error("It seems $o does not provide access to a `ManifoldCountObjective`.")
+end
+# Default, just count cost
+function get_cost(M::AbstractManifold, co::ManifoldCountObjective, p)
+    _count_if_exists(co, :Cost)
+    return get_cost(M, co.objective, p)
+end
+# Passthrough
+function get_cost_function(co::ManifoldCountObjective, recursive = false)
+    recursive && return get_cost_function(co.objective, recursive)
+    return (M, p) -> get_cost(M, co, p)
+end
+
+function get_cost_and_gradient(M::AbstractManifold, co::ManifoldCountObjective, p)
+    _count_if_exists(co, :Cost)
+    _count_if_exists(co, :Gradient)
+    return get_cost_and_gradient(M, co.objective, p)
+end
+
+
+function get_cost_and_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
+    _count_if_exists(co, :Cost)
+    _count_if_exists(co, :Gradient)
+    return get_cost_and_gradient!(M, X, co.objective, p)
+end
+
+function get_differential(M::AbstractManifold, co::ManifoldCountObjective, p, X; kwargs...)
+    _count_if_exists(co, :Differential)
+    return get_differential(M, co.objective, p, X; kwargs...)
+end
+# Passthrough
+function get_differential_function(co::ManifoldCountObjective, recursive = false)
+    recursive && return get_differential_function(co.objective, recursive)
+    return (M, p, X; kwargs...) -> get_differential(M, co, p, X; kwargs...)
+end
+
+function get_gradient_function(sco::ManifoldCountObjective, recursive = false)
+    recursive && return get_gradient_function(sco.objective, recursive)
+    return (M, X, p) -> get_gradient!(M, X, sco, p)
+end
+
+function get_gradient(M::AbstractManifold, co::ManifoldCountObjective, p)
+    _count_if_exists(co, :Gradient)
+    return get_gradient(M, co.objective, p)
+end
+function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
+    _count_if_exists(co, :Gradient)
+    get_gradient!(M, X, co.objective, p)
+    return X
+end
+
+
+function get_hessian(M::AbstractManifold, co::ManifoldCountObjective, p, X)
+    _count_if_exists(co, :Hessian)
+    return get_hessian(M, co.objective, p, X)
+end
+function get_hessian!(M::AbstractManifold, Y, co::ManifoldCountObjective, p, X)
+    _count_if_exists(co, :Hessian)
+    get_hessian!(M, Y, co.objective, p, X)
+    return Y
+end
+function get_hessian_function(
+        sco::ManifoldCountObjective, recursive::Bool = false
+    )
+    recursive && return get_hessian_function(sco.objective, recursive)
+    return (M, Y, p, X) -> get_hessian!(M, Y, sco, p, X)
+end
+
+function get_preconditioner(M::AbstractManifold, co::ManifoldCountObjective, p, X)
+    _count_if_exists(co, :Preconditioner)
+    return get_preconditioner(M, co.objective, p, X)
+end
+function get_preconditioner!(M::AbstractManifold, Y, co::ManifoldCountObjective, p, X)
+    _count_if_exists(co, :Preconditioner)
+    get_preconditioner!(M, Y, co.objective, p, X)
+    return Y
+end
+
+#
+# Constraint
+function get_equality_constraint(
+        M::AbstractManifold, co::ManifoldCountObjective, p, c::Colon
+    )
+    _count_if_exists(co, :EqualityConstraints)
+    return get_equality_constraint(M, co.objective, p, c)
+end
+function get_equality_constraint(
+        M::AbstractManifold, co::ManifoldCountObjective, p, j::Integer
+    )
+    _count_if_exists(co, :EqualityConstraint, j)
+    return get_equality_constraint(M, co.objective, p, j)
+end
+function get_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :EqualityConstraint, j)
+    end
+    return get_equality_constraint(M, co.objective, p, i)
+end
+
+function get_inequality_constraint(
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
+    )
+    _count_if_exists(co, :InequalityConstraints)
+    return get_inequality_constraint(M, co.objective, p, i)
+end
+function get_inequality_constraint(
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+    )
+    _count_if_exists(co, :InequalityConstraint, i)
+    return get_inequality_constraint(M, co.objective, p, i)
+end
+function get_inequality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+    for j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
+        _count_if_exists(co, :InequalityConstraint, j)
+    end
+    return get_inequality_constraint(M, co.objective, p, i)
+end
+
+function get_grad_equality_constraint(
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
+    )
+    _count_if_exists(co, :GradEqualityConstraints)
+    return get_grad_equality_constraint(M, co.objective, p, i)
+end
+function get_grad_equality_constraint(
+        M::AbstractManifold, co::ManifoldCountObjective, p, j::Integer
+    )
+    _count_if_exists(co, :GradEqualityConstraint, j)
+    return get_grad_equality_constraint(M, co.objective, p, j)
+end
+function get_grad_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradEqualityConstraint, j)
+    end
+    return get_grad_equality_constraint(M, co.objective, p, i)
+end
+function get_grad_equality_constraint!(
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
+    )
+    _count_if_exists(co, :GradEqualityConstraints)
+    return get_grad_equality_constraint!(M, X, co.objective, p, i)
+end
+function get_grad_equality_constraint!(
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, j::Integer
+    )
+    _count_if_exists(co, :GradEqualityConstraint, j)
+    return get_grad_equality_constraint!(M, X, co.objective, p, j)
+end
+function get_grad_equality_constraint!(
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i
+    )
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradEqualityConstraint, j)
+    end
+    return get_grad_equality_constraint!(M, X, co.objective, p, i)
+end
+
+function get_grad_inequality_constraint(
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
+    )
+    _count_if_exists(co, :GradInequalityConstraints)
+    return get_grad_inequality_constraint(M, co.objective, p, i)
+end
+function get_grad_inequality_constraint(
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+    )
+    _count_if_exists(co, :GradInequalityConstraint, i)
+    return get_grad_inequality_constraint(M, co.objective, p, i)
+end
+function get_grad_inequality_constraint(
+        M::AbstractManifold, co::ManifoldCountObjective, p, i
+    )
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradInequalityConstraint, j)
+    end
+    return get_grad_inequality_constraint(M, co.objective, p, i)
+end
+
+function get_grad_inequality_constraint!(
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
+    )
+    _count_if_exists(co, :GradInequalityConstraints)
+    return get_grad_inequality_constraint!(M, X, co.objective, p, i)
+end
+function get_grad_inequality_constraint!(
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Integer
+    )
+    _count_if_exists(co, :GradInequalityConstraint, i)
+    return get_grad_inequality_constraint!(M, X, co.objective, p, i)
+end
+function get_grad_inequality_constraint!(
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i
+    )
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradInequalityConstraint, j)
+    end
+    return get_grad_inequality_constraint!(M, X, co.objective, p, i)
+end
+
+#
+# proximal maps
+function get_proximal_map(M::AbstractManifold, co::ManifoldCountObjective, λ, p)
+    _count_if_exists(co, :ProximalMap)
+    return get_proximal_map(M, co.objective, λ, p)
+end
+function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCountObjective, λ, p)
+    _count_if_exists(co, :ProximalMap)
+    return get_proximal_map!(M, q, co.objective, λ, p)
+end
+function get_proximal_map(M::AbstractManifold, co::ManifoldCountObjective, λ, p, i)
+    _count_if_exists(co, :ProximalMap, i)
+    return get_proximal_map(M, co.objective, λ, p, i)
+end
+function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCountObjective, λ, p, i)
+    _count_if_exists(co, :ProximalMap, i)
+    return get_proximal_map!(M, q, co.objective, λ, p, i)
+end
+
+#
+# DC
+function get_subtrahend_gradient(M::AbstractManifold, co::ManifoldCountObjective, p)
+    _count_if_exists(co, :SubtrahendGradient)
+    return get_subtrahend_gradient(M, co.objective, p)
+end
+function get_subtrahend_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
+    _count_if_exists(co, :SubtrahendGradient)
+    return get_subtrahend_gradient!(M, X, co.objective, p)
+end
+
+#
+# Subgradient
+function get_subgradient(M::AbstractManifold, co::ManifoldCountObjective, p)
+    _count_if_exists(co, :SubGradient)
+    return get_subgradient(M, co.objective, p)
+end
+function get_subgradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
+    _count_if_exists(co, :SubGradient)
+    return get_subgradient!(M, X, co.objective, p)
+end
+
+#
+# Stochastic Gradient
+function get_gradients(M::AbstractManifold, co::ManifoldCountObjective, p)
+    _count_if_exists(co, :StochasticGradients)
+    return get_gradients(M, co.objective, p)
+end
+function get_gradients!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
+    _count_if_exists(co, :StochasticGradients)
+    return get_gradients!(M, X, co.objective, p)
+end
+function get_gradient(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+    _count_if_exists(co, :StochasticGradient, i)
+    return get_gradient(M, co.objective, p, i)
+end
+function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p, i)
+    _count_if_exists(co, :StochasticGradient, i)
+    return get_gradient!(M, X, co.objective, p, i)
+end
+
+function objective_count_factory(
+        M::AbstractManifold, o::AbstractManifoldObjective, counts::Vector{<:Symbol}
+    )
+    return ManifoldCountObjective(M, o, counts)
+end
+
+# change default – do not unwrap but call the one below
+function status_summary(io::IO, co::ManifoldCountObjective; kwargs...)
+    return print(io, status_summary(co; kwargs...))
+end
+function status_summary(co::ManifoldCountObjective; context::Symbol = :default)
+    so = status_summary(co.objective; context = context)
+    if _is_inline(context)
+        return "$so (statistics: $(join([ ":$(c[1])=$(c[2])" for c in co.counts ], ", ")))"
+    end
+    s = "## Statistics on function calls\n"
+    (length(so) > 0) && (so = "$(so)")
+    length(co.counts) == 0 && return "$(s)    No counters active\n$(so)"
+    longest_key_length = max(length.(["$c" for c in keys(co.counts)])...)
+    count_strings = [
+        "  * :$(rpad("$(c[1])", longest_key_length)) : $(c[2])" for c in co.counts
+    ]
+    return "$(so)\n\n$(s)$(join(count_strings, "\n"))"
+end
+function status_summary(t::Tuple{<:ManifoldCountObjective, S}; context::Symbol = :default) where {S <: AbstractManoptSolverState}
+    return "$(status_summary(t[2], context = context))\n\n$(status_summary(t[1]; context = context))"
+end
+function show(io::IO, co::ManifoldCountObjective)
+    return print(io, "ManifoldCountObjective($(repr(co.objective)), $(repr(co.counts)))")
+end
+
 
 #
 #
@@ -946,6 +2533,26 @@ function get_cost_and_gradient!(
     end
     return error("$mfo seems to either have no access to a cost or a gradient")
 end
+# Interaction with cache
+function get_cost_and_gradient(
+        M::AbstractManifold,
+        co::ManifoldCountObjective{<:ManifoldFirstOrderObjective{<:NamedTuple}},
+        p,
+    )
+    _count_if_exists(co, :Cost)
+    _count_if_exists(co, :Gradient)
+    return get_cost_and_gradient(M, co.objective, p)
+end
+function get_cost_and_gradient!(
+        M::AbstractManifold,
+        X,
+        co::ManifoldCountObjective{<:ManifoldFirstOrderObjective{<:NamedTuple}},
+        p,
+    )
+    _count_if_exists(co, :Cost)
+    _count_if_exists(co, :Gradient)
+    return get_cost_and_gradient!(M, X, co.objective, p)
+end
 
 function get_cost_function(
         mfo::ManifoldFirstOrderObjective, recursive::Bool = false
@@ -982,6 +2589,31 @@ function get_differential_function(
     else
         return (M, p, X; kwargs...) -> get_differential(M, mfo, p, X, kwargs...)
     end
+end
+function get_gradient(
+        M::AbstractManifold, co::ManifoldCountObjective{<:ManifoldFirstOrderObjective{<:NamedTuple}}, p,
+    )
+    _count_if_exists(co, :Gradient)
+    fs = get_objective(co.objective, true).functions
+    haskey(fs, :costgradient) && _count_if_exists(co, :Cost)
+    haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Cost)
+    haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Differential)
+    haskey(fs, :gradientdifferential) && _count_if_exists(co, :Differential)
+    return get_gradient(M, co.objective, p)
+end
+function get_gradient!(
+        M::AbstractManifold, X,
+        co::ManifoldCountObjective{<:ManifoldFirstOrderObjective{<:NamedTuple}},
+        p,
+    )
+    _count_if_exists(co, :Gradient)
+    fs = co.objective.functions
+    haskey(fs, :costgradient) && _count_if_exists(co, :Cost)
+    haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Cost)
+    haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Differential)
+    haskey(fs, :gradientdifferential) && _count_if_exists(co, :Differential)
+    get_gradient!(M, X, co.objective, p)
+    return X
 end
 function get_gradient!(
         M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{<:NamedTuple}, p,
@@ -1392,7 +3024,7 @@ get_proximal_map(::AbstractManifold, ::ManifoldProximalMapObjective, ::Any...)
 
 function get_proximal_map(
         M::AbstractManifold,
-        mpo::ManifoldProximalMapObjective{InplaceEvaluation, F, <:Union{<:Tuple, <:Vector}},
+        mpo::ManifoldProximalMapObjective{F, <:Union{<:Tuple, <:Vector}},
         λ, p, i,
     ) where {F}
     _check_prox_number(mpo.proximal_maps!!, i)
@@ -1602,4 +3234,474 @@ function status_summary(objective::ManifoldSubgradientObjective; context::Symbol
     ## Components
     * `f`:  $(objective.cost)
     * `∂f`: $(objective.subgradient!!)"""
+end
+
+@doc """
+    ScaledManifoldObjective{O2, O1<:AbstractManifoldObjective,F} <: AbstractDecoratedManifoldObjective{O2}
+
+Declare an objective to be defined as a scaled version of an existing objective.
+
+This rescales all involved functions.
+
+For now the functions rescaled are
+
+* the cost
+* the gradient
+* the Hessian
+
+# Fields
+
+* `objective`: the objective that is defined in the embedding
+* `scale=1`: the scaling applied
+
+# Constructors
+
+    ScaledManifoldObjective(objective, scale::Real=1)
+
+Generate a scaled manifold objective based on `objective` with `scale` being `1` by default
+in the first, `scale=-1` in the second case. The multiplication from the left with a scalar
+is also overloaded.
+
+    - objective
+
+The single-parameter minus is overloaded to have a short notation turning a maximization problem
+into a minimization one, which would fit the framework provided within Manopt.jl
+
+    scale * objective
+
+Equivalent to the first constructor, but might be nicer to write in a few places.
+"""
+struct ScaledManifoldObjective{O2, O1 <: AbstractManifoldObjective, F} <: AbstractDecoratedManifoldObjective{O2}
+    objective::O1
+    scale::F
+end
+function ScaledManifoldObjective(
+        objective::O, scale::F = 1
+    ) where {O <: AbstractManifoldObjective, F <: Real}
+    return ScaledManifoldObjective{O, O, F}(objective, scale)
+end
+function ScaledManifoldObjective(
+        objective::O1, scale::F = 1
+    ) where {
+        F <: Real, O2 <: AbstractManifoldObjective, O1 <: AbstractDecoratedManifoldObjective{O2},
+    }
+    return ScaledManifoldObjective{O2, O1, F}(objective, scale)
+end
+Base.:-(objective::AbstractManifoldObjective) = ScaledManifoldObjective(objective, -1)
+function Base.:*(scale::Real, objective::AbstractManifoldObjective)
+    return ScaledManifoldObjective(objective, scale)
+end
+
+@doc """
+    get_cost(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
+
+Evaluate the scaled objective. ``s*f(p)``
+"""
+function get_cost(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
+    return scaled_objective.scale * get_cost(M, scaled_objective.objective, p)
+end
+
+function get_cost_function(scaled_objective::ScaledManifoldObjective, recursive::Bool = false)
+    recursive && (return get_cost_function(scaled_objective.objective, recursive))
+    return (M, p) -> get_cost(M, scaled_objective, p)
+end
+@doc """
+    get_gradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
+    get_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldObjective, p)
+
+Evaluate the scaled gradient. ``s*$(_tex(:grad))f(p)``
+"""
+function get_gradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
+    return scaled_objective.scale * get_gradient(M, scaled_objective.objective, p)
+end
+function get_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldObjective, p)
+    get_gradient!(M, X, scaled_objective.objective, p)
+    X .= scaled_objective.scale .* X
+    return X
+end
+
+function get_gradient_function(scaled_objective::ScaledManifoldObjective, recursive::Bool = false)
+    recursive && (return get_gradient_function(scaled_objective.objective, recursive))
+    return (M, X, p) -> get_gradient!(M, X, scaled_objective, p)
+end
+
+@doc """
+    get_hessian(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p, X)
+    get_hessian!(M::AbstractManifold, Y, scaled_objective::ScaledManifoldObjective, p, X)
+
+Evaluate the scaled Hessian ``s*$(_tex(:Hess))f(p)``
+"""
+function get_hessian(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p, X)
+    return scaled_objective.scale * get_hessian(M, scaled_objective.objective, p, X)
+end
+function get_hessian!(M::AbstractManifold, Y, scaled_objective::ScaledManifoldObjective, p, X)
+    get_hessian!(M, Y, scaled_objective.objective, p, X)
+    Y .= scaled_objective.scale .* Y
+    return Y
+end
+function get_hessian_function(scaled_objective::ScaledManifoldObjective, recursive::Bool = false)
+    recursive && (return get_hessian_function(scaled_objective.objective, recursive))
+    return (M, Y, p, X) -> get_hessian!(M, Y, scaled_objective, p, X)
+end
+function Base.show(io::IO, scaled_objective::ScaledManifoldObjective)
+    return print(
+        io, "ScaledManifoldObjective($(repr(scaled_objective.objective)), $(scaled_objective.scale))",
+    )
+end
+function status_summary(scaled_objective::ScaledManifoldObjective; context::Symbol = :default)
+    # short and inline
+    (context === :short) && (return "$(scaled_objective.scale) * $(status_summary(scaled_objective.objective; context = context))")
+    (context === :inline) && (return "$(status_summary(scaled_objective.objective; context = context)) scaled by a factor of $(scaled_objective.scale)")
+    # default
+    return "A scaled version of the objective\n$(status_summary(scaled_objective.objective; context = context))\nscaled by a factor of $(scaled_objective.scale)"
+end
+
+@doc """
+     SimpleManifoldCachedObjective{O<:AbstractManifoldFirstOrderObjective, P, T, C} <: AbstractDecoratedManifoldObjective{O}
+
+Provide a simple cache for an [`AbstractManifoldFirstOrderObjective`](@ref) that is, this cache
+stores a point `p` and a gradient ``$(_tex(:grad)) f(p)`` in `X` as well as a cost value ``f(p)`` in `c`.
+It can also easily evaluate the differential based on the cached gradient.
+
+Both `X` and `c` are accompanied by booleans to keep track of their validity.
+
+While this does not provide a cache for the differential, it uses the cached gradient
+as a help to evaluate the differential, if an up-to-date gradient is available.
+It otherwise does call the original differential.
+
+This simple cache does not take into account, that some first order objectives have a
+common function for cost & grad. It only caches the function that is actually called.
+
+# Constructors
+
+    SimpleManifoldCachedObjective(M::AbstractManifold, obj::AbstractManifoldFirstOrderObjective; kwargs...)
+
+## Keyword arguments
+
+* `p=`$(Manopt._link(:rand)): a point on the manifold to initialize the cache with
+* `X=get_gradient(M, obj, p)` or `zero_vector(M,p)`: a tangent vector to store the gradient in,
+  see also `initialize=`
+* `c=[`get_cost`](@ref)`(M, obj, p)` or `0.0`: a value to store the cost function in `initialize`
+* `initialized=true`: whether to initialize the cached `X` and `c` or not.
+
+where both for `p` and `X` copies are generated before they are stored.
+
+    SimpleManifoldCachedObjective(obj::AbstractManifoldFirstOrderObjective, p, X, c; initialized = false)
+
+Similar as above but initialising all fields directly and without copies and `initialized` indicated whether
+the three values correspond to an evaluation from `obj`.
+"""
+mutable struct SimpleManifoldCachedObjective{
+        O <: AbstractManifoldObjective, P, T, C,
+    } <: AbstractDecoratedManifoldObjective{O}
+    objective::O
+    p::P # a point
+    X::T # a vector
+    X_valid::Bool
+    c::C # a value for the cost
+    c_valid::Bool
+end
+
+function SimpleManifoldCachedObjective(
+        M::AbstractManifold, obj::O;
+        initialized = true, p = rand(M),
+        X = initialized ? get_gradient(M, obj, p) : zero_vector(M, p),
+        c = initialized ? get_cost(M, obj, p) : 0.0,
+    ) where {O <: AbstractManifoldObjective}
+    q = copy(M, p)
+    return SimpleManifoldCachedObjective(obj, q, X, c; initialized = initialized)
+end
+
+function SimpleManifoldCachedObjective(
+        obj::O, p, X, c; initialized::Bool = false
+    ) where {O <: AbstractManifoldObjective}
+    return SimpleManifoldCachedObjective{O, typeof(p), typeof(X), typeof(c)}(
+        obj, p, X, initialized, c, initialized
+    )
+end
+
+# Default implementations
+function get_cost(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
+    scop_neq_p = sco.p != p
+    if scop_neq_p || !sco.c_valid
+        # else evaluate cost, invalidate grad if p changed
+        sco.c = get_cost(M, sco.objective, p)
+        # for switched points, invalidate X
+        scop_neq_p && (sco.X_valid = false)
+        copyto!(M, sco.p, p)
+        sco.c_valid = true
+    end
+    return sco.c
+end
+
+function get_cost_and_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
+    scop_neq_p = sco.p != p
+    if scop_neq_p || !sco.X_valid || !sco.c_valid
+        sco.c, X = get_cost_and_gradient(M, sco.objective, p)
+        # Update point
+        copyto!(M, sco.p, p)
+        sco.c_valid = true
+        copyto!(M, sco.X, X)
+        sco.X_valid = true
+    else
+        X = copy(M, p, sco.X)
+    end
+    return (sco.c, X)
+end
+function get_cost_and_gradient!(
+        M::AbstractManifold, X, sco::SimpleManifoldCachedObjective, p
+    )
+    scop_neq_p = sco.p != p
+    if scop_neq_p || !sco.X_valid || !sco.c_valid
+        sco.c, _ = get_cost_and_gradient!(M, X, sco.objective, p)
+        copyto!(M, sco.p, p)
+        sco.c_valid = true
+        copyto!(M, sco.X, p, X)
+        sco.X_valid = true
+    else
+        X = copy(M, p, sco.X)
+    end
+    return (sco.c, X)
+end
+
+function get_cost_function(sco::SimpleManifoldCachedObjective, recursive = false)
+    recursive && return get_cost_function(sco.objective, recursive)
+    return (M, p) -> get_cost(M, sco, p)
+end
+
+function get_differential(
+        M::AbstractManifold, sco::SimpleManifoldCachedObjective, p, X; kwargs...
+    )
+    scop_neq_p = sco.p != p
+    # Gradient outdated -> just call differenital of the inner objective
+    if scop_neq_p || !sco.X_valid
+        return get_differential(M, sco.objective, p, X; kwargs...)
+    end
+    # otherwise use the up to date gradient and inner
+    return real(inner(M, p, sco.X, X))
+end
+function get_differential_function(sco::SimpleManifoldCachedObjective, recursive = false)
+    recursive && (return get_differential_function(sco.objective, recursive))
+    return (M, p, X; kwargs...) -> get_differential(M, sco, p, X; kwargs...)
+end
+
+function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
+    scop_neq_p = sco.p != p
+    if scop_neq_p || !sco.X_valid
+        X = get_gradient(M, sco.objective, p)
+        # for switched points, invalidate c
+        copyto!(M, sco.p, p)
+        scop_neq_p && (sco.c_valid = false)
+        copyto!(M, sco.X, X)
+        sco.X_valid = true
+    else
+        X = copy(M, p, sco.X)
+    end
+    return X
+end
+function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjective, p)
+    scop_neq_p = sco.p != p
+    if scop_neq_p || !sco.X_valid
+        get_gradient!(M, X, sco.objective, p)
+        # for switched points, invalidate c
+        copyto!(M, sco.p, p)
+        scop_neq_p && (sco.c_valid = false)
+        copyto!(M, sco.X, X)
+        sco.X_valid = true
+    else
+        copyto!(M, X, p, sco.X)
+    end
+    return X
+end
+function get_gradient_function(sco::SimpleManifoldCachedObjective, recursive = false)
+    recursive && (return get_gradient_function(sco.objective, recursive))
+    return (M, X, p) -> get_gradient!(M, X, sco, p)
+end
+
+function Base.show(io::IO, smco::SimpleManifoldCachedObjective)
+    print(io, "SimpleManifoldCachedObjective(")
+    print(io, smco.objective); print(io, ", ")
+    print(io, smco.p); print(io, ", ")
+    print(io, smco.X); print(io, ", ")
+    print(io, smco.c)
+    return print(io, "; initialized = $(smco.X_valid && smco.c_valid))")
+end
+function show(
+        io::IO, t::Tuple{<:SimpleManifoldCachedObjective, S}
+    ) where {S <: AbstractManoptSolverState}
+    return print(io, "$(status_summary(t[2]))\n\n$(status_summary(t[1]))")
+end
+function status_summary(smco::SimpleManifoldCachedObjective; context::Symbol = :default)
+    (context === :short) && (return repr(smco))
+    (context === :inline) && (return "A simple cache objective caching one p, X, and c for $(status_summary(smco.objective; context = context))")
+    s = """
+    ## Cache
+    A `SimpleManifoldCachedObjective` to cache one point, one tangent vector, and real number
+    for the iterate, the gradient, and the cost function, respectively.
+
+    At the current iterate
+    * the tangent vector is cached:$(_MANOPT_INDENT)$(smco.X_valid ? "Yes" : "No")
+    * the cost is cached:$(_MANOPT_INDENT)$(smco.c_valid ? "Yes" : "No")
+    """
+    s2 = status_summary(smco.objective; context = context)
+    length(s2) > 0 && (s2 = "$(s2)\n\n")
+    return "$(s2)$(s)"
+end
+
+# Factory for both cache objectives
+@doc """
+    objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Symbol)
+
+Generate a cached variant of the [`AbstractManifoldObjective`](@ref) `o`
+on the `AbstractManifold M` based on the symbol `cache`.
+
+The following caches are available
+
+* `:Simple` generates a [`SimpleManifoldCachedObjective`](@ref)
+* `:LRU` generates a [`ManifoldCachedObjective`](@ref) where you should use the form
+  `(:LRU, [:Cost, :Gradient])` to specify what should be cached or
+  `(:LRU, [:Cost, :Gradient], 100)` to specify the cache size.
+  Here this variant defaults to `(:LRU, [:Cost, :Gradient], 100)`,
+  caching up to 100 cost and gradient values.[^1]
+
+[^1]:
+    This cache requires [`LRUCache.jl`](https://github.com/JuliaCollections/LRUCache.jl) to be loaded as well.
+"""
+function objective_cache_factory(M, o, cache::Symbol)
+    (cache === :Simple) && return SimpleManifoldCachedObjective(M, o)
+    (cache === :LRU) &&
+        return ManifoldCachedObjective(M, o, [:Cost, :Gradient]; cache_size = 100)
+    return o
+end
+
+@doc """
+    objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Tuple{Symbol, Array, Array})
+    objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Tuple{Symbol, Array})
+
+Generate a cached variant of the [`AbstractManifoldObjective`](@ref) `o`
+on the `AbstractManifold M` based on the symbol `cache[1]`,
+where the second element `cache[2]` are further arguments to the cache and
+the optional third is passed down as keyword arguments.
+
+For all available caches see the simpler variant with symbols.
+"""
+function objective_cache_factory(M, o, cache::Tuple{Symbol, <:AbstractArray, I}) where {I}
+    (cache[1] === :Simple) && return SimpleManifoldCachedObjective(M, o; cache[3]...)
+    if (cache[1] === :LRU)
+        if (cache[3] isa Integer)
+            return ManifoldCachedObjective(M, o, cache[2]; cache_size = cache[3])
+        else
+            return ManifoldCachedObjective(M, o, cache[2]; cache[3]...)
+        end
+    end
+    return o
+end
+function objective_cache_factory(M, o, cache::Tuple{Symbol, <:AbstractArray})
+    (cache[1] === :Simple) && return SimpleManifoldCachedObjective(M, o)
+    (cache[1] === :LRU) && return ManifoldCachedObjective(M, o, cache[2])
+    return o
+end
+
+@doc """
+    TrustRegionModelObjective{O<:AbstractManifoldHessianObjective} <: AbstractManifoldSubObjective{O}
+
+A trust region model of the form
+
+```math
+    m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p
+```
+
+# Fields
+
+* `objective`: an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
+
+# Constructors
+
+    TrustRegionModelObjective(objective)
+
+with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective
+"""
+struct TrustRegionModelObjective{
+        O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective},
+    } <: AbstractManifoldSubObjective{O}
+    objective::O
+end
+function TrustRegionModelObjective(
+        mho::O
+    ) where {O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
+    return TrustRegionModelObjective{O}(mho)
+end
+get_objective(trmo::TrustRegionModelObjective) = trmo.objective
+
+@doc """
+    get_cost(TpM, trmo::TrustRegionModelObjective, X)
+
+Evaluate the tangent space [`TrustRegionModelObjective`](@ref)
+
+```math
+m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p.
+```
+"""
+function get_cost(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
+    M = base_manifold(TpM)
+    p = TpM.point
+    c = get_objective_cost(M, trmo, p)
+    G = get_objective_gradient(M, trmo, p)
+    Y = get_objective_hessian(M, trmo, p, X)
+    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X)
+end
+@doc """
+    get_gradient(TpM, trmo::TrustRegionModelObjective, X)
+
+Evaluate the gradient of the [`TrustRegionModelObjective`](@ref)
+
+```math
+$(_tex(:grad)) m(X) = $(_tex(:grad)) f(p) + $(_tex(:Hess)) f(p)[X].
+```
+"""
+function get_gradient(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
+    M = base_manifold(TpM)
+    p = TpM.point
+    return get_objective_gradient(M, trmo, p) + get_objective_hessian(M, trmo, p, X)
+end
+function get_gradient!(TpM::TangentSpace, Y, trmo::TrustRegionModelObjective, X)
+    M = base_manifold(TpM)
+    p = TpM.point
+    get_objective_hessian!(M, Y, trmo, p, X)
+    Y .+= get_objective_gradient(M, trmo, p)
+    return Y
+end
+@doc """
+    get_hessian(TpM, trmo::TrustRegionModelObjective, X)
+
+Evaluate the Hessian of the [`TrustRegionModelObjective`](@ref)
+
+```math
+$(_tex(:Hess)) m(X)[Y] = $(_tex(:Hess)) f(p)[Y].
+```
+"""
+function get_hessian(TpM::TangentSpace, trmo::TrustRegionModelObjective, X, V)
+    M = base_manifold(TpM)
+    p = TpM.point
+    return get_objective_hessian(M, trmo, p, V)
+end
+function get_hessian!(TpM::TangentSpace, W, trmo::TrustRegionModelObjective, X, V)
+    M = base_manifold(TpM)
+    p = TpM.point
+    return get_objective_hessian!(M, W, trmo, p, V)
+end
+
+function Base.show(io::IO, trmo::TrustRegionModelObjective)
+    print(io, "TrustRegionModelObjective(")
+    print(io, trmo.objective)
+    return print(io, ")")
+end
+function status_summary(trmo::TrustRegionModelObjective; context::Symbol = :default)
+    (context === :short) && return repr(trmo)
+    (context === :inline) && return "The (tangent space) model for the trust region solver for the objective $(status_summary(trmo.objective; context = context))"
+    return """
+    The trust region model for the sub problem in the tangent space
+
+    ## Objective
+    $(_in_str(status_summary(trmo.objective)))"""
 end

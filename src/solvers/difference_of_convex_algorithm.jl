@@ -353,29 +353,13 @@ end
 #
 function step_solver!(
         amp::AbstractManoptProblem,
-        dcs::DifferenceOfConvexState{P, T, F, ClosedFormSubSolverState{InplaceEvaluation}},
+        dcs::DifferenceOfConvexState{P, T, F, ClosedFormSubSolverState},
         k,
     ) where {P, T, F}
     M = get_manifold(amp)
     get_subtrahend_gradient!(amp, dcs.X, dcs.p) # evaluate grad F in place for O.X
     callback(:BeforeSubsolver, amp, dcs, k)
     dcs.sub_problem(M, dcs.p, dcs.p, dcs.X) # evaluate the closed form solution and store the result in p
-    callback(:Subsolver, amp, dcs, k)
-    return dcs
-end
-#
-# Variant II: sub task is an allocating function providing a closed form solution
-#
-function step_solver!(
-        amp::AbstractManoptProblem,
-        dcs::DifferenceOfConvexState{P, T, F, ClosedFormSubSolverState{AllocatingEvaluation}},
-        k,
-    ) where {P, T, F}
-    M = get_manifold(amp)
-    get_subtrahend_gradient!(amp, dcs.X, dcs.p) # evaluate grad F in place for O.X
-    # run the subsolver in-place of a copy of the current iterate and copy it back to the current iterate
-    callback(:BeforeSubsolver, amp, dcs, k)
-    copyto!(M, dcs.p, dcs.sub_problem(M, copy(M, dcs.p), dcs.X))
     callback(:Subsolver, amp, dcs, k)
     return dcs
 end
