@@ -1,4 +1,104 @@
 @doc """
+    ManifoldDifferenceOfConvexProximalObjective <: Problem
+
+Specify an objective [`difference_of_convex_proximal_point`](@ref) algorithm.
+The problem is of the form
+
+```math
+    $(_tex(:argmin))_{p∈$(_math(:Manifold))} g(p) - h(p)
+```
+
+where both ``g`` and ``h`` are convex, lower semicontinuous and proper.
+
+# Fields
+
+* `cost`:     implementation of ``f(p) = g(p)-h(p)``
+* `gradient`: the gradient of the cost
+* `grad_h!`: a function ``$(_tex(:grad))h: $(_math(:Manifold)) → T$(_math(:Manifold))``,
+
+Note that both the gradients might be given in two possible signatures
+as allocating or in-place.
+
+ # Constructor
+
+    ManifoldDifferenceOfConvexProximalObjective(
+        grad_h;
+        cost = nothing, gradient = nothing, evaluation = AllocatingEvaluation()
+    )
+
+an note that neither cost nor gradient are required for the algorithm,
+just for eventual debug or recording functionality or for the stopping criterion.
+"""
+struct ManifoldDifferenceOfConvexProximalObjective{GH, F, G} <: AbstractManifoldFirstOrderObjective{F, G}
+    cost::F
+    gradient!::G
+    grad_h!::GH
+    function ManifoldDifferenceOfConvexProximalObjective(
+            grad_h::THG; cost::TC = nothing, gradient::TG = nothing
+        ) where {TC, TG, THG}
+        # TODO: Add eval and a wrapper
+        return new{THG, TC, TG}(cost, gradient, grad_h)
+    end
+end
+function get_gradient!(M::AbstractManifold, X, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
+    return dcpo.gradient!(M, X, p)
+end
+function get_gradient_function(dcpo::ManifoldDifferenceOfConvexProximalObjective, recursive = false)
+    return dcpo.gradient!
+end
+
+@doc """
+    X = get_subtrahend_gradient(M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
+    get_subtrahend_gradient!(M::AbstractManifold, X, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
+
+Evaluate the gradient of the subtrahend ``h`` from within
+a [`ManifoldDifferenceOfConvexProximalObjective`](@ref)` `P` at the point `p` (in place of X).
+"""
+get_subtrahend_gradient(
+    M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, p
+)
+
+function get_subtrahend_gradient(M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
+    X = zero_vector(M, p)
+    dcpo.grad_h!(M, X, p)
+    return X
+end
+function get_subtrahend_gradient!(M::AbstractManifold, X, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
+    dcpo.grad_h!(M, X, p)
+    return X
+end
+
+function Base.show(io::IO, dcpo::ManifoldDifferenceOfConvexProximalObjective)
+    print(io, "ManifoldDifferenceOfConvexProximalObjective(")
+    print(io, dcpo.grad_h!); print(io, "; ")
+    if !isnothing(dcpo.cost)
+        print(io, "cost = ")
+        print(io, dcpo.cost)
+        print(io, ", ")
+    end
+    if !isnothing(dcpo.gradient!)
+        print(io, ", gradient = ")
+        print(io, dcpo.gradient!)
+    end
+    return print(io, ")")
+end
+function status_summary(dcpo::ManifoldDifferenceOfConvexProximalObjective; context::Symbol = :default)
+    (context === :short) && (return repr(dcpo))
+    cs = isnothing(dcpo.cost) ? "" : "an overall cost"
+    gs = isnothing(dcpo.gradient!) ? "" : "an overall gradient"
+    cgs = length(cs) * length(gs) > 0 ? "$cs and $gs" : "$cs$gs"
+    s = length(cgs) == 0 ? "" : "including $cgs"
+    (context === :inline) && (return "A difference of convex proximal objective on a manifold $s")
+    csd = isnothing(dcpo.cost) ? "" : "\n* cost `f = g + h`:$(_MANOPT_INDENT)$(dcpo.cost)"
+    gsd = isnothing(dcpo.gradient!) ? "" : "\n* gradient of `f` :$(_MANOPT_INDENT)$(dcpo.gradient!)"
+    return """
+    A difference of convex proximal objective on a manifold.
+
+    ## Functions$(csd)$(gsd)
+    * gradient of `h` :$(_MANOPT_INDENT)$(dcpo.grad_h!)"""
+end
+
+@doc """
     DifferenceOfConvexProximalState{P, T, Pr, St, S<:Stepsize, SC<:StoppingCriterion, RTR<:AbstractRetractionMethod, ITR<:AbstractInverseRetractionMethod}
         <: AbstractSubProblemSolverState
 

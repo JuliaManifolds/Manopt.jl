@@ -1,4 +1,101 @@
 @doc """
+    ManifoldDifferenceOfConvexObjective <: AbstractManifoldCostObjective
+
+Specify an objective for a [`difference_of_convex_algorithm`](@ref).
+
+The objective ``f: $(_math(:Manifold)) → ℝ`` is given as
+
+```math
+    f(p) = g(p) - h(p)
+```
+
+where both ``g`` and ``h`` are convex, lower semicontinuous and proper.
+Furthermore the subdifferential ``∂h`` of ``h`` is required.
+
+# Fields
+
+* `cost`: an implementation of ``f(p) = g(p)-h(p)`` as a function `f(M,p)`.
+* `gradient!` a gradient of the smooth component `g`
+* `∂h!`: a deterministic version of ``∂h: $(_math(:Manifold))→ T$(_math(:Manifold)))``,
+  in the sense that calling `∂h(M, p)` returns a subgradient of ``h`` at `p` and
+  if there is more than one, it returns a deterministic choice.
+
+Note that the gradient and the subdifferential might be given in two possible signatures
+
+* `(M,p) -> X` which does an [`AllocatingEvaluation`](@ref)
+* `(M, X, p) -> X` which does an [`InplaceEvaluation`](@ref) in place of `X`.
+
+# Constructor
+
+    ManifoldDifferenceOfConvexObjective(cost, ∂h; gradient = nothing)
+
+Create the difference of convex objective given a `cost` function and the subdifferential `∂h` of the non-smooth part
+The `gradient` of the smooth part and the `evaluation = ` type are keywords.
+"""
+struct ManifoldDifferenceOfConvexObjective{F, G, S} <:
+    AbstractManifoldFirstOrderObjective{F, G}
+    cost::F
+    gradient!::G
+    ∂h!::S
+    function ManifoldDifferenceOfConvexObjective(cost::TC, ∂h::TSH; gradient::TG = nothing) where {TC, TG, TSH}
+        # TODO: Readd evaluation
+        return new{TC, TG, TSH}(cost, gradient, ∂h)
+    end
+end
+function get_gradient_function(doco::ManifoldDifferenceOfConvexObjective, recursive = false)
+    return doco.gradient!
+end
+function get_gradient(
+        M::AbstractManifold, doco::ManifoldDifferenceOfConvexObjective, p
+    )
+    X = zero_vector(M, p)
+    return doco.gradient!(M, X, p)
+end
+function get_gradient!(M::AbstractManifold, X, doco::ManifoldDifferenceOfConvexObjective, p)
+    return doco.gradient!(M, X, p)
+end
+
+function get_subtrahend_gradient(M::AbstractManifold, doco::ManifoldDifferenceOfConvexObjective, p)
+    X = zero_vector(M, p)
+    return doco.∂h!(M, X, p)
+end
+function get_subtrahend_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_subtrahend_gradient(M, get_objective(admo, false), p)
+end
+function get_subtrahend_gradient!(
+        M::AbstractManifold, X, doco::ManifoldDifferenceOfConvexObjective, p
+    )
+    return doco.∂h!(M, X, p)
+end
+function get_subtrahend_gradient!(
+        M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p
+    )
+    return get_subtrahend_gradient!(M, X, get_objective(admo, false), p)
+end
+
+function Base.show(io::IO, doco::ManifoldDifferenceOfConvexObjective)
+    print(io, "ManifoldDifferenceOfConvexObjective("); print(io, doco.cost); print(io, ", ")
+    print(io, doco.∂h!); print(io, "; ")
+    if !isnothing(doco.gradient!)
+        print(io, ", gradient = ")
+        print(io, doco.gradient!)
+    end
+    return print(io, ")")
+end
+function status_summary(doco::ManifoldDifferenceOfConvexObjective; context::Symbol = :default)
+    (context === :short) && (return repr(doco))
+    gs = isnothing(doco.gradient!) ? "" : "including a gradient of the smooth component"
+    (context === :inline) && (return "A difference of convex objective on a manifold $gs")
+    gsd = isnothing(doco.gradient!) ? "" : "\n* gradient of `g`:  $(_MANOPT_INDENT)$(doco.gradient!)"
+    return """
+    A difference of convex objective on a manifold.
+
+    ## Functions
+    * cost `f = g + h`: $(_MANOPT_INDENT)$(doco.cost)$(gsd)
+    * ∂h:               $(_MANOPT_INDENT)$(doco.∂h!)"""
+end
+
+@doc """
     DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
                AbstractManoptSolverState
 

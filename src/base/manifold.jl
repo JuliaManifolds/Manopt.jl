@@ -38,3 +38,13 @@ function add_coordinates!(M::AbstractManifold, c, p, X, basis::AbstractBasis)
     c .+= cX
     return c
 end
+
+"""
+    has_anisotropic_max_stepsize(M::AbstractManifold)
+
+Return `true` if `M` has `max_stepsize` that depends on the direction.
+For example, if `M` is a [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`)-like manifold with corners, or a product of it
+with a standard manifold. Otherwise return `false`.
+"""
+has_anisotropic_max_stepsize(::AbstractManifold) = false
+has_anisotropic_max_stepsize(M::ProductManifold) = any(has_anisotropic_max_stepsize, M.manifolds)

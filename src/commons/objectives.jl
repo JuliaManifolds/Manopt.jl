@@ -344,10 +344,7 @@ function get_grad_equality_constraint(
     return get_grad_equality_constraint(M, get_objective(admo, false), args...)
 end
 function get_grad_equality_constraint(
-        M::AbstractManifold,
-        co::ConstrainedManifoldObjective,
-        p,
-        j = :,
+        M::AbstractManifold, co::ConstrainedManifoldObjective, p, j = :,
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     if isnothing(co.equality_constraints)
@@ -359,10 +356,7 @@ function get_grad_equality_constraint(
 end
 
 function get_grad_equality_constraint!(
-        amp::AbstractManoptProblem,
-        X,
-        p,
-        j = :,
+        amp::AbstractManoptProblem, X, p, j = :,
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     return get_grad_equality_constraint!(
@@ -376,11 +370,7 @@ function get_grad_equality_constraint!(
 end
 
 function get_grad_equality_constraint!(
-        M::AbstractManifold,
-        X,
-        co::ConstrainedManifoldObjective,
-        p,
-        j = :,
+        M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j = :,
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     isnothing(co.equality_constraints) && (return X)
@@ -602,6 +592,103 @@ function get_feasibility_status(
     )
     """
 end
+
+#
+#
+# ---
+
+@doc """
+    ManifoldAlternatingGradientObjective{F,G} <: AbstractManifoldFirstOrderObjective{F G}
+
+An alternating gradient objective consists of
+
+* a cost function ``F(x)``
+* a gradient ``$(_tex(:grad))F`` that is either
+  * given as one function ``$(_tex(:grad))F`` returning a tangent vector `X` on `M` or
+  * an array of gradient functions ``$(_tex(:grad))F_i``, `ì=1,…,n` s each returning a component of the gradient
+  which might be allocating or mutating variants, but not a mix of both.
+
+!!! note
+
+    This Objective is usually defined using the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` to be loaded.
+
+# Constructors
+
+    ManifoldAlternatingGradientObjective(F, gradF::Function; evaluation=AllocatingEvaluation())
+    ManifoldAlternatingGradientObjective(F, gradF::AbstractVector{<:Function}; evaluation=AllocatingEvaluation())
+
+Create a alternating gradient problem with an optional `cost` and the gradient either as one
+function (returning an array) or a vector of functions.
+"""
+struct ManifoldAlternatingGradientObjective{F, G} <: AbstractManifoldFirstOrderObjective{F, G}
+    cost::F
+    gradient!::G
+    function ManifoldAlternatingGradientObjective(f::F, grad_f::G) where {F, G}
+        # TODO: REadd evaluation and wrap grad_f
+        return new{F, G}(f, grad_f)
+    end
+end
+function ManifoldAlternatingGradientObjective(f::F, grad_f::AbstractVector{<:TG}) where {F, TG}
+    # TODO: REadd evaluation and wrap grad_f
+    return ManifoldAlternatingGradientObjective{F, typeof(grad_f)}(f, grad_f)
+end
+function get_gradient(M::AbstractManifold, mago::ManifoldAlternatingGradientObjective{C, <:Function}, p) where {C}
+    X = zero_vector(M, p)
+    mago.gradient!(M, X, p)
+    return X
+end
+function get_gradient(
+        M::AbstractManifold, mago::ManifoldAlternatingGradientObjective{C, <:AbstractVector}, p,
+    ) where {C}
+    X = zero_vector(M, p)
+    get_gradient!(M, X, mago, p)
+    return X
+end
+function get_gradient!(
+        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{TC, <:Function}, p,
+    ) where {TC}
+    mago.gradient!(M, X, p)
+    return X
+end
+function get_gradient(
+        M::AbstractManifold, mago::ManifoldAlternatingGradientObjective{C}, p, i,
+    ) where {C}
+    X = zero_vector(M[i], p[M, i])
+    get_gradient!(M, X, mago, p, i)
+    return X
+end
+function get_gradient!(
+        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{C, <:Function}, p, k
+    ) where {C}
+    # this takes a lot more allocations than other methods, but the gradient can only be evaluated in full
+    Xf = zero_vector(M, p)
+    get_gradient!(M, Xf, mago, p)
+    copyto!(M[k], X, p[M, k], Xf[M, k])
+    return X
+end
+function get_gradient!(
+        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{C, <:AbstractVector}, p, k,
+    ) where {C}
+    mago.gradient![k](M, X, p)
+    return X
+end
+
+function Base.show(io::IO, mago::ManifoldAlternatingGradientObjective)
+    print(io, "ManifoldAlternatingGradientObjective(")
+    print(io, mago.cost); print(io, ", "); print(io, mago.gradient!); print(io, "; ")
+    return print(io, ")")
+end
+function status_summary(mago::ManifoldAlternatingGradientObjective; context::Symbol = :default)
+    (context === :short) && (return repr(mago))
+    (context === :inline) && (return "An alternating gradient objective on a manifold.")
+    return """
+    An alternating gradient objective providing the gradient as components with which to alternate
+
+    ## Functions
+    * cost:    $(_MANOPT_INDENT)$(mago.cost)
+    * gradient:$(_MANOPT_INDENT)$(mago.gradient!)"""
+end
+
 
 #
 #

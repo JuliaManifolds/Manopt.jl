@@ -1,278 +1,3 @@
-"""
-    StepsizeState{P,T} <: AbstractManoptSolverState
-
-A state to store a point and a descent direction used within a linesearch,
-if these are different from the iterate and search direction of the main solver.
-
-# Fields
-
-* `p::P`: a point on a manifold
-* `X::T`: a tangent vector at `p`.
-
-# Constructor
-
-    StepsizeState(p,X)
-    StepsizeState(M::AbstractManifold; p=rand(M), x=zero_vector(M,p)
-
-# See also
-
-[`interior_point_Newton`](@ref)
-"""
-struct StepsizeState{P, T} <: AbstractManoptSolverState
-    p::P
-    X::T
-    StepsizeState(; p::P, X::T) where {P, T} = new{P, T}(p, X)
-end
-StepsizeState(M::AbstractManifold; p = rand(M), X = zero_vector(M, p)) = StepsizeState(; p = p, X = X)
-get_iterate(s::StepsizeState) = s.p
-get_gradient(s::StepsizeState) = s.X
-set_iterate!(s::StepsizeState, M, p) = copyto!(M, s.p, p)
-set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
-Base.show(io::IO, sss::StepsizeState) = print(io, "StepsizeState(; p = ", sss.p, ", X = ", sss.X, ")")
-function status_summary(sss::StepsizeState{P, T}; context::Symbol = :default) where {P, T}
-    (context === :short) && return repr(sss)
-    return "A state for a stepsize problem."
-end
-
-@doc """
-    InteriorPointNewtonState{P,T} <: AbstractHessianSolverState
-
-# Fields
-
-$(_fields(:callbacks; add_properties = [:as_dict]))
-* `λ`:           the Lagrange multiplier with respect to the equality constraints
-* `μ`:           the Lagrange multiplier with respect to the inequality constraints
-$(_fields(:p; add_properties = [:as_Iterate]))
-* `s`:           the current slack variable
-$(_fields(:sub_problem))
-$(_fields(:sub_state))
-* `X`:           the current gradient with respect to `p`
-* `Y`:           the current gradient with respect to `μ`
-* `Z`:           the current gradient with respect to `λ`
-* `W`:           the current gradient with respect to `s`
-* `ρ`:           store the orthogonality `μ's/m` to compute the barrier parameter `β` in the sub problem
-* `σ`:           scaling factor for the barrier parameter `β` in the sub problem
-$(_fields(:stopping_criterion; name = "stop"))
-$(_fields([:retraction_method, :stepsize]))
-* `step_problem`: an [`AbstractManoptProblem`](@ref) storing the manifold and objective for the line search
-* `step_state`: storing iterate and search direction in a state for the line search, see [`StepsizeState`](@ref)
-
-# Constructor
-
-    InteriorPointNewtonState(
-        M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr, sub_state::St;
-        kwargs...
-    )
-    InteriorPointNewtonState(
-        M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr;
-        evaluation = AllocatingEvaluation(), kwargs...
-    )
-    InteriorPointNewtonState(
-        sub_problem::Pr, sub_state::St;
-        kwargs...
-    )
-
-Initialize the state, where both the [`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) and the [`ConstrainedManifoldObjective`](@ref)
-are used to fill in reasonable defaults for the keywords.
-For a closed form solution of the sub solver, you can provide the evaluation either as `St` in the first
-constructor or as a keyword like in the second.
-The third constructor is considered an internal constructor accepting the same keywords,
-but those that are filled by defaults based on `M` or `cmo` become mandatory
-
-# Input
-
-$(_args(:M))
-* `cmo`:         a [`ConstrainedManifoldObjective`](@ref)
-$(_args([:sub_problem, :sub_state]))
-
-# Keyword arguments
-
-Let `m` and `n` denote the number of inequality and equality constraints, respectively
-
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
-* `is_feasible_error=:error`: specify how to handle infeasible starting points, see [`is_feasible`](@ref) for options.
-$(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:retraction_method))
-* `s=ones(m)` slack variables for the inequality constraints
-* `step_objective=`[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
-* `step_problem`: wrap the manifold ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m``
-* `step_state`: the [`StepsizeState`](@ref) with point and search direction
-$(_kwargs(:stepsize; default = " `[`ArmijoLinesearch`](@ref)`()"))
-  with the [`InteriorPointCentralityCondition`](@ref) as additional condition to accept a step"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)"))
-* `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
-* `W=zero(s)` tangent vector (gradient) for the slack variables
-* `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`
-* `Y=zero(μ)` tangent vector (gradient) for the inequality constraints
-* `Z=zero(λ)` tangent vector (gradient) for the equality constraints
-* `λ=zeros(n)` Lagrange multipliers for the equality constraints
-* `μ=ones(m)` Lagrange multipliers for the inequality constraints
-* `ρ=μ's/m`  storage for the orthogonality check
-* `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`
-
-and internally `_step_M` and `_step_p` for the manifold and point in the stepsize.
-"""
-mutable struct InteriorPointNewtonState{
-        P, T, Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
-        C <: AbstractDict{Symbol},
-        V, R <: Real,
-        SC <: StoppingCriterion, TRTM <: AbstractRetractionMethod, TStepsize <: Stepsize,
-        TStepPr <: AbstractManoptProblem, TStepSt <: AbstractManoptSolverState,
-    } <: AbstractHessianSolverState
-    callbacks::C
-    is_feasible_error::Symbol
-    p::P
-    retraction_method::TRTM
-    s::V
-    step_problem::TStepPr
-    step_state::TStepSt
-    stepsize::TStepsize
-    stop::SC
-    sub_problem::Pr
-    sub_state::St
-    W::V
-    X::T
-    Y::V
-    Z::V
-    λ::V
-    μ::V
-    ρ::R
-    σ::R
-    function InteriorPointNewtonState(
-            sub_problem::Pr, sub_state::St;
-            callbacks::C = Dict{Symbol, Function}(),
-            is_feasible_error::Symbol = :error,
-            p::P, retraction_method::RTM, s::V,
-            step_problem::StepPr, step_state::StepSt, stepsize::S,
-            stopping_criterion::SC = StopAfterIteration(200) | StopWhenChangeLess(1.0e-8),
-            λ::V, μ::V,
-            W::V = zero(s), X::T, Y::V = zero(μ), Z::V = zero(λ),
-            ρ::R, σ::R, kwargs...
-        ) where {
-            P, T, V, R,
-            Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
-            C <: AbstractDict{Symbol},
-            StepPr <: AbstractManoptProblem, StepSt <: AbstractManoptSolverState,
-            SC <: StoppingCriterion, RTM <: AbstractRetractionMethod, S <: Stepsize,
-        }
-        ips = new{P, T, Pr, St, C, V, R, SC, RTM, S, StepPr, StepSt}()
-        ips.callbacks = callbacks
-        ips.is_feasible_error = is_feasible_error
-        ips.p = p
-        ips.retraction_method = retraction_method
-        ips.s = s
-        ips.step_problem = step_problem; ips.step_state = step_state
-        ips.stepsize = stepsize
-        ips.stop = stopping_criterion
-        ips.sub_problem = sub_problem; ips.sub_state = sub_state
-        ips.W = W
-        ips.X = X
-        ips.Y = Y; ips.Z = Z
-        ips.λ = λ; ips.μ = μ
-        ips.ρ = ρ; ips.σ = σ
-        return ips
-    end
-    function InteriorPointNewtonState(
-            M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr, sub_state::St;
-            callbacks::C = Dict{Symbol, Function}(),
-            p = rand(M), X = zero_vector(M, p),
-            μ = ones(length(get_inequality_constraint(M, cmo, p, :))),
-            λ = zeros(length(get_equality_constraint(M, cmo, p, :))),
-            s = ones(length(get_inequality_constraint(M, cmo, p, :))),
-            ρ = μ's / length(get_inequality_constraint(M, cmo, p, :)),
-            σ = calculate_σ(M, cmo, p, μ, λ, s),
-            retraction_method::RTM = default_retraction_method(M),
-            step_objective = ManifoldGradientObjective(
-                KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo);
-                evaluation = InplaceEvaluation(),
-            ),
-            vector_space = Rn,
-            _step_M = M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
-            step_problem::StepPr = DefaultManoptProblem(_step_M, step_objective),
-            _step_p = rand(_step_M),
-            step_state::StepSt = StepsizeState(; p = _step_p, X = zero_vector(_step_M, _step_p)),
-            centrality_condition = (N, p) -> true,
-            stepsize::S = ArmijoLinesearchStepsize(
-                get_manifold(step_problem);
-                retraction_method = default_retraction_method(get_manifold(step_problem)),
-                initial_stepsize = 1.0, additional_decrease_condition = centrality_condition,
-            ),
-            kwargs...,
-        ) where {
-            Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
-            C <: AbstractDict{Symbol},
-            RTM <: AbstractRetractionMethod, S <: Stepsize,
-            StepPr <: AbstractManoptProblem, StepSt <: AbstractManoptSolverState,
-        }
-        return InteriorPointNewtonState(
-            sub_problem, sub_state;
-            callbacks = callbacks, p = p, retraction_method = retraction_method, s = s,
-            step_problem = step_problem, step_state = step_state, stepsize = stepsize,
-            λ = λ, μ = μ, X = X, ρ = ρ, σ = σ,
-            kwargs...
-        )
-    end
-end
-function InteriorPointNewtonState(
-        M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem;
-        evaluation::E = AllocatingEvaluation(), kwargs...,
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
-    return InteriorPointNewtonState(M, cmo, sub_problem, cfs; kwargs...)
-end
-# get & set iterate
-get_iterate(ips::InteriorPointNewtonState) = ips.p
-function set_iterate!(ips::InteriorPointNewtonState, ::AbstractManifold, p)
-    ips.p = p
-    return ips
-end
-# get & set gradient (not sure if needed?)
-get_gradient(ips::InteriorPointNewtonState) = ips.X
-function set_gradient!(ips::InteriorPointNewtonState, ::AbstractManifold, X)
-    ips.X = X
-    return ips
-end
-# only message on stepsize for now
-function get_message(ips::InteriorPointNewtonState)
-    return get_message(ips.stepsize)
-end
-provided_callbacks(::Type{InteriorPointNewtonState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
-get_callbacks(ips::InteriorPointNewtonState) = ips.callbacks
-# pretty print state info
-function status_summary(ips::InteriorPointNewtonState; context::Symbol = :default)
-    i = get_count(ips, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(ips)) – $(Iter) $(has_converged(ips) ? "(converged)" : "")")
-    as = _callbacks_summary(ips)
-    s = """
-    # Solver state for `Manopt.jl`s Interior Point Newton Method
-    $Iter
-    ## Parameters$(as)
-    * ρ: $(ips.ρ)
-    * σ: $(ips.σ)
-    * retraction method: $(ips.retraction_method)
-
-    ## Stepsize
-    $(_in_str(status_summary(ips.stepsize; context = context); indent = 1, headers = 1))
-
-    ## Stopping criterion
-    $(_in_str(status_summary(ips.stop; context = context); indent = 1, headers = 1))    This indicates convergence: $Conv"""
-    return s
-end
-function Base.show(io::IO, ipns::InteriorPointNewtonState)
-    print(io, "InteriorPointNewtonState(", ipns.sub_problem, ", ", ipns.sub_state, ";")
-    print(io, " callbacks = ", ipns.callbacks, ", is_feasibility_error = ", ipns.is_feasible_error, ", retraction_method = ", ipns.retraction_method)
-    print(io, ", p = ", ipns.p, ", X = ", ipns.X, ", μ = ", ipns.μ, ", Y = ", ipns.Y)
-    print(io, ", λ = ", ipns.λ, ", Z = ", ipns.Z, ", s = ", ipns.s, ", W = ", ipns.W)
-    print(io, ", ρ = ", ipns.ρ, ", σ = ", ipns.σ, ", step_problem = ", ipns.step_problem)
-    print(io, ", step_state = ", ipns.step_state)
-    return print(io, ")")
-end
-#
-# Constraint functors
-#
-
 @doc """
     CondensedKKTVectorField{O<:ConstrainedManifoldObjective,T,R} <: AbstractConstrainedSlackFunction{T,R}
 
@@ -490,6 +215,187 @@ function Base.show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
     print(io, "CondensedKKTVectorFieldJacobian(")
     print(io, CKKTvfJ.cmo)
     return print(io, ", $(CKKTvfJ.μ), $(CKKTvfJ.s), $(CKKTvfJ.β))")
+end
+
+"""
+    abstract type SmoothingTechnique
+
+Specify a smoothing technique, see for example [`ExactPenaltyCost`](@ref) and [`ExactPenaltyGrad`](@ref).
+"""
+abstract type SmoothingTechnique end
+
+@doc """
+    LogarithmicSumOfExponentials <: SmoothingTechnique
+
+Specify a smoothing based on ``$(_tex(:max))$(_tex(:max, "a,b")) ≈ u $(_tex(:log))($(_tex(:rm, "e"))^{$(_tex(:frac, "a", "u"))}+$(_tex(:rm, "e"))^{$(_tex(:frac, "b", "u"))})``
+for some ``u``.
+"""
+struct LogarithmicSumOfExponentials <: SmoothingTechnique end
+
+@doc """
+    LinearQuadraticHuber <: SmoothingTechnique
+
+Specify a smoothing based on ``$(_tex(:max))$(_tex(:set, "0,x")) ≈ $(_tex(:Cal, "P"))(x,u)`` for some ``u``, where
+
+```math
+$(_tex(:Cal, "P")) = $(
+    _tex(
+        :cases,
+        "0 & $(_tex(:text, " if ")) x ≤ 0,",
+        "$(_tex(:frac, "x^2", "2u")) & $(_tex(:text, " if ")) 0 ≤ x ≤ u",
+        "x-$(_tex(:frac, "u", "2")) & $(_tex(:text, " if ")) x ≥ u"
+    )
+)
+```
+"""
+struct LinearQuadraticHuber <: SmoothingTechnique end
+
+@doc """
+    ExactPenaltyCost{S, Pr, R}
+
+Represent the cost of the exact penalty method based on a [`ConstrainedManifoldObjective`](@ref) `P`
+and a parameter ``ρ`` given by
+
+```math
+f(p) + ρ$(_tex(:Bigl))(
+    $(_tex(:sum, "i=0", "m")) $(_tex(:max))$(_tex(:set, "0,g_i(p)")) + $(_tex(:sum, "j=0", "n")) $(_tex(:abs, "h_j(p)"))
+$(_tex(:Bigr))),
+```
+where an additional parameter ``u`` is used as well as a smoothing technique,
+for example [`LogarithmicSumOfExponentials`](@ref) or [`LinearQuadraticHuber`](@ref)
+to obtain a smooth cost function. This struct is also a functor `(M,p) -> v` of the cost ``v``.
+
+## Fields
+
+* `ρ`, `u`: as described in the mathematical formula, .
+* `co`:     the original cost
+
+## Constructor
+
+    ExactPenaltyCost(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
+"""
+mutable struct ExactPenaltyCost{S, CO, R}
+    co::CO
+    ρ::R
+    u::R
+end
+function ExactPenaltyCost(
+        co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing = LinearQuadraticHuber()
+    ) where {R}
+    return ExactPenaltyCost{typeof(smoothing), typeof(co), R}(co, ρ, u)
+end
+function set_parameter!(epc::ExactPenaltyCost, ::Val{:ρ}, ρ)
+    epc.ρ = ρ
+    return epc
+end
+function set_parameter!(epc::ExactPenaltyCost, ::Val{:u}, u)
+    epc.u = u
+    return epc
+end
+function (L::ExactPenaltyCost{<:LogarithmicSumOfExponentials})(M::AbstractManifold, p)
+    gp = get_inequality_constraint(M, L.co, p, :)
+    hp = get_equality_constraint(M, L.co, p, :)
+    m = length(gp)
+    n = length(hp)
+    cost_ineq = (m > 0) ? sum(L.u .* log.(1 .+ exp.(gp ./ L.u))) : 0.0
+    cost_eq = (n > 0) ? sum(L.u .* log.(exp.(hp ./ L.u) .+ exp.(-hp ./ L.u))) : 0.0
+    return get_cost(M, L.co, p) + (L.ρ) * (cost_ineq + cost_eq)
+end
+function (L::ExactPenaltyCost{<:LinearQuadraticHuber})(M::AbstractManifold, p)
+    gp = get_inequality_constraint(M, L.co, p, :)
+    hp = get_equality_constraint(M, L.co, p, :)
+    m = length(gp)
+    n = length(hp)
+    cost_eq_greater_u = (m > 0) ? sum((gp .- L.u / 2) .* (gp .> L.u)) : 0.0
+    cost_eq_pos_smaller_u = (m > 0) ? sum((gp .^ 2 ./ (2 * L.u)) .* (0 .< gp .<= L.u)) : 0.0
+    cost_ineq = cost_eq_greater_u + cost_eq_pos_smaller_u
+    cost_eq = (n > 0) ? sum(sqrt.(hp .^ 2 .+ L.u^2)) : 0.0
+    return get_cost(M, L.co, p) + (L.ρ) * (cost_ineq + cost_eq)
+end
+
+@doc """
+    ExactPenaltyGrad{S, CO, R}
+
+Represent the gradient of the [`ExactPenaltyCost`](@ref) based on a [`ConstrainedManifoldObjective`](@ref) `co`
+and a parameter ``ρ`` and a smoothing technique, which uses an additional parameter ``u``.
+
+This struct is also a functor in both formats
+* `(M, p) -> X` to compute the gradient in allocating fashion.
+* `(M, X, p)` to compute the gradient in in-place fashion.
+
+## Fields
+
+* `ρ`, `u` as stated before
+* `co` the nonsmooth objective
+
+## Constructor
+
+    ExactPenaltyGradient(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
+"""
+mutable struct ExactPenaltyGrad{S, CO, R}
+    co::CO
+    ρ::R
+    u::R
+end
+function set_parameter!(epg::ExactPenaltyGrad, ::Val{:ρ}, ρ)
+    epg.ρ = ρ
+    return epg
+end
+function set_parameter!(epg::ExactPenaltyGrad, ::Val{:u}, u)
+    epg.u = u
+    return epg
+end
+function ExactPenaltyGrad(
+        co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing = LinearQuadraticHuber()
+    ) where {R}
+    return ExactPenaltyGrad{typeof(smoothing), typeof(co), R}(co, ρ, u)
+end
+# Default (functions constraints): evaluate all gradients
+# Since for LogExp the pre-factor c seems to not be zero, this might be the best way to go here
+function (EG::ExactPenaltyGrad)(M::AbstractManifold, p)
+    X = zero_vector(M, p)
+    return EG(M, X, p)
+end
+function (EG::ExactPenaltyGrad{<:LogarithmicSumOfExponentials})(M::AbstractManifold, X, p)
+    gp = get_inequality_constraint(M, EG.co, p, :)
+    hp = get_equality_constraint(M, EG.co, p, :)
+    m = length(gp)
+    n = length(hp)
+    # start with `gradf`
+    get_gradient!(M, X, EG.co, p)
+    c = 0
+    # add gradient of the components of g
+    (m > 0) && (c = EG.ρ .* exp.(gp ./ EG.u) ./ (1 .+ exp.(gp ./ EG.u)))
+    (m > 0) && (X .+= sum(get_grad_inequality_constraint(M, EG.co, p, :) .* c))
+    # add gradient of the components of h
+    (n > 0) && (
+        c =
+            EG.ρ .* (exp.(hp ./ EG.u) .- exp.(-hp ./ EG.u)) ./
+            (exp.(hp ./ EG.u) .+ exp.(-hp ./ EG.u))
+    )
+    (n > 0) && (X .+= sum(get_grad_equality_constraint(M, EG.co, p, :) .* c))
+    return X
+end
+
+# Default (functions constraints): evaluate all gradients
+function (EG::ExactPenaltyGrad{<:LinearQuadraticHuber})(
+        M::AbstractManifold, X, p::P
+    ) where {P}
+    gp = get_inequality_constraint(M, EG.co, p, :)
+    hp = get_equality_constraint(M, EG.co, p, :)
+    m = length(gp)
+    n = length(hp)
+    get_gradient!(M, X, EG.co, p)
+    if m > 0
+        gradgp = get_grad_inequality_constraint(M, EG.co, p, :)
+        X .+= sum(gradgp .* (gp .>= EG.u) .* EG.ρ) # add the ones >= u
+        X .+= sum(gradgp .* (gp ./ EG.u .* (0 .<= gp .< EG.u)) .* EG.ρ) # add < u
+    end
+    if n > 0
+        c = (hp ./ sqrt.(hp .^ 2 .+ EG.u^2)) .* EG.ρ
+        X .+= sum(get_grad_equality_constraint(M, EG.co, p, :) .* c)
+    end
+    return X
 end
 
 @doc """
@@ -854,237 +760,370 @@ function status_summary(KKTvfNSqGrad::KKTVectorFieldNormSqGradient; context::Sym
     _is_inline(context) && (return repr(KKTvfNSqGrad))
     return "The gradient of the KKT vector field in normed squared for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfNSqGrad.cmo; context = context))"
 end
-#
-#
-# A special linesearch for IP Newton
-function interior_point_initial_guess(
-        mp::AbstractManoptProblem, ips::StepsizeState, ::Int, l::R, η; kwargs...
-    ) where {R <: Real}
-    N = get_manifold(mp)
-    Y = get_gradient(N, get_objective(mp), ips.p)
-    grad_norm = norm(N, ips.p, Y)
-    max_step = max_stepsize(N, ips.p)
-    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
-end
 
 @doc """
-    InteriorPointCentralityCondition{CO,R}
+    LagrangianCost{CO,T} <: AbstractConstrainedFunction{T}
 
-A functor to check the centrality condition.
-
-In order to obtain a step in the linesearch performed within the [`interior_point_Newton`](@ref),
-Section 6 of [LaiYoshise:2024](@cite) propose the following additional conditions to hold
-inspired by the Euclidean case described in Section 6 [El-BakryTapiaTsuchiyaZhang:1996](@cite):
-
-For a given [`ConstrainedManifoldObjective`](@ref) assume consider the [`KKTVectorField`](@ref) ``F``,
-that is we are at a point ``q = (p, λ, μ, s)``  on ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
-
-Then, let
+Implement the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`.
 
 ```math
-τ_1 = $(_tex(:frac, "m$(_tex(:min))$(_tex(:set, "μ ⊙ s"))", "μ^{$(_tex(:rm, "T"))}s"))
-$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
-τ_2 = $(_tex(:frac, "μ^{$(_tex(:rm, "T"))}s", "$(_tex(:norm, "F(q)"))")),
+$(_tex(:Cal, "L"))(p; μ, λ) = f(p) + $(_tex(:sum, "i=1", "m")) μ_ig_i(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p)
 ```
-where ``⊙`` denotes the Hadamard (or elementwise) product.
-
-For a new candidate ``q(α) = $(_tex(:bigl))(p(α), λ(α), μ(α), s(α)$(_tex(:bigr)) := ($(_tex(:retr))_p(αX), λ+αY, μ+αZ, s+αW)``,
-we then define two functions
-
-```math
-c_1(α) = $(_tex(:min))$(_tex(:set, "μ(α) ⊙ s(α)")) - $(_tex(:frac, "γτ_1 μ(α)^{$(_tex(:rm, "T"))}s(α)", "m"))
-$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
-c_2(α) = μ(α)^{$(_tex(:rm, "T"))}s(α) – γτ_2 $(_tex(:norm, "F(q(α))")).
-```
-
-While the paper now states that the (Armijo) line search starts at a point
-``$(_tex(:tilde)) α``, it is easier to include the condition that ``c_1(α) ≥ 0`` and ``c_2(α) ≥ 0``
-into the line search as well.
-
-The functor `InteriorPointCentralityCondition(cmo, γ, μ, s, normKKT)(N,qα)`
-defined here evaluates this condition and returns true if both ``c_1`` and ``c_2`` are non-negative.
 
 # Fields
 
-* `cmo`: a [`ConstrainedManifoldObjective`](@ref)
-* `γ`: a constant
-* `τ1`, `τ2`: the constants given in the formula.
+* `co::CO`, `μ::T`, `λ::T` as mentioned, where `T` represents a vector type.
 
 # Constructor
 
-    InteriorPointCentralityCondition(cmo, γ)
-    InteriorPointCentralityCondition(cmo, γ, τ1, τ2)
+    LagrangianCost(co, μ, λ)
 
-Initialise the centrality conditions.
-The parameters `τ1`, `τ2` are initialise to zero if not provided.
+Create a functor for the Lagrangian with fixed dual variables.
 
-!!! note
+# Example
 
-    Besides [`get_parameter`](@ref) for all three constants,
-    and [`set_parameter!`](@ref) for ``γ``,
-    to update ``τ_1`` and ``τ_2``, call `set_parameter(ipcc, :τ, N, q)` to update
-    both ``τ_1`` and ``τ_2`` according to the formulae above.
+When you directly want to evaluate the Lagrangian ``$(_tex(:Cal, "L"))``
+you can also call
+
+```
+LagrangianCost(co, μ, λ)(M,p)
+```
 """
-mutable struct InteriorPointCentralityCondition{CO, R}
-    cmo::CO
-    γ::R
-    τ1::R
-    τ2::R
+mutable struct LagrangianCost{CO, T} <: AbstractConstrainedFunction{T}
+    co::CO
+    μ::T
+    λ::T
 end
-function InteriorPointCentralityCondition(cmo::CO, γ::R) where {CO, R}
-    return InteriorPointCentralityCondition{CO, R}(cmo, γ, zero(γ), zero(γ))
+function (lc::LagrangianCost)(M, p)
+    c = get_cost(M, lc.co, p)
+    g = get_inequality_constraint(M, lc.co, p, :)
+    h = get_equality_constraint(M, lc.co, p, :)
+    (length(g) > 0) && (c += sum(lc.μ .* g))
+    (length(h) > 0) && (c += sum(lc.λ .* h))
+    return c
 end
-function (ipcc::InteriorPointCentralityCondition)(N, qα)
-    μα = qα[N, 2]
-    sα = qα[N, 4]
-    m = length(μα)
-    # f1 false
-    (minimum(μα .* sα) - ipcc.γ * ipcc.τ1 * sum(μα .* sα) / m < 0) && return false
-    normKKTqα = sqrt(KKTVectorFieldNormSq(ipcc.cmo)(N, qα))
-    # f2 false
-    (sum(μα .* sα) - ipcc.γ * ipcc.τ2 * normKKTqα < 0) && return false
-    return true
-end
-function get_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:γ})
-    return ipcc.γ
-end
-function set_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:γ}, γ)
-    ipcc.γ = γ
-    return ipcc
-end
-function get_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:τ1})
-    return ipcc.τ1
-end
-function get_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:τ2})
-    return ipcc.τ2
-end
-function set_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:τ}, N, q)
-    μ = q[N, 2]
-    s = q[N, 4]
-    m = length(μ)
-    normKKTq = sqrt(KKTVectorFieldNormSq(ipcc.cmo)(N, q))
-    ipcc.τ1 = m * minimum(μ .* s) / sum(μ .* s)
-    ipcc.τ2 = sum(μ .* s) / normKKTq
-    return ipcc
+function show(io::IO, lc::LagrangianCost)
+    return print(io, "LagrangianCost\n$(_MANOPT_INDENT)with μ=$(lc.μ), λ=$(lc.λ)")
 end
 
 @doc """
-    StopWhenKKTResidualLess <: StoppingCriterion
+    LagrangianGradient{CO,T}
 
-Stop when the KKT residual
+The gradient of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`
+with respect to the variable ``p``. The formula reads
 
+```math
+$(_tex(:grad))_p $(_tex(:Cal, "L"))(p; μ, λ)
+= $(_tex(:grad)) f(p) + $(_tex(:sum, "i=1", "m")) μ_i $(_tex(:grad)) g_i(p) + $(_tex(:sum, "j=1", "n")) λ_j $(_tex(:grad)) h_j(p)
 ```
-r^2
-= $(_tex(:norm, "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p, μ, λ) "))^2
-+ $(_tex(:sum, "i=1", "m")) [μ_i]_{-}^2 + [g_i(p)]_+^2 + $(_tex(:abs, "μ_i g_i(p)"))^2
-+ $(_tex(:sum, "j=1", "n")) $(_tex(:abs, "h_i(p)"))^2.
-```
-
-is less than a given threshold ``r < ε``.
-We use ``[v]_+ = $(_tex(:max))$(_tex(:set, "0,v"))`` and ``[v]_- = $(_tex(:min))$(_tex(:set, "0,t"))``
-for the positive and negative part of ``v``, respectively
 
 # Fields
 
-* `ε`: a threshold
-* `residual`: store the last residual if the stopping criterion is hit.
-* `at_iteration`:
+* `co::CO`, `μ::T`, `λ::T` as mentioned, where `T` represents a vector type.
+
+# Constructor
+
+    LagrangianGradient(co, μ, λ)
+
+Create a functor for the Lagrangian with fixed dual variables.
+
+# Example
+
+When you directly want to evaluate the gradient of the Lagrangian ``$(_tex(:grad))_p $(_tex(:Cal, "L"))``
+you can also call `LagrangianGradient(co, μ, λ)(M,p)` or `LagrangianGradient(co, μ, λ)(M,X,p)` for the in-place variant.
 """
-mutable struct StopWhenKKTResidualLess{R} <: StoppingCriterion
-    ε::R
-    residual::R
-    at_iteration::Int
-    function StopWhenKKTResidualLess(ε::R) where {R}
-        return new{R}(ε, zero(ε), -1)
-    end
+mutable struct LagrangianGradient{CO, T} <: AbstractConstrainedFunction{T}
+    co::CO
+    μ::T
+    λ::T
 end
-function (c::StopWhenKKTResidualLess)(
-        amp::AbstractManoptProblem, ipns::InteriorPointNewtonState, k::Int
-    )
-    M = get_manifold(amp)
-    (k <= 0) && return false
-    # now k > 0
-    # Check residual
-    μ, λ, s, p = ipns.μ, ipns.λ, ipns.s, ipns.p
-    c.residual = 0.0
-    m, n = length(ipns.μ), length(ipns.λ)
-    # First component
-    c.residual += norm(M, p, LagrangianGradient(get_objective(amp), μ, λ)(M, p))
-    # ineq constr part
+function (lg::LagrangianGradient)(M, p)
+    X = zero_vector(M, p)
+    return lg(M, X, p)
+end
+function (lg::LagrangianGradient)(M, X, p)
+    Y = copy(M, p, X)
+    get_gradient!(M, X, lg.co, p)
+    m = inequality_constraints_length(lg.co)
+    n = equality_constraints_length(lg.co)
     for i in 1:m
-        gi = get_inequality_constraint(amp, ipns.p, i)
-        c.residual += min(0.0, μ[i])^2 + max(gi, 0)^2 + abs(μ[i] * gi)^2
+        get_grad_inequality_constraint!(M, Y, lg.co, p, i)
+        copyto!(M, X, p, X + lg.μ[i] * Y)
     end
-    # eq constr part
     for j in 1:n
-        hj = get_equality_constraint(amp, ipns.p, j)
-        c.residual += abs(hj)^2
+        get_grad_equality_constraint!(M, Y, lg.co, p, j)
+        copyto!(M, X, p, X + lg.λ[j] * Y)
     end
-    c.residual = sqrt(c.residual)
-    if c.residual < c.ε
-        c.at_iteration = k
-        return true
-    end
-    return false
+    return X
 end
-function get_reason(c::StopWhenKKTResidualLess)
-    if (c.at_iteration >= 0)
-        return "After iteration #$(c.at_iteration) the algorithm stopped with a KKT residual $(c.residual) < $(c.ε).\n"
-    end
-    return ""
-end
-function status_summary(swrr::StopWhenKKTResidualLess; context::Symbol = :default)
-    has_stopped = (swrr.at_iteration >= 0)
-    s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "‖F(p, λ, μ)‖ < ε = $(swrr.ε):$(_MANOPT_INDENT)" : "Stop when the KKT residual is less than ε = $(swrr.ε)\n$(_MANOPT_INDENT)") * s
-end
-indicates_convergence(::StopWhenKKTResidualLess) = true
-function Base.show(io::IO, c::StopWhenKKTResidualLess)
-    return print(io, "StopWhenKKTResidualLess($(c.ε))")
+function show(io::IO, lg::LagrangianGradient)
+    return print(io, "LagrangianGradient\n$(_MANOPT_INDENT)with μ=$(lg.μ), λ=$(lg.λ)")
 end
 
-# An internal function to compute the new σ
 @doc """
-    calculate_σ(M, cmo, p, μ, λ, s; kwargs...)
+    LagrangianHessian{CO, V, T}
 
-Compute the new ``σ`` factor for the barrier parameter in [`interior_point_Newton`](@ref) as
+The Hessian of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`
+with respect to the variable ``p``. The formula reads
 
 ```math
-$(_tex(:min))$(_tex(:set, "$(_tex(:frac, "1", "2")), $(_tex(:norm, "F(p; μ, λ, s)"))^{$(_tex(:frac, "1", "2"))}")),
+$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p; μ, λ)[X]
+= $(_tex(:Hess)) f(p) + $(_tex(:sum, "i=1", "m")) μ_i $(_tex(:Hess)) g_i(p)[X] + $(_tex(:sum, "j=1", "n")) λ_j $(_tex(:Hess)) h_j(p)[X]
 ```
-where ``F`` is the KKT vector field, hence the [`KKTVectorFieldNormSq`](@ref) is used.
 
-# Keyword arguments
+# Fields
 
-* `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
-* `N` the manifold ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m`` the vector field lives on (generated using `vector_space`)
-* `q` provide memory on `N` for interims evaluation of the vector field
+* `co::CO`, `μ::T`, `λ::T` as mentioned, where `T` represents a vector type.
+
+# Constructor
+
+    LagrangianHessian(co, μ, λ)
+
+Create a functor for the Lagrangian with fixed dual variables.
+
+# Example
+
+When you directly want to evaluate the Hessian of the Lagrangian ``$(_tex(:Hess))_p $(_tex(:Cal, "L"))``
+you can also call `LagrangianHessian(co, μ, λ)(M, p, X)` or `LagrangianHessian(co, μ, λ)(M, Y, p, X)` for the in-place variant.
 """
-function calculate_σ(
-        N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s; kwargs...
-    )
-    return calculate_σ(N, get_objective(cmo, true), p, μ, λ, s; kwargs...)
+mutable struct LagrangianHessian{CO, T} <: AbstractConstrainedFunction{T}
+    co::CO
+    μ::T
+    λ::T
 end
-function calculate_σ(
-        M::AbstractManifold,
-        cmo::ConstrainedManifoldObjective,
-        p,
-        μ,
-        λ,
-        s;
-        vector_space = Rn,
-        N = ProductManifold(
-            M,
-            vector_space(length(μ)),
-            vector_space(length(λ)),
-            vector_space(length(s)),
-        ),
-        q = allocate_result(N, rand),
-    )
-    q1, q2, q3, q4 = submanifold_components(N, q)
-    copyto!(N[1], q1, p)
-    q2 .= μ
-    q3 .= λ
-    q4 .= s
-    return min(0.5, (KKTVectorFieldNormSq(cmo)(N, q))^(1 / 4))
+function (lH::LagrangianHessian)(M, p, X)
+    Y = zero_vector(M, p)
+    return lH(M, Y, p, X)
+end
+function (lH::LagrangianHessian)(M, Y, p, X)
+    Z = copy(M, p, X)
+    get_hessian!(M, Y, lH.co, p, X)
+    n = inequality_constraints_length(lH.co)
+    m = equality_constraints_length(lH.co)
+    for i in 1:n
+        get_hess_inequality_constraint!(M, Z, lH.co, p, X, i)
+        copyto!(M, Y, p, Y + lH.μ[i] * Z)
+    end
+    for j in 1:m
+        get_hess_equality_constraint!(M, Z, lH.co, p, X, j)
+        copyto!(M, Y, p, Y + lH.λ[j] * Z)
+    end
+    return Y
+end
+function show(io::IO, lh::LagrangianHessian)
+    return print(io, "LagrangianHessian\n$(_MANOPT_INDENT)with μ=$(lh.μ), λ=$(lh.λ)")
+end
+
+#
+#
+# ---
+@doc """
+    LinearizedDCCost
+
+A functor `(M,q) → ℝ` to represent the inner problem of a [`ManifoldDifferenceOfConvexObjective`](@ref).
+This is a cost function of the form
+
+```math
+    F_{p_k,X_k}(p) = g(p) - ⟨X_k, $(_tex(:log))_{p_k}p⟩
+```
+for a point `p_k` and a tangent vector `X_k` at `p_k` (for example outer iterates)
+that are stored within this functor as well.
+
+# Fields
+
+* `g` a function
+* `pk` a point on a manifold
+* `Xk` a tangent vector at `pk`
+
+Both interim values can be set using
+`set_parameter!(::LinearizedDCCost, ::Val{:p}, p)`
+and `set_parameter!(::LinearizedDCCost, ::Val{:X}, X)`, respectively.
+
+# Constructor
+    LinearizedDCCost(g, p, X)
+"""
+mutable struct LinearizedDCCost{P, T, TG}
+    g::TG
+    pk::P
+    Xk::T
+end
+(F::LinearizedDCCost)(M, p) = F.g(M, p) - inner(M, F.pk, F.Xk, log(M, F.pk, p))
+
+function set_parameter!(ldc::LinearizedDCCost, ::Val{:p}, p)
+    ldc.pk .= p
+    return ldc
+end
+function set_parameter!(ldc::LinearizedDCCost, ::Val{:X}, X)
+    ldc.Xk .= X
+    return ldc
+end
+
+@doc """
+    LinearizedDCGrad
+
+A functor `(M,X,p) → ℝ` to represent the gradient of the inner problem of a [`ManifoldDifferenceOfConvexObjective`](@ref).
+This is a gradient function of the form
+
+```math
+    F_{p_k,X_k}(p) = g(p) - ⟨X_k, $(_tex(:log))_{p_k}p⟩
+```
+
+its gradient is given by using ``F=F_1(F_2(p))``, where ``F_1(X) = ⟨X_k,X⟩`` and ``F_2(p) = $(_tex(:log))_{p_k}p``
+and the chain rule as well as the adjoint differential of the logarithmic map with respect to its argument for ``D^*F_2(p)``
+
+```math
+    $(_tex(:grad)) F(q) = $(_tex(:grad))f(q) - DF_2^*(q)[X]
+```
+
+for a point `pk` and a tangent vector `Xk` at `pk` (the outer iterates) that are stored within this functor as well
+
+# Fields
+
+* `grad_g!` the gradient of ``g`` (see also [`LinearizedDCCost`](@ref))
+* `pk` a point on a manifold
+* `Xk` a tangent vector at `pk`
+
+Both interim values can be set using
+`set_parameter!(::LinearizedDCGrad, ::Val{:p}, p)`
+and `set_parameter!(::LinearizedDCGrad, ::Val{:X}, X)`, respectively.
+
+# Constructor
+    LinearizedDCGrad(grad_g, p, X; evaluation=AllocatingEvaluation())
+
+Where you specify whether `grad_g` is [`AllocatingEvaluation`](@ref) or [`InplaceEvaluation`](@ref),
+while this function still provides _both_ signatures.
+"""
+mutable struct LinearizedDCGrad{P, T, TG}
+    grad_g!::TG
+    pk::P
+    Xk::T
+    function LinearizedDCGrad(grad_g::TG, pk::P, Xk::T) where {TG, P, T}
+        # TODO: readd evaluatiion and wrap grad
+        return new{P, T, TG}(grad_g, pk, Xk)
+    end
+end
+function (grad_f!::LinearizedDCGrad)(M, X, p)
+    grad_f!.grad_g!(M, X, p)
+    X .-= adjoint_differential_log_argument(M, grad_f!.pk, p, grad_f!.Xk)
+    return X
+end
+function (grad_f!::LinearizedDCGrad)(M, p)
+    X = zero_vector(M, p)
+    grad_f!.grad_g!(M, X, p)
+    X .-= adjoint_differential_log_argument(M, grad_f!.pk, p, grad_f!.Xk)
+    return X
+end
+function set_parameter!(ldcg::LinearizedDCGrad, ::Val{:p}, p)
+    ldcg.pk .= p
+    return ldcg
+end
+function set_parameter!(ldcg::LinearizedDCGrad, ::Val{:X}, X)
+    ldcg.Xk .= X
+    return ldcg
+end
+
+@doc """
+    ProximalDCCost
+
+A functor `(M, p) → ℝ` to represent the inner cost function of a [`ManifoldDifferenceOfConvexProximalObjective`](@ref).
+This is the cost function of the proximal map of `g`.
+
+```math
+F_{p_k}(p) = $(_tex(:frac, "1", "2λ"))d_{$(_math(:Manifold))}(p_k,p)^2 + g(p)
+```
+
+for a point `pk` and a proximal parameter ``λ``.
+
+# Fields
+
+* `g`  - a function
+* `pk` - a point on a manifold
+* `λ`  - the prox parameter
+
+Both interim values can be set using
+`set_parameter!(::ProximalDCCost, ::Val{:p}, p)`
+and `set_parameter!(::ProximalDCCost, ::Val{:λ}, λ)`, respectively.
+
+# Constructor
+
+    ProximalDCCost(g, p, λ)
+"""
+mutable struct ProximalDCCost{P, TG, R}
+    g::TG
+    pk::P
+    λ::R
+end
+(F::ProximalDCCost)(M, p) = 1 / (2 * F.λ) * distance(M, p, F.pk)^2 + F.g(M, p)
+
+function set_parameter!(pdcc::ProximalDCCost, ::Val{:p}, p)
+    pdcc.pk .= p
+    return pdcc
+end
+function set_parameter!(pdcc::ProximalDCCost, ::Val{:λ}, λ)
+    pdcc.λ = λ
+    return pdcc
+end
+
+@doc """
+    ProximalDCGrad
+
+A functor `(M,X,p) → ℝ` to represent the gradient of the inner cost function of a [`ManifoldDifferenceOfConvexProximalObjective`](@ref).
+This is the gradient function of the proximal map cost function of `g`. Based on
+
+```math
+F_{p_k}(p) = $(_tex(:frac, "1", "2λ"))d_{$(_math(:Manifold))}(p_k,p)^2 + g(p)
+```
+
+it reads
+
+```math
+$(_tex(:grad)) F_{p_k}(p) = $(_tex(:grad))} g(p) - $(_tex(:frac, "1", "λ"))$(_tex(:log))_p p_k
+```
+
+for a point `pk` and a proximal parameter `λ`.
+
+# Fields
+
+* `grad_g`  - a gradient function
+* `pk` - a point on a manifold
+* `λ`  - the prox parameter
+
+Both interim values can be set using
+`set_parameter!(::ProximalDCGrad, ::Val{:p}, p)`
+and `set_parameter!(::ProximalDCGrad, ::Val{:λ}, λ)`, respectively.
+
+# Constructor
+
+    ProximalDCGrad(grad_g, pk, λ; evaluation=AllocatingEvaluation())
+
+Where you specify whether `grad_g` is [`AllocatingEvaluation`](@ref) or [`InplaceEvaluation`](@ref),
+while this function still always provides _both_ signatures.
+"""
+mutable struct ProximalDCGrad{P, TG, R}
+    grad_g!::TG
+    pk::P
+    λ::R
+    function ProximalDCGrad(grad_g::TG, pk::P, λ::R) where {TG, P, R}
+        #TODO: Add eval and a wrapper?
+        return new{P, TG, R}(grad_g, pk, λ)
+    end
+end
+function (grad_f!::ProximalDCGrad)(M, X, p)
+    grad_f!.grad_g!(M, X, p)
+    X .-= 1 / grad_f!.λ * log(M, p, grad_f!.pk)
+    return X
+end
+function (grad_f!::ProximalDCGrad)(M, p)
+    X = zero_vector(M, p)
+    grad_f!.grad_g!(M, X, p)
+    X .-= 1 / grad_f!.λ * log(M, p, grad_f!.pk)
+    return X
+end
+function set_parameter!(pdcg::ProximalDCGrad, ::Val{:p}, p)
+    pdcg.pk .= p
+    return pdcg
+end
+function set_parameter!(pdcg::ProximalDCGrad, ::Val{:λ}, λ)
+    pdcg.λ = λ
+    return pdcg
 end

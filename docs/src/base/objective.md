@@ -27,7 +27,6 @@ AllocatingEvaluation
 AllocatingInplaceEvaluation
 InplaceEvaluation
 ParentEvaluationType
-evaluation_type
 ```
 
 The different types of objectives are listed on sub pages depending on their type of information or function

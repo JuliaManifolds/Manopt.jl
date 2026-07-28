@@ -12,7 +12,6 @@ A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating tha
 the problem contains or the function(s) allocate memory for their result, they work out of place.
 """
 struct AllocatingEvaluation <: AbstractEvaluationType end
-_to_kw(::Type{AllocatingEvaluation}) = "evaluation = AllocatingEvaluation()"
 
 @doc """
     InplaceEvaluation <: AbstractEvaluationType
