@@ -100,7 +100,8 @@ using LinearAlgebra: Symmetric
             Manopt.get_gradient_function(c_obj, true)
         grad_f1 = Manopt.get_gradient_function(c_obj)
         @test grad_f1 != grad_f
-        @test grad_f1(M, p) == grad_f(M, p)
+        X = zero_vector(M, p)
+        @test grad_f1(M, X, p) == grad_f(M, p)
         @test get_count(c_obj, :Gradient) == 1 # still counted
         # And Hessian
         @test Manopt.get_hessian_function(obj) === Manopt.get_hessian_function(c_obj, true)

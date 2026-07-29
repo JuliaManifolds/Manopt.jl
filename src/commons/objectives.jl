@@ -115,11 +115,12 @@ function ConstrainedManifoldObjective(
         equality_constraints::Union{Integer, Nothing} = nothing,
         inequality_constraints::Union{Integer, Nothing} = nothing,
         M::Union{AbstractManifold, Nothing} = nothing, p = isnothing(M) ? nothing : rand(M), atol = 0,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     )
     if isnothing(hess_f)
-        objective = ManifoldGradientObjective(f, grad_f; evaluation = evaluation)
+        objective = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, p = isnothing(p) ? missing : p)
     else
-        objective = ManifoldHessianObjective(f, grad_f, hess_f; evaluation = evaluation)
+        objective = ManifoldHessianObjective(f, grad_f, hess_f; evaluation = evaluation, p = isnothing(p) ? missing : p)
     end
     num_eq = isnothing(equality_constraints) ? -1 : equality_constraints
     if isnothing(h) || isnothing(grad_h)
@@ -596,7 +597,6 @@ end
 #
 #
 # ---
-
 @doc """
     ManifoldAlternatingGradientObjective{F,G} <: AbstractManifoldFirstOrderObjective{F G}
 
@@ -614,23 +614,30 @@ An alternating gradient objective consists of
 
 # Constructors
 
-    ManifoldAlternatingGradientObjective(F, gradF::Function; evaluation=AllocatingEvaluation())
-    ManifoldAlternatingGradientObjective(F, gradF::AbstractVector{<:Function}; evaluation=AllocatingEvaluation())
+    ManifoldAlternatingGradientObjective(F, gradF::Function; evaluation=AllocatingEvaluation(), p = missing)
+    ManifoldAlternatingGradientObjective(F, gradF::AbstractVector{<:Function}; evaluation=AllocatingEvaluation(), p = missing)
 
 Create a alternating gradient problem with an optional `cost` and the gradient either as one
 function (returning an array) or a vector of functions.
+
+## Keyword Arguments
+
+$(_kwargs(:evaluation))
+* `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
 """
 struct ManifoldAlternatingGradientObjective{F, G} <: AbstractManifoldFirstOrderObjective{F, G}
     cost::F
     gradient!::G
-    function ManifoldAlternatingGradientObjective(f::F, grad_f::G) where {F, G}
-        # TODO: REadd evaluation and wrap grad_f
-        return new{F, G}(f, grad_f)
+    function ManifoldAlternatingGradientObjective(f::F, grad_f::G; evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing) where {F, G}
+        f_ = maybe_wrap_function(f, p; result = :Number)
+        grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
+        return new{typeof(f_), typeof(grad_f_)}(f_, grad_f_)
     end
 end
-function ManifoldAlternatingGradientObjective(f::F, grad_f::AbstractVector{<:TG}) where {F, TG}
-    # TODO: REadd evaluation and wrap grad_f
-    return ManifoldAlternatingGradientObjective{F, typeof(grad_f)}(f, grad_f)
+function ManifoldAlternatingGradientObjective(f::F, grad_f::AbstractVector{<:TG}; evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing) where {F, TG}
+    f_ = maybe_wrap_function(f, p; result = :Number)
+    grad_f_ = [ maybe_wrap_function(gf, p, evaluation; result = :TangentVector) for gf in grad_f]
+    return ManifoldAlternatingGradientObjective{typeof(f_), typeof(grad_f_)}(f_, grad_f_)
 end
 function get_gradient(M::AbstractManifold, mago::ManifoldAlternatingGradientObjective{C, <:Function}, p) where {C}
     X = zero_vector(M, p)
@@ -694,7 +701,7 @@ end
 #
 # ---
 """
-    ManifoldConstrainedSetObjective{E, MO, PF, IF} <: AbstractManifoldObjective{E}
+    ManifoldConstrainedSetObjective{MO, PF, IF} <: AbstractManifoldObjective
 
 Model a constrained objective restricted to a set
 
@@ -729,21 +736,24 @@ struct ManifoldConstrainedSetObjective{MO <: AbstractManifoldObjective, PF, IF} 
 end
 
 function ManifoldConstrainedSetObjective(
-        f, grad_f, project!::PF; indicator = nothing
+        f, grad_f, project!::PF; indicator = nothing, evaluation = AllocatingEvaluation(), p = missing,
     ) where {PF}
-    obj = ManifoldGradientObjective(f, grad_f)
+    obj = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, p = p)
+    proj_ = maybe_wrap_function(project!, p, evaluation; result = :Point)
     if isnothing(indicator)
         ind = function (M, p)
             q = rand(M)
-            project!(M, q, p)
+            proj_(M, q, p)
             return distance(M, p, q) ≈ 0 ? 0 : Inf
         end
-        return ManifoldConstrainedSetObjective{typeof(obj), typeof(project!), typeof(ind)}(
-            obj, project!, ind
+        ind_ = maybe_wrap_function(ind, p; result = :Number)
+        return ManifoldConstrainedSetObjective{typeof(obj), typeof(proj_), typeof(ind_)}(
+            obj, proj_, ind_
         )
     end
-    return ManifoldConstrainedSetObjective{typeof(obj), typeof(project!), typeof(indicator)}(
-        obj, project!, indicator
+    ind_ = maybe_wrap_function(indicator, p; result = :Number)
+    return ManifoldConstrainedSetObjective{typeof(obj), typeof(proj_), typeof(ind_)}(
+        obj, proj_, ind_
     )
 end
 
@@ -1912,8 +1922,9 @@ to compute the cost value `c` at `p` on the manifold `M`.
     ManifoldCostObjective(f::F, ::Type{P}) where {F, P}
 
 Generate a [`ManifoldCostObjective`](@ref) with cost function `f`.
-The initial point `p` or its type `P` are used to maybe wrap the cost to make sure
-that it works on mutating point types.
+
+## Keyword Arguments
+* `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
 
 ## See also
 [`NelderMead`](@ref), [`particle_swarm`](@ref)
@@ -2464,10 +2475,12 @@ They can also be addressed by their alternate constructors
 ## Keyword arguments
 
 * `cost = nothing` the cost function `c = f(M,p)`
-* `differential = nothing` the differential `d = df(M, p, X)`
-* `gradient=nothing` the gradient function `g(M, p)` or in-place `g!(M, X, p)`
-* `costgradient = nothing` the combined cost and gradient function `fg(M,p)` or in-place `fg!(M, X, p))`
 * `costdifferential = nothing` the combined cost and differential function  `fdf(M, p, X)`
+* `costgradient = nothing` the combined cost and gradient function `fg(M,p)` or in-place `fg!(M, X, p))`
+* `differential = nothing` the differential `d = df(M, p, X)`
+$(_kwargs(:evaluation))
+* `gradient=nothing` the gradient function `g(M, p)` or in-place `g!(M, X, p)`
+* `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
 
 Where:
  * At least one of `cost`, `costgradient` or `costdifferential` must be provided.
@@ -2487,6 +2500,7 @@ end
 function ManifoldFirstOrderObjective(;
         cost = nothing, differential = nothing, gradient = nothing,
         costgradient = nothing, costdifferential = nothing,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
     )
     # TODO: Readd evaluation
     no_cost = isnothing(cost)
@@ -2511,19 +2525,19 @@ function ManifoldFirstOrderObjective(;
     end
     nt = (;)
     if !no_cost
-        nt = merge(nt, (; cost = cost))
+        nt = merge(nt, (; cost = maybe_wrap_function(cost, p; result = :Number)))
     end
     if !no_grad
-        nt = merge(nt, (; gradient = gradient))
+        nt = merge(nt, (; gradient = maybe_wrap_function(gradient, p, evaluation; result = :TangentVector)))
     end
     if !no_diff
-        nt = merge(nt, (; differential = differential))
+        nt = merge(nt, (; differential = maybe_wrap_function(differential, p; result = :Number)))
     end
     if !ncg
-        nt = merge(nt, (; costgradient = costgradient))
+        nt = merge(nt, (; costgradient = maybe_wrap_function(costgradient, p; result = :NumberAndGradient)))
     end
     if !ncd
-        nt = merge(nt, (; costdifferential = costdifferential))
+        nt = merge(nt, (; costdifferential = maybe_wrap_function(costdifferential, p; result = :Number)))
     end
     return ManifoldFirstOrderObjective{typeof(nt)}(nt)
 end
@@ -2772,11 +2786,11 @@ struct ManifoldHessianObjective{C, G, H, Pre} <: AbstractManifoldHessianObjectiv
             cost::C, grad::G, hess::H, precond = nothing;
             p = missing, evaluation = AllocatingEvaluation(),
         ) where {C, G, H}
-        _cost = maybe_wrap_function(cost, p; result = :Number)
-        _grad = maybe_wrap_function(grad, p, evaluation; result = :TangentVector)
-        _hess = maybe_wrap_function(hess, p, evaluation; result = :TangentVector)
-        _precond = isnothing(precond) ? nothing : maybe_wrap_function(precond, p, evaluation; result = :TangentVector)
-        return new{typeof(_cost), typeof(_grad), typeof(_hess), typeof(_precond)}(_cost, _grad, _hess, _precond)
+        cost_ = maybe_wrap_function(cost, p; result = :Number)
+        grad_ = maybe_wrap_function(grad, p, evaluation; result = :TangentVector)
+        hess_ = maybe_wrap_function(hess, p, evaluation; result = :TangentVector)
+        precond_ = isnothing(precond) ? nothing : maybe_wrap_function(precond, p, evaluation; result = :TangentVector)
+        return new{typeof(cost_), typeof(grad_), typeof(hess_), typeof(precond_)}(cost_, grad_, hess_, precond_)
     end
 end
 function get_gradient(M::AbstractManifold, mho::ManifoldHessianObjective, p)
@@ -3187,6 +3201,11 @@ of one component of ``f``.
 
 Generate a proximal objective for ``f`` and its proxial map ``$(_tex(:prox))_{λf}``
 
+## Keyword Arguments
+
+$(_kwargs(:evaluation))
+* `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
+
 # See also
 
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`get_proximal_map`](@ref)
@@ -3195,10 +3214,15 @@ mutable struct ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostOb
     cost::TC
     proximal_maps!::TP
     number_of_proxes::V
-    function ManifoldProximalMapObjective(f, proxes_f::Union{Tuple, AbstractVector})
+    function ManifoldProximalMapObjective(
+            f, proxes_f::Union{Tuple, AbstractVector};
+            evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
+        )
         np = ones(length(proxes_f))
-        return new{typeof(f), typeof(proxes_f), typeof(np)}(
-            f, proxes_f, np
+        f_ = maybe_wrap_function(f, p; result = :Number)
+        proxes_f_ = [ maybe_wrap_function(pf, p, evaluation; result = :Point) for pf in proxes_f]
+        return new{typeof(f_), typeof(proxes_f_), typeof(np)}(
+            f_, proxes_f_, np
         )
     end
     function ManifoldProximalMapObjective(
@@ -3304,6 +3328,11 @@ as well as ``$(_tex(:grad)) g`` and ``$(_tex(:prox))_{λ h}``.
     ManifoldProximalGradientObjective(f, g, grad_g, prox_h)
 
 Generate the proximal gradient objective given the total cost ``f = g + h``, smooth cost ``g``, the gradient of the smooth component ``$(_tex(:grad)) g``, and the proximal map of the nonsmooth component ``$(_tex(:prox))_{λ h}``.
+
+## Keyword Arguments
+
+$(_kwargs(:evaluation))
+* `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
 """
 struct ManifoldProximalGradientObjective{TC, TG, TGG, TP} <: AbstractManifoldCostObjective{TC}
     cost::TC # f = g + h
@@ -3311,9 +3340,14 @@ struct ManifoldProximalGradientObjective{TC, TG, TGG, TP} <: AbstractManifoldCos
     gradient_g!::TGG
     proximal_map_h!::TP
     function ManifoldProximalGradientObjective(
-            f::TC, g::TG, grad_g::TGG, prox_h::TP
+            f::TC, g::TG, grad_g::TGG, prox_h::TP;
+            evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
         ) where {TC, TG, TGG, TP}
-        return new{TC, TG, TGG, TP}(f, g, grad_g, prox_h)
+        f_ = maybe_wrap_function(f, p; result = :Number)
+        g_ = maybe_wrap_function(g, p; result = :Number)
+        grad_g_ = maybe_wrap_function(grad_g, p, evaluation; result = :TangentVector)
+        prox_h_ = maybe_wrap_function(prox_h, p, evaluation; result = :Point)
+        return new{typeof(f_), typeof(g_), typeof(grad_g_), typeof(prox_h_)}(f_, g_, grad_g_, prox_h_)
     end
 end
 
@@ -3402,6 +3436,12 @@ function (returning an array of tangent vectors) or a vector of functions (each 
 The optional cost can also be given as either a single function (returning a number)
 pr a vector of functions, each returning a value.
 
+## Keyword Arguments
+
+* `cost = missing` provide the cost e.g. when it is used in a stopping criterion.
+$(_kwargs(:evaluation))
+* `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
+
 # Used with
 [`stochastic_gradient_descent`](@ref)
 
@@ -3413,9 +3453,21 @@ struct ManifoldStochasticGradientObjective{C, G} <: AbstractManifoldFirstOrderOb
     gradient!::G
 end
 function ManifoldStochasticGradientObjective(
-        grad_f!::G; cost::C = Missing()
+        grad_f::G; cost::C = Missing(), evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
     ) where {G <: Union{Function, AbstractVector{<:Function}}, C <: Union{Function, AbstractVector{<:Function}, Missing}}
-    return ManifoldStochasticGradientObjective{C, G}(cost, grad_f!)
+    if G <: AbstractVector
+        grad_f_ = [ maybe_wrap_function(gf, p, evaluation; result = :TangentVector) for gf in grad_f]
+    else
+        grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
+    end
+    if ismissing(cost)
+        cost_ = cost
+    elseif C <: AbstractVector
+        cost_ = [maybe_wrap_function(c, p; result = :Number) for c in cost ]
+    else
+        cost_ = maybe_wrap_function(cost, p; result = :Number)
+    end
+    return ManifoldStochasticGradientObjective{typeof(cost_), typeof(grad_f_)}(cost_, grad_f_)
 end
 function get_cost(
         M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C}, p
@@ -3579,18 +3631,27 @@ A structure to store information about a objective for a subgradient based optim
 
 # Constructor
 
-    ManifoldSubgradientObjective(f, ∂f)
+    ManifoldSubgradientObjective(f, ∂f; evaluation = AllocatingEvaluation, p = missing)
 
 Generate the [`ManifoldSubgradientObjective`](@ref) for a subgradient objective, consisting
 of a (cost) function `f(M, p)` and a function `∂f(M, p)` that returns a not necessarily
 deterministic element from the subdifferential at `p` on a manifold `M`.
+
+## Keyword Arguments
+
+$(_kwargs(:evaluation))
+* `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
 """
 struct ManifoldSubgradientObjective{C, S} <: AbstractManifoldCostObjective{C}
     cost::C
     subgradient!::S
-    function ManifoldSubgradientObjective(cost::C, subgrad::S) where {C, S}
-        # TODO: readd evaluation= keyword and wrap accordingly
-        return new{C, S}(cost, subgrad)
+    function ManifoldSubgradientObjective(
+            cost::C, subgrad::S;
+            evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
+        ) where {C, S}
+        cost_ = maybe_wrap_function(cost, p; result = :Number)
+        subgrad_ = maybe_wrap_function(subgrad, p, evaluation; result = :TangentVector)
+        return new{typeof(cost_), typeof(subgrad_)}(cost_, subgrad_)
     end
 end
 

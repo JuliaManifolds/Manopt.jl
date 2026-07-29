@@ -72,7 +72,9 @@ function GradientDescentState(
     )
 end
 provided_callbacks(::Type{GradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
-get_callbacks(state::GradientDescentState) = state.callbacks
+get_callbacks(gds::GradientDescentState) = gds.callbacks
+get_iterate(gds::GradientDescentState) = gds.p
+set_iterate!(gds::GradientDescentState, M, p) = copyto!(M, gds.p, p)
 
 function (r::IdentityUpdateRule)(
         mp::AbstractManoptProblem, s::AbstractGradientSolverState, k

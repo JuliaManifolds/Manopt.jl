@@ -78,25 +78,25 @@ end
         @test contains(sco1t, "## Cache")
         # evaluated on init -> 1
         @test sco1.objective.functions[:cost].i == 1
-        @test sco1.objective.functions[:gradient].i == 1
+        @test sco1.objective.functions[:gradient].f.i == 1
         @test get_gradient(M, sco1, p) == p
         get_gradient!(M, X, sco1, p)
         @test X == zero_vector(M, p)
         @test get_cost(M, sco1, p) == norm(p)
         # still at 1
         @test sco1.objective.functions[:cost].i == 1
-        @test sco1.objective.functions[:gradient].i == 1
+        @test sco1.objective.functions[:gradient].f.i == 1
         @test get_gradient(M, sco1, q) == q # triggers an evaluation
         get_gradient!(M, X, sco1, q) # same point, copies
         @test X == q
         @test get_cost(M, sco1, q) == norm(q)
         @test sco1.objective.functions[:cost].i == 2
-        @test sco1.objective.functions[:gradient].i == 2
+        @test sco1.objective.functions[:gradient].f.i == 2
         # first `grad!`
         get_gradient!(M, X, sco1, r) # triggers an evaluation
         @test get_gradient(M, sco1, r) == X # cached
         @test X == r
-        @test sco1.objective.functions[:gradient].i == 3
+        @test sco1.objective.functions[:gradient].f.i == 3
         @test Manopt.get_cost_function(sco1) != Manopt.get_cost_function(mgoa)
         @test Manopt.get_gradient_function(sco1) != Manopt.get_gradient_function(mgoa)
         # test cost_grad, back to q to trigger first
@@ -104,22 +104,22 @@ end
         @test X == q
         @test c == norm(q)
         @test sco1.objective.functions[:cost].i == 3
-        @test sco1.objective.functions[:gradient].i == 4
+        @test sco1.objective.functions[:gradient].f.i == 4
         c, _ = Manopt.get_cost_and_gradient!(M, X, sco1, q) # cached
         @test X == q
         @test c == norm(q)
         @test sco1.objective.functions[:cost].i == 3
-        @test sco1.objective.functions[:gradient].i == 4
+        @test sco1.objective.functions[:gradient].f.i == 4
         # Diff via grad - with caching (since not recursive)
         df = Manopt.get_differential_function(sco1)
         d = df(M, r, X) #norm <r, X> since grad is r, triggers, but does not cache grad
         @test d == dot(X, r)
-        @test sco1.objective.functions[:gradient].i == 5
+        @test sco1.objective.functions[:gradient].f.i == 5
         get_gradient(M, sco1, r)
-        @test sco1.objective.functions[:gradient].i == 6
+        @test sco1.objective.functions[:gradient].f.i == 6
         d = get_differential(M, sco1, r, X) # ...so that this is cached
         @test d == dot(X, r)
-        @test sco1.objective.functions[:gradient].i == 6
+        @test sco1.objective.functions[:gradient].f.i == 6
 
         mgoi = ManifoldGradientObjective(
             TestCostCount(0), TestGradCount(0); evaluation = InplaceEvaluation()

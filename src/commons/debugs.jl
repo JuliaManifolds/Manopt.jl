@@ -1077,8 +1077,8 @@ mutable struct DebugStepsize <: DebugAction
     format::String
     at_init::Bool
     function DebugStepsize(;
-            at_init::Bool = true, format = "$prefix%s", io::IO = stdout, long::Bool = false,
-            prefix = long ? "step size:" : "s:",
+            at_init::Bool = true, io::IO = stdout,
+            long::Bool = false, prefix = long ? "step size:" : "s:", format = "$prefix%s",
         )
         return new(io, format, at_init)
     end

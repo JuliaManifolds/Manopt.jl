@@ -27,19 +27,30 @@ Note that the gradient and the subdifferential might be given in two possible si
 
 # Constructor
 
-    ManifoldDifferenceOfConvexObjective(cost, ∂h; gradient = nothing)
+    ManifoldDifferenceOfConvexObjective(cost, ∂h; gradient = nothing, evaluation = AllocatingEvaluation(), p = missing)
 
 Create the difference of convex objective given a `cost` function and the subdifferential `∂h` of the non-smooth part
 The `gradient` of the smooth part and the `evaluation = ` type are keywords.
+
+## Keyword Arguments
+
+$(_kwargs(:evaluation))
+* `gradient = nothing` provide a gradient of the smooth part
+* `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
 """
 struct ManifoldDifferenceOfConvexObjective{F, G, S} <:
     AbstractManifoldFirstOrderObjective{F, G}
     cost::F
     gradient!::G
     ∂h!::S
-    function ManifoldDifferenceOfConvexObjective(cost::TC, ∂h::TSH; gradient::TG = nothing) where {TC, TG, TSH}
-        # TODO: Readd evaluation
-        return new{TC, TG, TSH}(cost, gradient, ∂h)
+    function ManifoldDifferenceOfConvexObjective(
+            cost::TC, ∂h::TSH;
+            gradient::TG = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
+        ) where {TC, TG, TSH}
+        cost_ = maybe_wrap_function(cost, p; result = :Number)
+        gradient_ = isnothing(gradient) ? gradient : maybe_wrap_function(gradient, p, evaluation; result = :TangentVector)
+        ∂h_ = maybe_wrap_function(∂h, p, evaluation; result = :TangentVector)
+        return new{typeof(cost_), typeof(gradient_), typeof(∂h_)}(cost_, gradient_, ∂h_)
     end
 end
 function get_gradient_function(doco::ManifoldDifferenceOfConvexObjective, recursive = false)
