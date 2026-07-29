@@ -34,7 +34,7 @@ struct ManifoldDifferenceOfConvexProximalObjective{GH, F, G} <: AbstractManifold
     gradient!::G
     grad_h!::GH
     function ManifoldDifferenceOfConvexProximalObjective(
-            grad_h::THG; cost::TC = nothing, gradient::TG = nothing, evaluation::AbstractEvaluationType, p = missing,
+            grad_h::THG; cost::TC = nothing, gradient::TG = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing,
         ) where {TC, TG, THG}
         cost_ = maybe_wrap_function(cost, p; result = :Number)
         grad_h_ = maybe_wrap_function(grad_h, p, evaluation; result = :TangentVector)

@@ -100,8 +100,7 @@ using LinearAlgebra: Symmetric
             Manopt.get_gradient_function(c_obj, true)
         grad_f1 = Manopt.get_gradient_function(c_obj)
         @test grad_f1 != grad_f
-        X = zero_vector(M, p)
-        @test grad_f1(M, X, p) == grad_f(M, p)
+        @test grad_f1(M, p) == grad_f(M, p)
         @test get_count(c_obj, :Gradient) == 1 # still counted
         # And Hessian
         @test Manopt.get_hessian_function(obj) === Manopt.get_hessian_function(c_obj, true)
@@ -125,7 +124,7 @@ using LinearAlgebra: Symmetric
         # The same for gradient
         @test Manopt.get_gradient_function(obj_i) ===
             Manopt.get_gradient_function(c_obj_i, true)
-        grad_f1! = Manopt.get_gradient_function(c_obj_i)
+        grad_f1! = Manopt.get_gradient_function(c_obj_i; evaluation = InplaceEvaluation())
         @test grad_f1! != grad_f!
         Y = similar(X)
         Z = similar(X)
@@ -134,7 +133,7 @@ using LinearAlgebra: Symmetric
         # And Hessian
         @test Manopt.get_hessian_function(obj_i) ===
             Manopt.get_hessian_function(c_obj_i, true)
-        Hess_f1! = Manopt.get_hessian_function(c_obj_i)
+        Hess_f1! = Manopt.get_hessian_function(c_obj_i; evaluation = InplaceEvaluation())
         @test Hess_f1 != Hess_f
         @test Hess_f1!(M, Y, p, X) == Hess_f!(M, Z, p, X)
         @test get_count(c_obj_i, :Hessian) == 1 # still counted
