@@ -309,7 +309,7 @@ function NesterovRule(
         inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M, typeof(p)),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
     ) where {P, T}
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     return NesterovRule(
         γ = γ, μ = μ, v = copy(M, p_), shrinkage = shrinkage, inverse_retraction_method = inverse_retraction_method, retraction_method = retraction_method,
     )

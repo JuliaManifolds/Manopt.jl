@@ -268,7 +268,7 @@ function DouglasRachford(
         parallel = 0,
         kwargs...,
     ) where {TF}
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     proxes_f_ = [_ensure_mutating_prox(prox_f, p, evaluation) for prox_f in proxes_f]
     N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(
@@ -276,7 +276,7 @@ function DouglasRachford(
     )
     mpo = ManifoldProximalMapObjective(f__, (prox1, prox2); evaluation = evaluation)
     rs = DouglasRachford(N, mpo, q; evaluation = evaluation, parallel = parallel_, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function DouglasRachford(
         M::AbstractManifold, mpo::O, p; kwargs...

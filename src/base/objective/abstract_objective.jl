@@ -70,20 +70,6 @@ function Base.show(io::IO, ro::ReturnManifoldObjective)
     return print(io, ")")
 end
 
-#
-# internal automatic wrappers to ensure mutability of the iterate
-_ensure_mutating_cost(cost, q::Number) = isnothing(cost) ? cost : (M, p) -> cost(M, p[])
-_ensure_mutating_cost(cost, p) = cost
-_ensure_mutating_gradient(grad_f, q) = grad_f
-# Here the grad is already mutating – i.e. wrapped
-_ensure_mutating_gradient(grad_f, q::Number) = (M, X, p) -> (X .= [grad_f(M, p[])])
-# ToDo – find. a way to “easy-wrap” alloc gradients.
-
-_ensure_mutating_variable(p) = p
-_ensure_mutating_variable(q::Number) = [q]
-_ensure_matching_output(::T, q::Vector{T}) where {T} = length(q) == 1 ? q[] : q
-_ensure_matching_output(p, q) = q
-
 """
     dispatch_objective_decorator(o::AbstractManoptSolverState)
 

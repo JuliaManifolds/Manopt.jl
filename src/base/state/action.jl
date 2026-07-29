@@ -171,7 +171,7 @@ end
         store_fields::Vector{Symbol} = Symbol[],
         store_points::Union{Type{<:Tuple}, Vector{Symbol}} = Tuple{},
         store_vectors::Union{Type{<:Tuple}, Vector{Symbol}} = Tuple{},
-        p_init = _ensure_mutating_variable(rand(M)),
+        p_init = maybe_wrap_variable(rand(M)),
         X_init = zero_vector(M, p_init),
         once = true,
     )

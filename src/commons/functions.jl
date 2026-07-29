@@ -1,9 +1,80 @@
 """
-    AllocatingManifoldFunction{F}
+    maybe_wrap_function(f, p, evaluation = AllocatingEvaluation(); result = :TangentVector)
 
-Wrapper for a function that does not work in-place but allocates, i.e. a function of the form
-`f(M, args...) = v` is wrapped herein to work as an in-place variant
-`f!(M, v, args...) = v` to be used within Manopt
+Wrap a function `f` defined on a manifold `M` to work
+* in-place, that is copy over the result if it is not yet in-place
+* on mutating input `p`, i.e. use a 1-element vector to store numbers.
+"""
+
+function maybe_wrap_variable end
+"""
+    maybe_wrap_variable(v)
+
+For a number variable `v` wrap it in an 1-element vector to make it mutable.
+Otherwise return the variable as is.
+"""
+maybe_wrap_variable(v)
+maybe_wrap_variable(v::Number) = [v]
+maybe_wrap_variable(v) = v
+
+function maybe_unwrap_variable end
+"""
+    maybe_unwrap_variable(p::P, q::P)
+    maybe_unwrap_variable(p::P, q::Vector{P})
+
+Undo the wrapping performed by `maybe_wrap_variable`, i.e. given the original
+input variable `p` and the possibly wrapped variable `q`, return the unwrapped variable,
+i.e. if `q` is a 1-element vector of same element-type `P` as the type of `p`,
+return this one element.
+"""
+maybe_unwrap_variable(::P, q::P) where {P} = q
+maybe_unwrap_variable(p::P, q::Vector{P}) where {P} = maybe_unwrap_variable(typeof(p), q)
+maybe_unwrap_variable(::Type{P}, q::Vector{P}) where {P} = length(q) == 1 ? q[] : q
+
+"""
+    MutableManifoldFunction{P, F}
+
+A wrapper for a function defined on a manifold to ensure it works on mutable variables,
+internally “unwrapping” them to numbers before calling the function that is wrapped.
+
+Since the function is working on immutable input types, it is assumed to work allocating,
+i.e. to be used within objectives of `Manopt.jl`, consider wrapping e.g. gradient or Hessian
+functions furthermore in a [`InplaceManifoldFunction`](@ref).
+
+## Fields
+* `f::F` : the function to be wrapped of the form `(M, args...) -> v`
+* `result::Symbol`: specify the type of result. If the result is expected to be a `:Number`,
+  it is kept as is, for anything else, like a `:Point` or `:TangentVector`, the result is
+  returned (again) as a mutable variable
+
+## Constructor
+
+    MutableManifoldFunction(f, p::P; result = :Number)
+    MutableManifoldFunction(f, P; result = :Number)
+
+Initialise the wrapper for a function `f` defined on a manifold, where `p` is a point on the manifold,
+to store the original point type `P` for the Arguments.
+"""
+struct MutableManifoldFunction{P, F}
+    f::F
+    result::Symbol
+    function MutableManifoldFunction(f::F, ::Type{P}, result::Symbol = :Number) where {F, P}
+        return new{P, F}(f, result)
+    end
+end
+function MutableManifoldFunction(f::F, ::P, result::Symbol = :Number) where {F, P}
+    return MutableManifoldFunction(f, P; result = result)
+end
+function (f::MutableManifoldFunction{P})(M, args...) where {P}
+    args_unwrapped = map(a -> maybe_unwrap_variable(P, a), args)
+    v = f.f(M, args_unwrapped...)
+    return f.result === :Number ? v : maybe_wrap_variable(v)
+end
+
+"""
+    InplaceManifoldFunction{F}
+
+Wrapper for a function to ensure it works in-place.
 
 # Fields
 * `f::F` : the function to be wrapped of the form `(M, args...) -> v`
@@ -11,30 +82,48 @@ Wrapper for a function that does not work in-place but allocates, i.e. a functio
   * `:Point` uses the corresponding `copyto!` for points
   * `:TangentVector` uses the corresponding `copyto!` for tangentvectors
     this type assumes, that the first argument is the point `p` the tangent vector is at.
-  * `:Number` the result is a number and hence can not use `copyto!`, we hence assume `v`
-    is a 0-dimensional array.
-
-  all other symbols use a call of `copyto!`
-
+  * `:Number` the result is a number. We hence assume that `v` is a zero- or one-dimensional array and store the value using `v[]`.
 
 # Constructor
 
-    AllocatingManifoldFunction(f, result = :Point)
+    InplaceManifoldFunction(f; result = :Point, input_type = P)
 """
-struct AllocatingManifoldFunction{F}
+struct InplaceManifoldFunction{F}
     f::F
     result::Symbol
-    function AllocatingManifoldFunction(f::F, result::Symbol = :Point) where {F}
+    function InplaceManifoldFunction(f::F, result::Symbol = :Point) where {P, F}
         return new{F}(f, result)
     end
 end
-function (f!::AllocatingManifoldFunction)(M, v, args...)
-    (f!.result === :Point) && return copyto!(M, v, f!.f(M, args...))
-    (f!.result === :TangentVector) && return copyto!(M, v, first(args...), f!.f(M, args...))
-    (f!.result === :Number) && return (v[] = f!.f(M, args...))
+function (f!::InplaceManifoldFunction)(M, v, p, args...)
+    (f!.result === :Point) && return copyto!(M, v, f!.f(M, p, args...))
+    (f!.result === :TangentVector) && return copyto!(M, v, p, f!.f(M, p, args...))
+    (f!.result === :Number) && return (v[] = f!.f(M, p, args...))
     # default: Just copyto!
     return copyto!(v, f!.f(M, args...))
 end
+
+"""
+    maybe_wrap_function(f, p, evaluation = AllocatingEvaluation(); result = :Number)
+    maybe_wrap_function(f, evaluation = AllocatingEvaluation(); result = :Number)
+
+Wrap a function `f` defined on a manifold to work in-place on mutable variables, i.e. first
+if the input variable `p` is a number, the function `f` is wrapped in a [`MutableManifoldFunction`](@ref).
+If then the function has an [`AllocatingManifoldFunction`](@ref) as `evaluation` type, it is wrapped in a [`InplaceManifoldFunction`](@ref) to work in-place of the result.
+
+The first step is skipped if the input variable `p` is not a number or not provided.
+"""
+maybe_wrap_function(f, p, evaluation::AbstractEvaluationType = AllocatingEvaluation(); result::Symbol = :Number) = maybe_wrap_function(f, typeof(p), evaluation; result = result)
+function maybe_wrap_function(
+        f, ::Type{P}, evaluation::AbstractEvaluationType = AllocatingEvaluation(); result::Symbol = :Number
+    ) where {P <: Number}
+    return maybe_wrap_function(MutableManifoldFunction(f, P, evaluation; result = result))
+end
+function maybe_wrap_function(f, ::Type{P}, evaluation::AbstractEvaluationType = AllocatingEvaluation(); result::Symbol = :Number) where {P}
+    return maybe_wrap_function(f, evaluation; result = result)
+end
+maybe_wrap_function(f, ::AllocatingEvaluation; result::Symbol = :Point) = InplaceManifoldFunction(f; result = result)
+maybe_wrap_function(f, ::InplaceEvaluation; result::Symbol = :Point) = f
 
 # TODO: Maybe also re-add the evaluation keyword here again
 @doc """

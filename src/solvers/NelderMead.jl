@@ -37,7 +37,7 @@ function NelderMeadSimplex(
         a::Real = 0.025,
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
     )
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     M_dim = manifold_dimension(M)
     vecs = [
         get_vector(M, p_, [ifelse(i == j, a, zero(a)) for i in 1:M_dim], B) for j in 0:M_dim

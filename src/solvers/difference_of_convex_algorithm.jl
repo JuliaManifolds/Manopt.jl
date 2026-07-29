@@ -296,7 +296,7 @@ function difference_of_convex_algorithm(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         grad_g = nothing, gradient = nothing, kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     g_ = _ensure_mutating_cost(g, p)
     gradient_ = _ensure_mutating_gradient(gradient, p, evaluation)
@@ -309,7 +309,7 @@ function difference_of_convex_algorithm(
         M, mdco, p_;
         g = g_, evaluation = evaluation, gradient = gradient_, grad_g = grad_g_, kwargs...,
     )
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function difference_of_convex_algorithm(
         M::AbstractManifold, mdco::O, p; kwargs...

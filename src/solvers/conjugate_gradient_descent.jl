@@ -108,12 +108,12 @@ end
 function conjugate_gradient_descent(
         M::AbstractManifold, f::TF, grad_f::TDF, p; evaluation = AllocatingEvaluation(), kwargs...
     ) where {TF, TDF}
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
     mgo = ManifoldGradientObjective(f_, grad_f_; evaluation = evaluation)
     rs = conjugate_gradient_descent(M, mgo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function conjugate_gradient_descent(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...

@@ -347,7 +347,7 @@ function augmented_Lagrangian_method(
         equality_constraints::Union{Nothing, Integer} = nothing,
         kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
     g_ = _ensure_mutating_cost(g, p)
@@ -369,7 +369,7 @@ function augmented_Lagrangian_method(
         p = p,
     )
     rs = augmented_Lagrangian_method(M, cmo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function augmented_Lagrangian_method(
         M::AbstractManifold, cmo::O, p = rand(M); kwargs...

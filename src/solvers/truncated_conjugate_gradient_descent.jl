@@ -511,8 +511,8 @@ function truncated_conjugate_gradient_descent(
         end,
         kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    X_ = _ensure_mutating_variable(X)
+    p_ = maybe_wrap_variable(p)
+    X_ = maybe_wrap_variable(X)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
     preconditioner_ = _ensure_mutating_hessian(preconditioner, p, evaluation)
@@ -524,7 +524,7 @@ function truncated_conjugate_gradient_descent(
     rs = truncated_conjugate_gradient_descent(
         M, mho, p_, X_; evaluation = evaluation, kwargs...
     )
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 #
 # Objective 1 -> generate model

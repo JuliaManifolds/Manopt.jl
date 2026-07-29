@@ -109,12 +109,12 @@ function proximal_point(
         M::AbstractManifold, prox_f, p = rand(M);
         f = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     prox_f_ = _ensure_mutating_prox(prox_f, p, evaluation)
     mpo = ManifoldProximalMapObjective(f_, prox_f_; evaluation = evaluation)
     rs = proximal_point(M, mpo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function proximal_point(
         M::AbstractManifold, mpo::O, p; kwargs...

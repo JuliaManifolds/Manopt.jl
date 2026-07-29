@@ -406,19 +406,19 @@ Glossaries.define!(_glossary_variables, :initial_guess)
 Glossaries.define!(
     _glossary_variables, :initial_guess, :description,
     """
-    a function to provide an initial guess for the step size,
-    it maps `(problem, state, k, last_stepsize, η) -> α_0` based on
-    * a [`AbstractManoptProblem`](@ref) `problem`
-    * a [`AbstractManoptSolverState`](@ref) `state`
-    * the current iterate `k`
-    * the last step size `last_stepsize`
-    * the search direction `η`
+      a function to provide an initial guess for the step size,
+      it maps `(problem, state, k, last_stepsize, η) -> α_0` based on
+      * a [`AbstractManoptProblem`](@ref) `problem`
+      * a [`AbstractManoptSolverState`](@ref) `state`
+      * the current iterate `k`
+      * the last step size `last_stepsize`
+      * the search direction `η`
 
-    and should at least accept the keywords
+      and should at least accept the keywords
 
-    * `lf0 = `[`get_cost`](@ref)`(problem, get_iterate(state))` the current cost at ^p` here interpreted as the initial point of `f` along the line search direction`
-    * `Dlf0 = `[`get_differential`](@ref)`(problem, get_iterate(state), η)` the directional derivative at point `p` in direction `η`
-  """,
+      * `lf0 = `[`get_cost`](@ref)`(problem, get_iterate(state))` the current cost at ^p` here interpreted as the initial point of `f` along the line search direction`
+      * `Dlf0 = `[`get_differential`](@ref)`(problem, get_iterate(state), η)` the directional derivative at point `p` in direction `η`
+    """,
 )
 Glossaries.define!(_glossary_variables, :initial_guess, :type, "F")
 

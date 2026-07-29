@@ -291,12 +291,12 @@ function Frank_Wolfe_method(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
     mgo = ManifoldGradientObjective(f_, grad_f_; evaluation = evaluation)
     rs = Frank_Wolfe_method(M, mgo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function Frank_Wolfe_method(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...

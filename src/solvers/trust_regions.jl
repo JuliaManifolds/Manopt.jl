@@ -343,7 +343,7 @@ function trust_regions(
         end,
         kwargs...,
     ) where {TH <: Function}
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
     Hess_f_ = _ensure_mutating_hessian(Hess_f, p, evaluation)
@@ -352,7 +352,7 @@ function trust_regions(
         f_, grad_f_, Hess_f_, preconditioner_; evaluation = evaluation
     )
     rs = trust_regions(M, mho, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 # neither Hessian (Function) nor point
 function trust_regions(M::AbstractManifold, f, grad_f; kwargs...)

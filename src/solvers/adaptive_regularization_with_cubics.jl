@@ -385,13 +385,13 @@ function adaptive_regularization_with_cubics(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     ) where {TF, TDF, THF}
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
     Hess_f_ = _ensure_mutating_hessian(Hess_f, p, evaluation)
     mho = ManifoldHessianObjective(f_, grad_f_, Hess_f_; evaluation = evaluation)
     rs = adaptive_regularization_with_cubics(M, mho, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function adaptive_regularization_with_cubics(M::AbstractManifold, f, grad_f; kwargs...)
     return adaptive_regularization_with_cubics(M, f, grad_f, rand(M); kwargs...)

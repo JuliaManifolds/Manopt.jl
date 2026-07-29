@@ -354,7 +354,7 @@ function difference_of_convex_proximal_point(
         kwargs...,
     )
     keywords_accepted(difference_of_convex_proximal_point; kwargs...)
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     cost_ = _ensure_mutating_cost(cost, p)
     grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
     g_ = _ensure_mutating_cost(g, p)
@@ -371,7 +371,7 @@ function difference_of_convex_proximal_point(
         gradient = gradient_, g = g_, grad_g = grad_g_, prox_g = prox_g_,
         kwargs...,
     )
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 
 function difference_of_convex_proximal_point(

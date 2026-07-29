@@ -144,12 +144,12 @@ function cyclic_proximal_point(
         M::AbstractManifold, f, proxes_f::Union{Tuple, AbstractVector}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     proxes_f_ = [_ensure_mutating_prox(prox_f, p, evaluation) for prox_f in proxes_f]
     mpo = ManifoldProximalMapObjective(f_, proxes_f_; evaluation = evaluation)
     rs = cyclic_proximal_point(M, mpo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function cyclic_proximal_point(
         M::AbstractManifold, mpo::O, p; kwargs...
