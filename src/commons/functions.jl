@@ -162,7 +162,9 @@ $(_kwargs([:retraction_method, :vector_transport_method]))
 ## Keyword arguments
 
 * `steplength=2^{-14}`: step length ``c`` to approximate the gradient evaluations
+$(_kwargs(:evaluation))
 $(_kwargs([:retraction_method, :vector_transport_method]))
+
 """
 mutable struct ApproxHessianFiniteDifference{P, T, G, RTR, VTR, R <: Real} <: AbstractApproximateHessianFunction
     p_dir::P
@@ -179,14 +181,17 @@ function ApproxHessianFiniteDifference(
         steplength::R = 2^-14,
         retraction_method::RTR = default_retraction_method(M, typeof(p)),
         vector_transport_method::VTR = default_vector_transport_method(M, typeof(p)),
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     ) where {
         mT <: AbstractManifold, P, G, R <: Real,
         RTR <: AbstractRetractionMethod, VTR <: AbstractVectorTransportMethod,
     }
-    X = copy(M, p, tangent_vector)
-    Y = copy(M, p, tangent_vector)
-    return ApproxHessianFiniteDifference{P, typeof(X), G, RTR, VTR, R}(
-        p, grad_f, X, Y, retraction_method, vector_transport_method, steplength
+    p_ = maybe_wrap_variable(p)
+    X = copy(M, p_, tangent_vector)
+    Y = copy(M, p_, tangent_vector)
+    grad_f_ = maybe_wrap_function(grad_f, p, evaluation, result = :TangentVector)
+    return ApproxHessianFiniteDifference{typeof(p_), typeof(X), typeof(grad_f_), RTR, VTR, R}(
+        p_, grad_f_, X, Y, retraction_method, vector_transport_method, steplength
     )
 end
 function (f::ApproxHessianFiniteDifference)(M, Y, p, X)
@@ -227,6 +232,7 @@ $(_kwargs(:vector_transport_method)).
 
 ## Keyword arguments
 
+$(_kwargs(:evaluation))
 * `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
 * `basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)
@@ -241,18 +247,22 @@ mutable struct ApproxHessianSymmetricRankOne{P, G, T, B <: AbstractBasis{ℝ}, V
     ν::R
 end
 function ApproxHessianSymmetricRankOne(
-        M::mT, p::P, gradient::G;
+        M::mT, p::P, grad_f::G;
         initial_operator::AbstractMatrix = Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M)),
         basis::B = default_basis(M, typeof(p)),
         nu::R = -1.0,
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     ) where {
         mT <: AbstractManifold, P, G, B <: AbstractBasis{ℝ}, R <: Real, VTM <: AbstractVectorTransportMethod,
     }
-    grad_tmp = zero_vector(M, p)
-    gradient(M, grad_tmp, p)
-    return ApproxHessianSymmetricRankOne{P, G, typeof(grad_tmp), B, VTM, R}(
-        p, gradient, grad_tmp, initial_operator, basis, vector_transport_method, nu
+    p_ = maybe_wrap_variable(p)
+    X = zero_vector(M, p_)
+    grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
+    # Fill X with current gradient
+    grad_f_(M, X, p_)
+    return ApproxHessianSymmetricRankOne{typeof(p_), typeof(grad_f_), typeof(X), B, VTM, R}(
+        p_, grad_f_, X, initial_operator, basis, vector_transport_method, nu
     )
 end
 function (f::ApproxHessianSymmetricRankOne)(M, Y, p, X)
@@ -309,6 +319,7 @@ $(_fields(:vector_transport_method))
 
 ## Keyword arguments
 
+$(_kwargs(:evaluation))
 * `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
 * `basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`)) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)
@@ -325,18 +336,21 @@ mutable struct ApproxHessianBFGS{
     scale::Bool
 end
 function ApproxHessianBFGS(
-        M::mT, p::P, gradient::G;
+        M::mT, p::P, grad_f::G;
         initial_operator::AbstractMatrix = Matrix{Float64}(
             I, manifold_dimension(M), manifold_dimension(M)
         ),
         basis::B = default_basis(M, typeof(p)),
         scale::Bool = true,
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     ) where {mT <: AbstractManifold, P, G, B <: AbstractBasis{ℝ}, VTM <: AbstractVectorTransportMethod}
-    grad_tmp = zero_vector(M, p)
-    gradient(M, grad_tmp, p)
-    return ApproxHessianBFGS{P, G, typeof(grad_tmp), B, VTM}(
-        p, gradient, grad_tmp, initial_operator, basis, vector_transport_method, scale
+    p_ = maybe_wrap_variable(p)
+    X = zero_vector(M, p_)
+    grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
+    grad_f_(M, X, p)
+    return ApproxHessianBFGS{typeof(p_), typeof(grad_f_), typeof(X), B, VTM}(
+        p_, grad_f_, X, initial_operator, basis, vector_transport_method, scale
     )
 end
 function (f::ApproxHessianBFGS)(M, Y, p, X)
