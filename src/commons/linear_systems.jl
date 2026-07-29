@@ -14,32 +14,41 @@ for (iteratively) solving Newton-like equations.
 
 # Fields
 
-* `A!!`: a symmetric, linear operator on the tangent space, see [`get_linear_operator`](@ref)
-* `b!!`: a tangent vector function, see [`get_vector_field`](@ref)
+* `A!`: a symmetric, linear operator on the tangent space, see [`get_linear_operator`](@ref)
+* `b!`: a tangent vector function, see [`get_vector_field`](@ref)
 
-where `A!!` is implemented as in-place operator `(M, Y, p, X) -> Y`,
-and similarly `b!!` is a function `(M, X, p) -> X` implemented to work in-place of `X`.
+where `A!` is implemented as in-place operator `(M, Y, p, X) -> Y`,
+and similarly `b!` is a function `(M, X, p) -> X` implemented to work in-place of `X`.
 
 # Constructor
 
-    SymmetricLinearSystemObjective(A, b; evaluation=AllocatingEvaluation())
+    SymmetricLinearSystemObjective(A, b; evaluation=AllocatingEvaluation(), p = missing)
 
 Generate the objective specifying whether the two parts work allocating or in-place.
+
+## Keyword Arguments
+
+$(_kwargs(:evaluation))
+* `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
 """
 mutable struct SymmetricLinearSystemObjective{TA, T} <: AbstractSymmetricLinearSystemObjective
-    A!!::TA
-    b!!::T
+    A!::TA
+    b!::T
+    function SymmetricLinearSystemObjective(A, b; evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing)
+        A_ = maybe_wrap_function(A, p, evaluation; result = :TangentVector)
+        b_ = maybe_wrap_function(b, p, evaluation; result = :TangentVector)
+        return new{typeof(A_), typeof(b_)}(A_, b_)
+    end
 end
-
 function set_parameter!(slso::SymmetricLinearSystemObjective, symbol::Symbol, value)
-    set_parameter!(slso.A!!, symbol, value)
-    set_parameter!(slso.b!!, symbol, value)
+    set_parameter!(slso.A!, symbol, value)
+    set_parameter!(slso.b!, symbol, value)
     return slso
 end
 
 function Base.show(io::IO, slso::SymmetricLinearSystemObjective)
     print(io, "SymmetricLinearSystemObjective(")
-    print(io, slso.A!!); print(io, ", "); print(io, slso.b!!)
+    print(io, slso.A!); print(io, ", "); print(io, slso.b!)
     return print(io, ")")
 end
 
@@ -51,18 +60,18 @@ function status_summary(slso::SymmetricLinearSystemObjective; context::Symbol = 
     and a function `b(M,p)` returning the vector on the right hand side in the current tangent space.
 
     # Fields
-    * A: $(slso.A!!)
-    * b: $(slso.b!!)"""
+    * A: $(slso.A!)
+    * b: $(slso.b!)"""
 end
 
 # TODO: Docs – maybe even over on the general setup?
 function get_linear_operator(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p, X)
     Y = copy(M, p, X)
-    slso.A!!(M, Y, p, X)
+    slso.A!(M, Y, p, X)
     return Y
 end
 function get_linear_operator!(M::AbstractManifold, W, slso::SymmetricLinearSystemObjective, p, X)
-    return slso.A!!(M, W, p, X)
+    return slso.A!(M, W, p, X)
 end
 
 @doc """
@@ -76,20 +85,20 @@ either providing a tangent space or a manifold and a point.
 """
 function get_vector_field(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p)
     Y = zero_vector(M, p)
-    return slso.b!!(M, Y, p)
+    return slso.b!(M, Y, p)
 end
 function get_vector_field!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p)
-    return slso.b!!(M, Y, p)
+    return slso.b!(M, Y, p)
 end
 # Also on TpM – shortcuts
 function get_vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjective)
     M = base_manifold(TpM)
     p = base_point(TpM)
     Y = zero_vector(M, p)
-    return slso.b!!(M, Y, p)
+    return slso.b!(M, Y, p)
 end
 function get_vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective)
     M = base_manifold(TpM)
     p = base_point(TpM)
-    return slso.b!!(M, Y, p)
+    return slso.b!(M, Y, p)
 end

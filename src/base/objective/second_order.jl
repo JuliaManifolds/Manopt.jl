@@ -19,11 +19,19 @@ end
 return the function to evaluate (just) the Hessian ``$(_tex(:Hess)) f(p)``,
 which has the form `(M, Y, p, X) -> Y` working in-place of `Y`.
 """
-get_hessian_function(mho::AbstractManifoldHessianObjective, recursive::Bool = false) = mho.hessian!
-
+function get_hessian_function(
+        mho::AbstractManifoldHessianObjective, recursive::Bool = false;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation()
+    )
+    if evaluation isa AllocatingEvaluation
+        return (M, p, X) -> mho.hessian!(M, zero_vector(M, p), p, X)
+    else
+        return mho.hessian!
+    end
+end
 
 function get_hessian_function(
-        admo::AbstractDecoratedManifoldObjective, recursive::Bool = false
+        admo::AbstractDecoratedManifoldObjective, recursive::Bool = false; kwargs...
     )
-    return get_hessian_function(get_objective(admo, recursive))
+    return get_hessian_function(get_objective(admo, recursive); kwargs...)
 end

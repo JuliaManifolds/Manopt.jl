@@ -34,17 +34,24 @@ struct ManifoldDifferenceOfConvexProximalObjective{GH, F, G} <: AbstractManifold
     gradient!::G
     grad_h!::GH
     function ManifoldDifferenceOfConvexProximalObjective(
-            grad_h::THG; cost::TC = nothing, gradient::TG = nothing
+            grad_h::THG; cost::TC = nothing, gradient::TG = nothing, evaluation::AbstractEvaluationType, p = missing,
         ) where {TC, TG, THG}
-        # TODO: Add eval and a wrapper
-        return new{THG, TC, TG}(cost, gradient, grad_h)
+        cost_ = maybe_wrap_function(cost, p; result = :Number)
+        grad_h_ = maybe_wrap_function(grad_h, p, evaluation; result = :TangentVector)
+        grad_ = isnothing(gradient) ? nothing : maybe_wrap_function(gradient, p, evaluation; result = :TangentVector)
+        return new{typeof(grad_h_), typeof(cost_), typeof(grad_)}(cost_, grad_, grad_h_)
     end
 end
 function get_gradient!(M::AbstractManifold, X, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
     return dcpo.gradient!(M, X, p)
 end
-function get_gradient_function(dcpo::ManifoldDifferenceOfConvexProximalObjective, recursive = false)
-    return dcpo.gradient!
+function get_gradient_function(dcpo::ManifoldDifferenceOfConvexProximalObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    isnothing(dcpo) && return nothing
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> dcpo.gradient!(M, zero_vector(M, p), p)
+    else
+        return dcpo.gradient!
+    end
 end
 
 @doc """
@@ -566,8 +573,5 @@ function step_solver!(
     s = dcps.stepsize(amp, dcps, k)
     callback(:Stepsize, amp, dcps, k)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
-    if !isnothing(get_gradient_function(get_objective(amp)))
-        get_gradient!(amp, dcps.X, dcps.p)
-    end
     return dcps
 end

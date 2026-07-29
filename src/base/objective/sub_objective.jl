@@ -36,8 +36,12 @@ See also the [`NormalEquationsObjective`](@ref) for the corresponding normal equ
 """
 abstract type AbstractLinearSurrogateObjective{O <: AbstractManifoldObjective} <: AbstractManifoldSubObjective{O} end
 
-function get_gradient_function(amso::AbstractManifoldSubObjective)
-    return (M, p) -> get_gradient(M, get_objective(amso), p)
+function get_gradient_function(amso::AbstractManifoldSubObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> get_gradient(M, get_objective(amso), p)
+    else
+        return (M, X, p) -> get_gradient!(M, X, get_objective(amso), p)
+    end
 end
 
 @doc """

@@ -296,8 +296,8 @@ end
 function get_gradient!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p)
     return get_gradient!(M, X, co.objective, p)
 end
-function get_gradient_function(co::ConstrainedManifoldObjective, recursive = false)
-    return get_gradient_function(co.objective, recursive)
+function get_gradient_function(co::ConstrainedManifoldObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    return get_gradient_function(co.objective, recursive; evaluation = evaluation)
 end
 
 @doc """
@@ -423,8 +423,8 @@ end
 function get_hessian!(M::AbstractManifold, Y, co::ConstrainedManifoldObjective, p, X)
     return get_hessian!(M, Y, co.objective, p, X)
 end
-function get_hessian_function(co::ConstrainedManifoldObjective, recursive = false)
-    return get_hessian_function(co.objective, recursive)
+function get_hessian_function(co::ConstrainedManifoldObjective, recursive = false; kwargs...)
+    return get_hessian_function(co.objective, recursive; kwargs...)
 end
 
 @doc """
@@ -763,8 +763,8 @@ end
 function get_cost_function(cso::ManifoldConstrainedSetObjective, recursive = false)
     return get_cost_function(cso.objective, recursive)
 end
-function get_gradient_function(cso::ManifoldConstrainedSetObjective, recursive = false)
-    return get_gradient_function(cso.objective, recursive)
+function get_gradient_function(cso::ManifoldConstrainedSetObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    return get_gradient_function(cso.objective, recursive; evaluation = evaluation)
 end
 function get_gradient(M::AbstractManifold, cso::ManifoldConstrainedSetObjective, p)
     return get_gradient(M, cso.objective, p)
@@ -903,9 +903,13 @@ function get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P,
     riemannian_gradient!(M, X, p, emo.X)
     return X
 end
-function get_gradient_function(emo::EmbeddedManifoldObjective{P, T}, recursive = false) where {P, T}
-    recursive && (return get_gradient_function(emo.objective, recursive))
-    return (M, X, p) -> get_gradient!(M, X, emo, p)
+function get_gradient_function(emo::EmbeddedManifoldObjective{P, T}, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation()) where {P, T}
+    recursive && (return get_gradient_function(emo.objective, recursive; evaluation = evaluation))
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> get_gradient(M, get_objective(emo), p)
+    else
+        return (M, X, p) -> get_gradient!(M, X, get_objective(emo), p)
+    end
 end
 @doc """
     get_hessian(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, X)
@@ -947,9 +951,13 @@ function get_hessian!(M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, 
     )
     return Y
 end
-function get_hessian_function(emo::EmbeddedManifoldObjective{P, T}, recursive::Bool = false) where {P, T}
+function get_hessian_function(emo::EmbeddedManifoldObjective, recursive::Bool = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
     recursive && (return get_hessian_function(emo.objective, recursive))
-    return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)
+    if evaluation isa AllocatingEvaluation
+        return (M, p, X) -> get_hessian(M, p, X)
+    else
+        return (M, Y, p, X) -> get_hessian(M, Y, p, X)
+    end
 end
 
 function get_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
@@ -1299,10 +1307,14 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
 end
 
 function get_gradient_function(
-        sco::ManifoldCachedObjective, recursive = false
+        sco::ManifoldCachedObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation()
     )
-    recursive && (return get_gradient_function(sco.objective, recursive))
-    return (M, X, p) -> get_gradient!(M, X, sco, p)
+    recursive && (return get_gradient_function(sco.objective, recursive; evaluation = evaluation))
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> get_gradient(M, get_objective(sco), p)
+    else
+        return (M, X, p) -> get_gradient!(M, X, get_objective(sco), p)
+    end
 end
 
 function get_cost_and_gradient(M::AbstractManifold, mco::ManifoldCachedObjective, p)
@@ -1741,10 +1753,14 @@ function get_hessian!(M::AbstractManifold, Y, co::ManifoldCachedObjective, p, X)
 end
 
 function get_hessian_function(
-        emo::ManifoldCachedObjective, recursive::Bool = false
+        mco::ManifoldCachedObjective, recursive::Bool = false; evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     )
-    recursive && (return get_hessian_function(emo.objective, recursive))
-    return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)
+    recursive && (return get_hessian_function(mco.objective, recursive; evaluation = evaluation))
+    if evaluation isa AllocatingEvaluation
+        return (M, p, X) -> get_hessian!(M, mco, p, X)
+    else
+        return (M, Y, p, X) -> get_hessian!(M, Y, mco, p, X)
+    end
 end
 function get_preconditioner(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
     !(haskey(co.cache, :Preconditioner)) && return get_preconditioner(M, co.objective, p, X)
@@ -2180,9 +2196,13 @@ function get_differential_function(co::ManifoldCountObjective, recursive = false
     return (M, p, X; kwargs...) -> get_differential(M, co, p, X; kwargs...)
 end
 
-function get_gradient_function(sco::ManifoldCountObjective, recursive = false)
-    recursive && return get_gradient_function(sco.objective, recursive)
-    return (M, X, p) -> get_gradient!(M, X, sco, p)
+function get_gradient_function(mco::ManifoldCountObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    recursive && return get_gradient_function(mco.objective, recursive; evaluation = evaluation)
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> get_gradient(M, get_objective(mco), p)
+    else
+        return (M, X, p) -> get_gradient!(M, X, get_objective(mco), p)
+    end
 end
 
 function get_gradient(M::AbstractManifold, co::ManifoldCountObjective, p)
@@ -2206,10 +2226,14 @@ function get_hessian!(M::AbstractManifold, Y, co::ManifoldCountObjective, p, X)
     return Y
 end
 function get_hessian_function(
-        sco::ManifoldCountObjective, recursive::Bool = false
+        sco::ManifoldCountObjective, recursive::Bool = false; evaluation::AbstractEvaluationType = AllocatingEvaluation()
     )
-    recursive && return get_hessian_function(sco.objective, recursive)
-    return (M, Y, p, X) -> get_hessian!(M, Y, sco, p, X)
+    recursive && return get_hessian_function(sco.objective, recursive; evaluation = evaluation)
+    if evaluation isa AllocatingEvaluation
+        return (M, p, X) -> get_hessian!(M, sco, p, X)
+    else
+        return (M, Y, p, X) -> get_hessian!(M, Y, sco, p, X)
+    end
 end
 
 function get_preconditioner(M::AbstractManifold, co::ManifoldCountObjective, p, X)
@@ -2728,10 +2752,14 @@ function get_gradient!(
 end
 
 function get_gradient_function(
-        mfo::ManifoldFirstOrderObjective, recursive = false
+        mfo::ManifoldFirstOrderObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation()
     )
     haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient])
-    return (M, X, p) -> get_gradient!(M, X, mfo, p)
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> mfo.functions[:gradient](M, zero_vector(M, p), p)
+    else
+        return mfo.functions[:gradient]
+    end
 end
 
 function status_summary(mfo::ManifoldFirstOrderObjective; context::Symbol = :default)
@@ -2801,8 +2829,12 @@ end
 function get_gradient!(M::AbstractManifold, Y, mho::ManifoldHessianObjective, p)
     return mho.gradient!(M, Y, p)
 end
-function get_gradient_function(mho::ManifoldHessianObjective, recursive = false)
-    return mho.gradient!
+function get_gradient_function(mho::ManifoldHessianObjective, recursive = false, evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> mho.gradient!(M, zero_vector(M, p), p)
+    else
+        return mho.gradient!
+    end
 end
 function get_hessian(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
     Y = zero_vector(M, p)
@@ -3789,10 +3821,15 @@ function get_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldO
     return X
 end
 
-function get_gradient_function(scaled_objective::ScaledManifoldObjective, recursive::Bool = false)
-    recursive && (return get_gradient_function(scaled_objective.objective, recursive))
-    return (M, X, p) -> get_gradient!(M, X, scaled_objective, p)
+function get_gradient_function(scaled_objective::ScaledManifoldObjective, recursive::Bool = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    recursive && (return get_gradient_function(scaled_objective.objective, recursive; evaluation = evaluation))
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> get_gradient(M, scaled_objective, p)
+    else
+        return (M, X, p) -> get_gradient!(M, X, scaled_objective, p)
+    end
 end
+
 
 @doc """
     get_hessian(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p, X)
@@ -3808,9 +3845,13 @@ function get_hessian!(M::AbstractManifold, Y, scaled_objective::ScaledManifoldOb
     Y .= scaled_objective.scale .* Y
     return Y
 end
-function get_hessian_function(scaled_objective::ScaledManifoldObjective, recursive::Bool = false)
-    recursive && (return get_hessian_function(scaled_objective.objective, recursive))
-    return (M, Y, p, X) -> get_hessian!(M, Y, scaled_objective, p, X)
+function get_hessian_function(scaled_objective::ScaledManifoldObjective, recursive::Bool = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    recursive && (return get_hessian_function(scaled_objective.objective, recursive; evaluation = evaluation))
+    if evaluation isa AllocatingEvaluation
+        return (M, p, X) -> get_hessian(M, scaled_objective, p, X)
+    else
+        return (M, Y, p, X) -> get_hessian!(M, Y, scaled_objective, p, X)
+    end
 end
 function Base.show(io::IO, scaled_objective::ScaledManifoldObjective)
     return print(
@@ -3982,11 +4023,14 @@ function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjectiv
     end
     return X
 end
-function get_gradient_function(sco::SimpleManifoldCachedObjective, recursive = false)
-    recursive && (return get_gradient_function(sco.objective, recursive))
-    return (M, X, p) -> get_gradient!(M, X, sco, p)
+function get_gradient_function(sco::SimpleManifoldCachedObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    recursive && (return get_gradient_function(sco.objective, recursive; evaluation = evaluation))
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> get_gradient(M, sco, p)
+    else
+        return (M, X, p) -> get_gradient!(M, X, sco, p)
+    end
 end
-
 function Base.show(io::IO, smco::SimpleManifoldCachedObjective)
     print(io, "SimpleManifoldCachedObjective(")
     print(io, smco.objective); print(io, ", ")

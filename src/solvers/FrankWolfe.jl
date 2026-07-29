@@ -173,7 +173,7 @@ function get_message(fws::FrankWolfeState)
 end
 provided_callbacks(::Type{FrankWolfeState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver, :Stepsize])
 
-function set_iterate!(fws::FrankWolfeState, p)
+function set_iterate!(fws::FrankWolfeState, M, p)
     fws.p = p
     return fws
 end
@@ -292,9 +292,7 @@ function Frank_Wolfe_method(
         kwargs...,
     )
     p_ = maybe_wrap_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation = evaluation)
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, p = p)
     rs = Frank_Wolfe_method(M, mgo, p_; evaluation = evaluation, kwargs...)
     return maybe_unwrap_variable(p, rs)
 end

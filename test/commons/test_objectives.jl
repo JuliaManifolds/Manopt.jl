@@ -52,19 +52,14 @@ using Manifolds, Manopt, Test
         oa = ManifoldHessianObjective((M, p) -> p[1], (M, p) -> p, (M, p, X) -> X)
         @test Manopt.get_cost_function(oa)(M, p) == p[1]
         Y = zero_vector(M, p)
-        @test Manopt.get_gradient_function(oa)(M, Y, p) == p
-        @test Y == p
-        @test Manopt.get_hessian_function(oa)(M, Y, p, X) == X
-        @test Y == X
+        @test Manopt.get_gradient_function(oa)(M, p) == p
+        @test Manopt.get_hessian_function(oa)(M, p, X) == X
         oi = ManifoldHessianObjective(
             (M, p) -> p[1], (M, X, p) -> (X .= p), (M, Y, p, X) -> (Y .= X);
             evaluation = InplaceEvaluation(),
         )
         @test Manopt.get_cost_function(oi)(M, p) == p[1]
-        Y = similar(X)
-        @test Manopt.get_gradient_function(oi)(M, Y, p) == p
-        @test Y == p
-        @test Manopt.get_hessian_function(oi)(M, Y, p, X) == X
-        @test Y == X
+        @test Manopt.get_gradient_function(oi)(M, p) == p
+        @test Manopt.get_hessian_function(oi)(M, p, X) == X
     end
 end

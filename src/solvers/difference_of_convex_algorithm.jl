@@ -53,8 +53,13 @@ struct ManifoldDifferenceOfConvexObjective{F, G, S} <:
         return new{typeof(cost_), typeof(gradient_), typeof(∂h_)}(cost_, gradient_, ∂h_)
     end
 end
-function get_gradient_function(doco::ManifoldDifferenceOfConvexObjective, recursive = false)
-    return doco.gradient!
+function get_gradient_function(doco::ManifoldDifferenceOfConvexObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    isnothing(doco.gradient!) && return nothing
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> doco.gradient!(M, zero_vector(M, p), p)
+    else
+        return doco.gradient!
+    end
 end
 function get_gradient(
         M::AbstractManifold, doco::ManifoldDifferenceOfConvexObjective, p

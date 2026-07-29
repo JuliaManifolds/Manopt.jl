@@ -27,7 +27,7 @@ a bit more lightweight and has “less to handle”.
 * a few internal abstract supertypes have been renamed for the new scheme that puts more focus on functions. The word “functor” is now avoided for structs that actually just represent functions. to stay more consistent.
   * `AbstractConstrainedFunctor` has been renamed to `AbstractConstrainedFunction`
   * `AbstractConstrainedSlackFunctor` has been renamed to `AbstractConstrainedSlackFunctor`
-* `get_gradient_function` and `get_hessian_function` are unified to always return an in-place variant. Previously this depended heavily on the function the user provided and was a bit inconsistent overall.
+* `get_gradient_function` and `get_hessian_function` are unified to always return an allocating variant by default but can also return an  in-place variant now based on a `evaluation=` keyword.
 * objectives now also accept a `p=` keyword to automatically “wrap” functions that operate on immutable  variables – internally Manopt is expecting points and tangent vectors to be mutable.
 
 ## Removed

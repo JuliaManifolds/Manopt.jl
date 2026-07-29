@@ -172,9 +172,8 @@ function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldOb
 end
 
 function get_gradient_function end
-
 @doc """
-    get_gradient_function(amgo::AbstractManifoldFirstOrderObjective, recursive=false)
+    get_gradient_function(amgo::AbstractManifoldFirstOrderObjective, recursive=false; evaluation=AllocatingEvaluation())
 
 return the function to evaluate (just) the gradient ``$(_tex(:grad)) f(p)``,
 where either the gradient function using the decorator or without the decorator is used.
@@ -182,10 +181,10 @@ where either the gradient function using the decorator or without the decorator 
 By default `recursive` is set to `false`, since usually to just pass the gradient function
 somewhere, one still wants for example the cached one or the one that still counts calls.
 """
-get_gradient_function(::AbstractManifoldFirstOrderObjective; recursive = false)
+get_gradient_function(::AbstractManifoldFirstOrderObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
 
-function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursive = false)
-    return get_gradient_function(get_objective(admo, recursive))
+function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    return get_gradient_function(get_objective(admo, recursive); evaluation = evaluation)
 end
 
 """
@@ -198,7 +197,7 @@ gradient itself.
 While in general, the result might not be deterministic, for this case it is.
 """
 function get_subgradient(M::AbstractManifold, agmo::AbstractManifoldFirstOrderObjective, p)
-    X = zero_vector!(M, p)
+    X = zero_vector(M, p)
     return get_subgradient!(M, X, agmo, p)
 end
 function get_subgradient!(

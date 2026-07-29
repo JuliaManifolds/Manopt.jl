@@ -57,8 +57,6 @@ function VectorGradientFunction(
     return VectorGradientFunction{FT, JT, F, J, I}(f, function_type, Jf, jacobian_type, range_dimension)
 end
 
-get_gradient_function(vgf::VectorGradientFunction, recursive = false) = vgf.jacobian!!
-
 @doc """
     get_value_function(vgf::VectorGradientFunction, recursive=false)
 
@@ -408,8 +406,6 @@ function get_hessian!(
     copyto!(pM_out, Y, P[pM_temp, i], y[pM_temp, i])
     return Y
 end
-get_hessian_function(vgf::VectorHessianFunction, recursive::Bool = false) = vgf.hessians!!
-
 
 function status_summary(vhf::VectorHessianFunction; context::Symbol = :default)
     _is_inline(context) && (return "A vectorial function of length $(length(vhf)) including gradients and Hessians represented as $(vhf.cost_type), gradients as $(vhf.jacobian_type), and Hessians as $(vhf.hessian_type).")
