@@ -121,6 +121,7 @@ end
 #
 #
 # Base – A (work in progress) separate folder scheme for abstract types and design ideas
+# ---
 # ## Problem
 include("base/problem/abstract_problem.jl")
 # ## Function
@@ -151,22 +152,26 @@ include("base/keyword.jl")
 include("base/parameter.jl")
 include("base/manifold.jl")
 include("base/repl.jl")
+include("base/stepsize.jl")
 include("base/stopping_criterion.jl")
 #
 #
 # Commons – a collection of types or functions that are common to more than one solver
-
+# ---
 # Robustifiers are used in the objective.jl, so they come first
 include("commons/robustifiers.jl")
-# The remainder is alphabetically ordered.
+# Functions are used in the Objectives, these are sometimes used later
 include("commons/functions.jl")
 include("commons/objectives.jl")
+# The remainder is alphabetically ordered.
+include("commons/conjugate_gradient_coefficients.jl")
 include("commons/direction_updates.jl")
 include("commons/linear_systems.jl")
 include("commons/parameters.jl")
 include("commons/problems.jl")
 include("commons/quasi_newton_updates.jl")
 include("commons/solver_states.jl")
+include("commons/stepsizes.jl")
 include("commons/stopping_criteria.jl")
 include("commons/sub_functions.jl")
 include("commons/sub_objectives.jl")
@@ -175,9 +180,6 @@ include("commons/vectorial_functions.jl")
 # Debug and Record might require common problems and objectives
 include("commons/debugs.jl")
 include("commons/records.jl")
-
-# DEPRECATED: Common Solver plans
-include("plans/plan.jl") #TODO: Move all its content either to base/ commons/ or the solvers
 #
 #
 # solvers general framework

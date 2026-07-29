@@ -1,3 +1,228 @@
+#
+#
+#
+"""
+    StepsizeMessage{TBound, TS}
+
+A message struct to hold stepsize information, when e.g.
+a step size underflow happens at a certain iteration
+
+# Fields
+- `at_iteration::Int`: The iteration at which the message was set
+- `bound::TBound`: The bound that was hit
+- `value::TS`: The corresponding value that either caused the message or provides additional information
+
+# Constructor
+
+    StepsizeMessage(; bound::TBound = 0.0, value::TS = 0.0)
+
+"""
+mutable struct StepsizeMessage{TBound <: Real, TS <: Real}
+    at_iteration::Int
+    bound::TBound
+    value::TS
+end
+
+function StepsizeMessage{TBound, TS}() where {TBound <: Real, TS <: Real}
+    return StepsizeMessage{TBound, TS}(-1, zero(TS), zero(TS))
+end
+
+function StepsizeMessage(
+        ; bound::TBound = 0.0, value::TS = 0.0
+    ) where {TBound <: Real, TS <: Real}
+    return StepsizeMessage{TBound, TS}(-1, bound, value)
+end
+
+"""
+    get_message(a)
+
+Given a certain structure `a` from within `Manopt.jl`, retrieve its last message of
+information, e.g. warnings from a step size.
+If no message is available, an empty string is returned.
+"""
+function get_message end
+
+"""
+    reset_messages!(messages::NamedTuple)
+
+Given a named tuple of `[StepsizeMessage`](@ref)s, reset all messages to default values,
+i.e. `at_iteration = -1`, `bound = 0`, `value = 0`.
+"""
+function reset_messages!(messages::NamedTuple)
+    for m in messages
+        m.at_iteration = -1
+        m.bound = 0
+        m.value = 0
+    end
+    return messages
+end
+
+"""
+    set_message!(messages::NamedTuple, key::Symbol; at=nothing, bound=nothing, value=nothing)
+
+Given a named tuple of `[StepsizeMessage`](@ref)s, set the message identified by `key` to the provided values,
+i.e. if they are not `nothing`.
+"""
+function set_message!(
+        messages::NamedTuple, key::Symbol;
+        at::Union{Nothing, Int} = nothing,
+        bound = nothing,
+        value = nothing,
+    )
+    haskey(messages, key) && set_message!(messages[key], at, bound, value)
+    return messages
+end
+"""
+    set_message!(message::StepsizeMessage, at=nothing, bound=nothing, value=nothing)
+
+Given a named tuple of `[StepsizeMessage`](@ref)s, set the message identified by `key` to the provided values,
+i.e. if they are not `nothing`.
+"""
+function set_message!(
+        msg::StepsizeMessage{TBound, TS},
+        at::Union{Nothing, Int} = nothing,
+        bound::Union{TBound, Nothing} = nothing,
+        value::Union{TS, Nothing} = nothing
+    ) where {TBound <: Real, TS <: Real}
+    isnothing(at) || (msg.at_iteration = at)
+    isnothing(bound) || (msg.bound = bound)
+    return isnothing(value) || (msg.value = value)
+end
+
+#
+#
+# --- Initial Guess functions
+"""
+    ConstantInitialGuess{TF} <: AbstractInitialLinesearchGuess
+
+Implement a constant initial guess for line searches.
+
+# Constructor
+
+    ConstantInitialGuess(α::TF)
+
+where `α` is the constant initial step size.
+"""
+struct ConstantInitialGuess{TF} <: AbstractInitialLinesearchGuess
+    α::TF
+end
+ConstantInitialGuess() = ConstantInitialGuess(1.0)
+
+function (cig::ConstantInitialGuess)(
+        ::AbstractManoptProblem, ::AbstractManoptSolverState, ::Int, ::Real, η; kwargs...
+    )
+    return cig.α
+end
+
+"""
+    ArmijoInitialGuess <: AbstractInitialLinesearchGuess
+
+Implement the initial guess for an Armijo line search.
+
+The initial step size is chosen as `min(l, max_stepsize(M, p) / norm(M, p, η))`,
+where `l` is the last step size used, `p` the current point and `η` the search direction.
+
+The default provided is based on the [`max_stepsize`](@ref)`(M)`.
+
+# Constructor
+
+    ArmijoInitialGuess()
+"""
+struct ArmijoInitialGuess <: AbstractInitialLinesearchGuess end
+
+function (::ArmijoInitialGuess)(
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, ::Int, l::Real, η; kwargs...
+    )
+    M = get_manifold(mp)
+    X = get_gradient(s)
+    p = get_iterate(s)
+    grad_norm = norm(M, p, X)
+    max_step = max_stepsize(M, p)
+    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
+end
+
+
+#
+#
+# --- Displaying concrete messages
+"""
+    get_message(s::Symbol, args...)
+
+For a certain set of symbols `s`, this message function turns
+them into human readable strings. The arguments usually contain
+an iteration number `k` or bounds to communicate to the user.
+"""
+get_message(s::Symbol, args...) = get_message(Val(s), args...)
+get_message(s::Symbol, msg::StepsizeMessage) = get_message(Val(s), msg.at_iteration, msg.value, msg.bound)
+
+"""
+    get_message(:non_descent_direction, k::Int)
+
+Display a message string for a non-descent direction encountered at iteration `k`.
+"""
+function get_message(::Val{:non_descent_direction}, k::Int = -1, value::Real = NaN, bound::Real = 0)
+    (k < 0) && (return "")
+    s = (k == 0) ? "the beginning" : "iteration #$k"
+    v_str = isnan(value) ? "" : "(⟨η, grad_f(p)⟩ = $value ≥ $bound)"
+    return (k >= 0) ? "At $s: Non-descent direction η encountered $v_str." : ""
+end
+
+"""
+    get_message(:stepsize_exceeds, k::Int, step::Real = NaN, bound::Real = NaN)
+
+Display a message string for a stepsize exceeding a certain bound at iteration `k`
+amd the step size `step` chosen instead.
+"""
+function get_message(::Val{:stepsize_exceeds}, k::Int = -1, value::Real = NaN, bound::Real = NaN)
+    (k < 0) && (return "")
+    s = (k == 0) ? "the beginning" : "iteration #$k"
+    s_str = isnan(value) ? "" : "Reducing to $value"
+    b_str = isnan(bound) ? "" : "($bound)"
+    return (k > 0) ? "At $s: Maximal step size bound $b_str exceeded. $s_str." : ""
+end
+"""
+    get_message(:stop_decreasing, k::Int=-1, step::Real = NaN)
+
+Display a message string for stopping the decrease of the step size at iteration `k`
+and the step size `step` chosen instead.
+"""
+function get_message(::Val{:stop_decreasing}, k::Int = -1, value::Real = NaN, bound::Int = -1)
+    (k < 0) && (return "")
+    s = (k == 0) ? "the beginning" : "iteration #$k"
+    s_str = isnan(bound) ? "" : "($bound)"
+    v_str = isnan(value) ? "" : "Continuing with a stepsize of $value."
+    return (k > 0) ? "At $s: Maximal number of decrease steps $s_str reached. Aborting decrease. $v_str" : ""
+end
+"""
+    get_message(:stop_increasing, k::Int=-1, step::Real = NaN)
+
+Display a message string for stopping the increase of the step size at iteration `k`
+and the step size `step` chosen instead.
+"""
+function get_message(::Val{:stop_increasing}, k::Int = -1, value::Real = NaN, bound::Int = -1)
+    (k < 0) && (return "")
+    s = (k == 0) ? "the beginning" : "iteration #$k"
+    s_str = isnan(bound) ? "" : "($bound)"
+    v_str = isnan(value) ? "" : "Continuing with a stepsize of $value."
+    return (k > 0) ? "At $s: Maximal number of increase steps $s_str reached. Aborting increase. $v_str" : ""
+end
+"""
+get_message(:stepsize_less, k::Int=-1, step::Real = NaN, bound::Real = NaN)
+
+Display a message string for stopping the increase of the step size at iteration `k`
+and the step size `step` chosen instead.
+"""
+function get_message(::Val{:stepsize_less}, k::Int = -1, value::Real = NaN, bound::Real = NaN)
+    (k < 0) && (return "")
+    s = (k == 0) ? "the beginning" : "iteration #$k"
+    s_str = isnan(value) ? "" : " Falling back to a stepsize of $value."
+    b_str = isnan(bound) ? "" : "($bound)"
+    return (k > 0) ? "At $s: Minimal stepsize less than bound $b_str reached.$s_str" : ""
+end
+
+#
+#
+# ---
 @doc """
     ArmijoLinesearchStepsize <: Linesearch
 
@@ -19,7 +244,7 @@ $(_kwargs(:retraction_method))
 * `contraction_factor`:            exponent for line search reduction
 * `sufficient_decrease`:           gain within Armijo's rule
 * `last_stepsize`:                 the last step size to start the search with
-* $(_doc_stepsize_initial_guess_field)
+$(_kwargs(:initial_guess))
 * `messages::NamedTuple`:          a named tuple to store possible [`StepsizeMessage`](@ref) about the stepsize search.
 * `stop_when_stepsize_less`:       smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds`:    largest stepsize when to stop.
@@ -150,6 +375,9 @@ function (a::ArmijoLinesearchStepsize)(
     return a.last_stepsize
 end
 get_initial_stepsize(a::ArmijoLinesearchStepsize) = a.initial_stepsize
+function get_last_stepsize(step::ArmijoLinesearchStepsize, ::Any...)
+    return step.last_stepsize
+end
 function Base.show(io::IO, a_ls::ArmijoLinesearchStepsize)
     print(io, "ArmijoLinesearch(; additional_decrease_condition = ", a_ls.additional_decrease_condition)
     print(io, ", additional_increase_condition = ", a_ls.additional_increase_condition)
@@ -1230,17 +1458,17 @@ A functor representing a nonmonotone line search using the Barzilai-Borwein step
 
 # Fields
 
-* $(_doc_stepsize_initial_guess_field)
+$(_fields(:initial_guess))
 * `memory_size`:           number of iterations after which the cost value needs to be lower than the current one
 * `bb_min_stepsize=1e-3`:     lower bound for the Barzilai-Borwein step size greater than zero
 * `bb_max_stepsize=1e3`:      upper bound for the Barzilai-Borwein step size greater than min_stepsize
 * `last_stepsize`:     the last computed stepsize
-$(_kwargs(:retraction_method))
+$(_fields(:retraction_method))
 * `strategy=direct`:          defines if the new step size is computed using the `:direct`, `:indirect` or `:alternating` strategy
 * `storage`:                  (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
 * `stepsize_reduction`:       step size reduction factor contained in the interval (0,1)
 * `sufficient_decrease`:     sufficient decrease parameter contained in the interval (0,1)
-$(_kwargs(:vector_transport_method))
+$(_fields(:vector_transport_method))
 * `candidate_point`:          to store an interim result
 * `stop_when_stepsize_less`:    smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds`: largest stepsize when to stop.
@@ -1396,14 +1624,8 @@ function (a::NonmonotoneLinesearchStepsize)(
     end
     update_storage!(a.storage, mp, s)
     return a(
-        get_manifold(mp),
-        get_iterate(s),
-        (M, p) -> get_cost(M, get_objective(mp), p),
-        grad,
-        η,
-        p_old,
-        X_old,
-        k;
+        get_manifold(mp), get_iterate(s), (M, p) -> get_cost(M, get_objective(mp), p),
+        grad, η, p_old, X_old, k;
         kwargs...,
     )
 end
@@ -1859,6 +2081,9 @@ function (a::WolfePowellLinesearchStepsize)(
     a.last_stepsize = step
     return step
 end
+function get_last_stepsize(step::WolfePowellLinesearchStepsize, ::Any...)
+    return step.last_stepsize
+end
 function Base.show(io::IO, a::WolfePowellLinesearchStepsize)
     print(io, "WolfePowellLinesearchStepsize(; sufficient_decrease = ", a.sufficient_decrease)
     print(io, ", sufficient_curvature = ", a.sufficient_curvature, ", candidate_direction = ", a.candidate_direction, ", candidate_point = ", a.candidate_point)
@@ -2023,6 +2248,9 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     a.last_stepsize = t
     return t
 end
+function get_last_stepsize(step::WolfePowellBinaryLinesearchStepsize, ::Any...)
+    return step.last_stepsize
+end
 function Base.show(io::IO, a::WolfePowellBinaryLinesearchStepsize)
     print(io, "WolfePowellBinaryLinesearchStepsize(; sufficient_decrease = ", a.sufficient_decrease)
     print(io, ", sufficient_curvature = ", a.sufficient_curvature)
@@ -2087,108 +2315,129 @@ function WolfePowellBinaryLinesearch(args...; kwargs...)
     return ManifoldDefaultsFactory(WolfePowellBinaryLinesearchStepsize, args...; kwargs...)
 end
 
-@doc """
-    get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
 
-return the stepsize stored within [`AbstractManoptSolverState`](@ref) `ams` when solving the
-[`AbstractManoptProblem`](@ref) `amp`.
-This method also works for decorated options and the [`Stepsize`](@ref) function within
-the options, by default stored in `ams.stepsize`.
 """
-function get_stepsize(
-        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
-    )
-    return _get_stepsize(amp, ams, dispatch_state_decorator(ams), vars...; kwargs...)
-end
-function _get_stepsize(
-        amp::AbstractManoptProblem,
-        ams::AbstractManoptSolverState,
-        ::Val{true},
-        vars...;
-        kwargs...,
-    )
-    return get_stepsize(amp, ams.state, vars...; kwargs...)
-end
-function _get_stepsize(
-        amp::AbstractManoptProblem,
-        ams::AbstractManoptSolverState,
-        ::Val{false},
-        vars...;
-        kwargs...,
-    )
-    return ams.stepsize(amp, ams, vars...; kwargs...)
-end
+    default_point_distance(::AbstractManifold, p)
 
-function get_initial_stepsize(
-        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
-    )
-    return _get_initial_stepsize(
-        amp::AbstractManoptProblem,
-        ams::AbstractManoptSolverState,
-        dispatch_state_decorator(ams),
-        vars...;
-        kwargs...,
-    )
-end
-function _get_initial_stepsize(
-        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{true}, vars...
-    )
-    return get_initial_stepsize(amp, ams.state)
-end
-function _get_initial_stepsize(
-        ::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...
-    )
-    return get_initial_stepsize(ams.stepsize)
-end
-
-@doc """
-    get_last_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
-
-return the last computed stepsize stored within [`AbstractManoptSolverState`](@ref) `ams`
-when solving the [`AbstractManoptProblem`](@ref) `amp`.
-
-This method takes into account that `ams` might be decorated.
-In case this returns `NaN`, a concrete call to the stored stepsize is performed.
-For this, usually, the first of the `vars...` should be the current iterate.
+The default Hager-Zhang guess for distance between `p` the solution to the optimization
+problem. The default is 0, which deactivates heuristic I0 (a).
+On each manifold with `default_point_distance`, you need to also implement `default_vector_norm`.
 """
-function get_last_stepsize(
-        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...
-    )
-    return _get_last_stepsize(amp, ams, dispatch_state_decorator(ams), vars...)
-end
-function _get_last_stepsize(
-        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{true}, vars...
-    )
-    return get_last_stepsize(amp, ams.state, vars...)
-end
-function _get_last_stepsize(
-        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...
-    )
-    s = get_last_stepsize(ams.stepsize) # if it stores the stepsize itself -> return
-    !isnan(s) && return s
-    # if not -> call step.
-    return ams.stepsize(amp, ams, vars...)
-end
-@doc """
-    get_last_stepsize(::Stepsize, vars...)
+default_point_distance(::AbstractManifold, p) = zero(number_eltype(p))
 
-return the last computed stepsize from within the stepsize.
-If no last step size is stored, this returns `NaN`.
 """
-get_last_stepsize(::Stepsize, ::Any...) = NaN
-function get_last_stepsize(step::ArmijoLinesearchStepsize, ::Any...)
-    return step.last_stepsize
-end
-function get_last_stepsize(step::WolfePowellLinesearchStepsize, ::Any...)
-    return step.last_stepsize
-end
-function get_last_stepsize(step::WolfePowellBinaryLinesearchStepsize, ::Any...)
-    return step.last_stepsize
-end
+    default_point_distance(::DefaultManifold, p)
+
+Following [HagerZhang:2006:2](@cite), the expected distance to the optimal solution from `p`
+on `DefaultManifold` is the `Inf` norm of `p`.
+"""
+default_point_distance(::DefaultManifold, p) = norm(p, Inf)
+
+"""
+    default_point_distance(::AbstractManifold, p)
+
+The default Hager-Zhang guess for distance between `p` the solution to the optimization
+problem along the descent direction. There is no default implementation because it is only
+needed for manifolds with a specific `default_point_distance` method.
+"""
+default_vector_norm(M::AbstractManifold, p, X)
+default_vector_norm(::DefaultManifold, p, X) = norm(p, Inf)
 
 
-#### Hager-Zhang Linesearch
+"""
+    HagerZhangInitialGuess{TF <: Real, TPN, TVN} <: AbstractInitialLinesearchGuess
 
+Initial line search guess from the paper [HagerZhang:2006:2](@cite), following the procedure
+`initial`. The line search was adapted to the Riemannian setting by introducing
+customizable norms for point and tangent vectors and maximum stepsize `alphamax`.
+"""
+struct HagerZhangInitialGuess{TF <: Real, TPN, TVN} <: AbstractInitialLinesearchGuess
+    ψ0::TF
+    ψ1::TF
+    ψ2::TF
+    constant_guess::TF
+    quadstep::Bool
+    point_distance::TPN
+    vector_norm::TVN
+    zero_abstol::TF
+    alphamax::TF
+end
+
+HagerZhangInitialGuess() = HagerZhangInitialGuess{Float64}()
+function HagerZhangInitialGuess{TF}(;
+        ψ0::TF = 0.01,
+        ψ1::TF = 0.01,
+        ψ2::TF = 2.0,
+        constant_guess::TF = NaN,
+        quadstep::Bool = true,
+        point_distance::TPN = default_point_distance,
+        vector_norm::TVN = default_vector_norm,
+        zero_abstol::TF = eps(TF),
+        alphamax::TF = Inf,
+    ) where {TF <: Real, TPN, TVN}
+    return HagerZhangInitialGuess{TF, TPN, TVN}(
+        ψ0, ψ1, ψ2, constant_guess, quadstep,
+        point_distance, vector_norm, zero_abstol, alphamax
+    )
+end
+
+function (hzi::HagerZhangInitialGuess{TF})(
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState,
+        k::Int, last_stepsize::Real, η;
+        lf0 = get_cost(mp, get_iterate(s)),
+        Dlf0 = get_differential(mp, get_iterate(s), η),
+        kwargs...
+    ) where {TF <: Real}
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    abs_lf0 = abs(lf0)
+
+    alphamax = min(hzi.alphamax, max_stepsize(M, p))
+
+    if :stop_when_stepsize_exceeds in keys(kwargs)
+        alphamax = min(
+            kwargs[:stop_when_stepsize_exceeds],
+            alphamax,
+        )
+    end
+
+    if k == 1
+        point_d = hzi.point_distance(M, p)
+        # Step I0
+        if isnan(hzi.constant_guess)
+            if point_d > hzi.zero_abstol
+                # I0.(a)
+                ηn = hzi.vector_norm(M, p, η)
+                return min(hzi.ψ0 * point_d / ηn, alphamax)
+            elseif abs_lf0 > hzi.zero_abstol
+                # I0.(b)
+                return min(hzi.ψ0 * abs_lf0 / norm(M, p, η)^2, alphamax)
+            else
+                # I0.(c)
+                return one(TF)
+            end
+        else
+            return hzi.constant_guess
+        end
+    else
+        if hzi.quadstep
+            # attempt step I1
+            step_R = hzi.ψ1 * last_stepsize
+            f_R = get_cost(mp, ManifoldsBase.retract_fused(M, p, η, step_R, default_retraction_method(M, typeof(p))))
+            # solving quadratic fit to the line given lf0, Dlf0 and cost at f_R
+            q_b = Dlf0
+            q_a = (f_R - q_b * step_R - lf0) / step_R^2
+
+            if f_R ≤ lf0 && isfinite(q_a) && q_a > hzi.zero_abstol
+                # if condition is false, we go to step I2
+                a_min = -q_b / (2 * q_a)
+                return min(a_min, alphamax)
+            end
+        end
+        # step I2
+        return min(hzi.ψ2 * last_stepsize, alphamax)
+    end
+end
 
 @doc """
     HagerZhangLinesearchStepsize{P,T,R<:Real} <: Linesearch

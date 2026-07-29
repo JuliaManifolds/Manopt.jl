@@ -1,8 +1,44 @@
+#
+# Define the default one early (needed in the state)
+# ---
+_doc_CG_notation = """
+Denote the last iterate and gradient by ``p_k,X_k``,
+the current iterate and gradient by ``p_{k+1}, X_{k+1}``, respectively,
+as well as the last update direction by ``δ_k``.
+"""
+
+"""
+    ConjugateDescentCoefficient()
+    ConjugateDescentCoefficient(M::AbstractManifold)
+
+Compute the (classical) conjugate gradient coefficient based on [Fletcher:1987](@cite) adapted to manifolds
+
+$(_doc_CG_notation)
+
+Then the coefficient reads
+```math
+β_k = $(_tex(:frac, "$(_tex(:diff))f(p_{k+1})[X_{k+1}]", "$(_tex(:diff))f(p_k)[-δ_k]"))
+ = $(_tex(:frac, "$(_tex(:norm, "X_{k+1}"; index = "p_{k+1}") * "^2")", "$(_tex(:inner, "-δ_k", "X_k"; index = "p_k"))"))
+```
+
+The second one it the one usually stated, while the first one avoids to use the metric `inner`.
+The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
+
+$(_note(:ManifoldDefaultFactory, "ConjugateDescentCoefficientRule"))
+"""
+function ConjugateDescentCoefficient()
+    return ManifoldDefaultsFactory(
+        Manopt.ConjugateDescentCoefficientRule; requires_manifold = false
+    )
+end
+
+#
+#
+# Generic Direction Rule storage thecoefficients are based on
 struct DirectionUpdateRuleStorage{TC <: DirectionUpdateRule, TStorage <: StoreStateAction} <: DirectionUpdateRule
     coefficient::TC
     storage::TStorage
 end
-
 function DirectionUpdateRuleStorage(
         M::AbstractManifold,
         dur::DirectionUpdateRule;
@@ -18,6 +54,9 @@ function DirectionUpdateRuleStorage(
     return DirectionUpdateRuleStorage{typeof(dur), typeof(sa)}(dur, sa)
 end
 
+#
+#
+# The coefficients to depend on the solver state so we define it here first
 @doc """
     ConjugateGradientState <: AbstractGradientSolverState
 
@@ -152,12 +191,9 @@ function Base.show(io::IO, cgs::ConjugateGradientDescentState)
     return print(io, ")")
 end
 
-_doc_CG_notation = """
-Denote the last iterate and gradient by ``p_k,X_k``,
-the current iterate and gradient by ``p_{k+1}, X_{k+1}``, respectively,
-as well as the last update direction by ``δ_k``.
-"""
-
+#
+#
+# Coefficient Rules
 @doc """
     ConjugateDescentCoefficientRule <: DirectionUpdateRule
 
@@ -176,31 +212,6 @@ Construct the conjugate descent coefficient update rule, a new storage is create
 [`ConjugateDescentCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
 """
 struct ConjugateDescentCoefficientRule <: DirectionUpdateRule end
-
-"""
-    ConjugateDescentCoefficient()
-    ConjugateDescentCoefficient(M::AbstractManifold)
-
-Compute the (classical) conjugate gradient coefficient based on [Fletcher:1987](@cite) adapted to manifolds
-
-$(_doc_CG_notation)
-
-Then the coefficient reads
-```math
-β_k = $(_tex(:frac, "$(_tex(:diff))f(p_{k+1})[X_{k+1}]", "$(_tex(:diff))f(p_k)[-δ_k]"))
- = $(_tex(:frac, "$(_tex(:norm, "X_{k+1}"; index = "p_{k+1}") * "^2")", "$(_tex(:inner, "-δ_k", "X_k"; index = "p_k"))"))
-```
-
-The second one it the one usually stated, while the first one avoids to use the metric `inner`.
-The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
-
-$(_note(:ManifoldDefaultFactory, "ConjugateDescentCoefficientRule"))
-"""
-function ConjugateDescentCoefficient()
-    return ManifoldDefaultsFactory(
-        Manopt.ConjugateDescentCoefficientRule; requires_manifold = false
-    )
-end
 
 update_rule_storage_points(::ConjugateDescentCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::ConjugateDescentCoefficientRule) = Tuple{:Gradient}
@@ -894,12 +905,12 @@ update_rule_storage_points(::SteepestDescentCoefficientRule) = Tuple{}
 update_rule_storage_vectors(::SteepestDescentCoefficientRule) = Tuple{}
 
 function (sd::SteepestDescentCoefficientRule)(
-        ::DefaultManoptProblem, ::ConjugateGradientDescentState, i; kwargs...
+        ::AbstractManoptProblem, ::ConjugateGradientDescentState, i; kwargs...
     )
     return 0.0
 end
 function (u::DirectionUpdateRuleStorage{SteepestDescentCoefficientRule})(
-        amp::DefaultManoptProblem, cgs::ConjugateGradientDescentState, i
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
     return u.coefficient(amp, cgs, i)
 end

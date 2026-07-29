@@ -1,6 +1,0 @@
-include("stepsize/initial_guess.jl")
-include("stepsize/stepsize_message.jl")
-include("stepsize/linesearch.jl")
-include("stepsize/stepsize.jl")
-include("conjugate_residual_plan.jl")
-include("conjugate_gradient_plan.jl")

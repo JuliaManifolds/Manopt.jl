@@ -21,11 +21,117 @@ the function creating the factory should either be called `TypeOf` or if that is
 """
 abstract type Stepsize end
 
+"""
+    AbstractInitialLinesearchGuess
+
+An abstract type for initial line search guess strategies. These are functors that map
+`(problem, state, k, last_stepsize, η) -> α_0`, where `α_0` is the initial step size,
+based on
+
+* an [`AbstractManoptProblem`](@ref) `problem`
+* an [`AbstractManoptSolverState`](@ref) `state`
+* the current iterate `k`
+* the last step size `last_stepsize`
+* the search direction `η`
+"""
+abstract type AbstractInitialLinesearchGuess end
+
+
 get_message(::S) where {S <: Stepsize} = ""
 
 function Base.show(io::IO, ::MIME"text/plain", ams::Stepsize)
     multiline = get(io, :multiline, true)
     return multiline ? status_summary(io, ams) : show(io, ams)
+end
+
+function get_initial_stepsize(
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
+    )
+    return _get_initial_stepsize(
+        amp::AbstractManoptProblem,
+        ams::AbstractManoptSolverState,
+        dispatch_state_decorator(ams),
+        vars...;
+        kwargs...,
+    )
+end
+function _get_initial_stepsize(
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{true}, vars...
+    )
+    return get_initial_stepsize(amp, ams.state)
+end
+function _get_initial_stepsize(
+        ::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...
+    )
+    return get_initial_stepsize(ams.stepsize)
+end
+
+@doc """
+    get_last_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
+
+return the last computed stepsize stored within [`AbstractManoptSolverState`](@ref) `ams`
+when solving the [`AbstractManoptProblem`](@ref) `amp`.
+
+This method takes into account that `ams` might be decorated.
+In case this returns `NaN`, a concrete call to the stored stepsize is performed.
+For this, usually, the first of the `vars...` should be the current iterate.
+"""
+function get_last_stepsize(
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...
+    )
+    return _get_last_stepsize(amp, ams, dispatch_state_decorator(ams), vars...)
+end
+function _get_last_stepsize(
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{true}, vars...
+    )
+    return get_last_stepsize(amp, ams.state, vars...)
+end
+function _get_last_stepsize(
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...
+    )
+    s = get_last_stepsize(ams.stepsize) # if it stores the stepsize itself -> return
+    !isnan(s) && return s
+    # if not -> call step.
+    return ams.stepsize(amp, ams, vars...)
+end
+@doc """
+    get_last_stepsize(::Stepsize, vars...)
+
+return the last computed stepsize from within the stepsize.
+If no last step size is stored, this returns `NaN`.
+"""
+get_last_stepsize(::Stepsize, ::Any...) = NaN
+
+@doc """
+    get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
+
+return the stepsize stored within [`AbstractManoptSolverState`](@ref) `ams` when solving the
+[`AbstractManoptProblem`](@ref) `amp`.
+This method also works for decorated options and the [`Stepsize`](@ref) function within
+the options, by default stored in `ams.stepsize`.
+"""
+function get_stepsize(
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
+    )
+    return _get_stepsize(amp, ams, dispatch_state_decorator(ams), vars...; kwargs...)
+end
+function _get_stepsize(
+        amp::AbstractManoptProblem,
+        ams::AbstractManoptSolverState,
+        ::Val{true},
+        vars...;
+        kwargs...,
+    )
+    return get_stepsize(amp, ams.state, vars...; kwargs...)
+end
+function _get_stepsize(
+        amp::AbstractManoptProblem,
+        ams::AbstractManoptSolverState,
+        ::Val{false},
+        vars...;
+        kwargs...,
+    )
+    return ams.stepsize(amp, ams, vars...; kwargs...)
 end
 
 """
