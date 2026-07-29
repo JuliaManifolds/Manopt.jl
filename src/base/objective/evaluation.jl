@@ -20,24 +20,3 @@ A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating tha
 the problem contains or the function(s) do not allocate memory but work on their input, in place.
 """
 struct InplaceEvaluation <: AbstractEvaluationType end
-_to_kw(::Type{InplaceEvaluation}) = "evaluation = InplaceEvaluation()"
-
-@doc """
-    ParentEvaluationType <: AbstractEvaluationType
-
-A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating that
-the problem contains or the function(s) do inherit their property from a parent
-[`AbstractManoptProblem`](@ref) or function.
-"""
-struct ParentEvaluationType <: AbstractEvaluationType end
-_to_kw(::Type{ParentEvaluationType}) = "evaluation = ParentEvaluationType()"
-
-@doc """
-    AllocatingInplaceEvaluation <: AbstractEvaluationType
-
-A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating that
-the problem contains or the function(s) that provides both an allocating variant and one,
-that does not allocate memory but work on their input, in place.
-"""
-struct AllocatingInplaceEvaluation <: AbstractEvaluationType end
-_to_kw(::Type{AllocatingInplaceEvaluation}) = "evaluation = AllocatingInplaceEvaluation()"

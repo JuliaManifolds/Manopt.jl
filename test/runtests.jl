@@ -5,8 +5,10 @@ using Manifolds, ManifoldsBase, Manopt, Test
     @testset "Base Interface tests" begin
         include("base/test_callbacks.jl")
     end
+    @testset "Commons" begin
+        include("commons/test_objectives.jl")
+    end
     @testset "Plan Tests          " begin
-        include("plans/test_objective.jl")
         include("plans/test_problem.jl")
         include("plans/test_state.jl")
         include("plans/test_conjugate_gradient_plan.jl")

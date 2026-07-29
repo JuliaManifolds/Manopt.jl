@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.4] unreleased / WIP
 
+As an overarching scheme of this release, the single functions in an objective become a bit
+more independent; their wrapping happens more automatically and the objective gets – in turn –
+a bit more lightweight and has “less to handle”.
+
 ### Changed
 
 * All `AbstractManifoldObjectives` had an evaluation type as first parameter.
@@ -23,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * a few internal abstract supertypes have been renamed for the new scheme that puts more focus on functions. The word “functor” is now avoided for structs that actually just represent functions. to stay more consistent.
   * `AbstractConstrainedFunctor` has been renamed to `AbstractConstrainedFunction`
   * `AbstractConstrainedSlackFunctor` has been renamed to `AbstractConstrainedSlackFunctor`
+* `get_gradient_function` and `get_hessian_function` are unified to always return an in-place variant. Previously this depended heavily on the function the user provided and was a bit inconsistent overall.
+* objectives now also accept a `p=` keyword to automatically “wrap” functions that operate on immutable  variables – internally Manopt is expecting points and tangent vectors to be mutable.
+
+## Removed
+
+* The two evaluation types of `ParentEvaluationType` and `AllocatingInplaceEvaluation` were never used anywhere, so removing them is considered nonbreaking. Internally this distinction is now anyways handled on a function level, so that neither of the cases can appear anyways. Neither of these types was ever exported.
 
 
 ## [0.6.3] July 20, 2026

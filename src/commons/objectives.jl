@@ -1908,15 +1908,22 @@ to compute the cost value `c` at `p` on the manifold `M`.
 
 # Constructors
 
-    ManifoldCostObjective(f::F)
+    ManifoldCostObjective(f::F, p::P) where {F, P}
+    ManifoldCostObjective(f::F, p::Type{P}) where {F, P}
 
-Generate a problem. While this Problem does not have any allocating functions,
+Generate a [`ManifoldCostObjective`](@ref) with cost function `f`.
+The initial point `p` or its type `P` are used to maybe wrap the cost to make sure
+that it works on mutating point types.
 
 ## See also
 [`NelderMead`](@ref), [`particle_swarm`](@ref)
 """
 struct ManifoldCostObjective{F} <: AbstractManifoldCostObjective{F}
     cost::F
+end
+ManifoldCostObjective(f, ::P) where {P} = ManifoldCostObjective(f, P)
+function ManifoldCostObjective(f, ::Type{P}) where {P}
+    return ManifoldCostObjective(maybe_wrap_function(f, P; result = :Number))
 end
 function show(io::IO, mco::ManifoldCostObjective{F}) where {F}
     return print(io, "ManifoldCostObjective($(mco.cost))")
@@ -2475,7 +2482,7 @@ struct ManifoldFirstOrderObjective{F <: NamedTuple} <: AbstractManifoldFirstOrde
     functions::F
 end
 # TODO: Test here how to maybe handle the old evaluation= kwarg to now automatically “wrap”
-# allocating variants.
+# allocating variants – and add a p= keyword to also wrap functions on immutable variables
 function ManifoldFirstOrderObjective(;
         cost = nothing, differential = nothing, gradient = nothing,
         costgradient = nothing, costdifferential = nothing,
@@ -2742,8 +2749,14 @@ specify a problem for Hessian based algorithms.
   ill-conditioned
 
 # Constructor
-    ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner = (M, p, X) -> X;
-        evaluation=AllocatingEvaluation())
+    ManifoldHessianObjective(
+        f, grad_f, Hess_f, preconditioner = nothing;
+        p = missing, evaluation=AllocatingEvaluation()
+    )
+
+Generate a [`ManifoldHessianObjective`](@ref) from a cost function `f`, its gradient `grad_f`, its Hessian `Hess_f`, and an optional preconditioner `preconditioner`.
+The `evaluation` keyword argument can be used to specify whether the functions are in-place or allocating, a point `p` can be used to specify the domain of the functions,
+which only has a “wrapping” effect if `p` is a immutable number.
 
 # See also
 
@@ -2755,11 +2768,14 @@ struct ManifoldHessianObjective{C, G, H, Pre} <: AbstractManifoldHessianObjectiv
     hessian!::H
     preconditioner!::Pre
     function ManifoldHessianObjective(
-            cost::C, grad::G, hess::H, precond = nothing
+            cost::C, grad::G, hess::H, precond = nothing;
+            p = missing, evaluation = AllocatingEvaluation(),
         ) where {C, G, H}
-        # TODO: readd evaluation= keyword and wrap accordingly
-        # We store `Nothing` as a type for the preconditioner
-        return new{C, G, H, typeof(precond)}(cost, grad, hess, precond)
+        _cost = maybe_wrap_function(cost, p; result = :Number)
+        _grad = maybe_wrap_function(grad, p, evaluation; result = :TangentVector)
+        _hess = maybe_wrap_function(hess, p, evaluation; result = :TangentVector)
+        _precond = isnothing(precond) ? nothing : maybe_wrap_function(precond, p, evaluation; result = :TangentVector)
+        return new{typeof(_cost), typeof(_grad), typeof(_hess), typeof(_precond)}(_cost, _grad, _hess, _precond)
     end
 end
 function get_gradient(M::AbstractManifold, mho::ManifoldHessianObjective, p)

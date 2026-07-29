@@ -49,8 +49,8 @@ functions furthermore in a [`InplaceManifoldFunction`](@ref).
 
 ## Constructor
 
-    MutableManifoldFunction(f, p::P; result = :Number)
-    MutableManifoldFunction(f, P; result = :Number)
+    MutableManifoldFunction(f, p::P, result = :Number)
+    MutableManifoldFunction(f, P, result = :Number)
 
 Initialise the wrapper for a function `f` defined on a manifold, where `p` is a point on the manifold,
 to store the original point type `P` for the Arguments.
@@ -86,12 +86,12 @@ Wrapper for a function to ensure it works in-place.
 
 # Constructor
 
-    InplaceManifoldFunction(f; result = :Point, input_type = P)
+    InplaceManifoldFunction(f, result = :Point)
 """
 struct InplaceManifoldFunction{F}
     f::F
     result::Symbol
-    function InplaceManifoldFunction(f::F, result::Symbol = :Point) where {P, F}
+    function InplaceManifoldFunction(f::F, result::Symbol = :Point) where {F}
         return new{F}(f, result)
     end
 end
@@ -104,25 +104,28 @@ function (f!::InplaceManifoldFunction)(M, v, p, args...)
 end
 
 """
-    maybe_wrap_function(f, p, evaluation = AllocatingEvaluation(); result = :Number)
-    maybe_wrap_function(f, evaluation = AllocatingEvaluation(); result = :Number)
+    maybe_wrap_function(f, p, evaluation = InplaceEvaluation(); result = :Number)
+    maybe_wrap_function(f, evaluation = InplaceEvaluation(); result = :Number)
 
 Wrap a function `f` defined on a manifold to work in-place on mutable variables, i.e. first
 if the input variable `p` is a number, the function `f` is wrapped in a [`MutableManifoldFunction`](@ref).
 If then the function has an [`AllocatingManifoldFunction`](@ref) as `evaluation` type, it is wrapped in a [`InplaceManifoldFunction`](@ref) to work in-place of the result.
 
-The first step is skipped if the input variable `p` is not a number or not provided.
+The first step is skipped if the input variable `p` is not a number, `missing` or not provided.
 """
-maybe_wrap_function(f, p, evaluation::AbstractEvaluationType = AllocatingEvaluation(); result::Symbol = :Number) = maybe_wrap_function(f, typeof(p), evaluation; result = result)
+maybe_wrap_function(f, p, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number) = maybe_wrap_function(f, typeof(p), evaluation; result = result)
 function maybe_wrap_function(
-        f, ::Type{P}, evaluation::AbstractEvaluationType = AllocatingEvaluation(); result::Symbol = :Number
+        f, ::Type{P}, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number
     ) where {P <: Number}
-    return maybe_wrap_function(MutableManifoldFunction(f, P, evaluation; result = result))
+    return maybe_wrap_function(MutableManifoldFunction(f, P, result), evaluation; result = result)
 end
-function maybe_wrap_function(f, ::Type{P}, evaluation::AbstractEvaluationType = AllocatingEvaluation(); result::Symbol = :Number) where {P}
+function maybe_wrap_function(f, ::Type{P}, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number) where {P}
     return maybe_wrap_function(f, evaluation; result = result)
 end
-maybe_wrap_function(f, ::AllocatingEvaluation; result::Symbol = :Point) = InplaceManifoldFunction(f; result = result)
+function maybe_wrap_function(f, ::Missing, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number)
+    return maybe_wrap_function(f, evaluation; result = result)
+end
+maybe_wrap_function(f, ::AllocatingEvaluation; result::Symbol = :Point) = InplaceManifoldFunction(f, result)
 maybe_wrap_function(f, ::InplaceEvaluation; result::Symbol = :Point) = f
 
 # TODO: Maybe also re-add the evaluation keyword here again

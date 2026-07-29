@@ -1,6 +1,15 @@
-using ManifoldsBase, Manopt, Test
+using Manifolds, Manopt, Test
 
-@testset "Objective" begin
+@testset "Common Objectives" begin
+    @testset "Immutable Variables wrapper for cost functions" begin
+        f(::Circle, p) = p^2
+        M = Circle()
+        p0 = 1.0
+        o = ManifoldCostObjective(f, p0)
+        p0m = Manopt.maybe_wrap_variable(p0) # turns into a vector
+        # Internally we now work on p0m, but we can verify against classical f above.
+        @test get_cost(M, o, p0m) == f(M, p0)
+    end
     @testset "Test decorator" begin
         o = ManifoldCostObjective(x -> x)
         d = Manopt.Test.DummyDecoratedObjective(o)
@@ -33,17 +42,20 @@ using ManifoldsBase, Manopt, Test
     end
     @testset "set_parameter!" begin
         o = ManifoldCostObjective(x -> x)
-        mp = DefaultManoptProblem(ManifoldsBase.DefaultManifold(2), o)
+        mp = DefaultManoptProblem(Euclidean(2), o)
         Manopt.set_parameter!(mp, :Objective, :Dummy, 1)
     end
     @testset "functions" begin
-        M = ManifoldsBase.DefaultManifold(2)
+        M = Euclidean(2)
         p = [1.0, 2.0]
         X = [3.0, 4.0]
         oa = ManifoldHessianObjective((M, p) -> p[1], (M, p) -> p, (M, p, X) -> X)
         @test Manopt.get_cost_function(oa)(M, p) == p[1]
-        @test Manopt.get_gradient_function(oa)(M, p) == p
-        @test Manopt.get_hessian_function(oa)(M, p, X) == X
+        Y = zero_vector(M, p)
+        @test Manopt.get_gradient_function(oa)(M, Y, p) == p
+        @test Y == p
+        @test Manopt.get_hessian_function(oa)(M, Y, p, X) == X
+        @test Y == X
         oi = ManifoldHessianObjective(
             (M, p) -> p[1], (M, X, p) -> (X .= p), (M, Y, p, X) -> (Y .= X);
             evaluation = InplaceEvaluation(),
@@ -54,7 +66,5 @@ using ManifoldsBase, Manopt, Test
         @test Y == p
         @test Manopt.get_hessian_function(oi)(M, Y, p, X) == X
         @test Y == X
-        @test Manopt._to_kw(Manopt.ParentEvaluationType) == "evaluation = ParentEvaluationType()"
-        @test Manopt._to_kw(Manopt.AllocatingInplaceEvaluation) == "evaluation = AllocatingInplaceEvaluation()"
     end
 end

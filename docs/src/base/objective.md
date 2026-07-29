@@ -24,9 +24,7 @@ One parameter of the objective specifies the type of evaluation:
 ```@docs
 AbstractEvaluationType
 AllocatingEvaluation
-AllocatingInplaceEvaluation
 InplaceEvaluation
-ParentEvaluationType
 ```
 
 The different types of objectives are listed on sub pages depending on their type of information or function
