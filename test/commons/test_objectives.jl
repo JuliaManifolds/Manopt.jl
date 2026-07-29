@@ -5,7 +5,7 @@ using Manifolds, Manopt, Test
         f(::Circle, p) = p^2
         M = Circle()
         p0 = 1.0
-        o = ManifoldCostObjective(f, p0)
+        o = ManifoldCostObjective(f; p = p0)
         p0m = Manopt.maybe_wrap_variable(p0) # turns into a vector
         # Internally we now work on p0m, but we can verify against classical f above.
         @test get_cost(M, o, p0m) == f(M, p0)

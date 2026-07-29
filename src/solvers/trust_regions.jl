@@ -343,14 +343,10 @@ function trust_regions(
         end,
         kwargs...,
     ) where {TH <: Function}
-    p_ = maybe_wrap_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    Hess_f_ = _ensure_mutating_hessian(Hess_f, p, evaluation)
-    preconditioner_ = _ensure_mutating_hessian(preconditioner, p, evaluation)
     mho = ManifoldHessianObjective(
-        f_, grad_f_, Hess_f_, preconditioner_; evaluation = evaluation
+        f, grad_f, Hess_f, preconditioner; p = p, evaluation = evaluation
     )
+    p_ = maybe_wrap_variable(p)
     rs = trust_regions(M, mho, p_; evaluation = evaluation, kwargs...)
     return maybe_unwrap_variable(p, rs)
 end

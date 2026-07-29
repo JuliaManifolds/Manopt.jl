@@ -1908,8 +1908,8 @@ to compute the cost value `c` at `p` on the manifold `M`.
 
 # Constructors
 
-    ManifoldCostObjective(f::F, p::P) where {F, P}
-    ManifoldCostObjective(f::F, p::Type{P}) where {F, P}
+    ManifoldCostObjective(f::F; p = missing) where {F, P}
+    ManifoldCostObjective(f::F, ::Type{P}) where {F, P}
 
 Generate a [`ManifoldCostObjective`](@ref) with cost function `f`.
 The initial point `p` or its type `P` are used to maybe wrap the cost to make sure
@@ -1920,11 +1920,12 @@ that it works on mutating point types.
 """
 struct ManifoldCostObjective{F} <: AbstractManifoldCostObjective{F}
     cost::F
+    function ManifoldCostObjective(f, ::Type{P}) where {P}
+        f_ = maybe_wrap_function(f, P; result = :Number)
+        return new{typeof(f_)}(f_)
+    end
 end
-ManifoldCostObjective(f, ::P) where {P} = ManifoldCostObjective(f, P)
-function ManifoldCostObjective(f, ::Type{P}) where {P}
-    return ManifoldCostObjective(maybe_wrap_function(f, P; result = :Number))
-end
+ManifoldCostObjective(f; p::P = missing) where {P} = ManifoldCostObjective(f, P)
 function show(io::IO, mco::ManifoldCostObjective{F}) where {F}
     return print(io, "ManifoldCostObjective($(mco.cost))")
 end

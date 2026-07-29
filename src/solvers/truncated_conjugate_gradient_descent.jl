@@ -511,16 +511,11 @@ function truncated_conjugate_gradient_descent(
         end,
         kwargs...,
     )
+    mho = ManifoldHessianObjective(
+        f, grad_f, Hess_f, preconditioner; p = p, evaluation = evaluation
+    )
     p_ = maybe_wrap_variable(p)
     X_ = maybe_wrap_variable(X)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    preconditioner_ = _ensure_mutating_hessian(preconditioner, p, evaluation)
-    Hess_f_ = _ensure_mutating_hessian(Hess_f, p, evaluation)
-
-    mho = ManifoldHessianObjective(
-        f_, grad_f_, Hess_f_, preconditioner_; evaluation = evaluation
-    )
     rs = truncated_conjugate_gradient_descent(
         M, mho, p_, X_; evaluation = evaluation, kwargs...
     )
