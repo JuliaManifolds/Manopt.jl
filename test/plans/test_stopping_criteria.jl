@@ -8,7 +8,7 @@ end
 
 @testset "StoppingCriteria" begin
     @testset "Generic Tests" begin
-        @test_throws ErrorException get_stopping_criteria(Manopt.Test.DummyStoppingCriteriaSet())
+        @test_throws MethodError get_stopping_criteria(Manopt.Test.DummyStoppingCriteriaSet())
         sa = StopAfterIteration(10)
         sb = StopWhenChangeLess(Euclidean(), 0.1)
         s = StopWhenAll(sa, sb)

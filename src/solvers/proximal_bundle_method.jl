@@ -301,7 +301,7 @@ calls_with_kwargs(::typeof(proximal_bundle_method)) = (proximal_bundle_method!,)
 function proximal_bundle_method!(
         M::AbstractManifold,
         f::TF,
-        ∂f!!::TdF,
+        ∂f!::TdF,
         p;
         m = 0.0125,
         bundle_size = 50,
@@ -322,7 +322,7 @@ function proximal_bundle_method!(
         kwargs..., #especially may contain debug
     ) where {TF, TdF, TRetr, IR, VTransp}
     keywords_accepted(proximal_bundle_method!; kwargs...)
-    sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation = evaluation)
+    sgo = ManifoldSubgradientObjective(f, ∂f!; evaluation = evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)

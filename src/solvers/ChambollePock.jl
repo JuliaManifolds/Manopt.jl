@@ -477,7 +477,7 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
     obj = get_objective(tmp)
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
-    if !hasproperty(obj, :Λ!!) || ismissing(obj.Λ!!)
+    if !hasproperty(obj, :Λ!) || ismissing(obj.Λ!)
         ptXn = cps.X
     else
         ptXn = vector_transport_to(
@@ -516,7 +516,7 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
     obj = get_objective(tmp)
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
-    if !hasproperty(obj, :Λ!!) || ismissing(obj.Λ!!)
+    if !hasproperty(obj, :Λ!) || ismissing(obj.Λ!)
         ptXbar = cps.Xbar
     else
         ptXbar = vector_transport_to(
@@ -559,7 +559,7 @@ function dual_update!(
         tmp, cps.m, inverse_retract(M, cps.m, start, cps.inverse_retraction_method), cps.n
     )
     # (2) if p.Λ is missing, if n = Λ(m) and do not PT, otherwise do
-    (hasproperty(obj, :Λ!!) && !ismissing(obj.Λ!!)) && vector_transport_to!(
+    (hasproperty(obj, :Λ!) && !ismissing(obj.Λ!)) && vector_transport_to!(
         N, X_update, forward_operator(tmp, cps.m), X_update, cps.n, cps.vector_transport_method_dual,
     )
     # (3) to the dual update

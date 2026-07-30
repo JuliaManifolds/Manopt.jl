@@ -201,7 +201,7 @@ function ProximalGradientMethodState(
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
         sub_problem::Pr = nothing,
-        sub_state::St = nothing, #AllocatingEvaluation(),
+        sub_state::St = nothing,
     ) where {
         P, T, SC <: StoppingCriterion, A,
         Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F}, St <: Union{<:AbstractManoptSolverState, <:AbstractEvaluationType, Nothing},
@@ -719,7 +719,7 @@ function proximal_gradient_method!(
         X = zero_vector(M, p),
         retraction_method = default_retraction_method(M, typeof(p)),
         inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
-        sub_problem = if isnothing(mpgo.proximal_map_h!!)
+        sub_problem = if isnothing(mpgo.proximal_map_h!)
             DefaultManoptProblem(
                 M,
                 ManifoldSubgradientObjective(
@@ -730,7 +730,7 @@ function proximal_gradient_method!(
         else
             nothing
         end,
-        sub_state = if !isnothing(mpgo.proximal_map_h!!)
+        sub_state = if !isnothing(mpgo.proximal_map_h!)
             # AllocatingEvaluation()
             nothing
         else
@@ -750,7 +750,7 @@ function proximal_gradient_method!(
     }
     keywords_accepted(proximal_gradient_method!; kwargs...)
     # Check whether either the right defaults were provided or a `sub_problem`.
-    if isnothing(mpgo.proximal_map_h!!) && isnothing(cost_nonsmooth)
+    if isnothing(mpgo.proximal_map_h!) && isnothing(cost_nonsmooth)
         error(
             """
             The `sub_problem` is not correctly initialized. Provide _one of_ the following setups

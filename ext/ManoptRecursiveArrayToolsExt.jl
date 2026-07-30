@@ -30,7 +30,7 @@ Evaluate one of the component gradients ``$(_tex(:grad)) f_i``, ``i∈ $(_tex(:s
 function get_gradient!(
         M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{TC, <:AbstractVector}, p,
     ) where {TC}
-    for (gi, Xi) in zip(mago.gradient!!, submanifold_components(M, X))
+    for (gi, Xi) in zip(mago.gradient!, submanifold_components(M, X))
         gi(M, Xi, p)
     end
     return X
