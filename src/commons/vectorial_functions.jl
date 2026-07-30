@@ -183,7 +183,7 @@ function VectorDifferentialFunction(
     ) where {I <: Integer, F, J, FT <: AbstractVectorialType, JT <: AbstractVectorialType}
     f_ = _maybe_wrap_vector_function(f, function_type, evaluation)
     Jf_ = _maybe_wrap_jacobian_function(Jf, jacobian_type, evaluation)
-    return VectorDifferentialFunction{typeof(f_), typeof(Jf_), Missing, F, J, Missing, I}(
+    return VectorDifferentialFunction{FT, JT, Missing, typeof(f_), typeof(Jf_), Missing, I}(
         f_, function_type, Jf_, jacobian_type, missing, missing, range_dimension
     )
 end

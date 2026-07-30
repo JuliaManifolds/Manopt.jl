@@ -997,9 +997,9 @@ mutable struct LinearizedDCGrad{P, T, TG}
     grad_g!::TG
     pk::P
     Xk::T
-    function LinearizedDCGrad(grad_g::TG, pk::P, Xk::T) where {TG, P, T}
-        # TODO: readd evaluatiion and wrap grad
-        return new{P, T, TG}(grad_g, pk, Xk)
+    function LinearizedDCGrad(grad_g::TG, pk::P, Xk::T; evaluation::AbstractEvaluationType = AllocatingEvaluation()) where {TG, P, T}
+        grad_g_ = maybe_wrap_function(grad_g, pk, evaluation)
+        return new{P, T, typeof(grad_g_)}(grad_g_, pk, Xk)
     end
 end
 function (grad_f!::LinearizedDCGrad)(M, X, p)
@@ -1103,9 +1103,9 @@ mutable struct ProximalDCGrad{P, TG, R}
     grad_g!::TG
     pk::P
     λ::R
-    function ProximalDCGrad(grad_g::TG, pk::P, λ::R) where {TG, P, R}
-        #TODO: Add eval and a wrapper?
-        return new{P, TG, R}(grad_g, pk, λ)
+    function ProximalDCGrad(grad_g::TG, pk::P, λ::R; evaluation::AbstractEvaluationType = AllocatingEvaluation()) where {TG, P, R}
+        grad_g_ = maybe_wrap_function(grad_g, pk, evaluation)
+        return new{P, typeof(grad_g_), R}(grad_g_, pk, λ)
     end
 end
 function (grad_f!::ProximalDCGrad)(M, X, p)

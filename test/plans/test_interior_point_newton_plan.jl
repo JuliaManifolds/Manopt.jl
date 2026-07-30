@@ -67,8 +67,8 @@ using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
     @test startswith(Manopt.status_summary(ipns; context = :default), show_str)
     @test startswith(repr(ipns), "InteriorPointNewtonState(")
     # status summary of KKT Vectorfields
-    @test startswith(Manopt.status_summary(sub_obj.A!!), "The Jacobian of the condensed KKT vector field for the constrained objective")
-    @test startswith(Manopt.status_summary(sub_obj.b!!), "The condensed KKT vector field for the constrained objective")
+    @test startswith(Manopt.status_summary(sub_obj.A!), "The Jacobian of the condensed KKT vector field for the constrained objective")
+    @test startswith(Manopt.status_summary(sub_obj.b!), "The condensed KKT vector field for the constrained objective")
     sc = StopWhenKKTResidualLess(1.0e-5)
     @test length(get_reason(sc)) == 0
     @test !sc(dmp, ipns, 1) #not yet reached

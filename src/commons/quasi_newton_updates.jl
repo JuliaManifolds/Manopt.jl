@@ -344,12 +344,15 @@ Add preconditioning to a gradient problem.
 * `preconditioner`:   preconditioner function, either as a `(M, p, X) -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
 
 # Keyword arguments
+$(_kwargs(:evaluation))
 """
 struct QuasiNewtonPreconditioner{F}
     preconditioner!::F
+    function QuasiNewtonPreconditioner(preconditioner::F; evaluation::AbstractEvaluationType = AllocatingEvaluation()) where {F}
+        preconditioner_ = maybe_wrap_function(preconditioner, evaluation)
+        return new{typeof(preconditioner_)}(preconditioner_)
+    end
 end
-# TODO: add evaluation keyword and wrap accordingly.
-# Internally this always works in-place of X
 function (pg::QuasiNewtonPreconditioner)(
         X, mp::AbstractManoptProblem, s::AbstractGradientSolverState
     )

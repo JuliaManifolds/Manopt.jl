@@ -80,7 +80,7 @@ function adjoint_linearized_operator(
         apdmo::AbstractPrimalDualManifoldObjective, m, n, Y,
     )
     X = zero_vector(M, m)
-    apdmo.adjoint_linearized_operator!!(N, X, m, n, Y)
+    apdmo.adjoint_linearized_operator!(N, X, m, n, Y)
     return X
 end
 function adjoint_linearized_operator(
@@ -94,7 +94,7 @@ function adjoint_linearized_operator!(
         ::AbstractManifold, N::AbstractManifold,
         X, apdmo::AbstractPrimalDualManifoldObjective, m, n, Y,
     )
-    apdmo.adjoint_linearized_operator!!(N, X, m, n, Y)
+    apdmo.adjoint_linearized_operator!(N, X, m, n, Y)
     return X
 end
 function adjoint_linearized_operator!(
@@ -119,7 +119,7 @@ function forward_operator(
         M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, p,
     )
     q = rand(N)
-    apdmo.Λ!!(M, q, p)
+    apdmo.Λ!(M, q, p)
     return q
 end
 function forward_operator(
@@ -130,7 +130,7 @@ end
 function forward_operator!(
         M::AbstractManifold, ::AbstractManifold, q, apdmo::AbstractPrimalDualManifoldObjective, p,
     )
-    apdmo.Λ!!(M, q, p)
+    apdmo.Λ!(M, q, p)
     return q
 end
 function forward_operator!(
@@ -225,7 +225,7 @@ function linearized_forward_operator(
         M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, m, X, n
     )
     Y = zero_vector(N, n)
-    apdmo.linearized_forward_operator!!(M, Y, m, X)
+    apdmo.linearized_forward_operator!(M, Y, m, X)
     return Y
 end
 function linearized_forward_operator(
@@ -236,7 +236,7 @@ end
 function linearized_forward_operator!(
         M::AbstractManifold, ::AbstractManifold, Y, apdmo::AbstractPrimalDualManifoldObjective, m, X, ::Any,
     )
-    apdmo.linearized_forward_operator!!(M, Y, m, X)
+    apdmo.linearized_forward_operator!(M, Y, m, X)
     return Y
 end
 function linearized_forward_operator!(
