@@ -109,7 +109,7 @@ function ExactPenaltyMethodState(
     return ExactPenaltyMethodState(M, sub_problem; evaluation = sub_state, kwargs...)
 end
 function ExactPenaltyMethodState(
-        M::AbstractManifold, sub_problem; evaluation::AbstractEvaluationType=AllocatingEvaluation(), kwargs...
+        M::AbstractManifold, sub_problem; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...
     )
     sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
     return ExactPenaltyMethodState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
