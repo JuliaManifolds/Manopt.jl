@@ -219,7 +219,6 @@ include("solvers/stochastic_gradient_descent.jl")
 include("solvers/subgradient.jl")
 include("solvers/vectorbundle_newton.jl")
 #
-# TODO: Debug & Record -> move to commons/?
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 

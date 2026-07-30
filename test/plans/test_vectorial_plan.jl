@@ -50,7 +50,7 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     )
 
     vgf_dfn = VectorDifferentialFunction(g, Dg, 2; jacobian_type = FunctionVectorialType())
-    @test ismissing(vgf_dfn.adjoint_jacobian!!)
+    @test ismissing(vgf_dfn.adjoint_jacobian!)
     vgf_df = VectorDifferentialFunction(g, Dg, aDg, 2; jacobian_type = FunctionVectorialType())
     vgf_dfi = VectorDifferentialFunction(
         g!, Dg!, aDg!, 2;

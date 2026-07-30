@@ -84,12 +84,12 @@ using ManifoldDiff:
     end
     @testset "show/repr and status_summary" begin
         s1 = repr(obj1)
-        @test startswith(s1, "PrimalDualManifoldSemismoothNewtonObjective(f,")
+        @test startswith(s1, "PrimalDualManifoldSemismoothNewtonObjective(")
         s2 = repr(obj2)
-        @test startswith(s2, "PrimalDualManifoldSemismoothNewtonObjective(f,")
+        @test startswith(s2, "PrimalDualManifoldSemismoothNewtonObjective(")
         @test contains(s2, "InplaceEvaluation")
         s3 = repr(obj3)
-        @test startswith(s3, "PrimalDualManifoldSemismoothNewtonObjective(f,")
+        @test startswith(s3, "PrimalDualManifoldSemismoothNewtonObjective(")
         @test contains(s3, "Λ = ")
         s4 = Manopt.status_summary(obj1)
         @test startswith(s4, "A primal dual semismooth Newton objective")

@@ -674,7 +674,7 @@ calls_with_kwargs(::typeof(convex_bundle_method)) = (convex_bundle_method!,)
 
 @doc "$(_doc_convex_bundle_method)"
 function convex_bundle_method!(
-        M::AbstractManifold, f::TF, ∂f!!::TdF, p;
+        M::AbstractManifold, f::TF, ∂f!::TdF, p;
         atol_λ::R = sqrt(eps()),
         atol_errors::R = sqrt(eps()),
         bundle_cap::Int = 25,
@@ -703,7 +703,7 @@ function convex_bundle_method!(
         kwargs...,
     ) where {R <: Real, TF, TdF, TRetr, IR, VTransp}
     keywords_accepted(convex_bundle_method!; kwargs...)
-    sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation = evaluation)
+    sgo = ManifoldSubgradientObjective(f, ∂f!; evaluation = evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
     bms = ConvexBundleMethodState(
