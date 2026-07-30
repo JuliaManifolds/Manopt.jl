@@ -318,6 +318,7 @@ function quasi_Newton!(
             end
         ),
         preconditioner = nothing,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         initial_scale::Union{<:Real, Nothing} = isnothing(preconditioner) ? 1.0 : nothing,
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, QuasiNewtonState;
@@ -368,7 +369,7 @@ function quasi_Newton!(
         direction_update = local_dir_upd,
         stopping_criterion = stopping_criterion,
         preconditioner = if preconditioner isa Function
-            QuasiNewtonPreconditioner(preconditioner; evaluation = E())
+            QuasiNewtonPreconditioner(preconditioner; evaluation = evaluation)
         else
             preconditioner
         end,

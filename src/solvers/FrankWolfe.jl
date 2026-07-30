@@ -341,7 +341,6 @@ function Frank_Wolfe_method!(
             decorate_objective!(M, sub_objective; objective_type = objective_type, sub_kwargs...),
         ),
         sub_stopping_criterion = StopAfterIteration(300) | StopWhenStepsizeLess(1.0e-8),
-        # TODO: After refactoring, Part I: Replace this by maybe wrapping a(n allocating) function
         sub_state::Union{AbstractManoptSolverState, AbstractEvaluationType} = if sub_problem isa
                 Function
             evaluation

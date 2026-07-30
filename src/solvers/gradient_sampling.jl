@@ -130,11 +130,19 @@ mutable struct GradientSamplingState{
         )
     end
 end
-
+function GradientSamplingSate(
+        M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
+    )
+    return GradientSamplingState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function GradientSamplingSate(
+        M::AbstractManifold, sub_problem = gradient_sampling_subsolver!; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
+    return GradientSamplingState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
+end
 function GradientSamplingState(
-        M::AbstractManifold,
-        sub_problem = gradient_sampling_subsolver!,
-        sub_state = InplaceEvaluation();
+        M::AbstractManifold, sub_problem::Pr, sub_state::St;
         callbacks::C = Dict{Symbol, Function}(),
         p::P = rand(M),
         X::T = zero_vector(M, p),
@@ -158,7 +166,7 @@ function GradientSamplingState(
             M, GradientSamplingState; retraction_method = retraction_method
         ),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
-    ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, C <: AbstractDict{Symbol}}
+    ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, C <: AbstractDict{Symbol}, Pr <: Union{G, AbstractManoptProblem} where {G}, St <: AbstractManoptSolverState}
     m1 = length(sampled_points)
     m2 = length(sampled_vectors)
     m3 = length(convex_hull_coeffs)
@@ -346,7 +354,7 @@ function gradient_sampling!(
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     s = GradientSamplingState(
-        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        M, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, GradientSamplingState),
         p = p,
         sample_size = sample_size,
