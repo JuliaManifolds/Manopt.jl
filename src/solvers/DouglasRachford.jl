@@ -270,6 +270,7 @@ function DouglasRachford(
     ) where {TF}
     p_ = maybe_wrap_variable(p)
     proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation) for prox_f in proxes_f]
+    f_ = maybe_wrap_function(f, p)
     N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(
         M, f_, proxes_f_, p_, parallel, evaluation
     )

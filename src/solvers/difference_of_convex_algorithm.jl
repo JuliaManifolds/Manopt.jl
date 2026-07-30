@@ -187,10 +187,12 @@ mutable struct DifferenceOfConvexState{
 end
 provided_callbacks(::Type{DifferenceOfConvexState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver])
 get_callbacks(dcs::DifferenceOfConvexState) = dcs.callbacks
-function DifferenceOfConvexState(M::AbstractManifold, sub_problem; kwargs...)
-    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
-    cfs = ClosedFormSubSolverState()
-    return DifferenceOfConvexState(M, sub_problem, cfs; kwargs...)
+function DifferenceOfConvexState(M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...)
+    return DifferenceOfConvexState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function DifferenceOfConvexState(M::AbstractManifold, sub_problem; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...)
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
+    return DifferenceOfConvexState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
 end
 
 get_iterate(dcs::DifferenceOfConvexState) = dcs.p
@@ -421,7 +423,7 @@ function difference_of_convex_algorithm!(
         """,
     )
     dcs = DifferenceOfConvexState(
-        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        M, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, DifferenceOfConvexState),
         p = p, stopping_criterion = stopping_criterion, X = X,
     )
