@@ -199,7 +199,7 @@ function VectorDifferentialFunction(
     f_ = _maybe_wrap_vector_function(f, function_type, evaluation)
     Jf_ = _maybe_wrap_jacobian_function(f, jacobian_type, evaluation)
     aJF_ = _maybe_wrap_adjoint_jacobian_function(aJf, adjoint_jacobian_type, evaluation)
-    return VectorDifferentialFunction{typeof(f_), typeof(Jf_), typeof(aJF_), F, J, A, I}(
+    return VectorDifferentialFunction{FT, JT, AJT, typeof(f_), typeof(Jf_), typeof(aJF_), I}(
         f, function_type, Jf, jacobian_type, AJf, adjoint_jacobian_type, range_dimension
     )
 end
@@ -350,9 +350,9 @@ function VectorHessianFunction(
         I <: Integer, F, J, H, FT <: AbstractVectorialType, JT <: AbstractVectorialType, HT <: AbstractVectorialType,
     }
     f_ = _maybe_wrap_vector_function(f, function_type, evaluation)
-    Jf_ = _maybe_wrap_jacobian_function(f, jacobian_type, evaluation)
+    Jf_ = _maybe_wrap_jacobian_function(Jf, jacobian_type, evaluation)
     Hf_ = _maybe_wrap_vector_Hessian_function(Hf, hessian_type, evaluation)
-    return VectorHessianFunction{typeof(f_), typeof(Jf_), typeof(Hf_), F, J, H, I}(
+    return VectorHessianFunction{FT, JT, HT, typeof(f_), typeof(Jf_), typeof(Hf_), I}(
         f_, function_type, Jf_, jacobian_type, Hf_, hessian_type, range_dimension
     )
 end
