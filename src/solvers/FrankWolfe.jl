@@ -117,11 +117,15 @@ mutable struct FrankWolfeState{
     retraction_method::TM
     inverse_retraction_method::ITM
     function FrankWolfeState(
-            M::AbstractManifold, sub_problem; kwargs...
+            M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
         )
-        # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
-        cfs = ClosedFormSubSolverState()
-        return FrankWolfeState(M, sub_problem, cfs; kwargs...)
+        return FrankWolfeState(M, sub_problem; evaluation = sub_state, kwargs...)
+    end
+    function FrankWolfeState(
+            M::AbstractManifold, sub_problem; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...
+        )
+        sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
+        return FrankWolfeState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
     end
     function FrankWolfeState(
             M::AbstractManifold, sub_problem::Pr, sub_state::St;
@@ -133,7 +137,7 @@ mutable struct FrankWolfeState{
             inverse_retraction_method::ITM = default_inverse_retraction_method(M, typeof(p)),
         ) where {
             P, T, C <: AbstractDict{Symbol},
-            Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+            Pr, St <: AbstractManoptSolverState,
             TStop <: StoppingCriterion, TStep <: Stepsize,
             TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
         }

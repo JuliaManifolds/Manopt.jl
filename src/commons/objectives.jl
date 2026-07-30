@@ -2520,14 +2520,11 @@ Where:
 struct ManifoldFirstOrderObjective{F <: NamedTuple} <: AbstractManifoldFirstOrderObjective{F, F}
     functions::F
 end
-# TODO: Test here how to maybe handle the old evaluation= kwarg to now automatically “wrap”
-# allocating variants – and add a p= keyword to also wrap functions on immutable variables
 function ManifoldFirstOrderObjective(;
         cost = nothing, differential = nothing, gradient = nothing,
         costgradient = nothing, costdifferential = nothing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
     )
-    # TODO: Readd evaluation
     no_cost = isnothing(cost)
     no_diff = isnothing(differential)
     no_grad = isnothing(gradient)

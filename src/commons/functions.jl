@@ -139,7 +139,6 @@ end
 maybe_wrap_function(f, ::AllocatingEvaluation; result::Symbol = :Point) = InplaceManifoldFunction(f, result)
 maybe_wrap_function(f, ::InplaceEvaluation; result::Symbol = :Point) = f
 
-# TODO: Maybe also re-add the evaluation keyword here again
 @doc """
     ApproxHessianFiniteDifference{P, T, G, RTR, VTR, R <: Real} <: AbstractApproximateHessianFunction
 

@@ -181,7 +181,6 @@ end
 function TrustRegionsState(
         M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
     )
-    # TODO: deprecate?
     return TrustRegionsState(M, sub_problem; evaluation = sub_state, kwargs...)
 end
 function TrustRegionsState(
