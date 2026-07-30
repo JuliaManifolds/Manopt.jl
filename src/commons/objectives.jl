@@ -956,7 +956,7 @@ function get_hessian_function(emo::EmbeddedManifoldObjective, recursive::Bool = 
     if evaluation isa AllocatingEvaluation
         return (M, p, X) -> get_hessian(M, emo, p, X)
     else
-        return (M, Y, p, X) -> get_hessian(M, Y, emo, p, X)
+        return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)
     end
 end
 
@@ -2556,13 +2556,13 @@ function ManifoldFirstOrderObjective(;
         nt = merge(nt, (; gradient = maybe_wrap_function(gradient, p, evaluation; result = :TangentVector)))
     end
     if !no_diff
-        nt = merge(nt, (; differential = maybe_wrap_function(differential, p; result = :Number)))
+        nt = merge(nt, (; differential = maybe_wrap_function(differential, p, evaluation; result = :Number)))
     end
     if !ncg
-        nt = merge(nt, (; costgradient = maybe_wrap_function(costgradient, p; result = :NumberAndGradient)))
+        nt = merge(nt, (; costgradient = maybe_wrap_function(costgradient, p, evaluation; result = :NumberAndGradient)))
     end
     if !ncd
-        nt = merge(nt, (; costdifferential = maybe_wrap_function(costdifferential, p; result = :Number)))
+        nt = merge(nt, (; costdifferential = maybe_wrap_function(costdifferential, p, evaluation; result = :Number)))
     end
     return ManifoldFirstOrderObjective{typeof(nt)}(nt)
 end

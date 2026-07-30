@@ -122,7 +122,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         # The same for gradient
         @test Manopt.get_gradient_function(obj_i) ===
             Manopt.get_gradient_function(e_obj_i, true)
-        grad_f1! = Manopt.get_gradient_function(e_obj_i)
+        grad_f1! = Manopt.get_gradient_function(e_obj_i; evaluation = InplaceEvaluation())
         @test grad_f1! != grad_f!
         Y = similar(X)
         Z = similar(X)
@@ -130,7 +130,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         # And Hessian
         @test Manopt.get_hessian_function(obj_i) ===
             Manopt.get_hessian_function(e_obj_i, true)
-        Hess_f1! = Manopt.get_hessian_function(e_obj_i)
+        Hess_f1! = Manopt.get_hessian_function(e_obj_i; evaluation = InplaceEvaluation())
         @test Hess_f1 != Hess_f
         @test Hess_f1!(M, Y, p, X) == Hess_f!(M, Z, p, X)
     end

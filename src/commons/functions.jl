@@ -102,7 +102,7 @@ function (f!::InplaceManifoldFunction)(M, v, p, args...)
     (f!.result === :TangentVectors) && return copyto!.(Ref(M), v, Ref(p), f!.f(M, p, args...))
     (f!.result === :Number) && return (v[] = f!.f(M, p, args...))
     # default: Just copyto! – e.g. for :Vector or :Matrix
-    return copyto!(v, f!.f(M, args...))
+    return copyto!(v, f!.f(M, p, args...))
 end
 
 """

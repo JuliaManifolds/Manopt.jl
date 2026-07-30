@@ -2,9 +2,8 @@ _maybe_wrap_vector_function(f, ::AbstractVectorialType, ::InplaceEvaluation) = f
 function _maybe_wrap_vector_function(f, ::FunctionVectorialType, ::AllocatingEvaluation)
     return InplaceManifoldFunction(f, :Vector)
 end
-function _maybe_wrap_vector_function(f, ::ComponentVectorialType, ::AllocatingEvaluation)
-    return [InplaceManifoldFunction(fi, :Number) for fi in f]
-end
+# The single components are like cost – returning numbers, so we keep them as is.
+_maybe_wrap_vector_function(f, ::ComponentVectorialType, ::AllocatingEvaluation) = f
 
 _maybe_wrap_jacobian_function(Jf, ::AbstractVectorialType, ::InplaceEvaluation) = Jf
 function _maybe_wrap_jacobian_function(Jf, ::FunctionVectorialType, ::AllocatingEvaluation)

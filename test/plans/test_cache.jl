@@ -161,56 +161,56 @@ end
         mcgoa = ManifoldCostGradientObjective(TestCostGradCount(0))
         sco3 = Manopt.SimpleManifoldCachedObjective(M, mcgoa; initialized = false)
         # not evaluated on init -> still zero
-        @test sco3.objective.functions[:costgradient].i == 0
+        @test sco3.objective.functions[:costgradient].f.i == 0
         @test get_gradient(M, sco3, p) == p
         get_gradient!(M, X, sco3, p)
         @test X == p
         @test get_cost(M, sco3, p) == norm(p)
         # for separate calls this is a 2
 
-        @test sco3.objective.functions[:costgradient].i == 2
+        @test sco3.objective.functions[:costgradient].f.i == 2
         @test get_gradient(M, sco3, q) == q
         get_gradient!(M, X, sco3, q) # cached
         @test X == q
         @test get_cost(M, sco3, q) == norm(q)
-        @test sco3.objective.functions[:costgradient].i == 4
+        @test sco3.objective.functions[:costgradient].f.i == 4
         get_gradient!(M, X, sco3, r)
         @test X == r
         @test get_gradient(M, sco3, r) == r # cached
         @test get_cost(M, sco3, r) == norm(r)
-        @test sco3.objective.functions[:costgradient].i == 6
+        @test sco3.objective.functions[:costgradient].f.i == 6
         @test get_cost(M, sco3, s) == norm(s)
         get_gradient!(M, X, sco3, s)
         @test X == s
         @test get_gradient(M, sco3, s) == s # cached
-        @test sco3.objective.functions[:costgradient].i == 8
+        @test sco3.objective.functions[:costgradient].f.i == 8
 
         mcgoi = ManifoldCostGradientObjective(
             TestCostGradCount(0); evaluation = InplaceEvaluation()
         )
         sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p = p)
         # evaluated on init -> evaluates twice
-        @test sco4.objective.functions[:costgradient].i == 2
+        @test sco4.objective.functions[:costgradient].f.i == 2
         @test get_gradient(M, sco4, p) == p
         get_gradient!(M, X, sco4, p) # cached
         @test X == p
         @test get_cost(M, sco4, p) == norm(p)
         # still at 2
-        @test sco4.objective.functions[:costgradient].i == 2
+        @test sco4.objective.functions[:costgradient].f.i == 2
         @test get_gradient(M, sco4, q) == q
         get_gradient!(M, X, sco4, q) #cached
         @test X == q
         @test get_cost(M, sco4, q) == norm(q)
-        @test sco4.objective.functions[:costgradient].i == 4
+        @test sco4.objective.functions[:costgradient].f.i == 4
         get_gradient!(M, X, sco4, r)
         @test X == r
         @test get_gradient(M, sco4, r) == r # cached
-        @test sco4.objective.functions[:costgradient].i == 5
+        @test sco4.objective.functions[:costgradient].f.i == 5
         @test get_cost(M, sco4, s) == norm(s)
         get_gradient!(M, X, sco4, s)
         @test X == s
         @test get_gradient(M, sco4, s) == s # cached
-        @test sco4.objective.functions[:costgradient].i == 7
+        @test sco4.objective.functions[:costgradient].f.i == 7
     end
     @testset "ManifoldCachedObjective on Cost&Grad" begin
         M = Sphere(2)
