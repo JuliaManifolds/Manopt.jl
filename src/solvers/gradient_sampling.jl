@@ -130,12 +130,12 @@ mutable struct GradientSamplingState{
         )
     end
 end
-function GradientSamplingSate(
+function GradientSamplingState(
         M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
     )
     return GradientSamplingState(M, sub_problem; evaluation = sub_state, kwargs...)
 end
-function GradientSamplingSate(
+function GradientSamplingState(
         M::AbstractManifold, sub_problem = gradient_sampling_subsolver!; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...
     )
     sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
