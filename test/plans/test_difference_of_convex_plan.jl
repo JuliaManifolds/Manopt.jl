@@ -46,7 +46,7 @@ using LRUCache, LinearAlgebra, Manifolds, Manopt, Test
             grad_h!; cost = f, gradient = grad_g!, evaluation = InplaceEvaluation()
         )
         for o in [dc_objgi, dcp_objgi]
-            ggi = Manopt.get_gradient_function(o; evaluation=InplaceEvaluation())
+            ggi = Manopt.get_gradient_function(o; evaluation = InplaceEvaluation())
             X = zero_vector(M, p)
             ggi(M, X, p)
             @test X == G
