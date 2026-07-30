@@ -188,10 +188,8 @@ function gradient_descent(
         kwargs...,
     )
     p_ = maybe_wrap_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
     mgo = ManifoldGradientObjective(
-        f_, grad_f_; evaluation = evaluation, differential = differential
+        f, grad_f; evaluation = evaluation, differential = differential
     )
     rs = gradient_descent(M, mgo, p_; kwargs...)
     return maybe_unwrap_variable(p, rs)

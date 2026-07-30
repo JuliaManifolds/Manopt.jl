@@ -279,10 +279,9 @@ function particle_swarm(
         velocity::AbstractVector = [rand(M; vector_at = y) for y in swarm],
         kwargs...,
     )
-    f_ = _ensure_mutating_cost(f, first(swarm))
     swarm_ = [maybe_wrap_variable(s) for s in swarm]
     velocity_ = [maybe_wrap_variable(v) for v in velocity]
-    mco = ManifoldCostObjective(f_)
+    mco = ManifoldCostObjective(f)
     rs = particle_swarm(M, mco, swarm_; velocity = velocity_, kwargs...)
     return maybe_unwrap_variable(first(swarm), rs)
 end

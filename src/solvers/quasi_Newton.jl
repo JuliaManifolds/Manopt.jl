@@ -268,10 +268,8 @@ function quasi_Newton(
         kwargs...,
     ) where {TF, TDF}
     p_ = maybe_wrap_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
     mgo = ManifoldGradientObjective(
-        f_, grad_f_; differential = differential, evaluation = evaluation
+        f, grad_f; differential = differential, evaluation = evaluation
     )
     rs = quasi_Newton(M, mgo, p_; kwargs...)
     return maybe_unwrap_variable(p, rs)

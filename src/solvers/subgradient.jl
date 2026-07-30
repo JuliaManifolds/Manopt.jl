@@ -147,9 +147,7 @@ function subgradient_method(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
     p_ = maybe_wrap_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    ∂f_ = _ensure_mutating_gradient(∂f, p, evaluation)
-    sgo = ManifoldSubgradientObjective(f_, ∂f_; evaluation = evaluation)
+    sgo = ManifoldSubgradientObjective(f, ∂f; evaluation = evaluation)
     rs = subgradient_method(M, sgo, p_; evaluation = evaluation, kwargs...)
     return maybe_unwrap_variable(p, rs)
 end

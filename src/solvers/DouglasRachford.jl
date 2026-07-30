@@ -269,8 +269,7 @@ function DouglasRachford(
         kwargs...,
     ) where {TF}
     p_ = maybe_wrap_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    proxes_f_ = [_ensure_mutating_prox(prox_f, p, evaluation) for prox_f in proxes_f]
+    proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation) for prox_f in proxes_f]
     N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(
         M, f_, proxes_f_, p_, parallel, evaluation
     )

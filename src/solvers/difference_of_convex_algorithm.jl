@@ -313,17 +313,12 @@ function difference_of_convex_algorithm(
         grad_g = nothing, gradient = nothing, kwargs...,
     )
     p_ = maybe_wrap_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    g_ = _ensure_mutating_cost(g, p)
-    gradient_ = _ensure_mutating_gradient(gradient, p, evaluation)
-    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
-    ∂h_ = _ensure_mutating_gradient(∂h, p, evaluation)
     mdco = ManifoldDifferenceOfConvexObjective(
-        f_, ∂h_; gradient = gradient_, evaluation = evaluation
+        f, ∂h; gradient = gradient, evaluation = evaluation
     )
     rs = difference_of_convex_algorithm(
         M, mdco, p_;
-        g = g_, evaluation = evaluation, gradient = gradient_, grad_g = grad_g_, kwargs...,
+        g = g, evaluation = evaluation, gradient = gradient, grad_g = grad_g, kwargs...,
     )
     return maybe_unwrap_variable(p, rs)
 end
