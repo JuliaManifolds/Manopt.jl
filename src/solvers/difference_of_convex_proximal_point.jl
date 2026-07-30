@@ -362,20 +362,13 @@ function difference_of_convex_proximal_point(
     )
     keywords_accepted(difference_of_convex_proximal_point; kwargs...)
     p_ = maybe_wrap_variable(p)
-    cost_ = _ensure_mutating_cost(cost, p)
-    grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
-    g_ = _ensure_mutating_cost(g, p)
-    gradient_ = _ensure_mutating_gradient(gradient, p, evaluation)
-    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
-    prox_g_ = _ensure_mutating_prox(prox_g, p, evaluation)
-
     mdcpo = ManifoldDifferenceOfConvexProximalObjective(
-        grad_h_; cost = cost_, gradient = gradient_, evaluation = evaluation
+        grad_h; cost = cost, gradient = gradient, evaluation = evaluation
     )
     rs = difference_of_convex_proximal_point(
         M, mdcpo, p_;
-        cost = cost_, evaluation = evaluation,
-        gradient = gradient_, g = g_, grad_g = grad_g_, prox_g = prox_g_,
+        cost = cost, evaluation = evaluation,
+        gradient = gradient, g = g, grad_g = grad_g, prox_g = prox_g,
         kwargs...,
     )
     return maybe_unwrap_variable(p, rs)

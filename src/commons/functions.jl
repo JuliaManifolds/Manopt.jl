@@ -27,7 +27,7 @@ input variable `p` and the possibly wrapped variable `q`, return the unwrapped v
 i.e. if `q` is a 1-element vector of same element-type `P` as the type of `p`,
 return this one element.
 """
-maybe_unwrap_variable(::P, q::P) where {P} = q
+maybe_unwrap_variable(::P, q) where {P} = q #Default, e.g. also for states: do not unwrap
 maybe_unwrap_variable(p::P, q::Vector{P}) where {P} = maybe_unwrap_variable(typeof(p), q)
 maybe_unwrap_variable(::Type{P}, q::Vector{P}) where {P} = length(q) == 1 ? q[] : q
 
