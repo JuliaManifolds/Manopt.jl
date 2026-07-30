@@ -29,7 +29,7 @@ end
 
 _maybe_wrap_vector_Hessian_function(Hf, ::AbstractVectorialType, ::InplaceEvaluation) = Hf
 function _maybe_wrap_vector_Hessian_function(Hf, ::FunctionVectorialType, ::AllocatingEvaluation)
-    return InplaceManifoldFunction(f, :TangentVectors)
+    return InplaceManifoldFunction(Hf, :TangentVectors)
 end
 function _maybe_wrap_vector_Hessian_function(Hf, ::ComponentVectorialType, ::AllocatingEvaluation)
     return [InplaceManifoldFunction(Hfi, :TangentVector) for Hfi in Hf]

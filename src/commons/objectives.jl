@@ -1757,7 +1757,7 @@ function get_hessian_function(
     )
     recursive && (return get_hessian_function(mco.objective, recursive; evaluation = evaluation))
     if evaluation isa AllocatingEvaluation
-        return (M, p, X) -> get_hessian!(M, mco, p, X)
+        return (M, p, X) -> get_hessian(M, mco, p, X)
     else
         return (M, Y, p, X) -> get_hessian!(M, Y, mco, p, X)
     end
@@ -2559,7 +2559,7 @@ function ManifoldFirstOrderObjective(;
         nt = merge(nt, (; differential = maybe_wrap_function(differential, p, evaluation; result = :Number)))
     end
     if !ncg
-        nt = merge(nt, (; costgradient = maybe_wrap_function(costgradient, p, evaluation; result = :NumberAndGradient)))
+        nt = merge(nt, (; costgradient = maybe_wrap_function(costgradient, p, evaluation; result = :NumberAndTangentVector)))
     end
     if !ncd
         nt = merge(nt, (; costdifferential = maybe_wrap_function(costdifferential, p, evaluation; result = :Number)))

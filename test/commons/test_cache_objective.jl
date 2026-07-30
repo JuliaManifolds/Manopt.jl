@@ -190,27 +190,27 @@ end
         )
         sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p = p)
         # evaluated on init -> evaluates twice
-        @test sco4.objective.functions[:costgradient].f.i == 2
+        @test sco4.objective.functions[:costgradient].i == 2
         @test get_gradient(M, sco4, p) == p
         get_gradient!(M, X, sco4, p) # cached
         @test X == p
         @test get_cost(M, sco4, p) == norm(p)
         # still at 2
-        @test sco4.objective.functions[:costgradient].f.i == 2
+        @test sco4.objective.functions[:costgradient].i == 2
         @test get_gradient(M, sco4, q) == q
         get_gradient!(M, X, sco4, q) #cached
         @test X == q
         @test get_cost(M, sco4, q) == norm(q)
-        @test sco4.objective.functions[:costgradient].f.i == 4
+        @test sco4.objective.functions[:costgradient].i == 4
         get_gradient!(M, X, sco4, r)
         @test X == r
         @test get_gradient(M, sco4, r) == r # cached
-        @test sco4.objective.functions[:costgradient].f.i == 5
+        @test sco4.objective.functions[:costgradient].i == 5
         @test get_cost(M, sco4, s) == norm(s)
         get_gradient!(M, X, sco4, s)
         @test X == s
         @test get_gradient(M, sco4, s) == s # cached
-        @test sco4.objective.functions[:costgradient].f.i == 7
+        @test sco4.objective.functions[:costgradient].i == 7
     end
     @testset "ManifoldCachedObjective on Cost&Grad" begin
         M = Sphere(2)
@@ -389,15 +389,14 @@ end
         # The same for gradient
         @test Manopt.get_gradient_function(obj_i) ===
             Manopt.get_gradient_function(c_obj_i, true)
-        grad_f1! = Manopt.get_gradient_function(c_obj_i)
+        grad_f1! = Manopt.get_gradient_function(c_obj_i; evaluation = InplaceEvaluation())
         @test grad_f1! != grad_f!
         Y = similar(X)
         Z = similar(X)
         @test grad_f1!(M, Y, p) == grad_f!(M, Z, p)
         # And Hessian
-        @test Manopt.get_hessian_function(obj_i) ===
-            Manopt.get_hessian_function(c_obj_i, true)
-        Hess_f1! = Manopt.get_hessian_function(c_obj_i)
+        @test Manopt.get_hessian_function(obj_i) === Manopt.get_hessian_function(c_obj_i, true)
+        Hess_f1! = Manopt.get_hessian_function(c_obj_i; evaluation = InplaceEvaluation())
         @test Hess_f1 != Hess_f
         @test Hess_f1!(M, Y, p, X) == Hess_f!(M, Z, p, X)
         #
@@ -411,8 +410,7 @@ end
         @test f1 != f
         @test f1(M, p) == f(M, p)
         # The same for gradient
-        @test Manopt.get_gradient_function(obj_g) ===
-            Manopt.get_gradient_function(s_obj, true)
+        @test Manopt.get_gradient_function(obj_g) === Manopt.get_gradient_function(s_obj, true)
         grad_f1 = Manopt.get_gradient_function(s_obj)
         @test grad_f1 != grad_f
         @test grad_f1(M, p) == grad_f(M, p)
@@ -426,9 +424,8 @@ end
         @test f2 != f
         @test f2(M, p) == f(M, p)
         # The same for gradient
-        @test Manopt.get_gradient_function(obj_g_i) ===
-            Manopt.get_gradient_function(s_obj_i, true)
-        grad_f1! = Manopt.get_gradient_function(s_obj_i)
+        @test Manopt.get_gradient_function(obj_g_i) === Manopt.get_gradient_function(s_obj_i, true)
+        grad_f1! = Manopt.get_gradient_function(s_obj_i; evaluation = InplaceEvaluation())
         @test grad_f1! != grad_f!
         Y = similar(X)
         Z = similar(X)

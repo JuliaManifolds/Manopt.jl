@@ -8,6 +8,7 @@ using Manifolds, ManifoldsBase, Manopt, Test
     @testset "Commons" begin
         include("commons/test_objectives.jl")
         include("commons/test_embedded_objective.jl")
+        include("commons/test_cache_objective.jl")
     end
     @testset "Plan Tests          " begin
         include("plans/test_problem.jl")
@@ -16,7 +17,6 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("plans/test_counts.jl")
         include("plans/test_debug.jl")
         include("plans/test_difference_of_convex_plan.jl")
-        include("plans/test_cache.jl")
         include("plans/test_conjugate_residual_plan.jl")
         include("plans/test_gradient_plan.jl")
         include("plans/test_keywords.jl")
