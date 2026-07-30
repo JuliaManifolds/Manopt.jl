@@ -229,9 +229,14 @@ function AdaptiveRegularizationState(
     )
 end
 function AdaptiveRegularizationState(
-        M, sub_problem; kwargs...
+        M, sub_problem, sub_state::AbstractEvaluationType; kwargs...
     )
-    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
+    return AdaptiveRegularizationState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function AdaptiveRegularizationState(
+        M, sub_problem; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :TangentVector)
     cfs = ClosedFormSubSolverState()
     return AdaptiveRegularizationState(M, sub_problem, cfs; kwargs...)
 end
@@ -506,11 +511,10 @@ function adaptive_regularization_with_cubics!(
     if isnothing(sub_problem)
         sub_problem = DefaultManoptProblem(TangentSpace(M, copy(M, p)), sub_objective)
     end
-    sub_state_ = maybe_wrap_evaluation_type(sub_state)
     X = copy(M, p, initial_tangent_vector)
     dmp = DefaultManoptProblem(M, dmho)
     arcs = AdaptiveRegularizationState(
-        M, sub_problem, sub_state_;
+        M, sub_problem, sub_state;
         callbacks = callbacks, p = p, X = X, σ = σ,
         ρ_regularization = ρ_regularization,
         stopping_criterion = stopping_criterion,

@@ -100,13 +100,8 @@ using RecursiveArrayTools
         )
         p1 = TwoManifoldProblem(M, N, pdmoa)
         pdmoi = PrimalDualManifoldObjective(
-            f,
-            prox_f!,
-            prox_g_dual!,
-            adjoint_DΛ!;
-            linearized_forward_operator = (DΛ!),
-            Λ = (Λ!),
-            evaluation = InplaceEvaluation(),
+            f, prox_f!, prox_g_dual!, adjoint_DΛ!;
+            linearized_forward_operator = (DΛ!), Λ = (Λ!), evaluation = InplaceEvaluation(),
         )
         p2 = TwoManifoldProblem(M, N, pdmoi)
         x1 = get_primal_prox(p1, 1.0, p0)

@@ -39,17 +39,21 @@ mutable struct PrimalDualManifoldObjective{
     Λ!::L
 end
 function PrimalDualManifoldObjective(
-        cost::C,
-        prox_f::F,
-        prox_g_dual::G,
-        adjoint_linearized_operator::A;
+        cost, prox_f, prox_g_dual, adjoint_linearized_operator;
         linearized_forward_operator::Union{Function, Missing} = missing,
         Λ::Union{Function, Missing} = missing,
-    ) where {C, F, G, A}
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+    )
+    cost_ = maybe_wrap_function(cost, evaluation; result = :Number)
+    prox_f_ = maybe_wrap_function(prox_f, evaluation; result = :Point)
+    prox_g_dual_ = maybe_wrap_function(prox_g_dual, evaluation; result = :TangentVector)
+    linearized_forward_operator_ = maybe_wrap_function(linearized_forward_operator, evaluation; result = :Vector)
+    adjoint_linearized_operator_ = maybe_wrap_function(adjoint_linearized_operator, evaluation; result = :Vector)
+    Λ_ = ismissing(Λ) ? missing : maybe_wrap_function(Λ, evaluation; result = :Point)
     return PrimalDualManifoldObjective{
-        C, F, G, typeof(linearized_forward_operator), A, typeof(Λ),
+        typeof(cost_), typeof(prox_f_), typeof(prox_g_dual_), typeof(linearized_forward_operator_), typeof(adjoint_linearized_operator_), typeof(Λ_),
     }(
-        cost, prox_f, prox_g_dual, linearized_forward_operator, adjoint_linearized_operator, Λ,
+        cost_, prox_f_, prox_g_dual_, linearized_forward_operator_, adjoint_linearized_operator_, Λ_,
     )
 end
 
@@ -143,17 +147,10 @@ $(_kwargs(:vector_transport_method; name = "vector_transport_method_dual", M = "
 if `Manifolds.jl` is loaded, `N` is also a keyword argument and set to `TangentBundle(M)` by default.
 """
 mutable struct ChambollePockState{
-        P,
-        Q,
-        T,
-        R,
-        C <: AbstractDict{Symbol},
-        SC <: StoppingCriterion,
-        RM <: AbstractRetractionMethod,
-        IRM <: AbstractInverseRetractionMethod,
+        P, Q, T, R, C <: AbstractDict{Symbol}, SC <: StoppingCriterion,
+        RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod,
         IRM_Dual <: AbstractInverseRetractionMethod,
-        VTM <: AbstractVectorTransportMethod,
-        VTM_Dual <: AbstractVectorTransportMethod,
+        VTM <: AbstractVectorTransportMethod, VTM_Dual <: AbstractVectorTransportMethod,
     } <: AbstractPrimalDualSolverState
     callbacks::C
     m::P

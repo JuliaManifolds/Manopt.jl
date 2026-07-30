@@ -81,13 +81,12 @@ mutable struct ExactPenaltyMethodState{
             P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState, SC <: StoppingCriterion,
             C <: AbstractDict{Symbol},
         }
-        _sub_state = maybe_wrap_evaluation_type(sub_state)
         # unify real type – for the keyword args that are stored in the state
         R = float(promote_type(typeof.([ϵ, ϵ_min, u, u_min, ρ, θ_u, θ_ϵ, θ_ρ])...))
         ϵ = convert(R, ϵ); ϵ_min = convert(R, ϵ_min); u = convert(R, u); u_min = convert(R, u_min)
         θ_ϵ = convert(R, θ_ϵ); θ_u = convert(R, θ_u); θ_ρ = convert(R, θ_ρ); ρ = convert(R, ρ)
         return ExactPenaltyMethodState(
-            sub_problem, _sub_state;
+            sub_problem, sub_state;
             callbacks = callbacks, p = p, stopping_criterion = stopping_criterion,
             u = u, u_min = u_min, θ_u = θ_u, θ_ρ = θ_ρ, ρ = ρ, ϵ = ϵ, ϵ_min = ϵ_min, θ_ϵ = θ_ϵ,
         )
@@ -105,11 +104,15 @@ mutable struct ExactPenaltyMethodState{
     end
 end
 function ExactPenaltyMethodState(
-        M::AbstractManifold, sub_problem; kwargs...
+        M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
     )
-    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
-    cfs = ClosedFormSubSolverState()
-    return ExactPenaltyMethodState(M, sub_problem, cfs; kwargs...)
+    return ExactPenaltyMethodState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function ExactPenaltyMethodState(
+        M::AbstractManifold, sub_problem; evaluation::AbstractEvaluationType=AllocatingEvaluation(), kwargs...
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
+    return ExactPenaltyMethodState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
 end
 # resolve an ambiguity
 ExactPenaltyMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Exact penalty method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")

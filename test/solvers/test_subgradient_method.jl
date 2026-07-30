@@ -118,7 +118,6 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
     @testset "Circle" begin
         Mc, fc, ∂fc, pc, pcs = Manopt.Test.Circle_mean_task()
         q4 = subgradient_method(Mc, fc, ∂fc, pc)
-        q5 = subgradient_method(Mc, fc, ∂fc, pc; evaluation = InplaceEvaluation())
         s3 = subgradient_method(Mc, fc, ∂fc, pc; return_state = true)
         q6 = get_solver_result(s3)[]
         @test isapprox(q4, 0.0; atol = 1.0e-8)

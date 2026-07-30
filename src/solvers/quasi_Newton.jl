@@ -330,8 +330,7 @@ function quasi_Newton!(
         sy_tol::Real = 1.0e-8,
         kwargs...,
     ) where {
-        E <: AbstractEvaluationType,
-        O <: Union{AbstractManifoldFirstOrderObjective{E}, AbstractDecoratedManifoldObjective{E}},
+        O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective},
     }
     keywords_accepted(quasi_Newton!; kwargs...)
     local local_dir_upd # COV_EXCL_LINE

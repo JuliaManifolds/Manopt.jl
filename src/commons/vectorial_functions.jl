@@ -211,7 +211,7 @@ function VectorDifferentialFunction(
     Jf_ = _maybe_wrap_jacobian_function(f, jacobian_type, evaluation)
     aJF_ = _maybe_wrap_adjoint_jacobian_function(aJf, adjoint_jacobian_type, evaluation)
     return VectorDifferentialFunction{FT, JT, AJT, typeof(f_), typeof(Jf_), typeof(aJF_), I}(
-        f, function_type, Jf, jacobian_type, AJf, adjoint_jacobian_type, range_dimension
+        f, function_type, Jf, jacobian_type, aJf, adjoint_jacobian_type, range_dimension
     )
 end
 # As an operator
