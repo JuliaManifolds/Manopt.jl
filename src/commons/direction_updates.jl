@@ -428,10 +428,10 @@ mutable struct PreconditionedDirectionRule{D <: DirectionUpdateRule, F} <: Direc
     preconditioner::F
     direction::D
     function PreconditionedDirectionRule(;
-            preconditioner::F, direction::D
+            preconditioner::F, direction::D, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         ) where {D <: DirectionUpdateRule, F}
-        # TODO: Readd evaluation and wrapping
-        return new{D, F}(preconditioner, direction)
+        preconditioner_ = maybe_wrap_function(preconditioner, evaluation; result = :TangentVector)
+        return new{D, typeof(preconditioner_)}(preconditioner_, direction)
     end
 end
 function PreconditionedDirectionRule(

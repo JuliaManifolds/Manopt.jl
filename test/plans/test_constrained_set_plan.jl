@@ -72,7 +72,7 @@ using Manifolds, Manopt, Random, Test
         if objective ∈ [csoa, csoa2]
             @test Manopt.get_gradient_function(objective)(M, c) == grad_f(M, c)
         else
-            Manopt.get_gradient_function(objective)(M, X, c) == grad_f!(M, Y, c)
+            Manopt.get_gradient_function(objective; evaluation = InplaceEvaluation())(M, X, c) == grad_f!(M, Y, c)
             @test X == Y
         end
         dmp = DefaultManoptProblem(M, objective)

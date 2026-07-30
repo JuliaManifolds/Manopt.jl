@@ -2556,13 +2556,13 @@ function ManifoldFirstOrderObjective(;
         nt = merge(nt, (; gradient = maybe_wrap_function(gradient, p, evaluation; result = :TangentVector)))
     end
     if !no_diff
-        nt = merge(nt, (; differential = maybe_wrap_function(differential, p, evaluation; result = :Number)))
+        nt = merge(nt, (; differential = maybe_wrap_function(differential, p; result = :Number)))
     end
     if !ncg
         nt = merge(nt, (; costgradient = maybe_wrap_function(costgradient, p, evaluation; result = :NumberAndTangentVector)))
     end
     if !ncd
-        nt = merge(nt, (; costdifferential = maybe_wrap_function(costdifferential, p, evaluation; result = :Number)))
+        nt = merge(nt, (; costdifferential = maybe_wrap_function(costdifferential, p; result = :Number)))
     end
     return ManifoldFirstOrderObjective{typeof(nt)}(nt)
 end
@@ -2621,7 +2621,7 @@ function get_cost(
     haskey(mfo.functions, :cost) && (return mfo.functions[:cost](M, p))
     X = zero_vector(M, p)
     if haskey(mfo.functions, :costdifferential)
-        return mfo.functions[:costdifferential](M, X, p, X)[1]
+        return mfo.functions[:costdifferential](M, p, X)[1]
     end
     haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, X, p)[1])
     return error("$mfo does not seem to provide a cost")
@@ -2904,6 +2904,7 @@ end
 #
 #
 # ---
+#TODO Check and readd evaluation =
 @doc """
     ManifoldNonlinearLeastSquaresObjectives <: AbstractManifoldObjective
 
