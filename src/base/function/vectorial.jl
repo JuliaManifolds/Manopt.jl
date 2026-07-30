@@ -744,7 +744,6 @@ function get_jacobian!(
     return a
 end
 
-
 _doc_get_jacobian_function_coord = """
     get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, c, B::AbstractBasis; kwargs...)
     get_jacobian!(M::AbstractManifold, a, vgf::AbstractVectorGradientFunction, p, c, B::AbstractBasis; kwargs...)

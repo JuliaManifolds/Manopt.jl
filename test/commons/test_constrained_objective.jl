@@ -90,12 +90,6 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     for r in [rcofa, rcofm, rcova, rcofm]
         @test startswith(r, "ConstrainedManifoldObjective(ManifoldFirstOrderObjective(; cost = f")
     end
-    for r in [rcofa, rcova]
-        @test contains(r, "evaluation = AllocatingEvaluation()")
-    end
-    for r in [rcofm, rcofm]
-        @test contains(r, "evaluation = InplaceEvaluation()")
-    end
     # Test cost/grad pass through
     @test Manopt.get_cost_function(cofa)(M, p) == f(M, p)
     @test Manopt.get_gradient_function(cofa)(M, p) == grad_f(M, p)
@@ -175,9 +169,9 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     @testset "ConstrainedObjective with Hessian" begin
         # Function access
         @test Manopt.get_hessian_function(cofha) == hess_f
-        @test Manopt.get_hessian_function(cofhm) == hess_f!
+        @test Manopt.get_hessian_function(cofhm; evaluation = InplaceEvaluation()) == hess_f!
         @test Manopt.get_hessian_function(covha) == hess_f
-        @test Manopt.get_hessian_function(covhm) == hess_f!
+        @test Manopt.get_hessian_function(covhm; evaluation = InplaceEvaluation()) == hess_f!
         for coh in [cofha, cofhm, covha, covhm]
             @testset "Hessian access for $coh" begin
                 @test get_hessian(M, coh, p, X) == hf

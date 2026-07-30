@@ -292,12 +292,18 @@ mutable struct ConvexBundleMethodState{
 end
 function ConvexBundleMethodState(
         M::AbstractManifold,
-        sub_problem = convex_bundle_method_subsolver;
+        sub_problem, sub_state::AbstractEvaluationType;
         kwargs...,
     )
-    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
-    cfs = ClosedFormSubSolverState()
-    return ConvexBundleMethodState(M, sub_problem, cfs; kwargs...)
+    return ConvexBundleMethodState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function ConvexBundleMethodState(
+        M::AbstractManifold, sub_problem = convex_bundle_method_subsolver;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Vector)
+    return ConvexBundleMethodState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
 end
 
 get_iterate(bms::ConvexBundleMethodState) = bms.p_last_serious
@@ -700,9 +706,8 @@ function convex_bundle_method!(
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation = evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     bms = ConvexBundleMethodState(
-        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        M, sub_problem, sub_state;
         p = p,
         atol_λ = atol_λ, atol_errors = atol_errors,
         bundle_cap = bundle_cap,

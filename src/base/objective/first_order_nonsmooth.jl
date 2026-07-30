@@ -1,6 +1,5 @@
 function get_proximal_map end
 
-#TODO: Add a docstring aløso here
 function get_proximal_map(amp::AbstractManoptProblem, λ, p, i)
     return get_proximal_map(get_manifold(amp), get_objective(amp), λ, p, i)
 end

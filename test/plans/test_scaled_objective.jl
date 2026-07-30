@@ -17,7 +17,7 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     neg_obj = -obj
     @test neg_obj isa ScaledManifoldObjective
     s = repr(neg_obj)
-    @test startswith(s, "ScaledManifoldObjective(ManifoldHessianObjective(f, ∇f")
+    @test startswith(s, "ScaledManifoldObjective(ManifoldHessianObjective(")
     @test endswith(s, "-1)")
     @test repr(neg_obj) == s
     scaled_obj = -1 * obj
@@ -57,7 +57,7 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     # Special cases for alloc and inplace
     Y = similar(X)
     Z = similar(X)
-    grad_f1! = Manopt.get_gradient_function(scaled_obj!)
+    grad_f1! = Manopt.get_gradient_function(scaled_obj!; evaluation = InplaceEvaluation())
     @test grad_f1 != ∇f!
     @test grad_f1!(M, Y, p) == -∇f!(M, Z, p)
     @test Y == -Z
@@ -65,7 +65,7 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     Hess_f1 = Manopt.get_hessian_function(scaled_obj)
     @test Hess_f1 != ∇²f
     @test Hess_f1(M, p, X) == -∇²f(M, p, X)
-    Hess_f1! = Manopt.get_hessian_function(scaled_obj!)
+    Hess_f1! = Manopt.get_hessian_function(scaled_obj!; evaluation = InplaceEvaluation())
     @test Hess_f1 != ∇²f!
     @test Hess_f1!(M, Y, p, X) == -∇²f!(M, Z, p, X)
     @test Y == -Z

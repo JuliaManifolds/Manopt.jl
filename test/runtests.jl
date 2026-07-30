@@ -8,8 +8,11 @@ using Manifolds, ManifoldsBase, Manopt, Test
     @testset "Commons" begin
         include("commons/test_objectives.jl")
         include("commons/test_embedded_objective.jl")
+        include("commons/test_constrained_objective.jl")
         include("commons/test_cache_objective.jl")
         include("commons/test_gradient_objective.jl")
+        include("commons/test_nonlinear_least_squares_objective.jl")
+        include("commons/test_stochastic_gradient_objective.jl")
     end
     @testset "Plan Tests          " begin
         include("plans/test_problem.jl")
@@ -23,8 +26,6 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("plans/test_interior_point_newton_plan.jl")
         include("plans/test_mesh_adaptive_plan.jl")
         include("plans/test_nelder_mead_plan.jl")
-        include("plans/test_nonlinear_least_squares_plan.jl")
-        include("plans/test_constrained_plan.jl")
         include("plans/test_constrained_set_plan.jl")
         include("plans/test_hessian_plan.jl")
         include("plans/test_parameters.jl")
@@ -36,7 +37,6 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("plans/test_robustifiers.jl")
         include("plans/test_scaled_objective.jl")
         include("plans/test_stepsize.jl")
-        include("plans/test_stochastic_gradient_plan.jl")
         include("plans/test_stopping_criteria.jl")
         include("plans/test_storage.jl")
         include("plans/test_subgradient_plan.jl")

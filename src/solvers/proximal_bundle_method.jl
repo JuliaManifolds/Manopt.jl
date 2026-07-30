@@ -145,11 +145,11 @@ end
 ProximalBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Bunde Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function ProximalBundleMethodState(
         M::AbstractManifold, sub_problem = proximal_bundle_method_subsolver;
-        evaluation::E = AllocatingEvaluation(), kwargs...,
-    ) where {E <: AbstractEvaluationType}
-    #TODO: Handle sub_problem wrapping for closed form solution
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation)
     cfs = ClosedFormSubSolverState()
-    return ProximalBundleMethodState(M, sub_problem, cfs; kwargs...)
+    return ProximalBundleMethodState(M, sub_problem_, cfs; kwargs...)
 end
 
 get_iterate(pbms::ProximalBundleMethodState) = pbms.p_last_serious

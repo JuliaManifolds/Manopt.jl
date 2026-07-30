@@ -180,7 +180,7 @@ using ManifoldsBase, Manopt, Test
             @test Manopt.get_cost_and_differential(M, obj, p, X) == (c, d)
             # using gradient!
             @test get_differential(M, obj, p, X; Y = Y) == d
-            @test Manopt.get_cost_and_differential(M, obj, p, X; Y = Y) == (c, d)
+            @test Manopt.get_cost_and_differential(M, obj, p, X; gradient = Y) == (c, d)
             @test Manopt.get_differential_function(obj)(M, p, X) == d
         end
         Yi = zero_vector(M, p)

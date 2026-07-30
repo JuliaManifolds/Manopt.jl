@@ -82,7 +82,7 @@ function (cs::Manopt.LineSearchesStepsize)(
     function ϕdϕ(α)
         ManifoldsBase.retract_fused!(M, p_tmp, p, η, α, cs.retraction_method)
         vector_transport_to!(M, Y_tmp, p, η, p_tmp, cs.vector_transport_method)
-        return Manopt.get_cost_and_differential(mp, p_tmp, Y_tmp; Y = X_tmp)
+        return Manopt.get_cost_and_differential(mp, p_tmp, Y_tmp; gradient = X_tmp)
     end
 
     α, fp = ls(ϕ, dϕ, ϕdϕ, α0, fp, dphi_0)

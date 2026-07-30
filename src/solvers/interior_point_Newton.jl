@@ -323,9 +323,9 @@ function InteriorPointNewtonState(
         M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem;
         evaluation::E = AllocatingEvaluation(), kwargs...,
     ) where {E <: AbstractEvaluationType}
-    # TODO: wrap the closed form solution `sub_problem` if eval is allocating
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
-    return InteriorPointNewtonState(M, cmo, sub_problem, cfs; kwargs...)
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation)
+    cfs = ClosedFormSubSolverState()
+    return InteriorPointNewtonState(M, cmo, sub_problem_, cfs; kwargs...)
 end
 # get & set iterate
 get_iterate(ips::InteriorPointNewtonState) = ips.p

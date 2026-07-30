@@ -2627,22 +2627,48 @@ function get_cost(
     return error("$mfo does not seem to provide a cost")
 end
 
-#TODO: Since Y is a keyword, maybe a better name is gradient_cache? and add the evaluated bool here as well
+"""
+    get_cost_and_differential(
+        M, mfo::ManifoldFirstOrderObjective, p, X;
+        gradient = nothing, evaluated::Bool = false,
+    )
+
+Evaluate cost function and differential simultaneously.
+
+This combined evaluation is especially beneficial., wenn you provided a combined `costdiff` function within
+the [`ManifoldFirstOrderObjective`](@ref) `mfo`.
+When there is no separate differential, the evaluation falls back to evaluating the gradient and an inner product.
+
+## Input
+$(_args(:M))
+* `mfo` an [`ManifoldFirstOrderObjective`](@ref)
+$(_args([:p, :X]))
+
+## Keyword Arguments
+* `gradient = nothing` provide a cache/memory to evaluate the gradient in.
+  if not provided, this function will allocate one tangent vector
+* `evaluated = false` if the cache is provided, this boolean specifies, whether
+  the cache already contains the evaluated gradient and does not need to evaluate the gradient again, if possible.
+  For example for a combined `costgrad` function, the evaluation can not be avoided, since we need the cost value.
+"""
 function get_cost_and_differential(
-        M::AbstractManifold, mfo::ManifoldFirstOrderObjective, p, X; Y = nothing,
+        M::AbstractManifold, mfo::ManifoldFirstOrderObjective, p, X;
+        gradient = nothing, evaluated = false
     )
     if haskey(mfo.functions, :costdifferential)
         return mfo.functions[:costdifferential](M, p, X)
     elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :differential)
         return (mfo.functions[:cost](M, p), mfo.functions[:differential](M, p, X))
     elseif haskey(mfo.functions, :costgradient)
-        _Y = isnothing(Y) ? zero_vector(M, p) : Y
+        _Y = isnothing(gradient) ? zero_vector(M, p) : gradient
+        # here we can not avoid the evaluation of the gradient even if it was already evaluated
         cost, grad = mfo.functions[:costgradient](M, _Y, p)
         return (cost, real(inner(M, p, X, grad)))
     elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :gradient)
         cost = mfo.functions[:cost](M, p)
-        _Y = isnothing(Y) ? zero_vector(M, p) : Y
-        grad = mfo.functions[:gradient](M, _Y, p)
+        _Y = isnothing(gradient) ? zero_vector(M, p) : gradient
+        # if we have no cache or it has not been evaluated: evaluate the gradient
+        (isnothing(gradient) || !evaluated) && (grad = mfo.functions[:gradient](M, _Y, p))
         return (cost, real(inner(M, p, X, grad)))
     end
     return error("$mfo does not provide a cost and a differential")
@@ -2904,7 +2930,6 @@ end
 #
 #
 # ---
-#TODO Check and readd evaluation =
 @doc """
     ManifoldNonlinearLeastSquaresObjectives <: AbstractManifoldObjective
 
@@ -3003,9 +3028,11 @@ function ManifoldNonlinearLeastSquaresObjective(
         jacobian_tangent_basis::AbstractBasis = DefaultOrthonormalBasis(),
         jacobian_type::AbstractVectorialType = CoefficientVectorialType(jacobian_tangent_basis),
         function_type::AbstractVectorialType = FunctionVectorialType(),
+        evaluation::AbstractEvaluationType = AllocatingEvaluation()
     )
     vgf = VectorGradientFunction(
-        f, jacobian, range_dimension; jacobian_type = jacobian_type, function_type = function_type,
+        f, jacobian, range_dimension;
+        jacobian_type = jacobian_type, function_type = function_type, evaluation = evaluation
     )
     return ManifoldNonlinearLeastSquaresObjective(vgf, robustifier)
 end
@@ -3491,7 +3518,7 @@ function ManifoldStochasticGradientObjective(
     if G <: AbstractVector
         grad_f_ = [ maybe_wrap_function(gf, p, evaluation; result = :TangentVector) for gf in grad_f]
     else
-        grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
+        grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVectors)
     end
     if ismissing(cost)
         cost_ = cost
@@ -3504,7 +3531,7 @@ function ManifoldStochasticGradientObjective(
 end
 function get_cost(
         M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C}, p
-    ) where {C <: AbstractVector{<:Function}}
+    ) where {C <: AbstractVector}
     return sum(f(M, p) for f in sgo.cost)
 end
 
@@ -3518,12 +3545,12 @@ to evaluate the whole cost.
 """
 function get_cost(
         M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C}, p, i
-    ) where {C <: AbstractVector{<:Function}}
+    ) where {C <: AbstractVector}
     return sgo.cost[i](M, p)
 end
 function get_cost(
-        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C}, p, i
-    ) where {C <: Function}
+        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, i
+    )
     (i == 1) && return sgo.cost(M, p)
     return error(
         "The cost is implemented as a single function and can not be accessed element wise at $i since the index is larger than 1.",
@@ -3547,9 +3574,11 @@ function get_gradients(
     get_gradients!(M, X, sgo, p)
     return X
 end
+# For a single function, since it is in-place, we have no chance to allocate the right amount of tangent vectors in X? Ah we can use get_cost
+
 function get_gradients!(
-        M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective{C, <:Function}, p,
-    ) where {C}
+        M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p,
+    )
     sgo.gradient!(M, X, p)
     return X
 end
@@ -3575,9 +3604,7 @@ Evaluate one of the summands gradients ``$(_tex(:grad))f_k``, ``k ∈ $(_tex(:se
 If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
 since the length (or number of elements of the gradient required for allocation) can not be determined.
 """
-function get_gradient(
-        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C}, p, k,
-    ) where {C}
+function get_gradient(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, k)
     X = zero_vector(M, p)
     return get_gradient!(M, X, sgo, p, k)
 end

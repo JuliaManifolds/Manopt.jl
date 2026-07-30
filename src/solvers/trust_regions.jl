@@ -179,11 +179,17 @@ function TrustRegionsState(
     )
 end
 function TrustRegionsState(
+        M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
+    )
+    # TODO: deprecate?
+    return TrustRegionsState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function TrustRegionsState(
         M::AbstractManifold, sub_problem; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...
     )
-    # TODO: wrap sub_problem if alloc
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation)
     cfs = ClosedFormSubSolverState()
-    return TrustRegionsState(M, sub_problem, cfs; kwargs...)
+    return TrustRegionsState(M, sub_problem_, cfs; kwargs...)
 end
 function TrustRegionsState(
         M::AbstractManifold, mho::AbstractManifoldHessianObjective; p = rand(M), kwargs...
@@ -488,7 +494,7 @@ function trust_regions!(
     dmho = decorate_objective!(M, mho; kwargs...)
     dmp = DefaultManoptProblem(M, dmho)
     trs = TrustRegionsState(
-        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        M, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, TrustRegionsState),
         p = p, X = get_gradient(dmp, p),
         trust_region_radius = trust_region_radius,

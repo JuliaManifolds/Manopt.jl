@@ -1,4 +1,3 @@
-# TODO: use the evaluation keyword to wrap allocating closed form subsolver functions
 """
     ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState
 
@@ -11,13 +10,6 @@ Subsolver state indicating that a closed-form solution is available
 struct ClosedFormSubSolverState{} <: AbstractManoptSolverState end
 Base.show(io::IO, ::ClosedFormSubSolverState) = print(io, "ClosedFormSubSolverState()")
 status_summary(cfss::ClosedFormSubSolverState; context::Symbol = :default) = repr(cfss)
-
-# TODO: After refactoring, Part I: Replace this by maybe wrapping the closed form (allocating) solution
-maybe_wrap_evaluation_type(s::AbstractManoptSolverState) = s
-maybe_wrap_evaluation_type(n::Nothing) = n
-function maybe_wrap_evaluation_type(::E) where {E <: AbstractEvaluationType}
-    return ClosedFormSubSolverState{E}()
-end
 
 @doc """
     ReturnSolverState{O<:AbstractManoptSolverState} <: AbstractManoptSolverState

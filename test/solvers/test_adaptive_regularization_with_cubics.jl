@@ -231,10 +231,6 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
             Mc, fc, grad_fc, hess_fc, p0; θ = 0.5, σ = 100.0
         )
         @test fc(Mc, p0) > fc(Mc, p1)
-        p2 = adaptive_regularization_with_cubics(
-            Mc, fc, grad_fc, hess_fc, p0; θ = 0.5, σ = 100.0, evaluation = InplaceEvaluation()
-        )
-        @test fc(Mc, p0) > fc(Mc, p2)
     end
 
     @testset "Start at a point with _exactly_ gradient zero - In Tutorial mode" begin

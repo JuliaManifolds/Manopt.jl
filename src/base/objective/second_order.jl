@@ -24,7 +24,7 @@ function get_hessian_function(
         evaluation::AbstractEvaluationType = AllocatingEvaluation()
     )
     if evaluation isa AllocatingEvaluation
-        return (M, p, X) -> mho.hessian!(M, zero_vector(M, p), p, X)
+        return mho.hessian! isa InplaceManifoldFunction ? mho.hessian!.f : (M, p, X) -> mho.hessian!(M, zero_vector(M, p), p, X)
     else
         return mho.hessian!
     end

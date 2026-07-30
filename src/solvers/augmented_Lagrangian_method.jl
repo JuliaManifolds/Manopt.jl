@@ -140,14 +140,18 @@ mutable struct AugmentedLagrangianMethodState{
     end
 end
 function AugmentedLagrangianMethodState(
-        M::AbstractManifold,
-        co::ConstrainedManifoldObjective,
-        sub_problem;
+        M::AbstractManifold, co::ConstrainedManifoldObjective,
+        sub_problem, sub_state::AbstractEvaluationType;
         kwargs...,
     )
-    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
-    cfs = ClosedFormSubSolverState()
-    return AugmentedLagrangianMethodState(M, co, sub_problem, cfs; kwargs...)
+    return AugmentedLagrangianMethodState(M, co, sub_problem; evaluation = sub_state, kwargs...)
+end
+function AugmentedLagrangianMethodState(
+        M::AbstractManifold, co::ConstrainedManifoldObjective, sub_problem;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
+    return AugmentedLagrangianMethodState(M, co, sub_problem_, ClosedFormSubSolverState(); kwargs...)
 end
 
 get_iterate(alms::AugmentedLagrangianMethodState) = alms.p
@@ -437,10 +441,8 @@ function augmented_Lagrangian_method!(
             M,
             # pass down objective type to sub solvers
             decorate_objective!(
-                M,
-                ManifoldGradientObjective(sub_cost, sub_grad; evaluation = evaluation);
-                objective_type = objective_type,
-                sub_kwargs...,
+                M, ManifoldGradientObjective(sub_cost, sub_grad; evaluation = evaluation);
+                objective_type = objective_type, sub_kwargs...,
             ),
         ),
         stopping_criterion::StoppingCriterion = StopAfterIteration(300) |
@@ -452,9 +454,8 @@ function augmented_Lagrangian_method!(
         kwargs...,
     ) where {O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(augmented_Lagrangian_method!; kwargs...)
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     alms = AugmentedLagrangianMethodState(
-        M, cmo, sub_problem, sub_state_storage;
+        M, cmo, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, AugmentedLagrangianMethodState),
         p = p,
         ϵ = ϵ, ϵ_min = ϵ_min, λ_max = λ_max, λ_min = λ_min, μ_max = μ_max,
@@ -466,9 +467,7 @@ function augmented_Lagrangian_method!(
         DefaultManoptProblem(M, dcmo)
     else
         ConstrainedManoptProblem(
-            M,
-            dcmo;
-            gradient_equality_range = gradient_equality_range,
+            M, dcmo; gradient_equality_range = gradient_equality_range,
             gradient_inequality_range = gradient_inequality_range,
         )
     end

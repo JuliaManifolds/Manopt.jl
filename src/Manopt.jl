@@ -183,7 +183,7 @@ include("commons/records.jl")
 #
 #
 # solvers general framework
-include("solvers/solver.jl") #TODO: Move to base/ & commons/
+include("solvers/solver.jl")
 # specific solvers
 include("solvers/adaptive_regularization_with_cubics.jl")
 include("solvers/alternating_gradient_descent.jl")

@@ -7,7 +7,7 @@ _maybe_wrap_vector_function(f, ::ComponentVectorialType, ::AllocatingEvaluation)
 
 _maybe_wrap_jacobian_function(Jf, ::AbstractVectorialType, ::InplaceEvaluation) = Jf
 function _maybe_wrap_jacobian_function(Jf, ::FunctionVectorialType, ::AllocatingEvaluation)
-    return InplaceManifoldFunction(Jf, :TangentVectors)
+    return InplaceManifoldFunction(Jf, :TangentVector)
 end
 function _maybe_wrap_jacobian_function(Jf, ::ComponentVectorialType, ::AllocatingEvaluation)
     return [ InplaceManifoldFunction(Jfi, :TangentVector) for Jfi in Jf]
@@ -106,6 +106,17 @@ return the internally stored function computing [`get_value`](@ref).
 function get_value_function(vgf::VectorGradientFunction, recursive = false)
     return vgf.value!
 end
+
+# (c) Jacobian function
+function get_jacobian!(
+        M::AbstractManifold, a, vgf::VectorGradientFunction{FT, <:CoefficientVectorialType}, p, X;
+        kwargs...
+    ) where {FT}
+    B = get_basis(vgf.jacobian_type)
+    c = get_coordinates(M, p, X, B)
+    return get_jacobian!(M, a, vgf, p, c, B)
+end
+
 
 function status_summary(vgf::VectorGradientFunction; context::Symbol = :default)
     _is_inline(context) && (return "A vectorial function including gradients of length $(length(vgf)) represented as $(vgf.cost_type) and gradients as $(vgf.jacobian_type)")

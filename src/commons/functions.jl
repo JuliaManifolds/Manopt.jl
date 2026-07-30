@@ -107,6 +107,13 @@ function (f!::InplaceManifoldFunction)(M, v, p, args...)
     return copyto!(v, f!.f(M, p, args...))
 end
 
+function show(io::IO, imf::InplaceManifoldFunction)
+    return print(io, "InplaceManifoldFunction(", imf.f, ", ", imf.result, ")")
+end
+function status_summary(co::InplaceManifoldFunction; context::Symbol = :default)
+    return status_summary(co.f; context = context)
+end
+
 """
     maybe_wrap_function(f, p, evaluation = InplaceEvaluation(); result = :Number)
     maybe_wrap_function(f, evaluation = InplaceEvaluation(); result = :Number)
@@ -198,6 +205,9 @@ function ApproxHessianFiniteDifference(
         p_, grad_f_, X, Y, retraction_method, vector_transport_method, steplength
     )
 end
+function (f::ApproxHessianFiniteDifference)(M, p, X)
+    return f(M, zero_vector(M, p), p, X)
+end
 function (f::ApproxHessianFiniteDifference)(M, Y, p, X)
     norm_X = norm(M, p, X)
     (norm_X ≈ zero(norm_X)) && return zero_vector!(M, X, p)
@@ -268,6 +278,9 @@ function ApproxHessianSymmetricRankOne(
     return ApproxHessianSymmetricRankOne{typeof(p_), typeof(grad_f_), typeof(X), B, VTM, R}(
         p_, grad_f_, X, initial_operator, basis, vector_transport_method, nu
     )
+end
+function (f::ApproxHessianSymmetricRankOne)(M, p, X)
+    return f(M, zero_vector(M, p), p, X)
 end
 function (f::ApproxHessianSymmetricRankOne)(M, Y, p, X)
     # Update Basis if necessary
@@ -356,6 +369,9 @@ function ApproxHessianBFGS(
     return ApproxHessianBFGS{typeof(p_), typeof(grad_f_), typeof(X), B, VTM}(
         p_, grad_f_, X, initial_operator, basis, vector_transport_method, scale
     )
+end
+function (f::ApproxHessianBFGS)(M, p, X)
+    return f(M, zero_vector(M, p), p, X)
 end
 function (f::ApproxHessianBFGS)(M, Y, p, X)
     # Update Basis if necessary
