@@ -3282,7 +3282,8 @@ mutable struct ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostOb
         )
     end
     function ManifoldProximalMapObjective(
-            f::F, proxes_f::Union{Tuple, AbstractVector}, nOP::Vector{<:Integer}
+            f::F, proxes_f::Union{Tuple, AbstractVector}, nOP::Vector{<:Integer};
+            evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
         ) where {F}
         return if length(nOP) != length(proxes_f)
             throw(
@@ -3291,12 +3292,20 @@ mutable struct ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostOb
                 ),
             )
         else
-            new{F, typeof(proxes_f), typeof(nOP)}(f, proxes_f, nOP)
+            f_ = maybe_wrap_function(f, p; result = :Number)
+            proxes_f_ = [ maybe_wrap_function(pf, p, evaluation; result = :Point) for pf in proxes_f]
+            return new{typeof(f_), typeof(proxes_f_), typeof(nOP)}(f_, proxes_f_, nOP)
         end
     end
-    function ManifoldProximalMapObjective(f::F, prox_f::PF) where {F, PF}
+    function ManifoldProximalMapObjective(
+            f::F, prox_f::PF;
+            evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
+        ) where {F, PF}
+        # Single functions each
         i = 1
-        return new{F, PF, typeof(i)}(f, prox_f, i)
+        f_ = maybe_wrap_function(f, p; result = :Number)
+        prox_f_ = maybe_wrap_function(prox_f, p, evaluation; result = :Point)
+        return new{typeof(f_), typeof(prox_f_), typeof(i)}(f_, prox_f_, i)
     end
 end
 function _check_prox_number(pf::Union{Tuple, Vector}, i)
