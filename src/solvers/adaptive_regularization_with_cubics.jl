@@ -386,13 +386,8 @@ function adaptive_regularization_with_cubics(
     return adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, rand(M); kwargs...)
 end
 function adaptive_regularization_with_cubics(
-        M::AbstractManifold,
-        f::TF,
-        grad_f::TDF,
-        Hess_f::THF,
-        p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        M::AbstractManifold, f::TF, grad_f::TDF, Hess_f::THF, p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     ) where {TF, TDF, THF}
     p_ = maybe_wrap_variable(p)
     mho = ManifoldHessianObjective(f, grad_f, Hess_f; p = p, evaluation = evaluation)
@@ -403,10 +398,7 @@ function adaptive_regularization_with_cubics(M::AbstractManifold, f, grad_f; kwa
     return adaptive_regularization_with_cubics(M, f, grad_f, rand(M); kwargs...)
 end
 function adaptive_regularization_with_cubics(
-        M::AbstractManifold,
-        f::TF,
-        grad_f::TdF,
-        p;
+        M::AbstractManifold, f::TF, grad_f::TdF, p;
         evaluation = AllocatingEvaluation(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         kwargs...,
@@ -527,7 +519,6 @@ function adaptive_regularization_with_cubics!(
     return get_solver_return(get_objective(dmp), darcs)
 end
 calls_with_kwargs(::typeof(adaptive_regularization_with_cubics!)) = (decorate_objective!, decorate_state!)
-
 function initialize_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState)
     get_gradient!(dmp, arcs.X, arcs.p)
     return arcs

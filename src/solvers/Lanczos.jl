@@ -147,9 +147,9 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
     if k == 1 #the first is known directly
         nX = norm(M, p, ls.X)
         if length(ls.Lanczos_vectors) == 0
-            push!(ls.Lanczos_vectors, ls.X ./ nX)
+            push!(ls.Lanczos_vectors, ls.X / nX)
         else
-            copyto!(M, ls.Lanczos_vectors[1], p, ls.X ./ nX)
+            copyto!(M, ls.Lanczos_vectors[1], p, ls.X / nX)
         end
         get_objective_hessian!(M, ls.Hp, arcmo, p, ls.Lanczos_vectors[1])
         α = inner(M, p, ls.Lanczos_vectors[1], ls.Hp)
