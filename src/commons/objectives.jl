@@ -3674,6 +3674,11 @@ function get_gradient!(
     end
     return X
 end
+# Single function - since we can not allocate all at once, we have to cheat a bit.
+function get_gradient!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
+    return copyto!(M, X, p, sum(get_gradients(M, sgo, p)))
+end
+
 function Base.show(io::IO, msgo::ManifoldStochasticGradientObjective)
     print(io, "ManifoldStochasticGradientObjective(", msgo.gradient!, "; ")
     if !ismissing(msgo.cost)

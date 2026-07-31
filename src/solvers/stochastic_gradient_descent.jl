@@ -238,17 +238,7 @@ function stochastic_gradient_descent(
         cost = Missing(), evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
     p_ = maybe_wrap_variable(p)
-    if p isa Number
-        if grad_f isa Function
-            n = grad_f(M, p) isa Number
-            grad_f_ = (M, p) -> [[X] for X in (n ? [grad_f(M, p[])] : grad_f(M, p[]))]
-        else
-            grad_f_ = [maybe_wrap_function(f, p, evaluation) for f in grad_f]
-        end
-    else
-        grad_f_ = grad_f
-    end
-    msgo = ManifoldStochasticGradientObjective(grad_f; cost = cost, evaluation = evaluation)
+    msgo = ManifoldStochasticGradientObjective(grad_f; cost = cost, evaluation = evaluation, p = p)
     rs = stochastic_gradient_descent(M, msgo, p_; evaluation = evaluation, kwargs...)
     return maybe_unwrap_variable(p, rs)
 end

@@ -639,9 +639,9 @@ interior_point_Newton!(M::AbstractManifold, args...; kwargs...)
 function interior_point_Newton!(
         M::AbstractManifold, f, grad_f, Hess_f, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        g = nothing, h = nothing,
-        grad_g = nothing, grad_h = nothing,
-        Hess_g = nothing, Hess_h = nothing,
+        g = missing, h = missing,
+        grad_g = missing, grad_h = missing,
+        Hess_g = missing, Hess_h = missing,
         inequality_constraints = nothing,
         equality_constraints = nothing,
         kwargs...,
@@ -662,21 +662,17 @@ function interior_point_Newton!(
         callbacks = Dict{Symbol, Function}(),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         X = get_gradient(M, cmo, p),
-        μ::AbstractVector = ones(inequality_constraints_length(cmo)),
-        Y::AbstractVector = zero(μ),
-        λ::AbstractVector = zeros(equality_constraints_length(cmo)),
-        Z::AbstractVector = zero(λ),
-        s::AbstractVector = copy(μ),
-        W::AbstractVector = zero(s),
+        μ::AbstractVector = ones(inequality_constraints_length(cmo)), Y::AbstractVector = zero(μ),
+        λ::AbstractVector = zeros(equality_constraints_length(cmo)), Z::AbstractVector = zero(λ),
+        s::AbstractVector = copy(μ), W::AbstractVector = zero(s),
         ρ::Real = μ's / length(μ),
         σ::Real = calculate_σ(M, cmo, p, μ, λ, s),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         sub_kwargs = (;),
         vector_space = Rn,
-        #γ=0.9,
-        centrality_condition = missing, #InteriorPointCentralityCondition(cmo, γ, zero(γ), zero(γ)),
+        centrality_condition = missing,
         step_objective = ManifoldGradientObjective(
-            KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation = evaluation
+            KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation = evaluation, p = p
         ),
         _step_M::AbstractManifold = ProductManifold(
             M, vector_space(length(μ)), vector_space(length(λ)), vector_space(length(s)),
@@ -713,11 +709,8 @@ function interior_point_Newton!(
         ),
         sub_state::St = decorate_state!(
             ConjugateResidualState(
-                TangentSpace(_sub_M, _sub_p),
-                sub_objective;
-                X = _sub_X,
-                stop = sub_stopping_criterion,
-                sub_kwargs...,
+                TangentSpace(_sub_M, _sub_p), sub_objective;
+                X = _sub_X, stop = sub_stopping_criterion, sub_kwargs...,
             );
             sub_kwargs...,
         ),

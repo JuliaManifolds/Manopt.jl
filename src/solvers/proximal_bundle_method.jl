@@ -143,6 +143,12 @@ mutable struct ProximalBundleMethodState{
 end
 ProximalBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Bunde Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function ProximalBundleMethodState(
+        M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType;
+        kwargs...,
+    )
+    return ProximalBundleMethodState(M, sub_problem; evbaluation = sub_state, kwargs...)
+end
+function ProximalBundleMethodState(
         M::AbstractManifold, sub_problem = proximal_bundle_method_subsolver;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )

@@ -296,7 +296,7 @@ calls_with_kwargs(::typeof(particle_swarm)) = (particle_swarm!,)
 
 @doc "$(_doc_PSO)"
 function particle_swarm!(M::AbstractManifold, f, swarm::AbstractVector; kwargs...)
-    mco = ManifoldCostObjective(f)
+    mco = ManifoldCostObjective(f; p = p)
     return particle_swarm!(M, mco, swarm; kwargs...)
 end
 function particle_swarm!(
@@ -308,15 +308,10 @@ function particle_swarm!(
         inertia::Real = 0.65,
         social_weight::Real = 1.4,
         cognitive_weight::Real = 1.4,
-        stopping_criterion::StoppingCriterion = StopAfterIteration(500) |
-            StopWhenSwarmVelocityLess(1.0e-4),
+        stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenSwarmVelocityLess(1.0e-4),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, eltype(swarm)),
-        inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
-            M, eltype(swarm)
-        ),
-        vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(
-            M, eltype(swarm)
-        ),
+        inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M, eltype(swarm)),
+        vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(M, eltype(swarm)),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(particle_swarm!; kwargs...)

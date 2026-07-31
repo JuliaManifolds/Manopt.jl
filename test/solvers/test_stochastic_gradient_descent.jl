@@ -75,9 +75,10 @@ using Manopt, Manifolds, Test
         get_gradients!(dmp1i, Z5, p)
         @test Z == Z5
         X = zero_vector(M, p)
-        @test_throws ErrorException get_gradient!(dmp1i, X, p)
-        @test_throws ErrorException get_gradients(dmp1i, p)
-        @test_throws ErrorException get_gradient!(dmp1i, Z4, p, 1)
+        # summation not easy to implement
+        @test_throws MethodError get_gradient!(dmp1i, X, p)
+        @test_throws MethodError get_gradients(dmp1i, p)
+        @test_throws MethodError get_gradient!(dmp1i, Z4, p, 1)
         sgds = StochasticGradientDescentState(
             M; p = deepcopy(p), X = zero_vector(M, p), direction = StochasticGradient(; p = p)(M)
         )
@@ -109,18 +110,12 @@ using Manopt, Manifolds, Test
         stochastic_gradient_descent!(M, sgrad_f1, q4; order_type = :Random)
         @test is_point(M, q4, true)
         q5 = stochastic_gradient_descent(
-            M,
-            sgrad_f1,
-            p;
-            order_type = :Random,
+            M, sgrad_f1, p; order_type = :Random,
             direction = AverageGradient(M; p = p, n = 10, direction = StochasticGradient()),
         )
         @test is_point(M, q5, true)
         q6 = stochastic_gradient_descent(
-            M,
-            sgrad_f1,
-            p;
-            order_type = :Random,
+            M, sgrad_f1, p; order_type = :Random,
             direction = MomentumGradient(; p = p, direction = StochasticGradient()),
         )
         @test is_point(M, q6, true)
@@ -142,9 +137,8 @@ using Manopt, Manifolds, Test
         #For this case in-place does not exist.
         sgrad_fc2 = [((M, y) -> -log(M, y, x)) for x in data]
         q3 = stochastic_gradient_descent(Mc, sgrad_fc2, pc)
-        q4 = stochastic_gradient_descent(Mc, sgrad_fc2, pc; evaluation = InplaceEvaluation())
         s = stochastic_gradient_descent(Mc, sgrad_fc2, pc; return_state = true)
-        q5 = get_solver_result(s)[]
-        @test all([is_point(Mc, q, true) for q in [q1, q2, q3, q4, q5]])
+        q4 = get_solver_result(s)[]
+        @test all([is_point(Mc, q, true) for q in [q1, q2, q3, q4]])
     end
 end

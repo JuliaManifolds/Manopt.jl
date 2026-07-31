@@ -679,6 +679,7 @@ end
 function get_jacobian!(
         M::AbstractManifold, JF, vgf::VGF, p;
         basis::AbstractBasis = default_basis(M, typeof(p)), range::AbstractPowerRepresentation = get_range(vgf.jacobian_type),
+        Y_cache = nothing, c_cache = nothing,
     ) where {FT, VGF <: AbstractVectorGradientFunction{FT, <:FunctionVectorialType}}
     mP = PowerManifold(M, range, vgf.range_dimension)
     gradients = zero_vector(mP, fill(p, mP))
@@ -720,7 +721,7 @@ end
 function get_jacobian!(
         M::AbstractManifold, a, vgf::AbstractVectorGradientFunction{FT, <:FunctionVectorialType}, p, X;
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
-        Y_cache = nothing,
+        Y_cache = nothing, c_cache = nothing,
     ) where {FT}
     n = vgf.range_dimension
     mP = PowerManifold(M, range, n)
