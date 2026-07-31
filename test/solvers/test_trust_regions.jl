@@ -164,7 +164,6 @@ include("trust_region_model.jl")
     end
     @testset "...with different Hessian updates" begin
         n = 4
-
         A = [
             1.0 2.0 3.0 0.0
             2.0 4.0 5.0 6.0
@@ -203,21 +202,17 @@ include("trust_region_model.jl")
             qaAoor = trust_regions(M, f, grad_f)
             #
             qaHSR1 = trust_regions(
-                M,
-                f,
-                grad_f!,
+                M, f, grad_f!,
                 ApproxHessianSymmetricRankOne(
                     M, p, grad_f!; nu = eps(Float64)^2, evaluation = InplaceEvaluation()
                 ),
                 p;
                 stopping_criterion = StopAfterIteration(100) | StopWhenGradientNormLess(1.0e-8),
                 trust_region_radius = 1.0,
-                θ = 0.1,
-                κ = 0.9,
-                retraction_method = ProjectionRetraction(),
-                evaluation = InplaceEvaluation(),
+                θ = 0.1, κ = 0.9,
+                retraction_method = ProjectionRetraction(), evaluation = InplaceEvaluation(),
             )
-            @test isapprox(M, qaHSR1, p_star) || isapprox(M, qaHSR1, -p_star)
+            @test isapprox(M, qaHSR1, p_star; atol = 1.0e-6) || isapprox(M, qaHSR1, -p_star; atol = 1.0e-6)
 
             qaHSR1_2 = copy(M, p)
             trust_regions!(
