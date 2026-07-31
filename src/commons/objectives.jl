@@ -19,14 +19,14 @@ $(_problem(:Constrained))
 
 # Constructors
     ConstrainedManifoldObjective(f, grad_f;
-        g=nothing, grad_g=nothing,
-        h=nothing, grad_h=nothing;
-        hess_f=nothing, hess_g=nothing, hess_h=nothing,
         equality_constraints=nothing,
         inequality_constraints=nothing,
+        g=missing, grad_g=missing,
+        h=missing, grad_h=missing;
+        hess_f=missing, hess_g=missing, hess_h=missing,
         evaluation=AllocatingEvaluation(),
-        M = nothing,
-        p = isnothing(M) ? nothing : rand(M),
+        M = missing,
+        p = ismissing(M) ? missing : rand(M),
         atol = 0,
     )
 
@@ -62,7 +62,7 @@ struct ConstrainedManifoldObjective{
     atol::Float64
 end
 function _vector_function_type_hint(f)
-    (!isnothing(f) && isa(f, AbstractVector)) && return ComponentVectorialType()
+    (!ismissing(f) && isa(f, AbstractVector)) && return ComponentVectorialType()
     return FunctionVectorialType()
 end
 
@@ -80,32 +80,32 @@ function _number_of_constraints(
         g, grad_g;
         function_type::Union{AbstractVectorialType, Nothing} = nothing,
         jacobian_type::Union{AbstractVectorialType, Nothing} = nothing,
-        M::Union{AbstractManifold, Nothing} = nothing,
-        p = isnothing(M) ? nothing : rand(M),
+        M::Union{AbstractManifold, Missing} = missing,
+        p = ismissing(M) ? missing : rand(M),
     )
-    if !isnothing(g)
+    if !ismissing(g)
         if isa(function_type, ComponentVectorialType) || isa(g, AbstractVector)
             return length(g)
         end
     end
-    if !isnothing(grad_g)
+    if !ismissing(grad_g)
         if isa(jacobian_type, ComponentVectorialType) || isa(grad_g, AbstractVector)
             return length(grad_g)
         end
     end
     # These are more expensive, since they evaluate and hence allocate
-    if !isnothing(M) && !isnothing(p)
+    if !ismissing(M) && !ismissing(p)
         # For functions on vector representations, the last size is equal to length
         # on array power manifolds, this also yields the number of elements
-        (!isnothing(g)) && (return _val_to_ncons(g(M, p)))
-        (!isnothing(grad_g)) && (return _val_to_ncons(grad_g(M, p)))
+        (!ismissing(g)) && (return _val_to_ncons(g(M, p)))
+        (!ismissing(grad_g)) && (return _val_to_ncons(grad_g(M, p)))
     end
     return -1
 end
 
 function ConstrainedManifoldObjective(
         f, grad_f, g, grad_g, h, grad_h;
-        hess_f = nothing, hess_g = nothing, hess_h = nothing,
+        hess_f = missing, hess_g = missing, hess_h = missing,
         equality_type::AbstractVectorialType = _vector_function_type_hint(h),
         equality_gradient_type::AbstractVectorialType = _vector_function_type_hint(grad_h),
         equality_hessian_type::AbstractVectorialType = _vector_function_type_hint(hess_h),
@@ -114,16 +114,16 @@ function ConstrainedManifoldObjective(
         inequality_hessian_type::AbstractVectorialType = _vector_function_type_hint(hess_g),
         equality_constraints::Union{Integer, Nothing} = nothing,
         inequality_constraints::Union{Integer, Nothing} = nothing,
-        M::Union{AbstractManifold, Nothing} = nothing, p = isnothing(M) ? nothing : rand(M), atol = 0,
+        M::Union{AbstractManifold, Missing} = missing, p = ismissing(M) ? missing : rand(M), atol = 0,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     )
-    if isnothing(hess_f)
-        objective = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, p = isnothing(p) ? missing : p)
+    if ismissing(hess_f)
+        objective = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, p = p)
     else
-        objective = ManifoldHessianObjective(f, grad_f, hess_f; evaluation = evaluation, p = isnothing(p) ? missing : p)
+        objective = ManifoldHessianObjective(f, grad_f, hess_f; evaluation = evaluation, p = p)
     end
     num_eq = isnothing(equality_constraints) ? -1 : equality_constraints
-    if isnothing(h) || isnothing(grad_h)
+    if ismissing(h) || ismissing(grad_h)
         eq = nothing
     else
         if isnothing(equality_constraints)
@@ -136,20 +136,20 @@ function ConstrainedManifoldObjective(
         end
         # if it is still < 0, this can not be used
         (num_eq < 0) && error("Please specify a positive number of `equality_constraints` (provided $(equality_constraints))")
-        if isnothing(hess_h)
+        if ismissing(hess_h)
             eq = VectorGradientFunction(
-                h, grad_h, num_eq; evaluation = evaluation,
+                h, grad_h, num_eq; evaluation = evaluation, p = p,
                 function_type = equality_type, jacobian_type = equality_gradient_type,
             )
         else
             eq = VectorHessianFunction(
-                h, grad_h, hess_h, num_eq; evaluation = evaluation,
+                h, grad_h, hess_h, num_eq; evaluation = evaluation, p = p,
                 function_type = equality_type, jacobian_type = equality_gradient_type, hessian_type = equality_hessian_type,
             )
         end
     end
     num_ineq = isnothing(inequality_constraints) ? -1 : inequality_constraints
-    if isnothing(g) || isnothing(grad_g)
+    if ismissing(g) || ismissing(grad_g)
         ineq = nothing
     else
         if isnothing(inequality_constraints)
@@ -162,14 +162,14 @@ function ConstrainedManifoldObjective(
         end
         # if it is still < 0, this can not be used
         (num_ineq < 0) && error("Please specify a positive number of `inequality_constraints` (provided $(inequality_constraints))")
-        if isnothing(hess_g)
+        if ismissing(hess_g)
             ineq = VectorGradientFunction(
-                g, grad_g, num_ineq; evaluation = evaluation,
+                g, grad_g, num_ineq; evaluation = evaluation, p = p,
                 function_type = inequality_type, jacobian_type = inequality_gradient_type,
             )
         else
             ineq = VectorHessianFunction(
-                g, grad_g, hess_g, num_ineq; evaluation = evaluation,
+                g, grad_g, hess_g, num_ineq; evaluation = evaluation, p = p,
                 function_type = inequality_type, jacobian_type = inequality_gradient_type, hessian_type = inequality_hessian_type,
             )
         end
@@ -201,7 +201,7 @@ function ConstrainedManifoldObjective(
     )
 end
 function ConstrainedManifoldObjective(
-        f, grad_f; g = nothing, grad_g = nothing, h = nothing, grad_h = nothing, kwargs...
+        f, grad_f; g = missing, grad_g = missing, h = missing, grad_h = missing, kwargs...
     )
     return ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h; kwargs...)
 end
@@ -633,11 +633,11 @@ struct ManifoldAlternatingGradientObjective{F, G} <: AbstractManifoldFirstOrderO
         grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
         return new{typeof(f_), typeof(grad_f_)}(f_, grad_f_)
     end
-end
-function ManifoldAlternatingGradientObjective(f::F, grad_f::AbstractVector{<:TG}; evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing) where {F, TG}
-    f_ = maybe_wrap_function(f, p; result = :Number)
-    grad_f_ = [ maybe_wrap_function(gf, p, evaluation; result = :TangentVector) for gf in grad_f]
-    return ManifoldAlternatingGradientObjective{typeof(f_), typeof(grad_f_)}(f_, grad_f_)
+    function ManifoldAlternatingGradientObjective(f::F, grad_f::AbstractVector{<:G}; evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing) where {F, G}
+        f_ = maybe_wrap_function(f, p; result = :Number)
+        grad_f_ = [ maybe_wrap_function(gf, p, evaluation; result = :TangentVector) for gf in grad_f]
+        return new{typeof(f_), typeof(grad_f_)}(f_, grad_f_)
+    end
 end
 function get_gradient(M::AbstractManifold, mago::ManifoldAlternatingGradientObjective{C, <:Function}, p) where {C}
     X = zero_vector(M, p)
@@ -3024,18 +3024,19 @@ function ManifoldNonlinearLeastSquaresObjective(
         jacobian_tangent_basis::AbstractBasis = DefaultOrthonormalBasis(),
         jacobian_type::AbstractVectorialType = CoefficientVectorialType(jacobian_tangent_basis),
         function_type::AbstractVectorialType = FunctionVectorialType(),
-        evaluation::AbstractEvaluationType = AllocatingEvaluation()
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        p = missing
     )
     vgf = VectorGradientFunction(
         f, jacobian, range_dimension;
-        jacobian_type = jacobian_type, function_type = function_type, evaluation = evaluation
+        jacobian_type = jacobian_type, function_type = function_type, evaluation = evaluation, p = p
     )
     return ManifoldNonlinearLeastSquaresObjective(vgf, robustifier)
 end
 
 """
     get_cost(M::AbstractManifold, nlso::ManifoldNonLinearLeastSquaresObjective, p)
-ß
+
 Compute the cost of the least squares objective, i.e.
 
 ```math

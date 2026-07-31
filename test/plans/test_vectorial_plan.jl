@@ -153,8 +153,8 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     # Hessian
     @test Manopt.get_hessian_function(vhf_fa) === hess_g
     @test all(Manopt.get_hessian_function(vhf_va) .=== [hess_g1, hess_g2])
-    @test Manopt.get_hessian_function(vhf_fi) === hess_g!
-    @test all(Manopt.get_hessian_function(vhf_vi) .=== [hess_g1!, hess_g2!])
+    @test Manopt.get_hessian_function(vhf_fi; evaluation = InplaceEvaluation()) === hess_g!
+    @test all(Manopt.get_hessian_function(vhf_vi; evaluation = InplaceEvaluation()) .=== [hess_g1!, hess_g2!])
     for vhf in [vhf_fa, vhf_va, vhf_fi, vhf_vi]
         @test get_hessian(M, vhf, p, X) == gh
         @test get_hessian(M, vhf, p, X, :) == gh

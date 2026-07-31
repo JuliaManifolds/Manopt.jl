@@ -97,11 +97,11 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test equality_constraints_length(cofa) == 1
         @test inequality_constraints_length(cofa) == 2
         cofE = ConstrainedManifoldObjective(
-            f, grad_f, nothing, nothing, h, grad_h; equality_constraints = 1
+            f, grad_f, missing, missing, h, grad_h; equality_constraints = 1
         )
 
         cofI = ConstrainedManifoldObjective(
-            f, grad_f, g, grad_g, nothing, nothing; inequality_constraints = 2
+            f, grad_f, g, grad_g, missing, missing; inequality_constraints = 2
         )
         @test equality_constraints_length(cofI) == 0
         @test inequality_constraints_length(cofE) == 0

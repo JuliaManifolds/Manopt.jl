@@ -1,38 +1,38 @@
-_maybe_wrap_vector_function(f, ::AbstractVectorialType, ::InplaceEvaluation) = f
-function _maybe_wrap_vector_function(f, ::FunctionVectorialType, ::AllocatingEvaluation)
-    return InplaceManifoldFunction(f, :Vector)
+_maybe_wrap_vector_function(f, p, ::AbstractVectorialType, ::InplaceEvaluation) = f
+function _maybe_wrap_vector_function(f, p, ::FunctionVectorialType, e::AllocatingEvaluation)
+    return maybe_wrap_function(f, p, e; result = :Vector)
 end
-# The single components are like cost – returning numbers, so we keep them as is.
-_maybe_wrap_vector_function(f, ::ComponentVectorialType, ::AllocatingEvaluation) = f
+# The single components are like cost – returning numbers, so we only have to wrap mutate
+_maybe_wrap_vector_function(f, p, ::ComponentVectorialType, ::AllocatingEvaluation) = maybe_wrap_function(f, p)
 
-_maybe_wrap_jacobian_function(Jf, ::AbstractVectorialType, ::InplaceEvaluation) = Jf
-function _maybe_wrap_jacobian_function(Jf, ::FunctionVectorialType, ::AllocatingEvaluation)
-    return InplaceManifoldFunction(Jf, :TangentVector)
+_maybe_wrap_jacobian_function(Jf, p, ::AbstractVectorialType, ::InplaceEvaluation) = Jf
+function _maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType, e::AllocatingEvaluation)
+    return maybe_wrap_function(Jf, p, e; result = :Unclear)
 end
-function _maybe_wrap_jacobian_function(Jf, ::ComponentVectorialType, ::AllocatingEvaluation)
-    return [ InplaceManifoldFunction(Jfi, :TangentVector) for Jfi in Jf]
+function _maybe_wrap_jacobian_function(Jf, p, ::ComponentVectorialType, e::AllocatingEvaluation)
+    return [ maybe_wrap_function(Jfi, p, e; result = :TangentVector) for Jfi in Jf]
 end
-function _maybe_wrap_jacobian_function(Jf, ::CoefficientVectorialType, ::AllocatingEvaluation)
-    return InplaceManifoldFunction(Jf, :Matrix)
-end
-
-_maybe_wrap_adjoint_jacobian_function(aJf, ::AbstractVectorialType, ::InplaceEvaluation) = aJf
-function _maybe_wrap_adjoint_jacobian_function(aJf, ::FunctionVectorialType, ::AllocatingEvaluation)
-    return InplaceManifoldFunction(aJf, :Vectors)
-end
-function _maybe_wrap_adjoint_jacobian_function(aJf, ::ComponentVectorialType, ::AllocatingEvaluation)
-    return [ InplaceManifoldFunction(aJfi, :Vector) for aJfi in aJf]
-end
-function _maybe_wrap_adjoint_jacobian_function(aJf, ::CoefficientVectorialType, ::AllocatingEvaluation)
-    return InplaceManifoldFunction(aJf, :Matrix)
+function _maybe_wrap_jacobian_function(Jf, p, ::CoefficientVectorialType, e::AllocatingEvaluation)
+    return maybe_wrap_function(Jf, p, e; result = :Matrix)
 end
 
-_maybe_wrap_vector_Hessian_function(Hf, ::AbstractVectorialType, ::InplaceEvaluation) = Hf
-function _maybe_wrap_vector_Hessian_function(Hf, ::FunctionVectorialType, ::AllocatingEvaluation)
-    return InplaceManifoldFunction(Hf, :TangentVectors)
+_maybe_wrap_adjoint_jacobian_function(aJf, p, ::AbstractVectorialType, ::InplaceEvaluation) = aJf
+function _maybe_wrap_adjoint_jacobian_function(aJf, p, ::FunctionVectorialType, e::AllocatingEvaluation)
+    return maybe_wrap_function(aJf, p, e; result = :Vectors)
 end
-function _maybe_wrap_vector_Hessian_function(Hf, ::ComponentVectorialType, ::AllocatingEvaluation)
-    return [InplaceManifoldFunction(Hfi, :TangentVector) for Hfi in Hf]
+function _maybe_wrap_adjoint_jacobian_function(aJf, p, ::ComponentVectorialType, e::AllocatingEvaluation)
+    return [ maybe_wrap_function(aJfi, p, e; result = :Vector) for aJfi in aJf]
+end
+function _maybe_wrap_adjoint_jacobian_function(aJf, p, ::CoefficientVectorialType, e::AllocatingEvaluation)
+    return maybe_wrap_function(aJf, p, e; result = :Matrix)
+end
+
+_maybe_wrap_vector_Hessian_function(Hf, p, ::AbstractVectorialType, ::InplaceEvaluation) = Hf
+function _maybe_wrap_vector_Hessian_function(Hf, p, ::FunctionVectorialType, e::AllocatingEvaluation)
+    return maybe_wrap_function(Hf, p, e; result = :TangentVectors)
+end
+function _maybe_wrap_vector_Hessian_function(Hf, p, ::ComponentVectorialType, e::AllocatingEvaluation)
+    return [maybe_wrap_function(Hfi, p, e; result = :TangentVector) for Hfi in Hf]
 end
 
 
@@ -91,10 +91,10 @@ end
 function VectorGradientFunction(
         f::F, Jf::J, range_dimension::I;
         function_type::FT = FunctionVectorialType(), jacobian_type::JT = FunctionVectorialType(),
-        evaluation::AbstractEvaluationType = AllocatingEvaluation()
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing,
     ) where {I <: Integer, F, J, FT <: AbstractVectorialType, JT <: AbstractVectorialType}
-    f_ = _maybe_wrap_vector_function(f, function_type, evaluation)
-    Jf_ = _maybe_wrap_jacobian_function(Jf, jacobian_type, evaluation)
+    f_ = _maybe_wrap_vector_function(f, p, function_type, evaluation)
+    Jf_ = _maybe_wrap_jacobian_function(Jf, p, jacobian_type, evaluation)
     return VectorGradientFunction{FT, JT, typeof(f_), typeof(Jf_), I}(f_, function_type, Jf_, jacobian_type, range_dimension)
 end
 
@@ -197,10 +197,10 @@ end
 function VectorDifferentialFunction(
         f::F, Jf::J, range_dimension::I;
         function_type::FT = FunctionVectorialType(), jacobian_type::JT = FunctionVectorialType(),
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
     ) where {I <: Integer, F, J, FT <: AbstractVectorialType, JT <: AbstractVectorialType}
-    f_ = _maybe_wrap_vector_function(f, function_type, evaluation)
-    Jf_ = _maybe_wrap_jacobian_function(Jf, jacobian_type, evaluation)
+    f_ = _maybe_wrap_vector_function(f, p, function_type, evaluation)
+    Jf_ = _maybe_wrap_jacobian_function(Jf, p, jacobian_type, evaluation)
     return VectorDifferentialFunction{FT, JT, Missing, typeof(f_), typeof(Jf_), Missing, I}(
         f_, function_type, Jf_, jacobian_type, missing, missing, range_dimension
     )
@@ -209,14 +209,14 @@ function VectorDifferentialFunction(
         f::F, Jf::J, aJf::A, range_dimension::I;
         function_type::FT = FunctionVectorialType(),
         jacobian_type::JT = FunctionVectorialType(), adjoint_jacobian_type::AJT = FunctionVectorialType(),
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing,
     ) where {
         I <: Integer, F, J, A, FT <: AbstractVectorialType,
         JT <: AbstractVectorialType, AJT <: Union{<:AbstractVectorialType, Missing},
     }
-    f_ = _maybe_wrap_vector_function(f, function_type, evaluation)
-    Jf_ = _maybe_wrap_jacobian_function(f, jacobian_type, evaluation)
-    aJf_ = _maybe_wrap_adjoint_jacobian_function(aJf, adjoint_jacobian_type, evaluation)
+    f_ = _maybe_wrap_vector_function(f, p, function_type, evaluation)
+    Jf_ = _maybe_wrap_jacobian_function(Jf, p, jacobian_type, evaluation)
+    aJf_ = _maybe_wrap_adjoint_jacobian_function(aJf, p, adjoint_jacobian_type, evaluation)
     return VectorDifferentialFunction{FT, JT, AJT, typeof(f_), typeof(Jf_), typeof(aJf_), I}(
         f_, function_type, Jf_, jacobian_type, aJf_, adjoint_jacobian_type, range_dimension
     )
@@ -363,13 +363,13 @@ function VectorHessianFunction(
         f::F, Jf::J, Hf::H, range_dimension::I;
         function_type::FT = FunctionVectorialType(),
         jacobian_type::JT = FunctionVectorialType(), hessian_type::HT = FunctionVectorialType(),
-        evaluation::AbstractEvaluationType = AllocatingEvaluation()
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
     ) where {
         I <: Integer, F, J, H, FT <: AbstractVectorialType, JT <: AbstractVectorialType, HT <: AbstractVectorialType,
     }
-    f_ = _maybe_wrap_vector_function(f, function_type, evaluation)
-    Jf_ = _maybe_wrap_jacobian_function(Jf, jacobian_type, evaluation)
-    Hf_ = _maybe_wrap_vector_Hessian_function(Hf, hessian_type, evaluation)
+    f_ = _maybe_wrap_vector_function(f, p, function_type, evaluation)
+    Jf_ = _maybe_wrap_jacobian_function(Jf, p, jacobian_type, evaluation)
+    Hf_ = _maybe_wrap_vector_Hessian_function(Hf, p, hessian_type, evaluation)
     return VectorHessianFunction{FT, JT, HT, typeof(f_), typeof(Jf_), typeof(Hf_), I}(
         f_, function_type, Jf_, jacobian_type, Hf_, hessian_type, range_dimension
     )
@@ -472,6 +472,14 @@ function get_hessian!(
     return Y
 end
 
+function get_hessian_function(vhf::VectorHessianFunction; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    if evaluation isa AllocatingEvaluation
+        (vhf.hessians! isa InplaceManifoldFunction) && return vhf.hessians!.f
+        (vhf.hessians! isa AbstractVector{<:InplaceManifoldFunction}) && return [h.f for h in vhf.hessians!]
+        return (M, p, X) -> get_hessian(M, p, X)
+    end # else: inplace, we return what we have
+    return vhf.hessians!
+end
 function status_summary(vhf::VectorHessianFunction; context::Symbol = :default)
     _is_inline(context) && (return "A vectorial function of length $(length(vhf)) including gradients and Hessians represented as $(vhf.cost_type), gradients as $(vhf.jacobian_type), and Hessians as $(vhf.hessian_type).")
     return """

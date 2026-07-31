@@ -139,14 +139,13 @@ mutable struct LevenbergMarquardtState{
         (damping_term_min <= 0) && throw(ArgumentError("The value of damping_term_min must be strictly above 0, received $damping_term_min"))
         (damping_increase_factor <= 1) && throw(ArgumentError("The value of `damping_increase_factor must be strictly above 1, received $damping_increase_factor"))
         (damping_reduction_factor >= 1) && throw(ArgumentError("The value of `damping_reduction_factor must be strictly below 1, received $β_reduction"))
-        _sub_state = maybe_wrap_evaluation_type(sub_state)
         R = promote_type(
             typeof(candidate_acceptance_threshold), typeof(damping_term_min), typeof(damping_increase_factor), typeof(damping_increase_threshold),
             typeof(damping_reduction_threshold), typeof(damping_reduction_factor), typeof(damping_term_min),
             typeof(damping_term_max), typeof(damping_term), typeof(minimum_acceptable_model_improvement)
         )
         return LevenbergMarquardtState(
-            sub_problem, _sub_state;
+            sub_problem, sub_state;
             candidate_acceptance_threshold = convert(R, candidate_acceptance_threshold),
             damping_increase_factor = convert(R, damping_increase_factor), damping_increase_threshold = convert(R, damping_increase_threshold),
             damping_reduction_threshold = convert(R, damping_reduction_threshold), damping_reduction_factor = convert(R, damping_reduction_factor),
@@ -319,7 +318,7 @@ function LevenbergMarquardt(
     end
     vgf = VectorGradientFunction(
         f, jacobian_f, num_components;
-        evaluation = evaluation, function_type = function_type, jacobian_type = jacobian_type,
+        evaluation = evaluation, function_type = function_type, jacobian_type = jacobian_type, p = p
     )
     return LevenbergMarquardt(M, vgf, p; evaluation = evaluation, kwargs...)
 end
@@ -391,7 +390,7 @@ function LevenbergMarquardt!(
     end
     nlso = ManifoldNonlinearLeastSquaresObjective(
         f, jacobian_f, num_components;
-        evaluation = evaluation, jacobian_type = jacobian_type, function_type = function_type,
+        evaluation = evaluation, jacobian_type = jacobian_type, function_type = function_type, p = p
     )
     return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
 end
@@ -445,7 +444,7 @@ function LevenbergMarquardt!(
     keywords_accepted(LevenbergMarquardt!; kwargs...)
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
-    sub_state_ = maybe_wrap_evaluation_type(sub_state)
+    sub_state_ = sub_state
     if has_anisotropic_max_stepsize(M)
         # This is how to recognize the box constraints as for example Hyperrectangle does
         sub_state_ = LevenbergMarquardtBoxSubsolver(M, sub_state_, p)

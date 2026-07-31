@@ -607,9 +607,9 @@ interior_point_Newton(M::AbstractManifold, args...; kwargs...)
 function interior_point_Newton(
         M::AbstractManifold, f, grad_f, Hess_f, p = rand(M);
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        g = nothing, h = nothing,
-        grad_g = nothing, grad_h = nothing,
-        Hess_g = nothing, Hess_h = nothing,
+        g = missing, h = missing,
+        grad_g = missing, grad_h = missing,
+        Hess_g = missing, Hess_h = missing,
         inequality_constraints::Union{Integer, Nothing} = nothing,
         equality_constraints::Union{Nothing, Integer} = nothing,
         kwargs...,

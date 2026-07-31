@@ -324,24 +324,15 @@ function proximal_bundle_method!(
     sgo = ManifoldSubgradientObjective(f, ∂f!; evaluation = evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
-    #TODO: Adapt sub problem wrapping for closed form solution
     pbms = ProximalBundleMethodState(
-        M,
-        sub_problem,
-        maybe_wrap_evaluation_type(sub_state);
-        p = p,
-        m = m,
-        bundle_size = bundle_size,
+        M, sub_problem, sub_state;
+        p = p, m = m, bundle_size = bundle_size,
         callbacks = process_callbacks_arg(callbacks, ProximalBundleMethodState),
         inverse_retraction_method = inverse_retraction_method,
         retraction_method = retraction_method,
         stopping_criterion = stopping_criterion,
         vector_transport_method = vector_transport_method,
-        α₀ = α₀,
-        ε = ε,
-        δ = δ,
-        μ = μ,
+        α₀ = α₀, ε = ε, δ = δ, μ = μ,
     )
     pbms = decorate_state!(pbms; kwargs...)
     return get_solver_return(solve!(mp, pbms))

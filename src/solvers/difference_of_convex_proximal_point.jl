@@ -449,10 +449,8 @@ function difference_of_convex_proximal_point!(
                 DefaultManoptProblem(M, sub_objective)
             end
         end,
-        sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState, Nothing} = if !isnothing(
-                prox_g
-            )
-            maybe_wrap_evaluation_type(evaluation)
+        sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState, Nothing} = if !isnothing(prox_g)
+            evaluation
         elseif isnothing(sub_objective)
             nothing
         else
@@ -499,7 +497,7 @@ function difference_of_convex_proximal_point!(
     dmdcpo = decorate_objective!(M, mdcpo; objective_type = objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmdcpo)
     dcps = DifferenceOfConvexProximalState(
-        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        M, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, DifferenceOfConvexProximalState),
         p = p, X = X, stepsize = _produce_type(stepsize, M, p),
         stopping_criterion = stopping_criterion,

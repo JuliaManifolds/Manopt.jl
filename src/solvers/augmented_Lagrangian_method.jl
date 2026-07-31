@@ -343,8 +343,8 @@ $(_note(:OutputSection))
 function augmented_Lagrangian_method(
         M::AbstractManifold, f, grad_f, p = rand(M);
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        g = nothing, h = nothing, grad_g = nothing, grad_h = nothing,
-        inequality_constraints::Union{Integer, Nothing} = nothing,
+        g = missing, h = missing, grad_g = missing, grad_h = missing,
+        inequality_constraints::Union{Nothing, Integer} = nothing,
         equality_constraints::Union{Nothing, Integer} = nothing,
         kwargs...,
     )
@@ -352,10 +352,8 @@ function augmented_Lagrangian_method(
     cmo = ConstrainedManifoldObjective(
         f, grad_f, g, grad_g, h, grad_h;
         evaluation = evaluation,
-        inequality_constraints = inequality_constraints,
-        equality_constraints = equality_constraints,
-        M = M,
-        p = p,
+        inequality_constraints = inequality_constraints, equality_constraints = equality_constraints,
+        M = M, p = p,
     )
     rs = augmented_Lagrangian_method(M, cmo, p_; evaluation = evaluation, kwargs...)
     return maybe_unwrap_variable(p, rs)
@@ -373,7 +371,7 @@ calls_with_kwargs(::typeof(augmented_Lagrangian_method)) = (augmented_Lagrangian
 function augmented_Lagrangian_method!(
         M::AbstractManifold, f::TF, grad_f::TGF, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        g = nothing, h = nothing, grad_g = nothing, grad_h = nothing,
+        g = missing, h = missing, grad_g = missing, grad_h = missing,
         inequality_constraints = nothing, equality_constraints = nothing,
         kwargs...,
     ) where {TF, TGF}

@@ -90,14 +90,8 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             callbacks = cb,
         )
         @test sk_record == [
-            (:BeforeInit, 0),
-            (:Init, 0),
-            (:BeforeStop, 0),
-            (:BeforeStep, 1),
-            (:Stepsize, 1),
-            (:Step, 1),
-            (:BeforeStop, 1),
-            (:Stop, 1),
+            (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+            (:BeforeStep, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
         ]
     end
 end
