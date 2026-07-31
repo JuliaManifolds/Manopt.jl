@@ -177,7 +177,7 @@ function get_message(fws::FrankWolfeState)
 end
 provided_callbacks(::Type{FrankWolfeState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver, :Stepsize])
 
-function set_iterate!(fws::FrankWolfeState, M, p)
+function set_iterate!(fws::FrankWolfeState, p)
     fws.p = p
     return fws
 end

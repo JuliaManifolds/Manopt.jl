@@ -100,7 +100,7 @@ using LinearAlgebra, LRUCache, Manifolds, Manopt, Test
                 @test X == get_gradient(M, cddo, p, i) # cached
                 get_gradient!(M, Y, cddo, p, i) # cached
                 @test X == Y
-                X = get_gradient(M, obj, -p, i)
+                X = get_gradient(M, obj, -p, i) #second comparison
                 get_gradient!(M, Y, cddo, -p, i) # counts
                 @test X == Y
                 get_gradient!(M, Y, cddo, -p, i) # cached

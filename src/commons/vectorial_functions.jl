@@ -103,10 +103,17 @@ end
 
 return the internally stored function computing [`get_value`](@ref).
 """
-function get_value_function(vgf::VectorGradientFunction, recursive = false)
-    return vgf.value!
+function get_value_function(
+        vgf::VectorGradientFunction, recursive = false;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation()
+    )
+    if evaluation isa AllocatingEvaluation
+        (vgf.value! isa InplaceManifoldFunction) && return vgf.value!.f
+        return (M, p) -> get_value(M, vgf, p)
+    else
+        return vgf.value!
+    end
 end
-
 # (c) Jacobian function
 function get_jacobian!(
         M::AbstractManifold, a, vgf::VectorGradientFunction{FT, <:CoefficientVectorialType}, p, X;

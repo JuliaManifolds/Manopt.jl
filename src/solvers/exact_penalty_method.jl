@@ -409,9 +409,8 @@ function exact_penalty_method!(
         Pr <: Union{F, AbstractManoptProblem} where {F},
     }
     keywords_accepted(exact_penalty_method!; kwargs...)
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     emps = ExactPenaltyMethodState(
-        M, sub_problem, sub_state_storage;
+        M, sub_problem, sub_state;
         p = p,
         callbacks = process_callbacks_arg(callbacks, ExactPenaltyMethodState),
         ϵ = ϵ, ϵ_min = ϵ_min,

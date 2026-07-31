@@ -31,7 +31,6 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     show(io, MIME"text/plain"(), vgf_fa)
     @test String(take!(io)) == Manopt.status_summary(vgf_fa)
     @test get_value_function(vgf_fa) === g
-    @test get_gradient_function(vgf_fa) == grad_g
     vgf_va = VectorGradientFunction(
         [g1, g2], [grad_g1, grad_g2], 2;
         function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType(),

@@ -1816,8 +1816,7 @@ function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
     )
 end
 function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p, i)
-    !(haskey(co.cache, :StochasticGradient)) &&
-        return get_gradient!(M, X, co.objective, p, i)
+    !(haskey(co.cache, :StochasticGradient)) && return get_gradient!(M, X, co.objective, p, i)
     copyto!(
         M, X, p,
         get!(co.cache[:StochasticGradient], (copy(M, p), i)) do
@@ -3510,8 +3509,8 @@ struct ManifoldStochasticGradientObjective{C, G} <: AbstractManifoldFirstOrderOb
     gradient!::G
 end
 function ManifoldStochasticGradientObjective(
-        grad_f::G; cost::C = Missing(), evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
-    ) where {G <: Union{Function, AbstractVector{<:Function}}, C <: Union{Function, AbstractVector{<:Function}, Missing}}
+        grad_f::G; cost::C = missing, evaluation::E = AllocatingEvaluation(), p = missing,
+    ) where {G, C, E <: AbstractEvaluationType}
     if G <: AbstractVector
         grad_f_ = [ maybe_wrap_function(gf, p, evaluation; result = :TangentVector) for gf in grad_f]
     else
@@ -3545,13 +3544,9 @@ function get_cost(
     ) where {C <: AbstractVector}
     return sgo.cost[i](M, p)
 end
-function get_cost(
-        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, i
-    )
+function get_cost(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, i)
     (i == 1) && return sgo.cost(M, p)
-    return error(
-        "The cost is implemented as a single function and can not be accessed element wise at $i since the index is larger than 1.",
-    )
+    return error("The cost is implemented as a single function and can not be accessed element wise at $i since the index is larger than 1.")
 end
 
 function get_gradients end
@@ -3571,8 +3566,17 @@ function get_gradients(
     get_gradients!(M, X, sgo, p)
     return X
 end
+# Single allocating function we wrapped ourselves – call it from intern storage, since
+# we have no chance to allocate this otherwise
+function get_gradients(
+        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C, <:InplaceManifoldFunction}, p,
+    ) where {C}
+    return sgo.gradient!.f(M, p)
+end
+function get_gradients(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradients(M, get_objective(admo, false), p)
+end
 # For a single function, since it is in-place, we have no chance to allocate the right amount of tangent vectors in X? Ah we can use get_cost
-
 function get_gradients!(
         M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p,
     )
@@ -3612,6 +3616,12 @@ function get_gradient!(
         M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective{C, <:AbstractVector}, p, k
     ) where {C}
     return sgo.gradient![k](M, X, p)
+end
+# We have an allocating function and wrapped it, then we can still access that; for a purely single inplace, we have no chance
+function get_gradient!(
+        M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective{C, <:InplaceManifoldFunction}, p, k
+    ) where {C}
+    return copyto!(M, X, p, sgo.gradient!.f(M, p)[k])
 end
 function get_gradient!(
         M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p, k
@@ -3742,8 +3752,16 @@ where either the gradient function using the decorator or without the decorator 
 By default `recursive` is set to `false`, since usually to just pass the gradient function
 somewhere, one still wants for example the cached one or the one that still counts calls.
 """
-function get_subgradient_function(objective::ManifoldSubgradientObjective, recursive = false)
-    return objective.subgradient!
+function get_subgradient_function(
+        msgo::ManifoldSubgradientObjective, recursive = false;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation()
+    )
+    if evaluation isa AllocatingEvaluation
+        (msgo.subgradient! isa InplaceManifoldFunction) && return msgo.subgradient!.f
+        return (M, p) -> msgo.subgradient!(M, zero_vector(M, p), p)
+    else
+        return msgo.subgradient!
+    end
 end
 
 function Base.show(io::IO, objective::ManifoldSubgradientObjective)

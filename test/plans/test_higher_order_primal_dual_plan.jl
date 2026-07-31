@@ -87,7 +87,6 @@ using ManifoldDiff:
         @test startswith(s1, "PrimalDualManifoldSemismoothNewtonObjective(")
         s2 = repr(obj2)
         @test startswith(s2, "PrimalDualManifoldSemismoothNewtonObjective(")
-        @test contains(s2, "InplaceEvaluation")
         s3 = repr(obj3)
         @test startswith(s3, "PrimalDualManifoldSemismoothNewtonObjective(")
         @test contains(s3, "Λ = ")

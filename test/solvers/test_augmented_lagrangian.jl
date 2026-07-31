@@ -87,10 +87,7 @@ using LinearAlgebra: I, tr
         grad_g(M, p) = -1
         s = augmented_Lagrangian_method(
             M, f, grad_f, 4.0;
-            g = g,
-            grad_g = grad_g,
-            stopping_criterion = StopAfterIteration(20),
-            return_state = true,
+            g = g, grad_g = grad_g, stopping_criterion = StopAfterIteration(20), return_state = true,
         )
         q = get_solver_result(s)[]
         @test q isa Real
