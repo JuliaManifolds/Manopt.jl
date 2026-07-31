@@ -260,13 +260,8 @@ $(_note(:OutputSection))
 @doc "$(_doc_Douglas_Rachford)"
 DouglasRachford(::AbstractManifold, args...; kwargs...)
 function DouglasRachford(
-        M::AbstractManifold,
-        f::TF,
-        proxes_f::Vector{<:Any},
-        p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        parallel = 0,
-        kwargs...,
+        M::AbstractManifold, f::TF, proxes_f::Vector{<:Any}, p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), parallel = 0, kwargs...,
     ) where {TF}
     p_ = maybe_wrap_variable(p)
     proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation) for prox_f in proxes_f]

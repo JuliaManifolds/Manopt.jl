@@ -108,9 +108,8 @@ mutable struct ProximalBundleMethodState{
         }
         R = promote_type(typeof(m), typeof(α₀), typeof(ε), typeof(δ), typeof(μ))
         m = convert(R, m); α₀ = convert(R, α₀); ε = convert(R, ε); δ = convert(R, δ); μ = convert(R, μ)
-        _sub_state = maybe_wrap_evaluation_type(sub_state)
         return ProximalBundleMethodState(
-            sub_problem, _sub_state;
+            sub_problem, sub_state;
             approx_errors = [zero(R)], bundle = [(copy(M, p), copy(M, p, X))], bundle_size = bundle_size,
             c = zero(R), callbacks = callbacks, d = copy(M, p, X),
             inverse_retraction_method = inverse_retraction_method, lin_errors = [zero(R)],

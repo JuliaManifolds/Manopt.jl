@@ -169,9 +169,7 @@ function cyclic_proximal_point!(
     return cyclic_proximal_point!(M, mpo, p; evaluation = evaluation, kwargs...)
 end
 function cyclic_proximal_point!(
-        M::AbstractManifold,
-        mpo::O,
-        p;
+        M::AbstractManifold, mpo::O, p;
         callbacks = Dict{Symbol, Function}(),
         evaluation_order::Symbol = :Linear,
         stopping_criterion::StoppingCriterion = StopAfterIteration(5000) |

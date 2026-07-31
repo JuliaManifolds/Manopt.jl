@@ -208,9 +208,10 @@ function ProximalGradientMethodState(
         RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, S <: Stepsize,
         C <: AbstractDict{Symbol},
     }
-    #TODO adapt wrapping
+    sub_state_ = (sub_state isa AbstractEvaluationType) ? ClosedFormSubSolverState() : sub_state
+    sub_problem_ = (isnothing(sub_problem) || Pr <: AbstractManoptProblem) ? sub_problem : maybe_wrap_function(sub_problem, p, sub_state)
     return ProximalGradientMethodState(
-        sub_problem, maybe_wrap_evaluation_type(sub_state);
+        sub_problem_, sub_state_;
         callbacks = callbacks,
         a = copy(M, p), acceleration = acceleration,
         stepsize = stepsize, last_stepsize = zero(number_eltype(p)),

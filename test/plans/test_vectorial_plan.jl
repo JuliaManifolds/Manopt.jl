@@ -118,7 +118,7 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         @test Z == gg[2]
         # Jacobian access
         b = DefaultOrthonormalBasis()
-        j1 = get_jacobian(M, vgf, p, X, b)
+        j1 = get_jacobian(M, vgf, p, X, b) # on Euclidean we can use X as its own coordinates
         @test j1 == jX
         j2 = similar(j1)
         get_jacobian!(M, j2, vgf, p, X, b)

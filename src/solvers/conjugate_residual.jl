@@ -251,10 +251,11 @@ conjugate_residual(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual(
         TpM::TangentSpace, A, b, X = zero_vector(TpM);
+        callbacks = Dict{Symbol, Function}(),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
     slso = SymmetricLinearSystemObjective(A, b; evaluation = evaluation, kwargs...)
-    return conjugate_residual(TpM, slso, X; kwargs...)
+    return conjugate_residual(TpM, slso, X; callbacks = callbacks, kwargs...)
 end
 function conjugate_residual(
         TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X = zero_vector(TpM); kwargs...
