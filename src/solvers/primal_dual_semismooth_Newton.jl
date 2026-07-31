@@ -40,9 +40,9 @@ function PrimalDualManifoldSemismoothNewtonObjective(
     diff_prox_F_ = maybe_wrap_function(diff_prox_F, evaluation)
     prox_G_dual_ = maybe_wrap_function(prox_G_dual, evaluation)
     diff_prox_G_dual_ = maybe_wrap_function(diff_prox_G_dual, evaluation)
-    linearized_forward_operator_ = maybe_wrap_function(linearized_forward_operator, evaluation; result = :Vector)
+    linearized_forward_operator_ = maybe_wrap_function(linearized_forward_operator, evaluation; result = :SecondManifoldPoint)
     adjoint_linearized_operator_ = maybe_wrap_function(adjoint_linearized_operator, evaluation)
-    Λ_ = ismissing(Λ) ? missing : maybe_wrap_function(Λ, evaluation)
+    Λ_ = ismissing(Λ) ? missing : maybe_wrap_function(Λ, evaluation; result = :SecondManifoldPoint)
     return PrimalDualManifoldSemismoothNewtonObjective{typeof(cost_), typeof(prox_F_), typeof(diff_prox_F_), typeof(prox_G_dual_), typeof(diff_prox_G_dual_), typeof(linearized_forward_operator_), typeof(adjoint_linearized_operator_), typeof(Λ_)}(
         cost_, prox_F_, diff_prox_F_, prox_G_dual_, diff_prox_G_dual_, linearized_forward_operator_, adjoint_linearized_operator_, Λ_,
     )

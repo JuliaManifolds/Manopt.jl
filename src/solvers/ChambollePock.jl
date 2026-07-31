@@ -47,9 +47,9 @@ function PrimalDualManifoldObjective(
     cost_ = maybe_wrap_function(cost, evaluation; result = :Number)
     prox_f_ = maybe_wrap_function(prox_f, evaluation; result = :Point)
     prox_g_dual_ = maybe_wrap_function(prox_g_dual, evaluation; result = :TangentVector)
-    linearized_forward_operator_ = maybe_wrap_function(linearized_forward_operator, evaluation; result = :Vector)
+    linearized_forward_operator_ = maybe_wrap_function(linearized_forward_operator, evaluation; result = :SecondManifoldPoint)
     adjoint_linearized_operator_ = maybe_wrap_function(adjoint_linearized_operator, evaluation; result = :Vector)
-    Λ_ = ismissing(Λ) ? missing : maybe_wrap_function(Λ, evaluation; result = :Point)
+    Λ_ = ismissing(Λ) ? missing : maybe_wrap_function(Λ, evaluation; result = :SecondManifoldPoint)
     return PrimalDualManifoldObjective{
         typeof(cost_), typeof(prox_f_), typeof(prox_g_dual_), typeof(linearized_forward_operator_), typeof(adjoint_linearized_operator_), typeof(Λ_),
     }(

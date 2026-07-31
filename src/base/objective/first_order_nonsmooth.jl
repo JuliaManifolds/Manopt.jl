@@ -146,9 +146,7 @@ function forward_operator!(
     return forward_operator!(M, N, q, get_objective(admo, false), p)
 end
 
-
 function get_dual_prox end
-
 @doc """
     Y = get_dual_prox(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
     get_dual_prox!(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, Y, n, τ, X)
