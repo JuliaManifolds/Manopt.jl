@@ -145,8 +145,7 @@ function cyclic_proximal_point(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
     p_ = maybe_wrap_variable(p)
-    proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation) for prox_f in proxes_f]
-    mpo = ManifoldProximalMapObjective(f, proxes_f_; evaluation = evaluation)
+    mpo = ManifoldProximalMapObjective(f, proxes_f; evaluation = evaluation, p = p)
     rs = cyclic_proximal_point(M, mpo, p_; evaluation = evaluation, kwargs...)
     return maybe_unwrap_variable(p, rs)
 end

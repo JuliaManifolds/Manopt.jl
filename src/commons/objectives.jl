@@ -3277,7 +3277,7 @@ mutable struct ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostOb
         )
         np = ones(length(proxes_f))
         f_ = maybe_wrap_function(f, p; result = :Number)
-        proxes_f_ = [ maybe_wrap_function(pf, p, evaluation; result = :Point) for pf in proxes_f]
+        proxes_f_ = [ maybe_wrap_function(pf, p, evaluation; result = :Point, point_index = 2) for pf in proxes_f]
         return new{typeof(f_), typeof(proxes_f_), typeof(np)}(
             f_, proxes_f_, np
         )
@@ -3294,7 +3294,7 @@ mutable struct ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostOb
             )
         else
             f_ = maybe_wrap_function(f, p; result = :Number)
-            proxes_f_ = [ maybe_wrap_function(pf, p, evaluation; result = :Point) for pf in proxes_f]
+            proxes_f_ = [ maybe_wrap_function(pf, p, evaluation; result = :Point, point_index = 2) for pf in proxes_f]
             return new{typeof(f_), typeof(proxes_f_), typeof(nOP)}(f_, proxes_f_, nOP)
         end
     end
@@ -3305,7 +3305,7 @@ mutable struct ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostOb
         # Single functions each
         i = 1
         f_ = maybe_wrap_function(f, p; result = :Number)
-        prox_f_ = maybe_wrap_function(prox_f, p, evaluation; result = :Point)
+        prox_f_ = maybe_wrap_function(prox_f, p, evaluation; result = :Point, point_index = 2)
         return new{typeof(f_), typeof(prox_f_), typeof(i)}(f_, prox_f_, i)
     end
 end
@@ -3412,7 +3412,7 @@ struct ManifoldProximalGradientObjective{TC, TG, TGG, TP} <: AbstractManifoldCos
         f_ = maybe_wrap_function(f, p; result = :Number)
         g_ = maybe_wrap_function(g, p; result = :Number)
         grad_g_ = maybe_wrap_function(grad_g, p, evaluation; result = :TangentVector)
-        prox_h_ = maybe_wrap_function(prox_h, p, evaluation; result = :Point)
+        prox_h_ = maybe_wrap_function(prox_h, p, evaluation; result = :Point, point_index = 2)
         return new{typeof(f_), typeof(g_), typeof(grad_g_), typeof(prox_h_)}(f_, g_, grad_g_, prox_h_)
     end
 end

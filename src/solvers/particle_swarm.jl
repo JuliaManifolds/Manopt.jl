@@ -281,7 +281,7 @@ function particle_swarm(
     )
     swarm_ = [maybe_wrap_variable(s) for s in swarm]
     velocity_ = [maybe_wrap_variable(v) for v in velocity]
-    mco = ManifoldCostObjective(f)
+    mco = ManifoldCostObjective(f; p = first(swarm))
     rs = particle_swarm(M, mco, swarm_; velocity = velocity_, kwargs...)
     return maybe_unwrap_variable(first(swarm), rs)
 end
@@ -296,13 +296,11 @@ calls_with_kwargs(::typeof(particle_swarm)) = (particle_swarm!,)
 
 @doc "$(_doc_PSO)"
 function particle_swarm!(M::AbstractManifold, f, swarm::AbstractVector; kwargs...)
-    mco = ManifoldCostObjective(f; p = p)
+    mco = ManifoldCostObjective(f; p = first(swarm))
     return particle_swarm!(M, mco, swarm; kwargs...)
 end
 function particle_swarm!(
-        M::AbstractManifold,
-        mco::O,
-        swarm::AbstractVector;
+        M::AbstractManifold, mco::O, swarm::AbstractVector;
         velocity::AbstractVector = [rand(M; vector_at = y) for y in swarm],
         callbacks = Dict{Symbol, Function}(),
         inertia::Real = 0.65,

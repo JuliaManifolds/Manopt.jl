@@ -361,7 +361,8 @@ end
 function augmented_Lagrangian_method(
         M::AbstractManifold, cmo::O, p = rand(M); kwargs...
     ) where {O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
-    q = copy(M, p)
+    p_ = maybe_wrap_variable(p)
+    q = copy(M, p_)
     keywords_accepted(augmented_Lagrangian_method; kwargs...)
     return augmented_Lagrangian_method!(M, cmo, q; kwargs...)
 end

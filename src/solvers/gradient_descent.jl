@@ -189,7 +189,7 @@ function gradient_descent(
     )
     p_ = maybe_wrap_variable(p)
     mgo = ManifoldGradientObjective(
-        f, grad_f; evaluation = evaluation, differential = differential
+        f, grad_f; differential = differential, evaluation = evaluation, p = p,
     )
     rs = gradient_descent(M, mgo, p_; kwargs...)
     return maybe_unwrap_variable(p, rs)
@@ -217,9 +217,7 @@ function gradient_descent!(
     return gradient_descent!(M, mgo, p; kwargs...)
 end
 function gradient_descent!(
-        M::AbstractManifold,
-        mgo::O,
-        p;
+        M::AbstractManifold, mgo::O, p;
         callbacks = Dict{Symbol, Function}(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(

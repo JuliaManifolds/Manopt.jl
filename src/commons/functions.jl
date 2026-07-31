@@ -85,7 +85,9 @@ Wrapper for a function to ensure it works in-place.
   * `:TangentVector` uses the corresponding `copyto!` for tangentvectors
     this type assumes, that the first argument is the point `p` the tangent vector is at.
   * `:Number` the result is a number. We hence assume that `v` is a zero- or one-dimensional array and store the value using `v[]`.
-
+* `point_index` from the arguments `args...` specify, which is the point to be used in copy
+  * default that works for most functions: 1
+  * for the proximal map `(M, λ, p)` this is index 2
 # Constructor
 
     InplaceManifoldFunction(f, result = :Point)
@@ -93,20 +95,21 @@ Wrapper for a function to ensure it works in-place.
 struct InplaceManifoldFunction{F}
     f::F
     result::Symbol
-    function InplaceManifoldFunction(f::F, result::Symbol = :Point) where {F}
-        return new{F}(f, result)
+    point_index::Int
+    function InplaceManifoldFunction(f::F, result::Symbol = :Point; point_index::Int = 1) where {F}
+        return new{F}(f, result, point_index)
     end
 end
-function (f!::InplaceManifoldFunction)(M, v, p, args...)
-    (f!.result === :Point) && return copyto!(M, v, f!.f(M, p, args...))
-    (f!.result === :Points) && return copyto!.(Ref(M), v, f!.f(M, p, args...))
-    (f!.result === :TangentVector) && return copyto!(M, v, p, f!.f(M, p, args...))
-    (f!.result === :TangentVectors) && return copyto!.(Ref(M), v, Ref(p), f!.f(M, p, args...))
-    (f!.result === :Number) && return (v[] = f!.f(M, p, args...))
+function (f!::InplaceManifoldFunction)(M, v, args...)
+    (f!.result === :Point) && return copyto!(M, v, f!.f(M, args...))
+    (f!.result === :Points) && return copyto!.(Ref(M), v, f!.f(M, args...))
+    (f!.result === :TangentVector) && return copyto!(M, v, args[f!.point_index], f!.f(M, args...))
+    (f!.result === :TangentVectors) && return copyto!.(Ref(M), v, Ref(args[f!.point_index]), f!.f(M, args...))
+    (f!.result === :Number) && return (v[] = f!.f(M, args...))
     # for example (c, X) = costgrad(M, p)
-    (f!.result === :NumberAndTangentVector) && return ((c, X) = f!.f(M, p, args...); copyto!(M, v, p, X); (c, v))
+    (f!.result === :NumberAndTangentVector) && return ((c, X) = f!.f(M, args...); copyto!(M, v, args[f!.point_index], X); (c, v))
     # default: Just copyto! – e.g. for :Vector or :Matrix
-    return copyto!(v, f!.f(M, p, args...))
+    return copyto!(v, f!.f(M, args...))
 end
 
 function show(io::IO, imf::InplaceManifoldFunction)
@@ -126,20 +129,20 @@ If then the function has an [`AllocatingManifoldFunction`](@ref) as `evaluation`
 
 The first step is skipped if the input variable `p` is not a number, `missing` or not provided.
 """
-maybe_wrap_function(f, p, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number) = maybe_wrap_function(f, typeof(p), evaluation; result = result)
+maybe_wrap_function(f, p, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number, point_index = 1) = maybe_wrap_function(f, typeof(p), evaluation; result = result, point_index = point_index)
 function maybe_wrap_function(
-        f, ::Type{P}, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number
+        f, ::Type{P}, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number, point_index = 1
     ) where {P <: Number}
-    return maybe_wrap_function(MutableManifoldFunction(f, P, result), evaluation; result = result)
+    return maybe_wrap_function(MutableManifoldFunction(f, P, result), evaluation; result = result, point_index = point_index)
 end
-function maybe_wrap_function(f, ::Type{P}, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number) where {P}
-    return maybe_wrap_function(f, evaluation; result = result)
+function maybe_wrap_function(f, ::Type{P}, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number, point_index = 1) where {P}
+    return maybe_wrap_function(f, evaluation; result = result, point_index = point_index)
 end
-function maybe_wrap_function(f, ::Missing, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number)
-    return maybe_wrap_function(f, evaluation; result = result)
+function maybe_wrap_function(f, ::Missing, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number, point_index = 1)
+    return maybe_wrap_function(f, evaluation; result = result, point_index = point_index)
 end
-maybe_wrap_function(f, ::AllocatingEvaluation; result::Symbol = :Point) = InplaceManifoldFunction(f, result)
-maybe_wrap_function(f, ::InplaceEvaluation; result::Symbol = :Point) = f
+maybe_wrap_function(f, ::AllocatingEvaluation; result::Symbol = :Point, point_index = 1) = InplaceManifoldFunction(f, result, point_index = point_index)
+maybe_wrap_function(f, ::InplaceEvaluation; result::Symbol = :Point, point_index = 1) = f
 
 @doc """
     ApproxHessianFiniteDifference{P, T, G, RTR, VTR, R <: Real} <: AbstractApproximateHessianFunction

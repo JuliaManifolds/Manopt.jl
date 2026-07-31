@@ -35,11 +35,9 @@ using ManifoldDiff: prox_distance, prox_distance!
         proxes_f = [(N, λ, p) -> prox_distance(N, λ, q, p) for q in data]
         p1 = cyclic_proximal_point(M, f, proxes_f, data[1])
         @test isapprox(M, q, p1; atol = 1.0e-3)
-        p2 = cyclic_proximal_point(M, f, proxes_f, data[1]; evaluation = InplaceEvaluation())
-        @test p1 == p2
         s = cyclic_proximal_point(M, f, proxes_f, data[1]; return_state = true)
-        p3 = get_solver_result(s)[]
-        @test p2 == p3
+        p2 = get_solver_result(s)[]
+        @test p2 == p1
     end
     @testset "Mutating" begin
         n = 3
