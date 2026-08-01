@@ -45,16 +45,16 @@ struct ManifoldDifferenceOfConvexObjective{F, G, S} <:
     ∂h!::S
     function ManifoldDifferenceOfConvexObjective(
             cost::TC, ∂h::TSH;
-            gradient::TG = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
+            gradient::TG = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
         ) where {TC, TG, TSH}
         cost_ = maybe_wrap_function(cost, p; result = :Number)
-        gradient_ = isnothing(gradient) ? gradient : maybe_wrap_function(gradient, p, evaluation; result = :TangentVector)
+        gradient_ = ismissing(gradient) ? gradient : maybe_wrap_function(gradient, p, evaluation; result = :TangentVector)
         ∂h_ = maybe_wrap_function(∂h, p, evaluation; result = :TangentVector)
         return new{typeof(cost_), typeof(gradient_), typeof(∂h_)}(cost_, gradient_, ∂h_)
     end
 end
 function get_gradient_function(doco::ManifoldDifferenceOfConvexObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
-    isnothing(doco.gradient!) && return nothing
+    ismissing(doco.gradient!) && return missing
     if evaluation isa AllocatingEvaluation
         return (M, p) -> doco.gradient!(M, zero_vector(M, p), p)
     else
@@ -312,15 +312,19 @@ difference_of_convex_algorithm(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_algorithm(
         M::AbstractManifold, f, g, ∂h, p = rand(M);
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        grad_g = nothing, gradient = nothing, kwargs...,
+        grad_g = missing, gradient = missing, kwargs...,
     )
     p_ = maybe_wrap_variable(p)
     mdco = ManifoldDifferenceOfConvexObjective(
-        f, ∂h; gradient = gradient, evaluation = evaluation
+        f, ∂h; gradient = gradient, evaluation = evaluation, p = p
     )
+    # to mutating
+    g_ = ismissing(g) ? missing : maybe_wrap_function(g, p)
+    grad_g_ = ismissing(grad_g) ? missing : maybe_wrap_function(grad_g, p)
+    gradient_ = ismissing(gradient) ? missing : maybe_wrap_function(gradient, p)
     rs = difference_of_convex_algorithm(
         M, mdco, p_;
-        g = g, evaluation = evaluation, gradient = gradient, grad_g = grad_g, kwargs...,
+        g = g_, evaluation = evaluation, gradient = gradient_, grad_g = grad_g_, kwargs...,
     )
     return maybe_unwrap_variable(p, rs)
 end
@@ -337,7 +341,7 @@ calls_with_kwargs(::typeof(difference_of_convex_algorithm)) = (difference_of_con
 difference_of_convex_algorithm!(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_algorithm!(
         M::AbstractManifold, f, g, ∂h, p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(), gradient = nothing, kwargs...,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), gradient = missing, kwargs...,
     )
     mdco = ManifoldDifferenceOfConvexObjective(f, ∂h; gradient = gradient, evaluation = evaluation)
     return difference_of_convex_algorithm!(M, mdco, p; g = g, evaluation = evaluation, kwargs...)
@@ -346,35 +350,31 @@ function difference_of_convex_algorithm!(
         M::AbstractManifold, mdco::O, p;
         callbacks = Dict{Symbol, Function}(),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        g = nothing, grad_g = nothing,
-        gradient = nothing,
+        g = missing, grad_g = missing,
+        gradient = missing,
         X = zero_vector(M, p),
         objective_type = :Riemannian,
-        stopping_criterion = if isnothing(gradient)
+        stopping_criterion = if ismissing(gradient)
             StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9)
         else
             StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9) | StopWhenGradientNormLess(1.0e-9)
         end,
         # Subsolver Magic Cascade.
-        sub_cost = if isnothing(g)
-            nothing
-        else
-            LinearizedDCCost(g, copy(M, p), copy(M, p, X))
-        end,
-        sub_grad = if isnothing(grad_g)
-            nothing
+        sub_cost = ismissing(g) ? missing : LinearizedDCCost(g, copy(M, p), copy(M, p, X)),
+        sub_grad = if ismissing(grad_g)
+            missing
         else
             LinearizedDCGrad(grad_g, copy(M, p), copy(M, p, X); evaluation = evaluation)
         end,
-        sub_hess = ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation = evaluation),
+        sub_hess = ismissing(sub_grad) ? missing : ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation = evaluation),
         sub_kwargs = (;),
         sub_stopping_criterion = StopAfterIteration(300) | StopWhenGradientNormLess(1.0e-8),
-        sub_objective = if isnothing(sub_cost) || isnothing(sub_grad)
-            nothing
+        sub_objective = if ismissing(sub_cost) || ismissing(sub_grad)
+            missing
         else
             decorate_objective!(
                 M,
-                if isnothing(sub_hess)
+                if ismissing(sub_hess)
                     ManifoldGradientObjective(sub_cost, sub_grad; evaluation = evaluation)
                 else
                     ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation = evaluation)
@@ -383,19 +383,19 @@ function difference_of_convex_algorithm!(
                 sub_kwargs...,
             )
         end,
-        sub_problem::Union{AbstractManoptProblem, Function, Nothing} = if isnothing(sub_objective)
-            nothing
+        sub_problem::Union{AbstractManoptProblem, Function, Missing} = if ismissing(sub_objective)
+            missing
         else
             DefaultManoptProblem(M, sub_objective)
         end,
-        sub_state::Union{AbstractManoptSolverState, AbstractEvaluationType, Nothing} = if sub_problem isa
+        sub_state::Union{AbstractManoptSolverState, AbstractEvaluationType, Missing} = if sub_problem isa
                 Function
             evaluation
-        elseif isnothing(sub_objective)
-            nothing
+        elseif ismissing(sub_objective)
+            missing
         else
             decorate_state!(
-                if isnothing(sub_hess)
+                if ismissing(sub_hess)
                     GradientDescentState(
                         M; p = copy(M, p), stopping_criterion = sub_stopping_criterion, sub_kwargs...
                     )
@@ -413,9 +413,9 @@ function difference_of_convex_algorithm!(
     keywords_accepted(difference_of_convex_algorithm!; kwargs...)
     dmdco = decorate_objective!(M, mdco; objective_type = objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
-    isnothing(sub_problem) && error(
+    ismissing(sub_problem) && error(
         """
-        Subproblem not correctly initialized. Please provide _either_
+        Subproblem seems to be missing. Please provide _either_
         * a `sub_problem=` to be solved
         * a `sub_objective` to automatically generate the sub problem,
         * `sub_grad=` (as well as the usually given `sub_cost=`) to automatically generate the sub objective _or_
@@ -450,9 +450,7 @@ function step_solver!(amp::AbstractManoptProblem, dcs::DifferenceOfConvexState, 
     # copy result from subsolver to current iterate
     copyto!(M, dcs.p, get_solver_result(dcs.sub_state))
     # small hack: store `gradient_f` in X at end of iteration for the gradient norm stopping criterion
-    if !isnothing(get_gradient_function(get_objective(amp)))
-        get_gradient!(amp, dcs.X, dcs.p)
-    end
+    !ismissing(get_gradient_function(get_objective(amp))) && get_gradient!(amp, dcs.X, dcs.p)
     return dcs
 end
 #

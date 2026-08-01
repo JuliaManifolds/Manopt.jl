@@ -68,12 +68,8 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 [`augmented_Lagrangian_method`](@ref)
 """
 mutable struct AugmentedLagrangianMethodState{
-        P,
-        Pr <: Union{F, AbstractManoptProblem} where {F},
-        St <: AbstractManoptSolverState,
-        R <: Real,
-        C <: AbstractDict{Symbol},
-        V <: AbstractVector{<:R},
+        P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
+        R <: Real, C <: AbstractDict{Symbol}, V <: AbstractVector{<:R},
         TStopping <: StoppingCriterion,
     } <: AbstractSubProblemSolverState
     callbacks::C

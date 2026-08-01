@@ -122,12 +122,8 @@ import Manifolds: inner
         @test isapprox(M, p2, p3)
         @test isapprox(f(M, p1), 0.0; atol = 1.0e-8)
         # not provided `grad_g` or problem nothing
-        @test_throws ErrorException difference_of_convex_algorithm(
-            M, f, g, grad_h, p0; sub_problem = nothing
-        )
-        @test_throws ErrorException difference_of_convex_algorithm(
-            M, f, g, grad_h, p0; sub_hess = nothing
-        )
+        @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_problem = missing)
+        @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_hess = missing)
         @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0)
 
         p4 = difference_of_convex_proximal_point(
@@ -137,7 +133,7 @@ import Manifolds: inner
         p5b = difference_of_convex_proximal_point(M, grad_h; g = g, grad_g = grad_g)
         # using gradient descent
         p5c = difference_of_convex_proximal_point(
-            M, grad_h, p0; g = g, grad_g = grad_g, sub_hess = nothing,
+            M, grad_h, p0; g = g, grad_g = grad_g, sub_hess = missing,
             stopping_criterion = StopAfterIteration(10), # is not that stable
         )
         s2 = difference_of_convex_proximal_point(

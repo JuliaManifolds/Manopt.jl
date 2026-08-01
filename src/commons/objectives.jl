@@ -206,20 +206,24 @@ function ConstrainedManifoldObjective(
     return ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h; kwargs...)
 end
 function status_summary(cmo::ConstrainedManifoldObjective; context::Symbol = :default)
-    _is_inline(context) && (return "A constrained objective based on $(status_summary(cmo.objective; context = context)) with $(length(cmo.equality_constraints)) equality and $(length(cmo.inequality_constraints)) inequality constraints.")
+    el = isnothing(cmo.equality_constraints) ? 0 : length(cmo.equality_constraints)
+    il = isnothing(cmo.inequality_constraints) ? 0 : length(cmo.inequality_constraints)
+    _is_inline(context) && (return "A constrained objective based on $(status_summary(cmo.objective; context = context)) with $(el == 0 ? "no" : el) equality and $(il == 0 ? "no" : il) inequality constraints.")
     s = status_summary(cmo.objective; context = context)
     return """
-    A constrained objective with $(length(cmo.equality_constraints)) equality and $(cmo.inequality_constraints) inequality constraints.
+    A constrained objective with $(el == 0 ? "no" : el) equality and $(il == 0 ? "no" : il) inequality constraints.
     For verifications, the inequalities are checked with an absolute tolerance of `atol = $(cmo.atol)`
 
     ## Unconstrained Objective
-    $(_in_str(s))
+    $(_in_str(s; indent = 1, headers = 1))
+
 
     ## Equality constrains
-    $(_in_str(status_summary(cmo.equality_constraints; context = context)))
+    $(el == 0 ? "$(_MANOPT_INDENT)none" : _in_str(status_summary(cmo.equality_constraints; context = context); indent = 1, headers = 1))
 
     ## Inequality constrains
-    $(_in_str(status_summary(cmo.inequality_constraints; context = context)))"""
+    $(il == 0 ? "$(_MANOPT_INDENT)none" : _in_str(status_summary(cmo.inequality_constraints; context = context); indent = 1, headers = 1))
+    """
 end
 function show(io::IO, cmo::ConstrainedManifoldObjective)
     print(io, "ConstrainedManifoldObjective("); print(io, cmo.objective)

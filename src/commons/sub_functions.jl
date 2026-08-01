@@ -946,6 +946,11 @@ mutable struct LinearizedDCCost{P, T, TG}
     g::TG
     pk::P
     Xk::T
+    function LinearizedDCCost(g_::TG, pk::P, Xk::T) where {TG, P, T}
+        # wrap funcktion for mutating variables
+        g_ = maybe_wrap_function(g_, pk)
+        return new{P, T, typeof(g_)}(g_, pk, Xk)
+    end
 end
 (F::LinearizedDCCost)(M, p) = F.g(M, p) - inner(M, F.pk, F.Xk, log(M, F.pk, p))
 
@@ -998,7 +1003,7 @@ mutable struct LinearizedDCGrad{P, T, TG}
     pk::P
     Xk::T
     function LinearizedDCGrad(grad_g::TG, pk::P, Xk::T; evaluation::AbstractEvaluationType = AllocatingEvaluation()) where {TG, P, T}
-        grad_g_ = maybe_wrap_function(grad_g, pk, evaluation)
+        grad_g_ = maybe_wrap_function(grad_g, pk, evaluation; result = :TangentVector)
         return new{P, T, typeof(grad_g_)}(grad_g_, pk, Xk)
     end
 end
@@ -1052,6 +1057,11 @@ mutable struct ProximalDCCost{P, TG, R}
     g::TG
     pk::P
     λ::R
+    function ProximalDCCost(g_::TG, pk::P, λ::R) where {TG, P, R}
+        # wrap funcktion for mutating variables
+        g_ = maybe_wrap_function(g_, pk)
+        return new{P, typeof(g_), R}(g_, pk, λ)
+    end
 end
 (F::ProximalDCCost)(M, p) = 1 / (2 * F.λ) * distance(M, p, F.pk)^2 + F.g(M, p)
 
@@ -1104,7 +1114,7 @@ mutable struct ProximalDCGrad{P, TG, R}
     pk::P
     λ::R
     function ProximalDCGrad(grad_g::TG, pk::P, λ::R; evaluation::AbstractEvaluationType = AllocatingEvaluation()) where {TG, P, R}
-        grad_g_ = maybe_wrap_function(grad_g, pk, evaluation)
+        grad_g_ = maybe_wrap_function(grad_g, pk, evaluation; result = :TangentVector)
         return new{P, typeof(grad_g_), R}(grad_g_, pk, λ)
     end
 end
