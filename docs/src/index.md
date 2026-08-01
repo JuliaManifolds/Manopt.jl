@@ -17,9 +17,18 @@ For a function ``f:\mathcal M → ℝ`` defined on a [Riemannian manifold](https
 or in other words: find the point ``p`` on the manifold, where ``f`` reaches its minimal function value.
 
 `Manopt.jl` provides a framework for optimization on manifolds as well as a Library of optimization algorithms in [Julia](https://julialang.org).
-It belongs to the “Manopt family”, which includes [Manopt](https://manopt.org) (Matlab) and [pymanopt.org](https://www.pymanopt.org/) (Python).
+It belongs to the **Manopt family**, which includes [Manopt](https://manopt.org) (Matlab) and [pymanopt.org](https://www.pymanopt.org/) (Python), both aiming to provide the same framework
+in the flavour of the corresponding language.
 
-If you want to delve right into `Manopt.jl` read the
+## Get Started
+
+To get started with `Manopt.jl`, start [Julia](https://julialang.org) and type
+
+```julia-repl
+] add Manopt
+```
+
+to install the package. Then you can dive directly into optimisation on manifolds, following the
 [🏔️ Get started with Manopt.jl](tutorials/getstarted.md) tutorial.
 
 `Manopt.jl` makes it easy to use an algorithm for your favourite
