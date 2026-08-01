@@ -27,9 +27,11 @@ get_gradient(M::ProductManifold, ::ManifoldAlternatingGradientObjective, ::Any..
 
 Evaluate one of the component gradients ``$(_tex(:grad)) f_i``, ``i∈ $(_tex(:set, "1,…,n"))``, at `x` (in place of `Y`).
 """
+get_gradient!(M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective, p)
+
 function get_gradient!(
-        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{TC, <:AbstractVector}, p,
-    ) where {TC}
+        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{F, <:AbstractVector}, p,
+    ) where {F}
     for (gi, Xi) in zip(mago.gradient!, submanifold_components(M, X))
         gi(M, Xi, p)
     end

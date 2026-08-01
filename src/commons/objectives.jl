@@ -652,7 +652,7 @@ function get_gradient(
     return X
 end
 function get_gradient!(
-        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{TC, <:Function}, p,
+        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{TC}, p,
     ) where {TC}
     mago.gradient!(M, X, p)
     return X
@@ -665,7 +665,7 @@ function get_gradient(
     return X
 end
 function get_gradient!(
-        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{C, <:Function}, p, k
+        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{C}, p, k
     ) where {C}
     # this takes a lot more allocations than other methods, but the gradient can only be evaluated in full
     Xf = zero_vector(M, p)
