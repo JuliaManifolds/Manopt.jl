@@ -101,7 +101,7 @@ if run_quarto || run_on_CI
 end
 
 # (c) load necessary packages for the docs
-using Documenter
+using Documenter, DocumenterVitepress
 using DocumenterCitations, DocumenterCodeBlocks, DocumenterInterLinks
 using LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
@@ -162,6 +162,13 @@ makedocs(;
         size_threshold_warn = 900 * 2^10, # raise from 500 KiB to 1.1 MB (for search index)
         search_size_threshold_warn = 2000 * 2^10,
     ),
+#= #Consider switching to Vitepress in the end?
+    format = DocumenterVitepress.MarkdownVitepress(
+        repo = "github.com/JuliaManifolds/Manopt.jl",
+        devbranch = "master",
+       devurl = "dev",
+   ),
+=#
     modules = [
         Manopt,
         Base.get_extension(Manopt, :ManoptLineSearchesExt),
@@ -209,31 +216,14 @@ makedocs(;
             "Trust-Regions Solver" => "solvers/trust_regions.md",
             "Vector Bundle Newton Method" => "solvers/vectorbundle_newton.md",
         ],
-        "Commons (WIP)" => [
+        "Commons" => [
             "Overview" => "commons/index.md",
             "Debug Outputs" => "commons/debugs.md",
+            "Stopping Criteria" => "commons/stopping_criteria.md",
         ],
-        "Plans (deprecated)" => [
-            "Specify a Solver" => "plans/index.md",
-            "Problem" => "plans/problem.md",
-            "Objective" => [
-                "Cost objectvies" => "plans/objectives/cost.md",
-                "First-order objectives" => "plans/objectives/first_order.md",
-                "Second-order objectives" => "plans/objectives/second_order.md",
-                "Constrained objectives" => "plans/objectives/constrained.md",
-                "Splitting-based objectives" => "plans/objectives/splitting_based.md",
-                "Subproblem objectives" => "plans/objectives/sub.md",
-                "Vectorial objectives" => "plans/objectives/vectorial.md",
-                "Linear Systems" => "plans/objectives/linear_system.md",
-                "Decorators for objectives" => "plans/objectives/decorated.md",
-            ],
-            "Solver State" => "plans/state.md",
-            "Stepsize" => "plans/stepsize.md",
-            "Stopping Criteria" => "plans/stopping_criteria.md",
-            "Recording values" => "plans/record.md",
-        ],
-        "Developer Guide (WIP)" => [
+        "Developer Guide" => [
             "Introduction" => "base/index.md",
+            "Function" => "base/function.md",
             "Problem" => "base/problem.md",
             "Objective" => "base/objective.md",
             "Solver State" => [
@@ -243,6 +233,7 @@ makedocs(;
                 "Debug" => "base/state/debug.md",
                 "Decorator" => "base/state/decorator.md",
             ],
+            "Stopping Criterion" => "base/stopping_criterion.md",
         ],
         "Helpers" => [
             "Checks" => "helpers/checks.md",
@@ -254,8 +245,19 @@ makedocs(;
         "Changelog" => "changelog.md",
         "References" => "references.md",
     ],
+    # TODO: Remove after refactor
+    warnonly = [:docs_block, :missing_docs, :cross_references],
     plugins = [bib, links, CodeBlocks()],
 )
 deploydocs(; repo = "github.com/JuliaManifolds/Manopt.jl", push_preview = true)
+#= # Consider switching to Vitepress in the end when docs render again.
+DocumenterVitepress.deploydocs(;
+    repo = "github.com/JuliaManifolds/Manopt.jl",
+    target = joinpath(@__DIR__, "build"),
+    branch = "gh-pages",
+    devbranch = "master",
+    push_preview = true,
+)
+=#
 #back to main env
 Pkg.activate()

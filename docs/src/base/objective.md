@@ -1,10 +1,8 @@
-# The Objective
-
-The [Problem](problem.md) to be solved
-
 ```@meta
 CurrentModule = Manopt
 ```
+
+# The Objective
 
 Within the optimization problem
 
@@ -17,14 +15,6 @@ The general abstract type for these is
 
 ```@docs
 AbstractManifoldObjective
-```
-
-One parameter of the objective specifies the type of evaluation:
-
-```@docs
-AbstractEvaluationType
-AllocatingEvaluation
-InplaceEvaluation
 ```
 
 The different types of objectives are listed on sub pages depending on their type of information or function

@@ -360,7 +360,7 @@ function difference_of_convex_proximal_point(
     keywords_accepted(difference_of_convex_proximal_point; kwargs...)
     p_ = maybe_wrap_variable(p)
     mdcpo = ManifoldDifferenceOfConvexProximalObjective(
-        grad_h; cost = cost, gradient = gradient, evaluation = evaluation, p=p
+        grad_h; cost = cost, gradient = gradient, evaluation = evaluation, p = p
     )
     # to mutating
     cost_ = ismissing(cost) ? missing : maybe_wrap_function(cost, p)

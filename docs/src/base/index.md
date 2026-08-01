@@ -1,11 +1,10 @@
 # Manopt.jl Developer guide
 
-This section of the documentation provides an overview on the main abstract types,
-their ideas and design concepts.
+This section of the documentation provides an overview of the design concepts behind
+`Manot.jl` and an introduction to its main data types and their relation.
 
-!!! note
-    Formerly, these were part of the [Plan](../plans/index.md), which will now sever to host
-    concrete types and properties several solvers have in common, while abstract types, concepts and design ideas will migrate here.
+The goal is to provide a detailed description for developers of new aspects within `Manopt.jl`
+and to convey the design decissions behind the overall structure of `Manopt.jl`.
 
 There are two main ingredients of `Manopt.jl`: The [problem](problem.md) and the [solver state](state.md).
 The problem represents the task to be solved, which by default includes the manifold
