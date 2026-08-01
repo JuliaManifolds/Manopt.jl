@@ -4,7 +4,7 @@ This section of the documentation provides an overview of the design concepts be
 `Manot.jl` and an introduction to its main data types and their relation.
 
 The goal is to provide a detailed description for developers of new aspects within `Manopt.jl`
-and to convey the design decissions behind the overall structure of `Manopt.jl`.
+and to convey the design decisions behind the overall structure of `Manopt.jl`.
 
 There are two main ingredients of `Manopt.jl`: The [problem](problem.md) and the [solver state](state.md).
 The problem represents the task to be solved, which by default includes the manifold
