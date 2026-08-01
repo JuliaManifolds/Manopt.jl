@@ -74,7 +74,7 @@ primal_residual
 dual_residual
 ```
 
-## Debug
+## Solver specific debug output
 
 ```@docs
 DebugDualBaseIterate
@@ -90,7 +90,7 @@ DebugPrimalResidual
 DebugPrimalDualResidual
 ```
 
-## Record
+## Solver specific recording actions
 
 ```@docs
 RecordDualBaseIterate

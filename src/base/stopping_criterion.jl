@@ -16,7 +16,7 @@ such that a human-readable reason can be assembled, see [`get_reason`](@ref).
 abstract type StoppingCriterion <: Function end
 
 @doc """
-    StoppingCriterionGroup <: StoppingCriterion
+    StoppingCriterionSet <: StoppingCriterion
 
 An abstract type for a Stopping Criterion that itself consists of a set of
 Stopping criteria. In total it acts as a stopping criterion itself. Examples
@@ -142,7 +142,6 @@ function set_parameter!(s::AbstractManoptSolverState, ::Val{:StoppingCriterion},
     set_parameter!(s.stop, args...)
     return s
 end
-
 
 function Base.show(io::IO, ::MIME"text/plain", asc::StoppingCriterion)
     multiline = get(io, :multiline, true)
