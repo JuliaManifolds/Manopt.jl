@@ -12,6 +12,11 @@ As an overarching scheme of this release, the single functions in an objective b
 more independent; their wrapping happens more automatically and the objective gets – in turn –
 a bit more lightweight and has “less to handle”.
 
+### Added
+
+* [DocumenterCodeBlocks.jl](https://fredrikekre.github.io/DocumenterCodeBlocks.jl/stable/) plugin added to the documentation
+* Added a Developer Guide section in the documentation
+
 ### Changed
 
 * All `AbstractManifoldObjectives` had an evaluation type as first parameter.
