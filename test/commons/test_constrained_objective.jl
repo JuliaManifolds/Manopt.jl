@@ -73,6 +73,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     cofaA = ConstrainedManifoldObjective( # Array representation tangent vector
         f, grad_f, g, grad_gA, h, grad_hA;
         inequality_constraints = 2, equality_constraints = 1,
+        inequality_gradient_type = FunctionVectorialType(ArrayPowerRepresentation()),
+        equality_gradient_type = FunctionVectorialType(ArrayPowerRepresentation()),
     )
     cofm = ConstrainedManifoldObjective(
         f, grad_f!, g!, grad_g!, h!, grad_h!;

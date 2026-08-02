@@ -4,6 +4,11 @@ function Manopt.add_vector!(M::Hyperrectangle, X, p, c::AbstractVector, basis::A
     return X
 end
 
+# For pure array power manifold vectors, we use the setting of matrices
+
+function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{ArrayPowerRepresentation}, e::AllocatingEvaluation)
+    return Manopt.maybe_wrap_function(Jf, p, e; result = :Matrix)
+end
 
 """
     default_point_distance(::DefaultManifold, p)
