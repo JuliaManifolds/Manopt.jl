@@ -64,7 +64,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
 
         # (c) call with objective - but then we also test the Centrality cond
         coh = ConstrainedManifoldObjective(
-            f, grad_f, g, grad_g, nothing, nothing; hess_f = Hess_f, hess_g = Hess_g, M = M, p = p_0
+            f, grad_f, g, grad_g, missing, missing; hess_f = Hess_f, hess_g = Hess_g, M = M, p = p_0
         )
         ipcc = InteriorPointCentralityCondition(coh, 0.9)
         q3 = interior_point_Newton(

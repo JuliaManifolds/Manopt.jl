@@ -9,6 +9,9 @@ end
 function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{ArrayPowerRepresentation}, e::AllocatingEvaluation)
     return Manopt.maybe_wrap_function(Jf, p, e; result = :Matrix)
 end
+function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{NestedPowerRepresentation}, e::AllocatingEvaluation)
+    return Manopt.maybe_wrap_function(Jf, p, e; result = :Tangentvectors)
+end
 
 """
     default_point_distance(::DefaultManifold, p)

@@ -27,7 +27,7 @@ Note that the gradient and the subdifferential might be given in two possible si
 
 # Constructor
 
-    ManifoldDifferenceOfConvexObjective(cost, ∂h; gradient = nothing, evaluation = AllocatingEvaluation(), p = missing)
+    ManifoldDifferenceOfConvexObjective(cost, ∂h; gradient = missing, evaluation = AllocatingEvaluation(), p = missing)
 
 Create the difference of convex objective given a `cost` function and the subdifferential `∂h` of the non-smooth part
 The `gradient` of the smooth part and the `evaluation = ` type are keywords.
@@ -35,7 +35,7 @@ The `gradient` of the smooth part and the `evaluation = ` type are keywords.
 ## Keyword Arguments
 
 $(_kwargs(:evaluation))
-* `gradient = nothing` provide a gradient of the smooth part
+* `gradient = missing` provide a gradient of the smooth part
 * `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
 """
 struct ManifoldDifferenceOfConvexObjective{F, G, S} <:
@@ -92,7 +92,7 @@ end
 function Base.show(io::IO, doco::ManifoldDifferenceOfConvexObjective)
     print(io, "ManifoldDifferenceOfConvexObjective("); print(io, doco.cost); print(io, ", ")
     print(io, doco.∂h!); print(io, "; ")
-    if !isnothing(doco.gradient!)
+    if !ismissing(doco.gradient!)
         print(io, ", gradient = ")
         print(io, doco.gradient!)
     end
@@ -100,9 +100,9 @@ function Base.show(io::IO, doco::ManifoldDifferenceOfConvexObjective)
 end
 function status_summary(doco::ManifoldDifferenceOfConvexObjective; context::Symbol = :default)
     (context === :short) && (return repr(doco))
-    gs = isnothing(doco.gradient!) ? "" : "including a gradient of the smooth component"
+    gs = ismissing(doco.gradient!) ? "" : "including a gradient of the smooth component"
     (context === :inline) && (return "A difference of convex objective on a manifold $gs")
-    gsd = isnothing(doco.gradient!) ? "" : "\n* gradient of `g`:  $(_MANOPT_INDENT)$(doco.gradient!)"
+    gsd = ismissing(doco.gradient!) ? "" : "\n* gradient of `g`:  $(_MANOPT_INDENT)$(doco.gradient!)"
     return """
     A difference of convex objective on a manifold.
 
@@ -277,10 +277,10 @@ $(_args(:p))
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
-* `gradient=nothing`:        specify ``$(_tex(:grad)) f``, for debug / analysis or enhancing the `stopping_criterion=`
-* `grad_g=nothing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
+* `gradient=missing`:        specify ``$(_tex(:grad)) f``, for debug / analysis or enhancing the `stopping_criterion=`
+* `grad_g=missing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)"))
-* `g=nothing`:               specify the function `g` If specified, a subsolver is automatically set up.
+* `g=missing`:               specify the function `g` If specified, a subsolver is automatically set up.
 * `sub_cost=`[`LinearizedDCCost`](@ref)`(g, p, initial_vector)`: a cost to be used within the default `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_objective"))
 * `sub_grad=`[`LinearizedDCGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`:

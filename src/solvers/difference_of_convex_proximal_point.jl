@@ -208,10 +208,9 @@ provided_callbacks(::Type{DifferenceOfConvexProximalState}) = union(_MANOPT_DEFA
 get_callbacks(dcps::DifferenceOfConvexProximalState) = dcps.callbacks
 # resolve an ambiguity
 DifferenceOfConvexProximalState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Difference of Convex Proximal Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
-function DifferenceOfConvexProximalState(M::AbstractManifold, sub_problem; kwargs...)
-    # TODO: Readd evaluation keyword and wrap sub_problem (fct) accordingly
-    cfs = ClosedFormSubSolverState()
-    return DifferenceOfConvexProximalState(M, sub_problem, cfs; kwargs...)
+function DifferenceOfConvexProximalState(M::AbstractManifold, sub_problem, e::AbstractEvaluationType; kwargs...)
+    sub_problem_ = maybe_wrap_function(sub_problem, e)
+    return DifferenceOfConvexProximalState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
 end
 get_iterate(dcps::DifferenceOfConvexProximalState) = dcps.p
 function set_iterate!(dcps::DifferenceOfConvexProximalState, M, p)
@@ -439,18 +438,13 @@ function difference_of_convex_proximal_point!(
                         sub_cost, sub_grad, sub_hess; evaluation = evaluation
                     )
                 end;
-                objective_type = objective_type,
-                sub_kwargs...,
+                objective_type = objective_type, sub_kwargs...,
             )
         end,
-        sub_problem::Union{AbstractManoptProblem, Function, Missing} = if !ismissing(prox_g)
+        sub_problem::Union{AbstractManoptProblem, F, Missing} where {F} = if !ismissing(prox_g)
             prox_g # closed form solution
         else
-            if ismissing(sub_objective)
-                missing
-            else
-                DefaultManoptProblem(M, sub_objective)
-            end
+            ismissing(sub_objective) ? missing : DefaultManoptProblem(M, sub_objective)
         end,
         sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState, Missing} = if !ismissing(prox_g)
             evaluation

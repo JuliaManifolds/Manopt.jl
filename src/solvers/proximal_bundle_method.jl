@@ -146,7 +146,7 @@ function ProximalBundleMethodState(
         M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType;
         kwargs...,
     )
-    return ProximalBundleMethodState(M, sub_problem; evbaluation = sub_state, kwargs...)
+    return ProximalBundleMethodState(M, sub_problem; evaluation = sub_state, kwargs...)
 end
 function ProximalBundleMethodState(
         M::AbstractManifold, sub_problem = proximal_bundle_method_subsolver;
