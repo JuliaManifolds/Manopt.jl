@@ -126,7 +126,7 @@ calls_with_kwargs(::typeof(conjugate_gradient_descent)) = (conjugate_gradient_de
 conjugate_gradient_descent!(M::AbstractManifold, params...; kwargs...)
 function conjugate_gradient_descent!(
         M::AbstractManifold, f::TF, grad_f::TDF, p;
-        differential = nothing,
+        differential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     ) where {TF, TDF}

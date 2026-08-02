@@ -405,7 +405,7 @@ end
 
     @testset "A Circle example" begin
         M = Circle()
-        data = [-π / 2, π / 4, 0.0, π / 4]
+        data = fill.([-π / 2, π / 4, 0.0, π / 4])
         pstar = sum([-π / 2, π / 4, 0.0, π / 4]) / length(data)
         f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
         grad_f(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), data))

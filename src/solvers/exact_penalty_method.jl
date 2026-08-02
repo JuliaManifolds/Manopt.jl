@@ -229,10 +229,10 @@ $(_args([:M, :f, :grad_f, :p]))
 # Keyword arguments
  if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`
 
-* `g=nothing`: the inequality constraints
-* `grad_g=nothing`: the gradient of the inequality constraints
-* `grad_h=nothing`: the gradient of the equality constraints
-* `h=nothing`: the equality constraints
+* `g=missing`: the inequality constraints
+* `grad_g=missing`: the gradient of the inequality constraints
+* `grad_h=missing`: the gradient of the equality constraints
+* `h=missing`: the equality constraints
 
 Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
 Otherwise the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
@@ -240,14 +240,14 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 # Further keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `equality_constraints=nothing`: the number ``n`` of equality constraints.
+* `equality_constraints=missing`: the number ``n`` of equality constraints.
   If not provided, a call to the gradient of `g` is performed to estimate these.
 * `gradient_equality_range=gradient_range`:
    specify how gradients of the equality constraints are represented, see [`VectorGradientFunction`](@ref).
 * `gradient_inequality_range=gradient_range`:
    specify how gradients of the inequality constraints are represented, see [`VectorGradientFunction`](@ref).
-* `gradient_range=nothing`: specify how both gradients of the constraints are represented
-* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
+* `gradient_range=missing`: specify how both gradients of the constraints are represented
+* `inequality_constraints=missing`: the number ``m`` of inequality constraints.
    If not provided, a call to the gradient of `g` is performed to estimate these.
 * `min_stepsize=1e-10`: the minimal step size
 * `smoothing=`[`LogarithmicSumOfExponentials`](@ref): a [`SmoothingTechnique`](@ref) to use
@@ -285,7 +285,7 @@ function exact_penalty_method(M::AbstractManifold, f, grad_f; kwargs...)
 end
 function exact_penalty_method(
         M::AbstractManifold, f::TF, grad_f::TGF, p;
-        g = nothing, h = nothing, grad_g = nothing, grad_h = nothing,
+        g = missing, h = missing, grad_g = missing, grad_h = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         inequality_constraints::Union{Integer, Nothing} = nothing,
         equality_constraints::Union{Nothing, Integer} = nothing,
@@ -322,7 +322,7 @@ calls_with_kwargs(::typeof(exact_penalty_method)) = (exact_penalty_method!,)
 exact_penalty_method!(M::AbstractManifold, args...; kwargs...)
 function exact_penalty_method!(
         M::AbstractManifold, f, grad_f, p;
-        g = nothing, h = nothing, grad_g = nothing, grad_h = nothing,
+        g = missing, h = missing, grad_g = missing, grad_h = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         inequality_constraints = nothing,
         equality_constraints = nothing,
