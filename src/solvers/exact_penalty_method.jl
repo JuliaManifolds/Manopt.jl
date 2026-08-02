@@ -298,7 +298,7 @@ function exact_penalty_method(
         equality_constraints = equality_constraints,
         inequality_constraints = equality_constraints,
         M = M,
-        p = p_,
+        p = p,
     )
     rs = exact_penalty_method(
         M, cmo, p_;
