@@ -730,7 +730,7 @@ Generate the constrained objective for a given function `f` its gradient `grad_f
 
 ## Keyword arguments
 
-* `indicator=nothing`: the indicator function ``ι_{$(_tex(:Cal, "C"))}(p)``. If not provided a test, whether the projection yields the same point is performed.
+* `indicator=missing`: the indicator function ``ι_{$(_tex(:Cal, "C"))}(p)``. If not provided a test, whether the projection yields the same point is performed.
   For the [`InplaceEvaluation`](@ref) this required one allocation.
 """
 struct ManifoldConstrainedSetObjective{MO <: AbstractManifoldObjective, PF, IF} <: AbstractManifoldObjective
@@ -740,11 +740,11 @@ struct ManifoldConstrainedSetObjective{MO <: AbstractManifoldObjective, PF, IF} 
 end
 
 function ManifoldConstrainedSetObjective(
-        f, grad_f, project!::PF; indicator = nothing, evaluation = AllocatingEvaluation(), p = missing,
+        f, grad_f, project!::PF; indicator = missing, evaluation = AllocatingEvaluation(), p = missing,
     ) where {PF}
     obj = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, p = p)
     proj_ = maybe_wrap_function(project!, p, evaluation; result = :Point)
-    if isnothing(indicator)
+    if ismissing(indicator)
         ind = function (M, p)
             q = rand(M)
             proj_(M, q, p)
@@ -828,8 +828,8 @@ in case the objective being stored here is decorated, e.g. with a cache.
 # Fields
 
 * `objective`: the objective that is defined in the embedding
-* `p=nothing`: a point in the embedding.
-* `X=nothing`: a tangent vector in the embedding
+* `p=missing`: a point in the embedding.
+* `X=missing`: a tangent vector in the embedding
 
 When a point in the embedding `p` is provided, `embed!` is used in place of this point to reduce
 memory allocations. Similarly `X` is used when embedding tangent vectors
@@ -2502,12 +2502,12 @@ They can also be addressed by their alternate constructors
 
 ## Keyword arguments
 
-* `cost = nothing` the cost function `c = f(M,p)`
-* `costdifferential = nothing` the combined cost and differential function  `fdf(M, p, X)`
-* `costgradient = nothing` the combined cost and gradient function `fg(M,p)` or in-place `fg!(M, X, p))`
-* `differential = nothing` the differential `d = df(M, p, X)`
+* `cost = missing` the cost function `c = f(M,p)`
+* `costdifferential = missing` the combined cost and differential function  `fdf(M, p, X)`
+* `costgradient = missing` the combined cost and gradient function `fg(M,p)` or in-place `fg!(M, X, p))`
+* `differential = missing` the differential `d = df(M, p, X)`
 $(_kwargs(:evaluation))
-* `gradient=nothing` the gradient function `g(M, p)` or in-place `g!(M, X, p)`
+* `gradient=missing` the gradient function `g(M, p)` or in-place `g!(M, X, p)`
 * `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
 
 Where:
@@ -2524,15 +2524,15 @@ struct ManifoldFirstOrderObjective{F <: NamedTuple} <: AbstractManifoldFirstOrde
     functions::F
 end
 function ManifoldFirstOrderObjective(;
-        cost = nothing, differential = nothing, gradient = nothing,
-        costgradient = nothing, costdifferential = nothing,
+        cost = missing, differential = missing, gradient = missing,
+        costgradient = missing, costdifferential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
     )
-    no_cost = isnothing(cost)
-    no_diff = isnothing(differential)
-    no_grad = isnothing(gradient)
-    ncg = isnothing(costgradient)
-    ncd = isnothing(costdifferential)
+    no_cost = ismissing(cost)
+    no_diff = ismissing(differential)
+    no_grad = ismissing(gradient)
+    ncg = ismissing(costgradient)
+    ncd = ismissing(costdifferential)
 
     if no_cost && ncg && ncd
         throw(
@@ -2630,7 +2630,7 @@ end
 """
     get_cost_and_differential(
         M, mfo::ManifoldFirstOrderObjective, p, X;
-        gradient = nothing, evaluated::Bool = false,
+        gradient = missing, evaluated::Bool = false,
     )
 
 Evaluate cost function and differential simultaneously.
@@ -2645,7 +2645,7 @@ $(_args(:M))
 $(_args([:p, :X]))
 
 ## Keyword Arguments
-* `gradient = nothing` provide a cache/memory to evaluate the gradient in.
+* `gradient = missing` provide a cache/memory to evaluate the gradient in.
   if not provided, this function will allocate one tangent vector
 * `evaluated = false` if the cache is provided, this boolean specifies, whether
   the cache already contains the evaluated gradient and does not need to evaluate the gradient again, if possible.
@@ -2653,22 +2653,22 @@ $(_args([:p, :X]))
 """
 function get_cost_and_differential(
         M::AbstractManifold, mfo::ManifoldFirstOrderObjective, p, X;
-        gradient = nothing, evaluated = false
+        gradient = missing, evaluated = false
     )
     if haskey(mfo.functions, :costdifferential)
         return mfo.functions[:costdifferential](M, p, X)
     elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :differential)
         return (mfo.functions[:cost](M, p), mfo.functions[:differential](M, p, X))
     elseif haskey(mfo.functions, :costgradient)
-        _Y = isnothing(gradient) ? zero_vector(M, p) : gradient
+        _Y = ismissing(gradient) ? zero_vector(M, p) : gradient
         # here we can not avoid the evaluation of the gradient even if it was already evaluated
         cost, grad = mfo.functions[:costgradient](M, _Y, p)
         return (cost, real(inner(M, p, X, grad)))
     elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :gradient)
         cost = mfo.functions[:cost](M, p)
-        _Y = isnothing(gradient) ? zero_vector(M, p) : gradient
+        _Y = ismissing(gradient) ? zero_vector(M, p) : gradient
         # if we have no cache or it has not been evaluated: evaluate the gradient
-        (isnothing(gradient) || !evaluated) && (grad = mfo.functions[:gradient](M, _Y, p))
+        (ismissing(gradient) || !evaluated) && (grad = mfo.functions[:gradient](M, _Y, p))
         return (cost, real(inner(M, p, X, grad)))
     end
     return error("$mfo does not provide a cost and a differential")
@@ -2721,7 +2721,7 @@ end
 
 function get_differential(
         M::AbstractManifold, mfo::ManifoldFirstOrderObjective, p, X;
-        gradient = nothing, evaluated::Bool = false, kwargs...,
+        gradient = missing, evaluated::Bool = false, kwargs...,
     )
     # If we have a differential – evaluate that
     haskey(mfo.functions, :differential) && (return mfo.functions[:differential](M, p, X))
@@ -2729,9 +2729,9 @@ function get_differential(
         (return mfo.functions[:costdifferential](M, p, X)[2])
     # default: inner with gradient
     # (a) we have gradient but it is not evaluated -> eval
-    (!evaluated && !isnothing(gradient)) && (get_gradient!(M, gradient, mfo, p))
-    # if grad is nothing -> allocated gradient
-    isnothing(gradient) && (gradient = get_gradient(M, mfo, p))
+    (!evaluated && !ismissing(gradient)) && (get_gradient!(M, gradient, mfo, p))
+    # if grad is missing -> allocated gradient
+    ismissing(gradient) && (gradient = get_gradient(M, mfo, p))
     # -> we have a gradient!
     return real(inner(M, p, gradient, X))
 end
@@ -2819,7 +2819,7 @@ specify a problem for Hessian based algorithms.
 
 # Constructor
     ManifoldHessianObjective(
-        f, grad_f, Hess_f, preconditioner = nothing;
+        f, grad_f, Hess_f, preconditioner = missing;
         p = missing, evaluation=AllocatingEvaluation()
     )
 
@@ -2883,7 +2883,7 @@ tangent vector `X`.
 """
 function get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
     Y = zero_vector(M, p)
-    isnothing(mho.preconditioner!) && return copyto!(M, Y, p, X)
+    ismissing(mho.preconditioner!) && return copyto!(M, Y, p, X)
     mho.preconditioner!(M, Y, p, X)
     return Y
 end
@@ -2898,7 +2898,7 @@ function get_preconditioner!(
     return get_preconditioner!(M, Y, get_objective(admo, false), p, X)
 end
 function get_preconditioner!(M::AbstractManifold, Y, mho::ManifoldHessianObjective, p, X)
-    return isnothing(mho.preconditioner!) ? copyto!(M, Y, p, X) : mho.preconditioner!(M, Y, p, X)
+    return ismissing(mho.preconditioner!) ? copyto!(M, Y, p, X) : mho.preconditioner!(M, Y, p, X)
 end
 
 update_hessian!(M, f, p, p_proposal, X) = f
@@ -2906,10 +2906,10 @@ update_hessian!(M, f, p, p_proposal, X) = f
 update_hessian_basis!(M, f, p) = f
 
 function status_summary(mho::ManifoldHessianObjective{E}; context::Symbol = :default) where {E}
-    _is_inline(context) && return "A second order objective with cost, gradient$(isnothing(mho.preconditioner!) ? ", and" : "") Hessian$(isnothing(mho.preconditioner!) ? "" : ", and a preconditioner")"
-    precon_str = isnothing(mho.preconditioner!) ? "" : "\n* preconditioner: $(mho.preconditioner!)"
+    _is_inline(context) && return "A second order objective with cost, gradient$(ismissing(mho.preconditioner!) ? ", and" : "") Hessian$(ismissing(mho.preconditioner!) ? "" : ", and a preconditioner")"
+    precon_str = ismissing(mho.preconditioner!) ? "" : "\n* preconditioner: $(mho.preconditioner!)"
     return """
-    A second order objective providing a cost, a gradient$(isnothing(mho.preconditioner!) ? ", and" : "") a Hessian$(isnothing(mho.preconditioner!) ? "" : ", and a preconditioner")
+    A second order objective providing a cost, a gradient$(ismissing(mho.preconditioner!) ? ", and" : "") a Hessian$(ismissing(mho.preconditioner!) ? "" : ", and a preconditioner")
 
     ## Functions
     * cost:    $(_MANOPT_INDENT)$(mho.cost)
@@ -2922,7 +2922,7 @@ function Base.show(io::IO, mho::ManifoldHessianObjective)
     print(io, "$(mho.cost), ")
     print(io, "$(mho.gradient!), ")
     print(io, "$(mho.hessian!)")
-    !isnothing(mho.preconditioner!) && print(io, ", $(mho.preconditioner!)")
+    !ismissing(mho.preconditioner!) && print(io, ", $(mho.preconditioner!)")
     return print(io, ")")
 end
 
