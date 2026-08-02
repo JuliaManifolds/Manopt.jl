@@ -264,11 +264,10 @@ function DouglasRachford(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), parallel = 0, kwargs...,
     ) where {TF}
     p_ = maybe_wrap_variable(p)
-    proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation) for prox_f in proxes_f]
-    N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(
-        M, f, proxes_f_, p_, parallel, evaluation
-    )
-    mpo = ManifoldProximalMapObjective(f__, (prox1, prox2); evaluation = evaluation)
+    proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation; result = :Point) for prox_f in proxes_f]
+    N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(M, f, proxes_f_, p_, parallel)
+    # we are inplace, so no need to pass it further down here
+    mpo = ManifoldProximalMapObjective(f__, (prox1, prox2); evaluation = InplaceEvaluation())
     rs = DouglasRachford(N, mpo, q; evaluation = evaluation, parallel = parallel_, kwargs...)
     return maybe_unwrap_variable(p, rs)
 end
@@ -276,26 +275,23 @@ function DouglasRachford(
         M::AbstractManifold, mpo::O, p; kwargs...
     ) where {O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(DouglasRachford; kwargs...)
-    q = copy(M, p)
-    return DouglasRachford!(M, mpo, q; kwargs...)
+    p_ = maybe_wrap_variable(p)
+    q = copy(M, p_)
+    rs = DouglasRachford!(M, mpo, q; kwargs...)
+    return maybe_unwrap_variable(p, rs)
 end
 calls_with_kwargs(::typeof(DouglasRachford)) = (DouglasRachford!,)
 
 @doc "$(_doc_Douglas_Rachford)"
 DouglasRachford!(::AbstractManifold, args...; kwargs...)
 function DouglasRachford!(
-        M::AbstractManifold,
-        f::TF,
-        proxes_f::Vector{<:Any},
-        p;
-        evaluation = AllocatingEvaluation(),
-        parallel::Int = 0,
-        kwargs...,
+        M::AbstractManifold, f::TF, proxes_f::Vector{<:Any}, p;
+        evaluation = AllocatingEvaluation(), parallel::Int = 0, kwargs...,
     ) where {TF}
-    N, f_, (prox1, prox2), parallel_, p0 = parallel_to_alternating_DR(
-        M, f, proxes_f, p, parallel, evaluation
-    )
-    mpo = ManifoldProximalMapObjective(f_, (prox1, prox2); evaluation = evaluation)
+    proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation; result = :Point) for prox_f in proxes_f]
+    N, f_, (prox1, prox2), parallel_, p0 = parallel_to_alternating_DR(M, f, proxes_f_, p, parallel)
+    # we are inplace, so no need to pass it further down here
+    mpo = ManifoldProximalMapObjective(f_, (prox1, prox2); evaluation = InplaceEvaluation())
     return DouglasRachford!(
         N, mpo, p0; evaluation = evaluation, parallel = parallel_, kwargs...
     )
@@ -315,18 +311,13 @@ function DouglasRachford!(
         # Adapt to evaluation type
         R::TR = if reflection_evaluation == InplaceEvaluation()
             (M, r, p, q) -> Manopt.reflect!(
-                M,
-                r,
-                p,
-                q;
+                M, r, p, q;
                 retraction_method = retraction_method,
                 inverse_retraction_method = inverse_retraction_method,
             )
         else
             (M, p, q) -> Manopt.reflect(
-                M,
-                p,
-                q;
+                M, p, q;
                 retraction_method = retraction_method,
                 inverse_retraction_method = inverse_retraction_method,
             )
@@ -336,9 +327,7 @@ function DouglasRachford!(
             StopWhenChangeLess(M, 1.0e-5),
         kwargs..., #especially may contain decorator options
     ) where {
-        Tλ,
-        Tα,
-        TR,
+        Tλ, Tα, TR,
         O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective},
         E <: AbstractEvaluationType,
     }
@@ -348,10 +337,7 @@ function DouglasRachford!(
     drs = DouglasRachfordState(
         M;
         callbacks = process_callbacks_arg(callbacks, DouglasRachfordState),
-        p = p,
-        λ = λ,
-        α = α,
-        R = R,
+        p = p, λ = λ, α = α, R = R,
         reflection_evaluation = reflection_evaluation,
         retraction_method = retraction_method,
         inverse_retraction_method = inverse_retraction_method,
@@ -368,9 +354,9 @@ calls_with_kwargs(::typeof(DouglasRachford!)) = (decorate_objective!, decorate_s
 # An internal function that turns more than 2 proximal maps into a parallel variant
 # on the power manifold
 function parallel_to_alternating_DR(
-        M, f, proxes_f, p, parallel, evaluation::AbstractEvaluationType
+        M, f, proxes_f, p, parallel
     )
-    prox1, prox2, parallel_ = prepare_proxes(proxes_f, parallel, evaluation)
+    prox1, prox2, parallel_ = prepare_proxes(proxes_f, parallel)
     if parallel_ > 0
         N = PowerManifold(M, NestedPowerRepresentation(), parallel_)
         p0 = [p]
@@ -386,7 +372,7 @@ function parallel_to_alternating_DR(
     return N, f_, (prox1, prox2), parallel_, p0
 end #
 # An internal function that turns more than 2 proximal maps into a parallel variant
-function prepare_proxes(proxes_f, parallel, evaluation::AbstractEvaluationType)
+function prepare_proxes(proxes_f, parallel)
     parallel_ = parallel
     if length(proxes_f) < 2
         throw(
@@ -399,16 +385,11 @@ function prepare_proxes(proxes_f, parallel, evaluation::AbstractEvaluationType)
         prox2 = proxes_f[2]
     else # more than 2 -> parallelDouglasRachford
         parallel_ = length(proxes_f)
-        if evaluation isa InplaceEvaluation
-            prox1 = function (M, q, λ, p)
-                [proxes_f[i](M.manifold, q[i], λ, p[i]) for i in 1:parallel_]
-                return q
-            end
-            prox2 = (M, q, λ, p) -> fill!(q, mean(M.manifold, p))
-        else
-            prox1 = (M, λ, p) -> [proxes_f[i](M.manifold, λ, p[i]) for i in 1:parallel_]
-            prox2 = (M, λ, p) -> fill(mean(M.manifold, p), parallel_)
+        prox1 = function (M, q, λ, p)
+            [proxes_f[i](M.manifold, q[i], λ, p[i]) for i in 1:parallel_]
+            return q
         end
+        prox2 = (M, q, λ, p) -> fill!(q, mean(M.manifold, p))
     end
     return prox1, prox2, parallel_
 end

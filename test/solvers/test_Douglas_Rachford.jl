@@ -12,6 +12,7 @@ using ManifoldDiff: prox_distance, prox_distance!
     f(M, p) = distance(M, p, d1)^2 + distance(M, p, d2)^2
     prox1a = (M, η, p) -> prox_distance(M, η, d1, p)
     prox2a = (M, η, p) -> prox_distance(M, η, d2, p)
+    # At least two proxes needed
     @test_throws ErrorException DouglasRachford(M, f, Array{Function, 1}([prox1a]), p)
     q1a = DouglasRachford(M, f, [prox1a, prox2a], p)
     @test isapprox(M, q1a, p_star; atol = 1.0e-14)
@@ -78,10 +79,8 @@ using ManifoldDiff: prox_distance, prox_distance!
         prox2b = (M, η, p) -> prox_distance(M, η, data[2], p)
         q1 = DouglasRachford(M, f3, [prox1b, prox2b], p)
         @test q1 == p_star
-        q2 = DouglasRachford(M, f3, [prox1b, prox2b], p; evaluation = InplaceEvaluation())
-        @test q1 == q2
         s = DouglasRachford(M, f3, [prox1b, prox2b], p; return_state = true)
-        q3 = get_solver_result(s)[]
-        @test q2 == q3
+        q2 = get_solver_result(s)[]
+        @test q1 == q2
     end
 end
