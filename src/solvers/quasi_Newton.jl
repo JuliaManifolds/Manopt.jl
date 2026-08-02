@@ -261,14 +261,12 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_QN)"
 function quasi_Newton(
-        M::AbstractManifold, f::TF, grad_f::TDF,
-        p = rand(M);
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        differential = missing,
+        M::AbstractManifold, f::TF, grad_f::TDF, p = rand(M);
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), differential = missing,
         kwargs...,
     ) where {TF, TDF}
     p_ = maybe_wrap_variable(p)
-    mgo = ManifoldGradientObjective(f, grad_f; differential = differential, evaluation = evaluation)
+    mgo = ManifoldGradientObjective(f, grad_f; differential = differential, evaluation = evaluation, p = p)
     rs = quasi_Newton(M, mgo, p_; kwargs...)
     return maybe_unwrap_variable(p, rs)
 end
@@ -276,10 +274,8 @@ function quasi_Newton(
         M::AbstractManifold, mgo::O, p; kwargs...
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(quasi_Newton; kwargs...)
-    p_ = maybe_wrap_variable(p)
-    q = copy(M, p_)
-    rs = quasi_Newton!(M, mgo, q; kwargs...)
-    return maybe_unwrap_variable(p, rs)
+    q = copy(M, p)
+    return quasi_Newton!(M, mgo, q; kwargs...)
 end
 calls_with_kwargs(::typeof(quasi_Newton)) = (quasi_Newton!,)
 
