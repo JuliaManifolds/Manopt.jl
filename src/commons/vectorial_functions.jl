@@ -7,7 +7,7 @@ _maybe_wrap_vector_function(f, p, ::ComponentVectorialType, ::AllocatingEvaluati
 
 _maybe_wrap_jacobian_function(Jf, p, ::AbstractVectorialType, ::InplaceEvaluation) = Jf
 function _maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType, e::AllocatingEvaluation)
-    return maybe_wrap_function(Jf, p, e; result = :TangentVectors)
+    return maybe_wrap_function(Jf, p, e; result = :TangentVector)
 end
 function _maybe_wrap_jacobian_function(Jf, p, ::ComponentVectorialType, e::AllocatingEvaluation)
     return [ maybe_wrap_function(Jfi, p, e; result = :TangentVector) for Jfi in Jf]
