@@ -1,10 +1,3 @@
-"""
-    maybe_wrap_function(f, p, evaluation = AllocatingEvaluation(); result = :TangentVector)
-
-Wrap a function `f` defined on a manifold `M` to work
-* in-place, that is copy over the result if it is not yet in-place
-* on mutating input `p`, i.e. use a 1-element vector to store numbers.
-"""
 
 function maybe_wrap_variable end
 """

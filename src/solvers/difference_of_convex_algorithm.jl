@@ -290,7 +290,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(
    specify a Hessian of the `sub_cost`, which the default solver, see `sub_state=` needs.
   $(_note(:KeywordUsedIn, "sub_objective"))
 $(_kwargs(:sub_kwargs))
-* `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess`if provided
+* `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess` if provided
    the objective used within `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_problem"))
 $(_kwargs(:sub_state; default = "([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hess` is provided)"))
@@ -350,8 +350,7 @@ function difference_of_convex_algorithm!(
         M::AbstractManifold, mdco::O, p;
         callbacks = Dict{Symbol, Function}(),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        g = missing, grad_g = missing,
-        gradient = missing,
+        g = missing, grad_g = missing, gradient = missing,
         X = zero_vector(M, p),
         objective_type = :Riemannian,
         stopping_criterion = if ismissing(gradient)
@@ -361,11 +360,7 @@ function difference_of_convex_algorithm!(
         end,
         # Subsolver Magic Cascade.
         sub_cost = ismissing(g) ? missing : LinearizedDCCost(g, copy(M, p), copy(M, p, X)),
-        sub_grad = if ismissing(grad_g)
-            missing
-        else
-            LinearizedDCGrad(grad_g, copy(M, p), copy(M, p, X); evaluation = evaluation)
-        end,
+        sub_grad = ismissing(grad_g) ? missing : LinearizedDCGrad(grad_g, copy(M, p), copy(M, p, X); evaluation = evaluation),
         sub_hess = ismissing(sub_grad) ? missing : ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation = evaluation),
         sub_kwargs = (;),
         sub_stopping_criterion = StopAfterIteration(300) | StopWhenGradientNormLess(1.0e-8),

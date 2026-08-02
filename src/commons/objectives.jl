@@ -2837,13 +2837,13 @@ struct ManifoldHessianObjective{C, G, H, Pre} <: AbstractManifoldHessianObjectiv
     hessian!::H
     preconditioner!::Pre
     function ManifoldHessianObjective(
-            cost::C, grad::G, hess::H, precond = nothing;
+            cost::C, grad::G, hess::H, precond = missing;
             p = missing, evaluation = AllocatingEvaluation(),
         ) where {C, G, H}
         cost_ = maybe_wrap_function(cost, p; result = :Number)
         grad_ = maybe_wrap_function(grad, p, evaluation; result = :TangentVector)
         hess_ = maybe_wrap_function(hess, p, evaluation; result = :TangentVector)
-        precond_ = isnothing(precond) ? nothing : maybe_wrap_function(precond, p, evaluation; result = :TangentVector)
+        precond_ = ismissing(precond) ? missing : maybe_wrap_function(precond, p, evaluation; result = :TangentVector)
         return new{typeof(cost_), typeof(grad_), typeof(hess_), typeof(precond_)}(cost_, grad_, hess_, precond_)
     end
 end
