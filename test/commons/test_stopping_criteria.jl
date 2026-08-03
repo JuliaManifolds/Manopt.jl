@@ -456,11 +456,14 @@ end
         @test has_converged(s1)
         # s3 does not trigger because s2 is not active yet
         @test !has_converged(s3)
-        # But s4 does since we stopped with s1 due to convergence
+        # But s4 does since we stopped with s1 due to convergence – when updated accordingly
+        s4.at_iteration = s1.at_iteration
         @test has_converged(s4)
         # Set s2 active as well
         s2.at_iteration = 11
         @test !has_converged(s2) # But it does not indicate we converged
+        # When internally also updating s3
+        s3.at_iteration = 11
         @test has_converged(s3) # Now this is fine as well
         @test has_converged(s4) # This continues to indicate that.
         # Deactivate s1
@@ -469,6 +472,22 @@ end
         @test !has_converged(s1)
         @test !has_converged(s3)
         @test !has_converged(s4)
+        # from https://github.com/JuliaManifolds/Manopt.jl/issues/631
+        @testset "has_converged in combination with Any/All (#631)" begin
+            sh1 = StopWhenGradientNormLess(1.0e-4)   # indicates_convergence == true
+            sh2 = StopAfterIteration(10)             # indicates_convergence == false
+            sh3 = StopAfterIteration(20)
+            sh4 = (sh1 | sh2)
+            sh5 = sh4 & sh3                    # StopWhenAll(StopWhenAny(sh1, sh2), sh3)
+            # trigger that every leaf is active, i.e. the overall sc has stopped
+            sh1.at_iteration = 1; sh2.at_iteration = 11; sh3.at_iteration = 21
+            # but we also have to internally set any/all which would have happened otherwise as well
+            # for sh4 at 1 (from sh1) and sh5 and 21 (sh3)
+            sh4.at_iteration = 1; sh5.at_iteration = 21
+            # Then (a) sh4 has converged, since one of its components has
+            @test has_converged(sh4)
+            # As well as sh5, since one of its children does indicate convergence
+            @test has_converged(sh5)   # false -- expected true
+        end
     end
-
 end

@@ -122,10 +122,10 @@ function status_summary(gds::GradientDescentState; context::Symbol = :default)
     * retraction method: $(gds.retraction_method)
 
     ## Stepsize
-    $(_in_str(status_summary(gds.stepsize; context = context); indent = 0, headers = 1))
+    $(_in_str(status_summary(gds.stepsize; context = context); indent = 1, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(gds.stop; context = context); indent = 0, headers = 1))
+    $(_in_str(status_summary(gds.stop; context = context); indent = 1, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end

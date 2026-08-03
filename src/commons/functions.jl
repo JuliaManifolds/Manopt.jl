@@ -49,7 +49,7 @@ functions furthermore in a [`InplaceManifoldFunction`](@ref).
 Initialise the wrapper for a function `f` defined on a manifold, where `p` is a point on the manifold,
 to store the original point type `P` for the Arguments.
 """
-struct MutableManifoldFunction{P, F}
+struct MutableManifoldFunction{P, F} <: Function
     f::F
     result::Symbol
     function MutableManifoldFunction(f::F, ::Type{P}, result::Symbol = :Number) where {F, P}
@@ -63,6 +63,12 @@ function (f::MutableManifoldFunction{P})(M, args...) where {P}
     args_unwrapped = map(a -> maybe_unwrap_variable(P, a), args)
     v = f.f(M, args_unwrapped...)
     return f.result === :Number ? v : maybe_wrap_variable(v)
+end
+function show(io::IO, mmf::MutableManifoldFunction)
+    return print(io, "MutableManifoldFunction(", mmf.f, ", ", mmf.result, ")")
+end
+function status_summary(mmf::MutableManifoldFunction; context::Symbol = :default)
+    return status_summary(mmf.f; context = context)
 end
 
 """
@@ -84,7 +90,7 @@ Wrapper for a function to ensure it works in-place.
 
     InplaceManifoldFunction(f, result = :Point)
 """
-struct InplaceManifoldFunction{F}
+struct InplaceManifoldFunction{F} <: Function
     f::F
     result::Symbol
     point_index::Int
@@ -107,8 +113,8 @@ end
 function show(io::IO, imf::InplaceManifoldFunction)
     return print(io, "InplaceManifoldFunction(", imf.f, ", ", imf.result, ")")
 end
-function status_summary(co::InplaceManifoldFunction; context::Symbol = :default)
-    return status_summary(co.f; context = context)
+function status_summary(imf::InplaceManifoldFunction; context::Symbol = :default)
+    return status_summary(imf.f; context = context)
 end
 
 """

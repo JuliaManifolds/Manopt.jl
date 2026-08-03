@@ -47,20 +47,16 @@ function status_summary(c::StopWhenAll; context::Symbol = :default)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop when _all_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r  * $(_in_str(status_summary(cs; context = :inline); indent = 0, headers = 0))\n"
+        r = "$r  * $(_in_str(status_summary(cs; context = :inline); indent = 1, headers = 0))\n"
     end
-    return (_is_inline(context) ? "$(r)Overall: $s" : "Stop when _all_ of the following are fulfilled:\n$(r)Overall: $s")
+    return "$(r)Overall: $s"
 end
 function indicates_convergence(c::StopWhenAll)
     return any(indicates_convergence(ci) for ci in c.criteria)
 end
 function has_converged(c::StopWhenAll)
-    # All are active
-    if length(get_active_stopping_criteria(c)) == length(c.criteria)
-        # at least one of them does has_converged as well
-        return any(has_converged(ci) for ci in c.criteria)
-    end
-    return false
+    # (a) all are active (have converged) and and at least one of them indicates convergence
+    return is_active_stopping_criterion(c) && any(has_converged(ci) for ci in c.criteria)
 end
 function get_count(c::StopWhenAll, v::Val{:Iterations})
     return maximum(get_count(ci, v) for ci in c.criteria)
@@ -181,16 +177,18 @@ function status_summary(c::StopWhenAny; context::Symbol = :default)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop when _one_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r  * $(_in_str(status_summary(cs; context = :inline); indent = 0, headers = 0))\n"
+        r = "$r  * $(_in_str(status_summary(cs; context = :inline); indent = 1, headers = 0))\n"
     end
     return "$(r)Overall: $s"
 end
 function indicates_convergence(c::StopWhenAny)
+    # Statically we can only indicate convergence in general if all indicate convergence,
+    # so that independent of “which one fires” we conclude with convergence
     return all(indicates_convergence(ci) for ci in c.criteria)
 end
 function has_converged(c::StopWhenAny)
-    # If any of the active ones has_converged – we stop due to convergence
-    return any(has_converged(ci) for ci in get_active_stopping_criteria(c))
+    # (a) we are active and (b) at least one of the active ones indicates convergence If any of the active ones has_converged – we stop due to convergence
+    return is_active_stopping_criterion(c) && any(is_active_stopping_criterion(ci) && has_converged(ci) for ci in c.criteria)
 end
 function get_count(c::StopWhenAny, v::Val{:Iterations})
     iters = filter(x -> x > 0, [get_count(ci, v) for ci in c.criteria])

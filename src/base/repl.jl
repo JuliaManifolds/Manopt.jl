@@ -56,11 +56,25 @@ end
 
 # in general, ignore printing the objective by default in tuples on REPL
 function show(io::IO, t::Tuple{<:AbstractManifoldObjective, <:AbstractManoptSolverState})
-    return print(io, "$(t[2])")
+    return show(io, t[2])
 end
+# on repl
+function Base.show(io::IO, ::MIME"text/plain", t::Tuple{<:AbstractManifoldObjective, <:AbstractManoptSolverState})
+    multiline = get(io, :multiline, true)
+    return multiline ? status_summary(io, t[2]) : show(io, t[2])
+end
+
 # for decorated ones, default: pass down
 function show(
         io::IO, t::Tuple{<:AbstractDecoratedManifoldObjective, <:AbstractManoptSolverState}
     )
-    return show(io, (get_objective(t[1], false), t[2]))
+    return show(io, t[2])
+end
+# for decorated ones, default: as both on status summary but first state then objective to print e.g. cache last
+function show(
+        io::IO, ::MIME"text/plain", t::Tuple{<:AbstractDecoratedManifoldObjective, <:AbstractManoptSolverState}
+    )
+    multiline = get(io, :multiline, true)
+    multiline ? status_summary(io, t[2]) : show(io, t[2])
+    return multiline ? status_summary(io, t[1]) : show(io, t[1])
 end

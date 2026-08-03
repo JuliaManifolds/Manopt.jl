@@ -364,7 +364,7 @@ function difference_of_convex_proximal_point(
     # to mutating
     cost_ = ismissing(cost) ? missing : maybe_wrap_function(cost, p)
     g_ = ismissing(g) ? missing : maybe_wrap_function(g, p)
-    prox_g_ = ismissing(grad_g) ? missing : maybe_wrap_function(prox_g, p)
+    prox_g_ = ismissing(prox_g) ? missing : maybe_wrap_function(prox_g, p)
     grad_g_ = ismissing(grad_g) ? missing : maybe_wrap_function(grad_g, p)
     gradient_ = ismissing(gradient) ? missing : maybe_wrap_function(gradient, p)
     rs = difference_of_convex_proximal_point(
@@ -513,9 +513,9 @@ end
 =#
 function step_solver!(
         amp::AbstractManoptProblem,
-        dcps::DifferenceOfConvexProximalState{P, T, <:Function, ClosedFormSubSolverState},
+        dcps::DifferenceOfConvexProximalState{P, T, F, ClosedFormSubSolverState},
         k,
-    ) where {P, T}
+    ) where {P, T, F <: Function}
     M = get_manifold(amp)
     # each line is one step in the documented solver steps. Note the reuse of `dcps.X`
     get_subtrahend_gradient!(amp, dcps.X, dcps.p)
