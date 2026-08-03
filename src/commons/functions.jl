@@ -106,6 +106,8 @@ function (f!::InplaceManifoldFunction)(M, v, args...)
     (f!.result === :Number) && return (v[] = f!.f(M, args...))
     # for example (c, X) = costgrad(M, p)
     (f!.result === :NumberAndTangentVector) && return ((c, X) = f!.f(M, args...); copyto!(M, v, args[f!.point_index], X); (c, v))
+    # For cases like in ProxBundle where the subsolver can return different sizes, we have to use assign
+    (f!.result === :Assign) && return (v = f!.f(M, args...))
     # default: Just copyto! – e.g. for :Vector or :Matrix
     return copyto!(v, f!.f(M, args...))
 end

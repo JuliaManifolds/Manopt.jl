@@ -152,7 +152,7 @@ function ProximalBundleMethodState(
         M::AbstractManifold, sub_problem = proximal_bundle_method_subsolver;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
-    sub_problem_ = maybe_wrap_function(sub_problem, evaluation)
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Assign)
     cfs = ClosedFormSubSolverState()
     return ProximalBundleMethodState(M, sub_problem_, cfs; kwargs...)
 end
