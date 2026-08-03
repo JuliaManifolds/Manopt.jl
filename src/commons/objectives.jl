@@ -3395,7 +3395,7 @@ as well as ``$(_tex(:grad)) g`` and ``$(_tex(:prox))_{λ h}``.
 * `proximal_map_h!`: the proximal map ``$(_tex(:prox))_{λ h}``
 
 # Constructor
-    ManifoldProximalGradientObjective(f, g, grad_g, prox_h)
+    ManifoldProximalGradientObjective(f, g, grad_g, prox_h = missing)
 
 Generate the proximal gradient objective given the total cost ``f = g + h``, smooth cost ``g``, the gradient of the smooth component ``$(_tex(:grad)) g``, and the proximal map of the nonsmooth component ``$(_tex(:prox))_{λ h}``.
 
@@ -3410,13 +3410,13 @@ struct ManifoldProximalGradientObjective{TC, TG, TGG, TP} <: AbstractManifoldCos
     gradient_g!::TGG
     proximal_map_h!::TP
     function ManifoldProximalGradientObjective(
-            f::TC, g::TG, grad_g::TGG, prox_h::TP;
+            f::TC, g::TG, grad_g::TGG, prox_h::TP = missing;
             evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
         ) where {TC, TG, TGG, TP}
         f_ = maybe_wrap_function(f, p; result = :Number)
         g_ = maybe_wrap_function(g, p; result = :Number)
         grad_g_ = maybe_wrap_function(grad_g, p, evaluation; result = :TangentVector)
-        prox_h_ = maybe_wrap_function(prox_h, p, evaluation; result = :Point, point_index = 2)
+        prox_h_ = ismissing(prox_h) ? missing : maybe_wrap_function(prox_h, p, evaluation; result = :Point, point_index = 2)
         return new{typeof(f_), typeof(g_), typeof(grad_g_), typeof(prox_h_)}(f_, g_, grad_g_, prox_h_)
     end
 end
@@ -3427,7 +3427,10 @@ end
 
 Evaluate the gradient of the smooth part of a [`ManifoldProximalGradientObjective`](@ref) `mgo` at `p`.
 """
-get_gradient(::AbstractManifold, ::ManifoldProximalGradientObjective, p)
+function get_gradient(M::AbstractManifold, mpgo::ManifoldProximalGradientObjective, p)
+    X = zero_vector(M, p)
+    return get_gradient!(M, X, mpgo, p)
+end
 
 function get_gradient!(M::AbstractManifold, X, mpgo::ManifoldProximalGradientObjective, p)
     return mpgo.gradient_g!(M, X, p)
@@ -3470,7 +3473,10 @@ end
 Evaluate proximal map of the nonsmooth component ``h`` of the [`ManifoldProximalGradientObjective`](@ref)` mpo`
 at the point `p` on `M` with parameter ``λ>0``.
 """
-get_proximal_map(M::AbstractManifold, mpgo::ManifoldProximalGradientObjective, λ, p)
+function get_proximal_map(M::AbstractManifold, mpgo::ManifoldProximalGradientObjective, λ, p)
+    q = copy(M, p)
+    return get_proximal_map!(M, q, mpgo, λ, p)
+end
 
 function get_proximal_map!(
         M::AbstractManifold, q, mpgo::ManifoldProximalGradientObjective, λ, p

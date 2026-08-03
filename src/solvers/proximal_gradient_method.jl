@@ -121,8 +121,8 @@ $(_fields(:stopping_criterion; name = "stop"))
 * `stepsize` - a function or [`Stepsize`](@ref) object to compute the stepsize
 * `last_stepsize` - stores the last computed stepsize
 $(_fields(:sub_problem; name = "sub_problem", type = "Union{`[`AbstractManoptProblem`](@ref)`, F}"))
-    or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
-$(_fields(:sub_state)). This field is ignored, if the `sub_problem` is `Nothing`.
+    or `missing` to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
+$(_fields(:sub_state)). This field is ignored, if the `sub_problem` is `missing`.
 
 # Constructor
 
@@ -143,12 +143,12 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 * `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)` by default no acceleration is performed
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
-$(_kwargs(:sub_problem; default = "nothing"))
+$(_kwargs(:sub_problem; default = "missing"))
 $(_kwargs(:sub_state; default = _glossary[:Variable][:evaluation][:default]))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct ProximalGradientMethodState{
-        P, T, Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F}, St <: Union{<:AbstractManoptSolverState, Nothing},
+        P, T, Pr <: Union{<:AbstractManoptProblem, F, Missing} where {F}, St <: Union{<:AbstractManoptSolverState, Missing},
         C <: AbstractDict{Symbol},
         A, SC <: StoppingCriterion, S <: Stepsize, RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, R,
     } <: AbstractManoptSolverState
@@ -174,7 +174,7 @@ mutable struct ProximalGradientMethodState{
             retraction_method::RM, stepsize::S, stopping_criterion::SC,
             X::T,
         ) where {
-            P, T, Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F}, St <: Union{<:AbstractManoptSolverState, Nothing},
+            P, T, Pr <: Union{<:AbstractManoptProblem, F, Missing} where {F}, St <: Union{<:AbstractManoptSolverState, Missing},
             C <: AbstractDict{Symbol},
             A, SC <: StoppingCriterion, S <: Stepsize, RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, R,
         }
@@ -200,16 +200,16 @@ function ProximalGradientMethodState(
         X::T = zero_vector(M, p),
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
-        sub_problem::Pr = nothing,
-        sub_state::St = nothing,
+        sub_problem::Pr = missing,
+        sub_state::St = missing,
     ) where {
         P, T, SC <: StoppingCriterion, A,
-        Pr <: Union{<:AbstractManoptProblem, F, Nothing} where {F}, St <: Union{<:AbstractManoptSolverState, <:AbstractEvaluationType, Nothing},
+        Pr <: Union{<:AbstractManoptProblem, F, Missing} where {F}, St <: Union{<:AbstractManoptSolverState, <:AbstractEvaluationType, Missing},
         RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, S <: Stepsize,
         C <: AbstractDict{Symbol},
     }
     sub_state_ = (sub_state isa AbstractEvaluationType) ? ClosedFormSubSolverState() : sub_state
-    sub_problem_ = (isnothing(sub_problem) || Pr <: AbstractManoptProblem) ? sub_problem : maybe_wrap_function(sub_problem, p, sub_state)
+    sub_problem_ = (ismissing(sub_problem) || Pr <: AbstractManoptProblem) ? sub_problem : maybe_wrap_function(sub_problem, p, sub_state)
     return ProximalGradientMethodState(
         sub_problem_, sub_state_;
         callbacks = callbacks,
@@ -614,9 +614,9 @@ end
 #
 # Solver
 _doc_prox_grad_method = """
-    proximal_gradient_method(M, f, g, grad_g, p=rand(M); prox_nonsmooth=nothing, kwargs...)
+    proximal_gradient_method(M, f, g, grad_g, p=rand(M); prox_nonsmooth=missing, kwargs...)
     proximal_gradient_method(M, mpgo::ManifoldProximalGradientObjective, p=rand(M); kwargs...)
-    proximal_gradient_method!(M, f, g, grad_g, p; prox_nonsmooth=nothing, kwargs...)
+    proximal_gradient_method!(M, f, g, grad_g, p; prox_nonsmooth=missing, kwargs...)
     proximal_gradient_method!(M, mpgo::ManifoldProximalGradientObjective, p; kwargs...)
 
 Perform the proximal gradient method as introduced in [BergmannJasaJohnPfeffer:2025:1](@cite) and [BergmannJasaJohnPfeffer:2025:2](@cite).
@@ -656,14 +656,14 @@ $(_args(:p))
 * `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step - the default is to copy the current point to the acceleration point, i.e. no acceleration is performed
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
-* `prox_nonsmooth`:          a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the (possibly) nonsmoooth part ``h`` of ``f``
+* `prox_nonsmooth = missing`:          a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the (possibly) nonsmoooth part ``h`` of ``f``
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ProximalGradientMethodState`](@ref)`)"))
   that by default uses a [`ProximalGradientMethodBacktracking`](@ref).
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
-$(_kwargs(:sub_problem; type = "Union{`[`AbstractManoptProblem`](@ref)`, F, Nothing}", default = "nothing"))
-  or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
-$(_kwargs(:sub_state; default = "evaluation")). This field is ignored, if the `sub_problem` is `Nothing`.
+$(_kwargs(:sub_problem; type = "Union{`[`AbstractManoptProblem`](@ref)`, F, Missing}", default = "missing"))
+  or `missing` to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
+$(_kwargs(:sub_state; default = "evaluation")). This field is ignored, if the `sub_problem` is `missing`.
 
 $(_note(:OtherKeywords))
 
@@ -673,7 +673,7 @@ $(_note(:OutputSection))
 @doc "$(_doc_prox_grad_method)"
 function proximal_gradient_method(
         M::AbstractManifold, f, g, grad_g, p = rand(M);
-        prox_nonsmooth = nothing, evaluation = AllocatingEvaluation(), kwargs...,
+        prox_nonsmooth = missing, evaluation = AllocatingEvaluation(), kwargs...,
     )
     mpgo = ManifoldProximalGradientObjective(
         f, g, grad_g, prox_nonsmooth; evaluation = evaluation
@@ -693,7 +693,7 @@ calls_with_kwargs(::typeof(proximal_gradient_method)) = (proximal_gradient_metho
 @doc "$(_doc_prox_grad_method)"
 function proximal_gradient_method!(
         M::AbstractManifold, f, g, grad_g, p;
-        prox_nonsmooth = nothing, evaluation = AllocatingEvaluation(), kwargs...,
+        prox_nonsmooth = missing, evaluation = AllocatingEvaluation(), kwargs...,
     )
     mpgo = ManifoldProximalGradientObjective(
         f, g, grad_g, prox_nonsmooth; evaluation = evaluation
@@ -708,19 +708,18 @@ function proximal_gradient_method!(
         end,
         callbacks = Dict{Symbol, Function}(),
         debug = [DebugWarnIfStepsizeCollapsed()],
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, ProximalGradientMethodState
         ),
-        cost_nonsmooth::Union{Nothing, Function} = nothing,
-        subgradient_nonsmooth::Union{Nothing, Function} = nothing,
+        cost_nonsmooth::Union{Missing, Function} = missing,
+        subgradient_nonsmooth::Union{Missing, Function} = missing,
         stopping_criterion::S = StopWhenGradientMappingNormLess(1.0e-7) |
             StopAfterIteration(5000) |
             StopWhenChangeLess(M, 1.0e-9),
         X = zero_vector(M, p),
         retraction_method = default_retraction_method(M, typeof(p)),
         inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
-        sub_problem = if isnothing(mpgo.proximal_map_h!)
+        sub_problem = if ismissing(mpgo.proximal_map_h!)
             DefaultManoptProblem(
                 M,
                 ManifoldSubgradientObjective(
@@ -729,11 +728,10 @@ function proximal_gradient_method!(
                 ),
             )
         else
-            nothing
+            missing
         end,
-        sub_state = if !isnothing(mpgo.proximal_map_h!)
-            # AllocatingEvaluation()
-            nothing
+        sub_state = if !ismissing(mpgo.proximal_map_h!)
+            AllocatingEvaluation()
         else
             SubGradientMethodState(
                 M;
@@ -751,7 +749,7 @@ function proximal_gradient_method!(
     }
     keywords_accepted(proximal_gradient_method!; kwargs...)
     # Check whether either the right defaults were provided or a `sub_problem`.
-    if isnothing(mpgo.proximal_map_h!) && isnothing(cost_nonsmooth)
+    if ismissing(mpgo.proximal_map_h!) && ismissing(cost_nonsmooth)
         error(
             """
             The `sub_problem` is not correctly initialized. Provide _one of_ the following setups
@@ -815,9 +813,9 @@ function step_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMethodSt
     return pgms
 end
 
-# (I) Problem is nothing -> use prox from objective
+# (I) Problem is missing -> use prox from objective
 function _pgm_proximal_step(
-        amp::AbstractManoptProblem, pgms::ProximalGradientMethodState{P, T, Nothing}, λ::Real
+        amp::AbstractManoptProblem, pgms::ProximalGradientMethodState{P, T, Missing}, λ::Real
     ) where {P, T}
     get_proximal_map!(amp, pgms.p, λ, pgms.a)
     return pgms
