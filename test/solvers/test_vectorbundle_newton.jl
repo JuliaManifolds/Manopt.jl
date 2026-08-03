@@ -154,7 +154,7 @@ using LinearAlgebra: eigvals
         @test occursin("Vector bundle Newton method", st_str)
         @test startswith(repr(st), "VectorBundleNewtonState(")
         # we stopped since the change was small enough
-        @test occursin("* |Δp| < 1.0e-11:$(Manopt._MANOPT_INDENT)reached", st_str)
+        @test occursin("|Δp| < 1.0e-11:$(Manopt._MANOPT_INDENT)reached", st_str)
         acs = st.stepsize
         @test get_initial_stepsize(acs) == acs.α
         @test get_last_stepsize(acs) > 0.0
