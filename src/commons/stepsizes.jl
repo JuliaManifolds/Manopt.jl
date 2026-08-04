@@ -338,7 +338,7 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
     end
 end
 function ArmijoLinesearchStepsize(M::AbstractManifold, p; kwargs...)
-    return ArmijoLinesearchStepsize(M; candidate_point = allocate(p), kwargs...)
+    return ArmijoLinesearchStepsize(M; candidate_point = copy(M,p), kwargs...)
 end
 function (a::ArmijoLinesearchStepsize)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s)));
