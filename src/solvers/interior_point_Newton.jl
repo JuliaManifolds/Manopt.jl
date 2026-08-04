@@ -544,15 +544,15 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
   where `N` is the manifold of the `step_problem`.
 * `equality_constraints=nothing`: the number ``n`` of equality constraints.
 $(_kwargs(:evaluation))
-* `g=nothing`: the inequality constraints
-* `grad_g=nothing`: the gradient of the inequality constraints
-* `grad_h=nothing`: the gradient of the equality constraints
+* `g=missing`: the inequality constraints
+* `grad_g=missing`: the gradient of the inequality constraints
+* `grad_h=missing`: the gradient of the equality constraints
 * `gradient_range=nothing`: specify how gradients are represented, where `nothing` is equivalent to [`NestedPowerRepresentation`](@extref `ManifoldsBase.NestedPowerRepresentation`)
 * `gradient_equality_range=gradient_range`: specify how the gradients of the equality constraints are represented
 * `gradient_inequality_range=gradient_range`: specify how the gradients of the inequality constraints are represented
-* `h=nothing`: the equality constraints
-* `Hess_g=nothing`: the Hessian of the inequality constraints
-* `Hess_h=nothing`: the Hessian of the equality constraints
+* `h=missing`: the equality constraints
+* `Hess_g=missing`: the Hessian of the inequality constraints
+* `Hess_h=missing`: the Hessian of the equality constraints
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
 * `λ=ones(length(h(M, p)))`: the Lagrange multiplier with respect to the equality constraints ``h``
 * `μ=ones(length(g(M, p)))`: the Lagrange multiplier with respect to the inequality constraints ``g``
@@ -611,7 +611,7 @@ function interior_point_Newton(
         grad_g = missing, grad_h = missing,
         Hess_g = missing, Hess_h = missing,
         inequality_constraints::Union{Integer, Nothing} = nothing,
-        equality_constraints::Union{Nothing, Integer} = nothing,
+        equality_constraints::Union{Integer, Nothing} = nothing,
         kwargs...,
     )
     cmo = ConstrainedManifoldObjective(

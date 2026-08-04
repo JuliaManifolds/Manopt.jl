@@ -35,7 +35,11 @@ a bit more lightweight and has “less to handle”.
 * `get_gradient_function` and `get_hessian_function` are unified to always return an allocating variant by default but can also return an  in-place variant now based on a `evaluation=` keyword. While this is formally breaking, since the default behaviour changed – are both functions internal and should also only be used within Manopt.jl
 * objectives now also accept a `p=` keyword to automatically “wrap” functions that operate on immutable  variables – internally Manopt is expecting points and tangent vectors to be mutable.
 
-## Removed
+### Fixed
+* `has_converged` produced inconsistent behaviours for more complex stopping criteria. (see #631)
+  this has been fixed and the function works now consistently for both `StopWhenAny` and `StopWhenAll`.
+
+### Removed
 
 * The two evaluation types of `ParentEvaluationType` and `AllocatingInplaceEvaluation` were never used anywhere, so removing them is considered nonbreaking. Internally this distinction is now anyways handled on a function level, so that neither of the cases can appear anyways. Neither of these types was ever exported.
 

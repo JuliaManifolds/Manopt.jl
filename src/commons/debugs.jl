@@ -501,7 +501,7 @@ function (d::DebugFeasibility)(
         mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
     s = ""
-    cmo = get_objective(mp)
+    cmo = get_objective(mp, true) #Unwrap to get the constrained objective.
     p = get_iterate(st)
     eqc = get_equality_constraint(mp, p, :)
     eqc_nz = eqc[abs.(eqc) .> cmo.atol]
