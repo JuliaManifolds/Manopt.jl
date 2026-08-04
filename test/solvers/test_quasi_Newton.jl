@@ -412,7 +412,7 @@ end
         p = quasi_Newton(M, f, grad_f, data[1])
         @test isapprox(M, pstar, p)
         s = quasi_Newton(M, f, grad_f, data[1]; return_state = true)
-        @test get_solver_result(s)[] == p
+        @test get_solver_result(s)[] == p[]
     end
 
     @testset "Cautious Update that does only transport" begin
