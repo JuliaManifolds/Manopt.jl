@@ -50,7 +50,7 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
 
     vgf_dfn = VectorDifferentialFunction(g, Dg, 2; jacobian_type = FunctionVectorialType())
     @test ismissing(vgf_dfn.adjoint_jacobian!)
-    vgf_df = VectorDifferentialFunction(g, Dg, aDg, 2; jacobian_type = FunctionVectorialType())
+    vgf_df = VectorDifferentialFunction(g, Dg, aDg, 2; jacobian_type = FunctionVectorialType(ArrayPowerRepresentation()))
     vgf_dfi = VectorDifferentialFunction(
         g!, Dg!, aDg!, 2;
         jacobian_type = FunctionVectorialType(), evaluation = InplaceEvaluation(),
@@ -87,8 +87,7 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType(),
         hessian_type = ComponentVectorialType(),
     )
-    for vgf in
-        [vgf_fa, vgf_va, vgf_fi, vgf_vi, vgf_ja, vgf_ji, vhf_fa, vhf_fi, vhf_va, vhf_vi, vgf_df, vgf_dfi]
+    for vgf in [vgf_fa, vgf_va, vgf_fi, vgf_vi, vgf_ja, vgf_ji, vhf_fa, vhf_fi, vhf_va, vhf_vi, vgf_df, vgf_dfi]
         @test length(vgf) == 2
         @test get_value(M, vgf, p) == c
         @test get_value(M, vgf, p, :) == c

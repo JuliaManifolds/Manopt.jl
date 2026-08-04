@@ -10,7 +10,7 @@ function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{Arr
     return Manopt.maybe_wrap_function(Jf, p, e; result = :Matrix)
 end
 function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{NestedPowerRepresentation}, e::AllocatingEvaluation)
-    return Manopt.maybe_wrap_function(Jf, p, e; result = :Tangentvectors)
+    return Manopt.maybe_wrap_function(Jf, p, e; result = :TangentVectors)
 end
 
 """
