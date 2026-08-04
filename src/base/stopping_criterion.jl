@@ -1,5 +1,5 @@
 @doc """
-    StoppingCriterion <: Function
+    StoppingCriterion <: AbstractManifoldFunction
 
 An abstract type for the functions representing stopping criteria, so they are callable structures.
 The naming Scheme follows functions, see for example [`StopAfterIteration`](@ref).
@@ -13,7 +13,7 @@ By default each `StoppingCriterion` should provide a field `at_iteration` to pro
 the iteration it (lst) indicated to stop. Further fields should provide enough information,
 such that a human-readable reason can be assembled, see [`get_reason`](@ref).
 """
-abstract type StoppingCriterion <: Function end
+abstract type StoppingCriterion <: AbstractManifoldFunction end
 
 @doc """
     StoppingCriterionSet <: StoppingCriterion

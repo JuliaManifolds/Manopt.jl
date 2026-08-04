@@ -22,7 +22,7 @@ $(_tex(:biggr)))
 """
 
 @doc """
-    AugmentedLagrangianCost{CO,R,T}
+    AugmentedLagrangianCost{CO,R,T} <: AbstractManifoldSubObjective{CO}
 
 Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
 of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
@@ -41,7 +41,7 @@ number type used and ``T`` the vector type.
 
     AugmentedLagrangianCost(co, ρ, μ, λ)
 """
-mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunction{T}
+mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractManifoldSubObjective{CO}
     co::CO
     ρ::R
     μ::T

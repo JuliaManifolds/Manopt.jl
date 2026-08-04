@@ -62,7 +62,8 @@ function get_parameter(
         e::Symbol, ::Symbol, args...; default = get_parameter(Val(e), Val(:default))
     )
     return @load_preference("$(e)", default)
-end # Handle empty defaults
+end
+# Handle empty defaults
 get_parameter(::Symbol, ::Val{:default}) = nothing
 get_parameter(::Val{:Mode}, ::Val{:default}) = nothing
 get_parameter(::Val{:KeywordsErrorMode}, ::Val{:default}) = "warn"

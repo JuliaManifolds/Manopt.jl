@@ -502,7 +502,7 @@ See [`AdaptiveWNGradient`](@ref) for the mathematical details.
 $(_kwargs(:p)) only used to define the `gradient_bound`
 $(_kwargs(:X)) only used to define the `gradient_bound`
 """
-mutable struct AdaptiveWNGradientStepsize{I <: Integer, R <: Real, F <: Function} <: Stepsize
+mutable struct AdaptiveWNGradientStepsize{I <: Integer, R <: Real, F} <: Stepsize
     count_threshold::I
     minimal_bound::R
     alternate_bound::F

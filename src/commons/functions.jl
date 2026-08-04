@@ -26,7 +26,7 @@ maybe_unwrap_variable(::P, q::Array{P, 0}) where {P} = q[]
 maybe_unwrap_variable(::Type{P}, q::Array{P, 0}) where {P} = q[]
 
 """
-    MutableManifoldFunction{P, F}
+    MutableManifoldFunction{P, F} <: Abstract
 
 A wrapper for a function defined on a manifold to ensure it works on mutable variables,
 internally “unwrapping” them to numbers before calling the function that is wrapped.
@@ -49,11 +49,15 @@ functions furthermore in a [`InplaceManifoldFunction`](@ref).
 Initialise the wrapper for a function `f` defined on a manifold, where `p` is a point on the manifold,
 to store the original point type `P` for the Arguments.
 """
-struct MutableManifoldFunction{P, F} <: Function
+struct MutableManifoldFunction{P, F} <: AbstractDecoratedManifoldFunction{F}
     f::F
     result::Symbol
     function MutableManifoldFunction(f::F, ::Type{P}, result::Symbol = :Number) where {F, P}
         return new{P, F}(f, result)
+    end
+    # do not “wrap twice”
+    function MutableManifoldFunction(mmf::MutableManifoldFunction, ::Type, ::Symbol = :Number)
+        return mmf
     end
 end
 function MutableManifoldFunction(f::F, ::P, result::Symbol = :Number) where {F, P}
@@ -64,6 +68,12 @@ function (f::MutableManifoldFunction{P})(M, args...) where {P}
     v = f.f(M, args_unwrapped...)
     return f.result === :Number ? v : maybe_wrap_variable(v)
 end
+function set_parameter!(mmf::MutableManifoldFunction, e::Symbol, args...)
+    return set_parameter!(mmf.f, e, args...)
+end
+function get_parameter(mmf::MutableManifoldFunction, e::Symbol, args...)
+    return get_parameter(mmf.f, e, args...)
+end
 function show(io::IO, mmf::MutableManifoldFunction)
     return print(io, "MutableManifoldFunction(", mmf.f, ", ", mmf.result, ")")
 end
@@ -72,7 +82,7 @@ function status_summary(mmf::MutableManifoldFunction; context::Symbol = :default
 end
 
 """
-    InplaceManifoldFunction{F}
+    InplaceManifoldFunction{F} <: AbstractDecoratedManifoldFunction{F}
 
 Wrapper for a function to ensure it works in-place.
 
@@ -90,28 +100,37 @@ Wrapper for a function to ensure it works in-place.
 
     InplaceManifoldFunction(f, result = :Point)
 """
-struct InplaceManifoldFunction{F} <: Function
+struct InplaceManifoldFunction{F} <: AbstractDecoratedManifoldFunction{F}
     f::F
     result::Symbol
     point_index::Int
     function InplaceManifoldFunction(f::F, result::Symbol = :Point; point_index::Int = 1) where {F}
         return new{F}(f, result, point_index)
     end
+    # do not “wrap twice”
+    function InplaceManifoldFunction(imf::InplaceManifoldFunction, ::Symbol = :Point; point_index::Int = 1)
+        return imf
+    end
 end
-function (f!::InplaceManifoldFunction)(M, v, args...)
-    (f!.result === :Point) && return copyto!(M, v, f!.f(M, args...))
-    (f!.result === :Points) && return copyto!.(Ref(M), v, f!.f(M, args...))
-    (f!.result === :TangentVector) && return copyto!(M, v, args[f!.point_index], f!.f(M, args...))
-    (f!.result === :TangentVectors) && return copyto!.(Ref(M), v, Ref(args[f!.point_index]), f!.f(M, args...))
-    (f!.result === :Number) && return (v[] = f!.f(M, args...))
+function (imf::InplaceManifoldFunction)(M, v, args...)
+    (imf.result === :Point) && return copyto!(M, v, imf.f(M, args...))
+    (imf.result === :Points) && return copyto!.(Ref(M), v, imf.f(M, args...))
+    (imf.result === :TangentVector) && return copyto!(M, v, args[imf.point_index], imf.f(M, args...))
+    (imf.result === :TangentVectors) && return copyto!.(Ref(M), v, Ref(args[imf.point_index]), imf.f(M, args...))
+    (imf.result === :Number) && return (v[] = imf.f(M, args...))
     # for example (c, X) = costgrad(M, p)
-    (f!.result === :NumberAndTangentVector) && return ((c, X) = f!.f(M, args...); copyto!(M, v, args[f!.point_index], X); (c, v))
+    (imf.result === :NumberAndTangentVector) && return ((c, X) = imf.f(M, args...); copyto!(M, v, args[imf.point_index], X); (c, v))
     # For cases like in ProxBundle where the subsolver can return different sizes, we have to use assign
-    (f!.result === :Assign) && return (v = f!.f(M, args...))
+    (imf.result === :Assign) && return (v = imf.f(M, args...))
     # default: Just copyto! – e.g. for :Vector or :Matrix
-    return copyto!(v, f!.f(M, args...))
+    return copyto!(v, imf.f(M, args...))
 end
-
+function get_parameter(imf::InplaceManifoldFunction, e::Symbol, args...)
+    return get_parameter(imf.f, e, args...)
+end
+function set_parameter!(imf::InplaceManifoldFunction, e::Symbol, args...)
+    return set_parameter!(imf.f, e, args...)
+end
 function show(io::IO, imf::InplaceManifoldFunction)
     return print(io, "InplaceManifoldFunction(", imf.f, ", ", imf.result, ")")
 end

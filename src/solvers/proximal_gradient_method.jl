@@ -2,7 +2,7 @@
 #
 # Subproblem default cost and gradient
 @doc """
-    ProximalGradientNonsmoothCost{F, R, P}
+    ProximalGradientNonsmoothCost{F, R, P} <: AbstractManifoldFunction
 
 Stores the nonsmooth part ``h`` of the proximal gradient objective ``f = g + h``, as well as the stepsize parameter ``λ ∈ ℝ``.
 
@@ -29,7 +29,7 @@ and `p` is the proximity point where the proximal map is evaluated, i.e. the arg
 # Constructor
     ProximalGradientNonsmoothCost(cost, λ, proximity_point)
 """
-mutable struct ProximalGradientNonsmoothCost{F, R, P}
+mutable struct ProximalGradientNonsmoothCost{F, R, P} <: AbstractManifoldFunction
     cost::F
     λ::R
     proximity_point::P
@@ -52,7 +52,7 @@ function (pgnc::ProximalGradientNonsmoothCost)(M::AbstractManifold, p)
 end
 
 @doc """
-    ProximalGradientNonsmoothSubgradient{F, R, P}
+    ProximalGradientNonsmoothSubgradient{F, R, P} <: AbstractManifoldFunction
 
 Stores a subgradient of the nonsmooth part ``h`` of the proximal gradient objective ``f = g + h``, as well as the stepsize parameter ``λ ∈ ℝ``.
 
@@ -75,7 +75,7 @@ is the proximity point where the proximal map is evaluated, i.e. the argument ``
 
     ProximalGradientNonsmoothSubgradient(cost, λ, proximity_point)
 """
-mutable struct ProximalGradientNonsmoothSubgradient{F, R, P}
+mutable struct ProximalGradientNonsmoothSubgradient{F, R, P} <: AbstractManifoldFunction
     X::F
     λ::R
     proximity_point::P

@@ -107,7 +107,7 @@ get_range(::AbstractVectorialType) = NestedPowerRepresentation()
 FunctionVectorialType() = FunctionVectorialType(NestedPowerRepresentation())
 
 @doc """
-    AbstractVectorFunction{FT} <: Function
+    AbstractVectorFunction{FT} <: AbstractManifoldFunction
 
 Represent an abstract vectorial function ``f:$(_math(:Manifold)) → ℝ^n`` with an [`AbstractVectorialType`](@ref)
 to specify the format ``f`` is implemented as.
@@ -140,7 +140,7 @@ For the  [`FunctionVectorialType`](@ref) ``f`` is implemented as a single functi
 And advantage here is, that this is a single function. A disadvantage might be,
 that if this is expensive even to compute a single component, all of `f` has to be evaluated
 """
-abstract type AbstractVectorFunction{FT <: AbstractVectorialType} <: Function end
+abstract type AbstractVectorFunction{FT <: AbstractVectorialType} <: AbstractManifoldFunction end
 
 @doc """
     length(vgf::AbstractVectorFunction)

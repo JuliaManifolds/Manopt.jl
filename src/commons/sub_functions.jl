@@ -251,7 +251,7 @@ $(_tex(:Cal, "P")) = $(
 struct LinearQuadraticHuber <: SmoothingTechnique end
 
 @doc """
-    ExactPenaltyCost{S, Pr, R}
+    ExactPenaltyCost{S, Pr, R} <: AbstractConstrainedFunction{R}
 
 Represent the cost of the exact penalty method based on a [`ConstrainedManifoldObjective`](@ref) `P`
 and a parameter ``ρ`` given by
@@ -274,7 +274,7 @@ to obtain a smooth cost function. This struct is also a functor `(M,p) -> v` of 
 
     ExactPenaltyCost(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
 """
-mutable struct ExactPenaltyCost{S, CO, R}
+mutable struct ExactPenaltyCost{S, CO, R} <: AbstractManifoldFunction
     co::CO
     ρ::R
     u::R
@@ -314,7 +314,7 @@ function (L::ExactPenaltyCost{<:LinearQuadraticHuber})(M::AbstractManifold, p)
 end
 
 @doc """
-    ExactPenaltyGrad{S, CO, R}
+    ExactPenaltyGrad{S, CO, R} <: AbstractManifoldFunction
 
 Represent the gradient of the [`ExactPenaltyCost`](@ref) based on a [`ConstrainedManifoldObjective`](@ref) `co`
 and a parameter ``ρ`` and a smoothing technique, which uses an additional parameter ``u``.
@@ -332,7 +332,7 @@ This struct is also a functor in both formats
 
     ExactPenaltyGradient(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
 """
-mutable struct ExactPenaltyGrad{S, CO, R}
+mutable struct ExactPenaltyGrad{S, CO, R} <: AbstractConstrainedFunction{R}
     co::CO
     ρ::R
     u::R

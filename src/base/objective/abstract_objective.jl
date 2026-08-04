@@ -119,7 +119,8 @@ end
 """
     set_parameter!(amo::AbstractManifoldObjective, element::Symbol, args...)
 
-Set a certain `args...` from the [`AbstractManifoldObjective`](@ref) `amo` to `value.
+Set a certain `element` from the [`AbstractManifoldObjective`](@ref) `amo` to a value specified
+by `args...`
 This function should dispatch on `Val(element)`.
 
 Currently supported

@@ -6,7 +6,7 @@ A common supertype for functors that model constraint functions.
 This supertype provides access for the fields ``λ`` and ``μ``, the dual variables of
 constraints of type `T`.
 """
-abstract type AbstractConstrainedFunction{T} end
+abstract type AbstractConstrainedFunction{T} <: AbstractManifoldFunction end
 
 function set_parameter!(acf::AbstractConstrainedFunction{T}, ::Val{:μ}, μ::T) where {T}
     acf.μ = μ

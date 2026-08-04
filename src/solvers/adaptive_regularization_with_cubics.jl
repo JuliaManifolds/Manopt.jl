@@ -567,9 +567,7 @@ function solve_arc_subproblem!(
     copyto!(M, s, p, get_solver_result(state))
     return s
 end
-function solve_arc_subproblem!(
-        M, s, problem!::P, ::ClosedFormSubSolverState, p
-    ) where {P <: Function}
+function solve_arc_subproblem!(M, s, problem!::F, ::ClosedFormSubSolverState, p) where {F <: Function}
     problem!(M, s, p)
     return s
 end

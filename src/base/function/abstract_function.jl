@@ -1,9 +1,37 @@
+"""
+    AbstractManifoldFunction <: Function
+
+An abstract function type to wrap functions defined on Riemannian manifolds.
+Within `Manopt.jl`, most functions are assumed to work in-place, like gradient and Hessian functions.
+Exceptions are those functions that return single values, e.g.
+a cost function, the differential of a function mapping into the real or complex numbers
+or a boolean function like a [`StoppingCriterion`](@ref)
+"""
+abstract type AbstractManifoldFunction <: Function end
+
+"""
+    AbstractDecoratedManifoldFunction{F} <: AbstractManifoldFunction
+
+An abstract function type to indicate that another function is wrapped.
+Often, the function of type `F` that is wrapped is itself is a [`AbstractManifoldFunction`](@ref) itself again.
+"""
+abstract type AbstractDecoratedManifoldFunction{F} <: AbstractManifoldFunction end
+
+"""
+    set_parameter!(amf::AbstractManifoldFunction, element::Symbol, args...)
+
+Set a certain `args...` from the [`AbstractManifoldFunction`](@ref) `amo` to `value.
+This function should dispatch on `Val(element)`.
+"""
+set_parameter!(amo::AbstractManifoldFunction, e::Symbol, args...)
+
+
 @doc """
-    AbstractApproximateHessianFunction <: Function
+    AbstractApproximateHessianFunction <: AbstractManifoldFunction
 
 An abstract supertype for approximate Hessian functions, declares them also to be functions.
 """
-abstract type AbstractApproximateHessianFunction <: Function end
+abstract type AbstractApproximateHessianFunction <: AbstractManifoldFunction end
 
 _doc_ApproxHessian_formula = """
 ```math
