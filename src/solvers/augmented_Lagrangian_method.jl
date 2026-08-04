@@ -435,7 +435,7 @@ function augmented_Lagrangian_method!(
             M,
             # pass down objective type to sub solvers
             decorate_objective!(
-                M, ManifoldGradientObjective(sub_cost, sub_grad; evaluation = evaluation, p=p);
+                M, ManifoldGradientObjective(sub_cost, sub_grad; evaluation = evaluation, p = p);
                 objective_type = objective_type, sub_kwargs...,
             ),
         ),
