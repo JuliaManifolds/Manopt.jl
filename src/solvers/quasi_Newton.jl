@@ -315,7 +315,7 @@ function quasi_Newton!(
         ),
         preconditioner = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        initial_scale::Union{<:Real, Nothing} = isnothing(preconditioner) ? 1.0 : nothing,
+        initial_scale::Union{<:Real, Nothing} = ismissing(preconditioner) ? 1.0 : nothing,
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, QuasiNewtonState;
             retraction_method = retraction_method,
