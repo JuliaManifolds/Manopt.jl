@@ -52,7 +52,7 @@ function set_parameter!(alc::AugmentedLagrangianCost, ::Val{:ρ}, ρ)
     return alc
 end
 get_parameter(alc::AugmentedLagrangianCost, ::Val{:ρ}) = alc.ρ
-
+# μ & λ already set through the abstract constrained function
 function (L::AugmentedLagrangianCost)(M::AbstractManifold, p)
     gp = get_inequality_constraint(M, L.co, p, :)
     hp = get_equality_constraint(M, L.co, p, :)
@@ -106,6 +106,8 @@ function set_parameter!(alg::AugmentedLagrangianGrad, ::Val{:ρ}, ρ)
     return alg
 end
 get_parameter(alg::AugmentedLagrangianGrad, ::Val{:ρ}) = alg.ρ
+# μ & λ already set through the abstract constrained function
+
 # default, that is especially when the `grad_g` and `grad_h` are functions.
 function (LG::AugmentedLagrangianGrad)(
         M::AbstractManifold, X, p, range = NestedPowerRepresentation()
