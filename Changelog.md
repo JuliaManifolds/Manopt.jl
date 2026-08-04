@@ -37,7 +37,7 @@ a bit more lightweight and has “less to handle”.
 
 ### Fixed
 * `has_converged` produced inconsistent behaviours for more complex stopping criteria. (see #631)
-  this has been fixed and the function works now consistently for both `StopWhenAny` and `StopWhenAll`.
+  This has been fixed and the function works now consistently for both `StopWhenAny` and `StopWhenAll`. (#630)
 
 ### Removed
 

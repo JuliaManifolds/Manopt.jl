@@ -14,7 +14,7 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("commons/test_nonlinear_least_squares_objective.jl")
         include("commons/test_stochastic_gradient_objective.jl")
         include("commons/test_stopping_criteria.jl")
-        include("plans/test_vectorial_function.jl")
+        include("commons/test_vectorial_function.jl")
     end
     @testset "Plan Tests          " begin
         include("plans/test_problem.jl")
