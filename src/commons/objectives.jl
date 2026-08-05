@@ -1313,6 +1313,7 @@ end
 function get_gradient_function(
         sco::ManifoldCachedObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation()
     )
+    # recursive: Unwrap cache
     recursive && (return get_gradient_function(sco.objective, recursive; evaluation = evaluation))
     if evaluation isa AllocatingEvaluation
         return (M, p) -> get_gradient(M, get_objective(sco), p)
@@ -2781,9 +2782,12 @@ end
 function get_gradient_function(
         mfo::ManifoldFirstOrderObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation()
     )
-    if evaluation isa AllocatingEvaluation
+    if evaluation isa AllocatingEvaluation # Since internally we have an inplace one: wrap
         return (M, p) -> get_gradient(M, mfo, p)
     else
+        # (a) do we have access to a “pure” gradient function? Return that
+        haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient])
+        # (b) otherwise generate an anonymous function of correct type
         return (M, X, p) -> get_gradient!(M, X, mfo, p)
     end
 end
@@ -2856,8 +2860,8 @@ function get_gradient!(M::AbstractManifold, Y, mho::ManifoldHessianObjective, p)
     return mho.gradient!(M, Y, p)
 end
 function get_gradient_function(mho::ManifoldHessianObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
-    if evaluation isa AllocatingEvaluation
-        return (M, p) -> mho.gradient!(M, zero_vector(M, p), p)
+    if evaluation isa AllocatingEvaluation # We have to wrap anyways
+        return mho.gradient! isa InplaceManifoldFunction ? mho.gradient!.f : (M, p) -> mho.gradient!(M, zero_vector(M, p), p)
     else
         return mho.gradient!
     end
@@ -3768,7 +3772,7 @@ function get_subgradient!(
 end
 
 @doc """
-    get_subgradient_function(objective::ManifoldSubgradientObjective, recursive=false)
+    get_subgradient_function(objective::ManifoldSubgradientObjective, recursive=false; evaluation = AllocatingEvaluation())
 
 return the function to evaluate (just) the gradient ``$(_tex(:grad)) f(p)``
 and is of the form `(M, X, p) -> X` to work in-place of `X`,
@@ -3890,6 +3894,7 @@ function get_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldO
 end
 
 function get_gradient_function(scaled_objective::ScaledManifoldObjective, recursive::Bool = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    # “unwrap scaling even”
     recursive && (return get_gradient_function(scaled_objective.objective, recursive; evaluation = evaluation))
     if evaluation isa AllocatingEvaluation
         return (M, p) -> get_gradient(M, scaled_objective, p)

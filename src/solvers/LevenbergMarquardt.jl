@@ -495,9 +495,9 @@ function step_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp, true)
     FpSq = get_cost(M, nlso, lms.p)
-    set_parameter!(lms.sub_problem, Val(:Objective), Val(:Penalty), lms.damping_term * FpSq)
+    set_parameter!(lms.sub_problem, :Objective, :Penalty, lms.damping_term * FpSq)
     # update base point of the tangent space the subproblem works on
-    set_parameter!(lms.sub_problem, Val(:Manifold), Val(:Basepoint), lms.p)
+    set_parameter!(lms.sub_problem, :Manifold, :Basepoint, lms.p)
     # Subsolver result
     solve_LM_subproblem!(M, lms.direction, lms.p, lms.sub_problem, lms.sub_state, lms.X)
     callback(:Stepsize, dmp, lms, k)

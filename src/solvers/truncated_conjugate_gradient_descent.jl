@@ -231,9 +231,7 @@ end
 
 Update the residual Power `θ`  to `v`.
 """
-function set_parameter!(
-        c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, v
-    )
+function set_parameter!(c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, v)
     c.θ = v
     return c
 end
@@ -243,9 +241,7 @@ end
 
 Update the residual Factor `κ` to `v`.
 """
-function set_parameter!(
-        c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, v
-    )
+function set_parameter!(c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, v)
     c.κ = v
     return c
 end

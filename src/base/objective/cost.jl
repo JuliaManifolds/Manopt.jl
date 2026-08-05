@@ -23,7 +23,7 @@ function get_cost(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective,
 end
 
 @doc """
-    get_cost_function(amco::AbstractManifoldCostObjective; recursive=false)
+    get_cost_function(amco::AbstractManifoldCostObjective, recursive=false)
 
 return the function to evaluate (just) the cost ``f(p)=c`` as a function `(M,p) -> c`.
 If `amco` has more than one decorator, `recursive` determines whether just one (`false`)

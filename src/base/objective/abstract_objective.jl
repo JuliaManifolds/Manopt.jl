@@ -131,15 +131,15 @@ Currently supported
 set_parameter!(amo::AbstractManifoldObjective, e::Symbol, args...)
 
 function set_parameter!(amo::AbstractManifoldObjective, ::Val{:Cost}, args...)
-    set_parameter!(get_cost_function(amo), args...)
+    set_parameter!(get_cost_function(amo, true), args...)
     return amo
 end
 function set_parameter!(amo::AbstractManifoldObjective, ::Val{:Gradient}, args...)
-    set_parameter!(get_gradient_function(amo), args...)
+    set_parameter!(get_gradient_function(amo, true; evaluation = InplaceEvaluation()), args...)
     return amo
 end
 function set_parameter!(amo::AbstractManifoldObjective, ::Val{:SubGradient}, args...)
-    set_parameter!(get_subgradient_function(amo), args...)
+    set_parameter!(get_subgradient_function(amo, true; evaluation = InplaceEvaluation()), args...)
     return amo
 end
 

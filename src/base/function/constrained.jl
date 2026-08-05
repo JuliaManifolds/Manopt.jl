@@ -42,9 +42,7 @@ function set_parameter!(acsf::AbstractConstrainedSlackFunction{T}, ::Val{:μ}, �
     return acsf
 end
 get_parameter(acsf::AbstractConstrainedSlackFunction, ::Val{:μ}) = acsf.μ
-function set_parameter!(
-        acsf::AbstractConstrainedSlackFunction{T, R}, ::Val{:β}, β::R
-    ) where {T, R}
+function set_parameter!(acsf::AbstractConstrainedSlackFunction{T, R}, ::Val{:β}, β::R) where {T, R}
     acsf.β = β
     return acsf
 end

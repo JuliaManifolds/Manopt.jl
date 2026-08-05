@@ -118,7 +118,7 @@ import Manifolds: inner
         @test Manopt.get_message(s1) == "" # no message in last step
         @test isapprox(M, p1, p2)
         @test isapprox(M, p2, p3)
-        @test isapprox(f(M, p1), 0.0; atol = 1.0e-8)
+        @test isapprox(f(M, p1), 0.0; atol = 1.0e-16)
         # not provided `grad_g` or problem missing
         @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_problem = missing)
         @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_hess = missing)

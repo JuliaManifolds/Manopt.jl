@@ -62,7 +62,7 @@ function get_cost(
     Y = get_objective_hessian(M, arcmo, p, X)
     return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X) + arcmo.σ / 3 * norm(M, p, X)^3
 end
-function get_cost_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective)
+function get_cost_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective, recursive = false)
     return (TpM, X) -> get_cost(TpM, arcmo, X)
 end
 @doc """
@@ -95,6 +95,7 @@ function get_gradient!(
     return Y
 end
 function get_gradient_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    recursive && (return get_gradient_function(arcmo.objective, recursive; evaluation = evaluation))
     if evaluation isa AllocatingEvaluation
         return (M, p) -> get_gradient(M, arcmo, p)
     else

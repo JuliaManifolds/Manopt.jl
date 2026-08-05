@@ -1590,7 +1590,3 @@ function status_summary(trmo::TrustRegionModelObjective; context::Symbol = :defa
     ## Objective
     $(_in_str(status_summary(trmo.objective)))"""
 end
-
-#
-#
-#

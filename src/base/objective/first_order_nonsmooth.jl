@@ -56,7 +56,7 @@ end
 function get_subgradient_function(
         admo::AbstractDecoratedManifoldObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation()
     )
-    return get_subgradient_function(get_objective(admo, recursive); evaluation = evaluation)
+    return get_subgradient_function(get_objective(admo, recursive), recursive; evaluation = evaluation)
 end
 
 #

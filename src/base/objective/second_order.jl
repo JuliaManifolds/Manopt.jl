@@ -31,7 +31,7 @@ function get_hessian_function(
 end
 
 function get_hessian_function(
-        admo::AbstractDecoratedManifoldObjective, recursive::Bool = false; kwargs...
+        admo::AbstractDecoratedManifoldObjective, recursive::Bool = false; evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     )
-    return get_hessian_function(get_objective(admo, recursive); kwargs...)
+    return get_hessian_function(get_objective(admo, recursive), recursive; evaluation = evaluation)
 end
