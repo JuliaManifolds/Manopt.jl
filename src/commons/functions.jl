@@ -81,6 +81,7 @@ function status_summary(mmf::MutableManifoldFunction; context::Symbol = :default
     return status_summary(mmf.f; context = context)
 end
 
+# TODO: Document all result = symbols that are available
 """
     InplaceManifoldFunction{F} <: AbstractDecoratedManifoldFunction{F}
 
@@ -121,7 +122,13 @@ function (imf::InplaceManifoldFunction)(M, v, args...)
     # for example (c, X) = costgrad(M, p)
     (imf.result === :NumberAndTangentVector) && return ((c, X) = imf.f(M, args...); copyto!(M, v, args[imf.point_index], X); (c, v))
     # For cases like in ProxBundle where the subsolver can return different sizes, we have to use assign
-    (imf.result === :Assign) && return (v = imf.f(M, args...))
+    if (imf.result === :MaybeResizeVector)
+        # For a few in-place assignments, we maybe want to grow/shrink the result vector
+        # For example for the prox bundle or convex bundle sub solvers.
+        w = imf.f(M, args...)
+        (length(v) != length(w)) && resize!(v, length(w))
+        return v .= w
+    end
     # default: Just copyto! – e.g. for :Vector or :Matrix
     return copyto!(v, imf.f(M, args...))
 end

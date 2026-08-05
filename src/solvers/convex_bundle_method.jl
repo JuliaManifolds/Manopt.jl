@@ -302,7 +302,7 @@ function ConvexBundleMethodState(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Vector)
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :MaybeResizeVector)
     return ConvexBundleMethodState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
 end
 
@@ -703,7 +703,7 @@ function convex_bundle_method!(
         kwargs...,
     ) where {R <: Real, TF, TdF, TRetr, IR, VTransp}
     keywords_accepted(convex_bundle_method!; kwargs...)
-    sgo = ManifoldSubgradientObjective(f, ∂f!; evaluation = evaluation)
+    sgo = ManifoldSubgradientObjective(f, ∂f!; evaluation = evaluation, p = p)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
     bms = ConvexBundleMethodState(
