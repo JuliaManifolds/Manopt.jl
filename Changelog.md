@@ -38,6 +38,8 @@ a bit more lightweight and has “less to handle”.
 ### Fixed
 * `has_converged` produced inconsistent behaviours for more complex stopping criteria. (see #631)
   This has been fixed and the function works now consistently for both `StopWhenAny` and `StopWhenAll`. (#630)
+* both in-place subsolver for the convex bundle and proximal bundle method would fail to update the result in case the size of the vector changes.
+  this is now adapted by resizing the (in-place, passed down) result vector accordingly for these subsolvers.
 
 ### Removed
 
