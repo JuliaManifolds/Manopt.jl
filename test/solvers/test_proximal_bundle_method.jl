@@ -134,7 +134,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         )
         @test distance(M, q2, m) < 2 * 1.0e-3
         # Test bundle size and in-place
-        p_size = copy(p0)
+        q3 = copy(M, p0)
         function ∂f!(M, X, p)
             X = sum(
                 1 / length(data) *
@@ -143,9 +143,10 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             return X
         end
         proximal_bundle_method!(
-            M, f, ∂f!, p_size; bundle_size = 2, stopping_criterion = StopAfterIteration(200),
+            M, f, ∂f!, q3; bundle_size = 2, stopping_criterion = StopAfterIteration(200),
             evaluation = InplaceEvaluation(), sub_problem = (proximal_bundle_method_subsolver!),
         )
+        @test distance(M, q3, m) < 2 * 1.0e-3
         @testset "Callback test" begin
             sk_record = Tuple{Symbol, Int}[]
             cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
