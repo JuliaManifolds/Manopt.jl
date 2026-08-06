@@ -6,12 +6,14 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("base/test_callbacks.jl")
     end
     @testset "Commons" begin
-        include("commons/test_objectives.jl")
+        include("commons/test_functions.jl")
         include("commons/test_embedded_objective.jl")
         include("commons/test_constrained_objective.jl")
         include("commons/test_cache_objective.jl")
         include("commons/test_gradient_objective.jl")
         include("commons/test_nonlinear_least_squares_objective.jl")
+        include("commons/test_objectives.jl")
+        include("commons/test_repl.jl")
         include("commons/test_stochastic_gradient_objective.jl")
         include("commons/test_stopping_criteria.jl")
         include("commons/test_vectorial_function.jl")

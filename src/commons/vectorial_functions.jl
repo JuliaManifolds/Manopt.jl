@@ -6,9 +6,6 @@ end
 _maybe_wrap_vector_function(f, p, ::ComponentVectorialType, ::AllocatingEvaluation) = maybe_wrap_function(f, p)
 
 _maybe_wrap_jacobian_function(Jf, p, ::AbstractVectorialType, ::InplaceEvaluation) = Jf
-function _maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType, e::AllocatingEvaluation)
-    return maybe_wrap_function(Jf, p, e; result = :TangentVector)
-end
 function _maybe_wrap_jacobian_function(Jf, p, ::ComponentVectorialType, e::AllocatingEvaluation)
     return [ maybe_wrap_function(Jfi, p, e; result = :TangentVector) for Jfi in Jf]
 end
@@ -476,7 +473,7 @@ function get_hessian_function(vhf::VectorHessianFunction; evaluation::AbstractEv
     if evaluation isa AllocatingEvaluation
         (vhf.hessians! isa InplaceManifoldFunction) && return vhf.hessians!.f
         (vhf.hessians! isa AbstractVector{<:InplaceManifoldFunction}) && return [h.f for h in vhf.hessians!]
-        return (M, p, X) -> get_hessian(M, p, X)
+        return (M, p, X) -> get_hessian(M, vhf, p, X)
     end # else: inplace, we return what we have
     return vhf.hessians!
 end

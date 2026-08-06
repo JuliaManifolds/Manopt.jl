@@ -41,7 +41,16 @@ end
 struct DummyEmptyDecoratedObjective{O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{O}
     objective::O
 end
-
+mutable struct DummyDecoratedFunction{F}
+    f::F
+    field::Int
+end
+function Manopt.set_parameter!(ddf::DummyDecoratedFunction, ::Val{:Field}, field)
+    return ddf.field = field
+end
+Manopt.get_parameter(ddf::DummyDecoratedFunction, ::Val{:Field}) = ddf.field
+Manopt.status_summary(ddf::DummyDecoratedFunction; context = :default) = "A dummy decorated function for $(ddf.f) with field $(ddf.field)."
+(ddf::DummyDecoratedFunction)(args...) = ddf.f(args...)
 struct DummyProblem{M <: AbstractManifold} <: AbstractManoptProblem{M} end
 struct DummyStoppingCriteriaSet <: StoppingCriterionSet end
 struct DummyStoppingCriterion <: StoppingCriterion end

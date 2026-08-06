@@ -1,4 +1,4 @@
-using Manopt, ManifoldsBase, Test
+using Manifolds, ManifoldsBase, Manopt, Test
 using Manopt: get_value, get_value!, get_value_function, get_gradient_function
 @testset "VectorialGradientCost" begin
     M = ManifoldsBase.DefaultManifold(3)
@@ -87,6 +87,28 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType(),
         hessian_type = ComponentVectorialType(),
     )
+    # Special wrappers
+    @testset "Wrappers with points" begin
+        vgf_imf1 = Manopt._maybe_wrap_adjoint_jacobian_function([grad_g1, grad_g2], p, ComponentVectorialType(), AllocatingEvaluation())
+        @test vgf_imf1 isa Vector{Manopt.InplaceManifoldFunction}
+        @test vgf_imf1[1].result === :Vector
+        vgf_imf2 = Manopt._maybe_wrap_adjoint_jacobian_function(jac_g, p, CoefficientVectorialType(), AllocatingEvaluation())
+        @test vgf_imf2 isa Manopt.InplaceManifoldFunction
+        @test vgf_imf2.result === :Matrix
+        # Test get_value_functions
+        # (a) builds a wrapper
+        vf1 = get_value_function(vgf_ji; evaluation = AllocatingEvaluation())
+        # (b) the originally wrapped g!
+        vf1! = get_value_function(vgf_ji; evaluation = InplaceEvaluation())
+        @test vf1(M, p) == g(M, p)
+        d1 = copy(c)
+        d2 = copy(c)
+        @test vf1!(M, d1, p) == g!(M, d2, p)
+        @test d1 == d2
+        hess_g_ = Manopt.get_hessian_function(vhf_fi; evaluation = AllocatingEvaluation())
+        # This wrapps the inplace one but still returns the same as the alloc one
+        @test hess_g_(M, p, X) == hess_g(M, p, X)
+    end
     for vgf in [vgf_fa, vgf_va, vgf_fi, vgf_vi, vgf_ja, vgf_ji, vhf_fa, vhf_fi, vhf_va, vhf_vi, vgf_df, vgf_dfi]
         @test length(vgf) == 2
         @test get_value(M, vgf, p) == c

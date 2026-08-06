@@ -61,7 +61,7 @@ struct MutableManifoldFunction{P, F} <: AbstractDecoratedManifoldFunction{F}
     end
 end
 function MutableManifoldFunction(f::F, ::P, result::Symbol = :Number) where {F, P}
-    return MutableManifoldFunction(f, P; result = result)
+    return MutableManifoldFunction(f, P, result)
 end
 function (f::MutableManifoldFunction{P})(M, args...) where {P}
     args_unwrapped = map(a -> maybe_unwrap_variable(P, a), args)
