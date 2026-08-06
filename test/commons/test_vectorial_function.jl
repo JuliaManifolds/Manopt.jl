@@ -106,7 +106,7 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         @test vf1!(M, d1, p) == g!(M, d2, p)
         @test d1 == d2
         hess_g_ = Manopt.get_hessian_function(vhf_fi; evaluation = AllocatingEvaluation())
-        # This wrapps the inplace one but still returns the same as the alloc one
+        # This wraps the inplace one but still returns the same as the alloc one
         @test hess_g_(M, p, X) == hess_g(M, p, X)
     end
     for vgf in [vgf_fa, vgf_va, vgf_fi, vgf_vi, vgf_ja, vgf_ji, vhf_fa, vhf_fi, vhf_va, vhf_vi, vgf_df, vgf_dfi]
