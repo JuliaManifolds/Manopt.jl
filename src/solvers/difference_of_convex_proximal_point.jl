@@ -46,6 +46,7 @@ function get_gradient!(M::AbstractManifold, X, dcpo::ManifoldDifferenceOfConvexP
     return dcpo.gradient!(M, X, p)
 end
 function get_gradient_function(dcpo::ManifoldDifferenceOfConvexProximalObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    ismissing(dcpo.gradient!) && return missing
     if evaluation isa AllocatingEvaluation
         return (M, p) -> dcpo.gradient!(M, zero_vector(M, p), p)
     else

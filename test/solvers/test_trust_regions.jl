@@ -36,6 +36,9 @@ include("trust_region_model.jl")
         Y = copy(M, p, X)
         @test Manopt.get_gradient_function(sub_objective; evaluation = InplaceEvaluation())(M, Y, p) == X
         @test Y == X
+        # Dummy pass through for closed from solver
+        trs4 = TrustRegionsState(M, rgrad, AllocatingEvaluation())
+        @test trs4.sub_state isa Manopt.ClosedFormSubSolverState
     end
     @testset "Objective accessors" begin
         mho = ManifoldHessianObjective(f, rgrad, rhess)

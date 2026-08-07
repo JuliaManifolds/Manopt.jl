@@ -154,6 +154,8 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         # Dummy construction with a function for the `sub_problem`
         arcs4 = AdaptiveRegularizationState(M, f1; p = p0)
         @test arcs4.sub_state isa Manopt.ClosedFormSubSolverState
+        arcs5 = AdaptiveRegularizationState(M, f1, AllocatingEvaluation(); p = p0)
+        @test arcs5.sub_state isa Manopt.ClosedFormSubSolverState
     end
 
     @testset "A few solver runs" begin

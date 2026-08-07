@@ -96,11 +96,7 @@ function get_gradient!(
 end
 function get_gradient_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
     recursive && (return get_gradient_function(arcmo.objective, recursive; evaluation = evaluation))
-    if evaluation isa AllocatingEvaluation
-        return (M, p) -> get_gradient(M, arcmo, p)
-    else
-        return (M, X, p) -> get_gradient!(M, X, arcmo, p)
-    end
+    return evaluation isa AllocatingEvaluation ? (M, p) -> get_gradient(M, arcmo, p) : (M, X, p) -> get_gradient!(M, X, arcmo, p)
 end
 function Base.show(io::IO, arcmo::AdaptiveRegularizationWithCubicsModelObjective)
     print(io, "AdaptiveRegularizationWithCubicsModelObjective(")

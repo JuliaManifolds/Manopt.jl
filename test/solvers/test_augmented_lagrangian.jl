@@ -45,6 +45,9 @@ using LinearAlgebra: I, tr
         # With dummy closed form solution
         almsc = AugmentedLagrangianMethodState(M, co, f)
         @test almsc.sub_state isa Manopt.ClosedFormSubSolverState
+        # With dummy closed form solution
+        almsc = AugmentedLagrangianMethodState(M, co, f, AllocatingEvaluation())
+        @test almsc.sub_state isa Manopt.ClosedFormSubSolverState
 
         alm_record = Tuple{Symbol, Int}[]
         alm_cb(symbol, problem, state, k) = append!(alm_record, [(symbol, k)])
