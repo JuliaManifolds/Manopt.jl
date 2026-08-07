@@ -25,4 +25,4 @@ These interfaces are also unified to accept
 * a `return_state = ` keyword return the [full solver state](state.md) instead of just the minimizer, for example to access its fields afterwards
 * an `objective_type = ` keyword to specify gradients or Hessians to be `:Euclidean` and automatically convert them to Riemannian ones
 
-Additionally there are severeal keyword arguments, for example for solvers with sub solvers `sub_problem = ` and `sub_state = ` to specify which solvers to use in these. These are then passed to the [solver state](state.md) upon construction.
+Additionally there are several keyword arguments, for example for solvers with sub solvers `sub_problem = ` and `sub_state = ` to specify which solvers to use in these. These are then passed to the [solver state](state.md) upon construction.
