@@ -38,12 +38,7 @@ SteepestDescentCoefficient
 The update rules might produce update steps that are not a descent direction, or at least
 be only approximately one. In these cases the following restart rules can be specified.
 
-```@docs
-AbstractRestartCondition
-NeverRestart
-RestartOnNonDescent
-RestartOnNonSufficientDescent
-```
+[`NeverRestart`](@ref), [`RestartOnNonDescent`](@ref), [`RestartOnNonSufficientDescent`](@ref)
 
 ## Internal rules for coefficients
 

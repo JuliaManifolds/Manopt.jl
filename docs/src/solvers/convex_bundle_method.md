@@ -15,12 +15,6 @@ convex_bundle_method!
 ConvexBundleMethodState
 ```
 
-## Stopping criteria
-
-```@docs
-StopWhenLagrangeMultiplierLess
-```
-
 ## Debug functions
 
 ```@docs

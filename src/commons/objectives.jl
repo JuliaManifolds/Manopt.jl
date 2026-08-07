@@ -1461,9 +1461,9 @@ function get_grad_equality_constraint(
     )
 end
 function get_grad_equality_constraint(
-        M::AbstractManifold, co::ManifoldCachedObjective{E, <:ConstrainedManifoldObjective}, p, j::Colon,
+        M::AbstractManifold, co::ManifoldCachedObjective{<:ConstrainedManifoldObjective}, p, j::Colon,
         range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
-    ) where {E}
+    )
     !(haskey(co.cache, :GradEqualityConstraints)) &&
         return get_grad_equality_constraint(M, co.objective, p, j)
     pM = PowerManifold(M, range, length(get_objective(co, true).equality_constraints))
@@ -1573,9 +1573,7 @@ function get_grad_equality_constraint!(
         for (k, j) in
             zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
             copyto!(
-                M,
-                _write(pM, rep_size, X, (k,)),
-                p,
+                M, _write(pM, rep_size, X, (k,)), p,
                 get!(co.cache[:GradEqualityConstraint], (key, j)) do
                     get_grad_equality_constraint(M, co.objective, p, j)
                 end,
@@ -1641,9 +1639,7 @@ function get_grad_inequality_constraint(
         for (k, j) in
             zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
             copyto!(
-                M,
-                _write(pM, rep_size, X, (k,)),
-                p,
+                M, _write(pM, rep_size, X, (k,)), p,
                 get!(co.cache[:GradInequalityConstraint], (key, j)) do
                     get_grad_inequality_constraint(M, co.objective, p, j)
                 end,
@@ -1670,13 +1666,9 @@ function get_grad_inequality_constraint!(
     return X
 end
 function get_grad_inequality_constraint!(
-        M::AbstractManifold,
-        X,
-        co::ManifoldCachedObjective{E, <:ConstrainedManifoldObjective},
-        p,
-        j::Colon,
+        M::AbstractManifold, X, co::ManifoldCachedObjective{<:ConstrainedManifoldObjective}, p, j::Colon,
         range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
-    ) where {E}
+    )
     !(haskey(co.cache, :GradInequalityConstraints)) &&
         return get_grad_inequality_constraint!(M, X, co.objective, p, j)
     pM = PowerManifold(M, range, length(get_objective(co, true).inequality_constraints))

@@ -76,19 +76,11 @@ dual_residual
 
 ## Solver specific debug output
 
-```@docs
-DebugDualBaseIterate
-DebugDualBaseChange
-DebugPrimalBaseIterate
-DebugPrimalBaseChange
-DebugDualChange
-DebugDualIterate
-DebugDualResidual
-DebugPrimalChange
-DebugPrimalIterate
-DebugPrimalResidual
-DebugPrimalDualResidual
-```
+[`DebugDualBaseIterate`](@ref), [`DebugDualBaseChange`](@ref), [`DebugPrimalBaseIterate`](@ref),
+[`DebugPrimalBaseChange`](@ref), [`DebugDualChange`](@ref), [`DebugDualIterate`](@ref),
+[`DebugDualResidual`](@ref), [`DebugPrimalChange`](@ref), [`DebugPrimalIterate`](@ref), [`DebugPrimalResidual`](@ref)
+[`DebugPrimalDualResidual`](@ref)
+
 
 ## Solver specific recording actions
 
@@ -119,8 +111,6 @@ The [`ChambollePock`](@ref) solver requires the following functions of a manifol
 * A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points.
 
 ## Literature
-
-
 
 ```@bibliography
 Pages = ["ChambollePock.md"]

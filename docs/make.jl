@@ -224,6 +224,7 @@ makedocs(;
         "Developer Guide" => [
             "Introduction" => "base/index.md",
             "Function" => "base/function.md",
+            "High-Level interface" => "base/high-level-interface.md",
             "Problem" => "base/problem.md",
             "Objective" => "base/objective.md",
             "Solver State" => [
@@ -232,6 +233,7 @@ makedocs(;
                 "Callback" => "base/state/callback.md",
                 "Debug" => "base/state/debug.md",
                 "Decorator" => "base/state/decorator.md",
+                "Record" => "base/state/record.md",
             ],
             "Stopping Criterion" => "base/stopping_criterion.md",
         ],

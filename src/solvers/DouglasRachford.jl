@@ -307,7 +307,7 @@ function DouglasRachford!(
         inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
             M, typeof(p)
         ),
-        reflection_evaluation::E = AllocatingEvaluation(),
+        reflection_evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         # Adapt to evaluation type
         R::TR = if reflection_evaluation == InplaceEvaluation()
             (M, r, p, q) -> Manopt.reflect!(
@@ -329,7 +329,6 @@ function DouglasRachford!(
     ) where {
         Tλ, Tα, TR,
         O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective},
-        E <: AbstractEvaluationType,
     }
     keywords_accepted(DouglasRachford!; kwargs...)
     dmpo = decorate_objective!(M, mpo; kwargs...)

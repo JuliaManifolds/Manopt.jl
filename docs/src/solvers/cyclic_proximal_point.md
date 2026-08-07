@@ -36,18 +36,6 @@ which either requires
 CyclicProximalPointState
 ```
 
-## Debug functions
-
-```@docs
-DebugProximalParameter
-```
-
-## Record functions
-
-```@docs
-RecordProximalParameter
-```
-
 ## Literature
 
 ```@bibliography

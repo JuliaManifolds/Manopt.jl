@@ -71,6 +71,13 @@ primal_dual_semismooth_Newton!
 PrimalDualSemismoothNewtonState
 ```
 
+## Solver specific debug output
+
+[`DebugDualBaseIterate`](@ref), [`DebugDualBaseChange`](@ref), [`DebugPrimalBaseIterate`](@ref),
+[`DebugPrimalBaseChange`](@ref), [`DebugDualChange`](@ref), [`DebugDualIterate`](@ref),
+[`DebugDualResidual`](@ref), [`DebugPrimalChange`](@ref), [`DebugPrimalIterate`](@ref), [`DebugPrimalResidual`](@ref)
+[`DebugPrimalDualResidual`](@ref)
+
 ## [Technical details](@id sec-ssn-technical-details)
 
 The [`primal_dual_semismooth_Newton`](@ref) solver requires the following functions of a manifold to be available for both the manifold ``\mathcal M``and ``\mathcal N``

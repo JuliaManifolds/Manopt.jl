@@ -321,8 +321,8 @@ mutable struct InteriorPointNewtonState{
 end
 function InteriorPointNewtonState(
         M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem;
-        evaluation::E = AllocatingEvaluation(), kwargs...,
-    ) where {E <: AbstractEvaluationType}
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
+    )
     sub_problem_ = maybe_wrap_function(sub_problem, evaluation)
     cfs = ClosedFormSubSolverState()
     return InteriorPointNewtonState(M, cmo, sub_problem_, cfs; kwargs...)

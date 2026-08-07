@@ -1,6 +1,6 @@
 using LRUCache, Manifolds, Manopt, Test
 
-@testset "Subgradient Plan" begin
+@testset "Subgradient Objective" begin
     M = Euclidean(2)
     p = [1.0, 2.0]
     f(M, q) = distance(M, q, p)
@@ -10,7 +10,14 @@ using LRUCache, Manifolds, Manopt, Test
         end
         return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
     end
+    function ∂f!(M, X, q)
+        if distance(M, p, q) == 0
+            return zero_vector(M, q)
+        end
+        return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
+    end
     mso = ManifoldSubgradientObjective(f, ∂f)
+    msoi = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())
     @testset "Objective Decorator passthrough" begin
         ddo = Manopt.Test.DummyDecoratedObjective(mso)
         @test get_cost(M, mso, p) == get_cost(M, ddo, p)
@@ -20,6 +27,9 @@ using LRUCache, Manifolds, Manopt, Test
         get_subgradient!(M, X, mso, p)
         get_subgradient!(M, Y, ddo, p)
         @test X == Y
+        # Forms an alloc wrapper
+        @test Manopt.get_subgradient_function(msoi; evaluation = AllocatingEvaluation())(M, p) == X
+        # “unwraps” alloc version
         @test Manopt.get_subgradient_function(ddo; evaluation = AllocatingEvaluation()) == ∂f
     end
     @testset "Count" begin

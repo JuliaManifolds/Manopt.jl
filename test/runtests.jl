@@ -16,6 +16,7 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("commons/test_repl.jl")
         include("commons/test_stochastic_gradient_objective.jl")
         include("commons/test_stopping_criteria.jl")
+        include("commons/test_subgradient_objective.jl")
         include("commons/test_vectorial_function.jl")
     end
     @testset "Plan Tests          " begin
@@ -42,7 +43,6 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("plans/test_scaled_objective.jl")
         include("plans/test_stepsize.jl")
         include("plans/test_storage.jl")
-        include("plans/test_subgradient_plan.jl")
     end
     @testset "Helper Tests        " begin
         include("helpers/test_checks.jl")
