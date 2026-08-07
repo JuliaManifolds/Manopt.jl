@@ -15,12 +15,6 @@ convex_bundle_method!
 ConvexBundleMethodState
 ```
 
-## Debug functions
-
-```@docs
-DebugWarnIfLagrangeMultiplierIncreases
-```
-
 ## Helpers and internal functions
 
 ```@docs

@@ -39,22 +39,6 @@ Manopt.NesterovRule
 Manopt.PreconditionedDirectionRule
 ```
 
-## Debug actions
-
-```@docs
-DebugGradient
-DebugGradientNorm
-DebugStepsize
-```
-
-## Record actions
-
-```@docs
-RecordGradient
-RecordGradientNorm
-RecordStepsize
-```
-
 ## [Technical details](@id sec-gradient-descent-technical-details)
 
 The [`gradient_descent`](@ref) solver requires the following functions of a manifold to be available
