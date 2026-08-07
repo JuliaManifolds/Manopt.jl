@@ -33,6 +33,9 @@ include("trust_region_model.jl")
         @test_throws ErrorException TrustRegionsState(M, sub_state)
         trs3 = TrustRegionsState(M, sub_problem; p = p)
         @test Manopt.get_gradient_function(sub_objective)(M, p) == X
+        Y = copy(M, p, X)
+        @test Manopt.get_gradient_function(sub_objective; evaluation = InplaceEvaluation())(M, Y, p) == X
+        @test Y == X
     end
     @testset "Objective accessors" begin
         mho = ManifoldHessianObjective(f, rgrad, rhess)

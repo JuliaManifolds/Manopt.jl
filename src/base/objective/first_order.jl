@@ -63,9 +63,11 @@ Similarly, any objective decorator would “pass though” to its inner objectiv
 
 The gradient part can be evaluated in-place of `X`.
 """
-function get_cost_and_gradient(M, objective::AbstractManifoldFirstOrderObjective, p)
+function get_cost_and_gradient(
+        M::AbstractManifold, mfo::AbstractManifoldFirstOrderObjective, p
+    )
     X = zero_vector(M, p)
-    return get_cost_and_gradient!(M, X, objective, p)
+    return get_cost_and_gradient!(M, X, mfo, p)
 end
 function get_cost_and_gradient(problem::AbstractManoptProblem, p)
     return get_cost_and_gradient(get_manifold(problem), get_objective(problem), p)
@@ -74,12 +76,6 @@ function get_cost_and_gradient(
         M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p
     )
     return get_cost_and_gradient(M, get_objective(admo, false), p)
-end
-function get_cost_and_gradient(
-        M::AbstractManifold, mfo::AbstractManifoldFirstOrderObjective, p
-    )
-    X = zero_vector(M, p)
-    return get_cost_and_gradient!(M, X, mfo, p)
 end
 function get_cost_and_gradient!(
         M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p
@@ -185,7 +181,7 @@ Use `evaluation = `[`InplaceEvaluation`](@ref)` and `recursive = true` to get ac
 Note that this actual function might still be wrapped in an [`InplaceManifoldFunction`](@ref).
 
 """
-get_gradient_function(::AbstractManifoldFirstOrderObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation()) = missing
+get_gradient_function(::AbstractManifoldFirstOrderObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
 
 function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
     return get_gradient_function(get_objective(admo, recursive); evaluation = evaluation)

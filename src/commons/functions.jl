@@ -68,11 +68,11 @@ function (f::MutableManifoldFunction{P})(M, args...) where {P}
     v = f.f(M, args_unwrapped...)
     return f.result === :Number ? v : maybe_wrap_variable(v)
 end
-function set_parameter!(mmf::MutableManifoldFunction, e::Symbol, args...)
-    return set_parameter!(mmf.f, e, args...)
-end
 function get_parameter(mmf::MutableManifoldFunction, e::Symbol, args...)
     return get_parameter(mmf.f, e, args...)
+end
+function set_parameter!(mmf::MutableManifoldFunction, e::Symbol, args...)
+    return set_parameter!(mmf.f, e, args...)
 end
 function show(io::IO, mmf::MutableManifoldFunction)
     return print(io, "MutableManifoldFunction(", mmf.f, ", ", mmf.result, ")")

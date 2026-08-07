@@ -22,7 +22,7 @@ $(_tex(:biggr)))
 """
 
 @doc """
-    AugmentedLagrangianCost{CO,R,T} <: AbstractManifoldSubObjective{CO}
+    AugmentedLagrangianCost{CO,R,T} <: AbstractConstrainedFunction{CO}
 
 Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
 of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
@@ -41,7 +41,7 @@ number type used and ``T`` the vector type.
 
     AugmentedLagrangianCost(co, ρ, μ, λ)
 """
-mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractManifoldSubObjective{CO}
+mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunction{CO}
     co::CO
     ρ::R
     μ::T
@@ -1474,13 +1474,6 @@ end
 
 get_objective(slsmo::NormalEquationsObjective) = slsmo.objective
 
-# set parameter just passes down to the inner objective – the first few here resolve an ambiguity.
-for NT in [Val, Val{:Cost}, Val{:Gradient}, Val{:SubGradient}]
-    @eval function set_parameter!(neo::NormalEquationsObjective, name::$NT, value)
-        set_parameter!(neo.objective, name, value)
-        return neo
-    end
-end
 function set_parameter!(neo::NormalEquationsObjective, name::Symbol, value)
     set_parameter!(neo.objective, name, value)
     return neo
@@ -1510,11 +1503,6 @@ struct TrustRegionModelObjective{
         O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective},
     } <: AbstractManifoldSubObjective{O}
     objective::O
-end
-function TrustRegionModelObjective(
-        mho::O
-    ) where {O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
-    return TrustRegionModelObjective{O}(mho)
 end
 get_objective(trmo::TrustRegionModelObjective) = trmo.objective
 

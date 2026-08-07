@@ -192,6 +192,10 @@ using ManifoldsBase, Manopt, Test
             ca, Ya = Manopt.get_cost_and_gradient(M, obj, p)
             @test ca == c
             @test Ya == G
+            mp = DefaultManoptProblem(M, obj)
+            cp, Yp = Manopt.get_cost_and_gradient(mp, p)
+            @test cp == c
+            @test Yp == G
             cb, _ = Manopt.get_cost_and_gradient!(M, Yi, obj, p)
             @test cb == c
             @test Yi == G
