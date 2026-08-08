@@ -64,14 +64,21 @@ function status_summary(slso::SymmetricLinearSystemObjective; context::Symbol = 
     * b: $(slso.b!)"""
 end
 
-# TODO: Docs – maybe even over on the general setup?
+@doc """
+    Y = get_linear_operator(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p, X)
+    get_linear_operator!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p, X)
+
+    Evaluate the linear operator ``W = $(_tex(:Cal, "A"))[X]` from the [`SymmetricLinearSystemObjective`](@ref)
+    defined on the tangent space at `p` at the tangent vector `X`
+
+    This can be evaluated in-place of `Y`.
+"""
 function get_linear_operator(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p, X)
     Y = copy(M, p, X)
-    slso.A!(M, Y, p, X)
-    return Y
+    return slso.A!(M, Y, p, X)
 end
-function get_linear_operator!(M::AbstractManifold, W, slso::SymmetricLinearSystemObjective, p, X)
-    return slso.A!(M, W, p, X)
+function get_linear_operator!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p, X)
+    return slso.A!(M, Y, p, X)
 end
 
 @doc """

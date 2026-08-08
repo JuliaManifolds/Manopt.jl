@@ -234,6 +234,7 @@ makedocs(;
                 "Debug" => "base/state/debug.md",
                 "Decorator" => "base/state/decorator.md",
                 "Record" => "base/state/record.md",
+                "Sub tasks" => "base/state/sub.md",
             ],
             "Stepsize" => "base/stepsize.md",
             "Stopping Criterion" => "base/stopping_criterion.md",

@@ -17,13 +17,13 @@ using ManifoldDiff: prox_distance, prox_distance!
     q1a = DouglasRachford(M, f, [prox1a, prox2a], p)
     @test isapprox(M, q1a, p_star; atol = 1.0e-14)
     q1i = DouglasRachford(
-        M, f, [prox1a, prox2a], p; R = Manopt.reflect, reflection_evaluation = AllocatingEvaluation()
+        M, f, [prox1a, prox2a], p; reflection_evaluation = AllocatingEvaluation()
     )
     @test isapprox(M, q1i, p_star; atol = 1.0e-14)
     prox1i = (M, q, η, p) -> prox_distance!(M, q, η, d1, p)
     prox2i = (M, q, η, p) -> prox_distance!(M, q, η, d2, p)
     q2 = copy(M, p)
-    DouglasRachford!(M, f, [prox1i, prox2i], q2; evaluation = InplaceEvaluation(), R = Manopt.reflect, reflection_evaluation = AllocatingEvaluation())
+    DouglasRachford!(M, f, [prox1i, prox2i], q2; evaluation = InplaceEvaluation(), reflection_evaluation = InplaceEvaluation())
     @test isapprox(M, q1a, q2)
     # compute the Riemannian center of mass (locally) on Sn
     # though also this is not that useful, but easy to test that DR works

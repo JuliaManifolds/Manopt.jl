@@ -81,23 +81,31 @@ function status_summary(mmf::MutableManifoldFunction; context::Symbol = :default
     return status_summary(mmf.f; context = context)
 end
 
-# TODO: Document all result = symbols that are available
 """
     InplaceManifoldFunction{F} <: AbstractDecoratedManifoldFunction{F}
 
-Wrapper for a function to ensure it works in-place.
+Wrapper for a function to ensure it works in-place. Since the action to perform to the
+provided return value differs per type, the following cases for results are available:
+
+* `:Point` use `copyto!` for a point on a manifold
+* `:Points` use an element-wise `copyto!` for points
+* `:TangentVector` use `copyto!` for a tangent vector`
+* `:TangentVectors` use an elementwise `copyto!` for tangent vectors
+* `:Number` assume the result to be a 0-dimensional array.
+* `:NumberAndTangentVector` for the combination `(c, X)` of a number and a tangent vector – return  `c` and handle `X` with the `copyto!` for a tangent vector
+* `:MaybeResizeVector` for a vector to return, make sure the size is adaptd if needed. This is useful e.g. for return values of sub solvers that might vary in length
+* `:Default` (also all other symbols) just use a plain `copyto!`
+
+For those that require an additional point like the tangent vectors, the point is taken as the `point_index` entry of the `args...`
 
 # Fields
 * `f::F` : the function to be wrapped of the form `(M, args...) -> v`
 * `result::Symbol`: specify the type
-  * `:Point` uses the corresponding `copyto!` for points
-  * `:TangentVector` uses the corresponding `copyto!` for tangentvectors
-    this type assumes, that the first argument is the point `p` the tangent vector is at.
-  * `:Number` the result is a number. We hence assume that `v` is a zero- or one-dimensional array and store the value using `v[]`.
 * `point_index` from the arguments `args...` specify, which is the point to be used in copy
   * default that works for most functions: 1
   * for the proximal map `(M, λ, p)` this is index 2
-# Constructor
+
+  # Constructor
 
     InplaceManifoldFunction(f, result = :Point)
 """

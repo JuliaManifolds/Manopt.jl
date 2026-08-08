@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Manopt
+```
+
 # The Manopt.jl Solver state
 
 The solver state represents all parameters that determine the solver's setup as well as interims memory, e.g. to avoid allocations or to keep certain variables in between iterations. These should also allow insight into how the solver is performing.
@@ -9,7 +13,7 @@ A state can be [decorated](state/decorator.md) to add functionality
 Further elements a state can use are
 
 * a [stepsize](stepsize.md)
-* a sub solver and sub state (TODO: Add link)
+* a [sub solver and sub state](state/sub.md)
 
 ## Abstract state
 
