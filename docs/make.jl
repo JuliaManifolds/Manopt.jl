@@ -227,6 +227,7 @@ makedocs(;
             "High-Level interface" => "base/high-level-interface.md",
             "Problem" => "base/problem.md",
             "Objective" => "base/objective.md",
+            "Solver" => "base/solver.md",
             "Solver State" => [
                 "Overview" => "base/state.md",
                 "Action" => "base/state/action.md",
