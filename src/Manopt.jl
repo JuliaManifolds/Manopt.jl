@@ -145,6 +145,7 @@ include("base/state/callback.jl")
 include("base/state/debug.jl")
 include("base/state/decorator.jl")
 include("base/state/record.jl")
+include("base/solver.jl")
 include("base/state/sub_state.jl")
 # ## General further interfaces
 include("base/default_factory.jl")
@@ -170,7 +171,6 @@ include("commons/linear_systems.jl")
 include("commons/parameters.jl")
 include("commons/problems.jl")
 include("commons/quasi_newton_updates.jl")
-include("commons/solver_states.jl")
 include("commons/stepsizes.jl")
 include("commons/stopping_criteria.jl")
 include("commons/sub_functions.jl")
@@ -182,8 +182,6 @@ include("commons/debugs.jl")
 include("commons/records.jl")
 #
 #
-# solvers general framework
-include("solvers/solver.jl")
 # specific solvers
 include("solvers/adaptive_regularization_with_cubics.jl")
 include("solvers/alternating_gradient_descent.jl")

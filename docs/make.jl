@@ -219,6 +219,11 @@ makedocs(;
         "Commons" => [
             "Overview" => "commons/index.md",
             "Debug Outputs" => "commons/debugs.md",
+            "Objectives" => "commons/objectives.md",
+            "Problems" => "commons/problems.md",
+            "Record Actions" => "commons/records.md",
+            "Robustifiers" => "commons/robustifiers.md",
+            "Stepsize Rules" => "commons/stepsizes.md",
             "Stopping Criteria" => "commons/stopping_criteria.md",
         ],
         "Developer Guide" => [
@@ -226,6 +231,7 @@ makedocs(;
             "Function" => "base/function.md",
             "High-Level interface" => "base/high-level-interface.md",
             "Problem" => "base/problem.md",
+            "Default Factory" => "base/default_factory.md",
             "Objective" => "base/objective.md",
             "Solver" => "base/solver.md",
             "Solver State" => [

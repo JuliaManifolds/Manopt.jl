@@ -4,7 +4,7 @@
 CurrentModule = Manopt
 ```
 
-Debug output can easily be added to any solver run, since all solvers accept the `debug=` keyword.
+Debug output can be added to any solver run, since all solvers accept the `debug = ` keyword.
 This is handles by the [`DebugActionFactory`](@ref).
 
 ```@autodocs
