@@ -2,7 +2,7 @@
 
 TODO short text and reference to commons
 
-## Structres
+## Types
 
 ```@autodocs
 Modules = [Manopt]
