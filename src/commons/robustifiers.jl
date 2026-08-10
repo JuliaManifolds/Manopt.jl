@@ -124,7 +124,7 @@ function get_robustifier_values(crf::ComponentwiseRobustifierFunction, x::Abstra
 end
 
 """
-ComposedRobustifierFunction{F<:AbstractRobustifierFunction, G<:AbstractRobustifierFunction} <: AbstractRobustifierFunction
+     ComposedRobustifierFunction{F<:AbstractRobustifierFunction, G<:AbstractRobustifierFunction} <: AbstractRobustifierFunction
 
 A robustifier that is the composition of two robustifier functions ``ρ = ρ_1 ∘ ρ_2``.
 

@@ -225,10 +225,15 @@ makedocs(;
             "Robustifiers" => "commons/robustifiers.md",
             "Stepsize Rules" => "commons/stepsizes.md",
             "Stopping Criteria" => "commons/stopping_criteria.md",
+            "Vector Functions" => "commons/vectorial_functions.md",
         ],
         "Developer Guide" => [
             "Introduction" => "base/index.md",
-            "Function" => "base/function.md",
+            "Function" => [
+                "Overview" => "base/function.md",
+                "Robustifier" => "base/function/robustifier.md",
+                "Vectorial" => "base/function/vectorial.md",
+            ],
             "High-Level interface" => "base/high-level-interface.md",
             "Problem" => "base/problem.md",
             "Default Factory" => "base/default_factory.md",
