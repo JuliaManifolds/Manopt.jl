@@ -101,7 +101,7 @@ The notation in the documentation aims to follow the same [notation](@extref Man
 
 ### Visualization
 
-To visualize and interpret results, `Manopt.jl` provides a system to get [debug](base/state/debug.md) during the iterations of an algorithms as well as [record](base/record.md) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
+To visualize and interpret results, `Manopt.jl` provides a system to get [debug](base/state/debug.md) during the iterations of an algorithms as well as [record](base/state/record.md) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
 [`RecordIterate`](@ref). Take a look at the [🏔️ Get started with Manopt.jl](tutorials/getstarted.md) tutorial on how to easily activate this.
 
 ## Literature

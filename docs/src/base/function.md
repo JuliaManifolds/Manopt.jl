@@ -18,7 +18,7 @@ the return value is second and then the arguments follow.
 
 Since a user might instead also implement a function `grad_f(M, p) -> X`. This is then
 internally “wrapped” by a [`InplaceManifoldFunction`](@ref) and can be specified for any
-[`AbstractManifoldObjective`](@ref) or [high-level interfaces](high-level-interfaces.md)
+[`AbstractManifoldObjective`](@ref) or [high-level interfaces](high-level-interface.md)
 with the `evaluation = ` keyword that accepts an [`AbstractEvaluationType`](@ref)
 and for the example here one specifies it as [`AllocatingEvaluation`](@ref)`()`.
 
@@ -34,10 +34,10 @@ maybe_wrap_function
 
 A few Manifolds like the [`Circle`](@extref `Manifolds.Circle`)`()` or [`PositiveNumbers`](@ref)
 might work on real numbers, which are not mutable. Internally, `Manopt` assumes that its variables,
-e.g. points and tangent vectors, are mutable. Therefore, variables in the [high-level interfaces](high-level-interfaces.md)
+e.g. points and tangent vectors, are mutable. Therefore, variables in the [high-level interfaces](high-level-interface.md)
 are automatically wrapped internally. Similarly functions can be wrapped in a [`MutableManifoldFunction`](@ref).
 
-Both the [`AbstractManifoldObjective`](@ref) and [high-level interfaces](high-level-interfaces.md)
+Both the [`AbstractManifoldObjective`](@ref) and [high-level interfaces](high-level-interface.md)
 can determine this when being passed a `p = ` keyword argument providing the point used to define
 functions on the manifold.
 

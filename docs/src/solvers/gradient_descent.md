@@ -18,16 +18,11 @@ GradientDescentState
 ## Direction update rules
 
 A field of the options is the `direction`, a [`DirectionUpdateRule`](@ref), which by default [`IdentityUpdateRule`](@ref) just evaluates the gradient but can be enhanced for example to
-
-```@docs
-AverageGradient
-DirectionUpdateRule
-IdentityUpdateRule
-MomentumGradient
-Nesterov
-PreconditionedDirection
-```
-
+[`AverageGradient`](@ref),
+[`DirectionUpdateRule`](@ref),
+[`MomentumGradient`](@ref),
+[`Nesterov`](@ref), or
+[`PreconditionedDirection`](@ref),
 which internally use the [`ManifoldDefaultsFactory`](@ref) and produce the internal
 elements
 
@@ -51,8 +46,5 @@ The [`gradient_descent`](@ref) solver requires the following functions of a mani
 ## Literature
 
 ```@bibliography
-Pages = ["gradient_descent.md"]
-Canonical=false
-
 Luenberger:1972
 ```
