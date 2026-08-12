@@ -128,7 +128,7 @@ $(_kwargs(:X))
 * `momentum=0.2` amount of momentum to use
 $(_kwargs(:vector_transport_method))
 
-$(_note(:ManifoldDefaultFactory, "MomentumGradientRule"))
+$(_note(:ManifoldDefaultsFactory, "MomentumGradientRule"))
 """
 function MomentumGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; requires_point = true, kwargs...)
@@ -252,7 +252,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 * `n=10` number of gradient evaluations to take the mean over
 $(_kwargs([:X, :vector_transport_method]))
 
-$(_note(:ManifoldDefaultFactory, "AverageGradientRule"))
+$(_note(:ManifoldDefaultsFactory, "AverageGradientRule"))
 """
 function AverageGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; requires_point = true, kwargs...)
@@ -387,7 +387,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 * `shrinkage = k -> 0.8`
 $(_kwargs(:inverse_retraction_method))
 
-$(_note(:ManifoldDefaultFactory, "NesterovRule"))
+$(_note(:ManifoldDefaultsFactory, "NesterovRule"))
 """
 function Nesterov(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.NesterovRule, args...; requires_point = true, kwargs...)
@@ -496,7 +496,7 @@ $(_args(:M)) (optional)
 * `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
 $(_kwargs(:evaluation))
 
-$(_note(:ManifoldDefaultFactory, "PreconditionedDirectionRule"))
+$(_note(:ManifoldDefaultsFactory, "PreconditionedDirectionRule"))
 """
 function PreconditionedDirection(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.PreconditionedDirectionRule, args...; kwargs...)

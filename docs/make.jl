@@ -224,6 +224,7 @@ makedocs(;
             "Problems" => "commons/problems.md",
             "Record Actions" => "commons/records.md",
             "Robustifiers" => "commons/robustifiers.md",
+            "States" => "commons/states.md",
             "Stepsize Rules" => "commons/stepsizes.md",
             "Stopping Criteria" => "commons/stopping_criteria.md",
             "Vector Functions" => "commons/vectorial_functions.md",

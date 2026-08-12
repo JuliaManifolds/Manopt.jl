@@ -24,7 +24,7 @@ Then the coefficient reads
 The second one it the one usually stated, while the first one avoids to use the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
-$(_note(:ManifoldDefaultFactory, "ConjugateDescentCoefficientRule"))
+$(_note(:ManifoldDefaultsFactory, "ConjugateDescentCoefficientRule"))
 """
 function ConjugateDescentCoefficient()
     return ManifoldDefaultsFactory(
@@ -92,7 +92,7 @@ The following fields from above are keyword arguments
 $(_kwargs(:X; name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
-* `restart_condition=`[`RestartOnNonDescent`](@ref)`()`: specify a [restart condition](@ref `AbstractRestartCondition`). It defaults to [`RestartOnNonDescent`](@ref).
+* `restart_condition=`[`RestartOnNonDescent`](@ref)`()`: specify a [restart condition](@ref AbstractRestartCondition). It defaults to [`RestartOnNonDescent`](@ref).
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:retraction_method))
@@ -351,7 +351,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 $(_kwargs(:vector_transport_method))
 
-$(_note(:ManifoldDefaultFactory, "DaiYuanCoefficientRule"))
+$(_note(:ManifoldDefaultsFactory, "DaiYuanCoefficientRule"))
 """
 function DaiYuanCoefficient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.DaiYuanCoefficientRule, args...; kwargs...)
@@ -423,7 +423,7 @@ Then the coefficient reads
 The second one it the one usually stated, while the first one avoids to use the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
-$(_note(:ManifoldDefaultFactory, "FletcherReevesCoefficientRule"))
+$(_note(:ManifoldDefaultsFactory, "FletcherReevesCoefficientRule"))
 """
 function FletcherReevesCoefficient()
     return ManifoldDefaultsFactory(
@@ -548,7 +548,7 @@ This method includes a numerical stability proposed by those authors.
 
 $(_kwargs(:vector_transport_method))
 
-$(_note(:ManifoldDefaultFactory, "HagerZhangCoefficientRule"))
+$(_note(:ManifoldDefaultsFactory, "HagerZhangCoefficientRule"))
 """
 function HagerZhangCoefficient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.HagerZhangCoefficientRule, args...; kwargs...)
@@ -672,7 +672,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 $(_kwargs(:vector_transport_method))
 
-$(_note(:ManifoldDefaultFactory, "HestenesStiefelCoefficientRule"))
+$(_note(:ManifoldDefaultsFactory, "HestenesStiefelCoefficientRule"))
 """
 function HestenesStiefelCoefficient(args...; kwargs...)
     return ManifoldDefaultsFactory(
@@ -775,7 +775,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 $(_kwargs(:vector_transport_method))
 
-$(_note(:ManifoldDefaultFactory, "LiuStoreyCoefficientRule"))
+$(_note(:ManifoldDefaultsFactory, "LiuStoreyCoefficientRule"))
 """
 function LiuStoreyCoefficient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.LiuStoreyCoefficientRule, args...; kwargs...)
@@ -878,7 +878,7 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 $(_kwargs(:vector_transport_method))
 
-$(_note(:ManifoldDefaultFactory, "PolakRibiereCoefficientRule"))
+$(_note(:ManifoldDefaultsFactory, "PolakRibiereCoefficientRule"))
 """
 function PolakRibiereCoefficient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.PolakRibiereCoefficientRule, args...; kwargs...)
@@ -924,7 +924,7 @@ so that is falls back to a [`gradient_descent`](@ref) method, that is
 β_k = 0
 ````
 
-$(_note(:ManifoldDefaultFactory, "SteepestDescentCoefficient"))
+$(_note(:ManifoldDefaultsFactory, "SteepestDescentCoefficient"))
 """
 function SteepestDescentCoefficient()
     return ManifoldDefaultsFactory(
@@ -1071,7 +1071,7 @@ where ``ε`` is the `threshold`, which is set by default to `0.2`, see [Powell:1
 $(_kwargs(:vector_transport_method))
 * `threshold=0.2`
 
-$(_note(:ManifoldDefaultFactory, "ConjugateGradientBealeRestartRule"))
+$(_note(:ManifoldDefaultsFactory, "ConjugateGradientBealeRestartRule"))
 """
 function ConjugateGradientBealeRestart(args...; kwargs...)
     return ManifoldDefaultsFactory(
@@ -1190,7 +1190,7 @@ The HS-DY parameter with parameter `0<σ<1` reads
 and can be implemented using
 [`HybridCoefficient`](@ref)`(`[`HestenesStiefelCoefficient`](@ref)`(),`[`DaiYuanCoefficient`](@ref)`(); lower_bound = `[`DaiYuanCoefficient`](@ref)`(), lower_bound_scale = -σ)`
 
-$(_note(:ManifoldDefaultFactory, "HybridCoefficientRule"))
+$(_note(:ManifoldDefaultsFactory, "HybridCoefficientRule"))
 """
 function HybridCoefficient(args...; kwargs...)
     return ManifoldDefaultsFactory(

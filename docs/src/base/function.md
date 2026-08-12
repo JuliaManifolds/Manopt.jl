@@ -44,27 +44,36 @@ functions on the manifold.
 maybe_unwrap_variable
 ```
 
+## Abstract function types
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/function/abstract_function.jl"]
+Order = [:type, :function]
+Private = true
+Public = true
+```
 
 ## Functions Modelling constrains
 
 TODO short text and reference to commons
 
-### Types
+### Types and functions
 
 ```@autodocs
 Modules = [Manopt]
 Pages = ["base/function/constrained.jl"]
 Order = [:type, :function]
-Private = false
-Public = true
+Private = true
+Public = false
 ```
 
-### Functions
+### Internals
 
 ```@autodocs
 Modules = [Manopt]
 Pages = ["base/function/constrained.jl"]
-Order = [:function]
+Order = [:type, :function]
 Private = false
 Public = true
 ```
@@ -93,4 +102,14 @@ Pages = ["base/function/vectorial.jl"]
 Order = [:type, :function]
 Private = false
 Public = true
+```
+
+### Internals
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/function/vectorial.jl"]
+Order = [:type, :function]
+Private = true
+Public = false
 ```

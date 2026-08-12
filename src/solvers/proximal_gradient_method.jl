@@ -459,7 +459,7 @@ g(T_{λ}(p)) ≤ g(p) + ⟨$(_tex(:grad)) g(p), $(_tex(:log))_p T_{λ}(p)⟩ + $
 
 Returns a stepsize `λ` that satisfies the specified condition.
 
-$(_note(:ManifoldDefaultFactory, "ProximalGradientMethodBacktrackingStepsize"))
+$(_note(:ManifoldDefaultsFactory, "ProximalGradientMethodBacktrackingStepsize"))
 """
 function ProximalGradientMethodBacktracking(args...; kwargs...)
     return ManifoldDefaultsFactory(

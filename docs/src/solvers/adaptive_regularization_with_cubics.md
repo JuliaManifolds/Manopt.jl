@@ -1,10 +1,9 @@
-# Adaptive regularization with cubics
-
-
 
 ```@meta
 CurrentModule = Manopt
 ```
+
+# Adaptive regularization with cubics
 
 ```@docs
 adaptive_regularization_with_cubics
@@ -33,11 +32,13 @@ There is a generic objective, that implements the sub problem
 
 ```@docs
 AdaptiveRegularizationWithCubicsModelObjective
+get_cost(::TangentSpace, ::AdaptiveRegularizationWithCubicsModelObjective, X)
+get_gradient(::TangentSpace,::AdaptiveRegularizationWithCubicsModelObjective, X)
 ```
 
 Since the sub problem is given on the tangent space, you have to provide
 
-```
+```julia
 arc_obj = AdaptiveRegularizationWithCubicsModelObjective(mho, σ)
 sub_problem = DefaultProblem(TangentSpaceAt(M,p), arc_obj)
 ```

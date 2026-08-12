@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Manopt
+```
+
 # The Riemannian Chambolle-Pock algorithm
 
 The Riemannian Chambolle—Pock is a generalization of the Chambolle—Pock algorithm [ChambollePock:2011](@citet*)
@@ -59,6 +63,12 @@ CurrentModule = Manopt
 ```@docs
 ChambollePock
 ChambollePock!
+```
+
+## Objective
+
+```@docs
+PrimalDualManifoldObjective
 ```
 
 ## State

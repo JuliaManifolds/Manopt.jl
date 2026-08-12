@@ -44,5 +44,6 @@ Of course the main function to implement is the one of the new data structure
 indicates_convergence
 is_active_stopping_criterion
 has_converged
+get_active_stopping_criteria
 get_reason
 ```

@@ -43,12 +43,6 @@ trust_regions!
 TrustRegionsState
 ```
 
-as well as their (non-exported) common supertype
-
-```@docs
-Manopt.AbstractApproximateHessianFunction
-```
-
 ## [Technical details](@id sec-tr-technical-details)
 
 The [`trust_regions`](@ref) solver requires the following functions of a manifold to be available

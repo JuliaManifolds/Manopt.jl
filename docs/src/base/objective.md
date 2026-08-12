@@ -22,7 +22,7 @@ There is a hierarchy of objectives in order to provide default implementations f
 ## [Decorated objectives](@id meta-objectives)
 
 Following the [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern) approach,
-an objective can be “wrapped” to gain certain properties. For example to [cache](@ref `ManifoldCachedObjective`) or [count](@ref `ManifoldCountObjective`) function evaluation.
+an objective can be “wrapped” to gain certain properties. For example to [cache](@ref ManifoldCachedObjective) or [count](@ref ManifoldCountObjective) function evaluation.
 
 ```@docs
 AbstractDecoratedManifoldObjective

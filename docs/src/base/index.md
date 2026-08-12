@@ -11,3 +11,28 @@ The problem represents the task to be solved, which by default includes the mani
 an objective is defined on and the objective to solve.
 The solver's state represents all variables and parameters a solver requires for setup as
 well as during the iterations.
+
+
+## Pretty printing on REPL
+
+TODO
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/repl.jl"]
+Order = [:type, :function]
+Public = true
+Private = true
+```
+
+## Parameters
+
+TODO
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/parameter.jl"]
+Order = [:type, :function]
+Public = true
+Private = true
+```

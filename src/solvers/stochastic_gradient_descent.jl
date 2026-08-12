@@ -173,7 +173,7 @@ end
 $(_kwargs(:X; name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 
-$(_note(:ManifoldDefaultFactory, "StochasticGradientRule"))
+$(_note(:ManifoldDefaultsFactory, "StochasticGradientRule"))
 """
 function StochasticGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.StochasticGradientRule, args...; kwargs...)

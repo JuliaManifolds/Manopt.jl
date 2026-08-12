@@ -465,7 +465,7 @@ $(_kwargs(:retraction_method))
 
 For the stop safe guards you can pass `:Messages` to a `debug=` to see `@info` messages when these happen.
 
-$(_note(:ManifoldDefaultFactory, "ArmijoLinesearchStepsize"))
+$(_note(:ManifoldDefaultsFactory, "ArmijoLinesearchStepsize"))
 """
 function ArmijoLinesearch(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.ArmijoLinesearchStepsize, args...; requires_point = true, kwargs...)
@@ -733,7 +733,7 @@ Specify a [`Stepsize`](@ref) that is constant.
   * `:relative` – scale the gradient tangent vector ``X`` to ``s*X``
   * `:absolute` – scale the gradient to an absolute step length ``s``, that is ``$(_tex(:frac, "s", _tex(:norm, "X")))X``
 
-$(_note(:ManifoldDefaultFactory, "ConstantStepsize"))
+$(_note(:ManifoldDefaultsFactory, "ConstantStepsize"))
 """
 function ConstantLength(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.ConstantStepsize, args...; kwargs...)
@@ -1107,7 +1107,7 @@ $(_kwargs(:retraction_method))
 * `hybrid=true`: use the hybrid strategy
 $(_kwargs(:vector_transport_method))
 
-$(_note(:ManifoldDefaultFactory, "CubicBracketingLinesearch"))
+$(_note(:ManifoldDefaultsFactory, "CubicBracketingLinesearch"))
 """
 function CubicBracketingLinesearch(args...; kwargs...)
     return ManifoldDefaultsFactory(CubicBracketingLinesearchStepsize, args...; requires_point = true, kwargs...)
@@ -1230,7 +1230,7 @@ with the following
 * `:relative` – scale the gradient tangent vector ``X`` to ``s_k*X``
 * `:absolute` – scale the gradient to an absolute step length ``s_k``, that is ``$(_tex(:frac, "s_k", _tex(:norm, "X")))X``
 
-$(_note(:ManifoldDefaultFactory, "DecreasingStepsize"))
+$(_note(:ManifoldDefaultsFactory, "DecreasingStepsize"))
 """
 function DecreasingLength(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.DecreasingStepsize, args...; kwargs...)
@@ -1445,7 +1445,7 @@ On subsequent calls, the state is updated as implemented:
 @doc """
 $(doc_DoG_main)
 
-$(_note(:ManifoldDefaultFactory, "DistanceOverGradientsStepsize"))
+$(_note(:ManifoldDefaultsFactory, "DistanceOverGradientsStepsize"))
 """
 function DistanceOverGradients(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.DistanceOverGradientsStepsize, args...; requires_point = true, kwargs...)
@@ -1882,7 +1882,7 @@ where ``∂f`` denotes a nonzero-subgradient of ``f`` at the current iterate ``p
 
 initialize the Polyak stepsize to a certain sequence and an initial estimate of ``f_{\text{best}}``.
 
-$(_note(:ManifoldDefaultFactory, "PolyakStepsize"))
+$(_note(:ManifoldDefaultsFactory, "PolyakStepsize"))
 """
 function Polyak(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.PolyakStepsize, args...; requires_manifold = false, kwargs...)
@@ -3060,7 +3060,7 @@ $(_kwargs(:vector_transport_method))
   for accepting secant step. Allowed range: `secant_acceptance_ratio >= 0`.
   In case of rejection, a bisection step is performed instead.
 
-$(_note(:ManifoldDefaultFactory, "HagerZhangLinesearch"))
+$(_note(:ManifoldDefaultsFactory, "HagerZhangLinesearch"))
 """
 function HagerZhangLinesearch(args...; kwargs...)
     return ManifoldDefaultsFactory(HagerZhangLinesearchStepsize, args...; kwargs...)

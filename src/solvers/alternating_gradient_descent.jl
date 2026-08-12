@@ -185,7 +185,7 @@ in order to do a alternating gradient descent.
 $(_kwargs(:X, name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 
-$(_note(:ManifoldDefaultFactory, "AlternatingGradientRule"))
+$(_note(:ManifoldDefaultsFactory, "AlternatingGradientRule"))
 """
 function AlternatingGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.AlternatingGradientRule, args...; kwargs...)

@@ -207,7 +207,7 @@ _glossary_notes = _glossary[:Note]
 __note_formatter = Glossaries.Plain(:note)
 _note(args...; kwargs...) = __note_formatter(_glossary_notes, args...; kwargs...)
 Glossaries.define!(
-    _glossary_notes, :ManifoldDefaultFactory, :note,
+    _glossary_notes, :ManifoldDefaultsFactory, :note,
     (type::String) -> """
     !!! info
         This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`](@ref).

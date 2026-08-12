@@ -476,7 +476,7 @@ Specify a step size that performs a backtracking to the interior of the domain o
 * `initial_stepsize``: specify an initial step size
 $(_kwargs(:retraction_method))
 
-$(_note(:ManifoldDefaultFactory, "DomainBackTrackingStepsize"))
+$(_note(:ManifoldDefaultsFactory, "DomainBackTrackingStepsize"))
 """
 function DomainBackTracking(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.DomainBackTrackingStepsize, args...; kwargs...)
