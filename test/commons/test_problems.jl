@@ -1,6 +1,6 @@
 using Manopt, Manifolds, Test
 
-@testset "Manopt Problem" begin
+@testset "Manopt Problems" begin
     @testset "Test generic Problem functions" begin
         M = Euclidean(3)
         f(M, p) = norm(p)^2

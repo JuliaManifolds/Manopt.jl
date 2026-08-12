@@ -3,7 +3,7 @@ using Dates
 
 struct NoIterateState <: AbstractManoptSolverState end
 
-@testset "Manopt Solver State" begin
+@testset "Manopt Solver States" begin
     @testset "Generic State" begin
         M = Euclidean(3)
         pr = Manopt.Test.DummyProblem{typeof(M)}()

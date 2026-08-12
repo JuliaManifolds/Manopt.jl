@@ -1,6 +1,6 @@
 using Manifolds, Manopt, Test
 
-@testset "Conjugate Residual Plan" begin
+@testset "Symmetric Linear Systems and Conjugate Residual State" begin
     M = ℝ^2
     p = [1.0, 1.0]
     TpM = TangentSpace(M, p)

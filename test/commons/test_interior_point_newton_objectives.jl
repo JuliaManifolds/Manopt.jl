@@ -1,6 +1,6 @@
 using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
 
-@testset "InteriorPointNewtonState" begin
+@testset "Interior Point Sub Objectives" begin
     M = ManifoldsBase.DefaultManifold(3)
     # Cost
     f(::ManifoldsBase.DefaultManifold, p) = norm(p)^2

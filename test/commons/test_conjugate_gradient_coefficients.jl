@@ -6,7 +6,7 @@ struct DummyCGCoeff <: DirectionUpdateRule end
 Manopt.update_rule_storage_points(::DummyCGCoeff) = Tuple{}
 Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
 
-@testset "Conjugate Gradient Descent Plan" begin
+@testset "Conjugate Gradient Coefficients" begin
     @testset "Test Restart CG" begin
         M = Euclidean(2)
         du = DummyCGCoeff()

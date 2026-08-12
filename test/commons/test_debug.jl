@@ -22,7 +22,7 @@ function Manopt.set_parameter!(d::TestDebugParameterState, ::Val{:value}, v)
 end
 Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
-@testset "Debug State" begin
+@testset "Debugs" begin
     # helper to get debug as string
     @testset "Basic Debug Output" begin
         io = IOBuffer()

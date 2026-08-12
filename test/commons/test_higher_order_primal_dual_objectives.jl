@@ -4,7 +4,7 @@ using ManifoldDiff:
     differential_shortest_geodesic_startpoint,
     differential_shortest_geodesic_startpoint!,
     prox_distance!
-@testset "Test higher order primal dual plan" begin
+@testset "Test higher order primal dual objectives" begin
     # Perform an really easy test, just compute a mid point
     #
     pixelM = Sphere(2)

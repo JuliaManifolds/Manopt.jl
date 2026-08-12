@@ -2,7 +2,7 @@ using Manifolds, Manopt, Test, Random
 using Manopt: get_cost_function, get_gradient_function, get_differential_function
 using LinearAlgebra: Symmetric
 
-@testset "Counting Objective test" begin
+@testset "Counting" begin
     @testset "Basics" begin
         M = Sphere(2)
         A = [2.0 1.0 0.0; 1.0 2.0 1.0; 0.0 1.0 2.0]
