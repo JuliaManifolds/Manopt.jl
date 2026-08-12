@@ -18,7 +18,7 @@ GradientDescentState
 ## Direction update rules
 
 A field of the options is the `direction`, a [`DirectionUpdateRule`](@ref), which by default [`IdentityUpdateRule`](@ref) just evaluates the gradient.
-The following ones are futhermore available
+The following ones are furthermore available
 
 ```@autodocs
 Modules = [Manopt]
