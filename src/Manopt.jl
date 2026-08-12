@@ -125,12 +125,12 @@ end
 # ## Problem
 include("base/problem/abstract_problem.jl")
 # ## Function
+include("base/function/evaluation.jl")
 include("base/function/abstract_function.jl")
 include("base/function/constrained.jl")
 include("base/function/robustifier.jl")
 include("base/function/vectorial.jl")
 # ## Objective
-include("base/objective/evaluation.jl")
 include("base/objective/abstract_objective.jl")
 include("base/objective/cost.jl")
 include("base/objective/first_order.jl")

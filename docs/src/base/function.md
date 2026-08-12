@@ -23,7 +23,6 @@ with the `evaluation = ` keyword that accepts an [`AbstractEvaluationType`](@ref
 and for the example here one specifies it as [`AllocatingEvaluation`](@ref)`()`.
 
 ```@docs
-InplaceManifoldFunction
 AbstractEvaluationType
 AllocatingEvaluation
 InplaceEvaluation
@@ -32,7 +31,7 @@ maybe_wrap_function
 
 ## A wrapper to guarantee mutating variables
 
-A few Manifolds like the [`Circle`](@extref `Manifolds.Circle`)`()` or [`PositiveNumbers`](@ref)
+A few Manifolds like the [`Circle`](@extref `Manifolds.Circle`)`()` or [`PositiveNumbers`](@extref `Manifolds.PositiveNumbers`)
 might work on real numbers, which are not mutable. Internally, `Manopt` assumes that its variables,
 e.g. points and tangent vectors, are mutable. Therefore, variables in the [high-level interfaces](high-level-interface.md)
 are automatically wrapped internally. Similarly functions can be wrapped in a [`MutableManifoldFunction`](@ref).
@@ -42,10 +41,56 @@ can determine this when being passed a `p = ` keyword argument providing the poi
 functions on the manifold.
 
 ```@docs
-MutableManifoldFunction
 maybe_unwrap_variable
 ```
 
-## See also
 
-* the [vectorial function](function/vectorial.md) interface
+## Functions Modelling constrains
+
+TODO short text and reference to commons
+
+### Types
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/function/constrained.jl"]
+Order = [:type, :function]
+Private = false
+Public = true
+```
+
+### Functions
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/function/constrained.jl"]
+Order = [:function]
+Private = false
+Public = true
+```
+
+## Robustifiers
+
+TODO short text and reference to commons
+
+### Types
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/function/robustifier.jl"]
+Order = [:type, :function]
+Private = false
+Public = true
+```
+
+## Functions that map into vector spaces
+
+TODO short text and reference to commons
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/function/vectorial.jl"]
+Order = [:type, :function]
+Private = false
+Public = true
+```

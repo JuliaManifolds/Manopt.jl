@@ -10,7 +10,7 @@ They share a common supertype in `Manopt.jl`.
 ```@autodocs
 Modules = [Manopt]
 Pages = ["base/state/action.jl"]
-Order = [:function]
+Order = [:type, :function]
 Public=true
 Private=false
 ```
@@ -20,7 +20,7 @@ Private=false
 ```@autodocs
 Modules = [Manopt]
 Pages = ["base/state/action.jl"]
-Order = [:function]
+Order = [:type, :function]
 Public=false
 Private=true
 ```

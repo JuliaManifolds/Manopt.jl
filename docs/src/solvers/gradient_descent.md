@@ -17,21 +17,25 @@ GradientDescentState
 
 ## Direction update rules
 
-A field of the options is the `direction`, a [`DirectionUpdateRule`](@ref), which by default [`IdentityUpdateRule`](@ref) just evaluates the gradient but can be enhanced for example to
-[`AverageGradient`](@ref),
-[`DirectionUpdateRule`](@ref),
-[`MomentumGradient`](@ref),
-[`Nesterov`](@ref), or
-[`PreconditionedDirection`](@ref),
-which internally use the [`ManifoldDefaultsFactory`](@ref) and produce the internal
-elements
+A field of the options is the `direction`, a [`DirectionUpdateRule`](@ref), which by default [`IdentityUpdateRule`](@ref) just evaluates the gradient.
+The following ones are futhermore available
 
-```@docs
-Manopt.AverageGradientRule
-Manopt.ConjugateDescentCoefficientRule
-Manopt.MomentumGradientRule
-Manopt.NesterovRule
-Manopt.PreconditionedDirectionRule
+```@autodocs
+Modules = [Manopt]
+Pages = ["commons/direction_updates.jl"]
+Order = [:type, :function]
+Private = false
+Public = true
+```
+
+### Internal functions
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["commons/direction_updates.jl"]
+Order = [:type, :function]
+Private = true
+Public = false
 ```
 
 ## [Technical details](@id sec-gradient-descent-technical-details)

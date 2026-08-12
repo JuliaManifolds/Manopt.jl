@@ -92,7 +92,7 @@ The following fields from above are keyword arguments
 $(_kwargs(:X; name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
-* `restart_condition=`[`RestartOnNonDescent`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to [`RestartOnNonDescent`](@ref).
+* `restart_condition=`[`RestartOnNonDescent`](@ref)`()`: specify a [restart condition](@ref `AbstractRestartCondition`). It defaults to [`RestartOnNonDescent`](@ref).
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:retraction_method))

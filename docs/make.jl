@@ -219,6 +219,7 @@ makedocs(;
         "Commons" => [
             "Overview" => "commons/index.md",
             "Debug Outputs" => "commons/debugs.md",
+            "Functions" => "commons/functions.md",
             "Objectives" => "commons/objectives.md",
             "Problems" => "commons/problems.md",
             "Record Actions" => "commons/records.md",
@@ -229,11 +230,7 @@ makedocs(;
         ],
         "Developer Guide" => [
             "Introduction" => "base/index.md",
-            "Function" => [
-                "Overview" => "base/function.md",
-                "Robustifier" => "base/function/robustifier.md",
-                "Vectorial" => "base/function/vectorial.md",
-            ],
+            "Function" => "base/function.md",
             "High-Level interface" => "base/high-level-interface.md",
             "Problem" => "base/problem.md",
             "Default Factory" => "base/default_factory.md",

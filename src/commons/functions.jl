@@ -159,7 +159,7 @@ end
 
 Wrap a function `f` defined on a manifold to work in-place on mutable variables, i.e. first
 if the input variable `p` is a number, the function `f` is wrapped in a [`MutableManifoldFunction`](@ref).
-If then the function has an [`AllocatingManifoldFunction`](@ref) as `evaluation` type, it is wrapped in a [`InplaceManifoldFunction`](@ref) to work in-place of the result.
+If then the function has an [`InplaceManifoldFunction`](@ref) as `evaluation` type, it is wrapped in a [`InplaceManifoldFunction`](@ref) to work in-place of the result.
 
 The first step is skipped if the input variable `p` is not a number, `missing` or not provided.
 """

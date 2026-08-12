@@ -22,7 +22,7 @@ There is a hierarchy of objectives in order to provide default implementations f
 ## [Decorated objectives](@id meta-objectives)
 
 Following the [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern) approach,
-an objective can be “wrapped” to gain certain properties. For example to [cache](@ref SimpleCacheObjective) or [count](@ref CountObjective) function evaluation.
+an objective can be “wrapped” to gain certain properties. For example to [cache](@ref `ManifoldCachedObjective`) or [count](@ref `ManifoldCountObjective`) function evaluation.
 
 ```@docs
 AbstractDecoratedManifoldObjective
@@ -95,7 +95,7 @@ Private = true
 Public = false
 ```
 
-## [A first order nonsmooth objective](@id zeroth-order-objectives)
+## [A first order nonsmooth objective](@id first-order-nonsmooth-objectives)
 
 TODO
 
@@ -117,10 +117,66 @@ Private = true
 Public = false
 ```
 
-* [Second Order Objectives](@ref second_order_objectives) for objectives that provide second order information such as Hessians
-* [Constrained Objectives](@ref constrained_objectives) for objectives that provide constraint information
-* [Splitting-based Objectives](@ref splitting_based_objectives) for objectives that provide primal-dual or similar splitting based information
-* [Objectives for Linear Systems](@ref objectives_for_linear_models) for objectives that provide linear systems usually in tangent spaces
-* [Subproblem Objectives](@ref subproblem_objectives) for objectives that are used in subproblems and need access to the main objective
-* [Vectorial Objectives](@ref vectorial_objectives) for objectives that provide vector valued
-* [Decorators for Objectives](@ref decorated-objectives) for objectives that decorate other objectives, e.g., to provide caching or scaling
+## [A second order objective](@id second-order-objectives)
+
+TODO
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/objective/second_order.jl"]
+Order = [:type, :function]
+Private = false
+Public = true
+```
+
+### Internal structures and functions
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/objective/second_order.jl"]
+Order = [:type, :function]
+Private = true
+Public = false
+```
+
+## [Linear systems in tangent spaces](@id linear-systems-objective)
+
+TODO
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/objective/linear_system.jl"]
+Order = [:type, :function]
+Private = false
+Public = true
+```
+
+### Internal structures and functions
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/objective/linear_system.jl"]
+Order = [:type, :function]
+Private = true
+Public = false
+```
+
+## [Subsolver objectives](@id second-order-objectives)
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/objective/sub_objective.jl"]
+Order = [:type, :function]
+Private = false
+Public = true
+```
+
+### Internal structures and functions
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["base/objective/sub_objective.jl"]
+Order = [:type, :function]
+Private = true
+Public = false
+```

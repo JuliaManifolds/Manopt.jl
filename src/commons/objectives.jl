@@ -2484,7 +2484,7 @@ Currently the following cases are covered, sorted by their popularity
     to compute gradient and differential together
 
 For all cases where a gradient and/or a differential is present are considered to work in-place,
-see [`AllocatingManifoldFunction`](@ref) for alternatives.
+see the [`InplaceManifoldFunction`](@ref) wrapper for alternatives.
 
 The cases of a common `fg` function for cost and gradient and the tuple `(f,g)` are the most common one.
 They can also be addressed by their alternate constructors

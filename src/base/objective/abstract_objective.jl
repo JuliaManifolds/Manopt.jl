@@ -17,7 +17,7 @@ should be implemented in the form
 where `M` is a $(_link(:AbstractManifold)), `v` is memory the result is computed in,
 as well as further arguments, most prominently usually the current iterate `p`.
 
-For an allocating variant, internally the wrapper [`AllocatingFunction`](@ref) is used.
+For an allocating variant, internally the wrapper [`InplaceManifoldFunction`](@ref) should be used.
 """
 abstract type AbstractManifoldObjective end
 

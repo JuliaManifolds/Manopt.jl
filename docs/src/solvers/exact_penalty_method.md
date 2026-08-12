@@ -15,16 +15,6 @@ CurrentModule = Manopt
 ExactPenaltyMethodState
 ```
 
-## Helping functions
-
-```@docs
-ExactPenaltyCost
-ExactPenaltyGrad
-SmoothingTechnique
-LinearQuadraticHuber
-LogarithmicSumOfExponentials
-```
-
 ## [Technical details](@id sec-dr-technical-details)
 
 The [`exact_penalty_method`](@ref) solver requires the following functions of a manifold to be available

@@ -25,22 +25,11 @@ DifferenceOfConvexState
 DifferenceOfConvexProximalState
 ```
 
-as well as for the corresponding sub problem
+as well as for the corresponding sub objective
 
 ```@docs
-LinearizedDCCost
-LinearizedDCGrad
-```
-
-```@docs
+ManifoldDifferenceOfConvexObjective
 ManifoldDifferenceOfConvexProximalObjective
-```
-
-as well as for the corresponding sub problems
-
-```@docs
-ProximalDCCost
-ProximalDCGrad
 ```
 
 ## Helper functions
