@@ -18,7 +18,7 @@ using Manifolds, Manopt, Test
         p = 1.0 #Nonmutable
         f(M, p) = p^2
         mf = Manopt.MutableManifoldFunction(f, p)
-        @test repr(mf) == "MutableManifoldFunction(f, Number)"
+        @test repr(mf) == "MutableManifoldFunction(f, Float64, :Number)"
         @test Manopt.MutableManifoldFunction(mf, p) === mf #we never double wrap
         @test mf(M, fill(p)) == f(M, p)
 
