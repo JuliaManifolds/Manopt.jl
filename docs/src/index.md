@@ -14,7 +14,7 @@ For a function ``f:\mathcal M → ℝ`` defined on a [Riemannian manifold](https
 \operatorname*{argmin}_{p ∈ \mathcal M} f(p),
 ```
 
-or in other words: find the point ``p`` on the manifold, where ``f`` reaches its minimal function value.
+or in other words: find the point ``p`` on the manifold ``\mathcal M``, where ``f`` reaches its minimal function value.
 
 `Manopt.jl` provides a framework for optimization on manifolds as well as a Library of optimization algorithms in [Julia](https://julialang.org).
 It belongs to the **Manopt family**, which includes [Manopt](https://manopt.org) (Matlab) and [pymanopt.org](https://www.pymanopt.org/) (Python), both aiming to provide the same framework
@@ -37,8 +37,17 @@ many manifolds and algorithms, which can easily be enhanced, for example to
 [record](@ref sec-record) certain data or
 [debug output](@ref sec-debug) throughout iterations.
 
-If you use `Manopt.jl`in your work, please cite the following
+If you use `Manopt.jl` in your work, please cite the following
 
+> _Bergmann, R._ (2022).
+> **Manopt.jl: Optimization on Manifolds in Julia**,
+> Journal of Open Source Software, 7(70), 3866.
+>
+> doi: [10.21105/joss.03866](https://doi.org/10.21105/joss.03866)
+
+```@raw html
+<details><summary><code>Bergmann:2022</code> (BibLaTeX) </summary>
+```
 ```biblatex
 @article{Bergmann2022,
     Author    = {Ronny Bergmann},
@@ -52,9 +61,19 @@ If you use `Manopt.jl`in your work, please cite the following
     Year      = {2022},
 }
 ```
+```@raw html
+</details>
+```
 
 To refer to a certain version or the source code in general cite for example
 
+> _Bergmann, R._ (2026). **Manopt.jl**, Zenodo.
+>
+> doi: [10.5281/zenodo.4290905](https://doi.org/10.5281/zenodo.4290905)
+
+```@raw html
+<details><summary><code>Manoptjl-zenodo-mostrecent</code> (BibLaTeX) </summary>
+```
 ```biblatex
 @software{manoptjl-zenodo-mostrecent,
     Author    = {Ronny Bergmann},
@@ -65,12 +84,24 @@ To refer to a certain version or the source code in general cite for example
     Year      = {2024},
 }
 ```
+```@raw html
+</details>
+```
 
 for the most recent version or a corresponding version specific DOI, see [the list of all versions](https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224290905%22&sort=-version&all_versions=True).
 
 
 If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/) please consider to cite
 
+> _Axen, S. D., Baran, M., Bergmann, R., Rzecki, K._ (2023).
+> **Manifolds.jl: An Extensible Julia Framework for Data Analysis on Manifolds**,
+> ACM Transactions on Mathematical Software, Volume 49, Issue 4, Article No. 33, pages 1–23.
+>
+> doi: [10.1145/3618296](https://doi.org/10.1145/3618296),
+> arXiv: [2106.08777](https://arxiv.org/abs/2106.08777)
+```@raw html
+<details><summary><code>AxenBaranBergmannRzecki:2023</code> (BibLaTeX) </summary>
+```
 ```biblatex
 @article{AxenBaranBergmannRzecki:2023,
     AUTHOR    = {Axen, Seth D. and Baran, Mateusz and Bergmann, Ronny and Rzecki, Krzysztof},
@@ -84,8 +115,9 @@ If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifold
     YEAR      = {2023}
 }
 ```
-
-Note that both citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format.
+```@raw html
+</details>
+```
 
 ## Main features
 
@@ -93,13 +125,13 @@ Note that both citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format
 
 For every optimization algorithm, a [solver](solvers/index.md) is implemented based on a [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that set up the solver, and stores values that are required between or for the next iteration.
 
-## Manifolds
+### Manifolds
 
 This project is build upon [ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`), a generic interface to implement manifolds. Certain functions are extended for specific manifolds from [Manifolds.jl](@extref Manifolds :std:doc:`index`), but all other manifolds from that package can be used here, too.
 
 The notation in the documentation aims to follow the same [notation](@extref Manifolds :std:doc:`misc/notation`) from these packages.
 
-### Visualization
+### Algorithm exploration
 
 To visualize and interpret results, `Manopt.jl` provides a system to get [debug](base/state/debug.md) during the iterations of an algorithms as well as [record](base/state/record.md) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
 [`RecordIterate`](@ref). Take a look at the [🏔️ Get started with Manopt.jl](tutorials/getstarted.md) tutorial on how to easily activate this.

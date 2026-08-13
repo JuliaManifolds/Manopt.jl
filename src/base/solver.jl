@@ -28,14 +28,19 @@ status_summary(rst::ReturnSolverState; context::Symbol = :default) = status_summ
 show(io::IO, rst::ReturnSolverState) = print(io, "ReturnSolverState(", rst.state, ")")
 dispatch_state_decorator(::ReturnSolverState) = Val(true)
 
-"""
+doc_get_solver_return = """
     get_solver_return(s::ReturnSolverState)
     get_solver_return(o::AbstractManifoldObjective, s::ReturnSolverState)
 
+Determine the solver return.
+
 return the internally stored state of the [`ReturnSolverState`](@ref) instead of the minimizer.
-This means that when the state are decorated like this, the user still has to call [`get_solver_result`](@ref)
-on the internal state separately.
+
+
+Since a solver might return both a state and an objective in a tuple, this then re-iterates on the second argument.
 """
+
+@doc "$(doc_get_solver_return)"
 get_solver_return(s::ReturnSolverState) = s.state
 
 function decorate_state! end
