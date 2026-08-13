@@ -3785,6 +3785,11 @@ function get_subgradient_function(
     end
 end
 
+function set_parameter!(msgo::ManifoldSubgradientObjective, ::Val{:SubGradient}, args...)
+    set_parameter!(get_subgradient_function(msgo, true; evaluation = InplaceEvaluation()), args...)
+    return msgo
+end
+
 function Base.show(io::IO, objective::ManifoldSubgradientObjective)
     return print(io, "ManifoldSubgradientObjective(", objective.cost, ", ", objective.subgradient!, ")")
 end

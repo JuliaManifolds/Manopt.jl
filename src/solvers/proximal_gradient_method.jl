@@ -822,9 +822,7 @@ end
 # (II) Problem is a subsolver -> solve
 function _pgm_proximal_step(
         amp::AbstractManoptProblem,
-        pgms::ProximalGradientMethodState{
-            P, T, <:AbstractManoptProblem, <:AbstractManoptSolverState,
-        },
+        pgms::ProximalGradientMethodState{P, T, <:AbstractManoptProblem, <:AbstractManoptSolverState},
         λ::Real,
     ) where {P, T}
     M = get_manifold(amp)
