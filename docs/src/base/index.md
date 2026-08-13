@@ -15,7 +15,10 @@ well as during the iterations.
 
 ## Pretty printing on REPL
 
-TODO
+On the [Julia REPL](https://docs.julialang.org/en/v1/stdlib/REPL/) `Manopt.jl` aims to provide detailed information about a solver run
+when the user activates such a feedback, i.e. when setting `return_state = true` such that
+a [high level interface](high-level-interface.md) returns the whole solver state instead of
+(just) the final iterate reached.
 
 ```@autodocs
 Modules = [Manopt]
@@ -27,7 +30,7 @@ Private = true
 
 ## Parameters
 
-TODO
+TODO: Describe how parameters are modelled.
 
 ```@autodocs
 Modules = [Manopt]

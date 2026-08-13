@@ -24,7 +24,7 @@ Public = false
 
 ## [Functions that are part of a sub objective](@id sub-functions)
 
-TODO
+TODO: Describe design of sub objectives
 
 ```@autodocs
 Modules = [Manopt]
