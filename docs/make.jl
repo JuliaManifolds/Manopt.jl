@@ -163,6 +163,7 @@ makedocs(;
         search_size_threshold_warn = 2000 * 2^10,
     ),
     #= #Consider switching to Vitepress in the end?
+      CodeBlocks do not work on Vitepress so probably let's not switch.
     format = DocumenterVitepress.MarkdownVitepress(
         repo = "github.com/JuliaManifolds/Manopt.jl",
         devbranch = "master",
@@ -259,8 +260,6 @@ makedocs(;
         "Changelog" => "changelog.md",
         "References" => "references.md",
     ],
-    # TODO: Remove after refactor
-    warnonly = [:docs_block, :missing_docs, :cross_references],
     plugins = [bib, links, CodeBlocks()],
 )
 deploydocs(; repo = "github.com/JuliaManifolds/Manopt.jl", push_preview = true)

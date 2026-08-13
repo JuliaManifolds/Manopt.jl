@@ -1,9 +1,10 @@
 """
     ManifoldDefaultsFactory{M,T,A,K}
 
-A generic factory to postpone the instantiation of certain types from within $(_link(:Manopt)),
-in order to be able to adapt it to defaults from different manifolds and/or postpone the
-decision on which manifold to use to a later point
+A generic factory to postpone the instantiation of certain types from $(_link(:Manopt)) storing keyword arguments.
+
+The factory is especially meant to postpone the defaults that depend on a manifold, so that
+the manifold does not have to be explicitly provided but can the “set in” later.
 
 For now this is established for
 
@@ -23,7 +24,6 @@ types from the list of types that do not require the manifold.
 * `args::A`:                             arguments (`args...`) that are passed to the type constructor
 * `kwargs::K`:                           keyword arguments (`kwargs...`) that are passed to the type constructor
 * `constructor_requires_manifold::Bool`: indicate whether the type constructor requires the manifold or not
-
 
 # Constructor
 

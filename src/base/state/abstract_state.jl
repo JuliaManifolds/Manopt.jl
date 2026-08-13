@@ -129,14 +129,10 @@ _get_message(s::AbstractManoptSolverState, ::Val{false}) = ""
 
 """
     get_solver_return(s::AbstractManoptSolverState)
-    get_solver_return(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
 
 determine the result value of a call to a solver.
+
 By default this returns the same as [`get_solver_result`](@ref).
-
-    get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverState)
-
-return both the objective and the state as a tuple.
 """
 function get_solver_return(s::AbstractManoptSolverState)
     return _get_solver_return(s, dispatch_state_decorator(s))
@@ -145,6 +141,13 @@ _get_solver_return(s::AbstractManoptSolverState, ::Val{false}) = get_solver_resu
 _get_solver_return(s::AbstractManoptSolverState, ::Val{true}) = get_solver_return(s.state)
 
 # also work in combination with the objective
+"""
+    get_solver_return(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
+
+determine the result value of a call to a solver.
+
+By default this returns the same as [`get_solver_result`](@ref).
+"""
 function get_solver_return(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
     #resolve objective first
     return _get_solver_return(o, s, dispatch_objective_decorator(o))
@@ -154,6 +157,11 @@ function _get_solver_return(o::AbstractManifoldObjective, s, ::Val{true})
     return get_solver_return(get_objective(o, false), s)
 end
 _get_solver_return(::AbstractManifoldObjective, s, ::Val{false}) = get_solver_return(s)
+"""
+    get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverState)
+
+return both the objective and the state as a tuple.
+"""
 function get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverState)
     return o.objective, get_solver_return(s)
 end

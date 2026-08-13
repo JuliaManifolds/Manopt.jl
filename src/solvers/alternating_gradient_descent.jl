@@ -1,6 +1,8 @@
 """
     AlternatingGradientRule <: AbstractGradientGroupDirectionRule
 
+The direction processor to alternate the gradient directions.
+
 Create a functor `(problem, state k) -> (s,X)` to evaluate the alternating gradient,
 that is alternating between the components of the gradient and has an field for
 partial evaluation of the gradient in-place.

@@ -168,7 +168,6 @@ function get_record_action(s::AbstractManoptSolverState, symbol::Symbol = :Itera
     end
 end
 @doc """
-    get_record(s::AbstractManoptSolverState, [,symbol=:Iteration])
     get_record(s::RecordSolverState, [,symbol=:Iteration])
 
 return the recorded values from within the [`RecordSolverState`](@ref) `s` that where
@@ -181,11 +180,21 @@ When called with arbitrary [`AbstractManoptSolverState`](@ref), this method look
 function get_record(s::RecordSolverState, symbol::Symbol = :Iteration)
     return get_record(get_record_action(s, symbol))
 end
+@doc """
+    get_record(s::RecordSolverState, [,symbol=:Iteration], i...)
+
+return the recorded values from within the [`RecordSolverState`](@ref) `s` that where
+recorded with respect to the symbol `symbol` as an `Array`.
+The default refers to any recordings during an `:Iteration`.
+
+The following arguments `i...` can be used to access further elements of that recoding,
+either in number `i` of a further symbol to address recorded elements
+"""
 function get_record(s::RecordSolverState, symbol::Symbol, i...)
     return get_record(get_record_action(s, symbol), i...)
 end
-function get_record(s::AbstractManoptSolverState, symbol::Symbol = :Iteration)
-    return get_record(get_record_state(s), symbol)
+function get_record(s::AbstractManoptSolverState, symbol::Symbol = :Iteration, i...)
+    return get_record(get_record_state(s), symbol, i...)
 end
 
 @doc """

@@ -90,7 +90,7 @@ max_stepsize(::SymmetricPositiveDefinite, p) = log(floatmax(eltype(p)))
 The default maximum stepsize for `Hyperrectangle` manifold with corners is maximum
 of distances from `p` to each boundary.
 """
-function max_stepsize(::Hyperrectangle, p)
+function max_stepsize(M::Hyperrectangle, p)
     lb = M.lb
     ub = M.ub
     ms = zero(eltype(p))
@@ -103,7 +103,7 @@ function max_stepsize(::Hyperrectangle, p)
     end # COV_EXCL_LINE
     return ms
 end
-function max_stepsize(::Hyperrectangle)
+function max_stepsize(M::Hyperrectangle)
     ms = 0.0
     for i in eachindex(M.lb, M.ub)
         ms = max(ms, M.ub[i] - M.lb[i])

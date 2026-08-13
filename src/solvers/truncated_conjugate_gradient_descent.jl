@@ -249,9 +249,10 @@ end
 @doc """
     StopWhenTrustRegionIsExceeded <: StoppingCriterion
 
-A functor for testing if the norm of the next iterate in the Steihaug-Toint truncated conjugate gradient
-method is larger than the trust-region radius ``θ ≤ $(_tex(:norm, "Y^{(k)}^{*}"; index = "p^{(k)}"))``
-and to end the algorithm when the trust region has been left.
+A stopping criterion to stop when next iterate is larger than the trust-region radius ``θ ≤ $(_tex(:norm, "Y^{(k)}^{*}"; index = "p^{(k)}"))``.
+
+This can for example be used Steihaug-Toint truncated conjugate gradient method as a subsolver
+for [`trust_regions`](@ref).
 
 # Fields
 

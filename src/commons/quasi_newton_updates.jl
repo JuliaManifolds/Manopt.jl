@@ -21,8 +21,9 @@ initialize_update!(s::AbstractQuasiNewtonDirectionUpdate) = s
 @doc """
     AbstractQuasiNewtonUpdateRule
 
-Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s,
-that is for a [`QuasiNewtonMatrixDirectionUpdate`](@ref) there are several different updates to the matrix,
+Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s.
+
+For a [`QuasiNewtonMatrixDirectionUpdate`](@ref) there are several different updates to the matrix,
 while the default for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) the most prominent is [`InverseBFGS`](@ref).
 """
 abstract type AbstractQuasiNewtonUpdateRule end
@@ -543,8 +544,9 @@ $(_tex(:Cal, "B"))_k^{(0)}[⋅]
 @doc """
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory Riemannian BFGS update,
-where the approximating operator is represented by ``m`` stored pairs of tangent
+This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory Riemannian BFGS update.
+
+The approximating operator is represented by ``m`` stored pairs of tangent
 vectors ``$(_math(:Sequence, "$(_tex(:widetilde, "s"))", "i", "k-m", "k-1"))`` and ``$(_math(:Sequence, "$(_tex(:widetilde, "y"))", "i", "k-m", "k-1"))``
 in the ``k``-th iteration. For the calculation of the search direction ``X_k``, the generalisation
 of the two-loop recursion is used (see [HuangGallivanAbsil:2015](@cite)),

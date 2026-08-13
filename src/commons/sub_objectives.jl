@@ -383,6 +383,8 @@ end
 @doc """
     LevenbergMarquardtLinearSurrogateObjective{VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective
 
+The linear surrogate objective for a [`ManifoldNonlinearLeastSquaresObjective`](@ref).
+
 Given an [`ManifoldNonlinearLeastSquaresObjective`](@ref) `objective` and a `penalty` ``λ``,
 this objective represents the penalized objective for the sub-problem to solve within every step
 of the Levenberg-Marquardt algorithm following the ideas of [TriggsMcLauchlanHartleyFitzgibbon:2000](@cite) given by

@@ -155,7 +155,7 @@ Returns the default [`Stepsize`](@ref) functor used when running the solver spec
 """
 default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 
-"""
+doc_max_stepsize = """
     max_stepsize(M::AbstractManifold, p)
     max_stepsize(M::AbstractManifold)
 
@@ -165,6 +165,8 @@ distance an algorithm is trying to move in a single step.
 By default, this returns $(_link(:injectivity_radius))`(M)`, if this exists.
 If this is not available on the the method returns `Inf`.
 """
+
+@doc "$(doc_max_stepsize)"
 function max_stepsize(M::AbstractManifold, p)
     s = try
         injectivity_radius(M, p)
@@ -187,6 +189,7 @@ function max_stepsize(M::AbstractPowerManifold, p)
     end
     return stepsize
 end
+@doc "$(doc_max_stepsize)"
 function max_stepsize(M::AbstractManifold)
     s = try
         injectivity_radius(M)

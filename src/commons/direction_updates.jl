@@ -109,10 +109,11 @@ function status_summary(mgr::MomentumGradientRule; context::Symbol = :default)
 end
 
 """
-    MomentumGradient()
+    MomentumGradient(args..., kwargs...)
 
-Append a momentum to a gradient processor, where the last direction and last iterate are
-stored and the new is composed as ``η_i = m*η_{i-1}' - s d_i``,
+Append a momentum to a gradient processor.
+
+The last direction and last iterate are stored and the new is composed as ``η_i = m*η_{i-1}' - s d_i``,
 where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector transported
 last direction multiplied by momentum ``m``.
 
@@ -137,9 +138,10 @@ end
 """
     AverageGradientRule <: DirectionUpdateRule
 
-Add an average of gradients to a gradient processor. A set of previous directions (from the
-inner processor) and the last iterate are stored. The average is taken after vector transporting
-them to the current iterates tangent space.
+Add an average of gradients to a gradient processor.
+
+A set of previous directions (from the inner processor) and the last iterate are stored.
+The average is taken after vector transporting them to the current iterates tangent space.
 
 
 # Fields

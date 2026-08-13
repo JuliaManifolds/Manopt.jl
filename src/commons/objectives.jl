@@ -3566,15 +3566,6 @@ function get_cost(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective,
 end
 
 function get_gradients end
-@doc """
-    get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
-
-Evaluate all summands gradients ``$(_math(:Sequence, "$(_tex(:grad))f", "i", "1", "n")) at `p` (in place of `X`).
-
-If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
-since the length (or number of elements of the gradient) can not be determined.
-"""
-get_gradients!(M::AbstractManifold, X, admo::ManifoldStochasticGradientObjective, p)
 function get_gradients(
         M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{C, <:AbstractVector}, p,
     ) where {C}
@@ -3582,6 +3573,17 @@ function get_gradients(
     get_gradients!(M, X, sgo, p)
     return X
 end
+@doc """
+    get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
+    get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
+
+Evaluate all summands gradients ``$(_math(:Sequence, "$(_tex(:grad))f", "i", "1", "n")) at `p` and return them as a vector.
+
+This can be done in-place of a vector of tangent vectors `X`.
+"""
+get_gradients(M::AbstractManifold, admo::ManifoldStochasticGradientObjective, p)
+
+
 # Single allocating function we wrapped ourselves – call it from intern storage, since
 # we have no chance to allocate this otherwise
 function get_gradients(
@@ -3593,9 +3595,7 @@ function get_gradients(M::AbstractManifold, admo::AbstractDecoratedManifoldObjec
     return get_gradients(M, get_objective(admo, false), p)
 end
 # For a single function, since it is in-place, we have no chance to allocate the right amount of tangent vectors in X? Ah we can use get_cost
-function get_gradients!(
-        M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p,
-    )
+function get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
     sgo.gradient!(M, X, p)
     return X
 end

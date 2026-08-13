@@ -1,4 +1,3 @@
-
 @doc """
     DouglasRachfordState <: AbstractManoptSolverState
 
