@@ -37,3 +37,8 @@ get_cost_function(mco::AbstractManifoldCostObjective, recursive = false) = mco.c
 function get_cost_function(admo::AbstractDecoratedManifoldObjective, recursive = false)
     return get_cost_function(get_objective(admo, recursive))
 end
+
+function set_parameter!(amo::AbstractManifoldCostObjective, ::Val{:Cost}, args...)
+    set_parameter!(get_cost_function(amo, true), args...)
+    return amo
+end

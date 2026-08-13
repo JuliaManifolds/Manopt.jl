@@ -1,6 +1,6 @@
 # Stopping criteria
 
-TODO
+TODO: describe how stopping crieria are modelled.
 
 ```@autodocs
 Modules = [Manopt]

@@ -545,9 +545,9 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     end
     # Update the current gradient
     get_gradient!(M, trs.X, mho, trs.p)
-    set_parameter!(trs.sub_problem, :Manifold, :Basepoint, copy(M, trs.p))
-    set_parameter!(trs.sub_state, :Iterate, copy(M, trs.p, trs.Y))
-    set_parameter!(trs.sub_state, :TrustRegionRadius, trs.trust_region_radius)
+    set_parameter!(trs.sub_problem, Val(:Manifold), Val(:Basepoint), copy(M, trs.p))
+    set_parameter!(trs.sub_state, Val(:Iterate), copy(M, trs.p, trs.Y))
+    set_parameter!(trs.sub_state, Val(:TrustRegionRadius), trs.trust_region_radius)
     solve!(trs.sub_problem, trs.sub_state)
     callback(:Subsolver, mp, trs, k)
     #

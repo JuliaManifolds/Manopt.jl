@@ -155,10 +155,6 @@ function set_parameter!(dg::DebugGroup, v::Val, args...)
     end
     return dg
 end
-function set_parameter!(dg::DebugGroup, e::Symbol, args...)
-    set_parameter!(dg, Val(e), args...)
-    return dg
-end
 
 @doc """
     DebugEvery <: DebugAction
@@ -197,10 +193,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     end
     # set activity for this iterate in sub solvers
     set_parameter!(
-        st,
-        :SubState,
-        :Debug,
-        :Activity,
+        st, Val(:SubState), Val(:Debug), Val(:Activity),
         !(k < 1) && (rem(k + d.activation_offset, d.every) == 0),
     )
     return nothing
@@ -222,11 +215,7 @@ function status_summary(de::DebugEvery; context::Symbol = :default)
     (context == :inline) && return "The Debug $(status_summary(de.debug; context = context)) only printed every $(de.every) iteration"
     return "A DebugAction wrapping the following DebugAction to only print it every $(de.every)th iteration.\n$(_in_str(status_summary(de.debug; context = context)))"
 end
-function set_parameter!(de::DebugEvery, e::Symbol, args...)
-    set_parameter!(de, Val(e), args...)
-    return de
-end
-function set_parameter!(de::DebugEvery, args...)
-    set_parameter!(de.debug, args...)
+function set_parameter!(de::DebugEvery, e::Val, args...)
+    set_parameter!(de.debug, e, args...)
     return de
 end

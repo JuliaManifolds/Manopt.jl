@@ -205,3 +205,12 @@ function get_subgradient!(
     )
     return get_gradient!(M, X, agmo, p)
 end
+
+function set_parameter!(amo::AbstractManifoldFirstOrderObjective, ::Val{:Gradient}, args...)
+    set_parameter!(get_gradient_function(amo, true; evaluation = InplaceEvaluation()), args...)
+    return amo
+end
+function set_parameter!(amo::AbstractManifoldFirstOrderObjective, ::Val{:SubGradient}, args...)
+    set_parameter!(get_subgradient_function(amo, true; evaluation = InplaceEvaluation()), args...)
+    return amo
+end

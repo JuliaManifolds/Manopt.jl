@@ -122,26 +122,9 @@ end
 Set a certain `element` from the [`AbstractManifoldObjective`](@ref) `amo` to a value specified
 by `args...`
 This function should dispatch on `Val(element)`.
-
-Currently supported
-* `:Cost` passes to the [`get_cost_function`](@ref)
-* `:Gradient` passes to the [`get_gradient_function`](@ref)
-* `:SubGradient` passes to the [`get_subgradient_function`](@ref)
 """
 set_parameter!(amo::AbstractManifoldObjective, e::Symbol, args...)
 
-function set_parameter!(amo::AbstractManifoldObjective, ::Val{:Cost}, args...)
-    set_parameter!(get_cost_function(amo, true), args...)
-    return amo
-end
-function set_parameter!(amo::AbstractManifoldObjective, ::Val{:Gradient}, args...)
-    set_parameter!(get_gradient_function(amo, true; evaluation = InplaceEvaluation()), args...)
-    return amo
-end
-function set_parameter!(amo::AbstractManifoldObjective, ::Val{:SubGradient}, args...)
-    set_parameter!(get_subgradient_function(amo, true; evaluation = InplaceEvaluation()), args...)
-    return amo
-end
 
 # For decorators the human readable version is “transparent” by default, i.e.
 # if no special addition is done, it just prints the human readable string from the child

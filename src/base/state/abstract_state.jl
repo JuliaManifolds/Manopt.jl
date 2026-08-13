@@ -310,9 +310,8 @@ This function passes to `Val(element)` and specific setters should dispatch on `
 
 By default, this function just does nothing.
 """
-function set_parameter!(ams::AbstractManoptSolverState, e::Symbol, args...)
-    return set_parameter!(ams, Val(e), args...)
-end
+set_parameter!(ams::AbstractManoptSolverState, e::Symbol, args...)
+
 # Default: do nothing
 function set_parameter!(ams::AbstractManoptSolverState, ::Val, args...)
     return ams

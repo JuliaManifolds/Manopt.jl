@@ -21,7 +21,7 @@ abstract type AbstractDecoratedManifoldFunction{F} <: AbstractManifoldFunction e
     set_parameter!(amf::AbstractManifoldFunction, element::Symbol, args...)
 
 Set a certain `args...` from the [`AbstractManifoldFunction`](@ref) `amo` to `value.
-This function should dispatch on `Val(element)`.
+This function by default dispatches on the same function replacing the second argument by `Val(element)`.
 """
 set_parameter!(amo::AbstractManifoldFunction, e::Symbol, args...)
 

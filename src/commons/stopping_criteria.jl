@@ -61,9 +61,9 @@ end
 function get_count(c::StopWhenAll, v::Val{:Iterations})
     return maximum(get_count(ci, v) for ci in c.criteria)
 end
-function set_parameter!(c::StopWhenAll, s::Symbol, v)
+function set_parameter!(c::StopWhenAll, e::Val, v)
     for d in c.criteria
-        set_parameter!(d, s, v)
+        set_parameter!(d, e, v)
     end
     return c
 end
@@ -158,9 +158,9 @@ function get_reason(c::StopWhenAny)
     end
     return ""
 end
-function set_parameter!(c::StopWhenAny, s::Symbol, v)
+function set_parameter!(c::StopWhenAny, e::Val, v)
     for d in c.criteria
-        set_parameter!(d, s, v)
+        set_parameter!(d, e, v)
     end
     return c
 end
@@ -367,7 +367,7 @@ function Base.show(io::IO, c::StopAfterIteration)
 end
 
 """
-    set_parameter!(c::StopAfterIteration, :;MaxIteration, v::Int)
+    set_parameter!(c::StopAfterIteration, :MaxIteration, v::Int)
 
 Update the number of iterations after which the algorithm should stop.
 """
@@ -1136,7 +1136,7 @@ function status_summary(c::StopWhenGradientNormLess; context::Symbol = :default)
 end
 show(io::IO, c::StopWhenGradientNormLess) = print(io, "StopWhenGradientNormLess($(c.threshold))")
 """
-    set_parameter!(c::StopWhenGradientNormLess{F,TF}, ::Val{:MinGradNorm}, v::TF) where {F,TF<:Real}
+    set_parameter!(c::StopWhenGradientNormLess{F,TF}, :MinGradNorm, v::TF) where {F,TF<:Real}
 
 Update the minimal gradient norm when an algorithm shall stop
 """
@@ -1450,7 +1450,7 @@ function Base.show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
     return print(io, "StopWhenProjectedNegativeGradientNormLess($(c.threshold); norm = $(c.norm))")
 end
 """
-    set_parameter!(c::StopWhenProjectedNegativeGradientNormLess{F,TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF<:Real}
+    set_parameter!(c::StopWhenProjectedNegativeGradientNormLess{F,TF}, :MinGradNorm, v::TF) where {F, TF<:Real}
 
 Update the minimal gradient norm when an algorithm shall stop.
 """

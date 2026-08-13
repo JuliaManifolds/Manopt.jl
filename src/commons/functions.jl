@@ -68,10 +68,10 @@ function (f::MutableManifoldFunction{P})(M, args...) where {P}
     v = f.f(M, args_unwrapped...)
     return f.result === :Number ? v : maybe_wrap_variable(v)
 end
-function get_parameter(mmf::MutableManifoldFunction, e::Symbol, args...)
+function get_parameter(mmf::MutableManifoldFunction, e::Val, args...)
     return get_parameter(mmf.f, e, args...)
 end
-function set_parameter!(mmf::MutableManifoldFunction, e::Symbol, args...)
+function set_parameter!(mmf::MutableManifoldFunction, e::Val, args...)
     return set_parameter!(mmf.f, e, args...)
 end
 function show(io::IO, mmf::MutableManifoldFunction)
@@ -140,10 +140,10 @@ function (imf::InplaceManifoldFunction)(M, v, args...)
     # default: Just copyto! – e.g. for :Vector or :Matrix
     return copyto!(v, imf.f(M, args...))
 end
-function get_parameter(imf::InplaceManifoldFunction, e::Symbol, args...)
+function get_parameter(imf::InplaceManifoldFunction, e::Val, args...)
     return get_parameter(imf.f, e, args...)
 end
-function set_parameter!(imf::InplaceManifoldFunction, e::Symbol, args...)
+function set_parameter!(imf::InplaceManifoldFunction, e::Val, args...)
     return set_parameter!(imf.f, e, args...)
 end
 function show(io::IO, imf::InplaceManifoldFunction)

@@ -3,6 +3,8 @@
 
 For any `f` and a `Symbol` `e`, dispatch on its value so by default, to
 set some `args...` in `f` or one of uts sub elements.
+
+By default this calls set_parameter!(f, Val(element), args...) to dispatch on the value of the symbol.
 """
 function set_parameter!(f, e::Symbol, args...)
     return set_parameter!(f, Val(e), args...)

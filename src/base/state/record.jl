@@ -130,6 +130,7 @@ end
 function set_parameter!(rss::RecordSolverState, v::Val{T}, args...) where {T}
     return set_parameter!(rss.state, v, args...)
 end
+# Resolve an ambiguity since this also exists for abstract state
 function set_parameter!(rss::RecordSolverState, v::Val{:StoppingCriterion}, args...)
     return set_parameter!(rss.state, v, args...)
 end
@@ -269,7 +270,7 @@ function (re::RecordEvery)(
     # note that since recording is happening at the end
     # sets activity for the _next_ iteration
     set_parameter!(
-        ams, :SubState, :Record, :Activity, !(k < 1) && (rem(k + 1, re.every) == 0)
+        ams, Val(:SubState), Val(:Record), Val(:Activity), !(k < 1) && (rem(k + 1, re.every) == 0)
     )
     return nothing
 end

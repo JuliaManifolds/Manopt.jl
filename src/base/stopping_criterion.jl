@@ -138,6 +138,7 @@ Return whether a [`StoppingCriterion`](@ref) is active, i.e. it has been called 
 """
 is_active_stopping_criterion(c::StoppingCriterion) = (c.at_iteration >= 0)
 
+# pass down from state to stopping criterion
 function set_parameter!(s::AbstractManoptSolverState, ::Val{:StoppingCriterion}, args...)
     set_parameter!(s.stop, args...)
     return s

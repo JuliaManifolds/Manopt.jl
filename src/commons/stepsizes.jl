@@ -408,13 +408,13 @@ function get_message(a::ArmijoLinesearchStepsize)
     s = [get_message(kv[1], kv[2]) for kv in pairs(a.messages)]
     return join([m for m in s if length(m) > 0], "\n")
 end
-function get_parameter(a::ArmijoLinesearchStepsize, s::Val{:DecreaseCondition}, args...)
+function get_parameter(a::ArmijoLinesearchStepsize, ::Val{:DecreaseCondition}, args...)
     return get_parameter(a.additional_decrease_condition, args...)
 end
 function get_parameter(a::ArmijoLinesearchStepsize, ::Val{:IncreaseCondition}, args...)
     return get_parameter(a.additional_increase_condition, args...)
 end
-function set_parameter!(a::ArmijoLinesearchStepsize, s::Val{:DecreaseCondition}, args...)
+function set_parameter!(a::ArmijoLinesearchStepsize, ::Val{:DecreaseCondition}, args...)
     set_parameter!(a.additional_decrease_condition, args...)
     return a
 end

@@ -141,7 +141,7 @@ To visualize and interpret results, `Manopt.jl` provides a system to get [debug]
 If you want to get started with manifolds, a recommended reference is the book [doCarmo:1992](@cite),
 and if you want do directly dive into optimization on manifolds, good references are
 [AbsilMahonySepulchre:2008](@cite) and [Boumal:2023](@cite),
-which are both available online for free
+which are both available online for free.
 
 ```@bibliography
 Pages = ["index.md"]

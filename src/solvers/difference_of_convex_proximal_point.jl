@@ -544,10 +544,10 @@ function step_solver!(
     # do a step in that direction
     retract!(M, dcps.q, dcps.p, dcps.λ(k) * dcps.X, dcps.retraction_method)
     # use this point (q) for the proximal map
-    set_parameter!(dcps.sub_problem, :Objective, :Cost, :p, dcps.q)
-    set_parameter!(dcps.sub_problem, :Objective, :Cost, :λ, dcps.λ(k))
-    set_parameter!(dcps.sub_problem, :Objective, :Gradient, :p, dcps.q)
-    set_parameter!(dcps.sub_problem, :Objective, :Gradient, :λ, dcps.λ(k))
+    set_parameter!(dcps.sub_problem, Val(:Objective), Val(:Cost), Val(:p), dcps.q)
+    set_parameter!(dcps.sub_problem, Val(:Objective), Val(:Cost), Val(:λ), dcps.λ(k))
+    set_parameter!(dcps.sub_problem, Val(:Objective), Val(:Gradient), Val(:p), dcps.q)
+    set_parameter!(dcps.sub_problem, Val(:Objective), Val(:Gradient), Val(:λ), dcps.λ(k))
     set_iterate!(dcps.sub_state, M, copy(M, dcps.q))
     callback(:BeforeSubsolver, amp, dcps, k)
     solve!(dcps.sub_problem, dcps.sub_state)

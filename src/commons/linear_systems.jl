@@ -40,9 +40,9 @@ mutable struct SymmetricLinearSystemObjective{TA, T} <: AbstractSymmetricLinearS
         return new{typeof(A_), typeof(b_)}(A_, b_)
     end
 end
-function set_parameter!(slso::SymmetricLinearSystemObjective, symbol::Symbol, value)
-    set_parameter!(slso.A!, symbol, value)
-    set_parameter!(slso.b!, symbol, value)
+function set_parameter!(slso::SymmetricLinearSystemObjective, e::Val, value)
+    set_parameter!(slso.A!, e, value)
+    set_parameter!(slso.b!, e, value)
     return slso
 end
 

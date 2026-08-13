@@ -1476,8 +1476,8 @@ end
 
 get_objective(slsmo::NormalEquationsObjective) = slsmo.objective
 
-function set_parameter!(neo::NormalEquationsObjective, name::Symbol, value)
-    set_parameter!(neo.objective, name, value)
+function set_parameter!(neo::NormalEquationsObjective, e::Val, value)
+    set_parameter!(neo.objective, e, value)
     return neo
 end
 

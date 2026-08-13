@@ -85,9 +85,7 @@ function set_parameter!(pgns::ProximalGradientNonsmoothSubgradient, ::Val{:λ}, 
     return pgns
 end
 get_parameter(pgns::ProximalGradientNonsmoothSubgradient, ::Val{:λ}) = pgns.λ
-function set_parameter!(
-        pgns::ProximalGradientNonsmoothSubgradient, ::Val{:proximity_point}, p
-    )
+function set_parameter!(pgns::ProximalGradientNonsmoothSubgradient, ::Val{:proximity_point}, p)
     pgns.proximity_point = p
     return pgns
 end
@@ -831,11 +829,11 @@ function _pgm_proximal_step(
     ) where {P, T}
     M = get_manifold(amp)
     # set lambda
-    set_parameter!(pgms.sub_problem, :Objective, :Cost, :λ, λ)
-    set_parameter!(pgms.sub_problem, :Objective, :SubGradient, :λ, λ)
+    set_parameter!(pgms.sub_problem, Val(:Objective), Val(:Cost), Val(:λ), λ)
+    set_parameter!(pgms.sub_problem, Val(:Objective), Val(:SubGradient), Val(:λ), λ)
     # set the proximity point of the subproblem
-    set_parameter!(pgms.sub_problem, :Objective, :Cost, :proximity_point, pgms.a)
-    set_parameter!(pgms.sub_problem, :Objective, :SubGradient, :proximity_point, pgms.a)
+    set_parameter!(pgms.sub_problem, Val(:Objective), Val(:Cost), Val(:proximity_point), pgms.a)
+    set_parameter!(pgms.sub_problem, Val(:Objective), Val(:SubGradient), Val(:proximity_point), pgms.a)
     # set start value to a
     set_iterate!(pgms.sub_state, M, copy(M, pgms.a))
     solve!(pgms.sub_problem, pgms.sub_state)

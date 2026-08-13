@@ -527,10 +527,10 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     # Set point also in the sub problem (eventually the tangent space)
     get_gradient!(M, arcs.X, mho, arcs.p)
     # Update base point in manifold
-    set_parameter!(arcs.sub_problem, :Manifold, :p, copy(M, arcs.p))
-    set_parameter!(arcs.sub_problem, :Objective, :σ, arcs.σ)
+    set_parameter!(arcs.sub_problem, Val(:Manifold), Val(:p), copy(M, arcs.p))
+    set_parameter!(arcs.sub_problem, Val(:Objective), Val(:σ), arcs.σ)
     set_iterate!(arcs.sub_state, M, copy(M, arcs.p, arcs.X))
-    set_parameter!(arcs.sub_state, :σ, arcs.σ)
+    set_parameter!(arcs.sub_state, Val(:σ), arcs.σ)
     #Solve the `sub_problem` via dispatch depending on type
     solve_arc_subproblem!(M, arcs.s, arcs.sub_problem, arcs.sub_state, arcs.p)
     # Compute ρ
