@@ -10,4 +10,16 @@ The following step size methods are available following the [stepsize](../base/s
 Modules = [Manopt]
 Pages = ["commons/stepsizes.jl"]
 Order = [:type, :function]
+Private = false
+Public = true
+```
+
+## Internal functions
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["commons/stepsizes.jl"]
+Order = [:type, :function]
+Private = true
+Public = false
 ```
