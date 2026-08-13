@@ -54,7 +54,7 @@ Private = true
 Public = true
 ```
 
-## Functions Modelling constrains
+## Function Modelling constrains
 
 TODO short text and reference to commons
 
@@ -78,7 +78,7 @@ Private = false
 Public = true
 ```
 
-## Robustifiers
+## Robustifier
 
 TODO short text and reference to commons
 
@@ -92,7 +92,7 @@ Private = false
 Public = true
 ```
 
-## Functions that map into vector spaces
+## Function that map into vector spaces
 
 TODO short text and reference to commons
 

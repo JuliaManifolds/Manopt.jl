@@ -124,7 +124,6 @@ import ManifoldsBase: distance, log!, representation_size
 function distance(M::ScaledSphere, p, q)
     return M.radius * distance(Sphere(M.dimension), p ./ M.radius, q ./ M.radius)
 end
-# TODO: Maybe Zero vector instead?
 function log!(M::ScaledSphere, X, p, q)
     log!(Sphere(M.dimension), X, p ./ M.radius, q ./ M.radius)
     X .*= M.radius
