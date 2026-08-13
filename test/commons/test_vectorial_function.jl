@@ -90,11 +90,9 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     # Special wrappers
     @testset "Wrappers with points" begin
         vgf_imf1 = Manopt._maybe_wrap_adjoint_jacobian_function([grad_g1, grad_g2], p, ComponentVectorialType(), AllocatingEvaluation())
-        @test vgf_imf1 isa Vector{Manopt.InplaceManifoldFunction}
-        @test vgf_imf1[1].result === :Vector
+        @test vgf_imf1 isa Vector{Manopt.InplaceManifoldFunction{:Vector}}
         vgf_imf2 = Manopt._maybe_wrap_adjoint_jacobian_function(jac_g, p, CoefficientVectorialType(), AllocatingEvaluation())
-        @test vgf_imf2 isa Manopt.InplaceManifoldFunction
-        @test vgf_imf2.result === :Matrix
+        @test vgf_imf2 isa Manopt.InplaceManifoldFunction{:Matrix}
         # Test get_value_functions
         # (a) builds a wrapper
         vf1 = get_value_function(vgf_ji; evaluation = AllocatingEvaluation())
