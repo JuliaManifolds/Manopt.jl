@@ -90,7 +90,7 @@ max_stepsize(::SymmetricPositiveDefinite, p) = log(floatmax(eltype(p)))
 The default maximum stepsize for `Hyperrectangle` manifold with corners is maximum
 of distances from `p` to each boundary.
 """
-function max_stepsize(M::Hyperrectangle, p)
+function max_stepsize(::Hyperrectangle, p)
     lb = M.lb
     ub = M.ub
     ms = zero(eltype(p))
@@ -103,14 +103,14 @@ function max_stepsize(M::Hyperrectangle, p)
     end # COV_EXCL_LINE
     return ms
 end
-function max_stepsize(M::Hyperrectangle)
+function max_stepsize(::Hyperrectangle)
     ms = 0.0
     for i in eachindex(M.lb, M.ub)
         ms = max(ms, M.ub[i] - M.lb[i])
     end
     return ms
 end
-function max_stepsize(M::ProbabilitySimplex)
+function max_stepsize(::ProbabilitySimplex)
     return 1.0
 end
 
@@ -152,76 +152,6 @@ function mid_point!(M::Sphere, y, p, q, x)
     return y
 end
 
-@doc """
-    reflect(M, f, x; kwargs...)
-    reflect!(M, q, f, x; kwargs...)
-
-reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f: $(Manopt._math(:Manifold)) → $(Manopt._math(:Manifold))``, given by
-
-````math
-$(Manopt._tex(:operatorname, "refl"))_f(x) = $(Manopt._tex(:operatorname, "refl"))_{f(x)}(x),
-````
-
-Compute the result in `q`.
-
-see also [`reflect`](@ref reflect(M::AbstractManifold, p, x))`(M,p,x)`, to which the keywords are also passed to.
-"""
-reflect(M::AbstractManifold, pr::Function, x; kwargs...) = reflect(M, pr(x), x; kwargs...)
-function reflect!(M::AbstractManifold, q, pr::Function, x; kwargs...)
-    return reflect!(M, q, pr(x), x; kwargs...)
-end
-
-@doc """
-    reflect(M, p, x, kwargs...)
-    reflect!(M, q, p, x, kwargs...)
-
-Reflect the point `x` from the manifold `M` at point `p`, given by
-
-```math
-$(Manopt._tex(:reflect))
-```
-
-where ``$(Manopt._tex(:retr))`` and ``$(Manopt._tex(:invretr))`` denote a retraction and an inverse
-retraction, respectively.
-This can also be done in place of `q`.
-
-## Keyword Arguments
-
-$(Manopt._kwargs([:retraction_method, :inverse_retraction_method]))
-
-and for the `reflect!` additionally
-
-$(Manopt._kwargs(:X))
-  as temporary memory to compute the inverse retraction in place.
-  otherwise this is the memory that would be allocated anyways.
-"""
-function reflect(
-        M::AbstractManifold,
-        p,
-        x;
-        retraction_method = default_retraction_method(M, typeof(p)),
-        inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
-        X = nothing,
-    )
-    return retract(
-        M, p, -inverse_retract(M, p, x, inverse_retraction_method), retraction_method
-    )
-end
-function reflect!(
-        M::AbstractManifold,
-        q,
-        p,
-        x;
-        retraction_method = default_retraction_method(M, typeof(p)),
-        inverse_retraction_method = default_inverse_retraction_method(M),
-        X = zero_vector(M, p),
-    )
-    inverse_retract!(M, X, p, x, inverse_retraction_method)
-    X .*= -1
-    return retract!(M, q, p, X, retraction_method)
-end
-
 
 """
     Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
@@ -229,7 +159,7 @@ end
 Set element of tangent vector `d` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle)
 at index `i` to 0.
 """
-function Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
+function Manopt.set_zero_at_index!(::Hyperrectangle, d, i)
     d[i] = 0
     return d
 end

@@ -59,15 +59,6 @@ leading to the second prox being the Riemannian mean.
   DouglasRachfordState
 ```
 
-For specific [`DebugAction`](@ref)s and [`RecordAction`](@ref)s see also
-[Cyclic Proximal Point](cyclic_proximal_point.md).
-
-Furthermore, this solver has a short hand notation for the involved [`reflect`](@ref)ion.
-
-```@docs
-reflect
-```
-
 ## [Technical details](@id sec-dr-technical-details)
 
 The [`DouglasRachford`](@ref) solver requires the following functions of a manifold to be available

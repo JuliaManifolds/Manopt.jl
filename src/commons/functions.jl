@@ -32,7 +32,7 @@ A wrapper for a function defined on a manifold to ensure it works on mutable var
 internally “unwrapping” them to numbers before calling the function that is wrapped.
 
 Since the function is working on immutable input types, it is assumed to work allocating,
-i.e. to be used within objectives of `Manopt.jl`, consider wrapping e.g. gradient or Hessian
+i.e. to be used within objectives of `jl`, consider wrapping e.g. gradient or Hessian
 functions furthermore in a [`InplaceManifoldFunction`](@ref).
 
 ## Fields
@@ -443,4 +443,74 @@ function update_hessian_basis!(M, f::ApproxHessianBFGS, p)
     copyto!(f.p_tmp, p)
     f.gradient!(M, f.grad_tmp, f.p_tmp)
     return f
+end
+
+@doc """
+    reflect(M, prox::Function, x, kwargs...)
+    reflect!(M, q, p::Function, x, kwargs...)
+
+Reflect the point `x` from the manifold `M` at point `p = $(_tex(:prox))(x)`.
+
+The formula is given by
+
+```math
+$(_tex(:reflect))_p(q) = $(_tex(:retr))_p(-$(_tex(:invretr))_p q),
+```
+where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an inverse retraction, respectively.
+
+This can also be done in place of `q`.
+
+## Keyword Arguments
+
+$(_kwargs([:retraction_method, :inverse_retraction_method]))
+* `X=zero_vector(M,p)`: a temporary memory to compute the inverse retraction in place.
+  otherwise this is the memory that would be allocated anyways.
+"""
+reflect(M::AbstractManifold, pr::Function, x; kwargs...) = reflect(M, pr(x), x; kwargs...)
+function reflect!(M::AbstractManifold, q, pr::Function, x; kwargs...)
+    return reflect!(M, q, pr(x), x; kwargs...)
+end
+
+@doc """
+    reflect(M, p, x, kwargs...)
+    reflect!(M, q, p, x, kwargs...)
+
+Reflect the point `x` from the manifold `M` at point `p`.
+
+The formula is given by
+
+```math
+$(_tex(:reflect))
+```
+
+where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an inverse
+retraction, respectively.
+This can also be done in place of `q`.
+
+## Keyword Arguments
+
+$(_kwargs([:retraction_method, :inverse_retraction_method]))
+$(_kwargs(:X))
+  as temporary memory to compute the inverse retraction in place.
+  otherwise this is the memory that would be allocated anyways.
+"""
+function reflect(
+        M::AbstractManifold, p, x;
+        retraction_method = default_retraction_method(M, typeof(p)),
+        inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
+        X = nothing,
+    )
+    return retract(
+        M, p, -inverse_retract(M, p, x, inverse_retraction_method), retraction_method
+    )
+end
+function reflect!(
+        M::AbstractManifold, q, p, x;
+        retraction_method = default_retraction_method(M, typeof(p)),
+        inverse_retraction_method = default_inverse_retraction_method(M),
+        X = zero_vector(M, p),
+    )
+    inverse_retract!(M, X, p, x, inverse_retraction_method)
+    X .*= -1
+    return retract!(M, q, p, X, retraction_method)
 end
