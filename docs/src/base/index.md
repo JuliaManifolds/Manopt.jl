@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Manopt
+```
+
 # Manopt.jl Developer guide
 
 This section of the documentation provides an overview of the design concepts behind
@@ -28,9 +32,19 @@ Public = true
 Private = true
 ```
 
-## Parameters
+## Parameter
 
-TODO: Describe how parameters are modelled.
+Within `Manopt.jl` a parameter is a value within a structure that can be accessed or set from outside. Since the overall design model is modular, [`get_parameter`](@ref) and [`set_parameter!`](@ref) allow do specify a certain “path” into a structure to get or set something.
+
+For example the gradient of a [objective](objective.md) function within a [problem](problem.md) has a certain parameter like the [`LagrangianGradient`](@ref) used within the [`augmented_Lagrangian_method`](@ref)s sub problem.
+The parameter functions allow to generically address such objects without having to care about
+decorators or which field exactly the parameter is stored.
+This can for example also be used in connection with [`DebugWhenActive`](@ref) to deactivate debug output under certain circumstances.
+
+While the functions can be called with symbols to specify the position of a parameter,
+internally and more effective is using `Val(:Symbol)`s.
+
+Without a structure upfront, starting just with a symbol, properties of `Manopt.jl` itself can be set.
 
 ```@autodocs
 Modules = [Manopt]
