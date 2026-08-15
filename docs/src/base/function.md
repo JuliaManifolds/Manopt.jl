@@ -54,9 +54,9 @@ Private = true
 Public = true
 ```
 
-## Function Modelling constrains
+## [Function Modelling constrains](@id sec-constrained-function)
 
-TODO short text and reference to commons
+Function modelling constrains can be defined with the following interface.
 
 ### Types and functions
 
@@ -78,9 +78,11 @@ Private = false
 Public = true
 ```
 
-## Robustifier
+## [Robustifier](@id sec-robustifier)
 
-TODO short text and reference to commons
+A robustifier is a smoothing technique for nonsmooth objectives.
+Here it is applied in a way that the goal is to approximate the square root in a smooth way.
+For concrete functions available see the [common robustifiers](../commons/records.md).
 
 ### Types
 
@@ -92,9 +94,12 @@ Private = false
 Public = true
 ```
 
-## Function that map into vector spaces
+## [Function that map into vector spaces](@id sec-vector-function)
 
-TODO short text and reference to commons
+For functions on manifolds that map into a vector space, this section defines
+an interface to define both the functions as well as their derivative information.
+Since the derivative information is given in tangent spaces, several different representations
+are available.
 
 ```@autodocs
 Modules = [Manopt]

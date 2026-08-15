@@ -1,10 +1,12 @@
+# Robustifiers
+
 ```@meta
 CurrentModule = Manopt
 ```
 
-# Robustifiers
-
-TODO: Short intro to robustifiers
+A [robustifier](@ref sec-robustifier) is mainly used in the [`LevenbergMarquardt`](@ref)
+solver to approximate nonsmooth nonlinear least squares. This page collects the available
+robustifier functions.
 
 ```@autodocs
 Modules = [Manopt]

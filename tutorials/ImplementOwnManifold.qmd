@@ -116,8 +116,6 @@ For both, we here use the “lazy” approach of using the ``[Sphere](@extref `M
 Finally, we have to provide information about how points and tangent vectors are stored on the
 manifold by implementing their ``[`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)``{=commonmark} function, which is often required when allocating memory.
 
-TODO Add a bit of text why these
-
 ```{julia}
 #| output : false
 import ManifoldsBase: distance, log!, representation_size

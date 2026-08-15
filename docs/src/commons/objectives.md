@@ -4,8 +4,6 @@
 CurrentModule = Manopt
 ```
 
-TODO : Structure a bit?
-
 ```@autodocs
 Modules = [Manopt]
 Pages = ["commons/objectives.jl"]

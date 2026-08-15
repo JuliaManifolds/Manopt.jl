@@ -1,8 +1,8 @@
+# [Common functions](@id common-functions)
+
 ```@meta
 CurrentModule = Manopt
 ```
-
-# [Common functions](@id common-functions)
 
 ```@autodocs
 Modules = [Manopt]
@@ -22,9 +22,10 @@ Private = true
 Public = false
 ```
 
-## [Functions that are part of a sub objective](@id sub-functions)
+## [Functions that are part of a sub objective](@id sec-sub-functions)
 
-TODO: Describe design of sub objectives
+This section collects functions that can be used with a [subsolver](@ref sec-subsolver).
+They are often either parametrised or even based on the original objective.
 
 ```@autodocs
 Modules = [Manopt]

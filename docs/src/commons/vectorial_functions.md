@@ -1,6 +1,7 @@
 # Vectorial Functions
 
-TODO short text and reference to base
+This section provides several concrete [vector functions](@ref sec-vector-function),
+that can be used for example to model constraints.
 
 ## Functions
 

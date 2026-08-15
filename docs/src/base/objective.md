@@ -75,7 +75,8 @@ Public = false
 
 ## [A first order objective](@id first-order-objectives)
 
-TODO
+A smooth first order objective usually contains the gradient.
+This interface allows to unify access.
 
 ```@autodocs
 Modules = [Manopt]
@@ -97,7 +98,7 @@ Public = false
 
 ## [A first order nonsmooth objective](@id first-order-nonsmooth-objectives)
 
-TODO
+First order nonsmooth objectives come in a variety of flavours, mainly splitting based, where the single summands themselves have certain properties. They are collected in the following
 
 ```@autodocs
 Modules = [Manopt]
@@ -119,7 +120,7 @@ Public = false
 
 ## [A second order objective](@id second-order-objectives)
 
-TODO
+The following concrete objectives can be used to store second-order objectives.
 
 ```@autodocs
 Modules = [Manopt]
@@ -139,9 +140,11 @@ Private = true
 Public = false
 ```
 
-## [Linear systems in tangent spaces](@id linear-systems-objective)
+## [A Linear system in a tangent space](@id sec-linear-systems-objective)
 
-TODO
+A linear system in a tangent space can be modelled in different ways. Most prominently
+either as a matrix as soon as a basis of the tangent space is fixed or as a linear operator
+in a basis-free representation
 
 ```@autodocs
 Modules = [Manopt]
