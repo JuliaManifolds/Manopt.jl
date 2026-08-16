@@ -101,7 +101,7 @@ if run_quarto || run_on_CI
 end
 
 # (c) load necessary packages for the docs
-using Documenter, DocumenterVitepress
+using Documenter
 using DocumenterCitations, DocumenterCodeBlocks, DocumenterInterLinks
 using LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
@@ -162,14 +162,6 @@ makedocs(;
         size_threshold_warn = 900 * 2^10, # raise from 500 KiB to 1.1 MB (for search index)
         search_size_threshold_warn = 2000 * 2^10,
     ),
-    #= #Consider switching to Vitepress in the end?
-      CodeBlocks do not work on Vitepress so probably let's not switch.
-    format = DocumenterVitepress.MarkdownVitepress(
-        repo = "github.com/JuliaManifolds/Manopt.jl",
-        devbranch = "master",
-       devurl = "dev",
-   ),
-=#
     modules = [
         Manopt,
         Base.get_extension(Manopt, :ManoptLineSearchesExt),
@@ -263,14 +255,4 @@ makedocs(;
     plugins = [bib, links, CodeBlocks()],
 )
 deploydocs(; repo = "github.com/JuliaManifolds/Manopt.jl", push_preview = true)
-#= # Consider switching to Vitepress in the end when docs render again.
-DocumenterVitepress.deploydocs(;
-    repo = "github.com/JuliaManifolds/Manopt.jl",
-    target = joinpath(@__DIR__, "build"),
-    branch = "gh-pages",
-    devbranch = "master",
-    push_preview = true,
-)
-=#
-#back to main env
 Pkg.activate()
