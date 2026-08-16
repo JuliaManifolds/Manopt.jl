@@ -138,7 +138,7 @@ Initialize the stochastic gradient processor with tangent vector type of `X`,
 where both `M` and `p` are just help variables.
 
 # See also
-[`stochastic_gradient_descent`](@ref), [`StochasticGradient`])@ref)
+[`stochastic_gradient_descent`](@ref), [`StochasticGradient`](@ref)
 """
 struct StochasticGradientRule{T} <: AbstractGradientGroupDirectionRule
     X::T

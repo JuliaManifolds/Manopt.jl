@@ -19,7 +19,7 @@ Initialize the alternating gradient processor with tangent vector type of `X`,
 where both `M` and `p` are just help variables.
 
 # See also
-[`alternating_gradient_descent`](@ref), [`AlternatingGradient`])@ref)
+[`alternating_gradient_descent`](@ref), [`AlternatingGradient`](@ref)
 """
 struct AlternatingGradientRule{T} <: AbstractGradientGroupDirectionRule
     X::T
