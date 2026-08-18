@@ -5,7 +5,7 @@ layout: home
 hero:
   name: Manopt.jl
   text: Optimization on Riemannian manifolds
-  tagline: Efficient algorithms for minimizing a function on a Riemannian manifold.
+  tagline: Efficient algorithms for minimizing a function on a Riemannian manifold
   actions:
     - theme: brand
       text: Get started
@@ -15,12 +15,12 @@ hero:
       link: https://github.com/JuliaManifolds/Manopt.jl
   image:
     src: /logo.png            # primary image (light themes)
-    alt: MyPackage.jl         # accessibility text
+    alt: Manopt.jl         # accessibility text
 
 features:
   - icon:
         light: /logo-manifoldsbase.png
-        dark: /logo-manifoldsbase.dark.png
+        dark: /logo-manifoldsbase-dark.png
         alt: ManifoldsBase.jl
         wrap: true
     title: Generic Implementations
@@ -40,10 +40,10 @@ features:
     details: With recording, debug and callback capabilities it is easy to analyse and modify the algorithms
   - icon:
         light: /logo-manifolds.png
-        dark: /logo-manifolds.dark.png
+        dark: /logo-manifolds-dark.png
         alt: Manifolds.jl
         wrap: true
-    title: Available Manifolds
+    title: Use with Manifolds.jl
     details: A large library of manifolds available.
     link: https://juliamanifolds.github.io/Manifolds.jl/stable/
 ---

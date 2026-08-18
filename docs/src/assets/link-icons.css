@@ -1,4 +1,4 @@
-a[href^="https://juliamanifolds.github.io/ManifoldsBase.jl/"]::before {
+a[href^="https://juliamanifolds.github.io/ManifoldsBase.jl/"]:not(.landing-feature)::before {
     content: "";
     background-image: url('logo-manifoldsbase.png');
     background-size: contain;
@@ -9,7 +9,7 @@ a[href^="https://juliamanifolds.github.io/ManifoldsBase.jl/"]::before {
     margin-right: 4px;
     vertical-align: middle;
 }
-a[href^="https://juliamanifolds.github.io/Manifolds.jl/"]::before {
+a[href^="https://juliamanifolds.github.io/Manifolds.jl/"]:not(.landing-feature)::before {
     content: "";
     background-image: url('logo-manifolds.png');
     background-size: contain;
@@ -20,7 +20,7 @@ a[href^="https://juliamanifolds.github.io/Manifolds.jl/"]::before {
     margin-right: 4px;
     vertical-align: middle;
 }
-a[href^="https://jump.dev/JuMP.jl/stable/"]::before {
+a[href^="https://jump.dev/JuMP.jl/stable/"]:not(.landing-feature)::before {
     content: "";
     background-image: url('logo-JuMP.svg');
     background-size: contain;
@@ -31,7 +31,7 @@ a[href^="https://jump.dev/JuMP.jl/stable/"]::before {
     margin-right: 4px;
     vertical-align: middle;
 }
-a[href^="https://en.wikipedia.org/"]::before {
+a[href^="https://en.wikipedia.org/"]:not(.landing-feature)::before {
     content: "";
     background-image: url('wikipedia.png');
     background-size: contain;
@@ -44,13 +44,13 @@ a[href^="https://en.wikipedia.org/"]::before {
 }
 
 @media (prefers-color-scheme: dark) {
-    a[href^="https://juliamanifolds.github.io/ManifoldsBase.jl/"]::before {
+    a[href^="https://juliamanifolds.github.io/ManifoldsBase.jl/"]:not(.landing-feature)::before {
         background-image: url('logo-manifoldsbase-dark.png');
     }
-    a[href^="https://juliamanifolds.github.io/Manifolds.jl/"]::before {
+    a[href^="https://juliamanifolds.github.io/Manifolds.jl/"]:not(.landing-feature)::before {
         background-image: url('logo-manifolds-dark.png');
     }
-    a[href^="https://jump.dev/JuMP.jl/stable/"]::before {
+    a[href^="https://jump.dev/JuMP.jl/stable/"]:not(.landing-feature)::before {
         background-image: url('logo-JuMP-dark.svg');
     }
 }
