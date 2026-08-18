@@ -9,10 +9,13 @@ hero:
   actions:
     - theme: brand
       text: Get started
-      link: tutorials/getstarted.html
+      link: tutorials/getstarted/index.html
     - theme: alt
-      text: View on GitHub
-      link: https://github.com/JuliaManifolds/Manopt.jl
+      text: Available Solvers
+      link: /solvers/index.html
+    - theme: alt
+      text: Developer Guide
+      link: /base/index.html
   image:
     src: /logo.png            # primary image (light themes)
     alt: Manopt.jl         # accessibility text
