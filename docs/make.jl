@@ -102,7 +102,7 @@ end
 
 # (c) load necessary packages for the docs
 using Documenter
-using DocumenterCitations, DocumenterCodeBlocks, DocumenterInterLinks
+using DocumenterCitations, DocumenterCodeBlocks, DocumenterInterLinks, DocumenterLandingPage
 using LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
 
@@ -252,7 +252,7 @@ makedocs(;
         "Changelog" => "changelog.md",
         "References" => "references.md",
     ],
-    plugins = [bib, links, CodeBlocks()],
+    plugins = [bib, links, CodeBlocks(), LandingPage()],
 )
 deploydocs(; repo = "github.com/JuliaManifolds/Manopt.jl", push_preview = true)
 Pkg.activate()
