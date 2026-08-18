@@ -22,11 +22,11 @@ Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
     PrimalDualManifoldObjective(cost, prox_f, prox_G_dual, adjoint_linearized_operator;
         linearized_forward_operator::Union{Function,Missing}=missing,
         Λ::Union{Function,Missing}=missing,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     )
 
-The last optional argument can be used to provide the 4 or 5 functions as in place.
-Note that the first argument is always the manifold under consideration, the mutated one is
-the second.
+Using the `evaluation=` keyword can be used to specify that all functions work in-place instead
+of the default allocating one.
 """
 mutable struct PrimalDualManifoldObjective{
         TC, TP, TDP, LFO, ALFO, L,
@@ -193,23 +193,14 @@ function Manopt.ChambollePockState(
         update_dual_base::Union{Function, Missing} = missing,
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
-        inverse_retraction_method_dual::IRM_Dual = default_inverse_retraction_method(
-            N, typeof(p)
-        ),
+        inverse_retraction_method_dual::IRM_Dual = default_inverse_retraction_method(N, typeof(p)),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(n)),
         vector_transport_method_dual::VTM_Dual = default_vector_transport_method(N, typeof(n)),
     ) where {
-        P,
-        Q,
-        T,
-        R,
-        C <: AbstractDict{Symbol},
-        SC <: StoppingCriterion,
-        RM <: AbstractRetractionMethod,
-        IRM <: AbstractInverseRetractionMethod,
+        P, Q, T, R, C <: AbstractDict{Symbol}, SC <: StoppingCriterion,
+        RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod,
         IRM_Dual <: AbstractInverseRetractionMethod,
-        VTM <: AbstractVectorTransportMethod,
-        VTM_Dual <: AbstractVectorTransportMethod,
+        VTM <: AbstractVectorTransportMethod, VTM_Dual <: AbstractVectorTransportMethod,
     }
     return ChambollePockState{P, Q, T, R, C, SC, RM, IRM, IRM_Dual, VTM, VTM_Dual}(
         callbacks,
@@ -338,18 +329,9 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_ChambollePock)"
 function ChambollePock(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        cost::TF,
-        p::P,
-        X::T,
-        m::P,
-        n::Q,
-        prox_F::Function,
-        prox_G_dual::Function,
-        get_adjoint_linear_operator::Function;
-        Λ::Union{Function, Missing} = missing,
-        linearized_forward_operator::Union{Function, Missing} = missing,
+        M::AbstractManifold, N::AbstractManifold, cost::TF, p::P, X::T, m::P, n::Q,
+        prox_F::Function, prox_G_dual::Function, adjoint_linear_operator::Function;
+        Λ::Union{Function, Missing} = missing, linearized_forward_operator::Union{Function, Missing} = missing,
         kwargs...,
     ) where {TF, P, T, Q}
     q = copy(M, p)
@@ -358,40 +340,23 @@ function ChambollePock(
     n2 = copy(N, n)
     keywords_accepted(ChambollePock; kwargs...)
     return ChambollePock!(
-        M,
-        N,
-        cost,
-        q,
-        Y,
-        m2,
-        n2,
-        prox_F,
-        prox_G_dual,
-        get_adjoint_linear_operator;
-        Λ = Λ,
-        linearized_forward_operator = linearized_forward_operator,
-        kwargs...,
+        M, N, cost, q, Y, m2, n2, prox_F, prox_G_dual, adjoint_linear_operator;
+        Λ = Λ, linearized_forward_operator = linearized_forward_operator, kwargs...,
     )
 end
 calls_with_kwargs(::typeof(ChambollePock)) = (ChambollePock!,)
 
+# TODO: Add Eval
 @doc "$(_doc_ChambollePock)"
 function ChambollePock!(
-        M::AbstractManifold,
-        N::AbstractManifold,
-        cost::TF,
-        p::P,
-        X::T,
-        m::P,
-        n::Q,
-        prox_F::Function,
-        prox_G_dual::Function,
-        get_adjoint_linear_operator::Function;
+        M::AbstractManifold, N::AbstractManifold, cost::TF, p::P, X::T, m::P, n::Q,
+        prox_F::Function, prox_G_dual::Function, adjoint_linear_operator::Function;
         callbacks = Dict{Symbol, Function}(),
         Λ::Union{Function, Missing} = missing,
         linearized_forward_operator::Union{Function, Missing} = missing,
         acceleration = 0.05,
         dual_stepsize = 1 / sqrt(8),
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         primal_stepsize = 1 / sqrt(8),
         relaxation = 1.0,
         relax::Symbol = :primal,
@@ -404,32 +369,20 @@ function ChambollePock!(
         variant = ismissing(Λ) ? :exact : :linearized,
         kwargs...,
     ) where {
-        TF,
-        P,
-        Q,
-        T,
-        RM <: AbstractRetractionMethod,
-        IRM <: AbstractInverseRetractionMethod,
+        TF, P, Q, T, RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod,
         VTM <: AbstractVectorTransportMethod,
     }
     pdmo = PrimalDualManifoldObjective(
-        cost,
-        prox_F,
-        prox_G_dual,
-        get_adjoint_linear_operator;
-        linearized_forward_operator = linearized_forward_operator,
-        Λ = Λ,
+        cost, prox_F, prox_G_dual, adjoint_linear_operator;
+        linearized_forward_operator = linearized_forward_operator, Λ = Λ,
+        evaluation = evaluation
     )
     keywords_accepted(ChambollePock!; kwargs...)
     dpdmo = decorate_objective!(M, pdmo; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmo)
     cps = ChambollePockState(
-        M,
-        N;
-        m = m,
-        n = n,
-        p = p,
-        X = X,
+        M, N;
+        m = m, n = n, p = p, X = X,
         callbacks = process_callbacks_arg(callbacks, ChambollePockState),
         primal_stepsize = primal_stepsize,
         dual_stepsize = dual_stepsize,
@@ -524,12 +477,9 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
         )
     end
     get_primal_prox!(
-        tmp,
-        cps.p,
-        cps.primal_stepsize,
+        tmp, cps.p, cps.primal_stepsize,
         retract(
-            M,
-            cps.p,
+            M, cps.p,
             vector_transport_to(
                 M, cps.m,
                 -cps.primal_stepsize * (adjoint_linearized_operator(tmp, cps.m, cps.n, ptXbar)),
