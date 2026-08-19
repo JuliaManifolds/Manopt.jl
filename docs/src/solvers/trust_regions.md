@@ -6,7 +6,7 @@ Minimize a function
 \operatorname*{\arg\,min}_{p ∈ \mathcal{M}}\ f(p)
 ```
 
-by using the Riemannian trust-regions solver following [AbsilBakerGallivan:2006](@cite) a model is build by
+by using the Riemannian trust-regions solver following [AbsilBakerGallivan:2006](@cite) a model is built by
 lifting the objective at the ``k``th iterate ``p_k`` by locally mapping the
 cost function ``f`` to the tangent space as ``f_k: T_{p_k}\mathcal M → ℝ`` as
 ``f_k(X) = f(\operatorname{retr}_{p_k}(X))``.

@@ -32,7 +32,7 @@ Given base points ``m∈\mathcal C``, ``n=Λ(m)∈\mathcal D``,
 initial primal and dual values ``p^{(0)} ∈\mathcal C``, ``ξ_{n}^{(0)} ∈ \mathcal T_{n}^{*}\mathcal N``,
 and primal and dual step sizes ``\sigma``, ``\tau``.
 
-The algorithms performs the steps ``k=1,…,`` (until a [`StoppingCriterion`](@ref) is reached)
+The algorithm performs the steps ``k=1,…,`` (until a [`StoppingCriterion`](@ref) is reached)
 
 1.  Choose any element
    ```math

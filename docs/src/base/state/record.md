@@ -1,4 +1,4 @@
-# The Debug decorator for solver states
+# The Record decorator for solver states
 
 ```@autodocs
 Modules = [Manopt]
@@ -30,4 +30,4 @@ Private = true
 
 ## Further reading
 
-For concrete debug actions available, see the [common debugs](../../commons/debugs.md).
+For concrete record actions available, see the [common records](../../commons/records.md).

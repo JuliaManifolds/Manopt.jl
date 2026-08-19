@@ -3,7 +3,7 @@
 ## LineSearches.jl
 
 Manopt can be used with line search algorithms implemented in [LineSearches.jl](https://github.com/JuliaNLSolvers/LineSearches.jl).
-This can be illustrated by the following example of optimizing Rosenbrock function constrained to the unit sphere.
+This can be illustrated by the following example of optimizing the Rosenbrock function constrained to the unit sphere.
 
 ```@example
 using Manopt, Manifolds, LineSearches

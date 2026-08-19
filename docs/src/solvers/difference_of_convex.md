@@ -38,7 +38,7 @@ ManifoldDifferenceOfConvexProximalObjective
 get_subtrahend_gradient
 ```
 
-## [Technical details](@id sec-cp-technical-details)
+## [Technical details](@id sec-doc-technical-details)
 
 The [`difference_of_convex_algorithm`](@ref) and [`difference_of_convex_proximal_point`](@ref) solver requires the following functions of a manifold to be available
 

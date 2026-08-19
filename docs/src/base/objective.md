@@ -10,7 +10,7 @@ Within the optimization problem
 \operatorname*{argmin}_{p \in \mathcal M} f(p)
 ```
 
-the objective describes the cost ``f(p)`` and its properties relations.
+the objective describes the cost ``f(p)`` and its properties and relations.
 The general abstract type for these is
 
 ```@docs
@@ -52,7 +52,7 @@ Public = false
 
 ## [A zeroth order objective](@id zeroth-order-objectives)
 
-For the first and simples objective, only the cost function itself is available.
+For the first and simplest objective, only the cost function itself is available.
 This is for example used in solvers like [`NelderMead`](@ref) or [`particle_swarm`](@ref)
 
 ```@autodocs
@@ -108,16 +108,6 @@ Private = false
 Public = true
 ```
 
-### Internal structures and functions
-
-```@autodocs
-Modules = [Manopt]
-Pages = ["base/objective/first_order_nonsmooth.jl"]
-Order = [:type, :function]
-Private = true
-Public = false
-```
-
 ## [A second order objective](@id second-order-objectives)
 
 The following concrete objectives can be used to store second-order objectives.
@@ -164,7 +154,7 @@ Private = true
 Public = false
 ```
 
-## [Subsolver objectives](@id second-order-objectives)
+## [Subsolver objectives](@id subsolver-objectives)
 
 ```@autodocs
 Modules = [Manopt]

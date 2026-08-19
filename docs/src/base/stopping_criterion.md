@@ -20,7 +20,7 @@ This is within `Manopt` the field `at_iteration`. It should reset its internal v
 The easiest example is the [`StopAfterIteration`](@ref), which is initialised to a maximal number of iterations and returns  `true` once the input `k` from above exceeds this threshold. This stopping criterion does not store anything else, since the reason only required the current iteration and the maximal one.
 
 There is a list of [common stopping criteria](../commons/stopping_criteria.md) available.
-Stopping criteria that a specialised to a single solver can be found on the corresponding solver page.
+Stopping criteria that are specialised to a single solver can be found on the corresponding solver page.
 
 ## Combining stopping criteria
 

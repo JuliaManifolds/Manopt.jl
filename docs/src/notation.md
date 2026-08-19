@@ -11,4 +11,4 @@ with the following additional parts.
 | ``\mathcal{C}`` | a (geodesically) convex set | | |
 | ``\operatorname*{arg\,min}_v f(v)`` | argument/variable ``v`` of a function ``f`` where a local or global minimum is attained | |
 | ``k`` | the current iterate | ``i`` | the goal is to unify this to `k` |
-| ``∇`` | The [Levi-Cevita connection](https://en.wikipedia.org/wiki/Levi-Civita_connection) | | |
+| ``∇`` | The [Levi-Civita connection](https://en.wikipedia.org/wiki/Levi-Civita_connection) | | |

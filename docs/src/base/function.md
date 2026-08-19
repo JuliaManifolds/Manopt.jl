@@ -7,7 +7,7 @@ CurrentModule = Manopt
 An [objective](objective.md) of an optimisation [problem](problem.md) may contain different
 functions related to the objective. In the simplest case a cost function ``f(p)`` and its (Riemannian) gradient
 ``\operatorname{grad} f(p)`` which returns the tangent vector of the steepest ascent direction of
-a differentiable function ``f``. Any function returns points on a manifold, (tangent) vectors or matrices,
+a differentiable function ``f``. Any function that returns points on a manifold, (tangent) vectors or matrices
 is internally assumed to work in-place. For the gradient this for example means the function
 is of the form `grad_f!(M, X, p)`, where the gradient is computed in-place of `X`.
 The signature follows the scheme in [`ManifoldsBase.jl`](@extref ManifoldsBase :doc:`index`),
@@ -16,7 +16,7 @@ the return value is second and then the arguments follow.
 
 ## A wrapper to guarantee in-place evaluations
 
-Since a user might instead also implement a function `grad_f(M, p) -> X`. This is then
+A user might instead also implement a function `grad_f(M, p) -> X`. This is then
 internally “wrapped” by a [`InplaceManifoldFunction`](@ref) and can be specified for any
 [`AbstractManifoldObjective`](@ref) or [high-level interfaces](high-level-interface.md)
 with the `evaluation = ` keyword that accepts an [`AbstractEvaluationType`](@ref)
@@ -54,9 +54,9 @@ Private = true
 Public = true
 ```
 
-## [Function Modelling constrains](@id sec-constrained-function)
+## [Function Modelling constraints](@id sec-constrained-function)
 
-Function modelling constrains can be defined with the following interface.
+Function modelling constraints can be defined with the following interface.
 
 ### Types and functions
 
@@ -66,16 +66,6 @@ Pages = ["base/function/constrained.jl"]
 Order = [:type, :function]
 Private = true
 Public = false
-```
-
-### Internals
-
-```@autodocs
-Modules = [Manopt]
-Pages = ["base/function/constrained.jl"]
-Order = [:type, :function]
-Private = false
-Public = true
 ```
 
 ## [Robustifier](@id sec-robustifier)
@@ -94,7 +84,7 @@ Private = false
 Public = true
 ```
 
-## [Function that map into vector spaces](@id sec-vector-function)
+## [Functions that map into vector spaces](@id sec-vector-function)
 
 For functions on manifolds that map into a vector space, this section defines
 an interface to define both the functions as well as their derivative information.

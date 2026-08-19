@@ -9,7 +9,7 @@ like the steepest descent direction in [`gradient_descent`](@ref) it is common t
 A special case is a line search method; both start with an initial guess.
 
 A stepsize is a function, usually implemented as a `struct` that can be called like a function, that based on the parameters `(problem, point, search_direction, gradient; kwargs...)` computes a new stepsize.
-A common keyword argument it the `initial_guess = `.
+A common keyword argument is the `initial_guess = `.
 
 Step sizes often have parameters that might depend on the manifold used and therefore often use the [default factory](default_factory.md) pattern.
 

@@ -31,7 +31,7 @@ features:
     link: https://juliamanifolds.github.io/ManifoldsBase.jl/stable/
   - icon: 🧩
     title: Composable
-    details: All components like step sizes and stopping criteria are defines modular so that they can be reused and combined easily
+    details: All components like step sizes and stopping criteria are defined modularly so that they can be reused and combined easily
   - icon: ⚡️
     title: Efficient
     details: Using in-place evaluations for both the objective and the manifold, we provide efficient implementations
@@ -175,23 +175,23 @@ If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifold
 
 ### Optimization algorithms (solvers)
 
-For every optimization algorithm, a [solver](solvers/index.md) is implemented based on a [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that set up the solver, and stores values that are required between or for the next iteration.
+For every optimization algorithm, a [solver](solvers/index.md) is implemented based on a [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that sets up the solver, and stores values that are required between or for the next iteration.
 
 ### Manifolds
 
-This project is build upon [ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`), a generic interface to implement manifolds. Certain functions are extended for specific manifolds from [Manifolds.jl](@extref Manifolds :std:doc:`index`), but all other manifolds from that package can be used here, too.
+This project is built upon [ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`), a generic interface to implement manifolds. Certain functions are extended for specific manifolds from [Manifolds.jl](@extref Manifolds :std:doc:`index`), but all other manifolds from that package can be used here, too.
 
 The notation in the documentation aims to follow the same [notation](@extref Manifolds :std:doc:`misc/notation`) from these packages.
 
 ### Algorithm exploration
 
-To visualize and interpret results, `Manopt.jl` provides a system to get [debug](base/state/debug.md) during the iterations of an algorithms as well as [record](base/state/record.md) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
+To visualize and interpret results, `Manopt.jl` provides a system to get [debug](base/state/debug.md) during the iterations of an algorithm as well as [record](base/state/record.md) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
 [`RecordIterate`](@ref). Take a look at the [🏔️ Get started with Manopt.jl](tutorials/getstarted.md) tutorial on how to easily activate this.
 
 ## Literature
 
 If you want to get started with manifolds, a recommended reference is the book [doCarmo:1992](@cite),
-and if you want do directly dive into optimization on manifolds, good references are
+and if you want to directly dive into optimization on manifolds, good references are
 [AbsilMahonySepulchre:2008](@cite) and [Boumal:2023](@cite),
 which are both available online for free.
 

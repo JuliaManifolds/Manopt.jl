@@ -4,7 +4,7 @@ CurrentModule = Manopt
 
 # The Manopt.jl Solver state
 
-The solver state represents all parameters that determine the solver's setup as well as interims memory, e.g. to avoid allocations or to keep certain variables in between iterations. These should also allow insight into how the solver is performing.
+The solver state represents all parameters that determine the solver's setup as well as interim memory, e.g. to avoid allocations or to keep certain variables in between iterations. These should also allow insight into how the solver is performing.
 
 A state contains [callbacks](state/callback.md) and a [stopping criterion](stopping_criterion.md)
 as mandatory elements and usually the iterate is stored in the field `p`.

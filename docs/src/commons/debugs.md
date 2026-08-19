@@ -5,7 +5,7 @@ CurrentModule = Manopt
 ## [Common Debug Output](@id sec-debug)
 
 Debug output can be added to any solver run, since all solvers accept the `debug = ` keyword.
-This is handles by the [`DebugActionFactory`](@ref).
+This is handled by the [`DebugActionFactory`](@ref).
 
 ```@autodocs
 Modules = [Manopt]

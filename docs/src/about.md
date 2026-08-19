@@ -8,7 +8,7 @@ This Julia package was started and is currently maintained by [Ronny Bergmann](h
 Thanks to the following contributors to `Manopt.jl`:
 
 * [Constantin Ahlmann-Eltze](https://const-ae.name) implemented the [gradient and differential `check` functions](helpers/checks.md)
-* [Renée Dornig](https://github.com/r-dornig) implemented the [particle swarm](solvers/particle_swarm.md), the [Riemannian Augmented Lagrangian Method](solvers/augmented_Lagrangian_method.md), the [Exact Penalty Method](solvers/exact_penalty_method.md), as well as the [`NonmonotoneLinesearch`](@ref). These solvers are also the first one with modular/exchangable sub solvers.
+* [Renée Dornig](https://github.com/r-dornig) implemented the [particle swarm](solvers/particle_swarm.md), the [Riemannian Augmented Lagrangian Method](solvers/augmented_Lagrangian_method.md), the [Exact Penalty Method](solvers/exact_penalty_method.md), as well as the [`NonmonotoneLinesearch`](@ref). These solvers are also the first ones with modular/exchangable sub solvers.
 * [Willem Diepeveen](https://www.maths.cam.ac.uk/person/wd292) implemented the [primal-dual Riemannian semismooth Newton](solvers/primal_dual_semismooth_Newton.md) solver.
 * [Ole Gunnar Røsholt Hovland](https://github.com/elorannug) started the implementation of the [gradient sampling algorithm](solvers/gradient_sampling.md)
 * [Hajg Jasa](https://hajg-ijk.github.io) implemented the [convex bundle method](solvers/convex_bundle_method.md) and the [proximal bundle method](solvers/proximal_bundle_method.md) and a default subsolver each of them.

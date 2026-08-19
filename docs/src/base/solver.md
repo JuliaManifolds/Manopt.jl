@@ -7,7 +7,7 @@ CurrentModule = Manopt
 
 A solver is the combination of a [problem](problem.md) providing usually at least the [manifold](@extref `ManifoldsBase.AbstractManifold`) and the [objective](objective.md) and a [state](state.md).
 
-Given these two, the function to call the function [`solve!`](@ref), which is a framework that you in general should not change or redefine. It uses the following methods, which also need to be implemented on your own
+Given these two, the function to call is [`solve!`](@ref), which is a framework that you in general should not change or redefine. It uses the following methods, which also need to be implemented on your own
 algorithm, if you want to provide one.
 
 ```@autodocs

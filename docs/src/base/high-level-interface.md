@@ -2,11 +2,11 @@
 CurrentModule = Manopt
 ```
 
-# High-level interfacesM
+# High-level interfaces
 
 While the internal structure in a [manifold](@extref `ManifoldsBase.AbstractManifold`),
 and an [objective](objective.md) wrapped in a [problem](problem.md) and a
-[state](state.md) allows for a modular access, a should have an “easy access” that handles
+[state](state.md) allows for a modular access, one should have an “easy access” that handles
 several things (semi-) automatically.
 
 These are referred to as the high-level-interfaces during this documentation.
@@ -22,7 +22,7 @@ These interfaces are also unified to accept
 * an `evaluation = ` keyword to specify whether e.g. the gradient can be computed in-place, see the [function](function.md) section.
 * a `record = ` keyword to [record elements](state/record.md)
 * a `return_objective = ` keyword to return the [objective](objective.md) additionally to the minimiser or state – for example to access function call statistics.
-* a `return_state = ` keyword return the [full solver state](state.md) instead of just the minimizer, for example to access its fields afterwards
+* a `return_state = ` keyword to return the [full solver state](state.md) instead of just the minimizer, for example to access its fields afterwards
 * an `objective_type = ` keyword to specify gradients or Hessians to be `:Euclidean` and automatically convert them to Riemannian ones
 
 Additionally there are several keyword arguments, for example for solvers with sub solvers `sub_problem = ` and `sub_state = ` to specify which solvers to use in these. These are then passed to the [solver state](state.md) upon construction.

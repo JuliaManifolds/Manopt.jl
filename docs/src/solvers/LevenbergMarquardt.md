@@ -19,7 +19,7 @@ LevenbergMarquardtState
 
 ### Internal functions
 
-Internally within the sub solvers both a linear operator, sometimes as a full matrix, and a vector as right hand side of a linear system have to be constructucted. The following functions accompany this.
+Internally within the sub solvers both a linear operator, sometimes as a full matrix, and a vector as right hand side of a linear system have to be constructed. The following functions accompany this.
 
 ```@docs
 Manopt.default_lm_lin_solve!
