@@ -51,4 +51,5 @@ The [`gradient_descent`](@ref) solver requires the following functions of a mani
 
 ```@bibliography
 Luenberger:1972
+Canonical=false
 ```

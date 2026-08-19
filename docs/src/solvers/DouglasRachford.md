@@ -76,4 +76,5 @@ which requires
 
 ```@bibliography
 Pages = ["DouglasRachford.md"]
+Canonical=false
 ```

@@ -73,5 +73,6 @@ Manopt.update_current_scale!
 ```
 
 ```@bibliography
+Pages = ["generalized_cauchy_direction_subsolver.md"]
 Canonical=false
 ```
