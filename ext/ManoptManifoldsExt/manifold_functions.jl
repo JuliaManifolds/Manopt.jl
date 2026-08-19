@@ -167,6 +167,8 @@ end
 """
     Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, d, t_current::Real)
 
+Limit the per-component stepsize in `d_out` to the bound imposed by the box constraints.
+
 For each element `i` in the tangent vector `d_out`, if the stepsize bound in direction `d`
 for that element is less than `t_current`, set the element of `d_out` to the distance from
 `p[i]` to the bound in the direction of `d[i]`. If the stepsize bound is non-positive,
