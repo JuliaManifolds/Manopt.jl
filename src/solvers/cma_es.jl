@@ -80,14 +80,9 @@ $(_fields(:vector_transport_method))
 [`cma_es`](@ref)
 """
 mutable struct CMAESState{
-        P,
-        TParams <: Real,
-        TStopping <: StoppingCriterion,
-        TRetraction <: AbstractRetractionMethod,
-        TVTM <: AbstractVectorTransportMethod,
-        TB <: AbstractBasis,
-        TRng <: AbstractRNG,
-        C <: AbstractDict{Symbol},
+        P, TParams <: Real, TStopping <: StoppingCriterion,
+        TRetraction <: AbstractRetractionMethod, TVTM <: AbstractVectorTransportMethod,
+        TB <: AbstractBasis, TRng <: AbstractRNG, C <: AbstractDict{Symbol},
     } <: AbstractManoptSolverState
     p::P
     p_obj::TParams
@@ -360,7 +355,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
 end
 
 @doc """
-    cma_es(M, f, p_m=rand(M); σ::Real=1.0, kwargs...)
+    cma_es(M, f, p=rand(M); σ::Real=1.0, kwargs...)
 
 Perform covariance matrix adaptation evolutionary strategy search for global gradient-free
 randomized optimization. It is suitable for complicated non-convex functions. It can be
@@ -376,7 +371,7 @@ setting.
 
 # Keyword arguments
 
-* `p_m=`$(Manopt._link(:rand)): an initial point `p`
+* `p=`$(Manopt._link(:rand)): an initial point `p`
 * `σ=1.0`: initial standard deviation
 * `λ`:                  (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
   increased for a more thorough global search but decreasing is not recommended)
@@ -401,10 +396,10 @@ function cma_es(M::AbstractManifold, f; kwargs...)
     mco = ManifoldCostObjective(f)
     return cma_es!(M, mco, rand(M); kwargs...)
 end
-function cma_es(M::AbstractManifold, f, p_m; kwargs...)
+function cma_es(M::AbstractManifold, f, p; kwargs...)
     keywords_accepted(cma_es; kwargs...)
     mco = ManifoldCostObjective(f)
-    return cma_es!(M, mco, copy(M, p_m); kwargs...)
+    return cma_es!(M, mco, copy(M, p); kwargs...)
 end
 calls_with_kwargs(::typeof(cma_es)) = (cma_es!,)
 function cma_es!(M::AbstractManifold, f, p_m; kwargs...)
@@ -433,7 +428,7 @@ end
 function cma_es!(
         M::AbstractManifold,
         mco::O,
-        p_m;
+        p;
         σ::Real = 1.0,
         λ::Int = 4 + Int(floor(3 * log(manifold_dimension(M)))), # Eq. (48)
         tol_fun::Real = 1.0e-12,
@@ -441,11 +436,11 @@ function cma_es!(
         stopping_criterion::StoppingCriterion = default_cma_es_stopping_criterion(
             M, λ; tol_fun = tol_fun, tol_x = tol_x
         ),
-        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p_m)),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(
-            M, typeof(p_m)
+            M, typeof(p)
         ),
-        basis::AbstractBasis = default_basis(M, typeof(p_m)),
+        basis::AbstractBasis = default_basis(M, typeof(p)),
         rng::AbstractRNG = default_rng(),
         callbacks = Dict{Symbol, Function}(),
         kwargs..., #collect rest
@@ -480,10 +475,10 @@ function cma_es!(
     c_σ = (μ_eff + 2) / (n_coords + μ_eff + 5) # Eq. (55)
     d_σ = 1 + 2 * max(0, sqrt((μ_eff - 1) / (n_coords + 1)) - 1) + c_σ # Eq. (55)
     c_c = (4 + μ_eff / n_coords) / (n_coords + 4 + 2 * μ_eff / n_coords) # Eq. (56)
-    covariance_matrix = Matrix{number_eltype(p_m)}(I, n_coords, n_coords)
+    covariance_matrix = Matrix{number_eltype(p)}(I, n_coords, n_coords)
     state = CMAESState(
         M,
-        p_m,
+        p,
         μ,
         λ,
         μ_eff,
@@ -512,12 +507,8 @@ calls_with_kwargs(::typeof(cma_es!)) = (decorate_objective!, decorate_state!)
 
 @doc """
     eigenvector_transport!(
-        M::AbstractManifold,
-        matrix_eigen::Eigen,
-        p,
-        q,
-        basis::AbstractBasis,
-        vtm::AbstractVectorTransportMethod,
+        M::AbstractManifold, matrix_eigen::Eigen, p, q,
+        basis::AbstractBasis, vtm::AbstractVectorTransportMethod,
     )
 
 Transport the matrix with `matrix_eig` eigen decomposition when expanded in `basis` from
@@ -528,12 +519,7 @@ is the (real) dimension of `M`. The function corresponds to the Ehresmann connec
 defined by vector transport `vtm` of eigenvectors of `matrix_eigen`.
 """
 function eigenvector_transport!(
-        M::AbstractManifold,
-        matrix_eigen::Eigen,
-        p,
-        q,
-        basis::AbstractBasis,
-        vtm::AbstractVectorTransportMethod,
+        M::AbstractManifold, matrix_eigen::Eigen, p, q, basis::AbstractBasis, vtm::AbstractVectorTransportMethod,
     )
     if is_flat(M)
         return matrix_eigen

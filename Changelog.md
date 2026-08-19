@@ -1434,7 +1434,7 @@ This is the first version with an actual Changelog entry
 
 ## [0.1.0] June 3, 2019
 
-First public release, first registered and announces version of `Manopt.jl`.
+First public release, first registered and [announced version](https://discourse.julialang.org/t/ann-manopt-jl/24906) of `Manopt.jl`.
 This version still also included what is now `Manifolds.jl`.
 
 The first commit that started `Manopt.jl` was done on November 25, 2016.

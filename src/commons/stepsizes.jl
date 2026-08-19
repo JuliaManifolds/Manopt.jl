@@ -207,7 +207,7 @@ function get_message(::Val{:stop_increasing}, k::Int = -1, value::Real = NaN, bo
     return (k > 0) ? "At $s: Maximal number of increase steps $s_str reached. Aborting increase. $v_str" : ""
 end
 """
-get_message(:stepsize_less, k::Int=-1, step::Real = NaN, bound::Real = NaN)
+    get_message(:stepsize_less, k::Int=-1, step::Real = NaN, bound::Real = NaN)
 
 Display a message string for stopping the increase of the step size at iteration `k`
 and the step size `step` chosen instead.
