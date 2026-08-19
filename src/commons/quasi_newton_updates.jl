@@ -1153,10 +1153,10 @@ end
 
 
 @doc raw"""
-    update_hessian!(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, p)
+    update_hessian!(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, mp, st, p_old, k)
 
-Update Hessian approximation `gh` by moving it to point `p` and updating the stored `s` and
-`y` vectors.
+Update the Hessian approximation `gh` by moving it from the previous point `p_old` to the current iterate
+and updating the stored `s` and `y` vectors, respectively.
 """
 function update_hessian!(
         gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate,
@@ -1405,6 +1405,8 @@ end
 
 """
     set_stepsize_bound!(M::AbstractManifold, d_out, p, d, t_current::Real)
+
+Limit the per-component stepsize in `d_out` to the bound imposed by the box constraints.
 
 For each component at index `i` in the tangent vector `d_out`, if the stepsize bound in
 direction `d` for that component is less than `t_current`, set the element of `d_out` to

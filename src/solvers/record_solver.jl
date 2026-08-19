@@ -26,7 +26,7 @@ function step_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, k)
 end
 
 """
-    stop_solver!(amp::AbstractManoptProblem, rss::RecordSolverStatek k)
+    stop_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, k)
 
 Extend the call to the stopping criterion by a hook to run records, that were
 added to the `:Stop` entry.

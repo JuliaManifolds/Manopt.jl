@@ -2872,10 +2872,10 @@ function get_preconditioner end
 @doc """
     get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
 
-evaluate the symmetric, positive definite preconditioner (approximation of the
-inverse of the Hessian of the cost function `F`) of a
-[`ManifoldHessianObjective`](@ref) `mho` at the point `p` applied to a
-tangent vector `X`.
+Evaluate the preconditioner of the [`ManifoldHessianObjective`](@ref) `mho`
+at the point `p`, applied to the tangent vector `X`.
+
+It usually is a symmetric, positive definite approximation of the inverse of the Hessian of the cost function `F`.
 """
 function get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
     Y = zero_vector(M, p)
@@ -4161,9 +4161,9 @@ end
     objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Tuple{Symbol, Array, Array})
     objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Tuple{Symbol, Array})
 
-Generate a cached variant of the [`AbstractManifoldObjective`](@ref) `o`
-on the `AbstractManifold M` based on the symbol `cache[1]`,
-where the second element `cache[2]` are further arguments to the cache and
+Generate a cached variant of the [`AbstractManifoldObjective`](@ref) `o` on the `AbstractManifold M`, selected by `cache[1]`.
+
+The second element `cache[2]` provides further arguments to the cache and
 the optional third is passed down as keyword arguments.
 
 For all available caches see the simpler variant with symbols.

@@ -92,6 +92,11 @@ function status_summary(sgms::SubGradientMethodState; context::Symbol = :default
     return s
 end
 get_iterate(sgs::SubGradientMethodState) = sgs.p
+@doc """
+    get_subgradient(sgs::SubGradientMethodState)
+
+Return the current subgradient stored in the [`SubGradientMethodState`](@ref) `sgs`.
+"""
 get_subgradient(sgs::SubGradientMethodState) = sgs.X
 function set_iterate!(sgs::SubGradientMethodState, M, p)
     copyto!(M, sgs.p, p)

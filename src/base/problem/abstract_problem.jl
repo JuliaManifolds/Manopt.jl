@@ -20,10 +20,10 @@ end
 @doc """
     get_preconditioner(amp::AbstractManoptProblem, p, X)
 
-evaluate the symmetric, positive definite preconditioner (approximation of the
-inverse of the Hessian of the cost function `f`) of a
-[`AbstractManoptProblem`](@ref) `amp`s objective at the point `p` applied to a
-tangent vector `X`.
+Evaluate the preconditioner of the objective of the [`AbstractManoptProblem`](@ref) `amp`
+at the point `p`, applied to the tangent vector `X`.
+
+It usually is a symmetric, positive definite approximation of the inverse of the Hessian of the cost function `f`.
 """
 function get_preconditioner(amp::AbstractManoptProblem, p, X)
     return get_preconditioner(get_manifold(amp), get_objective(amp), p, X)
@@ -77,6 +77,14 @@ function get_cost(amp::AbstractManoptProblem, p)
 end
 
 
+@doc """
+    get_gradient(amp::AbstractManoptProblem, p)
+    get_gradient!(amp::AbstractManoptProblem, X, p)
+
+Evaluate the gradient of an [`AbstractManoptProblem`](@ref) `amp` at the point `p`.
+
+This can also be computed in-place of `X` for the `!`-variant.
+"""
 function get_gradient(mp::AbstractManoptProblem, p)
     return get_gradient(get_manifold(mp), get_objective(mp), p)
 end

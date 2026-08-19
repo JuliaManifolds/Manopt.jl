@@ -1324,7 +1324,9 @@ end
 """
     get_cost(TpM::TangentSpace, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, X)
 
-Compute the surrogate cost when solving its normal equation, see also
+Compute the surrogate cost when solving its normal equations.
+
+See also
 [`get_cost(::AbstractManifold, ::LevenbergMarquardtLinearSurrogateObjective, p, X)`](@ref),
 [`get_linear_operator`](@ref), and [`get_vector_field`](@ref) for more details.
 """
@@ -1370,8 +1372,8 @@ _doc_linOp_NEO = """
     get_linear_operator!(M::AbstractManifold, b, neo::NormalEquationsObjective, p, c, B)
     get_linear_operator!(M::AbstractManifold, A, neo::NormalEquationsObjective, p, B)
 
-    Evaluate the linear operator related to the normal equations of the [`LevenbergMarquardtLinearSurrogateObjective`](@ref),
-    see [`get_normal_linear_operator`](@ref) for details.
+Evaluate the linear operator related to the normal equations of the [`LevenbergMarquardtLinearSurrogateObjective`](@ref).
+See [`get_normal_linear_operator`](@ref) for details.
 """
 
 @doc "$(_doc_linOp_NEO)"
@@ -1387,16 +1389,19 @@ function get_linear_operator!(
     return get_normal_linear_operator!(M, YA, neo.objective, p, XB)
 end
 # (b) coefficients in a basis
+@doc "$(_doc_linOp_NEO)"
 function get_linear_operator(
         M::AbstractManifold, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
     )
     return get_normal_linear_operator(M, neo.objective, p, c, B)
 end
+@doc "$(_doc_linOp_NEO)"
 function get_linear_operator!(
         M::AbstractManifold, Y, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p, c, B::AbstractBasis
     )
     return get_normal_linear_operator!(M, Y, neo.objective, p, c, B)
 end
+@doc "$(_doc_linOp_NEO)"
 function get_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis;
         penalty::Real = neo.objective.penalty,
@@ -1418,15 +1423,15 @@ _doc_vecField_NEO = """
     get_vector_field!(M::AbstractManifold, Y, neo::NormalEquationsObjective, p)
     get_vector_field!(M::AbstractManifold, c, neo::NormalEquationsObjective, p, B)
 
-    Evaluate the vector field related to the normal equations of the [`LevenbergMarquardtLinearSurrogateObjective`](@ref),
-    see [`get_normal_vector_field`](@ref) for details,
-    but note that for the [`NormalEquationsObjective`](@ref) the format is slightly different:
-    For the variant with `_normal` the result is similar to the surrogate, namely we have
-    ``$(_tex(:Cal, "L"))(X) + y`` for the surrogate and hence also the same form ``$(_tex(:Cal, "N"))(X) + z``,
-    which has to be set to zero to find ``X``.
+Evaluate the vector field related to the normal equations of the [`LevenbergMarquardtLinearSurrogateObjective`](@ref).
+See [`get_normal_vector_field`](@ref) for details,
+but note that for the [`NormalEquationsObjective`](@ref) the format is slightly different:
+For the variant with `_normal` the result is similar to the surrogate, namely we have
+``$(_tex(:Cal, "L"))(X) + y`` for the surrogate and hence also the same form ``$(_tex(:Cal, "N"))(X) + z``,
+which has to be set to zero to find ``X``.
 
-    For the objective here we consider ````$(_tex(:Cal, "N"))(X) = z'``, i.e. the `get_vector_field` `z' = -z``
-    differs by a sign.
+For the objective here we consider ````$(_tex(:Cal, "N"))(X) = z'``, i.e. the `get_vector_field` `z' = -z``
+differs by a sign.
 """
 
 # RHS as a tangent vector
@@ -1445,11 +1450,13 @@ function get_vector_field!(
     return Y
 end
 # RHS in coordinates
+@doc "$(_doc_vecField_NEO)"
 function get_vector_field(
         M::AbstractManifold, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
     )
     return -get_normal_vector_field(M, neo.objective, p, B)
 end
+@doc "$(_doc_vecField_NEO)"
 function get_vector_field!(
         M::AbstractManifold, c, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateObjective}, p, B::AbstractBasis
     )
