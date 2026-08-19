@@ -1409,6 +1409,8 @@ and their documentation and testing has been extended.
 
 ## [0.4.0] January 10, 2023
 
+This is the first version with an actual Changelog entry
+
 ### Added
 
 * Dependency on `ManifoldDiff.jl` and a start of moving actual derivatives, differentials,
@@ -1425,3 +1427,14 @@ and their documentation and testing has been extended.
 * `AbstractManoptSolverState` replaces `Options`
 * `random_point(M)` is replaced by `rand(M)` from `ManifoldsBase.jl
 * `random_tangent(M, p)` is replaced by `rand(M; vector_at=p)`
+
+## [0.3.0] March 9, 2021
+
+## [0.2.0] April 19, 2020
+
+## [0.1.0] June 3, 2019
+
+First public release, first registered and announces version of `Manopt.jl`.
+This version still also included what is now `Manifolds.jl`.
+
+The first commit that started `Manopt.jl` was done on November 25, 2016.
