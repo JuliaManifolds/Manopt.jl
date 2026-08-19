@@ -107,6 +107,7 @@ function get_vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjectiv
     Y = zero_vector(M, p)
     return slso.b!(M, Y, p)
 end
+@doc "$(_doc_get_vector_field_slso)"
 function get_vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective)
     M = base_manifold(TpM)
     p = base_point(TpM)
