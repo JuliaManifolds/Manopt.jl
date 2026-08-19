@@ -81,7 +81,7 @@ function get_linear_operator!(M::AbstractManifold, Y, slso::SymmetricLinearSyste
     return slso.A!(M, Y, p, X)
 end
 
-@doc """
+_doc_get_vector_field_slso = """
     get_vector_field(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p)
     get_vector_field!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p)
     get_vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjective)
@@ -90,6 +90,8 @@ end
 evaluate the stored value for computing the right hand side ``b`` in ``$(_tex(:Cal, "A"))=-b``,
 either providing a tangent space or a manifold and a point.
 """
+
+@doc "$(_doc_get_vector_field_slso)"
 function get_vector_field(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p)
     Y = zero_vector(M, p)
     return slso.b!(M, Y, p)
@@ -98,6 +100,7 @@ function get_vector_field!(M::AbstractManifold, Y, slso::SymmetricLinearSystemOb
     return slso.b!(M, Y, p)
 end
 # Also on TpM – shortcuts
+@doc "$(_doc_get_vector_field_slso)"
 function get_vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjective)
     M = base_manifold(TpM)
     p = base_point(TpM)

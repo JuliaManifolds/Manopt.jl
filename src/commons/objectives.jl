@@ -3744,8 +3744,8 @@ struct ManifoldSubgradientObjective{C, S} <: AbstractManifoldCostObjective{C}
 end
 
 """
-    X = get_subgradient(M;;AbstractManifold, sgo::ManifoldSubgradientObjective, p)
-    get_subgradient!(M;;AbstractManifold, X, sgo::ManifoldSubgradientObjective, p)
+    X = get_subgradient(M::AbstractManifold, sgo::ManifoldSubgradientObjective, p)
+    get_subgradient!(M::AbstractManifold, X, sgo::ManifoldSubgradientObjective, p)
 
 Evaluate the (sub)gradient of a [`ManifoldSubgradientObjective`](@ref) `sgo`
 at the point `p`.
