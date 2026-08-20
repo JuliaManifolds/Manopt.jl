@@ -1,15 +1,15 @@
 """
     AbstractManifoldSubObjective{O<:AbstractManifoldObjective} <: AbstractManifoldObjective
 
-An abstract type for objectives of sub problems within a solver but still store the
+An abstract type for objectives of sub problems within a solver, which still store the
 original objective internally to generate generic objectives for sub solvers.
 """
 abstract type AbstractManifoldSubObjective{O <: AbstractManifoldObjective} <: AbstractManifoldObjective end
 
 """
-    AbstractLinearSurrogateObjective{O <: AbstractManifoldObjective} <: AbstractManifoldSubObjective
+    AbstractLinearSurrogateObjective{O <: AbstractManifoldObjective} <: AbstractManifoldSubObjective{O}
 
-Provide a linear surrogate model for the given [`AbstractManifoldObjective`](@ref) `O` of the form
+Provide a linear surrogate model for a given [`AbstractManifoldObjective`](@ref) of type `O` of the form
 
 ```math
 μ_p(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, _tex(:Cal, "L") * "(X) + y"; index = "2"))^2
@@ -48,7 +48,7 @@ end
 @doc """
     get_objective(amso::AbstractManifoldSubObjective)
 
-Return the (original) objective stored the sub objective is build on.
+Return the (original) objective the sub objective is built on.
 """
 get_objective(amso::AbstractManifoldSubObjective)
 
@@ -75,8 +75,8 @@ function get_objective_gradient!(M::AbstractManifold, X, amso::AbstractManifoldS
 end
 
 @doc """
-    Y = get_objective_Hessian(M, amso::AbstractManifoldSubObjective, p, X)
-    get_objective_Hessian!(M, Y, amso::AbstractManifoldSubObjective, p, X)
+    Y = get_objective_hessian(M, amso::AbstractManifoldSubObjective, p, X)
+    get_objective_hessian!(M, Y, amso::AbstractManifoldSubObjective, p, X)
 
 Evaluate the Hessian of the (original) objective stored within the sub objective `amso`.
 """
@@ -89,9 +89,9 @@ end
 
 @doc """
     Y = get_objective_preconditioner(M, amso::AbstractManifoldSubObjective, p, X)
-    get_objective_preconditioner(M, Y, amso::AbstractManifoldSubObjective, p, X)
+    get_objective_preconditioner!(M, Y, amso::AbstractManifoldSubObjective, p, X)
 
-Evaluate the Hessian of the (original) objective stored within the sub objective `amso`.
+Evaluate the preconditioner of the (original) objective stored within the sub objective `amso`.
 """
 function get_objective_preconditioner(M::AbstractManifold, amso::AbstractManifoldSubObjective, p, X)
     return get_preconditioner(M, get_objective(amso), p, X)

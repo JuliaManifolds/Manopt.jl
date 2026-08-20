@@ -33,7 +33,8 @@ end
 """
     ArctanRobustifier <: AbstractRobustifierFunction
 
-A robustifier that is based on the arctangent function.
+A robustifier that is based on the arctangent function. Note that robustifiers act on the
+squared residuals within the nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
 
 The formula for the robustifier is given as
 ```math
@@ -66,7 +67,7 @@ squared residuals within the nonlinear least squares framework, i.e., ``ρ(f_i(p
 
 The formula for the Cauchy robustifier is given as
 ```math
-ρ(x) = $(_tex(:log, "1 + x"))
+ρ(x) = $(_tex(:log))(1 + x)
 ```
 
 and its first and second derivatives read as
@@ -97,16 +98,16 @@ end
 A robustifier to indicate that for a certain [`AbstractVectorGradientFunction`](@ref) a
 robustifier should be applied component wise.
 
-## Fields
-* `robustifier::R` the robustifier to be applied componentwise
+# Fields
+* `robustifier::R`: the robustifier to be applied componentwise
 
-## Constructor
+# Constructor
 
     ComponentwiseRobustifierFunction(robustifier::AbstractRobustifierFunction)
 
-Create a new componentwise robustifier function, where this wrapper avoids to ”double wrap”,
-i.e. calling the constructor with a componentwise robustifier creates a new componentwise robustifier
-with the only taking the internal robustifier.
+Create a new componentwise robustifier function. This wrapper avoids “double wrapping”:
+calling the constructor with a componentwise robustifier returns a new componentwise
+robustifier around the same internal robustifier, rather than nesting another layer.
 """
 struct ComponentwiseRobustifierFunction{R <: AbstractRobustifierFunction} <: AbstractRobustifierFunction
     robustifier::R
@@ -124,11 +125,11 @@ function get_robustifier_values(crf::ComponentwiseRobustifierFunction, x::Abstra
 end
 
 """
-     ComposedRobustifierFunction{F<:AbstractRobustifierFunction, G<:AbstractRobustifierFunction} <: AbstractRobustifierFunction
+    ComposedRobustifierFunction{F<:AbstractRobustifierFunction, G<:AbstractRobustifierFunction} <: AbstractRobustifierFunction
 
 A robustifier that is the composition of two robustifier functions ``ρ = ρ_1 ∘ ρ_2``.
 
-For formulae for the first and second derivatives are
+The formulae for the first and second derivatives are
 ```math
 ρ'(x) = ρ_1'(ρ_2(x)) ⋅ ρ_2'(x)
 ```
@@ -240,8 +241,8 @@ get_robustifier_values(::IdentityRobustifier, x::Real) = (x, 1.0, 0.0)
 """
     ScaledRobustifierFunction{F<:AbstractRobustifierFunction, R <: Real} <: AbstractRobustifierFunction
 
-A given robustifier function to scale the residuals a real value `scale` ``s``,
-i.e. we consider ``ρ_s(f(p)^2) = ρ(s^2⋅f(p)^2)`` for some [`AbstractRobustifierFunction`](@ref) ``ρ``.
+A robustifier function whose residuals are scaled by a real value `scale` ``s``,
+i.e. it considers ``ρ_s(f(p)^2) = ρ(s^2⋅f(p)^2)`` for some [`AbstractRobustifierFunction`](@ref) ``ρ``.
 The function and its derivatives hence read as
 * ``ρ_s(x) = s^2 ρ(x / s^2)``
 * ``ρ_s'(x) = ρ'(x / s^2)``
@@ -282,7 +283,7 @@ end
 """
     SoftL1Robustifier <: AbstractRobustifierFunction
 
-A robustifier that is based on Soft ``ℓ_1`` norm.
+A robustifier that is based on the soft ``ℓ_1`` norm.
 Note that robustifiers act on the
 squared residuals within the nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
 
@@ -314,15 +315,16 @@ end
 """
     TolerantRobustifier <: AbstractRobustifierFunction
 
-A robustifier that is based on the tolerant function.
+A robustifier that is based on the tolerant function. Note that robustifiers act on the
+squared residuals within the nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
 
 The formula for the robustifier is given as
 ```math
-ρ_{a,b}(x) = b$(_tex(:log))(1+ $(_tex(:rm, "e"))^{(s-a)/b}) - b$(_tex(:log))(1 + $(_tex(:rm, "e"))^{-a/b})
+ρ_{a,b}(x) = b$(_tex(:log))(1+ $(_tex(:rm, "e"))^{(x-a)/b}) - b$(_tex(:log))(1 + $(_tex(:rm, "e"))^{-a/b})
 ```
 and its first and second derivatives read as
 ```math
-ρ'_{a,b}(x) = $(_tex(:frac, "1", "1 + $(_tex(:rm, "e")){(a - x)/b}"))
+ρ'_{a,b}(x) = $(_tex(:frac, "1", "1 + $(_tex(:rm, "e"))^{(a - x)/b}"))
 ```
 and
 ```math

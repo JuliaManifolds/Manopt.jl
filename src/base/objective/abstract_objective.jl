@@ -30,8 +30,8 @@ end
     AbstractDecoratedManifoldObjective{O<:AbstractManifoldObjective}
 
 A common supertype for all decorators of [`AbstractManifoldObjective`](@ref)s to simplify dispatch.
-The second parameter should refer to the undecorated objective, i.e. even for multiple decorators
-provide insight into the most inner one.
+The parameter `O` should refer to the undecorated objective, that is, even for multiple decorators
+it provides insight into the innermost one.
 """
 abstract type AbstractDecoratedManifoldObjective{O <: AbstractManifoldObjective} <: AbstractManifoldObjective end
 
@@ -71,14 +71,14 @@ function Base.show(io::IO, ro::ReturnManifoldObjective)
 end
 
 """
-    dispatch_objective_decorator(o::AbstractManoptSolverState)
+    dispatch_objective_decorator(o::AbstractManifoldObjective)
 
-Indicate internally, whether an [`AbstractManifoldObjective`](@ref) `o` to be of decorating type,
-it stores (encapsulates) an object in itself, by default in the field `o.objective`.
+Indicate internally whether an [`AbstractManifoldObjective`](@ref) `o` is of decorating type,
+that is, whether it stores (encapsulates) another objective in itself, by default in the field `o.objective`.
 
 Decorators indicate this by returning `Val{true}` for further dispatch.
 
-The default is `Val{false}`, so by default an state is not decorated.
+The default is `Val{false}`, so by default an objective is not decorated.
 """
 dispatch_objective_decorator(::AbstractManifoldObjective) = Val(false)
 dispatch_objective_decorator(::AbstractDecoratedManifoldObjective) = Val(true)
@@ -86,9 +86,9 @@ dispatch_objective_decorator(::AbstractDecoratedManifoldObjective) = Val(true)
 @inline _extract_val(::Val{T}) where {T} = T
 
 """
-    is_object_decorator(s::AbstractManifoldObjective)
+    is_objective_decorator(s::AbstractManifoldObjective)
 
-Indicate, whether [`AbstractManifoldObjective`](@ref) `s` are of decorator type.
+Indicate whether the [`AbstractManifoldObjective`](@ref) `s` is of decorator type.
 """
 function is_objective_decorator(s::AbstractManifoldObjective)
     return _extract_val(dispatch_objective_decorator(s))
@@ -97,13 +97,13 @@ end
 @doc """
     get_objective(o::AbstractManifoldObjective, recursive=true)
 
-return the (one step) undecorated [`AbstractManifoldObjective`](@ref) of the (possibly) decorated `o`.
+Return the undecorated [`AbstractManifoldObjective`](@ref) of the (possibly) decorated `o`.
 As long as your decorated objective stores the objective within `o.objective` and
-the [`dispatch_objective_decorator`](@ref) is set to `Val{true}`,
-the internal state are extracted automatically.
+[`dispatch_objective_decorator`](@ref) is set to `Val{true}`,
+the internal objective is extracted automatically.
 
 By default the objective that is stored within a decorated objective is assumed to be at
-`o.objective`. Overwrite `_get_objective(o, ::Val{true}, recursive) to change this behaviour for your objective `o`
+`o.objective`. Overwrite `_get_objective(o, ::Val{true}, recursive)` to change this behaviour for your objective `o`
 for both the recursive and the direct case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
@@ -129,8 +129,8 @@ set_parameter!(amo::AbstractManifoldObjective, e::Symbol, args...)
 # For decorators the human readable version is “transparent” by default, i.e.
 # if no special addition is done, it just prints the human readable string from the child
 function status_summary(io::IO, co::AbstractDecoratedManifoldObjective; context::Symbol = :default)
-    return status_summary(io, get_objective(co, false); context = :default)
+    return status_summary(io, get_objective(co, false); context = context)
 end
 function status_summary(co::AbstractDecoratedManifoldObjective; context::Symbol = :default)
-    return status_summary(get_objective(co, false))
+    return status_summary(get_objective(co, false); context = context)
 end

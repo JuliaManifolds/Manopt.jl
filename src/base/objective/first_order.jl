@@ -13,7 +13,7 @@ AbstractManifoldCostObjective{F} end
 """
     DirectionUpdateRule
 
-A general functor, that handles direction update rules. It's fields are usually
+A general functor, that handles direction update rules. Its fields are usually
 only a [`StoreStateAction`](@ref) by default initialized to the fields required
 for the specific coefficient, but can also be replaced by a (common, global)
 individual one that provides these values.
@@ -23,7 +23,7 @@ abstract type DirectionUpdateRule end
 """
     AbstractGradientGroupDirectionRule <: DirectionUpdateRule
 
-A generic type for all options [`DirectionUpdateRule`](@ref) working with certain splittiungs of the overall gradient in the direction processing.
+A generic [`DirectionUpdateRule`](@ref) type for all rules working with certain splittings of the overall gradient in the direction processing.
 """
 abstract type AbstractGradientGroupDirectionRule <: DirectionUpdateRule end
 
@@ -32,9 +32,9 @@ abstract type AbstractGradientGroupDirectionRule <: DirectionUpdateRule end
     (c, d) = get_cost_and_differential(problem::AbstractManoptProblem, p, X; kwargs...)
     (c, d) = get_cost_and_differential(M, objective::AbstractManifoldFirstOrderObjective, p, X; kwargs...)
 
-Evaluate the cost and the differential of a [`AbstractManifoldFirstOrderObjective`] `objective` at a point `p` in direction `X`.
+Evaluate the cost and the differential of an [`AbstractManifoldFirstOrderObjective`](@ref) `objective` at a point `p` in direction `X`.
 For an [`AbstractManoptProblem`](@ref) `problem` the inner manifold and objectives are used.
-Similarly, any objective decorator would “pass though” to its inner objective.
+Similarly, any objective decorator would “pass through” to its inner objective.
 
 Keyword arguments are passed down.
 """
@@ -56,10 +56,10 @@ function get_cost_and_gradient! end
     (c, X) = get_cost_and_gradient(M, objective::AbstractManifoldFirstOrderObjective, p)
     (c, X) = get_cost_and_gradient!(M, X, objective::AbstractManifoldFirstOrderObjective, p)
 
-Evaluate the cost and the gradient of a [`AbstractManifoldFirstOrderObjective`] `objective` at a point `p`
+Evaluate the cost and the gradient of an [`AbstractManifoldFirstOrderObjective`](@ref) `objective` at a point `p`
 simultaneously.
 For an [`AbstractManoptProblem`](@ref) `problem` the inner manifold and objectives are used.
-Similarly, any objective decorator would “pass though” to its inner objective.
+Similarly, any objective decorator would “pass through” to its inner objective.
 
 The gradient part can be evaluated in-place of `X`.
 """
@@ -85,19 +85,20 @@ end
 
 """
      get_differential(amp::AbstractManoptProblem, p, X; kwargs...)
-     get_differential(M::AbstractManifold, amfo:AbstractManifoldFirstOrderObjective, p, X; kwargs...)
-     get_differential(M::AbstractManifold, amfo:AbstractDecoratedManifoldObjective, p, X; kwargs...)
+     get_differential(M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X; kwargs...)
+     get_differential(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X; kwargs...)
 
 Evaluate the differential ``Df(p)[X]`` of the function ``f`` represented by
 the [`AbstractManifoldFirstOrderObjective`](@ref).
-For an [`AbstractManoptProblem`](@ref) `problem` the inner manifold and objectives are used.
-Similarly, any objective decorator would “pass though” to its inner objective.
+For an [`AbstractManoptProblem`](@ref) `amp` the inner manifold and objectives are used.
+Similarly, any objective decorator would “pass through” to its inner objective.
 By default this falls back to ``Df(p)[X] = ⟨$(_tex(:grad))f(p), X⟩``.
 
 # Keyword arguments
-* `gradient=nothing` – pass a tangent vector to be used internally as interims memory,
-  e.g. in the default variant to evaluate the gradient in-place in.
-* `evaluated=false` – indicate whether `gradient` is just memory (`false`, default) or
+
+* `gradient=nothing`: pass a tangent vector to be used internally as interim memory,
+  for example in the default variant to evaluate the gradient in-place.
+* `evaluated=false`: indicate whether `gradient` is just memory (`false`, default) or
   already contains the evaluated gradient (`true`).
 """
 function get_differential(
@@ -137,7 +138,7 @@ Return the function to evaluate (just) the differential ``Df(p)[X]``.
 For a decorated objective, the `recursive` positional parameter determines whether to
 directly call this function on the next decorator or whether to get the “most inner” objective.
 """
-get_differential_function(::AbstractManifoldFirstOrderObjective; recursive::Bool = false)
+get_differential_function(::AbstractManifoldFirstOrderObjective, recursive::Bool = false)
 
 function get_differential_function(
         objective::AbstractDecoratedManifoldObjective, recursive = false
@@ -151,8 +152,8 @@ end
     get_gradient!(problem::AbstractManoptProblem, X, p)
     get_gradient!(M, X, objective::AbstractManifoldFirstOrderObjective, p)
 
-Evaluate the gradient of a [`AbstractManifoldFirstOrderObjective`] `objective` on an $(_link(:AbstractManifold)) `M` at a point `p`.
-This can be evaluated in-place of `X` and also when passing and [`AbstractManoptProblem`](@ref) `problem`.
+Evaluate the gradient of an [`AbstractManifoldFirstOrderObjective`](@ref) `objective` on an $(_link(:AbstractManifold)) `M` at a point `p`.
+This can be evaluated in-place of `X` and also when passing an [`AbstractManoptProblem`](@ref) `problem`.
 """
 function get_gradient(M::AbstractManifold, objective::AbstractManifoldFirstOrderObjective, p)
     X = zero_vector(M, p)
@@ -171,15 +172,14 @@ function get_gradient_function end
 @doc """
     get_gradient_function(amgo::AbstractManifoldFirstOrderObjective, recursive=false; evaluation=AllocatingEvaluation())
 
-return the function to evaluate (just) the gradient ``$(_tex(:grad)) f(p)``,
+Return the function to evaluate (just) the gradient ``$(_tex(:grad)) f(p)``,
 where either the gradient function using the decorator or without the decorator is used.
 
 By default `recursive` is set to `false`, since usually to just pass the gradient function
 somewhere, one still wants for example the cached one or the one that still counts calls.
 
-Use `evaluation = `[`InplaceEvaluation`](@ref)` and `recursive = true` to get access to the internally stored actual function.
+Use `evaluation=`[`InplaceEvaluation`](@ref)`()` and `recursive=true` to get access to the internally stored actual function.
 Note that this actual function might still be wrapped in an [`InplaceManifoldFunction`](@ref).
-
 """
 get_gradient_function(::AbstractManifoldFirstOrderObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
 
@@ -188,10 +188,10 @@ function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursi
 end
 
 """
-    X = get_subgradient(M::AbstractManifold, sgo::AbstractManifoldFirstOrderObjective, p)
-    get_subgradient!(M::AbstractManifold, X, sgo::AbstractManifoldFirstOrderObjective, p)
+    X = get_subgradient(M::AbstractManifold, agmo::AbstractManifoldFirstOrderObjective, p)
+    get_subgradient!(M::AbstractManifold, X, agmo::AbstractManifoldFirstOrderObjective, p)
 
-Evaluate the subgradient, which for the case of a objective having a gradient, means evaluating the
+Evaluate the subgradient, which for the case of an objective having a gradient, means evaluating the
 gradient itself.
 
 While in general, the result might not be deterministic, for this case it is.

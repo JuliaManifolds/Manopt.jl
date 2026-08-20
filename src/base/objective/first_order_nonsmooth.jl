@@ -33,10 +33,10 @@ end
     get_subgradient(amp::AbstractManoptProblem, p)
     get_subgradient!(amp::AbstractManoptProblem, X, p)
 
-evaluate the subgradient of an [`AbstractManoptProblem`](@ref) `amp` at point `p`.
+Evaluate the subgradient of an [`AbstractManoptProblem`](@ref) `amp` at point `p`.
 
 The evaluation is done in place of `X` for the `!`-variant.
-The result might not be deterministic, _one_ element of the subdifferential is returned.
+The result might not be deterministic; _one_ element of the subdifferential is returned.
 """
 function get_subgradient(amp::AbstractManoptProblem, p)
     return get_subgradient(get_manifold(amp), get_objective(amp), p)
@@ -72,13 +72,13 @@ abstract type AbstractPrimalDualManifoldObjective{C, P} <: AbstractManifoldCostO
 function adjoint_linearized_operator end
 
 @doc """
-    X = adjoint_linearized_operator(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, m, n, Y)
-    adjoint_linearized_operator(N::AbstractManifold, X, apdmo::AbstractPrimalDualManifoldObjective, m, n, Y)
+    X = adjoint_linearized_operator(M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, m, n, Y)
+    adjoint_linearized_operator!(M::AbstractManifold, N::AbstractManifold, X, apdmo::AbstractPrimalDualManifoldObjective, m, n, Y)
 
-Evaluate the adjoint of the linearized forward operator of ``(DΛ(m))^*[Y]`` stored within
+Evaluate the adjoint of the linearized forward operator, ``(DΛ(m))^*[Y]``, stored within
 the [`AbstractPrimalDualManifoldObjective`](@ref) (in place of `X`).
 Since ``Y∈$(_math(:TangentSpace; p = "n", M = "N"))``, both ``m`` and ``n=Λ(m)`` are necessary arguments, mainly because
-the forward operator ``Λ`` might be `missing` in `p`.
+the forward operator ``Λ`` might be `missing`.
 """
 adjoint_linearized_operator(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 
@@ -117,8 +117,8 @@ function forward_operator end
     q = forward_operator(M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, p)
     forward_operator!(M::AbstractManifold, N::AbstractManifold, q, apdmo::AbstractPrimalDualManifoldObjective, p)
 
-Evaluate the forward operator of ``Λ(x)`` stored within the [`TwoManifoldProblem`](@ref)
-(in place of `q`).
+Evaluate the forward operator ``Λ(p)`` stored within the
+[`AbstractPrimalDualManifoldObjective`](@ref) (in place of `q`).
 """
 forward_operator(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 
@@ -149,12 +149,12 @@ end
 function get_dual_prox end
 @doc """
     Y = get_dual_prox(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
-    get_dual_prox!(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, Y, n, τ, X)
+    get_dual_prox!(N::AbstractManifold, Y, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
 
-Evaluate the proximal map of ``g_n^*`` stored within [`AbstractPrimalDualManifoldObjective`](@ref)
+Evaluate the proximal map of ``g_n^*`` stored within the [`AbstractPrimalDualManifoldObjective`](@ref)
 
 ```math
-  Y = $(_tex(:prox))}_{τG_n^*}(X)
+  Y = $(_tex(:prox))_{τg_n^*}(X)
 ```
 
 which can also be computed in place of `Y`.
@@ -179,16 +179,16 @@ end
 
 function get_primal_prox end
 @doc """
-    q = get_primal_prox(M::AbstractManifold, p::AbstractPrimalDualManifoldObjective, σ, p)
-    get_primal_prox!(M::AbstractManifold, p::AbstractPrimalDualManifoldObjective, q, σ, p)
+    q = get_primal_prox(M::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, σ, p)
+    get_primal_prox!(M::AbstractManifold, q, apdmo::AbstractPrimalDualManifoldObjective, σ, p)
 
-Evaluate the proximal map of ``F`` stored within [`AbstractPrimalDualManifoldObjective`](@ref)
+Evaluate the proximal map of ``F`` stored within the [`AbstractPrimalDualManifoldObjective`](@ref)
 
 ```math
-$(_tex(:prox))_{σF}(x)
+$(_tex(:prox))_{σF}(p)
 ```
 
-which can also be computed in place of `y`.
+which can also be computed in place of `q`.
 """
 get_primal_prox(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 

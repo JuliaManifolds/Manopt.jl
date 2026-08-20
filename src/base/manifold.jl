@@ -6,7 +6,6 @@ A type representing a unit tangent vector on a `Hyperrectangle`-like manifold wi
 or a product of it with a standard manifold.
 The field `index` stores the index of the element equal to 1.
 All other elements are equal to 0.
-`its` stores the overall iterator over all bounds.
 """
 struct UnitVector{TB}
     index::TB
@@ -42,8 +41,8 @@ end
 """
     has_anisotropic_max_stepsize(M::AbstractManifold)
 
-Return `true` if `M` has `max_stepsize` that depends on the direction.
-For example, if `M` is a [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`)-like manifold with corners, or a product of it
+Return `true` if `M` has a `max_stepsize` that depends on the direction,
+for example if `M` is a [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`)-like manifold with corners, or a product of it
 with a standard manifold. Otherwise return `false`.
 """
 has_anisotropic_max_stepsize(::AbstractManifold) = false

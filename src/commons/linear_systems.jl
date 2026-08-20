@@ -1,5 +1,5 @@
 @doc """
-    SymmetricLinearSystemObjective{TA,T} <: AbstractSymmetricLinearSystemObjective{E}
+    SymmetricLinearSystemObjective{TA,T} <: AbstractSymmetricLinearSystemObjective
 
 Model the objective
 
@@ -7,8 +7,8 @@ $(_doc_CR_cost)
 
 defined on the tangent space ``$(_math(:TangentSpace))`` at ``p`` on the manifold ``$(_math(:Manifold))``.
 
-In other words this is an objective to solve ``$(_tex(:Cal, "A")) = -b(p)``
-for some linear symmetric operator and a vector function.
+In other words this is an objective to solve ``$(_tex(:Cal, "A"))[X] = -b(p)``
+for some linear symmetric operator ``$(_tex(:Cal, "A"))`` and a vector function ``b``.
 Note the minus on the right hand side, which makes this objective especially tailored
 for (iteratively) solving Newton-like equations.
 
@@ -55,11 +55,11 @@ end
 function status_summary(slso::SymmetricLinearSystemObjective; context::Symbol = :default)
     _is_inline(context) && (return repr(slso))
     return """
-    An objective modelling a symmetric linear system Ax=b, i.e. with a symmetric matrix A
-    implemented as a function `(M, p, X) -> Y` performing the matrix vector multiplication in the tangent space,
-    and a function `b(M,p)` returning the vector on the right hand side in the current tangent space.
+    An objective modelling a symmetric linear system A[X] = -b, i.e. with a symmetric operator A
+    implemented as a function `(M, Y, p, X) -> Y` performing the operator application in the tangent space,
+    and a function `(M, X, p) -> X` returning the vector on the right hand side in the current tangent space.
 
-    # Fields
+    ## Fields
     * A: $(slso.A!)
     * b: $(slso.b!)"""
 end
@@ -87,8 +87,10 @@ _doc_get_vector_field_slso = """
     get_vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjective)
     get_vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective)
 
-evaluate the stored value for computing the right hand side ``b`` in ``$(_tex(:Cal, "A"))=-b``,
+Evaluate the stored value for computing the right hand side ``b`` in ``$(_tex(:Cal, "A"))[X] = -b``,
 either providing a tangent space or a manifold and a point.
+
+This can be evaluated in-place of `Y`.
 """
 
 @doc "$(_doc_get_vector_field_slso)"

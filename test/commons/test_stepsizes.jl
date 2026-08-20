@@ -146,7 +146,7 @@ end
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
         s = AdaptiveWNGradient(; gradient_reduction = 0.5, count_threshold = 2)(M)
-        @test startswith(Manopt.status_summary(s), "An adaptive Gradient WN step size")
+        @test startswith(Manopt.status_summary(s), "An adaptive WN gradient step size")
         @test startswith(repr(s), "AdaptiveWNGradientStepsize(; ")
         gds = GradientDescentState(M; p = p)
         @test get_initial_stepsize(s) == 1.0
@@ -810,7 +810,7 @@ end
             @test ds.last_stepsize === get_last_stepsize(ds)
             # test printed representation before first step
             repr_ds = repr(ds)
-            @test occursin("DistanceOverGradientStepsize(;", repr_ds)
+            @test occursin("DistanceOverGradientsStepsize(;", repr_ds)
             @test occursin("initial_distance = 1.0", repr_ds)
             @test occursin("use_curvature = false", repr_ds)
             @test occursin("sectional_curvature_bound = 0.0", repr_ds)

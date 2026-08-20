@@ -414,7 +414,7 @@ end
     @testset "StopWhenProjectedNegativeGradientNormLess" begin
         sc = StopWhenProjectedNegativeGradientNormLess(1.0e-10)
         @test startswith(repr(sc), "StopWhenProjectedNegativeGradientNormLess(")
-        @test startswith(Manopt.status_summary(sc), "A StoppingCriterion to stop when the negative projected gradient norm is less than")
+        @test startswith(Manopt.status_summary(sc), "A stopping criterion to stop when the projected negative gradient norm is less than")
 
         M = Hyperrectangle([1.0], [2.0])
         prob = DefaultManoptProblem(
@@ -428,7 +428,7 @@ end
 
         @test startswith(
             to_display_string(sc),
-            "A StoppingCriterion to stop when the negative projected gradient norm is less than",
+            "A stopping criterion to stop when the projected negative gradient norm is less than",
         )
         @test startswith(Manopt.status_summary(sc; context = :inline), "|proj (-grad f)| < 1.0e-10")
 

@@ -5,15 +5,15 @@ An abstract type for the functors representing step sizes. These are callable
 structures. The naming scheme is `TypeOfStepSize`, for example `ConstantStepsize`.
 
 Every Stepsize has to provide a constructor and its function has to have
-the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
-and the current number of iterations are the arguments
+the interface `(problem, state, k)` where an [`AbstractManoptProblem`](@ref) `problem`, an
+[`AbstractManoptSolverState`](@ref) `state`, and the current iteration `k` are the arguments,
 and returns a number, namely the stepsize to use.
 
 The functor usually should accept arbitrary keyword arguments. Common ones used are
 * `gradient=nothing`: to pass a pre-calculated gradient, otherwise it is computed.
 
 For most it is advisable to employ a [`ManifoldDefaultsFactory`](@ref). Then
-the function creating the factory should either be called `TypeOf` or if that is confusing or too generic, `TypeOfLength`
+the function creating the factory should either be called `TypeOf` or, if that is confusing or too generic, `TypeOfLength`.
 
 # See also
 
@@ -30,7 +30,7 @@ based on
 
 * an [`AbstractManoptProblem`](@ref) `problem`
 * an [`AbstractManoptSolverState`](@ref) `state`
-* the current iterate `k`
+* the current iteration `k`
 * the last step size `last_stepsize`
 * the search direction `η`
 """
@@ -163,7 +163,7 @@ Get the maximum stepsize (at point `p`) on manifold `M`. It should be used to li
 distance an algorithm is trying to move in a single step.
 
 By default, this returns $(_link(:injectivity_radius))`(M)`, if this exists.
-If this is not available on the the method returns `Inf`.
+If this is not available on the manifold, the method returns `Inf`.
 """
 
 @doc "$(doc_max_stepsize)"
@@ -216,17 +216,17 @@ An abstract functor to represent line search type step size determinations, see
 functor.
 
 Compared to simple step sizes, the line search functors provide an interface of
-the form `(p,o,i,X) -> s` with an additional (but optional) fourth parameter to
+the form `(problem, state, k, X) -> s` with an additional (but optional) fourth parameter to
 provide a search direction; this should default to something reasonable,
 most prominently the negative gradient.
 """
 abstract type Linesearch <: Stepsize end
 
 _doc_linesearch_backtrack = """
-    s = linesearch_backtrack(M, F, p, s, decrease, contract, η; kwargs...)
-    s = linesearch_backtrack!(M, q, F, p, s, decrease, contract, η; kwargs...)
+    s = linesearch_backtrack(M, f, p, s, decrease, contract, η; kwargs...)
+    s = linesearch_backtrack!(M, q, f, p, s, decrease, contract, η; kwargs...)
 
-perform a line search along ``\ell_f(s) = f($(_tex(:retr))_p(sη)`` to find a stepsize `s`.
+perform a line search along ``$(_tex(:ell))f(s) = f($(_tex(:retr))_p(sη))`` to find a stepsize `s`.
 See [NocedalWright:2006; Section 3](@cite) for details.
 
 The linesearch starts with a first phase where the stepsize is increased as ``s ↦ s / σ``
@@ -234,17 +234,17 @@ until
 
 ```math
 f($(_tex(:retr))_p(sη)) ≥ f(p) + a * s * Df(p)[η]
-````
+```
 
 where ``a`` is the `decrease` parameter, and ``Df(p)[η]`` is the directional derivative.
 
 Then the actual backtracking phase starts, where the stepsize is decreased as ``s ↦ σ s``
 until
 ```math
-f($(_tex(:retr))_p(sη)) ≤ f(p) + b * s * Df(p)[η]
+f($(_tex(:retr))_p(sη)) ≤ f(p) + a * s * Df(p)[η]
 ```
 
-where ``b`` is the `decrease` parameter.
+with the same `decrease` parameter ``a`` as above.
 
 This can be done in-place, where `q` is the point to store the point reached in.
 
@@ -256,35 +256,35 @@ accept the current stepsize.
 
 ## Arguments
 
-* on manifold `M`
-* for the cost function `f`,
-* at the current point `p`
-* an initial stepsize `s`
-* a sufficient `decrease`
-* a `contract`ion factor ``σ``
-* a search direction ``η``
+* `M`: the manifold to perform the line search on
+* `f`: the cost function
+* `p`: the current point
+* `s`: an initial stepsize
+* `decrease`: the sufficient decrease parameter ``a``
+* `contract`: the contraction factor ``σ``
+* `η`: the search direction
 
 ## Keyword arguments
 
 $(_kwargs(:retraction_method))
 * `additional_increase_condition=(M,p) -> true`: impose an additional condition for an increased step size to be accepted
-* `additional_decrease_condition=(M,p) -> true`: impose an additional condition for an decreased step size to be accepted
+* `additional_decrease_condition=(M,p) -> true`: impose an additional condition for a decreased step size to be accepted
 * `Dlf0`: precomputed directional derivative at point `p` in direction `η`
-  if the `gradient` is specified, this is computed as the real part of `inner(M, p, gradient, η)`, otherwise it it nothing
+  if the `gradient` is specified, this is computed as the real part of `inner(M, p, gradient, η)`, otherwise it is `nothing`
 * `lf0 = f(M, p)`: the function value at the initial point `p`
 * `gradient = nothing`: precomputed gradient at point `p`
 * `report_messages_in::NamedTuple = (; )`: a named tuple of [`StepsizeMessage`](@ref)s to report messages in.
   currently supported keywords are `:non_descent_direction`, `:stepsize_exceeds`, `:stepsize_less`, `:stop_increasing`, `:stop_decreasing`
 * `stop_when_stepsize_less::Real=0.0`: to avoid numerical underflow
-* `stop_when_stepsize_exceeds::Real=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold or exceeding boundaries on a manifold with corners
+* `stop_when_stepsize_exceeds::Real=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`: to avoid leaving the injectivity radius on a manifold or exceeding boundaries on a manifold with corners
 * `stop_increasing_at_step=100`: stop the initial increase of step size after these many steps
-* `stop_decreasing_at_step=`1000`: stop the decreasing search after these many steps
+* `stop_decreasing_at_step=1000`: stop the decreasing search after these many steps
 
   These keywords are used as safeguards, where only the max stepsize is a very manifold specific one.
 
 # Return value
 
-A stepsize `s` and a message `msg` (in case any of the 4 criteria hit)
+A stepsize `s` and a message `msg` (in case any of the 5 criteria hit)
 """
 
 @doc "$_doc_linesearch_backtrack"

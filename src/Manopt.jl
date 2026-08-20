@@ -95,7 +95,7 @@ include("documentation_glossary.jl")
 A small internal helper function to choose a Euclidean space.
 By default, this uses the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) unless you load
 a more advanced Euclidean space like [`Euclidean`](@extref Manifolds.Euclidean)
-from [`Manifolds.jl`](@extref Manifolds.Manifolds)
+from [`Manifolds.jl`](@extref Manifolds.Manifolds).
 """
 Rn(args...; kwargs...) = Rn(Val(Rn_default()), args...; kwargs...)
 
@@ -103,8 +103,8 @@ Rn(args...; kwargs...) = Rn(Val(Rn_default()), args...; kwargs...)
     Rn_default()
 
 Specify a default value to dispatch [`Rn`](@ref) on.
-This default is set to `Manifolds`, indicating, that when this package is loaded,
-it is the preferred package to ask for a vector space space.
+This default is set to `Manifolds`, indicating that, when this package is loaded,
+it is the preferred package to ask for a vector space.
 
 The default within `Manopt.jl` is to use the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) from `ManifoldsBase.jl`.
 If you load `Manifolds.jl` this switches to using [`Euclidean`](@extref Manifolds.Euclidean).

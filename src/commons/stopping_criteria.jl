@@ -4,14 +4,19 @@
 @doc """
     StopWhenAll <: StoppingCriterionSet
 
-store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
-when _all_ indicate to stop. The `reason` is given by the concatenation of all
+Store an array of [`StoppingCriterion`](@ref) elements and indicate to stop
+when _all_ of them indicate to stop. The `reason` is given by the concatenation of all
 reasons.
+
+# Fields
+
+* `criteria`: the tuple of [`StoppingCriterion`](@ref)s that are combined
+* `at_iteration`: the iteration at which this criterion last indicated to stop, `-1` otherwise
 
 # Constructor
 
     StopWhenAll(c::NTuple{N,StoppingCriterion} where N)
-    StopWhenAll(c::StoppingCriterion,...)
+    StopWhenAll(c::StoppingCriterion...)
 """
 mutable struct StopWhenAll{TCriteria <: Tuple} <: StoppingCriterionSet
     criteria::TCriteria
@@ -55,7 +60,7 @@ function indicates_convergence(c::StopWhenAll)
     return any(indicates_convergence(ci) for ci in c.criteria)
 end
 function has_converged(c::StopWhenAll)
-    # (a) all are active (have converged) and and at least one of them indicates convergence
+    # (a) all are active (have converged) and at least one of them indicates convergence
     return is_active_stopping_criterion(c) && any(has_converged(ci) for ci in c.criteria)
 end
 function get_count(c::StopWhenAll, v::Val{:Iterations})
@@ -85,8 +90,8 @@ end
     &(s1,s2)
     s1 & s2
 
-Combine two [`StoppingCriterion`](@ref) within an [`StopWhenAll`](@ref).
-If either `s1` (or `s2`) is already an [`StopWhenAll`](@ref), then `s2` (or `s1`) is
+Combine two [`StoppingCriterion`](@ref) within a [`StopWhenAll`](@ref).
+If either `s1` (or `s2`) is already a [`StopWhenAll`](@ref), then `s2` (or `s1`) is
 appended to the list of [`StoppingCriterion`](@ref) within `s1` (or `s2`).
 
 # Example
@@ -114,9 +119,14 @@ end
 @doc """
     StopWhenAny <: StoppingCriterionSet
 
-store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
+Store an array of [`StoppingCriterion`](@ref) elements and indicate to stop
 when _any_ single one indicates to stop. The `reason` is given by the
 concatenation of all reasons (assuming that all non-indicating return `""`).
+
+# Fields
+
+* `criteria`: the tuple of [`StoppingCriterion`](@ref)s that are combined
+* `at_iteration`: the iteration at which this criterion last indicated to stop, `-1` otherwise
 
 # Constructor
     StopWhenAny(c::NTuple{N,StoppingCriterion} where N)
@@ -175,7 +185,7 @@ function status_summary(c::StopWhenAny; context::Symbol = :default)
     end
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    r = "Stop when _one_ of the following are fulfilled:\n"
+    r = "Stop when _one_ of the following is fulfilled:\n"
     for cs in c.criteria
         r = "$r  * $(_in_str(status_summary(cs; context = :inline); indent = 1, headers = 0))\n"
     end
@@ -212,9 +222,9 @@ end
     |(s1,s2)
     s1 | s2
 
-Combine two [`StoppingCriterion`](@ref) within an [`StopWhenAny`](@ref).
-If either `s1` (or `s2`) is already an [`StopWhenAny`](@ref), then `s2` (or `s1`) is
-appended to the list of [`StoppingCriterion`](@ref) within `s1` (or `s2`)
+Combine two [`StoppingCriterion`](@ref) within a [`StopWhenAny`](@ref).
+If either `s1` (or `s2`) is already a [`StopWhenAny`](@ref), then `s2` (or `s1`) is
+appended to the list of [`StoppingCriterion`](@ref) within `s1` (or `s2`).
 
 # Example
     a = StopAfterIteration(200) | StopWhenChangeLess(M, 1e-6)
@@ -244,16 +254,16 @@ end
 """
     StopAfter <: StoppingCriterion
 
-store a threshold when to stop looking at the complete runtime. It uses
+Store a threshold when to stop looking at the complete runtime. It uses
 `time_ns()` to measure the time and you provide a `Period` as a time limit,
 for example `Minute(15)`.
 
 # Fields
 
-* `threshold` stores the `Period` after which to stop
-* `start` stores the starting time when the algorithm is started, that is a call with `i=0`.
-* `time` stores the elapsed time
-* `at_iteration` indicates at which iteration (including `i=0`) the stopping criterion
+* `threshold`: stores the `Period` after which to stop
+* `start`: stores the starting time when the algorithm is started, that is a call with `k=0`.
+* `time`: stores the elapsed time
+* `at_iteration`: indicates at which iteration (including `k=0`) the stopping criterion
   was fulfilled and is `-1` while it is not fulfilled.
 
 # Constructor
@@ -322,15 +332,15 @@ A functor for a stopping criterion to stop after a maximal number of iterations.
 
 # Fields
 
-* `max_iterations`  stores the maximal iteration number where to stop at
-* `at_iteration` indicates at which iteration (including `i=0`) the stopping criterion
+* `max_iterations`: stores the maximal iteration number where to stop at
+* `at_iteration`: indicates at which iteration (including `k=0`) the stopping criterion
   was fulfilled and is `-1` while it is not fulfilled.
 
 # Constructor
 
-    StopAfterIteration(maxIter)
+    StopAfterIteration(max_iterations)
 
-initialize the functor to indicate to stop after `maxIter` iterations.
+initialize the functor to indicate to stop after `max_iterations` iterations.
 """
 mutable struct StopAfterIteration <: StoppingCriterion
     max_iterations::Int
@@ -379,30 +389,27 @@ end
 """
     StopWhenChangeLess <: StoppingCriterion
 
-stores a threshold when to stop looking at the norm of the change of the
+Store a threshold when to stop looking at the norm of the change of the
 optimization variable from within a [`AbstractManoptSolverState`](@ref) `s`.
-That ism by accessing `get_iterate(s)` and comparing successive iterates.
+That is, by accessing `get_iterate(s)` and comparing successive iterates.
 For the storage a [`StoreStateAction`](@ref) is used.
 
 # Fields
 
-
 $(_fields([:at_iteration, :last_change, :inverse_retraction_method, :storage]))
-* `at_iteration::Int`: indicate at which iteration this stopping criterion was last active.
-* `inverse_retraction`: An [`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) that can be passed
-  to approximate the distance by this inverse retraction and a norm on the tangent space.
-  This can be used if neither the distance nor the logarithmic map are available on `M`.
-* `last_change`: store the last change
-* `storage`: A [`StoreStateAction`](@ref) to access the previous iterate.
 * `threshold`: the threshold for the change to check (run under to stop)
 * `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
   that is used to compute the overall distance based on the element-wise distance.
-  You can deactivate this, but setting this value to `missing`.
+  You can deactivate this by setting this value to `missing`.
+
+The `inverse_retraction_method` can be used to approximate the distance by that inverse
+retraction together with a norm on the tangent space, if neither the distance nor the
+logarithmic map are available on `M`.
 
 # Example
 
 On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold)) = $(_math(:Manifold; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
 Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold))``
 is given by
 
@@ -413,23 +420,19 @@ $(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distan
 where the sum turns into a maximum for the case ``r=∞``.
 The `outer_norm` has no effect on manifolds that do not consist of components.
 
-
-If the manifold does not have components, the outer norm is ignored.
-
-
 # Constructor
 
     StopWhenChangeLess(
         M::AbstractManifold,
         threshold::Float64;
-        storage::StoreStateAction=StoreStateAction([:Iterate]),
-        inverse_retraction_method::IRT=default_inverse_retraction_method(M)
+        storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
+        inverse_retraction_method::IRT=default_inverse_retraction_method(M),
         outer_norm::Union{Missing,Real}=missing
     )
 
 initialize the stopping criterion to a threshold `ε` using the
-[`StoreStateAction`](@ref) `a`, which is initialized to just store `:Iterate` by
-default. You can also provide an inverse_retraction_method for the `distance` or a manifold
+[`StoreStateAction`](@ref) `storage`, which is initialized to just store `:Iterate` by
+default. You can also provide an `inverse_retraction_method` for the `distance`, or a manifold
 to use its default inverse retraction.
 """
 mutable struct StopWhenChangeLess{
@@ -513,7 +516,8 @@ A stopping criterion to stop when the change of the cost function is less than a
 
 # Fields
 $(_fields([:at_iteration, :last_change]))
-* `last_cost``: the last cost value
+* `last_cost`: the last cost value
+* `tolerance`: the threshold for the change of the cost
 
 # Constructor
 
@@ -617,7 +621,7 @@ end
 """
     set_parameter!(c::StopWhenCostLess, :MinCost, v)
 
-Update the minimal cost below which the algorithm shall stop
+Update the minimal cost below which the algorithm shall stop.
 """
 function set_parameter!(c::StopWhenCostLess, ::Val{:MinCost}, v)
     c.threshold = v
@@ -679,40 +683,41 @@ end
 @doc """
     StopWhenCriterionWithIterationCondition <: StoppingCriterion
 
-A stopping criterion, that only evaluates a certain (inner) stopping based on a condition
-on the iterate `k`.
-The condition is a function `condition(k) -> Bool`.
+A stopping criterion that only evaluates a certain (inner) stopping criterion based on a
+condition on the iteration `k`.
+The condition is a function `comp(k) -> Bool`.
 
-## Example
+# Example
 
-`(k) -> >(n)` would only activate that stopping criterion after `n` iterations.
+`comp = >(n)` would only activate the wrapped stopping criterion after `n` iterations.
 
-## Fields
+# Fields
 
-* `criterion`: the [`StoppingCriterion`](@ref) to wrap
-* `comp`: the number of times the criterion has to indicate to stop
+* `stopping_criterion`: the [`StoppingCriterion`](@ref) to wrap
+* `comp`: the condition on the iteration `k` that decides whether the wrapped criterion is checked
+* `at_iteration`: the iteration at which this criterion indicated to stop, `-1` otherwise
 
-## Constructor
+# Constructor
 
     StopWhenCriterionWithIterationCondition(criterion::StoppingCriterion, n=0; comp = (>(n)))
 
-Create a stopping criterion that indicates to stop when the `comp` has indicated to
-check the inner criterion. The `n` is ignored if you provide a manual functor `comp`.
+Create a stopping criterion that only checks the inner `criterion` in those iterations `k`
+for which `comp(k)` is `true`. The `n` is ignored if you provide a manual functor `comp`.
 
-## Examples
+# Examples
 
 A stopping criterion that indicates to stop when the gradient norm is small but only after the third iteration
 
     StopWhenCriterionWithIterationCondition(StopWhenGradientNormLess(1e-6), 3)
 
-You can also use the infix operators `≟` (`\\questeq` on REPL),  `⩻` (`\\ltquest`), and `⩼` (`\\gtquest`) to create such a criterion:
+You can also use the infix operators `≟` (`\\questeq` on REPL), `⩻` (`\\ltquest`), and `⩼` (`\\gtquest`) to create such a criterion:
 
     StopWhenGradientNormLess(1e-6) ≟ 3
     StopWhenGradientNormLess(1e-6) ⩻ 3
     StopWhenGradientNormLess(1e-6) ⩼ 3
 
 These are equivalent to specifying `comp = (==(3))`, `comp = (<(3))`, and `comp = (>(3))`, respectively.
-Their interpretation is “the stopping criterion is only checked (asked) if the condition is met”
+Their interpretation is “the stopping criterion is only checked (asked) if the condition is met”.
 """
 mutable struct StopWhenCriterionWithIterationCondition{SC <: StoppingCriterion, F} <:
     StoppingCriterion
@@ -786,9 +791,9 @@ end
 @doc """
     StopWhenEntryChangeLess
 
-Evaluate whether a certain fields change is less than a certain threshold
+Evaluate whether a certain field's change is less than a certain threshold.
 
-## Fields
+# Fields
 
 * `field`:     a symbol addressing the corresponding field in a certain subtype of [`AbstractManoptSolverState`](@ref) to track
 * `distance`:  a function `(problem, state, v1, v2) -> R` that computes the distance between two possible values of the `field`
@@ -798,15 +803,12 @@ Evaluate whether a certain fields change is less than a certain threshold
 # Internal fields
 
 * `at_iteration`: store the iteration at which the stop indication happened
-
-stores a threshold when to stop looking at the norm of the change of the
-optimization variable from within a [`AbstractManoptSolverState`](@ref), i.e `get_iterate(o)`.
-For the storage a [`StoreStateAction`](@ref) is used
+* `last_change`:  the last change recorded in this stopping criterion
 
 # Constructor
 
     StopWhenEntryChangeLess(
-        field::Symbol
+        field::Symbol,
         distance,
         threshold;
         storage::StoreStateAction=StoreStateAction([field]),
@@ -855,7 +857,7 @@ function get_reason(sc::StopWhenEntryChangeLess)
     return ""
 end
 function status_summary(sc::StopWhenEntryChangeLess; context::Symbol = :default)
-    (context == :short) && return repr(c)
+    (context == :short) && return repr(sc)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "|Δ:$(sc.field)| < $(sc.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the change of $(sc.field) is less than $(sc.threshold)\n$(_MANOPT_INDENT)") * "$s"
@@ -867,7 +869,7 @@ end
 """
     set_parameter!(c::StopWhenEntryChangeLess, :Threshold, v)
 
-Update the minimal cost below which the algorithm shall stop
+Update the threshold for the change of the tracked field below which the algorithm shall stop.
 """
 function set_parameter!(c::StopWhenEntryChangeLess, ::Val{:Threshold}, v)
     c.threshold = v
@@ -888,13 +890,13 @@ $(_fields([:at_iteration, :last_change, :vector_transport_method, :storage]))
 * `threshold`: the threshold for the change to check (run under to stop)
 * `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
   that is used to compute the overall distance based on the element-wise distance.
-  You can deactivate this, but setting this value to `missing`.
+  You can deactivate this by setting this value to `missing`.
 
 # Example
 
 On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold)) = $(_math(:Manifold; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradien ``X,Y ∈ $(_math(:Manifold))``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradient ``X,Y ∈ $(_math(:TangentSpace))``
 is given by
 
 ```math
@@ -902,21 +904,21 @@ $(_tex(:norm, "X-Y"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_te
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.
-The `outer_norm` has no effect on manifols, that do not consist of components.
+The `outer_norm` has no effect on manifolds that do not consist of components.
 
 # Constructor
 
     StopWhenGradientChangeLess(
         M::AbstractManifold,
         ε::Float64;
-        storage::StoreStateAction=StoreStateAction([:Iterate]),
-        vector_transport_method::IRT=default_vector_transport_method(M),
+        storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}, store_vectors=Tuple{:Gradient}),
+        vector_transport_method::VTM=default_vector_transport_method(M),
         outer_norm::N=missing
     )
 
-Create a stopping criterion with threshold `ε` for the change gradient, that is, this criterion
-indicates to stop when [`get_gradient`](@ref) is in (norm of) its change less than `ε`, where
-`vector_transport_method` denotes the vector transport ``$(_tex(:Cal, "T"))`` used.
+Create a stopping criterion with threshold `ε` for the change of the gradient, that is, this
+criterion indicates to stop when the norm of the change of [`get_gradient`](@ref) is less than
+`ε`, where `vector_transport_method` denotes the vector transport ``$(_tex(:Cal, "T"))`` used.
 """
 mutable struct StopWhenGradientChangeLess{
         F, VTM <: AbstractVectorTransportMethod, TSSA <: StoreStateAction, N <: Union{Missing, Real},
@@ -1018,7 +1020,10 @@ $(_fields(:last_change))
 
 Create a stopping criterion with threshold `ε` for the gradient mapping for the [`proximal_gradient_method`](@ref).
 That is, this criterion indicates to stop when the gradient mapping has a norm less than `ε`.
-The gradient mapping G_λ(p) is defined as -(1/λ) * log_p(T_λ(p)), where T_λ(p) is the proximal mapping prox_λ f(exp_p(-λ * grad f(p))).
+The gradient mapping is defined as
+``G_λ(p) = -$(_tex(:frac, "1", "λ"))$(_tex(:log))_p$(_tex(:bigl))(T_λ(p)$(_tex(:bigr)))``,
+where ``T_λ(p) = $(_tex(:prox))_{λ f}$(_tex(:bigl))(\\exp_p(-λ $(_tex(:grad)) f(p))$(_tex(:bigr)))``
+is the proximal mapping.
 """
 mutable struct StopWhenGradientMappingNormLess{TF} <: StoppingCriterion
     threshold::TF
@@ -1041,7 +1046,7 @@ end
 function status_summary(c::StopWhenGradientMappingNormLess; context::Symbol = :default)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "|G| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient mapping norm is less then a tolerance.\n$(_MANOPT_INDENT)") * s
+    return (_is_inline(context) ? "|G| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient mapping norm is less than a tolerance.\n$(_MANOPT_INDENT)") * s
 end
 
 #
@@ -1063,14 +1068,14 @@ A stopping criterion based on the current gradient norm.
 
 # Internal fields
 
-* `last_change` store the last change
-* `at_iteration` store the iteration at which the stop indication happened
+* `last_change`: store the last change
+* `at_iteration`: store the iteration at which the stop indication happened
 
 # Example
 
 On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold)) = $(_math(:Manifold; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:Manifold))``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:TangentSpace))``
 is given by
 
 ```math
@@ -1138,7 +1143,7 @@ show(io::IO, c::StopWhenGradientNormLess) = print(io, "StopWhenGradientNormLess(
 """
     set_parameter!(c::StopWhenGradientNormLess{F,TF}, :MinGradNorm, v::TF) where {F,TF<:Real}
 
-Update the minimal gradient norm when an algorithm shall stop
+Update the minimal gradient norm when an algorithm shall stop.
 """
 function set_parameter!(c::StopWhenGradientNormLess{F, TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF <: Real}
     c.threshold = v
@@ -1198,11 +1203,11 @@ end
 @doc """
     StopWhenLagrangeMultiplierLess <: StoppingCriterion
 
-Stopping Criteria for Lagrange multipliers.
+A stopping criterion for Lagrange multipliers.
 
-Currently these are meant for the [`convex_bundle_method`](@ref) and [`proximal_bundle_method`](@ref),
+Currently this is meant for the [`convex_bundle_method`](@ref) and [`proximal_bundle_method`](@ref),
 where based on the Lagrange multipliers an approximate (sub)gradient ``g`` and an error estimate ``ε``
-is computed.
+are computed.
 
 The `mode=:both` requires that both
 ``ε`` and ``$(_tex(:abs, "g"))`` are smaller than their `tolerance`s for the [`convex_bundle_method`](@ref),
@@ -1222,6 +1227,14 @@ Note that tolerance can be a single number for the `:estimate` case,
 but a vector of two values is required for the `:both` mode.
 Here the first entry specifies the tolerance for ``ε`` (``c``),
 the second the tolerance for ``$(_tex(:abs, "g"))`` (``$(_tex(:abs, "d"))``), respectively.
+
+# Fields
+
+* `tolerances`: the tolerances to check against
+* `values`: the last values that were compared against the `tolerances`
+* `names`: optional names for the `values`, used when reporting the reason
+* `mode`: either `:estimate` or `:both`, see above
+* `at_iteration`: the iteration at which this criterion indicated to stop, `-1` otherwise
 """
 mutable struct StopWhenLagrangeMultiplierLess{
         T <: Real, A <: AbstractVector{<:T}, B <: Union{Nothing, <:AbstractVector{<:String}},
@@ -1271,7 +1284,7 @@ function status_summary(sc::StopWhenLagrangeMultiplierLess; context::Symbol = :d
     return (_is_inline(context) ? "" : "A stopping criterion to stop when the Lagrange multipliers are less than $(sc.tolerances).\n$(_MANOPT_INDENT)") * "$(msg):$(_MANOPT_INDENT)$(s)"
 end
 function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
-    n = isnothing(sc.names) ? "" : ", $(names)"
+    n = isnothing(sc.names) ? "" : ", $(sc.names)"
     return print(
         io,
         "StopWhenLagrangeMultiplierLess($(sc.tolerances); mode=:$(sc.mode)$n)",
@@ -1284,15 +1297,16 @@ end
 @doc """
     StopWhenRepeated <: StoppingCriterion
 
-A stopping Criterion that indicates to stop when the (internal) stopping criterion it wraps,
-has indicated to stop for `n` (consecutive) times
+A stopping criterion that indicates to stop when the (internal) stopping criterion it wraps
+has indicated to stop for `n` (consecutive) times.
 
 # Fields
 
-* `criterion`: the [`StoppingCriterion`](@ref) to wrap
+* `stopping_criterion`: the [`StoppingCriterion`](@ref) to wrap
 * `n`: the number of times the criterion has to indicate to stop
 * `count`: the number of times the criterion has indicated to stop so far
 * `consecutive::Bool`: indicate whether to count consecutive indications to stop or arbitrary.
+* `at_iteration`: the iteration at which this criterion indicated to stop, `-1` otherwise
 
 # Constructor
 
@@ -1306,12 +1320,12 @@ Note that the cross product is in general noncommutative, and here only the orde
 
 # Examples
 
-A stopping criterion that indicates to stop whenever the gradient norm is less that `1e-6` for three consecutive iterations:
+A stopping criterion that indicates to stop whenever the gradient norm is less than `1e-6` for three consecutive iterations:
 
     StopWhenRepeated(StopWhenGradientNormLess(1e-6), 3)
     StopWhenGradientNormLess(1e-6) × 3
 
-A stopping criterion that indicates to stop whenever the gradient norm is less that `1e-6` at three iterations (not necessarily consecutive):
+A stopping criterion that indicates to stop whenever the gradient norm is less than `1e-6` at three iterations (not necessarily consecutive):
 
     StopWhenRepeated(StopWhenGradientNormLess(1e-6), 3; consecutive=false)
 """
@@ -1381,7 +1395,7 @@ function status_summary(sc::StopWhenRepeated; context::Symbol = :default)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     c = sc.consecutive ? "consecutive" : ""
-    return (_is_inline(context) ? "$(status_summary(sc.stopping_criterion; cnontext = context)) × $(sc.count) ≥ $(sc.n) ($(c)):" : "A stopping criterion to stop when the inner criterion has indicated to stop $(sc.n) ($(c)) times.\n$(_in_str(status_summary(sc.stopping_criterion; context = context); indent = 1, headers = 0))\n$(_in_str(s; indent = 2, headers = 0))")
+    return (_is_inline(context) ? "$(status_summary(sc.stopping_criterion; context = context)) × $(sc.count) ≥ $(sc.n) ($(c)):" : "A stopping criterion to stop when the inner criterion has indicated to stop $(sc.n) ($(c)) times.\n$(_in_str(status_summary(sc.stopping_criterion; context = context); indent = 1, headers = 0))\n$(_in_str(s; indent = 2, headers = 0))")
 end
 
 #
@@ -1391,8 +1405,16 @@ end
     StopWhenProjectedNegativeGradientNormLess <: StoppingCriterion
 
 A stopping criterion similar to [`StopWhenGradientNormLess`](@ref), although it checks the
-norm of projected minus gradient. It is primarily useful for optimization involving
+norm of the projected negative gradient. It is primarily useful for optimization involving
 [`Hyperrectangle`](@extref Manifolds.Hyperrectangle).
+
+# Fields
+
+* `norm`:       a function `(M::AbstractManifold, p, X) -> ℝ` computing the norm to use
+* `threshold`:  the threshold to indicate to stop when the norm is below this value
+* `last_change`: the last norm recorded in this stopping criterion
+* `at_iteration`: the iteration at which this criterion indicated to stop, `-1` otherwise
+* `outer_norm`: for manifolds with components, the norm used to combine the element-wise norms
 
 On manifolds with boundary and manifolds with corners, for a tangent vector ``X``,
 ``-X`` might not be a valid tangent vector. As an example, consider the objective
@@ -1434,7 +1456,7 @@ function (sc::StopWhenProjectedNegativeGradientNormLess)(
 end
 function get_reason(c::StopWhenProjectedNegativeGradientNormLess)
     if (c.last_change < c.threshold) && (c.at_iteration >= 0)
-        return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the gradient norm ($(c.last_change)) is less than $(c.threshold).\n"
+        return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the projected negative gradient norm ($(c.last_change)) is less than $(c.threshold).\n"
     end
     return ""
 end
@@ -1443,7 +1465,7 @@ function status_summary(c::StopWhenProjectedNegativeGradientNormLess; context::S
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     (context === :inline) && return "|proj (-grad f)| < $(c.threshold): $s"
-    return "A StoppingCriterion to stop when the negative projected gradient norm is less than a threshold of $(c.threshold):\n$(_MANOPT_INDENT)$s"
+    return "A stopping criterion to stop when the projected negative gradient norm is less than a threshold of $(c.threshold):\n$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(c::StopWhenProjectedNegativeGradientNormLess) = true
 function Base.show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
@@ -1471,10 +1493,10 @@ A stopping criterion to stop when
 \\frac{f_k - f_{k+1}}{\\max(\\lvert f_k \\rvert, \\lvert f_{k+1} \\rvert, 1)} ≤ tol,
 ````
 
-based on Eq. (1) in [ZhuByrdLuNocedal:1997](@cite)
+based on Eq. (1) in [ZhuByrdLuNocedal:1997](@cite).
 
 # Fields
-* _`threshold`: the threshold `tol` in the above formula.
+* `threshold`: the threshold `tol` in the above formula.
 $(_fields([:at_iteration, :last_change]))
 * `last_cost`: the last cost value
 
@@ -1486,7 +1508,7 @@ Initialize the stopping criterion to a `threshold` for the change of the cost fu
 
     StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::Real=1.0e7)
 
-Initialize threshold to `factr * eps(factr)`, following the convention in [ZhuByrdLuNocedal:1997](@cite).
+Initialize `threshold` to `factr * eps(typeof(factr))`, following the convention in [ZhuByrdLuNocedal:1997](@cite).
 """
 mutable struct StopWhenRelativeAPosterioriCostChangeLessOrEqual{F <: Real} <: StoppingCriterion
     threshold::F
@@ -1538,18 +1560,21 @@ end
 @doc """
     StopWhenSmallerOrEqual <: StoppingCriterion
 
-A functor for an stopping criterion, where the algorithm if stopped when a variable is smaller than or equal to its minimum value.
+A functor for a stopping criterion, where the algorithm is stopped when a field of the solver
+state is smaller than or equal to a given minimum value.
 
 # Fields
 
-* `value`    stores the variable which has to fall under a threshold for the algorithm to stop
-* `minValue` stores the threshold where, if the value is smaller or equal to this threshold, the algorithm stops
+* `value`:    a `Symbol` naming the field of the solver state that has to fall under the threshold
+* `minValue`: the threshold; if the field's value is smaller than or equal to it, the algorithm stops
+* `at_iteration`: the iteration at which this criterion indicated to stop, `-1` otherwise
 
 # Constructor
 
-    StopWhenSmallerOrEqual(value, minValue)
+    StopWhenSmallerOrEqual(value::Symbol, minValue)
 
-initialize the functor to indicate to stop after `value` is smaller than or equal to `minValue`.
+initialize the functor to indicate to stop as soon as the field `value` is smaller than or
+equal to `minValue`.
 """
 mutable struct StopWhenSmallerOrEqual{R} <: StoppingCriterion
     value::Symbol
@@ -1593,8 +1618,14 @@ end
 """
     StopWhenStepsizeLess <: StoppingCriterion
 
-stores a threshold when to stop looking at the last step size determined or found
+Store a threshold when to stop, looking at the last step size determined or found
 during the last iteration from within a [`AbstractManoptSolverState`](@ref).
+
+# Fields
+
+* `threshold`: the threshold below which the algorithm stops
+* `last_stepsize`: the last step size recorded in this stopping criterion
+* `at_iteration`: the iteration at which this criterion indicated to stop, `-1` otherwise
 
 # Constructor
 
@@ -1642,7 +1673,7 @@ end
 """
     set_parameter!(c::StopWhenStepsizeLess, :MinStepsize, v)
 
-Update the minimal step size below which the algorithm shall stop
+Update the minimal step size below which the algorithm shall stop.
 """
 function set_parameter!(c::StopWhenStepsizeLess, ::Val{:MinStepsize}, v)
     c.threshold = v
@@ -1656,6 +1687,12 @@ end
     StopWhenSubgradientNormLess <: StoppingCriterion
 
 A stopping criterion based on the current subgradient norm.
+
+# Fields
+
+* `at_iteration`: the iteration at which this criterion indicated to stop, `-1` otherwise
+* `threshold`: the threshold below which the algorithm stops
+* `value`: the last subgradient norm recorded in this stopping criterion
 
 # Constructor
 
@@ -1703,7 +1740,7 @@ end
 """
     set_parameter!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
 
-Update the minimal subgradient norm when an algorithm shall stop
+Update the minimal subgradient norm below which an algorithm shall stop.
 """
 function set_parameter!(c::StopWhenSubgradientNormLess, ::Val{:MinSubgradNorm}, v::Float64)
     c.threshold = v

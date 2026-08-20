@@ -1,10 +1,10 @@
 """
     set_parameter!(f, element::Symbol, args...)
 
-For any `f` and a `Symbol` `e`, dispatch on its value so by default, to
-set some `args...` in `f` or one of uts sub elements.
+For any `f` and a `Symbol` `element`, dispatch on its value so that, by default,
+some `args...` are set in `f` or in one of its sub elements.
 
-By default this calls set_parameter!(f, Val(element), args...) to dispatch on the value of the symbol.
+By default this calls `set_parameter!(f, Val(element), args...)` to dispatch on the value of the symbol.
 """
 function set_parameter!(f, e::Symbol, args...)
     return set_parameter!(f, Val(e), args...)
@@ -18,10 +18,10 @@ end
 
 Access arbitrary parameters from `f` addressed by a symbol `element`.
 
-For any `f` and a `Symbol` `e` dispatch on its value by default, to
-get some element from `f` potentially further qualified by `args...`.
+For any `f` and a `Symbol` `element`, dispatch on its value so that, by default,
+some element is obtained from `f`, potentially further qualified by `args...`.
 
-This functions returns `nothing` if `f` does not have the property `element`
+This function returns `nothing` if `f` does not have the property `element`.
 """
 function get_parameter(f, e::Symbol, args...)
     return get_parameter(f, Val(e), args...)
@@ -39,23 +39,21 @@ If the value is not set, `default` is returned.
 The parameters are queried from the global settings using [`Preferences.jl`](https://github.com/JuliaPackaging/Preferences.jl),
 so they are persistent within your activated Environment, see also [`set_parameter!`](@ref).
 
-## Currently used settings
+# Currently used settings
 
-`:Mode`
-the mode can be set to `"Tutorial"` to get several hints especially in scenarios, where
-the optimisation on manifolds is different from the usual “experience” in
-(classical, Euclidean) optimization.
-Any other value has the same effect as not setting it.
+* `:Mode`: the mode can be set to `"Tutorial"` to get several hints, especially in scenarios where
+  the optimisation on manifolds is different from the usual “experience” in
+  (classical, Euclidean) optimization.
+  Any other value has the same effect as not setting it.
+* `:KeywordsErrorMode`: specify how to handle the case when unknown keywords are passed to a solver.
+  Since solvers often pass their keywords on to internal structures, to for example
+  decorate the objective or the state, checking keywords has its own method in `Manopt.jl`.
+  The following values are available:
+  * `"none"` does not report anything and the keyword is just ignored
+  * `"warn"` issues a warning (default)
+  * `"error"` throws a [`ManoptKeywordError`](@ref)
 
-`:KeywordsErrorMode`
-specify how to handle the case when unknown keywords are passed to a solver.
-Since solvers often pass their keywords on to internal structures, to e.g.
-decorate the objective or the state, checking keywords has its own method in `Manopt.jl`.
-This parameter specifies how to handle the case where unknown keywords are handled.
-* `"none"` does not report and the keyword gets just ignored
-* `"warn"` issues a warning (default)
-* `"error"` throw a [`ManoptKeywordError`](@ref)
-all other symbol values are treated the same as `:none`.
+  All other values are treated the same as `"none"`.
 """
 function get_parameter(e::Symbol, args...; default = get_parameter(Val(e), Val(:default)))
     return @load_preference("$(e)", default)
@@ -73,7 +71,7 @@ get_parameter(::Val{:KeywordsErrorMode}, ::Val{:default}) = "warn"
     set_parameter!(element::Symbol, value::Union{String,Bool,<:Number})
 
 Set global [`Manopt`](@ref) parameters addressed by a symbol `element`.
-W
+
 This first dispatches on the value of `element`.
 
 The parameters are stored to the global settings using [`Preferences.jl`](https://github.com/JuliaPackaging/Preferences.jl).

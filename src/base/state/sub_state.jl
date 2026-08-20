@@ -22,7 +22,7 @@ By default this returns `ams.sub_state`.
 get_sub_state(ams::AbstractSubProblemSolverState) = ams.sub_state
 
 """
-    set_parameter!(ams::DebugSolverState, :SubProblem, args...)
+    set_parameter!(ams::AbstractSubProblemSolverState, :SubProblem, args...)
 
 Set certain values specified by `args...` to the sub problem.
 """
@@ -30,7 +30,7 @@ function set_parameter!(ams::AbstractSubProblemSolverState, ::Val{:SubProblem}, 
     return set_parameter!(get_sub_problem(ams), args...)
 end
 """
-    set_parameter!(ams::DebugSolverState, :SubState, args...)
+    set_parameter!(ams::AbstractSubProblemSolverState, :SubState, args...)
 
 Set certain values specified by `args...` to the sub state.
 """

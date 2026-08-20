@@ -1,7 +1,7 @@
 @doc """
     ConstrainedManoptProblem{
         TM <: AbstractManifold,
-        O <: AbstractManifoldObjective
+        O <: AbstractManifoldObjective,
         HR<:Union{AbstractPowerRepresentation,Nothing},
         GR<:Union{AbstractPowerRepresentation,Nothing},
         HHR<:Union{AbstractPowerRepresentation,Nothing},
@@ -18,18 +18,18 @@ Assume the objective is
 ```math
 \\begin{aligned}
  $(_tex(:argmin))_{p ∈ $(_math(:Manifold))} & f(p)\\\\
- $(_tex(:text, "subject to ")) & g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, " for all ")) i=1,…,m,\\
+ $(_tex(:text, "subject to ")) & g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, " for all ")) i=1,…,m,\\\\
  $(_tex(:quad)) & h_j(p)=0 $(_tex(:quad)) $(_tex(:text, " for all ")) j=1,…,n.
 \\end{aligned}
 ```
 
 then the gradients can (classically) be considered as vectors of the
-components gradients, for example
+component gradients, for example
 ``$(_tex(:bigl))($(_tex(:grad)) g_1(p), $(_tex(:grad)) g_2(p), …, $(_tex(:grad)) g_m(p) $(_tex(:bigr)))``.
 
-In another interpretation, this can be considered a point on the tangent space
+In another interpretation, this can be considered a point in the tangent space
 at ``P = (p,…,p) ∈ $(_math(:Manifold))^m``, so in the tangent space to the [`PowerManifold`](@extref `ManifoldsBase.PowerManifold`) ``$(_math(:Manifold))^m``.
-The case where this is a [`NestedPowerRepresentation`](@extref `ManifoldsBase.NestedPowerRepresentation`) this agrees with the
+In the case of a [`NestedPowerRepresentation`](@extref `ManifoldsBase.NestedPowerRepresentation`) this agrees with the
 interpretation from before, but on power manifolds, more efficient representations exist.
 
 To then access the elements, the range has to be specified. That is what this
@@ -41,13 +41,22 @@ problem is for.
         co::ConstrainedManifoldObjective;
         range=NestedPowerRepresentation(),
         gradient_equality_range=range,
-        gradient_inequality_range=range
+        gradient_inequality_range=range,
         hessian_equality_range=range,
-        hessian_inequality_range=range
+        hessian_inequality_range=range,
     )
 
-Creates a constrained Manopt problem specifying an [`AbstractPowerRepresentation`](@extref `ManifoldsBase.AbstractPowerRepresentation`)
-for both the `gradient_equality_range` and the `gradient_inequality_range`, respectively.
+Creates a constrained Manopt problem, where `range` sets the
+[`AbstractPowerRepresentation`](@extref `ManifoldsBase.AbstractPowerRepresentation`) for all
+four ranges at once; each of `gradient_equality_range`, `gradient_inequality_range`,
+`hessian_equality_range` and `hessian_inequality_range` can be given individually to override it.
+
+# Fields
+
+* `manifold`: the manifold the problem is defined on
+* `objective`: the [`ConstrainedManifoldObjective`](@ref)
+* `grad_equality_range`, `grad_inequality_range`: the ranges of the constraint gradients
+* `hess_equality_range`, `hess_inequality_range`: the ranges of the constraint Hessians
 """
 struct ConstrainedManoptProblem{
         TM <: AbstractManifold, O <: AbstractManifoldObjective,
@@ -195,7 +204,7 @@ end
     DefaultManoptProblem{TM <: AbstractManifold, Objective <: AbstractManifoldObjective}
 
 Model a default manifold problem, that (just) consists of the domain of optimisation,
-that is an `AbstractManifold` and an [`AbstractManifoldObjective`](@ref)
+that is an `AbstractManifold`, and an [`AbstractManifoldObjective`](@ref).
 """
 struct DefaultManoptProblem{TM <: AbstractManifold, O <: AbstractManifoldObjective} <:
     AbstractManoptProblem{TM}
@@ -234,10 +243,16 @@ end
 # ---
 @doc """
     TwoManifoldProblem{
-        MT<:AbstractManifold,NT<:AbstractManifold,O<:AbstractManifoldObjective
+        MT<:AbstractManifold,NT<:AbstractManifold,S<:AbstractManifoldObjective
     } <: AbstractManoptProblem{MT}
 
-An abstract type for problems that require two manifolds, for example the primal-dual-based problems.
+A problem that requires two manifolds, for example the primal-dual-based problems.
+
+# Fields
+
+* `first_manifold`: the first manifold ``$(_math(:Manifold))``
+* `second_manifold`: the second manifold ``$(_math(:Manifold, M = "N"))``
+* `objective`: the objective defined on these two manifolds
 """
 struct TwoManifoldProblem{
         MT <: AbstractManifold, NT <: AbstractManifold, S <: AbstractManifoldObjective,
@@ -255,11 +270,11 @@ function adjoint_linearized_operator!(tmp::TwoManifoldProblem, X, m, n, Y)
 end
 
 @doc """
-    dual_residual(p, o, x_old, X_old, n_old)
+    dual_residual(tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old)
 
-Compute the dual residual at current iterate ``k`` given the necessary values ``x_{k-1},
+Compute the dual residual at current iterate ``k`` given the necessary values ``p_{k-1},
 X_{k-1}``, and ``n_{k-1}`` from the previous iterate. The formula is slightly different depending
-on the `o.variant` used:
+on the `apds.variant` used:
 
 For the `:linearized` it reads
 ```math
@@ -332,9 +347,9 @@ function linearized_forward_operator!(tmp::TwoManifoldProblem, Y, m, X, n)
 end
 
 @doc """
-    primal_residual(p, o, x_old, X_old, n_old)
+    primal_residual(tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old)
 
-Compute the primal residual at current iterate ``k`` given the necessary values ``x_{k-1},
+Compute the primal residual at current iterate ``k`` given the necessary values ``p_{k-1},
 X_{k-1}``, and ``n_{k-1}`` from the previous iterate.
 
 ```math
@@ -345,7 +360,7 @@ $(
     )
 )
 ```
-where ``V_{⋅←⋅}`` is the vector transport used in the [`ChambollePockState`](@ref)
+where ``V_{⋅←⋅}`` is the vector transport used in the [`ChambollePockState`](@ref).
 """
 function primal_residual(
         tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old

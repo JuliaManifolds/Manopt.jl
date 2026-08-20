@@ -353,7 +353,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test repr(d3) == "DebugGroup([$(d1), $(d2)])"
         ts = "[ $(Manopt.status_summary(d1; context = :short)), $(Manopt.status_summary(d2; context = :short)) ]"
         @test Manopt.status_summary(d3; context = :short) == ts
-        tsi = "A DebugAction consisting of a group actions, $(Manopt.status_summary(d1; context = :inline)), and $(Manopt.status_summary(d2; context = :inline))"
+        tsi = "A DebugAction consisting of a group of actions, $(Manopt.status_summary(d1; context = :inline)), and $(Manopt.status_summary(d2; context = :inline))"
         @test Manopt.status_summary(d3; context = :inline) == tsi
         tsd = "A DebugAction consisting of a group with the following elements\n* $(Manopt.status_summary(d1))\n* $(Manopt.status_summary(d2))"
         @test Manopt.status_summary(d3) == tsd

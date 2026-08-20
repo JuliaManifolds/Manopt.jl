@@ -1,7 +1,7 @@
 """
-    ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState
+    ClosedFormSubSolverState <: AbstractManoptSolverState
 
-Subsolver state indicating that a closed-form solution is available
+Subsolver state indicating that a closed-form solution is available.
 
 # Constructor
 
@@ -34,8 +34,7 @@ doc_get_solver_return = """
 
 Determine the solver return.
 
-return the internally stored state of the [`ReturnSolverState`](@ref) instead of the minimizer.
-
+Return the internally stored state of the [`ReturnSolverState`](@ref) instead of the minimizer.
 
 Since a solver might return both a state and an objective in a tuple, this then re-iterates on the second argument.
 """
@@ -46,15 +45,15 @@ get_solver_return(s::ReturnSolverState) = s.state
 function decorate_state! end
 
 @doc """
-    decorate_state!(s::AbstractManoptSolverState)
+    decorate_state!(s::AbstractManoptSolverState; kwargs...)
 
-decorate the [`AbstractManoptSolverState`](@ref)` s` with specific decorators.
+Decorate the [`AbstractManoptSolverState`](@ref) `s` with specific decorators.
 
 # Optional arguments
 
-optional arguments provide necessary details on the decorators.
+The optional arguments provide necessary details on the decorators.
 
-* `callback=missing` (deprecated) add an arbitrary (simple) callback function `cb()` to be called every iteration.
+* `callback=missing`: (deprecated) add an arbitrary (simple) callback function `cb()` to be called every iteration.
 * `debug=Array{Union{Symbol,DebugAction,String,Int, Function},1}()`: a set of symbols
   representing [`DebugAction`](@ref)s, `Strings` used as dividers and a sub-sampling
   integer. These are passed as a [`DebugGroup`](@ref) within `:Iteration` to the
@@ -62,11 +61,11 @@ optional arguments provide necessary details on the decorators.
   Only exception is `:Stop` that is passed to `:Stop`.
 * `record=Array{Union{Symbol,RecordAction,Int},1}()`: specify recordings
   by using `Symbol`s or [`RecordAction`](@ref)s directly.
-  An integer can again be used for only recording every ``i``th iteration.
-* `return_state=false`: indicate whether to wrap the options in a [`ReturnSolverState`](@ref),
-  indicating that the solver should return options and not (only) the minimizer.
+  An integer can again be used for only recording every ``k``-th iteration.
+* `return_state=false`: indicate whether to wrap the state in a [`ReturnSolverState`](@ref),
+  indicating that the solver should return the state and not (only) the minimizer.
 
-other keywords are ignored.
+All other keywords are ignored.
 
 # See also
 
@@ -129,25 +128,27 @@ end
 
 function decorate_objective! end
 @doc """
-    decorate_objective!(M, o::AbstractManifoldObjective)
+    decorate_objective!(M, o::AbstractManifoldObjective; kwargs...)
 
-decorate the [`AbstractManifoldObjective`](@ref)` o` with specific decorators.
+Decorate the [`AbstractManifoldObjective`](@ref) `o` with specific decorators.
 
 # Optional arguments
 
-optional arguments provide necessary details on the decorators.
-A specific one is used to activate certain decorators.
+The optional arguments provide necessary details on the decorators;
+providing one of them activates the corresponding decorator.
 
 * `cache=missing`: specify a cache. Currently `:Simple` is supported and `:LRU` if you
   load [`LRUCache.jl`](https://github.com/JuliaCollections/LRUCache.jl).
-  For this case a tuple specifying what to cache and how many can be provided, has to be specified.
+  For this case a tuple specifying what to cache and how many entries to keep has to be provided.
   For example `(:LRU, [:Cost, :Gradient], 10)` states that the last 10 used cost function
   evaluations and gradient evaluations should be stored. See [`objective_cache_factory`](@ref) for details.
-* `count=missing`: specify calls to the objective to be called, see [`ManifoldCountObjective`](@ref) for the full list
+* `count=missing`: specify which calls to the objective should be counted, see [`ManifoldCountObjective`](@ref) for the full list.
 * `objective_type=:Riemannian`: specify that an objective is `:Riemannian` or `:Euclidean`.
-  The `:Euclidean` symbol is equivalent to specifying it as `:Embedded`, since in the end,
-  both refer to converting an objective from the embedding (whether its Euclidean or not)
+  The `:Euclidean` symbol is equivalent to specifying it as `:Embedding`, since in the end,
+  both refer to converting an objective from the embedding (whether it is Euclidean or not)
   to the Riemannian one.
+* `return_objective=false`: indicate whether to wrap the objective in a [`ReturnManifoldObjective`](@ref),
+  indicating that the solver should return the objective as well.
 
 # See also
 
@@ -186,12 +187,12 @@ function decorate_objective!(
 end
 
 """
-    initialize_solver!(ams::AbstractManoptProblem, amp::AbstractManoptSolverState)
+    initialize_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState)
 
 Initialize the solver to the optimization [`AbstractManoptProblem`](@ref) `amp` by
-initializing the necessary values in the [`AbstractManoptSolverState`](@ref) `amp`.
+initializing the necessary values in the [`AbstractManoptSolverState`](@ref) `ams`.
 """
-initialize_solver!(ams::AbstractManoptProblem, amp::AbstractManoptSolverState)
+initialize_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState)
 
 function initialize_solver!(p::AbstractManoptProblem, s::ReturnSolverState)
     return initialize_solver!(p, s.state)
@@ -200,11 +201,11 @@ end
 """
     solve!(problem::AbstractManoptProblem, state::AbstractManoptSolverState)
 
-run the solver implemented for the [`AbstractManoptProblem`](@ref) `problem` and the
+Run the solver implemented for the [`AbstractManoptProblem`](@ref) `problem` and the
 [`AbstractManoptSolverState`](@ref) `state` employing [`initialize_solver!`](@ref), [`step_solver!`](@ref),
 as well as the [`stop_solver!`](@ref) of the solver.
 
-This includes a callback `:BeforeInit`, `:Init`, `:BeforeStep`, `:Step`, and `:Stop`.
+This includes the callbacks `:BeforeInit`, `:Init`, `:BeforeStep`, `:Step`, and `:Stop`.
 """
 function solve!(problem::AbstractManoptProblem, state::AbstractManoptSolverState)
     iteration = 0
@@ -224,7 +225,7 @@ end
 """
     step_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
 
-Do one iteration step (the `i`th) for an [`AbstractManoptProblem`](@ref)` p` by modifying
+Do one iteration step (the `k`-th) for an [`AbstractManoptProblem`](@ref) `amp` by modifying
 the values in the [`AbstractManoptSolverState`](@ref) `ams`.
 """
 step_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
@@ -238,7 +239,7 @@ end
 Determine whether the solver should stop.
 
 Depending on the current [`AbstractManoptProblem`](@ref) `amp`, the current state of the solver
-stored in [`AbstractManoptSolverState`](@ref) `ams` and the current iterate `k`, this by default
+stored in [`AbstractManoptSolverState`](@ref) `ams` and the current iteration `k`, this by default
 calls the internal [`StoppingCriterion`](@ref) `ams.stop`.
 
 This includes a callback `:BeforeStop`.

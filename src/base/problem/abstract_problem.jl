@@ -33,11 +33,11 @@ function get_preconditioner!(amp::AbstractManoptProblem, Y, p, X)
 end
 
 @doc """
-    Y = get_hessian(amp::AbstractManoptProblem{T}, p, X)
-    get_hessian!(amp::AbstractManoptProblem{T}, Y, p, X)
+    Y = get_hessian(amp::AbstractManoptProblem, p, X)
+    get_hessian!(amp::AbstractManoptProblem, Y, p, X)
 
-evaluate the Hessian of an [`AbstractManoptProblem`](@ref) `amp` at `p`
-applied to a tangent vector `X`, computing ``$(_tex(:Hess))f(q)[X]``,
+Evaluate the Hessian of an [`AbstractManoptProblem`](@ref) `amp` at `p`
+applied to a tangent vector `X`, computing ``$(_tex(:Hess))f(p)[X]``,
 which can also happen in-place of `Y`.
 """
 function get_hessian(amp::AbstractManoptProblem, p, X)
@@ -52,7 +52,7 @@ function get_manifold end
 @doc """
     get_manifold(amp::AbstractManoptProblem)
 
-return the manifold stored within an [`AbstractManoptProblem`](@ref)
+Return the manifold stored within an [`AbstractManoptProblem`](@ref).
 """
 get_manifold(::AbstractManoptProblem)
 
@@ -61,15 +61,15 @@ function get_objective end
 @doc """
     get_objective(mp::AbstractManoptProblem, recursive=false)
 
-return the objective [`AbstractManifoldObjective`](@ref) stored within an [`AbstractManoptProblem`](@ref).
-If `recursive is set to true, it additionally unwraps all decorators of the objective`
+Return the objective [`AbstractManifoldObjective`](@ref) stored within an [`AbstractManoptProblem`](@ref).
+If `recursive` is set to `true`, it additionally unwraps all decorators of the objective.
 """
 get_objective(::AbstractManoptProblem)
 
 @doc """
     get_cost(amp::AbstractManoptProblem, p)
 
-evaluate the cost function `f` stored within the [`AbstractManifoldObjective`](@ref) of an
+Evaluate the cost function `f` stored within the [`AbstractManifoldObjective`](@ref) of an
 [`AbstractManoptProblem`](@ref) `amp` at the point `p`.
 """
 function get_cost(amp::AbstractManoptProblem, p)
@@ -106,15 +106,16 @@ function get_gradients!(mp::AbstractManoptProblem, X, p)
 end
 
 """
-    X = get_subtrahend_gradient(amp, q)
-    get_subtrahend_gradient!(amp, X, q)
+    X = get_subtrahend_gradient(amp, p)
+    get_subtrahend_gradient!(amp, X, p)
 
-Evaluate the (sub)gradient of the subtrahend `h` from within
-a [`ManifoldDifferenceOfConvexObjective`](@ref) `amp` at the point `q` (in place of `X`).
+Evaluate the (sub)gradient of the subtrahend `h` from within the
+[`ManifoldDifferenceOfConvexObjective`](@ref) of an [`AbstractManoptProblem`](@ref) `amp`
+at the point `p`.
 
 The evaluation is done in place of `X` for the `!`-variant.
-The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
-When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
+An objective using [`AllocatingEvaluation`](@ref) might still allocate memory within.
+When the non-mutating variant is called with an [`InplaceEvaluation`](@ref),
 memory for the result is allocated.
 """
 function get_subtrahend_gradient(amp::AbstractManoptProblem, p)
@@ -126,11 +127,11 @@ function get_subtrahend_gradient!(amp::AbstractManoptProblem, X, p)
 end
 
 """
-    set_parameter!(ams::AbstractManoptProblem, element::Symbol, field::Symbol , value)
+    set_parameter!(amp::AbstractManoptProblem, element::Symbol, field::Symbol, value)
 
-Set a certain field/element from the [`AbstractManoptProblem`](@ref) `ams` to `value`.
+Set a certain field/element from the [`AbstractManoptProblem`](@ref) `amp` to `value`.
 This function usually dispatches on `Val(element)`.
-Instead of a single field, also a chain of elements can be provided, allowing to access
+Instead of a single field, also a chain of elements can be provided, allowing access to
 encapsulated parts of the problem.
 
 Main values for `element` are `:Manifold` and `:Objective`.

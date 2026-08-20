@@ -18,7 +18,7 @@ function hessian_value(ha::LevenbergMarquardtBoxSubsolver, M::AbstractManifold, 
 end
 
 """
-    hessian_value_diag(ha::LevenbergMarquardtBoxSubsolver, M, p, X::UnitVector)
+    hessian_value_diag(ha::LevenbergMarquardtBoxSubsolver, M, p, X)
 
 Evaluate the quadratic form associated with the stored Hessian approximation.
 """
@@ -29,17 +29,18 @@ end
 """
     CoordinatesNormalSystemState <: AbstractManoptSolverState
 
-A solver state indicating that we solve the [`LevenbergMarquardtLinearSurrogateObjective`](@ref)
-using a linear system in coordinates of the tangent space at the current iterate
+A solver state indicating that the [`LevenbergMarquardtLinearSurrogateObjective`](@ref) is
+solved using a linear system in coordinates of the tangent space at the current iterate.
 
-## Fields
+# Fields
 
-* `A` an ``n×n`` matrix to store the normal equations linear from [`get_linear_operator`](@ref) in coordinates, where `n` is the number of coordinates
-* `b` a ``n`` vector storing the right hand side of the normal equations in coordinates
-* `basis::`[`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`)
-* `linsolve!` a function `(c, A, b) -> c` solving the linear system in-place of `c`
+* `A`: an ``n×n`` matrix storing the normal-equations linear operator from [`get_linear_operator`](@ref) in coordinates, where `n` is the number of coordinates
+* `b`: an ``n`` vector storing the right hand side of the normal equations in coordinates
+* `basis::`[`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`): the basis the coordinates refer to
+* `c`: an ``n`` vector storing the solution of the linear system in coordinates
+* `linsolve!`: a function `(c, A, b) -> c` solving the linear system in-place of `c`
 
-## Constructor
+# Constructor
     CoordinatesNormalSystemState(
         M::AbstractManifold, p = rand(M);
         linsolve = default_lm_lin_solve!,
@@ -48,7 +49,8 @@ using a linear system in coordinates of the tangent space at the current iterate
     )
 
 Construct the state, where not providing a memory for `A` uses the `eltype` of `p` to
-determine the element type of the matrix to store.
+determine the element type of the matrix to store. Note that the keyword is `linsolve`,
+while the field it is stored in is called `linsolve!`.
 """
 mutable struct CoordinatesNormalSystemState{F, TA <: AbstractMatrix, TB <: AbstractVector, TBA <: AbstractBasis} <: AbstractManoptSolverState
     A::TA
@@ -83,7 +85,7 @@ end
     hessian_value(ha::CoordinatesNormalSystemState, M, p, X::UnitVector, Y)
 
 Evaluate the quadratic form associated with the stored Hessian approximation.
-Returns the scalar ``c_b^{\top} B c`` where ``c_b`` are the coordinates of the
+Returns the scalar ``c_b^{$(_tex(:top))} B c`` where ``c_b`` are the coordinates of the
 [`UnitVector`](@ref) `X` at `p` (assumed to correspond to the basis `ha.basis`),
 ``c`` are the coordinates of the tangent vector `Y` at `p` (in the basis `ha.basis`)
 and ``B`` is `ha.A`.
@@ -96,9 +98,9 @@ end
 """
     hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X::UnitVector)
 
-Evaluate the quadratic form associated with the Hessian approximation [`CoordinatesNormalSystemState`].
-Returns the scalar ``c^{\top} A c`` where ``c`` are the coordinates of the
-[`UnitVector`](@ref) `X` at `p` (in the basis `ha.basis`) and ``B`` is `ha.A`.
+Evaluate the quadratic form associated with the Hessian approximation of a [`CoordinatesNormalSystemState`](@ref).
+Returns the scalar ``c^{$(_tex(:top))} A c`` where ``c`` are the coordinates of the
+[`UnitVector`](@ref) `X` at `p` (in the basis `ha.basis`) and ``A`` is `ha.A`.
 """
 function hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X::UnitVector)
     b = to_coordinate_index(M, X, ha.basis)
@@ -107,8 +109,8 @@ end
 """
     hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X)
 
-Evaluate the quadratic form associated with the Hessian approximation [`CoordinatesNormalSystemState`].
-Returns the scalar ``c^{\top} A c`` where ``c`` are the coordinates of `X` at `p`
+Evaluate the quadratic form associated with the Hessian approximation of a [`CoordinatesNormalSystemState`](@ref).
+Returns the scalar ``c^{$(_tex(:top))} A c`` where ``c`` are the coordinates of `X` at `p`
 (in the basis `ha.basis`) and ``A`` is `ha.A`.
 """
 function hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X)

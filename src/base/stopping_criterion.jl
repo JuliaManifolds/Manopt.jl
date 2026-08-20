@@ -2,15 +2,15 @@
     StoppingCriterion <: AbstractManifoldFunction
 
 An abstract type for the functions representing stopping criteria, so they are callable structures.
-The naming Scheme follows functions, see for example [`StopAfterIteration`](@ref).
+The naming scheme follows functions, see for example [`StopAfterIteration`](@ref).
 
-Every StoppingCriterion has to provide a constructor and its function has to have
-the interface `(p,s,i)` where a [`AbstractManoptProblem`](@ref) `p` as well as a [`AbstractManoptSolverState`](@ref) `s`
-and the current iteration step `i` are the arguments.
-The function always returns a boolean whether to stop or not.
+Every `StoppingCriterion` has to provide a constructor and its function has to have
+the interface `(amp, ams, k)` where an [`AbstractManoptProblem`](@ref) `amp` as well as an [`AbstractManoptSolverState`](@ref) `ams`
+and the current iteration `k` are the arguments.
+The function always returns a boolean indicating whether to stop or not.
 
 By default each `StoppingCriterion` should provide a field `at_iteration` to provide
-the iteration it (lst) indicated to stop. Further fields should provide enough information,
+the iteration it (last) indicated to stop. Further fields should provide enough information,
 such that a human-readable reason can be assembled, see [`get_reason`](@ref).
 """
 abstract type StoppingCriterion <: AbstractManifoldFunction end
@@ -18,8 +18,8 @@ abstract type StoppingCriterion <: AbstractManifoldFunction end
 @doc """
     StoppingCriterionSet <: StoppingCriterion
 
-An abstract type for a Stopping Criterion that itself consists of a set of
-Stopping criteria. In total it acts as a stopping criterion itself. Examples
+An abstract type for a stopping criterion that itself consists of a set of
+stopping criteria. In total it acts as a stopping criterion itself. Examples
 are [`StopWhenAny`](@ref) and [`StopWhenAll`](@ref) that can be used to
 combine stopping criteria.
 """
@@ -28,8 +28,8 @@ abstract type StoppingCriterionSet <: StoppingCriterion end
 """
     has_converged(c::StoppingCriterion)
 
-Return whether a [`StoppingCriterion`](@ref) that has indicated to stop _and_ is a stopping criterion
-that allows to conclude that the corresponding solver has converged.
+Return whether a [`StoppingCriterion`](@ref) `c` has indicated to stop _and_ is a stopping criterion
+that allows one to conclude that the corresponding solver has converged.
 
 By default this is given by the static [`indicates_convergence`](@ref)`(c)` as well as
 the test whether the stopping criterion has stopped.
@@ -37,12 +37,14 @@ For some stopping criteria, for example [`StopWhenAny`](@ref) a more advanced te
 that is more precise.
 
 # Examples
+
 With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` we obtain
 
 * `has_converged(s1)` is always `false` (even if it has stopped)
 * `has_converged(s2)` is always `true` as soon as it has stopped
-* `has_converged(s1 | s2)` is always `true` if it has stopped _and_ `s2` is the reason for that.
+* `has_converged(s1 | s2)` is `true` if it has stopped _and_ `s2` is the reason for that.
 * `has_converged(s1 & s2)` is `true` as soon as the algorithm stopped, since here `s2` always
+  has to be fulfilled as well.
 """
 has_converged(c::StoppingCriterion) = indicates_convergence(c) && (get_count(c, Val(:Iterations)) >= 0)
 
@@ -57,7 +59,7 @@ end
 @doc """
     get_active_stopping_criteria(c)
 
-returns all active stopping criteria, if any, that are within a
+Return all active stopping criteria, if any, that are within a
 [`StoppingCriterion`](@ref) `c`, and indicated a stop, that is their reason is nonempty.
 To be precise for a simple stopping criterion, this returns either an empty
 array if no stop is indicated or the stopping criterion as the only element of
@@ -84,7 +86,7 @@ function get_reason end
 @doc """
     get_reason(s::StoppingCriterion)
 
-return the reason why a [`StoppingCriterion`](@ref) has indicate to stop.
+Return the reason why a [`StoppingCriterion`](@ref) has indicated to stop.
 This reason is empty (`""`) if the criterion has never been met.
 """
 get_reason(s::StoppingCriterion)
@@ -92,7 +94,7 @@ get_reason(s::StoppingCriterion)
 @doc """
     get_reason(s::AbstractManoptSolverState)
 
-return the current reason stored within the [`StoppingCriterion`](@ref) from
+Return the current reason stored within the [`StoppingCriterion`](@ref) from
 within the [`AbstractManoptSolverState`](@ref).
 This reason is empty (`""`) if the criterion has never been met.
 """
@@ -103,7 +105,7 @@ function get_stopping_criteria end
 @doc """
     get_stopping_criteria(c::StoppingCriterionSet)
 
-return the array of internally stored [stopping criteria](@ref StoppingCriterion)
+Return the array of internally stored [stopping criteria](@ref StoppingCriterion)
 for a [`StoppingCriterionSet`](@ref) `c`.
 """
 get_stopping_criteria(c::StoppingCriterionSet)
@@ -116,8 +118,8 @@ mean that, when it indicates to stop, the solver has converged to a
 minimizer or critical point.
 
 Note that this is independent of the actual state of the stopping criterion,
-whether some of them indicate to stop, but a purely type-based, static
-decision.
+that is, of whether it currently indicates to stop; it is a purely type-based,
+static decision.
 
 # Examples
 
@@ -126,7 +128,7 @@ With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` the ind
 * `indicates_convergence(s1)` is `false`
 * `indicates_convergence(s2)` is `true`
 * `indicates_convergence(s1 | s2)` is `false`, since this might also stop after 20 iterations,
-  or in other words, for [`StopWhenAny`](@ref) _all_ its criteria have to indicate convergence, for this to return true.
+  or in other words, for [`StopWhenAny`](@ref) _all_ its criteria have to indicate convergence for this to return `true`.
 * `indicates_convergence(s1 & s2)` is `true`, since `s2` is fulfilled if this stops.
 """
 indicates_convergence(c::StoppingCriterion) = false

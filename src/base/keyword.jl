@@ -1,26 +1,32 @@
 """
     Keywords
 
-A small internal struct to represent a set of keywords,
+A small internal struct to represent a set of keywords.
+
+The type parameter `I` stores the function the keywords belong to, or `nothing`
+if they are not associated with a certain function.
 
 # Fields
 
-* `accepted=Set{Symbol}()` a `Set` of symbols of keywords a certain function accepts
-* `deprecated=Set{Symbol}()` a `Set` of symbols of keywords a certain function has deprecated
-* `from=nothing` the function the keywords are (directly or indirectly) come from or accepted in.
-  to indicate that these are not associated with a certain function, use `nothing`.
-  to Indicate an empty set, use `nothing`.
-* `origins` a dictionary that specifies for every keyword the function it is passed to.
-  this usually should point to the function it is _directly_ passed to.
+* `accepted::Set{Symbol}`: symbols of keywords a certain function accepts
+* `deprecated::Set{Symbol}`: symbols of keywords a certain function has deprecated
+* `origins::Dict{Symbol,Vector{Any}}`: a dictionary that specifies for every keyword the function it is passed to.
+  This usually should point to the function it is _directly_ passed to.
 
 # Constructor
 
     Keywords(
         accepted=Set{Symbol}(), deprecated=Set{Symbol}();
-        from::Type=nothing)
+        from=nothing, origins=nothing)
 
-Generate a Keywords wrapper, where both default to being the empty set.
-For pretty printing you can provide a type they belong to.
+Generate a [`Keywords`](@ref) wrapper, where both sets default to being empty.
+
+## Keyword arguments
+
+* `from=nothing`: the function the keywords (directly or indirectly) come from or are
+  accepted in; it becomes the type parameter `I`. Use `nothing` to indicate that these
+  are not associated with a certain function.
+* `origins=nothing`: an existing origins dictionary to extend; only used when `from` is given.
 """
 struct Keywords{I}
     accepted::Set{Symbol}
@@ -56,8 +62,9 @@ end
 An error to indicate that a certain function received keywords it does not accept.
 
 # Fields
-* `f` the function that received the keywords
-* `kw::Keywords` the keywords that were not accepted
+
+* `f`: the function that received the keywords
+* `kw::Keywords`: the keywords that were not accepted
 
 # Constructor
 
@@ -97,9 +104,9 @@ end
 """
     add!(kw::Keywords, kw2::Keywords)
 
-Append the [`Keywords`](@ref) `kw2` to `kw`, i.e. union the accepted and deprecated keywords,
-as well as their origins, but keep first parameter of `kw`.
-Also their origin takes precedence.
+Append the [`Keywords`](@ref) `kw2` to `kw`, that is, union the accepted and deprecated keywords
+as well as their origins, but keep the type parameter of `kw`.
+Origins already present in `kw` take precedence.
 """
 function add!(kw::Keywords{I}, kw2::Keywords) where {I}
     union!(kw.accepted, kw2.accepted)
@@ -139,7 +146,7 @@ function Base.show(io::IO, kw::Keywords{I}) where {I}
     else
         "\ndeprecated $(join(kw.deprecated, ", "))"
     end
-    dt = isnothing(I) ? "A set of Keywords" : "Keywords for $I:"
+    dt = isnothing(I) ? "A set of Keywords:" : "Keywords for $I:"
     return print(
         io,
         """
@@ -156,17 +163,17 @@ end
     accepted_keywords(solver)
     accepted_keywords(stepsize)
 
-Return a set of keywords, see [`Keywords`](@ref), a certain element of `Manopt.jl`
+Return the set of keywords, see [`Keywords`](@ref), that a certain element of `Manopt.jl`
 accepts when constructed.
 
 This function uses [`direct_keywords`](@ref) to find keywords a function directly accepts,
-and [`calls_with_kwargs`](@ref) to find functions it passes keyword to, where they also
+and [`calls_with_kwargs`](@ref) to find functions it passes keywords to, where they also
 might be accepted.
-In order for nonmutating functions `f` to work the same as their mutating variants `f!`,
-the allocating one, one should set [`calls_with_kwargs`](@ref)`(f) = (f,)`.
+In order for a nonmutating function `f` to accept the same keywords as its mutating variant `f!`,
+one should set [`calls_with_kwargs`](@ref)`(f) = (f!,)`.
 
-this also includes keywords that are passed on to internal structures, also specified using
-[`calls_with_kwargs`](@ref).
+This also includes keywords that are passed on to internal structures, which are specified using
+[`calls_with_kwargs`](@ref) as well.
 """
 function accepted_keywords(f)
     kw = direct_keywords(f)
@@ -190,7 +197,7 @@ calls_with_kwargs(f) = ()
     direct_keywords(solver)
     direct_keywords(stepsize)
 
-Return a set of keywords a function directly would work with.
+Return a set of keywords a function would directly work with.
 """
 function direct_keywords(f)
     methods_f = methods(f)
@@ -213,13 +220,15 @@ end
 deprecated_keywords(s) = Set{Symbol}()
 
 """
-    keywords_accepted(f, mode=:warn, kw::Keywords=accepted_keywords(f); kwargs...)
+    keywords_accepted(f, mode=Symbol(get_parameter(:KeywordsErrorMode)), kw::Keywords=accepted_keywords(f); kwargs...)
 
-Given a function `f`, [`Keywords`](@ref) `kw` it accepts, check if `kwargs...` are accepted
-by those keywords and warn if deprecated keywords are passed
+Given a function `f` and the [`Keywords`](@ref) `kw` it accepts, check whether `kwargs...` are
+accepted by those keywords and warn if deprecated keywords are passed.
 
-For keywords that are not accepted/processed here, the `mode` argument provides
-how to report the result, either `:warn` or `:error` on keywords that are not accepted.
+For keywords that are not accepted, the `mode` argument specifies how to report the result:
+`:warn` issues a warning, `:error` throws a [`ManoptKeywordError`](@ref), and any other value
+(for example `:none`) neither warns nor errors.
+The default is taken from the `:KeywordsErrorMode` setting, see [`get_parameter`](@ref).
 """
 function keywords_accepted(
         f, mode::Symbol = Symbol(get_parameter(:KeywordsErrorMode)), kw::Keywords = accepted_keywords(f);

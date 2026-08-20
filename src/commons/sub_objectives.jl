@@ -11,7 +11,7 @@ _doc_AL_Cost(iter) = "$(_tex(:Cal, "L"))_{ρ^{($iter)}}(p, μ^{($iter)}, λ^{($i
 _doc_AL_Cost_long = """
 ```math
 $(_tex(:Cal, "L"))_ρ(p, μ, λ)
-= f(x) + $(_tex(:frac, "ρ", "2"))$(_tex(:biggl))(
+= f(p) + $(_tex(:frac, "ρ", "2"))$(_tex(:biggl))(
   $(_tex(:sum, "j=1", "n"))$(_tex(:Bigl))(
     h_j(p) + $(_tex(:frac, "λ_j", "ρ"))
   $(_tex(:Bigr)))^2
@@ -32,10 +32,10 @@ based on the internal [`ConstrainedManifoldObjective`](@ref) it computes
 
 $_doc_AL_Cost_long
 
-## Fields
+# Fields
 
-* `co::CO`, `ρ::R`, `μ::T`, `λ::T` as mentioned in the formula, where ``R`` should be the
-number type used and ``T`` the vector type.
+* `co::CO`, `ρ::R`, `μ::T`, `λ::T` as mentioned in the formula, where `R` should be the
+  number type used and `T` the vector type.
 
 # Constructor
 
@@ -73,18 +73,18 @@ of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@
 
 This struct is also a functor in both formats
 * `(M, p) -> X` to compute the gradient in allocating fashion.
-* `(M, X, p)` to compute the gradient in in-place fashion.
+* `(M, X, p)` to compute the gradient in an in-place fashion.
 
-additionally this gradient does accept a positional last argument to specify the `range`
+Additionally this gradient accepts a positional last argument to specify the `range`
 for the internal gradient call of the constrained objective.
 
-based on the internal [`ConstrainedManifoldObjective`](@ref) and computes the gradient
-`$(_tex(:grad))$(_tex(:Cal, "L"))_{ρ}(p, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
+Based on the internal [`ConstrainedManifoldObjective`](@ref), it computes the gradient
+``$(_tex(:grad))$(_tex(:Cal, "L"))_{ρ}(p, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
 
-## Fields
+# Fields
 
-* `co::CO`, `ρ::R`, `μ::T`, `λ::T` as mentioned in the formula, where ``R`` should be the
-number type used and ``T`` the vector type.
+* `co::CO`, `ρ::R`, `μ::T`, `λ::T` as mentioned in the formula, where `R` should be the
+  number type used and `T` the vector type.
 
 # Constructor
 
@@ -138,25 +138,36 @@ end
 #
 # ---
 @doc """
-    LevenbergMarquardtLinearSurrogateCoordinatesObjective{VF<:AbstractManifoldFirstOrderObjective, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective{E}
+    LevenbergMarquardtLinearSurrogateCoordinatesObjective{R<:Real,TO,TVC,TJC,TB} <: AbstractLevenbergMarquardtLinearSurrogateObjective
 
-A subobjective similar to `LevenbergMarquardtLinearSurrogateObjective` but which uses
+A subobjective similar to [`LevenbergMarquardtLinearSurrogateObjective`](@ref) but which uses
 coordinate-based Jacobians in a single, selected basis instead of being centered around
 linear operators.
-## Fields
+
+# Fields
 
 * `objective`:     the [`ManifoldNonlinearLeastSquaresObjective`](@ref) to penalize
 * `penalty::Real`: the damping term ``λ``
-* `threshold::Real`: stabilization ``ε`` for ``α ≤ 1-ε`` in the rescaling of the residual and jacobian, see [`get_LevenbergMarquardt_scaling`](@ref)
+* `threshold::Real`: stabilization ``ε`` for ``α ≤ 1-ε`` in the rescaling of the residual and Jacobian, see [`get_LevenbergMarquardt_scaling`](@ref)
 * `mode::Symbol`:  which mode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
 * `value_cache`:   a vector to store the residuals ``F(p)`` at the current point `p` internally to avoid recomputations
 * `jacobian_cache`: a vector to store the coordinate-based Jacobian of the residuals at the
   current point `p` internally to avoid recomputations. If the Jacobian is used as a linear
   operator, this is just a vector of `nothing`s.
+* `basis`:         the [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) the coordinates refer to
 
-## Constructor
+# Constructor
 
-    LevenbergMarquardtLinearSurrogateCoordinatesObjective(objective; penalty::Real = 1e-6, threshold::Real = 1e-4, mode::Symbol = :Strict)
+    LevenbergMarquardtLinearSurrogateCoordinatesObjective(objective;
+        penalty::Real = 1e-6,
+        threshold::Real = 1e-4,
+        mode::Symbol = :Strict,
+        residuals = zeros(residuals_count(get_objective(objective))),
+        jacobian_cache = fill(nothing, length(get_objective(objective).objective)),
+        basis = DefaultOrthonormalBasis(),
+    )
+
+Note that the keyword `residuals` initialises the `value_cache` field.
 """
 mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
         R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective, TVC <: AbstractVector{R}, TJC <: AbstractVector, TB <: AbstractBasis,
@@ -356,7 +367,7 @@ function show(io::IO, lmlsco::LevenbergMarquardtLinearSurrogateCoordinatesObject
     print(io, "LevenbergMarquardtLinearSurrogateCoordinatesObjective(", lmlsco.objective, "; ")
     print(io, "penalty=", lmlsco.penalty, ", threshold=", lmlsco.threshold, ", mode=:", lmlsco.mode)
     print(io, ", basis = ", lmlsco.basis)
-    print(io, ", residuals=", lmlsco.value_cache, ", jacoian_cache=", lmlsco.jacobian_cache)
+    print(io, ", residuals=", lmlsco.value_cache, ", jacobian_cache=", lmlsco.jacobian_cache)
     return print(io, ")")
 end
 
@@ -381,7 +392,7 @@ end
 #
 # ---
 @doc """
-    LevenbergMarquardtLinearSurrogateObjective{VF<:AbstractManifoldFirstOrderObjective{E}, R} <: AbstractLevenbergMarquardtLinearSurrogateObjective
+    LevenbergMarquardtLinearSurrogateObjective{R<:Real,TO,TVC} <: AbstractLevenbergMarquardtLinearSurrogateObjective
 
 The linear surrogate objective for a [`ManifoldNonlinearLeastSquaresObjective`](@ref).
 
@@ -414,19 +425,26 @@ is the Jacobian.
 These two can be accessed with [`get_vector_field`](@ref) for ``y`` and [`get_linear_operator`](@ref) for ``$(_tex(:Cal, "L"))``,
 respectively.
 For technical details on the scaling using ``α``, especially how the `threshold` and `mode`
-act as safeguards, see [`get_LevenbergMarquardt_scaling`](@ref)
+act as safeguards, see [`get_LevenbergMarquardt_scaling`](@ref).
 
-## Fields
+# Fields
 
 * `objective`:     the [`ManifoldNonlinearLeastSquaresObjective`](@ref) to penalize
 * `penalty::Real`: the damping term ``λ``
-* `threshold::Real`: threshold ``ε`` for stabilization of ``α`` as ``α ≤ 1-ε``, see  [`get_LevenbergMarquardt_scaling`](@ref)
-* `mode::Symbol`:  which ode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
+* `threshold::Real`: threshold ``ε`` for stabilization of ``α`` as ``α ≤ 1-ε``, see [`get_LevenbergMarquardt_scaling`](@ref)
+* `mode::Symbol`:  which mode to use to stabilize ``α``, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
 * `value_cache`:   a vector to store the residuals ``F(p)`` at the current point `p` internally to avoid re-computations
 
-## Constructor
+# Constructor
 
-    LevenbergMarquardtLinearSurrogateObjective(objective; penalty::Real = 1e-6, threshold::Real = 1e-4, mode::Symbol = :Strict)
+    LevenbergMarquardtLinearSurrogateObjective(objective;
+        penalty::Real = 1e-6,
+        threshold::Real = 1e-4,
+        mode::Symbol = :Strict,
+        residuals = zeros(residuals_count(get_objective(objective))),
+    )
+
+Note that the keyword `residuals` initialises the `value_cache` field.
 """
 mutable struct LevenbergMarquardtLinearSurrogateObjective{
         R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective, TVC <: AbstractVector{R},
@@ -446,14 +464,14 @@ mutable struct LevenbergMarquardtLinearSurrogateObjective{
 end
 
 """
-    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FSq::Real, threshold::Real=1.0e-5, mode::Symbol=:Strict)
+    residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime::Real, ρ_double_prime::Real, FkSq::Real, threshold::Real=1.0e-5, mode::Symbol=:Strict)
 
 Compute the scalings for the residual ``y`` and within the operator ``C`` that are required for the robust
 rescaling within [`LevenbergMarquardt`](@ref)s [`get_vector_field`](@ref) and [`get_linear_operator`](@ref),
 respectively.
-Here `FSq` denotes ``s = $(_tex(:norm, "F(p)"; index = "2"))^2`` of the residual vector function ``F`` evaluated at some point ``p``,
-and `ρ_prime``=ρ'(s)` and `ρ_double_prime``=ρ''(s)` denote the current [`AbstractRobustifierFunction`](@ref)s
-first and second derivative evaluated at ``s``.
+Here `FkSq` denotes ``s = $(_tex(:norm, "F(p)"; index = "2"))^2`` of the residual vector function ``F`` evaluated at some point ``p``,
+and `ρ_prime` ``= ρ'(s)`` and `ρ_double_prime` ``= ρ''(s)`` denote the current
+[`AbstractRobustifierFunction`](@ref)'s first and second derivative evaluated at ``s``.
 
 The value for ``α`` is given by
 
@@ -461,7 +479,7 @@ The value for ``α`` is given by
     α = 1 - $(_tex(:sqrt, "1 + 2$(_tex(:frac, "ρ''(s)", "ρ'(s)"))s"))
 ```
 
-and hence the scaling of the residual and the within the projection of the operator are
+and hence the scaling of the residual and the one within the projection of the operator are
 
 ```math
 $(_tex(:frac, _tex(:sqrt, "ρ'(s)"), "1-α"))
@@ -471,7 +489,7 @@ $(_tex(:cases, "$(_tex(:frac, "α", "s")) & $(_tex(:text, " if ")) s ≠ 0", "0 
 
 respectively.
 
-## Numerical stability
+# Numerical stability
 
 For a unique solution that is a minimizer in a Levenberg-Marquardt step,
 we require `α < 1` and [TriggsMcLauchlanHartleyFitzgibbon:2000](@cite) recommends to bound this even by ``1-ε``
@@ -485,8 +503,8 @@ in the square root already if ``ρ(s)'' < 0`` for stability reason, which means 
 In the case ``s = 0`` we also set the operator scaling ``α / s = 0``.
 
 This function offers two `mode`s
-- `:Normal` keeps negative ``ρ''(s) < 0`` but makes sure the square root is well-defined.
-- `:Strict` (default) set ``α = 0`` when ``ρ''(s) < 0`` or when ``s = 0``
+* `:Normal` keeps negative ``ρ''(s) < 0`` but makes sure the square root is well-defined.
+* `:Strict` (default) sets ``α = 0`` when ``ρ''(s) < 0`` or when ``s = 0``.
 """
 function get_LevenbergMarquardt_scaling(
         ρ_prime::Real, ρ_double_prime::Real, FkSq::Real,

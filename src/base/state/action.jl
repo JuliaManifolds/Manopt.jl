@@ -1,7 +1,7 @@
 @doc """
     AbstractStateAction
 
-a common `Type` for `AbstractStateActions` that might be triggered in decorators,
+A common `Type` for `AbstractStateAction`s that might be triggered in decorators,
 for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverState`](@ref).
 """
 abstract type AbstractStateAction end
@@ -16,7 +16,7 @@ end
     struct PointStorageKey{key} end
 
 Refer to point storage of [`StoreStateAction`](@ref) in `get_storage` and `has_storage`
-functions
+functions.
 """
 struct PointStorageKey{key} end
 PointStorageKey(key::Symbol) = PointStorageKey{key}()
@@ -25,7 +25,7 @@ PointStorageKey(key::Symbol) = PointStorageKey{key}()
     struct VectorStorageKey{key} end
 
 Refer to tangent storage of [`StoreStateAction`](@ref) in `get_storage` and `has_storage`
-functions
+functions.
 """
 struct VectorStorageKey{key} end
 VectorStorageKey(key::Symbol) = VectorStorageKey{key}()
@@ -62,17 +62,17 @@ _storage_copy_vector(::AbstractManifold, X::Number) = StorageRef(X)
 @doc """
     StoreStateAction <: AbstractStateAction
 
-internal storage for [`AbstractStateAction`](@ref)s to store a tuple of fields from an
-[`AbstractManoptSolverState`](@ref)s
+Internal storage for [`AbstractStateAction`](@ref)s to store a tuple of fields from an
+[`AbstractManoptSolverState`](@ref).
 
 This functor possesses the usual interface of functions called during an
-iteration and acts on `(p, s, k)`, where `p` is a [`AbstractManoptProblem`](@ref),
+iteration and acts on `(p, s, k)`, where `p` is an [`AbstractManoptProblem`](@ref),
 `s` is an [`AbstractManoptSolverState`](@ref) and `k` is the current iteration.
 
 # Fields
 
-* `values`:        a dictionary to store interim values based on certain `Symbols`
-* `keys`:          a `Vector` of `Symbols` to refer to fields of `AbstractManoptSolverState`
+* `values`:        a dictionary to store interim values based on certain `Symbol`s
+* `keys`:          a `Vector` of `Symbol`s to refer to fields of `AbstractManoptSolverState`
 * `point_values`:  a `NamedTuple` of mutable values of points on a manifold to be stored in
   `StoreStateAction`. Manifold is later determined by `AbstractManoptProblem` passed
   to `update_storage!`.
@@ -85,11 +85,11 @@ iteration and acts on `(p, s, k)`, where `p` is a [`AbstractManoptProblem`](@ref
   passed to `update_storage!`. It is not specified at which point the vectors are tangent
   but for storage it should not matter.
 * `vector_init`:   a `NamedTuple` of boolean values indicating whether a tangent vector in
-  `vector_values`: with matching key has been already initialized to a value. When it is
+  `vector_values` with matching key has been already initialized to a value. When it is
   false, it corresponds to a general value not being stored for the key present in the
   vector `keys`.
 * `once`:          whether to update the internal values only once per iteration
-* `lastStored`:    last iterate, where this `AbstractStateAction` was called (to determine `once`)
+* `last_stored`:   the last iteration in which this `AbstractStateAction` was called (to determine `once`)
 
 To handle the general storage, use `get_storage` and `has_storage` with keys as `Symbol`s.
 For the point storage use `PointStorageKey`. For tangent vector storage use
@@ -99,27 +99,21 @@ For the point storage use `PointStorageKey`. For tangent vector storage use
 
     StoreStateAction(s::Vector{Symbol})
 
-This is equivalent as providing `s` to the keyword `store_fields`, just that here, no manifold
-is necessity for the construction.
+This is equivalent to providing `s` to the keyword `store_fields`, except that here no manifold
+is necessary for the construction.
 
-    StoreStateAction(M)
+    StoreStateAction(M::AbstractManifold; kwargs...)
 
 ## Keyword arguments
 
-* `store_fields` (`Symbol[]`)
-* `store_points` (`Symbol[]`)
-* `store_vectors` (`Symbol[]`)
-
-as vectors of symbols each referring to fields of the state (lower case symbols)
-or semantic ones (upper case).
-
-* `p_init` (`rand(M)`) but making sure this is not a number but a (mutable) array
-* `X_init` (`zero_vector(M, p_init)`)
-
-are used to initialize the point and vector storage, change these if you use other
-types (than the default) for your points/vectors on `M`.
-
-* `once` (`true`) whether to update internal storage only once per iteration or on every update call
+* `store_fields=Symbol[]`, `store_points=Tuple{}`, `store_vectors=Tuple{}`: vectors of symbols
+  (or tuple types) each referring to fields of the state (lower case symbols)
+  or semantic ones (upper case).
+* `p_init=maybe_wrap_variable(rand(M))`, `X_init=zero_vector(M, p_init)`: used to initialize
+  the point and vector storage; change these if you use other types (than the default)
+  for your points/vectors on `M`. The wrapping makes sure that `p_init` is not a number but
+  a (mutable) array.
+* `once=true`: whether to update internal storage only once per iteration or on every update call.
 """
 mutable struct StoreStateAction{
         TPS_asserts, TXS_assert, TPS <: NamedTuple, TXS <: NamedTuple, TPI <: NamedTuple, TTI <: NamedTuple,
@@ -218,7 +212,7 @@ end
     get_storage(a::AbstractStateAction, key::Symbol)
 
 Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
-`Symbol` `key`. Returns `nothing` if the key does not exist
+`Symbol` `key`. Return `nothing` if the key does not exist.
 """
 function get_storage(a::AbstractStateAction, key::Symbol)
     return get(a.values, key, nothing)
@@ -286,7 +280,7 @@ end
 """
     has_storage(a::AbstractStateAction, ::VectorStorageKey{key}) where {key}
 
-Return whether the [`AbstractStateAction`](@ref) `a` has a point value stored at the
+Return whether the [`AbstractStateAction`](@ref) `a` has a tangent vector value stored at the
 `Symbol` `key`.
 """
 function has_storage(a::AbstractStateAction, ::VectorStorageKey{key}) where {key}
@@ -302,7 +296,7 @@ end
 
 Update the [`AbstractStateAction`](@ref) `a` internal values to the ones given on
 the [`AbstractManoptSolverState`](@ref) `s`.
-Optimized using the information from `amp`
+Optimized using the information from `amp`.
 """
 function update_storage!(
         a::AbstractStateAction, amp::AbstractManoptProblem, s::AbstractManoptSolverState

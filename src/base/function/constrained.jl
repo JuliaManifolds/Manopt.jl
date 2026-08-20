@@ -1,9 +1,9 @@
 """
-    AbstractConstrainedFunction{T}
+    AbstractConstrainedFunction{T} <: AbstractManifoldFunction
 
 A common supertype for functors that model constraint functions.
 
-This supertype provides access for the fields ``λ`` and ``μ``, the dual variables of
+This supertype provides access to the fields `λ` and `μ`, the dual variables of
 constraints of type `T`.
 """
 abstract type AbstractConstrainedFunction{T} <: AbstractManifoldFunction end
@@ -24,11 +24,11 @@ get_parameter(acf::AbstractConstrainedFunction, ::Val{:λ}) = acf.λ
 
 A common supertype for functors that model constraint functions with slack.
 
-This supertype additionally provides access for the fields
-* `μ::T` the dual for the inequality constraints
-* `s::T` the slack parameter, and
-* `β::R` the  the barrier parameter
-which is also of type `T`.
+This supertype additionally provides access to the fields
+
+* `μ::T`: the dual for the inequality constraints
+* `s::T`: the slack parameter
+* `β::R`: the barrier parameter
 """
 abstract type AbstractConstrainedSlackFunction{T, R} end
 

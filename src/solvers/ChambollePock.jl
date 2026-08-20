@@ -283,7 +283,7 @@ _doc_ChambollePock = """
     ChambollePock!(M, N, f, p, X, m, n, prox_G, prox_G_dual, get_adjoint_linear_operator; kwargs...)
 
 
-Perform the Riemannian Chambolle—Pock algorithm.
+Perform the Riemannian Chambolle-Pock algorithm.
 
 $_doc_ChambollePock_formula
 

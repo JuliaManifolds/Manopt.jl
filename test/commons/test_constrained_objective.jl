@@ -407,12 +407,12 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             # Full KKT Vector field norm – the Merit function
             KKTvfN = KKTVectorFieldNormSq(coh)
             @test startswith(repr(KKTvfN), "KKTVectorFieldNormSq(")
-            @test startswith(Manopt.status_summary(KKTvfN), "The KKT vector field in normed squared for the constrained objective")
+            @test startswith(Manopt.status_summary(KKTvfN), "The squared norm of the KKT vector field for the constrained objective")
             vfn = KKTvfN(N, q)
             @test vfn == norm(N, q, Y)^2
             KKTvfNG = KKTVectorFieldNormSqGradient(coh)
             @test startswith(repr(KKTvfNG), "KKTVectorFieldNormSqGradient(")
-            @test startswith(Manopt.status_summary(KKTvfNG), "The gradient of the KKT vector field in normed squared for the constrained objective")
+            @test startswith(Manopt.status_summary(KKTvfNG), "The gradient of the squared norm of the KKT vector field for the constrained objective")
             Zg1 = KKTvf(N, q)
             Zg2 = 2.0 * KKTvfAdJ(N, q, Zg1)
             W = KKTvfNG(N, q)

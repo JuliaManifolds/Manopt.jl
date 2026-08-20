@@ -5,7 +5,7 @@ const _MANOPT_EMPTY_ANY_CALLBACK = (symbol::Symbol, problem, state, iteration) -
 """
     active_callbacks(state::AbstractManoptSolverState)
 
-For a given state, indicate, which callbacks are in use, i.e. stored and also called from this solver.
+For a given state, indicate which callbacks are in use, that is, stored and also called from this solver.
 
 See also: [`provided_callbacks`](@ref).
 """
@@ -15,11 +15,12 @@ function active_callbacks(state::AbstractManoptSolverState)
 end
 
 """
-    callback(name::Symbol, problem::AbstractManoptProblem, state::AbstractManoptState, iteration::Int)
+    callback(name::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int)
 
 Perform a callback.
 
 This function performs a call to both possible approaches
+
 * if a callback exists in the dictionary under the symbol `name` it is called with the parameters `problem, state, iteration`
 * if a callback exists in the dictionary that shall be called `:Any` time, this one is called with `name, problem, state, iteration`
 """
@@ -52,11 +53,11 @@ end
 _get_callbacks(state::AbstractManoptSolverState, ::Val{true}) = get_callbacks(state.state)
 
 """
-    provided_callbacks(state_type::Type{S}) where {S<:AbstractManoptSolverState})
+    provided_callbacks(state_type::Type{S}) where {S<:AbstractManoptSolverState}
 
-For a solver of type `S` return the callbacks the solver provides, i.e. all ones
+For a solver of type `S` return the callbacks the solver provides, that is, all those
 that are called during the solver run.
-This function returns a vector `Symbol`s representing the hooks. These can be kays in
+This function returns a vector of `Symbol`s representing the hooks. These can be keys in
 a dictionary of callbacks.
 """
 function provided_callbacks(::Type{S}) where {S <: AbstractManoptSolverState}
@@ -66,7 +67,7 @@ end
 """
     _callbacks_summary(state::AbstractManoptSolverState)
 
-Generate callback summary for a given solver state `s`. This function returns a string
+Generate a callback summary for a given solver `state`. This function returns a string
 that contains the active callbacks in the solver state. If no callbacks are active,
 an empty string is returned.
 """
@@ -83,20 +84,20 @@ end
 Given a vector `callbacks` a user has passed to a solver, this helper function processes the
 vector in the following way
 
-* a pair `:Hook => fct` is kept as is, where the `fct`` can also be some callable structure
-* a single element `function` is turned into `:Any => fct` allowing the case a single callback
-  to be specified just with the function
+* a pair `:Hook => fct` is kept as is, where the `fct` can also be some callable structure
+* a single element `function` is turned into `:Any => fct`, allowing a single callback
+  to be specified just by the function
 * a pair `[Hook1, Hook2] => fct` is a shortcut for an array of pairs and split into these here.
 
-The result is then wrapped into a dictionary. Be aware that from an array of pairs this function
-reduces, the dictionary “takes” the last `:Hook` pair as the entry in the dictionary. This
+The result is then wrapped into a dictionary. Be aware that when an array of pairs is reduced
+to a dictionary, the last `:Hook` pair “wins” and becomes the entry in the dictionary. This
 function does not check for duplicates.
 
-This function keeps a dictionary unchanged. Hence they are only processed once
+This function keeps a dictionary unchanged. Hence callbacks are only processed once
 even if this function is applied multiple times.
 
 If a `statetype` is provided, the final dictionary of callbacks is validated against
-the provided callback hooks by that state and a warning is issued if there are hooks that
+the callback hooks provided by that state and a warning is issued if there are hooks that
 do not have an effect.
 """
 function process_callbacks_arg(callbacks::Vector, statetype = missing)
@@ -137,7 +138,7 @@ function _warn_if_unused_callbacks(callbacks::Dict, statetype = missing)
         ck = keys(callbacks)
         pk = provided_callbacks(statetype)
         uk = collect(setdiff(ck, pk))
-        (length(uk) > 0) && (@warn "The following provided callback hooks are not used by $(statetype):\n\t$(uk)\nThe corresponding function will be ignored.\nAvailable hooks: $(pk)")
+        (length(uk) > 0) && (@warn "The following provided callback hooks are not used by $(statetype):\n\t$(uk)\nThe corresponding functions will be ignored.\nAvailable hooks: $(pk)")
     end
     return nothing
 end

@@ -1,5 +1,5 @@
 """
-    AbstractManifoldHessianObjective{F, G, H} <: AbstractManifoldFirstOrderObjective{Tuple{F,G}}
+    AbstractManifoldHessianObjective{F, G, H} <: AbstractManifoldFirstOrderObjective{F, G}
 
 An abstract type for all objectives that provide a (full) Hessian.
 """
@@ -14,10 +14,13 @@ function get_hessian!(
     return get_hessian!(M, Y, get_objective(admo, false), p, X)
 end
 @doc """
-    get_hessian_function(amgo::ManifoldHessianObjective)
+    get_hessian_function(mho::AbstractManifoldHessianObjective, recursive::Bool=false; evaluation=AllocatingEvaluation())
 
-return the function to evaluate (just) the Hessian ``$(_tex(:Hess)) f(p)``,
-which has the form `(M, Y, p, X) -> Y` working in-place of `Y`.
+Return the function to evaluate (just) the Hessian ``$(_tex(:Hess)) f(p)``.
+
+For the default `evaluation=`[`AllocatingEvaluation`](@ref)`()` this function has the form
+`(M, p, X) -> Y`; for `evaluation=`[`InplaceEvaluation`](@ref)`()` it has the form
+`(M, Y, p, X) -> Y` working in-place of `Y`.
 """
 function get_hessian_function(
         mho::AbstractManifoldHessianObjective, recursive::Bool = false;

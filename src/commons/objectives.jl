@@ -13,16 +13,16 @@ $(_problem(:Constrained))
 * `objective`: an [`AbstractManifoldObjective`](@ref) representing the unconstrained
   objective, that is containing cost ``f``, the gradient of the cost ``f`` and maybe the Hessian.
 * `equality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the equality constraints
-``h: $(_math(:Manifold)) → ℝ^n`` also possibly containing its gradient and/or Hessian
+  ``h: $(_math(:Manifold)) → ℝ^n`` also possibly containing its gradient and/or Hessian
 * `inequality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the inequality constraints
-``g: $(_math(:Manifold)) → ℝ^m`` also possibly containing its gradient and/or Hessian
+  ``g: $(_math(:Manifold)) → ℝ^m`` also possibly containing its gradient and/or Hessian
 
 # Constructors
     ConstrainedManifoldObjective(f, grad_f;
         equality_constraints=nothing,
         inequality_constraints=nothing,
         g=missing, grad_g=missing,
-        h=missing, grad_h=missing;
+        h=missing, grad_h=missing,
         hess_f=missing, hess_g=missing, hess_h=missing,
         evaluation=AllocatingEvaluation(),
         M = missing,
@@ -540,7 +540,7 @@ g_i(p) ≤ 0, $(_tex(:text, " for all ")) i=1,…,m$(_tex(:quad))\text{ and }$(_
 ```
 
 # Keyword arguments
-* `check_point::Bool=true`: whether to also verify that ``p∈$(_math(:Manifold))` holds, using [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
+* `check_point::Bool=true`: whether to also verify that ``p∈$(_math(:Manifold))`` holds, using [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
 * `error::Symbol=:none`: if the point is not feasible, this symbol determines how to report the error.
     * `:error`: throws an error
     * `:info`: displays the error message as an @info
@@ -602,26 +602,26 @@ end
 #
 # ---
 @doc """
-    ManifoldAlternatingGradientObjective{F,G} <: AbstractManifoldFirstOrderObjective{F G}
+    ManifoldAlternatingGradientObjective{F,G} <: AbstractManifoldFirstOrderObjective{F, G}
 
 An alternating gradient objective consists of
 
-* a cost function ``F(x)``
+* a cost function ``F(p)``
 * a gradient ``$(_tex(:grad))F`` that is either
   * given as one function ``$(_tex(:grad))F`` returning a tangent vector `X` on `M` or
-  * an array of gradient functions ``$(_tex(:grad))F_i``, `ì=1,…,n` s each returning a component of the gradient
+  * an array of gradient functions ``$(_tex(:grad))F_i``, `i=1,…,n`, each returning a component of the gradient
   which might be allocating or mutating variants, but not a mix of both.
 
 !!! note
 
-    This Objective is usually defined using the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` to be loaded.
+    This Objective is usually defined using the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` has to be loaded.
 
 # Constructors
 
     ManifoldAlternatingGradientObjective(F, gradF::Function; evaluation=AllocatingEvaluation(), p = missing)
     ManifoldAlternatingGradientObjective(F, gradF::AbstractVector{<:Function}; evaluation=AllocatingEvaluation(), p = missing)
 
-Create a alternating gradient problem with an optional `cost` and the gradient either as one
+Create an alternating gradient problem with an optional `cost` and the gradient either as one
 function (returning an array) or a vector of functions.
 
 ## Keyword Arguments
@@ -730,8 +730,8 @@ Generate the constrained objective for a given function `f` its gradient `grad_f
 
 ## Keyword arguments
 
-* `indicator=missing`: the indicator function ``ι_{$(_tex(:Cal, "C"))}(p)``. If not provided a test, whether the projection yields the same point is performed.
-  For the [`InplaceEvaluation`](@ref) this required one allocation.
+* `indicator=missing`: the indicator function ``ι_{$(_tex(:Cal, "C"))}(p)``. If not provided, a test whether the projection yields the same point is performed.
+  For the [`InplaceEvaluation`](@ref) this requires one allocation.
 """
 struct ManifoldConstrainedSetObjective{MO <: AbstractManifoldObjective, PF, IF} <: AbstractManifoldObjective
     objective::MO
@@ -832,7 +832,7 @@ in case the objective being stored here is decorated, e.g. with a cache.
 * `X=missing`: a tangent vector in the embedding
 
 When a point in the embedding `p` is provided, `embed!` is used in place of this point to reduce
-memory allocations. Similarly `X` is used when embedding tangent vectors
+memory allocations. Similarly `X` is used when embedding tangent vectors.
 """
 struct EmbeddedManifoldObjective{P, T, O2, O1 <: AbstractManifoldObjective} <: AbstractDecoratedManifoldObjective{O2}
     objective::O1
@@ -864,7 +864,7 @@ function local_embed!(M::AbstractManifold, emo::EmbeddedManifoldObjective{P}, p)
     return emo.p
 end
 @doc """
-    get_cost(M::AbstractManifold,emo::EmbeddedManifoldObjective, p)
+    get_cost(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
 
 Evaluate the cost function of an objective defined in the embedding by first embedding `p`
 before calling the cost function stored in the [`EmbeddedManifoldObjective`](@ref).
@@ -923,7 +923,7 @@ Evaluate the Hessian of an objective defined in the embedding, that is embed `p`
 before calling the Hessian function stored in the [`EmbeddedManifoldObjective`](@ref).
 
 The returned Hessian is then converted to a Riemannian Hessian calling
- [`riemannian_Hessian`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_Hessian-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}).
+[`riemannian_Hessian`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_Hessian-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}).
 """
 function get_hessian(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, X) where {P}
     q = local_embed!(M, emo, p)
@@ -974,7 +974,7 @@ end
 @doc """
     get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
 
-evaluate the `j`s equality constraint ``h_j(p)`` defined in the embedding, that is embed `p`
+Evaluate the `j`th equality constraint ``h_j(p)`` defined in the embedding, that is embed `p`
 before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
@@ -982,9 +982,9 @@ function get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjec
     return get_equality_constraint(M, emo.objective, q, j)
 end
 @doc """
-    get_inequality_constraint(M::AbstractManifold, ems::EmbeddedManifoldObjective, p, i)
+    get_inequality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, i)
 
-Evaluate the `i`s inequality constraint ``g_i(p)`` defined in the embedding, that is embed `p`
+Evaluate the `i`th inequality constraint ``g_i(p)`` defined in the embedding, that is embed `p`
 before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_inequality_constraint(
@@ -1153,7 +1153,7 @@ function status_summary(emo::EmbeddedManifoldObjective{P, T}; context::Symbol = 
 end
 
 @doc """
-    ManifoldCachedObjective{O,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractDecoratedManifoldObjective{O}
+    ManifoldCachedObjective{P,O<:AbstractManifoldObjective,C<:NamedTuple{}} <: AbstractDecoratedManifoldObjective{P}
 
 Create a cache for an objective, based on a `NamedTuple` that stores some kind of cache.
 
@@ -1166,14 +1166,14 @@ which function evaluations to cache.
 
 # Supported symbols
 
-| Symbol                      | Caches calls to (incl. `!` variants)            | Comment
+| Symbol                      | Caches calls to (incl. `!` variants)            | Comment                   |
 | :-------------------------- | :---------------------------------------------- | :------------------------ |
 | `:Cost`                     | [`get_cost`](@ref)                              |                           |
-| `:Differential`             | [`get_differential`](@ref)`(M, p, X)`.          |                           |
+| `:Differential`             | [`get_differential`](@ref)`(M, p, X)`           |                           |
 | `:EqualityConstraint`       | [`get_equality_constraint`](@ref)`(M, p, i)`    |                           |
 | `:EqualityConstraints`      | [`get_equality_constraint`](@ref)`(M, p, :)`    |                           |
 | `:GradEqualityConstraint`   | [`get_grad_equality_constraint`](@ref)          | tangent vector per (p,i)  |
-| `:GradInequalityConstraint` | [`get_inequality_constraint`](@ref)             | tangent vector per (p,i)  |
+| `:GradInequalityConstraint` | [`get_grad_inequality_constraint`](@ref)        | tangent vector per (p,i)  |
 | `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`                   | tangent vectors           |
 | `:Hessian`                  | [`get_hessian`](@ref)                           | tangent vectors           |
 | `:InequalityConstraint`     | [`get_inequality_constraint`](@ref)`(M, p, j)`  |                           |
@@ -1193,8 +1193,6 @@ which function evaluations to cache.
   the type of values for numeric values in the cache
 * `X=zero_vector(M,p)`:
   the type of values to be cached for gradient and Hessian calls.
-* `cache=[:Cost]`:
-  a vector of symbols indicating which function calls should be cached.
 * `cache_size=10`:
   number of (least recently used) calls to cache
 * `cache_sizes=Dict{Symbol,Int}()`:
@@ -1637,7 +1635,7 @@ function get_grad_inequality_constraint(
         X = zero_vector(pM, P)
         # access is subsampled with j, result linear in k
         for (k, j) in
-            zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
+            zip(1:n, _to_iterable_indices(1:inequality_constraints_length(co.objective), i))
             copyto!(
                 M, _write(pM, rep_size, X, (k,)), p,
                 get!(co.cache[:GradInequalityConstraint], (key, j)) do
@@ -1697,7 +1695,7 @@ function get_grad_inequality_constraint!(
         if haskey(co.cache[:GradInequalityConstraints], key)
             # access is subsampled with j, result linear in k
             for (k, j) in zip(
-                    1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+                    1:n, _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
                 )
                 copyto!(
                     M,
@@ -1713,7 +1711,7 @@ function get_grad_inequality_constraint!(
     if haskey(co.cache, :GradInequalityConstraint) # storing the index constraints
         # access is subsampled with j, result linear in k
         for (k, j) in
-            zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
+            zip(1:n, _to_iterable_indices(1:inequality_constraints_length(co.objective), i))
             copyto!(
                 M,
                 _write(pM, rep_size, X, (k,)),
@@ -1922,16 +1920,18 @@ end
 @doc """
     ManifoldCostObjective{F} <: AbstractManifoldCostObjective{F}
 
-specify an [`AbstractManifoldObjective`](@ref) that does only have information about
+Specify an [`AbstractManifoldObjective`](@ref) that does only have information about
 the cost function ``f:  $(_math(:Manifold)) → ℝ`` implemented as a function `(M, p) -> c`
 to compute the cost value `c` at `p` on the manifold `M`.
+
+# Fields
 
 * `cost`: a function ``f: $(_math(:Manifold)) → ℝ`` to minimize
 
 # Constructors
 
-    ManifoldCostObjective(f::F; p = missing) where {F, P}
-    ManifoldCostObjective(f::F, ::Type{P}) where {F, P}
+    ManifoldCostObjective(f; p::P = missing) where {P}
+    ManifoldCostObjective(f, ::Type{P}) where {P}
 
 Generate a [`ManifoldCostObjective`](@ref) with cost function `f`.
 
@@ -1957,7 +1957,7 @@ function status_summary(::ManifoldCostObjective{F}; context::Symbol = :default) 
 end
 
 """
-    ManifoldCountObjective{P,O<:AbstractManifoldObjective,I<:Integer} <: AbstractDecoratedManifoldObjective{P}
+    ManifoldCountObjective{P,O<:AbstractManifoldObjective,I<:Union{<:Integer,AbstractVector{<:Integer}}} <: AbstractDecoratedManifoldObjective{P}
 
 A wrapper for any [`AbstractManifoldObjective`](@ref) of type `O` to count different calls
 to parts of the objective.
@@ -1972,13 +1972,13 @@ to parts of the objective.
 | Symbol                      | Counts calls to (incl. `!` variants)   | Comment                      |
 | :-------------------------- | :------------------------------------- | :--------------------------- |
 | `:Cost`                     | [`get_cost`](@ref)                     |                              |
-| `:Differential`             | [`get_differential`](@ref).            |
+| `:Differential`             | [`get_differential`](@ref)             |                              |
 | `:EqualityConstraint`       | [`get_equality_constraint`](@ref)      | requires vector of counters  |
 | `:EqualityConstraints`      | [`get_equality_constraint`](@ref)      | when evaluating all of them with `:` |
 | `:GradEqualityConstraint`   | [`get_grad_equality_constraint`](@ref) | requires vector of counters  |
 | `:GradEqualityConstraints`  | [`get_grad_equality_constraint`](@ref) | when evaluating all of them with `:`  |
-| `:GradInequalityConstraint` | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
-| `:GradInequalityConstraints`| [`get_inequality_constraint`](@ref)    | when evaluating all of them with `:`  |
+| `:GradInequalityConstraint` | [`get_grad_inequality_constraint`](@ref) | requires vector of counters  |
+| `:GradInequalityConstraints`| [`get_grad_inequality_constraint`](@ref) | when evaluating all of them with `:`  |
 | `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`          |                              |
 | `:Hessian`                  | [`get_hessian`](@ref)                  |                              |
 | `:InequalityConstraint`     | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
@@ -1994,9 +1994,9 @@ to parts of the objective.
 
     ManifoldCountObjective(objective::AbstractManifoldObjective, counts::Dict{Symbol, <:Integer})
 
-Initialise the `ManifoldCountObjective` to wrap `objective` initializing the set of counts
+Initialize the `ManifoldCountObjective` to wrap `objective`, initializing the set of counts.
 
-    ManifoldCountObjective(M::AbstractManifold, objective::AbstractManifoldObjective, count::AbstractVecor{Symbol}, init=0)
+    ManifoldCountObjective(M::AbstractManifold, objective::AbstractManifoldObjective, count::AbstractVector{Symbol}, init=0)
 
 Count function calls on `objective` using the symbols in `count` initialising all entries to `init`.
 """
@@ -2138,7 +2138,7 @@ function _get_count(o::AbstractManifoldObjective, ::Val{true}, s, i, m)
 end
 
 """
-    reset_counters(co::ManifoldCountObjective, value::Integer=0)
+    reset_counters!(co::ManifoldCountObjective, value::Integer=0)
 
 Reset all values in the count objective to `value`.
 """
@@ -2337,7 +2337,7 @@ end
 function get_grad_inequality_constraint(
         M::AbstractManifold, co::ManifoldCountObjective, p, i
     )
-    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+    for j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
         _count_if_exists(co, :GradInequalityConstraint, j)
     end
     return get_grad_inequality_constraint(M, co.objective, p, i)
@@ -2358,7 +2358,7 @@ end
 function get_grad_inequality_constraint!(
         M::AbstractManifold, X, co::ManifoldCountObjective, p, i
     )
-    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+    for j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
         _count_if_exists(co, :GradInequalityConstraint, j)
     end
     return get_grad_inequality_constraint!(M, X, co.objective, p, i)
@@ -2460,9 +2460,9 @@ end
 #
 # ---
 @doc """
-    ManifoldFirstOrderObjective{F} <: AbstractManifoldFirstOrderObjective{F}
+    ManifoldFirstOrderObjective{F<:NamedTuple} <: AbstractManifoldFirstOrderObjective{F, F}
 
-specify an objective containing a cost and its gradient or differential.
+Specify an objective containing a cost and its gradient or differential.
 
 # Fields
 
@@ -2470,23 +2470,23 @@ specify an objective containing a cost and its gradient or differential.
 
 Currently the following cases are covered, sorted by their popularity
 
-1. a single function `fg`, i.e. a function, represents a combined
+1. a single function `fg` representing a combined
     function `(M, X, p) -> (c, X)` that computes the cost `c=cost(M,p)` and gradient `X=grad_f(M, X, p)`;
-2. a single function `fdf`, i.e. a function, represents a combined function
+2. a single function `fdf` representing a combined function
     `(M, d, p) -> (c, d)` that computes the cost `c=cost(M,p)` and differential `d=diff_f(M, d, p)`;
 3. pairs of single functions `(f, g)`, `(f, df)` of a cost function `f` and either its
     gradient `g` or its differential `d`, respectively
 4. The function `(fg, d)` and `(fdf, g)`  from 1 and 2, respectively joined by
     the other missing third information, the differential for the first or the gradient for the second
-5. a tuple `(f, g, d)` of three functions, computing cost, `f`, gradient `g`,
-    and `differential `d` separately
-6. a `(f, gd)` of a cost function and a combined function `(X, d) = gd(M, (X,d), p)`
+5. a tuple `(f, g, d)` of three functions, computing cost `f`, gradient `g`,
+    and differential `d` separately
+6. a tuple `(f, gd)` of a cost function and a combined function `(X, d) = gd(M, (X,d), p)`
     to compute gradient and differential together
 
-For all cases where a gradient and/or a differential is present are considered to work in-place,
+In all cases a gradient and/or a differential that is present is assumed to work in-place,
 see the [`InplaceManifoldFunction`](@ref) wrapper for alternatives.
 
-The cases of a common `fg` function for cost and gradient and the tuple `(f,g)` are the most common one.
+The cases of a common `fg` function for cost and gradient and the tuple `(f,g)` are the most common ones.
 They can also be addressed by their alternate constructors
 [`ManifoldCostGradientObjective`](@ref)`(fg)` and [`ManifoldGradientObjective`](@ref)`(f,g)`, respectively.
 
@@ -2497,7 +2497,7 @@ They can also be addressed by their alternate constructors
 
 * `cost = missing` the cost function `c = f(M,p)`
 * `costdifferential = missing` the combined cost and differential function  `fdf(M, p, X)`
-* `costgradient = missing` the combined cost and gradient function `fg(M,p)` or in-place `fg!(M, X, p))`
+* `costgradient = missing` the combined cost and gradient function `fg(M,p)` or in-place `fg!(M, X, p)`
 * `differential = missing` the differential `d = df(M, p, X)`
 $(_kwargs(:evaluation))
 * `gradient=missing` the gradient function `g(M, p)` or in-place `g!(M, X, p)`
@@ -2572,7 +2572,7 @@ const ManifoldGradientObjective{F, G} = ManifoldFirstOrderObjective{
 Generate an objective with a function `cost` and its `gradient`.
 The gradient is assumed to work in-place
 
-    * as a function `(M, X, p) -> X` that work in place of `X`, an [`InplaceEvaluation`](@ref)
+* as a function `(M, X, p) -> X` that works in place of `X`, an [`InplaceEvaluation`](@ref)
 
 Internally this is stored in a [`ManifoldFirstOrderObjective`](@ref). The `kwargs...`
 are also passed to this representation, which allows to add a special function
@@ -2594,7 +2594,7 @@ const ManifoldCostGradientObjective{FG} = ManifoldFirstOrderObjective{
 @doc """
     ManifoldCostGradientObjective(costgrad; kwargs...)
 
-create an objective containing one function to perform a combined computation of cost and its gradient
+Create an objective containing one function to perform a combined computation of cost and its gradient
 
 Internally this is stored in a [`ManifoldFirstOrderObjective`](@ref). The `kwargs...`
 are also passed to this representation, which allows to add a special function
@@ -2628,7 +2628,7 @@ end
 
 Evaluate cost function and differential simultaneously.
 
-This combined evaluation is especially beneficial., wenn you provided a combined `costdiff` function within
+This combined evaluation is especially beneficial when you provided a combined `costdifferential` function within
 the [`ManifoldFirstOrderObjective`](@ref) `mfo`.
 When there is no separate differential, the evaluation falls back to evaluating the gradient and an inner product.
 
@@ -2801,13 +2801,13 @@ end
 @doc """
     ManifoldHessianObjective{C,G,H,Pre} <: AbstractManifoldHessianObjective{C,G,H}
 
-specify a problem for Hessian based algorithms.
+Specify a problem for Hessian based algorithms.
 
 # Fields
 
 * `cost`:           a function ``f:$(_math(:Manifold))→ℝ`` to minimize
 * `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold)) → $(_math(:TangentBundle))`` of the cost function ``f``
-* `hessian`:        the Hessian ``$(_tex(:Hess))f(x)[⋅]: $(_math(:TangentSpace; p = "x")) → $(_math(:TangentSpace; p = "x"))`` of the cost function ``f``
+* `hessian`:        the Hessian ``$(_tex(:Hess))f(p)[⋅]: $(_math(:TangentSpace)) → $(_math(:TangentSpace))`` of the cost function ``f``
 * `preconditioner`: the symmetric, positive definite preconditioner
   as an approximation of the inverse of the Hessian of ``f``, a map with the same
   input variables as the `hessian` to numerically stabilize iterations when the Hessian is
@@ -2821,7 +2821,7 @@ specify a problem for Hessian based algorithms.
 
 Generate a [`ManifoldHessianObjective`](@ref) from a cost function `f`, its gradient `grad_f`, its Hessian `Hess_f`, and an optional preconditioner `preconditioner`.
 The `evaluation` keyword argument can be used to specify whether the functions are in-place or allocating, a point `p` can be used to specify the domain of the functions,
-which only has a “wrapping” effect if `p` is a immutable number.
+which only has a “wrapping” effect if `p` is an immutable number.
 
 # See also
 
@@ -2875,7 +2875,7 @@ function get_preconditioner end
 Evaluate the preconditioner of the [`ManifoldHessianObjective`](@ref) `mho`
 at the point `p`, applied to the tangent vector `X`.
 
-It usually is a symmetric, positive definite approximation of the inverse of the Hessian of the cost function `F`.
+It usually is a symmetric, positive definite approximation of the inverse of the Hessian of the cost function `f`.
 """
 function get_preconditioner(M::AbstractManifold, mho::ManifoldHessianObjective, p, X)
     Y = zero_vector(M, p)
@@ -2927,7 +2927,7 @@ end
 #
 # ---
 @doc """
-    ManifoldNonlinearLeastSquaresObjectives <: AbstractManifoldObjective
+    ManifoldNonlinearLeastSquaresObjective{VFV,RFV,TVC} <: AbstractManifoldFirstOrderObjective{VFV, VFV}
 
 An objective to model the robustified nonlinear least squares problem
 
@@ -2935,13 +2935,13 @@ $(_problem(:NonLinearLeastSquares))
 
 # Fields
 
-* `objective`: a vector of [`AbstractFirstOrderVectorFunction`](@ref)`{E}`s, one for each
+* `objective`: a vector of [`AbstractFirstOrderVectorFunction`](@ref)s, one for each
   block component cost function ``F_i``, which might internally also be a vector of component costs ``(F_i)_j``,
   as well as their Jacobian ``J_{F_i}`` or a vector of gradients ``$(_tex(:grad)) (F_i)_j``
   depending on the specified [`AbstractVectorialType`](@ref)s.
-* `robustifier`: a vector of [`AbstractRobustifierFunction`](@ref)`s`, one for each
+* `robustifier`: a vector of [`AbstractRobustifierFunction`](@ref)s, one for each
   block component cost function ``F_i``.
-* `value_cache::AbstractVector` and internal cache to store the result of evaluating the cost functions
+* `value_cache::AbstractVector` an internal cache to store the result of evaluating the cost functions
 
 # Constructors
 
@@ -2949,7 +2949,7 @@ $(_problem(:NonLinearLeastSquares))
 
 Create a nonlinear least squares objective for a single vectorial function `f` and its `jacobian`,
 where `range_dimension` is the dimension of the vector space `f` maps into. These three are internally
-wrapped into a [`VectorGradientFunction`](@ref) and calls the following constructor.
+wrapped into a [`VectorGradientFunction`](@ref) and this then calls the following constructor.
 
     ManifoldNonlinearLeastSquaresObjective(vf::AbstractFirstOrderVectorFunction, robustifier::AbstractRobustifierFunction=IdentityRobustifier())
 
@@ -2961,18 +2961,17 @@ Hence to not use the componentwise robustifier but a global one, pass `[vf,]` an
 
     ManifoldNonlinearLeastSquaresObjective(fs::Vector{<:AbstractFirstOrderVectorFunction}, robustifiers::Vector{<:AbstractRobustifierFunction}=fill(IdentityRobustifier(), length(fs)))
 
-Given a vector of [`AbstractFirstOrderVectorFunction`](@ref)`s to represent the single blocks
+Given a vector of [`AbstractFirstOrderVectorFunction`](@ref)s to represent the single blocks
 and a vector of robustifiers, one for each block, create the corresponding nonlinear least squares objective.
 
 # Keyword arguments
 
-The first constructor allows to pass the following keyword arguments, that are passed on to
-the corresponding
-the constructor of the As well as for the first variant of having a single block
+The first constructor, that is the variant for a single block, accepts the following keyword
+arguments, which are passed on to the corresponding [`VectorGradientFunction`](@ref) constructor.
 
 * `function_type::`[`AbstractVectorialType`](@ref)`=`[`FunctionVectorialType`](@ref)`()`: specify
   the format the residuals are given in. By default a function returning a vector.
-* `jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis()`; shortcut to specify
+* `jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis()`: shortcut to specify
   the basis the Jacobian matrix is build with.
 * `jacobian_type::`[`AbstractVectorialType`](@ref)`=`[`CoefficientVectorialType`](@ref)`(jacobian_tangent_basis)`:
   specify the format the Jacobian is given in. By default a matrix of the differential with
@@ -3035,7 +3034,7 @@ function ManifoldNonlinearLeastSquaresObjective(
 end
 
 """
-    get_cost(M::AbstractManifold, nlso::ManifoldNonLinearLeastSquaresObjective, p)
+    get_cost(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p)
 
 Compute the cost of the least squares objective, i.e.
 
@@ -3044,8 +3043,8 @@ $(_tex(:frac, "1", "2")) $(_tex(:sum, "i=1", "m")) ρ_i $(_tex(:bigl))( $(_tex(:
 ```
 
 where ``F_i: $(_math(:Manifold)) → ℝ^{n_i}`` is the ``i``th block component of length ``n_i > 0``
-and each ``ρ_i: ℝ → ℝ`` is a [* R robustifier function, cf. [`AbstractRobustifierFunction`](@ref),
-for each such a block component.
+and each ``ρ_i: ℝ → ℝ`` is a robustifier function, cf. [`AbstractRobustifierFunction`](@ref),
+one for each such block component.
 """
 function get_cost(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p)
     v = 0.0
@@ -3069,7 +3068,7 @@ function _get_cost(
     (a, _, _) = get_robustifier_values(r, vi)
     return a
 end
-# For a single vectorial function where the robustifier is applied to every in dex separately.
+# For a single vectorial function where the robustifier is applied to every index separately.
 function _get_cost(
         M, vgf::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p;
         value_cache = get_value(M, vgf, p)
@@ -3172,7 +3171,7 @@ end
 function status_summary(nlso::ManifoldNonlinearLeastSquaresObjective; context::Symbol = :default)
     (context === :short) && (return repr(nlso))
     n = length(nlso.objective)
-    return ("A nonlinear least squares objective $(n) vectorial block$(n > 1 ? "s" : "")")
+    return ("A nonlinear least squares objective with $(n) vectorial block$(n > 1 ? "s" : "")")
 end
 
 # --- Residuals
@@ -3180,9 +3179,9 @@ _doc_get_residuals_nlso = """
     get_residuals(M::AbstractManifold, nlso::ManifoldNonlinearLeastSquaresObjective, p)
     get_residuals!(M::AbstractManifold, v, nlso::ManifoldNonlinearLeastSquaresObjective, p)
 
-Compute the vector of residuals ``F(p) ∈ ℝ^n``, ``n = $(_tex(:sum, "1", "m")) n_i``.
+Compute the vector of residuals ``F(p) ∈ ℝ^n``, ``n = $(_tex(:sum, "i=1", "m")) n_i``.
 In other words this is the concatenation of the residual vectors ``F_i(p)``, ``i=1,…,m``
-of the components of the the [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`
+of the components of the [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`
 at the current point ``p`` on `M`.
 
 This can be computed in-place of `v`.
@@ -3231,9 +3230,9 @@ residuals_count(admo::AbstractDecoratedManifoldObjective) = residuals_count(get_
 #
 # ---
 @doc """
-    ManifoldProximalMapObjective{TC, TP, V <: Vector{<:Integer}} <: AbstractManifoldCostObjective{TC}
+    ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostObjective{TC}
 
-specify a problem for solvers based on the evaluation of proximal maps,
+Specify a problem for solvers based on the evaluation of proximal maps,
 which represents proximal maps ``$(_tex(:prox))_{λf_i}`` for summands ``f = f_1 + f_2+ … + f_N`` of the cost function ``f``.
 
 # Fields
@@ -3245,18 +3244,18 @@ which represents proximal maps ``$(_tex(:prox))_{λf_i}`` for summands ``f = f_1
 * `number_of_proxes`: number of proximal maps per function,
   to specify when one of the maps is a combined one such that the proximal maps
   functions return more than one entry per function, you have to adapt this value.
-  if not specified, it is set to one prox per function.
+  If not specified, it is set to one prox per function.
 
 # Constructor
 
-    ManifoldProximalMapObjective( f, proxes_f::Union{Tuple,AbstractVector}, number_of_proxes=onex(length(proxes)) )
+    ManifoldProximalMapObjective( f, proxes_f::Union{Tuple,AbstractVector}, number_of_proxes=ones(length(proxes_f)) )
 
 Generate a proximal problem with a tuple or vector of functions, where by default every function computes a single prox
 of one component of ``f``.
 
     ManifoldProximalMapObjective(f, prox_f)
 
-Generate a proximal objective for ``f`` and its proxial map ``$(_tex(:prox))_{λf}``
+Generate a proximal objective for ``f`` and its proximal map ``$(_tex(:prox))_{λf}``.
 
 ## Keyword Arguments
 
@@ -3321,7 +3320,7 @@ end
     q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalMapObjective, λ, p, i)
     get_proximal_map!(M::AbstractManifold, q, mpo::ManifoldProximalMapObjective, λ, p, i)
 
-evaluate the (`i`th) proximal map of the [`ManifoldProximalMapObjective`](@ref)` mpo` at
+Evaluate the (`i`th) proximal map of the [`ManifoldProximalMapObjective`](@ref) `mpo` at
 the point `p` of `M` with parameter ``λ>0``.
 """
 get_proximal_map(::AbstractManifold, ::ManifoldProximalMapObjective, ::Any...)
@@ -3369,7 +3368,7 @@ end
 
 
 @doc """
-    ManifoldProximalGradientObjective{TC, TG, TGG, TP} <: AbstractManifoldObjective{TC,TGG}
+    ManifoldProximalGradientObjective{TC, TG, TGG, TP} <: AbstractManifoldCostObjective{TC}
 
 Model an objective of the form
 
@@ -3378,7 +3377,7 @@ f(p) = g(p) + h(p), $(_tex(:qquad)) p ∈ $(_math(:Manifold)),
 ```
 
 where ``g: $(_math(:Manifold)) → $(_tex(:eR))`` is a differentiable function
-and ``h: → $(_tex(:eR))`` is a (possibly) lower semicontinous, and proper function.
+and ``h: $(_math(:Manifold)) → $(_tex(:eR))`` is a (possibly) lower semicontinuous and proper function.
 
 This objective provides the total cost ``f``, its smooth component ``g``,
 as well as ``$(_tex(:grad)) g`` and ``$(_tex(:prox))_{λ h}``.
@@ -3466,7 +3465,7 @@ end
     q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalGradientObjective, λ, p)
     get_proximal_map!(M::AbstractManifold, q, mpo::ManifoldProximalGradientObjective, λ, p)
 
-Evaluate proximal map of the nonsmooth component ``h`` of the [`ManifoldProximalGradientObjective`](@ref)` mpo`
+Evaluate the proximal map of the nonsmooth component ``h`` of the [`ManifoldProximalGradientObjective`](@ref) `mpo`
 at the point `p` on `M` with parameter ``λ>0``.
 """
 function get_proximal_map(M::AbstractManifold, mpgo::ManifoldProximalGradientObjective, λ, p)
@@ -3485,28 +3484,28 @@ end
 #
 # ---
 @doc """
-    ManifoldStochasticGradientObjective{F, G} <: AbstractManifoldFirstOrderObjective{F, G}
+    ManifoldStochasticGradientObjective{C, G} <: AbstractManifoldFirstOrderObjective{C, G}
 
 A stochastic gradient objective consists of
 
 * a(n optional) cost function ``f(p) = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) f_i(p)``
 * an array of gradients, ``$(_tex(:grad)) f_i(p), i=1,…,n`` which can be given in two forms
-  * as one single function ``($(_math(:Manifold)), p) ↦ (X_1,…,X_n) ∈ ($(_math(:TangentSpace))n``
+  * as one single function ``($(_math(:Manifold)), p) ↦ (X_1,…,X_n) ∈ ($(_math(:TangentSpace)))^n``
   * as a vector of functions ``$(_tex(:bigl))( ($(_math(:Manifold)), p) ↦ X_1, …, ($(_math(:Manifold)), p) ↦ X_n$(_tex(:bigr)))``.
 
-Where both variants arefunctions `(M, X, p) -> X`, where `X` is the vector of `X1,...,Xn` and `(M, X1, p) -> X1, ..., (M, Xn, p) -> Xn`,
+Where both variants are functions `(M, X, p) -> X`, where `X` is the vector of `X1,...,Xn` and `(M, X1, p) -> X1, ..., (M, Xn, p) -> Xn`,
 respectively.
 
 # Constructors
 
-    ManifoldStochasticGradientObjective(grad_f::Function; cost=Missing())
-    ManifoldStochasticGradientObjective(grad_f::AbstractVector{<:Function}; cost=Missing())
+    ManifoldStochasticGradientObjective(grad_f::Function; cost=missing)
+    ManifoldStochasticGradientObjective(grad_f::AbstractVector{<:Function}; cost=missing)
 
 Create a Stochastic gradient problem with the gradient either as one
 function (returning an array of tangent vectors) or a vector of functions (each returning one tangent vector).
 
 The optional cost can also be given as either a single function (returning a number)
-pr a vector of functions, each returning a value.
+or a vector of functions, each returning a value.
 
 ## Keyword Arguments
 
@@ -3552,7 +3551,7 @@ end
 
 Evaluate the `i`th summand of the cost.
 
-If you use a single function for the stochastic cost, then only the index `ì=1`` is available
+If you use a single function for the stochastic cost, then only the index `i=1` is available
 to evaluate the whole cost.
 """
 function get_cost(
@@ -3574,10 +3573,10 @@ function get_gradients(
     return X
 end
 @doc """
-    get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
+    get_gradients(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p)
     get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
 
-Evaluate all summands gradients ``$(_math(:Sequence, "$(_tex(:grad))f", "i", "1", "n")) at `p` and return them as a vector.
+Evaluate all summands gradients ``$(_math(:Sequence, "$(_tex(:grad))f", "i", "1", "n"))`` at `p` and return them as a vector.
 
 This can be done in-place of a vector of tangent vectors `X`.
 """
@@ -3614,9 +3613,9 @@ end
 
 @doc """
     get_gradient(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, k)
-    get_gradient!(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, Y, p, k)
+    get_gradient!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p, k)
 
-Evaluate one of the summands gradients ``$(_tex(:grad))f_k``, ``k ∈ $(_tex(:set, "1,…,n"))``, at `p` (in place of `Y`).
+Evaluate one of the summands gradients ``$(_tex(:grad))f_k``, ``k ∈ $(_tex(:set, "1,…,n"))``, at `p` (in place of `X`).
 
 If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
 since the length (or number of elements of the gradient required for allocation) can not be determined.
@@ -3649,7 +3648,7 @@ end
 
 @doc """
     get_gradient(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p)
-    get_gradient!(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, X, p)
+    get_gradient!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
 
 Evaluate the complete gradient ``$(_tex(:grad)) f = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) $(_tex(:grad)) f_i(p)`` at `p` (in place of `X`).
 
@@ -3701,16 +3700,16 @@ function status_summary(msgo::ManifoldStochasticGradientObjective; context::Symb
     A stochastic gradient objective
 
     ## Functions$(ics)
-    * subgradient ∂f:$(_MANOPT_INDENT)$(msgo.gradient!)"""
+    * gradient:$(_MANOPT_INDENT)$(msgo.gradient!)"""
 end
 
 #
 #
 # ---
 @doc """
-    ManifoldSubgradientObjective{C,S} <:AbstractManifoldCostObjective{C}
+    ManifoldSubgradientObjective{C,S} <: AbstractManifoldCostObjective{C}
 
-A structure to store information about a objective for a subgradient based optimization problem
+A structure to store information about an objective for a subgradient based optimization problem
 
 # Fields
 
@@ -3719,7 +3718,7 @@ A structure to store information about a objective for a subgradient based optim
 
 # Constructor
 
-    ManifoldSubgradientObjective(f, ∂f; evaluation = AllocatingEvaluation, p = missing)
+    ManifoldSubgradientObjective(f, ∂f; evaluation = AllocatingEvaluation(), p = missing)
 
 Generate the [`ManifoldSubgradientObjective`](@ref) for a subgradient objective, consisting
 of a (cost) function `f(M, p)` and a function `∂f(M, p)` that returns a not necessarily
@@ -3766,9 +3765,9 @@ end
 @doc """
     get_subgradient_function(objective::ManifoldSubgradientObjective, recursive=false; evaluation = AllocatingEvaluation())
 
-return the function to evaluate (just) the gradient ``$(_tex(:grad)) f(p)``
-and is of the form `(M, X, p) -> X` to work in-place of `X`,
-where either the gradient function using the decorator or without the decorator is used.
+Return the function to evaluate (just) the subgradient ``$(_tex(:subgrad)) f(p)``.
+It is of the form `(M, X, p) -> X` to work in-place of `X`,
+where either the subgradient function using the decorator or without the decorator is used.
 
 By default `recursive` is set to `false`, since usually to just pass the gradient function
 somewhere, one still wants for example the cached one or the one that still counts calls.
@@ -3821,21 +3820,20 @@ For now the functions rescaled are
 
 # Fields
 
-* `objective`: the objective that is defined in the embedding
+* `objective`: the objective that is scaled
 * `scale=1`: the scaling applied
 
 # Constructors
 
     ScaledManifoldObjective(objective, scale::Real=1)
 
-Generate a scaled manifold objective based on `objective` with `scale` being `1` by default
-in the first, `scale=-1` in the second case. The multiplication from the left with a scalar
-is also overloaded.
+Generate a scaled manifold objective based on `objective`, where `scale` is `1` by default.
+The unary minus and the multiplication from the left with a scalar are also overloaded.
 
     - objective
 
-The single-parameter minus is overloaded to have a short notation turning a maximization problem
-into a minimization one, which would fit the framework provided within Manopt.jl
+The single-parameter minus, that is `scale=-1`, is overloaded to have a short notation turning
+a maximization problem into a minimization one, which fits the framework provided within `Manopt.jl`.
 
     scale * objective
 
@@ -3865,7 +3863,7 @@ end
 @doc """
     get_cost(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
 
-Evaluate the scaled objective. ``s*f(p)``
+Evaluate the scaled objective ``s*f(p)``.
 """
 function get_cost(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
     return scaled_objective.scale * get_cost(M, scaled_objective.objective, p)
@@ -3879,7 +3877,7 @@ end
     get_gradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
     get_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldObjective, p)
 
-Evaluate the scaled gradient. ``s*$(_tex(:grad))f(p)``
+Evaluate the scaled gradient ``s*$(_tex(:grad))f(p)``.
 """
 function get_gradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
     return scaled_objective.scale * get_gradient(M, scaled_objective.objective, p)
@@ -3905,7 +3903,7 @@ end
     get_hessian(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p, X)
     get_hessian!(M::AbstractManifold, Y, scaled_objective::ScaledManifoldObjective, p, X)
 
-Evaluate the scaled Hessian ``s*$(_tex(:Hess))f(p)``
+Evaluate the scaled Hessian ``s*$(_tex(:Hess))f(p)``.
 """
 function get_hessian(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p, X)
     return scaled_objective.scale * get_hessian(M, scaled_objective.objective, p, X)
@@ -3937,7 +3935,7 @@ function status_summary(scaled_objective::ScaledManifoldObjective; context::Symb
 end
 
 @doc """
-     SimpleManifoldCachedObjective{O<:AbstractManifoldFirstOrderObjective, P, T, C} <: AbstractDecoratedManifoldObjective{O}
+    SimpleManifoldCachedObjective{O<:AbstractManifoldObjective, P, T, C} <: AbstractDecoratedManifoldObjective{O}
 
 Provide a simple cache for an [`AbstractManifoldFirstOrderObjective`](@ref) that is, this cache
 stores a point `p` and a gradient ``$(_tex(:grad)) f(p)`` in `X` as well as a cost value ``f(p)`` in `c`.
@@ -3960,8 +3958,8 @@ common function for cost & grad. It only caches the function that is actually ca
 
 * `p=`$(Manopt._link(:rand)): a point on the manifold to initialize the cache with
 * `X=get_gradient(M, obj, p)` or `zero_vector(M,p)`: a tangent vector to store the gradient in,
-  see also `initialize=`
-* `c=[`get_cost`](@ref)`(M, obj, p)` or `0.0`: a value to store the cost function in `initialize`
+  see also `initialized=`
+* `c=`[`get_cost`](@ref)`(M, obj, p)` or `0.0`: a value to store the cost in, see also `initialized=`
 * `initialized=true`: whether to initialize the cached `X` and `c` or not.
 
 where both for `p` and `X` copies are generated before they are stored.
