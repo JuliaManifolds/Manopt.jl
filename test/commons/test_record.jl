@@ -26,6 +26,10 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @test Manopt.status_summary(a) == "A RecordAction to record the current iteration number"
     # constructors
     rs = RecordSolverState(gds, a)
+    # the 2-argument show, also used by `status_summary(rs; context = :short)`
+    @test startswith(repr(rs), "RecordSolverState(")
+    @test contains(repr(rs), "RecordIteration()")
+    @test Manopt.status_summary(rs; context = :short) == repr(rs)
     Manopt.set_parameter!(rs, :Record, RecordCost())
     @test Manopt.dispatch_state_decorator(rs) === Val{true}()
     @test get_state(gds) == gds
