@@ -47,7 +47,7 @@ manifold- or objective specific defaults, and `sub_problem` is a closed form sol
 
 ## Keyword arguments
 
-the following keyword arguments are available to initialise the corresponding fields
+the following keyword arguments are available to initialize the corresponding fields
 
 * `ϵ=1e–3`
 * `ϵ_min=1e-6`
@@ -227,7 +227,7 @@ _doc_alm = """
 perform the augmented Lagrangian method (ALM) [LiuBoumal:2019](@cite).
 This method can work in-place of `p`.
 
-The aim of the ALM is to find the solution of the constrained optimisation task
+The aim of the ALM is to find the solution of the constrained optimization task
 
 $(_problem(:Constrained))
 

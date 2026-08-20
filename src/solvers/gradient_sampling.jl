@@ -67,7 +67,7 @@ $(_args(:sub_state))
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
-* `sample_size = 5` set the number of sampling points. If you initialise `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
+* `sample_size = 5` set the number of sampling points. If you initialize `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
   this parameter has no effect.
 * `sampling_radius = 0.5`
 * `sampling_radius_reduction = 0.5`
@@ -274,7 +274,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:differential))
 $(_kwargs(:evaluation; add_properties = [:GradientExample]))
 $(_kwargs(:retraction_method))
-* `sample_size = `$(_link(:manifold_dimension))`+1` set the number of sampling points. If you initialise `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
+* `sample_size = `$(_link(:manifold_dimension))`+1` set the number of sampling points. If you initialize `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
   this parameter has no effect.
 * `sampling_radius = 0.5`
 * `sampling_radius_reduction = 0.5`

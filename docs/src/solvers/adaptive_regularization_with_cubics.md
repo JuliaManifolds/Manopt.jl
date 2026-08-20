@@ -1,9 +1,8 @@
+# Adaptive regularization with cubics
 
 ```@meta
 CurrentModule = Manopt
 ```
-
-# Adaptive regularization with cubics
 
 ```@docs
 adaptive_regularization_with_cubics

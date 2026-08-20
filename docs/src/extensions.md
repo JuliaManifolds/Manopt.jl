@@ -2,7 +2,7 @@
 
 ## LineSearches.jl
 
-Manopt can be used with line search algorithms implemented in [LineSearches.jl](https://github.com/JuliaNLSolvers/LineSearches.jl).
+`Manopt.jl` can be used with line search algorithms implemented in [LineSearches.jl](https://github.com/JuliaNLSolvers/LineSearches.jl).
 This can be illustrated by the following example of optimizing the Rosenbrock function constrained to the unit sphere.
 
 ```@example
@@ -55,7 +55,7 @@ Manopt.linesearches_set_max_alpha
 
 ## Manifolds.jl
 
-Loading `Manifolds.jl` introduces the following additional functions
+Loading `Manifolds.jl` introduces the following additional functions:
 
 ```@docs
 Manopt.max_stepsize(::FixedRankMatrices, ::Any)
@@ -64,8 +64,8 @@ Manopt.max_stepsize(::TangentBundle, ::Any)
 mid_point
 ```
 
-Internally, `Manopt.jl` provides the two additional functions to choose some
-Euclidean space when needed as
+Internally, `Manopt.jl` provides the following two additional functions to choose some
+Euclidean space when needed:
 
 ```@docs
 Manopt.Rn

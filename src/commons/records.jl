@@ -391,10 +391,11 @@ end
 @doc """
     RecordStepsize <: RecordAction
 
-record the step size.
+Record the step size.
 
-## Constructor
-    RecordStepsise(r::Type{<:Real}=Float64)
+# Constructor
+
+    RecordStepsize(r::Type{<:Real}=Float64)
 """
 mutable struct RecordStepsize{R <: Real} <: RecordAction
     recorded_values::Array{R, 1}
@@ -499,7 +500,7 @@ when the `:WhenActive` symbol is present
 A dictionary for the different entry points where debug can happen, each containing
 a [`RecordAction`](@ref) to call.
 
-Note that upon the initialisation all dictionaries but the `:StartAlgorithm`
+Note that upon the initialization all dictionaries but the `:StartAlgorithm`
 one are called with an `i=0` for reset.
 """
 function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})

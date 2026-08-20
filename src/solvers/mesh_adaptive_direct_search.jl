@@ -71,7 +71,7 @@ with two small modifications:
 * `random_index`: a random index ``ι``
 $(_fields([:retraction_method, :vector_transport_method]))
 * `X::T` the last successful poll direction stored as a tangent vector.
-  initialised to the zero vector and reset to the zero vector after moving to a new tangent space.
+  initialized to the zero vector and reset to the zero vector after moving to a new tangent space.
 
 # Constructor
 

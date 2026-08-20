@@ -33,6 +33,17 @@ end
 # ---
 # check whether a context is inline or less
 _is_inline(c) = (c == :inline || c == :short)
+# _ordinal_suffix - the English ordinal suffix of a nonnegative integer,
+# for example 1 -> "st", 12 -> "th", 23 -> "rd". Julia provides no such helper.
+# Used for the “every nth iteration” phrasing of the `…Every` status summaries.
+function _ordinal_suffix(n::Integer)
+    (n % 100) ∈ 11:13 && return "th" # the teens are always “th”
+    r = n % 10
+    (r == 1) && return "st"
+    (r == 2) && return "nd"
+    (r == 3) && return "rd"
+    return "th"
+end
 # _in_str - indent a string for use within another one
 # * `indent = 0` how often to raise indentation by `indent_str` (`_MANOPT_INDENT` by default)
 # * `headers = 1` how often to increase headers, also on headers that are indented with `indent_str`

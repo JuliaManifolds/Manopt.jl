@@ -13,9 +13,9 @@ The usual call is given by
 that performs the record for the current problem and solver combination, and where `k` is
 the current iteration.
 
-By convention `i=0` is interpreted as "For Initialization only," so only
-initialize internal values, but not trigger any record, that the record is
-called from within [`stop_solver!`](@ref) which returns true afterwards.
+By convention `k=0` is interpreted as “for initialization only”: only
+initialize internal values, but do not trigger any record. Note that the record is
+called from within [`stop_solver!`](@ref), which returns `true` afterwards.
 
 Any negative value is interpreted as a “reset”, and should hence delete all stored recordings,
 for example when reusing a `RecordAction`.
@@ -30,31 +30,32 @@ abstract type RecordAction <: AbstractStateAction end
 @doc """
     RecordSolverState <: AbstractManoptSolverState
 
-append to any [`AbstractManoptSolverState`](@ref) the decorator with record capability,
+Append to any [`AbstractManoptSolverState`](@ref) the decorator with record capability.
 Internally a dictionary is kept that stores a [`RecordAction`](@ref) for
 several concurrent modes using a `Symbol` as reference.
 The default mode is `:Iteration`, which is used to store information that is recorded during
-the iterations. RecordActions might be added to `:Start` or `:Stop` to record values at the
-beginning or for the stopping time point, respectively
+the iterations. `RecordAction`s might be added to `:Start` or `:Stop` to record values at the
+beginning or for the stopping time point, respectively.
 
-The original options can still be accessed using the [`get_state`](@ref) function.
+The original state can still be accessed using the [`get_state`](@ref) function.
 
 # Fields
 
-* `options`          the options that are extended by debug information
-* `recordDictionary` a `Dict{Symbol,RecordAction}` to keep track of all
+* `state`:            the state that is extended by record information
+* `recordDictionary`: a `NamedTuple` of [`RecordAction`](@ref)s to keep track of all
   different recorded values
 
 # Constructors
 
-    RecordSolverState(o,dR)
+    RecordSolverState(s, dR)
 
-construct record decorated [`AbstractManoptSolverState`](@ref), where `dR` can be
+Construct a record decorated [`AbstractManoptSolverState`](@ref), where `dR` can be
 
-* a [`RecordAction`](@ref), then it is stored within the dictionary at `:Iteration`
-* an `Array` of [`RecordAction`](@ref)s, then it is stored as a
-  `recordDictionary`(@ref).
+* a [`RecordAction`](@ref), then it is stored within the dictionary at `:Iteration`.
 * a `Dict{Symbol,RecordAction}`.
+* an `Array` of [`RecordAction`](@ref)s, `Symbol`s and `String`s, which is passed to
+  the [`RecordFactory`](@ref).
+* a single `Symbol`, which is also passed to the [`RecordFactory`](@ref).
 """
 mutable struct RecordSolverState{S <: AbstractManoptSolverState, TRD <: NamedTuple} <:
     AbstractManoptSolverState
@@ -107,8 +108,8 @@ dispatch_state_decorator(::RecordSolverState) = Val(true)
 @doc """
     has_record(s::AbstractManoptSolverState)
 
-Indicate whether the [`AbstractManoptSolverState`](@ref)` s` are decorated with
-[`RecordSolverState`](@ref)
+Indicate whether the [`AbstractManoptSolverState`](@ref) `s` is decorated with
+a [`RecordSolverState`](@ref).
 """
 has_record(::RecordSolverState) = true
 has_record(s::AbstractManoptSolverState) = _has_record(s, dispatch_state_decorator(s))
@@ -116,9 +117,9 @@ _has_record(s::AbstractManoptSolverState, ::Val{true}) = has_record(s.state)
 _has_record(::AbstractManoptSolverState, ::Val{false}) = false
 
 """
-    set_parameter!(ams::RecordSolverState, ::Val{:Record}, args...)
+    set_parameter!(rss::RecordSolverState, ::Val{:Record}, args...)
 
-Set certain values specified by `args...` into the elements of the `recordDictionary`
+Set certain values specified by `args...` into the elements of the `recordDictionary`.
 """
 function set_parameter!(rss::RecordSolverState, ::Val{:Record}, args...)
     for d in values(rss.recordDictionary)
@@ -142,7 +143,7 @@ end
 @doc """
     get_record_state(s::AbstractManoptSolverState)
 
-return the [`RecordSolverState`](@ref) among the decorators from the [`AbstractManoptSolverState`](@ref) `o`
+Return the [`RecordSolverState`](@ref) among the decorators of the [`AbstractManoptSolverState`](@ref) `s`.
 """
 function get_record_state(s::AbstractManoptSolverState)
     return _get_record_state(s, dispatch_state_decorator(s))
@@ -156,23 +157,22 @@ end
 get_record_state(s::RecordSolverState) = s
 
 @doc """
-    get_record_action(s::AbstractManoptSolverState, s::Symbol)
+    get_record_action(s::AbstractManoptSolverState, symbol::Symbol=:Iteration)
 
-return the action contained in the (first) [`RecordSolverState`](@ref) decorator within the [`AbstractManoptSolverState`](@ref) `o`.
-
+Return the action contained in the (first) [`RecordSolverState`](@ref) decorator within the [`AbstractManoptSolverState`](@ref) `s`.
 """
 function get_record_action(s::AbstractManoptSolverState, symbol::Symbol = :Iteration)
     if haskey(s.recordDictionary, symbol)
         return s.recordDictionary[symbol]
     else
-        error("No record known for key :$s found")
+        error("No record known for key :$symbol found")
     end
 end
 @doc """
-    get_record(s::RecordSolverState, [,symbol=:Iteration])
+    get_record(s::RecordSolverState[, symbol=:Iteration])
 
-return the recorded values from within the [`RecordSolverState`](@ref) `s` that where
-recorded with respect to the `Symbol symbol` as an `Array`. The default refers to
+Return the recorded values from within the [`RecordSolverState`](@ref) `s` that were
+recorded with respect to the `Symbol` `symbol` as an `Array`. The default refers to
 any recordings during an `:Iteration`.
 
 When called with arbitrary [`AbstractManoptSolverState`](@ref), this method looks for the
@@ -182,14 +182,14 @@ function get_record(s::RecordSolverState, symbol::Symbol = :Iteration)
     return get_record(get_record_action(s, symbol))
 end
 @doc """
-    get_record(s::RecordSolverState, [,symbol=:Iteration], i...)
+    get_record(s::RecordSolverState[, symbol=:Iteration], i...)
 
-return the recorded values from within the [`RecordSolverState`](@ref) `s` that where
+Return the recorded values from within the [`RecordSolverState`](@ref) `s` that were
 recorded with respect to the symbol `symbol` as an `Array`.
 The default refers to any recordings during an `:Iteration`.
 
-The following arguments `i...` can be used to access further elements of that recoding,
-either in number `i` of a further symbol to address recorded elements
+The following arguments `i...` can be used to access further elements of that recording,
+either by an index `i` or by a further symbol addressing the recorded elements.
 """
 function get_record(s::RecordSolverState, symbol::Symbol, i...)
     return get_record(get_record_action(s, symbol), i...)
@@ -201,21 +201,21 @@ end
 @doc """
     get_record(r::RecordAction)
 
-return the recorded values stored within a [`RecordAction`](@ref) `r`.
+Return the recorded values stored within a [`RecordAction`](@ref) `r`.
 """
 get_record(r::RecordAction) = r.recorded_values
 get_record(r::RecordAction, k) = r.recorded_values
 
 """
-    get_index(rs::RecordSolverState, s::Symbol)
-    ro[s]
+    getindex(rs::RecordSolverState, s::Symbol)
+    rs[s]
 
 Get the recorded values for recorded type `s`, see [`get_record`](@ref) for details.
 
-    get_index(rs::RecordSolverState, s::Symbol, i...)
-    ro[s, i...]
+    getindex(rs::RecordSolverState, s::Symbol, i...)
+    rs[s, i...]
 
-Access the recording type of type `s` and call its [`RecordAction`](@ref) with `[i...]`.
+Access the recording of type `s` and call its [`RecordAction`](@ref) with `[i...]`.
 """
 getindex(rs::RecordSolverState, s::Symbol) = get_record(rs, s)
 getindex(rs::RecordSolverState, s::Symbol, i...) = get_record_action(rs, s)[i...]
@@ -242,11 +242,11 @@ end
 @doc """
     RecordEvery <: RecordAction
 
-record only every ``k``th iteration.
+Record only every ``k``-th iteration.
 Otherwise (optionally, but activated by default) just update internal tracking
 values.
 
-This method does not perform any record itself but relies on it's children's methods
+This method does not perform any record itself but relies on its children's methods.
 """
 mutable struct RecordEvery <: RecordAction
     record::RecordAction
@@ -287,10 +287,7 @@ function status_summary(re::RecordEvery; context::Symbol = :default)
         end
         return "[$s, $(re.every)]"
     end
-    s = ""
-    (re.every % 10 == 2) && (s = "every $(re.every)nd")
-    (re.every % 10 == 3) && (s = "every $(re.every)rd")
-    (re.every % 10 ∉ [2, 3]) && (s = "every $(re.every)th")
+    s = "every $(re.every)$(_ordinal_suffix(re.every))"
     (re.every == 1) && (s = "every")
     (context === :inline) && return "A RecordAction that records its inner action $s iteration"
     return """
@@ -305,31 +302,35 @@ getindex(r::RecordEvery, k) = get_record(r, k)
 """
     RecordGroup <: RecordAction
 
-group a set of [`RecordAction`](@ref)s into one action, where the internal [`RecordAction`](@ref)s
-act independently, but the results can be collected in a grouped fashion, a tuple per calls of this group.
-The entries can be later addressed either by index or semantic Symbols
+Group a set of [`RecordAction`](@ref)s into one action, where the internal [`RecordAction`](@ref)s
+act independently, but the results can be collected in a grouped fashion, a tuple per call of this group.
+The entries can be later addressed either by index or by semantic `Symbol`s.
 
 # Constructors
+
     RecordGroup(g::Array{<:RecordAction, 1})
 
-construct a group consisting of an Array of [`RecordAction`](@ref)s `g`,
+Construct a group consisting of an `Array` of [`RecordAction`](@ref)s `g`.
 
-    RecordGroup(g, symbols)
+    RecordGroup(g, symbols::Dict{Symbol,Int})
+
+Additionally store a dictionary that maps `Symbol`s to indices within `g`.
 
 # Examples
+
     g1 = RecordGroup([RecordIteration(), RecordCost()])
 
-A RecordGroup to record the current iteration and the cost. The cost can then be accessed using `get_record(r,2)` or `r[2]`.
+A `RecordGroup` to record the current iteration and the cost. The cost can then be accessed using `get_record(g1, 2)` or `g1[2]`.
 
     g2 = RecordGroup([RecordIteration(), RecordCost()], Dict(:Cost => 2))
 
-A RecordGroup to record the current iteration and the cost, which can then be accessed using `get_record(:Cost)` or `r[:Cost]`.
+A `RecordGroup` to record the current iteration and the cost, which can then be accessed using `get_record(g2, :Cost)` or `g2[:Cost]`.
 
     g3 = RecordGroup([RecordIteration(), RecordCost() => :Cost])
 
-A RecordGroup identical to the previous constructor, just a little easier to use.
-To access all recordings of the second entry of this last `g3` you can do either `g4[2]` or `g[:Cost]`,
-the first one can only be accessed by `g4[1]`, since no symbol was given here.
+A `RecordGroup` identical to the previous constructor, just a little easier to use.
+To access all recordings of the second entry of this last `g3` you can do either `g3[2]` or `g3[:Cost]`,
+the first one can only be accessed by `g3[1]`, since no symbol was given here.
 """
 mutable struct RecordGroup <: RecordAction
     group::Array{RecordAction, 1}
@@ -361,7 +362,7 @@ mutable struct RecordGroup <: RecordAction
                 push!(g, records[i].first)
                 push!(si, records[i].second => i)
             else
-                error("Unrecognised element of recording $(repr(records[i])) at entry $i.")
+                error("Unrecognized element of recording $(repr(records[i])) at entry $i.")
             end
         end
         return RecordGroup(g, si)
@@ -387,19 +388,19 @@ end
 @doc """
     get_record(r::RecordGroup)
 
-return an array of tuples, where each tuple is a recorded set per iteration or record call.
+Return an array of tuples, where each tuple is a recorded set per iteration or record call.
 
-    get_record(r::RecordGroup, k::Int)
+    get_record(r::RecordGroup, i)
 
-return an array of values corresponding to the `i`th entry in this record group
+Return an array of values corresponding to the ``i``-th entry in this record group.
 
     get_record(r::RecordGroup, s::Symbol)
 
-return an array of recorded values with respect to the `s`, see [`RecordGroup`](@ref).
+Return an array of recorded values with respect to the symbol `s`, see [`RecordGroup`](@ref).
 
     get_record(r::RecordGroup, s1::Symbol, s2::Symbol,...)
 
-return an array of tuples, where each tuple is a recorded set corresponding to the symbols `s1, s2,...` per iteration / record call.
+Return an array of tuples, where each tuple is a recorded set corresponding to the symbols `s1, s2,...` per iteration / record call.
 """
 get_record(r::RecordGroup) = length(r.group) > 0 ? [zip(get_record.(r.group)...)...] : []
 get_record(r::RecordGroup, i) = get_record(r.group[i])
@@ -417,7 +418,7 @@ end
     getindex(r::RecordGroup, i)
     r[i]
 
-return an array of recorded values with respect to the `s`, the symbols from the tuple `sT` or the index `i`.
+Return an array of recorded values with respect to the symbol `s`, the symbols from the tuple `sT` or the index `i`.
 See [`get_record`](@ref get_record(r::RecordGroup)) for details.
 """
 getindex(::RecordGroup, ::Any...)
@@ -428,16 +429,17 @@ getindex(r::RecordGroup, i) = get_record(r, i)
 @doc """
     RecordSubsolver <: RecordAction
 
-Record the current sub solvers recording, by calling [`get_record`](@ref)
-on the sub state with
+Record the current sub solver's recording, by calling [`get_record`](@ref)
+on the sub state with the symbols stored in `record`.
 
 # Fields
-* `records`: an array to store the recorded values
-* `symbols`: arguments for [`get_record`](@ref). Defaults to just one symbol `:Iteration`, but could be set to also record the `:Stop` action.
+
+* `recorded_values`: an array to store the recorded values
+* `record`: arguments for [`get_record`](@ref). Defaults to just one symbol `:Iteration`, but could be set to also record the `:Stop` action.
 
 # Constructor
 
-    RecordSubsolver(; record=[:Iteration,], record_type=eltype([]))
+    RecordSubsolver(; record=:Iteration, record_type=eltype([]))
 """
 mutable struct RecordSubsolver{R} <: RecordAction
     recorded_values::Vector{R}
@@ -462,10 +464,10 @@ function status_summary(rsr::RecordSubsolver{R}; context::Symbol = :default) whe
     (context === :short) && return ":Subsolver"
     (context === :inline) && return "A RecordAction to specify something to record from each subsolver run"
     return """
-    A RecordAction to record elements in from each subsolver run of type $R.
+    A RecordAction to record elements from each subsolver run of type $R.
 
     ## Recorded values
-    The following recorded symbols from the sub state are recorded in every iteration of the (outer) solver
+    The following recorded symbols from the sub state are recorded in every iteration of the (outer) solver.
     $(join([ "  * :$(s)" for s in rsr.record], "\n"))
     """
 end
@@ -473,15 +475,15 @@ end
 @doc """
     RecordWhenActive <: RecordAction
 
-record action that only records if the `active` boolean is set to true.
+A record action that only records if the `active` boolean is set to true.
 This can be set from outside and is for example triggered by [`RecordEvery`](@ref)
 on recordings of a subsolver. While this is for sub solvers maybe not completely necessary,
 recording values that are never accessible, is not that useful.
 
 # Fields
 
-* `active`:        a boolean that can (de-)activated from outside to turn on/off debug
-* `always_update`: whether or not to call the inner debugs with nonpositive iterates (init/reset)
+* `active`:        a boolean that can be (de-)activated from outside to turn recording on/off
+* `always_update`: whether or not to call the inner record action with nonpositive iterations (init/reset)
 
 # Constructor
 

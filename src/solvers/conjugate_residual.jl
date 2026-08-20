@@ -22,7 +22,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
     ConjugateResidualState(TpM::TangentSpace,slso::SymmetricLinearSystemObjective; kwargs...)
 
-Initialise the state with default values.
+Initialize the state with default values.
 
 ## Keyword arguments
 
@@ -142,12 +142,12 @@ $(_fields(:at_iteration))
 
     StopWhenRelativeResidualLess(c, ε; norm_r = 2*c*ε)
 
-Initialise the stopping criterion.
+Initialize the stopping criterion.
 
 !!! note
 
     The initial norm of the vector field ``c = $(_tex(:norm, "b"))``
-    that is stored internally is updated on initialisation, that is,
+    that is stored internally is updated on initialization, that is,
     if this stopping criterion is called with `k<=0`.
 """
 mutable struct StopWhenRelativeResidualLess{R} <: StoppingCriterion
@@ -212,7 +212,7 @@ Compute the solution of ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p ``, where
 * ``0_p`` is the zero vector ``$(_math(:TangentSpace))``.
 
 This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
-is initialised with ``X^{(0)}`` as the zero vector and
+is initialized with ``X^{(0)}`` as the zero vector and
 
 * the initial residual ``r^{(0)} = -b(p) - $(_tex(:Cal, "A"))(p)[X^{(0)}]``
 * the initial conjugate direction ``d^{(0)} = r^{(0)}``

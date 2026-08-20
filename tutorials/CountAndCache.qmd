@@ -101,7 +101,7 @@ we can use the `cache=` keyword argument.
 Since now both the cache and the count “extend” the capability of the objective,
 the order is important: on the high-level interface, the `count` is treated first, which
 means that only actual function calls and not cache look-ups are counted.
-With the proper initialisation, you can use any caches here that support the
+With the proper initialization, you can use any caches here that support the
 `get!(function, cache, key)!` update. All parts of the objective that can currently be cached are listed at [`ManifoldCachedObjective`](@ref). The solver call has a keyword `cache` that takes a tuple`(c, vs, n)` of three arguments, where `c` is a symbol for the type of cache, `vs` is a vector of symbols, which calls to cache and `n` is the size of the cache. If the last element is not provided, a suitable default (currently`n=10`) is used.
 
 Here we want to use `c=:LRU` caches for `vs=[Cost, :Gradient]` with a size of `n=25`.

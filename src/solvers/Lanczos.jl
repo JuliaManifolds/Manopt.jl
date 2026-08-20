@@ -156,7 +156,7 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
         # This is also the first coefficient in the tridiagonal matrix
         ls.tridig_matrix[1, 1] = α
         ls.Hp_residual .= ls.Hp - α * ls.Lanczos_vectors[1]
-        #this is the minimiser of one dimensional model
+        #this is the minimizer of one dimensional model
         ls.coefficients[1] = (α - sqrt(α^2 + 4 * ls.σ * nX)) / (2 * ls.σ)
     else # `i > 1`
         β = norm(M, p, ls.Hp_residual)

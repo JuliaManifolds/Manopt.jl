@@ -1,16 +1,16 @@
+# The Manopt.jl Solver state
+
 ```@meta
 CurrentModule = Manopt
 ```
-
-# The Manopt.jl Solver state
 
 The solver state represents all parameters that determine the solver's setup as well as interim memory, e.g. to avoid allocations or to keep certain variables in between iterations. These should also allow insight into how the solver is performing.
 
 A state contains [callbacks](state/callback.md) and a [stopping criterion](stopping_criterion.md)
 as mandatory elements and usually the iterate is stored in the field `p`.
-A state can be [decorated](state/decorator.md) to add functionality
+A state can be [decorated](state/decorator.md) to add functionality.
 
-Further elements a state can use are
+Further elements a state can use are:
 
 * a [stepsize](stepsize.md)
 * a [sub solver and sub state](state/sub.md)
@@ -29,8 +29,8 @@ Order = [:type]
 Modules = [Manopt]
 Pages = ["base/state/abstract_state.jl"]
 Order = [:function]
-Public=true
-Private=false
+Public = true
+Private = false
 ```
 
 ### Internal functions
@@ -39,6 +39,6 @@ Private=false
 Modules = [Manopt]
 Pages = ["base/state/abstract_state.jl"]
 Order = [:function]
-Public=false
-Private=true
+Public = false
+Private = true
 ```

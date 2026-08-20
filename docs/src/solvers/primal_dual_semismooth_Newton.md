@@ -1,8 +1,8 @@
+# [Primal-dual Riemannian semismooth Newton algorithm](@id solver-pdrssn)
+
 ```@meta
 CurrentModule = Manopt
 ```
-
-# [Primal-dual Riemannian semismooth Newton algorithm](@id solver-pdrssn)
 
 The Primal-dual Riemannian semismooth Newton Algorithm is a second-order method derived from the [`ChambollePock`](@ref).
 

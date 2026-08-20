@@ -1,5 +1,9 @@
 # Actions
 
+```@meta
+CurrentModule = Manopt
+```
+
 An action is a callable structure, usually with the signature `(problem, state, iterate)`,
 that performs something. Consider them elementary building blocks, for example a single
 [debug](debug.md) output action, that can be combined into larger “things acting”.

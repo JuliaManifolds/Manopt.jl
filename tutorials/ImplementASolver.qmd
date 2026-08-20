@@ -123,7 +123,7 @@ function RandomWalkState(M::AbstractManifold, p::P=rand(M);
 end
 ```
 
-Parametrising the state avoid that we have abstract typed fields.
+Parametrizing the state avoid that we have abstract typed fields.
 The keyword arguments for the retraction and stopping criterion are the ones usually used
 in `Manopt.jl` and provide an easy way to construct this state now.
 
@@ -133,7 +133,7 @@ States usually have a shortened name as their variable, we use `rws` for our sta
 
 There is basically only two methods we need to implement for our solver
 
-- `initialize_solver!(mp, rws)` which initialises the solver before the first iteration
+- `initialize_solver!(mp, rws)` which initializes the solver before the first iteration
 - `step_solver!(mp, rws, i)` which implements the `i`th iteration, where `i` is given to you as the third parameter
 - `get_iterate(rws)` which accesses the iterate from other places in the solver
 - `get_solver_result(rws)` returning the solvers final (best) point we reached.

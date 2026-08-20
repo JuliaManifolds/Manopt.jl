@@ -113,7 +113,7 @@ For most debugs, there further exists a longer form to specify the format to pri
 We want to use this to specify the format to print `ϵ`.
 This is done by putting the corresponding symbol together with the string to use in formatting into a tuple like `(:ϵ," | ϵ: %.8f")`, where we can already include the divider as well.
 
-A main problem now is, that this debug is issued every sub solver call or initialisation, as the following print of just a `.` per sub solver test/call illustrates
+A main problem now is, that this debug is issued every sub solver call or initialization, as the following print of just a `.` per sub solver test/call illustrates
 
 ```{julia}
 p3 = exact_penalty_method(
@@ -210,7 +210,7 @@ run_with_callback()
 ```
 
 This “simple” mode has the disadvantage, that we do not have access to anything else
-from “within” the solver and it is called both in the initialisation (at “iterate 0”), hence it counts one step more than the previous stopping criterion.
+from “within” the solver and it is called both in the initialization (at “iterate 0”), hence it counts one step more than the previous stopping criterion.
 Therefore, passing a function to `debug=` is the way to
 activate the (extended) variant, where the callback has to have the same form as the
 action functor.

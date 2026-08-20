@@ -482,8 +482,8 @@ See [`AdaptiveWNGradient`](@ref) for the mathematical details.
 * `alternate_bound::F`: how to determine ``$(_tex(:hat, "b"))_k`` as a function of `(bmin, bk, hat_c) -> hat_bk`
 * `gradient_reduction::R`: the gradient reduction factor threshold ``α ∈ [0,1)``
 * `gradient_bound::R`: the bound ``b_k``.
-* `weight::R`: ``ω_k``, initialised to ``ω_0 =`` `norm(M, p, X)` if this is not zero, `1.0` otherwise.
-* `count::I`: ``c_k``, initialised to ``c_0 = 0``.
+* `weight::R`: ``ω_k``, initialized to ``ω_0 =`` `norm(M, p, X)` if this is not zero, `1.0` otherwise.
+* `count::I`: ``c_k``, initialized to ``c_0 = 0``.
 
 # Constructor
 
@@ -1863,10 +1863,10 @@ end
 
 Compute a step size according to a method proposed by Polyak, cf. the Dynamic step size
 discussed in Section 3.2 of [Bertsekas:2015](@cite).
-This has been generalised here to both the Riemannian case and to approximate the minimum cost value.
+This has been generalized here to both the Riemannian case and to approximate the minimum cost value.
 
 Let ``f_{$(_tex(:text, "best"))}`` be the best cost value seen until now during some iterative
-optimisation algorithm and let ``γ_k`` be a sequence of numbers that is square summable, but not summable.
+optimization algorithm and let ``γ_k`` be a sequence of numbers that is square summable, but not summable.
 
 Then the step size computed here reads
 

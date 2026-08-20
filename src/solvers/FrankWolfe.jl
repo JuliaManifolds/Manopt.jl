@@ -62,7 +62,7 @@ _doc_FW_sub = """
 
 A struct to store the current state of the [`Frank_Wolfe_method`](@ref)
 
-It comes in two forms, depending on the realisation of the `subproblem`.
+It comes in two forms, depending on the realization of the `subproblem`.
 
 # Fields
 
@@ -81,11 +81,11 @@ $_doc_FW_sub
 
     FrankWolfeState(M, sub_problem, sub_state; kwargs...)
 
-Initialise the Frank Wolfe method state.
+Initialize the Frank Wolfe method state.
 
 FrankWolfeState(M, sub_problem; evaluation=AllocatingEvaluation(), kwargs...)
 
-Initialise the Frank Wolfe method state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
+Initialize the Frank Wolfe method state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 
 ## Input
 
@@ -235,7 +235,7 @@ the constrained problem
 
 $_doc_FW_problem
 
-where the main step is a constrained optimisation is within the algorithm,
+where the main step is a constrained optimization is within the algorithm,
 that is the sub problem (Oracle)
 
 $_doc_FW_sub

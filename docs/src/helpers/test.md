@@ -4,7 +4,7 @@
 Manopt.Test
 ```
 
-For now those tests mainly consider a few parts from `ManoptExamples.jl`
+For now these tests mainly consider a few parts from `ManoptExamples.jl`
 and a few dummy types.
 
 ```@docs

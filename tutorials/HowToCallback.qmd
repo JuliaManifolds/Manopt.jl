@@ -60,7 +60,7 @@ where the `hook` is the specific hook name currently calling `cb`,
 and `problem` and `state` can of course be more precisely specified to fit the solver you run.
 
 As an example here, we generate a list of the Hooks visited when only performing the first step of the solver run. We collect them in a string,
-that starts before the initialisation, and generates a list for every step.
+that starts before the initialization, and generates a list for every step.
 All this is collected in a globak string
 
 ```{julia}
@@ -71,7 +71,7 @@ function visited_hooks(hook, problem, state, k)
         global vhs = """
             # Visited Hooks during this solver run
 
-            ## Initialisation
+            ## Initialization
             """
     end
     if hook === :BeforeStep # Start new list every step

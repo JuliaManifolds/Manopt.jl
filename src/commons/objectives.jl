@@ -528,8 +528,8 @@ function inequality_constraints_length(admo::AbstractDecoratedManifoldObjective)
 end
 
 @doc """
-    is_feasible(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, kwargs...)
-    is_feasible(M::AbstractManifold, o::AbstractDecoratedManifoldObjective, p, kwargs...)
+    is_feasible(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p; kwargs...)
+    is_feasible(M::AbstractManifold, o::AbstractDecoratedManifoldObjective, p; kwargs...)
 
 Evaluate whether a point `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo`.
 That is for the provided inequality constraints ``g: $(_math(:Manifold)) → ℝ^m`` and equality constraints ``h: $(_math(:Manifold)) → ℝ^m``
@@ -1998,7 +1998,7 @@ Initialize the `ManifoldCountObjective` to wrap `objective`, initializing the se
 
     ManifoldCountObjective(M::AbstractManifold, objective::AbstractManifoldObjective, count::AbstractVector{Symbol}, init=0)
 
-Count function calls on `objective` using the symbols in `count` initialising all entries to `init`.
+Count function calls on `objective` using the symbols in `count` initializing all entries to `init`.
 """
 struct ManifoldCountObjective{
         P, O <: AbstractManifoldObjective, I <: Union{<:Integer, AbstractVector{<:Integer}},
@@ -2735,7 +2735,7 @@ function get_differential_function(
     if haskey(mfo.functions, :differential)
         return mfo.functions[:differential]
     else
-        return (M, p, X; kwargs...) -> get_differential(M, mfo, p, X, kwargs...)
+        return (M, p, X; kwargs...) -> get_differential(M, mfo, p, X; kwargs...)
     end
 end
 function get_gradient(
@@ -3966,7 +3966,7 @@ where both for `p` and `X` copies are generated before they are stored.
 
     SimpleManifoldCachedObjective(obj::AbstractManifoldFirstOrderObjective, p, X, c; initialized = false)
 
-Similar as above but initialising all fields directly and without copies and `initialized` indicated whether
+Similar as above but initializing all fields directly and without copies and `initialized` indicated whether
 the three values correspond to an evaluation from `obj`.
 """
 mutable struct SimpleManifoldCachedObjective{

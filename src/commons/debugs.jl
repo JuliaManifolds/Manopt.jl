@@ -1624,7 +1624,7 @@ when the `:WhenActive` symbol is present
 A dictionary for the different entry points where debug can happen, each containing
 a [`DebugAction`](@ref) to call.
 
-Note that upon the initialisation all dictionaries but the `:StartAlgorithm`
+Note that upon the initialization all dictionaries but the `:StartAlgorithm`
 one are called with an `i=0` for reset.
 
 # Examples

@@ -14,7 +14,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `κ::R`:                     the linear convergence target rate.
 * `project!`:                 for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* `randomize`:          indicate whether `X` is initialised to a random vector or not
+* `randomize`:          indicate whether `X` is initialized to a random vector or not
 * `residual::T`:                 the gradient of the model ``m(Y)``
 $(_fields(:stopping_criterion; name = "stop"))
 * `θ::R`:                     the superlinear convergence target rate of ``1+θ``
@@ -28,7 +28,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
     TruncatedConjugateGradientState(TpM::TangentSpace, Y=rand(TpM); kwargs...)
 
-Initialise the TCG state.
+Initialize the TCG state.
 
 ## Input
 
@@ -38,7 +38,7 @@ Initialise the TCG state.
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `κ=0.1`
-* `project!::F=copyto!`: initialise the numerical stabilisation to just copy the result
+* `project!::F=copyto!`: initialize the numerical stabilization to just copy the result
 * `randomize=false`
 * `θ=1.0`
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(base_manifold(TpM)) / 4`
@@ -475,7 +475,7 @@ $(_kwargs(:evaluation))
 * `κ=0.1`:                the linear convergence target rate.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* `randomize=false`:      indicate whether `X` is initialised to a random vector or not. This disables preconditioning.
+* `randomize=false`:      indicate whether `X` is initialized to a random vector or not. This disables preconditioning.
 $(_kwargs(:retraction_method))
 $(
     _kwargs(

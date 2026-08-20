@@ -216,8 +216,8 @@ function status_summary(de::DebugEvery; context::Symbol = :default)
         (de.debug isa DebugGroup) && (s = s[3:(end - 2)])
         return "[$s, $(de.every)]"
     end
-    (context == :inline) && return "The Debug $(status_summary(de.debug; context = context)) only printed every $(de.every)th iteration"
-    return "A DebugAction wrapping the following DebugAction to only print it every $(de.every)th iteration.\n$(_in_str(status_summary(de.debug; context = context)))"
+    (context == :inline) && return "The Debug $(status_summary(de.debug; context = context)) only printed every $(de.every)$(_ordinal_suffix(de.every)) iteration"
+    return "A DebugAction wrapping the following DebugAction to only print it every $(de.every)$(_ordinal_suffix(de.every)) iteration.\n$(_in_str(status_summary(de.debug; context = context)))"
 end
 function set_parameter!(de::DebugEvery, e::Val, args...)
     set_parameter!(de.debug, e, args...)

@@ -167,7 +167,7 @@ linear operators.
         basis = DefaultOrthonormalBasis(),
     )
 
-Note that the keyword `residuals` initialises the `value_cache` field.
+Note that the keyword `residuals` initializes the `value_cache` field.
 """
 mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
         R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective, TVC <: AbstractVector{R}, TJC <: AbstractVector, TB <: AbstractBasis,
@@ -444,7 +444,7 @@ act as safeguards, see [`get_LevenbergMarquardt_scaling`](@ref).
         residuals = zeros(residuals_count(get_objective(objective))),
     )
 
-Note that the keyword `residuals` initialises the `value_cache` field.
+Note that the keyword `residuals` initializes the `value_cache` field.
 """
 mutable struct LevenbergMarquardtLinearSurrogateObjective{
         R <: Real, TO <: ManifoldNonlinearLeastSquaresObjective, TVC <: AbstractVector{R},
@@ -815,7 +815,7 @@ function _get_linear_operator!(
     @. y = α * (y - operator_scaling * t * value_cache)
     return y
 end
-# Componenwise: Decouple
+# Componentwise: Decouple
 function _get_linear_operator!(
         M::AbstractManifold, y, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p, X,
         value_cache = get_value(M, o, p); threshold::Real, mode::Symbol, Y_cache, c_cache
@@ -1141,7 +1141,7 @@ function _get_normal_vector_field!(
     add_adjoint_jacobian!(M, X, o, p, y; Y_cache = Y_cache)
     return X
 end
-# Componenwise C again reduces to a diagonal
+# Componentwise C again reduces to a diagonal
 function _get_normal_vector_field!(
         M::AbstractManifold, X, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = nothing,
@@ -1200,7 +1200,7 @@ function add_normal_vector_field!(
     add_adjoint_jacobian!(M, c, o, p, y, B)
     return c
 end
-# Compponentwise: decouple, C is a diagonalmatrix
+# Componentwise: decouple, C is a diagonal matrix
 function add_normal_vector_field!(
         M::AbstractManifold, c, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p, B::AbstractBasis;
         value_cache = get_value(M, o, p), threshold::Real, mode::Symbol, Y_cache = nothing,

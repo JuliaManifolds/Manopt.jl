@@ -203,7 +203,7 @@ end
 @doc """
     DefaultManoptProblem{TM <: AbstractManifold, Objective <: AbstractManifoldObjective}
 
-Model a default manifold problem, that (just) consists of the domain of optimisation,
+Model a default manifold problem, that (just) consists of the domain of optimization,
 that is an `AbstractManifold`, and an [`AbstractManifoldObjective`](@ref).
 """
 struct DefaultManoptProblem{TM <: AbstractManifold, O <: AbstractManifoldObjective} <:

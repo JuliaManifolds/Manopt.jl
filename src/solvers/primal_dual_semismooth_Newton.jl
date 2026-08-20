@@ -60,7 +60,7 @@ $(_fields(:p; name = "m"))
 $(_fields(:p; type = "Q", name = "n", M = "N"))
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `primal_stepsize::Float64`:  proximal parameter of the primal prox
-* `reg_param::Float64`:        regularisation parameter for the Newton matrix
+* `reg_param::Float64`:        regularization parameter for the Newton matrix
 $(_fields(:retraction_method))
 $(_fields(:stopping_criterion; name = "stop"))
 * `update_dual_base`:          function to update the dual base
@@ -356,7 +356,7 @@ $(_kwargs([:evaluation, :inverse_retraction_method]))
 * `Λ=missing`: the exact operator, that is required if `Λ(m)=n` does not hold;
   `missing` indicates, that the forward operator is exact.
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
-* `reg_param=1e-5`: regularisation parameter for the Newton matrix
+* `reg_param=1e-5`: regularization parameter for the Newton matrix
   Note that this changes the arguments the `forward_operator` is called.
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))

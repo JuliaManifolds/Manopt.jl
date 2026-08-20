@@ -14,7 +14,7 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 * `project!`:                for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 $(_fields(:stopping_criterion; name = "stop"))
-* `randomize`:               indicate whether `X` is initialised to a random vector or not
+* `randomize`:               indicate whether `X` is initialized to a random vector or not
 * `ρ_regularization`:        regularize the model fitness ``ρ`` to avoid division by zero
 $(_fields([:sub_problem, :sub_state]))
 * `σ`:                       Gaussian standard deviation when creating the random initial tangent vector
@@ -299,7 +299,7 @@ $(_kwargs(:evaluation))
   see `evaluation`, and by default set to the identity.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* `randomize=false`:      indicate whether `X` is initialised to a random vector or not.
+* `randomize=false`:      indicate whether `X` is initialized to a random vector or not.
   This disables preconditioning.
 * `ρ_regularization=1e3`: regularize the performance evaluation ``ρ`` to avoid numerical inaccuracies.
 * `reduction_factor=0.25`: trust-region reduction factor

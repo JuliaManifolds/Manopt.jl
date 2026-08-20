@@ -42,7 +42,7 @@ so they are persistent within your activated Environment, see also [`set_paramet
 # Currently used settings
 
 * `:Mode`: the mode can be set to `"Tutorial"` to get several hints, especially in scenarios where
-  the optimisation on manifolds is different from the usual “experience” in
+  the optimization on manifolds is different from the usual “experience” in
   (classical, Euclidean) optimization.
   Any other value has the same effect as not setting it.
 * `:KeywordsErrorMode`: specify how to handle the case when unknown keywords are passed to a solver.

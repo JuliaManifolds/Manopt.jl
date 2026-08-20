@@ -22,7 +22,7 @@ Public = false
 Private = true
 ```
 
-## Linear Systems
+## Linear systems
 
 ```@autodocs
 Modules = [Manopt]

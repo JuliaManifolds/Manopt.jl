@@ -1,5 +1,9 @@
 # The State Decorator Pattern
 
+```@meta
+CurrentModule = Manopt
+```
+
 Features can be added to a solver by decorating it.
 Decorators wrap a solver state to perform additional operations
 in the initialization step, before or after the iteration step or when the solver stops.

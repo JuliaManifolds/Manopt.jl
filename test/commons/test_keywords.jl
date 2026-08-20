@@ -26,10 +26,23 @@ using Manopt, Test
     @testset "check errors" begin
         @test Manopt.keywords_accepted(show, :error, Manopt.Keywords(Set([:a])))
         @test Manopt.keywords_accepted(show, :error, Manopt.Keywords(Set([:a])); a = 1)
-        # Always warn on deprecations
+        # Always warn on deprecations – in every mode, also when nothing else is wrong
         @test_logs (:warn,) Manopt.keywords_accepted(
             show, :none,
             Manopt.Keywords(Set{Symbol}(), Set([:a])); a = 1
+        )
+        @test_logs (:warn,) Manopt.keywords_accepted(
+            show, :warn,
+            Manopt.Keywords(Set{Symbol}(), Set([:a])); a = 1
+        )
+        @test_logs (:warn,) Manopt.keywords_accepted(
+            show, :error,
+            Manopt.Keywords(Set{Symbol}(), Set([:a])); a = 1
+        )
+        # on `:warn` a deprecated *and* an unaccepted keyword are reported in a single warning
+        @test_logs (:warn,) Manopt.keywords_accepted(
+            show, :warn,
+            Manopt.Keywords(Set([:x]), Set([:a])); a = 1, b = 2
         )
         @test_throws Manopt.ManoptKeywordError Manopt.keywords_accepted(
             show, :error,

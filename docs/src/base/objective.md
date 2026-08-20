@@ -1,8 +1,8 @@
+# The Objective
+
 ```@meta
 CurrentModule = Manopt
 ```
-
-# The Objective
 
 Within the optimization problem
 
@@ -22,7 +22,7 @@ There is a hierarchy of objectives in order to provide default implementations f
 ## [Decorated objectives](@id meta-objectives)
 
 Following the [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern) approach,
-an objective can be “wrapped” to gain certain properties. For example to [cache](@ref ManifoldCachedObjective) or [count](@ref ManifoldCountObjective) function evaluation.
+an objective can be “wrapped” to gain certain properties, for example to [cache](@ref ManifoldCachedObjective) or [count](@ref ManifoldCountObjective) function evaluations.
 
 ```@docs
 AbstractDecoratedManifoldObjective
@@ -53,7 +53,7 @@ Public = false
 ## [A zeroth order objective](@id zeroth-order-objectives)
 
 For the first and simplest objective, only the cost function itself is available.
-This is for example used in solvers like [`NelderMead`](@ref) or [`particle_swarm`](@ref)
+This is for example used in solvers like [`NelderMead`](@ref) or [`particle_swarm`](@ref).
 
 ```@autodocs
 Modules = [Manopt]
@@ -76,7 +76,7 @@ Public = false
 ## [A first order objective](@id first-order-objectives)
 
 A smooth first order objective usually contains the gradient.
-This interface allows to unify access.
+This interface unifies the access to it.
 
 ```@autodocs
 Modules = [Manopt]
@@ -98,7 +98,7 @@ Public = false
 
 ## [A first order nonsmooth objective](@id first-order-nonsmooth-objectives)
 
-First order nonsmooth objectives come in a variety of flavours, mainly splitting based, where the single summands themselves have certain properties. They are collected in the following
+First order nonsmooth objectives come in a variety of flavours, mainly splitting based, where the single summands themselves have certain properties. They are collected in the following.
 
 ```@autodocs
 Modules = [Manopt]
@@ -110,7 +110,7 @@ Public = true
 
 ## [A second order objective](@id second-order-objectives)
 
-The following concrete objectives can be used to store second-order objectives.
+The following types and functions provide the access to second-order information.
 
 ```@autodocs
 Modules = [Manopt]
@@ -130,11 +130,11 @@ Private = true
 Public = false
 ```
 
-## [A Linear system in a tangent space](@id sec-linear-systems-objective)
+## [A linear system in a tangent space](@id sec-linear-systems-objective)
 
 A linear system in a tangent space can be modelled in different ways. Most prominently
 either as a matrix as soon as a basis of the tangent space is fixed or as a linear operator
-in a basis-free representation
+in a basis-free representation.
 
 ```@autodocs
 Modules = [Manopt]

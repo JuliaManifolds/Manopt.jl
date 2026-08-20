@@ -8,7 +8,7 @@ abstract type AbstractSubProblemSolverState <: AbstractManoptSolverState end
 @doc """
     get_sub_problem(ams::AbstractSubProblemSolverState)
 
-Access the sub problem of a solver state that involves a sub optimisation task.
+Access the sub problem of a solver state that involves a sub optimization task.
 By default this returns `ams.sub_problem`.
 """
 get_sub_problem(ams::AbstractSubProblemSolverState) = ams.sub_problem
@@ -16,7 +16,7 @@ get_sub_problem(ams::AbstractSubProblemSolverState) = ams.sub_problem
 @doc """
     get_sub_state(ams::AbstractSubProblemSolverState)
 
-Access the sub state of a solver state that involves a sub optimisation task.
+Access the sub state of a solver state that involves a sub optimization task.
 By default this returns `ams.sub_state`.
 """
 get_sub_state(ams::AbstractSubProblemSolverState) = ams.sub_state

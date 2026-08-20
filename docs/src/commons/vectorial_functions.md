@@ -1,6 +1,10 @@
 # Vectorial Functions
 
-This section provides several concrete [vector functions](@ref sec-vector-function),
+```@meta
+CurrentModule = Manopt
+```
+
+This section provides several concrete [vector functions](@ref sec-vector-function)
 that can be used for example to model constraints.
 
 ## Functions

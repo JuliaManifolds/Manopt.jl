@@ -82,7 +82,7 @@ Construct a Nelder-Mead Option with a default population (if not provided) of se
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
-* `p=copy(M, population.pts[1])`: initialise the storage for the best point (iterate)¨
+* `p=copy(M, population.pts[1])`: initialize the storage for the best point (iterate)¨
 * `population=`[`NelderMeadSimplex`](@ref)`(M)`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
   a [`StoppingCriterion`](@ref)

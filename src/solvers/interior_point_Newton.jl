@@ -92,8 +92,8 @@ defined here evaluates this condition and returns true if both ``c_1`` and ``c_2
     InteriorPointCentralityCondition(cmo, γ)
     InteriorPointCentralityCondition(cmo, γ, τ1, τ2)
 
-Initialise the centrality conditions.
-The parameters `τ1`, `τ2` are initialise to zero if not provided.
+Initialize the centrality conditions.
+The parameters `τ1`, `τ2` are initialize to zero if not provided.
 
 !!! note
 

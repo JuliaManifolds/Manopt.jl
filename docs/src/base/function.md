@@ -1,12 +1,12 @@
+# Modelling functions in Manopt.jl
+
 ```@meta
 CurrentModule = Manopt
 ```
 
-# Modelling functions in Manopt.jl
-
-An [objective](objective.md) of an optimisation [problem](problem.md) may contain different
-functions related to the objective. In the simplest case a cost function ``f(p)`` and its (Riemannian) gradient
-``\operatorname{grad} f(p)`` which returns the tangent vector of the steepest ascent direction of
+An [objective](objective.md) of an optimization [problem](problem.md) may contain different
+functions related to the objective. In the simplest case these are a cost function ``f(p)`` and its (Riemannian) gradient
+``\operatorname{grad} f(p)``, which returns the tangent vector of the steepest ascent direction of
 a differentiable function ``f``. Any function that returns points on a manifold, (tangent) vectors or matrices
 is internally assumed to work in-place. For the gradient this for example means the function
 is of the form `grad_f!(M, X, p)`, where the gradient is computed in-place of `X`.
@@ -17,9 +17,9 @@ the return value is second and then the arguments follow.
 ## A wrapper to guarantee in-place evaluations
 
 A user might instead also implement a function `grad_f(M, p) -> X`. This is then
-internally “wrapped” by a [`InplaceManifoldFunction`](@ref) and can be specified for any
+internally “wrapped” by an [`InplaceManifoldFunction`](@ref) and can be specified for any
 [`AbstractManifoldObjective`](@ref) or [high-level interfaces](high-level-interface.md)
-with the `evaluation = ` keyword that accepts an [`AbstractEvaluationType`](@ref)
+with the `evaluation=` keyword that accepts an [`AbstractEvaluationType`](@ref)
 and for the example here one specifies it as [`AllocatingEvaluation`](@ref)`()`.
 
 ```@docs
@@ -31,16 +31,17 @@ maybe_wrap_function
 
 ## A wrapper to guarantee mutating variables
 
-A few Manifolds like the [`Circle`](@extref `Manifolds.Circle`)`()` or [`PositiveNumbers`](@extref `Manifolds.PositiveNumbers`)
-might work on real numbers, which are not mutable. Internally, `Manopt` assumes that its variables,
-e.g. points and tangent vectors, are mutable. Therefore, variables in the [high-level interfaces](high-level-interface.md)
-are automatically wrapped internally. Similarly functions can be wrapped in a [`MutableManifoldFunction`](@ref).
+A few manifolds like the [`Circle`](@extref `Manifolds.Circle`)`()` or [`PositiveNumbers`](@extref `Manifolds.PositiveNumbers`)`()`
+might work on real numbers, which are not mutable. Internally, `Manopt.jl` assumes that its variables,
+for example points and tangent vectors, are mutable. Therefore, variables in the [high-level interfaces](high-level-interface.md)
+are automatically wrapped internally. Similarly, functions can be wrapped in a [`MutableManifoldFunction`](@ref).
 
 Both the [`AbstractManifoldObjective`](@ref) and [high-level interfaces](high-level-interface.md)
-can determine this when being passed a `p = ` keyword argument providing the point used to define
+can determine this when being passed a `p=` keyword argument providing the point used to define
 functions on the manifold.
 
 ```@docs
+maybe_wrap_variable
 maybe_unwrap_variable
 ```
 
@@ -54,9 +55,9 @@ Private = true
 Public = true
 ```
 
-## [Function Modelling constraints](@id sec-constrained-function)
+## [Functions modelling constraints](@id sec-constrained-function)
 
-Function modelling constraints can be defined with the following interface.
+Functions modelling constraints can be defined with the following interface.
 
 ### Types and functions
 
@@ -71,8 +72,8 @@ Public = false
 ## [Robustifier](@id sec-robustifier)
 
 A robustifier is a smoothing technique for nonsmooth objectives.
-Here it is applied in a way that the goal is to approximate the square root in a smooth way.
-For concrete functions available see the [common robustifiers](../commons/records.md).
+Here it is applied with the goal of approximating the square root in a smooth way.
+For the concrete functions available see the [common robustifiers](../commons/robustifiers.md).
 
 ### Types
 

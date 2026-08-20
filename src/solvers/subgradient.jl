@@ -16,7 +16,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
     SubGradientMethodState(M::AbstractManifold; kwargs...)
 
-Initialise the Subgradient method state
+Initialize the Subgradient method state
 
 # Keyword arguments
 

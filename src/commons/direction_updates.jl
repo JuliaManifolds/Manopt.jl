@@ -109,7 +109,7 @@ function status_summary(mgr::MomentumGradientRule; context::Symbol = :default)
 end
 
 """
-    MomentumGradient(args..., kwargs...)
+    MomentumGradient(args...; kwargs...)
 
 Append a momentum to a gradient processor.
 
@@ -250,7 +250,7 @@ $(_args(:M)) (optional)
 
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
-* `gradients=[zero_vector(M, p) for _ in 1:n]` how to initialise the internal storage
+* `gradients=[zero_vector(M, p) for _ in 1:n]` how to initialize the internal storage
 * `n=10` number of gradient evaluations to take the mean over
 $(_kwargs([:X, :vector_transport_method]))
 

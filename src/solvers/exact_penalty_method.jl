@@ -198,7 +198,7 @@ _doc_EPM = """
     exact_penalty_method!(M, cmo::ConstrainedManifoldObjective, p; kwargs...)
 
 perform the exact penalty method (EPM) [LiuBoumal:2019](@cite)
-The aim of the EPM is to find a solution of the constrained optimisation task
+The aim of the EPM is to find a solution of the constrained optimization task
 
 $(_problem(:Constrained))
 

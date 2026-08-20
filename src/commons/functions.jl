@@ -47,7 +47,7 @@ result is returned (again) as a mutable variable.
     MutableManifoldFunction(f, p::P, result = :Number)
     MutableManifoldFunction(f, P, result = :Number)
 
-Initialise the wrapper for a function `f` defined on a manifold, where `p` is a point on the manifold,
+Initialize the wrapper for a function `f` defined on a manifold, where `p` is a point on the manifold,
 to store the original point type `P` for the arguments.
 """
 struct MutableManifoldFunction{result, P, F} <: AbstractDecoratedManifoldFunction{F}

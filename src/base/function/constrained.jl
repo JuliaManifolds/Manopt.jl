@@ -20,7 +20,7 @@ end
 get_parameter(acf::AbstractConstrainedFunction, ::Val{:λ}) = acf.λ
 
 """
-    AbstractConstrainedSlackFunction{T,R}
+    AbstractConstrainedSlackFunction{T,R} <: AbstractManifoldFunction
 
 A common supertype for functors that model constraint functions with slack.
 
@@ -30,7 +30,7 @@ This supertype additionally provides access to the fields
 * `s::T`: the slack parameter
 * `β::R`: the barrier parameter
 """
-abstract type AbstractConstrainedSlackFunction{T, R} end
+abstract type AbstractConstrainedSlackFunction{T, R} <: AbstractManifoldFunction end
 
 function set_parameter!(acsf::AbstractConstrainedSlackFunction{T}, ::Val{:s}, s::T) where {T}
     acsf.s = s

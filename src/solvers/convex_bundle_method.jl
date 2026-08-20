@@ -520,7 +520,7 @@ mutable struct NullStepBackTrackingStepsize{TRM <: AbstractRetractionMethod, P, 
     end
 end
 function (nsbt::NullStepBackTrackingStepsize)(
-        amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int, kwargs...
+        amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; kwargs...
     )
     M = get_manifold(amp)
     nsbt.last_stepsize = cbms.last_stepsize

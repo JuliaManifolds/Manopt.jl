@@ -246,9 +246,9 @@ function keywords_accepted(
             push!(a, k)
         end
     end
-    # Warn for deprecated
-    if (mode != :warn) && length(d) > 0 # Warn about deprecated always
-        # if we are on warn the next kicks in anyways
+    # Warn about deprecated keywords always – but only once:
+    # on `:warn` with unaccepted keywords present, the block below already reports them.
+    if length(d) > 0 && !((mode === :warn) && (length(a) > 0))
         @warn keyword_error_string(f, Keywords(Set{Symbol}(), d); hint = false)
     end
     if length(a) > 0

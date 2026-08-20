@@ -1,5 +1,9 @@
 # The Record decorator for solver states
 
+```@meta
+CurrentModule = Manopt
+```
+
 ```@autodocs
 Modules = [Manopt]
 Pages = ["base/state/record.jl"]

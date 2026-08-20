@@ -1,4 +1,3 @@
-
 # Conjugate gradient descent
 
 ```@meta

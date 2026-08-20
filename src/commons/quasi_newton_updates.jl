@@ -402,7 +402,7 @@ space ``$(_math(:TangentSpace; p = "p_{k+1}"))``, preferably with an isometric v
 
 * `basis`:                  an `AbstractBasis` to use in the tangent spaces
 * `matrix`:                 the matrix which represents the approximating operator.
-* `initial_scale`:          when initialising the update, a unit matrix is used as initial approximation, scaled by this factor
+* `initial_scale`:          when initializing the update, a unit matrix is used as initial approximation, scaled by this factor
 * `update`:                 a [`AbstractQuasiNewtonUpdateRule`](@ref).
 $(_fields(:vector_transport_method))
 
@@ -548,7 +548,7 @@ This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory 
 
 The approximating operator is represented by ``m`` stored pairs of tangent
 vectors ``$(_math(:Sequence, "$(_tex(:widetilde, "s"))", "i", "k-m", "k-1"))`` and ``$(_math(:Sequence, "$(_tex(:widetilde, "y"))", "i", "k-m", "k-1"))``
-in the ``k``-th iteration. For the calculation of the search direction ``X_k``, the generalisation
+in the ``k``-th iteration. For the calculation of the search direction ``X_k``, the generalization
 of the two-loop recursion is used (see [HuangGallivanAbsil:2015](@cite)),
 since it only requires inner products and linear combinations of tangent vectors in ``$(_math(:TangentSpace; p = "p_k"))``.
 For that the stored pairs of tangent vectors ``s_i, y_i``,
