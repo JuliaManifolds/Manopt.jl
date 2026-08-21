@@ -31,7 +31,7 @@ features:
     link: https://juliamanifolds.github.io/ManifoldsBase.jl/stable/
   - icon: 🧩
     title: Composable
-    details: All components are designed in a modular fashion, for example problems, objectives, and solver states, but also stopping criteria and step sizes. They can be reused and combined easily.
+    details: All components are designed in a modular fashion, for example problems, objectives, and solver states, but also stopping criteria and step sizes. They can be reused and combined easily. Points and tangent vectors can be represented using arbitrary Julia types.
   - icon: ⚡️
     title: Efficient
     details: All methods use in-place evaluations for both the objective and the manifold. There is also an advanced, but easy to use caching system further promoting efficiency.
