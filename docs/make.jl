@@ -102,7 +102,7 @@ end
 
 # (c) load necessary packages for the docs
 using Documenter
-using DocumenterCitations, DocumenterInterLinks
+using DocumenterCitations, DocumenterCodeBlocks, DocumenterInterLinks, DocumenterLandingPage
 using LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
 
@@ -149,7 +149,7 @@ end
 # (e) finally make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style = :alpha)
 links = InterLinks(
-    "JuMP" => ("https://jump.dev/JuMP.jl/stable/"),
+    # "JuMP" => ("https://jump.dev/JuMP.jl/stable/"),
     "ManifoldDiff" => ("https://juliamanifolds.github.io/ManifoldDiff.jl/stable/"),
     "ManifoldsBase" => ("https://juliamanifolds.github.io/ManifoldsBase.jl/stable/"),
     "Manifolds" => ("https://juliamanifolds.github.io/Manifolds.jl/stable/"),
@@ -157,7 +157,7 @@ links = InterLinks(
 makedocs(;
     format = Documenter.HTML(;
         prettyurls = run_on_CI || ("--prettyurls" ∈ ARGS),
-        assets = ["assets/favicon.ico", "assets/citations.css", "assets/link-icons.css"],
+        assets = ["assets/favicon.ico", "assets/link-icons.css"],
         size_threshold = 1100 * 2^10,      # raise slightly 200 to to 300 KiB
         size_threshold_warn = 900 * 2^10, # raise from 500 KiB to 1.1 MB (for search index)
         search_size_threshold_warn = 2000 * 2^10,
@@ -209,40 +209,38 @@ makedocs(;
             "Trust-Regions Solver" => "solvers/trust_regions.md",
             "Vector Bundle Newton Method" => "solvers/vectorbundle_newton.md",
         ],
-        "Commons (WIP)" => [
+        "Commons" => [
             "Overview" => "commons/index.md",
             "Debug Outputs" => "commons/debugs.md",
+            "Functions" => "commons/functions.md",
+            "Objectives" => "commons/objectives.md",
+            "Problems" => "commons/problems.md",
+            "Record Actions" => "commons/records.md",
+            "Robustifiers" => "commons/robustifiers.md",
+            "States" => "commons/states.md",
+            "Stepsize Rules" => "commons/stepsizes.md",
+            "Stopping Criteria" => "commons/stopping_criteria.md",
+            "Vector Functions" => "commons/vectorial_functions.md",
         ],
-        "Plans (deprecated)" => [
-            "Specify a Solver" => "plans/index.md",
-            "Problem" => "plans/problem.md",
-            "Objective" => [
-                "Cost objectvies" => "plans/objectives/cost.md",
-                "First-order objectives" => "plans/objectives/first_order.md",
-                "Second-order objectives" => "plans/objectives/second_order.md",
-                "Constrained objectives" => "plans/objectives/constrained.md",
-                "Splitting-based objectives" => "plans/objectives/splitting_based.md",
-                "Subproblem objectives" => "plans/objectives/sub.md",
-                "Vectorial objectives" => "plans/objectives/vectorial.md",
-                "Linear Systems" => "plans/objectives/linear_system.md",
-                "Decorators for objectives" => "plans/objectives/decorated.md",
-            ],
-            "Solver State" => "plans/state.md",
-            "Stepsize" => "plans/stepsize.md",
-            "Stopping Criteria" => "plans/stopping_criteria.md",
-            "Recording values" => "plans/record.md",
-        ],
-        "Developer Guide (WIP)" => [
+        "Developer Guide" => [
             "Introduction" => "base/index.md",
+            "Function" => "base/function.md",
+            "High-Level interface" => "base/high-level-interface.md",
             "Problem" => "base/problem.md",
+            "Default Factory" => "base/default_factory.md",
             "Objective" => "base/objective.md",
+            "Solver" => "base/solver.md",
             "Solver State" => [
                 "Overview" => "base/state.md",
                 "Action" => "base/state/action.md",
                 "Callback" => "base/state/callback.md",
                 "Debug" => "base/state/debug.md",
                 "Decorator" => "base/state/decorator.md",
+                "Record" => "base/state/record.md",
+                "Sub tasks" => "base/state/sub.md",
             ],
+            "Stepsize" => "base/stepsize.md",
+            "Stopping Criterion" => "base/stopping_criterion.md",
         ],
         "Helpers" => [
             "Checks" => "helpers/checks.md",
@@ -254,8 +252,7 @@ makedocs(;
         "Changelog" => "changelog.md",
         "References" => "references.md",
     ],
-    plugins = [bib, links],
+    plugins = [bib, links, CodeBlocks(), LandingPage()],
 )
 deploydocs(; repo = "github.com/JuliaManifolds/Manopt.jl", push_preview = true)
-#back to main env
 Pkg.activate()

@@ -67,7 +67,7 @@ $(_args(:sub_state))
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
-* `sample_size = 5` set the number of sampling points. If you initialise `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
+* `sample_size = 5` set the number of sampling points. If you initialize `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
   this parameter has no effect.
 * `sampling_radius = 0.5`
 * `sampling_radius_reduction = 0.5`
@@ -130,11 +130,19 @@ mutable struct GradientSamplingState{
         )
     end
 end
-
 function GradientSamplingState(
-        M::AbstractManifold,
-        sub_problem = gradient_sampling_subsolver!,
-        sub_state = InplaceEvaluation();
+        M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
+    )
+    return GradientSamplingState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function GradientSamplingState(
+        M::AbstractManifold, sub_problem = gradient_sampling_subsolver!; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
+    return GradientSamplingState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
+end
+function GradientSamplingState(
+        M::AbstractManifold, sub_problem::Pr, sub_state::St;
         callbacks::C = Dict{Symbol, Function}(),
         p::P = rand(M),
         X::T = zero_vector(M, p),
@@ -158,7 +166,7 @@ function GradientSamplingState(
             M, GradientSamplingState; retraction_method = retraction_method
         ),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
-    ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, C <: AbstractDict{Symbol}}
+    ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, C <: AbstractDict{Symbol}, Pr <: Union{G, AbstractManoptProblem} where {G}, St <: AbstractManoptSolverState}
     m1 = length(sampled_points)
     m2 = length(sampled_vectors)
     m3 = length(convex_hull_coeffs)
@@ -266,7 +274,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:differential))
 $(_kwargs(:evaluation; add_properties = [:GradientExample]))
 $(_kwargs(:retraction_method))
-* `sample_size = `$(_link(:manifold_dimension))`+1` set the number of sampling points. If you initialise `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
+* `sample_size = `$(_link(:manifold_dimension))`+1` set the number of sampling points. If you initialize `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
   this parameter has no effect.
 * `sampling_radius = 0.5`
 * `sampling_radius_reduction = 0.5`
@@ -289,14 +297,10 @@ function gradient_sampling(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(
-        f_, grad_f_; evaluation = evaluation, differential = differential
-    )
+    p_ = maybe_wrap_variable(p)
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, differential = differential)
     rs = gradient_sampling(M, mgo, p_; kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function gradient_sampling(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...
@@ -350,7 +354,7 @@ function gradient_sampling!(
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     s = GradientSamplingState(
-        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        M, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, GradientSamplingState),
         p = p,
         sample_size = sample_size,
@@ -426,16 +430,9 @@ function step_solver!(
     end
     return gss
 end
-
+# closed form in-place
 function _gradient_sampling_subsolver(
-        M, gss::GradientSamplingState{P, T, R, F, ClosedFormSubSolverState{AllocatingEvaluation}}
-    ) where {P, T, R, F} # Point, Vector, Reals, Function (of closed form problem)
-    gss.convex_hull_coeffs = gss.sub_problem(M, gss.p, gss.sampled_vectors)
-    return gss
-end
-# (b) closed form in-place
-function _gradient_sampling_subsolver(
-        M, gss::GradientSamplingState{P, T, R, F, ClosedFormSubSolverState{InplaceEvaluation}}
+        M, gss::GradientSamplingState{P, T, R, F, ClosedFormSubSolverState}
     ) where {P, T, R, F}
     gss.sub_problem(M, gss.convex_hull_coeffs, gss.p, gss.sampled_vectors)
     return gss

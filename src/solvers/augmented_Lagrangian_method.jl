@@ -47,7 +47,7 @@ manifold- or objective specific defaults, and `sub_problem` is a closed form sol
 
 ## Keyword arguments
 
-the following keyword arguments are available to initialise the corresponding fields
+the following keyword arguments are available to initialize the corresponding fields
 
 * `ϵ=1e–3`
 * `ϵ_min=1e-6`
@@ -68,12 +68,8 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 [`augmented_Lagrangian_method`](@ref)
 """
 mutable struct AugmentedLagrangianMethodState{
-        P,
-        Pr <: Union{F, AbstractManoptProblem} where {F},
-        St <: AbstractManoptSolverState,
-        R <: Real,
-        C <: AbstractDict{Symbol},
-        V <: AbstractVector{<:R},
+        P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
+        R <: Real, C <: AbstractDict{Symbol}, V <: AbstractVector{<:R},
         TStopping <: StoppingCriterion,
     } <: AbstractSubProblemSolverState
     callbacks::C
@@ -140,14 +136,18 @@ mutable struct AugmentedLagrangianMethodState{
     end
 end
 function AugmentedLagrangianMethodState(
-        M::AbstractManifold,
-        co::ConstrainedManifoldObjective,
-        sub_problem;
-        evaluation::E = AllocatingEvaluation(),
+        M::AbstractManifold, co::ConstrainedManifoldObjective,
+        sub_problem, sub_state::AbstractEvaluationType;
         kwargs...,
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
-    return AugmentedLagrangianMethodState(M, co, sub_problem, cfs; kwargs...)
+    )
+    return AugmentedLagrangianMethodState(M, co, sub_problem; evaluation = sub_state, kwargs...)
+end
+function AugmentedLagrangianMethodState(
+        M::AbstractManifold, co::ConstrainedManifoldObjective, sub_problem;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
+    return AugmentedLagrangianMethodState(M, co, sub_problem_, ClosedFormSubSolverState(); kwargs...)
 end
 
 get_iterate(alms::AugmentedLagrangianMethodState) = alms.p
@@ -227,7 +227,7 @@ _doc_alm = """
 perform the augmented Lagrangian method (ALM) [LiuBoumal:2019](@cite).
 This method can work in-place of `p`.
 
-The aim of the ALM is to find the solution of the constrained optimisation task
+The aim of the ALM is to find the solution of the constrained optimization task
 
 $(_problem(:Constrained))
 
@@ -337,42 +337,22 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_alm)"
 function augmented_Lagrangian_method(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        p = rand(M);
+        M::AbstractManifold, f, grad_f, p = rand(M);
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        g = nothing,
-        h = nothing,
-        grad_g = nothing,
-        grad_h = nothing,
-        inequality_constraints::Union{Integer, Nothing} = nothing,
+        g = missing, h = missing, grad_g = missing, grad_h = missing,
+        inequality_constraints::Union{Nothing, Integer} = nothing,
         equality_constraints::Union{Nothing, Integer} = nothing,
         kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    g_ = _ensure_mutating_cost(g, p)
-    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
-    h_ = _ensure_mutating_cost(h, p)
-    grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
-
+    p_ = maybe_wrap_variable(p)
     cmo = ConstrainedManifoldObjective(
-        f_,
-        grad_f_,
-        g_,
-        grad_g_,
-        h_,
-        grad_h_;
+        f, grad_f, g, grad_g, h, grad_h;
         evaluation = evaluation,
-        inequality_constraints = inequality_constraints,
-        equality_constraints = equality_constraints,
-        M = M,
-        p = p,
+        inequality_constraints = inequality_constraints, equality_constraints = equality_constraints,
+        M = M, p = p,
     )
     rs = augmented_Lagrangian_method(M, cmo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function augmented_Lagrangian_method(
         M::AbstractManifold, cmo::O, p = rand(M); kwargs...
@@ -385,17 +365,10 @@ calls_with_kwargs(::typeof(augmented_Lagrangian_method)) = (augmented_Lagrangian
 
 @doc "$(_doc_alm)"
 function augmented_Lagrangian_method!(
-        M::AbstractManifold,
-        f::TF,
-        grad_f::TGF,
-        p;
+        M::AbstractManifold, f::TF, grad_f::TGF, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        g = nothing,
-        h = nothing,
-        grad_g = nothing,
-        grad_h = nothing,
-        inequality_constraints = nothing,
-        equality_constraints = nothing,
+        g = missing, h = missing, grad_g = missing, grad_h = missing,
+        inequality_constraints = nothing, equality_constraints = nothing,
         kwargs...,
     ) where {TF, TGF}
     if isnothing(inequality_constraints)
@@ -462,10 +435,8 @@ function augmented_Lagrangian_method!(
             M,
             # pass down objective type to sub solvers
             decorate_objective!(
-                M,
-                ManifoldGradientObjective(sub_cost, sub_grad; evaluation = evaluation);
-                objective_type = objective_type,
-                sub_kwargs...,
+                M, ManifoldGradientObjective(sub_cost, sub_grad; evaluation = evaluation, p = p);
+                objective_type = objective_type, sub_kwargs...,
             ),
         ),
         stopping_criterion::StoppingCriterion = StopAfterIteration(300) |
@@ -477,9 +448,8 @@ function augmented_Lagrangian_method!(
         kwargs...,
     ) where {O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(augmented_Lagrangian_method!; kwargs...)
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     alms = AugmentedLagrangianMethodState(
-        M, cmo, sub_problem, sub_state_storage;
+        M, cmo, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, AugmentedLagrangianMethodState),
         p = p,
         ϵ = ϵ, ϵ_min = ϵ_min, λ_max = λ_max, λ_min = λ_min, μ_max = μ_max,
@@ -491,9 +461,7 @@ function augmented_Lagrangian_method!(
         DefaultManoptProblem(M, dcmo)
     else
         ConstrainedManoptProblem(
-            M,
-            dcmo;
-            gradient_equality_range = gradient_equality_range,
+            M, dcmo; gradient_equality_range = gradient_equality_range,
             gradient_inequality_range = gradient_inequality_range,
         )
     end
@@ -512,15 +480,15 @@ end
 function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethodState, iter)
     M = get_manifold(mp)
     # use subsolver to minimize the augmented Lagrangian
-    set_parameter!(alms.sub_problem, :Objective, :Cost, :ρ, alms.ρ)
-    set_parameter!(alms.sub_problem, :Objective, :Cost, :μ, alms.μ)
-    set_parameter!(alms.sub_problem, :Objective, :Cost, :λ, alms.λ)
-    set_parameter!(alms.sub_problem, :Objective, :Gradient, :ρ, alms.ρ)
-    set_parameter!(alms.sub_problem, :Objective, :Gradient, :μ, alms.μ)
-    set_parameter!(alms.sub_problem, :Objective, :Gradient, :λ, alms.λ)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Cost), Val(:ρ), 1 / 3)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Cost), Val(:μ), alms.μ)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Cost), Val(:λ), alms.λ)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Gradient), Val(:ρ), alms.ρ)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Gradient), Val(:μ), alms.μ)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Gradient), Val(:λ), alms.λ)
     set_iterate!(alms.sub_state, M, copy(M, alms.p))
 
-    set_parameter!(alms, :StoppingCriterion, :MinIterateChange, alms.ϵ)
+    set_parameter!(alms, Val(:StoppingCriterion), Val(:MinIterateChange), alms.ϵ)
 
     new_p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
     callback(:Subsolver, mp, alms, iter)

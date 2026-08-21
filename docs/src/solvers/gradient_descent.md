@@ -17,42 +17,25 @@ GradientDescentState
 
 ## Direction update rules
 
-A field of the options is the `direction`, a [`DirectionUpdateRule`](@ref), which by default [`IdentityUpdateRule`](@ref) just evaluates the gradient but can be enhanced for example to
+A field of the options is the `direction`, a [`DirectionUpdateRule`](@ref), which by default [`IdentityUpdateRule`](@ref) just evaluates the gradient.
+The following ones are furthermore available
 
-```@docs
-AverageGradient
-DirectionUpdateRule
-IdentityUpdateRule
-MomentumGradient
-Nesterov
-PreconditionedDirection
+```@autodocs
+Modules = [Manopt]
+Pages = ["commons/direction_updates.jl"]
+Order = [:type, :function]
+Private = false
+Public = true
 ```
 
-which internally use the [`ManifoldDefaultsFactory`](@ref) and produce the internal
-elements
+### Internal functions
 
-```@docs
-Manopt.AverageGradientRule
-Manopt.ConjugateDescentCoefficientRule
-Manopt.MomentumGradientRule
-Manopt.NesterovRule
-Manopt.PreconditionedDirectionRule
-```
-
-## Debug actions
-
-```@docs
-DebugGradient
-DebugGradientNorm
-DebugStepsize
-```
-
-## Record actions
-
-```@docs
-RecordGradient
-RecordGradientNorm
-RecordStepsize
+```@autodocs
+Modules = [Manopt]
+Pages = ["commons/direction_updates.jl"]
+Order = [:type, :function]
+Private = true
+Public = false
 ```
 
 ## [Technical details](@id sec-gradient-descent-technical-details)
@@ -67,8 +50,6 @@ The [`gradient_descent`](@ref) solver requires the following functions of a mani
 ## Literature
 
 ```@bibliography
-Pages = ["gradient_descent.md"]
-Canonical=false
-
 Luenberger:1972
+Canonical=false
 ```

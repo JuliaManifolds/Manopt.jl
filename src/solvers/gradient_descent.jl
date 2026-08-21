@@ -72,7 +72,9 @@ function GradientDescentState(
     )
 end
 provided_callbacks(::Type{GradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
-get_callbacks(state::GradientDescentState) = state.callbacks
+get_callbacks(gds::GradientDescentState) = gds.callbacks
+get_iterate(gds::GradientDescentState) = gds.p
+set_iterate!(gds::GradientDescentState, M, p) = copyto!(M, gds.p, p)
 
 function (r::IdentityUpdateRule)(
         mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
@@ -120,10 +122,10 @@ function status_summary(gds::GradientDescentState; context::Symbol = :default)
     * retraction method: $(gds.retraction_method)
 
     ## Stepsize
-    $(_in_str(status_summary(gds.stepsize; context = context); indent = 0, headers = 1))
+    $(_in_str(status_summary(gds.stepsize; context = context); indent = 1, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(gds.stop; context = context); indent = 0, headers = 1))
+    $(_in_str(status_summary(gds.stop; context = context); indent = 1, headers = 1))
     This indicates convergence: $Conv"""
     return s
 end
@@ -185,14 +187,12 @@ function gradient_descent(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    p_ = maybe_wrap_variable(p)
     mgo = ManifoldGradientObjective(
-        f_, grad_f_; evaluation = evaluation, differential = differential
+        f, grad_f; differential = differential, evaluation = evaluation, p = p,
     )
     rs = gradient_descent(M, mgo, p_; kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function gradient_descent(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...
@@ -217,9 +217,7 @@ function gradient_descent!(
     return gradient_descent!(M, mgo, p; kwargs...)
 end
 function gradient_descent!(
-        M::AbstractManifold,
-        mgo::O,
-        p;
+        M::AbstractManifold, mgo::O, p;
         callbacks = Dict{Symbol, Function}(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(

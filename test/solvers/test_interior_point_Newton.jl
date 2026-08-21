@@ -31,9 +31,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             M, ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M), f
         )
         @test ipnsc.sub_state isa Manopt.ClosedFormSubSolverState
-
         p_0 = (1.0 / (sqrt(3.0))) .* [1.0, 1.0, 1.0]
-        # p_0 = 1.0 / sqrt(2) .* [0.0, 1.0, 1.0]
         p_opt = [0.0, 0.0, 1.0]
         record = [:Iterate]
         dbg = [
@@ -64,7 +62,8 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
 
         # (c) call with objective - but then we also test the Centrality cond
         coh = ConstrainedManifoldObjective(
-            f, grad_f, g, grad_g, nothing, nothing; hess_f = Hess_f, hess_g = Hess_g, M = M, p = p_0
+            f, grad_f, g, grad_g, missing, missing;
+            hess_f = Hess_f, hess_g = Hess_g, M = M, p = p_0
         )
         ipcc = InteriorPointCentralityCondition(coh, 0.9)
         q3 = interior_point_Newton(

@@ -313,9 +313,7 @@ using ManifoldDiff: grad_distance
 
     @testset "CG on the Circle" begin
         M, f, grad_f, p0, p_star = Manopt.Test.Circle_mean_task()
-        s = conjugate_gradient_descent(
-            M, f, grad_f, p0; evaluation = InplaceEvaluation(), return_state = true
-        )
+        s = conjugate_gradient_descent(M, f, grad_f, p0; return_state = true)
         p = get_solver_result(s)[]
         @test f(M, p) < f(M, p0)
         @test isapprox(M, p, p_star; atol = 5.0e-8)

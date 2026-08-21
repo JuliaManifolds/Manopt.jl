@@ -6,6 +6,63 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.4] August 21, 2026
+
+As an overarching scheme of this release, the single functions in an objective become more independent; their wrapping happens automatically and the objective gets – in turn – a bit more lightweight and has “less cases to handle”.
+
+### Added
+
+* [DocumenterCodeBlocks.jl](https://fredrikekre.github.io/DocumenterCodeBlocks.jl/stable/) plugin added to the documentation
+* [DocumenterLandingPage.jl](https://csvance.github.io/DocumenterLandingPage.jl/) enhances the start page with a short teaser for the package now.
+* Added a Developer Guide section in the documentation
+* `ManoptKeywordError` is now exported, since it is the error thrown when the `:KeywordsErrorMode` parameter is set to `"error"` and a solver receives a keyword it does not accept.
+
+### Changed
+
+* All `AbstractManifoldObjectives` had an evaluation type as first parameter.
+  This has been refactored “down to” the function level, and the functions in the objective are
+  now all expected to be in-place. This allows to combine allocating and in-place variants.
+  The constructors, however, have not changed. (#630)
+* the file structure has been changed and the `plan/` folder has been split with the following motivation
+  * all abstract types and generic implementation and documentation of functions has been moved to `base/`.
+    This is also reflected in the documentation, where the new `base/` files reflect a developer documentation that additionally includes descriptions of the design choices
+  * concrete types and their implementations have either been used to the specific solver where they are used / defined,
+    especially for solver states, or now reside in a `commons/` folder, when they are of general use for multiple solvers.
+    This structure is also reflected in the documentation.
+* a few internal abstract super types have been renamed for the new scheme that puts more focus on functions, to stay more consistent. The word “functor” is now avoided for structs that actually just represent functions.
+  * `AbstractConstrainedFunctor` has been renamed to `AbstractConstrainedFunction`
+  * `AbstractConstrainedSlackFunctor` has been renamed to `AbstractConstrainedSlackFunction`
+* `get_gradient_function` and `get_hessian_function` are unified to always return an allocating variant by default, but can also return an in-place variant now based on an `evaluation=` keyword. While this is formally breaking, since the default behaviour changed, both functions are internal and should also only be used within `Manopt.jl`.
+* objectives now also accept a `p=` keyword to automatically “wrap” functions that operate on immutable variables – internally `Manopt.jl` expects points and tangent vectors to be mutable.
+
+### Fixed
+
+* `has_converged` produced inconsistent behaviours for more complex stopping criteria. (#631)
+  This has been fixed and the function works now consistently for both `StopWhenAny` and `StopWhenAll`. (#630)
+* both in-place subsolver for the convex bundle and proximal bundle method would fail to update the result in case the size of the vector changes.
+  this is now adapted by resizing the (in-place, passed down) result vector accordingly for these subsolvers.
+* the cached and the counting objective dispatched the *inequality* constraint length onto
+  `equality_constraints_length`. Cache sizes and counters were therefore wrong whenever a problem
+  has different numbers of equality and inequality constraints.
+* the default of `start_enforcing_wolfe_conditions_at_bracketing_iteration` in `HagerZhangLinesearch`
+  was chosen by testing `initial_guess isa ConstantStepsize`, which can never hold, since
+  `ConstantInitialGuess` is not a `Stepsize`. The default was hence always `1` instead of the
+  intended `2` for a constant initial guess.
+* the `DefaultManifold` fallback of the vector norm used in the Hager-Zhang initial guess
+  computed the norm of the point instead of the norm of the tangent vector.
+* several `show`/`status_summary` methods errored or printed wrong content: `StopWhenEntryChangeLess`
+  and `StopWhenRepeated` threw on some `context=` values, `StopWhenLagrangeMultiplierLess` printed
+  `Base.names` instead of its own field, the two Wolfe-Powell line searches printed the retraction
+  method under “vector transport method”, and the objective decorators dropped the `context=`
+  keyword instead of passing it on.
+* a larger number of docstrings were corrected, where signatures, field names, or supertypes had
+  drifted from the implementation, together with formula and markup errors.
+
+### Removed
+
+* The two evaluation types of `ParentEvaluationType` and `AllocatingInplaceEvaluation` were never used anywhere, so removing them is considered nonbreaking. Internally this distinction is now anyways handled on a function level, so that neither of the cases can appear anyways. Neither of these types was ever exported.
+
+
 ## [0.6.3] July 20, 2026
 
 ### Added
@@ -921,7 +978,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 
 ### Fixed
 
-* fixed a bug, where the retraction set in `check_Hessian` was not passed on to the optional inner `check_gradient` call, which could lead to unwanted side effects, see [#342](https://github.com/JuliaManifolds/Manopt.jl/issues/342).
+* fixed a bug, where the retraction set in `check_Hessian` was not passed on to the optional inner `check_gradient` call, which could lead to unwanted side effects, see (#342).
 
 ## [0.4.46] January 1, 2024
 
@@ -941,7 +998,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 
 ### Added
 
-* Introduce `sub_kwargs` and `sub_stopping_criterion` for `trust_regions` as noticed in [#336](https://github.com/JuliaManifolds/Manopt.jl/discussions/336)
+* Introduce `sub_kwargs` and `sub_stopping_criterion` for `trust_regions` as noticed in (#336)
 
 ### Changed
 
@@ -1369,6 +1426,8 @@ and their documentation and testing has been extended.
 
 ## [0.4.0] January 10, 2023
 
+This is the first version with an actual Changelog entry
+
 ### Added
 
 * Dependency on `ManifoldDiff.jl` and a start of moving actual derivatives, differentials,
@@ -1385,3 +1444,14 @@ and their documentation and testing has been extended.
 * `AbstractManoptSolverState` replaces `Options`
 * `random_point(M)` is replaced by `rand(M)` from `ManifoldsBase.jl
 * `random_tangent(M, p)` is replaced by `rand(M; vector_at=p)`
+
+## [0.3.0] March 9, 2021
+
+## [0.2.0] April 19, 2020
+
+## [0.1.0] June 3, 2019
+
+First public release, first registered and [announced version](https://discourse.julialang.org/t/ann-manopt-jl/24906) of `Manopt.jl`.
+This version still also included what is now `Manifolds.jl`.
+
+The first commit that started `Manopt.jl` was done on November 25, 2016.

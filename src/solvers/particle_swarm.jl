@@ -279,12 +279,11 @@ function particle_swarm(
         velocity::AbstractVector = [rand(M; vector_at = y) for y in swarm],
         kwargs...,
     )
-    f_ = _ensure_mutating_cost(f, first(swarm))
-    swarm_ = [_ensure_mutating_variable(s) for s in swarm]
-    velocity_ = [_ensure_mutating_variable(v) for v in velocity]
-    mco = ManifoldCostObjective(f_)
+    swarm_ = [maybe_wrap_variable(s) for s in swarm]
+    velocity_ = [maybe_wrap_variable(v) for v in velocity]
+    mco = ManifoldCostObjective(f; p = first(swarm))
     rs = particle_swarm(M, mco, swarm_; velocity = velocity_, kwargs...)
-    return _ensure_matching_output(first(swarm), rs)
+    return maybe_unwrap_variable(first(swarm), rs)
 end
 function particle_swarm(
         M::AbstractManifold, mco::O, swarm::AbstractVector; kwargs...
@@ -297,27 +296,20 @@ calls_with_kwargs(::typeof(particle_swarm)) = (particle_swarm!,)
 
 @doc "$(_doc_PSO)"
 function particle_swarm!(M::AbstractManifold, f, swarm::AbstractVector; kwargs...)
-    mco = ManifoldCostObjective(f)
+    mco = ManifoldCostObjective(f; p = first(swarm))
     return particle_swarm!(M, mco, swarm; kwargs...)
 end
 function particle_swarm!(
-        M::AbstractManifold,
-        mco::O,
-        swarm::AbstractVector;
+        M::AbstractManifold, mco::O, swarm::AbstractVector;
         velocity::AbstractVector = [rand(M; vector_at = y) for y in swarm],
         callbacks = Dict{Symbol, Function}(),
         inertia::Real = 0.65,
         social_weight::Real = 1.4,
         cognitive_weight::Real = 1.4,
-        stopping_criterion::StoppingCriterion = StopAfterIteration(500) |
-            StopWhenSwarmVelocityLess(1.0e-4),
+        stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenSwarmVelocityLess(1.0e-4),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, eltype(swarm)),
-        inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
-            M, eltype(swarm)
-        ),
-        vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(
-            M, eltype(swarm)
-        ),
+        inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M, eltype(swarm)),
+        vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(M, eltype(swarm)),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(particle_swarm!; kwargs...)

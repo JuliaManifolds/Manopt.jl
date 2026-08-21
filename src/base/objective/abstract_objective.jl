@@ -1,19 +1,25 @@
 @doc """
-    AbstractManifoldObjective{E<:AbstractEvaluationType}
+    AbstractManifoldObjective
 
-Describe the collection of the optimization function ``f: $(_math(:Manifold)) → ℝ`` (or even a vectorial range)
-and its corresponding elements, which might for example be a gradient or (one or more) proximal maps.
+Describe the objective function ``f: $(_math(:Manifold)) → ℝ`` and all its necessary ingredients,
+for example when it consists of several summands.
 
-All these elements should usually be implemented as functions
-`(M, p) -> ...`, or `(M, X, p) -> ...` that is
+Subtypes might depend on the kind of objective in order to distinguish different available
+access functionality, e.g. to a gradient, or a proximal map.
 
-* the first argument of these functions should be the manifold `M` they are defined on
-* the argument `X` is present, if the computation is performed in-place of `X` (see [`InplaceEvaluation`](@ref))
-* the argument `p` is the place the function (``f`` or one of its elements) is evaluated __at__.
+Such a default component of the objective like the cost itself or the gradient
+should be implemented in the form
 
-the type `T` indicates the global [`AbstractEvaluationType`](@ref).
+```
+(M, v, args...) -> [...]; v
+```
+
+where `M` is a $(_link(:AbstractManifold)), `v` is memory the result is computed in,
+as well as further arguments, most prominently usually the current iterate `p`.
+
+For an allocating variant, internally the wrapper [`InplaceManifoldFunction`](@ref) should be used.
 """
-abstract type AbstractManifoldObjective{E <: AbstractEvaluationType} end
+abstract type AbstractManifoldObjective end
 
 function Base.show(io::IO, ::MIME"text/plain", amo::AbstractManifoldObjective)
     multiline = get(io, :multiline, true)
@@ -21,39 +27,38 @@ function Base.show(io::IO, ::MIME"text/plain", amo::AbstractManifoldObjective)
 end
 
 @doc """
-    AbstractDecoratedManifoldObjective{E<:AbstractEvaluationType,O<:AbstractManifoldObjective}
+    AbstractDecoratedManifoldObjective{O<:AbstractManifoldObjective}
 
 A common supertype for all decorators of [`AbstractManifoldObjective`](@ref)s to simplify dispatch.
-    The second parameter should refer to the undecorated objective (the most inner one).
+The parameter `O` should refer to the undecorated objective, that is, even for multiple decorators
+it provides insight into the innermost one.
 """
-abstract type AbstractDecoratedManifoldObjective{E, O <: AbstractManifoldObjective} <:
-AbstractManifoldObjective{E} end
+abstract type AbstractDecoratedManifoldObjective{O <: AbstractManifoldObjective} <: AbstractManifoldObjective end
 
 @doc """
-    ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <: AbstractDecoratedManifoldObjective{E,O2}
+    ReturnManifoldObjective{O2,O1<:AbstractManifoldObjective} <: AbstractDecoratedManifoldObjective{O2}
 
 A wrapper to indicate that [`get_solver_result`](@ref) should return the inner objective.
 
 The types are such that one can still dispatch on the undecorated type `O2` of the
 original objective as well.
 """
-struct ReturnManifoldObjective{E, O2, O1 <: AbstractManifoldObjective{E}} <:
-    AbstractDecoratedManifoldObjective{E, O2}
+struct ReturnManifoldObjective{O2, O1 <: AbstractManifoldObjective} <:
+    AbstractDecoratedManifoldObjective{O2}
     objective::O1
 end
 function ReturnManifoldObjective(
         o::O
-    ) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
-    return ReturnManifoldObjective{E, O, O}(o)
+    ) where {O <: AbstractManifoldObjective}
+    return ReturnManifoldObjective{O, O}(o)
 end
 function ReturnManifoldObjective(
         o::O1
     ) where {
-        E <: AbstractEvaluationType,
         O2 <: AbstractManifoldObjective,
-        O1 <: AbstractDecoratedManifoldObjective{E, O2},
+        O1 <: AbstractDecoratedManifoldObjective{O2},
     }
-    return ReturnManifoldObjective{E, O2, O1}(o)
+    return ReturnManifoldObjective{O2, O1}(o)
 end
 # The human readable version is “transparent” by default here
 function status_summary(o::ReturnManifoldObjective; kwargs...)
@@ -65,69 +70,25 @@ function Base.show(io::IO, ro::ReturnManifoldObjective)
     return print(io, ")")
 end
 
-#
-# Internal converters if the variable in the high-level interface is a number.
-#
-
-function _ensure_mutating_cost(cost, q::Number)
-    return isnothing(cost) ? cost : (M, p) -> cost(M, p[])
-end
-function _ensure_mutating_cost(cost, p)
-    return cost
-end
-
-function _ensure_mutating_gradient(grad_f, p, evaluation::AbstractEvaluationType)
-    return grad_f
-end
-function _ensure_mutating_gradient(grad_f, q::Number, evaluation::AllocatingEvaluation)
-    return isnothing(grad_f) ? grad_f : (M, p) -> [grad_f(M, p[])]
-end
-function _ensure_mutating_gradient(grad_f, q::Number, evaluation::InplaceEvaluation)
-    return isnothing(grad_f) ? grad_f : (M, X, p) -> (X .= [grad_f(M, p[])])
-end
-
-function _ensure_mutating_hessian(hess_f, p, evaluation::AbstractEvaluationType)
-    return hess_f
-end
-function _ensure_mutating_hessian(hess_f, q::Number, evaluation::AllocatingEvaluation)
-    return isnothing(hess_f) ? hess_f : (M, p, X) -> [hess_f(M, p[], X[])]
-end
-function _ensure_mutating_hessian(hess_f, q::Number, evaluation::InplaceEvaluation)
-    return isnothing(hess_f) ? hess_f : (M, Y, p, X) -> (Y .= [hess_f(M, p[], X[])])
-end
-
-function _ensure_mutating_prox(prox_f, p, evaluation::AbstractEvaluationType)
-    return prox_f
-end
-function _ensure_mutating_prox(prox_f, q::Number, evaluation::AllocatingEvaluation)
-    return isnothing(prox_f) ? prox_f : (M, λ, p) -> [prox_f(M, λ, p[])]
-end
-function _ensure_mutating_prox(prox_f, q::Number, evaluation::InplaceEvaluation)
-    return isnothing(prox_f) ? prox_f : (M, q, λ, p) -> (q .= [prox_f(M, λ, p[])])
-end
-
-_ensure_mutating_variable(p) = p
-_ensure_mutating_variable(q::Number) = [q]
-_ensure_matching_output(::T, q::Vector{T}) where {T} = length(q) == 1 ? q[] : q
-_ensure_matching_output(p, q) = q
-
 """
-    dispatch_objective_decorator(o::AbstractManoptSolverState)
+    dispatch_objective_decorator(o::AbstractManifoldObjective)
 
-Indicate internally, whether an [`AbstractManifoldObjective`](@ref) `o` to be of decorating type,
-it stores (encapsulates) an object in itself, by default in the field `o.objective`.
+Indicate internally whether an [`AbstractManifoldObjective`](@ref) `o` is of decorating type,
+that is, whether it stores (encapsulates) another objective in itself, by default in the field `o.objective`.
 
 Decorators indicate this by returning `Val{true}` for further dispatch.
 
-The default is `Val{false}`, so by default an state is not decorated.
+The default is `Val{false}`, so by default an objective is not decorated.
 """
 dispatch_objective_decorator(::AbstractManifoldObjective) = Val(false)
 dispatch_objective_decorator(::AbstractDecoratedManifoldObjective) = Val(true)
 
-"""
-    is_object_decorator(s::AbstractManifoldObjective)
+@inline _extract_val(::Val{T}) where {T} = T
 
-Indicate, whether [`AbstractManifoldObjective`](@ref) `s` are of decorator type.
+"""
+    is_objective_decorator(s::AbstractManifoldObjective)
+
+Indicate whether the [`AbstractManifoldObjective`](@ref) `s` is of decorator type.
 """
 function is_objective_decorator(s::AbstractManifoldObjective)
     return _extract_val(dispatch_objective_decorator(s))
@@ -136,13 +97,13 @@ end
 @doc """
     get_objective(o::AbstractManifoldObjective, recursive=true)
 
-return the (one step) undecorated [`AbstractManifoldObjective`](@ref) of the (possibly) decorated `o`.
+Return the undecorated [`AbstractManifoldObjective`](@ref) of the (possibly) decorated `o`.
 As long as your decorated objective stores the objective within `o.objective` and
-the [`dispatch_objective_decorator`](@ref) is set to `Val{true}`,
-the internal state are extracted automatically.
+[`dispatch_objective_decorator`](@ref) is set to `Val{true}`,
+the internal objective is extracted automatically.
 
 By default the objective that is stored within a decorated objective is assumed to be at
-`o.objective`. Overwrite `_get_objective(o, ::Val{true}, recursive) to change this behaviour for your objective `o`
+`o.objective`. Overwrite `_get_objective(o, ::Val{true}, recursive)` to change this behaviour for your objective `o`
 for both the recursive and the direct case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
@@ -158,34 +119,18 @@ end
 """
     set_parameter!(amo::AbstractManifoldObjective, element::Symbol, args...)
 
-Set a certain `args...` from the [`AbstractManifoldObjective`](@ref) `amo` to `value.
+Set a certain `element` from the [`AbstractManifoldObjective`](@ref) `amo` to a value specified
+by `args...`
 This function should dispatch on `Val(element)`.
-
-Currently supported
-* `:Cost` passes to the [`get_cost_function`](@ref)
-* `:Gradient` passes to the [`get_gradient_function`](@ref)
-* `:SubGradient` passes to the [`get_subgradient_function`](@ref)
 """
 set_parameter!(amo::AbstractManifoldObjective, e::Symbol, args...)
 
-function set_parameter!(amo::AbstractManifoldObjective, ::Val{:Cost}, args...)
-    set_parameter!(get_cost_function(amo), args...)
-    return amo
-end
-function set_parameter!(amo::AbstractManifoldObjective, ::Val{:Gradient}, args...)
-    set_parameter!(get_gradient_function(amo), args...)
-    return amo
-end
-function set_parameter!(amo::AbstractManifoldObjective, ::Val{:SubGradient}, args...)
-    set_parameter!(get_subgradient_function(amo), args...)
-    return amo
-end
 
 # For decorators the human readable version is “transparent” by default, i.e.
 # if no special addition is done, it just prints the human readable string from the child
 function status_summary(io::IO, co::AbstractDecoratedManifoldObjective; context::Symbol = :default)
-    return status_summary(io, get_objective(co, false); context = :default)
+    return status_summary(io, get_objective(co, false); context = context)
 end
 function status_summary(co::AbstractDecoratedManifoldObjective; context::Symbol = :default)
-    return status_summary(get_objective(co, false))
+    return status_summary(get_objective(co, false); context = context)
 end

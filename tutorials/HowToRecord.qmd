@@ -55,7 +55,7 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 
 ## First examples
 
-For the high level interfaces of the solvers, like [`gradient_descent`](@ref) we have to set `return_state` to `true` to obtain the whole [solver state](../plans/state.md) and not only the resulting minimizer.
+For the high level interfaces of the solvers, like [`gradient_descent`](@ref) we have to set `return_state` to `true` to obtain the whole [solver state](../base/state.md) and not only the resulting minimizer.
 
 Then we can easily use the `record=` option to add recorded values. This keyword accepts [`RecordAction`](@ref)s
 as well as several symbols as shortcuts, for example `:Cost` to record the cost, or if your options have a field `f`, `:f` would record that entry.

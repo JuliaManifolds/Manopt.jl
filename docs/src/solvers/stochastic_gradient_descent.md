@@ -27,7 +27,6 @@ StochasticGradient
 which internally uses
 
 ```@docs
-AbstractGradientGroupDirectionRule
 StochasticGradientRule
 ```
 

@@ -1,10 +1,13 @@
 # The Riemannian Chambolle-Pock algorithm
 
+```@meta
+CurrentModule = Manopt
+```
+
 The Riemannian Chambolle—Pock is a generalization of the Chambolle—Pock algorithm [ChambollePock:2011](@citet*)
 It is also known as primal-dual hybrid gradient (PDHG) or primal-dual proximal splitting (PDPS) algorithm.
 
 In order to minimize over ``p∈\mathcal M`` the cost function consisting of
-In order to minimize a cost function consisting of
 
 ```math
 F(p) + G(Λ(p)),
@@ -20,7 +23,7 @@ such that ``Λ(\mathcal C) \subset \mathcal D``.
 The algorithm is available in four variants: exact versus linearized (see `variant`)
 as well as with primal versus dual relaxation (see `relax`). For more details, see
 [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@citet*).
-In the following description is the case of the exact, primal relaxed Riemannian Chambolle—Pock algorithm.
+In the following, the case of the exact, primal relaxed Riemannian Chambolle—Pock algorithm is described.
 
 Given base points ``m∈\mathcal C``, ``n=Λ(m)∈\mathcal D``,
 initial primal and dual values ``p^{(0)} ∈\mathcal C``, ``ξ_n^{(0)} ∈T_n^*\mathcal N``,
@@ -29,7 +32,7 @@ as well as acceleration ``\gamma``.
 
 As an initialization, perform ``\bar p^{(0)} \gets p^{(0)}``.
 
-The algorithms performs the steps ``k=1,…,`` (until a [`StoppingCriterion`](@ref) is fulfilled with)
+The algorithm performs the steps ``k=1,…,`` (until a [`StoppingCriterion`](@ref) is fulfilled)
 
 1. ```math
    ξ^{(k+1)}_n = \operatorname{prox}_{\tau_k G_n^*}\Bigl(ξ_n^{(k)} + \tau_k \bigl(\log_n Λ (\bar p^{(k)})\bigr)^\flat\Bigr)
@@ -61,6 +64,12 @@ ChambollePock
 ChambollePock!
 ```
 
+## Objective
+
+```@docs
+PrimalDualManifoldObjective
+```
+
 ## State
 
 ```@docs
@@ -74,23 +83,15 @@ primal_residual
 dual_residual
 ```
 
-## Debug
+## Solver specific debug output
 
-```@docs
-DebugDualBaseIterate
-DebugDualBaseChange
-DebugPrimalBaseIterate
-DebugPrimalBaseChange
-DebugDualChange
-DebugDualIterate
-DebugDualResidual
-DebugPrimalChange
-DebugPrimalIterate
-DebugPrimalResidual
-DebugPrimalDualResidual
-```
+[`DebugDualBaseIterate`](@ref), [`DebugDualBaseChange`](@ref), [`DebugPrimalBaseIterate`](@ref),
+[`DebugPrimalBaseChange`](@ref), [`DebugDualChange`](@ref), [`DebugDualIterate`](@ref),
+[`DebugDualResidual`](@ref), [`DebugPrimalChange`](@ref), [`DebugPrimalIterate`](@ref), [`DebugPrimalResidual`](@ref)
+[`DebugPrimalDualResidual`](@ref)
 
-## Record
+
+## Solver specific recording actions
 
 ```@docs
 RecordDualBaseIterate
@@ -119,8 +120,6 @@ The [`ChambollePock`](@ref) solver requires the following functions of a manifol
 * A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points.
 
 ## Literature
-
-
 
 ```@bibliography
 Pages = ["ChambollePock.md"]

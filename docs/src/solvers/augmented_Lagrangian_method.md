@@ -15,14 +15,7 @@ CurrentModule = Manopt
 AugmentedLagrangianMethodState
 ```
 
-## Helping functions
-
-```@docs
-AugmentedLagrangianCost
-AugmentedLagrangianGrad
-```
-
-## [Technical details](@id sec-agd-technical-details)
+## [Technical details](@id sec-alm-technical-details)
 
 The [`augmented_Lagrangian_method`](@ref) solver requires the following functions of a manifold to be available
 

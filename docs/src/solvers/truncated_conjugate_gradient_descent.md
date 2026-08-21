@@ -38,13 +38,7 @@ Manopt.set_parameter!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:Residua
 Manopt.set_parameter!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, ::Any)
 ```
 
-## Trust region model
-
-```@docs
-TrustRegionModelObjective
-```
-
-## [Technical details](@id sec-tr-technical-details)
+## [Technical details](@id sec-tcg-technical-details)
 
 The [`trust_regions`](@ref) solver requires the following functions of a manifold to be available
 

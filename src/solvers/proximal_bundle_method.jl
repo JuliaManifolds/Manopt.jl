@@ -108,9 +108,8 @@ mutable struct ProximalBundleMethodState{
         }
         R = promote_type(typeof(m), typeof(α₀), typeof(ε), typeof(δ), typeof(μ))
         m = convert(R, m); α₀ = convert(R, α₀); ε = convert(R, ε); δ = convert(R, δ); μ = convert(R, μ)
-        _sub_state = maybe_wrap_evaluation_type(sub_state)
         return ProximalBundleMethodState(
-            sub_problem, _sub_state;
+            sub_problem, sub_state;
             approx_errors = [zero(R)], bundle = [(copy(M, p), copy(M, p, X))], bundle_size = bundle_size,
             c = zero(R), callbacks = callbacks, d = copy(M, p, X),
             inverse_retraction_method = inverse_retraction_method, lin_errors = [zero(R)],
@@ -144,11 +143,18 @@ mutable struct ProximalBundleMethodState{
 end
 ProximalBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Bunde Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function ProximalBundleMethodState(
+        M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType;
+        kwargs...,
+    )
+    return ProximalBundleMethodState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function ProximalBundleMethodState(
         M::AbstractManifold, sub_problem = proximal_bundle_method_subsolver;
-        evaluation::E = AllocatingEvaluation(), kwargs...,
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
-    return ProximalBundleMethodState(M, sub_problem, cfs; kwargs...)
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :MaybeResizeVector)
+    cfs = ClosedFormSubSolverState()
+    return ProximalBundleMethodState(M, sub_problem_, cfs; kwargs...)
 end
 
 get_iterate(pbms::ProximalBundleMethodState) = pbms.p_last_serious
@@ -202,6 +208,40 @@ function status_summary(pbms::ProximalBundleMethodState; context::Symbol = :defa
     return s
 end
 
+
+function proximal_bundle_method_subsolver end
+function proximal_bundle_method_subsolver! end
+@doc """
+    λ = proximal_bundle_method_subsolver(M, p_last_serious, μ, approximation_errors, transported_subgradients)
+    proximal_bundle_method_subsolver!(M, λ, p_last_serious, μ, approximation_errors, transported_subgradients)
+
+solver for the subproblem of the proximal bundle method.
+
+The subproblem for the proximal bundle method is
+```math
+\\begin{align*}
+    $(_tex(:argmin))_{λ ∈ ℝ^{$(_tex(:abs, "L_l"))}} &
+    $(_tex(:frac, "1", "2 μ_l")) $(_tex(:Bigl)) \\lVert $(_tex(:sum, "j ∈ L_l")) λ_j $(_tex(:rm, "P"))_{p_k←q_j} X_{q_j}$(_tex(:Bigr))\\rVert^2
+    + $(_tex(:sum, "j ∈ L_l")) "λ_j \\, c_j^k
+    \\\\
+    $(_tex(:text, "s. t.")) $(_tex(:quad)) &
+    $(_tex(:sum, "j ∈ L_l")) λ_j = 1,
+    $(_tex(:quad)) λ_j ≥ 0
+    $(_tex(:quad)) $(_tex(:text, "for all ")) j ∈ L_l,
+\\end{align*}
+```
+where ``L_l = $(_tex(:set, "k"))`` if ``q_k`` is a serious iterate, and ``L_l = L_{l-1}  ∪ $(_tex(:set, "k"))`` otherwise.
+See [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
+
+!!! tip
+    A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
+    is available if these two packages are loaded.
+"""
+proximal_bundle_method_subsolver(
+    M, p_last_serious, μ, approximation_errors, transported_subgradients
+)
+
+
 _doc_PBM_dk = raw"""
 ```math
 d_k = \frac{1}{\mu_k} \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
@@ -213,8 +253,8 @@ with ``X_{q_j} ∈ ∂f(q_j)``, ``p_k`` the last serious iterate,
 sub solver, see for example the [`proximal_bundle_method_subsolver`](@ref).
 """
 _doc_PBM = """
-    proximal_bundle_method(M, f, ∂f, p=rand(M), kwargs...)
-    proximal_bundle_method!(M, f, ∂f, p, kwargs...)
+    proximal_bundle_method(M, f, ∂f, p=rand(M); kwargs...)
+    proximal_bundle_method!(M, f, ∂f, p; kwargs...)
 
 perform a proximal bundle method ``p^{(k+1)} = $(_tex(:retr))_{p^{(k)}}(-d_k)``,
 where ``$(_tex(:retr))`` is a retraction and
@@ -266,7 +306,7 @@ calls_with_kwargs(::typeof(proximal_bundle_method)) = (proximal_bundle_method!,)
 function proximal_bundle_method!(
         M::AbstractManifold,
         f::TF,
-        ∂f!!::TdF,
+        ∂f!::TdF,
         p;
         m = 0.0125,
         bundle_size = 50,
@@ -287,26 +327,18 @@ function proximal_bundle_method!(
         kwargs..., #especially may contain debug
     ) where {TF, TdF, TRetr, IR, VTransp}
     keywords_accepted(proximal_bundle_method!; kwargs...)
-    sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation = evaluation)
+    sgo = ManifoldSubgradientObjective(f, ∂f!; evaluation = evaluation, p = p)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     pbms = ProximalBundleMethodState(
-        M,
-        sub_problem,
-        maybe_wrap_evaluation_type(sub_state);
-        p = p,
-        m = m,
-        bundle_size = bundle_size,
+        M, sub_problem, sub_state;
+        p = p, m = m, bundle_size = bundle_size,
         callbacks = process_callbacks_arg(callbacks, ProximalBundleMethodState),
         inverse_retraction_method = inverse_retraction_method,
         retraction_method = retraction_method,
         stopping_criterion = stopping_criterion,
         vector_transport_method = vector_transport_method,
-        α₀ = α₀,
-        ε = ε,
-        δ = δ,
-        μ = μ,
+        α₀ = α₀, ε = ε, δ = δ, μ = μ,
     )
     pbms = decorate_state!(pbms; kwargs...)
     return get_solver_return(solve!(mp, pbms))
@@ -430,18 +462,9 @@ get_solver_result(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 #
 #
 # Dispatching on different types of sub solvers
-# (a) closed form allocating
+# closed form in-place
 function _proximal_bundle_subsolver!(
-        M, pbms::ProximalBundleMethodState{P, T, F, ClosedFormSubSolverState{AllocatingEvaluation}}
-    ) where {P, T, F}
-    pbms.λ = pbms.sub_problem(
-        M, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients
-    )
-    return pbms
-end
-# (b) closed form in-place
-function _proximal_bundle_subsolver!(
-        M, pbms::ProximalBundleMethodState{P, T, F, ClosedFormSubSolverState{InplaceEvaluation}}
+        M, pbms::ProximalBundleMethodState{P, T, F, ClosedFormSubSolverState}
     ) where {P, T, F}
     pbms.sub_problem(
         M, pbms.λ, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients,

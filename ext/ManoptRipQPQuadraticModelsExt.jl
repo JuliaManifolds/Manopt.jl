@@ -45,7 +45,10 @@ function convex_bundle_method_subsolver!(
         uvar = [Inf for i in 1:d],
         c0 = zero(eltype(linearization_errors)),
     )
-    λ .= ripqp(qm; display = false).solution
+    # We work in-place of l, but that might be memory from an earlier subsolver run with a different length result
+    s = ripqp(qm; display = false).solution
+    (length(λ) != length(s)) && resize!(λ, length(s))
+    λ .= s
     return λ
 end
 
@@ -80,7 +83,10 @@ function proximal_bundle_method_subsolver!(
         uvar = [Inf for i in 1:d],
         c0 = zero(eltype(approximation_errors)),
     )
-    λ .= ripqp(qm; display = false).solution
+    # We work in-place of l, but that might be memory from an earlier subsolver run with a different length result
+    s = ripqp(qm; display = false).solution
+    (length(λ) != length(s)) && resize!(λ, length(s))
+    λ .= s
     return λ
 end
 

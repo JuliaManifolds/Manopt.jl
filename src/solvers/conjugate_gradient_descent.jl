@@ -78,16 +78,17 @@ $(_args([:M, :f, :grad_f, :p]))
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 * `coefficient::DirectionUpdateRule=`[`ConjugateDescentCoefficient`](@ref)`()`:
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
+$(_kwargs([:differential, :evaluation]))
 * `restart_condition::AbstractRestartCondition=`[`NeverRestart`](@ref)`()`:
   rule when the algorithm should restart, i.e. use the negative gradient instead of the computed direction,
   as a functior where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
-$(_kwargs([:differential, :evaluation, :retraction_method]))
-$(_kwargs(:callbacks; add_properties = [:process_note]))
+$(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:vector_transport_method))
@@ -108,12 +109,10 @@ end
 function conjugate_gradient_descent(
         M::AbstractManifold, f::TF, grad_f::TDF, p; evaluation = AllocatingEvaluation(), kwargs...
     ) where {TF, TDF}
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation = evaluation)
+    p_ = maybe_wrap_variable(p)
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, p = p)
     rs = conjugate_gradient_descent(M, mgo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function conjugate_gradient_descent(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...
@@ -127,16 +126,13 @@ calls_with_kwargs(::typeof(conjugate_gradient_descent)) = (conjugate_gradient_de
 @doc "$(_doc_CG)"
 conjugate_gradient_descent!(M::AbstractManifold, params...; kwargs...)
 function conjugate_gradient_descent!(
-        M::AbstractManifold,
-        f::TF,
-        grad_f::TDF,
-        p;
-        differential = nothing,
+        M::AbstractManifold, f::TF, grad_f::TDF, p;
+        differential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     ) where {TF, TDF}
     mgo = ManifoldGradientObjective(
-        f, grad_f; differential = differential, evaluation = evaluation
+        f, grad_f; differential = differential, evaluation = evaluation, p = p
     )
     return conjugate_gradient_descent!(M, mgo, p; kwargs...)
 end

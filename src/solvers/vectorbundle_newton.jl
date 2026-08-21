@@ -85,7 +85,7 @@ function Base.show(io::IO, vbns::VectorBundleNewtonState)
 end
 
 @doc """
-AffineCovariantStepsize <: Stepsize
+    AffineCovariantStepsize <: Stepsize
 
 A functor to provide an affine covariant stepsize generalizing the idea of following Newton paths introduced by [WeiglBergmannSchiela:2025; Section 4](@cite).
 It can be used to derive a damped Newton method. The stepsizes (damping factors) are computed

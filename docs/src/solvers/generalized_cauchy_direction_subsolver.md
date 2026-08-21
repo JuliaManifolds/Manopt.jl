@@ -18,7 +18,7 @@ The solver is currently primarily intended for internal use by optimization algo
 
 ## Simple stepsize limiting
 
-In case there is no Hessian approximation available, a simple stepsize limiting procedure is can be used to limit the stepsize in direction $X$ to the maximum allowed by the boundary of $D$ and the maximum allowed stepsize on $\mathcal{M}$.
+In case there is no Hessian approximation available, a simple stepsize limiting procedure can be used to limit the stepsize in direction $X$ to the maximum allowed by the boundary of $D$ and the maximum allowed stepsize on $\mathcal{M}$.
 This procedure is available using the following:
 
 ```@docs
@@ -49,7 +49,7 @@ Manopt.hessian_value_diag
 
 ### Symbols related to bound handling
 
-These are internal symbols used to manage and manipulate bound constraints during the GCP computation.
+These are internal symbols used to manage and manipulate bound constraints during the GCD computation.
 
 ```@docs
 Manopt.init_updater!
@@ -73,5 +73,6 @@ Manopt.update_current_scale!
 ```
 
 ```@bibliography
+Pages = ["generalized_cauchy_direction_subsolver.md"]
 Canonical=false
 ```

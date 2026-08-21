@@ -57,7 +57,7 @@ with two small modifications:
 * The mesh can be scaled globally so instead of ``Δ_0^m=1`` a certain different scale is used
 * Any poll direction can be rescaled if it is too long. This is to not exceed the injectivity radius for example.
 
-# Functor
+# Function
 
     (p::LowerTriangularAdaptivePoll)(problem, mesh_size; scale_mesh=1.0, max_stepsize=inf)
 
@@ -71,7 +71,7 @@ with two small modifications:
 * `random_index`: a random index ``ι``
 $(_fields([:retraction_method, :vector_transport_method]))
 * `X::T` the last successful poll direction stored as a tangent vector.
-  initialised to the zero vector and reset to the zero vector after moving to a new tangent space.
+  initialized to the zero vector and reset to the zero vector after moving to a new tangent space.
 
 # Constructor
 
@@ -276,7 +276,7 @@ end
 """
     DefaultMeshAdaptiveDirectSearch <: AbstractMeshSearchFunction
 
-# Functor
+# Function
 
     (s::DefaultMeshAdaptiveDirectSearch)(problem, mesh_size::Real, X; scale_mesh::Real=1.0, max_stepsize::Real=inf)
 

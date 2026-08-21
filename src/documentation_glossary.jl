@@ -67,6 +67,7 @@ Glossaries.define!(_glossary_tex_terms, :deriv, :math, _tex_deriv)
 _tex_diff(t = "t") = raw"\mathrm{D}_{" * "$(t)" * "}"
 Glossaries.define!(_glossary_tex_terms, :diff, :math, _tex_diff)
 Glossaries.define!(_glossary_tex_terms, :displaystyle, :math, raw"\displaystyle")
+Glossaries.define!(_glossary_tex_terms, :ell, :math, raw"\ell")
 Glossaries.define!(_glossary_tex_terms, :eR, :math, raw"\bar{\mathbb R}")
 _tex_frac(a, b) = raw"\frac" * "{$a}{$b}"
 Glossaries.define!(_glossary_tex_terms, :frac, :math, _tex_frac)
@@ -107,6 +108,7 @@ Glossaries.define!(_glossary_tex_terms, :sum, :math, _tex_sum)
 _tex_text(s) = raw"\text{" * "$s" * "}"
 Glossaries.define!(_glossary_tex_terms, :text, :math, _tex_text)
 Glossaries.define!(_glossary_tex_terms, :tilde, :math, raw"\tilde")
+Glossaries.define!(_glossary_tex_terms, :top, :math, raw"\top")
 Glossaries.define!(_glossary_tex_terms, :transp, :math, raw"\mathrm{T}")
 Glossaries.define!(_glossary_tex_terms, :vdots, :math, raw"\vdots")
 Glossaries.define!(_glossary_tex_terms, :vert, :math, raw"\vert")
@@ -147,9 +149,9 @@ Glossaries.define!(_glossary_math_terms, :TangentSpace, :description, _math_Tang
 _math_vector_transport(p = "⋅", q = "⋅") = raw"\mathcal T_{" * "$q←$p" * "}"
 Glossaries.define!(_glossary_math_terms, :VectorTransport, :math, _math_vector_transport)
 function _math_vector_transport_description(; M = "M", p = "⋅", q = "⋅")
-    points_given == (length(p) > 0 && p != "⋅" && length(q) > 0 && q != "⋅")
-    return manifold_given = length(M) > 0 &&
-        return "a vector transport $(manifold_given ? "on the manifold $(_math(:Manifold; M = M)) " : "")" *
+    points_given = (length(p) > 0 && p != "⋅" && length(q) > 0 && q != "⋅")
+    manifold_given = length(M) > 0
+    return "a vector transport $(manifold_given ? "on the manifold $(_math(:Manifold; M = M)) " : "")" *
         "$(points_given ? "from ``$p`` to ``$q``" : "between two points")"
 end
 Glossaries.define!(_glossary_math_terms, :VectorTransport, :description, _math_vector_transport_description)
@@ -207,7 +209,7 @@ _glossary_notes = _glossary[:Note]
 __note_formatter = Glossaries.Plain(:note)
 _note(args...; kwargs...) = __note_formatter(_glossary_notes, args...; kwargs...)
 Glossaries.define!(
-    _glossary_notes, :ManifoldDefaultFactory, :note,
+    _glossary_notes, :ManifoldDefaultsFactory, :note,
     (type::String) -> """
     !!! info
         This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`](@ref).
@@ -353,17 +355,17 @@ Glossaries.define!(_glossary_variables, :at_iteration, :type, "Int")
 Glossaries.define!(_glossary_variables, :callbacks)
 Glossaries.define!(
     _glossary_variables, :callbacks, :description,
-    "provided callback functions``",
+    "provided callback functions",
 )
 Glossaries.define!(_glossary_variables, :callbacks, :type, "D")
-Glossaries.define!(_glossary_variables, :callbacks, :as_dict, "provided as a dictionary symbols as keys")
-Glossaries.define!(_glossary_variables, :callbacks, :process_note, "A single function `(symbol, problem, state, k)` called in every hook, a (vector of) pairs `:hook => function` will be processed by [`` ,YOu can either pass an array of Pairsassumed to be stored in a dictionary like structure with symbols as keys")
+Glossaries.define!(_glossary_variables, :callbacks, :as_dict, "given as a dictionary with symbols as keys")
+Glossaries.define!(_glossary_variables, :callbacks, :process_note, ". A single function `(symbol, problem, state, k)` called in every hook, a (vector of) pairs `:hook => function` or will be processed by [`process_callbacks_arg`](@ref). As key you can either pass single symbol or an array of symbols to indicate a callback should be added in multiple places")
 Glossaries.define!(_glossary_variables, :callbacks, :default, "Dict{Symbol,Function}()")
 
 Glossaries.define!(_glossary_variables, :differential)
 Glossaries.define!(
     _glossary_variables, :differential, :description,
-    "specify a specific function to evaluate the differential. By default, ``Df(p)[X] = ⟨$(_tex(:grad))f(p),X⟩``. is used",
+    "specify a specific function to evaluate the differential. By default, ``Df(p)[X] = ⟨$(_tex(:grad))f(p),X⟩`` is used",
 )
 Glossaries.define!(_glossary_variables, :differential, :default, "nothing")
 
@@ -401,6 +403,26 @@ Glossaries.define!(
     (; M = "M", p = "p", f = "f") ->
     "the (Riemannian) Hessian ``$(_tex(:Hess))$f: $(_math(:TangentSpace, M = M, p = p)) → $(_math(:TangentSpace; M = M, p = p))`` of $f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
 )
+
+Glossaries.define!(_glossary_variables, :initial_guess)
+Glossaries.define!(
+    _glossary_variables, :initial_guess, :description,
+    """
+      a function to provide an initial guess for the step size,
+      it maps `(problem, state, k, last_stepsize, η) -> α_0` based on
+      * an [`AbstractManoptProblem`](@ref) `problem`
+      * an [`AbstractManoptSolverState`](@ref) `state`
+      * the current iteration `k`
+      * the last step size `last_stepsize`
+      * the search direction `η`
+
+      and should at least accept the keywords
+
+      * `lf0 = `[`get_cost`](@ref)`(problem, get_iterate(state))`: the current cost at `p`, here interpreted as the initial point of `f` along the line search direction
+      * `Dlf0 = `[`get_differential`](@ref)`(problem, get_iterate(state), η)`: the directional derivative at point `p` in direction `η`
+    """,
+)
+Glossaries.define!(_glossary_variables, :initial_guess, :type, "F")
 
 Glossaries.define!(_glossary_variables, :inverse_retraction_method)
 Glossaries.define!(

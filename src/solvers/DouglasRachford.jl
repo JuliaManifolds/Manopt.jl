@@ -1,45 +1,3 @@
-function reflect end
-@doc """
-    reflect(M, f, x; kwargs...)
-    reflect!(M, q, f, x; kwargs...)
-
-reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f: $(_math(:Manifold)) → $(_math(:Manifold))``, given by
-
-````math
-    $(_tex(:reflect))_f(x) = $(_tex(:reflect))_{f(x)}(x),
-````
-
-Compute the result in `q`.
-
-see also [`reflect`](@ref reflect(M::AbstractManifold, p, x))`(M,p,x)`, to which the keywords are also passed to.
-"""
-reflect(M::AbstractManifold, pr::Function, x; kwargs...)
-
-@doc """
-    reflect(M, p, x, kwargs...)
-    reflect!(M, q, p, x, kwargs...)
-
-Reflect the point `x` from the manifold `M` at point `p`, given by
-
-```math
-$(_tex(:reflect))_p(q) = $(_tex(:retr))_p(-$(_tex(:invretr))_p q),
-```
-where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an inverse retraction, respectively.
-
-This can also be done in place of `q`.
-
-## Keyword Arguments
-
-$(_kwargs([:retraction_method, :inverse_retraction_method]))
-
-and for the `reflect!` additionally
-
-* `X=zero_vector(M,p)`: a temporary memory to compute the inverse retraction in place.
-  otherwise this is the memory that would be allocated anyways.
-"""
-reflect(M::AbstractManifold, p::Any, x; kwargs...)
-
 @doc """
     DouglasRachfordState <: AbstractManoptSolverState
 
@@ -54,10 +12,10 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 * `λ`:                         function to provide the value for the proximal parameter during the calls
 * `parallel`:                  indicate whether to use a parallel Douglas-Rachford or not.
-* `R`:                          method employed in the iteration to perform the reflection of `x` at the prox `p`.
+* `R!`:                          method employed in the iteration to perform the reflection of `x` at the prox `p`.
 $(_fields(:p; add_properties = [:as_Iterate]))
   For the parallel Douglas-Rachford, this is not a value from the `PowerManifold` manifold but the mean.
-* `reflection_evaluation`:     whether `R` works in-place or allocating
+* `reflection!`:     whether `R` works in-place or allocating
 $(_fields(:retraction_method))
 * `s`:                         the last result of the double reflection at the proximal maps relaxed by `α`.
 $(_fields(:stopping_criterion; name = "stop"))
@@ -79,16 +37,15 @@ $(_kwargs(:inverse_retraction_method))
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter
   during the calls
 $(_kwargs(:p; add_properties = [:as_Initial]))
-* `R=`[`reflect`](@ref)`(!)`: method employed in the iteration to perform the reflection of `p` at
-  the prox of `p`, which function is used depends on `reflection_evaluation`.
-* `reflection_evaluation=`[`AllocatingEvaluation`](@ref)`()`) specify whether the reflection works in-place or allocating (default)
+* `R!= `[`reflect`](@ref): method employed in the iteration to perform the reflection of `p` at
+  the prox of `p`, which always works in-place.
+* `reflection_evaluation=`[`InplaceEvaluation`](@ref)`()`) specify whether the reflection works in-place (default) or allocating
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)"))
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 """
 mutable struct DouglasRachfordState{
-        P, C <: AbstractDict{Symbol}, Tλ, Tα, TR, S,
-        E <: AbstractEvaluationType, TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
+        P, C <: AbstractDict{Symbol}, Tλ, Tα, TR, S, TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
     } <: AbstractManoptSolverState
     α::Tα
     callbacks::C
@@ -97,8 +54,7 @@ mutable struct DouglasRachfordState{
     p::P
     parallel::Bool
     p_tmp::P
-    R::TR
-    reflection_evaluation::E
+    R!::TR
     retraction_method::TM
     s::P
     s_tmp::P
@@ -106,14 +62,8 @@ mutable struct DouglasRachfordState{
     function DouglasRachfordState(
             M::AbstractManifold; p::P = rand(M), λ::Fλ = i -> 1.0, α::Fα = i -> 0.9,
             callbacks::C = Dict{Symbol, Function}(),
-            reflection_evaluation::E = AllocatingEvaluation(),
-            R::FR = (
-                if reflection_evaluation isa AllocatingEvaluation
-                    Manopt.reflect
-                else
-                    Manopt.reflect!
-                end
-            ),
+            reflection_evaluation::E = InplaceEvaluation(),
+            R!::FR = Manopt.reflect!,
             stopping_criterion::S = StopAfterIteration(300),
             parallel = false,
             retraction_method::TM = default_retraction_method(M, typeof(p)),
@@ -122,24 +72,25 @@ mutable struct DouglasRachfordState{
             P, C <: AbstractDict{Symbol}, Fλ, Fα, FR, S <: StoppingCriterion, E <: AbstractEvaluationType,
             TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
         }
+        R! = maybe_wrap_function(R!, p, reflection_evaluation; result = :Point)
         return DouglasRachfordState(;
             p = p, p_tmp = copy(M, p), s = copy(M, p), s_tmp = copy(M, p),
-            λ = λ, α = α, R = R, callbacks = callbacks, reflection_evaluation = reflection_evaluation,
+            λ = λ, α = α, (R!) = R!, callbacks = callbacks,
             retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method,
             stopping_criterion = stopping_criterion, parallel = parallel,
         )
     end
     function DouglasRachfordState(;
-            p::P, p_tmp::P, s::P, s_tmp::P, λ::Fλ, α::Fα, R::FR,
-            callbacks::C, reflection_evaluation::E, retraction_method::TM, inverse_retraction_method::ITM,
+            p::P, p_tmp::P, s::P, s_tmp::P, λ::Fλ, α::Fα, R!::FR,
+            callbacks::C, retraction_method::TM, inverse_retraction_method::ITM,
             stopping_criterion::S, parallel::Bool
         ) where {
-            P, C <: AbstractDict{Symbol}, Fλ, Fα, FR, S <: StoppingCriterion, E <: AbstractEvaluationType,
+            P, C <: AbstractDict{Symbol}, Fλ, Fα, FR, S <: StoppingCriterion,
             TM <: AbstractRetractionMethod, ITM <: AbstractInverseRetractionMethod,
         }
-        return new{P, C, Fλ, Fα, FR, S, E, TM, ITM}(
+        return new{P, C, Fλ, Fα, FR, S, TM, ITM}(
             α, callbacks, inverse_retraction_method, λ, p, parallel, p_tmp,
-            R, reflection_evaluation, retraction_method, s, s_tmp, stopping_criterion,
+            R!, retraction_method, s, s_tmp, stopping_criterion,
         )
     end
 end
@@ -154,8 +105,7 @@ function Base.show(io::IO, drs::DouglasRachfordState)
     print(io, "p = "); print(io, drs.p); print(io, ", ")
     print(io, "parallel = "); print(io, drs.parallel); print(io, ", ")
     print(io, "p_tmp = "); print(io, drs.p_tmp); print(io, ", ")
-    print(io, "R = "); print(io, drs.R); print(io, ", ")
-    print(io, "reflection_evaluation = "); print(io, drs.reflection_evaluation); print(io, ", ")
+    print(io, "(R!) = "); print(io, drs.R!); print(io, ", ")
     print(io, "retraction_method = "); print(io, drs.retraction_method); print(io, ", ")
     print(io, "s = "); print(io, drs.s); print(io, ", ")
     print(io, "s_tmp = "); print(io, drs.s_tmp); print(io, ", ")
@@ -168,7 +118,6 @@ function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
     conv_inl = (i > 0) ? (indicates_convergence(drs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the Douglas Rachford solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    refl_e = drs.reflection_evaluation == AllocatingEvaluation() ? "allocating" : "in place"
     Conv = indicates_convergence(drs.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(drs)) – $(Iter) $(has_converged(drs) ? "(converged)" : "")")
     as = _callbacks_summary(drs)
@@ -176,8 +125,9 @@ function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
     s = """
     # Solver state for `Manopt.jl`s $(P)Douglas Rachford Algorithm
     $Iter
-    using an $(refl_e) reflection.
+
     ## Parameters$(as)
+    * `R! = ` $(drs.R!)
 
     ## Stopping criterion
     $(_in_str(status_summary(drs.stop; context = context); indent = 0, headers = 1))
@@ -241,7 +191,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs([:evaluation, :inverse_retraction_method]))
   This is used both in the relaxation step as well as in the reflection, unless you set `R` yourself.
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter ``λ_k``
-* `R=reflect(!)`:           method employed in the iteration to perform the reflection of `p` at the prox of `p`.
+* `R=reflect!`: method employed in the iteration to perform the reflection of `p` at the prox of `p`.
   This uses by default [`reflect`](@ref) or `reflect!` depending on `reflection_evaluation` and
   the retraction and inverse retraction specified by `retraction_method` and `inverse_retraction_method`, respectively.
 * `reflection_evaluation`: ([`AllocatingEvaluation`](@ref) whether `R` works in-place or allocating
@@ -258,56 +208,44 @@ $(_note(:OutputSection))
 @doc "$(_doc_Douglas_Rachford)"
 DouglasRachford(::AbstractManifold, args...; kwargs...)
 function DouglasRachford(
-        M::AbstractManifold,
-        f::TF,
-        proxes_f::Vector{<:Any},
-        p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        parallel = 0,
-        kwargs...,
+        M::AbstractManifold, f::TF, proxes_f::Vector{<:Any}, p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), parallel = 0, kwargs...,
     ) where {TF}
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    proxes_f_ = [_ensure_mutating_prox(prox_f, p, evaluation) for prox_f in proxes_f]
-    N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(
-        M, f_, proxes_f_, p_, parallel, evaluation
-    )
-    mpo = ManifoldProximalMapObjective(f__, (prox1, prox2); evaluation = evaluation)
+    p_ = maybe_wrap_variable(p)
+    proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation; result = :Point) for prox_f in proxes_f]
+    N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(M, f, proxes_f_, p_, parallel)
+    # we are inplace, so no need to pass it further down here
+    mpo = ManifoldProximalMapObjective(f__, (prox1, prox2); evaluation = InplaceEvaluation())
     rs = DouglasRachford(N, mpo, q; evaluation = evaluation, parallel = parallel_, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function DouglasRachford(
         M::AbstractManifold, mpo::O, p; kwargs...
     ) where {O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(DouglasRachford; kwargs...)
-    q = copy(M, p)
-    return DouglasRachford!(M, mpo, q; kwargs...)
+    p_ = maybe_wrap_variable(p)
+    q = copy(M, p_)
+    rs = DouglasRachford!(M, mpo, q; kwargs...)
+    return maybe_unwrap_variable(p, rs)
 end
 calls_with_kwargs(::typeof(DouglasRachford)) = (DouglasRachford!,)
 
 @doc "$(_doc_Douglas_Rachford)"
 DouglasRachford!(::AbstractManifold, args...; kwargs...)
 function DouglasRachford!(
-        M::AbstractManifold,
-        f::TF,
-        proxes_f::Vector{<:Any},
-        p;
-        evaluation = AllocatingEvaluation(),
-        parallel::Int = 0,
-        kwargs...,
+        M::AbstractManifold, f::TF, proxes_f::Vector{<:Any}, p;
+        evaluation = AllocatingEvaluation(), parallel::Int = 0, kwargs...,
     ) where {TF}
-    N, f_, (prox1, prox2), parallel_, p0 = parallel_to_alternating_DR(
-        M, f, proxes_f, p, parallel, evaluation
-    )
-    mpo = ManifoldProximalMapObjective(f_, (prox1, prox2); evaluation = evaluation)
+    proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation; result = :Point) for prox_f in proxes_f]
+    N, f_, (prox1, prox2), parallel_, p0 = parallel_to_alternating_DR(M, f, proxes_f_, p, parallel)
+    # we are inplace, so no need to pass it further down here
+    mpo = ManifoldProximalMapObjective(f_, (prox1, prox2); evaluation = InplaceEvaluation())
     return DouglasRachford!(
         N, mpo, p0; evaluation = evaluation, parallel = parallel_, kwargs...
     )
 end
 function DouglasRachford!(
-        M::AbstractManifold,
-        mpo::O,
-        p;
+        M::AbstractManifold, mpo::O, p;
         callbacks = Dict{Symbol, Function}(),
         λ::Tλ = (iter) -> 1.0,
         α::Tα = (iter) -> 0.9,
@@ -315,22 +253,17 @@ function DouglasRachford!(
         inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
             M, typeof(p)
         ),
-        reflection_evaluation::E = AllocatingEvaluation(),
+        reflection_evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         # Adapt to evaluation type
         R::TR = if reflection_evaluation == InplaceEvaluation()
             (M, r, p, q) -> Manopt.reflect!(
-                M,
-                r,
-                p,
-                q;
+                M, r, p, q;
                 retraction_method = retraction_method,
                 inverse_retraction_method = inverse_retraction_method,
             )
         else
             (M, p, q) -> Manopt.reflect(
-                M,
-                p,
-                q;
+                M, p, q;
                 retraction_method = retraction_method,
                 inverse_retraction_method = inverse_retraction_method,
             )
@@ -340,11 +273,8 @@ function DouglasRachford!(
             StopWhenChangeLess(M, 1.0e-5),
         kwargs..., #especially may contain decorator options
     ) where {
-        Tλ,
-        Tα,
-        TR,
+        Tλ, Tα, TR,
         O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective},
-        E <: AbstractEvaluationType,
     }
     keywords_accepted(DouglasRachford!; kwargs...)
     dmpo = decorate_objective!(M, mpo; kwargs...)
@@ -352,10 +282,7 @@ function DouglasRachford!(
     drs = DouglasRachfordState(
         M;
         callbacks = process_callbacks_arg(callbacks, DouglasRachfordState),
-        p = p,
-        λ = λ,
-        α = α,
-        R = R,
+        p = p, λ = λ, α = α, (R!) = R,
         reflection_evaluation = reflection_evaluation,
         retraction_method = retraction_method,
         inverse_retraction_method = inverse_retraction_method,
@@ -372,9 +299,9 @@ calls_with_kwargs(::typeof(DouglasRachford!)) = (decorate_objective!, decorate_s
 # An internal function that turns more than 2 proximal maps into a parallel variant
 # on the power manifold
 function parallel_to_alternating_DR(
-        M, f, proxes_f, p, parallel, evaluation::AbstractEvaluationType
+        M, f, proxes_f, p, parallel
     )
-    prox1, prox2, parallel_ = prepare_proxes(proxes_f, parallel, evaluation)
+    prox1, prox2, parallel_ = prepare_proxes(proxes_f, parallel)
     if parallel_ > 0
         N = PowerManifold(M, NestedPowerRepresentation(), parallel_)
         p0 = [p]
@@ -390,7 +317,7 @@ function parallel_to_alternating_DR(
     return N, f_, (prox1, prox2), parallel_, p0
 end #
 # An internal function that turns more than 2 proximal maps into a parallel variant
-function prepare_proxes(proxes_f, parallel, evaluation::AbstractEvaluationType)
+function prepare_proxes(proxes_f, parallel)
     parallel_ = parallel
     if length(proxes_f) < 2
         throw(
@@ -403,16 +330,11 @@ function prepare_proxes(proxes_f, parallel, evaluation::AbstractEvaluationType)
         prox2 = proxes_f[2]
     else # more than 2 -> parallelDouglasRachford
         parallel_ = length(proxes_f)
-        if evaluation isa InplaceEvaluation
-            prox1 = function (M, q, λ, p)
-                [proxes_f[i](M.manifold, q[i], λ, p[i]) for i in 1:parallel_]
-                return q
-            end
-            prox2 = (M, q, λ, p) -> fill!(q, mean(M.manifold, p))
-        else
-            prox1 = (M, λ, p) -> [proxes_f[i](M.manifold, λ, p[i]) for i in 1:parallel_]
-            prox2 = (M, λ, p) -> fill(mean(M.manifold, p), parallel_)
+        prox1 = function (M, q, λ, p)
+            [proxes_f[i](M.manifold, q[i], λ, p[i]) for i in 1:parallel_]
+            return q
         end
+        prox2 = (M, q, λ, p) -> fill!(q, mean(M.manifold, p))
     end
     return prox1, prox2, parallel_
 end
@@ -421,26 +343,18 @@ function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, k)
     M = get_manifold(amp)
     get_proximal_map!(amp, drs.p_tmp, drs.λ(k), drs.s, 1)
     #dispatch on allocation type for the reflection, see below.
-    _reflect!(M, drs.s_tmp, drs.p_tmp, drs.s, drs.R, drs.reflection_evaluation)
+    drs.R!(M, drs.s_tmp, drs.p_tmp, drs.s)
     callback(:FirstReflection, amp, drs, k)
     get_proximal_map!(amp, drs.p, drs.λ(k), drs.s_tmp, 2)
     callback(:ProximalMap, amp, drs, k)
-    _reflect!(M, drs.s_tmp, drs.p, drs.s_tmp, drs.R, drs.reflection_evaluation)
+    drs.R!(M, drs.s_tmp, drs.p, drs.s_tmp)
     callback(:SecondReflection, amp, drs, k)
     # relaxation
     drs.s = ManifoldsBase.retract_fused(
-        M,
-        drs.s,
+        M, drs.s,
         inverse_retract(M, drs.s, drs.s_tmp, drs.inverse_retraction_method),
-        drs.α(k),
-        drs.retraction_method,
+        drs.α(k), drs.retraction_method,
     )
     return drs
 end
 get_solver_result(drs::DouglasRachfordState) = drs.parallel ? drs.p[1] : drs.p
-
-function _reflect!(M, r, p, x, R, ::AllocatingEvaluation)
-    copyto!(M, r, R(M, p, x))
-    return r
-end
-_reflect!(M, r, p, x, R, ::InplaceEvaluation) = R(M, r, p, x)

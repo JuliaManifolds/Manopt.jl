@@ -399,7 +399,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         end
         @testset "show/repr on the LevenbergMarquardt state on NL objective" begin
             @test startswith(repr(o2), "ManifoldNonlinearLeastSquaresObjective(")
-            @test Manopt.status_summary(o2) == "A nonlinear least squares objective 1 vectorial block"
+            @test Manopt.status_summary(o2) == "A nonlinear least squares objective with 1 vectorial block"
             @test startswith(repr(s2), "LevenbergMarquardtState(")
             @test startswith(Manopt.status_summary(s2), "# Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm")
         end

@@ -17,7 +17,7 @@ The aim is to minimize a real-valued function on a Riemannian manifold, that is
 \min f(p), \quad p ∈ \mathcal{M}.
 ```
 
-Riemannian quasi-Newtonian methods are as generalizations of their Euclidean counterparts Riemannian line search methods. These methods determine a search direction ``η_k ∈ T_{p_k} \mathcal{M}`` at the current iterate ``p_k`` and a suitable stepsize ``α_k`` along ``\gamma(α) = R_{p_k}(α η_k)``, where ``R: T \mathcal{M} →\mathcal{M}`` is a retraction. The next iterate is obtained by
+Riemannian quasi-Newtonian methods are generalizations of their Euclidean counterparts Riemannian line search methods. These methods determine a search direction ``η_k ∈ T_{p_k} \mathcal{M}`` at the current iterate ``p_k`` and a suitable stepsize ``α_k`` along ``\gamma(α) = R_{p_k}(α η_k)``, where ``R: T \mathcal{M} →\mathcal{M}`` is a retraction. The next iterate is obtained by
 
 ```math
 p_{k+1} = R_{p_k}(α_k η_k).

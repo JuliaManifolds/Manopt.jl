@@ -14,7 +14,7 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 * `project!`:                for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 $(_fields(:stopping_criterion; name = "stop"))
-* `randomize`:               indicate whether `X` is initialised to a random vector or not
+* `randomize`:               indicate whether `X` is initialized to a random vector or not
 * `ρ_regularization`:        regularize the model fitness ``ρ`` to avoid division by zero
 $(_fields([:sub_problem, :sub_state]))
 * `σ`:                       Gaussian standard deviation when creating the random initial tangent vector
@@ -179,10 +179,16 @@ function TrustRegionsState(
     )
 end
 function TrustRegionsState(
-        M::AbstractManifold, sub_problem; evaluation::E = AllocatingEvaluation(), kwargs...
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
-    return TrustRegionsState(M, sub_problem, cfs; kwargs...)
+        M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
+    )
+    return TrustRegionsState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function TrustRegionsState(
+        M::AbstractManifold, sub_problem; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation)
+    cfs = ClosedFormSubSolverState()
+    return TrustRegionsState(M, sub_problem_, cfs; kwargs...)
 end
 function TrustRegionsState(
         M::AbstractManifold, mho::AbstractManifoldHessianObjective; p = rand(M), kwargs...
@@ -293,7 +299,7 @@ $(_kwargs(:evaluation))
   see `evaluation`, and by default set to the identity.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* `randomize=false`:      indicate whether `X` is initialised to a random vector or not.
+* `randomize=false`:      indicate whether `X` is initialized to a random vector or not.
   This disables preconditioning.
 * `ρ_regularization=1e3`: regularize the performance evaluation ``ρ`` to avoid numerical inaccuracies.
 * `reduction_factor=0.25`: trust-region reduction factor
@@ -342,16 +348,12 @@ function trust_regions(
         end,
         kwargs...,
     ) where {TH <: Function}
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    Hess_f_ = _ensure_mutating_hessian(Hess_f, p, evaluation)
-    preconditioner_ = _ensure_mutating_hessian(preconditioner, p, evaluation)
     mho = ManifoldHessianObjective(
-        f_, grad_f_, Hess_f_, preconditioner_; evaluation = evaluation
+        f, grad_f, Hess_f, preconditioner; p = p, evaluation = evaluation
     )
+    p_ = maybe_wrap_variable(p)
     rs = trust_regions(M, mho, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 # neither Hessian (Function) nor point
 function trust_regions(M::AbstractManifold, f, grad_f; kwargs...)
@@ -491,7 +493,7 @@ function trust_regions!(
     dmho = decorate_objective!(M, mho; kwargs...)
     dmp = DefaultManoptProblem(M, dmho)
     trs = TrustRegionsState(
-        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        M, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, TrustRegionsState),
         p = p, X = get_gradient(dmp, p),
         trust_region_radius = trust_region_radius,
@@ -543,9 +545,9 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     end
     # Update the current gradient
     get_gradient!(M, trs.X, mho, trs.p)
-    set_parameter!(trs.sub_problem, :Manifold, :Basepoint, copy(M, trs.p))
-    set_parameter!(trs.sub_state, :Iterate, copy(M, trs.p, trs.Y))
-    set_parameter!(trs.sub_state, :TrustRegionRadius, trs.trust_region_radius)
+    set_parameter!(trs.sub_problem, Val(:Manifold), Val(:Basepoint), copy(M, trs.p))
+    set_parameter!(trs.sub_state, Val(:Iterate), copy(M, trs.p, trs.Y))
+    set_parameter!(trs.sub_state, Val(:TrustRegionRadius), trs.trust_region_radius)
     solve!(trs.sub_problem, trs.sub_state)
     callback(:Subsolver, mp, trs, k)
     #

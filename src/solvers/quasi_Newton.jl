@@ -36,7 +36,7 @@ $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 * `initial_scale=1.0`: a relative initial scale. By default deactivated when using a preconditioner.
 * `memory_size=20`: a shortcut to set the memory in the default direction update
-* `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, Nothing} = nothing` specify a preconditioner or deactivate by passing `nothing`.
+* `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, missing} = missing` specify a preconditioner or deactivate by passing `missing`.
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`QuasiNewtonState`](@ref)`)"))
 $(_kwargs(:vector_transport_method))
@@ -76,7 +76,7 @@ mutable struct QuasiNewtonState{
             initial_vector::T = zero_vector(M, p), # deprecated
             X::T = initial_vector,
             vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
-            preconditioner::Union{QuasiNewtonPreconditioner, Nothing} = nothing,
+            preconditioner::Union{QuasiNewtonPreconditioner, Missing} = missing,
             initial_scale::Union{<:Real, Nothing} = isnothing(preconditioner) ? 1.0 : nothing,
             memory_size::Int = 20,
             direction_update::D = QuasiNewtonLimitedMemoryDirectionUpdate(
@@ -95,7 +95,7 @@ mutable struct QuasiNewtonState{
             P, T, D <: AbstractQuasiNewtonDirectionUpdate, C <: AbstractDict{Symbol},
             SC <: StoppingCriterion, S <: Stepsize, RM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
         }
-        precon = isnothing(preconditioner) ? QuasiNewtonPreconditioner((M, p, X) -> X) : preconditioner
+        precon = ismissing(preconditioner) ? QuasiNewtonPreconditioner((M, p, X) -> X) : preconditioner
         return QuasiNewtonState(;
             p = p, p_old = copy(M, p), η = copy(M, p, X), X = X, sk = copy(M, p, X), yk = copy(M, p, X),
             callbacks = callbacks, direction_update = direction_update, preconditioner = precon,
@@ -242,8 +242,8 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
   * `:reinitialize_direction_update`: discards operator state stored in direction update rules.
   * any other value performs the verification, keeps the direction but stores a message.
   A stored message can be displayed using [`DebugMessages`](@ref).
-* `preconditioner=nothing` specify a preconditioner, either
-  * the default `nothing` does not activate a preconditioning
+* `preconditioner=missing` specify a preconditioner, either
+  * the default `missing` does not activate a preconditioning
   * a function of the form `(M, p, X) -> Y` or mutating `(M, Y, p, X) -> Y` depending on the `evaluation`
   * a [`PreconditionedDirection`](@ref). See also their docs for more details on the preconditioner.
   Note that the preconditioner is applied to the gradient, i.e. the right hand side _before_ solving the linear system.
@@ -261,20 +261,14 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_QN)"
 function quasi_Newton(
-        M::AbstractManifold, f::TF, grad_f::TDF,
-        p = rand(M);
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        differential = nothing,
+        M::AbstractManifold, f::TF, grad_f::TDF, p = rand(M);
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), differential = missing,
         kwargs...,
     ) where {TF, TDF}
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(
-        f_, grad_f_; differential = differential, evaluation = evaluation
-    )
+    p_ = maybe_wrap_variable(p)
+    mgo = ManifoldGradientObjective(f, grad_f; differential = differential, evaluation = evaluation, p = p)
     rs = quasi_Newton(M, mgo, p_; kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function quasi_Newton(
         M::AbstractManifold, mgo::O, p; kwargs...
@@ -289,7 +283,7 @@ calls_with_kwargs(::typeof(quasi_Newton)) = (quasi_Newton!,)
 quasi_Newton!(M::AbstractManifold, params...; kwargs...)
 function quasi_Newton!(
         M::AbstractManifold, f::TF, grad_f::TDF, p;
-        differential = nothing,
+        differential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     ) where {TF, TDF}
@@ -319,8 +313,9 @@ function quasi_Newton!(
                 Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))
             end
         ),
-        preconditioner = nothing,
-        initial_scale::Union{<:Real, Nothing} = isnothing(preconditioner) ? 1.0 : nothing,
+        preconditioner = missing,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        initial_scale::Union{<:Real, Nothing} = ismissing(preconditioner) ? 1.0 : nothing,
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, QuasiNewtonState;
             retraction_method = retraction_method,
@@ -332,8 +327,7 @@ function quasi_Newton!(
         sy_tol::Real = 1.0e-8,
         kwargs...,
     ) where {
-        E <: AbstractEvaluationType,
-        O <: Union{AbstractManifoldFirstOrderObjective{E}, AbstractDecoratedManifoldObjective{E}},
+        O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective},
     }
     keywords_accepted(quasi_Newton!; kwargs...)
     local local_dir_upd # COV_EXCL_LINE
@@ -371,7 +365,7 @@ function quasi_Newton!(
         direction_update = local_dir_upd,
         stopping_criterion = stopping_criterion,
         preconditioner = if preconditioner isa Function
-            QuasiNewtonPreconditioner(preconditioner; evaluation = E())
+            QuasiNewtonPreconditioner(preconditioner; evaluation = evaluation)
         else
             preconditioner
         end,

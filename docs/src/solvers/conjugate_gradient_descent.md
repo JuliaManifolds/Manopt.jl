@@ -1,4 +1,3 @@
-
 # Conjugate gradient descent
 
 ```@meta
@@ -12,52 +11,30 @@ conjugate_gradient_descent!
 
 ## State
 
-```@docs
-ConjugateGradientDescentState
-```
+See [`ConjugateGradientDescentState`](@ref).
 
 ## [Available coefficients](@id cg-coeffs)
 
 The update rules act as [`DirectionUpdateRule`](@ref), which internally always first evaluate the gradient itself.
 
-```@docs
-ConjugateDescentCoefficient
-ConjugateGradientBealeRestart
-DaiYuanCoefficient
-FletcherReevesCoefficient
-HagerZhangCoefficient
-HestenesStiefelCoefficient
-HybridCoefficient
-LiuStoreyCoefficient
-PolakRibiereCoefficient
-SteepestDescentCoefficient
+```@autodocs
+Modules = [Manopt]
+Pages = ["commons/conjugate_gradient_coefficients.jl"]
+Order = [:type, :function]
+Private = false
+Public = true
 ```
 
-## [Restart rules](@id cg-restart)
+### Internal functions
 
-The update rules might produce update steps that are not a descent direction, or at least
-be only approximately one. In these cases the following restart rules can be specified.
-
-```@docs
-AbstractRestartCondition
-NeverRestart
-RestartOnNonDescent
-RestartOnNonSufficientDescent
+```@autodocs
+Modules = [Manopt]
+Pages = ["commons/conjugate_gradient_coefficients.jl"]
+Order = [:type, :function]
+Private = true
+Public = false
 ```
 
-## Internal rules for coefficients
-
-```@docs
-Manopt.ConjugateGradientBealeRestartRule
-Manopt.DaiYuanCoefficientRule
-Manopt.FletcherReevesCoefficientRule
-Manopt.HagerZhangCoefficientRule
-Manopt.HestenesStiefelCoefficientRule
-Manopt.HybridCoefficientRule
-Manopt.LiuStoreyCoefficientRule
-Manopt.PolakRibiereCoefficientRule
-Manopt.SteepestDescentCoefficientRule
-```
 
 ## [Technical details](@id sec-cgd-technical-details)
 

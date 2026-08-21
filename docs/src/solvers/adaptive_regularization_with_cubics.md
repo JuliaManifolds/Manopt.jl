@@ -1,7 +1,5 @@
 # Adaptive regularization with cubics
 
-
-
 ```@meta
 CurrentModule = Manopt
 ```
@@ -33,11 +31,13 @@ There is a generic objective, that implements the sub problem
 
 ```@docs
 AdaptiveRegularizationWithCubicsModelObjective
+get_cost(::TangentSpace, ::AdaptiveRegularizationWithCubicsModelObjective, X)
+get_gradient(::TangentSpace,::AdaptiveRegularizationWithCubicsModelObjective, X)
 ```
 
 Since the sub problem is given on the tangent space, you have to provide
 
-```
+```julia
 arc_obj = AdaptiveRegularizationWithCubicsModelObjective(mho, σ)
 sub_problem = DefaultProblem(TangentSpaceAt(M,p), arc_obj)
 ```
@@ -57,7 +57,7 @@ StopWhenFirstOrderProgress
 ## [Technical details](@id sec-arc-technical-details)
 
 The [`adaptive_regularization_with_cubics`](@ref) requires the following functions
-of a manifolds to be available
+of a manifold to be available
 
 * A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favourite retraction. If this default is set, a `retraction_method=` does not have to be specified.
 * if you do not provide an initial regularization parameter `σ`, a [`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`) is required.

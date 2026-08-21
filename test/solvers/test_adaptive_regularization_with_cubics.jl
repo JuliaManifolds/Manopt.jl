@@ -149,18 +149,13 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         f1(M, p) = p
         f1!(M, q, p) = copyto!(M, q, p)
         r = copy(M, p1)
-        Manopt.solve_arc_subproblem!(
-            M, r, f1, Manopt.ClosedFormSubSolverState{AllocatingEvaluation}(), p0
-        )
-        @test r == p0
-        r = copy(M, p1)
-        Manopt.solve_arc_subproblem!(
-            M, r, f1!, Manopt.ClosedFormSubSolverState{InplaceEvaluation}(), p0
-        )
+        Manopt.solve_arc_subproblem!(M, r, f1!, Manopt.ClosedFormSubSolverState(), p0)
         @test r == p0
         # Dummy construction with a function for the `sub_problem`
         arcs4 = AdaptiveRegularizationState(M, f1; p = p0)
         @test arcs4.sub_state isa Manopt.ClosedFormSubSolverState
+        arcs5 = AdaptiveRegularizationState(M, f1, AllocatingEvaluation(); p = p0)
+        @test arcs5.sub_state isa Manopt.ClosedFormSubSolverState
     end
 
     @testset "A few solver runs" begin
@@ -234,14 +229,8 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         Mc, fc, grad_fc, pc0, pc_star = Manopt.Test.Circle_mean_task()
         hess_fc(Mc, p, X) = 1.0
         p0 = 0.2
-        p1 = adaptive_regularization_with_cubics(
-            Mc, fc, grad_fc, hess_fc, p0; θ = 0.5, σ = 100.0
-        )
+        p1 = adaptive_regularization_with_cubics(Mc, fc, grad_fc, hess_fc, p0; θ = 0.5, σ = 100.0)
         @test fc(Mc, p0) > fc(Mc, p1)
-        p2 = adaptive_regularization_with_cubics(
-            Mc, fc, grad_fc, hess_fc, p0; θ = 0.5, σ = 100.0, evaluation = InplaceEvaluation()
-        )
-        @test fc(Mc, p0) > fc(Mc, p2)
     end
 
     @testset "Start at a point with _exactly_ gradient zero - In Tutorial mode" begin

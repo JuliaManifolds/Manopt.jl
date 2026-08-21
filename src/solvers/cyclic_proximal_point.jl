@@ -144,12 +144,10 @@ function cyclic_proximal_point(
         M::AbstractManifold, f, proxes_f::Union{Tuple, AbstractVector}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    proxes_f_ = [_ensure_mutating_prox(prox_f, p, evaluation) for prox_f in proxes_f]
-    mpo = ManifoldProximalMapObjective(f_, proxes_f_; evaluation = evaluation)
+    p_ = maybe_wrap_variable(p)
+    mpo = ManifoldProximalMapObjective(f, proxes_f; evaluation = evaluation, p = p)
     rs = cyclic_proximal_point(M, mpo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function cyclic_proximal_point(
         M::AbstractManifold, mpo::O, p; kwargs...
@@ -170,9 +168,7 @@ function cyclic_proximal_point!(
     return cyclic_proximal_point!(M, mpo, p; evaluation = evaluation, kwargs...)
 end
 function cyclic_proximal_point!(
-        M::AbstractManifold,
-        mpo::O,
-        p;
+        M::AbstractManifold, mpo::O, p;
         callbacks = Dict{Symbol, Function}(),
         evaluation_order::Symbol = :Linear,
         stopping_criterion::StoppingCriterion = StopAfterIteration(5000) |
@@ -198,7 +194,7 @@ end
 calls_with_kwargs(::typeof(cyclic_proximal_point!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPointState)
-    c = length(get_objective(amp, true).proximal_maps!!)
+    c = length(get_objective(amp, true).proximal_maps!)
     cpps.order = collect(1:c)
     (cpps.order_type == :FixedRandom) && shuffle!(cpps.order)
     return cpps

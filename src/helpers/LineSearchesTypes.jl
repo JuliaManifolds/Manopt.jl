@@ -3,21 +3,25 @@
 
 Wrapper for line searches available in the `LineSearches.jl` library.
 
-## Constructors
+# Constructors
 
-    LineSearchesStepsize(M::AbstractManifold, linesearch; kwargs...
-    LineSearchesStepsize(
-        linesearch; retraction_method=ExponentialRetraction(), vector_transport_method=ParallelTransport(),
-    )
+    LineSearchesStepsize(M::AbstractManifold, linesearch; kwargs...)
+    LineSearchesStepsize(linesearch; kwargs...)
 
 Wrap `linesearch` (for example [`HagerZhang`](https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.HagerZhang)
 or [`MoreThuente`](https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.MoreThuente)).
-The initial step selection from Linesearches.jl is not yet supported and `initial_guess` is
-always used (by default [`ConstantInitialGuess`](@ref)).
+The initial step selection from `LineSearches.jl` is not yet supported and `initial_guess` is
+always used instead.
 
 # Keyword Arguments
 
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`()`: the initial guess for the step size to
+  start the line search from.
+* `last_stepsize=NaN`: the initial value to store as the last step size computed.
 $(_kwargs([:retraction_method, :vector_transport_method]))
+
+Without the manifold `M` as a first argument, `retraction_method` defaults to
+`ExponentialRetraction()` and `vector_transport_method` to `ParallelTransport()`.
 """
 mutable struct LineSearchesStepsize{
         TLS, TIG <: AbstractInitialLinesearchGuess, TRM <: AbstractRetractionMethod, TVTM <: AbstractVectorTransportMethod, TF <: Real,
@@ -83,9 +87,9 @@ function Base.show(io::IO, cs::LineSearchesStepsize)
 end
 function status_summary(cs::LineSearchesStepsize; context::Symbol = :default)
     (context === :short) && return repr(cs)
-    (context === :inline) && return "A linesearch stepsize wrapper for LineSearches.jl (last step size $(cs.last_stepsize))"
+    (context === :inline) && return "A line search step size wrapper for LineSearches.jl (last step size: $(cs.last_stepsize))"
     return """
-    A step size wrapper for LineSearches.jl
+    A line search step size wrapper for LineSearches.jl
     (last step size: $(cs.last_stepsize))
 
     ## Parameters

@@ -123,7 +123,7 @@ function RandomWalkState(M::AbstractManifold, p::P=rand(M);
 end
 ```
 
-Parametrising the state avoid that we have abstract typed fields.
+Parametrizing the state avoid that we have abstract typed fields.
 The keyword arguments for the retraction and stopping criterion are the ones usually used
 in `Manopt.jl` and provide an easy way to construct this state now.
 
@@ -133,7 +133,7 @@ States usually have a shortened name as their variable, we use `rws` for our sta
 
 There is basically only two methods we need to implement for our solver
 
-- `initialize_solver!(mp, rws)` which initialises the solver before the first iteration
+- `initialize_solver!(mp, rws)` which initializes the solver before the first iteration
 - `step_solver!(mp, rws, i)` which implements the `i`th iteration, where `i` is given to you as the third parameter
 - `get_iterate(rws)` which accesses the iterate from other places in the solver
 - `get_solver_result(rws)` returning the solvers final (best) point we reached.
@@ -155,8 +155,8 @@ If your choice is different, you need to reimplement
 - `stop_solver!(mp, rws, i)` to determine whether or not to stop after the `i`th iteration.
 - `get_iterate(rws)` to access the current iterate
 
-We recommend to follow the general scheme with the `stop` field. If you have specific criteria
-when to stop, consider implementing your own [stopping criterion](../plans/stopping_criteria.md) instead.
+We recommend to follow the general scheme with the `stop` field.
+`Manopt.jl` already provides a library of available [stopping criteria](../commons/stopping_criteria.md) you can use.
 
 ### Initialization and iterate access
 
@@ -241,7 +241,7 @@ get_solver_result(s2)
 ## Ease of use I: a high level interface
 
 `Manopt.jl` offers a few additional features for solvers in their high level interfaces,
-for example [`debug=` for debug](../commons/debugs.md), [`record=`](../plans/record.md) keywords for debug and recording
+for example [`debug = `](../commons/debugs.md), [`record = `](../commons/records.md) keywords for debug output and recording
 within solver states or `count=` and `cache` keywords for the objective.
 
 We can introduce these here as well with just a few lines of code. There are usually two steps.

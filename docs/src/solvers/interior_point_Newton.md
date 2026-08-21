@@ -15,21 +15,10 @@ interior_point_Newton!
 InteriorPointNewtonState
 ```
 
-## Subproblem functions
-
-```@docs
-CondensedKKTVectorField
-CondensedKKTVectorFieldJacobian
-KKTVectorField
-KKTVectorFieldJacobian
-KKTVectorFieldAdjointJacobian
-KKTVectorFieldNormSq
-KKTVectorFieldNormSqGradient
-```
-
 ## Helpers
 
 ```@docs
+StepsizeState
 InteriorPointCentralityCondition
 Manopt.calculate_σ
 ```

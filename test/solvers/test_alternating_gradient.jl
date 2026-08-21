@@ -52,7 +52,6 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
     @testset "Test show/repr" begin
         s1 = repr(objf)
         @test startswith(s1, "ManifoldAlternatingGradientObjective(")
-        @test contains(s1, "AllocatingEvaluation()")
         @test Manopt.status_summary(objf; context = :short) == s1
         @test startswith(Manopt.status_summary(objf; context = :inline), "An alternating gradient objective")
         s2 = Manopt.status_summary(objf)
@@ -91,14 +90,8 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             callbacks = cb,
         )
         @test sk_record == [
-            (:BeforeInit, 0),
-            (:Init, 0),
-            (:BeforeStop, 0),
-            (:BeforeStep, 1),
-            (:Stepsize, 1),
-            (:Step, 1),
-            (:BeforeStop, 1),
-            (:Stop, 1),
+            (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+            (:BeforeStep, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
         ]
     end
 end

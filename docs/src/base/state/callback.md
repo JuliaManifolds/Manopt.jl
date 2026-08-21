@@ -1,5 +1,9 @@
 # Manopt Solver Callbacks
 
+```@meta
+CurrentModule = Manopt
+```
+
 The callback functionality is meant to provide a user with
 direct access to the solver (problem and state) at certain points
 of a solver run to inspect or modify it.

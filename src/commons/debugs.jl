@@ -171,6 +171,128 @@ end
 # A global constant for empty debugs
 _EMPTY_DIVIDER = DebugDivider("")
 
+"""
+    DebugDualChange(opts...)
+
+Print the change of the dual variable.
+
+This is similar to [`DebugChange`](@ref) (see their constructors for details), but uses a
+different calculation of the change, since the dual variable lives in (possibly different)
+tangent spaces.
+"""
+mutable struct DebugDualChange <: DebugAction
+    io::IO
+    format::String
+    storage::StoreStateAction
+    at_init::Bool
+    function DebugDualChange(;
+            storage::StoreStateAction = StoreStateAction([:X, :n]),
+            io::IO = stdout, prefix = "Dual Change: ", format = "$prefix%s", at_init::Bool = false,
+        )
+        return new(io, format, storage)
+    end
+    function DebugDualChange(
+            values::Tuple{T, P};
+            storage::StoreStateAction = StoreStateAction([:X, :n]),
+            io::IO = stdout, prefix = "Dual Change: ", format = "$prefix%s",
+        ) where {P, T}
+        update_storage!(
+            storage, Dict{Symbol, Any}(k => v for (k, v) in zip((:X, :n), values))
+        )
+        return new(io, format, storage)
+    end
+end
+function (d::DebugDualChange)(
+        tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
+    )
+    N = get_manifold(tmp, 2)
+    if all(has_storage.(Ref(d.storage), [:X, :n])) && k > 0 # all values stored
+        #fetch
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
+        v = norm(
+            N, apds.n,
+            vector_transport_to(
+                N, n_old, X_old, apds.n, apds.vector_transport_method_dual
+            ) - apds.X,
+        )
+        (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), v)
+    end
+    return d.storage(tmp, apds, k)
+end
+function show(io::IO, ddc::DebugDualChange)
+    return print(io, "DebugDualChange(; io = ", ddc.io, ", format =\"$(escape_string(ddc.format))\", at_init=$(ddc.at_init))")
+end
+function status_summary(ddc::DebugDualChange; context::Symbol = :default)
+    (context === :short) && return repr(ddc)
+    return "A DebugAction to print the change of the dual variable with format \"$(escape_string(ddc.format))\""
+end
+
+@doc """
+    DebugDualResidual <: DebugAction
+
+A Debug action to print the dual residual.
+The constructor accepts a printing function and some (shared) storage, which
+should at least record `:Iterate`, `:X` and `:n`.
+
+# Constructor
+DebugDualResidual(; kwargs...)
+
+# Keyword warguments
+
+* `io=`stdout`: stream to perform the debug to
+* `format="\$prefix%s"`: format to print the dual residual, using the
+* `prefix="Dual Residual: "`: short form to just set the prefix
+* `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
+"""
+mutable struct DebugDualResidual <: DebugAction
+    io::IO
+    format::String
+    storage::StoreStateAction
+    at_init::Bool
+    function DebugDualResidual(;
+            storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
+            io::IO = stdout, prefix = "Dual Residual: ", format = "$prefix%s", at_init::Bool = false,
+        )
+        return new(io, format, storage, at_init)
+    end
+    function DebugDualResidual(
+            initial_values::Tuple{P, T, Q};
+            storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
+            io::IO = stdout, prefix = "Dual Residual: ", format = "$prefix%s", at_init::Bool = false,
+        ) where {P, T, Q}
+        update_storage!(
+            storage, Dict(k => v for (k, v) in zip((:Iterate, :X, :n), initial_values))
+        )
+        return new(io, format, storage, at_init)
+    end
+end
+function (d::DebugDualResidual)(
+        tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
+    )
+    M = get_manifold(tmp, 1)
+    N = get_manifold(tmp, 2)
+    apdmo = get_objective(tmp)
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && (k >= (d.at_init ? 0 : 1)) # all values stored
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
+        Printf.format(
+            d.io, Printf.Format(d.format),
+            dual_residual(M, N, apdmo, apds, p_old, X_old, n_old),
+        )
+    end
+    return d.storage(tmp, apds, k)
+end
+function show(io::IO, d::DebugDualResidual)
+    return print(io, "DebugDualResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+end
+function status_summary(d::DebugDualResidual; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    return "A DebugAction to print the dual residual with format \"$(escape_string(d.format))\""
+end
+
 @doc """
     DebugEntry <: DebugAction
 
@@ -205,6 +327,134 @@ end
 function status_summary(di::DebugEntry; context::Symbol = :default)
     (context === :short) && return "(:$(di.field), format=\"$(escape_string(di.format))\")"
     return "A DebugAction to print the field :$(di.field) of the solver state with format \"$(escape_string(di.format))\""
+end
+
+"""
+    DebugDualIterate(e)
+
+Print the dual variable by using [`DebugEntry`](@ref),
+see their constructors for detail.
+This method is further set display `o.X`.
+"""
+DebugDualIterate(opts...; kwargs...) = DebugEntry(:X, opts...; kwargs...)
+
+"""
+    DebugDualBaseIterate(io::IO=stdout)
+
+Print the dual base variable by using [`DebugEntry`](@ref),
+see their constructors for detail.
+This method is further set display `o.n`.
+"""
+DebugDualBaseIterate(; kwargs...) = DebugEntry(:n; kwargs...)
+
+
+@doc """
+    DebugEntryChange{T} <: DebugAction
+
+print a certain entries change during iterates
+
+# Additional fields
+
+* `print`:    function to print the result
+* `prefix`:   prefix to the print out
+* `format`:   format to print (uses the `prefix` by default and scientific notation)
+* `field`:    Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `distance`: function (p,o,x1,x2) to compute the change/distance between two values of the entry
+* `storage`:  a [`StoreStateAction`](@ref) to store the previous value of `:f`
+
+# Constructors
+
+    DebugEntryChange(f,d)
+
+## Keyword arguments
+
+* `io=stdout`:                      an `IOStream` used for the debug
+* `prefix="Change of \$f"`:          the prefix
+* `storage=StoreStateAction((f,))`: a [`StoreStateAction`](@ref)
+* `initial_value=NaN`:              an initial value for the change of `o.field`.
+* `format="\$prefix %e"`:            format to print the change
+"""
+mutable struct DebugEntryChange <: DebugAction
+    distance::Any
+    field::Symbol
+    format::String
+    io::IO
+    storage::StoreStateAction
+    function DebugEntryChange(
+            f::Symbol,
+            d;
+            storage::StoreStateAction = StoreStateAction([f]),
+            prefix::String = "Change of \$f:",
+            format::String = "$prefix%s",
+            io::IO = stdout,
+            initial_value::Any = NaN,
+        )
+        if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
+            update_storage!(storage, Dict(f => initial_value))
+        end
+        return new(d, f, format, io, storage)
+    end
+end
+function (d::DebugEntryChange)(
+        p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
+    )
+    if k == 0
+        # on init if field not present -> generate
+        !has_storage(d.storage, d.field) && d.storage(p, st, k)
+        return nothing
+    end
+    x = get_storage(d.storage, d.field)
+    v = d.distance(p, st, getproperty(st, d.field), x)
+    (k > 0) && Printf.format(d.io, Printf.Format(d.format), v)
+    d.storage(p, st, k)
+    return nothing
+end
+function show(io::IO, dec::DebugEntryChange)
+    return print(
+        io,
+        "DebugEntryChange(:$(dec.field), $(dec.distance); format=\"$(escape_string(dec.format))\")",
+    )
+end
+function status_summary(d::DebugEntryChange; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    return "A DebugAction that prints the change of the entry :$(d.field) of the solver state in format “$(escape_string(d.format))”"
+end
+
+"""
+    DebugDualChange(; storage=StoreStateAction([:n]), io::IO=stdout)
+
+Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
+see their constructors for detail, on `o.n`.
+"""
+function DebugDualBaseChange(;
+        storage::StoreStateAction = StoreStateAction([:n]), prefix = "Dual Base Change:", kwargs...
+    )
+    return DebugEntryChange(
+        :n, (p, o, x, y) -> distance(get_manifold(p, 2), x, y, o.inverse_retraction_method_dual);
+        storage = storage, prefix = prefix, kwargs...,
+    )
+end
+
+"""
+    DebugPrimalBaseIterate()
+
+Print the primal base variable by using [`DebugEntry`](@ref),
+see their constructors for detail.
+This method is further set display `o.m`.
+"""
+DebugPrimalBaseIterate(opts...; kwargs...) = DebugEntry(:m, opts...; kwargs...)
+
+"""
+    DebugPrimalBaseChange(a::StoreStateAction=StoreStateAction([:m]),io::IO=stdout)
+
+Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
+see their constructors for detail, on `o.n`.
+"""
+function DebugPrimalBaseChange(opts...; prefix = "Primal Base Change:", kwargs...)
+    return DebugEntryChange(
+        :m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y),
+        opts...; prefix = prefix, kwargs...,
+    )
 end
 
 """
@@ -253,7 +503,7 @@ function (d::DebugFeasibility)(
         mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
     s = ""
-    cmo = get_objective(mp)
+    cmo = get_objective(mp, true) #Unwrap to get the constrained objective.
     p = get_iterate(st)
     eqc = get_equality_constraint(mp, p, :)
     eqc_nz = eqc[abs.(eqc) .> cmo.atol]
@@ -344,76 +594,43 @@ function status_summary(d::DebugIfEntry; context::Symbol = :Default)
     # Inline and default
     return "A DebugAction printing the entry :$(d.field) of the solver state if $(d.check) of that field is true, in format “$(escape_string(d.msg))” as $(d.type)"
 end
+
 @doc """
-    DebugEntryChange{T} <: DebugAction
+    DebugGradient <: DebugAction
 
-print a certain entries change during iterates
-
-# Additional fields
-
-* `print`:    function to print the result
-* `prefix`:   prefix to the print out
-* `format`:   format to print (uses the `prefix` by default and scientific notation)
-* `field`:    Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
-* `distance`: function (p,o,x1,x2) to compute the change/distance between two values of the entry
-* `storage`:  a [`StoreStateAction`](@ref) to store the previous value of `:f`
+debug for the gradient evaluated at the current iterate
 
 # Constructors
+    DebugGradient(; long=false, prefix= , format= "\$prefix%s", io=stdout, at_init=false)
 
-    DebugEntryChange(f,d)
-
-## Keyword arguments
-
-* `io=stdout`:                      an `IOStream` used for the debug
-* `prefix="Change of \$f"`:          the prefix
-* `storage=StoreStateAction((f,))`: a [`StoreStateAction`](@ref)
-* `initial_value=NaN`:              an initial value for the change of `o.field`.
-* `format="\$prefix %e"`:            format to print the change
+display the short (`false`) or long (`true`) default text for the gradient,
+or set the `prefix` manually. Alternatively the complete format can be set.
 """
-mutable struct DebugEntryChange <: DebugAction
-    distance::Any
-    field::Symbol
-    format::String
+mutable struct DebugGradient <: DebugAction
     io::IO
-    storage::StoreStateAction
-    function DebugEntryChange(
-            f::Symbol,
-            d;
-            storage::StoreStateAction = StoreStateAction([f]),
-            prefix::String = "Change of \$f:",
-            format::String = "$prefix%s",
+    format::String
+    at_init::Bool
+    function DebugGradient(;
+            long::Bool = false,
+            prefix = long ? "Gradient: " : "grad f(p):",
+            format = "$prefix%s",
             io::IO = stdout,
-            initial_value::Any = NaN,
+            at_init::Bool = false,
         )
-        if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
-            update_storage!(storage, Dict(f => initial_value))
-        end
-        return new(d, f, format, io, storage)
+        return new(io, format, at_init)
     end
 end
-function (d::DebugEntryChange)(
-        p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
-    )
-    if k == 0
-        # on init if field not present -> generate
-        !has_storage(d.storage, d.field) && d.storage(p, st, k)
-        return nothing
-    end
-    x = get_storage(d.storage, d.field)
-    v = d.distance(p, st, getproperty(st, d.field), x)
-    (k > 0) && Printf.format(d.io, Printf.Format(d.format), v)
-    d.storage(p, st, k)
+function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
+    (k < (d.at_init ? 0 : 1)) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), get_gradient(s))
     return nothing
 end
-function show(io::IO, dec::DebugEntryChange)
-    return print(
-        io,
-        "DebugEntryChange(:$(dec.field), $(dec.distance); format=\"$(escape_string(dec.format))\")",
-    )
+function Base.show(io::IO, dg::DebugGradient)
+    return print(io, "DebugGradient(; format=\"$(dg.format)\", at_init=$(dg.at_init))")
 end
-function status_summary(d::DebugEntryChange; context::Symbol = :default)
-    (context === :short) && return repr(d)
-    return "A DebugAction that prints the change of the entry :$(d.field) of the solver state in format “$(escape_string(d.format))”"
+function status_summary(dg::DebugGradient; context::Symbol = :default)
+    (context === :short) && (return "(:Gradient, \"$(dg.format)\")")
+    return "A DebugAction to print the gradient at the current iterate “$(dg.format)”"
 end
 
 @doc """
@@ -481,6 +698,51 @@ function status_summary(di::DebugGradientChange; context::Symbol = :Default)
     (context === :short) && (return "(:GradientChange, \"$(escape_string(di.format))\")")
     # Inline and default
     return "A DebugAction printing the change of the gradient with format “$(escape_string(di.format))”"
+end
+
+@doc """
+    DebugGradientNorm <: DebugAction
+
+debug for gradient evaluated at the current iterate.
+
+# Constructors
+    DebugGradientNorm([long=false, format= "\$prefix%s", io=stdout, at_init=true])
+
+display the short (`false`) or long (`true`) default text for the gradient norm.
+
+    DebugGradientNorm(prefix[, p=print])
+
+display the a `prefix` in front of the gradient norm.
+"""
+mutable struct DebugGradientNorm <: DebugAction
+    io::IO
+    format::String
+    at_init::Bool
+    function DebugGradientNorm(;
+            long::Bool = false,
+            prefix = long ? "Norm of the Gradient: " : "|grad f(p)|:",
+            format = "$prefix%s", io::IO = stdout, at_init::Bool = true,
+        )
+        return new(io, format, at_init)
+    end
+end
+function (d::DebugGradientNorm)(
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
+    (k < (d.at_init ? 0 : 1)) && return nothing
+    Printf.format(
+        d.io,
+        Printf.Format(d.format),
+        norm(get_manifold(mp), get_iterate(s), get_gradient(s)),
+    )
+    return nothing
+end
+function Base.show(io::IO, dgn::DebugGradientNorm)
+    return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\", at_init=$(dgn.at_init))")
+end
+function status_summary(dgn::DebugGradientNorm; context::Symbol = :default)
+    (context === :short) && return "(:GradientNorm, \"$(dgn.format)\")"
+    return "A debug action to display the gradient norm (format. \"$(dgn.format)\")"
 end
 
 @doc """
@@ -620,6 +882,224 @@ function status_summary(d::DebugMessages; context::Symbol = :default)
     return "A DebugAction printing messages collected during the last iteration as $(m)$(s)."
 end
 
+"""
+    DebugPrimalChange(opts...)
+
+Print the change of the primal variable by using [`DebugChange`](@ref),
+see their constructors for detail.
+"""
+function DebugPrimalChange(;
+        storage::StoreStateAction = StoreStateAction([:Iterate]), prefix = "Primal Change: ", kwargs...,
+    )
+    return DebugChange(; storage = storage, prefix = prefix, kwargs...)
+end
+
+
+@doc """
+    DebugPrimalDualResidual <: DebugAction
+
+A Debug action to print the primal dual residual.
+The constructor accepts a printing function and some (shared) storage, which
+should at least record `:Iterate`, `:X` and `:n`.
+
+# Constructor
+
+    DebugPrimalDualResidual()
+
+with the keywords
+
+# Keyword warguments
+
+* `io=`stdout`: stream to perform the debug to
+* `format="\$prefix%s"`: format to print the dual residual, using the
+* `prefix="PD Residual: "`: short form to just set the prefix
+* `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
+"""
+mutable struct DebugPrimalDualResidual <: DebugAction
+    io::IO
+    format::String
+    storage::StoreStateAction
+    at_init::Bool
+    function DebugPrimalDualResidual(;
+            storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
+            io::IO = stdout, prefix = "PD Residual: ", format = "$prefix%s", at_init::Bool = false,
+        )
+        return new(io, format, storage, at_init)
+    end
+    function DebugPrimalDualResidual(
+            values::Tuple{P, T, Q};
+            storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
+            io::IO = stdout, prefix = "PD Residual: ", format = "$prefix%s", at_init::Bool = false,
+        ) where {P, Q, T}
+        update_storage!(storage, Dict(k => v for (k, v) in zip((:Iterate, :X, :n), values)))
+        return new(io, format, storage, at_init)
+    end
+end
+function (d::DebugPrimalDualResidual)(
+        tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
+    )
+    M = get_manifold(tmp, 1)
+    N = get_manifold(tmp, 2)
+    apdmo = get_objective(tmp)
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && (k >= (d.at_init ? 0 : 1)) # all values stored
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
+        v = primal_residual(M, N, apdmo, apds, p_old, X_old, n_old) + dual_residual(tmp, apds, p_old, X_old, n_old)
+        Printf.format(d.io, Printf.Format(d.format), v / manifold_dimension(M))
+    end
+    return d.storage(tmp, apds, k)
+end
+function show(io::IO, d::DebugPrimalDualResidual)
+    return print(io, "DebugPrimalDualResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+end
+function status_summary(d::DebugPrimalDualResidual; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    return "A DebugAction to print the primal dual residual with format \"$(escape_string(d.format))\""
+end
+
+"""
+    DebugPrimalIterate(opts...;kwargs...)
+
+Print the change of the primal variable by using [`DebugIterate`](@ref),
+see their constructors for detail.
+"""
+DebugPrimalIterate(opts...; kwargs...) = DebugIterate(opts...; kwargs...)
+
+
+@doc """
+    DebugPrimalResidual <: DebugAction
+
+A Debug action to print the primal residual.
+The constructor accepts a printing function and some (shared) storage, which
+should at least record `:Iterate`, `:X` and `:n`.
+
+# Constructor
+
+    DebugPrimalResidual(; kwargs...)
+
+# Keyword warguments
+
+* `io=`stdout`: stream to perform the debug to
+* `format="\$prefix%s"`: format to print the dual residual, using the
+* `prefix="Primal Residual: "`: short form to just set the prefix
+* `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
+"""
+mutable struct DebugPrimalResidual <: DebugAction
+    io::IO
+    format::String
+    storage::StoreStateAction
+    at_init::Bool
+    function DebugPrimalResidual(;
+            storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
+            io::IO = stdout, prefix = "Primal Residual: ", format = "$prefix%s", at_init::Bool = false
+        )
+        return new(io, format, storage, at_init)
+    end
+    function DebugPrimalResidual(
+            values::Tuple{P, T, Q};
+            storage::StoreStateAction = StoreStateAction([:Iterate, :X, :n]),
+            io::IO = stdout, prefix = "Primal Residual: ", format = "$prefix%s", at_init::Bool = false,
+        ) where {P, T, Q}
+        update_storage!(storage, Dict(k => v for (k, v) in zip((:Iterate, :X, :n), values)))
+        return new(io, format, storage, at_init)
+    end
+end
+function (d::DebugPrimalResidual)(
+        tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
+    )
+    M = get_manifold(tmp, 1)
+    N = get_manifold(tmp, 2)
+    apdmo = get_objective(tmp)
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && (k >= (d.at_init ? 0 : 1)) # all values stored
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
+        Printf.format(
+            d.io, Printf.Format(d.format),
+            primal_residual(M, N, apdmo, apds, p_old, X_old, n_old),
+        )
+    end
+    return d.storage(tmp, apds, k)
+end
+function show(io::IO, d::DebugPrimalResidual)
+    return print(io, "DebugPrimalResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+end
+function status_summary(d::DebugPrimalResidual; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    return "A DebugAction to print the primal residual with format \"$(escape_string(d.format))\""
+end
+
+@doc """
+    DebugProximalParameter <: DebugAction
+
+print the current iterates proximal point algorithm parameter given by
+[`AbstractManoptSolverState`](@ref)s `o.λ`.
+"""
+mutable struct DebugProximalParameter <: DebugAction
+    io::IO
+    format::String
+    at_init::Bool
+    function DebugProximalParameter(;
+            long::Bool = false,
+            prefix = long ? "Proximal Map Parameter λ(i):" : "λ:",
+            format = "$prefix%s",
+            io::IO = stdout,
+            at_init::Bool = true,
+        )
+        return new(io, format, at_init)
+    end
+end
+function Base.show(io::IO, d::DebugProximalParameter)
+    return print(
+        io, "DebugGradientChange(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init = $(d.at_init))",
+    )
+end
+function status_summary(d::DebugProximalParameter; context::Symbol = :Default)
+    (context === :short) && (return "(:ProxParameter, \"$(escape_string(d.format))\")")
+    # Inline and default
+    return "A DebugAction printing the proximal parameter as “$(escape_string(d.format))”"
+end
+
+
+@doc """
+    DebugStepsize <: DebugAction
+
+debug for the current step size.
+
+# Constructors
+    DebugStepsize(;long=false,prefix="step size:", format="\$prefix%s", io=stdout, at_init=true)
+
+display the a `prefix` in front of the step size.
+"""
+mutable struct DebugStepsize <: DebugAction
+    io::IO
+    format::String
+    at_init::Bool
+    function DebugStepsize(;
+            at_init::Bool = true, io::IO = stdout,
+            long::Bool = false, prefix = long ? "step size:" : "s:", format = "$prefix%s",
+        )
+        return new(io, format, at_init)
+    end
+end
+function (d::DebugStepsize)(
+        p::P, s::O, k::Int
+    ) where {P <: AbstractManoptProblem, O <: AbstractGradientSolverState}
+    (k < (d.at_init ? 0 : 1)) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, k))
+    return nothing
+end
+function Base.show(io::IO, ds::DebugStepsize)
+    return print(io, "DebugStepsize(; format=\"$(escape_string(ds.format))\", at_init=$(ds.at_init))")
+end
+function status_summary(ds::DebugStepsize; context::Symbol = :default)
+    (context === :short) && return "(:Stepsize, \"$(escape_string(ds.format))\")"
+    return "A DebugAction that prints the current step size to $(ds.io) in format “$(escape_string(ds.format))”"
+end
+
 @doc """
     DebugStoppingCriterion <: DebugAction
 
@@ -656,6 +1136,41 @@ function status_summary(c::DebugStoppingCriterion; context::Symbol = :default)
     # Inline and default
     return "A DebugAction printing the reason why a solver has stopped."
 end
+
+@doc """
+    DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
+
+print a warning if the Lagrange parameter based value ``-ξ`` of the bundle method increases.
+
+# Constructor
+
+    DebugWarnIfLagrangeMultiplierIncreases(warn=:Once; tol=1e2)
+
+Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e2`.
+
+The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+to `:Always` to report an increase every time it happens, and it can be set to `:No`
+to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
+All other symbols are handled as if they were `:Always`.
+"""
+mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
+    status::Symbol
+    old_value::Float64
+    tol::Float64
+    function DebugWarnIfLagrangeMultiplierIncreases(warn::Symbol = :Once; tol = 1.0e2)
+        return new(warn, Float64(Inf), tol)
+    end
+end
+function show(io::IO, d::DebugWarnIfLagrangeMultiplierIncreases)
+    m = (d.status === :No ? "" : ":$(d.status)")
+    return print(io, "DebugWarnIfLagrangeMultiplierIncreases($(m); tol=\"$(d.tol)\")")
+end
+function status_summary(d::DebugWarnIfLagrangeMultiplierIncreases; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    m = (d.status === :Once) ? "once" : (d.status === :No ? "(inactive)" : "")
+    return "a DebugAction warning if the lagange multiplier increases in an iteration $m."
+end
+
 
 @doc """
     DebugWhenActive <: DebugAction
@@ -1109,7 +1624,7 @@ when the `:WhenActive` symbol is present
 A dictionary for the different entry points where debug can happen, each containing
 a [`DebugAction`](@ref) to call.
 
-Note that upon the initialisation all dictionaries but the `:StartAlgorithm`
+Note that upon the initialization all dictionaries but the `:StartAlgorithm`
 one are called with an `i=0` for reset.
 
 # Examples

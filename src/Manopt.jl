@@ -60,40 +60,21 @@ using ManifoldsBase:
     allocate, allocate_result, allocate_result_type,
     base_manifold,
     copy, copyto!,
-    default_inverse_retraction_method,
-    default_retraction_method,
-    default_vector_transport_method,
+    default_inverse_retraction_method, default_retraction_method, default_vector_transport_method,
     distance,
     embed, embed_project, embed_project!,
     exp, exp!, geodesic,
-    get_basis,
-    get_component,
-    get_coordinates, get_coordinates!,
-    get_embedding,
-    get_iterator,
+    get_basis, get_component, get_coordinates, get_coordinates!, get_embedding, get_iterator,
     get_vector, get_vector!, get_vectors,
     has_components,
-    injectivity_radius,
-    inner,
-    inverse_retract, inverse_retract!,
-    is_flat, is_point, is_vector,
+    injectivity_radius, inner, inverse_retract, inverse_retract!, is_flat, is_point, is_vector,
     log, log!,
-    manifold_dimension,
-    mid_point, mid_point!,
-    norm,
-    number_eltype, number_of_coordinates,
-    power_dimensions,
-    project,
-    project!,
-    rand!,
-    riemann_tensor, riemann_tensor!,
-    representation_size,
-    requires_caching,
-    retract, retract!,
-    sectional_curvature,
-    set_component!,
-    shortest_geodesic, shortest_geodesic!,
-    submanifold_component, submanifold_components,
+    manifold_dimension, mid_point, mid_point!,
+    norm, number_eltype, number_of_coordinates,
+    power_dimensions, project, project!,
+    rand!, riemann_tensor, riemann_tensor!, representation_size, requires_caching, retract, retract!,
+    sectional_curvature, set_component!,
+    shortest_geodesic, shortest_geodesic!, submanifold_component, submanifold_components,
     vector_transport_to, vector_transport_to!,
     zero_vector, zero_vector!,
     ×, ℂ, ℝ
@@ -114,7 +95,7 @@ include("documentation_glossary.jl")
 A small internal helper function to choose a Euclidean space.
 By default, this uses the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) unless you load
 a more advanced Euclidean space like [`Euclidean`](@extref Manifolds.Euclidean)
-from [`Manifolds.jl`](@extref Manifolds.Manifolds)
+from [`Manifolds.jl`](@extref Manifolds.Manifolds).
 """
 Rn(args...; kwargs...) = Rn(Val(Rn_default()), args...; kwargs...)
 
@@ -122,8 +103,8 @@ Rn(args...; kwargs...) = Rn(Val(Rn_default()), args...; kwargs...)
     Rn_default()
 
 Specify a default value to dispatch [`Rn`](@ref) on.
-This default is set to `Manifolds`, indicating, that when this package is loaded,
-it is the preferred package to ask for a vector space space.
+This default is set to `Manifolds`, indicating that, when this package is loaded,
+it is the preferred package to ask for a vector space.
 
 The default within `Manopt.jl` is to use the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) from `ManifoldsBase.jl`.
 If you load `Manifolds.jl` this switches to using [`Euclidean`](@extref Manifolds.Euclidean).
@@ -140,27 +121,67 @@ end
 #
 #
 # Base – A (work in progress) separate folder scheme for abstract types and design ideas
+# ---
+# ## Problem
 include("base/problem/abstract_problem.jl")
-include("base/objective/evaluation.jl")
+# ## Function
+include("base/function/evaluation.jl")
+include("base/function/abstract_function.jl")
+include("base/function/constrained.jl")
+include("base/function/robustifier.jl")
+include("base/function/vectorial.jl")
+# ## Objective
 include("base/objective/abstract_objective.jl")
+include("base/objective/cost.jl")
+include("base/objective/first_order.jl")
+include("base/objective/first_order_nonsmooth.jl")
+include("base/objective/linear_system.jl")
+include("base/objective/second_order.jl")
+include("base/objective/sub_objective.jl")
+# ## State
 include("base/state/abstract_state.jl")
 include("base/state/action.jl")
-include("base/state/debug.jl")
 include("base/state/callback.jl")
+include("base/state/debug.jl")
 include("base/state/decorator.jl")
+include("base/state/record.jl")
+include("base/solver.jl")
+include("base/state/sub_state.jl")
+# ## General further interfaces
 include("base/default_factory.jl")
-
+include("base/keyword.jl")
+include("base/parameter.jl")
+include("base/manifold.jl")
+include("base/repl.jl")
+include("base/stepsize.jl")
+include("base/stopping_criterion.jl")
 #
 #
 # Commons – a collection of types or functions that are common to more than one solver
+# ---
+# Robustifiers are used in the objective.jl, so they come first
+include("commons/robustifiers.jl")
+# Functions are used in the Objectives, these are sometimes used later
+include("commons/functions.jl")
+include("commons/objectives.jl")
+# The remainder is alphabetically ordered.
+include("commons/conjugate_gradient_coefficients.jl")
+include("commons/direction_updates.jl")
+include("commons/linear_systems.jl")
+include("commons/parameters.jl")
+include("commons/problems.jl")
+include("commons/quasi_newton_updates.jl")
+include("commons/stepsizes.jl")
+include("commons/stopping_criteria.jl")
+include("commons/sub_functions.jl")
+include("commons/sub_objectives.jl")
+include("commons/subsolver_states.jl")
+include("commons/vectorial_functions.jl")
+# Debug and Record might require common problems and objectives
 include("commons/debugs.jl")
-
-# Common Solver plans
-include("plans/plan.jl")
+include("commons/records.jl")
 #
 #
-# solvers general framework
-include("solvers/solver.jl")
 # specific solvers
 include("solvers/adaptive_regularization_with_cubics.jl")
 include("solvers/alternating_gradient_descent.jl")
@@ -195,6 +216,7 @@ include("solvers/trust_regions.jl")
 include("solvers/stochastic_gradient_descent.jl")
 include("solvers/subgradient.jl")
 include("solvers/vectorbundle_newton.jl")
+#
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 
@@ -270,7 +292,7 @@ export AbstractRobustifierFunction, SoftL1Robustifier, AbstractRobustifierFuncti
     HuberRobustifier, ComponentwiseRobustifierFunction
 #
 # Evaluation & Vectorial Types
-export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
+export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation
 export AbstractVectorialType
 export CoefficientVectorialType, ComponentVectorialType, FunctionVectorialType
 #
@@ -539,4 +561,7 @@ export get_count, reset_counters!
 #
 # Helpers
 export check_gradient, check_differential, check_Hessian
+#
+# Errors
+export ManoptKeywordError
 end

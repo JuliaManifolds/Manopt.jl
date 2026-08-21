@@ -1,5 +1,9 @@
 # [Primal-dual Riemannian semismooth Newton algorithm](@id solver-pdrssn)
 
+```@meta
+CurrentModule = Manopt
+```
+
 The Primal-dual Riemannian semismooth Newton Algorithm is a second-order method derived from the [`ChambollePock`](@ref).
 
 The aim is to solve an optimization problem on a manifold with a cost function of the form
@@ -28,7 +32,7 @@ Given base points ``m∈\mathcal C``, ``n=Λ(m)∈\mathcal D``,
 initial primal and dual values ``p^{(0)} ∈\mathcal C``, ``ξ_{n}^{(0)} ∈ \mathcal T_{n}^{*}\mathcal N``,
 and primal and dual step sizes ``\sigma``, ``\tau``.
 
-The algorithms performs the steps ``k=1,…,`` (until a [`StoppingCriterion`](@ref) is reached)
+The algorithm performs the steps ``k=1,…,`` (until a [`StoppingCriterion`](@ref) is reached)
 
 1.  Choose any element
    ```math
@@ -65,11 +69,26 @@ primal_dual_semismooth_Newton
 primal_dual_semismooth_Newton!
 ```
 
+## Objective
+
+```@docs
+PrimalDualManifoldSemismoothNewtonObjective
+get_differential_primal_prox
+get_differential_dual_prox
+```
+
 ## State
 
 ```@docs
 PrimalDualSemismoothNewtonState
 ```
+
+## Solver specific debug output
+
+[`DebugDualBaseIterate`](@ref), [`DebugDualBaseChange`](@ref), [`DebugPrimalBaseIterate`](@ref),
+[`DebugPrimalBaseChange`](@ref), [`DebugDualChange`](@ref), [`DebugDualIterate`](@ref),
+[`DebugDualResidual`](@ref), [`DebugPrimalChange`](@ref), [`DebugPrimalIterate`](@ref), [`DebugPrimalResidual`](@ref)
+[`DebugPrimalDualResidual`](@ref)
 
 ## [Technical details](@id sec-ssn-technical-details)
 

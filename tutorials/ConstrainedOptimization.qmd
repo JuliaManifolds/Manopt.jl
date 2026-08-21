@@ -3,11 +3,11 @@ title: "How to do constrained optimization"
 author: "Ronny Bergmann"
 ---
 
-This tutorial is a short introduction to using solvers for constraint optimisation in [`Manopt.jl`](../index.md).
+This tutorial is a short introduction to using solvers for constraint optimization in [`Manopt.jl`](../index.md).
 
 ## Introduction
 
-A constraint optimisation problem is given by
+A constraint optimization problem is given by
 
 ```math
 \tag{P}
@@ -57,7 +57,7 @@ N = rand(Normal(0, 1 / d), (d, d)); N[diagind(N, 0)] .= rand(Normal(0, 2 / d), d
 Z = Z = sqrt(σ) * v0 * transpose(v0) + N;
 ```
 
-In order to recover $v_0$ we consider the constrained optimisation problem on the sphere $\mathcal S^{d-1}$ given by
+In order to recover $v_0$ we consider the constrained optimization problem on the sphere $\mathcal S^{d-1}$ given by
 
 ```math
 \begin{align*}
@@ -232,7 +232,7 @@ maximum(g(M, v4))
 
 ## Comparing to the unconstrained solver
 
-We can compare this to the _global_ optimum on the sphere, which is the unconstrained optimisation problem, where we can just use Quasi Newton.
+We can compare this to the _global_ optimum on the sphere, which is the unconstrained optimization problem, where we can just use Quasi Newton.
 
 Note that this is much faster, since every iteration of the algorithm does a quasi-Newton call as well.
 

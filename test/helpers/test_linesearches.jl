@@ -35,7 +35,7 @@ using Test
 
     @test rosenbrock(M, get_iterate(x_opt)) < 1.503084
     @test startswith(sprint(show, ls_hz), "LineSearchesStepsize(HagerZhang")
-    @test startswith(Manopt.status_summary(ls_hz), "A step size wrapper for LineSearches.jl")
+    @test startswith(Manopt.status_summary(ls_hz), "A line search step size wrapper for LineSearches.jl")
 
     # make sure get_last_stepsize works
     mgo = ManifoldGradientObjective(

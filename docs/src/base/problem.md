@@ -1,4 +1,8 @@
-# The Manopt Problem
+# The Manopt.jl problem
+
+```@meta
+CurrentModule = Manopt
+```
 
 An [`AbstractManoptProblem`](@ref) contains
 the manifold (domain) a problem is defined on and the objective
@@ -21,5 +25,6 @@ Order = [:function]
 ```
 
 From the two ingredients here, you can find more information about
+
 * the [`ManifoldsBase.AbstractManifold`](@extref) in [ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`)
-* the [`AbstractManifoldObjective`](@ref) on the [objective](objective.md)
+* the [`AbstractManifoldObjective`](@ref) on the page about the [objective](objective.md).

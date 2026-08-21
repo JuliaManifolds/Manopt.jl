@@ -46,6 +46,8 @@ using LinearAlgebra: I, tr
     # With dummy closed form solution
     epmsc = ExactPenaltyMethodState(M, f)
     @test epmsc.sub_state isa Manopt.ClosedFormSubSolverState
+    epmsc2 = ExactPenaltyMethodState(M, f, AllocatingEvaluation())
+    @test epmsc2.sub_state isa Manopt.ClosedFormSubSolverState
     # that is errors with just Manifold + State
     @test_throws ErrorException ExactPenaltyMethodState(M, Manopt.Test.DummyState())
     @testset "Numbers" begin

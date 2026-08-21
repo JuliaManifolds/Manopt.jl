@@ -2,41 +2,45 @@
     DebugAction
 
 A `DebugAction` is a small functor to print/issue debug output. The usual call is given by
-`(p::AbstractManoptProblem, s::AbstractManoptSolverState, k) -> s`, where `i` is
-the current iterate.
+`(p::AbstractManoptProblem, s::AbstractManoptSolverState, k) -> s`, where `k` is
+the current iteration.
 
-By convention `i=0` is interpreted as "For Initialization only," only debug
-info that prints initialization reacts, `i<0` triggers updates of variables
+By convention `k=0` is interpreted as “for initialization only”: only debug
+info that prints initialization reacts. `k<0` triggers updates of variables
 internally but does not trigger any output.
 
 # Fields (assumed by subtypes to exist)
-* `print` method to perform the actual print. Can for example be set to a file export,
-or to @info. The default is the `print` function on the default `Base.stdout`.
+
+* `print`: method to perform the actual print. Can for example be set to a file export,
+  or to `@info`. The default is the `print` function on the default `Base.stdout`.
 """
 abstract type DebugAction <: AbstractStateAction end
 
 @doc """
     DebugSolverState <: AbstractManoptSolverState
 
-The debug state appends debug to any state, they act as a decorator pattern.
+The debug state appends debug to any state; it acts as a decorator.
 Internally a dictionary is kept that stores a [`DebugAction`](@ref) for several occasions
 using a `Symbol` as reference.
 
-The original options can still be accessed using the [`get_state`](@ref) function.
+The original state can still be accessed using the [`get_state`](@ref) function.
 
 # Fields
 
-* `options`:         the options that are extended by debug information
-* `debug_dictionary`: a `Dict{Symbol,DebugAction}` to keep track of Debug for different actions
+* `state`:            the state that is extended by debug information
+* `debug_dictionary`: a `Dict{Symbol,DebugAction}` to keep track of debug output for different occasions
 
 # Constructors
-    DebugSolverState(o,dA)
 
-construct debug decorated options, where `dD` can be
-* a [`DebugAction`](@ref), then it is stored within the dictionary at `:Iteration`
+    DebugSolverState(st, dD)
+
+Construct a debug decorated state, where `dD` can be
+
+* a [`DebugAction`](@ref), then it is stored within the dictionary at `:Iteration`.
 * an `Array` of [`DebugAction`](@ref)s.
 * a `Dict{Symbol,DebugAction}`.
-* an Array of Symbols, String and an Int for the [`DebugFactory`](@ref)
+* an `Array` of `Symbol`s, `String`s and an `Int` for the [`DebugFactory`](@ref).
+* a `Function` used as a callback, which is passed to the [`DebugFactory`](@ref).
 """
 mutable struct DebugSolverState{S <: AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
@@ -72,9 +76,9 @@ function DebugSolverState( # a function: callback
 end
 
 """
-    set_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
+    set_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
 
-Set certain values specified by `args...` into the elements of the `debug_dictionary`
+Set certain values specified by `args...` into the elements of the `debug_dictionary`.
 """
 function set_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
     for d in values(dss.debug_dictionary)
@@ -117,17 +121,17 @@ dispatch_state_decorator(::DebugSolverState) = Val(true)
 """
     DebugGroup <: DebugAction
 
-group a set of [`DebugAction`](@ref)s into one action, where the internal prints
-are removed by default and the resulting strings are concatenated
+Group a set of [`DebugAction`](@ref)s into one action, where the internal prints
+are removed by default and the resulting strings are concatenated.
 
 # Constructor
 
     DebugGroup(g)
 
-construct a group consisting of an Array of [`DebugAction`](@ref)s `g`,
-that are evaluated `en bloque`; the method does not perform any print itself,
+Construct a group consisting of an `Array` of [`DebugAction`](@ref)s `g`,
+that are evaluated _en bloc_; the method does not perform any print itself,
 but relies on the internal prints. It still concatenates the result and returns
-the complete string
+the complete string.
 """
 mutable struct DebugGroup{D <: DebugAction} <: DebugAction
     group::Vector{D}
@@ -140,7 +144,7 @@ function (d::DebugGroup)(p::AbstractManoptProblem, st::AbstractManoptSolverState
 end
 function status_summary(dg::DebugGroup; context::Symbol = :default)
     (context == :short) && return "[ " * join(["$(status_summary(di; context = context))" for di in dg.group], ", ") * " ]"
-    (context == :inline) && return "A DebugAction consisting of a group actions, " * join(["$(status_summary(di; context = context))" for di in dg.group], ", ", ", and ")
+    (context == :inline) && return "A DebugAction consisting of a group of actions, " * join(["$(status_summary(di; context = context))" for di in dg.group], ", ", ", and ")
     return """
     A DebugAction consisting of a group with the following elements
     $(join(["* $(status_summary(di; context = context))" for di in dg.group], "\n"))"""
@@ -155,28 +159,24 @@ function set_parameter!(dg::DebugGroup, v::Val, args...)
     end
     return dg
 end
-function set_parameter!(dg::DebugGroup, e::Symbol, args...)
-    set_parameter!(dg, Val(e), args...)
-    return dg
-end
 
 @doc """
     DebugEvery <: DebugAction
 
-evaluate and print debug only every ``k``th iteration. Otherwise no print is performed.
-Whether internal variables are updates is determined by `always_update`.
+Evaluate and print debug only every ``k``-th iteration. Otherwise no print is performed.
+Whether internal variables are updated is determined by `always_update`.
 
-This method does not perform any print itself but relies on it's children's print.
+This method does not perform any print itself but relies on its children's print.
 
-It also sets the sub solvers active parameter, see |`DebugWhenActive`}(#ref).
+It also sets the sub solvers active parameter, see [`DebugWhenActive`](@ref).
 Here, the `activation_offset` can be used to specify whether it refers to _this_ iteration,
-the `i`th, when this call is _before_ the iteration, then the offset should be 0,
+the ``k``-th: when this call is _before_ the iteration, then the offset should be 0;
 for the _next_ iteration, that is if this is called _after_ an iteration, it has to be set to 1.
 Since usual debug is happening after the iteration, 1 is the default.
 
 # Constructor
 
-    DebugEvery(d::DebugAction, every=1, always_update=true, activation_offset=1)
+    DebugEvery(d::DebugAction, every=1, always_update=true; activation_offset=1)
 """
 mutable struct DebugEvery <: DebugAction
     debug::DebugAction
@@ -197,10 +197,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     end
     # set activity for this iterate in sub solvers
     set_parameter!(
-        st,
-        :SubState,
-        :Debug,
-        :Activity,
+        st, Val(:SubState), Val(:Debug), Val(:Activity),
         !(k < 1) && (rem(k + d.activation_offset, d.every) == 0),
     )
     return nothing
@@ -219,14 +216,10 @@ function status_summary(de::DebugEvery; context::Symbol = :default)
         (de.debug isa DebugGroup) && (s = s[3:(end - 2)])
         return "[$s, $(de.every)]"
     end
-    (context == :inline) && return "The Debug $(status_summary(de.debug; context = context)) only printed every $(de.every) iteration"
-    return "A DebugAction wrapping the following DebugAction to only print it every $(de.every)th iteration.\n$(_in_str(status_summary(de.debug; context = context)))"
+    (context == :inline) && return "The Debug $(status_summary(de.debug; context = context)) only printed every $(de.every)$(_ordinal_suffix(de.every)) iteration"
+    return "A DebugAction wrapping the following DebugAction to only print it every $(de.every)$(_ordinal_suffix(de.every)) iteration.\n$(_in_str(status_summary(de.debug; context = context)))"
 end
-function set_parameter!(de::DebugEvery, e::Symbol, args...)
-    set_parameter!(de, Val(e), args...)
-    return de
-end
-function set_parameter!(de::DebugEvery, args...)
-    set_parameter!(de.debug, args...)
+function set_parameter!(de::DebugEvery, e::Val, args...)
+    set_parameter!(de.debug, e, args...)
     return de
 end

@@ -14,7 +14,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `κ::R`:                     the linear convergence target rate.
 * `project!`:                 for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* `randomize`:          indicate whether `X` is initialised to a random vector or not
+* `randomize`:          indicate whether `X` is initialized to a random vector or not
 * `residual::T`:                 the gradient of the model ``m(Y)``
 $(_fields(:stopping_criterion; name = "stop"))
 * `θ::R`:                     the superlinear convergence target rate of ``1+θ``
@@ -28,7 +28,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
     TruncatedConjugateGradientState(TpM::TangentSpace, Y=rand(TpM); kwargs...)
 
-Initialise the TCG state.
+Initialize the TCG state.
 
 ## Input
 
@@ -38,7 +38,7 @@ Initialise the TCG state.
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `κ=0.1`
-* `project!::F=copyto!`: initialise the numerical stabilisation to just copy the result
+* `project!::F=copyto!`: initialize the numerical stabilization to just copy the result
 * `randomize=false`
 * `θ=1.0`
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(base_manifold(TpM)) / 4`
@@ -231,9 +231,7 @@ end
 
 Update the residual Power `θ`  to `v`.
 """
-function set_parameter!(
-        c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, v
-    )
+function set_parameter!(c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, v)
     c.θ = v
     return c
 end
@@ -243,9 +241,7 @@ end
 
 Update the residual Factor `κ` to `v`.
 """
-function set_parameter!(
-        c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, v
-    )
+function set_parameter!(c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, v)
     c.κ = v
     return c
 end
@@ -253,9 +249,10 @@ end
 @doc """
     StopWhenTrustRegionIsExceeded <: StoppingCriterion
 
-A functor for testing if the norm of the next iterate in the Steihaug-Toint truncated conjugate gradient
-method is larger than the trust-region radius ``θ ≤ $(_tex(:norm, "Y^{(k)}^{*}"; index = "p^{(k)}"))``
-and to end the algorithm when the trust region has been left.
+A stopping criterion to stop when next iterate is larger than the trust-region radius ``θ ≤ $(_tex(:norm, "Y^{(k)}^{*}"; index = "p^{(k)}"))``.
+
+This can for example be used Steihaug-Toint truncated conjugate gradient method as a subsolver
+for [`trust_regions`](@ref).
 
 # Fields
 
@@ -478,7 +475,7 @@ $(_kwargs(:evaluation))
 * `κ=0.1`:                the linear convergence target rate.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* `randomize=false`:      indicate whether `X` is initialised to a random vector or not. This disables preconditioning.
+* `randomize=false`:      indicate whether `X` is initialized to a random vector or not. This disables preconditioning.
 $(_kwargs(:retraction_method))
 $(
     _kwargs(
@@ -511,20 +508,15 @@ function truncated_conjugate_gradient_descent(
         end,
         kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    X_ = _ensure_mutating_variable(X)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    preconditioner_ = _ensure_mutating_hessian(preconditioner, p, evaluation)
-    Hess_f_ = _ensure_mutating_hessian(Hess_f, p, evaluation)
-
     mho = ManifoldHessianObjective(
-        f_, grad_f_, Hess_f_, preconditioner_; evaluation = evaluation
+        f, grad_f, Hess_f, preconditioner; p = p, evaluation = evaluation
     )
+    p_ = maybe_wrap_variable(p)
+    X_ = maybe_wrap_variable(X)
     rs = truncated_conjugate_gradient_descent(
         M, mho, p_, X_; evaluation = evaluation, kwargs...
     )
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 #
 # Objective 1 -> generate model
@@ -542,7 +534,7 @@ function truncated_conjugate_gradient_descent(
     ) where {
         O <: Union{
             AbstractManifoldSubObjective,
-            AbstractDecoratedManifoldObjective{E, <:AbstractManifoldSubObjective} where {E},
+            AbstractDecoratedManifoldObjective{<:AbstractManifoldSubObjective},
         },
     }
     keywords_accepted(truncated_conjugate_gradient_descent; kwargs...)

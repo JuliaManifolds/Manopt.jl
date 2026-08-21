@@ -16,7 +16,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
     SubGradientMethodState(M::AbstractManifold; kwargs...)
 
-Initialise the Subgradient method state
+Initialize the Subgradient method state
 
 # Keyword arguments
 
@@ -146,12 +146,10 @@ function subgradient_method(
         M::AbstractManifold, f, ∂f, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    ∂f_ = _ensure_mutating_gradient(∂f, p, evaluation)
-    sgo = ManifoldSubgradientObjective(f_, ∂f_; evaluation = evaluation)
+    p_ = maybe_wrap_variable(p)
+    sgo = ManifoldSubgradientObjective(f, ∂f; evaluation = evaluation, p = p)
     rs = subgradient_method(M, sgo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function subgradient_method(
         M::AbstractManifold, sgo::O, p; kwargs...

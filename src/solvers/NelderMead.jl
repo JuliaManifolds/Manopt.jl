@@ -37,7 +37,7 @@ function NelderMeadSimplex(
         a::Real = 0.025,
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
     )
-    p_ = _ensure_mutating_variable(p)
+    p_ = maybe_wrap_variable(p)
     M_dim = manifold_dimension(M)
     vecs = [
         get_vector(M, p_, [ifelse(i == j, a, zero(a)) for i in 1:M_dim], B) for j in 0:M_dim
@@ -82,7 +82,7 @@ Construct a Nelder-Mead Option with a default population (if not provided) of se
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
-* `p=copy(M, population.pts[1])`: initialise the storage for the best point (iterate)¨
+* `p=copy(M, population.pts[1])`: initialize the storage for the best point (iterate)¨
 * `population=`[`NelderMeadSimplex`](@ref)`(M)`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
   a [`StoppingCriterion`](@ref)

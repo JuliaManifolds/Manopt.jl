@@ -22,12 +22,6 @@ ProximalGradientNonsmoothSubgradient
 ProximalGradientNonsmoothCost
 ```
 
-## Stopping criteria
-
-```@docs
-StopWhenGradientMappingNormLess
-```
-
 ## [Stepsize](@id Sec-ProxGrad-Stepsize)
 
 ```@docs

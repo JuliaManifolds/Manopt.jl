@@ -147,16 +147,16 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
     if k == 1 #the first is known directly
         nX = norm(M, p, ls.X)
         if length(ls.Lanczos_vectors) == 0
-            push!(ls.Lanczos_vectors, ls.X ./ nX)
+            push!(ls.Lanczos_vectors, ls.X / nX)
         else
-            copyto!(M, ls.Lanczos_vectors[1], p, ls.X ./ nX)
+            copyto!(M, ls.Lanczos_vectors[1], p, ls.X / nX)
         end
         get_objective_hessian!(M, ls.Hp, arcmo, p, ls.Lanczos_vectors[1])
         α = inner(M, p, ls.Lanczos_vectors[1], ls.Hp)
         # This is also the first coefficient in the tridiagonal matrix
         ls.tridig_matrix[1, 1] = α
         ls.Hp_residual .= ls.Hp - α * ls.Lanczos_vectors[1]
-        #this is the minimiser of one dimensional model
+        #this is the minimizer of one dimensional model
         ls.coefficients[1] = (α - sqrt(α^2 + 4 * ls.σ * nX)) / (2 * ls.σ)
     else # `i > 1`
         β = norm(M, p, ls.Hp_residual)

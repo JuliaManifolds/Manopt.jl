@@ -138,7 +138,7 @@ Initialize the stochastic gradient processor with tangent vector type of `X`,
 where both `M` and `p` are just help variables.
 
 # See also
-[`stochastic_gradient_descent`](@ref), [`StochasticGradient`])@ref)
+[`stochastic_gradient_descent`](@ref), [`StochasticGradient`](@ref)
 """
 struct StochasticGradientRule{T} <: AbstractGradientGroupDirectionRule
     X::T
@@ -173,7 +173,7 @@ end
 $(_kwargs(:X; name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 
-$(_note(:ManifoldDefaultFactory, "StochasticGradientRule"))
+$(_note(:ManifoldDefaultsFactory, "StochasticGradientRule"))
 """
 function StochasticGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.StochasticGradientRule, args...; kwargs...)
@@ -237,21 +237,10 @@ function stochastic_gradient_descent(
         M::AbstractManifold, grad_f, p;
         cost = Missing(), evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    cost_ = _ensure_mutating_cost(cost, p)
-    if p isa Number
-        if grad_f isa Function
-            n = grad_f(M, p) isa Number
-            grad_f_ = (M, p) -> [[X] for X in (n ? [grad_f(M, p[])] : grad_f(M, p[]))]
-        else
-            grad_f_ = [_ensure_mutating_gradient(f, p, evaluation) for f in grad_f]
-        end
-    else
-        grad_f_ = grad_f
-    end
-    msgo = ManifoldStochasticGradientObjective(grad_f_; cost = cost_, evaluation = evaluation)
+    p_ = maybe_wrap_variable(p)
+    msgo = ManifoldStochasticGradientObjective(grad_f; cost = cost, evaluation = evaluation, p = p)
     rs = stochastic_gradient_descent(M, msgo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function stochastic_gradient_descent(
         M::AbstractManifold, msgo::O, p; kwargs...

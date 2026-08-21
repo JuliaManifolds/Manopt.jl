@@ -25,22 +25,11 @@ DifferenceOfConvexState
 DifferenceOfConvexProximalState
 ```
 
-as well as for the corresponding sub problem
+as well as for the corresponding sub objective
 
 ```@docs
-LinearizedDCCost
-LinearizedDCGrad
-```
-
-```@docs
+ManifoldDifferenceOfConvexObjective
 ManifoldDifferenceOfConvexProximalObjective
-```
-
-as well as for the corresponding sub problems
-
-```@docs
-ProximalDCCost
-ProximalDCGrad
 ```
 
 ## Helper functions
@@ -49,7 +38,7 @@ ProximalDCGrad
 get_subtrahend_gradient
 ```
 
-## [Technical details](@id sec-cp-technical-details)
+## [Technical details](@id sec-doc-technical-details)
 
 The [`difference_of_convex_algorithm`](@ref) and [`difference_of_convex_proximal_point`](@ref) solver requires the following functions of a manifold to be available
 

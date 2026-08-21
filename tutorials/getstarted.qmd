@@ -3,11 +3,11 @@ title: "🏔️ Get started with Manopt.jl"
 author: Ronny Bergmann
 ---
 
-This tutorial both introduces the basics of optimisation on manifolds as well as
-how to use [`Manopt.jl`](../index.md) to perform optimisation on manifolds in [Julia](https://julialang.org).
+This tutorial both introduces the basics of optimization on manifolds as well as
+how to use [`Manopt.jl`](../index.md) to perform optimization on manifolds in [Julia](https://julialang.org).
 
 For more theoretical background, see for example [doCarmo:1992](@cite) for an introduction to Riemannian manifolds
-and [AbsilMahonySepulchre:2008](@cite) or [Boumal:2023](@cite) to read more about optimisation thereon.
+and [AbsilMahonySepulchre:2008](@cite) or [Boumal:2023](@cite) to read more about optimization thereon.
 
 Let $\mathcal M$ denote a (``[Riemannian manifold](@extref `ManifoldsBase.AbstractManifold`)``{=commonmark}
 and let $f:  \mathcal M → ℝ$ be a cost function.
@@ -20,15 +20,15 @@ This can also be written as
 ```
 
 where the aim is to compute the minimizer $p^*$ numerically.
-As an example, consider the generalisation of the [(arithmetic) mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
+As an example, consider the generalization of the [(arithmetic) mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
 In the Euclidean case with $d∈\mathbb N$, that is for $n∈\mathbb N$ data points $y_1,\ldots,y_n ∈ ℝ^d$ the mean
 
 ```math
   \frac{1}{n}\sum_{i=1}^n y_i
 ```
 
-can not be directly generalised to data $q_1,\ldots,q_n ∈ \mathcal M$, since on a manifold there is no addition available.
-But the mean can also be characterised as the following minimizer
+can not be directly generalized to data $q_1,\ldots,q_n ∈ \mathcal M$, since on a manifold there is no addition available.
+But the mean can also be characterized as the following minimizer
 
 ```math
   \operatorname*{arg\,min}_{x∈ℝ^d} \frac{1}{2n}\sum_{i=1}^n \lVert x - y_i\rVert^2
@@ -108,7 +108,7 @@ but where we also want to fix the display format for the change and the cost
 numbers (the `[...]`) to have a certain format. Furthermore, the reason why the solver stopped should be printed at the end
 
 These can easily be specified using either a Symbol when using the default format for numbers, or a tuple of a symbol and a format-string in the `debug=` keyword that is available for every solver.
-We can also, for illustration reasons, just look at the first 6 steps by setting a [`stopping_criterion=`](../plans/stopping_criteria.md)
+We can also, for illustration reasons, just look at the first 6 steps by setting a [`stopping_criterion=`](../commons/stopping_criteria.md)
 
 ```{julia}
 m2 = gradient_descent(M, f, grad_f, data[1];
@@ -138,7 +138,7 @@ m3 = gradient_descent(M, f, grad_f, data[1];
 ```
 
 We can finally use another way to determine the stepsize, for example
-a little more expensive [`ArmijoLinesearch`](@ref) than the default [stepsize](../plans/stepsize.md) rule used on the Sphere.
+a little more expensive [`ArmijoLinesearch`](@ref) than the default [stepsize](../commons/stepsizes.md) rule used on the Sphere.
 
 ```{julia}
 m4 = gradient_descent(M, f, grad_f, data[1];
@@ -187,7 +187,7 @@ the line search would take the gradient direction (and not the negative gradient
 as a start. The line search is still performed, but in this case returns a much too small,
 maybe even nearly zero step size.
 
-In other words, we have to be careful that the optimisation stays a “local” argument we use.
+In other words, we have to be careful that the optimization stays a “local” argument we use.
 
 This is also warned for in `"Tutorial"` mode. Calling
 
@@ -225,8 +225,8 @@ q = Matrix{Float64}(I, 3, 3)
 data2 = [exp(N, q, σ * rand(N; vector_at=q)) for i in 1:m];
 ```
 
-Instead of the mean, let's consider a non-smooth optimisation task:
-the median can be generalized to Manifolds as the minimiser of the sum of distances,
+Instead of the mean, let's consider a non-smooth optimization task:
+the median can be generalized to manifolds as the minimizer of the sum of distances,
 see [Bacak:2014](@cite).
 We define
 
@@ -255,7 +255,7 @@ res = cyclic_proximal_point(N, g, proxes_g, data2[1];
 
 ```{=commonmark}
 !!! note "Technical Detail"
-    The recording is realised by [`RecordAction`](@ref)s that are (also) executed at every iteration. These can also be individually implemented and added to the `record=` array instead of symbols.
+    The recording is realized by [`RecordAction`](@ref)s that are (also) executed at every iteration. These can also be individually implemented and added to the `record=` array instead of symbols.
 ```
 
 First, the computed median can be accessed as

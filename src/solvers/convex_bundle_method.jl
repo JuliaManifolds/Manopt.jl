@@ -292,12 +292,18 @@ mutable struct ConvexBundleMethodState{
 end
 function ConvexBundleMethodState(
         M::AbstractManifold,
-        sub_problem = convex_bundle_method_subsolver;
-        evaluation::E = AllocatingEvaluation(),
+        sub_problem, sub_state::AbstractEvaluationType;
         kwargs...,
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
-    return ConvexBundleMethodState(M, sub_problem, cfs; kwargs...)
+    )
+    return ConvexBundleMethodState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function ConvexBundleMethodState(
+        M::AbstractManifold, sub_problem = convex_bundle_method_subsolver;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :MaybeResizeVector)
+    return ConvexBundleMethodState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
 end
 
 get_iterate(bms::ConvexBundleMethodState) = bms.p_last_serious
@@ -470,7 +476,7 @@ Specify a step size that performs a backtracking to the interior of the domain o
 * `initial_stepsize``: specify an initial step size
 $(_kwargs(:retraction_method))
 
-$(_note(:ManifoldDefaultFactory, "DomainBackTrackingStepsize"))
+$(_note(:ManifoldDefaultsFactory, "DomainBackTrackingStepsize"))
 """
 function DomainBackTracking(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.DomainBackTrackingStepsize, args...; kwargs...)
@@ -514,7 +520,7 @@ mutable struct NullStepBackTrackingStepsize{TRM <: AbstractRetractionMethod, P, 
     end
 end
 function (nsbt::NullStepBackTrackingStepsize)(
-        amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int, kwargs...
+        amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; kwargs...
     )
     M = get_manifold(amp)
     nsbt.last_stepsize = cbms.last_stepsize
@@ -562,6 +568,50 @@ function status_summary(nsbt::NullStepBackTrackingStepsize; context::Symbol = :d
     """
 end
 get_message(nsbt::NullStepBackTrackingStepsize) = nsbt.message
+
+
+function convex_bundle_method_subsolver end
+function convex_bundle_method_subsolver! end
+@doc """
+    λ = convex_bundle_method_subsolver(M, p_last_serious, linearization_errors, transported_subgradients)
+    convex_bundle_method_subsolver!(M, λ, p_last_serious, linearization_errors, transported_subgradients)
+
+solver for the subproblem of the convex bundle method
+at the last serious iterate ``p_k`` given the current linearization errors ``c_j^k``,
+and transported subgradients ``$(_tex(:rm, "P"))_{p_k←q_j} X_{q_j}``.
+
+The computation can also be done in-place of `λ`.
+
+The subproblem for the convex bundle method is
+```math
+\\begin{align*}
+    $(_tex(:argmin))_{λ ∈ ℝ^{$(_tex(:abs, "J_k"))}}
+    &
+    $(_tex(:frac, "1", "2"))
+    $(_tex(:Bigl))\\lVert
+    $(_tex(:sum, "j ∈ J_k")) λ_j $(_tex(:rm, "P"))_{p_k←q_j} X_{q_j}
+    $(_tex(:Bigl))\\rVert^2
+    + $(_tex(:sum, "j ∈ J_k")) λ_jc_j^k
+    \\\\
+    $(_tex(:text, "s. t."))$(_tex(:quad)) &
+    $(_tex(:sum, "j ∈ J_k")) λ_j = 1,
+    $(_tex(:quad)) λ_j ≥ 0
+    $(_tex(:quad)) $(_tex(:text, "for all "))
+    j ∈ J_k,
+\\end{align*}
+```
+
+where ``J_k = $(_tex(:set, "j ∈ J_{k-1} \\ | \\ λ_j > 0")) ∪ $(_tex(:set, "k"))``.
+See [BergmannHerzogJasa:2024](@cite) for more details
+
+!!! tip
+    A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
+    is available if these two packages are loaded.
+"""
+convex_bundle_method_subsolver(
+    M, p_last_serious, linearization_errors, transported_subgradients
+)
+
 
 _doc_cbm_gk = """
 ```math
@@ -624,7 +674,7 @@ calls_with_kwargs(::typeof(convex_bundle_method)) = (convex_bundle_method!,)
 
 @doc "$(_doc_convex_bundle_method)"
 function convex_bundle_method!(
-        M::AbstractManifold, f::TF, ∂f!!::TdF, p;
+        M::AbstractManifold, f::TF, ∂f!::TdF, p;
         atol_λ::R = sqrt(eps()),
         atol_errors::R = sqrt(eps()),
         bundle_cap::Int = 25,
@@ -653,12 +703,11 @@ function convex_bundle_method!(
         kwargs...,
     ) where {R <: Real, TF, TdF, TRetr, IR, VTransp}
     keywords_accepted(convex_bundle_method!; kwargs...)
-    sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation = evaluation)
+    sgo = ManifoldSubgradientObjective(f, ∂f!; evaluation = evaluation, p = p)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     bms = ConvexBundleMethodState(
-        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        M, sub_problem, sub_state;
         p = p,
         atol_λ = atol_λ, atol_errors = atol_errors,
         bundle_cap = bundle_cap,
@@ -775,22 +824,8 @@ end
 #
 #
 # Dispatching on different types of sub solvers
-# (a) closed form allocating
-function _convex_bundle_subsolver!(
-        M, bms::ConvexBundleMethodState{P, T, F, ClosedFormSubSolverState{AllocatingEvaluation}}
-    ) where {P, T, F}
-    bms.λ = bms.sub_problem(
-        M, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients
-    )
-    return bms
-end
-# (b) closed form in-place
-function _convex_bundle_subsolver!(
-        M, bms::ConvexBundleMethodState{P, T, F, ClosedFormSubSolverState{InplaceEvaluation}}
-    ) where {P, T, F}
-    bms.sub_problem(
-        M, bms.λ, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients
-    )
+function _convex_bundle_subsolver!(M, bms::ConvexBundleMethodState{P, T, F, ClosedFormSubSolverState}) where {P, T, F}
+    bms.sub_problem(M, bms.λ, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients)
     return bms
 end
 # (c) the case where problem and state are given and `solve!` is called

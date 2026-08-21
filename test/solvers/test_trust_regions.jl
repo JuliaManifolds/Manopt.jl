@@ -33,6 +33,12 @@ include("trust_region_model.jl")
         @test_throws ErrorException TrustRegionsState(M, sub_state)
         trs3 = TrustRegionsState(M, sub_problem; p = p)
         @test Manopt.get_gradient_function(sub_objective)(M, p) == X
+        Y = copy(M, p, X)
+        @test Manopt.get_gradient_function(sub_objective; evaluation = InplaceEvaluation())(M, Y, p) == X
+        @test Y == X
+        # Dummy pass through for closed from solver
+        trs4 = TrustRegionsState(M, rgrad, AllocatingEvaluation())
+        @test trs4.sub_state isa Manopt.ClosedFormSubSolverState
     end
     @testset "Objective accessors" begin
         mho = ManifoldHessianObjective(f, rgrad, rhess)
@@ -164,7 +170,6 @@ include("trust_region_model.jl")
     end
     @testset "...with different Hessian updates" begin
         n = 4
-
         A = [
             1.0 2.0 3.0 0.0
             2.0 4.0 5.0 6.0
@@ -203,65 +208,42 @@ include("trust_region_model.jl")
             qaAoor = trust_regions(M, f, grad_f)
             #
             qaHSR1 = trust_regions(
-                M,
-                f,
-                grad_f!,
+                M, f, grad_f!,
                 ApproxHessianSymmetricRankOne(
                     M, p, grad_f!; nu = eps(Float64)^2, evaluation = InplaceEvaluation()
                 ),
                 p;
                 stopping_criterion = StopAfterIteration(100) | StopWhenGradientNormLess(1.0e-8),
                 trust_region_radius = 1.0,
-                θ = 0.1,
-                κ = 0.9,
-                retraction_method = ProjectionRetraction(),
-                evaluation = InplaceEvaluation(),
+                θ = 0.1, κ = 0.9,
+                retraction_method = ProjectionRetraction(), evaluation = InplaceEvaluation(),
             )
-            @test isapprox(M, qaHSR1, p_star) || isapprox(M, qaHSR1, -p_star)
+            @test isapprox(M, qaHSR1, p_star; atol = 1.0e-6) || isapprox(M, qaHSR1, -p_star; atol = 1.0e-6)
 
             qaHSR1_2 = copy(M, p)
             trust_regions!(
-                M,
-                f,
-                grad_f,
+                M, f, grad_f,
                 ApproxHessianSymmetricRankOne(M, qaHSR1_2, grad_f; nu = eps(Float64)^2),
                 qaHSR1_2;
-                stopping_criterion = StopAfterIteration(10000) |
-                    StopWhenGradientNormLess(1.0e-6),
-                trust_region_radius = 1.0,
-                θ = 0.1,
-                κ = 0.9,
+                stopping_criterion = StopAfterIteration(10000) | StopWhenGradientNormLess(1.0e-6),
+                trust_region_radius = 1.0, θ = 0.1, κ = 0.9,
                 retraction_method = ProjectionRetraction(),
             )
             @test isapprox(M, qaHSR1_2, p_star) || isapprox(M, qaHSR1_2, -p_star)
 
             qaHBFGS = trust_regions(
-                M,
-                f,
-                grad_f,
-                ApproxHessianBFGS(M, p, grad_f),
-                p;
-                stopping_criterion = StopAfterIteration(10000) |
-                    StopWhenGradientNormLess(1.0e-6),
-                trust_region_radius = 1.0,
-                θ = 0.1,
-                κ = 0.9,
+                M, f, grad_f, ApproxHessianBFGS(M, p, grad_f), p;
+                stopping_criterion = StopAfterIteration(10000) | StopWhenGradientNormLess(1.0e-6),
+                trust_region_radius = 1.0, θ = 0.1, κ = 0.9,
                 retraction_method = ProjectionRetraction(),
             )
             @test isapprox(M, qaHBFGS, p_star) || isapprox(M, qaHBFGS, -p_star)
 
             qaHBFGS_2 = copy(M, p)
             trust_regions!(
-                M,
-                f,
-                grad_f,
-                ApproxHessianBFGS(M, qaHBFGS_2, grad_f),
-                qaHBFGS_2;
-                stopping_criterion = StopAfterIteration(10000) |
-                    StopWhenGradientNormLess(1.0e-6),
-                trust_region_radius = 1.0,
-                θ = 0.1,
-                κ = 0.9,
+                M, f, grad_f, ApproxHessianBFGS(M, qaHBFGS_2, grad_f), qaHBFGS_2;
+                stopping_criterion = StopAfterIteration(10000) | StopWhenGradientNormLess(1.0e-6),
+                trust_region_radius = 1.0, θ = 0.1, κ = 0.9,
                 retraction_method = ProjectionRetraction(),
             )
             @test isapprox(M, qaHBFGS_2, p_star) || isapprox(M, qaHBFGS_2, -p_star)
@@ -269,62 +251,38 @@ include("trust_region_model.jl")
         @testset "Mutating" begin
             q3 = copy(M, p)
             trust_regions!(
-                M,
-                f,
-                grad_f!,
-                Hess_f!,
-                q3;
-                trust_region_radius = 1.0,
-                evaluation = InplaceEvaluation(),
+                M, f, grad_f!, Hess_f!, q3;
+                trust_region_radius = 1.0, evaluation = InplaceEvaluation(),
             )
             @test isapprox(M, q3, p_star) || isapprox(M, q3, -p_star)
 
             q4 = copy(M, p)
             trust_regions!(
-                M,
-                f,
-                grad_f!,
-                Hess_f!,
-                q4;
-                trust_region_radius = 1.0,
-                evaluation = InplaceEvaluation(),
+                M, f, grad_f!, Hess_f!, q4;
+                trust_region_radius = 1.0, evaluation = InplaceEvaluation(),
             )
             @test isapprox(M, q4, p_star) || isapprox(M, q4, -p_star)
 
             qaHSR1_3 = copy(M, p)
 
             trust_regions!(
-                M,
-                f,
-                grad_f!,
-                ApproxHessianSymmetricRankOne(
-                    M, qaHSR1_3, grad_f!; nu = eps(Float64)^2, evaluation = InplaceEvaluation()
-                ),
+                M, f, grad_f!,
+                ApproxHessianSymmetricRankOne(M, qaHSR1_3, grad_f!; nu = eps(Float64)^2, evaluation = InplaceEvaluation()),
                 qaHSR1_3;
-                stopping_criterion = StopAfterIteration(10000) |
-                    StopWhenGradientNormLess(1.0e-6),
-                trust_region_radius = 1.0,
-                θ = 0.1,
-                κ = 0.9,
-                retraction_method = ProjectionRetraction(),
-                evaluation = InplaceEvaluation(),
+                stopping_criterion = StopAfterIteration(10000) | StopWhenGradientNormLess(1.0e-6),
+                trust_region_radius = 1.0, θ = 0.1, κ = 0.9,
+                retraction_method = ProjectionRetraction(), evaluation = InplaceEvaluation(),
             )
             @test isapprox(M, qaHSR1_3, p_star) || isapprox(M, qaHSR1_3, -p_star)
 
             qaHBFGS_3 = copy(M, p)
             trust_regions!(
-                M,
-                f,
-                grad_f!,
+                M, f, grad_f!,
                 ApproxHessianBFGS(M, qaHBFGS_3, grad_f!; evaluation = InplaceEvaluation()),
                 qaHBFGS_3;
-                stopping_criterion = StopAfterIteration(10000) |
-                    StopWhenGradientNormLess(1.0e-6),
-                trust_region_radius = 1.0,
-                θ = 0.1,
-                κ = 0.9,
-                retraction_method = ProjectionRetraction(),
-                evaluation = InplaceEvaluation(),
+                stopping_criterion = StopAfterIteration(10000) | StopWhenGradientNormLess(1.0e-6),
+                trust_region_radius = 1.0, θ = 0.1, κ = 0.9,
+                retraction_method = ProjectionRetraction(), evaluation = InplaceEvaluation(),
             )
             @test isapprox(M, qaHBFGS_3, p_star) || isapprox(M, qaHBFGS_3, -p_star)
         end

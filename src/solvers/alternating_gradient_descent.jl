@@ -1,6 +1,8 @@
 """
     AlternatingGradientRule <: AbstractGradientGroupDirectionRule
 
+The direction processor to alternate the gradient directions.
+
 Create a functor `(problem, state k) -> (s,X)` to evaluate the alternating gradient,
 that is alternating between the components of the gradient and has an field for
 partial evaluation of the gradient in-place.
@@ -17,7 +19,7 @@ Initialize the alternating gradient processor with tangent vector type of `X`,
 where both `M` and `p` are just help variables.
 
 # See also
-[`alternating_gradient_descent`](@ref), [`AlternatingGradient`])@ref)
+[`alternating_gradient_descent`](@ref), [`AlternatingGradient`](@ref)
 """
 struct AlternatingGradientRule{T} <: AbstractGradientGroupDirectionRule
     X::T
@@ -185,7 +187,7 @@ in order to do a alternating gradient descent.
 $(_kwargs(:X, name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 
-$(_note(:ManifoldDefaultFactory, "AlternatingGradientRule"))
+$(_note(:ManifoldDefaultsFactory, "AlternatingGradientRule"))
 """
 function AlternatingGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.AlternatingGradientRule, args...; kwargs...)

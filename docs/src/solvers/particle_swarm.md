@@ -21,7 +21,7 @@ ParticleSwarmState
 StopWhenSwarmVelocityLess
 ```
 
-## [Technical details](@id sec-arc-technical-details)
+## [Technical details](@id sec-ps-technical-details)
 
 The [`particle_swarm`](@ref) solver requires the following functions of a manifold to be available
 
