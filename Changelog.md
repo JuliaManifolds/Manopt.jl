@@ -6,18 +6,16 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.4] unreleased / WIP
+## [0.6.4] August 21, 2026
 
-As an overarching scheme of this release, the single functions in an objective become a bit
-more independent; their wrapping happens more automatically and the objective gets – in turn –
-a bit more lightweight and has “less to handle”.
+As an overarching scheme of this release, the single functions in an objective become more independent; their wrapping happens automatically and the objective gets – in turn – a bit more lightweight and has “less cases to handle”.
 
 ### Added
 
 * [DocumenterCodeBlocks.jl](https://fredrikekre.github.io/DocumenterCodeBlocks.jl/stable/) plugin added to the documentation
+* [DocumenterLandingPage.jl](https://csvance.github.io/DocumenterLandingPage.jl/) enhances the start page with a short teaser for the package now.
 * Added a Developer Guide section in the documentation
-* `ManoptKeywordError` is now exported, since it is the error thrown when the `:KeywordsErrorMode`
-  parameter is set to `"error"` and a solver receives a keyword it does not accept.
+* `ManoptKeywordError` is now exported, since it is the error thrown when the `:KeywordsErrorMode` parameter is set to `"error"` and a solver receives a keyword it does not accept.
 
 ### Changed
 
@@ -31,7 +29,7 @@ a bit more lightweight and has “less to handle”.
   * concrete types and their implementations have either been used to the specific solver where they are used / defined,
     especially for solver states, or now reside in a `commons/` folder, when they are of general use for multiple solvers.
     This structure is also reflected in the documentation.
-* a few internal abstract supertypes have been renamed for the new scheme that puts more focus on functions, to stay more consistent. The word “functor” is now avoided for structs that actually just represent functions.
+* a few internal abstract super types have been renamed for the new scheme that puts more focus on functions, to stay more consistent. The word “functor” is now avoided for structs that actually just represent functions.
   * `AbstractConstrainedFunctor` has been renamed to `AbstractConstrainedFunction`
   * `AbstractConstrainedSlackFunctor` has been renamed to `AbstractConstrainedSlackFunction`
 * `get_gradient_function` and `get_hessian_function` are unified to always return an allocating variant by default, but can also return an in-place variant now based on an `evaluation=` keyword. While this is formally breaking, since the default behaviour changed, both functions are internal and should also only be used within `Manopt.jl`.
