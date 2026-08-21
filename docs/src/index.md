@@ -47,7 +47,7 @@ features:
         alt: Manifolds.jl
         wrap: true
     title: Use with Manifolds.jl
-    details: If you have a certain manifold in mind, checkout whether it is already provided in Manifolds.jl or LieGroups.jl
+    details: If you have a certain manifold in mind, check out whether it is already provided in Manifolds.jl or LieGroups.jl.
     link: https://juliamanifolds.github.io/Manifolds.jl/stable/
 ---
 ```
