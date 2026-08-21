@@ -34,7 +34,8 @@ features:
     details: All components are designed in a modular fashion, for example problems, objectives, and solver states, but also stopping criteria and step sizes. They can be reused and combined easily. Points and tangent vectors can be represented using arbitrary Julia types.
   - icon: ⚡️
     title: Efficient
-    details: All methods use in-place evaluations for both the objective and the manifold. There is also an advanced, but easy to use caching system further promoting efficiency.
+    link: https://github.com/JuliaManifolds/ManifoldsGPU.jl
+    details: All methods use in-place evaluations for both the objective and the manifold. There is also an advanced, but easy to use caching system further promoting efficiency. The package is compatible with running on a GPU when you use ManifoldsGPU.jl.
   - icon: 📚
     title: Well-documented and -tested
     details: All algorithms are documented – both their theoretical foundation and all their options and keywords. The theoretical background also refers to further literature.
