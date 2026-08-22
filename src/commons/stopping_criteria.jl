@@ -1,12 +1,26 @@
 #
 # Meta Stopping Criteria
 # ---
+"""
+    evaluate_criteria(criteria::Tuple, problem, state, k)
+
+Evaluate every [`StoppingCriterion`](@ref) in the tuple `criteria` exactly once at iteration `k`
+and return the results as a tuple of `Bool`s.
+"""
+@inline function evaluate_criteria(
+        criteria::Tuple, p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
+    return map(subC -> subC(p, s, k)::Bool, criteria)
+end
+
 @doc """
     StopWhenAll <: StoppingCriterionSet
 
 Store an array of [`StoppingCriterion`](@ref) elements and indicate to stop
 when _all_ of them indicate to stop. The `reason` is given by the concatenation of all
 reasons.
+All criteria are evaluated in every call, since some internal criteria might keep an internal
+status.
 
 # Fields
 
@@ -25,8 +39,14 @@ mutable struct StopWhenAll{TCriteria <: Tuple} <: StoppingCriterionSet
     StopWhenAll(c...) = new{typeof(c)}(c, -1)
 end
 function (c::StopWhenAll)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    (k == 0) && (c.at_iteration = -1) # reset on init
-    if all(subC -> subC(p, s, k), c.criteria)
+    if (k <= 0) # reset on init
+        c.at_iteration = -1
+        for ci in c.criteria #reset internals as well
+            ci(p, s, k)
+        end
+    end
+    # evaluate all criteria first (this also forwards the reset), only then combine
+    if all(evaluate_criteria(c.criteria, p, s, k))
         c.at_iteration = k
         return true
     end
@@ -122,6 +142,8 @@ end
 Store an array of [`StoppingCriterion`](@ref) elements and indicate to stop
 when _any_ single one indicates to stop. The `reason` is given by the
 concatenation of all reasons (assuming that all non-indicating return `""`).
+All criteria are evaluated in every call, since some internal criteria might keep an internal
+status.
 
 # Fields
 
@@ -138,24 +160,15 @@ mutable struct StopWhenAny{TCriteria <: Tuple} <: StoppingCriterionSet
     StopWhenAny(c::Vector{<:StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), -1)
     StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c, -1)
 end
-
-# `_fast_any(f, tup::Tuple)`` is functionally equivalent to `any(f, tup)`` but on Julia 1.10
-# this implementation is faster on heterogeneous tuples
-# for length zero -> return false
-@inline _fast_any(f, tup::Tuple{}) = false
-# for one-element tuples, evaluate that one element
-@inline _fast_any(f, tup::Tuple{T}) where {T} = f(tup[1])
-# for more than that -> finish fast, if the first is true end checks, otherwise continue with tail
-@inline function _fast_any(f, tup::Tuple)
-    if f(tup[1])
-        return true
-    else
-        return _fast_any(f, tup[2:end])
-    end
-end
 function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    (k == 0) && (c.at_iteration = -1) # reset on init
-    if _fast_any(subC -> subC(p, s, k), c.criteria)
+    if (k <= 0) # reset on init
+        c.at_iteration = -1
+        for ci in c.criteria #reset internals as well
+            ci(p, s, k)
+        end
+    end
+    # evaluate all criteria first (this also forwards the reset), only then combine
+    if any(evaluate_criteria(c.criteria, p, s, k))
         c.at_iteration = k
         return true
     end

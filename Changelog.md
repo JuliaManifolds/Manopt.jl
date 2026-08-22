@@ -6,6 +6,15 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5] August 22, 2026
+
+### Fixed
+
+* `StopWhenAll` and `StopWhenAny` evaluated their criteria with short-circuiting, so criteria
+  later in the list were not called in every iteration. Stateful criteria like
+  `StopWhenChangeLess` or `StopWhenRepeated` were hence not updated and the reset at
+  initialization did not reach them either. All criteria are now evaluated in every call. (#632,#635)
+
 ## [0.6.4] August 21, 2026
 
 As an overarching scheme of this release, the single functions in an objective become more independent; their wrapping happens automatically and the objective gets – in turn – a bit more lightweight and has “less cases to handle”.

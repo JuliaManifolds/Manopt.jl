@@ -45,8 +45,9 @@ end
         @test get_reason(sn) == ""
         @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iterations
         @test repr(sn) == "StopWhenAny([$(repr(sn1)), $(repr(s3))])"
-        # or over an empty set has to be false for any function
-        @test !Manopt._fast_any(x -> false, ())
+        # any/all over an empty set of criteria: identities false/true
+        @test !StopWhenAny()(p, s, 1)
+        @test StopWhenAll()(p, s, 1)
 
         sn2 = StopAfterIteration(10) | s3
         @test get_stopping_criteria(sn)[1].max_iterations ==
@@ -488,6 +489,25 @@ end
             @test has_converged(sh4)
             # As well as sh5, since one of its children does indicate convergence
             @test has_converged(sh5)   # false -- expected true
+        end
+    end
+
+    # cf. reported bug in https://github.com/JuliaManifolds/Manopt.jl/issues/632
+    @testset "StopWhenAll/StopWhenAny evaluate every criterion (#632)" begin
+        M = Euclidean(2)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective((M, x) -> sum(x .^ 2), (M, x) -> 2x))
+        st = GradientDescentState(M; p = [1.0, 2.0])
+        # `&`: the first criterion is false, `|`: the first one is true;
+        # in both cases the second one still has to be evaluated and updated
+        for sc in [
+                StopAfterIteration(100) & StopWhenChangeLess(M, 1.0e-9),
+                StopAfterIteration(1) | StopWhenChangeLess(M, 1.0e-9),
+            ]
+            Manopt.set_iterate!(st, M, [1.0, 2.0])
+            sc(mp, st, 0) # init stores the iterate
+            Manopt.set_iterate!(st, M, [0.5, 1.0])
+            sc(mp, st, 1)
+            @test sc.criteria[2].last_change ≈ distance(M, [1.0, 2.0], [0.5, 1.0])
         end
     end
 end
