@@ -191,6 +191,7 @@ function status_summary(swrr::StopWhenRelativeResidualLess; context::Symbol = :d
     return _is_inline(context) ? "‖r^(k)‖ / c < ε:$(_MANOPT_INDENT)$s" : "A stopping criterion to stop when the relative residual is less than the threshold of $(swrr.ε)\n$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(::StopWhenRelativeResidualLess) = true
+eligible_for_short_circuit(::Type{<:StopWhenRelativeResidualLess}) = true
 function show(io::IO, swrr::StopWhenRelativeResidualLess)
     return print(io, "StopWhenRelativeResidualLess($(swrr.c), $(swrr.ε))")
 end

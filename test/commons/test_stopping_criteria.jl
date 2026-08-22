@@ -493,12 +493,12 @@ end
     end
 
     # cf. reported bug in https://github.com/JuliaManifolds/Manopt.jl/issues/632
-    @testset "StopWhenAll/StopWhenAny evaluate every criterion (#632)" begin
+    @testset "StopWhenAll/StopWhenAny short-circuit eligible criteria (#632)" begin
         M = Euclidean(2)
         mp = DefaultManoptProblem(M, ManifoldGradientObjective((M, x) -> sum(x .^ 2), (M, x) -> 2x))
         st = GradientDescentState(M; p = [1.0, 2.0])
         # `&`: the first criterion is false, `|`: the first one is true;
-        # in both cases the second one still has to be evaluated and updated
+        # the second, stateful criterion is still evaluated and updated.
         for sc in [
                 StopAfterIteration(100) & StopWhenChangeLess(M, 1.0e-9),
                 StopAfterIteration(1) | StopWhenChangeLess(M, 1.0e-9),
@@ -508,6 +508,47 @@ end
             Manopt.set_iterate!(st, M, [0.5, 1.0])
             sc(mp, st, 1)
             @test sc.criteria[2].last_change ≈ distance(M, [1.0, 2.0], [0.5, 1.0])
+        end
+        # Criteria eligible for short-circuiting are skipped once the result is fixed.
+        for sc in [
+                StopAfterIteration(100) & StopAfterIteration(1),
+                StopAfterIteration(1) | StopAfterIteration(100),
+            ]
+            sc(mp, st, 1)
+            @test sc.criteria[2].at_iteration == -1
+        end
+    end
+
+    @testset "Stopping criterion short-circuit eligibility" begin
+        for c in (
+                StopAfterIteration(1),
+                StopWhenCostLess(1.0),
+                StopWhenCostNaN(),
+                StopWhenGradientMappingNormLess(1.0),
+                StopWhenGradientNormLess(1.0),
+                StopWhenIterateNaN(),
+                StopWhenLagrangeMultiplierLess(1.0),
+                StopWhenProjectedNegativeGradientNormLess(1.0),
+                StopWhenSmallerOrEqual(:p, 1.0),
+                StopWhenStepsizeLess(1.0),
+                StopWhenSubgradientNormLess(1.0),
+            )
+            @test Manopt.eligible_for_short_circuit(typeof(c))
+        end
+
+        for c in (
+                StopWhenAll(),
+                StopWhenAny(),
+                StopAfter(Second(1)),
+                StopWhenChangeLess(Euclidean(), 1.0),
+                StopWhenCostChangeLess(1.0),
+                StopWhenCriterionWithIterationCondition(StopAfterIteration(1)),
+                StopWhenEntryChangeLess(:p, (mp, s, x, y) -> abs(x - y), 1.0),
+                StopWhenGradientChangeLess(Euclidean(), 1.0),
+                StopWhenRepeated(StopAfterIteration(1), 2),
+                StopWhenRelativeAPosterioriCostChangeLessOrEqual(1.0),
+            )
+            @test !Manopt.eligible_for_short_circuit(typeof(c))
         end
     end
 end

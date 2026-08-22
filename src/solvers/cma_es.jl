@@ -582,6 +582,7 @@ function show(io::IO, c::StopWhenCovarianceIllConditioned)
         io, "StopWhenCovarianceIllConditioned($(c.threshold))"
     )
 end
+eligible_for_short_circuit(::Type{<:StopWhenCovarianceIllConditioned}) = true
 
 """
     StopWhenBestCostInGenerationConstant <: StoppingCriterion
@@ -804,6 +805,7 @@ end
 function show(io::IO, c::StopWhenPopulationStronglyConcentrated)
     return print(io, "StopWhenPopulationStronglyConcentrated($(c.tol))")
 end
+eligible_for_short_circuit(::Type{<:StopWhenPopulationStronglyConcentrated}) = true
 
 """
     StopWhenPopulationDiverges{TParam<:Real} <: StoppingCriterion

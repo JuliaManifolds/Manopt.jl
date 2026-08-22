@@ -1,16 +1,43 @@
 #
 # Meta Stopping Criteria
 # ---
-"""
-    evaluate_criteria(criteria::Tuple, problem, state, k)
 
-Evaluate every [`StoppingCriterion`](@ref) in the tuple `criteria` exactly once at iteration `k`
-and return the results as a tuple of `Bool`s.
+eligible_for_short_circuit(::Type{<:StoppingCriterion}) = false
+
 """
-@inline function evaluate_criteria(
+    evaluate_all_criteria(criteria::Tuple, problem, state, k)
+
+Evaluate stopping criteria for a [`StopWhenAll`](@ref). Once one criterion returns `false`,
+only criteria not eligible for short-circuiting are evaluated.
+"""
+@inline function evaluate_all_criteria(
         criteria::Tuple, p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
-    return map(subC -> subC(p, s, k)::Bool, criteria)
+    result = true
+    for criterion in criteria
+        if result || !eligible_for_short_circuit(typeof(criterion))
+            result &= criterion(p, s, k)::Bool
+        end
+    end
+    return result
+end
+
+"""
+    evaluate_any_criteria(criteria::Tuple, problem, state, k)
+
+Evaluate stopping criteria for a [`StopWhenAny`](@ref). Once one criterion returns `true`,
+only criteria not eligible for short-circuiting are evaluated.
+"""
+@inline function evaluate_any_criteria(
+        criteria::Tuple, p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
+    result = false
+    for criterion in criteria
+        if !result || !eligible_for_short_circuit(typeof(criterion))
+            result |= criterion(p, s, k)::Bool
+        end
+    end
+    return result
 end
 
 @doc """
@@ -45,8 +72,7 @@ function (c::StopWhenAll)(p::AbstractManoptProblem, s::AbstractManoptSolverState
             ci(p, s, k)
         end
     end
-    # evaluate all criteria first (this also forwards the reset), only then combine
-    if all(evaluate_criteria(c.criteria, p, s, k))
+    if evaluate_all_criteria(c.criteria, p, s, k)
         c.at_iteration = k
         return true
     end
@@ -167,8 +193,7 @@ function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState
             ci(p, s, k)
         end
     end
-    # evaluate all criteria first (this also forwards the reset), only then combine
-    if any(evaluate_criteria(c.criteria, p, s, k))
+    if evaluate_any_criteria(c.criteria, p, s, k)
         c.at_iteration = k
         return true
     end
@@ -388,6 +413,7 @@ end
 function Base.show(io::IO, c::StopAfterIteration)
     return print(io, "StopAfterIteration($(c.max_iterations))")
 end
+eligible_for_short_circuit(::Type{StopAfterIteration}) = true
 
 """
     set_parameter!(c::StopAfterIteration, :MaxIteration, v::Int)
@@ -630,6 +656,7 @@ end
 function Base.show(io::IO, c::StopWhenCostLess)
     return print(io, "StopWhenCostLess($(c.threshold))")
 end
+eligible_for_short_circuit(::Type{<:StopWhenCostLess}) = true
 
 """
     set_parameter!(c::StopWhenCostLess, :MinCost, v)
@@ -689,6 +716,7 @@ end
 function Base.show(io::IO, ::StopWhenCostNaN)
     return print(io, "StopWhenCostNaN()")
 end
+eligible_for_short_circuit(::Type{StopWhenCostNaN}) = true
 
 #
 #
@@ -1053,6 +1081,7 @@ function get_reason(c::StopWhenGradientMappingNormLess)
     return ""
 end
 indicates_convergence(c::StopWhenGradientMappingNormLess) = true
+eligible_for_short_circuit(::Type{<:StopWhenGradientMappingNormLess}) = true
 function Base.show(io::IO, c::StopWhenGradientMappingNormLess)
     return print(io, "StopWhenGradientMappingNormLess($(c.threshold))")
 end
@@ -1146,6 +1175,7 @@ function get_reason(c::StopWhenGradientNormLess)
     return ""
 end
 indicates_convergence(c::StopWhenGradientNormLess) = true
+eligible_for_short_circuit(::Type{<:StopWhenGradientNormLess}) = true
 function status_summary(c::StopWhenGradientNormLess; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
@@ -1209,6 +1239,7 @@ end
 function Base.show(io::IO, ::StopWhenIterateNaN)
     return print(io, "StopWhenIterateNaN()")
 end
+eligible_for_short_circuit(::Type{StopWhenIterateNaN}) = true
 
 #
 #
@@ -1303,6 +1334,7 @@ function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
         "StopWhenLagrangeMultiplierLess($(sc.tolerances); mode=:$(sc.mode)$n)",
     )
 end
+eligible_for_short_circuit(::Type{<:StopWhenLagrangeMultiplierLess}) = true
 
 #
 #
@@ -1481,6 +1513,7 @@ function status_summary(c::StopWhenProjectedNegativeGradientNormLess; context::S
     return "A stopping criterion to stop when the projected negative gradient norm is less than a threshold of $(c.threshold):\n$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(c::StopWhenProjectedNegativeGradientNormLess) = true
+eligible_for_short_circuit(::Type{<:StopWhenProjectedNegativeGradientNormLess}) = true
 function Base.show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
     return print(io, "StopWhenProjectedNegativeGradientNormLess($(c.threshold); norm = $(c.norm))")
 end
@@ -1625,6 +1658,7 @@ end
 function Base.show(io::IO, c::StopWhenSmallerOrEqual)
     return print(io, "StopWhenSmallerOrEqual(:$(c.value), $(c.minValue))")
 end
+eligible_for_short_circuit(::Type{<:StopWhenSmallerOrEqual}) = true
 #
 #
 # ---
@@ -1683,6 +1717,7 @@ end
 function Base.show(io::IO, c::StopWhenStepsizeLess)
     return print(io, "StopWhenStepsizeLess($(c.threshold))")
 end
+eligible_for_short_circuit(::Type{<:StopWhenStepsizeLess}) = true
 """
     set_parameter!(c::StopWhenStepsizeLess, :MinStepsize, v)
 
@@ -1735,6 +1770,7 @@ function (c::StopWhenSubgradientNormLess)(
     return false
 end
 indicates_convergence(c::StopWhenSubgradientNormLess) = true
+eligible_for_short_circuit(::Type{<:StopWhenSubgradientNormLess}) = true
 function get_reason(c::StopWhenSubgradientNormLess)
     if (c.value < c.threshold) && (c.at_iteration >= 0)
         return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the subgradient norm ($(c.value)) is less than $(c.threshold).\n"
