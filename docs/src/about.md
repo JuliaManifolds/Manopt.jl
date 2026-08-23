@@ -33,7 +33,6 @@ to clone/fork the repository or open an issue.
 The following packages are using `Manopt.jl`:
 
 * [ExponentialFamilyProjection.jl](https://github.com/ReactiveBayes/ExponentialFamilyProjection.jl) package uses `Manopt.jl` to project arbitrary functions onto the closest exponential family distributions. The package also integrates with [`RxInfer.jl`](https://github.com/ReactiveBayes/RxInfer.jl) to enable Bayesian inference in a larger set of probabilistic models.
-* [Caesar.jl](https://github.com/JuliaRobotics/Caesar.jl) uses `Manopt.jl` within non-Gaussian factor graph inference algorithms.
 * [SummationByPartsOperatorsExtra.jl](https://github.com/JoshuaLampert/SummationByPartsOperatorsExtra.jl) uses `Manopt.jl` to construct function space summation by parts operators for the numerical solution of partial differential equations.
 
 The following papers are using `Manopt.jl`:

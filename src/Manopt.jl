@@ -245,7 +245,7 @@ function __init__()
 end
 #
 # General
-export ℝ, ℂ, &, |, ×, ≟, ⩼, ⩻
+export ℝ, ℂ, &, |, ×, ≟, ⩼, ⩻, ≞
 export mid_point, mid_point!, reflect, reflect!
 #
 # Problems

@@ -6,6 +6,19 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5] August 22, 2026
+
+### Added
+
+* a new function `requires_update` that per `<:StoppingCriterion` type can indicate, whether a state is present that needs updating in every iteration.
+* a new shortcut for the `StopWhenCriterionWithIterationCondition` that only evaluates every `n`th iteration using `stopping_criterion ≞ n` (`\measeq` <TAB> on REPL) as constructor. While in theory also `%` would have been possible, there was a discussion not to use mnore-common symbols here, cf. (#509) – and the `m` could be seen as “modulo”.
+
+### Fixed
+
+* `StopWhenAll` and `StopWhenAny` evaluated their criteria with short-circuiting, so criteria later in the list were not called in every iteration. Stateful criteria like
+  `StopWhenChangeLess` or `StopWhenRepeated` were hence not updated and the reset at
+  initialization did not reach them either. Now `requires_update` is used to determine which ones need to be called even after one could use a shortcut already – only the ones without state are “short-circuited”. (#632,#635)
+
 ## [0.6.4] August 21, 2026
 
 As an overarching scheme of this release, the single functions in an objective become more independent; their wrapping happens automatically and the objective gets – in turn – a bit more lightweight and has “less cases to handle”.

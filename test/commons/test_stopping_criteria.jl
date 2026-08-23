@@ -45,8 +45,9 @@ end
         @test get_reason(sn) == ""
         @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iterations
         @test repr(sn) == "StopWhenAny([$(repr(sn1)), $(repr(s3))])"
-        # or over an empty set has to be false for any function
-        @test !Manopt._fast_any(x -> false, ())
+        # any/all over an empty set of criteria: identities false/true
+        @test !StopWhenAny()(p, s, 1)
+        @test StopWhenAll()(p, s, 1)
 
         sn2 = StopAfterIteration(10) | s3
         @test get_stopping_criteria(sn)[1].max_iterations ==
@@ -380,6 +381,9 @@ end
         @test sc4.comp === (==(5))
         sc6 = s ⩻ 5
         @test sc6.comp === (<(5))
+        sc7 = s ≞ 10
+        @test !sc7.comp(12)
+        @test sc7.comp(20)
 
         # test that it does not hit at 5
         @test !sc(mp, st, 5) # still count 0
@@ -489,5 +493,86 @@ end
             # As well as sh5, since one of its children does indicate convergence
             @test has_converged(sh5)   # false -- expected true
         end
+    end
+
+    # cf. reported bug in https://github.com/JuliaManifolds/Manopt.jl/issues/632
+    @testset "StopWhenAll/StopWhenAny short-circuit eligible criteria (#632)" begin
+        M = Euclidean(2)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective((M, x) -> sum(x .^ 2), (M, x) -> 2x))
+        st = GradientDescentState(M; p = [1.0, 2.0])
+        # `&`: the first criterion is false, `|`: the first one is true;
+        # the second, stateful criterion is still evaluated and updated.
+        for sc in [
+                StopAfterIteration(100) & StopWhenChangeLess(M, 1.0e-9),
+                StopAfterIteration(1) | StopWhenChangeLess(M, 1.0e-9),
+            ]
+            Manopt.set_iterate!(st, M, [1.0, 2.0])
+            sc(mp, st, 0) # init stores the iterate
+            Manopt.set_iterate!(st, M, [0.5, 1.0])
+            sc(mp, st, 1)
+            @test sc.criteria[2].last_change ≈ distance(M, [1.0, 2.0], [0.5, 1.0])
+        end
+        # Criteria eligible for short-circuiting are skipped once the result is fixed.
+        for sc in [
+                StopAfterIteration(100) & StopAfterIteration(1),
+                StopAfterIteration(1) | StopAfterIteration(100),
+            ]
+            sc(mp, st, 1)
+            @test sc.criteria[2].at_iteration == -1
+        end
+    end
+
+    @testset "Stopping criterion `requires_update` indicators." begin
+        for c in (
+                StopAfterIteration(1),
+                StopWhenCostLess(1.0),
+                StopWhenCostNaN(),
+                StopWhenCovarianceIllConditioned(1.0),
+                StopWhenGradientMappingNormLess(1.0),
+                StopWhenGradientNormLess(1.0),
+                StopWhenIterateNaN(),
+                StopWhenKKTResidualLess(1.0),
+                StopWhenLagrangeMultiplierLess(1.0),
+                StopWhenProjectedNegativeGradientNormLess(1.0),
+                StopWhenSmallerOrEqual(:p, 1.0),
+                StopWhenStepsizeLess(1.0),
+                StopWhenSubgradientNormLess(1.0),
+                StopAfter(Second(1)),
+                StopWhenAll(StopAfterIteration(1), StopWhenCostNaN()),
+                StopWhenAny(StopAfterIteration(1), StopWhenCostNaN()),
+            )
+            @test !Manopt.requires_update(typeof(c))
+        end
+
+        for c in (
+                StopWhenChangeLess(Euclidean(), 1.0),
+                StopWhenCostChangeLess(1.0),
+                StopWhenCriterionWithIterationCondition(StopAfterIteration(1)),
+                StopWhenEntryChangeLess(:p, (mp, s, x, y) -> abs(x - y), 1.0),
+                StopWhenGradientChangeLess(Euclidean(), 1.0),
+                StopWhenRepeated(StopAfterIteration(1), 2),
+                StopWhenRelativeAPosterioriCostChangeLessOrEqual(1.0),
+                StopWhenAny(StopAfterIteration(1), StopWhenCostChangeLess(1.0)),
+                StopWhenAll(StopAfterIteration(1), StopWhenCostChangeLess(1.0)),
+            )
+            @test Manopt.requires_update(typeof(c))
+        end
+    end
+
+    @testset "Type stability of Any/All" begin                # Keep tuple evaluation type-stable for heterogeneous stopping criteria.
+        cost_problem = DefaultManoptProblem(
+            Euclidean(2), ManifoldCostObjective((M, p) -> norm(p))
+        )
+        nelder_mead_state = NelderMeadState(Euclidean(2); p = [1.0, 2.0])
+        all_criteria = StopWhenAll(StopAfterIteration(1), StopWhenCostChangeLess(1.0))
+        any_criteria = StopWhenAny(StopAfterIteration(1), StopWhenCostChangeLess(1.0))
+        @test !(
+            @inferred Manopt.evaluate_all_criteria(
+                all_criteria.criteria, cost_problem, nelder_mead_state, 1
+            )
+        )
+        @test @inferred Manopt.evaluate_any_criteria(
+            any_criteria.criteria, cost_problem, nelder_mead_state, 1
+        )
     end
 end
