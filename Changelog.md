@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `StopWhenAll` and `StopWhenAny` evaluated their criteria with short-circuiting, so criteria later in the list were not called in every iteration. Stateful criteria like
   `StopWhenChangeLess` or `StopWhenRepeated` were hence not updated and the reset at
-  initialization did not reach them either. Not `requires_update` is used to determine, which ones need to be called even after one could use a short cut already – only the ones without state are “short-circuited”. (#632,#635)
+  initialization did not reach them either. Now `requires_update` is used to determine which ones need to be called even after one could use a shortcut already – only the ones without state are “short-circuited”. (#632,#635)
 
 ## [0.6.4] August 21, 2026
 

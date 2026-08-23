@@ -72,8 +72,8 @@ end
 Store an array of [`StoppingCriterion`](@ref) elements and indicate to stop
 when _all_ of them indicate to stop. The `reason` is given by the concatenation of all
 reasons.
-All criteria are evaluated in every call, since some internal criteria might keep an internal
-status.
+All criteria that [`requires_update`](@ref) return `true` for are evaluated in every
+call, since some internal criteria might keep an internal status.
 
 # Fields
 
@@ -195,8 +195,8 @@ end
 Store an array of [`StoppingCriterion`](@ref) elements and indicate to stop
 when _any_ single one indicates to stop. The `reason` is given by the
 concatenation of all reasons (assuming that all non-indicating return `""`).
-All criteria are evaluated in every call, since some internal criteria might keep an internal
-status.
+All criteria that [`requires_update`](@ref) return `true` for are evaluated in every
+call, since some internal criteria might keep an internal status.
 
 # Fields
 
