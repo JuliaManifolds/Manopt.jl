@@ -582,7 +582,7 @@ function show(io::IO, c::StopWhenCovarianceIllConditioned)
         io, "StopWhenCovarianceIllConditioned($(c.threshold))"
     )
 end
-has_state(::Type{<:StopWhenCovarianceIllConditioned}) = false
+requires_update(::Type{<:StopWhenCovarianceIllConditioned}) = false
 
 """
     StopWhenBestCostInGenerationConstant <: StoppingCriterion
@@ -805,7 +805,7 @@ end
 function show(io::IO, c::StopWhenPopulationStronglyConcentrated)
     return print(io, "StopWhenPopulationStronglyConcentrated($(c.tol))")
 end
-has_state(::Type{<:StopWhenPopulationStronglyConcentrated}) = false
+requires_update(::Type{<:StopWhenPopulationStronglyConcentrated}) = false
 
 """
     StopWhenPopulationDiverges{TParam<:Real} <: StoppingCriterion

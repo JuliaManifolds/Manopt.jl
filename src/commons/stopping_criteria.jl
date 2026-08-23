@@ -9,16 +9,19 @@
 Evaluate stopping criteria for a [`StopWhenAll`](@ref). Once one criterion returns `false`,
 only criteria not eligible for short-circuiting are evaluated.
 """
+@inline evaluate_all_criteria(
+    ::Tuple{}, ::AbstractManoptProblem, ::AbstractManoptSolverState, ::Int
+) = true
 @inline function evaluate_all_criteria(
-        criteria::Tuple, p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-    )
-    result = true
-    for criterion in criteria
-        if result || has_state(typeof(criterion))
-            result &= criterion(p, s, k)::Bool
-        end
-    end
-    return result
+        criteria::Tuple{C, Vararg{StoppingCriterion}},
+        p::AbstractManoptProblem,
+        s::AbstractManoptSolverState,
+        k::Int,
+    ) where {C <: StoppingCriterion}
+    criterion = first(criteria)
+    result = criterion(p, s, k)::Bool
+    return result ? evaluate_all_criteria(Base.tail(criteria), p, s, k) :
+        (_evaluate_update_criteria(Base.tail(criteria), p, s, k); false)
 end
 
 """
@@ -27,16 +30,40 @@ end
 Evaluate stopping criteria for a [`StopWhenAny`](@ref). Once one criterion returns `true`,
 only criteria not eligible for short-circuiting are evaluated.
 """
+@inline evaluate_any_criteria(
+    ::Tuple{}, ::AbstractManoptProblem, ::AbstractManoptSolverState, ::Int
+) = false
 @inline function evaluate_any_criteria(
-        criteria::Tuple, p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
-    )
-    result = false
-    for criterion in criteria
-        if !result || has_state(typeof(criterion))
-            result |= criterion(p, s, k)::Bool
-        end
+        criteria::Tuple{C, Vararg{StoppingCriterion}},
+        p::AbstractManoptProblem,
+        s::AbstractManoptSolverState,
+        k::Int,
+    ) where {C <: StoppingCriterion}
+    criterion = first(criteria)
+    result = criterion(p, s, k)::Bool
+    return result ? (_evaluate_update_criteria(Base.tail(criteria), p, s, k); true) :
+        evaluate_any_criteria(Base.tail(criteria), p, s, k)
+end
+
+"""
+    _evaluate_update_criteria(criteria::Tuple, problem, state, k)
+
+Evaluate stopping criteria for updating after the truth value has been established by
+either [`evaluate_all_criteria`](@ref) or [`evaluate_any_criteria`](@ref).
+"""
+@inline _evaluate_update_criteria(
+    ::Tuple{}, ::AbstractManoptProblem, ::AbstractManoptSolverState, ::Int
+) = nothing
+@inline function _evaluate_update_criteria(
+        criteria::Tuple{C, Vararg{StoppingCriterion}},
+        p::AbstractManoptProblem,
+        s::AbstractManoptSolverState,
+        k::Int,
+    ) where {C <: StoppingCriterion}
+    if requires_update(C)
+        first(criteria)(p, s, k)::Bool
     end
-    return result
+    return _evaluate_update_criteria(Base.tail(criteria), p, s, k)
 end
 
 @doc """
@@ -67,9 +94,7 @@ end
 function (c::StopWhenAll)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
     if (k <= 0) # reset on init
         c.at_iteration = -1
-        for ci in c.criteria #reset internals as well
-            ci(p, s, k)
-        end
+        map(ci -> ci(p, s, k), c.criteria) #reset internals as well
     end
     if evaluate_all_criteria(c.criteria, p, s, k)
         c.at_iteration = k
@@ -129,6 +154,9 @@ function Base.show(io::IO, c::StopWhenAll)
         show(io, cs)
     end
     return print(io, "])")
+end
+function requires_update(::Type{StopWhenAll{TC}}) where {TC <: Tuple}
+    return any(map(requires_update, Tuple(TC.parameters)))
 end
 
 """
@@ -255,6 +283,9 @@ function Base.show(io::IO, c::StopWhenAny)
     end
     return print(io, "])")
 end
+function requires_update(::Type{StopWhenAny{TC}}) where {TC <: Tuple}
+    return any(map(requires_update, Tuple(TC.parameters)))
+end
 """
     |(s1,s2)
     s1 | s2
@@ -305,9 +336,9 @@ for example `Minute(15)`.
 
 # Constructor
 
-    StopAfter(t)
+    StopAfter(t::Period)
 
-initialize the stopping criterion to a `Period t` to stop after.
+initialize the stopping criterion to a `Period` `t` to stop after.
 """
 mutable struct StopAfter <: StoppingCriterion
     threshold::Period
@@ -352,6 +383,7 @@ end
 function Base.show(io::IO, c::StopAfter)
     return print(io, "StopAfter($(repr(c.threshold)))")
 end
+requires_update(::Type{StopAfter}) = false
 @doc """
     set_parameter!(c::StopAfter, :MaxTime, v::Period)
 
@@ -412,7 +444,7 @@ end
 function Base.show(io::IO, c::StopAfterIteration)
     return print(io, "StopAfterIteration($(c.max_iterations))")
 end
-has_state(::Type{StopAfterIteration}) = false
+requires_update(::Type{StopAfterIteration}) = false
 
 """
     set_parameter!(c::StopAfterIteration, :MaxIteration, v::Int)
@@ -655,7 +687,7 @@ end
 function Base.show(io::IO, c::StopWhenCostLess)
     return print(io, "StopWhenCostLess($(c.threshold))")
 end
-has_state(::Type{<:StopWhenCostLess}) = false
+requires_update(::Type{<:StopWhenCostLess}) = false
 
 """
     set_parameter!(c::StopWhenCostLess, :MinCost, v)
@@ -715,7 +747,7 @@ end
 function Base.show(io::IO, ::StopWhenCostNaN)
     return print(io, "StopWhenCostNaN()")
 end
-has_state(::Type{StopWhenCostNaN}) = false
+requires_update(::Type{StopWhenCostNaN}) = false
 
 #
 #
@@ -1088,7 +1120,7 @@ function get_reason(c::StopWhenGradientMappingNormLess)
     return ""
 end
 indicates_convergence(c::StopWhenGradientMappingNormLess) = true
-has_state(::Type{<:StopWhenGradientMappingNormLess}) = false
+requires_update(::Type{<:StopWhenGradientMappingNormLess}) = false
 function Base.show(io::IO, c::StopWhenGradientMappingNormLess)
     return print(io, "StopWhenGradientMappingNormLess($(c.threshold))")
 end
@@ -1182,7 +1214,7 @@ function get_reason(c::StopWhenGradientNormLess)
     return ""
 end
 indicates_convergence(c::StopWhenGradientNormLess) = true
-has_state(::Type{<:StopWhenGradientNormLess}) = false
+requires_update(::Type{<:StopWhenGradientNormLess}) = false
 function status_summary(c::StopWhenGradientNormLess; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
@@ -1246,7 +1278,7 @@ end
 function Base.show(io::IO, ::StopWhenIterateNaN)
     return print(io, "StopWhenIterateNaN()")
 end
-has_state(::Type{StopWhenIterateNaN}) = false
+requires_update(::Type{StopWhenIterateNaN}) = false
 
 #
 #
@@ -1341,7 +1373,7 @@ function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
         "StopWhenLagrangeMultiplierLess($(sc.tolerances); mode=:$(sc.mode)$n)",
     )
 end
-has_state(::Type{<:StopWhenLagrangeMultiplierLess}) = false
+requires_update(::Type{<:StopWhenLagrangeMultiplierLess}) = false
 
 #
 #
@@ -1520,7 +1552,7 @@ function status_summary(c::StopWhenProjectedNegativeGradientNormLess; context::S
     return "A stopping criterion to stop when the projected negative gradient norm is less than a threshold of $(c.threshold):\n$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(c::StopWhenProjectedNegativeGradientNormLess) = true
-has_state(::Type{<:StopWhenProjectedNegativeGradientNormLess}) = false
+requires_update(::Type{<:StopWhenProjectedNegativeGradientNormLess}) = false
 function Base.show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
     return print(io, "StopWhenProjectedNegativeGradientNormLess($(c.threshold); norm = $(c.norm))")
 end
@@ -1665,7 +1697,7 @@ end
 function Base.show(io::IO, c::StopWhenSmallerOrEqual)
     return print(io, "StopWhenSmallerOrEqual(:$(c.value), $(c.minValue))")
 end
-has_state(::Type{<:StopWhenSmallerOrEqual}) = false
+requires_update(::Type{<:StopWhenSmallerOrEqual}) = false
 #
 #
 # ---
@@ -1724,7 +1756,7 @@ end
 function Base.show(io::IO, c::StopWhenStepsizeLess)
     return print(io, "StopWhenStepsizeLess($(c.threshold))")
 end
-has_state(::Type{<:StopWhenStepsizeLess}) = false
+requires_update(::Type{<:StopWhenStepsizeLess}) = false
 """
     set_parameter!(c::StopWhenStepsizeLess, :MinStepsize, v)
 
@@ -1777,7 +1809,7 @@ function (c::StopWhenSubgradientNormLess)(
     return false
 end
 indicates_convergence(c::StopWhenSubgradientNormLess) = true
-has_state(::Type{<:StopWhenSubgradientNormLess}) = false
+requires_update(::Type{<:StopWhenSubgradientNormLess}) = false
 function get_reason(c::StopWhenSubgradientNormLess)
     if (c.value < c.threshold) && (c.at_iteration >= 0)
         return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the subgradient norm ($(c.value)) is less than $(c.threshold).\n"

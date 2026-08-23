@@ -44,5 +44,5 @@ is_active_stopping_criterion
 has_converged
 get_active_stopping_criteria
 get_reason
-has_state
+requires_update
 ```

@@ -522,7 +522,7 @@ end
         end
     end
 
-    @testset "Stopping criterion `has_state` indicators." begin
+    @testset "Stopping criterion `requires_update` indicators." begin
         for c in (
                 StopAfterIteration(1),
                 StopWhenCostLess(1.0),
@@ -537,14 +537,14 @@ end
                 StopWhenSmallerOrEqual(:p, 1.0),
                 StopWhenStepsizeLess(1.0),
                 StopWhenSubgradientNormLess(1.0),
+                StopAfter(Second(1)),
+                StopWhenAll(StopAfterIteration(1), StopWhenCostNaN()),
+                StopWhenAny(StopAfterIteration(1), StopWhenCostNaN()),
             )
-            @test !Manopt.has_state(typeof(c))
+            @test !Manopt.requires_update(typeof(c))
         end
 
         for c in (
-                StopWhenAll(),
-                StopWhenAny(),
-                StopAfter(Second(1)),
                 StopWhenChangeLess(Euclidean(), 1.0),
                 StopWhenCostChangeLess(1.0),
                 StopWhenCriterionWithIterationCondition(StopAfterIteration(1)),
@@ -552,8 +552,27 @@ end
                 StopWhenGradientChangeLess(Euclidean(), 1.0),
                 StopWhenRepeated(StopAfterIteration(1), 2),
                 StopWhenRelativeAPosterioriCostChangeLessOrEqual(1.0),
+                StopWhenAny(StopAfterIteration(1), StopWhenCostChangeLess(1.0)),
+                StopWhenAll(StopAfterIteration(1), StopWhenCostChangeLess(1.0)),
             )
-            @test Manopt.has_state(typeof(c))
+            @test Manopt.requires_update(typeof(c))
         end
+    end
+
+    @testset "Type stability of Any/All" begin                # Keep tuple evaluation type-stable for heterogeneous stopping criteria.
+        cost_problem = DefaultManoptProblem(
+            Euclidean(2), ManifoldCostObjective((M, p) -> norm(p))
+        )
+        nelder_mead_state = NelderMeadState(Euclidean(2); p = [1.0, 2.0])
+        all_criteria = StopWhenAll(StopAfterIteration(1), StopWhenCostChangeLess(1.0))
+        any_criteria = StopWhenAny(StopAfterIteration(1), StopWhenCostChangeLess(1.0))
+        @test !(
+            @inferred Manopt.evaluate_all_criteria(
+                all_criteria.criteria, cost_problem, nelder_mead_state, 1
+            )
+        )
+        @test @inferred Manopt.evaluate_any_criteria(
+            any_criteria.criteria, cost_problem, nelder_mead_state, 1
+        )
     end
 end

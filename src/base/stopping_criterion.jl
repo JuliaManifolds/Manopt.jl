@@ -141,7 +141,7 @@ Return whether a [`StoppingCriterion`](@ref) is active, i.e. it has been called 
 is_active_stopping_criterion(c::StoppingCriterion) = (c.at_iteration >= 0)
 
 """
-    has_state(::Type{<:StoppingCriterion})
+    requires_update(::Type{<:StoppingCriterion})
 
 Return whether a [`StoppingCriterion`](@ref) has an internal state.
 
@@ -151,7 +151,7 @@ group of stopping criteria can maybe “stop early” to evaluate the single cri
 By default this function returns the pessimistic answer of `true`.
 Stopping criteria that do not require internal updates can set this value to `false`.
 """
-has_state(::Type{<:StoppingCriterion}) = true
+requires_update(::Type{<:StoppingCriterion}) = true
 
 
 # pass down from state to stopping criterion
