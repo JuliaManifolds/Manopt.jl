@@ -140,6 +140,20 @@ Return whether a [`StoppingCriterion`](@ref) is active, i.e. it has been called 
 """
 is_active_stopping_criterion(c::StoppingCriterion) = (c.at_iteration >= 0)
 
+"""
+    has_state(::Type{<:StoppingCriterion})
+
+Return whether a [`StoppingCriterion`](@ref) has an internal state.
+
+This is for example used when determining whether a [`StopWhenAll`](@ref)
+group of stopping criteria can maybe “stop early” to evaluate the single criteria.
+
+By default this function returns the pessimistic answer of `true`.
+Stopping criteria that do not require internal updates can set this value to `false`.
+"""
+has_state(::Type{<:StoppingCriterion}) = true
+
+
 # pass down from state to stopping criterion
 function set_parameter!(s::AbstractManoptSolverState, ::Val{:StoppingCriterion}, args...)
     set_parameter!(s.stop, args...)

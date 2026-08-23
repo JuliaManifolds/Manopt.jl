@@ -2,7 +2,6 @@
 # Meta Stopping Criteria
 # ---
 
-eligible_for_short_circuit(::Type{<:StoppingCriterion}) = false
 
 """
     evaluate_all_criteria(criteria::Tuple, problem, state, k)
@@ -15,7 +14,7 @@ only criteria not eligible for short-circuiting are evaluated.
     )
     result = true
     for criterion in criteria
-        if result || !eligible_for_short_circuit(typeof(criterion))
+        if result || has_state(typeof(criterion))
             result &= criterion(p, s, k)::Bool
         end
     end
@@ -33,7 +32,7 @@ only criteria not eligible for short-circuiting are evaluated.
     )
     result = false
     for criterion in criteria
-        if !result || !eligible_for_short_circuit(typeof(criterion))
+        if !result || has_state(typeof(criterion))
             result |= criterion(p, s, k)::Bool
         end
     end
@@ -413,7 +412,7 @@ end
 function Base.show(io::IO, c::StopAfterIteration)
     return print(io, "StopAfterIteration($(c.max_iterations))")
 end
-eligible_for_short_circuit(::Type{StopAfterIteration}) = true
+has_state(::Type{StopAfterIteration}) = false
 
 """
     set_parameter!(c::StopAfterIteration, :MaxIteration, v::Int)
@@ -656,7 +655,7 @@ end
 function Base.show(io::IO, c::StopWhenCostLess)
     return print(io, "StopWhenCostLess($(c.threshold))")
 end
-eligible_for_short_circuit(::Type{<:StopWhenCostLess}) = true
+has_state(::Type{<:StopWhenCostLess}) = false
 
 """
     set_parameter!(c::StopWhenCostLess, :MinCost, v)
@@ -716,7 +715,7 @@ end
 function Base.show(io::IO, ::StopWhenCostNaN)
     return print(io, "StopWhenCostNaN()")
 end
-eligible_for_short_circuit(::Type{StopWhenCostNaN}) = true
+has_state(::Type{StopWhenCostNaN}) = false
 
 #
 #
@@ -1081,7 +1080,7 @@ function get_reason(c::StopWhenGradientMappingNormLess)
     return ""
 end
 indicates_convergence(c::StopWhenGradientMappingNormLess) = true
-eligible_for_short_circuit(::Type{<:StopWhenGradientMappingNormLess}) = true
+has_state(::Type{<:StopWhenGradientMappingNormLess}) = false
 function Base.show(io::IO, c::StopWhenGradientMappingNormLess)
     return print(io, "StopWhenGradientMappingNormLess($(c.threshold))")
 end
@@ -1175,7 +1174,7 @@ function get_reason(c::StopWhenGradientNormLess)
     return ""
 end
 indicates_convergence(c::StopWhenGradientNormLess) = true
-eligible_for_short_circuit(::Type{<:StopWhenGradientNormLess}) = true
+has_state(::Type{<:StopWhenGradientNormLess}) = false
 function status_summary(c::StopWhenGradientNormLess; context::Symbol = :default)
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
@@ -1239,7 +1238,7 @@ end
 function Base.show(io::IO, ::StopWhenIterateNaN)
     return print(io, "StopWhenIterateNaN()")
 end
-eligible_for_short_circuit(::Type{StopWhenIterateNaN}) = true
+has_state(::Type{StopWhenIterateNaN}) = false
 
 #
 #
@@ -1334,7 +1333,7 @@ function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
         "StopWhenLagrangeMultiplierLess($(sc.tolerances); mode=:$(sc.mode)$n)",
     )
 end
-eligible_for_short_circuit(::Type{<:StopWhenLagrangeMultiplierLess}) = true
+has_state(::Type{<:StopWhenLagrangeMultiplierLess}) = false
 
 #
 #
@@ -1513,7 +1512,7 @@ function status_summary(c::StopWhenProjectedNegativeGradientNormLess; context::S
     return "A stopping criterion to stop when the projected negative gradient norm is less than a threshold of $(c.threshold):\n$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(c::StopWhenProjectedNegativeGradientNormLess) = true
-eligible_for_short_circuit(::Type{<:StopWhenProjectedNegativeGradientNormLess}) = true
+has_state(::Type{<:StopWhenProjectedNegativeGradientNormLess}) = false
 function Base.show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
     return print(io, "StopWhenProjectedNegativeGradientNormLess($(c.threshold); norm = $(c.norm))")
 end
@@ -1658,7 +1657,7 @@ end
 function Base.show(io::IO, c::StopWhenSmallerOrEqual)
     return print(io, "StopWhenSmallerOrEqual(:$(c.value), $(c.minValue))")
 end
-eligible_for_short_circuit(::Type{<:StopWhenSmallerOrEqual}) = true
+has_state(::Type{<:StopWhenSmallerOrEqual}) = false
 #
 #
 # ---
@@ -1717,7 +1716,7 @@ end
 function Base.show(io::IO, c::StopWhenStepsizeLess)
     return print(io, "StopWhenStepsizeLess($(c.threshold))")
 end
-eligible_for_short_circuit(::Type{<:StopWhenStepsizeLess}) = true
+has_state(::Type{<:StopWhenStepsizeLess}) = false
 """
     set_parameter!(c::StopWhenStepsizeLess, :MinStepsize, v)
 
@@ -1770,7 +1769,7 @@ function (c::StopWhenSubgradientNormLess)(
     return false
 end
 indicates_convergence(c::StopWhenSubgradientNormLess) = true
-eligible_for_short_circuit(::Type{<:StopWhenSubgradientNormLess}) = true
+has_state(::Type{<:StopWhenSubgradientNormLess}) = false
 function get_reason(c::StopWhenSubgradientNormLess)
     if (c.value < c.threshold) && (c.at_iteration >= 0)
         return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the subgradient norm ($(c.value)) is less than $(c.threshold).\n"

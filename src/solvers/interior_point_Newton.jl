@@ -448,7 +448,7 @@ function status_summary(swrr::StopWhenKKTResidualLess; context::Symbol = :defaul
     return (_is_inline(context) ? "‖F(p, λ, μ)‖ < ε = $(swrr.ε):$(_MANOPT_INDENT)" : "Stop when the KKT residual is less than ε = $(swrr.ε)\n$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(::StopWhenKKTResidualLess) = true
-eligible_for_short_circuit(::Type{<:StopWhenKKTResidualLess}) = true
+has_state(::Type{<:StopWhenKKTResidualLess}) = false
 function Base.show(io::IO, c::StopWhenKKTResidualLess)
     return print(io, "StopWhenKKTResidualLess($(c.ε))")
 end

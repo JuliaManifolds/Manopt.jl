@@ -533,7 +533,7 @@ end
                 StopWhenStepsizeLess(1.0),
                 StopWhenSubgradientNormLess(1.0),
             )
-            @test Manopt.eligible_for_short_circuit(typeof(c))
+            @test !Manopt.has_state(typeof(c))
         end
 
         for c in (
@@ -548,7 +548,7 @@ end
                 StopWhenRepeated(StopAfterIteration(1), 2),
                 StopWhenRelativeAPosterioriCostChangeLessOrEqual(1.0),
             )
-            @test !Manopt.eligible_for_short_circuit(typeof(c))
+            @test Manopt.has_state(typeof(c))
         end
     end
 end
