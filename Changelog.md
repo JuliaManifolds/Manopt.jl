@@ -8,12 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.5] August 22, 2026
 
+### Added
+
+* a new function `has_state` that per `<:StoppingCriterion` type can indicate, whether a state is present that needs updating in every iteration.
+* a new shortcut for the `StopWhenCriterionWithIterationCondition` that only evaluates every `n`th iteration using `stopping_criterion ≞ n` (`\measeq` <TAB> on REPL) as constructor. While in theory also `%` would have been possible, there was a discussion not to use mnore-common symbols here, cf. (#509) – and the `m` could be seen as “modulo”.
+
 ### Fixed
 
-* `StopWhenAll` and `StopWhenAny` evaluated their criteria with short-circuiting, so criteria
-  later in the list were not called in every iteration. Stateful criteria like
+* `StopWhenAll` and `StopWhenAny` evaluated their criteria with short-circuiting, so criteria later in the list were not called in every iteration. Stateful criteria like
   `StopWhenChangeLess` or `StopWhenRepeated` were hence not updated and the reset at
-  initialization did not reach them either. All criteria are now evaluated in every call. (#632,#635)
+  initialization did not reach them either. Not `has_state` is used to determine, which ones need to be called even after one could use a short cut already – only the ones without state are “short-circuited”. (#632,#635)
 
 ## [0.6.4] August 21, 2026
 

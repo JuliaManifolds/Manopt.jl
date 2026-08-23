@@ -750,14 +750,19 @@ A stopping criterion that indicates to stop when the gradient norm is small but 
 
     StopWhenCriterionWithIterationCondition(StopWhenGradientNormLess(1e-6), 3)
 
-You can also use the infix operators `≟` (`\\questeq` on REPL), `⩻` (`\\ltquest`), and `⩼` (`\\gtquest`) to create such a criterion:
+You can also use the infix operators `≟` (`\\questeq` on REPL), `⩻` (`\\ltquest`), `⩼` (`\\gtquest`), and `≞` (`\\measeq`) to create such a criterion:
 
     StopWhenGradientNormLess(1e-6) ≟ 3
     StopWhenGradientNormLess(1e-6) ⩻ 3
     StopWhenGradientNormLess(1e-6) ⩼ 3
+    StopWhenGradientNormLess(1e-6) ≞ 3
 
-These are equivalent to specifying `comp = (==(3))`, `comp = (<(3))`, and `comp = (>(3))`, respectively.
-Their interpretation is “the stopping criterion is only checked (asked) if the condition is met”.
+These are equivalent to specifying `comp = (==(3))`, `comp = (<(3))`, `comp = (>(3))`, and `comp = rem(k,n)==0` respectively.
+Their interpretation is “the stopping criterion is only checked (asked) if the condition is met”:
+* `≟` is only checked exactly at iteration 3,
+* `⩻` is only checked up to (but not including) iteration 3
+* `⩼` is only checked after (but not including) iteration 3
+* `≞` is only checked on iterations that are zero modulo 3
 """
 mutable struct StopWhenCriterionWithIterationCondition{SC <: StoppingCriterion, F} <:
     StoppingCriterion
@@ -778,6 +783,9 @@ function ⩼(sc::StoppingCriterion, n::Int)
 end
 function ≟(sc::StoppingCriterion, n::Int)
     return StopWhenCriterionWithIterationCondition(sc; comp = (==(n)))
+end
+function ≞(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc; comp = k -> rem(k, n) == 0)
 end
 function (c::StopWhenCriterionWithIterationCondition)(
         p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int

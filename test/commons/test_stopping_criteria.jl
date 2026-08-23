@@ -381,6 +381,9 @@ end
         @test sc4.comp === (==(5))
         sc6 = s ⩻ 5
         @test sc6.comp === (<(5))
+        sc7 = s ≞ 10
+        @test !sc7.comp(12)
+        @test sc7.comp(20)
 
         # test that it does not hit at 5
         @test !sc(mp, st, 5) # still count 0
