@@ -522,14 +522,16 @@ end
         end
     end
 
-    @testset "Stopping criterion short-circuit eligibility" begin
+    @testset "Stopping criterion `has_state` indicators." begin
         for c in (
                 StopAfterIteration(1),
                 StopWhenCostLess(1.0),
                 StopWhenCostNaN(),
+                StopWhenCovarianceIllConditioned(1.0),
                 StopWhenGradientMappingNormLess(1.0),
                 StopWhenGradientNormLess(1.0),
                 StopWhenIterateNaN(),
+                StopWhenKKTResidualLess(1.0),
                 StopWhenLagrangeMultiplierLess(1.0),
                 StopWhenProjectedNegativeGradientNormLess(1.0),
                 StopWhenSmallerOrEqual(:p, 1.0),
