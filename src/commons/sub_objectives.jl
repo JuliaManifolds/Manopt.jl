@@ -41,7 +41,7 @@ $_doc_AL_Cost_long
 
     AugmentedLagrangianCost(co, ρ, μ, λ)
 """
-mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunction{T}
+mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunction{CO}
     co::CO
     ρ::R
     μ::T
