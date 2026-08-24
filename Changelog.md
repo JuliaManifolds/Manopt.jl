@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * `augmented_Lagrangian_method` set the penalty parameter `ρ` of the sub problem's cost to the
-  constant `1/3` instead of the current `alms.ρ`, while its gradient did receive `alms.ρ`. (#TODO)
+  constant `1/3` instead of the current `alms.ρ`, while its gradient did receive `alms.ρ`. (#637)
 
 ## [0.6.5] August 22, 2026
 
