@@ -79,4 +79,28 @@ using LinearAlgebra: I, tr
         @test q isa Real
         @test f(M, q) < f(M, 4)
     end
+    @testset "Sub problem penalty parameters" begin
+        # The cost and the gradient of the sub problem have to be set up with the same penalty
+        # parameter ρ. If they disagree, the sub solver minimises a different function than the
+        # one it computes gradients for, and since ρ grows geometrically the two drift apart.
+        M = Euclidean(2)
+        f(M, p) = p[1]
+        grad_f(M, p) = [1.0, 0.0]
+        h(M, p) = [p[1]^2 + p[2]^2 - 1.0]
+        grad_h(M, p) = [[2 * p[1], 2 * p[2]]]
+        s = augmented_Lagrangian_method(
+            M, f, grad_f, [0.5, 0.5];
+            h = h, grad_h = grad_h, equality_constraints = 1,
+            stopping_criterion = StopAfterIteration(20), return_state = true,
+        )
+        sub_objective = Manopt.get_objective(s.sub_problem)
+        sub_cost = Manopt.get_cost_function(sub_objective)
+        # the gradient is wrapped for the in-place dispatch, so it needs one more unwrap
+        sub_gradient = sub_objective.functions.gradient.f
+        @test sub_cost.ρ == sub_gradient.ρ
+        @test sub_cost.μ == sub_gradient.μ
+        @test sub_cost.λ == sub_gradient.λ
+        # with matching parameters the solver reaches the minimiser (-1, 0)
+        @test distance(M, get_solver_result(s), [-1.0, 0.0]) < 1.0e-3
+    end
 end

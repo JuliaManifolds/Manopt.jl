@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `augmented_Lagrangian_method` set the penalty parameter `ρ` of the sub problem's cost to the
   constant `1/3` instead of the current `alms.ρ`, while its gradient did receive `alms.ρ`. (#637)
+* `AugmentedLagrangianCost` declared its supertype as `AbstractConstrainedFunction{CO}` with the
+  objective type `CO` instead of the type `T` of the dual variables, as `AugmentedLagrangianGrad`
+  does. The methods `set_parameter!(::AbstractConstrainedFunction{T}, ::Val{:μ}, ::T)` and the one
+  for `:λ` hence never applied to the cost, and since `set_parameter!` falls back to a no-op, its
+  `μ` and `λ` silently kept their initial values for the whole solver run. (#637)
 
 ## [0.6.5] August 22, 2026
 
