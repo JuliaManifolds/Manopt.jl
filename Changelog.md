@@ -6,6 +6,13 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.6] unreleased
+
+### Fixed
+
+* `augmented_Lagrangian_method` set the penalty parameter `ρ` of the sub problem's cost to the
+  constant `1/3` instead of the current `alms.ρ`, while its gradient did receive `alms.ρ`. (#TODO)
+
 ## [0.6.5] August 22, 2026
 
 ### Added
