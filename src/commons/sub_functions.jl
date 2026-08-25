@@ -330,9 +330,9 @@ mutable struct ExactPenaltyGrad{S, CO, T} <: AbstractConstrainedFunction{CO, T}
     u::T
 end
 function ExactPenaltyGrad(
-        co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing::S = LinearQuadraticHuber()
-    ) where {R, S <: SmoothingTechnique}
-    return ExactPenaltyGrad{S, typeof(co), R}(co, ρ, u)
+        co::ConstrainedManifoldObjective, ρ::T, u::T; smoothing::S = LinearQuadraticHuber()
+    ) where {T, S <: SmoothingTechnique}
+    return ExactPenaltyGrad{S, typeof(co), T}(co, ρ, u)
 end
 # Default (functions constraints): evaluate all gradients
 # Since for LogExp the pre-factor c seems to not be zero, this might be the best way to go here

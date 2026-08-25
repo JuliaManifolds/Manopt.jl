@@ -12,8 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `augmented_Lagrangian_method` set the penalty parameter `ρ` of the sub problem's cost to the
   constant `1/3` instead of the current `alms.ρ`, while its gradient did receive `alms.ρ`. (#637)
-* fix `set_parameter!` for `:μ` and `:λ` for  `AugmentedLagrangianCost`. (#637)
-* fix `AbstractConstrainedFunction` to have two parameters, one for the constrained objective it wraps and one for the type of dual parameters.
+* fix `set_parameter!` for `:μ` and `:λ` for `AugmentedLagrangianCost`. (#637)
+* fix `AbstractConstrainedFunction` to have two parameters, one for the constrained objective it wraps and one for the type of dual parameters (#639).
 
 ## [0.6.5] August 22, 2026
 
