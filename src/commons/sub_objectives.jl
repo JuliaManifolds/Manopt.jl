@@ -48,7 +48,7 @@ mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunction{
     λ::T
 end
 # Since the types of ρ and duals differ, we need a specific set function here
-function set_parameter!(alc::AugmentedLagrangianCost{CO, R}, ::Val{:ρ}, ρ::R) where {CO,R}
+function set_parameter!(alc::AugmentedLagrangianCost{CO, R}, ::Val{:ρ}, ρ::R) where {CO, R}
     alc.ρ = ρ
     return alc
 end
