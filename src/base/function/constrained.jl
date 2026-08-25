@@ -24,9 +24,9 @@ function set_parameter!(acf::AbstractConstrainedFunction{CO, T}, ::Val{:ρ}, ρ:
     return acf
 end
 get_parameter(acf::AbstractConstrainedFunction, ::Val{:ρ}) = acf.ρ
-function set_parameter!(epc::AbstractConstrainedFunction{CO, T}, ::Val{:u}, u::T) where {CO, T}
-    epc.u = u
-    return epc
+function set_parameter!(acf::AbstractConstrainedFunction{CO, T}, ::Val{:u}, u::T) where {CO, T}
+    acf.u = u
+    return acf
 end
 get_parameter(acf::AbstractConstrainedFunction, ::Val{:u}) = acf.u
 
