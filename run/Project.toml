@@ -1,0 +1,6 @@
+[deps]
+Glossaries = "8f48dd54-e453-4cdc-9500-53b96149560b"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
+Manopt = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
