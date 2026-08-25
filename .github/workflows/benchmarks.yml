@@ -1,0 +1,32 @@
+name: Run Benchmarks
+on:
+  pull_request_target:
+    branches: [ master ]
+    paths-ignore:
+      - 'docs/**'
+      - 'CITATION.bib'
+      - 'LICENSE'
+      - 'Changelog.md'
+      - 'Readme.md'
+      - '.zenodo.json'
+      - '_typos.yml'
+      - '.github/workflows/changelog.yml'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/clear_preview.yml'
+      - '.github/workflows/documenter.yml'
+      - '.github/workflows/format.yml'
+      - '.github/workflows/nightly.yml'
+      - '.github/workflows/spell_check.yml'
+      - '.github/workflows/TagBot.yml'
+      - '.github/dependabot.yml'
+permissions:
+  pull-requests: write    # needed to post comments
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    if: contains( github.event.pull_request.labels.*.name, 'benchmark') || github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/')
+    steps:
+      - uses: MilesCranmer/AirspeedVelocity.jl@action-v1
+        with:
+          julia-version: '1'
