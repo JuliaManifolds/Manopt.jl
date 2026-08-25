@@ -22,7 +22,7 @@ $(_tex(:biggr)))
 """
 
 @doc """
-    AugmentedLagrangianCost{CO,R,T} <: AbstractConstrainedFunction{CO}
+    AugmentedLagrangianCost{CO,R,T} <: AbstractConstrainedFunction{CO, T}
 
 Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
 of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
@@ -41,18 +41,18 @@ $_doc_AL_Cost_long
 
     AugmentedLagrangianCost(co, ρ, μ, λ)
 """
-mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunction{CO}
+mutable struct AugmentedLagrangianCost{CO, R, T} <: AbstractConstrainedFunction{CO, T}
     co::CO
     ρ::R
     μ::T
     λ::T
 end
-function set_parameter!(alc::AugmentedLagrangianCost, ::Val{:ρ}, ρ)
+# Since the types of ρ and duals differ, we need a specific set function here
+function set_parameter!(alc::AugmentedLagrangianCost{CO, R}, ::Val{:ρ}, ρ::R) where {CO,R}
     alc.ρ = ρ
     return alc
 end
-get_parameter(alc::AugmentedLagrangianCost, ::Val{:ρ}) = alc.ρ
-# μ & λ already set through the abstract constrained function
+# all other get/set for parameters already on the abstract case
 function (L::AugmentedLagrangianCost)(M::AbstractManifold, p)
     gp = get_inequality_constraint(M, L.co, p, :)
     hp = get_equality_constraint(M, L.co, p, :)
@@ -66,7 +66,7 @@ function (L::AugmentedLagrangianCost)(M::AbstractManifold, p)
 end
 
 @doc """
-    AugmentedLagrangianGrad{CO,R,T} <: AbstractConstrainedFunction{T}
+    AugmentedLagrangianGrad{CO, R, T} <: AbstractConstrainedFunction{CO, T}
 
 Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
 of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
@@ -91,7 +91,7 @@ Based on the internal [`ConstrainedManifoldObjective`](@ref), it computes the gr
     AugmentedLagrangianGrad(co, ρ, μ, λ)
 
 """
-mutable struct AugmentedLagrangianGrad{CO, R, T} <: AbstractConstrainedFunction{T}
+mutable struct AugmentedLagrangianGrad{CO, R, T} <: AbstractConstrainedFunction{CO, T}
     co::CO
     ρ::R
     μ::T
@@ -101,12 +101,12 @@ function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, p)
     X = zero_vector(M, p)
     return LG(M, X, p)
 end
-function set_parameter!(alg::AugmentedLagrangianGrad, ::Val{:ρ}, ρ)
+# Since the types of ρ and duals differ, we need a specific set function here
+function set_parameter!(alg::AugmentedLagrangianGrad{CO, R}, ::Val{:ρ}, ρ::R) where {CO, R}
     alg.ρ = ρ
     return alg
 end
-get_parameter(alg::AugmentedLagrangianGrad, ::Val{:ρ}) = alg.ρ
-# μ & λ already set through the abstract constrained function
+# all other get/set parameters already defined through the abstract constrained function
 
 # default, that is especially when the `grad_g` and `grad_h` are functions.
 function (LG::AugmentedLagrangianGrad)(

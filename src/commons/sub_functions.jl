@@ -251,7 +251,7 @@ $(_tex(:Cal, "P"))(x,u) = $(
 struct LinearQuadraticHuber <: SmoothingTechnique end
 
 @doc """
-    ExactPenaltyCost{S, CO, R} <: AbstractManifoldFunction
+    ExactPenaltyCost{S, CO, R} <: AbstractConstrainedFunction{CO, T}
 
 Represent the cost of the exact penalty method based on a [`ConstrainedManifoldObjective`](@ref) `co`
 and a parameter ``ρ`` given by
@@ -267,30 +267,22 @@ to obtain a smooth cost function. This struct is also a functor `(M,p) -> v` of 
 
 ## Fields
 
-* `ρ`, `u`: as described in the mathematical formula.
-* `co`:     the original cost
+* `ρ::T`, `u::T`: as described in the mathematical formula.
+* `co::CO`:     the original cost
 
 ## Constructor
 
     ExactPenaltyCost(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
 """
-mutable struct ExactPenaltyCost{S, CO, R} <: AbstractManifoldFunction
+mutable struct ExactPenaltyCost{S, CO, T} <: AbstractConstrainedFunction{CO, T}
     co::CO
-    ρ::R
-    u::R
+    ρ::T
+    u::T
 end
 function ExactPenaltyCost(
-        co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing = LinearQuadraticHuber()
-    ) where {R}
-    return ExactPenaltyCost{typeof(smoothing), typeof(co), R}(co, ρ, u)
-end
-function set_parameter!(epc::ExactPenaltyCost, ::Val{:ρ}, ρ)
-    epc.ρ = ρ
-    return epc
-end
-function set_parameter!(epc::ExactPenaltyCost, ::Val{:u}, u)
-    epc.u = u
-    return epc
+        co::ConstrainedManifoldObjective, ρ::T, u::T; smoothing::S = LinearQuadraticHuber()
+    ) where {T, S <: SmoothingTechnique}
+    return ExactPenaltyCost{S, typeof(co), T}(co, ρ, u)
 end
 function (L::ExactPenaltyCost{<:LogarithmicSumOfExponentials})(M::AbstractManifold, p)
     gp = get_inequality_constraint(M, L.co, p, :)
@@ -314,7 +306,7 @@ function (L::ExactPenaltyCost{<:LinearQuadraticHuber})(M::AbstractManifold, p)
 end
 
 @doc """
-    ExactPenaltyGrad{S, CO, R} <: AbstractConstrainedFunction{R}
+    ExactPenaltyGrad{S, CO, T} <: AbstractConstrainedFunction{CO, T}
 
 Represent the gradient of the [`ExactPenaltyCost`](@ref) based on a [`ConstrainedManifoldObjective`](@ref) `co`
 and a parameter ``ρ`` and a smoothing technique, which uses an additional parameter ``u``.
@@ -325,30 +317,22 @@ This struct is also a functor in both formats
 
 ## Fields
 
-* `ρ`, `u` as stated before
-* `co` the nonsmooth objective
+* `ρ::T`, `u::T` see [`ExactPenaltyCost`](@ref).
+* `co::CO` the nonsmooth objective
 
 ## Constructor
 
     ExactPenaltyGrad(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
 """
-mutable struct ExactPenaltyGrad{S, CO, R} <: AbstractConstrainedFunction{R}
+mutable struct ExactPenaltyGrad{S, CO, T} <: AbstractConstrainedFunction{CO, T}
     co::CO
-    ρ::R
-    u::R
-end
-function set_parameter!(epg::ExactPenaltyGrad, ::Val{:ρ}, ρ)
-    epg.ρ = ρ
-    return epg
-end
-function set_parameter!(epg::ExactPenaltyGrad, ::Val{:u}, u)
-    epg.u = u
-    return epg
+    ρ::T
+    u::T
 end
 function ExactPenaltyGrad(
-        co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing = LinearQuadraticHuber()
-    ) where {R}
-    return ExactPenaltyGrad{typeof(smoothing), typeof(co), R}(co, ρ, u)
+        co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing::S = LinearQuadraticHuber()
+    ) where {R, S <: SmoothingTechnique}
+    return ExactPenaltyGrad{S, typeof(co), R}(co, ρ, u)
 end
 # Default (functions constraints): evaluate all gradients
 # Since for LogExp the pre-factor c seems to not be zero, this might be the best way to go here
@@ -759,7 +743,7 @@ function status_summary(KKTvfNSqGrad::KKTVectorFieldNormSqGradient; context::Sym
 end
 
 @doc """
-    LagrangianCost{CO,T} <: AbstractConstrainedFunction{T}
+    LagrangianCost{CO, T} <: AbstractConstrainedFunction{CO, T}
 
 Implement the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`.
 
@@ -786,7 +770,7 @@ you can also call
 LagrangianCost(co, μ, λ)(M,p)
 ```
 """
-mutable struct LagrangianCost{CO, T} <: AbstractConstrainedFunction{T}
+mutable struct LagrangianCost{CO, T} <: AbstractConstrainedFunction{CO, T}
     co::CO
     μ::T
     λ::T
@@ -804,7 +788,7 @@ function show(io::IO, lc::LagrangianCost)
 end
 
 @doc """
-    LagrangianGradient{CO,T} <: AbstractConstrainedFunction{T}
+    LagrangianGradient{CO,T} <: AbstractConstrainedFunction{CO, T}
 
 The gradient of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`
 with respect to the variable ``p``. The formula reads
@@ -829,7 +813,7 @@ Create a functor for the Lagrangian with fixed dual variables.
 When you directly want to evaluate the gradient of the Lagrangian ``$(_tex(:grad))_p $(_tex(:Cal, "L"))``
 you can also call `LagrangianGradient(co, μ, λ)(M,p)` or `LagrangianGradient(co, μ, λ)(M,X,p)` for the in-place variant.
 """
-mutable struct LagrangianGradient{CO, T} <: AbstractConstrainedFunction{T}
+mutable struct LagrangianGradient{CO, T} <: AbstractConstrainedFunction{CO, T}
     co::CO
     μ::T
     λ::T
@@ -858,7 +842,7 @@ function show(io::IO, lg::LagrangianGradient)
 end
 
 @doc """
-    LagrangianHessian{CO, T} <: AbstractConstrainedFunction{T}
+    LagrangianHessian{CO, T} <: AbstractConstrainedFunction{CO, T}
 
 The Hessian of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`
 with respect to the variable ``p``. The formula reads
@@ -883,7 +867,7 @@ Create a functor for the Lagrangian with fixed dual variables.
 When you directly want to evaluate the Hessian of the Lagrangian ``$(_tex(:Hess))_p $(_tex(:Cal, "L"))``
 you can also call `LagrangianHessian(co, μ, λ)(M, p, X)` or `LagrangianHessian(co, μ, λ)(M, Y, p, X)` for the in-place variant.
 """
-mutable struct LagrangianHessian{CO, T} <: AbstractConstrainedFunction{T}
+mutable struct LagrangianHessian{CO, T} <: AbstractConstrainedFunction{CO, T}
     co::CO
     μ::T
     λ::T
