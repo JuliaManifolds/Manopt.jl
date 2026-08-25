@@ -1,23 +1,35 @@
 """
-    AbstractConstrainedFunction{T} <: AbstractManifoldFunction
+    AbstractConstrainedFunction{CO, T} <: AbstractManifoldFunction
 
-A common supertype for functors that model constraint functions.
+A common supertype for functions that model functions of the subproblem for a
+constrained objective, which they therefore wrap.
 
-This supertype provides access to the fields `λ` and `μ`, the dual variables of
-constraints of type `T`.
+This supertype provides access to fields like `λ` and `μ` or `ρ` and `u`, so
+dual variables or penalty terms for constraints of type `T` used for a constrained objective
+of type `CO`.
 """
-abstract type AbstractConstrainedFunction{T} <: AbstractManifoldFunction end
+abstract type AbstractConstrainedFunction{CO, T} <: AbstractManifoldFunction end
 
-function set_parameter!(acf::AbstractConstrainedFunction, ::Val{:μ}, μ)
+function set_parameter!(acf::AbstractConstrainedFunction{CO, T}, ::Val{:μ}, μ::T) where {CO, T}
     acf.μ = μ
     return acf
 end
 get_parameter(acf::AbstractConstrainedFunction, ::Val{:μ}) = acf.μ
-function set_parameter!(acf::AbstractConstrainedFunction, ::Val{:λ}, λ)
+function set_parameter!(acf::AbstractConstrainedFunction{CO, T}, ::Val{:λ}, λ::T) where {CO, T}
     acf.λ = λ
     return acf
 end
 get_parameter(acf::AbstractConstrainedFunction, ::Val{:λ}) = acf.λ
+function set_parameter!(acf::AbstractConstrainedFunction{CO, T}, ::Val{:ρ}, ρ::T) where {CO, T}
+    acf.ρ = ρ
+    return acf
+end
+get_parameter(acf::AbstractConstrainedFunction, ::Val{:ρ}) = acf.ρ
+function set_parameter!(acf::AbstractConstrainedFunction{CO, T}, ::Val{:u}, u::T) where {CO, T}
+    acf.u = u
+    return acf
+end
+get_parameter(acf::AbstractConstrainedFunction, ::Val{:u}) = acf.u
 
 """
     AbstractConstrainedSlackFunction{T,R} <: AbstractManifoldFunction

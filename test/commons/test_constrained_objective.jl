@@ -526,6 +526,14 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
                 wg2 = sum(gg .* (c[1] ./ u .* (0 .<= c[1] .< u)) .* ρ)
                 wg3 = sum(gh .* (c[2] ./ sqrt.(c[2] .^ 2 .+ u^2)) .* ρ)
                 @test EPGh(M, p) ≈ gf + wg1 .+ wg2 .+ wg3
+                @test Manopt.set_parameter!(EPCh, :ρ, 2 * ρ) == EPCh
+                @test Manopt.get_parameter(EPCh, :ρ) == 2 * ρ
+                @test Manopt.set_parameter!(EPCh, :u, 2 * u) == EPCh
+                @test Manopt.get_parameter(EPCh, :u) == 2 * u
+                @test Manopt.set_parameter!(EPGh, :ρ, 2 * ρ) == EPGh
+                @test Manopt.get_parameter(EPGh, :ρ) == 2 * ρ
+                @test Manopt.set_parameter!(EPGh, :u, 2 * u) == EPGh
+                @test Manopt.get_parameter(EPGh, :u) == 2 * u
             end
         end
     end
