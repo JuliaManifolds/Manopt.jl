@@ -4,8 +4,9 @@
 A common supertype for functions that model functions of the subproblem for a
 constrained objective, which they therefore wrap.
 
-This supertype provides access to the fields `λ` and `μ`, the dual variables of
-constraints of type `T` while the objectives type `CO` is also a parameter.
+This supertype provides access to fields like `λ` and `μ` or `ρ` and `u`, so
+dual variables or penalty terms for constraints of type `T` used for a constrained objective
+of type `CO`.
 """
 abstract type AbstractConstrainedFunction{CO, T} <: AbstractManifoldFunction end
 
