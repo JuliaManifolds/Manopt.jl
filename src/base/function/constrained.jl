@@ -8,12 +8,12 @@ constraints of type `T`.
 """
 abstract type AbstractConstrainedFunction{T} <: AbstractManifoldFunction end
 
-function set_parameter!(acf::AbstractConstrainedFunction{T}, ::Val{:μ}, μ::T) where {T}
+function set_parameter!(acf::AbstractConstrainedFunction, ::Val{:μ}, μ)
     acf.μ = μ
     return acf
 end
 get_parameter(acf::AbstractConstrainedFunction, ::Val{:μ}) = acf.μ
-function set_parameter!(acf::AbstractConstrainedFunction{T}, ::Val{:λ}, λ::T) where {T}
+function set_parameter!(acf::AbstractConstrainedFunction, ::Val{:λ}, λ)
     acf.λ = λ
     return acf
 end

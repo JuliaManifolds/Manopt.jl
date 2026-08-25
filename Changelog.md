@@ -6,6 +6,16 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.6] August 25, 2026
+
+### Fixed
+
+* `augmented_Lagrangian_method` set the penalty parameter `ρ` of the sub problem's cost to the
+  constant `1/3` instead of the current `alms.ρ`, while its gradient did receive `alms.ρ`. (#637)
+* `set_parameter!` for `:μ` and `:λ` tied the dual variable's type to the type parameter of
+  `AbstractConstrainedFunction`. It hence never applied to `AugmentedLagrangianCost` and, falling
+  back to a no-op, silently left its `μ` and `λ` at their initial values. (#637)
+
 ## [0.6.5] August 22, 2026
 
 ### Added
