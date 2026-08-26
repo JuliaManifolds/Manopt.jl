@@ -1,0 +1,16 @@
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+ManifoldDiff = "af67fdf4-a580-4b9f-bbec-742ef357defd"
+Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
+ManifoldsBase = "3362f125-f0bb-47a3-aa74-596ffd7ef2fb"
+Manopt = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[sources]
+Manopt = {path = ".."}
+
+[compat]
+BenchmarkTools = "1"
+Pkg = "1.10"
+Random = "1.10"
