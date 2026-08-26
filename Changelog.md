@@ -6,6 +6,15 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.7] August 26, 2026
+
+### Added
+
+* a benchmark suite in `benchmark/`, written with `BenchmarkTools.jl` and run with `AirspeedVelocity.jl`,
+  which on a pull request labelled `benchmark` compares it against `master`.
+  It starts with two problems, the Riemannian mean on the sphere, benchmarked with `gradient_descent`
+  and `quasi_Newton`, and the Riemannian median on hyperbolic space, benchmarked with `cyclic_proximal_point`.
+
 ## [0.6.6] August 25, 2026
 
 ### Fixed

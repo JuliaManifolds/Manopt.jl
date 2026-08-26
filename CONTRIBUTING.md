@@ -17,6 +17,7 @@ The following is a set of guidelines to [`Manopt.jl`](https://juliamanifolds.git
     - [Provide a new example](#Provide-a-new-example)
     - [Code style](#Code-style)
     - [Concerning the documentation](#Concerning-the-documentation)
+    - [Benchmarks](#Benchmarks)
     - [Spell checking](#Spell-checking)
     - [On the use of AI](#On-the-use-of-AI)
 
@@ -87,6 +88,12 @@ Please follow a few internal conventions:
 If you implement a new feature, a tutorial how to use it would be appreciated as well. Tutorials are written as [Quarto](https://quarto.org/) documents and stored in the `tutorials/` folder. This is rendered automatically into the documentation page, you just have to add a menu entry within the tutorial sub menu.
 
 If you implement an algorithm with a certain numerical example in mind, it would be great, if this could be added to the [ManoptExamples.jl](https://github.com/JuliaManifolds/ManoptExamples.jl) package as well.
+
+### Benchmarks
+
+Benchmarks are written with [BenchmarkTools.jl](https://juliaci.github.io/BenchmarkTools.jl/stable/) and stored in the `benchmark/` folder, the whole suite is run with `julia benchmark/benchmarks.jl`.
+On a pull request labelled `benchmark`, [AirspeedVelocity.jl](https://github.com/MilesCranmer/AirspeedVelocity.jl) compares it against `master` and reports the result as a comment.
+See [benchmark/Readme.md](benchmark/Readme.md) for how to run single benchmarks and how to add new ones.
 
 ### Spell checking
 
