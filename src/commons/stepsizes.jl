@@ -654,6 +654,153 @@ function AdaptiveWNGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.AdaptiveWNGradientStepsize, args...; requires_point = true, kwargs...)
 end
 
+@doc """
+    BarzileiBorweinStepsize{T, R<:Real, IRM, RM, VTM, TSSA} <: Linesearch
+
+A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
+
+# Fields
+
+$(_fields(:inverse_retraction_method))
+* `min_stepsize`:          lower bound for the Barzilai-Borwein step size, greater than zero
+* `max_stepsize`:          upper bound for the Barzilai-Borwein step size, greater than `bb_min_stepsize`
+$(_fields(:retraction_method))
+* `strategy`:                 defines if the new step size is computed using the `:direct`, `:inverse` or `:alternating` strategy
+* `storage`:                  (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
+$(_fields(:vector_transport_method))
+
+# Constructor
+
+    BarzileiBorweinStepsize(M::AbstractManifold; kwargs...)
+    BarzileiBorweinStepsize(M::AbstractManifold, p; kwargs...)
+
+## Keyword arguments
+
+$(_kwargs(:inverse_retraction_method))
+* `min_stepsize=1e-3`
+* `max_stepsize=1e3`
+$(_kwargs(:retraction_method))
+* `strategy=:direct`
+* `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
+$(_kwargs(:vector_transport_method))
+"""
+mutable struct BarzileiBorweinStepsize{
+        T, R <: Real,
+        IRM <: AbstractInverseRetractionMethod, RM <: AbstractRetractionMethod,
+        VTM <: AbstractVectorTransportMethod, TSSA <: StoreStateAction,
+    } <: Linesearch
+    inverse_retraction_method::IRM
+    min_stepsize::R
+    max_stepsize::R
+    retraction_method::RM
+    s::T
+    storage::TSSA
+    strategy::Symbol
+    vector_transport_method::VTM
+    y::T
+    function BarzileiBorweinStepsize(
+            M::AbstractManifold;
+            p::P = rand(M), X::T = zero_vector(M, p),
+            min_stepsize::R = 1.0e-3,
+            max_stepsize::R = 1.0e3,
+            retraction_method::RM = default_retraction_method(M, P),
+            inverse_retraction_method::IRM = default_inverse_retraction_method(M, P),
+            storage::Union{Nothing, StoreStateAction} = StoreStateAction(
+                M; store_fields = [:Iterate, :Gradient]
+            ),
+            strategy::Symbol = :direct,
+            vector_transport_method::VTM = default_vector_transport_method(M),
+        ) where {
+            IRM <: AbstractInverseRetractionMethod, RM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, R <: Real, T,
+        }
+        stop_when_stepsize_exceeds = R(stop_when_stepsize_exceeds)
+        if strategy ∉ [:direct, :inverse, :alternating]
+            @warn string(
+                "The strategy '", strategy, "' is not defined. The 'direct' strategy is used instead.",
+            )
+            strategy = :direct
+        end
+        if min_stepsize <= 0.0
+            throw(
+                DomainError(min_stepsize, "The lower bound for the Barzilei–Borwein step size has to be positive."),
+            )
+        end
+        if max_stepsize <= min_stepsize
+            throw(
+                DomainError(
+                    bb_max_stepsize, "The upper bound for the step size lower bound.",
+                ),
+            )
+        end
+        return new{T, R, IRM, RM, VTM, typeof(storage)}(
+            inverse_retraction_method, min_stepsize, max_stepsize,
+            retraction_method, copy(M, p, X), storage, strategy, vector_transport_method, X
+        )
+    end
+end
+function (bb::BarzileiBorweinStepsize)(
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s)));
+        gradient = nothing, last_stepsize = nothing, kwargs...
+    )
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    X = isnothing(gradient) ? get_gradient(mp, p) : gradient
+    if !has_storage(bb.storage, PointStorageKey(:Iterate)) || !has_storage(bb.storage, VectorStorageKey(:Gradient))
+        # first time call: get old grad/iterate and store.
+        p_old = get_iterate(s)
+        X_old = X
+    else
+        #fetch
+        p_old = get_storage(bb.storage, PointStorageKey(:Iterate))
+        X_old = get_storage(bb.storage, VectorStorageKey(:Gradient))
+    end
+    update_storage!(bb.storage, mp, s)
+
+    # compute the y_k – difference of gradients, but remember to transport
+    vector_transport_to!(M, bb.y, old_p, old_X, p, bb.vector_transport_method)
+    copyto!(M, bb.y, p, X .- bb.y)
+    # for s_k there are two possibilities
+    if !isnothing(last_stepsize) # Variant 1: Someone gave us the last stepsize, so we can just use -last_stepsize * X_old and transport it to the current iterate
+        vector_transport_to!(M, bb.s, p_old, -last_stepsize * X_old, p, bb.vector_transport_method)
+    else # Variant 2: otherwise we use the inverse retraction method
+        inverse_retract!(M, bb.s, p, p_old, bb.inverse_retraction_method)
+    end
+
+    #compute the new Barzilai-Borwein step size
+    s1 = real(inner(M, p, bb.s, bb.y))
+    s2 = real(inner(M, p, bb.y, bb.y))
+    s2 = s2 == 0 ? 1.0 : s2
+    s3 = real(inner(M, p, bb.s, bb.s))
+    #indirect strategy
+    return if bb.strategy == :inverse
+        if s1 > 0
+            stepsize = min(bb.max_stepsize, max(bb.min_stepsize, s1 / s2))
+        else
+            stepsize = bb.max_stepsize
+        end
+        #alternating strategy
+    elseif bb.strategy == :alternating
+        if s1 > 0
+            if k % 2 == 0
+                stepsize = min(bb.max_stepsize, max(bb.min_stepsize, s1 / s2))
+            else
+                stepsize = min(bb.max_stepsize, max(bb.min_stepsize, s3 / s1))
+            end
+        else
+            stepsize = bb.max_stepsize
+        end
+    else # default: direct strategy
+        if s1 > 0
+            stepsize = min(bb.max_stepsize, max(bb.min_stepsize, s2 / s1))
+        else
+            stepsize = bb.max_stepsize
+        end
+    end
+end
+function Base.show(io::IO, a::BarzileiBorweinStepsize)
+    return print(io, "BarzileiBorweinStepsize TODO")
+end
+
 """
     ConstantStepsize <: Stepsize
 
@@ -1702,14 +1849,7 @@ function (a::NonmonotoneLinesearchStepsize)(
         swse = (a.stop_when_stepsize_exceeds / l)
     end
     a.last_stepsize = linesearch_backtrack!(
-        M,
-        a.candidate_point,
-        f,
-        p,
-        BarzilaiBorwein_stepsize,
-        a.sufficient_decrease,
-        a.stepsize_reduction,
-        η;
+        M, a.candidate_point, f, p, BarzilaiBorwein_stepsize, a.sufficient_decrease, a.stepsize_reduction, η;
         lf0 = maximum(view(a.old_costs, 1:min(iter, memory_size))),
         gradient = X,
         retraction_method = a.retraction_method,
