@@ -1,6 +1,10 @@
-#
-# The Riemannian mean of `n` points on the `Sphere`
-#
+"""
+    RiemannianMean
+
+The Riemannian mean of `n` points on the `Sphere`, providing the cost `f`, its
+gradient `grad_f` and `grad_f!` as well as a starting point `p0` and a stopping
+criterion `sc`.
+"""
 module RiemannianMean
 
 using Manopt, Manifolds, ManifoldDiff, Random

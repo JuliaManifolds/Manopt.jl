@@ -1,9 +1,3 @@
-#
-# Benchmarks for `gradient_descent`.
-#
-# Run `julia benchmark/suites/gradient_descent.jl` for these benchmarks alone, or
-# `julia benchmark/benchmarks.jl` for the whole suite.
-#
 if abspath(PROGRAM_FILE) == @__FILE__
     using Pkg
     Pkg.activate(dirname(@__DIR__))
@@ -12,6 +6,11 @@ end
 isdefined(@__MODULE__, :RiemannianMean) ||
     include(joinpath(dirname(@__DIR__), "problems", "riemannian_mean.jl"))
 
+"""
+    GradientDescentSuite
+
+Benchmarks of `gradient_descent` on the `RiemannianMean` problem.
+"""
 module GradientDescentSuite
 
     using BenchmarkTools

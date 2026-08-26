@@ -1,12 +1,3 @@
-#
-# Benchmarks for `cyclic_proximal_point`.
-#
-# `evals = 1`, since with more than one evaluation per sample the in-place
-# variant would restart from an already converged point.
-#
-# Run `julia benchmark/suites/cyclic_proximal_point.jl` for these benchmarks
-# alone, or `julia benchmark/benchmarks.jl` for the whole suite.
-#
 if abspath(PROGRAM_FILE) == @__FILE__
     using Pkg
     Pkg.activate(dirname(@__DIR__))
@@ -15,6 +6,11 @@ end
 isdefined(@__MODULE__, :RiemannianMedian) ||
     include(joinpath(dirname(@__DIR__), "problems", "riemannian_median.jl"))
 
+"""
+    CyclicProximalPointSuite
+
+Benchmarks of `cyclic_proximal_point` on the `RiemannianMedian` problem.
+"""
 module CyclicProximalPointSuite
 
     using BenchmarkTools

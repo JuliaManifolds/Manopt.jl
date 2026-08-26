@@ -1,6 +1,10 @@
-#
-# The Riemannian median of `n` points on the `Hyperbolic` space.
-#
+"""
+    RiemannianMedian
+
+The Riemannian median of `n` points on the `Hyperbolic` space, providing the
+non-smooth cost `f`, the proximal maps `proxes` and `proxes!` of its summands as
+well as a starting point `p0` and a stopping criterion `sc`.
+"""
 module RiemannianMedian
 
 using Manopt, Manifolds, ManifoldDiff, Random
