@@ -328,7 +328,7 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
         return ArmijoLinesearchStepsize(;
             additional_decrease_condition = additional_decrease_condition,
             additional_increase_condition = additional_increase_condition,
-            candidate_point = candidate_point, contraction_factor = cf, initial_stepsize = is, last_stepsize = ls,
+            candidate_point = maybe_wrap_variable(candidate_point), contraction_factor = cf, initial_stepsize = is, last_stepsize = ls,
             initial_guess = initial_guess, retraction_method = retraction_method,
             stop_when_stepsize_less = swsl, stop_when_stepsize_exceeds = swse, sufficient_decrease = sd,
             stop_increasing_at_step = sias, stop_decreasing_at_step = sdas, messages = msgs
@@ -770,13 +770,15 @@ mutable struct BarzileiBorweinStepsize{
         if max_stepsize <= min_stepsize
             throw(
                 DomainError(
-                    bb_max_stepsize, "The upper bound for the step size lower bound.",
+                    max_stepsize, "The upper bound for the step size lower bound.",
                 ),
             )
         end
-        return new{T, R, IRM, RM, VTM, typeof(storage)}(
+        X_ = maybe_wrap_variable(X)
+        p_ = maybe_wrap_variable(p)
+        return new{typeof(X_), R, IRM, RM, VTM, typeof(storage)}(
             inverse_retraction_method, min_stepsize, max_stepsize,
-            retraction_method, ManifoldsBase.copy(M, p, X), storage, strategy, vector_transport_method, X
+            retraction_method, ManifoldsBase.copy(M, p_, X_), storage, strategy, vector_transport_method, X_
         )
     end
 end
@@ -1000,7 +1002,9 @@ mutable struct CubicBracketingLinesearchStepsize{
             vector_transport_method::VTM = default_vector_transport_method(M),
             max_stepsize::Real = max_stepsize(M),
         ) where {R <: Real, I <: Integer, TRM, VTM, P, T}
-        return new{R, I, TRM, VTM, P, T}(candidate_direction, candidate_point, initial_stepsize, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize)
+        p = maybe_wrap_variable(candidate_point)
+        X = maybe_wrap_variable(candidate_direction)
+        return new{R, I, TRM, VTM, typeof(p), typeof(X)}(X, p, initial_stepsize, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize)
     end
 end
 function CubicBracketingLinesearchStepsize(M::AbstractManifold, p; kwargs...)
@@ -1166,11 +1170,7 @@ function get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketing
 end
 
 function (cbls::CubicBracketingLinesearchStepsize)(
-        mp::AbstractManoptProblem,
-        s::AbstractManoptSolverState,
-        k::Int,
-        η = (-get_gradient(mp, get_iterate(s)));
-        kwargs...,
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s))); kwargs...,
     )
     M = get_manifold(mp)
     p = get_iterate(s)
@@ -1482,8 +1482,9 @@ function DistanceOverGradientsStepsize(
     R = promote_type(R1, R2)
     id = convert(R, initial_distance)
     κ = convert(R, sectional_curvature_bound)
+    p_ = maybe_wrap_variable(p)
     return DistanceOverGradientsStepsize(;
-        initial_distance = id, max_distance = id, gradient_sum = zero(R), initial_point = copy(M, p),
+        initial_distance = id, max_distance = id, gradient_sum = zero(R), initial_point = copy(M, p_),
         use_curvature = use_curvature, sectional_curvature_bound = κ, last_stepsize = zero(R)
     )
 end
@@ -1690,14 +1691,8 @@ $(_kwargs(:retraction_method))
 $(_kwargs(:vector_transport_method))
 """
 mutable struct NonmonotoneLinesearchStepsize{
-        P,
-        T <: AbstractVector,
-        R <: Real,
-        I <: Integer,
-        TRM <: AbstractRetractionMethod,
-        MSGS <: NamedTuple,
-        IG,
-        BB <: BarzileiBorweinStepsize,
+        P, T <: AbstractVector, R <: Real, I <: Integer, TRM <: AbstractRetractionMethod,
+        MSGS <: NamedTuple, IG, BB <: BarzileiBorweinStepsize,
     } <: Linesearch
     bb_stepsize::BB
     candidate_point::P
@@ -1739,11 +1734,11 @@ mutable struct NonmonotoneLinesearchStepsize{
             M; p = p, min_stepsize = bb_min_stepsize, max_stepsize = bb_max_stepsize,
             inverse_retraction_method = inverse_retraction_method, retraction_method = retraction_method,
             vector_transport_method = vector_transport_method,
-            storage = storage,
-            strategy = strategy
+            storage = storage, strategy = strategy
         )
         return NonmonotoneLinesearchStepsize(
             M, bb;
+            p = p,
             initial_guess = initial_guess, memory_size = memory_size,
             retraction_method = retraction_method,
             stepsize_reduction = stepsize_reduction,
@@ -1776,8 +1771,9 @@ mutable struct NonmonotoneLinesearchStepsize{
             stepsize_less = StepsizeMessage{R, R}(),
             stepsize_exceeds = StepsizeMessage{R, R}(),
         )
-        return new{P, typeof(old_costs), R, I, TRM, typeof(msgs), IG, BBS}(
-            stepsize, p, initial_guess, 1.0, msgs, old_costs,
+        p_ = maybe_wrap_variable(p)
+        return new{typeof(p_), typeof(old_costs), R, I, TRM, typeof(msgs), IG, BBS}(
+            stepsize, p_, initial_guess, 1.0, msgs, old_costs,
             retraction_method,
             stepsize_reduction,
             stop_decreasing_at_step, stop_increasing_at_step, stop_when_stepsize_exceeds, stop_when_stepsize_less,
@@ -1786,7 +1782,7 @@ mutable struct NonmonotoneLinesearchStepsize{
     end
 end
 function NonmonotoneLinesearchStepsize(M::AbstractManifold, p; kwargs...)
-    return NonmonotoneLinesearchStepsize(M; p = allocate(p), kwargs...)
+    return NonmonotoneLinesearchStepsize(M; p = p, kwargs...)
 end
 function (a::NonmonotoneLinesearchStepsize)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s)));
@@ -2023,9 +2019,11 @@ mutable struct WolfePowellLinesearchStepsize{
             vector_transport_method::VTM, stop_increasing_at_step::I, stop_decreasing_at_step::I,
             messages::TMSG
         ) where {R <: Real, TRM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T, I <: Integer, TMSG}
-        return new{R, TRM, VTM, P, T, I, TMSG}(
+        p_ = maybe_wrap_variable(candidate_point)
+        X_ = maybe_wrap_variable(candidate_direction)
+        return new{R, TRM, VTM, typeof(p_), typeof(X_), I, TMSG}(
             sufficient_decrease, sufficient_curvature,
-            candidate_direction, candidate_point, last_stepsize, max_stepsize, retraction_method,
+            X_, p_, last_stepsize, max_stepsize, retraction_method,
             stop_when_stepsize_less, vector_transport_method, stop_increasing_at_step, stop_decreasing_at_step, messages
         )
     end
@@ -2281,10 +2279,7 @@ mutable struct WolfePowellBinaryLinesearchStepsize{
     end
 end
 function (a::WolfePowellBinaryLinesearchStepsize)(
-        amp::AbstractManoptProblem,
-        ams::AbstractManoptSolverState,
-        ::Int,
-        η = (-get_gradient(amp, get_iterate(ams)));
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Int, η = (-get_gradient(amp, get_iterate(ams)));
         kwargs...,
     )
     M = get_manifold(amp)
