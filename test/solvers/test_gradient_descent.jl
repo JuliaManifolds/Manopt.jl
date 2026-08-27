@@ -37,7 +37,7 @@ using ManifoldDiff: grad_distance
         )
         @test p == p2
         step = NonmonotoneLinesearch(;
-            p=p,
+            p = p,
             stepsize_reduction = 0.99,
             sufficient_decrease = 0.1,
             memory_size = 2,

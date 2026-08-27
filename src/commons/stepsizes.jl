@@ -700,7 +700,7 @@ for the `:direct` strategy, or
 τ_{k} =  $(_tex(:frac, "⟨s, y⟩_{p_k}", "⟨y, y⟩_{p_k}")),
 ```
 
-for the `:inverse` strategy. The `:alternating` stragety uses the direct for odd, the inverse for even iterations `k`.
+for the `:inverse` strategy. The `:alternating` strategy uses the direct for odd, the inverse for even iterations `k`.
 
 # Fields
 
@@ -1794,7 +1794,6 @@ function (a::NonmonotoneLinesearchStepsize)(
     )
     M = get_manifold(mp)
     p = get_iterate(s)
-    @info p
     X = isnothing(gradient) ? get_gradient(mp, p) : gradient
     f(M, p) = get_cost(M, get_objective(mp), p)
     reset_messages!(a.messages)
