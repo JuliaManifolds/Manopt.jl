@@ -1781,8 +1781,9 @@ mutable struct NonmonotoneLinesearchStepsize{
         )
     end
 end
+# Handle this as allocating case:
 function NonmonotoneLinesearchStepsize(M::AbstractManifold, p; kwargs...)
-    return NonmonotoneLinesearchStepsize(M; p = p, kwargs...)
+    return NonmonotoneLinesearchStepsize(M; p = copy(M, p), kwargs...)
 end
 function (a::NonmonotoneLinesearchStepsize)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s)));
