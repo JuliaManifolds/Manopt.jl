@@ -70,6 +70,7 @@ Glossaries.define!(_glossary_tex_terms, :displaystyle, :math, raw"\displaystyle"
 Glossaries.define!(_glossary_tex_terms, :ell, :math, raw"\ell")
 Glossaries.define!(_glossary_tex_terms, :eR, :math, raw"\bar{\mathbb R}")
 _tex_frac(a, b) = raw"\frac" * "{$a}{$b}"
+Glossaries.define!(_glossary_tex_terms, :exp, :math, raw"\exp")
 Glossaries.define!(_glossary_tex_terms, :frac, :math, _tex_frac)
 Glossaries.define!(_glossary_tex_terms, :grad, :math, raw"\operatorname{grad}")
 _tex_hat(letter) = raw"\hat{" * "$letter" * "}"

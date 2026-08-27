@@ -654,16 +654,59 @@ function AdaptiveWNGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.AdaptiveWNGradientStepsize, args...; requires_point = true, kwargs...)
 end
 
-@doc """
-    BarzileiBorweinStepsize{T, R<:Real, IRM, RM, VTM, TSSA} <: Linesearch
+## TODO Introduce the factory as well: BarzileiBorwein and document the formula there.
 
-A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
+@doc """
+    BarzileiBorweinStepsize{T, R<:Real, IRM, RM, VTM, TSSA} <: Stepsize
+
+Compute a stepsize based on the Barzilei-Borwein rule.
+
+Consider the current iterate and gradient ``p_k`` and ``X_k`` as well as the last
+iterate and gradient ``p_{k-1}`` and ``X_{k-1}``. Note that in a gradient scheme this also
+yields the relation that ``p_k = $(_tex(:exp))_{p_{k-1}}(αX_{k-1}))`` when ``α`` is the stepsize
+from the last iteration.
+
+We compute the changes of the iterates and the vectors, respectively
+
+```math
+s = $(_tex(:invretr))_{p_{k}}(p_{k-1})
+$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
+y_{k} = X_k - $(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1}),
+```
+where alternatively ``s = α$(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1})`` if the `last_stepsize =`
+was passed to the function.
+
+Then the Barzilai—Borwein step size is
+
+```math
+α^{$(_tex(:text, "BB"))} = $(
+    _tex(
+        :cases,
+        "$(_tex(:min))(α_{$(_tex(:text, "max"))}, $(_tex(:max))(α_{$(_tex(:text, "min"))}, τ_{k})), & $(_tex(:text, "if")) ⟨s_{k}, y_{k}⟩_{p_k} > 0,",
+        "α_{$(_tex(:text, "max"))}, & $(_tex(:text, "else,"))"
+    )
+)
+```
+
+where
+
+```math
+τ_{k} = $(_tex(:frac, "⟨s, s⟩_{p_k}", "⟨s, y⟩_{p_k}")),
+```
+
+for the `:direct` strategy, or
+
+```math
+τ_{k} =  $(_tex(:frac, "⟨s, y⟩_{p_k}", "⟨y, y⟩_{p_k}")),
+```
+
+for the `:inverse` strategy. The `:alternating` stragety uses the direct for odd, the inverse for even iterations `k`.
 
 # Fields
 
 $(_fields(:inverse_retraction_method))
-* `min_stepsize`:          lower bound for the Barzilai-Borwein step size, greater than zero
-* `max_stepsize`:          upper bound for the Barzilai-Borwein step size, greater than `bb_min_stepsize`
+* `min_stepsize`:          lower bound ``α_{$(_tex(:text, "min"))}`` for the Barzilai-Borwein step size, greater than zero
+* `max_stepsize`:          upper bound ``α_{$(_tex(:text, "max"))}`` for the Barzilai-Borwein step size, greater than ``α_{$(_tex(:text, "min"))}``.
 $(_fields(:retraction_method))
 * `strategy`:                 defines if the new step size is computed using the `:direct`, `:inverse` or `:alternating` strategy
 * `storage`:                  (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
@@ -688,7 +731,7 @@ mutable struct BarzileiBorweinStepsize{
         T, R <: Real,
         IRM <: AbstractInverseRetractionMethod, RM <: AbstractRetractionMethod,
         VTM <: AbstractVectorTransportMethod, TSSA <: StoreStateAction,
-    } <: Linesearch
+    } <: Stepsize
     inverse_retraction_method::IRM
     min_stepsize::R
     max_stepsize::R
@@ -703,8 +746,8 @@ mutable struct BarzileiBorweinStepsize{
             p::P = rand(M), X::T = zero_vector(M, p),
             min_stepsize::R = 1.0e-3,
             max_stepsize::R = 1.0e3,
-            retraction_method::RM = default_retraction_method(M, P),
-            inverse_retraction_method::IRM = default_inverse_retraction_method(M, P),
+            retraction_method::RM = default_retraction_method(M, typeof(p)),
+            inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
             storage::Union{Nothing, StoreStateAction} = StoreStateAction(
                 M; store_fields = [:Iterate, :Gradient]
             ),
@@ -713,7 +756,6 @@ mutable struct BarzileiBorweinStepsize{
         ) where {
             IRM <: AbstractInverseRetractionMethod, RM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, R <: Real, T,
         }
-        stop_when_stepsize_exceeds = R(stop_when_stepsize_exceeds)
         if strategy ∉ [:direct, :inverse, :alternating]
             @warn string(
                 "The strategy '", strategy, "' is not defined. The 'direct' strategy is used instead.",
@@ -734,7 +776,7 @@ mutable struct BarzileiBorweinStepsize{
         end
         return new{T, R, IRM, RM, VTM, typeof(storage)}(
             inverse_retraction_method, min_stepsize, max_stepsize,
-            retraction_method, copy(M, p, X), storage, strategy, vector_transport_method, X
+            retraction_method, ManifoldsBase.copy(M, p, X), storage, strategy, vector_transport_method, X
         )
     end
 end
@@ -757,7 +799,7 @@ function (bb::BarzileiBorweinStepsize)(
     update_storage!(bb.storage, mp, s)
 
     # compute the y_k – difference of gradients, but remember to transport
-    vector_transport_to!(M, bb.y, old_p, old_X, p, bb.vector_transport_method)
+    vector_transport_to!(M, bb.y, p_old, X_old, p, bb.vector_transport_method)
     copyto!(M, bb.y, p, X .- bb.y)
     # for s_k there are two possibilities
     if !isnothing(last_stepsize) # Variant 1: Someone gave us the last stepsize, so we can just use -last_stepsize * X_old and transport it to the current iterate
@@ -765,7 +807,6 @@ function (bb::BarzileiBorweinStepsize)(
     else # Variant 2: otherwise we use the inverse retraction method
         inverse_retract!(M, bb.s, p, p_old, bb.inverse_retraction_method)
     end
-
     #compute the new Barzilai-Borwein step size
     s1 = real(inner(M, p, bb.s, bb.y))
     s2 = real(inner(M, p, bb.y, bb.y))
@@ -1654,13 +1695,11 @@ mutable struct NonmonotoneLinesearchStepsize{
         R <: Real,
         I <: Integer,
         TRM <: AbstractRetractionMethod,
-        VTM <: AbstractVectorTransportMethod,
-        TSSA <: StoreStateAction,
         MSGS <: NamedTuple,
         IG,
+        BB <: BarzileiBorweinStepsize,
     } <: Linesearch
-    bb_min_stepsize::R
-    bb_max_stepsize::R
+    bb_stepsize::BB
     candidate_point::P
     initial_guess::IG
     last_stepsize::R
@@ -1672,16 +1711,15 @@ mutable struct NonmonotoneLinesearchStepsize{
     stop_increasing_at_step::I
     stop_when_stepsize_exceeds::R
     stop_when_stepsize_less::R
-    storage::TSSA
-    strategy::Symbol
     sufficient_decrease::R
-    vector_transport_method::VTM
+    # This constructor is semi-legacy, since it passes down a lot of parameters to BB now
     function NonmonotoneLinesearchStepsize(
             M::AbstractManifold;
             bb_min_stepsize::R = 1.0e-3,
             bb_max_stepsize::R = 1.0e3,
             p::P = allocate_result(M, rand),
             initial_guess::IG = (problem, state, k, last_stepsize, η) -> k == 0 ? 1.0 : last_stepsize,
+            inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
             memory_size::I = 10,
             retraction_method::TRM = default_retraction_method(M),
             stepsize_reduction::R = 0.5,
@@ -1694,29 +1732,39 @@ mutable struct NonmonotoneLinesearchStepsize{
             ),
             strategy::Symbol = :direct,
             sufficient_decrease::R = 1.0e-4,
-            vector_transport_method::VTM = default_vector_transport_method(M),
-        ) where {TRM, VTM, P, R <: Real, I <: Integer, IG}
+            vector_transport_method = default_vector_transport_method(M),
+        ) where {TRM, P, R <: Real, I <: Integer, IG}
         stop_when_stepsize_exceeds = R(stop_when_stepsize_exceeds)
-        if strategy ∉ [:direct, :inverse, :alternating]
-            @warn string(
-                "The strategy '", strategy, "' is not defined. The 'direct' strategy is used instead.",
-            )
-            strategy = :direct
-        end
-        if bb_min_stepsize <= 0.0
-            throw(
-                DomainError(
-                    bb_min_stepsize, "The lower bound for the step size bb_min_stepsize has to be greater than zero.",
-                ),
-            )
-        end
-        if bb_max_stepsize <= bb_min_stepsize
-            throw(
-                DomainError(
-                    bb_max_stepsize, "The upper bound for the step size bb_max_stepsize has to be greater than its lower bound bb_min_stepsize.",
-                ),
-            )
-        end
+        bb = BarzileiBorweinStepsize(
+            M; p = p, min_stepsize = bb_min_stepsize, max_stepsize = bb_max_stepsize,
+            inverse_retraction_method = inverse_retraction_method, retraction_method = retraction_method,
+            vector_transport_method = vector_transport_method,
+            storage = storage,
+            strategy = strategy
+        )
+        return NonmonotoneLinesearchStepsize(
+            M, bb;
+            initial_guess = initial_guess, memory_size = memory_size,
+            retraction_method = retraction_method,
+            stepsize_reduction = stepsize_reduction,
+            stop_when_stepsize_less = stop_when_stepsize_less,
+            stop_when_stepsize_exceeds = stop_when_stepsize_exceeds,
+            stop_increasing_at_step = stop_increasing_at_step,
+            stop_decreasing_at_step = stop_decreasing_at_step,
+            sufficient_decrease = sufficient_decrease,
+        )
+    end
+    function NonmonotoneLinesearchStepsize(
+            M::AbstractManifold, stepsize::BBS;
+            p::P = rand(M),
+            initial_guess::IG = (problem, state, k, last_stepsize, η) -> k == 0 ? 1.0 : last_stepsize,
+            memory_size::I = 10,
+            retraction_method::TRM = default_retraction_method(M),
+            stepsize_reduction::R = 0.5,
+            stop_when_stepsize_less::R = 0.0, stop_when_stepsize_exceeds::R = real(max_stepsize(M)),
+            stop_increasing_at_step::I = 100, stop_decreasing_at_step::I = 1000,
+            sufficient_decrease::R = 1.0e-4,
+        ) where {BBS <: Stepsize, P, IG, TRM, R, I}
         if memory_size <= 0
             throw(DomainError(memory_size, "The memory_size has to be greater than zero."))
         end
@@ -1728,24 +1776,12 @@ mutable struct NonmonotoneLinesearchStepsize{
             stepsize_less = StepsizeMessage{R, R}(),
             stepsize_exceeds = StepsizeMessage{R, R}(),
         )
-        return new{P, typeof(old_costs), R, I, TRM, VTM, typeof(storage), typeof(msgs), IG}(
-            bb_min_stepsize,
-            bb_max_stepsize,
-            p,
-            initial_guess,
-            1.0,
-            msgs,
-            old_costs,
+        return new{P, typeof(old_costs), R, I, TRM, typeof(msgs), IG, BBS}(
+            stepsize, p, initial_guess, 1.0, msgs, old_costs,
             retraction_method,
             stepsize_reduction,
-            stop_decreasing_at_step,
-            stop_increasing_at_step,
-            stop_when_stepsize_exceeds,
-            stop_when_stepsize_less,
-            storage,
-            strategy,
+            stop_decreasing_at_step, stop_increasing_at_step, stop_when_stepsize_exceeds, stop_when_stepsize_less,
             sufficient_decrease,
-            vector_transport_method,
         )
     end
 end
@@ -1753,88 +1789,22 @@ function NonmonotoneLinesearchStepsize(M::AbstractManifold, p; kwargs...)
     return NonmonotoneLinesearchStepsize(M; p = allocate(p), kwargs...)
 end
 function (a::NonmonotoneLinesearchStepsize)(
-        mp::AbstractManoptProblem,
-        s::AbstractManoptSolverState,
-        k::Int,
-        η = (-get_gradient(mp, get_iterate(s)));
-        gradient = nothing,
-        kwargs...,
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s)));
+        gradient = nothing, kwargs...,
     )
-    grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
-    if !has_storage(a.storage, PointStorageKey(:Iterate)) ||
-            !has_storage(a.storage, VectorStorageKey(:Gradient))
-        # first time call: get old grad/iterate and store.
-        p_old = get_iterate(s)
-        X_old = grad
-    else
-        #fetch
-        p_old = get_storage(a.storage, PointStorageKey(:Iterate))
-        X_old = get_storage(a.storage, VectorStorageKey(:Gradient))
-    end
-    update_storage!(a.storage, mp, s)
-    return a(
-        get_manifold(mp), get_iterate(s), (M, p) -> get_cost(M, get_objective(mp), p),
-        grad, η, p_old, X_old, k;
-        kwargs...,
-    )
-end
-function (a::NonmonotoneLinesearchStepsize)(
-        M::mT, p, f::TF, X::T, η::T, old_p, old_X, iter::Int; kwargs...
-    ) where {mT <: AbstractManifold, TF, T}
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    @info p
+    X = isnothing(gradient) ? get_gradient(mp, p) : gradient
+    f(M, p) = get_cost(M, get_objective(mp), p)
     reset_messages!(a.messages)
-    #find the difference between the current and previous gradient after the previous gradient is transported to the current tangent space
-    grad_diff = X - vector_transport_to(M, old_p, old_X, p, a.vector_transport_method)
-    #transport the previous step into the tangent space of the current manifold point
+    initial_stepsize = a.initial_guess(M, p, k, a.last_stepsize, η)
 
-    initial_stepsize = a.initial_guess(M, p, iter, a.last_stepsize, η)
-
-    x_diff =
-        -initial_stepsize *
-        vector_transport_to(M, old_p, old_X, p, a.vector_transport_method)
-
-    #compute the new Barzilai-Borwein step size
-    s1 = real(inner(M, p, x_diff, grad_diff))
-    s2 = real(inner(M, p, grad_diff, grad_diff))
-    s2 = s2 == 0 ? 1.0 : s2
-    s3 = real(inner(M, p, x_diff, x_diff))
-    #indirect strategy
-    if a.strategy == :inverse
-        if s1 > 0
-            BarzilaiBorwein_stepsize = min(
-                a.bb_max_stepsize, max(a.bb_min_stepsize, s1 / s2)
-            )
-        else
-            BarzilaiBorwein_stepsize = a.bb_max_stepsize
-        end
-        #alternating strategy
-    elseif a.strategy == :alternating
-        if s1 > 0
-            if iter % 2 == 0
-                BarzilaiBorwein_stepsize = min(
-                    a.bb_max_stepsize, max(a.bb_min_stepsize, s1 / s2)
-                )
-            else
-                BarzilaiBorwein_stepsize = min(
-                    a.bb_max_stepsize, max(a.bb_min_stepsize, s3 / s1)
-                )
-            end
-        else
-            BarzilaiBorwein_stepsize = a.bb_max_stepsize
-        end
-        #direct strategy
-    else
-        if s1 > 0
-            BarzilaiBorwein_stepsize = min(
-                a.bb_max_stepsize, max(a.bb_min_stepsize, s2 / s1)
-            )
-        else
-            BarzilaiBorwein_stepsize = a.bb_max_stepsize
-        end
-    end
+    αBB = a.bb_stepsize(mp, s, k, η; gradient = X, last_stepsize = initial_stepsize, kwargs...)
 
     memory_size = length(a.old_costs)
-    if iter <= memory_size
-        a.old_costs[iter] = f(M, p)
+    if k <= memory_size
+        a.old_costs[k] = f(M, p)
     else
         a.old_costs[1:(memory_size - 1)] = a.old_costs[2:memory_size]
         a.old_costs[memory_size] = f(M, p)
@@ -1849,8 +1819,8 @@ function (a::NonmonotoneLinesearchStepsize)(
         swse = (a.stop_when_stepsize_exceeds / l)
     end
     a.last_stepsize = linesearch_backtrack!(
-        M, a.candidate_point, f, p, BarzilaiBorwein_stepsize, a.sufficient_decrease, a.stepsize_reduction, η;
-        lf0 = maximum(view(a.old_costs, 1:min(iter, memory_size))),
+        M, a.candidate_point, f, p, αBB, a.sufficient_decrease, a.stepsize_reduction, η;
+        lf0 = maximum(view(a.old_costs, 1:min(k, memory_size))),
         gradient = X,
         retraction_method = a.retraction_method,
         stop_when_stepsize_less = (a.stop_when_stepsize_less / l),
@@ -1864,7 +1834,7 @@ end
 function Base.show(io::IO, a::NonmonotoneLinesearchStepsize)
     return print(
         io,
-        "NonmonotoneLinesearch(; last_stepsize = $(a.last_stepsize), bb_max_stepsize = $(a.bb_max_stepsize), bb_min_stepsize = $(a.bb_min_stepsize), memory_size = $(length(a.old_costs)), stepsize_reduction = $(a.stepsize_reduction), strategy = :$(a.strategy), sufficient_decrease = $(a.sufficient_decrease), retraction_method = $(a.retraction_method), vector_transport_method = $(a.vector_transport_method))",
+        "NonmonotoneLinesearch(; last_stepsize = $(a.last_stepsize), memory_size = $(length(a.old_costs)), stepsize_reduction = $(a.stepsize_reduction), sufficient_decrease = $(a.sufficient_decrease), retraction_method = $(a.retraction_method))",
     )
 end
 function get_message(a::NonmonotoneLinesearchStepsize)
@@ -1878,44 +1848,8 @@ end
 
 A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
 
-This method first computes
-
-```math
-y_{k} = $(_tex(:grad))f(p_{k}) - $(_math(:VectorTransport, "p_{k-1}", "p_k"))$(_tex(:grad))f(p_{k-1})
-```
-
-and
-```math
-s_{k} = - α_{k-1} ⋅ $(_math(:VectorTransport, "p_{k-1}", "p_k"))$(_tex(:grad))f(p_{k-1}),
-```
-
-where ``α_{k-1}`` is the step size computed in the last iteration and ``$(_math(:VectorTransport))`` is a vector transport.
-Then the Barzilai—Borwein step size is
-
-```math
-α_k^{$(_tex(:text, "BB"))} = $(
-    _tex(
-        :cases,
-        "$(_tex(:min))(α_{$(_tex(:text, "max"))}, $(_tex(:max))(α_{$(_tex(:text, "min"))}, τ_{k})), & $(_tex(:text, "if")) ⟨s_{k}, y_{k}⟩_{p_k} > 0,",
-        "α_{$(_tex(:text, "max"))}, & $(_tex(:text, "else,"))"
-    )
-)
-```
-
-where
-
-```math
-τ_{k} = $(_tex(:frac, "⟨s_{k}, s_{k}⟩_{p_k}", "⟨s_{k}, y_{k}⟩_{p_k}")),
-```
-
-if the direct strategy is chosen, or
-
-```math
-τ_{k} =  $(_tex(:frac, "⟨s_{k}, y_{k}⟩_{p_k}", "⟨y_{k}, y_{k}⟩_{p_k}")),
-```
-
-in case of the inverse strategy or an alternation between the two in cases for
-the alternating strategy. Then find the smallest ``h = 0, 1, 2, …`` such that
+Base on the step size from the [`BazileinBorweinStepsize`](@ref) `α_k^{$(_tex(:text, "BB"))}`
+Then find the smallest ``h = 0, 1, 2, …`` such that
 
 ```math
 f($(_tex(:retr))_{p_k}(- σ^h α_k^{$(_tex(:text, "BB"))} $(_tex(:grad))f(p_k)))  ≤
