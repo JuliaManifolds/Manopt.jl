@@ -38,7 +38,7 @@ they were not fully supported in all places. This was now fixed and unified.
 ### Added
 
 * a new function `requires_update` that per `<:StoppingCriterion` type can indicate, whether a state is present that needs updating in every iteration.
-* a new shortcut for the `StopWhenCriterionWithIterationCondition` that only evaluates every `n`th iteration using `stopping_criterion ≞ n` (`\measeq` <TAB> on REPL) as constructor. While in theory also `%` would have been possible, there was a discussion not to use mnore-common symbols here, cf. (#509) – and the `m` could be seen as “modulo”.
+* a new shortcut for the `StopWhenCriterionWithIterationCondition` that only evaluates every `n`th iteration using `stopping_criterion ≞ n` (`\measeq` <TAB> on REPL) as constructor. While in theory also `%` would have been possible, there was a discussion not to use more-common symbols here, cf. (#509) – and the `m` could be seen as “modulo”.
 
 ### Fixed
 
@@ -66,7 +66,7 @@ As an overarching scheme of this release, the single functions in an objective b
 * the file structure has been changed and the `plan/` folder has been split with the following motivation
   * all abstract types and generic implementation and documentation of functions has been moved to `base/`.
     This is also reflected in the documentation, where the new `base/` files reflect a developer documentation that additionally includes descriptions of the design choices
-  * concrete types and their implementations have either been used to the specific solver where they are used / defined,
+  * concrete types and their implementations have either been moved to the specific solver where they are used / defined,
     especially for solver states, or now reside in a `commons/` folder, when they are of general use for multiple solvers.
     This structure is also reflected in the documentation.
 * a few internal abstract super types have been renamed for the new scheme that puts more focus on functions, to stay more consistent. The word “functor” is now avoided for structs that actually just represent functions.

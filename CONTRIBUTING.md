@@ -66,7 +66,7 @@ Please follow a few internal conventions:
 
 - It is preferred that any subtype of a `AbstractManoptProblem`'s struct contains information about the general structure of the problem.
 - Any implemented function should be accompanied by its mathematical formulae if a closed form exists.
-- `AbstractManoptProblem` and helping functions are stored within the `plan/` folder and sorted by properties of the problem and/or solver at hand.
+- `AbstractManoptProblem` and helping functions are stored within the `base/` folder and sorted by properties of the problem and/or solver at hand.
 - the solver state is usually stored with the solver itself
 - Within the source code of one algorithm, following the state, the high level interface should be next, then the initialization, then the step.
 - Otherwise an alphabetical order of functions is preferable.
