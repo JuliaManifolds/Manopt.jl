@@ -603,7 +603,7 @@ create a [`RecordAction`](@ref) where
   * `:Change`        to record the change of the iterates, see [`RecordChange`](@ref)
   * `:Cost`          to record the current cost function value
   * `:Gradient`      to record the gradient, see [`RecordGradient`](@ref)
-  * `:GradientNorm   to record the norm of the gradient, see [`RecordGradientNorm`](@ref)
+  * `:GradientNorm`: to record the norm of the gradient, see [`RecordGradientNorm`](@ref)
   * `:Iterate`       to record the iterate
   * `:Iteration`     to record the current iteration number
   * `:IterativeTime` to record the times taken for each iteration.

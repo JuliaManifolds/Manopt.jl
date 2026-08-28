@@ -262,11 +262,11 @@ $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
   where a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver
   $(_note(:KeywordUsedIn, "sub_state"))
-* `u=1e–1`: the smoothing parameter and threshold for violation of the constraints
+* `u=1e-1`: the smoothing parameter and threshold for violation of the constraints
 * `u_exponent=1/100`: exponent of the u update factor;
 * `u_min=1e-6`: the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ=1.0`: the penalty parameter
-* `ϵ=1e–3`: the accuracy tolerance
+* `ϵ=1e-3`: the accuracy tolerance
 * `ϵ_exponent=1/100`: exponent of the ϵ update factor;
 * `ϵ_min=1e-6`: the lower bound for the accuracy tolerance
 

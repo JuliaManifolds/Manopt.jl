@@ -59,7 +59,7 @@ end
     get_subtrahend_gradient!(M::AbstractManifold, X, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
 
 Evaluate the gradient of the subtrahend ``h`` from within
-a [`ManifoldDifferenceOfConvexProximalObjective`](@ref)` `P` at the point `p` (in place of X).
+a [`ManifoldDifferenceOfConvexProximalObjective`](@ref) `P` at the point `p` (in place of X).
 """
 get_subtrahend_gradient(M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
 
@@ -150,7 +150,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 
 $(_kwargs(:stepsize; default = "`[`ConstantLength`](@ref)`()"))
-$(_kwargs(:stopping_criterion; default = "`[StopWhenChangeLess`](@ref)`(1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopWhenChangeLess`](@ref)`(1e-8)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct DifferenceOfConvexProximalState{

@@ -240,7 +240,7 @@ DebugDualResidual(; kwargs...)
 
 # Keyword warguments
 
-* `io=`stdout`: stream to perform the debug to
+* `io=stdout`: stream to perform the debug to
 * `format="\$prefix%s"`: format to print the dual residual, using the
 * `prefix="Dual Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
@@ -910,7 +910,7 @@ with the keywords
 
 # Keyword warguments
 
-* `io=`stdout`: stream to perform the debug to
+* `io=stdout`: stream to perform the debug to
 * `format="\$prefix%s"`: format to print the dual residual, using the
 * `prefix="PD Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
@@ -981,7 +981,7 @@ should at least record `:Iterate`, `:X` and `:n`.
 
 # Keyword warguments
 
-* `io=`stdout`: stream to perform the debug to
+* `io=stdout`: stream to perform the debug to
 * `format="\$prefix%s"`: format to print the dual residual, using the
 * `prefix="Primal Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
@@ -1245,7 +1245,7 @@ The measured time is rounded using the given `time_accuracy` and printed after [
 # Keyword parameters
 
 * `io=stdout`:             default stream to print the debug to.
-* `format="\$prefix %s"`:   format to print the output, where `%s` is the canonicalized time`.
+* `format="\$prefix %s"`:   format to print the output, where `%s` is the canonicalized time.
 * `mode=:cumulative`:      whether to display the total time or reset on every call using `:iterative`.
 * `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`:
 * `start=false`:           indicate whether to start the timer on creation or not.
@@ -1635,7 +1635,7 @@ one are called with an `i=0` for reset.
    [:Iterate, " | ", :Cost, :Stop, 10]
    ```
 
-   Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | "),  and[`DebugCost`](@ref))
+   Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | ")`, and [`DebugCost`](@ref))
    as a [`DebugGroup`](@ref) inside an [`DebugEvery`](@ref) to only be executed every 10th iteration.
    It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorithm` entry of the dictionary.
 

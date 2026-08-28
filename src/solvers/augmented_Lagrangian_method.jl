@@ -49,7 +49,7 @@ manifold- or objective specific defaults, and `sub_problem` is a closed form sol
 
 the following keyword arguments are available to initialize the corresponding fields
 
-* `ϵ=1e–3`
+* `ϵ=1e-3`
 * `ϵ_min=1e-6`
 * `λ=ones(n)`: `n` is the number of equality constraints in the [`ConstrainedManifoldObjective`](@ref) `co`.
 * `λ_max=20.0`
@@ -315,7 +315,7 @@ $(_kwargs(:evaluation))
 * `sub_cost=[`AugmentedLagrangianCost± (@ref)`(cmo, ρ, μ, λ):` use augmented Lagrangian cost, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
    $(_note(:KeywordUsedIn, "sub_problem"))
 
-* `sub_grad=[`AugmentedLagrangianGrad`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian gradient, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
+* `sub_grad=`[`AugmentedLagrangianGrad`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian gradient, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
   $(_note(:KeywordUsedIn, "sub_problem"))
 
 $(_kwargs(:sub_kwargs))

@@ -8,7 +8,7 @@ Store the state of the trust-regions solver.
 * `acceptance_rate`:         a lower bound of the performance ratio for the iterate
   that decides if the iteration is accepted or not.
 $(_fields(:callbacks; add_properties = [:as_dict]))
-* `HX`, `HY`, `HZ`:          interim storage (to avoid allocation) of ``$(_tex(:Hess)) f(p)[⋅]` of `X`, `Y`, `Z`
+* `HX`, `HY`, `HZ`:          interim storage (to avoid allocation) of ``$(_tex(:Hess)) f(p)[⋅]`` for `X`, `Y`, `Z`
 * `max_trust_region_radius`: the maximum trust-region radius
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `project!`:                for numerical stability it is possible to project onto the tangent space after every iteration.

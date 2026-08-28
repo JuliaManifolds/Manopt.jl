@@ -658,7 +658,7 @@ Note that for ``α=0`` this is the Riemannian variant of `WNGRad`.
 
 ## Keyword arguments
 
-* `adaptive=true`: switches the `gradient_reduction ``α`` (if `true`) to `0`.
+* `adaptive=true`: switches the `gradient_reduction` ``α`` (if `true`) to `0`.
 * `alternate_bound = (bk, hat_c) ->  min(gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c))`:
   how to determine ``$(_tex(:hat, "k"))_k`` as a function of `(bmin, bk, hat_c) -> hat_bk`
 * `count_threshold=4`:  an `Integer` for ``$(_tex(:hat, "c"))``

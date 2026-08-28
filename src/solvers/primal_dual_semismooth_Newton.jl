@@ -90,7 +90,7 @@ $(Manopt._kwargs([:inverse_retraction_method]))
 * `primal_stepsize=1/sqrt(8)`
 * `reg_param=1e-5`
 $(Manopt._kwargs([:retraction_method]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))
 * `update_dual_base=(amp, ams, k) -> o.n`
 * `update_primal_base=(amp, ams, k) -> o.m`
 $(_kwargs(:vector_transport_method))

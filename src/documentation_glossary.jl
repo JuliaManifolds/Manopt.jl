@@ -167,6 +167,9 @@ _glossary_links = _glossary[:Link]
 
 __link_formatter = Glossaries.Plain(:link)
 _link(args...; kwargs...) = __link_formatter(_glossary_links, args...; kwargs...)
+# A link for a keyword `default`: `Glossaries.Keyword` appends the closing backtick,
+# so the code span the link brings along has to be left open here.
+_open_link(args...; kwargs...) = "`" * chopsuffix(_link(args...; kwargs...), "`")
 
 Glossaries.define!(
     _glossary_links, :AbstractManifold, :link,
@@ -458,7 +461,7 @@ Glossaries.define!(
     (; M = "M") -> "a point on the manifold ``$(_math(:Manifold, M = M))``"
 )
 Glossaries.define!(_glossary_variables, :p, :type, "P")
-Glossaries.define!(_glossary_variables, :p, :default, (; M = "M") -> "`$(_link(:rand; M = M))` ")
+Glossaries.define!(_glossary_variables, :p, :default, (; M = "M") -> _open_link(:rand; M = M))
 Glossaries.define!(_glossary_variables, :p, :as_Iterate, " storing the current iterate")
 Glossaries.define!(_glossary_variables, :p, :as_Initial, " to specify the initial value")
 
@@ -537,7 +540,7 @@ Glossaries.define!(
     "a tangent vector at the point ``$p`` on the manifold ``$(_math(:Manifold, M = M))``",
 )
 Glossaries.define!(_glossary_variables, :X, :type, "T")
-Glossaries.define!(_glossary_variables, :X, :default, (; M = "M", p = "p") -> "`$(_link(:zero_vector; M = M, p = p))` ")
+Glossaries.define!(_glossary_variables, :X, :default, (; M = "M", p = "p") -> _open_link(:zero_vector; M = M, p = p))
 Glossaries.define!(_glossary_variables, :X, :as_Gradient, "storing the gradient at the current iterate")
 Glossaries.define!(_glossary_variables, :X, :as_Subgradient, "storing a subgradient at the current iterate")
 Glossaries.define!(_glossary_variables, :X, :as_Memory, "to specify the representation of a tangent vector")

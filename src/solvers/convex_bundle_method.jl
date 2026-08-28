@@ -109,8 +109,8 @@ $(_fields(:vector_transport_method))
 $(_fields(:X; add_properties = [:as_Subgradient]))
 $(_fields(:stepsize))
 * `ε::R`:                      convex combination of the linearization errors
-* `λ:::AbstractVector{<:R}`:   convex coefficients from the slution of the subproblem
-* `ξ`:                         the stopping parameter given by ``ξ = -$(_tex(:norm, "g"))^2 – ε``
+* `λ::AbstractVector{<:R}`:    convex coefficients from the solution of the subproblem
+* `ξ`:                         the stopping parameter given by ``ξ = -$(_tex(:norm, "g"))^2 - ε``
 $(_fields([:sub_problem, :sub_state]))
 
 # Constructor
@@ -472,7 +472,7 @@ Specify a step size that performs a backtracking to the interior of the domain o
 * `candidate_point=allocate_result(M, rand)`:
   specify a point to be used as memory for the candidate points.
 * `contraction_factor`: how to update ``s`` in the decrease step
-* `initial_stepsize``: specify an initial step size
+* `initial_stepsize`: specify an initial step size
 $(_kwargs(:retraction_method))
 
 $(_note(:ManifoldDefaultsFactory, "DomainBackTrackingStepsize"))
@@ -651,7 +651,7 @@ $(_kwargs(:inverse_retraction_method))
 * `m=1e-3`: the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
-$(_kwargs(:sub_problem; default = "`[`convex_bundle_method_subsolver`](@ref)"))
+$(_kwargs(:sub_problem; default = "`[`convex_bundle_method_subsolver`](@ref)` "))
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)`()"))
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X))

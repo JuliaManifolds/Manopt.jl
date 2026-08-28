@@ -99,7 +99,7 @@ $(_fields(:inverse_retraction_method; name = "inverse_retraction_method_dual", M
 * `X::T`:               an initial tangent vector ``X^{(0)} ∈ $(_math(:TangentSpace; p = "p^{(0)}"))``
 * `Xbar::T`:            the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
 * `relaxation::R`:      relaxation in the primal relaxation step (to compute `pbar`:
-* `relax::Symbol:       which variable to relax (`:primal` or `:dual`:
+* `relax::Symbol`:      which variable to relax, `:primal` or `:dual`
 $(_fields(:retraction_method))
 $(_fields(:stopping_criterion; name = "stop"))
 * `variant`:            whether to perform an `:exact` or `:linearized` Chambolle-Pock
@@ -125,7 +125,7 @@ If you activate these to be different from the default identity, you have to pro
 # Keyword arguments
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
-* `n=``$(Manopt._link(:rand; M = "N"))
+* `n=`$(Manopt._link(:rand; M = "N"))
 * `p=`$(Manopt._link(:rand))
 * `m=`$(Manopt._link(:rand))
 * `X=`$(Manopt._link(:zero_vector))

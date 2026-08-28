@@ -805,7 +805,7 @@ update is skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@re
 the matrix ``H_k`` or ``B_k`` is not updated.
 The basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` is nevertheless transported into the upcoming tangent
 space ``T_{x_{k+1}} $(_math(:Manifold))``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
-neither the oldest vector pair ``$(_tex(:widetilde, "s"))_{k−m}``, ``$(_tex(:widetilde, "y"))_{k−m}`` is
+neither the oldest vector pair ``$(_tex(:widetilde, "s"))_{k-m}``, ``$(_tex(:widetilde, "y"))_{k-m}`` is
 discarded nor the newest vector pair ``$(_tex(:widetilde, "s"))_k, $(_tex(:widetilde, "y"))_k`` is added
 into storage, but all stored vector pairs ``$(_tex(:set, "$(_tex(:widetilde, "s"))_i, $(_tex(:widetilde, "y"))_i"))_{i=k-m}^{k-1}``
 are transported into the tangent space ``T_{x_{k+1}} $(_math(:Manifold))``.
