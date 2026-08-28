@@ -346,7 +346,6 @@ function ChambollePock(
 end
 calls_with_kwargs(::typeof(ChambollePock)) = (ChambollePock!,)
 
-# TODO: Add Eval
 @doc "$(_doc_ChambollePock)"
 function ChambollePock!(
         M::AbstractManifold, N::AbstractManifold, cost::TF, p::P, X::T, m::P, n::Q,

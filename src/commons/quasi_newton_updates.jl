@@ -442,8 +442,21 @@ mutable struct QuasiNewtonMatrixDirectionUpdate{
     update::NT
     vector_transport_method::VT
 end
-function status_summary(d::QuasiNewtonMatrixDirectionUpdate)
-    return "$(d.update) with $(!isnothing(d.initial_scale) ? "initial scaling $(d.initial_scale) and" : "") vector transport method $(d.vector_transport_method)."
+function status_summary(d::QuasiNewtonMatrixDirectionUpdate; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    scale = isnothing(d.initial_scale) ? "deactivated" : "$(d.initial_scale)"
+    (context === :inline) &&
+        return "A quasi Newton direction update using $(d.update), stored as a matrix."
+    return """
+    A quasi Newton direction update stored as a matrix
+
+    ## Parameters
+    * update rule:             $(_MANOPT_INDENT)$(d.update)
+    * basis:                   $(_MANOPT_INDENT)$(d.basis)
+    * initial scaling:         $(_MANOPT_INDENT)$(scale)
+    * matrix size:             $(_MANOPT_INDENT)$(size(d.matrix, 1))×$(size(d.matrix, 2))
+    * vector transport method: $(_MANOPT_INDENT)$(d.vector_transport_method)
+    """
 end
 function show(io::IO, d::QuasiNewtonMatrixDirectionUpdate)
     s = """
@@ -676,12 +689,26 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     )
 end
 get_message(d::QuasiNewtonLimitedMemoryDirectionUpdate) = d.message
-function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
-    s = "limited memory $T (size $(length(d.memory_s)))"
-    !isnothing(d.initial_scale) && (s = "$(s) initial scaling $(d.initial_scale)")
-    (d.project! !== copyto!) && (s = "$(s), projections, ")
-    s = "$(s)and $(d.vector_transport_method) as vector transport."
-    return s
+function status_summary(
+        d::QuasiNewtonLimitedMemoryDirectionUpdate{T}; context::Symbol = :default
+    ) where {T}
+    (context === :short) && return repr(d)
+    scale = isnothing(d.initial_scale) ? "deactivated" : "$(d.initial_scale)"
+    (context === :inline) &&
+        return "A limited memory $(T) direction update of memory size $(capacity(d.memory_s))."
+    return """
+    A limited memory quasi Newton direction update
+
+    ## Parameters
+    * update rule:                    $(_MANOPT_INDENT)$(T)
+    * memory size:                    $(_MANOPT_INDENT)$(capacity(d.memory_s))
+    * currently stored:               $(_MANOPT_INDENT)$(length(d.memory_s))
+    * initial scaling:                $(_MANOPT_INDENT)$(scale)
+    * projection:                     $(_MANOPT_INDENT)$(d.project! === copyto! ? "none" : "$(d.project!)")
+    * nonpositive curvature behavior: $(_MANOPT_INDENT):$(d.nonpositive_curvature_behavior)
+    * tolerance sy_tol:               $(_MANOPT_INDENT)$(d.sy_tol)
+    * vector transport method:        $(_MANOPT_INDENT)$(d.vector_transport_method)
+    """
 end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
         mp::AbstractManoptProblem, st
@@ -820,6 +847,24 @@ function QuasiNewtonCautiousDirectionUpdate(
     ) where {U <: Union{QuasiNewtonMatrixDirectionUpdate, QuasiNewtonLimitedMemoryDirectionUpdate}}
     return QuasiNewtonCautiousDirectionUpdate{U, typeof(θ)}(update, θ)
 end
+function status_summary(d::QuasiNewtonCautiousDirectionUpdate; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    (context === :inline) &&
+        return "A cautious direction update with θ = $(d.θ); internally: $(status_summary(d.update; context = :inline))"
+    return """
+    A cautious quasi Newton direction update
+
+    ## Parameters
+    * θ: $(_MANOPT_INDENT)$(d.θ)
+
+    ## Internal direction update
+    $(_in_str(status_summary(d.update; context = context); indent = 1, headers = 1))
+    """
+end
+function show(io::IO, d::QuasiNewtonCautiousDirectionUpdate)
+    print(io, "QuasiNewtonCautiousDirectionUpdate with θ = $(d.θ) and internal state:\n")
+    return print(io, d.update)
+end
 (d::QuasiNewtonCautiousDirectionUpdate)(mp::AbstractManoptProblem, st) = d.update(mp, st)
 function (d::QuasiNewtonCautiousDirectionUpdate)(r, mp::AbstractManoptProblem, st)
     return d.update(r, mp, st)
@@ -882,10 +927,23 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     last_gcd_stepsize::F
 end
 
-function status_summary(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
-    s = "limited memory direction update with support for box constraints; "
-    s *= "internal direction update status: $(status_summary(d.qn_du))"
-    return s
+function status_summary(
+        d::QuasiNewtonLimitedMemoryBoxDirectionUpdate; context::Symbol = :default
+    )
+    (context === :short) && return repr(d)
+    (context === :inline) &&
+        return "A limited memory direction update with support for box constraints; internally: $(status_summary(d.qn_du; context = :inline))"
+    return """
+    A limited memory quasi Newton direction update with support for box constraints
+
+    ## Parameters
+    * current scale:                $(_MANOPT_INDENT)$(d.current_scale)
+    * last Cauchy direction result: $(_MANOPT_INDENT):$(d.last_gcd_result)
+    * last Cauchy step size:        $(_MANOPT_INDENT)$(d.last_gcd_stepsize)
+
+    ## Internal direction update
+    $(_in_str(status_summary(d.qn_du; context = context); indent = 1, headers = 1))
+    """
 end
 
 function get_parameter(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate, ::Val{:max_stepsize})

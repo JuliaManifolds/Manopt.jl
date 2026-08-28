@@ -93,9 +93,9 @@ end
     s2 = NonmonotoneLinesearch()(M)
     @test startswith(repr(s2), "NonmonotoneLinesearch(;")
     @test Manopt.get_message(s2) == ""
-    @test startswith(repr(s2.bb_stepsize), "BarzileiBorweinStepsize(; ")
+    @test startswith(repr(s2.bb_stepsize), "BarzilaiBorweinStepsize(; ")
     @test startswith(Manopt.status_summary(s2), "Non-monotone linesearch")
-    @test startswith(Manopt.status_summary(s2.bb_stepsize), "Barzilei–Borwein stepsize\n")
+    @test startswith(Manopt.status_summary(s2.bb_stepsize), "Barzilai–Borwein stepsize\n")
 
 
     s3 = WolfePowellBinaryLinesearch()(M)
@@ -199,7 +199,7 @@ end
         @test abs_const_step(mp, gds, 1) ==
             1.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
     end
-    @testset "BarzileiBorwein" begin
+    @testset "BarzilaiBorwein" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)
         grad_f(M, p) = 2 .* p
@@ -207,7 +207,7 @@ end
         p = [2.0, 2.0]
         X = grad_f(M, p)
         # Create stepsize with factory
-        bb = BarzileiBorwein()(M) #
+        bb = BarzilaiBorwein()(M) #
         gds = GradientDescentState(M; p = p, stepsize = bb)
         # Check both modes to use BB
         # (1) vector transport when providing a last stepsize – no history -> max
@@ -238,7 +238,7 @@ end
         gs = GradientDescentState(M; p = p, X = grad_f(M, p))
         clbs = CubicBracketingLinesearch()(M)
         @test startswith(repr(clbs), "CubicBracketingLinesearch(;")
-        @test startswith(Manopt.status_summary(clbs), repr(clbs))
+        @test startswith(Manopt.status_summary(clbs), "Cubic bracketing stepsize")
         @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
 
         #edge cases of interval bracketing

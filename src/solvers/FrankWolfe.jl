@@ -292,11 +292,14 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 Frank_Wolfe_method(M::AbstractManifold, args...; kwargs...)
 function Frank_Wolfe_method(
         M::AbstractManifold, f, grad_f, p = rand(M);
+        differential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
     p_ = maybe_wrap_variable(p)
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, p = p)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential = differential, evaluation = evaluation, p = p
+    )
     rs = Frank_Wolfe_method(M, mgo, p_; evaluation = evaluation, kwargs...)
     return maybe_unwrap_variable(p, rs)
 end
@@ -313,7 +316,7 @@ calls_with_kwargs(::typeof(Frank_Wolfe_method)) = (Frank_Wolfe_method!,)
 Frank_Wolfe_method!(M::AbstractManifold, args...; kwargs...)
 function Frank_Wolfe_method!(
         M::AbstractManifold, f, grad_f, p;
-        differential = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        differential = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
     mgo = ManifoldGradientObjective(

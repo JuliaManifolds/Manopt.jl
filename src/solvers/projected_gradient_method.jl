@@ -229,7 +229,7 @@ function projected_gradient_method(M, f, grad_f, proj; kwargs...)
     return projected_gradient_method(M, f, grad_f, proj, rand(M); kwargs...)
 end
 function projected_gradient_method(
-        M, f, grad_f, proj, p; indicator = nothing, evaluation = AllocatingEvaluation(), kwargs...
+        M, f, grad_f, proj, p; indicator = missing, evaluation = AllocatingEvaluation(), kwargs...
     )
     cs_obj = ManifoldConstrainedSetObjective(
         f, grad_f, proj; evaluation = evaluation, indicator = indicator
@@ -245,7 +245,7 @@ calls_with_kwargs(::typeof(projected_gradient_method)) = (projected_gradient_met
 
 @doc "$(_doc_pgm)"
 function projected_gradient_method!(
-        M, f, grad_f, proj, p; indicator = nothing, evaluation = AllocatingEvaluation(), kwargs...
+        M, f, grad_f, proj, p; indicator = missing, evaluation = AllocatingEvaluation(), kwargs...
     )
     cs_obj = ManifoldConstrainedSetObjective(
         f, grad_f, proj; evaluation = evaluation, indicator = indicator

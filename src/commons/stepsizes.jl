@@ -672,12 +672,10 @@ function AdaptiveWNGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.AdaptiveWNGradientStepsize, args...; requires_point = true, kwargs...)
 end
 
-## TODO Introduce the factory as well: BarzileiBorwein and document the formula there.
-
 @doc """
-    BarzileiBorweinStepsize{T, R<:Real, IRM, RM, VTM, TSSA} <: Stepsize
+    BarzilaiBorweinStepsize{T, R<:Real, IRM, RM, VTM, TSSA} <: Stepsize
 
-Compute a stepsize based on the Barzilei-Borwein rule. See [`BarzileiBorwein`](@ref)
+Compute a stepsize based on the Barzilai-Borwein rule. See [`BarzilaiBorwein`](@ref)
 for details
 
 # Fields
@@ -692,7 +690,7 @@ $(_fields(:vector_transport_method))
 
 # Constructor
 
-    BarzileiBorweinStepsize(M::AbstractManifold, p; kwargs...)
+    BarzilaiBorweinStepsize(M::AbstractManifold, p; kwargs...)
 
 ## Keyword arguments
 
@@ -704,7 +702,7 @@ $(_kwargs([:p, :retraction_method]))
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
 $(_kwargs([:vector_transport_method, :X]))
 """
-mutable struct BarzileiBorweinStepsize{
+mutable struct BarzilaiBorweinStepsize{
         T, R <: Real,
         IRM <: AbstractInverseRetractionMethod, RM <: AbstractRetractionMethod,
         VTM <: AbstractVectorTransportMethod, TSSA <: StoreStateAction,
@@ -718,7 +716,7 @@ mutable struct BarzileiBorweinStepsize{
     strategy::Symbol
     vector_transport_method::VTM
     y::T
-    function BarzileiBorweinStepsize(
+    function BarzilaiBorweinStepsize(
             M::AbstractManifold;
             p::P = rand(M), X::T = zero_vector(M, p),
             min_stepsize::R = 1.0e-3,
@@ -741,7 +739,7 @@ mutable struct BarzileiBorweinStepsize{
         end
         if min_stepsize <= 0.0
             throw(
-                DomainError(min_stepsize, "The lower bound for the Barzilei–Borwein step size has to be positive."),
+                DomainError(min_stepsize, "The lower bound for the Barzilai–Borwein step size has to be positive."),
             )
         end
         if max_stepsize <= min_stepsize
@@ -759,7 +757,7 @@ mutable struct BarzileiBorweinStepsize{
         )
     end
 end
-function (bb::BarzileiBorweinStepsize)(
+function (bb::BarzilaiBorweinStepsize)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s)));
         gradient = nothing, last_stepsize = nothing, kwargs...
     )
@@ -817,8 +815,8 @@ function (bb::BarzileiBorweinStepsize)(
         end
     end
 end
-function Base.show(io::IO, bbs::BarzileiBorweinStepsize)
-    print(io, "BarzileiBorweinStepsize(; ")
+function Base.show(io::IO, bbs::BarzilaiBorweinStepsize)
+    print(io, "BarzilaiBorweinStepsize(; ")
     print(io, "inverse_retraction_method = ", bbs.inverse_retraction_method, ", ")
     print(io, "min_stepsize = ", bbs.min_stepsize, ", ")
     print(io, "max_stepsize = ", bbs.max_stepsize, ", ")
@@ -828,11 +826,11 @@ function Base.show(io::IO, bbs::BarzileiBorweinStepsize)
     print(io, "vector_transport_method = ", bbs.vector_transport_method)
     return print(io, ")")
 end
-function status_summary(bbs::BarzileiBorweinStepsize; context::Symbol = :default)
+function status_summary(bbs::BarzilaiBorweinStepsize; context::Symbol = :default)
     (context === :short) && return repr(bbs)
-    (context === :inline) && return "An Barzilei–Borwein stepsize with strategy :$(bbs.strategy)."
+    (context === :inline) && return "An Barzilai–Borwein stepsize with strategy :$(bbs.strategy)."
     return """
-    Barzilei–Borwein stepsize
+    Barzilai–Borwein stepsize
 
     ## Parameters
     * min stepsize:              $(_MANOPT_INDENT)$(bbs.min_stepsize)
@@ -845,8 +843,8 @@ function status_summary(bbs::BarzileiBorweinStepsize; context::Symbol = :default
 end
 
 """
-    BarzileiBorwein(; kwargs...)
-    BarzileiBorwein(M::AbstractManifold; kwargs...)
+    BarzilaiBorwein(; kwargs...)
+    BarzilaiBorwein(M::AbstractManifold; kwargs...)
 
 Consider the current iterate and gradient ``p_k`` and ``X_k`` as well as the last
 iterate and gradient ``p_{k-1}`` and ``X_{k-1}``. Note that in a gradient scheme this also
@@ -899,10 +897,10 @@ $(_kwargs([:p, :retraction_method]))
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
 $(_kwargs([:vector_transport_method, :X]))
 
-$(_note(:ManifoldDefaultsFactory, "BarzileiBorweinStepsize"))
+$(_note(:ManifoldDefaultsFactory, "BarzilaiBorweinStepsize"))
 """
-function BarzileiBorwein(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.BarzileiBorweinStepsize, args...; kwargs...)
+function BarzilaiBorwein(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.BarzilaiBorweinStepsize, args...; kwargs...)
 end
 
 """
@@ -1305,8 +1303,25 @@ function Base.show(io::IO, cbls::CubicBracketingLinesearchStepsize)
         "CubicBracketingLinesearch(; initial_stepsize = $(cbls.initial_stepsize),  stepsize_increase = $(cbls.stepsize_increase),  sufficient_curvature = $(cbls.sufficient_curvature),  min_bracket_width = $(cbls.min_bracket_width),  hybrid = $(cbls.hybrid),  retraction_method = $(cbls.retraction_method),  vector_transport_method = $(cbls.vector_transport_method),  max_stepsize = $(cbls.max_stepsize))",
     )
 end
-function status_summary(cbls::CubicBracketingLinesearchStepsize)
-    return "$(cbls)\nand a computed last stepsize of $(cbls.last_stepsize)"
+function status_summary(cbls::CubicBracketingLinesearchStepsize; context = :default)
+    (context === :short) && return repr(cbls)
+    (context === :inline) && return "A Cubic bracketing linesearch."
+    return """
+    Cubic bracketing stepsize
+
+    ## Parameters
+
+    * hybrid:                    $(_MANOPT_INDENT)$(cbls.hybrid ? "true" : "false")
+    * initial stepsize:          $(_MANOPT_INDENT)$(cbls.initial_stepsize)
+    * last stepsize:             $(_MANOPT_INDENT)$(cbls.last_stepsize)
+    * minimal bracket width:     $(_MANOPT_INDENT)$(cbls.min_bracket_width)
+    * max_iterations:            $(_MANOPT_INDENT)$(cbls.max_iterations)
+    * max_stepsize:              $(_MANOPT_INDENT)$(cbls.max_stepsize)
+    * sufficient_curvature:      $(_MANOPT_INDENT)$(cbls.sufficient_curvature)
+    * retraction method:         $(_MANOPT_INDENT)$(cbls.retraction_method)
+    * stepsize_increase:         $(_MANOPT_INDENT)$(cbls.stepsize_increase)
+    * vector transport method:   $(_MANOPT_INDENT)$(cbls.vector_transport_method)
+    """
 end
 
 @doc """
@@ -1446,12 +1461,12 @@ function status_summary(s::DecreasingStepsize; context::Symbol = :default)
     ((l -  k*a)f^k) / (k + s)^e
 
     ## Parameters
-    * length l: $(_MANOPT_INDENT)$(s.length)
+    * length l:     $(_MANOPT_INDENT)$(s.length)
     * subtrahend a: $(_MANOPT_INDENT)$(s.subtrahend)
-    * factor f: $(_MANOPT_INDENT)$(s.factor)
-    * shift s: $(_MANOPT_INDENT)$(s.shift)
-    * exponent e: $(_MANOPT_INDENT)$(s.exponent)
-    * type : $(_MANOPT_INDENT):$(s.type)
+    * factor f:     $(_MANOPT_INDENT)$(s.factor)
+    * shift s:      $(_MANOPT_INDENT)$(s.shift)
+    * exponent e:   $(_MANOPT_INDENT)$(s.exponent)
+    * type :        $(_MANOPT_INDENT):$(s.type)
     """
 end
 """
@@ -1749,7 +1764,7 @@ $(_kwargs(:vector_transport_method))
 """
 mutable struct NonmonotoneLinesearchStepsize{
         P, T <: AbstractVector, R <: Real, I <: Integer, TRM <: AbstractRetractionMethod,
-        MSGS <: NamedTuple, IG, BB <: BarzileiBorweinStepsize,
+        MSGS <: NamedTuple, IG, BB <: BarzilaiBorweinStepsize,
     } <: Linesearch
     bb_stepsize::BB
     candidate_point::P
@@ -1787,7 +1802,7 @@ mutable struct NonmonotoneLinesearchStepsize{
             vector_transport_method = default_vector_transport_method(M),
         ) where {TRM, P, R <: Real, I <: Integer, IG}
         stop_when_stepsize_exceeds = R(stop_when_stepsize_exceeds)
-        bb = BarzileiBorweinStepsize(
+        bb = BarzilaiBorweinStepsize(
             M; p = p, min_stepsize = bb_min_stepsize, max_stepsize = bb_max_stepsize,
             inverse_retraction_method = inverse_retraction_method, retraction_method = retraction_method,
             vector_transport_method = vector_transport_method,
@@ -1927,7 +1942,7 @@ end
 
 A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
 
-Base on the step size from the [`BarzileiBorweinStepsize`](@ref) `α_k^{$(_tex(:text, "BB"))}`
+Base on the step size from the [`BarzilaiBorweinStepsize`](@ref) `α_k^{$(_tex(:text, "BB"))}`
 Then find the smallest ``h = 0, 1, 2, …`` such that
 
 ```math

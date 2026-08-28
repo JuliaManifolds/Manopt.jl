@@ -481,7 +481,7 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export AdaptiveWNGradient, AffineCovariantStepsize, BarzileiBorwein, ConstantLength
+export AdaptiveWNGradient, AffineCovariantStepsize, BarzilaiBorwein, ConstantLength
 export DecreasingLength, Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
 export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch, CubicBracketingLinesearch

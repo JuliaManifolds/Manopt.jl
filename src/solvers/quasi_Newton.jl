@@ -164,7 +164,7 @@ function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
     # Solver state for `Manopt.jl`s Quasi Newton Method
     $Iter
     ## Parameters$(as)
-    * direction update:        $(status_summary(qns.direction_update))
+    * direction update:        $(status_summary(qns.direction_update; context = :inline))
     * retraction method:       $(qns.retraction_method)
     * vector transport method: $(qns.vector_transport_method)
 

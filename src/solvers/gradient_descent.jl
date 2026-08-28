@@ -183,7 +183,7 @@ gradient_descent(M::AbstractManifold, args...; kwargs...)
 
 function gradient_descent(
         M::AbstractManifold, f, grad_f, p = rand(M);
-        differential = nothing,
+        differential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
@@ -207,7 +207,7 @@ gradient_descent!(M::AbstractManifold, args...; kwargs...)
 
 function gradient_descent!(
         M::AbstractManifold, f, grad_f, p;
-        differential = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        differential = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
     keywords_accepted(gradient_descent; kwargs...)

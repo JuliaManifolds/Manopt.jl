@@ -32,11 +32,23 @@ end
         M = Euclidean(4)
         qnu = InverseBFGS()
         d = QuasiNewtonMatrixDirectionUpdate(M, qnu)
-        @test Manopt.status_summary(d) ==
-            "$(qnu) with initial scaling 1.0 and vector transport method ParallelTransport()."
+        @test startswith(
+            Manopt.status_summary(d), "A quasi Newton direction update stored as a matrix"
+        )
+        @test Manopt.status_summary(d; context = :inline) ==
+            "A quasi Newton direction update using $(qnu), stored as a matrix."
+        @test Manopt.status_summary(d; context = :short) == repr(d)
         s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], 1.0, InverseBFGS(), ParallelTransport())\n"
         @test repr(d) == s
         @test Manopt.get_message(d) == ""
+        c = QuasiNewtonCautiousDirectionUpdate(d)
+        @test startswith(
+            Manopt.status_summary(c), "A cautious quasi Newton direction update"
+        )
+        @test startswith(
+            Manopt.status_summary(c; context = :inline), "A cautious direction update with θ = "
+        )
+        @test startswith(repr(c), "QuasiNewtonCautiousDirectionUpdate with θ = ")
     end
 
     @testset "Mean of 3 Matrices" begin

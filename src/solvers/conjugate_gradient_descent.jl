@@ -107,10 +107,15 @@ function conjugate_gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
     return conjugate_gradient_descent(M, f, grad_f, rand(M); kwargs...)
 end
 function conjugate_gradient_descent(
-        M::AbstractManifold, f::TF, grad_f::TDF, p; evaluation = AllocatingEvaluation(), kwargs...
+        M::AbstractManifold, f::TF, grad_f::TDF, p;
+        differential = missing,
+        evaluation = AllocatingEvaluation(),
+        kwargs...,
     ) where {TF, TDF}
     p_ = maybe_wrap_variable(p)
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, p = p)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential = differential, evaluation = evaluation, p = p
+    )
     rs = conjugate_gradient_descent(M, mgo, p_; evaluation = evaluation, kwargs...)
     return maybe_unwrap_variable(p, rs)
 end
