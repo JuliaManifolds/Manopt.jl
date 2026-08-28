@@ -270,17 +270,17 @@ returns the range vector bundle stored within a [`VectorBundleManoptProblem`](@r
 """
 get_vectorbundle(vbp::VectorBundleManoptProblem) = vbp.vectorbundle
 
-raw"""
+"""
     get_manifold(vbp::VectorBundleManoptProblem)
 
-    returns the domain manifold stored within a [`VectorBundleManoptProblem`](@ref)
+returns the domain manifold stored within a [`VectorBundleManoptProblem`](@ref)
 """
 get_manifold(vbp::VectorBundleManoptProblem) = vbp.manifold
 
-raw"""
+"""
     get_newton_equation(mp::VectorBundleManoptProblem)
 
-returns the Newton equation [`newton_equation`](@ref) stored within an [`VectorBundleManoptProblem`](@ref).
+returns the Newton equation `newton_equation` stored within a [`VectorBundleManoptProblem`](@ref).
 """
 function get_newton_equation(vbp::VectorBundleManoptProblem)
     return vbp.newton_equation

@@ -9,6 +9,7 @@
 
 ```@docs
 VectorBundleManoptProblem
+Manopt.get_manifold(::VectorBundleManoptProblem)
 ```
 
 ## State
