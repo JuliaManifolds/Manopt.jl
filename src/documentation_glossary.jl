@@ -458,7 +458,7 @@ Glossaries.define!(
     (; M = "M") -> "a point on the manifold ``$(_math(:Manifold, M = M))``"
 )
 Glossaries.define!(_glossary_variables, :p, :type, "P")
-Glossaries.define!(_glossary_variables, :p, :default, (; M = "M") -> "`$(_link(:rand; M = M))` ")
+Glossaries.define!(_glossary_variables, :p, :default, (; M = "M") -> "`$(_link(:rand; M = M))` ")
 Glossaries.define!(_glossary_variables, :p, :as_Iterate, " storing the current iterate")
 Glossaries.define!(_glossary_variables, :p, :as_Initial, " to specify the initial value")
 

@@ -659,48 +659,8 @@ end
 @doc """
     BarzileiBorweinStepsize{T, R<:Real, IRM, RM, VTM, TSSA} <: Stepsize
 
-Compute a stepsize based on the Barzilei-Borwein rule.
-
-Consider the current iterate and gradient ``p_k`` and ``X_k`` as well as the last
-iterate and gradient ``p_{k-1}`` and ``X_{k-1}``. Note that in a gradient scheme this also
-yields the relation that ``p_k = $(_tex(:exp))_{p_{k-1}}(αX_{k-1}))`` when ``α`` is the stepsize
-from the last iteration.
-
-We compute the changes of the iterates and the vectors, respectively
-
-```math
-s = $(_tex(:invretr))_{p_{k}}(p_{k-1})
-$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
-y_{k} = X_k - $(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1}),
-```
-where alternatively ``s = α$(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1})`` if the `last_stepsize =`
-was passed to the function.
-
-Then the Barzilai—Borwein step size is
-
-```math
-α^{$(_tex(:text, "BB"))} = $(
-    _tex(
-        :cases,
-        "$(_tex(:min))(α_{$(_tex(:text, "max"))}, $(_tex(:max))(α_{$(_tex(:text, "min"))}, τ_{k})), & $(_tex(:text, "if")) ⟨s_{k}, y_{k}⟩_{p_k} > 0,",
-        "α_{$(_tex(:text, "max"))}, & $(_tex(:text, "else,"))"
-    )
-)
-```
-
-where
-
-```math
-τ_{k} = $(_tex(:frac, "⟨s, s⟩_{p_k}", "⟨s, y⟩_{p_k}")),
-```
-
-for the `:direct` strategy, or
-
-```math
-τ_{k} =  $(_tex(:frac, "⟨s, y⟩_{p_k}", "⟨y, y⟩_{p_k}")),
-```
-
-for the `:inverse` strategy. The `:alternating` strategy uses the direct for odd, the inverse for even iterations `k`.
+Compute a stepsize based on the Barzilei-Borwein rule. See [`BarzileiBorwein`](@ref)
+for details
 
 # Fields
 
@@ -714,7 +674,6 @@ $(_fields(:vector_transport_method))
 
 # Constructor
 
-    BarzileiBorweinStepsize(M::AbstractManifold; kwargs...)
     BarzileiBorweinStepsize(M::AbstractManifold, p; kwargs...)
 
 ## Keyword arguments
@@ -722,10 +681,10 @@ $(_fields(:vector_transport_method))
 $(_kwargs(:inverse_retraction_method))
 * `min_stepsize=1e-3`
 * `max_stepsize=1e3`
-$(_kwargs(:retraction_method))
+$(_kwargs([:p, :retraction_method]))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
-$(_kwargs(:vector_transport_method))
+$(_kwargs([:vector_transport_method, :X]))
 """
 mutable struct BarzileiBorweinStepsize{
         T, R <: Real,
@@ -840,8 +799,92 @@ function (bb::BarzileiBorweinStepsize)(
         end
     end
 end
-function Base.show(io::IO, a::BarzileiBorweinStepsize)
-    return print(io, "BarzileiBorweinStepsize TODO")
+function Base.show(io::IO, bbs::BarzileiBorweinStepsize)
+    print(io, "BarzileiBorweinStepsize(; ")
+    print(io, "inverse_retraction_method = ", bbs.inverse_retraction_method, ", ")
+    print(io, "min_stepsize = ", bbs.min_stepsize, ", ")
+    print(io, "max_stepsize = ", bbs.max_stepsize, ", ")
+    print(io, "retraction_method = ", bbs.retraction_method, ", ")
+    print(io, "storage = ", bbs.storage, ", ")
+    print(io, "strategy = :", bbs.strategy, ", ")
+    print(io, "vector_transport_method = ", bbs.vector_transport_method)
+    return print(io, ")")
+end
+function status_summary(bbs::BarzileiBorweinStepsize; context::Symbol = :default)
+    (context === :short) && return repr(bbs)
+    (context === :inline) && return "An Barzilei–Borwein stepsize with strategy :$(bbs.strategy)."
+    return """
+    Barzilei–Borwein stepsize
+
+    ## Parameters
+    * min stepsize:              $(_MANOPT_INDENT)$(bbs.min_stepsize)
+    * max stepsize:              $(_MANOPT_INDENT)$(bbs.max_stepsize)
+    * strategy:                  $(_MANOPT_INDENT):$(bbs.strategy)
+    * inverse retraction method: $(_MANOPT_INDENT)$(bbs.inverse_retraction_method)
+    * retraction method:         $(_MANOPT_INDENT)$(bbs.retraction_method)
+    * vector transport method:   $(_MANOPT_INDENT)$(bbs.vector_transport_method)
+    """
+end
+
+"""
+    BarzileiBorwein(; kwargs...)
+    BarzileiBorwein(M::AbstractManifold; kwargs...)
+
+Consider the current iterate and gradient ``p_k`` and ``X_k`` as well as the last
+iterate and gradient ``p_{k-1}`` and ``X_{k-1}``. Note that in a gradient scheme this also
+yields the relation that ``p_k = $(_tex(:exp))_{p_{k-1}}(αX_{k-1}))`` when ``α`` is the stepsize
+from the last iteration.
+
+We compute the changes of the iterates and the vectors, respectively
+
+```math
+s = $(_tex(:invretr))_{p_{k}}(p_{k-1})
+$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
+y_{k} = X_k - $(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1}),
+```
+where alternatively ``s = α$(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1})`` if the `last_stepsize =`
+was passed to the function.
+
+Then the Barzilai—Borwein step size is
+
+```math
+α^{$(_tex(:text, "BB"))} = $(
+    _tex(
+        :cases,
+        "$(_tex(:min))(α_{$(_tex(:text, "max"))}, $(_tex(:max))(α_{$(_tex(:text, "min"))}, τ_{k})), & $(_tex(:text, "if")) ⟨s_{k}, y_{k}⟩_{p_k} > 0,",
+        "α_{$(_tex(:text, "max"))}, & $(_tex(:text, "else,"))"
+    )
+)
+```
+
+where
+
+```math
+τ_{k} = $(_tex(:frac, "⟨s, s⟩_{p_k}", "⟨s, y⟩_{p_k}")),
+```
+
+for the `:direct` strategy, or
+
+```math
+τ_{k} =  $(_tex(:frac, "⟨s, y⟩_{p_k}", "⟨y, y⟩_{p_k}")),
+```
+
+for the `:inverse` strategy. The `:alternating` strategy uses the direct for odd, the inverse for even iterations `k`.
+
+## Keyword arguments
+
+$(_kwargs(:inverse_retraction_method))
+* `min_stepsize=1e-3`
+* `max_stepsize=1e3`
+$(_kwargs([:p, :retraction_method]))
+* `strategy=:direct`
+* `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
+$(_kwargs([:vector_transport_method, :X]))
+
+$(_note(:ManifoldDefaultsFactory, "BarzileiBorweinStepsize"))
+"""
+function BarzileiBorwein(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.BarzileiBorweinStepsize, args...; kwargs...)
 end
 
 """
@@ -877,12 +920,8 @@ function ConstantStepsize(
     return ConstantStepsize{R}(length, type)
 end
 function (cs::ConstantStepsize)(
-        amp::AbstractManoptProblem,
-        ams::AbstractManoptSolverState,
-        ::Any,
-        args...;
-        gradient = nothing,
-        kwargs...,
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Any, args...;
+        gradient = nothing, kwargs...,
     )
     s = cs.length
     if cs.type == :absolute
@@ -1827,11 +1866,37 @@ function (a::NonmonotoneLinesearchStepsize)(
     )
     return a.last_stepsize
 end
-function Base.show(io::IO, a::NonmonotoneLinesearchStepsize)
-    return print(
-        io,
-        "NonmonotoneLinesearch(; last_stepsize = $(a.last_stepsize), memory_size = $(length(a.old_costs)), stepsize_reduction = $(a.stepsize_reduction), sufficient_decrease = $(a.sufficient_decrease), retraction_method = $(a.retraction_method))",
-    )
+function Base.show(io::IO, nls::NonmonotoneLinesearchStepsize)
+    print(io, "NonmonotoneLinesearch(; ")
+    print(io, "bb_stepsize = ", nls.bb_stepsize, ", ")
+    print(io, "last_stepsize = ", nls.last_stepsize, ", ")
+    print(io, "memory_size = ", length(nls.old_costs), ", ")
+    print(io, "stepsize_reduction = ", nls.stepsize_reduction, ", ")
+    print(io, "sufficient_decrease = ", nls.sufficient_decrease, ", ")
+    print(io, "retraction_method = ", nls.retraction_method, ", ")
+    print(io, "stop_when_stepsize_less = ", nls.stop_when_stepsize_less, ", ")
+    print(io, "stop_when_stepsize_exceeds = ", nls.stop_when_stepsize_exceeds, ", ")
+    print(io, "sufficient_decrease = ", nls.sufficient_decrease, ", ")
+    print(io, "stop_increasing_at_step = ", nls.stop_increasing_at_step, ", ")
+    print(io, "stop_decreasing_at_step = ", nls.stop_decreasing_at_step)
+    return print(io, ")")
+end
+function status_summary(nls::NonmonotoneLinesearchStepsize; context::Symbol = :default)
+    (context === :short) && return repr(nls)
+    (context === :inline) && return "A Non-monotone linesearch using $(status_summary(nls.bb_stepsize; context = context))"
+    bb_stgr = status_summary(nls.bb_stepsize; context = context)
+
+    return """
+    Non-monotone linesearch
+
+    ## Stepsize
+    $(_in_str(status_summary(nls.bb_stepsize; context = context); indent = 1, headers = 1))
+
+    ## Parameters
+    * memory_size:         $(_MANOPT_INDENT)$(length(nls.old_costs))
+    * retraction method:   $(_MANOPT_INDENT)$(nls.retraction_method)
+    * sufficient decrease: $(_MANOPT_INDENT)$(nls.sufficient_decrease)
+    """
 end
 function get_message(a::NonmonotoneLinesearchStepsize)
     s = [get_message(kv[1], kv[2]) for kv in pairs(a.messages)]
@@ -1844,7 +1909,7 @@ end
 
 A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
 
-Base on the step size from the [`BazileinBorweinStepsize`](@ref) `α_k^{$(_tex(:text, "BB"))}`
+Base on the step size from the [`BarzileiBorweinStepsize`](@ref) `α_k^{$(_tex(:text, "BB"))}`
 Then find the smallest ``h = 0, 1, 2, …`` such that
 
 ```math
@@ -1876,7 +1941,9 @@ $(_kwargs(:retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M)`: largest stepsize when to stop to avoid leaving the injectivity radius
 * `stop_increasing_at_step=100`:  last step to increase the stepsize (phase 1),
-* `stop_decreasing_at_step=1000`: last step size to decrease the stepsize (phase 2),
+* `stop_decreasing_at_step=1000`: last step size to decrease the stepsize (phase 2)
+
+$(_note(:ManifoldDefaultsFactory, "NonmonotoneLinesearchStepsize"))
 """
 function NonmonotoneLinesearch(args...; kwargs...)
     return ManifoldDefaultsFactory(NonmonotoneLinesearchStepsize, args...; requires_point = true, kwargs...)

@@ -398,8 +398,7 @@ export ProximalGradientNonsmoothCost, ProximalGradientNonsmoothSubgradient
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate, QuasiNewtonLimitedMemoryBoxDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
 export QuasiNewtonPreconditioner
-export QuasiNewtonCautiousDirectionUpdate,
-    BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
+export QuasiNewtonCautiousDirectionUpdate, BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
 export WolfePowellLinesearch, WolfePowellBinaryLinesearch
@@ -482,8 +481,8 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export AdaptiveWNGradient, AffineCovariantStepsize, ConstantLength, DecreasingLength,
-    Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
+export AdaptiveWNGradient, AffineCovariantStepsize, BarzileiBorwein, ConstantLength
+export DecreasingLength, Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
 export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch, CubicBracketingLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
