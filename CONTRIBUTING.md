@@ -7,11 +7,11 @@ The following is a set of guidelines to [`Manopt.jl`](https://juliamanifolds.git
 
 #### Table of contents
 
-- [Contributing to `Manopt.jl`](#Contributing-to-manoptjl)
-      - [Table of Contents](#Table-of-Contents)
+- [Contributing to `Manopt.jl`](#Contributing-to-Manopt.jl)
+  - [Table of contents](#Table-of-contents)
   - [I just have a question](#I-just-have-a-question)
-  - [How can I file an issue?](#How-can-I-file-an-issue)
-  - [How can I contribute?](#How-can-I-contribute)
+  - [How can I file an issue?](#How-can-I-file-an-issue?)
+  - [How can I contribute?](#How-can-I-contribute?)
     - [Add a missing method](#Add-a-missing-method)
     - [Provide a new algorithm](#Provide-a-new-algorithm)
     - [Provide a new example](#Provide-a-new-example)
@@ -28,25 +28,25 @@ You can also ask your question on [discourse.julialang.org](https://discourse.ju
 
 ## How can I file an issue?
 
-If you found a bug or want to propose a feature, please open an issue in within the [GitHub repository](https://github.com/JuliaManifolds/Manopt.jl/issues).
+If you found a bug or want to propose a feature, please open an issue in the [GitHub repository](https://github.com/JuliaManifolds/Manopt.jl/issues).
 
 ## How can I contribute?
 
 ### Add a missing method
 
-There is still a lot of methods that can be contributed within the optimization framework of [`Manopt.jl`](https://juliamanifolds.github.io/Manopt.jl/),
+There are still a lot of methods that can be contributed within the optimization framework of [`Manopt.jl`](https://juliamanifolds.github.io/Manopt.jl/),
 may it be functions, gradients, differentials, proximal maps, step size rules or stopping criteria.
 If you notice a method you could contribute or improve an implementation, please do so,
-and the maintainers try help with the necessary details.
+and the maintainers try to help with the necessary details.
 Even providing a single new method is a good contribution.
 
 ### Provide a new algorithm
 
 A main contribution you can provide is another algorithm that is not yet included in the
 package.
-An algorithm is always based on a concrete type of a [`AbstractManoptProblem`](https://manoptjl.org/stable/plans/index.html#AbstractManoptProblems-1) storing the main information of the task and a concrete type of an [`AbstractManoptSolverState`](https://manoptjl.org/stable/plans/index.html#AbstractManoptSolverState-1from) storing all information that needs to be known to the solver in general. The actual algorithm is split into an initialization phase, see [`initialize_solver!`](https://manoptjl.org/stable/solvers/index.html#Manopt.initialize_solver!), and the implementation of the `i`th step of the solver itself, see  before the iterative procedure, see [`step_solver!`](https://manoptjl.org/stable/solvers/index.html#Manopt.step_solver!).
-For these two functions, it would be great if a new algorithm uses functions from the [`ManifoldsBase.jl`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html) interface as generically as possible. For example, if possible use [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.retract!-Tuple{AbstractManifold,Any,Any,Any}) in favor of [`exp!(M,q,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.exp!-Tuple{AbstractManifold,Any,Any,Any}) to perform a step starting in `p` in direction `X` (in place of `q`), since the exponential map might be too expensive to evaluate or might not be available on a certain manifold. See [Retractions and inverse retractions](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#Retractions-and-inverse-Retractions) for more details.
-Further, if possible, prefer [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.retract!-Tuple{AbstractManifold,Any,Any,Any}) in favor of [`retract(M,p,X)`](https://juliamanifolds.github.io/Manifolds.jl/latest/interface.html#ManifoldsBase.retract-Tuple{AbstractManifold,Any,Any}), since a computation in place of a suitable variable `q` reduces memory allocations.
+An algorithm is always based on a concrete type of a [`AbstractManoptProblem`](https://manoptjl.org/stable/base/problem/#Manopt.AbstractManoptProblem) storing the main information of the task and a concrete type of an [`AbstractManoptSolverState`](https://manoptjl.org/stable/base/state/#Manopt.AbstractManoptSolverState) storing all information that needs to be known to the solver in general. The actual algorithm is split into an initialization phase, see [`initialize_solver!`](https://manoptjl.org/stable/base/solver/#Manopt.initialize_solver!-Tuple{AbstractManoptProblem,%20AbstractManoptSolverState}), which is called before the iterative procedure, and the implementation of the `k`th step of the solver itself, see [`step_solver!`](https://manoptjl.org/stable/base/solver/#Manopt.step_solver!-Tuple{AbstractManoptProblem,%20AbstractManoptSolverState,%20Any}).
+For these two functions, it would be great if a new algorithm uses functions from the [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/) interface as generically as possible. For example, if possible use [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.retract!) in favor of [`exp!(M,q,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#exp-and-log) to perform a step starting in `p` in direction `X` (in place of `q`), since the exponential map might be too expensive to evaluate or might not be available on a certain manifold. See [Retractions and inverse retractions](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#sec-retractions) for more details.
+Further, if possible, prefer [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.retract!) in favor of [`retract(M,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.retract), since a computation in place of a suitable variable `q` reduces memory allocations.
 
 Usually, the methods implemented in `Manopt.jl` also have a high-level interface, that is easier to call, creates the necessary problem and options structure and calls the solver.
 
@@ -95,11 +95,11 @@ We use [crate-ci/typos](https://github.com/crate-ci/typos) for spell checking, w
 ### On the use of AI
 
 Following the [Julia Discourse Guidelines – Keep it tidy](https://discourse.julialang.org/faq#keep-tidy),
-please do not open PRs or issues that are pure AI generated. `Manopt.jl` is in its aspects,
+please do not open PRs or issues that are pure AI generated. `Manopt.jl` is in all its aspects,
 especially the code, the documentation, as well as the tests, carefully curated to be concise,
 well-documented, comprehensive, but in tests also in a (hopefully) good balance between
 ensuring functionality and “over testing”.
 
 Of course it is ok to get help from an AI, e.g. when refactoring parts of the code,
 but please always carefully reflect on the results proposed and do not “[vibe code](https://en.wikipedia.org/wiki/Vibe_coding)”. That usually does not work well nor fit the exact mathematical definitions,
-reliability and stability as well as and abstractions of the provided algorithms `Manopt.jl` aims to provide.
+reliability and stability as well as the abstractions of the provided algorithms `Manopt.jl` aims to provide.
