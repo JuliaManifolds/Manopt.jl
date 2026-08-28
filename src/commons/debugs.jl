@@ -41,7 +41,7 @@ end
 @doc """
     DebugChange(M=DefaultManifold(); kwargs...)
 
-debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`AbstractManoptSolverState`](@ref))
+debug for the amount of change of the iterate (stored in `get_iterate` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword parameters
@@ -589,7 +589,7 @@ end
 function show(io::IO, d::DebugIfEntry)
     return print(io, "DebugIfEntry(:$(d.field), $(d.check); type=:$(d.type), at_init=$(d.at_init))")
 end
-function status_summary(d::DebugIfEntry; context::Symbol = :Default)
+function status_summary(d::DebugIfEntry; context::Symbol = :default)
     (context === :short) && (return repr(d))
     # Inline and default
     return "A DebugAction printing the entry :$(d.field) of the solver state if $(d.check) of that field is true, in format “$(escape_string(d.msg))” as $(d.type)"
@@ -636,7 +636,7 @@ end
 @doc """
     DebugGradientChange()
 
-debug for the amount of change of the gradient (stored in `get_gradient(o)` of the [`AbstractManoptSolverState`](@ref) `o`)
+debug for the amount of change of the gradient (stored in `get_gradient` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword parameters
@@ -694,7 +694,7 @@ function show(io::IO, dgc::DebugGradientChange)
         "DebugGradientChange(; format=\"$(escape_string(dgc.format))\", vector_transport_method=$(dgc.vector_transport_method))",
     )
 end
-function status_summary(di::DebugGradientChange; context::Symbol = :Default)
+function status_summary(di::DebugGradientChange; context::Symbol = :default)
     (context === :short) && (return "(:GradientChange, \"$(escape_string(di.format))\")")
     # Inline and default
     return "A DebugAction printing the change of the gradient with format “$(escape_string(di.format))”"
@@ -748,7 +748,7 @@ end
 @doc """
     DebugIterate <: DebugAction
 
-debug for the current iterate (stored in `get_iterate(o)`).
+debug for the current iterate (stored in `get_iterate` of the [`AbstractManoptSolverState`](@ref)).
 
 # Constructor
     DebugIterate(; kwargs...)
@@ -1057,7 +1057,7 @@ function Base.show(io::IO, d::DebugProximalParameter)
         io, "DebugGradientChange(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init = $(d.at_init))",
     )
 end
-function status_summary(d::DebugProximalParameter; context::Symbol = :Default)
+function status_summary(d::DebugProximalParameter; context::Symbol = :default)
     (context === :short) && (return "(:ProxParameter, \"$(escape_string(d.format))\")")
     # Inline and default
     return "A DebugAction printing the proximal parameter as “$(escape_string(d.format))”"

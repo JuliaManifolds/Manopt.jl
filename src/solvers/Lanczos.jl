@@ -380,11 +380,11 @@ end
 function (c::StopWhenAllLanczosVectorsUsed)(
         ::AbstractManoptProblem,
         arcs::AdaptiveRegularizationState{P, T, Pr, <:LanczosState},
-        i::Int,
+        k::Int,
     ) where {P, T, Pr}
-    (i == 0) && (c.at_iteration = -1) # reset on init
-    if (i > 0) && length(arcs.sub_state.Lanczos_vectors) == c.maxLanczosVectors
-        c.at_iteration = i
+    (k == 0) && (c.at_iteration = -1) # reset on init
+    if (k > 0) && length(arcs.sub_state.Lanczos_vectors) == c.maxLanczosVectors
+        c.at_iteration = k
         return true
     end
     return false

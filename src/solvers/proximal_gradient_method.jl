@@ -362,7 +362,7 @@ function status_summary(pgb::ProximalGradientMethodBacktrackingStepsize; context
     """
 end
 function (s::ProximalGradientMethodBacktrackingStepsize)(
-        mp::AbstractManoptProblem, st::ProximalGradientMethodState, i::Int, args...; kwargs...
+        mp::AbstractManoptProblem, st::ProximalGradientMethodState, k::Int, args...; kwargs...
     )
     # Initialization
     M = get_manifold(mp)
@@ -371,7 +371,7 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
 
     # For the convex case, start with the last stepsize (warm start)
     # For the nonconvex case, reset to initial stepsize
-    λ = if s.strategy === :convex && i > 1
+    λ = if s.strategy === :convex && k > 1
         min(s.initial_stepsize, s.warm_start_factor * s.last_stepsize)
     else
         s.initial_stepsize
@@ -567,19 +567,19 @@ end
 #
 # Stopping Criterion
 function (sc::StopWhenGradientMappingNormLess)(
-        mp::AbstractManoptProblem, s::ProximalGradientMethodState, i::Int
+        mp::AbstractManoptProblem, s::ProximalGradientMethodState, k::Int
     )
     M = get_manifold(mp)
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         sc.at_iteration = -1
     end
-    if (i > 0)
+    if (k > 0)
         sc.last_change =
             1 / s.last_stepsize * norm(
             M, s.q, inverse_retract(M, s.q, get_iterate(s), s.inverse_retraction_method)
         )
         if sc.last_change < sc.threshold
-            sc.at_iteration = i
+            sc.at_iteration = k
             return true
         end
     end
