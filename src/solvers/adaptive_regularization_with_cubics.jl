@@ -161,7 +161,7 @@ Construct the solver state with all fields stated as keyword arguments and the f
 * `γ1=0.1`
 * `γ2=2.0`
 * `σ=100/manifold_dimension(M)`
-* `σmin=1e-7
+* `σmin=1e-7`
 * `ρ_regularization=1e3`
 $(_kwargs([:evaluation, :p, :retraction_method]))
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))

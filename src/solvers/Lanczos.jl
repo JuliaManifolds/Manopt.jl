@@ -42,12 +42,12 @@ mutable struct LanczosState{T, R, SC, SCN, B, TM, C, CA} <: AbstractManoptSolver
     σ::R
     stop::SC
     stop_newton::SCN
-    Lanczos_vectors::B # ``q_i``
-    tridig_matrix::TM  # `T``
-    coefficients::C     # `y``
-    Hp::T              # `Hess_f`` A temporary vector for evaluations of the Hessian
-    Hp_residual::T     # A residual vector
-    S::T               # store the tangent vector that solves the minimization problem
+    Lanczos_vectors::B  # ``q_i``
+    tridig_matrix::TM   # ``T``
+    coefficients::C     # ``y``
+    Hp::T               # ``Hess f`` a temporary vector for evaluations of the Hessian
+    Hp_residual::T      # a residual vector
+    S::T                # store the tangent vector that solves the minimization problem
     function LanczosState(;
             callbacks::CA, X::T, σ::R, stopping_criterion::SC, stopping_criterion_newton::SCN, Lanczos_vectors::B,
             tridig_matrix::TM, coefficients::C, Hp::T, Hp_residual::T, S::T

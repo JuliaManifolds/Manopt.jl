@@ -258,7 +258,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
 
     # sampling and evaluation of new solutions
 
-    # `D2, B = eigen(Symmetric(s.covariance_matrix))``
+    # `D2, B = eigen(Symmetric(s.covariance_matrix))`
     D2, B = s.covariance_matrix_eigen # assuming eigendecomposition has already been completed
     min_eigval, max_eigval = extrema(abs.(D2))
     if minimum(D2) <= 0

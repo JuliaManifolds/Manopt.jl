@@ -309,7 +309,7 @@ $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 $(_kwargs(:sub_kwargs))
 $(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "`( see [`truncated_conjugate_gradient_descent`](@ref))` "))
-* `sub_objective` : the subojective do solve, by default the [`TrustRegionModelObjective`](@ref)`(mho)` possibly decorated with `sub_kwargs``
+* `sub_objective`: the sub objective to solve, by default the [`TrustRegionModelObjective`](@ref)`(mho)` possibly decorated with `sub_kwargs`
   Note that this keyword has no effect if you set the `sub_problem` directly.
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(`[`TangentSpace`](@extref `ManifoldsBase.TangentSpace`)`(M,p), sub_objective)"))
 $(_kwargs(:sub_state; default = "`[`TruncatedConjugateGradientState`](@ref)` "))

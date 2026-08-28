@@ -105,7 +105,7 @@ by a predictor-corrector-loop using an affine covariant quantity ``θ`` to measu
 
 On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold)) = $(_math(:Manifold; M = "N"))^n``
 any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold))`
+Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold))``
 is given by
 
 ```math

@@ -86,15 +86,15 @@ Stores option values for a [`convex_bundle_method`](@ref) solver.
 # Fields
 
 THe following fields require a (real) number type `R`, as well as
-point type `P` and a tangent vector type `T``
+point type `P` and a tangent vector type `T`
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
 * `atol_λ::R`:                 tolerance parameter for the convex coefficients in λ
-* `atol_errors::R:             tolerance parameter for the linearization errors
+* `atol_errors::R`:            tolerance parameter for the linearization errors
 * `bundle<:AbstractVector{Tuple{<:P,<:T}}`: bundle that collects each iterate with the computed subgradient at the iterate
 * `bundle_cap::Int`: the maximal number of elements the bundle is allowed to remember
 * `diameter::R`: estimate for the diameter of the level set of the objective function at the starting point
-* `domain: the domain of ``f`` as a function `(M,p) -> b`that evaluates to true when the current candidate is in the domain of `f`, and false otherwise,
+* `domain`: the domain of ``f`` as a function `(M, p) -> b` that evaluates to true when the current candidate is in the domain of `f`, and false otherwise,
 * `g::T`:                      descent direction
 $(_fields(:inverse_retraction_method))
 * `k_max::R`:                  upper bound on the sectional curvature of the manifold
@@ -130,7 +130,7 @@ Most of the following keyword arguments set default values for the fields mentio
 
 * `atol_errors=eps()`
 * `atol_λ=eps()`
-* `bundle_cap=25``
+* `bundle_cap=25`
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `diameter=50.0`
 * `domain=(M, p) -> isfinite(f(M, p))`
@@ -641,7 +641,7 @@ $(_args([:M, :f, :subgrad_f, :p]))
 
 * `atol_errors=sqrt(eps())`: tolerance parameter for the linearization errors.
 * `atol_λ=sqrt(eps())`: tolerance parameter for the convex coefficients in ``λ``.
-* `bundle_cap=25``
+* `bundle_cap=25`
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `diameter=π/3`: estimate for the diameter of the level set of the objective function at the starting point.
 * `domain=(M, p) -> isfinite(f(M, p))`: a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
@@ -651,8 +651,8 @@ $(_kwargs(:inverse_retraction_method))
 * `m=1e-3`: the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
-$(_kwargs(:sub_problem; default = "`[`AllocatingEvaluation`](@ref)´ "))
-$(_kwargs(:sub_state; default = "`[`convex_bundle_method_subsolver`](@ref)"))
+$(_kwargs(:sub_problem; default = "`[`convex_bundle_method_subsolver`](@ref)"))
+$(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)`()"))
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X))
 

@@ -198,7 +198,7 @@ Perform a quasi Newton iteration to solve
 
 $(_problem(:Default))
 
-with start point `p`. The iterations can be done in-place of `p```=p^{(0)}``.
+with start point `p`. The iterations can be done in-place of `p`, which is used as ``p^{(0)}``.
 The ``k``th iteration consists of
 
 1. Compute the search direction ``η^{(k)} = -$(_tex(:Cal, "B"))_k [$(_tex(:grad))f (p^{(k)})]`` or solve ``$(_tex(:Cal, "H"))_k [η^{(k)}] = -$(_tex(:grad))f (p^{(k)})]``.

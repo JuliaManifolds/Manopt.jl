@@ -257,7 +257,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(
 * `sub_grad=`[`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver
   $(_note(:KeywordUsedIn, "sub_problem"))
 $(_kwargs(:sub_kwargs))
-$(_kwargs(:sub_state; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
 $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
   where a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver

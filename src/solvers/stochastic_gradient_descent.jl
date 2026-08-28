@@ -26,7 +26,7 @@ Create a `StochasticGradientDescentState` with start point `p`.
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `direction=`[`StochasticGradientRule`](@ref)`(M, `$(_link(:zero_vector))`)`
-* `order_type=:RandomOrder``
+* `order_type=:RandomOrder`
 * `order=Int[]`: specify how to store the order of indices for the next epoche
 $(_kwargs(:retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))

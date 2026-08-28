@@ -71,7 +71,7 @@ $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, AlternatingGradi
 $(_kwargs(:X))
 
 Generate the options for point `p` and where `inner_iterations`, `order_type`, `order`,
-`retraction_method`, `stopping_criterion`, and `stepsize`` are keyword arguments.
+`retraction_method`, `stopping_criterion`, and `stepsize` are keyword arguments.
 
 For internal use, there also exists a constructor solely having the fields as keyword arguments,
 but then all of them are mandatory.

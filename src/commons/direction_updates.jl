@@ -270,7 +270,7 @@ See [`Nesterov`](@ref) for details
 
 * `γ::Real`, `μ::Real`: coefficients from the last iterate
 * `v::P`:      an interim point to compute the next gradient evaluation point `y_k`
-* `shrinkage`: a function `k -> ...` to compute the shrinkage ``β_k`` per iterate `k``.
+* `shrinkage`: a function `k -> ...` to compute the shrinkage ``β_k`` per iterate `k`.
 $(_kwargs(:inverse_retraction_method))
 
 # Constructor
@@ -281,8 +281,8 @@ $(_kwargs(:inverse_retraction_method))
 ## Keyword arguments
 
 $(_kwargs(:p; add_properties = [:as_Initial]))
-* `γ=0.001``
-* `μ=0.9``
+* `γ=0.001`
+* `μ=0.9`
 * `shrinkage = k -> 0.8`
 $(_kwargs(:inverse_retraction_method))
 

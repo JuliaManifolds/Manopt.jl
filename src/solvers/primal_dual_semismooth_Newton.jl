@@ -10,7 +10,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 * `adjoint_linearized_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → $(_math(:TangentBundle))``
 * `prox_f!`:                     the proximal map belonging to ``F``
 * `diff_prox_f!`:                the (Clarke Generalized) differential of the proximal maps of ``F``
-* `prox_g_dual!`:                the proximal map belonging to `G^$(_tex(:ast))_n``
+* `prox_g_dual!`:                the proximal map belonging to ``G^$(_tex(:ast))_n``
 * `diff_prox_g_dual!`:           the (Clarke Generalized) differential of the proximal maps of ``G^$(_tex(:ast))_n``
 * `Λ!`:                          the exact forward operator. This operator is required if `Λ(m)=n` does not hold.
 

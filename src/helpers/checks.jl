@@ -171,7 +171,7 @@ no plot is generated.
 * `check_symmetry=true`:
   verify that the Hessian is symmetric, see [`is_Hessian_symmetric`](@ref)
 * `check_vector=false`:
-  verify that `$(_tex(:Hess)) f(p)[X] ∈ $(_math(:TangentSpace))`` using `is_vector`.
+  verify that ``$(_tex(:Hess)) f(p)[X] ∈ $(_math(:TangentSpace))`` using `is_vector`.
 * `mode=:Default`:
   specify the mode for the verification; the default assumption is,
   that the retraction provided is of second order. Otherwise one can also verify the Hessian

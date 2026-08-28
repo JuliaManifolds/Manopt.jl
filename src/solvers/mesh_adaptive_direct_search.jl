@@ -67,7 +67,7 @@ with two small modifications:
 * `basis`: a basis of the current tangent space with respect to which the mesh is stored
 * `candidate::P`: a memory for a new point/candidate
 * `mesh`: a vector of tangent vectors storing the mesh.
-* `random_vector`: a ``d``-dimensional random vector ``b_l```
+* `random_vector`: a ``d``-dimensional random vector ``b_l``
 * `random_index`: a random index ``ι``
 $(_fields([:retraction_method, :vector_transport_method]))
 * `X::T` the last successful poll direction stored as a tangent vector.
