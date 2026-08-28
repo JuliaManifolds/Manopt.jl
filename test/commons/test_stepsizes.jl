@@ -62,6 +62,16 @@ using ManifoldsBase, Manopt, Manifolds, Test
         @test Manopt.default_point_distance(Euclidean(2), p1) == 2.0
         @test Manopt.default_vector_norm(Euclidean(2), p1, X1) == 2.0
     end
+    @testset "Initial Guess Stepsize" begin
+        M = ManifoldsBase.DefaultManifold(2)
+        sig = Manopt.StepsizeInitialGuess(Manopt.ConstantStepsize(1.0, :relative))
+        f(M, p) = sum((p .- 1) .^ 2)
+        grad_f(M, p) = 2 .* (p .- 1)
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        gds1 = GradientDescentState(M)
+
+        @test sig(dmp, gds1, 1) == 1.0
+    end
 end
 
 
@@ -83,6 +93,9 @@ end
     s2 = NonmonotoneLinesearch()(M)
     @test startswith(repr(s2), "NonmonotoneLinesearch(;")
     @test Manopt.get_message(s2) == ""
+    @test startswith(repr(s2.bb_stepsize), "BarzileiBorweinStepsize(; ")
+    @test startswith(Manopt.status_summary(s2), "Non-monotone linesearch")
+    @test startswith(Manopt.status_summary(s2.bb_stepsize), "Barzilei–Borwein stepsize\n")
 
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
