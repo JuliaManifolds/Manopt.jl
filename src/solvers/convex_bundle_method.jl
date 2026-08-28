@@ -342,7 +342,6 @@ function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :defaul
     (context === :inline) && return "A solver state for the Convex Bundle Method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(cbms.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(cbms)) – $(Iter) $(has_converged(cbms) ? "(converged)" : "")")
     as = _callbacks_summary(cbms)
     s = """
     # Solver state for `Manopt.jl`s Convex Bundle Method

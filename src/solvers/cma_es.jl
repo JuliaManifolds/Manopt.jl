@@ -445,7 +445,7 @@ function cma_es!(
         callbacks = Dict{Symbol, Function}(),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
-    keywords_accepted(cma_es; kwargs...)
+    keywords_accepted(cma_es!; kwargs...)
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     n_coords = number_of_coordinates(M, basis)

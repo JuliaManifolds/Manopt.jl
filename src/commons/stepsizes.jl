@@ -745,7 +745,8 @@ mutable struct BarzilaiBorweinStepsize{
         if max_stepsize <= min_stepsize
             throw(
                 DomainError(
-                    max_stepsize, "The upper bound for the step size lower bound.",
+                    max_stepsize,
+                    "The upper bound for the Barzilai–Borwein step size has to be larger than the lower bound $(min_stepsize).",
                 ),
             )
         end
@@ -1921,21 +1922,18 @@ function Base.show(io::IO, nls::NonmonotoneLinesearchStepsize)
     print(io, "bb_stepsize = ", nls.bb_stepsize, ", ")
     print(io, "last_stepsize = ", nls.last_stepsize, ", ")
     print(io, "memory_size = ", length(nls.old_costs), ", ")
-    print(io, "stepsize_reduction = ", nls.stepsize_reduction, ", ")
-    print(io, "sufficient_decrease = ", nls.sufficient_decrease, ", ")
     print(io, "retraction_method = ", nls.retraction_method, ", ")
-    print(io, "stop_when_stepsize_less = ", nls.stop_when_stepsize_less, ", ")
-    print(io, "stop_when_stepsize_exceeds = ", nls.stop_when_stepsize_exceeds, ", ")
-    print(io, "sufficient_decrease = ", nls.sufficient_decrease, ", ")
+    print(io, "stepsize_reduction = ", nls.stepsize_reduction, ", ")
+    print(io, "stop_decreasing_at_step = ", nls.stop_decreasing_at_step, ", ")
     print(io, "stop_increasing_at_step = ", nls.stop_increasing_at_step, ", ")
-    print(io, "stop_decreasing_at_step = ", nls.stop_decreasing_at_step)
+    print(io, "stop_when_stepsize_exceeds = ", nls.stop_when_stepsize_exceeds, ", ")
+    print(io, "stop_when_stepsize_less = ", nls.stop_when_stepsize_less, ", ")
+    print(io, "sufficient_decrease = ", nls.sufficient_decrease)
     return print(io, ")")
 end
 function status_summary(nls::NonmonotoneLinesearchStepsize; context::Symbol = :default)
     (context === :short) && return repr(nls)
     (context === :inline) && return "A Non-monotone linesearch using $(status_summary(nls.bb_stepsize; context = context))"
-    bb_stgr = status_summary(nls.bb_stepsize; context = context)
-
     return """
     Non-monotone linesearch
 

@@ -138,7 +138,6 @@ function status_summary(pss::ParticleSwarmState; context::Symbol = :default)
     (context === :inline) && return "A solver state for the particle swarm solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pss.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(pss)) – $(Iter) $(has_converged(pss) ? "(converged)" : "")")
     as = _callbacks_summary(pss)
     s = """
     # Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm

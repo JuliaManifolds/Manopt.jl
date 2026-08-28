@@ -248,7 +248,6 @@ function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol =
     (context === :inline) && return "A solver state for the difference of convex proximal point algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(dcps.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(dcps)) – $(Iter) $(has_converged(dcps) ? "(converged)" : "")")
     as = _callbacks_summary(dcps)
     sub = repr(dcps.sub_state)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")

@@ -210,7 +210,6 @@ function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :defaul
     (context === :inline) && return "A solver state for the vector bundle Newton solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(vbns.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(vbns)) – $(Iter) $(has_converged(vbns) ? "(converged)" : "")")
     as = _callbacks_summary(vbns)
     s = """
     # Solver state for `Manopt.jl`s Vector bundle Newton method

@@ -119,7 +119,6 @@ function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
     (context === :inline) && return "A solver state for the Douglas Rachford solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(drs.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(drs)) – $(Iter) $(has_converged(drs) ? "(converged)" : "")")
     as = _callbacks_summary(drs)
     P = drs.parallel ? "Parallel " : ""
     s = """
