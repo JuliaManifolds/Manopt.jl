@@ -25,7 +25,7 @@ permissions:
 jobs:
   bench:
     runs-on: ubuntu-latest
-    if: contains( github.event.pull_request.labels.*.name, 'benchmark') || github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/')
+    if: contains( github.event.pull_request.labels.*.name, 'benchmark') || github.ref == 'refs/heads/master'
     steps:
       - uses: MilesCranmer/AirspeedVelocity.jl@action-v1
         with:
