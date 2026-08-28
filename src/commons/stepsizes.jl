@@ -1720,28 +1720,29 @@ function DistanceOverGradients(args...; kwargs...)
 end
 
 @doc """
-    NonmonotoneLinesearchStepsize{P,T,R<:Real,I<:Integer,TRM,VTM,TSSA,MSGS,IG} <: Linesearch
+    NonmonotoneLinesearchStepsize{P,T,R<:Real,I<:Integer,TRM,MSGS,IG,BB} <: Linesearch
 
 A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
 
 # Fields
 
+* `bb_stepsize`:                the [`BarzilaiBorweinStepsize`](@ref) providing ``α_k^{$(_tex(:text, "BB"))}``
+* `candidate_point`:            to store an interim result
 $(_fields(:initial_guess))
-* `memory_size`:           number of iterations after which the cost value needs to be lower than the current one
-* `bb_min_stepsize`:          lower bound for the Barzilai-Borwein step size, greater than zero
-* `bb_max_stepsize`:          upper bound for the Barzilai-Borwein step size, greater than `bb_min_stepsize`
-* `last_stepsize`:     the last computed stepsize
+* `last_stepsize`:              the last computed stepsize
+* `messages`:                   a `NamedTuple` of [`StepsizeMessage`](@ref)s reporting on the last step
+* `old_costs`:                  the last cost values; its length is the memory size, that is the
+  number of iterations after which the cost value needs to be lower than the current one
 $(_fields(:retraction_method))
-* `strategy`:                 defines if the new step size is computed using the `:direct`, `:inverse` or `:alternating` strategy
-* `storage`:                  (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
-* `stepsize_reduction`:       step size reduction factor contained in the interval (0,1)
-* `sufficient_decrease`:     sufficient decrease parameter contained in the interval (0,1)
-$(_fields(:vector_transport_method))
-* `candidate_point`:          to store an interim result
+* `stepsize_reduction`:         step size reduction factor contained in the interval ``(0,1)``
+* `stop_decreasing_at_step`:    last step size to decrease the stepsize (phase 2)
+* `stop_increasing_at_step`:    last step to increase the stepsize (phase 1)
+* `stop_when_stepsize_exceeds`: largest stepsize when to stop
 * `stop_when_stepsize_less`:    smallest stepsize when to stop (the last one before is taken)
-* `stop_when_stepsize_exceeds`: largest stepsize when to stop.
-* `stop_increasing_at_step`:    last step to increase the stepsize (phase 1),
-* `stop_decreasing_at_step`:    last step size to decrease the stepsize (phase 2),
+* `sufficient_decrease`:        sufficient decrease parameter contained in the interval ``(0,1)``
+
+The bounds for the Barzilai-Borwein step size, its `strategy`, its `storage` and the vector
+transport it uses are stored within the `bb_stepsize`.
 
 # Constructor
 

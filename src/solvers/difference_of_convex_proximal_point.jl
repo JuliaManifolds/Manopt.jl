@@ -122,7 +122,7 @@ $(_fields(:p; name = "r"))
 $(_fields(:retraction_method))
 $(_fields(:stepsize))
 $(_fields(:stopping_criterion; name = "stop"))
-* `X`, `Y`: the current gradient and descent direction, respectively
+* `X`: the current gradient
   their common type is set by the keyword `X`
 $(_fields([:sub_problem, :sub_state]))
 

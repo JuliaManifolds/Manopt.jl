@@ -88,7 +88,7 @@ no plot is generated.
 
 # Keyword arguments
 
-* `check_vector=true`:
+* `check_vector=false`:
   verify that ``$(_tex(:grad))f(p) ∈ $(_math(:TangentSpace))`` using `is_vector`.
 * `exactness_tol=1e-12`:
   if all errors are below this tolerance, the gradient is considered to be exact

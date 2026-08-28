@@ -151,16 +151,16 @@ end
 """
     RecordDualIterate(X)
 
-Create an [`RecordAction`](@ref) that records the dual base point,
-an [`RecordEntry`](@ref) of `o.X`.
+Create a [`RecordAction`](@ref) that records the dual iterate,
+an [`RecordEntry`](@ref) of the field `X` of the state.
 """
 RecordDualIterate(X) = RecordEntry(X, :X)
 
 """
     RecordDualBaseIterate(n)
 
-Create an [`RecordAction`](@ref) that records the dual base point,
-an [`RecordEntry`](@ref) of `o.n`.
+Create a [`RecordAction`](@ref) that records the dual base point,
+an [`RecordEntry`](@ref) of the field `n` of the state.
 """
 RecordDualBaseIterate(n) = RecordEntry(n, :n)
 
@@ -212,10 +212,10 @@ end
 
 
 """
-    RecordDualBaseChange(e)
+    RecordDualBaseChange()
 
-Create an [`RecordAction`](@ref) that records the dual base point change,
-an [`RecordEntryChange`](@ref) of `o.n` with distance to the last value to store a value.
+Create a [`RecordAction`](@ref) that records the dual base point change,
+an [`RecordEntryChange`](@ref) of the field `n` with distance to the last value to store a value.
 """
 function RecordDualBaseChange()
     return RecordEntryChange(:n, (p, o, x, y) -> distance(get_manifold(p, 2), x, y))
@@ -224,8 +224,8 @@ end
 """
     RecordDualChange()
 
-Create the action either with a given (shared) Storage, which can be set to the
-`values` Tuple, if that is provided).
+Create a [`RecordAction`](@ref) that records the change of the dual iterate,
+an [`RecordEntryChange`](@ref) of the field `X` with distance to the last value to store a value.
 """
 function RecordDualChange()
     return RecordEntryChange(:X, (p, o, x, y) -> distance(get_manifold(p, 2), x, y))
@@ -337,34 +337,34 @@ function status_summary(::RecordIteration; context::Symbol = :default)
 end
 
 """
-    RecordPrimalChange(a)
+    RecordPrimalChange()
 
-Create an [`RecordAction`](@ref) that records the primal value change,
-[`RecordChange`](@ref), to record the change of `o.p`.
+Create a [`RecordAction`](@ref) that records the primal value change,
+a [`RecordChange`](@ref), to record the change of the iterate `p`.
 """
 RecordPrimalChange() = RecordChange()
 
 """
-    RecordPrimalIterate(x)
+    RecordPrimalIterate(p)
 
-Create an [`RecordAction`](@ref) that records the primal point, an [`RecordIterate`](@ref) of `o.p`.
+Create a [`RecordAction`](@ref) that records the primal point, an [`RecordIterate`](@ref) of the iterate `p`.
 """
 RecordPrimalIterate(p) = RecordIterate(p)
 
 """
     RecordPrimalBaseChange()
 
-Create an [`RecordAction`](@ref) that records the primal base point change,
-an [`RecordEntryChange`](@ref) of `o.m` with distance to the last value to store a value.
+Create a [`RecordAction`](@ref) that records the primal base point change,
+an [`RecordEntryChange`](@ref) of the field `m` with distance to the last value to store a value.
 """
 function RecordPrimalBaseChange()
     return RecordEntryChange(:m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y))
 end
 
 """
-    RecordPrimalBaseIterate(x)
+    RecordPrimalBaseIterate(m)
 
-Create an [`RecordAction`](@ref) that records the primal base point, an [`RecordEntry`](@ref) of `o.m`.
+Create a [`RecordAction`](@ref) that records the primal base point, an [`RecordEntry`](@ref) of the field `m` of the state.
 """
 RecordPrimalBaseIterate(m) = RecordEntry(m, :m)
 

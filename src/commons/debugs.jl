@@ -343,7 +343,7 @@ DebugDualIterate(opts...; kwargs...) = DebugEntry(:X, opts...; kwargs...)
 
 Print the dual base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
-This method is further set display `o.n`.
+This method is further set to display the field `n` of the state.
 """
 DebugDualBaseIterate(; kwargs...) = DebugEntry(:n; kwargs...)
 
@@ -421,10 +421,10 @@ function status_summary(d::DebugEntryChange; context::Symbol = :default)
 end
 
 """
-    DebugDualChange(; storage=StoreStateAction([:n]), io::IO=stdout)
+    DebugDualBaseChange(; storage=StoreStateAction([:n]), kwargs...)
 
 Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
-see their constructors for detail, on `o.n`.
+see their constructors for detail, on the field `n` of the state.
 """
 function DebugDualBaseChange(;
         storage::StoreStateAction = StoreStateAction([:n]), prefix = "Dual Base Change:", kwargs...
@@ -440,15 +440,15 @@ end
 
 Print the primal base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
-This method is further set display `o.m`.
+This method is further set to display the field `m` of the state.
 """
 DebugPrimalBaseIterate(opts...; kwargs...) = DebugEntry(:m, opts...; kwargs...)
 
 """
-    DebugPrimalBaseChange(a::StoreStateAction=StoreStateAction([:m]),io::IO=stdout)
+    DebugPrimalBaseChange(opts...; prefix="Primal Base Change:", kwargs...)
 
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
-see their constructors for detail, on `o.n`.
+see their constructors for detail, on the field `m` of the state.
 """
 function DebugPrimalBaseChange(opts...; prefix = "Primal Base Change:", kwargs...)
     return DebugEntryChange(

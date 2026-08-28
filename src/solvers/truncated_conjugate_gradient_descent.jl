@@ -11,13 +11,11 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `δ::T`:                     the conjugate gradient search direction
 * `δHδ`, `YPδ`, `δPδ`, `YPδ`: temporary inner products with `Hδ` and preconditioned inner products.
 * `Hδ`, `HY`:                 temporary results of the Hessian applied to `δ` and `Y`, respectively.
-* `κ::R`:                     the linear convergence target rate.
 * `project!`:                 for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * `randomize`:          indicate whether `X` is initialized to a random vector or not
 * `residual::T`:                 the gradient of the model ``m(Y)``
 $(_fields(:stopping_criterion; name = "stop"))
-* `θ::R`:                     the superlinear convergence target rate of ``1+θ``
 * `trust_region_radius::R`:   the trust-region radius
 * `X::T`:                     the gradient ``$(_tex(:grad))f(p)``
 * `Y::T`:                     current iterate tangent vector

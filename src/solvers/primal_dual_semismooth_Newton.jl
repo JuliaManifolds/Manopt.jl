@@ -12,7 +12,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 * `diff_prox_f!`:                the (Clarke Generalized) differential of the proximal maps of ``F``
 * `prox_g_dual!`:                the proximal map belonging to `G^$(_tex(:ast))_n``
 * `diff_prox_g_dual!`:           the (Clarke Generalized) differential of the proximal maps of ``G^$(_tex(:ast))_n``
-* `Λ`:                           the exact forward operator. This operator is required if `Λ(m)=n` does not hold.
+* `Λ!`:                          the exact forward operator. This operator is required if `Λ(m)=n` does not hold.
 
 # Constructor
 

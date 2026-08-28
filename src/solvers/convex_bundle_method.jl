@@ -639,16 +639,16 @@ $(_args([:M, :f, :subgrad_f, :p]))
 
 # Keyword arguments
 
-* `atol_errors=eps()`: : tolerance parameter for the linearization errors.
-* `atol_λ=eps()` : tolerance parameter for the convex coefficients in ``λ``.
+* `atol_errors=sqrt(eps())`: tolerance parameter for the linearization errors.
+* `atol_λ=sqrt(eps())`: tolerance parameter for the convex coefficients in ``λ``.
 * `bundle_cap=25``
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `diameter=50.0`: estimate for the diameter of the level set of the objective function at the starting point.
+* `diameter=π/3`: estimate for the diameter of the level set of the objective function at the starting point.
 * `domain=(M, p) -> isfinite(f(M, p))`: a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
 $(_kwargs(:evaluation))
 $(_kwargs(:inverse_retraction_method))
 * `k_max=0`: upper bound on the sectional curvature of the manifold.
-* `m=1e-3`: : the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
+* `m=1e-3`: the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:sub_problem; default = "`[`AllocatingEvaluation`](@ref)´ "))
