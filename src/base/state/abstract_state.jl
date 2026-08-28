@@ -46,7 +46,7 @@ abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
 A general struct that indicates when to restart.
 It is used within the [`ConjugateGradientDescentState`](@ref).
 
-It is implemented to work as a functor `(problem, state, iteration) -> true|false`
+It is implemented to work as a functor `(problem, state, k) -> true|false`
 and what is done in the restart case (`true`) is decided by the single solver.
 """
 abstract type AbstractRestartCondition end

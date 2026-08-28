@@ -252,7 +252,7 @@ function initialize_solver!(mp::AbstractManoptProblem, s::CMAESState)
     s.covariance_matrix_eigen = eigen(Symmetric(s.covariance_matrix))
     return s
 end
-function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
+function step_solver!(mp::AbstractManoptProblem, s::CMAESState, k::Int)
     M = get_manifold(mp)
     n_coords = number_of_coordinates(M, s.basis)
 
@@ -309,7 +309,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
 
     # covariance matrix adaptation
     s.p_c .*= 1 - s.c_c # Eq. (45), part 1
-    if norm(s.p_σ) / sqrt(1 - (1 - s.c_σ)^(2 * (iteration + 1))) <
+    if norm(s.p_σ) / sqrt(1 - (1 - s.c_σ)^(2 * (k + 1))) <
             (1.4 + 2 / (n_coords + 1)) * s.e_mv_norm # h_σ criterion
         s.p_c .+= sqrt(s.c_c * (2 - s.c_c) * s.μ_eff) .* s.buffer # Eq. (45), part 2
         δh_σ = zero(s.c_c) # Appendix A
