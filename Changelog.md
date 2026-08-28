@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NonmonotoneLinesearchStepsize`.
 * introduce a `StepsizeInitialGuess` that allows to use a `Stepsize` as initial guess of a line search.
 
+### Changed
+
+* since `has_converged` exists, the status reports on REPL now use this to indicate whether an algorithm has converged.
+
 ### Fixed
 
 * since we introduced the differential in the first order objectives,
