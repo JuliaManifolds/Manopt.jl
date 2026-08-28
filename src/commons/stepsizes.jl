@@ -810,7 +810,7 @@ function (bb::BarzilaiBorweinStepsize)(
         end
     else # default: direct strategy
         if s1 > 0
-            stepsize = min(bb.max_stepsize, max(bb.min_stepsize, s2 / s1))
+            stepsize = min(bb.max_stepsize, max(bb.min_stepsize, s3 / s1))
         else
             stepsize = bb.max_stepsize
         end
@@ -1867,7 +1867,7 @@ function (a::NonmonotoneLinesearchStepsize)(
     X = isnothing(gradient) ? get_gradient(mp, p) : gradient
     f(M, p) = get_cost(M, get_objective(mp), p)
     reset_messages!(a.messages)
-    initial_stepsize = a.initial_guess(M, p, k, a.last_stepsize, η)
+    initial_stepsize = a.initial_guess(mp, s, k, a.last_stepsize, η)
 
     αBB = a.bb_stepsize(mp, s, k, η; gradient = X, last_stepsize = initial_stepsize, kwargs...)
 

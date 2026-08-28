@@ -870,7 +870,6 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             Consider decreasing either the `diameter` keyword argument, or one
             of the parameters involved in the estimation of the sectional curvature, such as
             `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
-            of the parameters involved in the estimation of the sectional curvature, such as `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
             """
             if d.status === :Once
                 @warn "Further warnings will be suppressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
@@ -883,7 +882,6 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             Consider increasing either the `diameter` keyword argument, or changing
             one of the parameters involved in the estimation of the sectional curvature, such as
             `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
-            one of the parameters involved in the estimation of the sectional curvature, such as `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
             """
         else
             d.old_value = min(d.old_value, new_value)
