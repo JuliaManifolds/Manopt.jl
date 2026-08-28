@@ -248,7 +248,7 @@ We can introduce these here as well with just a few lines of code. There are usu
 We further need three internal function from `Manopt.jl`
 
 ```{julia}
-using Manopt: get_solver_return, indicates_convergence, status_summary
+using Manopt: get_solver_return, has_converged, status_summary
 ```
 
 ### A high level interface using the objective
@@ -313,10 +313,10 @@ import Manopt: status_summary
 function status_summary(rws::RandomWalkState; context::Symbol = :default)
     (context === :short) && return repr(rws)
     i = get_count(rws, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(rws.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(rws.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the random walk algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(rws.stop) ? "Yes" : "No"
+    Conv = has_converged(rws.stop) ? "Yes" : "No"
     s = """
     # Solver state for `Manopt.jl`s Tutorial Random Walk
     $Iter
@@ -326,7 +326,7 @@ function status_summary(rws::RandomWalkState; context::Symbol = :default)
 
     ## Stopping criterion
     $(status_summary(rws.stop; context = context))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 ```

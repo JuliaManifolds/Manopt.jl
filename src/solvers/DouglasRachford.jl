@@ -115,10 +115,10 @@ end
 function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
     (context === :short) && return repr(drs)
     i = get_count(drs, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(drs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(drs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the Douglas Rachford solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(drs.stop) ? "Yes" : "No"
+    Conv = has_converged(drs.stop) ? "Yes" : "No"
     as = _callbacks_summary(drs)
     P = drs.parallel ? "Parallel " : ""
     s = """
@@ -130,7 +130,7 @@ function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(drs.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 get_iterate(drs::DouglasRachfordState) = drs.p

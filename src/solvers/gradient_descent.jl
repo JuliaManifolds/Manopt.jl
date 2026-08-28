@@ -109,10 +109,10 @@ end
 function status_summary(gds::GradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(gds)
     i = get_count(gds, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(gds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(gds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the gradient descent solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
+    Conv = has_converged(gds.stop) ? "Yes" : "No"
     as = _callbacks_summary(gds)
     s = """
     # Solver state for `Manopt.jl`s Gradient Descent
@@ -126,7 +126,7 @@ function status_summary(gds::GradientDescentState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(gds.stop; context = context); indent = 1, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 

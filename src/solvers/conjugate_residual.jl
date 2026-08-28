@@ -91,7 +91,7 @@ end
 function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
     i = get_count(crs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(crs.stop) ? "Yes" : "No"
+    Conv = has_converged(crs.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(crs)) – $(Iter) $(has_converged(crs) ? "(converged)" : "")")
     as = _callbacks_summary(crs)
     s = """
@@ -103,7 +103,7 @@ function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(crs.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv
+    The algorithm converged: $Conv
     """
     return s
 end

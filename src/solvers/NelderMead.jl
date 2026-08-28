@@ -154,10 +154,10 @@ end
 function status_summary(nms::NelderMeadState; context::Symbol = :default)
     (context === :short) && return repr(nms)
     i = get_count(nms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(nms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(nms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the Nelder-Mead solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(nms.stop) ? "Yes" : "No"
+    Conv = has_converged(nms.stop) ? "Yes" : "No"
     as = _callbacks_summary(nms)
     s = """
     # Solver state for `Manopt.jl`s Nelder Mead Algorithm
@@ -172,7 +172,7 @@ function status_summary(nms::NelderMeadState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(nms.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 get_iterate(O::NelderMeadState) = O.p

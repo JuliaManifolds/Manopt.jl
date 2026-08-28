@@ -103,7 +103,7 @@ function status_summary(ls::LanczosState; context::Symbol = :default)
     (context === :short) && return repr(ls)
     i = get_count(ls, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(ls.stop) ? "Yes" : "No"
+    Conv = has_converged(ls.stop) ? "Yes" : "No"
     as = _callbacks_summary(ls)
     vectors = length(ls.Lanczos_vectors)
     return """
@@ -118,7 +118,7 @@ function status_summary(ls::LanczosState; context::Symbol = :default)
     $(status_summary(ls.stop))
     (b) For the Newton sub solver
     $(status_summary(ls.stop_newton))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
 end
 
 #

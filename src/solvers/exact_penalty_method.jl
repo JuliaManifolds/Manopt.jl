@@ -138,10 +138,10 @@ end
 function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :default)
     (context === :short) && return repr(epms)
     i = get_count(epms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(epms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(epms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the exact panelty method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(epms.stop) ? "Yes" : "No"
+    Conv = has_converged(epms.stop) ? "Yes" : "No"
     (context === :inline) && (return "An exact penalty method state – $(Iter) $(has_converged(epms) ? "(converged)" : "")")
     as = _callbacks_summary(epms)
     s = """
@@ -154,7 +154,7 @@ function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :defaul
 
     ## Stopping criterion
     $(_in_str(status_summary(epms.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 

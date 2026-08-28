@@ -138,7 +138,7 @@ end
 function status_summary(agds::AlternatingGradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(agds)
     Iter = (agds.i > 0) ? "After $(agds.i) iterations\n" : ""
-    Conv = indicates_convergence(agds.stop) ? "Yes" : "No"
+    Conv = has_converged(agds.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(agds)) – $(Iter) $(has_converged(agds) ? "(converged)" : "")")
     as = _callbacks_summary(agds)
     s = """
@@ -154,7 +154,7 @@ function status_summary(agds::AlternatingGradientDescentState; context::Symbol =
 
     ## Stopping criterion
     $(_in_str(status_summary(agds.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 function get_message(agds::AlternatingGradientDescentState)

@@ -78,10 +78,10 @@ end
 function status_summary(cpps::CyclicProximalPointState; context::Symbol = :default)
     (context === :short) && return repr(cpps)
     i = get_count(cpps, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(cpps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(cpps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the cyclic proximal point algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(cpps.stop) ? "Yes" : "No"
+    Conv = has_converged(cpps.stop) ? "Yes" : "No"
     as = _callbacks_summary(cpps)
     s = """
     # Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm
@@ -91,7 +91,7 @@ function status_summary(cpps::CyclicProximalPointState; context::Symbol = :defau
 
     ## Stopping criterion
     $(_in_str(status_summary(cpps.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 

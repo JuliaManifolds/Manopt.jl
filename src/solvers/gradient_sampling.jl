@@ -221,10 +221,10 @@ end
 function status_summary(gss::GradientSamplingState; context::Symbol = :default)
     (context === :short) && return repr(gss)
     i = get_count(gss, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(gss.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(gss.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the gradient sampling solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(gss.stop) ? "Yes" : "No"
+    Conv = has_converged(gss.stop) ? "Yes" : "No"
     as = _callbacks_summary(gss)
     s = """
     # Solver state for `Manopt.jl`s Gradient Sampling Algorithm
@@ -242,7 +242,7 @@ function status_summary(gss::GradientSamplingState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(gss.stop; context = context); indent = 1, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 

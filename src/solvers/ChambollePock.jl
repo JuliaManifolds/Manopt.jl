@@ -231,11 +231,11 @@ get_callbacks(state::ChambollePockState) = state.callbacks
 function status_summary(cps::ChambollePockState; context::Symbol = :default)
     (context === :short) && return repr(cps)
     i = get_count(cps, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(cps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(cps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for Chambolle-Pock algorithm$(conv_inl)"
     i = get_count(cps, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(cps.stop) ? "Yes" : "No"
+    Conv = has_converged(cps.stop) ? "Yes" : "No"
     as = _callbacks_summary(cps)
     s = """
     # Solver state for `Manopt.jl`s Chambolle-Pock Algorithm
@@ -255,7 +255,7 @@ function status_summary(cps::ChambollePockState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(cps.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 get_solver_result(apds::AbstractPrimalDualSolverState) = get_iterate(apds)

@@ -241,7 +241,7 @@ end
 function status_summary(pgms::ProximalGradientMethodState; context::Symbol = :default)
     i = get_count(pgms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
+    Conv = has_converged(pgms.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(pgms)) – $(Iter) $(has_converged(pgms) ? "(converged)" : "")")
     as = _callbacks_summary(pgms)
     s = """
@@ -254,7 +254,7 @@ function status_summary(pgms::ProximalGradientMethodState; context::Symbol = :de
 
     ## Stopping criterion
     $(_in_str(status_summary(pgms.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 

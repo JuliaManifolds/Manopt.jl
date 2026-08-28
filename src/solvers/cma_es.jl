@@ -204,10 +204,10 @@ get_callbacks(state::CMAESState) = state.callbacks
 function status_summary(s::CMAESState; context::Symbol = :default)
     (context === :short) && return repr(s)
     i = get_count(s, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(s.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(s.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the conjugate gradient descent solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(s.stop) ? "Yes" : "No"
+    Conv = has_converged(s.stop) ? "Yes" : "No"
     s = """
     # Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy
     $Iter
@@ -236,7 +236,7 @@ function status_summary(s::CMAESState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(s.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 #

@@ -261,10 +261,10 @@ end
 function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :default)
     (context === :short) && (return repr(arcs))
     i = get_count(arcs, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(arcs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(arcs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the adaptive regularization with cubics solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(arcs.stop) ? "Yes" : "No"
+    Conv = has_converged(arcs.stop) ? "Yes" : "No"
     as = _callbacks_summary(arcs)
     sub = status_summary(arcs.sub_state; context = context)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
@@ -282,7 +282,7 @@ function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :de
 
     ## Stopping criterion
     $(_in_str(status_summary(arcs.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 

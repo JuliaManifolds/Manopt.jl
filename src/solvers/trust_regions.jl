@@ -236,10 +236,10 @@ end
 function status_summary(trs::TrustRegionsState; context::Symbol = :default)
     (context === :short) && return repr(trs)
     i = get_count(trs, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(trs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(trs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the trust region solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
+    Conv = has_converged(trs.stop) ? "Yes" : "No"
     (context === :inline) && (return "A trust regions method state – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
     sub = _in_str(status_summary(trs.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")
     as = _callbacks_summary(trs)
@@ -259,7 +259,7 @@ function status_summary(trs::TrustRegionsState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(trs.stop; context = context); indent = 1, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 

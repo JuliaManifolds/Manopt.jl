@@ -96,10 +96,10 @@ end
 function status_summary(sgds::StochasticGradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(sgds)
     i = get_count(sgds, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(sgds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(sgds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the stochastic gradient descent algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(sgds.stop) ? "Yes" : "No"
+    Conv = has_converged(sgds.stop) ? "Yes" : "No"
     as = _callbacks_summary(sgds)
     s = """
     # Solver state for `Manopt.jl`s Stochastic Gradient Descent
@@ -114,7 +114,7 @@ function status_summary(sgds::StochasticGradientDescentState; context::Symbol = 
 
     ## Stopping criterion
     $(_in_str(status_summary(sgds.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 """

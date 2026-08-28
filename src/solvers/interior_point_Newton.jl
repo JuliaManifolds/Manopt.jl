@@ -349,7 +349,7 @@ get_callbacks(ips::InteriorPointNewtonState) = ips.callbacks
 function status_summary(ips::InteriorPointNewtonState; context::Symbol = :default)
     i = get_count(ips, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
+    Conv = has_converged(ips.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(ips)) – $(Iter) $(has_converged(ips) ? "(converged)" : "")")
     as = _callbacks_summary(ips)
     s = """
@@ -364,7 +364,7 @@ function status_summary(ips::InteriorPointNewtonState; context::Symbol = :defaul
     $(_in_str(status_summary(ips.stepsize; context = context); indent = 1, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(ips.stop; context = context); indent = 1, headers = 1))    This indicates convergence: $Conv"""
+    $(_in_str(status_summary(ips.stop; context = context); indent = 1, headers = 1))    The algorithm converged: $Conv"""
     return s
 end
 function Base.show(io::IO, ipns::InteriorPointNewtonState)

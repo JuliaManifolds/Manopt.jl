@@ -11,10 +11,10 @@ end
 function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :default)
     (context === :short) && (return repr(cgds))
     i = get_count(cgds, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(cgds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(cgds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the conjugate gradient descent solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(cgds.stop) ? "Yes" : "No"
+    Conv = has_converged(cgds.stop) ? "Yes" : "No"
     as = _callbacks_summary(cgds)
     return """
     # Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver
@@ -30,7 +30,7 @@ function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :
 
     ## Stopping criterion
     $(_in_str(status_summary(cgds.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
 end
 
 _doc_CG_formula = raw"""
