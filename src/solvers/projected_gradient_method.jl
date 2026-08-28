@@ -3,7 +3,7 @@
 
 # Fields
 
-$(_fields(:stepsize; name = "backtracking")) to determine the step size ``β_k`` step size from ``p_k`` to the candidate ``q_k``
+$(_fields(:stepsize; name = "backtrack")) to determine the step size ``β_k`` step size from ``p_k`` to the candidate ``q_k``
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 $(_fields(:p; add_properties = [:as_Iterate]))

@@ -321,8 +321,6 @@ yield a reduction of the model.
 
 $(_fields(:at_iteration))
 * `value` store the value of the inner product.
-* `reason`: stores a reason of stopping if the stopping criterion has been reached,
-  see [`get_reason`](@ref).
 
 # Constructor
 

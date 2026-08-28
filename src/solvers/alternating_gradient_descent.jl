@@ -46,7 +46,7 @@ see also [`alternating_gradient_descent`](@ref).
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
 * `direction::`[`DirectionUpdateRule`](@ref)
-* `evaluation_order::Symbol`: whether to use a randomly permuted sequence (`:FixedRandom`),
+* `order_type::Symbol`: whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
 * `inner_iterations`: how many gradient steps to take in a component before alternating to the next
 * `order`: the current permutation

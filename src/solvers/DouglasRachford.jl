@@ -15,7 +15,7 @@ $(_fields(:inverse_retraction_method))
 * `R!`:                          method employed in the iteration to perform the reflection of `x` at the prox `p`.
 $(_fields(:p; add_properties = [:as_Iterate]))
   For the parallel Douglas-Rachford, this is not a value from the `PowerManifold` manifold but the mean.
-* `reflection!`:     whether `R` works in-place or allocating
+* `R!`:              whether `R` works in-place or allocating
 $(_fields(:retraction_method))
 * `s`:                         the last result of the double reflection at the proximal maps relaxed by `α`.
 $(_fields(:stopping_criterion; name = "stop"))

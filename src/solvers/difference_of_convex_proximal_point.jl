@@ -13,7 +13,7 @@ where both ``g`` and ``h`` are convex, lower semicontinuous and proper.
 # Fields
 
 * `cost`:     implementation of ``f(p) = g(p)-h(p)``
-* `gradient`: the gradient of the cost
+* `gradient!`: the gradient of the cost
 * `grad_h!`: a function ``$(_tex(:grad))h: $(_math(:Manifold)) → T$(_math(:Manifold))``,
 
 Note that both the gradients might be given in two possible signatures

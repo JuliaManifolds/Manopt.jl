@@ -36,7 +36,7 @@ The mathematical symbols are adapted from [HosseiniUschmajew:2017](@cite)
 
 # Fields
 $(_fields(:callbacks; add_properties = [:as_dict]))
-* `convex_hull_coefficients<:AbstractVector{R}` store the solution vector of the sub problem, i.e. the coefficients of the result in the convex hull
+* `convex_hull_coeffs<:AbstractVector{R}` store the solution vector of the sub problem, i.e. the coefficients of the result in the convex hull
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `sampled_points<:AbstractVector{P}` memory to store the vector of sampled points
 * `sampled_vectors<:AbstractVector{T}` memory to store the vector of (transported) gradients

@@ -71,7 +71,7 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:X; add_properties = [:as_Gradient]))
 $(_fields([:inverse_retraction_method, :sub_problem, :sub_state]))
 $(_fields(:stopping_criterion; name = "stop"))
-$(_fields([:stepsize, :retraction_method, :vector_transport_method]))
+$(_fields([:stepsize, :retraction_method]))
 
 The sub task requires a method to solve
 

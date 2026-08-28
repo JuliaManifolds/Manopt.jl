@@ -332,7 +332,7 @@ Add a preconditioning
 
 # Fields
 
-* `preconditioner::F`: the preconditioner function
+* `preconditioner!::F`: the preconditioner function
 
 # Constructors
 

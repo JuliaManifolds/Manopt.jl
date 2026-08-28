@@ -136,7 +136,7 @@ from the [`conjugate_residual`](@ref)
 $(_fields(:at_iteration))
 * `c`: the initial norm
 * `ε`: the threshold
-* `norm_rk`: the last computed norm of the residual
+* `norm_r`: the last computed norm of the residual
 
 # Constructor
 

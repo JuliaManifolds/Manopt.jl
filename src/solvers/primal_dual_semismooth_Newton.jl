@@ -6,12 +6,12 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 # Fields
 
 * `cost`:                        ``F + G(Λ(⋅))`` to evaluate interim cost function values
-* `linearized_operator`:         the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `linearized_adjoint_operator`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → $(_math(:TangentBundle))``
-* `prox_F`:                      the proximal map belonging to ``F``
-* `diff_prox_F`:                 the (Clarke Generalized) differential of the proximal maps of ``F``
-* `prox_G_dual`:                 the proximal map belonging to `G^$(_tex(:ast))_n``
-* `diff_prox_dual_G`:            the (Clarke Generalized) differential of the proximal maps of ``G^$(_tex(:ast))_n``
+* `linearized_forward_operator!`: the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
+* `adjoint_linearized_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → $(_math(:TangentBundle))``
+* `prox_f!`:                     the proximal map belonging to ``F``
+* `diff_prox_f!`:                the (Clarke Generalized) differential of the proximal maps of ``F``
+* `prox_g_dual!`:                the proximal map belonging to `G^$(_tex(:ast))_n``
+* `diff_prox_g_dual!`:           the (Clarke Generalized) differential of the proximal maps of ``G^$(_tex(:ast))_n``
 * `Λ`:                           the exact forward operator. This operator is required if `Λ(m)=n` does not hold.
 
 # Constructor
@@ -60,7 +60,7 @@ $(_fields(:p; name = "m"))
 $(_fields(:p; type = "Q", name = "n", M = "N"))
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `primal_stepsize::Float64`:  proximal parameter of the primal prox
-* `reg_param::Float64`:        regularization parameter for the Newton matrix
+* `regularization_parameter::Float64`: regularization parameter for the Newton matrix
 $(_fields(:retraction_method))
 $(_fields(:stopping_criterion; name = "stop"))
 * `update_dual_base`:          function to update the dual base

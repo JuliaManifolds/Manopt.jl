@@ -11,7 +11,7 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 * `direction`:  a direction update to use
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields(:stepsize))
-* `evaluation_order`: specify whether to use a randomly permuted sequence (`:FixedRandom`:),
+* `order_type`: specify whether to use a randomly permuted sequence (`:FixedRandom`:),
   a per cycle permuted sequence (`:Linear`) or the default, a `:Random` sequence.
 * `order`: stores the current permutation
 $(_fields(:retraction_method))

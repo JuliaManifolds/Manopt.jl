@@ -10,9 +10,9 @@ Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [Bergma
 
 * `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_forward_operator!`: linearized operator for the forward operation in the algorithm ``DΛ``
-* `linearized_adjoint_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → T$(_math(:Manifold))``
+* `adjoint_linearized_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → T$(_math(:Manifold))``
 * `prox_f!`:                      the proximal map belonging to ``f``
-* `prox_G_dual!`:                 the proximal map belonging to ``g_n^*``
+* `prox_g_dual!`:                 the proximal map belonging to ``g_n^*``
 * `Λ!`:                           the  forward operator (if given) ``Λ: $(_math(:Manifold)) → $(_math(:Manifold; M = "N"))``
 
 Either the linearized operator ``DΛ`` or ``Λ`` are required usually.

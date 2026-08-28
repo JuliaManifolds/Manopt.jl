@@ -2806,9 +2806,9 @@ Specify a problem for Hessian based algorithms.
 # Fields
 
 * `cost`:           a function ``f:$(_math(:Manifold))→ℝ`` to minimize
-* `gradient`:       the gradient ``$(_tex(:grad))f:$(_math(:Manifold)) → $(_math(:TangentBundle))`` of the cost function ``f``
-* `hessian`:        the Hessian ``$(_tex(:Hess))f(p)[⋅]: $(_math(:TangentSpace)) → $(_math(:TangentSpace))`` of the cost function ``f``
-* `preconditioner`: the symmetric, positive definite preconditioner
+* `gradient!`:      the gradient ``$(_tex(:grad))f:$(_math(:Manifold)) → $(_math(:TangentBundle))`` of the cost function ``f``
+* `hessian!`:       the Hessian ``$(_tex(:Hess))f(p)[⋅]: $(_math(:TangentSpace)) → $(_math(:TangentSpace))`` of the cost function ``f``
+* `preconditioner!`: the symmetric, positive definite preconditioner
   as an approximation of the inverse of the Hessian of ``f``, a map with the same
   input variables as the `hessian` to numerically stabilize iterations when the Hessian is
   ill-conditioned
@@ -3239,7 +3239,7 @@ which represents proximal maps ``$(_tex(:prox))_{λf_i}`` for summands ``f = f_1
 
 * `cost`: a function ``f:$(_math(:Manifold))→ℝ`` to
   minimize
-* `proxes`: proximal maps ``$(_tex(:prox))_{λf_i}:$(_math(:Manifold)) → $(_math(:Manifold))``
+* `proximal_maps!`: proximal maps ``$(_tex(:prox))_{λf_i}:$(_math(:Manifold)) → $(_math(:Manifold))``
   as functions `(M, λ, p) -> q` or in-place `(M, q, λ, p)`.
 * `number_of_proxes`: number of proximal maps per function,
   to specify when one of the maps is a combined one such that the proximal maps
@@ -3714,7 +3714,7 @@ A structure to store information about an objective for a subgradient based opti
 # Fields
 
 * `cost`:        the function ``f`` to be minimized
-* `subgradient`: a function returning a subgradient ``∂f`` of ``f``
+* `subgradient!`: a function returning a subgradient ``∂f`` of ``f``
 
 # Constructor
 
