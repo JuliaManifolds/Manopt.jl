@@ -722,7 +722,7 @@ mutable struct BarzileiBorweinStepsize{
             M::AbstractManifold;
             p::P = rand(M), X::T = zero_vector(M, p),
             min_stepsize::R = 1.0e-3,
-            max_stepsize::R = 1.0e3,
+            max_stepsize::R = injectivity_radius(M) * 0.9,
             retraction_method::RM = default_retraction_method(M, typeof(p)),
             inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
             storage::Union{Nothing, StoreStateAction} = StoreStateAction(

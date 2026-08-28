@@ -97,6 +97,7 @@ end
     @test startswith(Manopt.status_summary(s2), "Non-monotone linesearch")
     @test startswith(Manopt.status_summary(s2.bb_stepsize), "Barzilei–Borwein stepsize\n")
 
+
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
     @test startswith(repr(s3), "WolfePowellBinaryLinesearchStepsize(;")
@@ -197,6 +198,22 @@ end
         abs_const_step = Manopt.ConstantStepsize(M, 1.0; type = :absolute)
         @test abs_const_step(mp, gds, 1) ==
             1.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
+    end
+    @testset "BarzileiBorwein" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p = [2.0, 2.0]
+        X = grad_f(M, p)
+        # Create stepsize with factory
+        bb = BarzileiBorwein()(M) #
+        gds = GradientDescentState(M; p = p, stepsize = bb)
+        # Check both modes to use BB
+        # (1) vector transport when providing a last stepsize – no history -> max
+        bb(dmp, gds, 1; last_stepsize = 1.0) == bb.max_stepsize
+        # (1) vector transport when providing a last stepsize - we did not actually move - still max
+        bb(dmp, gds, 1) == bb.max_stepsize
     end
     @testset "Polyak Stepsize" begin
         M = Euclidean(2)
