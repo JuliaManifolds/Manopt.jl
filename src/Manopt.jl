@@ -286,7 +286,7 @@ export AbstractDecoratedManifoldObjective,
 export AbstractVectorFunction, VectorDifferentialFunction
 export AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
 # Robustifiers
-export AbstractRobustifierFunction, SoftL1Robustifier, AbstractRobustifierFunction,
+export AbstractRobustifierFunction, SoftL1Robustifier,
     CauchyRobustifier, TolerantRobustifier, TukeyRobustifier, ComposedRobustifierFunction,
     ArctanRobustifier, ScaledRobustifierFunction, RobustifierFunction, IdentityRobustifier,
     HuberRobustifier, ComponentwiseRobustifierFunction
@@ -348,7 +348,6 @@ export get_subgradient, get_subgradient!
 export get_subtrahend_gradient!, get_subtrahend_gradient
 export get_proximal_map, get_proximal_map!
 export get_state,
-    get_initial_stepsize,
     get_iterate,
     get_adjoint_jacobian, get_adjoint_jacobian!,
     get_jacobian, get_jacobian!,
@@ -371,7 +370,6 @@ export get_state,
 export get_hessian, get_hessian!
 export get_differential
 export provided_callbacks
-export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
 export equality_constraints_length,
@@ -474,9 +472,7 @@ export initialize_solver!, step_solver!, get_solver_result, stop_solver!
 export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
-export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
 export AdaptiveRegularizationWithCubicsModelObjective
-export ExactPenaltyCost, ExactPenaltyGrad
 export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
@@ -488,7 +484,6 @@ export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch, CubicBracketingLines
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
 export DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
-export ProximalGradientMethodBacktracking
 export HagerZhangLinesearch
 #
 # Stopping Criteria
@@ -535,9 +530,8 @@ export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPr
 export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIterate
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter, DebugWarnIfCostIncreases
-export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugWhenActive, DebugWarnIfFieldNotFinite, DebugIfEntry
-export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite
+export DebugWarnIfCostNotFinite
 export DebugWarnIfLagrangeMultiplierIncreases, DebugWarnIfStepsizeCollapsed
 export DebugWarnIfGradientNormTooLarge, DebugMessages
 #
@@ -551,7 +545,6 @@ export RecordGradient, RecordGradientNorm, RecordStepsize
 export RecordSubsolver, RecordWhenActive, RecordStoppingReason
 export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
-export RecordStoppingReason, RecordWhenActive, RecordSubsolver
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 export RecordProximalParameter
 #

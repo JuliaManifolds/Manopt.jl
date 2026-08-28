@@ -324,10 +324,12 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 
 @doc "$(doc_vector_bundle_newton)"
 function vectorbundle_newton(M::AbstractManifold, E::AbstractManifold, NE, p; kwargs...)
+    keywords_accepted(vectorbundle_newton; kwargs...)
     #replace type of E with VectorBundle once this is available in ManifoldsBase
     q = copy(M, p)
     return vectorbundle_newton!(M, E, NE, q; kwargs...)
 end
+calls_with_kwargs(::typeof(vectorbundle_newton)) = (vectorbundle_newton!,)
 
 
 @doc "$(doc_vector_bundle_newton)"
@@ -344,6 +346,7 @@ function vectorbundle_newton!(
         X::T = zero_vector(M, p),
         kwargs...,
     ) where {O, P, T, Pr, Op, RM <: AbstractRetractionMethod, SC <: StoppingCriterion}
+    keywords_accepted(vectorbundle_newton!; kwargs...)
     isnothing(sub_problem) && error("Please provide a sub_problem (method that solves the Newton equation)")
     vbp = VectorBundleManoptProblem(M, E, NE)
     vbs = VectorBundleNewtonState(
@@ -358,6 +361,7 @@ function vectorbundle_newton!(
     solve!(vbp, dvbs)
     return get_solver_return(dvbs)
 end
+calls_with_kwargs(::typeof(vectorbundle_newton!)) = (decorate_state!,)
 
 function initialize_solver!(::VectorBundleManoptProblem, s::VectorBundleNewtonState)
     return s
