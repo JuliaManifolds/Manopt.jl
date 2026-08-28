@@ -16,7 +16,7 @@ as well as to provide functions
 * `get_basepoint(poll!)` that returns the base point at which the mesh is build
 * `get_candidate(poll!)` that returns the last found candidate if the poll was successful.
   Otherwise the base point is returned
-* `get_descent_direction(poll!)` the the vector that points from the base point to the candidate.
+* `get_descent_direction(poll!)` that returns the vector that points from the base point to the candidate.
   If the last poll was not successful, the zero vector is returned
 * `update_basepoint!(M, poll!, p)` that updates the base point to `p` and all necessary
   internal data to a new point to build a mesh at

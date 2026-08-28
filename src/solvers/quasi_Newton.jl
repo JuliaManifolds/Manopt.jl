@@ -214,7 +214,7 @@ $(_args([:M, :f, :grad_f, :p]))
 # Keyword arguments
 
 * `basis::AbstractBasis=`[`DefaultOrthonormalBasis`](@extref ManifoldsBase.DefaultOrthonormalBasis)`()`:
-  basis to use within each of the the tangent spaces to represent
+  basis to use within each of the tangent spaces to represent
   the Hessian (inverse) for the cases where it is stored in full (matrix) form.
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `cautious_update::Bool=false`:

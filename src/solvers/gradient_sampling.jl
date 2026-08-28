@@ -349,7 +349,7 @@ function gradient_sampling!(
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(M, typeof(p)),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
-    # all explicit others others from above are anyways accepted here, so we only have to pass kwargs in
+    # all explicit others from above are anyways accepted here, so we only have to pass kwargs in
     keywords_accepted(gradient_sampling!; kwargs...)
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)

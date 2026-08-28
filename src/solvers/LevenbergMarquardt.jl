@@ -202,7 +202,7 @@ _doc_LM = """
     LevenbergMarquardt!(M, vgf, p; kwargs...)
     LevenbergMarquardt!(M, nlso, p; kwargs...)
 
-compute the the Riemannian Levenberg-Marquardt algorithm [Peeters:1993, AdachiOkunoTakeda:2022, BaranBergmann:2026](@cite)
+compute the Riemannian Levenberg-Marquardt algorithm [Peeters:1993, AdachiOkunoTakeda:2022, BaranBergmann:2026](@cite)
 to solve
 
 $(_problem(:NonLinearLeastSquares))

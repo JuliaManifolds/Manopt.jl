@@ -47,7 +47,7 @@ function Manopt.init_caches(
         # Float cache, like for f
         (c === :Cost) && push!(lru_caches, LRU{P, R}(; maxsize = m))
         (c === :Differential) && push!(lru_caches, LRU{Tuple{P, T}, R}(; maxsize = m))
-        # vectors, like for Constraints/EqCOnstraints/InEqCOnstraints
+        # vectors, like for Constraints/EqualityConstraints/InequalityConstraints
         # (a) store whole vectors
         (c === :EqualityConstraints) && push!(lru_caches, LRU{P, Vector{R}}(; maxsize = m))
         (c === :InequalityConstraints) && push!(lru_caches, LRU{P, Vector{R}}(; maxsize = m))

@@ -260,7 +260,7 @@ $(_kwargs(:sub_kwargs))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
 $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
   where a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used
-* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping criterion for the sub solver
   $(_note(:KeywordUsedIn, "sub_state"))
 * `u=1e-1`: the smoothing parameter and threshold for violation of the constraints
 * `u_exponent=1/100`: exponent of the u update factor;

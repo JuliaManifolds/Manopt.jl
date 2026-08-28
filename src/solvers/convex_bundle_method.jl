@@ -644,7 +644,7 @@ $(_args([:M, :f, :subgrad_f, :p]))
 * `bundle_cap=25`
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `diameter=π/3`: estimate for the diameter of the level set of the objective function at the starting point.
-* `domain=(M, p) -> isfinite(f(M, p))`: a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
+* `domain=(M, p) -> isfinite(f(M, p))`: a function that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
 $(_kwargs(:evaluation))
 $(_kwargs(:inverse_retraction_method))
 * `k_max=0`: upper bound on the sectional curvature of the manifold.

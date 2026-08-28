@@ -239,7 +239,7 @@ function gradient_descent!(
         X = zero_vector(M, p),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
-    # all explicit others others from above are anyways accepted here, so we only have to pass kwargs in
+    # all explicit others from above are anyways accepted here, so we only have to pass kwargs in
     keywords_accepted(gradient_descent!; kwargs...)
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
