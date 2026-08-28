@@ -492,7 +492,7 @@ Glossaries.define!(
 Glossaries.define!(_glossary_variables, :stopping_criterion, :type, "`[`StoppingCriterion`](@ref)` ")
 
 Glossaries.define!(_glossary_variables, :sub_kwargs)
-Glossaries.define!(_glossary_variables, :sub_kwargs, :description, "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective, the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself.")
+Glossaries.define!(_glossary_variables, :sub_kwargs, :description, "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective, the [`decorate_state!`](@ref) of the sub solvers state, and the sub state constructor itself.")
 Glossaries.define!(_glossary_variables, :sub_kwargs, :default, "(;)")
 
 Glossaries.define!(_glossary_variables, :sub_problem)
@@ -507,7 +507,7 @@ Glossaries.define!(
     _glossary_variables, :sub_state, :description,
     (; M = "M") -> " a state to specify the sub solver to use. For a closed form solution, this indicates the type of function.",
 )
-Glossaries.define!(_glossary_variables, :sub_state, :type, "Union{`[`AbstractManoptProblem`](@ref)`, F}")
+Glossaries.define!(_glossary_variables, :sub_state, :type, "Union{`[`AbstractManoptSolverState`](@ref)`, `[`AbstractEvaluationType`](@ref)`}")
 
 Glossaries.define!(_glossary_variables, :subgrad_f, :name, "∂f")
 Glossaries.define!(
@@ -537,7 +537,7 @@ Glossaries.define!(
     "a tangent vector at the point ``$p`` on the manifold ``$(_math(:Manifold, M = M))``",
 )
 Glossaries.define!(_glossary_variables, :X, :type, "T")
-Glossaries.define!(_glossary_variables, :X, :default, (; M = "M", p = "p") -> "`$(_link(:zero_vector; M = M, p = p))` ")
+Glossaries.define!(_glossary_variables, :X, :default, (; M = "M", p = "p") -> "`$(_link(:zero_vector; M = M, p = p))` ")
 Glossaries.define!(_glossary_variables, :X, :as_Gradient, "storing the gradient at the current iterate")
 Glossaries.define!(_glossary_variables, :X, :as_Subgradient, "storing a subgradient at the current iterate")
 Glossaries.define!(_glossary_variables, :X, :as_Memory, "to specify the representation of a tangent vector")
