@@ -6,7 +6,7 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.7] unreleased
+## [0.6.7] August 26, 2026
 
 ### Added
 
@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `quasi_Newton`, and the Riemannian median on hyperbolic space, benchmarked with `cyclic_proximal_point`.
 * A `BarzileiBorweinStepsize` as a standalone stepsize instead of only being available within the
   `NonmonotoneLinesearchStepsize`.
+* introduce a `StepsizeInitialGuess` that allows to use a `Stepsize` as initial guess of a line search.
 
 
 ## [0.6.6] August 25, 2026
