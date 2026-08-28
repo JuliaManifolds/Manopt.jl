@@ -675,14 +675,14 @@ calls_with_kwargs(::typeof(convex_bundle_method)) = (convex_bundle_method!,)
 @doc "$(_doc_convex_bundle_method)"
 function convex_bundle_method!(
         M::AbstractManifold, f::TF, ∂f!::TdF, p;
-        atol_λ::R = sqrt(eps()),
-        atol_errors::R = sqrt(eps()),
+        atol_λ::Real = sqrt(eps()),
+        atol_errors::Real = sqrt(eps()),
         bundle_cap::Int = 25,
         callbacks = Dict{Symbol, Function}(),
         contraction_factor = 0.975,
-        diameter::R = π / 3, # was `k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3)`,
+        diameter::Real = π / 3, # was `k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3)`,
         domain = (M, p) -> isfinite(f(M, p)),
-        m::R = 1.0e-3,
+        m::Real = 1.0e-3,
         k_max = 0,
         k_min = 0,
         p_estimate = p,
@@ -701,7 +701,7 @@ function convex_bundle_method!(
         sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = evaluation,
         ϱ = nothing,
         kwargs...,
-    ) where {R <: Real, TF, TdF, TRetr, IR, VTransp}
+    ) where {TF, TdF, TRetr, IR, VTransp}
     keywords_accepted(convex_bundle_method!; kwargs...)
     sgo = ManifoldSubgradientObjective(f, ∂f!; evaluation = evaluation, p = p)
     dsgo = decorate_objective!(M, sgo; kwargs...)

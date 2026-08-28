@@ -719,8 +719,8 @@ mutable struct BarzilaiBorweinStepsize{
     function BarzilaiBorweinStepsize(
             M::AbstractManifold;
             p::P = rand(M), X::T = zero_vector(M, p),
-            min_stepsize::R = 1.0e-3,
-            max_stepsize::R = injectivity_radius(M) * 0.9,
+            min_stepsize::Real = 1.0e-3,
+            max_stepsize::Real = injectivity_radius(M) * 0.9,
             retraction_method::RM = default_retraction_method(M, typeof(p)),
             inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
             storage::Union{Nothing, StoreStateAction} = StoreStateAction(
@@ -729,7 +729,7 @@ mutable struct BarzilaiBorweinStepsize{
             strategy::Symbol = :direct,
             vector_transport_method::VTM = default_vector_transport_method(M),
         ) where {
-            IRM <: AbstractInverseRetractionMethod, RM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, R <: Real, T,
+            IRM <: AbstractInverseRetractionMethod, RM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T,
         }
         if strategy ∉ [:direct, :inverse, :alternating]
             @warn string(
@@ -749,6 +749,9 @@ mutable struct BarzilaiBorweinStepsize{
                 ),
             )
         end
+        # “Unify” the type of the two bounds, since they share a type parameter
+        R = float(promote_type(typeof(min_stepsize), typeof(max_stepsize)))
+        min_stepsize, max_stepsize = convert.(Ref(R), (min_stepsize, max_stepsize))
         X_ = maybe_wrap_variable(X)
         p_ = maybe_wrap_variable(p)
         return new{typeof(X_), R, IRM, RM, VTM, typeof(storage)}(
@@ -1783,26 +1786,25 @@ mutable struct NonmonotoneLinesearchStepsize{
     # This constructor is semi-legacy, since it passes down a lot of parameters to BB now
     function NonmonotoneLinesearchStepsize(
             M::AbstractManifold;
-            bb_min_stepsize::R = 1.0e-3,
-            bb_max_stepsize::R = 1.0e3,
+            bb_min_stepsize::Real = 1.0e-3,
+            bb_max_stepsize::Real = 1.0e3,
             p::P = allocate_result(M, rand),
             initial_guess::IG = (problem, state, k, last_stepsize, η) -> k == 0 ? 1.0 : last_stepsize,
             inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
-            memory_size::I = 10,
+            memory_size::Integer = 10,
             retraction_method::TRM = default_retraction_method(M),
-            stepsize_reduction::R = 0.5,
-            stop_when_stepsize_less::R = 0.0,
-            stop_when_stepsize_exceeds::R = real(max_stepsize(M)),
-            stop_increasing_at_step::I = 100,
-            stop_decreasing_at_step::I = 1000,
+            stepsize_reduction::Real = 0.5,
+            stop_when_stepsize_less::Real = 0.0,
+            stop_when_stepsize_exceeds::Real = float(real(max_stepsize(M))),
+            stop_increasing_at_step::Integer = 100,
+            stop_decreasing_at_step::Integer = 1000,
             storage::Union{Nothing, StoreStateAction} = StoreStateAction(
                 M; store_fields = [:Iterate, :Gradient]
             ),
             strategy::Symbol = :direct,
-            sufficient_decrease::R = 1.0e-4,
+            sufficient_decrease::Real = 1.0e-4,
             vector_transport_method = default_vector_transport_method(M),
-        ) where {TRM, P, R <: Real, I <: Integer, IG}
-        stop_when_stepsize_exceeds = R(stop_when_stepsize_exceeds)
+        ) where {TRM, P, IG}
         bb = BarzilaiBorweinStepsize(
             M; p = p, min_stepsize = bb_min_stepsize, max_stepsize = bb_max_stepsize,
             inverse_retraction_method = inverse_retraction_method, retraction_method = retraction_method,
@@ -1826,16 +1828,30 @@ mutable struct NonmonotoneLinesearchStepsize{
             M::AbstractManifold, stepsize::BBS;
             p::P = rand(M),
             initial_guess::IG = (problem, state, k, last_stepsize, η) -> k == 0 ? 1.0 : last_stepsize,
-            memory_size::I = 10,
+            memory_size::Integer = 10,
             retraction_method::TRM = default_retraction_method(M),
-            stepsize_reduction::R = 0.5,
-            stop_when_stepsize_less::R = 0.0, stop_when_stepsize_exceeds::R = real(max_stepsize(M)),
-            stop_increasing_at_step::I = 100, stop_decreasing_at_step::I = 1000,
-            sufficient_decrease::R = 1.0e-4,
-        ) where {BBS <: Stepsize, P, IG, TRM, R, I}
+            stepsize_reduction::Real = 0.5,
+            stop_when_stepsize_less::Real = 0.0, stop_when_stepsize_exceeds::Real = float(real(max_stepsize(M))),
+            stop_increasing_at_step::Integer = 100, stop_decreasing_at_step::Integer = 1000,
+            sufficient_decrease::Real = 1.0e-4,
+        ) where {BBS <: Stepsize, P, IG, TRM}
         if memory_size <= 0
             throw(DomainError(memory_size, "The memory_size has to be greater than zero."))
         end
+        R = float(
+            promote_type(
+                typeof(stepsize_reduction), typeof(stop_when_stepsize_less),
+                typeof(stop_when_stepsize_exceeds), typeof(sufficient_decrease),
+            )
+        )
+        I = promote_type(typeof(stop_increasing_at_step), typeof(stop_decreasing_at_step))
+        stepsize_reduction, stop_when_stepsize_less, stop_when_stepsize_exceeds, sufficient_decrease =
+            convert.(
+            Ref(R),
+            (stepsize_reduction, stop_when_stepsize_less, stop_when_stepsize_exceeds, sufficient_decrease),
+        )
+        stop_increasing_at_step, stop_decreasing_at_step =
+            convert.(Ref(I), (stop_increasing_at_step, stop_decreasing_at_step))
         old_costs = zeros(memory_size)
         msgs = (;
             non_descent_direction = StepsizeMessage{R, R}(),
@@ -1846,7 +1862,7 @@ mutable struct NonmonotoneLinesearchStepsize{
         )
         p_ = maybe_wrap_variable(p)
         return new{typeof(p_), typeof(old_costs), R, I, TRM, typeof(msgs), IG, BBS}(
-            stepsize, p_, initial_guess, 1.0, msgs, old_costs,
+            stepsize, p_, initial_guess, one(R), msgs, old_costs,
             retraction_method,
             stepsize_reduction,
             stop_decreasing_at_step, stop_increasing_at_step, stop_when_stepsize_exceeds, stop_when_stepsize_less,
