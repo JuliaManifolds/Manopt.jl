@@ -127,7 +127,7 @@ function status_summary(tcgs::TruncatedConjugateGradientState; context::Symbol =
     (context === :short) && return repr(tcgs)
     i = get_count(tcgs, :Iterations)
     conv_inl = (i > 0) ? (indicates_convergence(tcgs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && "A solver state for the truncated conjugate gradient descent$(conv_inl)"
+    (context === :inline) && return "A solver state for the truncated conjugate gradient descent$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(tcgs.stop) ? "Yes" : "No"
     as = _callbacks_summary(tcgs)
@@ -416,7 +416,7 @@ function get_reason(c::StopWhenModelIncreased)
     return ""
 end
 function status_summary(c::StopWhenModelIncreased; context::Symbol = :default)
-    (context === :short) && (repr(c))
+    (context === :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     (context === :inline) && (return "Model Increased:$(_MANOPT_INDENT)$s")

@@ -337,7 +337,7 @@ function Base.show(io::IO, dmads::DefaultMeshAdaptiveDirectSearch)
 end
 function status_summary(dmads::DefaultMeshAdaptiveDirectSearch; context::Symbol = :default)
     (context === :short) && return repr(dmads)
-    (context === :inline) && "The default mesh adaptive direct search along a given direction using the $(dmads.retraction_method)"
+    (context === :inline) && return "The default mesh adaptive direct search along a given direction using the $(dmads.retraction_method)"
     return """The default mesh adaptive direct search
     along one given direction X.
 

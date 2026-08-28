@@ -783,6 +783,7 @@ function (bb::BarzilaiBorweinStepsize)(
         vector_transport_to!(M, bb.s, p_old, -last_stepsize * X_old, p, bb.vector_transport_method)
     else # Variant 2: otherwise we use the inverse retraction method
         inverse_retract!(M, bb.s, p, p_old, bb.inverse_retraction_method)
+        bb.s = -bb.s
     end
     #compute the new Barzilai-Borwein step size
     s1 = real(inner(M, p, bb.s, bb.y))

@@ -153,7 +153,7 @@ function Base.show(io::IO, acs::AffineCovariantStepsize)
     return print(io, ")")
 end
 function status_summary(acs::AffineCovariantStepsize; context = :default)
-    (context === :short) && repr(acs)
+    (context === :short) && return repr(acs)
     (context === :inline) && return "An affine covariant step size (last step size: $(acs.last_stepsize))"
     on = ismissing(acs.outer_norm) ? "" : "\n* outer norm:       $(_MANOPT_INDENT)$(acs.outer_norm)"
     return """
