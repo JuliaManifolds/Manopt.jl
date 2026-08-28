@@ -141,6 +141,24 @@ function (::ArmijoInitialGuess)(
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
 
+"""
+    StepsizeInitialGuess{S} <: AbstractInitialLinesearchGuess
+
+Use a [`Stepsize`](@ref) as initial guess for a linesearch
+
+# Constructor
+
+    StepsizeInitialGuess(stepsize::S)
+"""
+struct StepsizeInitialGuess{S <: Stepsize} <: AbstractInitialLinesearchGuess
+    stepsize::S
+end
+
+function (sig::StepsizeInitialGuess)(
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, l = nothing, η = (-get_gradient(mp, get_iterate(s))); kwargs...
+    )
+    return sig.stepsize(mp, s, k, η; last_stepsize = l, kwargs...)
+end
 
 #
 #
