@@ -120,4 +120,20 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             display(scene)
         end
     end
+    @testset "mixed constraints (m ≠ n)" begin
+        M = Manifolds.Euclidean(3)
+        f(M, p) = sum(p)
+        grad_f(M, p) = ones(3)
+        Hess_f(M, p, X) = zeros(3)
+        q = interior_point_Newton(
+            M, f, grad_f, Hess_f, [1.0, 1.0, 2.0];
+            g = [(M, p) -> -p[1]], grad_g = [(M, p) -> [-1.0, 0, 0]], Hess_g = [(M, p, X) -> zeros(3)],
+            h = [(M, p) -> p[2] - 1.0, (M, p) -> p[3] - 2.0],
+            grad_h = [(M, p) -> [0.0, 1, 0], (M, p) -> [0.0, 0, 1]],
+            Hess_h = [(M, p, X) -> zeros(3), (M, p, X) -> zeros(3)],
+            stopping_criterion = StopAfterIteration(3),
+        )
+        @test q[2] ≈ 1.0 atol = 1.0e-8
+        @test q[3] ≈ 2.0 atol = 1.0e-8
+    end
 end

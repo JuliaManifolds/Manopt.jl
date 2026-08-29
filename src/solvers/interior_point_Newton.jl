@@ -794,8 +794,8 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     # generate current full gradient in step state
     X = get_gradient(ips.step_state)
     copyto!(N[1], X[N, 1], ips.X)
-    (m > 0) && (copyto!(N[2], X[N, 2], ips.Z))
-    (n > 0) && (copyto!(N[3], X[N, 3], ips.Y))
+    (m > 0) && (copyto!(N[2], X[N, 2], ips.Y))
+    (n > 0) && (copyto!(N[3], X[N, 3], ips.Z))
     (m > 0) && (copyto!(N[4], X[N, 4], ips.W))
     set_gradient!(ips.step_state, M, q, X)
     # Update centrality factor – Maybe do this as an update function?

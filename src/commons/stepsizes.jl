@@ -565,7 +565,7 @@ function (awng::AdaptiveWNGradientStepsize)(
     grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
     M = get_manifold(mp)
     p = get_iterate(s)
-    isnan(awng.weight) || (awng.weight = norm(M, p, grad)) # init ω_0
+    isnan(awng.weight) && (awng.weight = norm(M, p, grad)) # init ω_0
     if i == 0 # init fields
         awng.weight = norm(M, p, grad) # init ω_0
         (awng.weight == 0) && (awng.weight = 1.0)
@@ -696,7 +696,7 @@ $(_fields(:vector_transport_method))
 
 $(_kwargs(:inverse_retraction_method))
 * `min_stepsize=1e-3`
-* `max_stepsize=1e3`
+* `max_stepsize=injectivity_radius(M) * 0.9` (or `1.0` if the injectivity radius is infinite)
 $(_kwargs([:p, :retraction_method]))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
@@ -720,7 +720,7 @@ mutable struct BarzilaiBorweinStepsize{
             M::AbstractManifold;
             p::P = rand(M), X::T = zero_vector(M, p),
             min_stepsize::Real = 1.0e-3,
-            max_stepsize::Real = injectivity_radius(M) * 0.9,
+            max_stepsize::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) * 0.9,
             retraction_method::RM = default_retraction_method(M, typeof(p)),
             inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
             storage::Union{Nothing, StoreStateAction} = StoreStateAction(
@@ -903,7 +903,7 @@ the inner product ``⟨s_{k}, y_{k}⟩_{p_k} = 0``, so that the maximal step siz
 
 $(_kwargs(:inverse_retraction_method))
 * `min_stepsize=1e-3`
-* `max_stepsize=1e3`
+* `max_stepsize=injectivity_radius(M) * 0.9` (or `1.0` if the injectivity radius is infinite)
 $(_kwargs([:p, :retraction_method]))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`

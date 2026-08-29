@@ -307,11 +307,7 @@ function initialize_solver!(
     end
     crs.r .-= get_vector_field(M, get_objective(amp), p)
     copyto!(TpM, crs.d, crs.r)
-    if crs.warm_start
-        get_hessian!(amp, crs.Ar, crs.X, crs.r)
-    else
-        zero_vector!(M, crs.Ar, p)
-    end
+    get_hessian!(amp, crs.Ar, crs.X, crs.r)
     copyto!(TpM, crs.Ad, crs.Ar)
     crs.α = 0.0
     crs.β = 0.0

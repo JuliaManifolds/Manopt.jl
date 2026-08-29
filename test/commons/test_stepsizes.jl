@@ -96,6 +96,8 @@ end
     @test startswith(repr(s2.bb_stepsize), "BarzilaiBorweinStepsize(; ")
     @test startswith(Manopt.status_summary(s2), "Non-monotone linesearch")
     @test startswith(Manopt.status_summary(s2.bb_stepsize), "Barzilai–Borwein stepsize\n")
+    # infinite injectivity radius: the default max_stepsize falls back to 1.0
+    @test Manopt.BarzilaiBorweinStepsize(Euclidean(2)).max_stepsize == 1.0
 
 
     s3 = WolfePowellBinaryLinesearch()(M)

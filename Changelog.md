@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The following fixes were reported by an AI assisted code review. Each single point was still carefully checked, and committed by hand.
 They are still listed here in detail in case (a) someone elses code breaks of (b) it was not done careful enough – to then avoid these approaches in the future.
 
+* `AdaptiveWNGradient` fixed its reference gradient norm to the initial one, so its adaptive mode now works.
+* `BarzilaiBorweinStepsize` defaults `max_stepsize` to `1.0` on manifolds with infinite injectivity radius.
+* `conjugate_residual(TpM, A, b; kwargs...)` no longer errors on solver keywords and no longer returns `NaN`s with `warm_start=false`.
+* `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
 * `cma_es` now uses the fitness-sorted samples in its covariance matrix update,
   cf. Eq. (47) of [arXiv:1604.00772](https://arxiv.org/abs/1604.00772).
 * `WolfePowellBinaryLinesearch` now bisects correctly the step size fulfils both Wolfe
