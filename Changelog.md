@@ -29,9 +29,13 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 
 * `AdaptiveWNGradient` fixed its reference gradient norm to the initial one, so its adaptive mode now works.
 * `BarzilaiBorweinStepsize` defaults `max_stepsize` to `1.0` on manifolds with infinite injectivity radius.
+* `ConjugateGradientDescentState` can now be constructed without specifying a stepsize.
 * `conjugate_residual(TpM, A, b; kwargs...)` no longer errors on solver keywords and no longer returns `NaN`s with `warm_start=false`.
 * `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
 * `ProximalGradientNonsmoothCost` now computes the documented `1/(2λ)` proximity weight instead of `λ/2`.
+* `truncated_conjugate_gradient_descent` no longer produces `NaN` when started at a point with zero gradient.
+* `trust_regions` now includes the Hessian term of the model decrease in its acceptance ratio also in the default (non-randomized) mode.
+* `trust_regions` reuses the Hessian product already computed by its tCG sub solver instead of recomputing it.
 * `cma_es` now uses the fitness-sorted samples in its covariance matrix update,
   cf. Eq. (47) of [arXiv:1604.00772](https://arxiv.org/abs/1604.00772).
 * `WolfePowellBinaryLinesearch` now bisects correctly the step size fulfils both Wolfe

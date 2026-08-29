@@ -530,6 +530,20 @@ function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     return trs
 end
 
+# Obtain H[Y] after the sub solver ran: a tCG sub state already provides it,
+# for any other sub solver it has to be computed.
+function _trs_get_HY!(M, trs::TrustRegionsState, mho, ::Any)
+    # for Y = 0 the model's Hessian term vanishes, no need to evaluate
+    (norm(M, trs.p, trs.Y) == 0) && return zero_vector!(M, trs.HY, trs.p)
+    return get_hessian!(M, trs.HY, mho, trs.p, trs.Y)
+end
+function _trs_get_HY!(M, trs::TrustRegionsState, mho, sub::TruncatedConjugateGradientState)
+    # an approximate Hessian is not linear in `X`, so the accumulated `HY` may differ from `H[Y]`
+    # so in that case we also do not use the subsolvers result but evaluate anew.
+    (get_hessian_function(mho, true) isa AbstractApproximateHessianFunction) && return _trs_get_HY!(M, trs, mho, nothing)
+    return copyto!(M, trs.HY, trs.p, sub.HY)
+end
+
 function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     M = get_manifold(mp)
     mho = get_objective(mp)
@@ -553,9 +567,9 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     #
     copyto!(M, trs.Y, trs.p, get_solver_result(trs.sub_state))
     f = get_cost(mp, trs.p)
+    _trs_get_HY!(M, trs, mho, get_state(trs.sub_state))
     if trs.σ > 0 # randomized approach: compare result with the Cauchy point.
         nX = norm(M, trs.p, trs.X)
-        get_hessian!(M, trs.HY, mho, trs.p, trs.Y)
         # Check the curvature,
         get_hessian!(mp, trs.HX, trs.p, trs.X)
         trs.τ = real(inner(M, trs.p, trs.X, trs.HX))

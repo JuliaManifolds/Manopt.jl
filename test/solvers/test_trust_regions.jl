@@ -63,6 +63,7 @@ include("trust_region_model.jl")
         s = trust_regions(
             M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, return_state = true
         )
+        @test norm(M, get_iterate(s), Manopt.get_state(s).HY) > 0
         @test startswith(
             Manopt.status_summary(s; context = :default),
             "# Solver state for `Manopt.jl`s Trust Region Method\n"
@@ -289,18 +290,18 @@ include("trust_region_model.jl")
     end
     @testset "on the Circle" begin
         Mc, fc, grad_fc, pc0, pc_star = Manopt.Test.Circle_mean_task()
-        hess_fc(Mc, p, X) = 1.0
+        hess_fc(Mc, p, X) = X
         s = trust_regions(Mc, fc, grad_fc, hess_fc; return_state = true)
         q = get_solver_result(s)
         @test distance(Mc, pc_star, q[]) < 1.0e-2
         q2 = trust_regions(Mc, fc, grad_fc, hess_fc, 0.1)
-        @test distance(Mc, pc_star, q[]) < 1.0e-2
+        @test distance(Mc, pc_star, q2[]) < 1.0e-2
         q2 = trust_regions(Mc, fc, grad_fc, hess_fc)
-        @test distance(Mc, pc_star, q[]) < 1.0e-2
+        @test distance(Mc, pc_star, q2[]) < 1.0e-2
         Y1 = truncated_conjugate_gradient_descent(
             Mc, fc, grad_fc, hess_fc, 0.1, 0.0; trust_region_radius = 0.5
         )
-        @test abs(Y1) ≈ 0.5
+        @test Y1 ≈ -grad_fc(Mc, 0.1)
     end
     @testset "Euclidean Embedding" begin
         Random.seed!(42)

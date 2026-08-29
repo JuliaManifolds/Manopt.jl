@@ -636,6 +636,8 @@ function step_solver!(
     M = base_manifold(TpM)
     p = TpM.point
     trmo = get_objective(mp)
+    # a zero residual means `Y` is already optimal for the model; avoid a 0/0 step
+    (tcgs.z_r == 0) && return tcgs
     get_objective_hessian!(M, tcgs.Hδ, trmo, p, tcgs.δ)
     tcgs.δHδ = real(inner(M, p, tcgs.δ, tcgs.Hδ))
     α = tcgs.z_r / tcgs.δHδ

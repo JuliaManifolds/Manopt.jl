@@ -142,8 +142,10 @@ function ConjugateGradientDescentState(
         coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
         restart_condition::TRC = RestartOnNonDescent(),
         retraction_method::TRetr = default_retraction_method(M, typeof(p)),
-        stepsize::TStep = default_stepsize(
-            M, ConjugateGradientDescentState; retraction_method = retraction_method
+        stepsize::TStep = _produce_type(
+            default_stepsize(
+                M, ConjugateGradientDescentState; retraction_method = retraction_method
+            ), M, p
         ),
         stopping_criterion::SC = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-8),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),

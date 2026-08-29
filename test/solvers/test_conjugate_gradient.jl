@@ -28,6 +28,8 @@ using ManifoldDiff: grad_distance
             initial_gradient = zero_vector(M, x0),
         )
         @test startswith(repr(s1), "ConjugateGradientDescentState(; ")
+        # the default stepsize factory is produced into a Stepsize
+        @test ConjugateGradientDescentState(M) isa ConjugateGradientDescentState
         @test s1.coefficient(dmp, s1, 1) == 0
         @test default_stepsize(M, typeof(s1)) isa Manopt.ManifoldDefaultsFactory{Manopt.ArmijoLinesearchStepsize}
         @test Manopt.get_message(s1) == ""
