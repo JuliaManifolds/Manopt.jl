@@ -228,18 +228,18 @@ mutable struct ConvexBundleMethodState{
             if (k_max === nothing)
                 estimation_points = [
                     close_point(
-                            M, p_estimate, diameter / 3; retraction_method = retraction_method
-                        ) for _ in 1:k_size
+                        M, p_estimate, diameter / 3; retraction_method = retraction_method
+                    ) for _ in 1:k_size
                 ]
                 estimation_vectors_1 = [rand(M; vector_at = pe) for pe in estimation_points]
                 estimation_vectors_2 = [rand(M; vector_at = pe) for pe in estimation_points]
                 s = [
                     sectional_curvature(
-                            M,
-                            estimation_points[i],
-                            estimation_vectors_1[i],
-                            estimation_vectors_2[i],
-                        ) for i in 1:k_size
+                        M,
+                        estimation_points[i],
+                        estimation_vectors_1[i],
+                        estimation_vectors_2[i],
+                    ) for i in 1:k_size
                 ]
             end
             (k_min === nothing) && (k_min = minimum(s))

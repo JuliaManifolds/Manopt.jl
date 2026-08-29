@@ -1393,10 +1393,10 @@ function get_equality_constraint(M::AbstractManifold, co::ManifoldCachedObjectiv
     if haskey(co.cache, :EqualityConstraint) # storing the index constraints
         return [
             copy(
-                    get!(co.cache[:EqualityConstraint], (key, j)) do
-                        get_equality_constraint(M, co.objective, p, j)
+                get!(co.cache[:EqualityConstraint], (key, j)) do
+                    get_equality_constraint(M, co.objective, p, j)
                 end,
-                ) for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+            ) for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
         ]
     end # neither cache: pass down to objective
     return get_equality_constraint(M, co.objective, p, i)
@@ -1434,10 +1434,10 @@ function get_inequality_constraint(M::AbstractManifold, co::ManifoldCachedObject
     if haskey(co.cache, :InequalityConstraint) # storing the index constraints
         return [
             copy(
-                    get!(co.cache[:InequalityConstraint], (key, j)) do
-                        get_inequality_constraint(M, co.objective, p, j)
+                get!(co.cache[:InequalityConstraint], (key, j)) do
+                    get_inequality_constraint(M, co.objective, p, j)
                 end,
-                ) for
+            ) for
                 j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
         ]
     end # neither cache: pass down to objective

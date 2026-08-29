@@ -21,9 +21,9 @@ using Manopt, Manifolds, Test
     sgrad_f2 = [((M, y) -> -log(M, y, x)) for x in pts]
     sgrad_f2! = [
         function f!(M, X, y)
-                log!(M, X, y, x)
-                X .*= -1
-                return X
+            log!(M, X, y, x)
+            X .*= -1
+            return X
         end for x in pts
     ]
 

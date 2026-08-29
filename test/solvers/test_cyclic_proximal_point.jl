@@ -45,11 +45,11 @@ using ManifoldDiff: prox_distance, prox_distance!
         N = PowerManifold(M, NestedPowerRepresentation(), n)
         q = [ #Adapted Lemniscate
             exp(
-                    M,
-                    [0.0, 0.0, 1.0],
-                    π / 2.0 * (cos(t) / (sin(t)^2 + 1.0)) * [1.0, 0.0, 0.0] +
+                M,
+                [0.0, 0.0, 1.0],
+                π / 2.0 * (cos(t) / (sin(t)^2 + 1.0)) * [1.0, 0.0, 0.0] +
                     π / 2.0 * (cos(t) * sin(t) / (sin(t)^2 + 1.0)) * [0.0, 1.0, 0.0],
-                ) for t in range(0, 2π; length = n)
+            ) for t in range(0, 2π; length = n)
         ]
         f(N, p) = Manopt.Test.L2_Total_Variation(N, q, 0.5, p)
         proxes! = (
@@ -107,11 +107,11 @@ using ManifoldDiff: prox_distance, prox_distance!
         N = PowerManifold(M, NestedPowerRepresentation(), n)
         q = [ #Adapted Lemniscate
             exp(
-                    M,
-                    [0.0, 0.0, 1.0],
-                    π / 2.0 * (cos(t) / (sin(t)^2 + 1.0)) * [1.0, 0.0, 0.0] +
+                M,
+                [0.0, 0.0, 1.0],
+                π / 2.0 * (cos(t) / (sin(t)^2 + 1.0)) * [1.0, 0.0, 0.0] +
                     π / 2.0 * (cos(t) * sin(t) / (sin(t)^2 + 1.0)) * [0.0, 1.0, 0.0],
-                ) for t in range(0, 2π; length = n)
+            ) for t in range(0, 2π; length = n)
         ]
         f(N, x) = Manopt.Test.L2_Total_Variation(N, q, 0.5, x)
         proxes! = (

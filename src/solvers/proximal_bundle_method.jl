@@ -367,10 +367,10 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
     v = [
         -2 * ej /
             norm(
-                M,
-                pbms.p_last_serious,
-                inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method),
-            )^2 for
+            M,
+            pbms.p_last_serious,
+            inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method),
+        )^2 for
             (ej, (qj, Xj)) in zip(pbms.lin_errors, pbms.bundle) if !(qj ≈ pbms.p_last_serious)
     ]
     if !isempty(v)

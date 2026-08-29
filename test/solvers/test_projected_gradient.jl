@@ -10,12 +10,12 @@ using Manifolds, Manopt, Random, Test
     # N random points moved to top left to have a mean outside
     pts = [
         exp(
-                M, c,
-                get_vector(
-                    M, c, σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
-                    DefaultOrthonormalBasis(),
-                ),
-            ) for _ in 1:N
+            M, c,
+            get_vector(
+                M, c, σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
+                DefaultOrthonormalBasis(),
+            ),
+        ) for _ in 1:N
     ]
     f(M, p) = 1 / (2 * length(pts)) .* sum(distance(M, p, q)^2 for q in pts)
     grad_f(M, p) = -1 / length(pts) .* sum(log(M, p, q) for q in pts)
