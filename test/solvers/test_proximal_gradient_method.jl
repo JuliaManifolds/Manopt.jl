@@ -139,6 +139,9 @@ using Manopt, Manifolds, Test, ManifoldDiff
         @test Manopt.get_parameter(pgnc, :proximity_point) == p
         @test Manopt.get_parameter(pgng, :λ) == 0.1
         @test Manopt.get_parameter(pgng, :proximity_point) == p
+        # the function computes the documented 1/(2λ) d² proximity term
+        pgnc0 = ProximalGradientNonsmoothCost((M, q) -> 0.0, 0.1, [0.0, 0.0])
+        @test pgnc0(Euclidean(2), [1.0, 0.0]) ≈ 5.0
 
         # prox pass through with dummy objective deco
         dob = Manopt.Test.DummyDecoratedObjective(ob)

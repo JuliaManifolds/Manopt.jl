@@ -12,10 +12,10 @@ This struct is also a functor `(M, q) -> v` that can be used as a cost function 
     $(_tex(:prox))_{λ h}(p) = $(_tex(:argmin))_{q ∈ $(_math(:Manifold))} h(q) + $(_tex(:frac, "1", "2λ"))$(_math(:distance))^2(q, p)
 ```
 
-Hence, the functor reads
+Hence, the function reads
 
 ```math
-    (M, q) ↦ h(q) + \frac{1}{2λ} $(_math(:distance))^2(q, p)
+    (M, q) ↦ h(q) + $(_tex(:frac, "1", "2λ")) $(_math(:distance))^2(q, p)
 ```
 
 and `p` is the proximity point where the proximal map is evaluated, i.e. the argument `p` of the proximal map ``$(_tex(:prox))_{λ h}``.
@@ -48,7 +48,7 @@ function get_parameter(pgnc::ProximalGradientNonsmoothCost, ::Val{:proximity_poi
 end
 
 function (pgnc::ProximalGradientNonsmoothCost)(M::AbstractManifold, p)
-    return pgnc.cost(M, p) + (1 / 2 * pgnc.λ) * distance(M, p, pgnc.proximity_point)^2
+    return pgnc.cost(M, p) + 1 / (2 * pgnc.λ) * distance(M, p, pgnc.proximity_point)^2
 end
 
 @doc """

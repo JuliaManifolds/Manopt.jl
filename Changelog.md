@@ -31,6 +31,7 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `BarzilaiBorweinStepsize` defaults `max_stepsize` to `1.0` on manifolds with infinite injectivity radius.
 * `conjugate_residual(TpM, A, b; kwargs...)` no longer errors on solver keywords and no longer returns `NaN`s with `warm_start=false`.
 * `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
+* `ProximalGradientNonsmoothCost` now computes the documented `1/(2λ)` proximity weight instead of `λ/2`.
 * `cma_es` now uses the fitness-sorted samples in its covariance matrix update,
   cf. Eq. (47) of [arXiv:1604.00772](https://arxiv.org/abs/1604.00772).
 * `WolfePowellBinaryLinesearch` now bisects correctly the step size fulfils both Wolfe
