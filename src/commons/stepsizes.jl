@@ -859,12 +859,16 @@ from the last iteration.
 We compute the changes of the iterates and the vectors, respectively
 
 ```math
-s = $(_tex(:invretr))_{p_{k}}(p_{k-1})
+s_{k} = $(_tex(:invretr))_{p_{k}}(p_{k-1})
 $(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
 y_{k} = X_k - $(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1}),
 ```
-where alternatively ``s = α$(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1})`` if the `last_stepsize =`
-was passed to the function.
+where alternatively ``s_{k} = α_{k-1}$(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1})`` if
+the last step size ``α_{k-1}`` was passed as the `last_stepsize =` keyword.
+
+If there are not prior iterate ``p_{k-1}`` and and gradient ``X_{k-1}`` available,
+both are set to their current counterpart which yields that ``s_{k} = y_{k} = 0`` are both
+the zero vector.
 
 Then the Barzilai—Borwein step size is
 
@@ -881,16 +885,19 @@ Then the Barzilai—Borwein step size is
 where
 
 ```math
-τ_{k} = $(_tex(:frac, "⟨s, s⟩_{p_k}", "⟨s, y⟩_{p_k}")),
+τ_{k} = $(_tex(:frac, "⟨s_{k}, s_{k}⟩_{p_k}", "⟨s_{k}, y_{k}⟩_{p_k}")),
 ```
 
 for the `:direct` strategy, or
 
 ```math
-τ_{k} =  $(_tex(:frac, "⟨s, y⟩_{p_k}", "⟨y, y⟩_{p_k}")),
+τ_{k} =  $(_tex(:frac, "⟨s_{k}, y_{k}⟩_{p_k}", "⟨y_{k}, y_{k}⟩_{p_k}")),
 ```
 
 for the `:inverse` strategy. The `:alternating` strategy uses the direct for odd, the inverse for even iterations `k`.
+
+In the initial step, that is, for the case that there are no prior iterate and gradient,
+the inner product ``⟨s_{k}, y_{k}⟩_{p_k} = 0``, so that the maximal step size ``α_{$(_tex(:text, "max"))}`` will be returned for this case.
 
 ## Keyword arguments
 
