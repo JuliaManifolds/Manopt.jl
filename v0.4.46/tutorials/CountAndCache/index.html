@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Count and use a cache · Manopt.jl</title><meta name="title" content="Count and use a cache · Manopt.jl"/><meta property="og:title" content="Count and use a cache · Manopt.jl"/><meta property="twitter:title" content="Count and use a cache · Manopt.jl"/><meta name="description" content="Documentation for Manopt.jl."/><meta property="og:description" content="Documentation for Manopt.jl."/><meta property="twitter:description" content="Documentation for Manopt.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/><link href="../../assets/citations.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="Manopt.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Manopt.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../about/">About</a></li><li><span class="tocitem">How to...</span><ul><li><a class="tocitem" href="../Optimize/">🏔️ Get started: optimize.</a></li><li><a class="tocitem" href="../InplaceGradient/">Speedup using in-place computations</a></li><li><a class="tocitem" href="../AutomaticDifferentiation/">Use automatic differentiation</a></li><li><a class="tocitem" href="../EmbeddingObjectives/">Define objectives in the embedding</a></li><li class="is-active"><a class="tocitem" href>Count and use a cache</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Technical-Background"><span>Technical Background</span></a></li><li><a class="tocitem" href="#Counting"><span>Counting</span></a></li><li><a class="tocitem" href="#Caching"><span>Caching</span></a></li><li><a class="tocitem" href="#Advanced-Caching-Examples"><span>Advanced Caching Examples</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li></ul></li><li><a class="tocitem" href="../HowToDebug/">Print debug output</a></li><li><a class="tocitem" href="../HowToRecord/">Record values</a></li><li><a class="tocitem" href="../ImplementASolver/">Implement a solver</a></li><li><a class="tocitem" href="../ImplementOwnManifold/">Optimize on your own manifold</a></li><li><a class="tocitem" href="../ConstrainedOptimization/">Do constrained optimization</a></li><li><a class="tocitem" href="../GeodesicRegression/">Do geodesic regression</a></li></ul></li><li><span class="tocitem">Solvers</span><ul><li><a class="tocitem" href="../../solvers/">Introduction</a></li><li><a class="tocitem" href="../../solvers/adaptive-regularization-with-cubics/">Adaptive Regularization with Cubics</a></li><li><a class="tocitem" href="../../solvers/alternating_gradient_descent/">Alternating Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/augmented_Lagrangian_method/">Augmented Lagrangian Method</a></li><li><a class="tocitem" href="../../solvers/ChambollePock/">Chambolle-Pock</a></li><li><a class="tocitem" href="../../solvers/conjugate_gradient_descent/">Conjugate gradient descent</a></li><li><a class="tocitem" href="../../solvers/cyclic_proximal_point/">Cyclic Proximal Point</a></li><li><a class="tocitem" href="../../solvers/difference_of_convex/">Difference of Convex</a></li><li><a class="tocitem" href="../../solvers/DouglasRachford/">Douglas—Rachford</a></li><li><a class="tocitem" href="../../solvers/exact_penalty_method/">Exact Penalty Method</a></li><li><a class="tocitem" href="../../solvers/FrankWolfe/">Frank-Wolfe</a></li><li><a class="tocitem" href="../../solvers/gradient_descent/">Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/LevenbergMarquardt/">Levenberg–Marquardt</a></li><li><a class="tocitem" href="../../solvers/NelderMead/">Nelder–Mead</a></li><li><a class="tocitem" href="../../solvers/particle_swarm/">Particle Swarm Optimization</a></li><li><a class="tocitem" href="../../solvers/primal_dual_semismooth_Newton/">Primal-dual Riemannian semismooth Newton</a></li><li><a class="tocitem" href="../../solvers/quasi_Newton/">Quasi-Newton</a></li><li><a class="tocitem" href="../../solvers/stochastic_gradient_descent/">Stochastic Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/subgradient/">Subgradient method</a></li><li><a class="tocitem" href="../../solvers/truncated_conjugate_gradient_descent/">Steihaug-Toint TCG Method</a></li><li><a class="tocitem" href="../../solvers/trust_regions/">Trust-Regions Solver</a></li></ul></li><li><span class="tocitem">Plans</span><ul><li><a class="tocitem" href="../../plans/">Specify a Solver</a></li><li><a class="tocitem" href="../../plans/problem/">Problem</a></li><li><a class="tocitem" href="../../plans/objective/">Objective</a></li><li><a class="tocitem" href="../../plans/state/">Solver State</a></li><li><a class="tocitem" href="../../plans/stepsize/">Stepsize</a></li><li><a class="tocitem" href="../../plans/stopping_criteria/">Stopping Criteria</a></li><li><a class="tocitem" href="../../plans/debug/">Debug Output</a></li><li><a class="tocitem" href="../../plans/record/">Recording values</a></li></ul></li><li><span class="tocitem">Helpers</span><ul><li><a class="tocitem" href="../../helpers/checks/">Checks</a></li><li><a class="tocitem" href="../../helpers/exports/">Exports</a></li></ul></li><li><a class="tocitem" href="../../contributing/">Contributing to Manopt.jl</a></li><li><a class="tocitem" href="../../extensions/">Extensions</a></li><li><a class="tocitem" href="../../notation/">Notation</a></li><li><a class="tocitem" href="../../changelog/">Changelog</a></li><li><a class="tocitem" href="../../references/">References</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">How to...</a></li><li class="is-active"><a href>Count and use a cache</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Count and use a cache</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaManifolds/Manopt.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaManifolds/Manopt.jl/blob/master/docs/src/tutorials/CountAndCache.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="How-to-count-and-cache-function-calls"><a class="docs-heading-anchor" href="#How-to-count-and-cache-function-calls">How to count and cache function calls</a><a id="How-to-count-and-cache-function-calls-1"></a><a class="docs-heading-anchor-permalink" href="#How-to-count-and-cache-function-calls" title="Permalink"></a></h1><p>Ronny Bergmann</p><p>In this tutorial, we want to investigate the caching and counting (statistics) features of <a href="https://manoptjl.org">Manopt.jl</a>. We will reuse the optimization tasks from the introductory tutorial <a href="https://manoptjl.org/stable/tutorials/Optimize!.html">Get Started: Optimize!</a>.</p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>There are surely many ways to keep track for example of how often the cost function is called, for example with a <a href="https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects">functor</a>, as we used in an example in <a href="https://manoptjl.org/stable/tutorials/HowtoRecord.html">How to Record Data</a></p><pre><code class="language-julia hljs">mutable struct MyCost{I&lt;:Integer}
+    count::I
+end
+MyCost() = MyCost{Int64}(0)
+function (c::MyCost)(M, x)
+    c.count += 1
+    # [ .. Actual implementation of the cost here ]
+end</code></pre><p>This still leaves a bit of work to the user, especially for tracking more than just the number of cost function evaluations.</p><p>When a function like the objective or gradient is expensive to compute, it may make sense to cache its results. Manopt.jl tries to minimize the number of repeated calls but sometimes they are necessary and harmless when the function is cheap to compute. Caching of expensive function calls can for example be added using <a href="https://github.com/JuliaCollections/Memoize.jl">Memoize.jl</a> by the user. The approach in the solvers of <a href="https://manoptjl.org">Manopt.jl</a> aims to simplify adding both these capabilities on the level of calling a solver.</p><h2 id="Technical-Background"><a class="docs-heading-anchor" href="#Technical-Background">Technical Background</a><a id="Technical-Background-1"></a><a class="docs-heading-anchor-permalink" href="#Technical-Background" title="Permalink"></a></h2><p>The two ingredients for a solver in <a href="https://manoptjl.org">Manopt.jl</a> are the <a href="../../plans/problem/#Manopt.AbstractManoptProblem"><code>AbstractManoptProblem</code></a> and the <a href="../../plans/state/#Manopt.AbstractManoptSolverState"><code>AbstractManoptSolverState</code></a>, where the former consists of the domain, that is the <a href="https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html#The-AbstractManifold">manifold</a> and <a href="../../plans/objective/#Manopt.AbstractManifoldObjective"><code>AbstractManifoldObjective</code></a>.</p><p>Both recording and debug capabilities are implemented in a decorator pattern to the solver state. They can be easily added using the <code>record=</code> and <code>debug=</code> in any solver call. This pattern was recently extended, such that also the objective can be decorated. This is how both caching and counting are implemented, as decorators of the <a href="../../plans/objective/#Manopt.AbstractManifoldObjective"><code>AbstractManifoldObjective</code></a> and hence for example changing/extending the behaviour of a call to <a href="../../plans/objective/#Manopt.get_cost"><code>get_cost</code></a>.</p><p>Let’s finish off the technical background by loading the necessary packages. Besides <a href="https://manoptjl.org">Manopt.jl</a> and <a href="https://juliamanifolds.github.io/Manifolds.jl/latest/">Manifolds.jl</a> we also need <a href="https://github.com/JuliaCollections/LRUCache.jl">LRUCaches.jl</a> which are (since Julia 1.9) a weak dependency and provide the <em>least recently used</em> strategy for our caches.</p><pre><code class="language-julia hljs">using Manopt, Manifolds, Random, LRUCache, LinearAlgebra, ManifoldDiff
+using ManifoldDiff: grad_distance</code></pre><h2 id="Counting"><a class="docs-heading-anchor" href="#Counting">Counting</a><a id="Counting-1"></a><a class="docs-heading-anchor-permalink" href="#Counting" title="Permalink"></a></h2><p>We first define our task, the Riemannian Center of Mass from the <a href="https://manoptjl.org/stable/tutorials/Optimize!.html">Get Started: Optimize!</a> tutorial.</p><pre><code class="language-julia hljs">n = 100
+σ = π / 8
+M = Sphere(2)
+p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
+Random.seed!(42)
+data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
+f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
+grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));</code></pre><p>to now count how often the cost and the gradient are called, we use the <code>count=</code> keyword argument that works in any solver to specify the elements of the objective whose calls we want to count calls to. A full list is available in the documentation of the <a href="../../plans/objective/#Manopt.AbstractManifoldObjective"><code>AbstractManifoldObjective</code></a>. To also see the result, we have to set <code>return_objective=true</code>. This returns <code>(objective, p)</code> instead of just the solver result <code>p</code>. We can further also set <code>return_state=true</code> to get even more information about the solver run.</p><pre><code class="language-julia hljs">gradient_descent(M, f, grad_f, data[1]; count=[:Cost, :Gradient], return_objective=true, return_state=true)</code></pre><pre><code class="nohighlight hljs"># Solver state for `Manopt.jl`s Gradient Descent
+After 66 iterations
+
+## Parameters
+* retraction method: ExponentialRetraction()
+
+## Stepsize
+ArmijoLinesearch() with keyword parameters
+  * initial_stepsize    = 1.0
+  * retraction_method   = ExponentialRetraction()
+  * contraction_factor  = 0.95
+  * sufficient_decrease = 0.1
+
+## Stopping Criterion
+Stop When _one_ of the following are fulfilled:
+    Max Iteration 200:  not reached
+    |grad f| &lt; 1.0e-8: reached
+Overall: reached
+This indicates convergence: Yes
+
+## Statistics on function calls
+  * :Gradient : 199
+  * :Cost     : 275</code></pre><p>And we see that statistics are shown in the end.</p><h2 id="Caching"><a class="docs-heading-anchor" href="#Caching">Caching</a><a id="Caching-1"></a><a class="docs-heading-anchor-permalink" href="#Caching" title="Permalink"></a></h2><p>To now also cache these calls, we can use the <code>cache=</code> keyword argument. Since now both the cache and the count “extend” the functionality of the objective, the order is important: On the high-level interface, the <code>count</code> is treated first, which means that only actual function calls and not cache look-ups are counted. With the proper initialisation, you can use any caches here that support the <code>get!(function, cache, key)!</code> update. All parts of the objective that can currently be cached are listed at <a href="../../plans/objective/#Manopt.ManifoldCachedObjective"><code>ManifoldCachedObjective</code></a>. The solver call has a keyword <code>cache</code> that takes a tuple<code>(c, vs, n)</code> of three arguments, where <code>c</code> is a symbol for the type of cache, <code>vs</code> is a vector of symbols, which calls to cache and <code>n</code> is the size of the cache. If the last element is not provided, a suitable default (currently<code>n=10</code>) is used.</p><p>Here we want to use <code>c=:LRU</code> caches for <code>vs=[Cost, :Gradient]</code> with a size of <code>n=25</code>.</p><pre><code class="language-julia hljs">r = gradient_descent(M, f, grad_f, data[1];
+    count=[:Cost, :Gradient],
+    cache=(:LRU, [:Cost, :Gradient], 25),
+    return_objective=true, return_state=true)</code></pre><pre><code class="nohighlight hljs"># Solver state for `Manopt.jl`s Gradient Descent
+After 66 iterations
+
+## Parameters
+* retraction method: ExponentialRetraction()
+
+## Stepsize
+ArmijoLinesearch() with keyword parameters
+  * initial_stepsize    = 1.0
+  * retraction_method   = ExponentialRetraction()
+  * contraction_factor  = 0.95
+  * sufficient_decrease = 0.1
+
+## Stopping Criterion
+Stop When _one_ of the following are fulfilled:
+    Max Iteration 200:  not reached
+    |grad f| &lt; 1.0e-8: reached
+Overall: reached
+This indicates convergence: Yes
+
+## Cache
+  * :Cost     : 25/25 entries of type Float64 used
+  * :Gradient : 25/25 entries of type Vector{Float64} used
+
+## Statistics on function calls
+  * :Gradient : 66
+  * :Cost     : 149</code></pre><p>Since the default setup with <a href="../../plans/stepsize/#Manopt.ArmijoLinesearch"><code>ArmijoLinesearch</code></a> needs the gradient and the cost, and similarly the stopping criterion might (independently) evaluate the gradient, the caching is quite helpful here.</p><p>And of course also for this advanced return value of the solver, we can still access the result as usual:</p><pre><code class="language-julia hljs">get_solver_result(r)</code></pre><pre><code class="nohighlight hljs">3-element Vector{Float64}:
+ 0.6868392807355564
+ 0.006531599748261925
+ 0.7267799809043942</code></pre><h2 id="Advanced-Caching-Examples"><a class="docs-heading-anchor" href="#Advanced-Caching-Examples">Advanced Caching Examples</a><a id="Advanced-Caching-Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Advanced-Caching-Examples" title="Permalink"></a></h2><p>There are more options other than caching single calls to specific parts of the objective. For example you may want to cache intermediate results of computing the cost and share that with the gradient computation. We will present three solutions to this:</p><ol><li>An easy approach from within <code>Manopt.jl</code>: The <a href="../../plans/objective/#Manopt.ManifoldCostGradientObjective"><code>ManifoldCostGradientObjective</code></a></li><li>A shared storage approach using a functor</li><li>A shared (internal) cache approach also using a functor</li></ol><p>For that we switch to another example: The Rayleigh quotient. We aim to maximize the Rayleigh quotient <span>$\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$</span>, for some <span>$A\in\mathbb R^{m+1\times m+1}$</span> and <span>$x\in\mathbb R^{m+1}$</span> but since we consider this on the sphere and <code>Manopt.jl</code> (as many other optimization toolboxes) minimizes, we consider</p><p class="math-container">\[g(p) = -p^{\mathrm{T}}Ap,\qquad p\in\mathbb S^{m}\]</p><p>The Euclidean gradient (that is in <span>$</span> R^{m+1}<span>$</span>) is actually just <span>$\nabla g(p) = -2Ap$</span>, the Riemannian gradient the projection of <span>$\nabla g(p)$</span> onto the tangent space <span>$T_p\mathbb S^{m}$</span>.</p><pre><code class="language-julia hljs">m = 25
+Random.seed!(42)
+A = randn(m + 1, m + 1)
+A = Symmetric(A)
+p_star = eigvecs(A)[:, end] # minimizer (or similarly -p)
+f_star = -eigvals(A)[end] # cost (note that we get - the largest Eigenvalue)
+
+N = Sphere(m);
+
+g(M, p) = -p&#39; * A*p
+∇g(p) = -2 * A * p
+grad_g(M,p) = project(M, p, ∇g(p))
+grad_g!(M,X, p) = project!(M, X, p, ∇g(p))</code></pre><pre><code class="nohighlight hljs">grad_g! (generic function with 1 method)</code></pre><p>But since both the cost and the gradient require the computation of the matrix-vector product <span>$Ap$</span>, it might be beneficial to only compute this once.</p><h3 id="The-[ManifoldCostGradientObjective](@ref)-approach"><a class="docs-heading-anchor" href="#The-[ManifoldCostGradientObjective](@ref)-approach">The <a href="../../plans/objective/#Manopt.ManifoldCostGradientObjective"><code>ManifoldCostGradientObjective</code></a> approach</a><a id="The-[ManifoldCostGradientObjective](@ref)-approach-1"></a><a class="docs-heading-anchor-permalink" href="#The-[ManifoldCostGradientObjective](@ref)-approach" title="Permalink"></a></h3><p>The <a href="../../plans/objective/#Manopt.ManifoldCostGradientObjective"><code>ManifoldCostGradientObjective</code></a> uses a combined function to compute both the gradient and the cost at the same time. We define the in-place variant as</p><pre><code class="language-julia hljs">function g_grad_g!(M::AbstractManifold, X, p)
+    X .= -A*p
+    c = p&#39;*X
+    X .*= 2
+    project!(M, X, p, X)
+    return (c, X)
+end</code></pre><pre><code class="nohighlight hljs">g_grad_g! (generic function with 1 method)</code></pre><p>where we only compute the matrix-vector product once. The small disadvantage might be, that we always compute <em>both</em>, the gradient and the cost. Luckily, the cache we used before, takes this into account and caches both results, such that we indeed end up computing <code>A*p</code> only once when asking to a cost and a gradient.</p><p>Let’s compare both methods</p><pre><code class="language-julia hljs">p0 = [(1/5 .* ones(5))..., zeros(m-4)...];
+@time s1 = gradient_descent(N, g, grad_g!, p0;
+    stopping_criterion = StopWhenGradientNormLess(1e-5),
+    evaluation=InplaceEvaluation(),
+    count=[:Cost, :Gradient],
+    cache=(:LRU, [:Cost, :Gradient], 25),
+    return_objective=true,
+)</code></pre><pre><code class="nohighlight hljs">  1.079972 seconds (1.72 M allocations: 137.104 MiB, 2.50% gc time, 99.32% compilation time)
+
+## Cache
+  * :Cost     : 25/25 entries of type Float64 used
+  * :Gradient : 25/25 entries of type Vector{Float64} used
+
+## Statistics on function calls
+  * :Gradient : 602
+  * :Cost     : 1449
+
+To access the solver result, call `get_solver_result` on this variable.</code></pre><p>versus</p><pre><code class="language-julia hljs">obj = ManifoldCostGradientObjective(g_grad_g!; evaluation=InplaceEvaluation())
+@time s2 = gradient_descent(N, obj, p0;
+    stopping_criterion=StopWhenGradientNormLess(1e-5),
+    count=[:Cost, :Gradient],
+    cache=(:LRU, [:Cost, :Gradient], 25),
+    return_objective=true,
+)</code></pre><pre><code class="nohighlight hljs">  0.656784 seconds (804.34 k allocations: 62.556 MiB, 2.57% gc time, 98.21% compilation time)
+
+## Cache
+  * :Cost     : 25/25 entries of type Float64 used
+  * :Gradient : 25/25 entries of type Vector{Float64} used
+
+## Statistics on function calls
+  * :Gradient : 1448
+  * :Cost     : 1448
+
+To access the solver result, call `get_solver_result` on this variable.</code></pre><p>first of all both yield the same result</p><pre><code class="language-julia hljs">p1 = get_solver_result(s1)
+p2 = get_solver_result(s2)
+[distance(N, p1, p2), g(N, p1), g(N, p2), f_star]</code></pre><pre><code class="nohighlight hljs">4-element Vector{Float64}:
+  0.0
+ -7.8032957637779035
+ -7.8032957637779035
+ -7.803295763793951</code></pre><p>and we can see that the combined number of evaluations is once 2051, once just the number of cost evaluations 1449. Note that the involved additional 847 gradient evaluations are merely a multiplication with 2. On the other hand, the additional caching of the gradient in these cases might be less beneficial. It is beneficial, when the gradient and the cost are very often required together.</p><h3 id="A-shared-storage-approach-using-a-functor"><a class="docs-heading-anchor" href="#A-shared-storage-approach-using-a-functor">A shared storage approach using a functor</a><a id="A-shared-storage-approach-using-a-functor-1"></a><a class="docs-heading-anchor-permalink" href="#A-shared-storage-approach-using-a-functor" title="Permalink"></a></h3><p>An alternative to the previous approach is the usage of a functor that introduces a “shared storage” of the result of computing <code>A*p</code>. We additionally have to store <code>p</code> though, since we have to check that we are still evaluating the cost and/or gradient at the same point at which the cached <code>A*p</code> was computed. We again consider the (more efficient) in-place variant. This can be done as follows</p><pre><code class="language-julia hljs">struct StorageG{T,M}
+    A::M
+    Ap::T
+    p::T
+end
+function (g::StorageG)(::Val{:Cost}, M::AbstractManifold, p)
+    if !(p==g.p) #We are at a new point -&gt; Update
+        g.Ap .= g.A*p
+        g.p .= p
+    end
+    return -g.p&#39;*g.Ap
+end
+function (g::StorageG)(::Val{:Gradient}, M::AbstractManifold, X, p)
+    if !(p==g.p) #We are at a new point -&gt; Update
+        g.Ap .= g.A*p
+        g.p .= p
+    end
+    X .= -2 .* g.Ap
+    project!(M, X, p, X)
+    return X
+end</code></pre><p>Here we use the first parameter to distinguish both functions. For the mutating case the signatures are different regardless of the additional argument but for the allocating case, the signatures of the cost and the gradient function are the same.</p><pre><code class="language-julia hljs">#Define the new functor
+storage_g = StorageG(A, zero(p0), zero(p0))
+# and cost and gradient that use this functor as
+g3(M,p) = storage_g(Val(:Cost), M, p)
+grad_g3!(M, X, p) = storage_g(Val(:Gradient), M, X, p)
+@time s3 = gradient_descent(N, g3, grad_g3!, p0;
+    stopping_criterion = StopWhenGradientNormLess(1e-5),
+    evaluation=InplaceEvaluation(),
+    count=[:Cost, :Gradient],
+    cache=(:LRU, [:Cost, :Gradient], 2),
+    return_objective=true#, return_state=true
+)</code></pre><pre><code class="nohighlight hljs">  0.427952 seconds (345.18 k allocations: 24.892 MiB, 2.09% gc time, 98.40% compilation time)
+
+## Cache
+  * :Cost     : 2/2 entries of type Float64 used
+  * :Gradient : 2/2 entries of type Vector{Float64} used
+
+## Statistics on function calls
+  * :Gradient : 602
+  * :Cost     : 1449
+
+To access the solver result, call `get_solver_result` on this variable.</code></pre><p>This of course still yields the same result</p><pre><code class="language-julia hljs">p3 = get_solver_result(s3)
+g(N, p3) - f_star</code></pre><pre><code class="nohighlight hljs">1.6047607687141863e-11</code></pre><p>And while we again have a split off the cost and gradient evaluations, we can observe that the allocations are less than half of the previous approach.</p><h3 id="A-local-cache-approach"><a class="docs-heading-anchor" href="#A-local-cache-approach">A local cache approach</a><a id="A-local-cache-approach-1"></a><a class="docs-heading-anchor-permalink" href="#A-local-cache-approach" title="Permalink"></a></h3><p>This variant is very similar to the previous one, but uses a whole cache instead of just one place to store <code>A*p</code>. This makes the code a bit nicer, and it is possible to store more than just the last <code>p</code> either cost or gradient was called with.</p><pre><code class="language-julia hljs">struct CacheG{C,M}
+    A::M
+    cache::C
+end
+function (g::CacheG)(::Val{:Cost}, M, p)
+    Ap = get!(g.cache, copy(M,p)) do
+        g.A*p
+    end
+    return -p&#39;*Ap
+end
+function (g::CacheG)(::Val{:Gradient}, M, X, p)
+    Ap = get!(g.cache, copy(M,p)) do
+        g.A*p
+    end
+    X .= -2 .* Ap
+    project!(M, X, p, X)
+    return X
+end</code></pre><p>However, the resulting solver run is not always faster, since the whole cache instead of storing just <code>Ap</code> and <code>p</code> is a bit more costly. Then the tradeoff is, whether this pays off.</p><pre><code class="language-julia hljs">#Define the new functor
+cache_g = CacheG(A, LRU{typeof(p0),typeof(p0)}(; maxsize=25))
+# and cost and gradient that use this functor as
+g4(M,p) = cache_g(Val(:Cost), M, p)
+grad_g4!(M, X, p) = cache_g(Val(:Gradient), M, X, p)
+@time s4 = gradient_descent(N, g4, grad_g4!, p0;
+    stopping_criterion = StopWhenGradientNormLess(1e-5),
+    evaluation=InplaceEvaluation(),
+    count=[:Cost, :Gradient],
+    cache=(:LRU, [:Cost, :Gradient], 25),
+    return_objective=true,
+)</code></pre><pre><code class="nohighlight hljs">  0.423500 seconds (339.13 k allocations: 24.883 MiB, 1.88% gc time, 96.30% compilation time)
+
+## Cache
+  * :Cost     : 25/25 entries of type Float64 used
+  * :Gradient : 25/25 entries of type Vector{Float64} used
+
+## Statistics on function calls
+  * :Gradient : 602
+  * :Cost     : 1449
+
+To access the solver result, call `get_solver_result` on this variable.</code></pre><p>and for safety let’s check that we are reasonably close</p><pre><code class="language-julia hljs">p4 = get_solver_result(s4)
+g(N, p4) - f_star</code></pre><pre><code class="nohighlight hljs">1.6047607687141863e-11</code></pre><p>For this example, or maybe even <a href="../../solvers/gradient_descent/#Manopt.gradient_descent"><code>gradient_descent</code></a> in general it seems, this additional (second, inner) cache does not improve the result further, it is about the same effort both time and allocation-wise.</p><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>While the second approach of <a href="../../plans/objective/#Manopt.ManifoldCostGradientObjective"><code>ManifoldCostGradientObjective</code></a> is very easy to implement, both the storage and the (local) cache approach are more efficient. All three are an improvement over the first implementation without sharing interim results. The results with storage or cache have further advantage of being more flexible, since the stored information could also be reused in a third function, for example when also computing the Hessian.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../EmbeddingObjectives/">« Define objectives in the embedding</a><a class="docs-footer-nextpage" href="../HowToDebug/">Print debug output »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Monday 1 January 2024 18:11">Monday 1 January 2024</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
