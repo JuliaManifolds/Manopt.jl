@@ -805,16 +805,16 @@ function (bb::BarzilaiBorweinStepsize)(
     elseif bb.strategy == :alternating
         if s1 > 0
             if k % 2 == 0
-                stepsize = min(bb.max_stepsize, max(bb.min_stepsize, s1 / s2))
+                stepsize = clamp(s1 / s2, bb.min_stepsize, bb.max_stepsize)
             else
-                stepsize = min(bb.max_stepsize, max(bb.min_stepsize, s3 / s1))
+                stepsize = clamp(s3 / s1, bb.min_stepsize, bb.max_stepsize)
             end
         else
             stepsize = bb.max_stepsize
         end
     else # default: direct strategy
         if s1 > 0
-            stepsize = min(bb.max_stepsize, max(bb.min_stepsize, s3 / s1))
+            stepsize = clamp(s3 / s1, bb.min_stepsize, bb.max_stepsize)
         else
             stepsize = bb.max_stepsize
         end
