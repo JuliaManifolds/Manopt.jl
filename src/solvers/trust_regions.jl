@@ -8,7 +8,7 @@ Store the state of the trust-regions solver.
 * `acceptance_rate`:         a lower bound of the performance ratio for the iterate
   that decides if the iteration is accepted or not.
 $(_fields(:callbacks; add_properties = [:as_dict]))
-* `HX`, `HY`, `HZ`:          interim storage (to avoid allocation) of ``$(_tex(:Hess)) f(p)[⋅]` of `X`, `Y`, `Z`
+* `HX`, `HY`, `HZ`:          interim storage (to avoid allocation) of ``$(_tex(:Hess)) f(p)[⋅]`` for `X`, `Y`, `Z`
 * `max_trust_region_radius`: the maximum trust-region radius
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `project!`:                for numerical stability it is possible to project onto the tangent space after every iteration.
@@ -236,10 +236,10 @@ end
 function status_summary(trs::TrustRegionsState; context::Symbol = :default)
     (context === :short) && return repr(trs)
     i = get_count(trs, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(trs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(trs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the trust region solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
+    Conv = has_converged(trs.stop) ? "Yes" : "No"
     (context === :inline) && (return "A trust regions method state – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
     sub = _in_str(status_summary(trs.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")
     as = _callbacks_summary(trs)
@@ -259,7 +259,7 @@ function status_summary(trs::TrustRegionsState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(trs.stop; context = context); indent = 1, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 
@@ -309,7 +309,7 @@ $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 $(_kwargs(:sub_kwargs))
 $(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "`( see [`truncated_conjugate_gradient_descent`](@ref))` "))
-* `sub_objective` : the subojective do solve, by default the [`TrustRegionModelObjective`](@ref)`(mho)` possibly decorated with `sub_kwargs``
+* `sub_objective`: the sub objective to solve, by default the [`TrustRegionModelObjective`](@ref)`(mho)` possibly decorated with `sub_kwargs`
   Note that this keyword has no effect if you set the `sub_problem` directly.
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(`[`TangentSpace`](@extref `ManifoldsBase.TangentSpace`)`(M,p), sub_objective)"))
 $(_kwargs(:sub_state; default = "`[`TruncatedConjugateGradientState`](@ref)` "))

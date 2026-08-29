@@ -220,10 +220,10 @@ end
 function status_summary(dcs::DifferenceOfConvexState; context::Symbol = :default)
     (context === :short) && return repr(dcs)
     i = get_count(dcs, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(dcs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(dcs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the differencce of convex algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(dcs.stop) ? "Yes" : "No"
+    Conv = has_converged(dcs.stop) ? "Yes" : "No"
     as = _callbacks_summary(dcs)
     sub = status_summary(dcs.sub_state; context = context)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
@@ -236,7 +236,7 @@ function status_summary(dcs::DifferenceOfConvexState; context::Symbol = :default
 
     ## Stopping criterion
     $(_in_str(status_summary(dcs.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 

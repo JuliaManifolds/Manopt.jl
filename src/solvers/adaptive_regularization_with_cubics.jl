@@ -161,7 +161,7 @@ Construct the solver state with all fields stated as keyword arguments and the f
 * `γ1=0.1`
 * `γ2=2.0`
 * `σ=100/manifold_dimension(M)`
-* `σmin=1e-7
+* `σmin=1e-7`
 * `ρ_regularization=1e3`
 $(_kwargs([:evaluation, :p, :retraction_method]))
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
@@ -261,10 +261,10 @@ end
 function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :default)
     (context === :short) && (return repr(arcs))
     i = get_count(arcs, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(arcs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(arcs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the adaptive regularization with cubics solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(arcs.stop) ? "Yes" : "No"
+    Conv = has_converged(arcs.stop) ? "Yes" : "No"
     as = _callbacks_summary(arcs)
     sub = status_summary(arcs.sub_state; context = context)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
@@ -282,7 +282,7 @@ function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :de
 
     ## Stopping criterion
     $(_in_str(status_summary(arcs.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 
@@ -354,10 +354,10 @@ the cost `f` and its gradient and Hessian might also be provided as a [`Manifold
 $(_kwargs(:evaluation))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `initial_tangent_vector=zero_vector(M, p)`: initialize any tangent vector data,
-* `maxIterLanczos=200`: a shortcut to set the stopping criterion in the sub solver,
+* `maxIterLanczos=min(300, manifold_dimension(M))`: a shortcut to set the stopping criterion in the sub solver,
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
 $(_kwargs(:retraction_method)):
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos-1)"))
 $(_kwargs(:sub_kwargs))
 * `sub_objective=nothing`: a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword
   By default, this is initialized as a [`AdaptiveRegularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.

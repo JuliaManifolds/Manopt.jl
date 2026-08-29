@@ -3,7 +3,7 @@
 
 # Fields
 
-$(_fields(:stepsize; name = "backtracking")) to determine the step size ``β_k`` step size from ``p_k`` to the candidate ``q_k``
+$(_fields(:stepsize; name = "backtrack")) to determine the step size ``β_k`` step size from ``p_k`` to the candidate ``q_k``
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 $(_fields(:p; add_properties = [:as_Iterate]))
@@ -93,10 +93,10 @@ end
 function status_summary(pgms::ProjectedGradientMethodState; context::Symbol = :default)
     (context === :short) && return repr(pgms)
     i = get_count(pgms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(pgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(pgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the projected gradient solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
+    Conv = has_converged(pgms.stop) ? "Yes" : "No"
     as = _callbacks_summary(pgms)
     s = """
     # Solver state for `Manopt.jl`s Projected Gradient Method
@@ -113,7 +113,7 @@ function status_summary(pgms::ProjectedGradientMethodState; context::Symbol = :d
 
     ## Stopping criterion
     $(_in_str(status_summary(pgms.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 
@@ -229,7 +229,7 @@ function projected_gradient_method(M, f, grad_f, proj; kwargs...)
     return projected_gradient_method(M, f, grad_f, proj, rand(M); kwargs...)
 end
 function projected_gradient_method(
-        M, f, grad_f, proj, p; indicator = nothing, evaluation = AllocatingEvaluation(), kwargs...
+        M, f, grad_f, proj, p; indicator = missing, evaluation = AllocatingEvaluation(), kwargs...
     )
     cs_obj = ManifoldConstrainedSetObjective(
         f, grad_f, proj; evaluation = evaluation, indicator = indicator
@@ -245,7 +245,7 @@ calls_with_kwargs(::typeof(projected_gradient_method)) = (projected_gradient_met
 
 @doc "$(_doc_pgm)"
 function projected_gradient_method!(
-        M, f, grad_f, proj, p; indicator = nothing, evaluation = AllocatingEvaluation(), kwargs...
+        M, f, grad_f, proj, p; indicator = missing, evaluation = AllocatingEvaluation(), kwargs...
     )
     cs_obj = ManifoldConstrainedSetObjective(
         f, grad_f, proj; evaluation = evaluation, indicator = indicator

@@ -1,6 +1,6 @@
 const _MANOPT_DEFAULT_CALLBACKS = [:Any, :BeforeInit, :BeforeStep, :BeforeStop, :Init, :Step, :Stop]
-const _MANOPT_EMPTY_CALLBACK = (problem, state, iteration) -> nothing
-const _MANOPT_EMPTY_ANY_CALLBACK = (symbol::Symbol, problem, state, iteration) -> nothing
+const _MANOPT_EMPTY_CALLBACK = (problem, state, k) -> nothing
+const _MANOPT_EMPTY_ANY_CALLBACK = (symbol::Symbol, problem, state, k) -> nothing
 
 """
     active_callbacks(state::AbstractManoptSolverState)
@@ -15,17 +15,17 @@ function active_callbacks(state::AbstractManoptSolverState)
 end
 
 """
-    callback(name::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int)
+    callback(name::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverState, k::Int)
 
 Perform a callback.
 
 This function performs a call to both possible approaches
 
-* if a callback exists in the dictionary under the symbol `name` it is called with the parameters `problem, state, iteration`
-* if a callback exists in the dictionary that shall be called `:Any` time, this one is called with `name, problem, state, iteration`
+* if a callback exists in the dictionary under the symbol `name` it is called with the parameters `problem, state, k`
+* if a callback exists in the dictionary that shall be called `:Any` time, this one is called with `name, problem, state, k`
 """
 function callback(
-        name::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
+        name::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverState, k::Int
     )
     cb = get_callbacks(state)
     if isempty(cb)
@@ -33,9 +33,9 @@ function callback(
         return nothing
     end
     cbs = get(cb, name, _MANOPT_EMPTY_CALLBACK)
-    cbs(problem, state, iteration)
+    cbs(problem, state, k)
     cba = get(cb, :Any, _MANOPT_EMPTY_ANY_CALLBACK)
-    cba(name, problem, state, iteration)
+    cba(name, problem, state, k)
     return nothing
 end
 

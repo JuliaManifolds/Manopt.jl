@@ -86,15 +86,15 @@ Stores option values for a [`convex_bundle_method`](@ref) solver.
 # Fields
 
 THe following fields require a (real) number type `R`, as well as
-point type `P` and a tangent vector type `T``
+point type `P` and a tangent vector type `T`
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
 * `atol_λ::R`:                 tolerance parameter for the convex coefficients in λ
-* `atol_errors::R:             tolerance parameter for the linearization errors
+* `atol_errors::R`:            tolerance parameter for the linearization errors
 * `bundle<:AbstractVector{Tuple{<:P,<:T}}`: bundle that collects each iterate with the computed subgradient at the iterate
 * `bundle_cap::Int`: the maximal number of elements the bundle is allowed to remember
 * `diameter::R`: estimate for the diameter of the level set of the objective function at the starting point
-* `domain: the domain of ``f`` as a function `(M,p) -> b`that evaluates to true when the current candidate is in the domain of `f`, and false otherwise,
+* `domain`: the domain of ``f`` as a function `(M, p) -> b` that evaluates to true when the current candidate is in the domain of `f`, and false otherwise,
 * `g::T`:                      descent direction
 $(_fields(:inverse_retraction_method))
 * `k_max::R`:                  upper bound on the sectional curvature of the manifold
@@ -109,8 +109,8 @@ $(_fields(:vector_transport_method))
 $(_fields(:X; add_properties = [:as_Subgradient]))
 $(_fields(:stepsize))
 * `ε::R`:                      convex combination of the linearization errors
-* `λ:::AbstractVector{<:R}`:   convex coefficients from the slution of the subproblem
-* `ξ`:                         the stopping parameter given by ``ξ = -$(_tex(:norm, "g"))^2 – ε``
+* `λ::AbstractVector{<:R}`:    convex coefficients from the solution of the subproblem
+* `ξ`:                         the stopping parameter given by ``ξ = -$(_tex(:norm, "g"))^2 - ε``
 $(_fields([:sub_problem, :sub_state]))
 
 # Constructor
@@ -130,7 +130,7 @@ Most of the following keyword arguments set default values for the fields mentio
 
 * `atol_errors=eps()`
 * `atol_λ=eps()`
-* `bundle_cap=25``
+* `bundle_cap=25`
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `diameter=50.0`
 * `domain=(M, p) -> isfinite(f(M, p))`
@@ -338,11 +338,10 @@ end
 function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :default)
     (context === :short) && return repr(cbms)
     i = get_count(cbms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(cbms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(cbms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the Convex Bundle Method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(cbms.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(cbms)) – $(Iter) $(has_converged(cbms) ? "(converged)" : "")")
+    Conv = has_converged(cbms.stop) ? "Yes" : "No"
     as = _callbacks_summary(cbms)
     s = """
     # Solver state for `Manopt.jl`s Convex Bundle Method
@@ -363,7 +362,7 @@ function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :defaul
 
     ## Stopping criterion
     $(_in_str(status_summary(cbms.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 
@@ -473,7 +472,7 @@ Specify a step size that performs a backtracking to the interior of the domain o
 * `candidate_point=allocate_result(M, rand)`:
   specify a point to be used as memory for the candidate points.
 * `contraction_factor`: how to update ``s`` in the decrease step
-* `initial_stepsize``: specify an initial step size
+* `initial_stepsize`: specify an initial step size
 $(_kwargs(:retraction_method))
 
 $(_note(:ManifoldDefaultsFactory, "DomainBackTrackingStepsize"))
@@ -640,20 +639,20 @@ $(_args([:M, :f, :subgrad_f, :p]))
 
 # Keyword arguments
 
-* `atol_errors=eps()`: : tolerance parameter for the linearization errors.
-* `atol_λ=eps()` : tolerance parameter for the convex coefficients in ``λ``.
-* `bundle_cap=25``
+* `atol_errors=sqrt(eps())`: tolerance parameter for the linearization errors.
+* `atol_λ=sqrt(eps())`: tolerance parameter for the convex coefficients in ``λ``.
+* `bundle_cap=25`
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `diameter=50.0`: estimate for the diameter of the level set of the objective function at the starting point.
-* `domain=(M, p) -> isfinite(f(M, p))`: a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
+* `diameter=π/3`: estimate for the diameter of the level set of the objective function at the starting point.
+* `domain=(M, p) -> isfinite(f(M, p))`: a function that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
 $(_kwargs(:evaluation))
 $(_kwargs(:inverse_retraction_method))
 * `k_max=0`: upper bound on the sectional curvature of the manifold.
-* `m=1e-3`: : the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
+* `m=1e-3`: the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
-$(_kwargs(:sub_problem; default = "`[`AllocatingEvaluation`](@ref)´ "))
-$(_kwargs(:sub_state; default = "`[`convex_bundle_method_subsolver`](@ref)"))
+$(_kwargs(:sub_problem; default = "`[`convex_bundle_method_subsolver`](@ref)` "))
+$(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)`()"))
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X))
 
@@ -675,14 +674,14 @@ calls_with_kwargs(::typeof(convex_bundle_method)) = (convex_bundle_method!,)
 @doc "$(_doc_convex_bundle_method)"
 function convex_bundle_method!(
         M::AbstractManifold, f::TF, ∂f!::TdF, p;
-        atol_λ::R = sqrt(eps()),
-        atol_errors::R = sqrt(eps()),
+        atol_λ::Real = sqrt(eps()),
+        atol_errors::Real = sqrt(eps()),
         bundle_cap::Int = 25,
         callbacks = Dict{Symbol, Function}(),
         contraction_factor = 0.975,
-        diameter::R = π / 3, # was `k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3)`,
+        diameter::Real = π / 3, # was `k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3)`,
         domain = (M, p) -> isfinite(f(M, p)),
-        m::R = 1.0e-3,
+        m::Real = 1.0e-3,
         k_max = 0,
         k_min = 0,
         p_estimate = p,
@@ -701,7 +700,7 @@ function convex_bundle_method!(
         sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = evaluation,
         ϱ = nothing,
         kwargs...,
-    ) where {R <: Real, TF, TdF, TRetr, IR, VTransp}
+    ) where {TF, TdF, TRetr, IR, VTransp}
     keywords_accepted(convex_bundle_method!; kwargs...)
     sgo = ManifoldSubgradientObjective(f, ∂f!; evaluation = evaluation, p = p)
     dsgo = decorate_objective!(M, sgo; kwargs...)
@@ -870,7 +869,6 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             Consider decreasing either the `diameter` keyword argument, or one
             of the parameters involved in the estimation of the sectional curvature, such as
             `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
-            of the parameters involved in the estimation of the sectional curvature, such as `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
             """
             if d.status === :Once
                 @warn "Further warnings will be suppressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
@@ -883,7 +881,6 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             Consider increasing either the `diameter` keyword argument, or changing
             one of the parameters involved in the estimation of the sectional curvature, such as
             `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
-            one of the parameters involved in the estimation of the sectional curvature, such as `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
             """
         else
             d.old_value = min(d.old_value, new_value)

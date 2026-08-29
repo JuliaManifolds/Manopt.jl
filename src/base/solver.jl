@@ -208,17 +208,17 @@ as well as the [`stop_solver!`](@ref) of the solver.
 This includes the callbacks `:BeforeInit`, `:Init`, `:BeforeStep`, `:Step`, and `:Stop`.
 """
 function solve!(problem::AbstractManoptProblem, state::AbstractManoptSolverState)
-    iteration = 0
+    k = 0
     callback(:BeforeInit, problem, state, 0)
     initialize_solver!(problem, state)
     callback(:Init, problem, state, 0)
-    while !stop_solver!(problem, state, iteration)
-        iteration = iteration + 1
-        callback(:BeforeStep, problem, state, iteration)
-        step_solver!(problem, state, iteration)
-        callback(:Step, problem, state, iteration)
+    while !stop_solver!(problem, state, k)
+        k = k + 1
+        callback(:BeforeStep, problem, state, k)
+        step_solver!(problem, state, k)
+        callback(:Step, problem, state, k)
     end
-    callback(:Stop, problem, state, iteration)
+    callback(:Stop, problem, state, k)
     return state
 end
 

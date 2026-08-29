@@ -104,8 +104,8 @@ by a predictor-corrector-loop using an affine covariant quantity ``θ`` to measu
 # Example
 
 On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold)) = $(_math(:Manifold; M = "N"))^n``
-any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold))`
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold))``
 is given by
 
 ```math
@@ -153,7 +153,7 @@ function Base.show(io::IO, acs::AffineCovariantStepsize)
     return print(io, ")")
 end
 function status_summary(acs::AffineCovariantStepsize; context = :default)
-    (context === :short) && repr(acs)
+    (context === :short) && return repr(acs)
     (context === :inline) && return "An affine covariant step size (last step size: $(acs.last_stepsize))"
     on = ismissing(acs.outer_norm) ? "" : "\n* outer norm:       $(_MANOPT_INDENT)$(acs.outer_norm)"
     return """
@@ -206,11 +206,10 @@ default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = Constan
 function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :default)
     (context === :short) && return repr(vbns)
     i = get_count(vbns, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(vbns.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(vbns.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the vector bundle Newton solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(vbns.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(vbns)) – $(Iter) $(has_converged(vbns) ? "(converged)" : "")")
+    Conv = has_converged(vbns.stop) ? "Yes" : "No"
     as = _callbacks_summary(vbns)
     s = """
     # Solver state for `Manopt.jl`s Vector bundle Newton method
@@ -223,7 +222,7 @@ function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :defaul
 
     ## Stopping criterion
     $(_in_str(status_summary(vbns.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 
@@ -271,17 +270,17 @@ returns the range vector bundle stored within a [`VectorBundleManoptProblem`](@r
 """
 get_vectorbundle(vbp::VectorBundleManoptProblem) = vbp.vectorbundle
 
-raw"""
+"""
     get_manifold(vbp::VectorBundleManoptProblem)
 
-    returns the domain manifold stored within a [`VectorBundleManoptProblem`](@ref)
+returns the domain manifold stored within a [`VectorBundleManoptProblem`](@ref)
 """
 get_manifold(vbp::VectorBundleManoptProblem) = vbp.manifold
 
-raw"""
+"""
     get_newton_equation(mp::VectorBundleManoptProblem)
 
-returns the Newton equation [`newton_equation`](@ref) stored within an [`VectorBundleManoptProblem`](@ref).
+returns the Newton equation `newton_equation` stored within a [`VectorBundleManoptProblem`](@ref).
 """
 function get_newton_equation(vbp::VectorBundleManoptProblem)
     return vbp.newton_equation
@@ -325,10 +324,12 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 
 @doc "$(doc_vector_bundle_newton)"
 function vectorbundle_newton(M::AbstractManifold, E::AbstractManifold, NE, p; kwargs...)
+    keywords_accepted(vectorbundle_newton; kwargs...)
     #replace type of E with VectorBundle once this is available in ManifoldsBase
     q = copy(M, p)
     return vectorbundle_newton!(M, E, NE, q; kwargs...)
 end
+calls_with_kwargs(::typeof(vectorbundle_newton)) = (vectorbundle_newton!,)
 
 
 @doc "$(doc_vector_bundle_newton)"
@@ -345,6 +346,7 @@ function vectorbundle_newton!(
         X::T = zero_vector(M, p),
         kwargs...,
     ) where {O, P, T, Pr, Op, RM <: AbstractRetractionMethod, SC <: StoppingCriterion}
+    keywords_accepted(vectorbundle_newton!; kwargs...)
     isnothing(sub_problem) && error("Please provide a sub_problem (method that solves the Newton equation)")
     vbp = VectorBundleManoptProblem(M, E, NE)
     vbs = VectorBundleNewtonState(
@@ -359,6 +361,7 @@ function vectorbundle_newton!(
     solve!(vbp, dvbs)
     return get_solver_return(dvbs)
 end
+calls_with_kwargs(::typeof(vectorbundle_newton!)) = (decorate_state!,)
 
 function initialize_solver!(::VectorBundleManoptProblem, s::VectorBundleNewtonState)
     return s

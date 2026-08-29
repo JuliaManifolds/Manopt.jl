@@ -155,16 +155,16 @@ end
 function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
     (context === :short) && return repr(qns)
     i = get_count(qns, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(qns.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(qns.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the quasi Newton solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(qns.stop) ? "Yes" : "No"
+    Conv = has_converged(qns.stop) ? "Yes" : "No"
     as = _callbacks_summary(qns)
     s = """
     # Solver state for `Manopt.jl`s Quasi Newton Method
     $Iter
     ## Parameters$(as)
-    * direction update:        $(status_summary(qns.direction_update))
+    * direction update:        $(status_summary(qns.direction_update; context = :inline))
     * retraction method:       $(qns.retraction_method)
     * vector transport method: $(qns.vector_transport_method)
 
@@ -173,7 +173,7 @@ function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(qns.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 get_iterate(qns::QuasiNewtonState) = qns.p
@@ -198,7 +198,7 @@ Perform a quasi Newton iteration to solve
 
 $(_problem(:Default))
 
-with start point `p`. The iterations can be done in-place of `p```=p^{(0)}``.
+with start point `p`. The iterations can be done in-place of `p`, which is used as ``p^{(0)}``.
 The ``k``th iteration consists of
 
 1. Compute the search direction ``η^{(k)} = -$(_tex(:Cal, "B"))_k [$(_tex(:grad))f (p^{(k)})]`` or solve ``$(_tex(:Cal, "H"))_k [η^{(k)}] = -$(_tex(:grad))f (p^{(k)})]``.
@@ -214,7 +214,7 @@ $(_args([:M, :f, :grad_f, :p]))
 # Keyword arguments
 
 * `basis::AbstractBasis=`[`DefaultOrthonormalBasis`](@extref ManifoldsBase.DefaultOrthonormalBasis)`()`:
-  basis to use within each of the the tangent spaces to represent
+  basis to use within each of the tangent spaces to represent
   the Hessian (inverse) for the cases where it is stored in full (matrix) form.
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `cautious_update::Bool=false`:

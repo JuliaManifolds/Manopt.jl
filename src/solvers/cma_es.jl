@@ -204,10 +204,10 @@ get_callbacks(state::CMAESState) = state.callbacks
 function status_summary(s::CMAESState; context::Symbol = :default)
     (context === :short) && return repr(s)
     i = get_count(s, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(s.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(s.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the conjugate gradient descent solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(s.stop) ? "Yes" : "No"
+    Conv = has_converged(s.stop) ? "Yes" : "No"
     s = """
     # Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy
     $Iter
@@ -236,7 +236,7 @@ function status_summary(s::CMAESState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(s.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 #
@@ -252,13 +252,13 @@ function initialize_solver!(mp::AbstractManoptProblem, s::CMAESState)
     s.covariance_matrix_eigen = eigen(Symmetric(s.covariance_matrix))
     return s
 end
-function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
+function step_solver!(mp::AbstractManoptProblem, s::CMAESState, k::Int)
     M = get_manifold(mp)
     n_coords = number_of_coordinates(M, s.basis)
 
     # sampling and evaluation of new solutions
 
-    # `D2, B = eigen(Symmetric(s.covariance_matrix))``
+    # `D2, B = eigen(Symmetric(s.covariance_matrix))`
     D2, B = s.covariance_matrix_eigen # assuming eigendecomposition has already been completed
     min_eigval, max_eigval = extrema(abs.(D2))
     if minimum(D2) <= 0
@@ -309,7 +309,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
 
     # covariance matrix adaptation
     s.p_c .*= 1 - s.c_c # Eq. (45), part 1
-    if norm(s.p_σ) / sqrt(1 - (1 - s.c_σ)^(2 * (iteration + 1))) <
+    if norm(s.p_σ) / sqrt(1 - (1 - s.c_σ)^(2 * (k + 1))) <
             (1.4 + 2 / (n_coords + 1)) * s.e_mv_norm # h_σ criterion
         s.p_c .+= sqrt(s.c_c * (2 - s.c_c) * s.μ_eff) .* s.buffer # Eq. (45), part 2
         δh_σ = zero(s.c_c) # Appendix A
@@ -324,10 +324,10 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
         w_i = s.recombination_weights[i]
         wᵒi = w_i # Eq. (46)
         if w_i < 0
-            mul!(cinv_y, cov_invsqrt, s.ys_c[i])
+            mul!(cinv_y, cov_invsqrt, ys_c_sorted[i])
             wᵒi *= n_coords / norm(cinv_y)^2
         end
-        mul!(s.covariance_matrix, s.ys_c[i], s.ys_c[i]', s.c_μ * wᵒi, true) # Eq. (47), rank μ update
+        mul!(s.covariance_matrix, ys_c_sorted[i], ys_c_sorted[i]', s.c_μ * wᵒi, true) # Eq. (47), rank μ update
     end
     # move covariance matrix, `p_c`, and `p_σ` to new mean point
     s.last_variances .= D2
@@ -445,7 +445,7 @@ function cma_es!(
         callbacks = Dict{Symbol, Function}(),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
-    keywords_accepted(cma_es; kwargs...)
+    keywords_accepted(cma_es!; kwargs...)
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     n_coords = number_of_coordinates(M, basis)

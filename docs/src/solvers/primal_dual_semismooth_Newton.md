@@ -83,6 +83,13 @@ get_differential_dual_prox
 PrimalDualSemismoothNewtonState
 ```
 
+## Internal functions
+
+```@docs
+Manopt.construct_primal_dual_residual_vector
+Manopt.construct_primal_dual_residual_covariant_derivative_matrix
+```
+
 ## Solver specific debug output
 
 [`DebugDualBaseIterate`](@ref), [`DebugDualBaseChange`](@ref), [`DebugPrimalBaseIterate`](@ref),

@@ -72,10 +72,10 @@ end
 function status_summary(sgms::SubGradientMethodState; context::Symbol = :default)
     (context === :short) && return repr(sgms)
     i = get_count(sgms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(sgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(sgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the subgradient method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(sgms.stop) ? "Yes" : "No"
+    Conv = has_converged(sgms.stop) ? "Yes" : "No"
     as = _callbacks_summary(sgms)
     s = """
     # Solver state for `Manopt.jl`s Subgradient Method
@@ -88,7 +88,7 @@ function status_summary(sgms::SubGradientMethodState; context::Symbol = :default
 
     ## Stopping criterion
     $(_in_str(status_summary(sgms.stop; context = context); indent = 1, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 get_iterate(sgs::SubGradientMethodState) = sgs.p

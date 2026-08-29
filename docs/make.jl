@@ -47,6 +47,7 @@ tutorials_menu =
     "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
     "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
     "Do optimization with bounds" => "tutorials/BoxDomain.md",
+    "Run stochastic gradient descent" => "tutorials/StochasticGradientDescent.md",
 ]
 # Check whether all tutorials are rendered, issue a warning if not (and quarto if not set)
 all_tutorials_exist = true
@@ -158,9 +159,9 @@ makedocs(;
     format = Documenter.HTML(;
         prettyurls = run_on_CI || ("--prettyurls" ∈ ARGS),
         assets = ["assets/favicon.ico", "assets/link-icons.css"],
-        size_threshold = 1100 * 2^10,      # raise slightly 200 to to 300 KiB
-        size_threshold_warn = 900 * 2^10, # raise from 500 KiB to 1.1 MB (for search index)
-        search_size_threshold_warn = 2000 * 2^10,
+        size_threshold = 1100 * 2^10,             # raise from the 200 KiB default
+        size_threshold_warn = 900 * 2^10,         # raise from the 100 KiB default
+        search_size_threshold_warn = 2000 * 2^10, # raise from the 500 KiB default
     ),
     modules = [
         Manopt,
@@ -187,7 +188,7 @@ makedocs(;
             "Convex bundle method" => "solvers/convex_bundle_method.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Difference of Convex" => "solvers/difference_of_convex.md",
-            "Douglas—Rachford" => "solvers/DouglasRachford.md",
+            "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Exact Penalty Method" => "solvers/exact_penalty_method.md",
             "Frank-Wolfe" => "solvers/FrankWolfe.md",
             "Generalized Cauchy direction subsolver" => "solvers/generalized_cauchy_direction_subsolver.md",

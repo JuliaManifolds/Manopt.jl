@@ -138,10 +138,10 @@ end
 function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :default)
     (context === :short) && return repr(epms)
     i = get_count(epms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(epms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(epms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the exact panelty method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(epms.stop) ? "Yes" : "No"
+    Conv = has_converged(epms.stop) ? "Yes" : "No"
     (context === :inline) && (return "An exact penalty method state – $(Iter) $(has_converged(epms) ? "(converged)" : "")")
     as = _callbacks_summary(epms)
     s = """
@@ -154,7 +154,7 @@ function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :defaul
 
     ## Stopping criterion
     $(_in_str(status_summary(epms.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 
@@ -257,16 +257,16 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(
 * `sub_grad=`[`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver
   $(_note(:KeywordUsedIn, "sub_problem"))
 $(_kwargs(:sub_kwargs))
-$(_kwargs(:sub_state; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
 $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
-  , where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used"))
-* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver
+  where a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping criterion for the sub solver
   $(_note(:KeywordUsedIn, "sub_state"))
-* `u=1e–1`: the smoothing parameter and threshold for violation of the constraints
+* `u=1e-1`: the smoothing parameter and threshold for violation of the constraints
 * `u_exponent=1/100`: exponent of the u update factor;
 * `u_min=1e-6`: the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ=1.0`: the penalty parameter
-* `ϵ=1e–3`: the accuracy tolerance
+* `ϵ=1e-3`: the accuracy tolerance
 * `ϵ_exponent=1/100`: exponent of the ϵ update factor;
 * `ϵ_min=1e-6`: the lower bound for the accuracy tolerance
 

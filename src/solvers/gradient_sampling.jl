@@ -36,7 +36,7 @@ The mathematical symbols are adapted from [HosseiniUschmajew:2017](@cite)
 
 # Fields
 $(_fields(:callbacks; add_properties = [:as_dict]))
-* `convex_hull_coefficients<:AbstractVector{R}` store the solution vector of the sub problem, i.e. the coefficients of the result in the convex hull
+* `convex_hull_coeffs<:AbstractVector{R}` store the solution vector of the sub problem, i.e. the coefficients of the result in the convex hull
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `sampled_points<:AbstractVector{P}` memory to store the vector of sampled points
 * `sampled_vectors<:AbstractVector{T}` memory to store the vector of (transported) gradients
@@ -221,10 +221,10 @@ end
 function status_summary(gss::GradientSamplingState; context::Symbol = :default)
     (context === :short) && return repr(gss)
     i = get_count(gss, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(gss.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(gss.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the gradient sampling solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(gss.stop) ? "Yes" : "No"
+    Conv = has_converged(gss.stop) ? "Yes" : "No"
     as = _callbacks_summary(gss)
     s = """
     # Solver state for `Manopt.jl`s Gradient Sampling Algorithm
@@ -242,7 +242,7 @@ function status_summary(gss::GradientSamplingState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(gss.stop; context = context); indent = 1, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 
@@ -254,7 +254,7 @@ _doc_gradient_sampling = """
 
 perform the gradient sampling algorithm as introduced in [HosseiniUschmajew:2017](@cite).
 
-The algorithm samples a set of `sampling_size = ```m`` many points in a ball around the current iterate,
+The algorithm samples a set of `sampling_size` = ``m`` many points in a ball around the current iterate,
 evaluates the gradient at these points and transports these to the current iterate.
 It then builds a surrogate in the tangent space consisting of these ``m`` tangent vectors
 and the gradient at the current iterate to determine a new descent direction in the convex
@@ -293,7 +293,7 @@ gradient_sampling(M::AbstractManifold, args...; kwargs...)
 
 function gradient_sampling(
         M::AbstractManifold, f, grad_f, p = rand(M);
-        differential = nothing,
+        differential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
@@ -315,7 +315,7 @@ gradient_sampling!(M::AbstractManifold, args...; kwargs...)
 
 function gradient_sampling!(
         M::AbstractManifold, f, grad_f, p;
-        differential = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        differential = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
     keywords_accepted(gradient_sampling; kwargs...)
@@ -349,7 +349,7 @@ function gradient_sampling!(
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(M, typeof(p)),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
-    # all explicit others others from above are anyways accepted here, so we only have to pass kwargs in
+    # all explicit others from above are anyways accepted here, so we only have to pass kwargs in
     keywords_accepted(gradient_sampling!; kwargs...)
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)

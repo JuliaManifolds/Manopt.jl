@@ -62,7 +62,6 @@ after the description
 $(_fields(:callbacks; add_properties = [:as_dict]))
 * `population::`[`NelderMeadSimplex`](@ref): a population (set) of ``d+1`` points ``x_i``, ``i=1,…,n+1``, where ``d``
   is the $(_link(:manifold_dimension; M = "")) of `M`.
-$(_fields(:stepsize))
 * `α`: the reflection parameter ``α > 0``:
 * `γ` the expansion parameter ``γ > 0``:
 * `ρ`: the contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
@@ -86,8 +85,8 @@ $(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `population=`[`NelderMeadSimplex`](@ref)`(M)`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
   a [`StoppingCriterion`](@ref)
-* `α=1.0`: reflection parameter ``α > 0``:
-* `γ=2.0` expansion parameter ``γ``:
+* `α=1.0`: reflection parameter, ``α > 0``
+* `γ=2.0`: expansion parameter, ``γ > 1``
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ=1/2`: shrink coefficient, ``0 < σ ≤ 1``
 """
@@ -155,10 +154,10 @@ end
 function status_summary(nms::NelderMeadState; context::Symbol = :default)
     (context === :short) && return repr(nms)
     i = get_count(nms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(nms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(nms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the Nelder-Mead solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(nms.stop) ? "Yes" : "No"
+    Conv = has_converged(nms.stop) ? "Yes" : "No"
     as = _callbacks_summary(nms)
     s = """
     # Solver state for `Manopt.jl`s Nelder Mead Algorithm
@@ -173,7 +172,7 @@ function status_summary(nms::NelderMeadState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(nms.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 get_iterate(O::NelderMeadState) = O.p
@@ -197,18 +196,16 @@ The algorithm consists of the following steps. Let ``d`` denote the dimension of
 
 1. Order the simplex vertices ``p_i, i=1,…,d+1`` by increasing cost, such that we have ``f(p_1) ≤ f(p_2) ≤ … ≤ f(p_{d+1})``.
 2. Compute the Riemannian center of mass [Karcher:1977](@cite), cf. [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}), ``p_{$(_tex(:text, "m"))}``
-    of the simplex vertices ``p_1,…,p_{d+1}``.
+    of the simplex vertices ``p_1,…,p_{d}``, that is, of all but the worst point.
 3. Reflect the point with the worst point at the mean ``p_{$(_tex(:text, "r"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl( - α$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} (p_{d+1}) \\bigr)``
     If ``f(p_1) ≤ f(p_{$(_tex(:text, "r"))}) ≤ f(p_{d})`` then set ``p_{d+1} = p_{$(_tex(:text, "r"))}`` and go to step 1.
 4. Expand the simplex if ``f(p_{$(_tex(:text, "r"))}) < f(p_1)`` by computing the expansion point ``p_{$(_tex(:text, "e"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl( - γα$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} (p_{d+1}) \\bigr)``,
     which in this formulation allows to reuse the tangent vector from the inverse retraction from before.
-    If ``f(p_{$(_tex(:text, "e"))}) < f(p_{$(_tex(:text, "r"))})`` then set ``p_{d+1} = p_{$(_tex(:text, "e"))}`` otherwise set set ``p_{d+1} = p_{$(_tex(:text, "r"))}``. Then go to Step 1.
-5. Contract the simplex if ``f(p_{$(_tex(:text, "r"))}) ≥ f(p_d)``.
-    1. If ``f(p_{$(_tex(:text, "r"))}) < f(p_{d+1})`` set the step ``s = -ρ``
-    2. otherwise set ``s=ρ``.
+    If ``f(p_{$(_tex(:text, "e"))}) < f(p_{$(_tex(:text, "r"))})`` then set ``p_{d+1} = p_{$(_tex(:text, "e"))}`` otherwise set ``p_{d+1} = p_{$(_tex(:text, "r"))}``. Then go to Step 1.
+5. Contract the simplex if ``f(p_{$(_tex(:text, "r"))}) > f(p_d)``.
+    Set the step ``s = -ρ`` if ``f(p_{$(_tex(:text, "r"))}) < f(p_{d+1})`` and ``s = ρ`` otherwise.
     Compute the contraction point ``p_{$(_tex(:text, "c"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl(s$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} p_{d+1} \\bigr)``.
-    1. in this case if ``f(p_{$(_tex(:text, "c"))}) < f(p_{$(_tex(:text, "r"))})`` set ``p_{d+1} = p_{$(_tex(:text, "c"))}`` and go to step 1
-    2. in this case if ``f(p_{$(_tex(:text, "c"))}) < f(p_{d+1})`` set ``p_{d+1} = p_{$(_tex(:text, "c"))}`` and go to step 1
+    If ``f(p_{$(_tex(:text, "c"))}) < f(p_{d+1})`` set ``p_{d+1} = p_{$(_tex(:text, "c"))}`` and go to step 1, otherwise continue with step 6.
 6. Shrink all points (closer to ``p_1``). For all ``i=2,...,d+1`` set
     ``p_{i} = $(_tex(:retr))_{p_{1}}\\bigl( σ$(_tex(:invretr))_{p_{1}} p_{i} \\bigr).``
 
@@ -228,8 +225,8 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
   a [`StoppingCriterion`](@ref)
-* `α=1.0`: reflection parameter ``α > 0``:
-* `γ=2.0` expansion parameter ``γ``:
+* `α=1.0`: reflection parameter, ``α > 0``
+* `γ=2.0`: expansion parameter, ``γ > 1``
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ=1/2`: shrink coefficient, ``0 < σ ≤ 1``
 
@@ -279,7 +276,7 @@ function NelderMead!(
         inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M, eltype(population.pts)),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
-    keywords_accepted(NelderMead; kwargs...)
+    keywords_accepted(NelderMead!; kwargs...)
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     s = NelderMeadState(
@@ -316,7 +313,7 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     Costr = get_cost(mp, xr)
     continue_steps = true
     # is it better than the worst but not better than the best?
-    if Costr >= s.costs[1] && Costr < s.costs[end - 1]
+    if Costr >= s.costs[1] && Costr <= s.costs[end - 1]
         # store as last
         s.population.pts[end] = xr
         s.costs[end] = Costr
@@ -367,14 +364,14 @@ end
 A stopping criterion for [`NelderMead`](@ref) to indicate to stop when
 both
 
-* the maximal distance of the first to the remaining the cost values and
-* the maximal distance of the first to the remaining the population points
+* the maximal distance of the first to the remaining cost values and
+* the maximal distance of the first to the remaining population points
 
 drops below a certain tolerance `tol_f` and `tol_p`, respectively.
 
 # Constructor
 
-    StopWhenPopulationConcentrated(tol_f::Real=1e-8, tol_x::Real=1e-8)
+    StopWhenPopulationConcentrated(tol_f::Real=1e-8, tol_p::Real=1e-8)
 
 """
 mutable struct StopWhenPopulationConcentrated{F <: Real} <: StoppingCriterion

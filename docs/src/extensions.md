@@ -9,35 +9,35 @@ This can be illustrated by the following example of optimizing the Rosenbrock fu
 using Manopt, Manifolds, LineSearches
 
 # define objective function and its gradient
-p = [1.0, 100.0]
-function rosenbrock(::AbstractManifold, x)
-    val = zero(eltype(x))
-    for i in 1:(length(x) - 1)
-        val += (p[1] - x[i])^2 + p[2] * (x[i + 1] - x[i]^2)^2
+a, b = 1.0, 100.0
+function rosenbrock(::AbstractManifold, p)
+    val = zero(eltype(p))
+    for i in 1:(length(p) - 1)
+        val += (a - p[i])^2 + b * (p[i + 1] - p[i]^2)^2
     end
     return val
 end
-function rosenbrock_grad!(M::AbstractManifold, storage, x)
-    storage .= 0.0
-    for i in 1:(length(x) - 1)
-        storage[i] += -2.0 * (p[1] - x[i]) - 4.0 * p[2] * (x[i + 1] - x[i]^2) * x[i]
-        storage[i + 1] += 2.0 * p[2] * (x[i + 1] - x[i]^2)
+function rosenbrock_grad!(M::AbstractManifold, X, p)
+    X .= 0.0
+    for i in 1:(length(p) - 1)
+        X[i] += -2.0 * (a - p[i]) - 4.0 * b * (p[i + 1] - p[i]^2) * p[i]
+        X[i + 1] += 2.0 * b * (p[i + 1] - p[i]^2)
     end
-    project!(M, storage, x, storage)
-    return storage
+    project!(M, X, p, X)
+    return X
 end
 # define constraint
 n_dims = 5
 M = Manifolds.Sphere(n_dims)
 # set initial point
-x0 = vcat(zeros(n_dims - 1), 1.0)
+p0 = vcat(zeros(n_dims), 1.0)
 # use LineSearches.jl HagerZhang method with Manopt.jl quasiNewton solver
 ls_hz = Manopt.LineSearchesStepsize(M, LineSearches.HagerZhang())
-x_opt = quasi_Newton(
+p_opt = quasi_Newton(
     M,
     rosenbrock,
     rosenbrock_grad!,
-    x0;
+    p0;
     stepsize=ls_hz,
     evaluation=InplaceEvaluation(),
     stopping_criterion=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),

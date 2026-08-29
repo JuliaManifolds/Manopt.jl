@@ -1,11 +1,11 @@
 <div align="center">
     <picture>
         <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/JuliaManifolds/Manopt.jl/master/docs/src/assets/logo-text-readme-dark.png">
-      <img alt="Manifolds.jl logo with text on the side" src="https://raw.githubusercontent.com/JuliaManifolds/Manopt.jl/master/docs/src/assets/logo-text-readme.png">
+      <img alt="Manopt.jl logo with text on the side" src="https://raw.githubusercontent.com/JuliaManifolds/Manopt.jl/master/docs/src/assets/logo-text-readme.png">
     </picture>
 </div>
 
-## Optimization Algorithm on Riemannian Manifolds.
+## Optimization Algorithms on Riemannian Manifolds
 
 [![](https://img.shields.io/badge/docs-stable-blue?logo=Julia&logoColor=white)](https://manoptjl.org/stable)
 [![code style: runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl)
@@ -23,9 +23,9 @@ For a function $f: ℳ → ℝ$  that maps from a [Riemannian manifold](https://
 
 `Manopt.jl` provides
 
-* A framework to implement arbitrary optimization algorithms on Riemannian Manifolds
-* A library of optimization algorithms on Riemannian manifolds
-* an easy-to-use interface for (debug) output and recording values during an algorithm run.
+* a framework to implement arbitrary optimization algorithms on Riemannian manifolds
+* a library of optimization algorithms on Riemannian manifolds
+* an easy-to-use interface for (debug) output and recording values during an algorithm run
 * several tools to investigate the algorithms, gradients, and optimality criteria
 
 ## Getting started
@@ -54,7 +54,7 @@ a Riemannian manifold.
 The following packages are related to `Manopt.jl`
 
 * [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/): a library of manifolds implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/) :octocat: [GitHub repository](https://github.com/JuliaManifolds/Manifolds.jl)
-* [`ManifoldsDiff.jl`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/): a package to use (Euclidean) AD tools on manifolds, that also provides several differentials and gradients. :octocat: [GitHub repository](https://github.com/JuliaManifolds/ManifoldDiff.jl)
+* [`ManifoldDiff.jl`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/): a package to use (Euclidean) AD tools on manifolds, that also provides several differentials and gradients. :octocat: [GitHub repository](https://github.com/JuliaManifolds/ManifoldDiff.jl)
 
 ## Citation
 
@@ -101,7 +101,7 @@ To refer to a certain version or the source code in general please cite for exam
     Doi       = {10.5281/zenodo.4290905},
     Publisher = {Zenodo},
     Title     = {Manopt.jl},
-    Year      = {2024},
+    Year      = {2026},
 }
 ```
 
@@ -119,7 +119,7 @@ If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifold
 > arXiv: [2106.08777](https://arxiv.org/abs/2106.08777)
 <details>
 
-  <summary><code>AxenBaranBergmannRzecki:2023</code>(BibLaTeX)</summary>
+  <summary><code>AxenBaranBergmannRzecki:2023</code> (BibLaTeX)</summary>
 
 ```biblatex
 @article{AxenBaranBergmannRzecki:2023,
@@ -129,7 +129,7 @@ If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifold
     JOURNAL   = {ACM Transactions on Mathematical Software},
     MONTH     = {dec},
     NUMBER    = {4},
-    TITLE     = {Manifolds.Jl: An Extensible Julia Framework for Data Analysis on Manifolds},
+    TITLE     = {Manifolds.jl: An Extensible Julia Framework for Data Analysis on Manifolds},
     VOLUME    = {49},
     YEAR      = {2023}
 }

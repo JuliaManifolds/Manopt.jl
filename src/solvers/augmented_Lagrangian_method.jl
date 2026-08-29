@@ -49,7 +49,7 @@ manifold- or objective specific defaults, and `sub_problem` is a closed form sol
 
 the following keyword arguments are available to initialize the corresponding fields
 
-* `ϵ=1e–3`
+* `ϵ=1e-3`
 * `ϵ_min=1e-6`
 * `λ=ones(n)`: `n` is the number of equality constraints in the [`ConstrainedManifoldObjective`](@ref) `co`.
 * `λ_max=20.0`
@@ -165,10 +165,10 @@ end
 function status_summary(alms::AugmentedLagrangianMethodState; context::Symbol = :default)
     (context === :short) && (return repr(alms))
     i = get_count(alms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(alms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(alms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the augmented Lagrandigan method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(alms.stop) ? "Yes" : "No"
+    Conv = has_converged(alms.stop) ? "Yes" : "No"
     as = _callbacks_summary(alms)
     s = """
     # Solver state for `Manopt.jl`s Augmented Lagrangian Method
@@ -183,7 +183,7 @@ function status_summary(alms::AugmentedLagrangianMethodState; context::Symbol = 
 
     ## Stopping criterion
     $(_in_str(status_summary(alms.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 
@@ -315,7 +315,7 @@ $(_kwargs(:evaluation))
 * `sub_cost=[`AugmentedLagrangianCost± (@ref)`(cmo, ρ, μ, λ):` use augmented Lagrangian cost, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
    $(_note(:KeywordUsedIn, "sub_problem"))
 
-* `sub_grad=[`AugmentedLagrangianGrad`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian gradient, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
+* `sub_grad=`[`AugmentedLagrangianGrad`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian gradient, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
   $(_note(:KeywordUsedIn, "sub_problem"))
 
 $(_kwargs(:sub_kwargs))

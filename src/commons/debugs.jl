@@ -4,7 +4,7 @@
 Debug for a simple callback function, mainly for compatibility to other solvers and if
 a user already has a callback function or functor available
 
-The expected format of the is that it is a function with signature `(problem, state, iteration) -> nothing`
+The expected format of the is that it is a function with signature `(problem, state, k) -> nothing`
 A simple callback of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form
 
 !!! note
@@ -41,7 +41,7 @@ end
 @doc """
     DebugChange(M=DefaultManifold(); kwargs...)
 
-debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`AbstractManoptSolverState`](@ref))
+debug for the amount of change of the iterate (stored in `get_iterate` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword parameters
@@ -240,7 +240,7 @@ DebugDualResidual(; kwargs...)
 
 # Keyword warguments
 
-* `io=`stdout`: stream to perform the debug to
+* `io=stdout`: stream to perform the debug to
 * `format="\$prefix%s"`: format to print the dual residual, using the
 * `prefix="Dual Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
@@ -343,7 +343,7 @@ DebugDualIterate(opts...; kwargs...) = DebugEntry(:X, opts...; kwargs...)
 
 Print the dual base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
-This method is further set display `o.n`.
+This method is further set to display the field `n` of the state.
 """
 DebugDualBaseIterate(; kwargs...) = DebugEntry(:n; kwargs...)
 
@@ -421,10 +421,10 @@ function status_summary(d::DebugEntryChange; context::Symbol = :default)
 end
 
 """
-    DebugDualChange(; storage=StoreStateAction([:n]), io::IO=stdout)
+    DebugDualBaseChange(; storage=StoreStateAction([:n]), kwargs...)
 
 Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
-see their constructors for detail, on `o.n`.
+see their constructors for detail, on the field `n` of the state.
 """
 function DebugDualBaseChange(;
         storage::StoreStateAction = StoreStateAction([:n]), prefix = "Dual Base Change:", kwargs...
@@ -440,15 +440,15 @@ end
 
 Print the primal base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
-This method is further set display `o.m`.
+This method is further set to display the field `m` of the state.
 """
 DebugPrimalBaseIterate(opts...; kwargs...) = DebugEntry(:m, opts...; kwargs...)
 
 """
-    DebugPrimalBaseChange(a::StoreStateAction=StoreStateAction([:m]),io::IO=stdout)
+    DebugPrimalBaseChange(opts...; prefix="Primal Base Change:", kwargs...)
 
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
-see their constructors for detail, on `o.n`.
+see their constructors for detail, on the field `m` of the state.
 """
 function DebugPrimalBaseChange(opts...; prefix = "Primal Base Change:", kwargs...)
     return DebugEntryChange(
@@ -589,7 +589,7 @@ end
 function show(io::IO, d::DebugIfEntry)
     return print(io, "DebugIfEntry(:$(d.field), $(d.check); type=:$(d.type), at_init=$(d.at_init))")
 end
-function status_summary(d::DebugIfEntry; context::Symbol = :Default)
+function status_summary(d::DebugIfEntry; context::Symbol = :default)
     (context === :short) && (return repr(d))
     # Inline and default
     return "A DebugAction printing the entry :$(d.field) of the solver state if $(d.check) of that field is true, in format “$(escape_string(d.msg))” as $(d.type)"
@@ -636,7 +636,7 @@ end
 @doc """
     DebugGradientChange()
 
-debug for the amount of change of the gradient (stored in `get_gradient(o)` of the [`AbstractManoptSolverState`](@ref) `o`)
+debug for the amount of change of the gradient (stored in `get_gradient` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword parameters
@@ -694,7 +694,7 @@ function show(io::IO, dgc::DebugGradientChange)
         "DebugGradientChange(; format=\"$(escape_string(dgc.format))\", vector_transport_method=$(dgc.vector_transport_method))",
     )
 end
-function status_summary(di::DebugGradientChange; context::Symbol = :Default)
+function status_summary(di::DebugGradientChange; context::Symbol = :default)
     (context === :short) && (return "(:GradientChange, \"$(escape_string(di.format))\")")
     # Inline and default
     return "A DebugAction printing the change of the gradient with format “$(escape_string(di.format))”"
@@ -748,7 +748,7 @@ end
 @doc """
     DebugIterate <: DebugAction
 
-debug for the current iterate (stored in `get_iterate(o)`).
+debug for the current iterate (stored in `get_iterate` of the [`AbstractManoptSolverState`](@ref)).
 
 # Constructor
     DebugIterate(; kwargs...)
@@ -910,7 +910,7 @@ with the keywords
 
 # Keyword warguments
 
-* `io=`stdout`: stream to perform the debug to
+* `io=stdout`: stream to perform the debug to
 * `format="\$prefix%s"`: format to print the dual residual, using the
 * `prefix="PD Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
@@ -981,7 +981,7 @@ should at least record `:Iterate`, `:X` and `:n`.
 
 # Keyword warguments
 
-* `io=`stdout`: stream to perform the debug to
+* `io=stdout`: stream to perform the debug to
 * `format="\$prefix%s"`: format to print the dual residual, using the
 * `prefix="Primal Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
@@ -1057,7 +1057,7 @@ function Base.show(io::IO, d::DebugProximalParameter)
         io, "DebugGradientChange(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init = $(d.at_init))",
     )
 end
-function status_summary(d::DebugProximalParameter; context::Symbol = :Default)
+function status_summary(d::DebugProximalParameter; context::Symbol = :default)
     (context === :short) && (return "(:ProxParameter, \"$(escape_string(d.format))\")")
     # Inline and default
     return "A DebugAction printing the proximal parameter as “$(escape_string(d.format))”"
@@ -1245,7 +1245,7 @@ The measured time is rounded using the given `time_accuracy` and printed after [
 # Keyword parameters
 
 * `io=stdout`:             default stream to print the debug to.
-* `format="\$prefix %s"`:   format to print the output, where `%s` is the canonicalized time`.
+* `format="\$prefix %s"`:   format to print the output, where `%s` is the canonicalized time.
 * `mode=:cumulative`:      whether to display the total time or reset on every call using `:iterative`.
 * `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`:
 * `start=false`:           indicate whether to start the timer on creation or not.
@@ -1635,7 +1635,7 @@ one are called with an `i=0` for reset.
    [:Iterate, " | ", :Cost, :Stop, 10]
    ```
 
-   Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | "),  and[`DebugCost`](@ref))
+   Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | ")`, and [`DebugCost`](@ref))
    as a [`DebugGroup`](@ref) inside an [`DebugEvery`](@ref) to only be executed every 10th iteration.
    It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorithm` entry of the dictionary.
 

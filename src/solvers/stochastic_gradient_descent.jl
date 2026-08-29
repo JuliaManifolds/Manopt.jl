@@ -11,8 +11,9 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 * `direction`:  a direction update to use
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields(:stepsize))
-* `evaluation_order`: specify whether to use a randomly permuted sequence (`:FixedRandom`:),
-  a per cycle permuted sequence (`:Linear`) or the default, a `:Random` sequence.
+* `order_type`: specify whether to use a fixed randomly permuted sequence (`:FixedRandom`),
+  the sequence as given in `order` (`:Linear`), or the default `:Random` one,
+  which chooses a random gradient in every step.
 * `order`: stores the current permutation
 $(_fields(:retraction_method))
 
@@ -26,7 +27,7 @@ Create a `StochasticGradientDescentState` with start point `p`.
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `direction=`[`StochasticGradientRule`](@ref)`(M, `$(_link(:zero_vector))`)`
-* `order_type=:RandomOrder``
+* `order_type=:Random`
 * `order=Int[]`: specify how to store the order of indices for the next epoche
 $(_kwargs(:retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
@@ -65,7 +66,7 @@ function StochasticGradientDescentState(
         p::P = rand(M),
         X::T = zero_vector(M, p),
         direction::D = StochasticGradientRule(M; X = copy(M, p, X)),
-        order_type::Symbol = :RandomOrder,
+        order_type::Symbol = :Random,
         order::Vector{<:Int} = Int[],
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         stopping_criterion::SC = StopAfterIteration(1000),
@@ -73,6 +74,9 @@ function StochasticGradientDescentState(
     ) where {
         P, T, C <: AbstractDict{Symbol}, D <: DirectionUpdateRule, RM <: AbstractRetractionMethod, SC <: StoppingCriterion, S <: Stepsize,
     }
+    (order_type in (:Random, :FixedRandom, :Linear)) || throw(
+        DomainError(order_type, "The order type has to be one of :Random, :FixedRandom, or :Linear.")
+    )
     return StochasticGradientDescentState(;
         callbacks = callbacks, p = p, X = X, direction = direction, stopping_criterion = stopping_criterion,
         stepsize = stepsize, order_type = order_type, order = order, retraction_method = retraction_method, k = 0,
@@ -96,10 +100,10 @@ end
 function status_summary(sgds::StochasticGradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(sgds)
     i = get_count(sgds, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(sgds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(sgds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the stochastic gradient descent algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(sgds.stop) ? "Yes" : "No"
+    Conv = has_converged(sgds.stop) ? "Yes" : "No"
     as = _callbacks_summary(sgds)
     s = """
     # Solver state for `Manopt.jl`s Stochastic Gradient Descent
@@ -114,7 +118,7 @@ function status_summary(sgds::StochasticGradientDescentState; context::Symbol = 
 
     ## Stopping criterion
     $(_in_str(status_summary(sgds.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 """
@@ -214,10 +218,8 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `direction=`[`StochasticGradient`](@ref)`(`$(_link(:zero_vector))`)` add a post-processor to
   the direction obtained from evaluating the sub-gradient.
 $(_kwargs(:evaluation))
-* `evaluation_order=:Random`: specify whether to use a randomly permuted sequence (`:FixedRandom`:,
-  a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
-* `order_type=:RandomOrder`: a type of ordering of gradient evaluations.
-  Possible values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
+* `order_type=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
+  a per cycle permuted sequence (`:Random`, default) or the default `:Linear` one.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`StochasticGradientDescentState`](@ref)`)"))
 * `order=[1:n]`: the initial permutation, where `n` is the number of gradients in `gradF`.

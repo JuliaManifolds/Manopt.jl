@@ -241,8 +241,9 @@ function keywords_accepted(
         if k in kw.deprecated
             push!(d, k)
         end
-        # Not accepted?
-        if (length(kw.accepted) > 0) && (k ∉ kw.accepted)
+        # Not accepted? Note that an empty set of accepted keywords means that none are.
+        # A deprecated keyword is not in `accepted` either, but is reported as deprecated above.
+        if (k ∉ kw.accepted) && (k ∉ kw.deprecated)
             push!(a, k)
         end
     end

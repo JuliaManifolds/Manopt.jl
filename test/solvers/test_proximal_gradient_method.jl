@@ -21,6 +21,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
         # Trigger manually
         sc1.at_iteration = 2
         @test length(get_reason(sc1)) > 0
+        @test Manopt.indicates_convergence(sc1)
 
         pgms.last_stepsize = 1.0
         g(M, q) = distance(M, q, p)^2

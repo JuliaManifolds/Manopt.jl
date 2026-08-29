@@ -42,12 +42,12 @@ mutable struct LanczosState{T, R, SC, SCN, B, TM, C, CA} <: AbstractManoptSolver
     σ::R
     stop::SC
     stop_newton::SCN
-    Lanczos_vectors::B # ``q_i``
-    tridig_matrix::TM  # `T``
-    coefficients::C     # `y``
-    Hp::T              # `Hess_f`` A temporary vector for evaluations of the Hessian
-    Hp_residual::T     # A residual vector
-    S::T               # store the tangent vector that solves the minimization problem
+    Lanczos_vectors::B  # ``q_i``
+    tridig_matrix::TM   # ``T``
+    coefficients::C     # ``y``
+    Hp::T               # ``Hess f`` a temporary vector for evaluations of the Hessian
+    Hp_residual::T      # a residual vector
+    S::T                # store the tangent vector that solves the minimization problem
     function LanczosState(;
             callbacks::CA, X::T, σ::R, stopping_criterion::SC, stopping_criterion_newton::SCN, Lanczos_vectors::B,
             tridig_matrix::TM, coefficients::C, Hp::T, Hp_residual::T, S::T
@@ -103,7 +103,7 @@ function status_summary(ls::LanczosState; context::Symbol = :default)
     (context === :short) && return repr(ls)
     i = get_count(ls, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(ls.stop) ? "Yes" : "No"
+    Conv = has_converged(ls.stop) ? "Yes" : "No"
     as = _callbacks_summary(ls)
     vectors = length(ls.Lanczos_vectors)
     return """
@@ -118,7 +118,7 @@ function status_summary(ls::LanczosState; context::Symbol = :default)
     $(status_summary(ls.stop))
     (b) For the Newton sub solver
     $(status_summary(ls.stop_newton))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
 end
 
 #
@@ -380,11 +380,11 @@ end
 function (c::StopWhenAllLanczosVectorsUsed)(
         ::AbstractManoptProblem,
         arcs::AdaptiveRegularizationState{P, T, Pr, <:LanczosState},
-        i::Int,
+        k::Int,
     ) where {P, T, Pr}
-    (i == 0) && (c.at_iteration = -1) # reset on init
-    if (i > 0) && length(arcs.sub_state.Lanczos_vectors) == c.maxLanczosVectors
-        c.at_iteration = i
+    (k == 0) && (c.at_iteration = -1) # reset on init
+    if (k > 0) && length(arcs.sub_state.Lanczos_vectors) == c.maxLanczosVectors
+        c.at_iteration = k
         return true
     end
     return false

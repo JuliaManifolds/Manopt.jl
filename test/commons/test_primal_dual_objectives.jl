@@ -82,7 +82,7 @@ using RecursiveArrayTools
     @test all(get_iterate(s_exact) .== p0)
 
     osm = PrimalDualSemismoothNewtonState(
-        M; m = m, n = n, p = zero.(p0), X = X0,
+        M, N; m = m, n = n, p = zero.(p0), X = X0,
         primal_stepsize = 0.0, dual_stepsize = 0.0, regularization_parameter = 0.0,
     )
     set_iterate!(osm, p0)

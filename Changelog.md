@@ -14,6 +14,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   which on a pull request labelled `benchmark` compares it against `master`.
   It starts with two problems, the Riemannian mean on the sphere, benchmarked with `gradient_descent`
   and `quasi_Newton`, and the Riemannian median on hyperbolic space, benchmarked with `cyclic_proximal_point`.
+* A `BarzilaiBorweinStepsize` as a standalone stepsize instead of only being available within the
+  `NonmonotoneLinesearchStepsize`.
+* introduce a `StepsizeInitialGuess` that allows to use a `Stepsize` as initial guess of a line search.
+
+### Changed
+
+* since `has_converged` exists, the status reports on REPL now use this to indicate whether an algorithm has converged.
+
+### Fixed
+
+The following fixes were reported by an AI assisted code review. Each single point was still carefully checked, and committed by hand.
+They are still listed here in detail in case (a) someone elses code breaks of (b) it was not done careful enough – to then avoid these approaches in the future.
+
+* `cma_es` now uses the fitness-sorted samples in its covariance matrix update,
+  cf. Eq. (47) of [arXiv:1604.00772](https://arxiv.org/abs/1604.00772).
+* `WolfePowellBinaryLinesearch` now bisects correctly the step size fulfils both Wolfe
+  conditions; sometimes a wrong termination check made it stop too early.
+* `default_vector_norm(::Euclidean, p, X)` returned the norm of `p` instead of `X`.
+* `PrimalDualSemismoothNewtonState` is now constructed as `(M, N; kwargs...)` like `ChambollePockState`;
+  the previous `(M; kwargs...)` form errored on its own default `n = rand(N)` when no `n` was provided.
+* since we introduced the differential in the first order objectives,
+they were not fully supported in all places. This was now fixed and unified.
+* for a nicer printing on REPL, a few more `status_summary` functions were added (with the help of an AI)
 
 ## [0.6.6] August 25, 2026
 
@@ -29,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * a new function `requires_update` that per `<:StoppingCriterion` type can indicate, whether a state is present that needs updating in every iteration.
-* a new shortcut for the `StopWhenCriterionWithIterationCondition` that only evaluates every `n`th iteration using `stopping_criterion ≞ n` (`\measeq` <TAB> on REPL) as constructor. While in theory also `%` would have been possible, there was a discussion not to use mnore-common symbols here, cf. (#509) – and the `m` could be seen as “modulo”.
+* a new shortcut for the `StopWhenCriterionWithIterationCondition` that only evaluates every `n`th iteration using `stopping_criterion ≞ n` (`\measeq` <TAB> on REPL) as constructor. While in theory also `%` would have been possible, there was a discussion not to use more-common symbols here, cf. (#509) – and the `m` could be seen as “modulo”.
 
 ### Fixed
 
@@ -57,7 +80,7 @@ As an overarching scheme of this release, the single functions in an objective b
 * the file structure has been changed and the `plan/` folder has been split with the following motivation
   * all abstract types and generic implementation and documentation of functions has been moved to `base/`.
     This is also reflected in the documentation, where the new `base/` files reflect a developer documentation that additionally includes descriptions of the design choices
-  * concrete types and their implementations have either been used to the specific solver where they are used / defined,
+  * concrete types and their implementations have either been moved to the specific solver where they are used / defined,
     especially for solver states, or now reside in a `commons/` folder, when they are of general use for multiple solvers.
     This structure is also reflected in the documentation.
 * a few internal abstract super types have been renamed for the new scheme that puts more focus on functions, to stay more consistent. The word “functor” is now avoided for structs that actually just represent functions.

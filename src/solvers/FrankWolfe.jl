@@ -71,7 +71,7 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:X; add_properties = [:as_Gradient]))
 $(_fields([:inverse_retraction_method, :sub_problem, :sub_state]))
 $(_fields(:stopping_criterion; name = "stop"))
-$(_fields([:stepsize, :retraction_method, :vector_transport_method]))
+$(_fields([:stepsize, :retraction_method]))
 
 The sub task requires a method to solve
 
@@ -192,10 +192,10 @@ end
 function status_summary(fws::FrankWolfeState; context::Symbol = :default)
     (context === :short) && return repr(fws)
     i = get_count(fws, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(fws.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(fws.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the Frank Wolfe algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(fws.stop) ? "Yes" : "No"
+    Conv = has_converged(fws.stop) ? "Yes" : "No"
     sub = _in_str(status_summary(fws.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")
     as = _callbacks_summary(fws)
     return """
@@ -212,7 +212,7 @@ function status_summary(fws::FrankWolfeState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(fws.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
 end
 
 #
@@ -292,11 +292,14 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 Frank_Wolfe_method(M::AbstractManifold, args...; kwargs...)
 function Frank_Wolfe_method(
         M::AbstractManifold, f, grad_f, p = rand(M);
+        differential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
     p_ = maybe_wrap_variable(p)
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, p = p)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential = differential, evaluation = evaluation, p = p
+    )
     rs = Frank_Wolfe_method(M, mgo, p_; evaluation = evaluation, kwargs...)
     return maybe_unwrap_variable(p, rs)
 end
@@ -313,7 +316,7 @@ calls_with_kwargs(::typeof(Frank_Wolfe_method)) = (Frank_Wolfe_method!,)
 Frank_Wolfe_method!(M::AbstractManifold, args...; kwargs...)
 function Frank_Wolfe_method!(
         M::AbstractManifold, f, grad_f, p;
-        differential = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        differential = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
     mgo = ManifoldGradientObjective(

@@ -62,6 +62,16 @@ using ManifoldsBase, Manopt, Manifolds, Test
         @test Manopt.default_point_distance(Euclidean(2), p1) == 2.0
         @test Manopt.default_vector_norm(Euclidean(2), p1, X1) == 2.0
     end
+    @testset "Initial Guess Stepsize" begin
+        M = ManifoldsBase.DefaultManifold(2)
+        sig = Manopt.StepsizeInitialGuess(Manopt.ConstantStepsize(1.0, :relative))
+        f(M, p) = sum((p .- 1) .^ 2)
+        grad_f(M, p) = 2 .* (p .- 1)
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        gds1 = GradientDescentState(M)
+
+        @test sig(dmp, gds1, 1) == 1.0
+    end
 end
 
 
@@ -83,6 +93,10 @@ end
     s2 = NonmonotoneLinesearch()(M)
     @test startswith(repr(s2), "NonmonotoneLinesearch(;")
     @test Manopt.get_message(s2) == ""
+    @test startswith(repr(s2.bb_stepsize), "BarzilaiBorweinStepsize(; ")
+    @test startswith(Manopt.status_summary(s2), "Non-monotone linesearch")
+    @test startswith(Manopt.status_summary(s2.bb_stepsize), "Barzilai–Borwein stepsize\n")
+
 
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
@@ -90,6 +104,14 @@ end
     @test get_last_stepsize(s3) == 0.0
     @test startswith(Manopt.status_summary(s3), "A Wolfe Powell bisection line search")
     # no stepsize yet so `repr` and summary are the same
+    # regression: with a too-long first trial the search must bisect until Armijo holds
+    f3(M, p) = 100 * sum(p .^ 2)
+    grad_f3(M, p) = 200 .* p
+    dmp3 = DefaultManoptProblem(M, ManifoldGradientObjective(f3, grad_f3))
+    gds3 = GradientDescentState(M; p = [1.0, 1.0])
+    gds3.X = grad_f3(M, gds3.p)
+    t3 = s3(dmp3, gds3, 1, -gds3.X)
+    @test f3(M, gds3.p .- t3 .* gds3.X) <= f3(M, gds3.p) - 1.0e-4 * t3 * norm(gds3.X)^2
     s4 = WolfePowellLinesearch()(M)
     @test startswith(repr(s4), "WolfePowellLinesearchStepsize(;")
     @test startswith(Manopt.status_summary(s4), "A Wolfe Powell line search")
@@ -185,6 +207,22 @@ end
         @test abs_const_step(mp, gds, 1) ==
             1.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
     end
+    @testset "BarzilaiBorwein" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p = [2.0, 2.0]
+        X = grad_f(M, p)
+        # Create stepsize with factory
+        bb = BarzilaiBorwein()(M) #
+        gds = GradientDescentState(M; p = p, stepsize = bb)
+        # Check both modes to use BB
+        # (1) vector transport when providing a last stepsize – no history -> max
+        bb(dmp, gds, 1; last_stepsize = 1.0) == bb.max_stepsize
+        # (1) vector transport when providing a last stepsize - we did not actually move - still max
+        bb(dmp, gds, 1) == bb.max_stepsize
+    end
     @testset "Polyak Stepsize" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)
@@ -208,7 +246,7 @@ end
         gs = GradientDescentState(M; p = p, X = grad_f(M, p))
         clbs = CubicBracketingLinesearch()(M)
         @test startswith(repr(clbs), "CubicBracketingLinesearch(;")
-        @test startswith(Manopt.status_summary(clbs), repr(clbs))
+        @test startswith(Manopt.status_summary(clbs), "Cubic bracketing stepsize")
         @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
 
         #edge cases of interval bracketing

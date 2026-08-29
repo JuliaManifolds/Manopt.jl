@@ -46,22 +46,25 @@ function _ordinal_suffix(n::Integer)
 end
 # _in_str - indent a string for use within another one
 # * `indent = 0` how often to raise indentation by `indent_str` (`_MANOPT_INDENT` by default)
-# * `headers = 1` how often to increase headers, also on headers that are indented with `indent_str`
+# * `headers = 1` how often to increase headers, also on headers that are already indented
 # * `indent_str = _MANOPT_INDENT` string to use for indent
 # * `indent_end = ""` a string to end the indentation, for example a `"| "` for visual distinction
+#
+# The headers are raised before indenting, so that this works for any `indent` and `indent_end`,
+# and empty lines are not indented, since that would only introduce trailing whitespace.
 function _in_str(s::String; indent = 0, headers = 1, indent_str = _MANOPT_INDENT, indent_end = "")
-    t = s
-    #add start
-    t = replace("$(indent_end)$t", "\n" => "\n$(indent_end)")
-    #add indent iteratively
-    for _ in 1:indent
-        t = replace("$(indent_str)$t", "\n" => "\n$(indent_str)")
-    end
-    # increase headers iteratively
-    for _ in 1:headers
-        t = replace(t, Regex("(?m)^($(indent_str)*)(#+)") => s"\1#\2")
-    end
-    return t
+    prefix = indent_str^indent * indent_end
+    return join(
+        map(split(s, "\n")) do line
+            if headers > 0
+                # a header might already be indented, keep that indent in front of the header
+                m = match(r"^(\s*)(#+.*)$", line)
+                isnothing(m) || (line = "$(m[1])$("#"^headers)$(m[2])")
+            end
+            return isempty(line) ? rstrip(prefix) : "$(prefix)$(line)"
+        end,
+        "\n",
+    )
 end
 
 # in general, ignore printing the objective by default in tuples on REPL

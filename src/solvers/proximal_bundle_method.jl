@@ -181,10 +181,10 @@ end
 function status_summary(pbms::ProximalBundleMethodState; context::Symbol = :default)
     (context === :short) && return repr(pbms)
     i = get_count(pbms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(pbms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(pbms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the proximal bundle method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(pbms.stop) ? "Yes" : "No"
+    Conv = has_converged(pbms.stop) ? "Yes" : "No"
     as = _callbacks_summary(pbms)
     s = """
     # Solver state for `Manopt.jl`s Proximal Bundle Method
@@ -204,7 +204,7 @@ function status_summary(pbms::ProximalBundleMethodState; context::Symbol = :defa
 
     ## Stopping criterion
     $(_in_str(status_summary(pbms.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 
@@ -278,7 +278,7 @@ $(_kwargs(:evaluation))
 $(_kwargs(:inverse_retraction_method))
 * `m=0.0125`:        a real number that controls the decrease of the cost function
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:sub_problem; default = "`[`proximal_bundle_method_subsolver`](@ref)`"))
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
 $(_kwargs(:vector_transport_method))

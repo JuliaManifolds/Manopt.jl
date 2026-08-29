@@ -14,8 +14,9 @@ function maybe_unwrap_variable end
     maybe_unwrap_variable(p::P, q::P)
     maybe_unwrap_variable(p::P, q::Vector{P})
 
-Undo the wrapping performed by `maybe_wrap_variable`, i.e. given the original
-input variable `p` and the possibly wrapped variable `q`, return the unwrapped variable,
+Undo the wrapping performed by [`maybe_wrap_variable`](@ref).
+
+Given the original input variable `p` and the possibly wrapped variable `q`, return the unwrapped variable,
 i.e. if `q` is a 1-element vector of same element-type `P` as the type of `p`,
 return this one element.
 """

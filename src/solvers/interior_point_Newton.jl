@@ -204,7 +204,7 @@ $(_kwargs(:retraction_method))
 * `step_problem`: wrap the manifold ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m``
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 $(_kwargs(:stepsize; default = " `[`ArmijoLinesearch`](@ref)`()"))
-  with the [`InteriorPointCentralityCondition`](@ref) as additional condition to accept a step"))
+  with the [`InteriorPointCentralityCondition`](@ref) as additional condition to accept a step
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)"))
 * `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `W=zero(s)` tangent vector (gradient) for the slack variables
@@ -349,7 +349,7 @@ get_callbacks(ips::InteriorPointNewtonState) = ips.callbacks
 function status_summary(ips::InteriorPointNewtonState; context::Symbol = :default)
     i = get_count(ips, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
+    Conv = has_converged(ips.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(ips)) – $(Iter) $(has_converged(ips) ? "(converged)" : "")")
     as = _callbacks_summary(ips)
     s = """
@@ -364,7 +364,7 @@ function status_summary(ips::InteriorPointNewtonState; context::Symbol = :defaul
     $(_in_str(status_summary(ips.stepsize; context = context); indent = 1, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(ips.stop; context = context); indent = 1, headers = 1))    This indicates convergence: $Conv"""
+    $(_in_str(status_summary(ips.stop; context = context); indent = 1, headers = 1))    The algorithm converged: $Conv"""
     return s
 end
 function Base.show(io::IO, ipns::InteriorPointNewtonState)
@@ -566,7 +566,7 @@ $(_kwargs(:retraction_method))
   as the problem the line search `stepsize=` employs for determining a step size
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 $(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
-  with the `centrality_condition` keyword as additional criterion to accept a step, if this is provided"))
+  with the `centrality_condition` keyword as additional criterion to accept a step, if this is provided
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-8)"))
   a stopping criterion, by default depending on the residual of the KKT vector field or a maximal number of steps, which ever hits first.
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well

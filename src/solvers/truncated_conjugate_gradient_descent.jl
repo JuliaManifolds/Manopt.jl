@@ -11,13 +11,11 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `δ::T`:                     the conjugate gradient search direction
 * `δHδ`, `YPδ`, `δPδ`, `YPδ`: temporary inner products with `Hδ` and preconditioned inner products.
 * `Hδ`, `HY`:                 temporary results of the Hessian applied to `δ` and `Y`, respectively.
-* `κ::R`:                     the linear convergence target rate.
 * `project!`:                 for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * `randomize`:          indicate whether `X` is initialized to a random vector or not
 * `residual::T`:                 the gradient of the model ``m(Y)``
 $(_fields(:stopping_criterion; name = "stop"))
-* `θ::R`:                     the superlinear convergence target rate of ``1+θ``
 * `trust_region_radius::R`:   the trust-region radius
 * `X::T`:                     the gradient ``$(_tex(:grad))f(p)``
 * `Y::T`:                     current iterate tangent vector
@@ -126,10 +124,10 @@ end
 function status_summary(tcgs::TruncatedConjugateGradientState; context::Symbol = :default)
     (context === :short) && return repr(tcgs)
     i = get_count(tcgs, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(tcgs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && "A solver state for the truncated conjugate gradient descent$(conv_inl)"
+    conv_inl = (i > 0) ? (has_converged(tcgs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the truncated conjugate gradient descent$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(tcgs.stop) ? "Yes" : "No"
+    Conv = has_converged(tcgs.stop) ? "Yes" : "No"
     as = _callbacks_summary(tcgs)
     return """
     # Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent
@@ -140,7 +138,7 @@ function status_summary(tcgs::TruncatedConjugateGradientState; context::Symbol =
 
     ## Stopping criterion
     $(_in_str(status_summary(tcgs.stop; context = context); indent = 1, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
 end
 get_callbacks(tcgs::TruncatedConjugateGradientState) = tcgs.callbacks
 function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, Y)
@@ -321,8 +319,6 @@ yield a reduction of the model.
 
 $(_fields(:at_iteration))
 * `value` store the value of the inner product.
-* `reason`: stores a reason of stopping if the stopping criterion has been reached,
-  see [`get_reason`](@ref).
 
 # Constructor
 
@@ -416,7 +412,7 @@ function get_reason(c::StopWhenModelIncreased)
     return ""
 end
 function status_summary(c::StopWhenModelIncreased; context::Symbol = :default)
-    (context === :short) && (repr(c))
+    (context === :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     (context === :inline) && (return "Model Increased:$(_MANOPT_INDENT)$s")

@@ -6,13 +6,13 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 # Fields
 
 * `cost`:                        ``F + G(Λ(⋅))`` to evaluate interim cost function values
-* `linearized_operator`:         the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `linearized_adjoint_operator`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → $(_math(:TangentBundle))``
-* `prox_F`:                      the proximal map belonging to ``F``
-* `diff_prox_F`:                 the (Clarke Generalized) differential of the proximal maps of ``F``
-* `prox_G_dual`:                 the proximal map belonging to `G^$(_tex(:ast))_n``
-* `diff_prox_dual_G`:            the (Clarke Generalized) differential of the proximal maps of ``G^$(_tex(:ast))_n``
-* `Λ`:                           the exact forward operator. This operator is required if `Λ(m)=n` does not hold.
+* `linearized_forward_operator!`: the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
+* `adjoint_linearized_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → $(_math(:TangentBundle))``
+* `prox_f!`:                     the proximal map belonging to ``F``
+* `diff_prox_f!`:                the (Clarke Generalized) differential of the proximal maps of ``F``
+* `prox_g_dual!`:                the proximal map belonging to ``G^$(_tex(:ast))_n``
+* `diff_prox_g_dual!`:           the (Clarke Generalized) differential of the proximal maps of ``G^$(_tex(:ast))_n``
+* `Λ!`:                          the exact forward operator. This operator is required if `Λ(m)=n` does not hold.
 
 # Constructor
 
@@ -60,7 +60,7 @@ $(_fields(:p; name = "m"))
 $(_fields(:p; type = "Q", name = "n", M = "N"))
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `primal_stepsize::Float64`:  proximal parameter of the primal prox
-* `reg_param::Float64`:        regularization parameter for the Newton matrix
+* `regularization_parameter::Float64`: regularization parameter for the Newton matrix
 $(_fields(:retraction_method))
 $(_fields(:stopping_criterion; name = "stop"))
 * `update_dual_base`:          function to update the dual base
@@ -75,7 +75,7 @@ If you activate these to be different from the default identity, you have to pro
 
 # Constructor
 
-    PrimalDualSemismoothNewtonState(M::AbstractManifold; kwargs...)
+    PrimalDualSemismoothNewtonState(M::AbstractManifold, N::AbstractManifold; kwargs...)
 
 Generate a state for the [`primal_dual_semismooth_Newton`](@ref).
 
@@ -90,7 +90,7 @@ $(Manopt._kwargs([:inverse_retraction_method]))
 * `primal_stepsize=1/sqrt(8)`
 * `reg_param=1e-5`
 $(Manopt._kwargs([:retraction_method]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))
 * `update_dual_base=(amp, ams, k) -> o.n`
 * `update_primal_base=(amp, ams, k) -> o.m`
 $(_kwargs(:vector_transport_method))
@@ -115,7 +115,7 @@ mutable struct PrimalDualSemismoothNewtonState{
     vector_transport_method::VTM
     X::T
     function PrimalDualSemismoothNewtonState(
-            M::AbstractManifold;
+            M::AbstractManifold, N::AbstractManifold;
             callbacks::C = Dict{Symbol, Function}(),
             dual_stepsize::Float64 = 1 / sqrt(8),
             m::P = rand(M), n::Q = rand(N), p::P = rand(M),
@@ -270,10 +270,10 @@ end
 function status_summary(pdsns::PrimalDualSemismoothNewtonState; context::Symbol = :default)
     (context === :short) && return repr(pdsns)
     i = get_count(pdsns, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(pdsns.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(pdsns.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the primal dual semismooth Newton solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(pdsns.stop) ? "Yes" : "No"
+    Conv = has_converged(pdsns.stop) ? "Yes" : "No"
     as = _callbacks_summary(pdsns)
     s = """
     # Solver state for `Manopt.jl`s primal dual semismooth Newton
@@ -288,7 +288,7 @@ function status_summary(pdsns::PrimalDualSemismoothNewtonState; context::Symbol 
 
     ## Stopping criterion
     $(_in_str(status_summary(pdsns.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 function Base.show(io::IO, pdmssno::PrimalDualManifoldSemismoothNewtonObjective)
@@ -423,7 +423,7 @@ function primal_dual_semismooth_Newton!(
     dpdmsno = decorate_objective!(M, pdmsno; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmsno)
     pdsn = PrimalDualSemismoothNewtonState(
-        M;
+        M, N;
         callbacks = process_callbacks_arg(callbacks, PrimalDualSemismoothNewtonState),
         m = m,
         n = n,
@@ -485,8 +485,8 @@ function primal_dual_step!(tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNe
     return pdsn.X = pdsn.X + dξ
 end
 
-raw"""
-    construct_primal_dual_residual_vector(p, o)
+@doc raw"""
+    construct_primal_dual_residual_vector(tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState)
 
 Constructs the vector representation of ``X(p^{(k)}, ξ_{n}^{(k)}) ∈ \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}``
 """
@@ -540,8 +540,8 @@ function construct_primal_dual_residual_vector(
     return [X₁; X₂]
 end
 
-raw"""
-onstruct_primal_dual_residual_covariant_derivative_matrix(p, o)
+@doc raw"""
+    construct_primal_dual_residual_covariant_derivative_matrix(tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState)
 
 Constructs the matrix representation of ``V^{(k)}:\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}\rightarrow \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}``
 """

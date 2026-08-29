@@ -13,7 +13,7 @@ where both ``g`` and ``h`` are convex, lower semicontinuous and proper.
 # Fields
 
 * `cost`:     implementation of ``f(p) = g(p)-h(p)``
-* `gradient`: the gradient of the cost
+* `gradient!`: the gradient of the cost
 * `grad_h!`: a function ``$(_tex(:grad))h: $(_math(:Manifold)) → T$(_math(:Manifold))``,
 
 Note that both the gradients might be given in two possible signatures
@@ -59,7 +59,7 @@ end
     get_subtrahend_gradient!(M::AbstractManifold, X, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
 
 Evaluate the gradient of the subtrahend ``h`` from within
-a [`ManifoldDifferenceOfConvexProximalObjective`](@ref)` `P` at the point `p` (in place of X).
+a [`ManifoldDifferenceOfConvexProximalObjective`](@ref) `P` at the point `p` (in place of X).
 """
 get_subtrahend_gradient(M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
 
@@ -122,7 +122,7 @@ $(_fields(:p; name = "r"))
 $(_fields(:retraction_method))
 $(_fields(:stepsize))
 $(_fields(:stopping_criterion; name = "stop"))
-* `X`, `Y`: the current gradient and descent direction, respectively
+* `X`: the current gradient
   their common type is set by the keyword `X`
 $(_fields([:sub_problem, :sub_state]))
 
@@ -150,7 +150,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 
 $(_kwargs(:stepsize; default = "`[`ConstantLength`](@ref)`()"))
-$(_kwargs(:stopping_criterion; default = "`[StopWhenChangeLess`](@ref)`(1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopWhenChangeLess`](@ref)`(1e-8)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct DifferenceOfConvexProximalState{
@@ -244,11 +244,10 @@ end
 function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol = :default)
     (context === :short) && return repr(dcps)
     i = get_count(dcps, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(dcps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(dcps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the difference of convex proximal point algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(dcps.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(dcps)) – $(Iter) $(has_converged(dcps) ? "(converged)" : "")")
+    Conv = has_converged(dcps.stop) ? "Yes" : "No"
     as = _callbacks_summary(dcps)
     sub = repr(dcps.sub_state)
     sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
@@ -266,7 +265,7 @@ function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol =
 
     ## Stopping criterion
     $(_in_str(status_summary(dcps.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 #

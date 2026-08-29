@@ -10,9 +10,9 @@ Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [Bergma
 
 * `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_forward_operator!`: linearized operator for the forward operation in the algorithm ``DΛ``
-* `linearized_adjoint_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → T$(_math(:Manifold))``
+* `adjoint_linearized_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → T$(_math(:Manifold))``
 * `prox_f!`:                      the proximal map belonging to ``f``
-* `prox_G_dual!`:                 the proximal map belonging to ``g_n^*``
+* `prox_g_dual!`:                 the proximal map belonging to ``g_n^*``
 * `Λ!`:                           the  forward operator (if given) ``Λ: $(_math(:Manifold)) → $(_math(:Manifold; M = "N"))``
 
 Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
@@ -99,7 +99,7 @@ $(_fields(:inverse_retraction_method; name = "inverse_retraction_method_dual", M
 * `X::T`:               an initial tangent vector ``X^{(0)} ∈ $(_math(:TangentSpace; p = "p^{(0)}"))``
 * `Xbar::T`:            the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
 * `relaxation::R`:      relaxation in the primal relaxation step (to compute `pbar`:
-* `relax::Symbol:       which variable to relax (`:primal` or `:dual`:
+* `relax::Symbol`:      which variable to relax, `:primal` or `:dual`
 $(_fields(:retraction_method))
 $(_fields(:stopping_criterion; name = "stop"))
 * `variant`:            whether to perform an `:exact` or `:linearized` Chambolle-Pock
@@ -125,7 +125,7 @@ If you activate these to be different from the default identity, you have to pro
 # Keyword arguments
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
-* `n=``$(Manopt._link(:rand; M = "N"))
+* `n=`$(Manopt._link(:rand; M = "N"))
 * `p=`$(Manopt._link(:rand))
 * `m=`$(Manopt._link(:rand))
 * `X=`$(Manopt._link(:zero_vector))
@@ -231,11 +231,11 @@ get_callbacks(state::ChambollePockState) = state.callbacks
 function status_summary(cps::ChambollePockState; context::Symbol = :default)
     (context === :short) && return repr(cps)
     i = get_count(cps, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(cps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(cps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for Chambolle-Pock algorithm$(conv_inl)"
     i = get_count(cps, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(cps.stop) ? "Yes" : "No"
+    Conv = has_converged(cps.stop) ? "Yes" : "No"
     as = _callbacks_summary(cps)
     s = """
     # Solver state for `Manopt.jl`s Chambolle-Pock Algorithm
@@ -255,7 +255,7 @@ function status_summary(cps::ChambollePockState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(cps.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 get_solver_result(apds::AbstractPrimalDualSolverState) = get_iterate(apds)
@@ -346,7 +346,6 @@ function ChambollePock(
 end
 calls_with_kwargs(::typeof(ChambollePock)) = (ChambollePock!,)
 
-# TODO: Add Eval
 @doc "$(_doc_ChambollePock)"
 function ChambollePock!(
         M::AbstractManifold, N::AbstractManifold, cost::TF, p::P, X::T, m::P, n::Q,

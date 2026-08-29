@@ -16,7 +16,7 @@ as well as to provide functions
 * `get_basepoint(poll!)` that returns the base point at which the mesh is build
 * `get_candidate(poll!)` that returns the last found candidate if the poll was successful.
   Otherwise the base point is returned
-* `get_descent_direction(poll!)` the the vector that points from the base point to the candidate.
+* `get_descent_direction(poll!)` that returns the vector that points from the base point to the candidate.
   If the last poll was not successful, the zero vector is returned
 * `update_basepoint!(M, poll!, p)` that updates the base point to `p` and all necessary
   internal data to a new point to build a mesh at
@@ -67,7 +67,7 @@ with two small modifications:
 * `basis`: a basis of the current tangent space with respect to which the mesh is stored
 * `candidate::P`: a memory for a new point/candidate
 * `mesh`: a vector of tangent vectors storing the mesh.
-* `random_vector`: a ``d``-dimensional random vector ``b_l```
+* `random_vector`: a ``d``-dimensional random vector ``b_l``
 * `random_index`: a random index ``ι``
 $(_fields([:retraction_method, :vector_transport_method]))
 * `X::T` the last successful poll direction stored as a tangent vector.
@@ -337,7 +337,7 @@ function Base.show(io::IO, dmads::DefaultMeshAdaptiveDirectSearch)
 end
 function status_summary(dmads::DefaultMeshAdaptiveDirectSearch; context::Symbol = :default)
     (context === :short) && return repr(dmads)
-    (context === :inline) && "The default mesh adaptive direct search along a given direction using the $(dmads.retraction_method)"
+    (context === :inline) && return "The default mesh adaptive direct search along a given direction using the $(dmads.retraction_method)"
     return """The default mesh adaptive direct search
     along one given direction X.
 
@@ -443,10 +443,10 @@ end
 function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :default)
     (context === :short) && return repr(mads)
     i = get_count(mads, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(mads.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    conv_inl = (i > 0) ? (has_converged(mads.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
     (context === :inline) && return "A solver state for the trust region solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(mads.stop) ? "Yes" : "No"
+    Conv = has_converged(mads.stop) ? "Yes" : "No"
     (context === :inline) && (return "A Mesh adaptive direct search state – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
     as = _callbacks_summary(mads)
     s = """
@@ -461,7 +461,7 @@ function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :
     * search:\n  $(_in_str(status_summary(mads.search; context = context); indent = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(mads.stop; context = context); indent = 0, headers = 1))    This indicates convergence: $Conv
+    $(_in_str(status_summary(mads.stop; context = context); indent = 0, headers = 1))    The algorithm converged: $Conv
     """
     return s
 end

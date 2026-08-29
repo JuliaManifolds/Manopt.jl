@@ -848,7 +848,7 @@ $(_tex(:Cal, "A"))(X) = $(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))(X) + λX
 = J_F^*(p)$(_tex(:bigl))[ C^T C J_F(p)[X] $(_tex(:bigr))] + λX,
 ```
 
-where ``λ = ```penalty` is a damping parameter and with
+where ``λ`` = `penalty` is a damping parameter and with
 ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``
 we have
 
@@ -1448,7 +1448,7 @@ For the variant with `_normal` the result is similar to the surrogate, namely we
 ``$(_tex(:Cal, "L"))(X) + y`` for the surrogate and hence also the same form ``$(_tex(:Cal, "N"))(X) + z``,
 which has to be set to zero to find ``X``.
 
-For the objective here we consider ````$(_tex(:Cal, "N"))(X) = z'``, i.e. the `get_vector_field` `z' = -z``
+For the objective here we consider ``$(_tex(:Cal, "N"))(X) = z'``, that is, the `get_vector_field` ``z' = -z``
 differs by a sign.
 """
 

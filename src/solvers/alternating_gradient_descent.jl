@@ -46,7 +46,7 @@ see also [`alternating_gradient_descent`](@ref).
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
 * `direction::`[`DirectionUpdateRule`](@ref)
-* `evaluation_order::Symbol`: whether to use a randomly permuted sequence (`:FixedRandom`),
+* `order_type::Symbol`: whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
 * `inner_iterations`: how many gradient steps to take in a component before alternating to the next
 * `order`: the current permutation
@@ -54,7 +54,7 @@ $(_fields([:retraction_method, :stepsize]))
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:X; add_properties = [:as_Gradient]))
-* `k`, ì`: internal counters for the outer and inner iterations, respectively.
+* `k`, `i`: internal counters for the outer and inner iterations, respectively.
 
 # Constructors
 
@@ -71,7 +71,7 @@ $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, AlternatingGradi
 $(_kwargs(:X))
 
 Generate the options for point `p` and where `inner_iterations`, `order_type`, `order`,
-`retraction_method`, `stopping_criterion`, and `stepsize`` are keyword arguments.
+`retraction_method`, `stopping_criterion`, and `stepsize` are keyword arguments.
 
 For internal use, there also exists a constructor solely having the fields as keyword arguments,
 but then all of them are mandatory.
@@ -102,6 +102,9 @@ mutable struct AlternatingGradientDescentState{
             stopping_criterion::StoppingCriterion = StopAfterIteration(1000),
             stepsize::Stepsize = default_stepsize(M, AlternatingGradientDescentState),
         ) where {P, T, C <: AbstractDict{Symbol}}
+        (order_type in (:Linear, :FixedRandom, :Random)) || throw(
+            DomainError(order_type, "The order type has to be one of :Linear, :FixedRandom, or :Random.")
+        )
         return AlternatingGradientDescentState(;
             callbacks = callbacks,
             p = p, X = X, direction = _produce_type(AlternatingGradient(; p = p, X = X), M),
@@ -138,7 +141,7 @@ end
 function status_summary(agds::AlternatingGradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(agds)
     Iter = (agds.i > 0) ? "After $(agds.i) iterations\n" : ""
-    Conv = indicates_convergence(agds.stop) ? "Yes" : "No"
+    Conv = has_converged(agds.stop) ? "Yes" : "No"
     _is_inline(context) && (return "$(repr(agds)) – $(Iter) $(has_converged(agds) ? "(converged)" : "")")
     as = _callbacks_summary(agds)
     s = """
@@ -154,7 +157,7 @@ function status_summary(agds::AlternatingGradientDescentState; context::Symbol =
 
     ## Stopping criterion
     $(_in_str(status_summary(agds.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $Conv"""
     return s
 end
 function get_message(agds::AlternatingGradientDescentState)
@@ -244,10 +247,10 @@ $(_args(:p))
 # Keyword arguments
 
 $(_kwargs(:evaluation))
-* `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
-  a per cycle permuted sequence (`:Random`) or the default `:Linear` one.
+* `order_type=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
+  a per cycle permuted sequence (`:Random`, default) or the default `:Linear` one.
 * `inner_iterations=5`:  how many gradient steps to take in a component before alternating to the next
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
 $(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
 * `order=[1:n]`:         the initial permutation, where `n` is the number of gradients in `gradF`.
 $(_kwargs(:retraction_method))

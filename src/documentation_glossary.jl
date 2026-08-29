@@ -70,6 +70,7 @@ Glossaries.define!(_glossary_tex_terms, :displaystyle, :math, raw"\displaystyle"
 Glossaries.define!(_glossary_tex_terms, :ell, :math, raw"\ell")
 Glossaries.define!(_glossary_tex_terms, :eR, :math, raw"\bar{\mathbb R}")
 _tex_frac(a, b) = raw"\frac" * "{$a}{$b}"
+Glossaries.define!(_glossary_tex_terms, :exp, :math, raw"\exp")
 Glossaries.define!(_glossary_tex_terms, :frac, :math, _tex_frac)
 Glossaries.define!(_glossary_tex_terms, :grad, :math, raw"\operatorname{grad}")
 _tex_hat(letter) = raw"\hat{" * "$letter" * "}"
@@ -166,6 +167,9 @@ _glossary_links = _glossary[:Link]
 
 __link_formatter = Glossaries.Plain(:link)
 _link(args...; kwargs...) = __link_formatter(_glossary_links, args...; kwargs...)
+# A link for a keyword `default`: `Glossaries.Keyword` appends the closing backtick,
+# so the code span the link brings along has to be left open here.
+_open_link(args...; kwargs...) = "`" * chopsuffix(_link(args...; kwargs...), "`")
 
 Glossaries.define!(
     _glossary_links, :AbstractManifold, :link,
@@ -457,7 +461,7 @@ Glossaries.define!(
     (; M = "M") -> "a point on the manifold ``$(_math(:Manifold, M = M))``"
 )
 Glossaries.define!(_glossary_variables, :p, :type, "P")
-Glossaries.define!(_glossary_variables, :p, :default, (; M = "M") -> "`$(_link(:rand; M = M))` ")
+Glossaries.define!(_glossary_variables, :p, :default, (; M = "M") -> _open_link(:rand; M = M))
 Glossaries.define!(_glossary_variables, :p, :as_Iterate, " storing the current iterate")
 Glossaries.define!(_glossary_variables, :p, :as_Initial, " to specify the initial value")
 
@@ -491,7 +495,7 @@ Glossaries.define!(
 Glossaries.define!(_glossary_variables, :stopping_criterion, :type, "`[`StoppingCriterion`](@ref)` ")
 
 Glossaries.define!(_glossary_variables, :sub_kwargs)
-Glossaries.define!(_glossary_variables, :sub_kwargs, :description, "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective, the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself.")
+Glossaries.define!(_glossary_variables, :sub_kwargs, :description, "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective, the [`decorate_state!`](@ref) of the sub solvers state, and the sub state constructor itself.")
 Glossaries.define!(_glossary_variables, :sub_kwargs, :default, "(;)")
 
 Glossaries.define!(_glossary_variables, :sub_problem)
@@ -506,7 +510,7 @@ Glossaries.define!(
     _glossary_variables, :sub_state, :description,
     (; M = "M") -> " a state to specify the sub solver to use. For a closed form solution, this indicates the type of function.",
 )
-Glossaries.define!(_glossary_variables, :sub_state, :type, "Union{`[`AbstractManoptProblem`](@ref)`, F}")
+Glossaries.define!(_glossary_variables, :sub_state, :type, "Union{`[`AbstractManoptSolverState`](@ref)`, `[`AbstractEvaluationType`](@ref)`}")
 
 Glossaries.define!(_glossary_variables, :subgrad_f, :name, "∂f")
 Glossaries.define!(
@@ -536,7 +540,7 @@ Glossaries.define!(
     "a tangent vector at the point ``$p`` on the manifold ``$(_math(:Manifold, M = M))``",
 )
 Glossaries.define!(_glossary_variables, :X, :type, "T")
-Glossaries.define!(_glossary_variables, :X, :default, (; M = "M", p = "p") -> "`$(_link(:zero_vector; M = M, p = p))` ")
+Glossaries.define!(_glossary_variables, :X, :default, (; M = "M", p = "p") -> _open_link(:zero_vector; M = M, p = p))
 Glossaries.define!(_glossary_variables, :X, :as_Gradient, "storing the gradient at the current iterate")
 Glossaries.define!(_glossary_variables, :X, :as_Subgradient, "storing a subgradient at the current iterate")
 Glossaries.define!(_glossary_variables, :X, :as_Memory, "to specify the representation of a tangent vector")

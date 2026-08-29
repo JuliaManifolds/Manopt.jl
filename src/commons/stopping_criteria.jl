@@ -605,9 +605,9 @@ function StopWhenCostChangeLess(tol::F) where {F <: Real}
     return StopWhenCostChangeLess{F}(tol, -1, zero(tol), 2 * tol)
 end
 function (c::StopWhenCostChangeLess)(
-        problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
+        problem::AbstractManoptProblem, state::AbstractManoptSolverState, k::Int
     )
-    if iteration <= 0 # reset on init
+    if k <= 0 # reset on init
         c.at_iteration = -1
         c.last_cost = Inf
         c.last_change = 2 * c.tolerance
@@ -616,7 +616,7 @@ function (c::StopWhenCostChangeLess)(
     c.last_cost = get_cost(problem, state)
     c.last_change = c.last_change - c.last_cost
     if abs(c.last_change) < c.tolerance
-        c.at_iteration = iteration
+        c.at_iteration = k
         return true
     end
     return false
@@ -1606,9 +1606,9 @@ function StopWhenRelativeAPosterioriCostChangeLessOrEqual(tol::F) where {F <: Re
 end
 StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::F = 1.0e7) where {F <: Real} = StopWhenRelativeAPosterioriCostChangeLessOrEqual(factr * eps(typeof(factr)))
 function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(
-        problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
+        problem::AbstractManoptProblem, state::AbstractManoptSolverState, k::Int
     )
-    if iteration <= 0 # reset on init
+    if k <= 0 # reset on init
         c.at_iteration = -1
         c.last_cost = Inf
         c.last_change = 2 * c.threshold
@@ -1616,8 +1616,8 @@ function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(
     current_cost = get_cost(problem, state)
     c.last_change = (c.last_cost - current_cost) / max(abs(c.last_cost), abs(current_cost), 1)
     c.last_cost = current_cost
-    if iteration > 1 && c.last_change <= c.threshold
-        c.at_iteration = iteration
+    if k > 1 && c.last_change <= c.threshold
+        c.at_iteration = k
         return true
     end
     return false
