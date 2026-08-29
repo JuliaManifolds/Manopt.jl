@@ -79,6 +79,7 @@ using Manopt, Manifolds, Test
         @test_throws MethodError get_gradient!(dmp1i, X, p)
         @test_throws MethodError get_gradients(dmp1i, p)
         @test_throws MethodError get_gradient!(dmp1i, Z4, p, 1)
+        @test_throws DomainError StochasticGradientDescentState(M; order_type = :WrongSymbol)
         sgds = StochasticGradientDescentState(
             M; p = deepcopy(p), X = zero_vector(M, p), direction = StochasticGradient(; p = p)(M)
         )

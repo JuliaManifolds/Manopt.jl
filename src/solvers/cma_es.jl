@@ -324,10 +324,10 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, k::Int)
         w_i = s.recombination_weights[i]
         wᵒi = w_i # Eq. (46)
         if w_i < 0
-            mul!(cinv_y, cov_invsqrt, s.ys_c[i])
+            mul!(cinv_y, cov_invsqrt, ys_c_sorted[i])
             wᵒi *= n_coords / norm(cinv_y)^2
         end
-        mul!(s.covariance_matrix, s.ys_c[i], s.ys_c[i]', s.c_μ * wᵒi, true) # Eq. (47), rank μ update
+        mul!(s.covariance_matrix, ys_c_sorted[i], ys_c_sorted[i]', s.c_μ * wᵒi, true) # Eq. (47), rank μ update
     end
     # move covariance matrix, `p_c`, and `p_σ` to new mean point
     s.last_variances .= D2

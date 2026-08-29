@@ -21,7 +21,13 @@ on `DefaultManifold` is the `Inf` norm of `p`.
 """
 Manopt.default_point_distance(::Euclidean, p) = norm(p, Inf)
 
-Manopt.default_vector_norm(::Euclidean, p, X) = norm(p, Inf)
+"""
+    default_vector_norm(::Euclidean, p, X)
+
+Following [HagerZhang:2006:2](@cite), the norm of a tangent vector `X` at `p`
+used within the Hager-Zhang initial guess on `Euclidean` is the `Inf` norm of `X`.
+"""
+Manopt.default_vector_norm(::Euclidean, p, X) = norm(X, Inf)
 
 """
     get_bounds_index(::Hyperrectangle)

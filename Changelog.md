@@ -24,6 +24,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+The following fixes were reported by an AI assisted code review. Each single point was still carefully checked, and committed by hand.
+They are still listed here in detail in case (a) someone elses code breaks of (b) it was not done careful enough – to then avoid these approaches in the future.
+
+* `cma_es` now uses the fitness-sorted samples in its covariance matrix update,
+  cf. Eq. (47) of [arXiv:1604.00772](https://arxiv.org/abs/1604.00772).
+* `WolfePowellBinaryLinesearch` now bisects correctly the step size fulfils both Wolfe
+  conditions; sometimes a wrong termination check made it stop too early.
+* `default_vector_norm(::Euclidean, p, X)` returned the norm of `p` instead of `X`.
+* `PrimalDualSemismoothNewtonState` is now constructed as `(M, N; kwargs...)` like `ChambollePockState`;
+  the previous `(M; kwargs...)` form errored on its own default `n = rand(N)` when no `n` was provided.
 * since we introduced the differential in the first order objectives,
 they were not fully supported in all places. This was now fixed and unified.
 * for a nicer printing on REPL, a few more `status_summary` functions were added (with the help of an AI)

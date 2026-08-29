@@ -104,6 +104,14 @@ end
     @test get_last_stepsize(s3) == 0.0
     @test startswith(Manopt.status_summary(s3), "A Wolfe Powell bisection line search")
     # no stepsize yet so `repr` and summary are the same
+    # regression: with a too-long first trial the search must bisect until Armijo holds
+    f3(M, p) = 100 * sum(p .^ 2)
+    grad_f3(M, p) = 200 .* p
+    dmp3 = DefaultManoptProblem(M, ManifoldGradientObjective(f3, grad_f3))
+    gds3 = GradientDescentState(M; p = [1.0, 1.0])
+    gds3.X = grad_f3(M, gds3.p)
+    t3 = s3(dmp3, gds3, 1, -gds3.X)
+    @test f3(M, gds3.p .- t3 .* gds3.X) <= f3(M, gds3.p) - 1.0e-4 * t3 * norm(gds3.X)^2
     s4 = WolfePowellLinesearch()(M)
     @test startswith(repr(s4), "WolfePowellLinesearchStepsize(;")
     @test startswith(Manopt.status_summary(s4), "A Wolfe Powell line search")

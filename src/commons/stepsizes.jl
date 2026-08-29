@@ -2415,10 +2415,12 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
         a.sufficient_curvature * get_differential(amp, p, η; Y = X_tmp)
     while (nAt || nWt) &&
             (t > a.stop_when_stepsize_less) &&
-            ((α + β) / 2 - 1 > a.stop_when_stepsize_less)
+            (β - α > a.stop_when_stepsize_less)
         nAt && (β = t)            # A(t) fails
         (!nAt && nWt) && (α = t)  # A(t) holds but W(t) fails
+        t_old = t
         t = isinf(β) ? 2 * α : (α + β) / 2
+        (t == t_old) && break # the bisection cannot make further progress
         # Update trial point
         ManifoldsBase.retract_fused!(M, xNew, get_iterate(ams), η, t, a.retraction_method)
         fNew = get_cost(amp, xNew)

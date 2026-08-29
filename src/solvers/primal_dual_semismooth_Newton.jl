@@ -75,7 +75,7 @@ If you activate these to be different from the default identity, you have to pro
 
 # Constructor
 
-    PrimalDualSemismoothNewtonState(M::AbstractManifold; kwargs...)
+    PrimalDualSemismoothNewtonState(M::AbstractManifold, N::AbstractManifold; kwargs...)
 
 Generate a state for the [`primal_dual_semismooth_Newton`](@ref).
 
@@ -115,7 +115,7 @@ mutable struct PrimalDualSemismoothNewtonState{
     vector_transport_method::VTM
     X::T
     function PrimalDualSemismoothNewtonState(
-            M::AbstractManifold;
+            M::AbstractManifold, N::AbstractManifold;
             callbacks::C = Dict{Symbol, Function}(),
             dual_stepsize::Float64 = 1 / sqrt(8),
             m::P = rand(M), n::Q = rand(N), p::P = rand(M),
@@ -423,7 +423,7 @@ function primal_dual_semismooth_Newton!(
     dpdmsno = decorate_objective!(M, pdmsno; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmsno)
     pdsn = PrimalDualSemismoothNewtonState(
-        M;
+        M, N;
         callbacks = process_callbacks_arg(callbacks, PrimalDualSemismoothNewtonState),
         m = m,
         n = n,

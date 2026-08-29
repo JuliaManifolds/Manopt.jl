@@ -102,6 +102,9 @@ mutable struct AlternatingGradientDescentState{
             stopping_criterion::StoppingCriterion = StopAfterIteration(1000),
             stepsize::Stepsize = default_stepsize(M, AlternatingGradientDescentState),
         ) where {P, T, C <: AbstractDict{Symbol}}
+        (order_type in (:Linear, :FixedRandom, :Random)) || throw(
+            DomainError(order_type, "The order type has to be one of :Linear, :FixedRandom, or :Random.")
+        )
         return AlternatingGradientDescentState(;
             callbacks = callbacks,
             p = p, X = X, direction = _produce_type(AlternatingGradient(; p = p, X = X), M),
@@ -244,8 +247,8 @@ $(_args(:p))
 # Keyword arguments
 
 $(_kwargs(:evaluation))
-* `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
-  a per cycle permuted sequence (`:Random`) or the default `:Linear` one.
+* `order_type=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
+  a per cycle permuted sequence (`:Random`, default) or the default `:Linear` one.
 * `inner_iterations=5`:  how many gradient steps to take in a component before alternating to the next
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
 $(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
