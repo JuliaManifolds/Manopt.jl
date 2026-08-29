@@ -797,7 +797,7 @@ function (bb::BarzilaiBorweinStepsize)(
     #indirect strategy
     return if bb.strategy == :inverse
         if s1 > 0
-            stepsize = min(bb.max_stepsize, max(bb.min_stepsize, s1 / s2))
+            stepsize = clamp(s1 / s2, bb.min_stepsize, bb.max_stepsize)
         else
             stepsize = bb.max_stepsize
         end
