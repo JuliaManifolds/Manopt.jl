@@ -69,6 +69,10 @@ using ManifoldDiff: prox_distance, prox_distance!
         o3 = ChambollePock(callargs_exact...; Λ = Λ, relax = :dual, variant = :exact)
         o4 = ChambollePock(callargs_exact...; Λ = Λ, relax = :primal, variant = :exact)
         @test o3 ≈ o4 atol = 2 * 1.0e-7
+        # the default variant matches the provided operator; a mismatch errors
+        o5 = ChambollePock(callargs_linearized...; linearized_forward_operator = DΛ, relax = :dual)
+        @test o5 ≈ o1 atol = 2 * 1.0e-7
+        @test_throws ArgumentError ChambollePock(callargs_exact...; variant = :exact)
         @test o1 ≈ o3
         o1a = ChambollePock(
             callargs_linearized...;

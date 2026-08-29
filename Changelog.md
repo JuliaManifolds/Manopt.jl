@@ -29,8 +29,12 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 
 * `AdaptiveWNGradient` fixed its reference gradient norm to the initial one, so its adaptive mode now works.
 * `BarzilaiBorweinStepsize` defaults `max_stepsize` to `1.0` on manifolds with infinite injectivity radius.
+* `ChambollePock` now defaults to the variant matching the operator that was provided;
+  requesting a variant without its operator errors with an explanation.
 * `ConjugateGradientDescentState` can now be constructed without specifying a stepsize.
 * `conjugate_residual(TpM, A, b; kwargs...)` no longer errors on solver keywords and no longer returns `NaN`s with `warm_start=false`.
+* `LevenbergMarquardt` now defaults to a coordinate normal-system sub solver on manifolds
+  with box constraints, where the default sub solver errored before.
 * `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
 * `ProximalGradientNonsmoothCost` now computes the documented `1/(2λ)` proximity weight instead of `λ/2`.
 * `truncated_conjugate_gradient_descent` no longer produces `NaN` when started at a point with zero gradient.

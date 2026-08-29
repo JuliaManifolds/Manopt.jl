@@ -438,7 +438,9 @@ function LevenbergMarquardt!(
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
         sub_objective = construct_lm_subobjective(use_unified_basis, nlso, damping_term_min, scaling_threshold, scaling_mode, initial_residual_values, initial_jacobian_matrices),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
-        sub_state = ConjugateResidualState(TangentSpace(M, p), sub_objective),
+        sub_state = has_anisotropic_max_stepsize(M) ?
+            CoordinatesNormalSystemState(M, p) :
+            ConjugateResidualState(TangentSpace(M, p), sub_objective),
         kwargs..., #collect rest
     ) where {O <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(LevenbergMarquardt!; kwargs...)

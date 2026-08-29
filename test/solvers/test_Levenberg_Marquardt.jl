@@ -104,6 +104,8 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         # and a is chosen accordingly
         # We have to use the normal coordinates subsolver here then.
         r1c1 = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M1b))
+        r1c0 = LevenbergMarquardt(M1b, vgf1, p1)  # defaults must work on a Hyperrectangle
+        @test distance(M1b, r1c0, r1c1) < 1.0e-8
         @test is_point(M1b, r1c1)
         vgf1c = VectorGradientFunction(
             F1, JF1mat, m; evaluation = AllocatingEvaluation(),

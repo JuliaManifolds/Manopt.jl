@@ -316,7 +316,7 @@ $(_kwargs(:inverse_retraction_method; name = "inverse_retraction_method_dual", M
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
 * `relaxation=1.`: the relaxation parameter ``γ``
 * `relax=:primal`: whether to relax the primal or dual
-* `variant=:exact` if `Λ` is missing, otherwise `:linearized`: variant to use.
+* `variant=:linearized` if `Λ` is missing, otherwise `:exact`: variant to use.
   Note that this changes the arguments the `forward_operator` is called with.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
@@ -365,7 +365,7 @@ function ChambollePock!(
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
-        variant = ismissing(Λ) ? :exact : :linearized,
+        variant = ismissing(Λ) ? :linearized : :exact,
         kwargs...,
     ) where {
         TF, P, Q, T, RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod,
@@ -377,6 +377,10 @@ function ChambollePock!(
         evaluation = evaluation
     )
     keywords_accepted(ChambollePock!; kwargs...)
+    (variant === :exact && ismissing(Λ)) &&
+        throw(ArgumentError("The `:exact` variant requires the forward operator `Λ`."))
+    (variant === :linearized && ismissing(linearized_forward_operator)) &&
+        throw(ArgumentError("The `:linearized` variant requires the `linearized_forward_operator`."))
     dpdmo = decorate_objective!(M, pdmo; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmo)
     cps = ChambollePockState(
