@@ -449,7 +449,7 @@ the current point ``p∈$(_math(:Manifold))`` and a search direction ``X∈$(_ma
 Then the step size ``s`` is found by reducing the initial step size ``s`` until
 
 ```math
-f($(_tex(:retr))_p(sX)) ≤ f(p) - τs ⟨ X, $(_tex(:grad))f(p) ⟩_p
+f($(_tex(:retr))_p(sX)) ≤ f(p) + τs ⟨ X, $(_tex(:grad))f(p) ⟩_p
 ```
 
 is fulfilled, for a sufficient decrease value ``τ ∈ (0,1)``.
@@ -497,7 +497,7 @@ See [`AdaptiveWNGradient`](@ref) for the mathematical details.
 
 * `count_threshold::I`: an `Integer` for ``$(_tex(:hat, "c"))``
 * `minimal_bound::R`: the value for ``b_{$(_tex(:text, "min"))}``
-* `alternate_bound::F`: how to determine ``$(_tex(:hat, "b"))_k`` as a function of `(bmin, bk, hat_c) -> hat_bk`
+* `alternate_bound::F`: how to determine ``$(_tex(:hat, "b"))_k`` as a function of `(bk, hat_c) -> hat_bk`
 * `gradient_reduction::R`: the gradient reduction factor threshold ``α ∈ [0,1)``
 * `gradient_bound::R`: the bound ``b_k``.
 * `weight::R`: ``ω_k``, initialized to ``ω_0 =`` `norm(M, p, X)` if this is not zero, `1.0` otherwise.
@@ -659,8 +659,8 @@ Note that for ``α=0`` this is the Riemannian variant of `WNGRad`.
 ## Keyword arguments
 
 * `adaptive=true`: switches the `gradient_reduction` ``α`` (if `true`) to `0`.
-* `alternate_bound = (bk, hat_c) ->  min(gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c))`:
-  how to determine ``$(_tex(:hat, "k"))_k`` as a function of `(bmin, bk, hat_c) -> hat_bk`
+* `alternate_bound = (bk, hat_c) ->  min(gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c)))`:
+  how to determine ``$(_tex(:hat, "b"))_k`` as a function of `(bk, hat_c) -> hat_bk`
 * `count_threshold=4`:  an `Integer` for ``$(_tex(:hat, "c"))``
 * `gradient_reduction::R=adaptive ? 0.9 : 0.0`: the gradient reduction factor threshold ``α ∈ [0,1)``
 * `gradient_bound=norm(M, p, X)`: the bound ``b_k``.
@@ -853,20 +853,20 @@ end
 
 Consider the current iterate and gradient ``p_k`` and ``X_k`` as well as the last
 iterate and gradient ``p_{k-1}`` and ``X_{k-1}``. Note that in a gradient scheme this also
-yields the relation that ``p_k = $(_tex(:exp))_{p_{k-1}}(αX_{k-1}))`` when ``α`` is the stepsize
+yields the relation that ``p_k = $(_tex(:exp))_{p_{k-1}}(-αX_{k-1})`` when ``α`` is the stepsize
 from the last iteration.
 
 We compute the changes of the iterates and the vectors, respectively
 
 ```math
-s_{k} = $(_tex(:invretr))_{p_{k}}(p_{k-1})
+s_{k} = -$(_tex(:invretr))_{p_{k}}(p_{k-1})
 $(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
 y_{k} = X_k - $(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1}),
 ```
-where alternatively ``s_{k} = α_{k-1}$(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1})`` if
+where alternatively ``s_{k} = -α_{k-1}$(_math(:VectorTransport, "p_{k-1}", "p_k"))(X_{k-1})`` if
 the last step size ``α_{k-1}`` was passed as the `last_stepsize =` keyword.
 
-If there are not prior iterate ``p_{k-1}`` and and gradient ``X_{k-1}`` available,
+If there is no prior iterate ``p_{k-1}`` and gradient ``X_{k-1}`` available,
 both are set to their current counterpart which yields that ``s_{k} = y_{k} = 0`` are both
 the zero vector.
 
@@ -1370,7 +1370,7 @@ induced by `sufficient_curvature`, or the bracket ``[a,b]`` is smaller than `min
 
 # Keyword arguments
 
-$(_kwargs(:p)) to store an interim result
+* `candidate_point=allocate_result(M, rand)`: to store an interim result
 * `initial_stepsize=1.0`: the step size to start the search with
 $(_kwargs(:retraction_method))
 * `stepsize_increase=1.5`:  step size increase factor ``>1``
@@ -1974,7 +1974,7 @@ Then find the smallest ``h = 0, 1, 2, …`` such that
 
 ```math
 f($(_tex(:retr))_{p_k}(- σ^h α_k^{$(_tex(:text, "BB"))} $(_tex(:grad))f(p_k)))  ≤
-$(_tex(:max))_{1 ≤ j ≤ $(_tex(:max))(k+1,m)} f(p_{k+1-j}) - γ σ^h α_k^{$(_tex(:text, "BB"))} ⟨$(_tex(:grad))f(p_k), $(_tex(:grad))f(p_k)⟩_{p_k},
+$(_tex(:max))_{1 ≤ j ≤ $(_tex(:min))(k+1,m)} f(p_{k+1-j}) - γ σ^h α_k^{$(_tex(:text, "BB"))} ⟨$(_tex(:grad))f(p_k), $(_tex(:grad))f(p_k)⟩_{p_k},
 ```
 
 where ``σ ∈ (0,1)`` is a step length reduction factor, ``m`` is the number of iterations

@@ -462,8 +462,8 @@ Glossaries.define!(
 )
 Glossaries.define!(_glossary_variables, :p, :type, "P")
 Glossaries.define!(_glossary_variables, :p, :default, (; M = "M") -> _open_link(:rand; M = M))
-Glossaries.define!(_glossary_variables, :p, :as_Iterate, " storing the current iterate")
-Glossaries.define!(_glossary_variables, :p, :as_Initial, " to specify the initial value")
+Glossaries.define!(_glossary_variables, :p, :as_Iterate, "storing the current iterate")
+Glossaries.define!(_glossary_variables, :p, :as_Initial, "to specify the initial value")
 
 Glossaries.define!(_glossary_variables, :retraction_method)
 Glossaries.define!(
@@ -501,14 +501,14 @@ Glossaries.define!(_glossary_variables, :sub_kwargs, :default, "(;)")
 Glossaries.define!(_glossary_variables, :sub_problem)
 Glossaries.define!(
     _glossary_variables, :sub_problem, :description,
-    (; M = "M") -> " specify a problem for a solver or a closed form solution function, which can be allocating or in-place."
+    (; M = "M") -> "specify a problem for a solver or a closed form solution function, which can be allocating or in-place."
 )
 Glossaries.define!(_glossary_variables, :sub_problem, :type, "Union{`[`AbstractManoptProblem`](@ref)`, F}")
 
 Glossaries.define!(_glossary_variables, :sub_state)
 Glossaries.define!(
     _glossary_variables, :sub_state, :description,
-    (; M = "M") -> " a state to specify the sub solver to use. For a closed form solution, this indicates the type of function.",
+    (; M = "M") -> "a state to specify the sub solver to use. For a closed form solution, this indicates the type of function.",
 )
 Glossaries.define!(_glossary_variables, :sub_state, :type, "Union{`[`AbstractManoptSolverState`](@ref)`, `[`AbstractEvaluationType`](@ref)`}")
 
@@ -542,5 +542,6 @@ Glossaries.define!(
 Glossaries.define!(_glossary_variables, :X, :type, "T")
 Glossaries.define!(_glossary_variables, :X, :default, (; M = "M", p = "p") -> _open_link(:zero_vector; M = M, p = p))
 Glossaries.define!(_glossary_variables, :X, :as_Gradient, "storing the gradient at the current iterate")
+Glossaries.define!(_glossary_variables, :X, :as_Iterate, "storing the current iterate")
 Glossaries.define!(_glossary_variables, :X, :as_Subgradient, "storing a subgradient at the current iterate")
 Glossaries.define!(_glossary_variables, :X, :as_Memory, "to specify the representation of a tangent vector")

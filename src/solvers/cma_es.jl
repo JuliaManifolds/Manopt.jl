@@ -161,7 +161,8 @@ function CMAESState(
     cov_eig = eigen(covariance_matrix)
 
     return CMAESState{P, TParams, TStopping, TRetraction, TVTM, TB, TRng, C}(
-        allocate(M, p_m),
+        # the input point stores the result (best visited); the mean roams on a copy
+        p_m,
         Inf,
         callbacks,
         μ,
@@ -183,7 +184,7 @@ function CMAESState(
         Inf,
         Inf,
         Inf,
-        p_m,
+        copy(M, p_m),
         σ,
         zeros(TParams, n_coords),
         zeros(TParams, n_coords),
@@ -205,7 +206,7 @@ function status_summary(s::CMAESState; context::Symbol = :default)
     (context === :short) && return repr(s)
     i = get_count(s, :Iterations)
     conv_inl = (i > 0) ? (has_converged(s.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the conjugate gradient descent solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the covariance matrix adaptation evolutionary strategy solver$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(s.stop) ? "Yes" : "No"
     s = """
@@ -381,7 +382,7 @@ setting.
 * `tol_x=1e-12`: tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
   absolute difference between subsequent point but actually computed from distribution
   parameters.
-$(_kwargs(:stopping_criterion; default = "`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`"))
+$(_kwargs(:stopping_criterion; default = "default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)"))
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs([:retraction_method, :vector_transport_method]))
 * `basis`               (`DefaultOrthonormalBasis()`) basis used to represent covariance in

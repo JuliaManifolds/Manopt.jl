@@ -65,6 +65,8 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         @test isapprox(M1, r1a1, r1a4; atol = 1.0e-7)
         # Interface II: vgf
         r1a5 = LevenbergMarquardt(M1, vgf1, p1)
+        # two identical runs agree exactly (deterministic sub solver start)
+        @test r1a5 == LevenbergMarquardt(M1, vgf1, p1)
         @test isapprox(M1, r1a1, r1a5; atol = 1.0e-7)
         # also in place vgf
         r1a6 = copy(M1, p1)
@@ -104,6 +106,10 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         # and a is chosen accordingly
         # We have to use the normal coordinates subsolver here then.
         r1c1 = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M1b))
+        cnss1 = CoordinatesNormalSystemState(M1b)
+        @test startswith(repr(cnss1), "CoordinatesNormalSystemState(; ")
+        @test startswith(Manopt.status_summary(cnss1), "# Solver state to solve the normal system")
+        @test Manopt.status_summary(cnss1; context = :inline) == repr(cnss1)
         r1c0 = LevenbergMarquardt(M1b, vgf1, p1)  # defaults must work on a Hyperrectangle
         @test distance(M1b, r1c0, r1c1) < 1.0e-8
         @test is_point(M1b, r1c1)

@@ -92,7 +92,9 @@ function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
     i = get_count(crs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(crs.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(crs)) – $(Iter) $(has_converged(crs) ? "(converged)" : "")")
+    (context === :short) && return repr(crs)
+    conv_inl = (i > 0) ? (has_converged(crs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the conjugate residual solver$(conv_inl)"
     as = _callbacks_summary(crs)
     s = """
     # Solver state for `Manopt.jl`s Conjugate Residual Method
@@ -242,7 +244,7 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 
 $(_kwargs(:evaluation))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
   ,  where `c` is ``$(_tex(:norm, "b"))
 $(_note(:OutputSection))
 """
@@ -268,6 +270,14 @@ calls_with_kwargs(::typeof(conjugate_residual)) = (conjugate_residual!,)
 
 @doc "$_doc_conjugate_residual"
 conjugate_residual!(TpM::TangentSpace, args...; kwargs...)
+
+function conjugate_residual!(
+        TpM::TangentSpace, A, b, X;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = base_point(TpM), kwargs...,
+    )
+    slso = SymmetricLinearSystemObjective(A, b; evaluation = evaluation, p = p)
+    return conjugate_residual!(TpM, slso, X; kwargs...)
+end
 
 function conjugate_residual!(
         TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X;

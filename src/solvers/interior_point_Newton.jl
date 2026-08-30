@@ -350,7 +350,9 @@ function status_summary(ips::InteriorPointNewtonState; context::Symbol = :defaul
     i = get_count(ips, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(ips.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(ips)) – $(Iter) $(has_converged(ips) ? "(converged)" : "")")
+    (context === :short) && return repr(ips)
+    conv_inl = (i > 0) ? (has_converged(ips.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the interior point Newton method$(conv_inl)"
     as = _callbacks_summary(ips)
     s = """
     # Solver state for `Manopt.jl`s Interior Point Newton Method
@@ -601,6 +603,9 @@ All other keyword arguments are passed to [`decorate_state!`](@ref) for state de
 
 The obtained approximate constrained minimizer ``p^*``.
 To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
+
+!!! note
+    This solver requires [RecursiveArrayTools.jl](https://github.com/SciML/RecursiveArrayTools.jl) to be loaded as well.
 """
 
 @doc "$(_doc_IPN)"

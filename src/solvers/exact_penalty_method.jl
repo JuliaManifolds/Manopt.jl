@@ -139,7 +139,7 @@ function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :defaul
     (context === :short) && return repr(epms)
     i = get_count(epms, :Iterations)
     conv_inl = (i > 0) ? (has_converged(epms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the exact panelty method$(conv_inl)"
+    (context === :inline) && return "A solver state for the exact penalty method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(epms.stop) ? "Yes" : "No"
     (context === :inline) && (return "An exact penalty method state – $(Iter) $(has_converged(epms) ? "(converged)" : "")")

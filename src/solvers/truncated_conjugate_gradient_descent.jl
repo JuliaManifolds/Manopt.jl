@@ -43,7 +43,7 @@ $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(
     _kwargs(
         :stopping_criterion;
-        default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "base_manifold(Tpm)"))`)`$(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`$(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()"
+        default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "base_manifold(TpM)"))`)`$(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`$(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()"
     )
 )
 $(_kwargs(:X))
@@ -477,7 +477,7 @@ $(_kwargs(:retraction_method))
 $(
     _kwargs(
         :stopping_criterion;
-        default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "base_manifold(Tpm)"))`)`$(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`$(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()"
+        default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "base_manifold(TpM)"))`)`$(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`$(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()"
     )
 )
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(M) / 4` (or `1.0` if the injectivity radius is infinite): the initial trust-region radius

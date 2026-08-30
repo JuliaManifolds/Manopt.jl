@@ -158,6 +158,14 @@ using Manopt: estimate_sectional_curvature
         )
         p_star2 = get_solver_result(s2)
         @test f(M, p_star2) <= f(M, p0)
+        # with the fix, the in-place call needs no explicit sub_problem anymore
+        q_ip = convex_bundle_method(
+            M, f, ∂f!, copy(p0); diameter = diameter,
+            domain = (M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
+            k_max = Ω, stopping_criterion = StopAfterIteration(200),
+            evaluation = InplaceEvaluation(),
+        )
+        @test f(M, q_ip) <= f(M, p0)
     end
 
     @testset "A simple median run" begin

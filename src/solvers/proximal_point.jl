@@ -110,7 +110,7 @@ function proximal_point(
         f = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
     p_ = maybe_wrap_variable(p)
-    mpo = ManifoldProximalMapObjective(f, prox_f; evaluation = evaluation)
+    mpo = ManifoldProximalMapObjective(f, prox_f; evaluation = evaluation, p = p)
     rs = proximal_point(M, mpo, p_; evaluation = evaluation, kwargs...)
     return maybe_unwrap_variable(p, rs)
 end
@@ -130,7 +130,7 @@ function proximal_point!(
         f = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    mpo = ManifoldProximalMapObjective(f, prox_f; evaluation = evaluation)
+    mpo = ManifoldProximalMapObjective(f, prox_f; evaluation = evaluation, p = p)
     return proximal_point!(M, mpo, p; evaluation = evaluation, kwargs...)
 end
 function proximal_point!(

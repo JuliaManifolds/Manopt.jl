@@ -166,7 +166,7 @@ function status_summary(alms::AugmentedLagrangianMethodState; context::Symbol = 
     (context === :short) && (return repr(alms))
     i = get_count(alms, :Iterations)
     conv_inl = (i > 0) ? (has_converged(alms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the augmented Lagrandigan method$(conv_inl)"
+    (context === :inline) && return "A solver state for the augmented Lagrangian method$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(alms.stop) ? "Yes" : "No"
     as = _callbacks_summary(alms)
@@ -320,7 +320,7 @@ $(_kwargs(:evaluation))
 
 $(_kwargs(:sub_kwargs))
 
-$(_kwargs(:stopping_criterion; default = "`$(_sc_alm_default)` "))
+$(_kwargs(:stopping_criterion; default = "`" * chopsuffix(_sc_alm_default, "`")))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` ")), where more precisely
   as quasi newton method, the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used.

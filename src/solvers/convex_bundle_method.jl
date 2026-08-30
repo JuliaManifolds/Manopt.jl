@@ -98,8 +98,11 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `g::T`:                      descent direction
 $(_fields(:inverse_retraction_method))
 * `k_max::R`:                  upper bound on the sectional curvature of the manifold
+* `k_min::R`:                  lower bound on the sectional curvature of the manifold
+* `last_stepsize::R`:          the last computed stepsize
 * `linearization_errors<:AbstractVector{<:R}`: linearization errors at the last serious step
 * `m::R`:                      the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
+* `null_stepsize::R`:          the stepsize computed in the last null step
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `p_last_serious::P`:         last serious iterate
 $(_fields(:retraction_method))
@@ -110,6 +113,7 @@ $(_fields(:X; add_properties = [:as_Subgradient]))
 $(_fields(:stepsize))
 * `ε::R`:                      convex combination of the linearization errors
 * `λ::AbstractVector{<:R}`:    convex coefficients from the solution of the subproblem
+* `ϱ::R`:                      curvature-dependent convexification coefficient
 * `ξ`:                         the stopping parameter given by ``ξ = -$(_tex(:norm, "g"))^2 - ε``
 $(_fields([:sub_problem, :sub_state]))
 
@@ -135,16 +139,20 @@ $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `diameter=50.0`
 * `domain=(M, p) -> isfinite(f(M, p))`
 $(_kwargs(:inverse_retraction_method))
-* `k_max=0`
-* `k_min=0`
+* `k_max=nothing`: upper bound on the sectional curvature; estimated from `k_size` sample points if `nothing`
+* `k_min=nothing`: lower bound on the sectional curvature; estimated from `k_size` sample points if `nothing`
+* `k_size=100`: the number of sample points around `p_estimate` for the curvature estimation
+* `last_stepsize=1.0`
 * `m=1e-2`
 $(_kwargs(:p; add_properties = [:as_Initial]))
+* `p_estimate=p`: the center point for the curvature estimation
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X))
   to specify the type of tangent vector to use.
+* `ϱ=nothing`: curvature-dependent convexification coefficient; computed from `k_min`, `k_max`, and `diameter` if `nothing`
 """
 mutable struct ConvexBundleMethodState{
         P, T, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
@@ -696,8 +704,9 @@ function convex_bundle_method!(
             StopWhenLagrangeMultiplierLess(1.0e-8; names = ["-ξ"]), StopAfterIteration(5000)
         ),
         vector_transport_method::VTransp = default_vector_transport_method(M, typeof(p)),
-        sub_problem = convex_bundle_method_subsolver,
         sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = evaluation,
+        sub_problem = sub_state isa InplaceEvaluation ?
+            convex_bundle_method_subsolver! : convex_bundle_method_subsolver,
         ϱ = nothing,
         kwargs...,
     ) where {TF, TdF, TRetr, IR, VTransp}

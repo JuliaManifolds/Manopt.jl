@@ -44,6 +44,11 @@ function Base.show(io::IO, ::MIME"text/plain", ams::Stepsize)
     return multiline ? status_summary(io, ams) : show(io, ams)
 end
 
+"""
+    get_initial_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...)
+
+Return the initial step size of the [`Stepsize`](@ref) stored within the solver state `ams`.
+"""
 function get_initial_stepsize(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
     )

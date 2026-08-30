@@ -77,7 +77,7 @@ mutable struct QuasiNewtonState{
             X::T = initial_vector,
             vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
             preconditioner::Union{QuasiNewtonPreconditioner, Missing} = missing,
-            initial_scale::Union{<:Real, Nothing} = isnothing(preconditioner) ? 1.0 : nothing,
+            initial_scale::Union{<:Real, Nothing} = ismissing(preconditioner) ? 1.0 : nothing,
             memory_size::Int = 20,
             direction_update::D = QuasiNewtonLimitedMemoryDirectionUpdate(
                 M, p, InverseBFGS(), memory_size;
@@ -686,12 +686,15 @@ function update_hessian!(
     ) where {U <: AbstractQuasiNewtonDirectionUpdate}
     M = get_manifold(mp)
     p = get_iterate(st)
-    X = get_gradient(st)
     # computing the bound used in the decision rule
-    bound = d.θ(norm(M, p, X))
+    bound = d.θ(norm(M, p_old, get_gradient(mp, p_old)))
     sk_normsq = norm(M, p, st.sk)^2
     if sk_normsq != 0 && (inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
         update_hessian!(d.update, mp, st, p_old, iter)
+    else
+        # the matrix is kept, but the basis is still transported to the new tangent space
+        (d.update isa QuasiNewtonMatrixDirectionUpdate) &&
+            update_basis!(d.update.basis, M, p_old, p, d.update.vector_transport_method)
     end
     return d
 end

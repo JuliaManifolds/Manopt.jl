@@ -98,6 +98,12 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             debug = [],
         )
         p_star2 = get_solver_result(s2)
+        # with the fix, the all-default in-place call works too (in-place subsolver chosen)
+        q_ip = proximal_bundle_method(
+            M, f, ∂f!, copy(p0);
+            stopping_criterion = StopAfterIteration(200), evaluation = InplaceEvaluation(),
+        )
+        @test isapprox(M, q_ip, p_star2; atol = 1.0e-8)
         @test f(M, p_star2) <= f(M, p0)
     end
     @testset "A simple median run" begin

@@ -10,6 +10,8 @@ no plot is generated,
 
 # Keyword arguments
 
+* `error=:none`:
+  how to handle errors, possible values: `:error`, `:info`, `:warn`
 * `exactness_tol=1e-12`: if all errors are below this tolerance,
   the differential is considered to be exact
 * `io=nothing`: provide an `IO` to print the result to
@@ -22,7 +24,6 @@ no plot is generated,
   The plot is in log-log-scale. This is returned and can then also be saved.
 $(_kwargs(:retraction_method))
 * `slope_tol=0.1`: tolerance for the slope (global) of the approximation
-* `throw_error=false`: throw an error message if the differential is wrong
 * `window=nothing`: specify window sizes within the `log_range` that are used for
   the slope estimation. The default is, to use all window sizes `2:N`.
 """
@@ -327,7 +328,7 @@ end
 Verify whether the Hessian function `Hess_f` fulfills linearity,
 
 ```math
-$(_tex(:Hess)) f(p)[aX + bY] = b$(_tex(:Hess)) f(p)[X]
+$(_tex(:Hess)) f(p)[aX + bY] = a$(_tex(:Hess)) f(p)[X]
  + b$(_tex(:Hess)) f(p)[Y]
 ```
 

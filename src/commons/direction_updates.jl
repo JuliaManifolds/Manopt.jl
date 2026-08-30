@@ -97,8 +97,8 @@ function Base.show(io::IO, mgr::MomentumGradientRule)
     return print(io, ")")
 end
 function status_summary(mgr::MomentumGradientRule; context::Symbol = :default)
-    (context === :short) && return repr(agr)
-    (context === :inline) && return "A momentum gradient direction processor with m=$(mgr.momentum)) using $(agr.vector_transport_method)"
+    (context === :short) && return repr(mgr)
+    (context === :inline) && return "A momentum gradient direction processor with m=$(mgr.momentum) using $(mgr.vector_transport_method)"
     return """
     Momentum Gradient Rule
 

@@ -75,6 +75,13 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             "# Solver state for `Manopt.jl`s Alternating Gradient Descent Solver"
         )
         @test startswith(repr(r), "AlternatingGradientDescentState(; ")
+        # the summary header shows the total iteration count, not the inner counter
+        rc = alternating_gradient_descent!(
+            N, f, [grad_f1!, grad_f2!], copy(N, q);
+            order_type = :Linear, evaluation = InplaceEvaluation(), return_state = true,
+            stopping_criterion = StopAfterIteration(7),
+        )
+        @test contains(Manopt.status_summary(rc; context = :default), "After 7 iterations")
         @test_throws DomainError AlternatingGradientDescentState(N; order_type = :WrongSymbol)
         # r has the same message as the internal stepsize
         @test Manopt.get_message(r) == Manopt.get_message(r.stepsize)

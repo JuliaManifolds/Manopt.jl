@@ -322,8 +322,9 @@ function proximal_bundle_method!(
         ε = 1.0e-2,
         δ = -1.0, #0.0,
         μ = 0.5, #1.0,
-        sub_problem = proximal_bundle_method_subsolver,
         sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = evaluation,
+        sub_problem = sub_state isa InplaceEvaluation ?
+            proximal_bundle_method_subsolver! : proximal_bundle_method_subsolver,
         kwargs..., #especially may contain debug
     ) where {TF, TdF, TRetr, IR, VTransp}
     keywords_accepted(proximal_bundle_method!; kwargs...)

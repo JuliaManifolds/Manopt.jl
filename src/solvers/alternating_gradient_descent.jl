@@ -89,7 +89,7 @@ mutable struct AlternatingGradientDescentState{
     order_type::Symbol
     order::Vector{<:Int}
     retraction_method::RM
-    k::Int # current iterate
+    k::Int # current component
     i::Int # inner iterate
     inner_iterations::Int
     function AlternatingGradientDescentState(
@@ -140,9 +140,11 @@ function Base.show(io::IO, agds::AlternatingGradientDescentState)
 end
 function status_summary(agds::AlternatingGradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(agds)
-    Iter = (agds.i > 0) ? "After $(agds.i) iterations\n" : ""
+    i = get_count(agds, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(agds.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(agds)) – $(Iter) $(has_converged(agds) ? "(converged)" : "")")
+    conv_inl = (i > 0) ? (has_converged(agds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the alternating gradient descent solver$(conv_inl)"
     as = _callbacks_summary(agds)
     s = """
     # Solver state for `Manopt.jl`s Alternating Gradient Descent Solver

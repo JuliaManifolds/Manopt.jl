@@ -13,6 +13,10 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     @test distance(M, get_solver_result(s), W) < 1.0e-9
     @test startswith(get_reason(s), "The algorithm computed a poll step size")
     @test startswith(repr(s), "MeshAdaptiveDirectSearchState(; ")
+    @test contains(
+        Manopt.status_summary(MeshAdaptiveDirectSearchState(M); context = :inline),
+        "mesh adaptive direct search",
+    )
     #
     #
     # A bit larger example inplace

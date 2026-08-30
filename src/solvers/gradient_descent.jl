@@ -197,6 +197,7 @@ end
 function gradient_descent(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(gradient_descent; kwargs...)
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
 end
@@ -210,7 +211,7 @@ function gradient_descent!(
         differential = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    keywords_accepted(gradient_descent; kwargs...)
+    keywords_accepted(gradient_descent!; kwargs...)
     mgo = ManifoldGradientObjective(
         f, grad_f; differential = differential, evaluation = evaluation
     )

@@ -34,6 +34,8 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
   requesting a variant without its operator errors with an explanation.
 * `ConjugateGradientDescentState` can now be constructed without specifying a stepsize.
 * `conjugate_residual(TpM, A, b; kwargs...)` no longer errors on solver keywords and no longer returns `NaN`s with `warm_start=false`.
+* `cma_es!` now leaves its result (the best visited point) in the input point,
+  which before ended at the final mean.
 * `conjugate_residual` now uses its initial vector `X` — it was ignored, making runs
   nondeterministic — and `conjugate_residual!` works in place of `X`.
 * `LevenbergMarquardt` now defaults to a coordinate normal-system sub solver on manifolds
@@ -53,6 +55,12 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `linesearch_backtrack` no longer errors when called without gradient information;
   it then backtracks on a plain decrease condition.
 * several line searches passed their gradient buffer to `get_differential` under a wrong keyword.
+* `proximal_bundle_method` and `convex_bundle_method` now default to the in-place subsolver
+  when used with `InplaceEvaluation`.
+* the cautious quasi-Newton matrix update now evaluates its bound at the previous iterate, as documented.
+* a skipped cautious quasi-Newton matrix update now still transports the basis to the new tangent space.
+* `QuasiNewtonState` now activates the default initial scaling when no preconditioner
+  is given, matching `quasi_Newton`.
 * `stochastic_gradient_descent` now uses its `retraction_method` keyword.
 * `subgradient_method!` now leaves its result (the best visited point) in the input point,
   which before ended at the last iterate.

@@ -363,6 +363,7 @@ end
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(M; p = p)
+        @test qns.direction_update.initial_scale == 1.0 # default scaling active without preconditioner
         # push zeros to memory
         qns.yk = copy(p)
         qns.sk = copy(p)
@@ -452,6 +453,23 @@ end
         # But I am not totally sure what to test for afterwards
 
         @test startswith(repr(qdu), "QuasiNewtonLimitedMemoryDirectionUpdate with memory size")
+    end
+    @testset "Cautious skip transports the basis" begin
+        M = Sphere(2)
+        mp = DefaultManoptProblem(
+            M, ManifoldGradientObjective((M, p) -> 0.0, (M, p) -> 10.0 .* [0.0, 0.0, 1.0])
+        )
+        p_old = [1.0, 0.0, 0.0]
+        p_new = [0.0, 1.0, 0.0]
+        b = get_basis(M, p_old, DefaultOrthonormalBasis())
+        d = QuasiNewtonMatrixDirectionUpdate(M, InverseBFGS(), b, Matrix{Float64}(I, 2, 2))
+        dc = QuasiNewtonCautiousDirectionUpdate(d; θ = identity)
+        st = QuasiNewtonState(M; p = copy(p_new), direction_update = dc)
+        st.sk .= [0.0, 0.0, 1.0]
+        st.yk .= [0.0, 0.0, 1.0]
+        # the bound is 10, the ratio 1, so the update is skipped, but the basis moves along
+        Manopt.update_hessian!(dc, mp, st, p_old, 2)
+        @test all(is_vector(M, p_new, X) for X in d.basis.data)
     end
     @testset "Removing zero rho vectors" begin
         M = Euclidean(2)

@@ -4,8 +4,8 @@
 Debug for a simple callback function, mainly for compatibility to other solvers and if
 a user already has a callback function or functor available
 
-The expected format of the is that it is a function with signature `(problem, state, k) -> nothing`
-A simple callback of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form
+The expected format of the callback is that of a function with signature `(problem, state, k) -> nothing`.
+A simple callback of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form above.
 
 !!! note
     This is for now an internal struct, since its name might still change before

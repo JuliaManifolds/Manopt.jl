@@ -809,7 +809,8 @@ neither the oldest vector pair ``$(_tex(:widetilde, "s"))_{k-m}``, ``$(_tex(:wid
 discarded nor the newest vector pair ``$(_tex(:widetilde, "s"))_k, $(_tex(:widetilde, "y"))_k`` is added
 into storage, but all stored vector pairs ``$(_tex(:set, "$(_tex(:widetilde, "s"))_i, $(_tex(:widetilde, "y"))_i"))_{i=k-m}^{k-1}``
 are transported into the tangent space ``T_{x_{k+1}} $(_math(:Manifold))``.
-If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting
+If [`InverseBFGS`](@ref) is chosen as update — either within a [`QuasiNewtonMatrixDirectionUpdate`](@ref)
+or a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) — then the resulting
 method follows the method of [HuangAbsilGallivan:2018](@cite),
 taking into account that the corresponding step size is chosen.
 

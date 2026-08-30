@@ -221,7 +221,7 @@ function status_summary(dcs::DifferenceOfConvexState; context::Symbol = :default
     (context === :short) && return repr(dcs)
     i = get_count(dcs, :Iterations)
     conv_inl = (i > 0) ? (has_converged(dcs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the differencce of convex algorithm$(conv_inl)"
+    (context === :inline) && return "A solver state for the difference of convex algorithm$(conv_inl)"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(dcs.stop) ? "Yes" : "No"
     as = _callbacks_summary(dcs)

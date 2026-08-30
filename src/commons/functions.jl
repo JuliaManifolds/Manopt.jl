@@ -346,6 +346,12 @@ function update_hessian!(M::AbstractManifold, f::ApproxHessianSymmetricRankOne, 
         f.matrix = f.matrix + srvec * srvec' / (srvec' * sk_c)
     end
 end
+"""
+    update_hessian_basis!(M, f, p)
+
+Update the basis of tangent vectors and the stored gradient of the approximate Hessian `f`
+when moving to the point `p`, using the vector transport stored in `f`.
+"""
 function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne, p)
     update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
     copyto!(f.p_tmp, p)
@@ -446,7 +452,7 @@ function update_hessian_basis!(M, f::ApproxHessianBFGS, p)
     return f
 end
 
-@doc """
+_doc_reflect_prox = """
     reflect(M, pr::Function, x; kwargs...)
     reflect!(M, q, pr::Function, x; kwargs...)
 
@@ -468,12 +474,14 @@ $(_kwargs([:retraction_method, :inverse_retraction_method]))
 * `X=zero_vector(M,p)`: temporary memory to compute the inverse retraction in place;
   otherwise this is the memory that would be allocated anyways.
 """
+@doc "$(_doc_reflect_prox)"
 reflect(M::AbstractManifold, pr::Function, x; kwargs...) = reflect(M, pr(x), x; kwargs...)
+@doc "$(_doc_reflect_prox)"
 function reflect!(M::AbstractManifold, q, pr::Function, x; kwargs...)
     return reflect!(M, q, pr(x), x; kwargs...)
 end
 
-@doc """
+_doc_reflect = """
     reflect(M, p, x; kwargs...)
     reflect!(M, q, p, x; kwargs...)
 
@@ -496,6 +504,7 @@ $(_kwargs(:X))
   as temporary memory to compute the inverse retraction in place;
   otherwise this is the memory that would be allocated anyways.
 """
+@doc "$(_doc_reflect)"
 function reflect(
         M::AbstractManifold, p, x;
         retraction_method = default_retraction_method(M, typeof(p)),
@@ -506,6 +515,7 @@ function reflect(
         M, p, -inverse_retract(M, p, x, inverse_retraction_method), retraction_method
     )
 end
+@doc "$(_doc_reflect)"
 function reflect!(
         M::AbstractManifold, q, p, x;
         retraction_method = default_retraction_method(M, typeof(p)),

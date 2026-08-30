@@ -234,6 +234,7 @@ using ManifoldDiff: grad_distance
             Manopt.status_summary(x_opt2; context = :default),
             "# Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver",
         )
+        @test contains(Manopt.status_summary(x_opt2; context = :default), "Armijo") # the stepsize section shows the stepsize
         Random.seed!(23)
         x_opt3 = conjugate_gradient_descent(
             M,

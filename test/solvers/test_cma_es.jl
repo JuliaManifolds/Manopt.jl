@@ -37,13 +37,17 @@ flat_example(::AbstractManifold, p) = 0.0
         @test griewank(M, p1) < 0.25
 
         p1 = [10.0, 10.0]
-        cma_es!(M, griewank, p1; σ = 10.0, rng = MersenneTwister(123))
+        r1 = cma_es!(M, griewank, p1; σ = 10.0, rng = MersenneTwister(123))
+        @test r1 === p1 # in-place: the passed point holds the result (best visited)
         @test griewank(M, p1) < 0.2
 
         o = cma_es(M, griewank, [10.0, 10.0]; return_state = true)
         @test startswith(
             Manopt.status_summary(o; context = :default),
             "# Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy",
+        )
+        @test contains(
+            Manopt.status_summary(o; context = :inline), "covariance matrix adaptation"
         )
 
         @testset "Callbacks" begin

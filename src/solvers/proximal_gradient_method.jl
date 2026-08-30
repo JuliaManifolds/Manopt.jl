@@ -230,7 +230,7 @@ provided_callbacks(::Type{ProximalGradientMethodState}) = union(_MANOPT_DEFAULT_
 get_callbacks(pgms::ProximalGradientMethodState) = pgms.callbacks
 
 function Base.show(io::IO, pgms::ProximalGradientMethodState)
-    print(io, "ProximalGradientMethodState(", pgms.sub_problem, ", ", pgms.sub_problem, ";")
+    print(io, "ProximalGradientMethodState(", pgms.sub_problem, ", ", pgms.sub_state, ";")
     print(io, " callbacks = ", pgms.callbacks, ",")
     print(io, " a = ", pgms.a, ", acceleration = ", pgms.acceleration, ", stepsize = ", pgms.stepsize)
     print(io, ", last_stepsize = ", pgms.last_stepsize, ", p = ", pgms.p, ", q = ", pgms.q)
@@ -242,7 +242,9 @@ function status_summary(pgms::ProximalGradientMethodState; context::Symbol = :de
     i = get_count(pgms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(pgms.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(pgms)) – $(Iter) $(has_converged(pgms) ? "(converged)" : "")")
+    (context === :short) && return repr(pgms)
+    conv_inl = (i > 0) ? (has_converged(pgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
+    (context === :inline) && return "A solver state for the proximal gradient method$(conv_inl)"
     as = _callbacks_summary(pgms)
     s = """
     # Solver state for `Manopt.jl`s Proximal Gradient Method

@@ -53,6 +53,9 @@ function DirectionUpdateRuleStorage(
     )
     return DirectionUpdateRuleStorage{typeof(dur), typeof(sa)}(dur, sa)
 end
+function Base.show(io::IO, durs::DirectionUpdateRuleStorage)
+    return print(io, durs.coefficient)
+end
 
 #
 #

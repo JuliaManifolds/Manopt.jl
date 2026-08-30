@@ -72,6 +72,18 @@ function CoordinatesNormalSystemState(
     return CoordinatesNormalSystemState{F, typeof(A), typeof(b), B}(A, b, basis, c, linsolve)
 end
 
+function Base.show(io::IO, cnss::CoordinatesNormalSystemState)
+    return print(io, "CoordinatesNormalSystemState(; basis = ", cnss.basis, ", linsolve = ", cnss.linsolve!, ")")
+end
+function status_summary(cnss::CoordinatesNormalSystemState; context::Symbol = :default)
+    _is_inline(context) && return repr(cnss)
+    return """
+    # Solver state to solve the normal system of a Levenberg-Marquardt subproblem in coordinates
+    * basis:    $(cnss.basis)
+    * linsolve: $(cnss.linsolve!)
+    * system size: $(size(cnss.A, 1))"""
+end
+
 function get_solver_result(
         dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective{<:AbstractLevenbergMarquardtLinearSurrogateObjective}},
         cnss::CoordinatesNormalSystemState

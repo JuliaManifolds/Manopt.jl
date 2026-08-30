@@ -26,7 +26,7 @@ function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :
     * vector transport method:       $(_MANOPT_INDENT)$(cgds.vector_transport_method)
 
     ## Stepsize
-    $(_in_str(status_summary(cgds.stop; context = context); indent = 0, headers = 1))
+    $(_in_str(status_summary(cgds.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
     $(_in_str(status_summary(cgds.stop; context = context); indent = 0, headers = 1))

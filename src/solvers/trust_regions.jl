@@ -132,7 +132,7 @@ mutable struct TrustRegionsState{
         !isnothing(HX) && (trs.HX = HX)
         !isnothing(Y) && (trs.Y = Y)
         !isnothing(HY) && (trs.HY = HY)
-        !isnothing(Z) && (trs.HZ = Z)
+        !isnothing(Z) && (trs.Z = Z)
         !isnothing(HZ) && (trs.HZ = HZ)
         !isnothing(τ) && (trs.τ = τ)
         return trs

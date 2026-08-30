@@ -440,7 +440,7 @@ function LevenbergMarquardt!(
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_state = has_anisotropic_max_stepsize(M) ?
             CoordinatesNormalSystemState(M, p) :
-            ConjugateResidualState(TangentSpace(M, p), sub_objective),
+            ConjugateResidualState(TangentSpace(M, p), sub_objective; X = zero_vector(M, p)),
         kwargs..., #collect rest
     ) where {O <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(LevenbergMarquardt!; kwargs...)
