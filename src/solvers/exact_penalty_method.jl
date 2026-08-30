@@ -296,7 +296,7 @@ function exact_penalty_method(
         f, grad_f, g, grad_g, h, grad_h;
         evaluation = evaluation,
         equality_constraints = equality_constraints,
-        inequality_constraints = equality_constraints,
+        inequality_constraints = inequality_constraints,
         M = M,
         p = p,
     )

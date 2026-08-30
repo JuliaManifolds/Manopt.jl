@@ -65,6 +65,13 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
     )
     y2 = o2
     @test x_hat ≈ y2 atol = 2 * 1.0e-7
+    x3 = deepcopy(data)
+    y3 = primal_dual_semismooth_Newton!(
+        M, N, f, x3, zero_vector(M, m), deepcopy(m), n, prox_f, Dprox_F, prox_g_dual,
+        Dprox_G_dual, DΛ, adjoint_DΛ; primal_stepsize = σ, dual_stepsize = τ,
+    )
+    @test y3 === x3      # in-place: the passed point holds the result
+    @test x_hat ≈ x3 atol = 2 * 1.0e-7
     @testset "Objective Decorator passthrough" begin
         # PDNSSN additional tests
         pdmsno = PrimalDualManifoldSemismoothNewtonObjective(

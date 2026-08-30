@@ -33,11 +33,20 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
   requesting a variant without its operator errors with an explanation.
 * `ConjugateGradientDescentState` can now be constructed without specifying a stepsize.
 * `conjugate_residual(TpM, A, b; kwargs...)` no longer errors on solver keywords and no longer returns `NaN`s with `warm_start=false`.
+* `conjugate_residual` now uses its initial vector `X` — it was ignored, making runs
+  nondeterministic — and `conjugate_residual!` works in place of `X`.
 * `LevenbergMarquardt` now defaults to a coordinate normal-system sub solver on manifolds
   with box constraints, where the default sub solver errored before.
+* the allocating `exact_penalty_method` forwarded the equality-constraint count as the inequality count.
 * `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
+* `primal_dual_semismooth_Newton!` now works in place of its point and is exported.
 * `ProximalGradientNonsmoothCost` now computes the documented `1/(2λ)` proximity weight instead of `λ/2`.
+* `subgradient_method!` now leaves its result (the best visited point) in the input point,
+  which before ended at the last iterate.
 * `truncated_conjugate_gradient_descent` no longer produces `NaN` when started at a point with zero gradient.
+* the standalone `truncated_conjugate_gradient_descent` now defaults its trust region radius
+  from the base manifold (not the flat tangent space), falling back to `1.0` for an infinite
+  injectivity radius.
 * `trust_regions` now includes the Hessian term of the model decrease in its acceptance ratio also in the default (non-randomized) mode.
 * `trust_regions` reuses the Hessian product already computed by its tCG sub solver instead of recomputing it.
 * `cma_es` now uses the fitness-sorted samples in its covariance matrix update,

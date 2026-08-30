@@ -28,8 +28,21 @@ using LinearAlgebra: I, tr
         g = g, grad_g = grad_g, smoothing = LinearQuadraticHuber(),
         gradient_inequality_range = NestedPowerRepresentation(),
     )
+    # allocating entry must forward inequality_constraints (was a copy-paste of equality_constraints)
+    g!(M, V, p) = (V .= -p; V)
+    grad_g!(M, X, p) = (
+        for i in 1:d
+            copyto!(X[i], project(M, p, mI[:, i]))
+        end; X
+    )
+    grad_f!(M, X, p) = copyto!(X, grad_f(M, p))
+    sol_ip = exact_penalty_method(
+        M, f, grad_f!, p0; g = g!, grad_g = grad_g!,
+        inequality_constraints = d, evaluation = InplaceEvaluation(),
+    )
     a_tol_emp = 8.0e-2
     @test isapprox(M, v0, sol_lse; atol = a_tol_emp)
+    @test isapprox(M, v0, sol_ip; atol = a_tol_emp)
     @test isapprox(M, v0, sol_lse2; atol = a_tol_emp)
     @test isapprox(M, v0, sol_lqh; atol = a_tol_emp)
     @test isapprox(M, v0, sol_lqh2; atol = a_tol_emp)

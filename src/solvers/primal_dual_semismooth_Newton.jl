@@ -481,8 +481,9 @@ function primal_dual_step!(tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNe
     dx = get_vector(M, pdsn.p, dx_coords, DefaultOrthonormalBasis())
     dξ = get_vector(N, pdsn.n, dξ_coords, DefaultOrthonormalBasis())
     # do step
-    pdsn.p = retract(M, pdsn.p, dx, pdsn.retraction_method)
-    return pdsn.X = pdsn.X + dξ
+    retract!(M, pdsn.p, pdsn.p, dx, pdsn.retraction_method)
+    pdsn.X .+= dξ
+    return pdsn.X
 end
 
 @doc raw"""

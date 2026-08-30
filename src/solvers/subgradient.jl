@@ -7,7 +7,7 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
-* `p_star`: optimal value
+* `p_star`: the best point visited; the result is returned and, for the in-place variant, stored here
 $(_fields([:retraction_method, :stepsize]))
 $(_fields(:stopping_criterion; name = "stop"))
 * `X`: the current element from the possible subgradients at `p` that was last evaluated.
@@ -54,7 +54,8 @@ mutable struct SubGradientMethodState{
             TM <: AbstractManifold, P, T, C <: AbstractDict{Symbol}, SC <: StoppingCriterion, S <: Stepsize, TR <: AbstractRetractionMethod,
         }
         return SubGradientMethodState(;
-            callbacks = callbacks, p = p, p_star = copy(M, p),
+            # the input point stores the result (best visited); the iterate roams on a copy
+            callbacks = callbacks, p = copy(M, p), p_star = p,
             retraction_method = retraction_method, stepsize = stepsize, stopping_criterion = stopping_criterion, X = X
         )
     end

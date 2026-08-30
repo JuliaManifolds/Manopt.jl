@@ -39,7 +39,7 @@ $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `project!::F=copyto!`: initialize the numerical stabilization to just copy the result
 * `randomize=false`
 * `θ=1.0`
-* `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(base_manifold(TpM)) / 4`
+* `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(base_manifold(TpM)) / 4` (or `1.0` if the injectivity radius is infinite)
 $(
     _kwargs(
         :stopping_criterion;
@@ -76,7 +76,8 @@ mutable struct TruncatedConjugateGradientState{T, R <: Real, C <: AbstractDict{S
             TpM::TangentSpace;
             callbacks::C = Dict{Symbol, Function}(),
             X::T = rand(TpM),
-            trust_region_radius::R = injectivity_radius(base_manifold(TpM)) / 4.0,
+            trust_region_radius::R = isinf(injectivity_radius(base_manifold(TpM))) ? 1.0 :
+                injectivity_radius(base_manifold(TpM)) / 4.0,
             randomize::Bool = false,
             project!::F = (copyto!),
             θ::Float64 = 1.0,
@@ -479,7 +480,7 @@ $(
         default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "base_manifold(Tpm)"))`)`$(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`$(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()"
     )
 )
-* `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(M) / 4`: the initial trust-region radius
+* `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(M) / 4` (or `1.0` if the injectivity radius is infinite): the initial trust-region radius
 
 $(_note(:OtherKeywords))
 
@@ -567,7 +568,7 @@ end
 function truncated_conjugate_gradient_descent!(
         TpM::TangentSpace, trm::TrustRegionModelObjective, p, X;
         callbacks = Dict{Symbol, Function}(),
-        trust_region_radius::Float64 = injectivity_radius(TpM) / 4,
+        trust_region_radius::Float64 = isinf(injectivity_radius(base_manifold(TpM))) ? 1.0 : injectivity_radius(base_manifold(TpM)) / 4,
         θ::Float64 = 1.0,
         κ::Float64 = 0.1,
         randomize::Bool = false,

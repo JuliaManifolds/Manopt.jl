@@ -96,6 +96,10 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
         @test isapprox(M, q1, p)
         @test isapprox(M, q2, p)
         @test isapprox(M, q3, p)
+        q4 = copy(M, p)  # start in the solution: the passed array must keep it
+        r4 = subgradient_method!(M, sgom, q4; stopping_criterion = StopAfterIteration(20))
+        @test r4 === q4
+        @test isapprox(M, q4, p)
         Random.seed!(23)
         q4 = subgradient_method(M, f, ∂f!; evaluation = InplaceEvaluation())
         @test isapprox(M, q4, p; atol = 0.5) # random point -> not that close

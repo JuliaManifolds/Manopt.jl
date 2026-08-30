@@ -280,7 +280,7 @@ function conjugate_residual!(
     ) where {SC <: StoppingCriterion}
     keywords_accepted(conjugate_residual!; kwargs...)
     crs = ConjugateResidualState(
-        TpM, aslso; callbacks = process_callbacks_arg(callbacks, ConjugateResidualState), stopping_criterion = stopping_criterion, kwargs...
+        TpM, aslso; X = X, callbacks = process_callbacks_arg(callbacks, ConjugateResidualState), stopping_criterion = stopping_criterion, kwargs...
     )
     dslso = decorate_objective!(TpM, aslso; kwargs...)
     dmp = DefaultManoptProblem(TpM, dslso)

@@ -19,6 +19,10 @@ using Manifolds, Manopt, Test
     pT4 = conjugate_residual(TpM, A, b, X0; warm_start = false)
     @test norm(ps - pT) < 3.0e-15
     @test norm(ps - pT4) < 3.0e-15
+    Y0 = copy(X0)
+    rT = conjugate_residual!(TpM, slso, Y0)
+    @test rT === Y0            # in-place: result lands in the passed vector
+    @test norm(ps - Y0) < 3.0e-15
     @test norm(pT2 - pT) < 3.0e-15
     @test get_cost(TpM, slso, pT) < 5.0e-15
     s = repr(slso)
