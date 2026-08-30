@@ -318,7 +318,7 @@ $(_kwargs(:inverse_retraction_method; name = "inverse_retraction_method_dual", M
 * `relax=:primal`: whether to relax the primal or dual
 * `variant=:linearized` if `Λ` is missing, otherwise `:exact`: variant to use.
   Note that this changes the arguments the `forward_operator` is called with.
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 $(_kwargs([:retraction_method, :vector_transport_method]))

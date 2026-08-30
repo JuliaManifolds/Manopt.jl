@@ -369,6 +369,8 @@ end
         update_hessian!(qns.direction_update, mp, qns, p, 1)
         update_hessian!(qns.direction_update, mp, qns, p, 2)
         @test contains(qns.direction_update.message, "i=2,1,1")
+        # get_message must surface the direction-update message (was dropped before)
+        @test contains(Manopt.get_message(qns), "i=2,1,1")
         qns.direction_update(mp, qns)
         # Update (1) says at i=1 inner products are zero (2) all are zero -> gradient proposal
         @test contains(qns.direction_update.message, "gradient")

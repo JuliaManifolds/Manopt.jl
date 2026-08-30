@@ -249,7 +249,7 @@ function (f::ApproxHessianFiniteDifference)(M, p, X)
 end
 function (f::ApproxHessianFiniteDifference)(M, Y, p, X)
     norm_X = norm(M, p, X)
-    (norm_X ≈ zero(norm_X)) && return zero_vector!(M, X, p)
+    (norm_X ≈ zero(norm_X)) && return zero_vector!(M, Y, p)
     c = f.steplength / norm_X
     f.gradient!(M, f.grad_tmp, p)
     retract!(M, f.p_dir, p, c * X, f.retraction_method)

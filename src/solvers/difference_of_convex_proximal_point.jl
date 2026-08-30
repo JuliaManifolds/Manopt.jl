@@ -324,7 +324,7 @@ $(_kwargs(:evaluation))
 * `grad_g=missing`: specify the gradient of `g`. If both `g`and `grad_g` are specified, a subsolver is automatically set up.
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stepsize; default = "`[`ConstantLength`](@ref)`()"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)`, plus `[`StopWhenGradientNormLess`](@ref)`(1.0e-9)` when a gradient is provided"))
   A [`StopWhenGradientNormLess`](@ref)`(1e-8)` is added with $(_sc(:Any)), when a `gradient` is provided.
 * `sub_cost=`[`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`):
   cost to be used within the default `sub_problem` that is initialized as soon as `g` is provided.
@@ -339,7 +339,7 @@ $(_kwargs(:sub_kwargs))
    the objective used within `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_problem"))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
-$(_kwargs(:sub_state; default = "([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hess` is provided)"))
+$(_kwargs(:sub_state; default = "(`[`GradientDescentState`](@ref)` or `[`TrustRegionsState`](@ref)` if `sub_hess` is provided)"))
 $(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "(`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
   $(_note(:KeywordUsedIn, "sub_state"))
 

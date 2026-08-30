@@ -380,7 +380,7 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 * `poll_size`
 $(_fields(:stopping_criterion; name = "stop"))
 * `poll::`[`AbstractMeshPollFunction`]: a poll step (functor) to perform
-* `search::`[`AbstractMeshSearchFunction`}(@ref) a search step (functor) to perform
+* `search::`[`AbstractMeshSearchFunction`](@ref) a search step (functor) to perform
 
 """
 mutable struct MeshAdaptiveDirectSearchState{

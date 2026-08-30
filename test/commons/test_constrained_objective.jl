@@ -90,6 +90,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     )
     rcofa = repr(cofa); rcofm = repr(cofm); rcova = repr(cova); rcofm = repr(covm)
     for r in [rcofa, rcofm, rcova, rcofm]
+        @test get_constraints(M, cofa, p) == [get_inequality_constraint(M, cofa, p, :), get_equality_constraint(M, cofa, p, :)]
         @test startswith(r, "ConstrainedManifoldObjective(ManifoldFirstOrderObjective(; cost = f")
     end
     # Test cost/grad pass through

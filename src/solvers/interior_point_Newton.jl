@@ -567,7 +567,7 @@ $(_kwargs(:retraction_method))
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 $(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
   with the `centrality_condition` keyword as additional criterion to accept a step, if this is provided
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(800)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-8)"))
   a stopping criterion, by default depending on the residual of the KKT vector field or a maximal number of steps, which ever hits first.
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_objective`: The [`SymmetricLinearSystemObjective`](@ref) modelling the system of equations to use in the sub solver,

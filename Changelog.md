@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * since `has_converged` exists, the status reports on REPL now use this to indicate whether an algorithm has converged.
+* the changelog check in CI is skipped on pull requests labelled `no changelog necessary`; dependabot adds this label to its pull requests automatically.
 
 ### Fixed
 
@@ -41,6 +42,18 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
 * `primal_dual_semismooth_Newton!` now works in place of its point and is exported.
 * `ProximalGradientNonsmoothCost` now computes the documented `1/(2λ)` proximity weight instead of `λ/2`.
+* the `:Random` evaluation order of `cyclic_proximal_point` now reshuffles every cycle;
+  its order values are unified to `:Linear`, `:FixedRandom`, and `:Random`, and validated.
+* the Lanczos first-order-progress criterion now uses the correct model gradient norm.
+* `CubicBracketingLinesearch` and `Nesterov` now promote mixed numeric types in their keyword arguments.
+* `get_constraints` now works for any constrained objective, not only embedded ones.
+* the finite-difference Hessian approximation wrote its zero-direction result into the wrong buffer.
+* fix the base point of an inner product in the Dai-Yuan coefficient.
+* fix a sign in the Nesterov acceleration parameter equation.
+* `linesearch_backtrack` no longer errors when called without gradient information;
+  it then backtracks on a plain decrease condition.
+* several line searches passed their gradient buffer to `get_differential` under a wrong keyword.
+* `stochastic_gradient_descent` now uses its `retraction_method` keyword.
 * `subgradient_method!` now leaves its result (the best visited point) in the input point,
   which before ended at the last iterate.
 * `truncated_conjugate_gradient_descent` no longer produces `NaN` when started at a point with zero gradient.

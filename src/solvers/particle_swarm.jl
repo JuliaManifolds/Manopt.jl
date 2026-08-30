@@ -199,10 +199,10 @@ g_{k}^{(i)}, & \text{else,}
 """
 
 _doc_PSO = """
-    patricle_swarm(M, f; kwargs...)
-    patricle_swarm(M, f, swarm; kwargs...)
-    patricle_swarm(M, mco::AbstractManifoldCostObjective; kwargs..)
-    patricle_swarm(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
+    particle_swarm(M, f; kwargs...)
+    particle_swarm(M, f, swarm; kwargs...)
+    particle_swarm(M, mco::AbstractManifoldCostObjective; kwargs...)
+    particle_swarm(M, mco::AbstractManifoldCostObjective, swarm; kwargs...)
     particle_swarm!(M, f, swarm; kwargs...)
     particle_swarm!(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
 
@@ -257,7 +257,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `inertia=0.65`: the inertia of the particles
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `social_weight=1.4`: a social weight factor
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenSwarmVelocityLess`](@ref)`(1e-4)"))
 * `swarm_size=100`: swarm size, if it should be generated randomly
 $(_kwargs(:vector_transport_method))
 * `velocity`:                  a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position

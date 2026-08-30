@@ -485,6 +485,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         cb() = (n += 1)
         @test_logs (:warn,) (decorate_state!(st; callback = cb))
         @test_logs (:warn,) (decorate_state!(st; callback = cb, debug = DebugDivider("")))
+        @test_logs (:warn,) (decorate_state!(st; callback = cb, debug = [:Cost]))
+        @test_logs (:warn,) (:warn,) (decorate_state!(st; callback = cb, debug = Dict{Symbol, DebugAction}()))
         cb2(p, s, k) = ((k > 1) && (n += 1))
         @test_logs (:warn,) dst2 = decorate_state!(st; debug = cb2)
         dbc = Manopt.DebugCallback(() -> nothing; simple = true)

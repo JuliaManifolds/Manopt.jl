@@ -18,7 +18,7 @@ end
     MomentumGradientRule <: DirectionUpdateRule
 
 Store the necessary information to compute the [`MomentumGradient`](@ref)
-direction update.
+direction update, see [RoyMhammediHarandi:2018, LeggioScuppa:2026](@cite).
 
 # Fields
 
@@ -116,6 +116,8 @@ Append a momentum to a gradient processor.
 The last direction and last iterate are stored and the new is composed as ``η_i = m*η_{i-1}' - s d_i``,
 where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector transported
 last direction multiplied by momentum ``m``.
+This is the Riemannian version of gradient descent with momentum, first used in [RoyMhammediHarandi:2018; Section 3.1](@cite);
+see [LeggioScuppa:2026; Section 6](@cite) for a convergence analysis.
 
 # Input
 
@@ -307,10 +309,13 @@ function NesterovRule(M::AbstractManifold, p; kwargs...)
     return NesterovRule(M; p = copy(M, p), kwargs...)
 end
 function NesterovRule(
-        M::AbstractManifold; p::P = rand(M), γ::T = 0.001, μ::T = 0.9, shrinkage::Function = i -> 0.8,
+        M::AbstractManifold; p::P = rand(M), γ::Real = 0.001, μ::Real = 0.9, shrinkage::Function = i -> 0.8,
         inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M, typeof(p)),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-    ) where {P, T}
+    ) where {P}
+    # “Unify” the type of the two parameters, since they share a type parameter
+    R = float(promote_type(typeof(γ), typeof(μ)))
+    γ, μ = convert.(Ref(R), (γ, μ))
     p_ = maybe_wrap_variable(p)
     return NesterovRule(
         γ = γ, μ = μ, v = copy(M, p_), shrinkage = shrinkage, inverse_retraction_method = inverse_retraction_method, retraction_method = retraction_method,
@@ -320,7 +325,7 @@ function (n::NesterovRule)(mp::AbstractManoptProblem, s::AbstractGradientSolverS
     M = get_manifold(mp)
     h = get_stepsize(mp, s, k)
     p = get_iterate(s)
-    α = (h * (n.γ - n.μ) + sqrt(h^2 * (n.γ - n.μ)^2 + 4 * h * n.γ)) / 2
+    α = (h * (n.μ - n.γ) + sqrt(h^2 * (n.μ - n.γ)^2 + 4 * h * n.γ)) / 2
     γbar = (1 - α) * n.γ + α * n.μ
     y = retract(
         M, p,

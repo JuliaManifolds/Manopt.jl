@@ -280,7 +280,7 @@ $(_kwargs(:retraction_method))
 * `sampling_radius_reduction = 0.5`
 * `sampling_radius_threshold = 1.0e-2` a threshold ``ϵ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientSamplingState`](@ref)`; retraction_method=retraction_method)"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))([`StopWhenGradientNormLess`](@ref)`(subgradient_norm_threshold)`$(_sc(:All))[`StopWhenSmallerOrEqual`](@ref)`(:sampling_radius, sampling_radius_threshold))"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)`$(_sc(:Any))([`StopWhenGradientNormLess`](@ref)`(subgradient_norm_threshold)`$(_sc(:All))[`StopWhenSmallerOrEqual`](@ref)`(:sampling_radius, sampling_radius_threshold))"))
 * `subgradient_norm_reduction = 0.5`
 * `subgradient_norm_tolerance = 0.1`
 * `subgradient_norm_threshold = 1.0e-3` a threshold ``δ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion

@@ -136,10 +136,7 @@ function get_message(qns::QuasiNewtonState)
             msg3 = "$(msg3) Resetting to negative gradient."
         end
     end
-    d = "$(msg1)"
-    d = "$(length(d) > 0 ? "\n" : "")$(msg2)"
-    d = "$(length(d) > 0 ? "\n" : "")$(msg3)"
-    return d
+    return join(filter(!isempty, [msg1, msg2, msg3]), "\n")
 end
 provided_callbacks(::Type{QuasiNewtonState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize, :DirectionUpdate])
 function Base.show(io::IO, qns::QuasiNewtonState)

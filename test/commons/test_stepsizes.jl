@@ -100,6 +100,12 @@ end
     @test Manopt.BarzilaiBorweinStepsize(Euclidean(2)).max_stepsize == 1.0
 
 
+    # mixed numeric keyword types promote instead of erroring
+    @test Manopt.CubicBracketingLinesearchStepsize(M; initial_stepsize = 1).initial_stepsize === 1.0
+    # gradient-free backtracking falls back to a plain decrease condition
+    s0 = Manopt.linesearch_backtrack(Euclidean(2), (M, q) -> sum(q .^ 2), [1.0, 2.0], 1.0, 1.0e-4, 0.5, [-1.0, -2.0])
+    @test s0 > 0
+
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
     @test startswith(repr(s3), "WolfePowellBinaryLinesearchStepsize(;")

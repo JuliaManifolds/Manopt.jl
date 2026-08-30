@@ -292,7 +292,7 @@ and for the `:exact` variant
 $(
     _tex(
         :norm,
-        "$(_tex(:frac, "1", "τ")) V_{n_{k}← n_{k-1}}(X_{k-1}) - $(_tex(:retr))^{-1}_{n_{k}}$(_tex(:bigl))( Λ($(_tex(:retr))_{m_{k}}(V_{m_k← x_k}$(_tex(:retr))^{-1}_{x_{k}}x_{k-1}))$(_tex(:bigr)))"
+        "$(_tex(:frac, "1", "τ"))$(_tex(:bigl))( V_{n_{k}← n_{k-1}}(X_{k-1}) - X_k $(_tex(:bigr)) ) - $(_tex(:retr))^{-1}_{n_{k}}$(_tex(:bigl))( Λ($(_tex(:retr))_{m_{k}}(V_{m_k← x_k}$(_tex(:retr))^{-1}_{x_{k}}x_{k-1}))$(_tex(:bigr)))"
     )
 )
 ```

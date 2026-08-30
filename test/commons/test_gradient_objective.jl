@@ -235,8 +235,18 @@ using ManifoldsBase, Manopt, Test
         @test contains(Manopt.status_summary(agr), "Average Gradient Rule")
 
         nr = Nesterov()(M) # Actually produces a rule
+        @test Nesterov(; γ = 1.0f0)(M).γ === 1.0 # mixed types promote
         @test startswith(repr(nr), "NesterovRule")
         @test contains(Manopt.status_summary(nr), "Nesterov Rule")
+        # after one call, γ reflects the positive root of α² = h((1-α)γ + αμ)
+        f2(M, q) = sum(q .^ 2)
+        grad_f2(M, q) = 2 .* q
+        dmp2 = DefaultManoptProblem(M, ManifoldGradientObjective(f2, grad_f2))
+        nr2 = Nesterov(; γ = 0.001, μ = 0.9)(M)
+        st2 = GradientDescentState(M; p = [1.0, 2.0], stepsize = Manopt.ConstantStepsize(M, 0.01))
+        nr2(dmp2, st2, 1)
+        αr = (0.01 * (0.9 - 0.001) + sqrt(0.01^2 * (0.9 - 0.001)^2 + 4 * 0.01 * 0.001)) / 2
+        @test nr2.γ ≈ ((1 - αr) * 0.001 + αr * 0.9) / (1 + 0.8)
 
         pr = PreconditionedDirection((M, Y, p, X) -> copyto!(M, Y, p, X); evaluation = InplaceEvaluation())(M)
         @test startswith(repr(pr), "PreconditionedDirectionRule")

@@ -964,12 +964,19 @@ function get_hessian_function(emo::EmbeddedManifoldObjective, recursive::Bool = 
     end
 end
 
-function get_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
-    q = local_embed!(M, emo, p)
-    return [
-        get_inequality_constraint(M, emo.objective, q, :),
-        get_equality_constraint(M, emo.objective, q, :),
-    ]
+@doc """
+    get_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
+
+Return a vector `[g, h]` of the two constraint value vectors, the inequality
+constraints ``g(p)`` and the equality constraints ``h(p)``,
+see also [`get_inequality_constraint`](@ref) and [`get_equality_constraint`](@ref).
+"""
+function get_constraints(
+        M::AbstractManifold,
+        co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective},
+        p,
+    )
+    return [get_inequality_constraint(M, co, p, :), get_equality_constraint(M, co, p, :)]
 end
 @doc """
     get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)

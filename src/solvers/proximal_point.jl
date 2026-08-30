@@ -26,7 +26,7 @@ $(_args(:M))
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `λ=k -> 1.0` a function to compute the ``λ_k, k ∈ $(_tex(:Cal, "N"))``,
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))
 
 # See also
 
@@ -96,7 +96,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
 * `f=nothing`: a cost function ``f: $(_math(:Manifold))→ℝ`` to minimize. For running the algorithm, ``f`` is not required, but for example when recording the cost or using a stopping criterion that requires a cost function.
 * `λ= k -> 1.0`: a function returning the (square summable but not summable) sequence of ``λ_i``
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)"))
 
 $(_note(:OtherKeywords))
 

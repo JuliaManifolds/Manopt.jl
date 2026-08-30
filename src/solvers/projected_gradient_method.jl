@@ -217,7 +217,7 @@ $(_kwargs(:stepsize; name = "backtrack", default = "`[`ArmijoLinesearchStepsize`
   Note that the method requires ``β_k ≤ 1``, otherwise the projection step no longer provides points within the constraints
 $(_kwargs([:evaluation, :retraction_method]))
 $(_kwargs(:stepsize; default = "`[`ConstantStepsize`](@ref)`(injectivity_radius(M)/2)")) to perform the candidate projected step.
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500) `$(_sc(:Any))` `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenProjectedGradientStationary`](@ref)`(M, 1.0e-7)"))
 
 $(_note(:OtherKeywords))
 

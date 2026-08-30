@@ -371,7 +371,7 @@ function dual_residual(
             N,
             apds.n,
             1 / apds.dual_stepsize * (
-                vector_transport_to(N, n_old, X_old, apds.n, apds.vector_transport_method_dual) - apds.n
+                vector_transport_to(N, n_old, X_old, apds.n, apds.vector_transport_method_dual) - apds.X
             ) - inverse_retract(
                 N, apds.n,
                 forward_operator(

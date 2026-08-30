@@ -1059,16 +1059,20 @@ mutable struct CubicBracketingLinesearchStepsize{
             M::AbstractManifold;
             candidate_point::P = allocate_result(M, rand),
             candidate_direction::T = zero_vector(M, candidate_point),
-            initial_stepsize::R = 1.0,
+            initial_stepsize::Real = 1.0,
             retraction_method::TRM = default_retraction_method(M),
-            stepsize_increase::R = 1.5,
+            stepsize_increase::Real = 1.5,
             max_iterations::I = 100,
-            sufficient_curvature::R = 0.2,
-            min_bracket_width::R = 1.0e-4,
+            sufficient_curvature::Real = 0.2,
+            min_bracket_width::Real = 1.0e-4,
             hybrid::Bool = true,
             vector_transport_method::VTM = default_vector_transport_method(M),
             max_stepsize::Real = max_stepsize(M),
-        ) where {R <: Real, I <: Integer, TRM, VTM, P, T}
+        ) where {I <: Integer, TRM, VTM, P, T}
+        # “Unify” the type of these bounds, since they share a type parameter
+        R = float(promote_type(typeof.((initial_stepsize, stepsize_increase, sufficient_curvature, min_bracket_width, max_stepsize))...))
+        initial_stepsize, stepsize_increase, sufficient_curvature, min_bracket_width, max_stepsize =
+            convert.(Ref(R), (initial_stepsize, stepsize_increase, sufficient_curvature, min_bracket_width, max_stepsize))
         p = maybe_wrap_variable(candidate_point)
         X = maybe_wrap_variable(candidate_direction)
         return new{R, I, TRM, VTM, typeof(p), typeof(X)}(X, p, initial_stepsize, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize)
@@ -2240,7 +2244,7 @@ function (a::WolfePowellLinesearchStepsize)(
         s_plus = min(2.0 * s_minus, max_step_increase)
     else
         vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
-        if get_differential(mp, a.candidate_point, a.candidate_direction; Y = Y) < a.sufficient_curvature * l
+        if get_differential(mp, a.candidate_point, a.candidate_direction; gradient = Y) < a.sufficient_curvature * l
             i = 0
             while fNew <= f0 + a.sufficient_decrease * step * l && (s_plus < max_step_increase)
                 # increase
@@ -2259,7 +2263,7 @@ function (a::WolfePowellLinesearchStepsize)(
     end
     ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
     vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
-    while get_differential(mp, a.candidate_point, a.candidate_direction; Y = Y) < a.sufficient_curvature * l
+    while get_differential(mp, a.candidate_point, a.candidate_direction; gradient = Y) < a.sufficient_curvature * l
         step = (s_minus + s_plus) / 2
         ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
         fNew = get_cost(mp, a.candidate_point)
@@ -2416,10 +2420,10 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     fNew = get_cost(amp, xNew)
     X_tmp = zero_vector(M, p)
     η_xNew = vector_transport_to(M, p, η, xNew, a.vector_transport_method)
-    nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η; Y = X_tmp)
+    nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η; gradient = X_tmp)
     nWt =
-        get_differential(amp, xNew, η_xNew; Y = X_tmp) <
-        a.sufficient_curvature * get_differential(amp, p, η; Y = X_tmp)
+        get_differential(amp, xNew, η_xNew; gradient = X_tmp) <
+        a.sufficient_curvature * get_differential(amp, p, η; gradient = X_tmp)
     while (nAt || nWt) &&
             (t > a.stop_when_stepsize_less) &&
             (β - α > a.stop_when_stepsize_less)
@@ -2435,10 +2439,10 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
             M, η_xNew, get_iterate(ams), η, xNew, a.vector_transport_method
         )
         # Update conditions
-        nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η; Y = X_tmp)
+        nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η; gradient = X_tmp)
         nWt =
-            get_differential(amp, xNew, η_xNew; Y = X_tmp) <
-            a.sufficient_curvature * get_differential(amp, p, η; Y = X_tmp)
+            get_differential(amp, xNew, η_xNew; gradient = X_tmp) <
+            a.sufficient_curvature * get_differential(amp, p, η; gradient = X_tmp)
     end
     a.last_stepsize = t
     return t
@@ -3096,7 +3100,7 @@ function (hzls::HagerZhangLinesearchStepsize)(
     dphi_0 = if !isnothing(gradient)
         real(inner(M, p, η, gradient))
     else
-        get_differential(mp, p, η; Y = hzls.temporary_tangent)
+        get_differential(mp, p, η; gradient = hzls.temporary_tangent)
     end
     hzls.triples[1] = UnivariateTriple(0.0, fp, dphi_0)
     hzls.last_evaluation_index = 1

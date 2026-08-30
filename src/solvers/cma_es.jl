@@ -354,8 +354,9 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, k::Int)
     return s
 end
 
-@doc """
+_doc_cma_es = """
     cma_es(M, f, p=rand(M); σ::Real=1.0, kwargs...)
+    cma_es!(M, f, p_m; σ::Real=1.0, kwargs...)
 
 Perform covariance matrix adaptation evolutionary strategy search for global gradient-free
 randomized optimization. It is suitable for complicated non-convex functions. It can be
@@ -391,6 +392,8 @@ $(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
 """
+
+@doc "$(_doc_cma_es)"
 function cma_es(M::AbstractManifold, f; kwargs...)
     keywords_accepted(cma_es; kwargs...)
     mco = ManifoldCostObjective(f)
@@ -402,6 +405,7 @@ function cma_es(M::AbstractManifold, f, p; kwargs...)
     return cma_es!(M, mco, copy(M, p); kwargs...)
 end
 calls_with_kwargs(::typeof(cma_es)) = (cma_es!,)
+@doc "$(_doc_cma_es)"
 function cma_es!(M::AbstractManifold, f, p_m; kwargs...)
     mco = ManifoldCostObjective(f)
     return cma_es!(M, mco, p_m; kwargs...)

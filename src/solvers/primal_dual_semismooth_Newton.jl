@@ -88,11 +88,11 @@ $(Manopt._kwargs([:inverse_retraction_method]))
 * `n=`$(Manopt._link(:rand; M = "N"))
 * `p=`$(Manopt._link(:rand))
 * `primal_stepsize=1/sqrt(8)`
-* `reg_param=1e-5`
+* `regularization_parameter=1e-5`
 $(Manopt._kwargs([:retraction_method]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))
-* `update_dual_base=(amp, ams, k) -> o.n`
-* `update_primal_base=(amp, ams, k) -> o.m`
+* `update_dual_base=missing`: function `(amp, ams, k) -> n` to update the dual base point; `missing` keeps `n` fixed
+* `update_primal_base=missing`: function `(amp, ams, k) -> m` to update the primal base point; `missing` keeps `m` fixed
 $(_kwargs(:vector_transport_method))
 * `X=`$(Manopt._link(:zero_vector))
 """

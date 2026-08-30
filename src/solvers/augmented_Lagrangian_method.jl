@@ -312,7 +312,7 @@ $(_kwargs(:evaluation))
 * `θ_ρ=0.3`:          the scaling factor of the penalty parameter
 * `θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent)`: the scaling factor of the exactness
 
-* `sub_cost=[`AugmentedLagrangianCost± (@ref)`(cmo, ρ, μ, λ):` use augmented Lagrangian cost, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
+* `sub_cost=`[`AugmentedLagrangianCost`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian cost, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
    $(_note(:KeywordUsedIn, "sub_problem"))
 
 * `sub_grad=`[`AugmentedLagrangianGrad`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian gradient, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.

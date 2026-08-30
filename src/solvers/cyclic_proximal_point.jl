@@ -9,8 +9,8 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:stopping_criterion; name = "stop"))
 * `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``k``
-* `order_type`: whether to use a randomly permuted sequence (`:FixedRandomOrder`),
-  a per cycle permuted sequence (`:RandomOrder`) or the default linear one.
+* `order_type`: specify whether to use a fixed randomly permuted sequence (`:FixedRandom`),
+  a per cycle newly permuted sequence (`:Random`), or the default `:Linear` order.
 
 # Constructor
 
@@ -25,7 +25,8 @@ $(_args(:M))
 # Keyword arguments
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
-* `evaluation_order=:LinearOrder`: soecify the `order_type`
+* `evaluation_order=:Linear`: specify whether to use a fixed randomly permuted sequence (`:FixedRandom`),
+  a per cycle newly permuted sequence (`:Random`), or the default `:Linear` order.
 * `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_math(:Manifold; M = "N"))``,
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)"))
@@ -52,11 +53,14 @@ end
 function CyclicProximalPointState(
         M::AbstractManifold;
         callbacks::C = Dict{Symbol, Function}(),
-        evaluation_order::Symbol = :LinearOrder,
+        evaluation_order::Symbol = :Linear,
         p::P = rand(M),
         stopping_criterion::S = StopAfterIteration(2000),
         λ::F = (i) -> 1.0 / i,
     ) where {P, C <: AbstractDict{Symbol}, S, F}
+    (evaluation_order in (:Linear, :FixedRandom, :Random)) || throw(
+        DomainError(evaluation_order, "The evaluation order has to be one of :Linear, :FixedRandom, or :Random.")
+    )
     return CyclicProximalPointState(; callbacks = callbacks, order = Int[], order_type = evaluation_order, p = p, stopping_criterion = stopping_criterion, λ = λ)
 end
 get_iterate(cpps::CyclicProximalPointState) = cpps.p
@@ -128,8 +132,8 @@ where `f` and the proximal maps `proxes_f` can also be given directly as a [`Man
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
-* `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`:,
-  a per cycle permuted sequence (`:Random`) or the default linear one.
+* `evaluation_order=:Linear`: specify whether to use a fixed randomly permuted sequence (`:FixedRandom`),
+  a per cycle newly permuted sequence (`:Random`), or the default `:Linear` order.
 * `λ=iter -> 1/iter`:         a function returning the (square summable but not summable) sequence of ``λ_i``
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)"))
 
@@ -204,6 +208,6 @@ function step_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPointState
     for k in cpps.order
         get_proximal_map!(amp, cpps.p, λi, cpps.p, k)
     end
-    (cpps.order_type == :Random) && shuffle(cpps.order)
+    (cpps.order_type == :Random) && shuffle!(cpps.order)
     return cpps
 end

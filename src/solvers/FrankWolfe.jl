@@ -260,7 +260,7 @@ $(_note(:GradientObjective))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs([:differential, :evaluation, :retraction_method]))
 $(_kwargs(:stepsize; default = "`[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-8)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-8)"))
 * `sub_cost=`[`FrankWolfeCost`](@ref)`(p, X)`:
   the cost of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
 * `sub_grad=`[`FrankWolfeGradient`](@ref)`(p, X)`:

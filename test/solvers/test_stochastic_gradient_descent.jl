@@ -97,6 +97,12 @@ using Manopt, Manifolds, Test
     end
     @testset "Comparing Stochastic Methods" begin
         q1 = stochastic_gradient_descent(M, sgrad_f1, p; order_type = :Linear)
+        # the stored retraction_method is used (an unimplemented one must throw)
+        struct NoRetraction <: AbstractRetractionMethod end
+        @test_throws MethodError stochastic_gradient_descent(
+            M, sgrad_f1, p;
+            retraction_method = NoRetraction(), stopping_criterion = StopAfterIteration(2),
+        )
         @test is_point(M, q1, true)
         s1 = stochastic_gradient_descent(
             M, sgrad_f1, p; order_type = :Linear, return_state = true

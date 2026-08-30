@@ -303,7 +303,7 @@ function (c::StopWhenFirstOrderProgress)(
     TpM = get_manifold(dmp)
     p = TpM.point
     M = base_manifold(TpM)
-    nX = norm(M, p, get_gradient(dmp, p))
+    nX = norm(M, p, ls.X)
     y = @view(ls.coefficients[1:(k - 1)])
     Ty = @view(ls.tridig_matrix[1:k, 1:(k - 1)]) * y
     ny = norm(y)
@@ -340,7 +340,7 @@ function (c::StopWhenFirstOrderProgress)(
     return prog
 end
 function status_summary(c::StopWhenFirstOrderProgress; context::Symbol = :default)
-    (context == :short) && return repr(sc)
+    (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     _is_inline(context) && return "First order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"

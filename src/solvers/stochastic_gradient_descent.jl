@@ -220,7 +220,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
 * `order_type=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle permuted sequence (`:Random`, default) or the default `:Linear` one.
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(10000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`StochasticGradientDescentState`](@ref)`)"))
 * `order=[1:n]`: the initial permutation, where `n` is the number of gradients in `gradF`.
 $(_kwargs(:retraction_method))
@@ -302,7 +302,7 @@ end
 function step_solver!(mp::AbstractManoptProblem, s::StochasticGradientDescentState, iter)
     step, s.X = s.direction(mp, s, iter)
     callback(:Direction, mp, s, iter)
-    retract!(get_manifold(mp), s.p, s.p, -step * s.X)
+    retract!(get_manifold(mp), s.p, s.p, -step * s.X, s.retraction_method)
     s.k = ((s.k) % length(s.order)) + 1
     return s
 end

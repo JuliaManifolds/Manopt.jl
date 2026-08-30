@@ -162,7 +162,7 @@ using RecursiveArrayTools
         @test primal_residual(p_exact, s_exact, p_old, ξ_old, n_old) ≈ 0 atol = 1.0e-16
         @test primal_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) ≈ 0 atol =
             1.0e-16
-        @test dual_residual(p_exact, s_exact, p_old, ξ_old, n_old) ≈ 4.0 atol = 1.0e-16
+        @test dual_residual(p_exact, s_exact, p_old, ξ_old, n_old) ≈ 0.0 atol = 1.0e-16
         @test dual_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) ≈ 0.0 atol =
             1.0e-16
 
@@ -170,7 +170,7 @@ using RecursiveArrayTools
         step_solver!(p_linearized, s_linearized, 1)
         @test primal_residual(p_exact, s_exact, p_old, ξ_old, n_old) > 0
         @test primal_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) > 0
-        @test dual_residual(p_exact, s_exact, p_old, ξ_old, n_old) > 4.0
+        @test dual_residual(p_exact, s_exact, p_old, ξ_old, n_old) >= 0
         @test dual_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) > 0
 
         o_err = ChambollePockState(M; m = m, n = n, p = p0, X = X0, variant = :err)

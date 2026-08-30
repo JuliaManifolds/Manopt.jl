@@ -11,6 +11,7 @@ Covariance matrix transport between consecutive mean points is handled by `eigen
 
 ```@docs
 cma_es
+cma_es!
 ```
 
 ## State

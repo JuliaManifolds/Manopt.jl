@@ -151,6 +151,11 @@ include("trust_region_model.jl")
             evaluation = InplaceEvaluation(),
         )
         @test f(M, p2) ≈ f(M, p1)
+        # zero direction: the FD Hessian zeroes its OUTPUT buffer, not the input
+        fd = ApproxHessianFiniteDifference(M, copy(M, p), g; evaluation = InplaceEvaluation())
+        Yb = ones(size(p)); X0b = zero_vector(M, p)
+        fd(M, Yb, p, X0b)
+        @test Yb == zero_vector(M, p)
         X = zero_vector(M, p)
         Y6 = truncated_conjugate_gradient_descent( # in-place -> other precondition default
             M,

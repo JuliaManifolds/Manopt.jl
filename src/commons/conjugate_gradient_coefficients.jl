@@ -295,7 +295,7 @@ function (dy::DaiYuanCoefficientRule)(
     δtr = vector_transport_to(M, p, δ, cgs.p, dy.vector_transport_method)
     # previously: nominator = inner(M, cgs.p, cgs.X, cgs.X)
     nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
-    return nominator / inner(M, p, δtr, ν)
+    return nominator / inner(M, cgs.p, δtr, ν)
 end
 function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
@@ -669,6 +669,7 @@ Then the coefficient reads
 
 The third one is the one usually stated, while the first one avoids to use the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
+The rule employs the nonnegative variant ``β_k^{+} = \\max(0, β_k)`` of this coefficient.
 
 # Keyword arguments
 
@@ -875,6 +876,7 @@ Then the coefficient reads
 
 The second one is the one usually stated, while the first one avoids to use the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
+The rule employs the nonnegative variant ``β_k^{+} = \\max(0, β_k)`` of this coefficient.
 
 # Keyword arguments
 

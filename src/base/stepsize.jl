@@ -270,7 +270,8 @@ $(_kwargs(:retraction_method))
 * `additional_increase_condition=(M,p) -> true`: impose an additional condition for an increased step size to be accepted
 * `additional_decrease_condition=(M,p) -> true`: impose an additional condition for a decreased step size to be accepted
 * `Dlf0`: precomputed directional derivative at point `p` in direction `η`
-  if the `gradient` is specified, this is computed as the real part of `inner(M, p, gradient, η)`, otherwise it is `nothing`
+  if the `gradient` is specified, this is computed as the real part of `inner(M, p, gradient, η)`, otherwise it is `nothing`,
+  in which case the search only requires a plain decrease of `f`
 * `lf0 = f(M, p)`: the function value at the initial point `p`
 * `gradient = nothing`: precomputed gradient at point `p`
 * `report_messages_in::NamedTuple = (; )`: a named tuple of [`StepsizeMessage`](@ref)s to report messages in.
@@ -284,7 +285,7 @@ $(_kwargs(:retraction_method))
 
 # Return value
 
-A stepsize `s` and a message `msg` (in case any of the 5 criteria hit)
+The stepsize `s`; safeguard messages are reported into `report_messages_in`.
 """
 
 @doc "$_doc_linesearch_backtrack"
@@ -308,15 +309,17 @@ function linesearch_backtrack!(
         stop_decreasing_at_step = 1000,
         report_messages_in::NamedTuple = (;),
     ) where {TF, T}
+    # without derivative information, fall back to a plain decrease condition (slope 0)
+    Dlf0_ = isnothing(Dlf0) ? zero(lf0) : Dlf0
     ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
     f_q = f(M, q)
-    if Dlf0 >= 0
+    if !isnothing(Dlf0) && Dlf0 >= 0
         set_message!(report_messages_in, :non_descent_direction, at = 0, value = Dlf0)
     end
 
     i = 0
     # Ensure that both the original condition and the additional one are fulfilled afterwards
-    while f_q < lf0 + decrease * s * Dlf0 || !additional_increase_condition(M, q)
+    while f_q < lf0 + decrease * s * Dlf0_ || !additional_increase_condition(M, q)
         (stop_increasing_at_step == 0) && break
         i = i + 1
         s = min(s / contract, stop_when_stepsize_exceeds)
@@ -333,7 +336,7 @@ function linesearch_backtrack!(
     end
     i = 0
     # Ensure that both the original condition and the additional one are fulfilled afterwards
-    while (f_q > lf0 + decrease * s * Dlf0) ||
+    while (f_q > lf0 + decrease * s * Dlf0_) ||
             (!additional_decrease_condition(M, q))
         i = i + 1
         s = contract * s

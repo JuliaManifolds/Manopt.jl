@@ -140,7 +140,7 @@ $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 * `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)` by default no acceleration is performed
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopWhenGradientMappingNormLess`](@ref)`(1.0e-2)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:sub_problem; default = "missing"))
 $(_kwargs(:sub_state; default = _glossary[:Variable][:evaluation][:default]))
 $(_kwargs(:X; add_properties = [:as_Memory]))
@@ -658,7 +658,7 @@ $(_kwargs(:evaluation))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ProximalGradientMethodState`](@ref)`)"))
   that by default uses a [`ProximalGradientMethodBacktracking`](@ref).
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopWhenGradientMappingNormLess`](@ref)`(1.0e-7)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:sub_problem; type = "Union{`[`AbstractManoptProblem`](@ref)`, F, Missing}", default = "missing"))
   or `missing` to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
 $(_kwargs(:sub_state; default = "evaluation")). This field is ignored, if the `sub_problem` is `missing`.
