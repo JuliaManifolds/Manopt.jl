@@ -16,6 +16,7 @@ updates:
     labels:
       - "dependencies"
       - "no changelog necessary"
+      - "skip documentation"
   - package-ecosystem: "julia"
     directories: # Location of Julia projects
       - "/"
@@ -32,3 +33,4 @@ updates:
     labels:
       - "dependencies"
       - "no changelog necessary"
+      - "skip documentation"
