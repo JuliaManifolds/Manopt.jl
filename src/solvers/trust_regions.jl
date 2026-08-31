@@ -285,7 +285,7 @@ $(_args([:M, :f, :grad_f, :Hess_f, :p]))
 
 * `acceptance_rate`:        accept/reject threshold: if ρ (the performance ratio for the iterate)
   is at least the acceptance rate ρ', the candidate is accepted.
-  This value should  be between ``0`` and ``\frac{1}{4}``
+  This value should be between ``0`` and ``$(_tex(:frac, "1", "4"))``
 * `augmentation_threshold=0.75`: trust-region augmentation threshold: if ρ is larger than this threshold,
   a solution is on the trust region boundary and negative curvature, and the radius is extended (augmented)
 * `augmentation_factor=2.0`: trust-region augmentation factor

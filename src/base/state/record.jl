@@ -23,7 +23,7 @@ The start of a solver calls the `:Iteration` and `:Stop` dictionary entries with
 to reset those recordings.
 
 By default any `RecordAction` is assumed to record its values in a field `recorded_values`,
-an `Vector` of recorded values. See [`get_record`](@ref get_record(r::RecordAction))`(ra)`.
+a `Vector` of recorded values. See [`get_record`](@ref get_record(r::RecordAction))`(ra)`.
 """
 abstract type RecordAction <: AbstractStateAction end
 

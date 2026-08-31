@@ -1,7 +1,7 @@
 function gradient_sampling_subsolver end
 function gradient_sampling_subsolver! end
 
-"""
+_doc_gradient_sampling_subsolver = """
     λ = gradient_sampling_subsolver(M, p, sampled_gradients)
     gradient_sampling_subsolver!(M, λ, p, sampled_gradients)
 
@@ -27,7 +27,12 @@ The subproblem then reads
     A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
     is available if these two packages are loaded.
 """
+
+@doc "$(_doc_gradient_sampling_subsolver)"
 gradient_sampling_subsolver(M::AbstractManifold, p, sampled_gradients)
+
+@doc "$(_doc_gradient_sampling_subsolver)"
+gradient_sampling_subsolver!(M::AbstractManifold, λ, p, sampled_gradients)
 """
     GradientSamplingState
 

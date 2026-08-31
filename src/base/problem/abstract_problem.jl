@@ -105,7 +105,7 @@ function get_gradients!(mp::AbstractManoptProblem, X, p)
     return get_gradients!(get_manifold(mp), X, get_objective(mp), p)
 end
 
-"""
+_doc_get_subtrahend_gradient = """
     X = get_subtrahend_gradient(amp, p)
     get_subtrahend_gradient!(amp, X, p)
 
@@ -118,9 +118,12 @@ An objective using [`AllocatingEvaluation`](@ref) might still allocate memory wi
 When the non-mutating variant is called with an [`InplaceEvaluation`](@ref),
 memory for the result is allocated.
 """
+
+@doc "$(_doc_get_subtrahend_gradient)"
 function get_subtrahend_gradient(amp::AbstractManoptProblem, p)
     return get_subtrahend_gradient(get_manifold(amp), get_objective(amp), p)
 end
+@doc "$(_doc_get_subtrahend_gradient)"
 function get_subtrahend_gradient!(amp::AbstractManoptProblem, X, p)
     get_subtrahend_gradient!(get_manifold(amp), X, get_objective(amp), p)
     return X

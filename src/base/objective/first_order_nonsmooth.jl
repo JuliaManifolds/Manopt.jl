@@ -71,7 +71,7 @@ abstract type AbstractPrimalDualManifoldObjective{C, P} <: AbstractManifoldCostO
 
 function adjoint_linearized_operator end
 
-@doc """
+_doc_adjoint_linearized_operator = """
     X = adjoint_linearized_operator(M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, m, n, Y)
     adjoint_linearized_operator!(M::AbstractManifold, N::AbstractManifold, X, apdmo::AbstractPrimalDualManifoldObjective, m, n, Y)
 
@@ -80,6 +80,8 @@ the [`AbstractPrimalDualManifoldObjective`](@ref) (in place of `X`).
 Since ``Y∈$(_math(:TangentSpace; p = "n", M = "N"))``, both ``m`` and ``n=Λ(m)`` are necessary arguments, mainly because
 the forward operator ``Λ`` might be `missing`.
 """
+
+@doc "$(_doc_adjoint_linearized_operator)"
 adjoint_linearized_operator(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 
 function adjoint_linearized_operator(
@@ -97,6 +99,7 @@ function adjoint_linearized_operator(
     return adjoint_linearized_operator(M, N, get_objective(admo, false), m, n, Y)
 end
 
+@doc "$(_doc_adjoint_linearized_operator)"
 function adjoint_linearized_operator!(
         ::AbstractManifold, N::AbstractManifold,
         X, apdmo::AbstractPrimalDualManifoldObjective, m, n, Y,
@@ -113,13 +116,15 @@ end
 
 function forward_operator end
 
-@doc """
+_doc_forward_operator = """
     q = forward_operator(M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, p)
     forward_operator!(M::AbstractManifold, N::AbstractManifold, q, apdmo::AbstractPrimalDualManifoldObjective, p)
 
 Evaluate the forward operator ``Λ(p)`` stored within the
 [`AbstractPrimalDualManifoldObjective`](@ref) (in place of `q`).
 """
+
+@doc "$(_doc_forward_operator)"
 forward_operator(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 
 function forward_operator(
@@ -134,6 +139,7 @@ function forward_operator(
     )
     return forward_operator(M, N, get_objective(admo, false), p)
 end
+@doc "$(_doc_forward_operator)"
 function forward_operator!(
         M::AbstractManifold, ::AbstractManifold, q, apdmo::AbstractPrimalDualManifoldObjective, p,
     )
@@ -147,7 +153,7 @@ function forward_operator!(
 end
 
 function get_dual_prox end
-@doc """
+_doc_get_dual_prox = """
     Y = get_dual_prox(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
     get_dual_prox!(N::AbstractManifold, Y, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
 
@@ -159,6 +165,8 @@ Evaluate the proximal map of ``g_n^*`` stored within the [`AbstractPrimalDualMan
 
 which can also be computed in place of `Y`.
 """
+
+@doc "$(_doc_get_dual_prox)"
 get_dual_prox(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 
 function get_dual_prox(M::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
@@ -169,6 +177,7 @@ end
 function get_dual_prox(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, n, τ, X)
     return get_dual_prox(M, get_objective(admo, false), n, τ, X)
 end
+@doc "$(_doc_get_dual_prox)"
 function get_dual_prox!(M::AbstractManifold, Y, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
     apdmo.prox_g_dual!(M, Y, n, τ, X)
     return Y
@@ -178,7 +187,7 @@ function get_dual_prox!(M::AbstractManifold, Y, admo::AbstractDecoratedManifoldO
 end
 
 function get_primal_prox end
-@doc """
+_doc_get_primal_prox = """
     q = get_primal_prox(M::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, σ, p)
     get_primal_prox!(M::AbstractManifold, q, apdmo::AbstractPrimalDualManifoldObjective, σ, p)
 
@@ -190,6 +199,8 @@ $(_tex(:prox))_{σF}(p)
 
 which can also be computed in place of `q`.
 """
+
+@doc "$(_doc_get_primal_prox)"
 get_primal_prox(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 
 function get_primal_prox(
@@ -203,6 +214,7 @@ function get_primal_prox(
     )
     return get_primal_prox(M, get_objective(admo, false), σ, p)
 end
+@doc "$(_doc_get_primal_prox)"
 function get_primal_prox!(
         M::AbstractManifold, q, apdmo::AbstractPrimalDualManifoldObjective, σ, p,
     )
@@ -217,13 +229,15 @@ end
 
 function linearized_forward_operator end
 
-@doc """
+_doc_linearized_forward_operator = """
     Y = linearized_forward_operator(M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, m, X, n)
     linearized_forward_operator!(M::AbstractManifold, N::AbstractManifold, Y, apdmo::AbstractPrimalDualManifoldObjective, m, X, n)
 
 Evaluate the linearized operator (differential) ``DΛ(m)[X]`` stored within
 the [`AbstractPrimalDualManifoldObjective`](@ref) (in place of `Y`), where `n = Λ(m)`.
 """
+
+@doc "$(_doc_linearized_forward_operator)"
 linearized_forward_operator(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 
 function linearized_forward_operator(
@@ -238,6 +252,7 @@ function linearized_forward_operator(
     )
     return linearized_forward_operator(M, N, get_objective(admo, false), m, X, n)
 end
+@doc "$(_doc_linearized_forward_operator)"
 function linearized_forward_operator!(
         M::AbstractManifold, ::AbstractManifold, Y, apdmo::AbstractPrimalDualManifoldObjective, m, X, ::Any,
     )

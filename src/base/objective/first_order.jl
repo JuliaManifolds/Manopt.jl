@@ -187,7 +187,7 @@ function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursi
     return get_gradient_function(get_objective(admo, recursive); evaluation = evaluation)
 end
 
-"""
+_doc_get_subgradient = """
     X = get_subgradient(M::AbstractManifold, agmo::AbstractManifoldFirstOrderObjective, p)
     get_subgradient!(M::AbstractManifold, X, agmo::AbstractManifoldFirstOrderObjective, p)
 
@@ -196,10 +196,13 @@ gradient itself.
 
 While in general, the result might not be deterministic, for this case it is.
 """
+
+@doc "$(_doc_get_subgradient)"
 function get_subgradient(M::AbstractManifold, agmo::AbstractManifoldFirstOrderObjective, p)
     X = zero_vector(M, p)
     return get_subgradient!(M, X, agmo, p)
 end
+@doc "$(_doc_get_subgradient)"
 function get_subgradient!(
         M::AbstractManifold, X, agmo::AbstractManifoldFirstOrderObjective, p
     )

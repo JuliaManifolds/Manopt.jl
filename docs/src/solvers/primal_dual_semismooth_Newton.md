@@ -74,7 +74,9 @@ primal_dual_semismooth_Newton!
 ```@docs
 PrimalDualManifoldSemismoothNewtonObjective
 get_differential_primal_prox
+get_differential_primal_prox!
 get_differential_dual_prox
+get_differential_dual_prox!
 ```
 
 ## State

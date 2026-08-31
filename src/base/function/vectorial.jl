@@ -151,7 +151,7 @@ that is the number `n`.
 """
 Base.length(vgf::AbstractVectorFunction) = vgf.range_dimension
 
-@doc """
+_doc_get_value = """
     get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p[, i=:])
     get_value!(M::AbstractManifold, V, vgf::AbstractVectorFunction, p[, i=:])
 
@@ -167,6 +167,8 @@ Since `i` is assumed to be a linear index, you can provide
 
 This function can perform the evaluation in-place of `V`.
 """
+
+@doc "$(_doc_get_value)"
 get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p, i)
 function get_value(
         M::AbstractManifold, vgf::AbstractVectorFunction{<:ComponentVectorialType}, p, i::Integer,
@@ -185,6 +187,7 @@ function get_value(
     vgf.value!(M, value_cache, p)
     return value_cache[i]
 end
+@doc "$(_doc_get_value)"
 function get_value!(
         M::AbstractManifold, V, vgf::AbstractVectorFunction{<:FunctionVectorialType}, p, i = :;
         value_cache = zeros(vgf.range_dimension),

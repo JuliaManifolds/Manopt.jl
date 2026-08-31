@@ -139,7 +139,8 @@ function show(io::IO, vgf::VectorGradientFunction)
     print(io, vgf.jacobian!); print(io, ", "); print(io, vgf.range_dimension)
     print(io, "; ")
     print(io, "function_type = "); print(io, vgf.cost_type); print(io, ", jacobian_type = ")
-    return print(io, vgf.jacobian_type)
+    print(io, vgf.jacobian_type)
+    return print(io, ")")
 end
 
 
@@ -311,7 +312,8 @@ function show(io::IO, vgf::VectorDifferentialFunction)
         print(io, ", adjoint_jacobian_type = "); print(io, vgf.adjoint_jacobian_type)
     end
     print(io, ", jacobian_type = ")
-    return print(io, vgf.jacobian_type)
+    print(io, vgf.jacobian_type)
+    return print(io, ")")
 end
 
 _doc_vhf = """
@@ -498,10 +500,10 @@ function status_summary(vhf::VectorHessianFunction; context::Symbol = :default)
     * dimension:$(_MANOPT_INDENT)$(length(vhf))"""
 end
 function show(io::IO, vhf::VectorHessianFunction)
-    print(io, "VectorGradientFunction("); print(io, vhf.value!); print(io, ", ")
+    print(io, "VectorHessianFunction("); print(io, vhf.value!); print(io, ", ")
     print(io, vhf.jacobian!); print(io, ", "); print(io, vhf.hessians!); print(io, ", ")
     print(io, vhf.range_dimension); print(io, "; ")
-    print(io, ", function_type = "); print(io, vhf.cost_type)
+    print(io, "function_type = "); print(io, vhf.cost_type)
     print(io, ", jacobian_type = "); print(io, vhf.jacobian_type)
     print(io, ", hessian_type = ")
     return print(io, vhf.hessian_type)

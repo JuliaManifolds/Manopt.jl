@@ -1054,7 +1054,7 @@ mutable struct DebugProximalParameter <: DebugAction
 end
 function Base.show(io::IO, d::DebugProximalParameter)
     return print(
-        io, "DebugGradientChange(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init = $(d.at_init))",
+        io, "DebugProximalParameter(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init = $(d.at_init))",
     )
 end
 function status_summary(d::DebugProximalParameter; context::Symbol = :default)

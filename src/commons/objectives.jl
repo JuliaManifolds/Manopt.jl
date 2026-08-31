@@ -331,7 +331,7 @@ function get_inequality_constraint(
     end
 end
 
-@doc """
+_doc_get_grad_equality_constraint = """
     get_grad_equality_constraint(amp::AbstractManoptProblem, p, j)
     get_grad_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
     get_grad_equality_constraint!(amp::AbstractManoptProblem, X, p, j)
@@ -341,6 +341,8 @@ Evaluate the gradient or gradients  of the equality constraint ``($(_tex(:grad))
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the gradient.
 """
+
+@doc "$(_doc_get_grad_equality_constraint)"
 function get_grad_equality_constraint end
 
 function get_grad_equality_constraint(
@@ -360,6 +362,7 @@ function get_grad_equality_constraint(
     return get_gradient(M, co.equality_constraints, p, j, range)
 end
 
+@doc "$(_doc_get_grad_equality_constraint)"
 function get_grad_equality_constraint!(
         amp::AbstractManoptProblem, X, p, j = :,
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
@@ -382,7 +385,7 @@ function get_grad_equality_constraint!(
     return get_gradient!(M, X, co.equality_constraints, p, j, range)
 end
 
-@doc """
+_doc_get_grad_inequality_constraint = """
     get_grad_inequality_constraint(amp::AbstractManoptProblem, p, j=:)
     get_grad_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
     get_grad_inequality_constraint!(amp::AbstractManoptProblem, X, p, j=:)
@@ -392,6 +395,8 @@ Evaluate the gradient or gradients of the inequality constraint ``($(_tex(:grad)
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the gradient.
 """
+
+@doc "$(_doc_get_grad_inequality_constraint)"
 function get_grad_inequality_constraint end
 function get_grad_inequality_constraint(
         M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, args...
@@ -409,6 +414,7 @@ function get_grad_inequality_constraint(
     end
     return get_gradient(M, co.inequality_constraints, p, j, range)
 end
+@doc "$(_doc_get_grad_inequality_constraint)"
 function get_grad_inequality_constraint!(
         M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, args...
     )
@@ -431,7 +437,7 @@ function get_hessian_function(co::ConstrainedManifoldObjective, recursive = fals
     return get_hessian_function(co.objective, recursive; kwargs...)
 end
 
-@doc """
+_doc_get_hess_equality_constraint = """
     get_hess_equality_constraint(amp::AbstractManoptProblem, p, j=:)
     get_hess_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
     get_hess_equality_constraint!(amp::AbstractManoptProblem, X, p, j=:)
@@ -441,6 +447,8 @@ Evaluate the Hessian or Hessians of the equality constraint ``($(_tex(:Hess)) h(
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the Hessian.
 """
+
+@doc "$(_doc_get_hess_equality_constraint)"
 function get_hess_equality_constraint end
 
 function get_hess_equality_constraint(
@@ -459,6 +467,7 @@ function get_hess_equality_constraint(
     end
     return get_hessian(M, co.equality_constraints, p, X, j, range)
 end
+@doc "$(_doc_get_hess_equality_constraint)"
 function get_hess_equality_constraint!(
         M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, args...
     )
@@ -472,7 +481,7 @@ function get_hess_equality_constraint!(
     return get_hessian!(M, Y, co.equality_constraints, p, X, j, range)
 end
 
-@doc """
+_doc_get_hess_inequality_constraint = """
     get_hess_inequality_constraint(amp::AbstractManoptProblem, p, X, j=:)
     get_hess_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
     get_hess_inequality_constraint!(amp::AbstractManoptProblem, Y, p, j=:)
@@ -482,6 +491,8 @@ Evaluate the Hessian or Hessians of the inequality constraint ``($(_tex(:Hess)) 
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the Hessian.
 """
+
+@doc "$(_doc_get_hess_inequality_constraint)"
 function get_hess_inequality_constraint end
 
 function get_hess_inequality_constraint(
@@ -501,6 +512,7 @@ function get_hess_inequality_constraint(
     end
     return get_hessian(M, co.inequality_constraints, p, X, j, range)
 end
+@doc "$(_doc_get_hess_inequality_constraint)"
 function get_hess_inequality_constraint!(
         M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, args...
     )
@@ -3321,7 +3333,7 @@ function _check_prox_number(pf::Union{Tuple, Vector}, i)
     return true
 end
 
-@doc """
+_doc_get_proximal_map = """
     q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalMapObjective, λ, p)
     get_proximal_map!(M::AbstractManifold, q, mpo::ManifoldProximalMapObjective, λ, p)
     q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalMapObjective, λ, p, i)
@@ -3330,6 +3342,8 @@ end
 Evaluate the (`i`th) proximal map of the [`ManifoldProximalMapObjective`](@ref) `mpo` at
 the point `p` of `M` with parameter ``λ>0``.
 """
+
+@doc "$(_doc_get_proximal_map)"
 get_proximal_map(::AbstractManifold, ::ManifoldProximalMapObjective, ::Any...)
 
 function get_proximal_map(
@@ -3342,6 +3356,7 @@ function get_proximal_map(
     mpo.proximal_maps![i](M, q, λ, p)
     return q
 end
+@doc "$(_doc_get_proximal_map)"
 function get_proximal_map!(
         M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{F, <:Union{<:Tuple, <:Vector}},
         λ, p, i,
@@ -3579,7 +3594,7 @@ function get_gradients(
     get_gradients!(M, X, sgo, p)
     return X
 end
-@doc """
+_doc_get_gradients = """
     get_gradients(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p)
     get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
 
@@ -3587,6 +3602,8 @@ Evaluate all summands gradients ``$(_math(:Sequence, "$(_tex(:grad))f", "i", "1"
 
 This can be done in-place of a vector of tangent vectors `X`.
 """
+
+@doc "$(_doc_get_gradients)"
 get_gradients(M::AbstractManifold, admo::ManifoldStochasticGradientObjective, p)
 
 
@@ -3601,6 +3618,7 @@ function get_gradients(M::AbstractManifold, admo::AbstractDecoratedManifoldObjec
     return get_gradients(M, get_objective(admo, false), p)
 end
 # For a single function, since it is in-place, we have no chance to allocate the right amount of tangent vectors in X? Ah we can use get_cost
+@doc "$(_doc_get_gradients)"
 function get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
     sgo.gradient!(M, X, p)
     return X

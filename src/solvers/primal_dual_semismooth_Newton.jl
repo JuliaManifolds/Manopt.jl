@@ -144,7 +144,7 @@ mutable struct PrimalDualSemismoothNewtonState{
 end
 get_callbacks(pdsn::PrimalDualSemismoothNewtonState) = pdsn.callbacks
 
-@doc """
+_doc_get_differential_primal_prox = """
     y = get_differential_primal_prox(M::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective σ, x)
     get_differential_primal_prox!(p::TwoManifoldProblem, y, σ, x)
 
@@ -156,6 +156,8 @@ D$(_tex(:prox))_{σF}(x)[X]
 
 which can also be computed in place of `y`.
 """
+
+@doc "$(_doc_get_differential_primal_prox)"
 get_differential_primal_prox(
     M::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective, ::Any...
 )
@@ -165,6 +167,7 @@ function get_differential_primal_prox(tmo::TwoManifoldProblem, σ, p, X)
     pdsno = get_objective(tmo)
     return get_differential_primal_prox(M, pdsno, σ, p, X)
 end
+@doc "$(_doc_get_differential_primal_prox)"
 function get_differential_primal_prox!(tmo::TwoManifoldProblem, Y, σ, p, X)
     M = get_manifold(tmo, 1)
     pdsno = get_objective(tmo)
@@ -194,7 +197,7 @@ function get_differential_primal_prox!(
     return get_differential_primal_prox!(M, Y, get_objective(admo, false), σ, p, X)
 end
 
-@doc """
+_doc_get_differential_dual_prox = """
     η = get_differential_dual_prox(N::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective, n, τ, X, ξ)
     get_differential_dual_prox!(N::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective, η, n, τ, X, ξ)
 
@@ -206,6 +209,8 @@ D$(_tex(:prox))_{τG_n^*}(X)[ξ]
 
 which can also be computed in place of `η`.
 """
+
+@doc "$(_doc_get_differential_dual_prox)"
 get_differential_dual_prox(
     ::AbstractManifold, ::PrimalDualManifoldSemismoothNewtonObjective, Any...,
 )
@@ -215,6 +220,7 @@ function get_differential_dual_prox(tmo::TwoManifoldProblem, n, τ, X, ξ)
     pdsno = get_objective(tmo)
     return get_differential_dual_prox(N, pdsno, n, τ, X, ξ)
 end
+@doc "$(_doc_get_differential_dual_prox)"
 function get_differential_dual_prox!(tmo::TwoManifoldProblem, η, n, τ, X, ξ)
     N = get_manifold(tmo, 2)
     pdsno = get_objective(tmo)

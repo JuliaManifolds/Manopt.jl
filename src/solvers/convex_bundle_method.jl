@@ -579,7 +579,7 @@ get_message(nsbt::NullStepBackTrackingStepsize) = nsbt.message
 
 function convex_bundle_method_subsolver end
 function convex_bundle_method_subsolver! end
-@doc """
+_doc_convex_bundle_method_subsolver = """
     λ = convex_bundle_method_subsolver(M, p_last_serious, linearization_errors, transported_subgradients)
     convex_bundle_method_subsolver!(M, λ, p_last_serious, linearization_errors, transported_subgradients)
 
@@ -615,6 +615,11 @@ See [BergmannHerzogJasa:2024](@cite) for more details
     A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
     is available if these two packages are loaded.
 """
+
+@doc "$(_doc_convex_bundle_method_subsolver)"
+convex_bundle_method_subsolver!(M, λ, p_last_serious, linearization_errors, transported_subgradients)
+
+@doc "$(_doc_convex_bundle_method_subsolver)"
 convex_bundle_method_subsolver(
     M, p_last_serious, linearization_errors, transported_subgradients
 )

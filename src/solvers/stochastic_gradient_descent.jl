@@ -162,7 +162,7 @@ function (sg::StochasticGradientRule)(
     return sgds.stepsize(apm, sgds, k), get_gradient!(apm, sg.X, sgds.p, j)
 end
 function Base.show(io::IO, sg::StochasticGradientRule)
-    return print(io, "StochasticGradientRule($(sg.X)")
+    return print(io, "StochasticGradientRule($(sg.X))")
 end
 function status_summary(sg::StochasticGradientRule; context::Symbol = :default)
     (context === :short) && return repr(sg)

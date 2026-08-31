@@ -20,6 +20,7 @@ GradientSamplingState
 
 ```@docs
 gradient_sampling_subsolver
+gradient_sampling_subsolver!
 ```
 
 ## [Technical details](@id sec-gradient-sampling-technical-details)

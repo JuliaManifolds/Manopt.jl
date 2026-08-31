@@ -211,7 +211,7 @@ end
 
 function proximal_bundle_method_subsolver end
 function proximal_bundle_method_subsolver! end
-@doc """
+_doc_proximal_bundle_method_subsolver = """
     λ = proximal_bundle_method_subsolver(M, p_last_serious, μ, approximation_errors, transported_subgradients)
     proximal_bundle_method_subsolver!(M, λ, p_last_serious, μ, approximation_errors, transported_subgradients)
 
@@ -237,6 +237,11 @@ See [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
     A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
     is available if these two packages are loaded.
 """
+
+@doc "$(_doc_proximal_bundle_method_subsolver)"
+proximal_bundle_method_subsolver!(M, λ, p_last_serious, μ, approximation_errors, transported_subgradients)
+
+@doc "$(_doc_proximal_bundle_method_subsolver)"
 proximal_bundle_method_subsolver(
     M, p_last_serious, μ, approximation_errors, transported_subgradients
 )
