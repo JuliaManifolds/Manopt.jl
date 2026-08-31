@@ -3307,7 +3307,7 @@ mutable struct ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostOb
         return if length(nOP) != length(proxes_f)
             throw(
                 ErrorException(
-                    "The number_of_proxes ($(nOP)) has to be the same length as the number of proxes ($(length(proxes_f)).",
+                    "The number_of_proxes ($(nOP)) has to be the same length as the number of proxes ($(length(proxes_f))).",
                 ),
             )
         else

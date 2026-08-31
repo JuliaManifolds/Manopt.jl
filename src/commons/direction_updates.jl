@@ -366,7 +366,7 @@ end
 
 Assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex. Given
 
-* a step size ``h_k<$(_tex(:frac, "1", "L"))`` (from the [`GradientDescentState`](@ref)
+* a step size ``h_k<$(_tex(:frac, "1", "L"))`` (from the [`GradientDescentState`](@ref))
 * a `shrinkage` parameter ``β_k``
 * and a current iterate ``p_k``
 * as well as the interim values ``γ_k`` and ``v_k`` from the previous iterate.

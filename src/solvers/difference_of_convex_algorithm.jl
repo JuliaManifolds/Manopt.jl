@@ -16,7 +16,7 @@ Furthermore the subdifferential ``∂h`` of ``h`` is required.
 
 * `cost`: an implementation of ``f(p) = g(p)-h(p)`` as a function `f(M,p)`.
 * `gradient!` a gradient of the smooth component `g`
-* `∂h!`: a deterministic version of ``∂h: $(_math(:Manifold))→ T$(_math(:Manifold)))``,
+* `∂h!`: a deterministic version of ``∂h: $(_math(:Manifold)) → T$(_math(:Manifold))``,
   in the sense that calling `∂h(M, p)` returns a subgradient of ``h`` at `p` and
   if there is more than one, it returns a deterministic choice.
 
@@ -115,7 +115,7 @@ end
     DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
                AbstractManoptSolverState
 
-A struct to store the current state of the [`difference_of_convex_algorithm`])(@ref).
+A struct to store the current state of the [`difference_of_convex_algorithm`](@ref).
 It comes in two forms, depending on the realization of the `subproblem`.
 
 # Fields
@@ -249,7 +249,7 @@ _doc_DoC = """
 Compute the difference of convex algorithm [BergmannFerreiraSantosSouza:2024](@cite) to minimize
 
 ```math
-    $(_tex(:argmin))_{p∈$(_math(:Manifold))\\ g(p) - h(p)
+    $(_tex(:argmin))_{p∈$(_math(:Manifold))}\\ g(p) - h(p)
 ```
 
 where you need to provide ``f(p) = g(p) - h(p)``, ``g`` and the subdifferential ``∂h`` of ``h``.

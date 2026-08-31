@@ -198,7 +198,7 @@ $(_problem(:Default))
 with start point `p`. The iterations can be done in-place of `p`, which is used as ``p^{(0)}``.
 The ``k``th iteration consists of
 
-1. Compute the search direction ``η^{(k)} = -$(_tex(:Cal, "B"))_k [$(_tex(:grad))f (p^{(k)})]`` or solve ``$(_tex(:Cal, "H"))_k [η^{(k)}] = -$(_tex(:grad))f (p^{(k)})]``.
+1. Compute the search direction ``η^{(k)} = -$(_tex(:Cal, "B"))_k [$(_tex(:grad))f (p^{(k)})]`` or solve ``$(_tex(:Cal, "H"))_k [η^{(k)}] = -$(_tex(:grad))f (p^{(k)})``.
 2. Determine a suitable stepsize ``α_k`` along the curve ``γ(α) = R_{p^{(k)}}(α η^{(k)})``, usually by using [`WolfePowellLinesearch`](@ref).
 3. Compute ``p^{(k+1)} = R_{p^{(k)}}(α_k η^{(k)})``.
 4. Define ``s_k = $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}(α_k η^{(k)})`` and ``y_k = $(_tex(:grad))f(p^{(k+1)}) - $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}($(_tex(:grad))f(p^{(k)}))``, where ``$(_tex(:Cal, "T"))`` denotes a vector transport.

@@ -1469,7 +1469,7 @@ function Base.show(io::IO, s::DecreasingStepsize)
 end
 function status_summary(s::DecreasingStepsize; context::Symbol = :default)
     (context === :short) && return repr(s)
-    (context === :inline) && return "A decreasing stepsize ($(s.length) - k*$(s.subtrahend)) * $(s.factor)^k) / (k + $(s.shift))^$(s.exponent)"
+    (context === :inline) && return "A decreasing stepsize (($(s.length) - k*$(s.subtrahend)) * $(s.factor)^k) / (k + $(s.shift))^$(s.exponent)"
     return """
     A decreasing step size
     For the `k`th iterate compute

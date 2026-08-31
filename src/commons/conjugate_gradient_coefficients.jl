@@ -1148,7 +1148,7 @@ function show(io::IO, u::HybridCoefficientRule)
     coefficient_str = join([repr(c.coefficient) for c in u.coefficients], ", ")
     return print(
         io,
-        "Manopt.HybridCoefficientRule(; coefficients = ($coefficient_str)), lower_bound = $(repr(u.lower_bound.coefficient)), lower_bound_scale = $(u.lower_bound_scale))",
+        "Manopt.HybridCoefficientRule(; coefficients = ($coefficient_str), lower_bound = $(repr(u.lower_bound.coefficient)), lower_bound_scale = $(u.lower_bound_scale))",
     )
 end
 

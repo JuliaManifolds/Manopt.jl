@@ -9,7 +9,7 @@ Let `T` denote the type of a tangent vector and `R <: Real`.
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
 * `δ::T`:                     the conjugate gradient search direction
-* `δHδ`, `YPδ`, `δPδ`, `YPδ`: temporary inner products with `Hδ` and preconditioned inner products.
+* `δHδ`, `YPδ`, `δPδ`, `YPY`: temporary inner products with `Hδ` and preconditioned inner products.
 * `Hδ`, `HY`:                 temporary results of the Hessian applied to `δ` and `Y`, respectively.
 * `project!`:                 for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
@@ -433,7 +433,7 @@ _doc_TCG_subproblem = raw"""
 ```
 """
 _doc_TCGD = """
-    truncated_conjugate_gradient_descent(M, f, grad_f, Hess_f, p=rand(M), X=rand(M); vector_at=p);
+    truncated_conjugate_gradient_descent(M, f, grad_f, Hess_f, p=rand(M), X=rand(M; vector_at=p);
         kwargs...
     )
     truncated_conjugate_gradient_descent(M, mho::ManifoldHessianObjective, p=rand(M), X=rand(M; vector_at=p);

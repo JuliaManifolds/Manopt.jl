@@ -637,7 +637,7 @@ Let ``λ_k ≥ 0`` be a sequence of (proximal) parameters, initialize
 Then perform as long as the stopping criterion is not fulfilled
 ```math
 p^{(k+1)} = prox_{λ_kh}$(_tex(:Bigl))(
-$(_tex(:retr))_{a^{(k)}}$(_tex(:bigl))(-λ_k $(_tex(:grad)) g(a^{(k)}$(_tex(:bigr)))
+$(_tex(:retr))_{a^{(k)}}$(_tex(:bigl))(-λ_k $(_tex(:grad)) g(a^{(k)})$(_tex(:bigr)))
 $(_tex(:Bigr))),
 ```
 where ``a^{(k)}=p^{(k)}`` by default, but it allows to introduce some acceleration before
