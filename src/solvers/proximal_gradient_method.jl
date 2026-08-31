@@ -656,7 +656,7 @@ $(_args(:p))
 * `acceleration=(pr, st, k) -> (copyto!(get_manifold(pr), st.a, st.p); st)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step - the default is to copy the current point to the acceleration point, i.e. no acceleration is performed
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
-* `prox_nonsmooth = missing`:          a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the (possibly) nonsmoooth part ``h`` of ``f``
+* `prox_nonsmooth = missing`:          a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the (possibly) nonsmooth part ``h`` of ``f``
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ProximalGradientMethodState`](@ref)`)"))
   that by default uses a [`ProximalGradientMethodBacktracking`](@ref).
 $(_kwargs(:retraction_method))

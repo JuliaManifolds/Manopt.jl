@@ -129,7 +129,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 The sub task consists of a method to solve
 
 ```math
-    $(_tex(:argmin))_{q∈$(_math(:Manifold))}\\ g(p) - ⟨X, $(_tex(:log))_p q⟩
+    $(_tex(:argmin))_{q∈$(_math(:Manifold))}\\ g(q) - ⟨X, $(_tex(:log))_p q⟩
 ```
 
 is needed. Besides a problem and a state, one can also provide a function and

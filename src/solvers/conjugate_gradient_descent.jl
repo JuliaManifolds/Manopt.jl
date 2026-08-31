@@ -86,7 +86,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs([:differential, :evaluation]))
 * `restart_condition::AbstractRestartCondition=`[`NeverRestart`](@ref)`()`:
   rule when the algorithm should restart, i.e. use the negative gradient instead of the computed direction,
-  as a functior where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
+  as a functor where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))

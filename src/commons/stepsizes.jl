@@ -646,7 +646,7 @@ If ``$(_tex(:norm, "X_k"; index = "p_k")) ≤ αω_{k-1}``, then let
 )
 ```
 
-If ``$(_tex(:norm, "X_k"; index = "p_k")) > αω_{k-1}``, the set
+If ``$(_tex(:norm, "X_k"; index = "p_k")) > αω_{k-1}``, then set
 
 ```math
 (b_k, ω_k, c_k) = $(_tex(:Bigl))( b_{k-1} + $(_tex(:frac, _tex(:norm, "X_k"; index = "p_k") * "^2", "b_{k-1}")), ω_{k-1}, 0 $(_tex(:Bigr)))

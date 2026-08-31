@@ -462,7 +462,7 @@ where the proximal map is given by `pr`.
 The formula is given by
 
 ```math
-$(_tex(:reflect))_p(q) = $(_tex(:retr))_p(-$(_tex(:invretr))_p q),
+$(_tex(:reflect))_p(x) = $(_tex(:retr))_p(-$(_tex(:invretr))_p x),
 ```
 where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an inverse retraction, respectively.
 

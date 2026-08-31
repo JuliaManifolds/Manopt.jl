@@ -1,7 +1,7 @@
 @doc """
     RecordChange <: RecordAction
 
-debug for the amount of change of the iterate (see [`get_iterate`](@ref)`(s)` of the [`AbstractManoptSolverState`](@ref))
+record the amount of change of the iterate (see [`get_iterate`](@ref)`(s)` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration.
 
 # Fields
@@ -152,7 +152,7 @@ end
     RecordDualIterate(X)
 
 Create a [`RecordAction`](@ref) that records the dual iterate,
-an [`RecordEntry`](@ref) of the field `X` of the state.
+a [`RecordEntry`](@ref) of the field `X` of the state.
 """
 RecordDualIterate(X) = RecordEntry(X, :X)
 

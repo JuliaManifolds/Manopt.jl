@@ -85,7 +85,7 @@ Stores option values for a [`convex_bundle_method`](@ref) solver.
 
 # Fields
 
-THe following fields require a (real) number type `R`, as well as
+The following fields require a (real) number type `R`, as well as
 point type `P` and a tangent vector type `T`
 
 $(_fields(:callbacks; add_properties = [:as_dict]))

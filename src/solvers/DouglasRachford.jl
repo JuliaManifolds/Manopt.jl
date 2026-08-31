@@ -161,7 +161,7 @@ given the (two) proximal maps `proxes_f`, see [BergmannPerschSteidl:2016](@cite)
 
 For ``k>2`` proximal maps, the problem is reformulated using the parallel Douglas Rachford:
 a vectorial proximal map on the power manifold ``$(_math(:Manifold))^k`` is introduced as the first
-proximal map and the second proximal map of the is set to the [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}) (Riemannian center of mass).
+proximal map and the second proximal map is set to the [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}) (Riemannian center of mass).
 This hence also boils down to two proximal maps, though each evaluates proximal maps in parallel,
 that is, component wise in a vector.
 

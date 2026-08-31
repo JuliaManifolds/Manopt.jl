@@ -123,7 +123,7 @@ end
 @doc """
     StopWhenRelativeResidualLess <: StoppingCriterion
 
-Stop when re relative residual in the [`conjugate_residual`](@ref)
+Stop when the relative residual in the [`conjugate_residual`](@ref)
 is below a certain threshold, i.e.
 
 ```math

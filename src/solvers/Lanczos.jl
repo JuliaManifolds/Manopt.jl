@@ -369,7 +369,7 @@ Note that this stopping criterion (for now) is only implemented for the case tha
 
 # Constructor
 
-    StopWhenAllLanczosVectorsUsed(maxLancosVectors::Int)
+    StopWhenAllLanczosVectorsUsed(maxLanczosVectors::Int)
 
 """
 mutable struct StopWhenAllLanczosVectorsUsed <: StoppingCriterion

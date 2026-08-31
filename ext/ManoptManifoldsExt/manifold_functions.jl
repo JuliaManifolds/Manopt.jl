@@ -37,7 +37,7 @@ lower (or upper) bounds.
 """
 Manopt.get_bounds_index(M::Hyperrectangle) = eachindex(M.lb)
 """
-    get_stepsize_bound(M::Hyperrectangle, x, d, i)
+    get_stepsize_bound(M::Hyperrectangle, p, d, i)
 
 Get the upper bound on moving in direction `d` from point `p` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`,
 for the bound index `i`. There are three cases:

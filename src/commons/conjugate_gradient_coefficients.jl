@@ -21,7 +21,7 @@ Then the coefficient reads
  = $(_tex(:frac, "$(_tex(:norm, "X_{k+1}"; index = "p_{k+1}") * "^2")", "$(_tex(:inner, "-δ_k", "X_k"; index = "p_k"))"))
 ```
 
-The second one it the one usually stated, while the first one avoids to use the metric `inner`.
+The second one is the one usually stated, while the first one avoids to use the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 $(_note(:ManifoldDefaultsFactory, "ConjugateDescentCoefficientRule"))
@@ -61,7 +61,7 @@ end
 #
 # The coefficients to depend on the solver state so we define it here first
 @doc """
-    ConjugateGradientState <: AbstractGradientSolverState
+    ConjugateGradientDescentState <: AbstractGradientSolverState
 
 specify options for a conjugate gradient descent algorithm, that solves a
 [`DefaultManoptProblem`].
@@ -349,7 +349,7 @@ $(
 )
 ````
 
-The second one it the one usually stated, while the first one avoids to use the metric `inner`.
+The second one is the one usually stated, while the first one avoids to use the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 # Keyword arguments
@@ -425,7 +425,7 @@ Then the coefficient reads
  = $(_tex(:frac, _tex(:norm, "X_{k+1}"; index = "p_{k+1}") * "^2", _tex(:norm, "X_k"; index = "p_k") * "^2"))
 ```
 
-The second one it the one usually stated, while the first one avoids to use the metric `inner`.
+The second one is the one usually stated, while the first one avoids to use the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 $(_note(:ManifoldDefaultsFactory, "FletcherReevesCoefficientRule"))
@@ -560,7 +560,7 @@ function HagerZhangCoefficient(args...; kwargs...)
 end
 
 @doc """
-    HestenesStiefelCoefficientRuleRule <: DirectionUpdateRule
+    HestenesStiefelCoefficientRule <: DirectionUpdateRule
 
 A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update coefficient based on [HestenesStiefel:1952](@cite) adapted to manifolds
 
@@ -570,7 +570,7 @@ $(_fields(:vector_transport_method))
 
 # Constructor
 
-    HestenesStiefelCoefficientRuleRule(M::AbstractManifold; kwargs...)
+    HestenesStiefelCoefficientRule(M::AbstractManifold; kwargs...)
 
 Construct the Hestenes-Stiefel coefficient update rule based on [HestenesStiefel:1952](@cite) adapted to manifolds.
 
@@ -699,7 +699,7 @@ $(_fields(:vector_transport_method))
 
     LiuStoreyCoefficientRule(M::AbstractManifold; kwargs...)
 
-Construct the Lui-Storey coefficient update rule based on [LiuStorey:1991](@cite) adapted to manifolds.
+Construct the Liu-Storey coefficient update rule based on [LiuStorey:1991](@cite) adapted to manifolds.
 
 # Keyword arguments
 
@@ -774,7 +774,7 @@ Then the coefficient reads
 = - $(_tex(:frac, "$(_tex(:inner, "X_{k+1}", "ν_k"; index = "p_{k+1}"))", "$(_tex(:inner, "δ_k", "X_k"; index = "p_k"))")).
 ```
 
-The second one it the one usually stated, while the first one avoids to use the metric `inner`.
+The second one is the one usually stated, while the first one avoids to use the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 # Keyword arguments
@@ -926,7 +926,7 @@ end
     SteepestDescentCoefficient(M::AbstractManifold)
 
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm
-so that is falls back to a [`gradient_descent`](@ref) method, that is
+so that it falls back to a [`gradient_descent`](@ref) method, that is
 ````math
 β_k = 0
 ````

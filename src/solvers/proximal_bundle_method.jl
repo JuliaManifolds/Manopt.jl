@@ -528,7 +528,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             @warn """The stopping parameter increased by at least $(d.tol).
             At iteration #$k the stopping parameter -ν increased from $(d.old_value) to $(new_value).\n
             Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
-            the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the
+            the stepsize-like parameter `ε` related to the injectivity radius of the manifold in the
             `proximal_bundle_method` call.
             """
             if d.status === :Once
@@ -539,7 +539,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             @warn """The stopping parameter is negative.
             At iteration #$k the stopping parameter -ν became negative.\n
             Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
-            the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the
+            the stepsize-like parameter `ε` related to the injectivity radius of the manifold in the
             `proximal_bundle_method` call.
             """
         else

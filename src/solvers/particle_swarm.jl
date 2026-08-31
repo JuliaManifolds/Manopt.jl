@@ -30,7 +30,7 @@ $(_fields(:p; name = "q"))
 
 # Constructor
 
-    ParticleSwarmState(M, initial_swarm, velocity; kawrgs...)
+    ParticleSwarmState(M, initial_swarm, velocity; kwargs...)
 
 construct a particle swarm solver state for the manifold `M` starting with the initial population `initial_swarm` with `velocities`.
 The `p` used in the following defaults is the type of one point from the swarm.

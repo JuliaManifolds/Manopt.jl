@@ -238,7 +238,7 @@ should at least record `:Iterate`, `:X` and `:n`.
 # Constructor
 DebugDualResidual(; kwargs...)
 
-# Keyword warguments
+# Keyword arguments
 
 * `io=stdout`: stream to perform the debug to
 * `format="\$prefix%s"`: format to print the dual residual, using the
@@ -908,7 +908,7 @@ should at least record `:Iterate`, `:X` and `:n`.
 
 with the keywords
 
-# Keyword warguments
+# Keyword arguments
 
 * `io=stdout`: stream to perform the debug to
 * `format="\$prefix%s"`: format to print the dual residual, using the
@@ -979,7 +979,7 @@ should at least record `:Iterate`, `:X` and `:n`.
 
     DebugPrimalResidual(; kwargs...)
 
-# Keyword warguments
+# Keyword arguments
 
 * `io=stdout`: stream to perform the debug to
 * `format="\$prefix%s"`: format to print the dual residual, using the
@@ -1217,7 +1217,7 @@ function status_summary(dwa::DebugWhenActive; context::Symbol = :default)
     (context === :short) && (return repr(dwa))
     (context === :inline) && return "A DebugAction only printing its internal criterion ($(status_summary(dwa.debug; context = context))) when active (currently: $(dwa.active))"
     return """
-    a DebugActin only printing its internal DebugAction when activated
+    a DebugAction only printing its internal DebugAction when activated
 
     ## DebugAction
     $(status_summary(dwa.debug; context = context))$(dwa.always_update ? "\nwhich is always updated for negative iteration numbers still." : "")
@@ -1297,7 +1297,7 @@ function status_summary(di::DebugTime; context::Symbol = :default)
         return "(:Time, \"$(escape_string(di.format))\")"
     end
     # Default and inline
-    return "a DebugActin to print time per step $(di.mode === :iterative ? "iteratively" : "cumulatively")"
+    return "a DebugAction to print time per step $(di.mode === :iterative ? "iteratively" : "cumulatively")"
 end
 """
     reset!(d::DebugTime)
@@ -1750,7 +1750,7 @@ DebugActionFactory(a::A) where {A <: DebugAction} = a
 function DebugActionFactory(f::F) where {F <: Function}
     @warn """
         the `DebugCallback` struct is deprecated. Passing functions to `debug = `
-        will no longer word in the next release. Use
+        will no longer work in the next release. Use
         `callbacks = [:Step => [...]]` to add your callback to the (end of)
         an iteration step
     """

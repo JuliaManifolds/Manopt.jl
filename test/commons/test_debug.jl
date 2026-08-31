@@ -338,11 +338,11 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         drs = "DebugTime(; format=\"time spent: %s\", mode=:cumulative)"
         @test repr(DebugTime()) == drs
         drs2 = "(:IterativeTime, \"time spent: %s\")"
-        drs2h = "a DebugActin to print time per step iteratively"
+        drs2h = "a DebugAction to print time per step iteratively"
         @test Manopt.status_summary(DebugTime(; mode = :iterative); context = :short) == drs2
         @test Manopt.status_summary(DebugTime(; mode = :iterative)) == drs2h
         drs3 = "(:Time, \"time spent: %s\")"
-        drs3h = "a DebugActin to print time per step cumulatively"
+        drs3h = "a DebugAction to print time per step cumulatively"
         @test Manopt.status_summary(DebugTime(; mode = :cumulative); context = :short) == drs3
         @test Manopt.status_summary(DebugTime(; mode = :cumulative)) == drs3h
     end

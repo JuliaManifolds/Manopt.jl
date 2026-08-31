@@ -218,7 +218,7 @@ function status_summary(cmo::ConstrainedManifoldObjective; context::Symbol = :de
     $(_in_str(s; indent = 1, headers = 1))
 
 
-    ## Equality constrains
+    ## Equality constraints
     $(el == 0 ? "$(_MANOPT_INDENT)none" : _in_str(status_summary(cmo.equality_constraints; context = context); indent = 1, headers = 1))
 
     ## Inequality constrains
@@ -599,7 +599,7 @@ function get_feasibility_status(
     g_violated = sum(g .> 0)
     h_violated = sum(h .!= 0)
     return """
-    The point $p on $M is not feasible for the provided constants.
+    The point $p on $M is not feasible for the provided constraints.
 
     * There are $(g_violated) of $(length(g)) inequality constraints violated. $(
         g_violated > 0 ? "The sum of violation is $(sum(max.(g, Ref(0))))." : ""

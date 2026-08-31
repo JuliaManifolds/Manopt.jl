@@ -83,7 +83,7 @@ $_doc_FW_sub
 
 Initialize the Frank Wolfe method state.
 
-FrankWolfeState(M, sub_problem; evaluation=AllocatingEvaluation(), kwargs...)
+    FrankWolfeState(M, sub_problem; evaluation=AllocatingEvaluation(), kwargs...)
 
 Initialize the Frank Wolfe method state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 

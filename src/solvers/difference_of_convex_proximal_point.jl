@@ -26,7 +26,7 @@ as allocating or in-place.
         cost = missing, gradient = missing, evaluation = AllocatingEvaluation()
     )
 
-an note that neither cost nor gradient are required for the algorithm,
+and note that neither cost nor gradient are required for the algorithm,
 just for eventual debug or recording functionality or for the stopping criterion.
 """
 struct ManifoldDifferenceOfConvexProximalObjective{GH, F, G} <: AbstractManifoldFirstOrderObjective{F, G}

@@ -251,7 +251,7 @@ $(_tex(:Cal, "P"))(x,u) = $(
 struct LinearQuadraticHuber <: SmoothingTechnique end
 
 @doc """
-    ExactPenaltyCost{S, CO, R} <: AbstractConstrainedFunction{CO, T}
+    ExactPenaltyCost{S, CO, T} <: AbstractConstrainedFunction{CO, T}
 
 Represent the cost of the exact penalty method based on a [`ConstrainedManifoldObjective`](@ref) `co`
 and a parameter ``ρ`` given by

@@ -308,7 +308,7 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 # Keyword Arguments
 
 * `acceleration=0.05`: acceleration parameter
-* `dual_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
+* `dual_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
 $(_kwargs([:evaluation, :inverse_retraction_method]))
 $(_kwargs(:inverse_retraction_method; name = "inverse_retraction_method_dual", M = "N", p = "n"))
 * `Λ=missing`: the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)

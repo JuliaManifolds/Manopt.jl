@@ -31,7 +31,7 @@ abstract type AbstractSymmetricLinearSystemObjective <: AbstractManifoldObjectiv
 
 
 @doc """
-    get_cost(TpM::TangentSpace, aslso::SymmetricLinearSystemObjective, X)
+    get_cost(TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X)
 
 Evaluate the cost
 
