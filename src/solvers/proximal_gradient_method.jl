@@ -111,7 +111,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 * `a` - point after acceleration step
 $(_fields(:p; add_properties = [:as_Iterate]))
-* `q` - point for storing gradient step
+* `q` - point storing the previous iterate
 $(_fields(:retraction_method))
 * `X` - tangent vector for storing gradient
 $(_fields(:stopping_criterion; name = "stop"))
@@ -139,7 +139,7 @@ $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
-* `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)` by default no acceleration is performed
+* `acceleration=(pr, st, k) -> (copyto!(get_manifold(pr), st.a, st.p); st)` by default no acceleration is performed
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenGradientMappingNormLess`](@ref)`(1.0e-2)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:sub_problem; default = "missing"))
 $(_kwargs(:sub_state; default = _glossary[:Variable][:evaluation][:default]))
@@ -653,7 +653,7 @@ $(_args(:p))
 
 # Keyword arguments
 
-* `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step - the default is to copy the current point to the acceleration point, i.e. no acceleration is performed
+* `acceleration=(pr, st, k) -> (copyto!(get_manifold(pr), st.a, st.p); st)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step - the default is to copy the current point to the acceleration point, i.e. no acceleration is performed
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
 * `prox_nonsmooth = missing`:          a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the (possibly) nonsmoooth part ``h`` of ``f``

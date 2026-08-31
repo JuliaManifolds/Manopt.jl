@@ -13,7 +13,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `bundle_size`:              the maximal size of the bundle
 * `c`:                        convex combination of the approximation errors
 * `d`:                        descent direction
-* `δ`:                        parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(i + 1)``, else ``μ += δ μ``
+* `δ`:                        parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(k + 1)``, else ``μ += δ μ``
 * `ε`:                        stepsize-like parameter related to the injectivity radius of the manifold
 * `η`:                        curvature-dependent term for updating the approximation errors
 $(_fields(:inverse_retraction_method))
@@ -141,7 +141,7 @@ mutable struct ProximalBundleMethodState{
         )
     end
 end
-ProximalBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Bunde Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
+ProximalBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Bundle Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function ProximalBundleMethodState(
         M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType;
         kwargs...,
@@ -222,7 +222,7 @@ The subproblem for the proximal bundle method is
 \\begin{align*}
     $(_tex(:argmin))_{λ ∈ ℝ^{$(_tex(:abs, "L_l"))}} &
     $(_tex(:frac, "1", "2 μ_l")) $(_tex(:Bigl)) \\lVert $(_tex(:sum, "j ∈ L_l")) λ_j $(_tex(:rm, "P"))_{p_k←q_j} X_{q_j}$(_tex(:Bigr))\\rVert^2
-    + $(_tex(:sum, "j ∈ L_l")) "λ_j \\, c_j^k
+    + $(_tex(:sum, "j ∈ L_l")) λ_j \\, c_j^k
     \\\\
     $(_tex(:text, "s. t.")) $(_tex(:quad)) &
     $(_tex(:sum, "j ∈ L_l")) λ_j = 1,

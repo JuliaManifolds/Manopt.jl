@@ -123,8 +123,9 @@ end
 """
     StopWhenProjectedGradientStationary <: StoppingCriterion
 
-Stop when the step taken by the projection is  (before linesearch)
-exactly the opposite of the
+Stop when the projected gradient step is stationary, that is when the distance between
+the last iterate ``p_k`` and the candidate ``q_k``, obtained from the gradient step and
+the projection (before the line search), is less than a threshold ``ε``.
 
 """
 mutable struct StopWhenProjectedGradientStationary{F, TSSA <: StoreStateAction} <:
@@ -163,7 +164,7 @@ function (c::StopWhenProjectedGradientStationary)(
 end
 function get_reason(c::StopWhenProjectedGradientStationary)
     if (c.at_iteration >= 0)
-        return "At iteration $(c.at_iteration) algorithm has reached a stationary point, since the distance from the last iterate to the projected gradient ($(c.last_change)) less than $(c.threshold).\n"
+        return "At iteration $(c.at_iteration) the algorithm has reached a stationary point, since the distance from the last iterate to the projected gradient step ($(c.last_change)) is less than $(c.threshold).\n"
     end
     return ""
 end
