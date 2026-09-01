@@ -169,7 +169,9 @@ function get_hess_inequality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X,
 end
 
 get_manifold(cmp::ConstrainedManoptProblem) = cmp.manifold
-get_objective(cmp::ConstrainedManoptProblem) = cmp.objective
+function get_objective(cmp::ConstrainedManoptProblem, recursive = false)
+    return recursive ? get_objective(cmp.objective, true) : cmp.objective
+end
 
 
 function show(io::IO, cmp::ConstrainedManoptProblem)

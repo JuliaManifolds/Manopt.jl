@@ -67,7 +67,7 @@ function get_count(ams::AbstractManoptSolverState, s::Symbol)
 end
 
 function get_count(ams::AbstractManoptSolverState, v::Val{:Iterations})
-    return get_count(ams.stop, v)
+    return get_count(get_stopping_criterion(ams), v)
 end
 @doc """
     get_gradient(agst::AbstractGradientSolverState)

@@ -259,10 +259,16 @@ function _change_basis!(
     end
     return JF
 end
-# case we have the same basis: nothing to do, just return JF
+# case of the same basis type: if the two bases agree there is nothing to do, but bases of the
+# same type can still differ, for example two different `CachedBasis`, then change as usual
 function _change_basis!(
-        M, JF, p, from_basis::B, to_basis_new::B; kwargs...
+        M, JF, p, from_basis::B, to_basis_new::B; X = zero_vector(M, p)
     ) where {B <: AbstractBasis}
+    (from_basis == to_basis_new) && return JF
+    for i in 1:size(JF, 1) # every row
+        get_vector!(M, X, p, view(JF, i, :), from_basis)
+        get_coordinates!(M, view(JF, i, :), p, X, to_basis_new)
+    end
     return JF
 end
 
@@ -747,7 +753,6 @@ function get_jacobian!(
     end
     return a
 end
-
 _doc_get_jacobian_function_coord = """
     get_jacobian(M::AbstractManifold, vgf::AbstractFirstOrderVectorFunction, p, c, B::AbstractBasis; kwargs...)
     get_jacobian!(M::AbstractManifold, a, vgf::AbstractFirstOrderVectorFunction, p, c, B::AbstractBasis; kwargs...)
@@ -813,7 +818,11 @@ function get_jacobian!(
     ) where {FT}
     JF = allocate_jacobian(M, vgf; T = eltype(c))
     vgf.jacobian!(M, JF, p)
-    a .= JF * c
+    if vgf.jacobian_type.basis === B
+        a .= JF * c
+    else
+        a .= JF * change_basis(M, p, c, B, vgf.jacobian_type.basis)
+    end
     return a
 end
 

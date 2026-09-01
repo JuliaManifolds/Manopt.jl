@@ -145,6 +145,10 @@ $(_kwargs(:vector_transport_method))
 $(_kwargs(:vector_transport_method; name = "vector_transport_method_dual", M = "N", p = "n"))
 
 if `Manifolds.jl` is loaded, `N` is also a keyword argument and set to `TangentBundle(M)` by default.
+
+!!! note
+    Constructing the default `n` on a `TangentBundle` requires
+    [RecursiveArrayTools.jl](https://github.com/SciML/RecursiveArrayTools.jl) to be loaded as well.
 """
 mutable struct ChambollePockState{
         P, Q, T, R, C <: AbstractDict{Symbol}, SC <: StoppingCriterion,

@@ -50,6 +50,12 @@ function get_cost_and_differential(amp::AbstractManoptProblem, p, X; kwargs...)
     return get_cost_and_differential(get_manifold(amp), get_objective(amp), p, X; kwargs...)
 end
 
+function get_cost_and_differential(
+        M::AbstractManifold, objective::AbstractManifoldFirstOrderObjective, p, X; kwargs...
+    )
+    return (get_cost(M, objective, p), get_differential(M, objective, p, X; kwargs...))
+end
+
 function get_cost_and_gradient! end
 @doc """
     (c, X) = get_cost_and_gradient(problem::AbstractManoptProblem, p)

@@ -115,7 +115,7 @@ function get_value_function(
 end
 # (c) Jacobian function
 function get_jacobian!(
-        M::AbstractManifold, a, vgf::VectorGradientFunction{FT, <:CoefficientVectorialType}, p, X;
+        M::AbstractManifold, a, vgf::AbstractVectorGradientFunction{FT, <:CoefficientVectorialType}, p, X;
         kwargs...
     ) where {FT}
     B = get_basis(vgf.jacobian_type)
