@@ -9,15 +9,12 @@ end
 function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{ArrayPowerRepresentation}, e::AllocatingEvaluation)
     return Manopt.maybe_wrap_function(Jf, p, e; result = :Matrix)
 end
-function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{NestedPowerRepresentation}, e::AllocatingEvaluation)
-    return Manopt.maybe_wrap_function(Jf, p, e; result = :TangentVectors)
-end
 
 """
-    default_point_distance(::DefaultManifold, p)
+    default_point_distance(::Euclidean, p)
 
 Following [HagerZhang:2006:2](@cite), the expected distance to the optimal solution from `p`
-on `DefaultManifold` is the `Inf` norm of `p`.
+on `Euclidean` is the `Inf` norm of `p`.
 """
 Manopt.default_point_distance(::Euclidean, p) = norm(p, Inf)
 

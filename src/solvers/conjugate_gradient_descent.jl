@@ -84,7 +84,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
 $(_kwargs([:differential, :evaluation]))
-* `restart_condition::AbstractRestartCondition=`[`NeverRestart`](@ref)`()`:
+* `restart_condition::AbstractRestartCondition=`[`RestartOnNonDescent`](@ref)`()`:
   rule when the algorithm should restart, i.e. use the negative gradient instead of the computed direction,
   as a functor where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.

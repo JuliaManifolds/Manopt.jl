@@ -102,17 +102,17 @@ By default this falls back to ``Df(p)[X] = ⟨$(_tex(:grad))f(p), X⟩``.
 
 # Keyword arguments
 
-* `gradient=nothing`: pass a tangent vector to be used internally as interim memory,
+* `gradient=missing`: pass a tangent vector to be used internally as interim memory,
   for example in the default variant to evaluate the gradient in-place.
 * `evaluated=false`: indicate whether `gradient` is just memory (`false`, default) or
   already contains the evaluated gradient (`true`).
 """
 function get_differential(
         M::AbstractManifold, objective::AbstractManifoldFirstOrderObjective, p, X;
-        gradient = nothing, evaluated::Bool = false,
+        gradient = missing, evaluated::Bool = false,
     )
-    isnothing(gradient) && (return real(inner(M, p, get_gradient(M, objective, p), X)))
-    # if it is not nothing call in-place
+    ismissing(gradient) && (return real(inner(M, p, get_gradient(M, objective, p), X)))
+    # if it is not missing call in-place
     (!evaluated) && (get_gradient!(M, gradient, objective, p))
     return real(inner(M, p, gradient, X))
 end

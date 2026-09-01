@@ -12,6 +12,9 @@ end
 function _maybe_wrap_jacobian_function(Jf, p, ::CoefficientVectorialType, e::AllocatingEvaluation)
     return maybe_wrap_function(Jf, p, e; result = :Matrix)
 end
+function _maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{NestedPowerRepresentation}, e::AllocatingEvaluation)
+    return maybe_wrap_function(Jf, p, e; result = :TangentVectors)
+end
 
 _maybe_wrap_adjoint_jacobian_function(aJf, p, ::AbstractVectorialType, ::InplaceEvaluation) = aJf
 function _maybe_wrap_adjoint_jacobian_function(aJf, p, ::FunctionVectorialType, e::AllocatingEvaluation)

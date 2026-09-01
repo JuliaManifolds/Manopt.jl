@@ -968,7 +968,7 @@ function get_hessian!(M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, 
     return Y
 end
 function get_hessian_function(emo::EmbeddedManifoldObjective, recursive::Bool = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
-    recursive && (return get_hessian_function(emo.objective, recursive))
+    recursive && (return get_hessian_function(emo.objective, recursive; evaluation = evaluation))
     if evaluation isa AllocatingEvaluation
         return (M, p, X) -> get_hessian(M, emo, p, X)
     else
@@ -2680,8 +2680,8 @@ function get_cost_and_differential(
         cost = mfo.functions[:cost](M, p)
         _Y = ismissing(gradient) ? zero_vector(M, p) : gradient
         # if we have no cache or it has not been evaluated: evaluate the gradient
-        (ismissing(gradient) || !evaluated) && (grad = mfo.functions[:gradient](M, _Y, p))
-        return (cost, real(inner(M, p, X, grad)))
+        (ismissing(gradient) || !evaluated) && (mfo.functions[:gradient](M, _Y, p))
+        return (cost, real(inner(M, p, X, _Y)))
     end
     return error("$mfo does not provide a cost and a differential")
 end

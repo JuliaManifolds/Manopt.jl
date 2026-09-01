@@ -11,8 +11,8 @@ internally but does not trigger any output.
 
 # Fields (assumed by subtypes to exist)
 
-* `print`: method to perform the actual print. Can for example be set to a file export,
-  or to `@info`. The default is the `print` function on the default `Base.stdout`.
+* `io::IO`: the stream to print the debug output to. Can for example be set to a file
+  stream to export the output. The default is `stdout`.
 """
 abstract type DebugAction <: AbstractStateAction end
 
@@ -99,6 +99,8 @@ function get_parameter(dss::DebugSolverState, v::Val{T}, args...) where {T}
 end
 
 function status_summary(dst::DebugSolverState; context::Symbol = :default)
+    (context === :short) && return repr(dst)
+    (context === :inline) && (return "A DebugSolverState for $(status_summary(dst.state; context = context))")
     if length(dst.debug_dictionary) > 0
         s = ""
         for (k, v) in dst.debug_dictionary

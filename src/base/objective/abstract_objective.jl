@@ -38,7 +38,7 @@ abstract type AbstractDecoratedManifoldObjective{O <: AbstractManifoldObjective}
 @doc """
     ReturnManifoldObjective{O2,O1<:AbstractManifoldObjective} <: AbstractDecoratedManifoldObjective{O2}
 
-A wrapper to indicate that [`get_solver_result`](@ref) should return the inner objective.
+A wrapper to indicate that [`get_solver_return`](@ref) should return the inner objective.
 
 The types are such that one can still dispatch on the undecorated type `O2` of the
 original objective as well.

@@ -5,7 +5,7 @@ _doc_gradient_sampling_subsolver = """
     λ = gradient_sampling_subsolver(M, p, sampled_gradients)
     gradient_sampling_subsolver!(M, λ, p, sampled_gradients)
 
-solver for the subproblem of the [gradient_sampling](@ref) algorithm.
+solver for the subproblem of the [`gradient_sampling`](@ref) algorithm.
 
 Let ``Y_j``, ``j=0,…m`` denote the `sampled_gradients`
 already provided transported to the tangent space at `p`

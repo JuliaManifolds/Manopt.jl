@@ -161,12 +161,15 @@ get_record_state(s::RecordSolverState) = s
 
 Return the action contained in the (first) [`RecordSolverState`](@ref) decorator within the [`AbstractManoptSolverState`](@ref) `s`.
 """
-function get_record_action(s::AbstractManoptSolverState, symbol::Symbol = :Iteration)
+function get_record_action(s::RecordSolverState, symbol::Symbol = :Iteration)
     if haskey(s.recordDictionary, symbol)
         return s.recordDictionary[symbol]
     else
         error("No record known for key :$symbol found")
     end
+end
+function get_record_action(s::AbstractManoptSolverState, symbol::Symbol = :Iteration)
+    return get_record_action(get_record_state(s), symbol)
 end
 @doc """
     get_record(s::RecordSolverState[, symbol=:Iteration])

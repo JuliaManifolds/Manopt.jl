@@ -25,7 +25,7 @@ Then the following functions are available directly
 
 * [`get_cost`](@ref)`(TpM, aslso, X)` to compute/evaluate the objective
 * [`get_gradient`](@ref)`(TpM, aslso, X)` to compute/evaluate the objective's gradient at `X`
-* [`get_linear_operator`](@ref)`(TpM, aslso, X)` to compute/evaluate the linear operator ``$(_tex(:Cal, "A"))`` at `X`
+* [`get_linear_operator`](@ref)`(M, aslso, p, X)` to compute/evaluate the linear operator ``$(_tex(:Cal, "A"))`` at `X`
 """
 abstract type AbstractSymmetricLinearSystemObjective <: AbstractManifoldObjective end
 
