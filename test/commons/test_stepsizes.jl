@@ -227,9 +227,9 @@ end
         gds = GradientDescentState(M; p = p, stepsize = bb)
         # Check both modes to use BB
         # (1) vector transport when providing a last stepsize – no history -> max
-        bb(dmp, gds, 1; last_stepsize = 1.0) == bb.max_stepsize
+        @test bb(dmp, gds, 1; last_stepsize = 1.0) == bb.max_stepsize
         # (1) vector transport when providing a last stepsize - we did not actually move - still max
-        bb(dmp, gds, 1) == bb.max_stepsize
+        @test bb(dmp, gds, 1) == bb.max_stepsize
     end
     @testset "Polyak Stepsize" begin
         M = Euclidean(2)
@@ -366,8 +366,8 @@ end
         end
         @testset "Wolfe condition modes" begin
             hzls_default = Manopt.HagerZhangLinesearchStepsize(M)
-            hzls.current_mode = :invalid_mode
-            @test_throws ErrorException hzls(dmp, gs, 1, η)
+            hzls_default.current_mode = :invalid_mode
+            @test_throws ErrorException hzls_default(dmp, gs, 1, η)
         end
 
 

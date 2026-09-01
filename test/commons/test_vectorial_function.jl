@@ -67,6 +67,25 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis
     @test Manopt.get_jacobian_basis(vgf_jib) == DefaultBasis()
     @test Manopt.get_jacobian_basis(vgf_vi) == DefaultOrthonormalBasis()
+    @testset "Jacobian basis changes" begin
+        pb = [1.0, 2.0, 3.0]
+        # two bases of the *same* type that nevertheless differ, so the change is not a no-op
+        b1 = get_basis(M, pb, DefaultOrthonormalBasis())
+        b2 = CachedBasis(
+            DefaultOrthonormalBasis(), [[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
+        )
+        @test typeof(b1) === typeof(b2)
+        @test b1 != b2
+        vgf_cb = VectorGradientFunction(g, jac_g, 2; jacobian_type = CoefficientVectorialType(b1))
+        # identical bases: nothing to do
+        @test Manopt.get_jacobian(M, vgf_cb, pb; basis = b1) == jac_g(M, pb)
+        # same type but different vectors: the columns are permuted accordingly
+        @test Manopt.get_jacobian(M, vgf_cb, pb; basis = b2) == [0.0 1.0 0.0; -1.0 0.0 0.0]
+        # operator form with a basis different from the one the Jacobian is given in
+        a_b = zeros(2)
+        Manopt.get_jacobian!(M, a_b, vgf_ja, pb, [1.0, 2.0, 3.0], DefaultBasis())
+        @test a_b == [1.0, -2.0]
+    end
     p = [1.0, 2.0, 3.0]
     c = [0.0, -3.0]
     jc = [0.0, 3.0, 0.0] #see above c1, -c2, 0

@@ -13,7 +13,7 @@ using RecursiveArrayTools
     δ = min(α / distance(pixelM, data[1], data[2]), 0.5)
     x_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = TangentBundle(M)
-    fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
+    fidelity(M, x) = 1 / 2 * distance(M, x, data)^2
     Λ(M, x) = ArrayPartition(x, Manopt.Test.forward_logs(M, x))
     function Λ!(M, Y, x)
         N = TangentBundle(M)
@@ -318,6 +318,6 @@ using RecursiveArrayTools
         @test s == t
         forward_operator!(M, N, s, ro, p0)
         forward_operator!(M, N, t, pdmo, p0)
-        @test Y1 == Y2
+        @test s == t
     end
 end

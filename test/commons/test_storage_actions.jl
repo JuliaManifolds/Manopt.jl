@@ -81,8 +81,8 @@ using Test, Manopt, ManifoldsBase, Manifolds
         st = Manopt.StoreStateAction(
             M; p_init = 1.0, X_init = 2.0, store_points = Tuple{:p}, store_vectors = Tuple{:X}
         )
-        Manopt.get_storage(st, Manopt.VectorStorageKey(:X)) == 2.0
-        Manopt.get_storage(st, Manopt.PointStorageKey(:p)) == 1.0
+        @test Manopt.get_storage(st, Manopt.VectorStorageKey(:X)) == 2.0
+        @test Manopt.get_storage(st, Manopt.PointStorageKey(:p)) == 1.0
     end
     @testset "Store swarm" begin
         M = ManifoldsBase.DefaultManifold(2)

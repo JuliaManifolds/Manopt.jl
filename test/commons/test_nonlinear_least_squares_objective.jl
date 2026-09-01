@@ -96,11 +96,11 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
                 lmlso = LevenbergMarquardtLinearSurrogateObjective(nlso)
                 sG = get_gradient(M, lmlso, p, X)
                 sG! = zero_vector(M, p)
-                sG = get_gradient!(M, sG!, lmlso, p, X)
+                get_gradient!(M, sG!, lmlso, p, X)
                 @test isapprox(M, p, sG, sG!)
                 sH = get_hessian(M, lmlso, p, X, Y)
                 sH! = zero_vector(M, p)
-                sH = get_hessian!(M, sH!, lmlso, p, X, Y)
+                get_hessian!(M, sH!, lmlso, p, X, Y)
                 @test isapprox(M, p, sH, sH!)
                 # Evaluate normal vector field of the surrogate as tangent vectors
                 nvf = Manopt.get_normal_vector_field(M, lmlso, p)
@@ -219,6 +219,8 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
         f(M, p) = p
         J_f(M, p) = one(p)
         mnlso = ManifoldNonlinearLeastSquaresObjective(f, J_f, 3)
+        @test startswith(repr(mnlso), "ManifoldNonlinearLeastSquaresObjective(")
+        @test startswith(Manopt.status_summary(mnlso), "A nonlinear least squares objective")
     end
     @testset "Inner consistency checks" begin
         s = zeros(2)

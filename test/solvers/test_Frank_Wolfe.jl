@@ -92,7 +92,7 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
         end
         @testset "Number test" begin
             M = Euclidean()
-            fe(M, p) = P
+            fe(M, p) = 0.0
             grad_fe(M, p) = zero_vector(M, p)
             oraclee(M, p, X) = X
             # and since the gradient is zero and oracle hence returns zero, the result is zero

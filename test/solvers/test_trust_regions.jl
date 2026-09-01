@@ -321,6 +321,21 @@ include("trust_region_model.jl")
             Mc, fc, grad_fc, hess_fc, 0.1, 0.0; trust_region_radius = 0.5
         )
         @test Y1 ≈ -grad_fc(Mc, 0.1)
+        # an approximate Hessian already works on the internal (mutable) representation,
+        # so it must not be wrapped again for the number-typed point
+        for H in (
+                ApproxHessianSymmetricRankOne, ApproxHessianBFGS,
+                ApproxHessianFiniteDifference,
+            )
+            qc = trust_regions(Mc, fc, grad_fc, H(Mc, pc0, grad_fc), pc0)
+            @test is_point(Mc, qc)
+            @test fc(Mc, qc) <= fc(Mc, pc0)
+        end
+        # both of these reach the minimizer, the SR1 approximation only descends here
+        for H in (ApproxHessianBFGS, ApproxHessianFiniteDifference)
+            qc = trust_regions(Mc, fc, grad_fc, H(Mc, pc0, grad_fc), pc0)
+            @test distance(Mc, pc_star, qc[]) < 1.0e-2
+        end
     end
     @testset "Euclidean Embedding" begin
         Random.seed!(42)

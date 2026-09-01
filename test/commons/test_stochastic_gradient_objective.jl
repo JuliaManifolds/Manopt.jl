@@ -28,6 +28,12 @@ using LinearAlgebra, LRUCache, Manifolds, Manopt, Test
             end
         end
     end
+    @testset "Full gradient from a single gradient function" begin
+        # the variant taking one function returning all gradients sums them up
+        for msgo in [msgo_ff, msgo_fv]
+            @test isapprox(M, p, get_gradient(M, msgo, p), sum(sgrad_f1(M, p)))
+        end
+    end
     @testset "Objective Decorator passthrough" begin
         X = zero_vector(M, p)
         Y = zero_vector(M, p)

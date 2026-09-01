@@ -20,19 +20,19 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
     arcmo = AdaptiveRegularizationWithCubicsModelObjective(mho)
 
     @testset "Accessors for the Objective" begin
-        isapprox(
+        @test isapprox(
             M, p0, Manopt.get_objective_gradient(M, arcmo, p0), get_gradient(M, mho, p0)
         )
         X0 = zero_vector(M, p0)
         Manopt.get_objective_gradient!(M, X0, arcmo, p0)
-        isapprox(M, p0, X0, get_gradient(M, mho, p0))
+        @test isapprox(M, p0, X0, get_gradient(M, mho, p0))
 
         g = Manopt.get_gradient_function(arcmo)
-        isapprox(M, p0, g(M2, p0), get_gradient(M, mho, p0))
+        @test isapprox(M, p0, g(M2, zero_vector(M, p0)), get_gradient(M, mho, p0))
         X0 = zero_vector(M, p0)
         X1 = similar(X0)
         Manopt.get_objective_preconditioner!(M, X1, arcmo, p0, X0)
-        isapprox(M, p0, X1, get_preconditioner(M, mho, p0, X0))
+        @test isapprox(M, p0, X1, get_preconditioner(M, mho, p0, X0))
         @test startswith(repr(arcmo), "AdaptiveRegularizationWithCubicsModelObjective(")
         @test startswith(Manopt.status_summary(arcmo), "The cubic polynomial based model for the sub problem of the Adaptive")
     end

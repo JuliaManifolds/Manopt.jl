@@ -402,7 +402,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             P2c = LevenbergMarquardt(TM2, [vgf2b1, vgf2b2], P0; robustifier = [IdentityRobustifier(), 1.0e-4 ∘ HuberRobustifier()])
             P2d = copy(TM2, P0)
             LevenbergMarquardt!(TM2, [vgf2b1, vgf2b2], P2d; robustifier = [IdentityRobustifier(), 1.0e-4 ∘ HuberRobustifier()])
-            isapprox(M2, P2c[TM2, :point], P2d[TM2, :point]; atol = 1.0e-5)
+            @test isapprox(M2, P2c[TM2, :point], P2d[TM2, :point]; atol = 1.0e-5)
             @test norm(P2c[TM2, :vector] - P2d[TM2, :vector]) < 1.0e-4
         end
         @testset "show/repr on the LevenbergMarquardt state on NL objective" begin

@@ -165,8 +165,8 @@ end
         swgcl1 = StopWhenGradientChangeLess(Euclidean(2), 1.0e-8)
         swgcl2 = StopWhenGradientChangeLess(1.0e-8)
         for swgcl in [swgcl1, swgcl2]
-            repr(swgcl) ==
-                "StopWhenGradientChangeLess($(1.0e-8); vector_transport_method=ParallelTransport())\n $(Manopt.status_summary(swgcl))"
+            @test repr(swgcl) ==
+                "StopWhenGradientChangeLess($(1.0e-8); vector_transport_method=ParallelTransport())"
             @test !Manopt.indicates_convergence(swgcl)
             swgcl(gp, gs, 0) # reset
             @test get_reason(swgcl) == ""

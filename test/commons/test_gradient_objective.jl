@@ -107,7 +107,7 @@ using ManifoldsBase, Manopt, Test
         @test get_gradient(M, mgo, p) == get_gradient(M, ddo, p)
         X = zero_vector(M, p)
         Y = zero_vector(M, p)
-        get_gradient!(M, X, ddo, p)
+        get_gradient!(M, X, mgo, p)
         get_gradient!(M, Y, ddo, p)
         @test X == Y
         @test Manopt.get_gradient_function(ddo) == Manopt.get_gradient_function(mgo)
