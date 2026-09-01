@@ -3,7 +3,7 @@ function _maybe_wrap_vector_function(f, p, ::FunctionVectorialType, e::Allocatin
     return maybe_wrap_function(f, p, e; result = :Vector)
 end
 # The single components are like cost – returning numbers, so we only have to wrap mutate
-_maybe_wrap_vector_function(f, p, ::ComponentVectorialType, ::AllocatingEvaluation) = maybe_wrap_function(f, p)
+_maybe_wrap_vector_function(f, p, ::ComponentVectorialType, ::AllocatingEvaluation) = [maybe_wrap_function(fi, p) for fi in f]
 
 _maybe_wrap_jacobian_function(Jf, p, ::AbstractVectorialType, ::InplaceEvaluation) = Jf
 function _maybe_wrap_jacobian_function(Jf, p, ::ComponentVectorialType, e::AllocatingEvaluation)

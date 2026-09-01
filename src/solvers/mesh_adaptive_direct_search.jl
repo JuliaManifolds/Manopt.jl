@@ -405,10 +405,11 @@ end
 function MeshAdaptiveDirectSearchState(
         M::AbstractManifold, p::P = rand(M);
         callbacks::C = Dict{Symbol, Function}(),
-        max_stepsize::Real = injectivity_radius(M), mesh_basis::B = default_basis(M, typeof(p)),
+        max_stepsize::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M),
+        mesh_basis::B = default_basis(M, typeof(p)),
         poll_size::Real = manifold_dimension(M),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-        scale_mesh::Real = injectivity_radius(M) / 2,
+        scale_mesh::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) / 2,
         stopping_criterion::SC = StopAfterIteration(500) | StopWhenPollSizeLess(1.0e-7),
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(M, typeof(p)),
         poll::PT = LowerTriangularAdaptivePoll(
@@ -540,14 +541,16 @@ $(_args([:M, :f, :p]))
 # Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `max_stepsize=`$(_link(:injectivity_radius))`(M)`: a maximum step size to take.
+* `max_stepsize=`$(_link(:injectivity_radius))`(M)`: a maximum step size to take,
+  where `1.0` is used if the injectivity radius is infinite.
   any vector generated on the mesh is shortened to this length to avoid leaving the injectivity radius,
 * `mesh_basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`):
   a basis to generate the mesh in. The mesh is generated in coordinates of this basis in every tangent space
 * `poll::`[`AbstractMeshPollFunction`](@ref)`=`[`LowerTriangularAdaptivePoll`](@ref)`(M, copy(M,p))`:
   the poll function to use. The `mesh_basis` (as `basis`), `retraction_method`, and `vector_transport_method` are passed to this default as well.
 $(_kwargs(:retraction_method))
-* `scale_mesh=`$(_link(:injectivity_radius))`(M) / 4`: initial scaling of the mesh
+* `scale_mesh=`$(_link(:injectivity_radius))`(M) / 4`: initial scaling of the mesh,
+  where `1.0` is used if the injectivity radius is infinite
 * `search::`[`AbstractMeshSearchFunction`](@ref)`=`[`DefaultMeshAdaptiveDirectSearch`](@ref)`(M, copy(M,p))`:
   the search function to use. The `retraction_method` is passed to this default as well.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenPollSizeLess`](@ref)`(1e-10)"))
@@ -586,10 +589,10 @@ function mesh_adaptive_direct_search!(
         mco::AbstractManifoldCostObjective,
         p;
         callbacks = Dict{Symbol, Function}(),
-        max_stepsize::Real = injectivity_radius(M),
+        max_stepsize::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M),
         mesh_basis::B = default_basis(M, typeof(p)),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, eltype(p)),
-        scale_mesh::Real = injectivity_radius(M) / 4,
+        scale_mesh::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) / 4,
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) |
             StopWhenPollSizeLess(1.0e-10),
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(

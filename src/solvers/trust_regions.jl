@@ -18,7 +18,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 * `ρ_regularization`:        regularize the model fitness ``ρ`` to avoid division by zero
 $(_fields([:sub_problem, :sub_state]))
 * `σ`:                       Gaussian standard deviation when creating the random initial tangent vector
-  This field has no effect, when `randomize` is false.
+  Defaults to `0` unless `randomize` is set; a value of `0` disables the randomized (Cauchy point) mode.
 * `trust_region_radius`: the trust-region radius
 $(_fields(:X))
 * `Y`:                       the solution (tangent vector) of the subsolver
@@ -425,7 +425,7 @@ function trust_regions!(
             StopWhenGradientNormLess(1.0e-6),
         max_trust_region_radius::Real = sqrt(manifold_dimension(M)),
         trust_region_radius::Real = max_trust_region_radius / 8,
-        randomize::Bool = false, # Deprecated, remove on next release (use just `σ`)
+        randomize::Bool = false,
         project!::Proj = (copyto!),
         ρ_prime::Real = 0.1, # Deprecated, remove on next breaking change (use `acceptance_rate`)
         acceptance_rate::Real = ρ_prime,
@@ -451,7 +451,7 @@ function trust_regions!(
             TruncatedConjugateGradientState(
                 TangentSpace(M, copy(M, p));
                 X = zero_vector(M, p), θ = θ, κ = κ,
-                trust_region_radius, randomize = randomize, (project!) = (project!),
+                trust_region_radius, randomize = (σ > 0), (project!) = (project!),
                 stopping_criterion = sub_stopping_criterion,
                 sub_kwargs...,
             );
@@ -489,6 +489,11 @@ function trust_regions!(
             "trust_region_radius must be positive and smaller than max_trust_region_radius (=$max_trust_region_radius) but it is $trust_region_radius.",
         ),
     )
+    # `randomize` requires a positive `σ` to have any effect, so keep the two consistent
+    if randomize && (σ == 0)
+        @warn "`randomize=true` has no effect for `σ=0`; the randomized (Cauchy point) mode is disabled. Pass a positive `σ` to enable it."
+        randomize = false
+    end
     keywords_accepted(trust_regions!; kwargs...)
     dmho = decorate_objective!(M, mho; kwargs...)
     dmp = DefaultManoptProblem(M, dmho)
@@ -521,7 +526,7 @@ function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     trs.HY = zero_vector(M, trs.p)
     trs.p_proposal = deepcopy(trs.p)
     trs.f_proposal = zero(trs.trust_region_radius)
-    if trs.randomize #only init if necessary
+    if trs.σ > 0 #only init if necessary
         trs.Z = zero_vector(M, trs.p)
         trs.HZ = zero_vector(M, trs.p)
         trs.τ = zero(trs.trust_region_radius)

@@ -88,6 +88,20 @@ include("trust_region_model.jl")
         p2 = get_solver_result(s2)
         @test f(M, p2) ≈ f(M, p1)
 
+        # `σ` alone activates the randomized mode, also within the sub solver
+        s3 = trust_regions(
+            M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, σ = 1.0e-3, return_state = true
+        )
+        @test contains(repr(s3), "HZ = ")
+        @test Manopt.get_state(s3).sub_state.randomize
+        # `randomize=true` without a positive `σ` warns and deactivates the randomized mode
+        s4 = @test_logs (:warn,) trust_regions(
+            M, f, rgrad, rhess, p;
+            max_trust_region_radius = 8.0, randomize = true, σ = 0.0, return_state = true
+        )
+        @test !contains(repr(s4), "HZ = ")
+        @test !Manopt.get_state(s4).sub_state.randomize
+
         p3 = trust_regions(
             M, f, rgrad, p; max_trust_region_radius = 8.0,
             stopping_criterion = StopAfterIteration(2000) | StopWhenGradientNormLess(1.0e-6),
