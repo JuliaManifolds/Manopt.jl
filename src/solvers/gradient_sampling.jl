@@ -303,7 +303,7 @@ function gradient_sampling(
         kwargs...,
     )
     p_ = maybe_wrap_variable(p)
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, differential = differential)
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, differential = differential, p = p)
     rs = gradient_sampling(M, mgo, p_; kwargs...)
     return maybe_unwrap_variable(p, rs)
 end

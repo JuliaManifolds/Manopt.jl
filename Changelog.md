@@ -58,6 +58,9 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * several line searches passed their gradient buffer to `get_differential` under a wrong keyword.
 * `proximal_bundle_method` and `convex_bundle_method` now default to the in-place subsolver
   when used with `InplaceEvaluation`.
+* `ConvexBundleMethodState` no longer errors when only one of `k_min` and `k_max` is provided.
+* `gradient_sampling` now also works for number-typed points, like `gradient_descent`.
+* `interior_point_Newton!(M, f, grad_f, Hess_f, p; …)` no longer decorates its objective twice, so `count=` and `cache=` now work for the in-place variant.
 * the cautious quasi-Newton matrix update now evaluates its bound at the previous iterate, as documented.
 * a skipped cautious quasi-Newton matrix update now still transports the basis to the new tangent space.
 * `QuasiNewtonState` now activates the default initial scaling when no preconditioner

@@ -233,7 +233,7 @@ mutable struct ConvexBundleMethodState{
         λ = Vector{R}()
         ξ = zero(R)
         if isnothing(ϱ) || isnothing(k_min) || isnothing(k_max)
-            if isnothing(k_max)
+            if isnothing(k_min) || isnothing(k_max)
                 estimation_points = [
                     close_point(
                         M, p_estimate, diameter / 3; retraction_method = retraction_method
@@ -249,9 +249,9 @@ mutable struct ConvexBundleMethodState{
                         estimation_vectors_2[i],
                     ) for i in 1:k_size
                 ]
+                isnothing(k_min) && (k_min = minimum(s))
+                isnothing(k_max) && (k_max = maximum(s))
             end
-            isnothing(k_min) && (k_min = minimum(s))
-            isnothing(k_max) && (k_max = maximum(s))
             isnothing(ϱ) && (ϱ = max(ζ_1(k_min, diameter) - one(k_min), one(k_max) - ζ_2(k_max, diameter)))
         end
         return ConvexBundleMethodState(

@@ -660,8 +660,7 @@ function interior_point_Newton!(
         inequality_constraints = inequality_constraints,
         M = M, p = p,
     )
-    dcmo = decorate_objective!(M, cmo; kwargs...)
-    return interior_point_Newton!(M, dcmo, p; evaluation = evaluation, kwargs...)
+    return interior_point_Newton!(M, cmo, p; evaluation = evaluation, kwargs...)
 end
 function interior_point_Newton!(
         M::AbstractManifold, cmo::O, p;
