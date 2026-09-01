@@ -155,7 +155,7 @@ mutable struct LevenbergMarquardtState{
         )
     end
 end
-provided_callbacks(::Type{LevenbergMarquardtState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize, :DampingIncreaseStepTooLong, :DampingIncreaseModelInadequate, :DampingDecreaseImprovementTooGood, :DampingIncreaseImprovementTooPoor, :CandidateAccept, :CandidateReject])
+provided_callbacks(::Type{<:LevenbergMarquardtState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize, :DampingIncreaseStepTooLong, :DampingIncreaseModelInadequate, :DampingDecreaseImprovementTooGood, :DampingIncreaseImprovementTooPoor, :CandidateAccept, :CandidateReject])
 get_callbacks(lms::LevenbergMarquardtState) = lms.callbacks
 #
 function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)
@@ -377,7 +377,8 @@ function LevenbergMarquardt!(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         jacobian_tangent_basis::AbstractBasis = default_basis(M, typeof(p)),
         jacobian_type::AbstractVectorialType = CoefficientVectorialType(jacobian_tangent_basis),
-        function_type::AbstractVectorialType = FunctionVectorialType(), kwargs...,
+        function_type::AbstractVectorialType = FunctionVectorialType(),
+        robustifier::AbstractRobustifierFunction = IdentityRobustifier(), kwargs...,
     )
     if num_components == -1
         if evaluation === AllocatingEvaluation()
@@ -389,7 +390,7 @@ function LevenbergMarquardt!(
         end
     end
     nlso = ManifoldNonlinearLeastSquaresObjective(
-        f, jacobian_f, num_components;
+        f, jacobian_f, num_components, robustifier;
         evaluation = evaluation, jacobian_type = jacobian_type, function_type = function_type, p = p
     )
     return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)

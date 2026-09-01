@@ -1,6 +1,6 @@
 _doc_CR_cost = """
 ```math
-f(X) = $(_tex(:frac, 1, 2)) $(_tex(:norm, _tex(:Cal, "A") * "[X] + b"; index = "p"))^2,$(_tex(:qquad)) X ∈ $(_math(:TangentSpace)),
+f(X) = $(_tex(:frac, 1, 2)) ⟨X, $(_tex(:Cal, "A"))[X]⟩_p + ⟨b, X⟩_p,$(_tex(:qquad)) X ∈ $(_math(:TangentSpace)),
 ```
 """
 
@@ -44,7 +44,8 @@ function get_cost(
     )
     M = base_manifold(TpM)
     p = base_point(TpM)
-    return 0.5 * norm(M, p, get_linear_operator(M, aslso, p, X) + get_vector_field(M, aslso, p))^2
+    W = 0.5 * get_linear_operator(M, aslso, p, X) + get_vector_field(M, aslso, p)
+    return real(inner(M, p, X, W))
 end
 @doc """
     get_gradient(TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X)

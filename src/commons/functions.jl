@@ -61,6 +61,12 @@ end
 function MutableManifoldFunction(mmf::MutableManifoldFunction, ::Type, ::Symbol = :Number)
     return mmf
 end
+# an approximate Hessian already works on the internal (mutable) representation
+function MutableManifoldFunction(
+        f::AbstractApproximateHessianFunction, ::Type, ::Symbol = :Number
+    )
+    return f
+end
 function MutableManifoldFunction(f::F, ::P, result::Symbol = :Number) where {F, P}
     return MutableManifoldFunction(f, P, result)
 end
@@ -227,7 +233,7 @@ mutable struct ApproxHessianFiniteDifference{P, T, G, RTR, VTR, R <: Real} <: Ab
 end
 function ApproxHessianFiniteDifference(
         M::mT, p::P, grad_f::G;
-        tangent_vector = zero_vector(M, p),
+        tangent_vector = zero_vector(M, maybe_wrap_variable(p)),
         steplength::R = 2^-14,
         retraction_method::RTR = default_retraction_method(M, typeof(p)),
         vector_transport_method::VTR = default_vector_transport_method(M, typeof(p)),

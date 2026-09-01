@@ -199,7 +199,7 @@ function CMAESState(
     )
 end
 
-provided_callbacks(::Type{CMAESState}) = _MANOPT_DEFAULT_CALLBACKS
+provided_callbacks(::Type{<:CMAESState}) = _MANOPT_DEFAULT_CALLBACKS
 get_callbacks(state::CMAESState) = state.callbacks
 
 function status_summary(s::CMAESState; context::Symbol = :default)

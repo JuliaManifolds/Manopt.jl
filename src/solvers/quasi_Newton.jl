@@ -138,7 +138,7 @@ function get_message(qns::QuasiNewtonState)
     end
     return join(filter(!isempty, [msg1, msg2, msg3]), "\n")
 end
-provided_callbacks(::Type{QuasiNewtonState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize, :DirectionUpdate])
+provided_callbacks(::Type{<:QuasiNewtonState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize, :DirectionUpdate])
 function Base.show(io::IO, qns::QuasiNewtonState)
     print(io, "QuasiNewtonState(; ")
     print(io, "callbacks = ", qns.callbacks, ", ")

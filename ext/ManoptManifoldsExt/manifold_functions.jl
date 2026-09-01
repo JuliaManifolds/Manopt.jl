@@ -132,7 +132,7 @@ function mid_point(M::Circle, p, q, x)
     if distance(M, p, q) ≈ π
         X = 0.5 * log(M, p, q)
         Y = log(M, p, x)
-        return exp(M, p, (sign(X) == sign(Y) ? 1 : -1) * X)
+        return exp(M, p, (sign(X[]) == sign(Y[]) ? 1 : -1) * X)
     end
     return mid_point(M, p, q)
 end

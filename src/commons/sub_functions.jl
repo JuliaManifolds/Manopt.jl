@@ -39,7 +39,7 @@ this struct models the right hand side ``b(p,λ) ∈ $(_math(:TangentSpace; p = 
 b(p,λ) = $(
     _tex(
         :pmatrix,
-        "$(_tex(:grad)) f(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) λ_j $(_tex(:grad)) h_j(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) μ_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) $(_tex(:frac, "μ_i", "s_i"))$(_tex(:bigl))( μ_i(g_i(p)+s_i) + β - μ_is_i $(_tex(:bigr)))$(_tex(:grad)) g_i(p)",
+        "$(_tex(:grad)) f(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) λ_j $(_tex(:grad)) h_j(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) μ_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) $(_tex(:frac, "1", "s_i"))$(_tex(:bigl))( μ_i(g_i(p)+s_i) + β - μ_is_i $(_tex(:bigr)))$(_tex(:grad)) g_i(p)",
         "h(p)",
     )
 )
@@ -83,7 +83,7 @@ function (cKKTvf::CondensedKKTVectorField)(N, Y, q)
         # Lagrangian term
         Y1 .+= μ[i] .* X
         #
-        Y1 .+= (μ[i] / s[i]) * (μ[i] * (gi + s[i]) + β - μ[i] * s[i]) .* X
+        Y1 .+= (1 / s[i]) * (μ[i] * (gi + s[i]) + β - μ[i] * s[i]) .* X
     end
     for j in 1:n
         get_grad_equality_constraint!(M, X, cKKTvf.cmo, p, j)

@@ -71,7 +71,7 @@ function GradientDescentState(
         callbacks, direction, p, stepsize, stopping_criterion, retraction_method, X,
     )
 end
-provided_callbacks(::Type{GradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
+provided_callbacks(::Type{<:GradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
 get_callbacks(gds::GradientDescentState) = gds.callbacks
 get_iterate(gds::GradientDescentState) = gds.p
 set_iterate!(gds::GradientDescentState, M, p) = copyto!(M, gds.p, p)
@@ -99,10 +99,10 @@ function get_message(gds::GradientDescentState)
 end
 
 function Base.show(io::IO, gds::GradientDescentState)
-    print(io, "GradientDescentState(; callbacks = ", gds.callbacks, ", ")
-    print(io, ", direction = ", gds.direction, " p = ", gds.p)
+    print(io, "GradientDescentState(; callbacks = ", gds.callbacks)
+    print(io, ", direction = ", gds.direction, ", p = ", gds.p)
     print(io, ", stepsize = ", gds.stepsize, ", stopping_criterion = ", status_summary(gds.stop; context = :short))
-    print(io, ", retraction_method = ", gds.retraction_method, " X= ", gds.X)
+    print(io, ", retraction_method = ", gds.retraction_method, ", X = ", gds.X)
     return print(io, ")")
 end
 

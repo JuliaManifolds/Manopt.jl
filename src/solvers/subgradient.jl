@@ -61,7 +61,7 @@ mutable struct SubGradientMethodState{
     end
 end
 get_callbacks(sgms::SubGradientMethodState) = sgms.callbacks
-provided_callbacks(::Type{SubGradientMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
+provided_callbacks(::Type{<:SubGradientMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
 function Base.show(io::IO, sgms::SubGradientMethodState)
     print(io, "SubGradientMethodState(; ")
     print(io, "callbacks = ", sgms.callbacks, ", ")

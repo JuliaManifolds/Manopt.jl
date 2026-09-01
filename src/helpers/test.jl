@@ -80,9 +80,10 @@ Returns cost and gradient for computing the mean of `data` ``d_i`` on manifold `
 
 ```math
 \begin{align*}
-f(p) = \frac{1}{2n} \sum_{i=1}^n d_M(p, d_i)^2
+f(p) = \frac{1}{2n} \sum_{i=1}^n d_M(p, d_i)^2\\
 \operatorname{grad} f(p) = -\frac{1}{n} \sum_{i=1}^n \log_p(d_i)
 \end{align*}
+```
 """
 function mean_task(M::AbstractManifold, data::AbstractVector)
     n = length(data)

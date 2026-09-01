@@ -731,7 +731,7 @@ function _add_hessian!(
     # per single component a for-loop similar to the one for the blocks
     r = cr.robustifier
     b = zero(value_cache)
-    get_jacobian!(M, b, o, p, X)
+    get_jacobian!(M, b, o, p, Y)
     # Componentwise a few things decouple
     for (i, ai) in enumerate(value_cache)
         ai_sq = abs(ai)^2

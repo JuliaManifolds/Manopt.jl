@@ -226,7 +226,7 @@ function set_iterate!(pgms::ProximalGradientMethodState, M, p)
     copyto!(M, pgms.p, p)
     return pgms
 end
-provided_callbacks(::Type{ProximalGradientMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
+provided_callbacks(::Type{<:ProximalGradientMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
 get_callbacks(pgms::ProximalGradientMethodState) = pgms.callbacks
 
 function Base.show(io::IO, pgms::ProximalGradientMethodState)

@@ -152,7 +152,7 @@ end
 
 get_iterate(alms::AugmentedLagrangianMethodState) = alms.p
 get_callbacks(alms::AugmentedLagrangianMethodState) = alms.callbacks
-provided_callbacks(::Type{AugmentedLagrangianMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Subsolver])
+provided_callbacks(::Type{<:AugmentedLagrangianMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Subsolver])
 function set_iterate!(alms::AugmentedLagrangianMethodState, M, p)
     alms.p = p
     return alms

@@ -61,6 +61,9 @@ Random.seed!(42)
         @test mid_point(M, 0, π / 2) ≈ π / 4
         # Without being too far away -> classical mid point
         @test mid_point(M, 0, 0.1, π / 2) == mid_point(M, 0, 0.1)
+        # the same also works for the 1-element-array representation of `Circle`
+        @test mid_point(M, [0.0], [Float64(π)], [1.0]) ≈ [π / 2]
+        @test mid_point(M, [0.0], [Float64(π)], [-1.0]) ≈ [-π / 2]
     end
     @testset "max_stepsize" begin
         M = Sphere(2)

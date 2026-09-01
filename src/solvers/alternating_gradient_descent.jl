@@ -167,7 +167,7 @@ function get_message(agds::AlternatingGradientDescentState)
     return get_message(agds.stepsize)
 end
 get_callbacks(agds::AlternatingGradientDescentState) = agds.callbacks
-provided_callbacks(::Type{AlternatingGradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
+provided_callbacks(::Type{<:AlternatingGradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
 
 function (ag::AlternatingGradientRule)(
         amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, k

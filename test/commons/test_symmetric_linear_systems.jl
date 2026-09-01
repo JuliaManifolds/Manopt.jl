@@ -18,7 +18,8 @@ using Manifolds, Manopt, Test
     slso2 = SymmetricLinearSystemObjective(A!, b!; evaluation = InplaceEvaluation())
     @testset "Objective" begin
         grad_value = A(TpM, p, X0) + b(TpM, p)
-        cost_value = 0.5 * norm(M, p, grad_value)^2
+        # the cost is the quadratic model 1/2⟨X, A[X]⟩ + ⟨b, X⟩, whose gradient is A[X] + b
+        cost_value = 0.5 * inner(M, p, X0, A(TpM, p, X0)) + inner(M, p, b(TpM, p), X0)
         @test get_cost(TpM, slso, X0) ≈ cost_value
         @test get_cost(TpM, slso2, X0) ≈ cost_value
 

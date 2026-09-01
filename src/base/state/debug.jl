@@ -123,8 +123,8 @@ dispatch_state_decorator(::DebugSolverState) = Val(true)
 """
     DebugGroup <: DebugAction
 
-Group a set of [`DebugAction`](@ref)s into one action, where the internal prints
-are removed by default and the resulting strings are concatenated.
+Group a set of [`DebugAction`](@ref)s into one action, where the actions are
+called in order and each one performs its own print.
 
 # Constructor
 
@@ -132,8 +132,7 @@ are removed by default and the resulting strings are concatenated.
 
 Construct a group consisting of an `Array` of [`DebugAction`](@ref)s `g`,
 that are evaluated _en bloc_; the method does not perform any print itself,
-but relies on the internal prints. It still concatenates the result and returns
-the complete string.
+but relies on the prints of its elements, each printing to its own `io`.
 """
 mutable struct DebugGroup{D <: DebugAction} <: DebugAction
     group::Vector{D}

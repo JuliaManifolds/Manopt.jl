@@ -161,7 +161,8 @@ _get_solver_return(::AbstractManifoldObjective, s, ::Val{false}) = get_solver_re
 """
     get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverState)
 
-Return both the objective and the state as a tuple.
+Return both the objective and the solver return value as a tuple.
+The second entry is the state only if `s` is a [`ReturnSolverState`](@ref), and the minimizer otherwise.
 """
 function get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverState)
     return o.objective, get_solver_return(s)

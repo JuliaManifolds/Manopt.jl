@@ -185,7 +185,7 @@ mutable struct DifferenceOfConvexState{
         return new{P, T, Pr, St, C, SC}(callbacks, p, stopping_criterion, sub_problem, sub_state, X)
     end
 end
-provided_callbacks(::Type{DifferenceOfConvexState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver])
+provided_callbacks(::Type{<:DifferenceOfConvexState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver])
 get_callbacks(dcs::DifferenceOfConvexState) = dcs.callbacks
 function DifferenceOfConvexState(M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...)
     return DifferenceOfConvexState(M, sub_problem; evaluation = sub_state, kwargs...)

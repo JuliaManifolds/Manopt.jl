@@ -1204,7 +1204,7 @@ function hessian_value_from_inner_products(gh::QuasiNewtonLimitedMemoryBoxDirect
         return result
     end
     result -= dot(cy1, gh.M_11, cy2)
-    result -= 2 * dot(cs1, gh.M_21, cy2)
+    result -= dot(cs1, gh.M_21, cy2) + dot(cs2, gh.M_21, cy1)
     result -= dot(cs1, gh.M_22, cs2)
 
     return result

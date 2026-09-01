@@ -1024,28 +1024,32 @@ The returned gradient is then converted to a Riemannian gradient calling
 [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}).
 """
 function get_grad_equality_constraint(
-        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j::Integer
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
     Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     return riemannian_gradient(M, p, Z)
 end
 function get_grad_equality_constraint(
-        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
     Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     return [riemannian_gradient(M, p, X) for X in Z]
 end
 function get_grad_equality_constraint(
-        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j::Integer
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
     get_grad_equality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, j)
     return riemannian_gradient(M, p, emo.X)
 end
 function get_grad_equality_constraint(
-        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
     Xs = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
@@ -1053,7 +1057,8 @@ function get_grad_equality_constraint(
     return Ys
 end
 function get_grad_equality_constraint!(
-        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j::Integer
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
     Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
@@ -1061,7 +1066,8 @@ function get_grad_equality_constraint!(
     return Y
 end
 function get_grad_equality_constraint!(
-        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
     Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
@@ -1069,7 +1075,8 @@ function get_grad_equality_constraint!(
     return Y
 end
 function get_grad_equality_constraint!(
-        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j::Integer
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
     get_grad_equality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, j)
@@ -1077,7 +1084,8 @@ function get_grad_equality_constraint!(
     return Y
 end
 function get_grad_equality_constraint!(
-        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
     Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
@@ -1096,35 +1104,40 @@ The returned gradient is then converted to a Riemannian gradient calling
 [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}).
 """
 function get_grad_inequality_constraint(
-        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, i::Integer
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, i::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
     Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, i)
     return riemannian_gradient(M, p, Z)
 end
 function get_grad_inequality_constraint(
-        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p, j,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
     Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     return [riemannian_gradient(M, p, X) for X in Z]
 end
 function get_grad_inequality_constraint(
-        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, i::Integer
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, i::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
     get_grad_inequality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, i)
     return riemannian_gradient(M, p, emo.X)
 end
 function get_grad_inequality_constraint(
-        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j
+        M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, j,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
     Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
     return [riemannian_gradient(M, p, X) for X in Z]
 end
 function get_grad_inequality_constraint!(
-        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, i::Integer
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, i::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
     Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, i)
@@ -1132,7 +1145,8 @@ function get_grad_inequality_constraint!(
     return Y
 end
 function get_grad_inequality_constraint!(
-        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, Missing}, p, j,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
     Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
@@ -1140,7 +1154,8 @@ function get_grad_inequality_constraint!(
     return Y
 end
 function get_grad_inequality_constraint!(
-        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, i::Integer
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, i::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
     get_grad_inequality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, i)
@@ -1148,7 +1163,8 @@ function get_grad_inequality_constraint!(
     return Y
 end
 function get_grad_inequality_constraint!(
-        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, j,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
     Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
@@ -2774,7 +2790,7 @@ function get_gradient!(
         p,
     )
     _count_if_exists(co, :Gradient)
-    fs = co.objective.functions
+    fs = get_objective(co.objective, true).functions
     haskey(fs, :costgradient) && _count_if_exists(co, :Cost)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Cost)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Differential)
@@ -3172,7 +3188,6 @@ function _add_gradient!(
     # get gradients for every component
     len = length(vgf)
     r = cr.robustifier
-    zero_vector!(M, X, p)
     Y = copy(M, p, X)
     for j in 1:len
         get_gradient!(M, Y, vgf, p, j) # gradient of f_{i,j}
@@ -3700,7 +3715,7 @@ function get_gradient!(
     Y = copy(M, p, X)
     for grad_i in sgo.gradient!
         grad_i(M, Y, p)
-        X += Y
+        X .+= Y
     end
     return X
 end

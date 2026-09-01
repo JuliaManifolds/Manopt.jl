@@ -169,7 +169,7 @@ function ConjugateGradientDescentState(
         retraction_method = retraction_method, vector_transport_method = vector_transport_method,
     )
 end
-provided_callbacks(::Type{ConjugateGradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
+provided_callbacks(::Type{<:ConjugateGradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
 get_callbacks(state::ConjugateGradientDescentState) = state.callbacks
 
 function get_message(cgs::ConjugateGradientDescentState)
@@ -826,7 +826,7 @@ update_rule_storage_vectors(::PolakRibiereCoefficientRule) = Tuple{:Gradient}
 # Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (pr::PolakRibiereCoefficientRule)(
-        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, kwargs...
     )
     M = get_manifold(amp)
     Xtr = vector_transport_to(M, p, X, cgs.p, pr.vector_transport_method)

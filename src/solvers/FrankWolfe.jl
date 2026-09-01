@@ -175,7 +175,7 @@ function get_message(fws::FrankWolfeState)
     # for now only the sub solver might have messages
     return get_message(fws.sub_state)
 end
-provided_callbacks(::Type{FrankWolfeState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver, :Stepsize])
+provided_callbacks(::Type{<:FrankWolfeState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver, :Stepsize])
 
 function set_iterate!(fws::FrankWolfeState, p)
     fws.p = p

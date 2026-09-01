@@ -205,7 +205,7 @@ function get_message(trs::TrustRegionsState)
     return get_message(trs.sub_state)
 end
 get_iterate(trs::TrustRegionsState) = trs.p
-provided_callbacks(::Type{TrustRegionsState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Subsolver])
+provided_callbacks(::Type{<:TrustRegionsState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Subsolver])
 
 function set_gradient!(agst::TrustRegionsState, M, p, X)
     copyto!(M, agst.X, p, X)

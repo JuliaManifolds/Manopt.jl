@@ -205,8 +205,9 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
         # restart solver; set dir to -grad
         copyto!(M, cgs.δ, cgs.X)
         cgs.δ .*= -1
-        update_storage!(cgs.coefficient.storage, amp, cgs)
         cgs.β = 0.0
     end
+    # store the direction actually used, so the next β sees δ_k and not δ_{k-1}
+    update_storage!(cgs.coefficient.storage, amp, cgs)
     return cgs
 end

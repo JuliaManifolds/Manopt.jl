@@ -39,7 +39,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             :Stop, 10, DebugMessages(:Info, :Always),
         ]
 
-        sc = StopAfterIteration(800) | StopWhenKKTResidualLess(1.0e-2)
+        sc = StopAfterIteration(800) | StopWhenKKTResidualLess(1.0e-6)
         # (a) classical call w/ recording
         res = interior_point_Newton(
             M, f, grad_f, Hess_f, p_0;

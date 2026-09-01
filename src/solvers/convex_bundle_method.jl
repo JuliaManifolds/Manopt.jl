@@ -232,8 +232,8 @@ mutable struct ConvexBundleMethodState{
         ε = zero(R)
         λ = Vector{R}()
         ξ = zero(R)
-        if ϱ === nothing
-            if (k_max === nothing)
+        if isnothing(ϱ) || isnothing(k_min) || isnothing(k_max)
+            if isnothing(k_max)
                 estimation_points = [
                     close_point(
                         M, p_estimate, diameter / 3; retraction_method = retraction_method
@@ -250,9 +250,9 @@ mutable struct ConvexBundleMethodState{
                     ) for i in 1:k_size
                 ]
             end
-            (k_min === nothing) && (k_min = minimum(s))
-            (k_max === nothing) && (k_max = maximum(s))
-            ϱ = max(ζ_1(k_min, diameter) - one(k_min), one(k_max) - ζ_2(k_max, diameter))
+            isnothing(k_min) && (k_min = minimum(s))
+            isnothing(k_max) && (k_max = maximum(s))
+            isnothing(ϱ) && (ϱ = max(ζ_1(k_min, diameter) - one(k_min), one(k_max) - ζ_2(k_max, diameter)))
         end
         return ConvexBundleMethodState(
             sub_problem, sub_state;
@@ -323,7 +323,7 @@ get_subgradient(bms::ConvexBundleMethodState) = bms.g
 function default_stepsize(M::AbstractManifold, ::Type{ConvexBundleMethodState})
     return ConstantStepsize(M)
 end
-provided_callbacks(::Type{ConvexBundleMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
+provided_callbacks(::Type{<:ConvexBundleMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
 get_callbacks(bms::ConvexBundleMethodState) = bms.callbacks
 function show(io::IO, cbms::ConvexBundleMethodState)
     print(io, "ConvexBundleMethodState(")

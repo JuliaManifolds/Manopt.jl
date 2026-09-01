@@ -74,7 +74,7 @@ function ProjectedGradientMethodState(
         X = X, Y = copy(M, p, X),
     )
 end
-provided_callbacks(::Type{ProjectedGradientMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Backtrack])
+provided_callbacks(::Type{<:ProjectedGradientMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Backtrack])
 get_callbacks(pgms::ProjectedGradientMethodState) = pgms.callbacks
 get_iterate(pgms::ProjectedGradientMethodState) = pgms.p
 get_gradient(pgms::ProjectedGradientMethodState) = pgms.X

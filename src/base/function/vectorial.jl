@@ -286,7 +286,8 @@ add_adjoint_jacobian!(M::AbstractManifold, X, vgf::AbstractFirstOrderVectorFunct
 _doc_add_adjoint_jacobian_function_coeff = """
     add_adjoint_jacobian!(M::AbstractManifold, c, vgf::AbstractFirstOrderVectorFunction, p, a, B::AbstractBasis; kwargs...)
 
-Compute the adjoint Jacobian ``J_F^*(p)[a]`` of a vectorial function ``F: $(_math(:Manifold)) → ℝ^n`` as a matrix in a tangent space.
+Compute the coordinates of the adjoint Jacobian ``J_F^*(p)[a]`` of a vectorial function ``F: $(_math(:Manifold)) → ℝ^n``
+with respect to the basis `B` and add them to `c`.
 For more details see [`get_adjoint_jacobian`](@ref).
 """
 
