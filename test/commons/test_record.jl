@@ -329,4 +329,13 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         Manopt.set_parameter!(r, :value, 1)
         @test Manopt.get_parameter(r, :value) == 1
     end
+    @testset "get_record_action resolves the decorator chain" begin
+        M = Euclidean(2)
+        gds = GradientDescentState(M; p = [1.0, 2.0])
+        r = RecordSolverState(gds, RecordIteration())
+        d = DebugSolverState(r, DebugDivider(""))
+        # reachable both directly and through a further decorator
+        @test Manopt.get_record_action(r) === Manopt.get_record_action(d)
+        @test Manopt.get_record_action(d) isa RecordIteration
+    end
 end

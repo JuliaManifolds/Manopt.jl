@@ -28,6 +28,9 @@ using LRUCache, Manifolds, Manopt, Test, Random
         # check differential default
         @test get_differential(mp, p, X; gradient = Y) == 0
         @test get_differential(mp, p, X) == 0
+        # the generic cost-and-differential fallback for any first order objective
+        @test Manopt.get_cost_and_differential(M, mho, p, X) == (f(M, p), 0)
+        @test Manopt.get_cost_and_differential(mp, p, X) == (f(M, p), 0)
         # Hessian
         @test get_hessian(mp, p, X) == 0.5 * X
         get_hessian!(mp, Y, p, X)
