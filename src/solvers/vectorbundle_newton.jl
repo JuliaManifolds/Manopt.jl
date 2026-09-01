@@ -79,7 +79,7 @@ get_callbacks(vbns::VectorBundleNewtonState) = vbns.callbacks
 function Base.show(io::IO, vbns::VectorBundleNewtonState)
     print(io, "VectorBundleNewtonState(", vbns.sub_problem, ", ", vbns.sub_state, "; ")
     print(io, "callbacks = ", vbns.callbacks, ", p = ", vbns.p, ", ")
-    print(io, "retraction_method = ", vbns.retraction_method, ", stopping_criterion = $(status_summary(vbns.stop; context = :short)),")
+    print(io, "retraction_method = ", vbns.retraction_method, ", stopping_criterion = $(status_summary(vbns.stop; context = :short)), ")
     print(io, "stepsize = ", vbns.stepsize, ", X = ", vbns.X)
     return print(io, ")")
 end
@@ -121,7 +121,7 @@ If the manifold does not have components, the outer norm is ignored.
 
     AffineCovariantStepsize(
         M::AbstractManifold=DefaultManifold(2);
-        α=1.0, θ=1.3, θ_des=0.5, θ_acc=1.1*θ_des, outer_norm::Real=missing
+        α=1.0, θ=1.3, θ_des=0.5, θ_acc=1.1*θ_des, outer_norm::Union{Missing,Real}=missing
     )
 
 Initializes all fields, where none of them is mandatory. The length is set to ``1.0``.

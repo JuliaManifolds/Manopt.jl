@@ -123,9 +123,8 @@ end
 """
     StopWhenProjectedGradientStationary <: StoppingCriterion
 
-Stop when the projected gradient step is stationary, that is when the distance between
-the last iterate ``p_k`` and the candidate ``q_k``, obtained from the gradient step and
-the projection (before the line search), is less than a threshold ``ε``.
+Stop when the projected gradient step is stationary, that is when the distance from the
+last iterate ``p_k`` to the candidate ``q_k`` is less than a threshold ``ε``.
 
 """
 mutable struct StopWhenProjectedGradientStationary{F, TSSA <: StoreStateAction} <:

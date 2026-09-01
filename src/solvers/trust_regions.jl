@@ -50,8 +50,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 * `project!=copyto!`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 * `randomize=false`
-* `ρ_regularization=10000.0`
-* `θ=1.0`
+* `ρ_regularization=1000.0`
 * `trust_region_radius=max_trust_region_radius / 8`
 $(_kwargs(:X; add_properties = [:as_Memory]))
 
@@ -316,7 +315,7 @@ $(_kwargs(:sub_state; default = "`[`TruncatedConjugateGradientState`](@ref)` "))
   , see also [`truncated_conjugate_gradient_descent`](@ref) for more details
 * `θ=1.0`:                the superlinear convergence target rate of ``1+θ`` of the tCG-method
   [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping criterion therein
-* `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(M) / 4`: the initial trust-region radius
+* `trust_region_radius=max_trust_region_radius / 8`: the initial trust-region radius
 
 For the case that no Hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).

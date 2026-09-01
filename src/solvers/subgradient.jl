@@ -65,7 +65,7 @@ provided_callbacks(::Type{<:SubGradientMethodState}) = union(_MANOPT_DEFAULT_CAL
 function Base.show(io::IO, sgms::SubGradientMethodState)
     print(io, "SubGradientMethodState(; ")
     print(io, "callbacks = ", sgms.callbacks, ", ")
-    print(io, "p = ", sgms.p, "p_star = ", sgms.p_star)
+    print(io, "p = ", sgms.p, ", p_star = ", sgms.p_star)
     print(io, ", retraction_method = ", sgms.retraction_method)
     print(io, ", stepsize = ", sgms.stepsize, ", stopping_criterion = ", sgms.stop, ", X = ", sgms.X)
     return print(io, ")")
@@ -108,7 +108,7 @@ _doc_SGM = """
     subgradient_method!(M, f, ∂f, p; kwargs...)
     subgradient_method!(M, sgo, p; kwargs...)
 
-perform a subgradient method ``p^{(k+1)} = $(_tex(:retr))\\bigl(p^{(k)}, s^{(k)}∂f(p^{(k)})\\bigr)``,
+perform a subgradient method ``p^{(k+1)} = $(_tex(:retr))\\bigl(p^{(k)}, -s^{(k)}∂f(p^{(k)})\\bigr)``,
 where ``$(_tex(:retr))`` is a retraction, ``s^{(k)}`` is a step size.
 
 Though the subgradient might be set valued,

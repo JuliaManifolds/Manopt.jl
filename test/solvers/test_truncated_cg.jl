@@ -34,7 +34,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @test length(get_reason(str)) > 0
     scn = StopWhenCurvatureIsNegative()
     scn1 = Manopt.status_summary(scn)
-    @test scn1 == "A stopping criterion to stop when the is negative\n$(Manopt._MANOPT_INDENT)not reached"
+    @test scn1 == "A stopping criterion to stop when the curvature is negative\n$(Manopt._MANOPT_INDENT)not reached"
     @test repr(scn) == "StopWhenCurvatureIsNegative()"
     smi = StopWhenModelIncreased()
     smi1 = Manopt.status_summary(smi)

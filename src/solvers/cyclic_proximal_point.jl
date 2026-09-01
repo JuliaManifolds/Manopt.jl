@@ -75,7 +75,7 @@ function Base.show(io::IO, cpps::CyclicProximalPointState)
     print(io, "order = "); print(io, cpps.order); print(io, ", ")
     print(io, "order_type = "); print(io, cpps.order_type); print(io, ", ")
     print(io, "p = "); print(io, cpps.p); print(io, ", ")
-    print(io, "stopping_crierion = "); print(io, cpps.stop); print(io, ", ")
+    print(io, "stopping_criterion = "); print(io, cpps.stop); print(io, ", ")
     print(io, "λ = "); print(io, cpps.λ)
     return print(io, ")")
 end

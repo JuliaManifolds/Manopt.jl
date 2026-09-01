@@ -56,13 +56,12 @@ end
 
 Stores a subgradient of the nonsmooth part ``h`` of the proximal gradient objective ``f = g + h``, as well as the stepsize parameter ``λ ∈ ℝ``.
 
-This struct is also a functor in both formats
-    * `(M, p) -> X` to compute the gradient in allocating fashion.
+This struct is also a functor `(M, q) -> X` that computes a subgradient in allocating fashion.
 This is primarily used for computing a subgradient of the cost function ``h(q) + $(_tex(:frac, "1", "2λ"))$(_math(:distance))^2(q, p)`` that defines proximal map in the proximal gradient method. This reads
 ```math
     ∂h(q) - $(_tex(:frac, "1", "λ"))$(_tex(:log))_q p
 ```
-is the proximity point where the proximal map is evaluated, i.e. the argument ``p`` of the proximal map ``$(_tex(:prox))_{λ h} (p)``.
+and ``p`` is the proximity point where the proximal map is evaluated, i.e. the argument ``p`` of the proximal map ``$(_tex(:prox))_{λ h} (p)``.
 
 ## Fields
 
@@ -73,7 +72,7 @@ is the proximity point where the proximal map is evaluated, i.e. the argument ``
 # Constructor
 
 
-    ProximalGradientNonsmoothSubgradient(cost, λ, proximity_point)
+    ProximalGradientNonsmoothSubgradient(X, λ, proximity_point)
 """
 mutable struct ProximalGradientNonsmoothSubgradient{F, R, P} <: AbstractManifoldFunction
     X::F
@@ -142,7 +141,7 @@ $(_kwargs(:retraction_method))
 * `acceleration=(pr, st, k) -> (copyto!(get_manifold(pr), st.a, st.p); st)` by default no acceleration is performed
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenGradientMappingNormLess`](@ref)`(1.0e-2)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:sub_problem; default = "missing"))
-$(_kwargs(:sub_state; default = _glossary[:Variable][:evaluation][:default]))
+$(_kwargs(:sub_state; default = "missing"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct ProximalGradientMethodState{
@@ -500,7 +499,7 @@ The retraction and its inverse are taken from the state.
 # Fields
 
 * `p` - the last iterate
-* `β` - acceleration parameter function or value
+* `β` - acceleration parameter function `k -> β_k`
 * `inverse_retraction_method` - method for inverse retraction
 * `X` - tangent vector for computations
 
@@ -516,7 +515,7 @@ $(_args(:M))
 
 # Keyword arguments
 
-* `β = k -> (k-1)/(k+2)` - acceleration parameter function or value
+* `β = k -> (k-1)/(k+2)` - acceleration parameter function `k -> β_k`
 * `inverse_retraction_method` - method for inverse retraction
 * `p` - initial point
 * `X` - initial tangent vector

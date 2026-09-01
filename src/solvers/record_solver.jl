@@ -16,7 +16,7 @@ end
 """
     step_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, k)
 
-Extend the `i`th step of the solver by a hook to run records,
+Extend the `k`th step of the solver by a hook to run records,
 that were added to the `:Iteration` entry.
 """
 function step_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, k)

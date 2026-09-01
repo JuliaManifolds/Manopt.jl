@@ -26,7 +26,7 @@ Create a `StochasticGradientDescentState` with start point `p`.
 # Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `direction=`[`StochasticGradientRule`](@ref)`(M, `$(_link(:zero_vector))`)`
+* `direction=`[`StochasticGradientRule`](@ref)`(M; X=`$(_link(:zero_vector))`)`
 * `order_type=:Random`
 * `order=Int[]`: specify how to store the order of indices for the next epoche
 $(_kwargs(:retraction_method))
@@ -93,7 +93,7 @@ function Base.show(io::IO, sgds::StochasticGradientDescentState)
     print(io, "p = $(sgds.p), ")
     print(io, "retraction_method = "); print(io, sgds.retraction_method); print(io, ", ")
     print(io, "stepsize = "); print(io, sgds.stepsize); print(io, ", ")
-    print(io, "stopping_crierion = "); print(io, status_summary(sgds.stop; context = :short)); print(io, ", ")
+    print(io, "stopping_criterion = "); print(io, status_summary(sgds.stop; context = :short)); print(io, ", ")
     print(io, "X = "); print(io, sgds.X)
     return print(io, ")")
 end
@@ -124,8 +124,8 @@ end
 """
     StochasticGradientRule<: AbstractGradientGroupDirectionRule
 
-Create a functor `(problem, state k) -> (s,X)` to evaluate the stochatsic gradient,
-that is chose a random index from the `state` and use the internal field for
+Create a functor `(problem, state, k) -> (s, X)` to evaluate the stochastic gradient,
+that is, choose a random index from the `state` and use the internal field for
 evaluation of the gradient in-place.
 
 The default gradient processor, which just evaluates the (stochastic) gradient or a subset thereof.
@@ -186,8 +186,8 @@ end
 """
     default_stepsize(M::AbstractManifold, ::Type{StochasticGradientDescentState})
 
-Deinfe the default step size computed for the [`StochasticGradientDescentState`](@ref),
-which is [`ConstantStepsize`](@ref)`M`.
+Define the default step size computed for the [`StochasticGradientDescentState`](@ref),
+which is [`ConstantStepsize`](@ref)`(M)`.
 """
 function default_stepsize(M::AbstractManifold, ::Type{StochasticGradientDescentState})
     return ConstantStepsize(M)
@@ -222,7 +222,7 @@ $(_kwargs(:evaluation))
   a per cycle permuted sequence (`:Random`, default) or the default `:Linear` one.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(10000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`StochasticGradientDescentState`](@ref)`)"))
-* `order=[1:n]`: the initial permutation, where `n` is the number of gradients in `gradF`.
+* `order=collect(1:n)`: the initial permutation, where `n` is the number of gradients in `grad_f`.
 $(_kwargs(:retraction_method))
 
 $(_note(:OtherKeywords))

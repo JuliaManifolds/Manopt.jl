@@ -164,7 +164,7 @@ A functor for testing if the norm of residual at the current iterate is reduced
 either by a power of 1+θ or by a factor κ compared to the norm of the initial
 residual. The criterion hence reads
 
-``$(_tex(:norm, "r_k"; index = "p")) ≦ $(_tex(:norm, "r_0"; index = "p^{(0)}")) $(_tex(:min)) $(_tex(:bigl))( κ, $(_tex(:norm, "r_0"; index = "p^{(0)}"))  $(_tex(:bigr)))``.
+``$(_tex(:norm, "r_k"; index = "p")) ≦ $(_tex(:norm, "r_0"; index = "p^{(0)}")) $(_tex(:min)) $(_tex(:bigl))( κ, $(_tex(:norm, "r_0"; index = "p^{(0)}"))^{θ}  $(_tex(:bigr)))``.
 
 # Fields
 
@@ -248,7 +248,7 @@ end
 @doc """
     StopWhenTrustRegionIsExceeded <: StoppingCriterion
 
-A stopping criterion to stop when next iterate is larger than the trust-region radius ``θ ≤ $(_tex(:norm, "Y^{(k)}^{*}"; index = "p^{(k)}"))``.
+A stopping criterion to stop when next iterate is larger than the trust-region radius ``Δ ≤ $(_tex(:norm, "Y^{(k)}"; index = "p^{(k)}"))``.
 
 This can for example be used Steihaug-Toint truncated conjugate gradient method as a subsolver
 for [`trust_regions`](@ref).
@@ -293,7 +293,7 @@ function (c::StopWhenTrustRegionIsExceeded)(
 end
 function get_reason(c::StopWhenTrustRegionIsExceeded)
     if c.at_iteration >= 0
-        return "Trust-region radius violation (‖Y‖² = $(c.YPY)) >= $(c.trr^2) = trust_region_radius²). \n"
+        return "Trust-region radius violation: ‖Y‖² = $(c.YPY) >= $(c.trr^2) = trust_region_radius². \n"
     end
     return ""
 end
@@ -302,7 +302,7 @@ function status_summary(c::StopWhenTrustRegionIsExceeded; context::Symbol = :def
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     (context === :inline) && (return "Trust region exceeded:$(_MANOPT_INDENT)$s")
-    return "A stopping criterion to stop when the trust region radius (0.0) is exceeded.\n$(_MANOPT_INDENT)$s"
+    return "A stopping criterion to stop when the trust region radius ($(c.trr)) is exceeded.\n$(_MANOPT_INDENT)$s"
 end
 function Base.show(io::IO, ::StopWhenTrustRegionIsExceeded)
     return print(io, "StopWhenTrustRegionIsExceeded()")
@@ -350,7 +350,7 @@ function (c::StopWhenCurvatureIsNegative)(
 end
 function get_reason(c::StopWhenCurvatureIsNegative)
     if c.at_iteration >= 0
-        return "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(c.value))) <= 0).\n"
+        return "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_p = $(c.value) <= 0).\n"
     end
     return ""
 end
@@ -359,7 +359,7 @@ function status_summary(c::StopWhenCurvatureIsNegative; context::Symbol = :defau
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     (context === :inline) && (return "Curvature is negative:$(_MANOPT_INDENT)$s")
-    return "A stopping criterion to stop when the is negative\n$(_MANOPT_INDENT)$s"
+    return "A stopping criterion to stop when the curvature is negative\n$(_MANOPT_INDENT)$s"
 end
 function Base.show(io::IO, ::StopWhenCurvatureIsNegative)
     return print(io, "StopWhenCurvatureIsNegative()")
@@ -368,7 +368,7 @@ end
 @doc """
     StopWhenModelIncreased <: StoppingCriterion
 
-A functor for testing if the curvature of the model value increased.
+A functor for testing if the model value increased.
 
 # Fields
 

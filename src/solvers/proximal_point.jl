@@ -9,7 +9,7 @@
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:stopping_criterion; name = "stop"))
-* `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``k``
+* `λ`:         a function for the values of ``λ_k`` per iteration/cycle ``k``
 
 # Constructor
 
@@ -24,7 +24,7 @@ $(_args(:M))
 ## Keyword arguments
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
-* `λ=k -> 1.0` a function to compute the ``λ_k, k ∈ $(_tex(:Cal, "N"))``,
+* `λ=k -> 1.0`: a function to compute ``λ_k`` for ``k ∈ ℕ``,
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))
 

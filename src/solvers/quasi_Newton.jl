@@ -25,9 +25,9 @@ $(_fields([:vector_transport_method]))
 
 # Constructor
 
-    QuasiNewtonState(M::AbstractManifold, p; kwargs...)
+    QuasiNewtonState(M::AbstractManifold; kwargs...)
 
-Generate the Quasi Newton state on the manifold `M` with start point `p`.
+Generate the Quasi Newton state on the manifold `M`.
 
 ## Keyword arguments
 
@@ -146,7 +146,7 @@ function Base.show(io::IO, qns::QuasiNewtonState)
     print(io, ", η = ", qns.η, ", X = ", qns.X, ", sk = ", qns.sk, ", yk = ", qns.yk, ", ")
     print(io, "nondescent_direction_behavior = ", qns.nondescent_direction_behavior, ", nondescent_direction_value = ", qns.nondescent_direction_value, ", ")
     print(io, "preconditioner = ", qns.preconditioner, ", retraction_method = ", qns.retraction_method, ", stepsize = ", qns.stepsize, ", ")
-    print(io, "stopping_critertion = ", qns.stop, ", X_old = ", qns.X_old, ", vector_transport_method = ", qns.vector_transport_method)
+    print(io, "stopping_criterion = ", qns.stop, ", X_old = ", qns.X_old, ", vector_transport_method = ", qns.vector_transport_method)
     return print(io, ")")
 end
 function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
@@ -186,7 +186,7 @@ end
 function default_stepsize(M::AbstractManifold, ::Type{QuasiNewtonState}; kwargs...)
     return Manopt.WolfePowellLinesearchStepsize(M; stop_when_stepsize_less = 1.0e-10, kwargs...)
 end
-_doc_QN_init_scaling = raw"``\frac{s⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}}``"
+_doc_QN_init_scaling = raw"``\frac{s⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}^2}``"
 _doc_QN = """
     quasi_Newton(M, f, grad_f, p; kwargs...)
     quasi_Newton!(M, f, grad_f, p; kwargs...)
