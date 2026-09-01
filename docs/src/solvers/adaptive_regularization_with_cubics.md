@@ -39,7 +39,7 @@ Since the sub problem is given on the tangent space, you have to provide
 
 ```julia
 arc_obj = AdaptiveRegularizationWithCubicsModelObjective(mho, σ)
-sub_problem = DefaultProblem(TangentSpaceAt(M,p), arc_obj)
+sub_problem = DefaultManoptProblem(TangentSpace(M, p), arc_obj)
 ```
 
 where `mho` is the Hessian objective of `f` to solve.

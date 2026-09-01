@@ -125,7 +125,7 @@ function set_iterate!(epms::ExactPenaltyMethodState, M, p)
     epms.p = p
     return epms
 end
-provided_callbacks(::Type{<:ExactPenaltyMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubSolver, :SubSolver])
+provided_callbacks(::Type{<:ExactPenaltyMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver])
 get_callbacks(epms::ExactPenaltyMethodState) = epms.callbacks
 function Base.show(io::IO, epms::ExactPenaltyMethodState)
     print(io, "ExactPenaltyMethodState("); print(io, epms.sub_problem); print(io, ", "); print(io, epms.sub_state)
@@ -453,9 +453,9 @@ function step_solver!(
     set_iterate!(epms.sub_state, M, copy(M, epms.p))
     set_parameter!(epms, Val(:StoppingCriterion), Val(:MinIterateChange), epms.ϵ)
 
-    callback(:BeforeSubSolver, amp, epms, i)
+    callback(:BeforeSubsolver, amp, epms, i)
     new_p = get_solver_result(solve!(epms.sub_problem, epms.sub_state))
-    callback(:SubSolver, amp, epms, i)
+    callback(:Subsolver, amp, epms, i)
     copyto!(M, epms.p, new_p)
 
     # get new evaluation of penalty

@@ -87,7 +87,7 @@ using LinearAlgebra: I, tr
         )
         @test sk_record == [
             (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
-            (:BeforeStep, 1), (:BeforeSubSolver, 1), (:SubSolver, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
         ]
     end
 end

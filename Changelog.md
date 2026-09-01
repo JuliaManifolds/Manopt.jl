@@ -41,6 +41,7 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `LevenbergMarquardt` now defaults to a coordinate normal-system sub solver on manifolds
   with box constraints, where the default sub solver errored before.
 * the allocating `exact_penalty_method` forwarded the equality-constraint count as the inequality count.
+* `exact_penalty_method` now spells its sub-solver callbacks `:BeforeSubsolver` and `:Subsolver`, like all other solvers.
 * `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
 * `primal_dual_semismooth_Newton!` now works in place of its point and is exported.
 * `ProximalGradientNonsmoothCost` now computes the documented `1/(2λ)` proximity weight instead of `λ/2`.

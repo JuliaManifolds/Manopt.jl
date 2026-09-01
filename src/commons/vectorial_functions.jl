@@ -208,7 +208,7 @@ function VectorDifferentialFunction(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
     ) where {I <: Integer, F, J, FT <: AbstractVectorialType, JT <: AbstractVectorialType}
     f_ = _maybe_wrap_vector_function(f, p, function_type, evaluation)
-    Jf_ = _maybe_wrap_jacobian_function(Jf, p, jacobian_type, evaluation)
+    Jf_ = maybe_wrap_function(Jf, p, evaluation; result = :Vector)
     return VectorDifferentialFunction{FT, JT, Missing, typeof(f_), typeof(Jf_), Missing, I}(
         f_, function_type, Jf_, jacobian_type, missing, missing, range_dimension
     )
@@ -223,7 +223,7 @@ function VectorDifferentialFunction(
         JT <: AbstractVectorialType, AJT <: Union{<:AbstractVectorialType, Missing},
     }
     f_ = _maybe_wrap_vector_function(f, p, function_type, evaluation)
-    Jf_ = _maybe_wrap_jacobian_function(Jf, p, jacobian_type, evaluation)
+    Jf_ = maybe_wrap_function(Jf, p, evaluation; result = :Vector)
     aJf_ = _maybe_wrap_adjoint_jacobian_function(aJf, p, adjoint_jacobian_type, evaluation)
     return VectorDifferentialFunction{FT, JT, AJT, typeof(f_), typeof(Jf_), typeof(aJf_), I}(
         f_, function_type, Jf_, jacobian_type, aJf_, adjoint_jacobian_type, range_dimension
