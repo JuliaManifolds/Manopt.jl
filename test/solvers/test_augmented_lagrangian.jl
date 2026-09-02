@@ -27,6 +27,21 @@ using LinearAlgebra: I, tr
             g = g, grad_g = grad_g, gradient_inequality_range = NestedPowerRepresentation(),
         )
         @test sol3 ≈ sol atol = 5.0e-5
+        # decorating keywords must work for the in-place variant too, and an
+        # already decorated objective must be accepted
+        sol4 = copy(M, p0)
+        augmented_Lagrangian_method!(
+            M, f, grad_f, sol4; g = g, grad_g = grad_g, count = [:Cost],
+        )
+        @test sol4 ≈ sol atol = 5.0e-5
+        sol5 = copy(M, p0)
+        dco = Manopt.decorate_objective!(
+            M, ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M);
+            count = [:Cost],
+        )
+        augmented_Lagrangian_method!(M, dco, sol5)
+        @test get_count(dco, :Cost) > 0
+        @test sol5 ≈ sol atol = 5.0e-5
         co = ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M)
         mp = DefaultManoptProblem(M, co)
         # dummy ALM problem

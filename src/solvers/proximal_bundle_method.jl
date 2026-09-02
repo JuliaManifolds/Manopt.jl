@@ -288,7 +288,7 @@ $(_kwargs(:sub_problem; default = "`[`proximal_bundle_method_subsolver`](@ref)`"
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
 $(_kwargs(:vector_transport_method))
 * `α₀=1.2`:          initialization value for `α`, used to update `η`
-* `δ=1.0`:           parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(i + 1)``, else ``μ += δ μ``
+* `δ=-1.0`:          parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(k + 1)``, else ``μ += δ μ``
 * `ε=1e-2`:          stepsize-like parameter related to the injectivity radius of the manifold
 * `μ=0.5`:           initial proximal parameter for the subproblem
 
@@ -360,6 +360,10 @@ function initialize_solver!(
     pbms.bundle = [(copy(M, pbms.p), copy(M, pbms.p, pbms.X))]
     empty!(pbms.λ)
     push!(pbms.λ, zero(R))
+    empty!(pbms.lin_errors)
+    push!(pbms.lin_errors, zero(R))
+    empty!(pbms.approx_errors)
+    push!(pbms.approx_errors, zero(R))
     return pbms
 end
 function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, k)

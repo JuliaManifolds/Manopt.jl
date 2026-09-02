@@ -156,7 +156,7 @@ function GradientSamplingState(
         sampled_points::Vector{P} = [copy(M, p) for _ in 1:(sample_size + 1)],
         sampled_vectors::Vector{T} = [copy(M, p, X) for _ in 1:(sample_size + 1)],
         sampling_radius::R = 0.5,
-        convex_hull_coeffs::Vector{R} = [zero(R) for _ in 1:(sample_size + 1)],
+        convex_hull_coeffs::Vector{R} = [zero(sampling_radius) for _ in 1:(sample_size + 1)],
         sampling_radius_reduction::R = 0.5,
         sampling_radius_threshold::R = 1.0e-2,
         subgradient_norm_reduction::R = 0.5,

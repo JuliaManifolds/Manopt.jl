@@ -219,7 +219,7 @@ To this end, a swarm $_doc_swarm of particles is moved around the manifold `M` i
 For every particle ``s_k^{(i)}`` the new particle velocities ``X_k^{(i)}`` are computed in every step ``i`` of the algorithm by
 
 ```math
-X_k^{(i)} = ω $(_math(:VectorTransport, "s_k^{(i)", "s_k^{(i-1)}")) X_k^{(i-1)} + c r_1  $(_tex(:invretr))_{s_k^{(i)}}(p_k^{(i)}) + s r_2 $(_tex(:invretr))_{s_k^{(i)}}(p),
+X_k^{(i)} = ω $(_math(:VectorTransport, "s_k^{(i-1)}", "s_k^{(i)}")) X_k^{(i-1)} + c r_1  $(_tex(:invretr))_{s_k^{(i)}}(p_k^{(i)}) + s r_2 $(_tex(:invretr))_{s_k^{(i)}}(p),
 ```
 
 

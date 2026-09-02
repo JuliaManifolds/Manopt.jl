@@ -221,7 +221,6 @@ end
 get_iterate(pgms::ProximalGradientMethodState) = pgms.p
 
 function set_iterate!(pgms::ProximalGradientMethodState, M, p)
-    pgms.p = p
     copyto!(M, pgms.p, p)
     return pgms
 end

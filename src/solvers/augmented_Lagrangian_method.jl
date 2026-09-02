@@ -91,7 +91,8 @@ mutable struct AugmentedLagrangianMethodState{
     stop::TStopping
     last_stepsize::R
     function AugmentedLagrangianMethodState(
-            M::AbstractManifold, co::ConstrainedManifoldObjective, sub_problem::Pr, sub_state::St;
+            M::AbstractManifold, co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective},
+            sub_problem::Pr, sub_state::St;
             callbacks::C = Dict{Symbol, Function}(),
             p::P = rand(M),
             ϵ::R = 1.0e-3,
@@ -136,14 +137,14 @@ mutable struct AugmentedLagrangianMethodState{
     end
 end
 function AugmentedLagrangianMethodState(
-        M::AbstractManifold, co::ConstrainedManifoldObjective,
+        M::AbstractManifold, co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective},
         sub_problem, sub_state::AbstractEvaluationType;
         kwargs...,
     )
     return AugmentedLagrangianMethodState(M, co, sub_problem; evaluation = sub_state, kwargs...)
 end
 function AugmentedLagrangianMethodState(
-        M::AbstractManifold, co::ConstrainedManifoldObjective, sub_problem;
+        M::AbstractManifold, co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}, sub_problem;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
     sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
@@ -385,9 +386,8 @@ function augmented_Lagrangian_method!(
         M = M,
         p = p,
     )
-    dcmo = decorate_objective!(M, cmo; kwargs...)
     return augmented_Lagrangian_method!(
-        M, dcmo, p;
+        M, cmo, p;
         evaluation = evaluation,
         equality_constraints = equality_constraints,
         inequality_constraints = inequality_constraints,

@@ -73,9 +73,19 @@ defined on the tangent space at `p` at the tangent vector `X`.
 
 This can be evaluated in-place of `Y`.
 """
+function get_linear_operator(
+        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X
+    )
+    return get_linear_operator(M, get_objective(admo, false), p, X)
+end
 function get_linear_operator(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p, X)
     Y = copy(M, p, X)
     return slso.A!(M, Y, p, X)
+end
+function get_linear_operator!(
+        M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p, X
+    )
+    return get_linear_operator!(M, Y, get_objective(admo, false), p, X)
 end
 function get_linear_operator!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p, X)
     return slso.A!(M, Y, p, X)
@@ -94,15 +104,24 @@ This can be evaluated in-place of `Y`.
 """
 
 @doc "$(_doc_get_vector_field_slso)"
+function get_vector_field(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_vector_field(M, get_objective(admo, false), p)
+end
 function get_vector_field(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p)
     Y = zero_vector(M, p)
     return slso.b!(M, Y, p)
+end
+function get_vector_field!(M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p)
+    return get_vector_field!(M, Y, get_objective(admo, false), p)
 end
 function get_vector_field!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p)
     return slso.b!(M, Y, p)
 end
 # Also on TpM – shortcuts
 @doc "$(_doc_get_vector_field_slso)"
+function get_vector_field(TpM::TangentSpace, admo::AbstractDecoratedManifoldObjective)
+    return get_vector_field(TpM, get_objective(admo, false))
+end
 function get_vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjective)
     M = base_manifold(TpM)
     p = base_point(TpM)
@@ -110,6 +129,9 @@ function get_vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjectiv
     return slso.b!(M, Y, p)
 end
 @doc "$(_doc_get_vector_field_slso)"
+function get_vector_field!(TpM::TangentSpace, Y, admo::AbstractDecoratedManifoldObjective)
+    return get_vector_field!(TpM, Y, get_objective(admo, false))
+end
 function get_vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective)
     M = base_manifold(TpM)
     p = base_point(TpM)

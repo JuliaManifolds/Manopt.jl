@@ -67,6 +67,15 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * the box quasi-Newton update now treats a deactivated `initial_scale` (as set by a `preconditioner`) as `1`, instead of erroring.
 * `StopWhenChangeLess(ε)` without a manifold now stores its iterate generically, instead of allocating storage on a `DefaultManifold`.
 * the allocating `LevenbergMarquardt` now honours `jacobian_tangent_basis` like its in-place variant, instead of silently ignoring it.
+* `adaptive_regularization_with_cubics` now also runs with a closed-form sub solver; setting the iterate of a `ClosedFormSubSolverState` is a no-op instead of an error.
+* `augmented_Lagrangian_method!(M, f, grad_f, p; …)` no longer decorates its objective twice, so `count=` and `cache=` work for the in-place variant and an already decorated objective is accepted.
+* `PrimalDualSemismoothNewtonState` now defaults its dual variable `X` to `zero_vector(N, n)`, the tangent space it is actually used in.
+* `primal_dual_semismooth_Newton` now uses the `vector_transport_method=` keyword also in its ∂X₁₂ block, and expands that block in the basis at the iterate `p` instead of at `m`.
+* `initialize_solver!` for a `ProximalBundleMethodState` now also resets `lin_errors` and `approx_errors`, so a state can be reused for a second `solve!`.
+* `set_iterate!` for a `ProximalGradientMethodState` no longer rebinds the state's iterate to the caller's point.
+* `get_linear_operator`(`!`) and `get_vector_field`(`!`) now pass decorated objectives through, so `conjugate_residual` accepts `count=` and `cache=` and actually uses the cache.
+* the documented `GradientSamplingState(M)` constructor works again; its `convex_hull_coeffs` default referred to the static parameter `R`, which is not bound while keyword defaults are evaluated.
+* `mesh_adaptive_direct_search` now moves the poll base point to the current iterate before the search, so the search is handed a direction tangent at that iterate and the iterates stay on the manifold.
 * the cautious quasi-Newton matrix update now evaluates its bound at the previous iterate, as documented.
 * a skipped cautious quasi-Newton matrix update now still transports the basis to the new tangent space.
 * `QuasiNewtonState` now activates the default initial scaling when no preconditioner

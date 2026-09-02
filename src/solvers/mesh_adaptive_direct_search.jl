@@ -198,10 +198,8 @@ function status_summary(ltap::LowerTriangularAdaptivePoll; context::Symbol = :de
     return s
 end
 function (ltap::LowerTriangularAdaptivePoll)(
-        amp::AbstractManoptProblem,
-        mesh_size::Real;
-        scale_mesh::Real = 1.0,
-        max_stepsize::Real = Inf,
+        amp::AbstractManoptProblem, mesh_size::Real;
+        scale_mesh::Real = 1.0, max_stepsize::Real = Inf,
     )
     M = get_manifold(amp)
     n = manifold_dimension(M)
@@ -585,9 +583,7 @@ function mesh_adaptive_direct_search!(M::AbstractManifold, f, p; kwargs...)
     return mesh_adaptive_direct_search!(M, mco, p; kwargs...)
 end
 function mesh_adaptive_direct_search!(
-        M::AbstractManifold,
-        mco::AbstractManifoldCostObjective,
-        p;
+        M::AbstractManifold, mco::AbstractManifoldCostObjective, p;
         callbacks = Dict{Symbol, Function}(),
         max_stepsize::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M),
         mesh_basis::B = default_basis(M, typeof(p)),
@@ -649,14 +645,13 @@ function step_solver!(amp::AbstractManoptProblem, madss::MeshAdaptiveDirectSearc
     M = get_manifold(amp)
     n = manifold_dimension(M)
     # search if the last poll or last search was successful
-    if is_successful(madss.search) || is_successful(madss.poll)
+    last_step_successful = is_successful(madss.search) || is_successful(madss.poll)
+    # move the poll base point – and with it the stored descent direction – to the iterate
+    update_basepoint!(M, madss.poll, madss.p)
+    if last_step_successful
         madss.search(
-            amp,
-            madss.mesh_size,
-            get_candidate(madss.poll),
-            get_descent_direction(madss.poll);
-            scale_mesh = madss.scale_mesh,
-            max_stepsize = madss.max_stepsize,
+            amp, madss.mesh_size, get_candidate(madss.poll), get_descent_direction(madss.poll);
+            scale_mesh = madss.scale_mesh, max_stepsize = madss.max_stepsize,
         )
         callback(:Search, amp, madss, k)
     end
@@ -664,11 +659,9 @@ function step_solver!(amp::AbstractManoptProblem, madss::MeshAdaptiveDirectSearc
     if is_successful(madss.search)
         copyto!(M, madss.p, get_candidate(madss.search))
         update_basepoint!(M, madss.poll, madss.p)
-    else #search was not successful: poll
-        update_basepoint!(M, madss.poll, madss.p)
+    else #search was not successful: poll (base point is already up to date)
         madss.poll(
-            amp, madss.mesh_size;
-            scale_mesh = madss.scale_mesh, max_stepsize = madss.max_stepsize,
+            amp, madss.mesh_size; scale_mesh = madss.scale_mesh, max_stepsize = madss.max_stepsize,
         )
         callback(:Poll, amp, madss, k)
         # For successful poll, copy over iterate

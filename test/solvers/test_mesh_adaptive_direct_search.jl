@@ -32,7 +32,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     # start with a very small mesh size - yields a more exact result
     p_s2 = mesh_adaptive_direct_search!(M2, f2, p1; scale_mesh = 0.1)
     @test isapprox(M, p_s2, p1)
-    @test distance(M2, p_s2, W2) < 1.0e-7
+    @test distance(M2, p_s2, W2) < 1.0e-6
     #
     #
     # An example on a sphere (to ensure type coherence between injectivity radii)

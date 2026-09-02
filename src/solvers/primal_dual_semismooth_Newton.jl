@@ -66,7 +66,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 * `update_dual_base`:          function to update the dual base
 * `update_primal_base`:        function to update the primal base
 $(_fields(:vector_transport_method))
-$(_fields(:X))
+$(_fields(:X; M = "N", p = "n"))
 
 where for the update functions a [`AbstractManoptProblem`](@ref) `amp`,
 [`AbstractManoptSolverState`](@ref) `ams` and the current iterate `i` are the arguments.
@@ -94,7 +94,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))
 * `update_dual_base=missing`: function `(amp, ams, k) -> n` to update the dual base point; `missing` keeps `n` fixed
 * `update_primal_base=missing`: function `(amp, ams, k) -> m` to update the primal base point; `missing` keeps `m` fixed
 $(_kwargs(:vector_transport_method))
-* `X=`$(Manopt._link(:zero_vector))
+* `X=`$(Manopt._link(:zero_vector; M = "N", p = "n"))
 """
 mutable struct PrimalDualSemismoothNewtonState{
         P, Q, T, C <: AbstractDict{Symbol}, RM <: AbstractRetractionMethod,
@@ -129,7 +129,7 @@ mutable struct PrimalDualSemismoothNewtonState{
             inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
             retraction_method::RM = default_retraction_method(M, typeof(p)),
             vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
-            X::T = zero_vector(M, p),
+            X::T = zero_vector(N, n),
         ) where {
             P, Q, T, C <: AbstractDict{Symbol}, RM <: AbstractRetractionMethod,
             IRM <: AbstractInverseRetractionMethod, VTM <: AbstractVectorTransportMethod,
@@ -645,12 +645,12 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
         eⱼ[j] = 1
         Ξⱼ = get_vector(N, pdsn.n, eⱼ, Ξ)
         hⱼ = -pdsn.primal_stepsize * adjoint_linearized_operator(tmp, pdsn.m, pdsn.n, Ξⱼ) # officially ∈ T*mM, but embedded in TmM
-        Hⱼ = vector_transport_to(M, pdsn.m, hⱼ, pdsn.p)
+        Hⱼ = vector_transport_to(M, pdsn.m, hⱼ, pdsn.p, pdsn.vector_transport_method)
         C₂ⱼ = differential_exp_argument(M, pdsn.p, q₃, Hⱼ)
         Bⱼ = get_differential_primal_prox(tmp, pdsn.primal_stepsize, q₂, C₂ⱼ)
         A₂ⱼ = -differential_log_argument(M, pdsn.p, q₁, Bⱼ)
 
-        ∂X₁₂j = get_coordinates(M, pdsn.m, A₂ⱼ, DefaultOrthonormalBasis())
+        ∂X₁₂j = get_coordinates(M, pdsn.p, A₂ⱼ, DefaultOrthonormalBasis())
 
         sp_∂X₁₂j = sparsevec(∂X₁₂j)
         dropzeros!(sp_∂X₁₂j)

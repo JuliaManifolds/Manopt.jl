@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test
+using Manifolds, Manopt, Test, LRUCache
 
 @testset "Conjugate Residual" begin
     M = ℝ^2
@@ -43,6 +43,23 @@ using Manifolds, Manopt, Test
         cb(symbol, problem, state, k) = append!(cr_record, [(symbol, k)])
         conjugate_residual(TpM, A, b, X0; callbacks = cb)
         @test cr_record[1:6] == [(:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0), (:BeforeStep, 1), (:Stepsize, 1), (:Step, 1)]
+    end
+
+    @testset "Decorated objectives" begin
+        # `count=`/`cache=` are accepted keywords, so the accessors must pass through the
+        # decorators rather than the solver unwrapping them (which would bypass a cache)
+        for kwargs in (
+                (; count = [:Gradient]),
+                (; count = [:Gradient], warm_start = false),
+                (; cache = (:LRU, [:Cost, :Gradient], 10)),
+            )
+            @test norm(ps - conjugate_residual(TpM, A, b, X0; kwargs...)) < 3.0e-15
+        end
+        # the decorator has to survive into the solver, otherwise a cache is never used
+        o_c, _ = conjugate_residual(
+            TpM, A, b, X0; count = [:Gradient], return_state = true, return_objective = true
+        )
+        @test o_c isa Manopt.ManifoldCountObjective
     end
 
     scs = StopWhenRelativeResidualLess(1.0, 0.1)
