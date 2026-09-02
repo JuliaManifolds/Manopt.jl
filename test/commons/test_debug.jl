@@ -324,7 +324,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         d2(mp, st, 2)
         @test t == d2.last_time # but not afterwards
         @test endswith(String(take!(io)), "seconds")
-        d3 = DebugTime(; start = true, mode = :iterative, io = io)
+        d3 = DebugTime(; start = true, mode = :Iterative, io = io)
         @test d3.last_time != Nanosecond(0) # changes on first call
         t = d3.last_time
         d3(mp, st, 2)
@@ -339,8 +339,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test repr(DebugTime()) == drs
         drs2 = "(:IterativeTime, \"time spent: %s\")"
         drs2h = "a DebugAction to print time per step iteratively"
-        @test Manopt.status_summary(DebugTime(; mode = :iterative); context = :short) == drs2
-        @test Manopt.status_summary(DebugTime(; mode = :iterative)) == drs2h
+        @test Manopt.status_summary(DebugTime(; mode = :Iterative); context = :short) == drs2
+        @test Manopt.status_summary(DebugTime(; mode = :Iterative)) == drs2h
         drs3 = "(:Time, \"time spent: %s\")"
         drs3h = "a DebugAction to print time per step cumulatively"
         @test Manopt.status_summary(DebugTime(; mode = :cumulative); context = :short) == drs3

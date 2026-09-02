@@ -928,6 +928,12 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     last_gcd_stepsize::F
 end
 
+# a deactivated `initial_scale` (`nothing`, used together with a preconditioner) acts as 1,
+# the same convention as `update_hessian!` in src/solvers/quasi_Newton.jl
+function _box_initial_scale(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    return isnothing(gh.qn_du.initial_scale) ? one(gh.current_scale) : gh.qn_du.initial_scale
+end
+
 function status_summary(
         d::QuasiNewtonLimitedMemoryBoxDirectionUpdate; context::Symbol = :default
     )
@@ -970,7 +976,7 @@ function QuasiNewtonLimitedMemoryBoxDirectionUpdate(
         typeof(qn_du), F, typeof(M_11), typeof(buffer_inner_Sk_X),
     }(
         qn_du,
-        qn_du.initial_scale,
+        isnothing(qn_du.initial_scale) ? one(F) : convert(F, qn_du.initial_scale),
         M_11,
         M_21,
         M_22,
@@ -1025,7 +1031,7 @@ function hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::A
     normX_sqr = norm(M, p, X)^2
 
     if m == 0 || num_nonzero_rho == 0
-        return gh.qn_du.initial_scale \ normX_sqr
+        return _box_initial_scale(gh) \ normX_sqr
     end
 
     ii = 1
@@ -1054,7 +1060,7 @@ function hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::A
     num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
     if m == 0 || num_nonzero_rho == 0
-        return inv(gh.qn_du.initial_scale)
+        return inv(_box_initial_scale(gh))
     end
 
     ii = 1
@@ -1085,7 +1091,7 @@ function hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstra
 
     Yb = get_at_bound_index(M, Y, b)
     if m == 0 || num_nonzero_rho == 0
-        return gh.qn_du.initial_scale * Yb
+        return _box_initial_scale(gh) * Yb
     end
 
     ii = 1
@@ -1132,7 +1138,7 @@ function update_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMem
 
     if (last_safe_index == -1)
         # All memory yield zero inner products
-        gh.current_scale = inv(gh.qn_du.initial_scale)
+        gh.current_scale = inv(_box_initial_scale(gh))
         gh.M_11 = fill(0.0, 0, 0)
         gh.M_21 = fill(0.0, 0, 0)
         gh.M_22 = fill(0.0, 0, 0)
@@ -1148,7 +1154,7 @@ function update_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMem
     # written this way to avoid floating point overflow (when ynorm is finite but ynorm^2 is Inf)
     # see CUTEst EXPQUAD problem for an example
     ynorm = norm(M, p, gh.qn_du.memory_y[last_safe_index])
-    gh.current_scale = ((gh.qn_du.ρ[last_safe_index] * ynorm) * ynorm) / gh.qn_du.initial_scale
+    gh.current_scale = ((gh.qn_du.ρ[last_safe_index] * ynorm) * ynorm) / _box_initial_scale(gh)
 
     tsksk = Symmetric(zeros(num_nonzero_rho, num_nonzero_rho))
     ii = 1

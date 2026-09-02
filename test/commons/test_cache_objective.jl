@@ -319,12 +319,12 @@ end
         @test X == f_f_grad(M, p)[2]
         Y = similar(X)
         #Update Y in-place but without evaluating the gradient but taking it from the cache
-        get_gradient!(M, Y, lco, p)
+        get_gradient!(M, Y, lco2a, p)
         @test Y == X
         # But is Y also fixed in there ? note that a reference to the cache was returned.
         Y .+= 1
         Z = similar(Y)
-        get_gradient!(M, Z, lco, p)
+        get_gradient!(M, Z, lco2a, p)
         @test Z == X
         get_gradient!(M, Y, lco, -p) #trigger cache with in-place
         @test Y == -X

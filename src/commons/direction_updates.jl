@@ -82,12 +82,14 @@ function (mg::MomentumGradientRule)(
     M = get_manifold(mp)
     p = get_iterate(s)
     step, dir = mg.direction(mp, s, k) #get inner direction and step size
+    # store the direction without the step size folded in, so that the solver applies
+    # the step exactly once: the displacement is `-step * X_old`
     mg.X_old =
         mg.momentum *
-        vector_transport_to(M, mg.p_old, mg.X_old, p, mg.vector_transport_method) -
-        step .* dir
+        vector_transport_to(M, mg.p_old, mg.X_old, p, mg.vector_transport_method) + dir
     copyto!(M, mg.p_old, p)
-    return step, -mg.X_old
+    # return a copy: the solver binds this to its gradient buffer and overwrites it next step
+    return step, copy(M, p, mg.X_old)
 end
 function Base.show(io::IO, mgr::MomentumGradientRule)
     print(io, "MomentumGradientRule(; momentum = ", mgr.momentum)

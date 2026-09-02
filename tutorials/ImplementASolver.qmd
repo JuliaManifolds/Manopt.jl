@@ -167,6 +167,7 @@ that is done by `Manopt.jl`. For the iterate access we just have to pass `p`.
 ```{julia}
 #| output: false
 function initialize_solver!(mp::AbstractManoptProblem, rws::RandomWalkState)
+    M = get_manifold(mp) # for ease of use get the manifold from the problem
     copyto!(M, rws.q, rws.p) # Set best q to p^{(0)}
     return rws
 end
@@ -275,8 +276,8 @@ function random_walk_algorithm!(
 )
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
-    s = RandomWalkState(M, [1.0, 0.0, 0.0];
-        σ=0.1, retraction_method=retraction_method, stopping_criterion=stopping_criterion,
+    s = RandomWalkState(M, p;
+        σ=σ, retraction_method=retraction_method, stopping_criterion=stopping_criterion,
     )
     ds = decorate_state!(s; kwargs...)
     solve!(dmp, ds)

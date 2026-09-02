@@ -4,7 +4,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
 @testset "The Proximal Bundle Method" begin
     M = Hyperbolic(4)
     p = [0.0, 0.0, 0.0, 0.0, 1.0]
-    p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
+    p0 = exp(M, p, [1.0, 0.0, 0.0, 0.0, 0.0])
     pbms = ProximalBundleMethodState(M; p = p0, stopping_criterion = StopAfterIteration(200))
     @test get_iterate(pbms) == p0
     # Check that Manifold+State is erroring since a problem is missing
@@ -171,7 +171,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
     @testset "Trigger the case where the bundle is not transported" begin
         M = Hyperbolic(4)
         p = [0.0, 0.0, 0.0, 0.0, 1.0]
-        p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
+        p0 = exp(M, p, [1.0, 0.0, 0.0, 0.0, 0.0])
         pbms = ProximalBundleMethodState(M; p = p0, stopping_criterion = StopAfterIteration(200))
         f(M, q) = distance(M, q, p)
         ∂f(M, q) = (distance(M, p, q) == 0) ? zero_vector(M, q) : (-log(M, q, p) / max(10 * eps(Float64), distance(M, p, q)))

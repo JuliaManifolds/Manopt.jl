@@ -109,8 +109,7 @@ Similarly for the Hessian, where in our example the embeddings of both the point
 #| output: false
 function Hess2_f(M, p, X)
     return riemannian_Hessian(
-        M,
-        p,
+        M, p,
         ∇f(get_embedding(M), embed(M, p)),
         ∇²f(get_embedding(M), embed(M, p), embed(M, p, X)),
         X
@@ -137,14 +136,9 @@ Now if we want to use these in optimization we would require these two functions
 ```{julia}
 p0 = [1.0 0.0; 0.0 1.0; 0.0 0.0; 0.0 0.0; 0.0 0.0]
 r1 = adaptive_regularization_with_cubics(
-    M,
-    f,
-    grad_f,
-    Hess_f,
-    p0;
+    M, f, grad_f, Hess_f, p0;
     debug=[:Iteration, :Cost, "\n"],
-    return_objective=true,
-    return_state=true,
+    return_objective=true, return_state=true,
 )
 q1 = get_solver_result(r1)
 r1
@@ -155,16 +149,10 @@ by specifying `objective_type=:Euclidean`.
 
 ```{julia}
 r2 = adaptive_regularization_with_cubics(
-    M,
-    f,
-    ∇f,
-    ∇²f,
-    p0;
+    M, f, ∇f, ∇²f, p0;
     # The one line different to specify our grad/Hess are Eucldiean:
-    objective_type=:Euclidean,
-    debug=[:Iteration, :Cost, "\n"],
-    return_objective=true,
-    return_state=true,
+    objective_type=:Euclidean, debug=[:Iteration, :Cost, "\n"],
+    return_objective=true, return_state=true,
 )
 q2 = get_solver_result(r2)
 r2

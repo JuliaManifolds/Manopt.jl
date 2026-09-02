@@ -61,6 +61,12 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `ConvexBundleMethodState` no longer errors when only one of `k_min` and `k_max` is provided.
 * `gradient_sampling` now also works for number-typed points, like `gradient_descent`.
 * `interior_point_Newton!(M, f, grad_f, Hess_f, p; …)` no longer decorates its objective twice, so `count=` and `cache=` now work for the in-place variant.
+* `debug=[:IterativeTime]` now really resets the timer each iteration; the factory built it with a `:Iterative` mode that the functor never matched.
+* `MomentumGradient` no longer folds the step size into its stored direction, so solvers no longer apply the step twice; with `momentum=0` it now reduces to plain gradient descent.
+* `count=[:ProximalMap]` now works for a `ManifoldProximalMapObjective` built from a single proximal map.
+* the box quasi-Newton update now treats a deactivated `initial_scale` (as set by a `preconditioner`) as `1`, instead of erroring.
+* `StopWhenChangeLess(ε)` without a manifold now stores its iterate generically, instead of allocating storage on a `DefaultManifold`.
+* the allocating `LevenbergMarquardt` now honours `jacobian_tangent_basis` like its in-place variant, instead of silently ignoring it.
 * the cautious quasi-Newton matrix update now evaluates its bound at the previous iterate, as documented.
 * a skipped cautious quasi-Newton matrix update now still transports the basis to the new tangent space.
 * `QuasiNewtonState` now activates the default initial scaling when no preconditioner

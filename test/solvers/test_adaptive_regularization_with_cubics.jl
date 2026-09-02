@@ -157,6 +157,18 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         @test arcs4.sub_state isa Manopt.ClosedFormSubSolverState
         arcs5 = AdaptiveRegularizationState(M, f1, AllocatingEvaluation(); p = p0)
         @test arcs5.sub_state isa Manopt.ClosedFormSubSolverState
+        # setting the iterate on a closed form sub state is a no-op, not an error
+        @test Manopt.set_iterate!(
+            Manopt.ClosedFormSubSolverState(), M, p0
+        ) isa Manopt.ClosedFormSubSolverState
+        # and the solver can actually be run through that path
+        q_cf = adaptive_regularization_with_cubics(
+            M, f, grad_f, Hess_f, p0;
+            sub_problem = (M, X, p) -> (X .= -grad_f(M, p); X),
+            sub_state = InplaceEvaluation(),
+            stopping_criterion = StopAfterIteration(2),
+        )
+        @test is_point(M, q_cf)
     end
 
     @testset "A few solver runs" begin

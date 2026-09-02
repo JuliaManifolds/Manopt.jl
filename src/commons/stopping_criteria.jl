@@ -526,8 +526,10 @@ function StopWhenChangeLess(
         ε, zero(ε), storage, inverse_retraction_method, -1, outer_norm
     )
 end
-function StopWhenChangeLess(ε::R; kwargs...) where {R <: Real}
-    return StopWhenChangeLess(DefaultManifold(), ε; kwargs...)
+function StopWhenChangeLess(
+        ε::R; storage::StoreStateAction = StoreStateAction([:Iterate]), kwargs...
+    ) where {R <: Real}
+    return StopWhenChangeLess(DefaultManifold(), ε; storage = storage, kwargs...)
 end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k)
     if k == 0 # reset on init

@@ -69,7 +69,7 @@ either as one function returning all gradients as a vector (see `gradF`), or, ma
 
 ```{julia}
 F(M, p) = 1 / (2 * n) * sum(map(q -> distance(M, p, q)^2, data))
-gradF(M, p) = [grad_distance(M, p, q) for q in data]
+gradF(M, p) = [grad_distance(M, q, p) for q in data]
 gradf = [(M, p) -> grad_distance(M, q, p) for q in data];
 p0 = 1 / sqrt(3) * [1.0, 1.0, 1.0]
 ```
@@ -108,7 +108,7 @@ p_opt3 = stochastic_gradient_descent(
 
 ```{julia}
 MG = MomentumGradient(; direction=StochasticGradient());
-@benchmark stochastic_gradient_descent($M, $gradf, p=$p0; direction=$MG)
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$MG)
 ```
 
 And on the other hand the [`AverageGradient`](@ref) computes an average of the last `n` gradients. This is done by
@@ -120,7 +120,7 @@ p_opt4 = stochastic_gradient_descent(
 ```
 ```{julia}
 AG = AverageGradient(; n=10, direction=StochasticGradient(M));
-@benchmark stochastic_gradient_descent($M, $gradf, p=$p0; direction=$AG, debug=[])
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$AG, debug=[])
 ```
 
 Note that the default [`StoppingCriterion`](@ref) is a fixed number of iterations which helps the comparison here.

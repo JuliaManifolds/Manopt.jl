@@ -438,7 +438,7 @@ record the time elapsed during the current iteration.
 
 The three possible modes are
 * `:cumulative` record times without resetting the timer
-* `:iterative` record times with resetting the timer
+* `:Iterative` record times with resetting the timer
 * `:total` record a time only at the end of an algorithm (see [`stop_solver!`](@ref))
 
 The default is `:cumulative`, and any non-listed symbol default to using this mode.
@@ -459,7 +459,7 @@ function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState,
     # At iteration zero also reset start
     (k == 0) && (r.start = Nanosecond(time_ns()))
     t = Nanosecond(time_ns()) - r.start
-    (r.mode == :iterative) && (r.start = Nanosecond(time_ns()))
+    (r.mode == :Iterative) && (r.start = Nanosecond(time_ns()))
     if r.mode == :total
         # only record at end (if `stop_solver` returns true)
         return record_or_reset!(r, t, (k > 0 && stop_solver!(p, s, k)) ? k : 0)
@@ -471,9 +471,9 @@ function Base.show(io::IO, ri::RecordTime)
     return print(io, "RecordTime(; mode=:$(ri.mode))")
 end
 function status_summary(ri::RecordTime; context::Symbol = :default)
-    (context == :short) && return (ri.mode === :iterative ? ":IterativeTime" : ":Time")
+    (context == :short) && return (ri.mode === :Iterative ? ":IterativeTime" : ":Time")
     # Inline and Default:
-    return "A RecordAction for recording times" * (ri.mode == :iterative ? " iteratively" : ".")
+    return "A RecordAction for recording times" * (ri.mode == :Iterative ? " iteratively" : ".")
 end
 
 #
@@ -623,7 +623,7 @@ function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :GradientNorm) && return RecordGradientNorm()
     (symbol == :Iterate) && return RecordIterate(get_iterate(s))
     (symbol == :Iteration) && return RecordIteration()
-    (symbol == :IterativeTime) && return RecordTime(; mode = :iterative)
+    (symbol == :IterativeTime) && return RecordTime(; mode = :Iterative)
     (symbol == :ProximalParameter) && return RecordProximalParameter()
     (symbol == :Stepsize) && return RecordStepsize()
     (symbol == :Stop) && return RecordStoppingReason()

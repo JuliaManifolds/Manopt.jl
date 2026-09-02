@@ -158,6 +158,7 @@ using ManifoldDiff: prox_distance, prox_distance!
         io = IOBuffer()
         M = Euclidean(3)
         p = ones(3)
+        q = zeros(3)
         O = CyclicProximalPointState(M; p = p)
         f(M, p) = Manopt.Test.L2_Total_Variation(M, q, 0.5, p)
         proxes = (

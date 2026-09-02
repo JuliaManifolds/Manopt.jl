@@ -9,6 +9,8 @@ Subsolver state indicating that a closed-form solution is available.
 """
 struct ClosedFormSubSolverState{} <: AbstractManoptSolverState end
 Base.show(io::IO, ::ClosedFormSubSolverState) = print(io, "ClosedFormSubSolverState()")
+# a closed form sub solver has no iterate to set
+set_iterate!(cfss::ClosedFormSubSolverState, ::AbstractManifold, p) = cfss
 status_summary(cfss::ClosedFormSubSolverState; context::Symbol = :default) = repr(cfss)
 
 @doc """

@@ -1246,7 +1246,7 @@ The measured time is rounded using the given `time_accuracy` and printed after [
 
 * `io=stdout`:             default stream to print the debug to.
 * `format="\$prefix %s"`:   format to print the output, where `%s` is the canonicalized time.
-* `mode=:cumulative`:      whether to display the total time or reset on every call using `:iterative`.
+* `mode=:cumulative`:      whether to display the total time or reset on every call using `:Iterative`.
 * `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`:
 * `start=false`:           indicate whether to start the timer on creation or not.
    Otherwise it might only be started on first call.
@@ -1278,7 +1278,7 @@ function (d::DebugTime)(::AbstractManoptProblem, ::AbstractManoptSolverState, k)
         Printf.format(
             d.io, Printf.Format(d.format), canonicalize(round(p, d.time_accuracy))
         )
-        if d.mode == :iterative
+        if d.mode == :Iterative
             d.last_time = Nanosecond(time_ns())
         end
     end
@@ -1291,13 +1291,13 @@ function show(io::IO, di::DebugTime)
 end
 function status_summary(di::DebugTime; context::Symbol = :default)
     if context == :short
-        if di.mode === :iterative
+        if di.mode === :Iterative
             return "(:IterativeTime, \"$(escape_string(di.format))\")"
         end
         return "(:Time, \"$(escape_string(di.format))\")"
     end
     # Default and inline
-    return "a DebugAction to print time per step $(di.mode === :iterative ? "iteratively" : "cumulatively")"
+    return "a DebugAction to print time per step $(di.mode === :Iterative ? "iteratively" : "cumulatively")"
 end
 """
     reset!(d::DebugTime)
@@ -1771,7 +1771,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
-* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
+* `:IterativeTime` creates a [`DebugTime`](@ref)`(; mode=:Iterative)`
 * `:ProxParameter` creates a [`DebugProximalParameter`](@ref)`()`
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:Stop` creates a [`StoppingCriterion`](@ref)`()`
@@ -1833,7 +1833,7 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:Stop` creates a [`DebugStoppingCriterion`](@ref)
 * `:Time` creates a [`DebugTime`](@ref)
-* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
+* `:IterativeTime` creates a [`DebugTime`](@ref)`(; mode=:Iterative)`
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """

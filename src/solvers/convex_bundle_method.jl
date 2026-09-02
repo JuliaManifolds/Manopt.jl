@@ -876,7 +876,12 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
     (k < 1) && (return nothing)
     if d.status !== :No
         new_value = -st.ξ
-        if new_value ≥ d.old_value * d.tol
+        # `ξ` oscillates around zero at machine precision once the solver has converged,
+        # so treat such values as zero rather than reporting on numerical noise
+        atol = sqrt(eps(number_eltype(st.ξ)))
+        if abs(new_value) ≤ atol
+            # numerically zero, nothing to report
+        elseif new_value ≥ d.old_value * d.tol
             @warn """The Lagrange multiplier increased by at least $(d.tol).
             At iteration #$k the negative of the Lagrange multiplier, -ξ, increased from $(d.old_value) to $(new_value).
 

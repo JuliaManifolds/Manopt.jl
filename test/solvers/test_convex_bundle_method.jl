@@ -8,7 +8,7 @@ using Manopt: estimate_sectional_curvature
     p = [0.0, 0.0, 0.0, 0.0, 1.0]
     q0 = [1.0, 0.0, 0.0, 0.0, √2] # [0.0, 0.0, 0.0, 0.0, -1.0]
     p0 = exp(M, p, 4log(M, p, q0))
-    diameter = floatmax()
+    diameter = 10.0
     Ω = 0.0
     ω = -1.0
 
@@ -63,9 +63,9 @@ using Manopt: estimate_sectional_curvature
         end
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
 
-        # Reset the serious iterate
-        p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
-        set_iterate!(cbms, M, p0)
+        # Reset the serious iterate to the minimizer itself (degenerate start)
+        p_deg = [0.0, 0.0, 0.0, 0.0, -1.0]
+        set_iterate!(cbms, M, p_deg)
         X = zero_vector(M, p)
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)
@@ -79,7 +79,10 @@ using Manopt: estimate_sectional_curvature
         @test_throws MethodError get_proximal_map(mp, 1.0, cbms.p, 1)
 
         @testset "Domain and Null Conditions" begin
-            @test _domain_condition(M, p, p0, 1.0, 1.0, cbms.domain)
+            # inside the domain and within `t * length` of `p0`
+            @test _domain_condition(M, p, p0, 1.0, 4.0, cbms.domain)
+            # inside the domain but farther away than `t * length`
+            @test !_domain_condition(M, p, p0, 1.0, 1.0, cbms.domain)
             @test !_null_condition(
                 mp, M, p, p0, cbms.X, cbms.g, cbms.vector_transport_method,
                 cbms.inverse_retraction_method, cbms.m, 1.0, cbms.ξ, cbms.ϱ,
@@ -96,8 +99,8 @@ using Manopt: estimate_sectional_curvature
                 stopping_criterion = StopAfterIteration(200), return_state = true, debug = [],
             )
             p_star2 = get_solver_result(bms2)
-            @test get_subgradient(bms2) == -∂f(M, p_star2)
-            @test f(M, p_star2) <= f(M, p0)
+            @test isapprox(M, p_star2, get_subgradient(bms2), ∂f(M, p_star2))
+            @test f(M, p_star2) < f(M, p0)
             set_iterate!(bms2, M, p)
             @test get_iterate(bms2) == p
             io = IOBuffer()
@@ -157,7 +160,7 @@ using Manopt: estimate_sectional_curvature
             sub_problem = (convex_bundle_method_subsolver!), return_state = true, debug = [],
         )
         p_star2 = get_solver_result(s2)
-        @test f(M, p_star2) <= f(M, p0)
+        @test f(M, p_star2) < f(M, p0)
         # with the fix, the in-place call needs no explicit sub_problem anymore
         q_ip = convex_bundle_method(
             M, f, ∂f!, copy(p0); diameter = diameter,
@@ -165,7 +168,7 @@ using Manopt: estimate_sectional_curvature
             k_max = Ω, stopping_criterion = StopAfterIteration(200),
             evaluation = InplaceEvaluation(),
         )
-        @test f(M, q_ip) <= f(M, p0)
+        @test f(M, q_ip) < f(M, p0)
     end
 
     @testset "A simple median run" begin

@@ -305,7 +305,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test t isa Nanosecond
         h1(dmp, gds, 1)
         @test h1.start == t
-        h2 = RecordTime(; mode = :iterative)
+        h2 = RecordTime(; mode = :Iterative)
         t = h2.start
         @test t isa Nanosecond
         sleep(0.002)

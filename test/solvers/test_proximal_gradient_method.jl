@@ -98,8 +98,8 @@ using Manopt, Manifolds, Test, ManifoldDiff
         )
 
         @testset "Backtracking Warnings" begin
-            dw1 = DebugWarnIfStepsizeCollapsed(:Once)
-            @test repr(dw1) == "DebugWarnIfStepsizeCollapsed(Once, :Once)"
+            dw1 = DebugWarnIfStepsizeCollapsed(1.0e-8, :Once)
+            @test repr(dw1) == "DebugWarnIfStepsizeCollapsed(1.0e-8, :Once)"
             pgms_warn = ProximalGradientMethodState(
                 M;
                 p = p0,
@@ -242,7 +242,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
         @test distance(M, q, m) < 2 * 1.0e-2
         p_size = copy(p0)
         function grad_g!(M, X, p)
-            X = sum(
+            X .= sum(
                 1 / length(data) *
                     ManifoldDiff.subgrad_distance.(Ref(M), data, Ref(p), 2; atol = 1.0e-8),
             )
@@ -252,5 +252,18 @@ using Manopt, Manifolds, Test, ManifoldDiff
             copyto!(M, a, p)
             return a
         end
+        proximal_gradient_method!(
+            M, f, g, grad_g!, p_size;
+            prox_nonsmooth = prox_h!,
+            evaluation = InplaceEvaluation(),
+            inverse_retraction_method = ProjectionInverseRetraction(),
+            stepsize = ProximalGradientMethodBacktracking(;
+                initial_stepsize = 1.0,
+                strategy = :convex,
+                k_max = 1.0,
+                δ = 1.0e-2,
+            ),
+        )
+        @test distance(M, p_size, m) < 2 * 1.0e-2
     end
 end

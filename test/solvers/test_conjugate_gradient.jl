@@ -65,7 +65,7 @@ using ManifoldDiff: grad_distance
         @test s3.coefficient(dmp, s3, 1) == 0.0
         s3.X = grad_2
         s3.δ = δ2
-        @test s3.coefficient(dmp, s3, 2) == dot(grad_2, grad_2) / dot(δ2, grad_2 - grad_1)
+        @test s3.coefficient(dmp, s3, 2) == dot(grad_2, grad_2) / dot(δ1, grad_2 - grad_1)
 
         dU = FletcherReevesCoefficient()
         s4 = ConjugateGradientDescentState(

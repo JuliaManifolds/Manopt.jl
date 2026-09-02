@@ -411,6 +411,19 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             @test startswith(repr(s2), "LevenbergMarquardtState(")
             @test startswith(Manopt.status_summary(s2), "# Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm")
         end
+        @testset "jacobian_tangent_basis is honoured by both variants" begin
+            Ml = Euclidean(2)
+            xs = [0.0, 1.0, 2.0, 3.0]
+            ys = [0.5, 2.4, 4.8, 6.9]
+            fl(M, p) = [p[1] + p[2] * x - y for (x, y) in zip(xs, ys)]
+            # the Jacobian is given in a basis with the two coordinates swapped
+            Bl = CachedBasis(DefaultOrthonormalBasis(), [[0.0, 1.0], [1.0, 0.0]])
+            jac_l(M, p) = hcat([x for x in xs], ones(length(xs)))
+            pl0 = [1.0, 1.0]
+            pa = LevenbergMarquardt(Ml, fl, jac_l, pl0, length(xs); jacobian_tangent_basis = Bl)
+            pi_ = LevenbergMarquardt!(Ml, fl, jac_l, copy(pl0), length(xs); jacobian_tangent_basis = Bl)
+            @test isapprox(pa, pi_; atol = 1.0e-8)
+        end
     end
     @testset "errors" begin
         sub_fake_f = (args...) -> 0

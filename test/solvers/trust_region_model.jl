@@ -20,8 +20,8 @@ end
 function (e::EGrad)(Y::Array, X::Array)
     U = X[e.M, 1]
     V = X[e.M, 2]
-    AV = A * V
-    AtU = transpose(A) * U
+    AV = e.A * V
+    AtU = transpose(e.A) * U
     view(Y, :, :, 1) .= -AV * (transpose(AV) * U)
     view(Y, :, :, 2) .= -AtU * (transpose(AtU) * V)
     return Y
@@ -86,7 +86,7 @@ function (e::EHess)(Y, X, H)
     AtUdot = transpose(e.A) * Udot
     #! format: off
     view(Y, :, :, 1) .= -AVdot * transpose(AV) * U - AV * transpose(AVdot) * U - AV * transpose(AV) * Udot
-    view(Y, :, :, 2) .= AtUdot * transpose(AtU) * V + AtU * transpose(AtUdot) * V + AtU * transpose(AtU) * Vdot
+    view(Y, :, :, 2) .= -AtUdot * transpose(AtU) * V - AtU * transpose(AtUdot) * V - AtU * transpose(AtU) * Vdot
     #! format: on
     return Y
 end
