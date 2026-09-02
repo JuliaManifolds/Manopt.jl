@@ -516,8 +516,7 @@ mutable struct StopWhenChangeLess{
     outer_norm::N
 end
 function StopWhenChangeLess(
-        M::AbstractManifold,
-        ε::F;
+        M::AbstractManifold, ε::F;
         storage::StoreStateAction = StoreStateAction(M; store_points = Tuple{:Iterate}),
         inverse_retraction_method::IRT = default_inverse_retraction_method(M),
         outer_norm::N = missing,
@@ -1016,8 +1015,7 @@ mutable struct StopWhenGradientChangeLess{
     outer_norm::N
 end
 function StopWhenGradientChangeLess(
-        M::AbstractManifold,
-        ε::F;
+        M::AbstractManifold, ε::F;
         storage::StoreStateAction = StoreStateAction(
             M; store_points = Tuple{:Iterate}, store_vectors = Tuple{:Gradient}
         ),

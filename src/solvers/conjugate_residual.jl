@@ -63,8 +63,7 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion, C <: Abs
         return crs
     end
     function ConjugateResidualState(
-            TpM::TangentSpace,
-            aslso::AbstractSymmetricLinearSystemObjective;
+            TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective;
             callbacks::C = Dict{Symbol, Function}(),
             X::T = rand(TpM), r::T = (-get_gradient(TpM, aslso, X)), d::T = copy(TpM, r),
             Ar::T = get_hessian(TpM, aslso, X, r), Ad::T = copy(TpM, Ar), α::Real = 0.0, β::Real = 0.0,

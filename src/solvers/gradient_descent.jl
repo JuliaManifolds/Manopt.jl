@@ -84,8 +84,7 @@ function (r::IdentityUpdateRule)(
 end
 
 function default_stepsize(
-        M::AbstractManifold,
-        ::Type{GradientDescentState};
+        M::AbstractManifold, ::Type{GradientDescentState};
         retraction_method = default_retraction_method(M),
     )
     # take a default with a slightly defensive initial step size.

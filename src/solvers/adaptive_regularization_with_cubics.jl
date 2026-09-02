@@ -437,8 +437,7 @@ function adaptive_regularization_with_cubics!(
 end
 function adaptive_regularization_with_cubics!(
         M::AbstractManifold, f, grad_f, Hess_f::TH, p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     ) where {TH <: Function}
     mho = ManifoldHessianObjective(f, grad_f, Hess_f; evaluation = evaluation)
     return adaptive_regularization_with_cubics!(M, mho, p; evaluation = evaluation, kwargs...)

@@ -1,6 +1,5 @@
 function default_stepsize(
-        M::AbstractManifold,
-        ::Type{<:ConjugateGradientDescentState};
+        M::AbstractManifold, ::Type{<:ConjugateGradientDescentState};
         retraction_method = default_retraction_method(M),
     )
     # take a default with a slightly defensive initial step size.
@@ -108,9 +107,7 @@ function conjugate_gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
 end
 function conjugate_gradient_descent(
         M::AbstractManifold, f::TF, grad_f::TDF, p;
-        differential = missing,
-        evaluation = AllocatingEvaluation(),
-        kwargs...,
+        differential = missing, evaluation = AllocatingEvaluation(), kwargs...,
     ) where {TF, TDF}
     p_ = maybe_wrap_variable(p)
     mgo = ManifoldGradientObjective(
@@ -142,9 +139,7 @@ function conjugate_gradient_descent!(
     return conjugate_gradient_descent!(M, mgo, p; kwargs...)
 end
 function conjugate_gradient_descent!(
-        M::AbstractManifold,
-        mgo::O,
-        p;
+        M::AbstractManifold, mgo::O, p;
         callbacks = Dict{Symbol, Function}(),
         coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
         restart_condition::AbstractRestartCondition = RestartOnNonDescent(),

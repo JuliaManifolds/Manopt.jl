@@ -65,9 +65,7 @@ i.e. if they are not `nothing`.
 """
 function set_message!(
         messages::NamedTuple, key::Symbol;
-        at::Union{Nothing, Int} = nothing,
-        bound = nothing,
-        value = nothing,
+        at::Union{Nothing, Int} = nothing, bound = nothing, value = nothing,
     )
     haskey(messages, key) && set_message!(messages[key], at, bound, value)
     return messages

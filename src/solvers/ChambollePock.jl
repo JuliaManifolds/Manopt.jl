@@ -185,8 +185,7 @@ mutable struct ChambollePockState{
     vector_transport_method_dual::VTM_Dual
 end
 function Manopt.ChambollePockState(
-        M::AbstractManifold,
-        N::AbstractManifold;
+        M::AbstractManifold, N::AbstractManifold;
         m::P = rand(M),
         n::Q = rand(N),
         p::P = rand(M),

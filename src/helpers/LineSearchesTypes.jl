@@ -33,8 +33,7 @@ mutable struct LineSearchesStepsize{
     last_stepsize::TF
 end
 function LineSearchesStepsize(
-        M::AbstractManifold,
-        linesearch;
+        M::AbstractManifold, linesearch;
         initial_guess::AbstractInitialLinesearchGuess = ConstantInitialGuess(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M),
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(M),

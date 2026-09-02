@@ -272,11 +272,8 @@ function particle_swarm(M::AbstractManifold, f; swarm_size = 100, kwargs...)
     return particle_swarm(M, f, [rand(M) for _ in 1:swarm_size]; kwargs...)
 end
 function particle_swarm(
-        M::AbstractManifold,
-        f,
-        swarm::AbstractVector;
-        velocity::AbstractVector = [rand(M; vector_at = y) for y in swarm],
-        kwargs...,
+        M::AbstractManifold, f, swarm::AbstractVector;
+        velocity::AbstractVector = [rand(M; vector_at = y) for y in swarm], kwargs...,
     )
     swarm_ = [maybe_wrap_variable(s) for s in swarm]
     velocity_ = [maybe_wrap_variable(v) for v in velocity]

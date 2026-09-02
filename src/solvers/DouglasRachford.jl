@@ -296,9 +296,7 @@ calls_with_kwargs(::typeof(DouglasRachford!)) = (decorate_objective!, decorate_s
 #
 # An internal function that turns more than 2 proximal maps into a parallel variant
 # on the power manifold
-function parallel_to_alternating_DR(
-        M, f, proxes_f, p, parallel
-    )
+function parallel_to_alternating_DR(M, f, proxes_f, p, parallel)
     prox1, prox2, parallel_ = prepare_proxes(proxes_f, parallel)
     if parallel_ > 0
         N = PowerManifold(M, NestedPowerRepresentation(), parallel_)

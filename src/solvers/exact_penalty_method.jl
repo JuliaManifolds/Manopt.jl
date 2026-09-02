@@ -353,9 +353,7 @@ function exact_penalty_method!(
     )
 end
 function exact_penalty_method!(
-        M::AbstractManifold,
-        cmo::O,
-        p;
+        M::AbstractManifold, cmo::O, p;
         evaluation = AllocatingEvaluation(),
         callbacks = Dict{Symbol, Function}(),
         ϵ::Real = 1.0e-3,

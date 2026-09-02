@@ -299,16 +299,14 @@ mutable struct ConvexBundleMethodState{
     ConvexBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Convex Bundle Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 end
 function ConvexBundleMethodState(
-        M::AbstractManifold,
-        sub_problem, sub_state::AbstractEvaluationType;
+        M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType;
         kwargs...,
     )
     return ConvexBundleMethodState(M, sub_problem; evaluation = sub_state, kwargs...)
 end
 function ConvexBundleMethodState(
         M::AbstractManifold, sub_problem = convex_bundle_method_subsolver;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
     sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :MaybeResizeVector)
     return ConvexBundleMethodState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)

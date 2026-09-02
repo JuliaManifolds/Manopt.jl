@@ -40,10 +40,8 @@ struct DirectionUpdateRuleStorage{TC <: DirectionUpdateRule, TStorage <: StoreSt
     storage::TStorage
 end
 function DirectionUpdateRuleStorage(
-        M::AbstractManifold,
-        dur::DirectionUpdateRule;
-        p_init = rand(M),
-        X_init = zero_vector(M, p_init),
+        M::AbstractManifold, dur::DirectionUpdateRule;
+        p_init = rand(M), X_init = zero_vector(M, p_init),
     )
     ursp = update_rule_storage_points(dur)
     ursv = update_rule_storage_vectors(dur)

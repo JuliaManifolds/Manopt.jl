@@ -226,8 +226,7 @@ function (a::ArmijoLinesearchStepsize)(
 end
 
 function default_stepsize(
-        M::AbstractManifold,
-        ::Type{AlternatingGradientDescentState};
+        M::AbstractManifold, ::Type{AlternatingGradientDescentState};
         retraction_method = default_retraction_method(M),
     )
     return ArmijoLinesearchStepsize(M; retraction_method = retraction_method)

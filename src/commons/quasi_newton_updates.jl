@@ -655,10 +655,7 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     message::String
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
-        M::AbstractManifold,
-        p,
-        ::NT,
-        memory_size::Int;
+        M::AbstractManifold, p, ::NT, memory_size::Int;
         initial_vector::T = zero_vector(M, p),
         initial_scale::G = 1.0,
         (project!)::Proj = (copyto!),

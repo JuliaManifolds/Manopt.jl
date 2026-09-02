@@ -379,8 +379,7 @@ function primal_dual_semismooth_Newton(
         M::AbstractManifold, N::AbstractManifold, cost::TF, p::P, X::T, m::P, n::Q,
         prox_F::Function, diff_prox_F::Function, prox_G_dual::Function, diff_prox_G_dual::Function,
         linearized_forward_operator::Function, adjoint_linearized_operator::Function;
-        Λ::Union{Function, Missing} = missing,
-        kwargs...,
+        Λ::Union{Function, Missing} = missing, kwargs...,
     ) where {TF, P, T, Q}
     keywords_accepted(primal_dual_semismooth_Newton; kwargs...)
     x_res = copy(M, p)

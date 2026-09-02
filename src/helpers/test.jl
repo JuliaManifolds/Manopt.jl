@@ -28,9 +28,7 @@ struct DummyManifold <: AbstractManifold{ManifoldsBase.ℝ} end
 struct DummyDecoratedObjective{O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{O}
     objective::O
 end
-function Manopt.status_summary(
-        ddo::DummyDecoratedObjective; kwargs...
-    )
+function Manopt.status_summary(ddo::DummyDecoratedObjective; kwargs...)
     return "A dummy decorator for " * Manopt.status_summary(ddo.objective; kwargs...)
 end
 function Base.show(io::IO, ddo::DummyDecoratedObjective)

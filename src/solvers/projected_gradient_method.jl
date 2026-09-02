@@ -53,8 +53,7 @@ struct ProjectedGradientMethodState{P, T, C <: AbstractDict{Symbol}, S, S2, SC, 
     end
 end
 function ProjectedGradientMethodState(
-        M::AbstractManifold,
-        p = rand(M);
+        M::AbstractManifold, p = rand(M);
         backtrack::Stepsize = ArmijoLinesearchStepsize(M),
         callbacks::C = Dict{Symbol, Function}(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
@@ -135,8 +134,7 @@ mutable struct StopWhenProjectedGradientStationary{F, TSSA <: StoreStateAction} 
     at_iteration::Int
 end
 function StopWhenProjectedGradientStationary(
-        M::AbstractManifold,
-        ε::F;
+        M::AbstractManifold, ε::F;
         storage::StoreStateAction = StoreStateAction(M; store_points = Tuple{:Iterate}),
     ) where {F <: Real}
     return StopWhenProjectedGradientStationary{F, typeof(storage)}(ε, zero(ε), storage, -1)

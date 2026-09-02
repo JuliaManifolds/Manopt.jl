@@ -159,9 +159,7 @@ end
 Base.:∘(rf1::AbstractRobustifierFunction, rf2::AbstractRobustifierFunction) =
     ComposedRobustifierFunction(rf1, rf2)
 
-function get_robustifier_values(
-        crf::ComposedRobustifierFunction, x::Real
-    )
+function get_robustifier_values(crf::ComposedRobustifierFunction, x::Real)
     (a2, b2, c2) = get_robustifier_values(crf.ρ2, x)
     (a1, b1, c1) = get_robustifier_values(crf.ρ1, a2)
     a = a1

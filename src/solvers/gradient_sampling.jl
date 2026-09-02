@@ -388,9 +388,7 @@ function initialize_solver!(mp::AbstractManoptProblem, gss::GradientSamplingStat
     return gss
 end
 
-function step_solver!(
-        mp::AbstractManoptProblem, gss::GradientSamplingState, i
-    )
+function step_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState, i)
     M = get_manifold(mp)
     # resample on TpM, map to manifold and make sure they are within radius
     for (j, (pj, Xj)) in enumerate(zip(gss.sampled_points, gss.sampled_vectors))

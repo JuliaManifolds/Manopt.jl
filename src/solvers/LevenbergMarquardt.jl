@@ -479,9 +479,7 @@ calls_with_kwargs(::typeof(LevenbergMarquardt!)) = (decorate_objective!, decorat
 #
 # Solver functions
 #
-function initialize_solver!(
-        dmp::DefaultManoptProblem, lms::LevenbergMarquardtState,
-    )
+function initialize_solver!(dmp::DefaultManoptProblem, lms::LevenbergMarquardtState)
     M = get_manifold(dmp)
     nlso = get_objective(dmp, true) # unwarp decorators
     get_residuals!(M, lms.residual_values, nlso, lms.p)
@@ -494,9 +492,7 @@ function initialize_solver!(
 end
 
 function step_solver!(
-        dmp::DefaultManoptProblem,
-        lms::LevenbergMarquardtState,
-        k::Integer,
+        dmp::DefaultManoptProblem, lms::LevenbergMarquardtState, k::Integer,
     )
     # Update damping term in the surrogate
     # should this be with (currently) or without robustifier?
@@ -588,9 +584,7 @@ function solve_LM_subproblem!(
 end
 
 
-function get_last_stepsize(
-        dmp::DefaultManoptProblem, lms::LevenbergMarquardtState, k,
-    )
+function get_last_stepsize(dmp::DefaultManoptProblem, lms::LevenbergMarquardtState, k)
     M = get_manifold(dmp)
     return norm(M, lms.p, lms.direction)
 end

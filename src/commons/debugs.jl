@@ -378,8 +378,7 @@ mutable struct DebugEntryChange <: DebugAction
     io::IO
     storage::StoreStateAction
     function DebugEntryChange(
-            f::Symbol,
-            d;
+            f::Symbol, d;
             storage::StoreStateAction = StoreStateAction([f]),
             prefix::String = "Change of $f:",
             format::String = "$prefix%s",

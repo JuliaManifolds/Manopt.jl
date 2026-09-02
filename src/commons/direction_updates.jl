@@ -442,8 +442,7 @@ mutable struct PreconditionedDirectionRule{D <: DirectionUpdateRule, F} <: Direc
     end
 end
 function PreconditionedDirectionRule(
-        M::AbstractManifold,
-        preconditioner::F;
+        M::AbstractManifold, preconditioner::F;
         direction::Union{<:DirectionUpdateRule, ManifoldDefaultsFactory} = Gradient(),
         evaluation::E = AllocatingEvaluation(),
     ) where {E <: AbstractEvaluationType, F}

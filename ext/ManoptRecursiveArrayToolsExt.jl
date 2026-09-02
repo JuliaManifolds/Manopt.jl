@@ -39,12 +39,8 @@ function get_gradient!(
 end
 
 function alternating_gradient_descent(
-        M::ProductManifold,
-        f,
-        grad_f::Union{TgF, AbstractVector{<:TgF}},
-        p = rand(M);
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        M::ProductManifold, f, grad_f::Union{TgF, AbstractVector{<:TgF}}, p = rand(M);
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     ) where {TgF}
     ago = ManifoldAlternatingGradientObjective(f, grad_f; evaluation = evaluation)
     return alternating_gradient_descent(M, ago, p; evaluation = evaluation, kwargs...)
@@ -58,20 +54,14 @@ function alternating_gradient_descent(
 end
 
 function alternating_gradient_descent!(
-        M::ProductManifold,
-        f,
-        grad_f::Union{TgF, AbstractVector{<:TgF}},
-        p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        M::ProductManifold, f, grad_f::Union{TgF, AbstractVector{<:TgF}}, p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     ) where {TgF}
     agmo = ManifoldAlternatingGradientObjective(f, grad_f; evaluation = evaluation)
     return alternating_gradient_descent!(M, agmo, p; evaluation = evaluation, kwargs...)
 end
 function alternating_gradient_descent!(
-        M::ProductManifold,
-        agmo::ManifoldAlternatingGradientObjective,
-        p;
+        M::ProductManifold, agmo::ManifoldAlternatingGradientObjective, p;
         callbacks = Dict{Symbol, Function}(),
         inner_iterations::Int = 5,
         stopping_criterion::StoppingCriterion = StopAfterIteration(100) |

@@ -39,9 +39,7 @@ $(_doc_CR_cost)
 
 at `X`.
 """
-function get_cost(
-        TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X
-    )
+function get_cost(TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X)
     M = base_manifold(TpM)
     p = base_point(TpM)
     W = 0.5 * get_linear_operator(M, aslso, p, X) + get_vector_field(M, aslso, p)

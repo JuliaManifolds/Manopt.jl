@@ -28,11 +28,7 @@ $(_kwargs(:retraction_method))
   the slope estimation. The default is, to use all window sizes `2:N`.
 """
 function check_differential(
-        M::AbstractManifold,
-        F,
-        dF,
-        p = rand(M),
-        X = rand(M; vector_at = p);
+        M::AbstractManifold, F, dF, p = rand(M), X = rand(M; vector_at = p);
         exactness_tol = 1.0e-12,
         io::Union{IO, Nothing} = nothing,
         limits = (-8.0, 0.0),
@@ -121,11 +117,7 @@ all remaining keyword arguments are passed down to the [`check_differential`](@r
 
 """
 function check_gradient(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        p = rand(M),
-        X = rand(M; vector_at = p);
+        M::AbstractManifold, f, grad_f, p = rand(M), X = rand(M; vector_at = p);
         gradient = grad_f(M, p),
         check_vector::Bool = false,
         error::Symbol = :none,
@@ -347,9 +339,7 @@ function is_Hessian_linear(
         Y = rand(M; vector_at = p),
         a = randn(),
         b = randn();
-        error = :none,
-        io = nothing,
-        kwargs...,
+        error = :none, io = nothing, kwargs...,
     )
     Z1 = Hess_f(M, p, a * X + b * Y)
     Z2 = a * Hess_f(M, p, X) + b * Hess_f(M, p, Y)

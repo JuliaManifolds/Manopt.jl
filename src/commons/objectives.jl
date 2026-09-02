@@ -1238,9 +1238,7 @@ struct ManifoldCachedObjective{P, O <: AbstractManifoldObjective, C <: NamedTupl
     cache::C
 end
 function ManifoldCachedObjective(
-        M::AbstractManifold,
-        objective::O,
-        caches::AbstractVector{<:Symbol} = [:Cost];
+        M::AbstractManifold, objective::O, caches::AbstractVector{<:Symbol} = [:Cost];
         p::P = rand(M),
         value::R = get_cost(M, objective, p),
         X::T = zero_vector(M, p),
@@ -1253,9 +1251,7 @@ function ManifoldCachedObjective(
     return ManifoldCachedObjective{O, O, typeof(c)}(objective, c)
 end
 function ManifoldCachedObjective(
-        M::AbstractManifold,
-        objective::O,
-        caches::AbstractVector{<:Symbol} = [:Cost];
+        M::AbstractManifold, objective::O, caches::AbstractVector{<:Symbol} = [:Cost];
         p::P = rand(M),
         value::R = get_cost(M, objective, p),
         X::T = zero_vector(M, p),
@@ -2059,10 +2055,7 @@ function ManifoldCountObjective(
     return ManifoldCountObjective{P, O, I}(counts, objective)
 end
 function ManifoldCountObjective(
-        M::AbstractManifold,
-        objective::O,
-        count::AbstractVector{Symbol},
-        init::I = 0;
+        M::AbstractManifold, objective::O, count::AbstractVector{Symbol}, init::I = 0;
         p::P = rand(M),
     ) where {P, I <: Integer, O <: AbstractManifoldObjective}
     # Infer the sizes of the counters from the symbols if possible
@@ -2644,9 +2637,7 @@ function ManifoldCostGradientObjective(cost_grad; kwargs...)
 end
 
 # accessors
-function get_cost(
-        M::AbstractManifold, mfo::ManifoldFirstOrderObjective, p
-    )
+function get_cost(M::AbstractManifold, mfo::ManifoldFirstOrderObjective, p)
     haskey(mfo.functions, :cost) && (return mfo.functions[:cost](M, p))
     X = zero_vector(M, p)
     if haskey(mfo.functions, :costdifferential)
@@ -2738,9 +2729,7 @@ function get_cost_and_gradient!(
     return get_cost_and_gradient!(M, X, co.objective, p)
 end
 
-function get_cost_function(
-        mfo::ManifoldFirstOrderObjective, recursive::Bool = false
-    )
+function get_cost_function(mfo::ManifoldFirstOrderObjective, recursive::Bool = false)
     if haskey(mfo.functions, :cost)
         return mfo.functions[:cost]
     else

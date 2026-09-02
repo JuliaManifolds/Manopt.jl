@@ -47,9 +47,7 @@ struct ReturnManifoldObjective{O2, O1 <: AbstractManifoldObjective} <:
     AbstractDecoratedManifoldObjective{O2}
     objective::O1
 end
-function ReturnManifoldObjective(
-        o::O
-    ) where {O <: AbstractManifoldObjective}
+function ReturnManifoldObjective(o::O) where {O <: AbstractManifoldObjective}
     return ReturnManifoldObjective{O, O}(o)
 end
 function ReturnManifoldObjective(

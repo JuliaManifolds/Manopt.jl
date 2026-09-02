@@ -31,9 +31,7 @@ Given a vector of symbols `caches`, this function sets up the
   a dictionary of sizes for the `caches` to specify different (non-default) sizes
 """
 function Manopt.init_caches(
-        M::AbstractManifold,
-        caches::AbstractVector{<:Symbol},
-        ::Type{LRU};
+        M::AbstractManifold, caches::AbstractVector{<:Symbol}, ::Type{LRU};
         p::P = rand(M),
         value::R = 0.0,
         X::T = zero_vector(M, p),
