@@ -152,7 +152,7 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
             copyto!(M, ls.Lanczos_vectors[1], p, ls.X / nX)
         end
         get_objective_hessian!(M, ls.Hp, arcmo, p, ls.Lanczos_vectors[1])
-        α = inner(M, p, ls.Lanczos_vectors[1], ls.Hp)
+        α = real(inner(M, p, ls.Lanczos_vectors[1], ls.Hp))
         # This is also the first coefficient in the tridiagonal matrix
         ls.tridig_matrix[1, 1] = α
         ls.Hp_residual .= ls.Hp - α * ls.Lanczos_vectors[1]
@@ -189,12 +189,12 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
         # Update Hessian and residual
         get_objective_hessian!(M, ls.Hp, arcmo, p, ls.Lanczos_vectors[k])
         ls.Hp_residual .= ls.Hp - β * ls.Lanczos_vectors[k - 1]
-        α = inner(M, p, ls.Hp_residual, ls.Lanczos_vectors[k])
+        α = real(inner(M, p, ls.Hp_residual, ls.Lanczos_vectors[k]))
         ls.Hp_residual .= ls.Hp_residual - α * ls.Lanczos_vectors[k]
         # Update tridiagonal matrix
         ls.tridig_matrix[k, k] = α
-        ls.tridig_matrix[k - 1, k] = β
-        ls.tridig_matrix[k, k - 1] = β
+        ls.tridig_matrix[k - 1, k] = real(β)
+        ls.tridig_matrix[k, k - 1] = real(β)
         min_cubic_Newton!(dmp, ls, k)
     end
     copyto!(M, ls.S, p, sum(ls.Lanczos_vectors[k] * ls.coefficients[k] for k in 1:k))
