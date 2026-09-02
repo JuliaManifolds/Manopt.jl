@@ -28,11 +28,14 @@ Describes a Gradient based descent algorithm, with
 * `damping_term`:                         current value of the damping term
 * `damping_term_min`:                     lower bound for the damping term
 * `damping_term_max`:                     upper bound for the damping term
-* `damping_increase_factor`:              improvement quotient exceeds `damping_reduction_threshold`.
+* `damping_increase_factor`:              factor the damping term is multiplied with when the
+  improvement quotient falls below `damping_increase_threshold`.
+* `damping_reduction_factor`:             factor the damping term is multiplied with when the
+  improvement quotient exceeds `damping_reduction_threshold`.
 * `damping_reduction_threshold`:          threshold for the improvement quotient above which
-  the damping term is reduced by multiplying it with `β_reduction`.
-* `damping_increase_threshold` :          threshold for the improvement quotient below which
-  the damping term is increased by multiplying it with `β`.
+  the damping term is reduced by multiplying it with `damping_reduction_factor`.
+* `damping_increase_threshold`:           threshold for the improvement quotient below which
+  the damping term is increased by multiplying it with `damping_increase_factor`.
 * `direction`:                            the current search direction, which is the solution of
   the linearized subproblem in each iteration.
 * `candidate_acceptance_threshold`:       Scaling factor for the sufficient cost decrease threshold required
@@ -189,8 +192,8 @@ function show(io::IO, lms::LevenbergMarquardtState)
     print(io, ", damping_increase_factor = ", lms.damping_increase_factor, ", damping_increase_threshold = ", lms.damping_increase_threshold)
     print(io, ", damping_reduction_threshold = ", lms.damping_reduction_threshold, ", damping_reduction_factor = ", lms.damping_reduction_factor)
     print(io, ", damping_term = ", lms.damping_term, ", damping_term_min = ", lms.damping_term_min, ", damping_term_max = ", lms.damping_term_max)
-    print(io, ", direction = ", lms.direction, ", callbacks = ", lms.callbacks, ", jacobian_matrices = ", lms.jacobian_matrices, ". minimum_acceptable_model_improvement = ", lms.minimum_acceptable_model_improvement)
-    print(io, ", p= ", lms.p, ", q = ", lms.q, ", residual_values = ", lms.residual_values, ", retraction_method = ", lms.retraction_method, ", stopping_criterion = ", lms.stop, ", X = ", lms.X)
+    print(io, ", direction = ", lms.direction, ", callbacks = ", lms.callbacks, ", jacobian_matrices = ", lms.jacobian_matrices, ", minimum_acceptable_model_improvement = ", lms.minimum_acceptable_model_improvement)
+    print(io, ", p = ", lms.p, ", q = ", lms.q, ", residual_values = ", lms.residual_values, ", retraction_method = ", lms.retraction_method, ", stopping_criterion = ", lms.stop, ", X = ", lms.X)
     return print(io, ")")
 end
 
@@ -245,7 +248,8 @@ If you provide `f` and its jacobian
 
 $(_kwargs(:evaluation))
 * `function_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
-* `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
+* `jacobian_tangent_basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: the basis the Jacobian coefficients refer to.
+* `jacobian_type=`[`CoefficientVectorialType`](@ref)`(jacobian_tangent_basis)`: an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
 
 as well as then these are already combined in a single [`VectorGradientFunction`](@ref) `vgf`
 
@@ -254,21 +258,20 @@ as well as then these are already combined in a single [`VectorGradientFunction`
   - if you provide a single vectorial function and its Jacobian, a single robustifer is applied
     to every component function of this vectorial function (each component is a block in the sum)
   - if you provide a vector of [`VectorGradientFunction`](@ref)s, each needs a robustifier.
-$(_kwargs(:evaluation))
 
 as well as in general using the model improvement parameter ``m_k`` in several places, cf [BaranBergmann:2026](@cite)
 
 * `candidate_acceptance_threshold=0.2`: sufficient model improvement ``η ∈ (0,1)``, i.e. ``m_k > η`` to accept a candidate point
 * `damping_increase_factor=5.0`:        factor ``β_{$(_tex(:text, "i"))}`` to increase damping, when the model is inaccurate
-* `damping_increase_threshold=candidate_acceptance_threshold`: threshold ``η_{$(_tex(:text, "l"))}`` the value ``m_k``has to be below to increase damping.
+* `damping_increase_threshold=candidate_acceptance_threshold`: threshold ``η_{$(_tex(:text, "l"))}`` the value ``m_k`` has to be below to increase damping.
   The default yields, that we increase damping when we reject a candidate.
 * `damping_reduction_factor= 1 / damping_increase_factor`: factor ``β_{$(_tex(:text, "d"))}`` to reduce damping, when the model is accurate
-* `damping_reduction_threshold=Inf`:    threshold ``β_{$(_tex(:text, "d"))}`` to reduce damping, when the model is accurate
+* `damping_reduction_threshold=Inf`:    threshold ``η_{$(_tex(:text, "u"))}`` the value ``m_k`` has to exceed to reduce damping
   The default means, that we never reduce damping.
 * `damping_term_min = 0.1`:             lower bound ``μ_{$(_tex(:text, "l"))}`` for the damping ``μ_k`` throughout the iterations
 * `damping_term_max = Inf`:             upper bound ``μ_{$(_tex(:text, "u"))}`` for the damping ``μ_k`` throughout the iterations
 * `initial_damping_term=damping_term_min`: initial damping ``μ_0``
-* `initial_residual_values = zeros(m)`: a cache for the vector of residuals, `m` is the number of residual blocks
+* `initial_residual_values = zeros(m)`: a cache for the vector of residuals, `m` is the total number of residuals, summed over all blocks
 * `initial_jacobian_matrices`: a cache for the evaluated Jacobians (currently only used if `use_unified_basis = true`, then initialized to a vector of jacobian matrices, otherwise ignored)
 $(_kwargs(:retraction_method))
 * `scaling_threshold = 1.0e-6`:         a threshold `ε` to bound the scaling parameter `α` in the robust case away from `1`, see [`get_LevenbergMarquardt_scaling`](@ref)

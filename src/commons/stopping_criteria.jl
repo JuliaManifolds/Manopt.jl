@@ -82,7 +82,7 @@ call, since some internal criteria might keep an internal status.
 
 # Constructor
 
-    StopWhenAll(c::NTuple{N,StoppingCriterion} where N)
+    StopWhenAll(c::Vector{<:StoppingCriterion})
     StopWhenAll(c::StoppingCriterion...)
 """
 mutable struct StopWhenAll{TCriteria <: Tuple} <: StoppingCriterionSet
@@ -204,7 +204,7 @@ call, since some internal criteria might keep an internal status.
 * `at_iteration`: the iteration at which this criterion last indicated to stop, `-1` otherwise
 
 # Constructor
-    StopWhenAny(c::NTuple{N,StoppingCriterion} where N)
+    StopWhenAny(c::Vector{<:StoppingCriterion})
     StopWhenAny(c::StoppingCriterion...)
 """
 mutable struct StopWhenAny{TCriteria <: Tuple} <: StoppingCriterionSet
@@ -573,7 +573,7 @@ function Base.show(io::IO, c::StopWhenChangeLess)
 end
 
 """
-    set_parameter!(c::StopWhenChangeLess, :MinIterateChange, v::Int)
+    set_parameter!(c::StopWhenChangeLess, :MinIterateChange, v)
 
 Update the minimal change below which an algorithm shall stop.
 """
@@ -628,7 +628,7 @@ end
 indicates_convergence(c::StopWhenCostChangeLess) = false
 function get_reason(c::StopWhenCostChangeLess)
     if c.at_iteration >= 0
-        return "At iteration $(c.at_iteration) the algorithm performed a step with an absolute cost change ($(abs(c.last_change))) less than $(c.tolerance)."
+        return "At iteration $(c.at_iteration) the algorithm performed a step with an absolute cost change ($(abs(c.last_change))) less than $(c.tolerance).\n"
     end
     return ""
 end
@@ -846,8 +846,7 @@ end
 function get_reason(sc::StopWhenCriterionWithIterationCondition)
     has_stopped = (sc.at_iteration >= 0)
     if has_stopped
-        r = "At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop together with $(sc.comp),
-        since $(status_summary(sc.stopping_criterion))"
+        r = "At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop together with $(sc.comp), since $(status_summary(sc.stopping_criterion))\n"
         return r
     end
     return ""
@@ -1108,7 +1107,8 @@ Create a stopping criterion with threshold `ε` for the gradient mapping for the
 That is, this criterion indicates to stop when the gradient mapping has a norm less than `ε`.
 The gradient mapping is defined as
 ``G_λ(p) = -$(_tex(:frac, "1", "λ"))$(_tex(:log))_p$(_tex(:bigl))(T_λ(p)$(_tex(:bigr)))``,
-where ``T_λ(p) = $(_tex(:prox))_{λ f}$(_tex(:bigl))(\\exp_p(-λ $(_tex(:grad)) f(p))$(_tex(:bigr)))``
+where, for ``f = g + h`` with ``g`` smooth and ``h`` (possibly) nonsmooth,
+``T_λ(p) = $(_tex(:prox))_{λ h}$(_tex(:bigl))($(_tex(:retr))_p(-λ $(_tex(:grad)) g(p))$(_tex(:bigr)))``
 is the proximal mapping.
 """
 mutable struct StopWhenGradientMappingNormLess{TF} <: StoppingCriterion
@@ -1334,7 +1334,7 @@ mutable struct StopWhenLagrangeMultiplierLess{
     mode::Symbol
     at_iteration::Int
     function StopWhenLagrangeMultiplierLess(
-            tol::T; mode::Symbol = :estimate, names::B = nothing
+            tol::T = 1.0e-6; mode::Symbol = :estimate, names::B = nothing
         ) where {T <: Real, B <: Union{Nothing, <:AbstractVector{<:String}}}
         return new{T, Vector{T}, B}([tol], zero([tol]), names, mode, -1)
     end
@@ -1368,7 +1368,7 @@ function status_summary(sc::StopWhenLagrangeMultiplierLess; context::Symbol = :d
     msg = "Lagrange multipliers"
     isnothing(sc.names) && (msg *= " with tolerances $(sc.tolerances)")
     if !isnothing(sc.names)
-        msg *= join(["$si < $bi" for (si, bi) in zip(sc.names, sc.tolerances)], ", ")
+        msg *= " " * join(["$si < $bi" for (si, bi) in zip(sc.names, sc.tolerances)], ", ")
     end
     return (_is_inline(context) ? "" : "A stopping criterion to stop when the Lagrange multipliers are less than $(sc.tolerances).\n$(_MANOPT_INDENT)") * "$(msg):$(_MANOPT_INDENT)$(s)"
 end
@@ -1459,9 +1459,9 @@ function get_reason(sc::StopWhenRepeated)
     has_stopped = (sc.at_iteration >= 0)
     if (sc.at_iteration >= 0)
         s = has_stopped ? "reached" : "not reached"
-        c = sc.consecutive ? "consecutive" : ""
+        c = sc.consecutive ? " consecutive" : ""
         # we can only get the last reason, unless we do more allocations
-        r = """At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n) $(c) times:
+        r = """At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n)$(c) times:
         $(sc.count) ≥ $(sc.n): $(s)
         last inner criterion status:
         $(_in_str(status_summary(sc.stopping_criterion); indent = 1, headers = 0))
@@ -1484,8 +1484,8 @@ function status_summary(sc::StopWhenRepeated; context::Symbol = :default)
     (context == :short) && return "StopWhenRepeated($(repr(sc.stopping_criterion)))×$(sc.n)"
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    c = sc.consecutive ? "consecutive" : ""
-    return (_is_inline(context) ? "$(status_summary(sc.stopping_criterion; context = context)) × $(sc.count) ≥ $(sc.n) ($(c)):" : "A stopping criterion to stop when the inner criterion has indicated to stop $(sc.n) ($(c)) times.\n$(_in_str(status_summary(sc.stopping_criterion; context = context); indent = 1, headers = 0))\n$(_in_str(s; indent = 2, headers = 0))")
+    c = sc.consecutive ? " consecutive" : ""
+    return (_is_inline(context) ? "$(status_summary(sc.stopping_criterion; context = context)) × $(sc.count) ≥ $(sc.n)$(c):$(_MANOPT_INDENT)$(s)" : "A stopping criterion to stop when the inner criterion has indicated to stop $(sc.n)$(c) times.\n$(_in_str(status_summary(sc.stopping_criterion; context = context); indent = 1, headers = 0))\n$(_in_str(s; indent = 2, headers = 0))")
 end
 
 #
@@ -1632,7 +1632,7 @@ end
 indicates_convergence(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual) = false
 function get_reason(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
     if c.at_iteration >= 0
-        return "At iteration $(c.at_iteration) the algorithm performed a step with a relative a posteriori cost change ($(abs(c.last_change))) less than or equal to $(c.threshold)."
+        return "At iteration $(c.at_iteration) the algorithm performed a step with a relative a posteriori cost change ($(c.last_change)) less than or equal to $(c.threshold).\n"
     end
     return ""
 end
@@ -1640,7 +1640,7 @@ function status_summary(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual; con
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = $(abs(c.last_change)) ≤ $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the relative posteriori cost change is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = $(c.last_change) ≤ $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the relative posteriori cost change is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
     return print(io, "StopWhenRelativeAPosterioriCostChangeLessOrEqual($(c.threshold))")

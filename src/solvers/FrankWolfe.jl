@@ -187,7 +187,7 @@ function Base.show(io::IO, fws::FrankWolfeState)
     print(io, "inverse_retraction_method = ", fws.inverse_retraction_method)
     print(io, ", p = ", fws.p, ", retraction_method = ", fws.retraction_method)
     print(io, ", stopping_criterion = ", fws.stop, ", stepsize = ", fws.stepsize)
-    return print(io, "X = ", fws.X, ")")
+    return print(io, ", X = ", fws.X, ")")
 end
 function status_summary(fws::FrankWolfeState; context::Symbol = :default)
     (context === :short) && return repr(fws)
@@ -267,13 +267,12 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(
   the gradient of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
 $(_kwargs(:sub_kwargs))
 
-* `sub_objective=`[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_gradient)`:
+* `sub_objective=`[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad)`:
   the objective for the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_problem"))
 
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 $(_kwargs(:sub_state; default = "`[`GradientDescentState`](@ref)`(M, copy(M,p))"))
 
-$(_kwargs(:X; add_properties = [:as_Gradient]))
 $(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)"))
   $(_note(:KeywordUsedIn, "sub_state"))
 $(_kwargs(:X; add_properties = [:as_Gradient]))

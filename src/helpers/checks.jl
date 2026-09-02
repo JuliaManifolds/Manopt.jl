@@ -6,7 +6,7 @@ Check numerically whether the differential `dF(M,p,X)` of `F(M,p)` is correct.
 This implements the method described in [Boumal:2023; Section 4.8](@cite).
 
 Note that if the errors are below the given tolerance and the method is exact,
-no plot is generated,
+no plot is generated.
 
 # Keyword arguments
 
@@ -116,8 +116,8 @@ $(_kwargs(:retraction_method))
   specify window sizes within the `log_range` that are used for the slope estimation.
   the default is, to use all window sizes `2:N`.
 
-The remaining keyword arguments are also passed down to the `check_vector` call, such that tolerances can
-easily be set.
+The tolerances `atol` and `rtol` are passed to the `is_vector` check;
+all remaining keyword arguments are passed down to the [`check_differential`](@ref) call.
 
 """
 function check_gradient(
@@ -195,8 +195,6 @@ no plot is generated.
 * `limits=(-8.0, 0.0)`: specify the limits in the `log_range`
 * `log_range=range(limits[1], limits[2]; length=N)`:
   specify the range of points (in log scale) to sample the Hessian line
-* `N=101`:
-  number of points to use within the `log_range` default range ``[10^{-8},10^{0}]``
 * `plot=false`:
   whether to plot the resulting verification (requires `Plots.jl` to be loaded). The plot is in log-log-scale. This is returned and can then also be saved.
 $(_kwargs(:retraction_method))
@@ -208,11 +206,12 @@ $(_kwargs(:retraction_method))
   specify window sizes within the `log_range` that are used for the slope estimation.
   the default is, to use all window sizes `2:N`.
 
-The `kwargs...` are also passed down to the `check_vector` and the `check_gradient` call, such that tolerances can
-easily be set.
+The `atol` and `rtol` tolerances are used for all checks performed here;
+the remaining `kwargs...` are passed down to the inner [`check_gradient`](@ref) call.
 
 While `check_vector` is also passed to the inner call to `check_gradient` as well as the `retraction_method`,
-this inner `check_gradient` is meant to be just for inner verification, so it does not throw an error nor produce a plot itself.
+this inner `check_gradient` is meant to be just for inner verification, so it does not produce a plot itself,
+but it does report (and, for `error=:error`, throw) according to the `error` keyword.
 """
 function check_Hessian(
         M::AbstractManifold,

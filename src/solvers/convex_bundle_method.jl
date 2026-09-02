@@ -101,7 +101,7 @@ $(_fields(:inverse_retraction_method))
 * `k_min::R`:                  lower bound on the sectional curvature of the manifold
 * `last_stepsize::R`:          the last computed stepsize
 * `linearization_errors<:AbstractVector{<:R}`: linearization errors at the last serious step
-* `m::R`:                      the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
+* `m::R`:                      the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m t_k ξ``, where ``t_k`` is the step size of iteration ``k``.
 * `null_stepsize::R`:          the stepsize computed in the last null step
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `p_last_serious::P`:         last serious iterate
@@ -392,9 +392,9 @@ end
 @doc """
     DomainBackTrackingStepsize <: Stepsize
 
-Implement a backtrack as long as we are ``q =$(_tex(:retr))_p(X)``
+Implement a backtrack as long as ``q = $(_tex(:retr))_p(X)``
 yields a point closer to ``p`` than ``$(_tex(:norm, "X"; index = "p"))`` or
-``q`` is not on the domain.
+``q`` is not in the domain.
 For the domain this step size requires a [`ConvexBundleMethodState`](@ref).
 """
 mutable struct DomainBackTrackingStepsize{TRM <: AbstractRetractionMethod, P, F} <: Stepsize
@@ -448,7 +448,7 @@ get_initial_stepsize(dbt::DomainBackTrackingStepsize) = dbt.initial_stepsize
 function Base.show(io::IO, dbt::DomainBackTrackingStepsize)
     print(io, "DomainBackTrackingStepsize(; candidate_point = ", dbt.candidate_point)
     print(io, ", contraction_factor = ", dbt.contraction_factor, ", initial_stepsize = ", dbt.initial_stepsize)
-    print(io, ", last_stepsize = ", dbt.last_stepsize, " message = ", dbt.message)
+    print(io, ", last_stepsize = ", dbt.last_stepsize, ", message = ", dbt.message)
     print(io, ", retraction_method = ", dbt.retraction_method)
     return print(io, ")")
 end
@@ -558,7 +558,7 @@ end
 function show(io::IO, nsbt::NullStepBackTrackingStepsize)
     print(io, "NullStepBackTrackingStepsize(; candidate_point = ", nsbt.candidate_point)
     print(io, ", contraction_factor = ", nsbt.contraction_factor, ", initial_stepsize = ", nsbt.initial_stepsize)
-    print(io, ", last_stepsize = ", nsbt.last_stepsize, " message = ", nsbt.message)
+    print(io, ", last_stepsize = ", nsbt.last_stepsize, ", message = ", nsbt.message)
     print(io, ", retraction_method = ", nsbt.retraction_method, ", X = ", nsbt.X)
     return print(io, ")")
 end
@@ -597,7 +597,7 @@ The subproblem for the convex bundle method is
     $(_tex(:frac, "1", "2"))
     $(_tex(:Bigl))\\lVert
     $(_tex(:sum, "j ∈ J_k")) λ_j $(_tex(:rm, "P"))_{p_k←q_j} X_{q_j}
-    $(_tex(:Bigl))\\rVert^2
+    $(_tex(:Bigr))\\rVert^2
     + $(_tex(:sum, "j ∈ J_k")) λ_jc_j^k
     \\\\
     $(_tex(:text, "s. t."))$(_tex(:quad)) &
@@ -656,13 +656,14 @@ $(_args([:M, :f, :subgrad_f, :p]))
 * `atol_λ=sqrt(eps())`: tolerance parameter for the convex coefficients in ``λ``.
 * `bundle_cap=25`
 $(_kwargs(:callbacks; add_properties = [:process_note]))
+* `contraction_factor=0.975`: the contraction factor passed to the default [`DomainBackTracking`](@ref) step size.
 * `diameter=π/3`: estimate for the diameter of the level set of the objective function at the starting point.
 * `domain=(M, p) -> isfinite(f(M, p))`: a function that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
 $(_kwargs(:evaluation))
 $(_kwargs(:inverse_retraction_method))
 * `k_max=0`: upper bound on the sectional curvature of the manifold.
-* `m=1e-3`: the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
-$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`)"))
+* `m=1e-3`: the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m t_k ξ``, where ``t_k`` is the step size of iteration ``k``.
+$(_kwargs(:stepsize; default = "`[`DomainBackTracking`](@ref)`(; contraction_factor=0.975)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:sub_problem; default = "`[`convex_bundle_method_subsolver`](@ref)` "))
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)`()"))

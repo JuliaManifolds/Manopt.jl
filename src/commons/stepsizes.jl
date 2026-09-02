@@ -629,7 +629,7 @@ Set ``c_0=0`` and use ``ω_0 = $(_tex(:norm, "$(_tex(:grad)) f(p_0)"; index = "p
 
 For the first iterate use the initial step size ``s_0 = $(_tex(:frac, "1", "b_0"))``.
 
-Then, given the last gradient ``X_{k-1} = $(_tex(:grad)) f(x_{k-1})``,
+Then, given the last gradient ``X_{k-1} = $(_tex(:grad)) f(p_{k-1})``,
 and a previous ``ω_{k-1}``, the values ``(b_k, ω_k, c_k)`` are computed
 using ``X_k = $(_tex(:grad)) f(p_k)`` and the following cases
 
@@ -690,7 +690,7 @@ $(_fields(:vector_transport_method))
 
 # Constructor
 
-    BarzilaiBorweinStepsize(M::AbstractManifold, p; kwargs...)
+    BarzilaiBorweinStepsize(M::AbstractManifold; kwargs...)
 
 ## Keyword arguments
 
@@ -833,7 +833,7 @@ function Base.show(io::IO, bbs::BarzilaiBorweinStepsize)
 end
 function status_summary(bbs::BarzilaiBorweinStepsize; context::Symbol = :default)
     (context === :short) && return repr(bbs)
-    (context === :inline) && return "An Barzilai–Borwein stepsize with strategy :$(bbs.strategy)."
+    (context === :inline) && return "A Barzilai–Borwein stepsize with strategy :$(bbs.strategy)."
     return """
     Barzilai–Borwein stepsize
 
@@ -1382,7 +1382,7 @@ $(_kwargs(:retraction_method))
 * `hybrid=true`: use the hybrid strategy
 $(_kwargs(:vector_transport_method))
 
-$(_note(:ManifoldDefaultsFactory, "CubicBracketingLinesearch"))
+$(_note(:ManifoldDefaultsFactory, "CubicBracketingLinesearchStepsize"))
 """
 function CubicBracketingLinesearch(args...; kwargs...)
     return ManifoldDefaultsFactory(CubicBracketingLinesearchStepsize, args...; requires_point = true, kwargs...)
@@ -1592,7 +1592,7 @@ Compute the geometric curvature function ``ζ_κ(d)`` used by the RDoG stepsize:
 \end{cases}
 ```
 
-For small arguments, a Taylor approximation is used for numerical stability.
+For ``d = 0`` (and for ``κ ≥ 0``) the value ``1`` is returned.
 """
 function geometric_curvature_function(κ::Real, d::Real)
     if κ < 0 && d > 0
@@ -2070,7 +2070,7 @@ optimization algorithm and let ``γ_k`` be a sequence of numbers that is square 
 Then the step size computed here reads
 
 ```math
-s_k = $(_tex(:frac, "f(p^{(k)}) - f_{$(_tex(:text, "best"))} + γ_k", _tex(:norm, "∂f(p^{(k)})"))),
+s_k = $(_tex(:frac, "f(p^{(k)}) - f_{$(_tex(:text, "best"))} + γ_k", _tex(:norm, "∂f(p^{(k)})") * "^2")),
 ```
 
 where ``∂f`` denotes a nonzero-subgradient of ``f`` at the current iterate ``p^{(k)}``.
@@ -2322,7 +2322,7 @@ end
 
 Perform a linesearch to fulfill both the Armijo-Goldstein conditions
 ```math
-f$(_tex(:bigl))( $(_tex(:retr))_{p}(αX) $(_tex(:bigr))) ≤ f(p) + c_1 α_k ⟨$(_tex(:grad)) f(p), X⟩_{p}
+f$(_tex(:bigl))( $(_tex(:retr))_{p}(αX) $(_tex(:bigr))) ≤ f(p) + c_1 α ⟨$(_tex(:grad)) f(p), X⟩_{p}
 ```
 
 as well as the Wolfe conditions
@@ -2462,7 +2462,7 @@ function Base.show(io::IO, a::WolfePowellBinaryLinesearchStepsize)
 end
 function status_summary(a::WolfePowellBinaryLinesearchStepsize; context::Symbol = :default)
     (context === :short) && return repr(a)
-    (context === :inline) && return "A Wolfe Powell bisection dissection step size (last stepsize: $(a.last_stepsize))"
+    (context === :inline) && return "A Wolfe Powell bisection step size (last stepsize: $(a.last_stepsize))"
     return """
     A Wolfe Powell bisection line search based step size
     (last stepsize: $(a.last_stepsize))
@@ -3263,7 +3263,7 @@ $(_kwargs(:vector_transport_method))
   for accepting secant step. Allowed range: `secant_acceptance_ratio >= 0`.
   In case of rejection, a bisection step is performed instead.
 
-$(_note(:ManifoldDefaultsFactory, "HagerZhangLinesearch"))
+$(_note(:ManifoldDefaultsFactory, "HagerZhangLinesearchStepsize"))
 """
 function HagerZhangLinesearch(args...; kwargs...)
     return ManifoldDefaultsFactory(HagerZhangLinesearchStepsize, args...; kwargs...)

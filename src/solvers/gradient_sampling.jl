@@ -213,13 +213,13 @@ function Base.show(io::IO, gss::GradientSamplingState)
     print(io, "GradientSamplingState(; ")
     print(io, "callbacks = ", gss.callbacks, ", ")
     print(io, "convex_hull_coeffs = ", gss.convex_hull_coeffs, ", p = ", gss.p, ", ")
-    print(io, "sampled_point = ", gss.sampled_points, ", sampled_vectors = ", gss.sampled_vectors, ", ")
+    print(io, "sampled_points = ", gss.sampled_points, ", sampled_vectors = ", gss.sampled_vectors, ", ")
     print(io, "sampling_radius = ", gss.sampling_radius, ", sampling_radius_reduction = ", gss.sampling_radius_reduction, ", ")
     print(io, "subgradient_norm_reduction = ", gss.subgradient_norm_reduction, ", subgradient_norm_tolerance = ", gss.subgradient_norm_tolerance, ", ")
     print(io, "sub_problem = ", gss.sub_problem, ", sub_state = ", gss.sub_state, ", ")
     print(io, "stepsize = ", gss.stepsize, ", stopping_criterion = ", gss.stop, ", ")
-    print(io, "retraction_method = ", gss.retraction_method, " vector_transport_method = ", gss.vector_transport_method, ", ")
-    print(io, "X = ", gss.X, "m Y = ", gss.Y)
+    print(io, "retraction_method = ", gss.retraction_method, ", vector_transport_method = ", gss.vector_transport_method, ", ")
+    print(io, "X = ", gss.X, ", Y = ", gss.Y)
     return print(io, ")")
 end
 
@@ -264,7 +264,7 @@ evaluates the gradient at these points and transports these to the current itera
 It then builds a surrogate in the tangent space consisting of these ``m`` tangent vectors
 and the gradient at the current iterate to determine a new descent direction in the convex
 hull of these. See [`gradient_sampling_subsolver`](@ref) for the actual sub problem that is solved.
-If this  direction exceeds, the `subgradient_norm_tolerance` the step is rejected and both
+If the norm of this direction falls below the `subgradient_norm_tolerance`, the step is rejected and both
 the ball radius and this tolerance are reduced.
 
 # Input
@@ -323,7 +323,7 @@ function gradient_sampling!(
         differential = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    keywords_accepted(gradient_sampling; kwargs...)
+    keywords_accepted(gradient_sampling!; kwargs...)
     mgo = ManifoldGradientObjective(
         f, grad_f; differential = differential, evaluation = evaluation
     )

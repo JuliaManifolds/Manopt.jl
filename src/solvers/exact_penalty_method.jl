@@ -152,7 +152,7 @@ function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :defaul
     $Iter
     ## Parameters$(as)
     * ϵ: $(epms.ϵ) (ϵ_min: $(epms.ϵ_min), θ_ϵ: $(epms.θ_ϵ))
-    * u: $(epms.u) (ϵ_min: $(epms.u_min), θ_u: $(epms.θ_u))
+    * u: $(epms.u) (u_min: $(epms.u_min), θ_u: $(epms.θ_u))
     * ρ: $(epms.ρ) (θ_ρ: $(epms.θ_ρ))
 
     ## Stopping criterion
@@ -243,18 +243,17 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 # Further keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `equality_constraints=missing`: the number ``n`` of equality constraints.
-  If not provided, a call to the gradient of `g` is performed to estimate these.
+* `equality_constraints=nothing`: the number ``n`` of equality constraints.
+  If not provided, a call to the gradient of `h` is performed to estimate these.
 * `gradient_equality_range=gradient_range`:
    specify how gradients of the equality constraints are represented, see [`VectorGradientFunction`](@ref).
 * `gradient_inequality_range=gradient_range`:
    specify how gradients of the inequality constraints are represented, see [`VectorGradientFunction`](@ref).
-* `gradient_range=missing`: specify how both gradients of the constraints are represented
-* `inequality_constraints=missing`: the number ``m`` of inequality constraints.
+* `gradient_range=nothing`: specify how both gradients of the constraints are represented
+* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
    If not provided, a call to the gradient of `g` is performed to estimate these.
-* `min_stepsize=1e-10`: the minimal step size
 * `smoothing=`[`LogarithmicSumOfExponentials`](@ref): a [`SmoothingTechnique`](@ref) to use
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )"))
 * `sub_cost=`[`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`: cost to use in the sub solver
   $(_note(:KeywordUsedIn, "sub_problem"))
 * `sub_grad=`[`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver
@@ -263,7 +262,7 @@ $(_kwargs(:sub_kwargs))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
 $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
   where a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used
-* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping criterion for the sub solver
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`: a stopping criterion for the sub solver
   $(_note(:KeywordUsedIn, "sub_state"))
 * `u=1e-1`: the smoothing parameter and threshold for violation of the constraints
 * `u_exponent=1/100`: exponent of the u update factor;

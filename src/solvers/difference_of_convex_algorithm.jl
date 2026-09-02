@@ -91,9 +91,9 @@ end
 
 function Base.show(io::IO, doco::ManifoldDifferenceOfConvexObjective)
     print(io, "ManifoldDifferenceOfConvexObjective("); print(io, doco.cost); print(io, ", ")
-    print(io, doco.∂h!); print(io, "; ")
+    print(io, doco.∂h!)
     if !ismissing(doco.gradient!)
-        print(io, ", gradient = ")
+        print(io, "; gradient = ")
         print(io, doco.gradient!)
     end
     return print(io, ")")
@@ -107,7 +107,7 @@ function status_summary(doco::ManifoldDifferenceOfConvexObjective; context::Symb
     A difference of convex objective on a manifold.
 
     ## Functions
-    * cost `f = g + h`: $(_MANOPT_INDENT)$(doco.cost)$(gsd)
+    * cost `f = g - h`: $(_MANOPT_INDENT)$(doco.cost)$(gsd)
     * ∂h:               $(_MANOPT_INDENT)$(doco.∂h!)"""
 end
 
@@ -139,11 +139,11 @@ a closed form solution for the sub task.
 # Constructors
 
     DifferenceOfConvexState(M, sub_problem, sub_state; kwargs...)
-    DifferenceOfConvexState(M, sub_solver; evaluation=InplaceEvaluation(), kwargs...)
+    DifferenceOfConvexState(M, sub_solver; evaluation=AllocatingEvaluation(), kwargs...)
 
 Generate the state either using a solver from Manopt, given by
 an [`AbstractManoptProblem`](@ref) `sub_problem` and an [`AbstractManoptSolverState`](@ref) `sub_state`,
-or a closed form solution `sub_solver` for the sub-problem the function expected to be of the form `(M, q, p, X) -> q`.
+or a closed form solution `sub_solver` for the sub-problem, of the form `(M, p, X) -> q` for `AllocatingEvaluation()` (the default) or `(M, q, p, X) -> q` for `InplaceEvaluation()`.
 
 ## further keyword arguments
 
@@ -226,13 +226,13 @@ function status_summary(dcs::DifferenceOfConvexState; context::Symbol = :default
     Conv = has_converged(dcs.stop) ? "Yes" : "No"
     as = _callbacks_summary(dcs)
     sub = status_summary(dcs.sub_state; context = context)
-    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
+    sub = replace(sub, "\n#" => "\n$(_MANOPT_INDENT)| ##", "\n" => "\n$(_MANOPT_INDENT)| ")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Algorithm
     $Iter
     ## Parameters$(as)
     * sub solver state:
-        | $(sub)
+    $(_MANOPT_INDENT)| $(sub)
 
     ## Stopping criterion
     $(_in_str(status_summary(dcs.stop; context = context); indent = 0, headers = 1))
@@ -263,7 +263,7 @@ Then repeat for ``k=0,1,…``
   p^{(k+1)} ∈ $(_tex(:argmin))_{q ∈ $(_math(:Manifold))} g(q) - ⟨X^{(k)}, $(_tex(:log))_{p^{(k)}}q⟩
 ```
 
-until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
+until the stopping criterion (see the `stopping_criterion=` keyword) is fulfilled.
 
 # Input
 
@@ -295,10 +295,8 @@ $(_kwargs(:sub_kwargs))
   $(_note(:KeywordUsedIn, "sub_problem"))
 $(_kwargs(:sub_state; default = "(`[`GradientDescentState`](@ref)` or `[`TrustRegionsState`](@ref)` if `sub_hess` is provided)"))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
-* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`:
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-8)`:
   a stopping criterion used within the default `sub_state=`
-  $(_note(:KeywordUsedIn, "sub_state"))
-* `sub_stepsize=`[`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`.
   $(_note(:KeywordUsedIn, "sub_state"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 

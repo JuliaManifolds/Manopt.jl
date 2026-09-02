@@ -125,7 +125,7 @@ A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 
 # Fields
 
-* `η1`, `η1`: bounds for evaluating the regularization parameter
+* `η1`, `η2`: bounds for evaluating the regularization parameter
 * `γ1`, `γ2`:  shrinking and expansion factors for regularization parameter `σ`
 * `H`: the current Hessian evaluation
 * `s`: the current solution from the subsolver
@@ -147,13 +147,14 @@ $(_fields(:stopping_criterion; name = "stop"))
 $(_fields([:sub_problem, :sub_state]))
 $(_fields(:callbacks; add_properties = [:as_dict]))
 
-Furthermore the following integral fields are defined
-
-# Constructor
+# Constructors
 
     AdaptiveRegularizationState(M, sub_problem, sub_state; kwargs...)
+    AdaptiveRegularizationState(M, sub_problem; evaluation=AllocatingEvaluation(), kwargs...)
 
-Construct the solver state with all fields stated as keyword arguments and the following defaults
+Construct the solver state with all fields stated as keyword arguments and the following defaults.
+Given a `sub_problem` and an `evaluation=` keyword, the sub problem solver is assumed to be the closed form solution,
+where `evaluation` determines how to call the sub function.
 
 ## Keyword arguments
 
@@ -161,8 +162,8 @@ Construct the solver state with all fields stated as keyword arguments and the f
 * `η2=0.9`
 * `γ1=0.1`
 * `γ2=2.0`
-* `σ=100/manifold_dimension(M)`
-* `σmin=1e-7`
+* `σ=100.0/sqrt(manifold_dimension(M))`
+* `σmin=1e-10`
 * `ρ_regularization=1e3`
 $(_kwargs([:evaluation, :p, :retraction_method]))
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
@@ -268,7 +269,7 @@ function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :de
     Conv = has_converged(arcs.stop) ? "Yes" : "No"
     as = _callbacks_summary(arcs)
     sub = status_summary(arcs.sub_state; context = context)
-    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
+    sub = replace(sub, "\n#" => "\n$(_MANOPT_INDENT)| ##", "\n" => "\n$(_MANOPT_INDENT)| ")
     s = """
     # Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)
     $Iter
@@ -279,7 +280,7 @@ function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :de
     * ρ (ρ_regularization) : $(arcs.ρ) ($(arcs.ρ_regularization))
     * retraction method    : $(arcs.retraction_method)
     * sub solver state     :
-        | $(sub)
+    $(_MANOPT_INDENT)| $(sub)
 
     ## Stopping criterion
     $(_in_str(status_summary(arcs.stop; context = context); indent = 0, headers = 1))
@@ -324,7 +325,7 @@ $_doc_ARC_model
 on the tangent space at the current iterate ``p_k``, where ``X ∈ $(_math(:TangentSpace; p = "p_k"))`` and
 ``σ_k > 0`` is a regularization parameter.
 
-Let ``Xp^{(k)}`` denote the minimizer of the model ``m_k`` and use the model improvement
+Let ``X_k`` denote the minimizer of the model ``m_k`` and use the model improvement
 
 $_doc_ARC_improvement
 
@@ -362,7 +363,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(40)`$(_
 $(_kwargs(:sub_kwargs))
 * `sub_objective=nothing`: a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword
   By default, this is initialized as a [`AdaptiveRegularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
-$(_kwargs(:sub_state; default = "`[`LanczosState`](@ref)`(M, copy(M,p))"))
+$(_kwargs(:sub_state; default = "`[`LanczosState`](@ref)`(TangentSpace(M, copy(M, p)))"))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 
 $(_note(:OtherKeywords))

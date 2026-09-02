@@ -15,7 +15,6 @@ $(_fields(:inverse_retraction_method))
 * `R!`:                          method employed in the iteration to perform the reflection of `x` at the prox `p`.
 $(_fields(:p; add_properties = [:as_Iterate]))
   For the parallel Douglas-Rachford, this is not a value from the `PowerManifold` manifold but the mean.
-* `R!`:              whether `R` works in-place or allocating
 $(_fields(:retraction_method))
 * `s`:                         the last result of the double reflection at the proximal maps relaxed by `α`.
 $(_fields(:stopping_criterion; name = "stop"))
@@ -39,7 +38,7 @@ $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `R!= `[`reflect`](@ref): method employed in the iteration to perform the reflection of `p` at
   the prox of `p`, which always works in-place.
-* `reflection_evaluation=`[`InplaceEvaluation`](@ref)`()`) specify whether the reflection works in-place (default) or allocating
+* `reflection_evaluation=`[`InplaceEvaluation`](@ref)`()`: specify whether the reflection works in-place (default) or allocating
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)"))
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
@@ -190,10 +189,10 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs([:evaluation, :inverse_retraction_method]))
   This is used both in the relaxation step as well as in the reflection, unless you set `R` yourself.
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter ``λ_k``
-* `R=reflect!`: method employed in the iteration to perform the reflection of `p` at the prox of `p`.
+* `R=`[`reflect`](@ref): method employed in the iteration to perform the reflection of `p` at the prox of `p`.
   This uses by default [`reflect`](@ref) or `reflect!` depending on `reflection_evaluation` and
   the retraction and inverse retraction specified by `retraction_method` and `inverse_retraction_method`, respectively.
-* `reflection_evaluation`: ([`AllocatingEvaluation`](@ref) whether `R` works in-place or allocating
+* `reflection_evaluation=`[`AllocatingEvaluation`](@ref)`()`: whether `R` works in-place or allocating
 $(_kwargs(:retraction_method))
   This is used both in the relaxation step as well as in the reflection, unless you set `R` yourself.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-5)"))

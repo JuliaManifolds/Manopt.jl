@@ -60,10 +60,10 @@ of the Euclidean case. The default is given in brackets, the required value rang
 after the description
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
-* `population::`[`NelderMeadSimplex`](@ref): a population (set) of ``d+1`` points ``x_i``, ``i=1,…,n+1``, where ``d``
+* `population::`[`NelderMeadSimplex`](@ref): a population (set) of ``d+1`` points ``p_i``, ``i=1,…,d+1``, where ``d``
   is the $(_link(:manifold_dimension; M = "")) of `M`.
-* `α`: the reflection parameter ``α > 0``:
-* `γ` the expansion parameter ``γ > 0``:
+* `α`: the reflection parameter ``α > 0``,
+* `γ`: the expansion parameter ``γ > 1``,
 * `ρ`: the contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ`: the shrinkage coefficient, ``0 < σ ≤ 1``
 $(_fields(:p))
@@ -81,7 +81,7 @@ Construct a Nelder-Mead Option with a default population (if not provided) of se
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
-* `p=copy(M, population.pts[1])`: initialize the storage for the best point (iterate)¨
+* `p=copy(M, population.pts[1])`: initialize the storage for the best point (iterate)
 * `population=`[`NelderMeadSimplex`](@ref)`(M)`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
   a [`StoppingCriterion`](@ref)
@@ -414,7 +414,7 @@ function status_summary(c::StopWhenPopulationConcentrated; context::Symbol = :de
     (context === :short) && (return repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    head = (!_is_inline(context) ? "Stop when the population of a swarm is concentrated in eher function values (tolerance: $(c.tol_f)) or points (tolerance: $(c.tol_p))\n$(_MANOPT_INDENT)" : "")
+    head = (!_is_inline(context) ? "Stop when the population is concentrated in both function values (tolerance: $(c.tol_f)) and points (tolerance: $(c.tol_p))\n$(_MANOPT_INDENT)" : "")
     return head * "Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):$(_MANOPT_INDENT)$s"
 end
 function Base.show(io::IO, c::StopWhenPopulationConcentrated)

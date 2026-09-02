@@ -9,7 +9,7 @@ A state for the [`conjugate_residual`](@ref) solver.
 * `callbacks::C`: the callbacks dictionary
 * `r::T`: the residual ``r = -b(p) - $(_tex(:Cal, "A"))(p)[X]``
 * `d::T`: the conjugate direction
-* `Ar::T`, `Ad::T`: storages for ``$(_tex(:Cal, "A"))(p)[d]``, ``$(_tex(:Cal, "A"))(p)[r]``
+* `Ar::T`, `Ad::T`: storages for ``$(_tex(:Cal, "A"))(p)[r]``, ``$(_tex(:Cal, "A"))(p)[d]``
 * `rAr::R`: internal field for storing ``⟨ r, $(_tex(:Cal, "A"))(p)[r] ⟩``
 * `α::R`: a step length
 * `β::R`: the conjugate coefficient
@@ -34,7 +34,7 @@ Initialize the state with default values.
 * `β::R=0.0`
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
-$(_kwargs(:X))
+$(_kwargs(:X; default = _open_link(:rand; M = "TpM")))
 
 # See also
 
@@ -112,7 +112,7 @@ end
 function Base.show(io::IO, crs::ConjugateResidualState)
     print(io, "ConjugateResidualState(;")
     print(io, " X = ", crs.X, ", d = ", crs.d, ", r = ", crs.r, ", α = ", crs.α, ", β = ", crs.β)
-    print(io, "Ar = ", crs.Ar, ", Ad = ", crs.Ad, ", rAr = ", crs.rAr)
+    print(io, ", Ar = ", crs.Ar, ", Ad = ", crs.Ad, ", rAr = ", crs.rAr)
     print(io, ", stopping_criterion = ", status_summary(crs.stop; context = :short))
     return print(io, ")")
 end
@@ -245,7 +245,7 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 $(_kwargs(:evaluation))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
-  ,  where `c` is ``$(_tex(:norm, "b"))
+  where ``c = $(_tex(:norm, "b"))`` is the norm of the vector field `b` at `p`.
 $(_note(:OutputSection))
 """
 

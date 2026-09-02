@@ -373,7 +373,7 @@ $(_args([:M, :f, :p]))
 # Keyword arguments
 
 * `σ=1.0`: initial standard deviation
-* `λ`:                  (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
+* `λ=4 + Int(floor(3 * log(manifold_dimension(M))))`: population size (can be
   increased for a more thorough global search but decreasing is not recommended)
 * `tol_fun=1e-12`: tolerance for the `StopWhenPopulationCostConcentrated`, similar to
   absolute difference between function values at subsequent points
@@ -383,9 +383,8 @@ $(_args([:M, :f, :p]))
 $(_kwargs(:stopping_criterion; default = "default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)"))
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs([:retraction_method, :vector_transport_method]))
-* `basis`               (`DefaultOrthonormalBasis()`) basis used to represent covariance in
-* `rng=default_rng()`: random number generator for generating new points
-  on `M`
+* `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: a basis used to represent the covariance matrix in coordinates
+* `rng=default_rng()`: random number generator for generating new points on `M`
 
 $(_note(:OtherKeywords))
 
@@ -637,7 +636,7 @@ function status_summary(c::StopWhenBestCostInGenerationConstant; context::Symbol
     (context == :short) && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
-    return "c.iterations_since_change > $(c.iteration_range):\t$s"
+    return "c.iterations_since_change >= $(c.iteration_range):\t$s"
 end
 function get_reason(c::StopWhenBestCostInGenerationConstant)
     if c.at_iteration >= 0
@@ -732,7 +731,7 @@ function status_summary(c::StopWhenEvolutionStagnates; context::Symbol = :defaul
     return """
     A stopping criterion to stop when the evolution stagnates, i.e.
     * generation >= $(c.min_size)
-    * the best mean did not decrease $(median_best_old) <= $(median_best_new)"
+    * the best mean did not decrease $(median_best_old) <= $(median_best_new)
     * the median did not decrease $(median_median_old) <= $(median_median_new)
     overall:$(_MANOPT_INDENT)$s"""
 end

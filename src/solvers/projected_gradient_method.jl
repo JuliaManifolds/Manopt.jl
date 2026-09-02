@@ -3,7 +3,7 @@
 
 # Fields
 
-$(_fields(:stepsize; name = "backtrack")) to determine the step size ``β_k`` step size from ``p_k`` to the candidate ``q_k``
+$(_fields(:stepsize; name = "backtrack")) ``β_k`` from ``p_k`` to the candidate ``q_k``
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 $(_fields(:p; add_properties = [:as_Iterate]))
@@ -14,7 +14,7 @@ $(_fields(:stepsize)) ``α_k`` to determine the ``q_k`` candidate
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields(:X))
 $(_fields(:X; name = "Y"))
-  a temporary memory for a tangent vector to store the no. Used within the backtracking
+  a temporary memory to store the search direction ``Y_k = $(_tex(:retr))_{p_k}^{-1}q_k``, used within the backtracking
 
 # Constructor
 

@@ -16,7 +16,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 
 # Constructor
 
-    PrimalDualManifoldSemismoothNewtonObjective(cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ)
+    PrimalDualManifoldSemismoothNewtonObjective(cost, prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual, linearized_forward_operator, adjoint_linearized_operator; Λ=missing, evaluation=AllocatingEvaluation())
 """
 mutable struct PrimalDualManifoldSemismoothNewtonObjective{
         TC, PF, DPF, PG, DPG, LFO, TALO, L,
@@ -145,8 +145,8 @@ end
 get_callbacks(pdsn::PrimalDualSemismoothNewtonState) = pdsn.callbacks
 
 _doc_get_differential_primal_prox = """
-    y = get_differential_primal_prox(M::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective σ, x)
-    get_differential_primal_prox!(p::TwoManifoldProblem, y, σ, x)
+    Y = get_differential_primal_prox(M::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective, σ, p, X)
+    get_differential_primal_prox!(M::AbstractManifold, Y, pdsno::PrimalDualManifoldSemismoothNewtonObjective, σ, p, X)
 
 Evaluate the differential proximal map of ``F`` stored within [`AbstractPrimalDualManifoldObjective`](@ref)
 
@@ -154,7 +154,7 @@ Evaluate the differential proximal map of ``F`` stored within [`AbstractPrimalDu
 D$(_tex(:prox))_{σF}(x)[X]
 ```
 
-which can also be computed in place of `y`.
+which can also be computed in place of `Y`.
 """
 
 @doc "$(_doc_get_differential_primal_prox)"
@@ -199,7 +199,7 @@ end
 
 _doc_get_differential_dual_prox = """
     η = get_differential_dual_prox(N::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective, n, τ, X, ξ)
-    get_differential_dual_prox!(N::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective, η, n, τ, X, ξ)
+    get_differential_dual_prox!(N::AbstractManifold, η, pdsno::PrimalDualManifoldSemismoothNewtonObjective, n, τ, X, ξ)
 
 Evaluate the differential proximal map of ``G_n^*`` stored within [`PrimalDualManifoldSemismoothNewtonObjective`](@ref)
 
@@ -363,7 +363,6 @@ $(_kwargs([:evaluation, :inverse_retraction_method]))
   `missing` indicates, that the forward operator is exact.
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
 * `reg_param=1e-5`: regularization parameter for the Newton matrix
-  Note that this changes the arguments the `forward_operator` is called.
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)

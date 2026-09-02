@@ -292,7 +292,7 @@ function get_jacobian!(
     return vgf.jacobian!(M, a, p, get_vector(M, p, c, B))
 end
 function status_summary(vgf::VectorDifferentialFunction; context::Symbol = :default)
-    _is_inline(context) && (return "A vectorial function including its differential $(length(vgf)) represented as $(vgf.cost_type) and its differential as $(vgf.jacobian_type) (adjoint: $(vgf.adjoint_jacobian_type))")
+    _is_inline(context) && (return "A vectorial function of length $(length(vgf)) including its differential, represented as $(vgf.cost_type) and its differential as $(vgf.jacobian_type) (adjoint: $(vgf.adjoint_jacobian_type))")
     return """
     A function defined on a manifold that maps into a vector space including its differential and the adjoint differential.
 
@@ -509,5 +509,6 @@ function show(io::IO, vhf::VectorHessianFunction)
     print(io, "function_type = "); print(io, vhf.cost_type)
     print(io, ", jacobian_type = "); print(io, vhf.jacobian_type)
     print(io, ", hessian_type = ")
-    return print(io, vhf.hessian_type)
+    print(io, vhf.hessian_type)
+    return print(io, ")")
 end

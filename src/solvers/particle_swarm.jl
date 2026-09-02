@@ -25,7 +25,7 @@ $(_fields(:p))
 * `positional_best`:  storing the best position ``p_i`` every single swarm participant visited
 $(_fields(:p; name = "q"))
   serving as temporary storage for interims results; avoids allocations
-* `social_vec`:       temporary storage for a tangent vector related to `social_weight`
+* `social_vector`:    temporary storage for a tangent vector related to `social_weight`
 * `swarm`:            a set of points (of type `AbstractVector{P}`) on a manifold ``$(_math(:Sequence, "a", "i", "1", "N"))``
 
 # Constructor
@@ -192,8 +192,8 @@ p_{k}^{(i)}, & \text{else,}
 _doc_swarm_global_best = raw"""
 ```math
 g^{(i+1)} = \begin{cases}
-p_k^{(i+1)},  & \text{if } F(p_k^{(i+1)})<F(g_{k}^{(i)}),\\
-g_{k}^{(i)}, & \text{else,}
+p_k^{(i+1)},  & \text{if } F(p_k^{(i+1)})<F(g^{(i)}),\\
+g^{(i)}, & \text{else,}
 \end{cases}
 ```
 """
@@ -204,7 +204,7 @@ _doc_PSO = """
     particle_swarm(M, mco::AbstractManifoldCostObjective; kwargs...)
     particle_swarm(M, mco::AbstractManifoldCostObjective, swarm; kwargs...)
     particle_swarm!(M, f, swarm; kwargs...)
-    particle_swarm!(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
+    particle_swarm!(M, mco::AbstractManifoldCostObjective, swarm; kwargs...)
 
 perform the particle swarm optimization algorithm (PSO) to solve
 
@@ -219,7 +219,7 @@ To this end, a swarm $_doc_swarm of particles is moved around the manifold `M` i
 For every particle ``s_k^{(i)}`` the new particle velocities ``X_k^{(i)}`` are computed in every step ``i`` of the algorithm by
 
 ```math
-X_k^{(i)} = ω $(_math(:VectorTransport, "s_k^{(i-1)}", "s_k^{(i)}")) X_k^{(i-1)} + c r_1  $(_tex(:invretr))_{s_k^{(i)}}(p_k^{(i)}) + s r_2 $(_tex(:invretr))_{s_k^{(i)}}(p),
+X_k^{(i)} = ω $(_math(:VectorTransport, "s_k^{(i-1)}", "s_k^{(i)}")) X_k^{(i-1)} + c r_1  $(_tex(:invretr))_{s_k^{(i)}}(p_k^{(i)}) + s r_2 $(_tex(:invretr))_{s_k^{(i)}}(g^{(i)}),
 ```
 
 

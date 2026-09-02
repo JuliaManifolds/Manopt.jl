@@ -59,7 +59,7 @@ end
     get_subtrahend_gradient!(M::AbstractManifold, X, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
 
 Evaluate the gradient of the subtrahend ``h`` from within
-a [`ManifoldDifferenceOfConvexProximalObjective`](@ref) `P` at the point `p` (in place of X).
+a [`ManifoldDifferenceOfConvexProximalObjective`](@ref) `dcpo` at the point `p` (in place of `X`).
 """
 get_subtrahend_gradient(M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
 
@@ -79,10 +79,10 @@ function Base.show(io::IO, dcpo::ManifoldDifferenceOfConvexProximalObjective)
     if !ismissing(dcpo.cost)
         print(io, "cost = ")
         print(io, dcpo.cost)
-        print(io, ", ")
     end
     if !ismissing(dcpo.gradient!)
-        print(io, ", gradient = ")
+        !ismissing(dcpo.cost) && print(io, ", ")
+        print(io, "gradient = ")
         print(io, dcpo.gradient!)
     end
     return print(io, ")")
@@ -94,7 +94,7 @@ function status_summary(dcpo::ManifoldDifferenceOfConvexProximalObjective; conte
     cgs = length(cs) * length(gs) > 0 ? "$cs and $gs" : "$cs$gs"
     s = length(cgs) == 0 ? "" : "including $cgs"
     (context === :inline) && (return "A difference of convex proximal objective on a manifold $s")
-    csd = ismissing(dcpo.cost) ? "" : "\n* cost `f = g + h`:$(_MANOPT_INDENT)$(dcpo.cost)"
+    csd = ismissing(dcpo.cost) ? "" : "\n* cost `f = g - h`:$(_MANOPT_INDENT)$(dcpo.cost)"
     gsd = ismissing(dcpo.gradient!) ? "" : "\n* gradient of `f` :$(_MANOPT_INDENT)$(dcpo.gradient!)"
     return """
     A difference of convex proximal objective on a manifold.
@@ -132,9 +132,7 @@ $(_fields([:sub_problem, :sub_state]))
 
 construct an difference of convex proximal point state
 
-    DifferenceOfConvexProximalState(M::AbstractManifold, sub_problem;
-        evaluation=AllocatingEvaluation(), kwargs...
-)
+    DifferenceOfConvexProximalState(M::AbstractManifold, sub_problem; evaluation=AllocatingEvaluation(), kwargs...)
 
 construct an difference of convex proximal point state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 
@@ -213,6 +211,12 @@ function DifferenceOfConvexProximalState(M::AbstractManifold, sub_problem, e::Ab
     sub_problem_ = maybe_wrap_function(sub_problem, e)
     return DifferenceOfConvexProximalState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
 end
+function DifferenceOfConvexProximalState(
+        M::AbstractManifold, sub_problem;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
+    )
+    return DifferenceOfConvexProximalState(M, sub_problem, evaluation; kwargs...)
+end
 get_iterate(dcps::DifferenceOfConvexProximalState) = dcps.p
 function set_iterate!(dcps::DifferenceOfConvexProximalState, M, p)
     copyto!(M, dcps.p, p)
@@ -250,7 +254,7 @@ function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol =
     Conv = has_converged(dcps.stop) ? "Yes" : "No"
     as = _callbacks_summary(dcps)
     sub = repr(dcps.sub_state)
-    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
+    sub = replace(sub, "\n#" => "\n$(_MANOPT_INDENT)| ##", "\n" => "\n$(_MANOPT_INDENT)| ")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm
     $Iter
@@ -258,7 +262,7 @@ function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol =
     * retraction method:         $(dcps.retraction_method)
     * inverse retraction method: $(dcps.inverse_retraction_method)
     * sub solver state:
-        | $(sub)
+    $(_MANOPT_INDENT)| $(sub)
 
     ## Stepsize
     $(_in_str(status_summary(dcps.stepsize; context = context); indent = 0, headers = 1))
@@ -325,7 +329,6 @@ $(_kwargs(:evaluation))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stepsize; default = "`[`ConstantLength`](@ref)`()"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)`, plus `[`StopWhenGradientNormLess`](@ref)`(1.0e-9)` when a gradient is provided"))
-  A [`StopWhenGradientNormLess`](@ref)`(1e-8)` is added with $(_sc(:Any)), when a `gradient` is provided.
 * `sub_cost=`[`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`):
   cost to be used within the default `sub_problem` that is initialized as soon as `g` is provided.
   $(_note(:KeywordUsedIn, "sub_objective"))
@@ -408,7 +411,7 @@ function difference_of_convex_proximal_point!(
         X = zero_vector(M, p),
         λ = i -> 1 / 2,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        inverse_retraction_method = default_inverse_retraction_method(M),
+        inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
         objective_type = :Riemannian,
         retraction_method = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = ConstantLength(M),

@@ -530,12 +530,13 @@ Compute the surrogate cost. Let ``F`` denote the vector of residuals (of a block
 of the inner [`ManifoldNonlinearLeastSquaresObjective`](@ref)
 
 ```math
-σ_k(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; index = "2"))^2, $(_tex(:qquad)) X ∈ $(_math(:TangentSpace))
+σ_k(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; index = "2"))^2 + $(_tex(:frac, "λ", "2"))$(_tex(:norm, "X"; index = "p"))^2, $(_tex(:qquad)) X ∈ $(_math(:TangentSpace))
 ```
 
 where
 * ``$(_tex(:Cal, "L"))(X) = CJ[X]`` see [`get_linear_operator`](@ref) with a `penalty` of zero.
 * ``y`` the rescaled vector field, see [`get_vector_field`](@ref)
+* ``λ`` the `penalty` of the surrogate objective
 """
 function get_cost(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
@@ -564,8 +565,8 @@ $(
         :aligned,
         "$(_tex(:grad)) μ_p(X) &= $(_tex(:sum, "i=1", "m")) $(_tex(:Cal, "L"))_i^*$(_tex(:bigl))($(_tex(:Cal, "L"))_i(X) + y_i $(_tex(:bigr))) + λX",
         """&= $(_tex(:sum, "i=1", "m")) J_{F_i}^*(p)$(_tex(:Bigl))[
-        ρ_i' $(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_{F_i}(p)[X] + a$(_tex(:sqrt, "ρ_i'"))$(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr))) F_i(p) + λX
-        $(_tex(:Bigr))]"""
+        ρ_i' $(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_{F_i}(p)[X] + a$(_tex(:sqrt, "ρ_i'"))$(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr))) F_i(p)
+        $(_tex(:Bigr))] + λX"""
     )
 )
 ```
@@ -663,8 +664,8 @@ $(
         :aligned,
         "$(_tex(:Hess)) μ_p(X)[Y] &= $(_tex(:sum, "i=1", "m")) $(_tex(:Cal, "L"))_i^*$(_tex(:bigl))($(_tex(:Cal, "L"))_i(Y)$(_tex(:bigr))) + λY",
         """&= $(_tex(:sum, "i=1", "m")) J_{F_i}^*(p)$(_tex(:Bigl))[
-        ρ_i' $(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_{F_i}(p)[Y] + λY
-        $(_tex(:Bigr))]"""
+        ρ_i' $(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_{F_i}(p)[Y]
+        $(_tex(:Bigr))] + λY"""
     )
 )
 ```
@@ -753,7 +754,7 @@ end
 Evaluate the linear operator ``$(_tex(:Cal, "L"))`` corresponding to the Levenberg-Marquardt surrogate objective, i.e.,
 
 ```math
-$(_tex(:Cal, "L"))(X) = C J_F(p)[X] $(_tex(:bigr))],
+$(_tex(:Cal, "L"))(X) = C J_F(p)[X],
 ```
 
 with

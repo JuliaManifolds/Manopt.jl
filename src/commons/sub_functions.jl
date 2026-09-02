@@ -694,7 +694,7 @@ $(
     _tex(
         :pmatrix,
         "$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p,μ,λ)[L] + (g_i(p) + s_i)$(_tex(:grad)) g_i(p) + h_j(p)$(_tex(:grad)) h_j(p)",
-        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), L⟩ + s_i$(_tex(:Bigr)))_{i=1}^m + μ ⊙ s ⊙ s",
+        "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), L⟩ $(_tex(:Bigr)))_{i=1}^m + μ ⊙ s ⊙ s",
         "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), L⟩ $(_tex(:Bigr)))_{j=1}^n",
         "g + s + μ ⊙ μ ⊙ s",
     )
@@ -958,7 +958,7 @@ its gradient is given by using ``F=F_1(F_2(p))``, where ``F_1(X) = ⟨X_k,X⟩``
 and the chain rule as well as the adjoint differential of the logarithmic map with respect to its argument for ``D^*F_2(p)``
 
 ```math
-    $(_tex(:grad)) F(q) = $(_tex(:grad))g(q) - DF_2^*(q)[X]
+    $(_tex(:grad)) F(q) = $(_tex(:grad))g(q) - DF_2^*(q)[X_k]
 ```
 
 for a point `pk` and a tangent vector `Xk` at `pk` (the outer iterates) that are stored within this functor as well.

@@ -2,7 +2,7 @@
 # Lanczos sub solver
 #
 @doc """
-    LanczosState{P,T,SC,B,I,R,TM,V,Y} <: AbstractManoptSolverState
+    LanczosState{T,R,SC,SCN,B,TM,C,CA} <: AbstractManoptSolverState
 
 Solve the adaptive regularized subproblem with a Lanczos iteration
 
@@ -281,7 +281,7 @@ $(_fields(:at_iteration))
 
 # Constructor
 
-    StopWhenAllLanczosVectorsUsed(θ)
+    StopWhenFirstOrderProgress(θ)
 
 """
 mutable struct StopWhenFirstOrderProgress{F} <: StoppingCriterion
@@ -318,7 +318,7 @@ function get_reason(c::StopWhenFirstOrderProgress)
         return "The algorithm has reduced the model grad norm by a factor $(c.θ)."
     end
     if c.at_iteration == 0 # gradient 0
-        return "The gradient of the gradient is zero."
+        return "The gradient of the model is zero."
     end
     return ""
 end
@@ -345,7 +345,7 @@ function status_summary(c::StopWhenFirstOrderProgress; context::Symbol = :defaul
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     _is_inline(context) && return "First order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
-    return "A stopping criterion to stop when the Lanczos model has fpund a certain first order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
+    return "A stopping criterion to stop when the Lanczos model has found a certain first order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
 end
 indicates_convergence(c::StopWhenFirstOrderProgress) = true
 function show(io::IO, c::StopWhenFirstOrderProgress)

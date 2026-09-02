@@ -59,7 +59,7 @@ end
 
 function status_summary(pdmo::PrimalDualManifoldObjective; context::Symbol = :default)
     both_missing = ismissing(pdmo.Λ!) && ismissing(pdmo.linearized_forward_operator!)
-    _is_inline(context) && ("A primal dual objective with a cost of f+g, a prox for f, a prox for the dual of g, as well as $(!ismissing(pdmo.Λ!) ? "an operator Λ," : "") $(!ismissing(pdmo.linearized_forward_operator!) ? "DΛ, " : "")$(!both_missing ? "and " : "")an adjoint D^*Λ")
+    _is_inline(context) && (return "A primal dual objective with a cost of f+g, a prox for f, a prox for the dual of g, as well as $(!ismissing(pdmo.Λ!) ? "an operator Λ," : "") $(!ismissing(pdmo.linearized_forward_operator!) ? "DΛ, " : "")$(!both_missing ? "and " : "")an adjoint D^*Λ")
 
     maybe_line1 = ismissing(pdmo.Λ!) ? "" : "\n* Λ:       $(pdmo.Λ!)"
     maybe_line2 = ismissing(pdmo.linearized_forward_operator!) ? "" : "\n* DΛ:      $(pdmo.linearized_forward_operator!)"
@@ -73,9 +73,13 @@ function status_summary(pdmo::PrimalDualManifoldObjective; context::Symbol = :de
 end
 function show(io::IO, pdmo::PrimalDualManifoldObjective)
     print(io, "PrimalDualManifoldObjective(", pdmo.cost, ", ", pdmo.prox_f!, ", ")
-    print(io, pdmo.prox_g_dual!, ", ", pdmo.adjoint_linearized_operator!, "; ")
-    !ismissing(pdmo.Λ!) && (print(io, ", Λ = ", pdmo.Λ!))
-    !ismissing(pdmo.linearized_forward_operator!) && (print(io, ", linearized_forward_operator = ", pdmo.linearized_forward_operator!))
+    print(io, pdmo.prox_g_dual!, ", ", pdmo.adjoint_linearized_operator!)
+    sep = "; "
+    if !ismissing(pdmo.Λ!)
+        print(io, sep, "Λ = ", pdmo.Λ!)
+        sep = ", "
+    end
+    !ismissing(pdmo.linearized_forward_operator!) && (print(io, sep, "linearized_forward_operator = ", pdmo.linearized_forward_operator!))
     return print(io, ")")
 end
 
@@ -98,7 +102,7 @@ $(_fields(:inverse_retraction_method; name = "inverse_retraction_method_dual", M
 * `primal_stepsize::R`: proximal parameter of the primal prox
 * `X::T`:               an initial tangent vector ``X^{(0)} ∈ $(_math(:TangentSpace; M = "N", p = "n"))``
 * `Xbar::T`:            the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
-* `relaxation::R`:      relaxation in the primal relaxation step (to compute `pbar`:
+* `relaxation::R`:      relaxation in the primal relaxation step (used to compute `pbar`)
 * `relax::Symbol`:      which variable to relax, `:primal` or `:dual`
 $(_fields(:retraction_method))
 $(_fields(:stopping_criterion; name = "stop"))
@@ -111,10 +115,12 @@ $(_fields(:vector_transport_method; name = "vector_transport_method_dual", M = "
 Here, `P` is a point type on ``$(_math(:Manifold))``, `T` its tangent vector type, `Q` a point type on ``$(_math(:Manifold; M = "N"))``,
 and `R<:Real` is a real number type
 
-where for the last two the functions a [`AbstractManoptProblem`](@ref)` p`,
-[`AbstractManoptSolverState`](@ref)` o` and the current iterate `i` are the arguments.
+The functions `update_primal_base` and `update_dual_base` are called with an
+[`AbstractManoptProblem`](@ref)` amp`, an [`AbstractManoptSolverState`](@ref)` ams`
+and the current iteration `k` as arguments.
 If you activate these to be different from the default identity, you have to provide
-`p.Λ` for the algorithm to work (which might be `missing` in the linearized case).
+the forward operator `Λ` of the objective for the algorithm to work
+(which might be `missing` in the linearized case).
 
 # Constructor
 
@@ -283,8 +289,8 @@ and ``Λ:$(_math(:Manifold)) → $(_math(:Manifold; M = "N"))``.
 """
 
 _doc_ChambollePock = """
-    ChambollePock(M, N, f, p, X, m, n, prox_G, prox_G_dual, get_adjoint_linear_operator; kwargs...)
-    ChambollePock!(M, N, f, p, X, m, n, prox_G, prox_G_dual, get_adjoint_linear_operator; kwargs...)
+    ChambollePock(M, N, f, p, X, m, n, prox_F, prox_G_dual, adjoint_linear_operator; kwargs...)
+    ChambollePock!(M, N, f, p, X, m, n, prox_F, prox_G_dual, adjoint_linear_operator; kwargs...)
 
 
 Perform the Riemannian Chambolle-Pock algorithm.
@@ -302,7 +308,7 @@ $(_args(:X))
 $(_args(:p; name = "m"))
 $(_args(:p; name = "n", M = "N"))
 * `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$(_tex_DΛ)``
-* `prox_F, prox_G_Dual`:          the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
+* `prox_F, prox_G_dual`:          the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
 By default, this performs the exact Riemannian Chambolle Pock algorithm, see the optional parameter
 `DΛ` for their linearized variant.

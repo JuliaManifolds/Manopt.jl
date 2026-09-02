@@ -2,7 +2,7 @@
 # State
 #
 
-_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min) `$(_sc(:All))` `[`StopWhenChangeLess`](@ref)`(1e-10))`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(M, 1.0e-10)`"
+_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min) `$(_sc(:All))` `[`StopWhenChangeLess`](@ref)`(M, 1.0e-10))`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-10)`"
 @doc """
     AugmentedLagrangianMethodState{P,T} <: AbstractManoptSolverState
 
@@ -111,7 +111,7 @@ mutable struct AugmentedLagrangianMethodState{
             ϵ_exponent = 1 / 100,
             θ_ϵ = (ϵ_min / ϵ)^(ϵ_exponent),
             stopping_criterion::SC = StopAfterIteration(300) |
-                (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1.0e-10)) | StopWhenChangeLess(M, 1.0e-10),
+                (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1.0e-10)) | StopWhenStepsizeLess(1.0e-10),
             kwargs...,
         ) where {
             P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
@@ -291,7 +291,7 @@ $(_kwargs(:evaluation))
   also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
 
   * `equality_constraints=nothing`: the number ``n`` of equality constraints.
-  If not provided, a call to the gradient of `g` is performed to estimate these.
+  If not provided, a call to the gradient of `h` is performed to estimate these.
 
 * `gradient_range=nothing`: specify how both gradients of the constraints are represented
 
@@ -304,11 +304,11 @@ $(_kwargs(:evaluation))
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
    If not provided, a call to the gradient of `g` is performed to estimate these.
 
-* `λ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints
+* `λ=ones(length(get_equality_constraint(M, cmo, p, :)))`: the Lagrange multiplier with respect to the equality constraints
 * `λ_max=20.0`:       an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min=- λ_max`:    a lower bound for the Lagrange multiplier belonging to the equality constraints
 
-* `μ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the inequality constraints
+* `μ=ones(length(get_inequality_constraint(M, cmo, p, :)))`: the Lagrange multiplier with respect to the inequality constraints
 * `μ_max=20.0`: an upper bound for the Lagrange multiplier belonging to the inequality constraints
 
 * `ρ=1.0`:            the penalty parameter

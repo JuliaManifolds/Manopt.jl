@@ -249,7 +249,7 @@ function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p = 2.0, q = 1.0,
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
+                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but it is not.",
                 ),
             )
         end
@@ -311,7 +311,7 @@ function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p = 2.0, q =
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($d) has to be equal to the number of the previous ones ($s) but its not.",
+                    "the last dimension ($d) has to be equal to the number of the previous ones ($s) but it is not.",
                 ),
             )
         end
@@ -533,7 +533,7 @@ function differential_project_collaborative_TV!(
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
+                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but it is not.",
                 ),
             )
         end
@@ -635,7 +635,7 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
+                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but it is not.",
                 ),
             )
         end

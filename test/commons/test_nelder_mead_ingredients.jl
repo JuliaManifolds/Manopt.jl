@@ -23,7 +23,7 @@ using Manifolds, Manopt, Test
             obj = ManifoldCostObjective(f)
             mp = DefaultManoptProblem(M, obj)
             s = StopWhenPopulationConcentrated(0.1, 0.1)
-            @test startswith(Manopt.status_summary(s), "Stop when the population of a swarm is")
+            @test startswith(Manopt.status_summary(s), "Stop when the population is concentrated")
             @test startswith(repr(s), "StopWhenPopulationConcentrated(")
             # tweak an iteration
             o.costs = [0.0, 0.1]

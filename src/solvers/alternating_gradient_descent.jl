@@ -4,7 +4,7 @@
 The direction processor to alternate the gradient directions.
 
 Create a functor `(problem, state k) -> (s,X)` to evaluate the alternating gradient,
-that is alternating between the components of the gradient and has an field for
+that is alternating between the components of the gradient and has a field for
 partial evaluation of the gradient in-place.
 
 # Fields
@@ -34,7 +34,7 @@ function Base.show(io::IO, ag::AlternatingGradientRule)
 end
 function status_summary(ag::AlternatingGradientRule; context::Symbol = :default)
     (context === :short) && return repr(ag)
-    return "A alternating gradient processor"
+    return "An alternating gradient processor"
 end
 """
     AlternatingGradientDescentState <: AbstractGradientDescentSolverState
@@ -187,7 +187,7 @@ end
     AlternatingGradient(M::AbstractManifold; kwargs...)
 
 Specify that a gradient based method should only update parts of the gradient
-in order to do a alternating gradient descent.
+in order to do an alternating gradient descent.
 
 # Keyword arguments
 
@@ -253,16 +253,16 @@ perform an alternating gradient descent. This can be done in-place of the start 
 $(_args([:M, :f]))
 * `grad_f`: a gradient, that can be of two cases
   * is a single function returning an `ArrayPartition` from [`RecursiveArrayTools.jl`](https://docs.sciml.ai/RecursiveArrayTools/stable/array_types/) or
-  * is a vector functions each returning a component part of the whole gradient
+  * is a vector of functions, each returning a component part of the whole gradient
 $(_args(:p))
 
 # Keyword arguments
 
 $(_kwargs(:evaluation))
 * `order_type=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
-  a per cycle permuted sequence (`:Random`, default) or the default `:Linear` one.
+  a per cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
 * `inner_iterations=5`:  how many gradient steps to take in a component before alternating to the next
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`AlternatingGradientDescentState`](@ref)`; retraction_method=retraction_method)"))
 * `order=[1:n]`:         the initial permutation, where `n` is the number of gradients in `gradF`.
 $(_kwargs(:retraction_method))

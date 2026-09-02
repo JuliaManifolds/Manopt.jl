@@ -115,8 +115,8 @@ end
 _doc_CPPA = """
     cyclic_proximal_point(M, f, proxes_f, p; kwargs...)
     cyclic_proximal_point(M, mpo, p; kwargs...)
-    cyclic_proximal_point!(M, f, proxes_f; kwargs...)
-    cyclic_proximal_point!(M, mpo; kwargs...)
+    cyclic_proximal_point!(M, f, proxes_f, p; kwargs...)
+    cyclic_proximal_point!(M, mpo, p; kwargs...)
 
 perform a cyclic proximal point algorithm. This can be done in-place of `p`.
 

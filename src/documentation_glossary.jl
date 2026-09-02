@@ -278,7 +278,7 @@ Glossaries.define!(
         ```math
     \\begin{aligned}
     $(_tex(:argmin))_{$p ∈ $(_math(:Manifold; M = M))} & f($p)\\\\
-    $(_tex(:text, "subject to"))$(_tex(:quad))& p ∈ $(_tex(:Cal, "C")) ⊂ $(_math(:Manifold; M = M))
+    $(_tex(:text, "subject to"))$(_tex(:quad))& $p ∈ $(_tex(:Cal, "C")) ⊂ $(_math(:Manifold; M = M))
     \\end{aligned}
     ```
     """,
@@ -352,7 +352,7 @@ _fields(args...; kwargs...) = __field_formatter(_glossary_variables, args...; kw
 Glossaries.define!(_glossary_variables, :at_iteration)
 Glossaries.define!(
     _glossary_variables, :at_iteration, :description,
-    "an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case;",
+    "an integer indicating at which iteration the stopping criterion last indicated to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case;",
 )
 Glossaries.define!(_glossary_variables, :at_iteration, :type, "Int")
 
@@ -363,7 +363,7 @@ Glossaries.define!(
 )
 Glossaries.define!(_glossary_variables, :callbacks, :type, "D")
 Glossaries.define!(_glossary_variables, :callbacks, :as_dict, "given as a dictionary with symbols as keys")
-Glossaries.define!(_glossary_variables, :callbacks, :process_note, ". A single function `(symbol, problem, state, k)` called in every hook, a (vector of) pairs `:hook => function` or will be processed by [`process_callbacks_arg`](@ref). As key you can either pass single symbol or an array of symbols to indicate a callback should be added in multiple places")
+Glossaries.define!(_glossary_variables, :callbacks, :process_note, "given either as a single function `(symbol, problem, state, k)` called in every hook or as a (vector of) pairs `:hook => function`, which are processed by [`process_callbacks_arg`](@ref). As key you can either pass single symbol or an array of symbols to indicate a callback should be added in multiple places")
 Glossaries.define!(_glossary_variables, :callbacks, :default, "Dict{Symbol,Function}()")
 
 Glossaries.define!(_glossary_variables, :differential)

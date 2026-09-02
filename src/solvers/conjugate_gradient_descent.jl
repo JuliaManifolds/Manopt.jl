@@ -56,7 +56,7 @@ $(_doc_CG_formula)
 
 where ``$(_tex(:retr))`` denotes a retraction on the `Manifold` `M`
 and one can employ different rules to update the descent direction ``δ_k`` based on
-the last direction ``δ_{k-1}`` and both gradients ``$(_tex(:grad))f(x_k)``,``$(_tex(:grad)) f(x_{k-1})``.
+the last direction ``δ_{k-1}`` and both gradients ``$(_tex(:grad))f(p_k)``, ``$(_tex(:grad)) f(p_{k-1})``.
 The [`Stepsize`](@ref) ``s_k`` may be determined by a [`Linesearch`](@ref).
 
 Alternatively to `f` and `grad_f` you can provide

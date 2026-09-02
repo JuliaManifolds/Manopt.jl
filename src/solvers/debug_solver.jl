@@ -2,8 +2,10 @@
     initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
 
 Extend the initialization of the solver by a hook to run the [`DebugAction`](@ref)
-that was added to the `:Start` entry of the debug lists. All others are
-triggered (with iteration number `0`) to trigger possible resets
+that was added to the `:Start` entry of the debug lists. The `:BeforeIteration`
+and `:Iteration` entries are additionally triggered with iteration number `0`,
+so that they are reset and may already print, the `:Stop` entry is triggered
+with `-1`, so that it is only reset without printing.
 """
 function initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
     initialize_solver!(amp, dss.state)
@@ -22,7 +24,7 @@ end
 """
     step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k)
 
-Extend the `i`th step of the solver by a hook to run debug prints,
+Extend the `k`th step of the solver by a hook to run debug prints,
 that were added to the `:BeforeIteration` and `:Iteration` entries of the debug lists.
 """
 function step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k)

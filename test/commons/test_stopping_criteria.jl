@@ -345,7 +345,7 @@ end
         @test has_converged(sc) == has_converged(s)
         @test get_reason(sc) == ""
         @test startswith(repr(sc), "StopWhenRepeated(")
-        @test startswith(Manopt.status_summary(sc), "A stopping criterion to stop when the inner criterion has indicated to stop 3 (consecutive) times")
+        @test startswith(Manopt.status_summary(sc), "A stopping criterion to stop when the inner criterion has indicated to stop 3 consecutive times")
         @test startswith(Manopt.status_summary(sc; context = :short), "StopWhenRepeated(StopAfterIteration(2))×3")
         @test !sc(p, o, 1) # still count 0
         @test !sc(p, o, 2) # 1

@@ -29,7 +29,7 @@ $(_args(:M))
 * `direction=`[`IdentityUpdateRule`](@ref)`()` specify a processor to modify the gradient direction
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientDescentState`](@ref)`; retraction_method=retraction_method)"))
 $(_kwargs(:retraction_method))
 $(_kwargs(:X; add_properties = [:as_Memory]))

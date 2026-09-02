@@ -11,8 +11,8 @@ if these are different from the iterate and search direction of the main solver.
 
 # Constructor
 
-    StepsizeState(p,X)
-    StepsizeState(M::AbstractManifold; p=rand(M), x=zero_vector(M,p)
+    StepsizeState(; p, X)
+    StepsizeState(M::AbstractManifold; p=rand(M), X=zero_vector(M, p))
 
 # See also
 
@@ -78,7 +78,7 @@ While the paper now states that the (Armijo) line search starts at a point
 ``$(_tex(:tilde)) α``, it is easier to include the condition that ``c_1(α) ≥ 0`` and ``c_2(α) ≥ 0``
 into the line search as well.
 
-The functor `InteriorPointCentralityCondition(cmo, γ, μ, s, normKKT)(N,qα)`
+The functor `InteriorPointCentralityCondition(cmo, γ, τ1, τ2)(N, qα)`
 defined here evaluates this condition and returns true if both ``c_1`` and ``c_2`` are non-negative.
 
 # Fields
@@ -371,7 +371,7 @@ function status_summary(ips::InteriorPointNewtonState; context::Symbol = :defaul
 end
 function Base.show(io::IO, ipns::InteriorPointNewtonState)
     print(io, "InteriorPointNewtonState(", ipns.sub_problem, ", ", ipns.sub_state, ";")
-    print(io, " callbacks = ", ipns.callbacks, ", is_feasibility_error = ", ipns.is_feasible_error, ", retraction_method = ", ipns.retraction_method)
+    print(io, " callbacks = ", ipns.callbacks, ", is_feasible_error = ", ipns.is_feasible_error, ", retraction_method = ", ipns.retraction_method)
     print(io, ", p = ", ipns.p, ", X = ", ipns.X, ", μ = ", ipns.μ, ", Y = ", ipns.Y)
     print(io, ", λ = ", ipns.λ, ", Z = ", ipns.Z, ", s = ", ipns.s, ", W = ", ipns.W)
     print(io, ", ρ = ", ipns.ρ, ", σ = ", ipns.σ, ", step_problem = ", ipns.step_problem)
@@ -388,11 +388,11 @@ Stop when the KKT residual
 r^2
 = $(_tex(:norm, "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p, μ, λ) "))^2
 + $(_tex(:sum, "i=1", "m")) [μ_i]_{-}^2 + [g_i(p)]_+^2 + $(_tex(:abs, "μ_i g_i(p)"))^2
-+ $(_tex(:sum, "j=1", "n")) $(_tex(:abs, "h_i(p)"))^2.
++ $(_tex(:sum, "j=1", "n")) $(_tex(:abs, "h_j(p)"))^2.
 ```
 
 is less than a given threshold ``r < ε``.
-We use ``[v]_+ = $(_tex(:max))$(_tex(:set, "0,v"))`` and ``[v]_- = $(_tex(:min))$(_tex(:set, "0,t"))``
+We use ``[v]_+ = $(_tex(:max))$(_tex(:set, "0,v"))`` and ``[v]_- = $(_tex(:min))$(_tex(:set, "0,v"))``
 for the positive and negative part of ``v``, respectively
 
 ## Fields
@@ -557,7 +557,7 @@ $(_kwargs(:evaluation))
 * `Hess_g=missing`: the Hessian of the inequality constraints
 * `Hess_h=missing`: the Hessian of the equality constraints
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
-* `λ=ones(length(h(M, p)))`: the Lagrange multiplier with respect to the equality constraints ``h``
+* `λ=zeros(length(h(M, p)))`: the Lagrange multiplier with respect to the equality constraints ``h``
 * `μ=ones(length(g(M, p)))`: the Lagrange multiplier with respect to the inequality constraints ``g``
 $(_kwargs(:retraction_method))
 * `ρ=μ's / length(μ)`:  store the orthogonality `μ's/m` to compute the barrier parameter `β` in the sub problem.
@@ -580,7 +580,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(800)`[`
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 $(_kwargs(:sub_state; default = "`[`ConjugateResidualState`](@ref)` "))
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
-* `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`:
+* `X=`[`get_gradient`](@ref)`(M, cmo, p)`:
   the initial gradient with respect to `p`.
 * `Y=zero(μ)`: the initial gradient with respect to `μ`
 * `Z=zero(λ)`: the initial gradient with respect to `λ`
