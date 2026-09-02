@@ -29,6 +29,9 @@ construct the exact penalty state.
 )
 
 construct the exact penalty state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
+The closed form solution is expected to be of the form `(M, q, ρ, u, p) -> q` for the in-place and
+`(M, ρ, u, p) -> q` for the allocating `evaluation`, that is it minimizes the smoothed penalized
+function for the current penalty parameter `ρ` and smoothing parameter `u`, starting from `p`.
 
 # Keyword arguments
 
@@ -441,6 +444,9 @@ calls_with_kwargs(::typeof(exact_penalty_method!)) = (decorate_objective!, decor
 function initialize_solver!(::AbstractManoptProblem, epms::ExactPenaltyMethodState)
     return epms
 end
+#=
+    Variant I: the sub task is a sub problem that is solved by a sub solver
+=#
 function step_solver!(
         amp::AbstractManoptProblem, epms::ExactPenaltyMethodState{P, <:AbstractManoptProblem}, i
     ) where {P}
@@ -457,7 +463,27 @@ function step_solver!(
     new_p = get_solver_result(solve!(epms.sub_problem, epms.sub_state))
     callback(:Subsolver, amp, epms, i)
     copyto!(M, epms.p, new_p)
+    return _epm_update!(amp, epms)
+end
+#=
+    Variant II: the sub task is a function providing a closed form solution
+=#
+function step_solver!(
+        amp::AbstractManoptProblem,
+        epms::ExactPenaltyMethodState{P, F, ClosedFormSubSolverState},
+        i,
+    ) where {P, F <: Function}
+    M = get_manifold(amp)
+    set_parameter!(epms, Val(:StoppingCriterion), Val(:MinIterateChange), epms.ϵ)
 
+    callback(:BeforeSubsolver, amp, epms, i)
+    # the closed form works in place of `p`; an allocating one is wrapped on construction
+    epms.sub_problem(M, epms.p, epms.ρ, epms.u, epms.p)
+    callback(:Subsolver, amp, epms, i)
+    return _epm_update!(amp, epms)
+end
+# the penalty and tolerance update both variants share
+function _epm_update!(amp::AbstractManoptProblem, epms::ExactPenaltyMethodState)
     # get new evaluation of penalty
     cost_ineq = get_inequality_constraint(amp, epms.p, :)
     cost_eq = get_equality_constraint(amp, epms.p, :)

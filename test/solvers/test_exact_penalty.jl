@@ -61,6 +61,25 @@ using LinearAlgebra: I, tr
     @test epmsc.sub_state isa Manopt.ClosedFormSubSolverState
     epmsc2 = ExactPenaltyMethodState(M, f, AllocatingEvaluation())
     @test epmsc2.sub_state isa Manopt.ClosedFormSubSolverState
+    @testset "closed form sub solver can take a step" begin
+        # the closed form state could be built but had no `step_solver!` method at all
+        co = ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M)
+        cmp = DefaultManoptProblem(M, co)
+        step(M, p) = exp(M, p, -0.05 .* grad_f(M, p))
+        closed_a(M, ρ, u, p) = step(M, p)                       # allocating
+        closed_i!(M, q, ρ, u, p) = copyto!(M, q, step(M, p))    # in place
+        ea = ExactPenaltyMethodState(M, closed_a; p = copy(M, p0))
+        ei = ExactPenaltyMethodState(M, closed_i!, InplaceEvaluation(); p = copy(M, p0))
+        @test ea.sub_problem isa Manopt.InplaceManifoldFunction
+        @test ei.sub_problem === closed_i!
+        for s in (ea, ei)
+            @test Manopt.step_solver!(cmp, s, 1) === s
+            @test is_point(M, get_iterate(s))
+        end
+        @test isapprox(M, get_iterate(ea), get_iterate(ei))
+        @test isapprox(M, get_iterate(ea), step(M, p0))
+        @test ea.ϵ < 1.0e-3 # the tolerance update ran
+    end
     # that is errors with just Manifold + State
     @test_throws ErrorException ExactPenaltyMethodState(M, Manopt.Test.DummyState())
     @testset "Numbers" begin

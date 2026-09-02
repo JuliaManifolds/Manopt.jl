@@ -44,6 +44,9 @@ manifold- or objective specific defaults.
 
 construct an augmented Lagrangian method options, where the manifold `M` and the [`ConstrainedManifoldObjective`](@ref) `co` are used for
 manifold- or objective specific defaults, and `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
+The closed form solution is expected to be of the form `(M, q, ρ, μ, λ, p) -> q` for the in-place
+and `(M, ρ, μ, λ, p) -> q` for the allocating `evaluation`, that is it minimizes the augmented
+Lagrangian for the current penalty parameter `ρ` and multipliers `μ` and `λ`, starting from `p`.
 
 ## Keyword arguments
 
@@ -477,7 +480,14 @@ function initialize_solver!(::AbstractManoptProblem, alms::AugmentedLagrangianMe
     alms.penalty = Inf
     return alms
 end
-function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethodState, iter)
+#=
+    Variant I: the sub task is a sub problem that is solved by a sub solver
+=#
+function step_solver!(
+        mp::AbstractManoptProblem,
+        alms::AugmentedLagrangianMethodState{P, <:AbstractManoptProblem, <:AbstractManoptSolverState},
+        iter,
+    ) where {P}
     M = get_manifold(mp)
     # use subsolver to minimize the augmented Lagrangian
     set_parameter!(alms.sub_problem, Val(:Objective), Val(:Cost), Val(:ρ), alms.ρ)
@@ -494,7 +504,28 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     callback(:Subsolver, mp, alms, iter)
     alms.last_stepsize = distance(M, alms.p, new_p, default_inverse_retraction_method(M))
     copyto!(M, alms.p, new_p)
+    return _alm_update!(mp, alms)
+end
+#=
+    Variant II: the sub task is a function providing a closed form solution
+=#
+function step_solver!(
+        mp::AbstractManoptProblem,
+        alms::AugmentedLagrangianMethodState{P, F, ClosedFormSubSolverState},
+        iter,
+    ) where {P, F <: Function}
+    M = get_manifold(mp)
+    set_parameter!(alms, Val(:StoppingCriterion), Val(:MinIterateChange), alms.ϵ)
 
+    # the closed form works in place of `p`; keep the previous iterate for the step length
+    q = copy(M, alms.p)
+    alms.sub_problem(M, alms.p, alms.ρ, alms.μ, alms.λ, q)
+    callback(:Subsolver, mp, alms, iter)
+    alms.last_stepsize = distance(M, q, alms.p, default_inverse_retraction_method(M))
+    return _alm_update!(mp, alms)
+end
+# the multiplier, penalty and tolerance update both variants share
+function _alm_update!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethodState)
     # update multipliers
     cost_ineq = get_inequality_constraint(mp, alms.p, :)
     n_ineq_constraint = length(cost_ineq)

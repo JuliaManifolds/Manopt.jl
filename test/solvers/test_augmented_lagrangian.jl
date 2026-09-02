@@ -63,6 +63,29 @@ using LinearAlgebra: I, tr
         # With dummy closed form solution
         almsc = AugmentedLagrangianMethodState(M, co, f, AllocatingEvaluation())
         @test almsc.sub_state isa Manopt.ClosedFormSubSolverState
+        @testset "closed form sub solver can take a step" begin
+            # the closed form state could be built but never stepped: `step_solver!` was
+            # unrestricted and always went through `solve!` on the sub problem
+            step(M, p) = exp(M, p, -0.05 .* grad_f(M, p))
+            closed_a(M, ρ, μ, λ, p) = step(M, p)                          # allocating
+            closed_i!(M, q, ρ, μ, λ, p) = copyto!(M, q, step(M, p))       # in place
+            sa = AugmentedLagrangianMethodState(M, co, closed_a; p = copy(M, p0))
+            si = AugmentedLagrangianMethodState(
+                M, co, closed_i!, InplaceEvaluation(); p = copy(M, p0),
+            )
+            # an allocating closed form is wrapped on construction, an in-place one is not
+            @test sa.sub_problem isa Manopt.InplaceManifoldFunction
+            @test si.sub_problem === closed_i!
+            for s in (sa, si)
+                @test Manopt.step_solver!(mp, s, 1) === s
+                @test is_point(M, get_iterate(s))
+            end
+            # both evaluation types have to take the same step
+            @test isapprox(M, get_iterate(sa), get_iterate(si))
+            @test isapprox(M, get_iterate(sa), step(M, p0))
+            # and the multiplier update ran, so the tolerance was tightened
+            @test sa.ϵ < 1.0e-3
+        end
 
         alm_record = Tuple{Symbol, Int}[]
         alm_cb(symbol, problem, state, k) = append!(alm_record, [(symbol, k)])
