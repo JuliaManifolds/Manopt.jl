@@ -153,7 +153,7 @@ function CMAESState(
     }
     n_coords = number_of_coordinates(M, basis)
     # approximation of expected value of norm of standard n_coords-variate normal distribution
-    e_mv_norm = sqrt(n_coords) * (1 - 1 / (4 * n_coords) + 1 / (21 * n_coords))
+    e_mv_norm = sqrt(n_coords) * (1 - 1 / (4 * n_coords) + 1 / (21 * n_coords^2))
 
     @assert μ_eff >= 1
     @assert μ_eff <= μ
@@ -368,12 +368,10 @@ setting.
 
 # Input
 
-* `M`:      a manifold ``$(_math(:Manifold))``
-* `f`:      a cost function ``f: $(_math(:Manifold))→ℝ`` to find a minimizer ``p^*`` for
+$(_args([:M, :f, :p]))
 
 # Keyword arguments
 
-* `p=`$(Manopt._link(:rand)): an initial point `p`
 * `σ=1.0`: initial standard deviation
 * `λ`:                  (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
   increased for a more thorough global search but decreasing is not recommended)

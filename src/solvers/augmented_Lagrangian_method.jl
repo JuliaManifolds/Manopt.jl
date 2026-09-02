@@ -190,7 +190,7 @@ end
 
 _doc_alm_λ_update = raw"""
 ```math
-λ_j^{(k+1)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k)} + ρ^{(k)} h_j(p^{(k+1)})) \text{for all} j=1,…,p,
+λ_j^{(k+1)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k)} + ρ^{(k)} h_j(p^{(k+1)})) \text{ for all } j=1,…,n,
 ```
 """
 _doc_alm_μ_update = raw"""
@@ -206,15 +206,15 @@ _doc_alm_ε_update = raw"""
 
 _doc_alm_σ = raw"""
 ```math
-σ^{(k)}=\max_{j=1,…,p, i=1,…,m} \{\|h_j(p^{(k)})\|, \|\max_{i=1,…,m}\{g_i(p^{(k)}), -\frac{μ_i^{(k-1)}}{ρ^{(k-1)}} \}\| \}.
+σ^{(k)}=\max_{j=1,…,n, i=1,…,m} \{\|h_j(p^{(k)})\|, \|\max_{i=1,…,m}\{g_i(p^{(k)}), -\frac{μ_i^{(k-1)}}{ρ^{(k-1)}} \}\| \}.
 ```
 """
 
 _doc_alm_ρ_update = raw"""
 ```math
 ρ^{(k)} = \begin{cases}
-ρ^{(k-1)}/θ_ρ,  & \text{if } σ^{(k)}\leq θ_ρ σ^{(k-1)} ,\\
-ρ^{(k-1)}, & \text{else,}
+ρ^{(k-1)}, & \text{if } σ^{(k)} \leq τ σ^{(k-1)},\\
+ρ^{(k-1)}/θ_ρ, & \text{else.}
 \end{cases}
 ```
 """
@@ -232,11 +232,11 @@ The aim of the ALM is to find the solution of the constrained optimization task
 
 $(_problem(:Constrained))
 
-where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "n"))`` and ``$(_math(:Sequence, "h", "j", "1", "m"))``
+where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "m"))`` and ``$(_math(:Sequence, "h", "j", "1", "n"))``
 are twice continuously differentiable functions from `M` to ℝ.
 In every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
  ``$(_doc_AL_Cost("k"))`` is minimized on ``$(_math(:Manifold))``,
-  where ``μ^{(k)} ∈ ℝ^n`` and ``λ^{(k)} ∈ ℝ^m`` are the current iterates of the Lagrange multipliers and ``ρ^{(k)}`` is the current penalty parameter.
+  where ``μ^{(k)} ∈ ℝ^m`` and ``λ^{(k)} ∈ ℝ^n`` are the current iterates of the Lagrange multipliers and ``ρ^{(k)}`` is the current penalty parameter.
 
 The Lagrange multipliers are then updated by
 
@@ -262,7 +262,7 @@ $_doc_alm_σ
 
 $_doc_alm_ρ_update
 
-where ``θ_ρ ∈ (0,1)`` is a constant scaling factor.
+where ``θ_ρ ∈ (0,1)`` is a constant scaling factor and ``τ ∈ (0,1)`` the required improvement factor of the constraint violation.
 
 # Input
 

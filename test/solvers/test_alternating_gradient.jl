@@ -1,4 +1,11 @@
-using Manopt, Manifolds, Test, RecursiveArrayTools
+using Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
+
+# a retraction that errors as soon as it is used, to prove the keyword is honoured
+struct TripRetraction <: AbstractRetractionMethod end
+ManifoldsBase._retract!(::AbstractManifold, q, p, X, ::TripRetraction) = error("TripRetraction was used")
+function ManifoldsBase._retract_fused!(::AbstractManifold, q, p, X, t::Number, ::TripRetraction)
+    return error("TripRetraction was used")
+end
 
 @testset "Alternating Gradient Descent" begin
     # Note that this is merely an alternating gradient descent toy example
@@ -101,5 +108,24 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
             (:BeforeStep, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
         ]
+    end
+    @testset "retraction_method is used" begin
+        # the keyword was stored and shown but never used, neither in the update nor the line search
+        s = alternating_gradient_descent(
+            N, f, grad_f, copy(p); retraction_method = ProductRetraction(ProjectionRetraction(), ProjectionRetraction()),
+            stopping_criterion = StopAfterIteration(1), return_state = true,
+        )
+        @test s.retraction_method == ProductRetraction(ProjectionRetraction(), ProjectionRetraction())
+        # the line search has to agree with the update, else the accepted step violates its own Armijo condition
+        @test s.stepsize.retraction_method == s.retraction_method
+        # a retraction that is never allowed to be called proves the update really uses it
+        @test_throws ErrorException alternating_gradient_descent(
+            N, f, grad_f, copy(p); retraction_method = ProductRetraction(TripRetraction(), TripRetraction()),
+            stopping_criterion = StopAfterIteration(2),
+        )
+        # the component of a ProductRetraction is selected for the per-component update
+        @test Manopt._component_retraction(ProductRetraction(ProjectionRetraction(), ExponentialRetraction()), 2) ==
+            ExponentialRetraction()
+        @test Manopt._component_retraction(ProjectionRetraction(), 1) == ProjectionRetraction()
     end
 end

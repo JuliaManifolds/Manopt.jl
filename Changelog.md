@@ -123,6 +123,27 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `default_vector_norm(::Euclidean, p, X)` returned the norm of `p` instead of `X`.
 * `PrimalDualSemismoothNewtonState` is now constructed as `(M, N; kwargs...)` like `ChambollePockState`;
   the previous `(M; kwargs...)` form errored on its own default `n = rand(N)` when no `n` was provided.
+* `LevenbergMarquardtState` no longer needs its Jacobian cache pre-shaped: the documented default
+  `initial_jacobian_matrices = nothing` and a single bare matrix are both accepted and normalized
+  to one entry per vectorial block.
+* `LevenbergMarquardtState` now reports an invalid `damping_reduction_factor` with the documented
+  `ArgumentError` instead of an `UndefVarError`.
+* `LevenbergMarquardt` now also clamps the damping term to `damping_term_max` when a step is
+  rejected for being too long, like all its other damping increases do.
+* `show(::NelderMeadState)` now emits the `, ` separators before `ρ`, `σ` and `p`, which before ran the fields together.
+* `NelderMead` now honours `return_objective=true`, which was accepted but silently dropped.
+* `adaptive_regularization_with_cubics` now wraps an allocating closed-form sub solver, which before
+  was stored unwrapped and errored when it was called.
+* `adaptive_regularization_with_cubics` now really passes `sub_kwargs` on to the `decorate_state!`
+  of its sub state — they were passed unsplatted and hence silently dropped. `LanczosState` accepts
+  the decoration keywords like `TruncatedConjugateGradientState` does, and
+  `StopWhenAllLanczosVectorsUsed` now also works with a decorated Lanczos sub state.
+* `alternating_gradient_descent` now uses its `retraction_method`, which was stored and printed but
+  never used: the component update retracts with it, and the default line search is built with it,
+  so the accepted step size still satisfies the condition it was computed for.
+* `cma_es` now uses Hansen's `1/(21n^2)` term in its approximation of the expected norm of a
+  standard normal vector, which before used `1/(21n)` and was hence systematically too large,
+  biasing both the step size update and the `h_σ` criterion.
 * since we introduced the differential in the first order objectives,
 they were not fully supported in all places. This was now fixed and unified.
 * for a nicer printing on REPL, a few more `status_summary` functions were added (with the help of an AI)

@@ -425,6 +425,46 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             @test isapprox(pa, pi_; atol = 1.0e-8)
         end
     end
+    @testset "Jacobian cache shapes" begin
+        M = Euclidean(2)
+        X1 = [1.0, 2.0, 3.0]; Y1 = [2.6, 2.9, 3.5]; m = 3
+        F1(M, p) = [p[1] * x + p[2] - y for (x, y) in zip(X1, Y1)]
+        JF1(M, p) = [[x, one(x)] for x in X1]
+        vgf = VectorGradientFunction(
+            F1, JF1, m; evaluation = AllocatingEvaluation(),
+            function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
+        )
+        nlso = ManifoldNonlinearLeastSquaresObjective(vgf)
+        # the documented default `initial_jacobian_matrices = nothing` yields a runnable state
+        lms = LevenbergMarquardtState(
+            M, (a...) -> 0, Manopt.ClosedFormSubSolverState(), zeros(m); p = [0.0, 0.0],
+        )
+        @test isnothing(lms.jacobian_matrices)
+        Manopt.initialize_solver!(DefaultManoptProblem(M, nlso), lms)
+        @test lms.X == [-18.9, -9.0]
+        # a single bare matrix is normalized to one entry per block
+        lms2 = LevenbergMarquardtState(
+            M, (a...) -> 0, Manopt.ClosedFormSubSolverState(), zeros(m), zeros(m, 2); p = [0.0, 0.0],
+        )
+        @test lms2.jacobian_matrices isa Vector
+        @test length(lms2.jacobian_matrices) == 1
+    end
+    @testset "the too-long-step rejection clamps to damping_term_max" begin
+        M2 = Manifolds.Sphere(2)
+        # a tiny Jacobian with a large residual makes the Gauss-Newton step exceed max_stepsize
+        Fl(M, p) = [10.0 * p[1], 10.0 * p[2]]
+        JFl(M, p) = 1.0e-2 .* [1.0 0.0; 0.0 1.0]
+        hits = Int[]
+        cb(sym, prob, st, k) = (sym === :DampingIncreaseStepTooLong && push!(hits, k))
+        # max is below initial * factor, so the first rejection has to clamp
+        s = LevenbergMarquardt(
+            M2, Fl, JFl, [1.0, 0.0, 0.0], 2;
+            initial_damping_term = 1.0e-6, damping_term_max = 5.0e-6, damping_increase_factor = 10.0,
+            stopping_criterion = StopAfterIteration(3), callbacks = cb, return_state = true,
+        )
+        @test !isempty(hits) # the branch under test was actually taken
+        @test s.damping_term == 5.0e-6 # without the clamp this would be 1.0e-5
+    end
     @testset "errors" begin
         sub_fake_f = (args...) -> 0
         sub_state = AllocatingEvaluation()
@@ -447,6 +487,10 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         # damping_increase_factor too small (≤ 1)
         @test_throws ArgumentError LevenbergMarquardtState(
             M, sub_fake_f, sub_state, i_res, i_JF; p = x0, damping_increase_factor = 0.5,
+        )
+        # damping_reduction_factor too large (≥ 1) – used to raise an `UndefVarError`
+        @test_throws ArgumentError LevenbergMarquardtState(
+            M, sub_fake_f, sub_state, i_res, i_JF; p = x0, damping_reduction_factor = 1.5,
         )
         # For the evaluating case num_components can not be derived in code, hence this errors
         @test_throws ArgumentError LevenbergMarquardt(

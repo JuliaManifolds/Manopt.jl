@@ -236,7 +236,7 @@ function AdaptiveRegularizationState(
     )
     sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :TangentVector)
     cfs = ClosedFormSubSolverState()
-    return AdaptiveRegularizationState(M, sub_problem, cfs; kwargs...)
+    return AdaptiveRegularizationState(M, sub_problem_, cfs; kwargs...)
 end
 get_iterate(s::AdaptiveRegularizationState) = s.p
 function set_iterate!(s::AdaptiveRegularizationState, p)
@@ -289,7 +289,7 @@ end
 
 _doc_ARC_model = """
 ```math
-m_k(X) = f(p_k) + $(_tex(:inner, "X", "$(_tex(:grad)) f(p^{(k)})")) + $(_tex(:frac, "1", "2)) $(_tex(:inner, "X", "$(_tex(:Hess)) f(p^{(k)})[X]")) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X"))^3"))
+m_k(X) = f(p_k) + $(_tex(:inner, "X", "$(_tex(:grad)) f(p_k)"; index = "p_k")) + $(_tex(:frac, "1", "2")) $(_tex(:inner, "X", "$(_tex(:Hess)) f(p_k)[X]"; index = "p_k")) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X"))^3
 ```
 """
 
@@ -477,11 +477,11 @@ function adaptive_regularization_with_cubics!(
                 stopping_criterion = sub_stopping_criterion,
                 sub_kwargs...,
             );
-            sub_kwargs,
+            sub_kwargs...,
         ),
         sub_objective = nothing,
         sub_problem = nothing,
-        stopping_criterion::StoppingCriterion = if sub_state isa LanczosState
+        stopping_criterion::StoppingCriterion = if get_state(sub_state) isa LanczosState
             StopAfterIteration(40) |
                 StopWhenGradientNormLess(1.0e-9) |
                 StopWhenAllLanczosVectorsUsed(maxIterLanczos - 1)

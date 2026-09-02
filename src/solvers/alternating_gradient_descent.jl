@@ -100,7 +100,9 @@ mutable struct AlternatingGradientDescentState{
             order_type::Symbol = :Linear, order::Vector{<:Int} = Int[],
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
             stopping_criterion::StoppingCriterion = StopAfterIteration(1000),
-            stepsize::Stepsize = default_stepsize(M, AlternatingGradientDescentState),
+            stepsize::Stepsize = default_stepsize(
+                M, AlternatingGradientDescentState; retraction_method = retraction_method
+            ),
         ) where {P, T, C <: AbstractDict{Symbol}}
         (order_type in (:Linear, :FixedRandom, :Random)) || throw(
             DomainError(order_type, "The order type has to be one of :Linear, :FixedRandom, or :Random.")
@@ -189,7 +191,7 @@ in order to do a alternating gradient descent.
 
 # Keyword arguments
 
-$(_kwargs(:X, name = "initial_gradient"))
+$(_kwargs(:X))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 
 $(_note(:ManifoldDefaultsFactory, "AlternatingGradientRule"))
@@ -223,9 +225,17 @@ function (a::ArmijoLinesearchStepsize)(
     return a.last_stepsize
 end
 
-function default_stepsize(M::AbstractManifold, ::Type{AlternatingGradientDescentState})
-    return ArmijoLinesearchStepsize(M)
+function default_stepsize(
+        M::AbstractManifold,
+        ::Type{AlternatingGradientDescentState};
+        retraction_method = default_retraction_method(M),
+    )
+    return ArmijoLinesearchStepsize(M; retraction_method = retraction_method)
 end
+
+# the line search works on the product manifold, the update on a single component
+_component_retraction(r::AbstractRetractionMethod, ::Int) = r
+_component_retraction(r::ProductRetraction, j::Int) = r.retractions[j]
 
 function alternating_gradient_descent end
 function alternating_gradient_descent! end
@@ -253,7 +263,7 @@ $(_kwargs(:evaluation))
   a per cycle permuted sequence (`:Random`, default) or the default `:Linear` one.
 * `inner_iterations=5`:  how many gradient steps to take in a component before alternating to the next
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
-$(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`AlternatingGradientDescentState`](@ref)`; retraction_method=retraction_method)"))
 * `order=[1:n]`:         the initial permutation, where `n` is the number of gradients in `gradF`.
 $(_kwargs(:retraction_method))
 
@@ -292,7 +302,10 @@ function step_solver!(amp::AbstractManoptProblem, agds::AlternatingGradientDesce
     step, agds.X = agds.direction(amp, agds, k)
     callback(:Stepsize, amp, agds, k)
     j = agds.order[agds.k]
-    retract!(M[j], agds.p[M, j], agds.p[M, j], -step * agds.X[M, j])
+    retract!(
+        M[j], agds.p[M, j], agds.p[M, j], -step * agds.X[M, j],
+        _component_retraction(agds.retraction_method, j),
+    )
     agds.i += 1
     if agds.i > agds.inner_iterations
         agds.k = ((agds.k) % length(agds.order)) + 1

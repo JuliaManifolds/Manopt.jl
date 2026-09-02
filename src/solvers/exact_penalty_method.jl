@@ -202,7 +202,7 @@ The aim of the EPM is to find a solution of the constrained optimization task
 
 $(_problem(:Constrained))
 
-where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "n"))`` and ``$(_math(:Sequence, "h", "j", "1", "m"))``
+where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "m"))`` and ``$(_math(:Sequence, "h", "j", "1", "n"))``
 are twice continuously differentiable functions from `M` to ℝ.
 For that a weighted ``L_1``-penalty term for the violation of the constraints is added to the objective
 

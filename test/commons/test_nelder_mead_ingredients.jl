@@ -6,6 +6,10 @@ using Manifolds, Manopt, Test
         o = NelderMeadState(M)
         @test startswith(Manopt.status_summary(o), "# Solver state for `Manopt.jl`s Nelder Mead Algorithm")
         @test startswith(repr(o), "NelderMeadState(; ")
+        # every field is separated by ", ", so the repr stays readable and parseable
+        for sep in (", α = ", ", γ = ", ", ρ = ", ", σ = ", ", p = ", ", costs = ")
+            @test occursin(sep, repr(o))
+        end
         o2 = NelderMeadState(M; population = o.population)
         @test o.p == o2.p
         @test o.population == o2.population

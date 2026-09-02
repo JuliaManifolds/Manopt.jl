@@ -161,6 +161,38 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         @test arcs4.sub_state isa Manopt.ClosedFormSubSolverState
         arcs5 = AdaptiveRegularizationState(M, f1, AllocatingEvaluation(); p = p0)
         @test arcs5.sub_state isa Manopt.ClosedFormSubSolverState
+        # an allocating closed form sub solver is wrapped, so it can be called in place
+        alloc_sub = (M, p) -> -grad_f(M, p)
+        arcs6 = AdaptiveRegularizationState(M, alloc_sub, AllocatingEvaluation(); p = p0)
+        @test arcs6.sub_problem isa Manopt.AbstractManifoldFunction
+        q_alloc = adaptive_regularization_with_cubics(
+            M, f, grad_f, Hess_f, p0;
+            sub_problem = alloc_sub, sub_state = AllocatingEvaluation(),
+            stopping_criterion = StopAfterIteration(2),
+        )
+        @test is_point(M, q_alloc)
+        @testset "sub_kwargs reach the sub state decoration" begin
+            # `sub_kwargs` was passed to `decorate_state!` unsplatted, so it was silently dropped
+            sd = adaptive_regularization_with_cubics(
+                M, f, grad_f, Hess_f, p0;
+                sub_kwargs = (; debug = [""]), maxIterLanczos = 3, return_state = true,
+            )
+            @test Manopt.is_state_decorator(sd.sub_state)
+            @test get_state(sd.sub_state) isa Manopt.LanczosState
+            # a decorated sub state must not lose the Lanczos criterion from the default
+            for st in (sd, adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p0; maxIterLanczos = 3, return_state = true))
+                sc = Manopt.get_stopping_criterion(st)
+                @test any(c -> c isa Manopt.StopWhenAllLanczosVectorsUsed, sc.criteria)
+            end
+            # and it still evaluates through the decorator instead of erroring
+            s2 = adaptive_regularization_with_cubics(
+                M, f, grad_f, Hess_f, p0;
+                sub_kwargs = (; debug = [""]), maxIterLanczos = 3,
+                stopping_criterion = StopAfterIteration(20) | Manopt.StopWhenAllLanczosVectorsUsed(2),
+                return_state = true,
+            )
+            @test is_point(M, get_solver_result(s2))
+        end
         # setting the iterate on a closed form sub state is a no-op, not an error
         @test Manopt.set_iterate!(
             Manopt.ClosedFormSubSolverState(), M, p0

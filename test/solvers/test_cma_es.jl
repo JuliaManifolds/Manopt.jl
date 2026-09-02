@@ -132,7 +132,7 @@ flat_example(::AbstractManifold, p) = 0.0
         @test_warn "Covariance matrix has nonpositive eigenvalues" o_flat = cma_es(
             M, flat_example, [10.0, 10.0]; σ = 10.0,
             stopping_criterion = StopAfterIteration(10000) | StopWhenPopulationStronglyConcentrated(1.0e-14),
-            rng = MersenneTwister(12), return_state = true,
+            rng = MersenneTwister(13), return_state = true,
         )
         flat_sc = only(get_active_stopping_criteria(o_flat.stop))
         @test flat_sc isa StopWhenPopulationStronglyConcentrated

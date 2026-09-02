@@ -53,7 +53,7 @@ $(_fields(:X))
 
 # Constructor
 
-    LevenbergMarquardtState(M, sub_problem, sub_state, initial_residual_values, initial_jacobian; kwargs...)
+    LevenbergMarquardtState(M, sub_problem, sub_state, initial_residual_values, initial_jacobian_matrices; kwargs...)
 
 Generate the Levenberg-Marquardt solver state.
 
@@ -137,8 +137,8 @@ mutable struct LevenbergMarquardtState{
         )
         (candidate_acceptance_threshold <= 0 || candidate_acceptance_threshold >= 1) && throw(ArgumentError("The value of `candidate_acceptance_threshold` must be strictly between 0 and 1, received $(candidate_acceptance_threshold)"))
         (damping_term_min <= 0) && throw(ArgumentError("The value of damping_term_min must be strictly above 0, received $damping_term_min"))
-        (damping_increase_factor <= 1) && throw(ArgumentError("The value of `damping_increase_factor must be strictly above 1, received $damping_increase_factor"))
-        (damping_reduction_factor >= 1) && throw(ArgumentError("The value of `damping_reduction_factor must be strictly below 1, received $β_reduction"))
+        (damping_increase_factor <= 1) && throw(ArgumentError("The value of `damping_increase_factor` must be strictly above 1, received $damping_increase_factor"))
+        (damping_reduction_factor >= 1) && throw(ArgumentError("The value of `damping_reduction_factor` must be strictly below 1, received $damping_reduction_factor"))
         R = promote_type(
             typeof(candidate_acceptance_threshold), typeof(damping_term_min), typeof(damping_increase_factor), typeof(damping_increase_threshold),
             typeof(damping_reduction_threshold), typeof(damping_reduction_factor), typeof(damping_term_min),
@@ -150,7 +150,7 @@ mutable struct LevenbergMarquardtState{
             damping_increase_factor = convert(R, damping_increase_factor), damping_increase_threshold = convert(R, damping_increase_threshold),
             damping_reduction_threshold = convert(R, damping_reduction_threshold), damping_reduction_factor = convert(R, damping_reduction_factor),
             damping_term = convert(R, damping_term), damping_term_min = convert(R, damping_term_min), damping_term_max = convert(R, damping_term_max),
-            direction = direction, callbacks = callbacks, jacobian_matrices = initial_jacobian_matrices, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
+            direction = direction, callbacks = callbacks, jacobian_matrices = initial_jacobian_matrices isa AbstractMatrix ? [initial_jacobian_matrices] : initial_jacobian_matrices, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
             p = p, q = copy(M, p), residual_values = initial_residual_values, retraction_method = retraction_method, stopping_criterion = stopping_criterion, X = X,
         )
     end
@@ -482,10 +482,11 @@ function initialize_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp, true) # unwarp decorators
     get_residuals!(M, lms.residual_values, nlso, lms.p)
-    for (o, jb) in zip(nlso.objective, lms.jacobian_matrices)
+    jms = isnothing(lms.jacobian_matrices) ? fill(nothing, length(nlso.objective)) : lms.jacobian_matrices
+    for (o, jb) in zip(nlso.objective, jms)
         !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
     end
-    get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_matrices)
+    get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = jms)
     return lms
 end
 
@@ -512,6 +513,7 @@ function step_solver!(
         # we reject the step without evaluating the objective
         # and increase damping
         lms.damping_term *= lms.damping_increase_factor
+        lms.damping_term = min(lms.damping_term, lms.damping_term_max)
         callback(:DampingIncreaseStepTooLong, dmp, lms, k)
         return lms
     end
@@ -545,10 +547,11 @@ function step_solver!(
         callback(:CandidateAccept, dmp, lms, k)
         copyto!(M, lms.p, lms.q)
         get_residuals!(M, lms.residual_values, nlso, lms.p)
-        for (o, jb) in zip(nlso.objective, lms.jacobian_matrices)
+        jms = isnothing(lms.jacobian_matrices) ? fill(nothing, length(nlso.objective)) : lms.jacobian_matrices
+        for (o, jb) in zip(nlso.objective, jms)
             !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
         end
-        get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_matrices)
+        get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = jms)
     else
         callback(:CandidateReject, dmp, lms, k)
     end

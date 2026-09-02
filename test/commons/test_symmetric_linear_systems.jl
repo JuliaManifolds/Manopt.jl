@@ -58,6 +58,26 @@ using Manifolds, Manopt, Test
         @test get_hessian!(TpM, Y0, slso2, p, X0) == hessAX0
         @test Y0 == hessAX0
     end
+    @testset "Decorated objectives pass through" begin
+        # these accessors have to peel exactly one decorator, so a `cache=` or `count=`
+        # decorator can still intercept the call instead of being unwrapped away
+        AX0 = Am * X0
+        for o in (slso, slso2)
+            ddo = Manopt.Test.DummyDecoratedObjective(o)
+            @test Manopt.get_linear_operator(M, ddo, p, X0) == AX0
+            Y = similar(X0)
+            @test Manopt.get_linear_operator!(M, Y, ddo, p, X0) == AX0
+            @test Y == AX0
+            @test Manopt.get_vector_field(M, ddo, p) == bv
+            fill!(Y, 0.0)
+            Manopt.get_vector_field!(M, Y, ddo, p)
+            @test Y == bv
+            @test Manopt.get_vector_field(TpM, ddo) == bv
+            fill!(Y, 0.0)
+            Manopt.get_vector_field!(TpM, Y, ddo)
+            @test Y == bv
+        end
+    end
     @testset "Conjugate residual state" begin
         crs = ConjugateResidualState(TpM, slso)
         @test set_iterate!(crs, TpM, X0) == crs # setters return state

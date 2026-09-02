@@ -174,7 +174,7 @@ end
 
 # Keyword arguments
 
-$(_kwargs(:X; name = "initial_gradient"))
+$(_kwargs(:X))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 
 $(_note(:ManifoldDefaultsFactory, "StochasticGradientRule"))

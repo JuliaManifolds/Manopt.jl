@@ -76,12 +76,12 @@ function alternating_gradient_descent!(
         inner_iterations::Int = 5,
         stopping_criterion::StoppingCriterion = StopAfterIteration(100) |
             StopWhenGradientNormLess(1.0e-9),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
-            M, AlternatingGradientDescentState
+            M, AlternatingGradientDescentState; retraction_method = retraction_method
         ),
         order_type::Symbol = :Linear,
         order = collect(1:length(M.manifolds)),
-        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         kwargs...,
     )
     Manopt.keywords_accepted(alternating_gradient_descent!; kwargs...)

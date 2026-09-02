@@ -68,6 +68,7 @@ function LanczosState(
             StopWhenFirstOrderProgress(θ),
         stopping_criterion_newton::SCN = StopAfterIteration(200),
         σ::R = 10.0,
+        kwargs...,
     ) where {T, SC <: StoppingCriterion, SCN <: StoppingCriterion, R, CA <: AbstractDict{Symbol}}
     tridig = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
     coeffs = zeros(maxIterLanczos)
@@ -379,11 +380,13 @@ mutable struct StopWhenAllLanczosVectorsUsed <: StoppingCriterion
 end
 function (c::StopWhenAllLanczosVectorsUsed)(
         ::AbstractManoptProblem,
-        arcs::AdaptiveRegularizationState{P, T, Pr, <:LanczosState},
+        arcs::AdaptiveRegularizationState,
         k::Int,
-    ) where {P, T, Pr}
+    )
     (k == 0) && (c.at_iteration = -1) # reset on init
-    if (k > 0) && length(arcs.sub_state.Lanczos_vectors) == c.maxLanczosVectors
+    ls = get_state(arcs.sub_state) # the sub state might be decorated
+    (ls isa LanczosState) || return false
+    if (k > 0) && length(ls.Lanczos_vectors) == c.maxLanczosVectors
         c.at_iteration = k
         return true
     end

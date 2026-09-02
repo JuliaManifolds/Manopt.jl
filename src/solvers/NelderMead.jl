@@ -146,7 +146,7 @@ mutable struct NelderMeadState{
 end
 function Base.show(io::IO, nms::NelderMeadState)
     print(io, "NelderMeadState(; ")
-    print(io, "callbacks = ", nms.callbacks, ", population = ", nms.population, ", α = ", nms.α, ", γ = ", nms.γ, "ρ = ", nms.ρ, " σ = ", nms.σ)
+    print(io, "callbacks = ", nms.callbacks, ", population = ", nms.population, ", α = ", nms.α, ", γ = ", nms.γ, ", ρ = ", nms.ρ, ", σ = ", nms.σ, ", ")
     print(io, "p = ", nms.p, ", costs = ", nms.costs, ", stopping_criterion = ", nms.stop)
     print(io, ", retraction_method = ", nms.retraction_method, ", inverse_retraction_method = ", nms.inverse_retraction_method)
     return print(io, ")")
@@ -246,8 +246,10 @@ function NelderMead(
     f_ = (M, p) -> f(M, p[])
     population_ = NelderMeadSimplex([[p] for p in population.pts])
     rs = NelderMead(M, f_, population_; kwargs...)
-    return (P == eltype(rs)) ? rs[] : rs
+    rs isa Tuple && return (rs[1], _unwrap_nelder_mead(P, rs[2]))
+    return _unwrap_nelder_mead(P, rs)
 end
+_unwrap_nelder_mead(::Type{P}, rs) where {P <: Number} = (P == eltype(rs)) ? rs[] : rs
 function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
     mco = ManifoldCostObjective(f)
     return NelderMead(M, mco, population; kwargs...)
@@ -287,7 +289,7 @@ function NelderMead!(
     )
     s = decorate_state!(s; kwargs...)
     solve!(mp, s)
-    return get_solver_return(s)
+    return get_solver_return(get_objective(mp), s)
 end
 calls_with_kwargs(::typeof(NelderMead!)) = (decorate_objective!, decorate_state!)
 
