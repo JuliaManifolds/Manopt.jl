@@ -306,7 +306,7 @@ end
 
 @doc """
     get_inequality_constraint(amp::AbstractManoptProblem, p, j=:)
-    get_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
+    get_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:)
 
 Evaluate inequality constraints of a [`ConstrainedManifoldObjective`](@ref) `objective`
 at point `p` and indices `j` (by default `:` which corresponds to all indices).
@@ -438,10 +438,10 @@ function get_hessian_function(co::ConstrainedManifoldObjective, recursive = fals
 end
 
 _doc_get_hess_equality_constraint = """
-    get_hess_equality_constraint(amp::AbstractManoptProblem, p, j=:)
-    get_hess_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
-    get_hess_equality_constraint!(amp::AbstractManoptProblem, X, p, j=:)
-    get_hess_equality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
+    get_hess_equality_constraint(amp::AbstractManoptProblem, p, X, j=:)
+    get_hess_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, X, j=:, range=NestedPowerRepresentation())
+    get_hess_equality_constraint!(amp::AbstractManoptProblem, Y, p, X, j=:)
+    get_hess_equality_constraint!(M::AbstractManifold, Y, co::ConstrainedManifoldObjective, p, X, j=:, range=NestedPowerRepresentation())
 
 Evaluate the Hessian or Hessians of the equality constraint ``($(_tex(:Hess)) h(p))_j`` or ``$(_tex(:Hess)) h_j(p)``,
 
@@ -483,8 +483,8 @@ end
 
 _doc_get_hess_inequality_constraint = """
     get_hess_inequality_constraint(amp::AbstractManoptProblem, p, X, j=:)
-    get_hess_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
-    get_hess_inequality_constraint!(amp::AbstractManoptProblem, Y, p, j=:)
+    get_hess_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, X, j=:, range=NestedPowerRepresentation())
+    get_hess_inequality_constraint!(amp::AbstractManoptProblem, Y, p, X, j=:)
     get_hess_inequality_constraint!(M::AbstractManifold, Y, co::ConstrainedManifoldObjective, p, X, j=:, range=NestedPowerRepresentation())
 
 Evaluate the Hessian or Hessians of the inequality constraint ``($(_tex(:Hess)) g(p)[X])_j`` or ``$(_tex(:Hess)) g_j(p)[X]``,
@@ -544,11 +544,11 @@ end
     is_feasible(M::AbstractManifold, o::AbstractDecoratedManifoldObjective, p; kwargs...)
 
 Evaluate whether a point `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo`.
-That is for the provided inequality constraints ``g: $(_math(:Manifold)) → ℝ^m`` and equality constraints ``h: $(_math(:Manifold)) → ℝ^m``
+That is for the provided inequality constraints ``g: $(_math(:Manifold)) → ℝ^m`` and equality constraints ``h: $(_math(:Manifold)) → ℝ^n``
 from within `cmo`, the point ``p ∈ $(_math(:Manifold))`` is feasible if
 
 ```math
-g_i(p) ≤ 0, $(_tex(:text, " for all ")) i=1,…,m$(_tex(:quad))\text{ and }$(_tex(:quad)) h_j(p) = 0, \text{ for all } j=1,…,n.
+g_i(p) ≤ 0, $(_tex(:text, " for all ")) i=1,…,m$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad)) h_j(p) = 0, $(_tex(:text, " for all ")) j=1,…,n.
 ```
 
 # Keyword arguments
@@ -698,7 +698,7 @@ end
 
 function Base.show(io::IO, mago::ManifoldAlternatingGradientObjective)
     print(io, "ManifoldAlternatingGradientObjective(")
-    print(io, mago.cost); print(io, ", "); print(io, mago.gradient!); print(io, "; ")
+    print(io, mago.cost); print(io, ", "); print(io, mago.gradient!)
     return print(io, ")")
 end
 function status_summary(mago::ManifoldAlternatingGradientObjective; context::Symbol = :default)
@@ -1231,7 +1231,7 @@ which function evaluations to cache.
 * `cache_size=10`:
   number of (least recently used) calls to cache
 * `cache_sizes=Dict{Symbol,Int}()`:
-  a named tuple or dictionary specifying the sizes individually for each cache.
+  a dictionary specifying the sizes individually for each cache.
 """
 struct ManifoldCachedObjective{P, O <: AbstractManifoldObjective, C <: NamedTuple{}} <: AbstractDecoratedManifoldObjective{P}
     objective::O
@@ -2511,15 +2511,13 @@ Currently the following cases are covered, sorted by their popularity
 1. a single function `fg` representing a combined
     function `(M, X, p) -> (c, X)` that computes the cost `c=cost(M,p)` and gradient `X=grad_f(M, X, p)`;
 2. a single function `fdf` representing a combined function
-    `(M, d, p) -> (c, d)` that computes the cost `c=cost(M,p)` and differential `d=diff_f(M, d, p)`;
+    `(M, p, X) -> (c, d)` that computes the cost `c=cost(M,p)` and the differential `d=diff_f(M, p, X)` in direction `X`;
 3. pairs of single functions `(f, g)`, `(f, df)` of a cost function `f` and either its
     gradient `g` or its differential `d`, respectively
 4. The function `(fg, d)` and `(fdf, g)`  from 1 and 2, respectively joined by
     the other missing third information, the differential for the first or the gradient for the second
 5. a tuple `(f, g, d)` of three functions, computing cost `f`, gradient `g`,
     and differential `d` separately
-6. a tuple `(f, gd)` of a cost function and a combined function `(X, d) = gd(M, (X,d), p)`
-    to compute gradient and differential together
 
 In all cases a gradient and/or a differential that is present is assumed to work in-place,
 see the [`InplaceManifoldFunction`](@ref) wrapper for alternatives.
@@ -2829,7 +2827,6 @@ end
 function Base.show(io::IO, mfo::ManifoldFirstOrderObjective)
     print(io, "ManifoldFirstOrderObjective(; ")
     print(io, join([ "$k = $v" for (k, v) in zip(keys(mfo.functions), mfo.functions)], ", "))
-    print(io, ", ")
     return print(io, ")")
 end
 
@@ -2940,10 +2937,10 @@ update_hessian!(M, f, p, p_proposal, X) = f
 update_hessian_basis!(M, f, p) = f
 
 function status_summary(mho::ManifoldHessianObjective{E}; context::Symbol = :default) where {E}
-    _is_inline(context) && return "A second order objective with cost, gradient$(ismissing(mho.preconditioner!) ? ", and" : "") Hessian$(ismissing(mho.preconditioner!) ? "" : ", and a preconditioner")"
+    _is_inline(context) && return "A second order objective with cost, gradient$(ismissing(mho.preconditioner!) ? ", and" : ",") Hessian$(ismissing(mho.preconditioner!) ? "" : ", and a preconditioner")"
     precon_str = ismissing(mho.preconditioner!) ? "" : "\n* preconditioner: $(mho.preconditioner!)"
     return """
-    A second order objective providing a cost, a gradient$(ismissing(mho.preconditioner!) ? ", and" : "") a Hessian$(ismissing(mho.preconditioner!) ? "" : ", and a preconditioner")
+    A second order objective providing a cost, a gradient$(ismissing(mho.preconditioner!) ? ", and" : ",") a Hessian$(ismissing(mho.preconditioner!) ? "" : ", and a preconditioner")
 
     ## Functions
     * cost:    $(_MANOPT_INDENT)$(mho.cost)

@@ -371,7 +371,7 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
 
     # For the convex case, start with the last stepsize (warm start)
     # For the nonconvex case, reset to initial stepsize
-    λ = if s.strategy === :convex && k > 1
+    λ = if s.strategy === :convex && k > 1 && s.last_stepsize > s.stop_when_stepsize_less
         min(s.initial_stepsize, s.warm_start_factor * s.last_stepsize)
     else
         s.initial_stepsize
@@ -432,6 +432,7 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
         # Reduce step size
         λ *= s.contraction_factor
     end
+    s.last_stepsize = λ
     return λ
 end
 
@@ -493,7 +494,8 @@ $(_tex(:bigr)))
 where ``p^{(k)}`` is the current iterate from the [`ProximalGradientMethodState`](@ref)s
 field `p` and the result is stored in `state.a`. The field `p` in this struct stores the last iterate.
 
-The retraction and its inverse are taken from the state.
+The inverse retraction is taken from this struct's `inverse_retraction_method`,
+the retraction from the state.
 
 # Fields
 
@@ -549,9 +551,9 @@ function (pga::ProximalGradientMethodAcceleration)(
     # compute the step
     M = get_manifold(amp)
     # inverse retract and store in X
-    inverse_retract!(M, pga.X, pgms.p, pga.p)
+    inverse_retract!(M, pga.X, pgms.p, pga.p, pga.inverse_retraction_method)
     # retract with step and store in a
-    retract!(M, pgms.a, pgms.p, -pga.β(k) * pga.X)
+    retract!(M, pgms.a, pgms.p, -pga.β(k) * pga.X, pgms.retraction_method)
     # save current p for next time as last iterate
     copyto!(M, pga.p, pgms.p)
     return pgms
@@ -600,7 +602,7 @@ function (d::DebugWarnIfStepsizeCollapsed)(
         if s.last_stepsize ≤ s.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(s.stop_when_stepsize_less)."
             if d.status === :Once
-                @warn "Further warnings will be suppressed, use DebugWarnIfStepsizeCollapsed(:Always) to get all warnings."
+                @warn "Further warnings will be suppressed, use DebugWarnIfStepsizeCollapsed($(d.stop_when_stepsize_less), :Always) to get all warnings."
                 d.status = :No
             end
         end
@@ -654,7 +656,9 @@ $(_args(:p))
 * `acceleration=(pr, st, k) -> (copyto!(get_manifold(pr), st.a, st.p); st)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step - the default is to copy the current point to the acceleration point, i.e. no acceleration is performed
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
+* `cost_nonsmooth = missing`:          the (possibly) nonsmooth part ``h`` of ``f`` as a function `(M, p) -> v`, used together with `subgradient_nonsmooth` to build the default `sub_problem`
 * `prox_nonsmooth = missing`:          a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the (possibly) nonsmooth part ``h`` of ``f``
+* `subgradient_nonsmooth = missing`:   a subgradient `(M, p) -> X` of the (possibly) nonsmooth part ``h`` of ``f``, used together with `cost_nonsmooth` to build the default `sub_problem`
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ProximalGradientMethodState`](@ref)`)"))
   that by default uses a [`ProximalGradientMethodBacktracking`](@ref).
 $(_kwargs(:retraction_method))
@@ -717,7 +721,9 @@ function proximal_gradient_method!(
         X = zero_vector(M, p),
         retraction_method = default_retraction_method(M, typeof(p)),
         inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
-        sub_problem = if ismissing(get_objective(mpgo, true).proximal_map_h!)
+        sub_problem = if ismissing(get_objective(mpgo, true).proximal_map_h!) &&
+                !ismissing(cost_nonsmooth) &&
+                !ismissing(subgradient_nonsmooth)
             DefaultManoptProblem(
                 M,
                 ManifoldSubgradientObjective(
@@ -747,12 +753,16 @@ function proximal_gradient_method!(
     }
     keywords_accepted(proximal_gradient_method!; kwargs...)
     # Check whether either the right defaults were provided or a `sub_problem`.
-    if ismissing(get_objective(mpgo, true).proximal_map_h!) && ismissing(cost_nonsmooth)
+    if ismissing(get_objective(mpgo, true).proximal_map_h!) && (
+            ismissing(sub_problem) ||
+                (sub_problem isa Function && !(sub_state isa AbstractEvaluationType))
+        )
         error(
             """
             The `sub_problem` is not correctly initialized. Provide _one of_ the following setups
             * `prox_nonsmooth` keyword argument as a closed form solution,
-            * `cost_nonsmooth` keyword argument for the (possibly nonsmooth) part of the cost function whose proximal map is to be computed,
+            * both the `cost_nonsmooth` and the `subgradient_nonsmooth` keyword arguments for the (possibly nonsmooth) part of the cost function whose proximal map is to be computed,
+            * a `sub_problem` (together with a fitting `sub_state`) that computes the proximal map.
             """,
         )
     end

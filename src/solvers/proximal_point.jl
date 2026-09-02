@@ -88,14 +88,14 @@ p^{(k+1)} = $(_tex(:prox))_{λ_kf}(p^{(k)})
 # Input
 
 $(_args(:M))
-* `prox_f`: a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the summands of ``f`` (see `evaluation`)
+* `prox_f`: the proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` of ``f`` (see `evaluation`)
 
 # Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
 * `f=nothing`: a cost function ``f: $(_math(:Manifold))→ℝ`` to minimize. For running the algorithm, ``f`` is not required, but for example when recording the cost or using a stopping criterion that requires a cost function.
-* `λ= k -> 1.0`: a function returning the (square summable but not summable) sequence of ``λ_i``
+* `λ=k -> 1.0`: a function returning the sequence of proximal parameters ``λ_k``
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)"))
 
 $(_note(:OtherKeywords))
@@ -137,7 +137,7 @@ function proximal_point!(
         M::AbstractManifold, mpo::O, p;
         callbacks = Dict{Symbol, Function}(),
         stopping_criterion::StoppingCriterion = StopAfterIteration(1000) | StopWhenChangeLess(M, 1.0e-12),
-        λ = k -> 1, kwargs...,
+        λ = k -> 1.0, kwargs...,
     ) where {O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(proximal_point!; kwargs...)
     dmpo = decorate_objective!(M, mpo; kwargs...)

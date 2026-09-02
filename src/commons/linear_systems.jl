@@ -68,7 +68,7 @@ end
     Y = get_linear_operator(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p, X)
     get_linear_operator!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p, X)
 
-Evaluate the linear operator ``W = $(_tex(:Cal, "A"))[X]`` from the [`SymmetricLinearSystemObjective`](@ref)
+Evaluate the linear operator ``Y = $(_tex(:Cal, "A"))[X]`` from the [`SymmetricLinearSystemObjective`](@ref)
 defined on the tangent space at `p` at the tangent vector `X`.
 
 This can be evaluated in-place of `Y`.

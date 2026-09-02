@@ -531,6 +531,8 @@ function step_solver!(
     s = dcps.stepsize(amp, dcps, k)
     callback(:Stepsize, amp, dcps, k)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
+    # store the gradient of `f` in `X` at the end of the iteration for the gradient norm stopping criterion
+    !ismissing(get_gradient_function(get_objective(amp, true))) && get_gradient!(amp, dcps.X, dcps.p)
     return dcps
 end
 #=
@@ -562,5 +564,7 @@ function step_solver!(
     s = dcps.stepsize(amp, dcps, k)
     callback(:Stepsize, amp, dcps, k)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
+    # store the gradient of `f` in `X` at the end of the iteration for the gradient norm stopping criterion
+    !ismissing(get_gradient_function(get_objective(amp, true))) && get_gradient!(amp, dcps.X, dcps.p)
     return dcps
 end

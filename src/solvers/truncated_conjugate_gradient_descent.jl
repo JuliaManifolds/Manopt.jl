@@ -24,7 +24,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
 # Constructor
 
-    TruncatedConjugateGradientState(TpM::TangentSpace, Y=rand(TpM); kwargs...)
+    TruncatedConjugateGradientState(TpM::TangentSpace; X=rand(TpM), kwargs...)
 
 Initialize the TCG state.
 

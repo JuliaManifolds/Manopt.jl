@@ -112,7 +112,6 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `cma_es` now uses Hansen's `1/(21n^2)` term in its approximation of the expected norm of a standard normal vector.
 * `StopWhenLagrangeMultiplierLess` now provides the documented default tolerance `1e-6`, so it can be constructed without arguments.
 * `StopWhenRelativeAPosterioriCostChangeLessOrEqual` now reports the signed relative cost change it actually tests, instead of its absolute value.
-* `status_summary(::PrimalDualManifoldObjective)` now returns its short summary for the `:inline` and `:short` contexts instead of the long one.
 * the default `stopping_criterion` of `AugmentedLagrangianMethodState` now ends in `StopWhenStepsizeLess(1.0e-10)`, matching `augmented_Lagrangian_method`.
 * `difference_of_convex_proximal_point` now defaults to the point-type-aware `default_inverse_retraction_method(M, typeof(p))`.
 * `StopWhenPopulationDiverges` now tests growth against the start of the run, not an absolute threshold.
@@ -125,6 +124,17 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `trust_regions` now runs with a closed form sub solver.
 * `trust_regions` no longer throws for a non-tCG sub state.
 * `interior_point_Newton` now runs with a closed form sub solver.
+* `difference_of_convex_proximal_point` now leaves the gradient of the objective in the state's `X`.
+* proximal gradient backtracking now stores the collapsed step size, so a collapse is detected.
+* `ProximalGradientMethodAcceleration` now uses the inverse retraction it is configured with.
+* `proximal_gradient_method` now rejects an incomplete sub-solver setup up front.
+* the default proximal parameter of `proximal_point` is `k -> 1.0`, so it no longer forces integers.
+* `QuasiNewtonState` no longer reports a spurious non-descent direction before the first iteration.
+* `quasi_Newton` now divides the maximal step size by the Riemannian norm on anisotropic manifolds.
+* `nondescent_direction_behavior=:step_towards_negative_gradient` now steps towards the negative gradient.
+* `initial_scale=nothing` now deactivates the initial scaling for the matrix-based quasi-Newton updates.
+* the cautious quasi-Newton matrix update compares the real part of the inner product against its bound.
+* the `:byrd` curvature test in the limited-memory quasi-Newton update now squares the gradient norm.
 * since we introduced the differential in the first order objectives,
 they were not fully supported in all places. This was now fixed and unified.
 * for a nicer printing on REPL, a few more `status_summary` functions were added (with the help of an AI)

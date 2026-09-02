@@ -34,12 +34,12 @@ $(_fields(:X; name = "X_old"))
     MomentumGradientRule(M::AbstractManifold; kwargs...)
     MomentumGradientRule(M::AbstractManifold, p; kwargs...)
 
-Initialize a momentum gradient rule to `s`, where `p` and `X` are memory for interim values.
+Initialize a momentum gradient rule, where `p` and `X` are memory for interim values.
 
 ## Keyword arguments
 
 $(_kwargs(:p))
-* `s=`[`IdentityUpdateRule`](@ref)`()`
+* `direction=`[`IdentityUpdateRule`](@ref)`()`
 * `momentum=0.2`
 $(_kwargs([:vector_transport_method, :X]))
 
@@ -93,9 +93,9 @@ function (mg::MomentumGradientRule)(
 end
 function Base.show(io::IO, mgr::MomentumGradientRule)
     print(io, "MomentumGradientRule(; momentum = ", mgr.momentum)
-    print(io, ", p_old = ", mgr.p_old, ", X_old ", mgr.X_old)
+    print(io, ", p_old = ", mgr.p_old, ", X_old = ", mgr.X_old)
     print(io, ", direction = ", mgr.direction)
-    print(io, "vector_transport_method = ", mgr.vector_transport_method)
+    print(io, ", vector_transport_method = ", mgr.vector_transport_method)
     return print(io, ")")
 end
 function status_summary(mgr::MomentumGradientRule; context::Symbol = :default)
@@ -159,12 +159,11 @@ $(_kwargs(:vector_transport_method))
 
     AverageGradientRule(
         M::AbstractManifold;
-        p::P=rand(M);
-        n::Int=10
-        direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=IdentityUpdateRule(),
-        gradients = fill(zero_vector(p.M, o.x),n),
-        last_iterate = deepcopy(x0),
-        vector_transport_method = default_vector_transport_method(M, typeof(p))
+        p=rand(M),
+        n::Int=10,
+        direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=Gradient(),
+        gradients=[zero_vector(M, p) for _ in 1:n],
+        vector_transport_method=default_vector_transport_method(M, typeof(p))
     )
     AverageGradientRule(M::AbstractManifold, p; kwargs...)
 
@@ -173,7 +172,6 @@ Add average to a gradient problem, where
 * `n`:                       determines the size of averaging
 * `direction`:               is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
 * `gradients`:               can be pre-filled with some history
-* `last_iterate`:            stores the last iterate
 $(_kwargs(:vector_transport_method))
 """
 mutable struct AverageGradientRule{
@@ -223,8 +221,8 @@ function (a::AverageGradientRule)(
 end
 function Base.show(io::IO, agr::AverageGradientRule)
     print(io, "AverageGradientRule(; gradients = ", agr.gradients)
-    print(io, "last_iterate = ", agr.last_iterate, ", direction = ", agr.direction)
-    print(io, "vector_transport_method = ", agr.vector_transport_method)
+    print(io, ", last_iterate = ", agr.last_iterate, ", direction = ", agr.direction)
+    print(io, ", vector_transport_method = ", agr.vector_transport_method)
     return print(io, ")")
 end
 function status_summary(agr::AverageGradientRule; context::Symbol = :default)
@@ -253,10 +251,10 @@ $(_args(:M)) (optional)
 # Keyword arguments
 
 $(_kwargs(:p; add_properties = [:as_Initial]))
-* `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
+* `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before averaging
 * `gradients=[zero_vector(M, p) for _ in 1:n]` how to initialize the internal storage
 * `n=10` number of gradient evaluations to take the mean over
-$(_kwargs([:X, :vector_transport_method]))
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultsFactory, "AverageGradientRule"))
 """
@@ -376,13 +374,13 @@ Assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex. Given
 This compute a Nesterov type update using the following steps, see [ZhangSra:2018](@cite)
 
 1. Compute the positive root ``α_k∈(0,1)`` of ``α^2 = h_k$(_tex(:bigl))((1-α_k)γ_k+α_k μ$(_tex(:bigr)))``.
-2. Set ``$(_tex(:bar, "γ"))_k+1 = (1-α_k)γ_k + α_kμ``
+2. Set ``$(_tex(:bar, "γ"))_{k+1} = (1-α_k)γ_k + α_kμ``
 3. ``y_k = $(_tex(:retr))_{p_k}\\Bigl(\\frac{α_kγ_k}{γ_k + α_kμ}$(_tex(:retr))^{-1}_{p_k}v_k \\Bigr)``
 4. ``x_{k+1} = $(_tex(:retr))_{y_k}(-h_k $(_tex(:grad))f(y_k))``
-5. ``v_{k+1} = $(_tex(:retr))_{y_k}\\Bigl(\\frac{(1-α_k)γ_k}{$(_tex(:bar, "γ"))_k}$(_tex(:retr))_{y_k}^{-1}(v_k) - \\frac{α_k}{$(_tex(:bar, "γ"))_{k+1}}$(_tex(:grad))f(y_k) \\Bigr)``
+5. ``v_{k+1} = $(_tex(:retr))_{y_k}\\Bigl(\\frac{(1-α_k)γ_k}{$(_tex(:bar, "γ"))_{k+1}}$(_tex(:retr))_{y_k}^{-1}(v_k) - \\frac{α_k}{$(_tex(:bar, "γ"))_{k+1}}$(_tex(:grad))f(y_k) \\Bigr)``
 6. ``γ_{k+1} = \\frac{1}{1+β_k}$(_tex(:bar, "γ"))_{k+1}``
 
-Then the direction from ``p_k`` to ``p_k+1`` by ``d = $(_tex(:invretr))_{p_k}p_{k+1}`` is returned.
+Then the direction from ``p_k`` to ``p_{k+1}`` by ``d = $(_tex(:invretr))_{p_k}p_{k+1}`` is returned.
 
 # Input
 

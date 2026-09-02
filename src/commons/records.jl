@@ -373,8 +373,9 @@ RecordPrimalBaseIterate(m) = RecordEntry(m, :m)
 @doc """
     RecordProximalParameter{R <: Real} <: RecordAction
 
-record the current iterates proximal point algorithm parameter given by in
-[`AbstractManoptSolverState`](@ref)s `o.λ`.
+record the current proximal point algorithm parameter ``λ_k``, given by `s.λ(k)`
+of the corresponding [`AbstractManoptSolverState`](@ref) `s`, for example the
+[`CyclicProximalPointState`](@ref).
 
 ## Constructor
     RecordProximalParameter(r::Type{<:Real}=Float64)
@@ -485,24 +486,27 @@ end
 
 Generate a dictionary of [`RecordAction`](@ref)s.
 
-First all `Symbol`s `String`, [`RecordAction`](@ref)s and numbers are collected,
-excluding `:Stop` and `:WhenActive`.
+First all `Symbol`s and [`RecordAction`](@ref)s are collected,
+excluding `:Stop`, `:WhenActive` and any `Int`.
 This collected vector is added to the `:Iteration => [...]` pair.
-`:Stop` is added as `:StoppingCriterion` to the `:Stop => [...]` pair.
-If any of these two pairs does not exist, it is pairs are created when adding the corresponding symbols
+`:Stop` is added as a [`RecordStoppingReason`](@ref) to the `:Stop => [...]` pair.
+If any of these two pairs does not exist, it is created when adding the corresponding entries.
 
 For each `Pair` of a `Symbol` and a `Vector`, the [`RecordGroupFactory`](@ref)
-is called for the `Vector` and the result is added to the debug dictionary's entry
+is called for the `Vector` and the result is added to the record dictionary's entry
 with said symbol. This is wrapped into the [`RecordWhenActive`](@ref),
-when the `:WhenActive` symbol is present
+when the `:WhenActive` symbol is present.
+
+If an `Int` `k` is present, all entries but `:Start` and `:Stop` are wrapped
+into a [`RecordEvery`](@ref)`(k)`.
 
 # Return value
 
-A dictionary for the different entry points where debug can happen, each containing
+A dictionary for the different entry points where recording can happen, each containing
 a [`RecordAction`](@ref) to call.
 
-Note that upon the initialization all dictionaries but the `:StartAlgorithm`
-one are called with an `i=0` for reset.
+Note that upon the initialization all dictionaries but the `:Start`
+one are called with a `k=-1` for reset.
 """
 function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})
     # filter out :Iteration defaults
@@ -550,12 +554,12 @@ RecordFactory(s::AbstractManoptSolverState, a) = RecordFactory(s, [a])
 @doc """
     RecordGroupFactory(s::AbstractManoptSolverState, a)
 
-Generate a [`RecordGroup`] of [`RecordAction`](@ref)s. The following rules are used
+Generate a [`RecordGroup`](@ref) of [`RecordAction`](@ref)s. The following rules are used
 
 1. Any `Symbol` contained in `a` is passed to [`RecordActionFactory`](@ref RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))
 2. Any [`RecordAction`](@ref) is included as is.
 Any Pair of a `RecordAction` and a symbol, that is in order `RecordCost() => :A` is handled,
-that the corresponding record action can later be accessed as `g[:A]`, where `g`is the record group generated here.
+that the corresponding record action can later be accessed as `g[:A]`, where `g` is the record group generated here.
 
 If this results in more than one [`RecordAction`](@ref) a [`RecordGroup`](@ref) of these is build.
 
@@ -610,6 +614,8 @@ create a [`RecordAction`](@ref) where
   * `:IterativeTime` to record the times taken for each iteration.
   * `:ProximalParameter` to record the proximal parameter, see [`RecordProximalParameter`](@ref)
   * `:Stepsize`      to record the current step size
+  * `:Stop`          to record the reason the solver stopped, see [`RecordStoppingReason`](@ref)
+  * `:Subsolver`     to record the sub solver's record, see [`RecordSubsolver`](@ref)
   * `:Time`          to record the total time taken after every iteration
 
 and every other symbol is passed to [`RecordEntry`](@ref), which results in recording the

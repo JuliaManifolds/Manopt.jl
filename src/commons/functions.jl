@@ -162,7 +162,7 @@ end
 
 """
     maybe_wrap_function(f, p, evaluation = InplaceEvaluation(); result = :Number)
-    maybe_wrap_function(f, evaluation = InplaceEvaluation(); result = :Number)
+    maybe_wrap_function(f, evaluation; result = :Point)
 
 Wrap a function `f` defined on a manifold to work in-place on mutable variables, i.e. first
 if the input variable `p` is a number, the function `f` is wrapped in a [`MutableManifoldFunction`](@ref).
@@ -372,7 +372,7 @@ A functor to approximate the Hessian by the BFGS update.
 # Fields
 
 * `gradient!`: the gradient function (either allocating or mutating, see `evaluation` parameter).
-* `scale::Bool`: whether to scale the initial approximating operator.
+* `scale::Bool`: a flag stored for a scaling of the initial approximating operator; it is currently not used in the update.
 $(_fields(:vector_transport_method))
 
 ## Internal temporary fields
@@ -390,7 +390,7 @@ $(_fields(:vector_transport_method))
 $(_kwargs(:evaluation))
 * `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`: the matrix representation of the initial approximating operator.
 * `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: an orthonormal basis in the tangent space of the initial iterate `p`.
-* `scale=true`: the value of the `scale` field above.
+* `scale=true`: the value to store in the `scale` field above.
 """
 mutable struct ApproxHessianBFGS{
         P, G, T, B <: AbstractBasis{ℝ}, VTR <: AbstractVectorTransportMethod,

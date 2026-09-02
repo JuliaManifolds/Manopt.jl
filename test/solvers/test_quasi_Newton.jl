@@ -393,7 +393,7 @@ end
         dqns = DebugSolverState(qns, DebugMessages(:Warning, :Once))
         @test_logs (
             :warn,
-            "Computed direction is not a descent direction. The inner product evaluated to 1.0. Resetting to negative gradient.",
+            r"Computed direction is not a descent direction\. The inner product evaluated to 4\.0\. Resetting to negative gradient\.",
         ) (
             :warn,
             "Further warnings will be suppressed, use DebugMessages(:Warning, :Always) to get all warnings.",

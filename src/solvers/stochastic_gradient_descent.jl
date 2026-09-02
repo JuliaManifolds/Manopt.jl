@@ -218,8 +218,9 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `direction=`[`StochasticGradient`](@ref)`(`$(_link(:zero_vector))`)` add a post-processor to
   the direction obtained from evaluating the sub-gradient.
 $(_kwargs(:evaluation))
-* `order_type=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
-  a per cycle permuted sequence (`:Random`, default) or the default `:Linear` one.
+* `order_type=:Random`: whether to use a fixed randomly permuted sequence (`:FixedRandom`),
+  the sequence as given in `order` (`:Linear`), or the default `:Random` one,
+  which chooses a random gradient in every step.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(10000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`StochasticGradientDescentState`](@ref)`)"))
 * `order=collect(1:n)`: the initial permutation, where `n` is the number of gradients in `grad_f`.

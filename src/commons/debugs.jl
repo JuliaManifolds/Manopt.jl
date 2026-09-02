@@ -46,13 +46,10 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword parameters
 
-* `storage=`[`StoreStateAction`](@ref)`( [:Gradient] )` storage of the previous action
+* `storage=`[`StoreStateAction`](@ref)`( [:Iterate] )`: storage of the previous iterate
 * `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`)
 * `io=stdout`: default stream to print the debug to.
 $(_kwargs(:inverse_retraction_method))
-
-the inverse retraction
-  to be used for approximating distance.
 """
 mutable struct DebugChange{IR <: AbstractInverseRetractionMethod} <: DebugAction
     io::IO
@@ -92,7 +89,7 @@ end
 function show(io::IO, dc::DebugChange)
     return print(
         io,
-        "DebugChange(; format=\"$(escape_string(dc.format))\", inverse_retraction=$(dc.inverse_retraction_method))",
+        "DebugChange(; format=\"$(escape_string(dc.format))\", inverse_retraction_method=$(dc.inverse_retraction_method))",
     )
 end
 function status_summary(dc::DebugChange; context::Symbol = :default)
@@ -334,7 +331,7 @@ end
 
 Print the dual variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
-This method is further set display `o.X`.
+This method is further set to display the field `X` of the state.
 """
 DebugDualIterate(opts...; kwargs...) = DebugEntry(:X, opts...; kwargs...)
 
@@ -641,7 +638,7 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword parameters
 
-* `storage=`[`StoreStateAction`](@ref)`( (:Gradient,) )`: storage of the action for previous data
+* `storage=`[`StoreStateAction`](@ref)`( [:Iterate, :Gradient] )`: storage of the action for previous data
 * `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`:
 * `io=stdout`: default stream to print the debug to.
 * `format="\$prefix %f"`: format to print the output
@@ -709,10 +706,6 @@ debug for gradient evaluated at the current iterate.
     DebugGradientNorm([long=false, format= "\$prefix%s", io=stdout, at_init=true])
 
 display the short (`false`) or long (`true`) default text for the gradient norm.
-
-    DebugGradientNorm(prefix[, p=print])
-
-display the a `prefix` in front of the gradient norm.
 """
 mutable struct DebugGradientNorm <: DebugAction
     io::IO
@@ -759,7 +752,7 @@ debug for the current iterate (stored in `get_iterate` of the [`AbstractManoptSo
 * `format="\$prefix %s"`: format how to print the current iterate
 * `long=false`:          whether to have a long (`"current iterate:"`) or a short (`"p:"`) prefix default
 * `prefix`:              (see `long` for default) set a prefix to be printed before the iterate
-* `at_init=true`:        whether to print also at initialization
+* `at_init=false`:       whether to print also at initialization
 """
 mutable struct DebugIterate <: DebugAction
     io::IO
@@ -800,7 +793,7 @@ end
 * `format="# %-6d"`: format to print the output
 * `io=stdout`: default stream to print the debug to.
 
-debug for the current iteration (prefixed with `#` by )
+debug for the current iteration, prefixed with `#` by the default `format`, and printed as `Initial` at initialization.
 """
 mutable struct DebugIteration <: DebugAction
     io::IO
@@ -1070,7 +1063,7 @@ end
 debug for the current step size.
 
 # Constructors
-    DebugStepsize(;long=false,prefix="step size:", format="\$prefix%s", io=stdout, at_init=true)
+    DebugStepsize(; long=false, prefix=long ? "step size:" : "s:", format="\$prefix%s", io=stdout, at_init=true)
 
 display the a `prefix` in front of the step size.
 """
@@ -1168,7 +1161,7 @@ end
 function status_summary(d::DebugWarnIfLagrangeMultiplierIncreases; context::Symbol = :default)
     (context === :short) && return repr(d)
     m = (d.status === :Once) ? "once" : (d.status === :No ? "(inactive)" : "")
-    return "a DebugAction warning if the lagange multiplier increases in an iteration $m."
+    return "a DebugAction warning if the Lagrange multiplier increases in an iteration $m."
 end
 
 
@@ -1187,7 +1180,7 @@ deactivate this debug
 # Fields
 
 * `active`:        a boolean that can (de-)activated from outside to turn on/off debug
-* `always_update`: whether or not to call the order debugs with iteration `<=0` inactive state
+* `always_update`: whether or not to call the other debugs with negative iteration numbers (`k < 0`) while inactive
 
 # Constructor
 
@@ -1247,7 +1240,7 @@ The measured time is rounded using the given `time_accuracy` and printed after [
 * `io=stdout`:             default stream to print the debug to.
 * `format="\$prefix %s"`:   format to print the output, where `%s` is the canonicalized time.
 * `mode=:cumulative`:      whether to display the total time or reset on every call using `:Iterative`.
-* `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`:
+* `prefix="time spent:"`:  prefix of the debug output (ignored if you set `format`)
 * `start=false`:           indicate whether to start the timer on creation or not.
    Otherwise it might only be started on first call.
 * `time_accuracy=Millisecond(1)`: round the time to this period before printing the canonicalized time
@@ -1385,11 +1378,10 @@ end
 @doc """
     DebugWarnIfCostNotFinite <: DebugAction
 
-A debug to see when a field (value or array within the AbstractManoptSolverState is or contains values
-that are not finite, for example `Inf` or `Nan`.
+A debug to see when the cost is not finite, for example `Inf` or `NaN`.
 
 # Constructor
-    DebugWarnIfCostNotFinite(field::Symbol, warn=:Once)
+    DebugWarnIfCostNotFinite(warn=:Once)
 
 Initialize the warning to warn `:Once`.
 
@@ -1474,7 +1466,7 @@ function (d::DebugWarnIfFieldNotFinite)(
             At iteration #$k it evaluated to $(v).
             """
             if d.status === :Once
-                @warn "Further warnings will be suppressed, use DebugWaranIfFieldNotFinite(:$(d.field), :Always) to get all warnings."
+                @warn "Further warnings will be suppressed, use DebugWarnIfFieldNotFinite(:$(d.field), :Always) to get all warnings."
                 d.status = :No
             end
         end
@@ -1504,14 +1496,14 @@ A debug to warn when an evaluated gradient at the current iterate is larger than
 
 Initialize the warning to warn `:Once`.
 
-This can be set to `:Once` to only warn the first time the cost is Nan.
+This can be set to `:Once` to only warn the first time the gradient norm is too large.
 It can also be set to `:No` to deactivate the warning, but this makes this Action also useless.
 All other symbols are handled as if they were `:Always:`
 
 # Example
-    DebugWarnIfFieldNotFinite(:Gradient)
+    DebugWarnIfGradientNormTooLarge(2.0)
 
-Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `Inf`.
+Creates a [`DebugAction`](@ref) warning when the gradient norm exceeds twice the maximal stepsize at the current iterate.
 """
 mutable struct DebugWarnIfGradientNormTooLarge{T} <: DebugAction
     status::Symbol
@@ -1531,7 +1523,7 @@ function (d::DebugWarnIfGradientNormTooLarge)(
         p_inj = d.factor * max_stepsize(M, p)
         if Xn > p_inj
             @warn """At iteration #$k
-            the gradient norm ($Xn) is larger than $(d.factor) times the injectivity radius $(p_inj) at the current iterate.
+            the gradient norm ($Xn) is larger than the threshold $(p_inj) ($(d.factor) times the maximal stepsize) at the current iterate.
             """
             if d.status === :Once
                 @warn "Further warnings will be suppressed, use DebugWarnIfGradientNormTooLarge($(d.factor), :Always) to get all warnings."
@@ -1584,7 +1576,7 @@ function (d::DebugWarnIfStepsizeCollapsed)(
         if get_last_stepsize(amp, st, k) ≤ d.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(d.stop_when_stepsize_less)."
             if d.status === :Once
-                @warn "Further warnings will be suppressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
+                @warn "Further warnings will be suppressed, use DebugWarnIfStepsizeCollapsed($(d.stop_when_stepsize_less), :Always) to get all warnings."
                 d.status = :No
             end
         end
@@ -1774,7 +1766,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:IterativeTime` creates a [`DebugTime`](@ref)`(; mode=:Iterative)`
 * `:ProxParameter` creates a [`DebugProximalParameter`](@ref)`()`
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
-* `:Stop` creates a [`StoppingCriterion`](@ref)`()`
+* `:Stop` creates a [`DebugStoppingCriterion`](@ref)`()`
 * `:Time` creates a [`DebugTime`](@ref)
 * `:WarnStepsize` creates a [`DebugWarnIfStepsizeCollapsed`](@ref)
 * `:WarnBundle` creates a [`DebugWarnIfLagrangeMultiplierIncreases`](@ref)

@@ -362,7 +362,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test Manopt.status_summary(d4; context = :short) === "[$(Manopt.status_summary(d1; context = :short)), 4]"
         de_d = "A DebugAction wrapping the following DebugAction to only print it every"
         @test startswith(Manopt.status_summary(d4), de_d)
-        ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction=LogarithmicInverseRetraction())"
+        ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction_method=LogarithmicInverseRetraction())"
         @test repr(DebugChange()) == ts2
         @test Manopt.status_summary(DebugChange(); context = :short) == "(:Change, \"Last Change: %f\")"
         @test startswith(Manopt.status_summary(DebugChange()), "A DebugAction to print the change of")

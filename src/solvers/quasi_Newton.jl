@@ -101,7 +101,7 @@ mutable struct QuasiNewtonState{
             callbacks = callbacks, direction_update = direction_update, preconditioner = precon,
             retraction_method = retraction_method, stepsize = stepsize, stopping_criterion = stopping_criterion,
             X_old = copy(M, p, X), vector_transport_method = vector_transport_method,
-            nondescent_direction_behavior = nondescent_direction_behavior, nondescent_direction_value = 1.0
+            nondescent_direction_behavior = nondescent_direction_behavior, nondescent_direction_value = 0.0
         )
     end
     function QuasiNewtonState(;
@@ -242,7 +242,7 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
 * `preconditioner=missing` specify a preconditioner, either
   * the default `missing` does not activate a preconditioning
   * a function of the form `(M, p, X) -> Y` or mutating `(M, Y, p, X) -> Y` depending on the `evaluation`
-  * a [`PreconditionedDirection`](@ref). See also their docs for more details on the preconditioner.
+  * a [`QuasiNewtonPreconditioner`](@ref), see its docs for more details on the preconditioner.
   Note that the preconditioner is applied to the gradient, i.e. the right hand side _before_ solving the linear system.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
@@ -382,7 +382,7 @@ calls_with_kwargs(::typeof(quasi_Newton!)) = (decorate_objective!, decorate_stat
 function _get_max_stepsize(M::AbstractManifold, qns::QuasiNewtonState)
     current_max_stepsize = get_parameter(qns.direction_update, Val(:max_stepsize))
     if !isnothing(current_max_stepsize) && !isfinite(current_max_stepsize)
-        return max_stepsize(M, qns.p) / norm(qns.η)
+        return max_stepsize(M, qns.p) / norm(M, qns.p, qns.η)
     else
         return current_max_stepsize
     end
@@ -391,6 +391,7 @@ end
 function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
     M = get_manifold(amp)
     get_gradient!(amp, qns.X, qns.p)
+    qns.nondescent_direction_value = zero(qns.nondescent_direction_value)
     copyto!(M, qns.sk, qns.p, qns.X)
     copyto!(M, qns.yk, qns.p, qns.X)
     initialize_update!(qns.direction_update)
@@ -409,13 +410,11 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
                     qns.nondescent_direction_behavior === :reinitialize_direction_update
                 copyto!(M, qns.η, qns.X)
                 qns.η .*= -1
+                current_max_stepsize = _get_max_stepsize(M, qns)
             end
             if qns.nondescent_direction_behavior === :reinitialize_direction_update
                 initialize_update!(qns.direction_update)
-            end
-            # update direction after reinitialization to get a valid one
-            if qns.nondescent_direction_behavior === :step_towards_negative_gradient ||
-                    qns.nondescent_direction_behavior === :reinitialize_direction_update
+                # update direction after reinitialization to get a valid one
                 qns.direction_update(qns.η, mp, qns)
                 current_max_stepsize = _get_max_stepsize(M, qns)
             end
@@ -480,9 +479,8 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
-    s = isnothing(d.initial_scale) ? 1.0 : d.initial_scale
-    if iter == 1
-        d.matrix = s * skyk_c / inner(M, p, st.yk, st.yk) * d.matrix
+    if iter == 1 && !isnothing(d.initial_scale)
+        d.matrix = d.initial_scale * skyk_c / inner(M, p, st.yk, st.yk) * d.matrix
     end
     d.matrix =
         (I - sk_c * yk_c' / skyk_c) * d.matrix * (I - yk_c * sk_c' / skyk_c) +
@@ -500,9 +498,8 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
-    s = isnothing(d.initial_scale) ? 1.0 : d.initial_scale
-    if iter == 1
-        d.matrix = s * inner(M, p, st.yk, st.yk) / skyk_c * d.matrix
+    if iter == 1 && !isnothing(d.initial_scale)
+        d.matrix = d.initial_scale * inner(M, p, st.yk, st.yk) / skyk_c * d.matrix
     end
     d.matrix =
         d.matrix + yk_c * yk_c' / skyk_c -
@@ -521,9 +518,8 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
-    s = isnothing(d.initial_scale) ? 1.0 : d.initial_scale
-    if iter == 1
-        d.matrix = s * inner(M, p, st.sk, st.sk) / skyk_c * d.matrix
+    if iter == 1 && !isnothing(d.initial_scale)
+        d.matrix = d.initial_scale * inner(M, p, st.sk, st.sk) / skyk_c * d.matrix
     end
     d.matrix =
         d.matrix + sk_c * sk_c' / skyk_c -
@@ -542,9 +538,8 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
-    s = isnothing(d.initial_scale) ? 1.0 : d.initial_scale
-    if iter == 1
-        d.matrix = s * skyk_c / inner(M, p, st.sk, st.sk) * d.matrix
+    if iter == 1 && !isnothing(d.initial_scale)
+        d.matrix = d.initial_scale * skyk_c / inner(M, p, st.sk, st.sk) * d.matrix
     end
     d.matrix =
         (I - yk_c * sk_c' / skyk_c) * d.matrix * (I - sk_c * yk_c' / skyk_c) +
@@ -692,7 +687,7 @@ function update_hessian!(
     # computing the bound used in the decision rule
     bound = d.θ(norm(M, p_old, get_gradient(mp, p_old)))
     sk_normsq = norm(M, p, st.sk)^2
-    if sk_normsq != 0 && (inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
+    if sk_normsq != 0 && real(inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
         update_hessian!(d.update, mp, st, p_old, iter)
     else
         # the matrix is kept, but the basis is still transported to the new tangent space
@@ -712,13 +707,13 @@ function fill_rho_i!(M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectio
         else
             d.message = "The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i, ignoring summand in approximation."
         end
-    elseif d.nonpositive_curvature_behavior === :byrd && v <= d.sy_tol * norm(M, p, d.memory_y[i])
+    elseif d.nonpositive_curvature_behavior === :byrd && v <= d.sy_tol * norm(M, p, d.memory_y[i])^2
         d.ρ[i] = zero(eltype(d.ρ))
         if length(d.message) > 0
             d.message = replace(d.message, " i=" => " i=$i,")
             d.message = replace(d.message, "summand in" => "summands in")
         else
-            d.message = "The inner products ⟨s_i,y_i⟩ <= $(d.sy_tol * norm(M, p, d.memory_y[i])), i=$i, removing summand from approximation."
+            d.message = "The inner products ⟨s_i,y_i⟩ <= $(d.sy_tol * norm(M, p, d.memory_y[i])^2), i=$i, removing summand from approximation."
         end
     else
         d.ρ[i] = 1 / v
