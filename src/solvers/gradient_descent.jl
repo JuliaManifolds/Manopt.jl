@@ -132,7 +132,7 @@ end
 
 _doc_gd_iterate = raw"""
 ```math
-p_{k+1} = \operatorname{retr}_{p_k}\bigl( s_k\operatorname{grad}f(p_k) \bigr),
+p_{k+1} = \operatorname{retr}_{p_k}\bigl( -s_k\operatorname{grad}f(p_k) \bigr),
 \qquad k=0,1,…
 ```
 where ``s_k > 0`` denotes a step size.

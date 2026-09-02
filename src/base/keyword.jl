@@ -132,7 +132,7 @@ function Base.show(io::IO, kw::Keywords{I}) where {I}
                 astn = "\n  * $(kwn)"
                 if haskey(kw.origins, kwn) && kw.origins[kwn] isa Vector
                     pass_on = last(kw.origins[kwn])
-                    if !("$(I)!" == "$(pass_on)")
+                    if !((pass_on === I) || ("$(I)!" == "$(pass_on)"))
                         astn *= " (passed on to $pass_on)"
                     end
                 end

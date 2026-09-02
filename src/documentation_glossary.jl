@@ -61,6 +61,7 @@ end
 Glossaries.define!(_glossary_tex_terms, :cases, :math, _tex_cases)
 Glossaries.define!(_glossary_tex_terms, :cdots, :math, raw"\cdots")
 Glossaries.define!(_glossary_tex_terms, :cot, :math, raw"\cot")
+Glossaries.define!(_glossary_tex_terms, :coth, :math, raw"\coth")
 Glossaries.define!(_glossary_tex_terms, :ddots, :math, raw"\ddots")
 _tex_deriv(t = "t") = raw"\frac{\mathrm{d}}{\mathrm{d}" * "$(t)" * "}"
 Glossaries.define!(_glossary_tex_terms, :deriv, :math, _tex_deriv)

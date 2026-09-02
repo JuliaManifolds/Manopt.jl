@@ -39,6 +39,33 @@ include("trust_region_model.jl")
         # Dummy pass through for closed from solver
         trs4 = TrustRegionsState(M, rgrad, AllocatingEvaluation())
         @test trs4.sub_state isa Manopt.ClosedFormSubSolverState
+        @testset "closed form sub solver can be solved" begin
+            # the documented closed form constructor built a state `step_solver!` could not run
+            mho = ManifoldHessianObjective(f, rgrad, rhess)
+            dmp = DefaultManoptProblem(M, mho)
+            # a valid (if crude) model minimizer inside the trust region of radius Δ
+            function closed_a(M, q, Δ)
+                Y = -rgrad(M, q)
+                n = norm(M, q, Y)
+                return n > Δ ? (Δ / n) * Y : Y
+            end
+            closed_i!(M, Y, q, Δ) = copyto!(M, Y, q, closed_a(M, q, Δ))
+            sa = TrustRegionsState(
+                M, closed_a; p = copy(M, p), stopping_criterion = StopAfterIteration(5),
+            )
+            si = TrustRegionsState(
+                M, closed_i!; p = copy(M, p), evaluation = InplaceEvaluation(),
+                stopping_criterion = StopAfterIteration(5),
+            )
+            @test sa.sub_problem isa Manopt.InplaceManifoldFunction
+            @test si.sub_problem === closed_i!
+            for s in (sa, si)
+                solve!(dmp, s)
+                @test is_point(M, get_solver_result(s))
+            end
+            # both evaluation types take the same steps
+            @test isapprox(M, get_solver_result(sa), get_solver_result(si))
+        end
     end
     @testset "Objective accessors" begin
         mho = ManifoldHessianObjective(f, rgrad, rhess)

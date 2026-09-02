@@ -342,7 +342,9 @@ function difference_of_convex_algorithm!(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), gradient = missing, kwargs...,
     )
     mdco = ManifoldDifferenceOfConvexObjective(f, ∂h; gradient = gradient, evaluation = evaluation)
-    return difference_of_convex_algorithm!(M, mdco, p; g = g, evaluation = evaluation, kwargs...)
+    return difference_of_convex_algorithm!(
+        M, mdco, p; g = g, evaluation = evaluation, gradient = gradient, kwargs...,
+    )
 end
 function difference_of_convex_algorithm!(
         M::AbstractManifold, mdco::O, p;
@@ -351,7 +353,7 @@ function difference_of_convex_algorithm!(
         g = missing, grad_g = missing, gradient = missing,
         X = zero_vector(M, p),
         objective_type = :Riemannian,
-        stopping_criterion = if ismissing(gradient)
+        stopping_criterion = if ismissing(gradient) && ismissing(get_gradient_function(get_objective(mdco)))
             StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9)
         else
             StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9) | StopWhenGradientNormLess(1.0e-9)
@@ -459,6 +461,7 @@ function step_solver!(
     callback(:BeforeSubsolver, amp, dcs, k)
     dcs.sub_problem(M, dcs.p, dcs.p, dcs.X) # evaluate the closed form solution and store the result in p
     callback(:Subsolver, amp, dcs, k)
+    !ismissing(get_gradient_function(get_objective(amp))) && get_gradient!(amp, dcs.X, dcs.p)
     return dcs
 end
 get_solver_result(dcs::DifferenceOfConvexState) = dcs.p

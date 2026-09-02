@@ -182,7 +182,7 @@ end
 function Base.show(io::IO, cgs::ConjugateGradientDescentState)
     print(io, "ConjugateGradientDescentState(;")
     print(io, " callbacks = $(cgs.callbacks),")
-    print(io, " p = $(cgs.p)")
+    print(io, " p = $(cgs.p),")
     print(io, " p_old = $(cgs.p_old),")
     print(io, " X = $(cgs.X),")
     print(io, " δ = $(cgs.δ),")
@@ -337,8 +337,7 @@ where ``$(_math(:VectorTransport))`` denotes a vector transport.
 Then the coefficient reads
 ````math
 β_k =
-=
-$(_tex(:frac, "$(_tex(:diff))f(p_{k+1})[X_{k+1}]", "$(_tex(:inner, "δ_k", "ν_k"; index = "p_{k+1}"))"))
+$(_tex(:frac, "$(_tex(:diff))f(p_{k+1})[X_{k+1}]", "$(_tex(:inner, "$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k", "ν_k"; index = "p_{k+1}"))"))
 =
 $(
     _tex(
@@ -527,7 +526,7 @@ end
     HagerZhangCoefficient(; kwargs...)
     HagerZhangCoefficient(M::AbstractManifold; kwargs...)
 
-Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [FletcherReeves:1964](@cite) adapted to manifolds
+Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [HagerZhang:2005](@cite) adapted to manifolds
 
 $(_doc_CG_notation)
 Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
@@ -800,7 +799,7 @@ $(_fields(:vector_transport_method))
 
     PolakRibiereCoefficientRule(M::AbstractManifold; kwargs...)
 
-Construct the Dai—Yuan coefficient update rule.
+Construct the Polak-Ribière coefficient update rule based on [PolakRibiere:1969](@cite) adapted to manifolds.
 
 # Keyword arguments
 
@@ -931,7 +930,7 @@ so that it falls back to a [`gradient_descent`](@ref) method, that is
 β_k = 0
 ````
 
-$(_note(:ManifoldDefaultsFactory, "SteepestDescentCoefficient"))
+$(_note(:ManifoldDefaultsFactory, "SteepestDescentCoefficientRule"))
 """
 function SteepestDescentCoefficient()
     return ManifoldDefaultsFactory(
@@ -1062,7 +1061,7 @@ Then a restart is performed, hence ``β_k = 0`` returned if
     _tex(
         :frac,
         "⟨X_{k+1}, $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k⟩",
-        _tex(:norm, "X_k", index = "p_k")
+        _tex(:norm, "X_{k+1}", index = "p_{k+1}")
     )
 ) > ε,
 ```
@@ -1245,7 +1244,7 @@ end
 
 A restart strategy that indicates to restart whenever the search direction `δ` is not a sufficient descent direction, i.e.
 ```math
-    ⟨$(_tex(:grad))f(p), δ⟩ ≤ - κ $(_tex(:norm, "X"))^2.
+    ⟨$(_tex(:grad))f(p), δ⟩ > - κ $(_tex(:norm, "X"))^2.
 ```
 
 at the current iterate ``p``.

@@ -115,6 +115,16 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `status_summary(::PrimalDualManifoldObjective)` now returns its short summary for the `:inline` and `:short` contexts instead of the long one.
 * the default `stopping_criterion` of `AugmentedLagrangianMethodState` now ends in `StopWhenStepsizeLess(1.0e-10)`, matching `augmented_Lagrangian_method`.
 * `difference_of_convex_proximal_point` now defaults to the point-type-aware `default_inverse_retraction_method(M, typeof(p))`.
+* `StopWhenPopulationDiverges` now tests growth against the start of the run, not an absolute threshold.
+* `ConvexBundleMethodState` can be built and run on its own again.
+* `DomainBackTrackingStepsize` and `NullStepBackTrackingStepsize` now start at their `initial_stepsize`.
+* `difference_of_convex_algorithm` now forwards a `gradient=`, also when the objective carries it.
+* the closed-form `difference_of_convex_algorithm` now leaves the gradient of `f` in the state.
+* `ExactPenaltyMethodState` now defaults to the same stopping criterion as `exact_penalty_method`.
+* `StopWhenKKTResidualLess` now squares the Lagrangian gradient norm, as documented; its default tolerance is `1e-12`.
+* `trust_regions` now runs with a closed form sub solver.
+* `trust_regions` no longer throws for a non-tCG sub state.
+* `interior_point_Newton` now runs with a closed form sub solver.
 * since we introduced the differential in the first order objectives,
 they were not fully supported in all places. This was now fixed and unified.
 * for a nicer printing on REPL, a few more `status_summary` functions were added (with the help of an AI)

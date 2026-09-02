@@ -1,5 +1,4 @@
 using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
-import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolver!
 
 @testset "The Proximal Bundle Method" begin
     M = Hyperbolic(4)

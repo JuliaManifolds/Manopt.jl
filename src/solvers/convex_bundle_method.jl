@@ -28,7 +28,7 @@ $(
     _tex(
         :cases,
         "1 & $(_tex(:text, " if ")) ω ≥ 0,",
-        "$(_tex(:sqrt, "-ω"))δ$(_tex(:cot))($(_tex(:sqrt, "-ω"))δ) & $(_tex(:text, " if ")) ω < 0",
+        "$(_tex(:sqrt, "-ω"))δ$(_tex(:coth))($(_tex(:sqrt, "-ω"))δ) & $(_tex(:text, " if ")) ω < 0",
     )
 )
 ```
@@ -137,7 +137,7 @@ Most of the following keyword arguments set default values for the fields mentio
 * `bundle_cap=25`
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `diameter=50.0`
-* `domain=(M, p) -> isfinite(f(M, p))`
+* `domain=(M, p) -> true`: a function that evaluates to true when the current candidate is in the domain of the objective
 $(_kwargs(:inverse_retraction_method))
 * `k_max=nothing`: upper bound on the sectional curvature; estimated from `k_size` sample points if `nothing`
 * `k_min=nothing`: lower bound on the sectional curvature; estimated from `k_size` sample points if `nothing`
@@ -147,7 +147,7 @@ $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `p_estimate=p`: the center point for the curvature estimation
 $(_kwargs(:retraction_method))
-$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`)"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`; contraction_factor=0.975)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X))
@@ -195,13 +195,13 @@ mutable struct ConvexBundleMethodState{
             M::TM, sub_problem::Pr, sub_state::St;
             atol_errors::Real = eps(), atol_λ::Real = eps(),
             bundle_cap::I = 25, callbacks::TC = Dict{Symbol, Function}(),
-            diameter::Real = 50.0, domain::D = (M, p) -> isfinite(f(M, p)),
+            diameter::Real = 50.0, domain::D = (M, p) -> true,
             k_max = nothing, k_min = nothing, k_size = 100,
             last_stepsize = one(number_eltype(atol_λ)), m::Real = 1.0e-2,
             p::P = rand(M), p_estimate = p,
             inverse_retraction_method::IR = default_inverse_retraction_method(M, typeof(p)),
             retraction_method::TR = default_retraction_method(M, typeof(p)),
-            stepsize::S = default_stepsize(M, ConvexBundleMethodState),
+            stepsize::S = default_stepsize(M, ConvexBundleMethodState; contraction_factor = 0.975),
             stopping_criterion::SC = StopWhenLagrangeMultiplierLess(1.0e-8) | StopAfterIteration(5000),
             vector_transport_method::VT = default_vector_transport_method(M, typeof(p)),
             X::T = zero_vector(M, p),
@@ -320,8 +320,11 @@ function set_iterate!(bms::ConvexBundleMethodState, M, p)
     return bms
 end
 get_subgradient(bms::ConvexBundleMethodState) = bms.g
-function default_stepsize(M::AbstractManifold, ::Type{ConvexBundleMethodState})
-    return ConstantStepsize(M)
+function default_stepsize(
+        M::AbstractManifold, ::Type{ConvexBundleMethodState};
+        contraction_factor = 0.95,
+    )
+    return DomainBackTrackingStepsize(M; contraction_factor = contraction_factor)
 end
 provided_callbacks(::Type{<:ConvexBundleMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
 get_callbacks(bms::ConvexBundleMethodState) = bms.callbacks
@@ -430,7 +433,7 @@ function (dbt::DomainBackTrackingStepsize)(
         amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; kwargs...
     )
     M = get_manifold(amp)
-    dbt.last_stepsize = 1.0
+    dbt.last_stepsize = dbt.initial_stepsize
     retract!(
         M, dbt.candidate_point, cbms.p_last_serious, -dbt.last_stepsize * cbms.g, dbt.retraction_method,
     )
@@ -530,7 +533,7 @@ function (nsbt::NullStepBackTrackingStepsize)(
         amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; kwargs...
     )
     M = get_manifold(amp)
-    nsbt.last_stepsize = cbms.last_stepsize
+    nsbt.last_stepsize = nsbt.initial_stepsize
     retract!(
         M, nsbt.candidate_point, cbms.p_last_serious, -nsbt.last_stepsize * cbms.g, nsbt.retraction_method,
     )
@@ -798,22 +801,18 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
         deleteat!(bms.linearization_errors, v)
         deleteat!(bms.transported_subgradients, v)
     end
-    l = length(bms.bundle)
-    if l == bms.bundle_cap && bms.bundle[1][1] ≠ bms.p_last_serious
-        #
+    # remove the oldest bundle entries until there is room for the new one
+    while length(bms.bundle) ≥ bms.bundle_cap && bms.bundle[1][1] ≠ bms.p_last_serious
         deleteat!(bms.bundle, 1)
         deleteat!(bms.λ, 1)
         deleteat!(bms.linearization_errors, 1)
-        push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
-        push!(bms.linearization_errors, 0.0)
-        push!(bms.λ, 0.0)
-    else
-        # push to bundle and update subgradients, λ, and linearization_errors (+1 in length)
-        push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
-        push!(bms.linearization_errors, 0.0)
-        push!(bms.λ, 0.0)
-        push!(bms.transported_subgradients, zero_vector(M, bms.p))
+        deleteat!(bms.transported_subgradients, 1)
     end
+    # push to bundle and update subgradients, λ, and linearization_errors
+    push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
+    push!(bms.linearization_errors, 0.0)
+    push!(bms.λ, 0.0)
+    push!(bms.transported_subgradients, zero_vector(M, bms.p))
     for (j, (qj, Xj)) in enumerate(bms.bundle)
         bms.linearization_errors[j] =
             get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (

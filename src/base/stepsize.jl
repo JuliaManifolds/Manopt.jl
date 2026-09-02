@@ -82,7 +82,7 @@ when solving the [`AbstractManoptProblem`](@ref) `amp`.
 
 This method takes into account that `ams` might be decorated.
 In case this returns `NaN`, a concrete call to the stored stepsize is performed.
-For this, usually, the first of the `vars...` should be the current iterate.
+For this, usually, the first of the `vars...` should be the current iteration `k`.
 """
 function get_last_stepsize(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...
@@ -156,10 +156,11 @@ By default it does nothing.
 initialize_stepsize!(sm::Stepsize) = sm
 
 """
-    default_stepsize(M::AbstractManifold, ams::AbstractManoptSolverState)
+    default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 
-Returns the default [`Stepsize`](@ref) functor used when running the solver specified by the
-[`AbstractManoptSolverState`](@ref) `ams` running with an objective on the `AbstractManifold M`.
+Returns the default [`Stepsize`](@ref) functor used when running the solver whose state is of
+type `sT`, a subtype of [`AbstractManoptSolverState`](@ref), running with an objective on the
+`AbstractManifold M`.
 """
 default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 
@@ -180,7 +181,7 @@ function max_stepsize(M::AbstractManifold, p)
         injectivity_radius(M, p)
     catch
         is_tutorial_mode() &&
-            @warn "`max_stepsize was called, but there seems to not be an `injectivity_radius` available on $M."
+            @warn "`max_stepsize` was called, but there seems to not be an `injectivity_radius` available on $M."
         Inf
     end
     return s
@@ -203,7 +204,7 @@ function max_stepsize(M::AbstractManifold)
         injectivity_radius(M)
     catch
         is_tutorial_mode() &&
-            @warn "`max_stepsize was called, but there seems to not be an `injectivity_radius` available on $M."
+            @warn "`max_stepsize` was called, but there seems to not be an `injectivity_radius` available on $M."
         Inf
     end
     return s

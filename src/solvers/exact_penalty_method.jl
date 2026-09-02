@@ -46,7 +46,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 * `ϵ=1e-3`
 * `ϵ_exponent=1 / 100`: a shortcut for the scaling factor ``θ_ϵ``
 * `ϵ_min=1e-6`
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-10) )"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )"))
 * `θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent)`
 
 # See also
@@ -78,7 +78,7 @@ mutable struct ExactPenaltyMethodState{
             u::Real = 1.0e-1, u_exponent::Real = 1 / 100, u_min::Real = 1.0e-6,
             θ_u::Real = (u_min / u)^(u_exponent), θ_ρ::Real = 0.3, ρ::Real = 1.0,
             ϵ::Real = 1.0e-3, ϵ_exponent::Real = 1 / 100, ϵ_min::Real = 1.0e-6,
-            stopping_criterion::SC = StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(M, 1.0e-10)),
+            stopping_criterion::SC = StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1.0e-10)),
             θ_ϵ::Real = (ϵ_min / ϵ)^(ϵ_exponent),
         ) where {
             P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState, SC <: StoppingCriterion,

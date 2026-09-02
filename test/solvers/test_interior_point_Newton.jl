@@ -31,6 +31,23 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             M, ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M), f
         )
         @test ipnsc.sub_state isa Manopt.ClosedFormSubSolverState
+        @testset "closed form sub solver can take a step" begin
+            # the documented closed form constructor built a state `step_solver!` could not run
+            cmo = ConstrainedManifoldObjective(
+                f, grad_f; g = g, grad_g = grad_g, M = M, hess_f = Hess_f, hess_g = Hess_g,
+            )
+            dmp = DefaultManoptProblem(M, cmo)
+            q0 = (1.0 / sqrt(3.0)) .* [1.0, 1.0, 1.0]
+            # the condensed system is solved on `N = M × ℝ^n`, in place of `X`
+            closed!(N, X, β, μ, λ, s, q) = zero_vector!(N, X, q)
+            ips = InteriorPointNewtonState(
+                M, cmo, closed!; p = copy(M, q0), evaluation = InplaceEvaluation(),
+            )
+            @test ips.sub_state isa Manopt.ClosedFormSubSolverState
+            @test ips.sub_problem === closed!
+            @test Manopt.step_solver!(dmp, ips, 1) === ips
+            @test is_point(M, get_iterate(ips))
+        end
         p_0 = (1.0 / (sqrt(3.0))) .* [1.0, 1.0, 1.0]
         p_opt = [0.0, 0.0, 1.0]
         record = [:Iterate]
@@ -39,7 +56,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             :Stop, 10, DebugMessages(:Info, :Always),
         ]
 
-        sc = StopAfterIteration(800) | StopWhenKKTResidualLess(1.0e-6)
+        sc = StopAfterIteration(800) | StopWhenKKTResidualLess(1.0e-10)
         # (a) classical call w/ recording
         res = interior_point_Newton(
             M, f, grad_f, Hess_f, p_0;

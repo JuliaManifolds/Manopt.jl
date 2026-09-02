@@ -89,8 +89,8 @@ using Statistics
 include("documentation_glossary.jl")
 
 """
-    Rn(args; kwargs...)
-    Rn(s::Symbol=:Manifolds, args; kwargs...)
+    Rn(args...; kwargs...)
+    Rn(::Val{T}, args...; kwargs...)
 
 A small internal helper function to choose a Euclidean space.
 By default, this uses the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) unless you load
@@ -457,6 +457,7 @@ export adaptive_regularization_with_cubics,
     primal_dual_semismooth_Newton, primal_dual_semismooth_Newton!,
     projected_gradient_method, projected_gradient_method!,
     proximal_bundle_method, proximal_bundle_method!,
+    proximal_bundle_method_subsolver, proximal_bundle_method_subsolver!,
     proximal_gradient_method, proximal_gradient_method!,
     proximal_point, proximal_point!,
     quasi_Newton, quasi_Newton!,

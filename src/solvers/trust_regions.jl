@@ -35,7 +35,9 @@ create a trust region state.
 * given a [`AbstractManifoldHessianObjective`](@ref) `mho`, the default sub solver,
   a [`TruncatedConjugateGradientState`](@ref) with `mho` used to define the problem on a tangent space is created
 * given a `sub_problem` and an `evaluation=` keyword, the sub problem solver is assumed to be the closed form solution,
-  where `evaluation` determines how to call the sub function.
+  where `evaluation` determines how to call the sub function. It is expected to be of the form
+  `(M, Y, p, Δ) -> Y` for the in-place and `(M, p, Δ) -> Y` for the allocating `evaluation`,
+  that is it minimizes the model within the trust region of radius `Δ` around `p`.
 
 # Input
 
@@ -536,6 +538,22 @@ end
 
 # Obtain H[Y] after the sub solver ran: a tCG sub state already provides it,
 # for any other sub solver it has to be computed.
+#=
+    Variant I: the sub task is a problem that is solved by a sub solver
+=#
+function _trs_solve_sub!(M, trs::TrustRegionsState, ::AbstractManoptSolverState)
+    set_parameter!(trs.sub_problem, Val(:Manifold), Val(:Basepoint), copy(M, trs.p))
+    set_parameter!(trs.sub_state, Val(:Iterate), copy(M, trs.p, trs.Y))
+    set_parameter!(trs.sub_state, Val(:TrustRegionRadius), trs.trust_region_radius)
+    solve!(trs.sub_problem, trs.sub_state)
+    return copyto!(M, trs.Y, trs.p, get_solver_result(trs.sub_state))
+end
+#=
+    Variant II: the sub task is a function providing a closed form solution
+=#
+function _trs_solve_sub!(M, trs::TrustRegionsState, ::ClosedFormSubSolverState)
+    return trs.sub_problem(M, trs.Y, trs.p, trs.trust_region_radius)
+end
 function _trs_get_HY!(M, trs::TrustRegionsState, mho, ::Any)
     # for Y = 0 the model's Hessian term vanishes, no need to evaluate
     (norm(M, trs.p, trs.Y) == 0) && return zero_vector!(M, trs.HY, trs.p)
@@ -563,13 +581,8 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     end
     # Update the current gradient
     get_gradient!(M, trs.X, mho, trs.p)
-    set_parameter!(trs.sub_problem, Val(:Manifold), Val(:Basepoint), copy(M, trs.p))
-    set_parameter!(trs.sub_state, Val(:Iterate), copy(M, trs.p, trs.Y))
-    set_parameter!(trs.sub_state, Val(:TrustRegionRadius), trs.trust_region_radius)
-    solve!(trs.sub_problem, trs.sub_state)
+    _trs_solve_sub!(M, trs, trs.sub_state)
     callback(:Subsolver, mp, trs, k)
-    #
-    copyto!(M, trs.Y, trs.p, get_solver_result(trs.sub_state))
     f = get_cost(mp, trs.p)
     _trs_get_HY!(M, trs, mho, get_state(trs.sub_state))
     if trs.σ > 0 # randomized approach: compare result with the Cauchy point.
@@ -614,7 +627,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
         trs.trust_region_radius *= trs.reduction_factor
     elseif ρ > trs.augmentation_threshold &&
-            get_parameter(trs.sub_state, :TrustRegionExceeded)
+            (get_parameter(get_state(trs.sub_state), :TrustRegionExceeded) === true)
         # (b) performed great and exceed/reach the trust region boundary -> increase radius
         trs.trust_region_radius = min(
             trs.augmentation_factor * trs.trust_region_radius, trs.max_trust_region_radius

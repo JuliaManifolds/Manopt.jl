@@ -54,7 +54,7 @@ Section 6 of [LaiYoshise:2024](@cite) propose the following additional condition
 inspired by the Euclidean case described in Section 6 [El-BakryTapiaTsuchiyaZhang:1996](@cite):
 
 For a given [`ConstrainedManifoldObjective`](@ref) assume consider the [`KKTVectorField`](@ref) ``F``,
-that is we are at a point ``q = (p, λ, μ, s)``  on ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
+that is we are at a point ``q = (p, μ, λ, s)``  on ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
 
 Then, let
 
@@ -65,7 +65,7 @@ $(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product.
 
-For a new candidate ``q(α) = $(_tex(:bigl))(p(α), λ(α), μ(α), s(α)$(_tex(:bigr)) := ($(_tex(:retr))_p(αX), λ+αY, μ+αZ, s+αW)``,
+For a new candidate ``q(α) = $(_tex(:bigl))(p(α), μ(α), λ(α), s(α)$(_tex(:bigr))) := ($(_tex(:retr))_p(αX), μ+αY, λ+αZ, s+αW)``,
 we then define two functions
 
 ```math
@@ -250,7 +250,7 @@ mutable struct InteriorPointNewtonState{
             is_feasible_error::Symbol = :error,
             p::P, retraction_method::RTM, s::V,
             step_problem::StepPr, step_state::StepSt, stepsize::S,
-            stopping_criterion::SC = StopAfterIteration(200) | StopWhenChangeLess(1.0e-8),
+            stopping_criterion::SC,
             λ::V, μ::V,
             W::V = zero(s), X::T, Y::V = zero(μ), Z::V = zero(λ),
             ρ::R, σ::R, kwargs...
@@ -303,6 +303,7 @@ mutable struct InteriorPointNewtonState{
                 retraction_method = default_retraction_method(get_manifold(step_problem)),
                 initial_stepsize = 1.0, additional_decrease_condition = centrality_condition,
             ),
+            stopping_criterion = StopAfterIteration(200) | StopWhenChangeLess(M, 1.0e-8),
             kwargs...,
         ) where {
             Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
@@ -314,6 +315,7 @@ mutable struct InteriorPointNewtonState{
             sub_problem, sub_state;
             callbacks = callbacks, p = p, retraction_method = retraction_method, s = s,
             step_problem = step_problem, step_state = step_state, stepsize = stepsize,
+            stopping_criterion = stopping_criterion,
             λ = λ, μ = μ, X = X, ρ = ρ, σ = σ,
             kwargs...
         )
@@ -420,7 +422,7 @@ function (c::StopWhenKKTResidualLess)(
     c.residual = 0.0
     m, n = length(ipns.μ), length(ipns.λ)
     # First component
-    c.residual += norm(M, p, LagrangianGradient(get_objective(amp), μ, λ)(M, p))
+    c.residual += norm(M, p, LagrangianGradient(get_objective(amp), μ, λ)(M, p))^2
     # ineq constr part
     for i in 1:m
         gi = get_inequality_constraint(amp, ipns.p, i)
@@ -538,7 +540,7 @@ or a [`ConstrainedManifoldObjective`](@ref) `cmo` containing `f`, `grad_f`, `Hes
 
 # Keyword arguments
 
-The keyword arguments related to the constraints (the first eleven) are ignored if you
+The keyword arguments related to the constraints (the first eight) are ignored if you
 pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
@@ -550,9 +552,6 @@ $(_kwargs(:evaluation))
 * `g=missing`: the inequality constraints
 * `grad_g=missing`: the gradient of the inequality constraints
 * `grad_h=missing`: the gradient of the equality constraints
-* `gradient_range=nothing`: specify how gradients are represented, where `nothing` is equivalent to [`NestedPowerRepresentation`](@extref `ManifoldsBase.NestedPowerRepresentation`)
-* `gradient_equality_range=gradient_range`: specify how the gradients of the equality constraints are represented
-* `gradient_inequality_range=gradient_range`: specify how the gradients of the inequality constraints are represented
 * `h=missing`: the equality constraints
 * `Hess_g=missing`: the Hessian of the inequality constraints
 * `Hess_h=missing`: the Hessian of the equality constraints
@@ -569,7 +568,7 @@ $(_kwargs(:retraction_method))
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 $(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
   with the `centrality_condition` keyword as additional criterion to accept a step, if this is provided
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(800)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(800)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-12)"))
   a stopping criterion, by default depending on the residual of the KKT vector field or a maximal number of steps, which ever hits first.
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_objective`: The [`SymmetricLinearSystemObjective`](@ref) modelling the system of equations to use in the sub solver,
@@ -696,7 +695,7 @@ function interior_point_Newton!(
             end,
         ),
         stopping_criterion::StoppingCriterion = StopAfterIteration(800) |
-            StopWhenKKTResidualLess(1.0e-8),
+            StopWhenKKTResidualLess(1.0e-12),
         _sub_M = ProductManifold(M, vector_space(length(λ))),
         _sub_p = rand(_sub_M),
         _sub_X = rand(_sub_M; vector_at = _sub_p),
@@ -755,9 +754,10 @@ function initialize_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewton
     return ips
 end
 
-function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState, k)
-    M = get_manifold(amp)
-    cmo = get_objective(amp)
+#=
+    Variant I: the sub task is a problem that is solved by a sub solver
+=#
+function _ipn_solve_sub!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState, ::AbstractManoptSolverState, k)
     N = base_manifold(get_manifold(ips.sub_problem))
     q = base_point(get_manifold(ips.sub_problem))
     copyto!(N[1], q[N, 1], ips.p)
@@ -769,11 +769,32 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     set_parameter!(ips.sub_problem, Val(:Objective), Val(:λ), ips.λ)
     set_parameter!(ips.sub_problem, Val(:Objective), Val(:s), ips.s)
     set_parameter!(ips.sub_problem, Val(:Objective), Val(:β), ips.ρ * ips.σ)
-    # product manifold on which to perform linesearch
     callback(:BeforeSubsolver, amp, ips, k)
     X2 = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
     callback(:Subsolver, amp, ips, k)
-    ips.X, ips.Z = submanifold_components(N, X2) #for p and λ
+    return submanifold_components(N, X2) # for p and λ
+end
+#=
+    Variant II: the sub task is a function providing a closed form solution
+=#
+function _ipn_solve_sub!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState, ::ClosedFormSubSolverState, k)
+    # the condensed system lives on `M × ℝ^n`; both factors are components of the step manifold
+    # `M × ℝ^m × ℝ^n × ℝ^m`, so no assumption on `vector_space` is needed here
+    N_step = get_manifold(ips.step_problem)
+    N = N_step[1] × N_step[3]
+    q = rand(N)
+    copyto!(N[1], q[N, 1], ips.p)
+    copyto!(N[2], q[N, 2], ips.λ)
+    X2 = zero_vector(N, q)
+    callback(:BeforeSubsolver, amp, ips, k)
+    ips.sub_problem(N, X2, ips.ρ * ips.σ, ips.μ, ips.λ, ips.s, q)
+    callback(:Subsolver, amp, ips, k)
+    return submanifold_components(N, X2) # for p and λ
+end
+function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState, k)
+    M = get_manifold(amp)
+    cmo = get_objective(amp)
+    ips.X, ips.Z = _ipn_solve_sub!(amp, ips, ips.sub_state, k)
 
     # Compute the remaining part of the solution
     m, n = length(ips.μ), length(ips.λ)

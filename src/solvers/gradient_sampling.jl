@@ -141,7 +141,7 @@ function GradientSamplingState(
     return GradientSamplingState(M, sub_problem; evaluation = sub_state, kwargs...)
 end
 function GradientSamplingState(
-        M::AbstractManifold, sub_problem = gradient_sampling_subsolver!; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...
+        M::AbstractManifold, sub_problem = gradient_sampling_subsolver!; evaluation::AbstractEvaluationType = InplaceEvaluation(), kwargs...
     )
     sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
     return GradientSamplingState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
@@ -409,7 +409,7 @@ function step_solver!(
     # and transport them to the current iterate
     for (i, (pj, Xj)) in enumerate(zip(gss.sampled_points, gss.sampled_vectors))
         get_gradient!(mp, Xj, pj) # we only have to transport the elements 2,3,...:
-        (i > 1) && vector_transport_to!(M, Xj, pj, Xj, gss.p)
+        (i > 1) && vector_transport_to!(M, Xj, pj, Xj, gss.p, gss.vector_transport_method)
     end
     # solve sub problem in convex_hull_coeffs
     callback(:BeforeSubsolver, mp, gss, i)

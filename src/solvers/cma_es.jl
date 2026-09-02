@@ -812,9 +812,9 @@ requires_update(::Type{<:StopWhenPopulationStronglyConcentrated}) = false
 """
     StopWhenPopulationDiverges{TParam<:Real} <: StoppingCriterion
 
-Stop if `σ` times maximum deviation increased by more than `tol`. This usually indicates a
-far too small `σ`, or divergent behavior. This corresponds to `TolXUp` condition from
-[Hansen:2023](@cite).
+Stop if `σ` times the maximum deviation has grown by a factor larger than `tol` compared to
+its value at the start of the run. This usually indicates a far too small `σ`, or divergent
+behavior. This corresponds to `TolXUp` condition from [Hansen:2023](@cite).
 """
 mutable struct StopWhenPopulationDiverges{TParam <: Real} <: StoppingCriterion
     tol::TParam
@@ -822,7 +822,8 @@ mutable struct StopWhenPopulationDiverges{TParam <: Real} <: StoppingCriterion
     at_iteration::Int
 end
 function StopWhenPopulationDiverges(tol::Real)
-    return StopWhenPopulationDiverges{typeof(tol)}(tol, 1.0, -1)
+    t = float(tol)
+    return StopWhenPopulationDiverges{typeof(t)}(t, one(t), -1)
 end
 
 indicates_convergence(c::StopWhenPopulationDiverges) = false
@@ -832,6 +833,7 @@ end
 function (c::StopWhenPopulationDiverges)(::AbstractManoptProblem, s::CMAESState, k::Int)
     if k == 0 # reset on init
         c.at_iteration = -1
+        c.last_σ_times_maxstddev = s.σ * maximum(s.deviations)
         return false
     end
     cur_σ_times_maxstddev = s.σ * maximum(s.deviations)
@@ -849,7 +851,7 @@ function status_summary(c::StopWhenPopulationDiverges; context::Symbol = :defaul
 end
 function get_reason(c::StopWhenPopulationDiverges)
     if c.at_iteration >= 0
-        return "σ times maximum standard deviation exceeded $(c.tol). This indicates either much too small σ or divergent behavior.\n"
+        return "σ times maximum standard deviation grew by a factor larger than $(c.tol) compared to its value at the start of the run. This indicates either much too small σ or divergent behavior.\n"
     end
     return ""
 end
