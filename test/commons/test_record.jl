@@ -329,6 +329,24 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         Manopt.set_parameter!(r, :value, 1)
         @test Manopt.get_parameter(r, :value) == 1
     end
+    @testset "RecordTime(:total) resets" begin
+        Mt = ManifoldsBase.DefaultManifold(2)
+        pt = [1.0, 2.0]
+        ft(M, q) = sum(q .^ 2)
+        grad_ft(M, q) = 2 .* q
+        mpt = DefaultManoptProblem(Mt, ManifoldGradientObjective(ft, grad_ft))
+        st = GradientDescentState(Mt; p = copy(pt), stopping_criterion = StopAfterIteration(5))
+        for mode in (:total, :cumulative)
+            rt = RecordTime(; mode = mode)
+            push!(rt.recorded_values, Nanosecond(42))
+            rt(mpt, st, -1)
+            @test isempty(rt.recorded_values)
+        end
+    end
+    @testset "RecordIterate from a type" begin
+        @test RecordIterate(Vector{Float64}) isa RecordIterate{Vector{Float64}}
+        @test RecordIterate([1.0, 2.0]) isa RecordIterate{Vector{Float64}}
+    end
     @testset "get_record_action resolves the decorator chain" begin
         M = Euclidean(2)
         gds = GradientDescentState(M; p = [1.0, 2.0])

@@ -424,8 +424,11 @@ function step_solver!(
     M = get_manifold(amp)
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F in place for O.X
     q = copy(M, fws.p)
+    callback(:BeforeSubsolver, amp, fws, k)
     fws.sub_problem(M, q, fws.p, fws.X) # evaluate the closed form solution and store the result in q
+    callback(:Subsolver, amp, fws, k)
     s = fws.stepsize(amp, fws, k; gradient = fws.X)
+    callback(:Stepsize, amp, fws, k)
     # step along the geodesic
     retract!(
         M,

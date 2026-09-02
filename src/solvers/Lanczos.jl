@@ -95,7 +95,7 @@ function Base.show(io::IO, ls::LanczosState)
     print(io, "LanczosState(; callbacks = ", ls.callbacks, ", X = ", ls.X, ", σ = ", ls.σ, ", stopping_criterion = ", ls.stop)
     print(io, ", stopping_criterion_newton = ", ls.stop_newton, ", ")
     print(io, "Lanczos_vectors = ", ls.Lanczos_vectors, ", ", "tridig_matrix = ", ls.tridig_matrix, ", ")
-    print(io, "coefficients = ", ls.X); print(io, ", Hp = ", ls.Hp, ", ")
+    print(io, "coefficients = ", ls.coefficients); print(io, ", Hp = ", ls.Hp, ", ")
     print(io, "Hp_residual = ", ls.Hp_residual, ", ", "S = ", ls.S)
     return print(io, ")")
 end

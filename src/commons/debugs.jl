@@ -189,17 +189,17 @@ mutable struct DebugDualChange <: DebugAction
             storage::StoreStateAction = StoreStateAction([:X, :n]),
             io::IO = stdout, prefix = "Dual Change: ", format = "$prefix%s", at_init::Bool = false,
         )
-        return new(io, format, storage)
+        return new(io, format, storage, at_init)
     end
     function DebugDualChange(
             values::Tuple{T, P};
             storage::StoreStateAction = StoreStateAction([:X, :n]),
-            io::IO = stdout, prefix = "Dual Change: ", format = "$prefix%s",
+            io::IO = stdout, prefix = "Dual Change: ", format = "$prefix%s", at_init::Bool = false,
         ) where {P, T}
         update_storage!(
             storage, Dict{Symbol, Any}(k => v for (k, v) in zip((:X, :n), values))
         )
-        return new(io, format, storage)
+        return new(io, format, storage, at_init)
     end
 end
 function (d::DebugDualChange)(
@@ -384,7 +384,7 @@ mutable struct DebugEntryChange <: DebugAction
             f::Symbol,
             d;
             storage::StoreStateAction = StoreStateAction([f]),
-            prefix::String = "Change of \$f:",
+            prefix::String = "Change of $f:",
             format::String = "$prefix%s",
             io::IO = stdout,
             initial_value::Any = NaN,
@@ -559,7 +559,7 @@ That way you can print the value in this case as well.
 
 # Constructor
 
-    DebugIfEntry(field, check=(>(0)); type=:warn, message=":\$f is nonnegative", io=stdout, at_init=true)
+    DebugIfEntry(field, check=(>(0)); type=:warn, message=":\$f nonpositive.", io=stdout, at_init=true)
 
 """
 mutable struct DebugIfEntry{F} <: DebugAction
@@ -570,7 +570,7 @@ mutable struct DebugIfEntry{F} <: DebugAction
     type::Symbol
     at_init::Bool
     function DebugIfEntry(
-            f::Symbol, check::F = (>(0)); type = :warn, message = ":\$f nonpositive.", io::IO = stdout, at_init::Bool = true
+            f::Symbol, check::F = (>(0)); type = :warn, message = ":$f nonpositive.", io::IO = stdout, at_init::Bool = true
         ) where {F}
         return new{F}(io, check, f, message, type, at_init)
     end

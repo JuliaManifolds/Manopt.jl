@@ -1153,8 +1153,8 @@ function show(io::IO, u::HybridCoefficientRule)
 end
 
 """
-    HybridCoefficient(coefficients::AbstractArray{Union{DirectionUpdateRule,ManifoldDefaultsFactory}}; kwargs...)
-    HybridCoefficient(M::AbstractManifold, coefficients::AbstractArray{Union{DirectionUpdateRule,ManifoldDefaultsFactory}}; kwargs...)
+    HybridCoefficient(coefficients::Union{DirectionUpdateRule,ManifoldDefaultsFactory}...; kwargs...)
+    HybridCoefficient(M::AbstractManifold, coefficients::Union{DirectionUpdateRule,ManifoldDefaultsFactory}...; kwargs...)
 
 Computes an hybrid update coefficient for the [`conjugate_gradient_descent`](@ref).
 

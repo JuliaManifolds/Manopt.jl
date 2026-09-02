@@ -177,7 +177,7 @@ no plot is generated.
   specify the mode for the verification; the default assumption is,
   that the retraction provided is of second order. Otherwise one can also verify the Hessian
   if the point `p` is a critical point.
-  THen set the mode to `:CritalPoint` to use [`gradient_descent`](@ref) to find a critical point.
+  Then set the mode to `:CriticalPoint` to use [`gradient_descent`](@ref) to find a critical point.
   Note: this requires (and evaluates) new tangent vectors `X` and `Y`
 * `atol`, `rtol`:      (same defaults as `isapprox`) tolerances that are passed down to all checks
 * `a`, `b`            two real values to verify linearity of the Hessian (if `check_linearity=true`)

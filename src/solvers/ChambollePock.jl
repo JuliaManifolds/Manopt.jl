@@ -47,7 +47,7 @@ function PrimalDualManifoldObjective(
     cost_ = maybe_wrap_function(cost, evaluation; result = :Number)
     prox_f_ = maybe_wrap_function(prox_f, evaluation; result = :Point)
     prox_g_dual_ = maybe_wrap_function(prox_g_dual, evaluation; result = :TangentVector)
-    linearized_forward_operator_ = maybe_wrap_function(linearized_forward_operator, evaluation; result = :SecondManifoldPoint)
+    linearized_forward_operator_ = ismissing(linearized_forward_operator) ? missing : maybe_wrap_function(linearized_forward_operator, evaluation; result = :SecondManifoldPoint)
     adjoint_linearized_operator_ = maybe_wrap_function(adjoint_linearized_operator, evaluation; result = :Vector)
     Λ_ = ismissing(Λ) ? missing : maybe_wrap_function(Λ, evaluation; result = :SecondManifoldPoint)
     return PrimalDualManifoldObjective{
@@ -96,7 +96,7 @@ $(_fields(:inverse_retraction_method; name = "inverse_retraction_method_dual", M
 * `p::P`:               an initial point on ``p^{(0)} ∈ $(_math(:Manifold))``
 * `pbar::P`:            the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `primal_stepsize::R`: proximal parameter of the primal prox
-* `X::T`:               an initial tangent vector ``X^{(0)} ∈ $(_math(:TangentSpace; p = "p^{(0)}"))``
+* `X::T`:               an initial tangent vector ``X^{(0)} ∈ $(_math(:TangentSpace; M = "N", p = "n"))``
 * `Xbar::T`:            the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
 * `relaxation::R`:      relaxation in the primal relaxation step (to compute `pbar`:
 * `relax::Symbol`:      which variable to relax, `:primal` or `:dual`
@@ -128,7 +128,7 @@ $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `n=`$(Manopt._link(:rand; M = "N"))
 * `p=`$(Manopt._link(:rand))
 * `m=`$(Manopt._link(:rand))
-* `X=`$(Manopt._link(:zero_vector))
+* `X=`$(Manopt._link(:zero_vector; M = "N", p = "n"))
 * `acceleration=0.0`
 * `dual_stepsize=1/sqrt(8)`
 * `primal_stepsize=1/sqrt(8)`
@@ -184,7 +184,7 @@ function Manopt.ChambollePockState(
         m::P = rand(M),
         n::Q = rand(N),
         p::P = rand(M),
-        X::T = zero_vector(M, p),
+        X::T = zero_vector(N, n),
         callbacks::C = Dict{Symbol, Function}(),
         primal_stepsize::R = 1 / sqrt(8),
         dual_stepsize::R = 1 / sqrt(8),
@@ -197,8 +197,8 @@ function Manopt.ChambollePockState(
         update_dual_base::Union{Function, Missing} = missing,
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
-        inverse_retraction_method_dual::IRM_Dual = default_inverse_retraction_method(N, typeof(p)),
-        vector_transport_method::VTM = default_vector_transport_method(M, typeof(n)),
+        inverse_retraction_method_dual::IRM_Dual = default_inverse_retraction_method(N, typeof(n)),
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
         vector_transport_method_dual::VTM_Dual = default_vector_transport_method(N, typeof(n)),
     ) where {
         P, Q, T, R, C <: AbstractDict{Symbol}, SC <: StoppingCriterion,
@@ -368,7 +368,9 @@ function ChambollePock!(
         update_dual_base::Union{Function, Missing} = missing,
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
+        inverse_retraction_method_dual = default_inverse_retraction_method(N, typeof(n)),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+        vector_transport_method_dual = default_vector_transport_method(N, typeof(n)),
         variant = ismissing(Λ) ? :linearized : :exact,
         kwargs...,
     ) where {
@@ -402,7 +404,9 @@ function ChambollePock!(
         variant = variant,
         retraction_method = retraction_method,
         inverse_retraction_method = inverse_retraction_method,
+        inverse_retraction_method_dual = inverse_retraction_method_dual,
         vector_transport_method = vector_transport_method,
+        vector_transport_method_dual = vector_transport_method_dual,
     )
     dcps = decorate_state!(cps; kwargs...)
     solve!(tmp, dcps)

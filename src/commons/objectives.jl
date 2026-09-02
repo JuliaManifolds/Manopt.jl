@@ -522,7 +522,7 @@ function get_hess_inequality_constraint!(
         M::AbstractManifold, Y, co::ConstrainedManifoldObjective, p, X, j = :,
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
-    isnothing(co.inequality_constraints) && (return X)
+    isnothing(co.inequality_constraints) && (return Y)
     return get_hessian!(M, Y, co.inequality_constraints, p, X, j, range)
 end
 
@@ -584,8 +584,8 @@ end
     get_feasibility_status(
         M::AbstractManifold,
         cmo::ConstrainedManifoldObjective,
-        g = get_inequality_constraints(M, cmo, p),
-        h = get_equality_constraints(M, cmo, p),
+        g = get_inequality_constraint(M, cmo, p, :),
+        h = get_equality_constraint(M, cmo, p, :),
     )
 
 Generate a message about the feasibiliy of `p` with respect to the [`ConstrainedManifoldObjective`](@ref).
@@ -594,7 +594,7 @@ in case you had them evaluated before.
 """
 function get_feasibility_status(
         M, cmo, p;
-        g = get_inequality_constraints(M, cmo, p), h = get_equality_constraints(M, cmo, p),
+        g = get_inequality_constraint(M, cmo, p, :), h = get_equality_constraint(M, cmo, p, :),
     )
     g_violated = sum(g .> 0)
     h_violated = sum(h .!= 0)
@@ -1868,7 +1868,7 @@ function get_gradients(M::AbstractManifold, co::ManifoldCachedObjective, p)
     )
 end
 function get_gradients!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
-    !(haskey(co.cache, :StochasticGradients)) && return get_gradients(M, X, co.objective, p)
+    !(haskey(co.cache, :StochasticGradients)) && return get_gradients!(M, X, co.objective, p)
     copyto!.(
         Ref(M),
         X,
@@ -4080,7 +4080,7 @@ function get_cost_and_gradient!(
         copyto!(M, sco.X, p, X)
         sco.X_valid = true
     else
-        X = copy(M, p, sco.X)
+        copyto!(M, X, p, sco.X)
     end
     return (sco.c, X)
 end

@@ -82,7 +82,7 @@ function decorate_state!(
             Function, # a function to indicate a (non-simple) callback
             DebugAction, # single one -> to :Iteration
             Array{DebugAction, 1}, # a group -> to :Iteration
-            Dict{Symbol, DebugAction}, # the most elaborate, a dictionary
+            Dict{Symbol, <:DebugAction}, # the most elaborate, a dictionary
             Array{<:Any, 1}, # short hand for Factory.
         } = missing,
         record::Union{
@@ -90,7 +90,7 @@ function decorate_state!(
             Symbol, # single action shortcut by symbol
             RecordAction, # single action -> to :Iteration
             Array{RecordAction, 1}, # a group -> to :Iteration
-            Dict{Symbol, RecordAction}, # a dictionary for precise settings
+            Dict{Symbol, <:RecordAction}, # a dictionary for precise settings
             Array{<:Any, 1}, # a formatted string with symbols or AbstractStateActions
         } = missing,
         callback = missing, # a (simple) callback function – deprecated

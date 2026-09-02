@@ -22,6 +22,10 @@ using ManifoldsBase, Manopt, Test
     mgo = ManifoldGradientObjective(f, grad_f)
     mp = DefaultManoptProblem(M, mgo)
     @test get_initial_stepsize(mp, gst) == 1.0
+    # keywords and extra positional arguments are accepted, also through a decorator
+    @test get_initial_stepsize(mp, gst; gradient = zero_vector(M, p)) == 1.0
+    @test get_initial_stepsize(mp, gst, 1) == 1.0
+    @test get_initial_stepsize(mp, DebugSolverState(gst, DebugDivider("")); gradient = zero_vector(M, p)) == 1.0
     @test get_stepsize(mp, gst, 1) == 1.0
     @test get_last_stepsize(mp, gst, 1) == 1.0
     # Check Fallbacks of Problem

@@ -301,7 +301,7 @@ T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:qua
 $(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold)),
 ```
 
-respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
+respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:InverseDavidon`.
 
 # Constructor
     InverseBroyden(φ, update_rule::Symbol = :constant)
@@ -503,7 +503,9 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    get_vector!(M, r, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
+    copyto!(M, r, p, X)
+    st.preconditioner(r, mp, st)
+    get_vector!(M, r, p, -d.matrix \ get_coordinates(M, p, r, d.basis), d.basis)
     return r
 end
 function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
@@ -1091,7 +1093,7 @@ function hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstra
 
     Yb = get_at_bound_index(M, Y, b)
     if m == 0 || num_nonzero_rho == 0
-        return _box_initial_scale(gh) * Yb
+        return _box_initial_scale(gh) \ Yb
     end
 
     ii = 1

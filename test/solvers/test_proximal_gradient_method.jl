@@ -266,4 +266,33 @@ using Manopt, Manifolds, Test, ManifoldDiff
         )
         @test distance(M, p_size, m) < 2 * 1.0e-2
     end
+    @testset "Decorated objective, function sub problem and :convex backtracking" begin
+        Ms = Sphere(2)
+        qs = [0.0, 0.0, 1.0]
+        ps0 = 1 / sqrt(1.29) .* [1.0, 0.5, 0.2]
+        fs(M, p) = distance(M, p, qs)^2
+        gs(M, p) = distance(M, p, qs)^2
+        grad_gs(M, p) = -2 * log(M, p, qs)
+        prox_s(M, λ, p) = ManifoldDiff.prox_distance(M, λ, qs, p, 2)
+        scs = StopAfterIteration(3)
+        # an already decorated objective must be accepted
+        mpgo = ManifoldProximalGradientObjective(fs, gs, grad_gs, prox_s)
+        dec = Manopt.objective_count_factory(Ms, mpgo, [:Cost])
+        @test is_point(Ms, proximal_gradient_method(Ms, dec, ps0; stopping_criterion = scs))
+        # a function valued `sub_problem` together with an evaluation type
+        r_f = proximal_gradient_method(
+            Ms, fs, gs, grad_gs, ps0;
+            cost_nonsmooth = (M, p) -> 0.0,
+            sub_problem = (M, q, λ, p) -> copyto!(M, q, p),
+            sub_state = InplaceEvaluation(), stopping_criterion = scs,
+        )
+        @test is_point(Ms, r_f)
+        # the `:convex` backtracking strategy has to work for a decorated objective too
+        r_c = proximal_gradient_method(
+            Ms, fs, gs, grad_gs, ps0; prox_nonsmooth = prox_s,
+            stepsize = ProximalGradientMethodBacktracking(; strategy = :convex),
+            count = [:Cost], stopping_criterion = scs,
+        )
+        @test is_point(Ms, r_c)
+    end
 end

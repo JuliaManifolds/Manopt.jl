@@ -835,10 +835,10 @@ function _get_linear_operator!(
 end
 
 """
-    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_normal_linear_operator!(M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_normal_linear_operator!(M::AbstractManifold, [A | b], lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
+    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; penalty = lmsco.penalty)
+    get_normal_linear_operator!(M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; penalty = lmsco.penalty)
+    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; penalty = lmsco.penalty)
+    get_normal_linear_operator!(M::AbstractManifold, [A | b], lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; penalty = lmsco.penalty)
 
 Compute the linear operator ``$(_tex(:Cal, "A"))`` corresponding to the optimality conditions of the
 modified Levenberg-Marquardt surrogate objective, i.e. the normal conditions
@@ -1003,7 +1003,7 @@ end
     add_normal_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractFirstOrderVectorFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol
     )
 
 Add the contribution of a single block (vectorial function with its robustifier) to
@@ -1527,7 +1527,7 @@ A trust region model of the form
 with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective
 """
 struct TrustRegionModelObjective{
-        O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective},
+        O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective},
     } <: AbstractManifoldSubObjective{O}
     objective::O
 end

@@ -55,6 +55,10 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         @test arcs.X == X1
         lst = LanczosState(M2; maxIterLanczos = 1)
         @test startswith(repr(lst), "LanczosState(; ")
+        # the `coefficients` field is shown, not the iterate `X` a second time
+        lst2 = LanczosState(M2; maxIterLanczos = 2)
+        lst2.coefficients .= [7.0, 8.0]
+        @test occursin("coefficients = [7.0, 8.0]", repr(lst2))
         @test startswith(Manopt.status_summary(lst), "# Solver state for `Manopt.jl`s Lanczos Iteration")
         @testset "Lanczos Callback" begin
             lanczos_record = Tuple{Symbol, Int}[]

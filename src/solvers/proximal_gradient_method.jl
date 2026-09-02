@@ -206,7 +206,7 @@ function ProximalGradientMethodState(
         C <: AbstractDict{Symbol},
     }
     sub_state_ = (sub_state isa AbstractEvaluationType) ? ClosedFormSubSolverState() : sub_state
-    sub_problem_ = (ismissing(sub_problem) || Pr <: AbstractManoptProblem) ? sub_problem : maybe_wrap_function(sub_problem, p, sub_state)
+    sub_problem_ = (ismissing(sub_problem) || Pr <: AbstractManoptProblem || !(sub_state isa AbstractEvaluationType)) ? sub_problem : maybe_wrap_function(sub_problem, p, sub_state; result = :Point)
     return ProximalGradientMethodState(
         sub_problem_, sub_state_;
         callbacks = callbacks,
@@ -378,7 +378,7 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
     end
 
     # Get the objective and temporary state
-    objective = get_objective(mp)
+    objective = get_objective(mp, true)
 
     # Temporary state for backtracking that doesn't affect the main state
     pgm_temp = ProximalGradientMethodState(
@@ -717,7 +717,7 @@ function proximal_gradient_method!(
         X = zero_vector(M, p),
         retraction_method = default_retraction_method(M, typeof(p)),
         inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
-        sub_problem = if ismissing(mpgo.proximal_map_h!)
+        sub_problem = if ismissing(get_objective(mpgo, true).proximal_map_h!)
             DefaultManoptProblem(
                 M,
                 ManifoldSubgradientObjective(
@@ -728,7 +728,7 @@ function proximal_gradient_method!(
         else
             missing
         end,
-        sub_state = if !ismissing(mpgo.proximal_map_h!)
+        sub_state = if !ismissing(get_objective(mpgo, true).proximal_map_h!)
             AllocatingEvaluation()
         else
             SubGradientMethodState(
@@ -747,7 +747,7 @@ function proximal_gradient_method!(
     }
     keywords_accepted(proximal_gradient_method!; kwargs...)
     # Check whether either the right defaults were provided or a `sub_problem`.
-    if ismissing(mpgo.proximal_map_h!) && ismissing(cost_nonsmooth)
+    if ismissing(get_objective(mpgo, true).proximal_map_h!) && ismissing(cost_nonsmooth)
         error(
             """
             The `sub_problem` is not correctly initialized. Provide _one of_ the following setups
@@ -836,5 +836,15 @@ function _pgm_proximal_step(
     set_iterate!(pgms.sub_state, M, copy(M, pgms.a))
     solve!(pgms.sub_problem, pgms.sub_state)
     copyto!(M, pgms.p, get_solver_result(pgms.sub_state))
+    return pgms
+end
+
+# (III) Problem is a closed form proximal map -> call it directly
+function _pgm_proximal_step(
+        amp::AbstractManoptProblem,
+        pgms::ProximalGradientMethodState{P, T, F, <:ClosedFormSubSolverState},
+        λ::Real,
+    ) where {P, T, F <: Function}
+    pgms.sub_problem(get_manifold(amp), pgms.p, λ, pgms.a)
     return pgms
 end

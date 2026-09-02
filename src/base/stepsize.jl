@@ -61,13 +61,16 @@ function get_initial_stepsize(
     )
 end
 function _get_initial_stepsize(
-        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{true}, vars...
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{true}, vars...;
+        kwargs...
     )
-    return get_initial_stepsize(amp, ams.state)
+    return get_initial_stepsize(amp, ams.state, vars...; kwargs...)
 end
 function _get_initial_stepsize(
-        ::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...
+        ::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...;
+        kwargs...
     )
+    # the `Stepsize` level methods take neither `vars...` nor keywords
     return get_initial_stepsize(ams.stepsize)
 end
 

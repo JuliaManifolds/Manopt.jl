@@ -125,6 +125,18 @@ struct NoIterateState <: AbstractManoptSolverState end
         # test Pass down
         @test repr((ro, s)) == repr(s)
     end
+    @testset "Decorator keywords accept concrete dictionaries" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        p = [1.0, 2.0]
+        sc = StopAfterIteration(1)
+        # inferred as `Dict{Symbol, DebugStoppingCriterion}` / `Dict{Symbol, RecordIteration}`
+        @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, debug = Dict(:Stop => DebugStoppingCriterion())))
+        @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, record = Dict(:Iteration => RecordIteration())))
+        # and the explicitly typed form keeps working
+        @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, debug = Dict{Symbol, DebugAction}(:Stop => DebugStoppingCriterion())))
+    end
     @testset "Decorator pass-through of solver and parameter functions" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)

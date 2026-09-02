@@ -291,7 +291,7 @@ record the iterate
 
 initialize the iterate record array to the type of `x0`, which indicates the kind of iterate
 
-    RecordIterate(P)
+    RecordIterate(T::DataType)
 
 initialize the iterate record array to the data type `T`.
 """
@@ -300,6 +300,7 @@ mutable struct RecordIterate{T} <: RecordAction
     RecordIterate{T}() where {T} = new(Array{T, 1}())
 end
 RecordIterate(::T) where {T} = RecordIterate{T}()
+RecordIterate(d::DataType) = RecordIterate{d}()
 function RecordIterate()
     return throw(
         ErrorException("The iterate's data type has to be provided, RecordIterate(x0).")
@@ -462,7 +463,7 @@ function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState,
     (r.mode == :Iterative) && (r.start = Nanosecond(time_ns()))
     if r.mode == :total
         # only record at end (if `stop_solver` returns true)
-        return record_or_reset!(r, t, (k > 0 && stop_solver!(p, s, k)) ? k : 0)
+        return record_or_reset!(r, t, (k > 0 && !stop_solver!(p, s, k)) ? 0 : k)
     else
         return record_or_reset!(r, t, k)
     end

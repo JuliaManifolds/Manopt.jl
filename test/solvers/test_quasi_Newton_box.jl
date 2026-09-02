@@ -246,6 +246,19 @@ using RecursiveArrayTools
                 M, p0, InverseBFGS(), 2; initial_scale = nothing
             )
         ).current_scale == 1.0
+        # with a non-unit `initial_scale` the two Hessian accessors must agree
+        u_s = Manopt.QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            Manopt.QuasiNewtonLimitedMemoryDirectionUpdate(
+                M, p0, InverseBFGS(), 2; initial_scale = 2.0
+            )
+        )
+        e1 = Manopt.UnitVector(1)
+        @test Manopt.hessian_value_diag(u_s, M, p0, e1) ≈
+            Manopt.hessian_value(u_s, M, p0, e1, [1.0, 0.0, 0.0])
+        # `cautious_update` can not be combined with the box update; report that clearly
+        @test_throws ErrorException quasi_Newton(
+            M, f, grad_f, p0; cautious_update = true, stopping_criterion = StopAfterIteration(3)
+        )
 
 
         f2(M, p) = sum(p .^ 4)

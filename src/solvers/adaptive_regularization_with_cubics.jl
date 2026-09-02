@@ -22,15 +22,16 @@ cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite)
 with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective.
 """
 mutable struct AdaptiveRegularizationWithCubicsModelObjective{
-        O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective}, R,
+        O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective}, R,
     } <: AbstractManifoldSubObjective{O}
     objective::O
     σ::R
 end
+# only the `σ` default: the two argument form is the struct's own constructor
 function AdaptiveRegularizationWithCubicsModelObjective(
-        mho::O, σ::R = 1.0
-    ) where {O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective}, R}
-    return AdaptiveRegularizationWithCubicsModelObjective{O, R}(mho, σ)
+        mho::O
+    ) where {O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
+    return AdaptiveRegularizationWithCubicsModelObjective{O, Float64}(mho, 1.0)
 end
 function set_parameter!(
         f::AdaptiveRegularizationWithCubicsModelObjective, ::Union{Val{:σ}, Val{:RegularizationParameter}}, σ,

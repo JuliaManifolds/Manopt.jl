@@ -88,8 +88,8 @@ call, since some internal criteria might keep an internal status.
 mutable struct StopWhenAll{TCriteria <: Tuple} <: StoppingCriterionSet
     criteria::TCriteria
     at_iteration::Int
-    StopWhenAll(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), -1)
-    StopWhenAll(c...) = new{typeof(c)}(c, -1)
+    StopWhenAll(c::Vector{<:StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), -1)
+    StopWhenAll(c::StoppingCriterion...) = new{typeof(c)}(c, -1)
 end
 function (c::StopWhenAll)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
     if (k <= 0) # reset on init
@@ -266,7 +266,7 @@ function has_converged(c::StopWhenAny)
     return is_active_stopping_criterion(c) && any(is_active_stopping_criterion(ci) && has_converged(ci) for ci in c.criteria)
 end
 function get_count(c::StopWhenAny, v::Val{:Iterations})
-    iters = filter(x -> x > 0, [get_count(ci, v) for ci in c.criteria])
+    iters = filter(x -> x >= 0, [get_count(ci, v) for ci in c.criteria])
     (length(iters) == 0) && (return -1) # None indicated to stop yet, so we also do not
     return minimum(iters)
 end
@@ -522,8 +522,9 @@ function StopWhenChangeLess(
         inverse_retraction_method::IRT = default_inverse_retraction_method(M),
         outer_norm::N = missing,
     ) where {F, N <: Union{Missing, Real}, IRT <: AbstractInverseRetractionMethod}
-    return StopWhenChangeLess{F, IRT, typeof(storage), N}(
-        ε, zero(ε), storage, inverse_retraction_method, -1, outer_norm
+    e = float(ε)
+    return StopWhenChangeLess{typeof(e), IRT, typeof(storage), N}(
+        e, zero(e), storage, inverse_retraction_method, -1, outer_norm
     )
 end
 function StopWhenChangeLess(
@@ -603,8 +604,9 @@ mutable struct StopWhenCostChangeLess{F <: Real} <: StoppingCriterion
     last_cost::F
     last_change::F
 end
-function StopWhenCostChangeLess(tol::F) where {F <: Real}
-    return StopWhenCostChangeLess{F}(tol, -1, zero(tol), 2 * tol)
+function StopWhenCostChangeLess(tol::Real)
+    t = float(tol)
+    return StopWhenCostChangeLess{typeof(t)}(t, -1, zero(t), 2 * t)
 end
 function (c::StopWhenCostChangeLess)(
         problem::AbstractManoptProblem, state::AbstractManoptSolverState, k::Int
@@ -656,8 +658,9 @@ mutable struct StopWhenCostLess{F} <: StoppingCriterion
     threshold::F
     last_cost::F
     at_iteration::Int
-    function StopWhenCostLess(ε::F) where {F <: Real}
-        return new{F}(ε, zero(ε), -1)
+    function StopWhenCostLess(ε::Real)
+        e = float(ε)
+        return new{typeof(e)}(e, zero(e), -1)
     end
 end
 function (c::StopWhenCostLess)(
@@ -826,7 +829,8 @@ function (c::StopWhenCriterionWithIterationCondition)(
     )
     if k <= 0 # reset on init
         c.at_iteration = -1
-        return c.stopping_criterion(p, s, k) # reset the criterion
+        c.stopping_criterion(p, s, k) # reset the criterion
+        return false
     end
     if c.comp(k)
         # evaluate the inner stopping criterion
@@ -1603,8 +1607,9 @@ mutable struct StopWhenRelativeAPosterioriCostChangeLessOrEqual{F <: Real} <: St
     last_cost::F
     last_change::F
 end
-function StopWhenRelativeAPosterioriCostChangeLessOrEqual(tol::F) where {F <: Real}
-    return StopWhenRelativeAPosterioriCostChangeLessOrEqual{F}(tol, -1, zero(tol), 2 * tol)
+function StopWhenRelativeAPosterioriCostChangeLessOrEqual(tol::Real)
+    t = float(tol)
+    return StopWhenRelativeAPosterioriCostChangeLessOrEqual{typeof(t)}(t, -1, zero(t), 2 * t)
 end
 StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::F = 1.0e7) where {F <: Real} = StopWhenRelativeAPosterioriCostChangeLessOrEqual(factr * eps(typeof(factr)))
 function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(

@@ -42,12 +42,14 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
   with box constraints, where the default sub solver errored before.
 * the allocating `exact_penalty_method` forwarded the equality-constraint count as the inequality count.
 * `exact_penalty_method` now spells its sub-solver callbacks `:BeforeSubsolver` and `:Subsolver`, like all other solvers.
+* `Frank_Wolfe_method` now also fires its advertised `:BeforeSubsolver`, `:Subsolver` and `:Stepsize` callbacks when a closed-form sub solver is used.
 * `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
 * `primal_dual_semismooth_Newton!` now works in place of its point and is exported.
 * `ProximalGradientNonsmoothCost` now computes the documented `1/(2λ)` proximity weight instead of `λ/2`.
 * the `:Random` evaluation order of `cyclic_proximal_point` now reshuffles every cycle;
   its order values are unified to `:Linear`, `:FixedRandom`, and `:Random`, and validated.
 * the Lanczos first-order-progress criterion now uses the correct model gradient norm.
+* `show(::LanczosState)` now prints the `coefficients` field, instead of printing the iterate `X` a second time under that label.
 * `CubicBracketingLinesearch` and `Nesterov` now promote mixed numeric types in their keyword arguments.
 * `get_constraints` now works for any constrained objective, not only embedded ones.
 * the finite-difference Hessian approximation wrote its zero-direction result into the wrong buffer.
@@ -76,6 +78,31 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `get_linear_operator`(`!`) and `get_vector_field`(`!`) now pass decorated objectives through, so `conjugate_residual` accepts `count=` and `cache=` and actually uses the cache.
 * the documented `GradientSamplingState(M)` constructor works again; its `convex_hull_coeffs` default referred to the static parameter `R`, which is not bound while keyword defaults are evaluated.
 * `mesh_adaptive_direct_search` now moves the poll base point to the current iterate before the search, so the search is handed a direction tangent at that iterate and the iterates stay on the manifold.
+* `proximal_gradient_method` now supports a function-valued `sub_problem` as documented, wrapping it only for an evaluation type and dispatching the closed-form proximal step.
+* `proximal_gradient_method` now accepts a decorated objective, and its `:convex` backtracking strategy works together with `count=`/`cache=`.
+* `quasi_Newton` and `quasi_Newton!` now forward `evaluation=` to the objective-based method, so a mutating `preconditioner` is no longer wrapped as allocating.
+* `quasi_Newton` now reports that `cautious_update=true` is not supported on manifolds with an anisotropic maximal step size, instead of failing with a `MethodError`.
+* `AffineCovariantStepsize` now solves the simplified Newton system with the sub problem's own evaluation type, so it works together with `sub_state = InplaceEvaluation()`.
+* `decorate_state!` now accepts `debug`/`record` dictionaries with a concrete action value type, such as `Dict(:Stop => DebugStoppingCriterion())`.
+* `get_initial_stepsize(amp, ams, vars...; kwargs...)` now really accepts the documented keyword and positional arguments, and forwards them through a decorated state.
+* `DebugDualChange` now honours its `at_init` keyword in both constructors, and the default prefixes of `DebugEntryChange` and `DebugIfEntry` name the field instead of printing a literal `$f`.
+* `get_hess_inequality_constraint!` now returns its output buffer instead of the direction when there are no inequality constraints.
+* `get_feasibility_status` works again; its keyword defaults called the removed plural constraint accessors.
+* the uncached fallback of `get_gradients!` now delegates in place, and `get_cost_and_gradient!` for a `SimpleManifoldCachedObjective` writes the caller's buffer on a cache hit.
+* the problem-level `get_grad_inequality_constraint!` now has the documented `j = :` default and forwards a `range`.
+* the direct (Hessian-matrix) quasi-Newton direction update now applies the `preconditioner`, as documented.
+* the empty-memory branch of the box quasi-Newton `hessian_value` now divides by `initial_scale` like its siblings, so the two accessors agree.
+* `RecordIterate(T::DataType)` now builds `RecordIterate{T}` as documented, instead of a broken `RecordIterate{DataType}`.
+* `RecordTime(; mode=:total)` now resets its recorded values when the solver state is re-initialized.
+* `CubicBracketingLinesearch` now uses the `gradient=` keyword it is given and no longer reads the state field `X` directly, so it works for any state implementing the documented interface.
+* `StopWhenAll` now accepts a concretely typed vector of criteria, like `StopWhenAny` already did, instead of silently wrapping it as a single criterion.
+* `get_count(::StopWhenAny, :Iterations)` no longer discards a sub-criterion that stopped at iteration `0`.
+* the change- and cost-based stopping criteria now promote an integer threshold to a float, instead of throwing an `InexactError` on their first evaluation.
+* `StopWhenCriterionWithIterationCondition` no longer returns the inner criterion's value from its reset call, which could stop a solver at iteration `0` without ever consulting the iteration condition.
+* `TrustRegionModelObjective` and `AdaptiveRegularizationWithCubicsModelObjective` now accept any `AbstractManifoldHessianObjective`, as documented.
+* a missing `linearized_forward_operator` is kept `missing` in `PrimalDualManifoldObjective`, so the `ismissing` checks and the printed summary are correct again.
+* `ChambollePockState` now defaults its dual variable `X` to `zero_vector(N, n)`, and its dual inverse retraction and vector transport defaults no longer pair a manifold with the other manifold's point type.
+* `ChambollePock` now accepts and forwards the documented `inverse_retraction_method_dual` and `vector_transport_method_dual` keywords, which were previously warned about and dropped.
 * the cautious quasi-Newton matrix update now evaluates its bound at the previous iterate, as documented.
 * a skipped cautious quasi-Newton matrix update now still transports the basis to the new tangent space.
 * `QuasiNewtonState` now activates the default initial scaling when no preconditioner

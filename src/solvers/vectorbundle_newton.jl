@@ -167,6 +167,19 @@ function status_summary(acs::AffineCovariantStepsize; context = :default)
     * acceptable θ:     $(_MANOPT_INDENT)$(acs.θ_acc)$(on)
     """
 end
+function _solve_newton_sub_problem(
+        amp::AbstractManoptProblem, ams::VectorBundleNewtonState{P, T, PR, AllocatingEvaluation}
+    ) where {P, T, PR}
+    return ams.sub_problem(amp, ams)
+end
+function _solve_newton_sub_problem(
+        amp::AbstractManoptProblem, ams::VectorBundleNewtonState{P, T, PR, InplaceEvaluation}
+    ) where {P, T, PR}
+    # a fresh buffer: `ams.X` is still needed as the Newton direction and as the denominator below
+    Y = copy(get_manifold(amp), ams.p, ams.X)
+    ams.sub_problem(amp, Y, ams)
+    return Y
+end
 function (acs::AffineCovariantStepsize)(
         amp::AbstractManoptProblem, ams::VectorBundleNewtonState, ::Any, args...; kwargs...
     )
@@ -182,7 +195,7 @@ function (acs::AffineCovariantStepsize)(
         rhs_simplified = rhs_next - (1.0 - α_new) * b
         amp.newton_equation.b .= rhs_simplified
 
-        simplified_newton = ams.sub_problem(amp, ams)
+        simplified_newton = _solve_newton_sub_problem(amp, ams)
 
         add_arg = (has_components(M) && !ismissing(acs.outer_norm)) ? (outer_norm = acs.outer_norm,) : ()
         nom = norm(amp.manifold, ams.p, simplified_newton, add_arg...)

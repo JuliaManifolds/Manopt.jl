@@ -242,7 +242,7 @@ get_robustifier_values(::IdentityRobustifier, x::Real) = (x, 1.0, 0.0)
     ScaledRobustifierFunction{F<:AbstractRobustifierFunction, R <: Real} <: AbstractRobustifierFunction
 
 A robustifier function whose residuals are scaled by a real value `scale` ``s``,
-i.e. it considers ``ρ_s(f(p)^2) = ρ(s^2⋅f(p)^2)`` for some [`AbstractRobustifierFunction`](@ref) ``ρ``.
+i.e. it considers ``ρ_s(f(p)^2) = s^2 ρ(f(p)^2 / s^2)`` for some [`AbstractRobustifierFunction`](@ref) ``ρ``.
 The function and its derivatives hence read as
 * ``ρ_s(x) = s^2 ρ(x / s^2)``
 * ``ρ_s'(x) = ρ'(x / s^2)``

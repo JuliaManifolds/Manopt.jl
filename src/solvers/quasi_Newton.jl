@@ -264,7 +264,7 @@ function quasi_Newton(
     ) where {TF, TDF}
     p_ = maybe_wrap_variable(p)
     mgo = ManifoldGradientObjective(f, grad_f; differential = differential, evaluation = evaluation, p = p)
-    rs = quasi_Newton(M, mgo, p_; kwargs...)
+    rs = quasi_Newton(M, mgo, p_; evaluation = evaluation, kwargs...)
     return maybe_unwrap_variable(p, rs)
 end
 function quasi_Newton(
@@ -287,7 +287,7 @@ function quasi_Newton!(
     mgo = ManifoldGradientObjective(
         f, grad_f; differential = differential, evaluation = evaluation
     )
-    return quasi_Newton!(M, mgo, p; kwargs...)
+    return quasi_Newton!(M, mgo, p; evaluation = evaluation, kwargs...)
 end
 function quasi_Newton!(
         M::AbstractManifold, mgo::O, p;
@@ -338,6 +338,9 @@ function quasi_Newton!(
             sy_tol = sy_tol,
         )
         if has_anisotropic_max_stepsize(M)
+            cautious_update && error(
+                "`cautious_update=true` is not supported on manifolds with an anisotropic maximal step size such as $(M).",
+            )
             local_dir_upd = QuasiNewtonLimitedMemoryBoxDirectionUpdate(local_dir_upd)
         end
     else

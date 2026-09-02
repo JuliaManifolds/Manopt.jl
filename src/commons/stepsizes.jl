@@ -119,8 +119,8 @@ end
 
 Implement the initial guess for an Armijo line search.
 
-The initial step size is chosen as `min(l, max_stepsize(M, p) / norm(M, p, η))`,
-where `l` is the last step size used, `p` the current point and `η` the search direction.
+The initial step size is chosen as `min(l, max_stepsize(M, p) / norm(M, p, X))`,
+where `l` is the last step size used, `p` the current point and `X` the gradient at `p`.
 
 The default provided is based on the [`max_stepsize`](@ref)`(M, p)`.
 
@@ -509,7 +509,7 @@ See [`AdaptiveWNGradient`](@ref) for the mathematical details.
 
 ## Keyword arguments
 
-* `adaptive=true`: switches the `gradient_reduction` ``α`` (if `true`) to `0`.
+* `adaptive=true`: use the adaptive variant with `gradient_reduction` ``α = 0.9``; set to `false` to switch ``α`` to `0`.
 * `alternate_bound = (bk, hat_c) ->  min(gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c)))`
 * `count_threshold=4`
 * `gradient_reduction::R=adaptive ? 0.9 : 0.0`
@@ -658,7 +658,7 @@ Note that for ``α=0`` this is the Riemannian variant of `WNGRad`.
 
 ## Keyword arguments
 
-* `adaptive=true`: switches the `gradient_reduction` ``α`` (if `true`) to `0`.
+* `adaptive=true`: use the adaptive variant with `gradient_reduction` ``α = 0.9``; set to `false` to switch ``α`` to `0`.
 * `alternate_bound = (bk, hat_c) ->  min(gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c)))`:
   how to determine ``$(_tex(:hat, "b"))_k`` as a function of `(bk, hat_c) -> hat_bk`
 * `count_threshold=4`:  an `Integer` for ``$(_tex(:hat, "c"))``
@@ -1241,12 +1241,14 @@ function get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketing
 end
 
 function (cbls::CubicBracketingLinesearchStepsize)(
-        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s))); kwargs...,
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s)));
+        gradient = nothing, kwargs...,
     )
     M = get_manifold(mp)
     p = get_iterate(s)
+    X = isnothing(gradient) ? get_gradient(mp, p) : gradient
 
-    init = UnivariateTriple(0.0, get_cost(M, get_objective(mp), p), get_differential(mp, p, η; gradient = s.X, evaluated = true))
+    init = UnivariateTriple(0.0, get_cost(M, get_objective(mp), p), get_differential(mp, p, η; gradient = X, evaluated = true))
 
     check_curvature(c::UnivariateTriple) = abs(c.df) < cbls.sufficient_curvature * abs(init.df)
 

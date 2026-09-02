@@ -112,10 +112,15 @@ function get_grad_inequality_constraint(cmp::ConstrainedManoptProblem, p, j = :)
         get_manifold(cmp), get_objective(cmp), p, j, cmp.grad_inequality_range
     )
 end
-function get_grad_inequality_constraint!(amp::AbstractManoptProblem, X, p, j)
-    return get_grad_inequality_constraint!(get_manifold(amp), X, get_objective(amp), p, j)
+function get_grad_inequality_constraint!(
+        amp::AbstractManoptProblem, X, p, j = :,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    return get_grad_inequality_constraint!(
+        get_manifold(amp), X, get_objective(amp), p, j, range
+    )
 end
-function get_grad_inequality_constraint!(cmp::ConstrainedManoptProblem, X, p, j)
+function get_grad_inequality_constraint!(cmp::ConstrainedManoptProblem, X, p, j = :)
     return get_grad_inequality_constraint!(
         get_manifold(cmp), X, get_objective(cmp), p, j, cmp.grad_inequality_range
     )
