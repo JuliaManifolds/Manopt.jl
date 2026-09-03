@@ -27,29 +27,26 @@ features:
         alt: ManifoldsBase.jl
         wrap: true
     title: Generic Implementations
-    details: Algorithms are implemented on a general Riemannian manifold using the interface from ManifoldsBase.jl.
-    link: https://juliamanifolds.github.io/ManifoldsBase.jl/stable/
+    details: Algorithms are implemented generically for any Riemannian manifold, based on the interface from [ManifoldsBase.jl](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/).
   - icon: 🧩
     title: Composable
-    details: All components are designed in a modular fashion, for example problems, objectives, and solver states, but also stopping criteria and step sizes. They can be reused and combined easily. Points and tangent vectors can be represented using arbitrary Julia types.
+    details: All components are modular, from problems, objectives, and solver states to stopping criteria and step sizes, and can easily be combined and reused. Points and tangent vectors can be represented by arbitrary Julia types.
   - icon: ⚡️
     title: Efficient
-    link: https://github.com/JuliaManifolds/ManifoldsGPU.jl
-    details: All methods use in-place evaluations for both the objective and the manifold. There is also an advanced, but easy to use caching system further promoting efficiency. The package is compatible with running on a GPU when you use ManifoldsGPU.jl.
+    details: All methods support in-place evaluation of both the objective and the manifold operations. An advanced and easy-to-use caching system avoids unnecessary re-evaluations. Together with [ManifoldsGPU.jl](https://juliamanifolds.github.io/ManifoldsGPU.jl/dev/), computations can also run on the GPU.
   - icon: 📚
     title: Well-documented and -tested
-    details: All algorithms are documented – both their theoretical foundation and all their options and keywords. The theoretical background also refers to further literature.
+    details: All algorithms are documented, covering their theoretical background with references to the literature as well as all their options and keyword arguments.
   - icon: 🛠️
     title: Customizable
-    details: All solvers bring recording, debug and callback capabilities, the objectives can keep track of internal function calls.
+    details: All solvers provide recording, debug, and callback capabilities, and objectives can count their internal function calls.
   - icon:
         light: /logo-manifolds.png
         dark: /logo-manifolds-dark.png
         alt: Manifolds.jl
         wrap: true
     title: Use with Manifolds.jl
-    details: If you have a certain manifold in mind, check out whether it is already provided in Manifolds.jl or LieGroups.jl.
-    link: https://juliamanifolds.github.io/Manifolds.jl/stable/
+    details: If you have a specific manifold in mind, check whether it is already available in [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/) or, for Lie groups, in [LieGroups.jl](https://juliamanifolds.github.io/LieGroups.jl/stable/).
 ---
 ```
 
