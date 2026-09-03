@@ -18,7 +18,7 @@ mutable struct MyCost{I<:Integer}
     count::I
 end
 MyCost() = MyCost{Int64}(0)
-function (c::MyCost)(M, x)
+function (c::MyCost)(M, p)
     c.count += 1
     # [ .. Actual implementation of the cost here ]
 end
@@ -42,7 +42,7 @@ Both recording and debug capabilities are implemented in a decorator pattern to 
 They can be easily added using the `record=` and `debug=` in any solver call.
 This pattern was recently extended, such that also the objective can be decorated.
 This is how both caching and counting are implemented, as decorators of the [`AbstractManifoldObjective`](@ref)
-and hence for example changing/extending the behaviour of a call to [`get_cost`](@ref).
+and hence for example changing/extending the behavior of a call to [`get_cost`](@ref).
 
 Let's finish off the technical background by loading the necessary packages.
 Besides [Manopt.jl](../index.md) and ``[Manifolds.jl]@extref Manifolds :std:doc:`index`)``{=commoinmark} we also need

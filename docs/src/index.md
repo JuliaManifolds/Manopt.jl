@@ -68,7 +68,7 @@ or in other words: find the point ``p`` on the manifold ``\mathcal M``, where ``
 
 `Manopt.jl` provides a framework for optimization on manifolds as well as a library of optimization algorithms in [Julia](https://julialang.org).
 It belongs to the **Manopt family**, which includes [Manopt](https://manopt.org) (Matlab) and [pymanopt.org](https://www.pymanopt.org/) (Python), both aiming to provide the same framework
-in the flavour of the corresponding language.
+in the flavor of the corresponding language.
 
 ## Get Started
 
@@ -81,8 +81,8 @@ To get started with `Manopt.jl`, start [Julia](https://julialang.org) and type
 to install the package. Then you can dive directly into optimization on manifolds, following the
 [🏔️ Get started with Manopt.jl](tutorials/getstarted.md) tutorial.
 
-`Manopt.jl` makes it easy to use an algorithm for your favourite
-manifold as well as a manifold for your favourite algorithm. It already provides
+`Manopt.jl` makes it easy to use an algorithm for your favorite
+manifold as well as a manifold for your favorite algorithm. It already provides
 many manifolds and algorithms, which can easily be enhanced, for example to
 [record](@ref sec-record) certain data or
 [debug output](@ref sec-debug) throughout iterations.

@@ -452,7 +452,7 @@ f($(_tex(:retr))_p(sX)) ≤ f(p) + τs ⟨ X, $(_tex(:grad))f(p) ⟩_p
 
 is fulfilled, for a sufficient decrease value ``τ ∈ (0,1)``.
 
-To be a bit more optimistic, if ``s`` already fulfils this, a first search is done,
+To be a bit more optimistic, if ``s`` already fulfills this, a first search is done,
 __increasing__ the given ``s`` until for a first time this step does not hold.
 
 Overall, a step size is sought that provides _enough decrease_, see
@@ -1514,7 +1514,7 @@ end
 
 A functor `(problem, state, k, ...) -> s` providing the Riemannian Distance over Gradients (RDoG) step size.
 
-This step size is learning-rate-free: it adapts using the maximum distance travelled from the
+This step size is learning-rate-free: it adapts using the maximum distance traveled from the
 start point together with the accumulated squared gradient norms.
 See [`DistanceOverGradients`](@ref) for the mathematical details.
 
@@ -2089,7 +2089,7 @@ end
 @doc """
     WolfePowellLinesearchStepsize{R<:Real,TRM,VTM,P,T,I,TMSG} <: Linesearch
 
-Do a backtracking line search to find a step size ``α`` that fulfils the
+Do a backtracking line search to find a step size ``α`` that fulfills the
 Wolfe conditions along a search direction ``X`` starting from ``p``.
 See [`WolfePowellLinesearch`](@ref) for the math details.
 
@@ -2355,7 +2355,7 @@ end
 @doc """
     WolfePowellBinaryLinesearchStepsize{TRM,VTM,F} <: Linesearch
 
-Do a backtracking line search to find a step size ``α`` that fulfils the
+Do a backtracking line search to find a step size ``α`` that fulfills the
 Wolfe conditions along a search direction ``X`` starting from ``p``.
 See [`WolfePowellBinaryLinesearch`](@ref) for the math details.
 

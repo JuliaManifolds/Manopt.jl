@@ -101,7 +101,7 @@ This way we can easily specify a certain debug to be printed.
 The goal is to get an output of the form
 
 ```{shell}
-# i | Last Change: [...] | F(x): [...] |
+# k | Last Change: [...] | f(p): [...] |
 ```
 
 but where we also want to fix the display format for the change and the cost
@@ -113,7 +113,7 @@ We can also, for illustration reasons, just look at the first 6 steps by setti
 ```{julia}
 m2 = gradient_descent(M, f, grad_f, data[1];
     debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
-        (:Cost, " F(x): %1.11f | "), "\n", :Stop],
+        (:Cost, " f(p): %1.11f | "), "\n", :Stop],
     stopping_criterion = StopAfterIteration(6)
   )
 ```
@@ -132,18 +132,18 @@ We further pass a number `25` to `debug=` to only an output every `25`th iterati
 ```{julia}
 m3 = gradient_descent(M, f, grad_f, data[1];
     debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
-        (:Cost, " F(x): %1.11f | "), "\n", :Stop, 25],
+        (:Cost, " f(p): %1.11f | "), "\n", :Stop, 25],
     stopping_criterion = StopWhenGradientNormLess(1e-14) | StopAfterIteration(400),
 )
 ```
 
-We can finally use another way to determine the stepsize, for example
+We can finally use another way to determine the step size, for example
 a little more expensive [`ArmijoLinesearch`](@ref) than the default [stepsize](../commons/stepsizes.md) rule used on the Sphere.
 
 ```{julia}
 m4 = gradient_descent(M, f, grad_f, data[1];
     debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
-        (:Cost, " F(x): %1.11f | "), "\n", :Stop, 2],
+        (:Cost, " f(p): %1.11f | "), "\n", :Stop, 2],
       stepsize = ArmijoLinesearch(; contraction_factor=0.999, sufficient_decrease=0.5),
     stopping_criterion = StopWhenGradientNormLess(1e-14) | StopAfterIteration(400),
 )
@@ -246,7 +246,7 @@ Besides also looking at a some debug prints, we can also easily record these val
 
 ```{julia}
 res = cyclic_proximal_point(N, g, proxes_g, data2[1];
-  debug=[:Iteration," | ",:Change," | ",(:Cost, "F(x): %1.12f"),"\n", 1000, :Stop,
+  debug=[:Iteration," | ",:Change," | ",(:Cost, "f(p): %1.12f"),"\n", 1000, :Stop,
         ],
         record=[:Iteration, :Change, :Cost, :Iterate],
         return_state=true,

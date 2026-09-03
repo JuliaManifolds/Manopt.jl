@@ -194,7 +194,7 @@ We at least see, that the function value decreased.
 
 ### Norm and maximal step size
 
-To use more advanced stopping criteria and step sizes we first need an ``[`inner`](@extref `ManifoldsBase.inner-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}`(M, p, X)`.
+To use more advanced stopping criteria and step sizes we first need an ``[`inner`](@extref `ManifoldsBase.inner-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}`(M, p, X, Y)`.
 We also need a [`max_stepsize`](@ref)`(M)`, to avoid having too large steps
 on positively curved manifolds like our scaled sphere in this example
 
@@ -202,7 +202,7 @@ on positively curved manifolds like our scaled sphere in this example
 import ManifoldsBase: inner
 import Manopt: max_stepsize
 inner(M::ScaledSphere, p, X,Y) = dot(X,Y) # inherited from the embedding
- # set the maximal allowed stepsize to injectivity radius.
+ # set the maximal allowed step size to injectivity radius.
 Manopt.max_stepsize(M::ScaledSphere) = M.radius*π
 ```
 

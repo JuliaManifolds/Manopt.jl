@@ -220,7 +220,7 @@ The second smoothing technique is often beneficial, when we have a lot of constr
 );
 ```
 
-For the result we see the same behaviour as for the other smoothing.
+For the result we see the same behavior as for the other smoothing.
 
 ```{julia}
 f(M, v4)

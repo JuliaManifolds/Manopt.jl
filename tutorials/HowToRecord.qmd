@@ -8,7 +8,7 @@ This tutorial illustrates how to:
 
 * record one value during the iterations;
 * record multiple values during the iterations and access them afterwards;
-* record within a subsolver
+* record within a sub solver
 * define an own `RecordAction` to perform individual recordings.
 
 Several predefined recordings exist, for example [`RecordCost`](@ref) or [`RecordGradient`](@ref), if the problem the solver uses provides a gradient.
@@ -17,7 +17,7 @@ For other recordings, for example more advanced computations before storing a va
 
 We illustrate these using the gradient descent from the [Get started: optimize](getstarted.md) tutorial.
 
-Here the focus is put on ways to investigate the behaviour during iterations by using Recording techniques.
+Here the focus is put on ways to investigate the behavior during iterations by using Recording techniques.
 
 ```{julia}
 #| echo: false
@@ -46,9 +46,9 @@ m = 30
 M = Sphere(m)
 n = 800
 σ = π / 8
-x = zeros(Float64, m + 1)
-x[2] = 1.0
-data = [exp(M, x, σ * rand(M; vector_at=x)) for i in 1:n]
+p = zeros(Float64, m + 1)
+p[2] = 1.0
+data = [exp(M, p, σ * rand(M; vector_at=p)) for i in 1:n]
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 ```
@@ -82,7 +82,7 @@ To record more than one value, you can pass an array of a mix of symbols and [`R
 R2 = gradient_descent(M, f, grad_f, data[1]; record=[:Iteration, :Cost], return_state=true)
 ```
 
-Here, the symbol `:Cost` is mapped to using the [`RecordCost`](@ref) action. The same holds for `:Iteration` obviously records the current iteration number `i`.
+Here, the symbol `:Cost` is mapped to using the [`RecordCost`](@ref) action. The same holds for `:Iteration`, which obviously records the current iteration number `k`.
 To access these you can first extract the group of records (that is where the `:Iteration`s are recorded; note the plural) and then access the `:Cost`
 """
 
@@ -180,9 +180,9 @@ get_record(res, :Iteration, (:Iteration, :Cost))
 where the last tuple contains the names from the pairs when we generated the record group.
 So similarly we can use `:Gradient` as specified before to access the recorded gradient.
 
-## Recording from a Subsolver
+## Recording from a sub solver
 
-One can also record from a subsolver. For that we need a problem that actually requires a subsolver. We take the constraint example from the
+One can also record from a sub solver. For that we need a problem that actually requires a sub solver. We take the constraint example from the
 [How to print debug](HowToDebug.md) tutorial.
 Maybe read that part for more details on the problem
 
@@ -227,7 +227,7 @@ s1 = exact_penalty_method(
 );
 ```
 
-Then the first entry of the record contains the iterate, the (main solvers) cost, and the third entry is the recording of the subsolver.
+Then the first entry of the record contains the iteration `k`, the (main solver's) cost, and the third entry is the recording of the subsolver.
 
 ```{julia}
 get_record(s1)[1]
@@ -286,9 +286,9 @@ mutable struct MyCost{T}
     count::Int
 end
 MyCost(data::T) where {T} = MyCost{T}(data, 0)
-function (c::MyCost)(M, x)
+function (c::MyCost)(M, p)
     c.count += 1
-    return sum(1 / (2 * length(c.data)) * distance.(Ref(M), Ref(x), c.data) .^ 2)
+    return sum(1 / (2 * length(c.data)) * distance.(Ref(M), Ref(p), c.data) .^ 2)
 end
 ```
 
@@ -299,10 +299,10 @@ mutable struct RecordCount <: RecordAction
     recorded_values::Vector{Int}
     RecordCount() = new(Vector{Int}())
 end
-function (r::RecordCount)(p::AbstractManoptProblem, ::AbstractManoptSolverState, i)
-    if i > 0
-        push!(r.recorded_values, Manopt.get_cost_function(get_objective(p)).count)
-    elseif i < 0 # reset if negative
+function (r::RecordCount)(amp::AbstractManoptProblem, ::AbstractManoptSolverState, k)
+    if k > 0
+        push!(r.recorded_values, Manopt.get_cost_function(get_objective(amp)).count)
+    elseif k < 0 # reset if negative
         r.recorded_values = Vector{Int}()
     end
 end
@@ -316,7 +316,7 @@ Note that this illustrates also the last use case since you can pass symbol-acti
 f3 = MyCost(data)
 ```
 
-Now for the plain gradient descent, we have to modify the step (to a constant stepsize) and remove the default debug verification whether the cost increases (setting `debug` to `[]`).
+Now for the plain gradient descent, we have to modify the step (to a constant step size) and remove the default debug verification whether the cost increases (setting `debug` to `[]`).
 We also only look at the first 20 iterations to keep this example small in recorded values. We call
 
 ```{julia}

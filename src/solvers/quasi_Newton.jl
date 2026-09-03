@@ -127,7 +127,7 @@ function get_message(qns::QuasiNewtonState)
     # collect messages from
     # (1) direction update or the
     # (2) the step size and combine them
-    # (3) the non-descent behaviour verification message
+    # (3) the non-descent behavior verification message
     msg1 = get_message(qns.direction_update)
     msg2 = get_message(qns.stepsize)
     msg3 = ""

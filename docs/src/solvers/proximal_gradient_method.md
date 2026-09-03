@@ -1,5 +1,9 @@
 # Proximal gradient method
 
+```@meta
+CurrentModule = Manopt
+```
+
 ```@docs
 proximal_gradient_method
 proximal_gradient_method!

@@ -1,5 +1,9 @@
 # [Subgradient method](@id sec-subgradient-method)
 
+```@meta
+CurrentModule = Manopt
+```
+
 ```@docs
 subgradient_method
 subgradient_method!
@@ -20,7 +24,7 @@ actions.
 
 The [`subgradient_method`](@ref) solver requires the following functions of a manifold to be available
 
-* A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favourite retraction. If this default is set, a `retraction_method=` does not have to be specified.
+* A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favorite retraction. If this default is set, a `retraction_method=` does not have to be specified.
 
 ## Literature
 

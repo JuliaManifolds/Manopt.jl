@@ -131,11 +131,12 @@ struct NoIterateState <: AbstractManoptSolverState end
         grad_f(M, p) = 2 .* p
         p = [1.0, 2.0]
         sc = StopAfterIteration(1)
+        io = IOBuffer()
         # inferred as `Dict{Symbol, DebugStoppingCriterion}` / `Dict{Symbol, RecordIteration}`
-        @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, debug = Dict(:Stop => DebugStoppingCriterion())))
+        @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, debug = Dict(:Stop => DebugStoppingCriterion(; io = io))))
         @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, record = Dict(:Iteration => RecordIteration())))
         # and the explicitly typed form keeps working
-        @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, debug = Dict{Symbol, DebugAction}(:Stop => DebugStoppingCriterion())))
+        @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, debug = Dict{Symbol, DebugAction}(:Stop => DebugStoppingCriterion(; io = io))))
     end
     @testset "Decorator pass-through of solver and parameter functions" begin
         M = Euclidean(2)

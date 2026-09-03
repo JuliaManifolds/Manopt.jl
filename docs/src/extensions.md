@@ -45,7 +45,7 @@ p_opt = quasi_Newton(
 )
 ```
 
-In general this defines the following new [stepsize](@ref Stepsize) with helper functions for setting and getting the maximum step size:
+In general this defines the following new [step size](@ref Stepsize) with helper functions for setting and getting the maximum step size:
 
 ```@docs
 Manopt.LineSearchesStepsize

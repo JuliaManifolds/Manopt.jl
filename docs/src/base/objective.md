@@ -98,7 +98,7 @@ Public = false
 
 ## [A first order nonsmooth objective](@id first-order-nonsmooth-objectives)
 
-First order nonsmooth objectives come in a variety of flavours, mainly splitting based, where the single summands themselves have certain properties. They are collected in the following.
+First order nonsmooth objectives come in a variety of flavors, mainly splitting based, where the single summands themselves have certain properties. They are collected in the following.
 
 ```@autodocs
 Modules = [Manopt]
@@ -132,7 +132,7 @@ Public = false
 
 ## [A linear system in a tangent space](@id sec-linear-systems-objective)
 
-A linear system in a tangent space can be modelled in different ways. Most prominently
+A linear system in a tangent space can be modeled in different ways. Most prominently
 either as a matrix as soon as a basis of the tangent space is fixed or as a linear operator
 in a basis-free representation.
 
@@ -154,7 +154,7 @@ Private = true
 Public = false
 ```
 
-## [Subsolver objectives](@id subsolver-objectives)
+## [Sub solver objectives](@id subsolver-objectives)
 
 ```@autodocs
 Modules = [Manopt]

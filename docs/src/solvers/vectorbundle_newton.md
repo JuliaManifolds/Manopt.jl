@@ -1,5 +1,9 @@
 # Vector Bundle Newton Method
 
+```@meta
+CurrentModule = Manopt
+```
+
 ```@docs
   vectorbundle_newton
   vectorbundle_newton!

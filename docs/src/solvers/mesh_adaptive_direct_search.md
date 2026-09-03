@@ -1,6 +1,5 @@
 # Mesh adaptive direct search (MADS)
 
-
 ```@meta
 CurrentModule = Manopt
 ```
@@ -57,9 +56,9 @@ Manopt.get_candidate(::DefaultMeshAdaptiveDirectSearch)
 
 The [`mesh_adaptive_direct_search`](@ref) solver requires the following functions of a manifold to be available
 
-* A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favourite retraction. If this default is set, a `retraction_method=` does not have to be specified.
+* A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favorite retraction. If this default is set, a `retraction_method=` does not have to be specified.
 * Within the default initialization [`rand`](@extref Base.rand-Tuple{AbstractManifold})`(M)` is used to generate the initial population
-* A [`vector_transport_to!`](@extref ManifoldsBase :doc:`vector_transports`)`M, Y, p, X, q)`; it is recommended to set the [`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`) to a favourite retraction. If this default is set, a `vector_transport_method=` does not have to be specified.
+* A [`vector_transport_to!`](@extref ManifoldsBase :doc:`vector_transports`)`(M, Y, p, X, q)`; it is recommended to set the [`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`) to a favorite vector transport. If this default is set, a `vector_transport_method=` does not have to be specified.
 
 ## Literature
 

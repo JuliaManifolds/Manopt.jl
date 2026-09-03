@@ -270,7 +270,7 @@ solver indicating that the model function at the current (outer) iterate,
 
 $_doc_ARC_model
 
-defined on the tangent space ``$(_math(:TangentSpace))`` fulfils at the current iterate ``X_k`` that
+defined on the tangent space ``$(_math(:TangentSpace))`` fulfills at the current iterate ``X_k`` that
 
 $_math_sc_firstorder
 

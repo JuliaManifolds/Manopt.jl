@@ -1,6 +1,6 @@
 #
 #
-# Helper functions for modelling the sub problem
+# Helper functions for modeling the sub problem
 @doc """
     FrankWolfeCost{P,T}
 

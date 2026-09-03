@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * a benchmark suite in `benchmark/`, written with `BenchmarkTools.jl` and run with `AirspeedVelocity.jl`,
-  which on a pull request labelled `benchmark` compares it against `master`.
+  which on a pull request labeled `benchmark` compares it against `master`.
   It starts with two problems, the Riemannian mean on the sphere, benchmarked with `gradient_descent`
   and `quasi_Newton`, and the Riemannian median on hyperbolic space, benchmarked with `cyclic_proximal_point`.
 * A `BarzilaiBorweinStepsize` as a standalone stepsize instead of only being available within the
@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * since `has_converged` exists, the status reports on REPL now use this to indicate whether an algorithm has converged.
-* the changelog check in CI is skipped on pull requests labelled `no changelog necessary`; dependabot adds this label to its pull requests automatically.
+* the changelog check in CI is skipped on pull requests labeled `no changelog necessary`; dependabot adds this label to its pull requests automatically.
 
 ### Fixed
 
@@ -98,7 +98,7 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `trust_regions` now includes the Hessian term of the model decrease in its acceptance ratio also in the default (non-randomized) mode and reuses the Hessian product already computed by its tCG sub solver.
 * `cma_es` now uses the fitness-sorted samples in its covariance matrix update,
   cf. Eq. (47) of [arXiv:1604.00772](https://arxiv.org/abs/1604.00772).
-* `WolfePowellBinaryLinesearch` now bisects correctly the step size fulfils both Wolfe
+* `WolfePowellBinaryLinesearch` now bisects correctly the step size fulfills both Wolfe
   conditions; sometimes a wrong termination check made it stop too early.
 * `default_vector_norm(::Euclidean, p, X)` returned the norm of `p` instead of `X`.
 * `PrimalDualSemismoothNewtonState` is now constructed as `(M, N; kwargs...)` like `ChambollePockState`
@@ -187,12 +187,12 @@ As an overarching scheme of this release, the single functions in an objective b
 * a few internal abstract super types have been renamed for the new scheme that puts more focus on functions, to stay more consistent. The word “functor” is now avoided for structs that actually just represent functions.
   * `AbstractConstrainedFunctor` has been renamed to `AbstractConstrainedFunction`
   * `AbstractConstrainedSlackFunctor` has been renamed to `AbstractConstrainedSlackFunction`
-* `get_gradient_function` and `get_hessian_function` are unified to always return an allocating variant by default, but can also return an in-place variant now based on an `evaluation=` keyword. While this is formally breaking, since the default behaviour changed, both functions are internal and should also only be used within `Manopt.jl`.
+* `get_gradient_function` and `get_hessian_function` are unified to always return an allocating variant by default, but can also return an in-place variant now based on an `evaluation=` keyword. While this is formally breaking, since the default behavior changed, both functions are internal and should also only be used within `Manopt.jl`.
 * objectives now also accept a `p=` keyword to automatically “wrap” functions that operate on immutable variables – internally `Manopt.jl` expects points and tangent vectors to be mutable.
 
 ### Fixed
 
-* `has_converged` produced inconsistent behaviours for more complex stopping criteria. (#631)
+* `has_converged` produced inconsistent behaviors for more complex stopping criteria. (#631)
   This has been fixed and the function works now consistently for both `StopWhenAny` and `StopWhenAll`. (#630)
 * both in-place subsolver for the convex bundle and proximal bundle method would fail to update the result in case the size of the vector changes.
   this is now adapted by resizing the (in-place, passed down) result vector accordingly for these subsolvers.
@@ -532,7 +532,7 @@ so a constant initial guess is recommended here. The initial guess may be refact
 
 ### Changed
 
-* remodelled the docs for the extensions a bit, added `JuMP` to the DocumenterInterlinks.
+* remodeled the docs for the extensions a bit, added `JuMP` to the DocumenterInterlinks.
 * the internal `VectorizedManifold` within that extension is now called `ManifoldSet`
 * the internal `ArrayShape` within that extensionis not called `ManifoldPointArrayShape`
 * Switch to using [Runic.jl](https://github.com/fredrikekre/Runic.jl) as code formatter
@@ -578,7 +578,7 @@ so a constant initial guess is recommended here. The initial guess may be refact
 
 ### Fixed
 
-* fixes a small bug where calling `mesh_adaptive_direct_search` with a start point in some cases did not initialise the state correctly with that start point.
+* fixes a small bug where calling `mesh_adaptive_direct_search` with a start point in some cases did not initialize the state correctly with that start point.
 * The `HestenesStiefelCoefficient` now also always returns a real value, similar
   the other coefficient rules. To the best of our knowledge, this might have been a bug previously.
 
@@ -824,7 +824,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
   * the new default is `(project!)=copyto!`, so by default no projection/stabilization is performed.
 * the positional argument `p` (usually the last or the third to last if sub solvers existed) has been moved to a keyword argument `p=` in all State constructors
 * in `NelderMeadState` the `population` moved from positional to keyword argument as well,
-* the way to initialise sub solvers in the solver states has been unified In the new variant
+* the way to initialize sub solvers in the solver states has been unified In the new variant
   * the `sub_problem` is always a positional argument; namely the last one
   * if the `sub_state` is given as a optional positional argument after the problem, it has to be a manopt solver state
   * you can provide the new `ClosedFormSolverState(e::AbstractEvaluationType)` for the state
@@ -878,7 +878,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
 * an Interior Point Newton Method, the `interior_point_newton`
 * a `conjugate_residual` Algorithm to solve a linear system on a tangent space.
 * `ArmijoLinesearch` now allows for additional `additional_decrease_condition` and `additional_increase_condition` keywords to add further conditions to accept additional conditions when to accept an decreasing or increase of the stepsize.
-* add a `DebugFeasibility` to have a debug print about feasibility of points in constrained optimisation employing the new `is_feasible` function
+* add a `DebugFeasibility` to have a debug print about feasibility of points in constrained optimization employing the new `is_feasible` function
 * add a `InteriorPointCentralityCondition` that can be added for step candidates within the line search of `interior_point_newton`
 * Add Several new functors
   * the `LagrangianCost`, `LagrangianGradient`, `LagrangianHessian`, that based on a constrained objective allow to construct the Hessian objective of its Lagrangian
@@ -1097,7 +1097,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 ### Added
 
 * introduce an environment persistent way of setting global values with the `set_manopt_parameter!` function using [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl).
-* introduce such a value named `:Mode` to enable a `"Tutorial"` mode that shall often provide more warnings and information for people getting started with optimisation on manifolds
+* introduce such a value named `:Mode` to enable a `"Tutorial"` mode that shall often provide more warnings and information for people getting started with optimization on manifolds
 
 ## [0.4.51] January 30, 2024
 

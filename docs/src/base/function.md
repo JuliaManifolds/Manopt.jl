@@ -1,4 +1,4 @@
-# Modelling functions in Manopt.jl
+# Modeling functions in Manopt.jl
 
 ```@meta
 CurrentModule = Manopt
@@ -55,9 +55,9 @@ Private = true
 Public = true
 ```
 
-## [Functions modelling constraints](@id sec-constrained-function)
+## [Functions modeling constraints](@id sec-constrained-function)
 
-Functions modelling constraints can be defined with the following interface.
+Functions modeling constraints can be defined with the following interface.
 
 ### Types and functions
 

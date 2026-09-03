@@ -1,5 +1,9 @@
 # Verifying gradients and Hessians
 
+```@meta
+CurrentModule = Manopt
+```
+
 If you have computed a gradient or differential and you are not sure whether it is correct,
 the following functions can be used to verify it numerically.
 

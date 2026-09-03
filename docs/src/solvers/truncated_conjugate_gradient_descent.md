@@ -1,5 +1,9 @@
 # [Steihaug-Toint truncated conjugate gradient method](@id tCG)
 
+```@meta
+CurrentModule = Manopt
+```
+
 Solve the constraint optimization problem on the tangent space
 
 ```math

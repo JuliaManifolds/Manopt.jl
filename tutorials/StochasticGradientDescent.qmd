@@ -12,8 +12,8 @@ the Riemannian Center of Mass or [Fréchet mean](https://en.wikipedia.org/wiki/F
 for given points ``` ``p_i ∈\mathcal M``, ``i=1,…,N`` ```{=commonmark} this optimization problem reads
 
 ```math
-\operatorname*{arg\,min}_{x∈\mathcal M} \frac{1}{2}\sum_{i=1}^{N}
-  \operatorname{d}^2_{\mathcal M}(x,p_i),
+\operatorname*{arg\,min}_{p∈\mathcal M} \frac{1}{2N}\sum_{i=1}^{N}
+  \operatorname{d}^2_{\mathcal M}(p,p_i),
 ```
 
 which of course can be (and is) solved by a gradient descent, see the introductory
@@ -60,7 +60,7 @@ The first variant is of course easier to define, but the second is more efficien
 For the mean, the gradient is
 
 ```math
-\operatorname{grad}f(p) = \sum_{i=1}^N \operatorname{grad}f_i(x) \quad \text{where} \operatorname{grad}f_i(x) = -\log_x p_i
+\operatorname{grad}f(p) = \frac{1}{N}\sum_{i=1}^N \operatorname{grad}f_i(p) \quad\text{ where }\quad \operatorname{grad}f_i(p) = -\log_p p_i
 ```
 
 which we define in `Manopt.jl` in two different ways:

@@ -115,7 +115,7 @@ function adjoint_differential_forward_logs!(
             I = [i.I...] # array of index
             J = I .+ 1 .* (1:d .== k) #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
+                j = CartesianIndex{d}(J...) # neighbor index as Cartesian Index
                 Y[M, I...] =
                     Y[M, I...] + ManifoldDiff.adjoint_differential_log_basepoint(
                     M.manifold, p[M, I...], p[M, J...], X[N, I..., k]
@@ -196,7 +196,7 @@ function forward_logs(M::PowerManifold{𝔽, TM, TSize, TPR}, p) where {𝔽, TM
             I = i.I
             J = I .+ 1 .* e_k_vals[k] #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
+                j = CartesianIndex{d}(J...) # neighbor index as Cartesian Index
                 X[N, i.I..., k] = log(M.manifold, p[M, i.I...], p[M, j.I...])
             end
         end # directions
@@ -223,7 +223,7 @@ function forward_logs!(M::PowerManifold{𝔽, TM, TSize, TPR}, X, p) where {𝔽
             I = i.I
             J = I .+ 1 .* e_k_vals[k] #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
+                j = CartesianIndex{d}(J...) # neighbor index as Cartesian Index
                 X[N, i.I..., k] = log(M.manifold, p[M, i.I...], p[M, j.I...])
             else
                 X[N, i.I..., k] = zero_vector(M.manifold, p[M, i.I...])
@@ -456,7 +456,7 @@ function prox_Total_Variation(M::PowerManifold, λ, x, p::Int = 1)
                 if (i[k] % 2) == l
                     J = i.I .+ ek.I #i + e_k is j
                     if all(J .<= maxInd) # is this neighbor in range?
-                        j = CartesianIndex(J...) # neighbour index as Cartesian Index
+                        j = CartesianIndex(J...) # neighbor index as Cartesian Index
                         (y[i], y[j]) = prox_Total_Variation(M.manifold, λ, (y[i], y[j]), p) # Compute TV on these
                     end
                 end
@@ -478,7 +478,7 @@ function prox_Total_Variation!(M::PowerManifold, y, λ, x, p::Int = 1)
                 if (i[k] % 2) == l # even/odd splitting
                     J = i.I .+ ek.I #i + e_k is j
                     if all(J .<= maxInd) # is this neighbor in range?
-                        j = CartesianIndex(J...) # neighbour index as Cartesian Index
+                        j = CartesianIndex(J...) # neighbor index as Cartesian Index
                         prox_Total_Variation!(M.manifold, [y[i], y[j]], λ, (y[i], y[j]), p) # Compute TV on these
                     end
                 end

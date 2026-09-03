@@ -134,7 +134,7 @@ States usually have a shortened name as their variable, we use `rws` for our sta
 There is basically only two methods we need to implement for our solver
 
 - `initialize_solver!(mp, rws)` which initializes the solver before the first iteration
-- `step_solver!(mp, rws, i)` which implements the `i`th iteration, where `i` is given to you as the third parameter
+- `step_solver!(mp, rws, k)` which implements the `k`th iteration, where `k` is given to you as the third parameter
 - `get_iterate(rws)` which accesses the iterate from other places in the solver
 - `get_solver_result(rws)` returning the solvers final (best) point we reached.
   By default this would return the last iterate `rws.p` (or more precisely calls [`get_iterate`](@ref)), but since we randomly walk and remember
@@ -152,7 +152,7 @@ The state we defined before has two fields where we use the common names used in
 that is the [`StoppingCriterion`](@ref) is usually in `stop` and the iterate in `p`.
 If your choice is different, you need to reimplement
 
-- `stop_solver!(mp, rws, i)` to determine whether or not to stop after the `i`th iteration.
+- `stop_solver!(mp, rws, k)` to determine whether or not to stop after the `k`th iteration.
 - `get_iterate(rws)` to access the current iterate
 
 We recommend to follow the general scheme with the `stop` field.
@@ -181,7 +181,7 @@ the one we need is [`get_cost`](@ref).
 
 ```{julia}
 #| output: false
-function step_solver!(mp::AbstractManoptProblem, rws::RandomWalkState, i)
+function step_solver!(mp::AbstractManoptProblem, rws::RandomWalkState, k)
     M = get_manifold(mp) # for ease of use get the manifold from the problem
     X = rand(M; vector_at=rws.p)     # generate a direction
     X .*= rws.σ/norm(M, rws.p, X)

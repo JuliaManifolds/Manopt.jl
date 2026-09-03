@@ -55,7 +55,7 @@ end
 function status_summary(slso::SymmetricLinearSystemObjective; context::Symbol = :default)
     _is_inline(context) && (return repr(slso))
     return """
-    An objective modelling a symmetric linear system A[X] = -b, i.e. with a symmetric operator A
+    An objective modeling a symmetric linear system A[X] = -b, i.e. with a symmetric operator A
     implemented as a function `(M, Y, p, X) -> Y` performing the operator application in the tangent space,
     and a function `(M, X, p) -> X` returning the vector on the right hand side in the current tangent space.
 

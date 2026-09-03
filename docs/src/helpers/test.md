@@ -1,5 +1,9 @@
 # Manopt.Test
 
+```@meta
+CurrentModule = Manopt
+```
+
 ```@docs
 Manopt.Test
 ```
