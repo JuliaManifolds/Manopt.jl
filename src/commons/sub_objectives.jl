@@ -1525,7 +1525,7 @@ A trust region model of the form
 
     TrustRegionModelObjective(objective)
 
-with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective
+with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or a decorator containing such an objective
 """
 struct TrustRegionModelObjective{
         O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective},

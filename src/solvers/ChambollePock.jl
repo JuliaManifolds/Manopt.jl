@@ -322,7 +322,7 @@ $(_kwargs([:evaluation, :inverse_retraction_method]))
 $(_kwargs(:inverse_retraction_method; name = "inverse_retraction_method_dual", M = "N", p = "n"))
 * `Λ=missing`: the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
 * `linearized_forward_operator=missing`: its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
-* `primal_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
+* `primal_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
 * `relaxation=1.`: the relaxation parameter ``γ``
 * `relax=:primal`: whether to relax the primal or dual
 * `variant=:linearized` if `Λ` is missing, otherwise `:exact`: variant to use.

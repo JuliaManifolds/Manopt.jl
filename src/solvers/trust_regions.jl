@@ -294,7 +294,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
 * `κ=0.1`: the linear convergence target rate of the tCG method
     [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping criterion therein
-* `max_trust_region_radius`: the maximum trust-region radius
+* `max_trust_region_radius=sqrt(manifold_dimension(M))`: the maximum trust-region radius
 * `preconditioner`:       a preconditioner for the Hessian H.
   This is either an allocating function `(M, p, X) -> Y` or an in-place function `(M, Y, p, X) -> Y`,
   see `evaluation`, and by default set to the identity.

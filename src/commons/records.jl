@@ -160,7 +160,7 @@ RecordDualIterate(X) = RecordEntry(X, :X)
     RecordDualBaseIterate(n)
 
 Create a [`RecordAction`](@ref) that records the dual base point,
-an [`RecordEntry`](@ref) of the field `n` of the state.
+a [`RecordEntry`](@ref) of the field `n` of the state.
 """
 RecordDualBaseIterate(n) = RecordEntry(n, :n)
 
@@ -215,7 +215,7 @@ end
     RecordDualBaseChange()
 
 Create a [`RecordAction`](@ref) that records the dual base point change,
-an [`RecordEntryChange`](@ref) of the field `n` with distance to the last value to store a value.
+a [`RecordEntryChange`](@ref) of the field `n` with distance to the last value to store a value.
 """
 function RecordDualBaseChange()
     return RecordEntryChange(:n, (p, o, x, y) -> distance(get_manifold(p, 2), x, y))
@@ -225,7 +225,7 @@ end
     RecordDualChange()
 
 Create a [`RecordAction`](@ref) that records the change of the dual iterate,
-an [`RecordEntryChange`](@ref) of the field `X` with distance to the last value to store a value.
+a [`RecordEntryChange`](@ref) of the field `X` with distance to the last value to store a value.
 """
 function RecordDualChange()
     return RecordEntryChange(:X, (p, o, x, y) -> distance(get_manifold(p, 2), x, y))
@@ -348,7 +348,7 @@ RecordPrimalChange() = RecordChange()
 """
     RecordPrimalIterate(p)
 
-Create a [`RecordAction`](@ref) that records the primal point, an [`RecordIterate`](@ref) of the iterate `p`.
+Create a [`RecordAction`](@ref) that records the primal point, a [`RecordIterate`](@ref) of the iterate `p`.
 """
 RecordPrimalIterate(p) = RecordIterate(p)
 
@@ -356,7 +356,7 @@ RecordPrimalIterate(p) = RecordIterate(p)
     RecordPrimalBaseChange()
 
 Create a [`RecordAction`](@ref) that records the primal base point change,
-an [`RecordEntryChange`](@ref) of the field `m` with distance to the last value to store a value.
+a [`RecordEntryChange`](@ref) of the field `m` with distance to the last value to store a value.
 """
 function RecordPrimalBaseChange()
     return RecordEntryChange(:m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y))
@@ -365,7 +365,7 @@ end
 """
     RecordPrimalBaseIterate(m)
 
-Create a [`RecordAction`](@ref) that records the primal base point, an [`RecordEntry`](@ref) of the field `m` of the state.
+Create a [`RecordAction`](@ref) that records the primal base point, a [`RecordEntry`](@ref) of the field `m` of the state.
 """
 RecordPrimalBaseIterate(m) = RecordEntry(m, :m)
 

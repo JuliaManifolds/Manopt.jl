@@ -10,7 +10,7 @@ end
     @testset "Generic Tests" begin
         @test_throws MethodError get_stopping_criteria(Manopt.Test.DummyStoppingCriteriaSet())
         sa = StopAfterIteration(10)
-        sb = StopWhenChangeLess(Euclidean(), 0.1)
+        sb = StopWhenChangeLess(0.1)
         s = StopWhenAll(sa, sb)
         @test !Manopt.indicates_convergence(s) #both are false so this is false
         @test repr(s) == "StopWhenAll([$(repr(sa)), $(repr(sb))])"

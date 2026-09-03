@@ -281,7 +281,7 @@ A functor for backtracking line search in proximal gradient methods.
 ## Keyword arguments
 
 * `initial_stepsize=1.0`: initial stepsize to try
-* `stop_when_stepsize_less=1e-8`: smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_less=1e-8`: smallest stepsize when to stop (the first one below this bound is returned)
 * `sufficient_decrease=0.5`: sufficient decrease parameter
 * `contraction_factor=0.5`: step size reduction factor
 * `strategy=:nonconvex`: backtracking strategy, either `:convex` or `:nonconvex`

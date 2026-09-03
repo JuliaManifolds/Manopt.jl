@@ -327,7 +327,9 @@ get_manifold(tmp::TwoManifoldProblem, i) = _get_manifold(tmp, Val(i))
 _get_manifold(tmp::TwoManifoldProblem, ::Val{1}) = tmp.first_manifold
 _get_manifold(tmp::TwoManifoldProblem, ::Val{2}) = tmp.second_manifold
 
-get_objective(tmo::TwoManifoldProblem) = tmo.objective
+function get_objective(tmo::TwoManifoldProblem, recursive = false)
+    return recursive ? get_objective(tmo.objective, true) : tmo.objective
+end
 
 function get_dual_prox(tmp::TwoManifoldProblem, n, τ, X)
     return get_dual_prox(get_manifold(tmp, 2), get_objective(tmp), n, τ, X)

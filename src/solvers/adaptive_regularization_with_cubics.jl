@@ -12,14 +12,14 @@ cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite)
 
 # Fields
 
-* `objective`: an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
+* `objective`: an [`AbstractManifoldHessianObjective`](@ref) providing ``f``, its gradient and Hessian
 * `σ`:         the current (cubic) regularization parameter
 
 # Constructors
 
     AdaptiveRegularizationWithCubicsModelObjective(mho, σ=1.0)
 
-with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective.
+with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or a decorator containing such an objective.
 """
 mutable struct AdaptiveRegularizationWithCubicsModelObjective{
         O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective}, R,

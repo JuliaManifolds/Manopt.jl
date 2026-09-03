@@ -1202,7 +1202,7 @@ Arguments:
 - `cy1`, `cy2`: coordinates of ``y``-like vectors in the ``Y_k`` basis.
 - `cs1`, `cs2`: coordinates of ``s``-like vectors in the scaled ``S_k`` basis.
 
-The result is ``θ·iss - cy₁ᵀ M₁₁ cy₂ - 2·cs₁ᵀ M₂₁ cy₂ - cs₁ᵀ M₂₂ cs₂`` using the blocks
+The result is ``θ·iss - cy₁ᵀ M₁₁ cy₂ - cs₁ᵀ M₂₁ cy₂ - cs₂ᵀ M₂₁ cy₁ - cs₁ᵀ M₂₂ cs₂`` using the blocks
 ``M₁₁``, ``M₂₁``, ``M₂₂`` stored in `gh` and the current scale ``θ``. Returns the scalar value.
 """
 function hessian_value_from_inner_products(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)

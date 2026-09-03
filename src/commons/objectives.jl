@@ -221,7 +221,7 @@ function status_summary(cmo::ConstrainedManifoldObjective; context::Symbol = :de
     ## Equality constraints
     $(el == 0 ? "$(_MANOPT_INDENT)none" : _in_str(status_summary(cmo.equality_constraints; context = context); indent = 1, headers = 1))
 
-    ## Inequality constrains
+    ## Inequality constraints
     $(il == 0 ? "$(_MANOPT_INDENT)none" : _in_str(status_summary(cmo.inequality_constraints; context = context); indent = 1, headers = 1))
     """
 end

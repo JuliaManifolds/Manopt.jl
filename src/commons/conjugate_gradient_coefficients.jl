@@ -62,7 +62,7 @@ end
     ConjugateGradientDescentState <: AbstractGradientSolverState
 
 specify options for a conjugate gradient descent algorithm, that solves a
-[`DefaultManoptProblem`].
+[`DefaultManoptProblem`](@ref).
 
 # Fields
 
@@ -70,7 +70,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:X))
 * `δ`:                       the current descent direction, also a tangent vector
-* `β`:                       the current update coefficient rule, see .
+* `β`:                       the current update coefficient, computed by the `coefficient` rule
 * `coefficient`:             function to determine the new `β`
 * `restart_condition`:       an [`AbstractRestartCondition`](@ref) to determine how to handle non-descent directions.
 $(_fields(:stepsize))
@@ -80,7 +80,7 @@ $(_fields(:vector_transport_method))
 
 # Constructor
 
-    ConjugateGradientState(M::AbstractManifold; kwargs...)
+    ConjugateGradientDescentState(M::AbstractManifold; kwargs...)
 
 where the last five fields can be set by their names as keyword and the
 `X` can be set to a tangent vector type using the keyword `initial_gradient` which defaults to `zero_vector(M,p)`,

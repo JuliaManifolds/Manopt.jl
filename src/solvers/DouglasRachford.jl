@@ -166,17 +166,17 @@ that is, component wise in a vector.
 
 !!! note
     The parallel Douglas Rachford does not work in-place for now, since
-    while creating the new staring point `p'` on the power manifold, a copy of `p`
-    Is created
+    while creating the new starting point `p'` on the power manifold, a copy of `p`
+    is created.
 
 If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proximal maps are kept unchanged.
 
 # Input
 
 $(_args([:M, :f]))
-* `proxes_f`: functions of the form `(M, λ, p)-> q` performing a proximal maps,
-  where `⁠λ` denotes the proximal parameter, for each of the summands of `F`.
-  These can also be given in the [`InplaceEvaluation`](@ref) variants `(M, q, λ p) -> q`
+* `proxes_f`: functions of the form `(M, λ, p) -> q` performing the proximal maps,
+  where `λ` denotes the proximal parameter, for each of the summands of `f`.
+  These can also be given in the [`InplaceEvaluation`](@ref) variants `(M, q, λ, p) -> q`
   computing in place of `q`.
 $(_args(:p))
 

@@ -426,7 +426,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
                 gf +
                 sum(λ .* gh) +
                 sum(μ .* gg) +
-                sum(((μ ./ s) .* (μ .* (c[1] .+ s) .+ β .- μ .* s)) .* gg)
+                sum(((1 ./ s) .* (μ .* (c[1] .+ s) .+ β .- μ .* s)) .* gg)
             b2 = c[2]
             Nc = M × ℝ^1 # (p,λ)
             qc = rand(Nc)

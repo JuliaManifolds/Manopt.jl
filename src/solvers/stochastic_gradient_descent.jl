@@ -215,7 +215,7 @@ then using the `cost=` keyword does not have any effect since if so, the cost is
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `cost=missing`: you can provide a cost function for example to track the function value
-* `direction=`[`StochasticGradient`](@ref)`(`$(_link(:zero_vector))`)` add a post-processor to
+* `direction=`[`StochasticGradient`](@ref)`(; p=p)` add a post-processor to
   the direction obtained from evaluating the sub-gradient.
 $(_kwargs(:evaluation))
 * `order_type=:Random`: whether to use a fixed randomly permuted sequence (`:FixedRandom`),
