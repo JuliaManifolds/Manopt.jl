@@ -7,7 +7,7 @@ CurrentModule = Manopt
 Within the optimization problem
 
 ```math
-\operatorname*{argmin}_{p \in \mathcal M} f(p)
+\operatorname*{arg\,min}_{p \in \mathcal M} f(p)
 ```
 
 the objective describes the cost ``f(p)`` and its properties and relations.

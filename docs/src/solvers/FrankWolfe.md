@@ -1,4 +1,4 @@
-# Frank—Wolfe method
+# Frank-Wolfe method
 
 ```@meta
 CurrentModule = Manopt
@@ -17,7 +17,7 @@ FrankWolfeState
 
 ## Helpers
 
-For the inner sub-problem you can easily create the corresponding cost and gradient using
+For the inner sub problem you can easily create the corresponding cost and gradient using
 
 ```@docs
 FrankWolfeCost

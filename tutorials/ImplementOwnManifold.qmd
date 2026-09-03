@@ -243,7 +243,7 @@ But we for example automatically also get the possibility to obtain debug inform
 gradient_descent(M, f, grad_f, p0; debug = [:Iteration, :Cost, :Stepsize, 25, :GradientNorm, :Stop, "\n"]);
 ```
 
-see [How to Print Debug Output](HowToDebug.md) for more details.
+see [How to print debug output](HowToDebug.md) for more details.
 
 ## Literature
 

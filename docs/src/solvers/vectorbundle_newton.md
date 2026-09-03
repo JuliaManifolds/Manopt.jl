@@ -1,4 +1,4 @@
-# Vector Bundle Newton Method
+# Vector bundle Newton method
 
 ```@meta
 CurrentModule = Manopt
@@ -28,7 +28,7 @@ VectorBundleNewtonState
 AffineCovariantStepsize
 ```
 
-## Internal Functions
+## Internal functions
 
 ```@autodocs
 Modules = [Manopt]

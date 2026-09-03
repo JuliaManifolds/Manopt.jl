@@ -57,11 +57,11 @@ N = rand(Normal(0, 1 / d), (d, d)); N[diagind(N, 0)] .= rand(Normal(0, 2 / d), d
 Z = sqrt(σ) * v0 * transpose(v0) + N;
 ```
 
-In order to recover $v_0$ we consider the constrained optimization problem on the sphere $\mathcal S^{d-1}$ given by
+In order to recover $v_0$ we consider the constrained optimization problem on the sphere $\mathbb S^{d-1}$ given by
 
 ```math
 \begin{align*}
-\operatorname*{arg\,min}_{p∈\mathcal S^{d-1}} & -p^{\mathrm{T}}Zp\\
+\operatorname*{arg\,min}_{p∈\mathbb S^{d-1}} & -p^{\mathrm{T}}Zp\\
 \text{such that} &\quad p \geq 0\\
 \end{align*}
 ```

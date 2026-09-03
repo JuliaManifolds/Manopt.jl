@@ -1,4 +1,4 @@
-# Gradient Sampling Algorithm
+# Gradient sampling algorithm
 
 ```@meta
 CurrentModule = Manopt

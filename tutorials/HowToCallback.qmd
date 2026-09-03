@@ -26,7 +26,7 @@ using ManifoldDiff: grad_distance
 Random.seed!(42);
 ```
 
-We consider the same example as in the [Introductory tutorial](getstarted.md) to compute the Riemannian center of mass
+We consider the same example as in the [🏔️ Get started with Manopt.jl](getstarted.md) tutorial to compute the Riemannian center of mass
 
 ```{julia}
 n = 100

@@ -139,6 +139,8 @@ For that we switch to another example:
 the Rayleigh quotient. We aim to maximize the Rayleigh quotient $\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$, for some $A∈ℝ^{(m+1)\times (m+1)}$ and $x∈ℝ^{m+1}$ but since we consider this on the sphere and `Manopt.jl`
 (as many other optimization toolboxes) minimizes, we consider
 
+Note that the [automatic differentiation tutorial](AutomaticDifferentiation.md) uses the same Rayleigh quotient with the opposite sign, minimizing toward the smallest eigenvalue rather than maximizing toward the largest.
+
 ```math
 g(p) = -p^{\mathrm{T}}Ap,\qquad p∈\mathbb S^{m}
 ```
@@ -264,7 +266,7 @@ grad_g3!(M, X, p) = storage_g(Val(:Gradient), M, X, p)
     evaluation=InplaceEvaluation(),
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 2),
-    return_objective=true#, return_state=true
+    return_objective=true,
 )
 ```
 

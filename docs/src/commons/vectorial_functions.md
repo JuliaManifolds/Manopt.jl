@@ -1,4 +1,4 @@
-# Vectorial Functions
+# Vector Functions
 
 ```@meta
 CurrentModule = Manopt

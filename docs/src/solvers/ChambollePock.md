@@ -4,7 +4,7 @@
 CurrentModule = Manopt
 ```
 
-The Riemannian Chambolle—Pock algorithm is a generalization of the Chambolle—Pock algorithm [ChambollePock:2011](@citet*).
+The Riemannian Chambolle-Pock algorithm is a generalization of the Chambolle-Pock algorithm [ChambollePock:2011](@citet*).
 It is also known as primal-dual hybrid gradient (PDHG) or primal-dual proximal splitting (PDPS) algorithm.
 
 In order to minimize over ``p∈\mathcal M`` the cost function consisting of
@@ -21,7 +21,7 @@ such that ``Λ(\mathcal C) \subset \mathcal D``.
 The algorithm is available in four variants: exact versus linearized (see `variant`)
 as well as with primal versus dual relaxation (see `relax`). For more details, see
 [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@citet*).
-In the following, the case of the exact, primal relaxed Riemannian Chambolle—Pock algorithm is described.
+In the following, the case of the exact, primal relaxed Riemannian Chambolle-Pock algorithm is described.
 
 Given base points ``m∈\mathcal C``, ``n=Λ(m)∈\mathcal D``,
 initial primal and dual values ``p^{(0)} ∈\mathcal C``, ``ξ_n^{(0)} ∈T_n^*\mathcal N``,
@@ -109,7 +109,7 @@ Manopt.update_prox_parameters!
 The [`ChambollePock`](@ref) solver requires the following functions of a manifold to be available for both the manifolds ``\mathcal M`` and ``\mathcal N``
 
 * A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favorite retraction. If this default is set, a `retraction_method=` or `retraction_method_dual=` (for ``\mathcal N``) does not have to be specified.
-* An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favorite retraction. If this default is set, a `inverse_retraction_method=` or `inverse_retraction_method_dual=` (for ``\mathcal N``) does not have to be specified.
+* An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favorite inverse retraction. If this default is set, an `inverse_retraction_method=` or `inverse_retraction_method_dual=` (for ``\mathcal N``) does not have to be specified.
 * A [`vector_transport_to!`](@extref ManifoldsBase :doc:`vector_transports`)`(M, Y, p, X, q)`; it is recommended to set the [`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`) to a favorite vector transport. If this default is set, a `vector_transport_method=` or `vector_transport_method_dual=` (for ``\mathcal N``) does not have to be specified.
 * A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points.
 

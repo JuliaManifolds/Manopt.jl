@@ -67,6 +67,8 @@ using ManifoldDiff: grad_distance, prox_distance
 Random.seed!(42);
 ```
 
+## Example 1: computing the Riemannian center of mass on the sphere
+
 Now assume we are on the ``[Sphere](@extref `Manifolds.Sphere`)``{=commonmark}
 $\mathcal M = \mathbb S^2$ and we generate some random points “around” some initial point $p$
 

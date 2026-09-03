@@ -15,7 +15,7 @@ Several predefined recordings exist, for example [`RecordCost`](@ref) or [`Recor
 For fields of the `State` the recording can also be done using [`RecordEntry`](@ref).
 For other recordings, for example more advanced computations before storing a value, an own `RecordAction` can be defined.
 
-We illustrate these using the gradient descent from the [Get started: optimize](getstarted.md) tutorial.
+We illustrate these using the gradient descent from the [🏔️ Get started with Manopt.jl](getstarted.md) tutorial.
 
 Here the focus is put on ways to investigate the behavior during iterations by using recording techniques.
 
@@ -202,9 +202,9 @@ grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
 p0 = project(M2, [ones(2)..., zeros(d - 3)..., 0.1])
 ```
 
-We directly start with recording the sub solvers Iteration.
+We directly start with recording the sub solver's iteration.
 We can specify what to record in the subsolver using the `sub_kwargs`
-keyword argument with a `Symbol => value` pair. Here we specify to record the iteration and the cost in every sub solvers step.
+keyword argument with a `Symbol => value` pair. Here we specify to record the iteration and the cost in every sub solver's step.
 
 Furthermore, we have to “collect” this recording after every sub solver run.
 This is done with the `:Subsolver` keyword in the main `record=` keyword.
@@ -250,7 +250,7 @@ Then
 get_record(s2)
 ```
 
-Finally, instead of recording iterations, we can also specify to record the stopping criterion and final cost by adding that to `:Stop` of the sub solvers record. Then we can specify, as usual in a tuple, that the `:Subsolver` should record `:Stop` (by default it takes over `:Iteration`)
+Finally, instead of recording iterations, we can also specify to record the stopping criterion and final cost by adding that to `:Stop` of the sub solver's record. Then we can specify, as usual in a tuple, that the `:Subsolver` should record `:Stop` (by default it takes over `:Iteration`)
 
 ```{julia}
 #| output: false

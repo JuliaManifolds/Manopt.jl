@@ -16,7 +16,7 @@ Thanks to the following contributors to `Manopt.jl`:
 * [Willem Diepeveen](https://www.maths.cam.ac.uk/person/wd292) implemented the [primal-dual Riemannian semismooth Newton](solvers/primal_dual_semismooth_Newton.md) solver.
 * [Ole Gunnar Røsholt Hovland](https://github.com/elorannug) started the implementation of the [gradient sampling algorithm](solvers/gradient_sampling.md).
 * [Hajg Jasa](https://hajg-ijk.github.io) implemented the [convex bundle method](solvers/convex_bundle_method.md) and the [proximal bundle method](solvers/proximal_bundle_method.md) and a default sub solver for each of them.
-* Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](solvers/FrankWolfe.md) solver.
+* Even Stephansen Kjemsås contributed to the implementation of the [Frank-Wolfe method](solvers/FrankWolfe.md) solver.
 * Mathias Ravn Munkvold contributed most of the implementation of the [Adaptive Regularization with Cubics](solvers/adaptive_regularization_with_cubics.md) solver as well as its [Lanczos](@ref arc-Lanczos) sub solver.
 * [Sander Engen Oddsen](https://github.com/oddsen) contributed to the implementation of the [LTMADS](solvers/mesh_adaptive_direct_search.md) solver.
 * [Jonas Püschel](https://www.uni-augsburg.de/de/fakultaet/mntf/math/prof/numa/team/jonas-pueschel/) contributed [restart rules for the conjugate gradient solver](@ref cg-coeffs).
