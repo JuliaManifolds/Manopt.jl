@@ -25,7 +25,7 @@ Further, define the reflection operator at the proximal map as
 Let ``\alpha_k ∈  [0,1]`` with ``\sum_{k ∈ ℕ} \alpha_k(1-\alpha_k) =  \infty``
 and ``λ > 0`` (which might depend on iteration ``k`` as well) be given.
 
-Then the (P)DRA algorithm for initial data ``p^{(0)} ∈ \mathcal M`` as
+Then the (P)DR algorithm for initial data ``p^{(0)} ∈ \mathcal M`` reads as
 
 ## Initialization
 
@@ -37,7 +37,7 @@ Repeat until a convergence criterion is reached
 
 1. Compute ``r^{(k)} = \operatorname{refl}_{λ g}\operatorname{refl}_{λ h}(q^{(k)})``
 2. Within that operation, store ``p^{(k+1)} = \operatorname{prox}_{λ h}(q^{(k)})`` which is the prox the inner reflection reflects at.
-3. Compute ``q^{(k+1)} = g(\alpha_k; q^{(k)}, r^{(k)})``, where ``g`` is a curve approximating the shortest geodesic, provided by a retraction and its inverse
+3. Compute ``q^{(k+1)} = γ(\alpha_k; q^{(k)}, r^{(k)})``, where ``γ`` is a curve approximating the shortest geodesic, provided by a retraction and its inverse
 4. Set ``k = k+1``
 
 ## Result
@@ -45,7 +45,7 @@ Repeat until a convergence criterion is reached
 The result is given by the last computed ``p^{(K)}`` in the last iteration ``K``.
 
 For the parallel version, the first proximal map is a vectorial version where
-in each component one prox is applied to the corresponding copy of ``t_k`` and
+in each component one prox is applied to the corresponding copy of ``q^{(k)}`` and
 the second proximal map corresponds to the indicator function of the set,
 where all copies are equal (in ``\mathcal M^n``, where ``n`` is the number of copies),
 leading to the second prox being the Riemannian mean.

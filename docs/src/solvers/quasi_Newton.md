@@ -17,7 +17,7 @@ The aim is to minimize a real-valued function on a Riemannian manifold, that is
 \min f(p), \quad p ∈ \mathcal{M}.
 ```
 
-Riemannian quasi-Newtonian methods are generalizations of their Euclidean counterparts Riemannian line search methods. These methods determine a search direction ``η_k ∈ T_{p^{(k)}} \mathcal{M}`` at the current iterate ``p^{(k)}`` and a suitable step size ``α_k`` along ``\gamma(α) = R_{p^{(k)}}(α η_k)``, where ``R: T \mathcal{M} →\mathcal{M}`` is a retraction. The next iterate is obtained by
+Riemannian quasi-Newton methods are generalizations of their Euclidean counterparts and are Riemannian line search methods. These methods determine a search direction ``η_k ∈ T_{p^{(k)}} \mathcal{M}`` at the current iterate ``p^{(k)}`` and a suitable step size ``α_k`` along ``\gamma(α) = R_{p^{(k)}}(α η_k)``, where ``R: T \mathcal{M} →\mathcal{M}`` is a retraction. The next iterate is obtained by
 
 ```math
 p^{(k+1)} = R_{p^{(k)}}(α_k η_k).
@@ -26,7 +26,7 @@ p^{(k+1)} = R_{p^{(k)}}(α_k η_k).
 In quasi-Newton methods, the search direction is given by
 
 ```math
-η_k = -{\mathcal{H}_k}^{-1}[\operatorname{grad}f (p^{(k)})] = -\mathcal{B}_k [\operatorname{grad} (p^{(k)})],
+η_k = -{\mathcal{H}_k}^{-1}[\operatorname{grad}f (p^{(k)})] = -\mathcal{B}_k [\operatorname{grad}f (p^{(k)})],
 ```
 
 where ``\mathcal{H}_k : T_{p^{(k)}} \mathcal{M} →T_{p^{(k)}} \mathcal{M}`` is a positive definite self-adjoint operator, which approximates the action of the Hessian ``\operatorname{Hess} f (p^{(k)})[⋅]`` and ``\mathcal{B}_k = {\mathcal{H}_k}^{-1}``. The idea of quasi-Newton methods is instead of creating a complete new approximation of the Hessian operator ``\operatorname{Hess} f(p^{(k+1)})`` or its inverse at every iteration, the previous operator ``\mathcal{H}_k`` or ``\mathcal{B}_k`` is updated by a convenient formula using the obtained information about the curvature of the objective function during the iteration. The resulting operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` acts on the tangent space ``T_{p^{(k+1)}} \mathcal{M}`` of the freshly computed iterate ``p^{(k+1)}``.
@@ -37,7 +37,7 @@ Hence a further requirement is that ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}
 In order to get information about the curvature of the objective function into the new operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}``, the last requirement is a form of a Riemannian quasi-Newton equation:
 
 ```math
-\mathcal{H}_{k+1} [T_{p^{(k)} \rightarrow p^{(k+1)}}({R_{p^{(k)}}}^{-1}(p^{(k+1)}))] = \operatorname{grad}(p^{(k+1)}) - T_{p^{(k)} \rightarrow p^{(k+1)}}(\operatorname{grad}f(p^{(k)}))
+\mathcal{H}_{k+1} [T_{p^{(k)} \rightarrow p^{(k+1)}}({R_{p^{(k)}}}^{-1}(p^{(k+1)}))] = \operatorname{grad}f(p^{(k+1)}) - T_{p^{(k)} \rightarrow p^{(k+1)}}(\operatorname{grad}f(p^{(k)}))
 ```
 
 or
@@ -52,25 +52,25 @@ Note that, of course, not all updates in all situations meet these conditions in
 For specific quasi-Newton updates, the fulfillment of the Riemannian curvature condition, which requires that
 
 ```math
-g_{p^{(k+1)}}(s_k, y_k) > 0
+g_{p^{(k+1)}}(s_k, y_k) > 0, \quad\text{where } s_k = T_{p^{(k)} \rightarrow p^{(k+1)}}(α_k η_k),
 ```
 
-holds, is a requirement for the inheritance of the self-adjointness and positive definiteness of the ``\mathcal{H}_k`` or ``\mathcal{B}_k`` to the operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}``. Unfortunately, the fulfillment of the Riemannian curvature condition is not given by a step size ``\alpha_k > 0`` that satisfies the generalized Wolfe conditions. However, to create a positive definite operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` in each iteration, the so-called locking condition was introduced in [HuangGallivanAbsil:2015](@cite), which requires that the isometric vector transport ``T^S``, which is used in the update formula, and its associate retraction ``R`` fulfill
+holds, is a requirement for the inheritance of the self-adjointness and positive definiteness of the ``\mathcal{H}_k`` or ``\mathcal{B}_k`` to the operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}``. Unfortunately, the fulfillment of the Riemannian curvature condition is not given by a step size ``\alpha_k > 0`` that satisfies the generalized Wolfe conditions. However, to create a positive definite operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` in each iteration, the so-called locking condition was introduced in [HuangGallivanAbsil:2015](@cite), which requires that the isometric vector transport ``T^S``, which is used in the update formula, and its associated retraction ``R`` fulfill
 
 ```math
-T^{S}{p, ξ_p}(ξ_p) = β T^{R}{p, ξ_p}(ξ_p), \quad β = \frac{\lVert ξ_p \rVert_p}{\lVert T^{R}{p, ξ_p}(ξ_p) \rVert_{R_{p}(ξ_p)}},
+T^{S}_{p, ξ_p}(ξ_p) = β T^{R}_{p, ξ_p}(ξ_p), \quad β = \frac{\lVert ξ_p \rVert_p}{\lVert T^{R}_{p, ξ_p}(ξ_p) \rVert_{R_{p}(ξ_p)}},
 ```
 
 where ``T^R`` is the vector transport by differentiated retraction. With the requirement that the isometric vector transport ``T^S`` and its associated retraction ``R`` satisfies the locking condition and using the tangent vector
 
 ```math
-y_k = {β_k}^{-1} \operatorname{grad}f(p^{(k+1)}) - T^{S}{p^{(k)}, α_k η_k}(\operatorname{grad}f(p^{(k)})),
+y_k = {β_k}^{-1} \operatorname{grad}f(p^{(k+1)}) - T^{S}_{p^{(k)}, α_k η_k}(\operatorname{grad}f(p^{(k)})),
 ```
 
 where
 
 ```math
-β_k = \frac{\lVert α_k η_k \rVert_{p^{(k)}}}{\lVert T^{R}{p^{(k)}, α_k η_k}(α_k η_k) \rVert_{p^{(k+1)}}},
+β_k = \frac{\lVert α_k η_k \rVert_{p^{(k)}}}{\lVert T^{R}_{p^{(k)}, α_k η_k}(α_k η_k) \rVert_{p^{(k+1)}}},
 ```
 
 in the update, it can be shown that choosing a step size ``α_k > 0`` that satisfies the Riemannian Wolfe conditions leads to the fulfillment of the Riemannian curvature condition, which in turn implies that the operator generated by the updates is positive definite.

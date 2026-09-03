@@ -18,7 +18,7 @@ Manopt.default_stepsize(::AbstractManifold, ::Type{StochasticGradientDescentStat
 
 Additionally, the state shares a [`DirectionUpdateRule`](@ref),
 so you can also apply [`MomentumGradient`](@ref) and [`AverageGradient`](@ref) here.
-The most inner one should always be.
+The innermost one should always be the following:
 
 ```@docs
 StochasticGradient

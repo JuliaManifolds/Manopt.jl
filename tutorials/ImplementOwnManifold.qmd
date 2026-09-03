@@ -71,8 +71,7 @@ Define a sphere of fixed radius
 
     ScaledSphere(dimension,radius)
 
-Initialize the manifold to a certain `dimension` and `radius`,
-which by default is set to `1.0`
+Initialize the manifold to a certain `dimension` and `radius`.
 """
 struct ScaledSphere <: AbstractManifold{ℝ}
     dimension::Int
@@ -80,15 +79,15 @@ struct ScaledSphere <: AbstractManifold{ℝ}
 end
 ```
 
-We would like to compute a mean and/or median similar to [🏔️ Get started with Manopt.jl!](getstarted.md).
-For given a set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@cite)
+We would like to compute a mean similar to [🏔️ Get started with Manopt.jl](getstarted.md).
+For a given set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@cite)
 
 ```math
   \operatorname*{arg\,min}_{p∈\mathcal M}
   \frac{1}{2n} \sum_{i=1}^n d_{\mathcal M}^2(p, q_i)
 ```
 
-On the `ScaledSphere` we just defined.
+on the `ScaledSphere` we just defined.
 We define a few parameters first
 
 ```{julia}
@@ -111,7 +110,7 @@ pts = [ r/norm(p) .* p for p in pts]
 ```
 
 Then, before starting with optimization, we need the distance on the manifold,
-to define the cost function, as well as the logarithmic map to defined the gradient.
+to define the cost function, as well as the logarithmic map to define the gradient.
 For both, we here use the “lazy” approach of using the ``[Sphere](@extref `Manifolds.Sphere`)``{=commonmark} as a fallback.
 Finally, we have to provide information about how points and tangent vectors are stored on the
 manifold by implementing their ``[`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)``{=commonmark} function, which is often required when allocating memory.
@@ -135,7 +134,7 @@ representation_size(M::ScaledSphere) = (M.dimension+1,)
 ```{julia}
 #| output : false
 f(M, q) = sum(distance(M, q, p)^2 for p in pts)
-grad_f(M,q) = sum( - log(M, q, p) for p in pts)
+grad_f(M,q) = sum( - 2 * log(M, q, p) for p in pts)
 ```
 
 ## Defining the necessary functions to run a solver
@@ -148,10 +147,10 @@ They list all details, but we can start even step by step here if we are a bit c
 
 ### A retraction
 
-We first implement a ``[retract](@extref ManifoldsBase :doc:`retractions`)``{=commonmark}ion. Informally, given a current point and a direction to “walk into” we need a function that performs that walk.
+We first implement a ``[retract](@extref ManifoldsBase :doc:`retractions`)``{=commonmark}ion. Informally, given a current point and a direction to “walk into” we need a function that performs that walk.
 Since we take an easy one that just projects onto
 the sphere, we use the ``[`ProjectionRetraction`](@extref `ManifoldsBase.ProjectionRetraction`)``{=commonmark} type.
-To be precise, we have to implement the ``[in-place variant](@extref ManifoldsBase `inplace-and-noninplace`)``{=commonmark} ``[`retract_project!`](@extref `ManifoldsBase.inverse_retract_project!-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}
+To be precise, we have to implement the ``[in-place variant](@extref ManifoldsBase `inplace-and-noninplace`)``{=commonmark} ``[`retract_project!`](@extref `ManifoldsBase.retract_project!-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}
 
 ```{julia}
 import ManifoldsBase: retract_project!
@@ -170,13 +169,13 @@ We have to specify
 * that we want to use the new retraction,
 * a simple step size and stopping criterion
 
-We start with a certain point of cost
+We start with a certain point and evaluate its cost
 ```{julia}
 p0 = [zeros(d)...,1.0]
 f(M,p0)
 ```
 
-Then we can run our first solver, where we have to overwrite a few
+Then we can run our first solver, where we have to overwrite a few
 defaults, which would use functions we do not (yet) have.
 Let's discuss these in the next steps.
 
@@ -207,7 +206,7 @@ Manopt.max_stepsize(M::ScaledSphere) = M.radius*π
 ```
 
 Then we can use the default step size ([`ArmijoLinesearch`](@ref)) and
-the default stopping criterion, which checks for a small gradient Norm
+the default stopping criterion, which checks for a small gradient norm
 
 ```{julia}
 q2 = gradient_descent(M, f, grad_f, p0;

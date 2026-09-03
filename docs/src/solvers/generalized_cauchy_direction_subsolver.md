@@ -8,7 +8,7 @@ The generalized Cauchy direction (GCD) sub solver is a component in optimization
 
 ```math
 \begin{align*}
-\operatorname*{arg\,min}_{Y  ∈  T_p D \times \mathcal{M}}&\ m_p(Y), \qquad m_p(Y) = ⟨X_g, Y⟩_p + \frac{1}{2} ⟨\mathcal{H}_p[Y], Y⟩_p\\
+\operatorname*{arg\,min}_{Y  ∈  T_p (D \times \mathcal{M})}&\ m_p(Y), \qquad m_p(Y) = ⟨X_g, Y⟩_p + \frac{1}{2} ⟨\mathcal{H}_p[Y], Y⟩_p\\
 \text{such that}& \ \exp_p(Y) = \exp_p(\alpha X) \in D \times \mathcal{M} \text{ for some } \alpha \in [0, A]
 \end{align*}
 ```
@@ -16,7 +16,7 @@ The generalized Cauchy direction (GCD) sub solver is a component in optimization
 where $X=(X_{\mathrm{D}}, X_{\mathcal{M}})$ is a given direction, the exponential map handles projection of the tangent vector when reaching the boundary, $D$ is a box domain ([`Hyperrectangle`](@extref Manifolds.Hyperrectangle)), $\mathcal{M}$ is a Riemannian manifold, $X_g$ is the gradient of a scalar function $f$ at point $p=(p_{\mathrm{D}}, p_{\mathcal{M}})$, $A$ is the maximum allowed step size on $\mathcal{M}$ at point $p=(p_{\mathrm{D}}, p_{\mathcal{M}})$ in direction $X_{\mathcal{M}}$ (infinity is supported) and $\mathcal{H}_p$ is a linear operator that approximates the Hessian of $f$ at $p$.
 
 Additionally, the sub solver indicates whether the selected direction $Y$ reaches the boundary of $D$ at some point, in which case the subsequent step size selection in direction $Y$ needs to be limited to the interval $[0, s_{\max}]$, where the number $1 ≤ s_{\max} ≤ ∞$ is also returned by the sub solver.
-Note that the value $s_{\max}=1$ is obtained when the minimum lies at the boundary of $D$, while larger values indicate that we are further away from the boundary along the selected direction $X$.
+Note that the value $s_{\max}=1$ is obtained when the minimum lies at the boundary of $D$, while larger values indicate that we are further away from the boundary along the selected direction $Y$.
 
 The solver is currently primarily intended for internal use by optimization algorithms that require bound-constrained subproblem solutions.
 
@@ -30,7 +30,7 @@ Manopt.MaxStepsizeInDirectionSubsolver
 Manopt.find_max_stepsize_in_direction
 ```
 
-## Internal types and method
+## Internal types and methods
 
 ### Symbols related to the GCD computation
 

@@ -1,5 +1,5 @@
 ---
-title: "How to implementing your own solver"
+title: "How to implement your own solver"
 author: "Ronny Bergmann"
 ---
 
@@ -53,10 +53,10 @@ We can run the following steps of the algorithm
 
 1. set $k=0$
 2. set our best point $q = p^{(0)}$
-2. Repeat until a stopping criterion is fulfilled
+3. Repeat until a stopping criterion is fulfilled
     1. Choose a random tangent vector $X^{(k)} ∈ T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert = \sigma$
     2. “Walk” along this direction, that is $p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(X^{(k)})$
-    3. If $f(p^{(k+1)}) < f(q)$ set q = p^{(k+1)}$ as our new best visited point
+    3. If $f(p^{(k+1)}) < f(q)$ set $q = p^{(k+1)}$ as our new best visited point
 4. Return $q$ as the resulting best point we visited
 
 ## Preliminaries: elements a solver works on
@@ -73,10 +73,10 @@ In our case the objective is (just) a [`ManifoldCostObjective`](@ref) that store
 or any other information we have about our task.
 
 This is something independent of the solver itself, since it only identifies the problem we
-want to solve independent of how we want to solve it, or in other words, this type contains
+want to solve independent of how we want to solve it, or in other words, this type contains
 all information that is static and independent of the specific solver at hand.
 
-Usually the problems variable is called `mp`.
+Usually the problem's variable is called `mp`.
 
 ### Specifying a solver: an `AbstractManoptSolverState`
 
@@ -92,7 +92,7 @@ In our case we want to store five things
 - the retraction $\operatorname{retr}$ to use (cf. ``[retractions and inverse retractions](@extref ManifoldsBase :doc:`retractions`)``{=commonmark})
 - a criterion, when to stop: a [`StoppingCriterion`](@ref)
 
-We can defined this as
+We can define this as
 
 ```{julia}
 #| output: false
@@ -123,7 +123,7 @@ function RandomWalkState(M::AbstractManifold, p::P=rand(M);
 end
 ```
 
-Parametrizing the state avoid that we have abstract typed fields.
+Parametrizing the state avoids that we have abstract typed fields.
 The keyword arguments for the retraction and stopping criterion are the ones usually used
 in `Manopt.jl` and provide an easy way to construct this state now.
 
@@ -131,7 +131,7 @@ States usually have a shortened name as their variable, we use `rws` for our sta
 
 ## Implementing your solver
 
-There is basically only two methods we need to implement for our solver
+There are basically only four methods we need to implement for our solver
 
 - `initialize_solver!(mp, rws)` which initializes the solver before the first iteration
 - `step_solver!(mp, rws, k)` which implements the `k`th iteration, where `k` is given to you as the third parameter
@@ -176,7 +176,7 @@ get_solver_result(rws::RandomWalkState) = rws.q
 ```
 
 and similarly we implement the step. Here we make use of the fact that the problem
-(and also the objective in fact) have access functions for their elements,
+(and also the objective) has access functions for its elements,
 the one we need is [`get_cost`](@ref).
 
 ```{julia}
@@ -198,7 +198,7 @@ end
 Performance wise we could improve the number of allocations by making `X` also a field of
 our `rws` but let's keep it simple here.
 We could also store the cost of `q` in the state, but we shall see how to easily also enable
-this solver to allow for ``[caching](CountAndCache.md).
+this solver to allow for [caching](CountAndCache.md).
 In practice, however, it is preferable to cache intermediate values like cost of `q` in the state when it can be easily achieved. This way we do not have to deal with overheads of an external cache.
 
 Now we can just run the solver already. We take the same example as for the other tutorials
@@ -227,7 +227,7 @@ get_solver_result(s)
 ```
 
 The function `solve!` works also in place of `s`, but the last line illustrates how to access
-the result in general; we could also just look at `s.p`, but the function `get_iterate` is
+the result in general; we could also just look at `s.q`, but the function `get_solver_result` is
 also used in several other places.
 
 We could for example easily set up a second solver to work from a specified starting point
@@ -239,26 +239,26 @@ solve!(mp, s2)
 get_solver_result(s2)
 ```
 
-## Ease of use I: a high level interface
+## Ease of use I: a high-level interface
 
-`Manopt.jl` offers a few additional features for solvers in their high level interfaces,
+`Manopt.jl` offers a few additional features for solvers in their high-level interfaces,
 for example [`debug = `](../commons/debugs.md), [`record = `](../commons/records.md) keywords for debug output and recording
 within solver states or `count=` and `cache` keywords for the objective.
 
 We can introduce these here as well with just a few lines of code. There are usually two steps.
-We further need three internal function from `Manopt.jl`
+We further need three internal functions from `Manopt.jl`
 
 ```{julia}
 using Manopt: get_solver_return, has_converged, status_summary
 ```
 
-### A high level interface using the objective
+### A high-level interface using the objective
 
-This could be considered as an interim step to the high-level interface: if objective, a [`ManifoldCostObjective`](@ref) is already initialized, the high level interface consists of the steps
+This could be considered as an interim step to the high-level interface: if the objective, a [`ManifoldCostObjective`](@ref), is already initialized, the high-level interface consists of the steps
 
 1. possibly decorate the objective
 2. generate the problem
-3. generate and possibly generate the state
+3. generate and possibly decorate the state
 4. call the solver
 5. determine the return value
 
@@ -285,10 +285,10 @@ function random_walk_algorithm!(
 end
 ```
 
-### The high level interface
+### The high-level interface
 
 Starting from the last section, the usual call a user would prefer is just
-passing a manifold `M` the cost `f` and maybe a start point `p`.
+passing a manifold `M`, the cost `f`, and maybe a start point `p`.
 
 ```{julia}
 function random_walk_algorithm!(M::AbstractManifold, f, p=rand(M); kwargs...)
@@ -303,7 +303,7 @@ For the case that you set `return_state=true` the solver should return a summary
 Internally this is mapped to the (human-readable) display of a `status_summary`
 It should reflect its main parameters, if they are not too verbose and provide information
 about the reason it stopped and whether this indicates convergence.
-Compared to Julias own `show(io::IO, state)` method, the status summary aims to be
+Compared to Julia's own `show(io::IO, state)` method, the status summary aims to be
 in prose text.
 
 Here it would for example look like
@@ -343,7 +343,7 @@ q = random_walk_algorithm!(M, f; return_state=true)
 
 We saw in this tutorial how to implement a simple cost-based algorithm, to illustrate how optimization algorithms are covered in `Manopt.jl`.
 
-One feature we did not cover is that most algorithms allow for in-place and allocation functions, as soon as they work on more than just the cost, for example use gradients, proximal maps or Hessians.
+One feature we did not cover is that most algorithms allow for in-place and allocating functions, as soon as they work on more than just the cost, for example use gradients, proximal maps or Hessians.
 This is usually a keyword argument of the objective and hence also part of the high-level interfaces.
 
 ````{=commonmark}

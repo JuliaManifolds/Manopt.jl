@@ -8,7 +8,7 @@ hero:
   tagline: Efficient algorithms for minimizing a function on a Riemannian manifold
   actions:
     - theme: brand
-      text: Get started
+      text: Get Started
       link: tutorials/getstarted/index.html
     - theme: alt
       text: Available Solvers
@@ -58,10 +58,10 @@ CurrentModule = Manopt
 Manopt.Manopt
 ```
 
-For a function ``f:\mathcal M → ℝ`` defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) ``\mathcal M`` algorithms in this package aim to solve
+For a function ``f:\mathcal M → ℝ`` defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) ``\mathcal M``, algorithms in this package aim to solve
 
 ```math
-\operatorname*{argmin}_{p ∈ \mathcal M} f(p),
+\operatorname*{arg\,min}_{p ∈ \mathcal M} f(p),
 ```
 
 or in other words: find the point ``p`` on the manifold ``\mathcal M``, where ``f`` reaches its minimal function value.
@@ -131,7 +131,7 @@ To refer to a certain version or the source code in general, cite for example
     Doi       = {10.5281/zenodo.4290905},
     Publisher = {Zenodo},
     Title     = {Manopt.jl},
-    Year      = {2024},
+    Year      = {2026},
 }
 ```
 ```@raw html
@@ -173,7 +173,7 @@ If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifold
 
 ### Optimization algorithms (solvers)
 
-For every optimization algorithm, a [solver](solvers/index.md) is implemented based on an [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that sets up the solver, and stores values that are required between or for the next iteration.
+For every optimization algorithm, a [solver](solvers/index.md) is implemented based on an [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that sets up the solver and stores values that are required between iterations or for the next iteration.
 
 ### Manifolds
 

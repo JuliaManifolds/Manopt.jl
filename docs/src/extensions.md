@@ -31,7 +31,7 @@ n_dims = 5
 M = Manifolds.Sphere(n_dims)
 # set initial point
 p0 = vcat(zeros(n_dims), 1.0)
-# use LineSearches.jl HagerZhang method with Manopt.jl quasiNewton solver
+# use LineSearches.jl HagerZhang method with Manopt.jl quasi_Newton solver
 ls_hz = Manopt.LineSearchesStepsize(M, LineSearches.HagerZhang())
 p_opt = quasi_Newton(
     M,

@@ -19,7 +19,7 @@ Manopt.ProximalGradientMethodAcceleration
 ProximalGradientMethodState
 ```
 
-## Helping functions
+## Helpers
 
 ```@docs
 ProximalGradientNonsmoothSubgradient

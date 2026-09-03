@@ -17,14 +17,12 @@ AlternatingGradientDescentState
 
 Additionally, the state shares a [`DirectionUpdateRule`](@ref),
 which chooses the current component, so they can be decorated further;
-The most inner one should always be the following one though.
+the innermost one should always be the following one though.
 
 ```@docs
 AlternatingGradient
 Manopt.AlternatingGradientRule
 ```
-
-which internally uses
 
 ## [Technical details](@id sec-agd-technical-details)
 

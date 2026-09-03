@@ -1,4 +1,4 @@
-# Conjugate residual solver in a Tangent space
+# Conjugate residual solver in a tangent space
 
 ```@meta
 CurrentModule = Manopt

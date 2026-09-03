@@ -24,6 +24,8 @@ FrankWolfeCost
 FrankWolfeGradient
 ```
 
+## Literature
+
 ```@bibliography
 Pages = ["FrankWolfe.md"]
 Canonical=false

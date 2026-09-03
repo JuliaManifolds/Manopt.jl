@@ -1689,7 +1689,7 @@ Generate a [`DebugGroup`](@ref) of [`DebugAction`](@ref)s. The following rules a
 1. Any `Symbol` is passed to [`DebugActionFactory`](@ref DebugActionFactory(::Symbol))
 2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=`,
    see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
-3. Any `String` is passed to [`DebugActionFactory`](@ref DebugActionFactory(d::String))
+3. Any `String` is passed to [`DebugActionFactory`](@ref)
 4. Any `Function` generates a [`DebugCallback`](@ref).
 5. Any [`DebugAction`](@ref) is included as is.
 
@@ -1728,13 +1728,15 @@ DebugGroupFactory(a; kwargs...) = DebugGroupFactory([a]; kwargs...)
 
 create a [`DebugAction`](@ref) where
 
-* a `String`yields the corresponding divider
+* a `String` yields the corresponding divider
 * a [`DebugAction`](@ref) is passed through
 * a [`Symbol`] creates [`DebugEntry`](@ref) of that symbol, with the exceptions
   of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
 * a `Tuple{Symbol,String}` creates a [`DebugEntry`](@ref) of that symbol where the String specifies the format.
 * a `<:Function` creates a [`DebugCallback`](@ref) with the function as callback.
 """
+function DebugActionFactory end
+
 DebugActionFactory(d::String) = DebugDivider(d)
 DebugActionFactory(a::A) where {A <: DebugAction} = a
 # Deprecated

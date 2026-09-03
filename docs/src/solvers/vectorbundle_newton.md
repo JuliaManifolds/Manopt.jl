@@ -22,7 +22,7 @@ Manopt.get_manifold(::VectorBundleManoptProblem)
 VectorBundleNewtonState
 ```
 
-# [Stepsize](@id Sec-VectorBundleNewton-Stepsize)
+## [Step size](@id Sec-VectorBundleNewton-Stepsize)
 
 ```@docs
 AffineCovariantStepsize

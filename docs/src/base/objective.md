@@ -98,7 +98,7 @@ Public = false
 
 ## [A first order nonsmooth objective](@id first-order-nonsmooth-objectives)
 
-First order nonsmooth objectives come in a variety of flavors, mainly splitting based, where the single summands themselves have certain properties. They are collected in the following.
+First order nonsmooth objectives come in a variety of flavors, mainly splitting-based, where the single summands themselves have certain properties. They are collected in the following.
 
 ```@autodocs
 Modules = [Manopt]

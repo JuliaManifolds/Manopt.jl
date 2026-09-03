@@ -25,6 +25,12 @@ cyclic_proximal_point
 cyclic_proximal_point!
 ```
 
+## State
+
+```@docs
+CyclicProximalPointState
+```
+
 ## [Technical details](@id sec-cppa-technical-details)
 
 The [`cyclic_proximal_point`](@ref) solver requires no additional functions to be available for your manifold, besides the ones you use in the proximal maps.
@@ -33,12 +39,6 @@ By default, one of the stopping criteria is [`StopWhenChangeLess`](@ref),
 which requires
 
 * An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favorite inverse retraction. If this default is set, an `inverse_retraction_method=` does not have to be specified. Alternatively, the [`distance`](@extref `ManifoldsBase.distance-Tuple{AbstractManifold, Any, Any}`)`(M, p, q)` can be used.
-
-## State
-
-```@docs
-CyclicProximalPointState
-```
 
 ## Literature
 

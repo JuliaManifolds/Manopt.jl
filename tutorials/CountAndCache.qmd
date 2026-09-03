@@ -45,8 +45,8 @@ This is how both caching and counting are implemented, as decorators of the [`Ab
 and hence for example changing/extending the behavior of a call to [`get_cost`](@ref).
 
 Let's finish off the technical background by loading the necessary packages.
-Besides [Manopt.jl](../index.md) and ``[Manifolds.jl]@extref Manifolds :std:doc:`index`)``{=commoinmark} we also need
-[LRUCaches.jl](https://github.com/JuliaCollections/LRUCache.jl) which are (since Julia 1.9) a weak dependency and provide
+Besides [Manopt.jl](../index.md) and ``[Manifolds.jl](@extref Manifolds :std:doc:`index`)``{=commonmark} we also need
+[LRUCache.jl](https://github.com/JuliaCollections/LRUCache.jl) which is (since Julia 1.9) a weak dependency and provides
 the _least recently used_ strategy for our caches.
 
 ```{julia}
@@ -80,9 +80,9 @@ f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
 ```
 
-to now count how often the cost and the gradient are called, we use the `count=` keyword
+To now count how often the cost and the gradient are called, we use the `count=` keyword
 argument that works in any solver to specify the elements of the objective whose calls we
-want to count calls to. A full list is available in the documentation of the
+want to count. A full list is available in the documentation of the
 [`AbstractManifoldObjective`](@ref).
 To also see the result, we have to set `return_objective=true`.
 This returns `(objective, p)` instead of just the solver result `p`.
@@ -102,9 +102,9 @@ Since now both the cache and the count “extend” the capability of the object
 the order is important: on the high-level interface, the `count` is treated first, which
 means that only actual function calls and not cache look-ups are counted.
 With the proper initialization, you can use any caches here that support the
-`get!(function, cache, key)!` update. All parts of the objective that can currently be cached are listed at [`ManifoldCachedObjective`](@ref). The solver call has a keyword `cache` that takes a tuple`(c, vs, n)` of three arguments, where `c` is a symbol for the type of cache, `vs` is a vector of symbols, which calls to cache and `n` is the size of the cache. If the last element is not provided, a suitable default (currently`n=10`) is used.
+`get!(function, cache, key)` update. All parts of the objective that can currently be cached are listed at [`ManifoldCachedObjective`](@ref). The solver call has a keyword `cache` that takes a tuple `(c, vs, n)` of three arguments, where `c` is a symbol for the type of cache, `vs` is a vector of symbols specifying which calls to cache, and `n` is the size of the cache. If the last element is not provided, a suitable default (currently `n=10`) is used.
 
-Here we want to use `c=:LRU` caches for `vs=[Cost, :Gradient]` with a size of `n=25`.
+Here we want to use `c=:LRU` caches for `vs=[:Cost, :Gradient]` with a size of `n=25`.
 
 ```{julia}
 r = gradient_descent(M, f, grad_f, data[1];
@@ -136,14 +136,14 @@ We present three solutions to this:
 3. A shared (internal) cache approach also using a functor
 
 For that we switch to another example:
-the Rayleigh quotient. We aim to maximize the Rayleigh quotient $\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$, for some $A∈ℝ^{m+1\times m+1}$ and $x∈ℝ^{m+1}$ but since we consider this on the sphere and `Manopt.jl`
+the Rayleigh quotient. We aim to maximize the Rayleigh quotient $\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$, for some $A∈ℝ^{(m+1)\times (m+1)}$ and $x∈ℝ^{m+1}$ but since we consider this on the sphere and `Manopt.jl`
 (as many other optimization toolboxes) minimizes, we consider
 
 ```math
 g(p) = -p^{\mathrm{T}}Ap,\qquad p∈\mathbb S^{m}
 ```
 
-The Euclidean gradient (that is in $ R^{m+1}$) is actually just $\nabla g(p) = -2Ap$, the Riemannian gradient the projection of $\nabla g(p)$ onto the tangent space $T_p\mathbb S^{m}$.
+The Euclidean gradient (that is in $ℝ^{m+1}$) is actually just $\nabla g(p) = -2Ap$, the Riemannian gradient is the projection of $\nabla g(p)$ onto the tangent space $T_p\mathbb S^{m}$.
 
 ```{julia}
 m = 25
@@ -178,14 +178,14 @@ end
 ```
 
 where we only compute the matrix-vector product once.
-The small disadvantage might be, that we always compute _both_, the gradient and the cost. Luckily, the cache we used before, takes this into account and caches both results, such that we indeed end up computing `A*p` only once when asking to a cost and a gradient.
+The small disadvantage might be that we always compute _both_ the gradient and the cost. Luckily, the cache we used before takes this into account and caches both results, such that we indeed end up computing `A*p` only once when asking for the cost and the gradient.
 
 Let's compare both methods
 
 ```{julia}
-p0 = [(1/5 .* ones(5))..., zeros(m-4)...];
+p0 = [(1/sqrt(5) .* ones(5))..., zeros(m-4)...];
 @time s1 = gradient_descent(N, g, grad_g!, p0;
-    stopping_criterion = StopWhenGradientNormLess(1e-5),
+    stopping_criterion = StopWhenGradientNormLess(1e-5),
     evaluation=InplaceEvaluation(),
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 25),
@@ -213,8 +213,8 @@ p2 = get_solver_result(s2)
 [distance(N, p1, p2), g(N, p1), g(N, p2), f_star]
 ```
 
-and we can see that the combined number of evaluations is once 2051, once
-just the number of cost evaluations 1449. Note that the involved additional 847
+and we can see that the combined number of evaluations is once 1847, once
+just the number of cost evaluations 1247. Note that the involved additional 600
 gradient evaluations are merely a multiplication with 2. On the other hand, the additional caching of the gradient in these cases might be less beneficial.
 It is beneficial, when the gradient and the cost are very often required together.
 
@@ -260,7 +260,7 @@ storage_g = StorageG(A, zero(p0), zero(p0))
 g3(M,p) = storage_g(Val(:Cost), M, p)
 grad_g3!(M, X, p) = storage_g(Val(:Gradient), M, X, p)
 @time s3 = gradient_descent(N, g3, grad_g3!, p0;
-    stopping_criterion = StopWhenGradientNormLess(1e-5),
+    stopping_criterion = StopWhenGradientNormLess(1e-5),
     evaluation=InplaceEvaluation(),
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 2),
@@ -275,7 +275,7 @@ p3 = get_solver_result(s3)
 g(N, p3) - f_star
 ```
 
-And while we again have a split off the cost and gradient evaluations, we can observe that the allocations are less than half of the previous approach.
+And while we again have a split of the cost and gradient evaluations, we can observe that the allocations are less than half of the previous approach.
 
 ### A local cache approach
 
@@ -306,7 +306,7 @@ end
 ```
 
 However, the resulting solver run is not always faster, since
-the whole cache instead of storing just `Ap` and `p` is a bit more costly.
+maintaining the whole cache instead of storing just `Ap` and `p` is a bit more costly.
 Then the tradeoff is, whether this pays off.
 
 ```{julia}
@@ -316,7 +316,7 @@ cache_g = CacheG(A, LRU{typeof(p0),typeof(p0)}(; maxsize=25))
 g4(M,p) = cache_g(Val(:Cost), M, p)
 grad_g4!(M, X, p) = cache_g(Val(:Gradient), M, X, p)
 @time s4 = gradient_descent(N, g4, grad_g4!, p0;
-    stopping_criterion = StopWhenGradientNormLess(1e-5),
+    stopping_criterion = StopWhenGradientNormLess(1e-5),
     evaluation=InplaceEvaluation(),
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 25),
@@ -337,7 +337,7 @@ it is about the same effort both time and allocation-wise.
 
 ## Summary
 
-While the second approach of [`ManifoldCostGradientObjective`](@ref) is very easy to implement, both the storage and the (local) cache approach are more efficient.
+While the first approach of [`ManifoldCostGradientObjective`](@ref) is very easy to implement, both the storage and the (local) cache approach are more efficient.
 All three are an improvement over the first implementation without sharing interim results.
 The results with storage or cache have further advantage of being more flexible, since the stored information could also be reused in a third function, for example when also computing the Hessian.
 

@@ -25,7 +25,7 @@ The [`exact_penalty_method`](@ref) solver requires the following functions of a 
 * A [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`.
 
 
-The stopping criteria involves [`StopWhenChangeLess`](@ref) and [`StopWhenGradientNormLess`](@ref)
+The stopping criteria involve [`StopWhenChangeLess`](@ref) and [`StopWhenGradientNormLess`](@ref)
 which require
 
 * An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favorite inverse retraction. If this default is set, an `inverse_retraction_method=` does not have to be specified. Alternatively, the [`distance`](@extref `ManifoldsBase.distance-Tuple{AbstractManifold, Any, Any}`)`(M, p, q)` can be used.

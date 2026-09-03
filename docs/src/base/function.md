@@ -18,9 +18,9 @@ the return value is second and then the arguments follow.
 
 A user might instead also implement a function `grad_f(M, p) -> X`. This is then
 internally “wrapped” by an [`InplaceManifoldFunction`](@ref) and can be specified for any
-[`AbstractManifoldObjective`](@ref) or [high-level interfaces](high-level-interface.md)
+[`AbstractManifoldObjective`](@ref) or [high-level interface](high-level-interface.md)
 with the `evaluation=` keyword that accepts an [`AbstractEvaluationType`](@ref)
-and for the example here one specifies it as [`AllocatingEvaluation`](@ref)`()`.
+and for the example here, one specifies it as [`AllocatingEvaluation`](@ref)`()`.
 
 ```@docs
 AbstractEvaluationType
@@ -88,7 +88,7 @@ Public = true
 ## [Functions that map into vector spaces](@id sec-vector-function)
 
 For functions on manifolds that map into a vector space, this section defines
-an interface to define both the functions as well as their derivative information.
+an interface to define both the functions and their derivative information.
 Since the derivative information is given in tangent spaces, several different representations
 are available.
 

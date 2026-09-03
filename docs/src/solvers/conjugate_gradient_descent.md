@@ -46,7 +46,7 @@ The [`conjugate_gradient_descent`](@ref) solver requires the following functions
 * By default the stopping criterion uses the [`norm`](@extref `LinearAlgebra.norm-Tuple{AbstractManifold, Any, Any}`) as well, to stop when the norm of the gradient is small, but if you implemented `inner`, the norm is provided already.
 * By default the tangent vector storing the gradient is initialized calling [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`.
 
-# Literature
+## Literature
 
 ```@bibliography
 Pages = ["conjugate_gradient_descent.md"]

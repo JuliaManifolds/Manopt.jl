@@ -80,7 +80,7 @@ of the functions in the second array of functions.
 So while you can use both `gradF` and `gradf` in the following call, the second one is (much) faster:
 
 ```{julia}
-p_opt1 = stochastic_gradient_descent(M, gradF, p)
+p_opt1 = stochastic_gradient_descent(M, gradF, p0)
 ```
 ```{julia}
 @benchmark stochastic_gradient_descent($M, $gradF, $p0)
@@ -95,10 +95,9 @@ p_opt2 = stochastic_gradient_descent(M, gradf, p0)
 
 This result is reasonably close. But we can improve it by using a [`DirectionUpdateRule`](@ref), namely:
 
-On the one hand [`MomentumGradient`](@ref), which requires both the manifold and the initial value, to keep track of the iterate and parallel transport the last direction to the current iterate.
+On the one hand [`MomentumGradient`](@ref), which keeps track of the iterate and parallel transports the last direction to the current iterate.
 The necessary `vector_transport_method=` keyword is set to a suitable default on every manifold,
 see ``[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)``{=commonmark}. We get
-"""
 
 ```{julia}
 p_opt3 = stochastic_gradient_descent(
@@ -119,7 +118,7 @@ p_opt4 = stochastic_gradient_descent(
 )
 ```
 ```{julia}
-AG = AverageGradient(; n=10, direction=StochasticGradient(M));
+AG = AverageGradient(; n=10, direction=StochasticGradient());
 @benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$AG, debug=[])
 ```
 

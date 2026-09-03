@@ -4,7 +4,7 @@
 CurrentModule = Manopt
 ```
 
-The Riemannian Chambolle—Pock is a generalization of the Chambolle—Pock algorithm [ChambollePock:2011](@citet*)
+The Riemannian Chambolle—Pock algorithm is a generalization of the Chambolle—Pock algorithm [ChambollePock:2011](@citet*).
 It is also known as primal-dual hybrid gradient (PDHG) or primal-dual proximal splitting (PDPS) algorithm.
 
 In order to minimize over ``p∈\mathcal M`` the cost function consisting of
@@ -12,8 +12,6 @@ In order to minimize over ``p∈\mathcal M`` the cost function consisting of
 ```math
 F(p) + G(Λ(p)),
 ```
-
- over ``p∈\mathcal M``
 
 where ``F:\mathcal M → \overline{ℝ}``, ``G:\mathcal N → \overline{ℝ}``, and
 ``Λ:\mathcal M →\mathcal N``.
@@ -32,13 +30,13 @@ as well as acceleration ``\gamma``.
 
 As an initialization, perform ``\bar p^{(0)} \gets p^{(0)}``.
 
-The algorithm performs the steps ``k=1,…,`` (until a [`StoppingCriterion`](@ref) is fulfilled)
+The algorithm performs the steps ``k=0,1,…`` (until a [`StoppingCriterion`](@ref) is fulfilled)
 
 1. ```math
    ξ^{(k+1)}_n = \operatorname{prox}_{\tau_k G_n^*}\Bigl(ξ_n^{(k)} + \tau_k \bigl(\log_n Λ (\bar p^{(k)})\bigr)^\flat\Bigr)
    ```
 2. ```math
-   p^{(k+1)} = \operatorname{prox}_{\sigma_k F}\biggl(\exp_{p^{(k)}}\Bigl( \operatorname{PT}_{p^{(k)}\gets m}\bigl(-\sigma_k DΛ(m)^*[ξ_n^{(k+1)}]\bigr)^\sharp\Bigr)\biggr)
+   p^{(k+1)} = \operatorname{prox}_{\sigma_k F}\biggl(\exp_{p^{(k)}}\Bigl( \mathcal P_{p^{(k)}\gets m}\bigl(-\sigma_k DΛ(m)^*[ξ_n^{(k+1)}]\bigr)^\sharp\Bigr)\biggr)
    ```
 3. Update
    * ``\theta_k = (1+2\gamma\sigma_k)^{-\frac{1}{2}}``
@@ -83,7 +81,7 @@ dual_residual
 
 [`DebugDualBaseIterate`](@ref), [`DebugDualBaseChange`](@ref), [`DebugPrimalBaseIterate`](@ref),
 [`DebugPrimalBaseChange`](@ref), [`DebugDualChange`](@ref), [`DebugDualIterate`](@ref),
-[`DebugDualResidual`](@ref), [`DebugPrimalChange`](@ref), [`DebugPrimalIterate`](@ref), [`DebugPrimalResidual`](@ref)
+[`DebugDualResidual`](@ref), [`DebugPrimalChange`](@ref), [`DebugPrimalIterate`](@ref), [`DebugPrimalResidual`](@ref),
 [`DebugPrimalDualResidual`](@ref)
 
 
@@ -108,7 +106,7 @@ Manopt.update_prox_parameters!
 
 ## [Technical details](@id sec-cp-technical-details)
 
-The [`ChambollePock`](@ref) solver requires the following functions of a manifold to be available for both the manifold ``\mathcal M``and ``\mathcal N``
+The [`ChambollePock`](@ref) solver requires the following functions of a manifold to be available for both the manifolds ``\mathcal M`` and ``\mathcal N``
 
 * A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favorite retraction. If this default is set, a `retraction_method=` or `retraction_method_dual=` (for ``\mathcal N``) does not have to be specified.
 * An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favorite retraction. If this default is set, a `inverse_retraction_method=` or `inverse_retraction_method_dual=` (for ``\mathcal N``) does not have to be specified.
