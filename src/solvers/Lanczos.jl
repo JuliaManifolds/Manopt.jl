@@ -193,8 +193,8 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
         ls.Hp_residual .= ls.Hp_residual - α * ls.Lanczos_vectors[k]
         # Update tridiagonal matrix
         ls.tridig_matrix[k, k] = α
-        ls.tridig_matrix[k - 1, k] = real(β)
-        ls.tridig_matrix[k, k - 1] = real(β)
+        ls.tridig_matrix[k - 1, k] = β
+        ls.tridig_matrix[k, k - 1] = β
         min_cubic_Newton!(dmp, ls, k)
     end
     copyto!(M, ls.S, p, sum(ls.Lanczos_vectors[k] * ls.coefficients[k] for k in 1:k))
