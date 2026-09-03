@@ -311,6 +311,7 @@ function gradient_sampling(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
+    keywords_accepted(gradient_sampling; kwargs...)
     return gradient_sampling!(M, mgo, q; kwargs...)
 end
 calls_with_kwargs(::typeof(gradient_sampling)) = (gradient_sampling!,)
