@@ -13,10 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * a benchmark suite in `benchmark/`, written with `BenchmarkTools.jl` and run with `AirspeedVelocity.jl`,
   which on a pull request labeled `benchmark` compares it against `master`.
   It starts with two problems, the Riemannian mean on the sphere, benchmarked with `gradient_descent`
-  and `quasi_Newton`, and the Riemannian median on hyperbolic space, benchmarked with `cyclic_proximal_point`.
+  and `quasi_Newton`, and the Riemannian median on hyperbolic space, benchmarked with `cyclic_proximal_point`. (#640)
 * A `BarzilaiBorweinStepsize` as a standalone stepsize instead of only being available within the
-  `NonmonotoneLinesearchStepsize`.
-* introduce a `StepsizeInitialGuess` that allows to use a `Stepsize` as initial guess of a line search.
+  `NonmonotoneLinesearchStepsize`. (#641)
+* introduce a `StepsizeInitialGuess` that allows to use a `Stepsize` as initial guess of a line search. (#641)
 
 ### Changed
 
@@ -138,7 +138,10 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * since we introduced the differential in the first order objectives,
 they were not fully supported in all places. This was now fixed and unified.
 * for a nicer printing on REPL, a few more `status_summary` functions were added (with the help of an AI)
-* Non-AI assisted: Minor bug fix in the solver `adaptive_regularization_with_cubics` to work on complex manifolds
+
+Furthermore the following were fixed
+
+* Minor bug fix in the solver `adaptive_regularization_with_cubics` to work on complex manifolds (#644)
 
 ## [0.6.6] August 25, 2026
 
