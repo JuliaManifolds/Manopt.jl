@@ -359,8 +359,8 @@ function (a::ArmijoLinesearchStepsize)(
         gradient = nothing, kwargs...,
     )
     p = get_iterate(s)
-    grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
-    return a(mp, p, grad, η; initial_guess = a.initial_guess(mp, s, k, a.last_stepsize, η), kwargs...)
+    X = isnothing(gradient) ? get_gradient(mp, p) : gradient
+    return a(mp, p, X, η; initial_guess = a.initial_guess(mp, s, k, a.last_stepsize, η), kwargs...)
 end
 function (a::ArmijoLinesearchStepsize)(
         mp::AbstractManoptProblem, p, X, η; initial_guess::Real = 1.0,
@@ -560,17 +560,17 @@ function (awng::AdaptiveWNGradientStepsize)(
         mp::AbstractManoptProblem, s::AbstractGradientSolverState, i, args...;
         gradient = nothing, kwargs...,
     )
-    grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
     M = get_manifold(mp)
     p = get_iterate(s)
-    isnan(awng.weight) && (awng.weight = norm(M, p, grad)) # init ω_0
+    X = isnothing(gradient) ? get_gradient(mp, p) : gradient
+    isnan(awng.weight) && (awng.weight = norm(M, p, X)) # init ω_0
     if i == 0 # init fields
-        awng.weight = norm(M, p, grad) # init ω_0
+        awng.weight = norm(M, p, X) # init ω_0
         (awng.weight == 0) && (awng.weight = 1.0)
         awng.count = 0
         return 1 / awng.gradient_bound
     end
-    grad_norm = norm(M, p, grad)
+    grad_norm = norm(M, p, X)
     if grad_norm < awng.gradient_reduction * awng.weight # grad norm < αω_{k-1}
         if awng.count + 1 == awng.count_threshold
             awng.gradient_bound = awng.alternate_bound(
@@ -767,8 +767,9 @@ function (bb::BarzilaiBorweinStepsize)(
     p = get_iterate(s)
     X = isnothing(gradient) ? get_gradient(mp, p) : gradient
     if !has_storage(bb.storage, PointStorageKey(:Iterate)) || !has_storage(bb.storage, VectorStorageKey(:Gradient))
-        # first time call: get old grad/iterate and store.
-        p_old = get_iterate(s)
+        # first time call: there is no previous iterate or gradient yet, so use the current
+        # ones, which yields s_k = y_k = 0, and store them for the next call.
+        p_old = p
         X_old = X
     else
         #fetch
@@ -951,8 +952,9 @@ function (cs::ConstantStepsize)(
     )
     s = cs.length
     if cs.type == :absolute
-        grad = isnothing(gradient) ? get_gradient(amp, get_iterate(ams)) : gradient
-        ns = norm(get_manifold(amp), get_iterate(ams), grad)
+        p = get_iterate(ams)
+        X = isnothing(gradient) ? get_gradient(amp, p) : gradient
+        ns = norm(get_manifold(amp), p, X)
         if ns > eps(eltype(s))
             s /= ns
         end
@@ -1004,6 +1006,8 @@ See [`CubicBracketingLinesearch`](@ref) for the mathematical details.
 $(_fields(:p; name = "candidate_point"))
   as temporary storage for candidates
 * `candidate_direction::T`: temporary storage for the transported search direction
+* `temporary_tangent::T`: temporary storage for a gradient, so that evaluating the
+  differential does not have to allocate one
 * `initial_stepsize::R`: the step size to start the search with
 * `last_stepsize::R`
 $(_fields(:retraction_method))
@@ -1023,6 +1027,7 @@ $(_fields(:vector_transport_method))
 ## Keyword arguments
 
 $(_kwargs(:p; name = "candidate_point")) as temporary storage for candidates
+* `temporary_tangent=`$(_link(:zero_vector; p = "candidate_point")): temporary storage for a gradient
 * `initial_stepsize=1.0`: the step size to start the search with
 $(_kwargs(:retraction_method))
 * `stepsize_increase=1.5`:  step size increase factor ``>1``
@@ -1043,6 +1048,7 @@ mutable struct CubicBracketingLinesearchStepsize{
     } <: Linesearch
     candidate_direction::T
     candidate_point::P
+    temporary_tangent::T
     initial_stepsize::R
     last_stepsize::R
     retraction_method::TRM
@@ -1057,6 +1063,7 @@ mutable struct CubicBracketingLinesearchStepsize{
             M::AbstractManifold;
             candidate_point::P = allocate_result(M, rand),
             candidate_direction::T = zero_vector(M, candidate_point),
+            temporary_tangent = zero_vector(M, candidate_point),
             initial_stepsize::Real = 1.0,
             retraction_method::TRM = default_retraction_method(M),
             stepsize_increase::Real = 1.5,
@@ -1073,7 +1080,8 @@ mutable struct CubicBracketingLinesearchStepsize{
             convert.(Ref(R), (initial_stepsize, stepsize_increase, sufficient_curvature, min_bracket_width, max_stepsize))
         p = maybe_wrap_variable(candidate_point)
         X = maybe_wrap_variable(candidate_direction)
-        return new{R, I, TRM, VTM, typeof(p), typeof(X)}(X, p, initial_stepsize, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize)
+        Y = maybe_wrap_variable(temporary_tangent)
+        return new{R, I, TRM, VTM, typeof(p), typeof(X)}(X, p, Y, initial_stepsize, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize)
     end
 end
 function CubicBracketingLinesearchStepsize(M::AbstractManifold, p; kwargs...)
@@ -1234,7 +1242,9 @@ function get_univariate_triple!(mp::AbstractManoptProblem, cbls::CubicBracketing
     cbls.last_stepsize = t
     ManifoldsBase.retract_fused!(M, cbls.candidate_point, p, η, t, cbls.retraction_method)
     vector_transport_to!(M, cbls.candidate_direction, p, η, cbls.candidate_point, cbls.vector_transport_method)
-    f, df = get_cost_and_differential(mp, cbls.candidate_point, cbls.candidate_direction)
+    f, df = get_cost_and_differential(
+        mp, cbls.candidate_point, cbls.candidate_direction; gradient = cbls.temporary_tangent
+    )
     return UnivariateTriple(t, f, df)
 end
 
@@ -1244,9 +1254,11 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     )
     M = get_manifold(mp)
     p = get_iterate(s)
-    X = isnothing(gradient) ? get_gradient(mp, p) : gradient
-
-    init = UnivariateTriple(0.0, get_cost(M, get_objective(mp), p), get_differential(mp, p, η; gradient = X, evaluated = true))
+    # if no gradient was passed, `get_differential` can use an objective's differential directly
+    # and evaluates a gradient in place of the temporary tangent vector only if it has to
+    df0 = isnothing(gradient) ? get_differential(mp, p, η; gradient = cbls.temporary_tangent) :
+        get_differential(mp, p, η; gradient = gradient, evaluated = true)
+    init = UnivariateTriple(0.0, get_cost(M, get_objective(mp), p), df0)
 
     check_curvature(c::UnivariateTriple) = abs(c.df) < cbls.sufficient_curvature * abs(init.df)
 
@@ -1608,9 +1620,9 @@ function (rdog::DistanceOverGradientsStepsize{R, P})(
     ) where {R, P}
     M = get_manifold(mp)
     p = get_iterate(s)
-    grad = isnothing(gradient) ? get_gradient(mp, p) : gradient
+    X = isnothing(gradient) ? get_gradient(mp, p) : gradient
     # Compute gradient norm
-    grad_norm_sq = clamp(norm(M, p, grad)^2, eps(R), typemax(R))
+    grad_norm_sq = clamp(norm(M, p, X)^2, eps(R), typemax(R))
     if i == 0
         # Initialize on first call
         rdog.gradient_sum = grad_norm_sq

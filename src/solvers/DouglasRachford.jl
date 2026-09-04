@@ -93,7 +93,7 @@ mutable struct DouglasRachfordState{
         )
     end
 end
-provided_callbacks(::Type{<:DouglasRachfordState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:FirstReflection, :ProximalMap, :SecondReflection])
+additional_callbacks(::Type{<:DouglasRachfordState}) = [:FirstReflection, :ProximalMap, :SecondReflection]
 get_callbacks(drs::DouglasRachfordState) = drs.callbacks
 function Base.show(io::IO, drs::DouglasRachfordState)
     print(io, "DouglasRachfordState(; ")

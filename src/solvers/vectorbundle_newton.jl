@@ -73,7 +73,7 @@ function VectorBundleNewtonState(
         stopping_criterion = stopping_criterion, stepsize = stepsize, retraction_method = retraction_method
     )
 end
-provided_callbacks(::Type{<:VectorBundleNewtonState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
+additional_callbacks(::Type{<:VectorBundleNewtonState}) = [:BeforeSubsolver, :Stepsize, :Subsolver]
 get_callbacks(vbns::VectorBundleNewtonState) = vbns.callbacks
 
 function Base.show(io::IO, vbns::VectorBundleNewtonState)

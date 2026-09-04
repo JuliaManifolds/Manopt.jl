@@ -158,7 +158,7 @@ mutable struct LevenbergMarquardtState{
         )
     end
 end
-provided_callbacks(::Type{<:LevenbergMarquardtState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize, :DampingIncreaseStepTooLong, :DampingIncreaseModelInadequate, :DampingDecreaseImprovementTooGood, :DampingIncreaseImprovementTooPoor, :CandidateAccept, :CandidateReject])
+additional_callbacks(::Type{<:LevenbergMarquardtState}) = [:Stepsize, :DampingIncreaseStepTooLong, :DampingIncreaseModelInadequate, :DampingDecreaseImprovementTooGood, :DampingIncreaseImprovementTooPoor, :CandidateAccept, :CandidateReject]
 get_callbacks(lms::LevenbergMarquardtState) = lms.callbacks
 #
 function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)

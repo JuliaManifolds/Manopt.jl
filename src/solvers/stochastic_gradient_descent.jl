@@ -83,7 +83,7 @@ function StochasticGradientDescentState(
     )
 end
 get_callbacks(sgds::StochasticGradientDescentState) = sgds.callbacks
-provided_callbacks(::Type{<:StochasticGradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Direction])
+additional_callbacks(::Type{<:StochasticGradientDescentState}) = [:Direction]
 function Base.show(io::IO, sgds::StochasticGradientDescentState)
     print(io, "StochasticGradientDescentState(; ")
     print(io, "callbacks = ", sgds.callbacks, ", ")

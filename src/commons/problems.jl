@@ -174,9 +174,6 @@ function get_hess_inequality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X,
 end
 
 get_manifold(cmp::ConstrainedManoptProblem) = cmp.manifold
-function get_objective(cmp::ConstrainedManoptProblem, recursive = false)
-    return recursive ? get_objective(cmp.objective, true) : cmp.objective
-end
 
 
 function show(io::IO, cmp::ConstrainedManoptProblem)
@@ -241,9 +238,6 @@ end
 
 get_manifold(amp::DefaultManoptProblem) = amp.manifold
 
-function get_objective(amp::DefaultManoptProblem, recursive = false)
-    return recursive ? get_objective(amp.objective, true) : amp.objective
-end
 
 #
 #
@@ -327,9 +321,6 @@ get_manifold(tmp::TwoManifoldProblem, i) = _get_manifold(tmp, Val(i))
 _get_manifold(tmp::TwoManifoldProblem, ::Val{1}) = tmp.first_manifold
 _get_manifold(tmp::TwoManifoldProblem, ::Val{2}) = tmp.second_manifold
 
-function get_objective(tmo::TwoManifoldProblem, recursive = false)
-    return recursive ? get_objective(tmo.objective, true) : tmo.objective
-end
 
 function get_dual_prox(tmp::TwoManifoldProblem, n, τ, X)
     return get_dual_prox(get_manifold(tmp, 2), get_objective(tmp), n, τ, X)

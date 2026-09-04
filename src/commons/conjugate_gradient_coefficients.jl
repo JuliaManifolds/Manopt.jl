@@ -167,7 +167,7 @@ function ConjugateGradientDescentState(
         retraction_method = retraction_method, vector_transport_method = vector_transport_method,
     )
 end
-provided_callbacks(::Type{<:ConjugateGradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
+additional_callbacks(::Type{<:ConjugateGradientDescentState}) = [:Stepsize]
 get_callbacks(state::ConjugateGradientDescentState) = state.callbacks
 
 function get_message(cgs::ConjugateGradientDescentState)

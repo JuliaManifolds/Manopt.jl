@@ -345,7 +345,7 @@ end
 function get_message(ips::InteriorPointNewtonState)
     return get_message(ips.stepsize)
 end
-provided_callbacks(::Type{<:InteriorPointNewtonState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
+additional_callbacks(::Type{<:InteriorPointNewtonState}) = [:BeforeSubsolver, :Stepsize, :Subsolver]
 get_callbacks(ips::InteriorPointNewtonState) = ips.callbacks
 # pretty print state info
 function status_summary(ips::InteriorPointNewtonState; context::Symbol = :default)

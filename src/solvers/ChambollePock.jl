@@ -235,7 +235,6 @@ function Manopt.ChambollePockState(
         vector_transport_method_dual,
     )
 end
-provided_callbacks(::Type{<:ChambollePockState}) = _MANOPT_DEFAULT_CALLBACKS
 get_callbacks(state::ChambollePockState) = state.callbacks
 function status_summary(cps::ChambollePockState; context::Symbol = :default)
     (context === :short) && return repr(cps)

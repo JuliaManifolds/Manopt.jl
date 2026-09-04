@@ -432,7 +432,7 @@ function MeshAdaptiveDirectSearchState(
 end
 get_iterate(mads::MeshAdaptiveDirectSearchState) = mads.p
 get_callbacks(mads::MeshAdaptiveDirectSearchState) = mads.callbacks
-provided_callbacks(::Type{<:MeshAdaptiveDirectSearchState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Search, :Poll])
+additional_callbacks(::Type{<:MeshAdaptiveDirectSearchState}) = [:Search, :Poll]
 function Base.show(io::IO, mads::MeshAdaptiveDirectSearchState)
     print(io, "MeshAdaptiveDirectSearchState(; callbacks = ", mads.callbacks, ", max_stepsize = ", mads.max_stepsize)
     print(io, ", mesh_size = ", mads.mesh_size, ", p = ", mads.p, ", poll = ", mads.poll, ", poll_size = ", mads.poll_size)

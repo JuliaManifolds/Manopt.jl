@@ -163,7 +163,7 @@ function set_iterate!(pbms::ProximalBundleMethodState, M, p)
     return pbms
 end
 get_subgradient(pbms::ProximalBundleMethodState) = pbms.d
-provided_callbacks(::Type{<:ProximalBundleMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver])
+additional_callbacks(::Type{<:ProximalBundleMethodState}) = [:BeforeSubsolver, :Subsolver]
 get_callbacks(pbms::ProximalBundleMethodState) = pbms.callbacks
 
 function show(io::IO, pbms::ProximalBundleMethodState)

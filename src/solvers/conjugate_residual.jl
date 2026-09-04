@@ -299,7 +299,7 @@ function conjugate_residual!(
 end
 calls_with_kwargs(::typeof(conjugate_residual!)) = (ConjugateResidualState, decorate_objective!, decorate_state!)
 
-provided_callbacks(::Type{<:ConjugateResidualState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
+additional_callbacks(::Type{<:ConjugateResidualState}) = [:Stepsize]
 
 function initialize_solver!(
         amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState

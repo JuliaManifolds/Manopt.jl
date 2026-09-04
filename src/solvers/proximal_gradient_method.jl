@@ -224,7 +224,7 @@ function set_iterate!(pgms::ProximalGradientMethodState, M, p)
     copyto!(M, pgms.p, p)
     return pgms
 end
-provided_callbacks(::Type{<:ProximalGradientMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
+additional_callbacks(::Type{<:ProximalGradientMethodState}) = [:BeforeSubsolver, :Stepsize, :Subsolver]
 get_callbacks(pgms::ProximalGradientMethodState) = pgms.callbacks
 
 function Base.show(io::IO, pgms::ProximalGradientMethodState)
@@ -272,7 +272,8 @@ A functor for backtracking line search in proximal gradient methods.
 * `sufficient_decrease::T` - sufficient decrease parameter (default: 0.5)
 * `contraction_factor::T` - step size reduction factor (default: 0.5)
 * `strategy::Symbol` - `:nonconvex` or `:convex` (default: `:nonconvex`)
-* `candidate_point::P` - a working point used during backtracking
+* `candidate_point::P` - a working point used during backtracking, it stores the result of the proximal step
+* `gradient_point::P` - a working point used during backtracking, it stores the result of the gradient step
 * `last_stepsize::T` - the last computed stepsize
 
 # Constructor
@@ -294,6 +295,7 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
     contraction_factor::T
     strategy::Symbol
     candidate_point::P
+    gradient_point::P
     last_stepsize::T
     stop_when_stepsize_less::T
     warm_start_factor::T
@@ -328,7 +330,7 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
 
         p = rand(M)
         return new{typeof(p), T}(
-            initial_stepsize, sufficient_decrease, contraction_factor, strategy, p,
+            initial_stepsize, sufficient_decrease, contraction_factor, strategy, p, copy(M, p),
             initial_stepsize, stop_when_stepsize_less, warm_start_factor, k_max, δ
         )
     end
@@ -377,30 +379,24 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
         s.initial_stepsize
     end
 
-    # Get the objective and temporary state
     objective = get_objective(mp, true)
-
-    # Temporary state for backtracking that doesn't affect the main state
-    pgm_temp = ProximalGradientMethodState(
-        M;
-        p = copy(M, p), X = zero_vector(M, p),
-        sub_problem = st.sub_problem, sub_state = st.sub_state,
-        retraction_method = st.retraction_method, inverse_retraction_method = st.inverse_retraction_method,
-    )
+    # the two working points of this step size take the role of `a` and `p` of the solver state,
+    # so that backtracking does not touch the state (the sub problem and sub state are shared)
+    copyto!(M, s.candidate_point, p)
 
     while λ > s.stop_when_stepsize_less
         # Perform gradient step with current λ
         direction = -λ * X
-        retract!(M, pgm_temp.a, p, direction, st.retraction_method)
+        retract!(M, s.gradient_point, p, direction, st.retraction_method)
         distance_gradient = norm(M, p, direction)
 
-
         # Perform proximal step with current λ
-        _pgm_proximal_step(mp, pgm_temp, λ)
-        candidate_point = copy(M, pgm_temp.p)
+        _pgm_proximal_step!(
+            mp, s.candidate_point, s.gradient_point, st.sub_problem, st.sub_state, λ
+        )
 
         # Compute log_p(candidate_point) and its squared norm for the conditions
-        log_p_q = inverse_retract(M, p, candidate_point, st.inverse_retraction_method)
+        log_p_q = inverse_retract(M, p, s.candidate_point, st.inverse_retraction_method)
         distance_candidate = norm(M, p, log_p_q)
         squared_distance = distance_candidate^2
         π_k = s.k_max ≤ eps(eltype(s.k_max)) ? Inf : π / √s.k_max
@@ -409,14 +405,14 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
         if max(distance_gradient, distance_candidate) ≤ r_δ
             if s.strategy === :nonconvex
                 # Nonconvex descent condition
-                if get_cost(mp, p) - get_cost(mp, candidate_point) >=
+                if get_cost(mp, p) - get_cost(mp, s.candidate_point) >=
                         (s.sufficient_decrease / λ) * squared_distance
                     s.last_stepsize = λ
                     return λ
                 end
             elseif s.strategy === :convex
                 g_p = get_cost_smooth(M, objective, p)
-                g_q = get_cost_smooth(M, objective, candidate_point)
+                g_q = get_cost_smooth(M, objective, s.candidate_point)
 
 
                 ζ_δ = s.k_max ≤ zero(eltype(s.k_max)) ? one(eltype(s.k_max)) : π / (2 + s.δ) * cot(π / (2 + s.δ))
@@ -815,46 +811,48 @@ function step_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMethodSt
 
     # Proximal step with chosen stepsize
     callback(:BeforeSubsolver, amp, pgms, k)
-    _pgm_proximal_step(amp, pgms, pgms.last_stepsize)
+    _pgm_proximal_step!(amp, pgms.p, pgms.a, pgms.sub_problem, pgms.sub_state, pgms.last_stepsize)
     callback(:Subsolver, amp, pgms, k)
 
     return pgms
 end
 
+#
+# Evaluate the proximal map of the (possibly) nonsmooth part in place of `q`, starting from the
+# point `a` of the preceding gradient step. Which of the three variants applies is decided by
+# the `sub_problem`/`sub_state` pair, so both the solver step and the backtracking step size can
+# call this with their own memory for `q` and `a`.
+#
 # (I) Problem is missing -> use prox from objective
-function _pgm_proximal_step(
-        amp::AbstractManoptProblem, pgms::ProximalGradientMethodState{P, T, Missing}, λ::Real
-    ) where {P, T}
-    get_proximal_map!(amp, pgms.p, λ, pgms.a)
-    return pgms
+function _pgm_proximal_step!(amp::AbstractManoptProblem, q, a, ::Missing, ::Any, λ::Real)
+    get_proximal_map!(amp, q, λ, a)
+    return q
 end
 
 # (II) Problem is a subsolver -> solve
-function _pgm_proximal_step(
-        amp::AbstractManoptProblem,
-        pgms::ProximalGradientMethodState{P, T, <:AbstractManoptProblem, <:AbstractManoptSolverState},
-        λ::Real,
-    ) where {P, T}
+function _pgm_proximal_step!(
+        amp::AbstractManoptProblem, q, a,
+        sub_problem::AbstractManoptProblem, sub_state::AbstractManoptSolverState, λ::Real,
+    )
     M = get_manifold(amp)
     # set lambda
-    set_parameter!(pgms.sub_problem, Val(:Objective), Val(:Cost), Val(:λ), λ)
-    set_parameter!(pgms.sub_problem, Val(:Objective), Val(:SubGradient), Val(:λ), λ)
+    set_parameter!(sub_problem, Val(:Objective), Val(:Cost), Val(:λ), λ)
+    set_parameter!(sub_problem, Val(:Objective), Val(:SubGradient), Val(:λ), λ)
     # set the proximity point of the subproblem
-    set_parameter!(pgms.sub_problem, Val(:Objective), Val(:Cost), Val(:proximity_point), pgms.a)
-    set_parameter!(pgms.sub_problem, Val(:Objective), Val(:SubGradient), Val(:proximity_point), pgms.a)
+    set_parameter!(sub_problem, Val(:Objective), Val(:Cost), Val(:proximity_point), a)
+    set_parameter!(sub_problem, Val(:Objective), Val(:SubGradient), Val(:proximity_point), a)
     # set start value to a
-    set_iterate!(pgms.sub_state, M, copy(M, pgms.a))
-    solve!(pgms.sub_problem, pgms.sub_state)
-    copyto!(M, pgms.p, get_solver_result(pgms.sub_state))
-    return pgms
+    set_iterate!(sub_state, M, copy(M, a))
+    solve!(sub_problem, sub_state)
+    copyto!(M, q, get_solver_result(sub_state))
+    return q
 end
 
 # (III) Problem is a closed form proximal map -> call it directly
-function _pgm_proximal_step(
-        amp::AbstractManoptProblem,
-        pgms::ProximalGradientMethodState{P, T, F, <:ClosedFormSubSolverState},
-        λ::Real,
-    ) where {P, T, F <: Function}
-    pgms.sub_problem(get_manifold(amp), pgms.p, λ, pgms.a)
-    return pgms
+function _pgm_proximal_step!(
+        amp::AbstractManoptProblem, q, a,
+        sub_problem::F, ::ClosedFormSubSolverState, λ::Real,
+    ) where {F <: Function}
+    sub_problem(get_manifold(amp), q, λ, a)
+    return q
 end

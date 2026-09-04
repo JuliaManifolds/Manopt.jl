@@ -53,15 +53,31 @@ end
 _get_callbacks(state::AbstractManoptSolverState, ::Val{true}) = get_callbacks(state.state)
 
 """
+    additional_callbacks(state_type::Type{S}) where {S<:AbstractManoptSolverState}
+
+Return the callback hooks the solver with state type `S` provides in addition to the default ones.
+
+Every solver provides `:Any`, `:BeforeInit`, `:BeforeStep`, `:BeforeStop`, `:Init`, `:Step`,
+and `:Stop`; this function names the further hooks a specific solver calls.
+
+See also [`provided_callbacks`](@ref), which combines these with the default ones.
+"""
+additional_callbacks(::Type{<:AbstractManoptSolverState}) = Symbol[]
+
+"""
     provided_callbacks(state_type::Type{S}) where {S<:AbstractManoptSolverState}
 
 For a solver of type `S` return the callbacks the solver provides, that is, all those
 that are called during the solver run.
 This function returns a vector of `Symbol`s representing the hooks. These can be keys in
 a dictionary of callbacks.
+
+The result consists of the default hooks every solver provides together with the solver
+specific ones from [`additional_callbacks`](@ref), which is the function to extend when
+implementing a solver.
 """
 function provided_callbacks(::Type{S}) where {S <: AbstractManoptSolverState}
-    return _MANOPT_DEFAULT_CALLBACKS
+    return union(_MANOPT_DEFAULT_CALLBACKS, additional_callbacks(S))
 end
 
 """

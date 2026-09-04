@@ -17,11 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * A `BarzilaiBorweinStepsize` as a standalone stepsize instead of only being available within the
   `NonmonotoneLinesearchStepsize`. (#641)
 * introduce a `StepsizeInitialGuess` that allows to use a `Stepsize` as initial guess of a line search. (#641)
+* the new internal function `additional_callbacks(::Type{<:AbstractManoptSolverState})` was added to declare
+  the callback hooks instead of manually overwriting `provided_callbacks`.
 
 ### Changed
 
 * since `has_converged` exists, the status reports on REPL now use this to indicate whether an algorithm has converged.
 * the changelog check in CI is skipped on pull requests labeled `no changelog necessary`; dependabot adds this label to its pull requests automatically.
+* the field `X_old` of the `MomentumGradientRule` is now called `η_old`, since it stores the accumulated momentum direction and not the last gradient.
+* the backtracking of the `proximal_gradient_method` no longer constructs a `ProximalGradientMethodState`
+  in every call, but uses two working points of its step size; the internal `_pgm_proximal_step!` now
+  takes the sub problem and sub state instead of a whole state.
 
 ### Fixed
 

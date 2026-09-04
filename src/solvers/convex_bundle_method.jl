@@ -324,7 +324,7 @@ function default_stepsize(
     )
     return DomainBackTrackingStepsize(M; contraction_factor = contraction_factor)
 end
-provided_callbacks(::Type{<:ConvexBundleMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
+additional_callbacks(::Type{<:ConvexBundleMethodState}) = [:BeforeSubsolver, :Stepsize, :Subsolver]
 get_callbacks(bms::ConvexBundleMethodState) = bms.callbacks
 function show(io::IO, cbms::ConvexBundleMethodState)
     print(io, "ConvexBundleMethodState(")

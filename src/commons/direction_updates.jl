@@ -27,14 +27,16 @@ $(_fields(:p; name = "p_old"))
 * `direction`: internal [`DirectionUpdateRule`](@ref) to determine directions
   to add the momentum to.
 $(_fields(:vector_transport_method))
-$(_fields(:X; name = "X_old"))
+* `η_old::T`: the momentum direction accumulated so far, that is the direction the rule
+  returned in the last step. Note that this is not the last gradient.
 
 # Constructors
 
     MomentumGradientRule(M::AbstractManifold; kwargs...)
     MomentumGradientRule(M::AbstractManifold, p; kwargs...)
 
-Initialize a momentum gradient rule, where `p` and `X` are memory for interim values.
+Initialize a momentum gradient rule, where `p` and `X` are memory for interim values,
+the latter for the accumulated momentum direction `η_old`.
 
 ## Keyword arguments
 
@@ -53,11 +55,11 @@ mutable struct MomentumGradientRule{
     p_old::P
     direction::D
     vector_transport_method::VTM
-    X_old::T
+    η_old::T
     function MomentumGradientRule(;
-            momentum::R, p_old::P, direction::D, vector_transport_method::VTM, X_old::T
+            momentum::R, p_old::P, direction::D, vector_transport_method::VTM, η_old::T
         ) where {P, T, D <: DirectionUpdateRule, R <: Real, VTM <: AbstractVectorTransportMethod}
-        return new{P, T, D, R, VTM}(momentum, p_old, direction, vector_transport_method, X_old)
+        return new{P, T, D, R, VTM}(momentum, p_old, direction, vector_transport_method, η_old)
     end
 end
 function MomentumGradientRule(M::AbstractManifold, p; kwargs...)
@@ -73,7 +75,7 @@ function MomentumGradientRule(
     ) where {P, Q, F <: Real, VTM <: AbstractVectorTransportMethod}
     dir = _produce_type(direction, M)
     return MomentumGradientRule(;
-        momentum = momentum, p_old = p, direction = dir, vector_transport_method = vector_transport_method, X_old = X,
+        momentum = momentum, p_old = p, direction = dir, vector_transport_method = vector_transport_method, η_old = X,
     )
 end
 function (mg::MomentumGradientRule)(
@@ -83,17 +85,17 @@ function (mg::MomentumGradientRule)(
     p = get_iterate(s)
     step, dir = mg.direction(mp, s, k) #get inner direction and step size
     # store the direction without the step size folded in, so that the solver applies
-    # the step exactly once: the displacement is `-step * X_old`
-    mg.X_old =
+    # the step exactly once: the displacement is `-step * η_old`
+    mg.η_old =
         mg.momentum *
-        vector_transport_to(M, mg.p_old, mg.X_old, p, mg.vector_transport_method) + dir
+        vector_transport_to(M, mg.p_old, mg.η_old, p, mg.vector_transport_method) + dir
     copyto!(M, mg.p_old, p)
     # return a copy: the solver binds this to its gradient buffer and overwrites it next step
-    return step, copy(M, p, mg.X_old)
+    return step, copy(M, p, mg.η_old)
 end
 function Base.show(io::IO, mgr::MomentumGradientRule)
     print(io, "MomentumGradientRule(; momentum = ", mgr.momentum)
-    print(io, ", p_old = ", mgr.p_old, ", X_old = ", mgr.X_old)
+    print(io, ", p_old = ", mgr.p_old, ", η_old = ", mgr.η_old)
     print(io, ", direction = ", mgr.direction)
     print(io, ", vector_transport_method = ", mgr.vector_transport_method)
     return print(io, ")")
@@ -115,9 +117,10 @@ end
 
 Append a momentum to a gradient processor.
 
-The last direction and last iterate are stored and the new is composed as ``η_i = m*η_{i-1}' - s d_i``,
-where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector transported
-last direction multiplied by momentum ``m``.
+The last direction and last iterate are stored and the new one is composed as
+``η_i = m η_{i-1}' + d_i``, where ``d_i`` is the current (inner) direction and ``η_{i-1}'`` is
+the vector transported last direction multiplied by the momentum ``m``.
+The step size is not folded into ``η_i``, the solver applies it to the returned direction.
 This is the Riemannian version of gradient descent with momentum, first used in [RoyMhammediHarandi:2018; Section 3.1](@cite);
 see [LeggioScuppa:2026; Section 6](@cite) for a convergence analysis.
 

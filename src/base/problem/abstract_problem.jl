@@ -63,8 +63,13 @@ function get_objective end
 
 Return the objective [`AbstractManifoldObjective`](@ref) stored within an [`AbstractManoptProblem`](@ref).
 If `recursive` is set to `true`, it additionally unwraps all decorators of the objective.
+
+This default assumes that the objective is stored in the field `objective`.
+A problem that stores it elsewhere has to implement this method itself.
 """
-get_objective(::AbstractManoptProblem)
+function get_objective(mp::AbstractManoptProblem, recursive = false)
+    return recursive ? get_objective(mp.objective, true) : mp.objective
+end
 
 @doc """
     get_cost(amp::AbstractManoptProblem, p)

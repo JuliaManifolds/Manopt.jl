@@ -128,7 +128,7 @@ function set_iterate!(epms::ExactPenaltyMethodState, M, p)
     epms.p = p
     return epms
 end
-provided_callbacks(::Type{<:ExactPenaltyMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver])
+additional_callbacks(::Type{<:ExactPenaltyMethodState}) = [:BeforeSubsolver, :Subsolver]
 get_callbacks(epms::ExactPenaltyMethodState) = epms.callbacks
 function Base.show(io::IO, epms::ExactPenaltyMethodState)
     print(io, "ExactPenaltyMethodState("); print(io, epms.sub_problem); print(io, ", "); print(io, epms.sub_state)

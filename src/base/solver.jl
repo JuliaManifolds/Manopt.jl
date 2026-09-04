@@ -46,6 +46,15 @@ get_solver_return(s::ReturnSolverState) = s.state
 
 function decorate_state! end
 
+# Merge the (deprecated) `callback=` keyword into whatever was passed as `debug=`.
+_add_debug_callback(::Missing, cb::DebugAction) = cb
+_add_debug_callback(debug::Array, cb::DebugAction) = [debug..., cb]
+_add_debug_callback(debug::Union{Function, DebugAction}, cb::DebugAction) = [debug, cb]
+function _add_debug_callback(debug::Dict, ::DebugAction)
+    @warn "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually"
+    return debug
+end
+
 @doc """
     decorate_state!(s::AbstractManoptSolverState; kwargs...)
 
@@ -105,18 +114,7 @@ function decorate_state!(
             `callbacks = [:Step => [...]]` to add your callback to the (end of)
             an iteration step
         """
-        if ismissing(debug)
-            debug = DebugCallback(callback; simple = true)
-        else
-            # From complex to simple, first array, since the other ones create an array
-            (debug isa Array) && (debug = [debug..., DebugCallback(callback; simple = true)])
-            if ((debug isa Function) || (debug isa DebugAction))
-                debug = [debug, DebugCallback(callback; simple = true)]
-            end
-            (debug isa Dict) && @warn(
-                "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually",
-            )
-        end
+        debug = _add_debug_callback(debug, DebugCallback(callback; simple = true))
     end
     if !ismissing(debug) && !(debug isa AbstractArray && length(debug) == 0)
         deco_s = DebugSolverState(s, debug)

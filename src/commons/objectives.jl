@@ -1028,7 +1028,7 @@ function get_grad_equality_constraint(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j, range)
     return riemannian_gradient(M, p, Z)
 end
 function get_grad_equality_constraint(
@@ -1036,7 +1036,7 @@ function get_grad_equality_constraint(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j, range)
     return [riemannian_gradient(M, p, X) for X in Z]
 end
 function get_grad_equality_constraint(
@@ -1044,7 +1044,7 @@ function get_grad_equality_constraint(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_grad_equality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, j)
+    get_grad_equality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, j, range)
     return riemannian_gradient(M, p, emo.X)
 end
 function get_grad_equality_constraint(
@@ -1052,7 +1052,7 @@ function get_grad_equality_constraint(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    Xs = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Xs = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j, range)
     Ys = [riemannian_gradient(M, p, X) for X in Xs]
     return Ys
 end
@@ -1061,7 +1061,7 @@ function get_grad_equality_constraint!(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j, range)
     riemannian_gradient!(M, Y, p, Z)
     return Y
 end
@@ -1070,7 +1070,7 @@ function get_grad_equality_constraint!(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j, range)
     Y .= [riemannian_gradient(M, p, X) for X in Z]
     return Y
 end
@@ -1079,7 +1079,7 @@ function get_grad_equality_constraint!(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_grad_equality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, j)
+    get_grad_equality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, j, range)
     riemannian_gradient!(M, Y, p, emo.X)
     return Y
 end
@@ -1088,7 +1088,7 @@ function get_grad_equality_constraint!(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Z = get_grad_equality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j, range)
     Y .= [riemannian_gradient(M, p, X) for X in Z]
     return Y
 end
@@ -1108,7 +1108,7 @@ function get_grad_inequality_constraint(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, i)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, i, range)
     return riemannian_gradient(M, p, Z)
 end
 function get_grad_inequality_constraint(
@@ -1116,7 +1116,7 @@ function get_grad_inequality_constraint(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j, range)
     return [riemannian_gradient(M, p, X) for X in Z]
 end
 function get_grad_inequality_constraint(
@@ -1124,7 +1124,7 @@ function get_grad_inequality_constraint(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_grad_inequality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, i)
+    get_grad_inequality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, i, range)
     return riemannian_gradient(M, p, emo.X)
 end
 function get_grad_inequality_constraint(
@@ -1132,7 +1132,7 @@ function get_grad_inequality_constraint(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j, range)
     return [riemannian_gradient(M, p, X) for X in Z]
 end
 function get_grad_inequality_constraint!(
@@ -1140,7 +1140,7 @@ function get_grad_inequality_constraint!(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, i)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, i, range)
     riemannian_gradient!(M, Y, p, Z)
     return Y
 end
@@ -1149,7 +1149,7 @@ function get_grad_inequality_constraint!(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j, range)
     Y .= [riemannian_gradient(M, p, X) for X in Z]
     return Y
 end
@@ -1158,7 +1158,7 @@ function get_grad_inequality_constraint!(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    get_grad_inequality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, i)
+    get_grad_inequality_constraint!(get_embedding(M, typeof(p)), emo.X, emo.objective, q, i, range)
     riemannian_gradient!(M, Y, p, emo.X)
     return Y
 end
@@ -1167,7 +1167,7 @@ function get_grad_inequality_constraint!(
         range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     ) where {P, T}
     q = local_embed!(M, emo, p)
-    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j)
+    Z = get_grad_inequality_constraint(get_embedding(M, typeof(p)), emo.objective, q, j, range)
     Y .= [riemannian_gradient(M, p, X) for X in Z]
     return Y
 end

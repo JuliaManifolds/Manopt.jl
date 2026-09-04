@@ -149,6 +149,17 @@ using ManifoldDiff: grad_distance
             debug = [], # do not warn about increasing step here
         )
         @test isapprox(M, north, n3)
+        # with `momentum = 0` the rule reduces to plain gradient descent
+        n3a = gradient_descent(
+            M, f, grad_f, pts[1]; stepsize = ConstantLength(), debug = [],
+        )
+        n3b = gradient_descent(
+            M, f, grad_f, pts[1];
+            direction = MomentumGradient(; momentum = 0.0),
+            stepsize = ConstantLength(),
+            debug = [],
+        )
+        @test isapprox(M, n3a, n3b)
         n4 = gradient_descent(
             M, f, grad_f, pts[1];
             direction = AverageGradient(M; n = 5),

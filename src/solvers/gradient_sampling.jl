@@ -206,7 +206,7 @@ end
 get_iterate(gss::GradientSamplingState) = gss.p
 get_solver_result(gss::GradientSamplingState) = gss.p
 get_gradient(gss::GradientSamplingState) = gss.X
-provided_callbacks(::Type{<:GradientSamplingState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
+additional_callbacks(::Type{<:GradientSamplingState}) = [:BeforeSubsolver, :Stepsize, :Subsolver]
 get_callbacks(gss::GradientSamplingState) = gss.callbacks
 
 function Base.show(io::IO, gss::GradientSamplingState)

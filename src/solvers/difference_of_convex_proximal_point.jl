@@ -203,7 +203,7 @@ mutable struct DifferenceOfConvexProximalState{
         )
     end
 end
-provided_callbacks(::Type{<:DifferenceOfConvexProximalState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver, :Stepsize])
+additional_callbacks(::Type{<:DifferenceOfConvexProximalState}) = [:BeforeSubsolver, :Subsolver, :Stepsize]
 get_callbacks(dcps::DifferenceOfConvexProximalState) = dcps.callbacks
 # resolve an ambiguity
 DifferenceOfConvexProximalState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Difference of Convex Proximal Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
