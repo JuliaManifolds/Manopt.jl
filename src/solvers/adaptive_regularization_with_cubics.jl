@@ -539,7 +539,7 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     cost = get_cost(M, mho, arcs.p)
     ρ_num = cost - get_cost(M, mho, arcs.q)
     ρ_vec = arcs.X + 0.5 * get_hessian(M, mho, arcs.p, arcs.s)
-    ρ_den = -inner(M, arcs.p, arcs.s, ρ_vec)
+    ρ_den = -real(inner(M, arcs.p, arcs.s, ρ_vec))
     ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
     arcs.ρ_denominator = ρ_den + ρ_reg # <= 0 -> the default debug kicks in
     arcs.ρ = (ρ_num + ρ_reg) / (ρ_den + ρ_reg)

@@ -42,6 +42,7 @@ The following packages are using `Manopt.jl`:
 The following papers are using `Manopt.jl`:
 
 * [GlaubitzIskeLampertOeffner:2026](@citet*)
+* [Locally Purified Maximally Mixed States At Scale: Entanglement Pruning and Symmetries](https://doi.org/10.1063/5.0317339): Explores integration of Manopt.jl with ITensors.jl and Zygote.jl to optimize the tensor network representation of quantum states
 
 If you are missing a package or paper that uses `Manopt.jl`, please [open an issue](https://github.com/JuliaManifolds/Manopt.jl/issues/new).
 It would be great to collect anything and anyone using `Manopt.jl` in this list.

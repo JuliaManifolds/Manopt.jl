@@ -138,6 +138,7 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * since we introduced the differential in the first order objectives,
 they were not fully supported in all places. This was now fixed and unified.
 * for a nicer printing on REPL, a few more `status_summary` functions were added (with the help of an AI)
+* Non-AI assisted: Minor bug fix in the solver `adaptive_regularization_with_cubics` to work on complex manifolds
 
 ## [0.6.6] August 25, 2026
 
