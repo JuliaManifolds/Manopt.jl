@@ -279,8 +279,9 @@ $(_kwargs(:retraction_method))
 * `additional_increase_condition=(M,p) -> true`: impose an additional condition for an increased step size to be accepted
 * `additional_decrease_condition=(M,p) -> true`: impose an additional condition for a decreased step size to be accepted
 * `Dlf0`: precomputed directional derivative at point `p` in direction `η`
-  if the `gradient` is specified, this is computed as the real part of `inner(M, p, gradient, η)`, otherwise it is `nothing`,
-  in which case the search only requires a plain decrease of `f`
+  if the `gradient` is specified, this is computed as the real part of `inner(M, p, gradient, η)`,
+  otherwise it is zero, in which case the search only requires a plain decrease of `f`
+  and no non-descent direction is reported
 * `lf0 = f(M, p)`: the function value at the initial point `p`
 * `gradient = nothing`: precomputed gradient at point `p`
 * `report_messages_in::NamedTuple = (; )`: a named tuple of [`StepsizeMessage`](@ref)s to report messages in.
@@ -309,7 +310,8 @@ end
 function linesearch_backtrack!(
         M::AbstractManifold, q, f::TF, p, s, decrease, contract, η::T;
         lf0::Real = f(M, p), gradient = nothing,
-        Dlf0 = isnothing(gradient) ? nothing : real(inner(M, p, gradient, η)),
+        # without derivative information the search falls back to a plain decrease, that is slope zero
+        Dlf0::Real = isnothing(gradient) ? zero(lf0) : real(inner(M, p, gradient, η)),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         additional_increase_condition = (M, p) -> true,
         additional_decrease_condition = (M, p) -> true,
@@ -318,17 +320,15 @@ function linesearch_backtrack!(
         stop_decreasing_at_step = 1000,
         report_messages_in::NamedTuple = (;),
     ) where {TF, T}
-    # without derivative information, fall back to a plain decrease condition (slope 0)
-    Dlf0_ = isnothing(Dlf0) ? zero(lf0) : Dlf0
     ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
     f_q = f(M, q)
-    if !isnothing(Dlf0) && Dlf0 >= 0
+    if Dlf0 > 0
         set_message!(report_messages_in, :non_descent_direction, at = 0, value = Dlf0)
     end
 
     i = 0
     # Ensure that both the original condition and the additional one are fulfilled afterwards
-    while f_q < lf0 + decrease * s * Dlf0_ || !additional_increase_condition(M, q)
+    while f_q < lf0 + decrease * s * Dlf0 || !additional_increase_condition(M, q)
         (stop_increasing_at_step == 0) && break
         i = i + 1
         s = min(s / contract, stop_when_stepsize_exceeds)
@@ -345,7 +345,7 @@ function linesearch_backtrack!(
     end
     i = 0
     # Ensure that both the original condition and the additional one are fulfilled afterwards
-    while (f_q > lf0 + decrease * s * Dlf0_) ||
+    while (f_q > lf0 + decrease * s * Dlf0) ||
             (!additional_decrease_condition(M, q))
         i = i + 1
         s = contract * s
