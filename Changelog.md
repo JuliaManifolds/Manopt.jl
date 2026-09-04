@@ -6,7 +6,7 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.7] September 6, 2026
+## [0.6.7] September 4, 2026
 
 ### Added
 
@@ -279,7 +279,7 @@ We also unified a few of the internal solver state constructors.
 * `GeneralizedCauchyDirectionSubsolver` for handling direction selection in the presence of box (`Hyperrectangle`) constraints in quasi-Newton methods. This allows for L-BFGS-B-style box constraint handling. (#554)
 * New stopping criteria: `StopWhenRelativeAPosterioriCostChangeLessOrEqual` and `StopWhenProjectedNegativeGradientNormLess`. (#554).
 * `HagerZhangLinesearch` stepsize, a state-of-the-art line search for smooth objectives with cubic interpolation and adaptive Wolfe condition checking. (#554)
-* Stopping criteria can now be initialized using `initialize_stepsize!`, similar to solvers. (#554)
+* Step sizes can now be initialized using `initialize_stepsize!`, similar to solvers. (#554)
 * The `ConjugateResidualState` now has a `warm_start=` option when used multiple times, for example in every iteration as a subsolver, to reuse the last state from the previous run.
 
 ### Changed
@@ -322,24 +322,6 @@ We also unified a few of the internal solver state constructors.
 * the `:convex` backtracking strategy for `proximal_gradient_method` now entails a slightly different condition whenever the upper bound on the sectional curvature of the manifold, input via the `k_max` kwarg, is positive. This comes with a "tolerance" type parameter, `δ`, which must be positive.
 
 ## [0.5.37] May 5, 2026
-
-### Changed
-
-* The default restart rule for `conjugate_gradient_descent` is now `RestartOnNonDescent` instead of `NeverRestart`, which makes the algorithm more robust to non-convexity and numerical issues. The old default can still be used by explicitly passing `restart_condition=NeverRestart()`. (#604)
-* `HagerZhangCoefficientRule` now has a safeguard against the denominator being too close to zero (the `denom_threshold` field). By default it is set to 1.0e-10. You can set it to a lower positive value (or even zero) to weaken the safeguard, but it is recommended to keep it to avoid numerical issues. (#604)
-* introduce for all `Rule`s also a variant without being encapsulated in a memory, where the old values have to be passed as keywords. This is now used by the `ConjugateGradientBealeRestartRule` when evaluating its inner rule. (#604)
-
-## [0.5.36] April 24, 2026
-
-### Added
-
-* a function `stopped_at(state)` to access the number of iterations it took a solver to stop. (#599)
-
-### Fixed
-
-* a small bug where `get_count(sc::StopWhenAny, Val(:Iteration))` wrongly reported it stopped before the first iteration when it actually did not yet stop. (#599)
-
-## [0.5.35] April 16, 2026
 
 ### Changed
 
