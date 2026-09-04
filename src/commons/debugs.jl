@@ -1238,7 +1238,7 @@ The measured time is rounded using the given `time_accuracy` and printed after [
 
 * `io=stdout`:             default stream to print the debug to.
 * `format="\$prefix %s"`:   format to print the output, where `%s` is the canonicalized time.
-* `mode=:cumulative`:      whether to display the total time or reset on every call using `:Iterative`.
+* `mode=:Cumulative`:      whether to display the total time or reset on every call using `:Iterative`.
 * `prefix="time spent:"`:  prefix of the debug output (ignored if you set `format`)
 * `start=false`:           indicate whether to start the timer on creation or not.
    Otherwise it might only be started on first call.
@@ -1255,7 +1255,7 @@ mutable struct DebugTime <: DebugAction
             io::IO = stdout,
             prefix::String = "time spent:",
             format::String = "$(prefix) %s",
-            mode::Symbol = :cumulative,
+            mode::Symbol = :Cumulative,
             time_accuracy::Period = Millisecond(1),
         )
         return new(io, format, Nanosecond(start ? time_ns() : 0), time_accuracy, mode)

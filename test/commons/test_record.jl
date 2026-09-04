@@ -297,8 +297,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test length(RecordGroup([RecordCost(), RecordIteration() => :It]).group) == 2
     end
     @testset "RecordTime" begin
-        h1 = RecordTime(; mode = :cumulative)
-        @test repr(h1) == "RecordTime(; mode=:cumulative)"
+        h1 = RecordTime(; mode = :Cumulative)
+        @test repr(h1) == "RecordTime(; mode=:Cumulative)"
         @test Manopt.status_summary(h1, context = :short) == ":Time"
         @test startswith(Manopt.status_summary(h1), "A RecordAction for recording times")
         t = h1.start
@@ -311,7 +311,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         sleep(0.002)
         h2(dmp, gds, 1)
         @test h2.start != t
-        h3 = RecordTime(; mode = :total)
+        h3 = RecordTime(; mode = :Total)
         h3(dmp, gds, 1)
         h3(dmp, gds, 10)
         h3(dmp, gds, 19)
@@ -329,14 +329,14 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         Manopt.set_parameter!(r, :value, 1)
         @test Manopt.get_parameter(r, :value) == 1
     end
-    @testset "RecordTime(:total) resets" begin
+    @testset "RecordTime(:Total) resets" begin
         Mt = ManifoldsBase.DefaultManifold(2)
         pt = [1.0, 2.0]
         ft(M, q) = sum(q .^ 2)
         grad_ft(M, q) = 2 .* q
         mpt = DefaultManoptProblem(Mt, ManifoldGradientObjective(ft, grad_ft))
         st = GradientDescentState(Mt; p = copy(pt), stopping_criterion = StopAfterIteration(5))
-        for mode in (:total, :cumulative)
+        for mode in (:Total, :Cumulative)
             rt = RecordTime(; mode = mode)
             push!(rt.recorded_values, Nanosecond(42))
             rt(mpt, st, -1)

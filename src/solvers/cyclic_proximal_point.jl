@@ -82,8 +82,7 @@ end
 function status_summary(cpps::CyclicProximalPointState; context::Symbol = :default)
     (context === :short) && return repr(cpps)
     i = get_count(cpps, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(cpps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the cyclic proximal point algorithm$(conv_inl)"
+    (context === :inline) && return "A solver state for the cyclic proximal point algorithm$(_iteration_suffix(cpps))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(cpps.stop) ? "Yes" : "No"
     as = _callbacks_summary(cpps)

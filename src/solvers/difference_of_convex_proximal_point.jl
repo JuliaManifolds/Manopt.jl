@@ -248,13 +248,11 @@ end
 function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol = :default)
     (context === :short) && return repr(dcps)
     i = get_count(dcps, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(dcps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the difference of convex proximal point algorithm$(conv_inl)"
+    (context === :inline) && return "A solver state for the difference of convex proximal point algorithm$(_iteration_suffix(dcps))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(dcps.stop) ? "Yes" : "No"
     as = _callbacks_summary(dcps)
-    sub = repr(dcps.sub_state)
-    sub = replace(sub, "\n#" => "\n$(_MANOPT_INDENT)| ##", "\n" => "\n$(_MANOPT_INDENT)| ")
+    sub = _in_str(repr(dcps.sub_state); indent = 1, indent_end = "| ")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm
     $Iter
@@ -262,7 +260,7 @@ function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol =
     * retraction method:         $(dcps.retraction_method)
     * inverse retraction method: $(dcps.inverse_retraction_method)
     * sub solver state:
-    $(_MANOPT_INDENT)| $(sub)
+    $(sub)
 
     ## Stepsize
     $(_in_str(status_summary(dcps.stepsize; context = context); indent = 0, headers = 1))

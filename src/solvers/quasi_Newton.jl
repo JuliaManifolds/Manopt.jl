@@ -153,8 +153,7 @@ end
 function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
     (context === :short) && return repr(qns)
     i = get_count(qns, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(qns.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the quasi Newton solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the quasi Newton solver$(_iteration_suffix(qns))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(qns.stop) ? "Yes" : "No"
     as = _callbacks_summary(qns)

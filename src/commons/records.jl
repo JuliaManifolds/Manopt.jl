@@ -439,21 +439,21 @@ end
 record the time elapsed during the current iteration.
 
 The three possible modes are
-* `:cumulative` record times without resetting the timer
+* `:Cumulative` record times without resetting the timer
 * `:Iterative` record times with resetting the timer
-* `:total` record a time only at the end of an algorithm (see [`stop_solver!`](@ref))
+* `:Total` record a time only at the end of an algorithm (see [`stop_solver!`](@ref))
 
-The default is `:cumulative`, and any non-listed symbol default to using this mode.
+The default is `:Cumulative`, and any non-listed symbol default to using this mode.
 
 # Constructor
 
-    RecordTime(; mode::Symbol=:cumulative)
+    RecordTime(; mode::Symbol=:Cumulative)
 """
 mutable struct RecordTime <: RecordAction
     recorded_values::Array{Nanosecond, 1}
     start::Nanosecond
     mode::Symbol
-    function RecordTime(; mode::Symbol = :cumulative)
+    function RecordTime(; mode::Symbol = :Cumulative)
         return new(Array{Nanosecond, 1}(), Nanosecond(time_ns()), mode)
     end
 end
@@ -462,7 +462,7 @@ function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState,
     (k == 0) && (r.start = Nanosecond(time_ns()))
     t = Nanosecond(time_ns()) - r.start
     (r.mode == :Iterative) && (r.start = Nanosecond(time_ns()))
-    if r.mode == :total
+    if r.mode == :Total
         # only record at end (if `stop_solver` returns true)
         return record_or_reset!(r, t, (k > 0 && !stop_solver!(p, s, k)) ? 0 : k)
     else
@@ -635,7 +635,7 @@ function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Stepsize) && return RecordStepsize()
     (symbol == :Stop) && return RecordStoppingReason()
     (symbol == :Subsolver) && return RecordSubsolver()
-    (symbol == :Time) && return RecordTime(; mode = :cumulative)
+    (symbol == :Time) && return RecordTime(; mode = :Cumulative)
     return RecordEntry(getfield(s, symbol), symbol)
 end
 @doc """

@@ -164,8 +164,7 @@ get_callbacks(lms::LevenbergMarquardtState) = lms.callbacks
 function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)
     (context === :short) && return repr(lms)
     i = get_count(lms, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(lms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the Levenberg–Marquardt algorithm$(conv_inl)"
+    (context === :inline) && return "A solver state for the Levenberg–Marquardt algorithm$(_iteration_suffix(lms))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(lms.stop) ? "Yes" : "No"
     as = _callbacks_summary(lms)
@@ -284,7 +283,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(
 
   This keyword is ignored if you set the `sub_problem` and/or `sub_state` keyword directly
 * `sub_problem = `[`DefaultManoptProblem`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the sub problem to be solved. This should usually be phrased on the tangent space at the current iterate
-* `sub_state = `[`ConjugateResidualState`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the solver for the surrogate, see also [`conjugate_residual`](@ref)
+* `sub_state`: the solver for the surrogate, by default a [`ConjugateResidualState`](@ref), see [`conjugate_residual`](@ref),
+  or a [`CoordinatesNormalSystemState`](@ref) on a manifold with box constraints, where the sub state is also wrapped to handle the bounds.
 * `use_unified_basis = false`:           specify to use a single basis for all Jacobian evaluations at a certain iterate, see `sub_objective`
   this requires that all Jacobians involved are of type [`CoefficientVectorialType`](@ref), since only then a jacobian can be represented as a matrix,
   and then here unified in the sense that all use the same basis.

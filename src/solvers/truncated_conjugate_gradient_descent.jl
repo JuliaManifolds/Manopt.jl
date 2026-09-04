@@ -125,8 +125,7 @@ end
 function status_summary(tcgs::TruncatedConjugateGradientState; context::Symbol = :default)
     (context === :short) && return repr(tcgs)
     i = get_count(tcgs, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(tcgs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the truncated conjugate gradient descent$(conv_inl)"
+    (context === :inline) && return "A solver state for the truncated conjugate gradient descent$(_iteration_suffix(tcgs))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(tcgs.stop) ? "Yes" : "No"
     as = _callbacks_summary(tcgs)

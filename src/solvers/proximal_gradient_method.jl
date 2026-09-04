@@ -241,8 +241,7 @@ function status_summary(pgms::ProximalGradientMethodState; context::Symbol = :de
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(pgms.stop) ? "Yes" : "No"
     (context === :short) && return repr(pgms)
-    conv_inl = (i > 0) ? (has_converged(pgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the proximal gradient method$(conv_inl)"
+    (context === :inline) && return "A solver state for the proximal gradient method$(_iteration_suffix(pgms))"
     as = _callbacks_summary(pgms)
     s = """
     # Solver state for `Manopt.jl`s Proximal Gradient Method

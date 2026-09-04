@@ -56,8 +56,7 @@ end
 function status_summary(pps::ProximalPointState; context::Symbol = :default)
     (context === :short) && return repr(pps)
     i = get_count(pps, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(pps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the proximal point algorithm$(conv_inl)"
+    (context === :inline) && return "A solver state for the proximal point algorithm$(_iteration_suffix(pps))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(pps.stop) ? "Yes" : "No"
     as = _callbacks_summary(pps)

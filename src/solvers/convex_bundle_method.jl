@@ -347,8 +347,7 @@ end
 function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :default)
     (context === :short) && return repr(cbms)
     i = get_count(cbms, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(cbms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the Convex Bundle Method$(conv_inl)"
+    (context === :inline) && return "A solver state for the Convex Bundle Method$(_iteration_suffix(cbms))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(cbms.stop) ? "Yes" : "No"
     as = _callbacks_summary(cbms)

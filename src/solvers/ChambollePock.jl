@@ -239,8 +239,7 @@ get_callbacks(state::ChambollePockState) = state.callbacks
 function status_summary(cps::ChambollePockState; context::Symbol = :default)
     (context === :short) && return repr(cps)
     i = get_count(cps, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(cps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for Chambolle-Pock algorithm$(conv_inl)"
+    (context === :inline) && return "A solver state for Chambolle-Pock algorithm$(_iteration_suffix(cps))"
     i = get_count(cps, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(cps.stop) ? "Yes" : "No"

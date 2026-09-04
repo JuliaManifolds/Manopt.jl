@@ -192,8 +192,7 @@ end
 function status_summary(fws::FrankWolfeState; context::Symbol = :default)
     (context === :short) && return repr(fws)
     i = get_count(fws, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(fws.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the Frank Wolfe algorithm$(conv_inl)"
+    (context === :inline) && return "A solver state for the Frank Wolfe algorithm$(_iteration_suffix(fws))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(fws.stop) ? "Yes" : "No"
     sub = _in_str(status_summary(fws.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")

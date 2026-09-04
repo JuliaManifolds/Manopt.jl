@@ -263,13 +263,11 @@ end
 function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :default)
     (context === :short) && (return repr(arcs))
     i = get_count(arcs, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(arcs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the adaptive regularization with cubics solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the adaptive regularization with cubics solver$(_iteration_suffix(arcs))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(arcs.stop) ? "Yes" : "No"
     as = _callbacks_summary(arcs)
-    sub = status_summary(arcs.sub_state; context = context)
-    sub = replace(sub, "\n#" => "\n$(_MANOPT_INDENT)| ##", "\n" => "\n$(_MANOPT_INDENT)| ")
+    sub = _in_str(status_summary(arcs.sub_state; context = context); indent = 1, indent_end = "| ")
     s = """
     # Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)
     $Iter
@@ -280,7 +278,7 @@ function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :de
     * ρ (ρ_regularization) : $(arcs.ρ) ($(arcs.ρ_regularization))
     * retraction method    : $(arcs.retraction_method)
     * sub solver state     :
-    $(_MANOPT_INDENT)| $(sub)
+    $(sub)
 
     ## Stopping criterion
     $(_in_str(status_summary(arcs.stop; context = context); indent = 0, headers = 1))

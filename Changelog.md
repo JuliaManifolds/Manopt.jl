@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * since `has_converged` exists, the status reports on REPL now use this to indicate whether an algorithm has converged.
 * the changelog check in CI is skipped on pull requests labeled `no changelog necessary`; dependabot adds this label to its pull requests automatically.
 * the field `X_old` of the `MomentumGradientRule` is now called `η_old`, since it stores the accumulated momentum direction and not the last gradient.
+* the modes of `RecordTime` and `DebugTime` are now capitalized consistently, that is `:Cumulative`, `:Iterative` and `:Total`.
 * the backtracking of the `proximal_gradient_method` no longer constructs a `ProximalGradientMethodState`
   in every call, but uses two working points of its step size; the internal `_pgm_proximal_step!` now
   takes the sub problem and sub state instead of a whole state.
@@ -88,7 +89,7 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * the direct (Hessian-matrix) quasi-Newton direction update now applies the `preconditioner`, as documented.
 * the empty-memory branch of the box quasi-Newton `hessian_value` now divides by `initial_scale` like its siblings, so the two accessors agree.
 * `RecordIterate(T::DataType)` now builds `RecordIterate{T}` as documented, instead of a broken `RecordIterate{DataType}`.
-* `RecordTime(; mode=:total)` now resets its recorded values when the solver state is re-initialized.
+* `RecordTime(; mode=:Total)` now resets its recorded values when the solver state is re-initialized.
 * `CubicBracketingLinesearch` now uses the `gradient=` keyword it is given and no longer reads the state field `X` directly, so it works for any state implementing the documented interface.
 * `StopWhenAll` now accepts a concretely typed vector of criteria, like `StopWhenAny` already did, instead of silently wrapping it as a single criterion.
 * `get_count(::StopWhenAny, :Iterations)` no longer discards a sub-criterion that stopped at iteration `0`.

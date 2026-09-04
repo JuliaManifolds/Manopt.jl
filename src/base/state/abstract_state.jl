@@ -260,6 +260,19 @@ Return whether the solver has converged, based on the internal [`StoppingCriteri
 """
 has_converged(ams::AbstractManoptSolverState) = has_converged(get_stopping_criterion(ams))
 
+"""
+    _iteration_suffix(ams::AbstractManoptSolverState)
+
+Return `" (converged after 12 iterations)"` or `" (stopped after 12 iterations)"` for the
+number of iterations performed, or `""` if the solver has not been run yet.
+This is used within the `:inline` `context` of [`status_summary`](@ref).
+"""
+function _iteration_suffix(ams::AbstractManoptSolverState)
+    i = get_count(ams, :Iterations)
+    (i > 0) || return ""
+    return (has_converged(ams) ? " (converged" : " (stopped") * " after $i iterations)"
+end
+
 @doc """
     set_gradient!(state::AbstractGradientSolverState, M, p, X)
 

@@ -220,19 +220,17 @@ end
 function status_summary(dcs::DifferenceOfConvexState; context::Symbol = :default)
     (context === :short) && return repr(dcs)
     i = get_count(dcs, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(dcs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the difference of convex algorithm$(conv_inl)"
+    (context === :inline) && return "A solver state for the difference of convex algorithm$(_iteration_suffix(dcs))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(dcs.stop) ? "Yes" : "No"
     as = _callbacks_summary(dcs)
-    sub = status_summary(dcs.sub_state; context = context)
-    sub = replace(sub, "\n#" => "\n$(_MANOPT_INDENT)| ##", "\n" => "\n$(_MANOPT_INDENT)| ")
+    sub = _in_str(status_summary(dcs.sub_state; context = context); indent = 1, indent_end = "| ")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Algorithm
     $Iter
     ## Parameters$(as)
     * sub solver state:
-    $(_MANOPT_INDENT)| $(sub)
+    $(sub)
 
     ## Stopping criterion
     $(_in_str(status_summary(dcs.stop; context = context); indent = 0, headers = 1))

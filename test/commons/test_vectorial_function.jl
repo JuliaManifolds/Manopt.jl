@@ -67,6 +67,15 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis
     @test Manopt.get_jacobian_basis(vgf_jib) == DefaultBasis()
     @test Manopt.get_jacobian_basis(vgf_vi) == DefaultOrthonormalBasis()
+    @testset "differential with a number-typed point" begin
+        # a differential returns one number per component, so it must not be wrapped as a
+        # tangent vector – for a number-typed point that wrapping used to throw
+        C = Manifolds.Circle()
+        fn(M, q) = [q - 1.0, -q - 1.0]
+        Dfn(M, q, Y) = [Y, -Y]
+        vdf_n = VectorDifferentialFunction(fn, Dfn, 2; p = 0.5)
+        @test Manopt.get_jacobian(C, vdf_n, 0.5) == [1.0; -1.0;;]
+    end
     @testset "Jacobian basis changes" begin
         pb = [1.0, 2.0, 3.0]
         # two bases of the *same* type that nevertheless differ, so the change is not a no-op

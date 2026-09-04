@@ -114,8 +114,7 @@ end
 function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
     (context === :short) && return repr(drs)
     i = get_count(drs, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(drs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the Douglas Rachford solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the Douglas Rachford solver$(_iteration_suffix(drs))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(drs.stop) ? "Yes" : "No"
     as = _callbacks_summary(drs)

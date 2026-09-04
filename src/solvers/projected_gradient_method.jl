@@ -92,8 +92,7 @@ end
 function status_summary(pgms::ProjectedGradientMethodState; context::Symbol = :default)
     (context === :short) && return repr(pgms)
     i = get_count(pgms, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(pgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the projected gradient solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the projected gradient solver$(_iteration_suffix(pgms))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(pgms.stop) ? "Yes" : "No"
     as = _callbacks_summary(pgms)

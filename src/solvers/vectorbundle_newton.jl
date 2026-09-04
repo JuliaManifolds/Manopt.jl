@@ -219,8 +219,7 @@ default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = Constan
 function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :default)
     (context === :short) && return repr(vbns)
     i = get_count(vbns, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(vbns.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the vector bundle Newton solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the vector bundle Newton solver$(_iteration_suffix(vbns))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(vbns.stop) ? "Yes" : "No"
     as = _callbacks_summary(vbns)

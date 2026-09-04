@@ -226,8 +226,7 @@ end
 function status_summary(gss::GradientSamplingState; context::Symbol = :default)
     (context === :short) && return repr(gss)
     i = get_count(gss, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(gss.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the gradient sampling solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the gradient sampling solver$(_iteration_suffix(gss))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(gss.stop) ? "Yes" : "No"
     as = _callbacks_summary(gss)

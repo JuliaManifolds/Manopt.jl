@@ -237,8 +237,7 @@ end
 function status_summary(trs::TrustRegionsState; context::Symbol = :default)
     (context === :short) && return repr(trs)
     i = get_count(trs, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(trs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the trust region solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the trust region solver$(_iteration_suffix(trs))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(trs.stop) ? "Yes" : "No"
     (context === :inline) && (return "A trust regions method state – $(Iter) $(has_converged(trs) ? "(converged)" : "")")
@@ -554,16 +553,18 @@ end
 function _trs_solve_sub!(M, trs::TrustRegionsState, ::ClosedFormSubSolverState)
     return trs.sub_problem(M, trs.Y, trs.p, trs.trust_region_radius)
 end
-function _trs_get_HY!(M, trs::TrustRegionsState, mho, ::Any)
+# The tCG sub solver accumulates `HY` along its iterations, which equals `H[Y]` only if the
+# Hessian is linear in `Y` – an approximate Hessian need not be. Any other sub solver does not
+# provide an `HY` to reuse.
+_reuses_HY(mho, ::Any) = false
+function _reuses_HY(mho, ::TruncatedConjugateGradientState)
+    return !(get_hessian_function(mho, true) isa AbstractApproximateHessianFunction)
+end
+function _trs_get_HY!(M, trs::TrustRegionsState, mho, sub)
+    _reuses_HY(mho, sub) && return copyto!(M, trs.HY, trs.p, sub.HY)
     # for Y = 0 the model's Hessian term vanishes, no need to evaluate
     (norm(M, trs.p, trs.Y) == 0) && return zero_vector!(M, trs.HY, trs.p)
     return get_hessian!(M, trs.HY, mho, trs.p, trs.Y)
-end
-function _trs_get_HY!(M, trs::TrustRegionsState, mho, sub::TruncatedConjugateGradientState)
-    # an approximate Hessian is not linear in `X`, so the accumulated `HY` may differ from `H[Y]`
-    # so in that case we also do not use the subsolvers result but evaluate anew.
-    (get_hessian_function(mho, true) isa AbstractApproximateHessianFunction) && return _trs_get_HY!(M, trs, mho, nothing)
-    return copyto!(M, trs.HY, trs.p, sub.HY)
 end
 
 function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)

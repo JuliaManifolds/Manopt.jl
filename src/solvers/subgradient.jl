@@ -73,8 +73,7 @@ end
 function status_summary(sgms::SubGradientMethodState; context::Symbol = :default)
     (context === :short) && return repr(sgms)
     i = get_count(sgms, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(sgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the subgradient method$(conv_inl)"
+    (context === :inline) && return "A solver state for the subgradient method$(_iteration_suffix(sgms))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(sgms.stop) ? "Yes" : "No"
     as = _callbacks_summary(sgms)

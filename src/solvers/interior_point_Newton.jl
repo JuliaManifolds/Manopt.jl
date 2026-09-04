@@ -353,8 +353,7 @@ function status_summary(ips::InteriorPointNewtonState; context::Symbol = :defaul
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(ips.stop) ? "Yes" : "No"
     (context === :short) && return repr(ips)
-    conv_inl = (i > 0) ? (has_converged(ips.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the interior point Newton method$(conv_inl)"
+    (context === :inline) && return "A solver state for the interior point Newton method$(_iteration_suffix(ips))"
     as = _callbacks_summary(ips)
     s = """
     # Solver state for `Manopt.jl`s Interior Point Newton Method
@@ -772,7 +771,10 @@ function _ipn_solve_sub!(amp::AbstractManoptProblem, ips::InteriorPointNewtonSta
     callback(:BeforeSubsolver, amp, ips, k)
     X2 = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
     callback(:Subsolver, amp, ips, k)
-    return submanifold_components(N, X2) # for p and λ
+    # write the result into the state; `X` and `Z` must not alias the sub solver's memory
+    copyto!(N[1], ips.X, q[N, 1], X2[N, 1])
+    ips.Z .= X2[N, 2]
+    return ips
 end
 #=
     Variant II: the sub task is a function providing a closed form solution
@@ -789,12 +791,15 @@ function _ipn_solve_sub!(amp::AbstractManoptProblem, ips::InteriorPointNewtonSta
     callback(:BeforeSubsolver, amp, ips, k)
     ips.sub_problem(N, X2, ips.ρ * ips.σ, ips.μ, ips.λ, ips.s, q)
     callback(:Subsolver, amp, ips, k)
-    return submanifold_components(N, X2) # for p and λ
+    # write the result into the state, as the `!` in the name promises
+    copyto!(N[1], ips.X, q[N, 1], X2[N, 1])
+    ips.Z .= X2[N, 2]
+    return ips
 end
 function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState, k)
     M = get_manifold(amp)
     cmo = get_objective(amp)
-    ips.X, ips.Z = _ipn_solve_sub!(amp, ips, ips.sub_state, k)
+    _ipn_solve_sub!(amp, ips, ips.sub_state, k)
 
     # Compute the remaining part of the solution
     m, n = length(ips.μ), length(ips.λ)

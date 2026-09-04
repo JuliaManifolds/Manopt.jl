@@ -204,8 +204,7 @@ get_callbacks(state::CMAESState) = state.callbacks
 function status_summary(s::CMAESState; context::Symbol = :default)
     (context === :short) && return repr(s)
     i = get_count(s, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(s.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the covariance matrix adaptation evolutionary strategy solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the covariance matrix adaptation evolutionary strategy solver$(_iteration_suffix(s))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(s.stop) ? "Yes" : "No"
     s = """

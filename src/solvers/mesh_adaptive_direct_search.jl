@@ -442,8 +442,7 @@ end
 function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :default)
     (context === :short) && return repr(mads)
     i = get_count(mads, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(mads.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the mesh adaptive direct search solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the mesh adaptive direct search solver$(_iteration_suffix(mads))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(mads.stop) ? "Yes" : "No"
     as = _callbacks_summary(mads)

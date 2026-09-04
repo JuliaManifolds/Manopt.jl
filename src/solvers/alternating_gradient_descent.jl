@@ -145,8 +145,7 @@ function status_summary(agds::AlternatingGradientDescentState; context::Symbol =
     i = get_count(agds, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(agds.stop) ? "Yes" : "No"
-    conv_inl = (i > 0) ? (has_converged(agds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the alternating gradient descent solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the alternating gradient descent solver$(_iteration_suffix(agds))"
     as = _callbacks_summary(agds)
     s = """
     # Solver state for `Manopt.jl`s Alternating Gradient Descent Solver

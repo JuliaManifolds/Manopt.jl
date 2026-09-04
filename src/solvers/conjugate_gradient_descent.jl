@@ -10,8 +10,7 @@ end
 function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :default)
     (context === :short) && (return repr(cgds))
     i = get_count(cgds, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(cgds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the conjugate gradient descent solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the conjugate gradient descent solver$(_iteration_suffix(cgds))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(cgds.stop) ? "Yes" : "No"
     as = _callbacks_summary(cgds)
