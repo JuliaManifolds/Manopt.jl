@@ -50,7 +50,7 @@ The [`gradient_descent`](@ref) solver requires the following functions of a mani
 ## Literature
 
 ```@bibliography
-Pages = []
+Pages = ["gradient_descent.md"]
 Luenberger:1972
 Canonical=false
 ```
