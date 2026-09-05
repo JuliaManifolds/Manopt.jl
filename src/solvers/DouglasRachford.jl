@@ -36,7 +36,7 @@ $(_kwargs(:inverse_retraction_method))
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter
   during the calls
 $(_kwargs(:p; add_properties = [:as_Initial]))
-* `R!= `[`reflect`](@ref): method employed in the iteration to perform the reflection of `p` at
+* `R!= `[`reflect!`](@ref): method employed in the iteration to perform the reflection of `p` at
   the prox of `p`, which always works in-place.
 * `reflection_evaluation=`[`InplaceEvaluation`](@ref)`()`: specify whether the reflection works in-place (default) or allocating
 $(_kwargs(:retraction_method))

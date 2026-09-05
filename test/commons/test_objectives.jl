@@ -63,3 +63,20 @@ using Manifolds, Manopt, Test
         @test Manopt.get_hessian_function(oi)(M, p, X) == X
     end
 end
+
+@testset "First order objective aliases" begin
+    M = ManifoldsBase.DefaultManifold(2)
+    f(M, p) = sum(p .^ 2)
+    grad_f(M, p) = 2 .* p
+    costgrad_f(M, p) = (f(M, p), grad_f(M, p))
+    df(M, p, X) = 2 * sum(p .* X)
+    # every constructor combination must be matched by the alias it is named after
+    @test ManifoldGradientObjective(f, grad_f) isa ManifoldGradientObjective
+    @test ManifoldGradientObjective(f, grad_f; differential = df) isa ManifoldGradientObjective
+    @test ManifoldCostGradientObjective(costgrad_f) isa ManifoldCostGradientObjective
+    @test ManifoldCostGradientObjective(costgrad_f; differential = df) isa
+        ManifoldCostGradientObjective
+    # and by no other one
+    @test !(ManifoldGradientObjective(f, grad_f) isa ManifoldCostGradientObjective)
+    @test !(ManifoldCostGradientObjective(costgrad_f) isa ManifoldGradientObjective)
+end

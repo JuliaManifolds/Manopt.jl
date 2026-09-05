@@ -218,7 +218,10 @@ Create a [`RecordAction`](@ref) that records the dual base point change,
 a [`RecordEntryChange`](@ref) of the field `n` with distance to the last value to store a value.
 """
 function RecordDualBaseChange()
-    return RecordEntryChange(:n, (p, o, x, y) -> distance(get_manifold(p, 2), x, y))
+    return RecordEntryChange(
+        :n,
+        (amp, ams, x, y) -> distance(get_manifold(amp, 2), x, y, ams.inverse_retraction_method_dual),
+    )
 end
 
 """
@@ -415,7 +418,7 @@ mutable struct RecordStepsize{R <: Real} <: RecordAction
     recorded_values::Array{R, 1}
     RecordStepsize(r::Type{<:Real} = Float64) = new{r}(Array{r, 1}())
 end
-function (r::RecordStepsize)(p::AbstractManoptProblem, s::AbstractGradientSolverState, k)
+function (r::RecordStepsize)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k)
     return record_or_reset!(r, get_last_stepsize(p, s, k), k)
 end
 show(io::IO, ::RecordStepsize{R}) where {R} = print(io, "RecordStepsize($R)")
@@ -470,8 +473,8 @@ mutable struct RecordTime <: RecordAction
     end
 end
 function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    # At iteration zero also reset start
-    (k == 0) && (r.start = Nanosecond(time_ns()))
+    # At initialization and reset (k <= 0) also reset start
+    (k <= 0) && (r.start = Nanosecond(time_ns()))
     t = Nanosecond(time_ns()) - r.start
     (r.mode == :Iterative) && (r.start = Nanosecond(time_ns()))
     if r.mode == :Total

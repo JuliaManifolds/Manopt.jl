@@ -38,6 +38,9 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
         @test get_hessian(M, s, p, X) == -∇²f(M, p, X)
         get_hessian!(M, Y, s, p, X)
         @test Y == -∇²f(M, p, X)
+        @test Manopt.get_cost_and_gradient(M, s, p) == (-f(M, p), -∇f(M, p))
+        @test Manopt.get_cost_and_gradient!(M, Y, s, p) == (-f(M, p), -∇f(M, p))
+        @test Y == -∇f(M, p)
 
         # Function accessors
         @test Manopt.get_cost_function(o) === Manopt.get_cost_function(s, true)
@@ -69,4 +72,12 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     @test Hess_f1 != ∇²f!
     @test Hess_f1!(M, Y, p, X) == -∇²f!(M, Z, p, X)
     @test Y == -Z
+    # differential accessors, which require a first order objective with a differential
+    df(M, p, X) = dot(A * p, X)
+    fo = ManifoldGradientObjective(f, ∇f; differential = df)
+    sfo = -fo
+    @test Manopt.get_cost_and_differential(M, sfo, p, X) == (-f(M, p), -df(M, p, X))
+    @test Manopt.get_differential(M, sfo, p, X) == -df(M, p, X)
+    @test Manopt.get_differential_function(sfo)(M, p, X) == -df(M, p, X)
+    @test Manopt.get_differential_function(sfo, true) === df
 end

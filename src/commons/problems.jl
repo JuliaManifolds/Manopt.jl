@@ -138,8 +138,13 @@ function get_hess_equality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X, j
         get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.hess_equality_range
     )
 end
-function get_hess_equality_constraint(amp::AbstractManoptProblem, p, X, j = :)
-    return get_hess_equality_constraint(get_manifold(amp), get_objective(amp), p, X, j)
+function get_hess_equality_constraint(
+        amp::AbstractManoptProblem, p, X, j = :,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    return get_hess_equality_constraint(
+        get_manifold(amp), get_objective(amp), p, X, j, range
+    )
 end
 function get_hess_equality_constraint(cmp::ConstrainedManoptProblem, p, X, j = :)
     return get_hess_equality_constraint(

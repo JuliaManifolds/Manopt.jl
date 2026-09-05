@@ -557,7 +557,7 @@ function AdaptiveWNGradientStepsize(M::AbstractManifold, p; kwargs...)
     return AdaptiveWNGradientStepsize(M; p = p, kwargs...)
 end
 function (awng::AdaptiveWNGradientStepsize)(
-        mp::AbstractManoptProblem, s::AbstractGradientSolverState, i, args...;
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, i, args...;
         gradient = nothing, kwargs...,
     )
     M = get_manifold(mp)
@@ -1662,6 +1662,13 @@ end
 
 get_initial_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
 get_last_stepsize(rdog::DistanceOverGradientsStepsize) = rdog.last_stepsize
+
+function initialize_stepsize!(rdog::DistanceOverGradientsStepsize{R}) where {R}
+    rdog.gradient_sum = zero(R)
+    rdog.max_distance = rdog.initial_distance
+    rdog.last_stepsize = zero(R)
+    return rdog
+end
 
 function Base.show(io::IO, rdog::DistanceOverGradientsStepsize)
     print(io, "DistanceOverGradientsStepsize(; initial_distance = ", rdog.initial_distance)

@@ -848,7 +848,7 @@ function get_linear_operator(
     )
     nlso = get_objective(lmsco)
     n = residuals_count(nlso)
-    y = zeros(eltype(p), n)
+    y = zeros(number_eltype(p), n)
     return get_linear_operator!(M, y, lmsco, p, X)
 end
 function get_linear_operator!(

@@ -301,7 +301,7 @@ This can be done inplace of ``p``.
 $(_args(:M))
 $(_args(:M; name = "N"))
 $(_args(:p))
-$(_args(:X))
+$(_args(:X; M = "N", p = "n"))
 $(_args(:p; name = "m"))
 $(_args(:p; name = "n", M = "N"))
 * `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$(_tex_DΛ)``

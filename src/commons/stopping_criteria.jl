@@ -134,7 +134,9 @@ function has_converged(c::StopWhenAll)
     return is_active_stopping_criterion(c) && any(has_converged(ci) for ci in c.criteria)
 end
 function get_count(c::StopWhenAll, v::Val{:Iterations})
-    return maximum(get_count(ci, v) for ci in c.criteria)
+    iters = [get_count(ci, v) for ci in c.criteria]
+    any(x -> x < 0, iters) && (return -1) # Not all indicated to stop yet, so this one did not either
+    return maximum(iters; init = -1)
 end
 function set_parameter!(c::StopWhenAll, e::Val, v)
     for d in c.criteria
@@ -908,10 +910,11 @@ mutable struct StopWhenEntryChangeLess{F, TF, TSSA <: StoreStateAction} <: Stopp
     last_change::TF
 end
 function StopWhenEntryChangeLess(
-        field::Symbol, distance::F, threshold::TF; storage::TSSA = StoreStateAction([field])
-    ) where {F, TF, TSSA <: StoreStateAction}
-    return StopWhenEntryChangeLess{F, TF, TSSA}(
-        -1, distance, field, storage, threshold, zero(threshold)
+        field::Symbol, distance::F, threshold; storage::TSSA = StoreStateAction([field])
+    ) where {F, TSSA <: StoreStateAction}
+    t = float(threshold)
+    return StopWhenEntryChangeLess{F, typeof(t), TSSA}(
+        -1, distance, field, storage, t, zero(t)
     )
 end
 
@@ -1022,8 +1025,9 @@ function StopWhenGradientChangeLess(
         vector_transport_method::VTM = default_vector_transport_method(M),
         outer_norm::N = missing,
     ) where {F, N <: Union{Missing, Real}, VTM <: AbstractVectorTransportMethod}
-    return StopWhenGradientChangeLess{F, VTM, typeof(storage), N}(
-        ε, zero(ε), storage, vector_transport_method, -1, outer_norm
+    e = float(ε)
+    return StopWhenGradientChangeLess{typeof(e), VTM, typeof(storage), N}(
+        e, zero(e), storage, vector_transport_method, -1, outer_norm
     )
 end
 function StopWhenGradientChangeLess(
@@ -1113,8 +1117,9 @@ mutable struct StopWhenGradientMappingNormLess{TF} <: StoppingCriterion
     threshold::TF
     last_change::TF
     at_iteration::Int
-    function StopWhenGradientMappingNormLess(ε::TF) where {TF}
-        return new{TF}(ε, zero(ε), -1)
+    function StopWhenGradientMappingNormLess(ε::Real)
+        e = float(ε)
+        return new{typeof(e)}(e, zero(e), -1)
     end
 end
 function get_reason(c::StopWhenGradientMappingNormLess)
@@ -1188,9 +1193,10 @@ mutable struct StopWhenGradientNormLess{F, TF <: Real, N <: Union{Missing, Real}
     at_iteration::Int
     outer_norm::N
     function StopWhenGradientNormLess(
-            ε::TF; norm::F = norm, outer_norm::N = missing
-        ) where {F, TF <: Real, N <: Union{Missing, Real}}
-        return new{F, TF, N}(norm, ε, zero(ε), -1, outer_norm)
+            ε::Real; norm::F = norm, outer_norm::N = missing
+        ) where {F, N <: Union{Missing, Real}}
+        e = float(ε)
+        return new{F, typeof(e), N}(norm, e, zero(e), -1, outer_norm)
     end
 end
 
@@ -1332,14 +1338,16 @@ mutable struct StopWhenLagrangeMultiplierLess{
     mode::Symbol
     at_iteration::Int
     function StopWhenLagrangeMultiplierLess(
-            tol::T = 1.0e-6; mode::Symbol = :estimate, names::B = nothing
-        ) where {T <: Real, B <: Union{Nothing, <:AbstractVector{<:String}}}
-        return new{T, Vector{T}, B}([tol], zero([tol]), names, mode, -1)
+            tol::Real = 1.0e-6; mode::Symbol = :estimate, names::B = nothing
+        ) where {B <: Union{Nothing, <:AbstractVector{<:String}}}
+        t = float(tol)
+        return new{typeof(t), Vector{typeof(t)}, B}([t], zero([t]), names, mode, -1)
     end
     function StopWhenLagrangeMultiplierLess(
-            tols::A; mode::Symbol = :estimate, names::B = nothing
-        ) where {T <: Real, A <: AbstractVector{<:T}, B <: Union{Nothing, <:AbstractVector{<:String}}}
-        return new{T, A, B}(tols, zero(tols), names, mode, -1)
+            tols::AbstractVector{<:Real}; mode::Symbol = :estimate, names::B = nothing
+        ) where {B <: Union{Nothing, <:AbstractVector{<:String}}}
+        t = float(tols)
+        return new{eltype(t), typeof(t), B}(t, zero(t), names, mode, -1)
     end
 end
 function get_reason(sc::StopWhenLagrangeMultiplierLess)
@@ -1517,9 +1525,10 @@ mutable struct StopWhenProjectedNegativeGradientNormLess{F, TF <: Real, N <: Uni
     at_iteration::Int
     outer_norm::N
     function StopWhenProjectedNegativeGradientNormLess(
-            ε::TF; norm::F = norm, outer_norm::N = missing
-        ) where {F, TF <: Real, N <: Union{Missing, Real}}
-        return new{F, TF, N}(norm, ε, zero(ε), -1, outer_norm)
+            ε::Real; norm::F = norm, outer_norm::N = missing
+        ) where {F, N <: Union{Missing, Real}}
+        e = float(ε)
+        return new{F, typeof(e), N}(norm, e, zero(e), -1, outer_norm)
     end
 end
 function (sc::StopWhenProjectedNegativeGradientNormLess)(
@@ -1728,8 +1737,9 @@ mutable struct StopWhenStepsizeLess{F} <: StoppingCriterion
     threshold::F
     last_stepsize::F
     at_iteration::Int
-    function StopWhenStepsizeLess(ε::F) where {F <: Real}
-        return new{F}(ε, zero(ε), -1)
+    function StopWhenStepsizeLess(ε::Real)
+        e = float(ε)
+        return new{typeof(e)}(e, zero(e), -1)
     end
 end
 function (c::StopWhenStepsizeLess)(
@@ -1797,7 +1807,10 @@ mutable struct StopWhenSubgradientNormLess{R} <: StoppingCriterion
     at_iteration::Int
     threshold::R
     value::R
-    StopWhenSubgradientNormLess(ε::R) where {R <: Real} = new{R}(-1, ε, zero(ε))
+    function StopWhenSubgradientNormLess(ε::Real)
+        e = float(ε)
+        return new{typeof(e)}(-1, e, zero(e))
+    end
 end
 function (c::StopWhenSubgradientNormLess)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int

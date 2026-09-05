@@ -284,7 +284,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(
   This keyword is ignored if you set the `sub_problem` and/or `sub_state` keyword directly
 * `sub_problem = `[`DefaultManoptProblem`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the sub problem to be solved. This should usually be phrased on the tangent space at the current iterate
 * `sub_state`: the solver for the surrogate, by default a [`ConjugateResidualState`](@ref), see [`conjugate_residual`](@ref),
-  or a [`CoordinatesNormalSystemState`](@ref) on a manifold with box constraints, where the sub state is also wrapped to handle the bounds.
+  or a [`CoordinatesNormalSystemState`](@ref) if `use_unified_basis = true` or on a manifold with box constraints,
+  where in the latter case the sub state is also wrapped to handle the bounds.
 * `use_unified_basis = false`:           specify to use a single basis for all Jacobian evaluations at a certain iterate, see `sub_objective`
   this requires that all Jacobians involved are of type [`CoefficientVectorialType`](@ref), since only then a jacobian can be represented as a matrix,
   and then here unified in the sense that all use the same basis.
@@ -443,7 +444,7 @@ function LevenbergMarquardt!(
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
         sub_objective = construct_lm_subobjective(use_unified_basis, nlso, damping_term_min, scaling_threshold, scaling_mode, initial_residual_values, initial_jacobian_matrices),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
-        sub_state = has_anisotropic_max_stepsize(M) ?
+        sub_state = (has_anisotropic_max_stepsize(M) || use_unified_basis) ?
             CoordinatesNormalSystemState(M, p) :
             ConjugateResidualState(TangentSpace(M, p), sub_objective; X = zero_vector(M, p)),
         kwargs..., #collect rest

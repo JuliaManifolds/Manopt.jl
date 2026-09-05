@@ -60,7 +60,7 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `CubicBracketingLinesearch` and `Nesterov` now promote mixed numeric types in their keyword arguments.
 * `CubicBracketingLinesearch` now uses the `gradient=` keyword it is given and no longer reads the state field `X` directly, so it works for any state implementing the documented interface.
 * the `:Random` evaluation order of `cyclic_proximal_point` now reshuffles every cycle; its order values are unified to `:Linear`, `:FixedRandom`, and `:Random`, and validated.
-* `DebugDualChange` now honours its `at_init` keyword in both constructors, and the default prefixes of `DebugEntryChange` and `DebugIfEntry` name the field instead of printing a literal `$f`.
+* the default prefixes of `DebugEntryChange` and `DebugIfEntry` name the field instead of printing a literal `$f`.
 * `debug=[:IterativeTime]` now really resets the timer each iteration; the factory built it with a `:Iterative` mode that the functor never matched.
 * `decorate_state!` now accepts `debug`/`record` dictionaries with a concrete action value type, such as `Dict(:Stop => DebugStoppingCriterion())`.
 * `default_vector_norm(::Euclidean, p, X)` returned the norm of `p` instead of `X`.
@@ -96,6 +96,7 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `linesearch_backtrack` no longer errors when called without gradient information; it then backtracks on a plain decrease condition.
 * `mesh_adaptive_direct_search` now moves the poll base point to the current iterate before the search, so the search is handed a direction tangent at that iterate and the iterates stay on the manifold.
 * `MomentumGradient` no longer folds the step size into its stored direction, so solvers no longer apply the step twice; with `momentum=0` it now reduces to plain gradient descent.
+* `LevenbergMarquardt` with `use_unified_basis=true` now defaults its `sub_state` to a `CoordinatesNormalSystemState`.
 * `NelderMead` now honours `return_objective=true`.
 * fix a sign in the Nesterov acceleration parameter equation.
 * `nondescent_direction_behavior=:step_towards_negative_gradient` now steps towards the negative gradient.

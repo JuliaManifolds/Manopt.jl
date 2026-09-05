@@ -107,7 +107,7 @@ print the current cost function value, see [`get_cost`](@ref).
 
 # Parameters
 
-* `format="\$prefix %f"`: format to print the output
+* `format="f(x): %f"`: format to print the output (`"current cost: %f"` when `long=true`)
 * `io=stdout`: default stream to print the debug to.
 * `long=false`: short form to set the format to `f(x):` (default) or `current cost: ` and the cost
 * `at_init=true`: whether to print also at initialization
@@ -142,7 +142,7 @@ end
 print a small divider (default `" | "`).
 
 # Constructor
-    DebugDivider(div, io=stdout, at_init=true)
+    DebugDivider(divider=" | "; io=stdout, at_init=true)
 
 """
 mutable struct DebugDivider{TypeIO <: IO} <: DebugAction
@@ -181,12 +181,12 @@ mutable struct DebugDualChange <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
-    at_init::Bool
+    # `at_init` is accepted for signature compatibility, but a change is undefined at k = 0
     function DebugDualChange(;
             storage::StoreStateAction = StoreStateAction([:X, :n]),
             io::IO = stdout, prefix = "Dual Change: ", format = "$prefix%s", at_init::Bool = false,
         )
-        return new(io, format, storage, at_init)
+        return new(io, format, storage)
     end
     function DebugDualChange(
             values::Tuple{T, P};
@@ -196,7 +196,7 @@ mutable struct DebugDualChange <: DebugAction
         update_storage!(
             storage, Dict{Symbol, Any}(k => v for (k, v) in zip((:X, :n), values))
         )
-        return new(io, format, storage, at_init)
+        return new(io, format, storage)
     end
 end
 function (d::DebugDualChange)(
@@ -213,12 +213,12 @@ function (d::DebugDualChange)(
                 N, n_old, X_old, apds.n, apds.vector_transport_method_dual
             ) - apds.X,
         )
-        (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), v)
+        Printf.format(d.io, Printf.Format(d.format), v)
     end
     return d.storage(tmp, apds, k)
 end
 function show(io::IO, ddc::DebugDualChange)
-    return print(io, "DebugDualChange(; io = ", ddc.io, ", format =\"$(escape_string(ddc.format))\", at_init=$(ddc.at_init))")
+    return print(io, "DebugDualChange(; io = ", ddc.io, ", format =\"$(escape_string(ddc.format))\")")
 end
 function status_summary(ddc::DebugDualChange; context::Symbol = :default)
     (context === :short) && return repr(ddc)
@@ -1602,7 +1602,7 @@ Generate a dictionary of [`DebugAction`](@ref)s.
 First all `Symbol`s `String`, [`DebugAction`](@ref)s and numbers are collected,
 excluding `:Stop` and `:WhenActive`.
 This collected vector is added to the `:Iteration => [...]` pair.
-`:Stop` is added as `:StoppingCriterion` to the `:Stop => [...]` pair.
+`:Stop` is added as a [`DebugStoppingCriterion`](@ref) to the `:Stop => [...]` pair.
 If necessary, these pairs are created
 
 For each `Pair` of a `Symbol` and a `Vector`, the [`DebugGroupFactory`](@ref)
@@ -1615,8 +1615,9 @@ when the `:WhenActive` symbol is present
 A dictionary for the different entry points where debug can happen, each containing
 a [`DebugAction`](@ref) to call.
 
-Note that upon the initialization all dictionaries but the `:StartAlgorithm`
-one are called with an `i=0` for reset.
+Note that upon initialization the `:Start`, `:BeforeIteration`, and `:Iteration`
+entries are called with iteration number `0` to reset them (and maybe already print),
+while the `:Stop` entry is called with `-1`, so that it is only reset.
 
 # Examples
 
@@ -1628,7 +1629,7 @@ one are called with an `i=0` for reset.
 
    Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | ")`, and [`DebugCost`](@ref))
    as a [`DebugGroup`](@ref) inside an [`DebugEvery`](@ref) to only be executed every 10th iteration.
-   It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorithm` entry of the dictionary.
+   It also adds the [`DebugStoppingCriterion`](@ref) to the `:Stop` entry of the dictionary.
 
 2. The same can also be written a bit more precise as
 
@@ -1807,7 +1808,7 @@ function DebugActionFactory(d::Symbol)
     return DebugEntry(d)
 end
 """
-    DebugActionFactory(t::Tuple{Symbol,String)
+    DebugActionFactory(t::Tuple{Symbol,String})
 
 Convert certain Symbols in the `debug=[ ... ]` vector to [`DebugAction`](@ref)s
 Currently the following ones are done, where the string in `t[2]` is passed as the
@@ -1827,6 +1828,8 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 * `:Stop` creates a [`DebugStoppingCriterion`](@ref)
 * `:Time` creates a [`DebugTime`](@ref)
 * `:IterativeTime` creates a [`DebugTime`](@ref)`(; mode=:Iterative)`
+* `:Messages`, `:InfoMessages`, `:WarningMessages`, and `:ErrorMessages` create the corresponding
+  [`DebugMessages`](@ref), where `t[2]` is used for the warn level (a `Symbol` such as `:Always`)
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """

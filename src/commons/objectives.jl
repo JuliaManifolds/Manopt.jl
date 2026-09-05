@@ -788,6 +788,20 @@ end
 function get_gradient!(M::AbstractManifold, X, cso::ManifoldConstrainedSetObjective, p)
     return get_gradient!(M, X, cso.objective, p)
 end
+function status_summary(cso::ManifoldConstrainedSetObjective; context::Symbol = :default)
+    (context === :short) && (return repr(cso))
+    (context === :inline) &&
+        (return "A set-constrained objective of $(status_summary(cso.objective; context = context))")
+    return """
+    A set-constrained objective
+
+    ## Objective
+    $(_in_str(status_summary(cso.objective; context = context); indent = 1, headers = 1, indent_end = "| "))
+
+    ## Set
+    * projection: $(cso.project!)
+    * indicator:  $(cso.indicator)"""
+end
 
 _doc_get_projected_point = """
     get_projected_point(amp::AbstractManoptProblem, p)
@@ -1459,9 +1473,9 @@ function get_gradient_function(
     # recursive: Unwrap cache
     recursive && (return get_gradient_function(sco.objective, recursive; evaluation = evaluation))
     if evaluation isa AllocatingEvaluation
-        return (M, p) -> get_gradient(M, get_objective(sco), p)
+        return (M, p) -> get_gradient(M, sco, p)
     else
-        return (M, X, p) -> get_gradient!(M, X, get_objective(sco), p)
+        return (M, X, p) -> get_gradient!(M, X, sco, p)
     end
 end
 
@@ -2705,8 +2719,8 @@ end
 
 const ManifoldGradientObjective{F, G} = ManifoldFirstOrderObjective{
     <:Union{
-        NamedTuple{Tuple{:cost, :gradient}, Tuple{F, G}},
-        NamedTuple{Tuple{:cost, :gradient, :differential}, Tuple{F, G, D where {D}}},
+        NamedTuple{(:cost, :gradient), Tuple{F, G}},
+        NamedTuple{(:cost, :gradient, :differential), Tuple{F, G, D}} where {D},
     },
 }
 @doc """
@@ -2730,8 +2744,8 @@ end
 
 const ManifoldCostGradientObjective{FG} = ManifoldFirstOrderObjective{
     <:Union{
-        NamedTuple{Tuple{:costgradient}, Tuple{FG}},
-        NamedTuple{Tuple{:costgradient, :differential}, Tuple{FG, D where {D}}},
+        NamedTuple{(:costgradient,), Tuple{FG}},
+        NamedTuple{(:differential, :costgradient), Tuple{D, FG}} where {D},
     },
 }
 @doc """
@@ -3385,7 +3399,7 @@ which represents proximal maps ``$(_tex(:prox))_{λf_i}`` for summands ``f = f_1
 
 # Constructor
 
-    ManifoldProximalMapObjective( f, proxes_f::Union{Tuple,AbstractVector}, number_of_proxes=ones(length(proxes_f)) )
+    ManifoldProximalMapObjective( f, proxes_f::Union{Tuple,AbstractVector}, number_of_proxes=ones(Int, length(proxes_f)) )
 
 Generate a proximal problem with a tuple or vector of functions, where by default every function computes a single prox
 of one component of ``f``.
@@ -3411,7 +3425,7 @@ mutable struct ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostOb
             f, proxes_f::Union{Tuple, AbstractVector};
             evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
         )
-        np = ones(length(proxes_f))
+        np = ones(Int, length(proxes_f))
         f_ = maybe_wrap_function(f, p; result = :Number)
         proxes_f_ = [ maybe_wrap_function(pf, p, evaluation; result = :Point, point_index = 2) for pf in proxes_f]
         return new{typeof(f_), typeof(proxes_f_), typeof(np)}(

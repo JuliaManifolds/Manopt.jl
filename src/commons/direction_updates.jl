@@ -75,7 +75,7 @@ function MomentumGradientRule(
     ) where {P, Q, F <: Real, VTM <: AbstractVectorTransportMethod}
     dir = _produce_type(direction, M)
     return MomentumGradientRule(;
-        momentum = momentum, p_old = p, direction = dir, vector_transport_method = vector_transport_method, η_old = X,
+        momentum = momentum, p_old = copy(M, p), direction = dir, vector_transport_method = vector_transport_method, η_old = X,
     )
 end
 function (mg::MomentumGradientRule)(
@@ -276,7 +276,8 @@ See [`Nesterov`](@ref) for details
 * `γ::Real`, `μ::Real`: coefficients from the last iterate
 * `v::P`:      an interim point to compute the next gradient evaluation point `y_k`
 * `shrinkage`: a function `k -> ...` to compute the shrinkage ``β_k`` per iterate `k`.
-$(_kwargs(:inverse_retraction_method))
+$(_fields(:inverse_retraction_method))
+$(_fields(:retraction_method))
 
 # Constructor
 
@@ -289,7 +290,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 * `γ=0.001`
 * `μ=0.9`
 * `shrinkage = k -> 0.8`
-$(_kwargs(:inverse_retraction_method))
+$(_kwargs([:inverse_retraction_method, :retraction_method]))
 
 # See also
 
@@ -395,7 +396,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 * `γ=0.001`
 * `μ=0.9`
 * `shrinkage = k -> 0.8`
-$(_kwargs(:inverse_retraction_method))
+$(_kwargs([:inverse_retraction_method, :retraction_method]))
 
 $(_note(:ManifoldDefaultsFactory, "NesterovRule"))
 """
@@ -428,11 +429,12 @@ Add preconditioning to a gradient problem.
 # Input
 
 $(_args(:M))
-* `preconditioner`:   preconditioner function, either as a `(M, Y, p, X) -> Y` mutating function
+* `preconditioner`:   preconditioner function, either as a `(M, p, X) -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
 
 # Keyword arguments
 
 * `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
+$(_kwargs(:evaluation))
 """
 mutable struct PreconditionedDirectionRule{D <: DirectionUpdateRule, F} <: DirectionUpdateRule
     preconditioner::F

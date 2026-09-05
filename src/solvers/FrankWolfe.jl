@@ -270,7 +270,7 @@ $(_kwargs(:sub_kwargs))
   the objective for the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_problem"))
 
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
-$(_kwargs(:sub_state; default = "`[`GradientDescentState`](@ref)`(M, copy(M,p))"))
+$(_kwargs(:sub_state; default = "`[`GradientDescentState`](@ref)`(M; p=copy(M, p))"))
 
 $(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)"))
   $(_note(:KeywordUsedIn, "sub_state"))

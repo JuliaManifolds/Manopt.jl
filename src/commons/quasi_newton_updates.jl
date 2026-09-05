@@ -1,11 +1,11 @@
 @doc """
     AbstractQuasiNewtonDirectionUpdate
 
-An abstract representation of an Quasi Newton Update rule to determine the next direction
+An abstract representation of a Quasi Newton update rule to determine the next direction
 given current [`QuasiNewtonState`](@ref).
 
-All subtypes should be functions as well, they should be callable as `H(M, p, X)` to compute a new direction update
-given a point `p` and a tangent vector `X`.
+All subtypes should be functors as well, callable as `H(mp, st)` and in-place as `H(η, mp, st)`,
+given an `AbstractManoptProblem` `mp` and a [`QuasiNewtonState`](@ref) `st`, to compute a new update direction.
 """
 abstract type AbstractQuasiNewtonDirectionUpdate end
 
@@ -890,9 +890,10 @@ end
 @doc raw"""
     QuasiNewtonLimitedMemoryBoxDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-An approximation of Hessian of a scalar function of the form ``B_0 = θ I``,
-``B_{k+1} = B_k - W_k M_k W_k^{\mathrm{T}}``,
-where ``θ > 0`` is an initial scaling guess.
+An approximation of the Hessian of a scalar function of the compact form
+``B_k = θ_k I - W_k M_k W_k^{\mathrm{T}}``,
+where ``θ_k > 0`` is the current scaling factor stored in `current_scale`;
+while the memory is empty, ``B_k = θ^{-1} I`` holds for the initial scaling guess ``θ > 0``.
 Matrix ``M_k = \left(\begin{smallmatrix}M₁₁ & M₂₁^{\mathrm{T}}\\ M₂₁ & M₂₂\end{smallmatrix}\right)``
 is stored using its blocks.
 Blocks ``W_k`` are (implicitly) composed from `memory_y` and `memory_s` stored in `qn_du`

@@ -122,6 +122,17 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             sub_state = CoordinatesNormalSystemState(M1b), use_unified_basis = true,
         )
         @test isapprox(M1, r1c1, r1c2)
+        # the default sub state has to work with `use_unified_basis` as well
+        r1c3 = LevenbergMarquardt(M1, vgf1c, p1; use_unified_basis = true)
+        @test isapprox(M1, r1a1, r1c3; atol = 1.0e-7)
+        # at a corner where the step points outwards in every coordinate the box
+        # subsolver finds no admissible stepsize, returns a zero step, and the solver stops
+        M1c = Hyperrectangle([-1.0, -1.0], [0.0, 0.0])
+        s1c = LevenbergMarquardt(M1c, vgf1, [0.0, 0.0]; return_state = true)
+        @test get_solver_result(s1c) == [0.0, 0.0]
+        @test s1c.sub_state.last_gcd_result === :not_found
+        @test get_count(s1c, :Iterations) == 1
+        @test startswith(Manopt.get_reason(s1c), "The algorithm computed a step size (0.0) less than")
 
         @testset "coordinate surrogate agrees with operator surrogate" begin
             B1 = DefaultOrthonormalBasis(); n1 = length(X1)
