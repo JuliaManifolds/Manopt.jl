@@ -11,10 +11,14 @@ using LRUCache, Manifolds, Manopt, Test
         return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
     end
     function ∂f!(M, X, q)
-        if distance(M, p, q) == 0
-            return zero_vector(M, q)
+        d = distance(M, p, q)
+        if d == 0
+            zero_vector!(M, X, q)
+            return X
         end
-        return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
+        log!(M, X, q, p)
+        X .*= -1 / max(10 * eps(Float64), d)
+        return X
     end
     mso = ManifoldSubgradientObjective(f, ∂f)
     msoi = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())

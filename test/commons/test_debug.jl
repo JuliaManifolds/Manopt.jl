@@ -456,7 +456,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         Manopt.set_parameter!(dE, :Activity, false) # deactivate
         dE(mp, st, -1) # test that reset is still working
         dE(mp, st, 2)
-        @test endswith(String(take!(io)), "")
+        @test String(take!(io)) == ""
         @test !dA.active
         dG = DebugGroup([dA])
         Manopt.set_parameter!(dG, :Activity, true) # activate in group

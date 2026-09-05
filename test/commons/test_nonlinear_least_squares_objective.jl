@@ -19,8 +19,8 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
         JF(M, x) = [j1(M, x), j2(M, x)]
         JF!(M, JF, x) = (JF .= [j1(M, x), j2(M, x)])
         # Jacobi matrix
-        J(M, x) = cat(j1(M, x), j2(M, x); dims = 2)
-        J!(M, J, x) = (J .= cat(j1(M, x), j2(M, x); dims = 2))
+        J(M, x) = permutedims(cat(j1(M, x), j2(M, x); dims = 2))
+        J!(M, J, x) = (J .= permutedims(cat(j1(M, x), j2(M, x); dims = 2)))
         # Smoothing types
 
         # Test all (new) possible combinations of vectorial cost and Jacobian

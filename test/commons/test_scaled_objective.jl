@@ -61,7 +61,7 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     Y = similar(X)
     Z = similar(X)
     grad_f1! = Manopt.get_gradient_function(scaled_obj!; evaluation = InplaceEvaluation())
-    @test grad_f1 != ∇f!
+    @test grad_f1! != ∇f!
     @test grad_f1!(M, Y, p) == -∇f!(M, Z, p)
     @test Y == -Z
 
@@ -69,7 +69,7 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     @test Hess_f1 != ∇²f
     @test Hess_f1(M, p, X) == -∇²f(M, p, X)
     Hess_f1! = Manopt.get_hessian_function(scaled_obj!; evaluation = InplaceEvaluation())
-    @test Hess_f1 != ∇²f!
+    @test Hess_f1! != ∇²f!
     @test Hess_f1!(M, Y, p, X) == -∇²f!(M, Z, p, X)
     @test Y == -Z
     # differential accessors, which require a first order objective with a differential

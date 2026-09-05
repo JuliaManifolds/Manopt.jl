@@ -109,7 +109,7 @@ struct NoIterateState <: AbstractManoptSolverState end
         @test a == o
         @test b == s
         # Return just S
-        Manopt.get_solver_return(ddo, rs) == s
+        @test Manopt.get_solver_return(ddo, rs) == s
         # both as tuples and they return the iterate
         @test isnan(get_solver_result((ro, rs)))
         @test isnan(get_solver_result((o, rs)))

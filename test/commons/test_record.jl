@@ -359,11 +359,14 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @testset "records in :Start record once at initialization" begin
         M = Euclidean(2)
         q0 = [1.0, 2.0]
+        # `f` is rebound to a record action by the "RecordIterate" testset above, so use fresh names
+        f_start(M, q) = distance(M, q, p)^2
+        grad_f_start(M, q) = -2 * log(M, q, p)
         rs = gradient_descent(
-            M, f, grad_f, q0; record = [:Start => [:Cost, :Iterate], :Iteration => [:Cost]],
+            M, f_start, grad_f_start, q0; record = [:Start => [:Cost, :Iterate], :Iteration => [:Cost]],
             return_state = true, stopping_criterion = StopAfterIteration(2),
         )
-        @test get_record(rs, :Start) == [(f(M, q0), q0)]
+        @test get_record(rs, :Start) == [(f_start(M, q0), q0)]
         @test length(get_record(rs, :Iteration)) == 2
     end
 end

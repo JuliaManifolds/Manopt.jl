@@ -10,7 +10,7 @@ using LinearAlgebra, LRUCache, Manifolds, Manopt, Test
             X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
     ]
     f(M, y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
-    f2 = [(M, y) -> 1 / 2 * distance(M, y, x) for x in pts]
+    f2 = [(M, y) -> 1 / 2 * distance(M, y, x)^2 for x in pts]
     sgrad_f1(M, y) = [-log(M, y, x) for x in pts]
     sgrad_f2 = [((M, y) -> -log(M, y, x)) for x in pts]
     msgo_ff = ManifoldStochasticGradientObjective(sgrad_f1; cost = f)

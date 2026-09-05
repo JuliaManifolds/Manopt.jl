@@ -106,7 +106,7 @@ Note that the first symbol again refers to the point where we record (not to the
 We can also pass a tuple as second argument to have our own order within the tuples returned. Switching the order of recorded cost and Iteration can be done using
 
 ```{julia}
-get_record(R2, :Iteration, (:Iteration, :Cost))
+get_record(R2, :Iteration, (:Cost, :Iteration))
 ```
 
 ## A more complex example

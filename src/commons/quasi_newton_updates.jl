@@ -890,7 +890,9 @@ end
 @doc raw"""
     QuasiNewtonLimitedMemoryBoxDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-An approximation of the Hessian of a scalar function of the compact form
+A limited memory quasi-Newton direction update with support for box constraints.
+
+It stores an approximation of the Hessian of a scalar function in the compact form
 ``B_k = θ_k I - W_k M_k W_k^{\mathrm{T}}``,
 where ``θ_k > 0`` is the current scaling factor stored in `current_scale`;
 while the memory is empty, ``B_k = θ^{-1} I`` holds for the initial scaling guess ``θ > 0``.

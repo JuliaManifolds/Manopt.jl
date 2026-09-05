@@ -152,7 +152,7 @@ function subgradient_method(
     return maybe_unwrap_variable(p, rs)
 end
 function subgradient_method(
-        M::AbstractManifold, sgo::O, p; kwargs...
+        M::AbstractManifold, sgo::O, p = rand(M); kwargs...
     ) where {O <: Union{ManifoldSubgradientObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(subgradient_method; kwargs...)
     q = copy(M, p)

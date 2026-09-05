@@ -122,7 +122,7 @@ AG = AverageGradient(; n=10, direction=StochasticGradient());
 @benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$AG, debug=[])
 ```
 
-Note that the default [`StoppingCriterion`](@ref) is a fixed number of iterations which helps the comparison here.
+Note that the default [`StoppingCriterion`](@ref) here is [`StopAfterIteration`](@ref)`(10000)` combined with [`StopWhenGradientNormLess`](@ref)`(1e-9)`.
 
 For both update rules we have to internally specify that we are still in the stochastic setting,
 since both rules can also be used with the ``[`IdentityUpdateRule`](@ref Manopt.IdentityUpdateRule)``{=commonmark} within [`gradient_descent`](@ref).

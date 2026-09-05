@@ -373,7 +373,7 @@ function get_adjoint_jacobian!(
     return add_adjoint_jacobian!(M, X, vgf, p, a; kwargs...)
 end
 
-@doc """
+_doc_get_gradient_vgf = """
     get_gradient(M::AbstractManifold, vgf::AbstractFirstOrderVectorFunction, p, i)
     get_gradient(M::AbstractManifold, vgf::AbstractFirstOrderVectorFunction, p, i, range)
     get_gradient!(M::AbstractManifold, X, vgf::AbstractFirstOrderVectorFunction, p, i)
@@ -390,8 +390,14 @@ Since `i` is assumed to be a linear index, you can provide
 * an `AbstractVector{<:Integer}` to specify indices
 * `:` to return the vector of all gradients
 """
+@doc "$(_doc_get_gradient_vgf)"
 get_gradient(
     M::AbstractManifold, vgf::AbstractFirstOrderVectorFunction,
+    p, i, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
+)
+@doc "$(_doc_get_gradient_vgf)"
+get_gradient!(
+    M::AbstractManifold, X, vgf::AbstractFirstOrderVectorFunction,
     p, i, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
 )
 

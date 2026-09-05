@@ -211,9 +211,9 @@ include("trust_region_model.jl")
         @test Y6 != X
         Y9 = copy(M, p, X)
         truncated_conjugate_gradient_descent!(
-            M, f, g, h, p, Y6; evaluation = InplaceEvaluation(), trust_region_radius = 0.5
+            M, f, g, h, p, Y9; evaluation = InplaceEvaluation(), trust_region_radius = 0.5
         )
-        @test Y6 != X
+        @test Y9 != X
     end
     @testset "...with different Hessian updates" begin
         n = 4

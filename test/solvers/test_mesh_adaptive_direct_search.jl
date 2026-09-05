@@ -31,7 +31,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     Random.seed!(42)
     # start with a very small mesh size - yields a more exact result
     p_s2 = mesh_adaptive_direct_search!(M2, f2, p1; scale_mesh = 0.1)
-    @test isapprox(M, p_s2, p1)
+    @test p_s2 === p1 # the in-place call returns the array it was handed
     @test distance(M2, p_s2, W2) < 1.0e-6
     #
     #

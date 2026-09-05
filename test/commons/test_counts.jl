@@ -133,7 +133,7 @@ using LinearAlgebra: Symmetric
         @test Manopt.get_hessian_function(obj_i) ===
             Manopt.get_hessian_function(c_obj_i, true)
         Hess_f1! = Manopt.get_hessian_function(c_obj_i; evaluation = InplaceEvaluation())
-        @test Hess_f1 != Hess_f
+        @test Hess_f1! != Hess_f!
         @test Hess_f1!(M, Y, p, X) == Hess_f!(M, Z, p, X)
         @test get_count(c_obj_i, :Hessian) == 1 # still counted
     end

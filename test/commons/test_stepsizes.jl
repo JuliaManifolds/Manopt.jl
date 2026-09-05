@@ -969,7 +969,7 @@ end
         @testset "Simple Rayleigh coefficient" begin
             # Minimize negative Rayleigh quotient on the sphere S^1
             M = Sphere(1)
-            A = [1.0 0; 0 1.0]
+            A = [2.0 0; 0 1.0]
 
             f(M, p) = -p' * A * p
 
@@ -986,7 +986,7 @@ end
             )
 
             # 1e-6 is the maximum rtol for the test to pass on 1.10; it works without specifying rtol on 1.11
-            @test f(M, x) ≈ -1 rtol = 1.0e-6
+            @test f(M, x) ≈ -2 rtol = 1.0e-6
         end
         @testset "Distance from Hyperbolic to origin" begin
             M = Hyperbolic(2)

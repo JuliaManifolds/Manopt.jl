@@ -171,7 +171,7 @@ We have to specify
 
 We start with a certain point and evaluate its cost
 ```{julia}
-p0 = [zeros(d)...,1.0]
+p0 = [r, zeros(d)...]
 f(M,p0)
 ```
 

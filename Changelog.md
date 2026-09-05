@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 The following fixes were reported by an AI assisted code review. Each single point was still carefully checked, and committed by hand.
-They are still listed here in detail in case (a) someone elses code breaks of (b) it was not done careful enough – to then avoid these approaches in the future.
+They are still listed here in detail in case (a) someone else's code breaks or (b) it was not done carefully enough – to then avoid these approaches in the future.
 
 * `adaptive_regularization_with_cubics` now also runs with a closed-form sub solver; setting the iterate of a `ClosedFormSubSolverState` is a no-op instead of an error.
 * `adaptive_regularization_with_cubics` now wraps an allocating closed-form sub solver.
@@ -137,13 +137,15 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `StopWhenLagrangeMultiplierLess` now provides the documented default tolerance `1e-6`, so it can be constructed without arguments.
 * `StopWhenPopulationDiverges` now tests growth against the start of the run, not an absolute threshold.
 * `StopWhenRelativeAPosterioriCostChangeLessOrEqual` now reports the signed relative cost change it actually tests, instead of its absolute value.
+* `subgradient_method(M, sgo)` with an objective now defaults its start point to `rand(M)`, as documented.
 * `subgradient_method!` now leaves its result (the best visited point) in the input point, which before ended at the last iterate.
 * the standalone `truncated_conjugate_gradient_descent` now defaults its trust region radius from the base manifold (not the flat tangent space).
+* `truncated_conjugate_gradient_descent` now reports the trust region as exceeded after a boundary step in a negative-curvature direction, so `trust_regions` can enlarge its radius.
 * `trust_regions` now includes the Hessian term of the model decrease in its acceptance ratio also in the default (non-randomized) mode and reuses the Hessian product already computed by its tCG sub solver.
 * `trust_regions` now runs with a closed form sub solver.
 * `trust_regions` no longer throws for a non-tCG sub state.
 * `TrustRegionModelObjective` and `AdaptiveRegularizationWithCubicsModelObjective` now accept any `AbstractManifoldHessianObjective`, as documented.
-* `WolfePowellBinaryLinesearch` now bisects correctly the step size fulfills both Wolfe
+* `WolfePowellBinaryLinesearch` now bisects correctly until the step size fulfills both Wolfe
   conditions; sometimes a wrong termination check made it stop too early.
 * since we introduced the differential in the first order objectives,
 they were not fully supported in all places. This was now fixed and unified.
@@ -248,7 +250,7 @@ As an overarching scheme of this release, the single functions in an objective b
 
 * Replaced internal `ZeroTangentVector` with `ZeroVector` from ManifoldsBase.jl. (#625)
 * internally restructure the `plans/` code folder and documentation and split it into two parts (#626)
-  * a `base/` folder defining inderfaces and documenting design ideas of these
+  * a `base/` folder defining interfaces and documenting design ideas of these
   * a `commons/` folder collecting things (some or all) solvers have in common
 
   this should not break other peoples code, but in the documentation, namely “hard link”s to any `plans/` element might break – and will all break in the future. When you are linking to these from another documentation, consider using `DocumenterInterlinks` instead.
@@ -287,10 +289,10 @@ We also unified a few of the internal solver state constructors.
 
 ### Changed
 
-* In the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/)t the `η` parameter has been renamed to `candidate_acceptance_threshold`, `β` to `damping_increase_factor` and `β_reduction` to `damping_reduction_factor`. (#617)
+* In the [Riemannian Levenberg Marquardt algorithm](https://manoptjl.org/stable/solvers/LevenbergMarquardt/) the `η` parameter has been renamed to `candidate_acceptance_threshold`, `β` to `damping_increase_factor` and `β_reduction` to `damping_reduction_factor`. (#617)
 * the constructor for the [Levenberg-Marquardt state](https://manoptjl.org/stable/solvers/LevenbergMarquardt/#Manopt.LevenbergMarquardtState) has been unified with the remaining states, to take the `sub_problem` and `sub_state` arguments as second and third positional arguments, respectively. (#617)
 * the keyword `initial_jacobian_f` within `LevenbergMarquardt` is unified in naming to the residual values vector and called `initial_jacobian_matrices`. If you call `LevenbergMarquardt` with a single vector component, also a single matrix is allowed. (#617)
-* an internal field of the solver state of Levenberg-Marqwuardt was called `jacobian_f` the same as the functions whose result it meant to cache if applicable. To distinguish both, the field is now called `jacobian_matrices`. (#617)
+* an internal field of the solver state of Levenberg-Marquardt was called `jacobian_f` the same as the functions whose result it meant to cache if applicable. To distinguish both, the field is now called `jacobian_matrices`. (#617)
 * the `max_stepsize(M)` on the [`SymmetricPositiveDefinite`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/symmetricpositivedefinite/) manifold was changed from returning `Inf`, which is the mathematical maximal stepsize to returning the square root of the maximum (floating point) value to avoid numerical instabilities.
 * title of "How to define the cost in the embedding" tutorial (#615)
 
@@ -515,7 +517,7 @@ so a constant initial guess is recommended here. The initial guess may be refact
 * a system to track keywords, warning when unused ones are passed and a static way to explore possible keywords.
 * a `warm_start_factor` field to `ProximalGradientMethodBacktrackingStepsize` to allow to scale the stepsize in the backtracking procedure.
 * a `gradient=` keyword in several `Stepsize`s, such that one can avoid to internally avoid computing the gradient again.
-* used the ``gradient=` keyword in
+* used the `gradient=` keyword in
   * `alternating_gradient_descent`
   * `conjugate_gradient_descent`
   * `Frank_Wolfe_method`
@@ -530,15 +532,12 @@ so a constant initial guess is recommended here. The initial guess may be refact
 
 * remodeled the docs for the extensions a bit, added `JuMP` to the DocumenterInterlinks.
 * the internal `VectorizedManifold` within that extension is now called `ManifoldSet`
-* the internal `ArrayShape` within that extensionis not called `ManifoldPointArrayShape`
+* the internal `ArrayShape` within that extension is now called `ManifoldPointArrayShape`
 * Switch to using [Runic.jl](https://github.com/fredrikekre/Runic.jl) as code formatter
 
 ### Fixed
 
 * Fixed some math rendering in the docs, especially avoid `raw` strings and interpolate math symbols more often.
-
-### Fixed
-
 * Fixed allocations in the callbacks of the JuMP interface so that the solver can query the cost and gradient without allocating.
 
 ## [0.5.20] July 8, 2025
@@ -689,7 +688,7 @@ present; they were changed to `retact_fused!`.
 * fixed a bug in several gradient based solvers like `quasi_newton`, such that they properly work with the combined cost grad objective.
 * fixes a few typos in the docs.
 
-## [0.5.7] February 20, 20265
+## [0.5.7] February 20, 2025
 
 ### Added
 
@@ -777,7 +776,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
 
 * Any `Stepsize` now has a `Stepsize` struct used internally as the original `struct`s before. The newly exported terms aim to fit `stepsize=...` in naming and create a `ManifoldDefaultsFactory` instead, so that any stepsize can be created without explicitly specifying the manifold.
   * `ConstantStepsize` is no longer exported, use `ConstantLength` instead. The length parameter is now a positional argument following the (optional) manifold. Besides that `ConstantLength` works as before,just that omitting the manifold fills the one specified in the solver now.
-  * `DecreasingStepsize` is no longer exported, use `DecreasingLength` instead. `ConstantLength` works as before,just that omitting the manifold fills the one specified in the solver now.
+  * `DecreasingStepsize` is no longer exported, use `DecreasingLength` instead. `DecreasingLength` works as before, just that omitting the manifold fills the one specified in the solver now.
   * `ArmijoLinesearch` is now called `ArmijoLinesearchStepsize`. `ArmijoLinesearch` works as before,just that omitting the manifold fills the one specified in the solver now.
   * `WolfePowellLinesearch` is now called `WolfePowellLinesearchStepsize`, its constant `c_1` is now unified with Armijo and called `sufficient_decrease`, `c_2` was renamed to `sufficient_curvature`. Besides that, `WolfePowellLinesearch` works as before, just that omitting the manifold fills the one specified in the solver now.
   * `WolfePowellBinaryLinesearch` is now called `WolfePowellBinaryLinesearchStepsize`, its constant `c_1` is now unified with Armijo and called `sufficient_decrease`, `c_2` was renamed to `sufficient_curvature`. Besides that, `WolfePowellBinaryLinesearch` works as before, just that omitting the manifold fills the one specified in the solver now.
@@ -823,11 +822,11 @@ In general this introduces a few factories, that avoid having to pass the manifo
 * the way to initialize sub solvers in the solver states has been unified In the new variant
   * the `sub_problem` is always a positional argument; namely the last one
   * if the `sub_state` is given as a optional positional argument after the problem, it has to be a manopt solver state
-  * you can provide the new `ClosedFormSolverState(e::AbstractEvaluationType)` for the state
+  * you can provide the new `ClosedFormSubSolverState(e::AbstractEvaluationType)` for the state
     to indicate that the `sub_problem` is a closed form solution (function call) and how it
     has to be called
   * if you do not provide the `sub_state` as positional, the keyword `evaluation=` is used
-    to generate the state `ClosedFormSolverState`.
+    to generate the state `ClosedFormSubSolverState`.
   * when previously `p` and eventually `X` where positional arguments, they are now moved
     to keyword arguments of the same name for start point and tangent vector.
   * in detail
@@ -852,7 +851,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
    provide `ApproxHessianFiniteDifference(M, copy(M, p), grad_f)` to `hess_f` directly.
 * all deprecated keyword arguments and a few function signatures were removed:
   * `get_equality_constraints`, `get_equality_constraints!`, `get_inequality_constraints`, `get_inequality_constraints!` are removed. Use their singular forms and set the index to `:` instead.
-  * `StopWhenChangeLess(ε)` is removed, use ``StopWhenChangeLess(M, ε)` instead to fill for example the retraction properly used to determine the change
+  * `StopWhenChangeLess(ε)` is removed, use `StopWhenChangeLess(M, ε)` instead to fill for example the retraction properly used to determine the change
 * In the `WolfePowellLinesearch` and  `WolfeBinaryLinesearch`the `linesearch_stopsize=` keyword is replaced by `stop_when_stepsize_less=`
 * `DebugChange` and `RecordChange` had a `manifold=` and a `invretr` keyword that were replaced by the first positional argument `M` and `inverse_retraction_method=`, respectively
 * in the `NonlinearLeastSquaresObjective` and `LevenbergMarquardt` the `jacB=` keyword is now called `jacobian_tangent_basis=`
@@ -879,7 +878,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
 * Add Several new functors
   * the `LagrangianCost`, `LagrangianGradient`, `LagrangianHessian`, that based on a constrained objective allow to construct the Hessian objective of its Lagrangian
   * the `CondensedKKTVectorField` and its `CondensedKKTVectorFieldJacobian`, that are being used to solve a linear system within `interior_point_newton`
-  * the `KKTVectorField` as well as its `KKTVectorFieldJacobian` and ``KKTVectorFieldAdjointJacobian`
+  * the `KKTVectorField` as well as its `KKTVectorFieldJacobian` and `KKTVectorFieldAdjointJacobian`
   * the `KKTVectorFieldNormSq` and its `KKTVectorFieldNormSqGradient` used within the Armijo line search of `interior_point_newton`
 * New stopping criteria
   * A `StopWhenRelativeResidualLess` for the `conjugate_residual`
@@ -1315,7 +1314,7 @@ and their documentation and testing has been extended.
 
 ### Added
 
-* A `:Subsolver` keyword in the `debug=` keyword argument, that activates the new `DebugWhenActive``
+* A `:Subsolver` keyword in the `debug=` keyword argument, that activates the new `DebugWhenActive`
   to de/activate subsolver debug from the main solvers`DebugEvery`.
 
 ## [0.4.30] August 3, 2023
@@ -1522,7 +1521,7 @@ and their documentation and testing has been extended.
 ### Changed
 
 * Improved storage performance by introducing separate named tuples for points and vectors
-* changed the `show` methods of `AbstractManoptSolverState`s to display their `state_summary
+* changed the `show` methods of `AbstractManoptSolverState`s to display their `state_summary`
 * Move tutorials to be rendered with Quarto into the documentation.
 
 ## [0.4.7] February 14, 2023
@@ -1593,7 +1592,7 @@ This is the first version with an actual Changelog entry
 * `AbstractManoptProblem` replaces `Problem`
 * the problem now contains a
 * `AbstractManoptSolverState` replaces `Options`
-* `random_point(M)` is replaced by `rand(M)` from `ManifoldsBase.jl
+* `random_point(M)` is replaced by `rand(M)` from `ManifoldsBase.jl`
 * `random_tangent(M, p)` is replaced by `rand(M; vector_at=p)`
 
 ## [0.3.0] March 9, 2021

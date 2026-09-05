@@ -438,7 +438,7 @@ _doc_TCGD = """
     truncated_conjugate_gradient_descent(M, mho::ManifoldHessianObjective, p=rand(M), X=rand(M; vector_at=p);
         kwargs...
     )
-    truncated_conjugate_gradient_descent(M, trmo::TrustRegionModelObjective, p=rand(M), X=rand(M; vector_at=p);
+    truncated_conjugate_gradient_descent(TpM::TangentSpace, trmo::TrustRegionModelObjective, p, X;
         kwargs...
     )
 
@@ -472,7 +472,6 @@ $(_kwargs(:evaluation))
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * `randomize=false`:      indicate whether `X` is initialized to a random vector or not. This disables preconditioning.
-$(_kwargs(:retraction_method))
 $(
     _kwargs(
         :stopping_criterion;
@@ -651,7 +650,8 @@ function step_solver!(
         ) / tcgs.δPδ
         copyto!(M, tcgs.Y, p, tcgs.Y + τ * tcgs.δ)
         copyto!(M, tcgs.HY, p, tcgs.HY + τ * tcgs.Hδ)
-        tcgs.YPY = YPY_new
+        # Y now lies on the boundary: YPY + 2τ*YPδ + τ^2*δPδ = Δ^2 by the choice of τ
+        tcgs.YPY = tcgs.trust_region_radius^2
         return tcgs
     end
     tcgs.YPY = YPY_new

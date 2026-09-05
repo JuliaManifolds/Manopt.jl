@@ -272,7 +272,7 @@ using Manopt: estimate_sectional_curvature
             return d == 0 ? zero_vector(M, q) : -log(M, q, p) / d
         end
         diam = π / 2
-        domf(M, p) = distance(M, p, p) < diam / 2 ? true : false
+        domf(M, p) = distance(M, p, q) < diam / 2 ? true : false
         cbms = ConvexBundleMethodState(
             M, convex_bundle_method_subsolver;
             diameter = diam, domain = domf, bundle_cap = 3, p = q, k_max = 1.0, k_min = 1.0,

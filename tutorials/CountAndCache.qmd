@@ -83,7 +83,7 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
 To now count how often the cost and the gradient are called, we use the `count=` keyword
 argument that works in any solver to specify the elements of the objective whose calls we
 want to count. A full list is available in the documentation of the
-[`AbstractManifoldObjective`](@ref).
+[`ManifoldCountObjective`](@ref).
 To also see the result, we have to set `return_objective=true`.
 This returns `(objective, p)` instead of just the solver result `p`.
 We can further also set `return_state=true` to get even more information about the solver run.

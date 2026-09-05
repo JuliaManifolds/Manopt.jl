@@ -106,7 +106,7 @@ Note that the number (`25`) yields that all but `:Start` and `:Stop` are only di
 
 ## Sub solver debug
 
-Sub solvers have a `sub_kwargs` keyword, such that you can pass keywords to the sub solver as well. This works well if you do not plan to change the subsolver. If you do you can wrap your own `solver_state=` argument in a [`decorate_state!`](@ref) and pass a `debug=` keyword to this function call.
+Sub solvers have a `sub_kwargs` keyword, such that you can pass keywords to the sub solver as well. This works well if you do not plan to change the subsolver. If you do you can wrap your own `sub_state=` argument in a [`decorate_state!`](@ref) and pass a `debug=` keyword to this function call.
 Keywords in a keyword have to be passed as pairs (`:debug => [...]`).
 
 For most debugs, there further exists a longer form to specify the format to print.
@@ -157,7 +157,7 @@ p4 = exact_penalty_method(
 );
 ```
 
-where we now see that the sub solver always only requires one step. Note that since debug of an iteration is happening _after_ a step, we see the sub solver run _before_ the debug for an iteration number.
+where we now see that the sub solver requires only one or two steps. Note that since debug of an iteration is happening _after_ a step, we see the sub solver run _before_ the debug for an iteration number.
 
 ## Advanced debug output
 

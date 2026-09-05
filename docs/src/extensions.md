@@ -71,3 +71,14 @@ Euclidean space when needed:
 Manopt.Rn
 Manopt.Rn_default
 ```
+
+## RecursiveArrayTools.jl
+
+Loading `RecursiveArrayTools.jl` provides the [alternating gradient descent](@ref solver-alternating-gradient-descent) solver
+on a [`ProductManifold`](@extref ManifoldsBase ProductManifold) as well as the following two ways to
+evaluate the gradient of a [`ManifoldAlternatingGradientObjective`](@ref).
+
+```@docs
+Manopt.get_gradient(::ProductManifold, ::Manopt.ManifoldAlternatingGradientObjective, ::Any...)
+Manopt.get_gradient!(::AbstractManifold, ::Any, ::Manopt.ManifoldAlternatingGradientObjective, ::Any)
+```

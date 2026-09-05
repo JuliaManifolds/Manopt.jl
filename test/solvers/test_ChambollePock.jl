@@ -65,6 +65,7 @@ using ManifoldDiff: prox_distance, prox_distance!
             variant = :linearized,
         )
         @test o1 ≈ o2 atol = 2 * 1.0e-7
+        @test isapprox(M, o1, x_hat; atol = 2 * 1.0e-7)
         callargs_exact = [M, N, f, x0, ξ0, m, n, prox_f, prox_g_dual, adjoint_DΛ]
         o3 = ChambollePock(callargs_exact...; Λ = Λ, relax = :dual, variant = :exact)
         o4 = ChambollePock(callargs_exact...; Λ = Λ, relax = :primal, variant = :exact)

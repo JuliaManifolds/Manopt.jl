@@ -183,7 +183,7 @@ using ManifoldsBase, Manopt, Test
             @test get_differential(M, obj, p, X) == d
             @test Manopt.get_cost_and_differential(M, obj, p, X) == (c, d)
             # using gradient!
-            @test get_differential(M, obj, p, X; Y = Y) == d
+            @test get_differential(M, obj, p, X; gradient = Y) == d
             @test Manopt.get_cost_and_differential(M, obj, p, X; gradient = Y) == (c, d)
             @test Manopt.get_differential_function(obj)(M, p, X) == d
         end

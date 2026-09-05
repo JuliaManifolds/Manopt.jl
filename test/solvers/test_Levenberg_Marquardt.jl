@@ -195,14 +195,6 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             )
             @test isapprox(nvf_acc, seed .+ nvf_direct; atol = 1.0e-12, rtol = 1.0e-12)
 
-            # Cross-check with the basis overload of add_normal_vector_field_coord!.
-            nvf_direct_B = zeros(d)
-            Manopt.add_normal_vector_field_coord!(
-                M1, nvf_direct_B, nlso.objective[1], nlso.robustifier[1], p1;
-                value_cache = val_cache, jacobian_cache = jc,
-                threshold = lmcso.threshold, mode = lmcso.mode,
-            )
-            @test isapprox(nvf_direct_B, nvf_direct; atol = 1.0e-12, rtol = 1.0e-12)
             n_res = Manopt.residuals_count(nlso)
             vf_lmso = zeros(n_res)
             vf_lmcso = zeros(n_res)

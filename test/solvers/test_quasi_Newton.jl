@@ -275,7 +275,7 @@ end
         M = Sphere(n - 1)
         F(::Sphere, X) = X' * A * X
         grad_f(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
-        grad_f!(::Sphere, X, p) = (X .= 2 * (A * X - X * (X' * A * X)))
+        grad_f!(::Sphere, X, p) = (X .= 2 * (A * p - p * (p' * A * p)))
 
         p_1 = [1.0; 0.0; 0.0; 0.0]
         p_2 = [0.0; 0.0; 1.0; 0.0]

@@ -82,7 +82,7 @@ function get_cost(amp::AbstractManoptProblem, p)
 end
 
 
-@doc """
+_doc_get_gradient_amp = """
     get_gradient(amp::AbstractManoptProblem, p)
     get_gradient!(amp::AbstractManoptProblem, X, p)
 
@@ -90,9 +90,11 @@ Evaluate the gradient of an [`AbstractManoptProblem`](@ref) `amp` at the point `
 
 This can also be computed in-place of `X` for the `!`-variant.
 """
+@doc "$(_doc_get_gradient_amp)"
 function get_gradient(mp::AbstractManoptProblem, p)
     return get_gradient(get_manifold(mp), get_objective(mp), p)
 end
+@doc "$(_doc_get_gradient_amp)"
 function get_gradient!(mp::AbstractManoptProblem, X, p)
     return get_gradient!(get_manifold(mp), X, get_objective(mp), p)
 end

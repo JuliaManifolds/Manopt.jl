@@ -272,6 +272,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         # test that this still returns the minimizer, that is when starting
         # at the minimizer
         r1 = adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p_min)
+        @test isapprox(M, p_min, r1)
     end
 
     @testset "A short solver run on the circle" begin
