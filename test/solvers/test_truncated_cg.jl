@@ -14,7 +14,6 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @test s.trust_region_radius ≈ injectivity_radius(M) / 4
     # standalone solve with a negative-curvature model stays finite with the default radius
     A = [2.0 1.0 0.0; 1.0 -3.0 1.0; 0.0 1.0 4.0]
-    fq(TpM, X) = 0.5 * sum(X .* (A * X)) - X[1, 1]
     trmo = TrustRegionModelObjective(
         ManifoldHessianObjective((M, q) -> 0.0, (M, q) -> project(M, p, -A[:, 1:2]), (M, q, X) -> project(M, p, A * X))
     )

@@ -359,7 +359,7 @@ end
         M = Euclidean(2)
         p = [0.0, 0.0]
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = 2 * sum(p)
+        grad_f(M, p) = 2 .* p
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(M; p = p)
@@ -503,7 +503,7 @@ end
         M = Euclidean(2)
         p = [0.0, 0.0]
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = 2 * sum(p)
+        grad_f(M, p) = 2 .* p
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         ha = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2; nonpositive_curvature_behavior = :byrd)

@@ -1,15 +1,10 @@
 module ManoptManifoldsExt
 
-using ManifoldsBase: exp, log, ParallelTransport, vector_transport_to
+using ManifoldsBase: exp, log
 using Manopt
-using Manopt: _math, _tex, ManifoldDefaultsFactory, _produce_type, get_stepsize_bound
-import Manopt: get_gradient, max_stepsize, get_gradient!, set_parameter!, Rn, Rn_default
-using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu, I, Diagonal
-import ManifoldsBase: copy, mid_point, mid_point!
-
-using ManifoldDiff:
-    adjoint_differential_shortest_geodesic_startpoint,
-    adjoint_differential_shortest_geodesic_endpoint
+using Manopt: get_stepsize_bound
+import Manopt: max_stepsize, Rn
+import ManifoldsBase: mid_point, mid_point!
 
 using Manifolds
 

@@ -139,7 +139,7 @@ f($(_tex(:retr))_p(tX)) = f(p) + t⟨$(_tex(:grad)) f(p), X⟩ + $(_tex(:frac, "
 """
 
 @doc """
-    check_Hessian(M, f, grad_f, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M, vector_at=p); kwargs...)
+    check_Hessian(M, f, grad_f, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p); kwargs...)
 
 Verify numerically whether the Hessian `Hess_f(M,p, X)` of `f(M,p)` is correct.
 

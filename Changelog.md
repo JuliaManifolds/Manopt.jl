@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in every call, but uses two working points of its step size; the internal `_pgm_proximal_step!` now
   takes the sub problem and sub state instead of a whole state.
 * the modes of `RecordTime` and `DebugTime` are now capitalized consistently, that is `:Cumulative`, `:Iterative` and `:Total`.
+* `stochastic_gradient_descent` with `order_type=:FixedRandom` now draws a new permutation at the start of every epoch.
+* the `TrustRegionsState` fields `Z`, `HZ` and `f_proposal` were removed, since they were never read; the Cauchy point is stored in `Y`.
 
 ### Fixed
 
@@ -38,6 +40,7 @@ They are still listed here in detail in case (a) someone else's code breaks or (
 * `adaptive_regularization_with_cubics` now also runs with a closed-form sub solver; setting the iterate of a `ClosedFormSubSolverState` is a no-op instead of an error.
 * `adaptive_regularization_with_cubics` now wraps an allocating closed-form sub solver.
 * `adaptive_regularization_with_cubics` now passes `sub_kwargs` on to the `decorate_state!` of its sub state.
+* `get_cost_function(::AdaptiveRegularizationWithCubicsModelObjective, true)` now returns the wrapped objective's cost, like its gradient counterpart.
 * `AdaptiveWNGradient` fixed its reference gradient norm to the initial one, so its adaptive mode now works.
 * `AffineCovariantStepsize` now solves the simplified Newton system with the sub problem's own evaluation type, so it works together with `sub_state = InplaceEvaluation()`.
 * `alternating_gradient_descent` now uses its `retraction_method`.
@@ -77,6 +80,7 @@ They are still listed here in detail in case (a) someone else's code breaks or (
 * `ExactPenaltyMethodState` now defaults to the same stopping criterion as `exact_penalty_method`.
 * `Frank_Wolfe_method` now also fires its advertised `:BeforeSubsolver`, `:Subsolver` and `:Stepsize` callbacks when a closed-form sub solver is used.
 * `get_constraints` now works for any constrained objective, not only embedded ones.
+* `get_constraints` now uses the `:Constraints` cache, which before was allocated but never read nor written.
 * `get_count(::StopWhenAny, :Iterations)` no longer discards a sub-criterion that stopped at iteration `0`.
 * `get_feasibility_status` works again; its keyword defaults called the removed plural constraint accessors.
 * the problem-level `get_grad_inequality_constraint!` now has the documented `j = :` default and forwards a `range`.
@@ -100,6 +104,7 @@ They are still listed here in detail in case (a) someone else's code breaks or (
 * `LevenbergMarquardtState` no longer needs its Jacobian cache pre-shaped and reports an invalid `damping_reduction_factor` with an `ArgumentError`.
 * `linesearch_backtrack` no longer errors when called without gradient information; it then backtracks on a plain decrease condition.
 * `mesh_adaptive_direct_search` now moves the poll base point to the current iterate before the search, so the search is handed a direction tangent at that iterate and the iterates stay on the manifold.
+* `mesh_adaptive_direct_search` now defaults its retraction and vector transport with the point type instead of the number type.
 * `MomentumGradient` no longer folds the step size into its stored direction, so solvers no longer apply the step twice; with `momentum=0` it now reduces to plain gradient descent.
 * `LevenbergMarquardt` with `use_unified_basis=true` now defaults its `sub_state` to a `CoordinatesNormalSystemState`.
 * `NelderMead` now honours `return_objective=true`.
@@ -107,6 +112,7 @@ They are still listed here in detail in case (a) someone else's code breaks or (
 * `nondescent_direction_behavior=:step_towards_negative_gradient` now steps towards the negative gradient.
 * `primal_dual_semismooth_Newton!` now works in place of its point and is exported.
 * `primal_dual_semismooth_Newton` now uses the `vector_transport_method=` keyword also in its ∂X₁₂ block, and expands that block in the basis at the iterate `p` instead of at `m`.
+* `primal_dual_semismooth_Newton` now builds its ∂X₁₁ basis directions at the iterate `p`, where the cached basis lives, instead of at `m`.
 * `PrimalDualSemismoothNewtonState` now defaults its dual variable `X` to `zero_vector(N, n)`, the tangent space it is actually used in.
 * `PrimalDualSemismoothNewtonState` is now constructed as `(M, N; kwargs...)` like `ChambollePockState`
 * `proximal_bundle_method` and `convex_bundle_method` now default to the in-place subsolver when used with `InplaceEvaluation`.
@@ -149,6 +155,7 @@ They are still listed here in detail in case (a) someone else's code breaks or (
 * `truncated_conjugate_gradient_descent` now reports the trust region as exceeded after a boundary step in a negative-curvature direction, so `trust_regions` can enlarge its radius.
 * `trust_regions` now includes the Hessian term of the model decrease in its acceptance ratio also in the default (non-randomized) mode and reuses the Hessian product already computed by its tCG sub solver.
 * `trust_regions` now runs with a closed form sub solver.
+* `trust_regions` now wraps an allocating closed-form sub solver as returning a tangent vector.
 * `trust_regions` no longer throws for a non-tCG sub state.
 * `TrustRegionModelObjective` and `AdaptiveRegularizationWithCubicsModelObjective` now accept any `AbstractManifoldHessianObjective`, as documented.
 * `WolfePowellBinaryLinesearch` now bisects correctly until the step size fulfills both Wolfe
@@ -443,7 +450,7 @@ so a constant initial guess is recommended here. The initial guess may be refact
 
 ### Fixed
 
-* Change the construction of the product manifold in `interior_point_newton` from `×` to `ProductManifold`, so that the algorithm also work on Product manifolds `M`, where it now correctly wraps `M` instead of extending it.
+* Change the construction of the product manifold in `interior_point_Newton` from `×` to `ProductManifold`, so that the algorithm also work on Product manifolds `M`, where it now correctly wraps `M` instead of extending it.
 * Unified the doc strings for constrained problems.
 * Fixed a few typos in the doc strings of matrix update formulae within the quasi-Newton and CG solver.
 * Covered one last line in `proximal_gradient_plan`
@@ -484,7 +491,7 @@ so a constant initial guess is recommended here. The initial guess may be refact
 ### Added
 
 * `CubicBracketingLinesearch` step size
-* fallback in `proximal_gradient_plan`to use the norm of the inverse retraction if the distance is not available.
+* fallback in `proximal_gradient_plan` to use the norm of the inverse retraction if the distance is not available.
 
 ## [0.5.23] September 14, 2025
 
@@ -528,7 +535,7 @@ so a constant initial guess is recommended here. The initial guess may be refact
   * `conjugate_gradient_descent`
   * `Frank_Wolfe_method`
   * `gradient_descent`
-  * `interior_point_newton`
+  * `interior_point_Newton`
   * `quasi_Newton`
   * `projected_gradient_method`
 * a `restart_condition` functor to `conjugate_gradient_descent`, which allows the algorithm to restart if the search direction is sub-par (#492)
@@ -592,7 +599,7 @@ so a constant initial guess is recommended here. The initial guess may be refact
 * Add `ProximalGradientMethodBacktracking` stepsize.
 * Add `StopWhenGradientMappingNormLess` stopping criterion.
 * Introduce a `StopWhenRepeated` stopping criterion that stops when the given stopping criterion has indicated to stop `n` times (consecutively, if `consecutive=true`).
-* Introduce a `StopWhenCriterionWithIterationCondition` stopping criterion that stops when a given stopping criterion has been satisfied together with a certain iteration condition. This can the generated even with shortcuts like `sc > 5`
+* Introduce a `StopWhenCriterionWithIterationCondition` stopping criterion that stops when a given stopping criterion has been satisfied together with a certain iteration condition. This can then be generated even with shortcuts like `sc > 5`
 * Introduce a `DebugCallback` that allows to add a callback function to the debug system
 * Introduce a `callback=` keyword to all solvers.
 * Added back functions `estimate_sectional_curvature`, `ζ_1`, `ζ_2`, `close_point` from `convex_bundle_method`; the function call can stay the same as before since there is a curvature estimation fallback
@@ -613,7 +620,7 @@ so a constant initial guess is recommended here. The initial guess may be refact
 ### Fixed
 
 * fixes a bug in the `LineSearches.jl` extension, where two (old) `retract!`s were still
-present; they were changed to `retact_fused!`.
+present; they were changed to `retract_fused!`.
 
 ## [0.5.15] May 6, 2025
 
@@ -689,7 +696,7 @@ present; they were changed to `retact_fused!`.
 
 ### Fixed
 
-* fixed a small bug in the `NonmonotoneLinesearchStepsize` hwn the injectivity radius is an irrational number.
+* fixed a small bug in the `NonmonotoneLinesearchStepsize` when the injectivity radius is an irrational number.
 * fixed a small bug in `check_gradient` where `eps` might have been called on complex types.
 * fixed a bug in several gradient based solvers like `quasi_newton`, such that they properly work with the combined cost grad objective.
 * fixes a few typos in the docs.
@@ -741,7 +748,7 @@ present; they were changed to `retact_fused!`.
 
 ### Changed
 
-* stabilize `max_stepsize` to also work when `injectivity_radius` dos not exist.
+* stabilize `max_stepsize` to also work when `injectivity_radius` does not exist.
   It however would warn new users, that activate tutorial mode.
 * Start a `ManoptTestSuite` sub package to store dummy types and common test helpers in.
 
@@ -781,9 +788,9 @@ In general this introduces a few factories, that avoid having to pass the manifo
 ### Changed
 
 * Any `Stepsize` now has a `Stepsize` struct used internally as the original `struct`s before. The newly exported terms aim to fit `stepsize=...` in naming and create a `ManifoldDefaultsFactory` instead, so that any stepsize can be created without explicitly specifying the manifold.
-  * `ConstantStepsize` is no longer exported, use `ConstantLength` instead. The length parameter is now a positional argument following the (optional) manifold. Besides that `ConstantLength` works as before,just that omitting the manifold fills the one specified in the solver now.
+  * `ConstantStepsize` is no longer exported, use `ConstantLength` instead. The length parameter is now a positional argument following the (optional) manifold. Besides that `ConstantLength` works as before, just that omitting the manifold fills the one specified in the solver now.
   * `DecreasingStepsize` is no longer exported, use `DecreasingLength` instead. `DecreasingLength` works as before, just that omitting the manifold fills the one specified in the solver now.
-  * `ArmijoLinesearch` is now called `ArmijoLinesearchStepsize`. `ArmijoLinesearch` works as before,just that omitting the manifold fills the one specified in the solver now.
+  * `ArmijoLinesearch` is now called `ArmijoLinesearchStepsize`. `ArmijoLinesearch` works as before, just that omitting the manifold fills the one specified in the solver now.
   * `WolfePowellLinesearch` is now called `WolfePowellLinesearchStepsize`, its constant `c_1` is now unified with Armijo and called `sufficient_decrease`, `c_2` was renamed to `sufficient_curvature`. Besides that, `WolfePowellLinesearch` works as before, just that omitting the manifold fills the one specified in the solver now.
   * `WolfePowellBinaryLinesearch` is now called `WolfePowellBinaryLinesearchStepsize`, its constant `c_1` is now unified with Armijo and called `sufficient_decrease`, `c_2` was renamed to `sufficient_curvature`. Besides that, `WolfePowellBinaryLinesearch` works as before, just that omitting the manifold fills the one specified in the solver now.
   * `NonmonotoneLinesearch` is now called `NonmonotoneLinesearchStepsize`. `NonmonotoneLinesearch` works as before, just that omitting the manifold fills the one specified in the solver now.
@@ -876,19 +883,19 @@ In general this introduces a few factories, that avoid having to pass the manifo
 
 ### Added
 
-* an Interior Point Newton Method, the `interior_point_newton`
+* an Interior Point Newton Method, the `interior_point_Newton`
 * a `conjugate_residual` Algorithm to solve a linear system on a tangent space.
 * `ArmijoLinesearch` now allows for additional `additional_decrease_condition` and `additional_increase_condition` keywords to add further conditions to accept additional conditions when to accept an decreasing or increase of the stepsize.
 * add a `DebugFeasibility` to have a debug print about feasibility of points in constrained optimization employing the new `is_feasible` function
-* add a `InteriorPointCentralityCondition` that can be added for step candidates within the line search of `interior_point_newton`
+* add a `InteriorPointCentralityCondition` that can be added for step candidates within the line search of `interior_point_Newton`
 * Add Several new functors
   * the `LagrangianCost`, `LagrangianGradient`, `LagrangianHessian`, that based on a constrained objective allow to construct the Hessian objective of its Lagrangian
-  * the `CondensedKKTVectorField` and its `CondensedKKTVectorFieldJacobian`, that are being used to solve a linear system within `interior_point_newton`
+  * the `CondensedKKTVectorField` and its `CondensedKKTVectorFieldJacobian`, that are being used to solve a linear system within `interior_point_Newton`
   * the `KKTVectorField` as well as its `KKTVectorFieldJacobian` and `KKTVectorFieldAdjointJacobian`
-  * the `KKTVectorFieldNormSq` and its `KKTVectorFieldNormSqGradient` used within the Armijo line search of `interior_point_newton`
+  * the `KKTVectorFieldNormSq` and its `KKTVectorFieldNormSqGradient` used within the Armijo line search of `interior_point_Newton`
 * New stopping criteria
   * A `StopWhenRelativeResidualLess` for the `conjugate_residual`
-  * A `StopWhenKKTResidualLess` for the `interior_point_newton`
+  * A `StopWhenKKTResidualLess` for the `interior_point_Newton`
 
 ## [0.4.67] July 25, 2024
 
@@ -1192,7 +1199,7 @@ and their documentation and testing has been extended.
 * `BezierSegment` is available as [`ManoptExamples.BeziérSegment`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.BezierSegment)
 * `cost_acceleration_bezier` is available as [`ManoptExamples.acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector{%3C:AbstractFloat}}}%20where%20P)
 * `cost_L2_acceleration_bezier` is available as [`ManoptExamples.L2_acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector{%3C:AbstractFloat},%20AbstractFloat,%20AbstractVector{P}}}%20where%20P)
-* `costIntrICTV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`]()
+* `costIntrICTV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/)
 * `costL2TV` is available as [`ManoptExamples.L2_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_Total_Variation-NTuple{4,%20Any})
 * `costL2TV12` is available as [`ManoptExamples.L2_Total_Variation_1_2`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_Total_Variation_1_2-Tuple{ManifoldsBase.PowerManifold,%20Vararg{Any,%204}})
 * `costL2TV2` is available as [`ManoptExamples.L2_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_second_order_Total_Variation-Tuple{ManifoldsBase.PowerManifold,%20Any,%20Any,%20Any})
@@ -1218,7 +1225,7 @@ and their documentation and testing has been extended.
 * `prox_parallel_TV` is available as [`ManoptExamples.prox_parallel_TV`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_parallel_TV)
 * `grad_TV2` is available as [`ManoptExamples.prox_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_second_order_Total_Variation)
 * `prox_TV` is available as [`ManoptExamples.prox_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_Total_Variation)
-* `prox_TV2` is available as [`ManopExamples.prox_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_second_order_Total_Variation-Union{Tuple{T},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T}},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T},%20Int64}}%20where%20T)
+* `prox_TV2` is available as [`ManoptExamples.prox_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_second_order_Total_Variation-Union{Tuple{T},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T}},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T},%20Int64}}%20where%20T)
 
 ## [0.4.43] November 19, 2023
 
@@ -1251,7 +1258,7 @@ and their documentation and testing has been extended.
   on a computer, the docs can still be build with the tutorials not being added to the menu
   such that documenter does not expect them to exist.
 
-### Changes
+### Changed
 
 * Bump dependencies to `ManifoldsBase.jl` 0.15 and `Manifolds.jl` 0.9
 * move the ARC CG subsolver to the main package, since `TangentSpace` is now already
@@ -1259,14 +1266,14 @@ and their documentation and testing has been extended.
 
 ## [0.4.39] October 9, 2023
 
-### Changes
+### Changed
 
 * also use the pair of a retraction and the inverse retraction (see last update)
   to perform the relaxation within the Douglas-Rachford algorithm.
 
 ## [0.4.38] October 8, 2023
 
-### Changes
+### Changed
 
 * avoid allocations when calling `get_jacobian!` within the Levenberg-Marquard Algorithm.
 
@@ -1276,26 +1283,26 @@ and their documentation and testing has been extended.
 
 ## [0.4.37] September 28, 2023
 
-### Changes
+### Changed
 
 * add more of the Riemannian Levenberg-Marquard algorithms parameters as keywords, so they
   can be changed on call
 * generalize the internal reflection of Douglas-Rachford, such that is also works with an
   arbitrary pair of a reflection and an inverse reflection.
 
-## [0.4.36]  September 20, 2023
+## [0.4.36] September 20, 2023
 
 ### Fixed
 
 * Fixed a bug that caused non-matrix points and vectors to fail when working with approximate
 
-## [0.4.35]  September 14, 2023
+## [0.4.35] September 14, 2023
 
 ### Added
 
 * The access to functions of the objective is now unified and encapsulated in proper `get_` functions.
 
-## [0.4.34]  September 02, 2023
+## [0.4.34] September 02, 2023
 
 ### Added
 
@@ -1321,7 +1328,7 @@ and their documentation and testing has been extended.
 ### Added
 
 * A `:Subsolver` keyword in the `debug=` keyword argument, that activates the new `DebugWhenActive`
-  to de/activate subsolver debug from the main solvers`DebugEvery`.
+  to de/activate subsolver debug from the main solvers `DebugEvery`.
 
 ## [0.4.30] August 3, 2023
 
@@ -1374,7 +1381,7 @@ and their documentation and testing has been extended.
 
 * another workflow that deletes old PR renderings from the docs to keep them smaller in overall size.
 
-### Changes
+### Changed
 
 * bump dependencies since the extension between Manifolds.jl and ManifoldsDiff.jl has been moved to Manifolds.jl
 
@@ -1557,7 +1564,7 @@ and their documentation and testing has been extended.
 
 ### Fixed
 
-* fix a type in `HestenesStiefelCoefficient`
+* fix a typo in `HestenesStiefelCoefficient`
 
 ## [0.4.3] January 17, 2023
 

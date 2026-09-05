@@ -21,7 +21,7 @@ end
 @doc """
     LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
 
-Describes a Gradient based descent algorithm, with
+Describes the state of the Riemannian Levenberg-Marquardt solver, with
 
 # Fields
 
@@ -209,7 +209,7 @@ to solve
 
 $(_problem(:NonLinearLeastSquares))
 
-The second block of signatures perform the optimization in-place of `p`.
+The second block of signatures performs the optimization in-place of `p`.
 
 The regularization parameter is updated using a generalized scheme proposed in [Fan:2006](@cite),
 Eq. (2.2). See also [Yuan:2015](@cite) for other schemes.
@@ -238,7 +238,7 @@ $(_args(:p))
   calling `f` one additional time. This is only possible when `evaluation` is [`AllocatingEvaluation`](@ref),
   for mutating evaluation this value must be explicitly specified.
 
-You can also provide the cost and its Jacobian already as a [`VectorGradientFunction`](@ref) `vgf` to indicate you are working on a single block,
+You can also provide the cost and its Jacobian already as a [`VectorGradientFunction`](@ref) `vgf` to indicate you are working on a single block.
 Alternatively, passing a [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso` also works.
 
 # Keyword arguments
@@ -250,11 +250,11 @@ $(_kwargs(:evaluation))
 * `jacobian_tangent_basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: the basis the Jacobian coefficients refer to.
 * `jacobian_type=`[`CoefficientVectorialType`](@ref)`(jacobian_tangent_basis)`: an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
 
-as well as then these are already combined in a single [`VectorGradientFunction`](@ref) `vgf`
+as well as when these are already combined in a single [`VectorGradientFunction`](@ref) `vgf`
 
 * `robustifier::`[`AbstractRobustifierFunction`](@ref)` = `[`IdentityRobustifier`](@ref)`()`:
   for the robust variant, specify how the robustification is meant to take place.
-  - if you provide a single vectorial function and its Jacobian, a single robustifer is applied
+  - if you provide a single vectorial function and its Jacobian, a single robustifier is applied
     to every component function of this vectorial function (each component is a block in the sum)
   - if you provide a vector of [`VectorGradientFunction`](@ref)s, each needs a robustifier.
 
@@ -276,7 +276,7 @@ $(_kwargs(:retraction_method))
 * `scaling_threshold = 1.0e-6`:         a threshold `ε` to bound the scaling parameter `α` in the robust case away from `1`, see [`get_LevenbergMarquardt_scaling`](@ref)
 * `scaling_mode = :Strict`:            specify the scaling stabilization mode, see [`get_LevenbergMarquardt_scaling`](@ref)
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-12)"))
-* `sub_objective`                      : specify the objective for the surrogate sub problem to solver in every iteration.
+* `sub_objective`                      : specify the objective for the surrogate sub problem to solve in every iteration.
   This is set depending on the `use_unified_basis`
   - if `true` to the [`LevenbergMarquardtLinearSurrogateCoordinatesObjective`](@ref) which always works in coordinates of one single basis per tangent space and allows to cache Jacobian evaluations
   - if `false` to the [`LevenbergMarquardtLinearSurrogateObjective`](@ref) that can work either with linear operators or in (even different) coordinates.

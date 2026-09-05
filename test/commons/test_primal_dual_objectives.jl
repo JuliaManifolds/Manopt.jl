@@ -9,9 +9,6 @@ using RecursiveArrayTools
     M = PowerManifold(pixelM, NestedPowerRepresentation(), 2)
     data = [[1.0, 0.0, 0.0], 1 / sqrt(2) .* [1.0, 1.0, 0.0]]
     α = 1
-    # known minimizer
-    δ = min(α / distance(pixelM, data[1], data[2]), 0.5)
-    x_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = TangentBundle(M)
     fidelity(M, x) = 1 / 2 * distance(M, x, data)^2
     Λ(M, x) = ArrayPartition(x, Manopt.Test.forward_logs(M, x))
@@ -78,14 +75,14 @@ using RecursiveArrayTools
     p_old = copy(p0)
     ξ_old = ArrayPartition(X0[N, :point], X0[N, :vector])
 
-    set_iterate!(s_exact, p0)
+    set_iterate!(s_exact, M, p0)
     @test all(get_iterate(s_exact) .== p0)
 
     osm = PrimalDualSemismoothNewtonState(
         M, N; m = m, n = n, p = zero.(p0), X = X0,
         primal_stepsize = 0.0, dual_stepsize = 0.0, regularization_parameter = 0.0,
     )
-    set_iterate!(osm, p0)
+    set_iterate!(osm, M, p0)
     @test all(get_iterate(osm) .== p0)
 
     @testset "show/repr" begin
@@ -152,7 +149,7 @@ using RecursiveArrayTools
     end
     @testset "Primal/Dual residual" begin
         pmdoe = PrimalDualManifoldObjective(f, prox_f, prox_g_dual, adjoint_DΛ; Λ = Λ)
-        p_exact = TwoManifoldProblem(M, N, pdmoe)
+        p_exact = TwoManifoldProblem(M, N, pmdoe)
         pmdol = PrimalDualManifoldObjective(
             f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator = DΛ
         )
@@ -301,17 +298,18 @@ using RecursiveArrayTools
         get_dual_prox!(N, Y1, ro, n, 0.1, X0)
         get_dual_prox!(N, Y2, pdmo, n, 0.1, X0)
         @test Y1 == Y2
-        Y1 = linearized_forward_operator(M, N, ro, m, p0, n)
-        Y2 = linearized_forward_operator(M, N, pdmol, m, p0, n)
+        X = log(M, m, p0)
+        Y1 = linearized_forward_operator(M, N, ro, m, X, n)
+        Y2 = linearized_forward_operator(M, N, pdmo, m, X, n)
         @test Y1 == Y2
-        linearized_forward_operator!(M, N, Y1, ro, m, p0, n)
-        linearized_forward_operator!(M, N, Y2, pdmol, m, p0, n)
+        linearized_forward_operator!(M, N, Y1, ro, m, X, n)
+        linearized_forward_operator!(M, N, Y2, pdmo, m, X, n)
         @test Y1 == Y2
         Z1 = adjoint_linearized_operator(M, N, ro, m, n, X0)
-        Z2 = adjoint_linearized_operator(M, N, pdmol, m, n, X0)
+        Z2 = adjoint_linearized_operator(M, N, pdmo, m, n, X0)
         @test Z1 == Z2
         adjoint_linearized_operator!(M, N, Z1, ro, m, n, X0)
-        adjoint_linearized_operator!(M, N, Z2, pdmol, m, n, X0)
+        adjoint_linearized_operator!(M, N, Z2, pdmo, m, n, X0)
         @test Z1 == Z2
         s = forward_operator(M, N, ro, p0)
         t = forward_operator(M, N, pdmo, p0)

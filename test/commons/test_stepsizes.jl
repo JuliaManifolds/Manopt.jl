@@ -134,7 +134,7 @@ end
     @testset "Linesearch safeguards" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = sum(2 .* p)
+        grad_f(M, p) = 2 .* p
         p = [2.0, 2.0]
         msgs = (;
             non_descent_direction = Manopt.StepsizeMessage{Float64, Float64}(),
@@ -842,10 +842,10 @@ end
 
     end
     @testset "Distance over Gradients Stepsize" begin
-        @testset "does not use sectional cuvature (Eucludian)" begin
+        @testset "does not use sectional curvature (Euclidean)" begin
             M = Euclidean(2)
             f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            grad_f(M, p) = 2 .* p
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p = p)
@@ -867,12 +867,12 @@ end
             summary = Manopt.status_summary(ds)
             @test startswith(summary, "A distance over gradients step size")
             lr = ds(dmp, gds, 0)
-            @test lr == 0.125
+            @test lr ≈ 1 / (4 * sqrt(2))
         end
-        @testset "use sectional cuvature (Euclidian)" begin
+        @testset "use sectional curvature (Euclidean)" begin
             M = Euclidean(2)
             f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            grad_f(M, p) = 2 .* p
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p = p)
@@ -889,12 +889,12 @@ end
             @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
-            @test lr == 0.125
+            @test lr ≈ 1 / (4 * sqrt(2))
         end
-        @testset "do not use sectional cuvature (Sphere)" begin
+        @testset "do not use sectional curvature (Sphere)" begin
             M = Sphere(1)
-            f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            f(M, p) = 2 * p[2]
+            grad_f(M, p) = project(M, p, [0.0, 2.0])
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [1, 0]
             gds = GradientDescentState(M; p = p)
@@ -910,10 +910,10 @@ end
             lr = ds(dmp, gds, 0)
             @test lr == 0.5
         end
-        @testset "use sectional cuvature (Sphere)" begin
+        @testset "use sectional curvature (Sphere)" begin
             M = Sphere(1)
-            f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            f(M, p) = 2 * p[2]
+            grad_f(M, p) = project(M, p, [0.0, 2.0])
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [1, 0]
             gds = GradientDescentState(M; p = p)
@@ -1049,7 +1049,7 @@ end
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p = [2.0, 2.0]
         gs = GradientDescentState(M; p = p)
-        # large sufficient curvatuture to trigger stop inc.
+        # large sufficient curvature to trigger stop inc.
         wpls = WolfePowellLinesearch(M; stop_increasing_at_step = 1, stop_decreasing_at_step = 1)()
         wpls(dmp, gs, 1)
         # This set the dec message

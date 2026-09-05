@@ -1031,7 +1031,7 @@ function StopWhenGradientChangeLess(
     )
 end
 function StopWhenGradientChangeLess(
-        ε::Float64; storage::StoreStateAction = StoreStateAction([:Iterate, :Gradient]), kwargs...
+        ε::Real; storage::StoreStateAction = StoreStateAction([:Iterate, :Gradient]), kwargs...
     )
     return StopWhenGradientChangeLess(DefaultManifold(1), ε; storage = storage, kwargs...)
 end

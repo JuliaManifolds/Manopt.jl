@@ -218,6 +218,7 @@ $(_fields([:retraction_method, :vector_transport_method]))
 ## Keyword arguments
 
 * `steplength=2^-14`: step length ``c`` to approximate the gradient evaluations
+* `tangent_vector=zero_vector(M, p)`: memory used to initialize the internal temporary gradient storages
 $(_kwargs(:evaluation))
 $(_kwargs([:retraction_method, :vector_transport_method]))
 

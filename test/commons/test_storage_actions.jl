@@ -43,7 +43,7 @@ using Test, Manopt, ManifoldsBase, Manifolds
         a2b = StoreStateAction(M; store_points = Tuple{:p}, store_vectors = Tuple{:X})
         @test keys(a2.point_values) == keys(a2b.point_values)
         @test keys(a2.vector_values) == keys(a2b.vector_values)
-        @test keys(a2.keys) == keys(a2b.keys)
+        @test a2.keys == a2b.keys
 
         # make sure fast storage is actually fast
         @test (@allocated update_storage!(a2, mp, st)) == 0

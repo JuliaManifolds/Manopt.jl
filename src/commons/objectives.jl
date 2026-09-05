@@ -803,6 +803,12 @@ function status_summary(cso::ManifoldConstrainedSetObjective; context::Symbol = 
     * indicator:  $(cso.indicator)"""
 end
 
+function Base.show(io::IO, cso::ManifoldConstrainedSetObjective)
+    print(io, "ManifoldConstrainedSetObjective(")
+    print(io, cso.objective); print(io, ", "); print(io, cso.project!)
+    return print(io, ")")
+end
+
 _doc_get_projected_point = """
     get_projected_point(amp::AbstractManoptProblem, p)
     get_projected_point!(amp::AbstractManoptProblem, q, p)
@@ -1331,6 +1337,7 @@ which function evaluations to cache.
 
 | Symbol                      | Caches calls to (incl. `!` variants)            | Comment                   |
 | :-------------------------- | :---------------------------------------------- | :------------------------ |
+| `:Constraints`              | [`get_constraints`](@ref)                       |                           |
 | `:Cost`                     | [`get_cost`](@ref)                              |                           |
 | `:Differential`             | [`get_differential`](@ref)`(M, p, X)`           |                           |
 | `:EqualityConstraint`       | [`get_equality_constraint`](@ref)`(M, p, i)`    |                           |
@@ -1521,6 +1528,16 @@ function get_cost_and_gradient!(M::AbstractManifold, X, mco::ManifoldCachedObjec
     end
 end
 
+function get_constraints(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    (!haskey(co.cache, :Constraints)) && return [
+        get_inequality_constraint(M, co, p, :), get_equality_constraint(M, co, p, :),
+    ]
+    return copy.(# Return a copy of the version in the cache
+        get!(co.cache[:Constraints], copy(M, p)) do
+            [get_inequality_constraint(M, co, p, :), get_equality_constraint(M, co, p, :)]
+        end,
+    )
+end
 function get_equality_constraint(
         M::AbstractManifold, co::ManifoldCachedObjective, p, j::Integer
     )
@@ -2791,7 +2808,7 @@ When there is no separate differential, the evaluation falls back to evaluating 
 
 ## Input
 $(_args(:M))
-* `mfo` an [`ManifoldFirstOrderObjective`](@ref)
+* `mfo` a [`ManifoldFirstOrderObjective`](@ref)
 $(_args([:p, :X]))
 
 ## Keyword Arguments

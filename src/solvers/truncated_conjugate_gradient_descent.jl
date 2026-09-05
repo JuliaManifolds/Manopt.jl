@@ -46,7 +46,7 @@ $(
         default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "base_manifold(TpM)"))`)`$(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`$(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()"
     )
 )
-$(_kwargs(:X))
+$(_kwargs(:X; default = _open_link(:rand; M = "TpM")))
 
 # See also
 
@@ -217,7 +217,7 @@ function status_summary(c::StopWhenResidualIsReducedByFactorOrPower; context::Sy
     (context === :short) && (return repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    (context === :inline) && (return "Residual reduced by factor $(c.κ) or power $(c.θ):$(_MANOPT_INDENT)$s")
+    (context === :inline) && (return "Residual reduced by factor $(c.κ) or power 1+$(c.θ):$(_MANOPT_INDENT)$s")
     return "A stopping criterion used within tCG to check whether the residual is reduced by factor $(c.κ) or power 1+$(c.θ)\n$(_MANOPT_INDENT)$s"
 end
 function Base.show(io::IO, c::StopWhenResidualIsReducedByFactorOrPower)
@@ -249,14 +249,14 @@ end
 
 A stopping criterion to stop when next iterate is larger than the trust-region radius ``Δ ≤ $(_tex(:norm, "Y^{(k)}"; index = "p^{(k)}"))``.
 
-This can for example be used Steihaug-Toint truncated conjugate gradient method as a subsolver
+This can for example be used in the Steihaug-Toint truncated conjugate gradient method as a subsolver
 for [`trust_regions`](@ref).
 
 # Fields
 
 $(_fields(:at_iteration))
 * `trr` the trust region radius
-* `YPY` the computed norm of ``Y``.
+* `YPY` the computed squared norm of ``Y``.
 
 # Constructor
 

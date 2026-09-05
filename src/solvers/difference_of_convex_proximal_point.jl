@@ -104,7 +104,7 @@ function status_summary(dcpo::ManifoldDifferenceOfConvexProximalObjective; conte
 end
 
 @doc """
-    DifferenceOfConvexProximalState{P, T, Pr, St, S<:Stepsize, SC<:StoppingCriterion, RTR<:AbstractRetractionMethod, ITR<:AbstractInverseRetractionMethod}
+    DifferenceOfConvexProximalState{P, T, Pr, St<:AbstractManoptSolverState, C<:AbstractDict{Symbol}, S<:Stepsize, SC<:StoppingCriterion, RTR<:AbstractRetractionMethod, ITR<:AbstractInverseRetractionMethod, Tλ}
         <: AbstractSubProblemSolverState
 
 A struct to store the current state of the algorithm as well as the form.
@@ -114,27 +114,27 @@ It comes in two forms, depending on the realization of the `subproblem`.
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
+* `λ`: a function `k -> λ_k` returning the sequence of prox parameters
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:p; name = "q"))
- storing the gradient step
+  storing the gradient step
 $(_fields(:p; name = "r"))
   storing the result of the proximal map
 $(_fields(:retraction_method))
 $(_fields(:stepsize))
 $(_fields(:stopping_criterion; name = "stop"))
 * `X`: the current gradient
-  their common type is set by the keyword `X`
 $(_fields([:sub_problem, :sub_state]))
 
 # Constructor
 
     DifferenceOfConvexProximalState(M::AbstractManifold, sub_problem, sub_state; kwargs...)
 
-construct an difference of convex proximal point state
+construct a difference of convex proximal point state
 
     DifferenceOfConvexProximalState(M::AbstractManifold, sub_problem; evaluation=AllocatingEvaluation(), kwargs...)
 
-construct an difference of convex proximal point state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
+construct a difference of convex proximal point state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 
 ## Input
 
@@ -144,6 +144,7 @@ $(_args([:M, :sub_problem, :sub_state]))
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
+* `λ = k -> 1`: a function returning the sequence of prox parameters ``λ_k``
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 
@@ -290,7 +291,7 @@ Compute the difference of convex proximal point algorithm [SouzaOliveira:2015](@
 where you have to provide the subgradient ``∂h`` of ``h`` and either
 * the proximal map ``$(_tex(:prox))_{λg}`` of `g` as a function `prox_g(M, λ, p)` or  `prox_g(M, q, λ, p)`
 * the functions `g` and `grad_g` to compute the proximal map using a sub solver
-* your own sub-solver, specified by `sub_problem=`and `sub_state=`
+* your own sub-solver, specified by `sub_problem=` and `sub_state=`
 
 This algorithm performs the following steps given a start point `p`= ``p^{(0)}``.
 Then repeat for ``k=0,1,…``
@@ -325,11 +326,11 @@ $(_kwargs(:evaluation))
    or enhancing the `stopping_criterion`
 * `prox_g=missing`: specify a proximal map for the sub problem _or_ both of the following
 * `g=missing`: specify the function `g`.
-* `grad_g=missing`: specify the gradient of `g`. If both `g`and `grad_g` are specified, a subsolver is automatically set up.
+* `grad_g=missing`: specify the gradient of `g`. If both `g` and `grad_g` are specified, a subsolver is automatically set up.
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stepsize; default = "`[`ConstantLength`](@ref)`()"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)`, plus (when a gradient is provided)$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
-* `sub_cost=`[`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`):
+* `sub_cost=`[`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`:
   cost to be used within the default `sub_problem` that is initialized as soon as `g` is provided.
   $(_note(:KeywordUsedIn, "sub_objective"))
 * `sub_grad=`[`ProximalDCGrad`](@ref)`(grad_g, copy(M, p), λ(1); evaluation=evaluation)`:
@@ -338,12 +339,12 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(
 * `sub_hess`:              (a finite difference approximation using `sub_grad` by default):
    specify a Hessian of the `sub_cost`, which the default solver, see `sub_state=` needs.
 $(_kwargs(:sub_kwargs))
-* `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess`if provided
+* `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess` if provided
    the objective used within `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_problem"))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
-$(_kwargs(:sub_state; default = "(`[`GradientDescentState`](@ref)` or `[`TrustRegionsState`](@ref)` if `sub_hess` is provided)"))
-$(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "(`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
+$(_kwargs(:sub_state; default = "`([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hess` is provided`)"))
+$(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
   $(_note(:KeywordUsedIn, "sub_state"))
 
 $(_note(:OtherKeywords))

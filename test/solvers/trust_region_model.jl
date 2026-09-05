@@ -38,9 +38,6 @@ function (r::RGrad)(M::PowerManifold, X, p)
     return project!(M, X, p, r.egrad(X, p))
 end
 
-function e2rHess(M::Grassmann, p, X, e_grad, e_hess)
-    return project(M, p, project(M, p, e_hess) - X * (p' * e_grad))
-end
 function e2rhess!(M::Grassmann, Y, p, X, e_grad, e_Hess)
     project!(M, Y, p, e_Hess)
     Y .-= X * (p' * e_grad)

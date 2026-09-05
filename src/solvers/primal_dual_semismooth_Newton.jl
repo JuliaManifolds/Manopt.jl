@@ -1,5 +1,5 @@
 @doc """
-    PrimalDualManifoldSemismoothNewtonObjective{TC, LO, TALO, PF, DPF, PG, DPG, L} <: AbstractPrimalDualManifoldObjective{TC, PF}
+    PrimalDualManifoldSemismoothNewtonObjective{TC, PF, DPF, PG, DPG, LFO, TALO, L} <: AbstractPrimalDualManifoldObjective{TC, PF}
 
 Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [DiepeveenLellmann:2021](@cite)
 
@@ -68,10 +68,11 @@ $(_fields(:stopping_criterion; name = "stop"))
 $(_fields(:vector_transport_method))
 $(_fields(:X; M = "N", p = "n"))
 
-where for the update functions a [`AbstractManoptProblem`](@ref) `amp`,
-[`AbstractManoptSolverState`](@ref) `ams` and the current iterate `i` are the arguments.
+The functions `update_primal_base` and `update_dual_base` are called with an
+[`AbstractManoptProblem`](@ref) `amp`, an [`AbstractManoptSolverState`](@ref) `ams`
+and the current iteration `k` as arguments.
 If you activate these to be different from the default identity, you have to provide
-`p.Λ` for the algorithm to work (which might be `missing`).
+the exact forward operator `Λ` (by default `missing`) for the algorithm to work.
 
 # Constructor
 
@@ -148,10 +149,10 @@ _doc_get_differential_primal_prox = """
     Y = get_differential_primal_prox(M::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective, σ, p, X)
     get_differential_primal_prox!(M::AbstractManifold, Y, pdsno::PrimalDualManifoldSemismoothNewtonObjective, σ, p, X)
 
-Evaluate the differential proximal map of ``F`` stored within [`AbstractPrimalDualManifoldObjective`](@ref)
+Evaluate the differential proximal map of ``F`` stored within [`PrimalDualManifoldSemismoothNewtonObjective`](@ref)
 
 ```math
-D$(_tex(:prox))_{σF}(x)[X]
+D$(_tex(:prox))_{σF}(p)[X]
 ```
 
 which can also be computed in place of `Y`.
@@ -253,7 +254,7 @@ end
 
 get_iterate(pdsn::PrimalDualSemismoothNewtonState) = pdsn.p
 
-function set_iterate!(pdsn::PrimalDualSemismoothNewtonState, p)
+function set_iterate!(pdsn::PrimalDualSemismoothNewtonState, ::AbstractManifold, p)
     pdsn.p = p
     return pdsn
 end
@@ -304,9 +305,9 @@ function Base.show(io::IO, pdmssno::PrimalDualManifoldSemismoothNewtonObjective)
     print(io, pdmssno.prox_g_dual!); print(io, ", ")
     print(io, pdmssno.diff_prox_g_dual!); print(io, ", ")
     print(io, pdmssno.linearized_forward_operator!); print(io, ", ")
-    print(io, pdmssno.adjoint_linearized_operator!); print(io, "; ")
+    print(io, pdmssno.adjoint_linearized_operator!)
     if !ismissing(pdmssno.Λ!)
-        print(io, "Λ = "); print(io, pdmssno.Λ!); print(io, ", ")
+        print(io, "; Λ = "); print(io, pdmssno.Λ!)
     end
     return print(io, ")")
 end
@@ -596,7 +597,7 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
     for j in 1:Mdims
         eⱼ = zeros(Mdims)
         eⱼ[j] = 1
-        Θⱼ = get_vector(M, pdsn.m, eⱼ, Θ)
+        Θⱼ = get_vector(M, pdsn.p, eⱼ, Θ)
         Gⱼ = differential_shortest_geodesic_endpoint(M, pdsn.m, pdsn.p, 1 / 2, Θⱼ)
         Fⱼ = 2 * differential_log_argument(M, qb, qₚ, Gⱼ)
         Eⱼ = differential_exp_argument(M, qb, q₅, Fⱼ)

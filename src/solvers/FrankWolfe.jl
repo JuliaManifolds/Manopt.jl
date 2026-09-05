@@ -62,7 +62,7 @@ _doc_FW_sub = """
 
 A struct to store the current state of the [`Frank_Wolfe_method`](@ref)
 
-It comes in two forms, depending on the realization of the `subproblem`.
+It comes in two forms, depending on the realization of the `sub_problem`.
 
 # Fields
 
@@ -177,7 +177,7 @@ function get_message(fws::FrankWolfeState)
 end
 additional_callbacks(::Type{<:FrankWolfeState}) = [:BeforeSubsolver, :Subsolver, :Stepsize]
 
-function set_iterate!(fws::FrankWolfeState, p)
+function set_iterate!(fws::FrankWolfeState, ::AbstractManifold, p)
     fws.p = p
     return fws
 end
@@ -222,9 +222,8 @@ _doc_FW_problem = """
     $(_tex(:argmin))_{p∈$(_tex(:Cal, "C"))} f(p),
 ```
 """
-_doc_FW_sk_default = raw"``s_k = \frac{2}{k+2}``"
 _doc_Frank_Wolfe_method = """
-    Frank_Wolfe_method(M, f, grad_f, p=rand(M))
+    Frank_Wolfe_method(M, f, grad_f, p=rand(M); kwargs...)
     Frank_Wolfe_method(M, gradient_objective, p=rand(M); kwargs...)
     Frank_Wolfe_method!(M, f, grad_f, p; kwargs...)
     Frank_Wolfe_method!(M, gradient_objective, p; kwargs...)
@@ -234,7 +233,7 @@ the constrained problem
 
 $_doc_FW_problem
 
-where the main step is a constrained optimization is within the algorithm,
+where the main step is a constrained optimization within the algorithm,
 that is the sub problem (Oracle)
 
 $_doc_FW_sub
@@ -259,6 +258,7 @@ $(_note(:GradientObjective))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs([:differential, :evaluation, :retraction_method]))
 $(_kwargs(:stepsize; default = "`[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)"))
+  which in practice yields the step size ``s_k = $(_tex(:frac, "2", "k+2"))`` mentioned above
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-8)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-8)"))
 * `sub_cost=`[`FrankWolfeCost`](@ref)`(p, X)`:
   the cost of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))

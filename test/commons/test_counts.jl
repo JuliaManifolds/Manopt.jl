@@ -82,7 +82,7 @@ using LinearAlgebra: Symmetric
         X = [0.0, 1.0, zeros(n - 2)...]
         f(M, p) = 0.5 * p' * A * p
         grad_f(M, p) = A * p - (p' * A * p) * p
-        Hess_f(M, p, X) = A * X + (p' * A * X) .* p + (p' * A * p) .* X
+        Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         obj = ManifoldHessianObjective(f, grad_f, Hess_f)
         c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient, :Hessian])
         # undecorated / recursive cost -> exactly f
@@ -110,7 +110,7 @@ using LinearAlgebra: Symmetric
         #
         # And all three for mutating again
         grad_f!(M, X, p) = (X .= A * p - (p' * A * p) * p)
-        Hess_f!(M, Y, p, X) = (Y .= A * X + (p' * A * X) .* p + (p' * A * p) .* X)
+        Hess_f!(M, Y, p, X) = (Y .= A * X - (p' * A * X) .* p - (p' * A * p) .* X)
         obj_i = ManifoldHessianObjective(
             f, grad_f!, Hess_f!; evaluation = InplaceEvaluation()
         )

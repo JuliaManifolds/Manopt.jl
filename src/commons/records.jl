@@ -302,9 +302,9 @@ end
 record the iterate
 
 # Constructors
-    RecordIterate(x0)
+    RecordIterate(p0)
 
-initialize the iterate record array to the type of `x0`, which indicates the kind of iterate
+initialize the iterate record array to the type of `p0`, which indicates the kind of iterate
 
     RecordIterate(T::DataType)
 
@@ -318,7 +318,7 @@ RecordIterate(::T) where {T} = RecordIterate{T}()
 RecordIterate(d::DataType) = RecordIterate{d}()
 function RecordIterate()
     return throw(
-        ErrorException("The iterate's data type has to be provided, RecordIterate(x0).")
+        ErrorException("The iterate's data type has to be provided, RecordIterate(p0).")
     )
 end
 function (r::RecordIterate{T})(
@@ -374,7 +374,7 @@ Create a [`RecordAction`](@ref) that records the primal base point change,
 a [`RecordEntryChange`](@ref) of the field `m` with distance to the last value to store a value.
 """
 function RecordPrimalBaseChange()
-    return RecordEntryChange(:m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y))
+    return RecordEntryChange(:m, (amp, ams, p1, p2) -> distance(get_manifold(amp, 1), p1, p2))
 end
 
 """

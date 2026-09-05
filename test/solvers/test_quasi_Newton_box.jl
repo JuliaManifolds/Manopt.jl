@@ -23,7 +23,7 @@ using RecursiveArrayTools
         @test Manopt.get_stepsize_bound(M, p, d, 2) ≈ Inf
     end
 
-    @testset "update_fp_fpp - basic d = -g" begin
+    @testset "segment Hessian updater - basic d = -g" begin
         M = Hyperrectangle([0.0, 1.0], [3.0, 3.0])
 
         grad = [1.0, 4.0]
@@ -56,7 +56,7 @@ using RecursiveArrayTools
         @test hv_eb_d == original_hv_eb_d
     end
 
-    @testset "update_fp_fpp - basic d = [-2.0, -1.0]" begin
+    @testset "segment Hessian updater - basic d = [-2.0, -1.0]" begin
         M = Hyperrectangle([0.0, 1.0], [3.0, 3.0])
 
         grad = [1.0, 4.0]
@@ -88,7 +88,7 @@ using RecursiveArrayTools
         @test hv_eb_d == original_hv_eb_d
     end
 
-    @testset "update_fp_fpp - basic d = [-2.0, -1.0] with limited memory update" begin
+    @testset "segment Hessian updater - limited memory update" begin
         M = Hyperrectangle([1.0, 4.0], [2.0, 10.0])
 
         p = [2.0, 5.0]
@@ -287,12 +287,6 @@ using RecursiveArrayTools
         p0 = [0.0, 4.0, 1.0]
         p_opt = quasi_Newton(MInf, f3, grad_f3, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test f3(MInf, p_opt) < 16.1
-
-        p_opt = quasi_Newton(
-            MInf, f3, grad_f3, p0;
-            stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100),
-        )
-        @test f3(MInf, p_opt) < 64.0
     end
 
     @testset "has_anisotropic_max_stepsize" begin

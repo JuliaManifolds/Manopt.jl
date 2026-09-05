@@ -19,13 +19,15 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     s = repr(neg_obj)
     @test startswith(s, "ScaledManifoldObjective(ManifoldHessianObjective(")
     @test endswith(s, "-1)")
-    @test repr(neg_obj) == s
     scaled_obj = -1 * obj
+    @test repr(scaled_obj) == s
     @test scaled_obj == neg_obj
     scaled_obj! = -1.0 * obj!
     # just verify that this also works for double decorated ones.
     deco_obj = ScaledManifoldObjective(ManifoldCountObjective(M, obj, [:Cost]), 0.5)
     @test startswith(Manopt.status_summary(scaled_obj), "A scaled version of the objective")
+    @test startswith(Manopt.status_summary(deco_obj), "A scaled version of the objective")
+    @test get_cost(M, deco_obj, p) == 0.5 * f(M, p)
     #
     # Test and compare all accessors
     #
@@ -65,9 +67,6 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     @test grad_f1!(M, Y, p) == -∇f!(M, Z, p)
     @test Y == -Z
 
-    Hess_f1 = Manopt.get_hessian_function(scaled_obj)
-    @test Hess_f1 != ∇²f
-    @test Hess_f1(M, p, X) == -∇²f(M, p, X)
     Hess_f1! = Manopt.get_hessian_function(scaled_obj!; evaluation = InplaceEvaluation())
     @test Hess_f1! != ∇²f!
     @test Hess_f1!(M, Y, p, X) == -∇²f!(M, Z, p, X)

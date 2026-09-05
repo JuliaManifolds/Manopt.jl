@@ -26,7 +26,7 @@ construct the exact penalty state.
 
     ExactPenaltyMethodState(M::AbstractManifold, sub_problem;
         evaluation=AllocatingEvaluation(), kwargs...
-)
+    )
 
 construct the exact penalty state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 The closed form solution is expected to be of the form `(M, q, ρ, u, p) -> q` for the in-place and
@@ -144,7 +144,6 @@ function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :defaul
     (context === :inline) && return "A solver state for the exact penalty method$(_iteration_suffix(epms))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(epms.stop) ? "Yes" : "No"
-    (context === :inline) && (return "An exact penalty method state – $(Iter) $(has_converged(epms) ? "(converged)" : "")")
     as = _callbacks_summary(epms)
     s = """
     # Solver state for `Manopt.jl`s Exact Penalty Method
@@ -162,7 +161,7 @@ end
 
 _doc_EPM_penalty = raw"""
 ```math
-f(x) + ρ\biggl( \sum_{i=1}^m \max\bigl\{0, g_i(x)\bigr\} + \sum_{j=1}^n \vert h_j(x)\vert\biggr),
+f(p) + ρ\biggl( \sum_{i=1}^m \max\bigl\{0, g_i(p)\bigr\} + \sum_{j=1}^n \vert h_j(p)\vert\biggr),
 ```
 where ``ρ>0`` is the penalty parameter.
 """
@@ -172,13 +171,13 @@ _doc_EMP_ϵ_update = raw"""
 ϵ^{(k)}=\max\{ϵ_{\min}, θ_ϵ ϵ^{(k-1)}\},
 ```
 
-where ``ϵ_{\min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor, and
+where ``ϵ_{\min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is a constant scaling factor, and
 """
 
 _doc_EMP_ρ_update = raw"""
 ```math
 ρ^{(k)} = \begin{cases}
-ρ^{(k-1)}/θ_ρ,  & \text{if } \displaystyle \max_{j ∈ \mathcal{E},i ∈ \mathcal{I}} \Bigl\{ \vert h_j(x^{(k)}) \vert, g_i(x^{(k)})\Bigr\} \geq u^{(k-1)} \Bigr) ,\\
+ρ^{(k-1)}/θ_ρ,  & \text{if } \displaystyle \max_{j ∈ \mathcal{E},i ∈ \mathcal{I}} \Bigl\{ \vert h_j(p^{(k)}) \vert, g_i(p^{(k)})\Bigr\} > u^{(k-1)},\\
 ρ^{(k-1)}, & \text{ else,}
 \end{cases}
 ```
@@ -190,7 +189,7 @@ _doc_EMP_u_update = raw"""
 u^{(k)} = \max \{u_{\min}, \theta_u u^{(k-1)} \},
 ```
 
-where ``u_{\min}`` is the lowest value ``u`` is allowed to become and ``θ_u ∈ (0,1)`` is constant scaling factor.
+where ``u_{\min}`` is the lowest value ``u`` is allowed to become and ``θ_u ∈ (0,1)`` is a constant scaling factor.
 """
 
 _doc_EPM = """
@@ -253,14 +252,14 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
    If not provided, a call to the gradient of `g` is performed to estimate these.
 * `smoothing=`[`LogarithmicSumOfExponentials`](@ref): a [`SmoothingTechnique`](@ref) to use
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )"))
-* `sub_cost=`[`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`: cost to use in the sub solver
+* `sub_cost=`[`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`: cost to use in the sub solver.
   $(_note(:KeywordUsedIn, "sub_problem"))
-* `sub_grad=`[`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver
+* `sub_grad=`[`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver.
   $(_note(:KeywordUsedIn, "sub_problem"))
 $(_kwargs(:sub_kwargs))
-$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation))"))
 $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
-  where a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used
+  The default uses a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref).
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`: a stopping criterion for the sub solver
   $(_note(:KeywordUsedIn, "sub_state"))
 * `u=1e-1`: the smoothing parameter and threshold for violation of the constraints

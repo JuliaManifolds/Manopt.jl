@@ -367,7 +367,7 @@ print a certain entries change during iterates
 
 * `io=stdout`:                      an `IOStream` used for the debug
 * `prefix="Change of \$f:"`:         the prefix
-* `storage=StoreStateAction((f,))`: a [`StoreStateAction`](@ref)
+* `storage=StoreStateAction([f])`:  a [`StoreStateAction`](@ref)
 * `initial_value=NaN`:              an initial value for the change of the entry `f`.
 * `format="\$prefix%s"`:             format to print the change
 """
@@ -630,7 +630,7 @@ function status_summary(dg::DebugGradient; context::Symbol = :default)
 end
 
 @doc """
-    DebugGradientChange()
+    DebugGradientChange(M::AbstractManifold=DefaultManifold(); kwargs...)
 
 debug for the amount of change of the gradient (stored in `get_gradient` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
@@ -700,7 +700,7 @@ end
 @doc """
     DebugGradientNorm <: DebugAction
 
-debug for gradient evaluated at the current iterate.
+debug for the norm of the gradient evaluated at the current iterate.
 
 # Constructors
     DebugGradientNorm(; long=false, prefix=long ? "Norm of the Gradient: " : "|grad f(p)|:", format="\$prefix%s", io=stdout, at_init=true)
@@ -1080,7 +1080,7 @@ mutable struct DebugStepsize <: DebugAction
 end
 function (d::DebugStepsize)(
         p::P, s::O, k::Int
-    ) where {P <: AbstractManoptProblem, O <: AbstractGradientSolverState}
+    ) where {P <: AbstractManoptProblem, O <: AbstractManoptSolverState}
     (k < (d.at_init ? 0 : 1)) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, k))
     return nothing
@@ -1101,7 +1101,7 @@ empty, unless the algorithm stops.
 
 # Fields
 
-* `prefix=""`: format to print the output
+* `prefix=""`: a prefix printed before the reason the solver stopped
 * `io=stdout`: default stream to print the debug to.
 
 # Constructor
@@ -1826,7 +1826,7 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:ProxParameter` creates a [`DebugProximalParameter`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
-* `:Stop` creates a [`DebugStoppingCriterion`](@ref)
+* `:Stop` creates a [`DebugStoppingCriterion`](@ref), where `t[2]` is used as its `prefix` and not as a format
 * `:Time` creates a [`DebugTime`](@ref)
 * `:IterativeTime` creates a [`DebugTime`](@ref)`(; mode=:Iterative)`
 * `:Messages`, `:InfoMessages`, `:WarningMessages`, and `:ErrorMessages` create the corresponding

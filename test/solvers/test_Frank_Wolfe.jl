@@ -16,7 +16,6 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
         return q[i] = p[i] - sign(X[i])
     end
     function oracle(M, p, X)
-        X
         i = argmax(X)
         q = copy(p)
         q[i] = p[i] - sign(X[i])
@@ -38,7 +37,7 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
         @test startswith(repr(s), "FrankWolfeState(")
         # Manifold+State errors since problem is missing
         @test_throws ErrorException FrankWolfeState(M, Manopt.Test.DummyState())
-        set_iterate!(s, 2 .* p)
+        set_iterate!(s, M, 2 .* p)
         @test get_iterate(s) == 2 .* p
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(FC, FG))
         gds = GradientDescentState(M)

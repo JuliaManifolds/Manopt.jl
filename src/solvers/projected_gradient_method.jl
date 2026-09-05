@@ -133,10 +133,13 @@ mutable struct StopWhenProjectedGradientStationary{F, TSSA <: StoreStateAction} 
     at_iteration::Int
 end
 function StopWhenProjectedGradientStationary(
-        M::AbstractManifold, ε::F;
+        M::AbstractManifold, ε::Real;
         storage::StoreStateAction = StoreStateAction(M; store_points = Tuple{:Iterate}),
-    ) where {F <: Real}
-    return StopWhenProjectedGradientStationary{F, typeof(storage)}(ε, zero(ε), storage, -1)
+    )
+    e = float(ε)
+    return StopWhenProjectedGradientStationary{typeof(e), typeof(storage)}(
+        e, zero(e), storage, -1
+    )
 end
 function (c::StopWhenProjectedGradientStationary)(
         mp::AbstractManoptProblem, pgms::ProjectedGradientMethodState, k::Int
@@ -212,9 +215,10 @@ $(_args(:p))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:stepsize; name = "backtrack", default = "`[`ArmijoLinesearchStepsize`](@ref)`(M; stop_increasing_at_step=0)")) to perform the backtracking to determine the ``β_k``.
   Note that the method requires ``β_k ≤ 1``, otherwise the projection step no longer provides points within the constraints
-$(_kwargs([:evaluation, :retraction_method]))
+$(_kwargs([:evaluation, :inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stepsize; default = "`[`ConstantStepsize`](@ref)`(M)")) to perform the candidate projected step.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenProjectedGradientStationary`](@ref)`(M, 1.0e-7)"))
+$(_kwargs(:X))
 
 $(_note(:OtherKeywords))
 

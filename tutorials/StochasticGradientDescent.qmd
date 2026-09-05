@@ -93,7 +93,7 @@ p_opt2 = stochastic_gradient_descent(M, gradf, p0)
 ```
 
 
-This result is reasonably close. But we can improve it by using a [`DirectionUpdateRule`](@ref), namely:
+This result is reasonably close. We can also modify the search direction by using a [`DirectionUpdateRule`](@ref), namely:
 
 On the one hand [`MomentumGradient`](@ref), which keeps track of the iterate and parallel transports the last direction to the current iterate.
 The necessary `vector_transport_method=` keyword is set to a suitable default on every manifold,
@@ -114,12 +114,12 @@ And on the other hand the [`AverageGradient`](@ref) computes an average of the l
 
 ```{julia}
 p_opt4 = stochastic_gradient_descent(
-    M, gradf, p0; direction=AverageGradient(; n=10, direction=StochasticGradient()), debug=[],
+    M, gradf, p0; direction=AverageGradient(; n=10, direction=StochasticGradient()),
 )
 ```
 ```{julia}
 AG = AverageGradient(; n=10, direction=StochasticGradient());
-@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$AG, debug=[])
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$AG)
 ```
 
 Note that the default [`StoppingCriterion`](@ref) here is [`StopAfterIteration`](@ref)`(10000)` combined with [`StopWhenGradientNormLess`](@ref)`(1e-9)`.

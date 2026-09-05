@@ -10,8 +10,6 @@ Describes the augmented Lagrangian method, with
 
 # Fields
 
-a default value is given in brackets if a parameter can be left out in initialization.
-
 * `ϵ`:     the accuracy tolerance
 * `ϵ_min`: the lower bound for the accuracy tolerance
 * `λ`:     the Lagrange multiplier with respect to the equality constraints
@@ -254,7 +252,7 @@ Next, the accuracy tolerance ``ϵ`` is updated as
 
 $_doc_alm_ε_update
 
- where ``ϵ_{$(_tex(:text, "min"))}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor.
+ where ``ϵ_{$(_tex(:text, "min"))}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is a constant scaling factor.
 
 Last, the penalty parameter ``ρ`` is updated as follows: with
 
@@ -277,7 +275,7 @@ $(_args([:M, :f, :grad_f]))
 * `grad_g=missing`: the gradient of the inequality constraints
 * `grad_h=missing`: the gradient of the equality constraints
 
-Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) have to be provided.
+Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
 But if neither of them is provided the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
 
 # Keyword Arguments
@@ -325,8 +323,8 @@ $(_kwargs(:sub_kwargs))
 
 $(_kwargs(:stopping_criterion; default = "`" * chopsuffix(_sc_alm_default, "`")))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
-$(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` ")), where more precisely
-  as quasi newton method, the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used.
+$(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
+  More precisely, a quasi Newton method with the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) and [`InverseBFGS`](@ref) is used by default.
 * `sub_stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`,
 
 

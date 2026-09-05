@@ -48,7 +48,7 @@ _doc_CG = """
     conjugate_gradient_descent(M, gradient_objective, p)
     conjugate_gradient_descent!(M, gradient_objective, p; kwargs...)
 
-perform a conjugate gradient based descent-
+perform a conjugate gradient based descent
 
 $(_doc_CG_formula)
 
@@ -80,12 +80,12 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `coefficient::DirectionUpdateRule=`[`ConjugateDescentCoefficient`](@ref)`()`:
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
-  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
+  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iteration.
 $(_kwargs([:differential, :evaluation]))
 * `restart_condition::AbstractRestartCondition=`[`RestartOnNonDescent`](@ref)`()`:
   rule when the algorithm should restart, i.e. use the negative gradient instead of the computed direction,
   as a functor where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
-  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
+  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iteration.
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))

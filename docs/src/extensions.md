@@ -79,6 +79,9 @@ on a [`ProductManifold`](@extref ManifoldsBase ProductManifold) as well as the f
 evaluate the gradient of a [`ManifoldAlternatingGradientObjective`](@ref).
 
 ```@docs
-Manopt.get_gradient(::ProductManifold, ::Manopt.ManifoldAlternatingGradientObjective, ::Any...)
-Manopt.get_gradient!(::AbstractManifold, ::Any, ::Manopt.ManifoldAlternatingGradientObjective, ::Any)
+
+Manopt.get_gradient(::ProductManifold, ::Manopt.ManifoldAlternatingGradientObjective, ::Any)
+Manopt.get_gradient!(::ProductManifold, ::Any, ::Manopt.ManifoldAlternatingGradientObjective, ::Any)
+Manopt.get_gradient(::AbstractManifold, ::Manopt.ManifoldAlternatingGradientObjective, ::Any, ::Any)
+Manopt.get_gradient!(::AbstractManifold, ::Any, ::Manopt.ManifoldAlternatingGradientObjective, ::Any, ::Any)
 ```

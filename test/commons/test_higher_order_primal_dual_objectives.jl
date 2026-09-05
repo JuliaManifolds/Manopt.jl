@@ -20,9 +20,6 @@ using ManifoldDiff:
     M = PowerManifold(pixelM, NestedPowerRepresentation(), 2 * signal_section_size)
     data = [[1.0, 0.0, 0.0], 1 / sqrt(2) .* [1.0, 1.0, 0.0]]
     α = 1
-    # known minimizer
-    δ = min(α / distance(pixelM, data[1], data[2]), 0.5)
-    p_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = M
     fidelity(M, p) = 1 / 2 * distance(M, p, data)^2
     Λ(M, p) = ArrayPartition(p, forward_logs(M, p))

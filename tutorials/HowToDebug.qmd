@@ -76,7 +76,7 @@ p1 = exact_penalty_method(
 While in the last step, we specified what to print, this can be extended to even specify _when_ to print it. Currently the following four “places” are available, ordered by when they appear
 in an algorithm run.
 
-* `:Start` to print something at the start of the algorithm. At this place all other (the following) places are “reset”, by triggering each of them with an iteration number `0`
+* `:Start` to print something at the start of the algorithm. At this place all other (the following) places are “reset”: `:BeforeIteration` and `:Iteration` are triggered with an iteration number `0`, so they may already print, while `:Stop` is triggered with `-1`, which resets it without printing
 * `:BeforeIteration` to print something before an iteration starts
 * `:Iteration` to print something _after_ an iteration. For example the group of prints from
 the last code block `[:Iteration, :Cost, " | ", (:ϵ,"ϵ: %.8f"), 25,]` is added to this entry.
@@ -175,7 +175,7 @@ p2 = exact_penalty_method(
 );
 ```
 
-You can also write your own [`DebugAction`](@ref) functor, where the function to implement has the same signature as the `step` function, that is an [`AbstractManoptProblem`](@ref), an [`AbstractManoptSolverState`](@ref), as well as the current iteration `k`. For example the already mentioned [`DebugDivider`](@ref)`(s)` is given as
+You can also write your own [`DebugAction`](@ref) functor, where the function to implement has the same signature as the `step` function, that is an [`AbstractManoptProblem`](@ref), an [`AbstractManoptSolverState`](@ref), as well as the current iteration `k`. For example, a simplified version of the already mentioned [`DebugDivider`](@ref) could look like
 
 ```{julia}
 #| eval: false

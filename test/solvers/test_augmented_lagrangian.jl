@@ -14,8 +14,7 @@ using LinearAlgebra: I, tr
         mI = -Matrix{Float64}(I, d, d)
         grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
         p0 = project(M, ones(d))
-        # This run (and the following as well) seem to stall after iteration 3 (previously 14)
-        # not reaching the minimiser as before
+        # This run (and the following ones) converge to the minimizer in 12 iterations
         sol = augmented_Lagrangian_method(M, f, grad_f, p0; g = g, grad_g = grad_g)
         @test distance(M, sol, v0) < 8 * 1.0e-4
         sol2 = copy(M, p0)

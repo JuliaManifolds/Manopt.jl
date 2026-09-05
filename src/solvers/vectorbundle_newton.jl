@@ -14,7 +14,7 @@ $(_fields(:X))
 $(_fields(:sub_problem))
   currently only the closed form solution is implemented, that is, this is a functor that maps
   either `(problem::`[`VectorBundleManoptProblem`](@ref)`, state::VectorBundleNewtonState) -> X` or `(problem, X, state) -> X` to compute the Newton direction.
-$(_fields(:sub_state)) specify how the sub_problem is evaluated, e.g. [`AllocatingEvaluation`](@ref) or [`InplaceEvaluation`](@ref)
+$(_fields(:sub_state)) This specifies how the `sub_problem` is evaluated, e.g. [`AllocatingEvaluation`](@ref) or [`InplaceEvaluation`](@ref)
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields([:stepsize, :retraction_method]))
 
@@ -26,7 +26,7 @@ $(_fields([:stepsize, :retraction_method]))
 
 $(_args(:M))
 * `E`: range vector bundle
-$(_args([:p, :sub_state, :sub_problem]))
+$(_args([:p, :sub_problem, :sub_state]))
 
 # Keyword arguments
 
@@ -127,7 +127,7 @@ If the manifold does not have components, the outer norm is ignored.
 Initializes all fields, where none of them is mandatory. The length is set to ``1.0``.
 
 Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
-This should be implemented as a method of the `newton_equation(M, VB, p, p_trial)` as parameters and returning a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
+This should be implemented as a method of the Newton equation functor that takes `(M, VB, p, p_trial)` as parameters and returns a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
 """
 mutable struct AffineCovariantStepsize{R <: Real, N <: Union{Real, Missing}} <: Stepsize
     α::R
@@ -242,8 +242,8 @@ end
 @doc """
     VectorBundleManoptProblem{M<:AbstractManifold,TV<:AbstractManifold,O} <: AbstractManoptProblem{M}
 
-Model a vector bundle problem, that consists of the domain manifold ``$(_math(:Manifold))`` that is a $(_link(:AbstractManifold)), the range vector bundle ``$(_tex(:Cal, "E"))`` and the Newton equation ``Q_{F(x)}∘ F'(x) δ x + F(x) = 0_{p(F(x))}``.
-The Newton equation should be implemented as a functor that computes a representation of the Newton matrix and the right hand side. It needs to have a field ``A`` to store a representation of the Newton matrix ``Q_{F(x)}∘ F'(x) `` and a field ``b`` to store a representation of the right hand side ``F(x)``.
+Model a vector bundle problem, that consists of the domain manifold ``$(_math(:Manifold))`` that is a $(_link(:AbstractManifold)), the range vector bundle ``$(_tex(:Cal, "E"))`` and the Newton equation ``Q_{F(p)}∘ F'(p) X + F(p) = 0``.
+The Newton equation should be implemented as a functor that computes a representation of the Newton matrix and the right hand side. It needs to have a field ``A`` to store a representation of the Newton matrix ``Q_{F(p)}∘ F'(p)`` and a field ``b`` to store a representation of the right hand side ``F(p)``.
 """
 struct VectorBundleManoptProblem{
         M <: AbstractManifold, TV <: AbstractManifold, O,
@@ -318,8 +318,8 @@ For more details see [WeiglSchiela:2024, WeiglBergmannSchiela:2025](@cite).
 
 $(_args(:M))
 * `E`: range vector bundle
-$(_args(:p))
 * `NE`: functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}∘ F'(p)`` (covariant derivative of ``F`` at ``p``) and the right hand side ``F(p)`` at a point ``p ∈ $(_math(:Manifold))``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
+$(_args(:p))
 
 # Keyword arguments
 

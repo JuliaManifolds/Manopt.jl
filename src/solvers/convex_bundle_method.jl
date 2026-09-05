@@ -225,8 +225,6 @@ mutable struct ConvexBundleMethodState{
         !isnothing(k_max) && (k_max = convert(R, k_max))
         !isnothing(k_min) && (k_min = convert(R, k_min))
         !isnothing(ϱ) && (ϱ = convert(R, (ϱ)))
-        atol_errors = convert(R, atol_errors)
-        m, diameter, last_stepsize
         null_stepsize = one(R)
         linearization_errors = Vector{R}()
         ε = zero(R)
@@ -493,7 +491,7 @@ end
     NullStepBackTrackingStepsize <: Stepsize
 
 Implement a backtracking with a geometric condition in the case of a null step.
-For the domain this step size requires a [`ConvexBundleMethodState`](@ref).
+To access the parameters of the bundle method, this step size requires a [`ConvexBundleMethodState`](@ref).
 """
 mutable struct NullStepBackTrackingStepsize{TRM <: AbstractRetractionMethod, P, F, T} <: Stepsize
     candidate_point::P
@@ -662,13 +660,16 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
 $(_kwargs(:inverse_retraction_method))
 * `k_max=0`: upper bound on the sectional curvature of the manifold.
+* `k_min=0`: lower bound on the sectional curvature of the manifold.
 * `m=1e-3`: the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m t_k ξ``, where ``t_k`` is the step size of iteration ``k``.
+* `p_estimate=p`: the center point for the curvature estimation.
+$(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`DomainBackTracking`](@ref)`(; contraction_factor=0.975)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:sub_problem; default = "`[`convex_bundle_method_subsolver`](@ref)` "))
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)`()"))
 $(_kwargs(:vector_transport_method))
-$(_kwargs(:X))
+* `ϱ=nothing`: curvature-dependent convexification coefficient; computed from `k_min`, `k_max`, and `diameter` if `nothing`.
 
 $(_note(:OtherKeywords))
 

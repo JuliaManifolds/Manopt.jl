@@ -139,8 +139,8 @@ m3 = gradient_descent(M, f, grad_f, data[1];
 )
 ```
 
-We can finally use another way to determine the step size, for example
-the default [`ArmijoLinesearch`](@ref) [stepsize](../commons/stepsizes.md) rule, but with more expensive parameter choices.
+We can finally also tune the step size, for example by choosing more expensive parameters for
+the default [`ArmijoLinesearch`](@ref) [stepsize](../commons/stepsizes.md) rule.
 
 ```{julia}
 m4 = gradient_descent(M, f, grad_f, data[1];

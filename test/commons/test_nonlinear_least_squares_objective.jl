@@ -1,6 +1,6 @@
 using Manifolds, Manopt, RecursiveArrayTools, Test
 
-@testset "Nonlinear lest squares plan" begin
+@testset "Nonlinear least squares plan" begin
     @testset "Test cost/residual/jacobian cases" begin
         # a simple nlso objective on R2
         M = Euclidean(2)
@@ -143,7 +143,6 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
                 Manopt.get_vector_field!(M, nevfB!, no, p, DefaultOrthogonalBasis())
                 @test isapprox(nevfB, nevfB!)
                 @test isapprox(nevfB, -nvfB)
-                # Manopt.get_normal_vector_field!(M, nvf!, lmlso, p, DefaultOrthogonalBasis())
                 # its linear operator and vector field (in a basis)
                 neo = Manopt.get_linear_operator(M, no, p, X)
                 neo! = zeros(2)
@@ -162,9 +161,6 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
                 Manopt.get_linear_operator!(M, neoBA!, no, p, DefaultOrthogonalBasis())
                 @test isapprox(neoBA, neoBA!)
                 @test isapprox(neoBA, nloBA)
-                # and a call with filled jacobian case if we have a basis
-                if (nlso === nlsoJa) || (nlso === nlsoRobust)
-                end
             end
             @testset "Gradient with caching test" begin
                 Z = get_gradient(M, nlsoRobustJa, p)
@@ -211,7 +207,7 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
         B1 = DefaultBasis()
         B2 = DefaultOrthonormalBasis()
         Manopt._change_basis!(M, J, p, B1, B2)
-        # In practice both are the same basis in coordinates, so Jtt stays as iss
+        # In practice both are the same basis in coordinates, so J stays as it is
         @test J == Jt
     end
     @testset "show/repr and status_summary" begin

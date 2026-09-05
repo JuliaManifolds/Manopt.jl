@@ -1,7 +1,7 @@
 @doc """
     QuasiNewtonState <: AbstractManoptSolverState
 
-The [`AbstractManoptSolverState`](@ref) represent any quasi-Newton based method and stores
+The [`AbstractManoptSolverState`](@ref) represents any quasi-Newton based method and stores
 all necessary fields.
 
 # Fields
@@ -9,11 +9,11 @@ all necessary fields.
 $(_fields(:callbacks; add_properties = [:as_dict]))
 * `direction_update`:              an [`AbstractQuasiNewtonDirectionUpdate`](@ref) rule.
 * `η`:                             the current update direction
-* `nondescent_direction_behavior`: a `Symbol` to specify how to handle direction that are not descent ones.
+* `nondescent_direction_behavior`: a `Symbol` to specify how to handle directions that are not descent ones.
 * `nondescent_direction_value`:    the value from the last inner product from checking for descent directions
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `p_old`:                         the last iterate
-* `preconditioner`                 an [`QuasiNewtonPreconditioner`](@ref)
+* `preconditioner`:                a [`QuasiNewtonPreconditioner`](@ref)
 * `sk`:                            the current step
 $(_fields([:retraction_method, :stepsize]))
 $(_fields(:stopping_criterion; name = "stop"))
@@ -32,12 +32,12 @@ Generate the Quasi Newton state on the manifold `M`.
 ## Keyword arguments
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
-* `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), memory_size; vector_transport_method=vector_transport_method)`
+* `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), memory_size; vector_transport_method=vector_transport_method, initial_scale=initial_scale)`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 * `initial_scale=1.0`: a relative initial scale. By default deactivated when using a preconditioner.
 * `memory_size=20`: a shortcut to set the memory in the default direction update
 $(_kwargs(:p; add_properties = [:as_Initial]))
-* `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, missing} = missing` specify a preconditioner or deactivate by passing `missing`.
+* `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, Missing} = missing` specify a preconditioner or deactivate by passing `missing`.
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`QuasiNewtonState`](@ref)`)"))
 $(_kwargs(:vector_transport_method))
@@ -224,7 +224,7 @@ $(_kwargs(:differential))
 * `direction_update=`[`InverseBFGS`](@ref)`()`:
   the [`AbstractQuasiNewtonUpdateRule`](@ref) to use.
 $(_kwargs(:evaluation; add_properties = [:GradientExample]))
-* `initial_operator= initial_scale*Matrix{Float64}(I, n, n)`:
+* `initial_operator=Matrix{Float64}(I, n, n)`:
    initial matrix to use in case the Hessian (inverse) approximation is stored as a full matrix,
    that is `n=manifold_dimension(M)`. This matrix is only allocated for the full matrix case.
    See also `initial_scale`.
@@ -460,8 +460,8 @@ end
 @doc """
     update_hessian!(d::AbstractQuasiNewtonDirectionUpdate, amp, st, p_old, k)
 
-update the Hessian within the [`QuasiNewtonState`](@ref) `st` given a [`AbstractManoptProblem`](@ref) `amp`
-as well as the an [`AbstractQuasiNewtonDirectionUpdate`](@ref) `d` and the last iterate `p_old`.
+update the Hessian within the [`QuasiNewtonState`](@ref) `st` given an [`AbstractManoptProblem`](@ref) `amp`
+as well as an [`AbstractQuasiNewtonDirectionUpdate`](@ref) `d` and the last iterate `p_old`.
 Note that the current (`k`th) iterate is already stored in [`get_iterate`](@ref)`(st)`.
 
 See also [`AbstractQuasiNewtonUpdateRule`](@ref) and its subtypes for the different rules
@@ -711,7 +711,7 @@ function fill_rho_i!(M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectio
         d.ρ[i] = zero(eltype(d.ρ))
         if length(d.message) > 0
             d.message = replace(d.message, " i=" => " i=$i,")
-            d.message = replace(d.message, "summand in" => "summands in")
+            d.message = replace(d.message, "summand from" => "summands from")
         else
             d.message = "The inner products ⟨s_i,y_i⟩ <= $(d.sy_tol * norm(M, p, d.memory_y[i])^2), i=$i, removing summand from approximation."
         end

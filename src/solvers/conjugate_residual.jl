@@ -15,12 +15,12 @@ A state for the [`conjugate_residual`](@ref) solver.
 * `β::R`: the conjugate coefficient
 $(_fields(:stopping_criterion; name = "stop"))
 * `warm_start`: whether to warm start or not when reusing this state, i.e.
-  * `true` (default): means we reuse the values in `X` on initialization and set the remaining terms accordingly. This involved one call to the objectives linear system and right hand side.
+  * `true` (default): means we reuse the values in `X` on initialization and set the remaining terms accordingly. This involves one call to the objective's linear system and right hand side.
   * `false`: Initialize `X` to the zero vector and hence `d=r=-b(p)`, but we avoid evaluating the linear operator.
 
 # Constructor
 
-    ConjugateResidualState(TpM::TangentSpace,slso::SymmetricLinearSystemObjective; kwargs...)
+    ConjugateResidualState(TpM::TangentSpace, slso::AbstractSymmetricLinearSystemObjective; kwargs...)
 
 Initialize the state with default values.
 
@@ -35,6 +35,7 @@ Initialize the state with default values.
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:X; default = _open_link(:rand; M = "TpM")))
+* `warm_start=true`: whether to reuse the values in `X` for the initialization (`true`) or to start from the zero vector (`false`), see the field description above.
 
 # See also
 
@@ -125,7 +126,7 @@ Stop when the relative residual in the [`conjugate_residual`](@ref)
 is below a certain threshold, i.e.
 
 ```math
-$(_tex(:displaystyle))$(_tex(:frac, _tex(:norm, "r^{(k)}"), "c")) ≤ ε,
+$(_tex(:displaystyle))$(_tex(:frac, _tex(:norm, "r^{(k)}"), "c")) < ε,
 ```
 
 where ``c = $(_tex(:norm, "b"))`` of the initial vector from the vector field in ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p``,
@@ -214,13 +215,13 @@ Compute the solution of ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p ``, where
 * ``0_p`` is the zero vector ``$(_math(:TangentSpace))``.
 
 This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
-is initialized with ``X^{(0)}`` as the zero vector and
+is initialized with ``X^{(0)}`` as the given tangent vector `X` (or as the zero vector if `warm_start=false`) and
 
 * the initial residual ``r^{(0)} = -b(p) - $(_tex(:Cal, "A"))(p)[X^{(0)}]``
 * the initial conjugate direction ``d^{(0)} = r^{(0)}``
 * initialize ``Y^{(0)} = $(_tex(:Cal, "A"))(p)[r^{(0)}]``
 
-performed the following steps at iteration ``k=0,…`` until the `stopping_criterion` is fulfilled.
+It then performs the following steps at iteration ``k=0,…`` until the `stopping_criterion` is fulfilled.
 
 1. compute a step size ``α_k = $(_tex(:displaystyle))$(_tex(:frac, "⟨ r^{(k)}, $(_tex(:Cal, "A"))(p)[r^{(k)}] ⟩_p", "⟨ $(_tex(:Cal, "A"))(p)[d^{(k)}], $(_tex(:Cal, "A"))(p)[d^{(k)}] ⟩_p"))``
 2. do a step ``X^{(k+1)} = X^{(k)} + α_kd^{(k)}``
@@ -236,7 +237,7 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 
 * `TpM` the [`TangentSpace`](@extref `ManifoldsBase.TangentSpace`) as the domain
 * `A` a symmetric linear operator on the tangent space `(M, p, X) -> Y`
-* `b` a vector field on the tangent space `(M, p) -> X`
+* `b` a vector field on the manifold `(M, p) -> X`
 * `X` the initial tangent vector
 
 # Keyword arguments
@@ -245,6 +246,8 @@ $(_kwargs(:evaluation))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
   where ``c = $(_tex(:norm, "b"))`` is the norm of the vector field `b` at `p`.
+* `warm_start=true`: whether to reuse the initial `X` to warm start the solver (`true`) or to start from the zero vector (`false`), see [`ConjugateResidualState`](@ref).
+
 $(_note(:OutputSection))
 """
 

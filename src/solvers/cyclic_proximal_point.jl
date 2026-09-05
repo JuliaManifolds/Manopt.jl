@@ -8,7 +8,7 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:stopping_criterion; name = "stop"))
-* `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``k``
+* `λ`:         a function for the values of ``λ_k`` per iteration (cycle) ``k``
 * `order_type`: specify whether to use a fixed randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`), or the default `:Linear` order.
 
@@ -27,7 +27,7 @@ $(_args(:M))
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `evaluation_order=:Linear`: specify whether to use a fixed randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`), or the default `:Linear` order.
-* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_math(:Manifold; M = "N"))``,
+* `λ=i -> 1.0 / i`: a function to compute ``λ_k`` for ``k ∈ ℕ``,
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)"))
 

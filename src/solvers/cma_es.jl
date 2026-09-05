@@ -24,6 +24,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `population`                  population of the current generation
 * `ys_c`                        coordinates of random vectors for the current generation
 * `covariance_matrix`           coordinates of the covariance matrix
+* `last_variances`              eigenvalues of `covariance_matrix` from the previous iteration, used to replace nonpositive eigenvalues
 * `covariance_matrix_eigen`     eigen decomposition of `covariance_matrix`
 * `covariance_matrix_cond`      condition number of `covariance_matrix`, updated after eigen decomposition
 * `best_fitness_current_gen`    best fitness value of individuals in the current generation
@@ -61,6 +62,7 @@ $(_fields(:vector_transport_method))
         covariance_matrix::Matrix{TParams},
         σ::TParams,
         recombination_weights::Vector{TParams};
+        callbacks=Dict{Symbol, Function}(),
         retraction_method::TRetraction=default_retraction_method(M, typeof(p_m)),
         vector_transport_method::TVTM=default_vector_transport_method(M, typeof(p_m)),
         basis::TB=default_basis(M, typeof(p_m)),
@@ -416,7 +418,7 @@ function default_cma_es_stopping_criterion(
         Int(10 + ceil(30 * manifold_dimension(M) / λ))
     ) |
         StopWhenEvolutionStagnates(
-        Int(120 + 30 * ceil(30 * manifold_dimension(M) / λ)), 20000, 0.3
+        Int(120 + ceil(30 * manifold_dimension(M) / λ)), 20000, 0.3
     ) |
         StopWhenPopulationDiverges(1.0e4) |
         StopWhenPopulationCostConcentrated(
@@ -511,10 +513,10 @@ calls_with_kwargs(::typeof(cma_es!)) = (decorate_objective!, decorate_state!)
         basis::AbstractBasis, vtm::AbstractVectorTransportMethod,
     )
 
-Transport the matrix with `matrix_eig` eigen decomposition when expanded in `basis` from
+Transport the matrix with `matrix_eigen` eigen decomposition when expanded in `basis` from
 point `p` to point `q` on `M`. Update `matrix_eigen` in-place.
 
-`(p, matrix_eig)` belongs to the fiber bundle of ``B = $(_math(:Manifold)) × $(_tex(:rm, "SPD"))(n)``, where `n`
+`(p, matrix_eigen)` belongs to the fiber bundle of ``B = $(_math(:Manifold)) × $(_tex(:rm, "SPD"))(n)``, where `n`
 is the (real) dimension of `M`. The function corresponds to the Ehresmann connection
 defined by vector transport `vtm` of eigenvectors of `matrix_eigen`.
 """
@@ -589,7 +591,7 @@ requires_update(::Type{<:StopWhenCovarianceIllConditioned}) = false
     StopWhenBestCostInGenerationConstant <: StoppingCriterion
 
 Stop if the range of the best objective function values of the last `iteration_range`
-generations is zero. This corresponds to `EqualFUnValues` condition from
+generations is zero. This corresponds to `EqualFunValues` condition from
 [Hansen:2023](@cite).
 
 See also `StopWhenPopulationCostConcentrated`.
@@ -602,7 +604,8 @@ mutable struct StopWhenBestCostInGenerationConstant{TParam <: Real} <: StoppingC
 end
 
 function StopWhenBestCostInGenerationConstant{TParam}(iteration_range::Int) where {TParam}
-    return StopWhenBestCostInGenerationConstant{TParam}(iteration_range, Inf, 0, -1)
+    T = float(TParam)
+    return StopWhenBestCostInGenerationConstant{T}(iteration_range, T(Inf), 0, -1)
 end
 
 # It just indicates stagnation, not that convergence to a minimizer
@@ -653,8 +656,9 @@ end
 """
     StopWhenEvolutionStagnates{TParam<:Real} <: StoppingCriterion
 
-The best and median fitness in each iteration is tracked over the last 20% but
-at least `min_size` and no more than `max_size` iterations. Solver is stopped if
+The best and median fitness in each iteration is tracked over the last (at most)
+`max_size` iterations, and the criterion is evaluated once at least `min_size`
+values have been recorded. Solver is stopped if
 in both histories the median of the most recent `fraction` of values is not better
 than the median of the oldest `fraction`.
 """
@@ -688,7 +692,7 @@ function is_active_stopping_criterion(c::StopWhenEvolutionStagnates)
         return false
     end
     threshold_low = Int(ceil(N * c.fraction))
-    threshold_high = Int(floor(N * (1 - c.fraction)))
+    threshold_high = N - threshold_low + 1
     (threshold_low < 1 || threshold_high < 1) && return false
     best_stagnant =
         median(c.best_history[1:threshold_low]) <= median(c.best_history[threshold_high:end])
@@ -718,7 +722,7 @@ function status_summary(c::StopWhenEvolutionStagnates; context::Symbol = :defaul
     s = has_stopped ? "reached" : "not reached"
     N = length(c.best_history)
     threshold_low = Int(ceil(N * c.fraction))
-    threshold_high = Int(floor(N * (1 - c.fraction)))
+    threshold_high = N - threshold_low + 1
     if threshold_low < 1 || threshold_high < 1
         return "best and median fitness not yet filled, stopping criterion:$(_MANOPT_INDENT)$s"
     end
@@ -758,7 +762,7 @@ norm of `σ * p_c` is smaller than `tol`. This corresponds to `TolX` condition f
 # Fields
 
 * `tol` the tolerance to verify against
-* `at_iteration` an internal field to indicate at with iteration ``i ≥ 0`` the tolerance was met.
+* `at_iteration` an internal field to indicate at which iteration ``k ≥ 0`` the tolerance was met.
 
 # Constructor
 

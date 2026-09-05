@@ -310,7 +310,7 @@ using ManifoldDiff: grad_distance
             stepsize = CubicBracketingLinesearch(; sufficient_curvature = 1.0e-4),
             stopping_criterion = StopAfterIteration(2),
         )
-        @test norm(p1) ≈ 0 atol = 4 * 1.0e-16
+        @test norm(p3) ≈ 0 atol = 4 * 1.0e-16
         @test isapprox(M, p1, p3; atol = 5.0e-8)
     end
 

@@ -245,8 +245,6 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
 
         @testset "coordinate surrogate robustified high-damping regression" begin
             B2 = DefaultOrthonormalBasis(); n = length(X1)
-            c2X = [0.3, -0.5]
-            X2 = get_vector(M1, p1, c2X, B2)
             penalty = 1.0e3
 
             for r in (

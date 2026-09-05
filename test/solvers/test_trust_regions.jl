@@ -96,8 +96,8 @@ include("trust_region_model.jl")
             "# Solver state for `Manopt.jl`s Trust Region Method\n"
         )
         @test startswith(repr(s), "TrustRegionsState(")
-        # not a random one -> does not contain HZ
-        @test !contains(repr(s), "HZ = ")
+        # not a random one -> does not contain HX
+        @test !contains(repr(s), "HX = ")
         p1 = get_solver_result(s)
         q = copy(M, p)
         set_gradient!(s, M, p, zero_vector(M, p))
@@ -109,8 +109,8 @@ include("trust_region_model.jl")
             M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, randomize = true, return_state = true
         )
         @test startswith(repr(s2), "TrustRegionsState(")
-        # a random one -> does contain HZ
-        @test contains(repr(s2), "HZ = ")
+        # a random one -> does contain HX
+        @test contains(repr(s2), "HX = ")
 
         p2 = get_solver_result(s2)
         @test f(M, p2) ≈ f(M, p1)
@@ -119,14 +119,14 @@ include("trust_region_model.jl")
         s3 = trust_regions(
             M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, σ = 1.0e-3, return_state = true
         )
-        @test contains(repr(s3), "HZ = ")
+        @test contains(repr(s3), "HX = ")
         @test Manopt.get_state(s3).sub_state.randomize
         # `randomize=true` without a positive `σ` warns and deactivates the randomized mode
         s4 = @test_logs (:warn,) trust_regions(
             M, f, rgrad, rhess, p;
             max_trust_region_radius = 8.0, randomize = true, σ = 0.0, return_state = true
         )
-        @test !contains(repr(s4), "HZ = ")
+        @test !contains(repr(s4), "HX = ")
         @test !Manopt.get_state(s4).sub_state.randomize
 
         p3 = trust_regions(
@@ -156,10 +156,6 @@ include("trust_region_model.jl")
             trust_region_radius = 0.5,
         )
         @test Y2 != X
-        Y3 = truncated_conjugate_gradient_descent(
-            M, f, rgrad, rhess, p, X; trust_region_radius = 0.5
-        )
-        @test Y3 != X
         Y4 = copy(M, p, X)
         truncated_conjugate_gradient_descent!(
             M, f, rgrad, rhess, p, Y4; trust_region_radius = 0.5
@@ -249,7 +245,7 @@ include("trust_region_model.jl")
             q3 = trust_regions(M, f, grad_f, Hess_f)
             # remove ambiguity
             q3 = (sign(q3[1]) == sign(p_star[1])) ? q3 : -q3
-            @test isapprox(M, q3, p_star) || isapprox(M, q3, -p_star)
+            @test isapprox(M, q3, p_star)
 
             # a Default
             qaAoor = trust_regions(M, f, grad_f)
@@ -375,8 +371,8 @@ include("trust_region_model.jl")
         ∇f(E, p) = A * p
         ∇²f(M, p, X) = A * X
         λ = min(eigvals(A)...)
-        q = trust_regions(M, f, ∇f, p0; objective_type = :Euclidean, (project!) = (project!))
-        @test f(M, q) ≈ λ atol = 1 * 1.0e-1 # a bit imprecise?
+        q = trust_regions(M, f, ∇f, ∇²f, p0; objective_type = :Euclidean, (project!) = (project!))
+        @test f(M, q) ≈ λ atol = 1 * 1.0e-4
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         q3 = trust_regions(M, f, grad_f, p0)

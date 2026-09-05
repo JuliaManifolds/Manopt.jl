@@ -30,7 +30,7 @@ end
 
         s3 = StopWhenCostLess(0.1)
         p = DefaultManoptProblem(
-            Euclidean(), ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
+            Euclidean(), ManifoldGradientObjective((M, x) -> x^2, (M, x) -> 2x)
         )
         s = GradientDescentState(Euclidean(); p = 1.0)
         @test !s3(p, s, 1)
@@ -65,8 +65,7 @@ end
         @test !sm(p, s, 9)
         @test sm(p, s, 11)
         an = get_reason(sm)
-        m = match(r"^((.*)\n)+", an)
-        @test length(m.captures) == 2 # both have to be active
+        @test count(==('\n'), an) == 2 # both have to be active
         Manopt.set_parameter!(s3, :MinCost, 1.0e-2)
         @test s3.threshold == 1.0e-2
         # Dummy without iterations has a reasonable fallback
@@ -180,7 +179,7 @@ end
 
     @testset "TCG stopping criteria" begin
         # create dummy criterion
-        ho = ManifoldHessianObjective(x -> x, (M, x) -> x, (M, x) -> x, x -> x)
+        ho = ManifoldHessianObjective((M, x) -> x, (M, x) -> x, (M, x, X) -> X, (M, x, X) -> X)
         hp = DefaultManoptProblem(Euclidean(), ho)
         tcgs = TruncatedConjugateGradientState(
             TangentSpace(Euclidean(), 1.0); X = 0.0, trust_region_radius = 2.0, randomize = false
@@ -232,7 +231,7 @@ end
     end
 
     @testset "Test further setters" begin
-        mgo = ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
+        mgo = ManifoldGradientObjective((M, x) -> x^2, (M, x) -> 2x)
         dmp = DefaultManoptProblem(Euclidean(), mgo)
         gds = GradientDescentState(
             Euclidean();
@@ -341,6 +340,7 @@ end
         s = StopAfterIteration(2)
         sc = StopWhenRepeated(s, 3)
         sc2 = s × 3
+        @test typeof(sc) === typeof(sc2)
         @test Manopt.indicates_convergence(sc) == Manopt.indicates_convergence(s)
         @test has_converged(sc) == has_converged(s)
         @test get_reason(sc) == ""
@@ -358,7 +358,7 @@ end
     end
 
     @testset "StopWhenCriterionWithIterationCondition" begin
-        f(M, p) = 0.0 # Always triggrers
+        f(M, p) = 0.0 # Always triggers
         M = Euclidean(2)
         p = [1.0, 2.0]
         mco = ManifoldCostObjective(f)
@@ -396,7 +396,7 @@ end
     @testset "StopWhenRelativeAPosterioriCostChangeLessOrEqual" begin
         sc = StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr = 100.0)
         prob = DefaultManoptProblem(
-            Euclidean(), ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
+            Euclidean(), ManifoldGradientObjective((M, x) -> x^2, (M, x) -> 2x)
         )
         s = GradientDescentState(Euclidean(); p = 1.0)
         @test !sc(prob, s, -1)
@@ -422,7 +422,7 @@ end
 
         M = Hyperrectangle([1.0], [2.0])
         prob = DefaultManoptProblem(
-            M, ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
+            M, ManifoldGradientObjective((M, x) -> x^2, (M, x) -> 2x)
         )
         s = GradientDescentState(M; p = [1.0], X = [2.0])
         @test !sc(prob, s, -1)

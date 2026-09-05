@@ -159,7 +159,7 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
         ls.Hp_residual .= ls.Hp - α * ls.Lanczos_vectors[1]
         #this is the minimizer of one dimensional model
         ls.coefficients[1] = (α - sqrt(α^2 + 4 * ls.σ * nX)) / (2 * ls.σ)
-    else # `i > 1`
+    else # `k > 1`
         β = norm(M, p, ls.Hp_residual)
         if β > 1.0e-12 # Obtained new orthogonal Lanczos long enough with respect to numerical stability
             if length(ls.Lanczos_vectors) < k
@@ -192,7 +192,15 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
         ls.Hp_residual .= ls.Hp - β * ls.Lanczos_vectors[k - 1]
         α = real(inner(M, p, ls.Hp_residual, ls.Lanczos_vectors[k]))
         ls.Hp_residual .= ls.Hp_residual - α * ls.Lanczos_vectors[k]
-        # Update tridiagonal matrix
+        # Update tridiagonal matrix, growing the preallocated storage in case the
+        # stopping criterion allows more iterations than `maxIterLanczos`
+        if size(ls.tridig_matrix, 1) < k
+            n_old = size(ls.tridig_matrix, 1)
+            tridig = spdiagm(k, k, [0.0])
+            tridig[1:n_old, 1:n_old] = ls.tridig_matrix
+            ls.tridig_matrix = tridig
+            append!(ls.coefficients, zeros(k - n_old))
+        end
         ls.tridig_matrix[k, k] = α
         ls.tridig_matrix[k - 1, k] = β
         ls.tridig_matrix[k, k - 1] = β
@@ -315,10 +323,10 @@ function (c::StopWhenFirstOrderProgress)(
 end
 function get_reason(c::StopWhenFirstOrderProgress)
     if c.at_iteration > 0
-        return "The algorithm has reduced the model grad norm by a factor $(c.θ)."
+        return "The algorithm has reduced the model grad norm by a factor $(c.θ).\n"
     end
     if c.at_iteration == 0 # gradient 0
-        return "The gradient of the model is zero."
+        return "The gradient of the model is zero.\n"
     end
     return ""
 end
@@ -360,12 +368,12 @@ a fallback / security stopping criterion to not access a non-existing field
 in the array allocated for vectors.
 
 Note that this stopping criterion (for now) is only implemented for the case that an
-[`AdaptiveRegularizationState`](@ref) when using a [`LanczosState`](@ref) subsolver
+[`AdaptiveRegularizationState`](@ref) uses a [`LanczosState`](@ref) subsolver.
 
 # Fields
 
 * `maxLanczosVectors`: maximal number of Lanczos vectors
-* `at_iteration` indicates at which iteration (including `i=0`) the stopping criterion
+* `at_iteration` indicates at which iteration (including `k=0`) the stopping criterion
   was fulfilled and is `-1` while it is not fulfilled.
 
 # Constructor

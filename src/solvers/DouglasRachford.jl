@@ -6,7 +6,7 @@ Store all options required for the DouglasRachford algorithm,
 # Fields
 
 * `α`:                         relaxation of the step from old to new iterate, to be precise
-  ``p^{(k+1)} = g(α_k; p^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double
+  ``s^{(k+1)} = g(α_k; s^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double
   reflection involved in the DR algorithm
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
@@ -30,7 +30,7 @@ $(_args(:M))
 # Keyword arguments
 
 * `α= k -> 0.9`: relaxation of the step from old to new iterate, to be precise
-  ``p^{(k+1)} = g(α_k; p^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double reflection involved in the DR algorithm
+  ``s^{(k+1)} = g(α_k; s^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double reflection involved in the DR algorithm
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter
@@ -132,7 +132,7 @@ function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
     return s
 end
 get_iterate(drs::DouglasRachfordState) = drs.p
-function set_iterate!(drs::DouglasRachfordState, p)
+function set_iterate!(drs::DouglasRachfordState, ::AbstractManifold, p)
     drs.p = p
     return drs
 end
@@ -182,8 +182,8 @@ $(_args(:p))
 # Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `α= k -> 0.9`: relaxation of the step from old to new iterate, to be precise
-  ``p^{(k+1)} = g(α_k; p^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double reflection
+* `α= k -> 0.9`: relaxation of the step from old to new iterate on the shadow sequence ``s``, to be precise
+  ``s^{(k+1)} = g(α_k; s^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double reflection
   involved in the DR algorithm and ``g`` is a curve induced by the retraction and its inverse.
 $(_kwargs([:evaluation, :inverse_retraction_method]))
   This is used both in the relaxation step as well as in the reflection, unless you set `R` yourself.

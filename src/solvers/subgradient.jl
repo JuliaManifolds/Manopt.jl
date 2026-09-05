@@ -20,7 +20,7 @@ Initialize the Subgradient method state
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; add_properties = [:process_note]))
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`SubGradientMethodState`](@ref)`)"))
@@ -29,7 +29,7 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct SubGradientMethodState{
         P, T, C <: AbstractDict{Symbol}, RM <: AbstractRetractionMethod, S <: Stepsize, SC <: StoppingCriterion,
-    } <: AbstractManoptSolverState where {P, T}
+    } <: AbstractManoptSolverState
     callbacks::C
     p::P
     p_star::P
@@ -87,7 +87,7 @@ function status_summary(sgms::SubGradientMethodState; context::Symbol = :default
     $(_in_str(status_summary(sgms.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(sgms.stop; context = context); indent = 1, headers = 1))
+    $(_in_str(status_summary(sgms.stop; context = context); indent = 0, headers = 1))
     The algorithm converged: $Conv"""
     return s
 end

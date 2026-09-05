@@ -1,5 +1,5 @@
 """
-    StochasticGradientDescentState <: AbstractGradientDescentSolverState
+    StochasticGradientDescentState <: AbstractGradientSolverState
 
 Store the following fields for a default stochastic gradient descent algorithm,
 see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient_descent`](@ref).
@@ -16,6 +16,7 @@ $(_fields(:stepsize))
   which chooses a random gradient in every step.
 * `order`: stores the current permutation
 $(_fields(:retraction_method))
+$(_fields(:X; add_properties = [:as_Gradient]))
 
 # Constructor
 
@@ -25,10 +26,10 @@ Create a `StochasticGradientDescentState` with start point `p`.
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; add_properties = [:process_note]))
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `direction=`[`StochasticGradientRule`](@ref)`(M; X=`$(_link(:zero_vector))`)`
 * `order_type=:Random`
-* `order=Int[]`: specify how to store the order of indices for the next epoche
+* `order=Int[]`: specify how to store the order of indices for the next epoch
 $(_kwargs(:retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
@@ -40,7 +41,7 @@ mutable struct StochasticGradientDescentState{
     } <: AbstractGradientSolverState
     callbacks::C
     direction::D
-    k::Int # current iterate
+    k::Int # current position within the order (per epoch)
     order::V
     order_type::Symbol
     p::P
@@ -121,7 +122,7 @@ function status_summary(sgds::StochasticGradientDescentState; context::Symbol = 
     return s
 end
 """
-    StochasticGradientRule<: AbstractGradientGroupDirectionRule
+    StochasticGradientRule <: AbstractGradientGroupDirectionRule
 
 Create a functor `(problem, state, k) -> (s, X)` to evaluate the stochastic gradient,
 that is, choose a random index from the `state` and use the internal field for
@@ -155,7 +156,7 @@ function (sg::StochasticGradientRule)(
         apm::AbstractManoptProblem, sgds::StochasticGradientDescentState, k
     )
     # for each new epoch choose new order if at random order
-    ((sgds.k == 1) && (sgds.order_type == :Random)) && shuffle!(sgds.order)
+    ((sgds.k == 1) && (sgds.order_type == :FixedRandom)) && shuffle!(sgds.order)
     # the gradient to choose, either from the order or completely random
     j = sgds.order_type == :Random ? rand(1:length(sgds.order)) : sgds.order[sgds.k]
     return sgds.stepsize(apm, sgds, k), get_gradient!(apm, sg.X, sgds.p, j)
@@ -207,7 +208,7 @@ $(_args(:M))
   or is a vector of gradient functions
 $(_args(:p))
 
-alternatively to the gradient you can provide an [`ManifoldStochasticGradientObjective`](@ref) `msgo`,
+alternatively to the gradient you can provide a [`ManifoldStochasticGradientObjective`](@ref) `msgo`,
 then using the `cost=` keyword does not have any effect since if so, the cost is already within the objective.
 
 # Keyword arguments
@@ -215,7 +216,7 @@ then using the `cost=` keyword does not have any effect since if so, the cost is
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `cost=missing`: you can provide a cost function for example to track the function value
 * `direction=`[`StochasticGradient`](@ref)`(; p=p)` add a post-processor to
-  the direction obtained from evaluating the sub-gradient.
+  the direction obtained from evaluating the stochastic gradient.
 $(_kwargs(:evaluation))
 * `order_type=:Random`: whether to use a fixed randomly permuted sequence (`:FixedRandom`),
   the sequence as given in `order` (`:Linear`), or the default `:Random` one,

@@ -60,8 +60,13 @@ using Manifolds, Manopt, Random, Test
         f, grad_f!, project_C!; evaluation = InplaceEvaluation(), indicator = indicator_C
     )
 
+    # a point outside of C, at distance 2r from its center c
+    q_out = exp(M, c, get_vector(M, c, [2 * r, 0.0], DefaultOrthonormalBasis()))
+
     for objective in [csoa, csoa2, csoi, csoi2]
         @test get_cost(M, objective, c) == f(M, c)
+        @test objective.indicator(M, c) == 0
+        @test isinf(objective.indicator(M, q_out))
         @test Manopt.get_cost_function(objective)(M, c) == f(M, c)
         @test get_gradient(M, objective, c) == grad_f(M, c)
         X = zero_vector(M, c)
@@ -72,7 +77,7 @@ using Manifolds, Manopt, Random, Test
         if objective ∈ [csoa, csoa2]
             @test Manopt.get_gradient_function(objective)(M, c) == grad_f(M, c)
         else
-            Manopt.get_gradient_function(objective; evaluation = InplaceEvaluation())(M, X, c) == grad_f!(M, Y, c)
+            @test Manopt.get_gradient_function(objective; evaluation = InplaceEvaluation())(M, X, c) == grad_f!(M, Y, c)
             @test X == Y
         end
         dmp = DefaultManoptProblem(M, objective)

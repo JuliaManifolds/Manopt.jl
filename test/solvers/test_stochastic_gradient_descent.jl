@@ -88,7 +88,7 @@ using Manopt, Manifolds, Test
         initialize_solver!(dmp1, sgds)
         sgds.order_type = :Linear
         step_solver!(dmp1, sgds, 1)
-        @test sgds.p == exp(M, p, get_gradient(dmp1, p, 1))
+        @test sgds.p == exp(M, p, -get_stepsize(dmp1, sgds, 1) * get_gradient(dmp1, p, 1))
         @test startswith(
             Manopt.status_summary(sgds; context = :default),
             "# Solver state for `Manopt.jl`s Stochastic Gradient Descent\n"
@@ -137,7 +137,7 @@ using Manopt, Manifolds, Test
         Mc = Circle()
         pc = 0.0
         data = [-π / 4, 0.0, π / 4]
-        fc(y) = 1 / 2 * sum([distance(M, y, x)^2 for x in data])
+        fc(M, y) = 1 / 2 * sum([distance(M, y, x)^2 for x in data])
         sgrad_fc(M, y) = [-log(M, y, x) for x in data]
         q1 = stochastic_gradient_descent(Mc, sgrad_fc)
         q2 = stochastic_gradient_descent(Mc, sgrad_fc, pc)

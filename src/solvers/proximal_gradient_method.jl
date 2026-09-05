@@ -115,11 +115,11 @@ $(_fields(:retraction_method))
 * `X` - tangent vector for storing gradient
 $(_fields(:stopping_criterion; name = "stop"))
 * `acceleration` - a function `(problem, state, k) -> state` to compute an acceleration before the gradient step
-* `stepsize` - a function or [`Stepsize`](@ref) object to compute the stepsize
+* `stepsize` - a [`Stepsize`](@ref) object to compute the stepsize
 * `last_stepsize` - stores the last computed stepsize
 $(_fields(:sub_problem; name = "sub_problem", type = "Union{`[`AbstractManoptProblem`](@ref)`, F}"))
-    or `missing` to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
-$(_fields(:sub_state)). This field is ignored, if the `sub_problem` is `missing`.
+    Alternatively pass `missing` to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
+$(_fields(:sub_state)) This field is ignored, if the `sub_problem` is `missing`.
 
 # Constructor
 
@@ -274,6 +274,10 @@ A functor for backtracking line search in proximal gradient methods.
 * `candidate_point::P` - a working point used during backtracking, it stores the result of the proximal step
 * `gradient_point::P` - a working point used during backtracking, it stores the result of the gradient step
 * `last_stepsize::T` - the last computed stepsize
+* `stop_when_stepsize_less::T` - the smallest stepsize before the search stops
+* `warm_start_factor::T` - factor to scale the last stepsize with for the next initial guess (`:convex` strategy)
+* `k_max::T` - an upper bound on the sectional curvature of the manifold
+* `δ::T` - tolerance parameter for the radius restriction used when `k_max > 0`
 
 # Constructor
     ProximalGradientMethodBacktrackingStepsize(M::AbstractManifold; kwargs...)
@@ -285,6 +289,7 @@ A functor for backtracking line search in proximal gradient methods.
 * `sufficient_decrease=0.5`: sufficient decrease parameter
 * `contraction_factor=0.5`: step size reduction factor
 * `strategy=:nonconvex`: backtracking strategy, either `:convex` or `:nonconvex`
+* `warm_start_factor=1.0`: factor to scale the last stepsize with to obtain the initial guess of the next search, only used by the `:convex` strategy
 * `k_max=0.0`: an upper bound to the sectional curvatures of the manifold; if positive, candidate steps are restricted to a curvature-dependent radius (applies to both strategies)
 * `δ=1e-2`: parameter for backtracking in case `k_max > 0`
 """
@@ -443,7 +448,7 @@ For the nonconvex case, the condition is:
 f(p) - f(T_{λ}(p)) ≥ γλ$(_tex(:norm, "G_{λ}(p)"))^2
 ```
 
-where ``G_{λ}(p) = (1/λ) * $(_tex(:log))_p(T_{λ}(p))`` is the gradient mapping.
+where ``G_{λ}(p) = -(1/λ)$(_tex(:log))_p(T_{λ}(p))`` is the gradient mapping.
 
 For the convex case, the condition is:
 
@@ -486,7 +491,7 @@ a^{(k)} = $(_tex(:retr))_{p^{(k)}}$(_tex(:bigl))(
 $(_tex(:bigr)))
 ```
 
-where ``p^{(k)}`` is the current iterate from the [`ProximalGradientMethodState`](@ref)s
+where ``p^{(k)}`` is the current iterate from the [`ProximalGradientMethodState`](@ref)'s
 field `p` and the result is stored in `state.a`. The field `p` in this struct stores the last iterate.
 
 The inverse retraction is taken from this struct's `inverse_retraction_method`,
@@ -503,7 +508,7 @@ the retraction from the state.
 
     ProximalGradientMethodAcceleration(M::AbstractManifold; kwargs...)
 
-Generate the state for a given manifold `M` with initial iterate `p`.
+Generate the acceleration functor for a given manifold `M`.
 
 ## Input
 
@@ -631,7 +636,7 @@ Let ``λ_k ≥ 0`` be a sequence of (proximal) parameters, initialize
 
 Then perform as long as the stopping criterion is not fulfilled
 ```math
-p^{(k+1)} = prox_{λ_kh}$(_tex(:Bigl))(
+p^{(k+1)} = $(_tex(:prox))_{λ_k h}$(_tex(:Bigl))(
 $(_tex(:retr))_{a^{(k)}}$(_tex(:bigl))(-λ_k $(_tex(:grad)) g(a^{(k)})$(_tex(:bigr)))
 $(_tex(:Bigr))),
 ```
@@ -641,7 +646,7 @@ computing the gradient step.
 # Input
 
 $(_args([:M, :f]))
-  total cost function ``f = g + h``
+  (the total cost function ``f = g + h``)
 * `g`:              the smooth part of the cost function
 * `grad_g`:           a gradient `(M,p) -> X` or `(M, X, p) -> X` of the smooth part ``g`` of the problem
 $(_args(:p))
@@ -659,8 +664,8 @@ $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ProximalGradi
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenGradientMappingNormLess`](@ref)`(1.0e-7)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:sub_problem; type = "Union{`[`AbstractManoptProblem`](@ref)`, F, Missing}", default = "missing"))
-  or `missing` to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
-$(_kwargs(:sub_state; default = "evaluation")). This field is ignored, if the `sub_problem` is `missing`.
+  Alternatively pass `missing` to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
+$(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)`()")) If the objective does not provide a proximal map, a [`SubGradientMethodState`](@ref) is used instead. This field is ignored, if the `sub_problem` is `missing`.
 
 $(_note(:OtherKeywords))
 

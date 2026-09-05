@@ -953,7 +953,7 @@ This is the gradient of a cost function of the form
 ```
 
 its gradient is given by using ``F(p)=g(p)-F_1(F_2(p))``, where ``F_1(X) = ⟨X_k,X⟩`` and ``F_2(p) = $(_tex(:log))_{p_k}p``
-and the chain rule as well as the adjoint differential of the logarithmic map with respect to its argument for ``D^*F_2(p)``
+and the chain rule as well as the adjoint differential of the logarithmic map with respect to its argument for ``DF_2^*(q)``
 
 ```math
     $(_tex(:grad)) F(q) = $(_tex(:grad))g(q) - DF_2^*(q)[X_k]

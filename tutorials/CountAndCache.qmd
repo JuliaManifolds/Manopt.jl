@@ -139,11 +139,11 @@ For that we switch to another example:
 the Rayleigh quotient. We aim to maximize the Rayleigh quotient $\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$, for some $A∈ℝ^{(m+1)\times (m+1)}$ and $x∈ℝ^{m+1}$ but since we consider this on the sphere and `Manopt.jl`
 (as many other optimization toolboxes) minimizes, we consider
 
-Note that the [automatic differentiation tutorial](AutomaticDifferentiation.md) uses the same Rayleigh quotient with the opposite sign, minimizing toward the smallest eigenvalue rather than maximizing toward the largest.
-
 ```math
 g(p) = -p^{\mathrm{T}}Ap,\qquad p∈\mathbb S^{m}
 ```
+
+Note that the [automatic differentiation tutorial](AutomaticDifferentiation.md) uses the same Rayleigh quotient with the opposite sign, minimizing toward the smallest eigenvalue rather than maximizing toward the largest.
 
 The Euclidean gradient (that is in $ℝ^{m+1}$) is actually just $\nabla g(p) = -2Ap$, the Riemannian gradient is the projection of $\nabla g(p)$ onto the tangent space $T_p\mathbb S^{m}$.
 

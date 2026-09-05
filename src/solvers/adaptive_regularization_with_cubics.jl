@@ -42,7 +42,7 @@ end
 get_objective(arcmo::AdaptiveRegularizationWithCubicsModelObjective) = arcmo.objective
 
 @doc """
-    get_cost(TpM, trmo::AdaptiveRegularizationWithCubicsModelObjective, X)
+    get_cost(TpM, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X)
 
 Evaluate the tangent space [`AdaptiveRegularizationWithCubicsModelObjective`](@ref)
 
@@ -64,10 +64,11 @@ function get_cost(
     return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X) + arcmo.σ / 3 * norm(M, p, X)^3
 end
 function get_cost_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective, recursive = false)
+    recursive && (return get_cost_function(arcmo.objective, recursive))
     return (TpM, X) -> get_cost(TpM, arcmo, X)
 end
 @doc """
-    get_gradient(TpM, trmo::AdaptiveRegularizationWithCubicsModelObjective, X)
+    get_gradient(TpM, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X)
 
 Evaluate the gradient of the [`AdaptiveRegularizationWithCubicsModelObjective`](@ref)
 
@@ -119,7 +120,7 @@ function status_summary(arcmo::AdaptiveRegularizationWithCubicsModelObjective; c
 end
 
 @doc """
-    AdaptiveRegularizationState{P,T} <: AbstractHessianSolverState
+    AdaptiveRegularizationState{P,T} <: AbstractManoptSolverState
 
 A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 
@@ -128,7 +129,6 @@ A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 * `η1`, `η2`: bounds for evaluating the regularization parameter
 * `γ1`, `γ2`:  shrinking and expansion factors for regularization parameter `σ`
 * `H`: the current Hessian evaluation
-* `s`: the current solution from the subsolver
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `q`: a point for the candidates to evaluate model and ρ
 $(_fields(:X; add_properties = [:as_Gradient]))
@@ -240,7 +240,7 @@ function AdaptiveRegularizationState(
     return AdaptiveRegularizationState(M, sub_problem_, cfs; kwargs...)
 end
 get_iterate(s::AdaptiveRegularizationState) = s.p
-function set_iterate!(s::AdaptiveRegularizationState, p)
+function set_iterate!(s::AdaptiveRegularizationState, ::AbstractManifold, p)
     s.p = p
     return s
 end
@@ -294,7 +294,7 @@ m_k(X) = f(p_k) + $(_tex(:inner, "X", "$(_tex(:grad)) f(p_k)"; index = "p_k")) +
 
 _doc_ARC_improvement = """
 ```math
-  ρ_k = $(_tex(:frac, "f(p_k) - f($(_tex(:retr))_{p_k}(X_k))", "m_k(0) - m_k(X_k) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X"))^3"))
+  ρ_k = $(_tex(:frac, "f(p_k) - f($(_tex(:retr))_{p_k}(X_k))", "m_k(0) - m_k(X_k) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X_k"))^3"))
 ```
 """
 _doc_ARC_regularization_update = raw"""
@@ -331,7 +331,7 @@ With two thresholds ``η_2 ≥ η_1 > 0``
 set ``p_{k+1} = $(_tex(:retr))_{p_k}(X_k)`` if ``ρ ≥ η_1``
 and reject the candidate otherwise, that is, set ``p_{k+1} = p_k``.
 
-Further update the regularization parameter using factors ``0 < γ_1 < 1 < γ_2`` reads
+Further, the update of the regularization parameter using the factors ``0 < γ_1 < 1 < γ_2`` reads
 
 $_doc_ARC_regularization_update
 
@@ -345,7 +345,7 @@ the cost `f` and its gradient and Hessian might also be provided as a [`Manifold
 
 # Keyword arguments
 
-* `σ=100.0 / sqrt(manifold_dimension(M)`: initial regularization parameter
+* `σ=100.0 / sqrt(manifold_dimension(M))`: initial regularization parameter
 * `σmin=1e-10`: minimal regularization value ``σ_{\\min}``
 * `η1=0.1`: lower model success threshold
 * `η2=0.9`: upper model success threshold
@@ -356,17 +356,19 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `initial_tangent_vector=zero_vector(M, p)`: initialize any tangent vector data,
 * `maxIterLanczos=min(300, manifold_dimension(M))`: a shortcut to set the stopping criterion in the sub solver,
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
-$(_kwargs(:retraction_method)):
+$(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos-1)"))
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)`: the stopping criterion of the default sub solver
 $(_kwargs(:sub_kwargs))
+* `θ=0.5`: the ``θ`` parameter of the [`StopWhenFirstOrderProgress`](@ref) within the default `sub_stopping_criterion=`
 * `sub_objective=nothing`: a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword
-  By default, this is initialized as a [`AdaptiveRegularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
+  By default, this is initialized as an [`AdaptiveRegularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
 $(_kwargs(:sub_state; default = "`[`LanczosState`](@ref)`(TangentSpace(M, copy(M, p)))"))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 
 $(_note(:OtherKeywords))
 
-If you provide the [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
+If you provide the [`ManifoldHessianObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
 $(_note(:TutorialMode))

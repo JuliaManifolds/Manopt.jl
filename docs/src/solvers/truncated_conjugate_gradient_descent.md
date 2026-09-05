@@ -48,6 +48,7 @@ The [`truncated_conjugate_gradient_descent`](@ref) solver requires the following
 
 * if you do not provide a `trust_region_radius=`, then [`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`) on the manifold `M` is required.
 * the [`norm`](@extref `LinearAlgebra.norm-Tuple{AbstractManifold, Any, Any}`), to check the reduction of the residual; if you implemented `inner`, the norm is provided already.
+* the [`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`), since the default stopping criterion stops after that many iterations.
 * A [`zero_vector!`](@extref `ManifoldsBase.zero_vector!-Tuple{AbstractManifold, Any, Any}`)`(M,X,p)`.
 * A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points.
 

@@ -29,7 +29,7 @@ Note that the gradient and the subdifferential might be given in two possible si
 
     ManifoldDifferenceOfConvexObjective(cost, ∂h; gradient = missing, evaluation = AllocatingEvaluation(), p = missing)
 
-Create the difference of convex objective given a `cost` function and the subdifferential `∂h` of the non-smooth part
+Create the difference of convex objective given a `cost` function and the subdifferential `∂h` of the non-smooth part.
 The `gradient` of the cost and the `evaluation = ` type are keywords.
 
 ## Keyword Arguments
@@ -126,7 +126,7 @@ $(_fields(:X; add_properties = [:as_Subgradient]))
 $(_fields([:sub_problem, :sub_state]))
 $(_fields(:stopping_criterion; name = "stop"))
 
-The sub task consists of a method to solve
+For the sub task a method to solve
 
 ```math
     $(_tex(:argmin))_{q∈$(_math(:Manifold))}\\ g(q) - ⟨X, $(_tex(:log))_p q⟩
@@ -278,7 +278,7 @@ $(_kwargs(:evaluation))
 * `gradient=missing`:        specify ``$(_tex(:grad)) f``, for debug / analysis or enhancing the `stopping_criterion=`
 * `grad_g=missing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)`, plus (when a gradient is provided)$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
-* `g=missing`:               specify the function `g` If specified, a subsolver is automatically set up.
+* `g=missing`:               specify the function `g`. If specified, a subsolver is automatically set up.
 * `sub_cost=`[`LinearizedDCCost`](@ref)`(g, p, initial_vector)`: a cost to be used within the default `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_objective"))
 * `sub_grad=`[`LinearizedDCGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`:
@@ -291,10 +291,10 @@ $(_kwargs(:sub_kwargs))
 * `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess` if provided
    the objective used within `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_problem"))
-$(_kwargs(:sub_state; default = "(`[`GradientDescentState`](@ref)` or `[`TrustRegionsState`](@ref)` if `sub_hess` is provided)"))
+$(_kwargs(:sub_state; default = "`([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hess` is provided`)"))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-8)`:
-  a stopping criterion used within the default `sub_state=`
+  a stopping criterion used within the default `sub_state=`.
   $(_note(:KeywordUsedIn, "sub_state"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 

@@ -1611,7 +1611,7 @@ function geometric_curvature_function(κ::Real, d::Real)
 end
 
 function (rdog::DistanceOverGradientsStepsize{R, P})(
-        mp::AbstractManoptProblem, s::AbstractManoptSolverState, i, args...;
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k, args...;
         gradient = nothing, kwargs...,
     ) where {R, P}
     M = get_manifold(mp)
@@ -1619,7 +1619,7 @@ function (rdog::DistanceOverGradientsStepsize{R, P})(
     X = isnothing(gradient) ? get_gradient(mp, p) : gradient
     # Compute gradient norm
     grad_norm_sq = clamp(norm(M, p, X)^2, eps(R), typemax(R))
-    if i == 0
+    if k == 0
         # Initialize on first call
         rdog.gradient_sum = grad_norm_sq
         rdog.initial_point = copy(M, p)
@@ -2215,12 +2215,13 @@ function WolfePowellLinesearchStepsize(M::AbstractManifold, p; kwargs...)
 end
 function (a::WolfePowellLinesearchStepsize)(
         mp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(ams)));
-        kwargs...,
+        gradient = nothing, kwargs...,
     )
     # For readability extract a few variables
     M = get_manifold(mp)
     p = get_iterate(ams)
-    l = get_differential(mp, p, η)
+    l = isnothing(gradient) ? get_differential(mp, p, η) :
+        get_differential(mp, p, η; gradient = gradient, evaluated = true)
     grad_norm = norm(M, p, η)
     max_step_increase = ifelse(
         isfinite(a.max_stepsize), min(1.0e9, a.max_stepsize / grad_norm), 1.0e9
@@ -2370,7 +2371,7 @@ end
 @doc """
     WolfePowellBinaryLinesearchStepsize{TRM,VTM,F} <: Linesearch
 
-Do a backtracking line search to find a step size ``α`` that fulfills the
+Do a bisection-based line search to find a step size ``α`` that fulfills the
 Wolfe conditions along a search direction ``X`` starting from ``p``.
 See [`WolfePowellBinaryLinesearch`](@ref) for the math details.
 
@@ -2423,7 +2424,7 @@ mutable struct WolfePowellBinaryLinesearchStepsize{
 end
 function (a::WolfePowellBinaryLinesearchStepsize)(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Int, η = (-get_gradient(amp, get_iterate(ams)));
-        kwargs...,
+        gradient = nothing, kwargs...,
     )
     M = get_manifold(amp)
     α = 0.0
@@ -2435,10 +2436,13 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     fNew = get_cost(amp, xNew)
     X_tmp = zero_vector(M, p)
     η_xNew = vector_transport_to(M, p, η, xNew, a.vector_transport_method)
-    nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η; gradient = X_tmp)
+    # the differential at `p` does not change during the bisection, so evaluate it once
+    d_p = isnothing(gradient) ? get_differential(amp, p, η; gradient = X_tmp) :
+        real(inner(M, p, η, gradient))
+    nAt = fNew > f0 + a.sufficient_decrease * t * d_p
     nWt =
         get_differential(amp, xNew, η_xNew; gradient = X_tmp) <
-        a.sufficient_curvature * get_differential(amp, p, η; gradient = X_tmp)
+        a.sufficient_curvature * d_p
     while (nAt || nWt) &&
             (t > a.stop_when_stepsize_less) &&
             (β - α > a.stop_when_stepsize_less)
@@ -2454,10 +2458,10 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
             M, η_xNew, get_iterate(ams), η, xNew, a.vector_transport_method
         )
         # Update conditions
-        nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η; gradient = X_tmp)
+        nAt = fNew > f0 + a.sufficient_decrease * t * d_p
         nWt =
             get_differential(amp, xNew, η_xNew; gradient = X_tmp) <
-            a.sufficient_curvature * get_differential(amp, p, η; gradient = X_tmp)
+            a.sufficient_curvature * d_p
     end
     a.last_stepsize = t
     return t

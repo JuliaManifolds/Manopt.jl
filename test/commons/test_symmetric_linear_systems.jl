@@ -7,7 +7,6 @@ using Manifolds, Manopt, Test
 
     Am = [2.0 1.0; 1.0 4.0]
     bv = [1.0, 2.0]
-    ps = Am \ (-bv)
     X0 = [3.0, 4.0]
     A(TpM, X, V) = Am * V
     b(TpM, p) = bv
@@ -101,13 +100,13 @@ using Manifolds, Manopt, Test
     @testset "StopWhenRelativeResidualLess" begin
         dmp = DefaultManoptProblem(TpM, slso)
         crs = ConjugateResidualState(TpM, slso; X = X0)
-        swrr = StopWhenRelativeResidualLess(1.0, 1.0e-3) #initial norm 1.0, ε=1e-9
+        swrr = StopWhenRelativeResidualLess(1.0, 1.0e-3) # initial norm 1.0 (reset on init), ε=1e-3
         @test startswith(repr(swrr), "StopWhenRelativeResidualLess(1.0, 0.001)")
         # initially this resets norm
         swrr(dmp, crs, 0)
         @test swrr.c == norm(bv)
         @test swrr(dmp, crs, 1) == false
-        # sop reason is also empty still
+        # stop reason is also empty still
         @test length(get_reason(swrr)) == 0
         # Manually set residual small
         crs.r = [1.0e-5, 1.0e-5]

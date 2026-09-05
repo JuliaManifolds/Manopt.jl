@@ -73,8 +73,8 @@ $(_fields([:inverse_retraction_method, :retraction_method]))
 
     NelderMeadState(M::AbstractManifold; kwargs...)
 
-Construct a Nelder-Mead Option with a default population (if not provided) of set of
-`dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).
+Construct a Nelder-Mead state with a default population (if not provided) of
+`manifold_dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).
 
 # Keyword arguments
 
@@ -83,7 +83,6 @@ $(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `p=copy(M, population.pts[1])`: initialize the storage for the best point (iterate)
 * `population=`[`NelderMeadSimplex`](@ref)`(M)`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
-  a [`StoppingCriterion`](@ref)
 * `α=1.0`: reflection parameter, ``α > 0``
 * `γ=2.0`: expansion parameter, ``γ > 1``
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
@@ -222,7 +221,6 @@ $(_args([:M, :f]))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
-  a [`StoppingCriterion`](@ref)
 * `α=1.0`: reflection parameter, ``α > 0``
 * `γ=2.0`: expansion parameter, ``γ > 1``
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,

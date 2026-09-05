@@ -14,7 +14,7 @@ tutorial [🏔️ Get started with Manopt.jl](getstarted.md)
 and also familiarized yourself with how to work with manifolds in general at
 ``[🚀 Get Started with `Manifolds.jl`](@extref Manifolds :std:doc:`tutorials/getstarted`)``{=commonmark},
 you might come across the point that you want to
-``[implementing a manifold](@extref :doc:`tutorials/implement-a-manifold`)``{=commonmark}
+``[implement a manifold](@extref :doc:`tutorials/implement-a-manifold`)``{=commonmark}
 yourself and use it within [`Manopt.jl`](../index.md).
 A challenge might be, which functions are necessary, since the overall interface of ``[ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`)``{=commonmark}
 is maybe not completely necessary.

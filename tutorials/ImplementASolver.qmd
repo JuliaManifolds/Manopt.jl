@@ -246,7 +246,7 @@ for example [`debug = `](../commons/debugs.md), [`record = `](../commons/records
 within solver states or `count=` and `cache` keywords for the objective.
 
 We can introduce these here as well with just a few lines of code. There are usually two steps.
-We further need three internal functions from `Manopt.jl`
+We further need three more functions from `Manopt.jl`, two of which are internal
 
 ```{julia}
 using Manopt: get_solver_return, has_converged, status_summary

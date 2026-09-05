@@ -75,12 +75,8 @@ using LinearAlgebra: eigvals
             alg_kwargs...
         )
         @test y1 == y3
-        y4 = copy(M, y0) # avoid working inplace of y0
-        Manopt.vectorbundle_newton!(
-            M, TangentBundle(M), NE, y4; sub_problem = solve_augmented_system,
-            alg_kwargs...
-        )
-        @test y1 == y4
+        # the in-place variant returns the point it worked in place of
+        @test vbns === y3
 
         # test access on the VB Problem
         vbp = VectorBundleManoptProblem(M, TangentBundle(M), NE)

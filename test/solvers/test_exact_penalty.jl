@@ -95,7 +95,7 @@ using LinearAlgebra: I, tr
         )
         q = get_solver_result(s)[]
         @test q isa Real
-        @test fe(M, q) < fe(M, 4.0)
+        @test fe(Me, q) < fe(Me, 4.0)
     end
     @testset "Callbacks" begin
         sk_record = Tuple{Symbol, Int}[]

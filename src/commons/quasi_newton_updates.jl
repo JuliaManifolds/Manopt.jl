@@ -610,7 +610,7 @@ $(_fields(:vector_transport_method))
                                 - `:byrd`: pairs such that `inner(M, p, X_s, Y_s) <= sy_tol * norm(M, p, Y_s)^2`
                                   are removed from memory (see [ByrdLuNocedalZhu:1995](@cite),
                                   Eq. (3.9) and its discussion).
-* `sy_tol`:                  tolerance for detecting non-positive-definite pairs (X_s, X_y).
+* `sy_tol`:                  tolerance for detecting non-positive-definite pairs (X_s, Y_s).
                              The pairs may lose positive-definiteness after vector transport.
 
 # Constructor

@@ -17,6 +17,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `ε`:                        stepsize-like parameter related to the injectivity radius of the manifold
 * `η`:                        curvature-dependent term for updating the approximation errors
 $(_fields(:inverse_retraction_method))
+* `lin_errors`:               linearization errors at the last serious step
 * `λ`:                        convex coefficients that solve the subproblem
 * `m`:                        the parameter to test the decrease of the cost
 * `μ`:                        (initial) proximal parameter for the subproblem
@@ -522,7 +523,7 @@ Initialize the warning to warning level (`:Once`) and introduce a tolerance for 
 The `warn` level can be set to `:Once` to only warn the first time the cost increases,
 to `:Always` to report an increase every time it happens, and it can be set to `:No`
 to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
-All other symbols are handled as if they were `:Always`
+All other symbols are handled as if they were `:Always`.
 """
 function (d::DebugWarnIfLagrangeMultiplierIncreases)(
         ::AbstractManoptProblem, st::ProximalBundleMethodState, k::Int

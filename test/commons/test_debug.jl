@@ -467,6 +467,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test DebugFactory([:WhenActive, " | "])[:Iteration] isa DebugWhenActive
 
         dst = DebugSolverState(st, dA)
+        Manopt.set_parameter!(dA, :Activity, false) # deactivate again
+        @test !dA.active
         Manopt.set_parameter!(dst, :Debug, :Activity, true)
         @test dA.active
     end

@@ -158,7 +158,7 @@ end
 # Access functions
 #
 get_iterate(pss::ParticleSwarmState) = pss.p
-function set_iterate!(pss::ParticleSwarmState, p)
+function set_iterate!(pss::ParticleSwarmState, ::AbstractManifold, p)
     pss.p = p
     return pss
 end

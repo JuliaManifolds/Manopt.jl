@@ -3,7 +3,7 @@
 
 The direction processor to alternate the gradient directions.
 
-Create a functor `(problem, state k) -> (s,X)` to evaluate the alternating gradient,
+Create a functor `(problem, state, k) -> (s, X)` to evaluate the alternating gradient,
 that is alternating between the components of the gradient and has a field for
 partial evaluation of the gradient in-place.
 
@@ -37,7 +37,7 @@ function status_summary(ag::AlternatingGradientRule; context::Symbol = :default)
     return "An alternating gradient processor"
 end
 """
-    AlternatingGradientDescentState <: AbstractGradientDescentSolverState
+    AlternatingGradientDescentState <: AbstractGradientSolverState
 
 Store the fields for an alternating gradient descent algorithm,
 see also [`alternating_gradient_descent`](@ref).
@@ -54,7 +54,7 @@ $(_fields([:retraction_method, :stepsize]))
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:X; add_properties = [:as_Gradient]))
-* `k`, `i`: internal counters for the outer and inner iterations, respectively.
+* `k`, `i`: internal counters for the current component of the `order` and the inner iterations within that component, respectively.
 
 # Constructors
 
@@ -256,13 +256,14 @@ $(_args(:p))
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
 * `order_type=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
 * `inner_iterations=5`:  how many gradient steps to take in a component before alternating to the next
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`AlternatingGradientDescentState`](@ref)`; retraction_method=retraction_method)"))
-* `order=[1:n]`:         the initial permutation, where `n` is the number of gradients in `gradF`.
+* `order=collect(1:n)`: the initial permutation, where `n` is the number of gradients in `grad_f`.
 $(_kwargs(:retraction_method))
 
 # Output

@@ -53,8 +53,8 @@ In order to obtain a step in the linesearch performed within the [`interior_poin
 Section 6 of [LaiYoshise:2024](@cite) propose the following additional conditions to hold
 inspired by the Euclidean case described in Section 6 [El-BakryTapiaTsuchiyaZhang:1996](@cite):
 
-For a given [`ConstrainedManifoldObjective`](@ref) assume consider the [`KKTVectorField`](@ref) ``F``,
-that is we are at a point ``q = (p, μ, λ, s)``  on ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
+For a given [`ConstrainedManifoldObjective`](@ref) consider the [`KKTVectorField`](@ref) ``F``,
+that is we are at a point ``q = (p, μ, λ, s)``  on ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m`` and a search direction ``V = (X, Y, Z, W)``.
 
 Then, let
 
@@ -93,14 +93,14 @@ defined here evaluates this condition and returns true if both ``c_1`` and ``c_2
     InteriorPointCentralityCondition(cmo, γ, τ1, τ2)
 
 Initialize the centrality conditions.
-The parameters `τ1`, `τ2` are initialize to zero if not provided.
+The parameters `τ1`, `τ2` are initialized to zero if not provided.
 
 !!! note
 
     Besides [`get_parameter`](@ref) for all three constants,
     and [`set_parameter!`](@ref) for ``γ``,
-    to update ``τ_1`` and ``τ_2``, call `set_parameter(ipcc, :τ, N, q)` to update
-    both ``τ_1`` and ``τ_2`` according to the formulae above.
+    to update ``τ_1`` and ``τ_2``, call `set_parameter!(ipcc, :τ, N, q)`
+    according to the formulae above.
 """
 mutable struct InteriorPointCentralityCondition{CO, R}
     cmo::CO
@@ -196,6 +196,7 @@ $(_args([:sub_problem, :sub_state]))
 Let `m` and `n` denote the number of inequality and equality constraints, respectively
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+* `centrality_condition=(N, p) -> true`: an additional condition when to accept a step size, used as the `additional_decrease_condition` of the default `stepsize`, for example an [`InteriorPointCentralityCondition`](@ref)
 * `is_feasible_error=:error`: specify how to handle infeasible starting points, see [`is_feasible`](@ref) for options.
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
@@ -204,7 +205,7 @@ $(_kwargs(:retraction_method))
 * `step_problem`: wrap the manifold ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m``
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 $(_kwargs(:stepsize; default = " `[`ArmijoLinesearch`](@ref)`()"))
-  with the [`InteriorPointCentralityCondition`](@ref) as additional condition to accept a step
+  with the `centrality_condition` keyword as additional condition to accept a step, if this is provided
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)"))
 * `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `W=zero(s)` tangent vector (gradient) for the slack variables
@@ -311,12 +312,13 @@ mutable struct InteriorPointNewtonState{
             RTM <: AbstractRetractionMethod, S <: Stepsize,
             StepPr <: AbstractManoptProblem, StepSt <: AbstractManoptSolverState,
         }
+        ρ_, σ_ = promote(float(ρ), float(σ))
         return InteriorPointNewtonState(
             sub_problem, sub_state;
             callbacks = callbacks, p = p, retraction_method = retraction_method, s = s,
             step_problem = step_problem, step_state = step_state, stepsize = stepsize,
             stopping_criterion = stopping_criterion,
-            λ = λ, μ = μ, X = X, ρ = ρ, σ = σ,
+            λ = λ, μ = μ, X = X, ρ = ρ_, σ = σ_,
             kwargs...
         )
     end
@@ -325,7 +327,7 @@ function InteriorPointNewtonState(
         M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
-    sub_problem_ = maybe_wrap_function(sub_problem, evaluation)
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :TangentVector, point_index = 5)
     cfs = ClosedFormSubSolverState()
     return InteriorPointNewtonState(M, cmo, sub_problem_, cfs; kwargs...)
 end
@@ -367,7 +369,8 @@ function status_summary(ips::InteriorPointNewtonState; context::Symbol = :defaul
     $(_in_str(status_summary(ips.stepsize; context = context); indent = 1, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(ips.stop; context = context); indent = 1, headers = 1))    The algorithm converged: $Conv"""
+    $(_in_str(status_summary(ips.stop; context = context); indent = 1, headers = 1))
+    The algorithm converged: $Conv"""
     return s
 end
 function Base.show(io::IO, ipns::InteriorPointNewtonState)
@@ -406,8 +409,9 @@ mutable struct StopWhenKKTResidualLess{R} <: StoppingCriterion
     ε::R
     residual::R
     at_iteration::Int
-    function StopWhenKKTResidualLess(ε::R) where {R}
-        return new{R}(ε, zero(ε), -1)
+    function StopWhenKKTResidualLess(ε::Real)
+        e = float(ε)
+        return new{typeof(e)}(e, zero(e), -1)
     end
 end
 function (c::StopWhenKKTResidualLess)(
@@ -451,7 +455,7 @@ end
 function status_summary(swrr::StopWhenKKTResidualLess; context::Symbol = :default)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "‖F(p, λ, μ)‖ < ε = $(swrr.ε):$(_MANOPT_INDENT)" : "Stop when the KKT residual is less than ε = $(swrr.ε)\n$(_MANOPT_INDENT)") * s
+    return (_is_inline(context) ? "KKT residual < ε = $(swrr.ε):$(_MANOPT_INDENT)" : "Stop when the KKT residual is less than ε = $(swrr.ε)\n$(_MANOPT_INDENT)") * s
 end
 indicates_convergence(::StopWhenKKTResidualLess) = true
 requires_update(::Type{<:StopWhenKKTResidualLess}) = false
@@ -542,11 +546,12 @@ or a [`ConstrainedManifoldObjective`](@ref) `cmo` containing `f`, `grad_f`, `Hes
 
 # Keyword arguments
 
-The keyword arguments related to the constraints (the first eight) are ignored if you
+The keyword arguments related to the constraints (`g`, `grad_g`, `Hess_g`, `h`, `grad_h`, `Hess_h`,
+`equality_constraints`, and `inequality_constraints`) are ignored if you
 pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `centrality_condition=missing`; an additional condition when to accept a step size.
+* `centrality_condition=missing`: an additional condition when to accept a step size.
   This can be used to ensure that the resulting iterate is still an interior point if you provide a check `(N,q) -> true/false`,
   where `N` is the manifold of the `step_problem`.
 * `equality_constraints=nothing`: the number ``n`` of equality constraints.

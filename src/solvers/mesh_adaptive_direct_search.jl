@@ -25,7 +25,7 @@ The `kwargs...` could include
 
 * `scale_mesh=1.0`: to rescale the mesh globally
 * `max_stepsize=Inf`: avoid exceeding a step size beyond this value, e.g. injectivity radius.
-  any vector longer than this should be shortened to the provided maximum step size.
+  Any vector longer than this should be shortened to the provided maximum step size.
 """
 abstract type AbstractMeshPollFunction end
 
@@ -66,12 +66,12 @@ with two small modifications:
 * `base_point::P`: a point on the manifold, where the mesh is built in the tangent space
 * `basis`: a basis of the current tangent space with respect to which the mesh is stored
 * `candidate::P`: a memory for a new point/candidate
-* `mesh`: a vector of tangent vectors storing the mesh.
+* `mesh`: a matrix whose columns are the coordinates, with respect to `basis`, of the mesh directions in the tangent space at `base_point`.
 * `random_vector`: a ``d``-dimensional random vector ``b_l``
 * `random_index`: a random index ``ι``
 $(_fields([:retraction_method, :vector_transport_method]))
-* `X::T` the last successful poll direction stored as a tangent vector.
-  initialized to the zero vector and reset to the zero vector after moving to a new tangent space.
+* `X::T`: the last successful poll direction stored as a tangent vector.
+  Initialized to the zero vector, transported to the new tangent space when the base point is updated, and reset to the zero vector after an unsuccessful poll.
 
 # Constructor
 
@@ -79,7 +79,7 @@ $(_fields([:retraction_method, :vector_transport_method]))
 
 ## Keyword arguments
 
-* `basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`)
+* `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: a basis for the tangent space
 $(_kwargs([:retraction_method, :vector_transport_method, :X]))
 """
 mutable struct LowerTriangularAdaptivePoll{
@@ -280,9 +280,10 @@ end
 
 # Fields
 
+* `p`: the candidate of the last successful search, returned by `get_candidate`
 * `q`: a temporary memory for a point on the manifold
 * `X`: information to perform the search, e.g. the last direction found by poll.
-* `last_search_improved::Bool` indicate whether the last search was successful, i.e. improved the cost.
+* `last_search_improved::Bool`: indicates whether the last search was successful, i.e. improved the cost.
 $(_fields(:retraction_method))
 
 # Constructor
@@ -307,7 +308,7 @@ mutable struct DefaultMeshAdaptiveDirectSearch{P, T, RM <: AbstractRetractionMet
 end
 function DefaultMeshAdaptiveDirectSearch(
         M::AbstractManifold, p = rand(M);
-        X = zero_vector(M, p), retraction_method::AbstractRetractionMethod = default_retraction_method(M),
+        X = zero_vector(M, p), retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
     )
     return DefaultMeshAdaptiveDirectSearch(; p = p, q = copy(M, p), X = X, last_search_improved = false, retraction_method = retraction_method)
 end
@@ -375,7 +376,7 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 * `mesh_size`: the current (internal) mesh size
 * `scale_mesh`: the current scaling of the internal mesh size, yields the actual mesh size used
 * `max_stepsize`: an upper bound for the longest step taken in looking for a candidate in either poll or search
-* `poll_size`
+* `poll_size`: the current poll size, in each iteration set to `manifold_dimension(M) * sqrt(mesh_size)`
 $(_fields(:stopping_criterion; name = "stop"))
 * `poll::`[`AbstractMeshPollFunction`](@ref): a poll step (functor) to perform
 * `search::`[`AbstractMeshSearchFunction`](@ref): a search step (functor) to perform
@@ -471,7 +472,7 @@ end
 """
     StopWhenPollSizeLess <: StoppingCriterion
 
-stores a threshold when to stop looking at the poll mesh size of an [`MeshAdaptiveDirectSearchState`](@ref).
+stores a threshold when to stop looking at the poll mesh size of a [`MeshAdaptiveDirectSearchState`](@ref).
 
 # Constructor
 
@@ -542,8 +543,8 @@ $(_args([:M, :f, :p]))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `max_stepsize=`$(_link(:injectivity_radius))`(M)`: a maximum step size to take,
   where `1.0` is used if the injectivity radius is infinite.
-  any vector generated on the mesh is shortened to this length to avoid leaving the injectivity radius,
-* `mesh_basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`):
+  Any vector generated on the mesh is shortened to this length to avoid leaving the injectivity radius.
+* `mesh_basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`:
   a basis to generate the mesh in. The mesh is generated in coordinates of this basis in every tangent space
 * `poll::`[`AbstractMeshPollFunction`](@ref)`=`[`LowerTriangularAdaptivePoll`](@ref)`(M, copy(M,p))`:
   the poll function to use. The `mesh_basis` (as `basis`), `retraction_method`, and `vector_transport_method` are passed to this default as well.
@@ -588,12 +589,12 @@ function mesh_adaptive_direct_search!(
         callbacks = Dict{Symbol, Function}(),
         max_stepsize::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M),
         mesh_basis::B = default_basis(M, typeof(p)),
-        retraction_method::AbstractRetractionMethod = default_retraction_method(M, eltype(p)),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         scale_mesh::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) / 4,
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) |
             StopWhenPollSizeLess(1.0e-10),
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(
-            M, eltype(p)
+            M, typeof(p)
         ),
         poll::PT = LowerTriangularAdaptivePoll(
             M, copy(M, p);

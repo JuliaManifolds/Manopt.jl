@@ -1,7 +1,7 @@
 using Manopt, Manifolds, Test
 
 struct DummyCGCoeff <: DirectionUpdateRule end
-(::DummyCGCoeff)(pr, st, k; kwagrs...) = 0.2
+(::DummyCGCoeff)(pr, st, k; kwargs...) = 0.2
 (::Manopt.DirectionUpdateRuleStorage{DummyCGCoeff})(pr, st, k) = 0.2
 Manopt.update_rule_storage_points(::DummyCGCoeff) = Tuple{}
 Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}

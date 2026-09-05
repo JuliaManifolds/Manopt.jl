@@ -10,7 +10,7 @@ Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [Bergma
 
 * `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_forward_operator!`: linearized operator for the forward operation in the algorithm ``DΛ``
-* `adjoint_linearized_operator!`: the adjoint differential ``(DΛ)^* : T$(_math(:Manifold; M = "N")) → T$(_math(:Manifold))``
+* `adjoint_linearized_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:TangentBundle; M = "N")) → $(_math(:TangentBundle))``
 * `prox_f!`:                      the proximal map belonging to ``f``
 * `prox_g_dual!`:                 the proximal map belonging to ``g_n^*``
 * `Λ!`:                           the  forward operator (if given) ``Λ: $(_math(:Manifold)) → $(_math(:Manifold; M = "N"))``
@@ -267,7 +267,7 @@ function status_summary(cps::ChambollePockState; context::Symbol = :default)
 end
 get_solver_result(apds::AbstractPrimalDualSolverState) = get_iterate(apds)
 get_iterate(apds::AbstractPrimalDualSolverState) = apds.p
-function set_iterate!(apds::AbstractPrimalDualSolverState, p)
+function set_iterate!(apds::AbstractPrimalDualSolverState, ::AbstractManifold, p)
     apds.p = p
     return apds
 end
@@ -446,7 +446,7 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
     obj = get_objective(tmp)
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
-    if !hasproperty(obj, :Λ!) || ismissing(obj.Λ!)
+    if ismissing(get_objective(obj, true).Λ!)
         ptXn = cps.X
     else
         ptXn = vector_transport_to(
@@ -485,7 +485,7 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
     obj = get_objective(tmp)
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
-    if !hasproperty(obj, :Λ!) || ismissing(obj.Λ!)
+    if ismissing(get_objective(obj, true).Λ!)
         ptXbar = cps.Xbar
     else
         ptXbar = vector_transport_to(
@@ -525,7 +525,7 @@ function dual_update!(
         tmp, cps.m, inverse_retract(M, cps.m, start, cps.inverse_retraction_method), cps.n
     )
     # (2) if p.Λ is missing, if n = Λ(m) and do not PT, otherwise do
-    (hasproperty(obj, :Λ!) && !ismissing(obj.Λ!)) && vector_transport_to!(
+    (!ismissing(get_objective(obj, true).Λ!)) && vector_transport_to!(
         N, X_update, forward_operator(tmp, cps.m), X_update, cps.n, cps.vector_transport_method_dual,
     )
     # (3) to the dual update
@@ -555,9 +555,9 @@ end
     update_prox_parameters!(pds)
 update the prox parameters as described in Algorithm 2 of [ChambollePock:2011](@cite),
 
-1. ``θ_{n} = $(_tex(:frac, "1", "$(_tex(:sqrt, "1+2γτ_n"))"))``
-2. ``τ_{n+1} = θ_nτ_n``
-3. ``σ_{n+1} = $(_tex(:frac, "σ_n", "θ_n"))``
+1. ``θ_{n} = $(_tex(:frac, "1", "$(_tex(:sqrt, "1+2γσ_n"))"))``
+2. ``σ_{n+1} = θ_nσ_n``
+3. ``τ_{n+1} = $(_tex(:frac, "τ_n", "θ_n"))``
 """
 function update_prox_parameters!(pds::S) where {S <: AbstractPrimalDualSolverState}
     if pds.acceleration > 0
