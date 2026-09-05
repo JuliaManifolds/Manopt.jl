@@ -1,6 +1,10 @@
-# Douglas—Rachford algorithm
+# Douglas-Rachford algorithm
 
-The (Parallel) Douglas—Rachford ((P)DR) algorithm was generalized to Hadamard
+```@meta
+CurrentModule = Manopt
+```
+
+The (Parallel) Douglas-Rachford ((P)DR) algorithm was generalized to Hadamard
 manifolds in [BergmannPerschSteidl:2016](@cite).
 
 The aim is to minimize the sum
@@ -21,7 +25,7 @@ Further, define the reflection operator at the proximal map as
 Let ``\alpha_k ∈  [0,1]`` with ``\sum_{k ∈ ℕ} \alpha_k(1-\alpha_k) =  \infty``
 and ``λ > 0`` (which might depend on iteration ``k`` as well) be given.
 
-Then the (P)DRA algorithm for initial data ``p^{(0)} ∈ \mathcal M`` as
+Then the (P)DR algorithm for initial data ``p^{(0)} ∈ \mathcal M`` reads as
 
 ## Initialization
 
@@ -31,17 +35,17 @@ Initialize ``q^{(0)} = p^{(0)}`` and ``k=0``
 
 Repeat until a convergence criterion is reached
 
-1. Compute ``r^{(k)} = \operatorname{refl}_{λ g}\operatorname{refl}_{λ h}(q^{(k)})``
-2. Within that operation, store ``p^{(k+1)} = \operatorname{prox}_{λ h}(q^{(k)})`` which is the prox the inner reflection reflects at.
-3. Compute ``q^{(k+1)} = g(\alpha_k; q^{(k)}, r^{(k)})``, where ``g`` is a curve approximating the shortest geodesic, provided by a retraction and its inverse
+1. Compute ``r^{(k)} = \operatorname{refl}_{λ h}\operatorname{refl}_{λ g}(q^{(k)})``
+2. Within that operation, store ``p^{(k+1)} = \operatorname{prox}_{λ h}\bigl(\operatorname{refl}_{λ g}(q^{(k)})\bigr)``, which is the prox the outer reflection reflects at.
+3. Compute ``q^{(k+1)} = γ(\alpha_k; q^{(k)}, r^{(k)})``, where ``γ`` is a curve approximating the shortest geodesic, provided by a retraction and its inverse
 4. Set ``k = k+1``
 
 ## Result
 
-The result is given by the last computed ``p^{(K)}`` at the last iterate ``K``.
+The result is given by the last computed ``p^{(K)}`` in the last iteration ``K``.
 
 For the parallel version, the first proximal map is a vectorial version where
-in each component one prox is applied to the corresponding copy of ``t_k`` and
+in each component one prox is applied to the corresponding copy of ``q^{(k)}`` and
 the second proximal map corresponds to the indicator function of the set,
 where all copies are equal (in ``\mathcal M^n``, where ``n`` is the number of copies),
 leading to the second prox being the Riemannian mean.
@@ -63,14 +67,14 @@ leading to the second prox being the Riemannian mean.
 
 The [`DouglasRachford`](@ref) solver requires the following functions of a manifold to be available
 
-* A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favourite retraction. If this default is set, a `retraction_method=` does not have to be specified.
-* An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favourite retraction. If this default is set, a `inverse_retraction_method=` does not have to be specified.
+* A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favorite retraction. If this default is set, a `retraction_method=` does not have to be specified.
+* An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favorite inverse retraction. If this default is set, an `inverse_retraction_method=` does not have to be specified.
 * A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points.
 
 By default, one of the stopping criteria is [`StopWhenChangeLess`](@ref),
 which requires
 
-* An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favourite retraction. If this default is set, a `inverse_retraction_method=` or `inverse_retraction_method_dual=` (for ``\mathcal N``) does not have to be specified or the [`distance`](@extref `ManifoldsBase.distance-Tuple{AbstractManifold, Any, Any}`)`(M, p, q)` for said default inverse retraction.
+* An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favorite inverse retraction. If this default is set, an `inverse_retraction_method=` does not have to be specified. Alternatively, the [`distance`](@extref `ManifoldsBase.distance-Tuple{AbstractManifold, Any, Any}`)`(M, p, q)` can be used.
 
 ## Literature
 

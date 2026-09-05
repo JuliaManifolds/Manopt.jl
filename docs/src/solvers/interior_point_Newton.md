@@ -29,7 +29,7 @@ Manopt.calculate_σ
 StopWhenKKTResidualLess
 ```
 
-## References
+## Literature
 
 ```@bibliography
 Pages = ["interior_point_Newton.md"]

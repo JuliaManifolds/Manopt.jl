@@ -70,7 +70,7 @@ import Manifolds: inner
         set_gradient!(dcps, M, p1, X1)
         @test dcps.X == X1
         # Dummy closed form sub
-        dcpsc = DifferenceOfConvexProximalState(M, f, AllocatingEvaluation())
+        dcpsc = DifferenceOfConvexProximalState(M, f; evaluation = AllocatingEvaluation())
         @test dcpsc.sub_state isa Manopt.ClosedFormSubSolverState
 
         dc_cost_a = ManifoldDifferenceOfConvexObjective(f, grad_h)

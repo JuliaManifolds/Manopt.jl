@@ -9,7 +9,7 @@ how to use [`Manopt.jl`](../index.md) to perform optimization on manifolds in [J
 For more theoretical background, see for example [doCarmo:1992](@cite) for an introduction to Riemannian manifolds
 and [AbsilMahonySepulchre:2008](@cite) or [Boumal:2023](@cite) to read more about optimization thereon.
 
-Let $\mathcal M$ denote a (``[Riemannian manifold](@extref `ManifoldsBase.AbstractManifold`)``{=commonmark}
+Let $\mathcal M$ denote a ``[Riemannian manifold](@extref `ManifoldsBase.AbstractManifold`)``{=commonmark}
 and let $f:  \mathcal M → ℝ$ be a cost function.
 The aim is to determine or obtain a point $p^*$ where $f$ is _minimal_ or in other words $p^*$ is a _minimizer_ of $f$.
 
@@ -59,13 +59,15 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 
 Let's assume you have already installed both `Manopt.jl` and `Manifolds.jl` in Julia (using for example `using Pkg; Pkg.add(["Manopt", "Manifolds"])`).
-Then we can get started by loading both packages as well as `Random.jl` for persistency in this tutorial.
+Then we can get started by loading both packages, as well as `LinearAlgebra.jl`, `ManifoldDiff.jl`, and `Random.jl` for reproducibility in this tutorial.
 
 ```{julia}
 using Manopt, Manifolds, Random, LinearAlgebra, ManifoldDiff
 using ManifoldDiff: grad_distance, prox_distance
 Random.seed!(42);
 ```
+
+## Example 1: computing the Riemannian center of mass on the sphere
 
 Now assume we are on the ``[Sphere](@extref `Manifolds.Sphere`)``{=commonmark}
 $\mathcal M = \mathbb S^2$ and we generate some random points “around” some initial point $p$
@@ -95,61 +97,61 @@ m1 = gradient_descent(M, f, grad_f, data[1])
 ```
 
 In order to get more details, we further add the `debug=` keyword argument, which
-act as a [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern).
+acts as a [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern).
 
 This way we can easily specify a certain debug to be printed.
 The goal is to get an output of the form
 
 ```{shell}
-# i | Last Change: [...] | F(x): [...] |
+# k | Last Change: [...] | f(p): [...] |
 ```
 
 but where we also want to fix the display format for the change and the cost
-numbers (the `[...]`) to have a certain format. Furthermore, the reason why the solver stopped should be printed at the end
+numbers (the `[...]`) to have a certain format. Furthermore, the reason why the solver stopped should be printed at the end.
 
 These can easily be specified using either a Symbol when using the default format for numbers, or a tuple of a symbol and a format-string in the `debug=` keyword that is available for every solver.
-We can also, for illustration reasons, just look at the first 6 steps by setting a [`stopping_criterion=`](../commons/stopping_criteria.md)
+We can also, for illustration reasons, just look at the first 6 steps by setting a [`stopping_criterion=`](../commons/stopping_criteria.md)
 
 ```{julia}
 m2 = gradient_descent(M, f, grad_f, data[1];
     debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
-        (:Cost, " F(x): %1.11f | "), "\n", :Stop],
+        (:Cost, " f(p): %1.11f | "), "\n", :Stop],
     stopping_criterion = StopAfterIteration(6)
   )
 ```
 
-See ``[here](@ref Manopt.RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))``{=commonmark} for the list of available symbols.
+See the ``[`DebugActionFactory`](@ref Manopt.DebugActionFactory)``{=commonmark} for the list of available symbols.
 
 ```{=commonmark}
 !!! info "Technical Detail"
     The `debug=` keyword is actually a list of [`DebugAction`](@ref)s added to every iteration, allowing you to write your own ones even. Additionally, `:Stop` is an action added to the end of the solver to display the reason why the solver stopped.
 ```
 
-The default stopping criterion for [`gradient_descent`](@ref) is, to either stop when the gradient is small (`<1e-9`) or a max number of iterations is reached (as a fallback).
+The default stopping criterion for [`gradient_descent`](@ref) is to either stop when the gradient is small (`<1e-8`) or a max number of iterations is reached (as a fallback).
 Combining stopping-criteria can be done by `|` or `&`.
-We further pass a number `25` to `debug=` to only an output every `25`th iteration:
+We further pass a number `25` to `debug=` to only print an output every `25`th iteration:
 
 ```{julia}
 m3 = gradient_descent(M, f, grad_f, data[1];
     debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
-        (:Cost, " F(x): %1.11f | "), "\n", :Stop, 25],
-    stopping_criterion = StopWhenGradientNormLess(1e-14) | StopAfterIteration(400),
+        (:Cost, " f(p): %1.11f | "), "\n", :Stop, 25],
+    stopping_criterion = StopWhenGradientNormLess(1e-14) | StopAfterIteration(400),
 )
 ```
 
-We can finally use another way to determine the stepsize, for example
-a little more expensive [`ArmijoLinesearch`](@ref) than the default [stepsize](../commons/stepsizes.md) rule used on the Sphere.
+We can finally also tune the step size, for example by choosing more expensive parameters for
+the default [`ArmijoLinesearch`](@ref) [stepsize](../commons/stepsizes.md) rule.
 
 ```{julia}
 m4 = gradient_descent(M, f, grad_f, data[1];
     debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
-        (:Cost, " F(x): %1.11f | "), "\n", :Stop, 2],
+        (:Cost, " f(p): %1.11f | "), "\n", :Stop, 2],
       stepsize = ArmijoLinesearch(; contraction_factor=0.999, sufficient_decrease=0.5),
-    stopping_criterion = StopWhenGradientNormLess(1e-14) | StopAfterIteration(400),
+    stopping_criterion = StopWhenGradientNormLess(1e-14) | StopAfterIteration(400),
 )
 ```
 
-Then we reach approximately the same point as in the previous run, but in far less steps
+Then we reach approximately the same point as in the previous run, but in far fewer steps.
 
 ```{julia}
 [f(M, m3)-f(M,m4), distance(M, m3, m4)]
@@ -187,7 +189,7 @@ the line search would take the gradient direction (and not the negative gradient
 as a start. The line search is still performed, but in this case returns a much too small,
 maybe even nearly zero step size.
 
-In other words, we have to be careful that the optimization stays a “local” argument we use.
+In other words, we have to be careful that the steps of the optimization stay “local”.
 
 This is also warned for in `"Tutorial"` mode. Calling
 
@@ -197,7 +199,7 @@ mX = gradient_descent(M, f2, grad_f2, data[1])
 ```
 
 So just by chance it seems we still got nearly the same point as before, but
-when we for example look when this one stops, that is takes more steps.
+when we for example look at when this run stops, we see that it takes more steps.
 
 ```{julia}
 #| warning: true
@@ -231,22 +233,22 @@ see [Bacak:2014](@cite).
 We define
 
 ```{julia}
-g(N, q) = sum(1 / (2 * m) * distance.(Ref(N), Ref(q), data2))
+g(N, q) = sum(1 / m * distance.(Ref(N), Ref(q), data2))
 ```
 
 Since the function is non-smooth, we can not use a gradient-based approach.
-But since every is a distance and its ``[proximal map](@extref ManifoldDiff :jl:function:`ManifoldDiff.prox_distance`)``{=commonmark} is available in ``[ManifoldDiff.jl](@extref ManifoldDiff :std:doc:`index`)``{=commonmark}, we can use the
+But since every summand is a distance and its ``[proximal map](@extref ManifoldDiff :jl:function:`ManifoldDiff.prox_distance`)``{=commonmark} is available in ``[ManifoldDiff.jl](@extref ManifoldDiff :std:doc:`index`)``{=commonmark}, we can use the
 ``[cyclic proximal point algorithm (CPPA)](@ref Manopt.cyclic_proximal_point)``{=commonmark}. We hence define the vector of proximal maps as
 
 ```{julia}
 proxes_g = Function[(N, λ, q) -> prox_distance(N, λ / m, di, q, 1) for di in data2];
 ```
 
-Besides also looking at a some debug prints, we can also easily record these values. Similarly to `debug=`, `record=` also accepts Symbols, see list ``[here](@ref Manopt.RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))``{=commonmark}, to indicate things to record. We further set `return_state` to true to obtain not just the (approximate) minimizer.
+Besides also looking at some debug prints, we can also easily record these values. Similarly to `debug=`, `record=` also accepts Symbols, see list ``[here](@ref Manopt.RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))``{=commonmark}, to indicate things to record. We further set `return_state` to true to obtain not just the (approximate) minimizer.
 
 ```{julia}
 res = cyclic_proximal_point(N, g, proxes_g, data2[1];
-  debug=[:Iteration," | ",:Change," | ",(:Cost, "F(x): %1.12f"),"\n", 1000, :Stop,
+  debug=[:Iteration," | ",:Change," | ",(:Cost, "f(p): %1.12f"),"\n", 1000, :Stop,
         ],
         record=[:Iteration, :Change, :Cost, :Iterate],
         return_state=true,
@@ -264,15 +266,15 @@ First, the computed median can be accessed as
 median = get_solver_result(res)
 ```
 
-but we can also look at the recorded values. For simplicity (of output), lets just look
+but we can also look at the recorded values. For simplicity (of output), let's just look
 at the recorded values at iteration 42
 
 ```{julia}
 get_record(res)[42]
 ```
 
-But we can also access whole series and see that the cost does not decrease that fast; actually, the CPPA might converge relatively slow. For that we can for
-example access the `:Cost` that was recorded every `:Iterate` as well as the (maybe a little boring) `:Iteration`-number in a semi-log-plot.
+But we can also access the whole series and see that the cost does not decrease that fast; actually, the CPPA might converge relatively slowly. For that we can for
+example access the `:Cost` that was recorded every iteration as well as the (maybe a little boring) `:Iteration`-number in a semi-log-plot.
 
 ```{julia}
 x = get_record(res, :Iteration, :Iteration)

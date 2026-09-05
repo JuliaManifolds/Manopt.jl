@@ -36,8 +36,7 @@ end
 function Keywords(
         accepted::Set{Symbol} = Set{Symbol}(),
         deprecated::Set{Symbol} = Set{Symbol}();
-        from = nothing,
-        origins::Union{Dict, Nothing} = nothing,
+        from = nothing, origins::Union{Dict, Nothing} = nothing,
     )
     if !isnothing(from)
         _origins = isnothing(origins) ? Dict{Symbol, Vector{Any}}() : origins
@@ -85,8 +84,7 @@ function keyword_error_string(f, kw::Keywords; hint = true)
     end
     if length(kw.deprecated) > 0
         print(io, "\n$(f) accepts, but deprecates the keyword(s):\n  ")
-        print(io, join(sort!(collect(kw.deprecated)), ", "), "\n  ")
-        print(io, "\n")
+        print(io, join(sort!(collect(kw.deprecated)), ", "), "\n")
     end
     if hint
         akw = accepted_keywords(f).accepted
@@ -132,7 +130,7 @@ function Base.show(io::IO, kw::Keywords{I}) where {I}
                 astn = "\n  * $(kwn)"
                 if haskey(kw.origins, kwn) && kw.origins[kwn] isa Vector
                     pass_on = last(kw.origins[kwn])
-                    if !("$(I)!" == "$(pass_on)")
+                    if !((pass_on === I) || ("$(I)!" == "$(pass_on)"))
                         astn *= " (passed on to $pass_on)"
                     end
                 end

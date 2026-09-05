@@ -8,7 +8,7 @@ hero:
   tagline: Efficient algorithms for minimizing a function on a Riemannian manifold
   actions:
     - theme: brand
-      text: Get started
+      text: Get Started
       link: tutorials/getstarted/index.html
     - theme: alt
       text: Available Solvers
@@ -27,29 +27,26 @@ features:
         alt: ManifoldsBase.jl
         wrap: true
     title: Generic Implementations
-    details: Algorithms are implemented on a general Riemannian manifold using the interface from ManifoldsBase.jl.
-    link: https://juliamanifolds.github.io/ManifoldsBase.jl/stable/
+    details: Algorithms are implemented generically for any Riemannian manifold, based on the interface from [ManifoldsBase.jl](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/).
   - icon: 🧩
     title: Composable
-    details: All components are designed in a modular fashion, for example problems, objectives, and solver states, but also stopping criteria and step sizes. They can be reused and combined easily. Points and tangent vectors can be represented using arbitrary Julia types.
+    details: All components are modular, from problems, objectives, and solver states to stopping criteria and step sizes, and can easily be combined and reused. Points and tangent vectors can be represented by arbitrary Julia types.
   - icon: ⚡️
     title: Efficient
-    link: https://github.com/JuliaManifolds/ManifoldsGPU.jl
-    details: All methods use in-place evaluations for both the objective and the manifold. There is also an advanced, but easy to use caching system further promoting efficiency. The package is compatible with running on a GPU when you use ManifoldsGPU.jl.
+    details: All methods support in-place evaluation of both the objective and the manifold operations. An advanced and easy-to-use caching system avoids unnecessary re-evaluations. Together with [ManifoldsGPU.jl](https://juliamanifolds.github.io/ManifoldsGPU.jl/dev/), computations can also run on the GPU.
   - icon: 📚
     title: Well-documented and -tested
-    details: All algorithms are documented – both their theoretical foundation and all their options and keywords. The theoretical background also refers to further literature.
+    details: All algorithms are documented, covering their theoretical background with references to the literature as well as all their options and keyword arguments.
   - icon: 🛠️
     title: Customizable
-    details: All solvers bring recording, debug and callback capabilities, the objectives can keep track of internal function calls.
+    details: All solvers provide recording, debug, and callback capabilities, and objectives can count their internal function calls.
   - icon:
         light: /logo-manifolds.png
         dark: /logo-manifolds-dark.png
         alt: Manifolds.jl
         wrap: true
     title: Use with Manifolds.jl
-    details: If you have a certain manifold in mind, check out whether it is already provided in Manifolds.jl or LieGroups.jl.
-    link: https://juliamanifolds.github.io/Manifolds.jl/stable/
+    details: If you have a specific manifold in mind, check whether it is already available in [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/) or, for Lie groups, in [LieGroups.jl](https://juliamanifolds.github.io/LieGroups.jl/stable/).
 ---
 ```
 
@@ -61,17 +58,17 @@ CurrentModule = Manopt
 Manopt.Manopt
 ```
 
-For a function ``f:\mathcal M → ℝ`` defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) ``\mathcal M`` algorithms in this package aim to solve
+For a function ``f:\mathcal M → ℝ`` defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) ``\mathcal M``, algorithms in this package aim to solve
 
 ```math
-\operatorname*{argmin}_{p ∈ \mathcal M} f(p),
+\operatorname*{arg\,min}_{p ∈ \mathcal M} f(p),
 ```
 
 or in other words: find the point ``p`` on the manifold ``\mathcal M``, where ``f`` reaches its minimal function value.
 
 `Manopt.jl` provides a framework for optimization on manifolds as well as a library of optimization algorithms in [Julia](https://julialang.org).
 It belongs to the **Manopt family**, which includes [Manopt](https://manopt.org) (Matlab) and [pymanopt.org](https://www.pymanopt.org/) (Python), both aiming to provide the same framework
-in the flavour of the corresponding language.
+in the flavor of the corresponding language.
 
 ## Get Started
 
@@ -84,8 +81,8 @@ To get started with `Manopt.jl`, start [Julia](https://julialang.org) and type
 to install the package. Then you can dive directly into optimization on manifolds, following the
 [🏔️ Get started with Manopt.jl](tutorials/getstarted.md) tutorial.
 
-`Manopt.jl` makes it easy to use an algorithm for your favourite
-manifold as well as a manifold for your favourite algorithm. It already provides
+`Manopt.jl` makes it easy to use an algorithm for your favorite
+manifold as well as a manifold for your favorite algorithm. It already provides
 many manifolds and algorithms, which can easily be enhanced, for example to
 [record](@ref sec-record) certain data or
 [debug output](@ref sec-debug) throughout iterations.
@@ -134,7 +131,7 @@ To refer to a certain version or the source code in general, cite for example
     Doi       = {10.5281/zenodo.4290905},
     Publisher = {Zenodo},
     Title     = {Manopt.jl},
-    Year      = {2024},
+    Year      = {2026},
 }
 ```
 ```@raw html
@@ -176,7 +173,7 @@ If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifold
 
 ### Optimization algorithms (solvers)
 
-For every optimization algorithm, a [solver](solvers/index.md) is implemented based on an [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that sets up the solver, and stores values that are required between or for the next iteration.
+For every optimization algorithm, a [solver](solvers/index.md) is implemented based on an [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that sets up the solver and stores values that are required between iterations or for the next iteration.
 
 ### Manifolds
 

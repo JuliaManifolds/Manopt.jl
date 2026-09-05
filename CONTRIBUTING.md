@@ -50,7 +50,7 @@ Further, if possible, prefer [`retract!(M,q,p,X)`](https://juliamanifolds.github
 
 Usually, the methods implemented in `Manopt.jl` also have a high-level interface, that is easier to call, creates the necessary problem and options structure and calls the solver.
 
-The two technical functions `initialize_solver!` and `step_solver!` should be documented with technical details, while the high level interface should usually provide a general description and some literature references to the algorithm at hand.
+The two technical functions `initialize_solver!` and `step_solver!` should be documented with technical details, while the high-level interface should usually provide a general description and some literature references to the algorithm at hand.
 
 ### Provide a new example
 
@@ -68,7 +68,7 @@ Please follow a few internal conventions:
 - Any implemented function should be accompanied by its mathematical formulae if a closed form exists.
 - `AbstractManoptProblem` and helping functions are stored within the `base/` folder and sorted by properties of the problem and/or solver at hand.
 - the solver state is usually stored with the solver itself
-- Within the source code of one algorithm, following the state, the high level interface should be next, then the initialization, then the step.
+- Within the source code of one algorithm, following the state, the high-level interface should be next, then the initialization, then the step.
 - Otherwise an alphabetical order of functions is preferable.
 - The preceding implies that the mutating variant of a function follows the non-mutating variant.
 - Always add a newline between things of different types (struct/method/const).

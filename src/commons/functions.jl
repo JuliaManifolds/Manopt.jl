@@ -2,7 +2,7 @@ function maybe_wrap_variable end
 """
     maybe_wrap_variable(v)
 
-For a number variable `v` wrap it in a 1-element vector to make it mutable.
+For a number variable `v` wrap it in a 0-dimensional array to make it mutable.
 Otherwise return the variable as is.
 """
 maybe_wrap_variable(v)
@@ -60,6 +60,12 @@ end
 # do not “wrap twice”
 function MutableManifoldFunction(mmf::MutableManifoldFunction, ::Type, ::Symbol = :Number)
     return mmf
+end
+# an approximate Hessian already works on the internal (mutable) representation
+function MutableManifoldFunction(
+        f::AbstractApproximateHessianFunction, ::Type, ::Symbol = :Number
+    )
+    return f
 end
 function MutableManifoldFunction(f::F, ::P, result::Symbol = :Number) where {F, P}
     return MutableManifoldFunction(f, P, result)
@@ -156,7 +162,7 @@ end
 
 """
     maybe_wrap_function(f, p, evaluation = InplaceEvaluation(); result = :Number)
-    maybe_wrap_function(f, evaluation = InplaceEvaluation(); result = :Number)
+    maybe_wrap_function(f, evaluation; result = :Point)
 
 Wrap a function `f` defined on a manifold to work in-place on mutable variables, i.e. first
 if the input variable `p` is a number, the function `f` is wrapped in a [`MutableManifoldFunction`](@ref).
@@ -212,6 +218,7 @@ $(_fields([:retraction_method, :vector_transport_method]))
 ## Keyword arguments
 
 * `steplength=2^-14`: step length ``c`` to approximate the gradient evaluations
+* `tangent_vector=zero_vector(M, p)`: memory used to initialize the internal temporary gradient storages
 $(_kwargs(:evaluation))
 $(_kwargs([:retraction_method, :vector_transport_method]))
 
@@ -227,7 +234,7 @@ mutable struct ApproxHessianFiniteDifference{P, T, G, RTR, VTR, R <: Real} <: Ab
 end
 function ApproxHessianFiniteDifference(
         M::mT, p::P, grad_f::G;
-        tangent_vector = zero_vector(M, p),
+        tangent_vector = zero_vector(M, maybe_wrap_variable(p)),
         steplength::R = 2^-14,
         retraction_method::RTR = default_retraction_method(M, typeof(p)),
         vector_transport_method::VTR = default_vector_transport_method(M, typeof(p)),
@@ -249,7 +256,7 @@ function (f::ApproxHessianFiniteDifference)(M, p, X)
 end
 function (f::ApproxHessianFiniteDifference)(M, Y, p, X)
     norm_X = norm(M, p, X)
-    (norm_X ≈ zero(norm_X)) && return zero_vector!(M, X, p)
+    (norm_X ≈ zero(norm_X)) && return zero_vector!(M, Y, p)
     c = f.steplength / norm_X
     f.gradient!(M, f.grad_tmp, p)
     retract!(M, f.p_dir, p, c * X, f.retraction_method)
@@ -289,6 +296,7 @@ $(_kwargs(:evaluation))
 * `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`: the matrix representation of the initial approximating operator.
 * `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: an orthonormal basis in the tangent space of the initial iterate `p`.
 * `nu=-1.0`: the value ``ν`` above; a negative value disables the safeguard on the denominator.
+$(_kwargs(:vector_transport_method))
 """
 mutable struct ApproxHessianSymmetricRankOne{P, G, T, B <: AbstractBasis{ℝ}, VTR, R <: Real} <: AbstractApproximateHessianFunction
     p_tmp::P
@@ -346,6 +354,12 @@ function update_hessian!(M::AbstractManifold, f::ApproxHessianSymmetricRankOne, 
         f.matrix = f.matrix + srvec * srvec' / (srvec' * sk_c)
     end
 end
+"""
+    update_hessian_basis!(M, f, p)
+
+Update the basis of tangent vectors and the stored gradient of the approximate Hessian `f`
+when moving to the point `p`, using the vector transport stored in `f`.
+"""
 function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne, p)
     update_basis!(f.basis, M, f.p_tmp, p, f.vector_transport_method)
     copyto!(f.p_tmp, p)
@@ -360,7 +374,7 @@ A functor to approximate the Hessian by the BFGS update.
 # Fields
 
 * `gradient!`: the gradient function (either allocating or mutating, see `evaluation` parameter).
-* `scale::Bool`: whether to scale the initial approximating operator.
+* `scale::Bool`: a flag stored for a scaling of the initial approximating operator; it is currently not used in the update.
 $(_fields(:vector_transport_method))
 
 ## Internal temporary fields
@@ -378,7 +392,8 @@ $(_fields(:vector_transport_method))
 $(_kwargs(:evaluation))
 * `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`: the matrix representation of the initial approximating operator.
 * `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: an orthonormal basis in the tangent space of the initial iterate `p`.
-* `scale=true`: the value of the `scale` field above.
+* `scale=true`: the value to store in the `scale` field above.
+$(_kwargs(:vector_transport_method))
 """
 mutable struct ApproxHessianBFGS{
         P, G, T, B <: AbstractBasis{ℝ}, VTR <: AbstractVectorTransportMethod,
@@ -446,7 +461,7 @@ function update_hessian_basis!(M, f::ApproxHessianBFGS, p)
     return f
 end
 
-@doc """
+_doc_reflect_prox = """
     reflect(M, pr::Function, x; kwargs...)
     reflect!(M, q, pr::Function, x; kwargs...)
 
@@ -456,7 +471,7 @@ where the proximal map is given by `pr`.
 The formula is given by
 
 ```math
-$(_tex(:reflect))_p(q) = $(_tex(:retr))_p(-$(_tex(:invretr))_p q),
+$(_tex(:reflect))_p(x) = $(_tex(:retr))_p(-$(_tex(:invretr))_p x),
 ```
 where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an inverse retraction, respectively.
 
@@ -465,15 +480,17 @@ This can also be done in place of `q`.
 ## Keyword Arguments
 
 $(_kwargs([:retraction_method, :inverse_retraction_method]))
-* `X=zero_vector(M,p)`: temporary memory to compute the inverse retraction in place;
-  otherwise this is the memory that would be allocated anyways.
+* `X=zero_vector(M,p)`: temporary memory `reflect!` uses to compute the inverse retraction in place;
+  the allocating `reflect` ignores this keyword.
 """
+@doc "$(_doc_reflect_prox)"
 reflect(M::AbstractManifold, pr::Function, x; kwargs...) = reflect(M, pr(x), x; kwargs...)
+@doc "$(_doc_reflect_prox)"
 function reflect!(M::AbstractManifold, q, pr::Function, x; kwargs...)
     return reflect!(M, q, pr(x), x; kwargs...)
 end
 
-@doc """
+_doc_reflect = """
     reflect(M, p, x; kwargs...)
     reflect!(M, q, p, x; kwargs...)
 
@@ -493,9 +510,10 @@ This can also be done in place of `q`.
 
 $(_kwargs([:retraction_method, :inverse_retraction_method]))
 $(_kwargs(:X))
-  as temporary memory to compute the inverse retraction in place;
-  otherwise this is the memory that would be allocated anyways.
+  used by `reflect!` as temporary memory to compute the inverse retraction in place;
+  the allocating `reflect` ignores this keyword.
 """
+@doc "$(_doc_reflect)"
 function reflect(
         M::AbstractManifold, p, x;
         retraction_method = default_retraction_method(M, typeof(p)),
@@ -506,10 +524,11 @@ function reflect(
         M, p, -inverse_retract(M, p, x, inverse_retraction_method), retraction_method
     )
 end
+@doc "$(_doc_reflect)"
 function reflect!(
         M::AbstractManifold, q, p, x;
         retraction_method = default_retraction_method(M, typeof(p)),
-        inverse_retraction_method = default_inverse_retraction_method(M),
+        inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
         X = zero_vector(M, p),
     )
     inverse_retract!(M, X, p, x, inverse_retraction_method)

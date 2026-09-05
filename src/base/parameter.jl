@@ -29,7 +29,7 @@ end
 get_parameter(f, args...) = nothing
 
 """
-    get_parameter(element::Symbol; default=nothing)
+    get_parameter(element::Symbol; default=get_parameter(Val(element), Val(:default)))
 
 Access global [`Manopt`](@ref) parameters addressed by a symbol `element`.
 This first dispatches on the value of `element`.
@@ -82,7 +82,7 @@ Whenever the `LocalPreferences.toml` is modified, this is also issued as an `@in
 function set_parameter!(e::Symbol, value::Union{String, Bool, <:Number})
     return if length(value) == 0
         @delete_preferences!(string(e))
-        v = get_parameter(e, Val(:default))
+        v = get_parameter(Val(e), Val(:default))
         default = isnothing(v) ? "" : ((v isa String) ? " \"$v\"" : " ($v)")
         @info("Resetting the `Manopt.jl` parameter :$(e) to default$(default).")
     else

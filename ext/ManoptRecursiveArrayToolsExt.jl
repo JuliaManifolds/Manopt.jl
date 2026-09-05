@@ -13,21 +13,30 @@ using Manopt: _tex, ManifoldDefaultsFactory, _produce_type
 
 using RecursiveArrayTools
 
-@doc """
+_doc_get_gradient_agd = """
     X = get_gradient(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
-    get_gradient!(M::ProductManifold, P::ManifoldAlternatingGradientObjective, X, p)
+    get_gradient!(M::ProductManifold, X, ago::ManifoldAlternatingGradientObjective, p)
 
 Evaluate all summands gradients at a point `p` on the `ProductManifold M` (in place of `X`)
 """
-get_gradient(M::ProductManifold, ::ManifoldAlternatingGradientObjective, ::Any...)
 
-@doc """
-    X = get_gradient(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, p, i)
-    get_gradient!(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, X, p, i)
+@doc "$(_doc_get_gradient_agd)"
+get_gradient(M::ProductManifold, ::ManifoldAlternatingGradientObjective, p)
 
-Evaluate one of the component gradients ``$(_tex(:grad)) f_i``, ``i∈ $(_tex(:set, "1,…,n"))``, at `x` (in place of `Y`).
+@doc "$(_doc_get_gradient_agd)"
+get_gradient!(M::ProductManifold, X, ::ManifoldAlternatingGradientObjective, p)
+
+_doc_get_gradient_i_agd = """
+    X = get_gradient(M::AbstractManifold, mago::ManifoldAlternatingGradientObjective, p, i)
+    get_gradient!(M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective, p, i)
+
+Evaluate one of the component gradients ``$(_tex(:grad)) f_i``, ``i∈ $(_tex(:set, "1,…,n"))``, at `p` (in place of `X`).
 """
-get_gradient!(M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective, p)
+@doc "$(_doc_get_gradient_i_agd)"
+get_gradient(M::AbstractManifold, mago::ManifoldAlternatingGradientObjective, p, i)
+
+@doc "$(_doc_get_gradient_i_agd)"
+get_gradient!(M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective, p, i)
 
 function get_gradient!(
         M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{F, <:AbstractVector}, p,
@@ -39,12 +48,8 @@ function get_gradient!(
 end
 
 function alternating_gradient_descent(
-        M::ProductManifold,
-        f,
-        grad_f::Union{TgF, AbstractVector{<:TgF}},
-        p = rand(M);
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        M::ProductManifold, f, grad_f::Union{TgF, AbstractVector{<:TgF}}, p = rand(M);
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     ) where {TgF}
     ago = ManifoldAlternatingGradientObjective(f, grad_f; evaluation = evaluation)
     return alternating_gradient_descent(M, ago, p; evaluation = evaluation, kwargs...)
@@ -58,30 +63,24 @@ function alternating_gradient_descent(
 end
 
 function alternating_gradient_descent!(
-        M::ProductManifold,
-        f,
-        grad_f::Union{TgF, AbstractVector{<:TgF}},
-        p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        M::ProductManifold, f, grad_f::Union{TgF, AbstractVector{<:TgF}}, p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     ) where {TgF}
     agmo = ManifoldAlternatingGradientObjective(f, grad_f; evaluation = evaluation)
     return alternating_gradient_descent!(M, agmo, p; evaluation = evaluation, kwargs...)
 end
 function alternating_gradient_descent!(
-        M::ProductManifold,
-        agmo::ManifoldAlternatingGradientObjective,
-        p;
+        M::ProductManifold, agmo::ManifoldAlternatingGradientObjective, p;
         callbacks = Dict{Symbol, Function}(),
         inner_iterations::Int = 5,
         stopping_criterion::StoppingCriterion = StopAfterIteration(100) |
             StopWhenGradientNormLess(1.0e-9),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
-            M, AlternatingGradientDescentState
+            M, AlternatingGradientDescentState; retraction_method = retraction_method
         ),
         order_type::Symbol = :Linear,
         order = collect(1:length(M.manifolds)),
-        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         kwargs...,
     )
     Manopt.keywords_accepted(alternating_gradient_descent!; kwargs...)

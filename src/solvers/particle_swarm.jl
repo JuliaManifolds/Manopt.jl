@@ -25,12 +25,12 @@ $(_fields(:p))
 * `positional_best`:  storing the best position ``p_i`` every single swarm participant visited
 $(_fields(:p; name = "q"))
   serving as temporary storage for interims results; avoids allocations
-* `social_vec`:       temporary storage for a tangent vector related to `social_weight`
+* `social_vector`:    temporary storage for a tangent vector related to `social_weight`
 * `swarm`:            a set of points (of type `AbstractVector{P}`) on a manifold ``$(_math(:Sequence, "a", "i", "1", "N"))``
 
 # Constructor
 
-    ParticleSwarmState(M, initial_swarm, velocity; kawrgs...)
+    ParticleSwarmState(M, initial_swarm, velocity; kwargs...)
 
 construct a particle swarm solver state for the manifold `M` starting with the initial population `initial_swarm` with `velocities`.
 The `p` used in the following defaults is the type of one point from the swarm.
@@ -134,8 +134,7 @@ end
 function status_summary(pss::ParticleSwarmState; context::Symbol = :default)
     (context === :short) && return repr(pss)
     i = get_count(pss, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(pss.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the particle swarm solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the particle swarm solver$(_iteration_suffix(pss))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(pss.stop) ? "Yes" : "No"
     as = _callbacks_summary(pss)
@@ -159,7 +158,7 @@ end
 # Access functions
 #
 get_iterate(pss::ParticleSwarmState) = pss.p
-function set_iterate!(pss::ParticleSwarmState, p)
+function set_iterate!(pss::ParticleSwarmState, ::AbstractManifold, p)
     pss.p = p
     return pss
 end
@@ -192,19 +191,19 @@ p_{k}^{(i)}, & \text{else,}
 _doc_swarm_global_best = raw"""
 ```math
 g^{(i+1)} = \begin{cases}
-p_k^{(i+1)},  & \text{if } F(p_k^{(i+1)})<F(g_{k}^{(i)}),\\
-g_{k}^{(i)}, & \text{else,}
+p_k^{(i+1)},  & \text{if } F(p_k^{(i+1)})<F(g^{(i)}),\\
+g^{(i)}, & \text{else,}
 \end{cases}
 ```
 """
 
 _doc_PSO = """
-    patricle_swarm(M, f; kwargs...)
-    patricle_swarm(M, f, swarm; kwargs...)
-    patricle_swarm(M, mco::AbstractManifoldCostObjective; kwargs..)
-    patricle_swarm(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
+    particle_swarm(M, f; kwargs...)
+    particle_swarm(M, f, swarm; kwargs...)
+    particle_swarm(M, mco::AbstractManifoldCostObjective; kwargs...)
+    particle_swarm(M, mco::AbstractManifoldCostObjective, swarm; kwargs...)
     particle_swarm!(M, f, swarm; kwargs...)
-    particle_swarm!(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
+    particle_swarm!(M, mco::AbstractManifoldCostObjective, swarm; kwargs...)
 
 perform the particle swarm optimization algorithm (PSO) to solve
 
@@ -219,7 +218,7 @@ To this end, a swarm $_doc_swarm of particles is moved around the manifold `M` i
 For every particle ``s_k^{(i)}`` the new particle velocities ``X_k^{(i)}`` are computed in every step ``i`` of the algorithm by
 
 ```math
-X_k^{(i)} = ω $(_math(:VectorTransport, "s_k^{(i)", "s_k^{(i-1)}")) X_k^{(i-1)} + c r_1  $(_tex(:invretr))_{s_k^{(i)}}(p_k^{(i)}) + s r_2 $(_tex(:invretr))_{s_k^{(i)}}(p),
+X_k^{(i)} = ω $(_math(:VectorTransport, "s_k^{(i-1)}", "s_k^{(i)}")) X_k^{(i-1)} + c r_1  $(_tex(:invretr))_{s_k^{(i)}}(p_k^{(i)}) + s r_2 $(_tex(:invretr))_{s_k^{(i)}}(g^{(i)}),
 ```
 
 
@@ -257,7 +256,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `inertia=0.65`: the inertia of the particles
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `social_weight=1.4`: a social weight factor
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenSwarmVelocityLess`](@ref)`(1e-4)"))
 * `swarm_size=100`: swarm size, if it should be generated randomly
 $(_kwargs(:vector_transport_method))
 * `velocity`:                  a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position
@@ -272,11 +271,8 @@ function particle_swarm(M::AbstractManifold, f; swarm_size = 100, kwargs...)
     return particle_swarm(M, f, [rand(M) for _ in 1:swarm_size]; kwargs...)
 end
 function particle_swarm(
-        M::AbstractManifold,
-        f,
-        swarm::AbstractVector;
-        velocity::AbstractVector = [rand(M; vector_at = y) for y in swarm],
-        kwargs...,
+        M::AbstractManifold, f, swarm::AbstractVector;
+        velocity::AbstractVector = [rand(M; vector_at = y) for y in swarm], kwargs...,
     )
     swarm_ = [maybe_wrap_variable(s) for s in swarm]
     velocity_ = [maybe_wrap_variable(v) for v in velocity]

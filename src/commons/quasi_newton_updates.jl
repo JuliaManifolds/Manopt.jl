@@ -1,11 +1,11 @@
 @doc """
     AbstractQuasiNewtonDirectionUpdate
 
-An abstract representation of an Quasi Newton Update rule to determine the next direction
+An abstract representation of a Quasi Newton update rule to determine the next direction
 given current [`QuasiNewtonState`](@ref).
 
-All subtypes should be functions as well, they should be callable as `H(M, p, X)` to compute a new direction update
-given a point `p` and a tangent vector `X`.
+All subtypes should be functors as well, callable as `H(mp, st)` and in-place as `H(η, mp, st)`,
+given an `AbstractManoptProblem` `mp` and a [`QuasiNewtonState`](@ref) `st`, to compute a new update direction.
 """
 abstract type AbstractQuasiNewtonDirectionUpdate end
 
@@ -24,7 +24,7 @@ initialize_update!(s::AbstractQuasiNewtonDirectionUpdate) = s
 Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s.
 
 For a [`QuasiNewtonMatrixDirectionUpdate`](@ref) there are several different updates to the matrix,
-while the default for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) the most prominent is [`InverseBFGS`](@ref).
+while for the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) the default and most prominent one is [`InverseBFGS`](@ref).
 """
 abstract type AbstractQuasiNewtonUpdateRule end
 
@@ -204,7 +204,7 @@ $(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x
 respectively.
 
 This method can be stabilized by only performing the update if denominator is larger than
-``r$(_tex(:norm, "y_k"; index = "x_{k+1}"))$(_tex(:norm, "s_k - $(_tex(:widetilde, "H"))^{$(_tex(:rm, "SR1"))}_k y_k"; index = "x_{k+1}"))``
+``r$(_tex(:norm, "y_k"; index = "x_{k+1}"))$(_tex(:norm, "s_k - $(_tex(:widetilde, "B"))^{$(_tex(:rm, "SR1"))}_k y_k"; index = "x_{k+1}"))``
 for some ``r>0``. For more details, see Section 6.2 in [NocedalWright:2006](@cite).
 
 # Constructor
@@ -268,7 +268,7 @@ Indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian Br
 is used in the Riemannian quasi-Newton method, which is as a convex combination
 of [`InverseBFGS`](@ref) and [`InverseDFP`](@ref).
 
-Denote by ``$(_tex(:widetilde, "H"))_k^{$(_tex(:rm, "Br"))}`` the operator concatenated with a vector transport
+Denote by ``$(_tex(:widetilde, "B"))_k^{$(_tex(:rm, "Br"))}`` the operator concatenated with a vector transport
 and its inverse before and after to act on ``x_{k+1} = R_{p_k}(α_k η_k)``.
 Then the update formula reads
 
@@ -301,7 +301,7 @@ T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:qua
 $(_tex(:grad))f(x_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{x_{k+1}} $(_math(:Manifold)),
 ```
 
-respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
+respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:InverseDavidon`.
 
 # Constructor
     InverseBroyden(φ, update_rule::Symbol = :constant)
@@ -316,7 +316,7 @@ _doc_QN_H_update = "``H_k ↦ H_{k+1}``"
 _doc_QN_B_update = "``B_k ↦ B_{k+1}``"
 _doc_QN_H_full_system = """
 ```math
-$(_tex(:text, "Solve"))$(_tex(:quad))$(_tex(:hat, "η_k")) = - H_k $(_tex(:widehat, "$(_tex(:grad))f(p_k)")),
+$(_tex(:text, "Solve"))$(_tex(:quad)) H_k $(_tex(:hat, "η_k")) = - $(_tex(:widehat, "$(_tex(:grad))f(p_k)")),
 ```
 """
 _doc_QN_B_full_system = """
@@ -385,7 +385,7 @@ matrix-vector multiplication
 $_doc_QN_B_full_system
 
 where ``B_k`` is the matrix representing the operator with respect to the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``
-and ``$(_tex(:widehat, "$(_tex(:grad)) f(p_k)"))``. In the end, the search direction ``η_k`` is
+and ``$(_tex(:widehat, "$(_tex(:grad)) f(p_k)"))`` again represents the coordinates of the gradient of ``f`` in ``p_k``. In the end, the search direction ``η_k`` is
 generated from the coordinates ``$(_tex(:hat, "η"))_k`` and the vectors of the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``
 in both variants.
 The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used.
@@ -503,7 +503,9 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    get_vector!(M, r, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
+    copyto!(M, r, p, X)
+    st.preconditioner(r, mp, st)
+    get_vector!(M, r, p, -d.matrix \ get_coordinates(M, p, r, d.basis), d.basis)
     return r
 end
 function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
@@ -514,7 +516,7 @@ end
     hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate, M, p, X)
 
 Evaluate the quadratic form associated with the stored quasi-Newton matrix.
-Returns the scalar ``c^{\top} B c`` where ``c`` are the coordinates of the
+Returns the scalar ``c^{$(_tex(:transp))} B c`` where ``c`` are the coordinates of the
 tangent vector `X` at `p` (in the basis `d.basis`) and ``B`` is `d.matrix`.
 """
 function hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X) where {T <: Union{BFGS, DFP, SR1, Broyden}}
@@ -526,7 +528,7 @@ end
     hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate, M, p, X::UnitVector)
 
 Evaluate the quadratic form associated with the stored quasi-Newton matrix.
-Returns the scalar ``c^{\top} B c`` where ``c`` are the coordinates of the
+Returns the scalar ``c^{$(_tex(:transp))} B c`` where ``c`` are the coordinates of the
 [`UnitVector`](@ref) `X` at `p` (in the basis `d.basis`) and ``B`` is `d.matrix`.
 """
 function hessian_value_diag(d::QuasiNewtonMatrixDirectionUpdate{T}, M::AbstractManifold, p, X::UnitVector) where {T <: Union{BFGS, DFP, SR1, Broyden}}
@@ -537,7 +539,7 @@ end
     hessian_value(d::QuasiNewtonMatrixDirectionUpdate, M, p, X::UnitVector, Y)
 
 Evaluate the quadratic form associated with the stored quasi-Newton matrix.
-Returns the scalar ``c_b^{\top} B c`` where ``c_b`` are the coordinates of the
+Returns the scalar ``c_b^{$(_tex(:transp))} B c`` where ``c_b`` are the coordinates of the
 [`UnitVector`](@ref) `X` at `p` (assumed to correspond to the basis `d.basis`),
 ``c`` are the coordinates of the tangent vector `Y` at `p` (in the basis `d.basis`)
 and ``B`` is `d.matrix`.
@@ -585,20 +587,19 @@ function is always included and the old, probably no longer relevant, informatio
 
 # Provided functors
 
-* `(mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction
-* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
+* `(mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction
+* `(η, mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
 
 # Fields
 
 * `memory_s`:                the set of the stored (and transported) search directions times step size `` $(_math(:Sequence, _tex(:widehat, "s"), "i", "k-m", "k-1"))``.
 * `memory_y`:                set of the stored gradient differences ``$(_math(:Sequence, _tex(:widehat, "y"), "i", "k-m", "k-1"))``.
 * `ξ`:                       a variable used in the two-loop recursion.
-* `ρ`L                       a variable used in the two-loop recursion.
+* `ρ`:                       a variable used in the two-loop recursion.
 * `initial_scale`:           initial scaling of the Hessian, deactivate (e.g. when using a preconditioner) by passing `nothing`
 $(_fields(:vector_transport_method))
 * `message`:                 a string containing a potential warning that might have appeared
 * `project!`:                a function to stabilize the update by projecting on the tangent space
-* `vector_transport_method`: method for transporting stored s and y directions to the new point
 * `nonpositive_curvature_behavior`: how non-positive-definite pairs (s, y) are detected and handled in vector transport.
                              Allowed values are:
                                 - `:ignore` (default): pairs whose inner product is zero are
@@ -606,22 +607,25 @@ $(_fields(:vector_transport_method))
                                   retained in memory for further iterations. This may lead
                                   to non-positive-definite Hessians and non-descent directions
                                   being selected and thus needs to be handled elsewhere.
-                                - `:byrd`: pairs such that `inner(M, p, X_s, Y_s) <= iszero_abstol * norm(M, p, Y_s)^2`
+                                - `:byrd`: pairs such that `inner(M, p, X_s, Y_s) <= sy_tol * norm(M, p, Y_s)^2`
                                   are removed from memory (see [ByrdLuNocedalZhu:1995](@cite),
                                   Eq. (3.9) and its discussion).
-* `sy_tol`:                  tolerance for detecting non-positive-definite pairs (X_s, X_y).
+* `sy_tol`:                  tolerance for detecting non-positive-definite pairs (X_s, Y_s).
                              The pairs may lose positive-definiteness after vector transport.
 
 # Constructor
 
     QuasiNewtonLimitedMemoryDirectionUpdate(
         M::AbstractManifold,
-        x,
+        p,
         update::AbstractQuasiNewtonUpdateRule,
         memory_size::Int;
-        initial_vector=zero_vector(M,x),
-        initial_scale::Real=1.0
-        project!=copyto!
+        initial_vector=zero_vector(M, p),
+        initial_scale::Real=1.0,
+        project!=copyto!,
+        vector_transport_method=default_vector_transport_method(M, typeof(p)),
+        nonpositive_curvature_behavior::Symbol=:ignore,
+        sy_tol::Real=1.0e-8,
     )
 
 # See also
@@ -651,10 +655,7 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     message::String
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
-        M::AbstractManifold,
-        p,
-        ::NT,
-        memory_size::Int;
+        M::AbstractManifold, p, ::NT, memory_size::Int;
         initial_vector::T = zero_vector(M, p),
         initial_scale::G = 1.0,
         (project!)::Proj = (copyto!),
@@ -741,8 +742,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
         end
     end
     if (last_safe_index == -1)
-        d.message = "$(d.message)$(length(d.message) > 0 ? :"\n" : "")"
-        d.message = "$(d.message) All memory yield zero inner products, falling back to a gradient step."
+        d.message = "All memory pairs yield zero inner products, falling back to a gradient step."
 
         r .*= -1
         return r
@@ -783,7 +783,7 @@ function initialize_update!(d::QuasiNewtonLimitedMemoryDirectionUpdate)
 end
 
 function show(io::IO, qns::QuasiNewtonLimitedMemoryDirectionUpdate)
-    return print(io, "QuasiNewtonLimitedMemoryDirectionUpdate with memory size $(length(qns.memory_s)) and $(qns.vector_transport_method) as vector transport.")
+    return print(io, "QuasiNewtonLimitedMemoryDirectionUpdate with memory size $(capacity(qns.memory_s)) and $(qns.vector_transport_method) as vector transport.")
 end
 
 
@@ -809,7 +809,8 @@ neither the oldest vector pair ``$(_tex(:widetilde, "s"))_{k-m}``, ``$(_tex(:wid
 discarded nor the newest vector pair ``$(_tex(:widetilde, "s"))_k, $(_tex(:widetilde, "y"))_k`` is added
 into storage, but all stored vector pairs ``$(_tex(:set, "$(_tex(:widetilde, "s"))_i, $(_tex(:widetilde, "y"))_i"))_{i=k-m}^{k-1}``
 are transported into the tangent space ``T_{x_{k+1}} $(_math(:Manifold))``.
-If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting
+If [`InverseBFGS`](@ref) is chosen as update — either within a [`QuasiNewtonMatrixDirectionUpdate`](@ref)
+or a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) — then the resulting
 method follows the method of [HuangAbsilGallivan:2018](@cite),
 taking into account that the corresponding step size is chosen.
 
@@ -835,10 +836,10 @@ Generate a cautious update for either a matrix based or a limited memory based u
 [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 """
-mutable struct QuasiNewtonCautiousDirectionUpdate{U, Tθ} <:
-    AbstractQuasiNewtonDirectionUpdate where {
+mutable struct QuasiNewtonCautiousDirectionUpdate{
         U <: Union{QuasiNewtonMatrixDirectionUpdate, QuasiNewtonLimitedMemoryDirectionUpdate},
-    }
+        Tθ,
+    } <: AbstractQuasiNewtonDirectionUpdate
     update::U
     θ::Tθ
 end
@@ -888,17 +889,20 @@ end
 @doc raw"""
     QuasiNewtonLimitedMemoryBoxDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-An approximation of Hessian of a scalar function of the form ``B_0 = θ I``,
-``B_{k+1} = B_k - W_k M_k W_k^{\mathrm{T}}``,
-where ``θ > 0`` is an initial scaling guess.
+A limited memory quasi-Newton direction update with support for box constraints.
+
+It stores an approximation of the Hessian of a scalar function in the compact form
+``B_k = θ_k I - W_k M_k W_k^{\mathrm{T}}``,
+where ``θ_k > 0`` is the current scaling factor stored in `current_scale`;
+while the memory is empty, ``B_k = θ^{-1} I`` holds for the initial scaling guess ``θ > 0``.
 Matrix ``M_k = \left(\begin{smallmatrix}M₁₁ & M₂₁^{\mathrm{T}}\\ M₂₁ & M₂₂\end{smallmatrix}\right)``
 is stored using its blocks.
 Blocks ``W_k`` are (implicitly) composed from `memory_y` and `memory_s` stored in `qn_du`
 of type [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref).
 
-Initial scale ``θ`` is stored in the field `initial_scale` but if the memory isn't empty,
-the current scale is set to squared norm of $s_k$ divided by inner product of ``s_k`` and ``y_k``
-where ``k`` is the oldest index for which the denominator is not equal to 0.
+Initial scale ``θ`` is stored in the field `initial_scale`; if the memory is not empty,
+the current scale is set to ``\frac{\|y_k\|^2}{⟨s_k, y_k⟩ θ}``, where ``k`` is the most recent
+index for which ``⟨s_k, y_k⟩`` is not equal to 0.
 
 `last_gcd_result` stores the result of the last generalized Cauchy direction search.
 
@@ -925,6 +929,12 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     buffer_inner_Yk_Y::V
     last_gcd_result::Symbol
     last_gcd_stepsize::F
+end
+
+# a deactivated `initial_scale` (`nothing`, used together with a preconditioner) acts as 1,
+# the same convention as `update_hessian!` in src/solvers/quasi_Newton.jl
+function _box_initial_scale(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
+    return isnothing(gh.qn_du.initial_scale) ? one(gh.current_scale) : gh.qn_du.initial_scale
 end
 
 function status_summary(
@@ -969,7 +979,7 @@ function QuasiNewtonLimitedMemoryBoxDirectionUpdate(
         typeof(qn_du), F, typeof(M_11), typeof(buffer_inner_Sk_X),
     }(
         qn_du,
-        qn_du.initial_scale,
+        isnothing(qn_du.initial_scale) ? one(F) : convert(F, qn_du.initial_scale),
         M_11,
         M_21,
         M_22,
@@ -1024,7 +1034,7 @@ function hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::A
     normX_sqr = norm(M, p, X)^2
 
     if m == 0 || num_nonzero_rho == 0
-        return gh.qn_du.initial_scale \ normX_sqr
+        return _box_initial_scale(gh) \ normX_sqr
     end
 
     ii = 1
@@ -1053,7 +1063,7 @@ function hessian_value_diag(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::A
     num_nonzero_rho = count(!iszero, gh.qn_du.ρ)
 
     if m == 0 || num_nonzero_rho == 0
-        return inv(gh.qn_du.initial_scale)
+        return inv(_box_initial_scale(gh))
     end
 
     ii = 1
@@ -1084,7 +1094,7 @@ function hessian_value(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::Abstra
 
     Yb = get_at_bound_index(M, Y, b)
     if m == 0 || num_nonzero_rho == 0
-        return gh.qn_du.initial_scale * Yb
+        return _box_initial_scale(gh) \ Yb
     end
 
     ii = 1
@@ -1131,7 +1141,7 @@ function update_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMem
 
     if (last_safe_index == -1)
         # All memory yield zero inner products
-        gh.current_scale = inv(gh.qn_du.initial_scale)
+        gh.current_scale = inv(_box_initial_scale(gh))
         gh.M_11 = fill(0.0, 0, 0)
         gh.M_21 = fill(0.0, 0, 0)
         gh.M_22 = fill(0.0, 0, 0)
@@ -1147,7 +1157,7 @@ function update_current_scale!(M::AbstractManifold, p, gh::QuasiNewtonLimitedMem
     # written this way to avoid floating point overflow (when ynorm is finite but ynorm^2 is Inf)
     # see CUTEst EXPQUAD problem for an example
     ynorm = norm(M, p, gh.qn_du.memory_y[last_safe_index])
-    gh.current_scale = ((gh.qn_du.ρ[last_safe_index] * ynorm) * ynorm) / gh.qn_du.initial_scale
+    gh.current_scale = ((gh.qn_du.ρ[last_safe_index] * ynorm) * ynorm) / _box_initial_scale(gh)
 
     tsksk = Symmetric(zeros(num_nonzero_rho, num_nonzero_rho))
     ii = 1
@@ -1194,7 +1204,7 @@ Arguments:
 - `cy1`, `cy2`: coordinates of ``y``-like vectors in the ``Y_k`` basis.
 - `cs1`, `cs2`: coordinates of ``s``-like vectors in the scaled ``S_k`` basis.
 
-The result is ``θ·iss - cy₁ᵀ M₁₁ cy₂ - 2·cs₁ᵀ M₂₁ cy₂ - cs₁ᵀ M₂₂ cs₂`` using the blocks
+The result is ``θ·iss - cy₁ᵀ M₁₁ cy₂ - cs₁ᵀ M₂₁ cy₂ - cs₂ᵀ M₂₁ cy₁ - cs₁ᵀ M₂₂ cs₂`` using the blocks
 ``M₁₁``, ``M₂₁``, ``M₂₂`` stored in `gh` and the current scale ``θ``. Returns the scalar value.
 """
 function hessian_value_from_inner_products(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, iss::Real, cy1, cs1, cy2, cs2)
@@ -1203,7 +1213,7 @@ function hessian_value_from_inner_products(gh::QuasiNewtonLimitedMemoryBoxDirect
         return result
     end
     result -= dot(cy1, gh.M_11, cy2)
-    result -= 2 * dot(cs1, gh.M_21, cy2)
+    result -= dot(cs1, gh.M_21, cy2) + dot(cs2, gh.M_21, cy1)
     result -= dot(cs1, gh.M_22, cs2)
 
     return result
@@ -1404,14 +1414,14 @@ function _iterate(ranges, i, st)
 end
 
 """
-    to_coordinate_index(M::ProductManifold, b::UnitVector, B::AbstractBasis)
+    to_coordinate_index(M::AbstractManifold, b::UnitVector{Int}, B::AbstractBasis)
 
 Get the index of coordinate equal to 1 of [`UnitVector`](@ref) `b` with respect to
 `AbstractBasis` `B`.
 """
 to_coordinate_index(::AbstractManifold, b::UnitVector{Int}, ::AbstractBasis) = b.index
 """
-    to_coordinate_index(M::ProductManifold, b::UnitVector, B::AbstractBasis)
+    to_coordinate_index(M::ProductManifold, b::UnitVector{Tuple{Int, Int}}, B::AbstractBasis)
 
 Get the index of coordinate equal to 1 of [`UnitVector`](@ref) `b` with respect to
 `AbstractBasis` `B`.
@@ -1429,7 +1439,7 @@ Base.length(itr::ProductIndex) = sum(length, itr.ranges)
     get_bounds_index(::AbstractManifold)
 
 Get the bound indices of manifold `M`. Standard manifolds don't have bounds, so
-`Base.OneTo(1)` is returned.
+`Base.OneTo(0)`, that is an empty range, is returned.
 """
 get_bounds_index(M::AbstractManifold) = Base.OneTo(0)
 function get_bounds_index(M::ProductManifold)
@@ -1490,11 +1500,13 @@ function set_stepsize_bound!(M::ProductManifold, d_out, p, d, t_current::Real)
 end
 
 @doc raw"""
-    GeneralizedCauchyDirectionSubsolver{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
+    GeneralizedCauchyDirectionSubsolver{TX, T_HA, TFU <: AbstractSegmentHessianUpdater, TFT, TBI, TO}
 
-Helper container for generalized Cauchy direction search. Stores the manifold `M`, cached
-original descent direction (`d_original`), the quasi-Newton direction update `ha`, and the
-`hessian_segment_updater`, which computes certain values of the Hessian while advancing segments.
+Helper container for generalized Cauchy direction search. Stores the cached
+original descent direction (`d_original`), the quasi-Newton direction update `ha`, the
+`hessian_segment_updater`, which computes certain values of the Hessian while advancing
+segments, the list of bounds `F_list`, the bound indices `bounds_indices`, and the heap
+`ordering`.
 Instances are reused across segments during [`find_generalized_cauchy_direction!`](@ref) to
 avoid allocations.
 """
@@ -1668,8 +1680,8 @@ end
 """
     struct MaxStepsizeInDirectionSubsolver end
 
-Helper container for finding the maximum stepsize in a direction. Stores the manifold `M`,
-container for the list of bounds `F_list`, and the bound indices.
+Helper container for finding the maximum stepsize in a direction. Stores the list of bounds
+`F_list` and the bound indices `bounds_indices`.
 
 ## Constructor
 
@@ -1702,15 +1714,14 @@ end
 Find the maximum stepsize that can be performed from point `p` in direction `d`.
 
 The function returns a pair (status, max_stepsize) where `status` is a symbol describing
-the result of the search, and `max_stepsize` is the maximum stepsize that can be taken in
-the direction `d_out`.
+the result of the search, and `max_stepsize` is the maximum stepsize that can be taken from
+`p` in the direction `d`.
 
 The `status` can be one of the following:
-* `:found_limited` if the point was found and we can perform a step of length at most 1
-  in direction `d_out` afterwards,
-* `:found_unlimited` if the point was found and we can perform a step of length at most
-  `max_stepsize(M, p)` in direction `d_out` afterwards,
-* `:not_found` if the search cannot be performed in direction `d`.
+* `:found_limited` if a finite bound exists; `max_stepsize` is then the smallest positive
+  stepsize bound,
+* `:found_unlimited` if no finite bound exists; `max_stepsize` is then `Inf`,
+* `:not_found` if no positive stepsize bound exists at all; `max_stepsize` is then `NaN`.
 """
 function find_max_stepsize_in_direction(
         M::AbstractManifold,

@@ -13,7 +13,7 @@ using LRUCache, Manifolds, Manopt, Test, Random
     mho1 = ManifoldHessianObjective(f, grad_f, Hess_f)
     mho2 = ManifoldHessianObjective(f, grad_f, Hess_f, precon)
     mho3 = ManifoldHessianObjective(f, grad_f!, Hess_f!; evaluation = InplaceEvaluation())
-    mho4 = ManifoldHessianObjective(f, grad_f, Hess_f)
+    mho4 = ManifoldHessianObjective(f, grad_f!, Hess_f!, precon!; evaluation = InplaceEvaluation())
 
     p = zeros(2)
     X = ones(2)
@@ -28,17 +28,20 @@ using LRUCache, Manifolds, Manopt, Test, Random
         # check differential default
         @test get_differential(mp, p, X; gradient = Y) == 0
         @test get_differential(mp, p, X) == 0
+        # the generic cost-and-differential fallback for any first order objective
+        @test Manopt.get_cost_and_differential(M, mho, p, X) == (f(M, p), 0)
+        @test Manopt.get_cost_and_differential(mp, p, X) == (f(M, p), 0)
         # Hessian
         @test get_hessian(mp, p, X) == 0.5 * X
         get_hessian!(mp, Y, p, X)
         @test Y == 0.5 * X
-        # precondition - alweays identity, since the precon we use in mho2 is id as well
+        # precondition - always identity, since the precon we use in mho2 is id as well
         @test get_preconditioner(mp, p, X) == X
         get_preconditioner!(mp, Y, p, X)
         @test Y == X
         # show / status summary
         @test startswith(Manopt.status_summary(mho), "A second order objective providing a cost, a gradient")
-        @test contains(Manopt.status_summary(mho), "preconditioner") == (mho === mho2)
+        @test contains(Manopt.status_summary(mho), "preconditioner") == (mho === mho2 || mho === mho4)
     end
     @testset "Objective Decorator pass through" begin
         Y1 = zero_vector(M, p)
@@ -88,7 +91,7 @@ using LRUCache, Manifolds, Manopt, Test, Random
             @test Y == Z
             @test get_count(ccobj, :Hessian) == 1
             Z = get_hessian(M, obj, -p, -X)
-            get_hessian!(M, Y, ccobj, -p, -X) #cached
+            get_hessian!(M, Y, ccobj, -p, -X) # computes and caches the new arguments
             @test Y == Z
             @test get_hessian(M, ccobj, -p, -X) == Z #cached
             @test get_count(ccobj, :Hessian) == 2

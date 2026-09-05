@@ -39,6 +39,33 @@ include("trust_region_model.jl")
         # Dummy pass through for closed from solver
         trs4 = TrustRegionsState(M, rgrad, AllocatingEvaluation())
         @test trs4.sub_state isa Manopt.ClosedFormSubSolverState
+        @testset "closed form sub solver can be solved" begin
+            # the documented closed form constructor built a state `step_solver!` could not run
+            mho = ManifoldHessianObjective(f, rgrad, rhess)
+            dmp = DefaultManoptProblem(M, mho)
+            # a valid (if crude) model minimizer inside the trust region of radius Δ
+            function closed_a(M, q, Δ)
+                Y = -rgrad(M, q)
+                n = norm(M, q, Y)
+                return n > Δ ? (Δ / n) * Y : Y
+            end
+            closed_i!(M, Y, q, Δ) = copyto!(M, Y, q, closed_a(M, q, Δ))
+            sa = TrustRegionsState(
+                M, closed_a; p = copy(M, p), stopping_criterion = StopAfterIteration(5),
+            )
+            si = TrustRegionsState(
+                M, closed_i!; p = copy(M, p), evaluation = InplaceEvaluation(),
+                stopping_criterion = StopAfterIteration(5),
+            )
+            @test sa.sub_problem isa Manopt.InplaceManifoldFunction
+            @test si.sub_problem === closed_i!
+            for s in (sa, si)
+                solve!(dmp, s)
+                @test is_point(M, get_solver_result(s))
+            end
+            # both evaluation types take the same steps
+            @test isapprox(M, get_solver_result(sa), get_solver_result(si))
+        end
     end
     @testset "Objective accessors" begin
         mho = ManifoldHessianObjective(f, rgrad, rhess)
@@ -63,13 +90,14 @@ include("trust_region_model.jl")
         s = trust_regions(
             M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, return_state = true
         )
+        @test norm(M, get_iterate(s), Manopt.get_state(s).HY) > 0
         @test startswith(
             Manopt.status_summary(s; context = :default),
             "# Solver state for `Manopt.jl`s Trust Region Method\n"
         )
         @test startswith(repr(s), "TrustRegionsState(")
-        # not a random one -> does not contain HZ
-        @test !contains(repr(s), "HZ = ")
+        # not a random one -> does not contain HX
+        @test !contains(repr(s), "HX = ")
         p1 = get_solver_result(s)
         q = copy(M, p)
         set_gradient!(s, M, p, zero_vector(M, p))
@@ -81,11 +109,25 @@ include("trust_region_model.jl")
             M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, randomize = true, return_state = true
         )
         @test startswith(repr(s2), "TrustRegionsState(")
-        # a random one -> does contain HZ
-        @test contains(repr(s2), "HZ = ")
+        # a random one -> does contain HX
+        @test contains(repr(s2), "HX = ")
 
         p2 = get_solver_result(s2)
         @test f(M, p2) ≈ f(M, p1)
+
+        # `σ` alone activates the randomized mode, also within the sub solver
+        s3 = trust_regions(
+            M, f, rgrad, rhess, p; max_trust_region_radius = 8.0, σ = 1.0e-3, return_state = true
+        )
+        @test contains(repr(s3), "HX = ")
+        @test Manopt.get_state(s3).sub_state.randomize
+        # `randomize=true` without a positive `σ` warns and deactivates the randomized mode
+        s4 = @test_logs (:warn,) trust_regions(
+            M, f, rgrad, rhess, p;
+            max_trust_region_radius = 8.0, randomize = true, σ = 0.0, return_state = true
+        )
+        @test !contains(repr(s4), "HX = ")
+        @test !Manopt.get_state(s4).sub_state.randomize
 
         p3 = trust_regions(
             M, f, rgrad, p; max_trust_region_radius = 8.0,
@@ -114,10 +156,6 @@ include("trust_region_model.jl")
             trust_region_radius = 0.5,
         )
         @test Y2 != X
-        Y3 = truncated_conjugate_gradient_descent(
-            M, f, rgrad, rhess, p, X; trust_region_radius = 0.5
-        )
-        @test Y3 != X
         Y4 = copy(M, p, X)
         truncated_conjugate_gradient_descent!(
             M, f, rgrad, rhess, p, Y4; trust_region_radius = 0.5
@@ -150,6 +188,11 @@ include("trust_region_model.jl")
             evaluation = InplaceEvaluation(),
         )
         @test f(M, p2) ≈ f(M, p1)
+        # zero direction: the FD Hessian zeroes its OUTPUT buffer, not the input
+        fd = ApproxHessianFiniteDifference(M, copy(M, p), g; evaluation = InplaceEvaluation())
+        Yb = ones(size(p)); X0b = zero_vector(M, p)
+        fd(M, Yb, p, X0b)
+        @test Yb == zero_vector(M, p)
         X = zero_vector(M, p)
         Y6 = truncated_conjugate_gradient_descent( # in-place -> other precondition default
             M,
@@ -164,9 +207,9 @@ include("trust_region_model.jl")
         @test Y6 != X
         Y9 = copy(M, p, X)
         truncated_conjugate_gradient_descent!(
-            M, f, g, h, p, Y6; evaluation = InplaceEvaluation(), trust_region_radius = 0.5
+            M, f, g, h, p, Y9; evaluation = InplaceEvaluation(), trust_region_radius = 0.5
         )
-        @test Y6 != X
+        @test Y9 != X
     end
     @testset "...with different Hessian updates" begin
         n = 4
@@ -202,7 +245,7 @@ include("trust_region_model.jl")
             q3 = trust_regions(M, f, grad_f, Hess_f)
             # remove ambiguity
             q3 = (sign(q3[1]) == sign(p_star[1])) ? q3 : -q3
-            @test isapprox(M, q3, p_star) || isapprox(M, q3, -p_star)
+            @test isapprox(M, q3, p_star)
 
             # a Default
             qaAoor = trust_regions(M, f, grad_f)
@@ -289,18 +332,33 @@ include("trust_region_model.jl")
     end
     @testset "on the Circle" begin
         Mc, fc, grad_fc, pc0, pc_star = Manopt.Test.Circle_mean_task()
-        hess_fc(Mc, p, X) = 1.0
+        hess_fc(Mc, p, X) = X
         s = trust_regions(Mc, fc, grad_fc, hess_fc; return_state = true)
         q = get_solver_result(s)
         @test distance(Mc, pc_star, q[]) < 1.0e-2
         q2 = trust_regions(Mc, fc, grad_fc, hess_fc, 0.1)
-        @test distance(Mc, pc_star, q[]) < 1.0e-2
+        @test distance(Mc, pc_star, q2[]) < 1.0e-2
         q2 = trust_regions(Mc, fc, grad_fc, hess_fc)
-        @test distance(Mc, pc_star, q[]) < 1.0e-2
+        @test distance(Mc, pc_star, q2[]) < 1.0e-2
         Y1 = truncated_conjugate_gradient_descent(
             Mc, fc, grad_fc, hess_fc, 0.1, 0.0; trust_region_radius = 0.5
         )
-        @test abs(Y1) ≈ 0.5
+        @test Y1 ≈ -grad_fc(Mc, 0.1)
+        # an approximate Hessian already works on the internal (mutable) representation,
+        # so it must not be wrapped again for the number-typed point
+        for H in (
+                ApproxHessianSymmetricRankOne, ApproxHessianBFGS,
+                ApproxHessianFiniteDifference,
+            )
+            qc = trust_regions(Mc, fc, grad_fc, H(Mc, pc0, grad_fc), pc0)
+            @test is_point(Mc, qc)
+            @test fc(Mc, qc) <= fc(Mc, pc0)
+        end
+        # both of these reach the minimizer, the SR1 approximation only descends here
+        for H in (ApproxHessianBFGS, ApproxHessianFiniteDifference)
+            qc = trust_regions(Mc, fc, grad_fc, H(Mc, pc0, grad_fc), pc0)
+            @test distance(Mc, pc_star, qc[]) < 1.0e-2
+        end
     end
     @testset "Euclidean Embedding" begin
         Random.seed!(42)
@@ -313,8 +371,8 @@ include("trust_region_model.jl")
         ∇f(E, p) = A * p
         ∇²f(M, p, X) = A * X
         λ = min(eigvals(A)...)
-        q = trust_regions(M, f, ∇f, p0; objective_type = :Euclidean, (project!) = (project!))
-        @test f(M, q) ≈ λ atol = 1 * 1.0e-1 # a bit imprecise?
+        q = trust_regions(M, f, ∇f, ∇²f, p0; objective_type = :Euclidean, (project!) = (project!))
+        @test f(M, q) ≈ λ atol = 1 * 1.0e-4
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         q3 = trust_regions(M, f, grad_f, p0)

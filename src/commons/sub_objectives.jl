@@ -210,6 +210,32 @@ function get_normal_linear_operator!(
     (penalty != 0) && (_diagview(A) .+= penalty)
     return A
 end
+
+"""
+    _componentwise_scalings(cr::ComponentwiseRobustifierFunction, value_cache; threshold, mode)
+
+For a componentwise robustifier the operator ``C`` is diagonal. Return its diagonal
+`d` together with the per-component residual scaling `s`, so that the coordinate
+surrogate blocks reduce to `C = Diagonal(d)`.
+"""
+function _componentwise_scalings(
+        cr::ComponentwiseRobustifierFunction, value_cache; threshold::Real, mode::Symbol
+    )
+    r = cr.robustifier
+    d = similar(value_cache, float(real(eltype(value_cache))))
+    s = similar(d)
+    for (i, ai) in enumerate(value_cache)
+        ai_sq = abs(ai)^2
+        (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
+        residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(
+            ρ_prime, ρ_double_prime, ai_sq, threshold, mode
+        )
+        d[i] = sqrt(ρ_prime) * (1 - operator_scaling * ai_sq)
+        s[i] = residual_scaling
+    end
+    return d, s
+end
+
 function add_normal_linear_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
@@ -230,6 +256,17 @@ function add_normal_linear_operator_coord!(
         JFa = jacobian_cache' * a
         mul!(A, JFa, JFa', rank1_scaling, true)
     end
+    # damping term is added once after summing up all blocks, so we do not add it here
+    return A
+end
+# Componentwise: C is diagonal, so C^TC = Diagonal(d)^2
+function add_normal_linear_operator_coord!(
+        M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
+        cr::ComponentwiseRobustifierFunction, p, basis::AbstractBasis;
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol
+    )
+    d, _ = _componentwise_scalings(cr, value_cache; threshold = threshold, mode = mode)
+    A .+= jacobian_cache' * Diagonal(d .^ 2) * jacobian_cache
     # damping term is added once after summing up all blocks, so we do not add it here
     return A
 end
@@ -281,6 +318,19 @@ function add_normal_linear_operator_coord!(
     # penalty is added once after summing up all blocks, so we do not add it here
     return c
 end
+# Componentwise: C is diagonal, so C^TC b = d.^2 .* b
+function add_normal_linear_operator_coord!(
+        M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction,
+        cr::ComponentwiseRobustifierFunction, p, cX::AbstractVector;
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol
+    )
+    d, _ = _componentwise_scalings(cr, value_cache; threshold = threshold, mode = mode)
+    b = jacobian_cache * cX
+    b .= d .^ 2 .* b
+    mul!(c, jacobian_cache', b, true, true)
+    # penalty is added once after summing up all blocks, so we do not add it here
+    return c
+end
 """
     add_linear_operator_coord!(
         M::AbstractManifold, y::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector
@@ -322,6 +372,16 @@ function _add_linear_operator_coord!(
     @. y += α * (y_cache - operator_scaling * t * value_cache)
     return y
 end
+# Componentwise: C is diagonal, so C y = d .* y
+function _add_linear_operator_coord!(
+        M::AbstractManifold, y::AbstractVector, o::AbstractVectorGradientFunction,
+        cr::ComponentwiseRobustifierFunction, p, cX::AbstractVector,
+        value_cache, jacobian_cache; threshold::Real, mode::Symbol
+    )
+    d, _ = _componentwise_scalings(cr, value_cache; threshold = threshold, mode = mode)
+    y .+= d .* (jacobian_cache * cX)
+    return y
+end
 
 function get_normal_vector_field_coord!(
         M::AbstractManifold, c::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p,
@@ -354,6 +414,17 @@ function add_normal_vector_field_coord!(
     # Compute y = ρ'(p) / (1-α)) F(p) and ...
     y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
     # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (inplace of y)
+    mul!(c, jacobian_cache', y, true, true)
+    return c
+end
+# Componentwise: C is diagonal, so C^T y = d .* y
+function add_normal_vector_field_coord!(
+        M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction,
+        cr::ComponentwiseRobustifierFunction, p;
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol,
+    )
+    d, s = _componentwise_scalings(cr, value_cache; threshold = threshold, mode = mode)
+    y = s .* d .* value_cache
     mul!(c, jacobian_cache', y, true, true)
     return c
 end
@@ -396,7 +467,7 @@ end
 
 The linear surrogate objective for a [`ManifoldNonlinearLeastSquaresObjective`](@ref).
 
-Given an [`ManifoldNonlinearLeastSquaresObjective`](@ref) `objective` and a `penalty` ``λ``,
+Given a [`ManifoldNonlinearLeastSquaresObjective`](@ref) `objective` and a `penalty` ``λ``,
 this objective represents the penalized objective for the sub-problem to solve within every step
 of the Levenberg-Marquardt algorithm following the ideas of [TriggsMcLauchlanHartleyFitzgibbon:2000](@cite) given by
 
@@ -499,7 +570,7 @@ Furthermore if ``ρ'(s) + 2ρ''(s)⋅s ≤ 0`` the Hessian is also indefinite.
 This can be caught by making sure the argument of the ``√`` is ensured to be non-negative.
 
 The [Ceres solver](http://ceres-solver.org/nnls_modeling.html#theory) even omits the second term
-in the square root already if ``ρ(s)'' < 0`` for stability reason, which means setting ``α = 0``.
+in the square root already if ``ρ''(s) < 0`` for stability reasons, which means setting ``α = 0``.
 In the case ``s = 0`` we also set the operator scaling ``α / s = 0``.
 
 This function offers two `mode`s
@@ -530,12 +601,13 @@ Compute the surrogate cost. Let ``F`` denote the vector of residuals (of a block
 of the inner [`ManifoldNonlinearLeastSquaresObjective`](@ref)
 
 ```math
-σ_k(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; index = "2"))^2, $(_tex(:qquad)) X ∈ $(_math(:TangentSpace))
+σ_k(X) = $(_tex(:frac, "1", "2"))$(_tex(:norm, "y + $(_tex(:Cal, "L"))(X)"; index = "2"))^2 + $(_tex(:frac, "λ", "2"))$(_tex(:norm, "X"; index = "p"))^2, $(_tex(:qquad)) X ∈ $(_math(:TangentSpace))
 ```
 
 where
 * ``$(_tex(:Cal, "L"))(X) = CJ[X]`` see [`get_linear_operator`](@ref) with a `penalty` of zero.
 * ``y`` the rescaled vector field, see [`get_vector_field`](@ref)
+* ``λ`` the `penalty` of the surrogate objective
 """
 function get_cost(
         M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X
@@ -564,8 +636,8 @@ $(
         :aligned,
         "$(_tex(:grad)) μ_p(X) &= $(_tex(:sum, "i=1", "m")) $(_tex(:Cal, "L"))_i^*$(_tex(:bigl))($(_tex(:Cal, "L"))_i(X) + y_i $(_tex(:bigr))) + λX",
         """&= $(_tex(:sum, "i=1", "m")) J_{F_i}^*(p)$(_tex(:Bigl))[
-        ρ_i' $(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_{F_i}(p)[X] + a$(_tex(:sqrt, "ρ_i'"))$(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr))) F_i(p) + λX
-        $(_tex(:Bigr))]"""
+        ρ_i' $(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_{F_i}(p)[X] + a$(_tex(:sqrt, "ρ_i'"))$(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr))) F_i(p)
+        $(_tex(:Bigr))] + λX"""
     )
 )
 ```
@@ -663,14 +735,14 @@ $(
         :aligned,
         "$(_tex(:Hess)) μ_p(X)[Y] &= $(_tex(:sum, "i=1", "m")) $(_tex(:Cal, "L"))_i^*$(_tex(:bigl))($(_tex(:Cal, "L"))_i(Y)$(_tex(:bigr))) + λY",
         """&= $(_tex(:sum, "i=1", "m")) J_{F_i}^*(p)$(_tex(:Bigl))[
-        ρ_i' $(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_{F_i}(p)[Y] + λY
-        $(_tex(:Bigr))]"""
+        ρ_i' $(_tex(:bigl))(I- b F_i(p)F_i(p)^{$(_tex(:transp))}$(_tex(:bigr)))^2 J_{F_i}(p)[Y]
+        $(_tex(:Bigr))] + λY"""
     )
 )
 ```
 where ``ρ_i' = ρ_i'($(_tex(:norm, "F_i(p)"))_2^2)``, ``ρ_i'' = ρ_i''($(_tex(:norm, "F_i(p)"))_2^2)``
 are the values from the [`AbstractRobustifierFunction`](@ref) `ρ` its first and second derivative, respectively,
-and ``b`` is the [`get_LevenbergMarquardt_scaling`](@ref) values of scaling the operator.
+and ``b`` is the [`get_LevenbergMarquardt_scaling`](@ref) value scaling the operator.
 See also [`get_jacobian`](@ref) and [`get_adjoint_jacobian`](@ref).
 
 This can be computed inplace of `Z`.
@@ -731,7 +803,7 @@ function _add_hessian!(
     # per single component a for-loop similar to the one for the blocks
     r = cr.robustifier
     b = zero(value_cache)
-    get_jacobian!(M, b, o, p, X)
+    get_jacobian!(M, b, o, p, Y)
     # Componentwise a few things decouple
     for (i, ai) in enumerate(value_cache)
         ai_sq = abs(ai)^2
@@ -753,7 +825,7 @@ end
 Evaluate the linear operator ``$(_tex(:Cal, "L"))`` corresponding to the Levenberg-Marquardt surrogate objective, i.e.,
 
 ```math
-$(_tex(:Cal, "L"))(X) = C J_F(p)[X] $(_tex(:bigr))],
+$(_tex(:Cal, "L"))(X) = C J_F(p)[X],
 ```
 
 with
@@ -776,7 +848,7 @@ function get_linear_operator(
     )
     nlso = get_objective(lmsco)
     n = residuals_count(nlso)
-    y = zeros(eltype(p), n)
+    y = zeros(number_eltype(p), n)
     return get_linear_operator!(M, y, lmsco, p, X)
 end
 function get_linear_operator!(
@@ -835,10 +907,10 @@ function _get_linear_operator!(
 end
 
 """
-    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_normal_linear_operator!(M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
-    get_normal_linear_operator!(M::AbstractManifold, [A | b], lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; threshold = lmsco.threshold, mode = lmsco.mode, penalty = lmsco.penalty)
+    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; penalty = lmsco.penalty)
+    get_normal_linear_operator!(M::AbstractManifold, Y, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, X; penalty = lmsco.penalty)
+    get_normal_linear_operator(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; penalty = lmsco.penalty)
+    get_normal_linear_operator!(M::AbstractManifold, [A | b], lmsco::LevenbergMarquardtLinearSurrogateObjective, p[, c], B::AbstractBasis; penalty = lmsco.penalty)
 
 Compute the linear operator ``$(_tex(:Cal, "A"))`` corresponding to the optimality conditions of the
 modified Levenberg-Marquardt surrogate objective, i.e. the normal conditions
@@ -938,7 +1010,6 @@ function add_normal_linear_operator!(
         b[i] = ρ_prime * (1 - operator_scaling * ai_sq)^2 * b[i]
     end
     # Now apply the adjoint
-    zero_vector!(M, Y, p)
     add_adjoint_jacobian!(M, Y, o, p, b)
     return Y
 end
@@ -1003,7 +1074,7 @@ end
     add_normal_linear_operator!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractFirstOrderVectorFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
-        value_cache = get_value(M, o, p), ε::Real, mode::Symbol
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol
     )
 
 Add the contribution of a single block (vectorial function with its robustifier) to
@@ -1082,10 +1153,12 @@ and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and comp
 """
 
 _doc_add_normal_vector_field = """
-    add_normal_vector_field!(M::AbstractManifold, X, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p)
-    add_normal_vector_field!(M::AbstractManifold, c, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis)
+    add_normal_vector_field!(
+        M::AbstractManifold, c, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis;
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
+    )
 
-Add the contribution of `o` / `r` to the normal linear operator tangent vector in `X` or `c`.
+Add the contribution of `o` / `r` to the coordinates `c` of the normal vector field with respect to the basis `B`.
 See [`get_normal_vector_field`](@ref) for the mathematical details.
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`ManifoldNonlinearLeastSquaresObjective`](@ref) and summed up.
@@ -1372,7 +1445,8 @@ function get_cost(
     )
     M = base_manifold(TpM)
     p = base_point(TpM)
-    cX = get_coordinates(M, p, X)
+    # the cached Jacobians – and hence all coordinate vectors – refer to `basis`
+    cX = get_coordinates(M, p, X, lnsco.objective.basis)
     n = residuals_count(lnsco.objective.objective)
     vf = zeros(number_eltype(p), n)
     get_vector_field!(M, vf, lnsco.objective, p)
@@ -1518,16 +1592,16 @@ A trust region model of the form
 
 # Fields
 
-* `objective`: an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
+* `objective`: an [`AbstractManifoldHessianObjective`](@ref) providing ``f``, its gradient and Hessian
 
 # Constructors
 
     TrustRegionModelObjective(objective)
 
-with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective
+with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or a decorator containing such an objective
 """
 struct TrustRegionModelObjective{
-        O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective},
+        O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective},
     } <: AbstractManifoldSubObjective{O}
     objective::O
 end
@@ -1572,7 +1646,7 @@ function get_gradient!(TpM::TangentSpace, Y, trmo::TrustRegionModelObjective, X)
     return Y
 end
 @doc """
-    get_hessian(TpM, trmo::TrustRegionModelObjective, X)
+    get_hessian(TpM, trmo::TrustRegionModelObjective, X, Y)
 
 Evaluate the Hessian of the [`TrustRegionModelObjective`](@ref)
 

@@ -4,12 +4,12 @@
 CurrentModule = Manopt
 ```
 
-An action is a callable structure, usually with the signature `(problem, state, iterate)`,
+An action is a callable structure, usually with the signature `(problem, state, k)`,
 that performs something. Consider them elementary building blocks, for example a single
 [debug](debug.md) output action, that can be combined into larger “things acting”.
 They share a common supertype in `Manopt.jl`.
 
-## Access functions
+## Types and functions
 
 ```@autodocs
 Modules = [Manopt]

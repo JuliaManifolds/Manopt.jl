@@ -6,10 +6,12 @@ Check numerically whether the differential `dF(M,p,X)` of `F(M,p)` is correct.
 This implements the method described in [Boumal:2023; Section 4.8](@cite).
 
 Note that if the errors are below the given tolerance and the method is exact,
-no plot is generated,
+no plot is generated.
 
 # Keyword arguments
 
+* `error=:none`:
+  how to handle errors, possible values: `:error`, `:info`, `:warn`
 * `exactness_tol=1e-12`: if all errors are below this tolerance,
   the differential is considered to be exact
 * `io=nothing`: provide an `IO` to print the result to
@@ -22,16 +24,11 @@ no plot is generated,
   The plot is in log-log-scale. This is returned and can then also be saved.
 $(_kwargs(:retraction_method))
 * `slope_tol=0.1`: tolerance for the slope (global) of the approximation
-* `throw_error=false`: throw an error message if the differential is wrong
 * `window=nothing`: specify window sizes within the `log_range` that are used for
   the slope estimation. The default is, to use all window sizes `2:N`.
 """
 function check_differential(
-        M::AbstractManifold,
-        F,
-        dF,
-        p = rand(M),
-        X = rand(M; vector_at = p);
+        M::AbstractManifold, F, dF, p = rand(M), X = rand(M; vector_at = p);
         exactness_tol = 1.0e-12,
         io::Union{IO, Nothing} = nothing,
         limits = (-8.0, 0.0),
@@ -98,7 +95,7 @@ no plot is generated.
   instead of the gradient function you can also provide the gradient at `p` directly
 * `limits=(-8.0, 0.0)`: specify the limits in the `log_range`
 * `log_range=range(limits[1], limits[2]; length=N)`:
-  - specify the range of points (in log scale) to sample the gradient line
+  specify the range of points (in log scale) to sample the gradient line
 * `N=101`:
   number of points to verify within the `log_range` default range ``[10^{-8},10^{0}]``
 * `plot=false`:
@@ -115,16 +112,12 @@ $(_kwargs(:retraction_method))
   specify window sizes within the `log_range` that are used for the slope estimation.
   the default is, to use all window sizes `2:N`.
 
-The remaining keyword arguments are also passed down to the `check_vector` call, such that tolerances can
-easily be set.
+The tolerances `atol` and `rtol` are passed to the `is_vector` check;
+all remaining keyword arguments are passed down to the [`check_differential`](@ref) call.
 
 """
 function check_gradient(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        p = rand(M),
-        X = rand(M; vector_at = p);
+        M::AbstractManifold, f, grad_f, p = rand(M), X = rand(M; vector_at = p);
         gradient = grad_f(M, p),
         check_vector::Bool = false,
         error::Symbol = :none,
@@ -146,7 +139,7 @@ f($(_tex(:retr))_p(tX)) = f(p) + t⟨$(_tex(:grad)) f(p), X⟩ + $(_tex(:frac, "
 """
 
 @doc """
-    check_Hessian(M, f, grad_f, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M, vector_at=p); kwargs...)
+    check_Hessian(M, f, grad_f, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p); kwargs...)
 
 Verify numerically whether the Hessian `Hess_f(M,p, X)` of `f(M,p)` is correct.
 
@@ -176,8 +169,8 @@ no plot is generated.
   specify the mode for the verification; the default assumption is,
   that the retraction provided is of second order. Otherwise one can also verify the Hessian
   if the point `p` is a critical point.
-  THen set the mode to `:CritalPoint` to use [`gradient_descent`](@ref) to find a critical point.
-  Note: this requires (and evaluates) new tangent vectors `X` and `Y`
+  Then set the mode to `:CriticalPoint` to use [`gradient_descent`](@ref) to find a critical point.
+  Note: this requires (and evaluates) a new tangent vector `X`
 * `atol`, `rtol`:      (same defaults as `isapprox`) tolerances that are passed down to all checks
 * `a`, `b`            two real values to verify linearity of the Hessian (if `check_linearity=true`)
 * `N=101`:
@@ -194,8 +187,6 @@ no plot is generated.
 * `limits=(-8.0, 0.0)`: specify the limits in the `log_range`
 * `log_range=range(limits[1], limits[2]; length=N)`:
   specify the range of points (in log scale) to sample the Hessian line
-* `N=101`:
-  number of points to use within the `log_range` default range ``[10^{-8},10^{0}]``
 * `plot=false`:
   whether to plot the resulting verification (requires `Plots.jl` to be loaded). The plot is in log-log-scale. This is returned and can then also be saved.
 $(_kwargs(:retraction_method))
@@ -207,11 +198,12 @@ $(_kwargs(:retraction_method))
   specify window sizes within the `log_range` that are used for the slope estimation.
   the default is, to use all window sizes `2:N`.
 
-The `kwargs...` are also passed down to the `check_vector` and the `check_gradient` call, such that tolerances can
-easily be set.
+The `atol` and `rtol` tolerances are used for all checks performed here;
+the remaining `kwargs...` are passed down to the inner [`check_gradient`](@ref) call.
 
 While `check_vector` is also passed to the inner call to `check_gradient` as well as the `retraction_method`,
-this inner `check_gradient` is meant to be just for inner verification, so it does not throw an error nor produce a plot itself.
+this inner `check_gradient` is meant to be just for inner verification, so it does not produce a plot itself,
+but it does report (and, for `error=:error`, throw) according to the `error` keyword.
 """
 function check_Hessian(
         M::AbstractManifold,
@@ -327,7 +319,7 @@ end
 Verify whether the Hessian function `Hess_f` fulfills linearity,
 
 ```math
-$(_tex(:Hess)) f(p)[aX + bY] = b$(_tex(:Hess)) f(p)[X]
+$(_tex(:Hess)) f(p)[aX + bY] = a$(_tex(:Hess)) f(p)[X]
  + b$(_tex(:Hess)) f(p)[Y]
 ```
 
@@ -347,9 +339,7 @@ function is_Hessian_linear(
         Y = rand(M; vector_at = p),
         a = randn(),
         b = randn();
-        error = :none,
-        io = nothing,
-        kwargs...,
+        error = :none, io = nothing, kwargs...,
     )
     Z1 = Hess_f(M, p, a * X + b * Y)
     Z2 = a * Hess_f(M, p, X) + b * Hess_f(M, p, Y)
@@ -365,8 +355,8 @@ end
 
 @doc """
     is_Hessian_symmetric(M, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p);
-    error=:none, io=nothing, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps
-)
+        error=:none, io=nothing, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps
+    )
 
 Verify whether the Hessian function `Hess_f` fulfills symmetry, which means that
 
@@ -396,8 +386,8 @@ function is_Hessian_symmetric(
     )
     a = inner(M, p, Hess_f(M, p, X), Y)
     b = inner(M, p, X, Hess_f(M, p, Y))
-    isapprox(a, b; atol = atol, rtol = rtol) && (return true)
-    m = "Hess f seems to not be symmetric: ⟨Hess f(p)[X], Y⟩ = $a != $b = ⟨Hess f(p)[Y], X⟩"
+    isapprox(a, b; atol = atol, rtol = rtol, kwargs...) && (return true)
+    m = "Hess f seems to not be symmetric: ⟨Hess f(p)[X], Y⟩ = $a != $b = ⟨X, Hess f(p)[Y]⟩.\n"
     (io !== nothing) && print(io, m)
     (error === :info) && @info m
     (error === :warn) && @warn m

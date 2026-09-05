@@ -37,9 +37,14 @@ using ManifoldDiff: prox_distance, prox_distance!
     @test startswith(Manopt.status_summary(obj), "A proximal map objective")
 
     dpp = DebugProximalParameter()
-    @test startswith(repr(dpp), "DebugGradientChange(; io")
+    @test startswith(repr(dpp), "DebugProximalParameter(; io")
     @test startswith(Manopt.status_summary(dpp), "A DebugAction printing the proximal parameter")
     rpp = RecordProximalParameter()
     @test startswith(repr(rpp), "RecordProximalParameter(")
     @test startswith(Manopt.status_summary(rpp), "A RecordAction to record the current proximal parameter")
+    @testset "Number representation on the Circle" begin
+        qc = proximal_point(Circle(), (M, λ, p) -> prox_distance(M, λ, -0.3, p, 1), 0.9)
+        @test qc isa Float64
+        @test isapprox(Circle(), qc, -0.3; atol = 1.0e-4)
+    end
 end

@@ -9,18 +9,18 @@ A state for the [`conjugate_residual`](@ref) solver.
 * `callbacks::C`: the callbacks dictionary
 * `r::T`: the residual ``r = -b(p) - $(_tex(:Cal, "A"))(p)[X]``
 * `d::T`: the conjugate direction
-* `Ar::T`, `Ad::T`: storages for ``$(_tex(:Cal, "A"))(p)[d]``, ``$(_tex(:Cal, "A"))(p)[r]``
+* `Ar::T`, `Ad::T`: storages for ``$(_tex(:Cal, "A"))(p)[r]``, ``$(_tex(:Cal, "A"))(p)[d]``
 * `rAr::R`: internal field for storing ``⟨ r, $(_tex(:Cal, "A"))(p)[r] ⟩``
 * `α::R`: a step length
 * `β::R`: the conjugate coefficient
 $(_fields(:stopping_criterion; name = "stop"))
 * `warm_start`: whether to warm start or not when reusing this state, i.e.
-  * `true` (default): means we reuse the values in `X` on initialization and set the remaining terms accordingly. This involved one call to the objectives linear system and right hand side.
+  * `true` (default): means we reuse the values in `X` on initialization and set the remaining terms accordingly. This involves one call to the objective's linear system and right hand side.
   * `false`: Initialize `X` to the zero vector and hence `d=r=-b(p)`, but we avoid evaluating the linear operator.
 
 # Constructor
 
-    ConjugateResidualState(TpM::TangentSpace,slso::SymmetricLinearSystemObjective; kwargs...)
+    ConjugateResidualState(TpM::TangentSpace, slso::AbstractSymmetricLinearSystemObjective; kwargs...)
 
 Initialize the state with default values.
 
@@ -34,7 +34,8 @@ Initialize the state with default values.
 * `β::R=0.0`
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
-$(_kwargs(:X))
+$(_kwargs(:X; default = _open_link(:rand; M = "TpM")))
+* `warm_start=true`: whether to reuse the values in `X` for the initialization (`true`) or to start from the zero vector (`false`), see the field description above.
 
 # See also
 
@@ -63,8 +64,7 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion, C <: Abs
         return crs
     end
     function ConjugateResidualState(
-            TpM::TangentSpace,
-            aslso::AbstractSymmetricLinearSystemObjective;
+            TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective;
             callbacks::C = Dict{Symbol, Function}(),
             X::T = rand(TpM), r::T = (-get_gradient(TpM, aslso, X)), d::T = copy(TpM, r),
             Ar::T = get_hessian(TpM, aslso, X, r), Ad::T = copy(TpM, Ar), α::Real = 0.0, β::Real = 0.0,
@@ -92,7 +92,8 @@ function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
     i = get_count(crs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(crs.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(crs)) – $(Iter) $(has_converged(crs) ? "(converged)" : "")")
+    (context === :short) && return repr(crs)
+    (context === :inline) && return "A solver state for the conjugate residual solver$(_iteration_suffix(crs))"
     as = _callbacks_summary(crs)
     s = """
     # Solver state for `Manopt.jl`s Conjugate Residual Method
@@ -110,7 +111,7 @@ end
 function Base.show(io::IO, crs::ConjugateResidualState)
     print(io, "ConjugateResidualState(;")
     print(io, " X = ", crs.X, ", d = ", crs.d, ", r = ", crs.r, ", α = ", crs.α, ", β = ", crs.β)
-    print(io, "Ar = ", crs.Ar, ", Ad = ", crs.Ad, ", rAr = ", crs.rAr)
+    print(io, ", Ar = ", crs.Ar, ", Ad = ", crs.Ad, ", rAr = ", crs.rAr)
     print(io, ", stopping_criterion = ", status_summary(crs.stop; context = :short))
     return print(io, ")")
 end
@@ -121,11 +122,11 @@ end
 @doc """
     StopWhenRelativeResidualLess <: StoppingCriterion
 
-Stop when re relative residual in the [`conjugate_residual`](@ref)
+Stop when the relative residual in the [`conjugate_residual`](@ref)
 is below a certain threshold, i.e.
 
 ```math
-$(_tex(:displaystyle))$(_tex(:frac, _tex(:norm, "r^{(k)}"), "c")) ≤ ε,
+$(_tex(:displaystyle))$(_tex(:frac, _tex(:norm, "r^{(k)}"), "c")) < ε,
 ```
 
 where ``c = $(_tex(:norm, "b"))`` of the initial vector from the vector field in ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p``,
@@ -168,6 +169,7 @@ function (swrr::StopWhenRelativeResidualLess)(
     #compute current r-norm
     swrr.norm_r = norm(M, p, crs.r)
     if k <= 0
+        swrr.at_iteration = -1
         # on init also update the right hand side norm
         swrr.c = norm(M, p, get_vector_field(M, get_objective(amp), p))
         return false # just init the norm, but do not stop
@@ -213,21 +215,21 @@ Compute the solution of ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p ``, where
 * ``0_p`` is the zero vector ``$(_math(:TangentSpace))``.
 
 This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
-is initialized with ``X^{(0)}`` as the zero vector and
+is initialized with ``X^{(0)}`` as the given tangent vector `X` (or as the zero vector if `warm_start=false`) and
 
 * the initial residual ``r^{(0)} = -b(p) - $(_tex(:Cal, "A"))(p)[X^{(0)}]``
 * the initial conjugate direction ``d^{(0)} = r^{(0)}``
-* initialize ``Y^{(0)} = $(_tex(:Cal, "A"))(p)[X^{(0)}]``
+* initialize ``Y^{(0)} = $(_tex(:Cal, "A"))(p)[r^{(0)}]``
 
-performed the following steps at iteration ``k=0,…`` until the `stopping_criterion` is fulfilled.
+It then performs the following steps at iteration ``k=0,…`` until the `stopping_criterion` is fulfilled.
 
 1. compute a step size ``α_k = $(_tex(:displaystyle))$(_tex(:frac, "⟨ r^{(k)}, $(_tex(:Cal, "A"))(p)[r^{(k)}] ⟩_p", "⟨ $(_tex(:Cal, "A"))(p)[d^{(k)}], $(_tex(:Cal, "A"))(p)[d^{(k)}] ⟩_p"))``
 2. do a step ``X^{(k+1)} = X^{(k)} + α_kd^{(k)}``
-2. update the residual ``r^{(k+1)} = r^{(k)} + α_k Y^{(k)}``
+3. update the residual ``r^{(k+1)} = r^{(k)} - α_k Y^{(k)}``
 4. compute ``Z = $(_tex(:Cal, "A"))(p)[r^{(k+1)}]``
 5. Update the conjugate coefficient ``β_k = $(_tex(:displaystyle))$(_tex(:frac, "⟨ r^{(k+1)}, $(_tex(:Cal, "A"))(p)[r^{(k+1)}] ⟩_p", "⟨ r^{(k)}, $(_tex(:Cal, "A"))(p)[r^{(k)}] ⟩_p"))``
 6. Update the conjugate direction ``d^{(k+1)} = r^{(k+1)} + β_kd^{(k)}``
-7. Update  ``Y^{(k+1)} = -Z + β_k Y^{(k)}``
+7. Update  ``Y^{(k+1)} = Z + β_k Y^{(k)}``
 
 Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal, "A"))[d^{(k+1)}]``, but avoids the actual evaluation
 
@@ -235,15 +237,17 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 
 * `TpM` the [`TangentSpace`](@extref `ManifoldsBase.TangentSpace`) as the domain
 * `A` a symmetric linear operator on the tangent space `(M, p, X) -> Y`
-* `b` a vector field on the tangent space `(M, p) -> X`
+* `b` a vector field on the manifold `(M, p) -> X`
 * `X` the initial tangent vector
 
 # Keyword arguments
 
 $(_kwargs(:evaluation))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
-  ,  where `c` is ``$(_tex(:norm, "b"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
+  where ``c = $(_tex(:norm, "b"))`` is the norm of the vector field `b` at `p`.
+* `warm_start=true`: whether to reuse the initial `X` to warm start the solver (`true`) or to start from the zero vector (`false`), see [`ConjugateResidualState`](@ref).
+
 $(_note(:OutputSection))
 """
 
@@ -252,11 +256,10 @@ conjugate_residual(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual(
         TpM::TangentSpace, A, b, X = zero_vector(TpM);
-        callbacks = Dict{Symbol, Function}(),
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = base_point(TpM), kwargs...,
     )
-    slso = SymmetricLinearSystemObjective(A, b; evaluation = evaluation, kwargs...)
-    return conjugate_residual(TpM, slso, X; callbacks = callbacks, kwargs...)
+    slso = SymmetricLinearSystemObjective(A, b; evaluation = evaluation, p = p)
+    return conjugate_residual(TpM, slso, X; kwargs...)
 end
 function conjugate_residual(
         TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X = zero_vector(TpM); kwargs...
@@ -271,6 +274,14 @@ calls_with_kwargs(::typeof(conjugate_residual)) = (conjugate_residual!,)
 conjugate_residual!(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual!(
+        TpM::TangentSpace, A, b, X;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = base_point(TpM), kwargs...,
+    )
+    slso = SymmetricLinearSystemObjective(A, b; evaluation = evaluation, p = p)
+    return conjugate_residual!(TpM, slso, X; kwargs...)
+end
+
+function conjugate_residual!(
         TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective, X;
         callbacks = Dict{Symbol, Function}(),
         stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
@@ -281,7 +292,7 @@ function conjugate_residual!(
     ) where {SC <: StoppingCriterion}
     keywords_accepted(conjugate_residual!; kwargs...)
     crs = ConjugateResidualState(
-        TpM, aslso; callbacks = process_callbacks_arg(callbacks, ConjugateResidualState), stopping_criterion = stopping_criterion, kwargs...
+        TpM, aslso; X = X, callbacks = process_callbacks_arg(callbacks, ConjugateResidualState), stopping_criterion = stopping_criterion, kwargs...
     )
     dslso = decorate_objective!(TpM, aslso; kwargs...)
     dmp = DefaultManoptProblem(TpM, dslso)
@@ -291,7 +302,7 @@ function conjugate_residual!(
 end
 calls_with_kwargs(::typeof(conjugate_residual!)) = (ConjugateResidualState, decorate_objective!, decorate_state!)
 
-provided_callbacks(::Type{ConjugateResidualState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
+additional_callbacks(::Type{<:ConjugateResidualState}) = [:Stepsize]
 
 function initialize_solver!(
         amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
@@ -308,11 +319,7 @@ function initialize_solver!(
     end
     crs.r .-= get_vector_field(M, get_objective(amp), p)
     copyto!(TpM, crs.d, crs.r)
-    if crs.warm_start
-        get_hessian!(amp, crs.Ar, crs.X, crs.r)
-    else
-        zero_vector!(M, crs.Ar, p)
-    end
+    get_hessian!(amp, crs.Ar, crs.X, crs.r)
     copyto!(TpM, crs.Ad, crs.Ar)
     crs.α = 0.0
     crs.β = 0.0

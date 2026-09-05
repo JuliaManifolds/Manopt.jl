@@ -58,10 +58,10 @@ using Random
             # verify that the new velocities are tangent vectors of the original particle locations
             @test is_vector(M, p, v, true; atol = 2.0e-15)
         end
-        set_iterate!(o, p_start[1])
+        set_iterate!(o, M, p_start[1])
         @test get_iterate(o) == p_start[1]
     end
-    @testset "Spherical Particle Swarm" begin
+    @testset "Circle Particle Swarm" begin
         Random.seed!(42)
         M = Circle()
         f(::Circle, p) = p * 2 * p

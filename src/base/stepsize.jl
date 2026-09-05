@@ -44,6 +44,11 @@ function Base.show(io::IO, ::MIME"text/plain", ams::Stepsize)
     return multiline ? status_summary(io, ams) : show(io, ams)
 end
 
+"""
+    get_initial_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...)
+
+Return the initial step size of the [`Stepsize`](@ref) stored within the solver state `ams`.
+"""
 function get_initial_stepsize(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
     )
@@ -56,13 +61,16 @@ function get_initial_stepsize(
     )
 end
 function _get_initial_stepsize(
-        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{true}, vars...
+        amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{true}, vars...;
+        kwargs...
     )
-    return get_initial_stepsize(amp, ams.state)
+    return get_initial_stepsize(amp, ams.state, vars...; kwargs...)
 end
 function _get_initial_stepsize(
-        ::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...
+        ::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...;
+        kwargs...
     )
+    # the `Stepsize` level methods take neither `vars...` nor keywords
     return get_initial_stepsize(ams.stepsize)
 end
 
@@ -74,7 +82,7 @@ when solving the [`AbstractManoptProblem`](@ref) `amp`.
 
 This method takes into account that `ams` might be decorated.
 In case this returns `NaN`, a concrete call to the stored stepsize is performed.
-For this, usually, the first of the `vars...` should be the current iterate.
+For this, usually, the first of the `vars...` should be the current iteration `k`.
 """
 function get_last_stepsize(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...
@@ -103,12 +111,13 @@ If no last step size is stored, this returns `NaN`.
 get_last_stepsize(::Stepsize, ::Any...) = NaN
 
 @doc """
-    get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
+    get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...)
 
 return the stepsize stored within [`AbstractManoptSolverState`](@ref) `ams` when solving the
-[`AbstractManoptProblem`](@ref) `amp`.
-This method also works for decorated options and the [`Stepsize`](@ref) function within
-the options, by default stored in `ams.stepsize`.
+[`AbstractManoptProblem`](@ref) `amp`. The keyword arguments are passed on to the stepsize
+functor, for example to provide a pre-computed `gradient=`.
+This method also works for decorated states and the [`Stepsize`](@ref) functor within
+the state, by default stored in `ams.stepsize`.
 """
 function get_stepsize(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
@@ -148,10 +157,11 @@ By default it does nothing.
 initialize_stepsize!(sm::Stepsize) = sm
 
 """
-    default_stepsize(M::AbstractManifold, ams::AbstractManoptSolverState)
+    default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 
-Returns the default [`Stepsize`](@ref) functor used when running the solver specified by the
-[`AbstractManoptSolverState`](@ref) `ams` running with an objective on the `AbstractManifold M`.
+Returns the default [`Stepsize`](@ref) functor used when running the solver whose state is of
+type `sT`, a subtype of [`AbstractManoptSolverState`](@ref), running with an objective on the
+`AbstractManifold M`.
 """
 default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 
@@ -172,7 +182,7 @@ function max_stepsize(M::AbstractManifold, p)
         injectivity_radius(M, p)
     catch
         is_tutorial_mode() &&
-            @warn "`max_stepsize was called, but there seems to not be an `injectivity_radius` available on $M."
+            @warn "`max_stepsize` was called, but there seems to not be an `injectivity_radius` available on $M."
         Inf
     end
     return s
@@ -195,7 +205,7 @@ function max_stepsize(M::AbstractManifold)
         injectivity_radius(M)
     catch
         is_tutorial_mode() &&
-            @warn "`max_stepsize was called, but there seems to not be an `injectivity_radius` available on $M."
+            @warn "`max_stepsize` was called, but there seems to not be an `injectivity_radius` available on $M."
         Inf
     end
     return s
@@ -270,7 +280,9 @@ $(_kwargs(:retraction_method))
 * `additional_increase_condition=(M,p) -> true`: impose an additional condition for an increased step size to be accepted
 * `additional_decrease_condition=(M,p) -> true`: impose an additional condition for a decreased step size to be accepted
 * `Dlf0`: precomputed directional derivative at point `p` in direction `η`
-  if the `gradient` is specified, this is computed as the real part of `inner(M, p, gradient, η)`, otherwise it is `nothing`
+  if the `gradient` is specified, this is computed as the real part of `inner(M, p, gradient, η)`,
+  otherwise it is zero, in which case the search only requires a plain decrease of `f`
+  and no non-descent direction is reported
 * `lf0 = f(M, p)`: the function value at the initial point `p`
 * `gradient = nothing`: precomputed gradient at point `p`
 * `report_messages_in::NamedTuple = (; )`: a named tuple of [`StepsizeMessage`](@ref)s to report messages in.
@@ -284,7 +296,7 @@ $(_kwargs(:retraction_method))
 
 # Return value
 
-A stepsize `s` and a message `msg` (in case any of the 5 criteria hit)
+The stepsize `s`; safeguard messages are reported into `report_messages_in`.
 """
 
 @doc "$_doc_linesearch_backtrack"
@@ -299,7 +311,8 @@ end
 function linesearch_backtrack!(
         M::AbstractManifold, q, f::TF, p, s, decrease, contract, η::T;
         lf0::Real = f(M, p), gradient = nothing,
-        Dlf0 = isnothing(gradient) ? nothing : real(inner(M, p, gradient, η)),
+        # without derivative information the search falls back to a plain decrease, that is slope zero
+        Dlf0::Real = isnothing(gradient) ? zero(lf0) : real(inner(M, p, gradient, η)),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         additional_increase_condition = (M, p) -> true,
         additional_decrease_condition = (M, p) -> true,
@@ -310,7 +323,7 @@ function linesearch_backtrack!(
     ) where {TF, T}
     ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
     f_q = f(M, q)
-    if Dlf0 >= 0
+    if Dlf0 > 0
         set_message!(report_messages_in, :non_descent_direction, at = 0, value = Dlf0)
     end
 

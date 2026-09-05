@@ -14,8 +14,7 @@ using LinearAlgebra: I, tr
         mI = -Matrix{Float64}(I, d, d)
         grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
         p0 = project(M, ones(d))
-        # This run (and the following as well) seem to stall after iteration 3 (previously 14)
-        # not reaching the minimiser as before
+        # This run (and the following ones) converge to the minimizer in 12 iterations
         sol = augmented_Lagrangian_method(M, f, grad_f, p0; g = g, grad_g = grad_g)
         @test distance(M, sol, v0) < 8 * 1.0e-4
         sol2 = copy(M, p0)
@@ -27,6 +26,21 @@ using LinearAlgebra: I, tr
             g = g, grad_g = grad_g, gradient_inequality_range = NestedPowerRepresentation(),
         )
         @test sol3 ≈ sol atol = 5.0e-5
+        # decorating keywords must work for the in-place variant too, and an
+        # already decorated objective must be accepted
+        sol4 = copy(M, p0)
+        augmented_Lagrangian_method!(
+            M, f, grad_f, sol4; g = g, grad_g = grad_g, count = [:Cost],
+        )
+        @test sol4 ≈ sol atol = 5.0e-5
+        sol5 = copy(M, p0)
+        dco = Manopt.decorate_objective!(
+            M, ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M);
+            count = [:Cost],
+        )
+        augmented_Lagrangian_method!(M, dco, sol5)
+        @test get_count(dco, :Cost) > 0
+        @test sol5 ≈ sol atol = 5.0e-5
         co = ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M)
         mp = DefaultManoptProblem(M, co)
         # dummy ALM problem
@@ -48,6 +62,29 @@ using LinearAlgebra: I, tr
         # With dummy closed form solution
         almsc = AugmentedLagrangianMethodState(M, co, f, AllocatingEvaluation())
         @test almsc.sub_state isa Manopt.ClosedFormSubSolverState
+        @testset "closed form sub solver can take a step" begin
+            # the closed form state could be built but never stepped: `step_solver!` was
+            # unrestricted and always went through `solve!` on the sub problem
+            step(M, p) = exp(M, p, -0.05 .* grad_f(M, p))
+            closed_a(M, ρ, μ, λ, p) = step(M, p)                          # allocating
+            closed_i!(M, q, ρ, μ, λ, p) = copyto!(M, q, step(M, p))       # in place
+            sa = AugmentedLagrangianMethodState(M, co, closed_a; p = copy(M, p0))
+            si = AugmentedLagrangianMethodState(
+                M, co, closed_i!, InplaceEvaluation(); p = copy(M, p0),
+            )
+            # an allocating closed form is wrapped on construction, an in-place one is not
+            @test sa.sub_problem isa Manopt.InplaceManifoldFunction
+            @test si.sub_problem === closed_i!
+            for s in (sa, si)
+                @test Manopt.step_solver!(mp, s, 1) === s
+                @test is_point(M, get_iterate(s))
+            end
+            # both evaluation types have to take the same step
+            @test isapprox(M, get_iterate(sa), get_iterate(si))
+            @test isapprox(M, get_iterate(sa), step(M, p0))
+            # and the multiplier update ran, so the tolerance was tightened
+            @test sa.ϵ < 1.0e-3
+        end
 
         alm_record = Tuple{Symbol, Int}[]
         alm_cb(symbol, problem, state, k) = append!(alm_record, [(symbol, k)])

@@ -21,7 +21,7 @@ if "--help" ∈ ARGS
           Then you can spare time in the rendering by not passing this argument.
           If quarto is not run, some tutorials are generated as empty files, since they
           are referenced from within the documentation.
-          These are currently `getstarted.md` and `ImplementOwnManifold.md`.
+          These are currently `getstarted.md`, `ImplementOwnManifold.md`, and `HowToRecord.md`.
         """
     )
     exit(0)
@@ -83,13 +83,13 @@ end
 #
 # (b) if docs is not the current active environment, switch to it
 # (from https://github.com/JuliaIO/HDF5.jl/pull/1020/) 
+using Pkg
 if Base.active_project() != joinpath(@__DIR__, "Project.toml")
-    using Pkg
     Pkg.activate(@__DIR__)
     Pkg.instantiate()
 end
 
-# (b) If quarto is set, or we are on CI, run quarto
+# (c) If quarto is set, or we are on CI, run quarto
 if run_quarto || run_on_CI
     @info "Rendering Quarto"
     tutorials_folder = (@__DIR__) * "/../tutorials"
@@ -101,13 +101,13 @@ if run_quarto || run_on_CI
     run(`quarto render $(tutorials_folder)`)
 end
 
-# (c) load necessary packages for the docs
+# (d) load necessary packages for the docs
 using Documenter
 using DocumenterCitations, DocumenterCodeBlocks, DocumenterInterLinks, DocumenterLandingPage
 using LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
 
-# (d) add contributing.md and changelog.md to the docs – and link to releases and issues
+# (e) add contributing.md and changelog.md to the docs – and link to releases and issues
 
 function add_links(line::String, url::String = "https://github.com/JuliaManifolds/Manopt.jl")
     # replace issues (#XXXX) -> ([#XXXX](url/issue/XXXX))
@@ -147,7 +147,7 @@ for (md_file, doc_file) in
 end
 
 ## Build tutorials menu
-# (e) finally make docs
+# (f) finally make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style = :alpha)
 links = InterLinks(
     # "JuMP" => ("https://jump.dev/JuMP.jl/stable/"),
@@ -168,6 +168,7 @@ makedocs(;
         Base.get_extension(Manopt, :ManoptLineSearchesExt),
         Base.get_extension(Manopt, :ManoptLRUCacheExt),
         Base.get_extension(Manopt, :ManoptManifoldsExt),
+        Base.get_extension(Manopt, :ManoptRecursiveArrayToolsExt),
         Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt),
     ],
     authors = "Ronny Bergmann <ronny.bergmann@ntnu.no> and contributors.",
@@ -181,17 +182,17 @@ makedocs(;
             "Adaptive Regularization with Cubics" => "solvers/adaptive_regularization_with_cubics.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
             "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",
-            "Chambolle-Pock" => "solvers/ChambollePock.md",
+            "Chambolle–Pock" => "solvers/ChambollePock.md",
             "CMA-ES" => "solvers/cma_es.md",
-            "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
+            "Conjugate Gradient Descent" => "solvers/conjugate_gradient_descent.md",
             "Conjugate Residual" => "solvers/conjugate_residual.md",
-            "Convex bundle method" => "solvers/convex_bundle_method.md",
+            "Convex Bundle Method" => "solvers/convex_bundle_method.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Difference of Convex" => "solvers/difference_of_convex.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Exact Penalty Method" => "solvers/exact_penalty_method.md",
-            "Frank-Wolfe" => "solvers/FrankWolfe.md",
-            "Generalized Cauchy direction subsolver" => "solvers/generalized_cauchy_direction_subsolver.md",
+            "Frank–Wolfe" => "solvers/FrankWolfe.md",
+            "Generalized Cauchy direction sub solver" => "solvers/generalized_cauchy_direction_subsolver.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Gradient Sampling" => "solvers/gradient_sampling.md",
             "Interior Point Newton" => "solvers/interior_point_Newton.md",
@@ -201,12 +202,13 @@ makedocs(;
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",
             "Primal-dual Riemannian semismooth Newton" => "solvers/primal_dual_semismooth_Newton.md",
             "Projected Gradient Method" => "solvers/projected_gradient_method.md",
-            "Proximal bundle method" => "solvers/proximal_bundle_method.md",
+            "Proximal Bundle Method" => "solvers/proximal_bundle_method.md",
             "Proximal Gradient Method" => "solvers/proximal_gradient_method.md",
+            "Proximal Point Method" => "solvers/proximal_point.md",
             "Quasi-Newton" => "solvers/quasi_Newton.md",
             "Stochastic Gradient Descent" => "solvers/stochastic_gradient_descent.md",
-            "Subgradient method" => "solvers/subgradient.md",
-            "Steihaug-Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
+            "Subgradient Method" => "solvers/subgradient.md",
+            "Steihaug–Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
             "Trust-Regions Solver" => "solvers/trust_regions.md",
             "Vector Bundle Newton Method" => "solvers/vectorbundle_newton.md",
         ],
@@ -219,7 +221,7 @@ makedocs(;
             "Record Actions" => "commons/records.md",
             "Robustifiers" => "commons/robustifiers.md",
             "States" => "commons/states.md",
-            "Stepsize Rules" => "commons/stepsizes.md",
+            "Step Size Rules" => "commons/stepsizes.md",
             "Stopping Criteria" => "commons/stopping_criteria.md",
             "Vector Functions" => "commons/vectorial_functions.md",
         ],
@@ -227,6 +229,7 @@ makedocs(;
             "Introduction" => "base/index.md",
             "Function" => "base/function.md",
             "High-Level interface" => "base/high-level-interface.md",
+            "Keyword handling" => "base/keyword.md",
             "Problem" => "base/problem.md",
             "Default Factory" => "base/default_factory.md",
             "Objective" => "base/objective.md",
@@ -240,7 +243,7 @@ makedocs(;
                 "Record" => "base/state/record.md",
                 "Sub tasks" => "base/state/sub.md",
             ],
-            "Stepsize" => "base/stepsize.md",
+            "Step size" => "base/stepsize.md",
             "Stopping Criterion" => "base/stopping_criterion.md",
         ],
         "Helpers" => [

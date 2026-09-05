@@ -65,6 +65,8 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         @test isapprox(M1, r1a1, r1a4; atol = 1.0e-7)
         # Interface II: vgf
         r1a5 = LevenbergMarquardt(M1, vgf1, p1)
+        # two identical runs agree exactly (deterministic sub solver start)
+        @test r1a5 == LevenbergMarquardt(M1, vgf1, p1)
         @test isapprox(M1, r1a1, r1a5; atol = 1.0e-7)
         # also in place vgf
         r1a6 = copy(M1, p1)
@@ -104,6 +106,12 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         # and a is chosen accordingly
         # We have to use the normal coordinates subsolver here then.
         r1c1 = LevenbergMarquardt(M1b, vgf1, p1; sub_state = CoordinatesNormalSystemState(M1b))
+        cnss1 = CoordinatesNormalSystemState(M1b)
+        @test startswith(repr(cnss1), "CoordinatesNormalSystemState(; ")
+        @test startswith(Manopt.status_summary(cnss1), "# Solver state to solve the normal system")
+        @test Manopt.status_summary(cnss1; context = :inline) == repr(cnss1)
+        r1c0 = LevenbergMarquardt(M1b, vgf1, p1)  # defaults must work on a Hyperrectangle
+        @test distance(M1b, r1c0, r1c1) < 1.0e-8
         @test is_point(M1b, r1c1)
         vgf1c = VectorGradientFunction(
             F1, JF1mat, m; evaluation = AllocatingEvaluation(),
@@ -114,6 +122,17 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             sub_state = CoordinatesNormalSystemState(M1b), use_unified_basis = true,
         )
         @test isapprox(M1, r1c1, r1c2)
+        # the default sub state has to work with `use_unified_basis` as well
+        r1c3 = LevenbergMarquardt(M1, vgf1c, p1; use_unified_basis = true)
+        @test isapprox(M1, r1a1, r1c3; atol = 1.0e-7)
+        # at a corner where the step points outwards in every coordinate the box
+        # subsolver finds no admissible stepsize, returns a zero step, and the solver stops
+        M1c = Hyperrectangle([-1.0, -1.0], [0.0, 0.0])
+        s1c = LevenbergMarquardt(M1c, vgf1, [0.0, 0.0]; return_state = true)
+        @test get_solver_result(s1c) == [0.0, 0.0]
+        @test s1c.sub_state.last_gcd_result === :not_found
+        @test get_count(s1c, :Iterations) == 1
+        @test startswith(Manopt.get_reason(s1c), "The algorithm computed a step size (0.0) less than")
 
         @testset "coordinate surrogate agrees with operator surrogate" begin
             B1 = DefaultOrthonormalBasis(); n1 = length(X1)
@@ -176,14 +195,6 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             )
             @test isapprox(nvf_acc, seed .+ nvf_direct; atol = 1.0e-12, rtol = 1.0e-12)
 
-            # Cross-check with the basis overload of add_normal_vector_field_coord!.
-            nvf_direct_B = zeros(d)
-            Manopt.add_normal_vector_field_coord!(
-                M1, nvf_direct_B, nlso.objective[1], nlso.robustifier[1], p1;
-                value_cache = val_cache, jacobian_cache = jc,
-                threshold = lmcso.threshold, mode = lmcso.mode,
-            )
-            @test isapprox(nvf_direct_B, nvf_direct; atol = 1.0e-12, rtol = 1.0e-12)
             n_res = Manopt.residuals_count(nlso)
             vf_lmso = zeros(n_res)
             vf_lmcso = zeros(n_res)
@@ -196,6 +207,16 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             X = get_vector(M1, p1, cX, B1)
             @test isapprox(get_cost(TpM1, slso, X0), get_cost(TpM1, slco, X0); atol = 1.0e-12, rtol = 1.0e-12)
             @test isapprox(get_cost(TpM1, slso, X), get_cost(TpM1, slco, X); atol = 1.0e-12, rtol = 1.0e-12)
+            # The same has to hold for a basis that is not the default one, since the
+            # coordinate surrogate has to convert `X` in its own (stored) basis.
+            Brot = CachedBasis(DefaultOrthonormalBasis(), [[0.0, 1.0], [-1.0, 0.0]])
+            lmcso_rot = Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(
+                nlso; penalty = 1.0e-3, basis = Brot,
+                jacobian_cache = [get_jacobian(M1, o, p1; basis = Brot) for o in nlso.objective],
+                residuals = copy(lmcso.value_cache),
+            )
+            slco_rot = Manopt.NormalEquationsObjective(lmcso_rot)
+            @test isapprox(get_cost(TpM1, slso, X), get_cost(TpM1, slco_rot, X); atol = 1.0e-12, rtol = 1.0e-12)
 
             # Coordinate normal operator action should match the assembled normal matrix.
             c_lmso = A_lmso * cX
@@ -224,11 +245,13 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
 
         @testset "coordinate surrogate robustified high-damping regression" begin
             B2 = DefaultOrthonormalBasis(); n = length(X1)
-            c2X = [0.3, -0.5]
-            X2 = get_vector(M1, p1, c2X, B2)
             penalty = 1.0e3
 
-            for r in (CauchyRobustifier(), SoftL1Robustifier())
+            for r in (
+                    CauchyRobustifier(), SoftL1Robustifier(),
+                    ComponentwiseRobustifierFunction(CauchyRobustifier()),
+                    ComponentwiseRobustifierFunction(SoftL1Robustifier()),
+                )
                 vgf = VectorGradientFunction(
                     F1, JF1mat, n; function_type = FunctionVectorialType(),
                     jacobian_type = CoefficientVectorialType(B2),
@@ -373,7 +396,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             )
 
             @test isapprox(TM2, s2.p, s2_ns.p; atol = 1.0e-2)
-            @test isapprox(TM2, s2_ns.p, s2_ns_ub.p; atol = 1.0e+1)
+            @test isapprox(TM2, s2_ns.p, s2_ns_ub.p; atol = 1.0e-2)
             # due to different scaling they should be a bit different
             @test !isapprox(TM2, s2.p, s2_ns.p; atol = 1.0e-8)
             @test !isapprox(TM2, s2.p, s2_ns_ub.p; atol = 1.0e-8)
@@ -394,7 +417,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             P2c = LevenbergMarquardt(TM2, [vgf2b1, vgf2b2], P0; robustifier = [IdentityRobustifier(), 1.0e-4 ∘ HuberRobustifier()])
             P2d = copy(TM2, P0)
             LevenbergMarquardt!(TM2, [vgf2b1, vgf2b2], P2d; robustifier = [IdentityRobustifier(), 1.0e-4 ∘ HuberRobustifier()])
-            isapprox(M2, P2c[TM2, :point], P2d[TM2, :point]; atol = 1.0e-5)
+            @test isapprox(M2, P2c[TM2, :point], P2d[TM2, :point]; atol = 1.0e-5)
             @test norm(P2c[TM2, :vector] - P2d[TM2, :vector]) < 1.0e-4
         end
         @testset "show/repr on the LevenbergMarquardt state on NL objective" begin
@@ -403,6 +426,59 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             @test startswith(repr(s2), "LevenbergMarquardtState(")
             @test startswith(Manopt.status_summary(s2), "# Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm")
         end
+        @testset "jacobian_tangent_basis is honoured by both variants" begin
+            Ml = Euclidean(2)
+            xs = [0.0, 1.0, 2.0, 3.0]
+            ys = [0.5, 2.4, 4.8, 6.9]
+            fl(M, p) = [p[1] + p[2] * x - y for (x, y) in zip(xs, ys)]
+            # the Jacobian is given in a basis with the two coordinates swapped
+            Bl = CachedBasis(DefaultOrthonormalBasis(), [[0.0, 1.0], [1.0, 0.0]])
+            jac_l(M, p) = hcat([x for x in xs], ones(length(xs)))
+            pl0 = [1.0, 1.0]
+            pa = LevenbergMarquardt(Ml, fl, jac_l, pl0, length(xs); jacobian_tangent_basis = Bl)
+            pi_ = LevenbergMarquardt!(Ml, fl, jac_l, copy(pl0), length(xs); jacobian_tangent_basis = Bl)
+            @test isapprox(pa, pi_; atol = 1.0e-8)
+        end
+    end
+    @testset "Jacobian cache shapes" begin
+        M = Euclidean(2)
+        X1 = [1.0, 2.0, 3.0]; Y1 = [2.6, 2.9, 3.5]; m = 3
+        F1(M, p) = [p[1] * x + p[2] - y for (x, y) in zip(X1, Y1)]
+        JF1(M, p) = [[x, one(x)] for x in X1]
+        vgf = VectorGradientFunction(
+            F1, JF1, m; evaluation = AllocatingEvaluation(),
+            function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
+        )
+        nlso = ManifoldNonlinearLeastSquaresObjective(vgf)
+        # the documented default `initial_jacobian_matrices = nothing` yields a runnable state
+        lms = LevenbergMarquardtState(
+            M, (a...) -> 0, Manopt.ClosedFormSubSolverState(), zeros(m); p = [0.0, 0.0],
+        )
+        @test isnothing(lms.jacobian_matrices)
+        Manopt.initialize_solver!(DefaultManoptProblem(M, nlso), lms)
+        @test lms.X == [-18.9, -9.0]
+        # a single bare matrix is normalized to one entry per block
+        lms2 = LevenbergMarquardtState(
+            M, (a...) -> 0, Manopt.ClosedFormSubSolverState(), zeros(m), zeros(m, 2); p = [0.0, 0.0],
+        )
+        @test lms2.jacobian_matrices isa Vector
+        @test length(lms2.jacobian_matrices) == 1
+    end
+    @testset "the too-long-step rejection clamps to damping_term_max" begin
+        M2 = Manifolds.Sphere(2)
+        # a tiny Jacobian with a large residual makes the Gauss-Newton step exceed max_stepsize
+        Fl(M, p) = [10.0 * p[1], 10.0 * p[2]]
+        JFl(M, p) = 1.0e-2 .* [1.0 0.0; 0.0 1.0]
+        hits = Int[]
+        cb(sym, prob, st, k) = (sym === :DampingIncreaseStepTooLong && push!(hits, k))
+        # max is below initial * factor, so the first rejection has to clamp
+        s = LevenbergMarquardt(
+            M2, Fl, JFl, [1.0, 0.0, 0.0], 2;
+            initial_damping_term = 1.0e-6, damping_term_max = 5.0e-6, damping_increase_factor = 10.0,
+            stopping_criterion = StopAfterIteration(3), callbacks = cb, return_state = true,
+        )
+        @test !isempty(hits) # the branch under test was actually taken
+        @test s.damping_term == 5.0e-6 # without the clamp this would be 1.0e-5
     end
     @testset "errors" begin
         sub_fake_f = (args...) -> 0
@@ -426,6 +502,10 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         # damping_increase_factor too small (≤ 1)
         @test_throws ArgumentError LevenbergMarquardtState(
             M, sub_fake_f, sub_state, i_res, i_JF; p = x0, damping_increase_factor = 0.5,
+        )
+        # damping_reduction_factor too large (≥ 1) – used to raise an `UndefVarError`
+        @test_throws ArgumentError LevenbergMarquardtState(
+            M, sub_fake_f, sub_state, i_res, i_JF; p = x0, damping_reduction_factor = 1.5,
         )
         # For the evaluating case num_components can not be derived in code, hence this errors
         @test_throws ArgumentError LevenbergMarquardt(

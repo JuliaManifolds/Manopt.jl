@@ -21,18 +21,21 @@ end
 @doc """
     LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
 
-Describes a Gradient based descent algorithm, with
+Describes the state of the Riemannian Levenberg-Marquardt solver, with
 
 # Fields
 
 * `damping_term`:                         current value of the damping term
 * `damping_term_min`:                     lower bound for the damping term
 * `damping_term_max`:                     upper bound for the damping term
-* `damping_increase_factor`:              improvement quotient exceeds `damping_reduction_threshold`.
+* `damping_increase_factor`:              factor the damping term is multiplied with when the
+  improvement quotient falls below `damping_increase_threshold`.
+* `damping_reduction_factor`:             factor the damping term is multiplied with when the
+  improvement quotient exceeds `damping_reduction_threshold`.
 * `damping_reduction_threshold`:          threshold for the improvement quotient above which
-  the damping term is reduced by multiplying it with `β_reduction`.
-* `damping_increase_threshold` :          threshold for the improvement quotient below which
-  the damping term is increased by multiplying it with `β`.
+  the damping term is reduced by multiplying it with `damping_reduction_factor`.
+* `damping_increase_threshold`:           threshold for the improvement quotient below which
+  the damping term is increased by multiplying it with `damping_increase_factor`.
 * `direction`:                            the current search direction, which is the solution of
   the linearized subproblem in each iteration.
 * `candidate_acceptance_threshold`:       Scaling factor for the sufficient cost decrease threshold required
@@ -53,7 +56,7 @@ $(_fields(:X))
 
 # Constructor
 
-    LevenbergMarquardtState(M, sub_problem, sub_state, initial_residual_values, initial_jacobian; kwargs...)
+    LevenbergMarquardtState(M, sub_problem, sub_state, initial_residual_values, initial_jacobian_matrices; kwargs...)
 
 Generate the Levenberg-Marquardt solver state.
 
@@ -137,8 +140,8 @@ mutable struct LevenbergMarquardtState{
         )
         (candidate_acceptance_threshold <= 0 || candidate_acceptance_threshold >= 1) && throw(ArgumentError("The value of `candidate_acceptance_threshold` must be strictly between 0 and 1, received $(candidate_acceptance_threshold)"))
         (damping_term_min <= 0) && throw(ArgumentError("The value of damping_term_min must be strictly above 0, received $damping_term_min"))
-        (damping_increase_factor <= 1) && throw(ArgumentError("The value of `damping_increase_factor must be strictly above 1, received $damping_increase_factor"))
-        (damping_reduction_factor >= 1) && throw(ArgumentError("The value of `damping_reduction_factor must be strictly below 1, received $β_reduction"))
+        (damping_increase_factor <= 1) && throw(ArgumentError("The value of `damping_increase_factor` must be strictly above 1, received $damping_increase_factor"))
+        (damping_reduction_factor >= 1) && throw(ArgumentError("The value of `damping_reduction_factor` must be strictly below 1, received $damping_reduction_factor"))
         R = promote_type(
             typeof(candidate_acceptance_threshold), typeof(damping_term_min), typeof(damping_increase_factor), typeof(damping_increase_threshold),
             typeof(damping_reduction_threshold), typeof(damping_reduction_factor), typeof(damping_term_min),
@@ -150,19 +153,18 @@ mutable struct LevenbergMarquardtState{
             damping_increase_factor = convert(R, damping_increase_factor), damping_increase_threshold = convert(R, damping_increase_threshold),
             damping_reduction_threshold = convert(R, damping_reduction_threshold), damping_reduction_factor = convert(R, damping_reduction_factor),
             damping_term = convert(R, damping_term), damping_term_min = convert(R, damping_term_min), damping_term_max = convert(R, damping_term_max),
-            direction = direction, callbacks = callbacks, jacobian_matrices = initial_jacobian_matrices, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
+            direction = direction, callbacks = callbacks, jacobian_matrices = initial_jacobian_matrices isa AbstractMatrix ? [initial_jacobian_matrices] : initial_jacobian_matrices, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
             p = p, q = copy(M, p), residual_values = initial_residual_values, retraction_method = retraction_method, stopping_criterion = stopping_criterion, X = X,
         )
     end
 end
-provided_callbacks(::Type{LevenbergMarquardtState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize, :DampingIncreaseStepTooLong, :DampingIncreaseModelInadequate, :DampingDecreaseImprovementTooGood, :DampingIncreaseImprovementTooPoor, :CandidateAccept, :CandidateReject])
+additional_callbacks(::Type{<:LevenbergMarquardtState}) = [:Stepsize, :DampingIncreaseStepTooLong, :DampingIncreaseModelInadequate, :DampingDecreaseImprovementTooGood, :DampingIncreaseImprovementTooPoor, :CandidateAccept, :CandidateReject]
 get_callbacks(lms::LevenbergMarquardtState) = lms.callbacks
 #
 function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)
     (context === :short) && return repr(lms)
     i = get_count(lms, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(lms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the Levenberg–Marquardt algorithm$(conv_inl)"
+    (context === :inline) && return "A solver state for the Levenberg–Marquardt algorithm$(_iteration_suffix(lms))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(lms.stop) ? "Yes" : "No"
     as = _callbacks_summary(lms)
@@ -189,8 +191,8 @@ function show(io::IO, lms::LevenbergMarquardtState)
     print(io, ", damping_increase_factor = ", lms.damping_increase_factor, ", damping_increase_threshold = ", lms.damping_increase_threshold)
     print(io, ", damping_reduction_threshold = ", lms.damping_reduction_threshold, ", damping_reduction_factor = ", lms.damping_reduction_factor)
     print(io, ", damping_term = ", lms.damping_term, ", damping_term_min = ", lms.damping_term_min, ", damping_term_max = ", lms.damping_term_max)
-    print(io, ", direction = ", lms.direction, ", callbacks = ", lms.callbacks, ", jacobian_matrices = ", lms.jacobian_matrices, ". minimum_acceptable_model_improvement = ", lms.minimum_acceptable_model_improvement)
-    print(io, ", p= ", lms.p, ", q = ", lms.q, ", residual_values = ", lms.residual_values, ", retraction_method = ", lms.retraction_method, ", stopping_criterion = ", lms.stop, ", X = ", lms.X)
+    print(io, ", direction = ", lms.direction, ", callbacks = ", lms.callbacks, ", jacobian_matrices = ", lms.jacobian_matrices, ", minimum_acceptable_model_improvement = ", lms.minimum_acceptable_model_improvement)
+    print(io, ", p = ", lms.p, ", q = ", lms.q, ", residual_values = ", lms.residual_values, ", retraction_method = ", lms.retraction_method, ", stopping_criterion = ", lms.stop, ", X = ", lms.X)
     return print(io, ")")
 end
 
@@ -207,7 +209,7 @@ to solve
 
 $(_problem(:NonLinearLeastSquares))
 
-The second block of signatures perform the optimization in-place of `p`.
+The second block of signatures performs the optimization in-place of `p`.
 
 The regularization parameter is updated using a generalized scheme proposed in [Fan:2006](@cite),
 Eq. (2.2). See also [Yuan:2015](@cite) for other schemes.
@@ -236,7 +238,7 @@ $(_args(:p))
   calling `f` one additional time. This is only possible when `evaluation` is [`AllocatingEvaluation`](@ref),
   for mutating evaluation this value must be explicitly specified.
 
-You can also provide the cost and its Jacobian already as a [`VectorGradientFunction`](@ref) `vgf` to indicate you are working on a single block,
+You can also provide the cost and its Jacobian already as a [`VectorGradientFunction`](@ref) `vgf` to indicate you are working on a single block.
 Alternatively, passing a [`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso` also works.
 
 # Keyword arguments
@@ -245,43 +247,45 @@ If you provide `f` and its jacobian
 
 $(_kwargs(:evaluation))
 * `function_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
-* `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
+* `jacobian_tangent_basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: the basis the Jacobian coefficients refer to.
+* `jacobian_type=`[`CoefficientVectorialType`](@ref)`(jacobian_tangent_basis)`: an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
 
-as well as then these are already combined in a single [`VectorGradientFunction`](@ref) `vgf`
+as well as when these are already combined in a single [`VectorGradientFunction`](@ref) `vgf`
 
 * `robustifier::`[`AbstractRobustifierFunction`](@ref)` = `[`IdentityRobustifier`](@ref)`()`:
   for the robust variant, specify how the robustification is meant to take place.
-  - if you provide a single vectorial function and its Jacobian, a single robustifer is applied
+  - if you provide a single vectorial function and its Jacobian, a single robustifier is applied
     to every component function of this vectorial function (each component is a block in the sum)
   - if you provide a vector of [`VectorGradientFunction`](@ref)s, each needs a robustifier.
-$(_kwargs(:evaluation))
 
 as well as in general using the model improvement parameter ``m_k`` in several places, cf [BaranBergmann:2026](@cite)
 
 * `candidate_acceptance_threshold=0.2`: sufficient model improvement ``η ∈ (0,1)``, i.e. ``m_k > η`` to accept a candidate point
 * `damping_increase_factor=5.0`:        factor ``β_{$(_tex(:text, "i"))}`` to increase damping, when the model is inaccurate
-* `damping_increase_threshold=candidate_acceptance_threshold`: threshold ``η_{$(_tex(:text, "l"))}`` the value ``m_k``has to be below to increase damping.
+* `damping_increase_threshold=candidate_acceptance_threshold`: threshold ``η_{$(_tex(:text, "l"))}`` the value ``m_k`` has to be below to increase damping.
   The default yields, that we increase damping when we reject a candidate.
 * `damping_reduction_factor= 1 / damping_increase_factor`: factor ``β_{$(_tex(:text, "d"))}`` to reduce damping, when the model is accurate
-* `damping_reduction_threshold=Inf`:    threshold ``β_{$(_tex(:text, "d"))}`` to reduce damping, when the model is accurate
+* `damping_reduction_threshold=Inf`:    threshold ``η_{$(_tex(:text, "u"))}`` the value ``m_k`` has to exceed to reduce damping
   The default means, that we never reduce damping.
 * `damping_term_min = 0.1`:             lower bound ``μ_{$(_tex(:text, "l"))}`` for the damping ``μ_k`` throughout the iterations
 * `damping_term_max = Inf`:             upper bound ``μ_{$(_tex(:text, "u"))}`` for the damping ``μ_k`` throughout the iterations
 * `initial_damping_term=damping_term_min`: initial damping ``μ_0``
-* `initial_residual_values = zeros(m)`: a cache for the vector of residuals, `m` is the number of residual blocks
+* `initial_residual_values = zeros(m)`: a cache for the vector of residuals, `m` is the total number of residuals, summed over all blocks
 * `initial_jacobian_matrices`: a cache for the evaluated Jacobians (currently only used if `use_unified_basis = true`, then initialized to a vector of jacobian matrices, otherwise ignored)
 $(_kwargs(:retraction_method))
 * `scaling_threshold = 1.0e-6`:         a threshold `ε` to bound the scaling parameter `α` in the robust case away from `1`, see [`get_LevenbergMarquardt_scaling`](@ref)
 * `scaling_mode = :Strict`:            specify the scaling stabilization mode, see [`get_LevenbergMarquardt_scaling`](@ref)
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-12)"))
-* `sub_objective`                      : specify the objective for the surrogate sub problem to solver in every iteration.
+* `sub_objective`                      : specify the objective for the surrogate sub problem to solve in every iteration.
   This is set depending on the `use_unified_basis`
   - if `true` to the [`LevenbergMarquardtLinearSurrogateCoordinatesObjective`](@ref) which always works in coordinates of one single basis per tangent space and allows to cache Jacobian evaluations
   - if `false` to the [`LevenbergMarquardtLinearSurrogateObjective`](@ref) that can work either with linear operators or in (even different) coordinates.
 
   This keyword is ignored if you set the `sub_problem` and/or `sub_state` keyword directly
 * `sub_problem = `[`DefaultManoptProblem`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the sub problem to be solved. This should usually be phrased on the tangent space at the current iterate
-* `sub_state = `[`ConjugateResidualState`](@ref)`(`$(_link(:TangentSpace))`(M, p), sub_objective)`: specify the solver for the surrogate, see also [`conjugate_residual`](@ref)
+* `sub_state`: the solver for the surrogate, by default a [`ConjugateResidualState`](@ref), see [`conjugate_residual`](@ref),
+  or a [`CoordinatesNormalSystemState`](@ref) if `use_unified_basis = true` or on a manifold with box constraints,
+  where in the latter case the sub state is also wrapped to handle the bounds.
 * `use_unified_basis = false`:           specify to use a single basis for all Jacobian evaluations at a certain iterate, see `sub_objective`
   this requires that all Jacobians involved are of type [`CoefficientVectorialType`](@ref), since only then a jacobian can be represented as a matrix,
   and then here unified in the sense that all use the same basis.
@@ -304,7 +308,8 @@ function LevenbergMarquardt(
         M::AbstractManifold, f, jacobian_f, p, num_components::Int = -1;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         function_type::AbstractVectorialType = FunctionVectorialType(),
-        jacobian_type::AbstractVectorialType = CoefficientVectorialType(DefaultOrthonormalBasis()),
+        jacobian_tangent_basis::AbstractBasis = default_basis(M, typeof(p)),
+        jacobian_type::AbstractVectorialType = CoefficientVectorialType(jacobian_tangent_basis),
         kwargs...,
     )
     if num_components == -1
@@ -328,7 +333,7 @@ function LevenbergMarquardt(
         robustifier::AbstractRobustifierFunction = IdentityRobustifier(), kwargs...,
     )
     # For a single vector gradient function, we always treat robustification componentwise
-    nlso = ManifoldNonlinearLeastSquaresObjective(vgf, ComponentwiseRobustifierFunction(robustifier))
+    nlso = ManifoldNonlinearLeastSquaresObjective(vgf, robustifier)
     return LevenbergMarquardt(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt(
@@ -377,7 +382,8 @@ function LevenbergMarquardt!(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         jacobian_tangent_basis::AbstractBasis = default_basis(M, typeof(p)),
         jacobian_type::AbstractVectorialType = CoefficientVectorialType(jacobian_tangent_basis),
-        function_type::AbstractVectorialType = FunctionVectorialType(), kwargs...,
+        function_type::AbstractVectorialType = FunctionVectorialType(),
+        robustifier::AbstractRobustifierFunction = IdentityRobustifier(), kwargs...,
     )
     if num_components == -1
         if evaluation === AllocatingEvaluation()
@@ -389,22 +395,21 @@ function LevenbergMarquardt!(
         end
     end
     nlso = ManifoldNonlinearLeastSquaresObjective(
-        f, jacobian_f, num_components;
+        f, jacobian_f, num_components, robustifier;
         evaluation = evaluation, jacobian_type = jacobian_type, function_type = function_type, p = p
     )
     return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt!(
-        M::AbstractManifold, vgf::VectorGradientFunction, p;
+        M::AbstractManifold, vgf::Union{VectorGradientFunction, VectorDifferentialFunction}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        robustifier = IdentityRobustifier(),
-        kwargs...,
+        robustifier::AbstractRobustifierFunction = IdentityRobustifier(), kwargs...,
     )
     nlso = ManifoldNonlinearLeastSquaresObjective(vgf, robustifier)
     return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt!(
-        M::AbstractManifold, vgf::Vector{<:VectorGradientFunction}, p;
+        M::AbstractManifold, vgf::Union{Vector{<:VectorGradientFunction}, Vector{<:VectorDifferentialFunction}}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         robustifier::Vector{<:AbstractRobustifierFunction} = [IdentityRobustifier() for _ in 1:length(vgf)],
         kwargs...,
@@ -438,7 +443,9 @@ function LevenbergMarquardt!(
         minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
         sub_objective = construct_lm_subobjective(use_unified_basis, nlso, damping_term_min, scaling_threshold, scaling_mode, initial_residual_values, initial_jacobian_matrices),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
-        sub_state = ConjugateResidualState(TangentSpace(M, p), sub_objective),
+        sub_state = (has_anisotropic_max_stepsize(M) || use_unified_basis) ?
+            CoordinatesNormalSystemState(M, p) :
+            ConjugateResidualState(TangentSpace(M, p), sub_objective; X = zero_vector(M, p)),
         kwargs..., #collect rest
     ) where {O <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(LevenbergMarquardt!; kwargs...)
@@ -472,23 +479,20 @@ calls_with_kwargs(::typeof(LevenbergMarquardt!)) = (decorate_objective!, decorat
 #
 # Solver functions
 #
-function initialize_solver!(
-        dmp::DefaultManoptProblem, lms::LevenbergMarquardtState,
-    )
+function initialize_solver!(dmp::DefaultManoptProblem, lms::LevenbergMarquardtState)
     M = get_manifold(dmp)
     nlso = get_objective(dmp, true) # unwarp decorators
     get_residuals!(M, lms.residual_values, nlso, lms.p)
-    for (o, jb) in zip(nlso.objective, lms.jacobian_matrices)
+    jms = isnothing(lms.jacobian_matrices) ? fill(nothing, length(nlso.objective)) : lms.jacobian_matrices
+    for (o, jb) in zip(nlso.objective, jms)
         !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
     end
-    get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_matrices)
+    get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = jms)
     return lms
 end
 
 function step_solver!(
-        dmp::DefaultManoptProblem,
-        lms::LevenbergMarquardtState,
-        k::Integer,
+        dmp::DefaultManoptProblem, lms::LevenbergMarquardtState, k::Integer,
     )
     # Update damping term in the surrogate
     # should this be with (currently) or without robustifier?
@@ -508,6 +512,7 @@ function step_solver!(
         # we reject the step without evaluating the objective
         # and increase damping
         lms.damping_term *= lms.damping_increase_factor
+        lms.damping_term = min(lms.damping_term, lms.damping_term_max)
         callback(:DampingIncreaseStepTooLong, dmp, lms, k)
         return lms
     end
@@ -541,10 +546,11 @@ function step_solver!(
         callback(:CandidateAccept, dmp, lms, k)
         copyto!(M, lms.p, lms.q)
         get_residuals!(M, lms.residual_values, nlso, lms.p)
-        for (o, jb) in zip(nlso.objective, lms.jacobian_matrices)
+        jms = isnothing(lms.jacobian_matrices) ? fill(nothing, length(nlso.objective)) : lms.jacobian_matrices
+        for (o, jb) in zip(nlso.objective, jms)
             !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
         end
-        get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = lms.jacobian_matrices)
+        get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = jms)
     else
         callback(:CandidateReject, dmp, lms, k)
     end
@@ -572,15 +578,19 @@ function solve_LM_subproblem!(
     # trim to box using GCD
     gcd = GeneralizedCauchyDirectionSubsolver(M, p, state)
     state.last_gcd_result, state.last_gcd_stepsize = find_generalized_cauchy_direction!(M, gcd, X, p, X, grad_Y)
+    if state.last_gcd_result === :not_found
+        # no feasible movement in this direction: return a zero step so that
+        # `StopWhenStepsizeLess` can stop the solver instead of looping on NaNs
+        zero_vector!(M, X, p)
+        return X
+    end
     # even if step size larger than 1 is possible, we shouldn't try to go further
     X .*= min(one(state.last_gcd_stepsize), state.last_gcd_stepsize)
     return X
 end
 
 
-function get_last_stepsize(
-        dmp::DefaultManoptProblem, lms::LevenbergMarquardtState, k,
-    )
+function get_last_stepsize(dmp::DefaultManoptProblem, lms::LevenbergMarquardtState, k)
     M = get_manifold(dmp)
     return norm(M, lms.p, lms.direction)
 end

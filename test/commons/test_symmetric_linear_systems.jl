@@ -7,7 +7,6 @@ using Manifolds, Manopt, Test
 
     Am = [2.0 1.0; 1.0 4.0]
     bv = [1.0, 2.0]
-    ps = Am \ (-bv)
     X0 = [3.0, 4.0]
     A(TpM, X, V) = Am * V
     b(TpM, p) = bv
@@ -18,7 +17,8 @@ using Manifolds, Manopt, Test
     slso2 = SymmetricLinearSystemObjective(A!, b!; evaluation = InplaceEvaluation())
     @testset "Objective" begin
         grad_value = A(TpM, p, X0) + b(TpM, p)
-        cost_value = 0.5 * norm(M, p, grad_value)^2
+        # the cost is the quadratic model 1/2⟨X, A[X]⟩ + ⟨b, X⟩, whose gradient is A[X] + b
+        cost_value = 0.5 * inner(M, p, X0, A(TpM, p, X0)) + inner(M, p, b(TpM, p), X0)
         @test get_cost(TpM, slso, X0) ≈ cost_value
         @test get_cost(TpM, slso2, X0) ≈ cost_value
 
@@ -57,6 +57,26 @@ using Manifolds, Manopt, Test
         @test get_hessian!(TpM, Y0, slso2, p, X0) == hessAX0
         @test Y0 == hessAX0
     end
+    @testset "Decorated objectives pass through" begin
+        # these accessors have to peel exactly one decorator, so a `cache=` or `count=`
+        # decorator can still intercept the call instead of being unwrapped away
+        AX0 = Am * X0
+        for o in (slso, slso2)
+            ddo = Manopt.Test.DummyDecoratedObjective(o)
+            @test Manopt.get_linear_operator(M, ddo, p, X0) == AX0
+            Y = similar(X0)
+            @test Manopt.get_linear_operator!(M, Y, ddo, p, X0) == AX0
+            @test Y == AX0
+            @test Manopt.get_vector_field(M, ddo, p) == bv
+            fill!(Y, 0.0)
+            Manopt.get_vector_field!(M, Y, ddo, p)
+            @test Y == bv
+            @test Manopt.get_vector_field(TpM, ddo) == bv
+            fill!(Y, 0.0)
+            Manopt.get_vector_field!(TpM, Y, ddo)
+            @test Y == bv
+        end
+    end
     @testset "Conjugate residual state" begin
         crs = ConjugateResidualState(TpM, slso)
         @test set_iterate!(crs, TpM, X0) == crs # setters return state
@@ -80,13 +100,13 @@ using Manifolds, Manopt, Test
     @testset "StopWhenRelativeResidualLess" begin
         dmp = DefaultManoptProblem(TpM, slso)
         crs = ConjugateResidualState(TpM, slso; X = X0)
-        swrr = StopWhenRelativeResidualLess(1.0, 1.0e-3) #initial norm 1.0, ε=1e-9
+        swrr = StopWhenRelativeResidualLess(1.0, 1.0e-3) # initial norm 1.0 (reset on init), ε=1e-3
         @test startswith(repr(swrr), "StopWhenRelativeResidualLess(1.0, 0.001)")
         # initially this resets norm
         swrr(dmp, crs, 0)
         @test swrr.c == norm(bv)
         @test swrr(dmp, crs, 1) == false
-        # sop reason is also empty still
+        # stop reason is also empty still
         @test length(get_reason(swrr)) == 0
         # Manually set residual small
         crs.r = [1.0e-5, 1.0e-5]

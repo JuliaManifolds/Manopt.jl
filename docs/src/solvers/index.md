@@ -19,7 +19,7 @@ In that list a 🏅 is used to indicate state-of-the-art solvers that usually pe
 
 For derivative free solvers only function evaluations of ``f`` are used.
 
-* [Nelder-Mead](NelderMead.md) a simplex based variant, that is using ``d+1`` points, where ``d`` is the dimension of the manifold.
+* [Nelder-Mead](NelderMead.md) a simplex-based variant that uses ``d+1`` points, where ``d`` is the dimension of the manifold.
 * [Particle Swarm](particle_swarm.md) 🫏 uses the evolution of a set of points, called swarm, to explore the domain of the cost and find a minimizer.
 * [Mesh adaptive direct search](mesh_adaptive_direct_search.md) performs a mesh based exploration (poll) and search.
 * [CMA-ES](cma_es.md) uses a stochastic evolutionary strategy to perform minimization robust to local minima of the objective.
@@ -35,10 +35,10 @@ For derivative free solvers only function evaluations of ``f`` are used.
 ### Subgradient
 
 The following methods require the Riemannian subgradient ``∂f`` to be available.
-While the subgradient might be set-valued, the function should provide one of the subgradients.
+While the subdifferential might be set-valued, the function should provide one of the subgradients.
 
 * The [Subgradient Method](subgradient.md) takes the negative subgradient as a step direction and can be combined with a step size.
-* The [Convex Bundle Method](convex_bundle_method.md) (CBM) uses a former collection of sub gradients at the previous iterates and iterate candidates to solve a local approximation to `f` in every iteration by solving a quadratic problem in the tangent space.
+* The [Convex Bundle Method](convex_bundle_method.md) (CBM) uses a former collection of subgradients at the previous iterates and iterate candidates to solve a local approximation to ``f`` in every iteration by solving a quadratic problem in the tangent space.
 * The [Proximal Bundle Method](proximal_bundle_method.md) works similar to CBM, but solves a proximal map-based problem in every iteration.
 
 ## Second order
@@ -55,12 +55,12 @@ This is usually very well tailored for non-smooth objectives.
 
 The following methods require that the splitting, for example into several summands, is smooth in the sense that for every summand of the cost, the gradient should still exist everywhere.
 
-* [Levenberg-Marquardt](LevenbergMarquardt.md) minimizes the squared norm of ``f: \mathcal M→ℝ^d``, that is ``\operatorname*{arg\,min}_{p∈\mathcal M} \frac{1}{2}\lVert f(p) \rVert^2 = \frac{1}{2}\sum_{i=1}^d f_i(p)^2``, provided the gradients ``\operatorname{grad} f_i`` of the component functions, or in other words the Jacobian of ``f``.
+* [Levenberg-Marquardt](LevenbergMarquardt.md) minimizes the squared norm of ``f: \mathcal M→ℝ^d``, that is it solves ``\operatorname*{arg\,min}_{p∈\mathcal M} \frac{1}{2}\lVert f(p) \rVert^2``, where ``\frac{1}{2}\lVert f(p) \rVert^2 = \frac{1}{2}\sum_{i=1}^d f_i(p)^2``, provided the gradients ``\operatorname{grad} f_i`` of the component functions, or in other words the Jacobian of ``f``.
   A robust variant is available as well, where each summand is additionally passed through a
   [robustifier](../commons/robustifiers.md) ``ρ_i``, that is ``\frac{1}{2}\sum_{i=1}^d ρ_i\bigl(f_i(p)^2\bigr)``,
   to reduce the influence of outliers. It is specified with the `robustifier=` keyword.
 * [Stochastic Gradient Descent](stochastic_gradient_descent.md) is based on a splitting of ``f`` into a sum of several components ``f_i`` whose gradients are provided. Steps are performed according to gradients of randomly selected components.
-* The [Alternating Gradient Descent](@ref solver-alternating-gradient-descent) alternates gradient descent steps on the components of the product manifold. All these components should be smooth as it is required, that the gradient exists, and is (locally) convex.
+* The [Alternating Gradient Descent](@ref solver-alternating-gradient-descent) alternates gradient descent steps on the components of the product manifold. All these components should be smooth, since it is required that their gradients exist, and each component should be (locally) convex.
 
 ### Nonsmooth
 
@@ -93,8 +93,8 @@ For these you can use
 
 * The [Augmented Lagrangian Method](augmented_Lagrangian_method.md) (ALM), where both `g` and `grad_g` as well as `h` and `grad_h` are keyword arguments, and one of these pairs is mandatory.
 * The [Exact Penalty Method](exact_penalty_method.md) (EPM) uses a penalty term instead of augmentation, but has the same interface as ALM.
-* The [Interior Point Newton Method](interior_point_Newton.md) (IPM) rephrases the KKT system of a constrained problem into a Newton iteration being performed in every iteration.
-* [Frank-Wolfe algorithm](FrankWolfe.md), where besides the gradient of ``f`` either a closed form solution or a (maybe even automatically generated) sub problem solver for ``\operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p_k), \log_{p_k}q⟩`` is required, where ``p_k`` is a fixed point on the manifold (changed in every iteration).
+* The [Interior Point Newton Method](interior_point_Newton.md) (IPM) rephrases the KKT system of a constrained problem as a Newton step that is performed in every iteration.
+* [Frank-Wolfe algorithm](FrankWolfe.md), where besides the gradient of ``f`` either a closed form solution or a (maybe even automatically generated) sub problem solver for ``\operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p^{(k)}), \log_{p^{(k)}}q⟩`` is required, where ``p^{(k)}`` is a fixed point on the manifold (changed in every iteration).
 * The [Projected Gradient Method](projected_gradient_method.md) projects the gradient step back onto the feasible set in every iteration.
 
 ## On the tangent space

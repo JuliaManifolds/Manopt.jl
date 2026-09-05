@@ -37,13 +37,17 @@ flat_example(::AbstractManifold, p) = 0.0
         @test griewank(M, p1) < 0.25
 
         p1 = [10.0, 10.0]
-        cma_es!(M, griewank, p1; σ = 10.0, rng = MersenneTwister(123))
+        r1 = cma_es!(M, griewank, p1; σ = 10.0, rng = MersenneTwister(123))
+        @test r1 === p1 # in-place: the passed point holds the result (best visited)
         @test griewank(M, p1) < 0.2
 
         o = cma_es(M, griewank, [10.0, 10.0]; return_state = true)
         @test startswith(
             Manopt.status_summary(o; context = :default),
             "# Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy",
+        )
+        @test contains(
+            Manopt.status_summary(o; context = :inline), "covariance matrix adaptation"
         )
 
         @testset "Callbacks" begin
@@ -128,7 +132,7 @@ flat_example(::AbstractManifold, p) = 0.0
         @test_warn "Covariance matrix has nonpositive eigenvalues" o_flat = cma_es(
             M, flat_example, [10.0, 10.0]; σ = 10.0,
             stopping_criterion = StopAfterIteration(10000) | StopWhenPopulationStronglyConcentrated(1.0e-14),
-            rng = MersenneTwister(12), return_state = true,
+            rng = MersenneTwister(13), return_state = true,
         )
         flat_sc = only(get_active_stopping_criteria(o_flat.stop))
         @test flat_sc isa StopWhenPopulationStronglyConcentrated

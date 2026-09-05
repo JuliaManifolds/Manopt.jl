@@ -9,6 +9,8 @@ Subsolver state indicating that a closed-form solution is available.
 """
 struct ClosedFormSubSolverState{} <: AbstractManoptSolverState end
 Base.show(io::IO, ::ClosedFormSubSolverState) = print(io, "ClosedFormSubSolverState()")
+# a closed form sub solver has no iterate to set
+set_iterate!(cfss::ClosedFormSubSolverState, ::AbstractManifold, p) = cfss
 status_summary(cfss::ClosedFormSubSolverState; context::Symbol = :default) = repr(cfss)
 
 @doc """
@@ -43,6 +45,15 @@ Since a solver might return both a state and an objective in a tuple, this then 
 get_solver_return(s::ReturnSolverState) = s.state
 
 function decorate_state! end
+
+# Merge the (deprecated) `callback=` keyword into whatever was passed as `debug=`.
+_add_debug_callback(::Missing, cb::DebugAction) = cb
+_add_debug_callback(debug::Array, cb::DebugAction) = [debug..., cb]
+_add_debug_callback(debug::Union{Function, DebugAction}, cb::DebugAction) = [debug, cb]
+function _add_debug_callback(debug::Dict, ::DebugAction)
+    @warn "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually"
+    return debug
+end
 
 @doc """
     decorate_state!(s::AbstractManoptSolverState; kwargs...)
@@ -80,7 +91,7 @@ function decorate_state!(
             Function, # a function to indicate a (non-simple) callback
             DebugAction, # single one -> to :Iteration
             Array{DebugAction, 1}, # a group -> to :Iteration
-            Dict{Symbol, DebugAction}, # the most elaborate, a dictionary
+            Dict{Symbol, <:DebugAction}, # the most elaborate, a dictionary
             Array{<:Any, 1}, # short hand for Factory.
         } = missing,
         record::Union{
@@ -88,7 +99,7 @@ function decorate_state!(
             Symbol, # single action shortcut by symbol
             RecordAction, # single action -> to :Iteration
             Array{RecordAction, 1}, # a group -> to :Iteration
-            Dict{Symbol, RecordAction}, # a dictionary for precise settings
+            Dict{Symbol, <:RecordAction}, # a dictionary for precise settings
             Array{<:Any, 1}, # a formatted string with symbols or AbstractStateActions
         } = missing,
         callback = missing, # a (simple) callback function – deprecated
@@ -100,21 +111,10 @@ function decorate_state!(
     if !ismissing(callback) # we got a simple callback
         @warn """
             the `callback =` keyword/decorator step is deprecated, use
-            `callbacks = [:Step => [...]]` to add your callback to the (end of)
+            `callbacks = [:Step => (problem, state, k) -> ...]` to add your callback to the (end of)
             an iteration step
         """
-        if ismissing(debug)
-            debug = DebugCallback(callback; simple = true)
-        else
-            # From complex to simple, first array, since the other ones create an array
-            (debug isa Array) && push!(debug, DebugCallback(callback; simple = true))
-            if ((debug isa Function) || (debug isa DebugAction))
-                debug = [debug, DebugCallback(callback; simple = true)]
-            end
-            (debug isa Dict) && warn(
-                "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually",
-            )
-        end
+        debug = _add_debug_callback(debug, DebugCallback(callback; simple = true))
     end
     if !ismissing(debug) && !(debug isa AbstractArray && length(debug) == 0)
         deco_s = DebugSolverState(s, debug)

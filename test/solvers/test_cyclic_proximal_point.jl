@@ -27,11 +27,23 @@ using ManifoldDiff: prox_distance, prox_distance!
         @test_throws ErrorException get_proximal_map(p, 1.0, f, 3)
         @test_throws ErrorException ManifoldProximalMapObjective(f, proxes, [1, 2, 2])
     end
+    @testset "Random order reshuffles" begin
+        Me = Euclidean(2)
+        mpo5 = ManifoldProximalMapObjective((M, p) -> 0.0, [(N, λ, p) -> p for _ in 1:8])
+        dmp5 = DefaultManoptProblem(Me, mpo5)
+        s5 = CyclicProximalPointState(Me; p = zeros(2), evaluation_order = :Random)
+        Manopt.initialize_solver!(dmp5, s5)
+        Manopt.step_solver!(dmp5, s5, 1)
+        Manopt.step_solver!(dmp5, s5, 2)
+        @test sort(s5.order) == collect(1:8)
+        @test s5.order != collect(1:8) # reshuffled; false-failure chance 1/8!
+        @test_throws DomainError CyclicProximalPointState(Me; evaluation_order = :WrongSymbol)
+    end
     @testset "Number" begin
         M = Circle()
         data = [-π / 2, π / 4, 0.0, π / 4]
         q = sum(data) / length(data)
-        f(M, p) = 1 / 10 * sum(distance.(Ref(M), dara, Ref(p)) .^ 2)
+        f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
         proxes_f = [(N, λ, p) -> prox_distance(N, λ, q, p) for q in data]
         p1 = cyclic_proximal_point(M, f, proxes_f, data[1])
         @test isapprox(M, q, p1; atol = 1.0e-3)
@@ -139,13 +151,14 @@ using ManifoldDiff: prox_distance, prox_distance!
         M = Euclidean(3)
         p = ones(3)
         O = CyclicProximalPointState(M; p = zeros(3))
-        set_iterate!(O, p)
+        set_iterate!(O, M, p)
         @test get_iterate(O) == p
     end
     @testset "Debug and Record prox parameter" begin
         io = IOBuffer()
         M = Euclidean(3)
         p = ones(3)
+        q = zeros(3)
         O = CyclicProximalPointState(M; p = p)
         f(M, p) = Manopt.Test.L2_Total_Variation(M, q, 0.5, p)
         proxes = (

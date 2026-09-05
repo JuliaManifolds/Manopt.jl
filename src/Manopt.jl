@@ -89,8 +89,8 @@ using Statistics
 include("documentation_glossary.jl")
 
 """
-    Rn(args; kwargs...)
-    Rn(s::Symbol=:Manifolds, args; kwargs...)
+    Rn(args...; kwargs...)
+    Rn(::Val{T}, args...; kwargs...)
 
 A small internal helper function to choose a Euclidean space.
 By default, this uses the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) unless you load
@@ -232,7 +232,9 @@ function __init__()
     #
     @static if isdefined(Base.Experimental, :register_error_hint) # COV_EXCL_LINE
         Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
-            if (exc.f === convex_bundle_method_subsolver) || (exc.f === proximal_bundle_method_subsolver) || (exc.f === gradient_sampling_subsolver)
+            if (exc.f === convex_bundle_method_subsolver) || (exc.f === convex_bundle_method_subsolver!) ||
+                    (exc.f === proximal_bundle_method_subsolver) || (exc.f === proximal_bundle_method_subsolver!) ||
+                    (exc.f === gradient_sampling_subsolver) || (exc.f === gradient_sampling_subsolver!)
                 print(
                     io,
                     "\nThe `$(exc.f)` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
@@ -454,9 +456,10 @@ export adaptive_regularization_with_cubics,
     mesh_adaptive_direct_search, mesh_adaptive_direct_search!,
     NelderMead, NelderMead!,
     particle_swarm, particle_swarm!,
-    primal_dual_semismooth_Newton,
+    primal_dual_semismooth_Newton, primal_dual_semismooth_Newton!,
     projected_gradient_method, projected_gradient_method!,
     proximal_bundle_method, proximal_bundle_method!,
+    proximal_bundle_method_subsolver, proximal_bundle_method_subsolver!,
     proximal_gradient_method, proximal_gradient_method!,
     proximal_point, proximal_point!,
     quasi_Newton, quasi_Newton!,

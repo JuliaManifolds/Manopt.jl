@@ -43,7 +43,7 @@ using Test, Manopt, ManifoldsBase, Manifolds
         a2b = StoreStateAction(M; store_points = Tuple{:p}, store_vectors = Tuple{:X})
         @test keys(a2.point_values) == keys(a2b.point_values)
         @test keys(a2.vector_values) == keys(a2b.vector_values)
-        @test keys(a2.keys) == keys(a2b.keys)
+        @test a2.keys == a2b.keys
 
         # make sure fast storage is actually fast
         @test (@allocated update_storage!(a2, mp, st)) == 0
@@ -81,8 +81,8 @@ using Test, Manopt, ManifoldsBase, Manifolds
         st = Manopt.StoreStateAction(
             M; p_init = 1.0, X_init = 2.0, store_points = Tuple{:p}, store_vectors = Tuple{:X}
         )
-        Manopt.get_storage(st, Manopt.VectorStorageKey(:X)) == 2.0
-        Manopt.get_storage(st, Manopt.PointStorageKey(:p)) == 1.0
+        @test Manopt.get_storage(st, Manopt.VectorStorageKey(:X)) == 2.0
+        @test Manopt.get_storage(st, Manopt.PointStorageKey(:p)) == 1.0
     end
     @testset "Store swarm" begin
         M = ManifoldsBase.DefaultManifold(2)

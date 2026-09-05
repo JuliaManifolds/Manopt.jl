@@ -82,14 +82,14 @@ call, since some internal criteria might keep an internal status.
 
 # Constructor
 
-    StopWhenAll(c::NTuple{N,StoppingCriterion} where N)
+    StopWhenAll(c::Vector{<:StoppingCriterion})
     StopWhenAll(c::StoppingCriterion...)
 """
 mutable struct StopWhenAll{TCriteria <: Tuple} <: StoppingCriterionSet
     criteria::TCriteria
     at_iteration::Int
-    StopWhenAll(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), -1)
-    StopWhenAll(c...) = new{typeof(c)}(c, -1)
+    StopWhenAll(c::Vector{<:StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), -1)
+    StopWhenAll(c::StoppingCriterion...) = new{typeof(c)}(c, -1)
 end
 function (c::StopWhenAll)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
     if (k <= 0) # reset on init
@@ -134,7 +134,9 @@ function has_converged(c::StopWhenAll)
     return is_active_stopping_criterion(c) && any(has_converged(ci) for ci in c.criteria)
 end
 function get_count(c::StopWhenAll, v::Val{:Iterations})
-    return maximum(get_count(ci, v) for ci in c.criteria)
+    iters = [get_count(ci, v) for ci in c.criteria]
+    any(x -> x < 0, iters) && (return -1) # Not all indicated to stop yet, so this one did not either
+    return maximum(iters; init = -1)
 end
 function set_parameter!(c::StopWhenAll, e::Val, v)
     for d in c.criteria
@@ -204,7 +206,7 @@ call, since some internal criteria might keep an internal status.
 * `at_iteration`: the iteration at which this criterion last indicated to stop, `-1` otherwise
 
 # Constructor
-    StopWhenAny(c::NTuple{N,StoppingCriterion} where N)
+    StopWhenAny(c::Vector{<:StoppingCriterion})
     StopWhenAny(c::StoppingCriterion...)
 """
 mutable struct StopWhenAny{TCriteria <: Tuple} <: StoppingCriterionSet
@@ -266,7 +268,7 @@ function has_converged(c::StopWhenAny)
     return is_active_stopping_criterion(c) && any(is_active_stopping_criterion(ci) && has_converged(ci) for ci in c.criteria)
 end
 function get_count(c::StopWhenAny, v::Val{:Iterations})
-    iters = filter(x -> x > 0, [get_count(ci, v) for ci in c.criteria])
+    iters = filter(x -> x >= 0, [get_count(ci, v) for ci in c.criteria])
     (length(iters) == 0) && (return -1) # None indicated to stop yet, so we also do not
     return minimum(iters)
 end
@@ -484,7 +486,7 @@ Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $
 is given by
 
 ```math
-$(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distance))(p_k,q_k)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
+$(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_math(:distance))(p_i,q_i)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.
@@ -516,18 +518,20 @@ mutable struct StopWhenChangeLess{
     outer_norm::N
 end
 function StopWhenChangeLess(
-        M::AbstractManifold,
-        ε::F;
+        M::AbstractManifold, ε::F;
         storage::StoreStateAction = StoreStateAction(M; store_points = Tuple{:Iterate}),
         inverse_retraction_method::IRT = default_inverse_retraction_method(M),
         outer_norm::N = missing,
     ) where {F, N <: Union{Missing, Real}, IRT <: AbstractInverseRetractionMethod}
-    return StopWhenChangeLess{F, IRT, typeof(storage), N}(
-        ε, zero(ε), storage, inverse_retraction_method, -1, outer_norm
+    e = float(ε)
+    return StopWhenChangeLess{typeof(e), IRT, typeof(storage), N}(
+        e, zero(e), storage, inverse_retraction_method, -1, outer_norm
     )
 end
-function StopWhenChangeLess(ε::R; kwargs...) where {R <: Real}
-    return StopWhenChangeLess(DefaultManifold(), ε; kwargs...)
+function StopWhenChangeLess(
+        ε::R; storage::StoreStateAction = StoreStateAction([:Iterate]), kwargs...
+    ) where {R <: Real}
+    return StopWhenChangeLess(DefaultManifold(), ε; storage = storage, kwargs...)
 end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k)
     if k == 0 # reset on init
@@ -570,7 +574,7 @@ function Base.show(io::IO, c::StopWhenChangeLess)
 end
 
 """
-    set_parameter!(c::StopWhenChangeLess, :MinIterateChange, v::Int)
+    set_parameter!(c::StopWhenChangeLess, :MinIterateChange, v)
 
 Update the minimal change below which an algorithm shall stop.
 """
@@ -601,8 +605,9 @@ mutable struct StopWhenCostChangeLess{F <: Real} <: StoppingCriterion
     last_cost::F
     last_change::F
 end
-function StopWhenCostChangeLess(tol::F) where {F <: Real}
-    return StopWhenCostChangeLess{F}(tol, -1, zero(tol), 2 * tol)
+function StopWhenCostChangeLess(tol::Real)
+    t = float(tol)
+    return StopWhenCostChangeLess{typeof(t)}(t, -1, zero(t), 2 * t)
 end
 function (c::StopWhenCostChangeLess)(
         problem::AbstractManoptProblem, state::AbstractManoptSolverState, k::Int
@@ -624,7 +629,7 @@ end
 indicates_convergence(c::StopWhenCostChangeLess) = false
 function get_reason(c::StopWhenCostChangeLess)
     if c.at_iteration >= 0
-        return "At iteration $(c.at_iteration) the algorithm performed a step with an absolute cost change ($(abs(c.last_change))) less than $(c.tolerance)."
+        return "At iteration $(c.at_iteration) the algorithm performed a step with an absolute cost change ($(abs(c.last_change))) less than $(c.tolerance).\n"
     end
     return ""
 end
@@ -642,7 +647,7 @@ end
     StopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the
-optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p, s)`.
+optimization problem from within a [`AbstractManoptProblem`](@ref), i.e. `get_cost(p, s)`.
 
 # Constructor
 
@@ -654,8 +659,9 @@ mutable struct StopWhenCostLess{F} <: StoppingCriterion
     threshold::F
     last_cost::F
     at_iteration::Int
-    function StopWhenCostLess(ε::F) where {F <: Real}
-        return new{F}(ε, zero(ε), -1)
+    function StopWhenCostLess(ε::Real)
+        e = float(ε)
+        return new{typeof(e)}(e, zero(e), -1)
     end
 end
 function (c::StopWhenCostLess)(
@@ -824,7 +830,8 @@ function (c::StopWhenCriterionWithIterationCondition)(
     )
     if k <= 0 # reset on init
         c.at_iteration = -1
-        return c.stopping_criterion(p, s, k) # reset the criterion
+        c.stopping_criterion(p, s, k) # reset the criterion
+        return false
     end
     if c.comp(k)
         # evaluate the inner stopping criterion
@@ -840,8 +847,7 @@ end
 function get_reason(sc::StopWhenCriterionWithIterationCondition)
     has_stopped = (sc.at_iteration >= 0)
     if has_stopped
-        r = "At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop together with $(sc.comp),
-        since $(status_summary(sc.stopping_criterion))"
+        r = "At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop together with $(sc.comp), since $(status_summary(sc.stopping_criterion))\n"
         return r
     end
     return ""
@@ -854,7 +860,7 @@ function has_converged(sc::StopWhenCriterionWithIterationCondition)
     return has_converged(sc.stopping_criterion)
 end
 function Base.show(io::IO, sc::StopWhenCriterionWithIterationCondition)
-    return print(io, "StopWhenCriterionWithIterationCondition($(typeof(sc.stopping_criterion)), $(sc.comp))")
+    return print(io, "StopWhenCriterionWithIterationCondition($(repr(sc.stopping_criterion)), $(sc.comp))")
 end
 function status_summary(sc::StopWhenCriterionWithIterationCondition; context::Symbol = :default)
     (context == :short) && return repr(sc)
@@ -904,10 +910,11 @@ mutable struct StopWhenEntryChangeLess{F, TF, TSSA <: StoreStateAction} <: Stopp
     last_change::TF
 end
 function StopWhenEntryChangeLess(
-        field::Symbol, distance::F, threshold::TF; storage::TSSA = StoreStateAction([field])
-    ) where {F, TF, TSSA <: StoreStateAction}
-    return StopWhenEntryChangeLess{F, TF, TSSA}(
-        -1, distance, field, storage, threshold, zero(threshold)
+        field::Symbol, distance::F, threshold; storage::TSSA = StoreStateAction([field])
+    ) where {F, TSSA <: StoreStateAction}
+    t = float(threshold)
+    return StopWhenEntryChangeLess{F, typeof(t), TSSA}(
+        -1, distance, field, storage, t, zero(t)
     )
 end
 
@@ -980,7 +987,7 @@ Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent 
 is given by
 
 ```math
-$(_tex(:norm, "X-Y"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k-Y_k"; index = "p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
+$(_tex(:norm, "X-Y"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_tex(:norm, "X_i-Y_i"; index = "p_i"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.
@@ -1011,20 +1018,20 @@ mutable struct StopWhenGradientChangeLess{
     outer_norm::N
 end
 function StopWhenGradientChangeLess(
-        M::AbstractManifold,
-        ε::F;
+        M::AbstractManifold, ε::F;
         storage::StoreStateAction = StoreStateAction(
             M; store_points = Tuple{:Iterate}, store_vectors = Tuple{:Gradient}
         ),
         vector_transport_method::VTM = default_vector_transport_method(M),
         outer_norm::N = missing,
     ) where {F, N <: Union{Missing, Real}, VTM <: AbstractVectorTransportMethod}
-    return StopWhenGradientChangeLess{F, VTM, typeof(storage), N}(
-        ε, zero(ε), storage, vector_transport_method, -1, outer_norm
+    e = float(ε)
+    return StopWhenGradientChangeLess{typeof(e), VTM, typeof(storage), N}(
+        e, zero(e), storage, vector_transport_method, -1, outer_norm
     )
 end
 function StopWhenGradientChangeLess(
-        ε::Float64; storage::StoreStateAction = StoreStateAction([:Iterate, :Gradient]), kwargs...
+        ε::Real; storage::StoreStateAction = StoreStateAction([:Iterate, :Gradient]), kwargs...
     )
     return StopWhenGradientChangeLess(DefaultManifold(1), ε; storage = storage, kwargs...)
 end
@@ -1102,15 +1109,17 @@ Create a stopping criterion with threshold `ε` for the gradient mapping for the
 That is, this criterion indicates to stop when the gradient mapping has a norm less than `ε`.
 The gradient mapping is defined as
 ``G_λ(p) = -$(_tex(:frac, "1", "λ"))$(_tex(:log))_p$(_tex(:bigl))(T_λ(p)$(_tex(:bigr)))``,
-where ``T_λ(p) = $(_tex(:prox))_{λ f}$(_tex(:bigl))(\\exp_p(-λ $(_tex(:grad)) f(p))$(_tex(:bigr)))``
+where, for ``f = g + h`` with ``g`` smooth and ``h`` (possibly) nonsmooth,
+``T_λ(p) = $(_tex(:prox))_{λ h}$(_tex(:bigl))($(_tex(:retr))_p(-λ $(_tex(:grad)) g(p))$(_tex(:bigr)))``
 is the proximal mapping.
 """
 mutable struct StopWhenGradientMappingNormLess{TF} <: StoppingCriterion
     threshold::TF
     last_change::TF
     at_iteration::Int
-    function StopWhenGradientMappingNormLess(ε::TF) where {TF}
-        return new{TF}(ε, zero(ε), -1)
+    function StopWhenGradientMappingNormLess(ε::Real)
+        e = float(ε)
+        return new{typeof(e)}(e, zero(e), -1)
     end
 end
 function get_reason(c::StopWhenGradientMappingNormLess)
@@ -1125,6 +1134,7 @@ function Base.show(io::IO, c::StopWhenGradientMappingNormLess)
     return print(io, "StopWhenGradientMappingNormLess($(c.threshold))")
 end
 function status_summary(c::StopWhenGradientMappingNormLess; context::Symbol = :default)
+    (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "|G| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient mapping norm is less than a tolerance.\n$(_MANOPT_INDENT)") * s
@@ -1160,7 +1170,7 @@ Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the 
 is given by
 
 ```math
-$(_tex(:norm, "X"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k"; index = "p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
+$(_tex(:norm, "X"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_tex(:norm, "X_i"; index = "p_i"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.
@@ -1184,9 +1194,10 @@ mutable struct StopWhenGradientNormLess{F, TF <: Real, N <: Union{Missing, Real}
     at_iteration::Int
     outer_norm::N
     function StopWhenGradientNormLess(
-            ε::TF; norm::F = norm, outer_norm::N = missing
-        ) where {F, TF <: Real, N <: Union{Missing, Real}}
-        return new{F, TF, N}(norm, ε, zero(ε), -1, outer_norm)
+            ε::Real; norm::F = norm, outer_norm::N = missing
+        ) where {F, N <: Union{Missing, Real}}
+        e = float(ε)
+        return new{F, typeof(e), N}(norm, e, zero(e), -1, outer_norm)
     end
 end
 
@@ -1328,14 +1339,16 @@ mutable struct StopWhenLagrangeMultiplierLess{
     mode::Symbol
     at_iteration::Int
     function StopWhenLagrangeMultiplierLess(
-            tol::T; mode::Symbol = :estimate, names::B = nothing
-        ) where {T <: Real, B <: Union{Nothing, <:AbstractVector{<:String}}}
-        return new{T, Vector{T}, B}([tol], zero([tol]), names, mode, -1)
+            tol::Real = 1.0e-6; mode::Symbol = :estimate, names::B = nothing
+        ) where {B <: Union{Nothing, <:AbstractVector{<:String}}}
+        t = float(tol)
+        return new{typeof(t), Vector{typeof(t)}, B}([t], zero([t]), names, mode, -1)
     end
     function StopWhenLagrangeMultiplierLess(
-            tols::A; mode::Symbol = :estimate, names::B = nothing
-        ) where {T <: Real, A <: AbstractVector{<:T}, B <: Union{Nothing, <:AbstractVector{<:String}}}
-        return new{T, A, B}(tols, zero(tols), names, mode, -1)
+            tols::AbstractVector{<:Real}; mode::Symbol = :estimate, names::B = nothing
+        ) where {B <: Union{Nothing, <:AbstractVector{<:String}}}
+        t = float(tols)
+        return new{eltype(t), typeof(t), B}(t, zero(t), names, mode, -1)
     end
 end
 function get_reason(sc::StopWhenLagrangeMultiplierLess)
@@ -1358,11 +1371,12 @@ function get_reason(sc::StopWhenLagrangeMultiplierLess)
     return ""
 end
 function status_summary(sc::StopWhenLagrangeMultiplierLess; context::Symbol = :default)
+    (context == :short) && return repr(sc)
     s = (sc.at_iteration >= 0) ? "reached" : "not reached"
     msg = "Lagrange multipliers"
     isnothing(sc.names) && (msg *= " with tolerances $(sc.tolerances)")
     if !isnothing(sc.names)
-        msg *= join(["$si < $bi" for (si, bi) in zip(sc.names, sc.tolerances)], ", ")
+        msg *= " " * join(["$si < $bi" for (si, bi) in zip(sc.names, sc.tolerances)], ", ")
     end
     return (_is_inline(context) ? "" : "A stopping criterion to stop when the Lagrange multipliers are less than $(sc.tolerances).\n$(_MANOPT_INDENT)") * "$(msg):$(_MANOPT_INDENT)$(s)"
 end
@@ -1453,9 +1467,9 @@ function get_reason(sc::StopWhenRepeated)
     has_stopped = (sc.at_iteration >= 0)
     if (sc.at_iteration >= 0)
         s = has_stopped ? "reached" : "not reached"
-        c = sc.consecutive ? "consecutive" : ""
+        c = sc.consecutive ? " consecutive" : ""
         # we can only get the last reason, unless we do more allocations
-        r = """At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n) $(c) times:
+        r = """At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n)$(c) times:
         $(sc.count) ≥ $(sc.n): $(s)
         last inner criterion status:
         $(_in_str(status_summary(sc.stopping_criterion); indent = 1, headers = 0))
@@ -1472,14 +1486,14 @@ function has_converged(sc::StopWhenRepeated)
     return has_converged(sc.stopping_criterion)
 end
 function Base.show(io::IO, sc::StopWhenRepeated)
-    return print(io, "StopWhenRepeated($(typeof(sc.stopping_criterion)), $(sc.n); consecutive=$(sc.consecutive))")
+    return print(io, "StopWhenRepeated($(repr(sc.stopping_criterion)), $(sc.n); consecutive=$(sc.consecutive))")
 end
 function status_summary(sc::StopWhenRepeated; context::Symbol = :default)
     (context == :short) && return "StopWhenRepeated($(repr(sc.stopping_criterion)))×$(sc.n)"
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    c = sc.consecutive ? "consecutive" : ""
-    return (_is_inline(context) ? "$(status_summary(sc.stopping_criterion; context = context)) × $(sc.count) ≥ $(sc.n) ($(c)):" : "A stopping criterion to stop when the inner criterion has indicated to stop $(sc.n) ($(c)) times.\n$(_in_str(status_summary(sc.stopping_criterion; context = context); indent = 1, headers = 0))\n$(_in_str(s; indent = 2, headers = 0))")
+    c = sc.consecutive ? " consecutive" : ""
+    return (_is_inline(context) ? "$(status_summary(sc.stopping_criterion; context = context)) × $(sc.count) ≥ $(sc.n)$(c):$(_MANOPT_INDENT)$(s)" : "A stopping criterion to stop when the inner criterion has indicated to stop $(sc.n)$(c) times.\n$(_in_str(status_summary(sc.stopping_criterion; context = context); indent = 1, headers = 0))\n$(_in_str(s; indent = 2, headers = 0))")
 end
 
 #
@@ -1513,9 +1527,10 @@ mutable struct StopWhenProjectedNegativeGradientNormLess{F, TF <: Real, N <: Uni
     at_iteration::Int
     outer_norm::N
     function StopWhenProjectedNegativeGradientNormLess(
-            ε::TF; norm::F = norm, outer_norm::N = missing
-        ) where {F, TF <: Real, N <: Union{Missing, Real}}
-        return new{F, TF, N}(norm, ε, zero(ε), -1, outer_norm)
+            ε::Real; norm::F = norm, outer_norm::N = missing
+        ) where {F, N <: Union{Missing, Real}}
+        e = float(ε)
+        return new{F, typeof(e), N}(norm, e, zero(e), -1, outer_norm)
     end
 end
 function (sc::StopWhenProjectedNegativeGradientNormLess)(
@@ -1601,8 +1616,9 @@ mutable struct StopWhenRelativeAPosterioriCostChangeLessOrEqual{F <: Real} <: St
     last_cost::F
     last_change::F
 end
-function StopWhenRelativeAPosterioriCostChangeLessOrEqual(tol::F) where {F <: Real}
-    return StopWhenRelativeAPosterioriCostChangeLessOrEqual{F}(tol, -1, zero(tol), 2 * tol)
+function StopWhenRelativeAPosterioriCostChangeLessOrEqual(tol::Real)
+    t = float(tol)
+    return StopWhenRelativeAPosterioriCostChangeLessOrEqual{typeof(t)}(t, -1, zero(t), 2 * t)
 end
 StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::F = 1.0e7) where {F <: Real} = StopWhenRelativeAPosterioriCostChangeLessOrEqual(factr * eps(typeof(factr)))
 function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(
@@ -1625,7 +1641,7 @@ end
 indicates_convergence(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual) = false
 function get_reason(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
     if c.at_iteration >= 0
-        return "At iteration $(c.at_iteration) the algorithm performed a step with a relative a posteriori cost change ($(abs(c.last_change))) less than or equal to $(c.threshold)."
+        return "At iteration $(c.at_iteration) the algorithm performed a step with a relative a posteriori cost change ($(c.last_change)) less than or equal to $(c.threshold).\n"
     end
     return ""
 end
@@ -1633,7 +1649,7 @@ function status_summary(c::StopWhenRelativeAPosterioriCostChangeLessOrEqual; con
     (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = $(abs(c.last_change)) ≤ $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the relative posteriori cost change is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
+    return (_is_inline(context) ? "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = $(c.last_change) ≤ $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the relative posteriori cost change is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)
     return print(io, "StopWhenRelativeAPosterioriCostChangeLessOrEqual($(c.threshold))")
@@ -1723,8 +1739,9 @@ mutable struct StopWhenStepsizeLess{F} <: StoppingCriterion
     threshold::F
     last_stepsize::F
     at_iteration::Int
-    function StopWhenStepsizeLess(ε::F) where {F <: Real}
-        return new{F}(ε, zero(ε), -1)
+    function StopWhenStepsizeLess(ε::Real)
+        e = float(ε)
+        return new{typeof(e)}(e, zero(e), -1)
     end
 end
 function (c::StopWhenStepsizeLess)(
@@ -1792,7 +1809,10 @@ mutable struct StopWhenSubgradientNormLess{R} <: StoppingCriterion
     at_iteration::Int
     threshold::R
     value::R
-    StopWhenSubgradientNormLess(ε::R) where {R <: Real} = new{R}(-1, ε, zero(ε))
+    function StopWhenSubgradientNormLess(ε::Real)
+        e = float(ε)
+        return new{typeof(e)}(-1, e, zero(e))
+    end
 end
 function (c::StopWhenSubgradientNormLess)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int

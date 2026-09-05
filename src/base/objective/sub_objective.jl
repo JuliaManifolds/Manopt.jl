@@ -37,7 +37,7 @@ See also the [`NormalEquationsObjective`](@ref) for the corresponding normal equ
 abstract type AbstractLinearSurrogateObjective{O <: AbstractManifoldObjective} <: AbstractManifoldSubObjective{O} end
 
 function get_gradient_function(amso::AbstractManifoldSubObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
-    recursive && (return get_gradient_function(get_objective(amso, recursive), recursive; evaluation = evaluation))
+    recursive && (return get_gradient_function(get_objective(amso), recursive; evaluation = evaluation))
     if evaluation isa AllocatingEvaluation
         return (M, p) -> get_gradient(M, get_objective(amso), p)
     else
@@ -61,41 +61,50 @@ function get_objective_cost(M::AbstractManifold, amso::AbstractManifoldSubObject
     return get_cost(M, get_objective(amso), p)
 end
 
-@doc """
+_doc_get_objective_gradient = """
     X = get_objective_gradient(M, amso::AbstractManifoldSubObjective, p)
     get_objective_gradient!(M, X, amso::AbstractManifoldSubObjective, p)
 
 Evaluate the gradient of the (original) objective stored within the sub objective `amso`.
 """
+
+@doc "$(_doc_get_objective_gradient)"
 function get_objective_gradient(M::AbstractManifold, amso::AbstractManifoldSubObjective, p)
     return get_gradient(M, get_objective(amso), p)
 end
+@doc "$(_doc_get_objective_gradient)"
 function get_objective_gradient!(M::AbstractManifold, X, amso::AbstractManifoldSubObjective, p)
     return get_gradient!(M, X, get_objective(amso), p)
 end
 
-@doc """
+_doc_get_objective_hessian = """
     Y = get_objective_hessian(M, amso::AbstractManifoldSubObjective, p, X)
     get_objective_hessian!(M, Y, amso::AbstractManifoldSubObjective, p, X)
 
 Evaluate the Hessian of the (original) objective stored within the sub objective `amso`.
 """
+
+@doc "$(_doc_get_objective_hessian)"
 function get_objective_hessian(M::AbstractManifold, amso::AbstractManifoldSubObjective, p, X)
     return get_hessian(M, get_objective(amso), p, X)
 end
+@doc "$(_doc_get_objective_hessian)"
 function get_objective_hessian!(M::AbstractManifold, Y, amso::AbstractManifoldSubObjective, p, X)
     return get_hessian!(M, Y, get_objective(amso), p, X)
 end
 
-@doc """
+_doc_get_objective_preconditioner = """
     Y = get_objective_preconditioner(M, amso::AbstractManifoldSubObjective, p, X)
     get_objective_preconditioner!(M, Y, amso::AbstractManifoldSubObjective, p, X)
 
 Evaluate the preconditioner of the (original) objective stored within the sub objective `amso`.
 """
+
+@doc "$(_doc_get_objective_preconditioner)"
 function get_objective_preconditioner(M::AbstractManifold, amso::AbstractManifoldSubObjective, p, X)
     return get_preconditioner(M, get_objective(amso), p, X)
 end
+@doc "$(_doc_get_objective_preconditioner)"
 function get_objective_preconditioner!(M::AbstractManifold, Y, amso::AbstractManifoldSubObjective, p, X)
     return get_preconditioner!(M, Y, get_objective(amso), p, X)
 end
@@ -111,7 +120,6 @@ get_objective(also::AbstractLinearSurrogateObjective) = also.objective
 
 function get_linear_operator end
 """
-    get_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p)
     get_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
     get_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X)
     get_linear_operator!(M::AbstractManifold, L, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
@@ -121,9 +129,8 @@ Return/Evaluate the linear operator ``$(_tex(:Cal, "L"))`` of the linear surroga
 
 If a tangent vector `X` is provided, evaluate ``$(_tex(:Cal, "L"))(X)``.
 If a basis `B` is provided, return the matrix representation of ``$(_tex(:Cal, "L"))`` with respect to that basis.
-Otherwise return the operator as a function `(TpM, X) -> Y`.
 """
-get_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X = nothing)
+get_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X)
 
 function get_vector_field end
 """
@@ -135,8 +142,7 @@ Return the vector `y` of the linear surrogate model `lsmo` at the point ``p ∈ 
 get_vector_field(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p)
 
 function get_normal_linear_operator end
-"""
-    get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p)
+_doc_get_normal_linear_operator = """
     get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
     get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X)
     get_normal_linear_operator!(M::AbstractManifold, N, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
@@ -146,9 +152,13 @@ Return/Evaluate the normal operator ``$(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))`` 
 
 If a tangent vector `X` is provided, evaluate ``$(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))(X)``.
 If a basis `B` is provided, return the matrix representation of ``$(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))`` with respect to that basis.
-Otherwise return the operator as a function `(TpM, X) -> Y`.
 """
-get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X = nothing)
+
+@doc "$(_doc_get_normal_linear_operator)"
+get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X)
+
+@doc "$(_doc_get_normal_linear_operator)"
+get_normal_linear_operator!(M::AbstractManifold, N, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
 
 function get_normal_vector_field end
 """

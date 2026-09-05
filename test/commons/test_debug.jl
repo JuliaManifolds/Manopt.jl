@@ -324,7 +324,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         d2(mp, st, 2)
         @test t == d2.last_time # but not afterwards
         @test endswith(String(take!(io)), "seconds")
-        d3 = DebugTime(; start = true, mode = :iterative, io = io)
+        d3 = DebugTime(; start = true, mode = :Iterative, io = io)
         @test d3.last_time != Nanosecond(0) # changes on first call
         t = d3.last_time
         d3(mp, st, 2)
@@ -335,16 +335,16 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test t != d3.last_time
         Manopt.stop!(d3)
         @test d3.last_time == Nanosecond(0)
-        drs = "DebugTime(; format=\"time spent: %s\", mode=:cumulative)"
+        drs = "DebugTime(; format=\"time spent: %s\", mode=:Cumulative)"
         @test repr(DebugTime()) == drs
         drs2 = "(:IterativeTime, \"time spent: %s\")"
-        drs2h = "a DebugActin to print time per step iteratively"
-        @test Manopt.status_summary(DebugTime(; mode = :iterative); context = :short) == drs2
-        @test Manopt.status_summary(DebugTime(; mode = :iterative)) == drs2h
+        drs2h = "a DebugAction to print time per step iteratively"
+        @test Manopt.status_summary(DebugTime(; mode = :Iterative); context = :short) == drs2
+        @test Manopt.status_summary(DebugTime(; mode = :Iterative)) == drs2h
         drs3 = "(:Time, \"time spent: %s\")"
-        drs3h = "a DebugActin to print time per step cumulatively"
-        @test Manopt.status_summary(DebugTime(; mode = :cumulative); context = :short) == drs3
-        @test Manopt.status_summary(DebugTime(; mode = :cumulative)) == drs3h
+        drs3h = "a DebugAction to print time per step cumulatively"
+        @test Manopt.status_summary(DebugTime(; mode = :Cumulative); context = :short) == drs3
+        @test Manopt.status_summary(DebugTime(; mode = :Cumulative)) == drs3h
     end
     @testset "Debug show/summaries" begin
         d1 = DebugDivider("|")
@@ -362,7 +362,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test Manopt.status_summary(d4; context = :short) === "[$(Manopt.status_summary(d1; context = :short)), 4]"
         de_d = "A DebugAction wrapping the following DebugAction to only print it every"
         @test startswith(Manopt.status_summary(d4), de_d)
-        ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction=LogarithmicInverseRetraction())"
+        ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction_method=LogarithmicInverseRetraction())"
         @test repr(DebugChange()) == ts2
         @test Manopt.status_summary(DebugChange(); context = :short) == "(:Change, \"Last Change: %f\")"
         @test startswith(Manopt.status_summary(DebugChange()), "A DebugAction to print the change of")
@@ -456,7 +456,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         Manopt.set_parameter!(dE, :Activity, false) # deactivate
         dE(mp, st, -1) # test that reset is still working
         dE(mp, st, 2)
-        @test endswith(String(take!(io)), "")
+        @test String(take!(io)) == ""
         @test !dA.active
         dG = DebugGroup([dA])
         Manopt.set_parameter!(dG, :Activity, true) # activate in group
@@ -467,6 +467,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test DebugFactory([:WhenActive, " | "])[:Iteration] isa DebugWhenActive
 
         dst = DebugSolverState(st, dA)
+        Manopt.set_parameter!(dA, :Activity, false) # deactivate again
+        @test !dA.active
         Manopt.set_parameter!(dst, :Debug, :Activity, true)
         @test dA.active
     end
@@ -485,6 +487,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         cb() = (n += 1)
         @test_logs (:warn,) (decorate_state!(st; callback = cb))
         @test_logs (:warn,) (decorate_state!(st; callback = cb, debug = DebugDivider("")))
+        @test_logs (:warn,) (decorate_state!(st; callback = cb, debug = [:Cost]))
+        @test_logs (:warn,) (:warn,) (decorate_state!(st; callback = cb, debug = Dict{Symbol, DebugAction}()))
         cb2(p, s, k) = ((k > 1) && (n += 1))
         @test_logs (:warn,) dst2 = decorate_state!(st; debug = cb2)
         dbc = Manopt.DebugCallback(() -> nothing; simple = true)

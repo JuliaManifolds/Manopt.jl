@@ -93,7 +93,7 @@ function get_robustifier_values(::CauchyRobustifier, x::Real)
 end
 
 """
-    ComponentwiseRobustifierFunction{F<:AbstractRobustifierFunction} <: AbstractRobustifierFunction
+    ComponentwiseRobustifierFunction{R<:AbstractRobustifierFunction} <: AbstractRobustifierFunction
 
 A robustifier to indicate that for a certain [`AbstractVectorGradientFunction`](@ref) a
 robustifier should be applied component wise.
@@ -159,9 +159,7 @@ end
 Base.:∘(rf1::AbstractRobustifierFunction, rf2::AbstractRobustifierFunction) =
     ComposedRobustifierFunction(rf1, rf2)
 
-function get_robustifier_values(
-        crf::ComposedRobustifierFunction, x::Real
-    )
+function get_robustifier_values(crf::ComposedRobustifierFunction, x::Real)
     (a2, b2, c2) = get_robustifier_values(crf.ρ2, x)
     (a1, b1, c1) = get_robustifier_values(crf.ρ1, a2)
     a = a1
@@ -242,7 +240,7 @@ get_robustifier_values(::IdentityRobustifier, x::Real) = (x, 1.0, 0.0)
     ScaledRobustifierFunction{F<:AbstractRobustifierFunction, R <: Real} <: AbstractRobustifierFunction
 
 A robustifier function whose residuals are scaled by a real value `scale` ``s``,
-i.e. it considers ``ρ_s(f(p)^2) = ρ(s^2⋅f(p)^2)`` for some [`AbstractRobustifierFunction`](@ref) ``ρ``.
+i.e. it considers ``ρ_s(f(p)^2) = s^2 ρ(f(p)^2 / s^2)`` for some [`AbstractRobustifierFunction`](@ref) ``ρ``.
 The function and its derivatives hence read as
 * ``ρ_s(x) = s^2 ρ(x / s^2)``
 * ``ρ_s'(x) = ρ'(x / s^2)``

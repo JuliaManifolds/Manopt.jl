@@ -4,7 +4,7 @@
 CurrentModule = Manopt
 ```
 
-The Riemannian Chambolle—Pock is a generalization of the Chambolle—Pock algorithm [ChambollePock:2011](@citet*)
+The Riemannian Chambolle-Pock algorithm is a generalization of the Chambolle-Pock algorithm [ChambollePock:2011](@citet*).
 It is also known as primal-dual hybrid gradient (PDHG) or primal-dual proximal splitting (PDPS) algorithm.
 
 In order to minimize over ``p∈\mathcal M`` the cost function consisting of
@@ -12,8 +12,6 @@ In order to minimize over ``p∈\mathcal M`` the cost function consisting of
 ```math
 F(p) + G(Λ(p)),
 ```
-
- over ``p∈\mathcal M``
 
 where ``F:\mathcal M → \overline{ℝ}``, ``G:\mathcal N → \overline{ℝ}``, and
 ``Λ:\mathcal M →\mathcal N``.
@@ -23,7 +21,7 @@ such that ``Λ(\mathcal C) \subset \mathcal D``.
 The algorithm is available in four variants: exact versus linearized (see `variant`)
 as well as with primal versus dual relaxation (see `relax`). For more details, see
 [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@citet*).
-In the following, the case of the exact, primal relaxed Riemannian Chambolle—Pock algorithm is described.
+In the following, the case of the exact, primal relaxed Riemannian Chambolle-Pock algorithm is described.
 
 Given base points ``m∈\mathcal C``, ``n=Λ(m)∈\mathcal D``,
 initial primal and dual values ``p^{(0)} ∈\mathcal C``, ``ξ_n^{(0)} ∈T_n^*\mathcal N``,
@@ -32,13 +30,13 @@ as well as acceleration ``\gamma``.
 
 As an initialization, perform ``\bar p^{(0)} \gets p^{(0)}``.
 
-The algorithm performs the steps ``k=1,…,`` (until a [`StoppingCriterion`](@ref) is fulfilled)
+The algorithm performs the steps ``k=0,1,…`` (until a [`StoppingCriterion`](@ref) is fulfilled)
 
 1. ```math
    ξ^{(k+1)}_n = \operatorname{prox}_{\tau_k G_n^*}\Bigl(ξ_n^{(k)} + \tau_k \bigl(\log_n Λ (\bar p^{(k)})\bigr)^\flat\Bigr)
    ```
 2. ```math
-   p^{(k+1)} = \operatorname{prox}_{\sigma_k F}\biggl(\exp_{p^{(k)}}\Bigl( \operatorname{PT}_{p^{(k)}\gets m}\bigl(-\sigma_k DΛ(m)^*[ξ_n^{(k+1)}]\bigr)^\sharp\Bigr)\biggr)
+   p^{(k+1)} = \operatorname{prox}_{\sigma_k F}\biggl(\exp_{p^{(k)}}\Bigl( \mathcal P_{p^{(k)}\gets m}\bigl(-\sigma_k DΛ(m)^*[ξ_n^{(k+1)}]\bigr)^\sharp\Bigr)\biggr)
    ```
 3. Update
    * ``\theta_k = (1+2\gamma\sigma_k)^{-\frac{1}{2}}``
@@ -54,10 +52,6 @@ by a retraction, an inverse retraction, and a vector transport.
 Finally you can also update the base points ``m`` and ``n`` during the iterations.
 This introduces a few additional vector transports. The same holds for the case
 ``Λ(m^{(k)})\neq n^{(k)}`` at some point. All these cases are covered in the algorithm.
-
-```@meta
-CurrentModule = Manopt
-```
 
 ```@docs
 ChambollePock
@@ -87,7 +81,7 @@ dual_residual
 
 [`DebugDualBaseIterate`](@ref), [`DebugDualBaseChange`](@ref), [`DebugPrimalBaseIterate`](@ref),
 [`DebugPrimalBaseChange`](@ref), [`DebugDualChange`](@ref), [`DebugDualIterate`](@ref),
-[`DebugDualResidual`](@ref), [`DebugPrimalChange`](@ref), [`DebugPrimalIterate`](@ref), [`DebugPrimalResidual`](@ref)
+[`DebugDualResidual`](@ref), [`DebugPrimalChange`](@ref), [`DebugPrimalIterate`](@ref), [`DebugPrimalResidual`](@ref),
 [`DebugPrimalDualResidual`](@ref)
 
 
@@ -112,11 +106,11 @@ Manopt.update_prox_parameters!
 
 ## [Technical details](@id sec-cp-technical-details)
 
-The [`ChambollePock`](@ref) solver requires the following functions of a manifold to be available for both the manifold ``\mathcal M``and ``\mathcal N``
+The [`ChambollePock`](@ref) solver requires the following functions of a manifold to be available for both the manifolds ``\mathcal M`` and ``\mathcal N``
 
-* A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favourite retraction. If this default is set, a `retraction_method=` or `retraction_method_dual=` (for ``\mathcal N``) does not have to be specified.
-* An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favourite retraction. If this default is set, a `inverse_retraction_method=` or `inverse_retraction_method_dual=` (for ``\mathcal N``) does not have to be specified.
-* A [`vector_transport_to!`](@extref ManifoldsBase :doc:`vector_transports`)`M, Y, p, X, q)`; it is recommended to set the [`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`) to a favourite retraction. If this default is set, a `vector_transport_method=` or `vector_transport_method_dual=` (for ``\mathcal N``) does not have to be specified.
+* A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favorite retraction. If this default is set, a `retraction_method=` does not have to be specified.
+* An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favorite inverse retraction. If this default is set, an `inverse_retraction_method=` or `inverse_retraction_method_dual=` (for ``\mathcal N``) does not have to be specified.
+* A [`vector_transport_to!`](@extref ManifoldsBase :doc:`vector_transports`)`(M, Y, p, X, q)`; it is recommended to set the [`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`) to a favorite vector transport. If this default is set, a `vector_transport_method=` or `vector_transport_method_dual=` (for ``\mathcal N``) does not have to be specified.
 * A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points.
 
 ## Literature

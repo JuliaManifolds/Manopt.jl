@@ -55,7 +55,8 @@ abstract type AbstractRestartCondition end
     get_count(ams::AbstractManoptSolverState, ::Symbol)
 
 Obtain the count for a certain countable size, for example the `:Iterations`.
-This function returns 0 if there was nothing to count.
+This function returns `-1` if there was nothing counted (yet),
+for example when the solver has not yet stopped.
 
 Available symbols from within the solver state:
 
@@ -67,7 +68,7 @@ function get_count(ams::AbstractManoptSolverState, s::Symbol)
 end
 
 function get_count(ams::AbstractManoptSolverState, v::Val{:Iterations})
-    return get_count(ams.stop, v)
+    return get_count(get_stopping_criterion(ams), v)
 end
 @doc """
     get_gradient(agst::AbstractGradientSolverState)
@@ -116,7 +117,7 @@ The default returns `agst.p`.
 get_iterate(agst::AbstractGradientSolverState) = agst.p
 
 @doc """
-    get_message(du::AbstractManoptSolverState)
+    get_message(s::AbstractManoptSolverState)
 
 Get a message (`String`) from internal functors, in a summary.
 This should return any message a sub-step might have issued as well.
@@ -161,7 +162,8 @@ _get_solver_return(::AbstractManifoldObjective, s, ::Val{false}) = get_solver_re
 """
     get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverState)
 
-Return both the objective and the state as a tuple.
+Return both the objective and the solver return value as a tuple.
+The second entry is the state only if `s` is a [`ReturnSolverState`](@ref), and the minimizer otherwise.
 """
 function get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverState)
     return o.objective, get_solver_return(s)
@@ -225,7 +227,7 @@ As long as your decorated state stores the state within `s.state` and
 the internal state is extracted automatically.
 
 By default the state that is stored within a decorated state is assumed to be at
-`s.state`. Overwrite `_get_state(s, ::Val{true}, recursive)` to change this behaviour for your state `s`
+`s.state`. Overwrite `_get_state(s, ::Val{true}, recursive)` to change this behavior for your state `s`
 for both the recursive and the direct case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
@@ -258,6 +260,19 @@ _get_stopping_criterion(ams::AbstractManoptSolverState) = ams.stop
 Return whether the solver has converged, based on the internal [`StoppingCriterion`](@ref).
 """
 has_converged(ams::AbstractManoptSolverState) = has_converged(get_stopping_criterion(ams))
+
+"""
+    _iteration_suffix(ams::AbstractManoptSolverState)
+
+Return `" (converged after 12 iterations)"` or `" (stopped after 12 iterations)"` for the
+number of iterations performed, or `""` if the solver has not been run yet.
+This is used within the `:inline` `context` of [`status_summary`](@ref).
+"""
+function _iteration_suffix(ams::AbstractManoptSolverState)
+    i = get_count(ams, :Iterations)
+    (i > 0) || return ""
+    return (has_converged(ams) ? " (converged" : " (stopped") * " after $i iterations)"
+end
 
 @doc """
     set_gradient!(state::AbstractGradientSolverState, M, p, X)
@@ -371,7 +386,7 @@ function dual_residual(
             N,
             apds.n,
             1 / apds.dual_stepsize * (
-                vector_transport_to(N, n_old, X_old, apds.n, apds.vector_transport_method_dual) - apds.n
+                vector_transport_to(N, n_old, X_old, apds.n, apds.vector_transport_method_dual) - apds.X
             ) - inverse_retract(
                 N, apds.n,
                 forward_operator(

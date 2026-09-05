@@ -9,8 +9,6 @@ Let’s start with the same function as in [🏔️ Get started with Manopt.jl](
 and compute the mean of some points, only that here we use the sphere $\mathbb S^{30}$
 and $n=800$ points.
 
-From the aforementioned example.
-
 We first load all necessary packages.
 
 ``` julia
@@ -34,8 +32,7 @@ data = [exp(M, p, σ * rand(M; vector_at=p)) for i in 1:n];
 
 ## Classical definition
 
-The variant from the previous tutorial defines a cost $f(x)$ and its gradient $\operatorname{grad}f(p)$
-““”
+The variant from the previous tutorial defines a cost $f(p)$ and its gradient $\operatorname{grad}f(p)$
 
 ``` julia
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
@@ -58,16 +55,16 @@ We can also benchmark this as
 @benchmark gradient_descent($M, $f, $grad_f, $p0; stopping_criterion=$sc)
 ```
 
-    BenchmarkTools.Trial: 100 samples with 1 evaluation per sample.
-     Range (min … max):  40.245 ms … 261.552 ms  ┊ GC (min … max):  0.00% … 84.25%
-     Time  (median):     43.807 ms               ┊ GC (median):    13.40%
-     Time  (mean ± σ):   50.333 ms ±  29.326 ms  ┊ GC (mean ± σ):  20.86% ± 10.83%
+    BenchmarkTools.Trial: 109 samples with 1 evaluation per sample.
+     Range (min … max):  40.811 ms … 203.364 ms  ┊ GC (min … max):  0.00% … 81.63%
+     Time  (median):     42.866 ms               ┊ GC (median):    13.02%
+     Time  (mean ± σ):   46.251 ms ±  21.471 ms  ┊ GC (mean ± σ):  18.45% ±  9.91%
 
-      ██                                                            
-      ██▃▄▃▃▁▁▁▃▁▁▂▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂ ▂
-      40.2 ms         Histogram: frequency by time          231 ms <
+      █▁                                                            
+      ██▆▅▄▁▁▁▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▄ ▄
+      40.8 ms       Histogram: log(frequency) by time       200 ms <
 
-     Memory estimate: 129.51 MiB, allocs estimate: 862005.
+     Memory estimate: 129.63 MiB, allocs estimate: 864013.
 
 ## In-place computation of the gradient
 
@@ -77,7 +74,7 @@ The motivation is twofold: on one hand, we want to avoid variables from the glob
 for example the manifold `M` or the `data`, being used within the function.
 Considering to do the same for more complicated cost functions might also be worth pursuing.
 
-Here, we store the data (as reference) and one introduce temporary memory to avoid
+Here, we store the data (as reference) and introduce temporary memory to avoid
 reallocation of memory per `grad_distance` computation. We get
 
 ``` julia
@@ -116,18 +113,19 @@ We can again benchmark this
 ) setup = (m2 = deepcopy($p0))
 ```
 
-    BenchmarkTools.Trial: 165 samples with 1 evaluation per sample.
-     Range (min … max):  29.907 ms …  32.496 ms  ┊ GC (min … max): 0.00% … 0.00%
-     Time  (median):     30.206 ms               ┊ GC (median):    0.00%
-     Time  (mean ± σ):   30.390 ms ± 411.446 μs  ┊ GC (mean ± σ):  0.60% ± 1.15%
+    BenchmarkTools.Trial: 155 samples with 1 evaluation per sample.
+     Range (min … max):  29.994 ms … 71.361 ms  ┊ GC (min … max): 0.00% … 0.00%
+     Time  (median):     30.624 ms              ┊ GC (median):    0.00%
+     Time  (mean ± σ):   32.412 ms ±  6.217 ms  ┊ GC (mean ± σ):  1.83% ± 4.96%
 
-           ▁▃   █▅▄ ▄                                               
-      ▃▁▄▅▇██▆▄▇███▇█▇▅▃▆▅▃▃▃▃▁▃▄▃▁▃▁▁▁▁▁▁▃▃▁▃▁▁▄█▇▄▅▃▆▃▃▃▃▅▁▁▁▁▁▃ ▃
-      29.9 ms         Histogram: frequency by time         31.3 ms <
+      █▆▂▁                                                         
+      ████▆▆▄▆▆▄▁▄▁▆▁▄▄▄▁▁▁▁▁▁▁▄▁▁▁▁▆▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▄▁▁▄ ▄
+      30 ms        Histogram: log(frequency) by time      63.9 ms <
 
-     Memory estimate: 4.46 MiB, allocs estimate: 10312.
+     Memory estimate: 4.45 MiB, allocs estimate: 10071.
 
-which is faster by about a factor of 2 compared to the first solver-call.
+which is faster than the first solver-call and, more importantly, allocates far less memory:
+compare both the memory estimate and the number of allocations of the two runs.
 Note that the results `m1` and `m2` are of course the same.
 
 ``` julia
@@ -148,21 +146,21 @@ This tutorial is cached. It was last run on the following package versions.
       [6e4b80f9] BenchmarkTools v1.8.0
       [5ae59095] Colors v0.13.1
     ⌃ [a0c0ee7d] DifferentiationInterface v0.7.19
-      [31c24e10] Distributions v0.25.129
+    ⌃ [31c24e10] Distributions v0.25.129
       [26cc04aa] FiniteDifferences v0.12.34
-      [f6369f11] ForwardDiff v1.4.1
+    ⌃ [f6369f11] ForwardDiff v1.4.1
       [8ac3fa9e] LRUCache v1.6.2
       [af67fdf4] ManifoldDiff v0.4.5
-      [1cead3c2] Manifolds v0.11.28
-      [3362f125] ManifoldsBase v2.5.0
-      [0fc0a36d] Manopt v0.6.2 `.`
-      [91a5bcdd] Plots v1.41.6
-    ⌃ [731186ca] RecursiveArrayTools v4.3.2
+      [1cead3c2] Manifolds v0.11.29
+    ⌃ [3362f125] ManifoldsBase v2.5.0
+      [0fc0a36d] Manopt v0.6.7 `.`
+      [91a5bcdd] Plots v1.41.7
+      [731186ca] RecursiveArrayTools v4.5.1
       [37e2e46d] LinearAlgebra v1.12.0
       [9a3f8284] Random v1.11.0
     Info Packages marked with ⌃ have new versions available and may be upgradable.
 
-This tutorial was last rendered July 16, 2026, 10:53:10.
+This tutorial was last rendered September 3, 2026, 16:10:43.
 
 ```@raw html
 </details>

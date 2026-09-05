@@ -134,13 +134,12 @@ using ManifoldDiff: grad_distance
         f(M, p) = 1 / 8 * sum(distance.(Ref(M), pts, Ref(p)) .^ 2)
         grad_f(M, p) = 1 / 4 * sum(-log.(Ref(M), Ref(p), pts))
         n2 = gradient_descent(M, f, grad_f, pts[1])
-        n2a = gradient_descent(M, f, grad_f)
         # `gradient_descent` allocated n2 newly
         @test !isapprox(M, pts[1], n2)
         @test isapprox(M, north, n2)
         Random.seed!(43)
         n2a = gradient_descent(M, f, grad_f)
-        # `gradient_descent` allocated n2 newly
+        # `gradient_descent` allocated n2a newly
         @test isapprox(M, north, n2a)
         n3 = gradient_descent(
             M, f, grad_f, pts[1];
@@ -149,9 +148,21 @@ using ManifoldDiff: grad_distance
             debug = [], # do not warn about increasing step here
         )
         @test isapprox(M, north, n3)
+        # with `momentum = 0` the rule reduces to plain gradient descent
+        n3a = gradient_descent(
+            M, f, grad_f, pts[1]; stepsize = ConstantLength(), debug = [],
+        )
+        n3b = gradient_descent(
+            M, f, grad_f, pts[1];
+            direction = MomentumGradient(; momentum = 0.0),
+            stepsize = ConstantLength(),
+            debug = [],
+        )
+        @test isapprox(M, n3a, n3b)
         n4 = gradient_descent(
             M, f, grad_f, pts[1];
             direction = AverageGradient(M; n = 5),
+            stepsize = ConstantLength(),
             stopping_criterion = StopAfterIteration(800),
         )
         @test isapprox(M, north, n4; atol = 1.0e-7)

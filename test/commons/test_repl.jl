@@ -1,4 +1,4 @@
-using Manopt, Test
+using Manifolds, Manopt, Test
 
 @testset "Test REPL printing" begin
     M = Euclidean(1)

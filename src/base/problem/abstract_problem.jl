@@ -63,8 +63,13 @@ function get_objective end
 
 Return the objective [`AbstractManifoldObjective`](@ref) stored within an [`AbstractManoptProblem`](@ref).
 If `recursive` is set to `true`, it additionally unwraps all decorators of the objective.
+
+This default assumes that the objective is stored in the field `objective`.
+A problem that stores it elsewhere has to implement this method itself.
 """
-get_objective(::AbstractManoptProblem)
+function get_objective(mp::AbstractManoptProblem, recursive = false)
+    return recursive ? get_objective(mp.objective, true) : mp.objective
+end
 
 @doc """
     get_cost(amp::AbstractManoptProblem, p)
@@ -77,7 +82,7 @@ function get_cost(amp::AbstractManoptProblem, p)
 end
 
 
-@doc """
+_doc_get_gradient_amp = """
     get_gradient(amp::AbstractManoptProblem, p)
     get_gradient!(amp::AbstractManoptProblem, X, p)
 
@@ -85,9 +90,11 @@ Evaluate the gradient of an [`AbstractManoptProblem`](@ref) `amp` at the point `
 
 This can also be computed in-place of `X` for the `!`-variant.
 """
+@doc "$(_doc_get_gradient_amp)"
 function get_gradient(mp::AbstractManoptProblem, p)
     return get_gradient(get_manifold(mp), get_objective(mp), p)
 end
+@doc "$(_doc_get_gradient_amp)"
 function get_gradient!(mp::AbstractManoptProblem, X, p)
     return get_gradient!(get_manifold(mp), X, get_objective(mp), p)
 end
@@ -105,7 +112,7 @@ function get_gradients!(mp::AbstractManoptProblem, X, p)
     return get_gradients!(get_manifold(mp), X, get_objective(mp), p)
 end
 
-"""
+_doc_get_subtrahend_gradient = """
     X = get_subtrahend_gradient(amp, p)
     get_subtrahend_gradient!(amp, X, p)
 
@@ -118,9 +125,12 @@ An objective using [`AllocatingEvaluation`](@ref) might still allocate memory wi
 When the non-mutating variant is called with an [`InplaceEvaluation`](@ref),
 memory for the result is allocated.
 """
+
+@doc "$(_doc_get_subtrahend_gradient)"
 function get_subtrahend_gradient(amp::AbstractManoptProblem, p)
     return get_subtrahend_gradient(get_manifold(amp), get_objective(amp), p)
 end
+@doc "$(_doc_get_subtrahend_gradient)"
 function get_subtrahend_gradient!(amp::AbstractManoptProblem, X, p)
     get_subtrahend_gradient!(get_manifold(amp), X, get_objective(amp), p)
     return X

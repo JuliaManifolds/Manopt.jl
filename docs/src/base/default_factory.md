@@ -4,7 +4,7 @@
 CurrentModule = Manopt
 ```
 
-Several components of a solver, like the [stepsize](stepsize.md),
+Several components of a solver, like the [step size](stepsize.md),
 might require a manifold to fill several defaults with reasonable values.
 This would mean that when specifying your own step size in a [high-level interface](high-level-interface.md), one would have to repeat the manifold, since it is usually already the first of the arguments of that interface.
 

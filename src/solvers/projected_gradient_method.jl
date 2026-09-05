@@ -3,7 +3,7 @@
 
 # Fields
 
-$(_fields(:stepsize; name = "backtrack")) to determine the step size ``β_k`` step size from ``p_k`` to the candidate ``q_k``
+$(_fields(:stepsize; name = "backtrack")) ``β_k`` from ``p_k`` to the candidate ``q_k``
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 $(_fields(:p; add_properties = [:as_Iterate]))
@@ -14,7 +14,7 @@ $(_fields(:stepsize)) ``α_k`` to determine the ``q_k`` candidate
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields(:X))
 $(_fields(:X; name = "Y"))
-  a temporary memory for a tangent vector to store the no. Used within the backtracking
+  a temporary memory to store the search direction ``Y_k = $(_tex(:retr))_{p_k}^{-1}q_k``, used within the backtracking
 
 # Constructor
 
@@ -23,12 +23,12 @@ $(_fields(:X; name = "Y"))
 ## Keyword arguments
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
-$(_kwargs(:stepsize; name = "backtracking", default = "`[`ArmijoLinesearchStepsize`](@ref)`(M)")) ``p_k`` to the candidate ``q_k``
+$(_kwargs(:stepsize; name = "backtrack", default = "`[`ArmijoLinesearchStepsize`](@ref)`(M)")) ``p_k`` to the candidate ``q_k``
 $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`ConstantStepsize`](@ref)`(M)"))
   ``α_k`` to determine the ``q_k`` candidate
-$(_kwargs(:stopping_criterion; name = "stop", default = "`[`StopAfterIteration`](@ref)`(300)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)"))
 $(_kwargs(:X))
 """
 struct ProjectedGradientMethodState{P, T, C <: AbstractDict{Symbol}, S, S2, SC, RM, IRM} <: AbstractManoptSolverState
@@ -53,8 +53,7 @@ struct ProjectedGradientMethodState{P, T, C <: AbstractDict{Symbol}, S, S2, SC, 
     end
 end
 function ProjectedGradientMethodState(
-        M::AbstractManifold,
-        p = rand(M);
+        M::AbstractManifold, p = rand(M);
         backtrack::Stepsize = ArmijoLinesearchStepsize(M),
         callbacks::C = Dict{Symbol, Function}(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
@@ -74,7 +73,7 @@ function ProjectedGradientMethodState(
         X = X, Y = copy(M, p, X),
     )
 end
-provided_callbacks(::Type{ProjectedGradientMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Backtrack])
+additional_callbacks(::Type{<:ProjectedGradientMethodState}) = [:Backtrack]
 get_callbacks(pgms::ProjectedGradientMethodState) = pgms.callbacks
 get_iterate(pgms::ProjectedGradientMethodState) = pgms.p
 get_gradient(pgms::ProjectedGradientMethodState) = pgms.X
@@ -93,8 +92,7 @@ end
 function status_summary(pgms::ProjectedGradientMethodState; context::Symbol = :default)
     (context === :short) && return repr(pgms)
     i = get_count(pgms, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(pgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the projected gradient solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the projected gradient solver$(_iteration_suffix(pgms))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(pgms.stop) ? "Yes" : "No"
     as = _callbacks_summary(pgms)
@@ -123,8 +121,8 @@ end
 """
     StopWhenProjectedGradientStationary <: StoppingCriterion
 
-Stop when the step taken by the projection is  (before linesearch)
-exactly the opposite of the
+Stop when the projected gradient step is stationary, that is when the distance from the
+last iterate ``p_k`` to the candidate ``q_k`` is less than a threshold ``ε``.
 
 """
 mutable struct StopWhenProjectedGradientStationary{F, TSSA <: StoreStateAction} <:
@@ -135,11 +133,13 @@ mutable struct StopWhenProjectedGradientStationary{F, TSSA <: StoreStateAction} 
     at_iteration::Int
 end
 function StopWhenProjectedGradientStationary(
-        M::AbstractManifold,
-        ε::F;
+        M::AbstractManifold, ε::Real;
         storage::StoreStateAction = StoreStateAction(M; store_points = Tuple{:Iterate}),
-    ) where {F <: Real}
-    return StopWhenProjectedGradientStationary{F, typeof(storage)}(ε, zero(ε), storage, -1)
+    )
+    e = float(ε)
+    return StopWhenProjectedGradientStationary{typeof(e), typeof(storage)}(
+        e, zero(e), storage, -1
+    )
 end
 function (c::StopWhenProjectedGradientStationary)(
         mp::AbstractManoptProblem, pgms::ProjectedGradientMethodState, k::Int
@@ -163,7 +163,7 @@ function (c::StopWhenProjectedGradientStationary)(
 end
 function get_reason(c::StopWhenProjectedGradientStationary)
     if (c.at_iteration >= 0)
-        return "At iteration $(c.at_iteration) algorithm has reached a stationary point, since the distance from the last iterate to the projected gradient ($(c.last_change)) less than $(c.threshold).\n"
+        return "At iteration $(c.at_iteration) the algorithm has reached a stationary point, since the distance from the last iterate to the projected gradient step ($(c.last_change)) is less than $(c.threshold).\n"
     end
     return ""
 end
@@ -215,9 +215,10 @@ $(_args(:p))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:stepsize; name = "backtrack", default = "`[`ArmijoLinesearchStepsize`](@ref)`(M; stop_increasing_at_step=0)")) to perform the backtracking to determine the ``β_k``.
   Note that the method requires ``β_k ≤ 1``, otherwise the projection step no longer provides points within the constraints
-$(_kwargs([:evaluation, :retraction_method]))
-$(_kwargs(:stepsize; default = "`[`ConstantStepsize`](@ref)`(injectivity_radius(M)/2)")) to perform the candidate projected step.
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500) `$(_sc(:Any))` `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)"))
+$(_kwargs([:evaluation, :inverse_retraction_method, :retraction_method]))
+$(_kwargs(:stepsize; default = "`[`ConstantStepsize`](@ref)`(M)")) to perform the candidate projected step.
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenProjectedGradientStationary`](@ref)`(M, 1.0e-7)"))
+$(_kwargs(:X))
 
 $(_note(:OtherKeywords))
 
@@ -236,7 +237,7 @@ function projected_gradient_method(
     )
     return projected_gradient_method(M, cs_obj, p; kwargs...)
 end
-function projected_gradient_method(M, obj::ManifoldConstrainedSetObjective, p; kwargs...)
+function projected_gradient_method(M, obj::ManifoldConstrainedSetObjective, p = rand(M); kwargs...)
     keywords_accepted(projected_gradient_method; kwargs...)
     q = copy(M, p)
     return projected_gradient_method!(M, obj, q; kwargs...)

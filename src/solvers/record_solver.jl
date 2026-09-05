@@ -1,12 +1,13 @@
 """
-    initialize_solver!(ams::AbstractManoptProblem, rss::RecordSolverState)
+    initialize_solver!(amp::AbstractManoptProblem, rss::RecordSolverState)
 
 Extend the initialization of the solver by a hook to run records
 that were added to the `:Start` entry.
 """
 function initialize_solver!(amp::AbstractManoptProblem, rss::RecordSolverState)
     initialize_solver!(amp, rss.state)
-    get(rss.recordDictionary, :Start, RecordGroup())(amp, get_state(rss), 0)
+    # record (k = 1) the :Start entries once
+    get(rss.recordDictionary, :Start, RecordGroup())(amp, get_state(rss), 1)
     # Reset Iteration and Stop
     get(rss.recordDictionary, :Iteration, RecordGroup())(amp, get_state(rss), -1)
     get(rss.recordDictionary, :Stop, RecordGroup())(amp, get_state(rss), -1)
@@ -16,7 +17,7 @@ end
 """
     step_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, k)
 
-Extend the `i`th step of the solver by a hook to run records,
+Extend the `k`th step of the solver by a hook to run records,
 that were added to the `:Iteration` entry.
 """
 function step_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, k)

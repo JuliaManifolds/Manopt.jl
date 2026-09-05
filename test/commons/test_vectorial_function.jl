@@ -13,6 +13,10 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     jac_g!(M, J, p) = (J .= [1.0 0.0; 0.0 -1.0; 0.0 0.0]')
     Dg(M, p, X) = [X[1], -X[2]]; Dg!(M, y, p, X) = (y .= [X[1], -X[2]])
     aDg(M, p, y) = [y[1], -y[2], 0.0]; aDg!(M, X, p, y) = (X .= [y[1], -y[2], 0.0])
+    # component-wise differentials and adjoint differentials
+    Dg1(M, p, X) = X[1]; Dg2(M, p, X) = -X[2]
+    aDg1(M, p, a) = [a, 0.0, 0.0]; aDg1!(M, X, p, a) = (X .= [a, 0.0, 0.0])
+    aDg2(M, p, a) = [0.0, -a, 0.0]; aDg2!(M, X, p, a) = (X .= [0.0, -a, 0.0])
     function grad_g!(M, X, p)
         X[1] .= [1.0, 0.0, 0.0]
         X[2] .= [0.0, -1.0, 0.0]
@@ -55,6 +59,24 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         g!, Dg!, aDg!, 2;
         jacobian_type = FunctionVectorialType(), evaluation = InplaceEvaluation(),
     )
+    vgf_dc = VectorDifferentialFunction(
+        [g1, g2], [Dg1, Dg2], [aDg1, aDg2], 2; function_type = ComponentVectorialType(),
+        jacobian_type = ComponentVectorialType(), adjoint_jacobian_type = ComponentVectorialType(),
+    )
+    vgf_dci = VectorDifferentialFunction(
+        [g1, g2], [Dg1, Dg2], [aDg1!, aDg2!], 2; evaluation = InplaceEvaluation(),
+        function_type = ComponentVectorialType(),
+        jacobian_type = ComponentVectorialType(), adjoint_jacobian_type = ComponentVectorialType(),
+    )
+    vgf_dj = VectorDifferentialFunction(g, jac_g, aDg, 2; jacobian_type = CoefficientVectorialType())
+    vgf_dji = VectorDifferentialFunction(
+        g!, jac_g!, aDg!, 2; jacobian_type = CoefficientVectorialType(), evaluation = InplaceEvaluation(),
+    )
+    # without an adjoint it is derived from the matrix of the differential
+    vgf_dcn = VectorDifferentialFunction(
+        [g1, g2], [Dg1, Dg2], 2; function_type = ComponentVectorialType(), jacobian_type = ComponentVectorialType(),
+    )
+    vgf_djn = VectorDifferentialFunction(g, jac_g, 2; jacobian_type = CoefficientVectorialType())
     show(io, MIME"text/plain"(), vgf_df)
     @test String(take!(io)) == Manopt.status_summary(vgf_df)
     @test startswith(repr(vgf_df), "VectorDifferentialFunction")
@@ -67,6 +89,34 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis
     @test Manopt.get_jacobian_basis(vgf_jib) == DefaultBasis()
     @test Manopt.get_jacobian_basis(vgf_vi) == DefaultOrthonormalBasis()
+    @testset "differential with a number-typed point" begin
+        # a differential returns one number per component, so it must not be wrapped as a
+        # tangent vector – for a number-typed point that wrapping used to throw
+        C = Manifolds.Circle()
+        fn(M, q) = [q - 1.0, -q - 1.0]
+        Dfn(M, q, Y) = [Y, -Y]
+        vdf_n = VectorDifferentialFunction(fn, Dfn, 2; p = 0.5)
+        @test Manopt.get_jacobian(C, vdf_n, 0.5) == [1.0; -1.0;;]
+    end
+    @testset "Jacobian basis changes" begin
+        pb = [1.0, 2.0, 3.0]
+        # two bases of the *same* type that nevertheless differ, so the change is not a no-op
+        b1 = get_basis(M, pb, DefaultOrthonormalBasis())
+        b2 = CachedBasis(
+            DefaultOrthonormalBasis(), [[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
+        )
+        @test typeof(b1) === typeof(b2)
+        @test b1 != b2
+        vgf_cb = VectorGradientFunction(g, jac_g, 2; jacobian_type = CoefficientVectorialType(b1))
+        # identical bases: nothing to do
+        @test Manopt.get_jacobian(M, vgf_cb, pb; basis = b1) == jac_g(M, pb)
+        # same type but different vectors: the columns are permuted accordingly
+        @test Manopt.get_jacobian(M, vgf_cb, pb; basis = b2) == [0.0 1.0 0.0; -1.0 0.0 0.0]
+        # operator form with a basis different from the one the Jacobian is given in
+        a_b = zeros(2)
+        Manopt.get_jacobian!(M, a_b, vgf_ja, pb, [1.0, 2.0, 3.0], DefaultBasis())
+        @test a_b == [1.0, -2.0]
+    end
     p = [1.0, 2.0, 3.0]
     c = [0.0, -3.0]
     jc = [0.0, 3.0, 0.0] #see above c1, -c2, 0
@@ -107,7 +157,10 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         # This wraps the inplace one but still returns the same as the alloc one
         @test hess_g_(M, p, X) == hess_g(M, p, X)
     end
-    for vgf in [vgf_fa, vgf_va, vgf_fi, vgf_vi, vgf_ja, vgf_ji, vhf_fa, vhf_fi, vhf_va, vhf_vi, vgf_df, vgf_dfi]
+    for vgf in [
+            vgf_fa, vgf_va, vgf_fi, vgf_vi, vgf_ja, vgf_ji, vhf_fa, vhf_fi, vhf_va, vhf_vi,
+            vgf_df, vgf_dfi, vgf_dfn, vgf_dc, vgf_dci, vgf_dj, vgf_dji, vgf_dcn, vgf_djn,
+        ]
         @test length(vgf) == 2
         @test get_value(M, vgf, p) == c
         @test get_value(M, vgf, p, :) == c

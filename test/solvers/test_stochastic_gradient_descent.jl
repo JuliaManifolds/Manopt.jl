@@ -88,7 +88,7 @@ using Manopt, Manifolds, Test
         initialize_solver!(dmp1, sgds)
         sgds.order_type = :Linear
         step_solver!(dmp1, sgds, 1)
-        @test sgds.p == exp(M, p, get_gradient(dmp1, p, 1))
+        @test sgds.p == exp(M, p, -get_stepsize(dmp1, sgds, 1) * get_gradient(dmp1, p, 1))
         @test startswith(
             Manopt.status_summary(sgds; context = :default),
             "# Solver state for `Manopt.jl`s Stochastic Gradient Descent\n"
@@ -97,6 +97,12 @@ using Manopt, Manifolds, Test
     end
     @testset "Comparing Stochastic Methods" begin
         q1 = stochastic_gradient_descent(M, sgrad_f1, p; order_type = :Linear)
+        # the stored retraction_method is used (an unimplemented one must throw)
+        struct NoRetraction <: AbstractRetractionMethod end
+        @test_throws MethodError stochastic_gradient_descent(
+            M, sgrad_f1, p;
+            retraction_method = NoRetraction(), stopping_criterion = StopAfterIteration(2),
+        )
         @test is_point(M, q1, true)
         s1 = stochastic_gradient_descent(
             M, sgrad_f1, p; order_type = :Linear, return_state = true
@@ -131,7 +137,7 @@ using Manopt, Manifolds, Test
         Mc = Circle()
         pc = 0.0
         data = [-π / 4, 0.0, π / 4]
-        fc(y) = 1 / 2 * sum([distance(M, y, x)^2 for x in data])
+        fc(M, y) = 1 / 2 * sum([distance(M, y, x)^2 for x in data])
         sgrad_fc(M, y) = [-log(M, y, x) for x in data]
         q1 = stochastic_gradient_descent(Mc, sgrad_fc)
         q2 = stochastic_gradient_descent(Mc, sgrad_fc, pc)

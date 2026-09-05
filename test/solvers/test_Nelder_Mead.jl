@@ -35,6 +35,10 @@ Random.seed!(29)
             set_iterate!(rst, M, ones(6))
             @test get_iterate(rst) == ones(6)
         end
+        # `return_objective=true` was accepted but silently dropped before
+        o1, q1 = NelderMead(M, Rosenbrock; return_objective = true)
+        @test o1 isa ManifoldCostObjective
+        @test q1 isa Vector
     end
 
     @testset "Rotations" begin
@@ -76,8 +80,9 @@ Random.seed!(29)
         M = Circle()
         data = [-π / 2, π / 4, 0.0, π / 4]
         p_star = sum(data) / length(data)
-        @test NelderMeadSimplex(Circle(), 0.0).pts isa Vector{Array{Float64, 0}}
+        @test NelderMeadSimplex(Circle(), 0.0).pts isa Vector{Float64}
         f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
+        @test NelderMead(M, f, NelderMeadSimplex(M, 0.0)) ≈ p_star
         #vector p-cost
         f2(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p[])) .^ 2)
         q = NelderMead(M, f)
@@ -92,5 +97,10 @@ Random.seed!(29)
         population2 = NelderMeadSimplex([[0.1], [-0.1]])
         q4 = NelderMead(M, f2, population2)
         @test isapprox(M, p_star, q4[]; atol = 1.0e-7)
+        # `return_objective=true` is honoured and still unwraps the scalar point
+        o5, q5 = NelderMead(M, f; return_objective = true)
+        @test o5 isa ManifoldCostObjective
+        @test q5 isa Number
+        @test isapprox(M, p_star, q5; atol = 1.0e-7)
     end
 end

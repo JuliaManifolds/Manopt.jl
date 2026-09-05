@@ -19,13 +19,15 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     s = repr(neg_obj)
     @test startswith(s, "ScaledManifoldObjective(ManifoldHessianObjective(")
     @test endswith(s, "-1)")
-    @test repr(neg_obj) == s
     scaled_obj = -1 * obj
+    @test repr(scaled_obj) == s
     @test scaled_obj == neg_obj
     scaled_obj! = -1.0 * obj!
     # just verify that this also works for double decorated ones.
     deco_obj = ScaledManifoldObjective(ManifoldCountObjective(M, obj, [:Cost]), 0.5)
     @test startswith(Manopt.status_summary(scaled_obj), "A scaled version of the objective")
+    @test startswith(Manopt.status_summary(deco_obj), "A scaled version of the objective")
+    @test get_cost(M, deco_obj, p) == 0.5 * f(M, p)
     #
     # Test and compare all accessors
     #
@@ -38,6 +40,9 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
         @test get_hessian(M, s, p, X) == -∇²f(M, p, X)
         get_hessian!(M, Y, s, p, X)
         @test Y == -∇²f(M, p, X)
+        @test Manopt.get_cost_and_gradient(M, s, p) == (-f(M, p), -∇f(M, p))
+        @test Manopt.get_cost_and_gradient!(M, Y, s, p) == (-f(M, p), -∇f(M, p))
+        @test Y == -∇f(M, p)
 
         # Function accessors
         @test Manopt.get_cost_function(o) === Manopt.get_cost_function(s, true)
@@ -58,15 +63,20 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     Y = similar(X)
     Z = similar(X)
     grad_f1! = Manopt.get_gradient_function(scaled_obj!; evaluation = InplaceEvaluation())
-    @test grad_f1 != ∇f!
+    @test grad_f1! != ∇f!
     @test grad_f1!(M, Y, p) == -∇f!(M, Z, p)
     @test Y == -Z
 
-    Hess_f1 = Manopt.get_hessian_function(scaled_obj)
-    @test Hess_f1 != ∇²f
-    @test Hess_f1(M, p, X) == -∇²f(M, p, X)
     Hess_f1! = Manopt.get_hessian_function(scaled_obj!; evaluation = InplaceEvaluation())
-    @test Hess_f1 != ∇²f!
+    @test Hess_f1! != ∇²f!
     @test Hess_f1!(M, Y, p, X) == -∇²f!(M, Z, p, X)
     @test Y == -Z
+    # differential accessors, which require a first order objective with a differential
+    df(M, p, X) = dot(A * p, X)
+    mgo = ManifoldGradientObjective(f, ∇f; differential = df)
+    sfo = -mgo
+    @test Manopt.get_cost_and_differential(M, sfo, p, X) == (-f(M, p), -df(M, p, X))
+    @test Manopt.get_differential(M, sfo, p, X) == -df(M, p, X)
+    @test Manopt.get_differential_function(sfo)(M, p, X) == -df(M, p, X)
+    @test Manopt.get_differential_function(sfo, true) === df
 end

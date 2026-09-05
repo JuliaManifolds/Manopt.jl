@@ -297,21 +297,21 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test length(RecordGroup([RecordCost(), RecordIteration() => :It]).group) == 2
     end
     @testset "RecordTime" begin
-        h1 = RecordTime(; mode = :cumulative)
-        @test repr(h1) == "RecordTime(; mode=:cumulative)"
+        h1 = RecordTime(; mode = :Cumulative)
+        @test repr(h1) == "RecordTime(; mode=:Cumulative)"
         @test Manopt.status_summary(h1, context = :short) == ":Time"
         @test startswith(Manopt.status_summary(h1), "A RecordAction for recording times")
         t = h1.start
         @test t isa Nanosecond
         h1(dmp, gds, 1)
         @test h1.start == t
-        h2 = RecordTime(; mode = :iterative)
+        h2 = RecordTime(; mode = :Iterative)
         t = h2.start
         @test t isa Nanosecond
         sleep(0.002)
         h2(dmp, gds, 1)
         @test h2.start != t
-        h3 = RecordTime(; mode = :total)
+        h3 = RecordTime(; mode = :Total)
         h3(dmp, gds, 1)
         h3(dmp, gds, 10)
         h3(dmp, gds, 19)
@@ -328,5 +328,45 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         r = RecordSolverState(s, RecordIteration())
         Manopt.set_parameter!(r, :value, 1)
         @test Manopt.get_parameter(r, :value) == 1
+    end
+    @testset "RecordTime(:Total) resets" begin
+        Mt = ManifoldsBase.DefaultManifold(2)
+        pt = [1.0, 2.0]
+        ft(M, q) = sum(q .^ 2)
+        grad_ft(M, q) = 2 .* q
+        mpt = DefaultManoptProblem(Mt, ManifoldGradientObjective(ft, grad_ft))
+        st = GradientDescentState(Mt; p = copy(pt), stopping_criterion = StopAfterIteration(5))
+        for mode in (:Total, :Cumulative)
+            rt = RecordTime(; mode = mode)
+            push!(rt.recorded_values, Nanosecond(42))
+            rt(mpt, st, -1)
+            @test isempty(rt.recorded_values)
+        end
+    end
+    @testset "RecordIterate from a type" begin
+        @test RecordIterate(Vector{Float64}) isa RecordIterate{Vector{Float64}}
+        @test RecordIterate([1.0, 2.0]) isa RecordIterate{Vector{Float64}}
+    end
+    @testset "get_record_action resolves the decorator chain" begin
+        M = Euclidean(2)
+        gds = GradientDescentState(M; p = [1.0, 2.0])
+        r = RecordSolverState(gds, RecordIteration())
+        d = DebugSolverState(r, DebugDivider(""))
+        # reachable both directly and through a further decorator
+        @test Manopt.get_record_action(r) === Manopt.get_record_action(d)
+        @test Manopt.get_record_action(d) isa RecordIteration
+    end
+    @testset "records in :Start record once at initialization" begin
+        M = Euclidean(2)
+        q0 = [1.0, 2.0]
+        # `f` is rebound to a record action by the "RecordIterate" testset above, so use fresh names
+        f_start(M, q) = distance(M, q, p)^2
+        grad_f_start(M, q) = -2 * log(M, q, p)
+        rs = gradient_descent(
+            M, f_start, grad_f_start, q0; record = [:Start => [:Cost, :Iterate], :Iteration => [:Cost]],
+            return_state = true, stopping_criterion = StopAfterIteration(2),
+        )
+        @test get_record(rs, :Start) == [(f_start(M, q0), q0)]
+        @test length(get_record(rs, :Iteration)) == 2
     end
 end

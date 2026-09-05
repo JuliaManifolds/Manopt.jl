@@ -16,7 +16,6 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
         return q[i] = p[i] - sign(X[i])
     end
     function oracle(M, p, X)
-        X
         i = argmax(X)
         q = copy(p)
         q[i] = p[i] - sign(X[i])
@@ -38,7 +37,7 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
         @test startswith(repr(s), "FrankWolfeState(")
         # Manifold+State errors since problem is missing
         @test_throws ErrorException FrankWolfeState(M, Manopt.Test.DummyState())
-        set_iterate!(s, 2 .* p)
+        set_iterate!(s, M, 2 .* p)
         @test get_iterate(s) == 2 .* p
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(FC, FG))
         gds = GradientDescentState(M)
@@ -62,6 +61,19 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
             cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
             Frank_Wolfe_method(
                 M, f, grad_f, p; callbacks = cb, stopping_criterion = StopAfterIteration(1)
+            )
+            @test sk_record == [
+                (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+                (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            ]
+        end
+        @testset "Callbacks with a closed form sub solver" begin
+            # the closed form variant advertises the same callbacks, so it has to fire them too
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
+            Frank_Wolfe_method(
+                M, f, grad_f, p; sub_problem = oracle, callbacks = cb,
+                stopping_criterion = StopAfterIteration(1),
             )
             @test sk_record == [
                 (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
@@ -92,7 +104,7 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
         end
         @testset "Number test" begin
             M = Euclidean()
-            fe(M, p) = P
+            fe(M, p) = 0.0
             grad_fe(M, p) = zero_vector(M, p)
             oraclee(M, p, X) = X
             # and since the gradient is zero and oracle hence returns zero, the result is zero

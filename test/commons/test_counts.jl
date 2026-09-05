@@ -45,11 +45,10 @@ using LinearAlgebra: Symmetric
         # Dummy Hessian to call plain costgrad (half)
         obj3 = ManifoldHessianObjective(f, grad_f, (M, p, X) -> X)
         c_obj3 = ManifoldCountObjective(M, obj3, [:Gradient])
-        # Those do not exist but they count
-        @test_throws MethodError Manopt.get_cost_and_gradient(M, c_obj3, p)
-        @test_throws MethodError Manopt.get_cost_and_gradient!(
-            M, zero_vector(M, p), c_obj3, p
-        )
+        # These fall back to cost and gradient separately, and they count
+        @test Manopt.get_cost_and_gradient(M, c_obj3, p) == (f(M, p), grad_f(M, p))
+        @test Manopt.get_cost_and_gradient!(M, zero_vector(M, p), c_obj3, p) ==
+            (f(M, p), grad_f(M, p))
         @test get_count(c_obj3, :Gradient) == 2
         @test get_count(c_obj3, :Cost) == -1 # nonexistent
         @test startswith(repr(c_obj), "ManifoldCountObjective(ManifoldFirstOrderObjective")
@@ -83,7 +82,7 @@ using LinearAlgebra: Symmetric
         X = [0.0, 1.0, zeros(n - 2)...]
         f(M, p) = 0.5 * p' * A * p
         grad_f(M, p) = A * p - (p' * A * p) * p
-        Hess_f(M, p, X) = A * X + (p' * A * X) .* p + (p' * A * p) .* X
+        Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         obj = ManifoldHessianObjective(f, grad_f, Hess_f)
         c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient, :Hessian])
         # undecorated / recursive cost -> exactly f
@@ -111,7 +110,7 @@ using LinearAlgebra: Symmetric
         #
         # And all three for mutating again
         grad_f!(M, X, p) = (X .= A * p - (p' * A * p) * p)
-        Hess_f!(M, Y, p, X) = (Y .= A * X + (p' * A * X) .* p + (p' * A * p) .* X)
+        Hess_f!(M, Y, p, X) = (Y .= A * X - (p' * A * X) .* p - (p' * A * p) .* X)
         obj_i = ManifoldHessianObjective(
             f, grad_f!, Hess_f!; evaluation = InplaceEvaluation()
         )
@@ -134,7 +133,7 @@ using LinearAlgebra: Symmetric
         @test Manopt.get_hessian_function(obj_i) ===
             Manopt.get_hessian_function(c_obj_i, true)
         Hess_f1! = Manopt.get_hessian_function(c_obj_i; evaluation = InplaceEvaluation())
-        @test Hess_f1 != Hess_f
+        @test Hess_f1! != Hess_f!
         @test Hess_f1!(M, Y, p, X) == Hess_f!(M, Z, p, X)
         @test get_count(c_obj_i, :Hessian) == 1 # still counted
     end

@@ -6,6 +6,10 @@ using Manifolds, Manopt, Test
         o = NelderMeadState(M)
         @test startswith(Manopt.status_summary(o), "# Solver state for `Manopt.jl`s Nelder Mead Algorithm")
         @test startswith(repr(o), "NelderMeadState(; ")
+        # every field is separated by ", ", so the repr stays readable and parseable
+        for sep in (", α = ", ", γ = ", ", ρ = ", ", σ = ", ", p = ", ", costs = ")
+            @test occursin(sep, repr(o))
+        end
         o2 = NelderMeadState(M; population = o.population)
         @test o.p == o2.p
         @test o.population == o2.population
@@ -19,7 +23,7 @@ using Manifolds, Manopt, Test
             obj = ManifoldCostObjective(f)
             mp = DefaultManoptProblem(M, obj)
             s = StopWhenPopulationConcentrated(0.1, 0.1)
-            @test startswith(Manopt.status_summary(s), "Stop when the population of a swarm is")
+            @test startswith(Manopt.status_summary(s), "Stop when the population is concentrated")
             @test startswith(repr(s), "StopWhenPopulationConcentrated(")
             # tweak an iteration
             o.costs = [0.0, 0.1]

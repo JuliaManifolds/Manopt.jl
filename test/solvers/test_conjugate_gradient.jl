@@ -28,6 +28,8 @@ using ManifoldDiff: grad_distance
             initial_gradient = zero_vector(M, x0),
         )
         @test startswith(repr(s1), "ConjugateGradientDescentState(; ")
+        # the default stepsize factory is produced into a Stepsize
+        @test ConjugateGradientDescentState(M) isa ConjugateGradientDescentState
         @test s1.coefficient(dmp, s1, 1) == 0
         @test default_stepsize(M, typeof(s1)) isa Manopt.ManifoldDefaultsFactory{Manopt.ArmijoLinesearchStepsize}
         @test Manopt.get_message(s1) == ""
@@ -63,7 +65,7 @@ using ManifoldDiff: grad_distance
         @test s3.coefficient(dmp, s3, 1) == 0.0
         s3.X = grad_2
         s3.δ = δ2
-        @test s3.coefficient(dmp, s3, 2) == dot(grad_2, grad_2) / dot(δ2, grad_2 - grad_1)
+        @test s3.coefficient(dmp, s3, 2) == dot(grad_2, grad_2) / dot(δ1, grad_2 - grad_1)
 
         dU = FletcherReevesCoefficient()
         s4 = ConjugateGradientDescentState(
@@ -232,6 +234,7 @@ using ManifoldDiff: grad_distance
             Manopt.status_summary(x_opt2; context = :default),
             "# Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver",
         )
+        @test contains(Manopt.status_summary(x_opt2; context = :default), "Armijo") # the stepsize section shows the stepsize
         Random.seed!(23)
         x_opt3 = conjugate_gradient_descent(
             M,
@@ -307,7 +310,7 @@ using ManifoldDiff: grad_distance
             stepsize = CubicBracketingLinesearch(; sufficient_curvature = 1.0e-4),
             stopping_criterion = StopAfterIteration(2),
         )
-        @test norm(p1) ≈ 0 atol = 4 * 1.0e-16
+        @test norm(p3) ≈ 0 atol = 4 * 1.0e-16
         @test isapprox(M, p1, p3; atol = 5.0e-8)
     end
 

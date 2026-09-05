@@ -88,8 +88,9 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         f, grad_f!, [g1, g2], [grad_g1!, grad_g2!], [h1], [grad_h1!];
         evaluation = InplaceEvaluation(), inequality_constraints = 2, equality_constraints = 1,
     )
-    rcofa = repr(cofa); rcofm = repr(cofm); rcova = repr(cova); rcofm = repr(covm)
-    for r in [rcofa, rcofm, rcova, rcofm]
+    rcofa = repr(cofa); rcofm = repr(cofm); rcova = repr(cova); rcovm = repr(covm)
+    for r in [rcofa, rcofm, rcova, rcovm]
+        @test get_constraints(M, cofa, p) == [get_inequality_constraint(M, cofa, p, :), get_equality_constraint(M, cofa, p, :)]
         @test startswith(r, "ConstrainedManifoldObjective(ManifoldFirstOrderObjective(; cost = f")
     end
     # Test cost/grad pass through
@@ -178,7 +179,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             @testset "Hessian access for $coh" begin
                 @test get_hessian(M, coh, p, X) == hf
                 Y = zero_vector(M, p)
-                get_hessian!(M, Y, coh, p, X) == hf
+                @test get_hessian!(M, Y, coh, p, X) == hf
                 @test Y == hf
                 #
                 @test get_hess_equality_constraint(M, coh, p, X) == hh
@@ -221,7 +222,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             f, grad_f!; evaluation = InplaceEvaluation()
         )
         co1f = ConstrainedManifoldObjective(
-            f, grad_f!; g = g, grad_g = grad_g, hess_g = hess_g, M = M
+            f, grad_f; g = g, grad_g = grad_g, hess_g = hess_g, M = M
         )
         @test get_equality_constraint(M, co1f, p, :) == []
         @test get_inequality_constraint(M, co1f, p, :) == c[1]
@@ -231,17 +232,17 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test get_hess_inequality_constraint(M, co1f, p, X, :) == hg
 
         co1v = ConstrainedManifoldObjective(
-            f, grad_f!; g = [g1, g2], grad_g = [grad_g1, grad_g2], hess_g = [hess_g1, hess_g2]
+            f, grad_f; g = [g1, g2], grad_g = [grad_g1, grad_g2], hess_g = [hess_g1, hess_g2]
         )
         @test get_equality_constraint(M, co1v, p, :) == []
         @test get_inequality_constraint(M, co1v, p, :) == c[1]
         @test get_grad_equality_constraint(M, co1v, p, :) == []
         @test get_grad_inequality_constraint(M, co1v, p, :) == gg
-        @test get_hess_equality_constraint(M, co1f, p, X, :) == []
-        @test get_hess_inequality_constraint(M, co1f, p, X, :) == hg
+        @test get_hess_equality_constraint(M, co1v, p, X, :) == []
+        @test get_hess_inequality_constraint(M, co1v, p, X, :) == hg
 
         co2f = ConstrainedManifoldObjective(
-            f, grad_f!; h = h, grad_h = grad_h, hess_h = hess_h, M = M
+            f, grad_f; h = h, grad_h = grad_h, hess_h = hess_h, M = M
         )
         @test get_equality_constraint(M, co2f, p, :) == c[2]
         @test get_inequality_constraint(M, co2f, p, :) == []
@@ -251,7 +252,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test get_hess_inequality_constraint(M, co2f, p, X, :) == []
 
         co2v = ConstrainedManifoldObjective(
-            f, grad_f!; h = h, grad_h = grad_h, hess_h = hess_h, M = M
+            f, grad_f; h = [h1], grad_h = [grad_h1], hess_h = [hess_h1]
         )
         @test get_equality_constraint(M, co2v, p, :) == c[2]
         @test get_inequality_constraint(M, co2v, p, :) == []
@@ -425,7 +426,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
                 gf +
                 sum(λ .* gh) +
                 sum(μ .* gg) +
-                sum(((μ ./ s) .* (μ .* (c[1] .+ s) .+ β .- μ .* s)) .* gg)
+                sum(((1 ./ s) .* (μ .* (c[1] .+ s) .+ β .- μ .* s)) .* gg)
             b2 = c[2]
             Nc = M × ℝ^1 # (p,λ)
             qc = rand(Nc)
@@ -445,16 +446,16 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             # Compute by hand – somehow the formula is still missing a Y
             Wc = zero_vector(Nc, qc)
             # (1) Hess L + The g sum + the grad g sum
-            Wc[N, 1] = hf + sum(hg .* μ) + sum(hh .* Yc[2])
+            Wc[Nc, 1] = hf + sum(hess_g(M, p, Yc[Nc, 1]) .* μ) + sum(hh .* λ)
             # (2) grad g terms
-            Wc[N, 1] += sum(
+            Wc[Nc, 1] += sum(
                 (μ ./ s) .*
-                    [inner(Nc[1], qc[N, 1], gg[i], Yc[Nc, 1]) for i in 1:length(gg)] .* gg,
+                    [inner(Nc[1], qc[Nc, 1], gg[i], Yc[Nc, 1]) for i in 1:length(gg)] .* gg,
             )
             # (3) grad h terms (note the Y_2 component)
-            Wc[N, 1] += sum(Yc[N, 2] .* gh)
+            Wc[Nc, 1] += sum(Yc[Nc, 2] .* gh)
             # Second component, just h terms
-            Wc[N, 2] = [inner(Nc[1], qc[N, 1], gh[j], Yc[Nc, 1]) for j in 1:length(gh)]
+            Wc[Nc, 2] = [inner(Nc[1], qc[Nc, 1], gh[j], Yc[Nc, 1]) for j in 1:length(gh)]
             W = CKKTVfJ(Nc, qc, Yc)
             W2 = copy(Nc, qc, Yc)
             CKKTVfJ(Nc, W2, qc, Yc)
@@ -655,7 +656,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         X = get_grad_equality_constraint(M, cofa, p, 1)
         @test get_grad_equality_constraint(M, ccofa, p, 1) == X
         Y = copy(M, p, X)
-        get_grad_equality_constraint!(M, Y, ccofa, p, 1) == X
+        @test get_grad_equality_constraint!(M, Y, ccofa, p, 1) == X
         @test Y == X
         @test get_count(ccofa, :GradEqualityConstraint) == 2
         @test get_count(ccofa, :GradEqualityConstraint, 1) == 2
@@ -777,12 +778,12 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test get_grad_equality_constraint(M, cccofa, p, 1:1) == Xe # cached single
         for i in 1:1
             @test get_grad_equality_constraint(M, cccofa, p, i) == Xe[i] #cached
-            get_grad_equality_constraint!(M, Y, cccofa, p, i) == Xe[i] # cached
+            @test get_grad_equality_constraint!(M, Y, cccofa, p, i) == Xe[i] # cached
             @test Y == Xe[i]
             @test get_count(cccofa, :GradEqualityConstraint, i) == 1
-            get_grad_equality_constraint!(M, Y, cccofa, -p, i) == Xe2[i] # counts
+            @test get_grad_equality_constraint!(M, Y, cccofa, -p, i) == Xe2[i] # counts
             @test Y == Xe2[i]
-            get_grad_equality_constraint!(M, Y, cccofa, -p, i) == Xe2[i] # cached
+            @test get_grad_equality_constraint!(M, Y, cccofa, -p, i) == Xe2[i] # cached
             @test Y == Xe2[i]
             @test get_grad_equality_constraint(M, cccofa, -p, i) == Xe2[i] #cached
             @test get_count(cccofa, :GradEqualityConstraint, i) == 2
@@ -827,7 +828,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             @test get_grad_inequality_constraint!(M, Y, cccofa, p, j) == Xi[j] # cached
             @test get_count(ccofa, :GradInequalityConstraint, j) == 2
             @test get_grad_inequality_constraint!(M, Y, cccofa, -p, j) == Xi2[j] # counts
-            @test get_grad_inequality_constraint(M, cccofa, p, j) == Xi2[j] # cached
+            @test get_grad_inequality_constraint(M, cccofa, -p, j) == Xi2[j] # cached
             @test get_count(ccofa, :GradInequalityConstraint, j) == 3
         end
         @test get_grad_inequality_constraint(M, cccofa, p, :) == Xi # counts
@@ -840,9 +841,9 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test Yi == Xi2
         @test get_count(ccofa, :GradInequalityConstraint, 1) == 3
         @test get_count(ccofa, :GradInequalityConstraint, 2) == 3
-        @test get_grad_inequality_constraint!(M, Yi, cccofa, -p, :) == Xi # counts for full
+        @test get_grad_inequality_constraint!(M, Yi, cccofa, -p, :) == Xi2 # counts for full
         @test Yi == Xi2
-        @test get_grad_inequality_constraint!(M, Yi, cccofa, -p, :) == Xi # cached
+        @test get_grad_inequality_constraint!(M, Yi, cccofa, -p, :) == Xi2 # cached
         @test Yi == Xi2
         get_grad_inequality_constraint!(M, Yi, cccofa, p, 1:2) # cached from full
         @test Yi == Xi
@@ -868,12 +869,12 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         end
         for i in 1:1
             @test get_grad_equality_constraint(M, cccofa, p, i) == Xe[i] #cached
-            get_grad_equality_constraint!(M, Y, cccofa, p, i) == Xe[i] # cached
+            @test get_grad_equality_constraint!(M, Y, cccofa, p, i) == Xe[i] # cached
             @test Y == Xe[i]
             @test get_count(cccofa, :GradEqualityConstraint, i) == 1
-            get_grad_equality_constraint!(M, Y, cccofa, -p, i) == Xe2[i] # counts
+            @test get_grad_equality_constraint!(M, Y, cccofa, -p, i) == Xe2[i] # counts
             @test Y == Xe2[i]
-            get_grad_equality_constraint!(M, Y, cccofa, -p, i) == Xe2[i] # cached
+            @test get_grad_equality_constraint!(M, Y, cccofa, -p, i) == Xe2[i] # cached
             @test Y == Xe2[i]
             @test get_grad_equality_constraint(M, cccofa, -p, i) == Xe2[i] #cached
             @test get_count(cccofa, :GradEqualityConstraint, i) == 2
@@ -884,9 +885,21 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             @test get_grad_inequality_constraint!(M, Y, cccofa, p, j) == Xi[j] # cached
             @test get_count(ccofa, :GradInequalityConstraint, j) == 1
             get_grad_inequality_constraint!(M, Y, cccofa, -p, j) # counts
-            @test Y == Xi[j]
+            @test Y == Xi2[j]
             @test get_grad_inequality_constraint(M, cccofa, -p, j) == Xi2[j] # cached
             @test get_count(ccofa, :GradInequalityConstraint, j) == 2
         end
+        # Reset Counter & Cache (last time) to check the :Constraints cache
+        ccofa = Manopt.objective_count_factory(M, cofa, cache_and_count)
+        cccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, cache_and_count))
+        # to always trigger fallbacks: a cache that does not cache
+        nccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, Vector{Symbol}()))
+        c = get_constraints(M, cofa, p)
+        @test get_constraints(M, cccofa, p) == c # counts
+        @test haskey(cccofa.cache[:Constraints], p) # and is stored
+        @test get_constraints(M, cccofa, p) == c # cached
+        @test get_count(cccofa, :EqualityConstraints) == 1
+        @test get_count(cccofa, :InequalityConstraints) == 1
+        @test get_constraints(M, nccofa, p) == c # fallback
     end
 end

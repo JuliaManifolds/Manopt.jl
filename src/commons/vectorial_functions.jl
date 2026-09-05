@@ -1,9 +1,9 @@
 _maybe_wrap_vector_function(f, p, ::AbstractVectorialType, ::InplaceEvaluation) = f
-function _maybe_wrap_vector_function(f, p, ::FunctionVectorialType, e::AllocatingEvaluation)
+function _maybe_wrap_vector_function(f, p, ::AbstractVectorialType, e::AllocatingEvaluation)
     return maybe_wrap_function(f, p, e; result = :Vector)
 end
 # The single components are like cost – returning numbers, so we only have to wrap mutate
-_maybe_wrap_vector_function(f, p, ::ComponentVectorialType, ::AllocatingEvaluation) = maybe_wrap_function(f, p)
+_maybe_wrap_vector_function(f, p, ::ComponentVectorialType, ::AllocatingEvaluation) = [maybe_wrap_function(fi, p) for fi in f]
 
 _maybe_wrap_jacobian_function(Jf, p, ::AbstractVectorialType, ::InplaceEvaluation) = Jf
 function _maybe_wrap_jacobian_function(Jf, p, ::ComponentVectorialType, e::AllocatingEvaluation)
@@ -11,6 +11,9 @@ function _maybe_wrap_jacobian_function(Jf, p, ::ComponentVectorialType, e::Alloc
 end
 function _maybe_wrap_jacobian_function(Jf, p, ::CoefficientVectorialType, e::AllocatingEvaluation)
     return maybe_wrap_function(Jf, p, e; result = :Matrix)
+end
+function _maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{NestedPowerRepresentation}, e::AllocatingEvaluation)
+    return maybe_wrap_function(Jf, p, e; result = :TangentVectors)
 end
 
 _maybe_wrap_adjoint_jacobian_function(aJf, p, ::AbstractVectorialType, ::InplaceEvaluation) = aJf
@@ -115,7 +118,7 @@ function get_value_function(
 end
 # (c) Jacobian function
 function get_jacobian!(
-        M::AbstractManifold, a, vgf::VectorGradientFunction{FT, <:CoefficientVectorialType}, p, X;
+        M::AbstractManifold, a, vgf::AbstractFirstOrderVectorFunction{FT, <:CoefficientVectorialType}, p, X;
         kwargs...
     ) where {FT}
     B = get_basis(vgf.jacobian_type)
@@ -125,7 +128,7 @@ end
 
 
 function status_summary(vgf::VectorGradientFunction; context::Symbol = :default)
-    _is_inline(context) && (return "A vectorial function including gradients of length $(length(vgf)) represented as $(vgf.cost_type) and gradients as $(vgf.jacobian_type)")
+    _is_inline(context) && (return "A vectorial function of length $(length(vgf)) including gradients represented as $(vgf.cost_type) and gradients as $(vgf.jacobian_type)")
     return """
     A function defined on a manifold that maps into a vector space including gradients of the component functions.
 
@@ -139,7 +142,8 @@ function show(io::IO, vgf::VectorGradientFunction)
     print(io, vgf.jacobian!); print(io, ", "); print(io, vgf.range_dimension)
     print(io, "; ")
     print(io, "function_type = "); print(io, vgf.cost_type); print(io, ", jacobian_type = ")
-    return print(io, vgf.jacobian_type)
+    print(io, vgf.jacobian_type)
+    return print(io, ")")
 end
 
 
@@ -150,7 +154,14 @@ Represent a function ``f:$(_math(:Manifold)) → ℝ^n`` including its first der
 as its differential, and optionally its adjoint differential.
 
 All three can be given either as single functions ([`FunctionVectorialType`](@ref))
-or as vectors of functions ([`ComponentVectorialType`](@ref)).
+or as vectors of functions ([`ComponentVectorialType`](@ref)), the differential also as a
+matrix with respect to a basis ([`CoefficientVectorialType`](@ref)).
+The differential `Jf(M, p, X)` returns ``Df(p)[X] ∈ ℝ^n``, its components `Jf[i](M, p, X)` the numbers ``Df_i(p)[X]``,
+and the matrix form `Jf(M, p)` returns ``J_f(p) ∈ ℝ^{n×d}``.
+The adjoint `aJf(M, p, a)` returns ``Df(p)^*[a] ∈ $(_math(:TangentSpace))``,
+its components `aJf[i](M, p, a_i)` return ``a_i $(_tex(:grad)) f_i(p)``.
+For the [`InplaceEvaluation`](@ref) the result is the second argument; the number-valued
+component differentials are always allocating.
 
 # Fields
 
@@ -184,7 +195,9 @@ or as vectors of functions ([`ComponentVectorialType`](@ref)).
     )
 
 Create a `VectorDifferentialFunction` of `f` and its Jacobian `Jf`, and optionally its adjoint Jacobian.
-If the adjoint is not provided, both it and its type are set to `missing`.
+If the adjoint is not provided, both it and its type are set to `missing`, and the adjoint
+is computed from the matrix of the differential with respect to `get_basis(jacobian_type)`,
+which is then assumed to be orthonormal.
 """
 struct VectorDifferentialFunction{
         FT <: AbstractVectorialType, JT <: AbstractVectorialType, AT <: Union{<:AbstractVectorialType, Missing},
@@ -204,7 +217,7 @@ function VectorDifferentialFunction(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
     ) where {I <: Integer, F, J, FT <: AbstractVectorialType, JT <: AbstractVectorialType}
     f_ = _maybe_wrap_vector_function(f, p, function_type, evaluation)
-    Jf_ = _maybe_wrap_jacobian_function(Jf, p, jacobian_type, evaluation)
+    Jf_ = _maybe_wrap_vector_function(Jf, p, jacobian_type, evaluation)
     return VectorDifferentialFunction{FT, JT, Missing, typeof(f_), typeof(Jf_), Missing, I}(
         f_, function_type, Jf_, jacobian_type, missing, missing, range_dimension
     )
@@ -219,7 +232,7 @@ function VectorDifferentialFunction(
         JT <: AbstractVectorialType, AJT <: Union{<:AbstractVectorialType, Missing},
     }
     f_ = _maybe_wrap_vector_function(f, p, function_type, evaluation)
-    Jf_ = _maybe_wrap_jacobian_function(Jf, p, jacobian_type, evaluation)
+    Jf_ = _maybe_wrap_vector_function(Jf, p, jacobian_type, evaluation)
     aJf_ = _maybe_wrap_adjoint_jacobian_function(aJf, p, adjoint_jacobian_type, evaluation)
     return VectorDifferentialFunction{FT, JT, AJT, typeof(f_), typeof(Jf_), typeof(aJf_), I}(
         f_, function_type, Jf_, jacobian_type, aJf_, adjoint_jacobian_type, range_dimension
@@ -235,23 +248,37 @@ function add_adjoint_jacobian!(
     X .+= Y_cache
     return X
 end
+# component adjoints Df_i^*(p)[a_i] = a_i grad f_i(p)
+function add_adjoint_jacobian!(
+        M::AbstractManifold, X, vgf::VectorDifferentialFunction{FT, JT, <:ComponentVectorialType}, p, a::AbstractVector;
+        Y_cache = zero_vector(M, p)
+    ) where {FT, JT}
+    for (i, aDfi) in enumerate(vgf.adjoint_jacobian!)
+        aDfi(M, Y_cache, p, a[i])
+        X .+= Y_cache
+    end
+    return X
+end
+# no adjoint given: use the transpose of the matrix of the differential (orthonormal basis)
+function add_adjoint_jacobian!(
+        M::AbstractManifold, X, vgf::VectorDifferentialFunction{FT, JT, Missing}, p, a::AbstractVector; Y_cache = nothing
+    ) where {FT, JT}
+    B = get_basis(vgf.jacobian_type)
+    return add_vector!(M, X, p, transpose(get_jacobian(M, vgf, p; basis = B)) * a, B)
+end
 # in coordinates
 function add_adjoint_jacobian!(
-        M::AbstractManifold, c, vgf::VectorDifferentialFunction{FT, JT, <:FunctionVectorialType}, p, a::AbstractVector, B::AbstractBasis; X = nothing, Y_cache = zero_vector(M, p)
-    ) where {FT, JT}
-    vgf.adjoint_jacobian!(M, Y_cache, p, a)
-    add_coordinates!(M, c, p, Y_cache, B)
+        M::AbstractManifold, c, vgf::VectorDifferentialFunction, p, a::AbstractVector, B::AbstractBasis; X = zero_vector(M, p), Y_cache = nothing
+    )
+    add_adjoint_jacobian!(M, X, vgf, p, a)
+    add_coordinates!(M, c, p, X, B)
     return c
 end
 
 function get_gradient(
-        M::AbstractManifold, vgf::VectorDifferentialFunction{FT, JT, <:FunctionVectorialType},
-        p, i::Integer, ::Union{AbstractPowerRepresentation, Nothing} = nothing,
-    ) where {FT <: AbstractVectorialType, JT <: AbstractVectorialType}
-    n = vgf.range_dimension
-    ei = zeros(n); ei[i] = 1
-    X = zero_vector(M, p)
-    return vgf.adjoint_jacobian!(M, X, p, ei)
+        M::AbstractManifold, vgf::VectorDifferentialFunction, p, i::Integer, ::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    )
+    return get_gradient!(M, zero_vector(M, p), vgf, p, i)
 end
 function get_gradient!(
         M::AbstractManifold, X, vgf::VectorDifferentialFunction{FT, JT, <:FunctionVectorialType},
@@ -260,6 +287,13 @@ function get_gradient!(
     n = vgf.range_dimension
     ei = zeros(n); ei[i] = 1
     return vgf.adjoint_jacobian!(M, X, p, ei)
+end
+function get_gradient!(
+        M::AbstractManifold, X, vgf::VectorDifferentialFunction, p, i::Integer, ::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    )
+    n = vgf.range_dimension
+    ei = zeros(n); ei[i] = 1
+    return get_adjoint_jacobian!(M, X, vgf, p, ei)
 end
 
 # Jacobian in matrix form JF
@@ -273,12 +307,33 @@ function get_jacobian!(
     end
     return JF
 end
+# component differentials: one row per component, one column per basis vector
+function get_jacobian!(
+        M::AbstractManifold, JF, vgf::VectorDifferentialFunction{FT, <:ComponentVectorialType}, p;
+        basis::AbstractBasis = get_basis(vgf.jacobian_type), range = nothing,
+    ) where {FT}
+    V = get_vectors(M, p, get_basis(M, p, basis))
+    for (i, Dfi) in enumerate(vgf.jacobian!), j in 1:length(V)
+        JF[i, j] = Dfi(M, p, V[j])
+    end
+    return JF
+end
 # Jacobian in linear operator form
 function get_jacobian!(
         M::AbstractManifold, a, vgf::VectorDifferentialFunction{FT, <:FunctionVectorialType}, p, X;
         range = nothing, Y_cache = nothing, c_cache = allocate_result(M, get_coordinates, p, X, get_basis(vgf.jacobian_type))
     ) where {FT}
     return vgf.jacobian!(M, a, p, X)
+end
+# component differentials Df_i(p)[X]
+function get_jacobian!(
+        M::AbstractManifold, a, vgf::VectorDifferentialFunction{FT, <:ComponentVectorialType}, p, X;
+        range = nothing, Y_cache = nothing, c_cache = nothing,
+    ) where {FT}
+    for (i, Dfi) in enumerate(vgf.jacobian!)
+        a[i] = Dfi(M, p, X)
+    end
+    return a
 end
 # linear operator in coordinates
 function get_jacobian!(
@@ -287,8 +342,15 @@ function get_jacobian!(
     ) where {FT}
     return vgf.jacobian!(M, a, p, get_vector(M, p, c, B))
 end
+function get_jacobian!(
+        M::AbstractManifold, a, vgf::VectorDifferentialFunction{FT, <:ComponentVectorialType}, p, c, B::AbstractBasis;
+        X = zero_vector(M, p), Y_cache = nothing,
+    ) where {FT}
+    get_vector!(M, X, p, c, B)
+    return get_jacobian!(M, a, vgf, p, X)
+end
 function status_summary(vgf::VectorDifferentialFunction; context::Symbol = :default)
-    _is_inline(context) && (return "A vectorial function including its differential $(length(vgf)) represented as $(vgf.cost_type) and its differential as $(vgf.jacobian_type) (adjoint: $(vgf.adjoint_jacobian_type))")
+    _is_inline(context) && (return "A vectorial function of length $(length(vgf)) including its differential, represented as $(vgf.cost_type) and its differential as $(vgf.jacobian_type) (adjoint: $(vgf.adjoint_jacobian_type))")
     return """
     A function defined on a manifold that maps into a vector space including its differential and the adjoint differential.
 
@@ -311,7 +373,8 @@ function show(io::IO, vgf::VectorDifferentialFunction)
         print(io, ", adjoint_jacobian_type = "); print(io, vgf.adjoint_jacobian_type)
     end
     print(io, ", jacobian_type = ")
-    return print(io, vgf.jacobian_type)
+    print(io, vgf.jacobian_type)
+    return print(io, ")")
 end
 
 _doc_vhf = """
@@ -498,11 +561,12 @@ function status_summary(vhf::VectorHessianFunction; context::Symbol = :default)
     * dimension:$(_MANOPT_INDENT)$(length(vhf))"""
 end
 function show(io::IO, vhf::VectorHessianFunction)
-    print(io, "VectorGradientFunction("); print(io, vhf.value!); print(io, ", ")
+    print(io, "VectorHessianFunction("); print(io, vhf.value!); print(io, ", ")
     print(io, vhf.jacobian!); print(io, ", "); print(io, vhf.hessians!); print(io, ", ")
     print(io, vhf.range_dimension); print(io, "; ")
-    print(io, ", function_type = "); print(io, vhf.cost_type)
+    print(io, "function_type = "); print(io, vhf.cost_type)
     print(io, ", jacobian_type = "); print(io, vhf.jacobian_type)
     print(io, ", hessian_type = ")
-    return print(io, vhf.hessian_type)
+    print(io, vhf.hessian_type)
+    return print(io, ")")
 end

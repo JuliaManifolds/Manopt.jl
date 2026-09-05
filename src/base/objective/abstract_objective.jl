@@ -7,8 +7,8 @@ for example when it consists of several summands.
 Subtypes might depend on the kind of objective in order to distinguish different available
 access functionality, e.g. to a gradient, or a proximal map.
 
-Such a default component of the objective like the cost itself or the gradient
-should be implemented in the form
+Such a default component of the objective whose result is stored in a mutable variable,
+like the gradient, should be implemented in the form
 
 ```
 (M, v, args...) -> [...]; v
@@ -16,6 +16,8 @@ should be implemented in the form
 
 where `M` is a $(_link(:AbstractManifold)), `v` is memory the result is computed in,
 as well as further arguments, most prominently usually the current iterate `p`.
+The cost itself is the exception: it returns a number and is evaluated as an allocating
+function `(M, p) -> c`, see [`get_cost_function`](@ref).
 
 For an allocating variant, internally the wrapper [`InplaceManifoldFunction`](@ref) should be used.
 """
@@ -38,7 +40,7 @@ abstract type AbstractDecoratedManifoldObjective{O <: AbstractManifoldObjective}
 @doc """
     ReturnManifoldObjective{O2,O1<:AbstractManifoldObjective} <: AbstractDecoratedManifoldObjective{O2}
 
-A wrapper to indicate that [`get_solver_result`](@ref) should return the inner objective.
+A wrapper to indicate that [`get_solver_return`](@ref) should return the inner objective.
 
 The types are such that one can still dispatch on the undecorated type `O2` of the
 original objective as well.
@@ -47,9 +49,7 @@ struct ReturnManifoldObjective{O2, O1 <: AbstractManifoldObjective} <:
     AbstractDecoratedManifoldObjective{O2}
     objective::O1
 end
-function ReturnManifoldObjective(
-        o::O
-    ) where {O <: AbstractManifoldObjective}
+function ReturnManifoldObjective(o::O) where {O <: AbstractManifoldObjective}
     return ReturnManifoldObjective{O, O}(o)
 end
 function ReturnManifoldObjective(
@@ -103,7 +103,7 @@ As long as your decorated objective stores the objective within `o.objective` an
 the internal objective is extracted automatically.
 
 By default the objective that is stored within a decorated objective is assumed to be at
-`o.objective`. Overwrite `_get_objective(o, ::Val{true}, recursive)` to change this behaviour for your objective `o`
+`o.objective`. Overwrite `_get_objective(o, ::Val{true}, recursive)` to change this behavior for your objective `o`
 for both the recursive and the direct case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.

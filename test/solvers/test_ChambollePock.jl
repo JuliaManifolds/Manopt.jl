@@ -14,7 +14,7 @@ using ManifoldDiff: prox_distance, prox_distance!
     δ = min(α / distance(pixelM, data[1], data[2]), 0.5)
     x_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = TangentBundle(M)
-    fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
+    fidelity(M, x) = 1 / 2 * distance(M, x, data)^2
     Λ(M, x) = ArrayPartition(x, Manopt.Test.forward_logs(M, x))
     function Λ!(M, Y, x)
         N = TangentBundle(M)
@@ -22,7 +22,7 @@ using ManifoldDiff: prox_distance, prox_distance!
         Manopt.Test.forward_logs!(M, Y[N, :vector], x)
         return Y
     end
-    prior(M, x) = norm(norm.(Ref(M.manifold), x, submanifold_component(N, Λ(x), 2)), 1)
+    prior(M, x) = norm(norm.(Ref(M.manifold), x, submanifold_component(N, Λ(M, x), 2)), 1)
     f(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
     prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
     function prox_g_dual(N, n, λ, ξ)
@@ -65,10 +65,15 @@ using ManifoldDiff: prox_distance, prox_distance!
             variant = :linearized,
         )
         @test o1 ≈ o2 atol = 2 * 1.0e-7
+        @test isapprox(M, o1, x_hat; atol = 2 * 1.0e-7)
         callargs_exact = [M, N, f, x0, ξ0, m, n, prox_f, prox_g_dual, adjoint_DΛ]
         o3 = ChambollePock(callargs_exact...; Λ = Λ, relax = :dual, variant = :exact)
         o4 = ChambollePock(callargs_exact...; Λ = Λ, relax = :primal, variant = :exact)
         @test o3 ≈ o4 atol = 2 * 1.0e-7
+        # the default variant matches the provided operator; a mismatch errors
+        o5 = ChambollePock(callargs_linearized...; linearized_forward_operator = DΛ, relax = :dual)
+        @test o5 ≈ o1 atol = 2 * 1.0e-7
+        @test_throws ArgumentError ChambollePock(callargs_exact...; variant = :exact)
         @test o1 ≈ o3
         o1a = ChambollePock(
             callargs_linearized...;

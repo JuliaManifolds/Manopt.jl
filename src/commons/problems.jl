@@ -112,10 +112,15 @@ function get_grad_inequality_constraint(cmp::ConstrainedManoptProblem, p, j = :)
         get_manifold(cmp), get_objective(cmp), p, j, cmp.grad_inequality_range
     )
 end
-function get_grad_inequality_constraint!(amp::AbstractManoptProblem, X, p, j)
-    return get_grad_inequality_constraint!(get_manifold(amp), X, get_objective(amp), p, j)
+function get_grad_inequality_constraint!(
+        amp::AbstractManoptProblem, X, p, j = :,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    return get_grad_inequality_constraint!(
+        get_manifold(amp), X, get_objective(amp), p, j, range
+    )
 end
-function get_grad_inequality_constraint!(cmp::ConstrainedManoptProblem, X, p, j)
+function get_grad_inequality_constraint!(cmp::ConstrainedManoptProblem, X, p, j = :)
     return get_grad_inequality_constraint!(
         get_manifold(cmp), X, get_objective(cmp), p, j, cmp.grad_inequality_range
     )
@@ -133,8 +138,13 @@ function get_hess_equality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X, j
         get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.hess_equality_range
     )
 end
-function get_hess_equality_constraint(amp::AbstractManoptProblem, p, X, j = :)
-    return get_hess_equality_constraint(get_manifold(amp), get_objective(amp), p, X, j)
+function get_hess_equality_constraint(
+        amp::AbstractManoptProblem, p, X, j = :,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    return get_hess_equality_constraint(
+        get_manifold(amp), get_objective(amp), p, X, j, range
+    )
 end
 function get_hess_equality_constraint(cmp::ConstrainedManoptProblem, p, X, j = :)
     return get_hess_equality_constraint(
@@ -169,7 +179,6 @@ function get_hess_inequality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X,
 end
 
 get_manifold(cmp::ConstrainedManoptProblem) = cmp.manifold
-get_objective(cmp::ConstrainedManoptProblem) = cmp.objective
 
 
 function show(io::IO, cmp::ConstrainedManoptProblem)
@@ -234,9 +243,6 @@ end
 
 get_manifold(amp::DefaultManoptProblem) = amp.manifold
 
-function get_objective(amp::DefaultManoptProblem, recursive = false)
-    return recursive ? get_objective(amp.objective, true) : amp.objective
-end
 
 #
 #
@@ -272,8 +278,8 @@ end
 @doc """
     dual_residual(tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old)
 
-Compute the dual residual at current iterate ``k`` given the necessary values ``p_{k-1},
-X_{k-1}``, and ``n_{k-1}`` from the previous iterate. The formula is slightly different depending
+Compute the dual residual at iteration ``k`` given the necessary values ``p_{k-1},
+X_{k-1}``, and ``n_{k-1}`` from the previous iteration. The formula is slightly different depending
 on the `apds.variant` used:
 
 For the `:linearized` it reads
@@ -281,7 +287,7 @@ For the `:linearized` it reads
 $(
     _tex(
         :norm,
-        "$(_tex(:frac, "1", "τ"))$(_tex(:bigl))( V_{n_{k}← n_{k-1}}(X_{k-1}) - X_k $(_tex(:bigr)) ) - DΛ(m_k)$(_tex(:bigl))[ V_{m_k← x_k}$(_tex(:retr))^{-1}_{x_{k}}(x_{k-1})$(_tex(:bigr))]"
+        "$(_tex(:frac, "1", "τ"))$(_tex(:bigl))( V_{n_{k}← n_{k-1}}(X_{k-1}) - X_k $(_tex(:bigr)) ) - DΛ(m_k)$(_tex(:bigl))[ V_{m_k← p_k}$(_tex(:retr))^{-1}_{p_{k}}(p_{k-1})$(_tex(:bigr))]"
     )
 )
 ```
@@ -292,7 +298,7 @@ and for the `:exact` variant
 $(
     _tex(
         :norm,
-        "$(_tex(:frac, "1", "τ")) V_{n_{k}← n_{k-1}}(X_{k-1}) - $(_tex(:retr))^{-1}_{n_{k}}$(_tex(:bigl))( Λ($(_tex(:retr))_{m_{k}}(V_{m_k← x_k}$(_tex(:retr))^{-1}_{x_{k}}x_{k-1}))$(_tex(:bigr)))"
+        "$(_tex(:frac, "1", "τ"))$(_tex(:bigl))( V_{n_{k}← n_{k-1}}(X_{k-1}) - X_k $(_tex(:bigr)) ) - $(_tex(:retr))^{-1}_{n_{k}}$(_tex(:bigl))( Λ($(_tex(:retr))_{m_{k}}(V_{m_k← p_k}$(_tex(:retr))^{-1}_{p_{k}}p_{k-1}))$(_tex(:bigr)))"
     )
 )
 ```
@@ -320,7 +326,6 @@ get_manifold(tmp::TwoManifoldProblem, i) = _get_manifold(tmp, Val(i))
 _get_manifold(tmp::TwoManifoldProblem, ::Val{1}) = tmp.first_manifold
 _get_manifold(tmp::TwoManifoldProblem, ::Val{2}) = tmp.second_manifold
 
-get_objective(tmo::TwoManifoldProblem) = tmo.objective
 
 function get_dual_prox(tmp::TwoManifoldProblem, n, τ, X)
     return get_dual_prox(get_manifold(tmp, 2), get_objective(tmp), n, τ, X)
@@ -349,14 +354,14 @@ end
 @doc """
     primal_residual(tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old)
 
-Compute the primal residual at current iterate ``k`` given the necessary values ``p_{k-1},
-X_{k-1}``, and ``n_{k-1}`` from the previous iterate.
+Compute the primal residual at iteration ``k`` given the necessary values ``p_{k-1},
+X_{k-1}``, and ``n_{k-1}`` from the previous iteration.
 
 ```math
 $(
     _tex(
         :norm,
-        "$(_tex(:frac, "1", "σ"))$(_tex(:retr))^{-1}_{x_{k}}x_{k-1} - V_{x_k←m_k} $(_tex(:bigl))( DΛ^*(m_k)$(_tex(:bigl))[V_{n_k← n_{k-1}}X_{k-1} - X_k $(_tex(:bigr))]$(_tex(:bigr)))"
+        "$(_tex(:frac, "1", "σ"))$(_tex(:retr))^{-1}_{p_{k}}p_{k-1} - V_{p_k←m_k} $(_tex(:bigl))( DΛ^*(m_k)$(_tex(:bigl))[V_{n_k← n_{k-1}}X_{k-1} - X_k $(_tex(:bigr))]$(_tex(:bigr)))"
     )
 )
 ```

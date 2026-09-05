@@ -31,9 +31,7 @@ function NelderMeadSimplex(M::AbstractManifold)
     return NelderMeadSimplex([rand(M) for i in 1:(manifold_dimension(M) + 1)])
 end
 function NelderMeadSimplex(
-        M::AbstractManifold,
-        p,
-        B::AbstractBasis = default_basis(M, typeof(p));
+        M::AbstractManifold, p, B::AbstractBasis = default_basis(M, typeof(p));
         a::Real = 0.025,
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
     )
@@ -42,7 +40,8 @@ function NelderMeadSimplex(
     vecs = [
         get_vector(M, p_, [ifelse(i == j, a, zero(a)) for i in 1:M_dim], B) for j in 0:M_dim
     ]
-    pts = map(X -> retract(M, p_, X, retraction_method), vecs)
+    # p_ is only wrapped for the computation; the simplex holds points of the user's type
+    pts = map(X -> maybe_unwrap_variable(p, retract(M, p_, X, retraction_method)), vecs)
     return NelderMeadSimplex(pts)
 end
 Base.show(io::IO, nms::NelderMeadSimplex) = print(io, "NelderMeadSimplex(", nms.pts, ")")
@@ -60,10 +59,10 @@ of the Euclidean case. The default is given in brackets, the required value rang
 after the description
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
-* `population::`[`NelderMeadSimplex`](@ref): a population (set) of ``d+1`` points ``x_i``, ``i=1,…,n+1``, where ``d``
+* `population::`[`NelderMeadSimplex`](@ref): a population (set) of ``d+1`` points ``p_i``, ``i=1,…,d+1``, where ``d``
   is the $(_link(:manifold_dimension; M = "")) of `M`.
-* `α`: the reflection parameter ``α > 0``:
-* `γ` the expansion parameter ``γ > 0``:
+* `α`: the reflection parameter ``α > 0``,
+* `γ`: the expansion parameter ``γ > 1``,
 * `ρ`: the contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ`: the shrinkage coefficient, ``0 < σ ≤ 1``
 $(_fields(:p))
@@ -74,17 +73,16 @@ $(_fields([:inverse_retraction_method, :retraction_method]))
 
     NelderMeadState(M::AbstractManifold; kwargs...)
 
-Construct a Nelder-Mead Option with a default population (if not provided) of set of
-`dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).
+Construct a Nelder-Mead state with a default population (if not provided) of
+`manifold_dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).
 
 # Keyword arguments
 
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
-* `p=copy(M, population.pts[1])`: initialize the storage for the best point (iterate)¨
+* `p=copy(M, population.pts[1])`: initialize the storage for the best point (iterate)
 * `population=`[`NelderMeadSimplex`](@ref)`(M)`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
-  a [`StoppingCriterion`](@ref)
 * `α=1.0`: reflection parameter, ``α > 0``
 * `γ=2.0`: expansion parameter, ``γ > 1``
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
@@ -146,7 +144,7 @@ mutable struct NelderMeadState{
 end
 function Base.show(io::IO, nms::NelderMeadState)
     print(io, "NelderMeadState(; ")
-    print(io, "callbacks = ", nms.callbacks, ", population = ", nms.population, ", α = ", nms.α, ", γ = ", nms.γ, "ρ = ", nms.ρ, " σ = ", nms.σ)
+    print(io, "callbacks = ", nms.callbacks, ", population = ", nms.population, ", α = ", nms.α, ", γ = ", nms.γ, ", ρ = ", nms.ρ, ", σ = ", nms.σ, ", ")
     print(io, "p = ", nms.p, ", costs = ", nms.costs, ", stopping_criterion = ", nms.stop)
     print(io, ", retraction_method = ", nms.retraction_method, ", inverse_retraction_method = ", nms.inverse_retraction_method)
     return print(io, ")")
@@ -154,8 +152,7 @@ end
 function status_summary(nms::NelderMeadState; context::Symbol = :default)
     (context === :short) && return repr(nms)
     i = get_count(nms, :Iterations)
-    conv_inl = (i > 0) ? (has_converged(nms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the Nelder-Mead solver$(conv_inl)"
+    (context === :inline) && return "A solver state for the Nelder-Mead solver$(_iteration_suffix(nms))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(nms.stop) ? "Yes" : "No"
     as = _callbacks_summary(nms)
@@ -224,7 +221,6 @@ $(_args([:M, :f]))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
-  a [`StoppingCriterion`](@ref)
 * `α=1.0`: reflection parameter, ``α > 0``
 * `γ=2.0`: expansion parameter, ``γ > 1``
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
@@ -243,10 +239,11 @@ end
 function NelderMead(
         M::AbstractManifold, f::F, population::NelderMeadSimplex{P, V}; kwargs...
     ) where {P <: Number, V <: AbstractVector{P}, F <: Function}
-    f_ = (M, p) -> f(M, p[])
+    f_ = maybe_wrap_function(f, P; result = :Number)
     population_ = NelderMeadSimplex([[p] for p in population.pts])
     rs = NelderMead(M, f_, population_; kwargs...)
-    return (P == eltype(rs)) ? rs[] : rs
+    rs isa Tuple && return (rs[1], maybe_unwrap_variable(P, rs[2]))
+    return maybe_unwrap_variable(P, rs)
 end
 function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
     mco = ManifoldCostObjective(f)
@@ -287,7 +284,7 @@ function NelderMead!(
     )
     s = decorate_state!(s; kwargs...)
     solve!(mp, s)
-    return get_solver_return(s)
+    return get_solver_return(get_objective(mp), s)
 end
 calls_with_kwargs(::typeof(NelderMead!)) = (decorate_objective!, decorate_state!)
 
@@ -412,7 +409,7 @@ function status_summary(c::StopWhenPopulationConcentrated; context::Symbol = :de
     (context === :short) && (return repr(c))
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    head = (!_is_inline(context) ? "Stop when the population of a swarm is concentrated in eher function values (tolerance: $(c.tol_f)) or points (tolerance: $(c.tol_p))\n$(_MANOPT_INDENT)" : "")
+    head = (!_is_inline(context) ? "Stop when the population is concentrated in both function values (tolerance: $(c.tol_f)) and points (tolerance: $(c.tol_p))\n$(_MANOPT_INDENT)" : "")
     return head * "Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):$(_MANOPT_INDENT)$s"
 end
 function Base.show(io::IO, c::StopWhenPopulationConcentrated)

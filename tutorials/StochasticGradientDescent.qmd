@@ -12,8 +12,8 @@ the Riemannian Center of Mass or [Fréchet mean](https://en.wikipedia.org/wiki/F
 for given points ``` ``p_i ∈\mathcal M``, ``i=1,…,N`` ```{=commonmark} this optimization problem reads
 
 ```math
-\operatorname*{arg\,min}_{x∈\mathcal M} \frac{1}{2}\sum_{i=1}^{N}
-  \operatorname{d}^2_{\mathcal M}(x,p_i),
+\operatorname*{arg\,min}_{p∈\mathcal M} \frac{1}{2N}\sum_{i=1}^{N}
+  \operatorname{d}^2_{\mathcal M}(p,p_i),
 ```
 
 which of course can be (and is) solved by a gradient descent, see the introductory
@@ -60,7 +60,7 @@ The first variant is of course easier to define, but the second is more efficien
 For the mean, the gradient is
 
 ```math
-\operatorname{grad}f(p) = \sum_{i=1}^N \operatorname{grad}f_i(x) \quad \text{where} \operatorname{grad}f_i(x) = -\log_x p_i
+\operatorname{grad}f(p) = \frac{1}{N}\sum_{i=1}^N \operatorname{grad}f_i(p) \quad\text{ where }\quad \operatorname{grad}f_i(p) = -\log_p p_i
 ```
 
 which we define in `Manopt.jl` in two different ways:
@@ -69,7 +69,7 @@ either as one function returning all gradients as a vector (see `gradF`), or, ma
 
 ```{julia}
 F(M, p) = 1 / (2 * n) * sum(map(q -> distance(M, p, q)^2, data))
-gradF(M, p) = [grad_distance(M, p, q) for q in data]
+gradF(M, p) = [grad_distance(M, q, p) for q in data]
 gradf = [(M, p) -> grad_distance(M, q, p) for q in data];
 p0 = 1 / sqrt(3) * [1.0, 1.0, 1.0]
 ```
@@ -80,7 +80,7 @@ of the functions in the second array of functions.
 So while you can use both `gradF` and `gradf` in the following call, the second one is (much) faster:
 
 ```{julia}
-p_opt1 = stochastic_gradient_descent(M, gradF, p)
+p_opt1 = stochastic_gradient_descent(M, gradF, p0)
 ```
 ```{julia}
 @benchmark stochastic_gradient_descent($M, $gradF, $p0)
@@ -93,12 +93,11 @@ p_opt2 = stochastic_gradient_descent(M, gradf, p0)
 ```
 
 
-This result is reasonably close. But we can improve it by using a [`DirectionUpdateRule`](@ref), namely:
+This result is reasonably close. We can also modify the search direction by using a [`DirectionUpdateRule`](@ref), namely:
 
-On the one hand [`MomentumGradient`](@ref), which requires both the manifold and the initial value, to keep track of the iterate and parallel transport the last direction to the current iterate.
+On the one hand [`MomentumGradient`](@ref), which keeps track of the iterate and parallel transports the last direction to the current iterate.
 The necessary `vector_transport_method=` keyword is set to a suitable default on every manifold,
 see ``[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)``{=commonmark}. We get
-"""
 
 ```{julia}
 p_opt3 = stochastic_gradient_descent(
@@ -108,22 +107,22 @@ p_opt3 = stochastic_gradient_descent(
 
 ```{julia}
 MG = MomentumGradient(; direction=StochasticGradient());
-@benchmark stochastic_gradient_descent($M, $gradf, p=$p0; direction=$MG)
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$MG)
 ```
 
 And on the other hand the [`AverageGradient`](@ref) computes an average of the last `n` gradients. This is done by
 
 ```{julia}
 p_opt4 = stochastic_gradient_descent(
-    M, gradf, p0; direction=AverageGradient(; n=10, direction=StochasticGradient()), debug=[],
+    M, gradf, p0; direction=AverageGradient(; n=10, direction=StochasticGradient()),
 )
 ```
 ```{julia}
-AG = AverageGradient(; n=10, direction=StochasticGradient(M));
-@benchmark stochastic_gradient_descent($M, $gradf, p=$p0; direction=$AG, debug=[])
+AG = AverageGradient(; n=10, direction=StochasticGradient());
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$AG)
 ```
 
-Note that the default [`StoppingCriterion`](@ref) is a fixed number of iterations which helps the comparison here.
+Note that the default [`StoppingCriterion`](@ref) here is [`StopAfterIteration`](@ref)`(10000)` combined with [`StopWhenGradientNormLess`](@ref)`(1e-9)`.
 
 For both update rules we have to internally specify that we are still in the stochastic setting,
 since both rules can also be used with the ``[`IdentityUpdateRule`](@ref Manopt.IdentityUpdateRule)``{=commonmark} within [`gradient_descent`](@ref).

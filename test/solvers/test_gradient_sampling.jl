@@ -34,6 +34,15 @@ _debug_gradient_sampling = false
         record = [:Iteration, :Cost, RecordGradientNorm()]
     )
 
+    @testset "documented constructor" begin
+        # the `convex_hull_coeffs` default must not mention the static parameter `R`
+        sd = GradientSamplingState(M)
+        @test length(sd.convex_hull_coeffs) == 6
+        @test eltype(sd.convex_hull_coeffs) === Float64
+        sd7 = GradientSamplingState(M; sample_size = 7)
+        @test length(sd7.convex_hull_coeffs) == 8
+    end
+
     s2 = get_state(m2, true)
     @test startswith(repr(s2), "GradientSamplingState(; ")
     @test startswith(Manopt.status_summary(s2), "# Solver state for `Manopt.jl`s Gradient Sampling Algorithm")

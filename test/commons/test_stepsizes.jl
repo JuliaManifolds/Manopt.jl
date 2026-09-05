@@ -96,7 +96,15 @@ end
     @test startswith(repr(s2.bb_stepsize), "BarzilaiBorweinStepsize(; ")
     @test startswith(Manopt.status_summary(s2), "Non-monotone linesearch")
     @test startswith(Manopt.status_summary(s2.bb_stepsize), "Barzilai–Borwein stepsize\n")
+    # infinite injectivity radius: the default max_stepsize falls back to 1.0
+    @test Manopt.BarzilaiBorweinStepsize(Euclidean(2)).max_stepsize == 1.0
 
+
+    # mixed numeric keyword types promote instead of erroring
+    @test Manopt.CubicBracketingLinesearchStepsize(M; initial_stepsize = 1).initial_stepsize === 1.0
+    # gradient-free backtracking falls back to a plain decrease condition
+    s0 = Manopt.linesearch_backtrack(Euclidean(2), (M, q) -> sum(q .^ 2), [1.0, 2.0], 1.0, 1.0e-4, 0.5, [-1.0, -2.0])
+    @test s0 > 0
 
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
@@ -126,7 +134,7 @@ end
     @testset "Linesearch safeguards" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = sum(2 .* p)
+        grad_f(M, p) = 2 .* p
         p = [2.0, 2.0]
         msgs = (;
             non_descent_direction = Manopt.StepsizeMessage{Float64, Float64}(),
@@ -219,9 +227,9 @@ end
         gds = GradientDescentState(M; p = p, stepsize = bb)
         # Check both modes to use BB
         # (1) vector transport when providing a last stepsize – no history -> max
-        bb(dmp, gds, 1; last_stepsize = 1.0) == bb.max_stepsize
+        @test bb(dmp, gds, 1; last_stepsize = 1.0) == bb.max_stepsize
         # (1) vector transport when providing a last stepsize - we did not actually move - still max
-        bb(dmp, gds, 1) == bb.max_stepsize
+        @test bb(dmp, gds, 1) == bb.max_stepsize
     end
     @testset "Polyak Stepsize" begin
         M = Euclidean(2)
@@ -334,6 +342,10 @@ end
         @test startswith(repr(hzls), "HagerZhangLinesearch(;")
         @test startswith(Manopt.status_summary(hzls), "HagerZhangLinesearch(;")
         @test Manopt.get_message(hzls) == ""
+        # numeric keywords may be passed in any real type and are promoted to a common one
+        hzls_int = Manopt.HagerZhangLinesearchStepsize(M; stepsize_limit = 1, ρ = 5)
+        @test hzls_int.stepsize_limit === 1.0
+        @test hzls_int.ρ === 5.0
 
         α = hzls(dmp, gs, 1, η)
         @test isfinite(α)
@@ -358,8 +370,8 @@ end
         end
         @testset "Wolfe condition modes" begin
             hzls_default = Manopt.HagerZhangLinesearchStepsize(M)
-            hzls.current_mode = :invalid_mode
-            @test_throws ErrorException hzls(dmp, gs, 1, η)
+            hzls_default.current_mode = :invalid_mode
+            @test_throws ErrorException hzls_default(dmp, gs, 1, η)
         end
 
 
@@ -830,10 +842,10 @@ end
 
     end
     @testset "Distance over Gradients Stepsize" begin
-        @testset "does not use sectional cuvature (Eucludian)" begin
+        @testset "does not use sectional curvature (Euclidean)" begin
             M = Euclidean(2)
             f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            grad_f(M, p) = 2 .* p
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p = p)
@@ -855,12 +867,12 @@ end
             summary = Manopt.status_summary(ds)
             @test startswith(summary, "A distance over gradients step size")
             lr = ds(dmp, gds, 0)
-            @test lr == 0.125
+            @test lr ≈ 1 / (4 * sqrt(2))
         end
-        @testset "use sectional cuvature (Euclidian)" begin
+        @testset "use sectional curvature (Euclidean)" begin
             M = Euclidean(2)
             f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            grad_f(M, p) = 2 .* p
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p = p)
@@ -877,12 +889,12 @@ end
             @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
-            @test lr == 0.125
+            @test lr ≈ 1 / (4 * sqrt(2))
         end
-        @testset "do not use sectional cuvature (Sphere)" begin
+        @testset "do not use sectional curvature (Sphere)" begin
             M = Sphere(1)
-            f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            f(M, p) = 2 * p[2]
+            grad_f(M, p) = project(M, p, [0.0, 2.0])
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [1, 0]
             gds = GradientDescentState(M; p = p)
@@ -898,10 +910,10 @@ end
             lr = ds(dmp, gds, 0)
             @test lr == 0.5
         end
-        @testset "use sectional cuvature (Sphere)" begin
+        @testset "use sectional curvature (Sphere)" begin
             M = Sphere(1)
-            f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            f(M, p) = 2 * p[2]
+            grad_f(M, p) = project(M, p, [0.0, 2.0])
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [1, 0]
             gds = GradientDescentState(M; p = p)
@@ -961,7 +973,7 @@ end
         @testset "Simple Rayleigh coefficient" begin
             # Minimize negative Rayleigh quotient on the sphere S^1
             M = Sphere(1)
-            A = [1.0 0; 0 1.0]
+            A = [2.0 0; 0 1.0]
 
             f(M, p) = -p' * A * p
 
@@ -978,7 +990,7 @@ end
             )
 
             # 1e-6 is the maximum rtol for the test to pass on 1.10; it works without specifying rtol on 1.11
-            @test f(M, x) ≈ -1 rtol = 1.0e-6
+            @test f(M, x) ≈ -2 rtol = 1.0e-6
         end
         @testset "Distance from Hyperbolic to origin" begin
             M = Hyperbolic(2)
@@ -1037,7 +1049,7 @@ end
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p = [2.0, 2.0]
         gs = GradientDescentState(M; p = p)
-        # large sufficient curvatuture to trigger stop inc.
+        # large sufficient curvature to trigger stop inc.
         wpls = WolfePowellLinesearch(M; stop_increasing_at_step = 1, stop_decreasing_at_step = 1)()
         wpls(dmp, gs, 1)
         # This set the dec message

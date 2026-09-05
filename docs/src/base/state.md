@@ -12,7 +12,7 @@ A state can be [decorated](state/decorator.md) to add functionality.
 
 Further elements a state can use are:
 
-* a [stepsize](stepsize.md)
+* a [step size](stepsize.md)
 * a [sub solver and sub state](state/sub.md)
 
 ## Abstract state

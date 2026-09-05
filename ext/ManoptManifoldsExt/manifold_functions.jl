@@ -1,4 +1,4 @@
-function Manopt.add_vector!(M::Hyperrectangle, X, p, c::AbstractVector, basis::AbstractBasis{ℝ})
+function Manopt.add_vector!(M::Hyperrectangle, X, p, c::AbstractVector, basis::DefaultOrthonormalBasis{ℝ})
     S = representation_size(M)
     X .+= reshape(c, S)
     return X
@@ -9,15 +9,12 @@ end
 function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{ArrayPowerRepresentation}, e::AllocatingEvaluation)
     return Manopt.maybe_wrap_function(Jf, p, e; result = :Matrix)
 end
-function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{NestedPowerRepresentation}, e::AllocatingEvaluation)
-    return Manopt.maybe_wrap_function(Jf, p, e; result = :TangentVectors)
-end
 
 """
-    default_point_distance(::DefaultManifold, p)
+    default_point_distance(::Euclidean, p)
 
 Following [HagerZhang:2006:2](@cite), the expected distance to the optimal solution from `p`
-on `DefaultManifold` is the `Inf` norm of `p`.
+on `Euclidean` is the `Inf` norm of `p`.
 """
 Manopt.default_point_distance(::Euclidean, p) = norm(p, Inf)
 
@@ -37,7 +34,7 @@ lower (or upper) bounds.
 """
 Manopt.get_bounds_index(M::Hyperrectangle) = eachindex(M.lb)
 """
-    get_stepsize_bound(M::Hyperrectangle, x, d, i)
+    get_stepsize_bound(M::Hyperrectangle, p, d, i)
 
 Get the upper bound on moving in direction `d` from point `p` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`,
 for the bound index `i`. There are three cases:
@@ -135,7 +132,7 @@ function mid_point(M::Circle, p, q, x)
     if distance(M, p, q) ≈ π
         X = 0.5 * log(M, p, q)
         Y = log(M, p, x)
-        return exp(M, p, (sign(X) == sign(Y) ? 1 : -1) * X)
+        return exp(M, p, (sign(X[]) == sign(Y[]) ? 1 : -1) * X)
     end
     return mid_point(M, p, q)
 end

@@ -1,7 +1,7 @@
 using Manopt, Manifolds, Test
 
 struct DummyCGCoeff <: DirectionUpdateRule end
-(::DummyCGCoeff)(pr, st, k; kwagrs...) = 0.2
+(::DummyCGCoeff)(pr, st, k; kwargs...) = 0.2
 (::Manopt.DirectionUpdateRuleStorage{DummyCGCoeff})(pr, st, k) = 0.2
 Manopt.update_rule_storage_points(::DummyCGCoeff) = Tuple{}
 Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
@@ -65,7 +65,7 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         s1 = "Manopt.ConjugateGradientBealeRestartRule(Manopt.ConjugateDescentCoefficientRule(); threshold=0.2, vector_transport_method=$(pt))"
         @test repr(cgbr) == s1
         cgbr2 = Manopt.ConjugateGradientBealeRestartRule(ConjugateDescentCoefficient())
-        @test cgbr.threshold == cgbr.threshold
+        @test cgbr2.threshold == cgbr.threshold
         @test repr(LiuStoreyCoefficient(M)()) ==
             "Manopt.LiuStoreyCoefficientRule(; vector_transport_method=$pt)"
         hcs = repr(HybridCoefficient(PolakRibiereCoefficient(), FletcherReevesCoefficient())(M))
@@ -74,5 +74,23 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         @test contains(hcs, "Manopt.FletcherReevesCoefficientRule")
         @test contains(hcs, "Manopt.SteepestDescentCoefficientRule")
         @test contains(hcs, "lower_bound_scale = 1.0")
+    end
+    @testset "Dai-Yuan on a point-dependent metric" begin
+        # the denominator inner product is evaluated at the new point
+        Ms = SymmetricPositiveDefinite(2)
+        f(M, q) = distance(M, q, [1.0 0.0; 0.0 1.0])^2
+        grad_f(M, q) = -2 * log(M, q, [1.0 0.0; 0.0 1.0])
+        dmp = DefaultManoptProblem(Ms, ManifoldGradientObjective(f, grad_f))
+        p_old = [2.0 0.0; 0.0 1.0]
+        cgs = ConjugateGradientDescentState(Ms; p = [1.5 0.1; 0.1 1.0])
+        cgs.X = grad_f(Ms, cgs.p)
+        X_old = grad_f(Ms, p_old)
+        δ_old = -X_old
+        dy = Manopt.DaiYuanCoefficientRule(Ms)
+        β = dy(dmp, cgs, 1; p = p_old, X = X_old, δ = δ_old)
+        vtm = dy.vector_transport_method
+        ν = cgs.X - vector_transport_to(Ms, p_old, X_old, cgs.p, vtm)
+        δtr = vector_transport_to(Ms, p_old, δ_old, cgs.p, vtm)
+        @test β ≈ inner(Ms, cgs.p, cgs.X, cgs.X) / inner(Ms, cgs.p, δtr, ν)
     end
 end

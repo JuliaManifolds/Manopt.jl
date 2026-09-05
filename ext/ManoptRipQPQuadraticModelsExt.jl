@@ -90,16 +90,12 @@ function proximal_bundle_method_subsolver!(
     return λ
 end
 
-function gradient_sampling_subsolver(
-        M::AbstractManifold, p, sampled_gradients
-    )
+function gradient_sampling_subsolver(M::AbstractManifold, p, sampled_gradients)
     λ = zeros(length(sampled_gradients))
     gradient_sampling_subsolver!(M, λ, p, sampled_gradients)
     return λ
 end
-function gradient_sampling_subsolver!(
-        M::AbstractManifold, λ, p, sampled_gradients
-    )
+function gradient_sampling_subsolver!(M::AbstractManifold, λ, p, sampled_gradients)
     d = length(sampled_gradients)
     T = eltype(λ)
     H = [inner(M, p, X, Y) for X in sampled_gradients, Y in sampled_gradients]

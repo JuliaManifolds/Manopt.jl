@@ -1,7 +1,7 @@
 @doc """
     RecordChange <: RecordAction
 
-debug for the amount of change of the iterate (see [`get_iterate`](@ref)`(s)` of the [`AbstractManoptSolverState`](@ref))
+record the amount of change of the iterate (see [`get_iterate`](@ref)`(s)` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration.
 
 # Fields
@@ -9,7 +9,7 @@ during the last iteration.
 * `storage`                   : a [`StoreStateAction`](@ref) to store (at least) the last
   iterate to use this as the last value (to compute the change) serving as a potential cache
   shared with other components of the solver.
-$(_kwargs(:inverse_retraction_method))
+$(_kwargs(:inverse_retraction_method; p = ""))
 * `recorded_values`           : to store the recorded values
 
 # Constructor
@@ -113,7 +113,7 @@ record a certain fields entry of type {T} during the iterates
 
 # Fields
 
-* `recorded_values` : the recorded Iterates
+* `recorded_values` : the recorded values of the entry
 * `field`           : Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
 
 # Constructor
@@ -152,7 +152,7 @@ end
     RecordDualIterate(X)
 
 Create a [`RecordAction`](@ref) that records the dual iterate,
-an [`RecordEntry`](@ref) of the field `X` of the state.
+a [`RecordEntry`](@ref) of the field `X` of the state.
 """
 RecordDualIterate(X) = RecordEntry(X, :X)
 
@@ -160,7 +160,7 @@ RecordDualIterate(X) = RecordEntry(X, :X)
     RecordDualBaseIterate(n)
 
 Create a [`RecordAction`](@ref) that records the dual base point,
-an [`RecordEntry`](@ref) of the field `n` of the state.
+a [`RecordEntry`](@ref) of the field `n` of the state.
 """
 RecordDualBaseIterate(n) = RecordEntry(n, :n)
 
@@ -172,10 +172,10 @@ record a certain entries change during iterates
 
 # Additional fields
 
-* `recorded_values` : the recorded Iterates
+* `recorded_values` : the recorded change values
 * `field`           : Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
-* `distance`        : function (p,o,x1,x2) to compute the change/distance between two values of the entry
-* `storage`         : a [`StoreStateAction`](@ref) to store (at least) `getproperty(o, d.field)`
+* `distance`        : function `(amp, ams, x1, x2)` to compute the change/distance between two values of the entry
+* `storage`         : a [`StoreStateAction`](@ref) to store (at least) the last value of the entry `field`
 
 # Constructor
 
@@ -215,20 +215,35 @@ end
     RecordDualBaseChange()
 
 Create a [`RecordAction`](@ref) that records the dual base point change,
-an [`RecordEntryChange`](@ref) of the field `n` with distance to the last value to store a value.
+a [`RecordEntryChange`](@ref) of the field `n` with distance to the last value to store a value.
 """
 function RecordDualBaseChange()
-    return RecordEntryChange(:n, (p, o, x, y) -> distance(get_manifold(p, 2), x, y))
+    return RecordEntryChange(
+        :n,
+        (amp, ams, x, y) -> distance(get_manifold(amp, 2), x, y, ams.inverse_retraction_method_dual),
+    )
 end
 
 """
     RecordDualChange()
 
 Create a [`RecordAction`](@ref) that records the change of the dual iterate,
-an [`RecordEntryChange`](@ref) of the field `X` with distance to the last value to store a value.
+a [`RecordEntryChange`](@ref) of the field `X` with distance to the last value to store a value.
 """
 function RecordDualChange()
-    return RecordEntryChange(:X, (p, o, x, y) -> distance(get_manifold(p, 2), x, y))
+    storage = StoreStateAction([:X, :n])
+    return RecordEntryChange(
+        :X,
+        (amp, ams, X, X_old) -> begin
+            N = get_manifold(amp, 2)
+            n_old = has_storage(storage, :n) ? get_storage(storage, :n) : ams.n
+            return norm(
+                N, ams.n,
+                vector_transport_to(N, n_old, X_old, ams.n, ams.vector_transport_method_dual) - X,
+            )
+        end,
+        storage,
+    )
 end
 
 
@@ -237,8 +252,8 @@ end
 
 record the gradient evaluated at the current iterate
 
-# Constructors
-    RecordGradient(ξ)
+# Constructor
+    RecordGradient(X)
 
 initialize the [`RecordAction`](@ref) to the corresponding type of the tangent vector.
 """
@@ -287,11 +302,11 @@ end
 record the iterate
 
 # Constructors
-    RecordIterate(x0)
+    RecordIterate(p0)
 
-initialize the iterate record array to the type of `x0`, which indicates the kind of iterate
+initialize the iterate record array to the type of `p0`, which indicates the kind of iterate
 
-    RecordIterate(P)
+    RecordIterate(T::DataType)
 
 initialize the iterate record array to the data type `T`.
 """
@@ -300,9 +315,10 @@ mutable struct RecordIterate{T} <: RecordAction
     RecordIterate{T}() where {T} = new(Array{T, 1}())
 end
 RecordIterate(::T) where {T} = RecordIterate{T}()
+RecordIterate(d::DataType) = RecordIterate{d}()
 function RecordIterate()
     return throw(
-        ErrorException("The iterate's data type has to be provided, RecordIterate(x0).")
+        ErrorException("The iterate's data type has to be provided, RecordIterate(p0).")
     )
 end
 function (r::RecordIterate{T})(
@@ -347,7 +363,7 @@ RecordPrimalChange() = RecordChange()
 """
     RecordPrimalIterate(p)
 
-Create a [`RecordAction`](@ref) that records the primal point, an [`RecordIterate`](@ref) of the iterate `p`.
+Create a [`RecordAction`](@ref) that records the primal point, a [`RecordIterate`](@ref) of the iterate `p`.
 """
 RecordPrimalIterate(p) = RecordIterate(p)
 
@@ -355,16 +371,16 @@ RecordPrimalIterate(p) = RecordIterate(p)
     RecordPrimalBaseChange()
 
 Create a [`RecordAction`](@ref) that records the primal base point change,
-an [`RecordEntryChange`](@ref) of the field `m` with distance to the last value to store a value.
+a [`RecordEntryChange`](@ref) of the field `m` with distance to the last value to store a value.
 """
 function RecordPrimalBaseChange()
-    return RecordEntryChange(:m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y))
+    return RecordEntryChange(:m, (amp, ams, p1, p2) -> distance(get_manifold(amp, 1), p1, p2))
 end
 
 """
     RecordPrimalBaseIterate(m)
 
-Create a [`RecordAction`](@ref) that records the primal base point, an [`RecordEntry`](@ref) of the field `m` of the state.
+Create a [`RecordAction`](@ref) that records the primal base point, a [`RecordEntry`](@ref) of the field `m` of the state.
 """
 RecordPrimalBaseIterate(m) = RecordEntry(m, :m)
 
@@ -372,8 +388,9 @@ RecordPrimalBaseIterate(m) = RecordEntry(m, :m)
 @doc """
     RecordProximalParameter{R <: Real} <: RecordAction
 
-record the current iterates proximal point algorithm parameter given by in
-[`AbstractManoptSolverState`](@ref)s `o.λ`.
+record the current proximal point algorithm parameter ``λ_k``, given by `s.λ(k)`
+of the corresponding [`AbstractManoptSolverState`](@ref) `s`, for example the
+[`CyclicProximalPointState`](@ref).
 
 ## Constructor
     RecordProximalParameter(r::Type{<:Real}=Float64)
@@ -401,7 +418,7 @@ mutable struct RecordStepsize{R <: Real} <: RecordAction
     recorded_values::Array{R, 1}
     RecordStepsize(r::Type{<:Real} = Float64) = new{r}(Array{r, 1}())
 end
-function (r::RecordStepsize)(p::AbstractManoptProblem, s::AbstractGradientSolverState, k)
+function (r::RecordStepsize)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k)
     return record_or_reset!(r, get_last_stepsize(p, s, k), k)
 end
 show(io::IO, ::RecordStepsize{R}) where {R} = print(io, "RecordStepsize($R)")
@@ -437,32 +454,32 @@ end
 record the time elapsed during the current iteration.
 
 The three possible modes are
-* `:cumulative` record times without resetting the timer
-* `:iterative` record times with resetting the timer
-* `:total` record a time only at the end of an algorithm (see [`stop_solver!`](@ref))
+* `:Cumulative` record times without resetting the timer
+* `:Iterative` record times with resetting the timer
+* `:Total` record a time only at the end of an algorithm (see [`stop_solver!`](@ref))
 
-The default is `:cumulative`, and any non-listed symbol default to using this mode.
+The default is `:Cumulative`, and any non-listed symbol defaults to using this mode.
 
 # Constructor
 
-    RecordTime(; mode::Symbol=:cumulative)
+    RecordTime(; mode::Symbol=:Cumulative)
 """
 mutable struct RecordTime <: RecordAction
     recorded_values::Array{Nanosecond, 1}
     start::Nanosecond
     mode::Symbol
-    function RecordTime(; mode::Symbol = :cumulative)
+    function RecordTime(; mode::Symbol = :Cumulative)
         return new(Array{Nanosecond, 1}(), Nanosecond(time_ns()), mode)
     end
 end
 function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    # At iteration zero also reset start
-    (k == 0) && (r.start = Nanosecond(time_ns()))
+    # At initialization and reset (k <= 0) also reset start
+    (k <= 0) && (r.start = Nanosecond(time_ns()))
     t = Nanosecond(time_ns()) - r.start
-    (r.mode == :iterative) && (r.start = Nanosecond(time_ns()))
-    if r.mode == :total
+    (r.mode == :Iterative) && (r.start = Nanosecond(time_ns()))
+    if r.mode == :Total
         # only record at end (if `stop_solver` returns true)
-        return record_or_reset!(r, t, (k > 0 && stop_solver!(p, s, k)) ? k : 0)
+        return record_or_reset!(r, t, (k > 0 && !stop_solver!(p, s, k)) ? 0 : k)
     else
         return record_or_reset!(r, t, k)
     end
@@ -471,9 +488,9 @@ function Base.show(io::IO, ri::RecordTime)
     return print(io, "RecordTime(; mode=:$(ri.mode))")
 end
 function status_summary(ri::RecordTime; context::Symbol = :default)
-    (context == :short) && return (ri.mode === :iterative ? ":IterativeTime" : ":Time")
+    (context == :short) && return (ri.mode === :Iterative ? ":IterativeTime" : ":Time")
     # Inline and Default:
-    return "A RecordAction for recording times" * (ri.mode == :iterative ? " iteratively" : ".")
+    return "A RecordAction for recording times" * (ri.mode == :Iterative ? " iteratively" : ".")
 end
 
 #
@@ -484,24 +501,27 @@ end
 
 Generate a dictionary of [`RecordAction`](@ref)s.
 
-First all `Symbol`s `String`, [`RecordAction`](@ref)s and numbers are collected,
-excluding `:Stop` and `:WhenActive`.
+First all `Symbol`s and [`RecordAction`](@ref)s are collected,
+excluding `:Stop`, `:WhenActive` and any `Int`.
 This collected vector is added to the `:Iteration => [...]` pair.
-`:Stop` is added as `:StoppingCriterion` to the `:Stop => [...]` pair.
-If any of these two pairs does not exist, it is pairs are created when adding the corresponding symbols
+`:Stop` is added as a [`RecordStoppingReason`](@ref) to the `:Stop => [...]` pair.
+If any of these two pairs does not exist, it is created when adding the corresponding entries.
 
 For each `Pair` of a `Symbol` and a `Vector`, the [`RecordGroupFactory`](@ref)
-is called for the `Vector` and the result is added to the debug dictionary's entry
+is called for the `Vector` and the result is added to the record dictionary's entry
 with said symbol. This is wrapped into the [`RecordWhenActive`](@ref),
-when the `:WhenActive` symbol is present
+when the `:WhenActive` symbol is present.
+
+If an `Int` `k` is present, all entries but `:Start` and `:Stop` are wrapped
+into a [`RecordEvery`](@ref)`(k)`.
 
 # Return value
 
-A dictionary for the different entry points where debug can happen, each containing
+A dictionary for the different entry points where recording can happen, each containing
 a [`RecordAction`](@ref) to call.
 
-Note that upon the initialization all dictionaries but the `:StartAlgorithm`
-one are called with an `i=0` for reset.
+Note that upon the initialization all dictionaries but the `:Start`
+one are called with a `k=-1` for reset.
 """
 function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})
     # filter out :Iteration defaults
@@ -549,12 +569,12 @@ RecordFactory(s::AbstractManoptSolverState, a) = RecordFactory(s, [a])
 @doc """
     RecordGroupFactory(s::AbstractManoptSolverState, a)
 
-Generate a [`RecordGroup`] of [`RecordAction`](@ref)s. The following rules are used
+Generate a [`RecordGroup`](@ref) of [`RecordAction`](@ref)s. The following rules are used
 
 1. Any `Symbol` contained in `a` is passed to [`RecordActionFactory`](@ref RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))
 2. Any [`RecordAction`](@ref) is included as is.
 Any Pair of a `RecordAction` and a symbol, that is in order `RecordCost() => :A` is handled,
-that the corresponding record action can later be accessed as `g[:A]`, where `g`is the record group generated here.
+that the corresponding record action can later be accessed as `g[:A]`, where `g` is the record group generated here.
 
 If this results in more than one [`RecordAction`](@ref) a [`RecordGroup`](@ref) of these is build.
 
@@ -599,16 +619,18 @@ end
 create a [`RecordAction`](@ref) where
 
 * a [`RecordAction`](@ref) is passed through
-* a [`Symbol`] creates
+* a `Symbol` creates
   * `:Change`        to record the change of the iterates, see [`RecordChange`](@ref)
   * `:Cost`          to record the current cost function value
   * `:Gradient`      to record the gradient, see [`RecordGradient`](@ref)
-  * `:GradientNorm`: to record the norm of the gradient, see [`RecordGradientNorm`](@ref)
+  * `:GradientNorm`  to record the norm of the gradient, see [`RecordGradientNorm`](@ref)
   * `:Iterate`       to record the iterate
   * `:Iteration`     to record the current iteration number
   * `:IterativeTime` to record the times taken for each iteration.
   * `:ProximalParameter` to record the proximal parameter, see [`RecordProximalParameter`](@ref)
   * `:Stepsize`      to record the current step size
+  * `:Stop`          to record the reason the solver stopped, see [`RecordStoppingReason`](@ref)
+  * `:Subsolver`     to record the sub solver's record, see [`RecordSubsolver`](@ref)
   * `:Time`          to record the total time taken after every iteration
 
 and every other symbol is passed to [`RecordEntry`](@ref), which results in recording the
@@ -623,12 +645,12 @@ function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :GradientNorm) && return RecordGradientNorm()
     (symbol == :Iterate) && return RecordIterate(get_iterate(s))
     (symbol == :Iteration) && return RecordIteration()
-    (symbol == :IterativeTime) && return RecordTime(; mode = :iterative)
+    (symbol == :IterativeTime) && return RecordTime(; mode = :Iterative)
     (symbol == :ProximalParameter) && return RecordProximalParameter()
     (symbol == :Stepsize) && return RecordStepsize()
     (symbol == :Stop) && return RecordStoppingReason()
     (symbol == :Subsolver) && return RecordSubsolver()
-    (symbol == :Time) && return RecordTime(; mode = :cumulative)
+    (symbol == :Time) && return RecordTime(; mode = :Cumulative)
     return RecordEntry(getfield(s, symbol), symbol)
 end
 @doc """
@@ -638,7 +660,7 @@ create a [`RecordAction`](@ref) where
 
 * (`:Subsolver`, s) creates a [`RecordSubsolver`](@ref) with `record=` set to the second tuple entry
 
-For other symbol the second entry is ignored and the symbol is used to generate a [`RecordEntry`](@ref)
+For any other symbol the second entry is ignored and the symbol is used to generate a [`RecordEntry`](@ref)
 recording the field with the name `symbol` of `s`.
 """
 function RecordActionFactory(s::AbstractManoptSolverState, t::Tuple{Symbol, T}) where {T}

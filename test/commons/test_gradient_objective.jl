@@ -22,6 +22,10 @@ using ManifoldsBase, Manopt, Test
     mgo = ManifoldGradientObjective(f, grad_f)
     mp = DefaultManoptProblem(M, mgo)
     @test get_initial_stepsize(mp, gst) == 1.0
+    # keywords and extra positional arguments are accepted, also through a decorator
+    @test get_initial_stepsize(mp, gst; gradient = zero_vector(M, p)) == 1.0
+    @test get_initial_stepsize(mp, gst, 1) == 1.0
+    @test get_initial_stepsize(mp, DebugSolverState(gst, DebugDivider("")); gradient = zero_vector(M, p)) == 1.0
     @test get_stepsize(mp, gst, 1) == 1.0
     @test get_last_stepsize(mp, gst, 1) == 1.0
     # Check Fallbacks of Problem
@@ -107,7 +111,7 @@ using ManifoldsBase, Manopt, Test
         @test get_gradient(M, mgo, p) == get_gradient(M, ddo, p)
         X = zero_vector(M, p)
         Y = zero_vector(M, p)
-        get_gradient!(M, X, ddo, p)
+        get_gradient!(M, X, mgo, p)
         get_gradient!(M, Y, ddo, p)
         @test X == Y
         @test Manopt.get_gradient_function(ddo) == Manopt.get_gradient_function(mgo)
@@ -179,7 +183,7 @@ using ManifoldsBase, Manopt, Test
             @test get_differential(M, obj, p, X) == d
             @test Manopt.get_cost_and_differential(M, obj, p, X) == (c, d)
             # using gradient!
-            @test get_differential(M, obj, p, X; Y = Y) == d
+            @test get_differential(M, obj, p, X; gradient = Y) == d
             @test Manopt.get_cost_and_differential(M, obj, p, X; gradient = Y) == (c, d)
             @test Manopt.get_differential_function(obj)(M, p, X) == d
         end
@@ -235,8 +239,18 @@ using ManifoldsBase, Manopt, Test
         @test contains(Manopt.status_summary(agr), "Average Gradient Rule")
 
         nr = Nesterov()(M) # Actually produces a rule
+        @test Nesterov(; γ = 1.0f0)(M).γ === 1.0 # mixed types promote
         @test startswith(repr(nr), "NesterovRule")
         @test contains(Manopt.status_summary(nr), "Nesterov Rule")
+        # after one call, γ reflects the positive root of α² = h((1-α)γ + αμ)
+        f2(M, q) = sum(q .^ 2)
+        grad_f2(M, q) = 2 .* q
+        dmp2 = DefaultManoptProblem(M, ManifoldGradientObjective(f2, grad_f2))
+        nr2 = Nesterov(; γ = 0.001, μ = 0.9)(M)
+        st2 = GradientDescentState(M; p = [1.0, 2.0], stepsize = Manopt.ConstantStepsize(M, 0.01))
+        nr2(dmp2, st2, 1)
+        αr = (0.01 * (0.9 - 0.001) + sqrt(0.01^2 * (0.9 - 0.001)^2 + 4 * 0.01 * 0.001)) / 2
+        @test nr2.γ ≈ ((1 - αr) * 0.001 + αr * 0.9) / (1 + 0.8)
 
         pr = PreconditionedDirection((M, Y, p, X) -> copyto!(M, Y, p, X); evaluation = InplaceEvaluation())(M)
         @test startswith(repr(pr), "PreconditionedDirectionRule")

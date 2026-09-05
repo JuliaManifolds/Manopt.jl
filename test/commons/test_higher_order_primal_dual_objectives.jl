@@ -1,8 +1,16 @@
 using Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
-using Manopt.Test: forward_logs, adjoint_differential_forward_logs
+using Manopt.Test:
+    adjoint_differential_forward_logs,
+    adjoint_differential_forward_logs!,
+    differential_forward_logs,
+    differential_forward_logs!,
+    forward_logs,
+    project_collaborative_TV,
+    project_collaborative_TV!
 using ManifoldDiff:
     differential_shortest_geodesic_startpoint,
     differential_shortest_geodesic_startpoint!,
+    prox_distance,
     prox_distance!
 @testset "Test higher order primal dual objectives" begin
     # Perform an really easy test, just compute a mid point
@@ -12,18 +20,15 @@ using ManifoldDiff:
     M = PowerManifold(pixelM, NestedPowerRepresentation(), 2 * signal_section_size)
     data = [[1.0, 0.0, 0.0], 1 / sqrt(2) .* [1.0, 1.0, 0.0]]
     α = 1
-    # known minimizer
-    δ = min(α / distance(pixelM, data[1], data[2]), 0.5)
-    p_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = M
-    fidelity(M, p) = 1 / 2 * distance(M, p, f)^2
+    fidelity(M, p) = 1 / 2 * distance(M, p, data)^2
     Λ(M, p) = ArrayPartition(p, forward_logs(M, p))
-    prior(M, p) = norm(norm.(Ref(M.manifold), p, submanifold_component(N, Λ(p), 2)), 1)
+    prior(M, p) = norm(norm.(Ref(M.manifold), p, submanifold_component(N, Λ(M, p), 2)), 1)
     f(M, p) = (1 / α) * fidelity(M, p) + prior(M, p)
     prox_f(M, λ, p) = prox_distance(M, λ / α, data, p, 2)
     prox_f!(M, q, λ, p) = prox_distance!(M, q, λ / α, data, p, 2)
     prox_g_dual(N, n, λ, X) = project_collaborative_TV(N, λ, n, X, Inf, Inf, 1.0)
-    prox_g_dual!(N, η, n, λ, X) = project_collaborative_TV(N, η, λ, n, X, Inf, Inf, 1.0)
+    prox_g_dual!(N, η, n, λ, X) = project_collaborative_TV!(N, η, λ, n, X, Inf, Inf, 1.0)
     DΛ(M, m, X) = differential_forward_logs(M, m, X)
     DΛ!(M, Y, m, X) = differential_forward_logs!(M, Y, m, X)
     adjoint_DΛ(N, m, n, X) = adjoint_differential_forward_logs(M, m, X)

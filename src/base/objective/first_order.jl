@@ -50,8 +50,13 @@ function get_cost_and_differential(amp::AbstractManoptProblem, p, X; kwargs...)
     return get_cost_and_differential(get_manifold(amp), get_objective(amp), p, X; kwargs...)
 end
 
-function get_cost_and_gradient! end
-@doc """
+function get_cost_and_differential(
+        M::AbstractManifold, objective::AbstractManifoldFirstOrderObjective, p, X; kwargs...
+    )
+    return (get_cost(M, objective, p), get_differential(M, objective, p, X; kwargs...))
+end
+
+_doc_get_cost_and_gradient = """
     (c, X) = get_cost_and_gradient(problem::AbstractManoptProblem, p)
     (c, X) = get_cost_and_gradient(M, objective::AbstractManifoldFirstOrderObjective, p)
     (c, X) = get_cost_and_gradient!(M, X, objective::AbstractManifoldFirstOrderObjective, p)
@@ -63,6 +68,11 @@ Similarly, any objective decorator would “pass through” to its inner objecti
 
 The gradient part can be evaluated in-place of `X`.
 """
+
+@doc "$(_doc_get_cost_and_gradient)"
+function get_cost_and_gradient! end
+
+@doc "$(_doc_get_cost_and_gradient)"
 function get_cost_and_gradient(
         M::AbstractManifold, mfo::AbstractManifoldFirstOrderObjective, p
     )
@@ -82,6 +92,11 @@ function get_cost_and_gradient!(
     )
     return get_cost_and_gradient!(M, X, get_objective(admo, false), p)
 end
+function get_cost_and_gradient!(
+        M::AbstractManifold, X, objective::AbstractManifoldFirstOrderObjective, p
+    )
+    return (get_cost(M, objective, p), get_gradient!(M, X, objective, p))
+end
 
 """
      get_differential(amp::AbstractManoptProblem, p, X; kwargs...)
@@ -96,17 +111,17 @@ By default this falls back to ``Df(p)[X] = ⟨$(_tex(:grad))f(p), X⟩``.
 
 # Keyword arguments
 
-* `gradient=nothing`: pass a tangent vector to be used internally as interim memory,
+* `gradient=missing`: pass a tangent vector to be used internally as interim memory,
   for example in the default variant to evaluate the gradient in-place.
 * `evaluated=false`: indicate whether `gradient` is just memory (`false`, default) or
   already contains the evaluated gradient (`true`).
 """
 function get_differential(
         M::AbstractManifold, objective::AbstractManifoldFirstOrderObjective, p, X;
-        gradient = nothing, evaluated::Bool = false,
+        gradient = missing, evaluated::Bool = false,
     )
-    isnothing(gradient) && (return real(inner(M, p, get_gradient(M, objective, p), X)))
-    # if it is not nothing call in-place
+    ismissing(gradient) && (return real(inner(M, p, get_gradient(M, objective, p), X)))
+    # if it is not missing call in-place
     (!evaluated) && (get_gradient!(M, gradient, objective, p))
     return real(inner(M, p, gradient, X))
 end
@@ -187,7 +202,7 @@ function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursi
     return get_gradient_function(get_objective(admo, recursive); evaluation = evaluation)
 end
 
-"""
+_doc_get_subgradient = """
     X = get_subgradient(M::AbstractManifold, agmo::AbstractManifoldFirstOrderObjective, p)
     get_subgradient!(M::AbstractManifold, X, agmo::AbstractManifoldFirstOrderObjective, p)
 
@@ -196,10 +211,13 @@ gradient itself.
 
 While in general, the result might not be deterministic, for this case it is.
 """
+
+@doc "$(_doc_get_subgradient)"
 function get_subgradient(M::AbstractManifold, agmo::AbstractManifoldFirstOrderObjective, p)
     X = zero_vector(M, p)
     return get_subgradient!(M, X, agmo, p)
 end
+@doc "$(_doc_get_subgradient)"
 function get_subgradient!(
         M::AbstractManifold, X, agmo::AbstractManifoldFirstOrderObjective, p
     )
