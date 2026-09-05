@@ -15,7 +15,6 @@ using Manifolds
 
 Rn(::Val{:Manifolds}, args...; kwargs...) = Euclidean(args...; kwargs...)
 
-const NONMUTATINGMANIFOLDS = Union{Circle, PositiveNumbers, Euclidean{Tuple{}}}
 include("manifold_functions.jl")
 include("ChambollePockManifolds.jl")
 include("test_examples.jl")

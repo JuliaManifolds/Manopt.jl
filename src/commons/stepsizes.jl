@@ -194,7 +194,7 @@ function get_message(::Val{:stepsize_exceeds}, k::Int = -1, value::Real = NaN, b
     s = (k == 0) ? "the beginning" : "iteration #$k"
     s_str = isnan(value) ? "" : "Reducing to $value"
     b_str = isnan(bound) ? "" : "($bound)"
-    return (k > 0) ? "At $s: Maximal step size bound $b_str exceeded. $s_str." : ""
+    return (k >= 0) ? "At $s: Maximal step size bound $b_str exceeded. $s_str." : ""
 end
 """
     get_message(:stop_decreasing, k::Int=-1, step::Real = NaN)
@@ -207,7 +207,7 @@ function get_message(::Val{:stop_decreasing}, k::Int = -1, value::Real = NaN, bo
     s = (k == 0) ? "the beginning" : "iteration #$k"
     s_str = isnan(bound) ? "" : "($bound)"
     v_str = isnan(value) ? "" : "Continuing with a stepsize of $value."
-    return (k > 0) ? "At $s: Maximal number of decrease steps $s_str reached. Aborting decrease. $v_str" : ""
+    return (k >= 0) ? "At $s: Maximal number of decrease steps $s_str reached. Aborting decrease. $v_str" : ""
 end
 """
     get_message(:stop_increasing, k::Int=-1, step::Real = NaN)
@@ -220,7 +220,7 @@ function get_message(::Val{:stop_increasing}, k::Int = -1, value::Real = NaN, bo
     s = (k == 0) ? "the beginning" : "iteration #$k"
     s_str = isnan(bound) ? "" : "($bound)"
     v_str = isnan(value) ? "" : "Continuing with a stepsize of $value."
-    return (k > 0) ? "At $s: Maximal number of increase steps $s_str reached. Aborting increase. $v_str" : ""
+    return (k >= 0) ? "At $s: Maximal number of increase steps $s_str reached. Aborting increase. $v_str" : ""
 end
 """
     get_message(:stepsize_less, k::Int=-1, step::Real = NaN, bound::Real = NaN)
@@ -233,7 +233,7 @@ function get_message(::Val{:stepsize_less}, k::Int = -1, value::Real = NaN, boun
     s = (k == 0) ? "the beginning" : "iteration #$k"
     s_str = isnan(value) ? "" : " Falling back to a stepsize of $value."
     b_str = isnan(bound) ? "" : "($bound)"
-    return (k > 0) ? "At $s: Minimal stepsize less than bound $b_str reached.$s_str" : ""
+    return (k >= 0) ? "At $s: Minimal stepsize less than bound $b_str reached.$s_str" : ""
 end
 
 #
@@ -253,11 +253,11 @@ based on the search direction `X`.
   checking a valid increase has to be fulfilled. The default accepts all points.
 * `candidate_point`:               to store an interim result
 * `initial_stepsize`:              an initial step size
-$(_kwargs(:retraction_method))
+$(_fields(:retraction_method))
 * `contraction_factor`:            factor the step size is multiplied with in the backtracking loop
 * `sufficient_decrease`:           gain within Armijo's rule
 * `last_stepsize`:                 the last step size to start the search with
-$(_kwargs(:initial_guess))
+$(_fields(:initial_guess))
 * `messages::NamedTuple`:          a named tuple to store possible [`StepsizeMessage`](@ref) about the stepsize search.
 * `stop_when_stepsize_less`:       smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds`:    largest stepsize when to stop.
@@ -631,7 +631,7 @@ Then, given the last gradient ``X_{k-1} = $(_tex(:grad)) f(p_{k-1})``,
 and a previous ``ω_{k-1}``, the values ``(b_k, ω_k, c_k)`` are computed
 using ``X_k = $(_tex(:grad)) f(p_k)`` and the following cases
 
-If ``$(_tex(:norm, "X_k"; index = "p_k")) ≤ αω_{k-1}``, then let
+If ``$(_tex(:norm, "X_k"; index = "p_k")) < αω_{k-1}``, then let
 ``$(_tex(:hat, "b"))_{k-1} ∈ [b_{$(_tex(:text, "min"))},b_{k-1}]`` and set
 
 ```math
@@ -644,7 +644,7 @@ If ``$(_tex(:norm, "X_k"; index = "p_k")) ≤ αω_{k-1}``, then let
 )
 ```
 
-If ``$(_tex(:norm, "X_k"; index = "p_k")) > αω_{k-1}``, then set
+If ``$(_tex(:norm, "X_k"; index = "p_k")) ≥ αω_{k-1}``, then set
 
 ```math
 (b_k, ω_k, c_k) = $(_tex(:Bigl))( b_{k-1} + $(_tex(:frac, _tex(:norm, "X_k"; index = "p_k") * "^2", "b_{k-1}")), ω_{k-1}, 0 $(_tex(:Bigr)))
@@ -671,7 +671,7 @@ function AdaptiveWNGradient(args...; kwargs...)
 end
 
 @doc """
-    BarzilaiBorweinStepsize{T, R<:Real, IRM, RM, VTM, TSSA} <: Stepsize
+    BarzilaiBorweinStepsize{T, R<:Real, IRM, VTM, TSSA} <: Stepsize
 
 Compute a stepsize based on the Barzilai-Borwein rule. See [`BarzilaiBorwein`](@ref)
 for details
@@ -681,7 +681,6 @@ for details
 $(_fields(:inverse_retraction_method))
 * `min_stepsize`:          lower bound ``α_{$(_tex(:text, "min"))}`` for the Barzilai-Borwein step size, greater than zero
 * `max_stepsize`:          upper bound ``α_{$(_tex(:text, "max"))}`` for the Barzilai-Borwein step size, greater than ``α_{$(_tex(:text, "min"))}``.
-$(_fields(:retraction_method))
 * `strategy`:                 defines if the new step size is computed using the `:direct`, `:inverse` or `:alternating` strategy
 * `storage`:                  (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
 $(_fields(:vector_transport_method))
@@ -695,20 +694,19 @@ $(_fields(:vector_transport_method))
 $(_kwargs(:inverse_retraction_method))
 * `min_stepsize=1e-3`
 * `max_stepsize=injectivity_radius(M) * 0.9` (or `1.0` if the injectivity radius is infinite)
-$(_kwargs([:p, :retraction_method]))
+$(_kwargs(:p))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
 $(_kwargs([:vector_transport_method, :X]))
 """
 mutable struct BarzilaiBorweinStepsize{
         T, R <: Real,
-        IRM <: AbstractInverseRetractionMethod, RM <: AbstractRetractionMethod,
+        IRM <: AbstractInverseRetractionMethod,
         VTM <: AbstractVectorTransportMethod, TSSA <: StoreStateAction,
     } <: Stepsize
     inverse_retraction_method::IRM
     min_stepsize::R
     max_stepsize::R
-    retraction_method::RM
     s::T
     storage::TSSA
     strategy::Symbol
@@ -719,7 +717,6 @@ mutable struct BarzilaiBorweinStepsize{
             p::P = rand(M), X::T = zero_vector(M, p),
             min_stepsize::Real = 1.0e-3,
             max_stepsize::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) * 0.9,
-            retraction_method::RM = default_retraction_method(M, typeof(p)),
             inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
             storage::Union{Nothing, StoreStateAction} = StoreStateAction(
                 M; store_fields = [:Iterate, :Gradient]
@@ -727,7 +724,7 @@ mutable struct BarzilaiBorweinStepsize{
             strategy::Symbol = :direct,
             vector_transport_method::VTM = default_vector_transport_method(M),
         ) where {
-            IRM <: AbstractInverseRetractionMethod, RM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T,
+            IRM <: AbstractInverseRetractionMethod, VTM <: AbstractVectorTransportMethod, P, T,
         }
         if strategy ∉ [:direct, :inverse, :alternating]
             @warn string(
@@ -753,9 +750,9 @@ mutable struct BarzilaiBorweinStepsize{
         min_stepsize, max_stepsize = convert.(Ref(R), (min_stepsize, max_stepsize))
         X_ = maybe_wrap_variable(X)
         p_ = maybe_wrap_variable(p)
-        return new{typeof(X_), R, IRM, RM, VTM, typeof(storage)}(
+        return new{typeof(X_), R, IRM, VTM, typeof(storage)}(
             inverse_retraction_method, min_stepsize, max_stepsize,
-            retraction_method, ManifoldsBase.copy(M, p_, X_), storage, strategy, vector_transport_method, X_
+            ManifoldsBase.copy(M, p_, X_), storage, strategy, vector_transport_method, X_
         )
     end
 end
@@ -824,7 +821,6 @@ function Base.show(io::IO, bbs::BarzilaiBorweinStepsize)
     print(io, "inverse_retraction_method = ", bbs.inverse_retraction_method, ", ")
     print(io, "min_stepsize = ", bbs.min_stepsize, ", ")
     print(io, "max_stepsize = ", bbs.max_stepsize, ", ")
-    print(io, "retraction_method = ", bbs.retraction_method, ", ")
     print(io, "storage = ", bbs.storage, ", ")
     print(io, "strategy = :", bbs.strategy, ", ")
     print(io, "vector_transport_method = ", bbs.vector_transport_method)
@@ -841,7 +837,6 @@ function status_summary(bbs::BarzilaiBorweinStepsize; context::Symbol = :default
     * max stepsize:              $(_MANOPT_INDENT)$(bbs.max_stepsize)
     * strategy:                  $(_MANOPT_INDENT):$(bbs.strategy)
     * inverse retraction method: $(_MANOPT_INDENT)$(bbs.inverse_retraction_method)
-    * retraction method:         $(_MANOPT_INDENT)$(bbs.retraction_method)
     * vector transport method:   $(_MANOPT_INDENT)$(bbs.vector_transport_method)
     """
 end
@@ -903,7 +898,7 @@ the inner product ``⟨s_{k}, y_{k}⟩_{p_k} = 0``, so that the maximal step siz
 $(_kwargs(:inverse_retraction_method))
 * `min_stepsize=1e-3`
 * `max_stepsize=injectivity_radius(M) * 0.9` (or `1.0` if the injectivity radius is infinite)
-$(_kwargs([:p, :retraction_method]))
+$(_kwargs(:p))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
 $(_kwargs([:vector_transport_method, :X]))
@@ -1026,7 +1021,7 @@ $(_fields(:vector_transport_method))
 
 ## Keyword arguments
 
-$(_kwargs(:p; name = "candidate_point")) as temporary storage for candidates
+$(_kwargs(:p; name = "candidate_point", default = "allocate_result(M, rand)")) as temporary storage for candidates
 * `temporary_tangent=`$(_link(:zero_vector; p = "candidate_point")): temporary storage for a gradient
 * `initial_stepsize=1.0`: the step size to start the search with
 $(_kwargs(:retraction_method))
@@ -1463,11 +1458,12 @@ function DecreasingStepsize(
     )
 end
 function (s::DecreasingStepsize)(
-        amp::P, ams::O, k::Int, args...; kwargs...
+        amp::P, ams::O, k::Int, args...; gradient = nothing, kwargs...
     ) where {P <: AbstractManoptProblem, O <: AbstractManoptSolverState}
     ds = (s.length - k * s.subtrahend) * (s.factor^k) / ((k + s.shift)^(s.exponent))
     if s.type == :absolute
-        ns = norm(get_manifold(amp), get_iterate(ams), get_gradient(ams))
+        X = isnothing(gradient) ? get_gradient(ams) : gradient
+        ns = norm(get_manifold(amp), get_iterate(ams), X)
         if ns > eps(eltype(ds))
             ds /= ns
         end
@@ -1579,7 +1575,7 @@ function DistanceOverGradientsStepsize(
         M::AbstractManifold, p;
         initial_distance::R1 = 1.0e-3, use_curvature::Bool = false, sectional_curvature_bound::R2 = 0.0,
     ) where {R1 <: Real, R2 <: Real}
-    R = promote_type(R1, R2)
+    R = float(promote_type(R1, R2))
     id = convert(R, initial_distance)
     κ = convert(R, sectional_curvature_bound)
     p_ = maybe_wrap_variable(p)
@@ -1679,9 +1675,9 @@ function Base.show(io::IO, rdog::DistanceOverGradientsStepsize)
 end
 function status_summary(rdog::DistanceOverGradientsStepsize; context::Symbol = :default)
     (context === :short) && return repr(rdog)
-    s = rdog.use_curvature ? "including a curvature correction" : ""
-    (context === :inline) && return "A distance over gradients step size $s (last stepsize: $(rdog.last_stepsize))"
-    s2 = !rdog.use_curvature ? "" : "* sectional curvature bound:$(_MANOPT_INDENT)$(rdog.sectional_curvature_bound)"
+    s = rdog.use_curvature ? " including a curvature correction" : ""
+    (context === :inline) && return "A distance over gradients step size$s (last stepsize: $(rdog.last_stepsize))"
+    s2 = !rdog.use_curvature ? "" : "\n* sectional curvature bound:$(_MANOPT_INDENT)$(rdog.sectional_curvature_bound)"
     return """
     A distance over gradients step size
     (last stepsize: $(rdog.last_stepsize))
@@ -1839,7 +1835,7 @@ mutable struct NonmonotoneLinesearchStepsize{
         ) where {TRM, P, IG}
         bb = BarzilaiBorweinStepsize(
             M; p = p, min_stepsize = bb_min_stepsize, max_stepsize = bb_max_stepsize,
-            inverse_retraction_method = inverse_retraction_method, retraction_method = retraction_method,
+            inverse_retraction_method = inverse_retraction_method,
             vector_transport_method = vector_transport_method,
             storage = storage, strategy = strategy
         )
@@ -1988,8 +1984,8 @@ end
 
 A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
 
-Base on the step size from the [`BarzilaiBorweinStepsize`](@ref) `α_k^{$(_tex(:text, "BB"))}`
-Then find the smallest ``h = 0, 1, 2, …`` such that
+Based on the step size ``α_k^{$(_tex(:text, "BB"))}`` from the [`BarzilaiBorweinStepsize`](@ref),
+find the smallest ``h = 0, 1, 2, …`` such that
 
 ```math
 f($(_tex(:retr))_{p_k}(- σ^h α_k^{$(_tex(:text, "BB"))} $(_tex(:grad))f(p_k)))  ≤
@@ -2514,7 +2510,7 @@ Then the following Algorithm is performed similar to Algorithm 7 from [Huang:201
     WolfePowellBinaryLinesearch(; kwargs...)
     WolfePowellBinaryLinesearch(M::AbstractManifold; kwargs...)
 
-Perform a linesearch to fulfill both the Armijo-Goldstein conditions
+Perform a linesearch to fulfill both the Armijo-Goldstein as well as the Wolfe conditions
 for some given sufficient decrease coefficient ``c_1`` and some sufficient curvature condition coefficient ``c_2``.
 Compared to [`WolfePowellLinesearch`](@ref Manopt.WolfePowellLinesearch) which tries a simpler method, this linesearch performs the following algorithm
 
@@ -2603,6 +2599,7 @@ function (hzi::HagerZhangInitialGuess{TF})(
         k::Int, last_stepsize::Real, η;
         lf0 = get_cost(mp, get_iterate(s)),
         Dlf0 = get_differential(mp, get_iterate(s), η),
+        retraction_method = default_retraction_method(get_manifold(mp), typeof(get_iterate(s))),
         kwargs...
     ) where {TF <: Real}
     M = get_manifold(mp)
@@ -2640,7 +2637,7 @@ function (hzi::HagerZhangInitialGuess{TF})(
         if hzi.quadstep
             # attempt step I1
             step_R = hzi.ψ1 * last_stepsize
-            f_R = get_cost(mp, ManifoldsBase.retract_fused(M, p, η, step_R, default_retraction_method(M, typeof(p))))
+            f_R = get_cost(mp, ManifoldsBase.retract_fused(M, p, η, step_R, retraction_method))
             # solving quadratic fit to the line given lf0, Dlf0 and cost at f_R
             q_b = Dlf0
             q_a = (f_R - q_b * step_R - lf0) / step_R^2
@@ -2661,10 +2658,10 @@ end
 
 Do a bracketing line search to find a step size ``α`` that finds a
 local minimum along the search direction ``X`` starting from ``p``,
-utilizing cubic polynomial interpolation using the method described in
-[HagerZhang:2006:2](@cite). The function [`secant`](@ref) is used to find the minimum of the
-cubic polynomial fitted to values of the cost function and its derivative at the endpoints
-of the current interval.
+using the method described in
+[HagerZhang:2006:2](@cite). The function [`secant`](@ref) performs the secant step towards a
+zero of the derivative of the cost along the search direction, using the derivative values
+at the endpoints of the current interval.
 See [`HagerZhangLinesearch`](@ref) for the mathematical details.
 
 # Fields
@@ -2742,9 +2739,9 @@ mutable struct HagerZhangLinesearchStepsize{
             initial_guess::TIG = HagerZhangInitialGuess(),
             retraction_method::TRM = default_retraction_method(M),
             vector_transport_method::TVTM = default_vector_transport_method(M),
-            initial_last_stepsize::TF = NaN,
-            initial_last_cost::TF = NaN,
-            stepsize_limit::TF = Inf,
+            initial_last_stepsize::Real = NaN,
+            initial_last_cost::Real = NaN,
+            stepsize_limit::Real = Inf,
             candidate_point = allocate_result(M, rand),
             candidate_direction = zero_vector(M, candidate_point),
             max_bracket_iterations::Int = 10,
@@ -2752,19 +2749,36 @@ mutable struct HagerZhangLinesearchStepsize{
             max_function_evaluations::Int = 20,
             wolfe_condition_mode::Symbol = :adaptive,
             allow_early_maxstep_termination::Bool = true,
-            ϵ::TF = 1.0e-6,
-            δ::TF = 0.1,
-            σ::TF = 0.9,
-            ω::TF = 1.0e-3,
-            θ::TF = 0.5,
-            γ::TF = 0.66,
-            ρ::TF = 5.0,
-            Δ::TF = 0.7,
-            secant_acceptance_ratio::TF = 1.0e-8,
+            ϵ::Real = 1.0e-6,
+            δ::Real = 0.1,
+            σ::Real = 0.9,
+            ω::Real = 1.0e-3,
+            θ::Real = 0.5,
+            γ::Real = 0.66,
+            ρ::Real = 5.0,
+            Δ::Real = 0.7,
+            secant_acceptance_ratio::Real = 1.0e-8,
         ) where {
             TIG <: AbstractInitialLinesearchGuess, TRM <: AbstractRetractionMethod,
-            TVTM <: AbstractVectorTransportMethod, TF <: Real,
+            TVTM <: AbstractVectorTransportMethod,
         }
+        # “Unify” the type of these parameters, since they share a type parameter
+        TF = float(
+            promote_type(
+                typeof(initial_last_stepsize), typeof(initial_last_cost),
+                typeof(stepsize_limit), typeof(ϵ), typeof(δ), typeof(σ), typeof(ω),
+                typeof(θ), typeof(γ), typeof(ρ), typeof(Δ),
+                typeof(secant_acceptance_ratio),
+            )
+        )
+        initial_last_stepsize, initial_last_cost, stepsize_limit, ϵ, δ, σ, ω, θ, γ, ρ, Δ, secant_acceptance_ratio =
+            convert.(
+            Ref(TF),
+            (
+                initial_last_stepsize, initial_last_cost, stepsize_limit, ϵ, δ, σ, ω, θ, γ,
+                ρ, Δ, secant_acceptance_ratio,
+            ),
+        )
 
         # check parameters
         @assert δ > 0 && δ < 0.5
@@ -3146,7 +3160,7 @@ function (hzls::HagerZhangLinesearchStepsize)(
         )
     end
     # guess initial alpha
-    α0 = hzls.initial_guess(mp, s, k, hzls.last_stepsize, η; lf0 = fp, Dlf0 = dphi_0, stop_when_stepsize_exceeds = max_alpha)
+    α0 = hzls.initial_guess(mp, s, k, hzls.last_stepsize, η; lf0 = fp, Dlf0 = dphi_0, stop_when_stepsize_exceeds = max_alpha, retraction_method = hzls.retraction_method)
 
     # in case initial_guess does not take into account the stepsize limit, we enforce it here
     α0 = min(α0, max_alpha)
@@ -3201,6 +3215,7 @@ function Base.show(io::IO, hzls::HagerZhangLinesearchStepsize)
             start_enforcing_wolfe_conditions_at_bracketing_iteration = $(hzls.start_enforcing_wolfe_conditions_at_bracketing_iteration),
             max_function_evaluations = $(length(hzls.triples)),
             wolfe_condition_mode = $(hzls.wolfe_condition_mode),
+            allow_early_maxstep_termination = $(hzls.allow_early_maxstep_termination),
             ϵ = $(hzls.ϵ), δ = $(hzls.δ), σ = $(hzls.σ),
             ω = $(hzls.ω),
             θ = $(hzls.θ), γ = $(hzls.γ), secant_acceptance_ratio = $(hzls.secant_acceptance_ratio),
@@ -3246,7 +3261,7 @@ The following changes were made to the original algorithm from the paper:
 
 ## Keyword arguments
 
-$(_kwargs(:p; name = "candidate_point")) as temporary storage for candidates
+$(_kwargs(:p; name = "candidate_point", default = "allocate_result(M, rand)")) as temporary storage for candidates
 $(_kwargs(:retraction_method))
 $(_kwargs(:vector_transport_method))
 * `initial_guess::AbstractInitialLinesearchGuess=HagerZhangInitialGuess()`: initial linesearch guess strategy

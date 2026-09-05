@@ -9,7 +9,7 @@ during the last iteration.
 * `storage`                   : a [`StoreStateAction`](@ref) to store (at least) the last
   iterate to use this as the last value (to compute the change) serving as a potential cache
   shared with other components of the solver.
-$(_kwargs(:inverse_retraction_method))
+$(_kwargs(:inverse_retraction_method; p = ""))
 * `recorded_values`           : to store the recorded values
 
 # Constructor
@@ -113,7 +113,7 @@ record a certain fields entry of type {T} during the iterates
 
 # Fields
 
-* `recorded_values` : the recorded Iterates
+* `recorded_values` : the recorded values of the entry
 * `field`           : Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
 
 # Constructor
@@ -172,10 +172,10 @@ record a certain entries change during iterates
 
 # Additional fields
 
-* `recorded_values` : the recorded Iterates
+* `recorded_values` : the recorded change values
 * `field`           : Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
-* `distance`        : function (p,o,x1,x2) to compute the change/distance between two values of the entry
-* `storage`         : a [`StoreStateAction`](@ref) to store (at least) `getproperty(o, d.field)`
+* `distance`        : function `(amp, ams, x1, x2)` to compute the change/distance between two values of the entry
+* `storage`         : a [`StoreStateAction`](@ref) to store (at least) the last value of the entry `field`
 
 # Constructor
 
@@ -252,8 +252,8 @@ end
 
 record the gradient evaluated at the current iterate
 
-# Constructors
-    RecordGradient(ξ)
+# Constructor
+    RecordGradient(X)
 
 initialize the [`RecordAction`](@ref) to the corresponding type of the tangent vector.
 """
@@ -458,7 +458,7 @@ The three possible modes are
 * `:Iterative` record times with resetting the timer
 * `:Total` record a time only at the end of an algorithm (see [`stop_solver!`](@ref))
 
-The default is `:Cumulative`, and any non-listed symbol default to using this mode.
+The default is `:Cumulative`, and any non-listed symbol defaults to using this mode.
 
 # Constructor
 
@@ -619,11 +619,11 @@ end
 create a [`RecordAction`](@ref) where
 
 * a [`RecordAction`](@ref) is passed through
-* a [`Symbol`] creates
+* a `Symbol` creates
   * `:Change`        to record the change of the iterates, see [`RecordChange`](@ref)
   * `:Cost`          to record the current cost function value
   * `:Gradient`      to record the gradient, see [`RecordGradient`](@ref)
-  * `:GradientNorm`: to record the norm of the gradient, see [`RecordGradientNorm`](@ref)
+  * `:GradientNorm`  to record the norm of the gradient, see [`RecordGradientNorm`](@ref)
   * `:Iterate`       to record the iterate
   * `:Iteration`     to record the current iteration number
   * `:IterativeTime` to record the times taken for each iteration.
@@ -660,7 +660,7 @@ create a [`RecordAction`](@ref) where
 
 * (`:Subsolver`, s) creates a [`RecordSubsolver`](@ref) with `record=` set to the second tuple entry
 
-For other symbol the second entry is ignored and the symbol is used to generate a [`RecordEntry`](@ref)
+For any other symbol the second entry is ignored and the symbol is used to generate a [`RecordEntry`](@ref)
 recording the field with the name `symbol` of `s`.
 """
 function RecordActionFactory(s::AbstractManoptSolverState, t::Tuple{Symbol, T}) where {T}

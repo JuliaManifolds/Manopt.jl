@@ -2,7 +2,7 @@ function maybe_wrap_variable end
 """
     maybe_wrap_variable(v)
 
-For a number variable `v` wrap it in a 1-element vector to make it mutable.
+For a number variable `v` wrap it in a 0-dimensional array to make it mutable.
 Otherwise return the variable as is.
 """
 maybe_wrap_variable(v)
@@ -295,6 +295,7 @@ $(_kwargs(:evaluation))
 * `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`: the matrix representation of the initial approximating operator.
 * `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: an orthonormal basis in the tangent space of the initial iterate `p`.
 * `nu=-1.0`: the value ``ν`` above; a negative value disables the safeguard on the denominator.
+$(_kwargs(:vector_transport_method))
 """
 mutable struct ApproxHessianSymmetricRankOne{P, G, T, B <: AbstractBasis{ℝ}, VTR, R <: Real} <: AbstractApproximateHessianFunction
     p_tmp::P
@@ -391,6 +392,7 @@ $(_kwargs(:evaluation))
 * `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`: the matrix representation of the initial approximating operator.
 * `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: an orthonormal basis in the tangent space of the initial iterate `p`.
 * `scale=true`: the value to store in the `scale` field above.
+$(_kwargs(:vector_transport_method))
 """
 mutable struct ApproxHessianBFGS{
         P, G, T, B <: AbstractBasis{ℝ}, VTR <: AbstractVectorTransportMethod,
@@ -477,8 +479,8 @@ This can also be done in place of `q`.
 ## Keyword Arguments
 
 $(_kwargs([:retraction_method, :inverse_retraction_method]))
-* `X=zero_vector(M,p)`: temporary memory to compute the inverse retraction in place;
-  otherwise this is the memory that would be allocated anyways.
+* `X=zero_vector(M,p)`: temporary memory `reflect!` uses to compute the inverse retraction in place;
+  the allocating `reflect` ignores this keyword.
 """
 @doc "$(_doc_reflect_prox)"
 reflect(M::AbstractManifold, pr::Function, x; kwargs...) = reflect(M, pr(x), x; kwargs...)
@@ -507,8 +509,8 @@ This can also be done in place of `q`.
 
 $(_kwargs([:retraction_method, :inverse_retraction_method]))
 $(_kwargs(:X))
-  as temporary memory to compute the inverse retraction in place;
-  otherwise this is the memory that would be allocated anyways.
+  used by `reflect!` as temporary memory to compute the inverse retraction in place;
+  the allocating `reflect` ignores this keyword.
 """
 @doc "$(_doc_reflect)"
 function reflect(
@@ -525,7 +527,7 @@ end
 function reflect!(
         M::AbstractManifold, q, p, x;
         retraction_method = default_retraction_method(M, typeof(p)),
-        inverse_retraction_method = default_inverse_retraction_method(M),
+        inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
         X = zero_vector(M, p),
     )
     inverse_retract!(M, X, p, x, inverse_retraction_method)

@@ -95,7 +95,7 @@ no plot is generated.
   instead of the gradient function you can also provide the gradient at `p` directly
 * `limits=(-8.0, 0.0)`: specify the limits in the `log_range`
 * `log_range=range(limits[1], limits[2]; length=N)`:
-  - specify the range of points (in log scale) to sample the gradient line
+  specify the range of points (in log scale) to sample the gradient line
 * `N=101`:
   number of points to verify within the `log_range` default range ``[10^{-8},10^{0}]``
 * `plot=false`:
@@ -170,7 +170,7 @@ no plot is generated.
   that the retraction provided is of second order. Otherwise one can also verify the Hessian
   if the point `p` is a critical point.
   Then set the mode to `:CriticalPoint` to use [`gradient_descent`](@ref) to find a critical point.
-  Note: this requires (and evaluates) new tangent vectors `X` and `Y`
+  Note: this requires (and evaluates) a new tangent vector `X`
 * `atol`, `rtol`:      (same defaults as `isapprox`) tolerances that are passed down to all checks
 * `a`, `b`            two real values to verify linearity of the Hessian (if `check_linearity=true`)
 * `N=101`:
@@ -355,8 +355,8 @@ end
 
 @doc """
     is_Hessian_symmetric(M, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p);
-    error=:none, io=nothing, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps
-)
+        error=:none, io=nothing, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps
+    )
 
 Verify whether the Hessian function `Hess_f` fulfills symmetry, which means that
 
@@ -386,8 +386,8 @@ function is_Hessian_symmetric(
     )
     a = inner(M, p, Hess_f(M, p, X), Y)
     b = inner(M, p, X, Hess_f(M, p, Y))
-    isapprox(a, b; atol = atol, rtol = rtol) && (return true)
-    m = "Hess f seems to not be symmetric: ⟨Hess f(p)[X], Y⟩ = $a != $b = ⟨Hess f(p)[Y], X⟩"
+    isapprox(a, b; atol = atol, rtol = rtol, kwargs...) && (return true)
+    m = "Hess f seems to not be symmetric: ⟨Hess f(p)[X], Y⟩ = $a != $b = ⟨X, Hess f(p)[Y]⟩.\n"
     (io !== nothing) && print(io, m)
     (error === :info) && @info m
     (error === :warn) && @warn m

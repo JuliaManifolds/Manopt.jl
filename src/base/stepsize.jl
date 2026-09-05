@@ -111,12 +111,13 @@ If no last step size is stored, this returns `NaN`.
 get_last_stepsize(::Stepsize, ::Any...) = NaN
 
 @doc """
-    get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
+    get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...)
 
 return the stepsize stored within [`AbstractManoptSolverState`](@ref) `ams` when solving the
-[`AbstractManoptProblem`](@ref) `amp`.
-This method also works for decorated options and the [`Stepsize`](@ref) function within
-the options, by default stored in `ams.stepsize`.
+[`AbstractManoptProblem`](@ref) `amp`. The keyword arguments are passed on to the stepsize
+functor, for example to provide a pre-computed `gradient=`.
+This method also works for decorated states and the [`Stepsize`](@ref) functor within
+the state, by default stored in `ams.stepsize`.
 """
 function get_stepsize(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...

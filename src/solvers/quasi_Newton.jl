@@ -210,7 +210,7 @@ $(_args([:M, :f, :grad_f, :p]))
 
 # Keyword arguments
 
-* `basis::AbstractBasis=`[`DefaultOrthonormalBasis`](@extref ManifoldsBase.DefaultOrthonormalBasis)`()`:
+* `basis::AbstractBasis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`:
   basis to use within each of the tangent spaces to represent
   the Hessian (inverse) for the cases where it is stored in full (matrix) form.
 $(_kwargs(:callbacks; add_properties = [:process_note]))

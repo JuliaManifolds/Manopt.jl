@@ -207,6 +207,16 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             X = get_vector(M1, p1, cX, B1)
             @test isapprox(get_cost(TpM1, slso, X0), get_cost(TpM1, slco, X0); atol = 1.0e-12, rtol = 1.0e-12)
             @test isapprox(get_cost(TpM1, slso, X), get_cost(TpM1, slco, X); atol = 1.0e-12, rtol = 1.0e-12)
+            # The same has to hold for a basis that is not the default one, since the
+            # coordinate surrogate has to convert `X` in its own (stored) basis.
+            Brot = CachedBasis(DefaultOrthonormalBasis(), [[0.0, 1.0], [-1.0, 0.0]])
+            lmcso_rot = Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(
+                nlso; penalty = 1.0e-3, basis = Brot,
+                jacobian_cache = [get_jacobian(M1, o, p1; basis = Brot) for o in nlso.objective],
+                residuals = copy(lmcso.value_cache),
+            )
+            slco_rot = Manopt.NormalEquationsObjective(lmcso_rot)
+            @test isapprox(get_cost(TpM1, slso, X), get_cost(TpM1, slco_rot, X); atol = 1.0e-12, rtol = 1.0e-12)
 
             # Coordinate normal operator action should match the assembled normal matrix.
             c_lmso = A_lmso * cX

@@ -55,7 +55,8 @@ abstract type AbstractRestartCondition end
     get_count(ams::AbstractManoptSolverState, ::Symbol)
 
 Obtain the count for a certain countable size, for example the `:Iterations`.
-This function returns 0 if there was nothing to count.
+This function returns `-1` if there was nothing counted (yet),
+for example when the solver has not yet stopped.
 
 Available symbols from within the solver state:
 
@@ -116,7 +117,7 @@ The default returns `agst.p`.
 get_iterate(agst::AbstractGradientSolverState) = agst.p
 
 @doc """
-    get_message(du::AbstractManoptSolverState)
+    get_message(s::AbstractManoptSolverState)
 
 Get a message (`String`) from internal functors, in a summary.
 This should return any message a sub-step might have issued as well.

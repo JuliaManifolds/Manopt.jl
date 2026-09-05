@@ -93,7 +93,7 @@ function get_robustifier_values(::CauchyRobustifier, x::Real)
 end
 
 """
-    ComponentwiseRobustifierFunction{F<:AbstractRobustifierFunction} <: AbstractRobustifierFunction
+    ComponentwiseRobustifierFunction{R<:AbstractRobustifierFunction} <: AbstractRobustifierFunction
 
 A robustifier to indicate that for a certain [`AbstractVectorGradientFunction`](@ref) a
 robustifier should be applied component wise.

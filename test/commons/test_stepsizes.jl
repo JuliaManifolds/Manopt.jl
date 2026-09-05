@@ -342,6 +342,10 @@ end
         @test startswith(repr(hzls), "HagerZhangLinesearch(;")
         @test startswith(Manopt.status_summary(hzls), "HagerZhangLinesearch(;")
         @test Manopt.get_message(hzls) == ""
+        # numeric keywords may be passed in any real type and are promoted to a common one
+        hzls_int = Manopt.HagerZhangLinesearchStepsize(M; stepsize_limit = 1, ρ = 5)
+        @test hzls_int.stepsize_limit === 1.0
+        @test hzls_int.ρ === 5.0
 
         α = hzls(dmp, gs, 1, η)
         @test isfinite(α)

@@ -128,7 +128,7 @@ end
 
 
 function status_summary(vgf::VectorGradientFunction; context::Symbol = :default)
-    _is_inline(context) && (return "A vectorial function including gradients of length $(length(vgf)) represented as $(vgf.cost_type) and gradients as $(vgf.jacobian_type)")
+    _is_inline(context) && (return "A vectorial function of length $(length(vgf)) including gradients represented as $(vgf.cost_type) and gradients as $(vgf.jacobian_type)")
     return """
     A function defined on a manifold that maps into a vector space including gradients of the component functions.
 

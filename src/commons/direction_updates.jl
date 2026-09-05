@@ -148,7 +148,7 @@ end
 Add an average of gradients to a gradient processor.
 
 A set of previous directions (from the inner processor) and the last iterate are stored.
-The average is taken after vector transporting them to the current iterates tangent space.
+The average is taken after vector transporting them to the current iterate's tangent space.
 
 
 # Fields
@@ -156,7 +156,7 @@ The average is taken after vector transporting them to the current iterates tang
 * `gradients`:               the last `n` gradient/direction updates
 * `last_iterate`:            last iterate (needed to transport the gradients)
 * `direction`:               internal [`DirectionUpdateRule`](@ref) to determine directions to apply the averaging to
-$(_kwargs(:vector_transport_method))
+$(_fields(:vector_transport_method))
 
 # Constructors
 
@@ -245,7 +245,7 @@ end
 
 Add an average of gradients to a gradient processor. A set of previous directions (from the
 inner processor) and the last iterate are stored, average is taken after vector transporting
-them to the current iterates tangent space.
+them to the current iterate's tangent space.
 
 # Input
 
@@ -375,9 +375,9 @@ Assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex. Given
 * and a current iterate ``p_k``
 * as well as the interim values ``γ_k`` and ``v_k`` from the previous iterate.
 
-This compute a Nesterov type update using the following steps, see [ZhangSra:2018](@cite)
+This computes a Nesterov type update using the following steps, see [ZhangSra:2018](@cite)
 
-1. Compute the positive root ``α_k∈(0,1)`` of ``α^2 = h_k$(_tex(:bigl))((1-α_k)γ_k+α_k μ$(_tex(:bigr)))``.
+1. Compute the positive root ``α_k∈(0,1)`` of ``α_k^2 = h_k$(_tex(:bigl))((1-α_k)γ_k+α_k μ$(_tex(:bigr)))``.
 2. Set ``$(_tex(:bar, "γ"))_{k+1} = (1-α_k)γ_k + α_kμ``
 3. ``y_k = $(_tex(:retr))_{p_k}\\Bigl(\\frac{α_kγ_k}{γ_k + α_kμ}$(_tex(:retr))^{-1}_{p_k}v_k \\Bigr)``
 4. ``x_{k+1} = $(_tex(:retr))_{y_k}(-h_k $(_tex(:grad))f(y_k))``

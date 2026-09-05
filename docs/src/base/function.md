@@ -21,12 +21,12 @@ internally “wrapped” by an [`InplaceManifoldFunction`](@ref) and can be spec
 [`AbstractManifoldObjective`](@ref) or [high-level interface](high-level-interface.md)
 with the `evaluation=` keyword that accepts an [`AbstractEvaluationType`](@ref)
 and for the example here, one specifies it as [`AllocatingEvaluation`](@ref)`()`.
+Internally, this wrapping is performed by [`maybe_wrap_function`](@ref).
 
 ```@docs
 AbstractEvaluationType
 AllocatingEvaluation
 InplaceEvaluation
-maybe_wrap_function
 ```
 
 ## A wrapper to guarantee mutating variables
@@ -39,11 +39,7 @@ are automatically wrapped internally. Similarly, functions can be wrapped in a [
 Both the [`AbstractManifoldObjective`](@ref) and [high-level interfaces](high-level-interface.md)
 can determine this when being passed a `p=` keyword argument providing the point used to define
 functions on the manifold.
-
-```@docs
-maybe_wrap_variable
-maybe_unwrap_variable
-```
+Internally, this wrapping is performed by [`maybe_wrap_variable`](@ref) and undone again by [`maybe_unwrap_variable`](@ref).
 
 ## Abstract function types
 

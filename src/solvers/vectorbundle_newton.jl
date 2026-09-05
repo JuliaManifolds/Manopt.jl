@@ -109,7 +109,7 @@ Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $
 is given by
 
 ```math
-$(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distance))(p_k,q_k)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
+$(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_math(:distance))(p_i,q_i)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.

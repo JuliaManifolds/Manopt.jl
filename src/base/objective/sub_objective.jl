@@ -120,7 +120,6 @@ get_objective(also::AbstractLinearSurrogateObjective) = also.objective
 
 function get_linear_operator end
 """
-    get_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p)
     get_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
     get_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X)
     get_linear_operator!(M::AbstractManifold, L, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
@@ -130,9 +129,8 @@ Return/Evaluate the linear operator ``$(_tex(:Cal, "L"))`` of the linear surroga
 
 If a tangent vector `X` is provided, evaluate ``$(_tex(:Cal, "L"))(X)``.
 If a basis `B` is provided, return the matrix representation of ``$(_tex(:Cal, "L"))`` with respect to that basis.
-Otherwise return the operator as a function `(TpM, X) -> Y`.
 """
-get_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X = nothing)
+get_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X)
 
 function get_vector_field end
 """
@@ -145,7 +143,6 @@ get_vector_field(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p)
 
 function get_normal_linear_operator end
 _doc_get_normal_linear_operator = """
-    get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p)
     get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
     get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X)
     get_normal_linear_operator!(M::AbstractManifold, N, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)
@@ -155,11 +152,10 @@ Return/Evaluate the normal operator ``$(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))`` 
 
 If a tangent vector `X` is provided, evaluate ``$(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))(X)``.
 If a basis `B` is provided, return the matrix representation of ``$(_tex(:Cal, "L"))^* $(_tex(:Cal, "L"))`` with respect to that basis.
-Otherwise return the operator as a function `(TpM, X) -> Y`.
 """
 
 @doc "$(_doc_get_normal_linear_operator)"
-get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X = nothing)
+get_normal_linear_operator(M::AbstractManifold, lsmo::AbstractLinearSurrogateObjective, p, X)
 
 @doc "$(_doc_get_normal_linear_operator)"
 get_normal_linear_operator!(M::AbstractManifold, N, lsmo::AbstractLinearSurrogateObjective, p, B::AbstractBasis)

@@ -186,7 +186,7 @@ function ConstrainedManifoldObjective(
         throw(
             ErrorException(
                 """
-                Neither the inequality and the equality constraints are provided.
+                Neither the inequality nor the equality constraints are provided.
                 You can not generate a `ConstrainedManifoldObjective` without actual
                 constraints.
 
@@ -230,17 +230,17 @@ function show(io::IO, cmo::ConstrainedManifoldObjective)
     print(io, "; atol = ")
     print(io, cmo.atol)
     if !isnothing(cmo.equality_constraints)
-        print(io, "; equality_constraints = "); print(io, cmo.equality_constraints)
+        print(io, ", equality_constraints = "); print(io, cmo.equality_constraints)
     end
     if !isnothing(cmo.inequality_constraints)
-        print(io, "; inequality_constraints = "); print(io, cmo.inequality_constraints)
+        print(io, ", inequality_constraints = "); print(io, cmo.inequality_constraints)
     end
     return print(io, ")")
 end
 @doc """
     equality_constraints_length(co::ConstrainedManifoldObjective)
 
-Return the number of equality constraints of an [`ConstrainedManifoldObjective`](@ref).
+Return the number of equality constraints of a [`ConstrainedManifoldObjective`](@ref).
 This acts transparently through [`AbstractDecoratedManifoldObjective`](@ref)s
 """
 function equality_constraints_length(co::ConstrainedManifoldObjective)
@@ -529,7 +529,7 @@ end
 @doc """
     inequality_constraints_length(cmo::ConstrainedManifoldObjective)
 
-Return the number of inequality constraints of an [`ConstrainedManifoldObjective`](@ref) `cmo`.
+Return the number of inequality constraints of a [`ConstrainedManifoldObjective`](@ref) `cmo`.
 This acts transparently through [`AbstractDecoratedManifoldObjective`](@ref)s
 """
 function inequality_constraints_length(cmo::ConstrainedManifoldObjective)
@@ -583,7 +583,7 @@ end
 @doc """
     get_feasibility_status(
         M::AbstractManifold,
-        cmo::ConstrainedManifoldObjective,
+        cmo::ConstrainedManifoldObjective, p;
         g = get_inequality_constraint(M, cmo, p, :),
         h = get_equality_constraint(M, cmo, p, :),
     )
@@ -1336,7 +1336,9 @@ which function evaluations to cache.
 | `:EqualityConstraint`       | [`get_equality_constraint`](@ref)`(M, p, i)`    |                           |
 | `:EqualityConstraints`      | [`get_equality_constraint`](@ref)`(M, p, :)`    |                           |
 | `:GradEqualityConstraint`   | [`get_grad_equality_constraint`](@ref)          | tangent vector per (p,i)  |
+| `:GradEqualityConstraints`  | [`get_grad_equality_constraint`](@ref)`(M, p, :)` | vector of tangent vectors |
 | `:GradInequalityConstraint` | [`get_grad_inequality_constraint`](@ref)        | tangent vector per (p,i)  |
+| `:GradInequalityConstraints` | [`get_grad_inequality_constraint`](@ref)`(M, p, :)` | vector of tangent vectors |
 | `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`                   | tangent vectors           |
 | `:Hessian`                  | [`get_hessian`](@ref)                           | tangent vectors           |
 | `:InequalityConstraint`     | [`get_inequality_constraint`](@ref)`(M, p, j)`  |                           |
@@ -1404,7 +1406,7 @@ function init_caches(M::AbstractManifold, caches, T = Nothing; kwargs...)
         DomainError(
             T,
             """
-            No function `init_caches` available for a caches $T.
+            No function `init_caches` available for the cache type $T.
             For a good default load `LRUCache.jl`, for example:
             Enter `using LRUCache`.
             """,
@@ -2599,13 +2601,13 @@ function status_summary(co::ManifoldCountObjective; context::Symbol = :default)
         return "$so (statistics: $(join([ ":$(c[1])=$(c[2])" for c in co.counts ], ", ")))"
     end
     s = "## Statistics on function calls\n"
-    (length(so) > 0) && (so = "$(so)")
-    length(co.counts) == 0 && return "$(s)    No counters active\n$(so)"
+    (length(so) > 0) && (so = "$(so)\n\n")
+    length(co.counts) == 0 && return "$(so)$(s)    No counters active\n"
     longest_key_length = max(length.(["$c" for c in keys(co.counts)])...)
     count_strings = [
         "  * :$(rpad("$(c[1])", longest_key_length)) : $(c[2])" for c in co.counts
     ]
-    return "$(so)\n\n$(s)$(join(count_strings, "\n"))"
+    return "$(so)$(s)$(join(count_strings, "\n"))"
 end
 function status_summary(t::Tuple{<:ManifoldCountObjective, S}; context::Symbol = :default) where {S <: AbstractManoptSolverState}
     return "$(status_summary(t[2], context = context))\n\n$(status_summary(t[1]; context = context))"
@@ -3842,16 +3844,14 @@ function get_gradient!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientOb
 end
 
 function Base.show(io::IO, msgo::ManifoldStochasticGradientObjective)
-    print(io, "ManifoldStochasticGradientObjective(", msgo.gradient!, "; ")
-    if !ismissing(msgo.cost)
-        print(io, "cost = ", msgo.cost, ", ")
-    end
+    print(io, "ManifoldStochasticGradientObjective(", msgo.gradient!)
+    !ismissing(msgo.cost) && print(io, "; cost = ", msgo.cost)
     return print(io, ")")
 end
 function status_summary(msgo::ManifoldStochasticGradientObjective; context::Symbol = :default)
     (context === :short) && return repr(msgo)
-    cs = ismissing(msgo.cost) ? "" : "including the cost function"
-    (context === :inline) && return "A stochastic gradient objective $cs."
+    cs = ismissing(msgo.cost) ? "" : " including the cost function"
+    (context === :inline) && return "A stochastic gradient objective$cs."
     ics = ismissing(msgo.cost) ? "" : "\n* cost:          $(_MANOPT_INDENT)$(msgo.cost)"
     return """
     A stochastic gradient objective
@@ -3952,7 +3952,7 @@ end
 
 function status_summary(objective::ManifoldSubgradientObjective; context::Symbol = :default)
     (context === :short) && return repr(objective)
-    s = "A subgradient objective "
+    s = "A subgradient objective"
     (context === :inline) && (return s)
     return """
     $s

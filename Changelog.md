@@ -57,17 +57,19 @@ They are still listed here in detail in case (a) someone else's code breaks or (
 * `ConvexBundleMethodState` no longer errors when only one of `k_min` and `k_max` is provided.
 * `ConvexBundleMethodState` can be built and run on its own again.
 * `count=[:ProximalMap]` now works for a `ManifoldProximalMapObjective` built from a single proximal map.
-* `CubicBracketingLinesearch` and `Nesterov` now promote mixed numeric types in their keyword arguments.
+* `CubicBracketingLinesearch`, `HagerZhangLinesearch` and `Nesterov` now promote mixed numeric types in their keyword arguments.
 * `CubicBracketingLinesearch` now uses the `gradient=` keyword it is given and no longer reads the state field `X` directly, so it works for any state implementing the documented interface.
 * the `:Random` evaluation order of `cyclic_proximal_point` now reshuffles every cycle; its order values are unified to `:Linear`, `:FixedRandom`, and `:Random`, and validated.
 * the default prefixes of `DebugEntryChange` and `DebugIfEntry` name the field instead of printing a literal `$f`.
 * `debug=[:IterativeTime]` now really resets the timer each iteration; the factory built it with a `:Iterative` mode that the functor never matched.
 * `decorate_state!` now accepts `debug`/`record` dictionaries with a concrete action value type, such as `Dict(:Stop => DebugStoppingCriterion())`.
+* `DecreasingStepsize` in `:absolute` mode now uses the `gradient=` keyword it is given, like `ConstantStepsize`.
 * `default_vector_norm(::Euclidean, p, X)` returned the norm of `p` instead of `X`.
 * `difference_of_convex_algorithm` now forwards a `gradient=`, also when the objective carries it.
 * the closed-form `difference_of_convex_algorithm` now leaves the gradient of `f` in the state.
 * `difference_of_convex_proximal_point` now defaults to the point-type-aware `default_inverse_retraction_method(M, typeof(p))`.
 * `difference_of_convex_proximal_point` now leaves the gradient of the objective in the state's `X`.
+* `DistanceOverGradientsStepsize` now promotes integer keyword arguments to floats instead of erroring on its first call.
 * `DomainBackTrackingStepsize` and `NullStepBackTrackingStepsize` now start at their `initial_stepsize`.
 * `EmbeddedManifoldObjective` now converts the constraint Hessians to Riemannian ones instead of returning the Euclidean ones.
 * the allocating `exact_penalty_method` forwarded the equality-constraint count as the inequality count.
@@ -84,14 +86,17 @@ They are still listed here in detail in case (a) someone else's code breaks or (
 * `get_linear_operator`(`!`) and `get_vector_field`(`!`) now pass decorated objectives through, so `conjugate_residual` accepts `count=` and `cache=` and actually uses the cache.
 * `gradient_sampling` now also works for number-typed points, like `gradient_descent`.
 * the documented `GradientSamplingState(M)` constructor works again; its `convex_hull_coeffs` default referred to the static parameter `R`, which is not bound while keyword defaults are evaluated.
+* `HagerZhangInitialGuess` now uses the `retraction_method` of the surrounding `HagerZhangLinesearch` for its quadratic step.
 * `initialize_solver!` for a `ProximalBundleMethodState` now also resets `lin_errors` and `approx_errors`, so a state can be reused for a second `solve!`.
 * `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
 * `interior_point_Newton!(M, f, grad_f, Hess_f, p; …)` no longer decorates its objective twice, so `count=` and `cache=` now work for the in-place variant.
 * `interior_point_Newton` now runs with a closed form sub solver.
+* `is_Hessian_symmetric` now passes its remaining keyword arguments on to `isapprox`, as documented.
 * the Lanczos first-order-progress criterion now uses the correct model gradient norm.
 * `LevenbergMarquardt` now defaults to a coordinate normal-system sub solver on manifolds with box constraints, where the default sub solver errored before.
 * the allocating `LevenbergMarquardt` now honours `jacobian_tangent_basis` like its in-place variant, instead of silently ignoring it.
 * `LevenbergMarquardt` now also clamps the damping term to `damping_term_max` when a step is rejected for being too long.
+* the coordinate Levenberg-Marquardt surrogate now converts tangent vectors in its stored `basis` instead of the manifold default.
 * `LevenbergMarquardtState` no longer needs its Jacobian cache pre-shaped and reports an invalid `damping_reduction_factor` with an `ArgumentError`.
 * `linesearch_backtrack` no longer errors when called without gradient information; it then backtracks on a plain decrease condition.
 * `mesh_adaptive_direct_search` now moves the poll base point to the current iterate before the search, so the search is handed a direction tangent at that iterate and the iterates stay on the manifold.
@@ -128,6 +133,7 @@ They are still listed here in detail in case (a) someone else's code breaks or (
 * `RecordIterate(T::DataType)` now builds `RecordIterate{T}` as documented, instead of a broken `RecordIterate{DataType}`.
 * records added to the `:Start` entry now work as documented.
 * `RecordTime(; mode=:Total)` now resets its recorded values when the solver state is re-initialized.
+* `reflect!` now defaults its `inverse_retraction_method` with the point type, like `reflect`.
 * `set_iterate!` for a `ProximalGradientMethodState` no longer rebinds the state's iterate to the caller's point.
 * `stochastic_gradient_descent` now uses its `retraction_method` keyword.
 * `StopWhenAll` now accepts a concretely typed vector of criteria, like `StopWhenAny` already did, instead of silently wrapping it as a single criterion.

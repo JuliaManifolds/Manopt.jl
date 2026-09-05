@@ -14,8 +14,7 @@ $(
 )
 ```
 
-we reformulate the KKT conditions of the Lagrangian
-from the optimality conditions of the Lagrangian
+we reformulate the KKT conditions from the optimality conditions of the Lagrangian
 
 ```math
 $(_tex(:Cal, "L"))(p, μ, λ) = f(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p) + $(_tex(:sum, "i=1", "m")) μ_ig_i(p)
@@ -122,8 +121,7 @@ $(
 )
 ```
 
-we reformulate the KKT conditions of the Lagrangian
-from the optimality conditions of the Lagrangian
+we reformulate the KKT conditions from the optimality conditions of the Lagrangian
 
 ```math
 $(_tex(:Cal, "L"))(p, μ, λ) = f(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p) +$(_tex(:sum, "i=1", "m")) μ_ig_i(p)
@@ -429,7 +427,7 @@ and ``⊙`` denotes the Hadamard (or elementwise) product.
 
 Define `F = KKTVectorField(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
 and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^m``.
-Then, you can call this cost as `F(N, q)` or as the in-place variant `F(N, Y, q)`,
+Then, you can call this vector field as `F(N, q)` or as the in-place variant `F(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` for the result.
 """
 struct KKTVectorField{O <: ConstrainedManifoldObjective}
@@ -498,7 +496,7 @@ Generate the Jacobian of the KKT vector field related to some [`ConstrainedManif
 
 Define `JF = KKTVectorFieldJacobian(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
 and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^m``.
-Then, you can call this cost as `JF(N, q, Y)` or as the in-place variant `JF(N, Z, q, Y)`,
+Then, you can call this Jacobian as `JF(N, q, Y)` or as the in-place variant `JF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are tangent vectors at `q`.
 """
 mutable struct KKTVectorFieldJacobian{O <: ConstrainedManifoldObjective}
@@ -582,7 +580,7 @@ Generate the Adjoint Jacobian of the KKT vector field related to some [`Constrai
 
 Define `AdJF = KKTVectorFieldAdjointJacobian(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
 and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^m``.
-Then, you can call this cost as `AdJF(N, q, Y)` or as the in-place variant `AdJF(N, Z, q, Y)`,
+Then, you can call this adjoint Jacobian as `AdJF(N, q, Y)` or as the in-place variant `AdJF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are tangent vectors at `q`.
 """
 mutable struct KKTVectorFieldAdjointJacobian{O <: ConstrainedManifoldObjective}
@@ -693,7 +691,7 @@ $(_tex(:grad)) φ
 $(
     _tex(
         :pmatrix,
-        "$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p,μ,λ)[L] + (g_i(p) + s_i)$(_tex(:grad)) g_i(p) + h_j(p)$(_tex(:grad)) h_j(p)",
+        "$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p,μ,λ)[L] + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) (g_i(p) + s_i)$(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) h_j(p)$(_tex(:grad)) h_j(p)",
         "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), L⟩ $(_tex(:Bigr)))_{i=1}^m + μ ⊙ s ⊙ s",
         "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), L⟩ $(_tex(:Bigr)))_{j=1}^n",
         "g + s + μ ⊙ μ ⊙ s",
@@ -714,7 +712,7 @@ where ``⊙`` denotes the Hadamard (or element wise) product.
 
 Define `grad_f = KKTVectorFieldNormSqGradient(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
 and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^m``.
-Then, you can call this cost as `grad_f(N, q)` or as the in-place variant `grad_f(N, Y, q)`,
+Then, you can call this gradient as `grad_f(N, q)` or as the in-place variant `grad_f(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` for the resulting gradient.
 """
 mutable struct KKTVectorFieldNormSqGradient{O <: ConstrainedManifoldObjective}
@@ -849,7 +847,7 @@ with respect to the variable ``p``. The formula reads
 
 ```math
 $(_tex(:Hess))_p $(_tex(:Cal, "L"))(p; μ, λ)[X]
-= $(_tex(:Hess)) f(p) + $(_tex(:sum, "i=1", "m")) μ_i $(_tex(:Hess)) g_i(p)[X] + $(_tex(:sum, "j=1", "n")) λ_j $(_tex(:Hess)) h_j(p)[X]
+= $(_tex(:Hess)) f(p)[X] + $(_tex(:sum, "i=1", "m")) μ_i $(_tex(:Hess)) g_i(p)[X] + $(_tex(:sum, "j=1", "n")) λ_j $(_tex(:Hess)) h_j(p)[X]
 ```
 
 # Fields
@@ -928,7 +926,7 @@ mutable struct LinearizedDCCost{P, T, TG}
     pk::P
     Xk::T
     function LinearizedDCCost(g_::TG, pk::P, Xk::T) where {TG, P, T}
-        # wrap funcktion for mutating variables
+        # wrap function for mutating variables
         g_ = maybe_wrap_function(g_, pk)
         return new{P, T, typeof(g_)}(g_, pk, Xk)
     end
@@ -948,13 +946,13 @@ end
     LinearizedDCGrad
 
 A functor `(M, p) → X`, or in-place `(M, X, p) → X`, to represent the gradient of the inner problem of a [`ManifoldDifferenceOfConvexObjective`](@ref).
-This is a gradient function of the form
+This is the gradient of a cost function of the form
 
 ```math
     F_{p_k,X_k}(p) = g(p) - ⟨X_k, $(_tex(:log))_{p_k}p⟩
 ```
 
-its gradient is given by using ``F=F_1(F_2(p))``, where ``F_1(X) = ⟨X_k,X⟩`` and ``F_2(p) = $(_tex(:log))_{p_k}p``
+its gradient is given by using ``F(p)=g(p)-F_1(F_2(p))``, where ``F_1(X) = ⟨X_k,X⟩`` and ``F_2(p) = $(_tex(:log))_{p_k}p``
 and the chain rule as well as the adjoint differential of the logarithmic map with respect to its argument for ``D^*F_2(p)``
 
 ```math
@@ -1039,7 +1037,7 @@ mutable struct ProximalDCCost{P, TG, R}
     pk::P
     λ::R
     function ProximalDCCost(g_::TG, pk::P, λ::R) where {TG, P, R}
-        # wrap funcktion for mutating variables
+        # wrap function for mutating variables
         g_ = maybe_wrap_function(g_, pk)
         return new{P, typeof(g_), R}(g_, pk, λ)
     end

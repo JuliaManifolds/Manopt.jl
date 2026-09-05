@@ -29,7 +29,7 @@ end
 get_parameter(f, args...) = nothing
 
 """
-    get_parameter(element::Symbol; default=nothing)
+    get_parameter(element::Symbol; default=get_parameter(Val(element), Val(:default)))
 
 Access global [`Manopt`](@ref) parameters addressed by a symbol `element`.
 This first dispatches on the value of `element`.

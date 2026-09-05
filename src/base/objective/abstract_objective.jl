@@ -7,8 +7,8 @@ for example when it consists of several summands.
 Subtypes might depend on the kind of objective in order to distinguish different available
 access functionality, e.g. to a gradient, or a proximal map.
 
-Such a default component of the objective like the cost itself or the gradient
-should be implemented in the form
+Such a default component of the objective whose result is stored in a mutable variable,
+like the gradient, should be implemented in the form
 
 ```
 (M, v, args...) -> [...]; v
@@ -16,6 +16,8 @@ should be implemented in the form
 
 where `M` is a $(_link(:AbstractManifold)), `v` is memory the result is computed in,
 as well as further arguments, most prominently usually the current iterate `p`.
+The cost itself is the exception: it returns a number and is evaluated as an allocating
+function `(M, p) -> c`, see [`get_cost_function`](@ref).
 
 For an allocating variant, internally the wrapper [`InplaceManifoldFunction`](@ref) should be used.
 """

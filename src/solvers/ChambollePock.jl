@@ -10,7 +10,7 @@ Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [Bergma
 
 * `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_forward_operator!`: linearized operator for the forward operation in the algorithm ``DΛ``
-* `adjoint_linearized_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → T$(_math(:Manifold))``
+* `adjoint_linearized_operator!`: the adjoint differential ``(DΛ)^* : T$(_math(:Manifold; M = "N")) → T$(_math(:Manifold))``
 * `prox_f!`:                      the proximal map belonging to ``f``
 * `prox_g_dual!`:                 the proximal map belonging to ``g_n^*``
 * `Λ!`:                           the  forward operator (if given) ``Λ: $(_math(:Manifold)) → $(_math(:Manifold; M = "N"))``
@@ -19,7 +19,7 @@ Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
 
 # Constructor
 
-    PrimalDualManifoldObjective(cost, prox_f, prox_G_dual, adjoint_linearized_operator;
+    PrimalDualManifoldObjective(cost, prox_f, prox_g_dual, adjoint_linearized_operator;
         linearized_forward_operator::Union{Function,Missing}=missing,
         Λ::Union{Function,Missing}=missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
@@ -300,6 +300,7 @@ This can be done inplace of ``p``.
 
 $(_args(:M))
 $(_args(:M; name = "N"))
+$(_args(:f))
 $(_args(:p))
 $(_args(:X; M = "N", p = "n"))
 $(_args(:p; name = "m"))
@@ -307,21 +308,22 @@ $(_args(:p; name = "n", M = "N"))
 * `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$(_tex_DΛ)``
 * `prox_F, prox_G_dual`:          the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
-By default, this performs the exact Riemannian Chambolle Pock algorithm, see the optional parameter
-`DΛ` for their linearized variant.
+If the forward operator `Λ` is provided, this performs the exact Riemannian Chambolle Pock algorithm;
+see the optional keyword `linearized_forward_operator=` for the linearized variant.
 
 For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@cite).
 
 # Keyword Arguments
 
 * `acceleration=0.05`: acceleration parameter
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
 $(_kwargs([:evaluation, :inverse_retraction_method]))
 $(_kwargs(:inverse_retraction_method; name = "inverse_retraction_method_dual", M = "N", p = "n"))
 * `Λ=missing`: the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
 * `linearized_forward_operator=missing`: its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
-* `relaxation=1.`: the relaxation parameter ``γ``
+* `relaxation=1.`: the relaxation parameter ``θ``
 * `relax=:primal`: whether to relax the primal or dual
 * `variant=:linearized` if `Λ` is missing, otherwise `:exact`: variant to use.
   Note that this changes the arguments the `forward_operator` is called with.
@@ -550,7 +552,7 @@ function dual_update!(
 end
 
 @doc """
-    update_prox_parameters!(o)
+    update_prox_parameters!(pds)
 update the prox parameters as described in Algorithm 2 of [ChambollePock:2011](@cite),
 
 1. ``θ_{n} = $(_tex(:frac, "1", "$(_tex(:sqrt, "1+2γτ_n"))"))``

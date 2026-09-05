@@ -570,7 +570,7 @@ Furthermore if ``ρ'(s) + 2ρ''(s)⋅s ≤ 0`` the Hessian is also indefinite.
 This can be caught by making sure the argument of the ``√`` is ensured to be non-negative.
 
 The [Ceres solver](http://ceres-solver.org/nnls_modeling.html#theory) even omits the second term
-in the square root already if ``ρ(s)'' < 0`` for stability reason, which means setting ``α = 0``.
+in the square root already if ``ρ''(s) < 0`` for stability reasons, which means setting ``α = 0``.
 In the case ``s = 0`` we also set the operator scaling ``α / s = 0``.
 
 This function offers two `mode`s
@@ -742,7 +742,7 @@ $(
 ```
 where ``ρ_i' = ρ_i'($(_tex(:norm, "F_i(p)"))_2^2)``, ``ρ_i'' = ρ_i''($(_tex(:norm, "F_i(p)"))_2^2)``
 are the values from the [`AbstractRobustifierFunction`](@ref) `ρ` its first and second derivative, respectively,
-and ``b`` is the [`get_LevenbergMarquardt_scaling`](@ref) values of scaling the operator.
+and ``b`` is the [`get_LevenbergMarquardt_scaling`](@ref) value scaling the operator.
 See also [`get_jacobian`](@ref) and [`get_adjoint_jacobian`](@ref).
 
 This can be computed inplace of `Z`.
@@ -1153,10 +1153,12 @@ and [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling and comp
 """
 
 _doc_add_normal_vector_field = """
-    add_normal_vector_field!(M::AbstractManifold, X, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p)
-    add_normal_vector_field!(M::AbstractManifold, c, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis)
+    add_normal_vector_field!(
+        M::AbstractManifold, c, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p, B::AbstractBasis;
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
+    )
 
-Add the contribution of `o` / `r` to the normal linear operator tangent vector in `X` or `c`.
+Add the contribution of `o` / `r` to the coordinates `c` of the normal vector field with respect to the basis `B`.
 See [`get_normal_vector_field`](@ref) for the mathematical details.
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
 [`ManifoldNonlinearLeastSquaresObjective`](@ref) and summed up.
@@ -1443,7 +1445,8 @@ function get_cost(
     )
     M = base_manifold(TpM)
     p = base_point(TpM)
-    cX = get_coordinates(M, p, X)
+    # the cached Jacobians – and hence all coordinate vectors – refer to `basis`
+    cX = get_coordinates(M, p, X, lnsco.objective.basis)
     n = residuals_count(lnsco.objective.objective)
     vf = zeros(number_eltype(p), n)
     get_vector_field!(M, vf, lnsco.objective, p)
@@ -1643,7 +1646,7 @@ function get_gradient!(TpM::TangentSpace, Y, trmo::TrustRegionModelObjective, X)
     return Y
 end
 @doc """
-    get_hessian(TpM, trmo::TrustRegionModelObjective, X)
+    get_hessian(TpM, trmo::TrustRegionModelObjective, X, Y)
 
 Evaluate the Hessian of the [`TrustRegionModelObjective`](@ref)
 

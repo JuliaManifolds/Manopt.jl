@@ -76,6 +76,8 @@ Manopt.hessian_value_from_inner_products
 Manopt.update_current_scale!
 ```
 
+## Literature
+
 ```@bibliography
 Pages = ["generalized_cauchy_direction_subsolver.md"]
 Canonical=false

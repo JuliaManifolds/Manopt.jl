@@ -36,7 +36,7 @@ Private = true
 
 Within `Manopt.jl` a parameter is a value within a structure that can be accessed or set from outside. Since the overall design model is modular, [`get_parameter`](@ref) and [`set_parameter!`](@ref) allow specifying a certain “path” into a structure to get or set something.
 
-For example the gradient of an [objective](objective.md) function within a [problem](problem.md), like the [`LagrangianGradient`](@ref) used within the sub problem of the [`augmented_Lagrangian_method`](@ref), has certain parameters.
+For example the gradient of an [objective](objective.md) function within a [problem](problem.md), like the [`AugmentedLagrangianGrad`](@ref) used within the sub problem of the [`augmented_Lagrangian_method`](@ref), has certain parameters.
 The parameter functions allow generically addressing such objects without having to care about
 decorators or in which field exactly the parameter is stored.
 This can for example also be used in connection with [`DebugWhenActive`](@ref) to deactivate debug output under certain circumstances.

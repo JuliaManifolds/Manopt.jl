@@ -103,7 +103,7 @@ vector in the following way
 * a pair `:Hook => fct` is kept as is, where the `fct` can also be some callable structure
 * a single element `function` is turned into `:Any => fct`, allowing a single callback
   to be specified just by the function
-* a pair `[Hook1, Hook2] => fct` is a shortcut for an array of pairs and split into these here.
+* a pair `[:Hook1, :Hook2] => fct` is a shortcut for an array of pairs and split into these here.
 
 The result is then wrapped into a dictionary. Be aware that when an array of pairs is reduced
 to a dictionary, the last `:Hook` pair “wins” and becomes the entry in the dictionary. This

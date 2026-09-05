@@ -65,9 +65,9 @@ Manopt.set_parameter!(s::DummyState, ::Val{:StoppingCriterion}, v) = s
 """
     M, f, grad_f, p0, p_star = Circle_mean_task()
 
-Create a small mean problem on the circle to test Number-based algorithms
-Requires `Manifolds.jl` to be loaded, use [`Manopt.Test.mean_task`](@ref)`(M, data)`
-for the general case
+Create a small mean problem on the circle to test Number-based algorithms.
+Requires `Manifolds.jl` to be loaded; use [`Manopt.Test.mean_task`](@ref)`(M, data)`
+for the general case.
 """
 function Circle_mean_task end
 

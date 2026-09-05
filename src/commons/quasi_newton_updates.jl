@@ -24,7 +24,7 @@ initialize_update!(s::AbstractQuasiNewtonDirectionUpdate) = s
 Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s.
 
 For a [`QuasiNewtonMatrixDirectionUpdate`](@ref) there are several different updates to the matrix,
-while the default for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) the most prominent is [`InverseBFGS`](@ref).
+while for the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) the default and most prominent one is [`InverseBFGS`](@ref).
 """
 abstract type AbstractQuasiNewtonUpdateRule end
 
@@ -385,7 +385,7 @@ matrix-vector multiplication
 $_doc_QN_B_full_system
 
 where ``B_k`` is the matrix representing the operator with respect to the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``
-and ``$(_tex(:widehat, "$(_tex(:grad)) f(p_k)"))``. In the end, the search direction ``η_k`` is
+and ``$(_tex(:widehat, "$(_tex(:grad)) f(p_k)"))`` again represents the coordinates of the gradient of ``f`` in ``p_k``. In the end, the search direction ``η_k`` is
 generated from the coordinates ``$(_tex(:hat, "η"))_k`` and the vectors of the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``
 in both variants.
 The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used.
@@ -607,7 +607,7 @@ $(_fields(:vector_transport_method))
                                   retained in memory for further iterations. This may lead
                                   to non-positive-definite Hessians and non-descent directions
                                   being selected and thus needs to be handled elsewhere.
-                                - `:byrd`: pairs such that `inner(M, p, X_s, Y_s) <= iszero_abstol * norm(M, p, Y_s)^2`
+                                - `:byrd`: pairs such that `inner(M, p, X_s, Y_s) <= sy_tol * norm(M, p, Y_s)^2`
                                   are removed from memory (see [ByrdLuNocedalZhu:1995](@cite),
                                   Eq. (3.9) and its discussion).
 * `sy_tol`:                  tolerance for detecting non-positive-definite pairs (X_s, X_y).
@@ -742,8 +742,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
         end
     end
     if (last_safe_index == -1)
-        d.message = "$(d.message)$(length(d.message) > 0 ? :"\n" : "")"
-        d.message = "$(d.message) All memory yield zero inner products, falling back to a gradient step."
+        d.message = "All memory pairs yield zero inner products, falling back to a gradient step."
 
         r .*= -1
         return r
@@ -837,10 +836,10 @@ Generate a cautious update for either a matrix based or a limited memory based u
 [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 """
-mutable struct QuasiNewtonCautiousDirectionUpdate{U, Tθ} <:
-    AbstractQuasiNewtonDirectionUpdate where {
+mutable struct QuasiNewtonCautiousDirectionUpdate{
         U <: Union{QuasiNewtonMatrixDirectionUpdate, QuasiNewtonLimitedMemoryDirectionUpdate},
-    }
+        Tθ,
+    } <: AbstractQuasiNewtonDirectionUpdate
     update::U
     θ::Tθ
 end
@@ -1501,11 +1500,13 @@ function set_stepsize_bound!(M::ProductManifold, d_out, p, d, t_current::Real)
 end
 
 @doc raw"""
-    GeneralizedCauchyDirectionSubsolver{TM <: AbstractManifold, TP, T_HA <: AbstractQuasiNewtonDirectionUpdate, TFU <: AbstractSegmentHessianUpdater}
+    GeneralizedCauchyDirectionSubsolver{TX, T_HA, TFU <: AbstractSegmentHessianUpdater, TFT, TBI, TO}
 
-Helper container for generalized Cauchy direction search. Stores the manifold `M`, cached
-original descent direction (`d_original`), the quasi-Newton direction update `ha`, and the
-`hessian_segment_updater`, which computes certain values of the Hessian while advancing segments.
+Helper container for generalized Cauchy direction search. Stores the cached
+original descent direction (`d_original`), the quasi-Newton direction update `ha`, the
+`hessian_segment_updater`, which computes certain values of the Hessian while advancing
+segments, the list of bounds `F_list`, the bound indices `bounds_indices`, and the heap
+`ordering`.
 Instances are reused across segments during [`find_generalized_cauchy_direction!`](@ref) to
 avoid allocations.
 """

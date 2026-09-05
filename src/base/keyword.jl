@@ -84,8 +84,7 @@ function keyword_error_string(f, kw::Keywords; hint = true)
     end
     if length(kw.deprecated) > 0
         print(io, "\n$(f) accepts, but deprecates the keyword(s):\n  ")
-        print(io, join(sort!(collect(kw.deprecated)), ", "), "\n  ")
-        print(io, "\n")
+        print(io, join(sort!(collect(kw.deprecated)), ", "), "\n")
     end
     if hint
         akw = accepted_keywords(f).accepted

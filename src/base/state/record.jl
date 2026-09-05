@@ -8,7 +8,7 @@
 A `RecordAction` is a small functor to record values.
 The usual call is given by
 
-    (amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k) -> s
+    (amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k) -> ams
 
 that performs the record for the current problem and solver combination, and where `k` is
 the current iteration.
@@ -53,7 +53,7 @@ Construct a record decorated [`AbstractManoptSolverState`](@ref), where `dR` can
 
 * a [`RecordAction`](@ref), then it is stored within the dictionary at `:Iteration`.
 * a `Dict{Symbol,RecordAction}`.
-* an `Array` of [`RecordAction`](@ref)s, `Symbol`s and `String`s, which is passed to
+* an `Array` of [`RecordAction`](@ref)s and `Symbol`s, which is passed to
   the [`RecordFactory`](@ref).
 * a single `Symbol`, which is also passed to the [`RecordFactory`](@ref).
 """
@@ -226,7 +226,7 @@ getindex(rs::RecordSolverState, s::Symbol, i...) = get_record_action(rs, s)[i...
 """
     record_or_reset!(r, v, k)
 
-either record (`k>0` and not `Inf`) the value `v` within the [`RecordAction`](@ref) `r`
+either record (`k>0`) the value `v` within the [`RecordAction`](@ref) `r`
 or reset (`k<0`) the internal storage, where `v` has to match the internal
 value type of the corresponding [`RecordAction`](@ref).
 """
@@ -295,7 +295,7 @@ function status_summary(re::RecordEvery; context::Symbol = :default)
     (context === :inline) && return "A RecordAction that records its inner action $s iteration"
     return """
     A RecordAction that records $s iteration with
-    $(_MANOPT_INDENT)$(_in_str(status_summary(re.record; context = context); indent = 1))
+    $(_in_str(status_summary(re.record; context = context); indent = 1))
     """
 end
 get_record(r::RecordEvery) = get_record(r.record)
@@ -381,7 +381,7 @@ end
 function status_summary(rg::RecordGroup; context::Symbol = :default)
     (context === :short) && (return "[$(join(["$(status_summary(ri; context = context))" for ri in rg.group], ", "))]")
     (context === :inline) && (return "A group of $(length(rg.group)) RecordActions")
-    return "A group of $(length(rg.group)) RecordActions:\n $(join(["* $(status_summary(ri; context = context))" for ri in rg.group], "\n"))\n"
+    return "A group of $(length(rg.group)) RecordActions:\n$(join(["* $(status_summary(ri; context = context))" for ri in rg.group], "\n"))\n"
 end
 function Base.show(io::IO, rg::RecordGroup)
     s = join(["$(ri)" for ri in rg.group], ", ")

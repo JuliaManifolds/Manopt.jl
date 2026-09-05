@@ -6,13 +6,13 @@ Store all options required for the DouglasRachford algorithm,
 # Fields
 
 * `α`:                         relaxation of the step from old to new iterate, to be precise
-  ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result of the double
+  ``p^{(k+1)} = g(α_k; p^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double
   reflection involved in the DR algorithm
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 * `λ`:                         function to provide the value for the proximal parameter during the calls
 * `parallel`:                  indicate whether to use a parallel Douglas-Rachford or not.
-* `R!`:                          method employed in the iteration to perform the reflection of `x` at the prox `p`.
+* `R!`:                          method employed in the iteration to perform the reflection of `p` at the prox of `p`.
 $(_fields(:p; add_properties = [:as_Iterate]))
   For the parallel Douglas-Rachford, this is not a value from the `PowerManifold` manifold but the mean.
 $(_fields(:retraction_method))
@@ -30,7 +30,7 @@ $(_args(:M))
 # Keyword arguments
 
 * `α= k -> 0.9`: relaxation of the step from old to new iterate, to be precise
-  ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result of the double reflection involved in the DR algorithm
+  ``p^{(k+1)} = g(α_k; p^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double reflection involved in the DR algorithm
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter

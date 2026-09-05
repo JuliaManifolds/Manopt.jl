@@ -111,7 +111,7 @@ function decorate_state!(
     if !ismissing(callback) # we got a simple callback
         @warn """
             the `callback =` keyword/decorator step is deprecated, use
-            `callbacks = [:Step => [...]]` to add your callback to the (end of)
+            `callbacks = [:Step => (problem, state, k) -> ...]` to add your callback to the (end of)
             an iteration step
         """
         debug = _add_debug_callback(debug, DebugCallback(callback; simple = true))

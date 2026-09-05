@@ -21,7 +21,7 @@ Then the coefficient reads
  = $(_tex(:frac, "$(_tex(:norm, "X_{k+1}"; index = "p_{k+1}") * "^2")", "$(_tex(:inner, "-δ_k", "X_k"; index = "p_k"))"))
 ```
 
-The second one is the one usually stated, while the first one avoids to use the metric `inner`.
+The second one is the one usually stated, while the first one avoids using the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 $(_note(:ManifoldDefaultsFactory, "ConjugateDescentCoefficientRule"))
@@ -82,7 +82,7 @@ $(_fields(:vector_transport_method))
 
     ConjugateGradientDescentState(M::AbstractManifold; kwargs...)
 
-where the last five fields can be set by their names as keyword and the
+where the last six fields can be set by their names as keyword (the field `stop` via the keyword `stopping_criterion`) and the
 `X` can be set to a tangent vector type using the keyword `initial_gradient` which defaults to `zero_vector(M,p)`,
 and `δ` is initialized to a copy of this vector.
 
@@ -346,7 +346,7 @@ $(
 )
 ````
 
-The second one is the one usually stated, while the first one avoids to use the metric `inner`.
+The second one is the one usually stated, while the first one avoids using the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 # Keyword arguments
@@ -422,7 +422,7 @@ Then the coefficient reads
  = $(_tex(:frac, _tex(:norm, "X_{k+1}"; index = "p_{k+1}") * "^2", _tex(:norm, "X_k"; index = "p_k") * "^2"))
 ```
 
-The second one is the one usually stated, while the first one avoids to use the metric `inner`.
+The second one is the one usually stated, while the first one avoids using the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 $(_note(:ManifoldDefaultsFactory, "FletcherReevesCoefficientRule"))
@@ -452,7 +452,7 @@ Construct the Hager-Zhang coefficient update rule based on [HagerZhang:2005](@ci
 
 $(_kwargs(:vector_transport_method))
 * `denom_threshold::Real=1e-10`: a threshold to avoid numerical instabilities when the inner
-  product `δ` and difference of gradients is close to zero.
+  product of `δ` and the difference of gradients is close to zero.
 
 # See also
 
@@ -549,6 +549,8 @@ This method includes a numerical stability proposed by those authors.
 # Keyword arguments
 
 $(_kwargs(:vector_transport_method))
+* `denom_threshold::Real=1e-10`: a threshold to avoid numerical instabilities when the inner
+  product of `δ` and the difference of gradients is close to zero.
 
 $(_note(:ManifoldDefaultsFactory, "HagerZhangCoefficientRule"))
 """
@@ -667,7 +669,7 @@ Then the coefficient reads
 \\end{aligned}
 ```
 
-The third one is the one usually stated, while the first one avoids to use the metric `inner`.
+The third one is the one usually stated, while the first one avoids using the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 The rule employs the nonnegative variant ``β_k^{+} = \\max(0, β_k)`` of this coefficient.
 
@@ -771,7 +773,7 @@ Then the coefficient reads
 = - $(_tex(:frac, "$(_tex(:inner, "X_{k+1}", "ν_k"; index = "p_{k+1}"))", "$(_tex(:inner, "δ_k", "X_k"; index = "p_k"))")).
 ```
 
-The second one is the one usually stated, while the first one avoids to use the metric `inner`.
+The second one is the one usually stated, while the first one avoids using the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 # Keyword arguments
@@ -874,7 +876,7 @@ Then the coefficient reads
 = $(_tex(:frac, _tex(:inner, "X_{k+1}", "ν_k"; index = "p_{k+1}"), _tex(:norm, "X_k"; index = "{p_k}") * "^2")).
 ````
 
-The second one is the one usually stated, while the first one avoids to use the metric `inner`.
+The second one is the one usually stated, while the first one avoids using the metric `inner`.
 The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 The rule employs the nonnegative variant ``β_k^{+} = \\max(0, β_k)`` of this coefficient.
 
@@ -1091,7 +1093,7 @@ A functor `(problem, state, k) -> β_k` to compute hybrid conjugate gradient upd
 
 # Fields
 
-* `coefficients::NTuple{DirectionUpdateRuleStorage, N}`: `NTuple` containing storage wrappers of CG coefficients of which the minimum is taken
+* `coefficients::Vector{<:DirectionUpdateRule}`: a vector containing storage wrappers of the CG coefficients of which the minimum is taken
 * `lower_bound::DirectionUpdateRuleStorage`: storage wrapper of lower bound CG coefficient
 * `lower_bound_scale::Real`: scalar the lower bound is multiplied with
 
@@ -1153,13 +1155,13 @@ end
     HybridCoefficient(coefficients::Union{DirectionUpdateRule,ManifoldDefaultsFactory}...; kwargs...)
     HybridCoefficient(M::AbstractManifold, coefficients::Union{DirectionUpdateRule,ManifoldDefaultsFactory}...; kwargs...)
 
-Computes an hybrid update coefficient for the [`conjugate_gradient_descent`](@ref).
+Computes a hybrid update coefficient for the [`conjugate_gradient_descent`](@ref).
 
 Given coefficients ``β_i`` for ``i = 1,...,m``, a lower bound coefficient ``β_0``, and a scalar factor ``σ`` for the lower bound,
 this coefficient computes
 
 ```math
-β_k = $(_tex(:max))$(_tex(:set, "σ * β_0, $(_tex(:min))(β_1, .... β_m)$(_tex(:bigr)))"))
+β_k = $(_tex(:max))$(_tex(:set, "σ * β_0, $(_tex(:min))(β_1, …, β_m)"))
 ```
 
 This includes the HS-DY and FR-PRP hybrid parameters introduced in [SakaiIiduka:2020](@cite) and [SakaiIiduka:2021](@cite)
@@ -1180,7 +1182,7 @@ hybrid rule
 The FR-PRP parameter reads
 
 ```math
-β_k^{$(_tex(:rm, "FR-PRP"))} = $(_tex(:max))$(_tex(:set, "0, $(_tex(:min))(β_k^{FR}, β_k^{PRP})$(_tex(:bigr)))"))
+β_k^{$(_tex(:rm, "FR-PRP"))} = $(_tex(:max))$(_tex(:set, "0, $(_tex(:min))(β_k^{FR}, β_k^{PRP})"))
 ```
 
 and can be implemented using
@@ -1222,7 +1224,7 @@ A restart strategy that restarts, whenever the search direction `δ` is not a de
 i.e. when
 
 ```math
-    ⟨$(_tex(:grad))f(p), δ⟩ > 0,
+    ⟨$(_tex(:grad))f(p), δ⟩ ≥ 0,
 ```
 
 at the current iterate ``p``.

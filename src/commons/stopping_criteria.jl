@@ -486,7 +486,7 @@ Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $
 is given by
 
 ```math
-$(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distance))(p_k,q_k)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
+$(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_math(:distance))(p_i,q_i)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.
@@ -647,7 +647,7 @@ end
     StopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the
-optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p, s)`.
+optimization problem from within a [`AbstractManoptProblem`](@ref), i.e. `get_cost(p, s)`.
 
 # Constructor
 
@@ -860,7 +860,7 @@ function has_converged(sc::StopWhenCriterionWithIterationCondition)
     return has_converged(sc.stopping_criterion)
 end
 function Base.show(io::IO, sc::StopWhenCriterionWithIterationCondition)
-    return print(io, "StopWhenCriterionWithIterationCondition($(typeof(sc.stopping_criterion)), $(sc.comp))")
+    return print(io, "StopWhenCriterionWithIterationCondition($(repr(sc.stopping_criterion)), $(sc.comp))")
 end
 function status_summary(sc::StopWhenCriterionWithIterationCondition; context::Symbol = :default)
     (context == :short) && return repr(sc)
@@ -987,7 +987,7 @@ Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent 
 is given by
 
 ```math
-$(_tex(:norm, "X-Y"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k-Y_k"; index = "p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
+$(_tex(:norm, "X-Y"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_tex(:norm, "X_i-Y_i"; index = "p_i"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.
@@ -1134,6 +1134,7 @@ function Base.show(io::IO, c::StopWhenGradientMappingNormLess)
     return print(io, "StopWhenGradientMappingNormLess($(c.threshold))")
 end
 function status_summary(c::StopWhenGradientMappingNormLess; context::Symbol = :default)
+    (context == :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "|G| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient mapping norm is less than a tolerance.\n$(_MANOPT_INDENT)") * s
@@ -1169,7 +1170,7 @@ Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the 
 is given by
 
 ```math
-$(_tex(:norm, "X"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k"; index = "p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
+$(_tex(:norm, "X"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_tex(:norm, "X_i"; index = "p_i"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.
@@ -1370,6 +1371,7 @@ function get_reason(sc::StopWhenLagrangeMultiplierLess)
     return ""
 end
 function status_summary(sc::StopWhenLagrangeMultiplierLess; context::Symbol = :default)
+    (context == :short) && return repr(sc)
     s = (sc.at_iteration >= 0) ? "reached" : "not reached"
     msg = "Lagrange multipliers"
     isnothing(sc.names) && (msg *= " with tolerances $(sc.tolerances)")
@@ -1484,7 +1486,7 @@ function has_converged(sc::StopWhenRepeated)
     return has_converged(sc.stopping_criterion)
 end
 function Base.show(io::IO, sc::StopWhenRepeated)
-    return print(io, "StopWhenRepeated($(typeof(sc.stopping_criterion)), $(sc.n); consecutive=$(sc.consecutive))")
+    return print(io, "StopWhenRepeated($(repr(sc.stopping_criterion)), $(sc.n); consecutive=$(sc.consecutive))")
 end
 function status_summary(sc::StopWhenRepeated; context::Symbol = :default)
     (context == :short) && return "StopWhenRepeated($(repr(sc.stopping_criterion)))×$(sc.n)"

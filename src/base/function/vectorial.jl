@@ -406,7 +406,7 @@ _doc_get_jacobian_matrix_vgf = """
     get_jacobian!(M::AbstractManifold, J, vgf::AbstractFirstOrderVectorFunction, p; kwargs...)
 
 Return the Jacobian ``J_F(p): $(_math(:TangentSpace)) → ℝ^m`` of an [`AbstractFirstOrderVectorFunction`](@ref) `vgf`,
-that is of a function ``F: $(_math(:Manifold)) → ℝ^m``, where `p ∈ $(_math(:Manifold))`, in matrix form with respect to
+that is of a function ``F: $(_math(:Manifold)) → ℝ^m``, where ``p ∈ $(_math(:Manifold))``, in matrix form with respect to
 a basis ``$(_tex(:Cal, "B")) = $(_tex(:set, "Y_1,…,Y_n"))`` of the tangent space.
 
 Then decomposing a tangent vector ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) c_iY_i``
@@ -694,7 +694,7 @@ end
 # (a) We have a single gradient function
 function get_jacobian!(
         M::AbstractManifold, JF, vgf::VGF, p;
-        basis::AbstractBasis = default_basis(M, typeof(p)), range::AbstractPowerRepresentation = get_range(vgf.jacobian_type),
+        basis::AbstractBasis = get_basis(vgf.jacobian_type), range::AbstractPowerRepresentation = get_range(vgf.jacobian_type),
         Y_cache = nothing, c_cache = nothing,
     ) where {FT, VGF <: AbstractVectorGradientFunction{FT, <:FunctionVectorialType}}
     mP = PowerManifold(M, range, vgf.range_dimension)
@@ -780,7 +780,7 @@ This can be computed in-place of `a`.
 
 # Keyword arguments
 
-$(_kwargs(:X)) It is used as memory to compute the interim tangent vector where necessary,
+$(_kwargs(:X)). It is used as memory to compute the interim tangent vector where necessary,
   and is non-allocating and/or ignored where it is not.
 
 !!! note "Technical note"

@@ -56,8 +56,7 @@ function get_cost_and_differential(
     return (get_cost(M, objective, p), get_differential(M, objective, p, X; kwargs...))
 end
 
-function get_cost_and_gradient! end
-@doc """
+_doc_get_cost_and_gradient = """
     (c, X) = get_cost_and_gradient(problem::AbstractManoptProblem, p)
     (c, X) = get_cost_and_gradient(M, objective::AbstractManifoldFirstOrderObjective, p)
     (c, X) = get_cost_and_gradient!(M, X, objective::AbstractManifoldFirstOrderObjective, p)
@@ -69,6 +68,11 @@ Similarly, any objective decorator would “pass through” to its inner objecti
 
 The gradient part can be evaluated in-place of `X`.
 """
+
+@doc "$(_doc_get_cost_and_gradient)"
+function get_cost_and_gradient! end
+
+@doc "$(_doc_get_cost_and_gradient)"
 function get_cost_and_gradient(
         M::AbstractManifold, mfo::AbstractManifoldFirstOrderObjective, p
     )
