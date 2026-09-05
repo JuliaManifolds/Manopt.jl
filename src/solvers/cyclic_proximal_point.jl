@@ -64,9 +64,9 @@ function CyclicProximalPointState(
     return CyclicProximalPointState(; callbacks = callbacks, order = Int[], order_type = evaluation_order, p = p, stopping_criterion = stopping_criterion, λ = λ)
 end
 get_iterate(cpps::CyclicProximalPointState) = cpps.p
-function set_iterate!(cpps::CyclicProximalPointState, p)
+function set_iterate!(cpps::CyclicProximalPointState, ::AbstractManifold, p)
     cpps.p = p
-    return p
+    return cpps
 end
 get_callbacks(cpps::CyclicProximalPointState) = cpps.callbacks
 function Base.show(io::IO, cpps::CyclicProximalPointState)

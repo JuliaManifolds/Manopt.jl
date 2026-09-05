@@ -7,7 +7,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 
 * `cost`:                        ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_forward_operator!`: the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `adjoint_linearized_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:Manifold; M = "N")) → $(_math(:TangentBundle))``
+* `adjoint_linearized_operator!`: the adjoint differential ``(DΛ)^* : $(_math(:TangentBundle; M = "N")) → $(_math(:TangentBundle))``
 * `prox_f!`:                     the proximal map belonging to ``F``
 * `diff_prox_f!`:                the (Clarke Generalized) differential of the proximal maps of ``F``
 * `prox_g_dual!`:                the proximal map belonging to ``G^$(_tex(:ast))_n``
@@ -338,7 +338,8 @@ and ``Λ: \mathcal M → \mathcal N``. The remaining input parameters are
 """
 
 _doc_PDSN = """
-    primal_dual_semismooth_Newton(M, N, cost, p, X, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_dual_G, linearized_operator, adjoint_linearized_operator)
+    primal_dual_semismooth_Newton(M, N, cost, p, X, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual, linearized_forward_operator, adjoint_linearized_operator; kwargs...)
+    primal_dual_semismooth_Newton!(M, N, cost, p, X, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual, linearized_forward_operator, adjoint_linearized_operator; kwargs...)
 
 Perform the Primal-Dual Riemannian semismooth Newton algorithm.
 
@@ -348,8 +349,8 @@ $(_doc_PDSN_formula)
 * `m,n`:                           base points on ``$(_math(:Manifold))`` and ``$(_math(:Manifold, M = "N"))``, respectively.
 * `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
 * `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_math(:TangentSpace; p = "m")) → $(_math(:TangentSpace; M = "N", p = "Λ(m)"))``
-* `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
-* `diff_prox_F, diff_prox_dual_G`: the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
+* `prox_F, prox_G_dual`:           the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
+* `diff_prox_F, diff_prox_G_dual`: the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
 For more details on the algorithm, see [DiepeveenLellmann:2021](@cite).
 

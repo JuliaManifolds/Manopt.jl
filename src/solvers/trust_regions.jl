@@ -447,7 +447,7 @@ function trust_regions!(
             StopWhenTrustRegionIsExceeded() |
             StopWhenCurvatureIsNegative() |
             StopWhenModelIncreased(),
-        sub_state::AbstractManoptSolverState = decorate_state!(
+        sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = decorate_state!(
             TruncatedConjugateGradientState(
                 TangentSpace(M, copy(M, p));
                 X = zero_vector(M, p), θ = θ, κ = κ,

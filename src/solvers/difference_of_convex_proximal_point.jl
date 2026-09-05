@@ -275,8 +275,10 @@ end
 #
 _doc_DCPPA = """
     difference_of_convex_proximal_point(M, grad_h, p=rand(M); kwargs...)
+    difference_of_convex_proximal_point(M, f, grad_h, p; kwargs...)
     difference_of_convex_proximal_point(M, mdcpo, p=rand(M); kwargs...)
     difference_of_convex_proximal_point!(M, grad_h, p; kwargs...)
+    difference_of_convex_proximal_point!(M, f, grad_h, p; kwargs...)
     difference_of_convex_proximal_point!(M, mdcpo, p; kwargs...)
 
 Compute the difference of convex proximal point algorithm [SouzaOliveira:2015](@cite) to minimize
@@ -309,7 +311,7 @@ DC functions is obtained for ``s_k = 1`` and one can hence employ usual line sea
 # Input
 
 $(_args([:M, :f]))
-  total cost function ``f = g - h``
+  total cost function ``f = g - h``; optional, when given positionally `p` has to be provided as well
 $(_args(:grad_f; name = "grad_h", f = "h"))
 $(_args(:p))
 
@@ -326,7 +328,7 @@ $(_kwargs(:evaluation))
 * `grad_g=missing`: specify the gradient of `g`. If both `g`and `grad_g` are specified, a subsolver is automatically set up.
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stepsize; default = "`[`ConstantLength`](@ref)`()"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)`, plus `[`StopWhenGradientNormLess`](@ref)`(1.0e-9)` when a gradient is provided"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)`, plus (when a gradient is provided)$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
 * `sub_cost=`[`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`):
   cost to be used within the default `sub_problem` that is initialized as soon as `g` is provided.
   $(_note(:KeywordUsedIn, "sub_objective"))
@@ -376,6 +378,9 @@ function difference_of_convex_proximal_point(
     )
     return maybe_unwrap_variable(p, rs)
 end
+function difference_of_convex_proximal_point(M::AbstractManifold, f, grad_h, p; kwargs...)
+    return difference_of_convex_proximal_point(M, grad_h, p; cost = f, kwargs...)
+end
 
 function difference_of_convex_proximal_point(
         M::AbstractManifold, mdcpo::O, p; kwargs...
@@ -401,6 +406,9 @@ function difference_of_convex_proximal_point!(
     return difference_of_convex_proximal_point!(
         M, mdcpo, p; evaluation = evaluation, kwargs...
     )
+end
+function difference_of_convex_proximal_point!(M::AbstractManifold, f, grad_h, p; kwargs...)
+    return difference_of_convex_proximal_point!(M, grad_h, p; cost = f, kwargs...)
 end
 function difference_of_convex_proximal_point!(
         M::AbstractManifold, mdcpo::O, p;

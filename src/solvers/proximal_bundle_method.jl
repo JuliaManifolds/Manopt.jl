@@ -37,6 +37,10 @@ $(_fields([:sub_problem, :sub_state]))
 
 Generate the state for the [`proximal_bundle_method`](@ref) on the manifold `M`
 
+## Input
+
+$(_args([:M, :sub_problem, :sub_state]))
+
 # Keyword arguments
 
 * `bundle_size=50`
@@ -46,8 +50,6 @@ $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
-$(_kwargs(:sub_problem; default = "`[`proximal_bundle_method_subsolver`](@ref)` "))
-$(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X)) to specify the type of tangent vector to use.
 * `α₀=1.2`
@@ -346,7 +348,8 @@ function proximal_bundle_method!(
         α₀ = α₀, ε = ε, δ = δ, μ = μ,
     )
     pbms = decorate_state!(pbms; kwargs...)
-    return get_solver_return(solve!(mp, pbms))
+    solve!(mp, pbms)
+    return get_solver_return(get_objective(mp), pbms)
 end
 calls_with_kwargs(::typeof(proximal_bundle_method!)) = (decorate_objective!, decorate_state!)
 
@@ -458,7 +461,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
                 ),
             )^2,
         )
-        if length(pbms.bundle) == pbms.bundle_size
+        if length(pbms.bundle) > pbms.bundle_size
             deleteat!(pbms.bundle, 1)
             deleteat!(pbms.lin_errors, 1)
             deleteat!(pbms.approx_errors, 1)

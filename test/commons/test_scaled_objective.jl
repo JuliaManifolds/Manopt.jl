@@ -74,8 +74,8 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     @test Y == -Z
     # differential accessors, which require a first order objective with a differential
     df(M, p, X) = dot(A * p, X)
-    fo = ManifoldGradientObjective(f, ∇f; differential = df)
-    sfo = -fo
+    mgo = ManifoldGradientObjective(f, ∇f; differential = df)
+    sfo = -mgo
     @test Manopt.get_cost_and_differential(M, sfo, p, X) == (-f(M, p), -df(M, p, X))
     @test Manopt.get_differential(M, sfo, p, X) == -df(M, p, X)
     @test Manopt.get_differential_function(sfo)(M, p, X) == -df(M, p, X)

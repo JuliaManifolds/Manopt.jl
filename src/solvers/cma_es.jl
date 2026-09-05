@@ -308,7 +308,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, k::Int)
 
     # covariance matrix adaptation
     s.p_c .*= 1 - s.c_c # Eq. (45), part 1
-    if norm(s.p_σ) / sqrt(1 - (1 - s.c_σ)^(2 * (k + 1))) <
+    if norm(s.p_σ) / sqrt(1 - (1 - s.c_σ)^(2 * k)) <
             (1.4 + 2 / (n_coords + 1)) * s.e_mv_norm # h_σ criterion
         s.p_c .+= sqrt(s.c_c * (2 - s.c_c) * s.μ_eff) .* s.buffer # Eq. (45), part 2
         δh_σ = zero(s.c_c) # Appendix A
@@ -546,7 +546,8 @@ mutable struct StopWhenCovarianceIllConditioned{T <: Real} <: StoppingCriterion
     at_iteration::Int
 end
 function StopWhenCovarianceIllConditioned(threshold::Real = 1.0e14)
-    return StopWhenCovarianceIllConditioned{typeof(threshold)}(threshold, 1, -1)
+    t = float(threshold)
+    return StopWhenCovarianceIllConditioned{typeof(t)}(t, one(t), -1)
 end
 
 indicates_convergence(c::StopWhenCovarianceIllConditioned) = false
@@ -688,6 +689,7 @@ function is_active_stopping_criterion(c::StopWhenEvolutionStagnates)
     end
     threshold_low = Int(ceil(N * c.fraction))
     threshold_high = Int(floor(N * (1 - c.fraction)))
+    (threshold_low < 1 || threshold_high < 1) && return false
     best_stagnant =
         median(c.best_history[1:threshold_low]) <= median(c.best_history[threshold_high:end])
     median_stagnant =
@@ -715,11 +717,11 @@ function status_summary(c::StopWhenEvolutionStagnates; context::Symbol = :defaul
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     N = length(c.best_history)
-    if N == 0
-        return "best and median fitness not yet filled, stopping criterion:$(_MANOPT_INDENT)$s"
-    end
     threshold_low = Int(ceil(N * c.fraction))
     threshold_high = Int(floor(N * (1 - c.fraction)))
+    if threshold_low < 1 || threshold_high < 1
+        return "best and median fitness not yet filled, stopping criterion:$(_MANOPT_INDENT)$s"
+    end
     median_best_old = median(c.best_history[1:threshold_low])
     median_best_new = median(c.best_history[threshold_high:end])
     median_median_old = median(c.median_history[1:threshold_low])
@@ -873,9 +875,10 @@ mutable struct StopWhenPopulationCostConcentrated{TParam <: Real} <: StoppingCri
     best_value_history::CircularBuffer{TParam}
     at_iteration::Int
 end
-function StopWhenPopulationCostConcentrated(tol::TParam, max_size::Int) where {TParam <: Real}
-    return StopWhenPopulationCostConcentrated{TParam}(
-        tol, CircularBuffer{TParam}(max_size), -1
+function StopWhenPopulationCostConcentrated(tol::Real, max_size::Int)
+    t = float(tol)
+    return StopWhenPopulationCostConcentrated{typeof(t)}(
+        t, CircularBuffer{typeof(t)}(max_size), -1
     )
 end
 

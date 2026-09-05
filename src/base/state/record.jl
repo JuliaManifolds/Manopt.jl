@@ -19,8 +19,8 @@ called from within [`stop_solver!`](@ref), which returns `true` afterwards.
 
 Any negative value is interpreted as a “reset”, and should hence delete all stored recordings,
 for example when reusing a `RecordAction`.
-The start of a solver calls the `:Iteration` and `:Stop` dictionary entries with `-1`,
-to reset those recordings.
+The start of a solver calls the `:Start` dictionary entry with `1`, so that its actions record once,
+and the `:Iteration` and `:Stop` dictionary entries with `-1`, to reset those recordings.
 
 By default any `RecordAction` is assumed to record its values in a field `recorded_values`,
 a `Vector` of recorded values. See [`get_record`](@ref get_record(r::RecordAction))`(ra)`.

@@ -385,7 +385,7 @@ end
 
 Stop when the KKT residual
 
-```
+```math
 r^2
 = $(_tex(:norm, "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p, μ, λ) "))^2
 + $(_tex(:sum, "i=1", "m")) [μ_i]_{-}^2 + [g_i(p)]_+^2 + $(_tex(:abs, "μ_i g_i(p)"))^2
@@ -414,7 +414,10 @@ function (c::StopWhenKKTResidualLess)(
         amp::AbstractManoptProblem, ipns::InteriorPointNewtonState, k::Int
     )
     M = get_manifold(amp)
-    (k <= 0) && return false
+    if k <= 0 # reset on init
+        c.at_iteration = -1
+        return false
+    end
     # now k > 0
     # Check residual
     μ, λ, s, p = ipns.μ, ipns.λ, ipns.s, ipns.p
@@ -732,7 +735,7 @@ function interior_point_Newton!(
     ips = InteriorPointNewtonState(
         M, cmo, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, InteriorPointNewtonState),
-        p = p, X = X, Y = Y, Z = Z, W = W, μ = μ, λ = λ, s = s,
+        p = p, X = X, Y = Y, Z = Z, W = W, μ = μ, λ = λ, s = s, ρ = ρ, σ = σ,
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,
         step_problem = step_problem, step_state = step_state,

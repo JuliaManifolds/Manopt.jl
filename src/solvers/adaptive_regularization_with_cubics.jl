@@ -479,7 +479,7 @@ function adaptive_regularization_with_cubics!(
         ),
         sub_objective = nothing,
         sub_problem = nothing,
-        stopping_criterion::StoppingCriterion = if get_state(sub_state) isa LanczosState
+        stopping_criterion::StoppingCriterion = if (sub_state isa AbstractManoptSolverState) && (get_state(sub_state) isa LanczosState)
             StopAfterIteration(40) |
                 StopWhenGradientNormLess(1.0e-9) |
                 StopWhenAllLanczosVectorsUsed(maxIterLanczos - 1)
@@ -536,7 +536,8 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     retract!(M, arcs.q, arcs.p, arcs.s, arcs.retraction_method)
     cost = get_cost(M, mho, arcs.p)
     ρ_num = cost - get_cost(M, mho, arcs.q)
-    ρ_vec = arcs.X + 0.5 * get_hessian(M, mho, arcs.p, arcs.s)
+    get_hessian!(M, arcs.H, mho, arcs.p, arcs.s)
+    ρ_vec = arcs.X + 0.5 * arcs.H
     ρ_den = -real(inner(M, arcs.p, arcs.s, ρ_vec))
     ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
     arcs.ρ_denominator = ρ_den + ρ_reg # <= 0 -> the default debug kicks in

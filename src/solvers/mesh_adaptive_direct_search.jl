@@ -483,8 +483,9 @@ mutable struct StopWhenPollSizeLess{F} <: StoppingCriterion
     threshold::F
     last_poll_size::F
     at_iteration::Int
-    function StopWhenPollSizeLess(ε::F) where {F <: Real}
-        return new{F}(ε, zero(ε), -1)
+    function StopWhenPollSizeLess(ε::Real)
+        e = float(ε)
+        return new{typeof(e)}(e, zero(e), -1)
     end
 end
 function (c::StopWhenPollSizeLess)(
@@ -610,7 +611,7 @@ function mesh_adaptive_direct_search!(
     madss = MeshAdaptiveDirectSearchState(
         M, p;
         callbacks = process_callbacks_arg(callbacks, MeshAdaptiveDirectSearchState),
-        max_stepsize = oftype(scale_mesh, max_stepsize),
+        max_stepsize = max_stepsize,
         mesh_basis = mesh_basis,
         poll = poll,
         retraction_method = retraction_method,

@@ -151,7 +151,7 @@ using ManifoldDiff: prox_distance, prox_distance!
         M = Euclidean(3)
         p = ones(3)
         O = CyclicProximalPointState(M; p = zeros(3))
-        set_iterate!(O, p)
+        set_iterate!(O, M, p)
         @test get_iterate(O) == p
     end
     @testset "Debug and Record prox parameter" begin

@@ -333,7 +333,7 @@ function LevenbergMarquardt(
         robustifier::AbstractRobustifierFunction = IdentityRobustifier(), kwargs...,
     )
     # For a single vector gradient function, we always treat robustification componentwise
-    nlso = ManifoldNonlinearLeastSquaresObjective(vgf, ComponentwiseRobustifierFunction(robustifier))
+    nlso = ManifoldNonlinearLeastSquaresObjective(vgf, robustifier)
     return LevenbergMarquardt(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt(
@@ -401,16 +401,15 @@ function LevenbergMarquardt!(
     return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt!(
-        M::AbstractManifold, vgf::VectorGradientFunction, p;
+        M::AbstractManifold, vgf::Union{VectorGradientFunction, VectorDifferentialFunction}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        robustifier = IdentityRobustifier(),
-        kwargs...,
+        robustifier::AbstractRobustifierFunction = IdentityRobustifier(), kwargs...,
     )
     nlso = ManifoldNonlinearLeastSquaresObjective(vgf, robustifier)
     return LevenbergMarquardt!(M, nlso, p; evaluation = evaluation, kwargs...)
 end
 function LevenbergMarquardt!(
-        M::AbstractManifold, vgf::Vector{<:VectorGradientFunction}, p;
+        M::AbstractManifold, vgf::Union{Vector{<:VectorGradientFunction}, Vector{<:VectorDifferentialFunction}}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         robustifier::Vector{<:AbstractRobustifierFunction} = [IdentityRobustifier() for _ in 1:length(vgf)],
         kwargs...,

@@ -168,6 +168,7 @@ function (swrr::StopWhenRelativeResidualLess)(
     #compute current r-norm
     swrr.norm_r = norm(M, p, crs.r)
     if k <= 0
+        swrr.at_iteration = -1
         # on init also update the right hand side norm
         swrr.c = norm(M, p, get_vector_field(M, get_objective(amp), p))
         return false # just init the norm, but do not stop

@@ -40,7 +40,8 @@ function NelderMeadSimplex(
     vecs = [
         get_vector(M, p_, [ifelse(i == j, a, zero(a)) for i in 1:M_dim], B) for j in 0:M_dim
     ]
-    pts = map(X -> retract(M, p_, X, retraction_method), vecs)
+    # p_ is only wrapped for the computation; the simplex holds points of the user's type
+    pts = map(X -> maybe_unwrap_variable(p, retract(M, p_, X, retraction_method)), vecs)
     return NelderMeadSimplex(pts)
 end
 Base.show(io::IO, nms::NelderMeadSimplex) = print(io, "NelderMeadSimplex(", nms.pts, ")")
@@ -240,13 +241,12 @@ end
 function NelderMead(
         M::AbstractManifold, f::F, population::NelderMeadSimplex{P, V}; kwargs...
     ) where {P <: Number, V <: AbstractVector{P}, F <: Function}
-    f_ = (M, p) -> f(M, p[])
+    f_ = maybe_wrap_function(f, P; result = :Number)
     population_ = NelderMeadSimplex([[p] for p in population.pts])
     rs = NelderMead(M, f_, population_; kwargs...)
-    rs isa Tuple && return (rs[1], _unwrap_nelder_mead(P, rs[2]))
-    return _unwrap_nelder_mead(P, rs)
+    rs isa Tuple && return (rs[1], maybe_unwrap_variable(P, rs[2]))
+    return maybe_unwrap_variable(P, rs)
 end
-_unwrap_nelder_mead(::Type{P}, rs) where {P <: Number} = (P == eltype(rs)) ? rs[] : rs
 function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
     mco = ManifoldCostObjective(f)
     return NelderMead(M, mco, population; kwargs...)

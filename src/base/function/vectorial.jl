@@ -717,7 +717,7 @@ function get_jacobian!(
         M::AbstractManifold, JF, vgf::VGF, p;
         basis::AbstractBasis = get_basis(vgf.jacobian_type), range = nothing, X = nothing, Y_cache = nothing,
     ) where {
-        FT, VGF <: AbstractVectorGradientFunction{FT, <:CoefficientVectorialType},
+        FT, VGF <: AbstractFirstOrderVectorFunction{FT, <:CoefficientVectorialType},
     }
     vgf.jacobian!(M, JF, p)
     _change_basis!(M, JF, p, vgf.jacobian_type.basis, basis)
@@ -814,7 +814,7 @@ function get_jacobian!(
 end
 # (c) Jacobian function
 function get_jacobian!(
-        M::AbstractManifold, a, vgf::AbstractVectorGradientFunction{FT, <:CoefficientVectorialType}, p, c, B::AbstractBasis;
+        M::AbstractManifold, a, vgf::AbstractFirstOrderVectorFunction{FT, <:CoefficientVectorialType}, p, c, B::AbstractBasis;
         X = nothing, Y_cache = nothing,
     ) where {FT}
     JF = allocate_jacobian(M, vgf; T = eltype(c))

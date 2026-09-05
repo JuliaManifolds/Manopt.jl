@@ -372,7 +372,7 @@ Glossaries.define!(
     _glossary_variables, :differential, :description,
     "specify a specific function to evaluate the differential. By default, ``Df(p)[X] = ⟨$(_tex(:grad))f(p),X⟩`` is used",
 )
-Glossaries.define!(_glossary_variables, :differential, :default, "nothing")
+Glossaries.define!(_glossary_variables, :differential, :default, "missing")
 
 Glossaries.define!(_glossary_variables, :evaluation)
 Glossaries.define!(

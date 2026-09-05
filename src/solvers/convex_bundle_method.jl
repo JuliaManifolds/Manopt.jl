@@ -634,11 +634,11 @@ _doc_convex_bundle_method = """
     convex_bundle_method(M, f, ∂f, p)
     convex_bundle_method!(M, f, ∂f, p)
 
-perform a convex bundle method ``p^{(k+1)} = $(_tex(:retr))_{p^{(k)}}(-g_k)`` where
+perform a convex bundle method with the candidate update ``q_{k+1} = $(_tex(:retr))_{p_k}(-t_k g_k)`` where
 
 $(_doc_cbm_gk)
 
-and ``p_k`` is the last serious iterate, ``X_{q_j} ∈ ∂f(q_j)``, and the ``λ_j^k`` are solutions
+and ``p_k`` is the last serious iterate, ``t_k`` the step size of iteration ``k``, ``X_{q_j} ∈ ∂f(q_j)``, and the ``λ_j^k`` are solutions
 to the quadratic subproblem provided by the [`convex_bundle_method_subsolver`](@ref).
 
 Though the subdifferential might be set valued, the argument `∂f` should always
@@ -710,6 +710,7 @@ function convex_bundle_method!(
             StopWhenLagrangeMultiplierLess(1.0e-8; names = ["-ξ"]), StopAfterIteration(5000)
         ),
         vector_transport_method::VTransp = default_vector_transport_method(M, typeof(p)),
+        X = zero_vector(M, p),
         sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = evaluation,
         sub_problem = sub_state isa InplaceEvaluation ?
             convex_bundle_method_subsolver! : convex_bundle_method_subsolver,
@@ -734,10 +735,12 @@ function convex_bundle_method!(
         retraction_method = retraction_method,
         stopping_criterion = stopping_criterion,
         vector_transport_method = vector_transport_method,
+        X = X,
         ϱ = ϱ,
     )
     bms = decorate_state!(bms; debug = debug, kwargs...)
-    return get_solver_return(solve!(mp, bms))
+    solve!(mp, bms)
+    return get_solver_return(get_objective(mp), bms)
 end
 calls_with_kwargs(::typeof(convex_bundle_method!)) = (decorate_objective!, decorate_state!)
 

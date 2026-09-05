@@ -247,7 +247,7 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 $(_kwargs(:retraction_method))
-$(_kwargs(:stepsize; default = "`[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)"))
+$(_kwargs(:stepsize; default = "`[`WolfePowellLinesearch`](@ref)`(; retraction_method=retraction_method, vector_transport_method=vector_transport_method, stop_when_stepsize_less=1e-10)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 $(_kwargs(:vector_transport_method))
 

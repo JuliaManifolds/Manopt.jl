@@ -80,8 +80,9 @@ Random.seed!(29)
         M = Circle()
         data = [-π / 2, π / 4, 0.0, π / 4]
         p_star = sum(data) / length(data)
-        @test NelderMeadSimplex(Circle(), 0.0).pts isa Vector{Array{Float64, 0}}
+        @test NelderMeadSimplex(Circle(), 0.0).pts isa Vector{Float64}
         f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
+        @test NelderMead(M, f, NelderMeadSimplex(M, 0.0)) ≈ p_star
         #vector p-cost
         f2(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p[])) .^ 2)
         q = NelderMead(M, f)

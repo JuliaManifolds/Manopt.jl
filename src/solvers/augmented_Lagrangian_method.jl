@@ -272,10 +272,10 @@ $(_args([:M, :f, :grad_f]))
 
 # Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
 
-* `g=nothing`: the inequality constraints
-* `h=nothing`: the equality constraints
-* `grad_g=nothing`: the gradient of the inequality constraints
-* `grad_h=nothing`: the gradient of the equality constraints
+* `g=missing`: the inequality constraints
+* `h=missing`: the equality constraints
+* `grad_g=missing`: the gradient of the inequality constraints
+* `grad_h=missing`: the gradient of the equality constraints
 
 Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) have to be provided.
 But if neither of them is provided the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
@@ -419,7 +419,7 @@ function augmented_Lagrangian_method!(
         sub_stopping_criterion::StoppingCriterion = StopAfterIteration(300) |
             StopWhenGradientNormLess(ϵ) |
             StopWhenStepsizeLess(1.0e-8),
-        sub_state::AbstractManoptSolverState = decorate_state!(
+        sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = decorate_state!(
             QuasiNewtonState(
                 M;
                 p = copy(M, p),
@@ -433,7 +433,7 @@ function augmented_Lagrangian_method!(
             );
             sub_kwargs...,
         ),
-        sub_problem::AbstractManoptProblem = DefaultManoptProblem(
+        sub_problem::Pr = DefaultManoptProblem(
             M,
             # pass down objective type to sub solvers
             decorate_objective!(
@@ -448,7 +448,10 @@ function augmented_Lagrangian_method!(
         ) |
             StopWhenStepsizeLess(1.0e-10),
         kwargs...,
-    ) where {O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
+    ) where {
+        O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective},
+        Pr <: Union{F, AbstractManoptProblem} where {F},
+    }
     keywords_accepted(augmented_Lagrangian_method!; kwargs...)
     alms = AugmentedLagrangianMethodState(
         M, cmo, sub_problem, sub_state;

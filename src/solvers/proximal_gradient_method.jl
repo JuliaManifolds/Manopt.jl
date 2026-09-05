@@ -285,8 +285,8 @@ A functor for backtracking line search in proximal gradient methods.
 * `sufficient_decrease=0.5`: sufficient decrease parameter
 * `contraction_factor=0.5`: step size reduction factor
 * `strategy=:nonconvex`: backtracking strategy, either `:convex` or `:nonconvex`
-* `k_max=0.0`: an upper bound to the sectional curvatures of the manifold, only for the `:convex` strategy
-* `δ=1e-2`: parameter for backtracking in case `k_max > 0`, only for the `:convex` strategy
+* `k_max=0.0`: an upper bound to the sectional curvatures of the manifold; if positive, candidate steps are restricted to a curvature-dependent radius (applies to both strategies)
+* `δ=1e-2`: parameter for backtracking in case `k_max > 0`
 """
 mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
     initial_stepsize::T

@@ -126,6 +126,7 @@ They are still listed here in detail in case (a) someone elses code breaks of (b
 * `QuasiNewtonState` now activates the default initial scaling when no preconditioner is given, matching `quasi_Newton`.
 * `QuasiNewtonState` no longer reports a spurious non-descent direction before the first iteration.
 * `RecordIterate(T::DataType)` now builds `RecordIterate{T}` as documented, instead of a broken `RecordIterate{DataType}`.
+* records added to the `:Start` entry now work as documented.
 * `RecordTime(; mode=:Total)` now resets its recorded values when the solver state is re-initialized.
 * `set_iterate!` for a `ProximalGradientMethodState` no longer rebinds the state's iterate to the caller's point.
 * `stochastic_gradient_descent` now uses its `retraction_method` keyword.

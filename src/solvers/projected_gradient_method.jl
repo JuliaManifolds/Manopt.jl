@@ -233,7 +233,7 @@ function projected_gradient_method(
     )
     return projected_gradient_method(M, cs_obj, p; kwargs...)
 end
-function projected_gradient_method(M, obj::ManifoldConstrainedSetObjective, p; kwargs...)
+function projected_gradient_method(M, obj::ManifoldConstrainedSetObjective, p = rand(M); kwargs...)
     keywords_accepted(projected_gradient_method; kwargs...)
     q = copy(M, p)
     return projected_gradient_method!(M, obj, q; kwargs...)
