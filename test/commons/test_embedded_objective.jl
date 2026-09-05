@@ -44,7 +44,9 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         @test endswith(eo4repr, "missing, missing)")
         @test startswith(Manopt.status_summary(eo4), "An embedded objective\n\n")
         # Constraints, though this is not the most practical constraint
-        o2 = ConstrainedManifoldObjective(f, ∇f, [f], [∇f], [f], [∇f])
+        o2 = ConstrainedManifoldObjective(
+            f, ∇f, [f], [∇f], [f], [∇f]; hess_g = [∇²f], hess_h = [∇²f]
+        )
         eco1 = EmbeddedManifoldObjective(M, o2)
         eco2 = EmbeddedManifoldObjective(o2, missing, copy(X))
         eco3 = EmbeddedManifoldObjective(o2, copy(p), missing)
@@ -71,8 +73,22 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 @test get_grad_inequality_constraint(M, eco, p, 1) == grad_f(M, p)
                 get_grad_inequality_constraint!(M, Y, eco, p, 1)
                 @test Y == grad_f(M, p)
+                # Hessians are converted to Riemannian ones as well
+                HX = Hess_f(M, p, X)
+                @test get_hess_equality_constraint(M, eco, p, X, 1) == HX
+                @test get_hess_equality_constraint(M, eco, p, X, :) == [HX]
+                @test get_hess_equality_constraint!(M, Y, eco, p, X, 1) == HX
+                @test get_hess_equality_constraint!(M, Z, eco, p, X, :) == [HX]
+                @test get_hess_inequality_constraint(M, eco, p, X, 1) == HX
+                @test get_hess_inequality_constraint(M, eco, p, X, :) == [HX]
+                @test get_hess_inequality_constraint!(M, Y, eco, p, X, 1) == HX
+                @test get_hess_inequality_constraint!(M, Z, eco, p, X, :) == [HX]
             end
         end
+        # the trailing range keeps the problem level calls on these methods
+        mp = DefaultManoptProblem(M, eco1)
+        @test get_hess_equality_constraint(mp, p, X, :) == [Hess_f(M, p, X)]
+        @test get_hess_inequality_constraint!(mp, [zero_vector(M, p)], p, X, :) == [Hess_f(M, p, X)]
         # just verify that this also works for double decorated ones.
         o3 = EmbeddedManifoldObjective(ManifoldCountObjective(M, o, [:Cost]), p, X)
     end

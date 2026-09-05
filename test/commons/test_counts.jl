@@ -45,11 +45,10 @@ using LinearAlgebra: Symmetric
         # Dummy Hessian to call plain costgrad (half)
         obj3 = ManifoldHessianObjective(f, grad_f, (M, p, X) -> X)
         c_obj3 = ManifoldCountObjective(M, obj3, [:Gradient])
-        # Those do not exist but they count
-        @test_throws MethodError Manopt.get_cost_and_gradient(M, c_obj3, p)
-        @test_throws MethodError Manopt.get_cost_and_gradient!(
-            M, zero_vector(M, p), c_obj3, p
-        )
+        # These fall back to cost and gradient separately, and they count
+        @test Manopt.get_cost_and_gradient(M, c_obj3, p) == (f(M, p), grad_f(M, p))
+        @test Manopt.get_cost_and_gradient!(M, zero_vector(M, p), c_obj3, p) ==
+            (f(M, p), grad_f(M, p))
         @test get_count(c_obj3, :Gradient) == 2
         @test get_count(c_obj3, :Cost) == -1 # nonexistent
         @test startswith(repr(c_obj), "ManifoldCountObjective(ManifoldFirstOrderObjective")

@@ -42,6 +42,7 @@ function (cs::Manopt.LineSearchesStepsize)(
         k::Int,
         η = (-get_gradient(s));
         fp = get_cost(mp, get_iterate(s)),
+        gradient = nothing,
         kwargs...,
     )
     M = get_manifold(mp)
@@ -50,7 +51,11 @@ function (cs::Manopt.LineSearchesStepsize)(
     p_tmp = copy(M, p)
     Y_tmp = zero_vector(M, p)
     f = Manopt.get_cost_function(get_objective(mp))
-    dphi_0 = get_differential(mp, p, η; gradient = X_tmp)
+    dphi_0 = if isnothing(gradient)
+        get_differential(mp, p, η; gradient = X_tmp)
+    else
+        real(inner(M, p, η, gradient))
+    end
 
     # guess initial alpha
     α0 = cs.initial_guess(mp, s, k, cs.last_stepsize, η; lf0 = fp, Dlf0 = dphi_0)

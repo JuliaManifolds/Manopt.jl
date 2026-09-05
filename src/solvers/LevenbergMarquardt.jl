@@ -578,6 +578,12 @@ function solve_LM_subproblem!(
     # trim to box using GCD
     gcd = GeneralizedCauchyDirectionSubsolver(M, p, state)
     state.last_gcd_result, state.last_gcd_stepsize = find_generalized_cauchy_direction!(M, gcd, X, p, X, grad_Y)
+    if state.last_gcd_result === :not_found
+        # no feasible movement in this direction: return a zero step so that
+        # `StopWhenStepsizeLess` can stop the solver instead of looping on NaNs
+        zero_vector!(M, X, p)
+        return X
+    end
     # even if step size larger than 1 is possible, we shouldn't try to go further
     X .*= min(one(state.last_gcd_stepsize), state.last_gcd_stepsize)
     return X

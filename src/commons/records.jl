@@ -228,7 +228,19 @@ Create a [`RecordAction`](@ref) that records the change of the dual iterate,
 a [`RecordEntryChange`](@ref) of the field `X` with distance to the last value to store a value.
 """
 function RecordDualChange()
-    return RecordEntryChange(:X, (p, o, x, y) -> distance(get_manifold(p, 2), x, y))
+    storage = StoreStateAction([:X, :n])
+    return RecordEntryChange(
+        :X,
+        (amp, ams, X, X_old) -> begin
+            N = get_manifold(amp, 2)
+            n_old = has_storage(storage, :n) ? get_storage(storage, :n) : ams.n
+            return norm(
+                N, ams.n,
+                vector_transport_to(N, n_old, X_old, ams.n, ams.vector_transport_method_dual) - X,
+            )
+        end,
+        storage,
+    )
 end
 
 

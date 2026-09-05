@@ -15,17 +15,17 @@ using RecursiveArrayTools
 
 @doc """
     X = get_gradient(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
-    get_gradient!(M::ProductManifold, P::ManifoldAlternatingGradientObjective, X, p)
+    get_gradient!(M::ProductManifold, X, ago::ManifoldAlternatingGradientObjective, p)
 
 Evaluate all summands gradients at a point `p` on the `ProductManifold M` (in place of `X`)
 """
 get_gradient(M::ProductManifold, ::ManifoldAlternatingGradientObjective, ::Any...)
 
 @doc """
-    X = get_gradient(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, p, i)
-    get_gradient!(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, X, p, i)
+    X = get_gradient(M::AbstractManifold, mago::ManifoldAlternatingGradientObjective, p, i)
+    get_gradient!(M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective, p, i)
 
-Evaluate one of the component gradients ``$(_tex(:grad)) f_i``, ``i∈ $(_tex(:set, "1,…,n"))``, at `x` (in place of `Y`).
+Evaluate one of the component gradients ``$(_tex(:grad)) f_i``, ``i∈ $(_tex(:set, "1,…,n"))``, at `p` (in place of `X`).
 """
 get_gradient!(M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective, p)
 

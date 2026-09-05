@@ -214,13 +214,13 @@ function (a::AverageGradientRule)(
     pop!(a.gradients)
     M = get_manifold(mp)
     p = get_iterate(s)
-    _, d = a.direction(mp, s, k) #get inner gradient and step
+    step, d = a.direction(mp, s, k) #get inner gradient and step
     for g in a.gradients
         vector_transport_to!(M, g, a.last_iterate, g, p, a.vector_transport_method)
     end
     pushfirst!(a.gradients, copy(M, p, d))
     copyto!(M, a.last_iterate, p)
-    return 1.0, 1 / length(a.gradients) .* sum(a.gradients)
+    return step, 1 / length(a.gradients) .* sum(a.gradients)
 end
 function Base.show(io::IO, agr::AverageGradientRule)
     print(io, "AverageGradientRule(; gradients = ", agr.gradients)

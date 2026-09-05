@@ -210,6 +210,32 @@ function get_normal_linear_operator!(
     (penalty != 0) && (_diagview(A) .+= penalty)
     return A
 end
+
+"""
+    _componentwise_scalings(cr::ComponentwiseRobustifierFunction, value_cache; threshold, mode)
+
+For a componentwise robustifier the operator ``C`` is diagonal. Return its diagonal
+`d` together with the per-component residual scaling `s`, so that the coordinate
+surrogate blocks reduce to `C = Diagonal(d)`.
+"""
+function _componentwise_scalings(
+        cr::ComponentwiseRobustifierFunction, value_cache; threshold::Real, mode::Symbol
+    )
+    r = cr.robustifier
+    d = similar(value_cache, float(real(eltype(value_cache))))
+    s = similar(d)
+    for (i, ai) in enumerate(value_cache)
+        ai_sq = abs(ai)^2
+        (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, ai_sq)
+        residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(
+            ρ_prime, ρ_double_prime, ai_sq, threshold, mode
+        )
+        d[i] = sqrt(ρ_prime) * (1 - operator_scaling * ai_sq)
+        s[i] = residual_scaling
+    end
+    return d, s
+end
+
 function add_normal_linear_operator_coord!(
         M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
         r::AbstractRobustifierFunction, p, basis::AbstractBasis;
@@ -230,6 +256,17 @@ function add_normal_linear_operator_coord!(
         JFa = jacobian_cache' * a
         mul!(A, JFa, JFa', rank1_scaling, true)
     end
+    # damping term is added once after summing up all blocks, so we do not add it here
+    return A
+end
+# Componentwise: C is diagonal, so C^TC = Diagonal(d)^2
+function add_normal_linear_operator_coord!(
+        M::AbstractManifold, A::AbstractMatrix, o::AbstractVectorGradientFunction,
+        cr::ComponentwiseRobustifierFunction, p, basis::AbstractBasis;
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol
+    )
+    d, _ = _componentwise_scalings(cr, value_cache; threshold = threshold, mode = mode)
+    A .+= jacobian_cache' * Diagonal(d .^ 2) * jacobian_cache
     # damping term is added once after summing up all blocks, so we do not add it here
     return A
 end
@@ -281,6 +318,19 @@ function add_normal_linear_operator_coord!(
     # penalty is added once after summing up all blocks, so we do not add it here
     return c
 end
+# Componentwise: C is diagonal, so C^TC b = d.^2 .* b
+function add_normal_linear_operator_coord!(
+        M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction,
+        cr::ComponentwiseRobustifierFunction, p, cX::AbstractVector;
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol
+    )
+    d, _ = _componentwise_scalings(cr, value_cache; threshold = threshold, mode = mode)
+    b = jacobian_cache * cX
+    b .= d .^ 2 .* b
+    mul!(c, jacobian_cache', b, true, true)
+    # penalty is added once after summing up all blocks, so we do not add it here
+    return c
+end
 """
     add_linear_operator_coord!(
         M::AbstractManifold, y::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p, cX::AbstractVector
@@ -322,6 +372,16 @@ function _add_linear_operator_coord!(
     @. y += α * (y_cache - operator_scaling * t * value_cache)
     return y
 end
+# Componentwise: C is diagonal, so C y = d .* y
+function _add_linear_operator_coord!(
+        M::AbstractManifold, y::AbstractVector, o::AbstractVectorGradientFunction,
+        cr::ComponentwiseRobustifierFunction, p, cX::AbstractVector,
+        value_cache, jacobian_cache; threshold::Real, mode::Symbol
+    )
+    d, _ = _componentwise_scalings(cr, value_cache; threshold = threshold, mode = mode)
+    y .+= d .* (jacobian_cache * cX)
+    return y
+end
 
 function get_normal_vector_field_coord!(
         M::AbstractManifold, c::AbstractVector, lmsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective, p,
@@ -354,6 +414,17 @@ function add_normal_vector_field_coord!(
     # Compute y = ρ'(p) / (1-α)) F(p) and ...
     y .= residual_scaling .* sqrt(ρ_prime) * (I - operator_scaling * (y * y')) * y
     # ...apply the adjoint, i.e. compute  J_F^*(p)[C^T y] (inplace of y)
+    mul!(c, jacobian_cache', y, true, true)
+    return c
+end
+# Componentwise: C is diagonal, so C^T y = d .* y
+function add_normal_vector_field_coord!(
+        M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction,
+        cr::ComponentwiseRobustifierFunction, p;
+        value_cache, jacobian_cache, threshold::Real, mode::Symbol,
+    )
+    d, s = _componentwise_scalings(cr, value_cache; threshold = threshold, mode = mode)
+    y = s .* d .* value_cache
     mul!(c, jacobian_cache', y, true, true)
     return c
 end
@@ -939,7 +1010,6 @@ function add_normal_linear_operator!(
         b[i] = ρ_prime * (1 - operator_scaling * ai_sq)^2 * b[i]
     end
     # Now apply the adjoint
-    zero_vector!(M, Y, p)
     add_adjoint_jacobian!(M, Y, o, p, b)
     return Y
 end

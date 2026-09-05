@@ -531,7 +531,7 @@ function construct_primal_dual_residual_vector(
         pdsn.n,
     )
     # (2) if p.Λ is missing, assume that n = Λ(m) and do not PT
-    noPT = !hasproperty(obj, :Λ!) || ismissing(obj.Λ!)
+    noPT = ismissing(get_objective(obj, true).Λ!)
     ξ_update = noPT ? ξ_update : vector_transport_to(
             N, forward_operator(tmp, pdsn.m), ξ_update, pdsn.n, pdsn.vector_transport_method,
         )
@@ -579,8 +579,8 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
         inverse_retract(M, pdsn.m, pdsn.p, pdsn.inverse_retraction_method),
         pdsn.n,
     )
-    # (2) if p.Λ is missing, assume that n = Λ(m) and do  not PT
-    noPT = !hasproperty(obj, :Λ!) || ismissing(obj.Λ!)
+    # (2) if p.Λ is missing, assume that n = Λ(m) and do not PT
+    noPT = ismissing(get_objective(obj, true).Λ!)
 
     η₁ = noPT ? η₁ : vector_transport_to(
             N, forward_operator(tmp, pdsn.m), η₁, pdsn.n, pdsn.vector_transport_method
@@ -617,7 +617,7 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
         ∂X₁₁[:, j] = sp_∂X₁₁j
 
         Mⱼ = differential_log_argument(M, pdsn.m, pdsn.p, Θⱼ)
-        noPT = !hasproperty(obj, :Λ!) || ismissing(obj.Λ!)
+        noPT = ismissing(get_objective(obj, true).Λ!)
         Kⱼ = pdsn.dual_stepsize * (
             noPT ? linearized_forward_operator(tmp, pdsn.m, Mⱼ, pdsn.n) : vector_transport_to(
                     N, forward_operator(tmp, pdsn.m), linearized_forward_operator(tmp, pdsn.m, Mⱼ, pdsn.n), pdsn.n,

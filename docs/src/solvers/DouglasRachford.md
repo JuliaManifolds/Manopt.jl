@@ -35,8 +35,8 @@ Initialize ``q^{(0)} = p^{(0)}`` and ``k=0``
 
 Repeat until a convergence criterion is reached
 
-1. Compute ``r^{(k)} = \operatorname{refl}_{λ g}\operatorname{refl}_{λ h}(q^{(k)})``
-2. Within that operation, store ``p^{(k+1)} = \operatorname{prox}_{λ h}(q^{(k)})`` which is the prox the inner reflection reflects at.
+1. Compute ``r^{(k)} = \operatorname{refl}_{λ h}\operatorname{refl}_{λ g}(q^{(k)})``
+2. Within that operation, store ``p^{(k+1)} = \operatorname{prox}_{λ h}\bigl(\operatorname{refl}_{λ g}(q^{(k)})\bigr)``, which is the prox the outer reflection reflects at.
 3. Compute ``q^{(k+1)} = γ(\alpha_k; q^{(k)}, r^{(k)})``, where ``γ`` is a curve approximating the shortest geodesic, provided by a retraction and its inverse
 4. Set ``k = k+1``
 

@@ -236,7 +236,11 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             X2 = get_vector(M1, p1, c2X, B2)
             penalty = 1.0e3
 
-            for r in (CauchyRobustifier(), SoftL1Robustifier())
+            for r in (
+                    CauchyRobustifier(), SoftL1Robustifier(),
+                    ComponentwiseRobustifierFunction(CauchyRobustifier()),
+                    ComponentwiseRobustifierFunction(SoftL1Robustifier()),
+                )
                 vgf = VectorGradientFunction(
                     F1, JF1mat, n; function_type = FunctionVectorialType(),
                     jacobian_type = CoefficientVectorialType(B2),
@@ -381,7 +385,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             )
 
             @test isapprox(TM2, s2.p, s2_ns.p; atol = 1.0e-2)
-            @test isapprox(TM2, s2_ns.p, s2_ns_ub.p; atol = 1.0e+1)
+            @test isapprox(TM2, s2_ns.p, s2_ns_ub.p; atol = 1.0e-2)
             # due to different scaling they should be a bit different
             @test !isapprox(TM2, s2.p, s2_ns.p; atol = 1.0e-8)
             @test !isapprox(TM2, s2.p, s2_ns_ub.p; atol = 1.0e-8)

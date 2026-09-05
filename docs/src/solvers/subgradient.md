@@ -16,8 +16,8 @@ SubGradientMethodState
 ```
 
 For [`DebugAction`](@ref)s and [`RecordAction`](@ref)s to record the (sub)gradient,
-its norm and the step sizes, see the [gradient descent](gradient_descent.md)
-actions.
+its norm and the step sizes, see the [common debug output](@ref sec-debug) and the
+[common record actions](@ref sec-record).
 
 
 ## [Technical details](@id sec-sgm-technical-details)

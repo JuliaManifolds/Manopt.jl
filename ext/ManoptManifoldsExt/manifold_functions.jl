@@ -1,4 +1,4 @@
-function Manopt.add_vector!(M::Hyperrectangle, X, p, c::AbstractVector, basis::AbstractBasis{ℝ})
+function Manopt.add_vector!(M::Hyperrectangle, X, p, c::AbstractVector, basis::DefaultOrthonormalBasis{ℝ})
     S = representation_size(M)
     X .+= reshape(c, S)
     return X

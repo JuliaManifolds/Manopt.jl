@@ -88,6 +88,11 @@ function get_cost_and_gradient!(
     )
     return get_cost_and_gradient!(M, X, get_objective(admo, false), p)
 end
+function get_cost_and_gradient!(
+        M::AbstractManifold, X, objective::AbstractManifoldFirstOrderObjective, p
+    )
+    return (get_cost(M, objective, p), get_gradient!(M, X, objective, p))
+end
 
 """
      get_differential(amp::AbstractManoptProblem, p, X; kwargs...)

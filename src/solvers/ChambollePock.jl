@@ -451,7 +451,7 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
             N, cps.n, cps.X, forward_operator(tmp, cps.m), cps.vector_transport_method_dual
         )
     end
-    p_old = cps.p
+    p_old = copy(M, cps.p)
     cps.p = get_primal_prox!(
         tmp,
         cps.p,

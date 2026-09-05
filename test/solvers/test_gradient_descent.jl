@@ -163,6 +163,7 @@ using ManifoldDiff: grad_distance
         n4 = gradient_descent(
             M, f, grad_f, pts[1];
             direction = AverageGradient(M; n = 5),
+            stepsize = ConstantLength(),
             stopping_criterion = StopAfterIteration(800),
         )
         @test isapprox(M, north, n4; atol = 1.0e-7)

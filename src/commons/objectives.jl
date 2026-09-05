@@ -1171,6 +1171,120 @@ function get_grad_inequality_constraint!(
     Y .= [riemannian_gradient(M, p, X) for X in Z]
     return Y
 end
+@doc """
+    get_hess_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, X, j)
+    get_hess_equality_constraint!(M::AbstractManifold, Y, emo::EmbeddedManifoldObjective, p, X, j)
+
+Evaluate the Hessian of the `j`th equality constraint ``$(_tex(:Hess)) h_j(p)[X]`` defined in the
+embedding, that is embed `p` and `X` before calling the Hessian function stored in the
+[`EmbeddedManifoldObjective`](@ref).
+
+The returned Hessian is then converted to a Riemannian Hessian calling
+[`riemannian_Hessian`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_Hessian-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}).
+"""
+function get_hess_equality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective, p, X, j::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    q = local_embed!(M, emo, p)
+    E = get_embedding(M, typeof(p))
+    Z = embed(M, p, X)
+    G = get_grad_equality_constraint(E, emo.objective, q, j, range)
+    H = get_hess_equality_constraint(E, emo.objective, q, Z, j, range)
+    return riemannian_Hessian(M, p, G, H, X)
+end
+function get_hess_equality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective, p, X, j,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    q = local_embed!(M, emo, p)
+    E = get_embedding(M, typeof(p))
+    Z = embed(M, p, X)
+    G = get_grad_equality_constraint(E, emo.objective, q, j, range)
+    H = get_hess_equality_constraint(E, emo.objective, q, Z, j, range)
+    return [riemannian_Hessian(M, p, Gj, Hj, X) for (Gj, Hj) in zip(G, H)]
+end
+function get_hess_equality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective, p, X, j::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    q = local_embed!(M, emo, p)
+    E = get_embedding(M, typeof(p))
+    Z = embed(M, p, X)
+    G = get_grad_equality_constraint(E, emo.objective, q, j, range)
+    H = get_hess_equality_constraint(E, emo.objective, q, Z, j, range)
+    riemannian_Hessian!(M, Y, p, G, H, X)
+    return Y
+end
+function get_hess_equality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective, p, X, j,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    q = local_embed!(M, emo, p)
+    E = get_embedding(M, typeof(p))
+    Z = embed(M, p, X)
+    G = get_grad_equality_constraint(E, emo.objective, q, j, range)
+    H = get_hess_equality_constraint(E, emo.objective, q, Z, j, range)
+    Y .= [riemannian_Hessian(M, p, Gj, Hj, X) for (Gj, Hj) in zip(G, H)]
+    return Y
+end
+@doc """
+    get_hess_inequality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, X, i)
+    get_hess_inequality_constraint!(M::AbstractManifold, Y, emo::EmbeddedManifoldObjective, p, X, i)
+
+Evaluate the Hessian of the `i`th inequality constraint ``$(_tex(:Hess)) g_i(p)[X]`` defined in the
+embedding, that is embed `p` and `X` before calling the Hessian function stored in the
+[`EmbeddedManifoldObjective`](@ref).
+
+The returned Hessian is then converted to a Riemannian Hessian calling
+[`riemannian_Hessian`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_Hessian-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}).
+"""
+function get_hess_inequality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective, p, X, i::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    q = local_embed!(M, emo, p)
+    E = get_embedding(M, typeof(p))
+    Z = embed(M, p, X)
+    G = get_grad_inequality_constraint(E, emo.objective, q, i, range)
+    H = get_hess_inequality_constraint(E, emo.objective, q, Z, i, range)
+    return riemannian_Hessian(M, p, G, H, X)
+end
+function get_hess_inequality_constraint(
+        M::AbstractManifold, emo::EmbeddedManifoldObjective, p, X, i,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    q = local_embed!(M, emo, p)
+    E = get_embedding(M, typeof(p))
+    Z = embed(M, p, X)
+    G = get_grad_inequality_constraint(E, emo.objective, q, i, range)
+    H = get_hess_inequality_constraint(E, emo.objective, q, Z, i, range)
+    return [riemannian_Hessian(M, p, Gi, Hi, X) for (Gi, Hi) in zip(G, H)]
+end
+function get_hess_inequality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective, p, X, i::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    q = local_embed!(M, emo, p)
+    E = get_embedding(M, typeof(p))
+    Z = embed(M, p, X)
+    G = get_grad_inequality_constraint(E, emo.objective, q, i, range)
+    H = get_hess_inequality_constraint(E, emo.objective, q, Z, i, range)
+    riemannian_Hessian!(M, Y, p, G, H, X)
+    return Y
+end
+function get_hess_inequality_constraint!(
+        M::AbstractManifold, Y, emo::EmbeddedManifoldObjective, p, X, i,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
+    q = local_embed!(M, emo, p)
+    E = get_embedding(M, typeof(p))
+    Z = embed(M, p, X)
+    G = get_grad_inequality_constraint(E, emo.objective, q, i, range)
+    H = get_hess_inequality_constraint(E, emo.objective, q, Z, i, range)
+    Y .= [riemannian_Hessian(M, p, Gi, Hi, X) for (Gi, Hi) in zip(G, H)]
+    return Y
+end
 function show(io::IO, emo::EmbeddedManifoldObjective)
     return print(io, "EmbeddedManifoldObjective($(emo.objective), $(emo.p), $(emo.X))")
 end
@@ -3915,6 +4029,30 @@ function get_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldO
     get_gradient!(M, X, scaled_objective.objective, p)
     X .= scaled_objective.scale .* X
     return X
+end
+function get_cost_and_gradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
+    c, X = get_cost_and_gradient(M, scaled_objective.objective, p)
+    return (scaled_objective.scale * c, scaled_objective.scale * X)
+end
+function get_cost_and_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldObjective, p)
+    c, _ = get_cost_and_gradient!(M, X, scaled_objective.objective, p)
+    X .= scaled_objective.scale .* X
+    return (scaled_objective.scale * c, X)
+end
+function get_cost_and_differential(
+        M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p, X; kwargs...
+    )
+    c, d = get_cost_and_differential(M, scaled_objective.objective, p, X)
+    return (scaled_objective.scale * c, scaled_objective.scale * d)
+end
+function get_differential(
+        M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p, X; kwargs...
+    )
+    return scaled_objective.scale * get_differential(M, scaled_objective.objective, p, X)
+end
+function get_differential_function(scaled_objective::ScaledManifoldObjective, recursive = false)
+    recursive && (return get_differential_function(scaled_objective.objective, recursive))
+    return (M, p, X; kwargs...) -> get_differential(M, scaled_objective, p, X; kwargs...)
 end
 
 function get_gradient_function(scaled_objective::ScaledManifoldObjective, recursive::Bool = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())

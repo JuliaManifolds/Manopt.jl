@@ -232,7 +232,9 @@ function __init__()
     #
     @static if isdefined(Base.Experimental, :register_error_hint) # COV_EXCL_LINE
         Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
-            if (exc.f === convex_bundle_method_subsolver) || (exc.f === proximal_bundle_method_subsolver) || (exc.f === gradient_sampling_subsolver)
+            if (exc.f === convex_bundle_method_subsolver) || (exc.f === convex_bundle_method_subsolver!) ||
+                    (exc.f === proximal_bundle_method_subsolver) || (exc.f === proximal_bundle_method_subsolver!) ||
+                    (exc.f === gradient_sampling_subsolver) || (exc.f === gradient_sampling_subsolver!)
                 print(
                     io,
                     "\nThe `$(exc.f)` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
