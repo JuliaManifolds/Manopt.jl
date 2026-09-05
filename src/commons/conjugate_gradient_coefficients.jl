@@ -26,9 +26,9 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 $(_note(:ManifoldDefaultsFactory, "ConjugateDescentCoefficientRule"))
 """
-function ConjugateDescentCoefficient()
+function ConjugateDescentCoefficient(args...)
     return ManifoldDefaultsFactory(
-        Manopt.ConjugateDescentCoefficientRule; requires_manifold = false
+        Manopt.ConjugateDescentCoefficientRule, args...; requires_manifold = false
     )
 end
 
@@ -427,9 +427,9 @@ The first one is implemented here, but falls back to calling `inner` if there is
 
 $(_note(:ManifoldDefaultsFactory, "FletcherReevesCoefficientRule"))
 """
-function FletcherReevesCoefficient()
+function FletcherReevesCoefficient(args...)
     return ManifoldDefaultsFactory(
-        Manopt.FletcherReevesCoefficientRule; requires_manifold = false
+        Manopt.FletcherReevesCoefficientRule, args...; requires_manifold = false
     )
 end
 
@@ -930,9 +930,9 @@ so that it falls back to a [`gradient_descent`](@ref) method, that is
 
 $(_note(:ManifoldDefaultsFactory, "SteepestDescentCoefficientRule"))
 """
-function SteepestDescentCoefficient()
+function SteepestDescentCoefficient(args...)
     return ManifoldDefaultsFactory(
-        Manopt.SteepestDescentCoefficientRule; requires_manifold = false
+        Manopt.SteepestDescentCoefficientRule, args...; requires_manifold = false
     )
 end
 

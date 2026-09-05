@@ -10,138 +10,139 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* the new internal function `additional_callbacks(::Type{<:AbstractManoptSolverState})` was added to declare
+  the callback hooks instead of manually overwriting `provided_callbacks`.
+* A `BarzilaiBorweinStepsize` as a standalone stepsize instead of only being available within the
+  `NonmonotoneLinesearchStepsize`. (#641)
 * a benchmark suite in `benchmark/`, written with `BenchmarkTools.jl` and run with `AirspeedVelocity.jl`,
   which on a pull request labeled `benchmark` compares it against `master`.
   It starts with two problems, the Riemannian mean on the sphere, benchmarked with `gradient_descent`
   and `quasi_Newton`, and the Riemannian median on hyperbolic space, benchmarked with `cyclic_proximal_point`. (#640)
-* A `BarzilaiBorweinStepsize` as a standalone stepsize instead of only being available within the
-  `NonmonotoneLinesearchStepsize`. (#641)
 * introduce a `StepsizeInitialGuess` that allows to use a `Stepsize` as initial guess of a line search. (#641)
-* the new internal function `additional_callbacks(::Type{<:AbstractManoptSolverState})` was added to declare
-  the callback hooks instead of manually overwriting `provided_callbacks`.
 
 ### Changed
 
-* since `has_converged` exists, the status reports on REPL now use this to indicate whether an algorithm has converged.
 * the changelog check in CI is skipped on pull requests labeled `no changelog necessary`; dependabot adds this label to its pull requests automatically.
+* since `has_converged` exists, the status reports on REPL now use this to indicate whether an algorithm has converged.
 * the field `X_old` of the `MomentumGradientRule` is now called `η_old`, since it stores the accumulated momentum direction and not the last gradient.
-* the modes of `RecordTime` and `DebugTime` are now capitalized consistently, that is `:Cumulative`, `:Iterative` and `:Total`.
 * the backtracking of the `proximal_gradient_method` no longer constructs a `ProximalGradientMethodState`
   in every call, but uses two working points of its step size; the internal `_pgm_proximal_step!` now
   takes the sub problem and sub state instead of a whole state.
+* the modes of `RecordTime` and `DebugTime` are now capitalized consistently, that is `:Cumulative`, `:Iterative` and `:Total`.
 
 ### Fixed
 
 The following fixes were reported by an AI assisted code review. Each single point was still carefully checked, and committed by hand.
 They are still listed here in detail in case (a) someone elses code breaks of (b) it was not done careful enough – to then avoid these approaches in the future.
 
-* `AdaptiveWNGradient` fixed its reference gradient norm to the initial one, so its adaptive mode now works.
-* `BarzilaiBorweinStepsize` defaults `max_stepsize` to `1.0` on manifolds with infinite injectivity radius.
-* `ChambollePock` now defaults to the variant matching the operator that was provided; requesting a variant without its operator errors with an explanation.
-* `ConjugateGradientDescentState` can now be constructed without specifying a stepsize.
-* `cma_es!` now leaves its result (the best visited point) in the input point,
-  which before ended at the final mean.
-* `conjugate_residual` now uses its initial vector `X` — it was ignored, making runs nondeterministic — and `conjugate_residual!` works in place of `X`.
-* `LevenbergMarquardt` now defaults to a coordinate normal-system sub solver on manifolds with box constraints, where the default sub solver errored before.
-* the allocating `exact_penalty_method` forwarded the equality-constraint count as the inequality count.
-* `exact_penalty_method` now spells its sub-solver callbacks `:BeforeSubsolver` and `:Subsolver`, like all other solvers.
-* `Frank_Wolfe_method` now also fires its advertised `:BeforeSubsolver`, `:Subsolver` and `:Stepsize` callbacks when a closed-form sub solver is used.
-* `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
-* `primal_dual_semismooth_Newton!` now works in place of its point and is exported.
-* `ProximalGradientNonsmoothCost` now computes the documented `1/(2λ)` proximity weight instead of `λ/2`.
-* the `:Random` evaluation order of `cyclic_proximal_point` now reshuffles every cycle; its order values are unified to `:Linear`, `:FixedRandom`, and `:Random`, and validated.
-* the Lanczos first-order-progress criterion now uses the correct model gradient norm.
-* `CubicBracketingLinesearch` and `Nesterov` now promote mixed numeric types in their keyword arguments.
-* `get_constraints` now works for any constrained objective, not only embedded ones.
-* fix a sign in the Nesterov acceleration parameter equation.
-* `linesearch_backtrack` no longer errors when called without gradient information; it then backtracks on a plain decrease condition.
-* `proximal_bundle_method` and `convex_bundle_method` now default to the in-place subsolver when used with `InplaceEvaluation`.
-* `ConvexBundleMethodState` no longer errors when only one of `k_min` and `k_max` is provided.
-* `gradient_sampling` now also works for number-typed points, like `gradient_descent`.
-* `interior_point_Newton!(M, f, grad_f, Hess_f, p; …)` no longer decorates its objective twice, so `count=` and `cache=` now work for the in-place variant.
-* `debug=[:IterativeTime]` now really resets the timer each iteration; the factory built it with a `:Iterative` mode that the functor never matched.
-* `MomentumGradient` no longer folds the step size into its stored direction, so solvers no longer apply the step twice; with `momentum=0` it now reduces to plain gradient descent.
-* `count=[:ProximalMap]` now works for a `ManifoldProximalMapObjective` built from a single proximal map.
-* the box quasi-Newton update now treats a deactivated `initial_scale` (as set by a `preconditioner`) as `1`, instead of erroring.
-* `StopWhenChangeLess(ε)` without a manifold now stores its iterate generically, instead of allocating storage on a `DefaultManifold`.
-* the allocating `LevenbergMarquardt` now honours `jacobian_tangent_basis` like its in-place variant, instead of silently ignoring it.
 * `adaptive_regularization_with_cubics` now also runs with a closed-form sub solver; setting the iterate of a `ClosedFormSubSolverState` is a no-op instead of an error.
-* `augmented_Lagrangian_method!(M, f, grad_f, p; …)` no longer decorates its objective twice, so `count=` and `cache=` work for the in-place variant and an already decorated objective is accepted.
-* `PrimalDualSemismoothNewtonState` now defaults its dual variable `X` to `zero_vector(N, n)`, the tangent space it is actually used in.
-* `primal_dual_semismooth_Newton` now uses the `vector_transport_method=` keyword also in its ∂X₁₂ block, and expands that block in the basis at the iterate `p` instead of at `m`.
-* `initialize_solver!` for a `ProximalBundleMethodState` now also resets `lin_errors` and `approx_errors`, so a state can be reused for a second `solve!`.
-* `set_iterate!` for a `ProximalGradientMethodState` no longer rebinds the state's iterate to the caller's point.
-* `get_linear_operator`(`!`) and `get_vector_field`(`!`) now pass decorated objectives through, so `conjugate_residual` accepts `count=` and `cache=` and actually uses the cache.
-* the documented `GradientSamplingState(M)` constructor works again; its `convex_hull_coeffs` default referred to the static parameter `R`, which is not bound while keyword defaults are evaluated.
-* `mesh_adaptive_direct_search` now moves the poll base point to the current iterate before the search, so the search is handed a direction tangent at that iterate and the iterates stay on the manifold.
-* `proximal_gradient_method` now supports a function-valued `sub_problem` as documented, wrapping it only for an evaluation type and dispatching the closed-form proximal step.
-* `proximal_gradient_method` now accepts a decorated objective, and its `:convex` backtracking strategy works together with `count=`/`cache=`.
-* `quasi_Newton` and `quasi_Newton!` now forward `evaluation=` to the objective-based method, so a mutating `preconditioner` is no longer wrapped as allocating.
-* `quasi_Newton` now reports that `cautious_update=true` is not supported on manifolds with an anisotropic maximal step size, instead of failing with a `MethodError`.
-* `AffineCovariantStepsize` now solves the simplified Newton system with the sub problem's own evaluation type, so it works together with `sub_state = InplaceEvaluation()`.
-* `decorate_state!` now accepts `debug`/`record` dictionaries with a concrete action value type, such as `Dict(:Stop => DebugStoppingCriterion())`.
-* `get_initial_stepsize(amp, ams, vars...; kwargs...)` now really accepts the documented keyword and positional arguments, and forwards them through a decorated state.
-* `DebugDualChange` now honours its `at_init` keyword in both constructors, and the default prefixes of `DebugEntryChange` and `DebugIfEntry` name the field instead of printing a literal `$f`.
-* `get_hess_inequality_constraint!` now returns its output buffer instead of the direction when there are no inequality constraints.
-* `get_feasibility_status` works again; its keyword defaults called the removed plural constraint accessors.
-* the uncached fallback of `get_gradients!` now delegates in place, and `get_cost_and_gradient!` for a `SimpleManifoldCachedObjective` writes the caller's buffer on a cache hit.
-* the problem-level `get_grad_inequality_constraint!` now has the documented `j = :` default and forwards a `range`.
-* the direct (Hessian-matrix) quasi-Newton direction update now applies the `preconditioner`, as documented.
-* the empty-memory branch of the box quasi-Newton `hessian_value` now divides by `initial_scale` like its siblings, so the two accessors agree.
-* `RecordIterate(T::DataType)` now builds `RecordIterate{T}` as documented, instead of a broken `RecordIterate{DataType}`.
-* `RecordTime(; mode=:Total)` now resets its recorded values when the solver state is re-initialized.
-* `CubicBracketingLinesearch` now uses the `gradient=` keyword it is given and no longer reads the state field `X` directly, so it works for any state implementing the documented interface.
-* `StopWhenAll` now accepts a concretely typed vector of criteria, like `StopWhenAny` already did, instead of silently wrapping it as a single criterion.
-* `get_count(::StopWhenAny, :Iterations)` no longer discards a sub-criterion that stopped at iteration `0`.
-* `StopWhenCriterionWithIterationCondition` no longer returns the inner criterion's value from its reset call, which could stop a solver at iteration `0` without ever consulting the iteration condition.
-* `TrustRegionModelObjective` and `AdaptiveRegularizationWithCubicsModelObjective` now accept any `AbstractManifoldHessianObjective`, as documented.
-* `ChambollePock` now accepts and forwards the documented `inverse_retraction_method_dual` and `vector_transport_method_dual` keywords, which were previously warned about and dropped.
-* the cautious quasi-Newton matrix update now evaluates its bound at the previous iterate, as documented.
-* a skipped cautious quasi-Newton matrix update now still transports the basis to the new tangent space.
-* `QuasiNewtonState` now activates the default initial scaling when no preconditioner is given, matching `quasi_Newton`.
-* `stochastic_gradient_descent` now uses its `retraction_method` keyword.
-* `subgradient_method!` now leaves its result (the best visited point) in the input point, which before ended at the last iterate.
-* the standalone `truncated_conjugate_gradient_descent` now defaults its trust region radius from the base manifold (not the flat tangent space).
-* `trust_regions` now includes the Hessian term of the model decrease in its acceptance ratio also in the default (non-randomized) mode and reuses the Hessian product already computed by its tCG sub solver.
-* `cma_es` now uses the fitness-sorted samples in its covariance matrix update,
-  cf. Eq. (47) of [arXiv:1604.00772](https://arxiv.org/abs/1604.00772).
-* `WolfePowellBinaryLinesearch` now bisects correctly the step size fulfills both Wolfe
-  conditions; sometimes a wrong termination check made it stop too early.
-* `default_vector_norm(::Euclidean, p, X)` returned the norm of `p` instead of `X`.
-* `PrimalDualSemismoothNewtonState` is now constructed as `(M, N; kwargs...)` like `ChambollePockState`
-* `LevenbergMarquardtState` no longer needs its Jacobian cache pre-shaped and reports an invalid `damping_reduction_factor` with an `ArgumentError`.
-* `LevenbergMarquardt` now also clamps the damping term to `damping_term_max` when a step is rejected for being too long.
-* `NelderMead` now honours `return_objective=true`.
 * `adaptive_regularization_with_cubics` now wraps an allocating closed-form sub solver.
 * `adaptive_regularization_with_cubics` now passes `sub_kwargs` on to the `decorate_state!` of its sub state.
+* `AdaptiveWNGradient` fixed its reference gradient norm to the initial one, so its adaptive mode now works.
+* `AffineCovariantStepsize` now solves the simplified Newton system with the sub problem's own evaluation type, so it works together with `sub_state = InplaceEvaluation()`.
 * `alternating_gradient_descent` now uses its `retraction_method`.
+* `augmented_Lagrangian_method!(M, f, grad_f, p; …)` no longer decorates its objective twice, so `count=` and `cache=` work for the in-place variant and an already decorated objective is accepted.
 * `augmented_Lagrangian_method` and `exact_penalty_method` can now be run with a closed form sub solver.
-* `cma_es` now uses Hansen's `1/(21n^2)` term in its approximation of the expected norm of a standard normal vector.
-* `StopWhenLagrangeMultiplierLess` now provides the documented default tolerance `1e-6`, so it can be constructed without arguments.
-* `StopWhenRelativeAPosterioriCostChangeLessOrEqual` now reports the signed relative cost change it actually tests, instead of its absolute value.
 * the default `stopping_criterion` of `AugmentedLagrangianMethodState` now ends in `StopWhenStepsizeLess(1.0e-10)`, matching `augmented_Lagrangian_method`.
-* `difference_of_convex_proximal_point` now defaults to the point-type-aware `default_inverse_retraction_method(M, typeof(p))`.
-* `StopWhenPopulationDiverges` now tests growth against the start of the run, not an absolute threshold.
+* `BarzilaiBorweinStepsize` defaults `max_stepsize` to `1.0` on manifolds with infinite injectivity radius.
+* `ChambollePock` now defaults to the variant matching the operator that was provided; requesting a variant without its operator errors with an explanation.
+* `ChambollePock` now accepts and forwards the documented `inverse_retraction_method_dual` and `vector_transport_method_dual` keywords, which were previously warned about and dropped.
+* `cma_es!` now leaves its result (the best visited point) in the input point,
+  which before ended at the final mean.
+* `cma_es` now uses the fitness-sorted samples in its covariance matrix update,
+  cf. Eq. (47) of [arXiv:1604.00772](https://arxiv.org/abs/1604.00772).
+* `cma_es` now uses Hansen's `1/(21n^2)` term in its approximation of the expected norm of a standard normal vector.
+* `conjugate_residual` now uses its initial vector `X` — it was ignored, making runs nondeterministic — and `conjugate_residual!` works in place of `X`.
+* `ConjugateGradientDescentState` can now be constructed without specifying a stepsize.
+* `ConvexBundleMethodState` no longer errors when only one of `k_min` and `k_max` is provided.
 * `ConvexBundleMethodState` can be built and run on its own again.
-* `DomainBackTrackingStepsize` and `NullStepBackTrackingStepsize` now start at their `initial_stepsize`.
+* `count=[:ProximalMap]` now works for a `ManifoldProximalMapObjective` built from a single proximal map.
+* `CubicBracketingLinesearch` and `Nesterov` now promote mixed numeric types in their keyword arguments.
+* `CubicBracketingLinesearch` now uses the `gradient=` keyword it is given and no longer reads the state field `X` directly, so it works for any state implementing the documented interface.
+* the `:Random` evaluation order of `cyclic_proximal_point` now reshuffles every cycle; its order values are unified to `:Linear`, `:FixedRandom`, and `:Random`, and validated.
+* `DebugDualChange` now honours its `at_init` keyword in both constructors, and the default prefixes of `DebugEntryChange` and `DebugIfEntry` name the field instead of printing a literal `$f`.
+* `debug=[:IterativeTime]` now really resets the timer each iteration; the factory built it with a `:Iterative` mode that the functor never matched.
+* `decorate_state!` now accepts `debug`/`record` dictionaries with a concrete action value type, such as `Dict(:Stop => DebugStoppingCriterion())`.
+* `default_vector_norm(::Euclidean, p, X)` returned the norm of `p` instead of `X`.
 * `difference_of_convex_algorithm` now forwards a `gradient=`, also when the objective carries it.
 * the closed-form `difference_of_convex_algorithm` now leaves the gradient of `f` in the state.
-* `ExactPenaltyMethodState` now defaults to the same stopping criterion as `exact_penalty_method`.
-* `StopWhenKKTResidualLess` now squares the Lagrangian gradient norm, as documented; its default tolerance is `1e-12`.
-* `trust_regions` now runs with a closed form sub solver.
-* `trust_regions` no longer throws for a non-tCG sub state.
-* `interior_point_Newton` now runs with a closed form sub solver.
+* `difference_of_convex_proximal_point` now defaults to the point-type-aware `default_inverse_retraction_method(M, typeof(p))`.
 * `difference_of_convex_proximal_point` now leaves the gradient of the objective in the state's `X`.
+* `DomainBackTrackingStepsize` and `NullStepBackTrackingStepsize` now start at their `initial_stepsize`.
+* `EmbeddedManifoldObjective` now converts the constraint Hessians to Riemannian ones instead of returning the Euclidean ones.
+* the allocating `exact_penalty_method` forwarded the equality-constraint count as the inequality count.
+* `exact_penalty_method` now spells its sub-solver callbacks `:BeforeSubsolver` and `:Subsolver`, like all other solvers.
+* `ExactPenaltyMethodState` now defaults to the same stopping criterion as `exact_penalty_method`.
+* `Frank_Wolfe_method` now also fires its advertised `:BeforeSubsolver`, `:Subsolver` and `:Stepsize` callbacks when a closed-form sub solver is used.
+* `get_constraints` now works for any constrained objective, not only embedded ones.
+* `get_count(::StopWhenAny, :Iterations)` no longer discards a sub-criterion that stopped at iteration `0`.
+* `get_feasibility_status` works again; its keyword defaults called the removed plural constraint accessors.
+* the problem-level `get_grad_inequality_constraint!` now has the documented `j = :` default and forwards a `range`.
+* the uncached fallback of `get_gradients!` now delegates in place, and `get_cost_and_gradient!` for a `SimpleManifoldCachedObjective` writes the caller's buffer on a cache hit.
+* `get_hess_inequality_constraint!` now returns its output buffer instead of the direction when there are no inequality constraints.
+* `get_initial_stepsize(amp, ams, vars...; kwargs...)` now really accepts the documented keyword and positional arguments, and forwards them through a decorated state.
+* `get_linear_operator`(`!`) and `get_vector_field`(`!`) now pass decorated objectives through, so `conjugate_residual` accepts `count=` and `cache=` and actually uses the cache.
+* `gradient_sampling` now also works for number-typed points, like `gradient_descent`.
+* the documented `GradientSamplingState(M)` constructor works again; its `convex_hull_coeffs` default referred to the static parameter `R`, which is not bound while keyword defaults are evaluated.
+* `initialize_solver!` for a `ProximalBundleMethodState` now also resets `lin_errors` and `approx_errors`, so a state can be reused for a second `solve!`.
+* `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
+* `interior_point_Newton!(M, f, grad_f, Hess_f, p; …)` no longer decorates its objective twice, so `count=` and `cache=` now work for the in-place variant.
+* `interior_point_Newton` now runs with a closed form sub solver.
+* the Lanczos first-order-progress criterion now uses the correct model gradient norm.
+* `LevenbergMarquardt` now defaults to a coordinate normal-system sub solver on manifolds with box constraints, where the default sub solver errored before.
+* the allocating `LevenbergMarquardt` now honours `jacobian_tangent_basis` like its in-place variant, instead of silently ignoring it.
+* `LevenbergMarquardt` now also clamps the damping term to `damping_term_max` when a step is rejected for being too long.
+* `LevenbergMarquardtState` no longer needs its Jacobian cache pre-shaped and reports an invalid `damping_reduction_factor` with an `ArgumentError`.
+* `linesearch_backtrack` no longer errors when called without gradient information; it then backtracks on a plain decrease condition.
+* `mesh_adaptive_direct_search` now moves the poll base point to the current iterate before the search, so the search is handed a direction tangent at that iterate and the iterates stay on the manifold.
+* `MomentumGradient` no longer folds the step size into its stored direction, so solvers no longer apply the step twice; with `momentum=0` it now reduces to plain gradient descent.
+* `NelderMead` now honours `return_objective=true`.
+* fix a sign in the Nesterov acceleration parameter equation.
+* `nondescent_direction_behavior=:step_towards_negative_gradient` now steps towards the negative gradient.
+* `primal_dual_semismooth_Newton!` now works in place of its point and is exported.
+* `primal_dual_semismooth_Newton` now uses the `vector_transport_method=` keyword also in its ∂X₁₂ block, and expands that block in the basis at the iterate `p` instead of at `m`.
+* `PrimalDualSemismoothNewtonState` now defaults its dual variable `X` to `zero_vector(N, n)`, the tangent space it is actually used in.
+* `PrimalDualSemismoothNewtonState` is now constructed as `(M, N; kwargs...)` like `ChambollePockState`
+* `proximal_bundle_method` and `convex_bundle_method` now default to the in-place subsolver when used with `InplaceEvaluation`.
+* `proximal_gradient_method` now supports a function-valued `sub_problem` as documented, wrapping it only for an evaluation type and dispatching the closed-form proximal step.
+* `proximal_gradient_method` now accepts a decorated objective, and its `:convex` backtracking strategy works together with `count=`/`cache=`.
 * proximal gradient backtracking now stores the collapsed step size, so a collapse is detected.
-* `ProximalGradientMethodAcceleration` now uses the inverse retraction it is configured with.
 * `proximal_gradient_method` now rejects an incomplete sub-solver setup up front.
 * the default proximal parameter of `proximal_point` is `k -> 1.0`, so it no longer forces integers.
-* `QuasiNewtonState` no longer reports a spurious non-descent direction before the first iteration.
+* `ProximalGradientMethodAcceleration` now uses the inverse retraction it is configured with.
+* `ProximalGradientNonsmoothCost` now computes the documented `1/(2λ)` proximity weight instead of `λ/2`.
+* the box quasi-Newton update now treats a deactivated `initial_scale` (as set by a `preconditioner`) as `1`, instead of erroring.
+* `quasi_Newton` and `quasi_Newton!` now forward `evaluation=` to the objective-based method, so a mutating `preconditioner` is no longer wrapped as allocating.
+* `quasi_Newton` now reports that `cautious_update=true` is not supported on manifolds with an anisotropic maximal step size, instead of failing with a `MethodError`.
+* the direct (Hessian-matrix) quasi-Newton direction update now applies the `preconditioner`, as documented.
+* the empty-memory branch of the box quasi-Newton `hessian_value` now divides by `initial_scale` like its siblings, so the two accessors agree.
+* the cautious quasi-Newton matrix update now evaluates its bound at the previous iterate, as documented.
+* a skipped cautious quasi-Newton matrix update now still transports the basis to the new tangent space.
 * `quasi_Newton` now divides the maximal step size by the Riemannian norm on anisotropic manifolds.
-* `nondescent_direction_behavior=:step_towards_negative_gradient` now steps towards the negative gradient.
 * `initial_scale=nothing` now deactivates the initial scaling for the matrix-based quasi-Newton updates.
 * the cautious quasi-Newton matrix update compares the real part of the inner product against its bound.
 * the `:byrd` curvature test in the limited-memory quasi-Newton update now squares the gradient norm.
+* `QuasiNewtonState` now activates the default initial scaling when no preconditioner is given, matching `quasi_Newton`.
+* `QuasiNewtonState` no longer reports a spurious non-descent direction before the first iteration.
+* `RecordIterate(T::DataType)` now builds `RecordIterate{T}` as documented, instead of a broken `RecordIterate{DataType}`.
+* `RecordTime(; mode=:Total)` now resets its recorded values when the solver state is re-initialized.
+* `set_iterate!` for a `ProximalGradientMethodState` no longer rebinds the state's iterate to the caller's point.
+* `stochastic_gradient_descent` now uses its `retraction_method` keyword.
+* `StopWhenAll` now accepts a concretely typed vector of criteria, like `StopWhenAny` already did, instead of silently wrapping it as a single criterion.
+* `StopWhenChangeLess(ε)` without a manifold now stores its iterate generically, instead of allocating storage on a `DefaultManifold`.
+* `StopWhenCriterionWithIterationCondition` no longer returns the inner criterion's value from its reset call, which could stop a solver at iteration `0` without ever consulting the iteration condition.
+* `StopWhenKKTResidualLess` now squares the Lagrangian gradient norm, as documented; its default tolerance is `1e-12`.
+* `StopWhenLagrangeMultiplierLess` now provides the documented default tolerance `1e-6`, so it can be constructed without arguments.
+* `StopWhenPopulationDiverges` now tests growth against the start of the run, not an absolute threshold.
+* `StopWhenRelativeAPosterioriCostChangeLessOrEqual` now reports the signed relative cost change it actually tests, instead of its absolute value.
+* `subgradient_method!` now leaves its result (the best visited point) in the input point, which before ended at the last iterate.
+* the standalone `truncated_conjugate_gradient_descent` now defaults its trust region radius from the base manifold (not the flat tangent space).
+* `trust_regions` now includes the Hessian term of the model decrease in its acceptance ratio also in the default (non-randomized) mode and reuses the Hessian product already computed by its tCG sub solver.
+* `trust_regions` now runs with a closed form sub solver.
+* `trust_regions` no longer throws for a non-tCG sub state.
+* `TrustRegionModelObjective` and `AdaptiveRegularizationWithCubicsModelObjective` now accept any `AbstractManifoldHessianObjective`, as documented.
+* `WolfePowellBinaryLinesearch` now bisects correctly the step size fulfills both Wolfe
+  conditions; sometimes a wrong termination check made it stop too early.
 * since we introduced the differential in the first order objectives,
 they were not fully supported in all places. This was now fixed and unified.
 * for a nicer printing on REPL, a few more `status_summary` functions were added (with the help of an AI)
