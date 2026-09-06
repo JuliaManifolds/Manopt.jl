@@ -74,7 +74,7 @@ With constraints on variances, the optimization variable belongs to $[1,100]^N \
 M = ProductManifold(Hyperrectangle(fill(1.0, N), fill(100.0, N)), M_rot)
 
 p0 = ArrayPartition(fill(10.0, N), Matrix{Float64}(I(N)))
-p_mle = quasi_Newton(M, logprob_cost, logprob_gradient, p0; stopping_criterion = StopAfterIteration(100) | StopWhenProjectedNegativeGradientNormLess(1e-6))
+p_mle = quasi_Newton(M, logprob_cost, logprob_gradient, p0; stopping_criterion = StopAfterIteration(100) | StopWhenProjectedNegativeGradientNormLess(1.0e-6))
 println("Estimated variances: $(p_mle.x[1])")
 cov_matrix_mle = p_mle.x[2] * Diagonal(p_mle.x[1]) * p_mle.x[2]'
 println("Estimated covariance matrix:")

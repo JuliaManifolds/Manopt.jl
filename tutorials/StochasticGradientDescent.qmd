@@ -46,7 +46,7 @@ n = 5000
 σ = π / 12
 M = Sphere(2)
 p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
-data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
+data = [exp(M, p, σ * rand(M; vector_at = p)) for i in 1:n];
 ```
 
 Note that due to the construction of the points as zero mean tangent vectors, the mean should
@@ -101,25 +101,25 @@ see ``[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_
 
 ```{julia}
 p_opt3 = stochastic_gradient_descent(
-    M, gradf, p0; direction=MomentumGradient(; direction=StochasticGradient())
+    M, gradf, p0; direction = MomentumGradient(; direction = StochasticGradient())
 )
 ```
 
 ```{julia}
-MG = MomentumGradient(; direction=StochasticGradient());
-@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$MG)
+MG = MomentumGradient(; direction = StochasticGradient());
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction = $MG)
 ```
 
 And on the other hand the [`AverageGradient`](@ref) computes an average of the last `n` gradients. This is done by
 
 ```{julia}
 p_opt4 = stochastic_gradient_descent(
-    M, gradf, p0; direction=AverageGradient(; n=10, direction=StochasticGradient()),
+    M, gradf, p0; direction = AverageGradient(; n = 10, direction = StochasticGradient()),
 )
 ```
 ```{julia}
-AG = AverageGradient(; n=10, direction=StochasticGradient());
-@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$AG)
+AG = AverageGradient(; n = 10, direction = StochasticGradient());
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction = $AG)
 ```
 
 Note that the default [`StoppingCriterion`](@ref) here is [`StopAfterIteration`](@ref)`(10000)` combined with [`StopWhenGradientNormLess`](@ref)`(1e-9)`.
@@ -130,15 +130,15 @@ since both rules can also be used with the ``[`IdentityUpdateRule`](@ref Manopt.
 For this not-that-large-scale example we can of course also use a gradient descent with [`ArmijoLinesearch`](@ref),
 
 ```{julia}
-fullGradF(M, p) = 1/n*sum(grad_distance(M, q, p) for q in data)
-p_opt5 = gradient_descent(M, F, fullGradF, p0; stepsize=ArmijoLinesearch())
+fullGradF(M, p) = 1 / n * sum(grad_distance(M, q, p) for q in data)
+p_opt5 = gradient_descent(M, F, fullGradF, p0; stepsize = ArmijoLinesearch())
 ```
 
 but in general it is expected to be a bit slow.
 
 ```{julia}
 AL = ArmijoLinesearch();
-@benchmark gradient_descent($M, $F, $fullGradF, $p0; stepsize=$AL)
+@benchmark gradient_descent($M, $F, $fullGradF, $p0; stepsize = $AL)
 ```
 
 ````{=commonmark}

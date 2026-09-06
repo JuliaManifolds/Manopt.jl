@@ -14,12 +14,12 @@ for example with a [function like object](https://docs.julialang.org/en/v1/manua
 
 ```{julia}
 #| eval: false
-mutable struct MyCost{I<:Integer}
+mutable struct MyCost{I <: Integer}
     count::I
 end
 MyCost() = MyCost{Int64}(0)
 function (c::MyCost)(M, p)
-    c.count += 1
+    return c.count += 1
     # [ .. Actual implementation of the cost here ]
 end
 ```
@@ -75,7 +75,7 @@ n = 100
 M = Sphere(2)
 p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
 Random.seed!(42)
-data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
+data = [exp(M, p, σ * rand(M; vector_at = p)) for i in 1:n];
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
 ```
@@ -89,7 +89,7 @@ This returns `(objective, p)` instead of just the solver result `p`.
 We can further also set `return_state=true` to get even more information about the solver run.
 
 ```{julia}
-gradient_descent(M, f, grad_f, data[1]; count=[:Cost, :Gradient], return_objective=true, return_state=true)
+gradient_descent(M, f, grad_f, data[1]; count = [:Cost, :Gradient], return_objective = true, return_state = true)
 ```
 
 And we see that statistics are shown in the end.
@@ -107,10 +107,12 @@ With the proper initialization, you can use any caches here that support the
 Here we want to use `c=:LRU` caches for `vs=[:Cost, :Gradient]` with a size of `n=25`.
 
 ```{julia}
-r = gradient_descent(M, f, grad_f, data[1];
-    count=[:Cost, :Gradient],
-    cache=(:LRU, [:Cost, :Gradient], 25),
-    return_objective=true, return_state=true)
+r = gradient_descent(
+    M, f, grad_f, data[1];
+    count = [:Cost, :Gradient],
+    cache = (:LRU, [:Cost, :Gradient], 25),
+    return_objective = true, return_state = true
+)
 ```
 
 Since the default setup with [`ArmijoLinesearch`](@ref) needs the gradient and the
@@ -157,10 +159,10 @@ f_star = -eigvals(A)[end] # cost (note that we get - the largest Eigenvalue)
 
 N = Sphere(m);
 
-g(M, p) = -p' * A*p
+g(M, p) = -p' * A * p
 ∇g(p) = -2 * A * p
-grad_g(M,p) = project(M, p, ∇g(p))
-grad_g!(M,X, p) = project!(M, X, p, ∇g(p))
+grad_g(M, p) = project(M, p, ∇g(p))
+grad_g!(M, X, p) = project!(M, X, p, ∇g(p))
 ```
 
 But since both the cost and the gradient require the computation of the matrix-vector product $Ap$, it might be beneficial to only compute this once.
@@ -171,8 +173,8 @@ The [`ManifoldCostGradientObjective`](@ref) uses a combined function to compute 
 
 ```{julia}
 function g_grad_g!(M::AbstractManifold, X, p)
-    X .= -A*p
-    c = p'*X
+    X .= -A * p
+    c = p' * X
     X .*= 2
     project!(M, X, p, X)
     return (c, X)
@@ -185,25 +187,27 @@ The small disadvantage might be that we always compute _both_ the gradient and t
 Let's compare both methods
 
 ```{julia}
-p0 = [(1/sqrt(5) .* ones(5))..., zeros(m-4)...];
-@time s1 = gradient_descent(N, g, grad_g!, p0;
-    stopping_criterion = StopWhenGradientNormLess(1e-5),
-    evaluation=InplaceEvaluation(),
-    count=[:Cost, :Gradient],
-    cache=(:LRU, [:Cost, :Gradient], 25),
-    return_objective=true,
+p0 = [(1 / sqrt(5) .* ones(5))..., zeros(m - 4)...];
+@time s1 = gradient_descent(
+    N, g, grad_g!, p0;
+    stopping_criterion = StopWhenGradientNormLess(1.0e-5),
+    evaluation = InplaceEvaluation(),
+    count = [:Cost, :Gradient],
+    cache = (:LRU, [:Cost, :Gradient], 25),
+    return_objective = true,
 )
 ```
 
 versus
 
 ```{julia}
-obj = ManifoldCostGradientObjective(g_grad_g!; evaluation=InplaceEvaluation())
-@time s2 = gradient_descent(N, obj, p0;
-    stopping_criterion=StopWhenGradientNormLess(1e-5),
-    count=[:Cost, :Gradient],
-    cache=(:LRU, [:Cost, :Gradient], 25),
-    return_objective=true,
+obj = ManifoldCostGradientObjective(g_grad_g!; evaluation = InplaceEvaluation())
+@time s2 = gradient_descent(
+    N, obj, p0;
+    stopping_criterion = StopWhenGradientNormLess(1.0e-5),
+    count = [:Cost, :Gradient],
+    cache = (:LRU, [:Cost, :Gradient], 25),
+    return_objective = true,
 )
 ```
 
@@ -228,21 +232,21 @@ We again consider the (more efficient) in-place variant.
 This can be done as follows
 
 ```{julia}
-struct StorageG{T,M}
+struct StorageG{T, M}
     A::M
     Ap::T
     p::T
 end
 function (g::StorageG)(::Val{:Cost}, M::AbstractManifold, p)
-    if !(p==g.p) #We are at a new point -> Update
-        g.Ap .= g.A*p
+    if !(p == g.p) #We are at a new point -> Update
+        g.Ap .= g.A * p
         g.p .= p
     end
-    return -g.p'*g.Ap
+    return -g.p' * g.Ap
 end
 function (g::StorageG)(::Val{:Gradient}, M::AbstractManifold, X, p)
-    if !(p==g.p) #We are at a new point -> Update
-        g.Ap .= g.A*p
+    if !(p == g.p) #We are at a new point -> Update
+        g.Ap .= g.A * p
         g.p .= p
     end
     X .= -2 .* g.Ap
@@ -259,14 +263,15 @@ case the signatures are different regardless of the additional argument but for 
 #Define the new functor
 storage_g = StorageG(A, zero(p0), zero(p0))
 # and cost and gradient that use this functor as
-g3(M,p) = storage_g(Val(:Cost), M, p)
+g3(M, p) = storage_g(Val(:Cost), M, p)
 grad_g3!(M, X, p) = storage_g(Val(:Gradient), M, X, p)
-@time s3 = gradient_descent(N, g3, grad_g3!, p0;
-    stopping_criterion = StopWhenGradientNormLess(1e-5),
-    evaluation=InplaceEvaluation(),
-    count=[:Cost, :Gradient],
-    cache=(:LRU, [:Cost, :Gradient], 2),
-    return_objective=true,
+@time s3 = gradient_descent(
+    N, g3, grad_g3!, p0;
+    stopping_criterion = StopWhenGradientNormLess(1.0e-5),
+    evaluation = InplaceEvaluation(),
+    count = [:Cost, :Gradient],
+    cache = (:LRU, [:Cost, :Gradient], 2),
+    return_objective = true,
 )
 ```
 
@@ -287,19 +292,19 @@ and it is possible to store more than just the last `p` either cost or gradient
 was called with.
 
 ```{julia}
-struct CacheG{C,M}
+struct CacheG{C, M}
     A::M
     cache::C
 end
 function (g::CacheG)(::Val{:Cost}, M, p)
-    Ap = get!(g.cache, copy(M,p)) do
-        g.A*p
+    Ap = get!(g.cache, copy(M, p)) do
+        g.A * p
     end
-    return -p'*Ap
+    return -p' * Ap
 end
 function (g::CacheG)(::Val{:Gradient}, M, X, p)
-    Ap = get!(g.cache, copy(M,p)) do
-        g.A*p
+    Ap = get!(g.cache, copy(M, p)) do
+        g.A * p
     end
     X .= -2 .* Ap
     project!(M, X, p, X)
@@ -313,16 +318,17 @@ Then the tradeoff is, whether this pays off.
 
 ```{julia}
 #Define the new functor
-cache_g = CacheG(A, LRU{typeof(p0),typeof(p0)}(; maxsize=25))
+cache_g = CacheG(A, LRU{typeof(p0), typeof(p0)}(; maxsize = 25))
 # and cost and gradient that use this functor as
-g4(M,p) = cache_g(Val(:Cost), M, p)
+g4(M, p) = cache_g(Val(:Cost), M, p)
 grad_g4!(M, X, p) = cache_g(Val(:Gradient), M, X, p)
-@time s4 = gradient_descent(N, g4, grad_g4!, p0;
-    stopping_criterion = StopWhenGradientNormLess(1e-5),
-    evaluation=InplaceEvaluation(),
-    count=[:Cost, :Gradient],
-    cache=(:LRU, [:Cost, :Gradient], 25),
-    return_objective=true,
+@time s4 = gradient_descent(
+    N, g4, grad_g4!, p0;
+    stopping_criterion = StopWhenGradientNormLess(1.0e-5),
+    evaluation = InplaceEvaluation(),
+    count = [:Cost, :Gradient],
+    cache = (:LRU, [:Cost, :Gradient], 25),
+    return_objective = true,
 )
 ```
 

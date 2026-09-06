@@ -97,13 +97,13 @@ We can define this as
 ```{julia}
 #| output: false
 mutable struct RandomWalkState{
-    P, R<:AbstractRetractionMethod, S<:StoppingCriterion,
-} <: AbstractManoptSolverState
-  p::P
-  q::P
-  σ::Float64
-  retraction_method::R
-  stop::S
+        P, R <: AbstractRetractionMethod, S <: StoppingCriterion,
+    } <: AbstractManoptSolverState
+    p::P
+    q::P
+    σ::Float64
+    retraction_method::R
+    stop::S
 end
 ```
 
@@ -114,12 +114,13 @@ the retraction based on a given manifold.
 
 ```{julia}
 #| output: false
-function RandomWalkState(M::AbstractManifold, p::P=rand(M);
-    σ = 0.1,
-    retraction_method::R=default_retraction_method(M, typeof(p)),
-    stopping_criterion::S=StopAfterIteration(200)
-) where {P, R<:AbstractRetractionMethod, S<:StoppingCriterion}
-    return RandomWalkState{P,R,S}(p, copy(M, p), σ, retraction_method, stopping_criterion)
+function RandomWalkState(
+        M::AbstractManifold, p::P = rand(M);
+        σ = 0.1,
+        retraction_method::R = default_retraction_method(M, typeof(p)),
+        stopping_criterion::S = StopAfterIteration(200)
+    ) where {P, R <: AbstractRetractionMethod, S <: StoppingCriterion}
+    return RandomWalkState{P, R, S}(p, copy(M, p), σ, retraction_method, stopping_criterion)
 end
 ```
 
@@ -183,8 +184,8 @@ the one we need is [`get_cost`](@ref).
 #| output: false
 function step_solver!(mp::AbstractManoptProblem, rws::RandomWalkState, k)
     M = get_manifold(mp) # for ease of use get the manifold from the problem
-    X = rand(M; vector_at=rws.p)     # generate a direction
-    X .*= rws.σ/norm(M, rws.p, X)
+    X = rand(M; vector_at = rws.p)     # generate a direction
+    X .*= rws.σ / norm(M, rws.p, X)
     # Walk
     retract!(M, rws.p, rws.p, X, rws.retraction_method)
     # is the new point better? Then store it
@@ -212,7 +213,7 @@ n = 100
 σ = π / 8
 M = Sphere(2)
 p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
-data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
+data = [exp(M, p, σ * rand(M; vector_at = p)) for i in 1:n];
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 ```
 
@@ -234,7 +235,7 @@ We could for example easily set up a second solver to work from a specified star
 with a different `σ` like
 
 ```{julia}
-s2 = RandomWalkState(M, [1.0, 0.0, 0.0];  σ = 0.1)
+s2 = RandomWalkState(M, [1.0, 0.0, 0.0]; σ = 0.1)
 solve!(mp, s2)
 get_solver_result(s2)
 ```
@@ -268,16 +269,17 @@ given start point unchanged would just add a `copy(M, p)` upfront.
 
 ```{julia}
 function random_walk_algorithm!(
-    M::AbstractManifold, mgo::ManifoldCostObjective, p;
-    σ = 0.1,
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(200),
-    kwargs...,
-)
+        M::AbstractManifold, mgo::ManifoldCostObjective, p;
+        σ = 0.1,
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
+        stopping_criterion::StoppingCriterion = StopAfterIteration(200),
+        kwargs...,
+    )
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
-    s = RandomWalkState(M, p;
-        σ=σ, retraction_method=retraction_method, stopping_criterion=stopping_criterion,
+    s = RandomWalkState(
+        M, p;
+        σ = σ, retraction_method = retraction_method, stopping_criterion = stopping_criterion,
     )
     ds = decorate_state!(s; kwargs...)
     solve!(dmp, ds)
@@ -291,7 +293,7 @@ Starting from the last section, the usual call a user would prefer is just
 passing a manifold `M`, the cost `f`, and maybe a start point `p`.
 
 ```{julia}
-function random_walk_algorithm!(M::AbstractManifold, f, p=rand(M); kwargs...)
+function random_walk_algorithm!(M::AbstractManifold, f, p = rand(M); kwargs...)
     mgo = ManifoldCostObjective(f)
     return random_walk_algorithm!(M, mgo, p; kwargs...)
 end
@@ -336,7 +338,7 @@ Now the algorithm can be easily called and provides all features of a `Manopt.jl
 For example to see the summary, we could now just call
 
 ```{julia}
-q = random_walk_algorithm!(M, f; return_state=true)
+q = random_walk_algorithm!(M, f; return_state = true)
 ```
 
 ## Conclusion & beyond

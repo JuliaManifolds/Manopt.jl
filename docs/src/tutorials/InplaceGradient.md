@@ -27,7 +27,7 @@ n = 800
 σ = π / 8
 p = zeros(Float64, m + 1)
 p[2] = 1.0
-data = [exp(M, p, σ * rand(M; vector_at=p)) for i in 1:n];
+data = [exp(M, p, σ * rand(M; vector_at = p)) for i in 1:n];
 ```
 
 ## Classical definition
@@ -44,15 +44,15 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 We further set the stopping criterion to be a little more strict. Then we obtain
 
 ``` julia
-sc = StopWhenGradientNormLess(5e-9)
-p0 = zeros(Float64, m + 1); p0[1] = 1/sqrt(2); p0[2] = 1/sqrt(2)
-m1 = gradient_descent(M, f, grad_f, p0; stopping_criterion=sc);
+sc = StopWhenGradientNormLess(5.0e-9)
+p0 = zeros(Float64, m + 1); p0[1] = 1 / sqrt(2); p0[2] = 1 / sqrt(2)
+m1 = gradient_descent(M, f, grad_f, p0; stopping_criterion = sc);
 ```
 
 We can also benchmark this as
 
 ``` julia
-@benchmark gradient_descent($M, $f, $grad_f, $p0; stopping_criterion=$sc)
+@benchmark gradient_descent($M, $f, $grad_f, $p0; stopping_criterion = $sc)
 ```
 
     BenchmarkTools.Trial: 109 samples with 1 evaluation per sample.
@@ -78,7 +78,7 @@ Here, we store the data (as reference) and introduce temporary memory to avoid
 reallocation of memory per `grad_distance` computation. We get
 
 ``` julia
-struct GradF!{TD,TTMP}
+struct GradF!{TD, TTMP}
     data::TD
     tmp::TTMP
 end
@@ -101,7 +101,7 @@ We can further also use [`gradient_descent!`](@ref) to even work in-place of the
 grad_f2! = GradF!(data, similar(data[1]))
 m2 = deepcopy(p0)
 gradient_descent!(
-    M, f, grad_f2!, m2; evaluation=InplaceEvaluation(), stopping_criterion=sc
+    M, f, grad_f2!, m2; evaluation = InplaceEvaluation(), stopping_criterion = sc
 );
 ```
 
@@ -109,7 +109,7 @@ We can again benchmark this
 
 ``` julia
 @benchmark gradient_descent!(
-    $M, $f, $grad_f2!, m2; evaluation=$(InplaceEvaluation()), stopping_criterion=$sc
+    $M, $f, $grad_f2!, m2; evaluation = $(InplaceEvaluation()), stopping_criterion = $sc
 ) setup = (m2 = deepcopy($p0))
 ```
 

@@ -51,8 +51,8 @@ where $\sigma$ is a signal-to-noise ratio and $N$ is a matrix with random entrie
 d = 150; # dimension of v0
 σ = 0.1^2; # SNR
 δ = 0.1; sp = Int(floor(δ * d)); # Sparsity
-S = sample(1:d, sp; replace=false);
-v0 =  [i ∈ S ? 1 / sqrt(sp) : 0.0 for i in 1:d];
+S = sample(1:d, sp; replace = false);
+v0 = [i ∈ S ? 1 / sqrt(sp) : 0.0 for i in 1:d];
 N = rand(Normal(0, 1 / d), (d, d)); N[diagind(N, 0)] .= rand(Normal(0, 2 / d), d);
 Z = sqrt(σ) * v0 * transpose(v0) + N;
 ```
@@ -92,7 +92,7 @@ has to return its own gradient. These are again in the embedding just $\operator
 
 ```{julia}
 grad_g(M, p) = project.(
-	Ref(M), Ref(p), [[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d]
+    Ref(M), Ref(p), [[i == j ? -1.0 : 0.0 for j in 1:d] for i in 1:d]
 );
 ```
 
@@ -119,10 +119,10 @@ Now as a first method we can just call the [Augmented Lagrangian Method](../solv
 
 ```{julia}
 @time v1 = augmented_Lagrangian_method(
-   	M, f, grad_f, p0; g=g, grad_g=grad_g,
-    debug=[:Iteration, :Cost, :Stop, " | ", (:Change, "Δp : %1.5e"), 20, "\n"],
+    M, f, grad_f, p0; g = g, grad_g = grad_g,
+    debug = [:Iteration, :Cost, :Stop, " | ", (:Change, "Δp : %1.5e"), 20, "\n"],
     stopping_criterion = StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, 1e-5) & StopWhenChangeLess(M, 1e-8)
+        StopWhenSmallerOrEqual(:ϵ, 1.0e-5) & StopWhenChangeLess(M, 1.0e-8)
     )
 );
 ```
@@ -134,7 +134,7 @@ namely up to numerical inaccuracies
 f(M, v1)
 ```
 ```{julia}
-maximum( g(M, v1) )
+maximum(g(M, v1))
 ```
 
 ## A faster augmented Lagrangian run
@@ -163,12 +163,12 @@ We obtain
 
 ```{julia}
 @time v2 = augmented_Lagrangian_method(
-    	M, f, grad_f!, p0; g=g2, grad_g=grad_g2!, evaluation=InplaceEvaluation(),
-    	debug=[:Iteration, :Cost, :Stop, " | ", (:Change, "Δp : %1.5e"), 20, "\n"],
-		stopping_criterion = StopAfterIteration(300) | (
-          StopWhenSmallerOrEqual(:ϵ, 1e-5) & StopWhenChangeLess(M, 1e-8)
-		)
-	);
+    M, f, grad_f!, p0; g = g2, grad_g = grad_g2!, evaluation = InplaceEvaluation(),
+    debug = [:Iteration, :Cost, :Stop, " | ", (:Change, "Δp : %1.5e"), 20, "\n"],
+    stopping_criterion = StopAfterIteration(300) | (
+        StopWhenSmallerOrEqual(:ϵ, 1.0e-5) & StopWhenChangeLess(M, 1.0e-8)
+    )
+);
 ```
 
 As a technical remark: note that (by default) the change to [`InplaceEvaluation`](@ref)s affects both the constrained solver as well as the inner solver of the subproblem in each iteration.
@@ -193,8 +193,8 @@ and [`LinearQuadraticHuber`](@ref). We compare both here as well. The first smoo
 
 ```{julia}
 @time v3 = exact_penalty_method(
-   	M, f, grad_f!, p0; g=g2, grad_g=grad_g2!, evaluation=InplaceEvaluation(),
-   	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
+    M, f, grad_f!, p0; g = g2, grad_g = grad_g2!, evaluation = InplaceEvaluation(),
+    debug = [:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
 );
 ```
 
@@ -213,10 +213,10 @@ The second smoothing technique is often beneficial, when we have a lot of constr
 
 ```{julia}
 @time v4 = exact_penalty_method(
-    M, f, grad_f!, p0; g=g2, grad_g=grad_g2!,
-    evaluation=InplaceEvaluation(),
-    smoothing=LinearQuadraticHuber(),
-   	debug=[:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
+    M, f, grad_f!, p0; g = g2, grad_g = grad_g2!,
+    evaluation = InplaceEvaluation(),
+    smoothing = LinearQuadraticHuber(),
+    debug = [:Iteration, :Cost, :Stop, " | ", :Change, 50, "\n"],
 );
 ```
 
@@ -238,7 +238,7 @@ Note that this is much faster, since every iteration of the constrained solvers 
 
 ```{julia}
 @time w1 = quasi_Newton(
-    M, f, grad_f!, p0; evaluation=InplaceEvaluation()
+    M, f, grad_f!, p0; evaluation = InplaceEvaluation()
 );
 ```
 

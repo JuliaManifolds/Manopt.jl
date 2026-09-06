@@ -48,7 +48,7 @@ n = 800
 σ = π / 8
 p = zeros(Float64, m + 1)
 p[2] = 1.0
-data = [exp(M, p, σ * rand(M; vector_at=p)) for i in 1:n]
+data = [exp(M, p, σ * rand(M; vector_at = p)) for i in 1:n]
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 ```
@@ -64,7 +64,7 @@ An overview of the symbols that can be used is given ``[here](@ref Manopt.Record
 We first just record the cost after every iteration
 
 ```{julia}
-R = gradient_descent(M, f, grad_f, data[1]; record=:Cost, return_state=true)
+R = gradient_descent(M, f, grad_f, data[1]; record = :Cost, return_state = true)
 ```
 
 From the returned state, we see that the [`GradientDescentState`](@ref) is encapsulated (decorated) within a [`RecordSolverState`](@ref).
@@ -79,7 +79,7 @@ get_record(R)
 To record more than one value, you can pass an array of a mix of symbols and [`RecordAction`](@ref)s which formally introduces [`RecordGroup`](@ref). Such a group records a tuple of values in every iteration:
 
 ```{julia}
-R2 = gradient_descent(M, f, grad_f, data[1]; record=[:Iteration, :Cost], return_state=true)
+R2 = gradient_descent(M, f, grad_f, data[1]; record = [:Iteration, :Cost], return_state = true)
 ```
 
 Here, the symbol `:Cost` is mapped to using the [`RecordCost`](@ref) action. The same holds for `:Iteration`, which obviously records the current iteration number `k`.
@@ -122,8 +122,8 @@ We first generate the problem and the state, to also illustrate how the low-leve
 p = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 s = GradientDescentState(
     M;
-    p=copy(data[1]),
-    stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(10.0^-9),
+    p = copy(data[1]),
+    stopping_criterion = StopAfterIteration(200) | StopWhenGradientNormLess(10.0^-9),
 )
 ```
 
@@ -131,11 +131,13 @@ We now first build a  [`RecordGroup`](@ref) to group the three entries we want t
 
 ```{julia}
 rI = RecordEvery(
-    RecordGroup([
-        RecordIteration() => :Iteration,
-        RecordCost() => :Cost,
-        RecordEntry(similar(data[1]), :X) => :Gradient,
-    ]),
+    RecordGroup(
+        [
+            RecordIteration() => :Iteration,
+            RecordCost() => :Cost,
+            RecordEntry(similar(data[1]), :X) => :Gradient,
+        ]
+    ),
     6,
 )
 ```
@@ -221,7 +223,7 @@ s1 = exact_penalty_method(
     grad_g = grad_g,
     record = [:Iteration, :Cost, :Subsolver],
     sub_kwargs = [:record => [:Iteration, :Cost]],
-    return_state=true,
+    return_state = true,
 );
 ```
 
@@ -240,7 +242,7 @@ s2 = exact_penalty_method(
     g = g, grad_g = grad_g,
     record = [:Iteration, :Cost, :Subsolver, 25],
     sub_kwargs = [:record => [:Iteration, :Cost, :WhenActive]],
-    return_state=true,
+    return_state = true,
 );
 ```
 
@@ -263,7 +265,7 @@ s3 = exact_penalty_method(
     grad_g = grad_g,
     record = [:Iteration, :Cost, (:Subsolver, :Stop), 25],
     sub_kwargs = [:record => [:Stop => [:Stop, :Cost]]],
-    return_state=true,
+    return_state = true,
 );
 ```
 
@@ -298,7 +300,7 @@ mutable struct RecordCount <: RecordAction
     RecordCount() = new(Vector{Int}())
 end
 function (r::RecordCount)(amp::AbstractManoptProblem, ::AbstractManoptSolverState, k)
-    if k > 0
+    return if k > 0
         push!(r.recorded_values, Manopt.get_cost_function(get_objective(amp)).count)
     elseif k < 0 # reset if negative
         r.recorded_values = Vector{Int}()
@@ -320,13 +322,15 @@ We also only look at the first 20 iterations to keep this example small in recor
 ```{julia}
 R3 = gradient_descent(
     M, f3, grad_f, data[1];
-    record=[:Iteration => [
-        :Iteration, RecordCount() => :Count, :Cost],
+    record = [
+        :Iteration => [
+            :Iteration, RecordCount() => :Count, :Cost,
+        ],
     ],
     stepsize = ConstantLength(1.0),
-    stopping_criterion=StopAfterIteration(20),
-    debug=[],
-    return_state=true,
+    stopping_criterion = StopAfterIteration(20),
+    debug = [],
+    return_state = true,
 )
 ```
 
@@ -356,9 +360,9 @@ To not get too many entries let's just look at the first 20 iterations again
 ```{julia}
 R4 = gradient_descent(
     M, f4, grad_f, data[1];
-    record=[RecordCount(),],
-    stopping_criterion=StopAfterIteration(20),
-    return_state=true,
+    record = [RecordCount()],
+    stopping_criterion = StopAfterIteration(20),
+    return_state = true,
 )
 ```
 

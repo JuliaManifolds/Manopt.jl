@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   It starts with two problems, the Riemannian mean on the sphere, benchmarked with `gradient_descent`
   and `quasi_Newton`, and the Riemannian median on hyperbolic space, benchmarked with `cyclic_proximal_point`. (#640)
 * introduce a `StepsizeInitialGuess` that allows to use a `Stepsize` as initial guess of a line search. (#641)
+* [Runic.jl](https://github.com/fredrikekre/Runic.jl) is now also used to check code formatting in the `.qmd` and `.md` files of the repository
 
 ### Changed
 

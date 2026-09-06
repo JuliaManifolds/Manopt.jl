@@ -41,7 +41,7 @@ We consider the cost function on the ``[`Grassmann`](@extref `Manifolds.Grassman
 n = 5
 k = 2
 M = Grassmann(n, k)
-A = Symmetric(rand(n,n));
+A = Symmetric(rand(n, n));
 ```
 
 ```{julia}
@@ -58,7 +58,7 @@ Its Euclidean gradient $\nabla f$ and Hessian $\nabla^2f$ are easy to compute as
 ```{julia}
 #| output: false
 ∇f(M, p) = A * p
-∇²f(M,p,X) = A*X
+∇²f(M, p, X) = A * X
 ```
 
 On the other hand, from the aforementioned Example 9.49 we can also state
@@ -74,13 +74,13 @@ We can verify that these are correct, at least numerically, by calling
 the [`check_gradient`](@ref)
 
 ```{julia}
-check_gradient(M, f, grad_f; plot=true)
+check_gradient(M, f, grad_f; plot = true)
 ```
 
 and the [`check_Hessian`](@ref), which requires a bit more tolerance in its linearity verification
 
 ```{julia}
-check_Hessian(M, f, grad_f, Hess_f; plot=true, error=:error, atol=1e-15)
+check_Hessian(M, f, grad_f, Hess_f; plot = true, error = :error, atol = 1.0e-15)
 ```
 
 While they look reasonable here and were already derived, for the general case this derivation
@@ -120,13 +120,13 @@ end
 And we can again verify these numerically,
 
 ```{julia}
-check_gradient(M, f, grad2_f; plot=true)
+check_gradient(M, f, grad2_f; plot = true)
 ```
 
 and
 
 ```{julia}
-check_Hessian(M, f, grad2_f, Hess2_f; plot=true, error=:error, atol=1e-14)
+check_Hessian(M, f, grad2_f, Hess2_f; plot = true, error = :error, atol = 1.0e-14)
 ```
 
 which yields the same result, but we see that the Euclidean conversion might be a bit less stable.
@@ -137,8 +137,8 @@ Now if we want to use these in optimization, we can call a solver with these two
 p0 = [1.0 0.0; 0.0 1.0; 0.0 0.0; 0.0 0.0; 0.0 0.0]
 r1 = adaptive_regularization_with_cubics(
     M, f, grad_f, Hess_f, p0;
-    debug=[:Iteration, :Cost, "\n"],
-    return_objective=true, return_state=true,
+    debug = [:Iteration, :Cost, "\n"],
+    return_objective = true, return_state = true,
 )
 q1 = get_solver_result(r1)
 r1
@@ -151,8 +151,8 @@ by specifying `objective_type=:Euclidean`.
 r2 = adaptive_regularization_with_cubics(
     M, f, ∇f, ∇²f, p0;
     # The one line difference to specify that our grad/Hess are Euclidean:
-    objective_type=:Euclidean, debug=[:Iteration, :Cost, "\n"],
-    return_objective=true, return_state=true,
+    objective_type = :Euclidean, debug = [:Iteration, :Cost, "\n"],
+    return_objective = true, return_state = true,
 )
 q2 = get_solver_result(r2)
 r2

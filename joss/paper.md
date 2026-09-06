@@ -92,12 +92,12 @@ using Manopt, Manifolds, LinearAlgebra, Random
 Random.seed!(42)
 M = Sphere(2)
 n = 40
-p = 1/sqrt(3) .* ones(3)
+p = 1 / sqrt(3) .* ones(3)
 B = DefaultOrthonormalBasis()
-pts = [ exp(M, p, get_vector(M, p, 0.425*randn(2), B)) for _ in 1:n ]
+pts = [ exp(M, p, get_vector(M, p, 0.425 * randn(2), B)) for _ in 1:n ]
 
-F(M, y) = sum(1/(2*n) * distance.(Ref(M), pts, Ref(y)).^2)
-gradF(M, y) = sum(1/n * grad_distance.(Ref(M), pts, Ref(y)))
+F(M, y) = sum(1 / (2 * n) * distance.(Ref(M), pts, Ref(y)) .^ 2)
+gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), pts, Ref(y)))
 
 x_mean = gradient_descent(M, F, gradF, pts[1])
 ```
@@ -122,10 +122,11 @@ To obtain an array of values for one recorded value,
 use the access per symbol, i.e. from the `Iteration`s we want to access the recorded iterates `:x` as follows:
 
 ```julia
-o = gradient_descent(M, F, gradF, pts[1],
-    debug=[:Iteration, " | ", :Change, " | ", :Cost, "\n", :Stop],
-    record=[:x, :Change, :Cost],
-    return_state=true
+o = gradient_descent(
+    M, F, gradF, pts[1],
+    debug = [:Iteration, " | ", :Change, " | ", :Cost, "\n", :Stop],
+    record = [:x, :Change, :Cost],
+    return_state = true
 )
 x_mean_2 = get_solver_result(o) # the solver result
 all_values = get_record(o) # a tuple of recorded data per iteration

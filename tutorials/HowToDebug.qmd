@@ -66,8 +66,8 @@ Then we can write
 
 ```{julia}
 p1 = exact_penalty_method(
-    M, f, grad_f, p0; g=g, grad_g=grad_g,
-    debug = [:Iteration, :Cost, " | ", (:ϵ,"ϵ: %.8f"), 25, "\n", :Stop]
+    M, f, grad_f, p0; g = g, grad_g = grad_g,
+    debug = [:Iteration, :Cost, " | ", (:ϵ, "ϵ: %.8f"), 25, "\n", :Stop]
 );
 ```
 
@@ -91,7 +91,7 @@ Being more precise for the other entries, we could also write
 
 ```{julia}
 p1 = exact_penalty_method(
-    M, f, grad_f, p0; g=g, grad_g=grad_g,
+    M, f, grad_f, p0; g = g, grad_g = grad_g,
     debug = [
         :BeforeIteration => [:Iteration],
         :Iteration => [:Cost, " | ", :ϵ, "\n"],
@@ -117,8 +117,8 @@ A main problem now is, that this debug is issued every sub solver call or initia
 
 ```{julia}
 p3 = exact_penalty_method(
-    M, f, grad_f, p0; g=g, grad_g=grad_g,
-    debug = ["\n",:Iteration, DebugCost(), (:ϵ," | ϵ: %.8f"), 25, "\n", :Stop],
+    M, f, grad_f, p0; g = g, grad_g = grad_g,
+    debug = ["\n", :Iteration, DebugCost(), (:ϵ, " | ϵ: %.8f"), 25, "\n", :Stop],
     sub_kwargs = [:debug => ["."]]
 );
 ```
@@ -136,15 +136,15 @@ p4 = exact_penalty_method(
     f,
     grad_f,
     p0;
-    g=g,
-    grad_g=grad_g,
-    debug=[
+    g = g,
+    grad_g = grad_g,
+    debug = [
         :BeforeIteration => [:Iteration, "\n"],
         :Iteration => [DebugCost(), (:ϵ, " | ϵ: %.8f"), "\n"],
         :Stop,
         25,
     ],
-    sub_kwargs=[
+    sub_kwargs = [
         :debug => [
             " | ",
             :Iteration,
@@ -170,8 +170,8 @@ Especially with the format change, the lines are more consistent in length.
 
 ```{julia}
 p2 = exact_penalty_method(
-    M, f, grad_f, p0; g=g, grad_g=grad_g,
-    debug = [:Iteration, DebugCost(), (:ϵ," | ϵ: %.8f"), 25, "\n", :Stop]
+    M, f, grad_f, p0; g = g, grad_g = grad_g,
+    debug = [:Iteration, DebugCost(), (:ϵ, " | ϵ: %.8f"), 25, "\n", :Stop]
 );
 ```
 
@@ -179,10 +179,10 @@ You can also write your own [`DebugAction`](@ref) functor, where the function to
 
 ```{julia}
 #| eval: false
-mutable struct DebugDivider{TypeIO<:IO} <: DebugAction
+mutable struct DebugDivider{TypeIO <: IO} <: DebugAction
     io::TypeIO
     divider::String
-    DebugDivider(divider=" | "; io::IO=stdout) = new{typeof(io)}(io, divider)
+    DebugDivider(divider = " | "; io::IO = stdout) = new{typeof(io)}(io, divider)
 end
 function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int)
     (k >= 0) && (!isempty(d.divider)) && (print(d.io, d.divider))

@@ -77,7 +77,7 @@ n = 100
 σ = π / 8
 M = Sphere(2)
 p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
-data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
+data = [exp(M, p, σ * rand(M; vector_at = p)) for i in 1:n];
 ```
 
 Now we can define the cost function $f$ and its (Riemannian) gradient $\operatorname{grad} f$
@@ -113,11 +113,14 @@ These can easily be specified using either a Symbol when using the default forma
 We can also, for illustration reasons, just look at the first 6 steps by setting a [`stopping_criterion=`](../commons/stopping_criteria.md)
 
 ```{julia}
-m2 = gradient_descent(M, f, grad_f, data[1];
-    debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
-        (:Cost, " f(p): %1.11f | "), "\n", :Stop],
+m2 = gradient_descent(
+    M, f, grad_f, data[1];
+    debug = [
+        :Iteration, (:Change, "|Δp|: %1.9f |"),
+        (:Cost, " f(p): %1.11f | "), "\n", :Stop,
+    ],
     stopping_criterion = StopAfterIteration(6)
-  )
+)
 ```
 
 See the ``[`DebugActionFactory`](@ref Manopt.DebugActionFactory)``{=commonmark} for the list of available symbols.
@@ -132,10 +135,13 @@ Combining stopping-criteria can be done by `|` or `&`.
 We further pass a number `25` to `debug=` to only print an output every `25`th iteration:
 
 ```{julia}
-m3 = gradient_descent(M, f, grad_f, data[1];
-    debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
-        (:Cost, " f(p): %1.11f | "), "\n", :Stop, 25],
-    stopping_criterion = StopWhenGradientNormLess(1e-14) | StopAfterIteration(400),
+m3 = gradient_descent(
+    M, f, grad_f, data[1];
+    debug = [
+        :Iteration, (:Change, "|Δp|: %1.9f |"),
+        (:Cost, " f(p): %1.11f | "), "\n", :Stop, 25,
+    ],
+    stopping_criterion = StopWhenGradientNormLess(1.0e-14) | StopAfterIteration(400),
 )
 ```
 
@@ -143,18 +149,21 @@ We can finally also tune the step size, for example by choosing more expensive p
 the default [`ArmijoLinesearch`](@ref) [stepsize](../commons/stepsizes.md) rule.
 
 ```{julia}
-m4 = gradient_descent(M, f, grad_f, data[1];
-    debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
-        (:Cost, " f(p): %1.11f | "), "\n", :Stop, 2],
-      stepsize = ArmijoLinesearch(; contraction_factor=0.999, sufficient_decrease=0.5),
-    stopping_criterion = StopWhenGradientNormLess(1e-14) | StopAfterIteration(400),
+m4 = gradient_descent(
+    M, f, grad_f, data[1];
+    debug = [
+        :Iteration, (:Change, "|Δp|: %1.9f |"),
+        (:Cost, " f(p): %1.11f | "), "\n", :Stop, 2,
+    ],
+    stepsize = ArmijoLinesearch(; contraction_factor = 0.999, sufficient_decrease = 0.5),
+    stopping_criterion = StopWhenGradientNormLess(1.0e-14) | StopAfterIteration(400),
 )
 ```
 
 Then we reach approximately the same point as in the previous run, but in far fewer steps.
 
 ```{julia}
-[f(M, m3)-f(M,m4), distance(M, m3, m4)]
+[f(M, m3) - f(M, m4), distance(M, m3, m4)]
 ```
 
 ## Using the tutorial mode
@@ -203,7 +212,7 @@ when we for example look at when this run stops, we see that it takes more steps
 
 ```{julia}
 #| warning: true
-gradient_descent(M, f2, grad_f2, data[1], debug=[:Stop]);
+gradient_descent(M, f2, grad_f2, data[1], debug = [:Stop]);
 ```
 
 
@@ -224,7 +233,7 @@ N = SymmetricPositiveDefinite(3)
 m = 100
 σ = 0.005
 q = Matrix{Float64}(I, 3, 3)
-data2 = [exp(N, q, σ * rand(N; vector_at=q)) for i in 1:m];
+data2 = [exp(N, q, σ * rand(N; vector_at = q)) for i in 1:m];
 ```
 
 Instead of the mean, let's consider a non-smooth optimization task:
@@ -247,12 +256,14 @@ proxes_g = Function[(N, λ, q) -> prox_distance(N, λ / m, di, q, 1) for di in d
 Besides also looking at some debug prints, we can also easily record these values. Similarly to `debug=`, `record=` also accepts Symbols, see list ``[here](@ref Manopt.RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))``{=commonmark}, to indicate things to record. We further set `return_state` to true to obtain not just the (approximate) minimizer.
 
 ```{julia}
-res = cyclic_proximal_point(N, g, proxes_g, data2[1];
-  debug=[:Iteration," | ",:Change," | ",(:Cost, "f(p): %1.12f"),"\n", 1000, :Stop,
-        ],
-        record=[:Iteration, :Change, :Cost, :Iterate],
-        return_state=true,
-    );
+res = cyclic_proximal_point(
+    N, g, proxes_g, data2[1];
+    debug = [
+        :Iteration, " | ", :Change, " | ", (:Cost, "f(p): %1.12f"), "\n", 1000, :Stop,
+    ],
+    record = [:Iteration, :Change, :Cost, :Iterate],
+    return_state = true,
+);
 ```
 
 ```{=commonmark}
@@ -280,7 +291,7 @@ example access the `:Cost` that was recorded every iteration as well as the (may
 x = get_record(res, :Iteration, :Iteration)
 y = get_record(res, :Iteration, :Cost)
 using Plots
-plot(x,y,xaxis=:log, label="CPPA Cost")
+plot(x, y, xaxis = :log, label = "CPPA Cost")
 ```
 
 ## Literature

@@ -33,7 +33,7 @@ We get started by loading the packages we need.
 using Pkg;
 cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
-Pkg.develop(path="../") # a trick to work on the local dev version
+Pkg.develop(path = "../") # a trick to work on the local dev version
 ```
 
 ```{julia}
@@ -95,7 +95,7 @@ d = 5  # dimension of the sphere - embedded in R^{d+1}
 r = 2.0 # radius of the sphere
 N = 100 # data set size
 
-M = ScaledSphere(d,r)
+M = ScaledSphere(d, r)
 ```
 
 
@@ -104,9 +104,9 @@ M = ScaledSphere(d,r)
 ```{julia}
 #| output : false
 # generate 100 points around the north pole
-pts = [ [zeros(d)..., M.radius] .+ 0.5.*([rand(d)...,0.5] .- 0.5) for _=1:N]
+pts = [ [zeros(d)..., M.radius] .+ 0.5 .* ([rand(d)..., 0.5] .- 0.5) for _ in 1:N]
 # project them onto the r-sphere
-pts = [ r/norm(p) .* p for p in pts]
+pts = [ r / norm(p) .* p for p in pts]
 ```
 
 Then, before starting with optimization, we need the distance on the manifold,
@@ -126,7 +126,7 @@ function log!(M::ScaledSphere, X, p, q)
     X .*= M.radius
     return X
 end
-representation_size(M::ScaledSphere) = (M.dimension+1,)
+representation_size(M::ScaledSphere) = (M.dimension + 1,)
 ```
 
 ## Define the cost and gradient
@@ -134,7 +134,7 @@ representation_size(M::ScaledSphere) = (M.dimension+1,)
 ```{julia}
 #| output : false
 f(M, q) = sum(distance(M, q, p)^2 for p in pts)
-grad_f(M,q) = sum( - 2 * log(M, q, p) for p in pts)
+grad_f(M, q) = sum(- 2 * log(M, q, p) for p in pts)
 ```
 
 ## Defining the necessary functions to run a solver
@@ -172,7 +172,7 @@ We have to specify
 We start with a certain point and evaluate its cost
 ```{julia}
 p0 = [r, zeros(d)...]
-f(M,p0)
+f(M, p0)
 ```
 
 Then we can run our first solver, where we have to overwrite a few
@@ -180,13 +180,14 @@ defaults, which would use functions we do not (yet) have.
 Let's discuss these in the next steps.
 
 ```{julia}
-q1 = gradient_descent(M, f, grad_f, p0;
+q1 = gradient_descent(
+    M, f, grad_f, p0;
     retraction_method = ProjectionRetraction(),   # state, that we use the retraction from above
-    stepsize = DecreasingLength(M; length=1.0), # A simple step size
+    stepsize = DecreasingLength(M; length = 1.0), # A simple step size
     stopping_criterion = StopAfterIteration(10),  # A simple stopping criterion
-    X = zeros(d+1),                               # how we define/represent tangent vectors
+    X = zeros(d + 1),                               # how we define/represent tangent vectors
 )
-f(M,q1)
+f(M, q1)
 ```
 
 We at least see, that the function value decreased.
@@ -200,18 +201,19 @@ on positively curved manifolds like our scaled sphere in this example
 ```{julia}
 import ManifoldsBase: inner
 import Manopt: max_stepsize
-inner(M::ScaledSphere, p, X,Y) = dot(X,Y) # inherited from the embedding
- # set the maximal allowed step size to injectivity radius.
-Manopt.max_stepsize(M::ScaledSphere) = M.radius*π
+inner(M::ScaledSphere, p, X, Y) = dot(X, Y) # inherited from the embedding
+# set the maximal allowed step size to injectivity radius.
+Manopt.max_stepsize(M::ScaledSphere) = M.radius * π
 ```
 
 Then we can use the default step size ([`ArmijoLinesearch`](@ref)) and
 the default stopping criterion, which checks for a small gradient norm
 
 ```{julia}
-q2 = gradient_descent(M, f, grad_f, p0;
+q2 = gradient_descent(
+    M, f, grad_f, p0;
     retraction_method = ProjectionRetraction(), # as before
-    X = zeros(d+1), # as before
+    X = zeros(d + 1), # as before
 )
 f(M, q2)
 ```
@@ -226,7 +228,7 @@ We define
 
 ```{julia}
 import ManifoldsBase: zero_vector, default_retraction_method
-zero_vector(M::ScaledSphere, p) = zeros(M.dimension+1)
+zero_vector(M::ScaledSphere, p) = zeros(M.dimension + 1)
 default_retraction_method(M::ScaledSphere) = ProjectionRetraction()
 ```
 
