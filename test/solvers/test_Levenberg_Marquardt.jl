@@ -298,7 +298,33 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
                 TpM1 = TangentSpace(M1, p1)
                 X0 = Manopt.ZeroVector()
                 @test isapprox(get_cost(TpM1, slso, X0), get_cost(TpM1, slco, X0); atol = 1.0e-12, rtol = 1.0e-12)
-                # The LM-relevant regression: both surrogate systems should produce the same step.
+                # The coordinate operator actions have to agree with the assembled operators,
+                # for the block robustifiers `r` as well as for the componentwise ones
+                # the operator surrogate reads its residuals from its own cache as well
+                get_residuals!(M1, lmso.value_cache, nlso, p1)
+                cX = [0.3, -0.5]
+                X = get_vector(M1, p1, cX, B2)
+                c_lmcso = zeros(d)
+                Manopt.add_normal_linear_operator_coord!(M1, c_lmcso, lmcso, p1, cX)
+                @test isapprox(A_lmso * cX, c_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+                y_lmso = zeros(n_res)
+                Manopt.get_linear_operator!(M1, y_lmso, lmso, p1, X)
+                y_lmcso = zeros(n_res)
+                Manopt.add_linear_operator_coord!(M1, y_lmcso, lmcso, p1, cX)
+                @test isapprox(y_lmso, y_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+                # In `:Normal` mode the rank one correction of the normal operator is active,
+                # the coordinate surrogate has to reproduce it as well
+                lmcso_normal = Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(
+                    nlso; penalty = penalty, basis = B2, mode = :Normal,
+                    jacobian_cache = copy.(lmcso.jacobian_cache), residuals = copy(lmcso.value_cache),
+                )
+                A_lmso_normal = zeros(d, d)
+                A_lmcso_normal = zeros(d, d)
+                Manopt.get_linear_operator!(M1, A_lmso_normal, slso_normal, p1, B2)
+                Manopt.get_linear_operator!(M1, A_lmcso_normal, Manopt.NormalEquationsObjective(lmcso_normal), p1, B2)
+                @test isapprox(A_lmso_normal, A_lmcso_normal; atol = 1.0e-12, rtol = 1.0e-12)
+
+                # both surrogate systems should produce the same step.
                 dmp_so = DefaultManoptProblem(TpM1, slso)
                 dmp_so_normal = DefaultManoptProblem(TpM1, slso_normal)
                 dmp_co = DefaultManoptProblem(TpM1, slco)
