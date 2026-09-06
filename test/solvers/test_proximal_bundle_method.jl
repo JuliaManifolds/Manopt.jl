@@ -51,6 +51,15 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         @test f(M, p_star2) <= f(M, p0)
         set_iterate!(pbms2, M, p)
         @test get_iterate(pbms2) == p
+        #
+        # Check bundle trimming
+        pbms3 = proximal_bundle_method(
+            M, f, ∂f, p0; m = 2.0, bundle_size = 2,
+            stopping_criterion = StopAfterIteration(6), return_state = true,
+        )
+        @test length(pbms3.bundle) == 2
+        @test length(pbms3.lin_errors) == 2
+        @test length(pbms3.approx_errors) == 2
         # Test warnings
         dw1 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 0.0)
         dw1(mp, pbms, 1) #do one normal run.

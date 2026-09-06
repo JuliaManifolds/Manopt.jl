@@ -134,6 +134,13 @@ import Manifolds: inner
             M, grad_h, p0; g = g, grad_g = grad_g, sub_hess = missing,
             stopping_criterion = StopAfterIteration(10), # is not that stable
         )
+        # also providing the cost – usually only useful for e.g. debug
+        p5d = difference_of_convex_proximal_point(M, f, grad_h, p0; g = g, grad_g = grad_g)
+        @test isapprox(M, p5, p5d)
+        p5e = copy(M, p0)
+        difference_of_convex_proximal_point!(M, f, grad_h, p5e; g = g, grad_g = grad_g)
+        @test isapprox(M, p5, p5e)
+
         s2 = difference_of_convex_proximal_point(
             M, grad_h, p0; g = g, grad_g = grad_g, gradient = grad_f, return_state = true
         )

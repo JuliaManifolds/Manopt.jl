@@ -10,12 +10,9 @@ using Manifolds, Manopt, Random, Test
     # N random points moved to top left to have a mean outside
     pts = [
         exp(
-            M,
-            c,
+            M, c,
             get_vector(
-                M,
-                c,
-                σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
+                M, c, σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
                 DefaultOrthonormalBasis(),
             ),
         ) for _ in 1:N
@@ -65,6 +62,10 @@ using Manifolds, Manopt, Random, Test
 
     for objective in [csoa, csoa2, csoi, csoi2]
         @test get_cost(M, objective, c) == f(M, c)
+        @test startswith(repr(objective), "ManifoldConstrainedSetObjective(")
+        @test Manopt.status_summary(objective; context = :short) == repr(objective)
+        @test startswith(Manopt.status_summary(objective; context = :inline), "A set-constrained objective of")
+        @test startswith(Manopt.status_summary(objective), "A set-constrained objective\n")
         @test objective.indicator(M, c) == 0
         @test isinf(objective.indicator(M, q_out))
         @test Manopt.get_cost_function(objective)(M, c) == f(M, c)

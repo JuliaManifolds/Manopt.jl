@@ -108,6 +108,20 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
             atol = 1.0e-14,
         )
 
+        # a stopping criterion that allows more steps than `maxIterLanczos` makes the
+        # state grow its tridiagonal matrix and its coefficient storage
+        arcs5 = AdaptiveRegularizationState(
+            M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos = 1, σ = 2.0); p = p0
+        )
+        initialize_solver!(arcs5.sub_problem, arcs5.sub_state)
+        copyto!(M, arcs5.sub_state.X, p0, get_gradient(M, mho, p0))
+        step_solver!(arcs5.sub_problem, arcs5.sub_state, 1)
+        @test size(arcs5.sub_state.tridig_matrix) == (1, 1)
+        step_solver!(arcs5.sub_problem, arcs5.sub_state, 2)
+        @test size(arcs5.sub_state.tridig_matrix) == (2, 2)
+        @test length(arcs5.sub_state.coefficients) == 2
+        @test length(arcs5.sub_state.Lanczos_vectors) == 2
+
         st1 = StopWhenFirstOrderProgress(0.5)
         @test startswith(repr(st1), "StopWhenFirstOrderProgress(0.5)")
         @test startswith(Manopt.status_summary(st1; context = :short), "StopWhenFirstOrderProgress")
