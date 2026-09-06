@@ -196,6 +196,8 @@ $(_kwargs(:retraction_method))
   This is used both in the relaxation step as well as in the reflection, unless you set `R` yourself.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-5)"))
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
+  For more than two proximal maps the parallel variant is always used. For a [`ManifoldProximalMapObjective`](@ref) `mpo`
+  this indicates that `mpo` is already a parallel one on a power manifold, so that the first component of the iterate is returned.
 
 $(_note(:OtherKeywords))
 
@@ -231,7 +233,7 @@ calls_with_kwargs(::typeof(DouglasRachford)) = (DouglasRachford!,)
 DouglasRachford!(::AbstractManifold, args...; kwargs...)
 function DouglasRachford!(
         M::AbstractManifold, f::TF, proxes_f::Vector{<:Any}, p;
-        evaluation = AllocatingEvaluation(), parallel::Int = 0, kwargs...,
+        evaluation = AllocatingEvaluation(), parallel::Integer = 0, kwargs...,
     ) where {TF}
     proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation; result = :Point) for prox_f in proxes_f]
     N, f_, (prox1, prox2), parallel_, p0 = parallel_to_alternating_DR(M, f, proxes_f_, p, parallel)
@@ -265,7 +267,7 @@ function DouglasRachford!(
                 inverse_retraction_method = inverse_retraction_method,
             )
         end,
-        parallel::Int = 0,
+        parallel::Integer = 0,
         stopping_criterion::StoppingCriterion = StopAfterIteration(200) |
             StopWhenChangeLess(M, 1.0e-5),
         kwargs..., #especially may contain decorator options
@@ -313,17 +315,17 @@ function parallel_to_alternating_DR(M, f, proxes_f, p, parallel)
 end #
 # An internal function that turns more than 2 proximal maps into a parallel variant
 function prepare_proxes(proxes_f, parallel)
-    parallel_ = parallel
+    parallel_ = 0
     if length(proxes_f) < 2
         throw(
             ErrorException(
                 "Less than two proximal maps provided, the (parallel) Douglas Rachford requires (at least) two proximal maps.",
             ),
         )
-    elseif length(proxes_f) == 2
+    elseif length(proxes_f) == 2 && parallel <= 0
         prox1 = proxes_f[1]
         prox2 = proxes_f[2]
-    else # more than 2 -> parallelDouglasRachford
+    else # more than 2 (or parallel requested) -> parallel Douglas-Rachford
         parallel_ = length(proxes_f)
         prox1 = function (M, q, λ, p)
             [proxes_f[i](M.manifold, q[i], λ, p[i]) for i in 1:parallel_]

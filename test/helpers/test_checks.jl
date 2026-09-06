@@ -84,3 +84,16 @@ default(; show = false, reuse = true)
         @test !check_Hessian(M4, f4, grad_f4, Hess_f4f1, p4, X4)
     end
 end
+
+@testset "check_vector honours the error setting" begin
+    M = Sphere(2)
+    p = [1.0, 0.0, 0.0]
+    f(M, p) = 0.0
+    bad_grad(M, p) = [1.0, 1.0, 1.0] # not tangent at p
+    @test_throws DomainError check_gradient(M, f, bad_grad, p; check_vector = true, error = :error)
+    @test !(
+        @test_logs (:warn,) match_mode = :any check_gradient(
+            M, f, bad_grad, p; check_vector = true, error = :warn
+        )
+    )
+end

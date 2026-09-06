@@ -102,7 +102,7 @@ There are three Tags on GitHub that modify the behaviour of the CI
 * `skip documentation` skips rendering and deployment of the documentation preview
   this is helpful for external contributors that do not have rights for the deployment
   or when nothing on the documentation is changed.
-* `no changelog needed` skips the small CI that checks that the changelog was edited.
+* `no changelog necessary` skips the small CI that checks that the changelog was edited.
   this is helpful when the change is small enough to not require an entry or for `dependabot`
   when it checks version updates for the package dependencies
 

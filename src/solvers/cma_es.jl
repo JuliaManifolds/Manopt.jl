@@ -902,7 +902,7 @@ function (c::StopWhenPopulationCostConcentrated)(
     if isfull(c.best_value_history)
         min_hist, max_hist = extrema(c.best_value_history)
         if max_hist - min_hist < c.tol &&
-                s.best_fitness_current_gen - s.worst_fitness_current_gen < c.tol
+                s.worst_fitness_current_gen - s.best_fitness_current_gen < c.tol
             c.at_iteration = k
             return true
         end

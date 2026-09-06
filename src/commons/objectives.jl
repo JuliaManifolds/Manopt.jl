@@ -2462,84 +2462,98 @@ function get_inequality_constraint(M::AbstractManifold, co::ManifoldCountObjecti
 end
 
 function get_grad_equality_constraint(
-        M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     _count_if_exists(co, :GradEqualityConstraints)
-    return get_grad_equality_constraint(M, co.objective, p, i)
+    return get_grad_equality_constraint(M, co.objective, p, i, range)
 end
 function get_grad_equality_constraint(
-        M::AbstractManifold, co::ManifoldCountObjective, p, j::Integer
+        M::AbstractManifold, co::ManifoldCountObjective, p, j::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     _count_if_exists(co, :GradEqualityConstraint, j)
-    return get_grad_equality_constraint(M, co.objective, p, j)
+    return get_grad_equality_constraint(M, co.objective, p, j, range)
 end
-function get_grad_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+function get_grad_equality_constraint(
+        M::AbstractManifold, co::ManifoldCountObjective, p, i,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+    )
     for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
         _count_if_exists(co, :GradEqualityConstraint, j)
     end
-    return get_grad_equality_constraint(M, co.objective, p, i)
+    return get_grad_equality_constraint(M, co.objective, p, i, range)
 end
 function get_grad_equality_constraint!(
-        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     _count_if_exists(co, :GradEqualityConstraints)
-    return get_grad_equality_constraint!(M, X, co.objective, p, i)
+    return get_grad_equality_constraint!(M, X, co.objective, p, i, range)
 end
 function get_grad_equality_constraint!(
-        M::AbstractManifold, X, co::ManifoldCountObjective, p, j::Integer
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, j::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     _count_if_exists(co, :GradEqualityConstraint, j)
-    return get_grad_equality_constraint!(M, X, co.objective, p, j)
+    return get_grad_equality_constraint!(M, X, co.objective, p, j, range)
 end
 function get_grad_equality_constraint!(
-        M::AbstractManifold, X, co::ManifoldCountObjective, p, i
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
         _count_if_exists(co, :GradEqualityConstraint, j)
     end
-    return get_grad_equality_constraint!(M, X, co.objective, p, i)
+    return get_grad_equality_constraint!(M, X, co.objective, p, i, range)
 end
 
 function get_grad_inequality_constraint(
-        M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     _count_if_exists(co, :GradInequalityConstraints)
-    return get_grad_inequality_constraint(M, co.objective, p, i)
+    return get_grad_inequality_constraint(M, co.objective, p, i, range)
 end
 function get_grad_inequality_constraint(
-        M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+        M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     _count_if_exists(co, :GradInequalityConstraint, i)
-    return get_grad_inequality_constraint(M, co.objective, p, i)
+    return get_grad_inequality_constraint(M, co.objective, p, i, range)
 end
 function get_grad_inequality_constraint(
-        M::AbstractManifold, co::ManifoldCountObjective, p, i
+        M::AbstractManifold, co::ManifoldCountObjective, p, i,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     for j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
         _count_if_exists(co, :GradInequalityConstraint, j)
     end
-    return get_grad_inequality_constraint(M, co.objective, p, i)
+    return get_grad_inequality_constraint(M, co.objective, p, i, range)
 end
 
 function get_grad_inequality_constraint!(
-        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     _count_if_exists(co, :GradInequalityConstraints)
-    return get_grad_inequality_constraint!(M, X, co.objective, p, i)
+    return get_grad_inequality_constraint!(M, X, co.objective, p, i, range)
 end
 function get_grad_inequality_constraint!(
-        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Integer
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Integer,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     _count_if_exists(co, :GradInequalityConstraint, i)
-    return get_grad_inequality_constraint!(M, X, co.objective, p, i)
+    return get_grad_inequality_constraint!(M, X, co.objective, p, i, range)
 end
 function get_grad_inequality_constraint!(
-        M::AbstractManifold, X, co::ManifoldCountObjective, p, i
+        M::AbstractManifold, X, co::ManifoldCountObjective, p, i,
+        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
     )
     for j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
         _count_if_exists(co, :GradInequalityConstraint, j)
     end
-    return get_grad_inequality_constraint!(M, X, co.objective, p, i)
+    return get_grad_inequality_constraint!(M, X, co.objective, p, i, range)
 end
 
 #

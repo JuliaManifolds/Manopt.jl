@@ -509,7 +509,7 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     return r
 end
 function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
-    copyto!(d.matrix, I)
+    copyto!(d.matrix, isnothing(d.initial_scale) ? I : d.initial_scale * I)
     return d
 end
 """

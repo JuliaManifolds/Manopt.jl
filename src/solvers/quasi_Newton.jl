@@ -36,6 +36,7 @@ $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 * `initial_scale=1.0`: a relative initial scale. By default deactivated when using a preconditioner.
 * `memory_size=20`: a shortcut to set the memory in the default direction update
+* `nondescent_direction_behavior=:reinitialize_direction_update`: how to handle a direction that is not a descent direction, see [`quasi_Newton`](@ref)
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, Missing} = missing` specify a preconditioner or deactivate by passing `missing`.
 $(_kwargs(:retraction_method))
@@ -320,6 +321,7 @@ function quasi_Newton!(
         ),
         stopping_criterion::StoppingCriterion = StopAfterIteration(max(1000, memory_size)) |
             StopWhenGradientNormLess(1.0e-6),
+        nondescent_direction_behavior::Symbol = :reinitialize_direction_update,
         nonpositive_curvature_behavior::Symbol = :ignore,
         sy_tol::Real = 1.0e-8,
         kwargs...,
@@ -363,6 +365,7 @@ function quasi_Newton!(
         initial_vector = get_gradient(mp, p),
         callbacks = process_callbacks_arg(callbacks, QuasiNewtonState),
         direction_update = local_dir_upd,
+        nondescent_direction_behavior = nondescent_direction_behavior,
         stopping_criterion = stopping_criterion,
         preconditioner = if preconditioner isa Function
             QuasiNewtonPreconditioner(preconditioner; evaluation = evaluation)

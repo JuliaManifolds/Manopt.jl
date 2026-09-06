@@ -76,7 +76,7 @@ function Manopt.init_caches(
         (c === :StochasticGradients) && push!(lru_caches, LRU{P, Vector{T}}(; maxsize = m))
         # Point caches
         # (b) proximal point - again use (p, λ, i) as key
-        (c === :ProximalMap) && push!(lru_caches, LRU{Tuple{P, R, Int}, P}(; maxsize = m))
+        (c === :ProximalMap) && push!(lru_caches, LRU{Tuple{P, Real, Int}, P}(; maxsize = m))
         # None of the previous cases matched -> unknown cache type
         if length(lru_caches) == i #nothing pushed
             error(

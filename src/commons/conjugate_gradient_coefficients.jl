@@ -41,7 +41,7 @@ struct DirectionUpdateRuleStorage{TC <: DirectionUpdateRule, TStorage <: StoreSt
 end
 function DirectionUpdateRuleStorage(
         M::AbstractManifold, dur::DirectionUpdateRule;
-        p_init = rand(M), X_init = zero_vector(M, p_init),
+        p_init = maybe_wrap_variable(rand(M)), X_init = zero_vector(M, p_init),
     )
     ursp = update_rule_storage_points(dur)
     ursv = update_rule_storage_vectors(dur)

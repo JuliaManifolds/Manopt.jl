@@ -64,6 +64,10 @@ Random.seed!(42)
         # the same also works for the 1-element-array representation of `Circle`
         @test mid_point(M, [0.0], [Float64(π)], [1.0]) ≈ [π / 2]
         @test mid_point(M, [0.0], [Float64(π)], [-1.0]) ≈ [-π / 2]
+        # the in-place variant has to honour the reference point as well
+        y = [0.0]
+        @test mid_point!(M, y, [0.0], [Float64(π)], [1.0]) ≈ [π / 2]
+        @test mid_point!(M, y, [0.0], [Float64(π)], [-1.0]) ≈ [-π / 2]
     end
     @testset "max_stepsize" begin
         M = Sphere(2)

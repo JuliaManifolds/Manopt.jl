@@ -210,12 +210,12 @@ function direct_keywords(f)
             push!(s, fkw)
         end
     end
-    d = deprecated_keywords(s)
+    d = deprecated_keywords(f)
     setdiff!(s, d)
     return Keywords(s, d; from = f)
 end
 
-deprecated_keywords(s) = Set{Symbol}()
+deprecated_keywords(f) = Set{Symbol}()
 
 """
     keywords_accepted(f, mode=Symbol(get_parameter(:KeywordsErrorMode)), kw::Keywords=accepted_keywords(f); kwargs...)

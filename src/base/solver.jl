@@ -126,6 +126,8 @@ function decorate_state!(
     return deco_s
 end
 
+deprecated_keywords(::typeof(decorate_state!)) = Set([:callback])
+
 function decorate_objective! end
 @doc """
     decorate_objective!(M, o::AbstractManifoldObjective; kwargs...)

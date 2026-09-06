@@ -1234,11 +1234,11 @@ function status_summary(c::StopWhenGradientNormLess; context::Symbol = :default)
 end
 show(io::IO, c::StopWhenGradientNormLess) = print(io, "StopWhenGradientNormLess($(c.threshold))")
 """
-    set_parameter!(c::StopWhenGradientNormLess{F,TF}, :MinGradNorm, v::TF) where {F,TF<:Real}
+    set_parameter!(c::StopWhenGradientNormLess, :MinGradNorm, v)
 
 Update the minimal gradient norm when an algorithm shall stop.
 """
-function set_parameter!(c::StopWhenGradientNormLess{F, TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF <: Real}
+function set_parameter!(c::StopWhenGradientNormLess, ::Val{:MinGradNorm}, v)
     c.threshold = v
     return c
 end
@@ -1572,11 +1572,11 @@ function Base.show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
     return print(io, "StopWhenProjectedNegativeGradientNormLess($(c.threshold); norm = $(c.norm))")
 end
 """
-    set_parameter!(c::StopWhenProjectedNegativeGradientNormLess{F,TF}, :MinGradNorm, v::TF) where {F, TF<:Real}
+    set_parameter!(c::StopWhenProjectedNegativeGradientNormLess, :MinGradNorm, v)
 
 Update the minimal gradient norm when an algorithm shall stop.
 """
-function set_parameter!(c::StopWhenProjectedNegativeGradientNormLess{F, TF}, ::Val{:MinGradNorm}, v::TF) where {F, TF <: Real}
+function set_parameter!(c::StopWhenProjectedNegativeGradientNormLess, ::Val{:MinGradNorm}, v)
     c.threshold = v
     return c
 end
@@ -1846,11 +1846,11 @@ function Base.show(io::IO, c::StopWhenSubgradientNormLess)
     return print(io, "StopWhenSubgradientNormLess($(c.threshold))")
 end
 """
-    set_parameter!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
+    set_parameter!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v)
 
 Update the minimal subgradient norm below which an algorithm shall stop.
 """
-function set_parameter!(c::StopWhenSubgradientNormLess, ::Val{:MinSubgradNorm}, v::Float64)
+function set_parameter!(c::StopWhenSubgradientNormLess, ::Val{:MinSubgradNorm}, v)
     c.threshold = v
     return c
 end

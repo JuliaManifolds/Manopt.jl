@@ -164,6 +164,15 @@ They are still listed here in detail in case (a) someone else's code breaks or (
 * since we introduced the differential in the first order objectives,
 they were not fully supported in all places. This was now fixed and unified.
 * for a nicer printing on REPL, a few more `status_summary` functions were added (with the help of an AI)
+* `set_parameter!` on a decorated objective now passes the update on to the objective it wraps, so a decorated sub objective receives the parameters its solver sets.
+* the `get_objective_*` accessors of a sub objective now pass through decorators, so `trust_regions` and `adaptive_regularization_with_cubics` also run when `sub_kwargs` decorates the sub objective.
+* recording or debugging the step size, or using `StopWhenStepsizeLess`, no longer re-runs and thereby alters the `BarzilaiBorwein`, `CubicBracketingLinesearch`, `HagerZhangLinesearch` and `NonmonotoneLinesearch` step sizes.
+* the `error=` keyword of `check_gradient` and `check_Hessian` now also applies to their `check_vector` step, which before never threw or warned.
+* `StopWhenPopulationCostConcentrated` now compares the worst against the best fitness of the current generation, which before was subtracted the wrong way round and always satisfied.
+* `quasi_Newton!` now accepts and forwards the documented `nondescent_direction_behavior` keyword, which before was warned about and dropped.
+* `stochastic_gradient_descent` with an absolute step length now normalizes by the stochastic gradient it steps along, and no longer evaluates the full gradient once per step.
+* the `LineSearches.jl` step size now hands its retraction to the initial guess, which before probed along the default retraction.
+* `convex_bundle_method` now uses its `retraction_method` for the candidates of both the domain backtracking and the null step, which before always used the default retraction.
 
 Furthermore the following were fixed
 

@@ -125,6 +125,11 @@ This function should dispatch on `Val(element)`.
 """
 set_parameter!(amo::AbstractManifoldObjective, e::Symbol, args...)
 
+function set_parameter!(admo::AbstractDecoratedManifoldObjective, e::Val, args...)
+    set_parameter!(get_objective(admo, false), e, args...)
+    return admo
+end
+
 
 # For decorators the human readable version is “transparent” by default, i.e.
 # if no special addition is done, it just prints the human readable string from the child

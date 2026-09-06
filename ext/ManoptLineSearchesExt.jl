@@ -8,7 +8,7 @@ using LineSearches
 Manopt.linesearches_get_max_alpha(ls::LineSearches.HagerZhang) = ls.alphamax
 Manopt.linesearches_get_max_alpha(ls::LineSearches.MoreThuente) = ls.alphamax
 
-function Manopt.linesearches_set_max_alpha(ls::LineSearches.HagerZhang{T, Tm}, max_alpha::T) where {T, Tm}
+function Manopt.linesearches_set_max_alpha(ls::LineSearches.HagerZhang{T, Tm}, max_alpha::Real) where {T, Tm}
     return HagerZhang{T, Tm}(
         delta = ls.delta,
         sigma = ls.sigma,
@@ -24,7 +24,7 @@ function Manopt.linesearches_set_max_alpha(ls::LineSearches.HagerZhang{T, Tm}, m
         check_flatness = ls.check_flatness,
     )
 end
-function Manopt.linesearches_set_max_alpha(ls::LineSearches.MoreThuente{T}, max_alpha::T) where {T}
+function Manopt.linesearches_set_max_alpha(ls::LineSearches.MoreThuente{T}, max_alpha::Real) where {T}
     return MoreThuente{T}(
         f_tol = ls.f_tol,
         gtol = ls.gtol,
@@ -58,7 +58,7 @@ function (cs::Manopt.LineSearchesStepsize)(
     end
 
     # guess initial alpha
-    α0 = cs.initial_guess(mp, s, k, cs.last_stepsize, η; lf0 = fp, Dlf0 = dphi_0)
+    α0 = cs.initial_guess(mp, s, k, cs.last_stepsize, η; lf0 = fp, Dlf0 = dphi_0, retraction_method = cs.retraction_method)
 
     # handle stepsize limit
     local ls # COV_EXCL_LINE

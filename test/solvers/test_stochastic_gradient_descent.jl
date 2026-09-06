@@ -149,3 +149,14 @@ using Manopt, Manifolds, Test
         @test all([is_point(Mc, q, true) for q in [q1, q2, q3, q4]])
     end
 end
+
+@testset "absolute step length uses the stochastic gradient" begin
+    M = Sphere(2)
+    p0 = [1.0, 0.0, 0.0]
+    grads = [(M, p) -> project(M, p, [0.0, 1.0, 0.0]), (M, p) -> project(M, p, [0.0, 0.0, 5.0])]
+    q = stochastic_gradient_descent(
+        M, grads, p0; stepsize = ConstantLength(1.0; type = :absolute),
+        order_type = :Linear, stopping_criterion = StopAfterIteration(1),
+    )
+    @test distance(M, p0, q) ≈ 1.0
+end

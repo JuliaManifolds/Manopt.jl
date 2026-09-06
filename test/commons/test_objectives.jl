@@ -45,6 +45,20 @@ using Manifolds, Manopt, Test
         mp = DefaultManoptProblem(Euclidean(2), o)
         Manopt.set_parameter!(mp, :Objective, :Dummy, 1)
     end
+    @testset "set_parameter! passes through decorators" begin
+        M = Euclidean(2)
+        mho = ManifoldHessianObjective((M, p) -> p[1], (M, p) -> p, (M, p, X) -> X)
+        arc = Manopt.AdaptiveRegularizationWithCubicsModelObjective(mho, 1.0)
+        Manopt.set_parameter!(arc, :σ, 5.0)
+        @test arc.σ == 5.0
+        # the update has to reach the inner objective through every decorator
+        Manopt.set_parameter!(Manopt.Test.DummyDecoratedObjective(arc), :σ, 7.0)
+        @test arc.σ == 7.0
+        Manopt.set_parameter!(Manopt.decorate_objective!(M, arc; count = [:Cost]), :σ, 9.0)
+        @test arc.σ == 9.0
+        Manopt.set_parameter!(Manopt.ReturnManifoldObjective(arc), :σ, 11.0)
+        @test arc.σ == 11.0
+    end
     @testset "functions" begin
         M = Euclidean(2)
         p = [1.0, 2.0]

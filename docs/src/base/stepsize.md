@@ -10,7 +10,8 @@ A special case is a line search method; both a step size computation and a line 
 
 A step size is a function, usually implemented as a `struct` that can be called like a function, that based on the parameters `(problem, state, k, η; kwargs...)` computes a new step size,
 where `k` is the current iteration and `η` the search direction.
-A common keyword argument is `initial_guess=`.
+A common keyword argument is `gradient=`, to pass an already computed gradient instead of evaluating it again.
+Line searches additionally take an `initial_guess=` keyword in their constructor, see [`AbstractInitialLinesearchGuess`](@ref).
 
 Step sizes often have parameters that might depend on the manifold used and therefore often use the [default factory](default_factory.md) pattern.
 

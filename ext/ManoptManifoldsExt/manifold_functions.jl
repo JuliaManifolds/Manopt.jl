@@ -136,6 +136,10 @@ function mid_point(M::Circle, p, q, x)
     end
     return mid_point(M, p, q)
 end
+function mid_point!(M::Circle, y, p, q, x)
+    y .= mid_point(M, p, q, x)
+    return y
+end
 
 function mid_point(M::Sphere, p, q, x)
     if isapprox(M, p, -q)

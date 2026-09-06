@@ -478,8 +478,7 @@ function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState,
     t = Nanosecond(time_ns()) - r.start
     (r.mode == :Iterative) && (r.start = Nanosecond(time_ns()))
     if r.mode == :Total
-        # only record at end (if `stop_solver` returns true)
-        return record_or_reset!(r, t, (k > 0 && !stop_solver!(p, s, k)) ? 0 : k)
+        return record_or_reset!(r, t, (k > 0 && stopped_at(s) != k) ? 0 : k)
     else
         return record_or_reset!(r, t, k)
     end

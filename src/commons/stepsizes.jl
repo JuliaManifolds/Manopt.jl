@@ -712,6 +712,7 @@ mutable struct BarzilaiBorweinStepsize{
     strategy::Symbol
     vector_transport_method::VTM
     y::T
+    last_stepsize::R
     function BarzilaiBorweinStepsize(
             M::AbstractManifold;
             p::P = rand(M), X::T = zero_vector(M, p),
@@ -752,7 +753,7 @@ mutable struct BarzilaiBorweinStepsize{
         p_ = maybe_wrap_variable(p)
         return new{typeof(X_), R, IRM, VTM, typeof(storage)}(
             inverse_retraction_method, min_stepsize, max_stepsize,
-            ManifoldsBase.copy(M, p_, X_), storage, strategy, vector_transport_method, X_
+            ManifoldsBase.copy(M, p_, X_), storage, strategy, vector_transport_method, X_, max_stepsize,
         )
     end
 end
@@ -791,31 +792,33 @@ function (bb::BarzilaiBorweinStepsize)(
     s2 = s2 == 0 ? 1.0 : s2
     s3 = real(inner(M, p, bb.s, bb.s))
     #indirect strategy
-    return if bb.strategy == :inverse
+    if bb.strategy == :inverse
         if s1 > 0
-            stepsize = clamp(s1 / s2, bb.min_stepsize, bb.max_stepsize)
+            bb.last_stepsize = clamp(s1 / s2, bb.min_stepsize, bb.max_stepsize)
         else
-            stepsize = bb.max_stepsize
+            bb.last_stepsize = bb.max_stepsize
         end
         #alternating strategy
     elseif bb.strategy == :alternating
         if s1 > 0
             if k % 2 == 0
-                stepsize = clamp(s1 / s2, bb.min_stepsize, bb.max_stepsize)
+                bb.last_stepsize = clamp(s1 / s2, bb.min_stepsize, bb.max_stepsize)
             else
-                stepsize = clamp(s3 / s1, bb.min_stepsize, bb.max_stepsize)
+                bb.last_stepsize = clamp(s3 / s1, bb.min_stepsize, bb.max_stepsize)
             end
         else
-            stepsize = bb.max_stepsize
+            bb.last_stepsize = bb.max_stepsize
         end
     else # default: direct strategy
         if s1 > 0
-            stepsize = clamp(s3 / s1, bb.min_stepsize, bb.max_stepsize)
+            bb.last_stepsize = clamp(s3 / s1, bb.min_stepsize, bb.max_stepsize)
         else
-            stepsize = bb.max_stepsize
+            bb.last_stepsize = bb.max_stepsize
         end
     end
+    return bb.last_stepsize
 end
+get_last_stepsize(bb::BarzilaiBorweinStepsize, ::Any...) = bb.last_stepsize
 function Base.show(io::IO, bbs::BarzilaiBorweinStepsize)
     print(io, "BarzilaiBorweinStepsize(; ")
     print(io, "inverse_retraction_method = ", bbs.inverse_retraction_method, ", ")
@@ -1320,6 +1323,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     end
     return t
 end
+get_last_stepsize(cbls::CubicBracketingLinesearchStepsize, ::Any...) = cbls.last_stepsize
 function Base.show(io::IO, cbls::CubicBracketingLinesearchStepsize)
     return print(
         io,
@@ -1944,6 +1948,7 @@ function (a::NonmonotoneLinesearchStepsize)(
     )
     return a.last_stepsize
 end
+get_last_stepsize(nls::NonmonotoneLinesearchStepsize, ::Any...) = nls.last_stepsize
 function Base.show(io::IO, nls::NonmonotoneLinesearchStepsize)
     print(io, "NonmonotoneLinesearch(; ")
     print(io, "bb_stepsize = ", nls.bb_stepsize, ", ")
@@ -3205,6 +3210,7 @@ function (hzls::HagerZhangLinesearchStepsize)(
     hzls.last_cost = hzls.triples[hzls.last_evaluation_index].f
     return hzls.last_stepsize
 end
+get_last_stepsize(hzls::HagerZhangLinesearchStepsize, ::Any...) = hzls.last_stepsize
 
 function Base.show(io::IO, hzls::HagerZhangLinesearchStepsize)
     return print(

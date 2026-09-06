@@ -317,6 +317,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         h3(dmp, gds, 19)
         @test length(h3.recorded_values) == 0
         # stop after 20 so 21 hits
+        gds.stop(dmp, gds, 20)
         h3(dmp, gds, 20)
         @test length(h3.recorded_values) == 1
         @test repr(RecordGradientNorm()) == "RecordGradientNorm()"

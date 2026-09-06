@@ -126,7 +126,7 @@ function check_gradient(
         kwargs...,
     )
     check_vector &&
-        (!is_vector(M, p, gradient, error === :error; atol = atol, rtol = rtol) && return false)
+        (!is_vector(M, p, gradient; error = error, atol = atol, rtol = rtol) && return false)
     # function for the directional derivative - real so it also works on complex manifolds
     df(M, p, Y) = real(inner(M, p, gradient, Y))
     return check_differential(M, f, df, p, X; name = "gradient", error = error, kwargs...)
@@ -256,7 +256,7 @@ function check_Hessian(
         end
     end
     check_vector &&
-        (!is_vector(M, p, Hessian, error === :error; atol = atol, rtol = rtol) && return false)
+        (!is_vector(M, p, Hessian; error = error, atol = atol, rtol = rtol) && return false)
     if check_linearity
         if !is_Hessian_linear(
                 M, Hess_f, p, X, Y, a, b; error = error, io = io, atol = atol, rtol = rtol

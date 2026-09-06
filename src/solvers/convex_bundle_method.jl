@@ -147,7 +147,7 @@ $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `p_estimate=p`: the center point for the curvature estimation
 $(_kwargs(:retraction_method))
-$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`; contraction_factor=0.975)"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`ConvexBundleMethodState`](@ref)`; contraction_factor=0.975, retraction_method=retraction_method)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X))
@@ -201,7 +201,7 @@ mutable struct ConvexBundleMethodState{
             p::P = rand(M), p_estimate = p,
             inverse_retraction_method::IR = default_inverse_retraction_method(M, typeof(p)),
             retraction_method::TR = default_retraction_method(M, typeof(p)),
-            stepsize::S = default_stepsize(M, ConvexBundleMethodState; contraction_factor = 0.975),
+            stepsize::S = default_stepsize(M, ConvexBundleMethodState; contraction_factor = 0.975, retraction_method = retraction_method),
             stopping_criterion::SC = StopWhenLagrangeMultiplierLess(1.0e-8) | StopAfterIteration(5000),
             vector_transport_method::VT = default_vector_transport_method(M, typeof(p)),
             X::T = zero_vector(M, p),
@@ -318,9 +318,9 @@ end
 get_subgradient(bms::ConvexBundleMethodState) = bms.g
 function default_stepsize(
         M::AbstractManifold, ::Type{ConvexBundleMethodState};
-        contraction_factor = 0.95,
+        contraction_factor = 0.95, retraction_method = default_retraction_method(M),
     )
-    return DomainBackTrackingStepsize(M; contraction_factor = contraction_factor)
+    return DomainBackTrackingStepsize(M; contraction_factor = contraction_factor, retraction_method = retraction_method)
 end
 additional_callbacks(::Type{<:ConvexBundleMethodState}) = [:BeforeSubsolver, :Stepsize, :Subsolver]
 get_callbacks(bms::ConvexBundleMethodState) = bms.callbacks
@@ -700,13 +700,13 @@ function convex_bundle_method!(
         k_max = 0,
         k_min = 0,
         p_estimate = p,
-        stepsize::Union{Stepsize, ManifoldDefaultsFactory} = DomainBackTracking(;
-            contraction_factor = contraction_factor
-        ),
         debug = [DebugWarnIfLagrangeMultiplierIncreases()],
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         inverse_retraction_method::IR = default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TRetr = default_retraction_method(M, typeof(p)),
+        stepsize::Union{Stepsize, ManifoldDefaultsFactory} = DomainBackTracking(;
+            contraction_factor = contraction_factor, retraction_method = retraction_method
+        ),
         stopping_criterion::StoppingCriterion = StopWhenAny(
             StopWhenLagrangeMultiplierLess(1.0e-8; names = ["-ξ"]), StopAfterIteration(5000)
         ),
@@ -789,6 +789,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
             M;
             contraction_factor = bms.stepsize.contraction_factor,
             initial_stepsize = bms.last_stepsize,
+            retraction_method = bms.stepsize.retraction_method,
         )
         bms.null_stepsize = nsbt(mp, bms, k)
         copyto!(M, bms.p, get_parameter(nsbt, :Iterate))

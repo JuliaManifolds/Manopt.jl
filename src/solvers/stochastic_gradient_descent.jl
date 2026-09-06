@@ -159,7 +159,8 @@ function (sg::StochasticGradientRule)(
     ((sgds.k == 1) && (sgds.order_type == :FixedRandom)) && shuffle!(sgds.order)
     # the gradient to choose, either from the order or completely random
     j = sgds.order_type == :Random ? rand(1:length(sgds.order)) : sgds.order[sgds.k]
-    return sgds.stepsize(apm, sgds, k), get_gradient!(apm, sg.X, sgds.p, j)
+    get_gradient!(apm, sg.X, sgds.p, j)
+    return sgds.stepsize(apm, sgds, k; gradient = sg.X), sg.X
 end
 function Base.show(io::IO, sg::StochasticGradientRule)
     return print(io, "StochasticGradientRule($(sg.X))")

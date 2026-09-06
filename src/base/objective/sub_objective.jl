@@ -108,6 +108,14 @@ end
 function get_objective_preconditioner!(M::AbstractManifold, Y, amso::AbstractManifoldSubObjective, p, X)
     return get_preconditioner!(M, Y, get_objective(amso), p, X)
 end
+# Decorators of a sub objective pass through to the sub objective they wrap
+get_objective_cost(M::AbstractManifold, o::AbstractDecoratedManifoldObjective, p) = get_objective_cost(M, get_objective(o, false), p)
+get_objective_gradient(M::AbstractManifold, o::AbstractDecoratedManifoldObjective, p) = get_objective_gradient(M, get_objective(o, false), p)
+get_objective_gradient!(M::AbstractManifold, X, o::AbstractDecoratedManifoldObjective, p) = get_objective_gradient!(M, X, get_objective(o, false), p)
+get_objective_hessian(M::AbstractManifold, o::AbstractDecoratedManifoldObjective, p, X) = get_objective_hessian(M, get_objective(o, false), p, X)
+get_objective_hessian!(M::AbstractManifold, Y, o::AbstractDecoratedManifoldObjective, p, X) = get_objective_hessian!(M, Y, get_objective(o, false), p, X)
+get_objective_preconditioner(M::AbstractManifold, o::AbstractDecoratedManifoldObjective, p, X) = get_objective_preconditioner(M, get_objective(o, false), p, X)
+get_objective_preconditioner!(M::AbstractManifold, Y, o::AbstractDecoratedManifoldObjective, p, X) = get_objective_preconditioner!(M, Y, get_objective(o, false), p, X)
 
 
 """
