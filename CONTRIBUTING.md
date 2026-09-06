@@ -92,6 +92,22 @@ If you implement an algorithm with a certain numerical example in mind, it would
 
 We use [crate-ci/typos](https://github.com/crate-ci/typos) for spell checking, which is run automatically on GitHub Actions, but you can also run it locally using their command line tool.
 
+### Technical Details on GitHub
+
+We use several continuous integration (CI) jobs on GitHub to ensure both code quality and not to miss small technical details, for example for the already mentioned spell checking or for checking the code formatting.
+
+There are three Tags on GitHub that modify the behaviour of the CI
+
+* `benchmark` activates the benchmark CI to avoid regression of the existing code
+* `skip documentation` skips rendering and deployment of the documentation preview
+  this is helpful for external contributors that do not have rights for the deployment
+  or when nothing on the documentation is changed.
+* `no changelog needed` skips the small CI that checks that the changelog was edited.
+  this is helpful when the change is small enough to not require an entry or for `dependabot`
+  when it checks version updates for the package dependencies
+
+We further use `Ready-for-Review` to highlight that a PR is considered finished and should be reviewed.
+
 ### On the use of AI
 
 Following the [Julia Discourse Guidelines – Keep it tidy](https://discourse.julialang.org/faq#keep-tidy),
