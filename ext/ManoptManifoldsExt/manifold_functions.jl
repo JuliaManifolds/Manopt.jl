@@ -81,7 +81,7 @@ max_stepsize(M::FixedRankMatrices) = manifold_dimension(M)
 """
     max_stepsize(::SymmetricPositiveDefinite, p)
 
-Return the maximum stepsize on the [`SymmetricPositiveDefinite`](@extref) manifold.
+Return the maximum stepsize on the [`SymmetricPositiveDefinite`](@extref Manifolds.SymmetricPositiveDefinite) manifold.
 The injectivity radius of `SymmetricPositiveDefinite` is infinite, but we return the
 logarithm of the maximum floating-point number to avoid numerical issues.
 """

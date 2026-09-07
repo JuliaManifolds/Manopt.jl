@@ -53,13 +53,24 @@ Manopt.linesearches_get_max_alpha
 Manopt.linesearches_set_max_alpha
 ```
 
+## LRUCache.jl
+
+Loading `LRUCache.jl` provides the cache used by the `cache=(:LRU, ...)` keyword of [`decorate_objective!`](@ref):
+
+```@docs
+Manopt.init_caches(::AbstractManifold, ::AbstractVector{<:Symbol}, ::Type{LRU})
+```
+
 ## Manifolds.jl
 
 Loading `Manifolds.jl` introduces the following additional functions:
 
 ```@docs
+Manopt.default_point_distance(::Euclidean, ::Any)
+Manopt.default_vector_norm(::Euclidean, ::Any, ::Any)
 Manopt.max_stepsize(::FixedRankMatrices, ::Any)
 Manopt.max_stepsize(::Hyperrectangle, ::Any)
+Manopt.max_stepsize(::SymmetricPositiveDefinite, ::Any)
 Manopt.max_stepsize(::TangentBundle, ::Any)
 mid_point
 ```
@@ -71,6 +82,11 @@ Euclidean space when needed:
 Manopt.Rn
 Manopt.Rn_default
 ```
+
+## RipQP.jl and QuadraticModels.jl
+
+Loading both provides the default sub solvers [`convex_bundle_method_subsolver`](@ref),
+[`proximal_bundle_method_subsolver`](@ref) and [`gradient_sampling_subsolver`](@ref).
 
 ## RecursiveArrayTools.jl
 

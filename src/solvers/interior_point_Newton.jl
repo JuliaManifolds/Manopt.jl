@@ -699,11 +699,7 @@ function interior_point_Newton!(
             _step_M;
             retraction_method = default_retraction_method(_step_M),
             initial_guess = interior_point_initial_guess, stop_increasing_at_step = 0,
-            additional_decrease_condition = if ismissing(centrality_condition)
-                (M, p) -> true
-            else
-                centrality_condition
-            end,
+            additional_decrease_condition = ismissing(centrality_condition) ? (M, p) -> true : centrality_condition,
         ),
         stopping_criterion::StoppingCriterion = StopAfterIteration(800) |
             StopWhenKKTResidualLess(1.0e-12),

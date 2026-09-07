@@ -315,7 +315,7 @@ $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 $(_kwargs(:sub_kwargs))
 $(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "`( see [`truncated_conjugate_gradient_descent`](@ref))` "))
-* `sub_objective`: the sub objective to solve, by default the [`TrustRegionModelObjective`](@ref)`(mho)` possibly decorated with `sub_kwargs`
+* `sub_objective`: the sub objective to solve, by default the [`TrustRegionModelObjective`](@ref) of `mho` after the `objective_type` conversion, possibly decorated with `sub_kwargs`
   Note that this keyword has no effect if you set the `sub_problem` directly.
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(`[`TangentSpace`](@extref `ManifoldsBase.TangentSpace`)`(M,p), sub_objective)"))
 $(_kwargs(:sub_state; default = "`[`TruncatedConjugateGradientState`](@ref)` "))
@@ -440,8 +440,12 @@ function trust_regions!(
         reduction_factor::Real = 0.25,
         augmentation_threshold::Real = 0.75,
         augmentation_factor::Real = 2.0,
+        objective_type::Symbol = :Riemannian,
+        _dmho = decorate_objective!(M, mho; objective_type = objective_type, p = p),
         sub_kwargs = (;),
-        sub_objective = decorate_objective!(M, TrustRegionModelObjective(mho); sub_kwargs...),
+        sub_objective = decorate_objective!(
+            M, TrustRegionModelObjective(_dmho); sub_kwargs...
+        ),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_stopping_criterion::StoppingCriterion = StopAfterIteration(manifold_dimension(M)) |
             StopWhenResidualIsReducedByFactorOrPower(;
@@ -498,7 +502,7 @@ function trust_regions!(
         randomize = false
     end
     keywords_accepted(trust_regions!; kwargs...)
-    dmho = decorate_objective!(M, mho; kwargs...)
+    dmho = decorate_objective!(M, _dmho; kwargs...)
     dmp = DefaultManoptProblem(M, dmho)
     trs = TrustRegionsState(
         M, sub_problem, sub_state;
