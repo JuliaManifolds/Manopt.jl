@@ -1,5 +1,11 @@
 using LRUCache, Manifolds, Manopt, Test, Random
 
+# An objective that only implements the in-place Hessian, to check the allocating fallback
+struct DummyHessianObjective <: Manopt.AbstractManifoldHessianObjective{Nothing, Nothing, Nothing} end
+function Manopt.get_hessian!(M::AbstractManifold, Y, ::DummyHessianObjective, p, X)
+    return copyto!(M, Y, p, 2 .* X)
+end
+
 @testset "Hessian access functions" begin
     M = Euclidean(2)
     f(M, p) = 1
@@ -133,5 +139,9 @@ using LRUCache, Manifolds, Manopt, Test, Random
         q1 = trust_regions(M, f2, grad_f2, p0)
         q2 = trust_regions(M, f2, grad_f2!, p0; evaluation = InplaceEvaluation())
         @test isapprox(M, q1, q2)
+    end
+    @testset "Allocating Hessian of an AbstractManifoldHessianObjective" begin
+        # only `get_hessian!` is implemented, the allocating variant falls back to it
+        @test get_hessian(Euclidean(2), DummyHessianObjective(), zeros(2), ones(2)) == 2 .* ones(2)
     end
 end

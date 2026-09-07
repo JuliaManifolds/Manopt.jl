@@ -5,6 +5,19 @@ An abstract type for all objectives that provide a (full) Hessian.
 """
 abstract type AbstractManifoldHessianObjective{F, G, H} <: AbstractManifoldFirstOrderObjective{F, G} end
 
+@doc """
+    Y = get_hessian(M::AbstractManifold, mho::AbstractManifoldHessianObjective, p, X)
+    get_hessian!(M::AbstractManifold, Y, mho::AbstractManifoldHessianObjective, p, X)
+
+Evaluate the Hessian ``$(_tex(:Hess)) f(p)[X]`` of an [`AbstractManifoldHessianObjective`](@ref) `mho`
+on an $(_link(:AbstractManifold)) `M` at a point `p` applied to a tangent vector `X`.
+This can be evaluated in-place of `Y`.
+"""
+function get_hessian(M::AbstractManifold, mho::AbstractManifoldHessianObjective, p, X)
+    Y = zero_vector(M, p)
+    return get_hessian!(M, Y, mho, p, X)
+end
+
 function get_hessian(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X)
     return get_hessian(M, get_objective(admo, false), p, X)
 end
