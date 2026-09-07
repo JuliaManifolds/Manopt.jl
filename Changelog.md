@@ -6,7 +6,7 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.7] September 4, 2026
+## [0.6.7] September 9, 2026
 
 ### Added
 
@@ -36,8 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-The following fixes were reported by an AI assisted code review. Each single point was still carefully checked, and committed by hand.
-They are still listed here in detail in case (a) someone else's code breaks or (b) it was not done carefully enough – to then avoid these approaches in the future.
+The following fixes were reported by an AI assisted code review. Each single point was still carefully checked, and committed by hand. Most of them are minor fixes and allowing several areas of `Manopt.jl` to also work on decorators and other edge cases. Only very few of the fixes are actually bug fixes, e.g. the line search direction in the interior point Newton was slightly wrong.
+They are still all listed here in detail in case (a) someone else's code breaks or (b) it was not done carefully enough – to then avoid these approaches in the future.
 
 * `adaptive_regularization_with_cubics` now also runs with a closed-form sub solver; setting the iterate of a `ClosedFormSubSolverState` is a no-op instead of an error.
 * `adaptive_regularization_with_cubics` now wraps an allocating closed-form sub solver.

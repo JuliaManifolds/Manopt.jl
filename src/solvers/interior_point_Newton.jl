@@ -685,11 +685,7 @@ function interior_point_Newton!(
         sub_kwargs = (;),
         vector_space = Rn,
         γ::Real = 0.9,
-        centrality_condition = if length(μ) > 0
-            InteriorPointCentralityCondition(_ecmo, γ)
-        else
-            missing
-        end,
+        centrality_condition = length(μ) > 0 ? InteriorPointCentralityCondition(_ecmo, γ) : missing,
         step_objective = ManifoldGradientObjective(
             KKTVectorFieldNormSq(_ecmo), KKTVectorFieldNormSqGradient(_ecmo); evaluation = evaluation, p = p
         ),

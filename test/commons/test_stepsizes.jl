@@ -98,6 +98,12 @@ end
     @test startswith(Manopt.status_summary(s2.bb_stepsize), "Barzilai–Borwein stepsize\n")
     # infinite injectivity radius: the default max_stepsize falls back to 1.0
     @test Manopt.BarzilaiBorweinStepsize(Euclidean(2)).max_stepsize == 1.0
+    # after a step the nonmonotone linesearch reports the stepsize it just determined
+    dmp_nm = DefaultManoptProblem(M, ManifoldGradientObjective((M, p) -> sum(p .^ 2), (M, p) -> 2 .* p))
+    gds_nm = GradientDescentState(M; p = [1.0, 2.0])
+    gds_nm.X = get_gradient(dmp_nm, gds_nm.p)
+    α_nm = s2(dmp_nm, gds_nm, 1)
+    @test get_last_stepsize(s2) == α_nm
 
 
     # mixed numeric keyword types promote instead of erroring
@@ -230,6 +236,7 @@ end
         @test bb(dmp, gds, 1; last_stepsize = 1.0) == bb.max_stepsize
         # (1) vector transport when providing a last stepsize - we did not actually move - still max
         @test bb(dmp, gds, 1) == bb.max_stepsize
+        @test get_last_stepsize(bb) == bb.max_stepsize
     end
     @testset "Polyak Stepsize" begin
         M = Euclidean(2)
@@ -256,6 +263,7 @@ end
         @test startswith(repr(clbs), "CubicBracketingLinesearch(;")
         @test startswith(Manopt.status_summary(clbs), "Cubic bracketing stepsize")
         @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
+        @test get_last_stepsize(clbs) === clbs.last_stepsize
 
         #edge cases of interval bracketing
         a, b, τ = 0, 1, 0.25
@@ -353,6 +361,7 @@ end
         α2 = hzls(dmp, gs, 1, η; gradient = grad_f_sum_sq(M, p))
         @test α2 ≈ α
         @test hzls.last_stepsize == α
+        @test get_last_stepsize(hzls) == α
         @test hzls.last_cost <= f_sum_sq(M, p) + 1.0e-12
 
         hzls_limit = Manopt.HagerZhangLinesearchStepsize(M; stepsize_limit = 0.05)

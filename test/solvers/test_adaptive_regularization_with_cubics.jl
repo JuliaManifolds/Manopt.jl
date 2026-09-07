@@ -33,6 +33,22 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         X1 = similar(X0)
         Manopt.get_objective_preconditioner!(M, X1, arcmo, p0, X0)
         @test isapprox(M, p0, X1, get_preconditioner(M, mho, p0, X0))
+        # a decorated sub objective passes every accessor through to the one it wraps
+        Xr = get_gradient(M, mho, p0)
+        d_arcmo = Manopt.decorate_objective!(M, arcmo; return_objective = true)
+        Y = zero_vector(M, p0)
+        @test Manopt.get_objective_cost(M, d_arcmo, p0) == get_cost(M, mho, p0)
+        @test isapprox(M, p0, Manopt.get_objective_gradient(M, d_arcmo, p0), Xr)
+        Manopt.get_objective_gradient!(M, Y, d_arcmo, p0)
+        @test isapprox(M, p0, Y, Xr)
+        @test isapprox(M, p0, Manopt.get_objective_hessian(M, d_arcmo, p0, Xr), get_hessian(M, mho, p0, Xr))
+        Manopt.get_objective_hessian!(M, Y, d_arcmo, p0, Xr)
+        @test isapprox(M, p0, Y, get_hessian(M, mho, p0, Xr))
+        @test isapprox(
+            M, p0, Manopt.get_objective_preconditioner(M, d_arcmo, p0, Xr), get_preconditioner(M, mho, p0, Xr)
+        )
+        Manopt.get_objective_preconditioner!(M, Y, d_arcmo, p0, Xr)
+        @test isapprox(M, p0, Y, get_preconditioner(M, mho, p0, Xr))
         @test startswith(repr(arcmo), "AdaptiveRegularizationWithCubicsModelObjective(")
         @test startswith(Manopt.status_summary(arcmo), "The cubic polynomial based model for the sub problem of the Adaptive")
     end
