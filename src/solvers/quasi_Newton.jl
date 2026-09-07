@@ -434,13 +434,9 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     copyto!(M, qns.p_old, get_iterate(qns))
     ManifoldsBase.retract_fused!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
     qns.η .*= α
-    # qns.yk update fails if α is equal to 0 because then β is NaN
-    β = ifelse(
-        iszero(α), one(α),
-        locking_condition_scale(
-            M, qns.direction_update, qns.p_old, qns.η, qns.p, qns.vector_transport_method
-        ),
-    )
+    # β is 0/0 if the step α η vanishes, for α = 0 or at a critical point
+    step_vanishes = iszero(α) || iszero(norm(M, qns.p_old, qns.η))
+    β = step_vanishes ? one(α) : locking_condition_scale(M, qns.direction_update, qns.p_old, qns.η, qns.p, qns.vector_transport_method)
     vector_transport_to!(
         M, qns.sk, qns.p_old, qns.η, qns.p, get_update_vector_transport(qns.direction_update),
     )
@@ -450,7 +446,8 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     copyto!(M, qns.X_old, qns.p, qns.X)
     get_gradient!(mp, qns.X, qns.p)
     qns.yk .= qns.X ./ β .- qns.X_old
-    update_hessian!(qns.direction_update, mp, qns, qns.p_old, k)
+    # a vanishing step carries no curvature information
+    (!step_vanishes) && update_hessian!(qns.direction_update, mp, qns, qns.p_old, k)
     return qns
 end
 

@@ -378,4 +378,19 @@ end
         @test Manopt.find_max_stepsize_in_direction(M, sdf, p, d) === (:not_found, NaN)
         @test d == d_before
     end
+
+    @testset "Vanishing step at the minimizer" begin
+        # the minimizer is reached before the stopping criterion fires, so the step becomes zero
+        N = Hyperrectangle(-ones(3), ones(3))
+        c = [0.3, 0.5, 0.2]
+        fq(M, p) = 0.5 * sum(abs2, p - c)
+        grad_fq(M, p) = p - c
+        for memory_size in [3, -1]
+            q = quasi_Newton(
+                N, fq, grad_fq, zeros(3);
+                memory_size = memory_size, stopping_criterion = StopAfterIteration(6),
+            )
+            @test isapprox(N, q, c)
+        end
+    end
 end

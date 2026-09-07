@@ -160,6 +160,7 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `trust_regions` now wraps an allocating closed-form sub solver as returning a tangent vector.
 * `trust_regions` no longer throws for a non-tCG sub state.
 * `trust_regions` now builds its default sub problem from the objective after the `objective_type` conversion, so `objective_type=:Euclidean` also applies to the sub solver.
+* `quasi_Newton` no longer turns the iterate into `NaN`, or the box constrained variant into a `DimensionMismatch`, when a step vanishes because the minimizer was reached before the stopping criterion fires.
 * `TrustRegionModelObjective` and `AdaptiveRegularizationWithCubicsModelObjective` now accept any `AbstractManifoldHessianObjective`, as documented.
 * `WolfePowellBinaryLinesearch` now bisects correctly until the step size fulfills both Wolfe
   conditions; sometimes a wrong termination check made it stop too early.
