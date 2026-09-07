@@ -535,7 +535,7 @@ function step_solver!(
     dcps.sub_problem(M, dcps.r, dcps.λ(k), dcps.q)
     callback(:Subsolver, amp, dcps, k)
     inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
-    s = dcps.stepsize(amp, dcps, k)
+    s = dcps.stepsize(amp, dcps, k, dcps.X)
     callback(:Stepsize, amp, dcps, k)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
     # store the gradient of `f` in `X` at the end of the iteration for the gradient norm stopping criterion
@@ -568,7 +568,7 @@ function step_solver!(
     # use that direction
     inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
     # to determine a step size
-    s = dcps.stepsize(amp, dcps, k)
+    s = dcps.stepsize(amp, dcps, k, dcps.X)
     callback(:Stepsize, amp, dcps, k)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
     # store the gradient of `f` in `X` at the end of the iteration for the gradient norm stopping criterion

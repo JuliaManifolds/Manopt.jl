@@ -156,9 +156,15 @@ struct NoIterateState <: AbstractManoptSolverState end
                 (s0 = GradientDescentState(M; p = copy(p), stopping_criterion = StopAfterIteration(5)); (s0, s0)),
                 (s1 = GradientDescentState(M; p = copy(p), stopping_criterion = StopAfterIteration(5)); (DebugSolverState(s1, DebugDivider("")), s1)),
                 (s2 = GradientDescentState(M; p = copy(p), stopping_criterion = StopAfterIteration(5)); (RecordSolverState(s2, RecordIteration()), s2)),
+                (s3 = GradientDescentState(M; p = copy(p), stopping_criterion = StopAfterIteration(5)); (Manopt.ReturnSolverState(s3), s3)),
             )
             Manopt.set_parameter!(state, Val(:StoppingCriterion), :MaxIteration, 7)
             @test inner.stop.max_iterations == 7
         end
+        # and through nested decorators, where the return state is the outermost one
+        s4 = GradientDescentState(M; p = copy(p), stopping_criterion = StopAfterIteration(5))
+        r4 = Manopt.ReturnSolverState(DebugSolverState(s4, DebugDivider("")))
+        Manopt.set_parameter!(r4, Val(:StoppingCriterion), :MaxIteration, 9)
+        @test s4.stop.max_iterations == 9
     end
 end

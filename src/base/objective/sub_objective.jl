@@ -39,9 +39,9 @@ abstract type AbstractLinearSurrogateObjective{O <: AbstractManifoldObjective} <
 function get_gradient_function(amso::AbstractManifoldSubObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
     recursive && (return get_gradient_function(get_objective(amso), recursive; evaluation = evaluation))
     if evaluation isa AllocatingEvaluation
-        return (M, p) -> get_gradient(M, get_objective(amso), p)
+        return (M, p) -> get_gradient(M, amso, p)
     else
-        return (M, X, p) -> get_gradient!(M, X, get_objective(amso), p)
+        return (M, X, p) -> get_gradient!(M, X, amso, p)
     end
 end
 

@@ -29,6 +29,19 @@ end
 status_summary(rst::ReturnSolverState; context::Symbol = :default) = status_summary(rst.state; context = context)
 show(io::IO, rst::ReturnSolverState) = print(io, "ReturnSolverState(", rst.state, ")")
 dispatch_state_decorator(::ReturnSolverState) = Val(true)
+# pass parameters through the decorator like the debug and record decorators do
+function set_parameter!(rst::ReturnSolverState, v::Val{T}, args...) where {T}
+    set_parameter!(rst.state, v, args...)
+    return rst
+end
+# Resolve an ambiguity since this also exists for abstract state
+function set_parameter!(rst::ReturnSolverState, v::Val{:StoppingCriterion}, args...)
+    set_parameter!(rst.state, v, args...)
+    return rst
+end
+function get_parameter(rst::ReturnSolverState, v::Val{T}, args...) where {T}
+    return get_parameter(rst.state, v, args...)
+end
 
 doc_get_solver_return = """
     get_solver_return(s::ReturnSolverState)
@@ -165,9 +178,9 @@ function decorate_objective!(
         } = missing,
         count::Union{Missing, AbstractVector{<:Symbol}} = missing,
         objective_type::Symbol = :Riemannian,
-        p = objective_type == :Riemannian ? missing : rand(M),
-        _embedded_p = objective_type == :Riemannian ? missing : embed(M, p),
-        _embedded_X = objective_type == :Riemannian ? missing : embed(M, p, zero_vector(M, p)),
+        _p = objective_type == :Riemannian ? missing : rand(M),
+        _embedded_p = objective_type == :Riemannian ? missing : embed(M, _p),
+        _embedded_X = objective_type == :Riemannian ? missing : embed(M, _p, zero_vector(M, _p)),
         return_objective = false,
         kwargs...,
     ) where {O <: AbstractManifoldObjective}

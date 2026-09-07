@@ -190,6 +190,15 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         df = DebugFactory([:Stop, "|"])
         @test isa(df[:Stop], DebugStoppingCriterion)
         @test isa(df[:Iteration], DebugDivider)
+        # a trailing frequency keeps the offset of the entry it wraps
+        dfo = DebugFactory([:BeforeIteration => [:Iteration], :Stop, 25])
+        @test contains(repr(dfo[:BeforeIteration]), "activation_offset=0")
+        @test contains(repr(DebugFactory([:Iteration, :Stop, 25])[:Iteration]), "activation_offset=1")
+        # a `(:Stop, prefix)` tuple belongs to the `:Stop` entry, not to the iteration one
+        dfs = DebugFactory([:Iteration, (:Stop, " Stopped: ")])
+        @test dfs[:Stop] isa DebugStoppingCriterion
+        @test dfs[:Stop].prefix == " Stopped: "
+        @test dfs[:Iteration] isa DebugIteration
         df = DebugFactory([:Stop, "|", 20])
         @test isa(df[:Iteration], DebugEvery)
         s = [:Change, :GradientChange, :Iteration, :Iterate, :Cost, :Stepsize, :p, :Time, :IterativeTime]
@@ -450,6 +459,12 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         #issue active
         dA(mp, st, 1)
         @test endswith(String(take!(io)), " | ")
+        # with a frequency of one the sub solver stays active for the first iteration
+        dWA = DebugWhenActive(DebugDivider(" | "; io = io), false)
+        sub_st = DebugSolverState(GradientDescentState(M; p = p), dWA)
+        trs = TrustRegionsState(M, mp, sub_st)
+        DebugEvery(DebugDivider(""; io = io), 1)(mp, trs, 0)
+        @test dWA.active
         dE = DebugEvery(dA, 2)
         dE(mp, st, 2)
         @test endswith(String(take!(io)), " | ")

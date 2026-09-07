@@ -398,7 +398,7 @@ calls_with_kwargs(::typeof(primal_dual_semismooth_Newton)) = (primal_dual_semism
 
 @doc "$(_doc_PDSN)"
 function primal_dual_semismooth_Newton!(
-        M::mT, N::nT, cost::Function, p::P, X::T, m::P, n::Q,
+        M::mT, N::nT, cost::TF, p::P, X::T, m::P, n::Q,
         prox_F::Function, diff_prox_F::Function, prox_G_dual::Function, diff_prox_G_dual::Function,
         linearized_forward_operator::Function, adjoint_linearized_operator::Function;
         callbacks = Dict{Symbol, Function}(),
@@ -415,7 +415,7 @@ function primal_dual_semismooth_Newton!(
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
         kwargs...,
     ) where {
-        mT <: AbstractManifold, nT <: AbstractManifold, P, Q, T,
+        mT <: AbstractManifold, nT <: AbstractManifold, TF, P, Q, T,
         RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod, VTM <: AbstractVectorTransportMethod,
     }
     keywords_accepted(primal_dual_semismooth_Newton!; kwargs...)

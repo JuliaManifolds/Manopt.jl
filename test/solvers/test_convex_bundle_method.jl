@@ -49,6 +49,7 @@ using Manopt: estimate_sectional_curvature
     @testset "Special Stopping Criteria" begin
         sc1 = StopWhenLagrangeMultiplierLess(1.0e-8)
         @test startswith(repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)")
+        @test Manopt.indicates_convergence(sc1)
         sc2 = StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode = :both)
         @test startswith(repr(sc2), "StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode=:both)")
     end
@@ -66,6 +67,7 @@ using Manopt: estimate_sectional_curvature
         # Reset the serious iterate to the minimizer itself (degenerate start)
         p_deg = [0.0, 0.0, 0.0, 0.0, -1.0]
         set_iterate!(cbms, M, p_deg)
+        @test isapprox(M, cbms.p, p_deg) # the iterate follows the serious iterate
         X = zero_vector(M, p)
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)
@@ -83,7 +85,9 @@ using Manopt: estimate_sectional_curvature
             @test _domain_condition(M, p, p0, 1.0, 4.0, cbms.domain)
             # inside the domain but farther away than `t * length`
             @test !_domain_condition(M, p, p0, 1.0, 1.0, cbms.domain)
-            @test !_null_condition(
+            # the degenerate start now really takes effect, so the run ends at the minimizer
+            # and the null condition holds for the resulting state
+            @test _null_condition(
                 mp, M, p, p0, cbms.X, cbms.g, cbms.vector_transport_method,
                 cbms.inverse_retraction_method, cbms.m, 1.0, cbms.ξ, cbms.ϱ,
             )
@@ -111,6 +115,12 @@ using Manopt: estimate_sectional_curvature
             ds(mp, bms2, 1)
             s = String(take!(io))
             @test s == "s:1.0"
+            # the generic action honours `at_init`, so it also writes at k = 0
+            ds(mp, cbms, 0)
+            @test startswith(String(take!(io)), "s:")
+            ds0 = DebugStepsize(; at_init = false, io = io)
+            ds0(mp, cbms, 0)
+            @test String(take!(io)) == ""
         end
 
         @testset "Warnings" begin
@@ -289,6 +299,13 @@ using Manopt: estimate_sectional_curvature
             push!(cbms.λ, 0.0)
             push!(cbms.transported_subgradients, zero_vector(M, p))
         end
+
+        # the cap also holds when the oldest entry is the last serious iterate
+        cbms.p_last_serious .= cbms.bundle[1][1]
+        step_solver!(mp, cbms, 1)
+        @test length(cbms.bundle) ≤ cbms.bundle_cap
+        @test length(cbms.linearization_errors) == length(cbms.bundle)
+        @test length(cbms.λ) == length(cbms.bundle)
 
         # Ensure the first element in the bundle is not equal to p_last_serious
         cbms.p_last_serious .= [0.0, 1.0, 0.0]

@@ -71,6 +71,10 @@ using RecursiveArrayTools
     p_linearized = TwoManifoldProblem(M, N, pdmol)
     s_exact = ChambollePockState(M; m = m, n = n, p = zero.(p0), X = X0, variant = :exact)
     s_linearized = ChambollePockState(M; m = m, n = n, p = p0, X = X0, variant = :linearized)
+    # integer valued keywords are promoted instead of erroring
+    s_int = ChambollePockState(M; m = m, n = n, p = p0, X = X0, acceleration = 0, relaxation = 1)
+    @test s_int.acceleration == 0.0
+    @test typeof(s_int.primal_stepsize) === typeof(s_int.acceleration)
     n_old = ArrayPartition(n[N, :point], n[N, :vector])
     p_old = copy(p0)
     ξ_old = ArrayPartition(X0[N, :point], X0[N, :vector])

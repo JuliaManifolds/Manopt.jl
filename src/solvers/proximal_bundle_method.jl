@@ -163,6 +163,7 @@ end
 get_iterate(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 function set_iterate!(pbms::ProximalBundleMethodState, M, p)
     copyto!(M, pbms.p_last_serious, p)
+    pbms.p = p
     return pbms
 end
 get_subgradient(pbms::ProximalBundleMethodState) = pbms.d

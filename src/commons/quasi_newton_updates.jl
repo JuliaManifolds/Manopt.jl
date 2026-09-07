@@ -402,7 +402,7 @@ space ``$(_math(:TangentSpace; p = "p_{k+1}"))``, preferably with an isometric v
 
 * `basis`:                  an `AbstractBasis` to use in the tangent spaces
 * `matrix`:                 the matrix which represents the approximating operator.
-* `initial_scale`:          when initializing the update, a unit matrix is used as initial approximation, scaled by this factor
+* `initial_scale`:          at the first update the stored matrix of the [`InverseBFGS`](@ref), [`BFGS`](@ref), [`InverseDFP`](@ref) and [`DFP`](@ref) rules is multiplied once by this factor times ``⟨s_1,y_1⟩/‖y_1‖^2``, ``‖y_1‖^2/⟨s_1,y_1⟩``, ``‖s_1‖^2/⟨s_1,y_1⟩`` and ``⟨s_1,y_1⟩/‖s_1‖^2``, respectively
 * `update`:                 a [`AbstractQuasiNewtonUpdateRule`](@ref).
 $(_fields(:vector_transport_method))
 
@@ -726,6 +726,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
     copyto!(M, r, p, get_gradient(st))
     m = length(d.memory_s)
     if m == 0
+        st.preconditioner(r, mp, st)
         r .*= -1
         return r
     end
@@ -743,7 +744,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
     end
     if (last_safe_index == -1)
         d.message = "All memory pairs yield zero inner products, falling back to a gradient step."
-
+        st.preconditioner(r, mp, st)
         r .*= -1
         return r
     end
@@ -878,6 +879,7 @@ end
 function get_update_vector_transport(u::QuasiNewtonCautiousDirectionUpdate)
     return get_update_vector_transport(u.update)
 end
+get_message(d::QuasiNewtonCautiousDirectionUpdate) = get_message(d.update)
 function initialize_update!(d::QuasiNewtonCautiousDirectionUpdate)
     initialize_update!(d.update)
     return d
@@ -1017,6 +1019,7 @@ function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
 end
 
 get_update_vector_transport(u::QuasiNewtonLimitedMemoryBoxDirectionUpdate) = get_update_vector_transport(u.qn_du)
+get_message(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate) = get_message(d.qn_du)
 
 function get_at_bound_index(M::ProductManifold, X, b::Tuple{Int, Any})
     return get_at_bound_index(M.manifolds[b[1]], submanifold_component(M, X, b[1]), b[2])
@@ -1661,6 +1664,8 @@ function find_generalized_cauchy_direction!(
         t_current, b = heappop!(F_list, ordering)
         dt = t_current - t_old
     end
+    # the isotropic limit was reached before the minimizer of the current segment: stop there
+    (b == -1) && (dt_min = min(dt_min, dt))
 
     dt_min = max(dt_min, 0.0)
     t_old = t_old + dt_min

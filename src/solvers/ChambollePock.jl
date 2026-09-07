@@ -191,10 +191,10 @@ function Manopt.ChambollePockState(
         p::P = rand(M),
         X::T = zero_vector(N, n),
         callbacks::C = Dict{Symbol, Function}(),
-        primal_stepsize::R = 1 / sqrt(8),
-        dual_stepsize::R = 1 / sqrt(8),
-        acceleration::R = 0.0,
-        relaxation::R = 1.0,
+        primal_stepsize::Real = 1 / sqrt(8),
+        dual_stepsize::Real = 1 / sqrt(8),
+        acceleration::Real = 0.0,
+        relaxation::Real = 1.0,
         relax::Symbol = :primal,
         stopping_criterion::SC = StopAfterIteration(300),
         variant::Symbol = :exact,
@@ -206,11 +206,16 @@ function Manopt.ChambollePockState(
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
         vector_transport_method_dual::VTM_Dual = default_vector_transport_method(N, typeof(n)),
     ) where {
-        P, Q, T, R, C <: AbstractDict{Symbol}, SC <: StoppingCriterion,
+        P, Q, T, C <: AbstractDict{Symbol}, SC <: StoppingCriterion,
         RM <: AbstractRetractionMethod, IRM <: AbstractInverseRetractionMethod,
         IRM_Dual <: AbstractInverseRetractionMethod,
         VTM <: AbstractVectorTransportMethod, VTM_Dual <: AbstractVectorTransportMethod,
     }
+    R = float(
+        promote_type(
+            typeof(primal_stepsize), typeof(dual_stepsize), typeof(acceleration), typeof(relaxation)
+        )
+    )
     return ChambollePockState{P, Q, T, R, C, SC, RM, IRM, IRM_Dual, VTM, VTM_Dual}(
         callbacks,
         m,
@@ -219,10 +224,10 @@ function Manopt.ChambollePockState(
         copy(M, p),
         X,
         copy(N, X),
-        primal_stepsize,
-        dual_stepsize,
-        acceleration,
-        relaxation,
+        convert(R, primal_stepsize),
+        convert(R, dual_stepsize),
+        convert(R, acceleration),
+        convert(R, relaxation),
         relax,
         stopping_criterion,
         variant,

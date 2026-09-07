@@ -169,7 +169,8 @@ end
 _EMPTY_DIVIDER = DebugDivider("")
 
 """
-    DebugDualChange(opts...)
+    DebugDualChange(; kwargs...)
+    DebugDualChange((X, n); kwargs...)
 
 Print the change of the dual variable.
 
@@ -328,7 +329,7 @@ function status_summary(di::DebugEntry; context::Symbol = :default)
 end
 
 """
-    DebugDualIterate(e)
+    DebugDualIterate(; kwargs...)
 
 Print the dual variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
@@ -337,7 +338,7 @@ This method is further set to display the field `X` of the state.
 DebugDualIterate(opts...; kwargs...) = DebugEntry(:X, opts...; kwargs...)
 
 """
-    DebugDualBaseIterate(io::IO=stdout)
+    DebugDualBaseIterate(; kwargs...)
 
 Print the dual base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
@@ -876,7 +877,7 @@ function status_summary(d::DebugMessages; context::Symbol = :default)
 end
 
 """
-    DebugPrimalChange(opts...)
+    DebugPrimalChange(; storage=StoreStateAction([:Iterate]), prefix="Primal Change: ", kwargs...)
 
 Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
@@ -1646,7 +1647,9 @@ while the `:Stop` entry is called with `-1`, so that it is only reset.
    ```
 """
 function DebugFactory(a::Vector{<:Any})
-    entries = filter(x -> !isa(x, Pair) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int), a)
+    # a bare `:Stop` as well as a `(:Stop, prefix)` tuple both belong to the `:Stop` entry
+    _is_stop(x) = (x === :Stop) || (x isa Tuple{Symbol, Any} && x[1] === :Stop)
+    entries = filter(x -> !isa(x, Pair) && !_is_stop(x) && (x !== :WhenActive) && !isa(x, Int), a)
     # Filter pairs
     b = filter(x -> isa(x, Pair), a)
     # Push this to the `:Iteration` if that exists or add that pair
@@ -1658,13 +1661,14 @@ function DebugFactory(a::Vector{<:Any})
         (length(entries) > 0) && (b = [b..., :Iteration => entries])
     end
     # Push a StoppingCriterion to `:Stop` if that exists or add such a pair
-    if (:Stop in a)
+    stops = [DebugActionFactory(x) for x in filter(_is_stop, a)]
+    if length(stops) > 0
         i = findlast(x -> (isa(x, Pair)) && (x.first == :Stop), b)
         if !isnothing(i)
             stop = popat!(b, i) #
-            b = [b..., :Stop => [stop.second..., DebugActionFactory(:Stop)]]
+            b = [b..., :Stop => [stop.second..., stops...]]
         else # regenerate since the type of b might change
-            b = [b..., :Stop => [DebugActionFactory(:Stop)]]
+            b = [b..., :Stop => stops]
         end
     end
     dictionary = Dict{Symbol, DebugAction}()
@@ -1677,7 +1681,7 @@ function DebugFactory(a::Vector{<:Any})
         debug = DebugGroupFactory(d.second; activation_offset = offset)
         (:WhenActive in a) && (debug = DebugWhenActive(debug))
         # Add DebugEvery to all but Start and Stop
-        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (debug = DebugEvery(debug, ae))
+        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (debug = DebugEvery(debug, ae; activation_offset = offset))
         dictionary[d.first] = debug
     end
     return dictionary

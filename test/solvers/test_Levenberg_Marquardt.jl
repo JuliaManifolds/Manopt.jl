@@ -44,6 +44,14 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()
         )
         @test norm(F1(M1, r1a1)) < 0.2
+        # the cost is evaluated through the decorated objective, so `count=` sees it
+        o1c, _ = LevenbergMarquardt(
+            M1, F1, JF1, p1, m;
+            function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
+            count = [:Cost], return_objective = true, return_state = true,
+            stopping_criterion = StopAfterIteration(5),
+        )
+        @test get_count(o1c, :Cost) > 0
         # We can even leave out m
         r1a2 = LevenbergMarquardt(
             M1, F1, JF1, p1;
@@ -142,6 +150,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
                 function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType(),
             )
             lmso = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = 1.0e-5)
+            get_residuals!(M1, lmso.value_cache, nlso, p1)
             @test startswith(Manopt.status_summary(lmso), "A linear surrogate objective for")
             @test startswith(repr(lmso), "LevenbergMarquardtLinearSurrogateObjective(")
             lmcso = Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(
@@ -169,6 +178,8 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             Manopt.get_linear_operator!(M1, A_lmso, slso, p1, B1)
             Manopt.get_linear_operator!(M1, A_lmcso, slco, p1, B1)
             @test isapprox(A_lmso, A_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+            # the allocating basis variant exists for the coordinates surrogate as well
+            @test isapprox(Manopt.get_linear_operator(M1, slco, p1, B1), A_lmcso)
             nvf_lmso = zeros(d)
             nvf_lmcso = zeros(d)
             Manopt.get_normal_vector_field!(M1, nvf_lmso, lmso, p1, B1)
@@ -235,6 +246,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             rhs_slco = zeros(d)
             Manopt.get_vector_field!(M1, rhs_slco, slco, p1, B1)
             @test isapprox(rhs_slco, -nvf_lmcso; atol = 1.0e-12, rtol = 1.0e-12)
+            @test isapprox(Manopt.get_vector_field(M1, slco, p1, B1), rhs_slco)
 
             # Coordinate linear-system solution coefficients map back to the right tangent vector.
             dmp = DefaultManoptProblem(TpM1, slco)
@@ -260,6 +272,8 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
                 nlso = ManifoldNonlinearLeastSquaresObjective([vgf], [r])
                 lmso = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = penalty)
                 lmso_normal = LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = penalty, mode = :Normal)
+                get_residuals!(M1, lmso.value_cache, nlso, p1)
+                get_residuals!(M1, lmso_normal.value_cache, nlso, p1)
                 lmcso = Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(
                     nlso;
                     penalty = penalty, basis = B2,

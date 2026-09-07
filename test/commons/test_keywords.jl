@@ -23,6 +23,11 @@ using Manopt, Test
         @test contains(repr(kwa), "passed on to repr")
 
     end
+    @testset "p is not a solver keyword" begin
+        # `p` is the start point, `decorate_objective!` must not make it an accepted keyword
+        @test :p ∉ Manopt.accepted_keywords(gradient_descent).accepted
+        @test :p ∉ Manopt.accepted_keywords(trust_regions).accepted
+    end
     @testset "check errors" begin
         @test Manopt.keywords_accepted(show, :error, Manopt.Keywords(Set([:a])))
         @test Manopt.keywords_accepted(show, :error, Manopt.Keywords(Set([:a])); a = 1)

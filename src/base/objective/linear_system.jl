@@ -18,8 +18,8 @@ for some linear symmetric operator ``$(_tex(:Cal, "A"))`` and a vector function 
 
 Concrete subtypes of this type should/could implement
 
-* [`get_linear_operator`](@ref) to evaluate ``$(_tex(:Cal, "A"))[X]``
-* [`get_vector_field`](@ref) to evaluate ``b`` at ``p``.
+* [`get_linear_operator!`](@ref)`(M, Y, aslso, p, X)` to evaluate ``$(_tex(:Cal, "A"))[X]`` in-place of `Y`
+* [`get_vector_field!`](@ref)`(M, Y, aslso, p)` to evaluate ``b`` at ``p`` in-place of `Y`.
 
 Then the following functions are available directly
 
@@ -28,6 +28,12 @@ Then the following functions are available directly
 * [`get_linear_operator`](@ref)`(M, aslso, p, X)` to compute/evaluate the linear operator ``$(_tex(:Cal, "A"))`` at `X`
 """
 abstract type AbstractSymmetricLinearSystemObjective <: AbstractManifoldObjective end
+
+# The allocating variants fall back to the in-place ones a subtype has to implement
+get_linear_operator(M::AbstractManifold, aslso::AbstractSymmetricLinearSystemObjective, p, X) = get_linear_operator!(M, copy(M, p, X), aslso, p, X)
+get_vector_field(M::AbstractManifold, aslso::AbstractSymmetricLinearSystemObjective, p) = get_vector_field!(M, zero_vector(M, p), aslso, p)
+get_vector_field(TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective) = get_vector_field(base_manifold(TpM), aslso, base_point(TpM))
+get_vector_field!(TpM::TangentSpace, Y, aslso::AbstractSymmetricLinearSystemObjective) = get_vector_field!(base_manifold(TpM), Y, aslso, base_point(TpM))
 
 
 @doc """

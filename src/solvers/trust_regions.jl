@@ -441,7 +441,7 @@ function trust_regions!(
         augmentation_threshold::Real = 0.75,
         augmentation_factor::Real = 2.0,
         objective_type::Symbol = :Riemannian,
-        _dmho = decorate_objective!(M, mho; objective_type = objective_type, p = p),
+        _dmho = decorate_objective!(M, mho; objective_type = objective_type, _p = p),
         sub_kwargs = (;),
         sub_objective = decorate_objective!(
             M, TrustRegionModelObjective(_dmho); sub_kwargs...

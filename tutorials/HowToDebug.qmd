@@ -157,7 +157,7 @@ p4 = exact_penalty_method(
 );
 ```
 
-where we now see that the sub solver requires only one or two steps. Note that since debug of an iteration is happening _after_ a step, we see the sub solver run _before_ the debug for an iteration number.
+where we now see that the sub solver requires only one or two steps. Since the iteration number is printed in `:BeforeIteration`, that is _before_ the step, the sub solver run of an iteration is shown _after_ its iteration number and _before_ the cost, which is printed in `:Iteration` after the step.
 
 ## Advanced debug output
 

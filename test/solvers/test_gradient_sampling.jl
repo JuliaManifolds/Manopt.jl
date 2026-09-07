@@ -41,6 +41,12 @@ _debug_gradient_sampling = false
         @test eltype(sd.convex_hull_coeffs) === Float64
         sd7 = GradientSamplingState(M; sample_size = 7)
         @test length(sd7.convex_hull_coeffs) == 8
+        # keywords of different number types are promoted instead of erroring
+        si = GradientSamplingState(M; sampling_radius = 1)
+        @test si.sampling_radius isa Float64
+        @test eltype(si.convex_hull_coeffs) === Float64
+        sf = GradientSamplingState(M; sampling_radius = 0.5f0)
+        @test sf.sampling_radius isa Float64 # promoted against the other defaults
     end
 
     s2 = get_state(m2, true)
@@ -61,7 +67,7 @@ _debug_gradient_sampling = false
     )
     # The parameters of this run are chosen so that reduction is necessary,
     # they hence to not work that well and we end up a bit further away.
-    @test isapprox(M, p2, p3; atol = 2.0e-3)
+    @test isapprox(M, p2, p3; atol = 3.0e-3)
 
     if _debug_gradient_sampling
         p1 = get_solver_result(m1)

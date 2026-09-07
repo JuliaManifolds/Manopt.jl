@@ -61,6 +61,15 @@ using Random
         set_iterate!(o, M, p_start[1])
         @test get_iterate(o) == p_start[1]
     end
+    @testset "A given velocity is not overwritten" begin
+        Ms = Sphere(2)
+        fs(N, q) = q[1]^2 + 2 * q[2]^2 + 5 * q[3]^2
+        swarm = [rand(Ms) for _ in 1:3]
+        v = [rand(Ms; vector_at = q) for q in swarm]
+        v0 = deepcopy(v)
+        particle_swarm(Ms, fs, swarm; velocity = v, stopping_criterion = StopAfterIteration(3))
+        @test all(isapprox.(Ref(Ms), swarm, v, v0))
+    end
     @testset "Circle Particle Swarm" begin
         Random.seed!(42)
         M = Circle()

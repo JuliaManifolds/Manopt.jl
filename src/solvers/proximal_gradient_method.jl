@@ -308,11 +308,15 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
 
     function ProximalGradientMethodBacktrackingStepsize(
             M::AbstractManifold;
-            initial_stepsize::T = 1.0, sufficient_decrease::T = 0.5, contraction_factor::T = 0.5,
-            strategy::Symbol = :nonconvex, stop_when_stepsize_less::T = 1.0e-8, warm_start_factor::T = 1.0,
-            k_max::T = 0.0,
-            δ::T = 1.0e-2,
-        ) where {T}
+            initial_stepsize::Real = 1.0, sufficient_decrease::Real = 0.5, contraction_factor::Real = 0.5,
+            strategy::Symbol = :nonconvex, stop_when_stepsize_less::Real = 1.0e-8, warm_start_factor::Real = 1.0,
+            k_max::Real = 0.0,
+            δ::Real = 1.0e-2,
+        )
+        T = promote_type(
+            typeof(initial_stepsize), typeof(sufficient_decrease), typeof(contraction_factor),
+            typeof(stop_when_stepsize_less), typeof(warm_start_factor), typeof(k_max), typeof(δ),
+        )
         0 < sufficient_decrease < 1 ||
             throw(DomainError(sufficient_decrease, "sufficient_decrease must be in (0, 1)"))
         0 < contraction_factor < 1 ||
@@ -334,8 +338,9 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
 
         p = rand(M)
         return new{typeof(p), T}(
-            initial_stepsize, sufficient_decrease, contraction_factor, strategy, p, copy(M, p),
-            initial_stepsize, stop_when_stepsize_less, warm_start_factor, k_max, δ
+            convert(T, initial_stepsize), convert(T, sufficient_decrease), convert(T, contraction_factor),
+            strategy, p, copy(M, p), convert(T, initial_stepsize), convert(T, stop_when_stepsize_less),
+            convert(T, warm_start_factor), convert(T, k_max), convert(T, δ)
         )
     end
 end

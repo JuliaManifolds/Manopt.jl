@@ -80,7 +80,7 @@ using ManifoldDiff: grad_distance
         s4.X = grad_1
         s4.δ = δ1
         # the first case is zero
-        @test s4.coefficient(dmp, s4, 1) == 1.0
+        @test s4.coefficient(dmp, s4, 1) == 0.0
         s4.X = grad_2
         s4.δ = δ2
         @test s4.coefficient(dmp, s4, 2) == dot(grad_2, grad_2) / dot(grad_1, grad_1)

@@ -156,8 +156,9 @@ mutable struct StopWhenRelativeResidualLess{R} <: StoppingCriterion
     ε::R
     norm_r::R
     at_iteration::Int
-    function StopWhenRelativeResidualLess(c::R, ε::R; norm_r::R = 2 * c * ε) where {R}
-        return new{R}(c, ε, norm_r, -1)
+    function StopWhenRelativeResidualLess(c::Real, ε::Real; norm_r::Real = 2 * c * ε)
+        R = float(promote_type(typeof(c), typeof(ε), typeof(norm_r)))
+        return new{R}(convert(R, c), convert(R, ε), convert(R, norm_r), -1)
     end
 end
 function (swrr::StopWhenRelativeResidualLess)(

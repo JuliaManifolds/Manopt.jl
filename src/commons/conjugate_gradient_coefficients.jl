@@ -329,19 +329,19 @@ Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algo
 Riemannian manifolds.
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_k", "p_{k+1}"))X_k``,
 where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
 ````math
 β_k =
-$(_tex(:frac, "$(_tex(:diff))f(p_{k+1})[X_{k+1}]", "$(_tex(:inner, "$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k", "ν_k"; index = "p_{k+1}"))"))
+$(_tex(:frac, "$(_tex(:diff))f(p_{k+1})[X_{k+1}]", "$(_tex(:inner, "$(_math(:VectorTransport, "p_k", "p_{k+1}"))δ_k", "ν_k"; index = "p_{k+1}"))"))
 =
 $(
     _tex(
         :frac,
         _tex(:norm, "X_{k+1}"; index = "p_{k+1}") * "^2",
-        "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"
+        "⟨$(_math(:VectorTransport, "p_k", "p_{k+1}"))δ_k, ν_k⟩_{p_{k+1}}"
     )
 )
 ````
@@ -393,10 +393,10 @@ end
 function (u::DirectionUpdateRuleStorage{FletcherReevesCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
-    M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
+        return 0.0
     end
     p = get_storage(u.storage, PointStorageKey(:Iterate))
     X = get_storage(u.storage, VectorStorageKey(:Gradient))
@@ -527,7 +527,7 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [HagerZhang:2005](@cite) adapted to manifolds
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_k", "p_{k+1}"))X_k``,
 where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
@@ -536,11 +536,11 @@ Then the coefficient reads
     _tex(
         :frac,
         "2$(_tex(:norm, "ν_k"; index = "p_{k+1}"))^2",
-        "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}",
+        "⟨$(_math(:VectorTransport, "p_k", "p_{k+1}"))δ_k, ν_k⟩_{p_{k+1}}",
     )
 )
-  $(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k,
-  $(_tex(:frac, "X_{k+1}", "⟨$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"))
+  $(_math(:VectorTransport, "p_k", "p_{k+1}"))δ_k,
+  $(_tex(:frac, "X_{k+1}", "⟨$(_math(:VectorTransport, "p_k", "p_{k+1}"))δ_k, ν_k⟩_{p_{k+1}}"))
 $(_tex(:Bigr))⟩_{p_{k+1}}.
 ```
 
@@ -637,7 +637,7 @@ Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algo
 
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_k", "p_{k+1}"))X_k``,
 where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
@@ -649,21 +649,21 @@ Then the coefficient reads
     _tex(
         :frac,
         "$(_tex(:diff))f(p_{k+1})[ν_k]",
-        "$(_tex(:diff))f(p_{k+1})[$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k] - $(_tex(:diff))f(p_k)[δ_k]",
+        "$(_tex(:diff))f(p_{k+1})[$(_math(:VectorTransport, "p_k", "p_{k+1}"))δ_k] - $(_tex(:diff))f(p_k)[δ_k]",
     )
 )
 \\\\&= $(
     _tex(
         :frac,
         "$(_tex(:inner, "X_{k+1}", "ν_k"; index = "p_{k+1}"))",
-        "$(_tex(:inner, "$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k", "X_{k+1}"; index = "p_{k+1}")) - $(_tex(:inner, "δ_k", "X_k"; index = "p_{k}"))",
+        "$(_tex(:inner, "$(_math(:VectorTransport, "p_k", "p_{k+1}"))δ_k", "X_{k+1}"; index = "p_{k+1}")) - $(_tex(:inner, "δ_k", "X_k"; index = "p_{k}"))",
     )
 )
 \\\\&= $(
     _tex(
         :frac,
         "$(_tex(:inner, "X_{k+1}", "ν_k"; index = "p_{k+1}"))",
-        "$(_tex(:inner, "$(_math(:VectorTransport, "p_{k+1}", "p_k"))δ_k", "ν_k"; index = "p_{k+1}"))",
+        "$(_tex(:inner, "$(_math(:VectorTransport, "p_k", "p_{k+1}"))δ_k", "ν_k"; index = "p_{k+1}"))",
     )
 ),
 \\end{aligned}
@@ -741,6 +741,7 @@ function (u::DirectionUpdateRuleStorage{<:LiuStoreyCoefficientRule})(
             !has_storage(u.storage, VectorStorageKey(:Gradient)) ||
             !has_storage(u.storage, VectorStorageKey(:δ))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
+        return 0.0
     end
     p = get_storage(u.storage, PointStorageKey(:Iterate))
     X = get_storage(u.storage, VectorStorageKey(:Gradient))
@@ -763,7 +764,7 @@ end
 Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algorithm based on [LiuStorey:1991](@cite) adapted to manifolds
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_k", "p_{k+1}"))X_k``,
 where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
@@ -844,6 +845,7 @@ function (u::DirectionUpdateRuleStorage{<:PolakRibiereCoefficientRule})(
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
             !has_storage(u.storage, VectorStorageKey(:Gradient))
         update_storage!(u.storage, amp, cgs) # if not given store current as old
+        return 0.0
     end
     p = get_storage(u.storage, PointStorageKey(:Iterate))
     X = get_storage(u.storage, VectorStorageKey(:Gradient))
@@ -865,7 +867,7 @@ Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algo
 on [PolakRibiere:1969](@cite) adapted to Riemannian manifolds.
 
 $(_doc_CG_notation)
-Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k``,
+Let ``ν_k = X_{k+1} - $(_math(:VectorTransport, "p_k", "p_{k+1}"))X_k``,
 where ``$(_math(:VectorTransport))`` denotes a vector transport.
 
 Then the coefficient reads
@@ -1060,7 +1062,7 @@ Then a restart is performed, hence ``β_k = 0`` returned if
   $(
     _tex(
         :frac,
-        "⟨X_{k+1}, $(_math(:VectorTransport, "p_{k+1}", "p_k"))X_k⟩",
+        "⟨X_{k+1}, $(_math(:VectorTransport, "p_k", "p_{k+1}"))X_k⟩",
         _tex(:norm, "X_{k+1}", index = "p_{k+1}")
     )
 ) > ε,

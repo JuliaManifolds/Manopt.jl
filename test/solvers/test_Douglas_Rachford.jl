@@ -45,6 +45,7 @@ using ManifoldDiff: prox_distance, prox_distance!
     @test startswith(repr(s), "DouglasRachfordState(; ")
     set_iterate!(s, M, d2)
     @test get_iterate(s) == d2
+    @test s.s == d2 # the reflection point follows the iterate
     @testset "Debug and Record prox parameter" begin
         io = IOBuffer()
         mpo = ManifoldProximalMapObjective(f, [prox1a, prox2a, prox3a])

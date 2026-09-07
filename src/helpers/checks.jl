@@ -158,7 +158,7 @@ no plot is generated.
 # Keyword arguments
 
 * `check_grad=true`:
-  verify that ``$(_tex(:grad))f(p) ∈ $(_math(:TangentSpace))``.
+  run [`check_gradient`](@ref) first, so that the Hessian is only verified for a correct gradient.
 * `check_linearity=true`:
   verify that the Hessian is linear, see [`is_Hessian_linear`](@ref) using `a`, `b`, `X`, and `Y`
 * `check_symmetry=true`:
@@ -249,7 +249,11 @@ function check_Hessian(
                 check_vector = check_vector,
                 atol = atol,
                 rtol = rtol,
+                exactness_tol = exactness_tol,
+                log_range = log_range,
                 retraction_method = retraction_method,
+                slope_tol = slope_tol,
+                window = window,
                 kwargs...,
             )
             return false

@@ -1,5 +1,14 @@
 using Manifolds, Manopt, Test
 
+# an objective that implements only the in-place accessors, to check the allocating fallbacks
+struct DummySymmetricLinearSystemObjective <: Manopt.AbstractSymmetricLinearSystemObjective end
+function Manopt.get_linear_operator!(M::AbstractManifold, Y, ::DummySymmetricLinearSystemObjective, p, X)
+    return copyto!(M, Y, p, 2 .* X)
+end
+function Manopt.get_vector_field!(M::AbstractManifold, Y, ::DummySymmetricLinearSystemObjective, p)
+    return copyto!(M, Y, p, [1.0, 2.0])
+end
+
 @testset "Symmetric Linear Systems and Conjugate Residual State" begin
     M = ℝ^2
     p = [1.0, 1.0]
@@ -88,6 +97,8 @@ using Manifolds, Manopt, Test
             "# Solver state for `Manopt.jl`s Conjugate Residual Method\n"
         )
         crs2 = ConjugateResidualState(TpM, slso2)
+        # tolerances of different types are promoted instead of erroring
+        @test Manopt.StopWhenRelativeResidualLess(1, 1.0e-8).c == 1.0
         @test set_iterate!(crs2, TpM, X0) == crs2 # setters return state
         @test get_iterate(crs2) == X0
         @test set_gradient!(crs2, TpM, X0) == crs2 # setters return state
@@ -114,5 +125,15 @@ using Manifolds, Manopt, Test
         @test swrr.norm_r == norm(crs.r)
         @test length(get_reason(swrr)) > 0
         @test Manopt.indicates_convergence(swrr)
+    end
+    @testset "Allocating fallbacks on the abstract type" begin
+        # only the in-place accessors are implemented, the allocating ones fall back to them
+        o = DummySymmetricLinearSystemObjective()
+        @test Manopt.get_linear_operator(M, o, p, X0) == 2 .* X0
+        @test Manopt.get_vector_field(M, o, p) == [1.0, 2.0]
+        @test Manopt.get_vector_field(TpM, o) == [1.0, 2.0]
+        Y = zero_vector(M, p)
+        @test Manopt.get_vector_field!(TpM, Y, o) == [1.0, 2.0]
+        @test Y == [1.0, 2.0]
     end
 end

@@ -232,10 +232,12 @@ end
 function projected_gradient_method(
         M, f, grad_f, proj, p; indicator = missing, evaluation = AllocatingEvaluation(), kwargs...
     )
+    p_ = maybe_wrap_variable(p)
     cs_obj = ManifoldConstrainedSetObjective(
-        f, grad_f, proj; evaluation = evaluation, indicator = indicator
+        f, grad_f, proj; evaluation = evaluation, indicator = indicator, p = p
     )
-    return projected_gradient_method(M, cs_obj, p; kwargs...)
+    rs = projected_gradient_method(M, cs_obj, p_; kwargs...)
+    return maybe_unwrap_variable(p, rs)
 end
 function projected_gradient_method(M, obj::ManifoldConstrainedSetObjective, p = rand(M); kwargs...)
     keywords_accepted(projected_gradient_method; kwargs...)
@@ -302,7 +304,7 @@ function step_solver!(amp::AbstractManoptProblem, pgms::ProjectedGradientMethodS
     get_projected_point!(amp, pgms.q, pgms.q)
     # Determine search direction
     inverse_retract!(M, pgms.Y, pgms.p, pgms.q, pgms.inverse_retraction_method)
-    τ = pgms.backtrack(amp, pgms, k, pgms.Y)
+    τ = pgms.backtrack(amp, pgms, k, pgms.Y; gradient = pgms.X)
     callback(:Backtrack, amp, pgms, k)
     # println("τ:", τ)
     # Compute new iterate

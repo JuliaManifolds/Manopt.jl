@@ -35,7 +35,7 @@ Generate the constrained objective based on all involved single functions `f`, `
 With `equality_constraints` and `inequality_constraints` you have to provide the dimension
 of the ranges of `h` and `g`, respectively.
 You can also provide a manifold `M` and a point `p` to use one evaluation of the constraints
-to automatically try to determine these sizes.
+to automatically try to determine these sizes; this requires allocating constraint functions.
 
     ConstrainedManifoldObjective(mho::AbstractManifoldObjective;
         equality_constraints = nothing,
@@ -82,6 +82,7 @@ function _number_of_constraints(
         jacobian_type::Union{AbstractVectorialType, Nothing} = nothing,
         M::Union{AbstractManifold, Missing} = missing,
         p = ismissing(M) ? missing : rand(M),
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     )
     if !ismissing(g)
         if isa(function_type, ComponentVectorialType) || isa(g, AbstractVector)
@@ -93,8 +94,9 @@ function _number_of_constraints(
             return length(grad_g)
         end
     end
-    # These are more expensive, since they evaluate and hence allocate
-    if !ismissing(M) && !ismissing(p)
+    # These are more expensive, since they evaluate and hence allocate;
+    # an in-place function can not be evaluated without knowing the size of its result
+    if !ismissing(M) && !ismissing(p) && (evaluation isa AllocatingEvaluation)
         # For functions on vector representations, the last size is equal to length
         # on array power manifolds, this also yields the number of elements
         (!ismissing(g)) && (return _val_to_ncons(g(M, p)))
@@ -131,7 +133,7 @@ function ConstrainedManifoldObjective(
             num_eq = _number_of_constraints(
                 h, grad_h;
                 function_type = equality_type, jacobian_type = equality_gradient_type,
-                M = M, p = p,
+                M = M, p = p, evaluation = evaluation,
             )
         end
         # if it is still < 0, this can not be used
@@ -157,7 +159,7 @@ function ConstrainedManifoldObjective(
             num_ineq = _number_of_constraints(
                 g, grad_g;
                 function_type = inequality_type, jacobian_type = inequality_gradient_type,
-                M = M, p = p,
+                M = M, p = p, evaluation = evaluation,
             )
         end
         # if it is still < 0, this can not be used
@@ -586,6 +588,7 @@ end
         cmo::ConstrainedManifoldObjective, p;
         g = get_inequality_constraint(M, cmo, p, :),
         h = get_equality_constraint(M, cmo, p, :),
+        atol = cmo.atol,
     )
 
 Generate a message about the feasibiliy of `p` with respect to the [`ConstrainedManifoldObjective`](@ref).
@@ -595,9 +598,10 @@ in case you had them evaluated before.
 function get_feasibility_status(
         M, cmo, p;
         g = get_inequality_constraint(M, cmo, p, :), h = get_equality_constraint(M, cmo, p, :),
+        atol = cmo.atol,
     )
-    g_violated = sum(g .> 0)
-    h_violated = sum(h .!= 0)
+    g_violated = sum(g .> atol)
+    h_violated = sum(abs.(h) .> atol)
     return """
     The point $p on $M is not feasible for the provided constraints.
 
@@ -1641,14 +1645,14 @@ function get_grad_equality_constraint(
         range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
     )
     !(haskey(co.cache, :GradEqualityConstraints)) &&
-        return get_grad_equality_constraint(M, co.objective, p, j)
-    pM = PowerManifold(M, range, length(get_objective(co, true).equality_constraints))
+        return get_grad_equality_constraint(M, co.objective, p, j, range)
+    pM = PowerManifold(M, range, equality_constraints_length(co.objective))
     P = fill(p, pM)
     return copy(# Return a copy of the version in the cache
         pM,
         P,
         get!(co.cache[:GradEqualityConstraints], (copy(M, p))) do
-            get_grad_equality_constraint(M, co.objective, p, j)
+            get_grad_equality_constraint(M, co.objective, p, j, range)
         end,
     )
 end
@@ -1663,7 +1667,7 @@ function get_grad_equality_constraint(
     P = fill(p, pM)
     if haskey(co.cache, :GradEqualityConstraints) # full constraints are stored
         if haskey(co.cache[:GradEqualityConstraints], key)
-            return co.cache[:GradEqualityConstraints][key][i]
+            return [copy(M, p, X) for X in co.cache[:GradEqualityConstraints][key][i]]
             #but caching is not possible here, since that requires evaluating all
         end
     end
@@ -1682,7 +1686,7 @@ function get_grad_equality_constraint(
         end
         return X
     end # neither cache: pass down to objective
-    return get_grad_equality_constraint(M, co.objective, p, i)
+    return get_grad_equality_constraint(M, co.objective, p, i, range)
 end
 function get_grad_equality_constraint!(
         M::AbstractManifold, X, co::ManifoldCachedObjective, p, j::Integer,
@@ -1705,14 +1709,14 @@ function get_grad_equality_constraint!(
         range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
     )
     !(haskey(co.cache, :GradEqualityConstraints)) &&
-        return get_grad_equality_constraint!(M, X, co.objective, p, i)
-    pM = PowerManifold(M, range, length(get_objective(co, true).equality_constraints))
+        return get_grad_equality_constraint!(M, X, co.objective, p, i, range)
+    pM = PowerManifold(M, range, equality_constraints_length(co.objective))
     P = fill(p, pM)
     copyto!(
         pM, X, P,
         get!(co.cache[:GradEqualityConstraints], (copy(M, p))) do
             # This evaluates in place of X
-            get_grad_equality_constraint!(M, X, co.objective, p, i)
+            get_grad_equality_constraint!(M, X, co.objective, p, i, range)
             copy(pM, P, X) #this creates a copy to be placed in the cache
         end, #and copy the values back to X
     )
@@ -1757,7 +1761,7 @@ function get_grad_equality_constraint!(
         end
         return X
     end # neither cache: pass down to objective
-    return get_grad_equality_constraint!(M, X, co.objective, p, i)
+    return get_grad_equality_constraint!(M, X, co.objective, p, i, range)
 end
 
 #
@@ -1782,14 +1786,14 @@ function get_grad_inequality_constraint(
         range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
     )
     !(haskey(co.cache, :GradInequalityConstraints)) &&
-        return get_grad_inequality_constraint(M, co.objective, p, i)
-    pM = PowerManifold(M, range, length(get_objective(co, true).inequality_constraints))
+        return get_grad_inequality_constraint(M, co.objective, p, i, range)
+    pM = PowerManifold(M, range, inequality_constraints_length(co.objective))
     P = fill(p, pM)
     return copy(# Return a copy of the version in the cache
         pM,
         P,
         get!(co.cache[:GradInequalityConstraints], (copy(M, p))) do
-            get_grad_inequality_constraint(M, co.objective, p, i)
+            get_grad_inequality_constraint(M, co.objective, p, i, range)
         end,
     )
 end
@@ -1804,7 +1808,7 @@ function get_grad_inequality_constraint(
     P = fill(p, pM)
     if haskey(co.cache, :GradInequalityConstraints) # full constraints are stored
         if haskey(co.cache[:GradInequalityConstraints], key)
-            return co.cache[:GradInequalityConstraints][key][i]
+            return [copy(M, p, X) for X in co.cache[:GradInequalityConstraints][key][i]]
             #but caching is not possible here, since that requires evaluating all
         end
     end
@@ -1823,7 +1827,7 @@ function get_grad_inequality_constraint(
         end
         return X
     end # neither cache: pass down to objective
-    return get_grad_inequality_constraint(M, co.objective, p, i)
+    return get_grad_inequality_constraint(M, co.objective, p, i, range)
 end
 function get_grad_inequality_constraint!(
         M::AbstractManifold, X, co::ManifoldCachedObjective, p,
@@ -1846,8 +1850,8 @@ function get_grad_inequality_constraint!(
         range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
     )
     !(haskey(co.cache, :GradInequalityConstraints)) &&
-        return get_grad_inequality_constraint!(M, X, co.objective, p, j)
-    pM = PowerManifold(M, range, length(get_objective(co, true).inequality_constraints))
+        return get_grad_inequality_constraint!(M, X, co.objective, p, j, range)
+    pM = PowerManifold(M, range, inequality_constraints_length(co.objective))
     P = fill(p, pM)
     copyto!(
         pM,
@@ -1855,7 +1859,7 @@ function get_grad_inequality_constraint!(
         P,
         get!(co.cache[:GradInequalityConstraints], (copy(M, p))) do
             # This evaluates in place of X
-            get_grad_inequality_constraint!(M, X, co.objective, p, j)
+            get_grad_inequality_constraint!(M, X, co.objective, p, j, range)
             copy(pM, P, X) #this creates a copy to be placed in the cache
         end, #and copy the values back to X
     )
@@ -1901,7 +1905,7 @@ function get_grad_inequality_constraint!(
         end
         return X
     end # neither cache: pass down to objective
-    return get_grad_inequality_constraint!(M, X, co.objective, p, i)
+    return get_grad_inequality_constraint!(M, X, co.objective, p, i, range)
 end
 
 function get_hessian(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
@@ -3954,8 +3958,10 @@ end
     get_subgradient_function(objective::ManifoldSubgradientObjective, recursive=false; evaluation = AllocatingEvaluation())
 
 Return the function to evaluate (just) the subgradient ``$(_tex(:subgrad)) f(p)``.
-It is of the form `(M, X, p) -> X` to work in-place of `X`,
-where either the subgradient function using the decorator or without the decorator is used.
+
+For the default `evaluation=`[`AllocatingEvaluation`](@ref)`()` this function has the form
+`(M, p) -> X`; for `evaluation=`[`InplaceEvaluation`](@ref)`()` it has the form
+`(M, X, p) -> X` working in-place of `X`.
 
 By default `recursive` is set to `false`, since usually to just pass the gradient function
 somewhere, one still wants for example the cached one or the one that still counts calls.

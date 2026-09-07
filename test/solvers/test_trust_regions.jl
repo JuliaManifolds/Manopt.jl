@@ -32,10 +32,11 @@ include("trust_region_model.jl")
         trs2 = TrustRegionsState(M, sub_problem, sub_state)
         @test_throws ErrorException TrustRegionsState(M, sub_state)
         trs3 = TrustRegionsState(M, sub_problem; p = p)
-        @test Manopt.get_gradient_function(sub_objective)(M, p) == X
+        gX = get_gradient(TpM, sub_objective, X)
+        @test Manopt.get_gradient_function(sub_objective)(TpM, X) == gX
         Y = copy(M, p, X)
-        @test Manopt.get_gradient_function(sub_objective; evaluation = InplaceEvaluation())(M, Y, p) == X
-        @test Y == X
+        @test Manopt.get_gradient_function(sub_objective; evaluation = InplaceEvaluation())(TpM, Y, X) == gX
+        @test Y == gX
         # Dummy pass through for closed from solver
         trs4 = TrustRegionsState(M, rgrad, AllocatingEvaluation())
         @test trs4.sub_state isa Manopt.ClosedFormSubSolverState

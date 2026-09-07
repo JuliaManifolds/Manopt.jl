@@ -498,7 +498,7 @@ function step_solver!(
     # should this be with (currently) or without robustifier?
     M = get_manifold(dmp)
     nlso = get_objective(dmp, true)
-    FpSq = get_cost(M, nlso, lms.p)
+    FpSq = get_cost(dmp, lms.p)
     set_parameter!(lms.sub_problem, Val(:Objective), Val(:Penalty), lms.damping_term * FpSq)
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, Val(:Manifold), Val(:Basepoint), lms.p)
@@ -528,7 +528,7 @@ function step_solver!(
     retract!(M, lms.q, lms.p, lms.direction, lms.retraction_method)
 
     # Evaluate improvement of actual cost divided by predicted cost improvement
-    cost_improvement = get_cost(M, nlso, lms.p) - get_cost(M, nlso, lms.q)
+    cost_improvement = FpSq - get_cost(dmp, lms.q)
     ρ = cost_improvement / model_improvement
     # Update damping term and iterate
     if ρ >= lms.damping_reduction_threshold

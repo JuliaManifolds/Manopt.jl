@@ -12,7 +12,7 @@ end
 function _maybe_wrap_jacobian_function(Jf, p, ::CoefficientVectorialType, e::AllocatingEvaluation)
     return maybe_wrap_function(Jf, p, e; result = :Matrix)
 end
-function _maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{NestedPowerRepresentation}, e::AllocatingEvaluation)
+function _maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType, e::AllocatingEvaluation)
     return maybe_wrap_function(Jf, p, e; result = :TangentVectors)
 end
 
@@ -103,7 +103,12 @@ end
 @doc """
     get_value_function(vgf::VectorGradientFunction, recursive=false; evaluation=AllocatingEvaluation())
 
-Return the internally stored function computing [`get_value`](@ref).
+Return the function to evaluate (just) the value ``f(p) ∈ ℝ^n``, see [`get_value`](@ref).
+
+For the default `evaluation=`[`AllocatingEvaluation`](@ref)`()` this function has the form
+`(M, p) -> V`; for `evaluation=`[`InplaceEvaluation`](@ref)`()` it has the form
+`(M, V, p) -> V` working in-place of `V`.
+For a value stored as a [`ComponentVectorialType`](@ref) the in-place variant returns the vector of the component functions instead.
 """
 function get_value_function(
         vgf::VectorGradientFunction, recursive = false;
@@ -444,7 +449,7 @@ function VectorHessianFunction(
     )
 end
 
-_vgf_index_to_length(b::BitVector, n) = sum(b)
+_vgf_index_to_length(b::AbstractArray{Bool}, n) = sum(b)
 _vgf_index_to_length(::Colon, n) = n
 _vgf_index_to_length(i::AbstractArray{<:Integer}, n) = length(i)
 _vgf_index_to_length(r::UnitRange{<:Integer}, n) = length(r)

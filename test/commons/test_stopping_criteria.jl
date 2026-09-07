@@ -332,6 +332,16 @@ end
         # Trigger manually
         sc3.at_iteration = 1
         @test length(get_reason(sc3)) > 0
+        # a nested point representation is checked entry by entry
+        Mn = PowerManifold(Sphere(2), NestedPowerRepresentation(), 2)
+        stn = GradientDescentState(Mn; p = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+        mpn = DefaultManoptProblem(
+            Mn, ManifoldGradientObjective((N, q) -> 0.0, (N, q) -> zero_vector(N, q))
+        )
+        sc4 = StopWhenIterateNaN()
+        @test !sc4(mpn, stn, 1)
+        stn.p[1][1] = NaN
+        @test sc4(mpn, stn, 1)
     end
 
     @testset "StopWhenRepeated" begin
@@ -347,6 +357,21 @@ end
         @test startswith(repr(sc), "StopWhenRepeated(")
         @test startswith(Manopt.status_summary(sc), "A stopping criterion to stop when the inner criterion has indicated to stop 3 consecutive times")
         @test startswith(Manopt.status_summary(sc; context = :short), "StopWhenRepeated(StopAfterIteration(2))×3")
+        # an inactive wrapper has not converged, even if the inner criterion fired before
+        Me = Euclidean(2)
+        ste = GradientDescentState(Me; p = [0.0, 0.0], X = [0.0, 0.0])
+        mpe = DefaultManoptProblem(Me, ManifoldGradientObjective((N, q) -> 0.0, (N, q) -> 2 .* q))
+        scr = StopWhenRepeated(StopWhenGradientNormLess(1.0e-6), 3)
+        @test !scr(mpe, ste, 1) # the inner criterion fires, the wrapper does not
+        ste.X .= [1.0, 0.0]
+        @test !scr(mpe, ste, 2) # the count is reset
+        @test !Manopt.is_active_stopping_criterion(scr)
+        @test !has_converged(scr)
+        ste.X .= [0.0, 0.0]
+        @test !scr(mpe, ste, 3)
+        @test !scr(mpe, ste, 4)
+        @test scr(mpe, ste, 5)
+        @test has_converged(scr)
         @test !sc(p, o, 1) # still count 0
         @test !sc(p, o, 2) # 1
         @test !sc(p, o, 2) # 2
@@ -394,6 +419,9 @@ end
     end
 
     @testset "StopWhenRelativeAPosterioriCostChangeLessOrEqual" begin
+        # an integer factor is promoted instead of erroring
+        @test StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr = 100).threshold ==
+            100 * eps(Float64)
         sc = StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr = 100.0)
         prob = DefaultManoptProblem(
             Euclidean(), ManifoldGradientObjective((M, x) -> x^2, (M, x) -> 2x)

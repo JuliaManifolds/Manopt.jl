@@ -199,7 +199,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     # set activity for this iterate in sub solvers
     set_parameter!(
         st, Val(:SubState), Val(:Debug), Val(:Activity),
-        !(k < 1) && (rem(k + d.activation_offset, d.every) == 0),
+        rem(max(k, 0) + d.activation_offset, d.every) == 0,
     )
     return nothing
 end

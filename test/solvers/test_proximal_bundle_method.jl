@@ -12,6 +12,7 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
     @testset "Special Stopping Criteria" begin
         sc1 = StopWhenLagrangeMultiplierLess(1.0e-8)
         @test startswith(repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)")
+        @test Manopt.indicates_convergence(sc1)
         @test get_reason(sc1) == ""
         # Trigger manually
         sc1.at_iteration = 2
@@ -51,6 +52,7 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         @test f(M, p_star2) <= f(M, p0)
         set_iterate!(pbms2, M, p)
         @test get_iterate(pbms2) == p
+        @test isapprox(M, Manopt.get_state(pbms2).p, p) # the iterate follows as well
         #
         # Check bundle trimming
         pbms3 = proximal_bundle_method(

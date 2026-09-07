@@ -1,4 +1,10 @@
 using Manopt, Manifolds, ManifoldsBase, ManifoldDiff, Test, RecursiveArrayTools
+
+# a callable cost object, which the in-place variant has to accept as well
+struct CallableCost{F}
+    f::F
+end
+(c::CallableCost)(M, p) = c.f(M, p)
 using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
 
 @testset "PD-RSSN" begin
@@ -71,6 +77,13 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
         Dprox_G_dual, DΛ, adjoint_DΛ; primal_stepsize = σ, dual_stepsize = τ,
     )
     @test y3 === x3      # in-place: the passed point holds the result
+    # the in-place variant also accepts a callable cost object
+    x3c = deepcopy(data)
+    y3c = primal_dual_semismooth_Newton!(
+        M, N, CallableCost(f), x3c, zero_vector(M, m), deepcopy(m), n, prox_f, Dprox_F,
+        prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ; primal_stepsize = σ, dual_stepsize = τ,
+    )
+    @test isapprox(M, y3c, x3)
     @test x_hat ≈ x3 atol = 2 * 1.0e-7
     @testset "Objective Decorator passthrough" begin
         # PDNSSN additional tests

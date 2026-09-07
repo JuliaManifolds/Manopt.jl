@@ -55,6 +55,13 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
             p2c = copy(M, p)
             Frank_Wolfe_method!(M, f, grad_f, p2c; sub_problem = oracle)
             @test f(M, p2c) < f(M, p)
+            # the default sub objective is Riemannian by construction, also for a Euclidean one
+            s2e = Frank_Wolfe_method(
+                M, f, grad_f, p; objective_type = :Euclidean, return_state = true,
+                stopping_criterion = StopAfterIteration(0),
+            )
+            sub_o = Manopt.get_objective(Manopt.get_state(s2e).sub_problem, false)
+            @test !(sub_o isa Manopt.EmbeddedManifoldObjective)
         end
         @testset "Callbacks" begin
             sk_record = Tuple{Symbol, Int}[]

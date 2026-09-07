@@ -219,6 +219,12 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     end
     @testset "RecordWhenActive" begin
         i = RecordIteration()
+        # with a frequency of one the sub solver stays active for the first iteration
+        rWA = RecordWhenActive(RecordIteration(), false)
+        sub_st = RecordSolverState(GradientDescentState(M; p = p), rWA)
+        trs = TrustRegionsState(M, dmp, sub_st)
+        RecordEvery(RecordIteration(), 1)(dmp, trs, -1)
+        @test rWA.active
         rwa = RecordWhenActive(i)
         @test repr(rwa) == "RecordWhenActive(RecordIteration(), true, true)"
         @test Manopt.status_summary(rwa; context = :short) == repr(rwa)
@@ -241,6 +247,10 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     end
     @testset "Manopt.RecordFactory" begin
         gds.X = [0.0, 0.0]
+        # an entry vector without an action gives an empty group instead of an error
+        @test get_record(Manopt.RecordGroupFactory(gds, Any[])) == Any[]
+        @test RecordFactory(gds, [:Iteration => [], :Stop]) isa Dict
+        @test RecordFactory(gds, [:Iteration => [5]]) isa Dict
         rf = RecordFactory(gds, [:Cost, :X])
         @test isa(rf[:Iteration], RecordGroup)
         @test isa(rf[:Iteration].group[1], RecordCost)

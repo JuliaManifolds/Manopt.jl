@@ -31,6 +31,16 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             M, ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M), f
         )
         @test ipnsc.sub_state isa Manopt.ClosedFormSubSolverState
+        @testset "the step manifold keeps a product manifold as one factor" begin
+            Mp = Sphere(2) × Sphere(2)
+            fp(N, q) = q[N, 1][1]^2 + q[N, 2][1]^2
+            grad_fp(N, q) = zero_vector(N, q)
+            gp(N, q) = [q[N, 1][3] - 1.0]
+            grad_gp(N, q) = [zero_vector(N, q)]
+            cmop = ConstrainedManifoldObjective(fp, grad_fp; g = gp, grad_g = grad_gp, M = Mp)
+            ipsp = InteriorPointNewtonState(Mp, cmop, fp)
+            @test get_manifold(ipsp.step_problem)[1] === Mp
+        end
         @testset "closed form sub solver can take a step" begin
             # the documented closed form constructor built a state `step_solver!` could not run
             cmo = ConstrainedManifoldObjective(
@@ -87,6 +97,8 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             M, coh, p_0; stopping_criterion = sc, centrality_condition = ipcc
         )
         @test distance(M, q3, [0.0, 0.0, 1.0]) < 2.0e-4
+        # the objective variant also has the documented default start point
+        @test hasmethod(interior_point_Newton, Tuple{typeof(M), typeof(coh)})
         @testset "Callback Test" begin
             sk_record = Tuple{Symbol, Int}[]
             cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))

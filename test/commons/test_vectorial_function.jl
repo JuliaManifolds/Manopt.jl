@@ -31,6 +31,13 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     hess_g2(M, p, X) = copy(-X); hess_g2!(M, Y, p, X) = copyto!(Y, -X)
     # verify a few case
     vgf_fa = VectorGradientFunction(g, grad_g, 2)
+    # an allocating Jacobian is wrapped for every function vectorial type
+    vgf_nr = VectorGradientFunction(
+        g, grad_g, 2;
+        jacobian_type = Manopt.FunctionVectorialType(NestedReplacingPowerRepresentation()),
+    )
+    @test get_gradient(M, vgf_nr, [1.0, 2.0, 3.0], :) ==
+        get_gradient(M, vgf_fa, [1.0, 2.0, 3.0], :)
     io = IOBuffer()
     show(io, MIME"text/plain"(), vgf_fa)
     @test String(take!(io)) == Manopt.status_summary(vgf_fa)

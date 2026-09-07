@@ -1267,12 +1267,15 @@ function (c::StopWhenIterateNaN)(::AbstractManoptProblem, s::AbstractManoptSolve
     if k == 0 # reset on init
         c.at_iteration = -1
     end
-    if (k >= 0) && any(isnan.(get_iterate(s)))
+    if (k >= 0) && _any_isnan(get_iterate(s))
         c.at_iteration = k
         return true
     end
     return false
 end
+# recursive, so that nested points, for example on a `NestedPowerRepresentation`, work as well
+_any_isnan(x::Number) = isnan(x)
+_any_isnan(x) = any(_any_isnan, x)
 function get_reason(c::StopWhenIterateNaN)
     if (c.at_iteration >= 0)
         return "The algorithm reached an iterate containing NaNs.\n"
@@ -1387,6 +1390,7 @@ function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
         "StopWhenLagrangeMultiplierLess($(sc.tolerances); mode=:$(sc.mode)$n)",
     )
 end
+indicates_convergence(c::StopWhenLagrangeMultiplierLess) = true
 requires_update(::Type{<:StopWhenLagrangeMultiplierLess}) = false
 
 #
@@ -1482,8 +1486,8 @@ function indicates_convergence(sc::StopWhenRepeated)
     return indicates_convergence(sc.stopping_criterion)
 end
 function has_converged(sc::StopWhenRepeated)
-    # When the inner one indicates convergence, this does as well
-    return has_converged(sc.stopping_criterion)
+    # only if this wrapper itself indicated to stop and the inner one indicates convergence
+    return is_active_stopping_criterion(sc) && has_converged(sc.stopping_criterion)
 end
 function Base.show(io::IO, sc::StopWhenRepeated)
     return print(io, "StopWhenRepeated($(repr(sc.stopping_criterion)), $(sc.n); consecutive=$(sc.consecutive))")
@@ -1608,7 +1612,7 @@ Initialize the stopping criterion to a `threshold` for the change of the cost fu
 
     StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::Real=1.0e7)
 
-Initialize `threshold` to `factr * eps(typeof(factr))`, following the convention in [ZhuByrdLuNocedal:1997](@cite).
+Initialize `threshold` to `factr * eps(typeof(float(factr)))`, following the convention in [ZhuByrdLuNocedal:1997](@cite).
 """
 mutable struct StopWhenRelativeAPosterioriCostChangeLessOrEqual{F <: Real} <: StoppingCriterion
     threshold::F
@@ -1620,7 +1624,7 @@ function StopWhenRelativeAPosterioriCostChangeLessOrEqual(tol::Real)
     t = float(tol)
     return StopWhenRelativeAPosterioriCostChangeLessOrEqual{typeof(t)}(t, -1, zero(t), 2 * t)
 end
-StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::F = 1.0e7) where {F <: Real} = StopWhenRelativeAPosterioriCostChangeLessOrEqual(factr * eps(typeof(factr)))
+StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr::Real = 1.0e7) = StopWhenRelativeAPosterioriCostChangeLessOrEqual(factr * eps(typeof(float(factr))))
 function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(
         problem::AbstractManoptProblem, state::AbstractManoptSolverState, k::Int
     )

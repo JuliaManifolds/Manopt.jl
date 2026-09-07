@@ -23,6 +23,8 @@ using Manifolds, Manopt, Test
             obj = ManifoldCostObjective(f)
             mp = DefaultManoptProblem(M, obj)
             s = StopWhenPopulationConcentrated(0.1, 0.1)
+            # tolerances of different types are promoted instead of erroring
+            @test StopWhenPopulationConcentrated(1.0e-6, 1).tol_p == 1.0
             @test startswith(Manopt.status_summary(s), "Stop when the population is concentrated")
             @test startswith(repr(s), "StopWhenPopulationConcentrated(")
             # tweak an iteration

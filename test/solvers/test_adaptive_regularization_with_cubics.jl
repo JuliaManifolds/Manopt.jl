@@ -71,6 +71,14 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         @test arcs.X == X1
         lst = LanczosState(M2; maxIterLanczos = 1)
         @test startswith(repr(lst), "LanczosState(; ")
+        set_iterate!(lst, M2, X1)
+        @test get_iterate(lst) == X1
+        # initializing clears the solution, so a reused state does not return the previous one
+        lst_reuse = LanczosState(M2; maxIterLanczos = 2)
+        copyto!(M2, lst_reuse.S, X1)
+        @test !iszero(get_solver_result(lst_reuse))
+        Manopt.initialize_solver!(DefaultManoptProblem(M2, arcmo), lst_reuse)
+        @test iszero(get_solver_result(lst_reuse))
         # the `coefficients` field is shown, not the iterate `X` a second time
         lst2 = LanczosState(M2; maxIterLanczos = 2)
         lst2.coefficients .= [7.0, 8.0]
@@ -88,6 +96,12 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
                 (:Stop, 0),
             ]
         end
+        # the gradient stored in the state is reused instead of evaluated again
+        co_c, _ = adaptive_regularization_with_cubics(
+            M, f, grad_f, Hess_f, p0; count = [:Gradient], return_objective = true,
+            return_state = true, stopping_criterion = StopAfterIteration(5),
+        )
+        @test get_count(co_c, :Gradient) == 5
         arcs2 = AdaptiveRegularizationState(
             M, DefaultManoptProblem(M2, arcmo), lst; p = p0, stopping_criterion = StopWhenAllLanczosVectorsUsed(1),
         )
@@ -95,6 +109,9 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         push!(arcs2.sub_state.Lanczos_vectors, X1)
         # 1 Lanczos was reached
         @test stop_solver!(arcs2.sub_problem, arcs2.sub_state, 1)
+        @test stop_solver!(arcs2.sub_problem, arcs2, 1)
+        # one vector more than configured still stops
+        push!(arcs2.sub_state.Lanczos_vectors, X1)
         @test stop_solver!(arcs2.sub_problem, arcs2, 1)
         arcs3 = AdaptiveRegularizationState(
             M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos = 2); p = p0

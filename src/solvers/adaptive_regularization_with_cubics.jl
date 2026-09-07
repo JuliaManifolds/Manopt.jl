@@ -96,10 +96,6 @@ function get_gradient!(
     Y .= Y + get_objective_gradient(M, arcmo, p) + arcmo.σ * norm(M, p, X) * X
     return Y
 end
-function get_gradient_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
-    recursive && (return get_gradient_function(arcmo.objective, recursive; evaluation = evaluation))
-    return evaluation isa AllocatingEvaluation ? (M, p) -> get_gradient(M, arcmo, p) : (M, X, p) -> get_gradient!(M, X, arcmo, p)
-end
 function Base.show(io::IO, arcmo::AdaptiveRegularizationWithCubicsModelObjective)
     print(io, "AdaptiveRegularizationWithCubicsModelObjective(")
     print(io, arcmo.objective); print(io, ", ")
@@ -525,8 +521,8 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     M = get_manifold(dmp)
     mho = get_objective(dmp)
     # Update sub state
-    # Set point also in the sub problem (eventually the tangent space)
-    get_gradient!(M, arcs.X, mho, arcs.p)
+    # Set point also in the sub problem (eventually the tangent space);
+    # `arcs.X` already holds the gradient at `arcs.p`
     # Update base point in manifold
     set_parameter!(arcs.sub_problem, Val(:Manifold), Val(:p), copy(M, arcs.p))
     set_parameter!(arcs.sub_problem, Val(:Objective), Val(:σ), arcs.σ)

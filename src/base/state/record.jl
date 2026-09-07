@@ -273,7 +273,7 @@ function (re::RecordEvery)(
     # note that since recording is happening at the end
     # sets activity for the _next_ iteration
     set_parameter!(
-        ams, Val(:SubState), Val(:Record), Val(:Activity), !(k < 1) && (rem(k + 1, re.every) == 0)
+        ams, Val(:SubState), Val(:Record), Val(:Activity), rem(max(k, 0) + 1, re.every) == 0
     )
     return nothing
 end

@@ -1,4 +1,13 @@
 using LinearAlgebra, Manifolds, Manopt, Random, Test
+
+# a step size that records the direction it is handed, to check that one is passed at all
+struct RecordingStepsize <: Manopt.Stepsize
+    directions::Vector{Any}
+end
+function (s::RecordingStepsize)(amp, ams, k, η = nothing; kwargs...)
+    push!(s.directions, η)
+    return 1.0
+end
 import Manifolds: inner
 
 @testset "Difference of Convex" begin
@@ -128,6 +137,14 @@ import Manifolds: inner
             M, grad_h!, p0; g = g, grad_g = (grad_g!), evaluation = InplaceEvaluation()
         )
         p5 = difference_of_convex_proximal_point(M, grad_h, p0; g = g, grad_g = grad_g)
+        # the solver hands the direction it steps along to the step size
+        rs = RecordingStepsize(Any[])
+        difference_of_convex_proximal_point(
+            M, grad_h, p0; g = g, grad_g = grad_g, stepsize = rs,
+            stopping_criterion = StopAfterIteration(1),
+        )
+        @test !isempty(rs.directions)
+        @test !isnothing(rs.directions[1])
         p5b = difference_of_convex_proximal_point(M, grad_h; g = g, grad_g = grad_g)
         # using gradient descent
         p5c = difference_of_convex_proximal_point(

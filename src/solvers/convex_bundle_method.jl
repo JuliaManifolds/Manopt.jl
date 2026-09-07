@@ -313,6 +313,7 @@ end
 get_iterate(bms::ConvexBundleMethodState) = bms.p_last_serious
 function set_iterate!(bms::ConvexBundleMethodState, M, p)
     copyto!(M, bms.p_last_serious, p)
+    bms.p = p
     return bms
 end
 get_subgradient(bms::ConvexBundleMethodState) = bms.g
@@ -803,12 +804,14 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
         deleteat!(bms.linearization_errors, v)
         deleteat!(bms.transported_subgradients, v)
     end
-    # remove the oldest bundle entries until there is room for the new one
-    while length(bms.bundle) ≥ bms.bundle_cap && bms.bundle[1][1] ≠ bms.p_last_serious
-        deleteat!(bms.bundle, 1)
-        deleteat!(bms.λ, 1)
-        deleteat!(bms.linearization_errors, 1)
-        deleteat!(bms.transported_subgradients, 1)
+    # remove the oldest bundle entries, keeping the last serious iterate, until there is room
+    while length(bms.bundle) ≥ bms.bundle_cap
+        j = findfirst(b -> b[1] ≠ bms.p_last_serious, bms.bundle)
+        isnothing(j) && break
+        deleteat!(bms.bundle, j)
+        deleteat!(bms.λ, j)
+        deleteat!(bms.linearization_errors, j)
+        deleteat!(bms.transported_subgradients, j)
     end
     # push to bundle and update subgradients, λ, and linearization_errors
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
@@ -907,13 +910,5 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             d.old_value = min(d.old_value, new_value)
         end
     end
-    return nothing
-end
-
-function (d::DebugStepsize)(
-        dmp::P, bms::ConvexBundleMethodState, k::Int
-    ) where {P <: AbstractManoptProblem}
-    (k < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(dmp, bms, k))
     return nothing
 end

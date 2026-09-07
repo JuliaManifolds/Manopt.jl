@@ -331,6 +331,23 @@ using RecursiveArrayTools
         @test distance(M, p_opt, ArrayPartition([0, 2, 0], px)) < 0.1
     end
 
+    @testset "Isotropic limit in the generalized Cauchy direction" begin
+        S2 = Sphere(2)
+        M = Hyperrectangle([-100.0], [100.0]) × S2
+        p = ArrayPartition([0.0], [1.0, 0.0, 0.0])
+        d = ArrayPartition([-1.0], [0.0, 10.0, 0.0])
+        X = -d
+        ha = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2)
+        )
+        gf = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha)
+        d_out = similar(d)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_out, p, d, X) ===
+            (:found_limited, 1.0)
+        # the direction may not leave the isotropic maximal step size of the sphere factor
+        @test norm(S2, p.x[2], d_out.x[2]) <= Manopt.max_stepsize(S2, p.x[2]) + 1.0e-12
+    end
+
     @testset "Sphere × Hyperrectangle" begin
         S2 = Sphere(2)
         px = [0.0, 1.0, 0.0]

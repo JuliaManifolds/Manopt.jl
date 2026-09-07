@@ -765,15 +765,15 @@ function (bb::BarzilaiBorweinStepsize)(
     p = get_iterate(s)
     X = isnothing(gradient) ? get_gradient(mp, p) : gradient
     if !has_storage(bb.storage, PointStorageKey(:Iterate)) || !has_storage(bb.storage, VectorStorageKey(:Gradient))
-        # first time call: there is no previous iterate or gradient yet, so use the current
-        # ones, which yields s_k = y_k = 0, and store them for the next call.
-        p_old = p
-        X_old = X
-    else
-        #fetch
-        p_old = get_storage(bb.storage, PointStorageKey(:Iterate))
-        X_old = get_storage(bb.storage, VectorStorageKey(:Gradient))
+        # first time call: there is no previous iterate or gradient yet, so store the current
+        # ones for the next call and return the maximal step size
+        update_storage!(bb.storage, mp, s)
+        bb.last_stepsize = bb.max_stepsize
+        return bb.last_stepsize
     end
+    #fetch
+    p_old = get_storage(bb.storage, PointStorageKey(:Iterate))
+    X_old = get_storage(bb.storage, VectorStorageKey(:Gradient))
     update_storage!(bb.storage, mp, s)
 
     # compute the y_k – difference of gradients, but remember to transport

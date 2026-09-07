@@ -132,8 +132,9 @@ function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
     return s
 end
 get_iterate(drs::DouglasRachfordState) = drs.p
-function set_iterate!(drs::DouglasRachfordState, ::AbstractManifold, p)
+function set_iterate!(drs::DouglasRachfordState, M::AbstractManifold, p)
     drs.p = p
+    copyto!(M, drs.s, p)
     return drs
 end
 

@@ -151,9 +151,8 @@ linear operators.
 * `threshold::Real`: stabilization ``ε`` for ``α ≤ 1-ε`` in the rescaling of the residual and Jacobian, see [`get_LevenbergMarquardt_scaling`](@ref)
 * `mode::Symbol`:  which mode to use to stabilize α, see the internal helper [`get_LevenbergMarquardt_scaling`](@ref)
 * `value_cache`:   a vector to store the residuals ``F(p)`` at the current point `p` internally to avoid recomputations
-* `jacobian_cache`: a vector to store the coordinate-based Jacobian of the residuals at the
-  current point `p` internally to avoid recomputations. If the Jacobian is used as a linear
-  operator, this is just a vector of `nothing`s.
+* `jacobian_cache`: one matrix per block, the Jacobian of its residuals at `p` in coordinates of `basis`.
+  Every evaluation needs them; the default of `nothing`s is a placeholder that [`LevenbergMarquardt`](@ref) replaces.
 * `basis`:         the [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) the coordinates refer to
 
 # Constructor
@@ -1030,9 +1029,16 @@ function get_normal_linear_operator!(
     # For every block
     fill!(d, 0)
     e = zero(d)
+    start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        get_normal_linear_operator!(M, e, o, r, p, c, B; threshold = lmsco.threshold, mode = lmsco.mode)
+        len = length(o)
+        get_normal_linear_operator!(
+            M, e, o, r, p, c, B;
+            value_cache = view(lmsco.value_cache, (start + 1):(start + len)),
+            threshold = lmsco.threshold, mode = lmsco.mode,
+        )
         d .+= e
+        start += len
     end
     # Finally add the damping term
     (penalty != 0) && (d .+= penalty * c)
@@ -1063,8 +1069,15 @@ function get_normal_linear_operator!(
     nlso = get_objective(lmsco)
     # For every block
     fill!(A, 0)
+    start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        add_normal_linear_operator!(M, A, o, r, p, B; threshold = lmsco.threshold, mode = lmsco.mode)
+        len = length(o)
+        add_normal_linear_operator!(
+            M, A, o, r, p, B;
+            value_cache = view(lmsco.value_cache, (start + 1):(start + len)),
+            threshold = lmsco.threshold, mode = lmsco.mode,
+        )
+        start += len
     end
     # Finally add the damping term
     (penalty != 0) && (_diagview(A) .+= penalty)
@@ -1251,8 +1264,15 @@ function get_normal_vector_field!(
     nlso = get_objective(lmsco)
     # For every block
     fill!(c, 0)
+    start = 0
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        add_normal_vector_field!(M, c, o, r, p, B; threshold = lmsco.threshold, mode = lmsco.mode)
+        len = length(o)
+        add_normal_vector_field!(
+            M, c, o, r, p, B;
+            value_cache = view(lmsco.value_cache, (start + 1):(start + len)),
+            threshold = lmsco.threshold, mode = lmsco.mode,
+        )
+        start += len
     end
     return c
 end
@@ -1328,17 +1348,22 @@ function get_vector_field!(
     start = 0
     # For every block
     for (o, r) in zip(nlso.objective, nlso.robustifier)
-        _get_vector_field!(M, view(y, (start + 1):(start + length(o))), o, r, p; threshold = lmsco.threshold, mode = lmsco.mode)
-        start += length(o)
+        len = length(o)
+        _get_vector_field!(
+            M, view(y, (start + 1):(start + len)), o, r, p;
+            value_cache = view(lmsco.value_cache, (start + 1):(start + len)),
+            threshold = lmsco.threshold, mode = lmsco.mode,
+        )
+        start += len
     end
     return y
 end
 # for a single block – the actual formula
 function _get_vector_field!(
         M::AbstractManifold, y, o::AbstractFirstOrderVectorFunction, r::AbstractRobustifierFunction, p;
-        threshold::Real, mode::Symbol,
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
-    get_value!(M, y, o, p) # evaluate residuals F(p)
+    y .= value_cache # residuals F(p)
     F_sq = sum(abs2, y)
     (_, ρ_prime, ρ_double_prime) = get_robustifier_values(r, F_sq)
     residual_scaling, _ = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
@@ -1349,9 +1374,9 @@ end
 # Componentwise, it decouples, C is diagonal
 function _get_vector_field!(
         M::AbstractManifold, y, o::AbstractFirstOrderVectorFunction, cr::ComponentwiseRobustifierFunction, p;
-        threshold::Real, mode::Symbol,
+        value_cache = get_value(M, o, p), threshold::Real, mode::Symbol,
     )
-    get_value!(M, y, o, p) # evaluate residuals F(p)
+    y .= value_cache # residuals F(p)
     r = cr.robustifier
     for (i, ai) in enumerate(y)
         ai_sq = abs(ai)^2
@@ -1501,6 +1526,16 @@ function get_linear_operator!(
     return get_normal_linear_operator!(M, A, neo.objective, p, B; penalty = penalty)
 end
 
+@doc "$(_doc_linOp_NEO)"
+function get_linear_operator(
+        M::AbstractManifold, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis;
+        penalty::Real = neo.objective.penalty,
+    )
+    d = number_of_coordinates(M, B)
+    A = zeros(number_eltype(p), d, d)
+    return get_linear_operator!(M, A, neo, p, B; penalty = penalty)
+end
+
 function get_vector_field!(
         M::AbstractManifold, c, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis
     )
@@ -1555,6 +1590,13 @@ function get_vector_field!(
     get_normal_vector_field!(M, c, neo.objective, p, B)
     c .*= -1
     return c
+end
+@doc "$(_doc_vecField_NEO)"
+function get_vector_field(
+        M::AbstractManifold, neo::NormalEquationsObjective{<:LevenbergMarquardtLinearSurrogateCoordinatesObjective}, p, B::AbstractBasis
+    )
+    c = get_coordinates(M, p, zero_vector(M, p), B)
+    return get_vector_field!(M, c, neo, p, B)
 end
 
 function show(io::IO, neo::NormalEquationsObjective)

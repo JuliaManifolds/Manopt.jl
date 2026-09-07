@@ -81,6 +81,7 @@ function LanczosState(
     )
 end
 get_callbacks(ls::LanczosState) = ls.callbacks
+get_iterate(ls::LanczosState) = ls.X
 function get_solver_result(ls::LanczosState)
     return ls.S
 end
@@ -137,6 +138,7 @@ function initialize_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::Lanc
     end
     zero_vector!(M, ls.Hp, p)
     zero_vector!(M, ls.Hp_residual, p)
+    zero_vector!(M, ls.S, p)
     return ls
 end
 
@@ -394,7 +396,7 @@ function (c::StopWhenAllLanczosVectorsUsed)(
     (k == 0) && (c.at_iteration = -1) # reset on init
     ls = get_state(arcs.sub_state) # the sub state might be decorated
     (ls isa LanczosState) || return false
-    if (k > 0) && length(ls.Lanczos_vectors) == c.maxLanczosVectors
+    if (k > 0) && length(ls.Lanczos_vectors) >= c.maxLanczosVectors
         c.at_iteration = k
         return true
     end

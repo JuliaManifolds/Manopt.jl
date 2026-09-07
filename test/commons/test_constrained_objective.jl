@@ -38,6 +38,15 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     @test Manopt._number_of_constraints(
         [g1, g2], nothing; jacobian_type = ComponentVectorialType()
     ) == 2
+    # in-place functions can not be evaluated to infer their number
+    q0 = [1.0, 2.0, 3.0]
+    @test Manopt._number_of_constraints(g, grad_g; M = M, p = q0) == 2
+    @test Manopt._number_of_constraints(
+        g!, grad_g!; M = M, p = q0, evaluation = InplaceEvaluation()
+    ) == -1
+    @test_throws ErrorException ConstrainedManifoldObjective(
+        f, grad_f!; g = g!, grad_g = grad_g!, evaluation = InplaceEvaluation(), M = M, p = q0
+    )
     # Equality Constraints
     h(M, p) = [2 * p[3] - 1]
     h!(M, V, p) = (V .= [2 * p[3] - 1])
@@ -303,6 +312,13 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             g = g, grad_g = grad_g, hess_g = hess_g,
             h = h, grad_h = grad_h, hess_h = hess_h,
         )
+        # the violation counts respect the tolerance of the objective
+        cot = ConstrainedManifoldObjective(
+            f, grad_f; M = M, g = g, grad_g = grad_g, h = h, grad_h = grad_h, atol = 0.1
+        )
+        status = Manopt.get_feasibility_status(M, cot, p; g = [0.05, 0.5], h = [-0.05])
+        @test contains(status, "1 of 2 inequality")
+        @test contains(status, "0 of 1 equality")
         @test is_feasible(M, coh, [-2.0, 3.0, 0.5]; error = :info)
         @test_throws ErrorException is_feasible(M, coh, p; error = :error)
         @test_logs (:info,) !is_feasible(M, coh, p; error = :info)
@@ -901,5 +917,37 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test get_count(cccofa, :EqualityConstraints) == 1
         @test get_count(cccofa, :InequalityConstraints) == 1
         @test get_constraints(M, nccofa, p) == c # fallback
+    end
+    @testset "Cached constraint gradients" begin
+        A = ArrayPowerRepresentation()
+        # the range reaches the wrapped objective through the cache
+        ccofaA = ManifoldCachedObjective(M, cofaA, [:Cost])
+        @test get_grad_inequality_constraint(M, ccofaA, p, :, A) ==
+            get_grad_inequality_constraint(M, cofaA, p, :, A)
+        @test get_grad_inequality_constraint(M, ccofaA, p, 1:2, A) ==
+            get_grad_inequality_constraint(M, cofaA, p, 1:2, A)
+        # a missing constraint kind gives the same empty result as without a cache
+        cofI = ConstrainedManifoldObjective(
+            f, grad_f, g, grad_g, missing, missing; inequality_constraints = 2
+        )
+        ccofI = ManifoldCachedObjective(
+            M, cofI, [:GradEqualityConstraints, :GradInequalityConstraints]
+        )
+        @test get_grad_equality_constraint(M, ccofI, p, :) ==
+            get_grad_equality_constraint(M, cofI, p, :)
+        # a range or a mask returns copies, so mutating them leaves the cache alone
+        ccofa = ManifoldCachedObjective(
+            M, cofa, [:GradEqualityConstraints, :GradInequalityConstraints]
+        )
+        Xi = get_grad_inequality_constraint(M, ccofa, p, :)
+        Zr = get_grad_inequality_constraint(M, ccofa, p, 1:2)
+        Zr[1] .= 99.0
+        @test get_grad_inequality_constraint(M, ccofa, p, :) == Xi
+        # a plain Vector{Bool} mask selects the same constraints as a BitVector
+        @test get_grad_inequality_constraint(M, cofa, p, [true, false]) ==
+            get_grad_inequality_constraint(M, cofa, p, BitVector([true, false]))
+        Zm = get_grad_inequality_constraint(M, ccofa, p, BitVector([true, false]))
+        Zm[1] .= -7.0
+        @test get_grad_inequality_constraint(M, ccofa, p, :) == Xi
     end
 end

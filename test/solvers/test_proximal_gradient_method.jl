@@ -87,6 +87,9 @@ using Manopt, Manifolds, Test, ManifoldDiff
         @test st(mp, pgms, 1) == 1.0
         pr = prox_h(M, 1.0, p0)
         @test get_proximal_map(M, ob, 1.0, p0) == pr
+        # keywords of different number types are promoted instead of erroring
+        si = Manopt.ProximalGradientMethodBacktrackingStepsize(M; initial_stepsize = 1)
+        @test si.initial_stepsize isa Float64
         @test_throws DomainError Manopt.ProximalGradientMethodBacktrackingStepsize(
             M; strategy = :neither
         )

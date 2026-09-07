@@ -281,11 +281,13 @@ function particle_swarm(
     return maybe_unwrap_variable(first(swarm), rs)
 end
 function particle_swarm(
-        M::AbstractManifold, mco::O, swarm::AbstractVector; kwargs...
+        M::AbstractManifold, mco::O, swarm::AbstractVector;
+        velocity::AbstractVector = [rand(M; vector_at = y) for y in swarm], kwargs...
     ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(particle_swarm; kwargs...)
     new_swarm = [copy(M, xi) for xi in swarm]
-    return particle_swarm!(M, mco, new_swarm; kwargs...)
+    new_velocity = [copy(M, xi, Xi) for (xi, Xi) in zip(swarm, velocity)]
+    return particle_swarm!(M, mco, new_swarm; velocity = new_velocity, kwargs...)
 end
 calls_with_kwargs(::typeof(particle_swarm)) = (particle_swarm!,)
 

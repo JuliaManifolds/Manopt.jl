@@ -294,7 +294,7 @@ mutable struct InteriorPointNewtonState{
                 evaluation = InplaceEvaluation(),
             ),
             vector_space = Rn,
-            _step_M = M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
+            _step_M = ProductManifold(M, vector_space(length(μ)), vector_space(length(λ)), vector_space(length(s))),
             step_problem::StepPr = DefaultManoptProblem(_step_M, step_objective),
             _step_p = rand(_step_M),
             step_state::StepSt = StepsizeState(; p = _step_p, X = zero_vector(_step_M, _step_p)),
@@ -638,7 +638,7 @@ function interior_point_Newton(
     return interior_point_Newton(M, cmo, p; evaluation = evaluation, kwargs...)
 end
 function interior_point_Newton(
-        M::AbstractManifold, cmo::O, p; kwargs...
+        M::AbstractManifold, cmo::O, p = rand(M); kwargs...
     ) where {O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(interior_point_Newton; kwargs...)
     q = copy(M, p)
@@ -674,7 +674,7 @@ function interior_point_Newton!(
         callbacks = Dict{Symbol, Function}(),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         objective_type::Symbol = :Riemannian,
-        _ecmo = decorate_objective!(M, cmo; objective_type = objective_type, p = p),
+        _ecmo = decorate_objective!(M, cmo; objective_type = objective_type, _p = p),
         X = get_gradient(M, _ecmo, p),
         μ::AbstractVector = ones(inequality_constraints_length(cmo)), Y::AbstractVector = zero(μ),
         λ::AbstractVector = zeros(equality_constraints_length(cmo)), Z::AbstractVector = zero(λ),
@@ -791,7 +791,7 @@ function _ipn_solve_sub!(amp::AbstractManoptProblem, ips::InteriorPointNewtonSta
     # the condensed system lives on `M × ℝ^n`; both factors are components of the step manifold
     # `M × ℝ^m × ℝ^n × ℝ^m`, so no assumption on `vector_space` is needed here
     N_step = get_manifold(ips.step_problem)
-    N = N_step[1] × N_step[3]
+    N = ProductManifold(N_step[1], N_step[3])
     q = rand(N)
     copyto!(N[1], q[N, 1], ips.p)
     copyto!(N[2], q[N, 2], ips.λ)

@@ -237,6 +237,21 @@ end
         # (1) vector transport when providing a last stepsize - we did not actually move - still max
         @test bb(dmp, gds, 1) == bb.max_stepsize
         @test get_last_stepsize(bb) == bb.max_stepsize
+        # on a curved manifold the first call must not compute with the roundoff of a
+        # transport and an inverse retraction of a point to itself
+        Ms = Sphere(2)
+        fs(N, q) = q[1]^2 + 2 * q[2]^2 + 5 * q[3]^2
+        grad_fs(N, q) = project(N, q, [2 * q[1], 4 * q[2], 10 * q[3]])
+        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fs, grad_fs))
+        for q in [
+                [-0.4351081605832091, 0.7182816676513397, 0.5429109821231346],
+                [0.36059885545348436, 0.6162424109231599, 0.7001526665129887],
+            ]
+            bbs = Manopt.BarzilaiBorweinStepsize(Ms)
+            gdss = GradientDescentState(Ms; p = q, stepsize = bbs)
+            @test bbs(dmps, gdss, 1) == bbs.max_stepsize
+            @test get_last_stepsize(bbs) == bbs.max_stepsize
+        end
     end
     @testset "Polyak Stepsize" begin
         M = Euclidean(2)

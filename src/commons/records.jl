@@ -595,6 +595,7 @@ function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})
             push!(group, RecordActionFactory(s, e))
         end
     end
+    (length(group) == 0) && return RecordGroup()
     (length(group) > 1) && (record = RecordGroup(group))
     (length(group) == 1) &&
         (record = first(group) isa RecordAction ? first(group) : first(group).first)

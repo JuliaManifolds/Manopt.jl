@@ -89,6 +89,16 @@ end
             stopping_criterion = StopAfterIteration(7),
         )
         @test contains(Manopt.status_summary(rc; context = :default), "After 7 iterations")
+        # the step size only evaluates the component gradient of the current block
+        c1 = Ref(0)
+        c2 = Ref(0)
+        cgrad_f1(N, p) = (c1[] += 1; grad_f1(N, p))
+        cgrad_f2(N, p) = (c2[] += 1; grad_f2(N, p))
+        alternating_gradient_descent(
+            N, f, [cgrad_f1, cgrad_f2], copy(N, q);
+            order_type = :Linear, stopping_criterion = StopAfterIteration(1),
+        )
+        @test (c1[], c2[]) == (2, 1)
         @test_throws DomainError AlternatingGradientDescentState(N; order_type = :WrongSymbol)
         # r has the same message as the internal stepsize
         @test Manopt.get_message(r) == Manopt.get_message(r.stepsize)

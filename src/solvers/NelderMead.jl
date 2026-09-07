@@ -377,8 +377,9 @@ mutable struct StopWhenPopulationConcentrated{F <: Real} <: StoppingCriterion
     value_f::F
     value_p::F
     at_iteration::Int
-    function StopWhenPopulationConcentrated(tol_f::F = 1.0e-8, tol_p::F = 1.0e-8) where {F <: Real}
-        return new{F}(tol_f, tol_p, zero(tol_f), zero(tol_p), -1)
+    function StopWhenPopulationConcentrated(tol_f::Real = 1.0e-8, tol_p::Real = 1.0e-8)
+        F = float(promote_type(typeof(tol_f), typeof(tol_p)))
+        return new{F}(convert(F, tol_f), convert(F, tol_p), zero(F), zero(F), -1)
     end
 end
 function (c::StopWhenPopulationConcentrated)(

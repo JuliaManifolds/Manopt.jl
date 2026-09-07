@@ -149,7 +149,7 @@ function get_differential_function end
 @doc """
      get_differential_function(objective::AbstractManifoldFirstOrderObjective, recursive::Bool=false)
 
-Return the function to evaluate (just) the differential ``Df(p)[X]``.
+Return the function to evaluate (just) the differential ``Df(p)[X]`` as a function `(M, p, X) -> d`.
 For a decorated objective, the `recursive` positional parameter determines whether to
 directly call this function on the next decorator or whether to get the “most inner” objective.
 """
@@ -187,8 +187,11 @@ function get_gradient_function end
 @doc """
     get_gradient_function(amgo::AbstractManifoldFirstOrderObjective, recursive=false; evaluation=AllocatingEvaluation())
 
-Return the function to evaluate (just) the gradient ``$(_tex(:grad)) f(p)``,
-where either the gradient function using the decorator or without the decorator is used.
+Return the function to evaluate (just) the gradient ``$(_tex(:grad)) f(p)``.
+
+For the default `evaluation=`[`AllocatingEvaluation`](@ref)`()` this function has the form
+`(M, p) -> X`; for `evaluation=`[`InplaceEvaluation`](@ref)`()` it has the form
+`(M, X, p) -> X` working in-place of `X`.
 
 By default `recursive` is set to `false`, since usually to just pass the gradient function
 somewhere, one still wants for example the cached one or the one that still counts calls.

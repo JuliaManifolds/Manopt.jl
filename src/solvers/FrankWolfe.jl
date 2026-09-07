@@ -267,7 +267,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(
 $(_kwargs(:sub_kwargs))
 
 * `sub_objective=`[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad)`:
-  the objective for the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_problem"))
+  the objective for the Frank-Wolfe sub problem, decorated with `sub_kwargs` only. $(_note(:KeywordUsedIn, "sub_problem"))
 
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
 $(_kwargs(:sub_state; default = "`[`GradientDescentState`](@ref)`(M; p=copy(M, p))"))
@@ -278,7 +278,7 @@ $(_kwargs(:X; add_properties = [:as_Gradient]))
 
 $(_note(:OtherKeywords))
 
-If you provide a [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
+If you provide a [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword only determines how a closed form solution passed as `sub_problem` is called.
 The decorations are still applied to the objective.
 
 # Output
@@ -339,7 +339,7 @@ function Frank_Wolfe_method!(
         sub_objective = ManifoldGradientObjective(sub_cost, sub_grad),
         sub_problem = DefaultManoptProblem(
             M,
-            decorate_objective!(M, sub_objective; objective_type = objective_type, sub_kwargs...),
+            decorate_objective!(M, sub_objective; sub_kwargs...),
         ),
         sub_stopping_criterion = StopAfterIteration(300) | StopWhenStepsizeLess(1.0e-8),
         sub_state::Union{AbstractManoptSolverState, AbstractEvaluationType} = if sub_problem isa
