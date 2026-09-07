@@ -55,7 +55,7 @@ b(p,λ) = $(
 
     CondensedKKTVectorField(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorField{O <: ConstrainedManifoldObjective, T, R} <: AbstractConstrainedSlackFunction{T, R}
+mutable struct CondensedKKTVectorField{O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}, T, R} <: AbstractConstrainedSlackFunction{T, R}
     cmo::O
     μ::T
     s::T
@@ -160,7 +160,7 @@ $(
 
     CondensedKKTVectorFieldJacobian(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorFieldJacobian{O <: ConstrainedManifoldObjective, T, R} <: AbstractConstrainedSlackFunction{T, R}
+mutable struct CondensedKKTVectorFieldJacobian{O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}, T, R} <: AbstractConstrainedSlackFunction{T, R}
     cmo::O
     μ::T
     s::T
@@ -430,7 +430,7 @@ and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^
 Then, you can call this vector field as `F(N, q)` or as the in-place variant `F(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` for the result.
 """
-struct KKTVectorField{O <: ConstrainedManifoldObjective}
+struct KKTVectorField{O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
     cmo::O
 end
 function (KKTvf::KKTVectorField)(N, q)
@@ -499,7 +499,7 @@ and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^
 Then, you can call this Jacobian as `JF(N, q, Y)` or as the in-place variant `JF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are tangent vectors at `q`.
 """
-mutable struct KKTVectorFieldJacobian{O <: ConstrainedManifoldObjective}
+mutable struct KKTVectorFieldJacobian{O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
     cmo::O
 end
 function (KKTvfJ::KKTVectorFieldJacobian)(N, q, Y)
@@ -583,7 +583,7 @@ and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^
 Then, you can call this adjoint Jacobian as `AdJF(N, q, Y)` or as the in-place variant `AdJF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are tangent vectors at `q`.
 """
-mutable struct KKTVectorFieldAdjointJacobian{O <: ConstrainedManifoldObjective}
+mutable struct KKTVectorFieldAdjointJacobian{O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
     cmo::O
 end
 function (KKTvfJa::KKTVectorFieldAdjointJacobian)(N, q, Y)
@@ -648,7 +648,7 @@ Define `f = KKTVectorFieldNormSq(cmo)` for some [`ConstrainedManifoldObjective`]
 and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `f(N, q)`, where `q` is a point on `N`.
 """
-mutable struct KKTVectorFieldNormSq{O <: ConstrainedManifoldObjective}
+mutable struct KKTVectorFieldNormSq{O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
     cmo::O
 end
 function (KKTvc::KKTVectorFieldNormSq)(N, q)
@@ -715,7 +715,7 @@ and let `N` be the product manifold of ``$(_math(:Manifold))×ℝ^m×ℝ^n×ℝ^
 Then, you can call this gradient as `grad_f(N, q)` or as the in-place variant `grad_f(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` for the resulting gradient.
 """
-mutable struct KKTVectorFieldNormSqGradient{O <: ConstrainedManifoldObjective}
+mutable struct KKTVectorFieldNormSqGradient{O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
     cmo::O
 end
 function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, q)

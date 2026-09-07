@@ -41,7 +41,7 @@ function interior_point_initial_guess(
     Y = get_gradient(N, get_objective(mp), ips.p)
     grad_norm = norm(N, ips.p, Y)
     max_step = max_stepsize(N, ips.p)
-    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
+    return ifelse(isfinite(max_step), min(one(R), l, max_step / grad_norm), min(one(R), l))
 end
 
 @doc """
@@ -280,7 +280,7 @@ mutable struct InteriorPointNewtonState{
         return ips
     end
     function InteriorPointNewtonState(
-            M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem::Pr, sub_state::St;
+            M::AbstractManifold, cmo::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}, sub_problem::Pr, sub_state::St;
             callbacks::C = Dict{Symbol, Function}(),
             p = rand(M), X = zero_vector(M, p),
             μ = ones(length(get_inequality_constraint(M, cmo, p, :))),
@@ -551,10 +551,11 @@ The keyword arguments related to the constraints (`g`, `grad_g`, `Hess_g`, `h`, 
 pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `centrality_condition=missing`: an additional condition when to accept a step size.
+* `centrality_condition=`[`InteriorPointCentralityCondition`](@ref)`(cmo, γ)`: an additional condition when to accept a step size.
   This can be used to ensure that the resulting iterate is still an interior point if you provide a check `(N,q) -> true/false`,
   where `N` is the manifold of the `step_problem`.
 * `equality_constraints=nothing`: the number ``n`` of equality constraints.
+* `γ=0.9`: the constant of the default `centrality_condition`.
 $(_kwargs(:evaluation))
 * `g=missing`: the inequality constraints
 * `grad_g=missing`: the gradient of the inequality constraints
@@ -601,9 +602,9 @@ All other keyword arguments are passed to [`decorate_state!`](@ref) for state de
 
 !!! note
 
-    The `centrality_condition=missing` disables to check centrality during the line search,
-    but you can pass [`InteriorPointCentralityCondition`](@ref)`(cmo, γ)`, where `γ` is a constant,
-    to activate this check.
+    The `centrality_condition` is `missing` for a problem without inequality constraints, which
+    disables the check. The keyword `γ` provides its initial value. Pass `missing` to disable the
+    check or a `(N,q) -> true/false` to replace it.
 
 # Output
 
@@ -672,18 +673,25 @@ function interior_point_Newton!(
         M::AbstractManifold, cmo::O, p;
         callbacks = Dict{Symbol, Function}(),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        X = get_gradient(M, cmo, p),
+        objective_type::Symbol = :Riemannian,
+        _ecmo = decorate_objective!(M, cmo; objective_type = objective_type, p = p),
+        X = get_gradient(M, _ecmo, p),
         μ::AbstractVector = ones(inequality_constraints_length(cmo)), Y::AbstractVector = zero(μ),
         λ::AbstractVector = zeros(equality_constraints_length(cmo)), Z::AbstractVector = zero(λ),
         s::AbstractVector = copy(μ), W::AbstractVector = zero(s),
         ρ::Real = μ's / length(μ),
-        σ::Real = calculate_σ(M, cmo, p, μ, λ, s),
+        σ::Real = calculate_σ(M, _ecmo, p, μ, λ, s),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         sub_kwargs = (;),
         vector_space = Rn,
-        centrality_condition = missing,
+        γ::Real = 0.9,
+        centrality_condition = if length(μ) > 0
+            InteriorPointCentralityCondition(_ecmo, γ)
+        else
+            missing
+        end,
         step_objective = ManifoldGradientObjective(
-            KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation = evaluation, p = p
+            KKTVectorFieldNormSq(_ecmo), KKTVectorFieldNormSqGradient(_ecmo); evaluation = evaluation, p = p
         ),
         _step_M::AbstractManifold = ProductManifold(
             M, vector_space(length(μ)), vector_space(length(λ)), vector_space(length(s)),
@@ -694,7 +702,7 @@ function interior_point_Newton!(
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = ArmijoLinesearch(
             _step_M;
             retraction_method = default_retraction_method(_step_M),
-            initial_guess = interior_point_initial_guess,
+            initial_guess = interior_point_initial_guess, stop_increasing_at_step = 0,
             additional_decrease_condition = if ismissing(centrality_condition)
                 (M, p) -> true
             else
@@ -709,8 +717,8 @@ function interior_point_Newton!(
         sub_objective = decorate_objective!(
             TangentSpace(_sub_M, _sub_p),
             SymmetricLinearSystemObjective(
-                CondensedKKTVectorFieldJacobian(cmo, μ, s, σ * ρ),
-                CondensedKKTVectorField(cmo, μ, s, σ * ρ),
+                CondensedKKTVectorFieldJacobian(_ecmo, μ, s, σ * ρ),
+                CondensedKKTVectorField(_ecmo, μ, s, σ * ρ),
             ),
             sub_kwargs...,
         ),
@@ -735,10 +743,10 @@ function interior_point_Newton!(
     }
     !is_feasible(M, cmo, p; error = is_feasible_error)
     keywords_accepted(interior_point_Newton!; kwargs...)
-    dcmo = decorate_objective!(M, cmo; kwargs...)
+    dcmo = decorate_objective!(M, _ecmo; kwargs...)
     dmp = DefaultManoptProblem(M, dcmo)
     ips = InteriorPointNewtonState(
-        M, cmo, sub_problem, sub_state;
+        M, dcmo, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, InteriorPointNewtonState),
         p = p, X = X, Y = Y, Z = Z, W = W, μ = μ, λ = λ, s = s, ρ = ρ, σ = σ,
         stopping_criterion = stopping_criterion,
@@ -843,7 +851,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     end
     set_parameter!(ips.stepsize, Val(:DecreaseCondition), Val(:τ), N, q)
     # determine stepsize
-    α = ips.stepsize(ips.step_problem, ips.step_state, k; gradient = X)
+    α = ips.stepsize(ips.step_problem, ips.step_state, k, X)
     callback(:Stepsize, amp, ips, k)
     # Update Parameters and slack
     retract!(M, ips.p, ips.p, α * ips.X, ips.retraction_method)
