@@ -87,6 +87,7 @@ using ManifoldDiff: prox_distance, prox_distance!
             "# Solver state for `Manopt.jl`s Chambolle-Pock Algorithm"
         )
         @test get_solver_result(o1a) == o1
+        @test startswith(repr(Manopt.get_state(o1a)), "ChambollePockState(; ")
         o2a = ChambollePock(
             callargs_linearized...;
             linearized_forward_operator = DΛ,

@@ -170,6 +170,7 @@ flat_example(::AbstractManifold, p) = 0.0
                 return_state = true,
             )
         )
+        @test startswith(repr(st), "CMAESState(M, ")
         sc7 = only(get_active_stopping_criteria(st.stop))
         @test sc7.iterations_since_change > 0
         sc7(DefaultManoptProblem(M, ManifoldCostObjective(flat_example)), st, 0)

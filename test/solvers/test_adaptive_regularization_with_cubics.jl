@@ -158,6 +158,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         st1 = StopWhenFirstOrderProgress(0.5)
         @test startswith(repr(st1), "StopWhenFirstOrderProgress(0.5)")
         @test startswith(Manopt.status_summary(st1; context = :short), "StopWhenFirstOrderProgress")
+        @test startswith(Manopt.status_summary(st1), "A stopping criterion to stop when the Lanczos model")
         @test Manopt.indicates_convergence(st1)
         @test get_reason(st1) == ""
         # fake a trigger

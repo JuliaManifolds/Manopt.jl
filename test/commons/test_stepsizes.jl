@@ -257,6 +257,18 @@ end
             @test bbs(dmps, gdss, 1) == bbs.max_stepsize
             @test get_last_stepsize(bbs) == bbs.max_stepsize
         end
+        # with a constant gradient ⟨s,y⟩ vanishes, so the `:inverse` and `:alternating`
+        # strategies fall back to the maximal step size
+        fc(N, q) = sum(q)
+        grad_fc(N, q) = [1.0, 0.0]
+        dmpc = DefaultManoptProblem(M, ManifoldGradientObjective(fc, grad_fc))
+        for strategy in [:inverse, :alternating]
+            bbc = Manopt.BarzilaiBorweinStepsize(M; strategy = strategy)
+            gdsc = GradientDescentState(M; p = [2.0, 2.0], stepsize = bbc)
+            bbc(dmpc, gdsc, 1) # first call, fills the storage
+            gdsc.p = [1.0, 1.0] # move, so that s ≠ 0 while y = 0
+            @test bbc(dmpc, gdsc, 2) == bbc.max_stepsize
+        end
         # a reused step size forgets the previous run, so the next call is a first call again
         bb2 = Manopt.BarzilaiBorweinStepsize(M)
         gds2 = GradientDescentState(M; p = p, stepsize = bb2)

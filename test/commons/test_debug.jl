@@ -96,6 +96,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
             io = io,
             inverse_retraction_method = PolarInverseRetraction(),
         )
+        # without a storage a manifold uses the point storage
+        @test DebugChange(Sphere(2)).storage isa StoreStateAction
         a2mani = DebugChange(
             TestPolarManifold();
             storage = StoreStateAction([:Iterate]),

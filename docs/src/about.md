@@ -36,8 +36,10 @@ to clone/fork the repository or open an issue.
 
 The following packages are using `Manopt.jl`:
 
+* [CalibrateEmulateSample.jl](https://github.com/CliMA/CalibrateEmulateSample.jl) uses `Manopt.jl` to determine likelihood-informed subspaces on the Grassmann manifold for dimension reduction in Bayesian inverse problems.
 * The [ExponentialFamilyProjection.jl](https://github.com/ReactiveBayes/ExponentialFamilyProjection.jl) package uses `Manopt.jl` to project arbitrary functions onto the closest exponential family distributions. The package also integrates with [`RxInfer.jl`](https://github.com/ReactiveBayes/RxInfer.jl) to enable Bayesian inference in a larger set of probabilistic models.
 * [SummationByPartsOperatorsExtra.jl](https://github.com/JoshuaLampert/SummationByPartsOperatorsExtra.jl) uses `Manopt.jl` to construct function space summation by parts operators for the numerical solution of partial differential equations.
+* [TensorKitchen.jl](https://github.com/TensorKitchen/TensorKitchen.jl) uses `Manopt.jl` for the Riemannian optimization part of its tensor decomposition algorithms, for example the canonical polyadic, Tucker and block term decompositions.
 
 The following papers are using `Manopt.jl`:
 

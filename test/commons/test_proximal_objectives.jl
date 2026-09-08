@@ -75,5 +75,14 @@ using ManifoldDiff: prox_distance
         get_proximal_map!(M, q2, ccppo2, 0.1, p) # Cached
         @test q2 == q
         @test get_count(ccppo2, :ProximalMap) == 1
+        # the in-place form also fills a cold cache
+        cppo3 = ManifoldCountObjective(M, ppo2, Dict([:ProximalMap => 0]))
+        ccppo3 = objective_cache_factory(M, cppo3, (:LRU, [:ProximalMap]))
+        q3 = copy(M, p)
+        get_proximal_map!(M, q3, ccppo3, 0.1, p)
+        @test q3 == q
+        get_proximal_map!(M, q3, ccppo3, 0.1, p) # Cached
+        @test q3 == q
+        @test get_count(ccppo3, :ProximalMap) == 1
     end
 end

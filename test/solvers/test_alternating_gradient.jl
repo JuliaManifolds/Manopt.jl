@@ -99,6 +99,11 @@ end
             order_type = :Linear, stopping_criterion = StopAfterIteration(1),
         )
         @test (c1[], c2[]) == (2, 1)
+        # the Armijo override evaluates the block gradient itself when none is handed in
+        amp_a = DefaultManoptProblem(N, ManifoldAlternatingGradientObjective(f, [grad_f1, grad_f2]))
+        agds_a = AlternatingGradientDescentState(N; p = copy(N, p), order_type = :Linear, order = [1, 2])
+        Manopt.initialize_solver!(amp_a, agds_a)
+        @test ArmijoLinesearch()(N)(amp_a, agds_a, 1) > 0
         @test_throws DomainError AlternatingGradientDescentState(N; order_type = :WrongSymbol)
         @test Manopt.get_message(r) isa String
         @test isapprox(N, q3, q)
