@@ -35,7 +35,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `p_σ`                         coordinates of a vector in ``$(_math(:TangentSpace; p = "p_m"))``
 * `p_c`                         coordinates of a vector in ``$(_math(:TangentSpace; p = "p_m"))``
 * `deviations`                  standard deviations of coordinate RNG
-* `buffer`                      buffer for random number generation and `wmean_y_c` of length `n_coords`
+* `buffer`                      buffer of length `n_coords` for random number generation and for the weighted mean ``⟨y⟩_w`` of the selected steps
 * `e_mv_norm`                   expected value of norm of the `n_coords`-variable standard normal distribution
 * `recombination_weights`       recombination weights used for updating covariance matrix
 $(_fields(:retraction_method))
@@ -202,6 +202,12 @@ function CMAESState(
 end
 
 get_callbacks(state::CMAESState) = state.callbacks
+function Base.show(io::IO, s::CMAESState)
+    print(io, "CMAESState(M, ", s.p_m, ", ", s.μ, ", ", s.λ, ", ", s.μ_eff, ", ", s.c_1, ", ", s.c_c, ", ", s.c_μ, ", ", s.c_σ, ", ", s.c_m, ", ", s.d_σ, ", ")
+    print(io, status_summary(s.stop; context = :short), ", ", s.covariance_matrix, ", ", s.σ, ", ", s.recombination_weights, "; ")
+    print(io, "callbacks = ", s.callbacks, ", retraction_method = ", s.retraction_method, ", vector_transport_method = ", s.vector_transport_method)
+    return print(io, ", basis = ", s.basis, ", rng = ", s.rng, ")")
+end
 
 function status_summary(s::CMAESState; context::Symbol = :default)
     (context === :short) && return repr(s)
@@ -209,10 +215,11 @@ function status_summary(s::CMAESState; context::Symbol = :default)
     (context === :inline) && return "A solver state for the covariance matrix adaptation evolutionary strategy solver$(_iteration_suffix(s))"
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(s.stop) ? "Yes" : "No"
+    as = _callbacks_summary(s)
     s = """
     # Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy
     $Iter
-    ## Parameters
+    ## Parameters$(as)
     * μ:                         $(s.μ)
     * λ:                         $(s.λ)
     * μ_eff:                     $(s.μ_eff)
@@ -357,7 +364,9 @@ end
 
 _doc_cma_es = """
     cma_es(M, f, p=rand(M); σ::Real=1.0, kwargs...)
+    cma_es(M, mco::AbstractManifoldCostObjective, p=rand(M); σ::Real=1.0, kwargs...)
     cma_es!(M, f, p_m; σ::Real=1.0, kwargs...)
+    cma_es!(M, mco::AbstractManifoldCostObjective, p_m; σ::Real=1.0, kwargs...)
 
 Perform covariance matrix adaptation evolutionary strategy search for global gradient-free
 randomized optimization. It is suitable for complicated non-convex functions. It can be
@@ -381,7 +390,7 @@ $(_args([:M, :f, :p]))
   absolute difference between subsequent point but actually computed from distribution
   parameters.
 $(_kwargs(:stopping_criterion; default = "default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)"))
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs([:retraction_method, :vector_transport_method]))
 * `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: a basis used to represent the covariance matrix in coordinates
 * `rng=default_rng()`: random number generator for generating new points on `M`
@@ -392,14 +401,16 @@ $(_note(:OutputSection))
 """
 
 @doc "$(_doc_cma_es)"
-function cma_es(M::AbstractManifold, f; kwargs...)
-    keywords_accepted(cma_es; kwargs...)
-    mco = ManifoldCostObjective(f)
-    return cma_es!(M, mco, rand(M); kwargs...)
+function cma_es(M::AbstractManifold, f, p = rand(M); kwargs...)
+    p_ = maybe_wrap_variable(p)
+    mco = ManifoldCostObjective(f; p = p)
+    rs = cma_es(M, mco, p_; kwargs...)
+    return maybe_unwrap_variable(p, rs)
 end
-function cma_es(M::AbstractManifold, f, p; kwargs...)
+function cma_es(
+        M::AbstractManifold, mco::O, p = rand(M); kwargs...
+    ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(cma_es; kwargs...)
-    mco = ManifoldCostObjective(f)
     return cma_es!(M, mco, copy(M, p); kwargs...)
 end
 calls_with_kwargs(::typeof(cma_es)) = (cma_es!,)
@@ -609,7 +620,7 @@ function StopWhenBestCostInGenerationConstant{TParam}(iteration_range::Int) wher
     return StopWhenBestCostInGenerationConstant{T}(iteration_range, T(Inf), 0, -1)
 end
 
-# It just indicates stagnation, not that convergence to a minimizer
+# Stagnation of the evolution is treated as convergence
 indicates_convergence(c::StopWhenBestCostInGenerationConstant) = true
 function is_active_stopping_criterion(c::StopWhenBestCostInGenerationConstant)
     return c.iterations_since_change >= c.iteration_range
@@ -686,7 +697,7 @@ function StopWhenEvolutionStagnates(
     )
 end
 
-# It just indicates stagnation, not convergence to a minimizer
+# Stagnation of the evolution is treated as convergence
 indicates_convergence(c::StopWhenEvolutionStagnates) = true
 function is_active_stopping_criterion(c::StopWhenEvolutionStagnates)
     N = length(c.best_history)
@@ -778,7 +789,7 @@ function StopWhenPopulationStronglyConcentrated(tol::Real)
     return StopWhenPopulationStronglyConcentrated{typeof(tol)}(tol, -1)
 end
 
-# It just indicates stagnation, not convergence to a minimizer
+# Stagnation of the evolution is treated as convergence
 indicates_convergence(c::StopWhenPopulationStronglyConcentrated) = true
 function is_active_stopping_criterion(c::StopWhenPopulationStronglyConcentrated)
     return c.at_iteration >= 0
@@ -888,7 +899,7 @@ function StopWhenPopulationCostConcentrated(tol::Real, max_size::Int)
     )
 end
 
-# It just indicates stagnation, not convergence to a minimizer
+# Stagnation of the evolution is treated as convergence
 indicates_convergence(c::StopWhenPopulationCostConcentrated) = true
 function is_active_stopping_criterion(c::StopWhenPopulationCostConcentrated)
     return c.at_iteration >= 0
@@ -915,16 +926,16 @@ function status_summary(c::StopWhenPopulationCostConcentrated; context::Symbol =
     context === :short && return repr(c)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
-    return "range of best objective values in the last $(length(c.best_value_history)) generations and all objective values in the current one < $(c.tol) :$(_MANOPT_INDENT)$s"
+    return "range of best objective values in the last $(capacity(c.best_value_history)) generations and all objective values in the current one < $(c.tol) :$(_MANOPT_INDENT)$s"
 end
 function get_reason(c::StopWhenPopulationCostConcentrated)
     if c.at_iteration >= 0
-        return "Range of best objective function values in the last $(length(c.best_value_history)) generations and all values in the current generation is below $(c.tol)\n"
+        return "Range of best objective function values in the last $(capacity(c.best_value_history)) generations and all values in the current generation is below $(c.tol)\n"
     end
     return ""
 end
 function show(io::IO, c::StopWhenPopulationCostConcentrated)
     return print(
-        io, "StopWhenPopulationCostConcentrated($(c.tol))"
+        io, "StopWhenPopulationCostConcentrated($(c.tol), $(capacity(c.best_value_history)))"
     )
 end

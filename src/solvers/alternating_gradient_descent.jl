@@ -63,11 +63,12 @@ $(_fields(:X; add_properties = [:as_Gradient]))
 # Keyword arguments
 * `inner_iterations=5`
 $(_kwargs(:p))
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `order_type::Symbol=:Linear`
 * `order::Vector{<:Int}=Int[]`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
-$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, AlternatingGradientDescentState)"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, AlternatingGradientDescentState; retraction_method=retraction_method)"))
 $(_kwargs(:X))
 
 Generate the state for point `p` and where `inner_iterations`, `order_type`, `order`,
@@ -87,7 +88,7 @@ mutable struct AlternatingGradientDescentState{
     stop::TStop
     stepsize::TStep
     order_type::Symbol
-    order::Vector{<:Int}
+    order::Vector{Int}
     retraction_method::RM
     k::Int # current component
     i::Int # inner iterate
@@ -151,12 +152,12 @@ function status_summary(agds::AlternatingGradientDescentState; context::Symbol =
     # Solver state for `Manopt.jl`s Alternating Gradient Descent Solver
     $Iter
     ## Parameters$(as)
-    * order: :$(agds.order_type)
+    * order type: :$(agds.order_type)
     * retraction method: $(agds.retraction_method)
     * direction: $(status_summary(agds.direction; context = :inline))
 
     ## Stepsize
-    $(agds.stepsize)
+    $(_in_str(status_summary(agds.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
     $(_in_str(status_summary(agds.stop; context = context); indent = 0, headers = 1))

@@ -70,6 +70,7 @@ The [`DouglasRachford`](@ref) solver requires the following functions of a manif
 * A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favorite retraction. If this default is set, a `retraction_method=` does not have to be specified.
 * An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favorite inverse retraction. If this default is set, an `inverse_retraction_method=` does not have to be specified.
 * A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points.
+* For the parallel variant, that is for more than two proximal maps, a [`mean`](@extref Manifolds :jl:method:`Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}`)`(M, pts)` has to be available, for example by loading [`Manifolds.jl`](@extref Manifolds :std:doc:`index`) and its [statistics](@extref Manifolds :std:doc:`features/statistics`) tools.
 
 By default, one of the stopping criteria is [`StopWhenChangeLess`](@ref),
 which requires

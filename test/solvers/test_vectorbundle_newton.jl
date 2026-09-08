@@ -83,7 +83,7 @@ using LinearAlgebra: eigvals
         @test Manopt.get_newton_equation(vbp) === NE
         @test startswith(Manopt.status_summary(vbp; context = :inline), "A vector bundle problem defined on $(M)")
         vbp_s = Manopt.status_summary(vbp; context = :default)
-        @test startswith(vbp_s, "A vector bundle problem representing a vector bundle newton equation objective")
+        @test startswith(vbp_s, "A vector bundle problem representing a vector bundle Newton equation objective")
         @test contains(vbp_s, "## Manifold")
         @test startswith(repr(vbp), "VectorBundleManoptProblem(")
     end

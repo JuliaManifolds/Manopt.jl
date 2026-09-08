@@ -55,10 +55,11 @@ optimization algorithm.
 # Fields
 
 The naming of these parameters follows the [Wikipedia article](https://en.wikipedia.org/wiki/Nelder–Mead_method)
-of the Euclidean case. The default is given in brackets, the required value range
-after the description
+of the Euclidean case; the required value range is given after the description.
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
+* `costs`: the cost values of the population points, in the same order
+$(_fields(:stopping_criterion; name = "stop"))
 * `population::`[`NelderMeadSimplex`](@ref): a population (set) of ``d+1`` points ``p_i``, ``i=1,…,d+1``, where ``d``
   is the $(_link(:manifold_dimension; M = "")) of `M`.
 * `α`: the reflection parameter ``α > 0``,
@@ -78,7 +79,7 @@ Construct a Nelder-Mead state with a default population (if not provided) of
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `p=copy(M, population.pts[1])`: initialize the storage for the best point (iterate)
 * `population=`[`NelderMeadSimplex`](@ref)`(M)`

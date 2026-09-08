@@ -97,7 +97,7 @@ $(_fields(:inverse_retraction_method))
 $(_fields(:inverse_retraction_method; name = "inverse_retraction_method_dual", M = "N", p = "n"))
 * `m::P`:               base point on ``$(_math(:Manifold))``
 * `n::Q`:               base point on ``$(_math(:Manifold; M = "N"))``
-* `p::P`:               an initial point on ``p^{(0)} ∈ $(_math(:Manifold))``
+* `p::P`:               an initial point ``p^{(0)} ∈ $(_math(:Manifold))``
 * `pbar::P`:            the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `primal_stepsize::R`: proximal parameter of the primal prox
 * `X::T`:               an initial tangent vector ``X^{(0)} ∈ $(_math(:TangentSpace; M = "N", p = "n"))``
@@ -130,7 +130,7 @@ the forward operator `Λ` of the objective for the algorithm to work
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `n=`$(Manopt._link(:rand; M = "N"))
 * `p=`$(Manopt._link(:rand))
 * `m=`$(Manopt._link(:rand))
@@ -262,7 +262,6 @@ function status_summary(cps::ChambollePockState; context::Symbol = :default)
     (context === :short) && return repr(cps)
     i = get_count(cps, :Iterations)
     (context === :inline) && return "A solver state for Chambolle-Pock algorithm$(_iteration_suffix(cps))"
-    i = get_count(cps, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(cps.stop) ? "Yes" : "No"
     as = _callbacks_summary(cps)
@@ -534,7 +533,7 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
 end
 #
 # Dual step: linearized
-# depending on whether its primal relaxed or dual relaxed, start from start=o.x or start=o.xbar
+# depending on whether its primal relaxed or dual relaxed, start from start=cps.p or start=cps.pbar
 #
 function dual_update!(
         tmp::TwoManifoldProblem, cps::ChambollePockState, start::P, ::Val{:linearized}
@@ -546,7 +545,7 @@ function dual_update!(
     X_update = linearized_forward_operator(
         tmp, cps.m, inverse_retract(M, cps.m, start, cps.inverse_retraction_method), cps.n
     )
-    # (2) if p.Λ is missing, if n = Λ(m) and do not PT, otherwise do
+    # (2) if Λ is missing, assume n = Λ(m) and do not transport, otherwise do
     (!ismissing(get_objective(obj, true).Λ!)) && vector_transport_to!(
         N, X_update, forward_operator(tmp, cps.m), X_update, cps.n, cps.vector_transport_method_dual,
     )
@@ -558,7 +557,7 @@ function dual_update!(
 end
 #
 # Dual step: exact
-# depending on whether its primal relaxed or dual relaxed start from start=o.x or start=o.xbar here
+# depending on whether its primal relaxed or dual relaxed start from start=cps.p or start=cps.pbar here
 #
 function dual_update!(
         tmp::TwoManifoldProblem, cps::ChambollePockState, start::P, ::Val{:exact}
@@ -577,9 +576,9 @@ end
     update_prox_parameters!(pds)
 update the prox parameters as described in Algorithm 2 of [ChambollePock:2011](@cite),
 
-1. ``θ_{n} = $(_tex(:frac, "1", "$(_tex(:sqrt, "1+2γσ_n"))"))``
-2. ``σ_{n+1} = θ_nσ_n``
-3. ``τ_{n+1} = $(_tex(:frac, "τ_n", "θ_n"))``
+1. ``θ_k = $(_tex(:frac, "1", "$(_tex(:sqrt, "1+2γσ_k"))"))``
+2. ``σ_{k+1} = θ_kσ_k``
+3. ``τ_{k+1} = $(_tex(:frac, "τ_k", "θ_k"))``
 """
 function update_prox_parameters!(pds::S) where {S <: AbstractPrimalDualSolverState}
     if pds.acceleration > 0

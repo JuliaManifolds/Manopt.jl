@@ -32,6 +32,7 @@ The [`gradient_sampling`](@ref) solver requires the following functions of a man
 * By default the stopping criterion uses the [`norm`](@extref `LinearAlgebra.norm-Tuple{AbstractManifold, Any, Any}`) as well, to stop when the norm of the gradient is small, but if you implemented [`inner`](@extref `ManifoldsBase.inner-Tuple{AbstractManifold, Any, Any, Any}`)`(M, p, X, Y)`, the norm is provided already.
 * By default the tangent vector storing the gradient is initialized calling [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`.
 * A [`vector_transport_to!`](@extref ManifoldsBase :doc:`vector_transports`)`(M, Y, p, X, q)`; it is recommended to set the [`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`) to a favorite vector transport. If this default is set, a `vector_transport_method=` does not have to be specified.
+* Generating random tangent vectors at `p` using [`rand!`](@extref Base.rand-Tuple{AbstractManifold})`(M, X; vector_at=p, σ=r)` in place of `X` with a standard deviation `σ`, to sample the gradient in a ball around the current iterate; if you do not provide a `sample_size=`, a [`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`) is required as well.
 
 ## Literature
 

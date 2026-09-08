@@ -134,7 +134,7 @@ $(_args(:M))
 # Keyword arguments
 
 * `stepsize=default_stepsize(M, ProximalGradientMethodState)`
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
@@ -662,6 +662,7 @@ $(_args(:p))
 * `acceleration=(pr, st, k) -> (copyto!(get_manifold(pr), st.a, st.p); st)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step - the default is to copy the current point to the acceleration point, i.e. no acceleration is performed
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
+$(_kwargs(:inverse_retraction_method))
 * `cost_nonsmooth = missing`:          the (possibly) nonsmooth part ``h`` of ``f`` as a function `(M, p) -> v`, used together with `subgradient_nonsmooth` to build the default `sub_problem`
 * `prox_nonsmooth = missing`:          a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the (possibly) nonsmooth part ``h`` of ``f``
 * `subgradient_nonsmooth = missing`:   a subgradient `(M, p) -> X` of the (possibly) nonsmooth part ``h`` of ``f``, used together with `cost_nonsmooth` to build the default `sub_problem`
@@ -672,6 +673,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopWhenGradientMappingNormLess`](@
 $(_kwargs(:sub_problem; type = "Union{`[`AbstractManoptProblem`](@ref)`, F, Missing}", default = "missing"))
   Alternatively pass `missing` to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)`()")) If the objective does not provide a proximal map, a [`SubGradientMethodState`](@ref) is used instead. This field is ignored, if the `sub_problem` is `missing`.
+$(_kwargs(:X; add_properties = [:as_Memory]))
 
 $(_note(:OtherKeywords))
 

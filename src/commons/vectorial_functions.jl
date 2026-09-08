@@ -133,7 +133,7 @@ end
 
 
 function status_summary(vgf::VectorGradientFunction; context::Symbol = :default)
-    _is_inline(context) && (return "A vectorial function of length $(length(vgf)) including gradients represented as $(vgf.cost_type) and gradients as $(vgf.jacobian_type)")
+    _is_inline(context) && (return "A vectorial function of length $(length(vgf)) including gradients, represented as $(vgf.cost_type) and its gradients as $(vgf.jacobian_type)")
     return """
     A function defined on a manifold that maps into a vector space including gradients of the component functions.
 
@@ -513,7 +513,7 @@ function get_hessian!(
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
     # In the resulting X the indices are linear,
-    # in jacobian[i] have the functions f are also given n a linear sense
+    # and in `hessians![i]` the functions f are also given in a linear sense
     for (j, f) in zip(1:n, vhf.hessians![i])
         f(M, _write(pM, rep_size, Y, (j,)), p, X)
     end

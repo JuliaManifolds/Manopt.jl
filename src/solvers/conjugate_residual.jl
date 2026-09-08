@@ -16,7 +16,7 @@ A state for the [`conjugate_residual`](@ref) solver.
 $(_fields(:stopping_criterion; name = "stop"))
 * `warm_start`: whether to warm start or not when reusing this state, i.e.
   * `true` (default): means we reuse the values in `X` on initialization and set the remaining terms accordingly. This involves one call to the objective's linear system and right hand side.
-  * `false`: Initialize `X` to the zero vector and hence `d=r=-b(p)`, but we avoid evaluating the linear operator.
+  * `false`: Initialize `X` to the zero vector and hence `d=r=-b(p)`, which saves one evaluation of the linear operator.
 
 # Constructor
 
@@ -32,7 +32,7 @@ Initialize the state with default values.
 * `Ad=copy(TpM, Ar)`
 * `α::R=0.0`
 * `β::R=0.0`
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:X; default = _open_link(:rand; M = "TpM")))
 * `warm_start=true`: whether to reuse the values in `X` for the initialization (`true`) or to start from the zero vector (`false`), see the field description above.
@@ -104,15 +104,14 @@ function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(crs.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv
-    """
+    The algorithm converged: $Conv"""
     return s
 end
 function Base.show(io::IO, crs::ConjugateResidualState)
     print(io, "ConjugateResidualState(;")
-    print(io, " X = ", crs.X, ", d = ", crs.d, ", r = ", crs.r, ", α = ", crs.α, ", β = ", crs.β)
+    print(io, " callbacks = ", crs.callbacks, ", X = ", crs.X, ", d = ", crs.d, ", r = ", crs.r, ", α = ", crs.α, ", β = ", crs.β)
     print(io, ", Ar = ", crs.Ar, ", Ad = ", crs.Ad, ", rAr = ", crs.rAr)
-    print(io, ", stopping_criterion = ", status_summary(crs.stop; context = :short))
+    print(io, ", stopping_criterion = ", status_summary(crs.stop; context = :short), ", warm_start = ", crs.warm_start)
     return print(io, ")")
 end
 
@@ -189,6 +188,7 @@ function get_reason(swrr::StopWhenRelativeResidualLess)
     return ""
 end
 function status_summary(swrr::StopWhenRelativeResidualLess; context::Symbol = :default)
+    (context === :short) && return repr(swrr)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return _is_inline(context) ? "‖r^(k)‖ / c < ε:$(_MANOPT_INDENT)$s" : "A stopping criterion to stop when the relative residual is less than the threshold of $(swrr.ε)\n$(_MANOPT_INDENT)$s"
@@ -328,13 +328,13 @@ function initialize_solver!(
 end
 
 function step_solver!(
-        amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, i
+        amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, k
     )
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
     p = base_point(TpM)
     crs.α = inner(M, p, crs.r, crs.Ar) / inner(M, p, crs.Ad, crs.Ad)
-    callback(:Stepsize, amp, crs, i)
+    callback(:Stepsize, amp, crs, k)
     crs.X .+= crs.α .* crs.d
     crs.rAr = inner(M, p, crs.r, crs.Ar)
     crs.r .-= crs.α .* crs.Ad

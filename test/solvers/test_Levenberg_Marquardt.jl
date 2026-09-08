@@ -129,7 +129,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             M1b, vgf1c, p1;
             sub_state = CoordinatesNormalSystemState(M1b), use_unified_basis = true,
         )
-        @test isapprox(M1, r1c1, r1c2)
+        @test isapprox(M1b, r1c1, r1c2)
         # the default sub state has to work with `use_unified_basis` as well
         r1c3 = LevenbergMarquardt(M1, vgf1c, p1; use_unified_basis = true)
         @test isapprox(M1, r1a1, r1c3; atol = 1.0e-7)

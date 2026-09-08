@@ -38,7 +38,7 @@ end
         @test Manopt.status_summary(d; context = :inline) ==
             "A quasi Newton direction update using $(qnu), stored as a matrix."
         @test Manopt.status_summary(d; context = :short) == repr(d)
-        s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], 1.0, InverseBFGS(), ParallelTransport())\n"
+        s = "QuasiNewtonMatrixDirectionUpdate(M, InverseBFGS(), DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0]; initial_scale = 1.0, vector_transport_method = ParallelTransport())"
         @test repr(d) == s
         @test Manopt.get_message(d) == ""
         c = QuasiNewtonCautiousDirectionUpdate(d)

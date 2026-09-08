@@ -38,7 +38,7 @@ The algorithm performs the steps ``k=0,1,…`` (until a [`StoppingCriterion`](@r
 2. ```math
    p^{(k+1)} = \operatorname{prox}_{\sigma_k F}\biggl(\exp_{p^{(k)}}\Bigl( \mathcal P_{p^{(k)}\gets m}\bigl(-\sigma_k DΛ(m)^*[ξ_n^{(k+1)}]\bigr)^\sharp\Bigr)\biggr)
    ```
-3. Update
+3. If ``\gamma > 0``, update (otherwise keep ``\theta_k = \theta_0``, ``\sigma_{k+1} = \sigma_k``, ``\tau_{k+1} = \tau_k``)
    * ``\theta_k = (1+2\gamma\sigma_k)^{-\frac{1}{2}}``
    * ``\sigma_{k+1} = \sigma_k\theta_k``
    * ``\tau_{k+1} =  \frac{\tau_k}{\theta_k}``

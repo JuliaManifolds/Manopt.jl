@@ -60,8 +60,8 @@ The [`Stepsize`](@ref) ``s_k`` may be determined by a [`Linesearch`](@ref).
 Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldFirstOrderObjective`](@ref) `gradient_objective` directly.
 
-Available update rules are [`SteepestDescentCoefficientRule`](@ref), which yields a [`gradient_descent`](@ref),
-[`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficientRule`](@ref), [`FletcherReevesCoefficient`](@ref),
+Available update rules are [`SteepestDescentCoefficient`](@ref), which yields a [`gradient_descent`](@ref),
+[`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).
 These can all be combined with a [`ConjugateGradientBealeRestartRule`](@ref) rule.
@@ -82,6 +82,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iteration.
 $(_kwargs([:differential, :evaluation]))
+$(_kwargs(:X; name = "initial_gradient", add_properties = [:as_Memory]))
 * `restart_condition::AbstractRestartCondition=`[`RestartOnNonDescent`](@ref)`()`:
   rule when the algorithm should restart, i.e. use the negative gradient instead of the computed direction,
   as a functor where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
@@ -202,6 +203,6 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
         cgs.β = 0.0
     end
     # store the direction actually used, so the next β sees δ_k and not δ_{k-1}
-    update_storage!(cgs.coefficient.storage, amp, cgs)
+    update_storage!(cgs.coefficient, amp, cgs)
     return cgs
 end

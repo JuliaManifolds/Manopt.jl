@@ -4,7 +4,7 @@
 CurrentModule = Manopt
 ```
 
-The Primal-dual Riemannian semismooth Newton Algorithm is a second-order method derived from the [`ChambollePock`](@ref).
+The Primal-dual Riemannian semismooth Newton Algorithm is a second-order method derived from the [`ChambollePock`](@ref) algorithm.
 
 The aim is to solve an optimization problem on a manifold with a cost function of the form
 
@@ -106,7 +106,7 @@ The [`primal_dual_semismooth_Newton`](@ref) solver requires the following functi
 * An [`inverse_retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`) to a favorite inverse retraction. If this default is set, an `inverse_retraction_method=` does not have to be specified.
 * A [`vector_transport_to!`](@extref ManifoldsBase :doc:`vector_transports`)`(M, Y, p, X, q)`; it is recommended to set the [`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`) to a favorite vector transport. If this default is set, a `vector_transport_method=` does not have to be specified.
 * A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points.
-* A [`get_basis`](@extref `ManifoldsBase.get_basis-Tuple{AbstractManifold, Any, ManifoldsBase.AbstractBasis}`) for the [`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`) on ``\mathcal M``
+* A [`get_basis`](@extref `ManifoldsBase.get_basis-Tuple{AbstractManifold, Any, ManifoldsBase.AbstractBasis}`) for the [`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`), together with [`get_coordinates`](@extref `ManifoldsBase.get_coordinates`), [`get_vector`](@extref `ManifoldsBase.get_vector`) and [`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`), on both ``\mathcal M`` and ``\mathcal N``, to represent the Newton system as a matrix
 * [`exp`](@extref `Base.exp-Tuple{AbstractManifold, Any, Any}`) and [`log`](@extref `Base.log-Tuple{AbstractManifold, Any, Any}`) (on ``\mathcal M``)
 * A [`DiagonalizingOrthonormalBasis`](@extref `ManifoldsBase.DiagonalizingOrthonormalBasis`) to compute the differentials of the exponential and logarithmic map
 * By default the tangent vectors are initialized calling [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`.

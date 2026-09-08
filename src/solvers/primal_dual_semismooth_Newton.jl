@@ -82,7 +82,7 @@ Generate a state for the [`primal_dual_semismooth_Newton`](@ref).
 
 ## Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `dual_stepsize=1/sqrt(8)`
 $(Manopt._kwargs([:inverse_retraction_method]))
 * `m=`$(Manopt._link(:rand))
@@ -383,12 +383,12 @@ function primal_dual_semismooth_Newton(
         Λ::Union{Function, Missing} = missing, kwargs...,
     ) where {TF, P, T, Q}
     keywords_accepted(primal_dual_semismooth_Newton; kwargs...)
-    x_res = copy(M, p)
-    ξ_res = copy(N, n, X)
+    q = copy(M, p)
+    Y = copy(N, n, X)
     m_res = copy(M, m)
     n_res = copy(N, n)
     return primal_dual_semismooth_Newton!(
-        M, N, cost, x_res, ξ_res, m_res, n_res,
+        M, N, cost, q, Y, m_res, n_res,
         prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual,
         linearized_forward_operator, adjoint_linearized_operator;
         Λ = Λ, kwargs...,

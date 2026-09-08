@@ -52,13 +52,7 @@ Return the initial step size of the [`Stepsize`](@ref) stored within the solver 
 function get_initial_stepsize(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
     )
-    return _get_initial_stepsize(
-        amp::AbstractManoptProblem,
-        ams::AbstractManoptSolverState,
-        dispatch_state_decorator(ams),
-        vars...;
-        kwargs...,
-    )
+    return _get_initial_stepsize(amp, ams, dispatch_state_decorator(ams), vars...; kwargs...)
 end
 function _get_initial_stepsize(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{true}, vars...;

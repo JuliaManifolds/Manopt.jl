@@ -24,7 +24,7 @@ Thanks to the following contributors to `Manopt.jl`:
 * [Tom-Christian Riemer](https://www.tu-chemnitz.de/mathematik/wire/mitarbeiter.php) implemented the [trust regions](solvers/trust_regions.md) and [quasi Newton](solvers/quasi_Newton.md) solvers as well as the [truncated conjugate gradient descent](solvers/truncated_conjugate_gradient_descent.md) sub solver.
 * [Markus A. Stokkenes](https://www.linkedin.com/in/markus-a-stokkenes-b41bba17b/) contributed most of the implementation of the [Interior Point Newton Method](solvers/interior_point_Newton.md) as well as its default [Conjugate Residual](solvers/conjugate_residual.md) sub solver.
 * [Laura Weigl](https://num.math.uni-bayreuth.de/en/team/laura-weigl/index.php) implemented the [Vector bundle Newton Method](solvers/vectorbundle_newton.md).
-* [Manuel Weiss](https://scoop.iwr.uni-heidelberg.de/author/manuel-weiß/) implemented most of the [conjugate gradient update rules](@ref cg-coeffs).
+* [Manuel Weiss](https://scoop.iwr.uni-heidelberg.de/team/mweiß/) implemented most of the [conjugate gradient update rules](@ref cg-coeffs).
 
 as well as various [contributors](https://github.com/JuliaManifolds/Manopt.jl/graphs/contributors) providing small extensions, finding small bugs and mistakes and fixing them by opening [PR](https://github.com/JuliaManifolds/Manopt.jl/pulls)s. Thanks to all of you.
 

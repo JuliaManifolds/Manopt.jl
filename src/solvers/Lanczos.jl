@@ -9,14 +9,14 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 # Fields
 
 $(_fields(:stopping_criterion; name = "stop"))
-$(_fields(:stopping_criterion, name = "stop_newton"))
+$(_fields(:stopping_criterion; name = "stop_newton"))
   used for the inner Newton iteration
 $(_fields(:callbacks; add_properties = [:as_dict]))
 * `σ`:               the current regularization parameter
-* `X`:               the Iterate
+* `X`:               the iterate
 * `Lanczos_vectors`: the obtained Lanczos vectors
 * `tridig_matrix`:   the tridiagonal coefficient matrix T
-* `coefficients`:    the coefficients ``y_1,...y_k`` that determine the solution
+* `coefficients`:    the coefficients ``y_1,…,y_k`` that determine the solution
 * `Hp`:              a temporary tangent vector containing the evaluation of the Hessian
 * `Hp_residual`:     a temporary tangent vector containing the residual to the Hessian
 * `S`:               the current obtained / approximated solution
@@ -28,7 +28,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 ## Keyword arguments
 
 $(_kwargs(:X; add_properties = [:as_Iterate]))
-* `callbacks`:       a dictionary of callbacks for solver lifecycle hooks
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `maxIterLanczos=200`: shortcut to set the maximal number of iterations in the `stopping_criterion=`
 * `θ=0.5`: set the parameter in the [`StopWhenFirstOrderProgress`](@ref) within the default `stopping_criterion=`.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)"))
@@ -103,6 +103,7 @@ function Base.show(io::IO, ls::LanczosState)
 end
 function status_summary(ls::LanczosState; context::Symbol = :default)
     (context === :short) && return repr(ls)
+    (context === :inline) && return "A solver state for the Lanczos sub solver$(_iteration_suffix(ls))"
     i = get_count(ls, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(ls.stop) ? "Yes" : "No"
@@ -266,8 +267,6 @@ end
 #
 _math_sc_firstorder = raw"""
 ```math
-m(X_k) ≤ m(0)
-\quad\text{ and }\quad
 \lVert \operatorname{grad} m(X_k) \rVert ≤ θ \lVert X_k \rVert^2
 ```
 """
@@ -359,7 +358,7 @@ function status_summary(c::StopWhenFirstOrderProgress; context::Symbol = :defaul
 end
 indicates_convergence(c::StopWhenFirstOrderProgress) = true
 function show(io::IO, c::StopWhenFirstOrderProgress)
-    return print(io, "StopWhenFirstOrderProgress($(repr(c.θ)))\n    $(status_summary(c))")
+    return print(io, "StopWhenFirstOrderProgress($(repr(c.θ)))")
 end
 
 @doc """

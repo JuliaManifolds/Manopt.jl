@@ -55,7 +55,7 @@ $(_args([:M, :sub_problem, :sub_state]))
 * `acceptance_rate=0.1`
 * `augmentation_factor=2.0`
 * `augmentation_threshold=0.75`
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `max_trust_region_radius=sqrt(manifold_dimension(M))`
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `project!=copyto!`
@@ -270,8 +270,10 @@ end
 _doc_TR = """
     trust_regions(M, f, grad_f, Hess_f, p=rand(M); kwargs...)
     trust_regions(M, f, grad_f, p=rand(M); kwargs...)
+    trust_regions(M, mho, p=rand(M); kwargs...)
     trust_regions!(M, f, grad_f, Hess_f, p; kwargs...)
     trust_regions!(M, f, grad_f, p; kwargs...)
+    trust_regions!(M, mho, p; kwargs...)
 
 run the Riemannian trust-regions solver for optimization on manifolds to minimize `f`,
 see [AbsilBakerGallivan:2006, ConnGouldToint:2000](@cite).
@@ -284,6 +286,8 @@ by default the [`truncated_conjugate_gradient_descent`](@ref) is used.
 # Input
 
 $(_args([:M, :f, :grad_f, :Hess_f, :p]))
+
+the cost `f` and its gradient and Hessian might also be provided as a [`ManifoldHessianObjective`](@ref) `mho`
 
 # Keyword arguments
 

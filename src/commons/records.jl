@@ -18,8 +18,13 @@ $(_kwargs(:inverse_retraction_method; p = ""))
         inverse_retraction_method = default_inverse_retraction_method(M),
         storage                   = StoreStateAction(M; store_points=Tuple{:Iterate})
     )
+    RecordChange(p, storage=StoreStateAction([:Iterate]);
+        manifold                  = DefaultManifold(1),
+        inverse_retraction_method = default_inverse_retraction_method(manifold, typeof(p)),
+    )
 
-with the previous fields as keywords. For the `DefaultManifold` only the field storage is used.
+with the previous fields as keywords. The second form stores `p` as the initial iterate to compare
+the first recorded change against. For the `DefaultManifold` only the field storage is used.
 Providing the actual manifold moves the default storage to the efficient point storage.
 """
 mutable struct RecordChange{
@@ -136,9 +141,9 @@ end
 RecordEntry(::T, f::Symbol) where {T} = RecordEntry{T}(f)
 RecordEntry(d::DataType, f::Symbol) = RecordEntry{d}(f)
 function (r::RecordEntry{T})(
-        ::AbstractManoptProblem, s::AbstractManoptSolverState, i
+        ::AbstractManoptProblem, s::AbstractManoptSolverState, k
     ) where {T}
-    return record_or_reset!(r, getfield(s, r.field), i)
+    return record_or_reset!(r, getfield(s, r.field), k)
 end
 function Base.show(io::IO, ra::RecordEntry)
     return print(io, "RecordEntry(:$(ra.field))")
@@ -322,9 +327,9 @@ function RecordIterate()
     )
 end
 function (r::RecordIterate{T})(
-        ::AbstractManoptProblem, s::AbstractManoptSolverState, i
+        ::AbstractManoptProblem, s::AbstractManoptSolverState, k
     ) where {T}
-    return record_or_reset!(r, get_iterate(s), i)
+    return record_or_reset!(r, get_iterate(s), k)
 end
 function Base.show(io::IO, ri::RecordIterate)
     return print(io, "RecordIterate($(eltype(ri.recorded_values)))")
@@ -430,7 +435,7 @@ end
 @doc """
     RecordStoppingReason <: RecordAction
 
-Record reason the solver stopped, see [`get_reason`](@ref).
+Record the reason the solver stopped, see [`get_reason`](@ref).
 """
 mutable struct RecordStoppingReason <: RecordAction
     recorded_values::Vector{String}

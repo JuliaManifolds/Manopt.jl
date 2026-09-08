@@ -117,7 +117,7 @@ end
     @test startswith(repr(s3), "WolfePowellBinaryLinesearchStepsize(;")
     @test get_last_stepsize(s3) == 0.0
     @test startswith(Manopt.status_summary(s3), "A Wolfe Powell bisection line search")
-    # no stepsize yet so `repr` and summary are the same
+
     # regression: with a too-long first trial the search must bisect until Armijo holds
     f3(M, p) = 100 * sum(p .^ 2)
     grad_f3(M, p) = 200 .* p
@@ -207,7 +207,6 @@ end
         @test s.count == 0
     end
     @testset "Absolute stepsizes" begin
-        M = ManifoldsBase.DefaultManifold(2)
         # Build a dummy function and gradient
         f(M, p) = 0
         grad_f(M, p) = [0.0, 0.75, 0.0] # valid, since only north pole used
@@ -1104,5 +1103,31 @@ end
         wpls.sufficient_curvature = 0.2
         wpls(dmp, gs, 2, -0.0001 * grad_f(M, p))
         @test wpls.messages[:stop_increasing].at_iteration > 0
+    end
+    @testset "Nonmonotone linesearch stays inside the injectivity radius" begin
+        M = Sphere(2)
+        f(M, p) = 1 - p[1]
+        grad_f(M, p) = project(M, p, [-1.0, 0.0, 0.0])
+        p = 1 / sqrt(1.25) .* [0.5, 1.0, 0.0]
+        nls = Manopt.NonmonotoneLinesearchStepsize(M; p = p)
+        @test nls.bb_stepsize.max_stepsize ≈ 0.9 * Manopt.max_stepsize(M)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        gds = GradientDescentState(M; p = p)
+        X = grad_f(M, p)
+        gds.X = X
+        α = nls(mp, gds, 1, -X; gradient = X)
+        @test α * norm(M, p, X) < injectivity_radius(M)
+    end
+    @testset "Float32 problems" begin
+        M = Euclidean(2)
+        f(M, p) = sum((p .- 1.0f0) .^ 2)
+        grad_f(M, p) = 2.0f0 .* (p .- 1.0f0)
+        p0 = Float32[0, 0]
+        # the step size of these two is a `Float64` while the cost is a `Float32`
+        for ls in [HagerZhangLinesearch(), CubicBracketingLinesearch()]
+            q = gradient_descent(M, f, grad_f, p0; stepsize = ls, stopping_criterion = StopAfterIteration(3))
+            @test eltype(q) === Float32
+            @test isapprox(M, q, Float32[1, 1]; atol = 1.0f-3)
+        end
     end
 end

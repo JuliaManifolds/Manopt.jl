@@ -24,7 +24,7 @@ Set a certain `element` from the [`AbstractManifoldFunction`](@ref) `amf` to a v
 by `args...`.
 This function by default dispatches on the same function replacing the second argument by `Val(element)`.
 """
-set_parameter!(amo::AbstractManifoldFunction, e::Symbol, args...)
+set_parameter!(amf::AbstractManifoldFunction, e::Symbol, args...)
 
 
 @doc """

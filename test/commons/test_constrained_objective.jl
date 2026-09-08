@@ -98,8 +98,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         evaluation = InplaceEvaluation(), inequality_constraints = 2, equality_constraints = 1,
     )
     rcofa = repr(cofa); rcofm = repr(cofm); rcova = repr(cova); rcovm = repr(covm)
+    @test get_constraints(M, cofa, p) == [get_inequality_constraint(M, cofa, p, :), get_equality_constraint(M, cofa, p, :)]
     for r in [rcofa, rcofm, rcova, rcovm]
-        @test get_constraints(M, cofa, p) == [get_inequality_constraint(M, cofa, p, :), get_equality_constraint(M, cofa, p, :)]
         @test startswith(r, "ConstrainedManifoldObjective(ManifoldFirstOrderObjective(; cost = f")
     end
     # Test cost/grad pass through
@@ -506,7 +506,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
                 gALC = AugmentedLagrangianGrad(P, ρ, μ, λ)
                 @test gALC(M, p) ≈ ag
                 gALC(M, X, p)
-                @test gALC(M, X, p) ≈ ag
+                @test X ≈ ag
                 @test Manopt.set_parameter!(ALC, :ρ, 2 * ρ) == ALC
                 @test Manopt.get_parameter(ALC, :ρ) == 2 * ρ
                 @test Manopt.set_parameter!(gALC, :ρ, 2 * ρ) == gALC
@@ -574,7 +574,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
                 Y = get_grad_equality_constraint!(M, Y, obj, p, i)
                 @test X == Y
             end
-            for j in 1:2 # for every equality constraint
+            for j in 1:2 # for every inequality constraint
                 @test get_inequality_constraint(M, ddo, p, j) ==
                     get_inequality_constraint(M, obj, p, j)
                 X = get_grad_inequality_constraint(M, ddo, p, j)
@@ -608,7 +608,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
                 Y = get_hess_equality_constraint!(M, Y, obj, p, X, i)
                 @test X == Y
             end
-            for j in 1:2 # for every equality constraint
+            for j in 1:2 # for every inequality constraint
                 X = get_hess_inequality_constraint(M, ddo, p, X, j)
                 Y = get_hess_inequality_constraint(M, obj, p, X, j)
                 @test X == Y
@@ -949,5 +949,27 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         Zm = get_grad_inequality_constraint(M, ccofa, p, BitVector([true, false]))
         Zm[1] .= -7.0
         @test get_grad_inequality_constraint(M, ccofa, p, :) == Xi
+    end
+    @testset "The stored range is used by default" begin
+        Mr = Euclidean(2)
+        pr = [0.5, 0.5]
+        gr(M, p) = [p[1] - 1, p[2] - 1]
+        grad_gr(M, p) = [1.0 0.0; 0.0 1.0] # the columns are the two gradients
+        cmo_a = ConstrainedManifoldObjective(
+            (M, p) -> sum(p .^ 2), (M, p) -> 2 .* p; g = gr, grad_g = grad_gr, M = Mr,
+            inequality_gradient_type = Manopt.FunctionVectorialType(ArrayPowerRepresentation()),
+        )
+        @test Manopt.get_range(cmo_a.inequality_constraints) == ArrayPowerRepresentation()
+        @test get_grad_inequality_constraint(Mr, cmo_a, pr, :) == grad_gr(Mr, pr)
+        Y = copy(grad_gr(Mr, pr))
+        @test get_grad_inequality_constraint!(Mr, Y, cmo_a, pr, :) == grad_gr(Mr, pr)
+        # an objective without a type hint keeps the nested representation
+        cmo_n = ConstrainedManifoldObjective(
+            (M, p) -> sum(p .^ 2), (M, p) -> 2 .* p;
+            g = gr, grad_g = (M, p) -> [[1.0, 0.0], [0.0, 1.0]], M = Mr,
+        )
+        @test Manopt.get_range(cmo_n.inequality_constraints) == NestedPowerRepresentation()
+        @test Manopt.get_range(cmo_n.equality_constraints) == NestedPowerRepresentation()
+        @test get_grad_inequality_constraint(Mr, cmo_n, pr, :) == [[1.0, 0.0], [0.0, 1.0]]
     end
 end

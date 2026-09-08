@@ -24,7 +24,7 @@ $(_args(:M))
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `evaluation_order=:Linear`: specify whether to use a fixed randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`), or the default `:Linear` order.
 * `λ=k -> 1.0 / k`: a function to compute ``λ_k`` for ``k ∈ ℕ``,

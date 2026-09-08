@@ -175,4 +175,20 @@ flat_example(::AbstractManifold, p) = 0.0
         sc7(DefaultManoptProblem(M, ManifoldCostObjective(flat_example)), st, 0)
         @test sc7.iterations_since_change == 0
     end
+    @testset "Objectives and numbers as points" begin
+        M = Euclidean(2)
+        p0 = [1.0, 1.0]
+        # the allocating entry also takes an objective, like the in-place one
+        mco = ManifoldCostObjective(griewank)
+        q = cma_es(M, mco, p0; rng = MersenneTwister(123))
+        q2 = copy(M, p0)
+        cma_es!(M, mco, q2; rng = MersenneTwister(123))
+        @test isapprox(M, q, q2)
+        # and a manifold whose points are numbers works
+        Mc = Circle()
+        fc(N, r) = (r - 0.3)^2
+        qc = cma_es(Mc, fc, 0.5; rng = MersenneTwister(1))
+        @test qc isa Float64
+        @test isapprox(Mc, qc, 0.3; atol = 1.0e-6)
+    end
 end

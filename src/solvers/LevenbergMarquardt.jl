@@ -77,7 +77,7 @@ The following fields are keyword arguments
 * `X = `$(_link(:zero_vector))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `minimum_acceptable_model_improvement::Real = eps(number_eltype(p))`
 
 # See also
@@ -198,6 +198,7 @@ end
 
 _doc_LM = """
     LevenbergMarquardt(M, f, jacobian_f, p, num_components=-1; kwargs...)
+    LevenbergMarquardt(M, f, jacobian_f, num_components=-1; kwargs...)
     LevenbergMarquardt(M, vgf, p; kwargs...)
     LevenbergMarquardt(M, nlso, p; kwargs...)
     LevenbergMarquardt!(M, f, jacobian_f, p, num_components=-1; kwargs...)
@@ -260,18 +261,19 @@ as well as when these are already combined in a single [`VectorGradientFunction`
 
 as well as in general using the model improvement parameter ``m_k`` in several places, cf [BaranBergmann:2026](@cite)
 
-* `candidate_acceptance_threshold=0.2`: sufficient model improvement ``η ∈ (0,1)``, i.e. ``m_k > η`` to accept a candidate point
+* `candidate_acceptance_threshold=0.2`: sufficient model improvement ``η ∈ (0,1)``, i.e. ``m_k ≥ η`` to accept a candidate point
 * `damping_increase_factor=5.0`:        factor ``β_{$(_tex(:text, "i"))}`` to increase damping, when the model is inaccurate
 * `damping_increase_threshold=candidate_acceptance_threshold`: threshold ``η_{$(_tex(:text, "l"))}`` the value ``m_k`` has to be below to increase damping.
   The default yields, that we increase damping when we reject a candidate.
 * `damping_reduction_factor= 1 / damping_increase_factor`: factor ``β_{$(_tex(:text, "d"))}`` to reduce damping, when the model is accurate
-* `damping_reduction_threshold=Inf`:    threshold ``η_{$(_tex(:text, "u"))}`` the value ``m_k`` has to exceed to reduce damping
+* `damping_reduction_threshold=Inf`:    threshold ``η_{$(_tex(:text, "u"))}`` the value ``m_k`` has to reach to reduce damping
   The default means, that we never reduce damping.
 * `damping_term_min = 0.1`:             lower bound ``μ_{$(_tex(:text, "l"))}`` for the damping ``μ_k`` throughout the iterations
 * `damping_term_max = Inf`:             upper bound ``μ_{$(_tex(:text, "u"))}`` for the damping ``μ_k`` throughout the iterations
 * `initial_damping_term=damping_term_min`: initial damping ``μ_0``
 * `initial_residual_values = zeros(m)`: a cache for the vector of residuals, `m` is the total number of residuals, summed over all blocks
 * `initial_jacobian_matrices`: a cache for the evaluated Jacobians (currently only used if `use_unified_basis = true`, then initialized to a vector of jacobian matrices, otherwise ignored)
+* `minimum_acceptable_model_improvement=eps(number_eltype(p))`: the least decrease of the surrogate model a candidate direction has to provide; otherwise the step is rejected and the damping increased without evaluating the cost
 $(_kwargs(:retraction_method))
 * `scaling_threshold = 1.0e-6`:         a threshold `ε` to bound the scaling parameter `α` in the robust case away from `1`, see [`get_LevenbergMarquardt_scaling`](@ref)
 * `scaling_mode = :Strict`:            specify the scaling stabilization mode, see [`get_LevenbergMarquardt_scaling`](@ref)
@@ -481,7 +483,7 @@ calls_with_kwargs(::typeof(LevenbergMarquardt!)) = (decorate_objective!, decorat
 #
 function initialize_solver!(dmp::DefaultManoptProblem, lms::LevenbergMarquardtState)
     M = get_manifold(dmp)
-    nlso = get_objective(dmp, true) # unwarp decorators
+    nlso = get_objective(dmp, true) # unwrap decorators
     get_residuals!(M, lms.residual_values, nlso, lms.p)
     jms = isnothing(lms.jacobian_matrices) ? fill(nothing, length(nlso.objective)) : lms.jacobian_matrices
     for (o, jb) in zip(nlso.objective, jms)

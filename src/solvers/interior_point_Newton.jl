@@ -195,7 +195,7 @@ $(_args([:sub_problem, :sub_state]))
 
 Let `m` and `n` denote the number of inequality and equality constraints, respectively
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `centrality_condition=(N, p) -> true`: an additional condition when to accept a step size, used as the `additional_decrease_condition` of the default `stepsize`, for example an [`InteriorPointCentralityCondition`](@ref)
 * `is_feasible_error=:error`: specify how to handle infeasible starting points, see [`is_feasible`](@ref) for options.
 $(_kwargs(:p; add_properties = [:as_Initial]))
@@ -286,9 +286,9 @@ mutable struct InteriorPointNewtonState{
             μ = ones(length(get_inequality_constraint(M, cmo, p, :))),
             λ = zeros(length(get_equality_constraint(M, cmo, p, :))),
             s = ones(length(get_inequality_constraint(M, cmo, p, :))),
-            ρ = μ's / length(get_inequality_constraint(M, cmo, p, :)),
+            ρ = isempty(μ) ? zero(eltype(μ)) : μ's / length(μ),
             σ = calculate_σ(M, cmo, p, μ, λ, s),
-            retraction_method::RTM = default_retraction_method(M),
+            retraction_method::RTM = default_retraction_method(M, typeof(p)),
             step_objective = ManifoldGradientObjective(
                 KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo);
                 evaluation = InplaceEvaluation(),
@@ -379,7 +379,8 @@ function Base.show(io::IO, ipns::InteriorPointNewtonState)
     print(io, ", p = ", ipns.p, ", X = ", ipns.X, ", μ = ", ipns.μ, ", Y = ", ipns.Y)
     print(io, ", λ = ", ipns.λ, ", Z = ", ipns.Z, ", s = ", ipns.s, ", W = ", ipns.W)
     print(io, ", ρ = ", ipns.ρ, ", σ = ", ipns.σ, ", step_problem = ", ipns.step_problem)
-    print(io, ", step_state = ", ipns.step_state)
+    print(io, ", step_state = ", ipns.step_state, ", stepsize = ", ipns.stepsize)
+    print(io, ", stopping_criterion = ", status_summary(ipns.stop; context = :short))
     return print(io, ")")
 end
 
@@ -584,7 +585,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(800)`[`
   $(_note(:KeywordUsedIn, "sub_problem"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(manifold_dimension(M))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`, where ``c = $(_tex(:norm, "b"))`` from the system to solve.
   $(_note(:KeywordUsedIn, "sub_state"))
-$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(`[`TangentSpace`](@extref `ManifoldsBase.TangentSpace`)`(M × ℝ^n, q), sub_objective)"))
 $(_kwargs(:sub_state; default = "`[`ConjugateResidualState`](@ref)` "))
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `X=`[`get_gradient`](@ref)`(M, cmo, p)`:
@@ -679,7 +680,7 @@ function interior_point_Newton!(
         μ::AbstractVector = ones(inequality_constraints_length(cmo)), Y::AbstractVector = zero(μ),
         λ::AbstractVector = zeros(equality_constraints_length(cmo)), Z::AbstractVector = zero(λ),
         s::AbstractVector = copy(μ), W::AbstractVector = zero(s),
-        ρ::Real = μ's / length(μ),
+        ρ::Real = isempty(μ) ? zero(eltype(μ)) : μ's / length(μ),
         σ::Real = calculate_σ(M, _ecmo, p, μ, λ, s),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         sub_kwargs = (;),
@@ -733,7 +734,7 @@ function interior_point_Newton!(
         St <: AbstractManoptSolverState,
         Pr <: Union{F, AbstractManoptProblem} where {F},
     }
-    !is_feasible(M, cmo, p; error = is_feasible_error)
+    is_feasible(M, cmo, p; error = is_feasible_error)
     keywords_accepted(interior_point_Newton!; kwargs...)
     dcmo = decorate_objective!(M, _ecmo; kwargs...)
     dmp = DefaultManoptProblem(M, dcmo)
@@ -757,7 +758,7 @@ calls_with_kwargs(::typeof(interior_point_Newton!)) = (decorate_objective!, deco
 function initialize_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState)
     M = get_manifold(amp)
     cmo = get_objective(amp)
-    !is_feasible(M, cmo, ips.p; error = ips.is_feasible_error)
+    is_feasible(M, cmo, ips.p; error = ips.is_feasible_error)
     return ips
 end
 
@@ -828,14 +829,14 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     q2 .= ips.μ
     q3 .= ips.λ
     q4 .= ips.s
-    set_iterate!(ips.step_state, M, q)
+    set_iterate!(ips.step_state, N, q)
     # generate current full gradient in step state
     X = get_gradient(ips.step_state)
     copyto!(N[1], X[N, 1], ips.X)
     (m > 0) && (copyto!(N[2], X[N, 2], ips.Y))
     (n > 0) && (copyto!(N[3], X[N, 3], ips.Z))
     (m > 0) && (copyto!(N[4], X[N, 4], ips.W))
-    set_gradient!(ips.step_state, M, q, X)
+    set_gradient!(ips.step_state, N, q, X)
     # Update centrality factor – Maybe do this as an update function?
     γ = get_parameter(ips.stepsize, Val(:DecreaseCondition), Val(:γ))
     if !isnothing(γ)

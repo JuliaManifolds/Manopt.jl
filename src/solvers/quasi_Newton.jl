@@ -31,7 +31,7 @@ Generate the Quasi Newton state on the manifold `M`.
 
 ## Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), memory_size; vector_transport_method=vector_transport_method, initial_scale=initial_scale)`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 * `initial_scale=1.0`: a relative initial scale. By default deactivated when using a preconditioner.
@@ -40,7 +40,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, Missing} = missing` specify a preconditioner or deactivate by passing `missing`.
 $(_kwargs(:retraction_method))
-$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`QuasiNewtonState`](@ref)`)"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`QuasiNewtonState`](@ref)`; retraction_method=retraction_method, vector_transport_method=vector_transport_method)"))
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 
@@ -202,7 +202,7 @@ The ``k``th iteration consists of
 1. Compute the search direction ``η^{(k)} = -$(_tex(:Cal, "B"))_k [$(_tex(:grad))f (p^{(k)})]`` or solve ``$(_tex(:Cal, "H"))_k [η^{(k)}] = -$(_tex(:grad))f (p^{(k)})``.
 2. Determine a suitable stepsize ``α_k`` along the curve ``γ(α) = R_{p^{(k)}}(α η^{(k)})``, usually by using [`WolfePowellLinesearch`](@ref).
 3. Compute ``p^{(k+1)} = R_{p^{(k)}}(α_k η^{(k)})``.
-4. Define ``s_k = $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}(α_k η^{(k)})`` and ``y_k = $(_tex(:grad))f(p^{(k+1)}) - $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}($(_tex(:grad))f(p^{(k)}))``, where ``$(_tex(:Cal, "T"))`` denotes a vector transport.
+4. Define ``s_k = $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}(α_k η^{(k)})`` and ``y_k = β_k^{-1}$(_tex(:grad))f(p^{(k+1)}) - $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}($(_tex(:grad))f(p^{(k)}))``, where ``$(_tex(:Cal, "T"))`` denotes a vector transport and ``β_k = $(_tex(:frac, _tex(:norm, "α_k η^{(k)}"; index = "p^{(k)}"), _tex(:norm, "s_k"; index = "p^{(k+1)}")))`` the locking condition scale.
 5. Compute the new approximate Hessian ``H_{k+1}`` or its inverse ``B_{k+1}``.
 
 # Input
@@ -229,8 +229,8 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
    initial matrix to use in case the Hessian (inverse) approximation is stored as a full matrix,
    that is `n=manifold_dimension(M)`. This matrix is only allocated for the full matrix case.
    See also `initial_scale`.
-* `initial_scale=1.0`: scale initial `s` to use in with $(_doc_QN_init_scaling) in the computation of the limited memory approach.
-  see also `initial_operator`
+* `initial_scale=1.0`: the scale `s` in $(_doc_QN_init_scaling) of the initial Hessian approximation,
+  see also `initial_operator`. Set to `nothing` by default when using a `preconditioner`.
 * `memory_size::Int=min(manifold_dimension(M), 20)`: limited memory, number of ``s_k, y_k`` to store.
    Set to a negative value to use a full memory (matrix) representation
 * `nondescent_direction_behavior=:reinitialize_direction_update`:
@@ -360,7 +360,7 @@ function quasi_Newton!(
             local_dir_upd; θ = cautious_function
         )
     end
-    dmgo = decorate_objective!(M, mgo; debug = debug, kwargs...)
+    dmgo = decorate_objective!(M, mgo; kwargs...)
     mp = DefaultManoptProblem(M, dmgo)
     qns = QuasiNewtonState(
         M;
@@ -671,11 +671,11 @@ function update_basis!(
 end
 
 function update_basis!(
-        b::CachedBasis, M::AbstractManifold, x::P, y::P, m::AbstractVectorTransportMethod
+        b::CachedBasis, M::AbstractManifold, p::P, q::P, m::AbstractVectorTransportMethod
     ) where {P}
     # transport all basis tangent vectors in the tangent space of the next iterate
     for v in b.data
-        vector_transport_to!(M, v, x, v, y, m)
+        vector_transport_to!(M, v, p, v, q, m)
     end
     return b
 end

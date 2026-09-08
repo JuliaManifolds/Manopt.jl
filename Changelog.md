@@ -52,8 +52,10 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `alternating_gradient_descent` now uses its `retraction_method`.
 * `augmented_Lagrangian_method!(M, f, grad_f, p; …)` no longer decorates its objective twice, so `count=` and `cache=` work for the in-place variant and an already decorated objective is accepted.
 * `augmented_Lagrangian_method` and `exact_penalty_method` can now be run with a closed form sub solver.
+* `augmented_Lagrangian_method` now measures the penalty with the multipliers the sub problem was solved with, as its own formula states, instead of with the ones just updated.
 * the default `stopping_criterion` of `AugmentedLagrangianMethodState` now ends in `StopWhenStepsizeLess(1.0e-10)`, matching `augmented_Lagrangian_method`.
 * `BarzilaiBorweinStepsize` defaults `max_stepsize` to `1.0` on manifolds with infinite injectivity radius.
+* `NonmonotoneLinesearch` now defaults `bb_max_stepsize` to the same bound as `BarzilaiBorweinStepsize`, that is `0.9` of the injectivity radius, instead of the constant `1e3` that let its first step leave the injectivity radius.
 * `cache=(:LRU, [:ProximalMap])` now also caches the proximal map without an index, the one `proximal_point` and `proximal_gradient_method` call.
 * `ChambollePock` now defaults to the variant matching the operator that was provided; requesting a variant without its operator errors with an explanation.
 * `ChambollePock` now accepts and forwards the documented `inverse_retraction_method_dual` and `vector_transport_method_dual` keywords, which were previously warned about and dropped.
@@ -62,13 +64,16 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `cma_es` now uses the fitness-sorted samples in its covariance matrix update,
   cf. Eq. (47) of [arXiv:1604.00772](https://arxiv.org/abs/1604.00772).
 * `cma_es` now uses Hansen's `1/(21n^2)` term in its approximation of the expected norm of a standard normal vector.
+* `cma_es(M, mco, p)` now also accepts an objective, like `cma_es!` always did, and both work on manifolds whose points are numbers, for example `Circle()`.
 * `cma_es` now accepts `tol_fun` and `tol_x` of different types, so switching one of them off with `tol_fun = 0` works.
 * `conjugate_residual` now uses its initial vector `X` — it was ignored, making runs nondeterministic — and `conjugate_residual!` works in place of `X`.
 * `ConjugateGradientDescentState` can now be constructed without specifying a stepsize.
 * `ConvexBundleMethodState` no longer errors when only one of `k_min` and `k_max` is provided.
 * `ConvexBundleMethodState` can be built and run on its own again.
 * `count=[:ProximalMap]` now works for a `ManifoldProximalMapObjective` built from a single proximal map.
+* the constraint gradient accessors of a `ConstrainedManifoldObjective` now default to the power representation the constraint function stores, instead of always assuming `NestedPowerRepresentation()`; an objective built with an `ArrayPowerRepresentation` errored before.
 * `CubicBracketingLinesearch`, `HagerZhangLinesearch` and `Nesterov` now promote mixed numeric types in their keyword arguments.
+* `CubicBracketingLinesearch` and `HagerZhangLinesearch` now also run on `Float32` problems, where the step size and the cost have different types.
 * `CubicBracketingLinesearch` now uses the `gradient=` keyword it is given and no longer reads the state field `X` directly, so it works for any state implementing the documented interface.
 * the `:Random` evaluation order of `cyclic_proximal_point` now reshuffles every cycle; its order values are unified to `:Linear`, `:FixedRandom`, and `:Random`, and validated.
 * the default prefixes of `DebugEntryChange` and `DebugIfEntry` name the field instead of printing a literal `$f`.
@@ -100,6 +105,7 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `gradient_sampling` now also works for number-typed points, like `gradient_descent`.
 * the documented `GradientSamplingState(M)` constructor works again; its `convex_hull_coeffs` default referred to the static parameter `R`, which is not bound while keyword defaults are evaluated.
 * `HagerZhangInitialGuess` now uses the `retraction_method` of the surrounding `HagerZhangLinesearch` for its quadratic step.
+* `HybridCoefficient` now updates the storage of each of its inner coefficients at the end of a conjugate gradient step, so a rule that uses the previous search direction, like `DaiYuanCoefficient` or `HestenesStiefelCoefficient`, no longer computes its coefficient from the direction of the step before.
 * `initialize_solver!` for a `ProximalBundleMethodState` now also resets `lin_errors` and `approx_errors`, so a state can be reused for a second `solve!`.
 * `interior_point_Newton` assembled its line-search gradient with the `μ`- and `λ`-components swapped, breaking problems with both constraint types.
 * `interior_point_Newton!(M, f, grad_f, Hess_f, p; …)` no longer decorates its objective twice, so `count=` and `cache=` now work for the in-place variant.

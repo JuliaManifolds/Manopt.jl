@@ -29,9 +29,9 @@ In quasi-Newton methods, the search direction is given by
 η_k = -{\mathcal{H}_k}^{-1}[\operatorname{grad}f (p^{(k)})] = -\mathcal{B}_k [\operatorname{grad}f (p^{(k)})],
 ```
 
-where ``\mathcal{H}_k : T_{p^{(k)}} \mathcal{M} →T_{p^{(k)}} \mathcal{M}`` is a positive definite self-adjoint operator, which approximates the action of the Hessian ``\operatorname{Hess} f (p^{(k)})[⋅]`` and ``\mathcal{B}_k = {\mathcal{H}_k}^{-1}``. The idea of quasi-Newton methods is instead of creating a complete new approximation of the Hessian operator ``\operatorname{Hess} f(p^{(k+1)})`` or its inverse at every iteration, the previous operator ``\mathcal{H}_k`` or ``\mathcal{B}_k`` is updated by a convenient formula using the obtained information about the curvature of the objective function during the iteration. The resulting operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` acts on the tangent space ``T_{p^{(k+1)}} \mathcal{M}`` of the freshly computed iterate ``p^{(k+1)}``.
+where ``\mathcal{H}_k : T_{p^{(k)}} \mathcal{M} →T_{p^{(k)}} \mathcal{M}`` is a positive definite self-adjoint operator, which approximates the action of the Hessian ``\operatorname{Hess} f (p^{(k)})[⋅]`` and ``\mathcal{B}_k = {\mathcal{H}_k}^{-1}``. The idea of quasi-Newton methods is that, instead of creating a completely new approximation of the Hessian operator ``\operatorname{Hess} f(p^{(k+1)})`` or its inverse at every iteration, the previous operator ``\mathcal{H}_k`` or ``\mathcal{B}_k`` is updated by a convenient formula using the obtained information about the curvature of the objective function during the iteration. The resulting operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` acts on the tangent space ``T_{p^{(k+1)}} \mathcal{M}`` of the freshly computed iterate ``p^{(k+1)}``.
 In order to get a well-defined method, the following requirements are placed on the new operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` that is created by an update.
-Since the Hessian ``\operatorname{Hess} f(p^{(k+1)})`` is a self-adjoint operator on the tangent space ``T_{p^{(k+1)}} \mathcal{M}``, and ``\mathcal{H}_{k+1}`` approximates it, one requirement is, that ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` is also self-adjoint on ``T_{p^{(k+1)}} \mathcal{M}``.
+Since the Hessian ``\operatorname{Hess} f(p^{(k+1)})`` is a self-adjoint operator on the tangent space ``T_{p^{(k+1)}} \mathcal{M}``, and ``\mathcal{H}_{k+1}`` approximates it, one requirement is that ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` is also self-adjoint on ``T_{p^{(k+1)}} \mathcal{M}``.
 In order to achieve a steady descent, the next requirement is that ``η_k`` is a descent direction in each iteration.
 Hence a further requirement is that ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` is a positive definite operator on ``T_{p^{(k+1)}} \mathcal{M}``.
 In order to get information about the curvature of the objective function into the new operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}``, the last requirement is a form of a Riemannian quasi-Newton equation:
@@ -78,8 +78,8 @@ In the following the specific operators are denoted in matrix notation and hence
 
 ## Direction updates
 
-In general there are different ways to compute a fixed [`AbstractQuasiNewtonUpdateRule`](@ref).
-In general these are represented by
+There are different ways to compute the search direction from a fixed [`AbstractQuasiNewtonUpdateRule`](@ref).
+These are represented by
 
 ```@docs
 AbstractQuasiNewtonDirectionUpdate
@@ -115,7 +115,7 @@ InverseSR1
 
 ## State
 
-The quasi Newton algorithm is based on a [`DefaultManoptProblem`](@ref).
+The quasi-Newton algorithm is based on a [`DefaultManoptProblem`](@ref).
 
 ```@docs
 QuasiNewtonState
@@ -130,8 +130,9 @@ The [`quasi_Newton`](@ref) solver requires the following functions of a manifold
 * the [`norm`](@extref `LinearAlgebra.norm-Tuple{AbstractManifold, Any, Any}`) as well, to stop when the norm of the gradient is small, but if you implemented `inner`, the norm is provided already.
 * A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points and similarly `copy(M, p, X)` for tangent vectors.
 * By default the tangent vector storing the gradient is initialized calling [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`.
+* If you do not provide a `memory_size=`, a [`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`) is required for its default; the full-matrix variant (`memory_size < 0`) needs it for the default `initial_operator=` as well.
 
-Most Hessian approximations further require [`get_coordinates`](@extref `ManifoldsBase.get_coordinates`)`(M, p, X, b)` with respect to the [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) `b` provided, which is [`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))` by default from the `basis=` keyword.
+Most Hessian approximations further require [`get_coordinates`](@extref `ManifoldsBase.get_coordinates`)`(M, p, X, b)` and [`get_vector!`](@extref `ManifoldsBase.get_vector`)`(M, X, p, c, b)` with respect to the [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) `b` provided, which is [`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))` by default from the `basis=` keyword.
 
 
 

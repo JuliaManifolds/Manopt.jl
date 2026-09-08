@@ -7,7 +7,7 @@ _doc_gradient_sampling_subsolver = """
 
 solver for the subproblem of the [`gradient_sampling`](@ref) algorithm.
 
-Let ``Y_j``, ``j=0,…m`` denote the `sampled_gradients`
+Let ``Y_j``, ``j=0,…,m`` denote the `sampled_gradients`
 already provided transported to the tangent space at `p`
 
 The subproblem then reads
@@ -24,7 +24,7 @@ The subproblem then reads
 ```
 
 !!! tip
-    A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
+    A default subsolver based on [`RipQP.jl`](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels.jl`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
     is available if these two packages are loaded.
 """
 
@@ -69,7 +69,7 @@ $(_args(:sub_state))
 
 ## Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 * `sample_size = 5` set the number of sampling points. If you initialize `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
@@ -267,7 +267,7 @@ _doc_gradient_sampling = """
 
 perform the gradient sampling algorithm as introduced in [HosseiniUschmajew:2017](@cite).
 
-The algorithm samples a set of `sampling_size` = ``m`` many points in a ball around the current iterate,
+The algorithm samples a set of `sample_size` = ``m`` many points in a ball around the current iterate,
 evaluates the gradient at these points and transports these to the current iterate.
 It then builds a surrogate in the tangent space consisting of these ``m`` tangent vectors
 and the gradient at the current iterate to determine a new descent direction in the convex
@@ -414,9 +414,11 @@ function step_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState, k)
     end
     # re-use the tangent vector memory to evaluate the gradients
     # and transport them to the current iterate
-    for (i, (pj, Xj)) in enumerate(zip(gss.sampled_points, gss.sampled_vectors))
-        get_gradient!(mp, Xj, pj) # we only have to transport the elements 2,3,...:
-        (i > 1) && vector_transport_to!(M, Xj, pj, Xj, gss.p, gss.vector_transport_method)
+    copyto!(M, gss.sampled_vectors[1], gss.p, gss.X) # the gradient at the iterate is already known
+    for (j, (pj, Xj)) in enumerate(zip(gss.sampled_points, gss.sampled_vectors))
+        (j == 1) && continue # we only have to evaluate and transport the elements 2,3,...:
+        get_gradient!(mp, Xj, pj)
+        vector_transport_to!(M, Xj, pj, Xj, gss.p, gss.vector_transport_method)
     end
     # solve sub problem in convex_hull_coeffs
     callback(:BeforeSubsolver, mp, gss, k)

@@ -18,7 +18,7 @@ where $X=(X_{\mathrm{D}}, X_{\mathcal{M}})$ is a given direction, the exponentia
 Additionally, the sub solver indicates whether the selected direction $Y$ reaches the boundary of $D$ at some point, in which case the subsequent step size selection in direction $Y$ needs to be limited to the interval $[0, s_{\max}]$, where the number $1 ≤ s_{\max} ≤ ∞$ is also returned by the sub solver.
 Note that the value $s_{\max}=1$ is obtained when the minimum lies at the boundary of $D$, while larger values indicate that we are further away from the boundary along the selected direction $Y$.
 
-The solver is currently primarily intended for internal use by optimization algorithms that require bound-constrained subproblem solutions.
+The solver is currently primarily intended for internal use by optimization algorithms that require bound-constrained sub problem solutions.
 
 ## Simple step size limiting
 

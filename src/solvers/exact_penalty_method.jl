@@ -35,7 +35,7 @@ function for the current penalty parameter `ρ` and smoothing parameter `u`, sta
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `u=1e-1`
 * `u_exponent=1 / 100`:  a shortcut for the scaling factor ``θ_u``.

@@ -63,7 +63,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         # single AbstractStateActions
         # DebugDivider
         a1(mp, st, 0)
-        s = @test String(take!(io)) == "|"
+        @test String(take!(io)) == "|"
         DebugGroup([a1, a1])(mp, st, 0)
         @test String(take!(io)) == "||"
         DebugEvery(a1, 10, false)(mp, st, 9)
@@ -375,8 +375,6 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test repr(DebugChange()) == ts2
         @test Manopt.status_summary(DebugChange(); context = :short) == "(:Change, \"Last Change: %f\")"
         @test startswith(Manopt.status_summary(DebugChange()), "A DebugAction to print the change of")
-        # verify that a non-default manifold works as well - not sure how to test this then
-        d = DebugChange(Euclidean(2))
 
         @test repr(DebugCost()) == "DebugCost(; format=\"f(x): %f\", at_init=true)"
         @test Manopt.status_summary(DebugCost(); context = :short) == "(:Cost, \"f(x): %f\")"

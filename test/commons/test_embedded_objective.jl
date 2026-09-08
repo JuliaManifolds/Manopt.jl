@@ -18,7 +18,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
 
         # With interim caches for p and X
         eo1 = Manopt.decorate_objective!(
-            M, o; objective_type = :Euclidean, embedded_p = copy(p), embedded_X = copy(X)
+            M, o; objective_type = :Euclidean, _embedded_p = copy(p), _embedded_X = copy(X)
         )
         eo2 = EmbeddedManifoldObjective(o, missing, copy(X))
         eo3 = EmbeddedManifoldObjective(o, copy(p), missing)

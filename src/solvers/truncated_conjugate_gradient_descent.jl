@@ -13,7 +13,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `Hδ`, `HY`:                 temporary results of the Hessian applied to `δ` and `Y`, respectively.
 * `project!`:                 for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* `randomize`:          indicate whether `X` is initialized to a random vector or not
+* `randomize`:          whether to start from the given tangent vector (`true`, without preconditioning) or from the zero vector (`false`)
 * `residual::T`:                 the gradient of the model ``m(Y)``
 $(_fields(:stopping_criterion; name = "stop"))
 * `trust_region_radius::R`:   the trust-region radius
@@ -34,7 +34,7 @@ Initialize the TCG state.
 
 ## Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `κ=0.1`
 * `project!::F=copyto!`: initialize the numerical stabilization to just copy the result
 * `randomize=false`
@@ -176,8 +176,8 @@ $(_fields(:at_iteration))
     StopWhenResidualIsReducedByFactorOrPower(; κ=0.1, θ=1.0)
 
 Initialize the StopWhenResidualIsReducedByFactorOrPower functor to indicate to stop after
-the norm of the current residual is lesser than either the norm of the initial residual
-to the power of 1+θ or the norm of the initial residual times κ.
+the norm of the current residual is less than or equal to the smaller of the norm of the initial residual
+to the power of 1+θ and the norm of the initial residual times κ.
 
 # See also
 
@@ -471,7 +471,7 @@ $(_kwargs(:evaluation))
 * `κ=0.1`:                the linear convergence target rate.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* `randomize=false`:      indicate whether `X` is initialized to a random vector or not. This disables preconditioning.
+* `randomize=false`:      whether to start the iteration from the given `X` (`true`, this disables preconditioning) or from the zero vector (`false`, `X` then only provides the memory for the result)
 $(
     _kwargs(
         :stopping_criterion;
@@ -490,7 +490,7 @@ $(_note(:OutputSection))
 """
 
 @doc "$(_doc_TCGD)"
-truncated_conjugate_gradient_descent(M::AbstractManifold, args; kwargs...)
+truncated_conjugate_gradient_descent(M::AbstractManifold, args...; kwargs...)
 # No Hessian, no point/vector
 function truncated_conjugate_gradient_descent(
         M::AbstractManifold,

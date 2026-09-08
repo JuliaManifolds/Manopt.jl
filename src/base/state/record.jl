@@ -245,11 +245,15 @@ end
 @doc """
     RecordEvery <: RecordAction
 
-Record only every ``k``-th iteration.
+Record only every `every`-th iteration.
 Otherwise (optionally, but activated by default) just update internal tracking
 values.
 
 This method does not perform any record itself but relies on its children's methods.
+
+# Constructor
+
+    RecordEvery(r::RecordAction, every=1, always_update=true)
 """
 mutable struct RecordEvery <: RecordAction
     record::RecordAction
@@ -354,7 +358,7 @@ mutable struct RecordGroup <: RecordAction
         return new(g, symbols)
     end
     function RecordGroup(
-            records::Vector, # assumed: {<:Union{<:RecordAction,Pair{<:RecordAction,Symbol}, rest ignored
+            records::Vector, # elements: RecordAction or Pair{<:RecordAction, Symbol}, anything else errors
         )
         g = Array{RecordAction, 1}()
         si = Dict{Symbol, Int}()

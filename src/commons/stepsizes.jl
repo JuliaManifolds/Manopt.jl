@@ -462,7 +462,7 @@ Overall, a step size is sought that provides _enough decrease_, see
 
 * `additional_decrease_condition=(M, p) -> true`:
   specify an additional criterion that has to be met to accept a step size in the decreasing loop
-* `additional_increase_condition::IF=(M, p) -> true`:
+* `additional_increase_condition=(M, p) -> true`:
   specify an additional criterion that has to be met to accept a step size in the (initial) increase loop
 * `candidate_point=allocate_result(M, rand)`:
   specify a point to be used as memory for the candidate points.
@@ -560,14 +560,13 @@ function AdaptiveWNGradientStepsize(M::AbstractManifold, p; kwargs...)
     return AdaptiveWNGradientStepsize(M; p = p, kwargs...)
 end
 function (awng::AdaptiveWNGradientStepsize)(
-        mp::AbstractManoptProblem, s::AbstractManoptSolverState, i, args...;
+        mp::AbstractManoptProblem, s::AbstractManoptSolverState, k, args...;
         gradient = nothing, kwargs...,
     )
     M = get_manifold(mp)
     p = get_iterate(s)
     X = isnothing(gradient) ? get_gradient(mp, p) : gradient
-    isnan(awng.weight) && (awng.weight = norm(M, p, X)) # init ω_0
-    if i == 0 # init fields
+    if k == 0 # init fields
         awng.weight = norm(M, p, X) # init ω_0
         (awng.weight == 0) && (awng.weight = 1.0)
         awng.count = 0
@@ -628,7 +627,7 @@ end
 A stepsize based on the adaptive gradient method introduced by [GrapigliaStella:2023](@cite).
 
 Given a positive threshold ``$(_tex(:hat, "c")) ∈ ℕ``,
-an minimal bound ``b_{$(_tex(:text, "min"))} > 0``,
+a minimal bound ``b_{$(_tex(:text, "min"))} > 0``,
 an initial ``b_0 ≥ b_{$(_tex(:text, "min"))}``, and a
 gradient reduction factor threshold ``α ∈ [0,1)``.
 
@@ -702,7 +701,7 @@ $(_fields(:vector_transport_method))
 
 $(_kwargs(:inverse_retraction_method))
 * `min_stepsize=1e-3`
-* `max_stepsize=injectivity_radius(M) * 0.9` (or `1.0` if the injectivity radius is infinite)
+* `max_stepsize=0.9 * max_stepsize(M)` (or `1.0` if that is infinite)
 $(_kwargs(:p))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
@@ -726,9 +725,9 @@ mutable struct BarzilaiBorweinStepsize{
             M::AbstractManifold;
             p::P = rand(M), X::T = zero_vector(M, p),
             min_stepsize::Real = 1.0e-3,
-            max_stepsize::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) * 0.9,
+            max_stepsize::Real = isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M),
             inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
-            storage::Union{Nothing, StoreStateAction} = StoreStateAction(
+            storage::StoreStateAction = StoreStateAction(
                 M; store_fields = [:Iterate, :Gradient]
             ),
             strategy::Symbol = :direct,
@@ -917,7 +916,7 @@ the inner product ``⟨s_{k}, y_{k}⟩_{p_k} = 0``, so that the maximal step siz
 
 $(_kwargs(:inverse_retraction_method))
 * `min_stepsize=1e-3`
-* `max_stepsize=injectivity_radius(M) * 0.9` (or `1.0` if the injectivity radius is infinite)
+* `max_stepsize=0.9 * max_stepsize(M)` (or `1.0` if that is infinite)
 $(_kwargs(:p))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
@@ -1042,6 +1041,7 @@ $(_fields(:vector_transport_method))
 ## Keyword arguments
 
 $(_kwargs(:p; name = "candidate_point", default = "allocate_result(M, rand)")) as temporary storage for candidates
+* `candidate_direction=`$(_link(:zero_vector; p = "candidate_point")): temporary storage for the transported search direction
 * `temporary_tangent=`$(_link(:zero_vector; p = "candidate_point")): temporary storage for a gradient
 * `initial_stepsize=1.0`: the step size to start the search with
 $(_kwargs(:retraction_method))
@@ -1122,6 +1122,8 @@ struct UnivariateTriple{R <: Real}
     f::R
     df::R
 end
+# the step size type may differ from the cost type
+UnivariateTriple(t::Real, f::Real, df::Real) = UnivariateTriple(promote(t, f, df)...)
 
 """
     update_bracket(a::UnivariateTriple, b::UnivariateTriple, c::UnivariateTriple)
@@ -1406,6 +1408,7 @@ $(_kwargs(:retraction_method))
 * `sufficient_curvature=0.2`: target reduction of the curvature ``(0,1)``
 * `min_bracket_width=1e-4`: minimal size of the bracket ``[a,b]``
 * `hybrid=true`: use the hybrid strategy
+* `max_stepsize=`[`max_stepsize`](@ref)`(M)`: maximal stepsize
 $(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultsFactory, "CubicBracketingLinesearchStepsize"))
@@ -1524,7 +1527,7 @@ with the following
 # Keyword arguments
 
 * `exponent=1.0`:   the exponent ``e`` in the denominator
-* `factor=1.0`:     the factor ``f`` in the nominator
+* `factor=1.0`:     the factor ``f`` in the numerator
 * `length=isinf(manifold_dimension(M)) ? 1.0 : manifold_dimension(M)/2`: the initial step size ``l``.
 * `subtrahend=0.0`: a value ``a`` that is subtracted every iteration
 * `shift=0.0`:      shift the denominator iterator ``k`` by ``s``.
@@ -1803,7 +1806,8 @@ transport it uses are stored within the `bb_stepsize`.
    function to provide an initial guess for the stepsize
 * `memory_size=10`
 * `bb_min_stepsize=1e-3`
-* `bb_max_stepsize=1e3`
+* `bb_max_stepsize=isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M)`
+$(_kwargs(:inverse_retraction_method)) used by the Barzilai–Borwein rule to compute ``s_k``
 $(_kwargs(:retraction_method))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
@@ -1836,7 +1840,7 @@ mutable struct NonmonotoneLinesearchStepsize{
     function NonmonotoneLinesearchStepsize(
             M::AbstractManifold;
             bb_min_stepsize::Real = 1.0e-3,
-            bb_max_stepsize::Real = 1.0e3,
+            bb_max_stepsize::Real = isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M),
             p::P = allocate_result(M, rand),
             initial_guess::IG = (problem, state, k, last_stepsize, η) -> k == 0 ? 1.0 : last_stepsize,
             inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
@@ -1847,7 +1851,7 @@ mutable struct NonmonotoneLinesearchStepsize{
             stop_when_stepsize_exceeds::Real = float(real(max_stepsize(M))),
             stop_increasing_at_step::Integer = 100,
             stop_decreasing_at_step::Integer = 1000,
-            storage::Union{Nothing, StoreStateAction} = StoreStateAction(
+            storage::StoreStateAction = StoreStateAction(
                 M; store_fields = [:Iterate, :Gradient]
             ),
             strategy::Symbol = :direct,
@@ -2034,7 +2038,8 @@ $(_kwargs(:p)) to store an interim result
   a function to provide an initial guess for the step size
 * `memory_size=10`: number of iterations after which the cost value needs to be lower than the current one
 * `bb_min_stepsize=1e-3`: lower bound for the Barzilai-Borwein step size, greater than zero
-* `bb_max_stepsize=1e3`: upper bound for the Barzilai-Borwein step size, greater than `bb_min_stepsize`
+* `bb_max_stepsize=isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M)`: upper bound for the Barzilai-Borwein step size, greater than `bb_min_stepsize`
+$(_kwargs(:inverse_retraction_method)) used by the Barzilai–Borwein rule to compute ``s_k``
 $(_kwargs(:retraction_method))
 * `strategy=:direct`: defines if the new step size is computed using the `:direct`, `:inverse` or `:alternating` strategy
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`: increase efficiency by using a [`StoreStateAction`](@ref) for `:Iterate` and `:Gradient`.
@@ -2074,7 +2079,7 @@ mutable struct PolyakStepsize{F, R} <: Stepsize
     γ::F
     best_cost_value::R
 end
-function PolyakStepsize(; γ = (i) -> 1 / i, initial_cost_estimate = 0.0)
+function PolyakStepsize(; γ = (k) -> 1 / k, initial_cost_estimate = 0.0)
     return PolyakStepsize(γ, initial_cost_estimate)
 end
 function (ps::PolyakStepsize)(
@@ -2280,7 +2285,7 @@ function (a::WolfePowellLinesearchStepsize)(
             fNew = get_cost(mp, a.candidate_point)
             i += 1
             if i == a.stop_decreasing_at_step
-                set_message!(a.messages, :stop_decreasing, at = i, bound = a.stop_decreasing_at_step, value = s_minus)
+                set_message!(a.messages, :stop_decreasing, at = k, bound = a.stop_decreasing_at_step, value = s_minus)
                 break
             end
         end
@@ -2297,7 +2302,7 @@ function (a::WolfePowellLinesearchStepsize)(
                 fNew = get_cost(mp, a.candidate_point)
                 i += 1
                 if i == a.stop_increasing_at_step
-                    set_message!(a.messages, :stop_increasing, at = i, bound = a.stop_increasing_at_step, value = s_plus)
+                    set_message!(a.messages, :stop_increasing, at = k, bound = a.stop_increasing_at_step, value = s_plus)
                     break
                 end
             end
@@ -2420,6 +2425,7 @@ $(_fields(:vector_transport_method))
 * `sufficient_curvature=0.999`
 $(_kwargs(:retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
+* `last_stepsize=0.0`: initial value of the stored last stepsize
 $(_kwargs(:vector_transport_method))
 
 """
@@ -3341,7 +3347,8 @@ $(_kwargs(:vector_transport_method))
 * `δ::Real = 0.1`: parameter for approximate Wolfe condition.
   Allowed range: `0 < δ < 0.5` and `δ <= σ`.
 * `σ::Real = 0.9`: curvature condition parameter. Allowed range: `δ <= σ < 1`.
-* `ω::Real = 1.0e-3`: interpolation safeguard parameter. Allowed range: `0 <= ω <= 1`.
+* `ω::Real = 1.0e-3`: threshold for switching from the standard to the approximate Wolfe condition
+  in `:adaptive` mode, applied when the cost changes by at most ``ω C_k``. Allowed range: `0 <= ω <= 1`.
 * `θ::Real = 0.5`: bisection update parameter. Allowed range: `0 < θ < 1`.
 * `γ::Real = 0.66`: determines when a bisection step is performed instead of secant.
   Allowed range: `0 < γ < 1`.

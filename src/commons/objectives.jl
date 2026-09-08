@@ -2,7 +2,7 @@
 #
 # ---
 """
-    ConstrainedManifoldObjective{C<:ConstraintType} <: AbstractManifoldObjective
+    ConstrainedManifoldObjective{MO,EMO,IMO} <: AbstractManifoldObjective
 
 Describes a constrained objective
 
@@ -354,7 +354,7 @@ function get_grad_equality_constraint(
 end
 function get_grad_equality_constraint(
         M::AbstractManifold, co::ConstrainedManifoldObjective, p, j = :,
-        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+        range::AbstractPowerRepresentation = get_range(co.equality_constraints),
     )
     if isnothing(co.equality_constraints)
         pM = PowerManifold(M, range, 0)
@@ -381,7 +381,7 @@ end
 
 function get_grad_equality_constraint!(
         M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j = :,
-        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+        range::AbstractPowerRepresentation = get_range(co.equality_constraints),
     )
     isnothing(co.equality_constraints) && (return X)
     return get_gradient!(M, X, co.equality_constraints, p, j, range)
@@ -407,7 +407,7 @@ function get_grad_inequality_constraint(
 end
 function get_grad_inequality_constraint(
         M::AbstractManifold, co::ConstrainedManifoldObjective, p, j = :,
-        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+        range::AbstractPowerRepresentation = get_range(co.inequality_constraints),
     )
     if isnothing(co.inequality_constraints)
         pM = PowerManifold(M, range, 0)
@@ -424,7 +424,7 @@ function get_grad_inequality_constraint!(
 end
 function get_grad_inequality_constraint!(
         M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j = :,
-        range::AbstractPowerRepresentation = NestedPowerRepresentation(),
+        range::AbstractPowerRepresentation = get_range(co.inequality_constraints),
     )
     isnothing(co.inequality_constraints) && (return X)
     return get_gradient!(M, X, co.inequality_constraints, p, j, range)
@@ -572,7 +572,7 @@ function is_feasible(M, o, p; check_point::Bool = true, error::Symbol = :none, k
     feasible = v && all(g .<= cmo.atol) && isapprox.(h, 0; atol = cmo.atol) |> all
     # if we are feasible or no error shall be generated
     ((error === :none) || feasible) && return feasible
-    # collect information about infeasibily
+    # collect information about infeasibility
     if (error === :info) || (error === :warn) || (error === :error)
         s = get_feasibility_status(M, cmo, p; g = g, h = h)
         (error === :error) && throw(ErrorException(s))
@@ -591,7 +591,7 @@ end
         atol = cmo.atol,
     )
 
-Generate a message about the feasibiliy of `p` with respect to the [`ConstrainedManifoldObjective`](@ref).
+Generate a message about the feasibility of `p` with respect to the [`ConstrainedManifoldObjective`](@ref).
 You can also provide the evaluated vectors for the values of `g` and `h` as keyword arguments,
 in case you had them evaluated before.
 """
@@ -1994,7 +1994,7 @@ function get_proximal_map(M::AbstractManifold, co::ManifoldCachedObjective, λ, 
     !(haskey(co.cache, :ProximalMap)) && return get_proximal_map(M, co.objective, λ, p, i)
     return copy(
         M,
-        get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do  # use the tuple (p,i) as key
+        get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do  # use the tuple (p,λ,i) as key
             get_proximal_map(M, co.objective, λ, p, i)
         end,
     )
@@ -2293,7 +2293,7 @@ Depending on the `mode` different results appear if the symbol does not exist in
 """
 function get_count(co::ManifoldCountObjective, s::Symbol, mode::Symbol = :None)
     if !haskey(co.counts, s)
-        msg = "There is no recorded count for $s."
+        msg = "There is no recorded count for :$s."
         (mode === :warn) && (@warn msg)
         (mode === :error) && (error(msg))
         return -1
@@ -3529,7 +3529,7 @@ mutable struct ManifoldProximalMapObjective{TC, TP, V} <: AbstractManifoldCostOb
 end
 function _check_prox_number(pf::Union{Tuple, Vector}, i)
     n = length(pf)
-    (i > n) && throw(ErrorException("the $(i)th entry does not exists, only $n available."))
+    (i > n) && throw(ErrorException("the $(i)th entry does not exist, only $n available."))
     return true
 end
 

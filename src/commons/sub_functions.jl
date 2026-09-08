@@ -296,9 +296,9 @@ function (L::ExactPenaltyCost{<:LinearQuadraticHuber})(M::AbstractManifold, p)
     hp = get_equality_constraint(M, L.co, p, :)
     m = length(gp)
     n = length(hp)
-    cost_eq_greater_u = (m > 0) ? sum((gp .- L.u / 2) .* (gp .> L.u)) : 0.0
-    cost_eq_pos_smaller_u = (m > 0) ? sum((gp .^ 2 ./ (2 * L.u)) .* (0 .< gp .<= L.u)) : 0.0
-    cost_ineq = cost_eq_greater_u + cost_eq_pos_smaller_u
+    cost_ineq_greater_u = (m > 0) ? sum((gp .- L.u / 2) .* (gp .> L.u)) : 0.0
+    cost_ineq_pos_smaller_u = (m > 0) ? sum((gp .^ 2 ./ (2 * L.u)) .* (0 .< gp .<= L.u)) : 0.0
+    cost_ineq = cost_ineq_greater_u + cost_ineq_pos_smaller_u
     cost_eq = (n > 0) ? sum(sqrt.(hp .^ 2 .+ L.u^2)) : 0.0
     return get_cost(M, L.co, p) + (L.ρ) * (cost_ineq + cost_eq)
 end
@@ -316,7 +316,7 @@ This struct is also a functor in both formats
 ## Fields
 
 * `ρ::T`, `u::T` see [`ExactPenaltyCost`](@ref).
-* `co::CO` the nonsmooth objective
+* `co::CO` the [`ConstrainedManifoldObjective`](@ref)
 
 ## Constructor
 
@@ -698,7 +698,7 @@ $(
     )
 ),
 ```
-where ``⊙`` denotes the Hadamard (or element wise) product.
+where ``⊙`` denotes the Hadamard (or elementwise) product.
 
 # Fields
 
@@ -877,13 +877,13 @@ end
 function (lH::LagrangianHessian)(M, Y, p, X)
     Z = copy(M, p, X)
     get_hessian!(M, Y, lH.co, p, X)
-    n = inequality_constraints_length(lH.co)
-    m = equality_constraints_length(lH.co)
-    for i in 1:n
+    m = inequality_constraints_length(lH.co)
+    n = equality_constraints_length(lH.co)
+    for i in 1:m
         get_hess_inequality_constraint!(M, Z, lH.co, p, X, i)
         copyto!(M, Y, p, Y + lH.μ[i] * Z)
     end
-    for j in 1:m
+    for j in 1:n
         get_hess_equality_constraint!(M, Z, lH.co, p, X, j)
         copyto!(M, Y, p, Y + lH.λ[j] * Z)
     end

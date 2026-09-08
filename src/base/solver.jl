@@ -78,14 +78,14 @@ Decorate the [`AbstractManoptSolverState`](@ref) `s` with specific decorators.
 The optional arguments provide necessary details on the decorators.
 
 * `callback=missing`: (deprecated) add an arbitrary (simple) callback function `cb()` to be called every iteration.
-* `debug=Array{Union{Symbol,DebugAction,String,Int, Function},1}()`: a set of symbols
+* `debug=missing`: a set of symbols
   representing [`DebugAction`](@ref)s, `Strings` used as dividers and a sub-sampling
   integer. These are passed as a [`DebugGroup`](@ref) within `:Iteration` to the
   [`DebugSolverState`](@ref) decorator dictionary. A function is added as a (non-simple) callback within a [`DebugCallback`](@ref).
   Only exception is `:Stop` that is passed to `:Stop`.
-* `record=Array{Union{Symbol,RecordAction,Int},1}()`: specify recordings
+* `record=missing`: specify recordings
   by using `Symbol`s or [`RecordAction`](@ref)s directly.
-  An integer can again be used for only recording every ``k``-th iteration.
+  An integer can again be used for only recording every `n`-th iteration.
 * `return_state=false`: indicate whether to wrap the state in a [`ReturnSolverState`](@ref),
   indicating that the solver should return the state and not (only) the minimizer.
 

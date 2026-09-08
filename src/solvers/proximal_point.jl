@@ -23,7 +23,7 @@ $(_args(:M))
 
 ## Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `λ=k -> 1.0`: a function to compute ``λ_k`` for ``k ∈ ℕ``,
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))

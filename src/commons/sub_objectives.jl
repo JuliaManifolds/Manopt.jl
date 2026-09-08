@@ -75,7 +75,7 @@ This struct is also a functor in both formats
 * `(M, p) -> X` to compute the gradient in allocating fashion.
 * `(M, X, p)` to compute the gradient in an in-place fashion.
 
-Additionally this gradient accepts a positional last argument to specify the `range`
+Additionally, the in-place variant `(M, X, p, range)` accepts a positional last argument to specify the `range`
 for the internal gradient call of the constrained objective.
 
 Based on the internal [`ConstrainedManifoldObjective`](@ref), it computes the gradient
@@ -436,7 +436,7 @@ end
 function show(io::IO, lmlsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective)
     print(io, "LevenbergMarquardtLinearSurrogateCoordinatesObjective(", lmlsco.objective, "; ")
     print(io, "penalty=", lmlsco.penalty, ", threshold=", lmlsco.threshold, ", mode=:", lmlsco.mode)
-    print(io, ", basis = ", lmlsco.basis)
+    print(io, ", basis=", lmlsco.basis)
     print(io, ", residuals=", lmlsco.value_cache, ", jacobian_cache=", lmlsco.jacobian_cache)
     return print(io, ")")
 end
@@ -836,7 +836,7 @@ C = $(_tex(:sqrt, "ρ'(p)"))(I-αP), $(_tex(:qquad)) P = $(_tex(:frac, "F(p)F(p)
 where ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``.
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
-[`ManifoldNonlinearLeastSquaresObjective`](@ref) and summed up.
+[`ManifoldNonlinearLeastSquaresObjective`](@ref) and the results are stacked into `y`.
 
 This can be computed in-place of `y`.
 
@@ -1149,7 +1149,7 @@ _doc_get_normal_vector_field = """
     get_normal_vector_field(M::AbstractManifold, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis)
     get_normal_vector_field!(M::AbstractManifold, c, lmsco::LevenbergMarquardtLinearSurrogateObjective, p, B::AbstractBasis)
 
-Compute the normal linear operator tangent vector ``X`` corresponding to the normal equations (optimality conditions) of the
+Compute the tangent vector ``X`` of the normal vector field corresponding to the normal equations (optimality conditions) of the
 Levenberg-Marquardt surrogate objective, i.e.,
 
 ```math
@@ -1325,7 +1325,7 @@ y = $(_tex(:frac, _tex(:sqrt, "ρ'(p)"), "1-α"))F(p)
 where the scaling uses ``α = 1 - $(_tex(:sqrt, "1 + 2 $(_tex(:frac, "ρ''(p)", "ρ'(p)"))$(_tex(:norm, "F(p)"; index = "2"))^2"))``
 
 Note that this is done per every block (vectorial function with its robustifier) of the underlying
-[`ManifoldNonlinearLeastSquaresObjective`](@ref) and summed up.
+[`ManifoldNonlinearLeastSquaresObjective`](@ref) and the results are stacked into `y`.
 
 See also
 * [`get_LevenbergMarquardt_scaling`](@ref) for details on the scaling factor
@@ -1419,7 +1419,7 @@ end
 """
     NormalEquationsObjective{O <: AbstractLinearSurrogateObjective} <: AbstractSymmetricLinearSystemObjective
 
-A [`AbstractLinearSurrogateObjective`](@ref) might be overdetermined, and it usually is overdetermined,
+An [`AbstractLinearSurrogateObjective`](@ref) might be overdetermined, and it usually is overdetermined,
 e.g. for the case of the [`LevenbergMarquardt`](@ref) algorithm.
 For this case, one considers the [normal equations](https://en.wikipedia.org/wiki/Non-linear_least_squares).
 
@@ -1475,7 +1475,7 @@ function get_cost(
     n = residuals_count(lnsco.objective.objective)
     vf = zeros(number_eltype(p), n)
     get_vector_field!(M, vf, lnsco.objective, p)
-    add_linear_operator_coord!(TpM, vf, lnsco.objective, p, cX)
+    add_linear_operator_coord!(M, vf, lnsco.objective, p, cX)
     cost = 0.5 * norm(vf)^2
     cost += (lnsco.objective.penalty / 2) * norm(M, p, X)^2
     return cost

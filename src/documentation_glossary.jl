@@ -40,7 +40,7 @@ _tex_abs(v) = raw"\lvert " * "$v" * raw" \rvert"
 Glossaries.define!(_glossary_tex_terms, :abs, :math, _tex_abs)
 Glossaries.define!(_glossary_tex_terms, :argmin, :math, raw"\operatorname*{arg\,min}")
 Glossaries.define!(_glossary_tex_terms, :ast, :math, raw"\ast")
-_tex_bar(letter) = raw"\bar" * "$(letter)"
+_tex_bar(letter) = raw"\bar{" * "$(letter)" * "}"
 Glossaries.define!(_glossary_tex_terms, :bar, :math, _tex_bar)
 Glossaries.define!(_glossary_tex_terms, :bf, :math, (letter) -> raw"\mathbf{" * "$letter" * "}")
 Glossaries.define!(_glossary_tex_terms, :big, :math, raw"\big")
@@ -353,7 +353,7 @@ _fields(args...; kwargs...) = __field_formatter(_glossary_variables, args...; kw
 Glossaries.define!(_glossary_variables, :at_iteration)
 Glossaries.define!(
     _glossary_variables, :at_iteration, :description,
-    "an integer indicating at which iteration the stopping criterion last indicated to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case;",
+    "an integer indicating at which iteration the stopping criterion last indicated to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case.",
 )
 Glossaries.define!(_glossary_variables, :at_iteration, :type, "Int")
 
@@ -516,9 +516,8 @@ Glossaries.define!(_glossary_variables, :sub_state, :type, "Union{`[`AbstractMan
 Glossaries.define!(_glossary_variables, :subgrad_f, :name, "∂f")
 Glossaries.define!(
     _glossary_variables, :subgrad_f, :description,
-    (; M = "M", p = "p", f = "f", kwargs...) -> """
-    the subgradient ``∂$f: $(_math(:Manifold; M = M)) → $(_math(:TangentBundle; M = M))`` of ``$f`` as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place. This function should always only return one element from the subgradient.
-    """,
+    (; M = "M", p = "p", f = "f", kwargs...) ->
+    "the subgradient ``∂$f: $(_math(:Manifold; M = M)) → $(_math(:TangentBundle; M = M))`` of ``$f`` as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place. This function should always only return one element from the subgradient.",
 )
 
 Glossaries.define!(_glossary_variables, :vector_transport_method)

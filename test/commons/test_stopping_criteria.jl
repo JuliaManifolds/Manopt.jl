@@ -102,7 +102,7 @@ end
         sb = "StopWhenChangeLess(1.0e-6; inverse_retraction_method=LogarithmicInverseRetraction())"
         @test repr(b) == sb
         @test get_reason(b) == ""
-        b2 = StopWhenChangeLess(Euclidean(), 1.0e-6) # second constructor
+        b2 = StopWhenChangeLess(1.0e-6) # second constructor, without a manifold
         @test repr(b2) == sb
         c = StopWhenGradientNormLess(1.0e-6)
         sc = "StopWhenGradientNormLess(1.0e-6)"
@@ -519,7 +519,7 @@ end
             # Then (a) sh4 has converged, since one of its components has
             @test has_converged(sh4)
             # As well as sh5, since one of its children does indicate convergence
-            @test has_converged(sh5)   # false -- expected true
+            @test has_converged(sh5)
         end
     end
 

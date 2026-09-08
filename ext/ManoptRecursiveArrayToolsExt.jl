@@ -3,12 +3,10 @@ using Manopt
 using ManifoldsBase
 using ManifoldsBase: submanifold_components
 import Manopt:
-    max_stepsize,
     alternating_gradient_descent,
     alternating_gradient_descent!,
     get_gradient,
-    get_gradient!,
-    set_parameter!
+    get_gradient!
 using Manopt: _tex, ManifoldDefaultsFactory, _produce_type
 
 using RecursiveArrayTools

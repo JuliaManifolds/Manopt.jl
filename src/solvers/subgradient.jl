@@ -20,7 +20,7 @@ Initialize the Subgradient method state
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`SubGradientMethodState`](@ref)`)"))

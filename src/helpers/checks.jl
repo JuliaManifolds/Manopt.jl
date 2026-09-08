@@ -172,7 +172,7 @@ no plot is generated.
   Then set the mode to `:CriticalPoint` to use [`gradient_descent`](@ref) to find a critical point.
   Note: this requires (and evaluates) a new tangent vector `X`
 * `atol`, `rtol`:      (same defaults as `isapprox`) tolerances that are passed down to all checks
-* `a`, `b`            two real values to verify linearity of the Hessian (if `check_linearity=true`)
+* `a=randn()`, `b=randn()`: two real values to verify linearity of the Hessian (if `check_linearity=true`)
 * `N=101`:
   number of points to verify within the `log_range` default range ``[10^{-8},10^{0}]``
 * `exactness_tol=1e-12`:
@@ -349,7 +349,7 @@ function is_Hessian_linear(
     Z2 = a * Hess_f(M, p, X) + b * Hess_f(M, p, Y)
     isapprox(M, p, Z1, Z2; kwargs...) && return true
     n = norm(M, p, Z1 - Z2)
-    m = "Hess f seems to not be linear since Hess_f(p)[aX+bY] differs from aHess f(p)[X] + b*Hess f(p)[Y] by $(n).\n"
+    m = "Hess f seems to not be linear since Hess f(p)[aX+bY] differs from a*Hess f(p)[X] + b*Hess f(p)[Y] by $(n).\n"
     (io !== nothing) && print(io, m)
     (error === :info) && @info m
     (error === :warn) && @warn m

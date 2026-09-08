@@ -45,7 +45,7 @@ $(_args([:M, :sub_problem, :sub_state]))
 # Keyword arguments
 
 * `bundle_size=50`
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
 * `m=0.0125`
 $(_kwargs(:p; add_properties = [:as_Initial]))
@@ -264,8 +264,9 @@ _doc_PBM = """
     proximal_bundle_method(M, f, ∂f, p=rand(M); kwargs...)
     proximal_bundle_method!(M, f, ∂f, p; kwargs...)
 
-perform a proximal bundle method ``p^{(k+1)} = $(_tex(:retr))_{p^{(k)}}(-d_k)``,
-where ``$(_tex(:retr))`` is a retraction and
+perform a proximal bundle method with the candidate update ``q_{k+1} = $(_tex(:retr))_{p_k}(-d_k)``
+if ``$(_tex(:norm, "d_k")) ≤ ε`` and ``q_{k+1} = $(_tex(:retr))_{p_k}$(_tex(:bigl))(-ε $(_tex(:frac, "d_k", _tex(:norm, "d_k")))$(_tex(:bigr)))`` otherwise,
+where ``$(_tex(:retr))`` is a retraction, ``ε`` is the `ε` keyword argument, and
 
 $(_doc_PBM_dk)
 
@@ -328,8 +329,8 @@ function proximal_bundle_method!(
         vector_transport_method::VTransp = default_vector_transport_method(M, typeof(p)),
         α₀ = 1.2,
         ε = 1.0e-2,
-        δ = -1.0, #0.0,
-        μ = 0.5, #1.0,
+        δ = -1.0,
+        μ = 0.5,
         sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = evaluation,
         sub_problem = sub_state isa InplaceEvaluation ?
             proximal_bundle_method_subsolver! : proximal_bundle_method_subsolver,

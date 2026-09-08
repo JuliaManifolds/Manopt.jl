@@ -59,16 +59,18 @@ with two small modifications:
 
 # Function
 
-    (p::LowerTriangularAdaptivePoll)(problem, mesh_size; scale_mesh=1.0, max_stepsize=Inf)
+    (ltap::LowerTriangularAdaptivePoll)(problem, mesh_size; scale_mesh=1.0, max_stepsize=Inf)
 
 # Fields
 
 * `base_point::P`: a point on the manifold, where the mesh is built in the tangent space
 * `basis`: a basis of the current tangent space with respect to which the mesh is stored
 * `candidate::P`: a memory for a new point/candidate
+* `last_poll_improved::Bool`: whether the last poll found a candidate with a smaller cost
 * `mesh`: a matrix whose columns are the coordinates, with respect to `basis`, of the mesh directions in the tangent space at `base_point`.
 * `random_vector`: a ``d``-dimensional random vector ``b_l``
 * `random_index`: a random index ``ι``
+* `poll_counter`: the mesh level ``l`` the stored `random_vector` and `random_index` were generated for
 $(_fields([:retraction_method, :vector_transport_method]))
 * `X::T`: the last successful poll direction stored as a tangent vector.
   Initialized to the zero vector, transported to the new tangent space when the base point is updated, and reset to the zero vector after an unsuccessful poll.
@@ -213,7 +215,7 @@ function (ltap::LowerTriangularAdaptivePoll)(
         rand!(ltap.random_vector, S)
         ltap.random_vector[ltap.random_index] = rand((-2^l, 2^l))
     end #otherwise we already created ltap.random_vector for this mesh size
-    # Generate L lower triangular, (n-1)x(n-1) in M
+    # Generate L upper triangular, (n-1)x(n-1) in M
     for i in 1:(n - 1)
         for j in 1:(n - 1)
             if i < j
@@ -387,7 +389,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
 ## Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `max_stepsize=`$(_link(:injectivity_radius))`(M)`: a maximum step size, where `1.0` is used if the injectivity radius is infinite
 * `mesh_basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: a basis to generate the mesh in
 * `poll::`[`AbstractMeshPollFunction`](@ref)`=`[`LowerTriangularAdaptivePoll`](@ref)`(M, copy(M,p))`: the poll function to use
@@ -538,9 +540,9 @@ show(io::IO, c::StopWhenPollSizeLess) = print(io, "StopWhenPollSizeLess($(c.thre
 _doc_mads = """
 
     mesh_adaptive_direct_search(M, f, p=rand(M); kwargs...)
-    mesh_adaptive_direct_search(M, mco::AbstractManifoldCostObjective, p=rand(M); kwargs..)
+    mesh_adaptive_direct_search(M, mco::AbstractManifoldCostObjective, p=rand(M); kwargs...)
     mesh_adaptive_direct_search!(M, f, p; kwargs...)
-    mesh_adaptive_direct_search!(M, mco::AbstractManifoldCostObjective, p; kwargs..)
+    mesh_adaptive_direct_search!(M, mco::AbstractManifoldCostObjective, p; kwargs...)
 
 The Mesh Adaptive Direct Search (MADS) algorithm minimizes an objective function ``f: $(_math(:Manifold)) → ℝ`` on the manifold `M`.
 The algorithm constructs an implicit mesh in the tangent space ``$(_math(:TangentSpace))`` at the current candidate ``p``.

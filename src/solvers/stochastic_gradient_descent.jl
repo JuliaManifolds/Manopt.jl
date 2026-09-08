@@ -26,7 +26,7 @@ Create a `StochasticGradientDescentState` with start point `p`.
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `direction=`[`StochasticGradientRule`](@ref)`(M; X=`$(_link(:zero_vector))`)`
 * `order_type=:Random`
 * `order=Int[]`: specify how to store the order of indices for the next epoch
@@ -301,9 +301,9 @@ function initialize_solver!(::AbstractManoptProblem, s::StochasticGradientDescen
     initialize_stepsize!(s.stepsize)
     return s
 end
-function step_solver!(mp::AbstractManoptProblem, s::StochasticGradientDescentState, iter)
-    step, s.X = s.direction(mp, s, iter)
-    callback(:Direction, mp, s, iter)
+function step_solver!(mp::AbstractManoptProblem, s::StochasticGradientDescentState, k)
+    step, s.X = s.direction(mp, s, k)
+    callback(:Direction, mp, s, k)
     retract!(get_manifold(mp), s.p, s.p, -step * s.X, s.retraction_method)
     s.k = ((s.k) % length(s.order)) + 1
     return s

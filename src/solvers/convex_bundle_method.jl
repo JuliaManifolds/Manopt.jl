@@ -135,7 +135,7 @@ Most of the following keyword arguments set default values for the fields mentio
 * `atol_errors=eps()`
 * `atol_λ=eps()`
 * `bundle_cap=25`
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `diameter=50.0`
 * `domain=(M, p) -> true`: a function that evaluates to true when the current candidate is in the domain of the objective
 $(_kwargs(:inverse_retraction_method))
@@ -480,8 +480,8 @@ Specify a step size that performs a backtracking to the interior of the domain o
 
 * `candidate_point=allocate_result(M, rand)`:
   specify a point to be used as memory for the candidate points.
-* `contraction_factor`: how to update ``s`` in the decrease step
-* `initial_stepsize`: specify an initial step size
+* `contraction_factor=0.95`: the factor the step size is multiplied with in every backtracking step
+* `initial_stepsize=1.0`: the step size the backtracking starts from
 $(_kwargs(:retraction_method))
 
 $(_note(:ManifoldDefaultsFactory, "DomainBackTrackingStepsize"))
@@ -658,6 +658,7 @@ $(_args([:M, :f, :subgrad_f, :p]))
 * `bundle_cap=25`
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `contraction_factor=0.975`: the contraction factor passed to the default [`DomainBackTracking`](@ref) step size.
+* `debug=[`[`DebugWarnIfLagrangeMultiplierIncreases`](@ref)`()]`: by default warn when the stopping parameter increases; pass `debug=[]` to deactivate.
 * `diameter=π/3`: estimate for the diameter of the level set of the objective function at the starting point.
 * `domain=(M, p) -> isfinite(f(M, p))`: a function that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
 $(_kwargs(:evaluation))
@@ -672,6 +673,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@r
 $(_kwargs(:sub_problem; default = "`[`convex_bundle_method_subsolver`](@ref)` "))
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)`()"))
 $(_kwargs(:vector_transport_method))
+$(_kwargs(:X)) to specify the type of tangent vector to use.
 * `ϱ=nothing`: curvature-dependent convexification coefficient; computed from `k_min`, `k_max`, and `diameter` if `nothing`.
 
 $(_note(:OtherKeywords))
@@ -697,7 +699,7 @@ function convex_bundle_method!(
         bundle_cap::Int = 25,
         callbacks = Dict{Symbol, Function}(),
         contraction_factor = 0.975,
-        diameter::Real = π / 3, # was `k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3)`,
+        diameter::Real = π / 3,
         domain = (M, p) -> isfinite(f(M, p)),
         m::Real = 1.0e-3,
         k_max = 0,

@@ -26,18 +26,18 @@ $(_fields(:p))
 $(_fields(:p; name = "q"))
   serving as temporary storage for interims results; avoids allocations
 * `social_vector`:    temporary storage for a tangent vector related to `social_weight`
-* `swarm`:            a set of points (of type `AbstractVector{P}`) on a manifold ``$(_math(:Sequence, "a", "i", "1", "N"))``
+* `swarm`:            a set of points (of type `AbstractVector{P}`) on a manifold ``$(_math(:Sequence, "s", "k", "1", "n"))``
 
 # Constructor
 
     ParticleSwarmState(M, initial_swarm, velocity; kwargs...)
 
-construct a particle swarm solver state for the manifold `M` starting with the initial population `initial_swarm` with `velocities`.
+construct a particle swarm solver state for the manifold `M` starting with the initial population `initial_swarm` with velocities `velocity`.
 The `p` used in the following defaults is the type of one point from the swarm.
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `cognitive_weight=1.4`
 * `inertia=0.65`
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
@@ -376,7 +376,7 @@ is less than a threshold.
 
 # Constructor
 
-    StopWhenSwarmVelocityLess(tolerance::Float64)
+    StopWhenSwarmVelocityLess(tolerance::Real)
 
 initialize the stopping criterion to a certain `tolerance`.
 """

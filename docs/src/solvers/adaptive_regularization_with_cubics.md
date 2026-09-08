@@ -45,7 +45,7 @@ sub_problem = DefaultManoptProblem(TangentSpace(M, p), arc_obj)
 where `mho` is the Hessian objective of `f` to solve.
 Then use this for the `sub_problem` keyword
 and use your favorite gradient based solver for the `sub_state` keyword, for example a
-[`ConjugateGradientDescentState`](@ref)
+[`ConjugateGradientDescentState`](@ref).
 
 ## Additional stopping criteria
 
@@ -60,7 +60,7 @@ The [`adaptive_regularization_with_cubics`](@ref) solver requires the following 
 of a manifold to be available
 
 * A [`retract!`](@extref ManifoldsBase :doc:`retractions`)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`) to a favorite retraction. If this default is set, a `retraction_method=` does not have to be specified.
-* if you do not provide an initial regularization parameter `σ`, a [`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`) is required.
+* if you do not provide both an initial regularization parameter `σ=` and a `maxIterLanczos=`, a [`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`) is required, since the defaults of both are computed from it.
 * By default the tangent vector storing the gradient is initialized calling [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`.
 * [`inner`](@extref `ManifoldsBase.inner-Tuple{AbstractManifold, Any, Any, Any}`)`(M, p, X, Y)` is used within the algorithm step
 

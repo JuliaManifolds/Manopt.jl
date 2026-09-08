@@ -118,8 +118,8 @@ end
 Append a momentum to a gradient processor.
 
 The last direction and last iterate are stored and the new one is composed as
-``η_i = m η_{i-1}' + d_i``, where ``d_i`` is the current (inner) direction and ``η_{i-1}'`` is
-the vector transported last direction multiplied by the momentum ``m``.
+``η_k = m η_{k-1}' + d_k``, where ``d_k`` is the current (inner) direction, ``η_{k-1}'`` is
+the last direction transported to the current iterate, and ``m`` is the momentum.
 The step size is not folded into ``η_i``, the solver applies it to the returned direction.
 This is the Riemannian version of gradient descent with momentum, first used in [RoyMhammediHarandi:2018; Section 3.1](@cite);
 see [LeggioScuppa:2026; Section 6](@cite) for a convergence analysis.
@@ -313,7 +313,7 @@ function NesterovRule(M::AbstractManifold, p; kwargs...)
     return NesterovRule(M; p = copy(M, p), kwargs...)
 end
 function NesterovRule(
-        M::AbstractManifold; p::P = rand(M), γ::Real = 0.001, μ::Real = 0.9, shrinkage::Function = i -> 0.8,
+        M::AbstractManifold; p::P = rand(M), γ::Real = 0.001, μ::Real = 0.9, shrinkage::Function = k -> 0.8,
         inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M, typeof(p)),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
     ) where {P}
@@ -347,7 +347,7 @@ function (n::NesterovRule)(mp::AbstractManoptProblem, s::AbstractGradientSolverS
 end
 function Base.show(io::IO, nr::NesterovRule)
     print(io, "NesterovRule(; γ = ", nr.γ, ", μ = ", nr.μ, ", v = ", nr.v, ", shrinkage = ", nr.shrinkage)
-    return print(io, ", inverse_retraction_method = ", nr. inverse_retraction_method, ", retraction_method = ", nr.retraction_method, ")")
+    return print(io, ", inverse_retraction_method = ", nr.inverse_retraction_method, ", retraction_method = ", nr.retraction_method, ")")
 end
 function status_summary(nr::NesterovRule; context::Symbol = :default)
     (context === :short) && return repr(nr)
@@ -384,7 +384,7 @@ This computes a Nesterov type update using the following steps, see [ZhangSra:20
 5. ``v_{k+1} = $(_tex(:retr))_{y_k}\\Bigl(\\frac{(1-α_k)γ_k}{$(_tex(:bar, "γ"))_{k+1}}$(_tex(:retr))_{y_k}^{-1}(v_k) - \\frac{α_k}{$(_tex(:bar, "γ"))_{k+1}}$(_tex(:grad))f(y_k) \\Bigr)``
 6. ``γ_{k+1} = \\frac{1}{1+β_k}$(_tex(:bar, "γ"))_{k+1}``
 
-Then the direction from ``p_k`` to ``p_{k+1}`` by ``d = $(_tex(:invretr))_{p_k}p_{k+1}`` is returned.
+Then, with ``d = $(_tex(:invretr))_{p_k}p_{k+1}`` the direction from ``p_k`` to ``p_{k+1}``, the pair ``(h_k, -d/h_k)`` is returned, so that the solver's step ``$(_tex(:retr))_{p_k}(-h_k ⋅ (-d/h_k))`` yields ``p_{k+1}``.
 
 # Input
 

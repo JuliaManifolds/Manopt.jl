@@ -126,7 +126,7 @@ function get_message(s::AbstractManoptSolverState)
     return _get_message(s, dispatch_state_decorator(s))
 end
 _get_message(s::AbstractManoptSolverState, ::Val{true}) = get_message(s.state)
-#INtroduce a default that there is no message
+# Introduce a default that there is no message
 _get_message(s::AbstractManoptSolverState, ::Val{false}) = ""
 
 """
@@ -269,9 +269,9 @@ number of iterations performed, or `""` if the solver has not been run yet.
 This is used within the `:inline` `context` of [`status_summary`](@ref).
 """
 function _iteration_suffix(ams::AbstractManoptSolverState)
-    i = get_count(ams, :Iterations)
-    (i > 0) || return ""
-    return (has_converged(ams) ? " (converged" : " (stopped") * " after $i iterations)"
+    k = get_count(ams, :Iterations)
+    (k > 0) || return ""
+    return (has_converged(ams) ? " (converged" : " (stopped") * " after $k iterations)"
 end
 
 @doc """

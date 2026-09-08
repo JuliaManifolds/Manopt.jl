@@ -162,7 +162,7 @@ where `evaluation` determines how to call the sub function.
 * `σmin=1e-10`
 * `ρ_regularization=1e3`
 $(_kwargs([:evaluation, :p, :retraction_method]))
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
 $(_kwargs(:X))
 """
@@ -354,13 +354,14 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos-1)"))
+  the last criterion is only part of the default if the `sub_state` is a [`LanczosState`](@ref)
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)`: the stopping criterion of the default sub solver
 $(_kwargs(:sub_kwargs))
 * `θ=0.5`: the ``θ`` parameter of the [`StopWhenFirstOrderProgress`](@ref) within the default `sub_stopping_criterion=`
 * `sub_objective=nothing`: a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword
   By default, this is initialized as an [`AdaptiveRegularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
 $(_kwargs(:sub_state; default = "`[`LanczosState`](@ref)`(TangentSpace(M, copy(M, p)))"))
-$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(`[`TangentSpace`](@extref `ManifoldsBase.TangentSpace`)`(M, copy(M, p)), sub_objective)"))
 
 $(_note(:OtherKeywords))
 

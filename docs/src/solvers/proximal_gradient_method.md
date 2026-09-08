@@ -26,7 +26,7 @@ ProximalGradientNonsmoothSubgradient
 ProximalGradientNonsmoothCost
 ```
 
-## [Stepsize](@id Sec-ProxGrad-Stepsize)
+## [Step size](@id Sec-ProxGrad-Stepsize)
 
 ```@docs
 ProximalGradientMethodBacktracking

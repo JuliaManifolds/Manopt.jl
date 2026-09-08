@@ -31,7 +31,7 @@ $(_args(:M))
 
 * `α= k -> 0.9`: relaxation of the step from old to new iterate, to be precise
   ``s^{(k+1)} = g(α_k; s^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double reflection involved in the DR algorithm
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter
   during the calls

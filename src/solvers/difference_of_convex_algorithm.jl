@@ -147,7 +147,7 @@ or a closed form solution `sub_solver` for the sub-problem, of the form `(M, p, 
 
 ## further keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))

@@ -72,7 +72,7 @@ If the gradient does not exist everywhere, that is if the splitting yields summa
 * The [Cyclic Proximal Point](cyclic_proximal_point.md) 🫏 uses proximal maps of the functions from splitting ``f`` into summands ``f_i``.
 * [Difference of Convex Algorithm](@ref solver-difference-of-convex) (DCA) uses a splitting of the (non-convex) function ``f = g - h`` into a difference of two functions; for each of these it is required to have access to the gradient of ``g`` and the subgradient of ``h`` to state a sub problem in every iteration to be solved.
 * [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) uses a splitting of the (non-convex) function ``f = g - h`` into a difference of two functions; provided the proximal map of ``g`` and the subgradient of ``h``, the next iterate is computed. Compared to DCA, the corresponding sub problem is here written in a form that yields the proximal map.
-* [Douglas-Rachford](DouglasRachford.md) uses a splitting ``f(p) = F(p) + G(p)`` and their proximal maps to compute a minimizer of ``f``, which can be non-smooth.
+* [Douglas-Rachford](DouglasRachford.md) uses a splitting ``f(p) = g(p) + h(p)`` and their proximal maps to compute a minimizer of ``f``, which can be non-smooth.
 * The [Gradient Sampling Algorithm](gradient_sampling.md) samples the gradient at points in a ball around the current iterate to build a surrogate and solve that instead to find a next iterate.
 * [Primal-dual Riemannian semismooth Newton Algorithm](@ref solver-pdrssn) extends Chambolle-Pock and requires the differentials of the proximal maps additionally.
 * The [Proximal Gradient Method](proximal_gradient_method.md) uses a splitting ``f = g + h`` into a smooth ``g``, whose gradient is required, and a nonsmooth ``h``, whose proximal map is required.
@@ -94,7 +94,7 @@ For these you can use
 * The [Augmented Lagrangian Method](augmented_Lagrangian_method.md) (ALM), where both `g` and `grad_g` as well as `h` and `grad_h` are keyword arguments, and one of these pairs is mandatory.
 * The [Exact Penalty Method](exact_penalty_method.md) (EPM) uses a penalty term instead of augmentation, but has the same interface as ALM.
 * The [Interior Point Newton Method](interior_point_Newton.md) (IPM) rephrases the KKT system of a constrained problem as a Newton step that is performed in every iteration.
-* [Frank-Wolfe algorithm](FrankWolfe.md), where besides the gradient of ``f`` either a closed form solution or a (maybe even automatically generated) sub problem solver for ``\operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p^{(k)}), \log_{p^{(k)}}q⟩`` is required, where ``p^{(k)}`` is a fixed point on the manifold (changed in every iteration).
+* [Frank-Wolfe algorithm](FrankWolfe.md), where besides the gradient of ``f`` either a closed form solution or a (maybe even automatically generated) sub problem solver for ``\operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p^{(k)}), \log_{p^{(k)}}q⟩`` is required, where ``p^{(k)}`` is the current iterate, which is kept fixed while the sub problem is solved.
 * The [Projected Gradient Method](projected_gradient_method.md) projects the gradient step back onto the feasible set in every iteration.
 
 ## On the tangent space

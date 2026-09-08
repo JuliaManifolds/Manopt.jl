@@ -93,7 +93,7 @@ $(_args([:M, :sub_problem, :sub_state]))
 
 ## Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
@@ -257,7 +257,7 @@ $(_note(:GradientObjective))
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs([:differential, :evaluation, :retraction_method]))
-$(_kwargs(:stepsize; default = "`[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)"))
+$(_kwargs(:stepsize; default = "`[`DecreasingLength`](@ref)`(; length=2.0, shift=2)"))
   which in practice yields the step size ``s_k = $(_tex(:frac, "2", "k+2"))`` mentioned above
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-8)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-8)"))
 * `sub_cost=`[`FrankWolfeCost`](@ref)`(p, X)`:

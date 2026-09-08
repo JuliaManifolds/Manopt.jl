@@ -47,8 +47,9 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 # Keyword parameters
 
 * `storage=`[`StoreStateAction`](@ref)`( [:Iterate] )`: storage of the previous iterate
-* `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`)
+* `prefix="Last Change: "`: prefix of the debug output (ignored if you set `format`)
 * `io=stdout`: default stream to print the debug to.
+* `format="\$(prefix)%f"`: format to print the output
 $(_kwargs(:inverse_retraction_method; p = ""))
 """
 mutable struct DebugChange{IR <: AbstractInverseRetractionMethod} <: DebugAction
@@ -166,7 +167,7 @@ function status_summary(di::DebugDivider; context::Symbol = :default)
     return "A DebugAction printing the String “$(escape_string(di.divider))” as a divider"
 end
 # A global constant for empty debugs
-_EMPTY_DIVIDER = DebugDivider("")
+const _EMPTY_DIVIDER = DebugDivider("")
 
 """
     DebugDualChange(; kwargs...)
@@ -230,7 +231,7 @@ end
     DebugDualResidual <: DebugAction
 
 A Debug action to print the dual residual.
-The constructor accepts a printing function and some (shared) storage, which
+The constructor accepts some (shared) storage or a tuple `(p, X, n)` of initial values, which
 should at least record `:Iterate`, `:X` and `:n`.
 
 # Constructor
@@ -639,7 +640,7 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 # Keyword parameters
 
 * `storage=`[`StoreStateAction`](@ref)`( [:Iterate, :Gradient] )`: storage of the action for previous data
-* `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`)
+* `prefix="Last Change: "`: prefix of the debug output (ignored if you set `format`)
 * `io=stdout`: default stream to print the debug to.
 * `format="\$(prefix)%f"`: format to print the output
 $(_kwargs(:vector_transport_method))
@@ -819,7 +820,7 @@ end
 
 An [`AbstractManoptSolverState`](@ref) or one of its sub steps like a
 [`Stepsize`](@ref) might generate warnings throughout their computations.
-This debug can be used to `:print` them display them as `:info` or `:warnings` or even `:error`,
+This debug can be used to `:Print` them or to display them as `:Info`, `:Warning` or even `:Error`,
 depending on the message type.
 
 # Constructor
@@ -893,7 +894,7 @@ end
     DebugPrimalDualResidual <: DebugAction
 
 A Debug action to print the primal dual residual.
-The constructor accepts a printing function and some (shared) storage, which
+The constructor accepts some (shared) storage or a tuple `(p, X, n)` of initial values, which
 should at least record `:Iterate`, `:X` and `:n`.
 
 # Constructor
@@ -956,7 +957,7 @@ end
 """
     DebugPrimalIterate(opts...;kwargs...)
 
-Print the change of the primal variable by using [`DebugIterate`](@ref),
+Print the primal variable by using [`DebugIterate`](@ref),
 see their constructors for detail.
 """
 DebugPrimalIterate(opts...; kwargs...) = DebugIterate(opts...; kwargs...)
@@ -966,7 +967,7 @@ DebugPrimalIterate(opts...; kwargs...) = DebugIterate(opts...; kwargs...)
     DebugPrimalResidual <: DebugAction
 
 A Debug action to print the primal residual.
-The constructor accepts a printing function and some (shared) storage, which
+The constructor accepts some (shared) storage or a tuple `(p, X, n)` of initial values, which
 should at least record `:Iterate`, `:X` and `:n`.
 
 # Constructor
@@ -1038,7 +1039,7 @@ mutable struct DebugProximalParameter <: DebugAction
     at_init::Bool
     function DebugProximalParameter(;
             long::Bool = false,
-            prefix = long ? "Proximal Map Parameter λ(i):" : "λ:",
+            prefix = long ? "Proximal Map Parameter λ(k):" : "λ:",
             format = "$prefix%s",
             io::IO = stdout,
             at_init::Bool = true,

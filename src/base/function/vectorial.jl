@@ -104,6 +104,7 @@ a vector of data.
 """
 get_range(vt::FunctionVectorialType) = vt.range
 get_range(::AbstractVectorialType) = NestedPowerRepresentation()
+get_range(::Nothing) = NestedPowerRepresentation()
 
 FunctionVectorialType() = FunctionVectorialType(NestedPowerRepresentation())
 
@@ -496,6 +497,8 @@ abstract type AbstractVectorGradientFunction{
     FT <: AbstractVectorialType, JT <: AbstractVectorialType,
 } <: AbstractFirstOrderVectorFunction{FT, JT} end
 
+get_range(vgf::AbstractVectorGradientFunction) = get_range(vgf.jacobian_type)
+
 #
 #
 # --- adjoint Jacobian – just the add_adjoint_jacobian variant
@@ -733,7 +736,7 @@ end
 #
 #
 # --- Jacobian in linear operator form
-# (a) Inplace single function – skip for now since allocation not so easy? we would need a power version of the point p
+# (a) a single gradient function
 function get_jacobian!(
         M::AbstractManifold, a, vgf::AbstractVectorGradientFunction{FT, <:FunctionVectorialType}, p, X;
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),

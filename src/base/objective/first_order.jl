@@ -103,9 +103,9 @@ function get_cost_and_gradient!(
 end
 
 """
-     get_differential(amp::AbstractManoptProblem, p, X; kwargs...)
-     get_differential(M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X; kwargs...)
-     get_differential(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X; kwargs...)
+    get_differential(amp::AbstractManoptProblem, p, X; kwargs...)
+    get_differential(M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X; kwargs...)
+    get_differential(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X; kwargs...)
 
 Evaluate the differential ``Df(p)[X]`` of the function ``f`` represented by
 the [`AbstractManifoldFirstOrderObjective`](@ref).
@@ -151,7 +151,7 @@ end
 function get_differential_function end
 
 @doc """
-     get_differential_function(objective::AbstractManifoldFirstOrderObjective, recursive::Bool=false)
+    get_differential_function(objective::AbstractManifoldFirstOrderObjective, recursive::Bool=false)
 
 Return the function to evaluate (just) the differential ``Df(p)[X]`` as a function `(M, p, X) -> d`.
 For a decorated objective, the `recursive` positional parameter determines whether to

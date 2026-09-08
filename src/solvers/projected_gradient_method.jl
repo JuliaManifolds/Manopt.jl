@@ -8,7 +8,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:p; name = "q"))
-  an interims point for the projected gradient step
+  an intermediate point for the projected gradient step
 $(_fields(:retraction_method))
 $(_fields(:stepsize)) ``α_k`` to determine the ``q_k`` candidate
 $(_fields(:stopping_criterion; name = "stop"))
@@ -22,8 +22,8 @@ $(_fields(:X; name = "Y"))
 
 ## Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
-$(_kwargs(:stepsize; name = "backtrack", default = "`[`ArmijoLinesearchStepsize`](@ref)`(M)")) ``p_k`` to the candidate ``q_k``
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
+$(_kwargs(:stepsize; name = "backtrack", default = "`[`ArmijoLinesearchStepsize`](@ref)`(M)")) ``β_k`` from ``p_k`` to the candidate ``q_k``
 $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`ConstantStepsize`](@ref)`(M)"))
@@ -36,7 +36,7 @@ struct ProjectedGradientMethodState{P, T, C <: AbstractDict{Symbol}, S, S2, SC, 
     callbacks::C
     inverse_retraction_method::IRM
     p::P
-    q::P # for doing a step (y_k) and projection (z_k) inplace
+    q::P # the candidate q_k: gradient step and projection are done in-place here
     retraction_method::RM
     stepsize::S # α_k
     stop::SC
@@ -177,7 +177,7 @@ function status_summary(c::StopWhenProjectedGradientStationary; context::Symbol 
     (context === :short) && return repr(c)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return (_is_inline(context) ? "projected gradient stationary (<$(c.threshold)):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the projected gradient is stationary, i.e. in norm less than $(c.threshold).\n$(_MANOPT_INDENT)") * s
+    return (_is_inline(context) ? "projected gradient stationary (<$(c.threshold)):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the projected gradient step is stationary, that is, when the distance from the iterate to the candidate is less than $(c.threshold).\n$(_MANOPT_INDENT)") * s
 end
 #
 #
@@ -216,6 +216,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:stepsize; name = "backtrack", default = "`[`ArmijoLinesearchStepsize`](@ref)`(M; stop_increasing_at_step=0)")) to perform the backtracking to determine the ``β_k``.
   Note that the method requires ``β_k ≤ 1``, otherwise the projection step no longer provides points within the constraints
 $(_kwargs([:evaluation, :inverse_retraction_method, :retraction_method]))
+* `indicator=missing`: the indicator function of the set ``$(_tex(:Cal, "C"))`` as a function `(M, p) -> ι`, see [`ManifoldConstrainedSetObjective`](@ref); if not provided, membership is tested through `proj`.
 $(_kwargs(:stepsize; default = "`[`ConstantStepsize`](@ref)`(M)")) to perform the candidate projected step.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenProjectedGradientStationary`](@ref)`(M, 1.0e-7)"))
 $(_kwargs(:X))
@@ -306,9 +307,9 @@ function step_solver!(amp::AbstractManoptProblem, pgms::ProjectedGradientMethodS
     inverse_retract!(M, pgms.Y, pgms.p, pgms.q, pgms.inverse_retraction_method)
     τ = pgms.backtrack(amp, pgms, k, pgms.Y; gradient = pgms.X)
     callback(:Backtrack, amp, pgms, k)
-    # println("τ:", τ)
+
     # Compute new iterate
     retract!(M, pgms.p, pgms.p, τ * pgms.Y, pgms.retraction_method)
-    # now we have
+
     return pgms
 end

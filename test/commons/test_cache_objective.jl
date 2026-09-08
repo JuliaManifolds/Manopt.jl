@@ -255,6 +255,7 @@ end
         @test get_differential(M, lco, p, X) == inner(M, p, X, Y)
         @test get_count(lco, :Differential) == c + 1
         d = get_differential(M, lco, p, X) # cached
+        @test d == inner(M, p, X, Y)
         @test get_count(lco, :Differential) == c + 1
         # A second point to check cost grad cache
         # Staying at p eval cost_grad comes at no cost.
@@ -309,7 +310,7 @@ end
             M, co2i, (:LRU, [:Cost, :Gradient], [:cache_size => 10])
         )
         #
-        c = get_count(lco2a, :Cost) # usually 1 since creating `lco`` calls that once
+        c = get_count(lco2a, :Cost) # usually 1 since creating `lco2a` calls that once
         @test get_cost(M, lco2a, p) == 2.0
         @test get_cost(M, lco2a, p) == 2.0
         # but the second was cached so no cost evaluation

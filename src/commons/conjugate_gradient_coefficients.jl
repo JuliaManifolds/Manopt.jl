@@ -55,6 +55,19 @@ function Base.show(io::IO, durs::DirectionUpdateRuleStorage)
     return print(io, durs.coefficient)
 end
 
+"""
+    update_storage!(dur::DirectionUpdateRuleStorage, amp::AbstractManoptProblem, s::AbstractManoptSolverState)
+
+Update the storage of a wrapped [`DirectionUpdateRule`](@ref), and the storages of the rules it
+wraps, to the values currently given in `s`.
+"""
+function update_storage!(
+        dur::DirectionUpdateRuleStorage, amp::AbstractManoptProblem,
+        s::AbstractManoptSolverState,
+    )
+    return update_storage!(dur.storage, amp, s)
+end
+
 #
 #
 # The coefficients to depend on the solver state so we define it here first
@@ -68,6 +81,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
+* `p_old`:                   the previous iterate, stored to transport the direction `δ` to the new iterate
 $(_fields(:X))
 * `δ`:                       the current descent direction, also a tangent vector
 * `β`:                       the current update coefficient, computed by the `coefficient` rule
@@ -171,7 +185,7 @@ additional_callbacks(::Type{<:ConjugateGradientDescentState}) = [:Stepsize]
 get_callbacks(state::ConjugateGradientDescentState) = state.callbacks
 
 function get_message(cgs::ConjugateGradientDescentState)
-    # for now only step size is quipped with messages
+    # for now only step size is equipped with messages
     return get_message(cgs.stepsize)
 end
 function get_gradient(cgs::ConjugateGradientDescentState)
@@ -219,7 +233,7 @@ struct ConjugateDescentCoefficientRule <: DirectionUpdateRule end
 update_rule_storage_points(::ConjugateDescentCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::ConjugateDescentCoefficientRule) = Tuple{:Gradient}
 
-# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (cdcr::ConjugateDescentCoefficientRule)(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, kwargs...
@@ -285,7 +299,7 @@ end
 update_rule_storage_points(::DaiYuanCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::DaiYuanCoefficientRule) = Tuple{:Gradient, :δ}
 
-# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (dy::DaiYuanCoefficientRule)(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ, kwargs...
@@ -378,7 +392,7 @@ struct FletcherReevesCoefficientRule <: DirectionUpdateRule end
 update_rule_storage_points(::FletcherReevesCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::FletcherReevesCoefficientRule) = Tuple{:Gradient}
 
-# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (fr::FletcherReevesCoefficientRule)(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, kwargs...
@@ -473,7 +487,7 @@ end
 update_rule_storage_points(::HagerZhangCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::HagerZhangCoefficientRule) = Tuple{:Gradient, :δ}
 
-# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (hz::HagerZhangCoefficientRule)(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
@@ -594,7 +608,7 @@ end
 update_rule_storage_points(::HestenesStiefelCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::HestenesStiefelCoefficientRule) = Tuple{:Gradient, :δ}
 
-# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (hs::HestenesStiefelCoefficientRule)(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
@@ -720,7 +734,7 @@ end
 update_rule_storage_points(::LiuStoreyCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::LiuStoreyCoefficientRule) = Tuple{:Gradient, :δ}
 
-# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (ls::LiuStoreyCoefficientRule)(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
@@ -823,7 +837,7 @@ update_rule_storage_points(::PolakRibiereCoefficientRule) = Tuple{:Iterate}
 update_rule_storage_vectors(::PolakRibiereCoefficientRule) = Tuple{:Gradient}
 
 
-# Since the Rule s are “memoryless” their functor accepts old necessary terms as (mandatory)
+# Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (pr::PolakRibiereCoefficientRule)(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, kwargs...
@@ -1124,7 +1138,7 @@ function HybridCoefficientRule(
         lower_bound::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = SteepestDescentCoefficient(),
         lower_bound_scale::Real = 1.0
     )
-    N = length(coefficients)
+
     coefficients_new = [DirectionUpdateRuleStorage(M, _produce_type(c, M)) for c in coefficients]
     lower_bound_new = DirectionUpdateRuleStorage(M, _produce_type(lower_bound, M))
     return Manopt.HybridCoefficientRule(coefficients_new, lower_bound_new, lower_bound_scale)
@@ -1144,6 +1158,16 @@ function (u::DirectionUpdateRuleStorage{<:HybridCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
     return u.coefficient(amp, cgs, i)
+end
+function update_storage!(
+        dur::DirectionUpdateRuleStorage{<:HybridCoefficientRule},
+        amp::AbstractManoptProblem, s::AbstractManoptSolverState,
+    )
+    for c in dur.coefficient.coefficients
+        update_storage!(c, amp, s)
+    end
+    update_storage!(dur.coefficient.lower_bound, amp, s)
+    return update_storage!(dur.storage, amp, s)
 end
 function show(io::IO, u::HybridCoefficientRule)
     coefficient_str = join([repr(c.coefficient) for c in u.coefficients], ", ")
@@ -1170,7 +1194,7 @@ This includes the HS-DY and FR-PRP hybrid parameters introduced in [SakaiIiduka:
 
 ## Input
 
-* `args...` : CG coefficients of type [`DirectionUpdateRule`](@ref) or a corresponding [`ManifoldDefaultsFactory`](@ref) to produce such a rule, of which the minimum is taken in the
+* `coefficients...` : CG coefficients of type [`DirectionUpdateRule`](@ref) or a corresponding [`ManifoldDefaultsFactory`](@ref) to produce such a rule, of which the minimum is taken in the
 hybrid rule
 
 ## Keyword arguments

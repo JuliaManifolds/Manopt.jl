@@ -27,7 +27,7 @@ $(_args(:M))
 ## Keyword arguments
 
 * `direction=`[`IdentityUpdateRule`](@ref)`()` specify a processor to modify the gradient direction
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientDescentState`](@ref)`; retraction_method=retraction_method)"))
@@ -93,7 +93,7 @@ function default_stepsize(
     )
 end
 function get_message(gds::GradientDescentState)
-    # for now only step size is quipped with messages
+    # for now only step size is equipped with messages
     return get_message(gds.stepsize)
 end
 
@@ -265,9 +265,9 @@ function initialize_solver!(mp::AbstractManoptProblem, s::GradientDescentState)
     initialize_stepsize!(s.stepsize)
     return s
 end
-function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, k)
-    step, s.X = s.direction(p, s, k)
-    callback(:Stepsize, p, s, k)
-    ManifoldsBase.retract_fused!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
+function step_solver!(amp::AbstractManoptProblem, s::GradientDescentState, k)
+    step, s.X = s.direction(amp, s, k)
+    callback(:Stepsize, amp, s, k)
+    ManifoldsBase.retract_fused!(get_manifold(amp), s.p, s.p, s.X, -step, s.retraction_method)
     return s
 end

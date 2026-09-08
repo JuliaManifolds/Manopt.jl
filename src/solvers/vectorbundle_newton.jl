@@ -1,7 +1,7 @@
 @doc """
     VectorBundleNewtonState{P,T} <: AbstractManoptSolverState
 
-Is state for the vector bundle Newton method
+A state for the vector bundle Newton method
 
 # Fields
 
@@ -30,7 +30,7 @@ $(_args([:p, :sub_problem, :sub_state]))
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`VectorBundleNewtonState`](@ref)`)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
@@ -115,7 +115,6 @@ $(_tex(:norm, "X"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_tex(
 where the sum turns into a maximum for the case ``r=∞``.
 The `outer_norm` has no effect on manifolds that do not consist of components.
 
-If the manifold does not have components, the outer norm is ignored.
 
 # Constructor
 
@@ -261,9 +260,9 @@ end
 
 function status_summary(vbmp::VectorBundleManoptProblem; context::Symbol = :default)
     (context === :short) && return repr(vbmp)
-    (context === :inline) && return "A vector bundle problem defined on $(vbmp.manifold) with range $(vbmp.vectorbundle) and newton equation $(vbmp.newton_equation)"
+    (context === :inline) && return "A vector bundle problem defined on $(vbmp.manifold) with range $(vbmp.vectorbundle) and Newton equation $(vbmp.newton_equation)"
     return """
-    A vector bundle problem representing a vector bundle newton equation objective
+    A vector bundle problem representing a vector bundle Newton equation objective
 
     ## Manifold
     $(_in_str(repr(vbmp.manifold); indent = 1))
@@ -271,7 +270,7 @@ function status_summary(vbmp::VectorBundleManoptProblem; context::Symbol = :defa
     ## Range
     $(_in_str(repr(vbmp.vectorbundle); indent = 1))
 
-    ## Vector bundle newton equation
+    ## Vector bundle Newton equation
     $(_in_str(repr(vbmp.newton_equation); indent = 1))
     """
 end
@@ -400,8 +399,8 @@ function step_solver!(
     step = s.stepsize(mp, s, k)
     callback(:Stepsize, mp, s, k)
     # retract
-    ManifoldsBase.retract_fused!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
-    s.p_trial = copy(get_manifold(mp), s.p) # needed for affine covariant damping (can be ignored if this stepsize computation is not used)
+    ManifoldsBase.retract_fused!(M, s.p, s.p, s.X, step, s.retraction_method)
+    copyto!(M, s.p_trial, s.p) # needed for affine covariant damping (can be ignored if this stepsize computation is not used)
     return s
 end
 
@@ -421,6 +420,6 @@ function step_solver!(
     callback(:Stepsize, mp, s, k)
     # retract
     ManifoldsBase.retract_fused!(M, s.p, s.p, s.X, step, s.retraction_method)
-    s.p_trial = copy(M, s.p) # needed for affine covariant damping (can be ignored if this stepsize computation is not used)
+    copyto!(M, s.p_trial, s.p) # needed for affine covariant damping (can be ignored if this stepsize computation is not used)
     return s
 end

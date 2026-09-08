@@ -142,7 +142,7 @@ $(_args([:M, :sub_problem, :sub_state]))
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
 * `λ = k -> 1`: a function returning the sequence of prox parameters ``λ_k``
 $(_kwargs(:p; add_properties = [:as_Initial]))

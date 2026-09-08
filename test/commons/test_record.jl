@@ -30,7 +30,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @test startswith(repr(rs), "RecordSolverState(")
     @test contains(repr(rs), "RecordIteration()")
     @test Manopt.status_summary(rs; context = :short) == repr(rs)
-    Manopt.set_parameter!(rs, :Record, RecordCost())
+    @test Manopt.set_parameter!(rs, :Record, RecordCost()) === rs
     @test Manopt.dispatch_state_decorator(rs) === Val{true}()
     @test get_state(gds) == gds
     @test get_state(rs) == gds
@@ -146,7 +146,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test d.recorded_values == [0.0, 1.0] # no p0 -> assume p is the first iterate
         e = RecordChange([4.0, 2.0])
         e(dmp, gds, 1)
-        @test e.recorded_values == [1.0] # no p0 -> assume p is the first iterate
+        @test e.recorded_values == [1.0] # p0 given -> change is measured against it
 
         dinvretr = RecordChange(; inverse_retraction_method = PolarInverseRetraction())
         dmani = RecordChange(SymplecticMatrices(2))
@@ -330,7 +330,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         h3(dmp, gds, 10)
         h3(dmp, gds, 19)
         @test length(h3.recorded_values) == 0
-        # stop after 20 so 21 hits
+        # the criterion stops at 20, so this call records
         gds.stop(dmp, gds, 20)
         h3(dmp, gds, 20)
         @test length(h3.recorded_values) == 1

@@ -161,14 +161,15 @@ function status_summary(imf::InplaceManifoldFunction; context::Symbol = :default
 end
 
 """
-    maybe_wrap_function(f, p, evaluation = InplaceEvaluation(); result = :Number)
-    maybe_wrap_function(f, evaluation; result = :Point)
+    maybe_wrap_function(f, p, evaluation = InplaceEvaluation(); result = :Number, point_index = 1)
+    maybe_wrap_function(f, evaluation; result = :Point, point_index = 1)
 
 Wrap a function `f` defined on a manifold to work in-place on mutable variables, i.e. first
 if the input variable `p` is a number, the function `f` is wrapped in a [`MutableManifoldFunction`](@ref).
 If the function then has an [`AllocatingEvaluation`](@ref) as its `evaluation` type, it is wrapped in an [`InplaceManifoldFunction`](@ref) to work in-place of the result.
 
 The first step is skipped if the input variable `p` is not a number, `missing` or not provided.
+The keyword `point_index` is passed on to the [`InplaceManifoldFunction`](@ref) and selects which of the remaining arguments is the base point when the result is a tangent vector.
 """
 maybe_wrap_function(f, p, evaluation::AbstractEvaluationType = InplaceEvaluation(); result::Symbol = :Number, point_index = 1) = maybe_wrap_function(f, typeof(p), evaluation; result = result, point_index = point_index)
 function maybe_wrap_function(
@@ -288,7 +289,7 @@ $(_fields(:vector_transport_method))
 
 # Constructor
 
-    ApproxHessianSymmetricRankOne(M, p, gradF; kwargs...)
+    ApproxHessianSymmetricRankOne(M, p, grad_f; kwargs...)
 
 ## Keyword arguments
 
@@ -385,7 +386,7 @@ $(_fields(:vector_transport_method))
 * `basis`: a temporary storage for an orthonormal basis at the current `p`.
 
 # Constructor
-    ApproxHessianBFGS(M, p, gradF; kwargs...)
+    ApproxHessianBFGS(M, p, grad_f; kwargs...)
 
 ## Keyword arguments
 

@@ -51,7 +51,7 @@ Lagrangian for the current penalty parameter `ρ` and multipliers `μ` and `λ`,
 
 the following keyword arguments are available to initialize the corresponding fields
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `ϵ=1e-3`
 * `ϵ_min=1e-6`
 * `ϵ_exponent=1/100`: a shortcut for the scaling factor ``θ_ϵ``
@@ -529,24 +529,24 @@ function step_solver!(
 end
 # the multiplier, penalty and tolerance update both variants share
 function _alm_update!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethodState)
-    # update multipliers
     cost_ineq = get_inequality_constraint(mp, alms.p, :)
+    cost_eq = get_equality_constraint(mp, alms.p, :)
+    # get new evaluation of penalty
+    penalty = maximum(
+        [abs.(max.(-alms.μ ./ alms.ρ, cost_ineq))..., abs.(cost_eq)...]; init = 0
+    )
+    # update multipliers
     n_ineq_constraint = length(cost_ineq)
     alms.μ .=
         min.(
         ones(n_ineq_constraint) .* alms.μ_max,
         max.(alms.μ .+ alms.ρ .* cost_ineq, zeros(n_ineq_constraint)),
     )
-    cost_eq = get_equality_constraint(mp, alms.p, :)
     n_eq_constraint = length(cost_eq)
     alms.λ =
         min.(
         ones(n_eq_constraint) .* alms.λ_max,
         max.(ones(n_eq_constraint) .* alms.λ_min, alms.λ + alms.ρ .* cost_eq),
-    )
-    # get new evaluation of penalty
-    penalty = maximum(
-        [abs.(max.(-alms.μ ./ alms.ρ, cost_ineq))..., abs.(cost_eq)...]; init = 0
     )
     # update ρ if necessary
     (penalty > alms.τ * alms.penalty) && (alms.ρ = alms.ρ / alms.θ_ρ)
