@@ -675,6 +675,8 @@ $(_kwargs(:sub_problem; type = "Union{`[`AbstractManoptProblem`](@ref)`, F, Miss
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)`()")) If the objective does not provide a proximal map, a [`SubGradientMethodState`](@ref) is used instead. This field is ignored, if the `sub_problem` is `missing`.
 $(_kwargs(:X; add_properties = [:as_Memory]))
 
+$(_note(:TutorialMode))
+
 $(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
@@ -719,7 +721,7 @@ function proximal_gradient_method!(
             return st
         end,
         callbacks = Dict{Symbol, Function}(),
-        debug = [DebugWarnIfStepsizeCollapsed()],
+        debug = is_tutorial_mode() ? [DebugWarnIfStepsizeCollapsed()] : [],
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, ProximalGradientMethodState
         ),
