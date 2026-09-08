@@ -99,17 +99,17 @@ by a predictor-corrector-loop using an affine covariant quantity ``θ`` to measu
 * `θ_acc`:         acceptable θ
 * `last_stepsize`: last computed stepsize (this is an auxiliary variable used within the algorithm)
 * `outer_norm`:    if `M` is a manifold with components, this is used to specify the norm,
-  that is used to compute the overall distance based on the element-wise distance.
+  that is used to combine the component-wise norms of the Newton directions into one norm.
 
 # Example
 
 On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold)) = $(_math(:Manifold; M = "N"))^n``
 any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
-Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:Manifold))``
+Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector ``X = (X_1,…,X_n) ∈ $(_math(:TangentSpace; p = "p"))``
 is given by
 
 ```math
-$(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_math(:distance))(p_i,q_i)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
+$(_tex(:norm, "X"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_tex(:norm, "X_i"; index = "p_i"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.

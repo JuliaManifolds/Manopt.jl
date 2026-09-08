@@ -2,7 +2,7 @@
 #
 # State
 """
-    ProximalPointState{P} <: AbstractGradientSolverState
+    ProximalPointState{P} <: AbstractManoptSolverState
 
 # Fields
 
@@ -32,7 +32,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))
 
 [`proximal_point`](@ref)
 """
-mutable struct ProximalPointState{P, Tλ, C <: AbstractDict{Symbol}, TStop <: StoppingCriterion} <: AbstractGradientSolverState
+mutable struct ProximalPointState{P, Tλ, C <: AbstractDict{Symbol}, TStop <: StoppingCriterion} <: AbstractManoptSolverState
     callbacks::C
     λ::Tλ
     p::P
@@ -49,6 +49,18 @@ mutable struct ProximalPointState{P, Tλ, C <: AbstractDict{Symbol}, TStop <: St
     end
 end
 get_callbacks(pps::ProximalPointState) = pps.callbacks
+get_iterate(pps::ProximalPointState) = pps.p
+function set_iterate!(pps::ProximalPointState, M::AbstractManifold, p)
+    copyto!(M, pps.p, p)
+    return pps
+end
+function (d::DebugProximalParameter)(::AbstractManoptProblem, pps::ProximalPointState, k::Int)
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), pps.λ(k))
+    return nothing
+end
+function (r::RecordProximalParameter)(::AbstractManoptProblem, pps::ProximalPointState, k::Int)
+    return record_or_reset!(r, pps.λ(k), k)
+end
 function Base.show(io::IO, pps::ProximalPointState)
     print(io, "ProximalPointState(; ")
     return print(io, "callbacks = ", pps.callbacks, ", λ = $(pps.λ), p = $(pps.p), stopping_criterion = $(pps.stop))")

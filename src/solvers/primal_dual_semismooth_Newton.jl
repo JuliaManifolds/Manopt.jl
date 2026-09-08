@@ -494,7 +494,7 @@ end
 @doc raw"""
     construct_primal_dual_residual_vector(tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState)
 
-Constructs the vector representation of ``X(p^{(k)}, ξ_{n}^{(k)}) ∈ \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}``
+Constructs the vector representation of ``X(p^{(k)}, ξ_{n}^{(k)}) ∈ T_{p^{(k)}} \mathcal{M} \times T_{n}^{*} \mathcal{N}``
 """
 function construct_primal_dual_residual_vector(
         tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState
@@ -549,7 +549,7 @@ end
 @doc raw"""
     construct_primal_dual_residual_covariant_derivative_matrix(tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState)
 
-Constructs the matrix representation of ``V^{(k)}:\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}\rightarrow \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}``
+Constructs the matrix representation of ``V^{(k)}:T_{p^{(k)}} \mathcal{M} \times T_{n}^{*} \mathcal{N}\rightarrow T_{p^{(k)}} \mathcal{M} \times T_{n}^{*} \mathcal{N}``
 """
 function construct_primal_dual_residual_covariant_derivative_matrix(
         tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState

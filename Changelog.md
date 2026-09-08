@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * [Runic.jl](https://github.com/fredrikekre/Runic.jl) is now also used to check code formatting in the `.qmd` and `.md` files of the repository
 * a keyword `γ` for `interior_point_Newton`, the initial value of its centrality condition.
 * allocating `get_linear_operator(M, neo, p, B)` and `get_vector_field(M, neo, p, B)` for the coordinates surrogate of the normal equations.
+* `DebugProximalParameter` and `RecordProximalParameter` can now also be used with `proximal_point`.
 
 ### Changed
 
@@ -34,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * the modes of `RecordTime` and `DebugTime` are now capitalized consistently, that is `:Cumulative`, `:Iterative` and `:Total`.
 * `stochastic_gradient_descent` with `order_type=:FixedRandom` now draws a new permutation at the start of every epoch.
 * the `TrustRegionsState` fields `Z`, `HZ` and `f_proposal` were removed, since they were never read; the Cauchy point is stored in `Y`.
+* `ProximalPointState` is an `AbstractManoptSolverState`, since it stores no gradient, and it provides `get_iterate` and `set_iterate!`.
 
 ### Fixed
 
@@ -45,12 +47,14 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `adaptive_regularization_with_cubics` now passes `sub_kwargs` on to the `decorate_state!` of its sub state.
 * `get_cost_function(::AdaptiveRegularizationWithCubicsModelObjective, true)` now returns the wrapped objective's cost, like its gradient counterpart.
 * `AdaptiveWNGradient` fixed its reference gradient norm to the initial one, so its adaptive mode now works.
+* `AdaptiveWNGradient`, `BarzilaiBorwein` and `NonmonotoneLinesearch` now reset their internal state when a solver is initialized, so reusing such a step size object no longer continues from the previous run.
 * `AffineCovariantStepsize` now solves the simplified Newton system with the sub problem's own evaluation type, so it works together with `sub_state = InplaceEvaluation()`.
 * `alternating_gradient_descent` now uses its `retraction_method`.
 * `augmented_Lagrangian_method!(M, f, grad_f, p; …)` no longer decorates its objective twice, so `count=` and `cache=` work for the in-place variant and an already decorated objective is accepted.
 * `augmented_Lagrangian_method` and `exact_penalty_method` can now be run with a closed form sub solver.
 * the default `stopping_criterion` of `AugmentedLagrangianMethodState` now ends in `StopWhenStepsizeLess(1.0e-10)`, matching `augmented_Lagrangian_method`.
 * `BarzilaiBorweinStepsize` defaults `max_stepsize` to `1.0` on manifolds with infinite injectivity radius.
+* `cache=(:LRU, [:ProximalMap])` now also caches the proximal map without an index, the one `proximal_point` and `proximal_gradient_method` call.
 * `ChambollePock` now defaults to the variant matching the operator that was provided; requesting a variant without its operator errors with an explanation.
 * `ChambollePock` now accepts and forwards the documented `inverse_retraction_method_dual` and `vector_transport_method_dual` keywords, which were previously warned about and dropped.
 * `cma_es!` now leaves its result (the best visited point) in the input point,
@@ -58,6 +62,7 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `cma_es` now uses the fitness-sorted samples in its covariance matrix update,
   cf. Eq. (47) of [arXiv:1604.00772](https://arxiv.org/abs/1604.00772).
 * `cma_es` now uses Hansen's `1/(21n^2)` term in its approximation of the expected norm of a standard normal vector.
+* `cma_es` now accepts `tol_fun` and `tol_x` of different types, so switching one of them off with `tol_fun = 0` works.
 * `conjugate_residual` now uses its initial vector `X` — it was ignored, making runs nondeterministic — and `conjugate_residual!` works in place of `X`.
 * `ConjugateGradientDescentState` can now be constructed without specifying a stepsize.
 * `ConvexBundleMethodState` no longer errors when only one of `k_min` and `k_max` is provided.
@@ -108,6 +113,7 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `linesearch_backtrack` no longer errors when called without gradient information; it then backtracks on a plain decrease condition.
 * `mesh_adaptive_direct_search` now moves the poll base point to the current iterate before the search, so the search is handed a direction tangent at that iterate and the iterates stay on the manifold.
 * `mesh_adaptive_direct_search` now defaults its retraction and vector transport with the point type instead of the number type.
+* `mesh_adaptive_direct_search` now regenerates its random vector `b_l` whenever the mesh size changes, instead of reusing the one of a finer mesh.
 * `MomentumGradient` no longer folds the step size into its stored direction, so solvers no longer apply the step twice; with `momentum=0` it now reduces to plain gradient descent.
 * `LevenbergMarquardt` with `use_unified_basis=true` now defaults its `sub_state` to a `CoordinatesNormalSystemState`.
 * `NelderMead` now honours `return_objective=true`.
@@ -123,6 +129,9 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `proximal_gradient_method` now accepts a decorated objective, and its `:convex` backtracking strategy works together with `count=`/`cache=`.
 * proximal gradient backtracking now stores the collapsed step size, so a collapse is detected.
 * `proximal_gradient_method` now rejects an incomplete sub-solver setup up front.
+* `proximal_gradient_method` now also warns with the threshold of `DebugWarnIfStepsizeCollapsed` itself, not only with the one of its backtracking step size.
+* `proximal_gradient_method` now works with a number as start point, for example on `Circle()`.
+* `proximal_gradient_method` now stores the point its proximal gradient step starts from, so `StopWhenGradientMappingNormLess` measures the documented gradient mapping also under acceleration.
 * the default proximal parameter of `proximal_point` is `k -> 1.0`, so it no longer forces integers.
 * `ProximalGradientMethodAcceleration` now uses the inverse retraction it is configured with.
 * `ProximalGradientNonsmoothCost` now computes the documented `1/(2λ)` proximity weight instead of `λ/2`.
@@ -148,7 +157,7 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `StopWhenAll` now accepts a concretely typed vector of criteria, like `StopWhenAny` already did, instead of silently wrapping it as a single criterion.
 * `StopWhenChangeLess(ε)` without a manifold now stores its iterate generically, instead of allocating storage on a `DefaultManifold`.
 * `StopWhenCriterionWithIterationCondition` no longer returns the inner criterion's value from its reset call, which could stop a solver at iteration `0` without ever consulting the iteration condition.
-* `StopWhenKKTResidualLess` now squares the Lagrangian gradient norm, as documented; its default tolerance is `1e-12`.
+* `StopWhenKKTResidualLess` now squares the Lagrangian gradient norm, as documented.
 * `StopWhenLagrangeMultiplierLess` now provides the documented default tolerance `1e-6`, so it can be constructed without arguments.
 * `StopWhenPopulationDiverges` now tests growth against the start of the run, not an absolute threshold.
 * `StopWhenRelativeAPosterioriCostChangeLessOrEqual` now reports the signed relative cost change it actually tests, instead of its absolute value.
@@ -160,6 +169,7 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `trust_regions` now runs with a closed form sub solver.
 * `trust_regions` now wraps an allocating closed-form sub solver as returning a tangent vector.
 * `trust_regions` no longer throws for a non-tCG sub state.
+* `trust_regions` now updates the stored gradient when a step is accepted, so gradient-based stopping criteria as well as debug and record output refer to the current iterate.
 * `trust_regions` now builds its default sub problem from the objective after the `objective_type` conversion, so `objective_type=:Euclidean` also applies to the sub solver.
 * `quasi_Newton` no longer turns the iterate into `NaN`, or the box constrained variant into a `DimensionMismatch`, when a step vanishes because the minimizer was reached before the stopping criterion fires.
 * `get_gradient_function` of a sub objective now returns the gradient of the sub objective itself, as its adaptive regularization variant already did.
@@ -217,10 +227,12 @@ they were not fully supported in all places. This was now fixed and unified.
 * recording or debugging the step size, or using `StopWhenStepsizeLess`, no longer re-runs the `BarzilaiBorwein`, `CubicBracketingLinesearch`, `HagerZhangLinesearch` and `NonmonotoneLinesearch` step sizes.
 * the `error=` keyword of `check_gradient` and `check_Hessian` now also applies to their `check_vector` step.
 * `StopWhenPopulationCostConcentrated` now compares the worst against the best fitness of the current generation.
+* `StopWhenBestCostInGenerationConstant` now resets its counter when a solver starts, so a reused criterion no longer stops in the first iteration.
 * `quasi_Newton!` now accepts and forwards the documented `nondescent_direction_behavior` keyword.
 * `stochastic_gradient_descent` with an absolute step length now normalizes by the stochastic gradient it steps along.
 * the `LineSearches.jl` step size now hands its retraction to the initial guess.
 * `convex_bundle_method` now uses its `retraction_method` for the candidates of both the domain backtracking and the null step.
+* the domain backtracking of `convex_bundle_method` no longer contracts the step when the retracted point is as far from the iterate as the tangent vector is long up to rounding.
 * `interior_point_Newton` now applies `objective_type=:Euclidean` to its KKT sub problem and line search objective as well.
 * `interior_point_Newton` now performs its line search along the Newton direction it steps along.
 
@@ -248,7 +260,7 @@ Furthermore the following were fixed
 
 * `StopWhenAll` and `StopWhenAny` evaluated their criteria with short-circuiting, so criteria later in the list were not called in every iteration. Stateful criteria like
   `StopWhenChangeLess` or `StopWhenRepeated` were hence not updated and the reset at
-  initialization did not reach them either. Now `requires_update` is used to determine which ones need to be called even after one could use a shortcut already – only the ones without state are “short-circuited”. (#632,#635)
+  initialization did not reach them either. Now `requires_update` is used to determine which ones need to be called even after one could use a shortcut already – only the ones without state are “short-circuited”. (#632) (#635)
 
 ## [0.6.4] August 21, 2026
 
@@ -931,7 +943,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
 * in `particle_swarm` the `n=` keyword is replaced by `swarm_size=`.
 * `update_stopping_criterion!` has been removed and unified with `set_parameter!`. The code adaptions are
   * to set a parameter of a stopping criterion, just replace `update_stopping_criterion!(sc, :Val, v)` with `set_parameter!(sc, :Val, v)`
-  * to update a stopping criterion in a solver state, replace the old `update_stopping_criterion!(state, :Val, v)` tat passed down to the stopping criterion by the explicit pass down with `set_parameter!(state, :StoppingCriterion, :Val, v)`
+  * to update a stopping criterion in a solver state, replace the old `update_stopping_criterion!(state, :Val, v)` that passed down to the stopping criterion by the explicit pass down with `set_parameter!(state, :StoppingCriterion, :Val, v)`
 
 ## [0.4.69] August 3, 2024
 
@@ -973,7 +985,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
 ### Changed
 
 * Remove functions `estimate_sectional_curvature`, `ζ_1`, `ζ_2`, `close_point` from `convex_bundle_method`
-* Remove some unused fields and arguments such as `p_estimate`, `ϱ`, `α`, from `ConvexBundleMethodState` in favor of jut `k_max`
+* Remove some unused fields and arguments such as `p_estimate`, `ϱ`, `α`, from `ConvexBundleMethodState` in favor of just `k_max`
 * Change parameter `R` placement in `ProximalBundleMethodState` to fifth position
 
 ## [0.4.65] June 13, 2024
@@ -1090,7 +1102,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 * more advanced methods to add debug to the beginning of an algorithm, a step, or the end of
   the algorithm with `DebugAction` entries at `:Start`, `:BeforeIteration`, `:Iteration`, and
   `:Stop`, respectively.
-* Introduce a Pair-based format to add elements to these hooks, while all others ar
+* Introduce a Pair-based format to add elements to these hooks, while all others are
   now added to :Iteration (no longer to `:All`)
 * (planned) add an easy possibility to also record the initial stage and not only after the first iteration.
 
@@ -1118,7 +1130,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 
 ### Fixed
 
-* fixes a type that when passing `sub_kwargs` to `trust_regions` caused an error in the decoration of the sub objective.
+* fixes a typo that when passing `sub_kwargs` to `trust_regions` caused an error in the decoration of the sub objective.
 
 ## [0.4.56] March 4, 2024
 
@@ -1244,22 +1256,22 @@ and their documentation and testing has been extended.
 ### Changed
 
 * Bumped and added dependencies on all 3 Project.toml files, the main one, the docs/, an the tutorials/ one.
-* `artificial_S2_lemniscate` is available as [`ManoptExample.Lemniscate`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.Lemniscate-Tuple{Number}) and works on arbitrary manifolds now.
-* `artificial_S1_signal` is available as [`ManoptExample.artificial_S1_signal`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S1_signal)
+* `artificial_S2_lemniscate` is available as [`ManoptExamples.Lemniscate`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.Lemniscate-Tuple{Number}) and works on arbitrary manifolds now.
+* `artificial_S1_signal` is available as [`ManoptExamples.artificial_S1_signal`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S1_signal)
 * `artificial_S1_slope_signal` is available as [`ManoptExamples.artificial_S1_slope_signal`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S1_slope_signal)
 * `artificial_S2_composite_bezier_curve` is available as [`ManoptExamples.artificial_S2_composite_Bezier_curve`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S2_composite_Bezier_curve-Tuple{})
 * `artificial_S2_rotation_image` is available as [`ManoptExamples.artificial_S2_rotation_image`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S2_rotation_image)
 * `artificial_S2_whirl_image` is available as [`ManoptExamples.artificial_S2_whirl_image`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S2_whirl_image)
-* `artificial_S2_whirl_patch` is available as [`ManoptExamples.artificial_S2_whirl_path`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S2_whirl_patch)
-* `artificial_SAR_image` is available as [`ManoptExamples.artificial_SAR_image`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificialIn_SAR_image-Tuple{Integer})
+* `artificial_S2_whirl_patch` is available as [`ManoptExamples.artificial_S2_whirl_patch`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S2_whirl_patch)
+* `artificial_SAR_image` is available as [`ManoptExamples.artificial_SAR_image`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_SAR_image-Tuple{Integer})
 * `artificial_SPD_image` is available as [`ManoptExamples.artificial_SPD_image`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_SPD_image)
-* `artificial_SPD_image2` is available as [`ManoptExamples.artificial_SPD_image`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_SPD_image2)
+* `artificial_SPD_image2` is available as [`ManoptExamples.artificial_SPD_image2`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_SPD_image2)
 * `adjoint_differential_forward_logs` is available as [`ManoptExamples.adjoint_differential_forward_logs`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.adjoint_differential_forward_logs-Union{Tuple{TPR},%20Tuple{TSize},%20Tuple{TM},%20Tuple{𝔽},%20Tuple{ManifoldsBase.PowerManifold{𝔽,%20TM,%20TSize,%20TPR},%20Any,%20Any}}%20where%20{𝔽,%20TM,%20TSize,%20TPR})
-* `adjoint:differential_bezier_control` is available as [`ManoptExamples.adjoint_differential_Bezier_control_points`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.adjoint_differential_Bezier_control_points-Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{%3C:ManoptExamples.BezierSegment},%20AbstractVector,%20AbstractVector})
-* `BezierSegment` is available as [`ManoptExamples.BeziérSegment`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.BezierSegment)
+* `adjoint_differential_bezier_control` is available as [`ManoptExamples.adjoint_differential_Bezier_control_points`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.adjoint_differential_Bezier_control_points-Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{%3C:ManoptExamples.BezierSegment},%20AbstractVector,%20AbstractVector})
+* `BezierSegment` is available as [`ManoptExamples.BezierSegment`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.BezierSegment)
 * `cost_acceleration_bezier` is available as [`ManoptExamples.acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector{%3C:AbstractFloat}}}%20where%20P)
 * `cost_L2_acceleration_bezier` is available as [`ManoptExamples.L2_acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector{%3C:AbstractFloat},%20AbstractFloat,%20AbstractVector{P}}}%20where%20P)
-* `costIntrICTV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/)
+* `costIntrICTV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.Intrinsic_infimal_convolution_TV12-Tuple{ManifoldsBase.AbstractManifold,%20Vararg{Any,%205}})
 * `costL2TV` is available as [`ManoptExamples.L2_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_Total_Variation-NTuple{4,%20Any})
 * `costL2TV12` is available as [`ManoptExamples.L2_Total_Variation_1_2`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_Total_Variation_1_2-Tuple{ManifoldsBase.PowerManifold,%20Vararg{Any,%204}})
 * `costL2TV2` is available as [`ManoptExamples.L2_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_second_order_Total_Variation-Tuple{ManifoldsBase.PowerManifold,%20Any,%20Any,%20Any})
@@ -1278,12 +1290,11 @@ and their documentation and testing has been extended.
 * `get_bezier_segments` is available as [`ManoptExamples.get_Bezier_segments`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.get_Bezier_segments-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20Vector{P},%20Any},%20Tuple{ManifoldsBase.AbstractManifold,%20Vector{P},%20Any,%20Symbol}}%20where%20P)
 * `grad_acceleration_bezier` is available as [`ManoptExamples.grad_acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_acceleration_Bezier-Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector,%20AbstractVector{%3C:Integer},%20AbstractVector})
 * `grad_L2_acceleration_bezier` is available as [`ManoptExamples.grad_L2_acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_L2_acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector,%20Any,%20AbstractVector{P}}}%20where%20P)
-* `grad_Intrinsic_infimal_convolution_TV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_intrinsic_infimal_convolution_TV12-Tuple{ManifoldsBase.AbstractManifold,%20Vararg{Any,%205}})
+* `grad_Intrinsic_infimal_convolution_TV12` is available as [`ManoptExamples.grad_intrinsic_infimal_convolution_TV12`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_intrinsic_infimal_convolution_TV12-Tuple{ManifoldsBase.AbstractManifold,%20Vararg{Any,%205}})
 * `grad_TV` is available as [`ManoptExamples.grad_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_Total_Variation)
-* `costIntrICTV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.Intrinsic_infimal_convolution_TV12-Tuple{ManifoldsBase.AbstractManifold,%20Vararg{Any,%205}})
 * `project_collaborative_TV` is available as [`ManoptExamples.project_collaborative_TV`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.project_collaborative_TV)
 * `prox_parallel_TV` is available as [`ManoptExamples.prox_parallel_TV`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_parallel_TV)
-* `grad_TV2` is available as [`ManoptExamples.prox_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_second_order_Total_Variation)
+* `grad_TV2` is available as [`ManoptExamples.grad_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_second_order_Total_Variation)
 * `prox_TV` is available as [`ManoptExamples.prox_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_Total_Variation)
 * `prox_TV2` is available as [`ManoptExamples.prox_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_second_order_Total_Variation-Union{Tuple{T},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T}},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T},%20Int64}}%20where%20T)
 
@@ -1354,7 +1365,7 @@ and their documentation and testing has been extended.
 
 ### Fixed
 
-* Fixed a bug that caused non-matrix points and vectors to fail when working with approximate
+* Fixed a bug that caused non-matrix points and vectors to fail when working with an approximate Hessian.
 
 ## [0.4.35] September 14, 2023
 
@@ -1536,7 +1547,7 @@ and their documentation and testing has been extended.
 * support for `ManifoldsBase.jl` 0.13.x, since with the definition of `copy(M,p::Number)`,
   in 0.14.4, that one is used instead of defining it ourselves.
 
-## [0.4.14] April 06, 2023
+## [0.4.14] April 09, 2023
 
 ### Changed
 
@@ -1546,7 +1557,7 @@ and their documentation and testing has been extended.
 
 * `particle_swarm` used quite a few `deepcopy(p)` commands still, which were replaced by `copy(M, p)`
 
-## [0.4.13] April 09, 2023
+## [0.4.13] April 06, 2023
 
 ### Added
 
@@ -1663,7 +1674,7 @@ This is the first version with an actual Changelog entry
 ### Changed
 
 * `AbstractManoptProblem` replaces `Problem`
-* the problem now contains a
+* the problem now contains an `AbstractManifoldObjective`
 * `AbstractManoptSolverState` replaces `Options`
 * `random_point(M)` is replaced by `rand(M)` from `ManifoldsBase.jl`
 * `random_tangent(M, p)` is replaced by `rand(M; vector_at=p)`

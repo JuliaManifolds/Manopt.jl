@@ -18,6 +18,7 @@ The following is a set of guidelines to [`Manopt.jl`](https://juliamanifolds.git
     - [Code style](#Code-style)
     - [Concerning the documentation](#Concerning-the-documentation)
     - [Spell checking](#Spell-checking)
+    - [Technical Details on GitHub](#Technical-Details-on-GitHub)
     - [On the use of AI](#On-the-use-of-AI)
 
 ## I just have a question
@@ -48,7 +49,7 @@ An algorithm is always based on a concrete type of a [`AbstractManoptProblem`](h
 For these two functions, it would be great if a new algorithm uses functions from the [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/) interface as generically as possible. For example, if possible use [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.retract!) in favor of [`exp!(M,q,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#exp-and-log) to perform a step starting in `p` in direction `X` (in place of `q`), since the exponential map might be too expensive to evaluate or might not be available on a certain manifold. See [Retractions and inverse retractions](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#sec-retractions) for more details.
 Further, if possible, prefer [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.retract!) in favor of [`retract(M,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.retract), since a computation in place of a suitable variable `q` reduces memory allocations.
 
-Usually, the methods implemented in `Manopt.jl` also have a high-level interface, that is easier to call, creates the necessary problem and options structure and calls the solver.
+Usually, the methods implemented in `Manopt.jl` also have a high-level interface, that is easier to call, creates the necessary problem and solver state and calls the solver.
 
 The two technical functions `initialize_solver!` and `step_solver!` should be documented with technical details, while the high-level interface should usually provide a general description and some literature references to the algorithm at hand.
 

@@ -410,8 +410,9 @@ function cma_es!(M::AbstractManifold, f, p_m; kwargs...)
 end
 
 function default_cma_es_stopping_criterion(
-        M::AbstractManifold, λ::Int; tol_fun::TParam = 1.0e-12, tol_x::TParam = 1.0e-12
-    ) where {TParam <: Real}
+        M::AbstractManifold, λ::Int; tol_fun::Real = 1.0e-12, tol_x::Real = 1.0e-12
+    )
+    TParam = float(promote_type(typeof(tol_fun), typeof(tol_x)))
     return StopAfterIteration(50000) |
         StopWhenCovarianceIllConditioned() |
         StopWhenBestCostInGenerationConstant{TParam}(
@@ -619,6 +620,7 @@ function (c::StopWhenBestCostInGenerationConstant)(
     if k == 0 # reset on init
         c.at_iteration = -1
         c.best_objective_at_last_change = Inf
+        c.iterations_since_change = 0
         return false
     end
     if c.iterations_since_change >= c.iteration_range

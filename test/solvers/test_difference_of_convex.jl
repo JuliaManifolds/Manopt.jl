@@ -58,8 +58,10 @@ import Manifolds: inner
         @test dcs.p == p1
         set_gradient!(dcs, M, p1, X1)
         @test dcs.X == X1
-        Manopt.set_parameter!(dcs, :SubProblem, :X, X1)
-        Manopt.set_parameter!(dcs, :SubState, :X, X1)
+        Manopt.set_parameter!(dcs, :SubProblem, :Objective, :Cost, :X, X1)
+        @test Manopt.get_cost_function(Manopt.get_objective(dcs.sub_problem)).Xk == X1
+        Manopt.set_parameter!(dcs, :SubState, :StoppingCriterion, :MaxIteration, 5)
+        @test dcs.sub_state.stop.criteria[1].max_iterations == 5
 
         dcppa_sub_cost = ProximalDCCost(g, copy(M, p0), 1.0)
         dcppa_sub_grad = ProximalDCGrad(grad_g, copy(M, p0), 1.0)

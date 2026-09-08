@@ -23,6 +23,7 @@ updates:
       - "/docs"
       - "/tutorials"
       - "/test"
+      - "/benchmark"
     schedule:
       interval: "daily"
     groups:

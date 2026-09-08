@@ -59,6 +59,7 @@ end
 _doc_get_cost_and_gradient = """
     (c, X) = get_cost_and_gradient(problem::AbstractManoptProblem, p)
     (c, X) = get_cost_and_gradient(M, objective::AbstractManifoldFirstOrderObjective, p)
+    (c, X) = get_cost_and_gradient!(problem::AbstractManoptProblem, X, p)
     (c, X) = get_cost_and_gradient!(M, X, objective::AbstractManifoldFirstOrderObjective, p)
 
 Evaluate the cost and the gradient of an [`AbstractManifoldFirstOrderObjective`](@ref) `objective` at a point `p`
@@ -81,6 +82,9 @@ function get_cost_and_gradient(
 end
 function get_cost_and_gradient(problem::AbstractManoptProblem, p)
     return get_cost_and_gradient(get_manifold(problem), get_objective(problem), p)
+end
+function get_cost_and_gradient!(problem::AbstractManoptProblem, X, p)
+    return get_cost_and_gradient!(get_manifold(problem), X, get_objective(problem), p)
 end
 function get_cost_and_gradient(
         M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p

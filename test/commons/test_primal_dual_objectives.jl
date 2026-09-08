@@ -75,9 +75,9 @@ using RecursiveArrayTools
     s_int = ChambollePockState(M; m = m, n = n, p = p0, X = X0, acceleration = 0, relaxation = 1)
     @test s_int.acceleration == 0.0
     @test typeof(s_int.primal_stepsize) === typeof(s_int.acceleration)
-    n_old = ArrayPartition(n[N, :point], n[N, :vector])
-    p_old = copy(p0)
-    ξ_old = ArrayPartition(X0[N, :point], X0[N, :vector])
+    n_old = deepcopy(n)
+    p_old = deepcopy(p0)
+    ξ_old = deepcopy(X0)
 
     set_iterate!(s_exact, M, p0)
     @test all(get_iterate(s_exact) .== p0)

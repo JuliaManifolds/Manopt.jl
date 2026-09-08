@@ -17,7 +17,7 @@ where ``F:\mathcal M → \overline{ℝ}``, ``G:\mathcal N → \overline{ℝ}``, 
 If the manifolds ``\mathcal M`` or ``\mathcal N`` are not Hadamard, it has to be considered locally only, that is on geodesically convex sets ``\mathcal C \subset \mathcal M`` and ``\mathcal D \subset\mathcal N``
 such that ``Λ(\mathcal C) \subset \mathcal D``.
 
-The algorithm comes down to applying the Riemannian semismooth Newton method to the rewritten primal-dual optimality conditions. Define the vector field ``X: \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N} \rightarrow \mathcal{T} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}`` as
+The algorithm comes down to applying the Riemannian semismooth Newton method to the rewritten primal-dual optimality conditions. Define the vector field ``X: \mathcal{M} \times T_{n}^{*} \mathcal{N} \rightarrow T \mathcal{M} \times T_{n}^{*} \mathcal{N}`` as
 
 ```math
 X\left(p, \xi_{n}\right):=\left(\begin{array}{c}
@@ -29,7 +29,7 @@ X\left(p, \xi_{n}\right):=\left(\begin{array}{c}
 and solve for ``X(p,ξ_{n})=0``.
 
 Given base points ``m∈\mathcal C``, ``n=Λ(m)∈\mathcal D``,
-initial primal and dual values ``p^{(0)} ∈\mathcal C``, ``ξ_{n}^{(0)} ∈ \mathcal T_{n}^{*}\mathcal N``,
+initial primal and dual values ``p^{(0)} ∈\mathcal C``, ``ξ_{n}^{(0)} ∈ T_{n}^{*}\mathcal N``,
 and primal and dual step sizes ``\sigma``, ``\tau``.
 
 The algorithm performs the steps ``k=0,1,…`` (until a [`StoppingCriterion`](@ref) is reached)
@@ -43,7 +43,7 @@ The algorithm performs the steps ``k=0,1,…`` (until a [`StoppingCriterion`](@r
    ```math
    V^{(k)} [(d_p^{(k)}, d_n^{(k)})] = - X(p^{(k)},ξ_n^{(k)})
    ```
-   in the vector space ``\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}``
+   in the vector space ``T_{p^{(k)}} \mathcal{M} \times T_{n}^{*} \mathcal{N}``
 3. Update
    ```math
    p^{(k+1)} := \exp_{p^{(k)}}(d_p^{(k)})
@@ -58,7 +58,10 @@ by a retraction, an inverse retraction and a vector transport.
 
 Finally you can also update the base points ``m`` and ``n`` during the iterations.
 This introduces a few additional vector transports. The same holds for the case that
-``Λ(m^{(k)})\neq n^{(k)}`` at some point. All these cases are covered in the algorithm.
+``Λ(m^{(k)})\neq n^{(k)}`` at some point. The solver performs the transports of the dual
+variable and of ``DΛ(m)[⋅]`` to ``n``; the transport ``\mathcal{P}_{\Lambda(m) \leftarrow n} \xi_{n}``
+inside the adjoint, however, is expected to be part of the provided `adjoint_linearized_operator`,
+which is called with `m`, `n` and ``ξ_n`` for this purpose.
 
 ```@docs
 primal_dual_semismooth_Newton

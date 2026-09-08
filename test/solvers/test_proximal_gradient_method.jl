@@ -32,9 +32,9 @@ using Manopt, Manifolds, Test, ManifoldDiff
         ob = ManifoldProximalGradientObjective(f, g, grad_g, prox_h)
         mp = DefaultManoptProblem(M, ob)
 
+        @test sc1(mp, pgms, 2) == true
         @test sc1.last_change < sc1.threshold
         @test sc1.at_iteration == 2
-        @test sc1(mp, pgms, 2) == true
         pgms.last_stepsize = 0.0
     end
     @testset "Proximal Gradient Backtracking" begin
@@ -73,6 +73,15 @@ using Manopt, Manifolds, Test, ManifoldDiff
             sub_state = AllocatingEvaluation(),
         )
         p_star2 = get_solver_result(pgm)
+        # under acceleration `q` is the point the step started from, not the previous iterate
+        pa0 = [1.0, 0.0, √2] # a start point of its own, `p0` was moved by the runs above
+        pgm_acc = proximal_gradient_method(
+            M, f, g, grad_g, pa0; prox_nonsmooth = prox_h,
+            acceleration = Manopt.ProximalGradientMethodAcceleration(M; p = copy(M, pa0)),
+            stepsize = Manopt.ConstantStepsize(M, 0.1),
+            stopping_criterion = StopAfterIteration(3), record = [:Iterate], return_state = true,
+        )
+        @test !isapprox(M, Manopt.get_state(pgm_acc).q, get_record(pgm_acc)[2])
         @test f(M, p_star2) <= f(M, p0)
         set_iterate!(pgm, M, p)
         @test get_iterate(pgm) == p
@@ -126,6 +135,17 @@ using Manopt, Manifolds, Test, ManifoldDiff
             @test_logs (:warn,) (:warn,) dw2(mp, pgms_const, 1)
             # but also only once
             @test_nowarn dw2(mp, pgms_const, 2)
+            # the action's own threshold is used when it is the larger one
+            dw3 = DebugWarnIfStepsizeCollapsed(1.0, :Once)
+            pgms_bt = ProximalGradientMethodState(
+                M; p = p0,
+                stepsize = Manopt.ProximalGradientMethodBacktrackingStepsize(
+                    M; initial_stepsize = 1.0, strategy = :convex
+                ),
+                stopping_criterion = StopAfterIteration(200),
+            )
+            pgms_bt.stepsize.last_stepsize = 0.5
+            @test_logs (:warn,) (:warn,) dw3(mp, pgms_bt, 1)
         end
 
         # Test subsolver with subgradient
@@ -297,5 +317,17 @@ using Manopt, Manifolds, Test, ManifoldDiff
             count = [:Cost], stopping_criterion = scs,
         )
         @test is_point(Ms, r_c)
+    end
+    @testset "Number representation on the Circle" begin
+        Mc = Circle()
+        gc(N, q) = 0.5 * distance(N, q, 0.2)^2
+        grad_gc(N, q) = -log(N, q, 0.2)
+        prox_c(N, λ, q) = ManifoldDiff.prox_distance(N, λ, 0.2, q, 1)
+        fc(N, q) = gc(N, q) + distance(N, q, 0.2)
+        qc = proximal_gradient_method(
+            Mc, fc, gc, grad_gc, 0.9; prox_nonsmooth = prox_c,
+            stopping_criterion = StopAfterIteration(5),
+        )
+        @test qc isa Float64
     end
 end

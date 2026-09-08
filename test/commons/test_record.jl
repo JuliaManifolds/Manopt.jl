@@ -215,7 +215,11 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test Manopt.status_summary(rss; context = :short) == ":Subsolver"
         @test startswith(Manopt.status_summary(rss), "A RecordAction to record elements from each subsolver")
         epms = ExactPenaltyMethodState(M, dmp, rs)
+        Manopt.get_record_action(rs)(dmp, gds, 1)
         rss(dmp, epms, 1)
+        @test get_record(rss) == [[1]]
+        rss(dmp, epms, -1) # reset
+        @test length(get_record(rss)) == 0
     end
     @testset "RecordWhenActive" begin
         i = RecordIteration()

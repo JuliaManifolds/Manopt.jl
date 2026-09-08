@@ -110,7 +110,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:inverse_retraction_method))
 * `a` - point after acceleration step
 $(_fields(:p; add_properties = [:as_Iterate]))
-* `q` - point storing the previous iterate
+* `q` - the point the last proximal gradient step started from, that is ``a^{(k)}``, which is the previous iterate without acceleration
 $(_fields(:retraction_method))
 * `X` - tangent vector for storing gradient
 $(_fields(:stopping_criterion; name = "stop"))
@@ -336,7 +336,7 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P, T} <: Stepsize
         (k_max > 0 && δ ≤ 0) &&
             throw(DomainError(δ, "the tolerance parameter δ must be positive if k_max > 0"))
 
-        p = rand(M)
+        p = maybe_wrap_variable(rand(M))
         return new{typeof(p), T}(
             convert(T, initial_stepsize), convert(T, sufficient_decrease), convert(T, contraction_factor),
             strategy, p, copy(M, p), convert(T, initial_stepsize), convert(T, stop_when_stepsize_less),
@@ -540,7 +540,7 @@ end
 
 function ProximalGradientMethodAcceleration(
         M::AbstractManifold;
-        p::P = rand(M),
+        p::P = maybe_wrap_variable(rand(M)),
         X::T = zero_vector(M, p),
         β::F = (k) -> (k - 1) / (k + 2),
         inverse_retraction_method::I = default_inverse_retraction_method(M, typeof(p)),
@@ -604,8 +604,9 @@ function (d::DebugWarnIfStepsizeCollapsed)(
     (k < 1) && (return nothing)
     s = st.stepsize
     if d.status !== :No
-        if s.last_stepsize ≤ s.stop_when_stepsize_less
-            @warn "Backtracking stopped because the stepsize fell below the threshold $(s.stop_when_stepsize_less)."
+        threshold = max(s.stop_when_stepsize_less, d.stop_when_stepsize_less)
+        if s.last_stepsize ≤ threshold
+            @warn "Backtracking stopped because the stepsize fell below the threshold $(threshold)."
             if d.status === :Once
                 @warn "Further warnings will be suppressed, use DebugWarnIfStepsizeCollapsed($(d.stop_when_stepsize_less), :Always) to get all warnings."
                 d.status = :No
@@ -682,10 +683,12 @@ function proximal_gradient_method(
         M::AbstractManifold, f, g, grad_g, p = rand(M);
         prox_nonsmooth = missing, evaluation = AllocatingEvaluation(), kwargs...,
     )
+    p_ = maybe_wrap_variable(p)
     mpgo = ManifoldProximalGradientObjective(
-        f, g, grad_g, prox_nonsmooth; evaluation = evaluation
+        f, g, grad_g, prox_nonsmooth; evaluation = evaluation, p = p
     )
-    return proximal_gradient_method(M, mpgo, p; evaluation = evaluation, kwargs...)
+    rs = proximal_gradient_method(M, mpgo, p_; evaluation = evaluation, kwargs...)
+    return maybe_unwrap_variable(p, rs)
 end
 
 function proximal_gradient_method(
@@ -802,11 +805,11 @@ end
 
 function step_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMethodState, k)
     M = get_manifold(amp)
-    # Store previous iterate
-    copyto!(M, pgms.q, pgms.p)
-
     # (Possible) Acceleration
     pgms.acceleration(amp, pgms, k)
+
+    # Store the point the proximal gradient step starts from
+    copyto!(M, pgms.q, pgms.a)
 
     # Evaluate the gradient at (possibly) accelerated point
     get_gradient!(amp, pgms.X, pgms.a)

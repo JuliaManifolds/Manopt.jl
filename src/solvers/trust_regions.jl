@@ -584,8 +584,6 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     else
         zero_vector!(M, trs.Y, trs.p)
     end
-    # Update the current gradient
-    get_gradient!(M, trs.X, mho, trs.p)
     _trs_solve_sub!(M, trs, trs.sub_state)
     callback(:Subsolver, mp, trs, k)
     f = get_cost(mp, trs.p)
@@ -643,6 +641,8 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
         copyto!(trs.p, trs.p_proposal)
         # If working with approximate Hessian -> update base point there
         update_hessian_basis!(M, get_hessian_function(mho, true), trs.p)
+        # and the gradient at the new iterate
+        get_gradient!(mp, trs.X, trs.p)
     end
     return trs
 end

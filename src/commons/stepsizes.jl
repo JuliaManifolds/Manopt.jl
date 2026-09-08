@@ -500,6 +500,7 @@ See [`AdaptiveWNGradient`](@ref) for the mathematical details.
 * `gradient_bound::R`: the bound ``b_k``.
 * `weight::R`: ``ω_k``, initialized to ``ω_0 =`` `norm(M, p, X)` if this is not zero, `1.0` otherwise.
 * `count::I`: ``c_k``, initialized to ``c_0 = 0``.
+* `initial_bound::R`: the initial ``b_0``, which `gradient_bound` and `weight` are reset to.
 
 # Constructor
 
@@ -524,12 +525,14 @@ mutable struct AdaptiveWNGradientStepsize{I <: Integer, R <: Real, F} <: Stepsiz
     gradient_bound::R
     weight::R
     count::I
+    initial_bound::R
     function AdaptiveWNGradientStepsize(;
             count_threshold::I, minimal_bound::R, alternate_bound::F, gradient_reduction::R,
-            gradient_bound::R, weight::R, count::I
+            gradient_bound::R, weight::R, count::I, initial_bound::R = gradient_bound
         ) where {I <: Integer, R <: Real, F}
         return new{I, R, F}(
-            count_threshold, minimal_bound, alternate_bound, gradient_reduction, gradient_bound, weight, count
+            count_threshold, minimal_bound, alternate_bound, gradient_reduction, gradient_bound, weight, count,
+            initial_bound
         )
     end
 end
@@ -592,6 +595,12 @@ function (awng::AdaptiveWNGradientStepsize)(
 end
 get_initial_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
 get_last_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
+function initialize_stepsize!(awng::AdaptiveWNGradientStepsize{I}) where {I}
+    awng.gradient_bound = awng.initial_bound
+    awng.weight = awng.initial_bound
+    awng.count = zero(I)
+    return awng
+end
 function Base.show(io::IO, awng::AdaptiveWNGradientStepsize)
     print(io, "AdaptiveWNGradientStepsize(; count_threshold = ", awng.count_threshold, ", count = ", awng.count)
     print(io, ", minimal_bound = ", awng.minimal_bound, ", alternate_bound = ", awng.alternate_bound)
@@ -819,6 +828,14 @@ function (bb::BarzilaiBorweinStepsize)(
     return bb.last_stepsize
 end
 get_last_stepsize(bb::BarzilaiBorweinStepsize, ::Any...) = bb.last_stepsize
+function initialize_stepsize!(bb::BarzilaiBorweinStepsize)
+    # forget iterate and gradient of a previous run, so that the next call is a first call again
+    a = bb.storage
+    empty!(a.values)
+    a.point_init = NamedTuple{keys(a.point_values)}(map(u -> false, keys(a.point_values)))
+    a.vector_init = NamedTuple{keys(a.vector_values)}(map(u -> false, keys(a.vector_values)))
+    return bb
+end
 function Base.show(io::IO, bbs::BarzilaiBorweinStepsize)
     print(io, "BarzilaiBorweinStepsize(; ")
     print(io, "inverse_retraction_method = ", bbs.inverse_retraction_method, ", ")
@@ -1949,6 +1966,11 @@ function (a::NonmonotoneLinesearchStepsize)(
     return a.last_stepsize
 end
 get_last_stepsize(nls::NonmonotoneLinesearchStepsize, ::Any...) = nls.last_stepsize
+function initialize_stepsize!(nls::NonmonotoneLinesearchStepsize{P, T, R}) where {P, T, R}
+    initialize_stepsize!(nls.bb_stepsize)
+    nls.last_stepsize = one(R)
+    return nls
+end
 function Base.show(io::IO, nls::NonmonotoneLinesearchStepsize)
     print(io, "NonmonotoneLinesearch(; ")
     print(io, "bb_stepsize = ", nls.bb_stepsize, ", ")

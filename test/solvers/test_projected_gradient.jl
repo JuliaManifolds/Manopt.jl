@@ -63,6 +63,8 @@ using Manifolds, Manopt, Random, Test
         stopping_criterion = StopAfterIteration(150) | StopWhenProjectedGradientStationary(M, 1.0e-7),
     )
     @test isapprox(M, mean_pg_1, mean_pg_2)
+    # the result has to be feasible, that is inside the ball of radius `r` around `c`
+    @test distance(M, c, mean_pg_1) <= r + 1.0e-12
     mean_pg_3 = copy(M, c)
     st = projected_gradient_method!(
         M, f, grad_f!, project_C!, mean_pg_3;

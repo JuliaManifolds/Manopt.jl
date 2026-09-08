@@ -36,3 +36,10 @@ The [`NelderMead`](@ref) solver requires the following functions of a manifold t
 * The [`distance`](@extref `ManifoldsBase.distance-Tuple{AbstractManifold, Any, Any}`)`(M, p, q)` when using the default stopping criterion, which includes [`StopWhenPopulationConcentrated`](@ref).
 * Within the default initialization [`rand`](@extref Base.rand-Tuple{AbstractManifold})`(M)` is used to generate the initial population.
 * A [`mean`](@extref Manifolds :jl:method:`Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}`)`(M, population)` has to be available, for example by loading [`Manifolds.jl`](@extref Manifolds :std:doc:`index`) and its [statistics](@extref Manifolds :std:doc:`features/statistics`) tools.
+
+## Literature
+
+```@bibliography
+Pages = ["NelderMead.md"]
+Canonical=false
+```

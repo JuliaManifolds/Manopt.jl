@@ -407,9 +407,9 @@ _doc_get_jacobian_matrix_vgf = """
 
 Return the Jacobian ``J_F(p): $(_math(:TangentSpace)) → ℝ^m`` of an [`AbstractFirstOrderVectorFunction`](@ref) `vgf`,
 that is of a function ``F: $(_math(:Manifold)) → ℝ^m``, where ``p ∈ $(_math(:Manifold))``, in matrix form with respect to
-a basis ``$(_tex(:Cal, "B")) = $(_tex(:set, "Y_1,…,Y_n"))`` of the tangent space.
+a basis ``$(_tex(:Cal, "B")) = $(_tex(:set, "Y_1,…,Y_d"))`` of the tangent space.
 
-Then decomposing a tangent vector ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) c_iY_i``
+Then decomposing a tangent vector ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "d")) c_iY_i``
 the evaluation of the Jacobian can be written as
 
 ````math
@@ -464,7 +464,7 @@ J_F(p)[X] = $(
 ) ∈ ℝ^m
 ````
 
-Given a basis ``$(_tex(:set, "Y_1,…,Y_n"))`` this can also be computed in coordinates of this basis.
+Given a basis ``$(_tex(:set, "Y_1,…,Y_d"))`` this can also be computed in coordinates of this basis.
 Then it simplifies to a matrix multiplication.
 
 This can be computed in-place of `a`.
@@ -772,8 +772,8 @@ with respect to the basis `B`, that is, compute
 J_F(p)[X] = DF(p)[X] ∈ ℝ^m
 ````
 
-where the basis ``B = $(_tex(:set, "Y_1,…,Y_n"))`` allows to decompose / provide the tangent vector
-in coordinates ``c`` given by ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) c_iY_i``
+where the basis ``B = $(_tex(:set, "Y_1,…,Y_d"))`` allows to decompose / provide the tangent vector
+in coordinates ``c`` given by ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "d")) c_iY_i``
 and the computation simplifies to a matrix multiplication.
 
 This can be computed in-place of `a`.
@@ -832,10 +832,3 @@ function get_jacobian!(
     end
     return a
 end
-
-
-function get_jacobian_basis(vgf::AbstractVectorGradientFunction)
-    return _get_jacobian_basis(vgf.jacobian_type)
-end
-_get_jacobian_basis(jt::AbstractVectorialType) = DefaultOrthonormalBasis()
-_get_jacobian_basis(jt::CoefficientVectorialType) = jt.basis

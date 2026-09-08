@@ -99,6 +99,7 @@ using ManifoldDiff: prox_distance, prox_distance!
                 return_state = true,
                 return_objective = true,
             )
+            @test isapprox(N, get_solver_result(r2[2]), s2)
         end
         @testset "Callbacks" begin
             sk_record = Tuple{Symbol, Int}[]

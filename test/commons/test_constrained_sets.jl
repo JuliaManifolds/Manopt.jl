@@ -90,5 +90,10 @@ using Manifolds, Manopt, Random, Test
         @test p == c
         get_projected_point!(M, p, objective, c)
         @test p == c
+        # and a point outside of C is projected onto its boundary
+        p = get_projected_point(M, objective, q_out)
+        @test isapprox(distance(M, c, p), r)
+        get_projected_point!(M, p, objective, q_out)
+        @test isapprox(distance(M, c, p), r)
     end
 end

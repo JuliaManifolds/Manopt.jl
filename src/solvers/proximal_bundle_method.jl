@@ -521,7 +521,7 @@ print a warning if the stopping parameter of the bundle method increases.
 
 Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e2`.
 
-The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+The `warn` level can be set to `:Once` to only warn the first time the multiplier increases,
 to `:Always` to report an increase every time it happens, and it can be set to `:No`
 to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always`.

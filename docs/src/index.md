@@ -99,14 +99,14 @@ If you use `Manopt.jl` in your work, please cite the following:
 <details><summary><code>Bergmann:2022</code> (BibLaTeX) </summary>
 ```
 ```biblatex
-@article{Bergmann2022,
+@article{Bergmann:2022,
     Author    = {Ronny Bergmann},
     Doi       = {10.21105/joss.03866},
     Journal   = {Journal of Open Source Software},
     Number    = {70},
     Pages     = {3866},
     Publisher = {The Open Journal},
-    Title     = {Manopt.jl: Optimization on Manifolds in {J}ulia},
+    Title     = {{M}anopt.jl: Optimization on Manifolds in {J}ulia},
     Volume    = {7},
     Year      = {2022},
 }
@@ -130,7 +130,7 @@ To refer to a certain version or the source code in general, cite for example
     Copyright = {MIT License},
     Doi       = {10.5281/zenodo.4290905},
     Publisher = {Zenodo},
-    Title     = {Manopt.jl},
+    Title     = {{M}anopt.jl},
     Year      = {2026},
 }
 ```

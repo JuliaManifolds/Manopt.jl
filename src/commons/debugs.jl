@@ -219,7 +219,7 @@ function (d::DebugDualChange)(
     return d.storage(tmp, apds, k)
 end
 function show(io::IO, ddc::DebugDualChange)
-    return print(io, "DebugDualChange(; io = ", ddc.io, ", format =\"$(escape_string(ddc.format))\")")
+    return print(io, "DebugDualChange(; io = ", ddc.io, ", format=\"$(escape_string(ddc.format))\")")
 end
 function status_summary(ddc::DebugDualChange; context::Symbol = :default)
     (context === :short) && return repr(ddc)
@@ -623,10 +623,10 @@ function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverStat
     return nothing
 end
 function Base.show(io::IO, dg::DebugGradient)
-    return print(io, "DebugGradient(; format=\"$(dg.format)\", at_init=$(dg.at_init))")
+    return print(io, "DebugGradient(; format=\"$(escape_string(dg.format))\", at_init=$(dg.at_init))")
 end
 function status_summary(dg::DebugGradient; context::Symbol = :default)
-    (context === :short) && (return "(:Gradient, \"$(dg.format)\")")
+    (context === :short) && (return "(:Gradient, \"$(escape_string(dg.format))\")")
     return "A DebugAction to print the gradient at the current iterate “$(dg.format)”"
 end
 
@@ -732,10 +732,10 @@ function (d::DebugGradientNorm)(
     return nothing
 end
 function Base.show(io::IO, dgn::DebugGradientNorm)
-    return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\", at_init=$(dgn.at_init))")
+    return print(io, "DebugGradientNorm(; format=\"$(escape_string(dgn.format))\", at_init=$(dgn.at_init))")
 end
 function status_summary(dgn::DebugGradientNorm; context::Symbol = :default)
-    (context === :short) && return "(:GradientNorm, \"$(dgn.format)\")"
+    (context === :short) && return "(:GradientNorm, \"$(escape_string(dgn.format))\")"
     return "A debug action to display the gradient norm (format. \"$(dgn.format)\")"
 end
 
@@ -1142,7 +1142,7 @@ print a warning if the Lagrange parameter based value ``-ξ`` of the bundle meth
 
 Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e2`.
 
-The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+The `warn` level can be set to `:Once` to only warn the first time the multiplier increases,
 to `:Always` to report an increase every time it happens, and it can be set to `:No`
 to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always`.
@@ -1157,7 +1157,7 @@ mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
 end
 function show(io::IO, d::DebugWarnIfLagrangeMultiplierIncreases)
     m = (d.status === :No ? "" : ":$(d.status)")
-    return print(io, "DebugWarnIfLagrangeMultiplierIncreases($(m); tol=\"$(d.tol)\")")
+    return print(io, "DebugWarnIfLagrangeMultiplierIncreases($(m); tol=$(d.tol))")
 end
 function status_summary(d::DebugWarnIfLagrangeMultiplierIncreases; context::Symbol = :default)
     (context === :short) && return repr(d)
@@ -1368,7 +1368,7 @@ function (d::DebugWarnIfCostIncreases)(
 end
 function show(io::IO, d::DebugWarnIfCostIncreases)
     m = (d.status === :No ? "" : ":$(d.status)")
-    return print(io, "DebugWarnIfCostIncreases($(m); tol=\"$(d.tol)\")")
+    return print(io, "DebugWarnIfCostIncreases($(m); tol=$(d.tol))")
 end
 function status_summary(d::DebugWarnIfCostIncreases; context::Symbol = :default)
     (context === :short) && return repr(d)
@@ -1553,12 +1553,12 @@ This threshold is specified by the `stop_when_stepsize_less` field.
 
 # Constructor
 
-    DebugWarnIfStepsizeCollapsed(tol::T=1e-8,warn=:Once;)
+    DebugWarnIfStepsizeCollapsed(tol::T=1e-8, warn=:Once)
 
 Initialize the warning to warning level (`:Once`) with a tolerance for `stop_when_stepsize_less` set to `tol` (1e-8).
 
-The `warn` level can be set to `:Once` to only warn the first time the cost increases,
-to `:Always` to report an increase every time it happens, and it can be set to `:No`
+The `warn` level can be set to `:Once` to only warn the first time the step size collapses,
+to `:Always` to report a collapse every time it happens, and it can be set to `:No`
 to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always`
 """
@@ -1601,8 +1601,8 @@ end
 
 Generate a dictionary of [`DebugAction`](@ref)s.
 
-First all `Symbol`s `String`, [`DebugAction`](@ref)s and numbers are collected,
-excluding `:Stop` and `:WhenActive`.
+First all `Symbol`s, `String`s and [`DebugAction`](@ref)s are collected,
+excluding `:Stop`, `:WhenActive` and any `Int`.
 This collected vector is added to the `:Iteration => [...]` pair.
 `:Stop` is added as a [`DebugStoppingCriterion`](@ref) to the `:Stop => [...]` pair.
 If necessary, these pairs are created
@@ -1620,6 +1620,9 @@ a [`DebugAction`](@ref) to call.
 Note that upon initialization the `:Start`, `:BeforeIteration`, and `:Iteration`
 entries are called with iteration number `0` to reset them (and maybe already print),
 while the `:Stop` entry is called with `-1`, so that it is only reset.
+
+If an `Int` `k` is present, all entries but `:Start` and `:Stop` are wrapped
+into a [`DebugEvery`](@ref)`(k)`.
 
 # Examples
 
@@ -1640,7 +1643,7 @@ while the `:Stop` entry is called with `-1`, so that it is only reset.
    ```
 
 3. We can even make the stopping criterion concrete and pass Actions directly,
-   for example explicitly Making the stop more concrete, we get
+   for example to make the stop more concrete, we get
 
    ```
    DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]])
@@ -1817,7 +1820,7 @@ end
 
 Convert certain Symbols in the `debug=[ ... ]` vector to [`DebugAction`](@ref)s
 Currently the following ones are done, where the string in `t[2]` is passed as the
-`format` the corresponding debug.
+`format` of the corresponding debug.
 Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 
 * `:Change` creates a [`DebugChange`](@ref)

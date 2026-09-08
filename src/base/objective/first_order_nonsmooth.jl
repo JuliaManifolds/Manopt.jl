@@ -169,21 +169,21 @@ which can also be computed in place of `Y`.
 @doc "$(_doc_get_dual_prox)"
 get_dual_prox(::AbstractManifold, ::AbstractPrimalDualManifoldObjective, ::Any...)
 
-function get_dual_prox(M::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
-    Y = allocate_result(M, get_dual_prox, X)
-    apdmo.prox_g_dual!(M, Y, n, τ, X)
+function get_dual_prox(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
+    Y = allocate_result(N, get_dual_prox, X)
+    apdmo.prox_g_dual!(N, Y, n, τ, X)
     return Y
 end
-function get_dual_prox(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, n, τ, X)
-    return get_dual_prox(M, get_objective(admo, false), n, τ, X)
+function get_dual_prox(N::AbstractManifold, admo::AbstractDecoratedManifoldObjective, n, τ, X)
+    return get_dual_prox(N, get_objective(admo, false), n, τ, X)
 end
 @doc "$(_doc_get_dual_prox)"
-function get_dual_prox!(M::AbstractManifold, Y, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
-    apdmo.prox_g_dual!(M, Y, n, τ, X)
+function get_dual_prox!(N::AbstractManifold, Y, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
+    apdmo.prox_g_dual!(N, Y, n, τ, X)
     return Y
 end
-function get_dual_prox!(M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, n, τ, X)
-    return get_dual_prox!(M, Y, get_objective(admo, false), n, τ, X)
+function get_dual_prox!(N::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, n, τ, X)
+    return get_dual_prox!(N, Y, get_objective(admo, false), n, τ, X)
 end
 
 function get_primal_prox end

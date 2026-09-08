@@ -11,9 +11,9 @@ module Manopt
 # When indenting something in print, use two spaces (or maybe \t later?)
 _MANOPT_INDENT = "  "
 
-import Base: &, copy, getindex, identity, length, setindex!, show, |
+import Base: &, copy, getindex, length, show, |
 import LinearAlgebra: reflect!
-import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
+import ManifoldsBase: embed!, prepare_check_result, find_best_slope_window
 import ManifoldsBase: base_manifold, base_point, get_basis
 import ManifoldsBase: project, project!, submanifold_component
 import LinearAlgebra: cross, LowerTriangular
@@ -78,9 +78,8 @@ using ManifoldsBase:
     vector_transport_to, vector_transport_to!,
     zero_vector, zero_vector!,
     ×, ℂ, ℝ
-using Markdown
 using Preferences:
-    @load_preference, @set_preferences!, @has_preference, @delete_preferences!
+    @load_preference, @set_preferences!, @delete_preferences!
 using Printf
 using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
 using SparseArrays

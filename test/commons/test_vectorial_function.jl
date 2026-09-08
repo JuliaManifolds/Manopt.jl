@@ -87,15 +87,15 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     show(io, MIME"text/plain"(), vgf_df)
     @test String(take!(io)) == Manopt.status_summary(vgf_df)
     @test startswith(repr(vgf_df), "VectorDifferentialFunction")
-    @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis
-    @test Manopt.get_jacobian_basis(vgf_vi) == DefaultOrthonormalBasis()
+    @test Manopt.get_basis(vgf_ji.jacobian_type) == vgf_ji.jacobian_type.basis
+    @test Manopt.get_basis(vgf_vi.jacobian_type) == DefaultOrthonormalBasis()
     vgf_jib = VectorGradientFunction(
         g!, jac_g!, 2; evaluation = InplaceEvaluation(),
         jacobian_type = CoefficientVectorialType(DefaultBasis()),
     )
-    @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis
-    @test Manopt.get_jacobian_basis(vgf_jib) == DefaultBasis()
-    @test Manopt.get_jacobian_basis(vgf_vi) == DefaultOrthonormalBasis()
+    @test Manopt.get_basis(vgf_ji.jacobian_type) == vgf_ji.jacobian_type.basis
+    @test Manopt.get_basis(vgf_jib.jacobian_type) == DefaultBasis()
+    @test Manopt.get_basis(vgf_vi.jacobian_type) == DefaultOrthonormalBasis()
     @testset "differential with a number-typed point" begin
         # a differential returns one number per component, so it must not be wrapped as a
         # tangent vector – for a number-typed point that wrapping used to throw

@@ -124,7 +124,7 @@ function LowerTriangularAdaptivePoll(
     b_l = zeros(d)
     D_k = zeros(d, d + 1)
     return LowerTriangularAdaptivePoll(;
-        base_point = p, candidate = copy(M, p), poll_counter = 0, random_vector = b_l, random_index = 0,
+        base_point = p, candidate = copy(M, p), poll_counter = -1, random_vector = b_l, random_index = 0,
         mesh = D_k, basis = basis, X = X, last_poll_improved = false,
         retraction_method = retraction_method, vector_transport_method = vector_transport_method,
     )
@@ -205,8 +205,8 @@ function (ltap::LowerTriangularAdaptivePoll)(
     n = manifold_dimension(M)
     l = -log(4, mesh_size)
     S = (-2^l + 1):(2^l - 1)
-    if ltap.poll_counter <= l # we did not yet generate a b_l on this scale
-        ltap.poll_counter += 1
+    if ltap.poll_counter != round(Int, l) # the stored b_l belongs to another mesh size
+        ltap.poll_counter = round(Int, l)
         # A random index ι
         ltap.random_index = rand(1:n)
         # generate a random b_l vector

@@ -127,11 +127,13 @@ using Manopt, Manifolds, Test
         )
         @test is_point(M, q6, true)
     end
-    @testset "Comparing different starts" begin
+    @testset "Allocating and in-place entry with an objective" begin
         msgo2 = ManifoldStochasticGradientObjective(sgrad_f1)
         q1 = stochastic_gradient_descent(M, msgo2, p)
         q2 = copy(M, p)
         stochastic_gradient_descent!(M, msgo2, q2)
+        @test is_point(M, q1, true)
+        @test is_point(M, q2, true)
     end
     @testset "Circle example" begin
         Mc = Circle()

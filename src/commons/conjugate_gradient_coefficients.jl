@@ -516,7 +516,7 @@ function (u::DirectionUpdateRuleStorage{<:HagerZhangCoefficientRule})(
 end
 function show(io::IO, u::HagerZhangCoefficientRule)
     return print(
-        io, "Manopt.HagerZhangCoefficientRule(; vector_transport_method=$(u.vector_transport_method))",
+        io, "Manopt.HagerZhangCoefficientRule(; vector_transport_method=$(u.vector_transport_method), denom_threshold=$(u.denom_threshold))",
     )
 end
 
@@ -1241,15 +1241,21 @@ end
 @doc """
     RestartOnNonSufficientDescent <: AbstractRestartCondition
 
-## Fields
-* `κ`: the sufficient decrease factor
+A restart strategy that indicates to restart whenever the search direction `δ` is not a sufficient descent direction, i.e. when
 
-A restart strategy that indicates to restart whenever the search direction `δ` is not a sufficient descent direction, i.e.
 ```math
-    ⟨$(_tex(:grad))f(p), δ⟩ > - κ $(_tex(:norm, "X"))^2.
+    ⟨$(_tex(:grad))f(p), δ⟩ > - κ $(_tex(:norm, "$(_tex(:grad))f(p)"))^2,
 ```
 
 at the current iterate ``p``.
+
+# Fields
+
+* `κ`: the sufficient decrease factor
+
+# Constructor
+
+    RestartOnNonSufficientDescent(κ::Real)
 """
 struct RestartOnNonSufficientDescent{F <: Real} <: AbstractRestartCondition
     κ::F

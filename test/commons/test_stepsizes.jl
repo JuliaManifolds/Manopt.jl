@@ -110,7 +110,7 @@ end
     @test Manopt.CubicBracketingLinesearchStepsize(M; initial_stepsize = 1).initial_stepsize === 1.0
     # gradient-free backtracking falls back to a plain decrease condition
     s0 = Manopt.linesearch_backtrack(Euclidean(2), (M, q) -> sum(q .^ 2), [1.0, 2.0], 1.0, 1.0e-4, 0.5, [-1.0, -2.0])
-    @test s0 > 0
+    @test s0 == 2.0
 
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
@@ -199,6 +199,12 @@ end
         @test s.count == 0 # was reset
         @test s.weight == 0.75 # also reset to orig
         @test startswith(repr(s), "AdaptiveWNGradientStepsize(;")
+        # a reused step size starts from its initial bound again
+        @test s.gradient_bound ≠ s.initial_bound
+        Manopt.initialize_stepsize!(s)
+        @test s.gradient_bound == s.initial_bound
+        @test s.weight == s.initial_bound
+        @test s.count == 0
     end
     @testset "Absolute stepsizes" begin
         M = ManifoldsBase.DefaultManifold(2)
@@ -252,6 +258,21 @@ end
             @test bbs(dmps, gdss, 1) == bbs.max_stepsize
             @test get_last_stepsize(bbs) == bbs.max_stepsize
         end
+        # a reused step size forgets the previous run, so the next call is a first call again
+        bb2 = Manopt.BarzilaiBorweinStepsize(M)
+        gds2 = GradientDescentState(M; p = p, stepsize = bb2)
+        bb2(dmp, gds2, 1)
+        @test Manopt.has_storage(bb2.storage, Manopt.PointStorageKey(:Iterate))
+        Manopt.initialize_stepsize!(bb2)
+        @test !Manopt.has_storage(bb2.storage, Manopt.PointStorageKey(:Iterate))
+        @test bb2(dmp, gds2, 1) == bb2.max_stepsize
+        # the nonmonotone line search resets both its Barzilai–Borwein step size and its last step
+        nls = NonmonotoneLinesearch()(M)
+        nls.last_stepsize = 0.5
+        nls.bb_stepsize(dmp, gds2, 1)
+        Manopt.initialize_stepsize!(nls)
+        @test nls.last_stepsize == 1.0
+        @test !Manopt.has_storage(nls.bb_stepsize.storage, Manopt.PointStorageKey(:Iterate))
     end
     @testset "Polyak Stepsize" begin
         M = Euclidean(2)

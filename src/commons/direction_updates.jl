@@ -356,11 +356,11 @@ function status_summary(nr::NesterovRule; context::Symbol = :default)
     Nesterov Rule
 
     ## Parameters
-    γ:                        $(_MANOPT_INDENT)$(nr.γ)
-    μ:                        $(_MANOPT_INDENT)$(nr.μ)
-    shrinkage:                $(_MANOPT_INDENT)$(nr.shrinkage)
-    inverse_retraction_method:$(_MANOPT_INDENT)$(nr.inverse_retraction_method)
-    retraction_method:        $(_MANOPT_INDENT)$(nr.retraction_method)
+    * γ:                        $(_MANOPT_INDENT)$(nr.γ)
+    * μ:                        $(_MANOPT_INDENT)$(nr.μ)
+    * shrinkage:                $(_MANOPT_INDENT)$(nr.shrinkage)
+    * inverse_retraction_method:$(_MANOPT_INDENT)$(nr.inverse_retraction_method)
+    * retraction_method:        $(_MANOPT_INDENT)$(nr.retraction_method)
     """
 end
 
@@ -474,7 +474,7 @@ function status_summary(pg::PreconditionedDirectionRule; context::Symbol = :defa
     Preconditioned Direction Rule
 
     ## Parameters
-    preconditioner: $(_MANOPT_INDENT)$(pg.preconditioner)
+    * preconditioner: $(_MANOPT_INDENT)$(pg.preconditioner)
 
     ## Direction Rule
     $(_in_str(status_summary(pg.direction; context = context); indent = 1, headers = 1))

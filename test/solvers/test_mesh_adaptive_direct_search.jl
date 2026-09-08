@@ -43,6 +43,18 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     p3 = get_solver_result(s3)
     @test f3(M3, p3) < f3(M3, p2)
     @test is_point(M3, p3; error = :error)
+    @testset "Poll regenerates b_l per mesh size" begin
+        mp = DefaultManoptProblem(M3, ManifoldCostObjective(f3))
+        ltap = Manopt.LowerTriangularAdaptivePoll(M3, copy(M3, p2))
+        ltap(mp, 1.0)
+        ltap(mp, 1 / 16) # a finer mesh, entries of `b_l` up to ±4
+        b_fine = copy(ltap.random_vector)
+        @test ltap.poll_counter == 2
+        ltap(mp, 1.0) # back to the coarse mesh, entries of `b_l` at most ±1
+        @test ltap.poll_counter == 0
+        @test ltap.random_vector ≠ b_fine
+        @test all(abs.(ltap.random_vector) .<= 1)
+    end
     @testset "Callback Test" begin
         sk_record = Tuple{Symbol, Int}[]
         cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))

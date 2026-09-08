@@ -240,6 +240,8 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
   * `:reinitialize_direction_update`: discards operator state stored in direction update rules.
   * any other value performs the verification, keeps the direction but stores a message.
   A stored message can be displayed using [`DebugMessages`](@ref).
+* `nonpositive_curvature_behavior=:ignore`: how the limited memory update handles stored pairs ``s_k, y_k`` with
+  nonpositive inner product, either `:ignore` or `:byrd`, see [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref).
 * `preconditioner=missing` specify a preconditioner, either
   * the default `missing` does not activate a preconditioning
   * a function of the form `(M, p, X) -> Y` or mutating `(M, Y, p, X) -> Y` depending on the `evaluation`
@@ -250,6 +252,7 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`WolfePowellLinesearch`](@ref)`(; retraction_method=retraction_method, vector_transport_method=vector_transport_method, stop_when_stepsize_less=1e-10)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
+* `sy_tol=1e-8`: the tolerance used by the `:byrd` variant of `nonpositive_curvature_behavior`, see [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref).
 $(_kwargs(:vector_transport_method))
 
 $(_note(:OtherKeywords))

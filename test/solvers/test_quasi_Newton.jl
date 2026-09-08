@@ -339,7 +339,7 @@ end
         update_hessian_basis!(M, BFGS_inplace, p_1)
         update_hessian_basis!(M, BFGS_inplace, p_2)
 
-        @test isapprox(M, p_1, X_3, X_4; atol = 1.0e-10)
+        @test isapprox(M, p_1, X_7, X_8; atol = 1.0e-10)
 
         BFGS_allocating.grad_tmp = ones(4)
         BFGS_allocating.matrix = one(zeros(3, 3))
@@ -466,9 +466,11 @@ end
         # push one dummy pair we can transport
         push!(qdu.memory_y, [1, 2])
         push!(qdu.memory_s, [3, 4])
-        # This triggers and cautious update that does not update the Hessian
+        # This triggers a cautious update that does not update the Hessian
         Manopt.update_hessian!(qns.direction_update, mp, qns, p, 1)
-        # But I am not totally sure what to test for afterwards
+        # the stored pair is only transported: no new pair is added and ρ is recomputed
+        @test length(qdu.memory_s) == 1
+        @test qdu.ρ[1] ≈ 1 / 11
 
         @test startswith(repr(qdu), "QuasiNewtonLimitedMemoryDirectionUpdate with memory size")
     end

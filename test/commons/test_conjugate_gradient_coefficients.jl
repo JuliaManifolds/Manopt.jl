@@ -52,7 +52,7 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         @test repr(Manopt.DaiYuanCoefficient(M; vector_transport_method = p)()) ==
             "Manopt.DaiYuanCoefficientRule(; vector_transport_method=$pt)"
         @test repr(HagerZhangCoefficient(; vector_transport_method = p)(M)) ==
-            "Manopt.HagerZhangCoefficientRule(; vector_transport_method=$pt)"
+            "Manopt.HagerZhangCoefficientRule(; vector_transport_method=$pt, denom_threshold=1.0e-10)"
         @test repr(HestenesStiefelCoefficient()(M)) ==
             "Manopt.HestenesStiefelCoefficientRule(; vector_transport_method=$pt)"
         # Requires a manifold

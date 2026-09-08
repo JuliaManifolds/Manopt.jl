@@ -30,7 +30,7 @@ default(; show = false, reuse = true)
         )
         #Check complex Sphere as well
         M2 = Sphere(n, ℂ)
-        check_gradient(M2, f, grad_f, p, X)
+        @test check_gradient(M2, f, grad_f, p, X)
         # Linear Euclidean function -> exact
         M2 = Euclidean(1)
         f2(M, p) = 3 * p[1]
@@ -38,7 +38,7 @@ default(; show = false, reuse = true)
         p2 = [1.0]
         X2 = [2.0]
         # true due to exactness.
-        check_gradient(M2, f2, grad_f2, p2, X2)
+        @test check_gradient(M2, f2, grad_f2, p2, X2)
     end
     @testset "Hessian Checks" begin
         M3 = Euclidean(2)

@@ -374,7 +374,9 @@ function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :defaul
 end
 
 function _domain_condition(M, q, p, t, length, domain)
-    return (!domain(M, q) || (distance(M, p, q) < t * length))
+    d = distance(M, p, q)
+    # a distance equal to t * length up to floating point accuracy is not closer
+    return (!domain(M, q) || (d < t * length && !isapprox(d, t * length)))
 end
 
 function _null_condition(amp, M, q, p_last_serious, X, g, VT, IRT, m, t, ξ, ϱ)

@@ -158,5 +158,21 @@ flat_example(::AbstractManifold, p) = 0.0
             sc.at_iteration = 10
             @test length(get_reason(sc)) > 0
         end
+        # the two tolerances are independent, so switching one of them off is allowed
+        M = Euclidean(2)
+        @test Manopt.default_cma_es_stopping_criterion(M, 6; tol_fun = 0) isa StoppingCriterion
+        @test Manopt.default_cma_es_stopping_criterion(M, 6; tol_x = 0) isa StoppingCriterion
+        # a reused criterion starts counting from zero again
+        st = Manopt.get_state(
+            cma_es(
+                M, flat_example, [10.0, 10.0]; σ = 10.0, rng = MersenneTwister(123),
+                stopping_criterion = StopAfterIteration(20) | StopWhenBestCostInGenerationConstant{Float64}(5),
+                return_state = true,
+            )
+        )
+        sc7 = only(get_active_stopping_criteria(st.stop))
+        @test sc7.iterations_since_change > 0
+        sc7(DefaultManoptProblem(M, ManifoldCostObjective(flat_example)), st, 0)
+        @test sc7.iterations_since_change == 0
     end
 end

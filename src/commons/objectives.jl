@@ -214,7 +214,7 @@ function status_summary(cmo::ConstrainedManifoldObjective; context::Symbol = :de
     s = status_summary(cmo.objective; context = context)
     return """
     A constrained objective with $(el == 0 ? "no" : el) equality and $(il == 0 ? "no" : il) inequality constraints.
-    For verifications, the inequalities are checked with an absolute tolerance of `atol = $(cmo.atol)`
+    For verifications, the constraints are checked with an absolute tolerance of `atol = $(cmo.atol)`
 
     ## Unconstrained Objective
     $(_in_str(s; indent = 1, headers = 1))
@@ -634,10 +634,10 @@ An alternating gradient objective consists of
 
 # Constructors
 
-    ManifoldAlternatingGradientObjective(F, gradF::Function; evaluation=AllocatingEvaluation(), p = missing)
-    ManifoldAlternatingGradientObjective(F, gradF::AbstractVector{<:Function}; evaluation=AllocatingEvaluation(), p = missing)
+    ManifoldAlternatingGradientObjective(f, grad_f::Function; evaluation=AllocatingEvaluation(), p = missing)
+    ManifoldAlternatingGradientObjective(f, grad_f::AbstractVector{<:Function}; evaluation=AllocatingEvaluation(), p = missing)
 
-Create an alternating gradient problem with an optional `cost` and the gradient either as one
+Create an alternating gradient objective with the cost `f` and the gradient either as one
 function (returning an array) or a vector of functions.
 
 ## Keyword Arguments
@@ -864,11 +864,20 @@ in case the objective being stored here is decorated, e.g. with a cache.
 # Fields
 
 * `objective`: the objective that is defined in the embedding
-* `p=missing`: a point in the embedding.
-* `X=missing`: a tangent vector in the embedding
+* `p`: a point in the embedding or `missing`
+* `X`: a tangent vector in the embedding or `missing`
 
 When a point in the embedding `p` is provided, `embed!` is used in place of this point to reduce
-memory allocations. Similarly `X` is used when embedding tangent vectors.
+memory allocations. Similarly `X` is used as memory for the gradient in the embedding before it
+is converted to a Riemannian gradient.
+
+# Constructors
+
+    EmbeddedManifoldObjective(objective, p = missing, X = missing)
+    EmbeddedManifoldObjective(M, objective; q = rand(M), p = embed(M, q), X = embed(M, q, rand(M; vector_at = q)))
+
+The first variant stores the given (or no) memory, the second allocates memory in the embedding
+of `M` based on a random point `q` on `M`.
 """
 struct EmbeddedManifoldObjective{P, T, O2, O1 <: AbstractManifoldObjective} <: AbstractDecoratedManifoldObjective{O2}
     objective::O1
@@ -1961,6 +1970,26 @@ function get_preconditioner!(M::AbstractManifold, Y, co::ManifoldCachedObjective
     return Y
 end
 
+function get_proximal_map(M::AbstractManifold, co::ManifoldCachedObjective, λ, p)
+    !(haskey(co.cache, :ProximalMap)) && return get_proximal_map(M, co.objective, λ, p)
+    return copy(
+        M,
+        get!(co.cache[:ProximalMap], (copy(M, p), λ, 1)) do # the single proximal map is the first
+            get_proximal_map(M, co.objective, λ, p)
+        end,
+    )
+end
+function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCachedObjective, λ, p)
+    !(haskey(co.cache, :ProximalMap)) && return get_proximal_map!(M, q, co.objective, λ, p)
+    copyto!(
+        M, q,
+        get!(co.cache[:ProximalMap], (copy(M, p), λ, 1)) do
+            get_proximal_map!(M, q, co.objective, λ, p) #compute in-place of q
+            copy(M, q) #store copy of q
+        end,
+    )
+    return q
+end
 function get_proximal_map(M::AbstractManifold, co::ManifoldCachedObjective, λ, p, i)
     !(haskey(co.cache, :ProximalMap)) && return get_proximal_map(M, co.objective, λ, p, i)
     return copy(
@@ -2081,7 +2110,7 @@ function show(
     return print(io, "$(t[2])\n\n$(status_summary(t[1]))")
 end
 function status_summary(mco::ManifoldCachedObjective; context::Symbol = :default)
-    _is_inline(context) && (return repr(mco))
+    _is_inline(context) && (return "$(status_summary(mco.objective; context = context)) (cached: $(join([":$k" for k in keys(mco.cache)], ", ")))")
     s = "## Cache\n"
     s2 = status_summary(mco.objective; context = context)
     (length(s2) > 0) && (s2 = "$(s2)\n\n")
@@ -2251,8 +2280,10 @@ end
 
 """
     get_count(co::ManifoldCountObjective, s::Symbol, mode::Symbol=:None)
+    get_count(co::ManifoldCountObjective, s::Symbol, i, mode::Symbol=:None)
 
-Get the number of counts for a certain symbol `s`.
+Get the number of counts for a certain symbol `s`, or, for counters that are stored per index
+(constraints, stochastic gradients, proximal maps), the count of the `i`th entry.
 
 Depending on the `mode` different results appear if the symbol does not exist in the dictionary
 
@@ -3284,10 +3315,10 @@ where ``F_i(p) ∈ ℝ^{n_i}`` is the vector of residuals for the `i`-th block c
 and ``f_{i,j}(p)`` its `j`-th component function.
 
 # Keyword arguments
-* `value_cache=nothing`: if provided, this vector is used to store the residuals ``F(p)``
-  internally to avoid re-computations.
-* `jacobian_cache=fill(nothing, length(nlso.objective))`: if provided, this is used to store
-  the Jacobians of the component functions.
+* `value_cache=nothing`: if provided, the residuals ``F(p)`` are not evaluated again but taken
+  from this vector of their cached values.
+* `jacobian_cache=fill(nothing, length(nlso.objective))`: if provided, the Jacobians are not
+  evaluated again but taken from here, where entry `i` holds the Jacobian of the `i`th block.
 """
 @doc "$(_doc_get_gradient_nlso)"
 function get_gradient(
@@ -3549,7 +3580,8 @@ function get_proximal_map!(
 end
 function status_summary(mpo::ManifoldProximalMapObjective; context::Symbol = :default)
     (context === :short) && (return repr(mpo))
-    return "A proximal map objective for a cost with $(mpo.number_of_proxes) proximal maps"
+    n = sum(mpo.number_of_proxes)
+    return "A proximal map objective for a cost with $(n) proximal map$(n == 1 ? "" : "s")"
 end
 function Base.show(io::IO, mpo::ManifoldProximalMapObjective)
     print(io, "ManifoldProximalMapObjective(", mpo.cost, ", ", mpo.proximal_maps!, ", ")
@@ -4237,7 +4269,7 @@ function get_cost_and_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObj
         # Update point
         copyto!(M, sco.p, p)
         sco.c_valid = true
-        copyto!(M, sco.X, X)
+        copyto!(M, sco.X, p, X)
         sco.X_valid = true
     else
         X = copy(M, p, sco.X)
@@ -4288,7 +4320,7 @@ function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p
         # for switched points, invalidate c
         copyto!(M, sco.p, p)
         scop_neq_p && (sco.c_valid = false)
-        copyto!(M, sco.X, X)
+        copyto!(M, sco.X, p, X)
         sco.X_valid = true
     else
         X = copy(M, p, sco.X)
@@ -4302,7 +4334,7 @@ function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjectiv
         # for switched points, invalidate c
         copyto!(M, sco.p, p)
         scop_neq_p && (sco.c_valid = false)
-        copyto!(M, sco.X, X)
+        copyto!(M, sco.X, p, X)
         sco.X_valid = true
     else
         copyto!(M, X, p, sco.X)

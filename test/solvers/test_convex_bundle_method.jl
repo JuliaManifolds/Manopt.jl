@@ -72,8 +72,7 @@ using Manopt: estimate_sectional_curvature
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
-        oR = solve!(mp, cbms)
-        xHat = get_solver_result(oR)
+        solve!(mp, cbms)
         # Check Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_subgradient(mp, p)) == 0
@@ -85,6 +84,9 @@ using Manopt: estimate_sectional_curvature
             @test _domain_condition(M, p, p0, 1.0, 4.0, cbms.domain)
             # inside the domain but farther away than `t * length`
             @test !_domain_condition(M, p, p0, 1.0, 1.0, cbms.domain)
+            # a distance that differs from `t * length` only by rounding is not closer
+            d = distance(M, p0, p)
+            @test !_domain_condition(M, p, p0, 1.0, d * (1 + 1.0e-12), cbms.domain)
             # the degenerate start now really takes effect, so the run ends at the minimizer
             # and the null condition holds for the resulting state
             @test _null_condition(
@@ -94,8 +96,6 @@ using Manopt: estimate_sectional_curvature
         end
 
         @testset "Stepsize and Debugging" begin
-            io = IOBuffer()
-            ds = DebugStepsize(; io = io)
             bms2 = convex_bundle_method(
                 M, f, ∂f, p0; diameter = diameter,
                 domain = (M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
@@ -125,12 +125,12 @@ using Manopt: estimate_sectional_curvature
 
         @testset "Warnings" begin
             dw1 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 0.0)
-            @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"0.0\")"
+            @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=0.0)"
             cbms.ξ = 101.0
             @test_logs (:warn,) dw1(mp, cbms, 1)
             dw2 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 1.0e1)
             dw2.old_value = -101.0
-            @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"10.0\")"
+            @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=10.0)"
             cbms.ξ = -1.0
             @test_logs (:warn,) (:warn,) dw2(mp, cbms, 1)
         end
@@ -154,8 +154,7 @@ using Manopt: estimate_sectional_curvature
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
-        sr = solve!(mp, cbms)
-        xHat = get_solver_result(sr)
+        solve!(mp, cbms)
         # Check Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_subgradient(mp, p)) == 0
@@ -212,10 +211,11 @@ using Manopt: estimate_sectional_curvature
         # try to force entering the backtracking loop
         diam = π / 4
         domf(M, p) = distance(M, p, p0) < diam / 2 ? true : false
-        q2 = convex_bundle_method(
+        q3 = convex_bundle_method(
             M, f, ∂f, p0; k_max = 1.0, diameter = diam, domain = domf,
             stopping_criterion = StopAfterIteration(3),
         )
+        @test f(M, q3) < f(M, p0)
         @testset "Callback test" begin
             sk_record = Tuple{Symbol, Int}[]
             cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
