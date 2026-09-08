@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * the new internal function `additional_callbacks(::Type{<:AbstractManoptSolverState})` was added to declare
-  the callback hooks instead of manually overwriting `provided_callbacks`.
+  the callback hooks instead of manually overwriting `provided_callbacks`. (#643)
 * A `BarzilaiBorweinStepsize` as a standalone stepsize instead of only being available within the
   `NonmonotoneLinesearchStepsize`. (#641)
 * a benchmark suite in `benchmark/`, written with `BenchmarkTools.jl` and run with `AirspeedVelocity.jl`,
@@ -19,28 +19,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   It starts with two problems, the Riemannian mean on the sphere, benchmarked with `gradient_descent`
   and `quasi_Newton`, and the Riemannian median on hyperbolic space, benchmarked with `cyclic_proximal_point`. (#640)
 * introduce a `StepsizeInitialGuess` that allows to use a `Stepsize` as initial guess of a line search. (#641)
-* [Runic.jl](https://github.com/fredrikekre/Runic.jl) is now also used to check code formatting in the `.qmd` and `.md` files of the repository
+* [Runic.jl](https://github.com/fredrikekre/Runic.jl) is now also used to check code formatting in the `.qmd` and `.md` files of the repository (#643)
 * a keyword `γ` for `interior_point_Newton`, the initial value of its centrality condition.
-* allocating `get_linear_operator(M, neo, p, B)` and `get_vector_field(M, neo, p, B)` for the coordinates surrogate of the normal equations.
-* `DebugProximalParameter` and `RecordProximalParameter` can now also be used with `proximal_point`.
+* allocating `get_linear_operator(M, neo, p, B)` and `get_vector_field(M, neo, p, B)` for the coordinates surrogate of the normal equations. (#643)
+* `DebugProximalParameter` and `RecordProximalParameter` can now also be used with `proximal_point`. (#643)
 
 ### Changed
 
-* the changelog check in CI is skipped on pull requests labeled `no changelog necessary`; dependabot adds this label to its pull requests automatically.
-* since `has_converged` exists, the status reports on REPL now use this to indicate whether an algorithm has converged.
-* the field `X_old` of the `MomentumGradientRule` is now called `η_old`, since it stores the accumulated momentum direction and not the last gradient.
+* the changelog check in CI is skipped on pull requests labeled `no changelog necessary`; dependabot adds this label to its pull requests automatically. (#643)
+* since `has_converged` exists, the status reports on REPL now use this to indicate whether an algorithm has converged. (#643)
+* the field `X_old` of the `MomentumGradientRule` is now called `η_old`, since it stores the accumulated momentum direction and not the last gradient. (#643)
 * the backtracking of the `proximal_gradient_method` no longer constructs a `ProximalGradientMethodState`
   in every call, but uses two working points of its step size; the internal `_pgm_proximal_step!` now
-  takes the sub problem and sub state instead of a whole state.
-* the modes of `RecordTime` and `DebugTime` are now capitalized consistently, that is `:Cumulative`, `:Iterative` and `:Total`.
-* `stochastic_gradient_descent` with `order_type=:FixedRandom` now draws a new permutation at the start of every epoch.
-* the `TrustRegionsState` fields `Z`, `HZ` and `f_proposal` were removed, since they were never read; the Cauchy point is stored in `Y`.
-* `ProximalPointState` is an `AbstractManoptSolverState`, since it stores no gradient, and it provides `get_iterate` and `set_iterate!`.
+  takes the sub problem and sub state instead of a whole state. (#643)
+* the modes of `RecordTime` and `DebugTime` are now capitalized consistently, that is `:Cumulative`, `:Iterative` and `:Total`. (#643)
+* `stochastic_gradient_descent` with `order_type=:FixedRandom` now draws a new permutation at the start of every epoch. (#643)
+* the `TrustRegionsState` fields `Z`, `HZ` and `f_proposal` were removed, since they were never read; the Cauchy point is stored in `Y`. (#643)
+* `ProximalPointState` is an `AbstractManoptSolverState`, since it stores no gradient, and it provides `get_iterate` and `set_iterate!`. (#643)
 
 ### Fixed
 
 The following fixes were reported by an AI assisted code review. Each single point was still carefully checked, and committed by hand. Most of them are minor fixes and allowing several areas of `Manopt.jl` to also work on decorators and other edge cases. Only very few of the fixes are actually bug fixes, e.g. the line search direction in the interior point Newton was slightly wrong.
-They are still all listed here in detail in case (a) someone else's code breaks or (b) it was not done carefully enough – to then avoid these approaches in the future.
+They are still all listed here in detail in case (a) someone else's code breaks or (b) it was not done carefully enough – to then avoid these approaches in the future. <the following list stems from (#643) as some changes above as well. This is the assisted review PR.
 
 * `adaptive_regularization_with_cubics` now also runs with a closed-form sub solver; setting the iterate of a `ClosedFormSubSolverState` is a no-op instead of an error.
 * `adaptive_regularization_with_cubics` now wraps an allocating closed-form sub solver.
@@ -146,18 +146,14 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * the box quasi-Newton update now treats a deactivated `initial_scale` (as set by a `preconditioner`) as `1`, instead of erroring.
 * `quasi_Newton` and `quasi_Newton!` now forward `evaluation=` to the objective-based method, so a mutating `preconditioner` is no longer wrapped as allocating.
 * `quasi_Newton` now reports that `cautious_update=true` is not supported on manifolds with an anisotropic maximal step size, instead of failing with a `MethodError`.
-* the direct (Hessian-matrix) quasi-Newton direction update now applies the `preconditioner`, as documented.
 * the empty-memory branch of the box quasi-Newton `hessian_value` now divides by `initial_scale` like its siblings, so the two accessors agree.
 * the cautious quasi-Newton matrix update now evaluates its bound at the previous iterate, as documented.
-* a skipped cautious quasi-Newton matrix update now still transports the basis to the new tangent space.
 * `quasi_Newton` now divides the maximal step size by the Riemannian norm on anisotropic manifolds.
 * `initial_scale=nothing` now deactivates the initial scaling for the matrix-based quasi-Newton updates.
 * the cautious quasi-Newton matrix update compares the real part of the inner product against its bound.
 * the `:byrd` curvature test in the limited-memory quasi-Newton update now squares the gradient norm.
 * `QuasiNewtonState` now activates the default initial scaling when no preconditioner is given, matching `quasi_Newton`.
-* `QuasiNewtonState` no longer reports a spurious non-descent direction before the first iteration.
 * `RecordIterate(T::DataType)` now builds `RecordIterate{T}` as documented, instead of a broken `RecordIterate{DataType}`.
-* records added to the `:Start` entry now work as documented.
 * `RecordTime(; mode=:Total)` now resets its recorded values when the solver state is re-initialized.
 * `reflect!` now defaults its `inverse_retraction_method` with the point type, like `reflect`.
 * `set_iterate!` for a `ProximalGradientMethodState` no longer rebinds the state's iterate to the caller's point.
@@ -181,7 +177,6 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `trust_regions` now builds its default sub problem from the objective after the `objective_type` conversion, so `objective_type=:Euclidean` also applies to the sub solver.
 * `quasi_Newton` no longer turns the iterate into `NaN`, or the box constrained variant into a `DimensionMismatch`, when a step vanishes because the minimizer was reached before the stopping criterion fires.
 * `get_gradient_function` of a sub objective now returns the gradient of the sub objective itself, as its adaptive regularization variant already did.
-* `decorate_objective!` no longer declares its internal template point as a public keyword, so a stray `p=` is reported by the keyword check of every solver instead of silently starting from a random point.
 * `ReturnSolverState` now passes `set_parameter!` and `get_parameter` on, so a callback can adjust the stopping criterion with `return_state=true` as well.
 * `DebugEvery` and `RecordEvery` with a frequency of one now also show and record the sub solver of the first iteration.
 * a `(:Stop, prefix)` tuple in `debug=` now lands in the `:Stop` entry, so it prints the reason at the end instead of the prefix in every iteration.
@@ -229,7 +224,7 @@ They are still all listed here in detail in case (a) someone else's code breaks 
   conditions; sometimes a wrong termination check made it stop too early.
 * since we introduced the differential in the first order objectives,
 they were not fully supported in all places. This was now fixed and unified.
-* for a nicer printing on REPL, a few more `status_summary` functions were added (with the help of an AI)
+* for a nicer printing on REPL, a few more `status_summary` functions were added 
 * `set_parameter!` on a decorated objective now passes the update on to the objective it wraps.
 * the `get_objective_*` accessors of a sub objective now pass through decorators.
 * recording or debugging the step size, or using `StopWhenStepsizeLess`, no longer re-runs the `BarzilaiBorwein`, `CubicBracketingLinesearch`, `HagerZhangLinesearch` and `NonmonotoneLinesearch` step sizes.
