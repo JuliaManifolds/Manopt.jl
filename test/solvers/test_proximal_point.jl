@@ -51,6 +51,14 @@ using ManifoldDiff: prox_distance, prox_distance!
             stopping_criterion = StopAfterIteration(3), return_state = true,
         )
         @test get_record(r) == [1.0, 0.5, 1 / 3]
+        # and the debug action prints the same values
+        iod = IOBuffer()
+        proximal_point(
+            M, prox_f, p0; λ = k -> 1.0 / k,
+            debug = [DebugProximalParameter(; io = iod, at_init = false)],
+            stopping_criterion = StopAfterIteration(2),
+        )
+        @test String(take!(iod)) == "λ:1.0λ:0.5"
     end
     @testset "Number representation on the Circle" begin
         qc = proximal_point(Circle(), (M, λ, p) -> prox_distance(M, λ, -0.3, p, 1), 0.9)
