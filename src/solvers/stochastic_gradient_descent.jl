@@ -11,8 +11,8 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 * `direction`:  a direction update to use
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields(:stepsize))
-* `order_type`: specify whether to use a fixed randomly permuted sequence (`:FixedRandom`),
-  the sequence as given in `order` (`:Linear`), or the default `:Random` one,
+* `order_type`: specify whether to use a randomly permuted sequence that is drawn anew at the
+  start of every epoch (`:FixedRandom`), the sequence as given in `order` (`:Linear`), or the default `:Random` one,
   which chooses a random gradient in every step.
 * `order`: stores the current permutation
 $(_fields(:retraction_method))
@@ -219,8 +219,8 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `direction=`[`StochasticGradient`](@ref)`(; p=p)` add a post-processor to
   the direction obtained from evaluating the stochastic gradient.
 $(_kwargs(:evaluation))
-* `order_type=:Random`: whether to use a fixed randomly permuted sequence (`:FixedRandom`),
-  the sequence as given in `order` (`:Linear`), or the default `:Random` one,
+* `order_type=:Random`: whether to use a randomly permuted sequence that is drawn anew at the
+  start of every epoch (`:FixedRandom`), the sequence as given in `order` (`:Linear`), or the default `:Random` one,
   which chooses a random gradient in every step.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(10000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`StochasticGradientDescentState`](@ref)`)"))

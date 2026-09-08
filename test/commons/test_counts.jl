@@ -32,7 +32,7 @@ using LinearAlgebra: Symmetric
         Manopt.get_cost_and_gradient!(M, Y, c_obj, p)
         @test get_count(c_obj, :Cost) == 3
         @test get_count(c_obj, :Gradient) == 4
-        d = get_differential(M, c_obj, p, X)
+        @test get_differential(M, c_obj, p, X) == get_differential(M, obj, p, X)
         @test get_count(c_obj, :Differential) == 1
         # also decorated objects can be wrapped to be counted
         ro = Manopt.Test.DummyDecoratedObjective(obj)

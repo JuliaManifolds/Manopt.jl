@@ -326,7 +326,7 @@ end
 # Jacobian in linear operator form
 function get_jacobian!(
         M::AbstractManifold, a, vgf::VectorDifferentialFunction{FT, <:FunctionVectorialType}, p, X;
-        range = nothing, Y_cache = nothing, c_cache = allocate_result(M, get_coordinates, p, X, get_basis(vgf.jacobian_type))
+        range = nothing, Y_cache = nothing, c_cache = nothing,
     ) where {FT}
     return vgf.jacobian!(M, a, p, X)
 end

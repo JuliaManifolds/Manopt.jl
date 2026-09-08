@@ -26,7 +26,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 $(_fields([:sub_problem, :sub_state]))
 * `σ`:                       Gaussian standard deviation when creating the random initial tangent vector
   Defaults to `0` unless `randomize` is set; a value of `0` disables the randomized (Cauchy point) mode.
-* `τ`:                       the scaling factor of the Cauchy point step (only used if random is activated)
+* `τ`:                       the scaling factor of the Cauchy point step (only used in the randomized mode)
 * `trust_region_radius`: the trust-region radius
 $(_fields(:X))
 * `Y`:                       the solution (tangent vector) of the subsolver
@@ -111,7 +111,7 @@ mutable struct TrustRegionsState{
             stopping_criterion::SC, retraction_method::RTR, reduction_threshold::R,
             augmentation_threshold::R, project!::Proj = (copyto!),
             reduction_factor::R, augmentation_factor::R, σ::R,
-            #random mode ones can stay uninitielized if not provided
+            # random mode ones can stay uninitialized if not provided
             HX::Union{T, Nothing} = nothing,
             Y::Union{T, Nothing} = nothing,
             HY::Union{T, Nothing} = nothing,
@@ -215,9 +215,9 @@ end
 get_iterate(trs::TrustRegionsState) = trs.p
 additional_callbacks(::Type{<:TrustRegionsState}) = [:Subsolver]
 
-function set_gradient!(agst::TrustRegionsState, M, p, X)
-    copyto!(M, agst.X, p, X)
-    return agst
+function set_gradient!(trs::TrustRegionsState, M, p, X)
+    copyto!(M, trs.X, p, X)
+    return trs
 end
 function set_iterate!(trs::TrustRegionsState, M, p)
     copyto!(M, trs.p, p)
@@ -574,7 +574,7 @@ end
 function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     M = get_manifold(mp)
     mho = get_objective(mp)
-    # Determine the initial tangent vector used as start point for the subsolvereta0
+    # Determine the initial tangent vector used as start point for the subsolver
     if trs.σ > 0
         rand!(M, trs.Y; vector_at = trs.p, σ = trs.σ)
         nY = norm(M, trs.p, trs.Y)
@@ -614,7 +614,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     end
     # Compute the tentative next iterate (the proposal)
     retract!(M, trs.p_proposal, trs.p, trs.Y, trs.retraction_method)
-    # Compute ρ_k as in (8) of ABG2007
+    # Compute ρ_k as in (8) of [AbsilBakerGallivan:2006]
     ρ_reg = max(1, abs(f)) * eps(Float64) * trs.ρ_regularization
     ρnum = f - get_cost(mp, trs.p_proposal)
     ρden = -real(inner(M, trs.p, trs.Y, trs.X)) - 0.5 * real(inner(M, trs.p, trs.Y, trs.HY))

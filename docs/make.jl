@@ -110,13 +110,13 @@ using RipQP, QuadraticModels
 # (e) add contributing.md and changelog.md to the docs – and link to releases and issues
 
 function add_links(line::String, url::String = "https://github.com/JuliaManifolds/Manopt.jl")
-    # replace issues (#XXXX) -> ([#XXXX](url/issue/XXXX))
+    # replace issues (#XXXX) -> ([#XXXX](url/issues/XXXX))
     while (m = match(r"\(\#([0-9]+)\)", line)) !== nothing
         id = m.captures[1]
         line = replace(line, m.match => "([#$id]($url/issues/$id))")
     end
     # replace ## [X.Y.Z] -> with a link to the release [X.Y.Z](url/releases/tag/vX.Y.Z)
-    while (m = match(r"\#\# \[([0-9]+.[0-9]+.[0-9]+)\] (.*)", line)) !== nothing
+    while (m = match(r"\#\# \[([0-9]+\.[0-9]+\.[0-9]+)\] (.*)", line)) !== nothing
         tag = m.captures[1]
         date = m.captures[2]
         line = replace(line, m.match => "## [$tag]($url/releases/tag/v$tag) ($date)")
@@ -146,7 +146,6 @@ for (md_file, doc_file) in
     end
 end
 
-## Build tutorials menu
 # (f) finally make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style = :alpha)
 links = InterLinks(

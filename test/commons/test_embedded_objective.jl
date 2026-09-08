@@ -91,6 +91,8 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         @test get_hess_inequality_constraint!(mp, [zero_vector(M, p)], p, X, :) == [Hess_f(M, p, X)]
         # just verify that this also works for double decorated ones.
         o3 = EmbeddedManifoldObjective(ManifoldCountObjective(M, o, [:Cost]), p, X)
+        @test get_cost(M, o3, p) == f(E, p)
+        @test get_gradient(M, o3, p) == grad_f(M, p)
     end
     @testset "Function passthrough" begin
         Random.seed!(42)

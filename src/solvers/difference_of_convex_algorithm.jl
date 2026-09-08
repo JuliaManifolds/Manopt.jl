@@ -455,7 +455,7 @@ function step_solver!(
         k,
     ) where {P, T, F}
     M = get_manifold(amp)
-    get_subtrahend_gradient!(amp, dcs.X, dcs.p) # evaluate grad F in place for O.X
+    get_subtrahend_gradient!(amp, dcs.X, dcs.p) # evaluate ∂h in place of dcs.X
     callback(:BeforeSubsolver, amp, dcs, k)
     dcs.sub_problem(M, dcs.p, dcs.p, dcs.X) # evaluate the closed form solution and store the result in p
     callback(:Subsolver, amp, dcs, k)

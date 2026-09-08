@@ -166,7 +166,7 @@ using LinearAlgebra: eigvals
         # we stopped since the change was small enough
         @test occursin("|Δp| < 1.0e-11:$(Manopt._MANOPT_INDENT)reached", st_str)
         acs = st.stepsize
-        @test get_initial_stepsize(acs) == acs.α
+        @test get_initial_stepsize(acs) == 1.0 # the default `α`
         @test get_last_stepsize(acs) > 0.0
         @test startswith(repr(acs), "AffineCovariantStepsize(; ")
         @test default_stepsize(M, VectorBundleNewtonState) isa Manopt.ConstantStepsize

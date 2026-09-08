@@ -172,11 +172,11 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
         else # Generate new random vector and
             # modified Gram Schmidt of new vector with respect to Q
             rand!(M, ls.Hp_residual; vector_at = p)
-            for k in 1:(k - 1)
+            for j in 1:(k - 1)
                 ls.Hp_residual .=
                     ls.Hp_residual -
-                    inner(M, p, ls.Lanczos_vectors[k], ls.Hp_residual) *
-                    ls.Lanczos_vectors[k]
+                    inner(M, p, ls.Lanczos_vectors[j], ls.Hp_residual) *
+                    ls.Lanczos_vectors[j]
             end
             if length(ls.Lanczos_vectors) < k
                 push!(ls.Lanczos_vectors, ls.Hp_residual ./ norm(M, p, ls.Hp_residual))
@@ -208,7 +208,7 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
         ls.tridig_matrix[k, k - 1] = β
         min_cubic_Newton!(dmp, ls, k)
     end
-    copyto!(M, ls.S, p, sum(ls.Lanczos_vectors[k] * ls.coefficients[k] for k in 1:k))
+    copyto!(M, ls.S, p, sum(ls.Lanczos_vectors[j] * ls.coefficients[j] for j in 1:k))
     return ls
 end
 #

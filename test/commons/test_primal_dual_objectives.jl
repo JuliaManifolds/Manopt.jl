@@ -3,7 +3,7 @@ using RecursiveArrayTools
 
 @testset "Test primal dual plan" begin
     #
-    # Perform an really easy test, just compute a mid point
+    # Perform a really easy test, just compute a mid point
     #
     pixelM = Sphere(2)
     M = PowerManifold(pixelM, NestedPowerRepresentation(), 2)

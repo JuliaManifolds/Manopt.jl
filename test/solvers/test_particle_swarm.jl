@@ -29,7 +29,7 @@ using Random
         g4 = particle_swarm(M, f)
         @test f(M, g4) < initF
 
-        # the cost of g and the p[i]'s are not greater after one step
+        # the cost of g and of the personal bests is not greater than at the start
         j = argmin([f(M, y) for y in p1])
         g0 = deepcopy(p1[j])
         @test f(M, g) <= f(M, g0) # global did not get worse
@@ -47,7 +47,7 @@ using Random
         X_start = [rand(M; vector_at = y) for y in p_start]
         p = DefaultManoptProblem(M, ManifoldCostObjective(f))
         o = ParticleSwarmState(M, zero.(p_start), X_start)
-        # test `set_iterate``
+        # test the `:Population` parameter
         Manopt.set_parameter!(o, :Population, p_start)
         @test sum(norm.(Manopt.get_parameter(o, :Population) .- p_start)) == 0
         initialize_solver!(p, o)

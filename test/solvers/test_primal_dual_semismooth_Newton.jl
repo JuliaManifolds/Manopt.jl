@@ -9,7 +9,7 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
 
 @testset "PD-RSSN" begin
     #
-    # Perform an really easy test, just compute a mid point
+    # Perform a really easy test, just compute a mid point
     #
     pixelM = Sphere(2)
     signal_section_size = 1

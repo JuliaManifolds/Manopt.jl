@@ -122,7 +122,6 @@ using ManifoldDiff: grad_distance
         )
         @test_throws DomainError NonmonotoneLinesearch(; memory_size = 0)(M2)
 
-        rec = get_record(s)
         # after one step for local enough data -> equal to real valued data
         @test isapprox(M, p, apprpstar, atol = 5.0e-10)
     end

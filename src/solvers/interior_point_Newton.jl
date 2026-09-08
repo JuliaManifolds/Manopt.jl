@@ -50,7 +50,7 @@ end
 A functor to check the centrality condition.
 
 In order to obtain a step in the linesearch performed within the [`interior_point_Newton`](@ref),
-Section 6 of [LaiYoshise:2024](@cite) propose the following additional conditions to hold
+Section 6 of [LaiYoshise:2024](@cite) proposes the following additional conditions to hold
 inspired by the Euclidean case described in Section 6 [El-BakryTapiaTsuchiyaZhang:1996](@cite):
 
 For a given [`ConstrainedManifoldObjective`](@ref) consider the [`KKTVectorField`](@ref) ``F``,
@@ -71,7 +71,7 @@ we then define two functions
 ```math
 c_1(α) = $(_tex(:min))$(_tex(:set, "μ(α) ⊙ s(α)")) - $(_tex(:frac, "γτ_1 μ(α)^{$(_tex(:rm, "T"))}s(α)", "m"))
 $(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
-c_2(α) = μ(α)^{$(_tex(:rm, "T"))}s(α) – γτ_2 $(_tex(:norm, "F(q(α))")).
+c_2(α) = μ(α)^{$(_tex(:rm, "T"))}s(α) - γτ_2 $(_tex(:norm, "F(q(α))")).
 ```
 
 While the paper now states that the (Armijo) line search starts at a point
@@ -477,12 +477,12 @@ where ``F`` is the KKT vector field, hence the [`KKTVectorFieldNormSq`](@ref) is
 
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `N` the manifold ``$(_math(:Manifold)) × ℝ^m × ℝ^n × ℝ^m`` the vector field lives on (generated using `vector_space`)
-* `q` provide memory on `N` for interims evaluation of the vector field
+* `q` provide memory on `N` for interim evaluation of the vector field
 """
 function calculate_σ(
-        N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s; kwargs...
+        M::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s; kwargs...
     )
-    return calculate_σ(N, get_objective(cmo, true), p, μ, λ, s; kwargs...)
+    return calculate_σ(M, get_objective(cmo, true), p, μ, λ, s; kwargs...)
 end
 function calculate_σ(
         M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s;
@@ -519,7 +519,7 @@ In order to solve the constrained problem
 
 $(_problem(:Constrained))
 
-This algorithms iteratively solves the linear system based on extending the KKT system
+This algorithm iteratively solves the linear system based on extending the KKT system
 by a slack variable `s`.
 
 $(_doc_IPN_subsystem)

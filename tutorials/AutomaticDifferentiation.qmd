@@ -68,6 +68,7 @@ and perform the approximation from before to obtain
 	\operatorname{grad}f(p) ≈ \sum_{i=1}^{d} G_h(X_i)X_i
 ```
 for some suitable step size $h$. This comes at the cost of $d+1$ function evaluations and $d$ exponential maps.
+The example below uses a more accurate central difference rule instead, which spends considerably more evaluations per basis vector.
 
 This is the first variant we can use. An advantage is that it is _intrinsic_ in the sense that it does not require any embedding of the manifold.
 
@@ -101,7 +102,7 @@ A = randn(n + 1, n + 1)
 A = Symmetric(A)
 M = Sphere(n);
 
-f1(p) = p' * A'p
+f1(p) = p' * A * p
 gradf1(p) = 2 * (A * p - p * p' * A * p)
 ```
 

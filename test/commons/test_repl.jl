@@ -7,7 +7,7 @@ using Manifolds, Manopt, Test
     s = Manopt.Test.DummyState()
     io = IOBuffer()
     show(io, MIME"text/plain"(), (o, s))
-    # objetived are ignored in general here
+    # objectives are ignored in general here
     r = String(take!(io))
     @test r == Manopt.status_summary(s)
     c = ManifoldCountObjective(M, o, Dict{Symbol, Int}(:Count => 0))

@@ -328,6 +328,17 @@ and
 ```math
 ρ''_{a,b}(x) = $(_tex(:frac, "1", "4b$(_tex(:rm, "cosh"))^2$(_tex(:Bigl))($(_tex(:frac, "(a - x)", "2b"))$(_tex(:Bigr)))")).
 ```
+
+# Fields
+
+* `a::Real`: the shift ``a`` of the robustifier
+* `b::Real`: the scale ``b > 0`` of the robustifier
+
+# Constructor
+
+    TolerantRobustifier(a::Real, b::Real)
+
+Generate a `TolerantRobustifier` with parameters `a` and `b`; an `ArgumentError` is thrown if `b ≤ 0`.
 """
 struct TolerantRobustifier <: AbstractRobustifierFunction
     a::Real

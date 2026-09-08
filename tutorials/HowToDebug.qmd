@@ -7,7 +7,7 @@ This tutorial aims to illustrate how to perform debug output. For that we consid
 example that includes a sub solver, to also consider their debug capabilities.
 
 The problem itself is hence not the main focus.
-We consider a nonnegative PCA which we can write as a constraint problem on the Sphere
+We consider a nonnegative PCA which we can write as a constraint problem on the Sphere.
 ```{julia}
 #| echo: false
 #| code-fold: true
@@ -175,7 +175,7 @@ p2 = exact_penalty_method(
 );
 ```
 
-You can also write your own [`DebugAction`](@ref) functor, where the function to implement has the same signature as the `step` function, that is an [`AbstractManoptProblem`](@ref), an [`AbstractManoptSolverState`](@ref), as well as the current iteration `k`. For example, a simplified version of the already mentioned [`DebugDivider`](@ref) could look like
+You can also write your own [`DebugAction`](@ref) functor, where the function to implement has the same signature as [`step_solver!`](@ref), that is an [`AbstractManoptProblem`](@ref), an [`AbstractManoptSolverState`](@ref), as well as the current iteration `k`. For example, a simplified version of the already mentioned [`DebugDivider`](@ref) could look like
 
 ```{julia}
 #| eval: false

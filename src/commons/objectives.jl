@@ -979,7 +979,7 @@ function get_hessian(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Miss
 end
 function get_hessian(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p, X) where {P, T}
     q = local_embed!(M, emo, p)
-    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, embed(M, p))
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q)
     return riemannian_Hessian(
         M, p, emo.X, get_hessian(get_embedding(M, typeof(p)), emo.objective, q, embed(M, p, X)), X
     )
@@ -994,7 +994,7 @@ function get_hessian!(M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, 
 end
 function get_hessian!(M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P, T}, p, X) where {P, T}
     q = local_embed!(M, emo, p)
-    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, embed(M, p))
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q)
     riemannian_Hessian!(
         M, Y, p, emo.X, get_hessian(get_embedding(M, typeof(p)), emo.objective, q, embed(M, p, X)), X
     )

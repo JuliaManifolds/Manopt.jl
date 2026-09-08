@@ -252,9 +252,9 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
    If not provided, a call to the gradient of `g` is performed to estimate these.
 * `smoothing=`[`LogarithmicSumOfExponentials`](@ref): a [`SmoothingTechnique`](@ref) to use
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )"))
-* `sub_cost=`[`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`: cost to use in the sub solver.
+* `sub_cost=`[`ExactPenaltyCost`](@ref)`(cmo, ρ, u; smoothing=smoothing)`: cost to use in the sub solver.
   $(_note(:KeywordUsedIn, "sub_problem"))
-* `sub_grad=`[`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver.
+* `sub_grad=`[`ExactPenaltyGrad`](@ref)`(cmo, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver.
   $(_note(:KeywordUsedIn, "sub_problem"))
 $(_kwargs(:sub_kwargs))
 $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation))"))
@@ -388,9 +388,9 @@ function exact_penalty_method!(
             QuasiNewtonState(
                 M;
                 p = copy(M, p),
-                initial_vector = zero_vector(M, p),
+                X = zero_vector(M, p),
                 direction_update = QuasiNewtonLimitedMemoryDirectionUpdate(
-                    M, copy(M, p), InverseBFGS(), 30
+                    M, copy(M, p), InverseBFGS(), min(manifold_dimension(M), 30)
                 ),
                 stopping_criterion = sub_stopping_criterion,
                 stepsize = default_stepsize(M, QuasiNewtonState),
@@ -443,7 +443,7 @@ end
     Variant I: the sub task is a sub problem that is solved by a sub solver
 =#
 function step_solver!(
-        amp::AbstractManoptProblem, epms::ExactPenaltyMethodState{P, <:AbstractManoptProblem}, i
+        amp::AbstractManoptProblem, epms::ExactPenaltyMethodState{P, <:AbstractManoptProblem}, k
     ) where {P}
     M = get_manifold(amp)
     # use subsolver to minimize the smoothed penalized function
@@ -454,9 +454,9 @@ function step_solver!(
     set_iterate!(epms.sub_state, M, copy(M, epms.p))
     set_parameter!(epms, Val(:StoppingCriterion), Val(:MinIterateChange), epms.ϵ)
 
-    callback(:BeforeSubsolver, amp, epms, i)
+    callback(:BeforeSubsolver, amp, epms, k)
     new_p = get_solver_result(solve!(epms.sub_problem, epms.sub_state))
-    callback(:Subsolver, amp, epms, i)
+    callback(:Subsolver, amp, epms, k)
     copyto!(M, epms.p, new_p)
     return _epm_update!(amp, epms)
 end
@@ -466,15 +466,15 @@ end
 function step_solver!(
         amp::AbstractManoptProblem,
         epms::ExactPenaltyMethodState{P, F, ClosedFormSubSolverState},
-        i,
+        k,
     ) where {P, F <: Function}
     M = get_manifold(amp)
     set_parameter!(epms, Val(:StoppingCriterion), Val(:MinIterateChange), epms.ϵ)
 
-    callback(:BeforeSubsolver, amp, epms, i)
+    callback(:BeforeSubsolver, amp, epms, k)
     # the closed form works in place of `p`; an allocating one is wrapped on construction
     epms.sub_problem(M, epms.p, epms.ρ, epms.u, epms.p)
-    callback(:Subsolver, amp, epms, i)
+    callback(:Subsolver, amp, epms, k)
     return _epm_update!(amp, epms)
 end
 # the penalty and tolerance update both variants share

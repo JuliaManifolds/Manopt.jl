@@ -313,6 +313,13 @@ Here it would for example look like
 ```{julia}
 #| output: false
 import Manopt: status_summary
+# the `:short` context returns `repr`, so the state needs a compact `show` of its parameters
+function Base.show(io::IO, rws::RandomWalkState)
+    return print(
+        io,
+        "RandomWalkState(; σ = $(rws.σ), retraction_method = $(rws.retraction_method), stopping_criterion = $(rws.stop))",
+    )
+end
 function status_summary(rws::RandomWalkState; context::Symbol = :default)
     (context === :short) && return repr(rws)
     i = get_count(rws, :Iterations)
@@ -338,7 +345,7 @@ Now the algorithm can be easily called and provides all features of a `Manopt.jl
 For example to see the summary, we could now just call
 
 ```{julia}
-q = random_walk_algorithm!(M, f; return_state = true)
+rws = random_walk_algorithm!(M, f; return_state = true)
 ```
 
 ## Conclusion & beyond

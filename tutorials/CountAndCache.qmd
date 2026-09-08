@@ -40,13 +40,13 @@ former consists of the domain, that is the ``[`AbstractManifold`](@extref `Manif
 
 Both recording and debug capabilities are implemented in a decorator pattern to the solver state.
 They can be easily added using the `record=` and `debug=` in any solver call.
-This pattern was recently extended, such that also the objective can be decorated.
+This pattern is also available for the objective, which can be decorated as well.
 This is how both caching and counting are implemented, as decorators of the [`AbstractManifoldObjective`](@ref)
 and hence for example changing/extending the behavior of a call to [`get_cost`](@ref).
 
 Let's finish off the technical background by loading the necessary packages.
 Besides [Manopt.jl](../index.md) and ``[Manifolds.jl](@extref Manifolds :std:doc:`index`)``{=commonmark} we also need
-[LRUCache.jl](https://github.com/JuliaCollections/LRUCache.jl) which is (since Julia 1.9) a weak dependency and provides
+[LRUCache.jl](https://github.com/JuliaCollections/LRUCache.jl) which is a weak dependency and provides
 the _least recently used_ strategy for our caches.
 
 ```{julia}
@@ -61,7 +61,7 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 
 ```{julia}
 #| output: false
-using Manopt, Manifolds, Random, LRUCache, LinearAlgebra, ManifoldDiff
+using Manopt, Manifolds, Random, LRUCache, LinearAlgebra, ManifoldDiff, BenchmarkTools
 using ManifoldDiff: grad_distance
 ```
 
@@ -188,8 +188,8 @@ Let's compare both methods
 
 ```{julia}
 p0 = [(1 / sqrt(5) .* ones(5))..., zeros(m - 4)...];
-@time s1 = gradient_descent(
-    N, g, grad_g!, p0;
+s1 = @btime gradient_descent(
+    $N, $g, $grad_g!, $p0;
     stopping_criterion = StopWhenGradientNormLess(1.0e-5),
     evaluation = InplaceEvaluation(),
     count = [:Cost, :Gradient],
@@ -202,8 +202,8 @@ versus
 
 ```{julia}
 obj = ManifoldCostGradientObjective(g_grad_g!; evaluation = InplaceEvaluation())
-@time s2 = gradient_descent(
-    N, obj, p0;
+s2 = @btime gradient_descent(
+    $N, $obj, $p0;
     stopping_criterion = StopWhenGradientNormLess(1.0e-5),
     count = [:Cost, :Gradient],
     cache = (:LRU, [:Cost, :Gradient], 25),
@@ -265,8 +265,8 @@ storage_g = StorageG(A, zero(p0), zero(p0))
 # and cost and gradient that use this functor as
 g3(M, p) = storage_g(Val(:Cost), M, p)
 grad_g3!(M, X, p) = storage_g(Val(:Gradient), M, X, p)
-@time s3 = gradient_descent(
-    N, g3, grad_g3!, p0;
+s3 = @btime gradient_descent(
+    $N, $g3, $grad_g3!, $p0;
     stopping_criterion = StopWhenGradientNormLess(1.0e-5),
     evaluation = InplaceEvaluation(),
     count = [:Cost, :Gradient],
@@ -282,7 +282,7 @@ p3 = get_solver_result(s3)
 g(N, p3) - f_star
 ```
 
-And while we again have a split of the cost and gradient evaluations, we can observe that the allocations are less than half of the previous approach.
+And while we again have a split of the cost and gradient evaluations, we can observe that this approach allocates only about a quarter of the memory of the previous one.
 
 ### A local cache approach
 
@@ -322,8 +322,8 @@ cache_g = CacheG(A, LRU{typeof(p0), typeof(p0)}(; maxsize = 25))
 # and cost and gradient that use this functor as
 g4(M, p) = cache_g(Val(:Cost), M, p)
 grad_g4!(M, X, p) = cache_g(Val(:Gradient), M, X, p)
-@time s4 = gradient_descent(
-    N, g4, grad_g4!, p0;
+s4 = @btime gradient_descent(
+    $N, $g4, $grad_g4!, $p0;
     stopping_criterion = StopWhenGradientNormLess(1.0e-5),
     evaluation = InplaceEvaluation(),
     count = [:Cost, :Gradient],
@@ -346,7 +346,7 @@ it is about the same effort both time and allocation-wise.
 ## Summary
 
 While the first approach of [`ManifoldCostGradientObjective`](@ref) is very easy to implement, both the storage and the (local) cache approach are more efficient.
-All three are an improvement over the first implementation without sharing interim results.
+They both improve on the first implementation without sharing interim results, while the combined cost and gradient function allocates more memory than it, since it always computes both.
 The results with storage or cache have further advantage of being more flexible, since the stored information could also be reused in a third function, for example when also computing the Hessian.
 
 ````{=commonmark}

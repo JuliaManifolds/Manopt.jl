@@ -26,16 +26,11 @@ using RecursiveArrayTools
     @testset "segment Hessian updater - basic d = -g" begin
         M = Hyperrectangle([0.0, 1.0], [3.0, 3.0])
 
-        grad = [1.0, 4.0]
         d = [-1.0, -4.0]
         p = [0.0, 0.0]
 
-        # values taken from loop iteration found in test case: "find_gcp! - with bounds, single variable is held fixed"
-        old_f_prime = -17.0
-        old_f_double_prime = 34.0
         dt = 0.25
-        gb = 4.0
-        db = -4.0 # in case of d = -g, db = -gb
+        db = -4.0 # for d = -g the entry of d is the negated gradient entry
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [2.0 0.0; 0.0 2.0])
         b = 2
         z = [-0.25, -1.0]
@@ -59,14 +54,10 @@ using RecursiveArrayTools
     @testset "segment Hessian updater - basic d = [-2.0, -1.0]" begin
         M = Hyperrectangle([0.0, 1.0], [3.0, 3.0])
 
-        grad = [1.0, 4.0]
         d = [-2.0, -1.0]
         p = [0.0, 0.0]
 
-        old_f_prime = -6.0
-        old_f_double_prime = 10.0
         dt = 0.25
-        gb = 1.0
         db = -2.0
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [2.0 0.0; 0.0 2.0])
         b = 1
@@ -125,11 +116,8 @@ using RecursiveArrayTools
 
         b = 1
 
-        old_f_prime = -6.0
-        old_f_double_prime = 10.0
         dt = 0.25
         db = d[b]
-        gb = grad[b]
 
         t_current = 0 + dt
 
@@ -156,7 +144,6 @@ using RecursiveArrayTools
 
         @testset "No memory tests" begin
             ha2 = QuasiNewtonLimitedMemoryBoxDirectionUpdate(QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2))
-            idx = Manopt.get_bounds_index(M)
             @test Manopt.hessian_value(ha2, M, p, Manopt.UnitVector(b), grad) ≈ 4.0
             Manopt.update_current_scale!(M, p, ha2)
             @test ha2.current_scale == ha2.qn_du.initial_scale

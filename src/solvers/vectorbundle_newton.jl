@@ -185,26 +185,27 @@ function (acs::AffineCovariantStepsize)(
     )
     α_new = acs.α
     θ_new = acs.θ
-    b = copy(amp.newton_equation.b)
+    M = get_manifold(amp)
+    NE = get_newton_equation(amp)
+    b = copy(NE.b)
     while θ_new > acs.θ_acc && α_new > 1.0e-10
         Xα = α_new * ams.X
-        M = get_manifold(amp)
         retract!(M, ams.p_trial, ams.p, Xα, ams.retraction_method)
 
-        rhs_next = amp.newton_equation(M, get_vectorbundle(amp), ams.p, ams.p_trial)
+        rhs_next = NE(M, get_vectorbundle(amp), ams.p, ams.p_trial)
         rhs_simplified = rhs_next - (1.0 - α_new) * b
-        amp.newton_equation.b .= rhs_simplified
+        NE.b .= rhs_simplified
 
         simplified_newton = _solve_newton_sub_problem(amp, ams)
 
         add_arg = (has_components(M) && !ismissing(acs.outer_norm)) ? (outer_norm = acs.outer_norm,) : ()
-        nom = norm(amp.manifold, ams.p, simplified_newton, add_arg...)
-        denom = norm(amp.manifold, ams.p, ams.X, add_arg...)
+        nom = norm(M, ams.p, simplified_newton, add_arg...)
+        denom = norm(M, ams.p, ams.X, add_arg...)
         θ_new = nom / denom
 
         α_new = min(1.0, ((α_new * acs.θ_des) / θ_new))
     end
-    amp.newton_equation.b .= b
+    NE.b .= b
     acs.last_stepsize = α_new
     return acs.last_stepsize
 end

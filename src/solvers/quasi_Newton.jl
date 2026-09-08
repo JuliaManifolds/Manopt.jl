@@ -365,7 +365,7 @@ function quasi_Newton!(
     qns = QuasiNewtonState(
         M;
         p = p,
-        initial_vector = get_gradient(mp, p),
+        X = get_gradient(mp, p),
         callbacks = process_callbacks_arg(callbacks, QuasiNewtonState),
         direction_update = local_dir_upd,
         nondescent_direction_behavior = nondescent_direction_behavior,

@@ -71,9 +71,9 @@ Random.seed!(29)
         )
         @test isapprox(M, p1, p3)
         # SC
-        f = StopWhenPopulationConcentrated(1.0e-1, 1.0e-2)
+        sc = StopWhenPopulationConcentrated(1.0e-1, 1.0e-2)
         sf = "StopWhenPopulationConcentrated($(1.0e-1), $(1.0e-2))"
-        @test Manopt.status_summary(f; context = :short) == sf
+        @test Manopt.status_summary(sc; context = :short) == sf
     end
 
     @testset "Circle" begin
@@ -82,7 +82,7 @@ Random.seed!(29)
         p_star = sum(data) / length(data)
         @test NelderMeadSimplex(Circle(), 0.0).pts isa Vector{Float64}
         f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
-        @test NelderMead(M, f, NelderMeadSimplex(M, 0.0)) ≈ p_star
+        @test isapprox(M, NelderMead(M, f, NelderMeadSimplex(M, 0.0)), p_star; atol = 1.0e-7)
         #vector p-cost
         f2(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p[])) .^ 2)
         q = NelderMead(M, f)

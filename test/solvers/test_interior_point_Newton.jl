@@ -77,7 +77,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
         )
 
         q = get_solver_result(res)
-        @test distance(M, q, [0.0, 0.0, 1.0]) < 2.0e-4
+        @test distance(M, q, p_opt) < 2.0e-4
 
         # (b) inplace call
         q2 = copy(M, p_0)
@@ -96,7 +96,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
         q3 = interior_point_Newton(
             M, coh, p_0; stopping_criterion = sc, centrality_condition = ipcc
         )
-        @test distance(M, q3, [0.0, 0.0, 1.0]) < 2.0e-4
+        @test distance(M, q3, p_opt) < 2.0e-4
         # the objective variant also has the documented default start point
         @test hasmethod(interior_point_Newton, Tuple{typeof(M), typeof(coh)})
         @testset "Callback Test" begin

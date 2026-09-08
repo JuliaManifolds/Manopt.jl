@@ -27,7 +27,7 @@ $(_args(:M))
 $(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `evaluation_order=:Linear`: specify whether to use a fixed randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`), or the default `:Linear` order.
-* `λ=i -> 1.0 / i`: a function to compute ``λ_k`` for ``k ∈ ℕ``,
+* `λ=k -> 1.0 / k`: a function to compute ``λ_k`` for ``k ∈ ℕ``,
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)"))
 
@@ -56,7 +56,7 @@ function CyclicProximalPointState(
         evaluation_order::Symbol = :Linear,
         p::P = rand(M),
         stopping_criterion::S = StopAfterIteration(2000),
-        λ::F = (i) -> 1.0 / i,
+        λ::F = (k) -> 1.0 / k,
     ) where {P, C <: AbstractDict{Symbol}, S, F}
     (evaluation_order in (:Linear, :FixedRandom, :Random)) || throw(
         DomainError(evaluation_order, "The evaluation order has to be one of :Linear, :FixedRandom, or :Random.")
@@ -133,7 +133,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
 * `evaluation_order=:Linear`: specify whether to use a fixed randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`), or the default `:Linear` order.
-* `λ=iter -> 1/iter`:         a function returning the (square summable but not summable) sequence of ``λ_i``
+* `λ=k -> 1/k`:               a function returning the (square summable but not summable) sequence of ``λ_k``
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)"))
 
 $(_note(:OtherKeywords))
@@ -176,7 +176,7 @@ function cyclic_proximal_point!(
         evaluation_order::Symbol = :Linear,
         stopping_criterion::StoppingCriterion = StopAfterIteration(5000) |
             StopWhenChangeLess(M, 1.0e-12),
-        λ = i -> 1 / i,
+        λ = k -> 1 / k,
         kwargs...,
     ) where {O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(cyclic_proximal_point!; kwargs...)
@@ -203,9 +203,9 @@ function initialize_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPoin
     return cpps
 end
 function step_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPointState, k)
-    λi = cpps.λ(k)
-    for k in cpps.order
-        get_proximal_map!(amp, cpps.p, λi, cpps.p, k)
+    λk = cpps.λ(k)
+    for i in cpps.order
+        get_proximal_map!(amp, cpps.p, λk, cpps.p, i)
     end
     (cpps.order_type == :Random) && shuffle!(cpps.order)
     return cpps

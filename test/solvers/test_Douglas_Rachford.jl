@@ -16,8 +16,9 @@ using ManifoldDiff: prox_distance, prox_distance!
     @test_throws ErrorException DouglasRachford(M, f, Array{Function, 1}([prox1a]), p)
     q1a = DouglasRachford(M, f, [prox1a, prox2a], p)
     @test isapprox(M, q1a, p_star; atol = 1.0e-14)
+    # only the reflection works in-place here, the proximal maps stay allocating
     q1i = DouglasRachford(
-        M, f, [prox1a, prox2a], p; reflection_evaluation = AllocatingEvaluation()
+        M, f, [prox1a, prox2a], p; reflection_evaluation = InplaceEvaluation()
     )
     @test isapprox(M, q1i, p_star; atol = 1.0e-14)
     prox1i = (M, q, η, p) -> prox_distance!(M, q, η, d1, p)

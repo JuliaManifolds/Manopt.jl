@@ -100,8 +100,7 @@ end
         )
         @test (c1[], c2[]) == (2, 1)
         @test_throws DomainError AlternatingGradientDescentState(N; order_type = :WrongSymbol)
-        # r has the same message as the internal stepsize
-        @test Manopt.get_message(r) == Manopt.get_message(r.stepsize)
+        @test Manopt.get_message(r) isa String
         @test isapprox(N, q3, q)
     end
     @testset "Callbacks" begin

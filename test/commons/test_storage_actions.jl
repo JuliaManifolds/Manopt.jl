@@ -78,6 +78,8 @@ using Test, Manopt, ManifoldsBase, Manifolds
         copyto!(q, 2.0)
         @test q.x == 2.0
         Y = Manopt._storage_copy_vector(M, 3.0)
+        copyto!(Y, 4.0)
+        @test Y.x == 4.0
         st = Manopt.StoreStateAction(
             M; p_init = 1.0, X_init = 2.0, store_points = Tuple{:p}, store_vectors = Tuple{:X}
         )

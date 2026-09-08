@@ -4,7 +4,7 @@ using ManifoldDiff: prox_distance, prox_distance!
 
 @testset "Chambolle-Pock" begin
     #
-    # Perform an really easy test, just compute a mid point
+    # Perform a really easy test, just compute a mid point
     #
     pixelM = Sphere(2)
     M = PowerManifold(pixelM, NestedPowerRepresentation(), 2)

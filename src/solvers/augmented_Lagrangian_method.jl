@@ -16,6 +16,7 @@ Describes the augmented Lagrangian method, with
 * `λ_max`: an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min`: a lower bound for the Lagrange multiplier belonging to the equality constraints
 $(_fields(:callbacks; add_properties = [:as_dict]))
+* `last_stepsize`: the length of the last step the sub solver took, initialized to `Inf`
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `penalty`: evaluation of the current penalty term, initialized to `Inf`.
 * `μ`:     the Lagrange multiplier with respect to the inequality constraints
@@ -50,8 +51,10 @@ Lagrangian for the current penalty parameter `ρ` and multipliers `μ` and `λ`,
 
 the following keyword arguments are available to initialize the corresponding fields
 
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
 * `ϵ=1e-3`
 * `ϵ_min=1e-6`
+* `ϵ_exponent=1/100`: a shortcut for the scaling factor ``θ_ϵ``
 * `λ=ones(n)`: `n` is the number of equality constraints in the [`ConstrainedManifoldObjective`](@ref) `co`.
 * `λ_max=20.0`
 * `λ_min=- λ_max`
@@ -281,7 +284,7 @@ But if neither of them is provided the problem is not constrained and a better s
 # Keyword Arguments
 
 $(_kwargs(:evaluation))
-* `callbacks=Dict{Symbol, Function}()`: callback hooks for the solver lifecycle
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 * `ϵ=1e-3`:           the accuracy tolerance
 * `ϵ_min=1e-6`:       the lower bound for the accuracy tolerance
 * `ϵ_exponent=1/100`: exponent of the ϵ update factor;
@@ -322,7 +325,7 @@ $(_kwargs(:evaluation))
 $(_kwargs(:sub_kwargs))
 
 $(_kwargs(:stopping_criterion; default = "`" * chopsuffix(_sc_alm_default, "`")))
-$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation))"))
 $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
   More precisely, a quasi Newton method with the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) and [`InverseBFGS`](@ref) is used by default.
 * `sub_stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`,
@@ -486,7 +489,7 @@ end
 function step_solver!(
         mp::AbstractManoptProblem,
         alms::AugmentedLagrangianMethodState{P, <:AbstractManoptProblem, <:AbstractManoptSolverState},
-        iter,
+        k,
     ) where {P}
     M = get_manifold(mp)
     # use subsolver to minimize the augmented Lagrangian
@@ -501,7 +504,7 @@ function step_solver!(
     set_parameter!(alms, Val(:StoppingCriterion), Val(:MinIterateChange), alms.ϵ)
 
     new_p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
-    callback(:Subsolver, mp, alms, iter)
+    callback(:Subsolver, mp, alms, k)
     alms.last_stepsize = distance(M, alms.p, new_p, default_inverse_retraction_method(M))
     copyto!(M, alms.p, new_p)
     return _alm_update!(mp, alms)
@@ -512,7 +515,7 @@ end
 function step_solver!(
         mp::AbstractManoptProblem,
         alms::AugmentedLagrangianMethodState{P, F, ClosedFormSubSolverState},
-        iter,
+        k,
     ) where {P, F <: Function}
     M = get_manifold(mp)
     set_parameter!(alms, Val(:StoppingCriterion), Val(:MinIterateChange), alms.ϵ)
@@ -520,7 +523,7 @@ function step_solver!(
     # the closed form works in place of `p`; keep the previous iterate for the step length
     q = copy(M, alms.p)
     alms.sub_problem(M, alms.p, alms.ρ, alms.μ, alms.λ, q)
-    callback(:Subsolver, mp, alms, iter)
+    callback(:Subsolver, mp, alms, k)
     alms.last_stepsize = distance(M, q, alms.p, default_inverse_retraction_method(M))
     return _alm_update!(mp, alms)
 end

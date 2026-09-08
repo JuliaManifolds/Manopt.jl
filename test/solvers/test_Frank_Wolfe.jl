@@ -87,8 +87,8 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
                 (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
             ]
         end
-        @testset "Testing with an Subsolver" begin
-            # This is not a useful run since the subproblem is not constraint
+        @testset "Testing with a Subsolver" begin
+            # This is not a useful run since the subproblem is not constrained
             p3 = Frank_Wolfe_method(
                 M,
                 f,

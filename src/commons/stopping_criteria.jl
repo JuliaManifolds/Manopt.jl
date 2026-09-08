@@ -69,7 +69,7 @@ end
 @doc """
     StopWhenAll <: StoppingCriterionSet
 
-Store an array of [`StoppingCriterion`](@ref) elements and indicate to stop
+Store a tuple of [`StoppingCriterion`](@ref) elements and indicate to stop
 when _all_ of them indicate to stop. The `reason` is given by the concatenation of all
 reasons.
 All criteria that [`requires_update`](@ref) return `true` for are evaluated in every
@@ -194,7 +194,7 @@ end
 @doc """
     StopWhenAny <: StoppingCriterionSet
 
-Store an array of [`StoppingCriterion`](@ref) elements and indicate to stop
+Store a tuple of [`StoppingCriterion`](@ref) elements and indicate to stop
 when _any_ single one indicates to stop. The `reason` is given by the
 concatenation of all reasons (assuming that all non-indicating return `""`).
 All criteria that [`requires_update`](@ref) return `true` for are evaluated in every
@@ -496,7 +496,7 @@ The `outer_norm` has no effect on manifolds that do not consist of components.
 
     StopWhenChangeLess(
         M::AbstractManifold,
-        threshold::Float64;
+        ε::Real;
         storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
         inverse_retraction_method::IRT=default_inverse_retraction_method(M),
         outer_norm::Union{Missing,Real}=missing
@@ -847,7 +847,7 @@ end
 function get_reason(sc::StopWhenCriterionWithIterationCondition)
     has_stopped = (sc.at_iteration >= 0)
     if has_stopped
-        r = "At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop together with $(sc.comp), since $(status_summary(sc.stopping_criterion))\n"
+        r = "At iteration $(sc.at_iteration), the stopping criterion $(repr(sc.stopping_criterion)) has indicated to stop together with $(sc.comp), since $(status_summary(sc.stopping_criterion))\n"
         return r
     end
     return ""
@@ -875,7 +875,7 @@ end
 #
 # ---
 @doc """
-    StopWhenEntryChangeLess
+    StopWhenEntryChangeLess <: StoppingCriterion
 
 Evaluate whether a certain field's change is less than a certain threshold.
 
@@ -976,7 +976,7 @@ A stopping criterion based on the change of the gradient.
 $(_fields([:at_iteration, :last_change, :vector_transport_method, :storage]))
 * `threshold`: the threshold for the change to check (run under to stop)
 * `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
-  that is used to compute the overall distance based on the element-wise distance.
+  that is used to compute the overall norm based on the element-wise norms.
   You can deactivate this by setting this value to `missing`.
 
 # Example
@@ -997,7 +997,7 @@ The `outer_norm` has no effect on manifolds that do not consist of components.
 
     StopWhenGradientChangeLess(
         M::AbstractManifold,
-        ε::Float64;
+        ε::Real;
         storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}, store_vectors=Tuple{:Gradient}),
         vector_transport_method::VTM=default_vector_transport_method(M),
         outer_norm::N=missing
@@ -1044,7 +1044,6 @@ function (c::StopWhenGradientChangeLess)(
     end
     if has_storage(c.storage, PointStorageKey(:Iterate)) &&
             has_storage(c.storage, VectorStorageKey(:Gradient))
-        M = get_manifold(mp)
         p_old = get_storage(c.storage, PointStorageKey(:Iterate))
         X_old = get_storage(c.storage, VectorStorageKey(:Gradient))
         p = get_iterate(s)
@@ -1074,7 +1073,9 @@ function status_summary(c::StopWhenGradientChangeLess; context::Symbol = :defaul
     return (_is_inline(context) ? "|Δgrad f| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the change of the gradient is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
 function Base.show(io::IO, c::StopWhenGradientChangeLess)
-    return print(io, "StopWhenGradientChangeLess($(c.threshold); vector_transport_method=$(c.vector_transport_method))")
+    print(io, "StopWhenGradientChangeLess($(c.threshold); vector_transport_method=$(c.vector_transport_method)")
+    !ismissing(c.outer_norm) && print(io, ", outer_norm = ", c.outer_norm)
+    return print(io, ")")
 end
 
 """
@@ -1153,9 +1154,9 @@ A stopping criterion based on the current gradient norm.
 * `norm`:      a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm
   of the gradient `X` in the tangent space at `p` on `M`.
   For manifolds with components provide a function `(M::AbstractManifold, p, X, r) -> ℝ`.
-* `threshold`: the threshold to indicate to stop when the distance is below this value
+* `threshold`: the threshold to indicate to stop when the gradient norm is below this value
 * `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
-  that is used to compute the overall distance based on the element-wise distance.
+  that is used to compute the overall norm based on the element-wise norms.
 
 # Internal fields
 
@@ -1232,7 +1233,12 @@ function status_summary(c::StopWhenGradientNormLess; context::Symbol = :default)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "|grad f| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the gradient norm is less than $(c.threshold)\n$(_MANOPT_INDENT)") * "$s"
 end
-show(io::IO, c::StopWhenGradientNormLess) = print(io, "StopWhenGradientNormLess($(c.threshold))")
+function show(io::IO, c::StopWhenGradientNormLess)
+    print(io, "StopWhenGradientNormLess($(c.threshold)")
+    (c.norm !== norm) && print(io, "; norm = ", c.norm)
+    !ismissing(c.outer_norm) && print(io, (c.norm !== norm) ? ", " : "; ", "outer_norm = ", c.outer_norm)
+    return print(io, ")")
+end
 """
     set_parameter!(c::StopWhenGradientNormLess, :MinGradNorm, v)
 
@@ -1384,7 +1390,7 @@ function status_summary(sc::StopWhenLagrangeMultiplierLess; context::Symbol = :d
     return (_is_inline(context) ? "" : "A stopping criterion to stop when the Lagrange multipliers are less than $(sc.tolerances).\n$(_MANOPT_INDENT)") * "$(msg):$(_MANOPT_INDENT)$(s)"
 end
 function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
-    n = isnothing(sc.names) ? "" : ", $(sc.names)"
+    n = isnothing(sc.names) ? "" : ", names=$(sc.names)"
     return print(
         io,
         "StopWhenLagrangeMultiplierLess($(sc.tolerances); mode=:$(sc.mode)$n)",
@@ -1468,13 +1474,11 @@ function (c::StopWhenRepeated)(
     return false
 end
 function get_reason(sc::StopWhenRepeated)
-    has_stopped = (sc.at_iteration >= 0)
     if (sc.at_iteration >= 0)
-        s = has_stopped ? "reached" : "not reached"
         c = sc.consecutive ? " consecutive" : ""
         # we can only get the last reason, unless we do more allocations
-        r = """At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n)$(c) times:
-        $(sc.count) ≥ $(sc.n): $(s)
+        r = """At iteration $(sc.at_iteration), the stopping criterion $(repr(sc.stopping_criterion)) has indicated to stop $(sc.n)$(c) times:
+        $(sc.count) ≥ $(sc.n): reached
         last inner criterion status:
         $(_in_str(status_summary(sc.stopping_criterion); indent = 1, headers = 0))
         """
@@ -1523,6 +1527,13 @@ On manifolds with boundary and manifolds with corners, for a tangent vector ``X`
 ``f(x)=x^2`` on the interval ``[1, 2]``. Its gradient at 1 is equal to 2, but because the
 point 1 is at the boundary of the interval, the projected negative gradient is equal to 0
 because we can't go in the negative direction.
+
+# Constructor
+
+    StopWhenProjectedNegativeGradientNormLess(ε; norm=ManifoldsBase.norm, outer_norm=missing)
+
+Create a stopping criterion with threshold `ε` for the projected negative gradient, where the
+norm to use can be specified in the `norm=` keyword and `outer_norm` is used on manifolds with components.
 """
 mutable struct StopWhenProjectedNegativeGradientNormLess{F, TF <: Real, N <: Union{Missing, Real}} <: StoppingCriterion
     norm::F
@@ -1573,7 +1584,9 @@ end
 indicates_convergence(c::StopWhenProjectedNegativeGradientNormLess) = true
 requires_update(::Type{<:StopWhenProjectedNegativeGradientNormLess}) = false
 function Base.show(io::IO, c::StopWhenProjectedNegativeGradientNormLess)
-    return print(io, "StopWhenProjectedNegativeGradientNormLess($(c.threshold); norm = $(c.norm))")
+    print(io, "StopWhenProjectedNegativeGradientNormLess($(c.threshold); norm = $(c.norm)")
+    !ismissing(c.outer_norm) && print(io, ", outer_norm = ", c.outer_norm)
+    return print(io, ")")
 end
 """
     set_parameter!(c::StopWhenProjectedNegativeGradientNormLess, :MinGradNorm, v)
@@ -1598,6 +1611,7 @@ A stopping criterion to stop when
 ````
 
 based on Eq. (1) in [ZhuByrdLuNocedal:1997](@cite).
+The criterion is checked from the second iteration on, that is for `k > 1`.
 
 # Fields
 * `threshold`: the threshold `tol` in the above formula.
@@ -1804,7 +1818,7 @@ A stopping criterion based on the current subgradient norm.
 
 # Constructor
 
-    StopWhenSubgradientNormLess(ε::Float64)
+    StopWhenSubgradientNormLess(ε::Real)
 
 Create a stopping criterion with threshold `ε` for the subgradient, that is, this criterion
 indicates to stop when [`get_subgradient`](@ref) returns a subgradient vector of norm less than `ε`.

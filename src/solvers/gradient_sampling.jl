@@ -397,7 +397,7 @@ function initialize_solver!(mp::AbstractManoptProblem, gss::GradientSamplingStat
     return gss
 end
 
-function step_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState, i)
+function step_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState, k)
     M = get_manifold(mp)
     # resample on TpM, map to manifold and make sure they are within radius
     for (j, (pj, Xj)) in enumerate(zip(gss.sampled_points, gss.sampled_vectors))
@@ -419,9 +419,9 @@ function step_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState, i)
         (i > 1) && vector_transport_to!(M, Xj, pj, Xj, gss.p, gss.vector_transport_method)
     end
     # solve sub problem in convex_hull_coeffs
-    callback(:BeforeSubsolver, mp, gss, i)
+    callback(:BeforeSubsolver, mp, gss, k)
     _gradient_sampling_subsolver(M, gss)
-    callback(:Subsolver, mp, gss, i)
+    callback(:Subsolver, mp, gss, k)
     # reconstruct tangent vector from the coefficients (w_l in HU17) in Y
     zero_vector!(M, gss.Y, gss.p)
     for (λj, Xj) in zip(gss.convex_hull_coeffs, gss.sampled_vectors)
@@ -435,8 +435,8 @@ function step_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState, i)
     else
         # We already have the gradient in the sampled vectors[1]
         # and set normed -Y as search direction
-        step = get_stepsize(mp, gss, i, -gss.Y / norm(M, gss.p, gss.Y); gradient = gss.sampled_vectors[1])
-        callback(:Stepsize, mp, gss, i)
+        step = get_stepsize(mp, gss, k, -gss.Y / norm(M, gss.p, gss.Y); gradient = gss.sampled_vectors[1])
+        callback(:Stepsize, mp, gss, k)
         ManifoldsBase.retract_fused!(M, gss.p, gss.p, -gss.Y / norm(M, gss.p, gss.Y), step, gss.retraction_method)
         get_gradient!(mp, gss.X, gss.p)
     end

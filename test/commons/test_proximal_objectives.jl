@@ -6,7 +6,7 @@ using ManifoldDiff: prox_distance
     p = [1.0, 2.0]
     Q = [[2.0, 3.0], [3.0, 4.0]]
     f(M, p) = 0.5 * sum(distance(M, p, q)^2 for q in Q)
-    f2(M, p) = 0.5 * distance(M, p, Q[1])
+    f2(M, p) = 0.5 * distance(M, p, Q[1])^2
     proxes_f = Tuple((N, λ, p) -> prox_distance(N, λ, q, p) for q in Q)
     ppo = ManifoldProximalMapObjective(f, proxes_f)
     ppo2 = ManifoldProximalMapObjective(f2, proxes_f[1])

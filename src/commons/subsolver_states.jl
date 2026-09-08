@@ -48,7 +48,7 @@ solved using a linear system in coordinates of the tangent space at the current 
         A = nothing
     )
 
-Construct the state, where not providing a memory for `A` uses the `eltype` of `p` to
+Construct the state, where not providing a memory for `A` uses the `number_eltype` of `p` to
 determine the element type of the matrix to store. Note that the keyword is `linsolve`,
 while the field it is stored in is called `linsolve!`.
 """
@@ -97,10 +97,10 @@ end
     hessian_value(ha::CoordinatesNormalSystemState, M, p, X::UnitVector, Y)
 
 Evaluate the quadratic form associated with the stored Hessian approximation.
-Returns the scalar ``c_b^{$(_tex(:top))} B c`` where ``c_b`` are the coordinates of the
+Returns the scalar ``c_b^{$(_tex(:top))} A c`` where ``c_b`` are the coordinates of the
 [`UnitVector`](@ref) `X` at `p` (assumed to correspond to the basis `ha.basis`),
 ``c`` are the coordinates of the tangent vector `Y` at `p` (in the basis `ha.basis`)
-and ``B`` is `ha.A`.
+and ``A`` is `ha.A`.
 """
 function hessian_value(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X::UnitVector, Y)
     b = to_coordinate_index(M, X, ha.basis)
@@ -131,7 +131,7 @@ function hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifol
 end
 
 
-# The objective here should be a LevenbergMarquardtLinearSurrogateObjective, but might be decorated as well, so for now lets not type it (yet?)
+# The objective here should be a LevenbergMarquardtLinearSurrogateObjective, but might be decorated as well, so for now let's not type it (yet?)
 function solve!(dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective}, cnss::CoordinatesNormalSystemState)
     # Update A and b
     TpM = get_manifold(dmp)

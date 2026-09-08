@@ -118,7 +118,7 @@ using LinearAlgebra: I, tr
     end
     @testset "Sub problem penalty parameters" begin
         # The cost and the gradient of the sub problem have to be set up with the same penalty
-        # parameter ρ. If they disagree, the sub solver minimises a different function than the
+        # parameter ρ. If they disagree, the sub solver minimizes a different function than the
         # one it computes gradients for, and since ρ grows geometrically the two drift apart.
         M = Euclidean(2)
         f(M, p) = p[1]
@@ -137,7 +137,7 @@ using LinearAlgebra: I, tr
         @test sub_cost.ρ == sub_gradient.ρ
         @test sub_cost.μ == sub_gradient.μ
         @test sub_cost.λ == sub_gradient.λ
-        # with matching parameters the solver reaches the minimiser (-1, 0)
+        # with matching parameters the solver reaches the minimizer (-1, 0)
         @test distance(M, get_solver_result(s), [-1.0, 0.0]) < 1.0e-3
     end
 end

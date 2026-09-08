@@ -85,6 +85,7 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `EmbeddedManifoldObjective` now converts the constraint Hessians to Riemannian ones instead of returning the Euclidean ones.
 * the allocating `exact_penalty_method` forwarded the equality-constraint count as the inequality count.
 * `exact_penalty_method` now spells its sub-solver callbacks `:BeforeSubsolver` and `:Subsolver`, like all other solvers.
+* `exact_penalty_method` now bounds the memory of its default quasi-Newton sub solver by the manifold dimension, as `augmented_Lagrangian_method` already did.
 * `ExactPenaltyMethodState` now defaults to the same stopping criterion as `exact_penalty_method`.
 * `Frank_Wolfe_method` now also fires its advertised `:BeforeSubsolver`, `:Subsolver` and `:Stepsize` callbacks when a closed-form sub solver is used.
 * `get_constraints` now works for any constrained objective, not only embedded ones.
@@ -114,6 +115,7 @@ They are still all listed here in detail in case (a) someone else's code breaks 
 * `mesh_adaptive_direct_search` now moves the poll base point to the current iterate before the search, so the search is handed a direction tangent at that iterate and the iterates stay on the manifold.
 * `mesh_adaptive_direct_search` now defaults its retraction and vector transport with the point type instead of the number type.
 * `mesh_adaptive_direct_search` now regenerates its random vector `b_l` whenever the mesh size changes, instead of reusing the one of a finer mesh.
+* `MeshAdaptiveDirectSearchState` now defaults `scale_mesh` and its stopping criterion to the same values as `mesh_adaptive_direct_search`, that is `injectivity_radius(M)/4` and `StopWhenPollSizeLess(1e-10)`.
 * `MomentumGradient` no longer folds the step size into its stored direction, so solvers no longer apply the step twice; with `momentum=0` it now reduces to plain gradient descent.
 * `LevenbergMarquardt` with `use_unified_basis=true` now defaults its `sub_state` to a `CoordinatesNormalSystemState`.
 * `NelderMead` now honours `return_objective=true`.

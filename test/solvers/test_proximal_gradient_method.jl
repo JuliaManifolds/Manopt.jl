@@ -56,7 +56,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
         Y = get_gradient(mp, p)
         get_gradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
-        oR = solve!(mp, pgms)
+        solve!(mp, pgms)
         # Check Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test get_cost_smooth(M, ob, p) == g(M, p)
@@ -155,6 +155,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
             cost_nonsmooth = h, subgradient_nonsmooth = ∂h,
             stopping_criterion = StopAfterIteration(10),
         )
+        @test is_point(M, sub_pgm)
         @test_throws ErrorException proximal_gradient_method(M, f, g, grad_g, p0)
         pgnc = ProximalGradientNonsmoothCost(h, 0.1, p)
         pgng = ProximalGradientNonsmoothSubgradient(∂h, 0.1, p)
@@ -204,8 +205,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
         @test norm(M, p, get_gradient(mp, p)) == 0
         @test_throws MethodError get_gradient(mp, 1.0, pgms.p)
         @test isapprox(M, get_proximal_map(mp, 1.0, pgms.p), pgms.p)
-        sr = solve!(mp, pgms)
-        xHat = get_solver_result(sr)
+        solve!(mp, pgms)
         s2 = proximal_gradient_method(
             M, f, g, grad_g!, copy(p0);
             prox_nonsmooth = prox_h!,

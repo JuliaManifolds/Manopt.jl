@@ -381,6 +381,22 @@ $(_fields(:stopping_criterion; name = "stop"))
 * `poll::`[`AbstractMeshPollFunction`](@ref): a poll step (functor) to perform
 * `search::`[`AbstractMeshSearchFunction`](@ref): a search step (functor) to perform
 
+# Constructor
+
+    MeshAdaptiveDirectSearchState(M::AbstractManifold, p=rand(M); kwargs...)
+
+## Keyword arguments
+
+$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+* `max_stepsize=`$(_link(:injectivity_radius))`(M)`: a maximum step size, where `1.0` is used if the injectivity radius is infinite
+* `mesh_basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: a basis to generate the mesh in
+* `poll::`[`AbstractMeshPollFunction`](@ref)`=`[`LowerTriangularAdaptivePoll`](@ref)`(M, copy(M,p))`: the poll function to use
+* `poll_size=manifold_dimension(M)`: the initial poll size
+$(_kwargs(:retraction_method))
+* `scale_mesh=`$(_link(:injectivity_radius))`(M) / 4`: initial scaling of the mesh, where `1.0` is used if the injectivity radius is infinite
+* `search::`[`AbstractMeshSearchFunction`](@ref)`=`[`DefaultMeshAdaptiveDirectSearch`](@ref)`(M, copy(M,p))`: the search function to use
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenPollSizeLess`](@ref)`(1e-10)"))
+$(_kwargs(:vector_transport_method))
 """
 mutable struct MeshAdaptiveDirectSearchState{
         P, F <: Real, C <: AbstractDict{Symbol}, PT <: AbstractMeshPollFunction, ST <: AbstractMeshSearchFunction, SC <: StoppingCriterion,
@@ -408,8 +424,8 @@ function MeshAdaptiveDirectSearchState(
         mesh_basis::B = default_basis(M, typeof(p)),
         poll_size::Real = manifold_dimension(M),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-        scale_mesh::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) / 2,
-        stopping_criterion::SC = StopAfterIteration(500) | StopWhenPollSizeLess(1.0e-7),
+        scale_mesh::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) / 4,
+        stopping_criterion::SC = StopAfterIteration(500) | StopWhenPollSizeLess(1.0e-10),
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(M, typeof(p)),
         poll::PT = LowerTriangularAdaptivePoll(
             M, copy(M, p);

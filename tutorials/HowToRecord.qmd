@@ -58,7 +58,7 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 For the high-level interfaces of the solvers, like [`gradient_descent`](@ref) we have to set `return_state` to `true` to obtain the whole [solver state](../base/state.md) and not only the resulting minimizer.
 
 Then we can easily use the `record=` option to add recorded values. This keyword accepts [`RecordAction`](@ref)s
-as well as several symbols as shortcuts, for example `:Cost` to record the cost, or if your options have a field `f`, `:f` would record that entry.
+as well as several symbols as shortcuts, for example `:Cost` to record the cost, or if your state has a field `f`, `:f` would record that entry.
 An overview of the symbols that can be used is given ``[here](@ref Manopt.RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))``{=commonmark}.
 
 We first just record the cost after every iteration
@@ -119,7 +119,7 @@ To illustrate a complicated example let's record:
 We first generate the problem and the state, to also illustrate how the low-level works when not using the high-level interface [`gradient_descent`](@ref).
 
 ```{julia}
-p = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 s = GradientDescentState(
     M;
     p = copy(data[1]),
@@ -162,7 +162,7 @@ r = RecordSolverState(s, Dict(:Iteration => rI, :Stop => sI))
 We now call the solver
 
 ```{julia}
-res = solve!(p, r)
+res = solve!(dmp, r)
 ```
 
 And we can look at the recorded value at `:Stop` to see how many iterations were performed
@@ -275,7 +275,7 @@ Then the following displays also the reasons why each of the recorded sub solver
 get_record(s3)
 ```
 
-## Writing an own [`RecordAction`](@ref)s
+## Writing own [`RecordAction`](@ref)s
 
 Let's investigate where we want to count the number of function evaluations, again just to illustrate, since for the gradient this is just one evaluation per iteration.
 We first define a cost, that counts its own calls.

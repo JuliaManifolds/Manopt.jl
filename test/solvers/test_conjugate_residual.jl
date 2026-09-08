@@ -27,6 +27,7 @@ using Manifolds, Manopt, Test, LRUCache
     r5 = conjugate_residual!(TpM, A, b, Y1; stopping_criterion = StopAfterIteration(3))
     @test r5 === Y1 # the function-based in-place entry exists and works in place
     @test norm(pT2 - pT) < 3.0e-15
+    @test norm(ps - pT3) < 3.0e-15
     @test get_cost(TpM, slso, pT) < 5.0e-15
     s = repr(slso)
     @test startswith(s, "SymmetricLinearSystemObjective")

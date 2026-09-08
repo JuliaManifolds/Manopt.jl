@@ -44,7 +44,7 @@ using ManifoldsBase, Manopt, Manifolds, Test
         @test hzi(dmp, gds3, 2, 1.0, η3) ≈ 0.5
 
         # case I2
-        @test hzi_nq(dmp, gds3, 2, 41.0, η3) ≈ hzi.ψ2 * 41.0
+        @test hzi_nq(dmp, gds3, 2, 41.0, η3) ≈ hzi_nq.ψ2 * 41.0
 
         # sphere
         MS = Sphere(1)

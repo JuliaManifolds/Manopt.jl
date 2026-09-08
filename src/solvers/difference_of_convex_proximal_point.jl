@@ -176,7 +176,7 @@ mutable struct DifferenceOfConvexProximalState{
             stopping_criterion::SC = StopWhenChangeLess(M, 1.0e-8),
             inverse_retraction_method::I = default_inverse_retraction_method(M, typeof(p)),
             retraction_method::R = default_retraction_method(M, typeof(p)),
-            λ::Fλ = i -> 1,
+            λ::Fλ = k -> 1,
         ) where {
             P, T, C <: AbstractDict{Symbol}, Pr <: Union{AbstractManoptProblem, F} where {F},
             S <: Stepsize, St <: AbstractManoptSolverState, SC <: StoppingCriterion,
@@ -253,7 +253,7 @@ function status_summary(dcps::DifferenceOfConvexProximalState; context::Symbol =
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = has_converged(dcps.stop) ? "Yes" : "No"
     as = _callbacks_summary(dcps)
-    sub = _in_str(repr(dcps.sub_state); indent = 1, indent_end = "| ")
+    sub = _in_str(status_summary(dcps.sub_state; context = context); indent = 1, indent_end = "| ")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm
     $Iter
@@ -416,7 +416,7 @@ function difference_of_convex_proximal_point!(
         callbacks = Dict{Symbol, Function}(),
         g = missing, grad_g = missing, prox_g = missing,
         X = zero_vector(M, p),
-        λ = i -> 1 / 2,
+        λ = k -> 1 / 2,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
         objective_type = :Riemannian,

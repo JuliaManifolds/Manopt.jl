@@ -241,6 +241,23 @@ function Manopt.ChambollePockState(
     )
 end
 get_callbacks(state::ChambollePockState) = state.callbacks
+function show(io::IO, cps::ChambollePockState)
+    print(io, "ChambollePockState(; ")
+    print(io, "acceleration = ", cps.acceleration, ", callbacks = ", cps.callbacks, ", ")
+    print(io, "dual_stepsize = ", cps.dual_stepsize, ", ")
+    print(io, "inverse_retraction_method = ", cps.inverse_retraction_method, ", ")
+    print(io, "inverse_retraction_method_dual = ", cps.inverse_retraction_method_dual, ", ")
+    print(io, "m = ", cps.m, ", n = ", cps.n, ", p = ", cps.p, ", pbar = ", cps.pbar, ", ")
+    print(io, "primal_stepsize = ", cps.primal_stepsize, ", relax = :", cps.relax, ", relaxation = ", cps.relaxation, ", ")
+    print(io, "retraction_method = ", cps.retraction_method, ", ")
+    print(io, "stopping_criterion = ", status_summary(cps.stop; context = :short), ", ")
+    print(io, "update_dual_base = ", cps.update_dual_base, ", update_primal_base = ", cps.update_primal_base, ", ")
+    print(io, "variant = :", cps.variant, ", ")
+    print(io, "vector_transport_method = ", cps.vector_transport_method, ", ")
+    print(io, "vector_transport_method_dual = ", cps.vector_transport_method_dual, ", ")
+    print(io, "X = ", cps.X, ", Xbar = ", cps.Xbar)
+    return print(io, ")")
+end
 function status_summary(cps::ChambollePockState; context::Symbol = :default)
     (context === :short) && return repr(cps)
     i = get_count(cps, :Iterations)

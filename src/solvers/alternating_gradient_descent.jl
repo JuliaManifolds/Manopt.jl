@@ -70,7 +70,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)")
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, AlternatingGradientDescentState)"))
 $(_kwargs(:X))
 
-Generate the options for point `p` and where `inner_iterations`, `order_type`, `order`,
+Generate the state for point `p` and where `inner_iterations`, `order_type`, `order`,
 `retraction_method`, `stopping_criterion`, and `stepsize` are keyword arguments.
 
 For internal use, there also exists a constructor solely having the fields as keyword arguments,
@@ -164,7 +164,7 @@ function status_summary(agds::AlternatingGradientDescentState; context::Symbol =
     return s
 end
 function get_message(agds::AlternatingGradientDescentState)
-    # for now only step size is quipped with messages
+    # for now only the step size is equipped with messages
     return get_message(agds.stepsize)
 end
 get_callbacks(agds::AlternatingGradientDescentState) = agds.callbacks
@@ -249,7 +249,7 @@ _doc_AGD = """
     alternating_gradient_descent!(M::ProductManifold, f, grad_f, p)
     alternating_gradient_descent!(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
 
-perform an alternating gradient descent. This can be done in-place of the start point `p`
+perform an alternating gradient descent. This can be done in-place of the start point `p`.
 
 # Input
 
@@ -278,8 +278,8 @@ usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) fo
 !!! note
 
     The input of each of the (component) gradients is still the whole vector `X`,
-    just that all other then the `i`th input component are assumed to be fixed and just
-    the `i`th components gradient is computed / returned.
+    just that all other than the `i`th input component are assumed to be fixed and just
+    the `i`th component's gradient is computed / returned.
 """
 
 @doc "$(_doc_AGD)"

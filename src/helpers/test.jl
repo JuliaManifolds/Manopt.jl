@@ -115,7 +115,6 @@ function adjoint_differential_forward_logs!(
             I = [i.I...] # array of index
             J = I .+ 1 .* (1:d .== k) #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neighbor index as Cartesian Index
                 Y[M, I...] =
                     Y[M, I...] + ManifoldDiff.adjoint_differential_log_basepoint(
                     M.manifold, p[M, I...], p[M, J...], X[N, I..., k]
@@ -178,7 +177,6 @@ function forward_logs(M::PowerManifold{𝔽, TM, TSize, TPR}, p) where {𝔽, TM
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    sX = size(p)
     maxInd = last(R).I
     if d > 1
         d2 = fill(1, d + 1)
@@ -207,14 +205,7 @@ function forward_logs!(M::PowerManifold{𝔽, TM, TSize, TPR}, X, p) where {𝔽
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    sX = size(p)
     maxInd = last(R).I
-    if d > 1
-        d2 = fill(1, d + 1)
-        d2[d + 1] = d
-    else
-        d2 = 1
-    end
     sN = d > 1 ? [power_size..., d] : [power_size...]
     N = PowerManifold(M.manifold, TPR(), sN...)
     e_k_vals = [1 * (1:d .== k) for k in 1:d]
@@ -711,7 +702,7 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
                         Y[N, I..., k] = zero_vector(N.manifold, x[N, I..., k])
                     end
                 end # directions
-            end # `ì` in R
+            end # `i` in R
             return Y
         else
             throw(ErrorException("The case p=$p, q=$q is not yet implemented"))

@@ -902,11 +902,16 @@ is stored using its blocks.
 Blocks ``W_k`` are (implicitly) composed from `memory_y` and `memory_s` stored in `qn_du`
 of type [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref).
 
-Initial scale ``θ`` is stored in the field `initial_scale`; if the memory is not empty,
+Initial scale ``θ`` is the `initial_scale` of the wrapped update `qn_du`; if the memory is not empty,
 the current scale is set to ``\frac{\|y_k\|^2}{⟨s_k, y_k⟩ θ}``, where ``k`` is the most recent
 index for which ``⟨s_k, y_k⟩`` is not equal to 0.
 
-`last_gcd_result` stores the result of the last generalized Cauchy direction search.
+`last_gcd_result` and `last_gcd_stepsize` store the status and the maximal step size returned
+by the last generalized Cauchy direction search, see [`find_generalized_cauchy_direction!`](@ref).
+
+# Constructor
+
+    QuasiNewtonLimitedMemoryBoxDirectionUpdate(qn_du::QuasiNewtonLimitedMemoryDirectionUpdate)
 
 See [ByrdNocedalSchnabel:1994](@cite) for details.
 """
@@ -981,7 +986,7 @@ function QuasiNewtonLimitedMemoryBoxDirectionUpdate(
         typeof(qn_du), F, typeof(M_11), typeof(buffer_inner_Sk_X),
     }(
         qn_du,
-        isnothing(qn_du.initial_scale) ? one(F) : convert(F, qn_du.initial_scale),
+        isnothing(qn_du.initial_scale) ? one(F) : inv(convert(F, qn_du.initial_scale)),
         M_11,
         M_21,
         M_22,

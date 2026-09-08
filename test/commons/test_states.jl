@@ -6,7 +6,6 @@ struct NoIterateState <: AbstractManoptSolverState end
 @testset "Manopt Solver States" begin
     @testset "Generic State" begin
         M = Euclidean(3)
-        pr = Manopt.Test.DummyProblem{typeof(M)}()
         s = Manopt.Test.DummyState()
         @test repr(Manopt.ReturnSolverState(s)) == "ReturnSolverState($s)"
         srst = "A Manopt Test state with storage Float64[]"

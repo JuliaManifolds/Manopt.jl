@@ -617,7 +617,7 @@ function status_summary(awng::AdaptiveWNGradientStepsize; context::Symbol = :def
 
     ## Parameters
     * count threshold:   $(_MANOPT_INDENT)$(awng.count_threshold)
-    * minimal_bound:     $(_MANOPT_INDENT)$(awng.minimal_bound)
+    * minimal bound:     $(_MANOPT_INDENT)$(awng.minimal_bound)
     * gradient reduction:$(_MANOPT_INDENT)$(awng.gradient_reduction)
     """
 end
@@ -1359,11 +1359,11 @@ function status_summary(cbls::CubicBracketingLinesearchStepsize; context = :defa
     * initial stepsize:          $(_MANOPT_INDENT)$(cbls.initial_stepsize)
     * last stepsize:             $(_MANOPT_INDENT)$(cbls.last_stepsize)
     * minimal bracket width:     $(_MANOPT_INDENT)$(cbls.min_bracket_width)
-    * max_iterations:            $(_MANOPT_INDENT)$(cbls.max_iterations)
-    * max_stepsize:              $(_MANOPT_INDENT)$(cbls.max_stepsize)
-    * sufficient_curvature:      $(_MANOPT_INDENT)$(cbls.sufficient_curvature)
+    * maximal iterations:        $(_MANOPT_INDENT)$(cbls.max_iterations)
+    * maximal stepsize:          $(_MANOPT_INDENT)$(cbls.max_stepsize)
+    * sufficient curvature:      $(_MANOPT_INDENT)$(cbls.sufficient_curvature)
     * retraction method:         $(_MANOPT_INDENT)$(cbls.retraction_method)
-    * stepsize_increase:         $(_MANOPT_INDENT)$(cbls.stepsize_increase)
+    * stepsize increase:         $(_MANOPT_INDENT)$(cbls.stepsize_increase)
     * vector transport method:   $(_MANOPT_INDENT)$(cbls.vector_transport_method)
     """
 end
@@ -2594,6 +2594,31 @@ default_vector_norm(::DefaultManifold, p, X) = norm(X, Inf)
 Initial line search guess from the paper [HagerZhang:2006:2](@cite), following their
 initial-guess procedure `I0`. The line search was adapted to the Riemannian setting by
 introducing customizable norms for points and tangent vectors and a maximum stepsize `alphamax`.
+
+# Fields
+
+* `ψ0`, `ψ1`, `ψ2`: the parameters of the steps `I0`, `I1` and `I2`
+* `constant_guess`: if not `NaN`, this value is returned in the first iteration instead of `I0`
+* `quadstep`: whether to attempt the quadratic interpolation step `I1`
+* `point_distance`: a function `(M, p) -> d` estimating the distance from `p` to the minimizer, see [`default_point_distance`](@ref)
+* `vector_norm`: a function `(M, p, X) -> n` measuring the search direction in `I0`, see [`default_vector_norm`](@ref)
+* `zero_abstol`: tolerance below which a distance or a cost is treated as zero in `I0`
+* `alphamax`: an upper bound for the returned guess
+
+# Constructor
+
+    HagerZhangInitialGuess()
+    HagerZhangInitialGuess{TF}(; kwargs...)
+
+## Keyword arguments
+
+* `ψ0=0.01`, `ψ1=0.01`, `ψ2=2.0`
+* `constant_guess=NaN`
+* `quadstep=true`
+* `point_distance=`[`default_point_distance`](@ref)
+* `vector_norm=`[`default_vector_norm`](@ref)
+* `zero_abstol=eps(TF)`
+* `alphamax=Inf`
 """
 struct HagerZhangInitialGuess{TF <: Real, TPN, TVN} <: AbstractInitialLinesearchGuess
     ψ0::TF

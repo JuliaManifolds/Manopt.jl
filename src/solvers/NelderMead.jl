@@ -7,7 +7,7 @@ A simplex for the Nelder-Mead algorithm.
 
     NelderMeadSimplex(M::AbstractManifold)
 
-Construct a  simplex using ``d+1`` random points from manifold `M`,
+Construct a simplex using ``d+1`` random points from manifold `M`,
 where ``d`` is the $(_link(:manifold_dimension; M = "")) of `M`.
 
     NelderMeadSimplex(
@@ -90,13 +90,13 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$
 """
 mutable struct NelderMeadState{
         P, C <: AbstractDict{Symbol}, S <: StoppingCriterion, F <: Real, A <: AbstractVector{<:Real},
-        TR <: AbstractRetractionMethod, TI <: AbstractInverseRetractionMethod,
+        TR <: AbstractRetractionMethod, TI <: AbstractInverseRetractionMethod, TS <: NelderMeadSimplex,
     } <: AbstractManoptSolverState
     callbacks::C
     costs::A
     inverse_retraction_method::TI
     p::P
-    population::NelderMeadSimplex{P}
+    population::TS
     retraction_method::TR
     stop::S
     α::F
@@ -106,14 +106,14 @@ mutable struct NelderMeadState{
     function NelderMeadState(;
             callbacks::C = Dict{Symbol, Function}(),
             costs::A, inverse_retraction_method::TI,
-            p::P, population::NelderMeadSimplex{P},
+            p::P, population::TS,
             retraction_method::TR, stopping_criterion::S,
             α::F, γ::F, ρ::F, σ::F,
         ) where {
             P, C <: AbstractDict{Symbol}, S <: StoppingCriterion, F <: Real, A <: AbstractVector{<:Real},
-            TR <: AbstractRetractionMethod, TI <: AbstractInverseRetractionMethod,
+            TR <: AbstractRetractionMethod, TI <: AbstractInverseRetractionMethod, TS <: NelderMeadSimplex,
         }
-        return new{P, C, S, F, A, TR, TI}(
+        return new{P, C, S, F, A, TR, TI, TS}(
             callbacks,
             costs, inverse_retraction_method,
             p, population,
@@ -172,10 +172,10 @@ function status_summary(nms::NelderMeadState; context::Symbol = :default)
     The algorithm converged: $Conv"""
     return s
 end
-get_iterate(O::NelderMeadState) = O.p
-function set_iterate!(O::NelderMeadState, ::AbstractManifold, p)
-    O.p = p
-    return O
+get_iterate(nms::NelderMeadState) = nms.p
+function set_iterate!(nms::NelderMeadState, ::AbstractManifold, p)
+    nms.p = p
+    return nms
 end
 get_callbacks(nms::NelderMeadState) = nms.callbacks
 
@@ -194,7 +194,7 @@ The algorithm consists of the following steps. Let ``d`` denote the dimension of
 1. Order the simplex vertices ``p_i, i=1,…,d+1`` by increasing cost, such that we have ``f(p_1) ≤ f(p_2) ≤ … ≤ f(p_{d+1})``.
 2. Compute the Riemannian center of mass [Karcher:1977](@cite), cf. [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}), ``p_{$(_tex(:text, "m"))}``
     of the simplex vertices ``p_1,…,p_{d}``, that is, of all but the worst point.
-3. Reflect the point with the worst point at the mean ``p_{$(_tex(:text, "r"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl( - α$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} (p_{d+1}) \\bigr)``
+3. Reflect the worst point at the mean ``p_{$(_tex(:text, "r"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl( - α$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} (p_{d+1}) \\bigr)``
     If ``f(p_1) ≤ f(p_{$(_tex(:text, "r"))}) ≤ f(p_{d})`` then set ``p_{d+1} = p_{$(_tex(:text, "r"))}`` and go to step 1.
 4. Expand the simplex if ``f(p_{$(_tex(:text, "r"))}) < f(p_1)`` by computing the expansion point ``p_{$(_tex(:text, "e"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl( - γα$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} (p_{d+1}) \\bigr)``,
     which in this formulation allows to reuse the tangent vector from the inverse retraction from before.
@@ -206,7 +206,7 @@ The algorithm consists of the following steps. Let ``d`` denote the dimension of
 6. Shrink all points (closer to ``p_1``). For all ``i=2,...,d+1`` set
     ``p_{i} = $(_tex(:retr))_{p_{1}}\\bigl( σ$(_tex(:invretr))_{p_{1}} p_{i} \\bigr).``
 
-For more details, see The Euclidean variant in the Wikipedia
+For more details, see the Euclidean variant in the Wikipedia
 [https://en.wikipedia.org/wiki/Nelder-Mead_method](https://en.wikipedia.org/wiki/Nelder-Mead_method)
 or Algorithm 4.1 in [http://www.optimization-online.org/DB_FILE/2007/08/1742.pdf](http://www.optimization-online.org/DB_FILE/2007/08/1742.pdf).
 
@@ -299,7 +299,7 @@ end
 function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     M = get_manifold(mp)
 
-    ind = sortperm(s.costs) # reordering for `s.cost` and `s.p`, that is the minimizer is at `ind[1]`
+    ind = sortperm(s.costs) # reordering for `s.costs` and `s.population.pts`, that is the minimizer is at `ind[1]`
     permute!(s.costs, ind)
     permute!(s.population.pts, ind)
     m = mean(M, s.population.pts[1:(end - 1)])
@@ -317,7 +317,7 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
         continue_steps = false
     end
     # --- Expansion ---
-    if Costr < s.costs[1] # reflected is better than fist -> expand
+    if Costr < s.costs[1] # reflected is better than first -> expand
         xe = retract(M, m, -s.γ * s.α * ξ, s.retraction_method)
         Coste = get_cost(mp, xe)
         # successful? use the expanded, otherwise still use `xr`

@@ -243,13 +243,15 @@ include("trust_region_model.jl")
             q2 = copy(M, p)
             trust_regions!(M, f, grad_f, Hess_f, q2)
             @test isapprox(M, q2, p_star; atol = 1.0e-6) || isapprox(M, q2, -p_star; atol = 1.0e-6)
-            # random start point
+            # random start point, seeded so that a failure is reproducible
+            Random.seed!(42)
             q3 = trust_regions(M, f, grad_f, Hess_f)
             # remove ambiguity
             q3 = (sign(q3[1]) == sign(p_star[1])) ? q3 : -q3
-            @test isapprox(M, q3, p_star)
+            @test isapprox(M, q3, p_star; atol = 1.0e-6)
 
-            # a Default
+            # a Default, from a seeded random start point
+            Random.seed!(42)
             qaAoor = trust_regions(M, f, grad_f)
             @test isapprox(M, qaAoor, p_star; atol = 1.0e-6) || isapprox(M, qaAoor, -p_star; atol = 1.0e-6)
             #

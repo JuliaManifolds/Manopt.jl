@@ -19,9 +19,7 @@ using ManifoldDiff: prox_distance, prox_distance!
         cyclic_proximal_point!(
             N, f, proxes, q3; λ = i -> π / (2 * i), stopping_criterion = StopAfterIteration(100)
         )
-        cpps = CyclicProximalPointState(
-            N; p = q, stopping_criterion = StopAfterIteration(1), λ = i -> π / (2 * i)
-        )
+        @test isapprox(N, q2, q3)
         mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
         p = DefaultManoptProblem(N, mpo)
         @test_throws ErrorException get_proximal_map(p, 1.0, f, 3)

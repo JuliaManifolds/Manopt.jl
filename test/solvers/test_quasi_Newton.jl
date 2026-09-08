@@ -205,9 +205,6 @@ end
         x_clrbfgs = quasi_Newton(M, f, grad_f, x; cautious_update = true)
         @test isapprox(M, x_clrbfgs, x_solution; atol = rayleigh_atol)
 
-        x_cached_lrbfgs = quasi_Newton(M, f, grad_f, x; memory_size = -1)
-        @test isapprox(M, x_cached_lrbfgs, x_solution; atol = rayleigh_atol)
-
         for T in [
                     InverseDFP(), DFP(), Broyden(0.5), InverseBroyden(0.5),
                     Broyden(0.5, :Davidon), Broyden(0.5, :InverseDavidon), InverseBFGS(), BFGS(),

@@ -11,8 +11,9 @@ using LRUCache, LinearAlgebra, Manifolds, Manopt, Test
     grad_g!(M, X, p) = (X .= 4 * log(det(p))^3 * p)
     f(M, p) = g(M, p) - h(M, p)
     grad_f(M, p) = grad_g(M, p) - grad_h(M, p)
+    grad_f!(M, X, p) = (X .= grad_g(M, p) - grad_h(M, p))
     p = log(2) * Matrix{Float64}(I, n, n)
-    G = grad_g(M, p)
+    G = grad_f(M, p)
 
     dc_obja = ManifoldDifferenceOfConvexObjective(f, grad_h)
     dc_obji = ManifoldDifferenceOfConvexObjective(
@@ -24,9 +25,9 @@ using LRUCache, LinearAlgebra, Manifolds, Manopt, Test
     )
     @testset "Gradient access" begin
         # Alloc
-        dc_objga = ManifoldDifferenceOfConvexObjective(f, grad_h; gradient = grad_g)
+        dc_objga = ManifoldDifferenceOfConvexObjective(f, grad_h; gradient = grad_f)
         dcp_objga = ManifoldDifferenceOfConvexProximalObjective(
-            grad_h; cost = f, gradient = grad_g
+            grad_h; cost = f, gradient = grad_f
         )
         for o in [dc_objga, dcp_objga]
             gga = Manopt.get_gradient_function(o)
@@ -40,10 +41,10 @@ using LRUCache, LinearAlgebra, Manifolds, Manopt, Test
         end
         # Inplace
         dc_objgi = ManifoldDifferenceOfConvexObjective(
-            f, grad_h!; gradient = grad_g!, evaluation = InplaceEvaluation()
+            f, grad_h!; gradient = grad_f!, evaluation = InplaceEvaluation()
         )
         dcp_objgi = ManifoldDifferenceOfConvexProximalObjective(
-            grad_h!; cost = f, gradient = grad_g!, evaluation = InplaceEvaluation()
+            grad_h!; cost = f, gradient = grad_f!, evaluation = InplaceEvaluation()
         )
         for o in [dc_objgi, dcp_objgi]
             ggi = Manopt.get_gradient_function(o; evaluation = InplaceEvaluation())
@@ -105,7 +106,7 @@ using LRUCache, LinearAlgebra, Manifolds, Manopt, Test
         end
     end
     @testset "show/repr and status_summary" begin
-        dc_obj_ga = ManifoldDifferenceOfConvexObjective(f, grad_h; gradient = grad_g)
+        dc_obj_ga = ManifoldDifferenceOfConvexObjective(f, grad_h; gradient = grad_f)
         s1 = repr(dc_obja)
         @test startswith(s1, "ManifoldDifferenceOfConvexObjective(")
         s2 = repr(dc_obj_ga)

@@ -208,10 +208,11 @@ mX = gradient_descent(M, f2, grad_f2, data[1])
 ```
 
 So just by chance it seems we still got nearly the same point as before, but
-when we for example look at when this run stops, we see that it takes more steps.
+when we for example look at when this run stops, we see that it takes more steps than the run with the scaled cost `f`.
 
 ```{julia}
 #| warning: true
+gradient_descent(M, f, grad_f, data[1], debug = [:Stop]);
 gradient_descent(M, f2, grad_f2, data[1], debug = [:Stop]);
 ```
 
