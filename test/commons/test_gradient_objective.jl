@@ -186,6 +186,11 @@ using ManifoldsBase, Manopt, Test
             @test get_differential(M, obj, p, X; gradient = Y) == d
             @test Manopt.get_cost_and_differential(M, obj, p, X; gradient = Y) == (c, d)
             @test Manopt.get_differential_function(obj)(M, p, X) == d
+            # through a decorator and through a problem
+            ddo = Manopt.Test.DummyDecoratedObjective(obj)
+            @test Manopt.get_cost_and_differential(M, ddo, p, X) == (c, d)
+            dmp = DefaultManoptProblem(M, obj)
+            @test Manopt.get_cost_and_differential(dmp, p, X) == (c, d)
         end
         Yi = zero_vector(M, p)
         # For all that have a gradient (all but 6&9) test their access
@@ -202,6 +207,9 @@ using ManifoldsBase, Manopt, Test
             @test Yp == G
             cb, _ = Manopt.get_cost_and_gradient!(M, Yi, obj, p)
             @test cb == c
+            @test Yi == G
+            cq, _ = Manopt.get_cost_and_gradient!(mp, Yi, p)
+            @test cq == c
             @test Yi == G
         end
         # For all allocs: test gradient function access.

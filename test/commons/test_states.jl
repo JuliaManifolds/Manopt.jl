@@ -102,6 +102,9 @@ struct NoIterateState <: AbstractManoptSolverState end
         ddo = Manopt.Test.DummyDecoratedObjective(o)
         s = Manopt.Test.DummyState()
         rs = Manopt.ReturnSolverState(s)
+        # parameters are passed through the decorator
+        @test Manopt.set_parameter!(rs, :Dummy, 1) === rs
+        @test isnothing(Manopt.get_parameter(rs, :Dummy))
         @test Manopt.get_solver_return(o, rs) == s #no ReturnManifoldObjective
         # Return O & S
         (a, b) = Manopt.get_solver_return(ro, rs)
