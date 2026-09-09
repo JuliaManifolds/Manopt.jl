@@ -12,5 +12,8 @@ Manopt = {path = ".."}
 
 [compat]
 BenchmarkTools = "1"
+ManifoldDiff = "0.4.5"
+Manifolds = "0.11.29"
+ManifoldsBase = "2.5.1"
 Pkg = "1.10"
 Random = "1.10"
