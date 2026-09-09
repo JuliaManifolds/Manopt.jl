@@ -4,7 +4,7 @@
 The module `Manopt.Test` provides dummy types and small test problems and examples
 that can be used throughout testing.
 
-Some of these are simplified variants from problems from `ManoptExamples.jl`,
+Some of these are simplified variants of problems from `ManoptExamples.jl`
 that are added here to not introduce a circular dependency.
 
 Some of the functionality is only populated when certain packages are loaded,
@@ -28,9 +28,7 @@ struct DummyManifold <: AbstractManifold{ManifoldsBase.ℝ} end
 struct DummyDecoratedObjective{O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{O}
     objective::O
 end
-function Manopt.status_summary(
-        ddo::DummyDecoratedObjective; kwargs...
-    )
+function Manopt.status_summary(ddo::DummyDecoratedObjective; kwargs...)
     return "A dummy decorator for " * Manopt.status_summary(ddo.objective; kwargs...)
 end
 function Base.show(io::IO, ddo::DummyDecoratedObjective)
@@ -67,9 +65,9 @@ Manopt.set_parameter!(s::DummyState, ::Val{:StoppingCriterion}, v) = s
 """
     M, f, grad_f, p0, p_star = Circle_mean_task()
 
-Create a small mean problem on the circle to test Number-based algorithms
-Requires `Manifolds.jl` to be loaded, use [`Manopt.Test.mean_task`](@ref)`(M, data)`
-for the general case
+Create a small mean problem on the circle to test Number-based algorithms.
+Requires `Manifolds.jl` to be loaded; use [`Manopt.Test.mean_task`](@ref)`(M, data)`
+for the general case.
 """
 function Circle_mean_task end
 
@@ -80,9 +78,10 @@ Returns cost and gradient for computing the mean of `data` ``d_i`` on manifold `
 
 ```math
 \begin{align*}
-f(p) = \frac{1}{2n} \sum_{i=1}^n d_M(p, d_i)^2
+f(p) = \frac{1}{2n} \sum_{i=1}^n d_M(p, d_i)^2\\
 \operatorname{grad} f(p) = -\frac{1}{n} \sum_{i=1}^n \log_p(d_i)
 \end{align*}
+```
 """
 function mean_task(M::AbstractManifold, data::AbstractVector)
     n = length(data)
@@ -116,7 +115,6 @@ function adjoint_differential_forward_logs!(
             I = [i.I...] # array of index
             J = I .+ 1 .* (1:d .== k) #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
                 Y[M, I...] =
                     Y[M, I...] + ManifoldDiff.adjoint_differential_log_basepoint(
                     M.manifold, p[M, I...], p[M, J...], X[N, I..., k]
@@ -179,7 +177,6 @@ function forward_logs(M::PowerManifold{𝔽, TM, TSize, TPR}, p) where {𝔽, TM
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    sX = size(p)
     maxInd = last(R).I
     if d > 1
         d2 = fill(1, d + 1)
@@ -197,7 +194,7 @@ function forward_logs(M::PowerManifold{𝔽, TM, TSize, TPR}, p) where {𝔽, TM
             I = i.I
             J = I .+ 1 .* e_k_vals[k] #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
+                j = CartesianIndex{d}(J...) # neighbor index as Cartesian Index
                 X[N, i.I..., k] = log(M.manifold, p[M, i.I...], p[M, j.I...])
             end
         end # directions
@@ -208,14 +205,7 @@ function forward_logs!(M::PowerManifold{𝔽, TM, TSize, TPR}, X, p) where {𝔽
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    sX = size(p)
     maxInd = last(R).I
-    if d > 1
-        d2 = fill(1, d + 1)
-        d2[d + 1] = d
-    else
-        d2 = 1
-    end
     sN = d > 1 ? [power_size..., d] : [power_size...]
     N = PowerManifold(M.manifold, TPR(), sN...)
     e_k_vals = [1 * (1:d .== k) for k in 1:d]
@@ -224,7 +214,7 @@ function forward_logs!(M::PowerManifold{𝔽, TM, TSize, TPR}, X, p) where {𝔽
             I = i.I
             J = I .+ 1 .* e_k_vals[k] #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
+                j = CartesianIndex{d}(J...) # neighbor index as Cartesian Index
                 X[N, i.I..., k] = log(M.manifold, p[M, i.I...], p[M, j.I...])
             else
                 X[N, i.I..., k] = zero_vector(M.manifold, p[M, i.I...])
@@ -248,7 +238,7 @@ function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p = 2.0, q = 1.0,
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
+                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but it is not.",
                 ),
             )
         end
@@ -310,7 +300,7 @@ function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p = 2.0, q =
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($d) has to be equal to the number of the previous ones ($s) but its not.",
+                    "the last dimension ($d) has to be equal to the number of the previous ones ($s) but it is not.",
                 ),
             )
         end
@@ -457,7 +447,7 @@ function prox_Total_Variation(M::PowerManifold, λ, x, p::Int = 1)
                 if (i[k] % 2) == l
                     J = i.I .+ ek.I #i + e_k is j
                     if all(J .<= maxInd) # is this neighbor in range?
-                        j = CartesianIndex(J...) # neighbour index as Cartesian Index
+                        j = CartesianIndex(J...) # neighbor index as Cartesian Index
                         (y[i], y[j]) = prox_Total_Variation(M.manifold, λ, (y[i], y[j]), p) # Compute TV on these
                     end
                 end
@@ -479,7 +469,7 @@ function prox_Total_Variation!(M::PowerManifold, y, λ, x, p::Int = 1)
                 if (i[k] % 2) == l # even/odd splitting
                     J = i.I .+ ek.I #i + e_k is j
                     if all(J .<= maxInd) # is this neighbor in range?
-                        j = CartesianIndex(J...) # neighbour index as Cartesian Index
+                        j = CartesianIndex(J...) # neighbor index as Cartesian Index
                         prox_Total_Variation!(M.manifold, [y[i], y[j]], λ, (y[i], y[j]), p) # Compute TV on these
                     end
                 end
@@ -532,7 +522,7 @@ function differential_project_collaborative_TV!(
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
+                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but it is not.",
                 ),
             )
         end
@@ -634,7 +624,7 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
+                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but it is not.",
                 ),
             )
         end
@@ -712,7 +702,7 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
                         Y[N, I..., k] = zero_vector(N.manifold, x[N, I..., k])
                     end
                 end # directions
-            end # `ì` in R
+            end # `i` in R
             return Y
         else
             throw(ErrorException("The case p=$p, q=$q is not yet implemented"))

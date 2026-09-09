@@ -18,6 +18,7 @@ The following is a set of guidelines to [`Manopt.jl`](https://juliamanifolds.git
     - [Code style](#Code-style)
     - [Concerning the documentation](#Concerning-the-documentation)
     - [Spell checking](#Spell-checking)
+    - [Technical Details on GitHub](#Technical-Details-on-GitHub)
     - [On the use of AI](#On-the-use-of-AI)
 
 ## I just have a question
@@ -48,9 +49,9 @@ An algorithm is always based on a concrete type of a [`AbstractManoptProblem`](h
 For these two functions, it would be great if a new algorithm uses functions from the [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/) interface as generically as possible. For example, if possible use [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.retract!) in favor of [`exp!(M,q,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#exp-and-log) to perform a step starting in `p` in direction `X` (in place of `q`), since the exponential map might be too expensive to evaluate or might not be available on a certain manifold. See [Retractions and inverse retractions](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#sec-retractions) for more details.
 Further, if possible, prefer [`retract!(M,q,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.retract!) in favor of [`retract(M,p,X)`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.retract), since a computation in place of a suitable variable `q` reduces memory allocations.
 
-Usually, the methods implemented in `Manopt.jl` also have a high-level interface, that is easier to call, creates the necessary problem and options structure and calls the solver.
+Usually, the methods implemented in `Manopt.jl` also have a high-level interface, that is easier to call, creates the necessary problem and solver state and calls the solver.
 
-The two technical functions `initialize_solver!` and `step_solver!` should be documented with technical details, while the high level interface should usually provide a general description and some literature references to the algorithm at hand.
+The two technical functions `initialize_solver!` and `step_solver!` should be documented with technical details, while the high-level interface should usually provide a general description and some literature references to the algorithm at hand.
 
 ### Provide a new example
 
@@ -68,7 +69,7 @@ Please follow a few internal conventions:
 - Any implemented function should be accompanied by its mathematical formulae if a closed form exists.
 - `AbstractManoptProblem` and helping functions are stored within the `base/` folder and sorted by properties of the problem and/or solver at hand.
 - the solver state is usually stored with the solver itself
-- Within the source code of one algorithm, following the state, the high level interface should be next, then the initialization, then the step.
+- Within the source code of one algorithm, following the state, the high-level interface should be next, then the initialization, then the step.
 - Otherwise an alphabetical order of functions is preferable.
 - The preceding implies that the mutating variant of a function follows the non-mutating variant.
 - Always add a newline between things of different types (struct/method/const).
@@ -91,6 +92,22 @@ If you implement an algorithm with a certain numerical example in mind, it would
 ### Spell checking
 
 We use [crate-ci/typos](https://github.com/crate-ci/typos) for spell checking, which is run automatically on GitHub Actions, but you can also run it locally using their command line tool.
+
+### Technical Details on GitHub
+
+We use several continuous integration (CI) jobs on GitHub to ensure both code quality and not to miss small technical details, for example for the already mentioned spell checking or for checking the code formatting.
+
+There are three Tags on GitHub that modify the behaviour of the CI
+
+* `benchmark` activates the benchmark CI to avoid regression of the existing code
+* `skip documentation` skips rendering and deployment of the documentation preview
+  this is helpful for external contributors that do not have rights for the deployment
+  or when nothing on the documentation is changed.
+* `no changelog necessary` skips the small CI that checks that the changelog was edited.
+  this is helpful when the change is small enough to not require an entry or for `dependabot`
+  when it checks version updates for the package dependencies
+
+We further use `Ready-for-Review` to highlight that a PR is considered finished and should be reviewed.
 
 ### On the use of AI
 

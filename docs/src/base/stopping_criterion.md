@@ -13,10 +13,10 @@ every iteration determines whether a solver should stop.
 It is passed to a solver via the `stopping_criterion=` keyword in the high-level interfaces.
 Since the criterion is stored in the [solver state](state.md), state constructors also accept that keyword.
 
-A stopping criterion should usually store the iteration number it last indicated to stop.
-Within `Manopt.jl` this is the field `at_iteration`. It should reset its internal variables when called with a negative number like `k=-1`. It should store all necessary information to determine whether to stop and provide a human-readable reason why it stopped, see [`get_reason(stopping_criterion)`](@ref get_reason). This reason should return an empty string if the criterion has not yet indicated to stop.
+A stopping criterion should usually store the iteration number at which it last indicated to stop.
+Within `Manopt.jl` this is the field `at_iteration`. It should reset its internal variables when called with `k=0`, that is upon initialization. It should store all necessary information to determine whether to stop and provide a human-readable reason why it stopped, see [`get_reason(stopping_criterion)`](@ref get_reason). This function should return an empty string if the criterion has not yet indicated to stop.
 
-The easiest example is the [`StopAfterIteration`](@ref), which is initialized to a maximal number of iterations and returns `true` once the input `k` from above exceeds this threshold. This stopping criterion does not store anything else, since the reason only requires the current iteration and the maximal one.
+The easiest example is the [`StopAfterIteration`](@ref), which is initialized to a maximal number of iterations and returns `true` once the input `k` from above reaches this threshold. This stopping criterion does not store anything else, since the reason only requires the current iteration and the maximal one.
 
 There is a list of [common stopping criteria](../commons/stopping_criteria.md) available.
 Stopping criteria that are specialized to a single solver can be found on the corresponding solver page.

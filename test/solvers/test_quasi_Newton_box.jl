@@ -23,19 +23,14 @@ using RecursiveArrayTools
         @test Manopt.get_stepsize_bound(M, p, d, 2) ≈ Inf
     end
 
-    @testset "update_fp_fpp - basic d = -g" begin
+    @testset "segment Hessian updater - basic d = -g" begin
         M = Hyperrectangle([0.0, 1.0], [3.0, 3.0])
 
-        grad = [1.0, 4.0]
         d = [-1.0, -4.0]
         p = [0.0, 0.0]
 
-        # values taken from loop iteration found in test case: "find_gcp! - with bounds, single variable is held fixed"
-        old_f_prime = -17.0
-        old_f_double_prime = 34.0
         dt = 0.25
-        gb = 4.0
-        db = -4.0 # in case of d = -g, db = -gb
+        db = -4.0 # for d = -g the entry of d is the negated gradient entry
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [2.0 0.0; 0.0 2.0])
         b = 2
         z = [-0.25, -1.0]
@@ -56,17 +51,13 @@ using RecursiveArrayTools
         @test hv_eb_d == original_hv_eb_d
     end
 
-    @testset "update_fp_fpp - basic d = [-2.0, -1.0]" begin
+    @testset "segment Hessian updater - basic d = [-2.0, -1.0]" begin
         M = Hyperrectangle([0.0, 1.0], [3.0, 3.0])
 
-        grad = [1.0, 4.0]
         d = [-2.0, -1.0]
         p = [0.0, 0.0]
 
-        old_f_prime = -6.0
-        old_f_double_prime = 10.0
         dt = 0.25
-        gb = 1.0
         db = -2.0
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [2.0 0.0; 0.0 2.0])
         b = 1
@@ -88,7 +79,7 @@ using RecursiveArrayTools
         @test hv_eb_d == original_hv_eb_d
     end
 
-    @testset "update_fp_fpp - basic d = [-2.0, -1.0] with limited memory update" begin
+    @testset "segment Hessian updater - limited memory update" begin
         M = Hyperrectangle([1.0, 4.0], [2.0, 10.0])
 
         p = [2.0, 5.0]
@@ -125,11 +116,8 @@ using RecursiveArrayTools
 
         b = 1
 
-        old_f_prime = -6.0
-        old_f_double_prime = 10.0
         dt = 0.25
         db = d[b]
-        gb = grad[b]
 
         t_current = 0 + dt
 
@@ -156,7 +144,6 @@ using RecursiveArrayTools
 
         @testset "No memory tests" begin
             ha2 = QuasiNewtonLimitedMemoryBoxDirectionUpdate(QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2))
-            idx = Manopt.get_bounds_index(M)
             @test Manopt.hessian_value(ha2, M, p, Manopt.UnitVector(b), grad) ≈ 4.0
             Manopt.update_current_scale!(M, p, ha2)
             @test ha2.current_scale == ha2.qn_du.initial_scale
@@ -232,6 +219,33 @@ using RecursiveArrayTools
         p0 = [0.0, 4.0, 1.0]
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(10))
         @test p_opt ≈ [0, 2, 0]
+        # a preconditioner deactivates `initial_scale`, which the box update has to treat as 1
+        for kwargs in ((; preconditioner = (M, p, X) -> X), (; initial_scale = nothing))
+            p_opt_p = quasi_Newton(
+                M, f, grad_f, p0;
+                stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(10),
+                kwargs...,
+            )
+            @test isapprox(p_opt_p, [0, 2, 0]; atol = 1.0e-3)
+        end
+        @test Manopt.QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            Manopt.QuasiNewtonLimitedMemoryDirectionUpdate(
+                M, p0, InverseBFGS(), 2; initial_scale = nothing
+            )
+        ).current_scale == 1.0
+        # with a non-unit `initial_scale` the two Hessian accessors must agree
+        u_s = Manopt.QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            Manopt.QuasiNewtonLimitedMemoryDirectionUpdate(
+                M, p0, InverseBFGS(), 2; initial_scale = 2.0
+            )
+        )
+        e1 = Manopt.UnitVector(1)
+        @test Manopt.hessian_value_diag(u_s, M, p0, e1) ≈
+            Manopt.hessian_value(u_s, M, p0, e1, [1.0, 0.0, 0.0])
+        # `cautious_update` can not be combined with the box update; report that clearly
+        @test_throws ErrorException quasi_Newton(
+            M, f, grad_f, p0; cautious_update = true, stopping_criterion = StopAfterIteration(3)
+        )
 
 
         f2(M, p) = sum(p .^ 4)
@@ -260,12 +274,6 @@ using RecursiveArrayTools
         p0 = [0.0, 4.0, 1.0]
         p_opt = quasi_Newton(MInf, f3, grad_f3, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test f3(MInf, p_opt) < 16.1
-
-        p_opt = quasi_Newton(
-            MInf, f3, grad_f3, p0;
-            stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100),
-        )
-        @test f3(MInf, p_opt) < 64.0
     end
 
     @testset "has_anisotropic_max_stepsize" begin
@@ -308,6 +316,23 @@ using RecursiveArrayTools
 
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test distance(M, p_opt, ArrayPartition([0, 2, 0], px)) < 0.1
+    end
+
+    @testset "Isotropic limit in the generalized Cauchy direction" begin
+        S2 = Sphere(2)
+        M = Hyperrectangle([-100.0], [100.0]) × S2
+        p = ArrayPartition([0.0], [1.0, 0.0, 0.0])
+        d = ArrayPartition([-1.0], [0.0, 10.0, 0.0])
+        X = -d
+        ha = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2)
+        )
+        gf = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha)
+        d_out = similar(d)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_out, p, d, X) ===
+            (:found_limited, 1.0)
+        # the direction may not leave the isotropic maximal step size of the sphere factor
+        @test norm(S2, p.x[2], d_out.x[2]) <= Manopt.max_stepsize(S2, p.x[2]) + 1.0e-12
     end
 
     @testset "Sphere × Hyperrectangle" begin
@@ -356,5 +381,20 @@ end
         sdf = Manopt.MaxStepsizeInDirectionSubsolver(M, p)
         @test Manopt.find_max_stepsize_in_direction(M, sdf, p, d) === (:not_found, NaN)
         @test d == d_before
+    end
+
+    @testset "Vanishing step at the minimizer" begin
+        # the minimizer is reached before the stopping criterion fires, so the step becomes zero
+        N = Hyperrectangle(-ones(3), ones(3))
+        c = [0.3, 0.5, 0.2]
+        fq(M, p) = 0.5 * sum(abs2, p - c)
+        grad_fq(M, p) = p - c
+        for memory_size in [3, -1]
+            q = quasi_Newton(
+                N, fq, grad_fq, zeros(3);
+                memory_size = memory_size, stopping_criterion = StopAfterIteration(6),
+            )
+            @test isapprox(N, q, c)
+        end
     end
 end

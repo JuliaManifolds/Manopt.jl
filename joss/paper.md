@@ -65,7 +65,7 @@ In the current version 0.3.17 of `Manopt.jl` the following algorithms are availa
 * Alternating Gradient Descent ([`alternating_gradient_descent`](https://manoptjl.org/v0.3/solvers/alternating_gradient_descent.html))
 * Chambolle-Pock ([`ChambollePock`](https://manoptjl.org/v0.3/solvers/ChambollePock.html)) [@BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021:1]
 * Conjugate Gradient Descent ([`conjugate_gradient_descent`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html)), which includes eight direction update rules using the `coefficient` keyword:
-  [`SteepestDirectionUpdateRule`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.SteepestDirectionUpdateRule),   [`ConjugateDescentCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.ConjugateDescentCoefficient). [`DaiYuanCoefficientRule`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.DaiYuanCoefficientRule), [`FletcherReevesCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.FletcherReevesCoefficient), [`HagerZhangCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.HagerZhangCoefficient), [`HeestenesStiefelCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.HeestenesStiefelCoefficient), [`LiuStoreyCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.LiuStoreyCoefficient), and [`PolakRibiereCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.PolakRibiereCoefficient)
+  [`SteepestDirectionUpdateRule`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.SteepestDirectionUpdateRule),   [`ConjugateDescentCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.ConjugateDescentCoefficient). [`DaiYuanCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.DaiYuanCoefficient), [`FletcherReevesCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.FletcherReevesCoefficient), [`HagerZhangCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.HagerZhangCoefficient), [`HeestenesStiefelCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.HeestenesStiefelCoefficient), [`LiuStoreyCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.LiuStoreyCoefficient), and [`PolakRibiereCoefficient`](https://manoptjl.org/v0.3/solvers/conjugate_gradient_descent.html#Manopt.PolakRibiereCoefficient)
 * Cyclic Proximal Point ([`cyclic_proximal_point`](https://manoptjl.org/v0.3/solvers/cyclic_proximal_point.html)) [@Bacak:2014:1]
 * (parallel) Douglas—Rachford ([`DouglasRachford`](https://manoptjl.org/v0.3/solvers/DouglasRachford.html)) [@BergmannPerschSteidl:2016:1]
 * Gradient Descent ([`gradient_descent`](https://manoptjl.org/v0.3/solvers/gradient_descent.html)), including direction update rules ([`IdentityUpdateRule`](https://manoptjl.org/v0.3/solvers/gradient_descent.html#Manopt.IdentityUpdateRule) for the classical gradient descent) to perform [`MomentumGradient`](https://manoptjl.org/v0.3/solvers/gradient_descent.html#Manopt.MomentumGradient), [`AverageGradient`](https://manoptjl.org/v0.3/solvers/gradient_descent.html#Manopt.AverageGradient), and [`Nesterov`](https://manoptjl.org/v0.3/solvers/gradient_descent.html#Manopt.Nesterov) types
@@ -92,12 +92,12 @@ using Manopt, Manifolds, LinearAlgebra, Random
 Random.seed!(42)
 M = Sphere(2)
 n = 40
-p = 1/sqrt(3) .* ones(3)
+p = 1 / sqrt(3) .* ones(3)
 B = DefaultOrthonormalBasis()
-pts = [ exp(M, p, get_vector(M, p, 0.425*randn(2), B)) for _ in 1:n ]
+pts = [ exp(M, p, get_vector(M, p, 0.425 * randn(2), B)) for _ in 1:n ]
 
-F(M, y) = sum(1/(2*n) * distance.(Ref(M), pts, Ref(y)).^2)
-gradF(M, y) = sum(1/n * grad_distance.(Ref(M), pts, Ref(y)))
+F(M, y) = sum(1 / (2 * n) * distance.(Ref(M), pts, Ref(y)) .^ 2)
+gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), pts, Ref(y)))
 
 x_mean = gradient_descent(M, F, gradF, pts[1])
 ```
@@ -122,10 +122,11 @@ To obtain an array of values for one recorded value,
 use the access per symbol, i.e. from the `Iteration`s we want to access the recorded iterates `:x` as follows:
 
 ```julia
-o = gradient_descent(M, F, gradF, pts[1],
-    debug=[:Iteration, " | ", :Change, " | ", :Cost, "\n", :Stop],
-    record=[:x, :Change, :Cost],
-    return_state=true
+o = gradient_descent(
+    M, F, gradF, pts[1],
+    debug = [:Iteration, " | ", :Change, " | ", :Cost, "\n", :Stop],
+    record = [:x, :Change, :Cost],
+    return_state = true
 )
 x_mean_2 = get_solver_result(o) # the solver result
 all_values = get_record(o) # a tuple of recorded data per iteration

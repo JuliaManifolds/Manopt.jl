@@ -59,9 +59,9 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
         @test norm(M, p, get_subgradient(mp, p)) == 0
         @test_throws MethodError get_gradient(mp, sgs.p)
         @test_throws MethodError get_proximal_map(mp, 1.0, sgs.p, 1)
-        @test_throws MethodError get_proximal_map!(mp, 1.0, sgs.p, 1)
+        @test_throws MethodError get_proximal_map!(mp, X, 1.0, sgs.p, 1)
         @test_throws MethodError get_proximal_map(mp, 1.0, sgs.p)
-        @test_throws MethodError get_proximal_map!(mp, 1.0, sgs.p)
+        @test_throws MethodError get_proximal_map!(mp, X, 1.0, sgs.p)
         sgs2 = subgradient_method(M, f, ∂f, p0; return_state = true)
         p_star2 = get_solver_result(sgs2)
         @test get_subgradient(sgs2) == -∂f(M, p_star2)
@@ -96,6 +96,10 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
         @test isapprox(M, q1, p)
         @test isapprox(M, q2, p)
         @test isapprox(M, q3, p)
+        q4 = copy(M, p)  # start in the solution: the passed array must keep it
+        r4 = subgradient_method!(M, sgom, q4; stopping_criterion = StopAfterIteration(20))
+        @test r4 === q4
+        @test isapprox(M, q4, p)
         Random.seed!(23)
         q4 = subgradient_method(M, f, ∂f!; evaluation = InplaceEvaluation())
         @test isapprox(M, q4, p; atol = 0.5) # random point -> not that close

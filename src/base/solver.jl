@@ -9,6 +9,8 @@ Subsolver state indicating that a closed-form solution is available.
 """
 struct ClosedFormSubSolverState{} <: AbstractManoptSolverState end
 Base.show(io::IO, ::ClosedFormSubSolverState) = print(io, "ClosedFormSubSolverState()")
+# a closed form sub solver has no iterate to set
+set_iterate!(cfss::ClosedFormSubSolverState, ::AbstractManifold, p) = cfss
 status_summary(cfss::ClosedFormSubSolverState; context::Symbol = :default) = repr(cfss)
 
 @doc """
@@ -27,6 +29,19 @@ end
 status_summary(rst::ReturnSolverState; context::Symbol = :default) = status_summary(rst.state; context = context)
 show(io::IO, rst::ReturnSolverState) = print(io, "ReturnSolverState(", rst.state, ")")
 dispatch_state_decorator(::ReturnSolverState) = Val(true)
+# pass parameters through the decorator like the debug and record decorators do
+function set_parameter!(rst::ReturnSolverState, v::Val{T}, args...) where {T}
+    set_parameter!(rst.state, v, args...)
+    return rst
+end
+# Resolve an ambiguity since this also exists for abstract state
+function set_parameter!(rst::ReturnSolverState, v::Val{:StoppingCriterion}, args...)
+    set_parameter!(rst.state, v, args...)
+    return rst
+end
+function get_parameter(rst::ReturnSolverState, v::Val{T}, args...) where {T}
+    return get_parameter(rst.state, v, args...)
+end
 
 doc_get_solver_return = """
     get_solver_return(s::ReturnSolverState)
@@ -44,6 +59,15 @@ get_solver_return(s::ReturnSolverState) = s.state
 
 function decorate_state! end
 
+# Merge the (deprecated) `callback=` keyword into whatever was passed as `debug=`.
+_add_debug_callback(::Missing, cb::DebugAction) = cb
+_add_debug_callback(debug::Array, cb::DebugAction) = [debug..., cb]
+_add_debug_callback(debug::Union{Function, DebugAction}, cb::DebugAction) = [debug, cb]
+function _add_debug_callback(debug::Dict, ::DebugAction)
+    @warn "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually"
+    return debug
+end
+
 @doc """
     decorate_state!(s::AbstractManoptSolverState; kwargs...)
 
@@ -54,14 +78,14 @@ Decorate the [`AbstractManoptSolverState`](@ref) `s` with specific decorators.
 The optional arguments provide necessary details on the decorators.
 
 * `callback=missing`: (deprecated) add an arbitrary (simple) callback function `cb()` to be called every iteration.
-* `debug=Array{Union{Symbol,DebugAction,String,Int, Function},1}()`: a set of symbols
+* `debug=missing`: a set of symbols
   representing [`DebugAction`](@ref)s, `Strings` used as dividers and a sub-sampling
   integer. These are passed as a [`DebugGroup`](@ref) within `:Iteration` to the
   [`DebugSolverState`](@ref) decorator dictionary. A function is added as a (non-simple) callback within a [`DebugCallback`](@ref).
   Only exception is `:Stop` that is passed to `:Stop`.
-* `record=Array{Union{Symbol,RecordAction,Int},1}()`: specify recordings
+* `record=missing`: specify recordings
   by using `Symbol`s or [`RecordAction`](@ref)s directly.
-  An integer can again be used for only recording every ``k``-th iteration.
+  An integer can again be used for only recording every `n`-th iteration.
 * `return_state=false`: indicate whether to wrap the state in a [`ReturnSolverState`](@ref),
   indicating that the solver should return the state and not (only) the minimizer.
 
@@ -80,7 +104,7 @@ function decorate_state!(
             Function, # a function to indicate a (non-simple) callback
             DebugAction, # single one -> to :Iteration
             Array{DebugAction, 1}, # a group -> to :Iteration
-            Dict{Symbol, DebugAction}, # the most elaborate, a dictionary
+            Dict{Symbol, <:DebugAction}, # the most elaborate, a dictionary
             Array{<:Any, 1}, # short hand for Factory.
         } = missing,
         record::Union{
@@ -88,7 +112,7 @@ function decorate_state!(
             Symbol, # single action shortcut by symbol
             RecordAction, # single action -> to :Iteration
             Array{RecordAction, 1}, # a group -> to :Iteration
-            Dict{Symbol, RecordAction}, # a dictionary for precise settings
+            Dict{Symbol, <:RecordAction}, # a dictionary for precise settings
             Array{<:Any, 1}, # a formatted string with symbols or AbstractStateActions
         } = missing,
         callback = missing, # a (simple) callback function – deprecated
@@ -100,21 +124,10 @@ function decorate_state!(
     if !ismissing(callback) # we got a simple callback
         @warn """
             the `callback =` keyword/decorator step is deprecated, use
-            `callbacks = [:Step => [...]]` to add your callback to the (end of)
+            `callbacks = [:Step => (problem, state, k) -> ...]` to add your callback to the (end of)
             an iteration step
         """
-        if ismissing(debug)
-            debug = DebugCallback(callback; simple = true)
-        else
-            # From complex to simple, first array, since the other ones create an array
-            (debug isa Array) && push!(debug, DebugCallback(callback; simple = true))
-            if ((debug isa Function) || (debug isa DebugAction))
-                debug = [debug, DebugCallback(callback; simple = true)]
-            end
-            (debug isa Dict) && warn(
-                "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually",
-            )
-        end
+        debug = _add_debug_callback(debug, DebugCallback(callback; simple = true))
     end
     if !ismissing(debug) && !(debug isa AbstractArray && length(debug) == 0)
         deco_s = DebugSolverState(s, debug)
@@ -125,6 +138,8 @@ function decorate_state!(
     deco_s = (return_state) ? ReturnSolverState(deco_s) : deco_s
     return deco_s
 end
+
+deprecated_keywords(::typeof(decorate_state!)) = Set([:callback])
 
 function decorate_objective! end
 @doc """
@@ -163,9 +178,9 @@ function decorate_objective!(
         } = missing,
         count::Union{Missing, AbstractVector{<:Symbol}} = missing,
         objective_type::Symbol = :Riemannian,
-        p = objective_type == :Riemannian ? missing : rand(M),
-        _embedded_p = objective_type == :Riemannian ? missing : embed(M, p),
-        _embedded_X = objective_type == :Riemannian ? missing : embed(M, p, zero_vector(M, p)),
+        _p = objective_type == :Riemannian ? missing : rand(M),
+        _embedded_p = objective_type == :Riemannian ? missing : embed(M, _p),
+        _embedded_X = objective_type == :Riemannian ? missing : embed(M, _p, zero_vector(M, _p)),
         return_objective = false,
         kwargs...,
     ) where {O <: AbstractManifoldObjective}

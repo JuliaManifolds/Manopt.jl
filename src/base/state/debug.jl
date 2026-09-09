@@ -11,8 +11,8 @@ internally but does not trigger any output.
 
 # Fields (assumed by subtypes to exist)
 
-* `print`: method to perform the actual print. Can for example be set to a file export,
-  or to `@info`. The default is the `print` function on the default `Base.stdout`.
+* `io::IO`: the stream to print the debug output to. Can for example be set to a file
+  stream to export the output. The default is `stdout`.
 """
 abstract type DebugAction <: AbstractStateAction end
 
@@ -99,6 +99,8 @@ function get_parameter(dss::DebugSolverState, v::Val{T}, args...) where {T}
 end
 
 function status_summary(dst::DebugSolverState; context::Symbol = :default)
+    (context === :short) && return repr(dst)
+    (context === :inline) && (return "A DebugSolverState for $(status_summary(dst.state; context = context))")
     if length(dst.debug_dictionary) > 0
         s = ""
         for (k, v) in dst.debug_dictionary
@@ -121,8 +123,8 @@ dispatch_state_decorator(::DebugSolverState) = Val(true)
 """
     DebugGroup <: DebugAction
 
-Group a set of [`DebugAction`](@ref)s into one action, where the internal prints
-are removed by default and the resulting strings are concatenated.
+Group a set of [`DebugAction`](@ref)s into one action, where the actions are
+called in order and each one performs its own print.
 
 # Constructor
 
@@ -130,8 +132,7 @@ are removed by default and the resulting strings are concatenated.
 
 Construct a group consisting of an `Array` of [`DebugAction`](@ref)s `g`,
 that are evaluated _en bloc_; the method does not perform any print itself,
-but relies on the internal prints. It still concatenates the result and returns
-the complete string.
+but relies on the prints of its elements, each printing to its own `io`.
 """
 mutable struct DebugGroup{D <: DebugAction} <: DebugAction
     group::Vector{D}
@@ -163,7 +164,7 @@ end
 @doc """
     DebugEvery <: DebugAction
 
-Evaluate and print debug only every ``k``-th iteration. Otherwise no print is performed.
+Evaluate and print debug only every `every`-th iteration. Otherwise no print is performed.
 Whether internal variables are updated is determined by `always_update`.
 
 This method does not perform any print itself but relies on its children's print.
@@ -198,7 +199,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     # set activity for this iterate in sub solvers
     set_parameter!(
         st, Val(:SubState), Val(:Debug), Val(:Activity),
-        !(k < 1) && (rem(k + d.activation_offset, d.every) == 0),
+        rem(max(k, 0) + d.activation_offset, d.every) == 0,
     )
     return nothing
 end

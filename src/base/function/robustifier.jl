@@ -6,7 +6,7 @@ currently mainly used within [Levenberg-Marquardt](@ref).
 
 Usually these should be twice continuously differentiable functions with
 
-* ``ρ(0) = 0`` and ``ρ'(0) = 1``, to mimic the classical least squares behaviour around zero residuals
+* ``ρ(0) = 0`` and ``ρ'(0) = 1``, to mimic the classical least squares behavior around zero residuals
 * ``ρ'(x) < 1`` in outlier regions
 * ``ρ''(x) < 0`` in outlier regions
 

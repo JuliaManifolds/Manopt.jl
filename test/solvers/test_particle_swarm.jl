@@ -29,7 +29,7 @@ using Random
         g4 = particle_swarm(M, f)
         @test f(M, g4) < initF
 
-        # the cost of g and the p[i]'s are not greater after one step
+        # the cost of g and of the personal bests is not greater than at the start
         j = argmin([f(M, y) for y in p1])
         g0 = deepcopy(p1[j])
         @test f(M, g) <= f(M, g0) # global did not get worse
@@ -47,7 +47,7 @@ using Random
         X_start = [rand(M; vector_at = y) for y in p_start]
         p = DefaultManoptProblem(M, ManifoldCostObjective(f))
         o = ParticleSwarmState(M, zero.(p_start), X_start)
-        # test `set_iterate``
+        # test the `:Population` parameter
         Manopt.set_parameter!(o, :Population, p_start)
         @test sum(norm.(Manopt.get_parameter(o, :Population) .- p_start)) == 0
         initialize_solver!(p, o)
@@ -58,10 +58,19 @@ using Random
             # verify that the new velocities are tangent vectors of the original particle locations
             @test is_vector(M, p, v, true; atol = 2.0e-15)
         end
-        set_iterate!(o, p_start[1])
+        set_iterate!(o, M, p_start[1])
         @test get_iterate(o) == p_start[1]
     end
-    @testset "Spherical Particle Swarm" begin
+    @testset "A given velocity is not overwritten" begin
+        Ms = Sphere(2)
+        fs(N, q) = q[1]^2 + 2 * q[2]^2 + 5 * q[3]^2
+        swarm = [rand(Ms) for _ in 1:3]
+        v = [rand(Ms; vector_at = q) for q in swarm]
+        v0 = deepcopy(v)
+        particle_swarm(Ms, fs, swarm; velocity = v, stopping_criterion = StopAfterIteration(3))
+        @test all(isapprox.(Ref(Ms), swarm, v, v0))
+    end
+    @testset "Circle Particle Swarm" begin
         Random.seed!(42)
         M = Circle()
         f(::Circle, p) = p * 2 * p

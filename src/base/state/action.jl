@@ -203,7 +203,8 @@ end
 function (a::StoreStateAction)(
         amp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
-    (!a.once || a.last_stored != k) && (update_storage!(a, amp, s))
+    # a nonpositive k marks initialization, a reset or a non-printing call, none of them an iteration
+    (!a.once || a.last_stored != k || k <= 0) && (update_storage!(a, amp, s))
     a.last_stored = k
     return a
 end

@@ -255,6 +255,7 @@ end
         @test get_differential(M, lco, p, X) == inner(M, p, X, Y)
         @test get_count(lco, :Differential) == c + 1
         d = get_differential(M, lco, p, X) # cached
+        @test d == inner(M, p, X, Y)
         @test get_count(lco, :Differential) == c + 1
         # A second point to check cost grad cache
         # Staying at p eval cost_grad comes at no cost.
@@ -309,7 +310,7 @@ end
             M, co2i, (:LRU, [:Cost, :Gradient], [:cache_size => 10])
         )
         #
-        c = get_count(lco2a, :Cost) # usually 1 since creating `lco`` calls that once
+        c = get_count(lco2a, :Cost) # usually 1 since creating `lco2a` calls that once
         @test get_cost(M, lco2a, p) == 2.0
         @test get_cost(M, lco2a, p) == 2.0
         # but the second was cached so no cost evaluation
@@ -319,12 +320,12 @@ end
         @test X == f_f_grad(M, p)[2]
         Y = similar(X)
         #Update Y in-place but without evaluating the gradient but taking it from the cache
-        get_gradient!(M, Y, lco, p)
+        get_gradient!(M, Y, lco2a, p)
         @test Y == X
         # But is Y also fixed in there ? note that a reference to the cache was returned.
         Y .+= 1
         Z = similar(Y)
-        get_gradient!(M, Z, lco, p)
+        get_gradient!(M, Z, lco2a, p)
         @test Z == X
         get_gradient!(M, Y, lco, -p) #trigger cache with in-place
         @test Y == -X
@@ -397,7 +398,7 @@ end
         # And Hessian
         @test Manopt.get_hessian_function(obj_i) === Manopt.get_hessian_function(c_obj_i, true)
         Hess_f1! = Manopt.get_hessian_function(c_obj_i; evaluation = InplaceEvaluation())
-        @test Hess_f1 != Hess_f
+        @test Hess_f1! != Hess_f!
         @test Hess_f1!(M, Y, p, X) == Hess_f!(M, Z, p, X)
         #
         # Simple

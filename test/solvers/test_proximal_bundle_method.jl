@@ -1,10 +1,9 @@
 using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
-import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolver!
 
 @testset "The Proximal Bundle Method" begin
     M = Hyperbolic(4)
     p = [0.0, 0.0, 0.0, 0.0, 1.0]
-    p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
+    p0 = exp(M, p, [1.0, 0.0, 0.0, 0.0, 0.0])
     pbms = ProximalBundleMethodState(M; p = p0, stopping_criterion = StopAfterIteration(200))
     @test get_iterate(pbms) == p0
     # Check that Manifold+State is erroring since a problem is missing
@@ -13,6 +12,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
     @testset "Special Stopping Criteria" begin
         sc1 = StopWhenLagrangeMultiplierLess(1.0e-8)
         @test startswith(repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)")
+        @test Manopt.indicates_convergence(sc1)
         @test get_reason(sc1) == ""
         # Trigger manually
         sc1.at_iteration = 2
@@ -52,15 +52,25 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         @test f(M, p_star2) <= f(M, p0)
         set_iterate!(pbms2, M, p)
         @test get_iterate(pbms2) == p
+        @test isapprox(M, Manopt.get_state(pbms2).p, p) # the iterate follows as well
+        #
+        # Check bundle trimming
+        pbms3 = proximal_bundle_method(
+            M, f, ∂f, p0; m = 2.0, bundle_size = 2,
+            stopping_criterion = StopAfterIteration(6), return_state = true,
+        )
+        @test length(pbms3.bundle) == 2
+        @test length(pbms3.lin_errors) == 2
+        @test length(pbms3.approx_errors) == 2
         # Test warnings
         dw1 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 0.0)
         dw1(mp, pbms, 1) #do one normal run.
-        @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"0.0\")"
+        @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=0.0)"
         pbms.ν = 101.0
         @test_logs (:warn,) dw1(mp, pbms, 2)
         dw2 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 1.0e1)
         dw2.old_value = -101.0
-        @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"10.0\")"
+        @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=10.0)"
         pbms.ν = -1.0
         @test_logs (:warn,) (:warn,) dw2(mp, pbms, 1)
     end
@@ -98,6 +108,12 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             debug = [],
         )
         p_star2 = get_solver_result(s2)
+        # with the fix, the all-default in-place call works too (in-place subsolver chosen)
+        q_ip = proximal_bundle_method(
+            M, f, ∂f!, copy(p0);
+            stopping_criterion = StopAfterIteration(200), evaluation = InplaceEvaluation(),
+        )
+        @test isapprox(M, q_ip, p_star2; atol = 1.0e-8)
         @test f(M, p_star2) <= f(M, p0)
     end
     @testset "A simple median run" begin
@@ -165,7 +181,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
     @testset "Trigger the case where the bundle is not transported" begin
         M = Hyperbolic(4)
         p = [0.0, 0.0, 0.0, 0.0, 1.0]
-        p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
+        p0 = exp(M, p, [1.0, 0.0, 0.0, 0.0, 0.0])
         pbms = ProximalBundleMethodState(M; p = p0, stopping_criterion = StopAfterIteration(200))
         f(M, q) = distance(M, q, p)
         ∂f(M, q) = (distance(M, p, q) == 0) ? zero_vector(M, q) : (-log(M, q, p) / max(10 * eps(Float64), distance(M, p, q)))

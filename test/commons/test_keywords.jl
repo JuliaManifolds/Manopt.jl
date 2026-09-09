@@ -9,19 +9,24 @@ using Manopt, Test
         @test contains(repr(kwd), "A set of") #default for from=nothing
         kwds = Manopt.Keywords(Set{Symbol}(), Set([:a, :b]); from = show)
         @test contains(repr(kwds), "show")
-        @test contains(repr(kwd), "deprecated")
+        @test contains(repr(kwds), "deprecated")
         kwds2 = copy(kwds)
         @test repr(kwds) == repr(kwds2)
         @test repr(Manopt.Keywords()) == "Keywords()"
-        # Test repr for one without deprecatedkwd
-        @test contains(repr(kwd), "accepted: none")
+        # Test repr for one without deprecated keywords
         kwa = Manopt.Keywords(Set([:a, :b]))
+        @test !contains(repr(kwa), "deprecated")
         @test contains(repr(kwa), "accepted")
         @test contains(repr(kwa), "* a")
         @test contains(repr(kwa), "* b")
         kwa.origins[:a] = [repr]
         @test contains(repr(kwa), "passed on to repr")
 
+    end
+    @testset "p is not a solver keyword" begin
+        # `p` is the start point, `decorate_objective!` must not make it an accepted keyword
+        @test :p ∉ Manopt.accepted_keywords(gradient_descent).accepted
+        @test :p ∉ Manopt.accepted_keywords(trust_regions).accepted
     end
     @testset "check errors" begin
         @test Manopt.keywords_accepted(show, :error, Manopt.Keywords(Set([:a])))

@@ -1,4 +1,4 @@
-# Modelling functions in Manopt.jl
+# Modeling functions in Manopt.jl
 
 ```@meta
 CurrentModule = Manopt
@@ -18,15 +18,15 @@ the return value is second and then the arguments follow.
 
 A user might instead also implement a function `grad_f(M, p) -> X`. This is then
 internally “wrapped” by an [`InplaceManifoldFunction`](@ref) and can be specified for any
-[`AbstractManifoldObjective`](@ref) or [high-level interfaces](high-level-interface.md)
+[`AbstractManifoldObjective`](@ref) or [high-level interface](high-level-interface.md)
 with the `evaluation=` keyword that accepts an [`AbstractEvaluationType`](@ref)
-and for the example here one specifies it as [`AllocatingEvaluation`](@ref)`()`.
+and for the example here, one specifies it as [`AllocatingEvaluation`](@ref)`()`.
+Internally, this wrapping is performed by [`maybe_wrap_function`](@ref).
 
 ```@docs
 AbstractEvaluationType
 AllocatingEvaluation
 InplaceEvaluation
-maybe_wrap_function
 ```
 
 ## A wrapper to guarantee mutating variables
@@ -39,11 +39,7 @@ are automatically wrapped internally. Similarly, functions can be wrapped in a [
 Both the [`AbstractManifoldObjective`](@ref) and [high-level interfaces](high-level-interface.md)
 can determine this when being passed a `p=` keyword argument providing the point used to define
 functions on the manifold.
-
-```@docs
-maybe_wrap_variable
-maybe_unwrap_variable
-```
+Internally, this wrapping is performed by [`maybe_wrap_variable`](@ref) and undone again by [`maybe_unwrap_variable`](@ref).
 
 ## Abstract function types
 
@@ -55,9 +51,9 @@ Private = true
 Public = true
 ```
 
-## [Functions modelling constraints](@id sec-constrained-function)
+## [Functions modeling constraints](@id sec-constrained-function)
 
-Functions modelling constraints can be defined with the following interface.
+Functions modeling constraints can be defined with the following interface.
 
 ### Types and functions
 
@@ -88,7 +84,7 @@ Public = true
 ## [Functions that map into vector spaces](@id sec-vector-function)
 
 For functions on manifolds that map into a vector space, this section defines
-an interface to define both the functions as well as their derivative information.
+an interface to define both the functions and their derivative information.
 Since the derivative information is given in tangent spaces, several different representations
 are available.
 

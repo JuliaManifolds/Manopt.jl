@@ -45,6 +45,14 @@ using Manifolds, Manopt, Random, Test
         end
         return q
     end
+    @testset "A manifold with numbers as points" begin
+        Mc = Circle()
+        fc(N, q) = (q - 0.3)^2
+        grad_fc(N, q) = 2 * (q - 0.3)
+        proj_c(N, q) = clamp(q, -0.2, 0.2)
+        qc = projected_gradient_method(Mc, fc, grad_fc, proj_c, 0.0)
+        @test qc isa Float64
+    end
     mean_pg_1 = projected_gradient_method(
         M, f, grad_f, project_C, c;
         stopping_criterion = StopAfterIteration(150) | StopWhenProjectedGradientStationary(M, 1.0e-7),
@@ -55,6 +63,8 @@ using Manifolds, Manopt, Random, Test
         stopping_criterion = StopAfterIteration(150) | StopWhenProjectedGradientStationary(M, 1.0e-7),
     )
     @test isapprox(M, mean_pg_1, mean_pg_2)
+    # the result has to be feasible, that is inside the ball of radius `r` around `c`
+    @test distance(M, c, mean_pg_1) <= r + 1.0e-12
     mean_pg_3 = copy(M, c)
     st = projected_gradient_method!(
         M, f, grad_f!, project_C!, mean_pg_3;

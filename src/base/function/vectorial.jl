@@ -104,6 +104,7 @@ a vector of data.
 """
 get_range(vt::FunctionVectorialType) = vt.range
 get_range(::AbstractVectorialType) = NestedPowerRepresentation()
+get_range(::Nothing) = NestedPowerRepresentation()
 
 FunctionVectorialType() = FunctionVectorialType(NestedPowerRepresentation())
 
@@ -151,7 +152,7 @@ that is the number `n`.
 """
 Base.length(vgf::AbstractVectorFunction) = vgf.range_dimension
 
-@doc """
+_doc_get_value = """
     get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p[, i=:])
     get_value!(M::AbstractManifold, V, vgf::AbstractVectorFunction, p[, i=:])
 
@@ -167,6 +168,8 @@ Since `i` is assumed to be a linear index, you can provide
 
 This function can perform the evaluation in-place of `V`.
 """
+
+@doc "$(_doc_get_value)"
 get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p, i)
 function get_value(
         M::AbstractManifold, vgf::AbstractVectorFunction{<:ComponentVectorialType}, p, i::Integer,
@@ -185,6 +188,7 @@ function get_value(
     vgf.value!(M, value_cache, p)
     return value_cache[i]
 end
+@doc "$(_doc_get_value)"
 function get_value!(
         M::AbstractManifold, V, vgf::AbstractVectorFunction{<:FunctionVectorialType}, p, i = :;
         value_cache = zeros(vgf.range_dimension),
@@ -256,10 +260,16 @@ function _change_basis!(
     end
     return JF
 end
-# case we have the same basis: nothing to do, just return JF
+# case of the same basis type: if the two bases agree there is nothing to do, but bases of the
+# same type can still differ, for example two different `CachedBasis`, then change as usual
 function _change_basis!(
-        M, JF, p, from_basis::B, to_basis_new::B; kwargs...
+        M, JF, p, from_basis::B, to_basis_new::B; X = zero_vector(M, p)
     ) where {B <: AbstractBasis}
+    (from_basis == to_basis_new) && return JF
+    for i in 1:size(JF, 1) # every row
+        get_vector!(M, X, p, view(JF, i, :), from_basis)
+        get_coordinates!(M, view(JF, i, :), p, X, to_basis_new)
+    end
     return JF
 end
 
@@ -277,7 +287,8 @@ add_adjoint_jacobian!(M::AbstractManifold, X, vgf::AbstractFirstOrderVectorFunct
 _doc_add_adjoint_jacobian_function_coeff = """
     add_adjoint_jacobian!(M::AbstractManifold, c, vgf::AbstractFirstOrderVectorFunction, p, a, B::AbstractBasis; kwargs...)
 
-Compute the adjoint Jacobian ``J_F^*(p)[a]`` of a vectorial function ``F: $(_math(:Manifold)) → ℝ^n`` as a matrix in a tangent space.
+Compute the coordinates of the adjoint Jacobian ``J_F^*(p)[a]`` of a vectorial function ``F: $(_math(:Manifold)) → ℝ^n``
+with respect to the basis `B` and add them to `c`.
 For more details see [`get_adjoint_jacobian`](@ref).
 """
 
@@ -363,7 +374,7 @@ function get_adjoint_jacobian!(
     return add_adjoint_jacobian!(M, X, vgf, p, a; kwargs...)
 end
 
-@doc """
+_doc_get_gradient_vgf = """
     get_gradient(M::AbstractManifold, vgf::AbstractFirstOrderVectorFunction, p, i)
     get_gradient(M::AbstractManifold, vgf::AbstractFirstOrderVectorFunction, p, i, range)
     get_gradient!(M::AbstractManifold, X, vgf::AbstractFirstOrderVectorFunction, p, i)
@@ -380,8 +391,14 @@ Since `i` is assumed to be a linear index, you can provide
 * an `AbstractVector{<:Integer}` to specify indices
 * `:` to return the vector of all gradients
 """
+@doc "$(_doc_get_gradient_vgf)"
 get_gradient(
     M::AbstractManifold, vgf::AbstractFirstOrderVectorFunction,
+    p, i, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
+)
+@doc "$(_doc_get_gradient_vgf)"
+get_gradient!(
+    M::AbstractManifold, X, vgf::AbstractFirstOrderVectorFunction,
     p, i, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
 )
 
@@ -390,10 +407,10 @@ _doc_get_jacobian_matrix_vgf = """
     get_jacobian!(M::AbstractManifold, J, vgf::AbstractFirstOrderVectorFunction, p; kwargs...)
 
 Return the Jacobian ``J_F(p): $(_math(:TangentSpace)) → ℝ^m`` of an [`AbstractFirstOrderVectorFunction`](@ref) `vgf`,
-that is of a function ``F: $(_math(:Manifold)) → ℝ^m``, where `p ∈ $(_math(:Manifold))`, in matrix form with respect to
-a basis ``$(_tex(:Cal, "B")) = $(_tex(:set, "Y_1,…,Y_n"))`` of the tangent space.
+that is of a function ``F: $(_math(:Manifold)) → ℝ^m``, where ``p ∈ $(_math(:Manifold))``, in matrix form with respect to
+a basis ``$(_tex(:Cal, "B")) = $(_tex(:set, "Y_1,…,Y_d"))`` of the tangent space.
 
-Then decomposing a tangent vector ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) c_iY_i``
+Then decomposing a tangent vector ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "d")) c_iY_i``
 the evaluation of the Jacobian can be written as
 
 ````math
@@ -448,7 +465,7 @@ J_F(p)[X] = $(
 ) ∈ ℝ^m
 ````
 
-Given a basis ``$(_tex(:set, "Y_1,…,Y_n"))`` this can also be computed in coordinates of this basis.
+Given a basis ``$(_tex(:set, "Y_1,…,Y_d"))`` this can also be computed in coordinates of this basis.
 Then it simplifies to a matrix multiplication.
 
 This can be computed in-place of `a`.
@@ -479,6 +496,8 @@ the function and the gradient are provided, see [`AbstractVectorFunction`](@ref)
 abstract type AbstractVectorGradientFunction{
     FT <: AbstractVectorialType, JT <: AbstractVectorialType,
 } <: AbstractFirstOrderVectorFunction{FT, JT} end
+
+get_range(vgf::AbstractVectorGradientFunction) = get_range(vgf.jacobian_type)
 
 #
 #
@@ -678,7 +697,7 @@ end
 # (a) We have a single gradient function
 function get_jacobian!(
         M::AbstractManifold, JF, vgf::VGF, p;
-        basis::AbstractBasis = default_basis(M, typeof(p)), range::AbstractPowerRepresentation = get_range(vgf.jacobian_type),
+        basis::AbstractBasis = get_basis(vgf.jacobian_type), range::AbstractPowerRepresentation = get_range(vgf.jacobian_type),
         Y_cache = nothing, c_cache = nothing,
     ) where {FT, VGF <: AbstractVectorGradientFunction{FT, <:FunctionVectorialType}}
     mP = PowerManifold(M, range, vgf.range_dimension)
@@ -707,7 +726,7 @@ function get_jacobian!(
         M::AbstractManifold, JF, vgf::VGF, p;
         basis::AbstractBasis = get_basis(vgf.jacobian_type), range = nothing, X = nothing, Y_cache = nothing,
     ) where {
-        FT, VGF <: AbstractVectorGradientFunction{FT, <:CoefficientVectorialType},
+        FT, VGF <: AbstractFirstOrderVectorFunction{FT, <:CoefficientVectorialType},
     }
     vgf.jacobian!(M, JF, p)
     _change_basis!(M, JF, p, vgf.jacobian_type.basis, basis)
@@ -717,7 +736,7 @@ end
 #
 #
 # --- Jacobian in linear operator form
-# (a) Inplace single function – skip for now since allocation not so easy? we would need a power version of the point p
+# (a) a single gradient function
 function get_jacobian!(
         M::AbstractManifold, a, vgf::AbstractVectorGradientFunction{FT, <:FunctionVectorialType}, p, X;
         range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
@@ -744,7 +763,6 @@ function get_jacobian!(
     end
     return a
 end
-
 _doc_get_jacobian_function_coord = """
     get_jacobian(M::AbstractManifold, vgf::AbstractFirstOrderVectorFunction, p, c, B::AbstractBasis; kwargs...)
     get_jacobian!(M::AbstractManifold, a, vgf::AbstractFirstOrderVectorFunction, p, c, B::AbstractBasis; kwargs...)
@@ -757,15 +775,15 @@ with respect to the basis `B`, that is, compute
 J_F(p)[X] = DF(p)[X] ∈ ℝ^m
 ````
 
-where the basis ``B = $(_tex(:set, "Y_1,…,Y_n"))`` allows to decompose / provide the tangent vector
-in coordinates ``c`` given by ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) c_iY_i``
+where the basis ``B = $(_tex(:set, "Y_1,…,Y_d"))`` allows to decompose / provide the tangent vector
+in coordinates ``c`` given by ``X = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "d")) c_iY_i``
 and the computation simplifies to a matrix multiplication.
 
 This can be computed in-place of `a`.
 
 # Keyword arguments
 
-$(_kwargs(:X)) It is used as memory to compute the interim tangent vector where necessary,
+$(_kwargs(:X)). It is used as memory to compute the interim tangent vector where necessary,
   and is non-allocating and/or ignored where it is not.
 
 !!! note "Technical note"
@@ -805,18 +823,15 @@ function get_jacobian!(
 end
 # (c) Jacobian function
 function get_jacobian!(
-        M::AbstractManifold, a, vgf::AbstractVectorGradientFunction{FT, <:CoefficientVectorialType}, p, c, B::AbstractBasis;
+        M::AbstractManifold, a, vgf::AbstractFirstOrderVectorFunction{FT, <:CoefficientVectorialType}, p, c, B::AbstractBasis;
         X = nothing, Y_cache = nothing,
     ) where {FT}
     JF = allocate_jacobian(M, vgf; T = eltype(c))
     vgf.jacobian!(M, JF, p)
-    a .= JF * c
+    if vgf.jacobian_type.basis === B
+        a .= JF * c
+    else
+        a .= JF * change_basis(M, p, c, B, vgf.jacobian_type.basis)
+    end
     return a
 end
-
-
-function get_jacobian_basis(vgf::AbstractVectorGradientFunction)
-    return _get_jacobian_basis(vgf.jacobian_type)
-end
-_get_jacobian_basis(jt::AbstractVectorialType) = DefaultOrthonormalBasis()
-_get_jacobian_basis(jt::CoefficientVectorialType) = jt.basis

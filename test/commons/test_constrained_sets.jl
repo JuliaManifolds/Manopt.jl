@@ -10,12 +10,9 @@ using Manifolds, Manopt, Random, Test
     # N random points moved to top left to have a mean outside
     pts = [
         exp(
-            M,
-            c,
+            M, c,
             get_vector(
-                M,
-                c,
-                σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
+                M, c, σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
                 DefaultOrthonormalBasis(),
             ),
         ) for _ in 1:N
@@ -60,8 +57,17 @@ using Manifolds, Manopt, Random, Test
         f, grad_f!, project_C!; evaluation = InplaceEvaluation(), indicator = indicator_C
     )
 
+    # a point outside of C, at distance 2r from its center c
+    q_out = exp(M, c, get_vector(M, c, [2 * r, 0.0], DefaultOrthonormalBasis()))
+
     for objective in [csoa, csoa2, csoi, csoi2]
         @test get_cost(M, objective, c) == f(M, c)
+        @test startswith(repr(objective), "ManifoldConstrainedSetObjective(")
+        @test Manopt.status_summary(objective; context = :short) == repr(objective)
+        @test startswith(Manopt.status_summary(objective; context = :inline), "A set-constrained objective of")
+        @test startswith(Manopt.status_summary(objective), "A set-constrained objective\n")
+        @test objective.indicator(M, c) == 0
+        @test isinf(objective.indicator(M, q_out))
         @test Manopt.get_cost_function(objective)(M, c) == f(M, c)
         @test get_gradient(M, objective, c) == grad_f(M, c)
         X = zero_vector(M, c)
@@ -72,7 +78,7 @@ using Manifolds, Manopt, Random, Test
         if objective ∈ [csoa, csoa2]
             @test Manopt.get_gradient_function(objective)(M, c) == grad_f(M, c)
         else
-            Manopt.get_gradient_function(objective; evaluation = InplaceEvaluation())(M, X, c) == grad_f!(M, Y, c)
+            @test Manopt.get_gradient_function(objective; evaluation = InplaceEvaluation())(M, X, c) == grad_f!(M, Y, c)
             @test X == Y
         end
         dmp = DefaultManoptProblem(M, objective)
@@ -84,5 +90,10 @@ using Manifolds, Manopt, Random, Test
         @test p == c
         get_projected_point!(M, p, objective, c)
         @test p == c
+        # and a point outside of C is projected onto its boundary
+        p = get_projected_point(M, objective, q_out)
+        @test isapprox(distance(M, c, p), r)
+        get_projected_point!(M, p, objective, q_out)
+        @test isapprox(distance(M, c, p), r)
     end
 end

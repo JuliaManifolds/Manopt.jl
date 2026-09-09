@@ -30,7 +30,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @test startswith(repr(rs), "RecordSolverState(")
     @test contains(repr(rs), "RecordIteration()")
     @test Manopt.status_summary(rs; context = :short) == repr(rs)
-    Manopt.set_parameter!(rs, :Record, RecordCost())
+    @test Manopt.set_parameter!(rs, :Record, RecordCost()) === rs
     @test Manopt.dispatch_state_decorator(rs) === Val{true}()
     @test get_state(gds) == gds
     @test get_state(rs) == gds
@@ -146,7 +146,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test d.recorded_values == [0.0, 1.0] # no p0 -> assume p is the first iterate
         e = RecordChange([4.0, 2.0])
         e(dmp, gds, 1)
-        @test e.recorded_values == [1.0] # no p0 -> assume p is the first iterate
+        @test e.recorded_values == [1.0] # p0 given -> change is measured against it
 
         dinvretr = RecordChange(; inverse_retraction_method = PolarInverseRetraction())
         dmani = RecordChange(SymplecticMatrices(2))
@@ -215,10 +215,20 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test Manopt.status_summary(rss; context = :short) == ":Subsolver"
         @test startswith(Manopt.status_summary(rss), "A RecordAction to record elements from each subsolver")
         epms = ExactPenaltyMethodState(M, dmp, rs)
+        Manopt.get_record_action(rs)(dmp, gds, 1)
         rss(dmp, epms, 1)
+        @test get_record(rss) == [[1]]
+        rss(dmp, epms, -1) # reset
+        @test length(get_record(rss)) == 0
     end
     @testset "RecordWhenActive" begin
         i = RecordIteration()
+        # with a frequency of one the sub solver stays active for the first iteration
+        rWA = RecordWhenActive(RecordIteration(), false)
+        sub_st = RecordSolverState(GradientDescentState(M; p = p), rWA)
+        trs = TrustRegionsState(M, dmp, sub_st)
+        RecordEvery(RecordIteration(), 1)(dmp, trs, -1)
+        @test rWA.active
         rwa = RecordWhenActive(i)
         @test repr(rwa) == "RecordWhenActive(RecordIteration(), true, true)"
         @test Manopt.status_summary(rwa; context = :short) == repr(rwa)
@@ -241,6 +251,10 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     end
     @testset "Manopt.RecordFactory" begin
         gds.X = [0.0, 0.0]
+        # an entry vector without an action gives an empty group instead of an error
+        @test get_record(Manopt.RecordGroupFactory(gds, Any[])) == Any[]
+        @test RecordFactory(gds, [:Iteration => [], :Stop]) isa Dict
+        @test RecordFactory(gds, [:Iteration => [5]]) isa Dict
         rf = RecordFactory(gds, [:Cost, :X])
         @test isa(rf[:Iteration], RecordGroup)
         @test isa(rf[:Iteration].group[1], RecordCost)
@@ -297,26 +311,27 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test length(RecordGroup([RecordCost(), RecordIteration() => :It]).group) == 2
     end
     @testset "RecordTime" begin
-        h1 = RecordTime(; mode = :cumulative)
-        @test repr(h1) == "RecordTime(; mode=:cumulative)"
+        h1 = RecordTime(; mode = :Cumulative)
+        @test repr(h1) == "RecordTime(; mode=:Cumulative)"
         @test Manopt.status_summary(h1, context = :short) == ":Time"
         @test startswith(Manopt.status_summary(h1), "A RecordAction for recording times")
         t = h1.start
         @test t isa Nanosecond
         h1(dmp, gds, 1)
         @test h1.start == t
-        h2 = RecordTime(; mode = :iterative)
+        h2 = RecordTime(; mode = :Iterative)
         t = h2.start
         @test t isa Nanosecond
         sleep(0.002)
         h2(dmp, gds, 1)
         @test h2.start != t
-        h3 = RecordTime(; mode = :total)
+        h3 = RecordTime(; mode = :Total)
         h3(dmp, gds, 1)
         h3(dmp, gds, 10)
         h3(dmp, gds, 19)
         @test length(h3.recorded_values) == 0
-        # stop after 20 so 21 hits
+        # the criterion stops at 20, so this call records
+        gds.stop(dmp, gds, 20)
         h3(dmp, gds, 20)
         @test length(h3.recorded_values) == 1
         @test repr(RecordGradientNorm()) == "RecordGradientNorm()"
@@ -328,5 +343,45 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         r = RecordSolverState(s, RecordIteration())
         Manopt.set_parameter!(r, :value, 1)
         @test Manopt.get_parameter(r, :value) == 1
+    end
+    @testset "RecordTime(:Total) resets" begin
+        Mt = ManifoldsBase.DefaultManifold(2)
+        pt = [1.0, 2.0]
+        ft(M, q) = sum(q .^ 2)
+        grad_ft(M, q) = 2 .* q
+        mpt = DefaultManoptProblem(Mt, ManifoldGradientObjective(ft, grad_ft))
+        st = GradientDescentState(Mt; p = copy(pt), stopping_criterion = StopAfterIteration(5))
+        for mode in (:Total, :Cumulative)
+            rt = RecordTime(; mode = mode)
+            push!(rt.recorded_values, Nanosecond(42))
+            rt(mpt, st, -1)
+            @test isempty(rt.recorded_values)
+        end
+    end
+    @testset "RecordIterate from a type" begin
+        @test RecordIterate(Vector{Float64}) isa RecordIterate{Vector{Float64}}
+        @test RecordIterate([1.0, 2.0]) isa RecordIterate{Vector{Float64}}
+    end
+    @testset "get_record_action resolves the decorator chain" begin
+        M = Euclidean(2)
+        gds = GradientDescentState(M; p = [1.0, 2.0])
+        r = RecordSolverState(gds, RecordIteration())
+        d = DebugSolverState(r, DebugDivider(""))
+        # reachable both directly and through a further decorator
+        @test Manopt.get_record_action(r) === Manopt.get_record_action(d)
+        @test Manopt.get_record_action(d) isa RecordIteration
+    end
+    @testset "records in :Start record once at initialization" begin
+        M = Euclidean(2)
+        q0 = [1.0, 2.0]
+        # `f` is rebound to a record action by the "RecordIterate" testset above, so use fresh names
+        f_start(M, q) = distance(M, q, p)^2
+        grad_f_start(M, q) = -2 * log(M, q, p)
+        rs = gradient_descent(
+            M, f_start, grad_f_start, q0; record = [:Start => [:Cost, :Iterate], :Iteration => [:Cost]],
+            return_state = true, stopping_criterion = StopAfterIteration(2),
+        )
+        @test get_record(rs, :Start) == [(f_start(M, q0), q0)]
+        @test length(get_record(rs, :Iteration)) == 2
     end
 end

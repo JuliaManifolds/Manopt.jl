@@ -1,4 +1,13 @@
 using LinearAlgebra, Manifolds, Manopt, Random, Test
+
+# a step size that records the direction it is handed, to check that one is passed at all
+struct RecordingStepsize <: Manopt.Stepsize
+    directions::Vector{Any}
+end
+function (s::RecordingStepsize)(amp, ams, k, η = nothing; kwargs...)
+    push!(s.directions, η)
+    return 1.0
+end
 import Manifolds: inner
 
 @testset "Difference of Convex" begin
@@ -49,8 +58,10 @@ import Manifolds: inner
         @test dcs.p == p1
         set_gradient!(dcs, M, p1, X1)
         @test dcs.X == X1
-        Manopt.set_parameter!(dcs, :SubProblem, :X, X1)
-        Manopt.set_parameter!(dcs, :SubState, :X, X1)
+        Manopt.set_parameter!(dcs, :SubProblem, :Objective, :Cost, :X, X1)
+        @test Manopt.get_cost_function(Manopt.get_objective(dcs.sub_problem)).Xk == X1
+        Manopt.set_parameter!(dcs, :SubState, :StoppingCriterion, :MaxIteration, 5)
+        @test dcs.sub_state.stop.criteria[1].max_iterations == 5
 
         dcppa_sub_cost = ProximalDCCost(g, copy(M, p0), 1.0)
         dcppa_sub_grad = ProximalDCGrad(grad_g, copy(M, p0), 1.0)
@@ -70,7 +81,7 @@ import Manifolds: inner
         set_gradient!(dcps, M, p1, X1)
         @test dcps.X == X1
         # Dummy closed form sub
-        dcpsc = DifferenceOfConvexProximalState(M, f, AllocatingEvaluation())
+        dcpsc = DifferenceOfConvexProximalState(M, f; evaluation = AllocatingEvaluation())
         @test dcpsc.sub_state isa Manopt.ClosedFormSubSolverState
 
         dc_cost_a = ManifoldDifferenceOfConvexObjective(f, grad_h)
@@ -128,12 +139,27 @@ import Manifolds: inner
             M, grad_h!, p0; g = g, grad_g = (grad_g!), evaluation = InplaceEvaluation()
         )
         p5 = difference_of_convex_proximal_point(M, grad_h, p0; g = g, grad_g = grad_g)
+        # the solver hands the direction it steps along to the step size
+        rs = RecordingStepsize(Any[])
+        difference_of_convex_proximal_point(
+            M, grad_h, p0; g = g, grad_g = grad_g, stepsize = rs,
+            stopping_criterion = StopAfterIteration(1),
+        )
+        @test !isempty(rs.directions)
+        @test !isnothing(rs.directions[1])
         p5b = difference_of_convex_proximal_point(M, grad_h; g = g, grad_g = grad_g)
         # using gradient descent
         p5c = difference_of_convex_proximal_point(
             M, grad_h, p0; g = g, grad_g = grad_g, sub_hess = missing,
             stopping_criterion = StopAfterIteration(10), # is not that stable
         )
+        # also providing the cost – usually only useful for e.g. debug
+        p5d = difference_of_convex_proximal_point(M, f, grad_h, p0; g = g, grad_g = grad_g)
+        @test isapprox(M, p5, p5d)
+        p5e = copy(M, p0)
+        difference_of_convex_proximal_point!(M, f, grad_h, p5e; g = g, grad_g = grad_g)
+        @test isapprox(M, p5, p5e)
+
         s2 = difference_of_convex_proximal_point(
             M, grad_h, p0; g = g, grad_g = grad_g, gradient = grad_f, return_state = true
         )

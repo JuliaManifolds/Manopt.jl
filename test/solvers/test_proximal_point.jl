@@ -37,9 +37,32 @@ using ManifoldDiff: prox_distance, prox_distance!
     @test startswith(Manopt.status_summary(obj), "A proximal map objective")
 
     dpp = DebugProximalParameter()
-    @test startswith(repr(dpp), "DebugGradientChange(; io")
+    @test startswith(repr(dpp), "DebugProximalParameter(; io")
     @test startswith(Manopt.status_summary(dpp), "A DebugAction printing the proximal parameter")
     rpp = RecordProximalParameter()
     @test startswith(repr(rpp), "RecordProximalParameter(")
     @test startswith(Manopt.status_summary(rpp), "A RecordAction to record the current proximal parameter")
+    @testset "Set iterate and the proximal parameter" begin
+        pps4 = ProximalPointState(M; p = copy(M, p0))
+        @test set_iterate!(pps4, M, q) === pps4
+        @test get_iterate(pps4) == q
+        r = proximal_point(
+            M, prox_f, p0; λ = k -> 1.0 / k, record = [RecordProximalParameter()],
+            stopping_criterion = StopAfterIteration(3), return_state = true,
+        )
+        @test get_record(r) == [1.0, 0.5, 1 / 3]
+        # and the debug action prints the same values
+        iod = IOBuffer()
+        proximal_point(
+            M, prox_f, p0; λ = k -> 1.0 / k,
+            debug = [DebugProximalParameter(; io = iod, at_init = false)],
+            stopping_criterion = StopAfterIteration(2),
+        )
+        @test String(take!(iod)) == "λ:1.0λ:0.5"
+    end
+    @testset "Number representation on the Circle" begin
+        qc = proximal_point(Circle(), (M, λ, p) -> prox_distance(M, λ, -0.3, p, 1), 0.9)
+        @test qc isa Float64
+        @test isapprox(Circle(), qc, -0.3; atol = 1.0e-4)
+    end
 end

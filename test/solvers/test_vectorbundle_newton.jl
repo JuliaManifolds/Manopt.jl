@@ -75,19 +75,15 @@ using LinearAlgebra: eigvals
             alg_kwargs...
         )
         @test y1 == y3
-        y4 = copy(M, y0) # avoid working inplace of y0
-        Manopt.vectorbundle_newton!(
-            M, TangentBundle(M), NE, y4; sub_problem = solve_augmented_system,
-            alg_kwargs...
-        )
-        @test y1 == y4
+        # the in-place variant returns the point it worked in place of
+        @test vbns === y3
 
         # test access on the VB Problem
         vbp = VectorBundleManoptProblem(M, TangentBundle(M), NE)
         @test Manopt.get_newton_equation(vbp) === NE
         @test startswith(Manopt.status_summary(vbp; context = :inline), "A vector bundle problem defined on $(M)")
         vbp_s = Manopt.status_summary(vbp; context = :default)
-        @test startswith(vbp_s, "A vector bundle problem representing a vector bundle newton equation objective")
+        @test startswith(vbp_s, "A vector bundle problem representing a vector bundle Newton equation objective")
         @test contains(vbp_s, "## Manifold")
         @test startswith(repr(vbp), "VectorBundleManoptProblem(")
     end
@@ -132,6 +128,10 @@ using LinearAlgebra: eigvals
         function solve_augmented_system(problem, newtonstate)
             return ((problem.newton_equation.A) \ (-problem.newton_equation.b))[1:(end - 1)]
         end
+        function solve_augmented_system!(problem, X, newtonstate)
+            X .= ((problem.newton_equation.A) \ (-problem.newton_equation.b))[1:(end - 1)]
+            return X
+        end
 
         y0 = zeros(N)
         y0[2] = 1.0
@@ -150,13 +150,23 @@ using LinearAlgebra: eigvals
         )
         y1 = get_iterate(st)
         @test any(isapprox(f(M, y1), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
+        # the affine covariant step size must also work with an in-place sub problem
+        st_ip = Manopt.vectorbundle_newton(
+            M, TangentBundle(M), NE, y0;
+            sub_problem = solve_augmented_system!, sub_state = InplaceEvaluation(),
+            stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
+            retraction_method = ProjectionRetraction(),
+            stepsize = AffineCovariantStepsize(M, θ_des = 0.1),
+            return_state = true,
+        )
+        @test get_iterate(st_ip) ≈ y1
         st_str = Manopt.status_summary(st; context = :default)
         @test occursin("Vector bundle Newton method", st_str)
         @test startswith(repr(st), "VectorBundleNewtonState(")
         # we stopped since the change was small enough
         @test occursin("|Δp| < 1.0e-11:$(Manopt._MANOPT_INDENT)reached", st_str)
         acs = st.stepsize
-        @test get_initial_stepsize(acs) == acs.α
+        @test get_initial_stepsize(acs) == 1.0 # the default `α`
         @test get_last_stepsize(acs) > 0.0
         @test startswith(repr(acs), "AffineCovariantStepsize(; ")
         @test default_stepsize(M, VectorBundleNewtonState) isa Manopt.ConstantStepsize

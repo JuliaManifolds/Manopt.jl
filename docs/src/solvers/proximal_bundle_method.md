@@ -19,6 +19,7 @@ ProximalBundleMethodState
 
 ```@docs
 proximal_bundle_method_subsolver
+proximal_bundle_method_subsolver!
 ```
 
 ## Literature

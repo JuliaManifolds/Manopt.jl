@@ -16,7 +16,6 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
         return q[i] = p[i] - sign(X[i])
     end
     function oracle(M, p, X)
-        X
         i = argmax(X)
         q = copy(p)
         q[i] = p[i] - sign(X[i])
@@ -38,7 +37,7 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
         @test startswith(repr(s), "FrankWolfeState(")
         # Manifold+State errors since problem is missing
         @test_throws ErrorException FrankWolfeState(M, Manopt.Test.DummyState())
-        set_iterate!(s, 2 .* p)
+        set_iterate!(s, M, 2 .* p)
         @test get_iterate(s) == 2 .* p
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(FC, FG))
         gds = GradientDescentState(M)
@@ -56,6 +55,13 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
             p2c = copy(M, p)
             Frank_Wolfe_method!(M, f, grad_f, p2c; sub_problem = oracle)
             @test f(M, p2c) < f(M, p)
+            # the default sub objective is Riemannian by construction, also for a Euclidean one
+            s2e = Frank_Wolfe_method(
+                M, f, grad_f, p; objective_type = :Euclidean, return_state = true,
+                stopping_criterion = StopAfterIteration(0),
+            )
+            sub_o = Manopt.get_objective(Manopt.get_state(s2e).sub_problem, false)
+            @test !(sub_o isa Manopt.EmbeddedManifoldObjective)
         end
         @testset "Callbacks" begin
             sk_record = Tuple{Symbol, Int}[]
@@ -68,8 +74,21 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
                 (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
             ]
         end
-        @testset "Testing with an Subsolver" begin
-            # This is not a useful run since the subproblem is not constraint
+        @testset "Callbacks with a closed form sub solver" begin
+            # the closed form variant advertises the same callbacks, so it has to fire them too
+            sk_record = Tuple{Symbol, Int}[]
+            cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
+            Frank_Wolfe_method(
+                M, f, grad_f, p; sub_problem = oracle, callbacks = cb,
+                stopping_criterion = StopAfterIteration(1),
+            )
+            @test sk_record == [
+                (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+                (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            ]
+        end
+        @testset "Testing with a Subsolver" begin
+            # This is not a useful run since the subproblem is not constrained
             p3 = Frank_Wolfe_method(
                 M,
                 f,
@@ -92,7 +111,7 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
         end
         @testset "Number test" begin
             M = Euclidean()
-            fe(M, p) = P
+            fe(M, p) = 0.0
             grad_fe(M, p) = zero_vector(M, p)
             oraclee(M, p, X) = X
             # and since the gradient is zero and oracle hence returns zero, the result is zero

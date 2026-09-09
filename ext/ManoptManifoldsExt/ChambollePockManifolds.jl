@@ -1,3 +1,5 @@
-function Manopt.ChambollePockState(M::AbstractManifold; kwargs...)
-    return ChambollePockState(M, TangentBundle(M); kwargs...)
+function Manopt.ChambollePockState(
+        M::AbstractManifold; N::AbstractManifold = TangentBundle(M), kwargs...,
+    )
+    return ChambollePockState(M, N; kwargs...)
 end

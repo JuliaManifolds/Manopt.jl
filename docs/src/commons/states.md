@@ -4,7 +4,7 @@
 CurrentModule = Manopt
 ```
 
-## Specific states for subsolvers
+## Specific states for sub solvers
 
 ```@autodocs
 Modules = [Manopt]

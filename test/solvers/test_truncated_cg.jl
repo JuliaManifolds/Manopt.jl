@@ -10,6 +10,15 @@ using Manifolds, Manopt, ManifoldsBase, Test
         "# Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent\n"
     )
     @test get_iterate(s) == η
+    # the default radius comes from the base manifold (finite here), not the flat tangent space
+    @test s.trust_region_radius ≈ injectivity_radius(M) / 4
+    # standalone solve with a negative-curvature model stays finite with the default radius
+    A = [2.0 1.0 0.0; 1.0 -3.0 1.0; 0.0 1.0 4.0]
+    trmo = TrustRegionModelObjective(
+        ManifoldHessianObjective((M, q) -> 0.0, (M, q) -> project(M, p, -A[:, 1:2]), (M, q, X) -> project(M, p, A * X))
+    )
+    Yfin = truncated_conjugate_gradient_descent(TangentSpace(M, p), trmo, p, η)
+    @test all(isfinite, Yfin)
     srr = StopWhenResidualIsReducedByFactorOrPower()
     ssr1 = Manopt.status_summary(srr)
     @test startswith(ssr1, "A stopping criterion used within tCG to check whether the residual is reduced by factor")
@@ -24,7 +33,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @test length(get_reason(str)) > 0
     scn = StopWhenCurvatureIsNegative()
     scn1 = Manopt.status_summary(scn)
-    @test scn1 == "A stopping criterion to stop when the is negative\n$(Manopt._MANOPT_INDENT)not reached"
+    @test scn1 == "A stopping criterion to stop when the curvature is negative\n$(Manopt._MANOPT_INDENT)not reached"
     @test repr(scn) == "StopWhenCurvatureIsNegative()"
     smi = StopWhenModelIncreased()
     smi1 = Manopt.status_summary(smi)

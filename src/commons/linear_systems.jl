@@ -55,7 +55,7 @@ end
 function status_summary(slso::SymmetricLinearSystemObjective; context::Symbol = :default)
     _is_inline(context) && (return repr(slso))
     return """
-    An objective modelling a symmetric linear system A[X] = -b, i.e. with a symmetric operator A
+    An objective modeling a symmetric linear system A[X] = -b, i.e. with a symmetric operator A
     implemented as a function `(M, Y, p, X) -> Y` performing the operator application in the tangent space,
     and a function `(M, X, p) -> X` returning the vector on the right hand side in the current tangent space.
 
@@ -68,14 +68,24 @@ end
     Y = get_linear_operator(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p, X)
     get_linear_operator!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p, X)
 
-Evaluate the linear operator ``W = $(_tex(:Cal, "A"))[X]`` from the [`SymmetricLinearSystemObjective`](@ref)
+Evaluate the linear operator ``Y = $(_tex(:Cal, "A"))[X]`` from the [`SymmetricLinearSystemObjective`](@ref)
 defined on the tangent space at `p` at the tangent vector `X`.
 
 This can be evaluated in-place of `Y`.
 """
+function get_linear_operator(
+        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X
+    )
+    return get_linear_operator(M, get_objective(admo, false), p, X)
+end
 function get_linear_operator(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p, X)
     Y = copy(M, p, X)
     return slso.A!(M, Y, p, X)
+end
+function get_linear_operator!(
+        M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p, X
+    )
+    return get_linear_operator!(M, Y, get_objective(admo, false), p, X)
 end
 function get_linear_operator!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p, X)
     return slso.A!(M, Y, p, X)
@@ -93,21 +103,33 @@ either providing a tangent space or a manifold and a point.
 This can be evaluated in-place of `Y`.
 """
 
+function get_vector_field(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_vector_field(M, get_objective(admo, false), p)
+end
 @doc "$(_doc_get_vector_field_slso)"
 function get_vector_field(M::AbstractManifold, slso::SymmetricLinearSystemObjective, p)
     Y = zero_vector(M, p)
     return slso.b!(M, Y, p)
 end
+function get_vector_field!(M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p)
+    return get_vector_field!(M, Y, get_objective(admo, false), p)
+end
 function get_vector_field!(M::AbstractManifold, Y, slso::SymmetricLinearSystemObjective, p)
     return slso.b!(M, Y, p)
 end
 # Also on TpM – shortcuts
+function get_vector_field(TpM::TangentSpace, admo::AbstractDecoratedManifoldObjective)
+    return get_vector_field(TpM, get_objective(admo, false))
+end
 @doc "$(_doc_get_vector_field_slso)"
 function get_vector_field(TpM::TangentSpace, slso::SymmetricLinearSystemObjective)
     M = base_manifold(TpM)
     p = base_point(TpM)
     Y = zero_vector(M, p)
     return slso.b!(M, Y, p)
+end
+function get_vector_field!(TpM::TangentSpace, Y, admo::AbstractDecoratedManifoldObjective)
+    return get_vector_field!(TpM, Y, get_objective(admo, false))
 end
 @doc "$(_doc_get_vector_field_slso)"
 function get_vector_field!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective)

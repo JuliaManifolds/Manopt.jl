@@ -16,21 +16,11 @@ using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
     grad_h(M, p) = [[0.0, 0.0, 2.0]]
     hess_h(M, p, X) = [[0.0, 0.0, 0.0]]
 
-    #A set of values for an example point and tangent
+    # An example point
     p = [1.0, 2.0, 3.0]
-    c = [[0.0, -3.0], [5.0]]
-    fp = 14.0
-    gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
-    gh = [[0.0, 0.0, 2.0]]
-    gf = 2 * p
-    X = [1.0, 0.0, 0.0]
-    hf = [2.0, 2.0, 2.0]
-    hg = [X, -X]
-    hh = [[0.0, 0.0, 0.0]]
 
     μ = [1.0, 1.0]
     λ = [1.0]
-    β = 7.0
     s = [1.0, 2.0]
     β = 6.0
     step_M = M × ℝ^2 × ℝ^1 × ℝ^2

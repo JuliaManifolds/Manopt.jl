@@ -37,7 +37,7 @@ FactoryDummyManifoldRule(M::TM; t::R = 1.0) where {TM <: AbstractManifold, R <: 
     @test fdr().t == 2.0
     @test fdr(Euclidean(2)).t == 2.0
     @test startswith(repr(fdr), "ManifoldDefaultsFactory(FactoryDummyRule)")
-    # A case without a manifold and with keywords instead.
+    # A case without a manifold and with a positional argument instead.
     fdr2 = Manopt.ManifoldDefaultsFactory(FactoryDummyRule, 1)
     @test startswith(repr(fdr2), "ManifoldDefaultsFactory(FactoryDummyRule)")
 

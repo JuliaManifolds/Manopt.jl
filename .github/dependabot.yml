@@ -13,12 +13,17 @@ updates:
       - dependency-name: "crate-ci/typos"
         update-types:
           - "version-update:semver-patch"
+    labels:
+      - "dependencies"
+      - "no changelog necessary"
+      - "skip documentation"
   - package-ecosystem: "julia"
     directories: # Location of Julia projects
       - "/"
       - "/docs"
       - "/tutorials"
       - "/test"
+      - "/benchmark"
     schedule:
       interval: "daily"
     groups:
@@ -26,3 +31,7 @@ updates:
       all-julia-packages:
         patterns:
           - "*"
+    labels:
+      - "dependencies"
+      - "no changelog necessary"
+      - "skip documentation"

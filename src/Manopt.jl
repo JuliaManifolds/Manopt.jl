@@ -11,9 +11,9 @@ module Manopt
 # When indenting something in print, use two spaces (or maybe \t later?)
 _MANOPT_INDENT = "  "
 
-import Base: &, copy, getindex, identity, length, setindex!, show, |
+import Base: &, copy, getindex, length, show, |
 import LinearAlgebra: reflect!
-import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
+import ManifoldsBase: embed!, prepare_check_result, find_best_slope_window
 import ManifoldsBase: base_manifold, base_point, get_basis
 import ManifoldsBase: project, project!, submanifold_component
 import LinearAlgebra: cross, LowerTriangular
@@ -78,9 +78,8 @@ using ManifoldsBase:
     vector_transport_to, vector_transport_to!,
     zero_vector, zero_vector!,
     ×, ℂ, ℝ
-using Markdown
 using Preferences:
-    @load_preference, @set_preferences!, @has_preference, @delete_preferences!
+    @load_preference, @set_preferences!, @delete_preferences!
 using Printf
 using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
 using SparseArrays
@@ -89,8 +88,8 @@ using Statistics
 include("documentation_glossary.jl")
 
 """
-    Rn(args; kwargs...)
-    Rn(s::Symbol=:Manifolds, args; kwargs...)
+    Rn(args...; kwargs...)
+    Rn(::Val{T}, args...; kwargs...)
 
 A small internal helper function to choose a Euclidean space.
 By default, this uses the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) unless you load
@@ -232,7 +231,9 @@ function __init__()
     #
     @static if isdefined(Base.Experimental, :register_error_hint) # COV_EXCL_LINE
         Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
-            if (exc.f === convex_bundle_method_subsolver) || (exc.f === proximal_bundle_method_subsolver) || (exc.f === gradient_sampling_subsolver)
+            if (exc.f === convex_bundle_method_subsolver) || (exc.f === convex_bundle_method_subsolver!) ||
+                    (exc.f === proximal_bundle_method_subsolver) || (exc.f === proximal_bundle_method_subsolver!) ||
+                    (exc.f === gradient_sampling_subsolver) || (exc.f === gradient_sampling_subsolver!)
                 print(
                     io,
                     "\nThe `$(exc.f)` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
@@ -454,9 +455,10 @@ export adaptive_regularization_with_cubics,
     mesh_adaptive_direct_search, mesh_adaptive_direct_search!,
     NelderMead, NelderMead!,
     particle_swarm, particle_swarm!,
-    primal_dual_semismooth_Newton,
+    primal_dual_semismooth_Newton, primal_dual_semismooth_Newton!,
     projected_gradient_method, projected_gradient_method!,
     proximal_bundle_method, proximal_bundle_method!,
+    proximal_bundle_method_subsolver, proximal_bundle_method_subsolver!,
     proximal_gradient_method, proximal_gradient_method!,
     proximal_point, proximal_point!,
     quasi_Newton, quasi_Newton!,

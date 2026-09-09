@@ -6,7 +6,6 @@ struct NoIterateState <: AbstractManoptSolverState end
 @testset "Manopt Solver States" begin
     @testset "Generic State" begin
         M = Euclidean(3)
-        pr = Manopt.Test.DummyProblem{typeof(M)}()
         s = Manopt.Test.DummyState()
         @test repr(Manopt.ReturnSolverState(s)) == "ReturnSolverState($s)"
         srst = "A Manopt Test state with storage Float64[]"
@@ -103,13 +102,16 @@ struct NoIterateState <: AbstractManoptSolverState end
         ddo = Manopt.Test.DummyDecoratedObjective(o)
         s = Manopt.Test.DummyState()
         rs = Manopt.ReturnSolverState(s)
+        # parameters are passed through the decorator
+        @test Manopt.set_parameter!(rs, :Dummy, 1) === rs
+        @test isnothing(Manopt.get_parameter(rs, :Dummy))
         @test Manopt.get_solver_return(o, rs) == s #no ReturnManifoldObjective
         # Return O & S
         (a, b) = Manopt.get_solver_return(ro, rs)
         @test a == o
         @test b == s
         # Return just S
-        Manopt.get_solver_return(ddo, rs) == s
+        @test Manopt.get_solver_return(ddo, rs) == s
         # both as tuples and they return the iterate
         @test isnan(get_solver_result((ro, rs)))
         @test isnan(get_solver_result((o, rs)))
@@ -124,5 +126,47 @@ struct NoIterateState <: AbstractManoptSolverState end
         @test repr((o, s)) == repr(s)
         # test Pass down
         @test repr((ro, s)) == repr(s)
+    end
+    @testset "Decorator keywords accept concrete dictionaries" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        p = [1.0, 2.0]
+        sc = StopAfterIteration(1)
+        io = IOBuffer()
+        # inferred as `Dict{Symbol, DebugStoppingCriterion}` / `Dict{Symbol, RecordIteration}`
+        @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, debug = Dict(:Stop => DebugStoppingCriterion(; io = io))))
+        @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, record = Dict(:Iteration => RecordIteration())))
+        # and the explicitly typed form keeps working
+        @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, debug = Dict{Symbol, DebugAction}(:Stop => DebugStoppingCriterion(; io = io))))
+    end
+    @testset "Decorator pass-through of solver and parameter functions" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        p = [1.0, 2.0]
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        # `ReturnSolverState` forwards `initialize_solver!` and `step_solver!` to its state
+        gds = GradientDescentState(M; p = copy(p))
+        rets = Manopt.ReturnSolverState(gds)
+        Manopt.initialize_solver!(mp, rets)
+        @test get_gradient(gds) == grad_f(M, p)
+        Manopt.step_solver!(mp, rets, 1)
+        @test get_iterate(gds) != p
+        # `:StoppingCriterion` is passed down from a state and through both decorators
+        for (state, inner) in (
+                (s0 = GradientDescentState(M; p = copy(p), stopping_criterion = StopAfterIteration(5)); (s0, s0)),
+                (s1 = GradientDescentState(M; p = copy(p), stopping_criterion = StopAfterIteration(5)); (DebugSolverState(s1, DebugDivider("")), s1)),
+                (s2 = GradientDescentState(M; p = copy(p), stopping_criterion = StopAfterIteration(5)); (RecordSolverState(s2, RecordIteration()), s2)),
+                (s3 = GradientDescentState(M; p = copy(p), stopping_criterion = StopAfterIteration(5)); (Manopt.ReturnSolverState(s3), s3)),
+            )
+            Manopt.set_parameter!(state, Val(:StoppingCriterion), :MaxIteration, 7)
+            @test inner.stop.max_iterations == 7
+        end
+        # and through nested decorators, where the return state is the outermost one
+        s4 = GradientDescentState(M; p = copy(p), stopping_criterion = StopAfterIteration(5))
+        r4 = Manopt.ReturnSolverState(DebugSolverState(s4, DebugDivider("")))
+        Manopt.set_parameter!(r4, Val(:StoppingCriterion), :MaxIteration, 9)
+        @test s4.stop.max_iterations == 9
     end
 end

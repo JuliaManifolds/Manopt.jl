@@ -45,6 +45,20 @@ using Manifolds, Manopt, Test
         mp = DefaultManoptProblem(Euclidean(2), o)
         Manopt.set_parameter!(mp, :Objective, :Dummy, 1)
     end
+    @testset "set_parameter! passes through decorators" begin
+        M = Euclidean(2)
+        mho = ManifoldHessianObjective((M, p) -> p[1], (M, p) -> p, (M, p, X) -> X)
+        arc = Manopt.AdaptiveRegularizationWithCubicsModelObjective(mho, 1.0)
+        Manopt.set_parameter!(arc, :σ, 5.0)
+        @test arc.σ == 5.0
+        # the update has to reach the inner objective through every decorator
+        Manopt.set_parameter!(Manopt.Test.DummyDecoratedObjective(arc), :σ, 7.0)
+        @test arc.σ == 7.0
+        Manopt.set_parameter!(Manopt.decorate_objective!(M, arc; count = [:Cost]), :σ, 9.0)
+        @test arc.σ == 9.0
+        Manopt.set_parameter!(Manopt.ReturnManifoldObjective(arc), :σ, 11.0)
+        @test arc.σ == 11.0
+    end
     @testset "functions" begin
         M = Euclidean(2)
         p = [1.0, 2.0]
@@ -62,4 +76,21 @@ using Manifolds, Manopt, Test
         @test Manopt.get_gradient_function(oi)(M, p) == p
         @test Manopt.get_hessian_function(oi)(M, p, X) == X
     end
+end
+
+@testset "First order objective aliases" begin
+    M = ManifoldsBase.DefaultManifold(2)
+    f(M, p) = sum(p .^ 2)
+    grad_f(M, p) = 2 .* p
+    costgrad_f(M, p) = (f(M, p), grad_f(M, p))
+    df(M, p, X) = 2 * sum(p .* X)
+    # every constructor combination must be matched by the alias it is named after
+    @test ManifoldGradientObjective(f, grad_f) isa ManifoldGradientObjective
+    @test ManifoldGradientObjective(f, grad_f; differential = df) isa ManifoldGradientObjective
+    @test ManifoldCostGradientObjective(costgrad_f) isa ManifoldCostGradientObjective
+    @test ManifoldCostGradientObjective(costgrad_f; differential = df) isa
+        ManifoldCostGradientObjective
+    # and by no other one
+    @test !(ManifoldGradientObjective(f, grad_f) isa ManifoldCostGradientObjective)
+    @test !(ManifoldCostGradientObjective(costgrad_f) isa ManifoldGradientObjective)
 end

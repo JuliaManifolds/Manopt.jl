@@ -30,7 +30,7 @@ default(; show = false, reuse = true)
         )
         #Check complex Sphere as well
         M2 = Sphere(n, ℂ)
-        check_gradient(M2, f, grad_f, p, X)
+        @test check_gradient(M2, f, grad_f, p, X)
         # Linear Euclidean function -> exact
         M2 = Euclidean(1)
         f2(M, p) = 3 * p[1]
@@ -38,7 +38,7 @@ default(; show = false, reuse = true)
         p2 = [1.0]
         X2 = [2.0]
         # true due to exactness.
-        check_gradient(M2, f2, grad_f2, p2, X2)
+        @test check_gradient(M2, f2, grad_f2, p2, X2)
     end
     @testset "Hessian Checks" begin
         M3 = Euclidean(2)
@@ -83,4 +83,17 @@ default(; show = false, reuse = true)
         Hess_f4f1(::Sphere, p, X) = p
         @test !check_Hessian(M4, f4, grad_f4, Hess_f4f1, p4, X4)
     end
+end
+
+@testset "check_vector honours the error setting" begin
+    M = Sphere(2)
+    p = [1.0, 0.0, 0.0]
+    f(M, p) = 0.0
+    bad_grad(M, p) = [1.0, 1.0, 1.0] # not tangent at p
+    @test_throws DomainError check_gradient(M, f, bad_grad, p; check_vector = true, error = :error)
+    @test !(
+        @test_logs (:warn,) match_mode = :any check_gradient(
+            M, f, bad_grad, p; check_vector = true, error = :warn
+        )
+    )
 end

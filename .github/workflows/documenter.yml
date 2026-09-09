@@ -4,10 +4,12 @@ on:
     branches: [master]
     tags: [v*]
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 jobs:
   docs:
     name: Documentation
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip documentation') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

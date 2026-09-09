@@ -15,6 +15,8 @@ using Manopt, Manifolds, Test
         io = IOBuffer()
         show(io, MIME"text/plain"(), cpa)
         @test startswith(String(take!(io)), "An optimization problem for Manopt.jl")
+        show(io, MIME"text/plain"(), cpi)
+        @test startswith(String(take!(io)), "An optimization problem for Manopt.jl")
     end
     @testset "set_parameter functions" begin
         f(M, p) = 1 # dummy cost

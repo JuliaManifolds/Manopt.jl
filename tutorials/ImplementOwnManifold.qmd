@@ -14,7 +14,7 @@ tutorial [🏔️ Get started with Manopt.jl](getstarted.md)
 and also familiarized yourself with how to work with manifolds in general at
 ``[🚀 Get Started with `Manifolds.jl`](@extref Manifolds :std:doc:`tutorials/getstarted`)``{=commonmark},
 you might come across the point that you want to
-``[implementing a manifold](@extref :doc:`tutorials/implement-a-manifold`)``{=commonmark}
+``[implement a manifold](@extref :doc:`tutorials/implement-a-manifold`)``{=commonmark}
 yourself and use it within [`Manopt.jl`](../index.md).
 A challenge might be, which functions are necessary, since the overall interface of ``[ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`)``{=commonmark}
 is maybe not completely necessary.
@@ -33,7 +33,7 @@ We get started by loading the packages we need.
 using Pkg;
 cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
-Pkg.develop(path="../") # a trick to work on the local dev version
+Pkg.develop(path = "../") # a trick to work on the local dev version
 ```
 
 ```{julia}
@@ -71,8 +71,7 @@ Define a sphere of fixed radius
 
     ScaledSphere(dimension,radius)
 
-Initialize the manifold to a certain `dimension` and `radius`,
-which by default is set to `1.0`
+Initialize the manifold to a certain `dimension` and `radius`.
 """
 struct ScaledSphere <: AbstractManifold{ℝ}
     dimension::Int
@@ -80,15 +79,15 @@ struct ScaledSphere <: AbstractManifold{ℝ}
 end
 ```
 
-We would like to compute a mean and/or median similar to [🏔️ Get started with Manopt.jl!](getstarted.md).
-For given a set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@cite)
+We would like to compute a mean similar to [🏔️ Get started with Manopt.jl](getstarted.md).
+For a given set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@cite)
 
 ```math
   \operatorname*{arg\,min}_{p∈\mathcal M}
   \frac{1}{2n} \sum_{i=1}^n d_{\mathcal M}^2(p, q_i)
 ```
 
-On the `ScaledSphere` we just defined.
+on the `ScaledSphere` we just defined.
 We define a few parameters first
 
 ```{julia}
@@ -96,7 +95,7 @@ d = 5  # dimension of the sphere - embedded in R^{d+1}
 r = 2.0 # radius of the sphere
 N = 100 # data set size
 
-M = ScaledSphere(d,r)
+M = ScaledSphere(d, r)
 ```
 
 
@@ -105,13 +104,13 @@ M = ScaledSphere(d,r)
 ```{julia}
 #| output : false
 # generate 100 points around the north pole
-pts = [ [zeros(d)..., M.radius] .+ 0.5.*([rand(d)...,0.5] .- 0.5) for _=1:N]
+pts = [ [zeros(d)..., M.radius] .+ 0.5 .* ([rand(d)..., 0.5] .- 0.5) for _ in 1:N]
 # project them onto the r-sphere
-pts = [ r/norm(p) .* p for p in pts]
+pts = [ r / norm(p) .* p for p in pts]
 ```
 
 Then, before starting with optimization, we need the distance on the manifold,
-to define the cost function, as well as the logarithmic map to defined the gradient.
+to define the cost function, as well as the logarithmic map to define the gradient.
 For both, we here use the “lazy” approach of using the ``[Sphere](@extref `Manifolds.Sphere`)``{=commonmark} as a fallback.
 Finally, we have to provide information about how points and tangent vectors are stored on the
 manifold by implementing their ``[`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)``{=commonmark} function, which is often required when allocating memory.
@@ -127,7 +126,7 @@ function log!(M::ScaledSphere, X, p, q)
     X .*= M.radius
     return X
 end
-representation_size(M::ScaledSphere) = (M.dimension+1,)
+representation_size(M::ScaledSphere) = (M.dimension + 1,)
 ```
 
 ## Define the cost and gradient
@@ -135,7 +134,7 @@ representation_size(M::ScaledSphere) = (M.dimension+1,)
 ```{julia}
 #| output : false
 f(M, q) = sum(distance(M, q, p)^2 for p in pts)
-grad_f(M,q) = sum( - log(M, q, p) for p in pts)
+grad_f(M, q) = sum(- 2 * log(M, q, p) for p in pts)
 ```
 
 ## Defining the necessary functions to run a solver
@@ -148,10 +147,10 @@ They list all details, but we can start even step by step here if we are a bit c
 
 ### A retraction
 
-We first implement a ``[retract](@extref ManifoldsBase :doc:`retractions`)``{=commonmark}ion. Informally, given a current point and a direction to “walk into” we need a function that performs that walk.
+We first implement a ``[retract](@extref ManifoldsBase :doc:`retractions`)``{=commonmark}ion. Informally, given a current point and a direction to “walk into” we need a function that performs that walk.
 Since we take an easy one that just projects onto
 the sphere, we use the ``[`ProjectionRetraction`](@extref `ManifoldsBase.ProjectionRetraction`)``{=commonmark} type.
-To be precise, we have to implement the ``[in-place variant](@extref ManifoldsBase `inplace-and-noninplace`)``{=commonmark} ``[`retract_project!`](@extref `ManifoldsBase.inverse_retract_project!-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}
+To be precise, we have to implement the ``[in-place variant](@extref ManifoldsBase `inplace-and-noninplace`)``{=commonmark} ``[`retract_project!`](@extref `ManifoldsBase.retract_project!-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}
 
 ```{julia}
 import ManifoldsBase: retract_project!
@@ -170,49 +169,51 @@ We have to specify
 * that we want to use the new retraction,
 * a simple step size and stopping criterion
 
-We start with a certain point of cost
+We start with a certain point and evaluate its cost
 ```{julia}
-p0 = [zeros(d)...,1.0]
-f(M,p0)
+p0 = [r, zeros(d)...]
+f(M, p0)
 ```
 
-Then we can run our first solver, where we have to overwrite a few
+Then we can run our first solver, where we have to overwrite a few
 defaults, which would use functions we do not (yet) have.
 Let's discuss these in the next steps.
 
 ```{julia}
-q1 = gradient_descent(M, f, grad_f, p0;
+q1 = gradient_descent(
+    M, f, grad_f, p0;
     retraction_method = ProjectionRetraction(),   # state, that we use the retraction from above
-    stepsize = DecreasingLength(M; length=1.0), # A simple step size
+    stepsize = DecreasingLength(M; length = 1.0), # A simple step size
     stopping_criterion = StopAfterIteration(10),  # A simple stopping criterion
-    X = zeros(d+1),                               # how we define/represent tangent vectors
+    X = zeros(d + 1),                               # how we define/represent tangent vectors
 )
-f(M,q1)
+f(M, q1)
 ```
 
 We at least see, that the function value decreased.
 
 ### Norm and maximal step size
 
-To use more advanced stopping criteria and step sizes we first need an ``[`inner`](@extref `ManifoldsBase.inner-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}`(M, p, X)`.
+To use more advanced stopping criteria and step sizes we first need an ``[`inner`](@extref `ManifoldsBase.inner-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}`(M, p, X, Y)`.
 We also need a [`max_stepsize`](@ref)`(M)`, to avoid having too large steps
 on positively curved manifolds like our scaled sphere in this example
 
 ```{julia}
 import ManifoldsBase: inner
 import Manopt: max_stepsize
-inner(M::ScaledSphere, p, X,Y) = dot(X,Y) # inherited from the embedding
- # set the maximal allowed stepsize to injectivity radius.
-Manopt.max_stepsize(M::ScaledSphere) = M.radius*π
+inner(M::ScaledSphere, p, X, Y) = dot(X, Y) # inherited from the embedding
+# set the maximal allowed step size to injectivity radius.
+Manopt.max_stepsize(M::ScaledSphere) = M.radius * π
 ```
 
 Then we can use the default step size ([`ArmijoLinesearch`](@ref)) and
-the default stopping criterion, which checks for a small gradient Norm
+the default stopping criterion, which checks for a small gradient norm
 
 ```{julia}
-q2 = gradient_descent(M, f, grad_f, p0;
+q2 = gradient_descent(
+    M, f, grad_f, p0;
     retraction_method = ProjectionRetraction(), # as before
-    X = zeros(d+1), # as before
+    X = zeros(d + 1), # as before
 )
 f(M, q2)
 ```
@@ -227,7 +228,7 @@ We define
 
 ```{julia}
 import ManifoldsBase: zero_vector, default_retraction_method
-zero_vector(M::ScaledSphere, p) = zeros(M.dimension+1)
+zero_vector(M::ScaledSphere, p) = zeros(M.dimension + 1)
 default_retraction_method(M::ScaledSphere) = ProjectionRetraction()
 ```
 
@@ -244,7 +245,7 @@ But we for example automatically also get the possibility to obtain debug inform
 gradient_descent(M, f, grad_f, p0; debug = [:Iteration, :Cost, :Stepsize, 25, :GradientNorm, :Stop, "\n"]);
 ```
 
-see [How to Print Debug Output](HowToDebug.md) for more details.
+see [How to print debug output](HowToDebug.md) for more details.
 
 ## Literature
 

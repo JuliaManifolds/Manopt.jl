@@ -1,10 +1,14 @@
 # Manopt.Test
 
+```@meta
+CurrentModule = Manopt
+```
+
 ```@docs
 Manopt.Test
 ```
 
-For now these tests mainly consider a few parts from `ManoptExamples.jl`
+For now this module mainly provides simplified variants of a few problems from `ManoptExamples.jl`
 and a few dummy types.
 
 ```@docs

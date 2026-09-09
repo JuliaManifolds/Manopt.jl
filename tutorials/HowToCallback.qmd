@@ -9,7 +9,7 @@ This tutorial illustrates how to use custom callbacks.
 While simple [debug](HowToDebug.md) and [recording](HowToRecord.md) are available,
 callbacks offer a more flexible way to interact with a solver run.
 
-The framework of callbacks allows to call user-defined functions to be called
+The framework of callbacks allows user-defined functions to be called
 at specific places, referred to as “hooks” in the following, during the run of a solver.
 
 ```{julia}
@@ -26,14 +26,14 @@ using ManifoldDiff: grad_distance
 Random.seed!(42);
 ```
 
-We consider the same example as in the [Introductory tutorial](getstarted.md) to compute the Riemannian center of mass
+We consider the same example as in the [🏔️ Get started with Manopt.jl](getstarted.md) tutorial to compute the Riemannian center of mass
 
 ```{julia}
 n = 100
 σ = π / 8
 M = Sphere(2)
 p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
-data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
+data = [exp(M, p, σ * rand(M; vector_at = p)) for i in 1:n];
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
 ```
@@ -43,9 +43,9 @@ And we also use [`gradient_descent`](@ref) as the example solver for this tutori
 The general callback function is called at every hook a solver has. By default there are at least
 
 * `:BeforeInit` and `:Init` before and after [`initialize_solver!`](@ref) is executed,
-* `:BeforeStep` and `:Step` before and after a [`step_solver!`](@ref) is performed.
+* `:BeforeStep` and `:Step` before and after a [`step_solver!`](@ref) is performed,
 * `:BeforeStop` before the stopping criterion is evaluated, and
-* `:Stop` when the stopping criterion indicated to stop.
+* `:Stop` when the stopping criterion indicates to stop.
 
 There are two different variants to introduce callbacks: A single callback that is called at every hook and specific callbacks for single hooks.
 
@@ -59,9 +59,9 @@ cb(hook::Symbol, problem::AbstractManoptProblem, state::AbstractManoptSolverStat
 where the `hook` is the specific hook name currently calling `cb`,
 and `problem` and `state` can of course be more precisely specified to fit the solver you run.
 
-As an example here, we generate a list of the Hooks visited when only performing the first step of the solver run. We collect them in a string,
+As an example here, we generate a list of the hooks visited when only performing the first step of the solver run. We collect them in a string,
 that starts before the initialization, and generates a list for every step.
-All this is collected in a globak string
+All this is collected in a global string
 
 ```{julia}
 #| output: false
@@ -69,23 +69,23 @@ vhs = ""
 function visited_hooks(hook, problem, state, k)
     if hook === :BeforeInit # Reset string on start
         global vhs = """
-            # Visited Hooks during this solver run
+        # Visited Hooks during this solver run
 
-            ## Initialization
-            """
+        ## Initialization
+        """
     end
     if hook === :BeforeStep # Start new list every step
         vhs *= """
 
-            ## Step #$(k)
-            """
+        ## Step #$(k)
+        """
     end # For all: Add an item of the current hook name
     vhs *= "* :$(hook)\n"
     return nothing
 end
 ```
 
-To pass this to the solver, the general `callbacks = ` can be used.
+To pass this to the solver, the general `callbacks = ` keyword can be used.
 For the callback for all hooks, we can just pass the function we just defined. This fills the string `vhs` as follows
 
 ```{julia}
@@ -108,7 +108,7 @@ provided_callbacks(GradientDescentState)
 
 We further see the `:Any` hook. This is used internally to store the general fallback we constructed in this section.
 
-## Specific callbacks for single hooks.
+## Specific callbacks for single hooks
 
 If there is some computation that shall only be performed on a single hook,
 one can of course use the method from the last section and use the `if` variant as already used there as well. Alternatively, one can also specify a callback with
@@ -125,9 +125,9 @@ the state as well. Here – as a toy example – we want to modify the descent d
 ```{julia}
 #| output: false
 function stepsize_callback(problem, state, k)
-    if k <= 10
+    return if k <= 10
         state.X ./= 2
-        (k==10) && (@info "Stop shortening direction at k=10")
+        (k == 10) && (@info "Stop shortening direction at k=10")
     end
 end
 ```

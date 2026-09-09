@@ -38,7 +38,7 @@ end
         @test Manopt.status_summary(d; context = :inline) ==
             "A quasi Newton direction update using $(qnu), stored as a matrix."
         @test Manopt.status_summary(d; context = :short) == repr(d)
-        s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], 1.0, InverseBFGS(), ParallelTransport())\n"
+        s = "QuasiNewtonMatrixDirectionUpdate(M, InverseBFGS(), DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0]; initial_scale = 1.0, vector_transport_method = ParallelTransport())"
         @test repr(d) == s
         @test Manopt.get_message(d) == ""
         c = QuasiNewtonCautiousDirectionUpdate(d)
@@ -189,11 +189,21 @@ end
         )
         @test isapprox(M, x_lrbfgs, x_solution; atol = rayleigh_atol)
 
+        @testset "Preconditioner with a finite memory" begin
+            Me = Euclidean(2)
+            fe(M, p) = 0.5 * (4 * p[1]^2 + p[2]^2)
+            grad_fe(M, p) = [4 * p[1], p[2]]
+            # with an empty memory the first step is the preconditioned gradient step
+            q = quasi_Newton(
+                Me, fe, grad_fe, [1.0, 2.0];
+                memory_size = 2, preconditioner = (M, p, X) -> 0.5 .* X,
+                stepsize = ConstantLength(1.0), stopping_criterion = StopAfterIteration(1),
+            )
+            @test q ≈ [-1.0, 1.0]
+        end
+
         x_clrbfgs = quasi_Newton(M, f, grad_f, x; cautious_update = true)
         @test isapprox(M, x_clrbfgs, x_solution; atol = rayleigh_atol)
-
-        x_cached_lrbfgs = quasi_Newton(M, f, grad_f, x; memory_size = -1)
-        @test isapprox(M, x_cached_lrbfgs, x_solution; atol = rayleigh_atol)
 
         for T in [
                     InverseDFP(), DFP(), Broyden(0.5), InverseBroyden(0.5),
@@ -275,7 +285,7 @@ end
         M = Sphere(n - 1)
         F(::Sphere, X) = X' * A * X
         grad_f(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
-        grad_f!(::Sphere, X, p) = (X .= 2 * (A * X - X * (X' * A * X)))
+        grad_f!(::Sphere, X, p) = (X .= 2 * (A * p - p * (p' * A * p)))
 
         p_1 = [1.0; 0.0; 0.0; 0.0]
         p_2 = [0.0; 0.0; 1.0; 0.0]
@@ -326,7 +336,7 @@ end
         update_hessian_basis!(M, BFGS_inplace, p_1)
         update_hessian_basis!(M, BFGS_inplace, p_2)
 
-        @test isapprox(M, p_1, X_3, X_4; atol = 1.0e-10)
+        @test isapprox(M, p_1, X_7, X_8; atol = 1.0e-10)
 
         BFGS_allocating.grad_tmp = ones(4)
         BFGS_allocating.matrix = one(zeros(3, 3))
@@ -359,16 +369,24 @@ end
         M = Euclidean(2)
         p = [0.0, 0.0]
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = 2 * sum(p)
+        grad_f(M, p) = 2 .* p
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(M; p = p)
+        @test qns.direction_update.initial_scale == 1.0 # default scaling active without preconditioner
         # push zeros to memory
         qns.yk = copy(p)
         qns.sk = copy(p)
         update_hessian!(qns.direction_update, mp, qns, p, 1)
         update_hessian!(qns.direction_update, mp, qns, p, 2)
         @test contains(qns.direction_update.message, "i=2,1,1")
+        # get_message must surface the direction-update message (was dropped before)
+        @test contains(Manopt.get_message(qns), "i=2,1,1")
+        # and it also has to survive the cautious and the box wrapper
+        cdu = QuasiNewtonCautiousDirectionUpdate(qns.direction_update)
+        @test contains(Manopt.get_message(cdu), "i=2,1,1")
+        bdu = QuasiNewtonLimitedMemoryBoxDirectionUpdate(qns.direction_update)
+        @test contains(Manopt.get_message(bdu), "i=2,1,1")
         qns.direction_update(mp, qns)
         # Update (1) says at i=1 inner products are zero (2) all are zero -> gradient proposal
         @test contains(qns.direction_update.message, "gradient")
@@ -390,7 +408,7 @@ end
         dqns = DebugSolverState(qns, DebugMessages(:Warning, :Once))
         @test_logs (
             :warn,
-            "Computed direction is not a descent direction. The inner product evaluated to 1.0. Resetting to negative gradient.",
+            r"Computed direction is not a descent direction\. The inner product evaluated to 4\.0\. Resetting to negative gradient\.",
         ) (
             :warn,
             "Further warnings will be suppressed, use DebugMessages(:Warning, :Always) to get all warnings.",
@@ -445,11 +463,30 @@ end
         # push one dummy pair we can transport
         push!(qdu.memory_y, [1, 2])
         push!(qdu.memory_s, [3, 4])
-        # This triggers and cautious update that does not update the Hessian
+        # This triggers a cautious update that does not update the Hessian
         Manopt.update_hessian!(qns.direction_update, mp, qns, p, 1)
-        # But I am not totally sure what to test for afterwards
+        # the stored pair is only transported: no new pair is added and ρ is recomputed
+        @test length(qdu.memory_s) == 1
+        @test qdu.ρ[1] ≈ 1 / 11
 
         @test startswith(repr(qdu), "QuasiNewtonLimitedMemoryDirectionUpdate with memory size")
+    end
+    @testset "Cautious skip transports the basis" begin
+        M = Sphere(2)
+        mp = DefaultManoptProblem(
+            M, ManifoldGradientObjective((M, p) -> 0.0, (M, p) -> 10.0 .* [0.0, 0.0, 1.0])
+        )
+        p_old = [1.0, 0.0, 0.0]
+        p_new = [0.0, 1.0, 0.0]
+        b = get_basis(M, p_old, DefaultOrthonormalBasis())
+        d = QuasiNewtonMatrixDirectionUpdate(M, InverseBFGS(), b, Matrix{Float64}(I, 2, 2))
+        dc = QuasiNewtonCautiousDirectionUpdate(d; θ = identity)
+        st = QuasiNewtonState(M; p = copy(p_new), direction_update = dc)
+        st.sk .= [0.0, 0.0, 1.0]
+        st.yk .= [0.0, 0.0, 1.0]
+        # the bound is 10, the ratio 1, so the update is skipped, but the basis moves along
+        Manopt.update_hessian!(dc, mp, st, p_old, 2)
+        @test all(is_vector(M, p_new, X) for X in d.basis.data)
     end
     @testset "Removing zero rho vectors" begin
         M = Euclidean(2)
@@ -483,7 +520,7 @@ end
         M = Euclidean(2)
         p = [0.0, 0.0]
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = 2 * sum(p)
+        grad_f(M, p) = 2 .* p
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         ha = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2; nonpositive_curvature_behavior = :byrd)
@@ -524,6 +561,20 @@ end
         @testset "get_cost with DebugSolverState" begin
             dqns = DebugSolverState(qns, DebugMessages(:Info, :Always))
             @test get_cost(mp, dqns) == f(M, get_iterate(dqns))
+        end
+    end
+    @testset "Vanishing step at the minimizer" begin
+        # the minimizer is reached before the stopping criterion fires, so the step becomes zero
+        N = Euclidean(3)
+        c = [0.3, 0.5, 0.2]
+        fq(M, p) = 0.5 * sum(abs2, p - c)
+        grad_fq(M, p) = p - c
+        for memory_size in [3, -1]
+            q = quasi_Newton(
+                N, fq, grad_fq, zeros(3);
+                memory_size = memory_size, stopping_criterion = StopAfterIteration(6),
+            )
+            @test isapprox(N, q, c)
         end
     end
 end

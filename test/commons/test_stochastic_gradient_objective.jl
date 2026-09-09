@@ -10,7 +10,7 @@ using LinearAlgebra, LRUCache, Manifolds, Manopt, Test
             X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
     ]
     f(M, y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
-    f2 = [(M, y) -> 1 / 2 * distance(M, y, x) for x in pts]
+    f2 = [(M, y) -> 1 / 2 * distance(M, y, x)^2 for x in pts]
     sgrad_f1(M, y) = [-log(M, y, x) for x in pts]
     sgrad_f2 = [((M, y) -> -log(M, y, x)) for x in pts]
     msgo_ff = ManifoldStochasticGradientObjective(sgrad_f1; cost = f)
@@ -26,6 +26,12 @@ using LinearAlgebra, LRUCache, Manifolds, Manopt, Test
             for i in 1:length(f2)
                 @test get_cost(M, msgo, p, i) == f2[i](M, p)
             end
+        end
+    end
+    @testset "Full gradient from a single gradient function" begin
+        # the variant taking one function returning all gradients sums them up
+        for msgo in [msgo_ff, msgo_fv]
+            @test isapprox(M, p, get_gradient(M, msgo, p), sum(sgrad_f1(M, p)))
         end
     end
     @testset "Objective Decorator passthrough" begin

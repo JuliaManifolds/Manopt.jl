@@ -19,6 +19,7 @@ ConvexBundleMethodState
 
 ```@docs
 convex_bundle_method_subsolver
+convex_bundle_method_subsolver!
 DomainBackTrackingStepsize
 DomainBackTracking
 NullStepBackTrackingStepsize

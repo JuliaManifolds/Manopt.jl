@@ -89,5 +89,6 @@ function show(
     )
     multiline = get(io, :multiline, true)
     multiline ? status_summary(io, t[2]) : show(io, t[2])
+    print(io, multiline ? "\n\n" : ", ")
     return multiline ? status_summary(io, t[1]) : show(io, t[1])
 end

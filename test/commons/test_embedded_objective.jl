@@ -18,7 +18,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
 
         # With interim caches for p and X
         eo1 = Manopt.decorate_objective!(
-            M, o; objective_type = :Euclidean, embedded_p = copy(p), embedded_X = copy(X)
+            M, o; objective_type = :Euclidean, _embedded_p = copy(p), _embedded_X = copy(X)
         )
         eo2 = EmbeddedManifoldObjective(o, missing, copy(X))
         eo3 = EmbeddedManifoldObjective(o, copy(p), missing)
@@ -44,7 +44,9 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         @test endswith(eo4repr, "missing, missing)")
         @test startswith(Manopt.status_summary(eo4), "An embedded objective\n\n")
         # Constraints, though this is not the most practical constraint
-        o2 = ConstrainedManifoldObjective(f, ∇f, [f], [∇f], [f], [∇f])
+        o2 = ConstrainedManifoldObjective(
+            f, ∇f, [f], [∇f], [f], [∇f]; hess_g = [∇²f], hess_h = [∇²f]
+        )
         eco1 = EmbeddedManifoldObjective(M, o2)
         eco2 = EmbeddedManifoldObjective(o2, missing, copy(X))
         eco3 = EmbeddedManifoldObjective(o2, copy(p), missing)
@@ -71,10 +73,26 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 @test get_grad_inequality_constraint(M, eco, p, 1) == grad_f(M, p)
                 get_grad_inequality_constraint!(M, Y, eco, p, 1)
                 @test Y == grad_f(M, p)
+                # Hessians are converted to Riemannian ones as well
+                HX = Hess_f(M, p, X)
+                @test get_hess_equality_constraint(M, eco, p, X, 1) == HX
+                @test get_hess_equality_constraint(M, eco, p, X, :) == [HX]
+                @test get_hess_equality_constraint!(M, Y, eco, p, X, 1) == HX
+                @test get_hess_equality_constraint!(M, Z, eco, p, X, :) == [HX]
+                @test get_hess_inequality_constraint(M, eco, p, X, 1) == HX
+                @test get_hess_inequality_constraint(M, eco, p, X, :) == [HX]
+                @test get_hess_inequality_constraint!(M, Y, eco, p, X, 1) == HX
+                @test get_hess_inequality_constraint!(M, Z, eco, p, X, :) == [HX]
             end
         end
+        # the trailing range keeps the problem level calls on these methods
+        mp = DefaultManoptProblem(M, eco1)
+        @test get_hess_equality_constraint(mp, p, X, :) == [Hess_f(M, p, X)]
+        @test get_hess_inequality_constraint!(mp, [zero_vector(M, p)], p, X, :) == [Hess_f(M, p, X)]
         # just verify that this also works for double decorated ones.
         o3 = EmbeddedManifoldObjective(ManifoldCountObjective(M, o, [:Cost]), p, X)
+        @test get_cost(M, o3, p) == f(E, p)
+        @test get_gradient(M, o3, p) == grad_f(M, p)
     end
     @testset "Function passthrough" begin
         Random.seed!(42)
@@ -131,7 +149,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         @test Manopt.get_hessian_function(obj_i) ===
             Manopt.get_hessian_function(e_obj_i, true)
         Hess_f1! = Manopt.get_hessian_function(e_obj_i; evaluation = InplaceEvaluation())
-        @test Hess_f1 != Hess_f
+        @test Hess_f1! != Hess_f!
         @test Hess_f1!(M, Y, p, X) == Hess_f!(M, Z, p, X)
     end
 end

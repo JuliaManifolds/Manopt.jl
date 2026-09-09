@@ -1,6 +1,6 @@
 using Manifolds, Manopt, RecursiveArrayTools, Test
 
-@testset "Nonlinear lest squares plan" begin
+@testset "Nonlinear least squares plan" begin
     @testset "Test cost/residual/jacobian cases" begin
         # a simple nlso objective on R2
         M = Euclidean(2)
@@ -19,8 +19,8 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
         JF(M, x) = [j1(M, x), j2(M, x)]
         JF!(M, JF, x) = (JF .= [j1(M, x), j2(M, x)])
         # Jacobi matrix
-        J(M, x) = cat(j1(M, x), j2(M, x); dims = 2)
-        J!(M, J, x) = (J .= cat(j1(M, x), j2(M, x); dims = 2))
+        J(M, x) = permutedims(cat(j1(M, x), j2(M, x); dims = 2))
+        J!(M, J, x) = (J .= permutedims(cat(j1(M, x), j2(M, x); dims = 2)))
         # Smoothing types
 
         # Test all (new) possible combinations of vectorial cost and Jacobian
@@ -96,11 +96,11 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
                 lmlso = LevenbergMarquardtLinearSurrogateObjective(nlso)
                 sG = get_gradient(M, lmlso, p, X)
                 sG! = zero_vector(M, p)
-                sG = get_gradient!(M, sG!, lmlso, p, X)
+                get_gradient!(M, sG!, lmlso, p, X)
                 @test isapprox(M, p, sG, sG!)
                 sH = get_hessian(M, lmlso, p, X, Y)
                 sH! = zero_vector(M, p)
-                sH = get_hessian!(M, sH!, lmlso, p, X, Y)
+                get_hessian!(M, sH!, lmlso, p, X, Y)
                 @test isapprox(M, p, sH, sH!)
                 # Evaluate normal vector field of the surrogate as tangent vectors
                 nvf = Manopt.get_normal_vector_field(M, lmlso, p)
@@ -143,7 +143,6 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
                 Manopt.get_vector_field!(M, nevfB!, no, p, DefaultOrthogonalBasis())
                 @test isapprox(nevfB, nevfB!)
                 @test isapprox(nevfB, -nvfB)
-                # Manopt.get_normal_vector_field!(M, nvf!, lmlso, p, DefaultOrthogonalBasis())
                 # its linear operator and vector field (in a basis)
                 neo = Manopt.get_linear_operator(M, no, p, X)
                 neo! = zeros(2)
@@ -162,9 +161,6 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
                 Manopt.get_linear_operator!(M, neoBA!, no, p, DefaultOrthogonalBasis())
                 @test isapprox(neoBA, neoBA!)
                 @test isapprox(neoBA, nloBA)
-                # and a call with filled jacobian case if we have a basis
-                if (nlso === nlsoJa) || (nlso === nlsoRobust)
-                end
             end
             @testset "Gradient with caching test" begin
                 Z = get_gradient(M, nlsoRobustJa, p)
@@ -211,7 +207,7 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
         B1 = DefaultBasis()
         B2 = DefaultOrthonormalBasis()
         Manopt._change_basis!(M, J, p, B1, B2)
-        # In practice both are the same basis in coordinates, so Jtt stays as iss
+        # In practice both are the same basis in coordinates, so J stays as it is
         @test J == Jt
     end
     @testset "show/repr and status_summary" begin
@@ -219,6 +215,8 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
         f(M, p) = p
         J_f(M, p) = one(p)
         mnlso = ManifoldNonlinearLeastSquaresObjective(f, J_f, 3)
+        @test startswith(repr(mnlso), "ManifoldNonlinearLeastSquaresObjective(")
+        @test startswith(Manopt.status_summary(mnlso), "A nonlinear least squares objective")
     end
     @testset "Inner consistency checks" begin
         s = zeros(2)

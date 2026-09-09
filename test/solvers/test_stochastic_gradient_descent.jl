@@ -88,7 +88,7 @@ using Manopt, Manifolds, Test
         initialize_solver!(dmp1, sgds)
         sgds.order_type = :Linear
         step_solver!(dmp1, sgds, 1)
-        @test sgds.p == exp(M, p, get_gradient(dmp1, p, 1))
+        @test sgds.p == exp(M, p, -get_stepsize(dmp1, sgds, 1) * get_gradient(dmp1, p, 1))
         @test startswith(
             Manopt.status_summary(sgds; context = :default),
             "# Solver state for `Manopt.jl`s Stochastic Gradient Descent\n"
@@ -97,6 +97,12 @@ using Manopt, Manifolds, Test
     end
     @testset "Comparing Stochastic Methods" begin
         q1 = stochastic_gradient_descent(M, sgrad_f1, p; order_type = :Linear)
+        # the stored retraction_method is used (an unimplemented one must throw)
+        struct NoRetraction <: AbstractRetractionMethod end
+        @test_throws MethodError stochastic_gradient_descent(
+            M, sgrad_f1, p;
+            retraction_method = NoRetraction(), stopping_criterion = StopAfterIteration(2),
+        )
         @test is_point(M, q1, true)
         s1 = stochastic_gradient_descent(
             M, sgrad_f1, p; order_type = :Linear, return_state = true
@@ -121,17 +127,19 @@ using Manopt, Manifolds, Test
         )
         @test is_point(M, q6, true)
     end
-    @testset "Comparing different starts" begin
+    @testset "Allocating and in-place entry with an objective" begin
         msgo2 = ManifoldStochasticGradientObjective(sgrad_f1)
         q1 = stochastic_gradient_descent(M, msgo2, p)
         q2 = copy(M, p)
         stochastic_gradient_descent!(M, msgo2, q2)
+        @test is_point(M, q1, true)
+        @test is_point(M, q2, true)
     end
     @testset "Circle example" begin
         Mc = Circle()
         pc = 0.0
         data = [-π / 4, 0.0, π / 4]
-        fc(y) = 1 / 2 * sum([distance(M, y, x)^2 for x in data])
+        fc(M, y) = 1 / 2 * sum([distance(M, y, x)^2 for x in data])
         sgrad_fc(M, y) = [-log(M, y, x) for x in data]
         q1 = stochastic_gradient_descent(Mc, sgrad_fc)
         q2 = stochastic_gradient_descent(Mc, sgrad_fc, pc)
@@ -142,4 +150,15 @@ using Manopt, Manifolds, Test
         q4 = get_solver_result(s)[]
         @test all([is_point(Mc, q, true) for q in [q1, q2, q3, q4]])
     end
+end
+
+@testset "absolute step length uses the stochastic gradient" begin
+    M = Sphere(2)
+    p0 = [1.0, 0.0, 0.0]
+    grads = [(M, p) -> project(M, p, [0.0, 1.0, 0.0]), (M, p) -> project(M, p, [0.0, 0.0, 5.0])]
+    q = stochastic_gradient_descent(
+        M, grads, p0; stepsize = ConstantLength(1.0; type = :absolute),
+        order_type = :Linear, stopping_criterion = StopAfterIteration(1),
+    )
+    @test distance(M, p0, q) ≈ 1.0
 end

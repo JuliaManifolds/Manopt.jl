@@ -8,7 +8,7 @@
 A `RecordAction` is a small functor to record values.
 The usual call is given by
 
-    (amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k) -> s
+    (amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k) -> ams
 
 that performs the record for the current problem and solver combination, and where `k` is
 the current iteration.
@@ -19,11 +19,11 @@ called from within [`stop_solver!`](@ref), which returns `true` afterwards.
 
 Any negative value is interpreted as a “reset”, and should hence delete all stored recordings,
 for example when reusing a `RecordAction`.
-The start of a solver calls the `:Iteration` and `:Stop` dictionary entries with `-1`,
-to reset those recordings.
+The start of a solver calls the `:Start` dictionary entry with `1`, so that its actions record once,
+and the `:Iteration` and `:Stop` dictionary entries with `-1`, to reset those recordings.
 
 By default any `RecordAction` is assumed to record its values in a field `recorded_values`,
-an `Vector` of recorded values. See [`get_record`](@ref get_record(r::RecordAction))`(ra)`.
+a `Vector` of recorded values. See [`get_record`](@ref get_record(r::RecordAction))`(ra)`.
 """
 abstract type RecordAction <: AbstractStateAction end
 
@@ -53,7 +53,7 @@ Construct a record decorated [`AbstractManoptSolverState`](@ref), where `dR` can
 
 * a [`RecordAction`](@ref), then it is stored within the dictionary at `:Iteration`.
 * a `Dict{Symbol,RecordAction}`.
-* an `Array` of [`RecordAction`](@ref)s, `Symbol`s and `String`s, which is passed to
+* an `Array` of [`RecordAction`](@ref)s and `Symbol`s, which is passed to
   the [`RecordFactory`](@ref).
 * a single `Symbol`, which is also passed to the [`RecordFactory`](@ref).
 """
@@ -161,12 +161,15 @@ get_record_state(s::RecordSolverState) = s
 
 Return the action contained in the (first) [`RecordSolverState`](@ref) decorator within the [`AbstractManoptSolverState`](@ref) `s`.
 """
-function get_record_action(s::AbstractManoptSolverState, symbol::Symbol = :Iteration)
+function get_record_action(s::RecordSolverState, symbol::Symbol = :Iteration)
     if haskey(s.recordDictionary, symbol)
         return s.recordDictionary[symbol]
     else
         error("No record known for key :$symbol found")
     end
+end
+function get_record_action(s::AbstractManoptSolverState, symbol::Symbol = :Iteration)
+    return get_record_action(get_record_state(s), symbol)
 end
 @doc """
     get_record(s::RecordSolverState[, symbol=:Iteration])
@@ -223,7 +226,7 @@ getindex(rs::RecordSolverState, s::Symbol, i...) = get_record_action(rs, s)[i...
 """
     record_or_reset!(r, v, k)
 
-either record (`k>0` and not `Inf`) the value `v` within the [`RecordAction`](@ref) `r`
+either record (`k>0`) the value `v` within the [`RecordAction`](@ref) `r`
 or reset (`k<0`) the internal storage, where `v` has to match the internal
 value type of the corresponding [`RecordAction`](@ref).
 """
@@ -242,11 +245,15 @@ end
 @doc """
     RecordEvery <: RecordAction
 
-Record only every ``k``-th iteration.
+Record only every `every`-th iteration.
 Otherwise (optionally, but activated by default) just update internal tracking
 values.
 
 This method does not perform any record itself but relies on its children's methods.
+
+# Constructor
+
+    RecordEvery(r::RecordAction, every=1, always_update=true)
 """
 mutable struct RecordEvery <: RecordAction
     record::RecordAction
@@ -270,7 +277,7 @@ function (re::RecordEvery)(
     # note that since recording is happening at the end
     # sets activity for the _next_ iteration
     set_parameter!(
-        ams, Val(:SubState), Val(:Record), Val(:Activity), !(k < 1) && (rem(k + 1, re.every) == 0)
+        ams, Val(:SubState), Val(:Record), Val(:Activity), rem(max(k, 0) + 1, re.every) == 0
     )
     return nothing
 end
@@ -292,7 +299,7 @@ function status_summary(re::RecordEvery; context::Symbol = :default)
     (context === :inline) && return "A RecordAction that records its inner action $s iteration"
     return """
     A RecordAction that records $s iteration with
-    $(_MANOPT_INDENT)$(_in_str(status_summary(re.record; context = context); indent = 1))
+    $(_in_str(status_summary(re.record; context = context); indent = 1))
     """
 end
 get_record(r::RecordEvery) = get_record(r.record)
@@ -351,7 +358,7 @@ mutable struct RecordGroup <: RecordAction
         return new(g, symbols)
     end
     function RecordGroup(
-            records::Vector, # assumed: {<:Union{<:RecordAction,Pair{<:RecordAction,Symbol}, rest ignored
+            records::Vector, # elements: RecordAction or Pair{<:RecordAction, Symbol}, anything else errors
         )
         g = Array{RecordAction, 1}()
         si = Dict{Symbol, Int}()
@@ -378,7 +385,7 @@ end
 function status_summary(rg::RecordGroup; context::Symbol = :default)
     (context === :short) && (return "[$(join(["$(status_summary(ri; context = context))" for ri in rg.group], ", "))]")
     (context === :inline) && (return "A group of $(length(rg.group)) RecordActions")
-    return "A group of $(length(rg.group)) RecordActions:\n $(join(["* $(status_summary(ri; context = context))" for ri in rg.group], "\n"))\n"
+    return "A group of $(length(rg.group)) RecordActions:\n$(join(["* $(status_summary(ri; context = context))" for ri in rg.group], "\n"))\n"
 end
 function Base.show(io::IO, rg::RecordGroup)
     s = join(["$(ri)" for ri in rg.group], ", ")
@@ -398,9 +405,9 @@ Return an array of values corresponding to the ``i``-th entry in this record gro
 
 Return an array of recorded values with respect to the symbol `s`, see [`RecordGroup`](@ref).
 
-    get_record(r::RecordGroup, s1::Symbol, s2::Symbol,...)
+    get_record(r::RecordGroup, s::NTuple{N,Symbol})
 
-Return an array of tuples, where each tuple is a recorded set corresponding to the symbols `s1, s2,...` per iteration / record call.
+Return an array of tuples, where each tuple is a recorded set corresponding to the symbols in `s` per iteration / record call.
 """
 get_record(r::RecordGroup) = length(r.group) > 0 ? [zip(get_record.(r.group)...)...] : []
 get_record(r::RecordGroup, i) = get_record(r.group[i])

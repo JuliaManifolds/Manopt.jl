@@ -14,12 +14,12 @@ for example with a [function like object](https://docs.julialang.org/en/v1/manua
 
 ```{julia}
 #| eval: false
-mutable struct MyCost{I<:Integer}
+mutable struct MyCost{I <: Integer}
     count::I
 end
 MyCost() = MyCost{Int64}(0)
-function (c::MyCost)(M, x)
-    c.count += 1
+function (c::MyCost)(M, p)
+    return c.count += 1
     # [ .. Actual implementation of the cost here ]
 end
 ```
@@ -40,13 +40,13 @@ former consists of the domain, that is the ``[`AbstractManifold`](@extref `Manif
 
 Both recording and debug capabilities are implemented in a decorator pattern to the solver state.
 They can be easily added using the `record=` and `debug=` in any solver call.
-This pattern was recently extended, such that also the objective can be decorated.
+This pattern is also available for the objective, which can be decorated as well.
 This is how both caching and counting are implemented, as decorators of the [`AbstractManifoldObjective`](@ref)
-and hence for example changing/extending the behaviour of a call to [`get_cost`](@ref).
+and hence for example changing/extending the behavior of a call to [`get_cost`](@ref).
 
 Let's finish off the technical background by loading the necessary packages.
-Besides [Manopt.jl](../index.md) and ``[Manifolds.jl]@extref Manifolds :std:doc:`index`)``{=commoinmark} we also need
-[LRUCaches.jl](https://github.com/JuliaCollections/LRUCache.jl) which are (since Julia 1.9) a weak dependency and provide
+Besides [Manopt.jl](../index.md) and ``[Manifolds.jl](@extref Manifolds :std:doc:`index`)``{=commonmark} we also need
+[LRUCache.jl](https://github.com/JuliaCollections/LRUCache.jl) which is a weak dependency and provides
 the _least recently used_ strategy for our caches.
 
 ```{julia}
@@ -61,7 +61,7 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 
 ```{julia}
 #| output: false
-using Manopt, Manifolds, Random, LRUCache, LinearAlgebra, ManifoldDiff
+using Manopt, Manifolds, Random, LRUCache, LinearAlgebra, ManifoldDiff, BenchmarkTools
 using ManifoldDiff: grad_distance
 ```
 
@@ -75,21 +75,21 @@ n = 100
 M = Sphere(2)
 p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
 Random.seed!(42)
-data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
+data = [exp(M, p, σ * rand(M; vector_at = p)) for i in 1:n];
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
 ```
 
-to now count how often the cost and the gradient are called, we use the `count=` keyword
+To now count how often the cost and the gradient are called, we use the `count=` keyword
 argument that works in any solver to specify the elements of the objective whose calls we
-want to count calls to. A full list is available in the documentation of the
-[`AbstractManifoldObjective`](@ref).
+want to count. A full list is available in the documentation of the
+[`ManifoldCountObjective`](@ref).
 To also see the result, we have to set `return_objective=true`.
 This returns `(objective, p)` instead of just the solver result `p`.
 We can further also set `return_state=true` to get even more information about the solver run.
 
 ```{julia}
-gradient_descent(M, f, grad_f, data[1]; count=[:Cost, :Gradient], return_objective=true, return_state=true)
+gradient_descent(M, f, grad_f, data[1]; count = [:Cost, :Gradient], return_objective = true, return_state = true)
 ```
 
 And we see that statistics are shown in the end.
@@ -102,15 +102,17 @@ Since now both the cache and the count “extend” the capability of the object
 the order is important: on the high-level interface, the `count` is treated first, which
 means that only actual function calls and not cache look-ups are counted.
 With the proper initialization, you can use any caches here that support the
-`get!(function, cache, key)!` update. All parts of the objective that can currently be cached are listed at [`ManifoldCachedObjective`](@ref). The solver call has a keyword `cache` that takes a tuple`(c, vs, n)` of three arguments, where `c` is a symbol for the type of cache, `vs` is a vector of symbols, which calls to cache and `n` is the size of the cache. If the last element is not provided, a suitable default (currently`n=10`) is used.
+`get!(function, cache, key)` update. All parts of the objective that can currently be cached are listed at [`ManifoldCachedObjective`](@ref). The solver call has a keyword `cache` that takes a tuple `(c, vs, n)` of three arguments, where `c` is a symbol for the type of cache, `vs` is a vector of symbols specifying which calls to cache, and `n` is the size of the cache. If the last element is not provided, a suitable default (currently `n=10`) is used.
 
-Here we want to use `c=:LRU` caches for `vs=[Cost, :Gradient]` with a size of `n=25`.
+Here we want to use `c=:LRU` caches for `vs=[:Cost, :Gradient]` with a size of `n=25`.
 
 ```{julia}
-r = gradient_descent(M, f, grad_f, data[1];
-    count=[:Cost, :Gradient],
-    cache=(:LRU, [:Cost, :Gradient], 25),
-    return_objective=true, return_state=true)
+r = gradient_descent(
+    M, f, grad_f, data[1];
+    count = [:Cost, :Gradient],
+    cache = (:LRU, [:Cost, :Gradient], 25),
+    return_objective = true, return_state = true
+)
 ```
 
 Since the default setup with [`ArmijoLinesearch`](@ref) needs the gradient and the
@@ -136,14 +138,16 @@ We present three solutions to this:
 3. A shared (internal) cache approach also using a functor
 
 For that we switch to another example:
-the Rayleigh quotient. We aim to maximize the Rayleigh quotient $\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$, for some $A∈ℝ^{m+1\times m+1}$ and $x∈ℝ^{m+1}$ but since we consider this on the sphere and `Manopt.jl`
+the Rayleigh quotient. We aim to maximize the Rayleigh quotient $\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$, for some $A∈ℝ^{(m+1)\times (m+1)}$ and $x∈ℝ^{m+1}$ but since we consider this on the sphere and `Manopt.jl`
 (as many other optimization toolboxes) minimizes, we consider
 
 ```math
 g(p) = -p^{\mathrm{T}}Ap,\qquad p∈\mathbb S^{m}
 ```
 
-The Euclidean gradient (that is in $ R^{m+1}$) is actually just $\nabla g(p) = -2Ap$, the Riemannian gradient the projection of $\nabla g(p)$ onto the tangent space $T_p\mathbb S^{m}$.
+Note that the [automatic differentiation tutorial](AutomaticDifferentiation.md) uses the same Rayleigh quotient with the opposite sign, minimizing toward the smallest eigenvalue rather than maximizing toward the largest.
+
+The Euclidean gradient (that is in $ℝ^{m+1}$) is actually just $\nabla g(p) = -2Ap$, the Riemannian gradient is the projection of $\nabla g(p)$ onto the tangent space $T_p\mathbb S^{m}$.
 
 ```{julia}
 m = 25
@@ -155,10 +159,10 @@ f_star = -eigvals(A)[end] # cost (note that we get - the largest Eigenvalue)
 
 N = Sphere(m);
 
-g(M, p) = -p' * A*p
+g(M, p) = -p' * A * p
 ∇g(p) = -2 * A * p
-grad_g(M,p) = project(M, p, ∇g(p))
-grad_g!(M,X, p) = project!(M, X, p, ∇g(p))
+grad_g(M, p) = project(M, p, ∇g(p))
+grad_g!(M, X, p) = project!(M, X, p, ∇g(p))
 ```
 
 But since both the cost and the gradient require the computation of the matrix-vector product $Ap$, it might be beneficial to only compute this once.
@@ -169,8 +173,8 @@ The [`ManifoldCostGradientObjective`](@ref) uses a combined function to compute 
 
 ```{julia}
 function g_grad_g!(M::AbstractManifold, X, p)
-    X .= -A*p
-    c = p'*X
+    X .= -A * p
+    c = p' * X
     X .*= 2
     project!(M, X, p, X)
     return (c, X)
@@ -178,30 +182,32 @@ end
 ```
 
 where we only compute the matrix-vector product once.
-The small disadvantage might be, that we always compute _both_, the gradient and the cost. Luckily, the cache we used before, takes this into account and caches both results, such that we indeed end up computing `A*p` only once when asking to a cost and a gradient.
+The small disadvantage might be that we always compute _both_ the gradient and the cost. Luckily, the cache we used before takes this into account and caches both results, such that we indeed end up computing `A*p` only once when asking for the cost and the gradient.
 
 Let's compare both methods
 
 ```{julia}
-p0 = [(1/5 .* ones(5))..., zeros(m-4)...];
-@time s1 = gradient_descent(N, g, grad_g!, p0;
-    stopping_criterion = StopWhenGradientNormLess(1e-5),
-    evaluation=InplaceEvaluation(),
-    count=[:Cost, :Gradient],
-    cache=(:LRU, [:Cost, :Gradient], 25),
-    return_objective=true,
+p0 = [(1 / sqrt(5) .* ones(5))..., zeros(m - 4)...];
+s1 = @btime gradient_descent(
+    $N, $g, $grad_g!, $p0;
+    stopping_criterion = StopWhenGradientNormLess(1.0e-5),
+    evaluation = InplaceEvaluation(),
+    count = [:Cost, :Gradient],
+    cache = (:LRU, [:Cost, :Gradient], 25),
+    return_objective = true,
 )
 ```
 
 versus
 
 ```{julia}
-obj = ManifoldCostGradientObjective(g_grad_g!; evaluation=InplaceEvaluation())
-@time s2 = gradient_descent(N, obj, p0;
-    stopping_criterion=StopWhenGradientNormLess(1e-5),
-    count=[:Cost, :Gradient],
-    cache=(:LRU, [:Cost, :Gradient], 25),
-    return_objective=true,
+obj = ManifoldCostGradientObjective(g_grad_g!; evaluation = InplaceEvaluation())
+s2 = @btime gradient_descent(
+    $N, $obj, $p0;
+    stopping_criterion = StopWhenGradientNormLess(1.0e-5),
+    count = [:Cost, :Gradient],
+    cache = (:LRU, [:Cost, :Gradient], 25),
+    return_objective = true,
 )
 ```
 
@@ -213,8 +219,8 @@ p2 = get_solver_result(s2)
 [distance(N, p1, p2), g(N, p1), g(N, p2), f_star]
 ```
 
-and we can see that the combined number of evaluations is once 2051, once
-just the number of cost evaluations 1449. Note that the involved additional 847
+and we can see that the combined number of evaluations is once 1847, once
+just the number of cost evaluations 1247. Note that the involved additional 600
 gradient evaluations are merely a multiplication with 2. On the other hand, the additional caching of the gradient in these cases might be less beneficial.
 It is beneficial, when the gradient and the cost are very often required together.
 
@@ -226,21 +232,21 @@ We again consider the (more efficient) in-place variant.
 This can be done as follows
 
 ```{julia}
-struct StorageG{T,M}
+struct StorageG{T, M}
     A::M
     Ap::T
     p::T
 end
 function (g::StorageG)(::Val{:Cost}, M::AbstractManifold, p)
-    if !(p==g.p) #We are at a new point -> Update
-        g.Ap .= g.A*p
+    if !(p == g.p) #We are at a new point -> Update
+        g.Ap .= g.A * p
         g.p .= p
     end
-    return -g.p'*g.Ap
+    return -g.p' * g.Ap
 end
 function (g::StorageG)(::Val{:Gradient}, M::AbstractManifold, X, p)
-    if !(p==g.p) #We are at a new point -> Update
-        g.Ap .= g.A*p
+    if !(p == g.p) #We are at a new point -> Update
+        g.Ap .= g.A * p
         g.p .= p
     end
     X .= -2 .* g.Ap
@@ -257,14 +263,15 @@ case the signatures are different regardless of the additional argument but for 
 #Define the new functor
 storage_g = StorageG(A, zero(p0), zero(p0))
 # and cost and gradient that use this functor as
-g3(M,p) = storage_g(Val(:Cost), M, p)
+g3(M, p) = storage_g(Val(:Cost), M, p)
 grad_g3!(M, X, p) = storage_g(Val(:Gradient), M, X, p)
-@time s3 = gradient_descent(N, g3, grad_g3!, p0;
-    stopping_criterion = StopWhenGradientNormLess(1e-5),
-    evaluation=InplaceEvaluation(),
-    count=[:Cost, :Gradient],
-    cache=(:LRU, [:Cost, :Gradient], 2),
-    return_objective=true#, return_state=true
+s3 = @btime gradient_descent(
+    $N, $g3, $grad_g3!, $p0;
+    stopping_criterion = StopWhenGradientNormLess(1.0e-5),
+    evaluation = InplaceEvaluation(),
+    count = [:Cost, :Gradient],
+    cache = (:LRU, [:Cost, :Gradient], 2),
+    return_objective = true,
 )
 ```
 
@@ -275,7 +282,7 @@ p3 = get_solver_result(s3)
 g(N, p3) - f_star
 ```
 
-And while we again have a split off the cost and gradient evaluations, we can observe that the allocations are less than half of the previous approach.
+And while we again have a split of the cost and gradient evaluations, we can observe that this approach allocates only about a quarter of the memory of the previous one.
 
 ### A local cache approach
 
@@ -285,19 +292,19 @@ and it is possible to store more than just the last `p` either cost or gradient
 was called with.
 
 ```{julia}
-struct CacheG{C,M}
+struct CacheG{C, M}
     A::M
     cache::C
 end
 function (g::CacheG)(::Val{:Cost}, M, p)
-    Ap = get!(g.cache, copy(M,p)) do
-        g.A*p
+    Ap = get!(g.cache, copy(M, p)) do
+        g.A * p
     end
-    return -p'*Ap
+    return -p' * Ap
 end
 function (g::CacheG)(::Val{:Gradient}, M, X, p)
-    Ap = get!(g.cache, copy(M,p)) do
-        g.A*p
+    Ap = get!(g.cache, copy(M, p)) do
+        g.A * p
     end
     X .= -2 .* Ap
     project!(M, X, p, X)
@@ -306,21 +313,22 @@ end
 ```
 
 However, the resulting solver run is not always faster, since
-the whole cache instead of storing just `Ap` and `p` is a bit more costly.
+maintaining the whole cache instead of storing just `Ap` and `p` is a bit more costly.
 Then the tradeoff is, whether this pays off.
 
 ```{julia}
 #Define the new functor
-cache_g = CacheG(A, LRU{typeof(p0),typeof(p0)}(; maxsize=25))
+cache_g = CacheG(A, LRU{typeof(p0), typeof(p0)}(; maxsize = 25))
 # and cost and gradient that use this functor as
-g4(M,p) = cache_g(Val(:Cost), M, p)
+g4(M, p) = cache_g(Val(:Cost), M, p)
 grad_g4!(M, X, p) = cache_g(Val(:Gradient), M, X, p)
-@time s4 = gradient_descent(N, g4, grad_g4!, p0;
-    stopping_criterion = StopWhenGradientNormLess(1e-5),
-    evaluation=InplaceEvaluation(),
-    count=[:Cost, :Gradient],
-    cache=(:LRU, [:Cost, :Gradient], 25),
-    return_objective=true,
+s4 = @btime gradient_descent(
+    $N, $g4, $grad_g4!, $p0;
+    stopping_criterion = StopWhenGradientNormLess(1.0e-5),
+    evaluation = InplaceEvaluation(),
+    count = [:Cost, :Gradient],
+    cache = (:LRU, [:Cost, :Gradient], 25),
+    return_objective = true,
 )
 ```
 
@@ -337,8 +345,8 @@ it is about the same effort both time and allocation-wise.
 
 ## Summary
 
-While the second approach of [`ManifoldCostGradientObjective`](@ref) is very easy to implement, both the storage and the (local) cache approach are more efficient.
-All three are an improvement over the first implementation without sharing interim results.
+While the first approach of [`ManifoldCostGradientObjective`](@ref) is very easy to implement, both the storage and the (local) cache approach are more efficient.
+They both improve on the first implementation without sharing interim results, while the combined cost and gradient function allocates more memory than it, since it always computes both.
 The results with storage or cache have further advantage of being more flexible, since the stored information could also be reused in a third function, for example when also computing the Hessian.
 
 ````{=commonmark}

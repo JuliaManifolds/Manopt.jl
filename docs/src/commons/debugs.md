@@ -27,7 +27,7 @@ Private = true
 
 ## Technical details
 
-The decorator to print debug during the iterations can be activated by
+The decorator to print debug output during the iterations can be activated by
 decorating the state of a solver and implementing
 your own [`DebugAction`](@ref)s.
 For more details, see [the debug solver state decorator](../base/state/debug.md).

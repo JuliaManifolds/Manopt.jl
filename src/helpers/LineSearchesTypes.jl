@@ -18,7 +18,7 @@ always used instead.
 * `initial_guess=`[`ConstantInitialGuess`](@ref)`()`: the initial guess for the step size to
   start the line search from.
 * `last_stepsize=NaN`: the initial value to store as the last step size computed.
-$(_kwargs([:retraction_method, :vector_transport_method]))
+$(_kwargs([:retraction_method, :vector_transport_method]; p = ""))
 
 Without the manifold `M` as a first argument, `retraction_method` defaults to
 `ExponentialRetraction()` and `vector_transport_method` to `ParallelTransport()`.
@@ -33,8 +33,7 @@ mutable struct LineSearchesStepsize{
     last_stepsize::TF
 end
 function LineSearchesStepsize(
-        M::AbstractManifold,
-        linesearch;
+        M::AbstractManifold, linesearch;
         initial_guess::AbstractInitialLinesearchGuess = ConstantInitialGuess(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M),
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(M),

@@ -22,7 +22,7 @@ using Test
     end
 
     n_dims = 5
-    M = Manifolds.Sphere(n_dims)
+    M = Manifolds.Sphere(n_dims - 1)
     x0 = vcat(zeros(n_dims - 1), 1.0)
     ls_hz = Manopt.LineSearchesStepsize(M, LineSearches.HagerZhang())
     x_opt = quasi_Newton(

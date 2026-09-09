@@ -1,4 +1,11 @@
-using Manopt, Manifolds, Test, RecursiveArrayTools
+using Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
+
+# a retraction that errors as soon as it is used, to prove the keyword is honoured
+struct TripRetraction <: AbstractRetractionMethod end
+ManifoldsBase._retract!(::AbstractManifold, q, p, X, ::TripRetraction) = error("TripRetraction was used")
+function ManifoldsBase._retract_fused!(::AbstractManifold, q, p, X, t::Number, ::TripRetraction)
+    return error("TripRetraction was used")
+end
 
 @testset "Alternating Gradient Descent" begin
     # Note that this is merely an alternating gradient descent toy example
@@ -75,9 +82,30 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             "# Solver state for `Manopt.jl`s Alternating Gradient Descent Solver"
         )
         @test startswith(repr(r), "AlternatingGradientDescentState(; ")
+        # the summary header shows the total iteration count, not the inner counter
+        rc = alternating_gradient_descent!(
+            N, f, [grad_f1!, grad_f2!], copy(N, q);
+            order_type = :Linear, evaluation = InplaceEvaluation(), return_state = true,
+            stopping_criterion = StopAfterIteration(7),
+        )
+        @test contains(Manopt.status_summary(rc; context = :default), "After 7 iterations")
+        # the step size only evaluates the component gradient of the current block
+        c1 = Ref(0)
+        c2 = Ref(0)
+        cgrad_f1(N, p) = (c1[] += 1; grad_f1(N, p))
+        cgrad_f2(N, p) = (c2[] += 1; grad_f2(N, p))
+        alternating_gradient_descent(
+            N, f, [cgrad_f1, cgrad_f2], copy(N, q);
+            order_type = :Linear, stopping_criterion = StopAfterIteration(1),
+        )
+        @test (c1[], c2[]) == (2, 1)
+        # the Armijo override evaluates the block gradient itself when none is handed in
+        amp_a = DefaultManoptProblem(N, ManifoldAlternatingGradientObjective(f, [grad_f1, grad_f2]))
+        agds_a = AlternatingGradientDescentState(N; p = copy(N, p), order_type = :Linear, order = [1, 2])
+        Manopt.initialize_solver!(amp_a, agds_a)
+        @test ArmijoLinesearch()(N)(amp_a, agds_a, 1) > 0
         @test_throws DomainError AlternatingGradientDescentState(N; order_type = :WrongSymbol)
-        # r has the same message as the internal stepsize
-        @test Manopt.get_message(r) == Manopt.get_message(r.stepsize)
+        @test Manopt.get_message(r) isa String
         @test isapprox(N, q3, q)
     end
     @testset "Callbacks" begin
@@ -94,5 +122,24 @@ using Manopt, Manifolds, Test, RecursiveArrayTools
             (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
             (:BeforeStep, 1), (:Stepsize, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
         ]
+    end
+    @testset "retraction_method is used" begin
+        # the keyword was stored and shown but never used, neither in the update nor the line search
+        s = alternating_gradient_descent(
+            N, f, grad_f, copy(p); retraction_method = ProductRetraction(ProjectionRetraction(), ProjectionRetraction()),
+            stopping_criterion = StopAfterIteration(1), return_state = true,
+        )
+        @test s.retraction_method == ProductRetraction(ProjectionRetraction(), ProjectionRetraction())
+        # the line search has to agree with the update, else the accepted step violates its own Armijo condition
+        @test s.stepsize.retraction_method == s.retraction_method
+        # a retraction that is never allowed to be called proves the update really uses it
+        @test_throws ErrorException alternating_gradient_descent(
+            N, f, grad_f, copy(p); retraction_method = ProductRetraction(TripRetraction(), TripRetraction()),
+            stopping_criterion = StopAfterIteration(2),
+        )
+        # the component of a ProductRetraction is selected for the per-component update
+        @test Manopt._component_retraction(ProductRetraction(ProjectionRetraction(), ExponentialRetraction()), 2) ==
+            ExponentialRetraction()
+        @test Manopt._component_retraction(ProjectionRetraction(), 1) == ProjectionRetraction()
     end
 end

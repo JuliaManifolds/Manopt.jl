@@ -24,7 +24,7 @@ Public = false
 
 ## [Functions that are part of a sub objective](@id sec-sub-functions)
 
-This section collects functions that can be used within a [subsolver](@ref sec-subsolver).
+This section collects functions that can be used within a [sub solver](@ref sec-subsolver).
 They are often either parametrized by or even based on the original objective.
 
 ```@autodocs

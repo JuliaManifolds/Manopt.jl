@@ -44,7 +44,7 @@ using ManifoldsBase, Manopt, Manifolds, Test
         @test hzi(dmp, gds3, 2, 1.0, η3) ≈ 0.5
 
         # case I2
-        @test hzi_nq(dmp, gds3, 2, 41.0, η3) ≈ hzi.ψ2 * 41.0
+        @test hzi_nq(dmp, gds3, 2, 41.0, η3) ≈ hzi_nq.ψ2 * 41.0
 
         # sphere
         MS = Sphere(1)
@@ -96,14 +96,28 @@ end
     @test startswith(repr(s2.bb_stepsize), "BarzilaiBorweinStepsize(; ")
     @test startswith(Manopt.status_summary(s2), "Non-monotone linesearch")
     @test startswith(Manopt.status_summary(s2.bb_stepsize), "Barzilai–Borwein stepsize\n")
+    # infinite injectivity radius: the default max_stepsize falls back to 1.0
+    @test Manopt.BarzilaiBorweinStepsize(Euclidean(2)).max_stepsize == 1.0
+    # after a step the nonmonotone linesearch reports the stepsize it just determined
+    dmp_nm = DefaultManoptProblem(M, ManifoldGradientObjective((M, p) -> sum(p .^ 2), (M, p) -> 2 .* p))
+    gds_nm = GradientDescentState(M; p = [1.0, 2.0])
+    gds_nm.X = get_gradient(dmp_nm, gds_nm.p)
+    α_nm = s2(dmp_nm, gds_nm, 1)
+    @test get_last_stepsize(s2) == α_nm
 
+
+    # mixed numeric keyword types promote instead of erroring
+    @test Manopt.CubicBracketingLinesearchStepsize(M; initial_stepsize = 1).initial_stepsize === 1.0
+    # gradient-free backtracking falls back to a plain decrease condition
+    s0 = Manopt.linesearch_backtrack(Euclidean(2), (M, q) -> sum(q .^ 2), [1.0, 2.0], 1.0, 1.0e-4, 0.5, [-1.0, -2.0])
+    @test s0 == 2.0
 
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
     @test startswith(repr(s3), "WolfePowellBinaryLinesearchStepsize(;")
     @test get_last_stepsize(s3) == 0.0
     @test startswith(Manopt.status_summary(s3), "A Wolfe Powell bisection line search")
-    # no stepsize yet so `repr` and summary are the same
+
     # regression: with a too-long first trial the search must bisect until Armijo holds
     f3(M, p) = 100 * sum(p .^ 2)
     grad_f3(M, p) = 200 .* p
@@ -126,7 +140,7 @@ end
     @testset "Linesearch safeguards" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = sum(2 .* p)
+        grad_f(M, p) = 2 .* p
         p = [2.0, 2.0]
         msgs = (;
             non_descent_direction = Manopt.StepsizeMessage{Float64, Float64}(),
@@ -185,9 +199,14 @@ end
         @test s.count == 0 # was reset
         @test s.weight == 0.75 # also reset to orig
         @test startswith(repr(s), "AdaptiveWNGradientStepsize(;")
+        # a reused step size starts from its initial bound again
+        @test s.gradient_bound ≠ s.initial_bound
+        Manopt.initialize_stepsize!(s)
+        @test s.gradient_bound == s.initial_bound
+        @test s.weight == s.initial_bound
+        @test s.count == 0
     end
     @testset "Absolute stepsizes" begin
-        M = ManifoldsBase.DefaultManifold(2)
         # Build a dummy function and gradient
         f(M, p) = 0
         grad_f(M, p) = [0.0, 0.75, 0.0] # valid, since only north pole used
@@ -219,9 +238,52 @@ end
         gds = GradientDescentState(M; p = p, stepsize = bb)
         # Check both modes to use BB
         # (1) vector transport when providing a last stepsize – no history -> max
-        bb(dmp, gds, 1; last_stepsize = 1.0) == bb.max_stepsize
+        @test bb(dmp, gds, 1; last_stepsize = 1.0) == bb.max_stepsize
         # (1) vector transport when providing a last stepsize - we did not actually move - still max
-        bb(dmp, gds, 1) == bb.max_stepsize
+        @test bb(dmp, gds, 1) == bb.max_stepsize
+        @test get_last_stepsize(bb) == bb.max_stepsize
+        # on a curved manifold the first call must not compute with the roundoff of a
+        # transport and an inverse retraction of a point to itself
+        Ms = Sphere(2)
+        fs(N, q) = q[1]^2 + 2 * q[2]^2 + 5 * q[3]^2
+        grad_fs(N, q) = project(N, q, [2 * q[1], 4 * q[2], 10 * q[3]])
+        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fs, grad_fs))
+        for q in [
+                [-0.4351081605832091, 0.7182816676513397, 0.5429109821231346],
+                [0.36059885545348436, 0.6162424109231599, 0.7001526665129887],
+            ]
+            bbs = Manopt.BarzilaiBorweinStepsize(Ms)
+            gdss = GradientDescentState(Ms; p = q, stepsize = bbs)
+            @test bbs(dmps, gdss, 1) == bbs.max_stepsize
+            @test get_last_stepsize(bbs) == bbs.max_stepsize
+        end
+        # with a constant gradient ⟨s,y⟩ vanishes, so the `:inverse` and `:alternating`
+        # strategies fall back to the maximal step size
+        fc(N, q) = sum(q)
+        grad_fc(N, q) = [1.0, 0.0]
+        dmpc = DefaultManoptProblem(M, ManifoldGradientObjective(fc, grad_fc))
+        for strategy in [:inverse, :alternating]
+            bbc = Manopt.BarzilaiBorweinStepsize(M; strategy = strategy)
+            gdsc = GradientDescentState(M; p = [2.0, 2.0], stepsize = bbc)
+            bbc(dmpc, gdsc, 1) # first call, fills the storage
+            gdsc.p = [1.0, 1.0] # move, so that s ≠ 0 while y = 0
+            @test bbc(dmpc, gdsc, 2) == bbc.max_stepsize
+        end
+        # a reused step size forgets the previous run, so the next call is a first call again
+        bb2 = Manopt.BarzilaiBorweinStepsize(M)
+        gds2 = GradientDescentState(M; p = p, stepsize = bb2)
+        bb2(dmp, gds2, 1)
+        @test Manopt.has_storage(bb2.storage, Manopt.PointStorageKey(:Iterate))
+        Manopt.initialize_stepsize!(bb2)
+        @test !Manopt.has_storage(bb2.storage, Manopt.PointStorageKey(:Iterate))
+        @test bb2(dmp, gds2, 1) == bb2.max_stepsize
+        # the nonmonotone line search resets both its Barzilai–Borwein step size and its last step
+        nls = NonmonotoneLinesearch()(M)
+        nls.last_stepsize = 0.5
+        nls.bb_stepsize(dmp, gds2, 1)
+        Manopt.initialize_stepsize!(nls)
+        @test nls.last_stepsize == 1.0
+        @test !Manopt.has_storage(nls.bb_stepsize.storage, Manopt.PointStorageKey(:Iterate))
     end
     @testset "Polyak Stepsize" begin
         M = Euclidean(2)
@@ -248,6 +310,7 @@ end
         @test startswith(repr(clbs), "CubicBracketingLinesearch(;")
         @test startswith(Manopt.status_summary(clbs), "Cubic bracketing stepsize")
         @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
+        @test get_last_stepsize(clbs) === clbs.last_stepsize
 
         #edge cases of interval bracketing
         a, b, τ = 0, 1, 0.25
@@ -334,6 +397,10 @@ end
         @test startswith(repr(hzls), "HagerZhangLinesearch(;")
         @test startswith(Manopt.status_summary(hzls), "HagerZhangLinesearch(;")
         @test Manopt.get_message(hzls) == ""
+        # numeric keywords may be passed in any real type and are promoted to a common one
+        hzls_int = Manopt.HagerZhangLinesearchStepsize(M; stepsize_limit = 1, ρ = 5)
+        @test hzls_int.stepsize_limit === 1.0
+        @test hzls_int.ρ === 5.0
 
         α = hzls(dmp, gs, 1, η)
         @test isfinite(α)
@@ -341,6 +408,7 @@ end
         α2 = hzls(dmp, gs, 1, η; gradient = grad_f_sum_sq(M, p))
         @test α2 ≈ α
         @test hzls.last_stepsize == α
+        @test get_last_stepsize(hzls) == α
         @test hzls.last_cost <= f_sum_sq(M, p) + 1.0e-12
 
         hzls_limit = Manopt.HagerZhangLinesearchStepsize(M; stepsize_limit = 0.05)
@@ -358,8 +426,8 @@ end
         end
         @testset "Wolfe condition modes" begin
             hzls_default = Manopt.HagerZhangLinesearchStepsize(M)
-            hzls.current_mode = :invalid_mode
-            @test_throws ErrorException hzls(dmp, gs, 1, η)
+            hzls_default.current_mode = :invalid_mode
+            @test_throws ErrorException hzls_default(dmp, gs, 1, η)
         end
 
 
@@ -830,10 +898,10 @@ end
 
     end
     @testset "Distance over Gradients Stepsize" begin
-        @testset "does not use sectional cuvature (Eucludian)" begin
+        @testset "does not use sectional curvature (Euclidean)" begin
             M = Euclidean(2)
             f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            grad_f(M, p) = 2 .* p
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p = p)
@@ -855,12 +923,12 @@ end
             summary = Manopt.status_summary(ds)
             @test startswith(summary, "A distance over gradients step size")
             lr = ds(dmp, gds, 0)
-            @test lr == 0.125
+            @test lr ≈ 1 / (4 * sqrt(2))
         end
-        @testset "use sectional cuvature (Euclidian)" begin
+        @testset "use sectional curvature (Euclidean)" begin
             M = Euclidean(2)
             f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            grad_f(M, p) = 2 .* p
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [2.0, 2.0]
             gds = GradientDescentState(M; p = p)
@@ -877,12 +945,12 @@ end
             @test ds.last_stepsize === 0.0
             @test ds.last_stepsize === get_last_stepsize(ds)
             lr = ds(dmp, gds, 0)
-            @test lr == 0.125
+            @test lr ≈ 1 / (4 * sqrt(2))
         end
-        @testset "do not use sectional cuvature (Sphere)" begin
+        @testset "do not use sectional curvature (Sphere)" begin
             M = Sphere(1)
-            f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            f(M, p) = 2 * p[2]
+            grad_f(M, p) = project(M, p, [0.0, 2.0])
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [1, 0]
             gds = GradientDescentState(M; p = p)
@@ -898,10 +966,10 @@ end
             lr = ds(dmp, gds, 0)
             @test lr == 0.5
         end
-        @testset "use sectional cuvature (Sphere)" begin
+        @testset "use sectional curvature (Sphere)" begin
             M = Sphere(1)
-            f(M, p) = sum(p .^ 2)
-            grad_f(M, p) = sum(2 .* p)
+            f(M, p) = 2 * p[2]
+            grad_f(M, p) = project(M, p, [0.0, 2.0])
             dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             p = [1, 0]
             gds = GradientDescentState(M; p = p)
@@ -961,7 +1029,7 @@ end
         @testset "Simple Rayleigh coefficient" begin
             # Minimize negative Rayleigh quotient on the sphere S^1
             M = Sphere(1)
-            A = [1.0 0; 0 1.0]
+            A = [2.0 0; 0 1.0]
 
             f(M, p) = -p' * A * p
 
@@ -978,7 +1046,7 @@ end
             )
 
             # 1e-6 is the maximum rtol for the test to pass on 1.10; it works without specifying rtol on 1.11
-            @test f(M, x) ≈ -1 rtol = 1.0e-6
+            @test f(M, x) ≈ -2 rtol = 1.0e-6
         end
         @testset "Distance from Hyperbolic to origin" begin
             M = Hyperbolic(2)
@@ -1037,7 +1105,7 @@ end
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p = [2.0, 2.0]
         gs = GradientDescentState(M; p = p)
-        # large sufficient curvatuture to trigger stop inc.
+        # large sufficient curvature to trigger stop inc.
         wpls = WolfePowellLinesearch(M; stop_increasing_at_step = 1, stop_decreasing_at_step = 1)()
         wpls(dmp, gs, 1)
         # This set the dec message
@@ -1047,5 +1115,31 @@ end
         wpls.sufficient_curvature = 0.2
         wpls(dmp, gs, 2, -0.0001 * grad_f(M, p))
         @test wpls.messages[:stop_increasing].at_iteration > 0
+    end
+    @testset "Nonmonotone linesearch stays inside the injectivity radius" begin
+        M = Sphere(2)
+        f(M, p) = 1 - p[1]
+        grad_f(M, p) = project(M, p, [-1.0, 0.0, 0.0])
+        p = 1 / sqrt(1.25) .* [0.5, 1.0, 0.0]
+        nls = Manopt.NonmonotoneLinesearchStepsize(M; p = p)
+        @test nls.bb_stepsize.max_stepsize ≈ 0.9 * Manopt.max_stepsize(M)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        gds = GradientDescentState(M; p = p)
+        X = grad_f(M, p)
+        gds.X = X
+        α = nls(mp, gds, 1, -X; gradient = X)
+        @test α * norm(M, p, X) < injectivity_radius(M)
+    end
+    @testset "Float32 problems" begin
+        M = Euclidean(2)
+        f(M, p) = sum((p .- 1.0f0) .^ 2)
+        grad_f(M, p) = 2.0f0 .* (p .- 1.0f0)
+        p0 = Float32[0, 0]
+        # the step size of these two is a `Float64` while the cost is a `Float32`
+        for ls in [HagerZhangLinesearch(), CubicBracketingLinesearch()]
+            q = gradient_descent(M, f, grad_f, p0; stepsize = ls, stopping_criterion = StopAfterIteration(3))
+            @test eltype(q) === Float32
+            @test isapprox(M, q, Float32[1, 1]; atol = 1.0f-3)
+        end
     end
 end
