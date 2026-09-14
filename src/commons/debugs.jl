@@ -396,14 +396,15 @@ end
 function (d::DebugEntryChange)(
         p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
-    if k == 0
-        # on init if field not present -> generate
-        !has_storage(d.storage, d.field) && d.storage(p, st, k)
+    if k <= 0
+        # initialization (`k = 0`) and update-only calls (`k < 0`) do not print;
+        # on init only generate the value if the field is not stored yet
+        (k < 0 || !has_storage(d.storage, d.field)) && d.storage(p, st, k)
         return nothing
     end
     x = get_storage(d.storage, d.field)
     v = d.distance(p, st, getproperty(st, d.field), x)
-    (k > 0) && Printf.format(d.io, Printf.Format(d.format), v)
+    Printf.format(d.io, Printf.Format(d.format), v)
     d.storage(p, st, k)
     return nothing
 end

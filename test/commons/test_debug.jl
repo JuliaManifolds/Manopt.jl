@@ -147,6 +147,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
             format = "Last: %1.1f",
             io,
         )
+        a3(mp, st, -1) # an update-only call before anything is stored, as the `:Stop` entry receives it
+        @test String(take!(io)) == ""
         a3(mp, st, 0) # init
         @test String(take!(io)) == ""
         a4(mp, st, 0) # init
