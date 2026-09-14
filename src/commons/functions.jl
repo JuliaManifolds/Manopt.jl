@@ -244,7 +244,7 @@ function ApproxHessianFiniteDifference(
         mT <: AbstractManifold, P, G, R <: Real,
         RTR <: AbstractRetractionMethod, VTR <: AbstractVectorTransportMethod,
     }
-    p_ = maybe_wrap_variable(p)
+    p_ = copy(M, maybe_wrap_variable(p))
     X = copy(M, p_, tangent_vector)
     Y = copy(M, p_, tangent_vector)
     grad_f_ = maybe_wrap_function(grad_f, p, evaluation, result = :TangentVector)
@@ -318,7 +318,7 @@ function ApproxHessianSymmetricRankOne(
     ) where {
         mT <: AbstractManifold, P, G, B <: AbstractBasis{ℝ}, R <: Real, VTM <: AbstractVectorTransportMethod,
     }
-    p_ = maybe_wrap_variable(p)
+    p_ = copy(M, maybe_wrap_variable(p))
     X = zero_vector(M, p_)
     grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
     # Fill X with current gradient
@@ -417,7 +417,7 @@ function ApproxHessianBFGS(
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     ) where {mT <: AbstractManifold, P, G, B <: AbstractBasis{ℝ}, VTM <: AbstractVectorTransportMethod}
-    p_ = maybe_wrap_variable(p)
+    p_ = copy(M, maybe_wrap_variable(p))
     X = zero_vector(M, p_)
     grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
     grad_f_(M, X, p)

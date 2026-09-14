@@ -236,6 +236,19 @@ include("trust_region_model.jl")
 
         p_star = eigvecs(A)[:, 1]
 
+        @testset "Approximate Hessians keep the point they are built with" begin
+            q = copy(M, p)
+            X = rand(M; vector_at = p_star)
+            for H in (
+                    ApproxHessianFiniteDifference(M, q, grad_f),
+                    ApproxHessianSymmetricRankOne(M, q, grad_f),
+                    ApproxHessianBFGS(M, q, grad_f),
+                )
+                H(M, p_star, X)
+                @test q == p
+            end
+        end
+
         @testset "Allocating Variant" begin
             # the run stops at the gradient norm of the current iterate, so `1e-6` is what it promises
             q = trust_regions(M, f, grad_f, Hess_f, p)
@@ -314,7 +327,7 @@ include("trust_region_model.jl")
                 trust_region_radius = 1.0, θ = 0.1, κ = 0.9,
                 retraction_method = ProjectionRetraction(), evaluation = InplaceEvaluation(),
             )
-            @test isapprox(M, qaHSR1_3, p_star) || isapprox(M, qaHSR1_3, -p_star)
+            @test isapprox(M, qaHSR1_3, p_star; atol = 1.0e-6) || isapprox(M, qaHSR1_3, -p_star; atol = 1.0e-6)
 
             qaHBFGS_3 = copy(M, p)
             trust_regions!(
@@ -325,7 +338,7 @@ include("trust_region_model.jl")
                 trust_region_radius = 1.0, θ = 0.1, κ = 0.9,
                 retraction_method = ProjectionRetraction(), evaluation = InplaceEvaluation(),
             )
-            @test isapprox(M, qaHBFGS_3, p_star) || isapprox(M, qaHBFGS_3, -p_star)
+            @test isapprox(M, qaHBFGS_3, p_star; atol = 1.0e-6) || isapprox(M, qaHBFGS_3, -p_star; atol = 1.0e-6)
         end
     end
     @testset "on the Circle" begin
