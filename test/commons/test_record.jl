@@ -220,6 +220,10 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test get_record(rss) == [[1]]
         rss(dmp, epms, -1) # reset
         @test length(get_record(rss)) == 0
+        # a state that declares its sub problem through the trait only
+        fws = FrankWolfeState(M, dmp, rs)
+        rss(dmp, fws, 1)
+        @test get_record(rss) == [[1]]
     end
     @testset "RecordWhenActive" begin
         i = RecordIteration()

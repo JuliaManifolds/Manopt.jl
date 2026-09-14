@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 This is yet another round of review – maybe also introducing a few test tools
 
+### Added
+
+* the trait `has_sub_problem` declares that a solver state stores a sub problem, so `get_sub_problem`, `get_sub_state` and `record=[:Subsolver]` work for every such state.
+
+### Deprecated
+
+* `AbstractSubProblemSolverState` is deprecated in favour of the trait `has_sub_problem`.
+
 ### Fixed
 
 * the approximate Hessians no longer store and overwrite the point they are built with.

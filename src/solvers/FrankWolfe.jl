@@ -164,6 +164,7 @@ mutable struct FrankWolfeState{
         )
     end
 end
+has_sub_problem(::Type{<:FrankWolfeState}) = true
 
 function default_stepsize(M::AbstractManifold, ::Type{FrankWolfeState})
     return DecreasingStepsize(M; length = 2.0, shift = 2.0)

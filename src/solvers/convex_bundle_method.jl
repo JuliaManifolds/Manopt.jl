@@ -296,6 +296,7 @@ mutable struct ConvexBundleMethodState{
     # resolve an ambiguity
     ConvexBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Convex Bundle Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 end
+has_sub_problem(::Type{<:ConvexBundleMethodState}) = true
 function ConvexBundleMethodState(
         M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType;
         kwargs...,

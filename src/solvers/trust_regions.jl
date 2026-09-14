@@ -1,5 +1,5 @@
 @doc """
-    TrustRegionsState <: AbstractSubProblemSolverState
+    TrustRegionsState <: AbstractManoptSolverState
 
 Store the state of the trust-regions solver.
 
@@ -77,7 +77,7 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 mutable struct TrustRegionsState{
         P, T, Pr, St <: AbstractManoptSolverState, C <: AbstractDict{Symbol},
         SC <: StoppingCriterion, RTR <: AbstractRetractionMethod, R <: Real, Proj,
-    } <: AbstractSubProblemSolverState
+    } <: AbstractManoptSolverState
     callbacks::C
     p::P
     X::T
@@ -146,6 +146,7 @@ mutable struct TrustRegionsState{
         return trs
     end
 end
+has_sub_problem(::Type{<:TrustRegionsState}) = true
 TrustRegionsState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Trust region method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function TrustRegionsState(
         M::AbstractManifold, sub_problem::Pr, sub_state::St;

@@ -204,6 +204,7 @@ mutable struct AdaptiveRegularizationState{
         )
     end
 end
+has_sub_problem(::Type{<:AdaptiveRegularizationState}) = true
 function AdaptiveRegularizationState(
         M::AbstractManifold, sub_problem::Pr, sub_state::St;
         p::P = rand(M), X::T = zero_vector(M, p), σ::R = 100.0 / sqrt(manifold_dimension(M)),

@@ -135,6 +135,7 @@ mutable struct GradientSamplingState{
         )
     end
 end
+has_sub_problem(::Type{<:GradientSamplingState}) = true
 function GradientSamplingState(
         M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
     )

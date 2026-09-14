@@ -158,6 +158,7 @@ mutable struct LevenbergMarquardtState{
         )
     end
 end
+has_sub_problem(::Type{<:LevenbergMarquardtState}) = true
 additional_callbacks(::Type{<:LevenbergMarquardtState}) = [:Stepsize, :DampingIncreaseStepTooLong, :DampingIncreaseModelInadequate, :DampingDecreaseImprovementTooGood, :DampingIncreaseImprovementTooPoor, :CandidateAccept, :CandidateReject]
 get_callbacks(lms::LevenbergMarquardtState) = lms.callbacks
 #

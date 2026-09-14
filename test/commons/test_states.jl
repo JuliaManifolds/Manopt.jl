@@ -140,6 +140,19 @@ struct NoIterateState <: AbstractManoptSolverState end
         # and the explicitly typed form keeps working
         @test is_point(M, gradient_descent(M, f, grad_f, p; stopping_criterion = sc, debug = Dict{Symbol, DebugAction}(:Stop => DebugStoppingCriterion(; io = io))))
     end
+    @testset "has_sub_problem" begin
+        for S in (
+                AdaptiveRegularizationState, AugmentedLagrangianMethodState, ConvexBundleMethodState,
+                DifferenceOfConvexProximalState, DifferenceOfConvexState, ExactPenaltyMethodState,
+                FrankWolfeState, GradientSamplingState, InteriorPointNewtonState, LevenbergMarquardtState,
+                ProximalBundleMethodState, ProximalGradientMethodState, TrustRegionsState, VectorBundleNewtonState,
+            )
+            @test Manopt.has_sub_problem(S)
+        end
+        @test !Manopt.has_sub_problem(GradientDescentState)
+        @test_throws ErrorException Manopt.get_sub_state(GradientDescentState(Euclidean(2)))
+        @test_throws ErrorException Manopt.get_sub_problem(GradientDescentState(Euclidean(2)))
+    end
     @testset "Decorator pass-through of solver and parameter functions" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)

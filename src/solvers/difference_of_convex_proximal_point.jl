@@ -105,7 +105,7 @@ end
 
 @doc """
     DifferenceOfConvexProximalState{P, T, Pr, St<:AbstractManoptSolverState, C<:AbstractDict{Symbol}, S<:Stepsize, SC<:StoppingCriterion, RTR<:AbstractRetractionMethod, ITR<:AbstractInverseRetractionMethod, Tλ}
-        <: AbstractSubProblemSolverState
+        <: AbstractManoptSolverState
 
 A struct to store the current state of the algorithm as well as the form.
 It comes in two forms, depending on the realization of the `subproblem`.
@@ -155,7 +155,7 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 mutable struct DifferenceOfConvexProximalState{
         P, T, Pr, St <: AbstractManoptSolverState, C <: AbstractDict{Symbol}, S <: Stepsize, SC <: StoppingCriterion,
         RTR <: AbstractRetractionMethod, ITR <: AbstractInverseRetractionMethod, Tλ,
-    } <: AbstractSubProblemSolverState
+    } <: AbstractManoptSolverState
     callbacks::C
     inverse_retraction_method::ITR
     λ::Tλ
@@ -204,6 +204,7 @@ mutable struct DifferenceOfConvexProximalState{
         )
     end
 end
+has_sub_problem(::Type{<:DifferenceOfConvexProximalState}) = true
 additional_callbacks(::Type{<:DifferenceOfConvexProximalState}) = [:BeforeSubsolver, :Subsolver, :Stepsize]
 get_callbacks(dcps::DifferenceOfConvexProximalState) = dcps.callbacks
 # resolve an ambiguity

@@ -183,6 +183,7 @@ mutable struct ProximalGradientMethodState{
         )
     end
 end
+has_sub_problem(::Type{<:ProximalGradientMethodState}) = true
 ProximalGradientMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Gradient Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function ProximalGradientMethodState(
         M::AbstractManifold;

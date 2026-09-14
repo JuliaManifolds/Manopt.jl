@@ -57,7 +57,7 @@ mutable struct ExactPenaltyMethodState{
         P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
         C <: AbstractDict{Symbol},
         R <: Real, TStopping <: StoppingCriterion,
-    } <: AbstractSubProblemSolverState
+    } <: AbstractManoptSolverState
     callbacks::C
     p::P
     stop::TStopping
@@ -106,6 +106,7 @@ mutable struct ExactPenaltyMethodState{
         )
     end
 end
+has_sub_problem(::Type{<:ExactPenaltyMethodState}) = true
 function ExactPenaltyMethodState(
         M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
     )

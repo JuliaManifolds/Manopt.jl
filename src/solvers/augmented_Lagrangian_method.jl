@@ -75,7 +75,7 @@ mutable struct AugmentedLagrangianMethodState{
         P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
         R <: Real, C <: AbstractDict{Symbol}, V <: AbstractVector{<:R},
         TStopping <: StoppingCriterion,
-    } <: AbstractSubProblemSolverState
+    } <: AbstractManoptSolverState
     callbacks::C
     p::P
     sub_problem::Pr
@@ -140,6 +140,7 @@ mutable struct AugmentedLagrangianMethodState{
         return alms
     end
 end
+has_sub_problem(::Type{<:AugmentedLagrangianMethodState}) = true
 function AugmentedLagrangianMethodState(
         M::AbstractManifold, co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective},
         sub_problem, sub_state::AbstractEvaluationType;

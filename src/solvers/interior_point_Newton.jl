@@ -323,6 +323,7 @@ mutable struct InteriorPointNewtonState{
         )
     end
 end
+has_sub_problem(::Type{<:InteriorPointNewtonState}) = true
 function InteriorPointNewtonState(
         M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,

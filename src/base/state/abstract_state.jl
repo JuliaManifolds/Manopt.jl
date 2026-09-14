@@ -328,9 +328,9 @@ By default, this function just does nothing.
 """
 set_parameter!(ams::AbstractManoptSolverState, e::Symbol, args...)
 
-# Default: do nothing
-function set_parameter!(ams::AbstractManoptSolverState, ::Val, args...)
-    return ams
+# Default: pass `:SubProblem` and `:SubState` on to a stored sub task, do nothing otherwise
+function set_parameter!(ams::AbstractManoptSolverState, v::Val, args...)
+    return _set_sub_parameter!(ams, Val(has_sub_problem(typeof(ams))), v, args...)
 end
 
 @doc """

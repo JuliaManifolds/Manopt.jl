@@ -154,7 +154,7 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct DifferenceOfConvexState{
         P, T, Pr, St <: AbstractManoptSolverState, C <: AbstractDict{Symbol}, SC <: StoppingCriterion,
-    } <: AbstractSubProblemSolverState
+    } <: AbstractManoptSolverState
     callbacks::C
     p::P
     stop::SC
@@ -185,6 +185,7 @@ mutable struct DifferenceOfConvexState{
         return new{P, T, Pr, St, C, SC}(callbacks, p, stopping_criterion, sub_problem, sub_state, X)
     end
 end
+has_sub_problem(::Type{<:DifferenceOfConvexState}) = true
 additional_callbacks(::Type{<:DifferenceOfConvexState}) = [:BeforeSubsolver, :Subsolver]
 get_callbacks(dcs::DifferenceOfConvexState) = dcs.callbacks
 function DifferenceOfConvexState(M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...)

@@ -56,6 +56,7 @@ mutable struct VectorBundleNewtonState{
         return new{P, T, Pr, St, C, TStop, TStep, TRTM}(callbacks, p, p_trial, retraction_method, stepsize, stopping_criterion, sub_problem, sub_state, X)
     end
 end
+has_sub_problem(::Type{<:VectorBundleNewtonState}) = true
 
 function VectorBundleNewtonState(
         M::AbstractManifold, E::AbstractManifold, p::P, sub_problem::Pr, sub_state::St;
