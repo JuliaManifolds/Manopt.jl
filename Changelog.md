@@ -23,6 +23,10 @@ This is yet another round of review – maybe also introducing a few test tools
 * the approximate Hessians work on a copy of the point they are built with, so the point passed in stays unchanged.
 * `TolerantRobustifier` evaluates its cost without overflow for large squared residuals.
 * `WolfePowellLinesearch` ends its bisection as soon as the interval has collapsed to two adjacent floats.
+* `HybridCoefficient`, also inside a `ConjugateGradientBealeRestart`, works on manifolds whose points are not of the type `rand(M)` returns.
+* constraint gradients and Hessians of an objective defined in the embedding are converted also when the index is left out.
+* `set_parameter!` on a cached objective empties its caches, so a cached sub objective of `augmented_Lagrangian_method` and `exact_penalty_method` uses the current penalty parameter.
+* `cache=` also works on manifolds whose points are numbers, for example `Circle()`, both for the `:LRU` and the `:Simple` cache.
 
 ## [0.6.7] September 9, 2026
 

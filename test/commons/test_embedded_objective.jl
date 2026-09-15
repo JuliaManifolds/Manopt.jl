@@ -83,6 +83,15 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 @test get_hess_inequality_constraint(M, eco, p, X, :) == [HX]
                 @test get_hess_inequality_constraint!(M, Y, eco, p, X, 1) == HX
                 @test get_hess_inequality_constraint!(M, Z, eco, p, X, :) == [HX]
+                # leaving the index out is the same as passing the full range
+                @test get_grad_equality_constraint(M, eco, p) == get_grad_equality_constraint(M, eco, p, :)
+                @test get_grad_equality_constraint!(M, Z, eco, p) == get_grad_equality_constraint(M, eco, p, :)
+                @test get_grad_inequality_constraint(M, eco, p) == get_grad_inequality_constraint(M, eco, p, :)
+                @test get_grad_inequality_constraint!(M, Z, eco, p) == get_grad_inequality_constraint(M, eco, p, :)
+                @test get_hess_equality_constraint(M, eco, p, X) == [HX]
+                @test get_hess_equality_constraint!(M, Z, eco, p, X) == [HX]
+                @test get_hess_inequality_constraint(M, eco, p, X) == [HX]
+                @test get_hess_inequality_constraint!(M, Z, eco, p, X) == [HX]
             end
         end
         # the trailing range keeps the problem level calls on these methods

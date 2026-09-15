@@ -408,6 +408,12 @@ using ManifoldDiff: grad_distance
         f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
         grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
         @test conjugate_gradient_descent(M, f, grad_f, data[1]) isa PoincareBallPoint
+        # a hybrid rule, plain and inside a restart, builds its storages from the given point
+        hybrid = HybridCoefficient(FletcherReevesCoefficient(), PolakRibiereCoefficient())
+        @test conjugate_gradient_descent(M, f, grad_f, data[1]; coefficient = hybrid) isa PoincareBallPoint
+        @test conjugate_gradient_descent(
+            M, f, grad_f, data[1]; coefficient = ConjugateGradientBealeRestart(hybrid)
+        ) isa PoincareBallPoint
     end
 
     @testset "Issue #603: CG with HZ rule on a numerically challenging problem" begin

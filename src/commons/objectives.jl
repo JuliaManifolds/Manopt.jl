@@ -348,9 +348,9 @@ See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the grad
 function get_grad_equality_constraint end
 
 function get_grad_equality_constraint(
-        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, args...
+        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, j = :, args...
     )
-    return get_grad_equality_constraint(M, get_objective(admo, false), args...)
+    return get_grad_equality_constraint(M, get_objective(admo, false), p, j, args...)
 end
 function get_grad_equality_constraint(
         M::AbstractManifold, co::ConstrainedManifoldObjective, p, j = :,
@@ -374,9 +374,9 @@ function get_grad_equality_constraint!(
     )
 end
 function get_grad_equality_constraint!(
-        M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, args...
+        M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p, j = :, args...
     )
-    return get_grad_equality_constraint!(M, X, get_objective(admo, false), args...)
+    return get_grad_equality_constraint!(M, X, get_objective(admo, false), p, j, args...)
 end
 
 function get_grad_equality_constraint!(
@@ -401,9 +401,9 @@ See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the grad
 @doc "$(_doc_get_grad_inequality_constraint)"
 function get_grad_inequality_constraint end
 function get_grad_inequality_constraint(
-        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, args...
+        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, j = :, args...
     )
-    return get_grad_inequality_constraint(M, get_objective(admo, false), args...)
+    return get_grad_inequality_constraint(M, get_objective(admo, false), p, j, args...)
 end
 function get_grad_inequality_constraint(
         M::AbstractManifold, co::ConstrainedManifoldObjective, p, j = :,
@@ -418,9 +418,9 @@ function get_grad_inequality_constraint(
 end
 @doc "$(_doc_get_grad_inequality_constraint)"
 function get_grad_inequality_constraint!(
-        M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, args...
+        M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p, j = :, args...
     )
-    return get_grad_inequality_constraint!(M, X, get_objective(admo, false), args...)
+    return get_grad_inequality_constraint!(M, X, get_objective(admo, false), p, j, args...)
 end
 function get_grad_inequality_constraint!(
         M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j = :,
@@ -454,9 +454,9 @@ See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the Hess
 function get_hess_equality_constraint end
 
 function get_hess_equality_constraint(
-        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, args...
+        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X, j = :, args...
     )
-    return get_hess_equality_constraint(M, get_objective(admo, false), args...)
+    return get_hess_equality_constraint(M, get_objective(admo, false), p, X, j, args...)
 end
 function get_hess_equality_constraint(
         M::AbstractManifold, co::ConstrainedManifoldObjective, p, X, j = :,
@@ -471,9 +471,9 @@ function get_hess_equality_constraint(
 end
 @doc "$(_doc_get_hess_equality_constraint)"
 function get_hess_equality_constraint!(
-        M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, args...
+        M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p, X, j = :, args...
     )
-    return get_hess_equality_constraint!(M, Y, get_objective(admo, false), args...)
+    return get_hess_equality_constraint!(M, Y, get_objective(admo, false), p, X, j, args...)
 end
 function get_hess_equality_constraint!(
         M::AbstractManifold, Y, co::ConstrainedManifoldObjective, p, X, j = :,
@@ -498,9 +498,9 @@ See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the Hess
 function get_hess_inequality_constraint end
 
 function get_hess_inequality_constraint(
-        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, args...
+        M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X, j = :, args...
     )
-    return get_hess_inequality_constraint(M, get_objective(admo, false), args...)
+    return get_hess_inequality_constraint(M, get_objective(admo, false), p, X, j, args...)
 end
 
 function get_hess_inequality_constraint(
@@ -516,9 +516,9 @@ function get_hess_inequality_constraint(
 end
 @doc "$(_doc_get_hess_inequality_constraint)"
 function get_hess_inequality_constraint!(
-        M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, args...
+        M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p, X, j = :, args...
     )
-    return get_hess_inequality_constraint!(M, Y, get_objective(admo, false), args...)
+    return get_hess_inequality_constraint!(M, Y, get_objective(admo, false), p, X, j, args...)
 end
 function get_hess_inequality_constraint!(
         M::AbstractManifold, Y, co::ConstrainedManifoldObjective, p, X, j = :,
@@ -1389,7 +1389,7 @@ struct ManifoldCachedObjective{P, O <: AbstractManifoldObjective, C <: NamedTupl
 end
 function ManifoldCachedObjective(
         M::AbstractManifold, objective::O, caches::AbstractVector{<:Symbol} = [:Cost];
-        p::P = rand(M),
+        p::P = maybe_wrap_variable(rand(M)),
         value::R = get_cost(M, objective, p),
         X::T = zero_vector(M, p),
         cache_size::Int = 10,
@@ -1402,7 +1402,7 @@ function ManifoldCachedObjective(
 end
 function ManifoldCachedObjective(
         M::AbstractManifold, objective::O, caches::AbstractVector{<:Symbol} = [:Cost];
-        p::P = rand(M),
+        p::P = maybe_wrap_variable(rand(M)),
         value::R = get_cost(M, objective, p),
         X::T = zero_vector(M, p),
         cache_size::Int = 10,
@@ -2101,6 +2101,13 @@ function get_subtrahend_gradient!(M::AbstractManifold, X, co::ManifoldCachedObje
     return X
 end
 
+function set_parameter!(mco::ManifoldCachedObjective, e::Val, args...)
+    set_parameter!(get_objective(mco, false), e, args...)
+    for c in values(mco.cache)
+        empty!(c)
+    end
+    return mco
+end
 function show(io::IO, mco::ManifoldCachedObjective)
     return print(io, "$(status_summary(mco))")
 end
@@ -4232,7 +4239,7 @@ end
 
 function SimpleManifoldCachedObjective(
         M::AbstractManifold, obj::O;
-        initialized = true, p = rand(M),
+        initialized = true, p = maybe_wrap_variable(rand(M)),
         X = initialized ? get_gradient(M, obj, p) : zero_vector(M, p),
         c = initialized ? get_cost(M, obj, p) : 0.0,
     ) where {O <: AbstractManifoldObjective}

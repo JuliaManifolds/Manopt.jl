@@ -170,7 +170,7 @@ function ConjugateGradientDescentState(
         TRC <: AbstractRestartCondition, TRetr <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
         C <: AbstractDict{Symbol},
     }
-    _coefficient = DirectionUpdateRuleStorage(M, _produce_type(coefficient, M); p_init = p, X_init = initial_gradient)
+    _coefficient = DirectionUpdateRuleStorage(M, _produce_type(coefficient, M, p); p_init = p, X_init = initial_gradient)
     return ConjugateGradientDescentState(;
         callbacks = callbacks,
         p = p, p_old = copy(M, p),
@@ -1005,12 +1005,19 @@ mutable struct ConjugateGradientBealeRestartRule{
     vector_transport_method::VT
 end
 function ConjugateGradientBealeRestartRule(
+        M::AbstractManifold, p,
+        direction_update::Union{DirectionUpdateRule, ManifoldDefaultsFactory}; kwargs...
+    )
+    return ConjugateGradientBealeRestartRule(M, direction_update; p = p, kwargs...)
+end
+function ConjugateGradientBealeRestartRule(
         M::AbstractManifold,
         direction_update::Union{DirectionUpdateRule, ManifoldDefaultsFactory};
+        p = rand(M),
         threshold::F = 0.2,
         vector_transport_method::V = default_vector_transport_method(M),
     ) where {V <: AbstractVectorTransportMethod, F <: Real}
-    dir = _produce_type(direction_update, M)
+    dir = _produce_type(direction_update, M, p)
     return ConjugateGradientBealeRestartRule{typeof(dir), V, F}(
         dir, threshold, vector_transport_method
     )
@@ -1097,7 +1104,7 @@ $(_note(:ManifoldDefaultsFactory, "ConjugateGradientBealeRestartRule"))
 """
 function ConjugateGradientBealeRestart(args...; kwargs...)
     return ManifoldDefaultsFactory(
-        Manopt.ConjugateGradientBealeRestartRule, args...; kwargs...
+        Manopt.ConjugateGradientBealeRestartRule, args...; requires_point = true, kwargs...
     )
 end
 
@@ -1133,14 +1140,21 @@ struct HybridCoefficientRule{F <: Real} <: DirectionUpdateRule
     lower_bound_scale::F
 end
 function HybridCoefficientRule(
+        M::AbstractManifold, p,
+        coefficients::Union{DirectionUpdateRule, ManifoldDefaultsFactory}...; kwargs...
+    )
+    return HybridCoefficientRule(M, coefficients...; p = p, kwargs...)
+end
+function HybridCoefficientRule(
         M::AbstractManifold,
         coefficients::Union{DirectionUpdateRule, ManifoldDefaultsFactory}...;
+        p = rand(M),
         lower_bound::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = SteepestDescentCoefficient(),
         lower_bound_scale::Real = 1.0
     )
-
-    coefficients_new = [DirectionUpdateRuleStorage(M, _produce_type(c, M)) for c in coefficients]
-    lower_bound_new = DirectionUpdateRuleStorage(M, _produce_type(lower_bound, M))
+    p_init = maybe_wrap_variable(p)
+    coefficients_new = [DirectionUpdateRuleStorage(M, _produce_type(c, M); p_init = p_init) for c in coefficients]
+    lower_bound_new = DirectionUpdateRuleStorage(M, _produce_type(lower_bound, M); p_init = p_init)
     return Manopt.HybridCoefficientRule(coefficients_new, lower_bound_new, lower_bound_scale)
 end
 
@@ -1226,7 +1240,7 @@ $(_note(:ManifoldDefaultsFactory, "HybridCoefficientRule"))
 """
 function HybridCoefficient(args...; kwargs...)
     return ManifoldDefaultsFactory(
-        Manopt.HybridCoefficientRule, args...; kwargs...
+        Manopt.HybridCoefficientRule, args...; requires_point = true, kwargs...
     )
 end
 

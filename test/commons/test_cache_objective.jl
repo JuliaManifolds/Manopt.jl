@@ -22,6 +22,12 @@ function (tgc::TestGradCount)(M, X, p)
     X .= p
     return X
 end
+# A cost with a parameter that can be changed with `set_parameter!`
+mutable struct TestScaledCost
+    s::Float64
+end
+(tsc::TestScaledCost)(M, p) = tsc.s * norm(p)
+Manopt.set_parameter!(tsc::TestScaledCost, ::Val{:s}, s) = (tsc.s = s; tsc)
 mutable struct TestCostGradCount
     i::Int
 end
@@ -341,6 +347,22 @@ end
         # Check default trigger
         @test_throws DomainError Manopt.init_caches(M, [:Cost], Nothing)
         @test_throws ErrorException Manopt.init_caches(M, [:None], LRU)
+        # changing a parameter of the wrapped objective empties the caches
+        sc = TestScaledCost(1.0)
+        lco3 = objective_cache_factory(M, ManifoldCostObjective(sc), (:LRU, [:Cost], 5))
+        @test get_cost(M, lco3, p) == 1.0
+        Manopt.set_parameter!(lco3, :Cost, :s, 2.0)
+        @test get_cost(M, lco3, p) == 2.0
+    end
+    @testset "Caches on a manifold with number points" begin
+        M = Circle()
+        f(M, p) = 0.5 * p^2
+        grad_f(M, p) = p
+        ref = gradient_descent(M, f, grad_f, 0.5; stopping_criterion = StopAfterIteration(3))
+        for cache in ((:LRU, [:Cost]), (:LRU, [:Cost, :Gradient]), :Simple)
+            q = gradient_descent(M, f, grad_f, 0.5; cache = cache, stopping_criterion = StopAfterIteration(3))
+            @test q ≈ ref
+        end
     end
     @testset "Function passthrough" begin
         Random.seed!(42)
