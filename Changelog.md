@@ -20,7 +20,8 @@ This is yet another round of review – maybe also introducing a few test tools
 
 ### Fixed
 
-* the approximate Hessians no longer store and overwrite the point they are built with.
+* the approximate Hessians work on a copy of the point they are built with, so the point passed in stays unchanged.
+* `TolerantRobustifier` evaluates its cost without overflow for large squared residuals.
 
 ## [0.6.7] September 9, 2026
 

@@ -66,7 +66,7 @@ using Manopt, Test
         a1 = b * (s1 - s2)
         b1 = 1 / (1 + exp((a - x) / b))
         c1 = 1 / (4 * b * cosh((a - x) / (2b))^2)
-        @test Manopt.get_robustifier_values(TolerantRobustifier(a, b), x) == (a1, b1, c1)
+        @test all(Manopt.get_robustifier_values(TolerantRobustifier(a, b), x) .≈ (a1, b1, c1))
     end
     @testset "Tukey robustifier" begin
         @test Manopt.get_robustifier_values(TukeyRobustifier(), 0.0) == (0.0, 1.0, -2.0)

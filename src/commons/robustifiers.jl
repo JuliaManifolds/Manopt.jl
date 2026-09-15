@@ -352,10 +352,10 @@ end
 function get_robustifier_values(trf::TolerantRobustifier, x::Real)
     a = trf.a
     b = trf.b
-    exp_term1 = exp((x - a) / b)
-    exp_term2 = exp(-a / b)
-    s1 = log(1 + exp_term1)
-    s2 = log(1 + exp_term2)
+    # log(1 + e^t) = max(t, 0) + log(1 + e^{-|t|}), to reduce chance of overflow
+    softplus(t) = max(t, zero(t)) + log1p(exp(-abs(t)))
+    s1 = softplus((x - a) / b)
+    s2 = softplus(-a / b)
     val = b * (s1 - s2)
     deriv1 = 1 / (1 + exp((a - x) / b))
     deriv2 = 1 / (4 * b * cosh((a - x) / (2b))^2)
