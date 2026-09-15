@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test, Random
+using Manifolds, Manopt, Test, Random, ManifoldDiff
 using Manopt: get_cost_function, get_gradient_function, get_differential_function
 using LinearAlgebra: Symmetric
 
@@ -72,6 +72,28 @@ using LinearAlgebra: Symmetric
         @test get_count(c_obj, :Cost) == 0
         reset_counters!(rc_obj) # also works on decorated counters
         @test_throws ErrorException reset_counters!(obj) # errors on non-counter ones
+    end
+    @testset "Counting a single proximal map" begin
+        M = Hyperbolic(2)
+        p = [0.0, 0.0, 1.0]
+        p0 = [1.0, 0.0, √2]
+        g(M, q) = distance(M, q, p)^2
+        grad_g(M, q) = -2 * log(M, q, p)
+        h(M, q) = distance(M, q, p)
+        prox_h(M, λ, q) = ManifoldDiff.prox_distance(M, λ, p, q, 1)
+        f(M, q) = g(M, q) + h(M, q)
+        ob = ManifoldProximalGradientObjective(f, g, grad_g, prox_h)
+        c_ob = ManifoldCountObjective(M, ob, [:ProximalMap]; p = p0)
+        @test get_count(c_ob, :ProximalMap) == 0
+        get_proximal_map(M, c_ob, 1.0, p0)
+        @test get_count(c_ob, :ProximalMap) == 1
+        # and through the solver
+        c_ob2, q = proximal_gradient_method(
+            M, f, g, grad_g, p0;
+            prox_nonsmooth = prox_h, count = [:ProximalMap],
+            stopping_criterion = StopAfterIteration(3), return_objective = true,
+        )
+        @test get_count(c_ob2, :ProximalMap) == 6
     end
     @testset "Function passthrough" begin
         Random.seed!(42)

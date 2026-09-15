@@ -531,7 +531,14 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
                     ρ .* (exp.(c[2] ./ u) .- exp.(-c[2] ./ u)) ./
                     (exp.(c[2] ./ u) .+ exp.(-c[2] ./ u))
                 vg2 = sum(vg2f .* gh)
-                @test EPGe(M, p) == gf + vg1 + vg2
+                @test EPGe(M, p) ≈ gf + vg1 + vg2
+                # for a small u the smoothing is close to the exact penalty
+                u_s = 1.0e-6
+                EPCe_s = ExactPenaltyCost(P, ρ, u_s; smoothing = LogarithmicSumOfExponentials())
+                EPGe_s = ExactPenaltyGrad(P, ρ, u_s; smoothing = LogarithmicSumOfExponentials())
+                # g = [0, -3]: only the active constraint contributes, h = [5]: |h|
+                @test EPCe_s(M, p) ≈ f(M, p) + ρ * (u_s * log(2) + 5)
+                @test EPGe_s(M, p) ≈ gf + ρ * 0.5 * gg[1] + ρ * gh[1]
                 # Huber Cost
                 EPCh = ExactPenaltyCost(P, ρ, u; smoothing = LinearQuadraticHuber())
                 EPGh = ExactPenaltyGrad(P, ρ, u; smoothing = LinearQuadraticHuber())

@@ -27,6 +27,9 @@ This is yet another round of review – maybe also introducing a few test tools
 * constraint gradients and Hessians of an objective defined in the embedding are converted also when the index is left out.
 * `set_parameter!` on a cached objective empties its caches, so a cached sub objective of `augmented_Lagrangian_method` and `exact_penalty_method` uses the current penalty parameter.
 * `cache=` also works on manifolds whose points are numbers, for example `Circle()`, both for the `:LRU` and the `:Simple` cache.
+* `count=[:ProximalMap]` also works for objectives that store a single proximal map, such as `ManifoldProximalGradientObjective`.
+* the exact penalty cost and gradient with `LogarithmicSumOfExponentials` smoothing stay finite for small `u`.
+* `LevenbergMarquardt` switches a block off when its robustifier has a vanishing first derivative, for example `TukeyRobustifier` beyond its cut-off.
 
 ## [0.6.7] September 9, 2026
 

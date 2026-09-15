@@ -287,8 +287,10 @@ function (L::ExactPenaltyCost{<:LogarithmicSumOfExponentials})(M::AbstractManifo
     hp = get_equality_constraint(M, L.co, p, :)
     m = length(gp)
     n = length(hp)
-    cost_ineq = (m > 0) ? sum(L.u .* log.(1 .+ exp.(gp ./ L.u))) : 0.0
-    cost_eq = (n > 0) ? sum(L.u .* log.(exp.(hp ./ L.u) .+ exp.(-hp ./ L.u))) : 0.0
+    # log(1 + e^t) = max(t, 0) + log(1 + e^{-|t|}), to reduce chance of overflow
+    cost_ineq = (m > 0) ? sum(max.(gp, 0) .+ L.u .* log1p.(exp.(-abs.(gp) ./ L.u))) : 0.0
+    # log(e^t + e^{-t}) = |t| + log(1 + e^{-2|t|}), to reduce chance of overflow
+    cost_eq = (n > 0) ? sum(abs.(hp) .+ L.u .* log1p.(exp.(-2 .* abs.(hp) ./ L.u))) : 0.0
     return get_cost(M, L.co, p) + (L.ρ) * (cost_ineq + cost_eq)
 end
 function (L::ExactPenaltyCost{<:LinearQuadraticHuber})(M::AbstractManifold, p)
@@ -347,14 +349,12 @@ function (EG::ExactPenaltyGrad{<:LogarithmicSumOfExponentials})(M::AbstractManif
     get_gradient!(M, X, EG.co, p)
     c = 0
     # add gradient of the components of g
-    (m > 0) && (c = EG.ρ .* exp.(gp ./ EG.u) ./ (1 .+ exp.(gp ./ EG.u)))
+    # e^t / (1 + e^t) = 1 / (1 + e^{-t}), to reduce chance of overflow
+    (m > 0) && (c = EG.ρ ./ (1 .+ exp.(-gp ./ EG.u)))
     (m > 0) && (X .+= sum(get_grad_inequality_constraint(M, EG.co, p, :) .* c))
     # add gradient of the components of h
-    (n > 0) && (
-        c =
-            EG.ρ .* (exp.(hp ./ EG.u) .- exp.(-hp ./ EG.u)) ./
-            (exp.(hp ./ EG.u) .+ exp.(-hp ./ EG.u))
-    )
+    # (e^t - e^{-t}) / (e^t + e^{-t}) = tanh(t), to reduce chance of overflow
+    (n > 0) && (c = EG.ρ .* tanh.(hp ./ EG.u))
     (n > 0) && (X .+= sum(get_grad_equality_constraint(M, EG.co, p, :) .* c))
     return X
 end

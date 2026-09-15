@@ -76,6 +76,9 @@ using Manopt, Test
         c = 2 * (x - 1)
         @test Manopt.get_robustifier_values(TukeyRobustifier(), x) == (a, b, c)
         @test Manopt.get_robustifier_values(TukeyRobustifier(), 1.5) == (1 / 3, 0.0, 0.0)
+        # beyond the cut-off both derivatives vanish and the Levenberg-Marquardt block is switched off
+        @test Manopt.get_LevenbergMarquardt_scaling(0.0, 0.0, 2.0, 1.0e-4, :Strict) == (0.0, 0.0)
+        @test Manopt.get_LevenbergMarquardt_scaling(0.0, 0.0, 2.0, 1.0e-4, :Normal) == (0.0, 0.0)
     end
     @testset "RobustifierFunction" begin
         # Manual functions

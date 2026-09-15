@@ -580,6 +580,8 @@ function get_LevenbergMarquardt_scaling(
         ρ_prime::Real, ρ_double_prime::Real, FkSq::Real,
         threshold::Real = 1.0e-5, mode::Symbol = :Strict
     )
+    # a vanishing first derivative switches the block off, `α` is not defined there
+    iszero(ρ_prime) && return (zero(ρ_prime), 0.0)
     # second derivative existent and negative: In strict mode (motivated by ceres) -> return sqrt(ρ_prime), 0
     ((ρ_double_prime < 0 && mode == :Strict)) && return (sqrt(ρ_prime), 0.0)
     (iszero(FkSq) && mode == :Strict) && return (sqrt(ρ_prime), 0.0)
