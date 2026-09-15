@@ -2313,6 +2313,8 @@ function (a::WolfePowellLinesearchStepsize)(
     vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
     while get_differential(mp, a.candidate_point, a.candidate_direction; gradient = Y) < a.sufficient_curvature * l
         step = (s_minus + s_plus) / 2
+        # the bisection interval collapsed to two adjacent floats, so it cannot shrink further
+        ((step == s_minus) || (step == s_plus)) && break
         ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
         fNew = get_cost(mp, a.candidate_point)
         if fNew <= f0 + a.sufficient_decrease * step * l

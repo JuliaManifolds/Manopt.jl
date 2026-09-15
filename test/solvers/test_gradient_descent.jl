@@ -28,6 +28,12 @@ using ManifoldDiff: grad_distance
             return_state = true,
         )
         p = get_solver_result(s)[]
+        # the Wolfe-Powell bisection collapses to two adjacent floats within 26 iterations here
+        q = gradient_descent(
+            M, f, grad_f, data[1];
+            stepsize = WolfePowellLinesearch(), stopping_criterion = StopAfterIteration(26),
+        )
+        @test isapprox(M, q, apprpstar; atol = 1.0e-8)
         res_debug = String(take!(my_io))
         @test res_debug === " f(x): 1.357071\n"
         p2 = gradient_descent(
