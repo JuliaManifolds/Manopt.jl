@@ -91,6 +91,7 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
             f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ
         )
         ro = Manopt.Test.DummyDecoratedObjective(pdmsno)
+        @test get_cost(M, pdmsno, x0) == f(M, x0)
         X = zero_vector(M, x0)
         Y = get_differential_primal_prox(M, pdmsno, 0.1, x0, X)
         Y2 = get_differential_primal_prox(M, ro, 0.1, x0, X)

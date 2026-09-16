@@ -167,6 +167,10 @@ Since `i` is assumed to be a linear index, you can provide
 * `:` to return the vector of all values, which is also the default
 
 This function can perform the evaluation in-place of `V`.
+
+# Keyword arguments
+
+* `value_cache=zeros(float(real(number_eltype(p))), length(vgf))`: memory to evaluate the function into.
 """
 
 @doc "$(_doc_get_value)"
@@ -183,7 +187,7 @@ function get_value(
 end
 function get_value(
         M::AbstractManifold, vgf::AbstractVectorFunction{<:FunctionVectorialType},
-        p, i = :; value_cache = zeros(vgf.range_dimension),
+        p, i = :; value_cache = zeros(float(real(number_eltype(p))), vgf.range_dimension),
     )
     vgf.value!(M, value_cache, p)
     return value_cache[i]
@@ -191,7 +195,7 @@ end
 @doc "$(_doc_get_value)"
 function get_value!(
         M::AbstractManifold, V, vgf::AbstractVectorFunction{<:FunctionVectorialType}, p, i = :;
-        value_cache = zeros(vgf.range_dimension),
+        value_cache = zeros(float(real(number_eltype(p))), vgf.range_dimension),
     )
     vgf.value!(M, value_cache, p)
     V .= value_cache[i]

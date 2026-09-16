@@ -37,6 +37,8 @@ end
         # the generic cost-and-differential fallback for any first order objective
         @test Manopt.get_cost_and_differential(M, mho, p, X) == (f(M, p), 0)
         @test Manopt.get_cost_and_differential(mp, p, X) == (f(M, p), 0)
+        # the generic differential function for any first order objective
+        @test Manopt.get_differential_function(mho)(M, p, X) == 0
         # Hessian
         @test get_hessian(mp, p, X) == 0.5 * X
         get_hessian!(mp, Y, p, X)

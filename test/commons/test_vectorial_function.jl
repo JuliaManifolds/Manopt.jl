@@ -96,6 +96,22 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     @test Manopt.get_basis(vgf_ji.jacobian_type) == vgf_ji.jacobian_type.basis
     @test Manopt.get_basis(vgf_jib.jacobian_type) == DefaultBasis()
     @test Manopt.get_basis(vgf_vi.jacobian_type) == DefaultOrthonormalBasis()
+    @testset "Hessian in array power representation" begin
+        Ms = Sphere(2)
+        ps = [1.0, 0.0, 0.0]
+        Xs = [0.0, 1.0, 0.0]
+        gs(M, q) = [q[2], q[3]]
+        grad_arr(M, q) = hcat(project(M, q, [0.0, 1.0, 0.0]), project(M, q, [0.0, 0.0, 1.0]))
+        hess_arr(M, q, Y) = hcat(-q * Y[2], -q * Y[3])
+        vhf_arr = VectorHessianFunction(
+            gs, grad_arr, hess_arr, 2;
+            jacobian_type = FunctionVectorialType(ArrayPowerRepresentation()),
+            hessian_type = FunctionVectorialType(ArrayPowerRepresentation()),
+        )
+        @test get_hessian(Ms, vhf_arr, ps, Xs, :) == hess_arr(Ms, ps, Xs)
+        @test get_hessian(Ms, vhf_arr, ps, Xs, 1) == hess_arr(Ms, ps, Xs)[:, 1]
+        @test get_gradient(Ms, vhf_arr, ps, :) == grad_arr(Ms, ps)
+    end
     @testset "differential with a number-typed point" begin
         # a differential returns one number per component, so it must not be wrapped as a
         # tangent vector – for a number-typed point that wrapping used to throw
@@ -178,6 +194,8 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         ci = similar([c[1]])
         get_value!(M, ci, vgf, p, 1)
         @test ci[1] == c[1]
+        # the value keeps the precision of the point
+        @test eltype(get_value(M, vgf, BigFloat.(p))) == BigFloat
         if !(vgf isa VectorDifferentialFunction)
             # range access not yet implemented / too expensive for VDF
             @test get_gradient(M, vgf, p) == gg

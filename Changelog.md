@@ -47,6 +47,21 @@ This is yet another round of review – maybe also introducing a few test tools
 * `difference_of_convex_algorithm` adds its gradient norm criterion only when the objective has a gradient.
 * `LevenbergMarquardt` with `use_unified_basis=true` uses the basis of the Jacobians.
 * `Manopt.Test.adjoint_differential_forward_logs` is the adjoint of `differential_forward_logs` on curved manifolds.
+* `objective_type=:Euclidean` also converts the subgradient.
+* both primal-dual objectives evaluate their cost, for example for `record=[:Cost]`.
+* `projected_gradient_method` works with a decorated objective, for example from `cache=`.
+* `TrustRegionsState` accepts a decorated Hessian objective.
+* `get_gradient_function` of a decorated objective is `missing` when the objective has no gradient.
+* a vectorial Hessian in array power representation works with an allocating evaluation.
+* `get_value` keeps the precision of the point.
+* `ManifoldCountObjective` counts calls to `get_cost_and_differential`.
+* `get_differential_function` has a fallback for any `AbstractManifoldFirstOrderObjective`.
+* `ManifoldCachedObjective` serves and fills its caches in `get_cost_and_differential`.
+* `DebugEvery` and `RecordEvery` reject a nonpositive `every` with a `DomainError`.
+* `update_storage!(a, d::Dict)` merges the keys of `d` into the ones already tracked.
+* the `DebugWarnIf…` actions warn only for actual iterations of `DebugEvery`.
+* `DebugFeasibility` evaluates the constraints only on calls where it prints.
+* `record = [:Time, n]` records the cumulative time.
 
 ## [0.6.7] September 9, 2026
 

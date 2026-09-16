@@ -187,6 +187,7 @@ mutable struct DebugEvery <: DebugAction
     function DebugEvery(
             d::DebugAction, every::Int = 1, always_update::Bool = true; activation_offset = 1
         )
+        (every < 1) && throw(DomainError(every, "DebugEvery requires a positive `every`."))
         return new(d, every, always_update, activation_offset)
     end
 end

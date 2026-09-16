@@ -260,6 +260,7 @@ mutable struct RecordEvery <: RecordAction
     every::Int
     always_update::Bool
     function RecordEvery(r::RecordAction, every::Int = 1, always_update::Bool = true)
+        (every < 1) && throw(DomainError(every, "RecordEvery requires a positive `every`."))
         return new(r, every, always_update)
     end
 end

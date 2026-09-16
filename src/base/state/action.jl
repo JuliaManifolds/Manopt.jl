@@ -359,5 +359,5 @@ the dictionary `d`. The values are merged, where the values from `d` are preferr
 function update_storage!(a::AbstractStateAction, d::Dict{Symbol, <:Any})
     merge!(a.values, d)
     # update keys
-    return a.keys = collect(keys(a.values))
+    return a.keys = union(a.keys, keys(d))
 end

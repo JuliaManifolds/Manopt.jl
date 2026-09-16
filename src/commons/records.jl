@@ -257,16 +257,21 @@ end
 
 record the gradient evaluated at the current iterate
 
-# Constructor
+# Constructors
     RecordGradient(X)
 
 initialize the [`RecordAction`](@ref) to the corresponding type of the tangent vector.
+
+    RecordGradient(T::DataType)
+
+initialize the gradient record array to the data type `T`.
 """
 mutable struct RecordGradient{T} <: RecordAction
     recorded_values::Array{T, 1}
     RecordGradient{T}() where {T} = new(Array{T, 1}())
 end
 RecordGradient(::T) where {T} = RecordGradient{T}()
+RecordGradient(d::DataType) = RecordGradient{d}()
 function (r::RecordGradient{T})(
         ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     ) where {T}
@@ -478,8 +483,8 @@ mutable struct RecordTime <: RecordAction
     end
 end
 function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    # At initialization and reset (k <= 0) also reset start
-    (k <= 0) && (r.start = Nanosecond(time_ns()))
+    # a reset (k < 0) restarts the timer, an update call (k = 0) leaves it alone
+    (k < 0) && (r.start = Nanosecond(time_ns()))
     t = Nanosecond(time_ns()) - r.start
     (r.mode == :Iterative) && (r.start = Nanosecond(time_ns()))
     if r.mode == :Total

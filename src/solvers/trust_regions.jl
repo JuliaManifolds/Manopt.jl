@@ -200,7 +200,12 @@ function TrustRegionsState(
     return TrustRegionsState(M, sub_problem_, cfs; kwargs...)
 end
 function TrustRegionsState(
-        M::AbstractManifold, mho::AbstractManifoldHessianObjective; p = rand(M), kwargs...
+        M::AbstractManifold,
+        mho::Union{
+            AbstractManifoldHessianObjective,
+            AbstractDecoratedManifoldObjective{<:AbstractManifoldHessianObjective},
+        };
+        p = rand(M), kwargs...,
     )
     TpM = TangentSpace(M, copy(M, p))
     problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))

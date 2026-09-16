@@ -85,6 +85,8 @@ import Manifolds: inner
         @test dcpsc.sub_state isa Manopt.ClosedFormSubSolverState
 
         dc_cost_a = ManifoldDifferenceOfConvexObjective(f, grad_h)
+        # without a gradient the decorated accessor is missing as well
+        @test ismissing(Manopt.get_gradient_function(Manopt.decorate_objective!(M, dc_cost_a; count = [:Cost])))
         @test_throws ErrorException difference_of_convex_algorithm(M, dc_cost_a, p1; grad_g = grad_g)
         @test_throws ErrorException difference_of_convex_algorithm(M, dc_cost_a, p1; g = g)
         dc_cost_i = ManifoldDifferenceOfConvexObjective(
@@ -117,6 +119,11 @@ import Manifolds: inner
             M, f, g, grad_h!, p0; grad_g = (grad_g!), evaluation = InplaceEvaluation()
         )
         p2 = difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g = grad_g)
+        # decorated objectives without a gradient run as well
+        p2e = difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g = grad_g, objective_type = :Euclidean)
+        @test isapprox(M, p2e, p2; atol = 1.0e-8)
+        p2c = difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g = grad_g, count = [:Cost])
+        @test isapprox(M, p2c, p2; atol = 1.0e-8)
         s1 = difference_of_convex_algorithm(
             M, f, g, grad_h, p0; grad_g = grad_g, gradient = grad_f, return_state = true
         )

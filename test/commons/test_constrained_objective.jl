@@ -333,6 +333,20 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test Manopt.status_summary(df; context = :short) === "(:Feasibility, [\"feasible: \", :Feasible])"
         df(mp, st, 1)
         @test String(take!(io)) == "feasible: No"
+        # the constraints are only evaluated on calls that print
+        cnt = Ref(0)
+        gc(M, q) = (cnt[] += 1; g(M, q))
+        coc = ConstrainedManifoldObjective(f, grad_f; M = M, g = gc, grad_g = grad_g, h = h, grad_h = grad_h)
+        mpc = DefaultManoptProblem(M, coc)
+        cnt[] = 0 # the constructor evaluated g once
+        dfc = DebugFeasibility(; io = io, at_init = false)
+        dfc(mpc, st, -1)
+        DebugEvery(dfc, 10)(mpc, st, 3)
+        @test cnt[] == 0
+        @test String(take!(io)) == ""
+        dfc(mpc, st, 1)
+        @test cnt[] == 1
+        @test String(take!(io)) == "feasible: No"
     end
     @testset "Lagrangians" begin
         μ = [1.0, 1.0]

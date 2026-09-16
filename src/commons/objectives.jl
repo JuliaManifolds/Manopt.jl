@@ -847,6 +847,12 @@ function get_projected_point!(M::AbstractManifold, q, cso::ManifoldConstrainedSe
     cso.project!(M, q, p)
     return q
 end
+function get_projected_point(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_projected_point(M, get_objective(admo, false), p)
+end
+function get_projected_point!(M::AbstractManifold, q, admo::AbstractDecoratedManifoldObjective, p)
+    return get_projected_point!(M, q, get_objective(admo, false), p)
+end
 
 #
 #
@@ -952,8 +958,29 @@ function get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P,
     riemannian_gradient!(M, X, p, emo.X)
     return X
 end
+function get_subgradient(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p) where {P}
+    q = local_embed!(M, emo, p)
+    return riemannian_gradient(M, p, get_subgradient(get_embedding(M, typeof(p)), emo.objective, q))
+end
+function get_subgradient(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p) where {P, T}
+    q = local_embed!(M, emo, p)
+    get_subgradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q)
+    return riemannian_gradient(M, p, emo.X)
+end
+function get_subgradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P, Missing}, p) where {P}
+    q = local_embed!(M, emo, p)
+    riemannian_gradient!(M, X, p, get_subgradient(get_embedding(M, typeof(p)), emo.objective, q))
+    return X
+end
+function get_subgradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P, T}, p) where {P, T}
+    q = local_embed!(M, emo, p)
+    get_subgradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q)
+    riemannian_gradient!(M, X, p, emo.X)
+    return X
+end
 function get_gradient_function(emo::EmbeddedManifoldObjective{P, T}, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation()) where {P, T}
     recursive && (return get_gradient_function(emo.objective, recursive; evaluation = evaluation))
+    ismissing(get_gradient_function(emo.objective, true; evaluation = evaluation)) && return missing
     if evaluation isa AllocatingEvaluation
         return (M, p) -> get_gradient(M, emo, p)
     else
@@ -1494,6 +1521,7 @@ function get_gradient_function(
     )
     # recursive: Unwrap cache
     recursive && (return get_gradient_function(sco.objective, recursive; evaluation = evaluation))
+    ismissing(get_gradient_function(sco.objective, true; evaluation = evaluation)) && return missing
     if evaluation isa AllocatingEvaluation
         return (M, p) -> get_gradient(M, sco, p)
     else
@@ -1539,6 +1567,12 @@ function get_cost_and_gradient!(M::AbstractManifold, X, mco::ManifoldCachedObjec
         copyto!(M, X, p, mco.cache[:Gradient][p])
         return mco.cache[:Cost][p], X
     end
+end
+
+function get_cost_and_differential(M::AbstractManifold, mco::ManifoldCachedObjective, p, X; kwargs...)
+    # without a cache for either, keep the combined evaluation
+    !any(haskey.(Ref(mco.cache), (:Cost, :Differential))) && return get_cost_and_differential(M, mco.objective, p, X; kwargs...)
+    return get_cost(M, mco, p), get_differential(M, mco, p, X; kwargs...)
 end
 
 function get_constraints(M::AbstractManifold, co::ManifoldCachedObjective, p)
@@ -2404,6 +2438,14 @@ function get_cost_and_gradient!(M::AbstractManifold, X, co::ManifoldCountObjecti
     return get_cost_and_gradient!(M, X, co.objective, p)
 end
 
+function get_cost_and_differential(
+        M::AbstractManifold, co::ManifoldCountObjective, p, X; kwargs...
+    )
+    _count_if_exists(co, :Cost)
+    _count_if_exists(co, :Differential)
+    return get_cost_and_differential(M, co.objective, p, X; kwargs...)
+end
+
 function get_differential(M::AbstractManifold, co::ManifoldCountObjective, p, X; kwargs...)
     _count_if_exists(co, :Differential)
     return get_differential(M, co.objective, p, X; kwargs...)
@@ -2416,6 +2458,7 @@ end
 
 function get_gradient_function(mco::ManifoldCountObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
     recursive && return get_gradient_function(mco.objective, recursive; evaluation = evaluation)
+    ismissing(get_gradient_function(mco.objective, true; evaluation = evaluation)) && return missing
     # Otherwise, keep count
     if evaluation isa AllocatingEvaluation
         return (M, p) -> get_gradient(M, mco, p)
@@ -4168,6 +4211,7 @@ end
 function get_gradient_function(scaled_objective::ScaledManifoldObjective, recursive::Bool = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
     # “unwrap scaling even”
     recursive && (return get_gradient_function(scaled_objective.objective, recursive; evaluation = evaluation))
+    ismissing(get_gradient_function(scaled_objective.objective, true; evaluation = evaluation)) && return missing
     if evaluation isa AllocatingEvaluation
         return (M, p) -> get_gradient(M, scaled_objective, p)
     else
@@ -4370,6 +4414,7 @@ function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjectiv
 end
 function get_gradient_function(sco::SimpleManifoldCachedObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
     recursive && (return get_gradient_function(sco.objective, recursive; evaluation = evaluation))
+    ismissing(get_gradient_function(sco.objective, true; evaluation = evaluation)) && return missing
     if evaluation isa AllocatingEvaluation
         return (M, p) -> get_gradient(M, sco, p)
     else

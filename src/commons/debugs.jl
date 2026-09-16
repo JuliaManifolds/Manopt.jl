@@ -501,6 +501,7 @@ end
 function (d::DebugFeasibility)(
         mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < (d.at_init ? 0 : 1)) && return nothing
     s = ""
     cmo = get_objective(mp, true) #Unwrap to get the constrained objective.
     p = get_iterate(st)
@@ -523,7 +524,7 @@ function (d::DebugFeasibility)(
         (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz); init = 0.0))")
         (f === :TotalInEq) && (s *= "$(sum(ineqc_pos; init = 0.0))")
     end
-    print(d.io, (k >= (d.at_init ? 0 : 1)) ? s : "")
+    print(d.io, s)
     return nothing
 end
 function show(io::IO, d::DebugFeasibility)
@@ -1344,6 +1345,7 @@ end
 function (d::DebugWarnIfCostIncreases)(
         p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < 0) && (return nothing)
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
         if cost > d.old_cost + d.tol
@@ -1399,6 +1401,7 @@ end
 function (d::DebugWarnIfCostNotFinite)(
         p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < 0) && (return nothing)
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
         if !isfinite(cost)
@@ -1452,6 +1455,7 @@ end
 function (d::DebugWarnIfFieldNotFinite)(
         ::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < 0) && (return nothing)
     if d.status !== :No
         if d.field == :Iterate
             v = get_iterate(st)
@@ -1518,6 +1522,7 @@ end
 function (d::DebugWarnIfGradientNormTooLarge)(
         mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < 0) && (return nothing)
     if d.status !== :No
         M = get_manifold(mp)
         p = get_iterate(st)
@@ -1574,7 +1579,7 @@ end
 function (d::DebugWarnIfStepsizeCollapsed)(
         amp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
-    (k == 0) && (return nothing)
+    (k < 1) && (return nothing)
     if d.status !== :No
         if get_last_stepsize(amp, st, k) ≤ d.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(d.stop_when_stepsize_less)."

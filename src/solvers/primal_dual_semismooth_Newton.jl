@@ -16,7 +16,9 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 
 # Constructor
 
-    PrimalDualManifoldSemismoothNewtonObjective(cost, prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual, linearized_forward_operator, adjoint_linearized_operator; Λ=missing, evaluation=AllocatingEvaluation())
+    PrimalDualManifoldSemismoothNewtonObjective(cost, prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual, linearized_forward_operator, adjoint_linearized_operator; Λ=missing, p=missing, evaluation=AllocatingEvaluation())
+
+A point `p=` wraps the cost for points that are numbers.
 """
 mutable struct PrimalDualManifoldSemismoothNewtonObjective{
         TC, PF, DPF, PG, DPG, LFO, TALO, L,
@@ -33,9 +35,9 @@ end
 function PrimalDualManifoldSemismoothNewtonObjective(
         cost::C, prox_F::PF, diff_prox_F::DPF, prox_G_dual::PG, diff_prox_G_dual::DPG,
         linearized_forward_operator::LFO, adjoint_linearized_operator::AL;
-        Λ::L = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        Λ::L = missing, p = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     ) where {C, PF, DPF, PG, DPG, LFO, AL, L}
-    cost_ = maybe_wrap_function(cost, evaluation; result = :Number)
+    cost_ = maybe_wrap_function(cost, p; result = :Number)
     prox_F_ = maybe_wrap_function(prox_F, evaluation)
     diff_prox_F_ = maybe_wrap_function(diff_prox_F, evaluation)
     prox_G_dual_ = maybe_wrap_function(prox_G_dual, evaluation)

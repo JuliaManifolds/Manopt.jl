@@ -22,11 +22,12 @@ Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
     PrimalDualManifoldObjective(cost, prox_f, prox_g_dual, adjoint_linearized_operator;
         linearized_forward_operator::Union{Function,Missing}=missing,
         Λ::Union{Function,Missing}=missing,
+        p=missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     )
 
 Using the `evaluation=` keyword can be used to specify that all functions work in-place instead
-of the default allocating one.
+of the default allocating one. A point `p=` wraps the cost for points that are numbers.
 """
 mutable struct PrimalDualManifoldObjective{
         TC, TP, TDP, LFO, ALFO, L,
@@ -42,9 +43,10 @@ function PrimalDualManifoldObjective(
         cost, prox_f, prox_g_dual, adjoint_linearized_operator;
         linearized_forward_operator::Union{Function, Missing} = missing,
         Λ::Union{Function, Missing} = missing,
+        p = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     )
-    cost_ = maybe_wrap_function(cost, evaluation; result = :Number)
+    cost_ = maybe_wrap_function(cost, p; result = :Number)
     prox_f_ = maybe_wrap_function(prox_f, evaluation; result = :Point)
     prox_g_dual_ = maybe_wrap_function(prox_g_dual, evaluation; result = :TangentVector)
     linearized_forward_operator_ = ismissing(linearized_forward_operator) ? missing : maybe_wrap_function(linearized_forward_operator, evaluation; result = :SecondManifoldPoint)

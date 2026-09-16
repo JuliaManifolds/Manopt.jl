@@ -9,6 +9,9 @@ end
 function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{ArrayPowerRepresentation}, e::AllocatingEvaluation)
     return Manopt.maybe_wrap_function(Jf, p, e; result = :Matrix)
 end
+function Manopt._maybe_wrap_vector_Hessian_function(Hf, p, ::FunctionVectorialType{ArrayPowerRepresentation}, e::AllocatingEvaluation)
+    return Manopt.maybe_wrap_function(Hf, p, e; result = :Matrix)
+end
 
 """
     default_point_distance(::Euclidean, p)

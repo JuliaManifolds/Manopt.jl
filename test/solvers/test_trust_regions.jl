@@ -40,6 +40,9 @@ include("trust_region_model.jl")
         # Dummy pass through for closed from solver
         trs4 = TrustRegionsState(M, rgrad, AllocatingEvaluation())
         @test trs4.sub_state isa Manopt.ClosedFormSubSolverState
+        # a decorated Hessian objective gets the same sub solver as the plain one
+        trs5 = TrustRegionsState(M, EmbeddedManifoldObjective(M, mho); p = p)
+        @test typeof(trs5.sub_state) == typeof(TrustRegionsState(M, mho; p = p).sub_state)
         @testset "closed form sub solver can be solved" begin
             # the documented closed form constructor built a state `step_solver!` could not run
             mho = ManifoldHessianObjective(f, rgrad, rhess)

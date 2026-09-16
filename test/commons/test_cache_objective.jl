@@ -300,6 +300,15 @@ end
         # one of these was cached
         @test get_count(lco, :Cost) == a2 + 2
         @test get_count(lco, :Gradient) == b2 + 2
+        # the combined cost and differential accessor serves and fills the caches
+        a3 = get_count(lco, :Cost)
+        d3 = get_count(lco, :Differential)
+        cd1 = Manopt.get_cost_and_differential(M, lco, q, X)
+        cd2 = Manopt.get_cost_and_differential(M, lco, q, X)
+        @test cd1 == cd2
+        @test cd1 == (get_cost(M, o, q), get_differential(M, o, q, X))
+        @test get_count(lco, :Cost) == a3 # the cost at q was cached above
+        @test get_count(lco, :Differential) == d3 + 1
 
         #
         # CostGrad

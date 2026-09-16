@@ -34,6 +34,10 @@ using LinearAlgebra: Symmetric
         @test get_count(c_obj, :Gradient) == 4
         @test get_differential(M, c_obj, p, X) == get_differential(M, obj, p, X)
         @test get_count(c_obj, :Differential) == 1
+        # the combined accessor counts both
+        @test Manopt.get_cost_and_differential(M, c_obj, p, X) == Manopt.get_cost_and_differential(M, obj, p, X)
+        @test get_count(c_obj, :Cost) == 4
+        @test get_count(c_obj, :Differential) == 2
         # also decorated objects can be wrapped to be counted
         ro = Manopt.Test.DummyDecoratedObjective(obj)
         c_obj2 = ManifoldCountObjective(M, ro, [:Gradient])

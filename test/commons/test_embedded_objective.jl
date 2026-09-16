@@ -38,6 +38,14 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 @test Y == Hess_f(M, p, X)
             end
         end
+        # a subgradient is converted like a gradient
+        so = ManifoldSubgradientObjective(f, ∇f)
+        for eso in [EmbeddedManifoldObjective(M, so), EmbeddedManifoldObjective(so, missing, copy(X)), EmbeddedManifoldObjective(so, copy(p), missing), EmbeddedManifoldObjective(so)]
+            @test get_subgradient(M, eso, p) == grad_f(M, p)
+            Y = zero_vector(M, p)
+            get_subgradient!(M, Y, eso, p)
+            @test Y == grad_f(M, p)
+        end
         # Without interim caches for p and X
         eo4repr = repr(eo4)
         @test startswith(eo4repr, "EmbeddedManifoldObjective(ManifoldHessianObjective(")

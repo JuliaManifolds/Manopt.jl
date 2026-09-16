@@ -50,6 +50,9 @@ using ManifoldDiff: prox_distance, prox_distance!
     n = Λ(M, m)
     x0 = deepcopy(data)
     ξ0 = ArrayPartition(zero_vector(M, m), zero_vector(M, m))
+    # the cost of the objective is the cost itself
+    pdo = PrimalDualManifoldObjective(f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator = DΛ)
+    @test get_cost(M, pdo, x0) == f(M, x0)
     @testset "Test Variants" begin
         callargs_linearized = [M, N, f, x0, ξ0, m, n, prox_f, prox_g_dual, adjoint_DΛ]
         o1 = ChambollePock(

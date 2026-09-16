@@ -71,6 +71,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         DebugEvery(a1, 10, true)(mp, st, 10)
         @test String(take!(io)) == "|"
         @test DebugEvery(a1, 10, true)(mp, st, -1) == nothing
+        @test_throws DomainError DebugEvery(a1, 0)
         # Debug Cost
         @test DebugCost(; format = "A %f").format == "A %f"
         DebugCost(; long = false, io = io)(mp, st, 0)
@@ -272,6 +273,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test_logs (:warn,) (:warn,) w1(mp, st, 0)
         w2 = DebugWarnIfCostNotFinite(:Always)
         @test_logs (:warn,) w2(mp, st, 0)
+        @test_logs w2(mp, st, -1) # an update-only call does not warn
 
         st.X = grad_f(M, p)
         w3 = DebugWarnIfFieldNotFinite(:X)
