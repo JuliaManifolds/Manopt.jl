@@ -713,7 +713,7 @@ function interior_point_Newton!(
             SymmetricLinearSystemObjective(
                 CondensedKKTVectorFieldJacobian(_ecmo, μ, s, σ * ρ),
                 CondensedKKTVectorField(_ecmo, μ, s, σ * ρ),
-            ),
+            );
             sub_kwargs...,
         ),
         sub_stopping_criterion::StoppingCriterion = StopAfterIteration(manifold_dimension(M)) |

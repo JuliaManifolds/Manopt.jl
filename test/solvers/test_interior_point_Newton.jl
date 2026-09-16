@@ -78,6 +78,13 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
 
         q = get_solver_result(res)
         @test distance(M, q, p_opt) < 2.0e-4
+        # sub_kwargs reach the sub problem as keywords
+        q_sub = interior_point_Newton(
+            M, f, grad_f, Hess_f, p_0;
+            g = g, grad_g = grad_g, Hess_g = Hess_g, stopping_criterion = sc,
+            sub_kwargs = (record = [:Iterate],),
+        )
+        @test q_sub == q
 
         # (b) inplace call
         q2 = copy(M, p_0)

@@ -19,6 +19,17 @@ using Manifolds, Manopt, ManifoldsBase, Test
     )
     Yfin = truncated_conjugate_gradient_descent(TangentSpace(M, p), trmo, p, η)
     @test all(isfinite, Yfin)
+    # a nonzero start vector: the truncated step lands on the trust region boundary
+    M3 = Sphere(3)
+    B = [2.0 1.0 0.0 0.0; 1.0 -3.0 1.0 0.0; 0.0 1.0 4.0 1.0; 0.0 0.0 1.0 -1.0]
+    p3 = [1.0, 0.0, 0.0, 0.0]
+    f3(M, q) = q' * B * q
+    grad_f3(M, q) = 2 * project(M, q, B * q)
+    Hess_f3(M, q, X) = 2 * (project(M, q, B * X) - (q' * B * q) * X)
+    Δ = π / 4
+    X3 = Δ / 2 * [0.0, 1.0, 1.0, 1.0] / sqrt(3)
+    Y3 = truncated_conjugate_gradient_descent(M3, f3, grad_f3, Hess_f3, p3, X3; randomize = true, trust_region_radius = Δ)
+    @test norm(M3, p3, Y3) ≈ Δ
     srr = StopWhenResidualIsReducedByFactorOrPower()
     ssr1 = Manopt.status_summary(srr)
     @test startswith(ssr1, "A stopping criterion used within tCG to check whether the residual is reduced by factor")

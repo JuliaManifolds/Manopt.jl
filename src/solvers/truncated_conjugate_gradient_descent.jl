@@ -683,7 +683,8 @@ function step_solver!(
     tcgs.δ = -tcgs.z + β * tcgs.δ
     # potentially stabilize step by projecting.
     tcgs.project!(M, tcgs.δ, p, tcgs.δ)
-    tcgs.YPδ = β * (α * tcgs.δPδ + tcgs.YPδ)
+    # the scalar recursion is exact only for a zero start vector
+    tcgs.YPδ = tcgs.randomize ? real(inner(M, p, tcgs.Y, tcgs.δ)) : β * (α * tcgs.δPδ + tcgs.YPδ)
     tcgs.δPδ = tcgs.z_r + β^2 * tcgs.δPδ
     return tcgs
 end

@@ -278,9 +278,11 @@ mutable struct ExactPenaltyCost{S, CO, T} <: AbstractConstrainedFunction{CO, T}
     u::T
 end
 function ExactPenaltyCost(
-        co::ConstrainedManifoldObjective, ρ::T, u::T; smoothing::S = LinearQuadraticHuber()
-    ) where {T, S <: SmoothingTechnique}
-    return ExactPenaltyCost{S, typeof(co), T}(co, ρ, u)
+        co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective{<:ConstrainedManifoldObjective}}, ρ::Real, u::Real;
+        smoothing::S = LinearQuadraticHuber(),
+    ) where {S <: SmoothingTechnique}
+    ρ_, u_ = promote(float(ρ), float(u))
+    return ExactPenaltyCost{S, typeof(co), typeof(ρ_)}(co, ρ_, u_)
 end
 function (L::ExactPenaltyCost{<:LogarithmicSumOfExponentials})(M::AbstractManifold, p)
     gp = get_inequality_constraint(M, L.co, p, :)
@@ -330,9 +332,11 @@ mutable struct ExactPenaltyGrad{S, CO, T} <: AbstractConstrainedFunction{CO, T}
     u::T
 end
 function ExactPenaltyGrad(
-        co::ConstrainedManifoldObjective, ρ::T, u::T; smoothing::S = LinearQuadraticHuber()
-    ) where {T, S <: SmoothingTechnique}
-    return ExactPenaltyGrad{S, typeof(co), T}(co, ρ, u)
+        co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective{<:ConstrainedManifoldObjective}}, ρ::Real, u::Real;
+        smoothing::S = LinearQuadraticHuber(),
+    ) where {S <: SmoothingTechnique}
+    ρ_, u_ = promote(float(ρ), float(u))
+    return ExactPenaltyGrad{S, typeof(co), typeof(ρ_)}(co, ρ_, u_)
 end
 # Default (functions constraints): evaluate all gradients
 # Since for LogExp the pre-factor c seems to not be zero, this might be the best way to go here

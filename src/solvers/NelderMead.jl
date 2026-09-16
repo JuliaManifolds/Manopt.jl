@@ -23,9 +23,16 @@ constructed by moving by `a` in each principal direction defined by basis `B` of
 space at point `p` using retraction `retraction_method`. This works similarly to how
 the initial simplex is constructed in the Euclidean Nelder-Mead algorithm, just in
 the tangent space at point `p`.
+
+The first type parameter is the type of the points as they were passed; points that are numbers
+are stored wrapped, see [`maybe_wrap_variable`](@ref).
 """
-struct NelderMeadSimplex{TP, T <: AbstractVector{TP}}
+struct NelderMeadSimplex{TP, T <: AbstractVector}
     pts::T
+    function NelderMeadSimplex(pts::AbstractVector{TP}) where {TP}
+        pts_ = maybe_wrap_variable.(pts)
+        return new{TP, typeof(pts_)}(pts_)
+    end
 end
 function NelderMeadSimplex(M::AbstractManifold)
     return NelderMeadSimplex([rand(M) for i in 1:(manifold_dimension(M) + 1)])
@@ -125,13 +132,13 @@ mutable struct NelderMeadState{
     function NelderMeadState(
             M::AbstractManifold;
             callbacks::C = Dict{Symbol, Function}(),
-            population::NelderMeadSimplex{T} = NelderMeadSimplex(M),
+            population::NelderMeadSimplex = NelderMeadSimplex(M),
             inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M, eltype(population.pts)),
-            p::T = copy(M, population.pts[1]),
+            p = copy(M, population.pts[1]),
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, eltype(population.pts)),
             stopping_criterion::StoppingCriterion = StopAfterIteration(2000) | StopWhenPopulationConcentrated(),
             α::Real = 1.0, γ::Real = 2.0, ρ::Real = 1 / 2, σ::Real = 1 / 2,
-        ) where {T, C <: AbstractDict{Symbol}}
+        ) where {C <: AbstractDict{Symbol}}
         R = promote_type(typeof(α), typeof(γ), typeof(ρ), typeof(σ))
         α = convert(R, α); γ = convert(R, γ); ρ = convert(R, ρ); σ = convert(R, σ)
         return NelderMeadState(;
@@ -237,18 +244,10 @@ NelderMead(M::AbstractManifold, args...; kwargs...)
 function NelderMead(M::AbstractManifold, f; kwargs...)
     return NelderMead(M, f, NelderMeadSimplex(M); kwargs...)
 end
-function NelderMead(
-        M::AbstractManifold, f::F, population::NelderMeadSimplex{P, V}; kwargs...
-    ) where {P <: Number, V <: AbstractVector{P}, F <: Function}
-    f_ = maybe_wrap_function(f, P; result = :Number)
-    population_ = NelderMeadSimplex([[p] for p in population.pts])
-    rs = NelderMead(M, f_, population_; kwargs...)
+function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex{P}; kwargs...) where {P}
+    rs = NelderMead(M, ManifoldCostObjective(f, P), population; kwargs...)
     rs isa Tuple && return (rs[1], maybe_unwrap_variable(P, rs[2]))
     return maybe_unwrap_variable(P, rs)
-end
-function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
-    mco = ManifoldCostObjective(f)
-    return NelderMead(M, mco, population; kwargs...)
 end
 function NelderMead(
         M::AbstractManifold, mco::O, population::NelderMeadSimplex; kwargs...
@@ -261,9 +260,10 @@ calls_with_kwargs(::typeof(NelderMead)) = (NelderMead!,)
 
 @doc "$(_doc_NelderMead)"
 NelderMead!(M::AbstractManifold, args...; kwargs...)
-function NelderMead!(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
-    mco = ManifoldCostObjective(f)
-    return NelderMead!(M, mco, population; kwargs...)
+function NelderMead!(M::AbstractManifold, f, population::NelderMeadSimplex{P}; kwargs...) where {P}
+    rs = NelderMead!(M, ManifoldCostObjective(f, P), population; kwargs...)
+    rs isa Tuple && return (rs[1], maybe_unwrap_variable(P, rs[2]))
+    return maybe_unwrap_variable(P, rs)
 end
 function NelderMead!(
         M::AbstractManifold, mco::O, population::NelderMeadSimplex;

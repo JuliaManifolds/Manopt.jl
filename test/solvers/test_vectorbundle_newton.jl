@@ -160,6 +160,15 @@ using LinearAlgebra: eigvals
             return_state = true,
         )
         @test get_iterate(st_ip) ≈ y1
+        # the returned factor is the one whose θ was accepted
+        st2 = Manopt.vectorbundle_newton(
+            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
+            stopping_criterion = (StopAfterIteration(15) | StopWhenChangeLess(M, 1.0e-11)),
+            retraction_method = ProjectionRetraction(),
+            stepsize = AffineCovariantStepsize(M, θ_des = 0.1),
+            record = [:Stepsize], return_state = true,
+        )
+        @test get_record(st2)[1] ≈ 0.1757478251 atol = 1.0e-9
         st_str = Manopt.status_summary(st; context = :default)
         @test occursin("Vector bundle Newton method", st_str)
         @test startswith(repr(st), "VectorBundleNewtonState(")

@@ -223,6 +223,8 @@ $(_kwargs(:evaluation))
   start of every epoch (`:FixedRandom`), the sequence as given in `order` (`:Linear`), or the default `:Random` one,
   which chooses a random gradient in every step.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(10000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
+  Since the state stores the gradient of a single summand, [`StopWhenGradientNormLess`](@ref)
+  evaluates the full gradient here only every `n` iterations, `n` the number of gradients, that is once per epoch.
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`StochasticGradientDescentState`](@ref)`)"))
 * `order=collect(1:n)`: the initial permutation, where `n` is the number of gradients in `grad_f`.
 $(_kwargs(:retraction_method))
@@ -307,4 +309,19 @@ function step_solver!(mp::AbstractManoptProblem, s::StochasticGradientDescentSta
     retract!(get_manifold(mp), s.p, s.p, -step * s.X, s.retraction_method)
     s.k = ((s.k) % length(s.order)) + 1
     return s
+end
+function (sc::StopWhenGradientNormLess)(mp::AbstractManoptProblem, s::StochasticGradientDescentState, k::Int)
+    if k <= 0 # reset on nonpositive k
+        sc.at_iteration = -1
+        return false
+    end
+    (s.k != 1) && return false # epoch not complete
+    M = get_manifold(mp)
+    r = (has_components(M) && !ismissing(sc.outer_norm)) ? (sc.outer_norm,) : ()
+    sc.last_change = sc.norm(M, get_iterate(s), get_gradient(mp, get_iterate(s)), r...)
+    if sc.last_change < sc.threshold
+        sc.at_iteration = k
+        return true
+    end
+    return false
 end

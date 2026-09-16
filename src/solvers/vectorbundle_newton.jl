@@ -203,6 +203,7 @@ function (acs::AffineCovariantStepsize)(
         denom = norm(M, ams.p, ams.X, add_arg...)
         θ_new = nom / denom
 
+        (θ_new <= acs.θ_acc) && break
         α_new = min(1.0, ((α_new * acs.θ_des) / θ_new))
     end
     NE.b .= b

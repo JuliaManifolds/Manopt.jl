@@ -14,6 +14,10 @@ This is yet another round of review – maybe also introducing a few test tools
 
 * the trait `has_sub_problem` declares that a solver state stores a sub problem, so `get_sub_problem`, `get_sub_state` and `record=[:Subsolver]` work for every such state.
 
+### Changed
+
+* `NelderMeadSimplex` records the type of the points it was built from and stores number points wrapped, so `NelderMead` also works for number points when called in place or with an objective.
+
 ### Deprecated
 
 * `AbstractSubProblemSolverState` is deprecated in favour of the trait `has_sub_problem`.
@@ -34,6 +38,11 @@ This is yet another round of review – maybe also introducing a few test tools
 * `LevenbergMarquardt` also runs for other number types than `Float64`, for example `Float32`.
 * `AverageGradient` also works on manifolds whose points are numbers.
 * `alternating_gradient_descent` keeps the full gradient between its inner iterations, so its stopping criterion sees the gradient of every block.
+* `StopWhenGradientNormLess` evaluates the full gradient once per epoch in `stochastic_gradient_descent`, so the solver stops at a critical point of the whole cost.
+* the truncated conjugate gradient keeps its trust region norm exact when started from a nonzero tangent vector.
+* `AffineCovariantStepsize` returns the damping factor whose convergence monitor was accepted.
+* `sub_kwargs` of `interior_point_Newton` reach the sub objective as keywords.
+* `exact_penalty_method` accepts a decorated constrained objective and different number types for `ρ` and `u`.
 
 ## [0.6.7] September 9, 2026
 

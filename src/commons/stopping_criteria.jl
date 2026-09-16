@@ -1180,6 +1180,9 @@ The `outer_norm` has no effect on manifolds that do not consist of components.
 If you pass in your individual norm, this can be deactivated on such manifolds
 by passing `missing` to `outer_norm`.
 
+For the [`StochasticGradientDescentState`](@ref) the stored gradient is the one of a single summand only,
+so this criterion evaluates the full gradient there only every `n` iterations, `n` the number of gradients, that is once per epoch.
+
 # Constructor
 
     StopWhenGradientNormLess(ε; norm=ManifoldsBase.norm, outer_norm=missing)

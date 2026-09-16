@@ -113,6 +113,14 @@ using Manopt, Manifolds, Test
         @test is_point(M, q2, true)
         q3 = stochastic_gradient_descent(M, sgrad_f1, p; order_type = :Random)
         @test is_point(M, q3, true)
+        # start at a data point whose summand is drawn first: its gradient vanishes, the full one does not
+        s4 = stochastic_gradient_descent(
+            M, sgrad_f1, pts[2];
+            order_type = :Linear, order = [2, 1, 3, 4, 5], stepsize = DecreasingLength(M; length = 1.0),
+            return_state = true,
+        )
+        @test get_count(s4, :Iterations) == 5
+        @test isapprox(M, get_solver_result(s4), p; atol = 1.0e-12)
         q4 = copy(M, p)
         stochastic_gradient_descent!(M, sgrad_f1, q4; order_type = :Random)
         @test is_point(M, q4, true)
