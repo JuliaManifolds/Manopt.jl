@@ -762,9 +762,9 @@ function ManifoldConstrainedSetObjective(
     proj_ = maybe_wrap_function(project!, p, evaluation; result = :Point)
     if ismissing(indicator)
         ind = function (M, p)
-            q = rand(M)
+            q = copy(M, maybe_wrap_variable(p))
             proj_(M, q, p)
-            return distance(M, p, q) ≈ 0 ? 0 : Inf
+            return isapprox(M, p, q) ? 0 : Inf
         end
         ind_ = maybe_wrap_function(ind, p; result = :Number)
         return ManifoldConstrainedSetObjective{typeof(obj), typeof(proj_), typeof(ind_)}(
@@ -1034,6 +1034,16 @@ function get_hessian_function(emo::EmbeddedManifoldObjective, recursive::Bool = 
     else
         return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)
     end
+end
+function get_cost_and_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
+    X = zero_vector(M, p)
+    return get_cost_and_gradient!(M, X, emo, p)
+end
+function get_cost_and_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p)
+    q = local_embed!(M, emo, p)
+    c, Z = get_cost_and_gradient(get_embedding(M, typeof(p)), emo.objective, q)
+    riemannian_gradient!(M, X, p, Z)
+    return c, X
 end
 
 @doc """

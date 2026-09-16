@@ -32,6 +32,9 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 Y = zero_vector(M, p)
                 get_gradient!(M, Y, eo, p)
                 @test Y == grad_f(M, p)
+                # the pair converts the gradient as well
+                @test Manopt.get_cost_and_gradient(M, eo, p) == (f(E, p), grad_f(M, p))
+                @test Manopt.get_cost_and_gradient!(M, Y, eo, p) == (f(E, p), grad_f(M, p))
                 @test get_hessian(M, o, p, X) == ∇²f(M, p, X)
                 @test get_hessian(M, eo, p, X) == Hess_f(M, p, X)
                 get_hessian!(M, Y, eo, p, X)

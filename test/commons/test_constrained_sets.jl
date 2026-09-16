@@ -59,6 +59,16 @@ using Manifolds, Manopt, Random, Test
 
     # a point outside of C, at distance 2r from its center c
     q_out = exp(M, c, get_vector(M, c, [2 * r, 0.0], DefaultOrthonormalBasis()))
+    # a projection that reproduces a point of C only up to round-off
+    project_R(M, p) = norm(M, c, log(M, c, p)) > r ? project_C(M, p) : exp(M, c, log(M, c, p))
+    csor = ManifoldConstrainedSetObjective(f, grad_f, project_R)
+    p_in = exp(M, c, get_vector(M, c, [r / 2, 0.0], DefaultOrthonormalBasis()))
+    @test csor.indicator(M, p_in) == 0
+    @test isinf(csor.indicator(M, q_out))
+    # the default indicator also works for number points
+    csoc = ManifoldConstrainedSetObjective((M, p) -> p^2, (M, p) -> 2p, (M, p) -> clamp(p, -1.0, 1.0); p = 0.5)
+    @test csoc.indicator(Circle(), 0.5) == 0
+    @test isinf(csoc.indicator(Circle(), 2.0))
 
     for objective in [csoa, csoa2, csoi, csoi2]
         @test get_cost(M, objective, c) == f(M, c)

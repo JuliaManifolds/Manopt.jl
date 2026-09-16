@@ -1043,7 +1043,7 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestartRule})(
     M = get_manifold(amp)
     if k == 0
         # store current values as old and return 0
-        update_storage!(u.storage, amp, cgs)
+        update_storage!(u, amp, cgs)
         return 0.0
     end
     # If a rule does not have these, they should return nothing
@@ -1057,9 +1057,17 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestartRule})(
     Xtr = vector_transport_to(M, p, X, cgs.p, u.coefficient.vector_transport_method)
     num = inner(M, cgs.p, cgs.X, Xtr)
     # update storage only after that in case they share
-    update_storage!(u.storage, amp, cgs)
+    update_storage!(u, amp, cgs)
     return real(num / denom) > u.coefficient.threshold ? zero(β) : β
 end
+function update_storage!(
+        dur::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestartRule}, amp::AbstractManoptProblem, s::AbstractManoptSolverState
+    )
+    update_storage!(dur.coefficient.direction_update, amp, s)
+    return update_storage!(dur.storage, amp, s)
+end
+# a rule that keeps no storages of its own has nothing to update
+update_storage!(::DirectionUpdateRule, ::AbstractManoptProblem, ::AbstractManoptSolverState) = nothing
 function show(io::IO, u::ConjugateGradientBealeRestartRule)
     return print(
         io, "Manopt.ConjugateGradientBealeRestartRule($(repr(u.direction_update)); threshold=$(u.threshold), vector_transport_method=$(u.vector_transport_method))",
@@ -1172,6 +1180,14 @@ function (u::DirectionUpdateRuleStorage{<:HybridCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
     return u.coefficient(amp, cgs, i)
+end
+function update_storage!(
+        hc::HybridCoefficientRule, amp::AbstractManoptProblem, s::AbstractManoptSolverState
+    )
+    for c in hc.coefficients
+        update_storage!(c, amp, s)
+    end
+    return update_storage!(hc.lower_bound, amp, s)
 end
 function update_storage!(
         dur::DirectionUpdateRuleStorage{<:HybridCoefficientRule},

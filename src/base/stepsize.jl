@@ -105,6 +105,14 @@ If no last step size is stored, this returns `NaN`.
 get_last_stepsize(::Stepsize, ::Any...) = NaN
 
 @doc """
+    get_initial_stepsize(::Stepsize)
+
+return the initial stepsize stored within a [`Stepsize`](@ref).
+If no initial step size is stored, this returns `NaN`.
+"""
+get_initial_stepsize(::Stepsize) = NaN
+
+@doc """
     get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...)
 
 return the stepsize stored within [`AbstractManoptSolverState`](@ref) `ams` when solving the

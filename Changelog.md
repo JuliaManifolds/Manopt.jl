@@ -71,6 +71,14 @@ This is yet another round of review – maybe also introducing a few test tools
 * a backtracking line search stays within `stop_when_stepsize_exceeds` from its first guess.
 * `BarzilaiBorwein` computes a step size when its `storage` keeps typed buffers.
 * `DecreasingLength` reports its initial length when asked at iteration 0.
+* `CubicBracketingLinesearch` starts a new solver run from its `initial_stepsize`.
+* `WolfePowellBinaryLinesearch` stays within the maximal step size.
+* the Hager-Zhang initial guess measures the maximal step size in the units of its step and honours `alphamax` on all branches.
+* `Polyak` uses the subgradient the solver already computed and reports the step taken when recorded.
+* `get_initial_stepsize` returns `NaN` for a step size without an initial step size.
+* `ConjugateGradientBealeRestart` updates the storages of the rule it wraps.
+* `get_cost_and_gradient` of an objective in the embedding returns the Riemannian gradient.
+* the default `ManifoldConstrainedSetObjective` indicator tolerates round-off and numbers.
 
 ## [0.6.7] September 9, 2026
 

@@ -416,6 +416,29 @@ using ManifoldDiff: grad_distance
         ) isa PoincareBallPoint
     end
 
+    @testset "Beale restart updates the storages of a wrapped hybrid rule" begin
+        M = Sphere(2)
+        A = [1.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 5.0]
+        f(M, p) = p' * A * p
+        grad_f(M, p) = project(M, p, 2 * A * p)
+        p0 = [1.0, 1.0, 1.0] ./ sqrt(3)
+        # max(β, min(β)) = β, so the hybrid of one rule must give the plain rule's β
+        βs = map(
+            [
+                ConjugateGradientBealeRestart(DaiYuanCoefficient(); threshold = 100.0),
+                ConjugateGradientBealeRestart(HybridCoefficient(DaiYuanCoefficient(); lower_bound = DaiYuanCoefficient()); threshold = 100.0),
+            ]
+        ) do coefficient
+            s = conjugate_gradient_descent(
+                M, f, grad_f, p0;
+                coefficient = coefficient, stepsize = Manopt.ConstantStepsize(M, 0.05), restart_condition = NeverRestart(),
+                stopping_criterion = StopAfterIteration(5), record = [RecordEntry(0.0, :β)], return_state = true,
+            )
+            get_record(s)
+        end
+        @test βs[1] ≈ βs[2]
+    end
+
     @testset "Issue #603: CG with HZ rule on a numerically challenging problem" begin
         M = Sphere(2)
         p0 = [1.0, 0.0, 0.0]

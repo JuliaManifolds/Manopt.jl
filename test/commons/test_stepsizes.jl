@@ -39,6 +39,20 @@ using ManifoldsBase, Manopt, Manifolds, Test
 
         # case I0, explicit guess
         @test hzi_nq(dmp, gds3, 1, NaN, η3) ≈ hzi_nq.constant_guess
+        # alphamax bounds the fallback and the constant guess as well
+        hzi_b = Manopt.HagerZhangInitialGuess{Float64}(; alphamax = 0.1)
+        @test hzi_b(dmp, gds3, 1, NaN, η3) == 0.1
+        hzi_bc = Manopt.HagerZhangInitialGuess{Float64}(; alphamax = 0.1, constant_guess = 12.0)
+        @test hzi_bc(dmp, gds3, 1, NaN, η3) == 0.1
+        # the manifold bound is a length, the guess a factor
+        Ms = Sphere(2)
+        fs(N, q) = 40000 + 10 * q[3]
+        grad_fs(N, q) = project(N, q, [0.0, 0.0, 10.0])
+        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fs, grad_fs))
+        ps = [1.0, 0.0, 0.3] ./ norm([1.0, 0.0, 0.3])
+        ηs = -grad_fs(Ms, ps)
+        gdss = GradientDescentState(Ms; p = ps, X = -ηs)
+        @test hzi(dmps, gdss, 1, NaN, ηs) * norm(Ms, ps, ηs) <= Manopt.max_stepsize(Ms) + 1.0e-12
 
         # case I1
         @test hzi(dmp, gds3, 2, 1.0, η3) ≈ 0.5
@@ -126,8 +140,20 @@ end
     gds3.X = grad_f3(M, gds3.p)
     t3 = s3(dmp3, gds3, 1, -gds3.X)
     @test f3(M, gds3.p .- t3 .* gds3.X) <= f3(M, gds3.p) - 1.0e-4 * t3 * norm(gds3.X)^2
+    # the maximal step size of the manifold and the passed bound limit the step
+    Ms = Sphere(2)
+    fs(N, q) = 1 - q[1]
+    grad_fs(N, q) = project(N, q, [-1.0, 0.0, 0.0])
+    dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fs, grad_fs))
+    ps = [0.3, 0.5, 0.8] ./ norm([0.3, 0.5, 0.8])
+    ηs = -10.0 .* grad_fs(Ms, ps)
+    gdss = GradientDescentState(Ms; p = ps, X = -ηs)
+    s3s = WolfePowellBinaryLinesearch()(Ms)
+    @test s3s(dmps, gdss, 1, ηs) * norm(Ms, ps, ηs) <= Manopt.max_stepsize(Ms) + 1.0e-12
+    @test s3s(dmps, gdss, 1, ηs; stop_when_stepsize_exceeds = 0.01) == 0.01
     s4 = WolfePowellLinesearch()(M)
     @test startswith(repr(s4), "WolfePowellLinesearchStepsize(;")
+    @test isnan(get_initial_stepsize(s4)) # no initial step size is stored
     @test startswith(Manopt.status_summary(s4), "A Wolfe Powell line search")
     @test Manopt.get_message(s4) == ""
     @testset "Armijo setter / getters" begin
@@ -179,6 +205,11 @@ end
         )
         @test s6 <= 0.5
         @test msgs[:stepsize_exceeds].at_iteration == 0
+        # an integer bound is converted by the message
+        s7 = Manopt.linesearch_backtrack(
+            M, f, p, 1.0e-12, 0, 0.5, -grad_f(M, p); gradient = grad_f(M, p), stop_when_stepsize_exceeds = 1, report_messages_in = msgs
+        )
+        @test msgs[:stepsize_exceeds].bound == 1.0
     end
     @testset "Adaptive WN Gradient" begin
         # Build a dummy function and gradient
@@ -326,9 +357,11 @@ end
         p = [2.0, 2.0]
         X = grad_f(M, p)
         sgs = SubGradientMethodState(M; p = p)
+        sgs.X = X # the solver stores the subgradient before asking for the step
         ps = Polyak()()
         @test startswith(repr(ps), "Polyak(; γ = ")
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
+        @test get_last_stepsize(ps) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
         @test startswith(Manopt.status_summary(ps), "Polyak step size with γ = ")
     end
     @testset "CubicBracketing Stepsize" begin
@@ -345,6 +378,10 @@ end
         @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
         @test get_last_stepsize(clbs) === clbs.last_stepsize
         @test get_initial_stepsize(clbs) == clbs.initial_stepsize
+        # a new solver run starts from the initial step size again
+        clbs.last_stepsize = 0.25
+        Manopt.initialize_stepsize!(clbs)
+        @test clbs.last_stepsize == clbs.initial_stepsize
         # the maximal step size bounds the distance travelled, not the factor
         Ms = Sphere(2)
         fs(N, q) = q[1]^2

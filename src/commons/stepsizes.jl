@@ -77,11 +77,11 @@ Set the fields of a single [`StepsizeMessage`](@ref) to the provided values,
 i.e. to those that are not `nothing`.
 """
 function set_message!(
-        msg::StepsizeMessage{TBound, TS},
+        msg::StepsizeMessage,
         at::Union{Nothing, Int} = nothing,
-        bound::Union{TBound, Nothing} = nothing,
-        value::Union{TS, Nothing} = nothing
-    ) where {TBound <: Real, TS <: Real}
+        bound::Union{Real, Nothing} = nothing,
+        value::Union{Real, Nothing} = nothing
+    )
     isnothing(at) || (msg.at_iteration = at)
     isnothing(bound) || (msg.bound = bound)
     return isnothing(value) || (msg.value = value)
@@ -1345,6 +1345,10 @@ function (cbls::CubicBracketingLinesearchStepsize)(
 end
 get_initial_stepsize(cbls::CubicBracketingLinesearchStepsize) = cbls.initial_stepsize
 get_last_stepsize(cbls::CubicBracketingLinesearchStepsize, ::Any...) = cbls.last_stepsize
+function initialize_stepsize!(cbls::CubicBracketingLinesearchStepsize)
+    cbls.last_stepsize = cbls.initial_stepsize
+    return cbls
+end
 function Base.show(io::IO, cbls::CubicBracketingLinesearchStepsize)
     return print(
         io,
@@ -2068,6 +2072,7 @@ A functor `(problem, state, ...) -> s` to provide a step size due to Polyak, cf.
 
 * `γ`               : a function `k -> ...` representing a sequence.
 * `best_cost_value` : storing the best cost value
+* `last_stepsize`   : the last computed stepsize
 
 # Constructor
 
@@ -2081,22 +2086,24 @@ Construct a stepsize of Polyak type.
 mutable struct PolyakStepsize{F, R} <: Stepsize
     γ::F
     best_cost_value::R
+    last_stepsize::R
 end
 function PolyakStepsize(; γ = (k) -> 1 / k, initial_cost_estimate = 0.0)
-    return PolyakStepsize(γ, initial_cost_estimate)
+    return PolyakStepsize(γ, initial_cost_estimate, zero(initial_cost_estimate))
 end
 function (ps::PolyakStepsize)(
         amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int, args...; kwargs...
     )
     M = get_manifold(amp)
     p = get_iterate(ams)
-    X = get_subgradient(amp, p)
+    X = get_subgradient(ams) # the solver stores it before asking for the step
     # Evaluate the cost
     c = get_cost(M, get_objective(amp), p)
     (c < ps.best_cost_value) && (ps.best_cost_value = c)
-    α = (c - ps.best_cost_value + ps.γ(k)) / (norm(M, p, X)^2)
-    return α
+    ps.last_stepsize = (c - ps.best_cost_value + ps.γ(k)) / (norm(M, p, X)^2)
+    return ps.last_stepsize
 end
+get_last_stepsize(ps::PolyakStepsize, ::Any...) = ps.last_stepsize
 function Base.show(io::IO, ps::PolyakStepsize)
     return print(io, "Polyak(; γ = $(ps.γ))")
 end
@@ -2465,10 +2472,14 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
         gradient = nothing, kwargs...,
     )
     M = get_manifold(amp)
+    p = get_iterate(ams)
+    max_step = max_stepsize(M, p) / norm(M, p, η)
+    if :stop_when_stepsize_exceeds in keys(kwargs)
+        max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
+    end
     α = 0.0
     β = Inf
-    t = 1.0
-    p = get_iterate(ams)
+    t = min(1.0, max_step)
     f0 = get_cost(amp, p)
     xNew = ManifoldsBase.retract_fused(M, p, η, t, a.retraction_method)
     fNew = get_cost(amp, xNew)
@@ -2487,7 +2498,7 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
         nAt && (β = t)            # A(t) fails
         (!nAt && nWt) && (α = t)  # A(t) holds but W(t) fails
         t_old = t
-        t = isinf(β) ? 2 * α : (α + β) / 2
+        t = isinf(β) ? min(2 * α, max_step) : (α + β) / 2
         (t == t_old) && break # the bisection cannot make further progress
         # Update trial point
         ManifoldsBase.retract_fused!(M, xNew, get_iterate(ams), η, t, a.retraction_method)
@@ -2673,7 +2684,7 @@ function (hzi::HagerZhangInitialGuess{TF})(
     p = get_iterate(s)
     abs_lf0 = abs(lf0)
 
-    alphamax = min(hzi.alphamax, max_stepsize(M, p))
+    alphamax = min(hzi.alphamax, max_stepsize(M, p) / norm(M, p, η))
 
     if :stop_when_stepsize_exceeds in keys(kwargs)
         alphamax = min(
@@ -2695,10 +2706,10 @@ function (hzi::HagerZhangInitialGuess{TF})(
                 return min(hzi.ψ0 * abs_lf0 / norm(M, p, η)^2, alphamax)
             else
                 # I0.(c)
-                return one(TF)
+                return min(one(TF), alphamax)
             end
         else
-            return hzi.constant_guess
+            return min(hzi.constant_guess, alphamax)
         end
     else
         if hzi.quadstep
