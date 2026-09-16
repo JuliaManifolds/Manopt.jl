@@ -62,6 +62,15 @@ This is yet another round of review – maybe also introducing a few test tools
 * the `DebugWarnIf…` actions warn only for actual iterations of `DebugEvery`.
 * `DebugFeasibility` evaluates the constraints only on calls where it prints.
 * `record = [:Time, n]` records the cumulative time.
+* `ScaledRobustifierFunction` throws an `ArgumentError` for a zero scale.
+* `check_differential`, `check_gradient` and `check_Hessian` reject a zero vector `X`.
+* `StopWhenRepeated` and `StopWhenCriterionWithIterationCondition` pass on `set_parameter!`.
+* `StopWhenAll` and `StopWhenAny` evaluate their criteria once at initialization.
+* `StopAfter` rejects a period without fixed length, such as `Month`, at construction.
+* `CubicBracketingLinesearch` respects `max_stepsize` as a bound on the distance travelled.
+* a backtracking line search stays within `stop_when_stepsize_exceeds` from its first guess.
+* `BarzilaiBorwein` computes a step size when its `storage` keeps typed buffers.
+* `DecreasingLength` reports its initial length when asked at iteration 0.
 
 ## [0.6.7] September 9, 2026
 

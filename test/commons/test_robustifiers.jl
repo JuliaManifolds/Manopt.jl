@@ -42,6 +42,7 @@ using Manopt, Test
         s = 1.5
         r = CauchyRobustifier()
         sr = ScaledRobustifierFunction(r, s)
+        @test_throws ArgumentError ScaledRobustifierFunction(r, 0.0)
         @test sr.scale == (s ∘ r).scale
         @test (s ∘ sr).scale == s^2
         x = 0.5
@@ -56,6 +57,7 @@ using Manopt, Test
     end
     @testset "Tolerant robustifier" begin
         @test_throws ArgumentError TolerantRobustifier(1.0, 0.0)
+        @test TolerantRobustifier(1, 0.5) isa TolerantRobustifier{Float64}
         a = 1.0
         b = 0.5
         x = 1.5

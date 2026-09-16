@@ -16,6 +16,9 @@ default(; show = false, reuse = true)
         grad_f(M, p) = -log(M, p, q)
 
         @test check_gradient(M, f, grad_f, p, X)
+        # a zero direction is rejected with a message naming the cause
+        @test_throws ArgumentError check_gradient(M, f, grad_f, p, zero_vector(M, p))
+        @test_throws ArgumentError check_differential(M, f, (M, p, X) -> 0.0, p, zero_vector(M, p))
 
         grad_fb(M, p) = -0.5 * log(M, p, q)
         @test_throws ErrorException check_gradient(M, f, grad_fb, p, X; error = :error)
@@ -50,6 +53,7 @@ default(; show = false, reuse = true)
         X3 = [1.0, 0.0]
         #just run all defaults with true and even the gradient descent
         @test check_Hessian(M3, f3, grad_f3, Hess_f3, p3, X3; mode = :CriticalPoint)
+        @test_throws ArgumentError check_Hessian(M3, f3, grad_f3, Hess_f3, p3, zero_vector(M3, p3); check_grad = false)
         # Euclidean and completely exact
 
         # gradient not correct

@@ -172,6 +172,13 @@ end
             M, f, p, 1.0e-12, 0, 0.5, -grad_f(M, p); gradient = grad_f(M, p), stop_increasing_at_step = 1, report_messages_in = msgs
         )
         @test msgs[:stop_increasing].at_iteration == 1
+        # the bound also caps the first guess, when no increase happens
+        s6 = Manopt.linesearch_backtrack(
+            M, f, p, 3.0, 1.0e-4, 0.5, -grad_f(M, p); gradient = grad_f(M, p), stop_when_stepsize_exceeds = 0.5,
+            stop_increasing_at_step = 0, report_messages_in = msgs,
+        )
+        @test s6 <= 0.5
+        @test msgs[:stepsize_exceeds].at_iteration == 0
     end
     @testset "Adaptive WN Gradient" begin
         # Build a dummy function and gradient
@@ -182,6 +189,7 @@ end
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
         s = AdaptiveWNGradient(; gradient_reduction = 0.5, count_threshold = 2)(M)
+        @test_throws MethodError AdaptiveWNGradient(; unknown_keyword = 12)(M)
         @test startswith(Manopt.status_summary(s), "An adaptive WN gradient step size")
         @test startswith(repr(s), "AdaptiveWNGradientStepsize(; ")
         gds = GradientDescentState(M; p = p)
@@ -222,6 +230,11 @@ end
         solve!(mp, gds)
         @test abs_dec_step(mp, gds, 1) ==
             10.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
+        # at iteration 0 the decreasing step reports its initial length
+        dec_step = DecreasingLength(M; length = 2.0)()
+        @test dec_step(mp, gds, 0) == 2.0
+        @test dec_step(mp, gds, 1) == 2.0
+        @test dec_step(mp, gds, 2) == 1.0
         abs_const_step = Manopt.ConstantStepsize(M, 1.0; type = :absolute)
         @test abs_const_step(mp, gds, 1) ==
             1.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
@@ -242,6 +255,26 @@ end
         # (1) vector transport when providing a last stepsize - we did not actually move - still max
         @test bb(dmp, gds, 1) == bb.max_stepsize
         @test get_last_stepsize(bb) == bb.max_stepsize
+        @test get_initial_stepsize(bb) == bb.max_stepsize
+        # a storage with typed buffers gives the same step as the default one
+        f2(M, q) = q[1]^2 + 4 * q[2]^2
+        grad_f2(M, q) = [2 * q[1], 8 * q[2]]
+        dmp2 = DefaultManoptProblem(M, ManifoldGradientObjective(f2, grad_f2))
+        steps = map(
+            [
+                Manopt.StoreStateAction(M; store_fields = [:Iterate, :Gradient]),
+                Manopt.StoreStateAction(M; store_points = Tuple{:Iterate}, store_vectors = Tuple{:Gradient}, p_init = [2.0, 2.0]),
+            ]
+        ) do storage
+            bb2 = BarzilaiBorwein(; storage = storage)(M)
+            gds2 = GradientDescentState(M; p = [2.0, 2.0], X = grad_f2(M, [2.0, 2.0]), stepsize = bb2)
+            bb2(dmp2, gds2, 1)
+            Manopt.set_iterate!(gds2, M, [1.0, 0.5])
+            gds2.X = grad_f2(M, [1.0, 0.5])
+            bb2(dmp2, gds2, 2)
+        end
+        @test steps[1] ≈ 0.1625
+        @test steps[2] == steps[1]
         # on a curved manifold the first call must not compute with the roundoff of a
         # transport and an inverse retraction of a point to itself
         Ms = Sphere(2)
@@ -311,6 +344,17 @@ end
         @test startswith(Manopt.status_summary(clbs), "Cubic bracketing stepsize")
         @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
         @test get_last_stepsize(clbs) === clbs.last_stepsize
+        @test get_initial_stepsize(clbs) == clbs.initial_stepsize
+        # the maximal step size bounds the distance travelled, not the factor
+        Ms = Sphere(2)
+        fs(N, q) = q[1]^2
+        grad_fs(N, q) = project(N, q, [2 * q[1], 0.0, 0.0])
+        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fs, grad_fs))
+        ps = [1.0, 0.0, 0.0]
+        η = 10.0 .* [0.0, 1.0, 0.0]
+        gss = GradientDescentState(Ms; p = ps, X = -η)
+        ts = CubicBracketingLinesearch()(Ms)(dmps, gss, 1, η)
+        @test ts * norm(Ms, ps, η) <= Manopt.max_stepsize(Ms) + 1.0e-12
 
         #edge cases of interval bracketing
         a, b, τ = 0, 1, 0.25

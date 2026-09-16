@@ -91,6 +91,7 @@ end
         @test s(p, o, 2) == true
         @test length(get_reason(s)) > 0
         @test_throws ErrorException StopAfter(Second(-1))
+        @test_throws ArgumentError StopAfter(Month(1))
         @test_throws ErrorException Manopt.set_parameter!(s, :MaxTime, Second(-1))
         Manopt.set_parameter!(s, :MaxTime, Second(2))
         @test s.threshold == Second(2)
@@ -357,6 +358,10 @@ end
         @test startswith(repr(sc), "StopWhenRepeated(")
         @test startswith(Manopt.status_summary(sc), "A stopping criterion to stop when the inner criterion has indicated to stop 3 consecutive times")
         @test startswith(Manopt.status_summary(sc; context = :short), "StopWhenRepeated(StopAfterIteration(2))×3")
+        # parameters reach the wrapped criterion
+        scp = StopWhenRepeated(StopAfterIteration(2), 3)
+        Manopt.set_parameter!(scp, :MaxIteration, 5)
+        @test scp.stopping_criterion.max_iterations == 5
         # an inactive wrapper has not converged, even if the inner criterion fired before
         Me = Euclidean(2)
         ste = GradientDescentState(Me; p = [0.0, 0.0], X = [0.0, 0.0])
@@ -409,6 +414,10 @@ end
         sc7 = s ≞ 10
         @test !sc7.comp(12)
         @test sc7.comp(20)
+        # parameters reach the wrapped criterion
+        scp = StopAfterIteration(2) ⩼ 5
+        Manopt.set_parameter!(scp, :MaxIteration, 5)
+        @test scp.stopping_criterion.max_iterations == 5
 
         # test that it does not hit at 5
         @test !sc(mp, st, 5) # still count 0
@@ -539,6 +548,14 @@ end
             Manopt.set_iterate!(st, M, [0.5, 1.0])
             sc(mp, st, 1)
             @test sc.criteria[2].last_change ≈ distance(M, [1.0, 2.0], [0.5, 1.0])
+        end
+        # at initialization every criterion is evaluated exactly once
+        cmo = ManifoldCountObjective(M, ManifoldGradientObjective((M, x) -> sum(x .^ 2), (M, x) -> 2x), [:Cost])
+        mpc = DefaultManoptProblem(M, cmo)
+        for sc in [StopWhenCostNaN() | StopWhenCostLess(0.0), StopWhenCostNaN() & StopWhenCostLess(0.0)]
+            reset_counters!(cmo)
+            sc(mpc, st, 0)
+            @test get_count(cmo, :Cost) == 2
         end
         # Criteria eligible for short-circuiting are skipped once the result is fixed.
         for sc in [

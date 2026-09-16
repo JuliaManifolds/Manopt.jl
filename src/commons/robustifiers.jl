@@ -256,7 +256,7 @@ The function and its derivatives hence read as
     ScaledRobustifierFunction(robustifier::F, scale::R) where {F<:AbstractRobustifierFunction, R <: Real}
     scale ∘ robustifier
 
-Generate a `ScaledRobustifierFunction` given a robustifier function and a scaling factor.
+Generate a `ScaledRobustifierFunction` given a robustifier function and a nonzero scaling factor.
 """
 struct ScaledRobustifierFunction{
         F <: AbstractRobustifierFunction,
@@ -264,6 +264,12 @@ struct ScaledRobustifierFunction{
     } <: AbstractRobustifierFunction
     robustifier::F
     scale::R
+    function ScaledRobustifierFunction(
+            robustifier::F, scale::R
+        ) where {F <: AbstractRobustifierFunction, R <: Real}
+        iszero(scale) && throw(ArgumentError("The scale must not be zero."))
+        return new{F, R}(robustifier, scale)
+    end
 end
 
 Base.:∘(s::Real, rf::AbstractRobustifierFunction) = ScaledRobustifierFunction(rf, s)
@@ -311,7 +317,7 @@ function get_robustifier_values(::SoftL1Robustifier, x::Real)
 end
 
 """
-    TolerantRobustifier <: AbstractRobustifierFunction
+    TolerantRobustifier{R <: Real} <: AbstractRobustifierFunction
 
 A robustifier that is based on the tolerant function. Note that robustifiers act on the
 squared residuals within the nonlinear least squares framework, i.e., ``ρ(f_i(p)^2)``.
@@ -331,8 +337,8 @@ and
 
 # Fields
 
-* `a::Real`: the shift ``a`` of the robustifier
-* `b::Real`: the scale ``b > 0`` of the robustifier
+* `a::R`: the shift ``a`` of the robustifier
+* `b::R`: the scale ``b > 0`` of the robustifier
 
 # Constructor
 
@@ -340,12 +346,13 @@ and
 
 Generate a `TolerantRobustifier` with parameters `a` and `b`; an `ArgumentError` is thrown if `b ≤ 0`.
 """
-struct TolerantRobustifier <: AbstractRobustifierFunction
-    a::Real
-    b::Real
+struct TolerantRobustifier{R <: Real} <: AbstractRobustifierFunction
+    a::R
+    b::R
     function TolerantRobustifier(a::Real, b::Real)
         (b <= 0) && throw(ArgumentError("Parameter b must be strictly positive, received $b"))
-        return new(a, b)
+        (ap, bp) = promote(a, b)
+        return new{typeof(ap)}(ap, bp)
     end
 end
 

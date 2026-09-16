@@ -92,9 +92,11 @@ mutable struct StopWhenAll{TCriteria <: Tuple} <: StoppingCriterionSet
     StopWhenAll(c::StoppingCriterion...) = new{typeof(c)}(c, -1)
 end
 function (c::StopWhenAll)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    if (k <= 0) # reset on init
+    if (k <= 0) # reset on init, evaluating every criterion exactly once
         c.at_iteration = -1
-        map(ci -> ci(p, s, k), c.criteria) #reset internals as well
+        all(map(ci -> ci(p, s, k), c.criteria)) || return false
+        c.at_iteration = k
+        return true
     end
     if evaluate_all_criteria(c.criteria, p, s, k)
         c.at_iteration = k
@@ -216,11 +218,11 @@ mutable struct StopWhenAny{TCriteria <: Tuple} <: StoppingCriterionSet
     StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c, -1)
 end
 function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    if (k <= 0) # reset on init
+    if (k <= 0) # reset on init, evaluating every criterion exactly once
         c.at_iteration = -1
-        for ci in c.criteria #reset internals as well
-            ci(p, s, k)
-        end
+        any(map(ci -> ci(p, s, k), c.criteria)) || return false
+        c.at_iteration = k
+        return true
     end
     if evaluate_any_criteria(c.criteria, p, s, k)
         c.at_iteration = k
@@ -325,7 +327,7 @@ end
     StopAfter <: StoppingCriterion
 
 Store a threshold when to stop looking at the complete runtime. It uses
-`time_ns()` to measure the time and you provide a `Period` as a time limit,
+`time_ns()` to measure the time and you provide a `Period` of fixed length as a time limit,
 for example `Minute(15)`.
 
 # Fields
@@ -348,6 +350,7 @@ mutable struct StopAfter <: StoppingCriterion
     time::Nanosecond
     at_iteration::Int
     function StopAfter(t::Period)
+        hasmethod(convert, Tuple{Type{Nanosecond}, typeof(t)}) || throw(ArgumentError("The period $t is not of fixed length."))
         return if value(t) < 0
             error("You must provide a positive time period")
         else
@@ -861,6 +864,15 @@ function has_converged(sc::StopWhenCriterionWithIterationCondition)
 end
 function Base.show(io::IO, sc::StopWhenCriterionWithIterationCondition)
     return print(io, "StopWhenCriterionWithIterationCondition($(repr(sc.stopping_criterion)), $(sc.comp))")
+end
+"""
+    set_parameter!(c::StopWhenCriterionWithIterationCondition, e::Val, v)
+
+Update a parameter of the stopping criterion this criterion wraps.
+"""
+function set_parameter!(c::StopWhenCriterionWithIterationCondition, e::Val, v)
+    set_parameter!(c.stopping_criterion, e, v)
+    return c
 end
 function status_summary(sc::StopWhenCriterionWithIterationCondition; context::Symbol = :default)
     (context == :short) && return repr(sc)
@@ -1498,6 +1510,15 @@ function has_converged(sc::StopWhenRepeated)
 end
 function Base.show(io::IO, sc::StopWhenRepeated)
     return print(io, "StopWhenRepeated($(repr(sc.stopping_criterion)), $(sc.n); consecutive=$(sc.consecutive))")
+end
+"""
+    set_parameter!(c::StopWhenRepeated, e::Val, v)
+
+Update a parameter of the stopping criterion this criterion wraps.
+"""
+function set_parameter!(c::StopWhenRepeated, e::Val, v)
+    set_parameter!(c.stopping_criterion, e, v)
+    return c
 end
 function status_summary(sc::StopWhenRepeated; context::Symbol = :default)
     (context == :short) && return "StopWhenRepeated($(repr(sc.stopping_criterion)))×$(sc.n)"

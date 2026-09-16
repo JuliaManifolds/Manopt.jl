@@ -315,6 +315,10 @@ function linesearch_backtrack!(
         stop_decreasing_at_step = 1000,
         report_messages_in::NamedTuple = (;),
     ) where {TF, T}
+    if s > stop_when_stepsize_exceeds
+        s = min(s, stop_when_stepsize_exceeds)
+        set_message!(report_messages_in, :stepsize_exceeds, at = 0, bound = stop_when_stepsize_exceeds, value = s)
+    end
     ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
     f_q = f(M, q)
     if Dlf0 > 0

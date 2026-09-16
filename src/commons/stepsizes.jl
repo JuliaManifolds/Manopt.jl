@@ -546,7 +546,7 @@ function AdaptiveWNGradientStepsize(
         gradient_bound::Real = norm(M, p, X),
         alternate_bound = (bk, hat_c) -> min(
             gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c))
-        ), kwargs...,
+        ),
     ) where {I <: Integer}
     R = promote_type(typeof(minimal_bound), typeof(gradient_reduction), typeof(gradient_bound))
     g = gradient_bound == 0 ? one(R) : convert(R, gradient_bound)
@@ -782,7 +782,6 @@ function (bb::BarzilaiBorweinStepsize)(
     #fetch
     p_old = get_storage(bb.storage, PointStorageKey(:Iterate))
     X_old = get_storage(bb.storage, VectorStorageKey(:Gradient))
-    update_storage!(bb.storage, mp, s)
 
     # compute the y_k – difference of gradients, but remember to transport
     vector_transport_to!(M, bb.y, p_old, X_old, p, bb.vector_transport_method)
@@ -794,6 +793,7 @@ function (bb::BarzilaiBorweinStepsize)(
         inverse_retract!(M, bb.s, p, p_old, bb.inverse_retraction_method)
         bb.s = -bb.s
     end
+    update_storage!(bb.storage, mp, s)
     #compute the new Barzilai-Borwein step size
     s1 = real(inner(M, p, bb.s, bb.y))
     s2 = real(inner(M, p, bb.y, bb.y))
@@ -826,6 +826,7 @@ function (bb::BarzilaiBorweinStepsize)(
     end
     return bb.last_stepsize
 end
+get_initial_stepsize(bb::BarzilaiBorweinStepsize) = bb.max_stepsize
 get_last_stepsize(bb::BarzilaiBorweinStepsize, ::Any...) = bb.last_stepsize
 function initialize_stepsize!(bb::BarzilaiBorweinStepsize)
     # forget iterate and gradient of a previous run, so that the next call is a first call again
@@ -1280,7 +1281,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     check_curvature(c::UnivariateTriple) = abs(c.df) < cbls.sufficient_curvature * abs(init.df)
 
     n_iter = 0
-    max_step = cbls.max_stepsize
+    max_step = cbls.max_stepsize / norm(M, p, η)
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
     end
@@ -1342,6 +1343,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     end
     return t
 end
+get_initial_stepsize(cbls::CubicBracketingLinesearchStepsize) = cbls.initial_stepsize
 get_last_stepsize(cbls::CubicBracketingLinesearchStepsize, ::Any...) = cbls.last_stepsize
 function Base.show(io::IO, cbls::CubicBracketingLinesearchStepsize)
     return print(
@@ -1484,7 +1486,8 @@ end
 function (s::DecreasingStepsize)(
         amp::P, ams::O, k::Int, args...; gradient = nothing, kwargs...
     ) where {P <: AbstractManoptProblem, O <: AbstractManoptSolverState}
-    ds = (s.length - k * s.subtrahend) * (s.factor^k) / ((k + s.shift)^(s.exponent))
+    d = (k + s.shift)^(s.exponent)
+    ds = (s.length - k * s.subtrahend) * (s.factor^k) / (iszero(d) ? one(d) : d) # a vanishing denominator counts as one
     if s.type == :absolute
         X = isnothing(gradient) ? get_gradient(ams) : gradient
         ns = norm(get_manifold(amp), get_iterate(ams), X)
