@@ -113,6 +113,14 @@ using ManifoldDiff: grad_distance
             ),
         )
         @test isapprox(M, p, p8; atol = 1.0e-13)
+        # the averaged gradient keeps the number point wrapped
+        p9 = gradient_descent(
+            M, f, grad_f, data[1];
+            direction = AverageGradient(; n = 5),
+            stepsize = ConstantLength(),
+            stopping_criterion = StopAfterIteration(800),
+        )
+        @test isapprox(M, p9, apprpstar; atol = 1.0e-9)
         M2 = Euclidean()
         @test_logs (
             :warn,

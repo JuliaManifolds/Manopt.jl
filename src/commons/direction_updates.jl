@@ -220,7 +220,7 @@ function (a::AverageGradientRule)(
     end
     pushfirst!(a.gradients, copy(M, p, d))
     copyto!(M, a.last_iterate, p)
-    return step, 1 / length(a.gradients) .* sum(a.gradients)
+    return step, sum(a.gradients) / length(a.gradients)
 end
 function Base.show(io::IO, agr::AverageGradientRule)
     print(io, "AverageGradientRule(; gradients = ", agr.gradients)

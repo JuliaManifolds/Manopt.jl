@@ -175,8 +175,6 @@ function (ag::AlternatingGradientRule)(
         amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, k
     )
     M = get_manifold(amp)
-    # at begin of inner iterations reset internal vector to zero
-    (k == 1) && zero_vector!(M, ag.X, agds.p)
     # update order(k)th component in-place
     get_gradient!(amp, ag.X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
     return agds.stepsize(amp, agds, k; gradient = ag.X), ag.X # return current full gradient

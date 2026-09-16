@@ -60,6 +60,12 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         @test r1c == LevenbergMarquardt(M1, nlso1, p1)
         r1cu = LevenbergMarquardt(M1, ManifoldCountObjective(M1, nlso1, [:Cost]), p1; use_unified_basis = true)
         @test r1cu == LevenbergMarquardt(M1, nlso1, p1; use_unified_basis = true)
+        # penalty, threshold and the residual cache may have different number types
+        r1f = LevenbergMarquardt(M1, nlso1, Float32[0.0, 0.0])
+        @test eltype(r1f) == Float32
+        @test isapprox(M1, r1f, r1a1; atol = 1.0e-3)
+        r1fu = LevenbergMarquardt(M1, nlso1, Float32[0.0, 0.0]; use_unified_basis = true)
+        @test isapprox(M1, r1fu, r1a1; atol = 1.0e-3)
         # We can even leave out m
         r1a2 = LevenbergMarquardt(
             M1, F1, JF1, p1;

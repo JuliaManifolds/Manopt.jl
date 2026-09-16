@@ -31,6 +31,9 @@ This is yet another round of review – maybe also introducing a few test tools
 * the exact penalty cost and gradient with `LogarithmicSumOfExponentials` smoothing stay finite for small `u`.
 * `LevenbergMarquardt` switches a block off when its robustifier has a vanishing first derivative, for example `TukeyRobustifier` beyond its cut-off.
 * `LevenbergMarquardt` works for decorated `ManifoldNonlinearLeastSquaresObjective`s, for example a counted or cached one.
+* `LevenbergMarquardt` also runs for other number types than `Float64`, for example `Float32`.
+* `AverageGradient` also works on manifolds whose points are numbers.
+* `alternating_gradient_descent` keeps the full gradient between its inner iterations, so its stopping criterion sees the gradient of every block.
 
 ## [0.6.7] September 9, 2026
 

@@ -169,7 +169,7 @@ linear operators.
 Note that the keyword `residuals` initializes the `value_cache` field.
 """
 mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
-        R <: Real, TO <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective{<:ManifoldNonlinearLeastSquaresObjective}}, TVC <: AbstractVector{R}, TJC <: AbstractVector, TB <: AbstractBasis,
+        R <: Real, TO <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective{<:ManifoldNonlinearLeastSquaresObjective}}, TVC <: AbstractVector, TJC <: AbstractVector, TB <: AbstractBasis,
     } <: AbstractLevenbergMarquardtLinearSurrogateObjective
     objective::TO
     penalty::R
@@ -180,12 +180,13 @@ mutable struct LevenbergMarquardtLinearSurrogateCoordinatesObjective{
     basis::TB
     function LevenbergMarquardtLinearSurrogateCoordinatesObjective(
             objective::Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective{<:ManifoldNonlinearLeastSquaresObjective}};
-            penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Strict,
+            penalty::Real = 1.0e-6, threshold::Real = 1.0e-4, mode::Symbol = :Strict,
             residuals::TVC = zeros(residuals_count(objective)),
             jacobian_cache::TJC = fill(nothing, length(get_residual_functions(objective))),
             basis::TB = DefaultOrthonormalBasis(),
-        ) where {R <: Real, TVC <: AbstractVector, TJC <: AbstractVector, TB <: AbstractBasis}
-        return new{R, typeof(objective), TVC, TJC, TB}(objective, penalty, threshold, mode, residuals, jacobian_cache, basis)
+        ) where {TVC <: AbstractVector, TJC <: AbstractVector, TB <: AbstractBasis}
+        (penalty_, threshold_) = promote(penalty, threshold)
+        return new{typeof(penalty_), typeof(objective), TVC, TJC, TB}(objective, penalty_, threshold_, mode, residuals, jacobian_cache, basis)
     end
 end
 
@@ -517,7 +518,7 @@ act as safeguards, see [`get_LevenbergMarquardt_scaling`](@ref).
 Note that the keyword `residuals` initializes the `value_cache` field.
 """
 mutable struct LevenbergMarquardtLinearSurrogateObjective{
-        R <: Real, TO <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective{<:ManifoldNonlinearLeastSquaresObjective}}, TVC <: AbstractVector{R},
+        R <: Real, TO <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective{<:ManifoldNonlinearLeastSquaresObjective}}, TVC <: AbstractVector,
     } <: AbstractLevenbergMarquardtLinearSurrogateObjective
     objective::TO
     penalty::R
@@ -526,10 +527,11 @@ mutable struct LevenbergMarquardtLinearSurrogateObjective{
     value_cache::TVC
     function LevenbergMarquardtLinearSurrogateObjective(
             objective::Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective{<:ManifoldNonlinearLeastSquaresObjective}};
-            penalty::R = 1.0e-6, threshold::R = 1.0e-4, mode::Symbol = :Strict,
+            penalty::Real = 1.0e-6, threshold::Real = 1.0e-4, mode::Symbol = :Strict,
             residuals::TVC = zeros(residuals_count(objective)),
-        ) where {R <: Real, TVC <: AbstractVector}
-        return new{R, typeof(objective), TVC}(objective, penalty, threshold, mode, residuals)
+        ) where {TVC <: AbstractVector}
+        (penalty_, threshold_) = promote(penalty, threshold)
+        return new{typeof(penalty_), typeof(objective), TVC}(objective, penalty_, threshold_, mode, residuals)
     end
 end
 
