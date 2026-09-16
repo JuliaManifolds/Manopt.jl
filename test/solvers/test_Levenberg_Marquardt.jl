@@ -492,6 +492,8 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             pa = LevenbergMarquardt(Ml, fl, jac_l, pl0, length(xs); jacobian_tangent_basis = Bl)
             pi_ = LevenbergMarquardt!(Ml, fl, jac_l, copy(pl0), length(xs); jacobian_tangent_basis = Bl)
             @test isapprox(pa, pi_; atol = 1.0e-8)
+            pu = LevenbergMarquardt(Ml, fl, jac_l, pl0, length(xs); jacobian_tangent_basis = Bl, use_unified_basis = true)
+            @test isapprox(pu, pa; atol = 1.0e-8)
         end
     end
     @testset "Jacobian cache shapes" begin

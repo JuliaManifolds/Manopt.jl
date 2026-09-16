@@ -366,6 +366,7 @@ function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso,
             LevenbergMarquardtLinearSurrogateCoordinatesObjective(
                 nlso; penalty = damping_term_min, threshold = threshold, mode = mode,
                 residuals = residuals, jacobian_cache = _jm,
+                basis = get_basis(first(get_residual_functions(nlso)).jacobian_type),
             ),
         )
     else
@@ -447,7 +448,7 @@ function LevenbergMarquardt!(
         sub_objective = construct_lm_subobjective(use_unified_basis, nlso, damping_term_min, scaling_threshold, scaling_mode, initial_residual_values, initial_jacobian_matrices),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_state = (has_anisotropic_max_stepsize(M) || use_unified_basis) ?
-            CoordinatesNormalSystemState(M, p) :
+            CoordinatesNormalSystemState(M, p; basis = get_basis(first(get_residual_functions(nlso)).jacobian_type)) :
             ConjugateResidualState(TangentSpace(M, p), sub_objective; X = zero_vector(M, p)),
         kwargs..., #collect rest
     ) where {O <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}

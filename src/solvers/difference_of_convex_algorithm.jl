@@ -352,7 +352,7 @@ function difference_of_convex_algorithm!(
         g = missing, grad_g = missing, gradient = missing,
         X = zero_vector(M, p),
         objective_type = :Riemannian,
-        stopping_criterion = if ismissing(gradient) && ismissing(get_gradient_function(get_objective(mdco)))
+        stopping_criterion = if ismissing(get_gradient_function(get_objective(mdco)))
             StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9)
         else
             StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9) | StopWhenGradientNormLess(1.0e-9)

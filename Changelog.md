@@ -43,6 +43,10 @@ This is yet another round of review – maybe also introducing a few test tools
 * `AffineCovariantStepsize` returns the damping factor whose convergence monitor was accepted.
 * `sub_kwargs` of `interior_point_Newton` reach the sub objective as keywords.
 * `exact_penalty_method` accepts a decorated constrained objective and different number types for `ρ` and `u`.
+* `DouglasRachford` wraps its cost for number points.
+* `difference_of_convex_algorithm` adds its gradient norm criterion only when the objective has a gradient.
+* `LevenbergMarquardt` with `use_unified_basis=true` uses the basis of the Jacobians.
+* `Manopt.Test.adjoint_differential_forward_logs` is the adjoint of `differential_forward_logs` on curved manifolds.
 
 ## [0.6.7] September 9, 2026
 

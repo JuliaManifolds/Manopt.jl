@@ -205,6 +205,21 @@ import Manifolds: inner
             M, grad_h, p0; grad_g = grad_g
         )
     end
+    @testset "gradient keyword with an objective" begin
+        # the objective carries no gradient, so no gradient norm criterion is used and the run goes on
+        M2 = Euclidean(2)
+        a = [1.0, 0.0]
+        g2(M, p) = norm(p)^4 / 4
+        grad_g2(M, p) = norm(p)^2 * p
+        h2(M, p) = norm(p - a)^2
+        grad_h2(M, p) = 2 * (p - a)
+        f2(M, p) = g2(M, p) - h2(M, p)
+        grad_f2(M, p) = grad_g2(M, p) - grad_h2(M, p)
+        mdco2 = ManifoldDifferenceOfConvexObjective(f2, grad_h2)
+        q = difference_of_convex_algorithm(M2, mdco2, a; g = g2, grad_g = grad_g2, gradient = grad_f2)
+        @test norm(grad_f2(M2, q)) < 1.0e-6
+        @test isapprox(q, [-1.7692923540193184, 0.0]; atol = 1.0e-6)
+    end
     @testset "Running the closed form solution solvers" begin
         # make them a bit by providing sub solvers as functions
         function dca_sub(M, p, X)

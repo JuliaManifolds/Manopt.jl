@@ -212,8 +212,9 @@ function DouglasRachford(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), parallel = 0, kwargs...,
     ) where {TF}
     p_ = maybe_wrap_variable(p)
+    f_ = maybe_wrap_function(f, p; result = :Number)
     proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation; result = :Point) for prox_f in proxes_f]
-    N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(M, f, proxes_f_, p_, parallel)
+    N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(M, f_, proxes_f_, p_, parallel)
     # we are inplace, so no need to pass it further down here
     mpo = ManifoldProximalMapObjective(f__, (prox1, prox2); evaluation = InplaceEvaluation())
     rs = DouglasRachford(N, mpo, q; evaluation = evaluation, parallel = parallel_, kwargs...)
