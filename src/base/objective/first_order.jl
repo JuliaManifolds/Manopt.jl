@@ -180,11 +180,11 @@ function get_gradient(M::AbstractManifold, objective::AbstractManifoldFirstOrder
 end
 
 ### Decorator
-function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
-    return get_gradient(M, get_objective(admo, false), p)
+function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p; kwargs...)
+    return get_gradient(M, get_objective(admo, false), p; kwargs...)
 end
-function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
-    return get_gradient!(M, X, get_objective(admo, false), p)
+function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p; kwargs...)
+    return get_gradient!(M, X, get_objective(admo, false), p; kwargs...)
 end
 
 function get_gradient_function end

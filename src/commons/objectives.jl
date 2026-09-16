@@ -932,23 +932,23 @@ before calling the gradient function stored in the [`EmbeddedManifoldObjective`]
 The returned gradient is then converted to a Riemannian gradient calling
 [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}).
 """
-function get_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p) where {P}
+function get_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, Missing}, p; kwargs...) where {P}
     q = local_embed!(M, emo, p)
-    return riemannian_gradient(M, p, get_gradient(get_embedding(M, typeof(p)), emo.objective, q))
+    return riemannian_gradient(M, p, get_gradient(get_embedding(M, typeof(p)), emo.objective, q; kwargs...))
 end
-function get_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p) where {P, T}
+function get_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective{P, T}, p; kwargs...) where {P, T}
     q = local_embed!(M, emo, p)
-    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q)
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q; kwargs...)
     return riemannian_gradient(M, p, emo.X)
 end
-function get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P, Missing}, p) where {P}
+function get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P, Missing}, p; kwargs...) where {P}
     q = local_embed!(M, emo, p)
-    riemannian_gradient!(M, X, p, get_gradient(get_embedding(M, typeof(p)), emo.objective, q))
+    riemannian_gradient!(M, X, p, get_gradient(get_embedding(M, typeof(p)), emo.objective, q; kwargs...))
     return X
 end
-function get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P, T}, p) where {P, T}
+function get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P, T}, p; kwargs...) where {P, T}
     q = local_embed!(M, emo, p)
-    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q)
+    get_gradient!(get_embedding(M, typeof(p)), emo.X, emo.objective, q; kwargs...)
     riemannian_gradient!(M, X, p, emo.X)
     return X
 end
@@ -1464,25 +1464,25 @@ function get_differential_function(mco::ManifoldCachedObjective, recursive = fal
     return (M, p, X; kwargs...) -> get_differential(M, mco, p, X; kwargs...)
 end
 
-function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
-    !(haskey(co.cache, :Gradient)) && return get_gradient(M, co.objective, p)
+function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p; kwargs...)
+    !(haskey(co.cache, :Gradient)) && return get_gradient(M, co.objective, p; kwargs...)
     return copy(
         M,
         p,
         get!(co.cache[:Gradient], copy(M, p)) do
-            get_gradient(M, co.objective, p)
+            get_gradient(M, co.objective, p; kwargs...)
         end,
     )
 end
-function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
-    !(haskey(co.cache, :Gradient)) && return get_gradient!(M, X, co.objective, p)
+function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p; kwargs...)
+    !(haskey(co.cache, :Gradient)) && return get_gradient!(M, X, co.objective, p; kwargs...)
     copyto!(
         M,
         X,
         p,
         get!(co.cache[:Gradient], copy(M, p)) do
             # This evaluates in place of X
-            get_gradient!(M, X, co.objective, p)
+            get_gradient!(M, X, co.objective, p; kwargs...)
             copy(M, p, X) #this creates a copy to be placed in the cache
         end, #and copy the values back to X
     )
@@ -2424,13 +2424,13 @@ function get_gradient_function(mco::ManifoldCountObjective, recursive = false; e
     end
 end
 
-function get_gradient(M::AbstractManifold, co::ManifoldCountObjective, p)
+function get_gradient(M::AbstractManifold, co::ManifoldCountObjective, p; kwargs...)
     _count_if_exists(co, :Gradient)
-    return get_gradient(M, co.objective, p)
+    return get_gradient(M, co.objective, p; kwargs...)
 end
-function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
+function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p; kwargs...)
     _count_if_exists(co, :Gradient)
-    get_gradient!(M, X, co.objective, p)
+    get_gradient!(M, X, co.objective, p; kwargs...)
     return X
 end
 
@@ -3454,6 +3454,24 @@ function residuals_count(nlso::ManifoldNonlinearLeastSquaresObjective)
 end
 residuals_count(admo::AbstractDecoratedManifoldObjective) = residuals_count(get_objective(admo, false))
 
+"""
+    get_residual_functions(nlso::ManifoldNonlinearLeastSquaresObjective)
+
+Return the vector of vectorial functions ``F_i``, one per block, of the
+[`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`.
+"""
+get_residual_functions(nlso::ManifoldNonlinearLeastSquaresObjective) = nlso.objective
+get_residual_functions(admo::AbstractDecoratedManifoldObjective) = get_residual_functions(get_objective(admo, false))
+
+"""
+    get_robustifier_functions(nlso::ManifoldNonlinearLeastSquaresObjective)
+
+Return the vector of [`AbstractRobustifierFunction`](@ref)s ``ρ_i``, one per block, of the
+[`ManifoldNonlinearLeastSquaresObjective`](@ref) `nlso`.
+"""
+get_robustifier_functions(nlso::ManifoldNonlinearLeastSquaresObjective) = nlso.robustifier
+get_robustifier_functions(admo::AbstractDecoratedManifoldObjective) = get_robustifier_functions(get_objective(admo, false))
+
 #
 #
 # ---
@@ -4114,11 +4132,11 @@ end
 
 Evaluate the scaled gradient ``s*$(_tex(:grad))f(p)``.
 """
-function get_gradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
-    return scaled_objective.scale * get_gradient(M, scaled_objective.objective, p)
+function get_gradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p; kwargs...)
+    return scaled_objective.scale * get_gradient(M, scaled_objective.objective, p; kwargs...)
 end
-function get_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldObjective, p)
-    get_gradient!(M, X, scaled_objective.objective, p)
+function get_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldObjective, p; kwargs...)
+    get_gradient!(M, X, scaled_objective.objective, p; kwargs...)
     X .= scaled_objective.scale .* X
     return X
 end
@@ -4322,10 +4340,10 @@ function get_differential_function(sco::SimpleManifoldCachedObjective, recursive
     return (M, p, X; kwargs...) -> get_differential(M, sco, p, X; kwargs...)
 end
 
-function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
+function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p; kwargs...)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
-        X = get_gradient(M, sco.objective, p)
+        X = get_gradient(M, sco.objective, p; kwargs...)
         # for switched points, invalidate c
         copyto!(M, sco.p, p)
         scop_neq_p && (sco.c_valid = false)
@@ -4336,10 +4354,10 @@ function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p
     end
     return X
 end
-function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjective, p)
+function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjective, p; kwargs...)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
-        get_gradient!(M, X, sco.objective, p)
+        get_gradient!(M, X, sco.objective, p; kwargs...)
         # for switched points, invalidate c
         copyto!(M, sco.p, p)
         scop_neq_p && (sco.c_valid = false)

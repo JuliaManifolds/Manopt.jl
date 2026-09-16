@@ -434,12 +434,12 @@ function LevenbergMarquardt!(
         damping_term_max::Real = Inf,
         initial_damping_term::Real = damping_term_min,
         debug = is_tutorial_mode() ? [DebugWarnIfCostIncreases()] : [],
-        initial_residual_values = zeros(number_eltype(p), residuals_count(get_objective(nlso))),
+        initial_residual_values = zeros(number_eltype(p), residuals_count(nlso)),
         use_unified_basis::Bool = false,
         initial_jacobian_matrices = if use_unified_basis
-            [Manopt.allocate_jacobian(M, vgf; T = eltype(p)) for vgf in get_objective(nlso).objective]
+            [Manopt.allocate_jacobian(M, vgf; T = eltype(p)) for vgf in get_residual_functions(nlso)]
         else # one nothing per block
-            fill(nothing, length(get_objective(nlso).objective))
+            fill(nothing, length(get_residual_functions(nlso)))
         end,
         scaling_threshold::Real = 1.0e-6,
         scaling_mode::Symbol = :Strict,
@@ -484,10 +484,10 @@ calls_with_kwargs(::typeof(LevenbergMarquardt!)) = (decorate_objective!, decorat
 #
 function initialize_solver!(dmp::DefaultManoptProblem, lms::LevenbergMarquardtState)
     M = get_manifold(dmp)
-    nlso = get_objective(dmp, true) # unwrap decorators
+    nlso = get_objective(dmp) # keep decorators, every evaluation passes through them
     get_residuals!(M, lms.residual_values, nlso, lms.p)
-    jms = isnothing(lms.jacobian_matrices) ? fill(nothing, length(nlso.objective)) : lms.jacobian_matrices
-    for (o, jb) in zip(nlso.objective, jms)
+    jms = isnothing(lms.jacobian_matrices) ? fill(nothing, length(get_residual_functions(nlso))) : lms.jacobian_matrices
+    for (o, jb) in zip(get_residual_functions(nlso), jms)
         !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
     end
     get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = jms)
@@ -500,7 +500,7 @@ function step_solver!(
     # Update damping term in the surrogate
     # should this be with (currently) or without robustifier?
     M = get_manifold(dmp)
-    nlso = get_objective(dmp, true)
+    nlso = get_objective(dmp) # keep decorators, every evaluation passes through them
     FpSq = get_cost(dmp, lms.p)
     set_parameter!(lms.sub_problem, Val(:Objective), Val(:Penalty), lms.damping_term * FpSq)
     # update base point of the tangent space the subproblem works on
@@ -549,8 +549,8 @@ function step_solver!(
         callback(:CandidateAccept, dmp, lms, k)
         copyto!(M, lms.p, lms.q)
         get_residuals!(M, lms.residual_values, nlso, lms.p)
-        jms = isnothing(lms.jacobian_matrices) ? fill(nothing, length(nlso.objective)) : lms.jacobian_matrices
-        for (o, jb) in zip(nlso.objective, jms)
+        jms = isnothing(lms.jacobian_matrices) ? fill(nothing, length(get_residual_functions(nlso))) : lms.jacobian_matrices
+        for (o, jb) in zip(get_residual_functions(nlso), jms)
             !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
         end
         get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = jms)

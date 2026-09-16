@@ -30,6 +30,7 @@ This is yet another round of review – maybe also introducing a few test tools
 * `count=[:ProximalMap]` also works for objectives that store a single proximal map, such as `ManifoldProximalGradientObjective`.
 * the exact penalty cost and gradient with `LogarithmicSumOfExponentials` smoothing stay finite for small `u`.
 * `LevenbergMarquardt` switches a block off when its robustifier has a vanishing first derivative, for example `TukeyRobustifier` beyond its cut-off.
+* `LevenbergMarquardt` works for decorated `ManifoldNonlinearLeastSquaresObjective`s, for example a counted or cached one.
 
 ## [0.6.7] September 9, 2026
 

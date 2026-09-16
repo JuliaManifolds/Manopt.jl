@@ -181,6 +181,24 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
             get_residuals!(M, V!, dnlso, p)
             @test isapprox(V, V!)
             @test isapprox(V, get_residuals(M, dnlso, p))
+            # the stored functions are reachable through the decorator
+            @test Manopt.get_residual_functions(dnlso) === Manopt.get_residual_functions(nlsoFa)
+            @test Manopt.get_robustifier_functions(dnlso) === Manopt.get_robustifier_functions(nlsoFa)
+            @test length(Manopt.get_residual_functions(nlsoRobust)) == 2
+            @test Manopt.get_robustifier_functions(nlsoRobust)[1] isa HuberRobustifier
+            # the surrogates keep a decorated objective and evaluate the same as for the plain one
+            lmso = LevenbergMarquardtLinearSurrogateObjective(nlsoFa)
+            dlmso = LevenbergMarquardtLinearSurrogateObjective(dnlso)
+            @test get_objective(dlmso) === dnlso
+            get_residuals!(M, lmso.value_cache, nlsoFa, p)
+            get_residuals!(M, dlmso.value_cache, dnlso, p)
+            @test get_gradient(M, dlmso, p, X) == get_gradient(M, lmso, p, X)
+            @test Manopt.get_normal_vector_field(M, dlmso, p) == Manopt.get_normal_vector_field(M, lmso, p)
+            @test LevenbergMarquardt(M, dnlso, p) == LevenbergMarquardt(M, nlsoFa, p)
+            # a decorator of another objective is not accepted
+            dco = Manopt.Test.DummyDecoratedObjective(ManifoldCostObjective(f))
+            @test_throws MethodError LevenbergMarquardtLinearSurrogateObjective(dco)
+            @test_throws MethodError Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(dco)
         end
     end
     @testset "Add_vector! on special manifolds" begin

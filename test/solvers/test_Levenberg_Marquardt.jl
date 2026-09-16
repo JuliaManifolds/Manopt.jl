@@ -52,6 +52,14 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             stopping_criterion = StopAfterIteration(5),
         )
         @test get_count(o1c, :Cost) > 0
+        # an already decorated objective is accepted, kept, and gives the same result as the plain one
+        nlso1 = ManifoldNonlinearLeastSquaresObjective(
+            F1, JF1, m; function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()
+        )
+        r1c = LevenbergMarquardt(M1, ManifoldCountObjective(M1, nlso1, [:Cost]), p1)
+        @test r1c == LevenbergMarquardt(M1, nlso1, p1)
+        r1cu = LevenbergMarquardt(M1, ManifoldCountObjective(M1, nlso1, [:Cost]), p1; use_unified_basis = true)
+        @test r1cu == LevenbergMarquardt(M1, nlso1, p1; use_unified_basis = true)
         # We can even leave out m
         r1a2 = LevenbergMarquardt(
             M1, F1, JF1, p1;
