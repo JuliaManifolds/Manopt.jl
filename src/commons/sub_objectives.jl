@@ -433,6 +433,16 @@ function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateCoordinatesObjec
     lmlso.penalty = penalty
     return lmlso
 end
+function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateCoordinatesObjective, ::Val{:ResidualCache}, residuals)
+    copyto!(lmlso.value_cache, residuals)
+    return lmlso
+end
+function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateCoordinatesObjective, ::Val{:JacobianCache}, jacobians)
+    for (jc, j) in zip(lmlso.jacobian_cache, jacobians)
+        copyto!(jc, j)
+    end
+    return lmlso
+end
 
 function show(io::IO, lmlsco::LevenbergMarquardtLinearSurrogateCoordinatesObjective)
     print(io, "LevenbergMarquardtLinearSurrogateCoordinatesObjective(", lmlsco.objective, "; ")
@@ -1394,6 +1404,10 @@ end
 
 function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateObjective, ::Val{:Penalty}, penalty::Real)
     lmlso.penalty = penalty
+    return lmlso
+end
+function set_parameter!(lmlso::LevenbergMarquardtLinearSurrogateObjective, ::Val{:ResidualCache}, residuals)
+    copyto!(lmlso.value_cache, residuals)
     return lmlso
 end
 

@@ -365,7 +365,7 @@ function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso,
         return NormalEquationsObjective(
             LevenbergMarquardtLinearSurrogateCoordinatesObjective(
                 nlso; penalty = damping_term_min, threshold = threshold, mode = mode,
-                residuals = residuals, jacobian_cache = _jm,
+                residuals = copy(residuals), jacobian_cache = copy.(_jm), # the surrogate gets its own caches
                 basis = get_basis(first(get_residual_functions(nlso)).jacobian_type),
             ),
         )
@@ -373,7 +373,7 @@ function construct_lm_subobjective(use_fast_coordinate_subobjective::Bool, nlso,
         return NormalEquationsObjective(
             LevenbergMarquardtLinearSurrogateObjective(
                 nlso; penalty = damping_term_min, threshold = threshold, mode = mode,
-                residuals = residuals,
+                residuals = copy(residuals), # the surrogate gets its own cache
             ),
         )
     end
@@ -504,6 +504,9 @@ function step_solver!(
     nlso = get_objective(dmp) # keep decorators, every evaluation passes through them
     FpSq = get_cost(dmp, lms.p)
     set_parameter!(lms.sub_problem, Val(:Objective), Val(:Penalty), lms.damping_term * FpSq)
+    # pass the current residuals and Jacobians as caches to the surrogate
+    set_parameter!(lms.sub_problem, Val(:Objective), Val(:ResidualCache), lms.residual_values)
+    isnothing(lms.jacobian_matrices) || set_parameter!(lms.sub_problem, Val(:Objective), Val(:JacobianCache), lms.jacobian_matrices)
     # update base point of the tangent space the subproblem works on
     set_parameter!(lms.sub_problem, Val(:Manifold), Val(:Basepoint), lms.p)
     # Subsolver result

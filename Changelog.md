@@ -105,6 +105,7 @@ This is yet another round of review – maybe also introducing a few test tools
 * `ProximalGradientMethodAcceleration` starts accelerating in the second iteration.
 * `Frank_Wolfe_method` accepts `inverse_retraction_method=`, which its step uses.
 * `set_iterate!` on a `FrankWolfeState` writes into the stored point.
+* `LevenbergMarquardt` passes residuals and Jacobians to its surrogate explicitly, so a surrogate given as `sub_objective=` works.
 
 ## [0.6.7] September 9, 2026
 

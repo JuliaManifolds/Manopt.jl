@@ -536,6 +536,33 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         @test !isempty(hits) # the branch under test was actually taken
         @test s.damping_term == 5.0e-6 # without the clamp this would be 1.0e-5
     end
+    @testset "a surrogate built on its own receives residuals and Jacobians" begin
+        Me = Euclidean(2)
+        ts = [0.0, 1.0, 2.0]
+        ys = [0.5, 2.5, 4.7]
+        Fr(M, p) = [p[1] + p[2] * t - y for (t, y) in zip(ts, ys)]
+        Jr(M, p) = [ones(3) ts]
+        vgf = VectorGradientFunction(Fr, Jr, 3; jacobian_type = CoefficientVectorialType())
+        nlso = ManifoldNonlinearLeastSquaresObjective(vgf)
+        q = LevenbergMarquardt(Me, vgf, [0.0, 0.0])
+        # state and default surrogate hold separate arrays
+        sd = get_state(LevenbergMarquardt(Me, vgf, [0.0, 0.0]; return_state = true), true)
+        sur_d = Manopt.get_objective(Manopt.get_objective(sd.sub_problem))
+        @test sur_d.value_cache !== sd.residual_values
+        @test sur_d.value_cache ≈ sd.residual_values atol = 1.0e-6
+        sur = Manopt.LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = 0.1)
+        q1 = LevenbergMarquardt(Me, vgf, [0.0, 0.0]; sub_objective = Manopt.NormalEquationsObjective(sur))
+        @test q1 == q
+        @test sur.value_cache ≈ Fr(Me, q) atol = 1.0e-6
+        surc = Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(
+            nlso; penalty = 0.1, jacobian_cache = [zeros(3, 2)],
+        )
+        q2 = LevenbergMarquardt(
+            Me, vgf, [0.0, 0.0]; use_unified_basis = true, sub_objective = Manopt.NormalEquationsObjective(surc),
+        )
+        @test q2 == LevenbergMarquardt(Me, vgf, [0.0, 0.0]; use_unified_basis = true)
+        @test surc.jacobian_cache[1] == Jr(Me, q2)
+    end
     @testset "errors" begin
         sub_fake_f = (args...) -> 0
         sub_state = AllocatingEvaluation()
